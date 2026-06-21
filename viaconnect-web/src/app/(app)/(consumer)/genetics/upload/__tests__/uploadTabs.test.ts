@@ -24,9 +24,13 @@ describe("Upload Genetic Data tabs", () => {
     expect(source).not.toContain('label: "EpigenHQ"');
   });
 
-  it("shares one raw DNA dropzone across the DNA and genotype tabs", () => {
-    // The dropzone copy lives once and renders for every non-epigenetic tab.
-    expect(source).toContain("Drop your raw data file here");
+  it("shares one upload card across the DNA and genotype tabs (PDF, photo, or data)", () => {
+    // One unified card, matching the Epigenetic tab, accepting a data file, a PDF,
+    // or a photo. It renders for every non-epigenetic tab.
+    expect(source).toContain("UPLOAD DNA DATA, REPORT, OR PHOTO");
+    expect(source).toContain("Upload data, PDF, or photo");
+    // The card accepts images (photo support), not just data files and PDFs.
+    expect(source).toContain("image/*");
     // The genotype tabs are no longer routed away to a separate explainer.
     expect(source).not.toContain("PanelExplainerPanel");
     // Each genotype tab still links to its blueprint panel from the intro.

@@ -44,11 +44,15 @@ export async function POST(request: Request): Promise<NextResponse> {
   if (!(file instanceof File)) {
     return NextResponse.json({ error: 'No file provided.' }, { status: 400 });
   }
-  if (!file.name.toLowerCase().endsWith('.pdf') && file.type !== 'application/pdf') {
-    return NextResponse.json({ error: 'This endpoint accepts PDF files only.' }, { status: 400 });
+  // Prompt 204 (2026-06-21): accept a PDF OR a photo of a report. A PDF tries the
+  // text layer first then Gemini vision; an image goes straight to the vision path.
+  const isPdf = file.name.toLowerCase().endsWith('.pdf') || file.type === 'application/pdf';
+  const isImage = file.type.startsWith('image/');
+  if (!isPdf && !isImage) {
+    return NextResponse.json({ error: 'Please upload a PDF or a photo of your report.' }, { status: 400 });
   }
   if (file.size > MAX_PDF_BYTES) {
-    return NextResponse.json({ error: 'PDF too large. Maximum 10 MB.' }, { status: 400 });
+    return NextResponse.json({ error: 'File too large. Maximum 10 MB.' }, { status: 400 });
   }
 
   // Prompt 204 (2026-06-21): optional per-tab panel scope. A genotype panel tab

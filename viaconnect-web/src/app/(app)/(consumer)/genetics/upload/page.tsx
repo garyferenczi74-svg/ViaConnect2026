@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
@@ -124,6 +124,16 @@ const SUPPORTED_PROVIDERS = [
   { name: "SelfDecode", ext: ".txt,.csv", icon: "SD", color: "bg-rose-500/10 text-rose-400 border-rose-500/20", desc: "Export genotype data from SelfDecode" },
 ];
 
+// Detect a raw-data provider from the filename, for labeling only (the route
+// defaults to generic when absent).
+function providerFromName(name: string): string | null {
+  if (name.includes("23andme")) return "23andMe";
+  if (name.includes("ancestry")) return "AncestryDNA";
+  if (name.includes("myheritage")) return "MyHeritage";
+  if (name.includes("nebula")) return "Nebula Genomics";
+  return null;
+}
+
 // Token-driven status badge for an extracted variant. +/+ orange, +/- neutral
 // white, -/- teal. The hyphen-minus characters are genotype notation, allowed.
 function pdfStatusBadgeClass(status: string): string {
@@ -140,12 +150,12 @@ function GeneticUploadInner() {
     return t && VALID_TABS.has(t) ? (t as UploadTab) : "dna";
   });
   const [userId, setUserId] = useState<string | null>(null);
-  const [file, setFile] = useState<File | null>(null);
   const [provider, setProvider] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [result, setResult] = useState<UploadResult | null>(null);
   const [genexStatus, setGenexStatus] = useState<"idle" | "checking" | "found" | "none">("idle");
   const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   // Prompt 204c: PDF verify-before-save flow state.
   const [pdfPreview, setPdfPreview] = useState<PdfPreview | null>(null);
   const [pdfSaving, setPdfSaving] = useState(false);
@@ -157,45 +167,23 @@ function GeneticUploadInner() {
     });
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(false);
-    const dropped = e.dataTransfer.files[0];
-    const name = dropped?.name.toLowerCase() ?? "";
-    if (dropped && (name.endsWith(".txt") || name.endsWith(".csv") || name.endsWith(".pdf"))) {
-      setFile(dropped);
-      if (name.includes("23andme")) setProvider("23andMe");
-      else if (name.includes("ancestry")) setProvider("AncestryDNA");
-      else if (name.includes("myheritage")) setProvider("MyHeritage");
-      else if (name.includes("nebula")) setProvider("Nebula Genomics");
-    } else {
-      toast.error("Please upload a .txt, .csv, or .pdf file");
-    }
-  }, []);
-
-  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const selected = e.target.files?.[0];
-    if (selected) {
-      setFile(selected);
-      const name = selected.name.toLowerCase();
-      if (name.includes("23andme")) setProvider("23andMe");
-      else if (name.includes("ancestry")) setProvider("AncestryDNA");
-    }
-  }, []);
-
-  const handleUpload = useCallback(async () => {
-    if (!file || !userId) return;
+  // Upload a chosen file immediately (one step, matching the Epigenetic tab). A raw
+  // 23andMe / Ancestry data file (.txt/.csv) goes through the direct genotype parse;
+  // a report PDF or a photo goes through the verify-before-save vision flow. Both
+  // carry the per-tab panel scope (a genotype tab captures only its panel; the DNA
+  // Test tab passes no scope and captures every panel).
+  const handleUpload = useCallback(async (selectedFile: File) => {
+    if (!userId) return;
     setIsUploading(true);
     try {
-      // Prompt 204c: a PDF goes through the verify-before-save flow (extract +
-      // interpret, then the member confirms) instead of the direct text parse.
-      // Per-tab scope: a genotype panel tab (its id is the panel_key) captures only
-      // that panel; the DNA Test tab passes no scope and captures every panel.
+      const name = selectedFile.name.toLowerCase();
+      const isPdf = name.endsWith(".pdf") || selectedFile.type === "application/pdf";
+      const isImage = selectedFile.type.startsWith("image/");
       const panelScope = activeTab === "dna" ? null : activeTab;
 
-      if (file.name.toLowerCase().endsWith(".pdf")) {
+      if (isPdf || isImage) {
         const formData = new FormData();
-        formData.append("file", file);
+        formData.append("file", selectedFile);
         if (panelScope) formData.append("panel", panelScope);
         // Abort the request if the server stalls, so the spinner can never hang.
         const res = await withAbortTimeout(
@@ -205,25 +193,25 @@ function GeneticUploadInner() {
         );
         const data = await res.json();
         if (!res.ok) {
-          toast.error(data.error || "Could not read this PDF");
+          toast.error(data.error || "Could not read this file");
           return;
         }
         setPdfPreview(data as PdfPreview);
         if ((data as PdfPreview).matchedCount === 0) {
-          toast("No known genetic markers were found in this PDF", { icon: "i" });
+          toast("No known genetic markers were found in this file", { icon: "i" });
         }
         return;
       }
 
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", selectedFile);
       formData.append("kitId", `upload-${Date.now()}`);
-      if (provider) formData.append("provider", provider);
+      const detected = providerFromName(name) ?? provider;
+      if (detected) formData.append("provider", detected);
       if (panelScope) formData.append("panel", panelScope);
 
       const res = await fetch("/api/genex/upload", { method: "POST", body: formData });
       const data = await res.json();
-
       if (data.success) {
         setResult(data.data);
         toast.success(`${data.data.summary.panel_variants_found} genetic variants analyzed!`);
@@ -235,7 +223,32 @@ function GeneticUploadInner() {
     } finally {
       setIsUploading(false);
     }
-  }, [file, userId, provider, activeTab]);
+  }, [userId, provider, activeTab]);
+
+  // Validate a chosen or dropped file, then upload it immediately.
+  const validateAndUpload = useCallback((f: File) => {
+    const name = f.name.toLowerCase();
+    const ok =
+      name.endsWith(".txt") || name.endsWith(".csv") || name.endsWith(".pdf") || f.type.startsWith("image/");
+    if (!ok) {
+      toast.error("Please upload a DNA data file (.txt or .csv), a report PDF, or a photo");
+      return;
+    }
+    void handleUpload(f);
+  }, [handleUpload]);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    const dropped = e.dataTransfer.files?.[0];
+    if (dropped) validateAndUpload(dropped);
+  }, [validateAndUpload]);
+
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = e.target.files?.[0];
+    if (selected) validateAndUpload(selected);
+    e.target.value = "";
+  }, [validateAndUpload]);
 
   // Prompt 204c: save the PDF-extracted variants the member just verified. The
   // server re-runs the deterministic engine from the rows, so the saved status
@@ -271,7 +284,6 @@ function GeneticUploadInner() {
   const handleCancelPdf = useCallback(() => {
     setPdfPreview(null);
     setPdfSavedCount(null);
-    setFile(null);
     setProvider(null);
   }, []);
 
@@ -525,7 +537,7 @@ function GeneticUploadInner() {
               <Link href="/genetics">
                 <Button className="bg-teal hover:bg-teal/80 text-white">View Full Results</Button>
               </Link>
-              <Button variant="secondary" onClick={() => { setResult(null); setFile(null); }}>Upload Another</Button>
+              <Button variant="secondary" onClick={() => setResult(null)}>Upload Another</Button>
             </div>
           </Card>
         </StaggerChild>
@@ -615,41 +627,44 @@ function GeneticUploadInner() {
             </StaggerChild>
           )}
 
-          {/* Upload Zone (shared by the DNA tab and every genotype panel tab) */}
+          {/* Upload Zone (shared by the DNA tab and every genotype panel tab). One
+              card matching the Epigenetic tab: a raw DNA data file, a report PDF, or
+              a photo. The file uploads as soon as it is chosen. */}
           <StaggerChild>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".txt,.csv,.pdf,text/plain,text/csv,application/pdf,image/*"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
             <div
               onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
               onDragLeave={() => setDragOver(false)}
               onDrop={handleDrop}
-              className={`relative border-2 border-dashed rounded-2xl p-8 text-center transition-all ${
-                dragOver ? "border-teal bg-teal/5" : file ? "border-portal-green/40 bg-portal-green/5" : "border-white/[0.12] hover:border-white/[0.2]"
-              }`}
+              className="glass-v2 p-4 md:p-6 rounded-2xl flex flex-col gap-3 md:gap-4 transition-colors"
+              style={{ borderLeft: "4px solid #2DA5A0", backgroundColor: dragOver ? "rgba(45, 165, 160, 0.06)" : undefined }}
             >
-              {file ? (
-                <div className="flex flex-col items-center gap-3">
-                  <FileText className="w-12 h-12 text-portal-green" />
-                  <div>
-                    <p className="text-white font-medium">{file.name}</p>
-                    <p className="text-sm text-gray-400">{(file.size / 1024 / 1024).toFixed(1)} MB{provider ? ` from ${provider}` : ""}</p>
-                  </div>
-                  <div className="flex gap-3">
-                    <Button onClick={handleUpload} disabled={isUploading} className="bg-teal hover:bg-teal/80 text-white">
-                      {isUploading ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Analyzing...</> : <><Upload className="w-4 h-4 mr-2" />Analyze Genetic Data</>}
-                    </Button>
-                    <Button variant="secondary" onClick={() => { setFile(null); setProvider(null); }}>Remove</Button>
-                  </div>
-                </div>
-              ) : (
-                <label className="flex flex-col items-center gap-3 cursor-pointer">
-                  <Upload className="w-12 h-12 text-gray-500" />
-                  <div>
-                    <p className="text-white font-medium">Drop your raw data file here</p>
-                    <p className="text-sm text-gray-400">or click to browse (.txt, .csv, or .pdf)</p>
-                  </div>
-                  <input type="file" accept=".txt,.csv,.pdf,text/plain,text/csv,application/pdf" onChange={handleFileSelect} className="hidden" />
-                  <p className="text-xs text-gray-600 mt-2">Supported: 23andMe, AncestryDNA, MyHeritage, LivingDNA, Nebula, SelfDecode</p>
-                </label>
-              )}
+              <div className="flex items-center justify-center w-11 h-11 rounded-xl" style={{ backgroundColor: "rgba(45, 165, 160, 0.15)" }}>
+                <FileText size={22} strokeWidth={1.5} style={{ color: "#2DA5A0" }} />
+              </div>
+              <h3 className="text-heading-3 text-white">UPLOAD DNA DATA, REPORT, OR PHOTO</h3>
+              <p className="text-sm text-white/60 leading-relaxed">
+                Upload your raw DNA file (23andMe, AncestryDNA, and more), a report PDF, or a clear
+                photo of a report. We read your genotypes and you verify every reading before
+                anything is saved. Drag a file here or click to browse.
+              </p>
+              <Button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                className="bg-teal hover:bg-teal/80 text-white w-fit"
+              >
+                {isUploading ? (
+                  <><Loader2 className="w-4 h-4 animate-spin mr-2" strokeWidth={1.5} />Reading your file...</>
+                ) : (
+                  <><Upload className="w-4 h-4 mr-2" strokeWidth={1.5} />Upload data, PDF, or photo</>
+                )}
+              </Button>
             </div>
           </StaggerChild>
 
