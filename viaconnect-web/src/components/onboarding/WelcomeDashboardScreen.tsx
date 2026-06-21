@@ -9,6 +9,11 @@ import { CAQ_INTERSTITIALS } from "@/config/caq-interstitials";
 function BackgroundLayer({ background }: { background: typeof CAQ_INTERSTITIALS[0]["background"] }) {
   const [videoLoaded, setVideoLoaded] = useState(false);
   const [videoError, setVideoError] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  useEffect(() => {
+    setPrefersReducedMotion(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  }, []);
 
   return (
     <div className="absolute inset-0 z-0">
@@ -16,7 +21,7 @@ function BackgroundLayer({ background }: { background: typeof CAQ_INTERSTITIALS[
         className="absolute inset-0 animate-gradient-shift"
         style={{ background: background.fallbackGradient, backgroundSize: "400% 400%" }}
       />
-      {background.type === "video" && background.src && !videoError && (
+      {background.type === "video" && background.src && !videoError && !prefersReducedMotion && (
         <video
           autoPlay muted loop playsInline preload="auto" aria-hidden="true"
           onLoadedData={() => setVideoLoaded(true)}

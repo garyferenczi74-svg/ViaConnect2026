@@ -28,7 +28,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useInViewport, useVideoBudget } from '@/lib/shop/useVideoBudget'
-import { buildWebmUrlFromMp4, isPlayableVideoUrl } from '@/lib/shop/videoUrlHelpers'
+import { isPlayableVideoUrl } from '@/lib/shop/videoUrlHelpers'
 
 interface CollectionTileVideoLayerProps {
     videoUrl: string | null | undefined
@@ -78,8 +78,10 @@ export function CollectionTileVideoLayer({
 
     if (!isPlayableVideoUrl(videoUrl)) return null
 
-    const webmUrl = buildWebmUrlFromMp4(videoUrl)
-    const showWebmFirst = videoUrl.toLowerCase().endsWith('.webm')
+    // No .webm assets exist in storage (the derived siblings 404), so render a
+    // single source typed from the actual url extension. This avoids one dead
+    // .webm request per tile while still honoring a .webm url if one is set.
+    const sourceType = videoUrl.toLowerCase().endsWith('.webm') ? 'video/webm' : 'video/mp4'
     const renderVideo = budgetAllowed
 
     return (
@@ -103,17 +105,7 @@ export function CollectionTileVideoLayer({
                     }`}
                 >
                     {inView ? (
-                        showWebmFirst ? (
-                            <>
-                                <source src={videoUrl} type="video/webm" />
-                                <source src={buildWebmUrlFromMp4(videoUrl)} type="video/mp4" />
-                            </>
-                        ) : (
-                            <>
-                                <source src={webmUrl} type="video/webm" />
-                                <source src={videoUrl} type="video/mp4" />
-                            </>
-                        )
+                        <source src={videoUrl} type={sourceType} />
                     ) : null}
                 </video>
             ) : null}
