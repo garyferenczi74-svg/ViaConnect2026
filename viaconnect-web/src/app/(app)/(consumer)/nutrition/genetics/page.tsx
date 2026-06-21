@@ -18,6 +18,7 @@ import { withTimeout } from '@/lib/utils/with-timeout';
 import type { SupabaseLike } from '@/lib/nutrition/genetics/recommendations';
 import { BackToNutritionLink } from '@/components/nutrition/hub/BackToNutritionLink';
 import { NutritionGeneticsTabs } from '@/components/nutrition/genetics/NutritionGeneticsTabs';
+import { NutritionByGeneticsPanel } from '@/components/protocol/NutritionByGeneticsPanel';
 
 const TIMEOUT_MS = 4_000;
 
@@ -153,6 +154,13 @@ export default async function NutritionGeneticsPage() {
             nutrigenDxPending={nutrigenDxPending}
           />
         </Suspense>
+      </div>
+
+      {/* Nutrition by Genetics panel: Gordon's synthesis-driven prefer/avoid
+          lists keyed to the member's variants. Client component; fetches its
+          own data via GET /api/protocol/synthesis. */}
+      <div className="mt-8">
+        <NutritionByGeneticsPanel />
       </div>
     </div>
   );
