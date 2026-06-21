@@ -18,6 +18,7 @@ import { getPublishedAtoms, type KnowledgeAtomDomain } from '@/lib/kb/knowledgeA
 import { scoreCoverage, captureQuery } from '@/lib/kb/knowledgeQueries';
 import { HANNAH_208_QA_DIRECTIVE } from '@/lib/ai/hannah/ultrathink/prompts/ultrathink-system';
 import { safeLog } from '@/lib/utils/safe-log';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 
 // ---------------------------------------------------------------------------
 // Anthropic API constants (mirrors engine.ts values exactly).
@@ -169,10 +170,26 @@ export async function generateGroundedAnswer(
 
 export async function POST(request: Request): Promise<NextResponse> {
   // Auth: resolve the user from the server session.
+  // Auth timeout fails CLOSED: a timeout is treated as unauthenticated (401).
   const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  let user: { id: string } | null = null;
+  try {
+    const { data } = await withTimeout(
+      supabase.auth.getUser(),
+      5000,
+      'api.hannah.ask.auth',
+    );
+    user = data.user;
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.warn('api.hannah.ask', 'auth.getUser timed out; returning 401', {
+        error: (err as Error).message,
+      });
+    } else {
+      safeLog.error('api.hannah.ask', 'auth.getUser threw; returning 401', { err });
+    }
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
 
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -203,8 +220,24 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
 
   // Retrieve published atoms for the mapped scientific domain.
+  // Timeout fails OPEN: on timeout or error, proceed with an empty atom list
+  // so the fallback answer is still returned rather than blocking the user.
   const atomDomain = DOMAIN_MAP[domain];
-  const atoms = await getPublishedAtoms({ domain: atomDomain });
+  let atoms: Array<{ id: string; claim: string; evidence_tier: number }> = [];
+  try {
+    atoms = await withTimeout(
+      getPublishedAtoms({ domain: atomDomain }),
+      5000,
+      'api.hannah.ask.getPublishedAtoms',
+    );
+  } catch (err) {
+    safeLog.warn('api.hannah.ask', 'getPublishedAtoms timed out or threw; proceeding with empty atoms', {
+      userId: user.id,
+      domain,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    atoms = [];
+  }
 
   // Score coverage deterministically.
   const { coverage, tiersUsed } = scoreCoverage(atoms);

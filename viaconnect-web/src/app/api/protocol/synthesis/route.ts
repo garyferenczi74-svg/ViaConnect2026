@@ -19,13 +19,30 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getLatestUserProtocolSynthesis } from '@/lib/protocol/readSynthesis';
 import { safeLog } from '@/lib/utils/safe-log';
+import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 
 export async function GET(): Promise<NextResponse> {
   // Resolve the authenticated user from the server session.
+  // Auth timeout fails CLOSED: a timeout is treated as unauthenticated (401).
   const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  let user: { id: string } | null = null;
+  try {
+    const { data } = await withTimeout(
+      supabase.auth.getUser(),
+      5000,
+      'api.protocol.synthesis.auth',
+    );
+    user = data.user;
+  } catch (err) {
+    if (isTimeoutError(err)) {
+      safeLog.warn('api.protocol.synthesis', 'auth.getUser timed out; returning 401', {
+        error: err.message,
+      });
+    } else {
+      safeLog.error('api.protocol.synthesis', 'auth.getUser threw; returning 401', { err });
+    }
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
 
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
