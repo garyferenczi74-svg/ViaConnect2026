@@ -142,6 +142,9 @@ function buildAdminMock(
         return {
           select: vi.fn().mockReturnThis(),
           eq: vi.fn().mockReturnThis(),
+          // The synthesis query excludes SAMPLE rows via .neq('is_sample', true);
+          // keep the chain thenable after it.
+          neq: vi.fn().mockReturnThis(),
           then: (resolve: (v: unknown) => void) =>
             resolve({ data: variantRows, error: null }),
         };

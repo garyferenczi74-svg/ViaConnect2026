@@ -125,7 +125,11 @@ export async function synthesizeForUser(userId: string): Promise<SynthesisOutput
     const { data: variantData, error: variantError } = await supabase
       .from('user_variants')
       .select('rsid, gene, genotype, panel_key, status')
-      .eq('user_id', userId);
+      .eq('user_id', userId)
+      // Exclude GeneX360 SAMPLE rows: seeded demo genotypes must never drive a
+      // real, unlabeled nutritional protocol. neq-true (not eq-false) so any
+      // legacy null real row is still kept.
+      .neq('is_sample', true);
 
     if (variantError) {
       safeLog.warn('synthesis', 'Failed to load user_variants; continuing with empty variants', {

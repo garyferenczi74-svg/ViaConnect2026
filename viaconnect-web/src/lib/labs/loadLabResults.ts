@@ -55,7 +55,11 @@ export async function loadLabResults(
       .order('collection_date', { ascending: true }),
     supabase.from('user_variants')
       .select('rsid, gene, genotype, status')
-      .eq('user_id', userId),
+      .eq('user_id', userId)
+      // Exclude GeneX360 SAMPLE rows: seeded demo genotypes must never produce a
+      // real, unlabeled genetic-adjusted lab optimal range. neq-true (not
+      // eq-false) so any legacy null real row is still kept.
+      .neq('is_sample', true),
   ]);
 
   const variants = (varData ?? []) as VariantRow[];
