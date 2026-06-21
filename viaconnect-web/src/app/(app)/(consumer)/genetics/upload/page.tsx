@@ -8,15 +8,63 @@ import toast from "react-hot-toast";
 import {
   Upload, FileText, CheckCircle2, AlertTriangle, Dna, ArrowLeft,
   Loader2, Shield, Zap, Cloud, ExternalLink, RefreshCw, Hourglass,
+  Apple, Activity, HeartPulse, Leaf,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { PageTransition, StaggerChild, MotionCard } from "@/lib/motion";
 import { withAbortTimeout } from "@/lib/utils/with-timeout";
 import { EpigenUploadPanel } from "@/components/genetics/upload/EpigenUploadPanel";
+import { PanelExplainerPanel, type PanelExplainerInfo } from "@/components/genetics/upload/PanelExplainerPanel";
 
-type UploadTab = "dna" | "epigen";
+// The Upload Genetic Data tabs. DNA Test is the raw genotype upload (it also
+// covers the GeneXM methylation panel). Epigenetic is its own measured-report
+// upload. Nutrition, Hormone, Peptide, and Cannabis are read from the DNA file,
+// so their tabs explain that and route to the DNA upload (PanelExplainerPanel).
+type UploadTab = "dna" | "nutrition" | "hormone" | "epigen" | "peptide" | "cannabis";
+
+const TABS: ReadonlyArray<{ id: UploadTab; label: string; icon: LucideIcon }> = [
+  { id: "dna", label: "DNA Test", icon: Dna },
+  { id: "nutrition", label: "Nutrition", icon: Apple },
+  { id: "hormone", label: "Hormone", icon: Activity },
+  { id: "epigen", label: "Epigenetic", icon: Hourglass },
+  { id: "peptide", label: "Peptide", icon: HeartPulse },
+  { id: "cannabis", label: "Cannabis", icon: Leaf },
+];
+
+const VALID_TABS = new Set<string>(TABS.map((t) => t.id));
+
+// The explainer copy for the genotype panels read from the DNA file. `covers` is
+// a plain description of the panel; `dataSourceNote` states where the data comes
+// from. No clinical claim about the member is made here.
+const EXPLAINERS: Partial<Record<UploadTab, PanelExplainerInfo>> = {
+  nutrition: {
+    title: "Nutrition (NutrigenDX)",
+    covers: "Functional nutrition and absorption markers: how you metabolize folate, fats, vitamins, and more.",
+    dataSourceNote: "These markers are read from your DNA, so there is no separate upload. Upload your DNA test once and your Nutrition panel is scored from it.",
+    blueprintHref: "/shop/genex360#nutrigen-dx",
+  },
+  hormone: {
+    title: "Hormone (HormoneIQ)",
+    covers: "Hormone and adrenal mapping: estrogen, androgen, and stress hormone pathways.",
+    dataSourceNote: "The genetic markers are read from your DNA upload. The measured hormone and metabolite levels come from your GeneX360 lab sample.",
+    blueprintHref: "/shop/genex360#hormone-iq",
+  },
+  peptide: {
+    title: "Peptide (PeptideIQ)",
+    covers: "Peptide response and tissue repair genetics: growth factor and recovery pathways.",
+    dataSourceNote: "These markers are read from your DNA, so there is no separate upload. Upload your DNA test once and your Peptide panel is scored from it.",
+    blueprintHref: "/shop/genex360#peptide-iq",
+  },
+  cannabis: {
+    title: "Cannabis (CannabisIQ)",
+    covers: "Cannabinoid response and sensitivity genetics: how you respond to and clear cannabinoids.",
+    dataSourceNote: "These markers are read from your DNA, so there is no separate upload. Upload your DNA test once and your Cannabis panel is scored from it.",
+    blueprintHref: "/shop/genex360#cannabis-iq",
+  },
+};
 
 const supabase = createClient();
 
@@ -71,9 +119,10 @@ function pdfStatusBadgeClass(status: string): string {
 function GeneticUploadInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState<UploadTab>(
-    searchParams.get("tab") === "epigen" ? "epigen" : "dna",
-  );
+  const [activeTab, setActiveTab] = useState<UploadTab>(() => {
+    const t = searchParams.get("tab");
+    return t && VALID_TABS.has(t) ? (t as UploadTab) : "dna";
+  });
   const [userId, setUserId] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [provider, setProvider] = useState<string | null>(null);
@@ -260,15 +309,14 @@ function GeneticUploadInner() {
         </div>
       </StaggerChild>
 
-      {/* Prompt 204 (2026-06-21): one tabbed page for every genetic upload path.
-          DNA Test (raw files + GENEX360 sync) and EpigenHQ (epigenetic report)
-          each get a tab; ?tab=epigen deep links to the EpigenHQ tab. */}
+      {/* Prompt 204 (2026-06-21): one tabbed page for every GeneX360 test. DNA Test
+          (raw files + GENEX360 sync, covering the methylation panel) and Epigenetic
+          (measured report) each have their own upload; Nutrition, Hormone, Peptide,
+          and Cannabis are read from the DNA file and explain that. ?tab= deep links
+          to any tab. The tab bar scrolls on narrow widths. */}
       <StaggerChild className="mb-6">
-        <div className="inline-flex gap-1 rounded-xl border border-white/[0.08] bg-white/[0.03] p-1">
-          {([
-            { id: "dna", label: "DNA Test", icon: Dna },
-            { id: "epigen", label: "EpigenHQ", icon: Hourglass },
-          ] as const).map((t) => {
+        <div className="scrollbar-hide flex gap-1 overflow-x-auto rounded-xl border border-white/[0.08] bg-white/[0.03] p-1">
+          {TABS.map((t) => {
             const TabIcon = t.icon;
             const isActive = activeTab === t.id;
             return (
@@ -277,7 +325,7 @@ function GeneticUploadInner() {
                 type="button"
                 onClick={() => setActiveTab(t.id)}
                 aria-pressed={isActive}
-                className={`inline-flex min-h-[44px] items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 ${
+                className={`inline-flex min-h-[44px] flex-none items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 ${
                   isActive ? "bg-teal/15 text-teal" : "text-gray-400 hover:bg-white/[0.04] hover:text-white"
                 }`}
               >
@@ -290,10 +338,19 @@ function GeneticUploadInner() {
       </StaggerChild>
 
       {/* The PDF verify-before-save and saved screens take precedence over the
-          text-parse result and the upload form, all within the DNA tab. */}
+          text-parse result and the upload form, all within the DNA tab. The
+          Epigenetic tab owns its measured-report upload; the four genotype tabs
+          render an explainer that routes to the DNA upload. */}
       {activeTab === "epigen" ? (
         <StaggerChild>
           <EpigenUploadPanel />
+        </StaggerChild>
+      ) : EXPLAINERS[activeTab] ? (
+        <StaggerChild>
+          <PanelExplainerPanel
+            info={EXPLAINERS[activeTab] as PanelExplainerInfo}
+            onUseDnaUpload={() => setActiveTab("dna")}
+          />
         </StaggerChild>
       ) : pdfSavedCount !== null ? (
         <StaggerChild className="space-y-6">
