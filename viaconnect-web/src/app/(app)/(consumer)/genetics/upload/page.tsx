@@ -1,19 +1,22 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import {
   Upload, FileText, CheckCircle2, AlertTriangle, Dna, ArrowLeft,
-  Loader2, Shield, Zap, Cloud, ExternalLink, RefreshCw,
+  Loader2, Shield, Zap, Cloud, ExternalLink, RefreshCw, Hourglass,
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { PageTransition, StaggerChild, MotionCard } from "@/lib/motion";
 import { withAbortTimeout } from "@/lib/utils/with-timeout";
+import { EpigenUploadPanel } from "@/components/genetics/upload/EpigenUploadPanel";
+
+type UploadTab = "dna" | "epigen";
 
 const supabase = createClient();
 
@@ -65,8 +68,12 @@ function pdfStatusBadgeClass(status: string): string {
   return "border-[#2DA5A0]/40 bg-[#2DA5A0]/[0.12] text-[#2DA5A0]";
 }
 
-export default function GeneticUploadPage() {
+function GeneticUploadInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState<UploadTab>(
+    searchParams.get("tab") === "epigen" ? "epigen" : "dna",
+  );
   const [userId, setUserId] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [provider, setProvider] = useState<string | null>(null);
@@ -249,13 +256,46 @@ export default function GeneticUploadPage() {
         <Dna className="w-6 h-6 text-teal" />
         <div>
           <h1 className="text-2xl font-bold text-white">Upload Genetic Data</h1>
-          <p className="text-sm text-gray-400">Import data from testing companies or sync GENEX360 results</p>
+          <p className="text-sm text-gray-400">Import your DNA test or your EpigenHQ results, all in one place</p>
         </div>
       </StaggerChild>
 
-      {/* Prompt 204c: the PDF verify-before-save and saved screens take
-          precedence over the text-parse result and the upload form. */}
-      {pdfSavedCount !== null ? (
+      {/* Prompt 204 (2026-06-21): one tabbed page for every genetic upload path.
+          DNA Test (raw files + GENEX360 sync) and EpigenHQ (epigenetic report)
+          each get a tab; ?tab=epigen deep links to the EpigenHQ tab. */}
+      <StaggerChild className="mb-6">
+        <div className="inline-flex gap-1 rounded-xl border border-white/[0.08] bg-white/[0.03] p-1">
+          {([
+            { id: "dna", label: "DNA Test", icon: Dna },
+            { id: "epigen", label: "EpigenHQ", icon: Hourglass },
+          ] as const).map((t) => {
+            const TabIcon = t.icon;
+            const isActive = activeTab === t.id;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setActiveTab(t.id)}
+                aria-pressed={isActive}
+                className={`inline-flex min-h-[44px] items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 ${
+                  isActive ? "bg-teal/15 text-teal" : "text-gray-400 hover:bg-white/[0.04] hover:text-white"
+                }`}
+              >
+                <TabIcon className="h-4 w-4" strokeWidth={1.5} />
+                {t.label}
+              </button>
+            );
+          })}
+        </div>
+      </StaggerChild>
+
+      {/* The PDF verify-before-save and saved screens take precedence over the
+          text-parse result and the upload form, all within the DNA tab. */}
+      {activeTab === "epigen" ? (
+        <StaggerChild>
+          <EpigenUploadPanel />
+        </StaggerChild>
+      ) : pdfSavedCount !== null ? (
         <StaggerChild className="space-y-6">
           <Card className="p-6 border-portal-green/30 bg-portal-green/5">
             <div className="flex items-center gap-3 mb-4">
@@ -532,5 +572,15 @@ export default function GeneticUploadPage() {
         </div>
       )}
     </PageTransition>
+  );
+}
+
+export default function GeneticUploadPage() {
+  // useSearchParams (for the ?tab deep link) requires a Suspense boundary in the
+  // App Router; the inner component holds all of the upload state.
+  return (
+    <Suspense fallback={null}>
+      <GeneticUploadInner />
+    </Suspense>
   );
 }
