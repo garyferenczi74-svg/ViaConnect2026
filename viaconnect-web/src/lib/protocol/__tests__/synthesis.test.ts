@@ -3,6 +3,7 @@
  * TDD: written RED first, then implementation makes them GREEN.
  *
  * Prompt 208, Phase 4, Task 12 (2026-06-21).
+ * Updated for 208a Task A3: getQualifiedUserVariants is now the variant source.
  * No em/en-dashes. No emojis.
  */
 
@@ -11,6 +12,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // ---------------------------------------------------------------------------
 // Mock modules that hit the DB or external APIs.
 // runInterlocks is NOT mocked -- it is the real implementation.
+// getQualifiedUserVariants is mocked so synthesis tests stay isolated from QC.
 // ---------------------------------------------------------------------------
 
 vi.mock('@/lib/kb/snpProtocolRules', () => ({
@@ -26,6 +28,10 @@ vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: vi.fn(),
 }));
 
+vi.mock('@/lib/genetics/qc/qualifiedVariants', () => ({
+  getQualifiedUserVariants: vi.fn(),
+}));
+
 // safeLog is real (no side effects in tests, just console output).
 
 import {
@@ -36,6 +42,7 @@ import {
 
 import { getPublishedRules, ruleMatchesGenotype } from '@/lib/kb/snpProtocolRules';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { getQualifiedUserVariants } from '@/lib/genetics/qc/qualifiedVariants';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -128,27 +135,18 @@ function makeSupabaseMock(responses: Record<string, { data: unknown[]; error: nu
 
 /**
  * Build a simple admin mock that handles:
- *   - user_variants select (returns variantRows)
  *   - user_current_supplements select (returns supplementRows)
  *   - user_protocol_synthesis insert (returns success)
+ *
+ * Note: user_variants is no longer queried by synthesis directly.
+ * getQualifiedUserVariants is mocked separately to supply variant data.
  */
 function buildAdminMock(
-  variantRows: unknown[],
+  _variantRows: unknown[],
   supplementRows: unknown[],
 ) {
   const supabase = {
     from: vi.fn().mockImplementation((table: string) => {
-      if (table === 'user_variants') {
-        return {
-          select: vi.fn().mockReturnThis(),
-          eq: vi.fn().mockReturnThis(),
-          // The synthesis query excludes SAMPLE rows via .neq('is_sample', true);
-          // keep the chain thenable after it.
-          neq: vi.fn().mockReturnThis(),
-          then: (resolve: (v: unknown) => void) =>
-            resolve({ data: variantRows, error: null }),
-        };
-      }
       if (table === 'user_current_supplements') {
         return {
           select: vi.fn().mockReturnThis(),
@@ -219,6 +217,9 @@ beforeEach(() => {
       return m.toUpperCase() === genotype.toUpperCase();
     },
   );
+
+  // Default: getQualifiedUserVariants returns empty (tests override per-case)
+  (getQualifiedUserVariants as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 });
 
 // ---------------------------------------------------------------------------
@@ -232,11 +233,14 @@ describe('Test 1: MTHFR user (prefer_form)', () => {
     // Published rules: one prefer_form rule for MTHFR TT
     (getPublishedRules as ReturnType<typeof vi.fn>).mockResolvedValue([preferFormRule()]);
 
-    // user_variants: MTHFR TT
+    // user_variants: MTHFR TT (supplied via the QC reader)
     // user_current_supplements: includes 'folic acid'
+    (getQualifiedUserVariants as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { rsid: 'rs1801133', gene: 'MTHFR', genotype: 'TT', panel_key: 'methylation', status: 'confirmed' },
+    ]);
     (createAdminClient as ReturnType<typeof vi.fn>).mockReturnValue(
       buildAdminMock(
-        [{ rsid: 'rs1801133', gene: 'MTHFR', genotype: 'TT', panel_key: 'methylation', status: 'confirmed' }],
+        [],
         [{ supplement_name: 'folic acid', product_name: 'Generic Folic Acid', is_current: true, is_ai_recommended: false }],
       ),
     );
@@ -294,11 +298,11 @@ describe('Test 2: HFE user (iron contraindicated by interlock)', () => {
       ironPreferRule,
     ]);
 
+    (getQualifiedUserVariants as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { rsid: 'rs1800562', gene: 'HFE', genotype: 'AA', panel_key: 'methylation', status: 'confirmed' },
+    ]);
     (createAdminClient as ReturnType<typeof vi.fn>).mockReturnValue(
-      buildAdminMock(
-        [{ rsid: 'rs1800562', gene: 'HFE', genotype: 'AA', panel_key: 'methylation', status: 'confirmed' }],
-        [],
-      ),
+      buildAdminMock([], []),
     );
 
     const output = await synthesizeForUser(userId);
@@ -321,6 +325,7 @@ describe('Test 3: No genetic upload (empty user_variants)', () => {
 
     (getPublishedRules as ReturnType<typeof vi.fn>).mockResolvedValue([preferFormRule()]);
 
+    // getQualifiedUserVariants returns [] by default (set in beforeEach)
     (createAdminClient as ReturnType<typeof vi.fn>).mockReturnValue(
       buildAdminMock([], []),
     );
@@ -359,11 +364,11 @@ describe('Test 4: Tier 3 prefer rule excluded from recommendations', () => {
 
     (getPublishedRules as ReturnType<typeof vi.fn>).mockResolvedValue([tier3Rule]);
 
+    (getQualifiedUserVariants as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { rsid: 'rs1801133', gene: 'MTHFR', genotype: 'TT', panel_key: 'methylation', status: 'confirmed' },
+    ]);
     (createAdminClient as ReturnType<typeof vi.fn>).mockReturnValue(
-      buildAdminMock(
-        [{ rsid: 'rs1801133', gene: 'MTHFR', genotype: 'TT', panel_key: 'methylation', status: 'confirmed' }],
-        [],
-      ),
+      buildAdminMock([], []),
     );
 
     const output = await synthesizeForUser(userId);
@@ -372,5 +377,31 @@ describe('Test 4: Tier 3 prefer rule excluded from recommendations', () => {
       (r) => r.form === 'Exotic-Methylfolate-Tier3',
     );
     expect(tier3Rec).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Test 5: QC-excluded variant - its rule is NOT applied (208a Task A3)
+// ---------------------------------------------------------------------------
+
+describe('Test 5: QC-excluded variant does not drive rule application', () => {
+  it('does not apply MTHFR rule when the variant is QC-excluded (not returned by reader)', async () => {
+    const userId = 'user-qc-excluded';
+
+    // Published rule that would apply to rs1801133 TT
+    (getPublishedRules as ReturnType<typeof vi.fn>).mockResolvedValue([preferFormRule()]);
+
+    // QC reader excludes the MTHFR variant (e.g. orientation unresolved)
+    (getQualifiedUserVariants as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (createAdminClient as ReturnType<typeof vi.fn>).mockReturnValue(
+      buildAdminMock([], []),
+    );
+
+    const output = await synthesizeForUser(userId);
+
+    // No variants -> no applicable rules -> nothing recommended
+    expect(output.recommended_vitamins_minerals).toHaveLength(0);
+    expect(output.supplement_flags).toHaveLength(0);
+    expect(output.arnold_context.activeTopics).toHaveLength(0);
   });
 });

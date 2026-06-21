@@ -38,6 +38,7 @@ import { runInterlocks } from '@/lib/protocol/safetyInterlocks';
 import type { InterlockContext, ProtocolCandidate } from '@/lib/protocol/safetyInterlocks';
 import { nutritionByGeneticsFromRules } from '@/lib/agents/gordon/nutritionByGenetics';
 import { safeLog } from '@/lib/utils/safe-log';
+import { getQualifiedUserVariants } from '@/lib/genetics/qc/qualifiedVariants';
 
 // ---------------------------------------------------------------------------
 // Public constants
@@ -119,28 +120,17 @@ export async function synthesizeForUser(userId: string): Promise<SynthesisOutput
   const supabase = createAdminClient();
 
   // -------------------------------------------------------------------------
-  // Step 1: Load user_variants
+  // Step 1: Load user_variants (QC-gated: excludes unresolved orientation /
+  // no-call variants; legacy variants with no QC row still pass; fail-open).
+  // is_sample exclusion is preserved inside getQualifiedUserVariants.
   // -------------------------------------------------------------------------
   let userVariants: Array<{ rsid: string; genotype: string }> = [];
   try {
-    const { data: variantData, error: variantError } = await supabase
-      .from('user_variants')
-      .select('rsid, gene, genotype, panel_key, status')
-      .eq('user_id', userId)
-      // Exclude GeneX360 SAMPLE rows: seeded demo genotypes must never drive a
-      // real, unlabeled nutritional protocol. neq-true (not eq-false) so any
-      // legacy null real row is still kept.
-      .neq('is_sample', true);
-
-    if (variantError) {
-      safeLog.warn('synthesis', 'Failed to load user_variants; continuing with empty variants', {
-        userId,
-        error: variantError,
-      });
-    } else if (variantData && variantData.length > 0) {
-      userVariants = variantData as Array<{ rsid: string; genotype: string }>;
+    const variantRows = await getQualifiedUserVariants(userId);
+    if (variantRows && variantRows.length > 0) {
+      userVariants = variantRows as Array<{ rsid: string; genotype: string }>;
     }
-    // If variantData is null or empty: no variants -> valid empty output path
+    // If variantRows is empty: no variants -> valid empty output path
   } catch (err) {
     safeLog.error('synthesis', 'user_variants query threw; continuing with empty variants', {
       userId,
