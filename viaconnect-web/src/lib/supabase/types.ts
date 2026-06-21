@@ -14,6 +14,89 @@ export type Database = {
   }
   public: {
     Tables: {
+      genotype_uploads: {
+        Row: {
+          created_at: string
+          detected_build: string | null
+          id: string
+          normalization_confidence: number | null
+          normalized_build: string | null
+          qc_status: string
+          source: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          detected_build?: string | null
+          id?: string
+          normalization_confidence?: number | null
+          normalized_build?: string | null
+          qc_status?: string
+          source?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          detected_build?: string | null
+          id?: string
+          normalization_confidence?: number | null
+          normalized_build?: string | null
+          qc_status?: string
+          source?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      variant_calls: {
+        Row: {
+          call_quality: string | null
+          created_at: string
+          id: string
+          is_imputed: boolean
+          is_no_call: boolean
+          normalized_genotype: string | null
+          orientation_resolved: boolean
+          raw_genotype: string | null
+          rsid: string
+          upload_id: string | null
+          user_id: string
+        }
+        Insert: {
+          call_quality?: string | null
+          created_at?: string
+          id?: string
+          is_imputed?: boolean
+          is_no_call?: boolean
+          normalized_genotype?: string | null
+          orientation_resolved?: boolean
+          raw_genotype?: string | null
+          rsid: string
+          upload_id?: string | null
+          user_id: string
+        }
+        Update: {
+          call_quality?: string | null
+          created_at?: string
+          id?: string
+          is_imputed?: boolean
+          is_no_call?: boolean
+          normalized_genotype?: string | null
+          orientation_resolved?: boolean
+          raw_genotype?: string | null
+          rsid?: string
+          upload_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "variant_calls_upload_id_fkey"
+            columns: ["upload_id"]
+            isOneToOne: false
+            referencedRelation: "genotype_uploads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_heartbeats: {
         Row: {
           agent: string
