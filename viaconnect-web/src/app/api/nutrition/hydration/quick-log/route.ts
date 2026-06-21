@@ -144,12 +144,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   let customCoefficient: number | null = null;
   let customKind: HydrationSourceKind | null = null;
   let customName: string | null = null;
+  let customIsAlcoholic = false;
   if (user_beverage_id) {
     try {
       const { data: ub } = await withTimeout(
         admin
           .from('user_beverages')
-          .select('hydration_source_kind, hydration_coefficient, display_name')
+          .select('hydration_source_kind, hydration_coefficient, display_name, is_alcoholic')
           .eq('id', user_beverage_id)
           .maybeSingle(),
         { timeoutMs: 3000, op: 'user_beverage_lookup' },
@@ -158,6 +159,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         customKind = ub.hydration_source_kind as HydrationSourceKind;
         customCoefficient = Number(ub.hydration_coefficient);
         customName = ub.display_name as string;
+        customIsAlcoholic = ub.is_alcoholic === true;
       }
     } catch (e) {
       safeLog.warn('api.hydration.quick_log', 'user_beverage lookup failed (continuing)', {
@@ -212,6 +214,26 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   let hydrationMl: number;
   if (customKind !== null && customCoefficient !== null) {
     hydrationMl = Math.round(volume_ml * customCoefficient * 100) / 100;
+    // Prompt 207a Task 9: apply the same dose-dependent diuretic reduction
+    // for custom alcoholic beverages that the catalog path already gets.
+    // alcohol_low is the canonical kind for custom alcohol (per the mapping)
+    // and countDailyAlcoholicDrinks already counts both alcohol_low and
+    // alcohol_high kinds, so the daily tally stays consistent.
+    if (customIsAlcoholic && hydrationMl > 0) {
+      const drinksToday = await countDailyAlcoholicDrinks({
+        admin,
+        user_id: user.id,
+        day_anchor_iso: loggedAtIso,
+      });
+      const threshold = getAlcoholDiureticThresholdDrinks();
+      const reduced = applyAlcoholDiureticReduction(
+        hydrationMl,
+        drinksToday,
+        threshold,
+        ALCOHOL_DIURETIC_FLOOR,
+      );
+      hydrationMl = Math.round(reduced * 100) / 100;
+    }
   } else {
     hydrationMl = computeHydrationMl({
       source_kind: beverage_kind,

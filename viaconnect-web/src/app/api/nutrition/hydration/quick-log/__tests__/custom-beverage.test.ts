@@ -404,3 +404,96 @@ describe('207a Task 3: non-custom path still uses 20pct sampling gate', () => {
     expect(telemetryPayloadHolder.last).toBeNull();
   });
 });
+
+describe('207a Task 9: custom alcoholic beverage gets same diuretic reduction as catalog alcohol', () => {
+  it('reduces hydration_ml when custom beverage is_alcoholic and daily count is at threshold', async () => {
+    mocks.supabaseAuth.mockResolvedValueOnce({ data: { user: { id: 'u-alcohol-custom-1' } } });
+    mocks.checkHydrationDeduplication.mockResolvedValueOnce({
+      deduplicated: false,
+      reference_meal_id: null,
+    });
+    // threshold is 3; 5 drinks today = 2 above threshold => linear ramp applies
+    const { itemInsertPayloadHolder } = wireAdminMocks({
+      profileCountingMode: 'adjusted',
+      ubRow: {
+        hydration_source_kind: 'alcohol_low',
+        hydration_coefficient: 1.0,
+        display_name: 'Home Brew IPA',
+        is_alcoholic: true,
+      },
+      alcoholicCountToday: 5,
+    });
+
+    const res = await POST(buildRequest({
+      volume_ml: 355,
+      beverage_kind: 'alcohol_low',
+      log_surface: 'hydration_detail_view',
+      user_beverage_id: 'c8e9783a-1ac3-43e4-a30d-73c3849aad22',
+    }));
+
+    expect(res.status).toBe(200);
+    const hydration = itemInsertPayloadHolder.last?.hydration_ml as number;
+    // 355 * 1.0 base, then diuretic ramp at 5 drinks (2 above threshold of 3)
+    // mirrors phase-c catalog test: ~307.67 ml
+    expect(hydration).toBeLessThan(355);
+    expect(hydration).toBeGreaterThan(307);
+    expect(hydration).toBeLessThan(308);
+  });
+
+  it('clamps to ALCOHOL_DIURETIC_FLOOR (0.80) at 6+ drinks for custom beverage', async () => {
+    mocks.supabaseAuth.mockResolvedValueOnce({ data: { user: { id: 'u-alcohol-custom-2' } } });
+    mocks.checkHydrationDeduplication.mockResolvedValueOnce({
+      deduplicated: false,
+      reference_meal_id: null,
+    });
+    const { itemInsertPayloadHolder } = wireAdminMocks({
+      profileCountingMode: 'adjusted',
+      ubRow: {
+        hydration_source_kind: 'alcohol_low',
+        hydration_coefficient: 1.0,
+        display_name: 'Craft Lager',
+        is_alcoholic: true,
+      },
+      alcoholicCountToday: 6,
+    });
+
+    await POST(buildRequest({
+      volume_ml: 355,
+      beverage_kind: 'alcohol_low',
+      log_surface: 'hydration_detail_view',
+      user_beverage_id: '0a979a2b-af35-455b-9911-966453f7c5a1',
+    }));
+
+    // 355 * 0.80 floor = 284
+    expect(itemInsertPayloadHolder.last?.hydration_ml).toBe(284);
+  });
+
+  it('does NOT reduce hydration_ml for a custom non-alcoholic beverage', async () => {
+    mocks.supabaseAuth.mockResolvedValueOnce({ data: { user: { id: 'u-alcohol-custom-3' } } });
+    mocks.checkHydrationDeduplication.mockResolvedValueOnce({
+      deduplicated: false,
+      reference_meal_id: null,
+    });
+    // High alcoholic count to prove the guard is on is_alcoholic, not drink count
+    const { itemInsertPayloadHolder } = wireAdminMocks({
+      profileCountingMode: 'adjusted',
+      ubRow: {
+        hydration_source_kind: 'juice_smoothie',
+        hydration_coefficient: 1.2,
+        display_name: 'Green Protein Shake',
+        is_alcoholic: false,
+      },
+      alcoholicCountToday: 10,
+    });
+
+    await POST(buildRequest({
+      volume_ml: 300,
+      beverage_kind: 'juice_smoothie',
+      log_surface: 'floating_fab',
+      user_beverage_id: 'eb1696c7-dc74-4918-8b48-1731203e5f9a',
+    }));
+
+    // 300 * 1.2 = 360; no reduction applied
+    expect(itemInsertPayloadHolder.last?.hydration_ml).toBe(360);
+  });
+});
