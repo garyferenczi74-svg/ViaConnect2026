@@ -17,12 +17,20 @@ import { Button } from "@/components/ui/Button";
 import { PageTransition, StaggerChild, MotionCard } from "@/lib/motion";
 import { withAbortTimeout } from "@/lib/utils/with-timeout";
 import { EpigenUploadPanel } from "@/components/genetics/upload/EpigenUploadPanel";
-import { PanelExplainerPanel, type PanelExplainerInfo } from "@/components/genetics/upload/PanelExplainerPanel";
+
+// A short intro shown above the shared DNA dropzone on a genotype panel tab, so a
+// member knows what the panel covers and that it is read from their DNA file.
+interface PanelIntro {
+  title: string;
+  covers: string;
+  dataSourceNote: string;
+  blueprintHref: string;
+}
 
 // The Upload Genetic Data tabs. DNA Test is the raw genotype upload (it also
 // covers the GeneXM methylation panel). Epigenetic is its own measured-report
 // upload. Nutrition, Hormone, Peptide, and Cannabis are read from the DNA file,
-// so their tabs explain that and route to the DNA upload (PanelExplainerPanel).
+// so their tabs show the SAME DNA dropzone with a short per-panel intro.
 type UploadTab = "dna" | "nutrition" | "hormone" | "epigen" | "peptide" | "cannabis";
 
 const TABS: ReadonlyArray<{ id: UploadTab; label: string; icon: LucideIcon }> = [
@@ -39,7 +47,7 @@ const VALID_TABS = new Set<string>(TABS.map((t) => t.id));
 // The explainer copy for the genotype panels read from the DNA file. `covers` is
 // a plain description of the panel; `dataSourceNote` states where the data comes
 // from. No clinical claim about the member is made here.
-const EXPLAINERS: Partial<Record<UploadTab, PanelExplainerInfo>> = {
+const EXPLAINERS: Partial<Record<UploadTab, PanelIntro>> = {
   nutrition: {
     title: "Nutrition (NutrigenDX)",
     covers: "Functional nutrition and absorption markers: how you metabolize folate, fats, vitamins, and more.",
@@ -337,20 +345,14 @@ function GeneticUploadInner() {
         </div>
       </StaggerChild>
 
-      {/* The PDF verify-before-save and saved screens take precedence over the
-          text-parse result and the upload form, all within the DNA tab. The
-          Epigenetic tab owns its measured-report upload; the four genotype tabs
-          render an explainer that routes to the DNA upload. */}
+      {/* The Epigenetic tab owns its measured-report upload. Every other tab
+          (DNA plus the four genotype panels) shares the SAME raw-DNA upload flow
+          below: the verify-before-save and saved screens take precedence, then the
+          upload form. The genotype panels are read from the one DNA file, so each
+          of their tabs shows the same dropzone with a short per-panel intro. */}
       {activeTab === "epigen" ? (
         <StaggerChild>
           <EpigenUploadPanel />
-        </StaggerChild>
-      ) : EXPLAINERS[activeTab] ? (
-        <StaggerChild>
-          <PanelExplainerPanel
-            info={EXPLAINERS[activeTab] as PanelExplainerInfo}
-            onUseDnaUpload={() => setActiveTab("dna")}
-          />
         </StaggerChild>
       ) : pdfSavedCount !== null ? (
         <StaggerChild className="space-y-6">
@@ -510,7 +512,9 @@ function GeneticUploadInner() {
         </StaggerChild>
       ) : (
         <div className="space-y-6">
-          {/* GENEX360 Auto-Import */}
+          {activeTab === "dna" ? (
+          <>
+          {/* GENEX360 Auto-Import (DNA tab only) */}
           <StaggerChild>
             <Card className="p-6 border-copper/20 bg-gradient-to-br from-copper/5 to-transparent">
               <div className="flex items-center justify-between mb-4">
@@ -573,8 +577,26 @@ function GeneticUploadInner() {
               ))}
             </div>
           </StaggerChild>
+          </>
+          ) : (
+            // A genotype panel tab: the same dropzone, with a short intro telling
+            // the member what the panel covers and that it is read from their DNA.
+            <StaggerChild>
+              <Card className="p-6">
+                <h2 className="text-lg font-semibold text-white">{EXPLAINERS[activeTab]?.title}</h2>
+                <p className="text-sm text-gray-400 mt-1">{EXPLAINERS[activeTab]?.covers}</p>
+                <p className="text-sm text-gray-400 mt-2">{EXPLAINERS[activeTab]?.dataSourceNote}</p>
+                <Link
+                  href={EXPLAINERS[activeTab]?.blueprintHref ?? "/shop/genex360"}
+                  className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-teal hover:text-teal/80"
+                >
+                  View on your blueprint
+                </Link>
+              </Card>
+            </StaggerChild>
+          )}
 
-          {/* Upload Zone */}
+          {/* Upload Zone (shared by the DNA tab and every genotype panel tab) */}
           <StaggerChild>
             <div
               onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}

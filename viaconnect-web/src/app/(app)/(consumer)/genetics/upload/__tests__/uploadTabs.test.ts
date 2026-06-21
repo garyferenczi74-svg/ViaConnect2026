@@ -1,18 +1,14 @@
 // Prompt 204 (2026-06-21): contract tests for the Upload Genetic Data tabs.
 // Source-as-text per the repo convention. Locks the tab set (including the
-// EpigenHQ to Epigenetic rename) and that the four genotype tabs explain + route
-// to the DNA upload rather than offering a duplicate dropzone.
+// EpigenHQ to Epigenetic rename) and that every genotype tab shows the SAME raw
+// DNA dropzone (Gary 2026-06-21: each test has the same dropzone), with the
+// GENEX360 auto-import and provider grid limited to the DNA tab.
 
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
 const PAGE = path.resolve(__dirname, "..", "page.tsx");
-const EXPLAINER = path.resolve(
-  __dirname,
-  "..", "..", "..", "..", "..", "..",
-  "components", "genetics", "upload", "PanelExplainerPanel.tsx",
-);
 
 describe("Upload Genetic Data tabs", () => {
   const source = readFileSync(PAGE, "utf-8");
@@ -24,38 +20,29 @@ describe("Upload Genetic Data tabs", () => {
     expect(source).toContain('label: "Epigenetic"');
     expect(source).toContain('label: "Peptide"');
     expect(source).toContain('label: "Cannabis"');
-    // The old tab label is gone.
     expect(source).not.toContain('label: "EpigenHQ"');
   });
 
-  it("routes the genotype explainer tabs to the DNA upload", () => {
-    expect(source).toContain("PanelExplainerPanel");
-    expect(source).toContain('onUseDnaUpload={() => setActiveTab("dna")}');
-    // Each genotype explainer points at its blueprint panel.
+  it("shares one raw DNA dropzone across the DNA and genotype tabs", () => {
+    // The dropzone copy lives once and renders for every non-epigenetic tab.
+    expect(source).toContain("Drop your raw data file here");
+    // The genotype tabs are no longer routed away to a separate explainer.
+    expect(source).not.toContain("PanelExplainerPanel");
+    // Each genotype tab still links to its blueprint panel from the intro.
     expect(source).toContain("/shop/genex360#nutrigen-dx");
     expect(source).toContain("/shop/genex360#hormone-iq");
     expect(source).toContain("/shop/genex360#peptide-iq");
     expect(source).toContain("/shop/genex360#cannabis-iq");
   });
 
+  it("limits the GENEX360 auto-import and provider grid to the DNA tab", () => {
+    expect(source).toContain('activeTab === "dna" ? (');
+    expect(source).toContain("GENEX360 Auto-Import (DNA tab only)");
+  });
+
   it("keeps the Epigenetic tab on its own measured-report upload", () => {
     expect(source).toContain("EpigenUploadPanel");
     expect(source).toContain('activeTab === "epigen"');
-  });
-
-  it("contains no em or en dashes", () => {
-    expect(source.includes(String.fromCharCode(0x2014))).toBe(false);
-    expect(source.includes(String.fromCharCode(0x2013))).toBe(false);
-  });
-});
-
-describe("PanelExplainerPanel", () => {
-  const source = readFileSync(EXPLAINER, "utf-8");
-
-  it("offers the DNA upload route and a blueprint link, no dropzone", () => {
-    expect(source).toContain("Go to DNA Test upload");
-    expect(source).toContain("View on your blueprint");
-    expect(source).not.toContain("type=\"file\"");
   });
 
   it("contains no em or en dashes", () => {
