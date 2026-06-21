@@ -14,6 +14,90 @@ export type Database = {
   }
   public: {
     Tables: {
+      cost_ledger: {
+        Row: {
+          api_calls: number
+          budget_state: string
+          estimated_cost: number
+          id: string
+          pass_ref: string | null
+          recorded_at: string
+          tokens: number
+        }
+        Insert: {
+          api_calls?: number
+          budget_state?: string
+          estimated_cost?: number
+          id?: string
+          pass_ref?: string | null
+          recorded_at?: string
+          tokens?: number
+        }
+        Update: {
+          api_calls?: number
+          budget_state?: string
+          estimated_cost?: number
+          id?: string
+          pass_ref?: string | null
+          recorded_at?: string
+          tokens?: number
+        }
+        Relationships: []
+      }
+      eval_gold_set: {
+        Row: {
+          active: boolean
+          created_at: string
+          expected_output: Json
+          id: string
+          inputs: Json
+          scenario: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          expected_output?: Json
+          id?: string
+          inputs?: Json
+          scenario: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          expected_output?: Json
+          id?: string
+          inputs?: Json
+          scenario?: string
+        }
+        Relationships: []
+      }
+      eval_runs: {
+        Row: {
+          created_at: string
+          failed: number
+          failures: Json
+          id: string
+          passed: number
+          run_at: string
+        }
+        Insert: {
+          created_at?: string
+          failed?: number
+          failures?: Json
+          id?: string
+          passed?: number
+          run_at?: string
+        }
+        Update: {
+          created_at?: string
+          failed?: number
+          failures?: Json
+          id?: string
+          passed?: number
+          run_at?: string
+        }
+        Relationships: []
+      }
       genotype_uploads: {
         Row: {
           created_at: string
