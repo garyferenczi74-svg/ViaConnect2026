@@ -5,10 +5,11 @@
  * Three scenarios per brief:
  *   1. Unauthenticated -> 401
  *   2. Authenticated, row found -> 200 { synthesis: row }
- *   3. Authenticated, getLatestUserProtocolSynthesis throws -> 200 { synthesis: null } (fail-open)
+ *   3. Authenticated, getOrComputeUserProtocolSynthesis throws -> 200 { synthesis: null } (fail-open)
  *
  * No jsdom. Pure TypeScript with vitest.
  * Prompt 208, Phase 8, Task 23 (2026-06-21).
+ * Task 26b: updated to mock getOrComputeUserProtocolSynthesis (lazy compute-on-read).
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -19,7 +20,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   getUser: vi.fn(),
-  getLatestUserProtocolSynthesis: vi.fn(),
+  getOrComputeUserProtocolSynthesis: vi.fn(),
 }));
 
 vi.mock('@/lib/supabase/server', () => ({
@@ -29,7 +30,7 @@ vi.mock('@/lib/supabase/server', () => ({
 }));
 
 vi.mock('@/lib/protocol/readSynthesis', () => ({
-  getLatestUserProtocolSynthesis: mocks.getLatestUserProtocolSynthesis,
+  getOrComputeUserProtocolSynthesis: mocks.getOrComputeUserProtocolSynthesis,
 }));
 
 // ---------------------------------------------------------------------------
@@ -60,7 +61,7 @@ const MOCK_ROW = {
 
 beforeEach(() => {
   mocks.getUser.mockReset();
-  mocks.getLatestUserProtocolSynthesis.mockReset();
+  mocks.getOrComputeUserProtocolSynthesis.mockReset();
 });
 
 describe('GET /api/protocol/synthesis: unauthenticated', () => {
@@ -72,26 +73,26 @@ describe('GET /api/protocol/synthesis: unauthenticated', () => {
     expect(res.status).toBe(401);
     const body = await res.json();
     expect(body).toMatchObject({ error: expect.any(String) });
-    expect(mocks.getLatestUserProtocolSynthesis).not.toHaveBeenCalled();
+    expect(mocks.getOrComputeUserProtocolSynthesis).not.toHaveBeenCalled();
   });
 });
 
 describe('GET /api/protocol/synthesis: authenticated', () => {
   it('returns 200 with { synthesis: row } when a row exists', async () => {
     mocks.getUser.mockResolvedValueOnce({ data: { user: { id: MOCK_USER_ID } }, error: null });
-    mocks.getLatestUserProtocolSynthesis.mockResolvedValueOnce(MOCK_ROW);
+    mocks.getOrComputeUserProtocolSynthesis.mockResolvedValueOnce(MOCK_ROW);
 
     const res = await GET();
 
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body).toEqual({ synthesis: MOCK_ROW });
-    expect(mocks.getLatestUserProtocolSynthesis).toHaveBeenCalledWith(MOCK_USER_ID);
+    expect(mocks.getOrComputeUserProtocolSynthesis).toHaveBeenCalledWith(MOCK_USER_ID);
   });
 
   it('returns 200 with { synthesis: null } when no row exists', async () => {
     mocks.getUser.mockResolvedValueOnce({ data: { user: { id: MOCK_USER_ID } }, error: null });
-    mocks.getLatestUserProtocolSynthesis.mockResolvedValueOnce(null);
+    mocks.getOrComputeUserProtocolSynthesis.mockResolvedValueOnce(null);
 
     const res = await GET();
 
@@ -100,9 +101,9 @@ describe('GET /api/protocol/synthesis: authenticated', () => {
     expect(body).toEqual({ synthesis: null });
   });
 
-  it('returns 200 { synthesis: null } (fail-open) when getLatestUserProtocolSynthesis throws', async () => {
+  it('returns 200 { synthesis: null } (fail-open) when getOrComputeUserProtocolSynthesis throws', async () => {
     mocks.getUser.mockResolvedValueOnce({ data: { user: { id: MOCK_USER_ID } }, error: null });
-    mocks.getLatestUserProtocolSynthesis.mockRejectedValueOnce(new Error('DB timeout'));
+    mocks.getOrComputeUserProtocolSynthesis.mockRejectedValueOnce(new Error('DB timeout'));
 
     const res = await GET();
 

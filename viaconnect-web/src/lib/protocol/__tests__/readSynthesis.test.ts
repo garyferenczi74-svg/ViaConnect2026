@@ -3,6 +3,7 @@
  * TDD: written RED first, then implementation makes them GREEN.
  *
  * Prompt 208, Phase 8, Task 22 (2026-06-21).
+ * Task 26b: added getOrComputeUserProtocolSynthesis tests.
  * No em/en-dashes. No emojis.
  */
 
@@ -10,16 +11,22 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // Mock the admin client (no real DB in tests).
+// Mock synthesizeForUser so lazy recompute tests do not hit the DB.
 // ---------------------------------------------------------------------------
 
 vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: vi.fn(),
 }));
 
+vi.mock('@/lib/protocol/synthesis', () => ({
+  synthesizeForUser: vi.fn(),
+}));
+
 // safeLog is real -- no side effects that matter in tests.
 
-import { getLatestUserProtocolSynthesis } from '../readSynthesis';
+import { getLatestUserProtocolSynthesis, getOrComputeUserProtocolSynthesis, SYNTHESIS_STALE_MS, type UserProtocolSynthesisRow } from '../readSynthesis';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { synthesizeForUser } from '@/lib/protocol/synthesis';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -147,5 +154,134 @@ describe('getLatestUserProtocolSynthesis', () => {
     expect(eqMock).toHaveBeenCalledWith('user_id', USER_ID);
     expect(orderMock).toHaveBeenCalledWith('generated_at', { ascending: false });
     expect(limitMock).toHaveBeenCalledWith(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getOrComputeUserProtocolSynthesis tests
+// ---------------------------------------------------------------------------
+
+/**
+ * Build a fresh row (generated_at within SYNTHESIS_STALE_MS).
+ */
+function buildFreshRow(overrides: Record<string, unknown> = {}) {
+  return buildRow({
+    generated_at: new Date(Date.now() - 1000).toISOString(), // 1 second ago
+    ...overrides,
+  });
+}
+
+/**
+ * Build a stale row (generated_at older than SYNTHESIS_STALE_MS).
+ */
+function buildStaleRow(overrides: Record<string, unknown> = {}) {
+  return buildRow({
+    generated_at: new Date(Date.now() - SYNTHESIS_STALE_MS - 60_000).toISOString(), // past stale bound
+    ...overrides,
+  });
+}
+
+function buildSupabaseMockForRow(row: ReturnType<typeof buildRow> | null) {
+  const data = row ? [row] : [];
+  return buildSupabaseMock({ data, error: null });
+}
+
+describe('getOrComputeUserProtocolSynthesis', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns a fresh row without calling synthesizeForUser', async () => {
+    const fresh = buildFreshRow();
+    vi.mocked(createAdminClient).mockReturnValue(buildSupabaseMockForRow(fresh) as never);
+
+    const result = await getOrComputeUserProtocolSynthesis(USER_ID);
+
+    expect(result).not.toBeNull();
+    expect(result!.disclaimers_version).toBe('dshea-2026-06');
+    expect(vi.mocked(synthesizeForUser)).not.toHaveBeenCalled();
+  });
+
+  it('calls synthesizeForUser when no row exists, then returns freshly-read row', async () => {
+    const freshRow = buildFreshRow();
+    let callCount = 0;
+    // First call returns null (no row); second call returns the fresh row.
+    vi.mocked(createAdminClient).mockImplementation(() => {
+      callCount += 1;
+      const data = callCount === 1 ? [] : [freshRow];
+      return buildSupabaseMock({ data, error: null }) as never;
+    });
+    vi.mocked(synthesizeForUser).mockResolvedValue({
+      recommended_vitamins_minerals: [],
+      supplement_flags: [],
+      nutrition_guidance: { avoid: [], prefer: [] },
+      arnold_context: { activeTopics: [] },
+      disclaimers_version: 'dshea-2026-06',
+    });
+
+    const result = await getOrComputeUserProtocolSynthesis(USER_ID);
+
+    expect(vi.mocked(synthesizeForUser)).toHaveBeenCalledWith(USER_ID);
+    expect(result).not.toBeNull();
+    expect(result!.disclaimers_version).toBe('dshea-2026-06');
+  });
+
+  it('calls synthesizeForUser when row is stale, then returns freshly-read row', async () => {
+    const stale = buildStaleRow();
+    const fresh = buildFreshRow();
+    let callCount = 0;
+    vi.mocked(createAdminClient).mockImplementation(() => {
+      callCount += 1;
+      const data = callCount === 1 ? [stale] : [fresh];
+      return buildSupabaseMock({ data, error: null }) as never;
+    });
+    vi.mocked(synthesizeForUser).mockResolvedValue({
+      recommended_vitamins_minerals: [],
+      supplement_flags: [],
+      nutrition_guidance: { avoid: [], prefer: [] },
+      arnold_context: { activeTopics: [] },
+      disclaimers_version: 'dshea-2026-06',
+    });
+
+    const result = await getOrComputeUserProtocolSynthesis(USER_ID);
+
+    expect(vi.mocked(synthesizeForUser)).toHaveBeenCalledWith(USER_ID);
+    expect(result).not.toBeNull();
+  });
+
+  it('does not throw and returns without crashing when synthesizeForUser throws (stale row exists)', async () => {
+    const stale = buildStaleRow();
+    // Use mockImplementation so every createAdminClient() call returns a fresh chain.
+    vi.mocked(createAdminClient).mockImplementation(() => buildSupabaseMockForRow(stale) as never);
+    vi.mocked(synthesizeForUser).mockRejectedValue(new Error('DB unavailable'));
+
+    let threw = false;
+    let result: UserProtocolSynthesisRow | null = undefined as unknown as UserProtocolSynthesisRow | null;
+    try {
+      result = await getOrComputeUserProtocolSynthesis(USER_ID);
+    } catch {
+      threw = true;
+    }
+    // Fail-open: must not throw
+    expect(threw).toBe(false);
+    // The stale row was the latest known state; it is returned unchanged.
+    expect(result).not.toBeNull();
+  });
+
+  it('does not throw and returns null when no row exists and synthesizeForUser throws', async () => {
+    vi.mocked(createAdminClient).mockImplementation(() => buildSupabaseMockForRow(null) as never);
+    vi.mocked(synthesizeForUser).mockRejectedValue(new Error('Network failure'));
+
+    let threw = false;
+    let result: UserProtocolSynthesisRow | null = undefined as unknown as UserProtocolSynthesisRow | null;
+    try {
+      result = await getOrComputeUserProtocolSynthesis(USER_ID);
+    } catch {
+      threw = true;
+    }
+    // Fail-open: must not throw
+    expect(threw).toBe(false);
+    // No prior row existed and recompute failed -> null (safe empty state).
+    expect(result).toBeNull();
   });
 });

@@ -36,6 +36,7 @@ import { getPublishedRules, ruleMatchesGenotype } from '@/lib/kb/snpProtocolRule
 import { CONSUMER_TIERS } from '@/lib/kb/evidenceTier';
 import { runInterlocks } from '@/lib/protocol/safetyInterlocks';
 import type { InterlockContext, ProtocolCandidate } from '@/lib/protocol/safetyInterlocks';
+import { nutritionByGeneticsFromRules } from '@/lib/agents/gordon/nutritionByGenetics';
 import { safeLog } from '@/lib/utils/safe-log';
 
 // ---------------------------------------------------------------------------
@@ -217,23 +218,9 @@ export async function synthesizeForUser(userId: string): Promise<SynthesisOutput
   // -------------------------------------------------------------------------
   const recommendedItems: RecommendedItem[] = [];
   const supplementFlags: SupplementFlag[] = [];
-  const avoidSet = new Set<string>();
-  const preferSet = new Set<string>();
   const topicsSet = new Set<string>();
 
   for (const rule of applicableRules) {
-    // --- nutrition_guidance: avoid_list (all rules) ---
-    if (Array.isArray(rule.avoid_list)) {
-      for (const item of rule.avoid_list) {
-        if (item && item.trim().length > 0) avoidSet.add(item.trim());
-      }
-    }
-
-    // --- nutrition_guidance: prefer (all rules with recommended_form) ---
-    if (rule.recommended_form && rule.recommended_form.trim().length > 0) {
-      preferSet.add(rule.recommended_form.trim());
-    }
-
     // --- arnold_context.activeTopics (all rules) ---
     const topic = (rule.gene && rule.gene.trim().length > 0) ? rule.gene.trim() : rule.rsid;
     topicsSet.add(topic);
@@ -301,13 +288,15 @@ export async function synthesizeForUser(userId: string): Promise<SynthesisOutput
   // -------------------------------------------------------------------------
   // Step 7: Write user_protocol_synthesis row
   // -------------------------------------------------------------------------
+  // Use Gordon's translator as the single source of truth for nutrition_guidance.
+  // This includes flagged_form items in the avoid list (more correct than the
+  // prior inline construction) and keeps the two surfaces in sync.
+  const nutritionGuidance = nutritionByGeneticsFromRules(applicableRules);
+
   const output: SynthesisOutput = {
     recommended_vitamins_minerals: recommendedItems,
     supplement_flags: supplementFlags,
-    nutrition_guidance: {
-      avoid: [...avoidSet],
-      prefer: [...preferSet],
-    },
+    nutrition_guidance: nutritionGuidance,
     arnold_context: {
       activeTopics: [...topicsSet],
     },

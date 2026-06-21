@@ -17,7 +17,7 @@
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { getLatestUserProtocolSynthesis } from '@/lib/protocol/readSynthesis';
+import { getOrComputeUserProtocolSynthesis } from '@/lib/protocol/readSynthesis';
 import { safeLog } from '@/lib/utils/safe-log';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 
@@ -48,9 +48,10 @@ export async function GET(): Promise<NextResponse> {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Read the synthesis row, fail-open on any error.
+  // Lazy compute-on-read: returns cached row if fresh, triggers synthesizeForUser
+  // when absent or stale, then returns the freshly-written row. Fail-open.
   try {
-    const synthesis = await getLatestUserProtocolSynthesis(user.id);
+    const synthesis = await getOrComputeUserProtocolSynthesis(user.id);
     return NextResponse.json({ synthesis });
   } catch (err) {
     safeLog.error('api.protocol.synthesis', 'Unexpected error reading synthesis; returning null', {

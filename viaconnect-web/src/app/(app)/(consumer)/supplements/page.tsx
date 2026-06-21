@@ -20,7 +20,7 @@
  */
 
 import { createClient } from '@/lib/supabase/server';
-import { getLatestUserProtocolSynthesis } from '@/lib/protocol/readSynthesis';
+import { getOrComputeUserProtocolSynthesis } from '@/lib/protocol/readSynthesis';
 import { SupplementsPageContent } from './SupplementsPageContent';
 
 export default async function SupplementsPage() {
@@ -37,8 +37,9 @@ export default async function SupplementsPage() {
     // No session or client error -- continue with empty synthesis.
   }
 
-  // Fetch synthesis (admin client, owner-scoped, fail-open).
-  const synthesis = userId ? await getLatestUserProtocolSynthesis(userId) : null;
+  // Lazy compute-on-read: returns cached row if fresh, triggers synthesizeForUser
+  // when absent or stale, then returns the freshly-written row. Fail-open.
+  const synthesis = userId ? await getOrComputeUserProtocolSynthesis(userId) : null;
 
   return (
     <SupplementsPageContent
