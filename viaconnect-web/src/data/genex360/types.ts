@@ -22,6 +22,26 @@ export interface PanelMarker {
   // disclosure. Present on the GeneXM SNP markers after the genex-m-deep merge;
   // absent on panels without per SNP reports.
   deepReport?: SnpDeepReport;
+  // Prompt 204 (2026-06-20): optional epigenetic interpretation shown in the
+  // expanded disclosure for an EpigenHQ marker. EpigenHQ is NOT a genotype panel,
+  // so it has no deepReport; instead each marker carries this educational
+  // interpretation (what it measures, what higher / lower suggests, a wellness
+  // note). Attached at module load by the epigen-hq interpretation merge.
+  epigeneticInterpretation?: EpigeneticInterpretation;
+}
+
+// Prompt 204 (2026-06-20): the educational interpretation for one EpigenHQ marker.
+// EpigenHQ markers are MEASURED epigenetic readouts (methylation age, indices,
+// exposure signatures), not genotypes, so there is no allele, no genotype table,
+// and no severity tier. This is the validated, non-diagnostic wellness reading of
+// a marker. The member's actual result value is a separate future data source;
+// this is the interpretation layer only.
+export interface EpigeneticInterpretation {
+  marker: string; // the display marker name, matching PanelMarker.symbol
+  measures: string; // what this epigenetic readout measures
+  higherSuggests: string; // what a higher-than-expected value suggests, wellness framed
+  lowerSuggests: string; // what a lower-than-expected value suggests, wellness framed
+  wellnessNote: string; // the practical, non-diagnostic takeaway and supportive levers
 }
 
 // Prompt 193a (2026-06-12): comprehensive per SNP deep report types for the

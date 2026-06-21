@@ -36,6 +36,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ChevronDown, Dot } from "lucide-react";
 import type { PanelMarker, PanelMarkerGroup as PanelMarkerGroupData } from "@/data/genex360/types";
 import { VariantReportTabs } from "./VariantReportTabs";
+import { EpigeneticInterpretationCard } from "./EpigeneticInterpretationCard";
 import type { SeverityTier } from "@/lib/genetics/severity";
 import type { BiologicalSex } from "@/hooks/body-tracker/useUserBiologicalSex";
 
@@ -220,6 +221,8 @@ function SnpMarkerRow({
                   userGenotypeByRsid={userGenotypeByRsid}
                   panelSlug={panelSlug}
                 />
+              ) : marker.epigeneticInterpretation ? (
+                <EpigeneticInterpretationCard interpretation={marker.epigeneticInterpretation} />
               ) : (
                 <p className="text-[13px] leading-relaxed text-white/75">{marker.description}</p>
               )}

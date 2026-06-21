@@ -1,6 +1,8 @@
 # EpigenHQ Display Surface: Scoping Note
 
-Status: SCOPING (no surface built; design + build is a separate cycle)
+Status: v1 BUILT (educational interpretation surface live 2026-06-20). The
+member-result data source (section "What a surface needs", item 1) is the remaining
+follow-on cycle: this v1 renders the validated interpretations, not per-member values.
 Date: 2026-06-20
 
 ## Why this exists

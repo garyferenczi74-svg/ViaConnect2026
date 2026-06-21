@@ -18,6 +18,7 @@
 import Link from 'next/link';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { GeneX360PanelSection } from '@/components/shop/genex360/GeneX360PanelSection';
+import { DSHEADisclaimer } from '@/components/compliance/DSHEADisclaimer';
 
 export const metadata = {
   title: 'Your Genetic Blueprint | Via Cura',
@@ -69,6 +70,11 @@ export default function GeneticBlueprintPage() {
         <div className="mt-8">
           <GeneX360PanelSection />
         </div>
+
+        {/* Prompt 204 (2026-06-20): the validated #113 DSHEA disclaimer. This page
+            now renders live genetic reports and EpigenHQ wellness interpretations
+            (structure / function content), so this US surface must show it. */}
+        <DSHEADisclaimer surface="genetics-blueprint" />
       </div>
     </div>
   );

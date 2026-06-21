@@ -1,12 +1,13 @@
-// Prompt 204 (2026-06-20): tests for the EpigenHQ interpretation DRAFT (Phase 3).
-// EpigenHQ is not a genotype panel, so these lock the 12 epigenetic marker
-// interpretations, their non-empty fields, the absence of dashes, and the fact
-// that this draft is wired to no surface (non-live).
+// Prompt 204 (2026-06-20): tests for the EpigenHQ interpretations. EpigenHQ is not
+// a genotype panel, so these lock the 12 epigenetic marker interpretations, their
+// non-empty fields, the absence of dashes, the no-genotype/no-severity shape, and
+// (since the go-live) that each is attached to its panel marker.
 
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { EPIGEN_HQ_INTERPRETATIONS_DRAFT } from "../epigen-hq-interpretations.draft";
+import { PANEL_BY_SLUG } from "../panels";
 
 const EPIGEN_HQ_ROSTER = [
   "epigenetic-age", "biological-age-gap", "pace-of-aging",
@@ -54,6 +55,23 @@ describe("EpigenHQ interpretation DRAFT", () => {
       expect(e).not.toHaveProperty("genotype");
       expect(e).not.toHaveProperty("severity");
       expect(e).not.toHaveProperty("keyVariants");
+    }
+  });
+});
+
+describe("EpigenHQ interpretations are attached to their panel markers (go-live 2026-06-20)", () => {
+  it("every epigen-hq marker carries its matching interpretation, and none carries a deepReport", () => {
+    const markers = PANEL_BY_SLUG["epigen-hq"].groups.flatMap((g) => g.markers);
+    expect(markers.length).toBe(EPIGEN_HQ_ROSTER.length);
+    for (const marker of markers) {
+      expect(
+        marker.epigeneticInterpretation,
+        `${marker.symbol} has an interpretation`,
+      ).toBeDefined();
+      // The interpretation's display name matches the marker it is attached to.
+      expect(marker.epigeneticInterpretation?.marker).toBe(marker.symbol);
+      // EpigenHQ is not a genotype panel, so no deepReport is attached.
+      expect(marker.deepReport).toBeUndefined();
     }
   });
 });

@@ -23,7 +23,7 @@ The two former go-live blockers are both RESOLVED.
 | 0 | GeneXM | LIVE | LIVE (zygosity) |
 | 1 | NutrigenDX | LIVE (27 SNP reports) | LIVE (per-genotype) |
 | 2 | HormoneIQ | LIVE (5 SNP reports) | LIVE (per-genotype; CYP19A1 untiered) |
-| 3 | EpigenHQ | GATED (drafted; no display surface) | none (not a genotype panel) |
+| 3 | EpigenHQ | LIVE v1 (educational interpretations; member-result values pending) | none (not a genotype panel) |
 | 4 | PeptideIQ | LIVE (14 educational) | none (educational) |
 | 5 | CannabisIQ | LIVE (10 educational) | none (educational) |
 

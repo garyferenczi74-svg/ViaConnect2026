@@ -20,6 +20,8 @@ import { NUTRIGEN_DX_DEEP_DRAFTS } from "./nutrigen-dx-deep.draft";
 import { HORMONE_IQ_DEEP_DRAFTS } from "./hormone-iq-deep.draft";
 import { PEPTIDE_IQ_DEEP_DRAFTS } from "./peptide-iq-deep.draft";
 import { CANNABIS_IQ_DEEP_DRAFTS } from "./cannabis-iq-deep.draft";
+// EpigenHQ educational interpretations (not a genotype panel; no deepReport).
+import { EPIGEN_HQ_INTERPRETATIONS_DRAFT } from "./epigen-hq-interpretations.draft";
 
 export const GENEX360_PANELS: Panel[] = [
   {
@@ -1059,6 +1061,23 @@ for (const [slug, reports] of Object.entries(GATE_APPROVED_DEEP_REPORTS)) {
     const report = reports[markerDeepReportSlug(marker.symbol)];
     if (report) {
       marker.deepReport = report;
+    }
+  }
+}
+
+// Go-live (2026-06-20): attach the EpigenHQ educational interpretations to their
+// markers, matched by DISPLAY NAME (interpretation.marker === marker.symbol).
+// EpigenHQ is not a genotype panel, so its markers carry an interpretation rather
+// than a deepReport; the marker report row renders the interpretation card.
+{
+  const epigenByMarker = new Map<string, (typeof EPIGEN_HQ_INTERPRETATIONS_DRAFT)[string]>();
+  for (const interpretation of Object.values(EPIGEN_HQ_INTERPRETATIONS_DRAFT)) {
+    epigenByMarker.set(interpretation.marker, interpretation);
+  }
+  for (const marker of PANEL_BY_SLUG["epigen-hq"].groups.flatMap((group) => group.markers)) {
+    const interpretation = epigenByMarker.get(marker.symbol);
+    if (interpretation) {
+      marker.epigeneticInterpretation = interpretation;
     }
   }
 }

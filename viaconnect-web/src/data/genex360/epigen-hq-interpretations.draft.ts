@@ -14,18 +14,9 @@
 // em or en dashes; numbers as words; Via Cura brand only where natural;
 // TypeScript strict (no any).
 
-export interface EpigeneticInterpretation {
-  /** The display marker name. */
-  marker: string;
-  /** What this epigenetic readout measures. */
-  measures: string;
-  /** What a higher-than-expected value suggests, wellness framed. */
-  higherSuggests: string;
-  /** What a lower-than-expected value suggests, wellness framed. */
-  lowerSuggests: string;
-  /** The practical, non-diagnostic takeaway and supportive levers. */
-  wellnessNote: string;
-}
+import type { EpigeneticInterpretation } from "./types";
+
+export type { EpigeneticInterpretation };
 
 export const EPIGEN_HQ_INTERPRETATIONS_DRAFT: Record<string, EpigeneticInterpretation> = {
   "epigenetic-age": {
