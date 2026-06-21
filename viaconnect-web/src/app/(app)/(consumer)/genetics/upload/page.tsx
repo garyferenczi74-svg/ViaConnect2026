@@ -8,7 +8,7 @@ import toast from "react-hot-toast";
 import {
   Upload, FileText, CheckCircle2, AlertTriangle, Dna, ArrowLeft,
   Loader2, Shield, Zap, Cloud, ExternalLink, RefreshCw, Hourglass,
-  Apple, Activity, HeartPulse, Leaf,
+  Apple, Activity, HeartPulse, Leaf, Atom,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Card } from "@/components/ui/Card";
@@ -27,14 +27,16 @@ interface PanelIntro {
   blueprintHref: string;
 }
 
-// The Upload Genetic Data tabs. DNA Test is the raw genotype upload (it also
-// covers the GeneXM methylation panel). Epigenetic is its own measured-report
-// upload. Nutrition, Hormone, Peptide, and Cannabis are read from the DNA file,
-// so their tabs show the SAME DNA dropzone with a short per-panel intro.
-type UploadTab = "dna" | "nutrition" | "hormone" | "epigen" | "peptide" | "cannabis";
+// The Upload Genetic Data tabs. DNA Test is the comprehensive raw genotype upload
+// (every panel at once). Epigenetic is its own measured-report upload. Methylation,
+// Nutrition, Hormone, Peptide, and Cannabis are the genotype panels read from the
+// DNA file: their tabs show the SAME DNA dropzone with a short per-panel intro and
+// scope the upload to that one panel.
+type UploadTab = "dna" | "methylation" | "nutrition" | "hormone" | "epigen" | "peptide" | "cannabis";
 
 const TABS: ReadonlyArray<{ id: UploadTab; label: string; icon: LucideIcon }> = [
   { id: "dna", label: "DNA Test", icon: Dna },
+  { id: "methylation", label: "Methylation", icon: Atom },
   { id: "nutrition", label: "Nutrition", icon: Apple },
   { id: "hormone", label: "Hormone", icon: Activity },
   { id: "epigen", label: "Epigenetic", icon: Hourglass },
@@ -48,6 +50,12 @@ const VALID_TABS = new Set<string>(TABS.map((t) => t.id));
 // a plain description of the panel; `dataSourceNote` states where the data comes
 // from. No clinical claim about the member is made here.
 const EXPLAINERS: Partial<Record<UploadTab, PanelIntro>> = {
+  methylation: {
+    title: "Methylation (GeneXM)",
+    covers: "Methylation and detox pathways: folate, B12, homocysteine, and detoxification capacity.",
+    dataSourceNote: "These markers are read from your DNA, so there is no separate upload. Upload your DNA test once and your Methylation panel is scored from it.",
+    blueprintHref: "/shop/genex360#genex-m",
+  },
   nutrition: {
     title: "Nutrition (NutrigenDX)",
     covers: "Functional nutrition and absorption markers: how you metabolize folate, fats, vitamins, and more.",

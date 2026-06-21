@@ -13,8 +13,9 @@ const PAGE = path.resolve(__dirname, "..", "page.tsx");
 describe("Upload Genetic Data tabs", () => {
   const source = readFileSync(PAGE, "utf-8");
 
-  it("has the six test tabs with the EpigenHQ to Epigenetic rename", () => {
+  it("has the test tabs with the EpigenHQ to Epigenetic rename and a Methylation tab", () => {
     expect(source).toContain('label: "DNA Test"');
+    expect(source).toContain('label: "Methylation"');
     expect(source).toContain('label: "Nutrition"');
     expect(source).toContain('label: "Hormone"');
     expect(source).toContain('label: "Epigenetic"');
@@ -29,6 +30,7 @@ describe("Upload Genetic Data tabs", () => {
     // The genotype tabs are no longer routed away to a separate explainer.
     expect(source).not.toContain("PanelExplainerPanel");
     // Each genotype tab still links to its blueprint panel from the intro.
+    expect(source).toContain("/shop/genex360#genex-m");
     expect(source).toContain("/shop/genex360#nutrigen-dx");
     expect(source).toContain("/shop/genex360#hormone-iq");
     expect(source).toContain("/shop/genex360#peptide-iq");
