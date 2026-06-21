@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      agent_heartbeats: {
+        Row: {
+          agent: string
+          detail: Json
+          last_beat_at: string
+          status: string
+        }
+        Insert: {
+          agent: string
+          detail?: Json
+          last_beat_at?: string
+          status?: string
+        }
+        Update: {
+          agent?: string
+          detail?: Json
+          last_beat_at?: string
+          status?: string
+        }
+        Relationships: []
+      }
       knowledge_atoms: {
         Row: {
           citation: string | null
