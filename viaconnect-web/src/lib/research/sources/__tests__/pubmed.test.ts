@@ -128,6 +128,23 @@ describe('searchPubMed', () => {
     )
   })
 
+  it('returns [] and calls safeLog.error when esummary fetch throws', async () => {
+    fetchMock
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ esearchresult: { idlist: ['111'] } }), { status: 200 }),
+      )
+      .mockRejectedValueOnce(new Error('network'))
+
+    const results = await searchPubMed('x')
+
+    expect(results).toEqual([])
+    expect(vi.mocked(safeLog.error)).toHaveBeenCalledWith(
+      'research.pubmed',
+      expect.any(String),
+      expect.objectContaining({ error: expect.any(String) }),
+    )
+  })
+
   it('respects retmax option', async () => {
     fetchMock.mockResolvedValueOnce(
       new Response(JSON.stringify({ esearchresult: { idlist: [] } }), { status: 200 }),
