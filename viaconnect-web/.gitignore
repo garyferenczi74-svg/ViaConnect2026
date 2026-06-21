@@ -56,3 +56,6 @@ tmp/159/
 tmp/161/
 tmp/161a/
 tmp/166/
+
+# Local working dir for scripts/compress-hero-videos.sh (downloaded + re-encoded videos)
+hero-fix/
