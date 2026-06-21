@@ -1,0 +1,415 @@
+"use client";
+
+/**
+ * src/app/(app)/(consumer)/supplements/SupplementsPageContent.tsx
+ *
+ * Client content shell for My Supplements, extracted from page.tsx so that
+ * page.tsx can be a server component that fetches user_protocol_synthesis
+ * and passes it as props.
+ *
+ * All existing sections are preserved exactly. Two new sections are mounted
+ * ADDITIVELY below Recommended Supplements:
+ *   - Recommended Protocol (genetics layer)
+ *   - Supplement Flags (genetics-flagged current supplements)
+ *
+ * NOTE: user_protocol_synthesis is populated by synthesizeForUser (Task 12).
+ * Wiring the recompute trigger (on supplement change / new upload / newly
+ * published rule) and the human-gate publishing of rules are separate steps,
+ * so these panels show their empty states until then. That is expected.
+ *
+ * Prompt 208, Phase 8, Task 22 (2026-06-21).
+ * No em/en-dashes. No emojis.
+ */
+
+import { useState } from "react";
+import {
+  Pill, CalendarClock, Sparkles, ShieldAlert, UserSearch, ShoppingBag,
+  Stethoscope, Leaf, ArrowRight, Check, FlaskConical, Droplets,
+  Dna, Activity, TestTubes,
+  AlertTriangle, Plus, RefreshCw, Loader2,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { ProtocolConfidenceBadge } from "@/components/protocol/ProtocolConfidenceBadge";
+import { PractitionerDisclaimer } from "@/components/protocol/PractitionerDisclaimer";
+import SupplementInput from "@/components/shared/SupplementInput";
+import { useUserDashboardData } from "@/hooks/useUserDashboardData";
+import DailySchedule from "@/components/supplements/DailySchedule";
+import { createClient } from "@/lib/supabase/client";
+import RecommendedSupplements from "@/components/supplement-protocol/RecommendedSupplements";
+import { MobileHeroBackground } from "@/components/ui/MobileHeroBackground";
+import { SupplementCaptureBlock } from "@/components/caq/phase6/SupplementCaptureBlock";
+import type { BarcodeConfirmRecord } from "@/components/caq/phase6/SupplementBarcodeConfirm";
+import { RecommendedProtocolPanel } from "@/components/protocol/RecommendedProtocolPanel";
+import { SupplementFlagsPanel } from "@/components/protocol/SupplementFlagsPanel";
+import type { RecommendedItem, SupplementFlag } from "@/lib/protocol/readSynthesis";
+
+const SUPPLEMENT_HERO_IMAGE =
+  "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Athlete%205.png";
+
+function PIcon({ icon: Icon, color, size = "md" }: { icon: LucideIcon; color: string; size?: "sm" | "md" | "lg" }) {
+  const s = size === "lg" ? { box: "w-14 h-14", ico: "w-7 h-7", glow: "blur-2xl -inset-2" } : size === "sm" ? { box: "w-9 h-9", ico: "w-4 h-4", glow: "blur-lg -inset-1" } : { box: "w-12 h-12", ico: "w-5 h-5", glow: "blur-xl -inset-1.5" };
+  return (<div className="relative flex-shrink-0"><div className={`absolute ${s.glow} rounded-2xl opacity-60 pointer-events-none`} style={{ backgroundColor: `${color}33` }} /><div className={`relative ${s.box} rounded-xl flex items-center justify-center`} style={{ background: `linear-gradient(135deg, ${color}33, ${color}1A, transparent)`, border: `1px solid ${color}26` }}><Icon className={s.ico} style={{ color }} strokeWidth={1.5} /></div></div>);
+}
+
+/* Prompt 185a slice 5b: the Daily Schedule data + rendering moved into the
+   DailySchedule component, which reads GET /api/supplements/schedule. */
+const CATEGORIES = [
+  { icon: FlaskConical, label: "Liposomal", color: "#2DA5A0", count: "45+" },
+  { icon: Droplets, label: "Micellar", color: "#60A5FA", count: "38+" },
+  { icon: Dna, label: "Methylated", color: "#A855F7", count: "25+" },
+  { icon: Activity, label: "Minerals", color: "#FBBF24", count: "40+" },
+  { icon: TestTubes, label: "Amino Acids", color: "#22D3EE", count: "30+" },
+  { icon: Leaf, label: "Botanicals", color: "#34D399", count: "55+" },
+  { icon: Sparkles, label: "Specialty", color: "#B75E18", count: "35+" },
+  { icon: Pill, label: "Standard", color: "#9CA3AF", count: "50+" },
+];
+
+/* ═══ SECTION WRAPPER ═══ */
+function Section({ icon, iconColor, title, subtitle, children }: { icon: LucideIcon; iconColor: string; title: string; subtitle: string; children: React.ReactNode }) {
+  return (
+    <section className="relative rounded-2xl overflow-hidden">
+      <div className="absolute inset-0 bg-[#1E3054]/20 backdrop-blur-md" />
+      <div className="absolute inset-0 rounded-2xl border border-white/[0.08]" />
+      <div className="relative z-10">
+        <div className="flex items-center gap-3 p-5 md:p-6 border-b border-white/5">
+          <PIcon icon={icon} color={iconColor} size="md" />
+          <div>
+            <h2 className="text-base md:text-lg font-bold text-white">{title}</h2>
+            <p className="text-xs text-white/30 mt-0.5">{subtitle}</p>
+          </div>
+        </div>
+        {children}
+      </div>
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Props
+// ---------------------------------------------------------------------------
+
+export interface SupplementsPageContentProps {
+  recommendedItems: RecommendedItem[];
+  supplementFlags: SupplementFlag[];
+}
+
+/* ═══ MAIN CONTENT ═══ */
+export function SupplementsPageContent({
+  recommendedItems,
+  supplementFlags,
+}: SupplementsPageContentProps) {
+  const { loading } = useUserDashboardData();
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4" style={{ background: "linear-gradient(180deg, #0F1520, #1A2744)" }}>
+        <Loader2 className="w-8 h-8 text-teal-400 animate-spin" />
+        <p className="text-sm text-white/40">Loading your supplement protocol...</p>
+      </div>
+    );
+  }
+
+  return (
+    <>
+    <MobileHeroBackground src={SUPPLEMENT_HERO_IMAGE} overlayOpacity={0.6} objectPosition="center top" priority />
+    <div className="relative z-10 min-h-screen text-white">
+
+      {/* Portal switcher removed (Prompt #74): global nav is single source of truth */}
+
+      <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 md:px-6 md:py-8">
+
+      {/* PAGE HEADER */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <PIcon icon={Pill} color="#2DA5A0" size="lg" />
+          <div>
+            <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">My Supplements</h1>
+            <p className="text-sm text-white/40 mt-0.5">Your personalized daily regimen</p>
+          </div>
+        </div>
+        <ProtocolConfidenceBadge tier={1} />
+      </div>
+
+      {/* ═══ 1. DAILY SCHEDULE ═══ */}
+      <Section icon={CalendarClock} iconColor="#2DA5A0" title="Your personalized daily regimen: Daily Schedule" subtitle="Your supplement checklist for today">
+        <DailySchedule />
+      </Section>
+
+      {/* ═══ ADD YOUR SUPPLEMENTS (Prompt 175l, 2026-06-05) ═══
+          Positioned immediately under Daily Schedule (the protocol-page
+          equivalent of Today's Meals). Replaces the 175h Section 2.6
+          inline picker; single entry point on this page. */}
+      <AddYourSupplementsSection />
+
+      {/* ═══ UPDATE ASSESSMENT ═══ */}
+      <SupplementsRetakeCard />
+
+      {/* ═══ 2. RECOMMENDED SUPPLEMENTS: Powered by Ultrathink AI ═══ */}
+      <Section icon={Sparkles} iconColor="#2DA5A0" title="Recommended Supplements" subtitle="AI-powered personalized protocol by Hannah">
+        <div className="p-5 md:p-6">
+          <RecommendedSupplements />
+        </div>
+      </Section>
+
+      {/* ═══ 2c. RECOMMENDED PROTOCOL (genetics layer, Task 22) ═══
+          Populated by synthesizeForUser (Task 12) writing user_protocol_synthesis.
+          Wiring the recompute trigger (supplement change / new upload / newly
+          published rule) and the human-gate publishing of rules are separate steps.
+          Empty state renders until then -- that is expected and correct. */}
+      <Section icon={Dna} iconColor="#2DA5A0" title="Recommended Protocol" subtitle="Your Genetics | Your Protocol">
+        <div className="p-5 md:p-6">
+          <RecommendedProtocolPanel items={recommendedItems} />
+        </div>
+      </Section>
+
+      {/* ═══ 2d. SUPPLEMENT FLAGS (genetics layer, Task 22) ═══
+          Flags current supplements against clinically-published genetic rules.
+          Same gate as Recommended Protocol above -- empty state until rules publish. */}
+      <Section icon={ShieldAlert} iconColor="#60A5FA" title="Supplement Flags" subtitle="Supplements flagged by your genetic variants">
+        <div className="p-5 md:p-6">
+          <SupplementFlagsPanel flags={supplementFlags} />
+        </div>
+      </Section>
+
+      {/* ═══ 2b. BROWSE OUR FULL SUPPLEMENT CATALOG → /shop ═══ */}
+      <Section icon={ShoppingBag} iconColor="#2DA5A0" title="Browse Our Full Supplement Catalog" subtitle="Explore the complete ViaConnect™ shop">
+        <div className="p-5 md:p-6">
+          <a
+            href="/shop"
+            className="group relative block overflow-hidden rounded-2xl border border-teal-400/20 bg-gradient-to-br from-teal-400/10 via-teal-400/[0.04] to-transparent p-5 md:p-6 transition-all duration-300 hover:border-teal-400/40 hover:shadow-[0_0_30px_rgba(45,165,160,0.10)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744]"
+          >
+            <div className="flex items-start gap-4">
+              <PIcon icon={ShoppingBag} color="#2DA5A0" size="lg" />
+              <div className="min-w-0 flex-1">
+                <h3 className="text-base font-bold text-white md:text-lg">
+                  Browse Our Full Supplement Catalog
+                </h3>
+                <p className="mt-1 text-xs leading-relaxed text-white/50 md:text-sm">
+                  Explore the complete ViaConnect™ shop: liposomal, micellar,
+                  methylated, minerals, amino acids, botanicals, and specialty
+                  formulas. All curated for genomics-guided protocols.
+                </p>
+                <div
+                  className="relative mt-3 inline-flex min-h-[44px] items-center gap-2 overflow-hidden rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-all group-hover:shadow-[0_0_16px_rgba(45,165,160,0.35)]"
+                  style={{ background: 'linear-gradient(135deg, #2DA5A0 0%, #1E3054 100%)' }}
+                >
+                  <span className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+                  <ShoppingBag className="relative h-4 w-4" strokeWidth={2} />
+                  <span className="relative">Visit the Shop</span>
+                  <ArrowRight className="relative h-4 w-4 transition-transform group-hover:translate-x-0.5" strokeWidth={2} />
+                </div>
+              </div>
+            </div>
+          </a>
+        </div>
+      </Section>
+
+      {/* ═══ 3. MEDICAL & HERBAL INTERACTIONS ═══ */}
+      <Section icon={ShieldAlert} iconColor="#60A5FA" title="Medical & Herbal Interactions" subtitle="Medications, allergies, and interaction analysis">
+        <div className="p-5 md:p-6 space-y-6">
+          <div><div className="flex items-center gap-3 mb-3"><PIcon icon={Pill} color="#60A5FA" size="sm" /><div><h3 className="text-sm font-semibold text-white">Current Medications</h3><p className="text-xs text-white/30">0 medications on file</p></div></div><div className="rounded-xl bg-white/[0.02] border border-white/5 p-5 text-center"><p className="text-sm text-white/30">No medications on file</p></div></div>
+          <div><div className="flex items-center gap-3 mb-3"><PIcon icon={AlertTriangle} color="#FBBF24" size="sm" /><h3 className="text-sm font-semibold text-white">Known Allergies &amp; Adverse Reactions</h3></div><div className="grid grid-cols-1 sm:grid-cols-2 gap-3"><div className="rounded-xl bg-white/[0.02] border border-white/5 p-4"><p className="text-[10px] text-white/20 uppercase tracking-wider font-semibold mb-2">Allergies</p><p className="text-xs text-white/25">No known allergies</p></div><div className="rounded-xl bg-white/[0.02] border border-white/5 p-4"><p className="text-[10px] text-white/20 uppercase tracking-wider font-semibold mb-2">Adverse Reactions</p><p className="text-xs text-white/25">None reported</p></div></div></div>
+          <div><div className="flex items-center gap-3 mb-3"><PIcon icon={ShieldAlert} color="#2DA5A0" size="sm" /><div><h3 className="text-sm font-semibold text-white">Interaction Analysis</h3><p className="text-xs text-white/30">Real-time checking across all substances</p></div></div><div className="rounded-xl bg-teal-400/[0.03] border border-teal-400/10 p-5 text-center"><Check className="w-6 h-6 text-teal-400 mx-auto mb-2" strokeWidth={1.5} /><p className="text-sm text-teal-400/80 font-medium">No Interactions Found</p><p className="text-xs text-white/25 mt-1">Your current medications and supplements have been checked</p></div></div>
+        </div>
+      </Section>
+
+      {/* ═══ 4. FIND A PRACTITIONER ═══ */}
+      <Section icon={UserSearch} iconColor="#B75E18" title="Find a Practitioner" subtitle="Consult with a healthcare professional">
+        <div className="p-5 md:p-6 space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+            <div className="relative rounded-2xl overflow-hidden group cursor-pointer"><div className="absolute inset-0 bg-gradient-to-br from-teal-400/10 to-teal-400/[0.02]" /><div className="relative border border-teal-400/15 group-hover:border-teal-400/30 rounded-2xl p-5 md:p-6 transition-all duration-300 group-hover:shadow-[0_0_30px_rgba(45,165,160,0.08)]">
+              <PIcon icon={Stethoscope} color="#2DA5A0" size="lg" />
+              <h3 className="text-base font-bold text-white mt-3 mb-1.5">Find a Practitioner</h3>
+              <p className="text-xs text-white/40 leading-relaxed mb-4">Licensed practitioners specializing in integrative medicine and genomics-guided optimization.</p>
+              <div className="space-y-1.5 mb-4">{["Review your AI protocol", "Verify medication interactions", "Order specialized lab work", "Monitor your progress"].map(t => <div key={t} className="flex items-center gap-2"><Check className="w-3 h-3 text-teal-400/60 flex-shrink-0" strokeWidth={2} /><span className="text-[11px] text-white/35">{t}</span></div>)}</div>
+              <a href="/messages" className="min-h-[44px] w-full flex items-center justify-center gap-2 rounded-xl bg-teal-400/15 border border-teal-400/30 text-teal-400 font-semibold text-sm transition-all"><Stethoscope className="w-4 h-4" strokeWidth={1.5} /> Browse Practitioners <ArrowRight className="w-4 h-4" strokeWidth={1.5} /></a>
+            </div></div>
+            <div className="relative rounded-2xl overflow-hidden group cursor-pointer"><div className="absolute inset-0 bg-gradient-to-br from-emerald-400/10 to-emerald-400/[0.02]" /><div className="relative border border-emerald-400/15 group-hover:border-emerald-400/30 rounded-2xl p-5 md:p-6 transition-all duration-300 group-hover:shadow-[0_0_30px_rgba(52,211,153,0.08)]">
+              <PIcon icon={Leaf} color="#34D399" size="lg" />
+              <h3 className="text-base font-bold text-white mt-3 mb-1.5">Find a Naturopath</h3>
+              <p className="text-xs text-white/40 leading-relaxed mb-4">Naturopathic doctors combining traditional healing with modern genomics and herbal protocols.</p>
+              <div className="space-y-1.5 mb-4">{["Herbal protocol guidance", "TCM / Ayurvedic integration", "Functional lab interpretation", "Holistic wellness planning"].map(t => <div key={t} className="flex items-center gap-2"><Check className="w-3 h-3 text-emerald-400/60 flex-shrink-0" strokeWidth={2} /><span className="text-[11px] text-white/35">{t}</span></div>)}</div>
+              <a href="/messages" className="min-h-[44px] w-full flex items-center justify-center gap-2 rounded-xl bg-emerald-400/15 border border-emerald-400/30 text-emerald-400 font-semibold text-sm transition-all"><Leaf className="w-4 h-4" strokeWidth={1.5} /> Browse Naturopaths <ArrowRight className="w-4 h-4" strokeWidth={1.5} /></a>
+            </div></div>
+          </div>
+        </div>
+      </Section>
+
+      {/* ═══ 5. BROWSE & BUILD PROTOCOL ═══ */}
+      <Section icon={ShoppingBag} iconColor="#B75E18" title="Browse & Build Protocol" subtitle="Search by name or browse the catalog">
+        <div className="p-5 md:p-6 space-y-6">
+          <SupplementInput portal="consumer" onProductAdded={() => {}} />
+          <div><h3 className="text-xs text-white/20 uppercase tracking-wider font-semibold mb-3">Browse by Category</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 md:gap-3">
+              {CATEGORIES.map((cat) => (
+                <a key={cat.label} href={`/shop?category=${encodeURIComponent(cat.label)}`} className="rounded-xl bg-white/[0.02] border border-white/5 p-4 hover:border-white/15 hover:bg-white/[0.04] transition-all group flex flex-col items-center gap-2 text-center">
+                  <div className="relative"><div className="absolute -inset-1 rounded-lg opacity-0 group-hover:opacity-60 transition-opacity blur-md" style={{ backgroundColor: `${cat.color}1A` }} /><div className="relative w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${cat.color}26, transparent)`, border: `1px solid ${cat.color}1A` }}><cat.icon className="w-5 h-5" style={{ color: cat.color }} strokeWidth={1.5} /></div></div>
+                  <span className="text-xs font-medium text-white/50 group-hover:text-white/70 transition-colors">{cat.label}</span>
+                  <span className="text-[10px] text-white/20">{cat.count} products</span>
+                </a>
+              ))}
+            </div>
+          </div>
+          <div className="text-center pt-4"><a href="/shop" className="min-h-[48px] inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-teal-400/25 hover:border-teal-400/40 text-white font-semibold text-sm hover:shadow-[0_0_25px_rgba(45,165,160,0.1)] transition-all duration-300" style={{ background: "linear-gradient(135deg, rgba(45,165,160,0.15), rgba(183,94,24,0.15))" }}><ShoppingBag className="w-4 h-4 text-teal-400" strokeWidth={1.5} /> Browse Full Catalog <ArrowRight className="w-4 h-4" strokeWidth={1.5} /></a></div>
+        </div>
+      </Section>
+
+      {/* DISCLAIMER */}
+      <PractitionerDisclaimer />
+
+      </div>
+    </div>
+    </>
+  );
+}
+
+// RecommendedSupplementsSection replaced by Ultrathink-powered RecommendedSupplements component
+// Old inline section removed; see src/components/supplement-protocol/RecommendedSupplements.tsx
+
+/**
+ * Prompt 175l (2026-06-05): "Add Your Supplements" section on the
+ * Supplement Protocol page. Supersedes the 175h Section 2.6 inline
+ * picker. Mounts the shared SupplementCaptureBlock (search + OR + Scan
+ * barcode + OR + Photo) inside a page-style Section so the heading
+ * treatment matches Daily Schedule, Recommended Supplements, and the
+ * other sections.
+ *
+ * Persistence: writes the confirmed BarcodeConfirmRecord straight to
+ * user_current_supplements with Hannah's timing fields. The Daily
+ * Schedule above reads the same table, so refreshing surfaces the
+ * just-added row in the right slot.
+ *
+ * The "Recently added" footer keeps immediate feedback because the
+ * page does not subscribe to user_current_supplements via realtime;
+ * the Refresh schedule link is a one-tap reload.
+ */
+function AddYourSupplementsSection() {
+  const [savingId, setSavingId] = useState<string | null>(null);
+  const [recent, setRecent] = useState<Array<{ id: string; name: string; brand: string }>>([]);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  async function persistSupplement(rec: BarcodeConfirmRecord): Promise<void> {
+    const tempId = `tmp-${Date.now()}`;
+    setSavingId(tempId);
+    setErrorMessage(null);
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setErrorMessage("You need to sign in to save supplements.");
+        return;
+      }
+      const dosageString = rec.dosage && rec.unit ? `${rec.dosage}${rec.unit}` : (rec.dosage || "");
+      const keyIngredients = rec.structured_ingredients
+        .map((ing) => ing.name)
+        .filter((n) => n.length > 0);
+      const sourceColumn =
+        rec.source === "photo"
+          ? "photo_ai"
+          : rec.source === "search"
+            ? "user_search"
+            : "barcode";
+      const { error } = await supabase
+        .from("user_current_supplements")
+        .upsert({
+          user_id: user.id,
+          supplement_name: rec.name,
+          brand: rec.brand,
+          product_name: rec.name,
+          formulation: "",
+          dosage: dosageString,
+          dosage_form: rec.deliveryMethod || "capsule",
+          frequency: rec.frequency || "daily",
+          category: rec.deliveryMethod || "general",
+          key_ingredients: keyIngredients,
+          source: sourceColumn,
+          is_current: true,
+          is_ai_recommended: false,
+          added_at: new Date().toISOString(),
+          time_of_day: rec.time_of_day && rec.time_of_day.length > 0 ? rec.time_of_day : null,
+          with_food: rec.with_food,
+          timing_reason: rec.timing_reason,
+          timing_source: rec.timing_source,
+        }, { onConflict: "user_id,supplement_name" });
+      if (error) {
+        setErrorMessage("We could not save that. Please try again.");
+        return;
+      }
+      setRecent((prev) => [{ id: tempId, name: rec.name, brand: rec.brand }, ...prev].slice(0, 5));
+    } catch {
+      setErrorMessage("We could not save that. Please try again.");
+    } finally {
+      setSavingId(null);
+    }
+  }
+
+  return (
+    <Section
+      icon={Plus}
+      iconColor="#2DA5A0"
+      title="Add Your Supplements"
+      subtitle="Add every supplement, vitamin, and mineral you take regularly"
+    >
+      <div className="p-5 md:p-6 space-y-4">
+        <SupplementCaptureBlock onSupplementAdded={persistSupplement} />
+
+        {savingId && (
+          <p className="text-xs text-white/40 flex items-center gap-1.5">
+            <Loader2 className="w-3 h-3 animate-spin" strokeWidth={1.5} />
+            Saving to your protocol...
+          </p>
+        )}
+
+        {errorMessage && (
+          <p className="text-xs text-orange-400/80">{errorMessage}</p>
+        )}
+
+        {recent.length > 0 && (
+          <div className="pt-4 border-t border-white/5">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[10px] text-white/30 uppercase tracking-wider font-semibold">Recently added</p>
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className="text-[11px] text-teal-400 underline hover:text-teal-300 inline-flex items-center gap-1"
+              >
+                <RefreshCw className="w-3 h-3" strokeWidth={1.5} />
+                Refresh schedule
+              </button>
+            </div>
+            <ul className="space-y-1">
+              {recent.map((r) => (
+                <li key={r.id} className="text-xs text-white/70 flex items-center gap-2">
+                  <Check className="w-3 h-3 text-teal-400" strokeWidth={2} />
+                  <span>{r.brand ? `${r.brand} ` : ''}{r.name}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    </Section>
+  );
+}
+
+function SupplementsRetakeCard() {
+  const [confirming, setConfirming] = useState(false);
+  return (
+    <div className="rounded-xl bg-white/[0.02] border border-white/[0.08] p-5 md:p-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <div className="relative flex-shrink-0"><div className="absolute blur-lg -inset-1 rounded-2xl opacity-60" style={{ backgroundColor: "#B75E1833" }} /><div className="relative w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #B75E1833, #B75E181A, transparent)", border: "1px solid #B75E1826" }}><RefreshCw className="w-4 h-4 text-orange-400" strokeWidth={1.5} /></div></div>
+          <div><h4 className="text-sm font-semibold text-white">Update Your Assessment</h4><p className="text-xs text-white/30 mt-1 leading-relaxed max-w-md">Retake the Clinical Assessment Questionnaire to update your supplement protocol and recommendations with your current health status</p></div>
+        </div>
+        {!confirming ? (
+          <button onClick={() => setConfirming(true)} className="min-h-[44px] px-5 py-2.5 rounded-xl bg-orange-400/10 border border-orange-400/30 text-orange-400 text-sm font-medium hover:bg-orange-400/15 transition-all flex items-center gap-2 w-full sm:w-auto justify-center flex-shrink-0"><RefreshCw className="w-4 h-4" strokeWidth={1.5} /> Retake Assessment</button>
+        ) : (
+          <div className="w-full sm:w-auto space-y-3">
+            <div className="rounded-lg bg-orange-400/5 border border-orange-400/10 px-4 py-3"><p className="text-xs text-white/40 leading-relaxed">This will take you through all 7 phases. Your previous answers will be <span className="text-white/60 font-medium">pre-filled</span> so you only need to update what has changed.</p></div>
+            <div className="flex gap-2"><a href="/onboarding/i-caq-intro" className="min-h-[44px] flex-1 px-5 py-2.5 rounded-xl bg-teal-400/15 border border-teal-400/30 text-teal-400 text-sm font-medium hover:bg-teal-400/20 transition-all flex items-center gap-2 justify-center"><Check className="w-4 h-4" strokeWidth={2} /> Yes, Start Assessment</a><button onClick={() => setConfirming(false)} className="min-h-[44px] px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white/40 text-sm hover:bg-white/[0.08] transition-all flex items-center justify-center">Cancel</button></div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
