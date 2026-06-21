@@ -14,8 +14,12 @@ import {
 } from '../variantSeverity';
 
 describe('VARIANT_SEVERITY source (panel-scoped, go-live)', () => {
-  it('is keyed by panel slug and wired for the two gate-approved SNP panels', () => {
-    expect(Object.keys(VARIANT_SEVERITY).sort()).toEqual(['hormone-iq', 'nutrigen-dx']);
+  it('is keyed by panel slug and wired for the gate-approved SNP panels', () => {
+    // Prompt 204 (2026-06-21): peptide-iq and cannabis-iq joined after Gary's
+    // sign-off reversed their educational only status.
+    expect(Object.keys(VARIANT_SEVERITY).sort()).toEqual([
+      'cannabis-iq', 'hormone-iq', 'nutrigen-dx', 'peptide-iq',
+    ]);
   });
 
   it('does NOT include the methylation panel (it is scored by zygosity, not genotype)', () => {

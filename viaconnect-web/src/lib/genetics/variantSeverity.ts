@@ -20,16 +20,21 @@
 import type { SeverityTier } from './severity';
 import { NUTRIGEN_DX_SEVERITY_DRAFT } from './drafts/nutrigenDxSeverityDraft';
 import { HORMONE_IQ_SEVERITY_DRAFT } from './drafts/hormoneIqSeverityDraft';
+import { PEPTIDE_IQ_SEVERITY_DRAFT } from './drafts/peptideIqSeverityDraft';
+import { CANNABIS_IQ_SEVERITY_DRAFT } from './drafts/cannabisIqSeverityDraft';
 
-// panelSlug -> rsID (lowercase) -> normalized genotype -> validated tier. The two
-// SNP panels that passed the gate are wired here; the descriptive markers in each
+// panelSlug -> rsID (lowercase) -> normalized genotype -> validated tier. The SNP
+// panels that passed the gate are wired here; the descriptive markers in each
 // (FUT2, AMY1, GST deletions, HLA, MCM6, NAT2, CYP19A1) are absent from their
-// panel map by design and render unscored. EpigenHQ, PeptideIQ, and CannabisIQ are
-// not here: EpigenHQ has no genotype scoring and Peptide / Cannabis are
-// educational (untiered).
+// panel map by design and render unscored. Prompt 204 (2026-06-21): PeptideIQ and
+// CannabisIQ joined after Gary's sign-off reversed their educational only status;
+// most of their SNPs stay unscored (omitted) by design, only the defensible tiers
+// are present. EpigenHQ is still absent: it has no genotype scoring (measured).
 export const VARIANT_SEVERITY: Record<string, Record<string, Record<string, SeverityTier>>> = {
   'nutrigen-dx': NUTRIGEN_DX_SEVERITY_DRAFT,
   'hormone-iq': HORMONE_IQ_SEVERITY_DRAFT,
+  'peptide-iq': PEPTIDE_IQ_SEVERITY_DRAFT,
+  'cannabis-iq': CANNABIS_IQ_SEVERITY_DRAFT,
 };
 
 // Normalize a genotype string for lookup: uppercase, strip spaces and separators
