@@ -242,7 +242,7 @@ describe('runResearchPass', () => {
     ;(embedText as ReturnType<typeof vi.fn>)
       .mockResolvedValueOnce(vecA)
       .mockResolvedValueOnce(vecB)
-    ;(upsertAtomDraft as ReturnType<typeof vi.fn>).mockResolvedValue(undefined)
+    ;(upsertAtomDraft as ReturnType<typeof vi.fn>).mockResolvedValue({ inserted: true })
     ;(getPublishedRules as ReturnType<typeof vi.fn>).mockResolvedValue([])
 
     const { adminClient, logInsert } = makeAdminMock([])
@@ -270,7 +270,7 @@ describe('runResearchPass', () => {
     ;(searchClinicalTrials as ReturnType<typeof vi.fn>).mockResolvedValue([])
     ;(searchConsensus as ReturnType<typeof vi.fn>).mockResolvedValue([])
     ;(embedText as ReturnType<typeof vi.fn>).mockResolvedValue(fixedVec)
-    ;(upsertAtomDraft as ReturnType<typeof vi.fn>).mockResolvedValue(undefined)
+    ;(upsertAtomDraft as ReturnType<typeof vi.fn>).mockResolvedValue({ inserted: true })
     ;(getPublishedRules as ReturnType<typeof vi.fn>).mockResolvedValue([])
 
     // Existing atom with same embedding vector
@@ -300,7 +300,7 @@ describe('runResearchPass', () => {
     ;(searchClinicalTrials as ReturnType<typeof vi.fn>).mockResolvedValue([])
     ;(searchConsensus as ReturnType<typeof vi.fn>).mockResolvedValue([])
     ;(embedText as ReturnType<typeof vi.fn>).mockResolvedValue(fixedVec)
-    ;(upsertAtomDraft as ReturnType<typeof vi.fn>).mockResolvedValue(undefined)
+    ;(upsertAtomDraft as ReturnType<typeof vi.fn>).mockResolvedValue({ inserted: true })
     ;(getPublishedRules as ReturnType<typeof vi.fn>).mockResolvedValue([
       { id: 'rule-1', rsid: 'rs1801133', genotype_match: 'TT', action_type: 'prefer_form', review_status: 'published' },
     ])
@@ -338,7 +338,7 @@ describe('runResearchPass', () => {
     ;(searchConsensus as ReturnType<typeof vi.fn>).mockResolvedValue([])
     ;(embedText as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Embed crash'))
     ;(getPublishedRules as ReturnType<typeof vi.fn>).mockResolvedValue([])
-    ;(upsertAtomDraft as ReturnType<typeof vi.fn>).mockResolvedValue(undefined)
+    ;(upsertAtomDraft as ReturnType<typeof vi.fn>).mockResolvedValue({ inserted: true })
 
     const { adminClient } = makeAdminMock([])
     ;(createAdminClient as ReturnType<typeof vi.fn>).mockReturnValue(adminClient)
@@ -359,7 +359,7 @@ describe('runResearchPass', () => {
     ;(searchClinicalTrials as ReturnType<typeof vi.fn>).mockResolvedValue([])
     ;(searchConsensus as ReturnType<typeof vi.fn>).mockResolvedValue([])
     ;(embedText as ReturnType<typeof vi.fn>).mockResolvedValue(fixedVec)
-    ;(upsertAtomDraft as ReturnType<typeof vi.fn>).mockResolvedValue(undefined)
+    ;(upsertAtomDraft as ReturnType<typeof vi.fn>).mockResolvedValue({ inserted: true })
     ;(getPublishedRules as ReturnType<typeof vi.fn>).mockResolvedValue([])
 
     const { adminClient } = makeAdminMock([])
@@ -369,6 +369,29 @@ describe('runResearchPass', () => {
 
     // First atom created, second rejected by within-pass dedup
     expect(result.atomsCreated).toBe(1)
+    expect(result.atomsRejected).toBe(1)
+  })
+
+  it('counts as atomsRejected (not atomsCreated) when upsertAtomDraft returns { inserted: false } (DB-level skip)', async () => {
+    // Use orthogonal vectors so cosine dedup does not trigger -- the skip comes from the DB.
+    const vecA = Array.from({ length: 768 }, (_, i) => (i === 0 ? 1 : 0))
+
+    ;(searchPubMed as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { title: 'Fresh Study', url: 'https://pubmed/20', sourceAuthority: 'pubmed', identifier: '20' },
+    ])
+    ;(searchClinicalTrials as ReturnType<typeof vi.fn>).mockResolvedValue([])
+    ;(searchConsensus as ReturnType<typeof vi.fn>).mockResolvedValue([])
+    ;(embedText as ReturnType<typeof vi.fn>).mockResolvedValue(vecA)
+    // DB already has this row (e.g. inserted in a prior pass) -- upsert skips it.
+    ;(upsertAtomDraft as ReturnType<typeof vi.fn>).mockResolvedValue({ inserted: false })
+    ;(getPublishedRules as ReturnType<typeof vi.fn>).mockResolvedValue([])
+
+    const { adminClient } = makeAdminMock([])
+    ;(createAdminClient as ReturnType<typeof vi.fn>).mockReturnValue(adminClient)
+
+    const result = await runResearchPass('methylation')
+
+    expect(result.atomsCreated).toBe(0)
     expect(result.atomsRejected).toBe(1)
   })
 })

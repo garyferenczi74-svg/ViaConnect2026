@@ -174,7 +174,7 @@ export async function getPublishedAtoms(filter?: {
 // ---------------------------------------------------------------------------
 export async function upsertAtomDraft(
   atom: KnowledgeAtomInsert & { embedding?: number[] | null },
-): Promise<void> {
+): Promise<{ inserted: boolean }> {
   const supabase = createAdminClient();
 
   // Existence check: find any row with the same (domain, claim) pair.
@@ -186,12 +186,12 @@ export async function upsertAtomDraft(
 
   if (selectError) {
     // Fail-open: log and skip rather than hard-throw during seeding.
-    return;
+    return { inserted: false };
   }
 
   if (existing && existing.length > 0) {
     // Row already present -- skip (idempotent).
-    return;
+    return { inserted: false };
   }
 
   // Build the row to insert, including embedding if provided.
@@ -215,7 +215,18 @@ export async function upsertAtomDraft(
     last_verified_at: atom.last_verified_at,
   };
 
-  await supabase.from('knowledge_atoms').insert([row]);
+  const { error: insertError } = await supabase.from('knowledge_atoms').insert([row]);
+
+  if (insertError) {
+    safeLog.error('kb.upsert', 'Failed to insert knowledge atom draft', {
+      claim: atom.claim,
+      domain: atom.domain,
+      error: insertError,
+    });
+    return { inserted: false };
+  }
+
+  return { inserted: true };
 }
 
 // ---------------------------------------------------------------------------

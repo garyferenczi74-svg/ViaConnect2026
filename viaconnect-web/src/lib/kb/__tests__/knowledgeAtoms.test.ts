@@ -100,7 +100,7 @@ vi.mock('../embeddings', () => ({
 // Now import modules under test (after mocks are registered).
 // ---------------------------------------------------------------------------
 import type { KnowledgeEntry } from '../knowledgeEntry';
-import { atomFromEntry, getPublishedAtoms, seedMonographsAsDrafts } from '../knowledgeAtoms';
+import { atomFromEntry, getPublishedAtoms, seedMonographsAsDrafts, upsertAtomDraft } from '../knowledgeAtoms';
 import { gradeToTier } from '../evidenceTier';
 import { embedText } from '../embeddings';
 import { safeLog } from '@/lib/utils/safe-log';
@@ -340,5 +340,77 @@ describe('seedMonographsAsDrafts', () => {
       'Failed to insert knowledge atom draft',
       expect.objectContaining({ domain: 'methylation' }),
     );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Tests: upsertAtomDraft return value
+// ---------------------------------------------------------------------------
+describe('upsertAtomDraft', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const minimalAtom = {
+    domain: 'methylation' as const,
+    claim: 'Test claim for upsert',
+    mechanism: null,
+    evidence_tier: 2 as const,
+    source_type: 'monograph',
+    source_authority: 'internal_study' as const,
+    source_url: null,
+    citation: null,
+    snp_refs: [],
+    nutrient_refs: [],
+    supplement_refs: [],
+    contraindications: null,
+    review_status: 'draft' as const,
+    reviewed_by: null,
+    confidence: null,
+    last_verified_at: null,
+  };
+
+  it('returns { inserted: true } when the row did not previously exist and insert succeeds', async () => {
+    // No existing rows.
+    mockEqDomain.mockReturnValue({ data: null, error: null, eq: mockEqClaim });
+    mockEqClaim.mockReturnValue({ data: [], error: null });
+    // Insert succeeds.
+    mockInsert.mockResolvedValue({ error: null });
+
+    const result = await upsertAtomDraft(minimalAtom);
+
+    expect(result).toEqual({ inserted: true });
+  });
+
+  it('returns { inserted: false } when a row with the same (domain, claim) already exists', async () => {
+    // Existing row found.
+    mockEqDomain.mockReturnValue({ data: null, error: null, eq: mockEqClaim });
+    mockEqClaim.mockReturnValue({ data: [{ id: 'already-there' }], error: null });
+
+    const result = await upsertAtomDraft(minimalAtom);
+
+    expect(result).toEqual({ inserted: false });
+    // Insert must not have been called.
+    expect(mockInsert).not.toHaveBeenCalled();
+  });
+
+  it('returns { inserted: false } on select error (fail-open)', async () => {
+    mockEqDomain.mockReturnValue({ data: null, error: null, eq: mockEqClaim });
+    mockEqClaim.mockReturnValue({ data: null, error: { message: 'select failed' } });
+
+    const result = await upsertAtomDraft(minimalAtom);
+
+    expect(result).toEqual({ inserted: false });
+    expect(mockInsert).not.toHaveBeenCalled();
+  });
+
+  it('returns { inserted: false } when insert errors', async () => {
+    mockEqDomain.mockReturnValue({ data: null, error: null, eq: mockEqClaim });
+    mockEqClaim.mockReturnValue({ data: [], error: null });
+    mockInsert.mockResolvedValue({ error: { message: 'insert boom' } });
+
+    const result = await upsertAtomDraft(minimalAtom);
+
+    expect(result).toEqual({ inserted: false });
   });
 });

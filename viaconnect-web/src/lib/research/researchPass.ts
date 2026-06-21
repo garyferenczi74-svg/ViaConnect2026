@@ -225,12 +225,15 @@ export async function runResearchPass(domain: ResearchDomain): Promise<RunResult
         }
 
         // Upsert (idempotent on domain+claim)
-        await upsertAtomDraft({ ...candidate, embedding: emb })
-        atomsCreated++
-
-        // Add new embedding to in-memory list for within-pass dedup
-        if (emb !== null) {
-          existingEmbeddings = [...existingEmbeddings, emb]
+        const { inserted } = await upsertAtomDraft({ ...candidate, embedding: emb })
+        if (inserted) {
+          atomsCreated++
+          // Add new embedding to in-memory list for within-pass dedup
+          if (emb !== null) {
+            existingEmbeddings = [...existingEmbeddings, emb]
+          }
+        } else {
+          atomsRejected++
         }
       } catch (err) {
         safeLog.error('research.pass', 'Error processing source', {
