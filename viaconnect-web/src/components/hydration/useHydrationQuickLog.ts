@@ -39,6 +39,12 @@ export interface HydrationQuickLogArgs {
    * 170o quick log buttons that pass only beverage_kind.
    */
   beverage_slug?: string;
+  /**
+   * Prompt 207a Task 3: uuid of a custom beverage from the user's personal
+   * library. When present, the route resolves kind + coefficient from
+   * user_beverages and computes the correct hydration_ml at write time.
+   */
+  user_beverage_id?: string;
 }
 
 export interface HydrationQuickLogResult {
@@ -68,6 +74,9 @@ export function useHydrationQuickLog(): UseHydrationQuickLogReturn {
       };
       if (args.beverage_slug) {
         payload.beverage_slug = args.beverage_slug;
+      }
+      if (args.user_beverage_id) {
+        payload.user_beverage_id = args.user_beverage_id;
       }
       const resp = await fetch('/api/nutrition/hydration/quick-log', {
         method: 'POST',

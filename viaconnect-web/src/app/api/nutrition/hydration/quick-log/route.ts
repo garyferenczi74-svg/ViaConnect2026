@@ -54,6 +54,7 @@ import {
 import {
   buildPhaseFTelemetryFields,
 } from '@/lib/nutrition/hydration/phase-f-telemetry';
+import { withTimeout } from '@/lib/nutrition/resilience/timeout';
 import {
   countDistinctCatalogCategoriesToday,
   shouldFireDiversity3,
@@ -113,7 +114,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     );
   }
 
-  const { volume_ml, beverage_kind, captured_at, log_surface, beverage_slug } = parsed.data;
+  const { volume_ml, beverage_kind, captured_at, log_surface, beverage_slug, user_beverage_id } = parsed.data;
   const loggedAtIso = captured_at ?? new Date().toISOString();
   const admin = createAdminClient();
 
@@ -135,6 +136,37 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       deduplicated: true,
       hydration_ml_logged: 0,
     });
+  }
+
+  // Prompt 207a Task 3: resolve custom beverage kind + coefficient when
+  // user_beverage_id is present. Wrap in a timeout and fail open so a
+  // slow or failed lookup never blocks the log write.
+  let customCoefficient: number | null = null;
+  let customKind: HydrationSourceKind | null = null;
+  let customName: string | null = null;
+  let customIsAlcoholic = false;
+  if (user_beverage_id) {
+    try {
+      const { data: ub } = await withTimeout(
+        admin
+          .from('user_beverages')
+          .select('hydration_source_kind, hydration_coefficient, display_name, is_alcoholic')
+          .eq('id', user_beverage_id)
+          .maybeSingle(),
+        { timeoutMs: 3000, op: 'user_beverage_lookup' },
+      );
+      if (ub) {
+        customKind = ub.hydration_source_kind as HydrationSourceKind;
+        customCoefficient = Number(ub.hydration_coefficient);
+        customName = ub.display_name as string;
+        customIsAlcoholic = ub.is_alcoholic === true;
+      }
+    } catch (e) {
+      safeLog.warn('api.hydration.quick_log', 'user_beverage lookup failed (continuing)', {
+        error: e,
+        user_beverage_id,
+      });
+    }
   }
 
   const { data: profileRow } = await admin
@@ -172,14 +204,44 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   // Phase C: catalog display_name wins over the legacy kind based name so
   // the timeline and edit panel show "Cold Brew Coffee" instead of the
   // generic "Coffee or tea" when the user picks via the catalog.
-  const foodName = catalogRow?.display_name ?? FOOD_NAME_BY_KIND[beverage_kind];
+  // Prompt 207a Task 3: custom beverage display_name wins over catalog name
+  // which wins over the generic kind label.
+  const foodName = customName ?? catalogRow?.display_name ?? FOOD_NAME_BY_KIND[beverage_kind];
 
-  let hydrationMl = computeHydrationMl({
-    source_kind: beverage_kind,
-    portion_volume_ml: volume_ml,
-    counting_mode: countingMode,
-    food_name: foodName,
-  });
+  // Prompt 207a Task 3: when a custom beverage resolved its coefficient,
+  // compute hydration_ml directly from volume * coefficient. Otherwise
+  // fall through to the existing computeHydrationMl path.
+  let hydrationMl: number;
+  if (customKind !== null && customCoefficient !== null) {
+    hydrationMl = Math.round(volume_ml * customCoefficient * 100) / 100;
+    // Prompt 207a Task 9: apply the same dose-dependent diuretic reduction
+    // for custom alcoholic beverages that the catalog path already gets.
+    // alcohol_low is the canonical kind for custom alcohol (per the mapping)
+    // and countDailyAlcoholicDrinks already counts both alcohol_low and
+    // alcohol_high kinds, so the daily tally stays consistent.
+    if (customIsAlcoholic && hydrationMl > 0) {
+      const drinksToday = await countDailyAlcoholicDrinks({
+        admin,
+        user_id: user.id,
+        day_anchor_iso: loggedAtIso,
+      });
+      const threshold = getAlcoholDiureticThresholdDrinks();
+      const reduced = applyAlcoholDiureticReduction(
+        hydrationMl,
+        drinksToday,
+        threshold,
+        ALCOHOL_DIURETIC_FLOOR,
+      );
+      hydrationMl = Math.round(reduced * 100) / 100;
+    }
+  } else {
+    hydrationMl = computeHydrationMl({
+      source_kind: beverage_kind,
+      portion_volume_ml: volume_ml,
+      counting_mode: countingMode,
+      food_name: foodName,
+    });
+  }
 
   // Phase C Workstream 2: apply the dose dependent diuretic reduction
   // when the row is alcoholic. The math runs in every mode; the COPY
@@ -257,7 +319,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     nutrient_source: 'user_entered',
     portion_grams: volume_ml,
     portion_volume_ml: volume_ml,
-    hydration_source_kind: beverage_kind,
+    // Prompt 207a Task 3: use the resolved kind from the custom beverage
+    // row when available; otherwise the beverage_kind from the request.
+    hydration_source_kind: customKind ?? beverage_kind,
     hydration_ml: hydrationMl,
     user_modified: false,
     calories_kcal: 0,
@@ -296,10 +360,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     attribute_caffeine: attributeCaffeine,
   });
 
-  if (Math.random() < 0.2) {
+  // Prompt 207a Task 3: for custom-beverage logs write telemetry
+  // UNCONDITIONALLY (bypass the 20pct gate) and set user_beverage_id +
+  // beverage_catalog_slug null. Keep the 20pct gate for all other paths.
+  const isCustomBeveragePath = user_beverage_id != null && customKind !== null;
+  if (isCustomBeveragePath || Math.random() < 0.2) {
     try {
       const userHash = hashUserId(user.id);
-      await admin.from('hydration_log_sessions').insert({
+      const telemetryRow: Record<string, unknown> = {
         user_hash: userHash,
         meal_id: mealId,
         log_surface,
@@ -308,10 +376,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         was_quick_log: true,
         was_voice_input: false,
         was_deduplicated: false,
-        beverage_catalog_slug: phaseFFields.beverage_catalog_slug,
+        beverage_catalog_slug: isCustomBeveragePath ? null : phaseFFields.beverage_catalog_slug,
         effective_volume_bucket: phaseFFields.effective_volume_bucket,
         caffeine_contributed_flag: phaseFFields.caffeine_contributed_flag,
-      });
+      };
+      if (isCustomBeveragePath) {
+        telemetryRow.user_beverage_id = user_beverage_id;
+      }
+      await admin.from('hydration_log_sessions').insert(telemetryRow);
     } catch (telemetryErr) {
       safeLog.warn('api.hydration.quick_log', 'telemetry insert failed (non-fatal)', {
         error: telemetryErr,

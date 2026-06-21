@@ -21,6 +21,7 @@ import { HydrationEditPanel } from './HydrationEditPanel';
 import { useHydrationToday } from './useHydrationToday';
 import { useHydrationHistory } from './useHydrationHistory';
 import { useHydrationQuickLog, type HydrationLogSurface } from './useHydrationQuickLog';
+import { useUserBeverages } from './useUserBeverages';
 import type { HydrationTodayEvent } from './useHydrationToday';
 import type { HydrationHistoryDay } from './useHydrationHistory';
 import type { HydrationBeverageKind } from './useHydrationQuickLog';
@@ -31,6 +32,7 @@ import { ElectrolyteSummary } from '@/components/nutrition/hydration/Electrolyte
 import type { ElectrolyteCatalogRow } from '@/components/nutrition/hydration/ElectrolyteSummary';
 import { CaffeineOverlay } from '@/components/nutrition/hydration/CaffeineOverlay';
 import { useBeverageCatalog } from '@/components/nutrition/hydration/BeveragePicker/useBeverageCatalog';
+import { isCustomBeveragesEnabled } from '@/lib/config/custom-beverages-flag';
 
 const BEVERAGE_KIND_LABELS: Record<string, { label: string; Icon: typeof Droplet }> = {
   pure_water: { label: 'Water', Icon: Droplet },
@@ -71,6 +73,7 @@ export function HydrationFullSection({
 
   const [editTarget, setEditTarget] = useState<{ mealId: string; volume: number; kind: HydrationBeverageKind } | null>(null);
   const { log: logBeverage } = useHydrationQuickLog();
+  const { beverages: userBeverages, create: createUserBeverage } = useUserBeverages({ enabled: isCustomBeveragesEnabled() });
 
   const [sleepStartHHMM, setSleepStartHHMM] = useState<string>('23:00');
   useEffect(() => {
@@ -117,12 +120,21 @@ export function HydrationFullSection({
   const target = today.data?.target_ml ?? 1890;
 
   async function handleBeveragePickerLogged(intent: BeverageLogIntent): Promise<void> {
-    const result = await logBeverage({
+    const args: Parameters<typeof logBeverage>[0] = {
       volume_ml: intent.volume_ml,
       beverage_kind: intent.beverage_kind as HydrationBeverageKind,
       log_surface: logSurface,
-      beverage_slug: intent.slug,
-    });
+    };
+    // Only forward the catalog slug when it is a non-empty string.
+    // Custom beverages carry slug: '' and must not pass an empty string
+    // to the route (the route interprets any slug value as a catalog lookup).
+    if (intent.slug) {
+      args.beverage_slug = intent.slug;
+    }
+    if (intent.user_beverage_id) {
+      args.user_beverage_id = intent.user_beverage_id;
+    }
+    const result = await logBeverage(args);
     if (result === null) return;
     if (result.deduplicated) {
       toast.success('Already logged within the last few minutes.');
@@ -222,7 +234,11 @@ export function HydrationFullSection({
 
       <ElectrolyteSummary events={electrolyteEvents} catalog={electrolyteCatalog} />
 
-      <BeveragePicker onLogged={handleBeveragePickerLogged} />
+      <BeveragePicker
+        onLogged={handleBeveragePickerLogged}
+        userBeverages={userBeverages}
+        onCreateCustom={createUserBeverage}
+      />
 
       <section
         aria-labelledby="hydration-week-heading"

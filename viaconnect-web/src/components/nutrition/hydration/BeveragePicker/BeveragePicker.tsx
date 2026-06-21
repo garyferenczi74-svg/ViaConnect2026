@@ -15,9 +15,10 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Plus } from 'lucide-react';
 import { useSafetyMode } from '@/lib/safety-mode/useSafetyMode';
 import { isKillSwitchEnabled } from '@/lib/compliance/kill-switches';
+import { isCustomBeveragesEnabled } from '@/lib/config/custom-beverages-flag';
 import {
   getHydrationMicrocopy,
   type HydrationMicrocopyVariant,
@@ -38,6 +39,7 @@ import {
   incrementVolume,
   openBeverage,
   openCategory,
+  openCreateCustom,
   resolveFavorites,
   resolveRecents,
   searchCatalog,
@@ -53,9 +55,11 @@ import { VolumePicker } from './VolumePicker';
 import { SearchField } from './SearchField';
 import { FavoritesRow } from './FavoritesRow';
 import { RecentsRow } from './RecentsRow';
+import { MyBeveragesRow } from './MyBeveragesRow';
+import { CreateBeverageForm } from './CreateBeverageForm';
 import { LogButton } from './LogButton';
 
-export function BeveragePicker({ volumeUnit, onLogged }: BeveragePickerProps): JSX.Element | null {
+export function BeveragePicker({ volumeUnit, onLogged, userBeverages, onCreateCustom }: BeveragePickerProps): JSX.Element | null {
   // Kill switch gate: silent unmount when BEVERAGE_CATALOG_RENDERING_ENABLED
   // is false. No error UI, no "feature disabled" copy; matches the Phase 2
   // BOS line silent-on-kill pattern so a 170c section 9 emergency rollback
@@ -144,6 +148,8 @@ export function BeveragePicker({ volumeUnit, onLogged }: BeveragePickerProps): J
       setState((s) => backToCategory(s));
     } else if (state.view === 'category') {
       setState((s) => backToDefault(s));
+    } else if (state.view === 'create_custom') {
+      setState((s) => backToDefault(s));
     }
   }
 
@@ -188,6 +194,8 @@ export function BeveragePicker({ volumeUnit, onLogged }: BeveragePickerProps): J
             aria-label={
               state.view === 'beverage'
                 ? getHydrationMicrocopy('action.back_to_beverages', variant)
+                : state.view === 'category'
+                ? getHydrationMicrocopy('action.back_to_categories', variant)
                 : getHydrationMicrocopy('action.back_to_categories', variant)
             }
             className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/[0.08] bg-white/5 text-white/80 transition-colors hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2DA5A0] focus-visible:outline-offset-2"
@@ -215,6 +223,9 @@ export function BeveragePicker({ volumeUnit, onLogged }: BeveragePickerProps): J
 
       {!catalogState.loading && !catalogState.error && state.view === 'default' ? (
         <>
+          {isCustomBeveragesEnabled() && userBeverages && userBeverages.length > 0 ? (
+            <MyBeveragesRow beverages={userBeverages} onLogged={(intent) => void onLogged?.(intent)} />
+          ) : null}
           <FavoritesRow favorites={favorites} onSelect={handleBeverageSelect} variant={variant} />
           <RecentsRow recents={recents} onSelect={handleBeverageSelect} variant={variant} />
           <SearchField
@@ -235,6 +246,16 @@ export function BeveragePicker({ volumeUnit, onLogged }: BeveragePickerProps): J
           ) : (
             <CategoryGrid onSelect={handleCategorySelect} variant={variant} />
           )}
+          {isCustomBeveragesEnabled() ? (
+            <button
+              type="button"
+              onClick={() => setState((s) => openCreateCustom(s))}
+              className="inline-flex items-center gap-2 self-start rounded-full border border-[#2DA5A0]/25 bg-[#2DA5A0]/[0.07] px-3 py-1.5 text-[12px] font-medium text-[#2DA5A0] transition-colors hover:border-[#2DA5A0]/40 hover:bg-[#2DA5A0]/[0.12] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2DA5A0] focus-visible:outline-offset-2"
+            >
+              <Plus className="h-3.5 w-3.5" strokeWidth={1.5} aria-hidden="true" />
+              Create my own
+            </button>
+          ) : null}
         </>
       ) : null}
 
@@ -258,6 +279,18 @@ export function BeveragePicker({ volumeUnit, onLogged }: BeveragePickerProps): J
           />
           <LogButton onClick={() => void handleLog()} loading={logging} variant={variant} />
         </div>
+      ) : null}
+
+      {state.view === 'create_custom' && onCreateCustom ? (
+        <CreateBeverageForm
+          onCreateCustom={onCreateCustom}
+          onLogged={async (intent) => {
+            await onLogged?.(intent);
+            setState((s) => backToDefault(s));
+            void today.refresh();
+          }}
+          onCancel={() => setState((s) => backToDefault(s))}
+        />
       ) : null}
     </section>
   );

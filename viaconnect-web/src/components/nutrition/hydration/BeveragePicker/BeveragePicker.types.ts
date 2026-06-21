@@ -12,6 +12,7 @@
 // types at the boundary.
 
 import type { HydrationSourceKind } from '@/lib/nutrition/hydration/types';
+import type { UserBeverage, CreateBeverageInput } from '@/components/hydration/useUserBeverages';
 
 export type { HydrationSourceKind };
 
@@ -73,7 +74,7 @@ export interface BeverageCatalogRow {
  *   default -> (search match) -> beverage -> (log) -> default
  * The default view shows favorites, recents, search, and category grid.
  */
-export type PickerView = 'default' | 'category' | 'beverage';
+export type PickerView = 'default' | 'category' | 'beverage' | 'create_custom';
 
 export interface PickerState {
   view: PickerView;
@@ -95,7 +96,10 @@ export interface PickerState {
 export interface BeverageLogIntent {
   beverage_kind: HydrationSourceKind;
   volume_ml: number;
+  /** Catalog slug. Empty string when logging a custom user beverage (no catalog entry). */
   slug: string;
+  /** UUID from user_beverages table. Present only for custom beverages; absent for catalog entries. */
+  user_beverage_id?: string;
 }
 
 export interface BeveragePickerProps {
@@ -103,4 +107,20 @@ export interface BeveragePickerProps {
   volumeUnit?: 'ml' | 'oz';
   /** Fires when the user taps Log. Parent commits via /api/nutrition/hydration/quick-log. */
   onLogged?: (intent: BeverageLogIntent) => Promise<void> | void;
+  /**
+   * Prompt 207a Task 6: custom beverages from useUserBeverages.
+   * Rendered in the My Beverages shelf (gated behind isCustomBeveragesEnabled).
+   * Omit to hide the shelf (flag OFF or not yet loaded).
+   */
+  userBeverages?: ReadonlyArray<UserBeverage>;
+  /**
+   * Prompt 207a Task 6: create a new custom beverage.
+   * Called from CreateBeverageForm on submit. Null return means the server
+   * rejected the input; the form surfaces the error without navigating away.
+   */
+  onCreateCustom?: (input: CreateBeverageInput) => Promise<UserBeverage | null>;
 }
+
+// Re-export so callers can import UserBeverage from this barrel without a
+// separate import from the hook module.
+export type { UserBeverage, CreateBeverageInput };
