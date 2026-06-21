@@ -70,6 +70,14 @@ describe('YourVariantsCard source', () => {
     expect(source).toContain('href={GENEX360_SHOP_HREF}');
   });
 
+  it('has a persistent upgrade / add-a-test CTA in the header and an add-this-test empty state (Prompt 204)', () => {
+    // A persistent header CTA to the shop, plus the relabeled per-panel empty-state
+    // button. The old "Order GeneX360" label is gone.
+    expect(source).toContain('Upgrade or add a test');
+    expect(source).toContain('Add this test');
+    expect(source).not.toContain('Order GeneX360');
+  });
+
   it('uses the yourVariants media seam from GENETICS_CARD_MEDIA', () => {
     expect(source).toContain('GENETICS_CARD_MEDIA.yourVariants');
   });

@@ -12,7 +12,7 @@
 //
 // The fetch is fail-open: any failure resolves to empty data, so the card never
 // throws and never shows an error panel. A panel with no rows shows an honest
-// empty / locked state (its generic label plus an Order GeneX360 CTA), not
+// empty / locked state (its generic label plus an Add this test CTA), not
 // fabricated sample rows.
 //
 // State slices:
@@ -37,7 +37,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { Dna } from 'lucide-react';
+import { Dna, Plus } from 'lucide-react';
 import { GeneticsHubTile } from './GeneticsHubTile';
 import { GENETICS_CARD_MEDIA } from './geneticsHubMedia';
 import { GENEX360_SHOP_HREF } from './geneticsHubLinks';
@@ -208,13 +208,23 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
       mediaLogKey="yourVariants"
       className={className}
     >
-      {/* Header row: title, total real-variant count badge, one line subtitle. */}
+      {/* Header row: title, total real-variant count badge, one line subtitle, and
+          a persistent CTA to upgrade the bundle or add a new GeneX360 test. */}
       <div className="flex flex-col gap-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-lg font-semibold leading-tight text-white md:text-xl">Your Variants</h2>
-          <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-0.5 text-[11px] font-medium tabular-nums text-white/75">
-            {totalVariants} variants
-          </span>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-lg font-semibold leading-tight text-white md:text-xl">Your Variants</h2>
+            <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-0.5 text-[11px] font-medium tabular-nums text-white/75">
+              {totalVariants} variants
+            </span>
+          </div>
+          <Link
+            href={GENEX360_SHOP_HREF}
+            className="inline-flex min-h-[36px] flex-none items-center gap-1.5 rounded-full border border-[#2DA5A0]/40 bg-[#2DA5A0]/[0.14] px-3.5 py-1.5 text-[12px] font-semibold text-[#2DA5A0] no-underline transition-colors duration-200 hover:border-[#2DA5A0]/60 hover:bg-[#2DA5A0]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] motion-reduce:transition-none"
+          >
+            <Plus aria-hidden="true" className="h-3.5 w-3.5" strokeWidth={1.5} />
+            Upgrade or add a test
+          </Link>
         </div>
         <p className="text-[12px] leading-relaxed text-white/60 md:text-[13px]">{SUBTITLE}</p>
       </div>
@@ -393,7 +403,7 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
                   No {activeGenericLabel} variants yet.
                 </p>
                 <p className="text-[13px] leading-relaxed text-white/60">
-                  Upload a DNA test or order this panel to see your interpreted variants here.
+                  Upload a DNA test or add this panel to see your interpreted variants here.
                 </p>
               </div>
             </div>
@@ -401,7 +411,7 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
               href={GENEX360_SHOP_HREF}
               className="inline-flex min-h-[36px] flex-none items-center justify-center rounded-full border border-[#1A2744]/60 bg-white/[0.08] px-3.5 py-1.5 text-[12px] font-semibold text-white no-underline backdrop-blur-md [text-shadow:0_1px_2px_rgba(0,0,0,0.8)] transition-colors duration-200 hover:border-[#1A2744]/80 hover:bg-white/[0.16] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] motion-reduce:transition-none"
             >
-              Order GeneX360
+              Add this test
             </Link>
           </div>
         )}
