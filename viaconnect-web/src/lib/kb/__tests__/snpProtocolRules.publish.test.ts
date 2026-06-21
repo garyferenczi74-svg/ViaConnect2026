@@ -195,6 +195,7 @@ describe('publishRule', () => {
     const result = await publishRule('rule-uuid-001');
 
     expect(result.published).toBe(false);
+    expect(result.decision).toBe('BLOCKED');
     // reviewServerText must NOT have been called
     expect(mockReviewServerText).not.toHaveBeenCalled();
     // Update must NOT have been called
@@ -213,6 +214,27 @@ describe('publishRule', () => {
     expect(result.published).toBe(false);
     expect(result.decision).toBe('ESCALATE');
     expect(mockUpdate).not.toHaveBeenCalled();
+    expect(mockSafeLogError).toHaveBeenCalled();
+  });
+
+  // Test 6: Supabase update resolves with { error } -> returns { published:false, decision:'ESCALATE' }
+  it('returns published:false with decision ESCALATE when Supabase update resolves with an error', async () => {
+    const rule = makeRule({ review_status: 'in_review' });
+    setupFetch(rule);
+    setupUpdate({ message: 'db error' });
+
+    mockReviewServerText.mockResolvedValueOnce({
+      decision: 'APPROVED',
+      text: 'Some approved text',
+      sanitized: false,
+      stage_1_score: 0,
+      stage_1_flag_count: 0,
+    });
+
+    const result = await publishRule('rule-uuid-001');
+
+    expect(result.published).toBe(false);
+    expect(result.decision).toBe('ESCALATE');
     expect(mockSafeLogError).toHaveBeenCalled();
   });
 

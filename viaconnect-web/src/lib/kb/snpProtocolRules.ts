@@ -695,7 +695,7 @@ export async function publishRule(
     });
     return {
       published: false,
-      decision: rule.review_status as ServerReviewDecision,
+      decision: 'BLOCKED',
     };
   }
 
@@ -720,10 +720,14 @@ export async function publishRule(
   if (decision === 'pass_stage_1' || decision === 'APPROVED' || decision === 'CONDITIONAL') {
     // Publish: UPDATE review_status='published'. DB trigger emits knowledge_bus event.
     try {
-      await supabase
+      const { error: updateError } = await supabase
         .from('snp_protocol_rules')
         .update({ review_status: 'published' })
         .eq('id', ruleId);
+      if (updateError) {
+        safeLog.error('snp-protocol-rules', 'publishRule: update failed', { ruleId, decision, updateError });
+        return { published: false, decision: 'ESCALATE' };
+      }
     } catch (err) {
       safeLog.error('snp-protocol-rules', 'publishRule: update threw', { ruleId, decision, err });
       return { published: false, decision: 'ESCALATE' };
