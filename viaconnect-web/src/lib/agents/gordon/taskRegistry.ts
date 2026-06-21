@@ -48,3 +48,12 @@ export function determineGordonTask(query: string): GordonTask {
     return GORDON_TASKS.DAILY_NUTRITION_SUMMARY;
   return GORDON_TASKS.NUTRITION_INSIGHT;
 }
+
+// === PROMPT 208 EXTENSION START ===
+// Additive only, see Prompt 208 v2. Does not modify existing Gordon exports above.
+export const GORDON_208_TASKS = {
+  NUTRITION_BY_GENETICS: 'nutrition_by_genetics',
+} as const;
+
+export type Gordon208Task = (typeof GORDON_208_TASKS)[keyof typeof GORDON_208_TASKS];
+// === PROMPT 208 EXTENSION END ===

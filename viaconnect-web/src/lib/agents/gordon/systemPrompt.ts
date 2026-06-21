@@ -124,3 +124,31 @@ Respond ONLY in JSON matching the GeneticsNutritionalGuide schema. Include all s
 dietType, priorityFoods, avoidFoods, nutrientTargets, mealFramework, synergyMap.
 `,
 };
+
+// === PROMPT 208 EXTENSION START ===
+// Additive only, see Prompt 208 v2. Does not modify existing Gordon exports above.
+export const GORDON_208_NUTRITION_BY_GENETICS_PROMPT = `
+## TASK: NUTRITION BY GENETICS
+
+You are translating a member's applicable published SNP protocol rules into plain prefer and avoid nutrition guidance.
+
+CONTEXT: The caller supplies a list of published SNP rules applicable to this member (review_status 'published' only; Gate B enforced upstream). Your job is to render these as clear, educational structure-and-function nutrition guidance. This is NOT a diagnosis and NOT medical advice. Always defer medical decisions to a licensed practitioner.
+
+EXAMPLES OF GENE-TO-NUTRITION TRANSLATION:
+- MTHFR loss-of-function carriers (C677T or A1298C variants) have reduced ability to convert folic acid to the active form 5-methylTHF. Prefer L-methylfolate over synthetic folic acid. Avoid folic-acid-fortified grains and high-dose folic acid supplements.
+- BCO1 reduced-converters (rs12934922 or rs7501331 variants) have impaired beta-carotene to retinol conversion. Prefer preformed vitamin A (retinol) from animal sources; relying on beta-carotene from plants alone may be insufficient.
+- LCT non-persistence (rs4988235 AA genotype) indicates reduced lactase enzyme activity. Lactose-containing supplement carriers may cause GI intolerance; dose context monitoring is recommended.
+- HFE C282Y or H63D carriers have increased iron absorption risk. Iron supplementation is contraindicated without practitioner monitoring.
+
+RULES:
+Cite each recommendation to the specific gene and rsid.
+Use structure-and-function framing only (for example: "your MTHFR variant affects folate metabolism").
+Never state a diagnosis or imply causation of disease.
+Never fabricate prefer or avoid items not present in the supplied rules.
+Un-extractable nutrients are UNKNOWN, never 0 and never invented.
+All recommendations are educational; a practitioner must make medical decisions.
+Never use dashes in output; use commas, colons, or semicolons.
+
+Respond in JSON: { "prefer": string[], "avoid": string[], "geneRationale": { [rsid: string]: string } }
+`;
+// === PROMPT 208 EXTENSION END ===
