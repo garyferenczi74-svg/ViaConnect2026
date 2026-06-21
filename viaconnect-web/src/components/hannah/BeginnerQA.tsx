@@ -5,6 +5,7 @@ import { SendHorizonal, ChevronDown } from 'lucide-react';
 import { getDisplayName } from '@/lib/getDisplayName';
 import { DSHEADisclaimer } from '@/components/compliance/DSHEADisclaimer';
 import { EmergingBadge } from './EmergingBadge';
+import { BEGINNER_QA_DOMAINS, type BeginnerQADomainId } from './beginnerQADomains';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -25,16 +26,11 @@ interface QAEntry {
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
-const DOMAINS = [
-  { id: 'genomics',       label: 'Genomics' },
-  { id: 'nutraceuticals', label: 'Nutraceuticals' },
-  { id: 'biohacking',     label: 'Biohacking' },
-  { id: 'athletics',      label: 'Athletics' },
-  { id: 'weight-loss',    label: 'Weight Loss' },
-  { id: 'longevity',      label: 'Longevity' },
-] as const;
+// Domain list lives in beginnerQADomains.ts so tests can import it
+// without triggering the JSX transform (BeginnerQA.tsx uses JSX).
+const DOMAINS = BEGINNER_QA_DOMAINS;
 
-type DomainId = (typeof DOMAINS)[number]['id'];
+type DomainId = BeginnerQADomainId;
 
 const HANNAH_NAME = getDisplayName('hannah');
 
@@ -127,7 +123,7 @@ export function BeginnerQA(): JSX.Element {
   const selectedDomainLabel = DOMAINS.find((d) => d.id === domain)?.label ?? domain;
 
   return (
-    <div className="flex flex-col w-full">
+    <div className="flex flex-col w-full h-full">
       {/* ── Domain selector ─────────────────────────────────────── */}
       <div className="px-3 md:px-5 pt-4 pb-3">
         <p className="text-xs text-gray-400 mb-2">Topic area</p>

@@ -7,12 +7,16 @@
  * These tests verify module contracts, domain constants, display name,
  * copy compliance, and API shape without a DOM.
  *
+ * Domain constants are imported from beginnerQADomains.ts (pure TS, no JSX)
+ * so this test runs under the default vitest config without jsx transform.
+ *
  * To enable full DOM tests, install jsdom + @testing-library/dom and
- * update vitest.config.components.ts environment to "jsdom".
+ * update vitest.config.ts (or an equivalent config) environment to "jsdom".
  */
 
 import { describe, it, expect } from 'vitest';
 import { getDisplayName } from '@/lib/getDisplayName';
+import { BEGINNER_QA_DOMAINS } from '../beginnerQADomains';
 
 // U+2013 en-dash (8211) and U+2014 em-dash (8212) via fromCharCode so the
 // source file does not contain the literal bytes that trigger the project
@@ -36,24 +40,37 @@ describe('getDisplayName("hannah")', () => {
 
 // ── Six required domains ─────────────────────────────────────────────────────
 
-// Mirror the DOMAINS array in BeginnerQA.tsx so changes to either force
-// a deliberate update to both.
-const REQUIRED_DOMAINS = [
+// Import the live domain list so changes to beginnerQADomains.ts force
+// deliberate test failures. The expected array must match
+// POST /api/hannah/ask VALID_DOMAINS exactly.
+const EXPECTED_DOMAIN_IDS = [
   'genomics',
   'nutraceuticals',
   'biohacking',
   'athletics',
-  'weight-loss',
+  'weightloss',
   'longevity',
 ] as const;
 
 describe('BeginnerQA domain list', () => {
   it('has exactly six domains', () => {
-    expect(REQUIRED_DOMAINS).toHaveLength(6);
+    expect(BEGINNER_QA_DOMAINS).toHaveLength(6);
   });
 
-  it.each(REQUIRED_DOMAINS)('includes domain "%s"', (id) => {
-    expect(REQUIRED_DOMAINS).toContain(id);
+  it('ids match the API-accepted domain list exactly', () => {
+    const ids = BEGINNER_QA_DOMAINS.map((d) => d.id);
+    expect(ids).toEqual([...EXPECTED_DOMAIN_IDS]);
+  });
+
+  it.each(EXPECTED_DOMAIN_IDS)('includes domain id "%s"', (id) => {
+    const ids = BEGINNER_QA_DOMAINS.map((d) => d.id);
+    expect(ids).toContain(id);
+  });
+
+  it('uses weightloss (no hyphen) to match POST /api/hannah/ask validation', () => {
+    const ids = BEGINNER_QA_DOMAINS.map((d) => d.id);
+    expect(ids).toContain('weightloss');
+    expect(ids).not.toContain('weight-loss');
   });
 });
 
