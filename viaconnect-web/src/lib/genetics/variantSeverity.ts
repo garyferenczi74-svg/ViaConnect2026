@@ -5,35 +5,32 @@
 // function of zygosity: a heterozygous result on a high impact variant can be
 // High, while a heterozygous result on a minor variant can be Low.
 //
-// IT SHIPS EMPTY ON PURPOSE. The diagnostic for 204g found that no per-genotype
-// severity source ever existed in this codebase (only retired demo impacts in
-// geneticsVariantSamples.ts, hand assigned per rsID and never per genotype). Per
-// the Decision Gate, severity tiers must NOT be invented, because that would
-// silently change clinical scoring. So the engine reads tiers ONLY from this map;
-// an unmapped (rsID, genotype) returns null and the variant renders the neutral
-// unscored fallback, never a fabricated tier. This mirrors the 204d / 204f
-// pattern: the structure is wired now, the validated content is a human gated
-// pass (Hannah plus clinical and compliance review) that populates this map.
-//
-// To populate (the content pass, not this prompt): add an rsID key whose value
-// maps each clinically reviewed genotype (normalized, see normalizeGenotype) to
-// its validated tier. Example shape only, intentionally commented out so nothing
-// ships unvalidated:
-//   // 'rs1801133': { 'CT': 'high', 'TT': 'high', 'CC': 'low' },
-//
-// Standing rules honored: no invented tiers, no em or en dashes, TypeScript
-// strict (no any).
+// PANEL-SCOPED (go-live 2026-06-20, after Gary's clinical and compliance sign-off).
+// The map is keyed by PANEL SLUG first, then rsID, then normalized genotype, so a
+// shared rsID (TCN2 rs1801198, SOD2 rs4880, DAO, VDR all appear in more than one
+// panel) NEVER leaks one panel's validated tier onto another panel's report. Each
+// panel reads ONLY its own entry. The methylation panel (genex-m) is absent here
+// on purpose: it is scored by zygosity through methylationSeverityFor, not by
+// genotype, so severityFor returns null for it and the report falls back to the
+// copy-count display. A panel with no approved per-genotype source is simply
+// absent from this map, so every such variant still renders the honest unscored
+// fallback, never a fabricated tier. Tiers are NOT invented here; the values come
+// from the panel severity drafts, each authored by Hannah and signed off by Gary.
 
 import type { SeverityTier } from './severity';
+import { NUTRIGEN_DX_SEVERITY_DRAFT } from './drafts/nutrigenDxSeverityDraft';
+import { HORMONE_IQ_SEVERITY_DRAFT } from './drafts/hormoneIqSeverityDraft';
 
-// rsID (lowercase) -> normalized genotype -> validated tier. EMPTY for the
-// genotype-keyed path: the DNA-raw upload pipeline that stores an actual genotype
-// (CT, GG, ...) has no validated per-genotype source yet, so it stays empty and
-// every such variant renders the honest unscored fallback until a content pass
-// populates it. Methylation-panel variants take the separate zygosity path below
-// (methylationSeverityFor), because their stored result is a +/+ +/- -/- zygosity
-// call, not a genotype.
-export const VARIANT_SEVERITY: Record<string, Record<string, SeverityTier>> = {};
+// panelSlug -> rsID (lowercase) -> normalized genotype -> validated tier. The two
+// SNP panels that passed the gate are wired here; the descriptive markers in each
+// (FUT2, AMY1, GST deletions, HLA, MCM6, NAT2, CYP19A1) are absent from their
+// panel map by design and render unscored. EpigenHQ, PeptideIQ, and CannabisIQ are
+// not here: EpigenHQ has no genotype scoring and Peptide / Cannabis are
+// educational (untiered).
+export const VARIANT_SEVERITY: Record<string, Record<string, Record<string, SeverityTier>>> = {
+  'nutrigen-dx': NUTRIGEN_DX_SEVERITY_DRAFT,
+  'hormone-iq': HORMONE_IQ_SEVERITY_DRAFT,
+};
 
 // Normalize a genotype string for lookup: uppercase, strip spaces and separators
 // so "C/T", "c t", and "CT" all match the same key. Order is preserved as stored
@@ -57,12 +54,19 @@ export function canonicalGenotype(genotype: string): string {
   return normalizeGenotype(genotype).split('').sort().join('');
 }
 
-// Resolve the validated severity tier for a member's result, or null when the
-// (rsID, genotype) has no validated assignment yet. Null is the honest unscored
-// state; callers must NOT substitute a guessed tier.
-export function severityFor(rsid: string | null, genotype: string | null): SeverityTier | null {
-  if (!rsid || !genotype) return null;
-  const byGenotype = VARIANT_SEVERITY[rsid.trim().toLowerCase()];
+// Resolve the validated severity tier for a member's result on a SPECIFIC panel,
+// or null when the (panel, rsID, genotype) has no validated assignment. Null is
+// the honest unscored state; callers must NOT substitute a guessed tier. The panel
+// slug scopes the lookup so a shared rsID never crosses panels.
+export function severityFor(
+  panelSlug: string | null,
+  rsid: string | null,
+  genotype: string | null,
+): SeverityTier | null {
+  if (!panelSlug || !rsid || !genotype) return null;
+  const byRsid = VARIANT_SEVERITY[panelSlug.trim().toLowerCase()];
+  if (!byRsid) return null;
+  const byGenotype = byRsid[rsid.trim().toLowerCase()];
   if (!byGenotype) return null;
   return byGenotype[normalizeGenotype(genotype)] ?? null;
 }

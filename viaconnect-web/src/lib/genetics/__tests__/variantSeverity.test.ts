@@ -1,7 +1,9 @@
-// Prompt 204g (2026-06-19): tests for the validated per-genotype severity SOURCE.
-// They lock the Decision Gate outcome: the source ships EMPTY (no invented
-// tiers), and an unmapped (rsID, genotype) resolves to null, the honest unscored
-// state, never a fabricated tier.
+// Prompt 204g + go-live (2026-06-20): tests for the validated per-genotype
+// severity SOURCE. After Gary's clinical and compliance sign-off the source is
+// PANEL-SCOPED and wired for the two SNP panels that passed the gate. They lock
+// the panel-scoping (a shared rsID never crosses panels), the honest unscored null
+// for an unmapped (panel, rsID, genotype), and that methylation is absent (it is
+// scored by zygosity, not genotype).
 
 import { describe, it, expect } from 'vitest';
 import {
@@ -11,22 +13,43 @@ import {
   methylationSeverityFor,
 } from '../variantSeverity';
 
-describe('VARIANT_SEVERITY source', () => {
-  it('ships empty until the validated clinical content pass populates it', () => {
-    expect(Object.keys(VARIANT_SEVERITY)).toHaveLength(0);
+describe('VARIANT_SEVERITY source (panel-scoped, go-live)', () => {
+  it('is keyed by panel slug and wired for the two gate-approved SNP panels', () => {
+    expect(Object.keys(VARIANT_SEVERITY).sort()).toEqual(['hormone-iq', 'nutrigen-dx']);
+  });
+
+  it('does NOT include the methylation panel (it is scored by zygosity, not genotype)', () => {
+    expect(VARIANT_SEVERITY['genex-m']).toBeUndefined();
   });
 });
 
-describe('severityFor', () => {
-  it('returns null for an unmapped variant (honest unscored state)', () => {
-    expect(severityFor('rs1801133', 'CT')).toBeNull();
-    expect(severityFor('rs4680', 'AG')).toBeNull();
+describe('severityFor (panel-scoped)', () => {
+  it('scores a validated (panel, rsID, genotype) from that panel only', () => {
+    expect(severityFor('nutrigen-dx', 'rs1801133', 'CT')).toBe('moderate');
+    expect(severityFor('nutrigen-dx', 'rs1801133', 'TT')).toBe('high');
+    expect(severityFor('nutrigen-dx', 'rs1801133', 'CC')).toBe('low');
+    expect(severityFor('hormone-iq', 'rs4680', 'AA')).toBe('moderate');
   });
 
-  it('returns null when the rsID or genotype is missing', () => {
-    expect(severityFor(null, 'CT')).toBeNull();
-    expect(severityFor('rs1801133', null)).toBeNull();
-    expect(severityFor('', 'CT')).toBeNull();
+  it('panel-scopes a shared rsID: the same rsID is not scored on another panel', () => {
+    // rs1801198 (TCN2) is validated on NutrigenDX but the methylation panel has no
+    // genotype source, so it stays null there (no cross-panel contamination).
+    expect(severityFor('nutrigen-dx', 'rs1801198', 'GG')).toBe('moderate');
+    expect(severityFor('genex-m', 'rs1801198', 'GG')).toBeNull();
+    expect(severityFor('hormone-iq', 'rs1801198', 'GG')).toBeNull();
+  });
+
+  it('returns null for an unmapped panel, variant, or genotype (honest unscored state)', () => {
+    expect(severityFor('nutrigen-dx', 'rs00000000', 'CT')).toBeNull();
+    expect(severityFor('epigen-hq', 'rs1801133', 'CT')).toBeNull();
+    expect(severityFor('nutrigen-dx', 'rs1801133', 'GG')).toBeNull();
+  });
+
+  it('returns null when the panel, rsID, or genotype is missing', () => {
+    expect(severityFor(null, 'rs1801133', 'CT')).toBeNull();
+    expect(severityFor('nutrigen-dx', null, 'CT')).toBeNull();
+    expect(severityFor('nutrigen-dx', 'rs1801133', null)).toBeNull();
+    expect(severityFor('', 'rs1801133', 'CT')).toBeNull();
   });
 });
 

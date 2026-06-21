@@ -13,7 +13,7 @@ import path from "node:path";
 import { NUTRIGEN_DX_DEEP_DRAFTS } from "../nutrigen-dx-deep.draft";
 import { NUTRIGEN_DX_SEVERITY_DRAFT } from "@/lib/genetics/drafts/nutrigenDxSeverityDraft";
 import { DEEP_REPORT_REGISTRY } from "@/lib/genex360/variantReport.config";
-import { normalizeGenotype } from "@/lib/genetics/variantSeverity";
+import { normalizeGenotype, VARIANT_SEVERITY } from "@/lib/genetics/variantSeverity";
 
 // The 27 NutrigenDX SNP roster (lowercased symbol slugs), from panels.ts. HLA-DQ2
 // and HLA-DQ8 share one marker; GSTM1 and GSTT1 are null deletion loci. The
@@ -66,17 +66,15 @@ describe("NutrigenDX deep report DRAFT", () => {
     expect(draftSource.includes(String.fromCharCode(0x2013))).toBe(false);
   });
 
-  it("NON-LIVE GATE: the draft is not attached to markers and not registered", () => {
-    // The Report pill / blueprint only render a panel's reports when that panel is
-    // in DEEP_REPORT_REGISTRY. The draft must NOT be there yet (only on the human
-    // gate). Today the registry holds only genex-m.
-    expect(Object.keys(DEEP_REPORT_REGISTRY)).not.toContain("nutrigen-dx");
-    // And the draft module name is not imported by panels.ts (the attach loop).
+  it("LIVE (go-live 2026-06-20): attached to markers and registered", () => {
+    // After the gate, NutrigenDX is registered (Report pill + blueprint render it)
+    // and the draft is attached to its markers by panels.ts.
+    expect(Object.keys(DEEP_REPORT_REGISTRY)).toContain("nutrigen-dx");
     const panelsSource = readFileSync(
       path.resolve(__dirname, "..", "panels.ts"),
       "utf-8",
     );
-    expect(panelsSource).not.toContain("nutrigen-dx-deep.draft");
+    expect(panelsSource).toContain("nutrigen-dx-deep.draft");
   });
 });
 
@@ -104,13 +102,8 @@ describe("NutrigenDX severity DRAFT", () => {
     }
   });
 
-  it("NON-LIVE GATE: the severity draft is not merged into VARIANT_SEVERITY", () => {
-    const liveSource = readFileSync(
-      path.resolve(__dirname, "..", "..", "..", "lib", "genetics", "variantSeverity.ts"),
-      "utf-8",
-    );
-    expect(liveSource).not.toContain("nutrigenDxSeverityDraft");
-    expect(liveSource).not.toContain("NUTRIGEN_DX_SEVERITY_DRAFT");
+  it("LIVE (go-live 2026-06-20): the severity draft is merged into VARIANT_SEVERITY under its panel", () => {
+    expect(VARIANT_SEVERITY["nutrigen-dx"]).toBe(NUTRIGEN_DX_SEVERITY_DRAFT);
   });
 });
 

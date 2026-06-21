@@ -137,6 +137,7 @@ export function PanelDescriptionCard({
               severityByRsid={severityByRsid}
               userSex={userSex}
               userGenotypeByRsid={userGenotypeByRsid}
+              panelSlug={panel.slug}
             />
           ))}
         </div>

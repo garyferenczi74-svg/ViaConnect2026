@@ -111,6 +111,12 @@ interface SnpDeepReportProps {
   // stores a +/+ zygosity, so its key is absent or empty here and the report falls
   // back to the tier match. Empty until an upload exists.
   userGenotypeByRsid?: ReadonlyMap<string, string>;
+  // Go-live (2026-06-20): the slug of the panel this report belongs to, so the
+  // STATUS chip and row tint read THIS panel's validated severity (the source is
+  // panel-scoped). The same gene's report in two panels (for example MTHFR in
+  // GeneXM and NutrigenDX) reads each panel's own tiers. Empty falls back to the
+  // copy-count display.
+  panelSlug?: string;
 }
 
 // Chip classes for one genotype status label, selected by keyword. Returns the
@@ -194,14 +200,20 @@ function statusTierFor(call: string, ref: string | null): StatusTier | null {
 // stays on the fallback path unchanged. The validated map is empty for a panel
 // until that panel's per-genotype source is approved and merged, so nothing
 // changes for a panel until it is live.
-function resolvedSeverityFor(rsid: string, call: string): SeverityTier | null {
-  return severityFor(rsid, call);
+// PANEL-SCOPED so a shared rsID is scored by THIS panel's validated source only.
+function resolvedSeverityFor(panelSlug: string, rsid: string, call: string): SeverityTier | null {
+  return severityFor(panelSlug, rsid, call);
 }
 
 // The STATUS tier (Typical / Moderate / High) for a row: validated tier mapped to
 // the status scale, else the copy-count fallback.
-function resolvedStatusTier(rsid: string, call: string, ref: string | null): StatusTier | null {
-  const validated = resolvedSeverityFor(rsid, call);
+function resolvedStatusTier(
+  panelSlug: string,
+  rsid: string,
+  call: string,
+  ref: string | null,
+): StatusTier | null {
+  const validated = resolvedSeverityFor(panelSlug, rsid, call);
   if (validated) return severityToStatusTier(validated);
   return statusTierFor(call, ref);
 }
@@ -210,8 +222,13 @@ function resolvedStatusTier(rsid: string, call: string, ref: string | null): Sta
 // Reads the SAME resolver as the StatusChip, so the row glass shade and the status
 // pill for a row always agree (validated when available, copy-count otherwise).
 // null for a non-tier row (representative or pending), which renders untinted.
-function rowSeverityFor(rsid: string, genotype: SnpGenotype, ref: string | null): SeverityTier | null {
-  const validated = resolvedSeverityFor(rsid, genotype.genotype);
+function rowSeverityFor(
+  panelSlug: string,
+  rsid: string,
+  genotype: SnpGenotype,
+  ref: string | null,
+): SeverityTier | null {
+  const validated = resolvedSeverityFor(panelSlug, rsid, genotype.genotype);
   if (validated) return validated;
   const tier = statusTierFor(genotype.genotype, ref);
   return tier ? STATUS_TIER_TO_SEVERITY[tier] : null;
@@ -220,15 +237,17 @@ function rowSeverityFor(rsid: string, genotype: SnpGenotype, ref: string | null)
 // The STATUS chip: the resolved tier colored through severityToken(), or the
 // original descriptive label when no clean tier can be derived.
 function StatusChip({
+  panelSlug,
   rsid,
   genotype,
   refAllele,
 }: {
+  panelSlug: string;
   rsid: string;
   genotype: SnpGenotype;
   refAllele: string | null;
 }) {
-  const tier = resolvedStatusTier(rsid, genotype.genotype, refAllele);
+  const tier = resolvedStatusTier(panelSlug, rsid, genotype.genotype, refAllele);
   if (!tier) {
     return <span className={tierClasses(genotype.label)}>{genotype.label}</span>;
   }
@@ -387,6 +406,7 @@ export function SnpDeepReport({
   severityByRsid,
   userSex,
   userGenotypeByRsid,
+  panelSlug = "",
 }: SnpDeepReportProps) {
   return (
     <div className="space-y-7 text-white">
@@ -506,7 +526,7 @@ export function SnpDeepReport({
                       // Prompt 204k: tint each card by its own status tier (Typical
                       // green, Moderate yellow, High red), a stronger glass plus a
                       // tier border on the matched row. A non-tier row stays neutral.
-                      const rowSev = rowSeverityFor(variant.rsid, genotype, refAllele);
+                      const rowSev = rowSeverityFor(panelSlug, variant.rsid, genotype, refAllele);
                       const rowClass = rowSev
                         ? isUserRow
                           ? `border ${severityToken(rowSev).matchedBorder} ${severityToken(rowSev).rowGlassMatched}`
@@ -524,7 +544,7 @@ export function SnpDeepReport({
                               {genotype.genotype}
                             </span>
                           ) : null}
-                          <StatusChip rsid={variant.rsid} genotype={genotype} refAllele={refAllele} />
+                          <StatusChip panelSlug={panelSlug} rsid={variant.rsid} genotype={genotype} refAllele={refAllele} />
                         </div>
                         <p className="mt-1.5 text-[13px] leading-relaxed text-white/75">
                           {genotype.interpretation}
@@ -559,7 +579,7 @@ export function SnpDeepReport({
                           // Prompt 204k: tint each row by its own status tier; the
                           // matched row gets a stronger glass plus the tier left
                           // accent. A non-tier row stays untinted (neutral).
-                          const rowSev = rowSeverityFor(variant.rsid, genotype, refAllele);
+                          const rowSev = rowSeverityFor(panelSlug, variant.rsid, genotype, refAllele);
                           const rowClass = rowSev
                             ? isUserRow
                               ? `${severityToken(rowSev).rowGlassMatched} ${severityToken(rowSev).accent}`
@@ -581,7 +601,7 @@ export function SnpDeepReport({
                               </div>
                             </td>
                             <td className="px-3 py-2.5">
-                              <StatusChip rsid={variant.rsid} genotype={genotype} refAllele={refAllele} />
+                              <StatusChip panelSlug={panelSlug} rsid={variant.rsid} genotype={genotype} refAllele={refAllele} />
                             </td>
                             <td className="px-3 py-2.5 text-[13px] leading-relaxed text-white/75">
                               {genotype.interpretation}

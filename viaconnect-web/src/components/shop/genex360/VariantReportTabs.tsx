@@ -71,6 +71,9 @@ interface VariantReportTabsProps {
   // Prompt 204 follow-up (go-live blocker 1): the member's canonical genotype by
   // rsID, forwarded so SnpDeepReport marks the member's exact row.
   userGenotypeByRsid?: ReadonlyMap<string, string>;
+  // Go-live: the panel slug, forwarded so the STATUS chip reads this panel's
+  // validated severity (panel-scoped).
+  panelSlug?: string;
 }
 
 // True when the active variant deep link targets a variant that lives in THIS
@@ -87,6 +90,7 @@ export function VariantReportTabs({
   severityByRsid,
   userSex,
   userGenotypeByRsid,
+  panelSlug,
 }: VariantReportTabsProps) {
   const slug = marker.symbol.toLowerCase();
 
@@ -238,6 +242,7 @@ export function VariantReportTabs({
             severityByRsid={severityByRsid}
             userSex={userSex}
             userGenotypeByRsid={userGenotypeByRsid}
+            panelSlug={panelSlug}
           />
         </div>
       ) : null}

@@ -8,7 +8,7 @@ import path from "node:path";
 import { HORMONE_IQ_DEEP_DRAFTS } from "../hormone-iq-deep.draft";
 import { HORMONE_IQ_SEVERITY_DRAFT } from "@/lib/genetics/drafts/hormoneIqSeverityDraft";
 import { DEEP_REPORT_REGISTRY } from "@/lib/genex360/variantReport.config";
-import { normalizeGenotype } from "@/lib/genetics/variantSeverity";
+import { normalizeGenotype, VARIANT_SEVERITY } from "@/lib/genetics/variantSeverity";
 
 // The 5 HormoneIQ genotype SNPs. The other 24 markers are biomarkers (lab track).
 const HORMONE_IQ_SNP_ROSTER = ["comt", "cyp1a1", "cyp1b1", "cyp19a1", "srd5a2"];
@@ -63,17 +63,13 @@ describe("HormoneIQ deep report DRAFT", () => {
     }
   });
 
-  it("NON-LIVE GATE: not attached to markers, not registered, not merged", () => {
-    expect(Object.keys(DEEP_REPORT_REGISTRY)).not.toContain("hormone-iq");
+  it("LIVE (go-live 2026-06-20): attached to markers, registered, and severity merged under its panel", () => {
+    expect(Object.keys(DEEP_REPORT_REGISTRY)).toContain("hormone-iq");
     const panelsSource = readFileSync(
       path.resolve(__dirname, "..", "panels.ts"),
       "utf-8",
     );
-    expect(panelsSource).not.toContain("hormone-iq-deep.draft");
-    const liveSeverity = readFileSync(
-      path.resolve(__dirname, "..", "..", "..", "lib", "genetics", "variantSeverity.ts"),
-      "utf-8",
-    );
-    expect(liveSeverity).not.toContain("hormoneIqSeverityDraft");
+    expect(panelsSource).toContain("hormone-iq-deep.draft");
+    expect(VARIANT_SEVERITY["hormone-iq"]).toBe(HORMONE_IQ_SEVERITY_DRAFT);
   });
 });

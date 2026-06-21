@@ -9,6 +9,11 @@
 // brand; TypeScript strict (no any).
 
 import { GENEX_M_DEEP_REPORTS } from "@/data/genex360/genex-m-deep";
+// Go-live (2026-06-20, after Gary's clinical and compliance sign-off).
+import { NUTRIGEN_DX_DEEP_DRAFTS } from "@/data/genex360/nutrigen-dx-deep.draft";
+import { HORMONE_IQ_DEEP_DRAFTS } from "@/data/genex360/hormone-iq-deep.draft";
+import { PEPTIDE_IQ_DEEP_DRAFTS } from "@/data/genex360/peptide-iq-deep.draft";
+import { CANNABIS_IQ_DEEP_DRAFTS } from "@/data/genex360/cannabis-iq-deep.draft";
 import type { DeepReportRegistry } from "./types";
 
 // 1. INTEGRATION POINT: the live route of the Your DNA, Decoded / Your Genetic
@@ -34,6 +39,10 @@ export const ANCHOR_SCHEME: AnchorScheme = "rsid";
 //    pill lights up on those variants automatically.
 export const DEEP_REPORT_REGISTRY: DeepReportRegistry = {
   "genex-m": GENEX_M_DEEP_REPORTS,
+  "nutrigen-dx": NUTRIGEN_DX_DEEP_DRAFTS,
+  "hormone-iq": HORMONE_IQ_DEEP_DRAFTS,
+  "peptide-iq": PEPTIDE_IQ_DEEP_DRAFTS,
+  "cannabis-iq": CANNABIS_IQ_DEEP_DRAFTS,
 };
 
 // Maps a visible Your Variants tab label OR its non hyphenated tab slug to the

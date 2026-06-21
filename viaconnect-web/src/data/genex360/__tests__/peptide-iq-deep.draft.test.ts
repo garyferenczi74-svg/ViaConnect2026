@@ -57,12 +57,12 @@ describe("PeptideIQ educational DRAFT", () => {
     expect(source.includes(String.fromCharCode(0x2013))).toBe(false);
   });
 
-  it("NON-LIVE GATE: not attached to markers, not registered", () => {
-    expect(Object.keys(DEEP_REPORT_REGISTRY)).not.toContain("peptide-iq");
+  it("LIVE (go-live 2026-06-20): attached to markers and registered (educational, no severity)", () => {
+    expect(Object.keys(DEEP_REPORT_REGISTRY)).toContain("peptide-iq");
     const panelsSource = readFileSync(
       path.resolve(__dirname, "..", "panels.ts"),
       "utf-8",
     );
-    expect(panelsSource).not.toContain("peptide-iq-deep.draft");
+    expect(panelsSource).toContain("peptide-iq-deep.draft");
   });
 });

@@ -88,11 +88,20 @@ describe("GeneXM deep reports", () => {
     }
   });
 
-  it("does not attach deepReports to any other panel", () => {
+  it("attaches deepReports to the five wired panels but not EpigenHQ (go-live 2026-06-20)", () => {
+    // GeneXM was the only wired panel until the go-live; now NutrigenDX, HormoneIQ,
+    // PeptideIQ, and CannabisIQ are wired too. EpigenHQ stays unwired (its markers
+    // are epigenetic interpretations with no genotype report surface).
+    const WIRED = new Set(["genex-m", "nutrigen-dx", "hormone-iq", "peptide-iq", "cannabis-iq"]);
     for (const panel of GENEX360_PANELS) {
-      if (panel.slug === "genex-m") continue;
-      for (const marker of panel.groups.flatMap((group) => group.markers)) {
-        expect(marker.deepReport).toBeUndefined();
+      const withReport = panel.groups
+        .flatMap((group) => group.markers)
+        .filter((marker) => marker.deepReport).length;
+      if (panel.slug === "epigen-hq") {
+        expect(withReport).toBe(0);
+      } else {
+        expect(WIRED.has(panel.slug)).toBe(true);
+        expect(withReport).toBeGreaterThan(0);
       }
     }
   });

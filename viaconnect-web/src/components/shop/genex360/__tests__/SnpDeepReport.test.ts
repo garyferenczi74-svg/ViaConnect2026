@@ -191,16 +191,16 @@ describe('SnpDeepReport STATUS scale (Prompt 204i, Typical / Moderate / High)', 
     expect(source).toContain('function StatusChip');
     // Both genotype tables (mobile cards + desktop table) use StatusChip, now
     // keyed by rsid so it can read the validated per-genotype tier.
-    const chipUses = source.split('<StatusChip rsid={variant.rsid} genotype={genotype} refAllele={refAllele} />').length - 1;
+    const chipUses = source.split('<StatusChip panelSlug={panelSlug} rsid={variant.rsid} genotype={genotype} refAllele={refAllele} />').length - 1;
     expect(chipUses).toBe(2);
   });
 
-  it('reads the VALIDATED per-genotype tier first, copy-count only as fallback (go-live blocker 1)', () => {
-    // The resolver prefers the clinical map (severityFor) so a non-monotonic
-    // ladder (a homozygous variant scored Moderate, not High) is shown correctly;
-    // copy count is only the fallback when a variant has no validated entry.
+  it('reads the VALIDATED per-genotype tier first (panel-scoped), copy-count only as fallback', () => {
+    // The resolver prefers the clinical map (severityFor, panel-scoped) so a
+    // non-monotonic ladder (a homozygous variant scored Moderate, not High) is
+    // shown correctly; copy count is only the fallback with no validated entry.
     expect(source).toContain('function resolvedStatusTier');
-    expect(source).toContain('const validated = resolvedSeverityFor(rsid, call)');
+    expect(source).toContain('const validated = resolvedSeverityFor(panelSlug, rsid, call)');
     expect(source).toContain('if (validated) return severityToStatusTier(validated)');
     expect(source).toContain('return statusTierFor(call, ref)');
     expect(source).toContain('import { severityFor, canonicalGenotype }');
@@ -298,7 +298,7 @@ describe('SnpDeepReport row tier glass tint (Prompt 204k)', () => {
     expect(source).toContain('function rowSeverityFor');
     // The tint reads the validated tier first, the same resolver the StatusChip
     // uses, then falls back to the copy-count STATUS_TIER_TO_SEVERITY mapping.
-    expect(source).toContain('const validated = resolvedSeverityFor(rsid, genotype.genotype)');
+    expect(source).toContain('const validated = resolvedSeverityFor(panelSlug, rsid, genotype.genotype)');
     expect(source).toContain('STATUS_TIER_TO_SEVERITY[tier]');
   });
 
@@ -310,8 +310,8 @@ describe('SnpDeepReport row tier glass tint (Prompt 204k)', () => {
     // a tier border on the stacked mobile card.
     expect(source).toContain('severityToken(rowSev).accent');
     expect(source).toContain('severityToken(rowSev).matchedBorder');
-    // Computed once per layout (mobile cards + desktop table), keyed by rsid.
-    const uses = source.split('rowSeverityFor(variant.rsid, genotype, refAllele)').length - 1;
+    // Computed once per layout (mobile cards + desktop table), panel-scoped.
+    const uses = source.split('rowSeverityFor(panelSlug, variant.rsid, genotype, refAllele)').length - 1;
     expect(uses).toBe(2);
   });
 

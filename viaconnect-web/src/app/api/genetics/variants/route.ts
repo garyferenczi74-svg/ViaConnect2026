@@ -9,7 +9,7 @@ import { safeLog } from '@/lib/utils/safe-log';
 import { getBrandedPanelKeys } from '@/lib/genetics/brandedProvenance';
 import { severityFor, methylationSeverityFor } from '@/lib/genetics/variantSeverity';
 import type { SeverityTier } from '@/lib/genetics/severity';
-import type { PanelKey } from '@/lib/genetics/panelLabels';
+import { PANEL_LABELS, type PanelKey } from '@/lib/genetics/panelLabels';
 
 // The raw shape selected from user_variants. status is the zygosity notation
 // (the genotype chip), kept distinct from severity (the score).
@@ -73,8 +73,12 @@ export async function GET(): Promise<NextResponse> {
     // zygosity score; null when neither has a validated tier.
     const rows: VariantRow[] = dbRows.map((row) => ({
       ...row,
+      // Go-live (2026-06-20): severity is PANEL-SCOPED, so a shared rsID is scored
+      // by THIS panel's validated source, never another panel's. Methylation rows
+      // fall through to the zygosity path (their panel has no genotype source).
       severity:
-        severityFor(row.rsid, row.genotype) ?? methylationSeverityFor(row.rsid, row.status),
+        severityFor(PANEL_LABELS[row.panel_key]?.slug ?? null, row.rsid, row.genotype) ??
+        methylationSeverityFor(row.rsid, row.status),
     }));
     const variantsByPanel: Partial<Record<PanelKey, VariantRow[]>> = {};
     for (const row of rows) {

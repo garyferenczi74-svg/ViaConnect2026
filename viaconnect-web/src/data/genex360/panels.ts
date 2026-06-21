@@ -10,8 +10,16 @@
 // markerCount on each panel is the real number of marker entries in its groups
 // and must match markerCountLabel.
 
-import type { Panel, PanelSlug } from "./types";
+import type { Panel, PanelSlug, SnpDeepReport } from "./types";
 import { GENEX_M_DEEP_REPORTS } from "./genex-m-deep";
+// Go-live (2026-06-20, after Gary's clinical and compliance sign-off): the
+// gate-approved per-marker deep reports for the four ready panels. EpigenHQ is not
+// here (its 12 markers are epigenetic interpretations with no genotype report
+// surface yet).
+import { NUTRIGEN_DX_DEEP_DRAFTS } from "./nutrigen-dx-deep.draft";
+import { HORMONE_IQ_DEEP_DRAFTS } from "./hormone-iq-deep.draft";
+import { PEPTIDE_IQ_DEEP_DRAFTS } from "./peptide-iq-deep.draft";
+import { CANNABIS_IQ_DEEP_DRAFTS } from "./cannabis-iq-deep.draft";
 
 export const GENEX360_PANELS: Panel[] = [
   {
@@ -1025,5 +1033,32 @@ for (const marker of PANEL_BY_SLUG["genex-m"].groups.flatMap((group) => group.ma
   const report = GENEX_M_DEEP_REPORTS[marker.symbol.toLowerCase()];
   if (report) {
     marker.deepReport = report;
+  }
+}
+
+// Go-live (2026-06-20): attach the four gate-approved panels' deep reports to
+// their markers, the same way GeneXM does. Keyed by a slug of the gene symbol
+// (lowercase, spaces to hyphens) so a multi-word marker such as "HLA-DQ2 and
+// HLA-DQ8" matches its draft key "hla-dq2-and-hla-dq8". A marker with no matching
+// report (for example a HormoneIQ biomarker, which is not a genotype SNP) is left
+// unchanged and shows its description only.
+function markerDeepReportSlug(symbol: string): string {
+  return symbol.toLowerCase().replace(/\s+/g, "-");
+}
+
+const GATE_APPROVED_DEEP_REPORTS: Partial<Record<PanelSlug, Record<string, SnpDeepReport>>> = {
+  "nutrigen-dx": NUTRIGEN_DX_DEEP_DRAFTS,
+  "hormone-iq": HORMONE_IQ_DEEP_DRAFTS,
+  "peptide-iq": PEPTIDE_IQ_DEEP_DRAFTS,
+  "cannabis-iq": CANNABIS_IQ_DEEP_DRAFTS,
+};
+
+for (const [slug, reports] of Object.entries(GATE_APPROVED_DEEP_REPORTS)) {
+  if (!reports) continue;
+  for (const marker of PANEL_BY_SLUG[slug as PanelSlug].groups.flatMap((group) => group.markers)) {
+    const report = reports[markerDeepReportSlug(marker.symbol)];
+    if (report) {
+      marker.deepReport = report;
+    }
   }
 }

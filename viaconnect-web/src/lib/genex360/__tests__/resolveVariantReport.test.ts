@@ -42,10 +42,18 @@ describe("resolveVariantReport", () => {
     expect(target.href).toBe("");
   });
 
-  it("returns exists false for a panel whose reports have not shipped", () => {
-    // FUT2 rs601338 is in the NutrigenDX sample; NutrigenDX deep reports are not
-    // built yet, and the rsID is not in any shipped panel, so there is no report.
-    expect(resolveVariantReport("rs601338", "nutrigendx").exists).toBe(false);
+  it("resolves a NutrigenDX variant now that its reports have shipped (go-live 2026-06-20)", () => {
+    // FUT2 rs601338 is a NutrigenDX keyVariant, and NutrigenDX is now registered,
+    // so the Report pill resolves to its gene report.
+    const target = resolveVariantReport("rs601338", "nutrigendx");
+    expect(target.exists).toBe(true);
+    expect(target.panelSlug).toBe("nutrigen-dx");
+    expect(target.geneSlug).toBe("fut2");
+    expect(target.level).toBe("variant");
+  });
+
+  it("returns exists false for a truly unknown rsID on a shipped panel", () => {
+    expect(resolveVariantReport("rs00000000", "nutrigendx").exists).toBe(false);
   });
 
   it("returns exists false for an unknown rsID", () => {
