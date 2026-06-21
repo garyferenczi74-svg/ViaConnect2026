@@ -17,7 +17,8 @@
 // #2DA5A0, white opacity neutrals), Lucide strokeWidth 1.5 outline icons, no
 // emojis, no em or en dashes, TypeScript strict (no any).
 
-import { ArrowDown, ArrowRight, ArrowUp, Microscope, Sparkles } from "lucide-react";
+import Link from "next/link";
+import { ArrowDown, ArrowRight, ArrowUp, Microscope, Sparkles, Upload } from "lucide-react";
 import type { EpigeneticInterpretation } from "@/data/genex360/types";
 import type { EpigeneticResult } from "@/lib/genetics/loadEpigeneticResults";
 
@@ -70,10 +71,19 @@ export function EpigeneticInterpretationCard({
           ) : null}
         </section>
       ) : (
-        <p className="text-[12px] leading-relaxed text-white/45">
-          Connect your EpigenHQ test to see your own reading for this marker. The reading below is
-          educational background.
-        </p>
+        <div className="space-y-2">
+          <p className="text-[12px] leading-relaxed text-white/45">
+            Connect your EpigenHQ test to see your own reading for this marker. The interpretation
+            below is educational background.
+          </p>
+          <Link
+            href="/genetics/epigenetic/upload"
+            className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-[#2DA5A0]/40 bg-[#2DA5A0]/10 px-4 py-2 text-[13px] font-semibold text-[#2DA5A0] transition-colors hover:bg-[#2DA5A0]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744]"
+          >
+            <Upload aria-hidden="true" className="h-4 w-4 shrink-0" strokeWidth={1.5} />
+            Upload your EpigenHQ results
+          </Link>
+        </div>
       )}
 
       {/* What it measures. */}
