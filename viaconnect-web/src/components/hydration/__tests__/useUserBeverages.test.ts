@@ -146,6 +146,33 @@ describe('useUserBeverages source: UserBeverage type shape', () => {
 // themselves are deterministic and testable.
 // ---------------------------------------------------------------------------
 
+describe('useUserBeverages source: enabled option', () => {
+  it('accepts an optional opts parameter with enabled boolean', () => {
+    expect(src).toContain('opts?: UseUserBeveragesOptions');
+    const hasEnabled = src.includes('opts?.enabled') || src.includes("opts?.enabled ?? true");
+    expect(hasEnabled).toBe(true);
+  });
+
+  it('gates the mount fetch on enabled flag', () => {
+    expect(src).toContain('if (!enabled) return;');
+  });
+
+  it('includes enabled in the useEffect dependency array', () => {
+    expect(src).toContain('[refresh, enabled]');
+  });
+
+  it('defaults enabled to true so existing call sites are unaffected', () => {
+    expect(src).toContain('?? true');
+  });
+
+  it('source: no fetch fires when enabled is false (effect returns early)', () => {
+    // Source contract: the effect body starts with `if (!enabled) return;`
+    // so when enabled === false the fetch is never reached.
+    const effectBody = src.slice(src.indexOf('useEffect('), src.indexOf('[refresh, enabled]'));
+    expect(effectBody).toContain('if (!enabled) return;');
+  });
+});
+
 describe('useUserBeverages fetch behavior: GET on mount', () => {
   let fetchMock: ReturnType<typeof vi.fn>;
   const originalFetch = global.fetch;

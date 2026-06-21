@@ -49,7 +49,12 @@ export interface UseUserBeveragesReturn {
   update: (id: string, patch: UpdateBeveragePatch) => Promise<UserBeverage | null>;
 }
 
-export function useUserBeverages(): UseUserBeveragesReturn {
+export interface UseUserBeveragesOptions {
+  enabled?: boolean;
+}
+
+export function useUserBeverages(opts?: UseUserBeveragesOptions): UseUserBeveragesReturn {
+  const enabled = opts?.enabled ?? true;
   const [beverages, setBeverages] = useState<UserBeverage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -72,8 +77,9 @@ export function useUserBeverages(): UseUserBeveragesReturn {
   }, []);
 
   useEffect(() => {
+    if (!enabled) return;
     void refresh();
-  }, [refresh]);
+  }, [refresh, enabled]);
 
   const create = useCallback(
     async (input: CreateBeverageInput): Promise<UserBeverage | null> => {

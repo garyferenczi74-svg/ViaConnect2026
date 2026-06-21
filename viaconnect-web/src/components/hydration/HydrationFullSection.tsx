@@ -32,6 +32,7 @@ import { ElectrolyteSummary } from '@/components/nutrition/hydration/Electrolyte
 import type { ElectrolyteCatalogRow } from '@/components/nutrition/hydration/ElectrolyteSummary';
 import { CaffeineOverlay } from '@/components/nutrition/hydration/CaffeineOverlay';
 import { useBeverageCatalog } from '@/components/nutrition/hydration/BeveragePicker/useBeverageCatalog';
+import { isCustomBeveragesEnabled } from '@/lib/config/custom-beverages-flag';
 
 const BEVERAGE_KIND_LABELS: Record<string, { label: string; Icon: typeof Droplet }> = {
   pure_water: { label: 'Water', Icon: Droplet },
@@ -72,7 +73,7 @@ export function HydrationFullSection({
 
   const [editTarget, setEditTarget] = useState<{ mealId: string; volume: number; kind: HydrationBeverageKind } | null>(null);
   const { log: logBeverage } = useHydrationQuickLog();
-  const { beverages: userBeverages, create: createUserBeverage } = useUserBeverages();
+  const { beverages: userBeverages, create: createUserBeverage } = useUserBeverages({ enabled: isCustomBeveragesEnabled() });
 
   const [sleepStartHHMM, setSleepStartHHMM] = useState<string>('23:00');
   useEffect(() => {
