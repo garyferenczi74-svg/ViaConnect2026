@@ -1,4 +1,4 @@
-// Arnold system prompt — composes the 6 brain domains into the instruction
+// Arnold system prompt - composes the 6 brain domains into the instruction
 // used for every Claude Vision API call.
 
 import { BODY_COMPOSITION_SCIENCE_SUMMARY } from './brain/bodyCompositionScience';
@@ -138,3 +138,53 @@ export function buildArnoldUserPrompt(ctx: {
   parts.push('Analyze the attached photos following the protocol and return JSON only.');
   return parts.join('\n');
 }
+
+// === PROMPT 208 EXTENSION START ===
+// Additive only, see Prompt 208 v2. Does not modify any existing Arnold export above.
+// Arnold reads PUBLISHED knowledge atoms and contextualizes tracked metrics against
+// the active protocol. Surfaces relationships only, never diagnoses.
+
+export const ARNOLD_208_PROTOCOL_CONTEXT_DIRECTIVE = `
+When the member has an active published protocol, use the protocol topics and recommended forms
+as context for interpreting tracked body-composition and recovery metrics.
+Surface observable relationships between the tracked data and the protocol context only.
+These are observations, not a diagnosis. Never diagnose, never make disease or treatment claims,
+and never substitute this context for medical advice from a licensed practitioner.
+All protocol relationships described here are informational correlations only, not a diagnosis.
+`.trim();
+
+export interface Arnold208ProtocolContextInput {
+  activeTopics: string[];
+  recommendedForms: string[];
+}
+
+export function buildArnold208ProtocolContext(input: Arnold208ProtocolContextInput): string {
+  const { activeTopics, recommendedForms } = input;
+
+  if (activeTopics.length === 0 && recommendedForms.length === 0) {
+    return (
+      'No active protocol topics or recommended forms are on file for this member. ' +
+      'Tracked metrics are interpreted without protocol context. ' +
+      'These observations are not a diagnosis and do not substitute for guidance from a licensed practitioner.'
+    );
+  }
+
+  const parts: string[] = [];
+
+  if (activeTopics.length > 0) {
+    parts.push(`Active protocol topics: ${activeTopics.join(', ')}.`);
+  }
+
+  if (recommendedForms.length > 0) {
+    parts.push(`Recommended forms in the active protocol: ${recommendedForms.join(', ')}.`);
+  }
+
+  parts.push(
+    'Surface any observable relationships between these protocol elements and the tracked metrics as informational context only. ' +
+    'This is not a diagnosis. Never make disease or treatment claims. ' +
+    'Defer all medical decisions to a licensed practitioner.'
+  );
+
+  return parts.join(' ');
+}
+// === PROMPT 208 EXTENSION END ===
