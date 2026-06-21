@@ -19,6 +19,7 @@
 
 import Link from "next/link";
 import { ArrowDown, ArrowRight, ArrowUp, Microscope, Sparkles, Upload } from "lucide-react";
+import { SampleBadge } from "@/components/genetics/SampleBadge";
 import type { EpigeneticInterpretation } from "@/data/genex360/types";
 import type { EpigeneticResult } from "@/lib/genetics/loadEpigeneticResults";
 
@@ -53,8 +54,9 @@ export function EpigeneticInterpretationCard({
       {/* The member's reading, when on file. Teal panel, never an alarm color. */}
       {result ? (
         <section className="space-y-1 rounded-xl border border-[#2DA5A0]/30 bg-[#2DA5A0]/[0.08] p-3">
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-[#2DA5A0]">
+          <span className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-[#2DA5A0]">
             Your reading
+            {result.isSample ? <SampleBadge /> : null}
           </span>
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
             {valueDisplay ? (

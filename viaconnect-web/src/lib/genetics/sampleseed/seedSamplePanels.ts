@@ -32,6 +32,24 @@ export interface SeedSampleResult {
 
 const FAILED: SeedSampleResult = { variants: 0, epigen: 0, skipped: false };
 
+// Pure predicate: returns true when an order's lines include the GeneX360
+// bundle. A line qualifies when it is a testing product whose slug is the
+// complete bundle or any GeneX360 slug. No side effects.
+export function isGenexBundlePurchase(
+  lines: ReadonlyArray<{ productType?: string | null; productSlug?: string | null }>,
+): boolean {
+  return lines.some((line) => {
+    if (line.productType !== "testing") {
+      return false;
+    }
+    const slug = line.productSlug;
+    return (
+      slug === "genex360-complete" ||
+      (typeof slug === "string" && slug.toLowerCase().startsWith("genex360"))
+    );
+  });
+}
+
 export async function seedSamplePanels(
   supabase: SupabaseLike,
   userId: string,

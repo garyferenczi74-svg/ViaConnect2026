@@ -45,6 +45,7 @@ import { useGeneticsVariants, type VariantRecord } from './useGeneticsVariants';
 import { VariantReportPill } from './VariantReportPill';
 import { VariantImpactFilter, type ImpactFilterValue } from './VariantImpactFilter';
 import { SeverityPill } from '@/components/genetics/SeverityPill';
+import { SampleBadge } from '@/components/genetics/SampleBadge';
 import { resolveVariantReport } from '@/lib/genex360/resolveVariantReport';
 import { PanelDisclaimer } from '@/components/shop/genex360/PanelDisclaimer';
 import type { PanelSlug } from '@/data/genex360/types';
@@ -332,6 +333,9 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
                         <span className="rounded bg-white/5 px-2 py-0.5 font-mono text-[11px] tabular-nums text-white/45">
                           {z}
                         </span>
+                        {/* Prompt 204 (2026-06-21): mark a seeded SAMPLE variant so
+                            it never reads as the member's real result. */}
+                        {row.is_sample ? <SampleBadge /> : null}
                         {/* Prompt 204g: the severity tier IS the score, pinned
                             right. SeverityPill reads color only from
                             severityToken() and shows Unscored until the validated

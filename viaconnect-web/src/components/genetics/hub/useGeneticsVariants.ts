@@ -31,6 +31,10 @@ export interface VariantRecord {
   // source, or null when this (rsID, genotype) has no validated assignment yet.
   // Distinct from genotype and the zygosity status.
   severity: SeverityTier | null;
+  // Prompt 204 (2026-06-21): true when this row was seeded as SAMPLE data on a
+  // GeneX360 purchase, so the card badges it and the member never reads it as a
+  // real result.
+  is_sample: boolean;
 }
 
 export interface GeneticsVariantsData {
@@ -128,6 +132,7 @@ function normalize(json: unknown): GeneticsVariantsData {
             row.severity === 'high' || row.severity === 'moderate' || row.severity === 'low'
               ? row.severity
               : null,
+          is_sample: row.is_sample === true,
         });
       }
       variantsByPanel[key as PanelKey] = rows;

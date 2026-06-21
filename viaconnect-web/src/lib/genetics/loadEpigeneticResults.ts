@@ -22,6 +22,8 @@ export interface EpigeneticResult {
   direction: EpigenDirection | null;
   confidence: string | null;
   measuredOn: string | null;
+  /** Whether the current reading was seeded as a sample on purchase (UI badge). */
+  isSample: boolean;
   /** Numeric readings across dates (oldest first), or null when fewer than two. */
   trend: EpigeneticTrendPoint[] | null;
 }
@@ -34,6 +36,7 @@ interface DbRow {
   direction: EpigenDirection | null;
   confidence: string | null;
   measured_on: string | null;
+  is_sample: boolean | null;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -45,7 +48,7 @@ export async function loadEpigeneticResults(
 ): Promise<EpigeneticResult[]> {
   const { data, error } = await supabase
     .from("user_epigenetic_markers")
-    .select("marker_key, value_num, value_text, unit, direction, confidence, measured_on")
+    .select("marker_key, value_num, value_text, unit, direction, confidence, measured_on, is_sample")
     .eq("user_id", userId)
     .order("measured_on", { ascending: false });
 
@@ -77,6 +80,8 @@ export async function loadEpigeneticResults(
       direction: current.direction,
       confidence: current.confidence,
       measuredOn: current.measured_on,
+      // Sample flag taken from the current (latest) reading; default false.
+      isSample: current.is_sample === true,
       trend: numericByDate.length > 1 ? numericByDate : null,
     });
   }

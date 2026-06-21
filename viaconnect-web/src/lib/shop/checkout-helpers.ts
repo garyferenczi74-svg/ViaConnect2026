@@ -33,6 +33,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout'
 import { safeLog } from '@/lib/utils/safe-log'
 import { creditEarning } from '@/lib/helix/earning-engine'
+import { seedSamplePanels, isGenexBundlePurchase } from '@/lib/genetics/sampleseed/seedSamplePanels'
 import type { PricingSupabaseClient } from '@/lib/pricing/supabase-types'
 import type { CheckoutCartLine } from '@/lib/shop/checkout-actions'
 
@@ -252,6 +253,23 @@ export async function finalizeOrderForSession(
                 error: itemsErr,
                 sessionId,
             })
+        }
+
+        // GeneX360 sample seed (2026-06-21): when the order includes the
+        // GeneX360 bundle, populate the buyer's six panels with SAMPLE results
+        // immediately so they see their panels. Idempotent and fail-soft: the
+        // order is already paid, so a seeding error is logged and never blocks
+        // finalize. sb is the same client used for the order writes.
+        if (userId && isGenexBundlePurchase(cart)) {
+            try {
+                await withTimeout(
+                    seedSamplePanels(sb, userId),
+                    5000,
+                    'shop.checkout.finalize.genex_seed',
+                )
+            } catch (error) {
+                safeLog.warn('shop.checkout', 'genex sample seed failed', { error, sessionId })
+            }
         }
 
         // Phase F6b.3d: prescription token consumption for L3/L4 line items.

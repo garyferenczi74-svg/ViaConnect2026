@@ -20,6 +20,9 @@ interface DbVariantRow {
   genotype: string | null;
   status: string | null;
   clinical_significance: string | null;
+  // Whether this result was seeded as a sample on purchase (vs a real upload).
+  // Surfaced so the UI can badge sample results.
+  is_sample: boolean;
 }
 
 // What the client receives: the db row plus the computed severity tier (Prompt
@@ -47,7 +50,7 @@ export async function GET(): Promise<NextResponse> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (supabase as any)
       .from('user_variants')
-      .select('panel_key, rsid, gene, genotype, status, clinical_significance')
+      .select('panel_key, rsid, gene, genotype, status, clinical_significance, is_sample')
       .eq('user_id', user.id)
       .order('panel_key', { ascending: true });
 
@@ -73,6 +76,8 @@ export async function GET(): Promise<NextResponse> {
     // zygosity score; null when neither has a validated tier.
     const rows: VariantRow[] = dbRows.map((row) => ({
       ...row,
+      // Coerce a missing or null is_sample to false so the flag is always boolean.
+      is_sample: row.is_sample === true,
       // Go-live (2026-06-20): severity is PANEL-SCOPED, so a shared rsID is scored
       // by THIS panel's validated source, never another panel's. Methylation rows
       // fall through to the zygosity path (their panel has no genotype source).

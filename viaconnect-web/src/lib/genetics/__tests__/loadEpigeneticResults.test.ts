@@ -22,8 +22,8 @@ describe("loadEpigeneticResults", () => {
   it("returns the latest reading per marker and builds a numeric trend across dates", async () => {
     // Rows arrive newest first (the query orders measured_on desc).
     const rows = [
-      { marker_key: "epigenetic-age", value_num: 52, value_text: null, unit: "years", direction: "higher", confidence: "high", measured_on: "2026-06-01" },
-      { marker_key: "epigenetic-age", value_num: 54, value_text: null, unit: "years", direction: "higher", confidence: "high", measured_on: "2025-06-01" },
+      { marker_key: "epigenetic-age", value_num: 52, value_text: null, unit: "years", direction: "higher", confidence: "high", measured_on: "2026-06-01", is_sample: true },
+      { marker_key: "epigenetic-age", value_num: 54, value_text: null, unit: "years", direction: "higher", confidence: "high", measured_on: "2025-06-01", is_sample: false },
     ];
     const results = await loadEpigeneticResults(mockSupabase(rows), "u1");
     expect(results).toHaveLength(1);
@@ -32,6 +32,8 @@ describe("loadEpigeneticResults", () => {
     // The newest (2026-06-01, value 52) is the current reading.
     expect(age.valueNum).toBe(52);
     expect(age.measuredOn).toBe("2026-06-01");
+    // isSample is taken from the current (latest) row, which is a sample.
+    expect(age.isSample).toBe(true);
     // Trend is oldest first.
     expect(age.trend).toEqual([
       { measuredOn: "2025-06-01", valueNum: 54 },
@@ -41,13 +43,15 @@ describe("loadEpigeneticResults", () => {
 
   it("leaves trend null for a single reading or a non-numeric marker", async () => {
     const rows = [
-      { marker_key: "ahrr-combustion-exposure", value_num: null, value_text: "low signal", unit: null, direction: "lower", confidence: "medium", measured_on: "2026-06-01" },
+      { marker_key: "ahrr-combustion-exposure", value_num: null, value_text: "low signal", unit: null, direction: "lower", confidence: "medium", measured_on: "2026-06-01", is_sample: false },
     ];
     const results = await loadEpigeneticResults(mockSupabase(rows), "u1");
     expect(results).toHaveLength(1);
     expect(results[0].valueText).toBe("low signal");
     expect(results[0].valueNum).toBeNull();
     expect(results[0].trend).toBeNull();
+    // isSample is false when the current row is not a sample.
+    expect(results[0].isSample).toBe(false);
   });
 
   it("fails open to an empty list on a read error", async () => {
