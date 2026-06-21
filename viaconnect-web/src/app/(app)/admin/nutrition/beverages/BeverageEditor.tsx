@@ -13,6 +13,7 @@
 //   - No em-dashes or en-dashes anywhere.
 
 import { useState } from 'react';
+import { getDisplayName } from '@/lib/getDisplayName';
 import {
   AlertCircle,
   AlertTriangle,
@@ -604,7 +605,7 @@ export function BeverageEditor({ beverage, onSaved, onClose }: BeverageEditorPro
           >
             <AlertTriangle strokeWidth={1.5} className="mt-0.5 h-4 w-4 shrink-0" />
             <p className="text-sm">
-              This beverage is flagged for claim review. After saving, Kelsey and Marshall will
+              This beverage is flagged for claim review. After saving, {getDisplayName('kelsey')} and {getDisplayName('marshall')} will
               need to approve it before activation.
             </p>
           </div>

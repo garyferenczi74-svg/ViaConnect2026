@@ -25,7 +25,6 @@ import { BeverageEditor } from './BeverageEditor';
 import type {
   BeverageCatalogRow,
   BeverageCategory,
-  BEVERAGE_CATEGORIES,
 } from '@/components/nutrition/hydration/BeveragePicker/BeveragePicker.types';
 
 // Re-declare the constant locally so we don't import the full picker barrel
