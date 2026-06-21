@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
 import { persistDnaAnalysis } from "@/lib/genetics/dnaUploadStore";
+import { PANEL_ORDER, type PanelKey } from "@/lib/genetics/panelLabels";
 
 function apiEnvelope(
   success: boolean,
@@ -365,6 +366,13 @@ export async function POST(request: Request) {
   const file = formData.get("file") as File | null;
   const kitId = formData.get("kitId") as string | null;
   const provider = (formData.get("provider") as string | null)?.trim() || "generic";
+  // Prompt 204 (2026-06-21): optional per-tab panel scope. A genotype panel tab
+  // sends its panel_key so only that panel's variants are saved; the DNA Test tab
+  // sends nothing and every panel is saved. An unknown value is ignored (no scope).
+  const panelRaw = (formData.get("panel") as string | null)?.trim() || "";
+  const panelScope: PanelKey | undefined = (PANEL_ORDER as string[]).includes(panelRaw)
+    ? (panelRaw as PanelKey)
+    : undefined;
 
   if (!file) {
     return NextResponse.json(
@@ -439,7 +447,7 @@ export async function POST(request: Request) {
       isFarmceutica: false,
       brandedProductCode: null,
       sourceFilename: file.name,
-    });
+    }, panelScope);
 
     // Upload raw file to Supabase Storage for archival
     const storagePath = `${user.id}/${kitId}/${Date.now()}-${file.name}`;

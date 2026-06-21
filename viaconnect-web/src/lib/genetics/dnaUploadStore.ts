@@ -35,8 +35,12 @@ export async function persistDnaAnalysis(
   userId: string,
   rows: ParsedSnpRow[],
   provenance: DnaUploadProvenance,
+  // Prompt 204 (2026-06-21): optional per-tab scope. When set, only the variants
+  // for that panel are persisted, so an upload on the Nutrition tab populates only
+  // the Nutrition list. Omitted (the DNA Test tab) persists every panel.
+  panelScope?: PanelKey,
 ): Promise<DnaPersistResult> {
-  return persistInterpretedVariants(supabase, userId, analyzeVariants(rows), provenance);
+  return persistInterpretedVariants(supabase, userId, analyzeVariants(rows), provenance, panelScope);
 }
 
 // Persist already-interpreted variants. Used by both the raw genotype path
@@ -48,7 +52,13 @@ export async function persistInterpretedVariants(
   userId: string,
   variants: InterpretedVariant[],
   provenance: DnaUploadProvenance,
+  // Prompt 204 (2026-06-21): when set, keep only this panel's variants so a
+  // per-tab upload populates just the corresponding panel (each tab is its own
+  // independent capture). The engine maps each rsID to one panel_key, so this is
+  // an exact filter, not a guess.
+  panelScope?: PanelKey,
 ): Promise<DnaPersistResult> {
+  const scoped = panelScope ? variants.filter((v) => v.panel_key === panelScope) : variants;
   try {
     // Provenance row first so variants can reference its id.
     const { data: upload, error: uploadErr } = await supabase
@@ -69,13 +79,13 @@ export async function persistInterpretedVariants(
         user_id: userId,
         error: uploadErr?.message ?? 'no row',
       });
-      return { ...EMPTY, variantCount: variants.length };
+      return { ...EMPTY, variantCount: scoped.length };
     }
 
     const uploadId = upload.id as string;
 
-    if (variants.length > 0) {
-      const rowsToWrite = variants.map((v) => ({
+    if (scoped.length > 0) {
+      const rowsToWrite = scoped.map((v) => ({
         user_id: userId,
         upload_id: uploadId,
         panel_key: v.panel_key,
@@ -110,11 +120,11 @@ export async function persistInterpretedVariants(
     }
 
     const panelCounts: Partial<Record<PanelKey, number>> = {};
-    for (const v of variants) {
+    for (const v of scoped) {
       panelCounts[v.panel_key] = (panelCounts[v.panel_key] ?? 0) + 1;
     }
 
-    return { uploadId, variantCount: variants.length, panelCounts };
+    return { uploadId, variantCount: scoped.length, panelCounts };
   } catch (err) {
     safeLog.error('genetics.persist', 'persistInterpretedVariants threw (fail-open)', {
       user_id: userId,

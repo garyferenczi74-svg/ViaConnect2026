@@ -57,19 +57,19 @@ const EXPLAINERS: Partial<Record<UploadTab, PanelIntro>> = {
   hormone: {
     title: "Hormone (HormoneIQ)",
     covers: "Hormone and adrenal mapping: estrogen, androgen, and stress hormone pathways.",
-    dataSourceNote: "The genetic markers are read from your DNA upload. The measured hormone and metabolite levels come from your GeneX360 lab sample.",
+    dataSourceNote: "The genetic markers are read from your DNA, and as our panel coverage expands they appear here. The measured hormone and metabolite levels come from your GeneX360 lab sample.",
     blueprintHref: "/shop/genex360#hormone-iq",
   },
   peptide: {
     title: "Peptide (PeptideIQ)",
     covers: "Peptide response and tissue repair genetics: growth factor and recovery pathways.",
-    dataSourceNote: "These markers are read from your DNA, so there is no separate upload. Upload your DNA test once and your Peptide panel is scored from it.",
+    dataSourceNote: "These markers are read from your DNA. As our panel coverage expands, your results appear here.",
     blueprintHref: "/shop/genex360#peptide-iq",
   },
   cannabis: {
     title: "Cannabis (CannabisIQ)",
     covers: "Cannabinoid response and sensitivity genetics: how you respond to and clear cannabinoids.",
-    dataSourceNote: "These markers are read from your DNA, so there is no separate upload. Upload your DNA test once and your Cannabis panel is scored from it.",
+    dataSourceNote: "These markers are read from your DNA. As our panel coverage expands, your results appear here.",
     blueprintHref: "/shop/genex360#cannabis-iq",
   },
 };
@@ -181,9 +181,14 @@ function GeneticUploadInner() {
     try {
       // Prompt 204c: a PDF goes through the verify-before-save flow (extract +
       // interpret, then the member confirms) instead of the direct text parse.
+      // Per-tab scope: a genotype panel tab (its id is the panel_key) captures only
+      // that panel; the DNA Test tab passes no scope and captures every panel.
+      const panelScope = activeTab === "dna" ? null : activeTab;
+
       if (file.name.toLowerCase().endsWith(".pdf")) {
         const formData = new FormData();
         formData.append("file", file);
+        if (panelScope) formData.append("panel", panelScope);
         // Abort the request if the server stalls, so the spinner can never hang.
         const res = await withAbortTimeout(
           (signal) => fetch("/api/genex/upload-pdf", { method: "POST", body: formData, signal }),
@@ -206,6 +211,7 @@ function GeneticUploadInner() {
       formData.append("file", file);
       formData.append("kitId", `upload-${Date.now()}`);
       if (provider) formData.append("provider", provider);
+      if (panelScope) formData.append("panel", panelScope);
 
       const res = await fetch("/api/genex/upload", { method: "POST", body: formData });
       const data = await res.json();
@@ -221,7 +227,7 @@ function GeneticUploadInner() {
     } finally {
       setIsUploading(false);
     }
-  }, [file, userId, provider]);
+  }, [file, userId, provider, activeTab]);
 
   // Prompt 204c: save the PDF-extracted variants the member just verified. The
   // server re-runs the deterministic engine from the rows, so the saved status
@@ -233,7 +239,12 @@ function GeneticUploadInner() {
       const res = await fetch("/api/genetics/confirm-variants", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rows: pdfPreview.rows, sourceFilename: pdfPreview.sourceFilename }),
+        body: JSON.stringify({
+          rows: pdfPreview.rows,
+          sourceFilename: pdfPreview.sourceFilename,
+          // Re-send the per-tab scope so the confirmed save stays within this panel.
+          panel: activeTab === "dna" ? undefined : activeTab,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -247,7 +258,7 @@ function GeneticUploadInner() {
     } finally {
       setPdfSaving(false);
     }
-  }, [pdfPreview]);
+  }, [pdfPreview, activeTab]);
 
   const handleCancelPdf = useCallback(() => {
     setPdfPreview(null);

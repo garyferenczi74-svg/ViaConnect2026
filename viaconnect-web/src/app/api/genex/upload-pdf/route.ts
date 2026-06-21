@@ -14,6 +14,7 @@ import { parseDnaReportText } from '@/lib/genetics/parseDnaReportText';
 import { analyzeVariants } from '@/lib/genetics/dnaAnalysisEngine';
 import { extractMethylationFromPdf, mapMethylationRows } from '@/lib/genetics/extractMethylationReport';
 import { inMemoryRateLimit } from '@/lib/utils/inMemoryRateLimit';
+import { PANEL_ORDER, type PanelKey } from '@/lib/genetics/panelLabels';
 
 const MAX_PDF_BYTES = 10 * 1024 * 1024; // 10 MB
 
@@ -49,6 +50,14 @@ export async function POST(request: Request): Promise<NextResponse> {
   if (file.size > MAX_PDF_BYTES) {
     return NextResponse.json({ error: 'PDF too large. Maximum 10 MB.' }, { status: 400 });
   }
+
+  // Prompt 204 (2026-06-21): optional per-tab panel scope. A genotype panel tab
+  // sends its panel_key so the verify screen (and the saved rows) cover only that
+  // panel; the DNA Test tab sends nothing and every panel is shown.
+  const panelRaw = (formData.get('panel') as string | null)?.trim() || '';
+  const panelScope: PanelKey | null = (PANEL_ORDER as string[]).includes(panelRaw)
+    ? (panelRaw as PanelKey)
+    : null;
 
   try {
     const buffer = Buffer.from(await file.arrayBuffer());
@@ -86,6 +95,14 @@ export async function POST(request: Request): Promise<NextResponse> {
           contextByRsid.set(v.rsid, `Reported as ${v.status} on your methylation pathway report`);
         }
       }
+    }
+
+    // Per-tab scope: keep only the active panel's variants so the verify screen
+    // and the confirmed rows populate just that panel (each tab is its own
+    // independent capture). Applied after the methylation fallback so both paths
+    // are scoped. The DNA Test tab passes no scope and sees every panel.
+    if (panelScope) {
+      interpreted = interpreted.filter((v) => v.panel_key === panelScope);
     }
 
     // readable distinguishes "we read the document but found no known markers"

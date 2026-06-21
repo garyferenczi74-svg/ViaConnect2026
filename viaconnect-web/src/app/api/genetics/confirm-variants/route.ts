@@ -15,6 +15,7 @@ import { safeLog } from '@/lib/utils/safe-log';
 import { persistInterpretedVariants } from '@/lib/genetics/dnaUploadStore';
 import { analyzeVariants, type ParsedSnpRow, type InterpretedVariant } from '@/lib/genetics/dnaAnalysisEngine';
 import { interpretMethylationByRsid } from '@/lib/genetics/extractMethylationReport';
+import { PANEL_ORDER, type PanelKey } from '@/lib/genetics/panelLabels';
 
 const MAX_ROWS = 5000;
 const GENOTYPE_RE = /^[ACGT]{2}$/i;
@@ -22,6 +23,10 @@ const GENOTYPE_RE = /^[ACGT]{2}$/i;
 interface ConfirmBody {
   rows?: Array<{ rsid?: unknown; genotype?: unknown; status?: unknown }>;
   sourceFilename?: unknown;
+  // Prompt 204 (2026-06-21): the per-tab panel scope from the upload tab. When set,
+  // only this panel's re-derived variants are saved (defense in depth: the preview
+  // was already scoped, this re-applies it server-side).
+  panel?: unknown;
 }
 
 export async function POST(request: Request): Promise<NextResponse> {
@@ -55,7 +60,15 @@ export async function POST(request: Request): Promise<NextResponse> {
     if (variant) methylationVariants.push(variant);
   }
 
-  const interpreted: InterpretedVariant[] = [...analyzeVariants(genotypeRows), ...methylationVariants];
+  let interpreted: InterpretedVariant[] = [...analyzeVariants(genotypeRows), ...methylationVariants];
+
+  // Re-apply the per-tab scope server-side so a confirmed save never writes beyond
+  // the panel the member uploaded for. An unknown panel value is ignored (no scope).
+  const panelRaw = typeof body.panel === 'string' ? body.panel.trim() : '';
+  if ((PANEL_ORDER as string[]).includes(panelRaw)) {
+    const panelScope = panelRaw as PanelKey;
+    interpreted = interpreted.filter((v) => v.panel_key === panelScope);
+  }
 
   if (interpreted.length === 0) {
     return NextResponse.json({ error: 'No variants to save.' }, { status: 400 });

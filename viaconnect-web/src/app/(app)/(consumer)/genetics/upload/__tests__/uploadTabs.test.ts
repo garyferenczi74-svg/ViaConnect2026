@@ -40,6 +40,14 @@ describe("Upload Genetic Data tabs", () => {
     expect(source).toContain("GENEX360 Auto-Import (DNA tab only)");
   });
 
+  it("scopes each genotype tab's upload to its panel", () => {
+    // The tab id is the panel_key, so a non-DNA tab passes itself as the scope.
+    expect(source).toContain('activeTab === "dna" ? null : activeTab');
+    expect(source).toContain('formData.append("panel", panelScope)');
+    // The confirm step re-sends the scope.
+    expect(source).toContain('panel: activeTab === "dna" ? undefined : activeTab');
+  });
+
   it("keeps the Epigenetic tab on its own measured-report upload", () => {
     expect(source).toContain("EpigenUploadPanel");
     expect(source).toContain('activeTab === "epigen"');
