@@ -10,9 +10,10 @@
  *   - 200 with emerging:true when no atoms (coverage gap), gap_topic captured
  *   - 200 fallback answer when generateGroundedAnswer throws (fail-open)
  *   - captureQuery always called with correct args
+ *   - callHannahQaModel receives HANNAH_208_QA_DIRECTIVE as system prompt (T19 review)
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 // ---------------------------------------------------------------------------
 // Module mocks - all hoisted before imports.
@@ -28,17 +29,6 @@ vi.mock('@/lib/supabase/server', () => ({
 
 vi.mock('@/lib/kb/knowledgeAtoms', () => ({
   getPublishedAtoms: vi.fn(),
-}))
-
-vi.mock('@/app/api/hannah/ask/route', async (importOriginal) => {
-  // We need to mock generateGroundedAnswer which lives inside the module.
-  // Instead we mock the module at the engine level used by generateGroundedAnswer.
-  return importOriginal()
-})
-
-// Mock the engine used by generateGroundedAnswer inside the route.
-vi.mock('@/lib/ai/hannah/ultrathink/engine', () => ({
-  runUltrathink: vi.fn(),
 }))
 
 vi.mock('@/lib/kb/knowledgeQueries', () => ({
@@ -59,11 +49,11 @@ vi.mock('@/lib/utils/safe-log', () => ({
 // ---------------------------------------------------------------------------
 // Imports under test.
 // ---------------------------------------------------------------------------
-import { POST } from '../route'
+import { POST, callHannahQaModel } from '../route'
 import { getPublishedAtoms } from '@/lib/kb/knowledgeAtoms'
 import { scoreCoverage, captureQuery } from '@/lib/kb/knowledgeQueries'
-import { runUltrathink } from '@/lib/ai/hannah/ultrathink/engine'
 import { safeLog } from '@/lib/utils/safe-log'
+import { HANNAH_208_QA_DIRECTIVE } from '@/lib/ai/hannah/ultrathink/prompts/ultrathink-system'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -91,18 +81,21 @@ function mockScore(result: { coverage: string; tiersUsed: number[] }) {
   ;(scoreCoverage as ReturnType<typeof vi.fn>).mockReturnValue(result)
 }
 
-function mockEngine(answer: string) {
-  ;(runUltrathink as ReturnType<typeof vi.fn>).mockResolvedValue({
-    answer,
-    tier: 'fast',
-    citations: [],
-    confidence: 0.9,
-    critiquePassed: true,
-    critiqueNotes: '',
-    latencyMs: 100,
-    inputTokens: 10,
-    outputTokens: 20,
-  })
+/**
+ * Build a minimal fetch Response that callHannahQaModel will accept as a
+ * successful Anthropic API response returning the given answer text.
+ */
+function buildAnthropicResponse(text: string): Response {
+  return new Response(
+    JSON.stringify({
+      content: [{ type: 'text', text }],
+      usage: { input_tokens: 10, output_tokens: 20 },
+    }),
+    {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    },
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -162,9 +155,13 @@ describe('POST /api/hannah/ask - body validation', () => {
 
 // ---------------------------------------------------------------------------
 // Tests - happy path: well_covered
+// Mocks fetch so callHannahQaModel can be exercised without a network call,
+// and so we can assert the system prompt passed to the Anthropic API body.
 // ---------------------------------------------------------------------------
 
 describe('POST /api/hannah/ask - tier-2 atoms (well_covered)', () => {
+  let fetchSpy: ReturnType<typeof vi.spyOn>
+
   beforeEach(() => {
     vi.clearAllMocks()
     mockAuth(AUTHED_USER)
@@ -173,8 +170,18 @@ describe('POST /api/hannah/ask - tier-2 atoms (well_covered)', () => {
       { id: 'atom-2', evidence_tier: 1, domain: 'methylation' },
     ])
     mockScore({ coverage: 'well_covered', tiersUsed: [1, 2] })
-    mockEngine('MTHFR affects folate metabolism.')
     ;(captureQuery as ReturnType<typeof vi.fn>).mockResolvedValue(undefined)
+    // Mock global fetch to intercept the Anthropic API call inside
+    // callHannahQaModel and return a canned success response.
+    process.env.ANTHROPIC_API_KEY = 'test-key'
+    fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      buildAnthropicResponse('MTHFR affects folate metabolism.'),
+    )
+  })
+
+  afterEach(() => {
+    fetchSpy.mockRestore()
+    delete process.env.ANTHROPIC_API_KEY
   })
 
   it('returns 200 with emerging:false', async () => {
@@ -214,6 +221,20 @@ describe('POST /api/hannah/ask - tier-2 atoms (well_covered)', () => {
     await POST(req)
     expect(getPublishedAtoms).toHaveBeenCalledWith({ domain: 'methylation' })
   })
+
+  it('passes HANNAH_208_QA_DIRECTIVE as the system field in the Anthropic API body', async () => {
+    const req = makeRequest({ question: 'What is MTHFR?', domain: 'genomics' })
+    await POST(req)
+    // fetch must have been called once (the Anthropic API call inside callHannahQaModel).
+    expect(fetchSpy).toHaveBeenCalledOnce()
+    const [, fetchInit] = fetchSpy.mock.calls[0] as [string, RequestInit]
+    const requestBody = JSON.parse(fetchInit.body as string) as Record<string, unknown>
+    // The system field in the Anthropic request body must contain the full directive.
+    expect(typeof requestBody.system).toBe('string')
+    expect(requestBody.system as string).toContain(HANNAH_208_QA_DIRECTIVE)
+    // Spot-check a distinctive phrase from the weight-loss guardrail.
+    expect(requestBody.system as string).toContain('WEIGHT LOSS GUARDRAIL')
+  })
 })
 
 // ---------------------------------------------------------------------------
@@ -221,13 +242,23 @@ describe('POST /api/hannah/ask - tier-2 atoms (well_covered)', () => {
 // ---------------------------------------------------------------------------
 
 describe('POST /api/hannah/ask - no atoms (gap)', () => {
+  let fetchSpy: ReturnType<typeof vi.spyOn>
+
   beforeEach(() => {
     vi.clearAllMocks()
     mockAuth(AUTHED_USER)
     mockAtoms([])
     mockScore({ coverage: 'gap', tiersUsed: [] })
-    mockEngine('I do not have grounded information on that topic yet.')
     ;(captureQuery as ReturnType<typeof vi.fn>).mockResolvedValue(undefined)
+    process.env.ANTHROPIC_API_KEY = 'test-key'
+    fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      buildAnthropicResponse('I do not have grounded information on that topic yet.'),
+    )
+  })
+
+  afterEach(() => {
+    fetchSpy.mockRestore()
+    delete process.env.ANTHROPIC_API_KEY
   })
 
   it('returns 200 with emerging:true when no atoms', async () => {
@@ -282,22 +313,32 @@ describe('POST /api/hannah/ask - no atoms (gap)', () => {
 // ---------------------------------------------------------------------------
 
 describe('POST /api/hannah/ask - generateGroundedAnswer throws (fail-open)', () => {
+  let fetchSpy: ReturnType<typeof vi.spyOn>
+
   beforeEach(() => {
     vi.clearAllMocks()
     mockAuth(AUTHED_USER)
     mockAtoms([{ id: 'atom-3', evidence_tier: 2, domain: 'methylation' }])
     mockScore({ coverage: 'well_covered', tiersUsed: [2] })
-    ;(runUltrathink as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('AI service unavailable'))
     ;(captureQuery as ReturnType<typeof vi.fn>).mockResolvedValue(undefined)
+    // Make fetch throw so callHannahQaModel propagates the error through
+    // generateGroundedAnswer up to the POST handler's fail-open catch block.
+    process.env.ANTHROPIC_API_KEY = 'test-key'
+    fetchSpy = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('AI service unavailable'))
   })
 
-  it('still returns 200 when engine throws', async () => {
+  afterEach(() => {
+    fetchSpy.mockRestore()
+    delete process.env.ANTHROPIC_API_KEY
+  })
+
+  it('still returns 200 when callHannahQaModel throws', async () => {
     const req = makeRequest({ question: 'Tell me about COMT', domain: 'genomics' })
     const res = await POST(req)
     expect(res.status).toBe(200)
   })
 
-  it('returns a fallback answer with emerging:true when engine throws', async () => {
+  it('returns a fallback answer with emerging:true when callHannahQaModel throws', async () => {
     const req = makeRequest({ question: 'Tell me about COMT', domain: 'genomics' })
     const res = await POST(req)
     const body = await res.json()
@@ -306,13 +347,13 @@ describe('POST /api/hannah/ask - generateGroundedAnswer throws (fail-open)', () 
     expect(body.answer.length).toBeGreaterThan(0)
   })
 
-  it('still attempts captureQuery when engine throws', async () => {
+  it('still attempts captureQuery when callHannahQaModel throws', async () => {
     const req = makeRequest({ question: 'Tell me about COMT', domain: 'genomics' })
     await POST(req)
     expect(captureQuery).toHaveBeenCalledOnce()
   })
 
-  it('calls safeLog.error when engine throws', async () => {
+  it('calls safeLog.error when callHannahQaModel throws', async () => {
     const req = makeRequest({ question: 'Tell me about COMT', domain: 'genomics' })
     await POST(req)
     expect(safeLog.error).toHaveBeenCalled()
@@ -325,14 +366,23 @@ describe('POST /api/hannah/ask - generateGroundedAnswer throws (fail-open)', () 
 
 describe('POST /api/hannah/ask - all valid domains accepted', () => {
   const validDomains = ['genomics', 'nutraceuticals', 'biohacking', 'athletics', 'weightloss', 'longevity']
+  let fetchSpy: ReturnType<typeof vi.spyOn>
 
   beforeEach(() => {
     vi.clearAllMocks()
     mockAuth(AUTHED_USER)
     mockAtoms([])
     mockScore({ coverage: 'gap', tiersUsed: [] })
-    mockEngine('Educational response.')
     ;(captureQuery as ReturnType<typeof vi.fn>).mockResolvedValue(undefined)
+    process.env.ANTHROPIC_API_KEY = 'test-key'
+    fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      buildAnthropicResponse('Educational response.'),
+    )
+  })
+
+  afterEach(() => {
+    fetchSpy.mockRestore()
+    delete process.env.ANTHROPIC_API_KEY
   })
 
   for (const domain of validDomains) {
@@ -342,4 +392,51 @@ describe('POST /api/hannah/ask - all valid domains accepted', () => {
       expect(res.status).toBe(200)
     })
   }
+})
+
+// ---------------------------------------------------------------------------
+// Tests - callHannahQaModel unit tests (exported helper)
+// ---------------------------------------------------------------------------
+
+describe('callHannahQaModel - unit', () => {
+  let fetchSpy: ReturnType<typeof vi.spyOn>
+
+  afterEach(() => {
+    fetchSpy?.mockRestore()
+    delete process.env.ANTHROPIC_API_KEY
+  })
+
+  it('throws when ANTHROPIC_API_KEY is not set', async () => {
+    delete process.env.ANTHROPIC_API_KEY
+    await expect(callHannahQaModel('system', 'user')).rejects.toThrow('ANTHROPIC_API_KEY is not configured')
+  })
+
+  it('throws when the Anthropic API returns a non-ok status', async () => {
+    process.env.ANTHROPIC_API_KEY = 'test-key'
+    fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response('Bad Request', { status: 400 }),
+    )
+    await expect(callHannahQaModel('system', 'user')).rejects.toThrow('Anthropic API error 400')
+  })
+
+  it('returns the text from the first text content block', async () => {
+    process.env.ANTHROPIC_API_KEY = 'test-key'
+    fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      buildAnthropicResponse('Hello world'),
+    )
+    const result = await callHannahQaModel('my system prompt', 'my user text')
+    expect(result).toBe('Hello world')
+  })
+
+  it('sends the system argument as the system field in the request body', async () => {
+    process.env.ANTHROPIC_API_KEY = 'test-key'
+    fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      buildAnthropicResponse('ok'),
+    )
+    await callHannahQaModel('DIRECTIVE TEXT', 'user question')
+    const [, fetchInit] = fetchSpy.mock.calls[0] as [string, RequestInit]
+    const body = JSON.parse(fetchInit.body as string) as Record<string, unknown>
+    expect(body.system).toBe('DIRECTIVE TEXT')
+    expect((body.messages as Array<{ role: string; content: string }>)[0].content).toBe('user question')
+  })
 })

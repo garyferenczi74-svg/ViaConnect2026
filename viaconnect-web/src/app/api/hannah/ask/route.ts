@@ -16,9 +16,28 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getPublishedAtoms, type KnowledgeAtomDomain } from '@/lib/kb/knowledgeAtoms';
 import { scoreCoverage, captureQuery } from '@/lib/kb/knowledgeQueries';
-import { runUltrathink } from '@/lib/ai/hannah/ultrathink/engine';
 import { HANNAH_208_QA_DIRECTIVE } from '@/lib/ai/hannah/ultrathink/prompts/ultrathink-system';
 import { safeLog } from '@/lib/utils/safe-log';
+
+// ---------------------------------------------------------------------------
+// Anthropic API constants (mirrors engine.ts values exactly).
+// ---------------------------------------------------------------------------
+
+const ANTHROPIC_API = 'https://api.anthropic.com/v1/messages';
+const ANTHROPIC_VERSION = '2023-06-01';
+// Use the same fast-tier model as engine.ts tier "fast".
+const QA_MODEL = 'claude-haiku-4-5-20251001';
+const QA_MAX_TOKENS = 1024;
+const QA_TIMEOUT_MS = 5000;
+
+interface AnthropicContentBlock {
+  type: string;
+  text?: string;
+}
+
+interface AnthropicResponse {
+  content: AnthropicContentBlock[];
+}
 
 // ---------------------------------------------------------------------------
 // Conversational domain union accepted at the endpoint.
@@ -62,11 +81,65 @@ const FALLBACK_ANSWER =
   'Consult a qualified healthcare practitioner before making changes to your health regimen.';
 
 // ---------------------------------------------------------------------------
+// callHannahQaModel
+//
+// Thin wrapper around the Anthropic API. Exported so tests can mock it
+// independently of generateGroundedAnswer. Mirrors the fetch pattern used in
+// engine.ts (same env var, same ANTHROPIC_VERSION header, same content
+// extraction) but calls the API directly so the system prompt is not
+// replaced by the engine's own getUltrathinkSystemPrompt.
+// ---------------------------------------------------------------------------
+
+export async function callHannahQaModel(
+  system: string,
+  userText: string,
+): Promise<string> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    throw new Error('ANTHROPIC_API_KEY is not configured');
+  }
+
+  const res = await fetch(ANTHROPIC_API, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': ANTHROPIC_VERSION,
+    },
+    body: JSON.stringify({
+      model: QA_MODEL,
+      max_tokens: QA_MAX_TOKENS,
+      system,
+      messages: [{ role: 'user', content: userText }],
+    }),
+    signal: AbortSignal.timeout(QA_TIMEOUT_MS),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Anthropic API error ${res.status}: ${errText}`);
+  }
+
+  const message = (await res.json()) as AnthropicResponse;
+  const text = message.content
+    .filter((b) => b.type === 'text' && b.text)
+    .map((b) => b.text!)
+    .join('\n');
+
+  if (!text) {
+    throw new Error('Anthropic API returned no text content');
+  }
+
+  return text;
+}
+
+// ---------------------------------------------------------------------------
 // generateGroundedAnswer
 //
-// Runs the Hannah ultrathink engine with the QA directive as system guidance
-// and the retrieved atom claims injected as grounding context.
-// Exported to allow testing the route while mocking the engine separately.
+// Builds the full system prompt (HANNAH_208_QA_DIRECTIVE + grounding atoms)
+// and delegates to callHannahQaModel so the directive reaches the model as
+// the actual system prompt -- not as a field the engine would ignore.
+// Exported to allow testing the route while mocking callHannahQaModel.
 // ---------------------------------------------------------------------------
 
 export async function generateGroundedAnswer(
@@ -82,21 +155,12 @@ export async function generateGroundedAnswer(
           .join('\n')
       : 'No published knowledge atoms are available for this domain yet.';
 
-  const systemPrompt =
+  const system =
     HANNAH_208_QA_DIRECTIVE +
     '\n\nGROUNDING CONTEXT (published knowledge atoms):\n' +
     groundingContext;
 
-  const response = await runUltrathink({
-    userId: 'system',
-    query: `[Domain: ${domain}]\n\n${question}`,
-    tier: 'fast',
-    modality: 'text',
-    phiAllowed: false,
-    _systemPromptOverride: systemPrompt,
-  } as Parameters<typeof runUltrathink>[0]);
-
-  return response.answer;
+  return callHannahQaModel(system, `[Domain: ${domain}]\n\n${question}`);
 }
 
 // ---------------------------------------------------------------------------
