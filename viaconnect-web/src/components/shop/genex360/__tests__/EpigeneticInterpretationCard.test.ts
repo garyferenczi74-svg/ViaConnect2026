@@ -45,6 +45,21 @@ describe("EpigeneticInterpretationCard source", () => {
     expect(source).not.toContain("#4ADE80");
   });
 
+  it("renders the member reading + direction when a result is on file, else an empty state", () => {
+    // The optional result prop drives a "Your reading" panel with the value and a
+    // neutral direction chip; absent it shows the connect-your-test empty state.
+    expect(source).toContain("result?: EpigeneticResult | null");
+    expect(source).toContain("Your reading");
+    expect(source).toContain("Higher than expected");
+    expect(source).toContain("Lower than expected");
+    expect(source).toContain("Within the expected range");
+    expect(source).toContain("Connect your EpigenHQ test");
+    // The matching higher / lower block is emphasized (teal), never an alarm color.
+    expect(source).toContain("higherEmphasis");
+    expect(source).toContain("lowerEmphasis");
+    expect(source).toContain("bg-[#2DA5A0]/[0.08]");
+  });
+
   it("contains no em or en dashes", () => {
     expect(source.includes(String.fromCharCode(0x2014))).toBe(false);
     expect(source.includes(String.fromCharCode(0x2013))).toBe(false);
@@ -54,14 +69,16 @@ describe("EpigeneticInterpretationCard source", () => {
 describe("PanelMarkerGroup mounts the interpretation card", () => {
   const source = readFileSync(GROUP, "utf-8");
 
-  it("renders the EpigeneticInterpretationCard for a marker with an interpretation", () => {
+  it("renders the EpigeneticInterpretationCard for a marker with an interpretation, with its result", () => {
     expect(source).toContain(
       'import { EpigeneticInterpretationCard } from "./EpigeneticInterpretationCard"',
     );
     expect(source).toContain("marker.epigeneticInterpretation ?");
-    expect(source).toContain(
-      "<EpigeneticInterpretationCard interpretation={marker.epigeneticInterpretation} />",
-    );
+    expect(source).toContain("<EpigeneticInterpretationCard");
+    expect(source).toContain("interpretation={marker.epigeneticInterpretation}");
+    // The member's reading is looked up by the marker's key and passed in.
+    expect(source).toContain("epigenKeyForDisplayName(marker.symbol)");
+    expect(source).toContain("epigeneticResultsByKey?.get(key)");
   });
 
   it("keeps the order: deepReport tabs, else interpretation card, else description", () => {

@@ -17,16 +17,65 @@
 // #2DA5A0, white opacity neutrals), Lucide strokeWidth 1.5 outline icons, no
 // emojis, no em or en dashes, TypeScript strict (no any).
 
-import { ArrowDown, ArrowUp, Microscope, Sparkles } from "lucide-react";
+import { ArrowDown, ArrowRight, ArrowUp, Microscope, Sparkles } from "lucide-react";
 import type { EpigeneticInterpretation } from "@/data/genex360/types";
+import type { EpigeneticResult } from "@/lib/genetics/loadEpigeneticResults";
+
+// The non-alarm chip describing the member's reading direction. Teal at every
+// direction (never red / green): the interpretation copy carries the meaning, and
+// several markers are compositional where neither direction is better.
+function directionLabel(direction: EpigeneticResult["direction"]): string {
+  if (direction === "higher") return "Higher than expected";
+  if (direction === "lower") return "Lower than expected";
+  return "Within the expected range";
+}
 
 export function EpigeneticInterpretationCard({
   interpretation,
+  result = null,
 }: {
   interpretation: EpigeneticInterpretation;
+  // The member's reading for this marker, or null when no result is on file. When
+  // present, the card shows the value and emphasizes the matching higher / lower
+  // interpretation. When null it stays purely educational.
+  result?: EpigeneticResult | null;
 }) {
+  const valueDisplay =
+    result?.valueNum !== null && result?.valueNum !== undefined
+      ? String(result.valueNum)
+      : result?.valueText ?? null;
+  const higherEmphasis = result?.direction === "higher";
+  const lowerEmphasis = result?.direction === "lower";
+
   return (
     <div className="space-y-4 text-white">
+      {/* The member's reading, when on file. Teal panel, never an alarm color. */}
+      {result ? (
+        <section className="space-y-1 rounded-xl border border-[#2DA5A0]/30 bg-[#2DA5A0]/[0.08] p-3">
+          <span className="text-[11px] font-semibold uppercase tracking-wide text-[#2DA5A0]">
+            Your reading
+          </span>
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+            {valueDisplay ? (
+              <span className="text-lg font-semibold text-white">{valueDisplay}</span>
+            ) : null}
+            {result.unit ? <span className="text-[12px] text-white/55">{result.unit}</span> : null}
+            <span className="inline-flex items-center gap-1 rounded-full border border-[#2DA5A0]/50 bg-[#2DA5A0]/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#2DA5A0]">
+              <ArrowRight aria-hidden="true" className="h-3 w-3 shrink-0" strokeWidth={1.5} />
+              {directionLabel(result.direction)}
+            </span>
+          </div>
+          {result.measuredOn ? (
+            <p className="text-[11px] text-white/45">Measured {result.measuredOn}</p>
+          ) : null}
+        </section>
+      ) : (
+        <p className="text-[12px] leading-relaxed text-white/45">
+          Connect your EpigenHQ test to see your own reading for this marker. The reading below is
+          educational background.
+        </p>
+      )}
+
       {/* What it measures. */}
       <section className="space-y-1.5">
         <h5 className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#2DA5A0]">
@@ -37,16 +86,29 @@ export function EpigeneticInterpretationCard({
       </section>
 
       {/* Higher and lower readings, side by side. The arrows label a direction,
-          not a verdict; the copy carries the neither-better / reversible framing. */}
+          not a verdict; the copy carries the neither-better / reversible framing.
+          When a member result is on file, the matching block is emphasized. */}
       <div className="grid gap-2.5 sm:grid-cols-2">
-        <div className="space-y-1 rounded-lg border border-white/[0.06] bg-[#1E3054]/40 p-3">
+        <div
+          className={`space-y-1 rounded-lg border p-3 ${
+            higherEmphasis
+              ? "border-[#2DA5A0]/50 bg-[#2DA5A0]/[0.08]"
+              : "border-white/[0.06] bg-[#1E3054]/40"
+          }`}
+        >
           <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-white/55">
             <ArrowUp aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-[#2DA5A0]" strokeWidth={1.5} />
             A higher reading
           </span>
           <p className="text-[13px] leading-relaxed text-white/75">{interpretation.higherSuggests}</p>
         </div>
-        <div className="space-y-1 rounded-lg border border-white/[0.06] bg-[#1E3054]/40 p-3">
+        <div
+          className={`space-y-1 rounded-lg border p-3 ${
+            lowerEmphasis
+              ? "border-[#2DA5A0]/50 bg-[#2DA5A0]/[0.08]"
+              : "border-white/[0.06] bg-[#1E3054]/40"
+          }`}
+        >
           <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-white/55">
             <ArrowDown aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-[#2DA5A0]" strokeWidth={1.5} />
             A lower reading

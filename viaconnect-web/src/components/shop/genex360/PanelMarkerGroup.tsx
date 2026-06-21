@@ -37,6 +37,8 @@ import { ChevronDown, Dot } from "lucide-react";
 import type { PanelMarker, PanelMarkerGroup as PanelMarkerGroupData } from "@/data/genex360/types";
 import { VariantReportTabs } from "./VariantReportTabs";
 import { EpigeneticInterpretationCard } from "./EpigeneticInterpretationCard";
+import { epigenKeyForDisplayName } from "@/lib/genetics/epigenMarkerMap";
+import type { EpigeneticResult } from "@/lib/genetics/loadEpigeneticResults";
 import type { SeverityTier } from "@/lib/genetics/severity";
 import type { BiologicalSex } from "@/hooks/body-tracker/useUserBiologicalSex";
 
@@ -60,6 +62,7 @@ interface PanelMarkerGroupProps {
   // rsID, forwarded so the open report marks the member's exact row.
   userGenotypeByRsid?: ReadonlyMap<string, string>;
   panelSlug?: string;
+  epigeneticResultsByKey?: ReadonlyMap<string, EpigeneticResult>;
 }
 
 export function PanelMarkerGroup({
@@ -71,6 +74,7 @@ export function PanelMarkerGroup({
   userSex,
   userGenotypeByRsid,
   panelSlug,
+  epigeneticResultsByKey,
 }: PanelMarkerGroupProps) {
   const reduced = useReducedMotion() ?? false;
   // The blueprint island always supplies onToggleSnp, so every marker collapses
@@ -98,6 +102,7 @@ export function PanelMarkerGroup({
                 userSex={userSex}
                 userGenotypeByRsid={userGenotypeByRsid}
                 panelSlug={panelSlug}
+                epigeneticResultsByKey={epigeneticResultsByKey}
               />
             );
           }
@@ -142,6 +147,7 @@ function SnpMarkerRow({
   userSex,
   userGenotypeByRsid,
   panelSlug,
+  epigeneticResultsByKey,
 }: {
   marker: PanelMarker;
   openSnpSlug: string | null;
@@ -152,6 +158,7 @@ function SnpMarkerRow({
   userSex?: BiologicalSex | null;
   userGenotypeByRsid?: ReadonlyMap<string, string>;
   panelSlug?: string;
+  epigeneticResultsByKey?: ReadonlyMap<string, EpigeneticResult>;
 }) {
   const slug = marker.symbol.toLowerCase();
   const isOpen = openSnpSlug === slug;
@@ -222,7 +229,13 @@ function SnpMarkerRow({
                   panelSlug={panelSlug}
                 />
               ) : marker.epigeneticInterpretation ? (
-                <EpigeneticInterpretationCard interpretation={marker.epigeneticInterpretation} />
+                <EpigeneticInterpretationCard
+                  interpretation={marker.epigeneticInterpretation}
+                  result={(() => {
+                    const key = epigenKeyForDisplayName(marker.symbol);
+                    return key ? epigeneticResultsByKey?.get(key) ?? null : null;
+                  })()}
+                />
               ) : (
                 <p className="text-[13px] leading-relaxed text-white/75">{marker.description}</p>
               )}

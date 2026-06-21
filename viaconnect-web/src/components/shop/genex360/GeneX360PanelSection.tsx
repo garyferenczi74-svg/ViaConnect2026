@@ -51,6 +51,7 @@ import type { PanelSlug } from '@/data/genex360/types';
 import { PanelDescriptionCard } from './PanelDescriptionCard';
 import { PanelPillTabs } from './PanelPillTabs';
 import { useGeneticsVariants } from '@/components/genetics/hub/useGeneticsVariants';
+import { useEpigeneticResults } from '@/components/genetics/hub/useEpigeneticResults';
 import type { SeverityTier } from '@/lib/genetics/severity';
 import { canonicalGenotype } from '@/lib/genetics/variantSeverity';
 import { useCurrentUser } from '@/components/body-tracker/manual-input/useCurrentUser';
@@ -344,6 +345,11 @@ export function GeneX360PanelSection() {
   const userSex: BiologicalSex | null =
     source === 'override' || source === 'caq' ? sex : null;
 
+  // Prompt 204 (2026-06-21): the member's EpigenHQ readouts by marker key, for the
+  // EpigenHQ interpretation cards. Fail-open empty (no upload, no auth), so the
+  // panel still renders the educational interpretations with no member value.
+  const { resultsByKey: epigeneticResultsByKey } = useEpigeneticResults();
+
   return (
     <section aria-labelledby="genex360-panels-heading" className="mb-12 lg:mb-16">
       {/* Section header above the pills. Neutral, on brand copy; the approved
@@ -373,6 +379,7 @@ export function GeneX360PanelSection() {
         severityByRsid={severityByRsid}
         userSex={userSex}
         userGenotypeByRsid={userGenotypeByRsid}
+        epigeneticResultsByKey={epigeneticResultsByKey}
       />
 
       {/* Hidden anchor stubs for every non active slug so all six slugs stay

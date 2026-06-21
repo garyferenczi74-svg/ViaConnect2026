@@ -37,6 +37,7 @@ import { PanelDisclaimer } from "./PanelDisclaimer";
 import { PanelMarkerGroup } from "./PanelMarkerGroup";
 import type { SeverityTier } from "@/lib/genetics/severity";
 import type { BiologicalSex } from "@/hooks/body-tracker/useUserBiologicalSex";
+import type { EpigeneticResult } from "@/lib/genetics/loadEpigeneticResults";
 
 interface PanelDescriptionCardProps {
   panel: Panel;
@@ -60,6 +61,9 @@ interface PanelDescriptionCardProps {
   // Prompt 204 follow-up (go-live blocker 1): the member's canonical genotype by
   // rsID, passed through so the open report marks the member's exact row.
   userGenotypeByRsid?: ReadonlyMap<string, string>;
+  // Prompt 204 (2026-06-21): the member's EpigenHQ readouts by marker key, passed
+  // through to the EpigenHQ interpretation cards.
+  epigeneticResultsByKey?: ReadonlyMap<string, EpigeneticResult>;
 }
 
 // Per panel leading icon. All six are confirmed present in lucide-react 0.577.0.
@@ -81,6 +85,7 @@ export function PanelDescriptionCard({
   severityByRsid,
   userSex,
   userGenotypeByRsid,
+  epigeneticResultsByKey,
 }: PanelDescriptionCardProps) {
   const PanelIcon = PANEL_ICON[panel.slug];
   const tabId = `genex360-tab-${panel.slug}`;
@@ -138,6 +143,7 @@ export function PanelDescriptionCard({
               userSex={userSex}
               userGenotypeByRsid={userGenotypeByRsid}
               panelSlug={panel.slug}
+              epigeneticResultsByKey={epigeneticResultsByKey}
             />
           ))}
         </div>
