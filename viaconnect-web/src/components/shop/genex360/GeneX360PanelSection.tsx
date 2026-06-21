@@ -52,6 +52,7 @@ import { PanelDescriptionCard } from './PanelDescriptionCard';
 import { PanelPillTabs } from './PanelPillTabs';
 import { useGeneticsVariants } from '@/components/genetics/hub/useGeneticsVariants';
 import type { SeverityTier } from '@/lib/genetics/severity';
+import { canonicalGenotype } from '@/lib/genetics/variantSeverity';
 import { useCurrentUser } from '@/components/body-tracker/manual-input/useCurrentUser';
 import {
   useUserBiologicalSex,
@@ -314,6 +315,24 @@ export function GeneX360PanelSection() {
     return map;
   }, [variantsData]);
 
+  // Prompt 204 follow-up (go-live blocker 1): the member's CANONICAL allele
+  // genotype by rsID, so the Full Report marks the member's EXACT row rather than
+  // mapping their tier to a copy count (which mislabels a non-monotonic clinical
+  // ladder, for example a homozygous variant scored Moderate not High). Only a
+  // clean two-base call participates; a methylation zygosity / phenotype /
+  // copy-number value is skipped so that variant falls back to the tier match.
+  const userGenotypeByRsid = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const rows of Object.values(variantsData.variantsByPanel)) {
+      for (const row of rows ?? []) {
+        if (!row.rsid || !row.genotype) continue;
+        const canon = canonicalGenotype(row.genotype);
+        if (canon.length === 2) map.set(row.rsid.toLowerCase(), canon);
+      }
+    }
+    return map;
+  }, [variantsData]);
+
   // Prompt 204i (Gary 2026-06-19): the member's biological sex, for X-linked
   // variants (MAOA). Only trusted when it comes from an explicit source (a manual
   // override or the CAQ assessment); the hook defaults to 'male' when unknown, so
@@ -353,6 +372,7 @@ export function GeneX360PanelSection() {
         highlightRsid={highlightRsid}
         severityByRsid={severityByRsid}
         userSex={userSex}
+        userGenotypeByRsid={userGenotypeByRsid}
       />
 
       {/* Hidden anchor stubs for every non active slug so all six slugs stay

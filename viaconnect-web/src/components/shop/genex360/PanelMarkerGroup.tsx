@@ -55,6 +55,9 @@ interface PanelMarkerGroupProps {
   severityByRsid?: ReadonlyMap<string, SeverityTier | null>;
   // Prompt 204i: the member's biological sex, forwarded for X-linked (MAOA) rows.
   userSex?: BiologicalSex | null;
+  // Prompt 204 follow-up (go-live blocker 1): the member's canonical genotype by
+  // rsID, forwarded so the open report marks the member's exact row.
+  userGenotypeByRsid?: ReadonlyMap<string, string>;
 }
 
 export function PanelMarkerGroup({
@@ -64,6 +67,7 @@ export function PanelMarkerGroup({
   highlightRsid,
   severityByRsid,
   userSex,
+  userGenotypeByRsid,
 }: PanelMarkerGroupProps) {
   const reduced = useReducedMotion() ?? false;
   // The blueprint island always supplies onToggleSnp, so every marker collapses
@@ -89,6 +93,7 @@ export function PanelMarkerGroup({
                 highlightRsid={highlightRsid ?? null}
                 severityByRsid={severityByRsid}
                 userSex={userSex}
+                userGenotypeByRsid={userGenotypeByRsid}
               />
             );
           }
@@ -131,6 +136,7 @@ function SnpMarkerRow({
   highlightRsid,
   severityByRsid,
   userSex,
+  userGenotypeByRsid,
 }: {
   marker: PanelMarker;
   openSnpSlug: string | null;
@@ -139,6 +145,7 @@ function SnpMarkerRow({
   highlightRsid: string | null;
   severityByRsid?: ReadonlyMap<string, SeverityTier | null>;
   userSex?: BiologicalSex | null;
+  userGenotypeByRsid?: ReadonlyMap<string, string>;
 }) {
   const slug = marker.symbol.toLowerCase();
   const isOpen = openSnpSlug === slug;
@@ -205,6 +212,7 @@ function SnpMarkerRow({
                   highlightRsid={highlightRsid}
                   severityByRsid={severityByRsid}
                   userSex={userSex}
+                  userGenotypeByRsid={userGenotypeByRsid}
                 />
               ) : (
                 <p className="text-[13px] leading-relaxed text-white/75">{marker.description}</p>

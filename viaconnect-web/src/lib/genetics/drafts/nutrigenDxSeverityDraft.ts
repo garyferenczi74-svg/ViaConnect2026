@@ -17,15 +17,19 @@
 // nothing here supports a High clinical score. Any genotype without a defensible
 // tier is omitted so it renders the honest unscored fallback.
 //
-// GO-LIVE BLOCKER for the gate (does not affect this non-live draft): the
-// general genotype severity ladder is CLINICAL, not a pure allele-copy count, so
-// it is not always monotonic (for example FADS1 TT and VDR ff score moderate, not
-// high). The 204i STATUS chip and the 204i/204k matched-row highlight currently
-// DERIVE their tier from allele copy count (the methylation zygosity model:
-// 0 copies Typical, 1 Moderate, 2 High). That assumption holds for methylation
-// but NOT for this panel, so before NutrigenDX goes live the STATUS chip and the
-// matched-row highlight must read the validated severity tier directly (per the
-// stored genotype), not re-derive it from copy count, or they will mislabel rows.
+// GO-LIVE BLOCKER 1: RESOLVED (2026-06-20). The general genotype severity ladder
+// is CLINICAL, not a pure allele-copy count, so it is not always monotonic (for
+// example FADS1 TT and VDR ff score moderate, not high). The 204i STATUS chip, the
+// row tint, and the matched-row highlight previously DERIVED their tier from
+// allele copy count (the methylation zygosity model), which would mislabel a
+// non-monotonic ladder. SnpDeepReport now reads the VALIDATED per-genotype tier
+// first (resolvedStatusTier / rowSeverityFor -> severityFor), with copy count only
+// as the fallback for a variant with no validated entry (methylation, which is
+// copy-count-correct). The matched-row highlight now marks the member's EXACT
+// genotype (isMembersRow -> canonicalGenotype match), falling back to the tier
+// match only for methylation (zygosity, no allele call). The validated map is
+// empty for this panel until its per-genotype source is approved and merged, so
+// nothing changes until go-live; the components are now correct for when it does.
 //
 // Standing rules honored: no invented tiers, no em or en dashes, TypeScript
 // strict (no any).
@@ -69,10 +73,11 @@ export const NUTRIGEN_DX_SEVERITY_DRAFT: Record<string, Record<string, SeverityT
   "rs10156191": { "CC": "low", "CT": "moderate", "TT": "high" }, // DAO, effect allele T
   "rs2231142": { "CC": "low", "CT": "moderate", "TT": "high" }, // ABCG2 Q141K, effect allele T
   "rs4410790": { "TT": "low", "CT": "moderate", "CC": "moderate" }, // AHR, effect allele C, behavioral tendency capped at moderate
-  // NAT2 is omitted: acetylator status (rapid / intermediate / slow) is a COMPOSITE
-  // phenotype derived from several SNPs, not a single-rsID genotype, so the live
-  // severityFor lookup (one rsID, one normalized genotype) cannot score it. It
-  // renders the honest unscored fallback and its report shows the acetylator status
-  // descriptively. Scoring it would need a dedicated NAT2 phenotype resolver (a
-  // go-live item for the gate), not this per-genotype map.
+  // NAT2 is omitted here on purpose: acetylator status (rapid / intermediate /
+  // slow) is a COMPOSITE phenotype derived from several SNPs, not a single-rsID
+  // genotype, so the live severityFor lookup cannot score it. GO-LIVE BLOCKER 2 is
+  // now RESOLVED: the dedicated resolver lives in src/lib/genetics/nat2.ts
+  // (nat2AcetylatorPhenotype, the 3 slow-defining tag SNPs). Per Hannah, NAT2 stays
+  // PHENOTYPE-ONLY and UNTIERED (nat2SeverityTier returns null), so it correctly
+  // remains absent from this per-genotype map and renders descriptively.
 };

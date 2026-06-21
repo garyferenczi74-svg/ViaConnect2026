@@ -189,12 +189,24 @@ describe('SnpDeepReport STATUS scale (Prompt 204i, Typical / Moderate / High)', 
 
   it('renders the STATUS chip via StatusChip in both the mobile and desktop tables', () => {
     expect(source).toContain('function StatusChip');
-    // Both genotype tables (mobile cards + desktop table) use StatusChip.
-    const chipUses = source.split('<StatusChip genotype={genotype} refAllele={refAllele} />').length - 1;
+    // Both genotype tables (mobile cards + desktop table) use StatusChip, now
+    // keyed by rsid so it can read the validated per-genotype tier.
+    const chipUses = source.split('<StatusChip rsid={variant.rsid} genotype={genotype} refAllele={refAllele} />').length - 1;
     expect(chipUses).toBe(2);
   });
 
-  it('derives the tier from effect-allele copies: 0 Typical, 1 Moderate, 2 High', () => {
+  it('reads the VALIDATED per-genotype tier first, copy-count only as fallback (go-live blocker 1)', () => {
+    // The resolver prefers the clinical map (severityFor) so a non-monotonic
+    // ladder (a homozygous variant scored Moderate, not High) is shown correctly;
+    // copy count is only the fallback when a variant has no validated entry.
+    expect(source).toContain('function resolvedStatusTier');
+    expect(source).toContain('const validated = resolvedSeverityFor(rsid, call)');
+    expect(source).toContain('if (validated) return severityToStatusTier(validated)');
+    expect(source).toContain('return statusTierFor(call, ref)');
+    expect(source).toContain('import { severityFor, canonicalGenotype }');
+  });
+
+  it('keeps the copy-count derivation as the fallback (0 Typical, 1 Moderate, 2 High)', () => {
     expect(source).toContain('function statusTierFor');
     expect(source).toContain('copies === 0 ? "Typical" : copies === 1 ? "Moderate" : "High"');
     // The reference allele is read from the Typical-labeled (baseline) genotype.
@@ -220,13 +232,22 @@ describe('SnpDeepReport STATUS scale (Prompt 204i, Typical / Moderate / High)', 
 describe('SnpDeepReport member genotype-row highlight (Prompt 204i)', () => {
   const source = readFileSync(COMPONENT, 'utf-8');
 
-  it('marks the member own genotype row by matching their severity tier to the row tier', () => {
+  it('marks the member own row by EXACT genotype, tier-match only as the methylation fallback (go-live blocker 1)', () => {
+    expect(source).toContain('function isMembersRow');
+    // General panels: exact canonical genotype match (unambiguous for a
+    // non-injective ladder). Methylation: fall back to the tier match.
+    expect(source).toContain('canonicalGenotype(genotype.genotype) === userGenotype');
+    expect(source).toContain('return isUsersGenotypeRow(genotype, ref, userTier)');
     expect(source).toContain('function isUsersGenotypeRow');
     expect(source).toContain('rowTier === severityToStatusTier(userTier)');
-    expect(source).toContain('function severityToStatusTier');
-    // Computed per row in both the mobile and desktop tables.
-    const uses = source.split('isUsersGenotypeRow(genotype, refAllele, userTier)').length - 1;
+    // isMembersRow is computed per row in both the mobile and desktop tables.
+    const uses = source.split('isMembersRow(genotype, refAllele, userTier, userGeno)').length - 1;
     expect(uses).toBe(2);
+  });
+
+  it('threads the member canonical genotype by rsID from the island', () => {
+    expect(source).toContain('userGenotypeByRsid?: ReadonlyMap<string, string>');
+    expect(source).toContain('const userGeno = userGenotypeByRsid?.get(rsidKey)');
   });
 
   it('replaces the Your result chip with a non-color icon cue and sr-only label (204k follow-up)', () => {
@@ -273,9 +294,11 @@ describe('SnpDeepReport member genotype-row highlight (Prompt 204i)', () => {
 describe('SnpDeepReport row tier glass tint (Prompt 204k)', () => {
   const source = readFileSync(COMPONENT, 'utf-8');
 
-  it('derives a row tint tier from the same status tier as the pill', () => {
+  it('derives a row tint tier from the same resolver as the pill (validated, else copy-count)', () => {
     expect(source).toContain('function rowSeverityFor');
-    // Reuses statusTierFor + STATUS_TIER_TO_SEVERITY, the same mapping the pill uses.
+    // The tint reads the validated tier first, the same resolver the StatusChip
+    // uses, then falls back to the copy-count STATUS_TIER_TO_SEVERITY mapping.
+    expect(source).toContain('const validated = resolvedSeverityFor(rsid, genotype.genotype)');
     expect(source).toContain('STATUS_TIER_TO_SEVERITY[tier]');
   });
 
@@ -287,8 +310,8 @@ describe('SnpDeepReport row tier glass tint (Prompt 204k)', () => {
     // a tier border on the stacked mobile card.
     expect(source).toContain('severityToken(rowSev).accent');
     expect(source).toContain('severityToken(rowSev).matchedBorder');
-    // Computed once per layout (mobile cards + desktop table).
-    const uses = source.split('rowSeverityFor(genotype, refAllele)').length - 1;
+    // Computed once per layout (mobile cards + desktop table), keyed by rsid.
+    const uses = source.split('rowSeverityFor(variant.rsid, genotype, refAllele)').length - 1;
     expect(uses).toBe(2);
   });
 

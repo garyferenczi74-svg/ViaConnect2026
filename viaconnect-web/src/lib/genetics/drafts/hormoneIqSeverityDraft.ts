@@ -9,11 +9,12 @@
 // population level, and bidirectional with no clean low-to-high ladder, so it
 // renders the honest unscored fallback and is read through the lab metabolites.
 //
-// The same GO-LIVE BLOCKER recorded for NutrigenDX applies here: the 204i STATUS
-// chip and the matched-row highlight derive tier from allele copy count, but these
+// GO-LIVE BLOCKER 1 is now RESOLVED (2026-06-20), same fix as NutrigenDX: these
 // ladders are clinical (CYP1A1 GG, CYP1B1 GG, SRD5A2 CC score moderate, not high),
-// so before HormoneIQ goes live the chip and highlight must read the validated
-// severity tier directly, not re-derive it from copy count.
+// and SnpDeepReport now reads the VALIDATED per-genotype tier first (severityFor)
+// with copy count only as the fallback, and marks the member's EXACT genotype row.
+// So when this panel's per-genotype source is approved and merged the STATUS chip,
+// the row tint, and the highlight render the clinical tier correctly.
 //
 // COMT rs4680 also appears in the GeneXM (methylation) severity context; here it
 // is the hormone-clearance reading. Keep the two keyed by panel slug, not merged.

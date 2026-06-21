@@ -81,6 +81,7 @@ import type { SnpDeepReport as SnpDeepReportData, SnpGenotype } from "@/data/gen
 import { SeverityPill } from "@/components/genetics/SeverityPill";
 import { severityToken } from "@/lib/genetics/severity";
 import type { SeverityTier } from "@/lib/genetics/severity";
+import { severityFor, canonicalGenotype } from "@/lib/genetics/variantSeverity";
 import type { BiologicalSex } from "@/hooks/body-tracker/useUserBiologicalSex";
 
 interface SnpDeepReportProps {
@@ -103,6 +104,13 @@ interface SnpDeepReportProps {
   // directly); males are hemizygous (one X copy, only a homozygous-call row can be
   // theirs); unknown sex falls back to no row mark.
   userSex?: BiologicalSex | null;
+  // Prompt 204 follow-up (go-live blocker 1): the member's CANONICAL allele
+  // genotype by rsID (lowercased key), threaded from the island so the matched row
+  // is found by the member's ACTUAL genotype, not by mapping their tier to a copy
+  // count. A general panel stores a real call (for example "CT"); methylation
+  // stores a +/+ zygosity, so its key is absent or empty here and the report falls
+  // back to the tier match. Empty until an upload exists.
+  userGenotypeByRsid?: ReadonlyMap<string, string>;
 }
 
 // Chip classes for one genotype status label, selected by keyword. Returns the
@@ -165,27 +173,62 @@ function referenceAllele(genotypes: SnpGenotype[]): string | null {
 }
 
 // Map one genotype call to its Typical / Moderate / High tier by counting effect
-// allele copies against the reference. null for a non-two-base call.
+// allele copies against the reference. null for a non-two-base call. This is the
+// COPY-COUNT fallback, correct only when the clinical ladder is monotonic with
+// copy count (the methylation zygosity model). The general panels read the
+// validated tier instead (see resolvedSeverityFor).
 function statusTierFor(call: string, ref: string | null): StatusTier | null {
   if (!ref || call.length !== 2) return null;
   const copies = (call[0] === ref ? 0 : 1) + (call[1] === ref ? 0 : 1);
   return copies === 0 ? "Typical" : copies === 1 ? "Moderate" : "High";
 }
 
-// Prompt 204k: the severity tier used to TINT a genotype row, derived from the
-// same status tier its StatusChip shows, so the row glass shade and the status
-// pill for a row always resolve from the same severityToken() and agree. null
-// for a non-two-base call (representative or pending rows), which then render
-// with no tier tint so nothing is misrepresented.
-function rowSeverityFor(genotype: SnpGenotype, ref: string | null): SeverityTier | null {
+// Prompt 204 follow-up (go-live blocker 1): the single resolver for a row's tier.
+// It reads the VALIDATED per-genotype severity first (severityFor, the clinical
+// map), and ONLY falls back to the copy-count derivation when a variant has no
+// validated entry. This matters for the general (non-methylation) panels, where
+// the clinical ladder is NOT a pure copy count (a homozygous variant can be
+// Moderate, not High), so deriving the STATUS from copy count alone would mislabel
+// the row and disagree with the score pill. The methylation panel has no
+// per-genotype allele entry in the validated map and is copy-count-correct, so it
+// stays on the fallback path unchanged. The validated map is empty for a panel
+// until that panel's per-genotype source is approved and merged, so nothing
+// changes for a panel until it is live.
+function resolvedSeverityFor(rsid: string, call: string): SeverityTier | null {
+  return severityFor(rsid, call);
+}
+
+// The STATUS tier (Typical / Moderate / High) for a row: validated tier mapped to
+// the status scale, else the copy-count fallback.
+function resolvedStatusTier(rsid: string, call: string, ref: string | null): StatusTier | null {
+  const validated = resolvedSeverityFor(rsid, call);
+  if (validated) return severityToStatusTier(validated);
+  return statusTierFor(call, ref);
+}
+
+// Prompt 204k + 204 follow-up: the severity tier used to TINT a genotype row.
+// Reads the SAME resolver as the StatusChip, so the row glass shade and the status
+// pill for a row always agree (validated when available, copy-count otherwise).
+// null for a non-tier row (representative or pending), which renders untinted.
+function rowSeverityFor(rsid: string, genotype: SnpGenotype, ref: string | null): SeverityTier | null {
+  const validated = resolvedSeverityFor(rsid, genotype.genotype);
+  if (validated) return validated;
   const tier = statusTierFor(genotype.genotype, ref);
   return tier ? STATUS_TIER_TO_SEVERITY[tier] : null;
 }
 
-// The STATUS chip: the derived tier colored through severityToken(), or the
+// The STATUS chip: the resolved tier colored through severityToken(), or the
 // original descriptive label when no clean tier can be derived.
-function StatusChip({ genotype, refAllele }: { genotype: SnpGenotype; refAllele: string | null }) {
-  const tier = statusTierFor(genotype.genotype, refAllele);
+function StatusChip({
+  rsid,
+  genotype,
+  refAllele,
+}: {
+  rsid: string;
+  genotype: SnpGenotype;
+  refAllele: string | null;
+}) {
+  const tier = resolvedStatusTier(rsid, genotype.genotype, refAllele);
   if (!tier) {
     return <span className={tierClasses(genotype.label)}>{genotype.label}</span>;
   }
@@ -216,6 +259,26 @@ function isUsersGenotypeRow(
   if (userTier == null) return false;
   const rowTier = statusTierFor(genotype.genotype, ref);
   return rowTier != null && rowTier === severityToStatusTier(userTier);
+}
+
+// Prompt 204 follow-up (go-live blocker 1): the member's matched row. When the
+// member has a real allele genotype on file (the general panels), match it
+// EXACTLY by canonical genotype, because the clinical ladder can be non-injective
+// (two genotypes can share a tier), so a tier match would be ambiguous and could
+// highlight the wrong row. When there is no genotype (the methylation panel stores
+// a +/+ zygosity, not an allele call), fall back to the tier match, which is
+// unambiguous there because the methylation tier IS the copy count. userGenotype
+// is the member's canonical (sorted, normalized) call, or empty when absent.
+function isMembersRow(
+  genotype: SnpGenotype,
+  ref: string | null,
+  userTier: SeverityTier | null,
+  userGenotype: string,
+): boolean {
+  if (userGenotype.length > 0) {
+    return canonicalGenotype(genotype.genotype) === userGenotype;
+  }
+  return isUsersGenotypeRow(genotype, ref, userTier);
 }
 
 // X-linked rsIDs. MAOA rs6323 sits on the X chromosome, so the member's genotype
@@ -323,6 +386,7 @@ export function SnpDeepReport({
   highlightRsid,
   severityByRsid,
   userSex,
+  userGenotypeByRsid,
 }: SnpDeepReportProps) {
   return (
     <div className="space-y-7 text-white">
@@ -365,6 +429,10 @@ export function SnpDeepReport({
             const rsidKey = variant.rsid.toLowerCase();
             const hasUserResult = severityByRsid?.has(rsidKey) ?? false;
             const userTier = hasUserResult ? severityByRsid?.get(rsidKey) ?? null : null;
+            // Prompt 204 follow-up (go-live blocker 1): the member's canonical
+            // genotype for this variant, used to match their EXACT row on a general
+            // panel (empty for methylation, which falls back to the tier match).
+            const userGeno = userGenotypeByRsid?.get(rsidKey) ?? "";
             // Prompt 204i follow-up: the reference allele for this variant, so each
             // genotype's STATUS maps to Typical / Moderate / High by effect-allele
             // copies (the same scale as the score).
@@ -433,12 +501,12 @@ export function SnpDeepReport({
                     {variant.genotypes.map((genotype) => {
                       const isUserRow =
                         allowRowMark &&
-                        isUsersGenotypeRow(genotype, refAllele, userTier) &&
+                        isMembersRow(genotype, refAllele, userTier, userGeno) &&
                         (!maleHemizygous || isHomozygousCall(genotype.genotype));
                       // Prompt 204k: tint each card by its own status tier (Typical
                       // green, Moderate yellow, High red), a stronger glass plus a
                       // tier border on the matched row. A non-tier row stays neutral.
-                      const rowSev = rowSeverityFor(genotype, refAllele);
+                      const rowSev = rowSeverityFor(variant.rsid, genotype, refAllele);
                       const rowClass = rowSev
                         ? isUserRow
                           ? `border ${severityToken(rowSev).matchedBorder} ${severityToken(rowSev).rowGlassMatched}`
@@ -456,7 +524,7 @@ export function SnpDeepReport({
                               {genotype.genotype}
                             </span>
                           ) : null}
-                          <StatusChip genotype={genotype} refAllele={refAllele} />
+                          <StatusChip rsid={variant.rsid} genotype={genotype} refAllele={refAllele} />
                         </div>
                         <p className="mt-1.5 text-[13px] leading-relaxed text-white/75">
                           {genotype.interpretation}
@@ -486,12 +554,12 @@ export function SnpDeepReport({
                         {variant.genotypes.map((genotype) => {
                           const isUserRow =
                             allowRowMark &&
-                            isUsersGenotypeRow(genotype, refAllele, userTier) &&
+                            isMembersRow(genotype, refAllele, userTier, userGeno) &&
                             (!maleHemizygous || isHomozygousCall(genotype.genotype));
                           // Prompt 204k: tint each row by its own status tier; the
                           // matched row gets a stronger glass plus the tier left
                           // accent. A non-tier row stays untinted (neutral).
-                          const rowSev = rowSeverityFor(genotype, refAllele);
+                          const rowSev = rowSeverityFor(variant.rsid, genotype, refAllele);
                           const rowClass = rowSev
                             ? isUserRow
                               ? `${severityToken(rowSev).rowGlassMatched} ${severityToken(rowSev).accent}`
@@ -513,7 +581,7 @@ export function SnpDeepReport({
                               </div>
                             </td>
                             <td className="px-3 py-2.5">
-                              <StatusChip genotype={genotype} refAllele={refAllele} />
+                              <StatusChip rsid={variant.rsid} genotype={genotype} refAllele={refAllele} />
                             </td>
                             <td className="px-3 py-2.5 text-[13px] leading-relaxed text-white/75">
                               {genotype.interpretation}

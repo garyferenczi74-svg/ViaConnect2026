@@ -47,6 +47,16 @@ export function normalizeGenotype(genotype: string): string {
   return genotype.replace(/[\s/|,;-]+/g, '').toUpperCase();
 }
 
+// Prompt 204 follow-up (go-live blocker 1): an ORDER-INDEPENDENT canonical form
+// of a two-base genotype, for matching a member's stored call to a report row when
+// allele order may differ ("CT" and "TC" are the same heterozygous call). It
+// normalizes (uppercase, strip separators) then sorts the bases, so both sides
+// canonicalize to the same token. A non-two-base value (a zygosity, a phenotype, a
+// copy-number call) just normalizes and sorts harmlessly; callers gate on length.
+export function canonicalGenotype(genotype: string): string {
+  return normalizeGenotype(genotype).split('').sort().join('');
+}
+
 // Resolve the validated severity tier for a member's result, or null when the
 // (rsID, genotype) has no validated assignment yet. Null is the honest unscored
 // state; callers must NOT substitute a guessed tier.

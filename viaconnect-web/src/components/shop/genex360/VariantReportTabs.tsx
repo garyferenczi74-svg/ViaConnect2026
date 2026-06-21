@@ -68,6 +68,9 @@ interface VariantReportTabsProps {
   severityByRsid?: ReadonlyMap<string, SeverityTier | null>;
   // Prompt 204i: the member's biological sex, forwarded for X-linked (MAOA) rows.
   userSex?: BiologicalSex | null;
+  // Prompt 204 follow-up (go-live blocker 1): the member's canonical genotype by
+  // rsID, forwarded so SnpDeepReport marks the member's exact row.
+  userGenotypeByRsid?: ReadonlyMap<string, string>;
 }
 
 // True when the active variant deep link targets a variant that lives in THIS
@@ -83,6 +86,7 @@ export function VariantReportTabs({
   highlightRsid,
   severityByRsid,
   userSex,
+  userGenotypeByRsid,
 }: VariantReportTabsProps) {
   const slug = marker.symbol.toLowerCase();
 
@@ -233,6 +237,7 @@ export function VariantReportTabs({
             highlightRsid={highlightRsid}
             severityByRsid={severityByRsid}
             userSex={userSex}
+            userGenotypeByRsid={userGenotypeByRsid}
           />
         </div>
       ) : null}
