@@ -14,6 +14,273 @@ export type Database = {
   }
   public: {
     Tables: {
+      knowledge_atoms: {
+        Row: {
+          citation: string | null
+          claim: string
+          confidence: number | null
+          contraindications: Json
+          created_at: string
+          domain: string
+          embedding: string | null
+          evidence_tier: number
+          id: string
+          last_verified_at: string | null
+          mechanism: string | null
+          nutrient_refs: string[]
+          review_status: string
+          reviewed_by: string | null
+          snp_refs: string[]
+          source_authority: string | null
+          source_type: string | null
+          source_url: string | null
+          supplement_refs: string[]
+        }
+        Insert: {
+          citation?: string | null
+          claim: string
+          confidence?: number | null
+          contraindications?: Json
+          created_at?: string
+          domain: string
+          embedding?: string | null
+          evidence_tier: number
+          id?: string
+          last_verified_at?: string | null
+          mechanism?: string | null
+          nutrient_refs?: string[]
+          review_status?: string
+          reviewed_by?: string | null
+          snp_refs?: string[]
+          source_authority?: string | null
+          source_type?: string | null
+          source_url?: string | null
+          supplement_refs?: string[]
+        }
+        Update: {
+          citation?: string | null
+          claim?: string
+          confidence?: number | null
+          contraindications?: Json
+          created_at?: string
+          domain?: string
+          embedding?: string | null
+          evidence_tier?: number
+          id?: string
+          last_verified_at?: string | null
+          mechanism?: string | null
+          nutrient_refs?: string[]
+          review_status?: string
+          reviewed_by?: string | null
+          snp_refs?: string[]
+          source_authority?: string | null
+          source_type?: string | null
+          source_url?: string | null
+          supplement_refs?: string[]
+        }
+        Relationships: []
+      }
+      snp_protocol_rules: {
+        Row: {
+          action_type: string
+          avoid_list: string[]
+          created_at: string
+          effect: string | null
+          evidence_tier: number | null
+          flagged_form: string | null
+          gene: string | null
+          genotype_match: string
+          id: string
+          linked_atom_ids: string[]
+          recommended_form: string | null
+          review_status: string
+          rsid: string
+          sensitive: boolean
+        }
+        Insert: {
+          action_type: string
+          avoid_list?: string[]
+          created_at?: string
+          effect?: string | null
+          evidence_tier?: number | null
+          flagged_form?: string | null
+          gene?: string | null
+          genotype_match: string
+          id?: string
+          linked_atom_ids?: string[]
+          recommended_form?: string | null
+          review_status?: string
+          rsid: string
+          sensitive?: boolean
+        }
+        Update: {
+          action_type?: string
+          avoid_list?: string[]
+          created_at?: string
+          effect?: string | null
+          evidence_tier?: number | null
+          flagged_form?: string | null
+          gene?: string | null
+          genotype_match?: string
+          id?: string
+          linked_atom_ids?: string[]
+          recommended_form?: string | null
+          review_status?: string
+          rsid?: string
+          sensitive?: boolean
+        }
+        Relationships: []
+      }
+      knowledge_bus: {
+        Row: {
+          created_at: string
+          domain: string | null
+          event_type: string
+          id: string
+          payload: Json
+          ref_id: string
+          ref_table: string
+          seq: number
+        }
+        Insert: {
+          created_at?: string
+          domain?: string | null
+          event_type: string
+          id?: string
+          payload?: Json
+          ref_id: string
+          ref_table: string
+          seq?: number
+        }
+        Update: {
+          created_at?: string
+          domain?: string | null
+          event_type?: string
+          id?: string
+          payload?: Json
+          ref_id?: string
+          ref_table?: string
+          seq?: number
+        }
+        Relationships: []
+      }
+      user_protocol_synthesis: {
+        Row: {
+          arnold_context: Json
+          disclaimers_version: string | null
+          generated_at: string
+          id: string
+          nutrition_guidance: Json
+          recommended_vitamins_minerals: Json
+          supplement_flags: Json
+          user_id: string
+        }
+        Insert: {
+          arnold_context?: Json
+          disclaimers_version?: string | null
+          generated_at?: string
+          id?: string
+          nutrition_guidance?: Json
+          recommended_vitamins_minerals?: Json
+          supplement_flags?: Json
+          user_id: string
+        }
+        Update: {
+          arnold_context?: Json
+          disclaimers_version?: string | null
+          generated_at?: string
+          id?: string
+          nutrition_guidance?: Json
+          recommended_vitamins_minerals?: Json
+          supplement_flags?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
+      knowledge_queries: {
+        Row: {
+          answer_summary: string | null
+          cited_atom_ids: string[]
+          coverage: string
+          created_at: string
+          domain: string
+          embedding: string | null
+          evidence_tiers_used: number[]
+          gap_topic: string | null
+          id: string
+          question_normalized: string | null
+          question_text: string
+          user_id: string
+        }
+        Insert: {
+          answer_summary?: string | null
+          cited_atom_ids?: string[]
+          coverage: string
+          created_at?: string
+          domain: string
+          embedding?: string | null
+          evidence_tiers_used?: number[]
+          gap_topic?: string | null
+          id?: string
+          question_normalized?: string | null
+          question_text: string
+          user_id: string
+        }
+        Update: {
+          answer_summary?: string | null
+          cited_atom_ids?: string[]
+          coverage?: string
+          created_at?: string
+          domain?: string
+          embedding?: string | null
+          evidence_tiers_used?: number[]
+          gap_topic?: string | null
+          id?: string
+          question_normalized?: string | null
+          question_text?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      research_run_log: {
+        Row: {
+          atoms_created: number
+          atoms_rejected: number
+          created_at: string
+          domain: string | null
+          duration_ms: number | null
+          errors: Json
+          gaps_recorded: number
+          id: string
+          sources_queried: string[]
+          status: string
+        }
+        Insert: {
+          atoms_created?: number
+          atoms_rejected?: number
+          created_at?: string
+          domain?: string | null
+          duration_ms?: number | null
+          errors?: Json
+          gaps_recorded?: number
+          id?: string
+          sources_queried?: string[]
+          status?: string
+        }
+        Update: {
+          atoms_created?: number
+          atoms_rejected?: number
+          created_at?: string
+          domain?: string | null
+          duration_ms?: number | null
+          errors?: Json
+          gaps_recorded?: number
+          id?: string
+          sources_queried?: string[]
+          status?: string
+        }
+        Relationships: []
+      }
       advisor_agent_config: {
         Row: {
           key: string
