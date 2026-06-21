@@ -6,6 +6,7 @@
  *   1. Happy path: returns number[768] on a successful fetch.
  *   2. Failure path: fetch throws -> returns null (fail-open), safeLog.error called.
  *   3. Missing API key: returns null immediately (fail-open).
+ *   4. HTTP error path: fetch resolves with ok:false -> returns null, safeLog.error called.
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -57,6 +58,7 @@ describe('embedText', () => {
   const FAKE_VALUES = Array.from({ length: 768 }, (_, i) => i * 0.001);
 
   beforeEach(() => {
+    vi.resetModules();
     vi.clearAllMocks();
     process.env.GEMINI_API_KEY = 'test-key-abc';
   });
@@ -117,5 +119,24 @@ describe('embedText', () => {
       expect.any(Object),
     );
     expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('returns null and calls safeLog.error when fetch resolves with a non-ok status', async () => {
+    global.fetch = vi.fn().mockResolvedValueOnce({
+      ok: false,
+      status: 403,
+      json: async () => ({}),
+    } as unknown as Response);
+
+    const { embedText } = await import('../embeddings');
+
+    const result = await embedText('x');
+
+    expect(result).toBeNull();
+    expect(safeLog.error).toHaveBeenCalledWith(
+      'kb.embedText',
+      expect.any(String),
+      expect.any(Object),
+    );
   });
 });
