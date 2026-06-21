@@ -17,6 +17,7 @@
  */
 
 import { createAdminClient } from '@/lib/supabase/admin';
+import { safeLog } from '@/lib/utils/safe-log';
 import { embedText } from './embeddings';
 import { gradeToTier } from './evidenceTier';
 import { METHYLATION_SNP_MONOGRAPHS } from './seeds/methylationSnpMonographs';
@@ -176,10 +177,11 @@ export async function upsertAtomDraft(
 ): Promise<void> {
   const supabase = createAdminClient();
 
-  // Existence check: find any row with the same claim text.
+  // Existence check: find any row with the same (domain, claim) pair.
   const { data: existing, error: selectError } = await supabase
     .from('knowledge_atoms')
     .select('id')
+    .eq('domain', atom.domain)
     .eq('claim', atom.claim);
 
   if (selectError) {
@@ -222,17 +224,19 @@ export async function upsertAtomDraft(
 // For each monograph:
 //   1. Convert via atomFromEntry (domain = 'methylation').
 //   2. Embed the claim text (null tolerated -- fails open).
-//   3. Upsert as draft (idempotent: skip if claim already present).
+//   3. Upsert as draft (idempotent: skip if (domain, claim) already present).
 //
-// Returns { inserted, skipped } counts. MUST NOT be called against the live
-// DB from tests -- always mock createAdminClient and embedText.
+// Returns { inserted, skipped, failed } counts. MUST NOT be called against
+// the live DB from tests -- always mock createAdminClient and embedText.
 // ---------------------------------------------------------------------------
 export async function seedMonographsAsDrafts(): Promise<{
   inserted: number;
   skipped: number;
+  failed: number;
 }> {
   let inserted = 0;
   let skipped = 0;
+  let failed = 0;
 
   const supabase = createAdminClient();
 
@@ -242,10 +246,11 @@ export async function seedMonographsAsDrafts(): Promise<{
     // Attach embedding (null tolerated).
     const embedding = await embedText(atom.claim);
 
-    // Existence check.
+    // Existence check on (domain, claim).
     const { data: existing } = await supabase
       .from('knowledge_atoms')
       .select('id')
+      .eq('domain', atom.domain)
       .eq('claim', atom.claim);
 
     if (existing && existing.length > 0) {
@@ -274,9 +279,19 @@ export async function seedMonographsAsDrafts(): Promise<{
       last_verified_at: atom.last_verified_at,
     };
 
-    await supabase.from('knowledge_atoms').insert([row]);
-    inserted++;
+    const { error: insertError } = await supabase.from('knowledge_atoms').insert([row]);
+
+    if (insertError) {
+      safeLog.error('kb.seed', 'Failed to insert knowledge atom draft', {
+        claim: atom.claim,
+        domain: atom.domain,
+        error: insertError,
+      });
+      failed++;
+    } else {
+      inserted++;
+    }
   }
 
-  return { inserted, skipped };
+  return { inserted, skipped, failed };
 }

@@ -6,6 +6,7 @@
  * Mocks:
  *   - @/lib/supabase/admin  (service-role client)
  *   - ./embeddings           (embedText)
+ *   - @/lib/utils/safe-log   (safeLog)
  *
  * Assertions:
  *   1. atomFromEntry maps a sample monograph correctly:
@@ -16,34 +17,67 @@
  *   2. getPublishedAtoms: query builder receives .eq('review_status', 'published')
  *      and must NEVER include drafts.
  *   3. seedMonographsAsDrafts: with embedText mocked to return null, still upserts
- *      and returns inserted + skipped counts totalling 29.
+ *      and returns inserted + skipped + failed counts totalling 29.
+ *   4. Existence check uses (domain, claim) -- two chained .eq() calls.
+ *   5. When insert returns an error, failed is incremented (not inserted).
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // ---------------------------------------------------------------------------
+// Mock safeLog BEFORE module-under-test is imported.
+// ---------------------------------------------------------------------------
+vi.mock('@/lib/utils/safe-log', () => ({
+  safeLog: {
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  },
+}));
+
+// ---------------------------------------------------------------------------
 // Mock the Supabase admin client BEFORE any module-under-test is imported.
-// We build a chainable mock that records the eq() call so we can assert on it.
+//
+// The existence check now chains: .select('id').eq('domain', x).eq('claim', y)
+// We model this with two levels of chaining:
+//   mockEqDomain -- the first .eq('domain', ...) call; returns an object
+//                   whose .eq property is mockEqClaim
+//   mockEqClaim  -- the second .eq('claim', ...) call; returns { data, error }
+//
+// getPublishedAtoms still does a single .eq('review_status', 'published') on
+// the chain that starts from .select('*'), so its chain calls mockEqDomain
+// (which for that path returns the final result directly, since there is no
+// second .eq chained after it).  We route both uses through mockEqDomain but
+// make mockEqDomain's default return value also work as a terminal result.
 // ---------------------------------------------------------------------------
 
-// Shared mutable spy references so tests can inspect them.
-const mockEq = vi.fn();
+const mockEqClaim = vi.fn();
+const mockEqDomain = vi.fn();
 const mockSelect = vi.fn();
 const mockInsert = vi.fn();
 
-// Build a reusable chainable mock factory.
-// getPublishedAtoms does:  supabase.from('knowledge_atoms').select('*').eq('review_status','published')
-// upsertAtomDraft does:    supabase.from('knowledge_atoms').select(...)... then .insert(...)
+// Default: second .eq returns empty list (no existing rows).
+mockEqClaim.mockReturnValue({ data: [], error: null });
 
-// Default mockEq response -- tests override this with mockReturnValue / mockReturnValueOnce.
-mockEq.mockReturnValue({ data: [], error: null });
+// Default: first .eq returns an object with a second .eq (for domain+claim
+// chaining) AND also behaves as a terminal result for review_status queries.
+// We accomplish this by returning an object that has both `data`/`error` keys
+// (for getPublishedAtoms) and an `.eq` method (for seedMonographsAsDrafts /
+// upsertAtomDraft existence checks).
+mockEqDomain.mockReturnValue({
+  data: [],
+  error: null,
+  eq: mockEqClaim,
+});
 
 const makeChain = () => {
   const chain: Record<string, unknown> = {};
   chain.select = vi.fn(() => chain);
-  // Assign mockEq directly so per-test mockReturnValue / mockReturnValueOnce overrides work.
-  chain.eq = mockEq;
-  chain.insert = mockInsert.mockResolvedValue({ error: null });
+  chain.eq = mockEqDomain;
+  // Assign mockInsert directly -- do NOT call mockResolvedValue here so that
+  // per-test mockInsert.mockResolvedValue() calls are not overridden.
+  chain.insert = mockInsert;
   return chain;
 };
 
@@ -69,6 +103,7 @@ import type { KnowledgeEntry } from '../knowledgeEntry';
 import { atomFromEntry, getPublishedAtoms, seedMonographsAsDrafts } from '../knowledgeAtoms';
 import { gradeToTier } from '../evidenceTier';
 import { embedText } from '../embeddings';
+import { safeLog } from '@/lib/utils/safe-log';
 import { METHYLATION_SNP_MONOGRAPHS } from '../seeds/methylationSnpMonographs';
 
 // ---------------------------------------------------------------------------
@@ -186,12 +221,12 @@ describe('getPublishedAtoms', () => {
   it('calls .eq("review_status", "published") and never returns drafts', async () => {
     // Return published mock data.
     const publishedRow = { id: 'abc', review_status: 'published', claim: 'test claim' };
-    mockEq.mockReturnValueOnce({ data: [publishedRow], error: null });
+    mockEqDomain.mockReturnValueOnce({ data: [publishedRow], error: null, eq: mockEqClaim });
 
     const results = await getPublishedAtoms();
 
     // Must have called eq with review_status published.
-    expect(mockEq).toHaveBeenCalledWith('review_status', 'published');
+    expect(mockEqDomain).toHaveBeenCalledWith('review_status', 'published');
 
     // Must not include any draft rows.
     for (const row of results) {
@@ -200,20 +235,20 @@ describe('getPublishedAtoms', () => {
   });
 
   it('filters by domain when provided', async () => {
-    mockEq.mockReturnValue({ data: [], error: null });
+    mockEqDomain.mockReturnValue({ data: [], error: null, eq: mockEqClaim });
     await getPublishedAtoms({ domain: 'methylation' });
     // Must have called eq with review_status=published at minimum.
-    expect(mockEq).toHaveBeenCalledWith('review_status', 'published');
+    expect(mockEqDomain).toHaveBeenCalledWith('review_status', 'published');
   });
 
   it('returns empty array on no results', async () => {
-    mockEq.mockReturnValueOnce({ data: [], error: null });
+    mockEqDomain.mockReturnValueOnce({ data: [], error: null, eq: mockEqClaim });
     const results = await getPublishedAtoms();
     expect(results).toEqual([]);
   });
 
   it('returns empty array on DB error (fail-open)', async () => {
-    mockEq.mockReturnValueOnce({ data: null, error: { message: 'connection refused' } });
+    mockEqDomain.mockReturnValueOnce({ data: null, error: { message: 'connection refused' }, eq: mockEqClaim });
     const results = await getPublishedAtoms();
     expect(results).toEqual([]);
   });
@@ -229,7 +264,8 @@ describe('seedMonographsAsDrafts', () => {
 
   it('calls embedText for each monograph even when it returns null', async () => {
     // select returns no existing rows (so all are inserted).
-    mockEq.mockReturnValue({ data: [], error: null });
+    mockEqDomain.mockReturnValue({ data: null, error: null, eq: mockEqClaim });
+    mockEqClaim.mockReturnValue({ data: [], error: null });
     mockInsert.mockResolvedValue({ error: null });
 
     await seedMonographsAsDrafts();
@@ -240,32 +276,69 @@ describe('seedMonographsAsDrafts', () => {
 
   it('returns inserted + skipped counts totalling 29 (all new)', async () => {
     // No existing rows -> all 29 inserted.
-    mockEq.mockReturnValue({ data: [], error: null });
+    mockEqDomain.mockReturnValue({ data: null, error: null, eq: mockEqClaim });
+    mockEqClaim.mockReturnValue({ data: [], error: null });
     mockInsert.mockResolvedValue({ error: null });
 
     const result = await seedMonographsAsDrafts();
 
-    expect(result.inserted + result.skipped).toBe(METHYLATION_SNP_MONOGRAPHS.length);
+    expect(result.inserted + result.skipped + result.failed).toBe(METHYLATION_SNP_MONOGRAPHS.length);
     expect(result.inserted).toBe(29);
     expect(result.skipped).toBe(0);
+    expect(result.failed).toBe(0);
   });
 
   it('skips rows that already exist (idempotent)', async () => {
     // All rows already present -> none inserted.
-    mockEq.mockReturnValue({ data: [{ id: 'existing' }], error: null });
+    mockEqDomain.mockReturnValue({ data: null, error: null, eq: mockEqClaim });
+    mockEqClaim.mockReturnValue({ data: [{ id: 'existing' }], error: null });
 
     const result = await seedMonographsAsDrafts();
 
     expect(result.skipped).toBe(METHYLATION_SNP_MONOGRAPHS.length);
     expect(result.inserted).toBe(0);
-    expect(result.inserted + result.skipped).toBe(METHYLATION_SNP_MONOGRAPHS.length);
+    expect(result.failed).toBe(0);
+    expect(result.inserted + result.skipped + result.failed).toBe(METHYLATION_SNP_MONOGRAPHS.length);
   });
 
   it('tolerates null embeddings (does not throw)', async () => {
     // embedText is already mocked to return null at the top level.
-    mockEq.mockReturnValue({ data: [], error: null });
+    mockEqDomain.mockReturnValue({ data: null, error: null, eq: mockEqClaim });
+    mockEqClaim.mockReturnValue({ data: [], error: null });
     mockInsert.mockResolvedValue({ error: null });
 
     await expect(seedMonographsAsDrafts()).resolves.not.toThrow();
+  });
+
+  it('uses domain in the existence-check query (dedup key is domain + claim)', async () => {
+    mockEqDomain.mockReturnValue({ data: null, error: null, eq: mockEqClaim });
+    mockEqClaim.mockReturnValue({ data: [], error: null });
+    mockInsert.mockResolvedValue({ error: null });
+
+    await seedMonographsAsDrafts();
+
+    // The first .eq call must receive 'domain' as the column name.
+    expect(mockEqDomain).toHaveBeenCalledWith('domain', 'methylation');
+    // The second .eq call must receive 'claim' as the column name.
+    expect(mockEqClaim).toHaveBeenCalledWith('claim', expect.any(String));
+  });
+
+  it('increments failed (not inserted) and calls safeLog.error when insert returns an error', async () => {
+    // No existing rows -> will attempt insert.
+    mockEqDomain.mockReturnValue({ data: null, error: null, eq: mockEqClaim });
+    mockEqClaim.mockReturnValue({ data: [], error: null });
+    // All inserts fail.
+    mockInsert.mockResolvedValue({ error: { message: 'boom' } });
+
+    const result = await seedMonographsAsDrafts();
+
+    expect(result.failed).toBe(METHYLATION_SNP_MONOGRAPHS.length);
+    expect(result.inserted).toBe(0);
+    expect(result.skipped).toBe(0);
+    expect(safeLog.error).toHaveBeenCalledWith(
+      'kb.seed',
+      'Failed to insert knowledge atom draft',
+      expect.objectContaining({ domain: 'methylation' }),
+    );
   });
 });
