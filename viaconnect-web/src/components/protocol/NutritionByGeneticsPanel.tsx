@@ -176,7 +176,7 @@ export function NutritionByGeneticsPanel() {
                   strokeWidth={1.5}
                 />
                 <span className="text-xs font-semibold uppercase tracking-wide text-red-400/70">
-                  Limit
+                  Avoid
                 </span>
               </div>
               <ul className="space-y-2" role="list">
