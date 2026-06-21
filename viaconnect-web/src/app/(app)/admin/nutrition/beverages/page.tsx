@@ -1,13 +1,11 @@
 'use client';
 
-// Prompt 207a Task 7: Admin beverage catalog list page.
+// Prompt 207a Task 7+8: Admin beverage catalog list page + editor.
 //
 // Fetches GET /api/admin/nutrition/beverages (admin-gated) and renders all
-// beverage_catalog rows (active + inactive). Provides:
-//   - In-memory search by display_name
-//   - Filter by the 9 categories
-//   - Sort by sort_order (default)
-//   - Desktop: full table; Mobile: stacked cards
+// beverage_catalog rows (active + inactive). Task 8 adds:
+//   - "Add Beverage" button to open BeverageEditor in create mode
+//   - "Edit" button per row to open BeverageEditor in edit mode
 //
 // Auth: the (app)/layout.tsx admin-role gate already blocks non-admins;
 // no additional page-level guard is needed here.
@@ -16,13 +14,14 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   AlertCircle,
   ChevronDown,
-  Coffee,
-  Droplets,
   Filter,
   Loader2,
+  Pencil,
+  Plus,
   Search,
   Tag,
 } from 'lucide-react';
+import { BeverageEditor } from './BeverageEditor';
 import type {
   BeverageCatalogRow,
   BeverageCategory,
@@ -61,6 +60,8 @@ export default function AdminBeveragesPage() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<BeverageCategory | ''>('');
+  /** null = editor closed; 'new' = create mode; BeverageCatalogRow = edit mode */
+  const [editorTarget, setEditorTarget] = useState<BeverageCatalogRow | 'new' | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -110,33 +111,66 @@ export default function AdminBeveragesPage() {
                 Beverage Catalog
               </h1>
               <p className="mt-0.5 text-sm" style={{ color: '#8099cc' }}>
-                All system beverages (active + inactive). Read-only view.
+                All system beverages (active + inactive).
               </p>
             </div>
-            {!loading && !error && (
-              <div className="flex gap-3 text-sm" style={{ color: '#8099cc' }}>
-                <span>
-                  <span className="font-semibold" style={{ color: '#2DA5A0' }}>
-                    {activeCount}
-                  </span>{' '}
-                  active
-                </span>
-                <span>
-                  <span className="font-semibold" style={{ color: '#B75E18' }}>
-                    {inactiveCount}
-                  </span>{' '}
-                  inactive
-                </span>
-                <span>
-                  <span className="font-semibold text-white">{beverages.length}</span> total
-                </span>
-              </div>
-            )}
+            <div className="flex flex-wrap items-center gap-3">
+              {!loading && !error && (
+                <div className="flex gap-3 text-sm" style={{ color: '#8099cc' }}>
+                  <span>
+                    <span className="font-semibold" style={{ color: '#2DA5A0' }}>
+                      {activeCount}
+                    </span>{' '}
+                    active
+                  </span>
+                  <span>
+                    <span className="font-semibold" style={{ color: '#B75E18' }}>
+                      {inactiveCount}
+                    </span>{' '}
+                    inactive
+                  </span>
+                  <span>
+                    <span className="font-semibold text-white">{beverages.length}</span> total
+                  </span>
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => setEditorTarget('new')}
+                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-opacity hover:opacity-80"
+                style={{ background: '#2DA5A0', color: '#fff' }}
+              >
+                <Plus strokeWidth={1.5} className="h-4 w-4" />
+                Add Beverage
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+        {/* Editor panel */}
+        {editorTarget !== null && (
+          <div className="mb-6">
+            <BeverageEditor
+              beverage={editorTarget === 'new' ? null : editorTarget}
+              onSaved={(row) => {
+                setBeverages((prev) => {
+                  const idx = prev.findIndex((b) => b.slug === row.slug);
+                  if (idx >= 0) {
+                    const next = [...prev];
+                    next[idx] = row;
+                    return next;
+                  }
+                  return [...prev, row];
+                });
+                setEditorTarget(null);
+              }}
+              onClose={() => setEditorTarget(null)}
+            />
+          </div>
+        )}
+
         {/* Loading */}
         {loading && (
           <div className="flex items-center justify-center py-24">
@@ -239,12 +273,13 @@ export default function AdminBeveragesPage() {
                     <th className="px-4 py-3 text-right">Volume (ml)</th>
                     <th className="px-4 py-3 text-right">Hydration Coeff</th>
                     <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3" />
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-4 py-10 text-center text-sm" style={{ color: '#8099cc' }}>
+                      <td colSpan={7} className="px-4 py-10 text-center text-sm" style={{ color: '#8099cc' }}>
                         No beverages match your filters.
                       </td>
                     </tr>
@@ -275,6 +310,16 @@ export default function AdminBeveragesPage() {
                         <td className="px-4 py-3">
                           <StatusBadge isActive={bev.is_active} />
                         </td>
+                        <td className="px-4 py-3 text-right">
+                          <button
+                            type="button"
+                            onClick={() => setEditorTarget(bev)}
+                            className="rounded p-1.5 transition-colors hover:bg-white/10"
+                            aria-label={`Edit ${bev.display_name}`}
+                          >
+                            <Pencil strokeWidth={1.5} className="h-3.5 w-3.5" style={{ color: '#2DA5A0' }} />
+                          </button>
+                        </td>
                       </tr>
                     ))
                   )}
@@ -302,7 +347,17 @@ export default function AdminBeveragesPage() {
                       <p className="font-medium" style={{ color: '#c8d8f4' }}>
                         {bev.display_name}
                       </p>
-                      <StatusBadge isActive={bev.is_active} />
+                      <div className="flex items-center gap-2">
+                        <StatusBadge isActive={bev.is_active} />
+                        <button
+                          type="button"
+                          onClick={() => setEditorTarget(bev)}
+                          className="rounded p-1.5 transition-colors hover:bg-white/10"
+                          aria-label={`Edit ${bev.display_name}`}
+                        >
+                          <Pencil strokeWidth={1.5} className="h-3.5 w-3.5" style={{ color: '#2DA5A0' }} />
+                        </button>
+                      </div>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <CategoryPill category={bev.category} />

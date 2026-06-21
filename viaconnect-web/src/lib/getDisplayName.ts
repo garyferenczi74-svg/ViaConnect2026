@@ -19,6 +19,7 @@ const NAME_MAP: Readonly<Record<string, string>> = {
   sherlock: "Sherlock",
   michelangelo: "Michelangelo",
   marshall: "Marshall",
+  kelsey: "Kelsey",
   lex: "Lex",
   marshall_precheck: "Marshall Pre-Check",
   marshall_extension: "Marshall Pre-Check Extension",
