@@ -27,6 +27,10 @@
 
 import { createAdminClient } from '@/lib/supabase/admin';
 import { canonicalGenotype } from '@/lib/genetics/variantSeverity';
+import { reviewServerText } from '@/lib/compliance/review-server-text';
+import type { ServerReviewDecision } from '@/lib/compliance/review-server-text';
+import { canTransitionToPublished } from './knowledgeBus';
+import { safeLog } from '@/lib/utils/safe-log';
 import type { EvidenceTier } from './evidenceTier';
 
 // ---------------------------------------------------------------------------
@@ -602,4 +606,136 @@ export async function seedRulesAsDrafts(): Promise<{
   }
 
   return { inserted, skipped, failed };
+}
+
+// ---------------------------------------------------------------------------
+// ruleClaimText
+//
+// Composes the consumer-facing text from a rule row for compliance review.
+// Builds a non-empty sentence from: effect, recommended_form, flagged_form,
+// and avoid_list. All fields are optional; at minimum the gene + rsid are used
+// so the text is never empty.
+// ---------------------------------------------------------------------------
+function ruleClaimText(rule: SnpProtocolRule): string {
+  const parts: string[] = [];
+
+  if (rule.effect && rule.effect.trim().length > 0) {
+    parts.push(rule.effect.trim());
+  }
+
+  if (rule.recommended_form && rule.recommended_form.trim().length > 0) {
+    parts.push(`Prefer ${rule.recommended_form.trim()}.`);
+  }
+
+  if (rule.flagged_form && rule.flagged_form.trim().length > 0) {
+    parts.push(`Flag ${rule.flagged_form.trim()}.`);
+  }
+
+  if (Array.isArray(rule.avoid_list) && rule.avoid_list.length > 0) {
+    parts.push(`Avoid: ${rule.avoid_list.join(', ')}.`);
+  }
+
+  if (parts.length === 0) {
+    // Fallback: rule identity so text is never blank.
+    parts.push(`Protocol rule for ${rule.gene} ${rule.rsid}.`);
+  }
+
+  return parts.join(' ');
+}
+
+// ---------------------------------------------------------------------------
+// publishRule
+//
+// Gate B: the ONLY path by which a net-new consumer SNP protocol rule reaches
+// review_status='published'. Routes the rule's consumer-facing text through
+// reviewServerText (Kelsey two-stage gate) before any DB update.
+//
+// Algorithm:
+//   1. Fetch rule by id. Not found -> { published:false, decision:'BLOCKED' }.
+//   2. Guard: rule must be in_review (canTransitionToPublished). Otherwise
+//      return { published:false, decision:<current_status> } without calling
+//      reviewServerText.
+//   3. Compose consumer-facing text via ruleClaimText(rule).
+//   4. Call reviewServerText with subject_type:'protocol', jurisdiction:'US'.
+//   5. pass_stage_1 or APPROVED -> UPDATE review_status='published'.
+//      CONDITIONAL -> UPDATE review_status='published' (sanitized rewrite approved).
+//      BLOCKED or ESCALATE -> hold in_review, safeLog the hold, do NOT publish.
+//   6. DB trigger emits knowledge_bus event on UPDATE; do NOT insert bus rows here.
+//   Fail-safe: any thrown error -> safeLog.error + { published:false, decision:'ESCALATE' }.
+// ---------------------------------------------------------------------------
+export async function publishRule(
+  ruleId: string,
+): Promise<{ published: boolean; decision: ServerReviewDecision }> {
+  const supabase = createAdminClient();
+
+  // Step 1: Fetch rule by id.
+  let rule: SnpProtocolRule;
+  try {
+    const { data, error } = await supabase
+      .from('snp_protocol_rules')
+      .select('*')
+      .eq('id', ruleId);
+
+    if (error || !data || data.length === 0) {
+      safeLog.warn('snp-protocol-rules', 'publishRule: rule not found', { ruleId, error });
+      return { published: false, decision: 'BLOCKED' };
+    }
+
+    rule = data[0] as SnpProtocolRule;
+  } catch (err) {
+    safeLog.error('snp-protocol-rules', 'publishRule: fetch threw', { ruleId, err });
+    return { published: false, decision: 'ESCALATE' };
+  }
+
+  // Step 2: Guard - must be in_review.
+  if (!canTransitionToPublished(rule.review_status)) {
+    safeLog.warn('snp-protocol-rules', 'publishRule: transition guard blocked (not in_review)', {
+      ruleId,
+      review_status: rule.review_status,
+    });
+    return {
+      published: false,
+      decision: rule.review_status as ServerReviewDecision,
+    };
+  }
+
+  // Step 3 + 4: Compose text and call reviewServerText.
+  let result;
+  try {
+    result = await reviewServerText({
+      text: ruleClaimText(rule),
+      jurisdiction: 'US',
+      subject_type: 'protocol',
+      subject_id: ruleId,
+      actor_role: 'system',
+    });
+  } catch (err) {
+    safeLog.error('snp-protocol-rules', 'publishRule: reviewServerText threw', { ruleId, err });
+    return { published: false, decision: 'ESCALATE' };
+  }
+
+  // Step 5: Decision mapping.
+  const decision = result.decision;
+
+  if (decision === 'pass_stage_1' || decision === 'APPROVED' || decision === 'CONDITIONAL') {
+    // Publish: UPDATE review_status='published'. DB trigger emits knowledge_bus event.
+    try {
+      await supabase
+        .from('snp_protocol_rules')
+        .update({ review_status: 'published' })
+        .eq('id', ruleId);
+    } catch (err) {
+      safeLog.error('snp-protocol-rules', 'publishRule: update threw', { ruleId, decision, err });
+      return { published: false, decision: 'ESCALATE' };
+    }
+    return { published: true, decision };
+  }
+
+  // BLOCKED or ESCALATE: hold in_review.
+  safeLog.warn('snp-protocol-rules', 'publishRule: held in_review by compliance gate', {
+    ruleId,
+    decision,
+    rationale: result.rationale,
+  });
+  return { published: false, decision };
 }
