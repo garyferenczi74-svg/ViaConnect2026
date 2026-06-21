@@ -138,10 +138,10 @@ export function HeroSection({
                             </div>
                         </HeroOverlayScrollWrapper>
                         <div className="absolute inset-0 overflow-hidden border border-white/5">
-                            {/* Poster wired to /images/hero-poster.jpg so the landing shows an
-                                instant first frame while the 15MB hero video buffers. Generate the
-                                asset once via ffmpeg (the browser ignores a missing poster, so there
-                                is no regression until the file is added and deployed):
+                            {/* TODO: a poster gives an instant first frame while the 15MB hero
+                                buffers, but only wire poster="/images/hero-poster.jpg" AFTER the
+                                asset exists in public/images/ (an absent poster makes the browser
+                                request a 404). Generate it once via ffmpeg:
                                 ffmpeg -i "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Assets/DNA HD.mp4" -ss 00:00:01 -frames:v 1 -q:v 2 public/images/hero-poster.jpg */}
                             <video
                                 ref={videoRef}
@@ -151,7 +151,6 @@ export function HeroSection({
                                 playsInline
                                 preload="auto"
                                 disablePictureInPicture
-                                poster="/images/hero-poster.jpg"
                                 className="size-full object-cover opacity-30 lg:opacity-50"
                                 src="https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Assets/DNA%20HD.mp4"
                             />
