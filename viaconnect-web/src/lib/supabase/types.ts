@@ -14,6 +14,72 @@ export type Database = {
   }
   public: {
     Tables: {
+      drug_nutrient_depletions: {
+        Row: {
+          created_at: string
+          depleted_nutrient: string
+          evidence_tier: number | null
+          id: string
+          mechanism: string | null
+          medication: string
+          source_atom_ids: string[]
+        }
+        Insert: {
+          created_at?: string
+          depleted_nutrient: string
+          evidence_tier?: number | null
+          id?: string
+          mechanism?: string | null
+          medication: string
+          source_atom_ids?: string[]
+        }
+        Update: {
+          created_at?: string
+          depleted_nutrient?: string
+          evidence_tier?: number | null
+          id?: string
+          mechanism?: string | null
+          medication?: string
+          source_atom_ids?: string[]
+        }
+        Relationships: []
+      }
+      user_health_context: {
+        Row: {
+          allergies: Json
+          conditions: Json
+          demographics: Json
+          goals: Json
+          id: string
+          medications: Json
+          pregnancy_status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          allergies?: Json
+          conditions?: Json
+          demographics?: Json
+          goals?: Json
+          id?: string
+          medications?: Json
+          pregnancy_status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          allergies?: Json
+          conditions?: Json
+          demographics?: Json
+          goals?: Json
+          id?: string
+          medications?: Json
+          pregnancy_status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       biomarker_trends: {
         Row: {
           biomarker: string
