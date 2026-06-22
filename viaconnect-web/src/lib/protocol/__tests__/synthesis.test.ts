@@ -51,6 +51,16 @@ vi.mock('@/lib/protocol/healthContext', () => ({
   }),
 }));
 
+// === PROMPT 208a C2 EXTENSION START ===
+// Mock getUserAncestry so synthesis C2 tests can control ancestry without DB.
+// Default: empty ancestry (unknown -> no caveats surfaced; no unfair penalization).
+vi.mock('@/lib/genetics/ancestry/populationMatch', () => ({
+  getUserAncestry: vi.fn().mockResolvedValue([]),
+  populationCaveatFor: vi.fn().mockReturnValue(null),
+  populationMatches: vi.fn().mockReturnValue(true),
+}));
+// === PROMPT 208a C2 EXTENSION END ===
+
 // safeLog is real (no side effects in tests, just console output).
 
 import {
@@ -66,6 +76,9 @@ import { getLatestUserHealthContext } from '@/lib/protocol/healthContext';
 // === PROMPT 208a I3 EXTENSION START ===
 import { getActivePublishedRules } from '@/lib/kb/ruleKillswitch';
 // === PROMPT 208a I3 EXTENSION END ===
+// === PROMPT 208a C2 EXTENSION START ===
+import { getUserAncestry, populationCaveatFor } from '@/lib/genetics/ancestry/populationMatch';
+// === PROMPT 208a C2 EXTENSION END ===
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -760,3 +773,107 @@ describe('I3 Test 12: Killed rule does not appear in recommendations', () => {
     expect(killedRec).toBeUndefined();
   });
 });
+
+// ---------------------------------------------------------------------------
+// === PROMPT 208a C2 EXTENSION START ===
+// C2 Test 13: EUR-only rule + AFR user -> population_caveats includes that rsid
+// C2 Test 14: MTHFR + HFE rules without validated_populations -> no caveat
+// (Prompt 208a Module C Task C2)
+// ---------------------------------------------------------------------------
+
+describe('C2 Test 13: EUR-only rule + AFR user produces a population caveat', () => {
+  it('includes a population_caveats entry for the mismatched rsid when ancestry is known and different', async () => {
+    const userId = 'user-afr-eur-mismatch';
+
+    // A prefer_form rule that has validated_populations: ['european']
+    const eurRule = preferFormRule({
+      id: 'rule-eur-only',
+      rsid: 'rs1801133',
+      gene: 'MTHFR',
+      genotype_match: 'TT',
+      recommended_form: 'L-methylfolate',
+      validated_populations: ['european'],
+      cross_population_caveat: 'Validated primarily in European populations; cross-ancestry applicability is uncertain.',
+      evidence_tier: 2,
+    });
+
+    (getPublishedRules as ReturnType<typeof vi.fn>).mockResolvedValue([eurRule]);
+    (getQualifiedUserVariants as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { rsid: 'rs1801133', gene: 'MTHFR', genotype: 'TT', panel_key: 'methylation', status: 'confirmed' },
+    ]);
+    (createAdminClient as ReturnType<typeof vi.fn>).mockReturnValue(
+      buildAdminMock([], []),
+    );
+    (getLatestUserHealthContext as ReturnType<typeof vi.fn>).mockResolvedValue({
+      allergies: [],
+      medications: [],
+      goals: [],
+      pregnancyStatus: null,
+      age: 35,
+    });
+
+    // User has AFR ancestry (does not match EUR rule)
+    (getUserAncestry as ReturnType<typeof vi.fn>).mockResolvedValue(['african']);
+    // Real populationCaveatFor: returns caveat when non-matching known ancestry
+    (populationCaveatFor as ReturnType<typeof vi.fn>).mockImplementation(
+      (rule: { rsid: string; validated_populations?: string[] | null; cross_population_caveat?: string | null }, userPops: string[]) => {
+        if (!rule.validated_populations || rule.validated_populations.length === 0) return null;
+        if (userPops.length === 0) return null;
+        const userLower = userPops.map((p: string) => p.toLowerCase());
+        const matches = rule.validated_populations.some((rp: string) => userLower.includes(rp.toLowerCase()));
+        if (matches) return null;
+        if (!rule.cross_population_caveat || rule.cross_population_caveat.trim().length === 0) return null;
+        return { rsid: rule.rsid, caveat: rule.cross_population_caveat };
+      },
+    );
+
+    const output = await synthesizeForUser(userId);
+
+    // The rule STILL applies (it is still recommended).
+    const rec = output.recommended_vitamins_minerals.find((r) => r.form === 'L-methylfolate');
+    expect(rec).toBeDefined();
+
+    // population_caveats must include the caveat for rs1801133.
+    expect(output.population_caveats).toBeDefined();
+    expect(Array.isArray(output.population_caveats)).toBe(true);
+    const caveat = output.population_caveats?.find((c) => c.rsid === 'rs1801133');
+    expect(caveat).toBeDefined();
+    expect(caveat?.caveat).toContain('European');
+  });
+});
+
+describe('C2 Test 14: MTHFR + HFE rules without validated_populations -> no population caveats', () => {
+  it('produces no population_caveats when rules have no validated_populations', async () => {
+    const userId = 'user-no-pop-caveats';
+
+    (getPublishedRules as ReturnType<typeof vi.fn>).mockResolvedValue([preferFormRule(), contraindicateRule()]);
+    (getQualifiedUserVariants as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { rsid: 'rs1801133', gene: 'MTHFR', genotype: 'TT', panel_key: 'methylation', status: 'confirmed' },
+      { rsid: 'rs1800562', gene: 'HFE', genotype: 'AA', panel_key: 'methylation', status: 'confirmed' },
+    ]);
+    (createAdminClient as ReturnType<typeof vi.fn>).mockReturnValue(
+      buildAdminMock([], []),
+    );
+    (getLatestUserHealthContext as ReturnType<typeof vi.fn>).mockResolvedValue({
+      allergies: [],
+      medications: [],
+      goals: [],
+      pregnancyStatus: null,
+      age: 35,
+    });
+
+    // Reset to default: getUserAncestry returns [] (unknown), populationCaveatFor returns null
+    (getUserAncestry as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (populationCaveatFor as ReturnType<typeof vi.fn>).mockReturnValue(null);
+
+    const output = await synthesizeForUser(userId);
+
+    // No population caveats: rules have no validated_populations.
+    expect(!output.population_caveats || output.population_caveats.length === 0).toBe(true);
+
+    // Existing behavior unchanged: MTHFR still recommends L-methylfolate.
+    const rec = output.recommended_vitamins_minerals.find((r) => r.form === 'L-methylfolate');
+    expect(rec).toBeDefined();
+  });
+});
+// === PROMPT 208a C2 EXTENSION END ===

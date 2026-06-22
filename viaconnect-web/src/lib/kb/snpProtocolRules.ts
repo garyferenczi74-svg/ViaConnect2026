@@ -67,11 +67,22 @@ export interface SnpProtocolRuleSeed {
 
 /**
  * Full DB row shape (includes server-set columns).
+ * === PROMPT 208a C2 EXTENSION START ===
+ * validated_populations and cross_population_caveat are additive optional fields.
+ * They are never required; absence means the rule is population-universal.
+ * === PROMPT 208a C2 EXTENSION END ===
  */
 export interface SnpProtocolRule extends SnpProtocolRuleSeed {
   id: string;
   review_status: 'draft' | 'in_review' | 'published' | 'rejected' | 'retired';
   created_at: string;
+  // === PROMPT 208a C2 EXTENSION START ===
+  /** Populations in which this rule was validated (e.g. ['european', 'east asian']). */
+  validated_populations?: string[] | null;
+  /** Honest informational caveat surfaced when the user's ancestry does not match.
+   *  Informational only -- never gates or removes a rule or interlock. */
+  cross_population_caveat?: string | null;
+  // === PROMPT 208a C2 EXTENSION END ===
 }
 
 // ---------------------------------------------------------------------------

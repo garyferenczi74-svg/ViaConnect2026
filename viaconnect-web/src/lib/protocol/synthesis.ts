@@ -59,6 +59,10 @@ import { getSecondaryFindingsGenes, isSecondaryFindingGene } from '@/lib/kb/seco
 // === PROMPT 208a I3 EXTENSION START ===
 import { getActivePublishedRules } from '@/lib/kb/ruleKillswitch';
 // === PROMPT 208a I3 EXTENSION END ===
+// === PROMPT 208a C2 EXTENSION START ===
+import { getUserAncestry, populationCaveatFor } from '@/lib/genetics/ancestry/populationMatch';
+import type { PopulationCaveat } from '@/lib/genetics/ancestry/populationMatch';
+// === PROMPT 208a C2 EXTENSION END ===
 
 // ---------------------------------------------------------------------------
 // Public constants
@@ -109,6 +113,12 @@ export interface SynthesisOutput {
   // protocol item; they are listed here with routing 'genetic_counseling'.
   secondary_findings_routing?: { gene: string; routing: string }[];
   // === PROMPT 208a I2 EXTENSION END ===
+  // === PROMPT 208a C2 EXTENSION START ===
+  // Additive informational population caveats (Module C). Never gates an interlock.
+  // Present only when a rule was validated in a specific population that differs
+  // from the user's known ancestry. Empty or absent when ancestry is unknown or matches.
+  population_caveats?: PopulationCaveat[];
+  // === PROMPT 208a C2 EXTENSION END ===
 }
 
 // ---------------------------------------------------------------------------
@@ -521,6 +531,22 @@ export async function synthesizeForUser(userId: string): Promise<SynthesisOutput
   // fail-open (returns [] on any error), so this cannot break synthesis.
   output.concordance_context = await computeAndPersistConcordance(userId);
   // === PROMPT 208a E4b EXTENSION END ===
+  // === PROMPT 208a C2 EXTENSION START ===
+  // Module C: enrich the output with cross-population caveats (informational;
+  // never gates or removes a rule or an interlock). getUserAncestry is fail-open
+  // (returns [] on any error). When userAncestry is [] (unknown), populationCaveatFor
+  // returns null for every rule -> population_caveats will be [] -> no unfair
+  // penalization of users whose ancestry we do not know.
+  try {
+    const userAncestry = await getUserAncestry(userId);
+    const populationCaveats = applicableRules
+      .map((r) => populationCaveatFor(r, userAncestry))
+      .filter((c): c is PopulationCaveat => c !== null);
+    output.population_caveats = populationCaveats;
+  } catch {
+    // fail-open: population_caveats left undefined, synthesis continues
+  }
+  // === PROMPT 208a C2 EXTENSION END ===
 
   // -------------------------------------------------------------------------
   // Step 8: Return
