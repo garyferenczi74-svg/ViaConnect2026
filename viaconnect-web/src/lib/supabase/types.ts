@@ -14,6 +14,108 @@ export type Database = {
   }
   public: {
     Tables: {
+      biomarker_trends: {
+        Row: {
+          biomarker: string
+          computed_at: string
+          direction: string | null
+          id: string
+          slope: number | null
+          trend_window: string | null
+          user_id: string
+        }
+        Insert: {
+          biomarker: string
+          computed_at?: string
+          direction?: string | null
+          id?: string
+          slope?: number | null
+          trend_window?: string | null
+          user_id: string
+        }
+        Update: {
+          biomarker?: string
+          computed_at?: string
+          direction?: string | null
+          id?: string
+          slope?: number | null
+          trend_window?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      genotype_phenotype_concordance: {
+        Row: {
+          biomarker: string | null
+          concordance_state: string | null
+          confidence: string | null
+          created_at: string
+          gene: string | null
+          id: string
+          user_id: string
+          variant: string | null
+        }
+        Insert: {
+          biomarker?: string | null
+          concordance_state?: string | null
+          confidence?: string | null
+          created_at?: string
+          gene?: string | null
+          id?: string
+          user_id: string
+          variant?: string | null
+        }
+        Update: {
+          biomarker?: string | null
+          concordance_state?: string | null
+          confidence?: string | null
+          created_at?: string
+          gene?: string | null
+          id?: string
+          user_id?: string
+          variant?: string | null
+        }
+        Relationships: []
+      }
+      lab_results_normalized: {
+        Row: {
+          age_sex_adjusted: boolean
+          biomarker: string
+          created_at: string
+          id: string
+          measured_at: string | null
+          reference_high: number | null
+          reference_low: number | null
+          unit_normalized: string | null
+          user_id: string
+          value: number | null
+        }
+        Insert: {
+          age_sex_adjusted?: boolean
+          biomarker: string
+          created_at?: string
+          id?: string
+          measured_at?: string | null
+          reference_high?: number | null
+          reference_low?: number | null
+          unit_normalized?: string | null
+          user_id: string
+          value?: number | null
+        }
+        Update: {
+          age_sex_adjusted?: boolean
+          biomarker?: string
+          created_at?: string
+          id?: string
+          measured_at?: string | null
+          reference_high?: number | null
+          reference_low?: number | null
+          unit_normalized?: string | null
+          user_id?: string
+          value?: number | null
+        }
+        Relationships: []
+      }
       pathway_scores: {
         Row: {
           component_variants: Json
