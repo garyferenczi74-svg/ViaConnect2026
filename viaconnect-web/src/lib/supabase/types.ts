@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      retest_schedule: {
+        Row: {
+          baseline_value: number | null
+          biomarker: string
+          created_at: string
+          id: string
+          intervention_ref: string | null
+          recommended_retest_at: string | null
+          recommended_retest_window: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          baseline_value?: number | null
+          biomarker: string
+          created_at?: string
+          id?: string
+          intervention_ref?: string | null
+          recommended_retest_at?: string | null
+          recommended_retest_window?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          baseline_value?: number | null
+          biomarker?: string
+          created_at?: string
+          id?: string
+          intervention_ref?: string | null
+          recommended_retest_at?: string | null
+          recommended_retest_window?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       hydration_reconciliation: {
         Row: {
           activity_adjusted_target_ml: number | null
