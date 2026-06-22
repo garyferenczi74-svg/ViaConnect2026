@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      pathway_scores: {
+        Row: {
+          component_variants: Json
+          composite_score: number | null
+          created_at: string
+          evidence_tier: number | null
+          id: string
+          pathway: string
+          severity_band: string | null
+          user_id: string
+        }
+        Insert: {
+          component_variants?: Json
+          composite_score?: number | null
+          created_at?: string
+          evidence_tier?: number | null
+          id?: string
+          pathway: string
+          severity_band?: string | null
+          user_id: string
+        }
+        Update: {
+          component_variants?: Json
+          composite_score?: number | null
+          created_at?: string
+          evidence_tier?: number | null
+          id?: string
+          pathway?: string
+          severity_band?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       cost_ledger: {
         Row: {
           api_calls: number
