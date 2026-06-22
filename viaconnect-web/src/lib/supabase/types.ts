@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      hydration_reconciliation: {
+        Row: {
+          activity_adjusted_target_ml: number | null
+          base_target_ml: number | null
+          body_water_context: string | null
+          computed_at: string
+          electrolyte_context: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          activity_adjusted_target_ml?: number | null
+          base_target_ml?: number | null
+          body_water_context?: string | null
+          computed_at?: string
+          electrolyte_context?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          activity_adjusted_target_ml?: number | null
+          base_target_ml?: number | null
+          body_water_context?: string | null
+          computed_at?: string
+          electrolyte_context?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       active_compound_load: {
         Row: {
           compound: string
