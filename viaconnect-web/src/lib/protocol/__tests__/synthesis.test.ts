@@ -61,6 +61,17 @@ vi.mock('@/lib/genetics/ancestry/populationMatch', () => ({
 }));
 // === PROMPT 208a C2 EXTENSION END ===
 
+// === PROMPT 208a J2 EXTENSION START ===
+// Mock recommendationAudit so synthesis J2 tests can assert the audit insert
+// without touching the real DB. Default: recordRecommendationAudit returns true.
+vi.mock('@/lib/protocol/recommendationAudit', () => ({
+  stableInputsHash: vi.fn().mockReturnValue('mock-hash-001'),
+  recordRecommendationAudit: vi.fn().mockResolvedValue(true),
+  snapshotCorpus: vi.fn().mockResolvedValue(null),
+  getActiveEmbeddingVersion: vi.fn().mockResolvedValue(null),
+}));
+// === PROMPT 208a J2 EXTENSION END ===
+
 // safeLog is real (no side effects in tests, just console output).
 
 import {
@@ -79,6 +90,9 @@ import { getActivePublishedRules } from '@/lib/kb/ruleKillswitch';
 // === PROMPT 208a C2 EXTENSION START ===
 import { getUserAncestry, populationCaveatFor } from '@/lib/genetics/ancestry/populationMatch';
 // === PROMPT 208a C2 EXTENSION END ===
+// === PROMPT 208a J2 EXTENSION START ===
+import { recordRecommendationAudit } from '@/lib/protocol/recommendationAudit';
+// === PROMPT 208a J2 EXTENSION END ===
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -877,3 +891,87 @@ describe('C2 Test 14: MTHFR + HFE rules without validated_populations -> no popu
   });
 });
 // === PROMPT 208a C2 EXTENSION END ===
+
+// ---------------------------------------------------------------------------
+// === PROMPT 208a J2 EXTENSION START ===
+// J2 Test 15: synthesizeForUser writes one recommendation_audit row
+// Asserts: audit insert called once with non-empty inputs_hash + rule ids + DISCLAIMERS_VERSION.
+// Recommendations are unchanged (audit is a fail-open side-record).
+// (Prompt 208a Module J Task J2)
+// ---------------------------------------------------------------------------
+
+describe('J2 Test 15: synthesizeForUser writes one recommendation_audit row', () => {
+  it('calls recordRecommendationAudit once with correct inputs_hash, rule ids, and disclaimer_version', async () => {
+    const userId = 'user-j2-audit';
+
+    // One applicable MTHFR rule
+    (getPublishedRules as ReturnType<typeof vi.fn>).mockResolvedValue([preferFormRule()]);
+    (getQualifiedUserVariants as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { rsid: 'rs1801133', gene: 'MTHFR', genotype: 'TT', panel_key: 'methylation', status: 'confirmed' },
+    ]);
+    (createAdminClient as ReturnType<typeof vi.fn>).mockReturnValue(
+      buildAdminMock([], []),
+    );
+    (getLatestUserHealthContext as ReturnType<typeof vi.fn>).mockResolvedValue({
+      allergies: [],
+      medications: [],
+      goals: [],
+      pregnancyStatus: null,
+      age: 35,
+    });
+
+    const output = await synthesizeForUser(userId);
+
+    // Audit must have been called exactly once
+    expect(recordRecommendationAudit).toHaveBeenCalledOnce();
+
+    const [calledUserId, auditInput] = (recordRecommendationAudit as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(calledUserId).toBe(userId);
+
+    // inputs_hash is a non-empty string
+    expect(typeof auditInput.inputsHash).toBe('string');
+    expect(auditInput.inputsHash.length).toBeGreaterThan(0);
+
+    // ruleIds contains the applicable rule id
+    expect(Array.isArray(auditInput.ruleIds)).toBe(true);
+    expect(auditInput.ruleIds).toContain('rule-001');
+
+    // disclaimer_version matches DISCLAIMERS_VERSION
+    expect(auditInput.disclaimerVersion).toBe(DISCLAIMERS_VERSION);
+
+    // Recommendations are unchanged (the audit is purely additive)
+    const rec = output.recommended_vitamins_minerals.find((r) => r.form === 'L-methylfolate');
+    expect(rec).toBeDefined();
+  });
+
+  it('synthesis output is unchanged when audit fails (fail-open)', async () => {
+    const userId = 'user-j2-audit-fail';
+
+    (getPublishedRules as ReturnType<typeof vi.fn>).mockResolvedValue([preferFormRule()]);
+    (getQualifiedUserVariants as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { rsid: 'rs1801133', gene: 'MTHFR', genotype: 'TT', panel_key: 'methylation', status: 'confirmed' },
+    ]);
+    (createAdminClient as ReturnType<typeof vi.fn>).mockReturnValue(
+      buildAdminMock([], []),
+    );
+    (getLatestUserHealthContext as ReturnType<typeof vi.fn>).mockResolvedValue({
+      allergies: [],
+      medications: [],
+      goals: [],
+      pregnancyStatus: null,
+      age: 35,
+    });
+
+    // Simulate audit failure (returns false = DB error)
+    (recordRecommendationAudit as ReturnType<typeof vi.fn>).mockResolvedValue(false);
+
+    const output = await synthesizeForUser(userId);
+
+    // Output must still be complete and correct despite audit failure
+    expect(output).toBeDefined();
+    const rec = output.recommended_vitamins_minerals.find((r) => r.form === 'L-methylfolate');
+    expect(rec).toBeDefined();
+    expect(output.disclaimers_version).toBe(DISCLAIMERS_VERSION);
+  });
+});
+// === PROMPT 208a J2 EXTENSION END ===

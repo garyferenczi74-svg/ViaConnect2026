@@ -63,6 +63,9 @@ import { getActivePublishedRules } from '@/lib/kb/ruleKillswitch';
 import { getUserAncestry, populationCaveatFor } from '@/lib/genetics/ancestry/populationMatch';
 import type { PopulationCaveat } from '@/lib/genetics/ancestry/populationMatch';
 // === PROMPT 208a C2 EXTENSION END ===
+// === PROMPT 208a J2 EXTENSION START ===
+import { stableInputsHash, recordRecommendationAudit } from '@/lib/protocol/recommendationAudit';
+// === PROMPT 208a J2 EXTENSION END ===
 
 // ---------------------------------------------------------------------------
 // Public constants
@@ -551,5 +554,28 @@ export async function synthesizeForUser(userId: string): Promise<SynthesisOutput
   // -------------------------------------------------------------------------
   // Step 8: Return
   // -------------------------------------------------------------------------
+
+  // === PROMPT 208a J2 EXTENSION START ===
+  // Additive fail-open side-record: record which inputs + rule versions produced
+  // this recommendation set. Never changes recommendations, never gates anything,
+  // never throws. The await is non-blocking on the return (fire-and-trust pattern
+  // using void; synthesis always returns output immediately).
+  {
+    const applicableRuleIds = applicableRules.map((r) => r.id).sort();
+    const inputsHash = stableInputsHash({
+      userId,
+      variants: userVariants,
+      ruleIds: applicableRuleIds,
+      supplements: currentSupplementNames,
+    });
+    void recordRecommendationAudit(userId, {
+      inputsHash,
+      ruleIds: applicableRuleIds,
+      snapshotRef: null,
+      disclaimerVersion: DISCLAIMERS_VERSION,
+    });
+  }
+  // === PROMPT 208a J2 EXTENSION END ===
+
   return output;
 }
