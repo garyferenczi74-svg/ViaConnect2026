@@ -122,7 +122,7 @@ export async function getUserAncestry(userId: string): Promise<string[]> {
         .from('user_health_context')
         .select('demographics')
         .eq('user_id', userId)
-        .order('created_at', { ascending: false })
+        .order('updated_at', { ascending: false })
         .limit(1)
         .maybeSingle() as unknown as Promise<{
         data: { demographics: unknown } | null;

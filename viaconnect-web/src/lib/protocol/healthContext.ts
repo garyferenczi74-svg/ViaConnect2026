@@ -157,7 +157,7 @@ export async function getLatestUserHealthContext(
       .from('user_health_context')
       .select('allergies, medications, goals, pregnancy_status, demographics')
       .eq('user_id', userId)
-      .order('created_at', { ascending: false })
+      .order('updated_at', { ascending: false })
       .limit(1)
       .maybeSingle() as unknown as Promise<{
       data: { allergies: unknown; medications: unknown; goals: unknown; pregnancy_status: unknown; demographics: unknown } | null;
