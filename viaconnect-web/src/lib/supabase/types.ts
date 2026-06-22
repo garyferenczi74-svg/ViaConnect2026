@@ -635,31 +635,37 @@ export type Database = {
       genotype_phenotype_concordance: {
         Row: {
           biomarker: string | null
+          concordance_dimensions: number | null
           concordance_state: string | null
           confidence: string | null
           created_at: string
           gene: string | null
           id: string
+          symptom_ref: string | null
           user_id: string
           variant: string | null
         }
         Insert: {
           biomarker?: string | null
+          concordance_dimensions?: number | null
           concordance_state?: string | null
           confidence?: string | null
           created_at?: string
           gene?: string | null
           id?: string
+          symptom_ref?: string | null
           user_id: string
           variant?: string | null
         }
         Update: {
           biomarker?: string | null
+          concordance_dimensions?: number | null
           concordance_state?: string | null
           confidence?: string | null
           created_at?: string
           gene?: string | null
           id?: string
+          symptom_ref?: string | null
           user_id?: string
           variant?: string | null
         }
