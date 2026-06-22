@@ -14,6 +14,87 @@ export type Database = {
   }
   public: {
     Tables: {
+      corpus_snapshots: {
+        Row: {
+          atom_count: number
+          id: string
+          rule_count: number
+          snapshot_hash: string | null
+          taken_at: string
+        }
+        Insert: {
+          atom_count?: number
+          id?: string
+          rule_count?: number
+          snapshot_hash?: string | null
+          taken_at?: string
+        }
+        Update: {
+          atom_count?: number
+          id?: string
+          rule_count?: number
+          snapshot_hash?: string | null
+          taken_at?: string
+        }
+        Relationships: []
+      }
+      embedding_versions: {
+        Row: {
+          active: boolean
+          created_at: string
+          dimension: number | null
+          id: string
+          model: string
+          version: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          dimension?: number | null
+          id?: string
+          model: string
+          version?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          dimension?: number | null
+          id?: string
+          model?: string
+          version?: string | null
+        }
+        Relationships: []
+      }
+      recommendation_audit: {
+        Row: {
+          created_at: string
+          disclaimer_version: string | null
+          id: string
+          inputs_hash: string | null
+          rule_ids: Json
+          snapshot_ref: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          disclaimer_version?: string | null
+          id?: string
+          inputs_hash?: string | null
+          rule_ids?: Json
+          snapshot_ref?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          disclaimer_version?: string | null
+          id?: string
+          inputs_hash?: string | null
+          rule_ids?: Json
+          snapshot_ref?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       outcome_events: {
         Row: {
           adherence: number | null
