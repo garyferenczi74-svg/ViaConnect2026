@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      rule_killswitch: {
+        Row: {
+          disabled: boolean
+          disabled_at: string
+          disabled_by: string | null
+          reason: string | null
+          rule_id: string
+        }
+        Insert: {
+          disabled?: boolean
+          disabled_at?: string
+          disabled_by?: string | null
+          reason?: string | null
+          rule_id: string
+        }
+        Update: {
+          disabled?: boolean
+          disabled_at?: string
+          disabled_by?: string | null
+          reason?: string | null
+          rule_id?: string
+        }
+        Relationships: []
+      }
+      secondary_findings_exclusions: {
+        Row: {
+          condition_class: string | null
+          created_at: string
+          gene: string
+          id: string
+          routing_action: string
+          variant: string
+        }
+        Insert: {
+          condition_class?: string | null
+          created_at?: string
+          gene: string
+          id?: string
+          routing_action?: string
+          variant?: string
+        }
+        Update: {
+          condition_class?: string | null
+          created_at?: string
+          gene?: string
+          id?: string
+          routing_action?: string
+          variant?: string
+        }
+        Relationships: []
+      }
       drug_nutrient_depletions: {
         Row: {
           created_at: string
