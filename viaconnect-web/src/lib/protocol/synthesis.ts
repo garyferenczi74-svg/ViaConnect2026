@@ -539,7 +539,7 @@ export async function synthesizeForUser(userId: string): Promise<SynthesisOutput
   // penalization of users whose ancestry we do not know.
   try {
     const userAncestry = await getUserAncestry(userId);
-    const populationCaveats = applicableRules
+    const populationCaveats = rulesAfterSfFilter
       .map((r) => populationCaveatFor(r, userAncestry))
       .filter((c): c is PopulationCaveat => c !== null);
     output.population_caveats = populationCaveats;
