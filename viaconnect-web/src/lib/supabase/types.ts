@@ -14,6 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
+      agent_conflict_log: {
+        Row: {
+          agent_a: string | null
+          agent_b: string | null
+          conflict_detail: string | null
+          created_at: string
+          id: string
+          resolution: string | null
+          resolved_by: string | null
+          topic: string | null
+          user_id: string | null
+        }
+        Insert: {
+          agent_a?: string | null
+          agent_b?: string | null
+          conflict_detail?: string | null
+          created_at?: string
+          id?: string
+          resolution?: string | null
+          resolved_by?: string | null
+          topic?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          agent_a?: string | null
+          agent_b?: string | null
+          conflict_detail?: string | null
+          created_at?: string
+          id?: string
+          resolution?: string | null
+          resolved_by?: string | null
+          topic?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      user_context_canonical: {
+        Row: {
+          computed_at: string
+          context: Json
+          id: string
+          user_id: string
+          version: number
+        }
+        Insert: {
+          computed_at?: string
+          context?: Json
+          id?: string
+          user_id: string
+          version?: number
+        }
+        Update: {
+          computed_at?: string
+          context?: Json
+          id?: string
+          user_id?: string
+          version?: number
+        }
+        Relationships: []
+      }
       corpus_snapshots: {
         Row: {
           atom_count: number
