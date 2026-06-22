@@ -119,8 +119,7 @@ export async function buildCanonicalContext(userId: string): Promise<CanonicalCo
         .select('*')
         .eq('user_id', userId)
         .order('computed_at', { ascending: false })
-        .limit(100)
-        .maybeSingle() as unknown as Promise<{
+        .limit(100) as unknown as Promise<{
         data: unknown;
         error: { message: string } | null;
       }>);
@@ -151,8 +150,7 @@ export async function buildCanonicalContext(userId: string): Promise<CanonicalCo
         .select('*')
         .eq('user_id', userId)
         .order('computed_at', { ascending: false })
-        .limit(100)
-        .maybeSingle() as unknown as Promise<{
+        .limit(100) as unknown as Promise<{
         data: unknown;
         error: { message: string } | null;
       }>);
@@ -216,6 +214,6 @@ export async function buildCanonicalContext(userId: string): Promise<CanonicalCo
       userId,
       err: err instanceof Error ? err.message : String(err),
     });
-    return { ...EMPTY_CONTEXT };
+    return structuredClone(EMPTY_CONTEXT);
   }
 }

@@ -56,12 +56,15 @@ import { getUserAncestry } from '@/lib/genetics/ancestry/populationMatch';
 // ---------------------------------------------------------------------------
 
 function makeQueryChain(resolveWith: { data: unknown; error: unknown }) {
+  // The chain must be thenable so `await chain` resolves directly from limit().
+  // select/eq/order return the chain; limit() returns a Promise that resolves
+  // with resolveWith, matching the real multi-row select behavior (no maybeSingle).
   const chain: Record<string, unknown> = {};
-  const methods = ['select', 'eq', 'order', 'limit'];
+  const methods = ['select', 'eq', 'order'];
   for (const m of methods) {
     chain[m] = vi.fn(() => chain);
   }
-  chain['maybeSingle'] = vi.fn(() => Promise.resolve(resolveWith));
+  chain['limit'] = vi.fn(() => Promise.resolve(resolveWith));
   chain['insert'] = vi.fn(() => Promise.resolve({ error: null }));
   return chain;
 }
@@ -137,6 +140,39 @@ describe('buildCanonicalContext', () => {
     );
   });
 
+  it('carries all pathway rows when multiple rows are returned (not just one)', async () => {
+    (getQualifiedUserVariants as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (getLatestUserHealthContext as ReturnType<typeof vi.fn>).mockResolvedValue({
+      allergies: [],
+      medications: [],
+      goals: [],
+      pregnancyStatus: null,
+      age: null,
+    });
+    (getUserAncestry as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+
+    const twoPathways = [
+      { pathway: 'methylation', score: 0.8 },
+      { pathway: 'detox', score: 0.5 },
+    ];
+    const pathwayChain = makeQueryChain({ data: twoPathways, error: null });
+    const concordanceChain = makeQueryChain({ data: [], error: null });
+    const insertChain = { insert: vi.fn().mockResolvedValue({ error: null }) };
+
+    mockFrom.mockImplementation((table: string) => {
+      if (table === 'pathway_scores') return pathwayChain;
+      if (table === 'genotype_phenotype_concordance') return concordanceChain;
+      if (table === 'user_context_canonical') return insertChain;
+      return makeQueryChain({ data: null, error: null });
+    });
+
+    const result = await buildCanonicalContext(USER_ID);
+
+    expect(result.pathways).toHaveLength(2);
+    expect(result.pathways[0]).toEqual({ pathway: 'methylation', score: 0.8 });
+    expect(result.pathways[1]).toEqual({ pathway: 'detox', score: 0.5 });
+  });
+
   it('returns a valid empty-ish context when getQualifiedUserVariants throws (fail-open)', async () => {
     (getQualifiedUserVariants as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('db timeout'));
     (getLatestUserHealthContext as ReturnType<typeof vi.fn>).mockResolvedValue({
@@ -189,9 +225,8 @@ describe('buildCanonicalContext', () => {
       return makeQueryChain({ data: null, error: null });
     });
 
-    await expect(buildCanonicalContext(USER_ID)).resolves.toBeDefined();
-
     const result = await buildCanonicalContext(USER_ID);
+    expect(result).toBeDefined();
     expect(result.pathways).toEqual([]);
   });
 
