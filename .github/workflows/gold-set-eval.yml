@@ -1,0 +1,33 @@
+name: Gold-Set Safety Eval
+# Prompt 208a Module L. Runs the canonical safety gold-set (HFE never iron,
+# MTHFR methylfolate, no-upload-safe) on every push and PR to main. A failure
+# here means a deploy would break a canonical mapping. Blocks merge under branch
+# protection and surfaces failures on direct pushes. The gold-set mocks the DB
+# layer, so it needs no secrets.
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  gold-set:
+    name: Gold-Set Safety Eval
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: viaconnect-web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: viaconnect-web/package-lock.json
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Run gold-set safety eval
+        run: npx vitest run src/lib/eval/__tests__/goldSet.test.ts
