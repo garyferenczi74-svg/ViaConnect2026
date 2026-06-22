@@ -56,6 +56,9 @@ import { screenAllergens, goalRank } from '@/lib/protocol/phenotypeEnrich';
 import { runSafetyGates, type SafetyGateContext } from '@/lib/protocol/safetyGates';
 import { getSecondaryFindingsGenes, isSecondaryFindingGene } from '@/lib/kb/secondaryFindings';
 // === PROMPT 208a I2 EXTENSION END ===
+// === PROMPT 208a I3 EXTENSION START ===
+import { getActivePublishedRules } from '@/lib/kb/ruleKillswitch';
+// === PROMPT 208a I3 EXTENSION END ===
 
 // ---------------------------------------------------------------------------
 // Public constants
@@ -199,7 +202,13 @@ export async function synthesizeForUser(userId: string): Promise<SynthesisOutput
   // -------------------------------------------------------------------------
   // Step 2: Load PUBLISHED rules and find APPLICABLE rules
   // -------------------------------------------------------------------------
-  const allRules = await getPublishedRules();
+  // === PROMPT 208a I3 EXTENSION START ===
+  // getActivePublishedRules wraps getPublishedRules + filters out killed rule ids.
+  // Fail-open: if the killswitch read fails, getActivePublishedRules returns the
+  // full published set (empty killed set -> all rules pass). getPublishedRules
+  // itself is unchanged.
+  const allRules = await getActivePublishedRules();
+  // === PROMPT 208a I3 EXTENSION END ===
 
   // Build a lookup: rsid -> user genotype
   const variantByRsid: Record<string, string> = {};

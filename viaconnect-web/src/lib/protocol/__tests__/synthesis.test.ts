@@ -20,6 +20,15 @@ vi.mock('@/lib/kb/snpProtocolRules', () => ({
   ruleMatchesGenotype: vi.fn(),
 }));
 
+// === PROMPT 208a I3 EXTENSION START ===
+// Mock ruleKillswitch so synthesis tests control the active rule set directly.
+// getActivePublishedRules defaults to returning whatever getPublishedRules returns
+// (killswitch transparent). Tests can override per-case to simulate killed rules.
+vi.mock('@/lib/kb/ruleKillswitch', () => ({
+  getActivePublishedRules: vi.fn(),
+}));
+// === PROMPT 208a I3 EXTENSION END ===
+
 vi.mock('@/lib/kb/knowledgeAtoms', () => ({
   getPublishedAtoms: vi.fn(),
 }));
@@ -54,6 +63,9 @@ import { getPublishedRules, ruleMatchesGenotype } from '@/lib/kb/snpProtocolRule
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getQualifiedUserVariants } from '@/lib/genetics/qc/qualifiedVariants';
 import { getLatestUserHealthContext } from '@/lib/protocol/healthContext';
+// === PROMPT 208a I3 EXTENSION START ===
+import { getActivePublishedRules } from '@/lib/kb/ruleKillswitch';
+// === PROMPT 208a I3 EXTENSION END ===
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -231,6 +243,15 @@ beforeEach(() => {
 
   // Default: getQualifiedUserVariants returns empty (tests override per-case)
   (getQualifiedUserVariants as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+
+  // === PROMPT 208a I3 EXTENSION START ===
+  // Default: getActivePublishedRules delegates to getPublishedRules so existing
+  // tests that set (getPublishedRules as mock).mockResolvedValue(...) continue to
+  // work transparently. Tests that need to simulate killed rules override this.
+  (getActivePublishedRules as ReturnType<typeof vi.fn>).mockImplementation(async () => {
+    return (getPublishedRules as ReturnType<typeof vi.fn>)();
+  });
+  // === PROMPT 208a I3 EXTENSION END ===
 });
 
 // ---------------------------------------------------------------------------
@@ -679,5 +700,63 @@ describe('I2 Test 11: Minor user (age < 18) gets no recommendations (pediatric g
 
     // No recommendations for a minor
     expect(output.recommended_vitamins_minerals).toHaveLength(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// I3 Test 12: A killed rule does NOT appear in recommendations
+// (Prompt 208a Module I Task I3 -- per-rule killswitch)
+// ---------------------------------------------------------------------------
+
+describe('I3 Test 12: Killed rule does not appear in recommendations', () => {
+  it('excludes a rule that is in the killswitch (killed=true) from synthesis output', async () => {
+    const userId = 'user-killswitch';
+
+    // Two rules: one live (MTHFR prefer_form), one killed (HFE contraindicate).
+    const liveRule = preferFormRule({ id: 'rule-live' });
+    const killedRule = preferFormRule({
+      id: 'rule-killed',
+      rsid: 'rs9999999',
+      gene: 'TEST',
+      genotype_match: 'AA',
+      recommended_form: 'killed-supplement',
+      flagged_form: undefined,
+      avoid_list: [],
+      evidence_tier: 2,
+      effect: 'This rule is killed and must not appear.',
+    });
+
+    // getPublishedRules returns both rules.
+    (getPublishedRules as ReturnType<typeof vi.fn>).mockResolvedValue([liveRule, killedRule]);
+
+    // Override getActivePublishedRules to simulate the killswitch removing rule-killed.
+    (getActivePublishedRules as ReturnType<typeof vi.fn>).mockResolvedValue([liveRule]);
+
+    (getQualifiedUserVariants as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { rsid: 'rs1801133', gene: 'MTHFR', genotype: 'TT', panel_key: 'methylation', status: 'confirmed' },
+      { rsid: 'rs9999999', gene: 'TEST', genotype: 'AA', panel_key: 'methylation', status: 'confirmed' },
+    ]);
+    (createAdminClient as ReturnType<typeof vi.fn>).mockReturnValue(
+      buildAdminMock([], []),
+    );
+    (getLatestUserHealthContext as ReturnType<typeof vi.fn>).mockResolvedValue({
+      allergies: [],
+      medications: [],
+      goals: [],
+      pregnancyStatus: null,
+      age: 35,
+    });
+
+    const output = await synthesizeForUser(userId);
+
+    // The live rule's form must appear.
+    const liveRec = output.recommended_vitamins_minerals.find((r) => r.form === 'L-methylfolate');
+    expect(liveRec).toBeDefined();
+
+    // The killed rule's form must NOT appear.
+    const killedRec = output.recommended_vitamins_minerals.find(
+      (r) => r.form === 'killed-supplement',
+    );
+    expect(killedRec).toBeUndefined();
   });
 });
