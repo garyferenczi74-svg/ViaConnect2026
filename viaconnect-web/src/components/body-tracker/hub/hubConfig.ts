@@ -48,6 +48,10 @@ export interface SurfaceMedia {
   // "center" or "top". CardMedia defaults to "top" when unset, which
   // preserves the Dashboard hero framing; set "center" to crop centered.
   objectPosition?: string;
+  // CSS object-fit for an image. Defaults to "cover" (fills the card and crops);
+  // set "contain" to show the WHOLE image fitted inside the card (the gradient
+  // fills the remaining space). Only consulted by the image path today.
+  objectFit?: "cover" | "contain";
   // Tailwind classes for the gradient placeholder used when kind is
   // "gradient" or when an image or video fails to load.
   gradientClass: string;

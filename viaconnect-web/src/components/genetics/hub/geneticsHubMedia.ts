@@ -80,6 +80,9 @@ export const GENETICS_CARD_MEDIA: Record<string, SurfaceMedia> = {
     kind: "image",
     src: "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/render/image/public/Hero%20Images/Mouth%20Swab%201.png?width=1200&quality=70",
     objectPosition: "center",
+    // Show the WHOLE swab photo fitted in the card rather than a zoomed crop
+    // (Gary 2026-06-21); the teal gradient fills the rest of the card.
+    objectFit: "contain",
     gradientClass: MEDIA_TEAL_BL,
   },
   // Prompt 193d (2026-06-13): the Upload Lab Results card plays the Blood Test
