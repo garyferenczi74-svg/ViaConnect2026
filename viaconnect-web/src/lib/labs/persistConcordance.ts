@@ -9,14 +9,88 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { safeLog } from '@/lib/utils/safe-log';
 import { getQualifiedUserVariants } from '@/lib/genetics/qc/qualifiedVariants';
 import { loadLabResults } from '@/lib/labs/loadLabResults';
-import { buildConcordances, type ConcordanceRecord } from '@/lib/labs/concordance';
+// === PROMPT 208b 4.3 EXTENSION START ===
+// Triangulated builder + type supersede the 208a buildConcordances import here.
+// The pure 208a buildConcordances + ConcordanceRecord remain exported from
+// concordance.ts and are reused INSIDE buildTriangulatedConcordances.
+import type { SupabaseClient } from '@supabase/supabase-js';
+import {
+  buildTriangulatedConcordances,
+  type TriangulatedConcordance,
+} from '@/lib/labs/concordance';
+
+/**
+ * Cheapest read of the user's reported symptoms: the conditions jsonb on the
+ * latest user_health_context row (the F2 aggregator stores CAQ health_concerns
+ * there). Flattened to a lowercased string[]. Fail-open: returns [] on any error
+ * so a missing/odd shape never blocks concordance.
+ */
+async function loadUserSymptoms(client: SupabaseClient, userId: string): Promise<string[]> {
+  try {
+    const { data, error } = await (client
+      .from('user_health_context')
+      .select('conditions')
+      .eq('user_id', userId)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle() as unknown as Promise<{
+      data: { conditions: unknown } | null;
+      error: { message: string } | null;
+    }>);
+    if (error || !data) return [];
+    return flattenSymptoms(data.conditions);
+  } catch (err) {
+    safeLog.warn('concordance', 'symptom read failed - proceeding with no symptoms', {
+      userId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return [];
+  }
+}
+
+/**
+ * Flatten the conditions/health_concerns jsonb into a flat string[]. Accepts an
+ * array of strings, an array of { name | label | concern } objects, or a plain
+ * object whose string values are concern terms. Never throws.
+ */
+function flattenSymptoms(raw: unknown): string[] {
+  const out: string[] = [];
+  const pushStr = (v: unknown): void => {
+    if (typeof v === 'string') {
+      const t = v.trim();
+      if (t.length > 0) out.push(t);
+    }
+  };
+  if (Array.isArray(raw)) {
+    for (const item of raw) {
+      if (typeof item === 'string') {
+        pushStr(item);
+      } else if (item && typeof item === 'object') {
+        const o = item as Record<string, unknown>;
+        pushStr(o['name']);
+        pushStr(o['label']);
+        pushStr(o['concern']);
+        pushStr(o['symptom']);
+      }
+    }
+  } else if (raw && typeof raw === 'object') {
+    for (const v of Object.values(raw as Record<string, unknown>)) {
+      if (typeof v === 'string') pushStr(v);
+      else if (Array.isArray(v)) for (const x of v) pushStr(x);
+    }
+  }
+  return out;
+}
+// === PROMPT 208b 4.3 EXTENSION END ===
 
 /**
  * Compute genotype-phenotype concordance from the user's QC-qualified variants
  * and confirmed lab results, persist them to genotype_phenotype_concordance
  * (fail-open), and return them. Returns [] on any failure.
  */
-export async function computeAndPersistConcordance(userId: string): Promise<ConcordanceRecord[]> {
+export async function computeAndPersistConcordance(
+  userId: string,
+): Promise<TriangulatedConcordance[]> {
   try {
     // -------------------------------------------------------------------------
     // Step 1: Load QC-qualified variants
@@ -42,16 +116,22 @@ export async function computeAndPersistConcordance(userId: string): Promise<Conc
     }));
 
     // -------------------------------------------------------------------------
-    // Step 3: Build concordance records (pure engine, never throws)
+    // Step 3: Load reported symptoms (fail-open []), then build TRIANGULATED
+    // concordance records (pure engine, never throws). Confidence is recomputed
+    // from the number of concordant dimensions (symptom + biomarker + genotype).
+    // === PROMPT 208b 4.3 EXTENSION START ===
     // -------------------------------------------------------------------------
-    const records = buildConcordances(variants, labs);
+    const userSymptoms = await loadUserSymptoms(adminClient, userId);
+    const records = buildTriangulatedConcordances(variants, labs, userSymptoms);
+    // === PROMPT 208b 4.3 EXTENSION END ===
 
     if (records.length === 0) {
       return records;
     }
 
     // -------------------------------------------------------------------------
-    // Step 4: Persist each record to genotype_phenotype_concordance (fail-open)
+    // Step 4: Persist each record to genotype_phenotype_concordance (fail-open),
+    // including the additive symptom_ref + concordance_dimensions columns.
     // -------------------------------------------------------------------------
     try {
       const rows = records.map((r) => ({
@@ -60,6 +140,10 @@ export async function computeAndPersistConcordance(userId: string): Promise<Conc
         biomarker: r.biomarker,
         concordance_state: r.state,
         confidence: r.confidence,
+        // === PROMPT 208b 4.3 EXTENSION START ===
+        symptom_ref: r.symptom_ref,
+        concordance_dimensions: r.concordance_dimensions,
+        // === PROMPT 208b 4.3 EXTENSION END ===
       }));
       const { error } = await adminClient.from('genotype_phenotype_concordance').insert(rows);
       if (error) {
