@@ -84,6 +84,16 @@ vi.mock('@/lib/nutrition/intakeReconciliation', () => ({
 }));
 // === PROMPT 208b 4.1 EXTENSION END ===
 
+// === PROMPT 208b 4.2 EXTENSION START ===
+// Mock labEfficacyFlags so synthesis 4.2 tests control the SECOND (lab-efficacy)
+// supplement-flag source without wiring the lab loader through the admin mock.
+// Default: no lab-efficacy flags (fail-open empty) -> supplement_flags is exactly
+// today's genetic-only behavior. Tests override buildLabEfficacyFlags per-case.
+vi.mock('@/lib/protocol/labEfficacyFlags', () => ({
+  buildLabEfficacyFlags: vi.fn().mockResolvedValue([]),
+}));
+// === PROMPT 208b 4.2 EXTENSION END ===
+
 // safeLog is real (no side effects in tests, just console output).
 
 import {
@@ -109,6 +119,9 @@ import { recordRecommendationAudit } from '@/lib/protocol/recommendationAudit';
 import { getFoodContributions, buildNutrientIntakeLedger } from '@/lib/nutrition/intakeReconciliation';
 import { runInterlocks, type InterlockContext } from '@/lib/protocol/safetyInterlocks';
 // === PROMPT 208b 4.1 EXTENSION END ===
+// === PROMPT 208b 4.2 EXTENSION START ===
+import { buildLabEfficacyFlags } from '@/lib/protocol/labEfficacyFlags';
+// === PROMPT 208b 4.2 EXTENSION END ===
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -306,6 +319,12 @@ beforeEach(() => {
   });
   (buildNutrientIntakeLedger as ReturnType<typeof vi.fn>).mockResolvedValue([]);
   // === PROMPT 208b 4.1 EXTENSION END ===
+
+  // === PROMPT 208b 4.2 EXTENSION START ===
+  // Default: no lab-efficacy flags -> supplement_flags is exactly today's
+  // genetic-only behavior. Tests that exercise the lab path override per-case.
+  (buildLabEfficacyFlags as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+  // === PROMPT 208b 4.2 EXTENSION END ===
 });
 
 // ---------------------------------------------------------------------------
@@ -1151,3 +1170,157 @@ describe('4.1 Test 19: a thrown getFoodContributions does NOT break synthesis (f
   });
 });
 // === PROMPT 208b 4.1 EXTENSION END ===
+
+// ---------------------------------------------------------------------------
+// === PROMPT 208b 4.2 EXTENSION START ===
+// 4.2 Tests 20-23: lab-efficacy is a SECOND, independent supplement-flag source.
+//
+// A user supplementing a nutrient whose biomarker is still out-of-range gets a
+// lab_efficacy flag appended to supplement_flags. It is ADDITIVE: it never removes
+// a recommendation and never gates an interlock. flagSource distinguishes it from
+// the genetic source. Fail-open (buildLabEfficacyFlags cannot throw -> []).
+//
+// buildLabEfficacyFlags is mocked (see top-of-file mock) so these tests drive the
+// lab-efficacy output directly and assert the synthesis wiring only.
+// ---------------------------------------------------------------------------
+
+describe('4.2 Test 20: a lab-efficacy flag is appended to supplement_flags with flagSource + linkedBiomarker', () => {
+  it('adds a lab_efficacy flag (vitamin_d still low) alongside the genetic flag', async () => {
+    const userId = 'user-4-2-vitd-low';
+
+    // One applicable MTHFR prefer_form rule -> a GENETIC flag for folic acid.
+    (getPublishedRules as ReturnType<typeof vi.fn>).mockResolvedValue([preferFormRule()]);
+    (getQualifiedUserVariants as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { rsid: 'rs1801133', gene: 'MTHFR', genotype: 'TT', panel_key: 'methylation', status: 'confirmed' },
+    ]);
+    (createAdminClient as ReturnType<typeof vi.fn>).mockReturnValue(
+      buildAdminMock(
+        [],
+        [{ supplement_name: 'folic acid', product_name: 'Generic Folic Acid', is_current: true, is_ai_recommended: false }],
+      ),
+    );
+
+    // The lab-efficacy source returns one flag: vitamin D supplement, vitamin_d still low.
+    (buildLabEfficacyFlags as ReturnType<typeof vi.fn>).mockResolvedValue([
+      {
+        current: 'Vitamin D3 5000 IU',
+        reason: 'Supplementing Vitamin D3 5000 IU but vitamin_d remains below range; review dose, form, absorption, or cofactors.',
+        flagSource: 'lab_efficacy',
+        linkedBiomarker: 'vitamin_d',
+      },
+    ]);
+
+    const output = await synthesizeForUser(userId);
+
+    // The genetic flag (folic acid) is still present.
+    const geneticFlag = output.supplement_flags.find((f) => f.current.toLowerCase() === 'folic acid');
+    expect(geneticFlag).toBeDefined();
+    expect(geneticFlag?.ruleRsid).toBe('rs1801133');
+
+    // The lab-efficacy flag is appended with flagSource + linkedBiomarker.
+    const labFlag = output.supplement_flags.find((f) => f.flagSource === 'lab_efficacy');
+    expect(labFlag).toBeDefined();
+    expect(labFlag?.linkedBiomarker).toBe('vitamin_d');
+    expect(labFlag?.current).toBe('Vitamin D3 5000 IU');
+    expect(labFlag?.ruleRsid).toBe('lab_efficacy');
+
+    // Genetic recommendation is UNCHANGED (lab-efficacy flags never gate/remove).
+    const rec = output.recommended_vitamins_minerals.find((r) => r.form === 'L-methylfolate');
+    expect(rec).toBeDefined();
+  });
+});
+
+describe('4.2 Test 21: lab-efficacy flags do NOT remove a recommendation or change recommendations', () => {
+  it('the recommendation set is identical whether or not a lab-efficacy flag is present', async () => {
+    const userId = 'user-4-2-additive';
+
+    (getPublishedRules as ReturnType<typeof vi.fn>).mockResolvedValue([preferFormRule()]);
+    (getQualifiedUserVariants as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { rsid: 'rs1801133', gene: 'MTHFR', genotype: 'TT', panel_key: 'methylation', status: 'confirmed' },
+    ]);
+    (createAdminClient as ReturnType<typeof vi.fn>).mockReturnValue(buildAdminMock([], []));
+
+    // First: WITH a lab-efficacy flag.
+    (buildLabEfficacyFlags as ReturnType<typeof vi.fn>).mockResolvedValue([
+      {
+        current: 'Vitamin D3',
+        reason: 'Supplementing Vitamin D3 but vitamin_d remains below range; review dose, form, absorption, or cofactors.',
+        flagSource: 'lab_efficacy',
+        linkedBiomarker: 'vitamin_d',
+      },
+    ]);
+    const withFlag = await synthesizeForUser(userId);
+
+    // Second: WITHOUT (empty lab-efficacy source).
+    (buildLabEfficacyFlags as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    const withoutFlag = await synthesizeForUser(userId);
+
+    // Recommendations are byte-for-byte identical (flags are informational only).
+    expect(withFlag.recommended_vitamins_minerals).toEqual(withoutFlag.recommended_vitamins_minerals);
+    expect(withFlag.nutrition_guidance).toEqual(withoutFlag.nutrition_guidance);
+
+    // Only the flags differ: the flagged run has exactly one MORE flag.
+    expect(withFlag.supplement_flags.length).toBe(withoutFlag.supplement_flags.length + 1);
+  });
+});
+
+describe('4.2 Test 22: synthesis is fail-open when buildLabEfficacyFlags rejects', () => {
+  it('still produces genetic flags + recommendations when the lab-efficacy source throws', async () => {
+    const userId = 'user-4-2-throws';
+
+    (getPublishedRules as ReturnType<typeof vi.fn>).mockResolvedValue([preferFormRule()]);
+    (getQualifiedUserVariants as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { rsid: 'rs1801133', gene: 'MTHFR', genotype: 'TT', panel_key: 'methylation', status: 'confirmed' },
+    ]);
+    (createAdminClient as ReturnType<typeof vi.fn>).mockReturnValue(
+      buildAdminMock(
+        [],
+        [{ supplement_name: 'folic acid', product_name: 'Generic Folic Acid', is_current: true, is_ai_recommended: false }],
+      ),
+    );
+
+    // The lab-efficacy source rejects. Synthesis must not throw.
+    (buildLabEfficacyFlags as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error('lab efficacy exploded'),
+    );
+
+    const output = await synthesizeForUser(userId);
+
+    expect(output).toBeDefined();
+    // Genetic flag still present; no lab_efficacy flag (the source failed).
+    const geneticFlag = output.supplement_flags.find((f) => f.current.toLowerCase() === 'folic acid');
+    expect(geneticFlag).toBeDefined();
+    const labFlag = output.supplement_flags.find((f) => f.flagSource === 'lab_efficacy');
+    expect(labFlag).toBeUndefined();
+    // Recommendation unchanged.
+    const rec = output.recommended_vitamins_minerals.find((r) => r.form === 'L-methylfolate');
+    expect(rec).toBeDefined();
+    expect(output.disclaimers_version).toBe(DISCLAIMERS_VERSION);
+  });
+});
+
+describe('4.2 Test 23: lab-efficacy flag is passed the current supplement names', () => {
+  it('invokes buildLabEfficacyFlags once with the user id and the current supplement list', async () => {
+    const userId = 'user-4-2-args';
+
+    (getPublishedRules as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (getQualifiedUserVariants as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (createAdminClient as ReturnType<typeof vi.fn>).mockReturnValue(
+      buildAdminMock(
+        [],
+        [
+          { supplement_name: 'Vitamin D3', product_name: 'D3', is_current: true, is_ai_recommended: false },
+          { supplement_name: 'Magnesium glycinate', product_name: 'Mag', is_current: true, is_ai_recommended: false },
+        ],
+      ),
+    );
+
+    await synthesizeForUser(userId);
+
+    expect(buildLabEfficacyFlags).toHaveBeenCalledOnce();
+    const [calledUserId, supplementNames] = (buildLabEfficacyFlags as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(calledUserId).toBe(userId);
+    expect(supplementNames).toEqual(['Vitamin D3', 'Magnesium glycinate']);
+  });
+});
+// === PROMPT 208b 4.2 EXTENSION END ===

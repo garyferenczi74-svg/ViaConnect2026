@@ -72,6 +72,13 @@ import { stableInputsHash, recordRecommendationAudit } from '@/lib/protocol/reco
 // and buildNutrientIntakeLedger is a fail-open persist (returns [], never throws).
 import { getFoodContributions, buildNutrientIntakeLedger } from '@/lib/nutrition/intakeReconciliation';
 // === PROMPT 208b 4.1 EXTENSION END ===
+// === PROMPT 208b 4.2 EXTENSION START ===
+// Lab-based supplement efficacy flags: a SECOND, independent supplement-flag source
+// alongside the genetic one. buildLabEfficacyFlags is fail-open (returns [] on any
+// error, never throws). It is ADDITIVE: it only appends informational flags to
+// supplement_flags and never removes a recommendation or gates an interlock.
+import { buildLabEfficacyFlags } from '@/lib/protocol/labEfficacyFlags';
+// === PROMPT 208b 4.2 EXTENSION END ===
 
 // ---------------------------------------------------------------------------
 // Public constants
@@ -96,6 +103,13 @@ export interface SupplementFlag {
   alternativeForm: string | null;
   ruleRsid: string;
   evidenceTier: number;
+  // === PROMPT 208b 4.2 EXTENSION START ===
+  // Optional additive provenance fields. Existing (genetic) flags omit them unless
+  // explicitly set; the lab-efficacy source sets flagSource: 'lab_efficacy' plus the
+  // canonical biomarker it is keyed to. Purely informational: never gates anything.
+  flagSource?: 'genetic' | 'lab_efficacy' | 'interaction' | 'intake_ceiling';
+  linkedBiomarker?: string;
+  // === PROMPT 208b 4.2 EXTENSION END ===
 }
 
 export interface SynthesisOutput {
@@ -423,6 +437,38 @@ export async function synthesizeForUser(userId: string): Promise<SynthesisOutput
     // Other action_types (dose_context, monitor_biomarker, practitioner_only):
     // nutrition_guidance + arnold_context already handled above
   }
+
+  // === PROMPT 208b 4.2 EXTENSION START ===
+  // SECOND supplement-flag source: lab-based efficacy flags. APPEND (never remove)
+  // a flag for each current supplement whose corresponding biomarker is still
+  // out-of-range. This is purely informational: it adds to supplementFlags and does
+  // NOT touch recommendedItems, nutrition_guidance, the interlocks, or the candidate
+  // pipeline. flagSource distinguishes lab_efficacy from the genetic flags above.
+  //
+  // Fail-open: buildLabEfficacyFlags returns [] on any error and never throws. The
+  // try/catch is belt-and-suspenders only. ruleRsid 'lab_efficacy' and evidenceTier 2
+  // adapt the lab flags to the existing SupplementFlag shape (the lab source carries
+  // no rule rsid); alternativeForm is null (no genetic alternate form here).
+  try {
+    const labFlags = await buildLabEfficacyFlags(userId, currentSupplementNames);
+    supplementFlags.push(
+      ...labFlags.map((f) => ({
+        current: f.current,
+        reason: f.reason,
+        alternativeForm: null,
+        ruleRsid: 'lab_efficacy',
+        evidenceTier: 2,
+        flagSource: f.flagSource,
+        linkedBiomarker: f.linkedBiomarker,
+      })),
+    );
+  } catch (err) {
+    safeLog.error('synthesis', 'buildLabEfficacyFlags threw; supplement_flags keeps genetic-only set', {
+      userId,
+      err,
+    });
+  }
+  // === PROMPT 208b 4.2 EXTENSION END ===
 
   // === PROMPT 208a F4 EXTENSION START ===
   // Post-processing: allergen screen, depletion repletion, goal weighting.
