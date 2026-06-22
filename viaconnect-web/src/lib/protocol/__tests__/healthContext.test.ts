@@ -6,10 +6,23 @@
  * No em/en-dashes. No emojis.
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, type MockInstance } from 'vitest';
 
 // The module does not exist yet (RED phase).
 import { buildUserHealthContext, type UserHealthContext } from '../healthContext';
+
+// ---------------------------------------------------------------------------
+// Mock safeLog so we can assert on warn calls
+// ---------------------------------------------------------------------------
+vi.mock('@/lib/utils/safe-log', () => ({
+  safeLog: {
+    warn: vi.fn(),
+    info: vi.fn(),
+    error: vi.fn(),
+  },
+}));
+
+import { safeLog } from '@/lib/utils/safe-log';
 
 // ---------------------------------------------------------------------------
 // Mock admin client factory
@@ -293,5 +306,42 @@ describe('buildUserHealthContext', () => {
     });
 
     await expect(buildUserHealthContext('u-8', client as never)).resolves.toBeDefined();
+  });
+
+  // -------------------------------------------------------------------------
+  // Test 7: user_medications read error -> fail-open, CAQ meds only, warn called
+  // -------------------------------------------------------------------------
+  it('returns valid context (CAQ meds only) when user_medications returns a Supabase error, and calls safeLog.warn', async () => {
+    const caqRow = {
+      status: 'completed',
+      demographics: { age: 40 },
+      health_concerns: [],
+      medications: [{ name: 'Metformin' }],
+      allergies: [],
+      lifestyle: {},
+    };
+
+    const client = makeAdminClient({
+      caq_assessment_versions: { selectResult: { data: caqRow, error: null } },
+      user_medications: { selectResult: { data: null, error: { message: 'RLS denied' } } },
+      user_current_supplements: { selectResult: { data: [], error: null } },
+      user_health_context: { insertResult: { data: null, error: null } },
+    });
+
+    const warnSpy = safeLog.warn as unknown as MockInstance;
+    warnSpy.mockClear();
+
+    const result = await buildUserHealthContext('u-9', client as never);
+
+    // Should not throw - returns a valid context
+    expect(result).toBeDefined();
+    // CAQ meds only (user_medications failed)
+    expect(result.medications).toContain('Metformin');
+    // safeLog.warn must have been called with the user_medications error
+    expect(warnSpy).toHaveBeenCalledWith(
+      'health-context',
+      'Failed to load user_medications; continuing',
+      expect.objectContaining({ userId: 'u-9', error: expect.objectContaining({ message: 'RLS denied' }) }),
+    );
   });
 });

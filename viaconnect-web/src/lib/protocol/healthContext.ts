@@ -182,7 +182,6 @@ export async function buildUserHealthContext(
       : {}
   ) as Record<string, unknown>;
 
-  const conditions = toArray(caqRow['health_concerns']);
   // health_concerns may be an object (not an array) - keep as-is for consumers.
   const conditionsRaw: unknown = caqRow['health_concerns'] ?? [];
 
@@ -206,14 +205,21 @@ export async function buildUserHealthContext(
   // -------------------------------------------------------------------------
   let userMedNames: string[] = [];
   try {
-    const { data: userMeds } = await (db
+    const { data: userMeds, error: userMedsError } = await (db
       .from('user_medications')
       .select('medication_name, active')
       .eq('user_id', userId)
       .eq('active', true) as Promise<{
       data: Array<{ medication_name: string; active: boolean }> | null;
-      error: unknown;
+      error: { message: string } | null;
     }>);
+
+    if (userMedsError) {
+      safeLog.warn('health-context', 'Failed to load user_medications; continuing', {
+        userId,
+        error: userMedsError,
+      });
+    }
 
     userMedNames = (userMeds ?? [])
       .map((m) => (typeof m.medication_name === 'string' ? m.medication_name.trim() : ''))
