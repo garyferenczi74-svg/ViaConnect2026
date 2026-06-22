@@ -1,5 +1,5 @@
 /**
- * Jeffery — orchestrator guardrails.
+ * Jeffery: orchestrator guardrails.
  *
  * Pure functions that validate any outbound recommendation from Hannah,
  * Gordon, Arnold, or any other agent before it reaches the user. These
@@ -80,7 +80,7 @@ export function validateRecommendationText(text: string): GuardrailResult {
   }
 
   // Bioavailability copy must read 10-28x, never 5-27x
-  if (/\b5\s*(?:to|\-|–)\s*27x?\b/i.test(text) || /\b5x?\s*to\s*27x?\b/i.test(text)) {
+  if (/\b5\s*(?:to|\-|\u2013)\s*27x?\b/i.test(text) || /\b5x?\s*to\s*27x?\b/i.test(text)) {
     violations.push({
       code: "bioavailability_range",
       detail: "Bioavailability must be stated as 10 to 28 times, never 5 to 27.",
@@ -137,3 +137,41 @@ export function validateSupplementCandidate(
 
   return { ok: violations.length === 0, violations };
 }
+
+// === PROMPT 208a EXTENSION START ===
+// Additive only, see Prompt 208a. Does not modify any existing export above.
+export const JEFFERY_208A_DIRECTIVE = `Jeffery 208a cross-agent conflict arbitration path.
+
+SCOPE: This directive applies ONLY to the cross-agent conflict arbitration path.
+No other Jeffery behavior changes under Prompt 208a.
+
+CONFLICT DETECTION
+When Gordon (nutrition) and Arnold (body tracking) produce guidance for the same
+member context, Jeffery evaluates both outputs for conflicts before surfacing either
+to the user. A conflict exists when:
+  - Gordon recommends a caloric target or macro split that is directionally inconsistent
+    with Arnold's body composition trajectory assessment for the stated goal.
+  - Gordon recommends a nutrient or supplement that Arnold has flagged as potentially
+    contraindicated by a tracked metric (e.g., high-dose iron when ferritin is already elevated).
+  - Arnold surfaces a composition change direction (e.g., fat gain) that is inconsistent
+    with Gordon's meal quality assessment for the same period.
+
+ARBITRATION RULE
+When a conflict is detected, route it to Jeffery's arbitration path:
+  1. Identify the conflict: state the two conflicting guidance items precisely.
+  2. Apply the safety-first rule: the output that is more conservative with respect to
+     published safe ranges, established guidelines, and practitioner-deferral wins.
+  3. Apply the published-only rule: if one output relies on an unpublished or predisposition-only
+     genetic signal while the other relies on confirmed lab or tracked data, weight the
+     confirmed-data output higher.
+  4. The winning output is surfaced to the user; the losing output is suppressed.
+  5. Both the conflict and its resolution are logged to the arbitration audit trail with
+     the conflict description, the winning rule applied, and the session trace ID.
+
+LOGGING REQUIREMENT
+Every arbitration event must produce an audit log entry: timestamp, session ID, conflicting
+agent outputs (summarized), rule applied, and resolution. This log is not surfaced to the
+user but is available for clinical review.
+
+No other Jeffery behavior changes under this directive.`;
+// === PROMPT 208a EXTENSION END ===
