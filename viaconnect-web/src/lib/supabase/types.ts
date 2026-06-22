@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      diplotype_calls: {
+        Row: {
+          confidence: string | null
+          created_at: string
+          diplotype: string | null
+          evidence_tier: number | null
+          gene: string
+          id: string
+          metabolizer_phenotype: string | null
+          source_atom_ids: string[]
+          user_id: string
+        }
+        Insert: {
+          confidence?: string | null
+          created_at?: string
+          diplotype?: string | null
+          evidence_tier?: number | null
+          gene: string
+          id?: string
+          metabolizer_phenotype?: string | null
+          source_atom_ids?: string[]
+          user_id: string
+        }
+        Update: {
+          confidence?: string | null
+          created_at?: string
+          diplotype?: string | null
+          evidence_tier?: number | null
+          gene?: string
+          id?: string
+          metabolizer_phenotype?: string | null
+          source_atom_ids?: string[]
+          user_id?: string
+        }
+        Relationships: []
+      }
       rule_killswitch: {
         Row: {
           disabled: boolean
