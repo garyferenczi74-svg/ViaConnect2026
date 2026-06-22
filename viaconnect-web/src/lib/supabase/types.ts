@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      nutrient_interactions: {
+        Row: {
+          created_at: string
+          evidence_tier: number | null
+          id: string
+          interaction_type: string
+          mechanism: string | null
+          nutrient_a: string
+          nutrient_b: string
+          source_atom_ids: string[]
+        }
+        Insert: {
+          created_at?: string
+          evidence_tier?: number | null
+          id?: string
+          interaction_type: string
+          mechanism?: string | null
+          nutrient_a: string
+          nutrient_b: string
+          source_atom_ids?: string[]
+        }
+        Update: {
+          created_at?: string
+          evidence_tier?: number | null
+          id?: string
+          interaction_type?: string
+          mechanism?: string | null
+          nutrient_a?: string
+          nutrient_b?: string
+          source_atom_ids?: string[]
+        }
+        Relationships: []
+      }
       energy_balance_signals: {
         Row: {
           balance_state: string | null
