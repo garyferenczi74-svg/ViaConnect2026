@@ -9,7 +9,11 @@
  * enforces plain language, emerging labels, structure-function framing,
  * practitioner referral, APOE guardrail, and weight-loss guardrail.
  *
- * Prompt 208 Phase 7 (Task 19). No em/en-dashes. No emojis.
+ * Prompt 208 Phase 7 (Task 19). Task I4 additive guards:
+ *   - Per-user in-memory rate limit (15 req/60s). Returns 429 before model call.
+ *   - Jurisdiction-aware compliance post-check via reviewServerText. Fail-open.
+ *
+ * No em/en-dashes. No emojis.
  */
 
 import { NextResponse } from 'next/server';
@@ -19,6 +23,39 @@ import { scoreCoverage, captureQuery } from '@/lib/kb/knowledgeQueries';
 import { HANNAH_208_QA_DIRECTIVE } from '@/lib/ai/hannah/ultrathink/prompts/ultrathink-system';
 import { safeLog } from '@/lib/utils/safe-log';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import { reviewServerText } from '@/lib/compliance/review-server-text';
+import { getUserJurisdictionCode } from '@/lib/compliance/jurisdiction';
+
+// ---------------------------------------------------------------------------
+// Per-user in-memory rate limiter (mirrors /api/ai/[provider] pattern).
+// 15 requests per 60 s per user. No external dependency.
+// ---------------------------------------------------------------------------
+
+const ASK_RATE_LIMIT = 15;
+const ASK_RATE_WINDOW_MS = 60_000;
+const askRateLimitMap = new Map<string, { count: number; resetAt: number }>();
+
+function checkAskRateLimit(userId: string): { allowed: boolean; retryAfter: number } {
+  const now = Date.now();
+  const entry = askRateLimitMap.get(userId);
+  if (!entry || now > entry.resetAt) {
+    askRateLimitMap.set(userId, { count: 1, resetAt: now + ASK_RATE_WINDOW_MS });
+    return { allowed: true, retryAfter: 0 };
+  }
+  if (entry.count >= ASK_RATE_LIMIT) {
+    return { allowed: false, retryAfter: Math.ceil((entry.resetAt - now) / 1000) };
+  }
+  entry.count++;
+  return { allowed: true, retryAfter: 0 };
+}
+
+/**
+ * Test-only export: resets the rate-limit map between test cases so
+ * per-user state does not bleed across tests.
+ */
+export function resetAskRateLimitForTesting(): void {
+  askRateLimitMap.clear();
+}
 
 // ---------------------------------------------------------------------------
 // Anthropic API constants (mirrors engine.ts values exactly).
@@ -195,6 +232,15 @@ export async function POST(request: Request): Promise<NextResponse> {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  // Rate limit: per-user in-memory guard. Returns 429 without calling the model.
+  const rateCheck = checkAskRateLimit(user.id);
+  if (!rateCheck.allowed) {
+    return NextResponse.json(
+      { error: 'Rate limit exceeded', retryAfter: rateCheck.retryAfter },
+      { status: 429 },
+    );
+  }
+
   // Body validation.
   let body: { question?: unknown; domain?: unknown };
   try {
@@ -257,6 +303,35 @@ export async function POST(request: Request): Promise<NextResponse> {
     });
     answer = FALLBACK_ANSWER;
     answerFailed = true;
+  }
+
+  // Jurisdiction-aware compliance post-check. Fail-open: if reviewServerText
+  // throws, keep the original answer and never return a 500.
+  if (!answerFailed) {
+    try {
+      const jurisdiction = await getUserJurisdictionCode();
+      const review = await reviewServerText({
+        text: answer,
+        jurisdiction,
+        subject_type: 'protocol',
+        actor_role: 'system',
+      });
+      if (review.decision === 'BLOCKED' || review.decision === 'ESCALATE') {
+        // Verdict requires the raw answer to be dropped. Use the educational fallback.
+        answer = FALLBACK_ANSWER;
+      } else if (review.decision === 'CONDITIONAL' && review.text != null && review.text.trim().length > 0) {
+        // Kelsey provided a safe rewrite. Use it.
+        answer = review.text;
+      }
+      // APPROVED and pass_stage_1: keep the answer unchanged.
+    } catch (err) {
+      // Fail-open: compliance check failure must never block the response.
+      safeLog.warn('api.hannah.ask', 'reviewServerText threw; keeping original answer (fail-open)', {
+        userId: user.id,
+        domain,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
   }
 
   // Capture the exchange (fail-open: captureQuery never throws).

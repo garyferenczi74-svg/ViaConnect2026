@@ -1,7 +1,7 @@
 /**
  * src/app/api/hannah/ask/__tests__/route.test.ts
  *
- * TDD tests for POST /api/hannah/ask (Prompt 208, Phase 7, Task 19).
+ * TDD tests for POST /api/hannah/ask (Prompt 208, Phase 7, Task 19 + Task I4).
  *
  * Coverage:
  *   - 401 when unauthenticated
@@ -11,6 +11,15 @@
  *   - 200 fallback answer when generateGroundedAnswer throws (fail-open)
  *   - captureQuery always called with correct args
  *   - callHannahQaModel receives HANNAH_208_QA_DIRECTIVE as system prompt (T19 review)
+ *   Task I4:
+ *   - 429 when per-user rate limit exceeded (no model call)
+ *   - different user not limited by another user's quota
+ *   - jurisdiction forwarded to reviewServerText (CA -> CA)
+ *   - BLOCKED verdict replaces answer with FALLBACK
+ *   - ESCALATE verdict replaces answer with FALLBACK
+ *   - CONDITIONAL with rewrite uses rewrite text
+ *   - APPROVED keeps original answer
+ *   - reviewServerText throws -> fail-open, 200, original answer kept
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
@@ -45,6 +54,21 @@ vi.mock('@/lib/utils/safe-log', () => ({
     error: vi.fn(),
   },
 }))
+
+// Task I4: mock compliance helpers
+const mockReviewServerText = vi.fn()
+const mockGetUserJurisdictionCode = vi.fn()
+
+vi.mock('@/lib/compliance/review-server-text', () => ({
+  reviewServerText: (...args: unknown[]) => mockReviewServerText(...args),
+}))
+
+vi.mock('@/lib/compliance/jurisdiction', () => ({
+  getUserJurisdictionCode: (...args: unknown[]) => mockGetUserJurisdictionCode(...args),
+}))
+
+// Task I4: expose resetAskRateLimit so tests can clear per-user state
+import { resetAskRateLimitForTesting } from '../route'
 
 // ---------------------------------------------------------------------------
 // Imports under test.
@@ -98,6 +122,21 @@ function buildAnthropicResponse(text: string): Response {
   )
 }
 
+/**
+ * Set up compliance mocks to pass through without modifying the answer.
+ * Required in any test that allows the route to reach the compliance post-check.
+ */
+function mockCompliancePassthrough() {
+  mockGetUserJurisdictionCode.mockResolvedValue('US')
+  mockReviewServerText.mockResolvedValue({
+    decision: 'pass_stage_1',
+    text: null, // pass_stage_1 keeps the original; text is not used
+    sanitized: false,
+    stage_1_score: 0,
+    stage_1_flag_count: 0,
+  })
+}
+
 // ---------------------------------------------------------------------------
 // Tests - authentication
 // ---------------------------------------------------------------------------
@@ -105,6 +144,7 @@ function buildAnthropicResponse(text: string): Response {
 describe('POST /api/hannah/ask - authentication', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    resetAskRateLimitForTesting()
   })
 
   it('returns 401 when no session user', async () => {
@@ -125,6 +165,7 @@ describe('POST /api/hannah/ask - authentication', () => {
 describe('POST /api/hannah/ask - body validation', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    resetAskRateLimitForTesting()
     mockAuth(AUTHED_USER)
   })
 
@@ -164,6 +205,7 @@ describe('POST /api/hannah/ask - tier-2 atoms (well_covered)', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    resetAskRateLimitForTesting()
     mockAuth(AUTHED_USER)
     mockAtoms([
       { id: 'atom-1', evidence_tier: 2, domain: 'methylation' },
@@ -171,6 +213,7 @@ describe('POST /api/hannah/ask - tier-2 atoms (well_covered)', () => {
     ])
     mockScore({ coverage: 'well_covered', tiersUsed: [1, 2] })
     ;(captureQuery as ReturnType<typeof vi.fn>).mockResolvedValue(undefined)
+    mockCompliancePassthrough()
     // Mock global fetch to intercept the Anthropic API call inside
     // callHannahQaModel and return a canned success response.
     process.env.ANTHROPIC_API_KEY = 'test-key'
@@ -182,6 +225,7 @@ describe('POST /api/hannah/ask - tier-2 atoms (well_covered)', () => {
   afterEach(() => {
     fetchSpy.mockRestore()
     delete process.env.ANTHROPIC_API_KEY
+    resetAskRateLimitForTesting()
   })
 
   it('returns 200 with emerging:false', async () => {
@@ -246,10 +290,12 @@ describe('POST /api/hannah/ask - no atoms (gap)', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    resetAskRateLimitForTesting()
     mockAuth(AUTHED_USER)
     mockAtoms([])
     mockScore({ coverage: 'gap', tiersUsed: [] })
     ;(captureQuery as ReturnType<typeof vi.fn>).mockResolvedValue(undefined)
+    mockCompliancePassthrough()
     process.env.ANTHROPIC_API_KEY = 'test-key'
     fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       buildAnthropicResponse('I do not have grounded information on that topic yet.'),
@@ -259,6 +305,7 @@ describe('POST /api/hannah/ask - no atoms (gap)', () => {
   afterEach(() => {
     fetchSpy.mockRestore()
     delete process.env.ANTHROPIC_API_KEY
+    resetAskRateLimitForTesting()
   })
 
   it('returns 200 with emerging:true when no atoms', async () => {
@@ -317,10 +364,12 @@ describe('POST /api/hannah/ask - generateGroundedAnswer throws (fail-open)', () 
 
   beforeEach(() => {
     vi.clearAllMocks()
+    resetAskRateLimitForTesting()
     mockAuth(AUTHED_USER)
     mockAtoms([{ id: 'atom-3', evidence_tier: 2, domain: 'methylation' }])
     mockScore({ coverage: 'well_covered', tiersUsed: [2] })
     ;(captureQuery as ReturnType<typeof vi.fn>).mockResolvedValue(undefined)
+    // No compliance mock needed: answerFailed=true skips the compliance post-check.
     // Make fetch throw so callHannahQaModel propagates the error through
     // generateGroundedAnswer up to the POST handler's fail-open catch block.
     process.env.ANTHROPIC_API_KEY = 'test-key'
@@ -330,6 +379,7 @@ describe('POST /api/hannah/ask - generateGroundedAnswer throws (fail-open)', () 
   afterEach(() => {
     fetchSpy.mockRestore()
     delete process.env.ANTHROPIC_API_KEY
+    resetAskRateLimitForTesting()
   })
 
   it('still returns 200 when callHannahQaModel throws', async () => {
@@ -370,10 +420,12 @@ describe('POST /api/hannah/ask - all valid domains accepted', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    resetAskRateLimitForTesting()
     mockAuth(AUTHED_USER)
     mockAtoms([])
     mockScore({ coverage: 'gap', tiersUsed: [] })
     ;(captureQuery as ReturnType<typeof vi.fn>).mockResolvedValue(undefined)
+    mockCompliancePassthrough()
     process.env.ANTHROPIC_API_KEY = 'test-key'
     fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       buildAnthropicResponse('Educational response.'),
@@ -383,6 +435,7 @@ describe('POST /api/hannah/ask - all valid domains accepted', () => {
   afterEach(() => {
     fetchSpy.mockRestore()
     delete process.env.ANTHROPIC_API_KEY
+    resetAskRateLimitForTesting()
   })
 
   for (const domain of validDomains) {
@@ -438,5 +491,225 @@ describe('callHannahQaModel - unit', () => {
     const body = JSON.parse(fetchInit.body as string) as Record<string, unknown>
     expect(body.system).toBe('DIRECTIVE TEXT')
     expect((body.messages as Array<{ role: string; content: string }>)[0].content).toBe('user question')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Task I4 - per-user rate limit
+// ---------------------------------------------------------------------------
+
+const RATE_USER = { id: 'rate-user-001' }
+const RATE_USER_2 = { id: 'rate-user-002' }
+
+// Default mock setup shared by rate-limit describe blocks.
+function setupRateLimitDefaults(fetchSpy: { mockResolvedValue: (v: Response) => unknown }) {
+  mockAtoms([])
+  mockScore({ coverage: 'gap', tiersUsed: [] })
+  ;(captureQuery as ReturnType<typeof vi.fn>).mockResolvedValue(undefined)
+  mockGetUserJurisdictionCode.mockResolvedValue('US')
+  mockReviewServerText.mockResolvedValue({ decision: 'pass_stage_1', text: 'Educational response.', sanitized: false, stage_1_score: 0, stage_1_flag_count: 0 })
+  process.env.ANTHROPIC_API_KEY = 'test-key'
+  fetchSpy.mockResolvedValue(buildAnthropicResponse('Educational response.'))
+}
+
+describe('POST /api/hannah/ask - rate limit (Task I4)', () => {
+  let fetchSpy: ReturnType<typeof vi.spyOn>
+  const ASK_RATE_LIMIT = 15 // must match the constant in the route
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    fetchSpy = vi.spyOn(globalThis, 'fetch')
+    resetAskRateLimitForTesting()
+  })
+
+  afterEach(() => {
+    fetchSpy.mockRestore()
+    delete process.env.ANTHROPIC_API_KEY
+    resetAskRateLimitForTesting()
+  })
+
+  it('returns 200 for requests within the rate limit', async () => {
+    mockAuth(RATE_USER)
+    setupRateLimitDefaults(fetchSpy)
+    const req = makeRequest({ question: 'Tell me something', domain: 'genomics' })
+    const res = await POST(req)
+    expect(res.status).toBe(200)
+  })
+
+  it('returns 429 on the (limit+1)th request from the same user', async () => {
+    mockAuth(RATE_USER)
+    setupRateLimitDefaults(fetchSpy)
+
+    for (let i = 0; i < ASK_RATE_LIMIT; i++) {
+      const req = makeRequest({ question: 'Tell me something', domain: 'genomics' })
+      const res = await POST(req)
+      expect(res.status).toBe(200)
+    }
+
+    const req = makeRequest({ question: 'One more', domain: 'genomics' })
+    const res = await POST(req)
+    expect(res.status).toBe(429)
+  })
+
+  it('does not call the model when rate-limited', async () => {
+    mockAuth(RATE_USER)
+    setupRateLimitDefaults(fetchSpy)
+    fetchSpy.mockClear()
+
+    for (let i = 0; i < ASK_RATE_LIMIT; i++) {
+      const req = makeRequest({ question: 'Tell me something', domain: 'genomics' })
+      await POST(req)
+    }
+    fetchSpy.mockClear()
+
+    const req = makeRequest({ question: 'Blocked', domain: 'genomics' })
+    await POST(req)
+    // fetch (Anthropic API) must NOT have been called for the blocked request
+    expect(fetchSpy).not.toHaveBeenCalled()
+  })
+
+  it('429 response body contains error and retryAfter fields', async () => {
+    mockAuth(RATE_USER)
+    setupRateLimitDefaults(fetchSpy)
+
+    for (let i = 0; i < ASK_RATE_LIMIT; i++) {
+      await POST(makeRequest({ question: 'q', domain: 'genomics' }))
+    }
+    const res = await POST(makeRequest({ question: 'q', domain: 'genomics' }))
+    expect(res.status).toBe(429)
+    const body = await res.json()
+    expect(typeof body.error).toBe('string')
+    expect(typeof body.retryAfter).toBe('number')
+  })
+
+  it('a different user is NOT rate-limited by the first user hitting the limit', async () => {
+    // Exhaust user 1
+    mockGetUser.mockResolvedValue({ data: { user: RATE_USER } })
+    setupRateLimitDefaults(fetchSpy)
+    for (let i = 0; i < ASK_RATE_LIMIT; i++) {
+      await POST(makeRequest({ question: 'q', domain: 'genomics' }))
+    }
+
+    // Switch to user 2 - must not be limited
+    mockGetUser.mockResolvedValue({ data: { user: RATE_USER_2 } })
+    const res = await POST(makeRequest({ question: 'Am I blocked?', domain: 'genomics' }))
+    expect(res.status).toBe(200)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Task I4 - jurisdiction-aware compliance post-check
+// ---------------------------------------------------------------------------
+
+const FALLBACK_SUBSTRING = 'qualified healthcare practitioner'
+
+describe('POST /api/hannah/ask - jurisdiction compliance post-check (Task I4)', () => {
+  let fetchSpy: ReturnType<typeof vi.spyOn>
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockAuth(AUTHED_USER)
+    mockAtoms([])
+    mockScore({ coverage: 'gap', tiersUsed: [] })
+    ;(captureQuery as ReturnType<typeof vi.fn>).mockResolvedValue(undefined)
+    process.env.ANTHROPIC_API_KEY = 'test-key'
+    fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      buildAnthropicResponse('Raw model answer about MTHFR.'),
+    )
+    resetAskRateLimitForTesting()
+  })
+
+  afterEach(() => {
+    fetchSpy.mockRestore()
+    delete process.env.ANTHROPIC_API_KEY
+    resetAskRateLimitForTesting()
+  })
+
+  it('calls getUserJurisdictionCode to resolve the user jurisdiction', async () => {
+    mockGetUserJurisdictionCode.mockResolvedValue('US')
+    mockReviewServerText.mockResolvedValue({ decision: 'pass_stage_1', text: 'Raw model answer about MTHFR.', sanitized: false, stage_1_score: 0, stage_1_flag_count: 0 })
+    await POST(makeRequest({ question: 'What is MTHFR?', domain: 'genomics' }))
+    expect(mockGetUserJurisdictionCode).toHaveBeenCalledOnce()
+  })
+
+  it('passes the resolved jurisdiction code to reviewServerText', async () => {
+    mockGetUserJurisdictionCode.mockResolvedValue('CA')
+    mockReviewServerText.mockResolvedValue({ decision: 'pass_stage_1', text: 'Raw model answer about MTHFR.', sanitized: false, stage_1_score: 0, stage_1_flag_count: 0 })
+    await POST(makeRequest({ question: 'What is MTHFR?', domain: 'genomics' }))
+    expect(mockReviewServerText).toHaveBeenCalledOnce()
+    const callArg = mockReviewServerText.mock.calls[0][0] as { jurisdiction: string }
+    expect(callArg.jurisdiction).toBe('CA')
+  })
+
+  it('BLOCKED verdict: response answer is the FALLBACK, not the raw model answer', async () => {
+    mockGetUserJurisdictionCode.mockResolvedValue('US')
+    mockReviewServerText.mockResolvedValue({ decision: 'BLOCKED', text: null, sanitized: false, stage_1_score: 5, stage_1_flag_count: 2 })
+    const res = await POST(makeRequest({ question: 'What is MTHFR?', domain: 'genomics' }))
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.answer).not.toContain('Raw model answer')
+    expect(body.answer).toContain(FALLBACK_SUBSTRING)
+  })
+
+  it('ESCALATE verdict: response answer is the FALLBACK, not the raw model answer', async () => {
+    mockGetUserJurisdictionCode.mockResolvedValue('US')
+    mockReviewServerText.mockResolvedValue({ decision: 'ESCALATE', text: null, sanitized: false, stage_1_score: 5, stage_1_flag_count: 2 })
+    const res = await POST(makeRequest({ question: 'What is MTHFR?', domain: 'genomics' }))
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.answer).not.toContain('Raw model answer')
+    expect(body.answer).toContain(FALLBACK_SUBSTRING)
+  })
+
+  it('CONDITIONAL with rewrite: response uses the rewrite text', async () => {
+    mockGetUserJurisdictionCode.mockResolvedValue('US')
+    mockReviewServerText.mockResolvedValue({ decision: 'CONDITIONAL', text: 'Rewritten safe answer.', sanitized: true, stage_1_score: 3, stage_1_flag_count: 1 })
+    const res = await POST(makeRequest({ question: 'What is MTHFR?', domain: 'genomics' }))
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.answer).toBe('Rewritten safe answer.')
+  })
+
+  it('APPROVED keeps the original model answer', async () => {
+    mockGetUserJurisdictionCode.mockResolvedValue('US')
+    mockReviewServerText.mockResolvedValue({ decision: 'APPROVED', text: 'Raw model answer about MTHFR.', sanitized: false, stage_1_score: 0, stage_1_flag_count: 0 })
+    const res = await POST(makeRequest({ question: 'What is MTHFR?', domain: 'genomics' }))
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.answer).toBe('Raw model answer about MTHFR.')
+  })
+
+  it('pass_stage_1 keeps the original model answer', async () => {
+    mockGetUserJurisdictionCode.mockResolvedValue('US')
+    mockReviewServerText.mockResolvedValue({ decision: 'pass_stage_1', text: 'Raw model answer about MTHFR.', sanitized: false, stage_1_score: 0, stage_1_flag_count: 0 })
+    const res = await POST(makeRequest({ question: 'What is MTHFR?', domain: 'genomics' }))
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.answer).toBe('Raw model answer about MTHFR.')
+  })
+
+  it('reviewServerText throws: fail-open returns 200 with original answer', async () => {
+    mockGetUserJurisdictionCode.mockResolvedValue('US')
+    mockReviewServerText.mockRejectedValue(new Error('Compliance service unreachable'))
+    const res = await POST(makeRequest({ question: 'What is MTHFR?', domain: 'genomics' }))
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.answer).toBe('Raw model answer about MTHFR.')
+  })
+
+  it('reviewServerText throws: safeLog.warn is called for the compliance error', async () => {
+    mockGetUserJurisdictionCode.mockResolvedValue('US')
+    mockReviewServerText.mockRejectedValue(new Error('Compliance service unreachable'))
+    await POST(makeRequest({ question: 'What is MTHFR?', domain: 'genomics' }))
+    expect(safeLog.warn).toHaveBeenCalled()
+  })
+
+  it('captureQuery receives the compliance-adjusted answer (BLOCKED -> FALLBACK)', async () => {
+    mockGetUserJurisdictionCode.mockResolvedValue('US')
+    mockReviewServerText.mockResolvedValue({ decision: 'BLOCKED', text: null, sanitized: false, stage_1_score: 5, stage_1_flag_count: 2 })
+    await POST(makeRequest({ question: 'What is MTHFR?', domain: 'genomics' }))
+    expect(captureQuery).toHaveBeenCalledOnce()
+    const args = (captureQuery as ReturnType<typeof vi.fn>).mock.calls[0][0] as { answerSummary: string }
+    expect(args.answerSummary).toContain(FALLBACK_SUBSTRING)
   })
 })
