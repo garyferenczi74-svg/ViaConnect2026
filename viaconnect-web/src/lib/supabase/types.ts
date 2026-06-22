@@ -14,6 +14,120 @@ export type Database = {
   }
   public: {
     Tables: {
+      atom_archive: {
+        Row: {
+          archived_at: string
+          archived_content_ref: string | null
+          atom_id: string
+        }
+        Insert: {
+          archived_at?: string
+          archived_content_ref?: string | null
+          atom_id: string
+        }
+        Update: {
+          archived_at?: string
+          archived_content_ref?: string | null
+          atom_id?: string
+        }
+        Relationships: []
+      }
+      atom_conflicts: {
+        Row: {
+          atom_id_a: string
+          atom_id_b: string
+          conflict_type: string | null
+          created_at: string
+          id: string
+          resolution_state: string
+          surfaced: boolean
+        }
+        Insert: {
+          atom_id_a: string
+          atom_id_b: string
+          conflict_type?: string | null
+          created_at?: string
+          id?: string
+          resolution_state?: string
+          surfaced?: boolean
+        }
+        Update: {
+          atom_id_a?: string
+          atom_id_b?: string
+          conflict_type?: string | null
+          created_at?: string
+          id?: string
+          resolution_state?: string
+          surfaced?: boolean
+        }
+        Relationships: []
+      }
+      atom_study_metadata: {
+        Row: {
+          atom_id: string
+          ci_summary: string | null
+          created_at: string
+          design: string | null
+          effect_direction: string | null
+          effect_magnitude: string | null
+          grade_assessment: string | null
+          population: string | null
+          sample_size: number | null
+        }
+        Insert: {
+          atom_id: string
+          ci_summary?: string | null
+          created_at?: string
+          design?: string | null
+          effect_direction?: string | null
+          effect_magnitude?: string | null
+          grade_assessment?: string | null
+          population?: string | null
+          sample_size?: number | null
+        }
+        Update: {
+          atom_id?: string
+          ci_summary?: string | null
+          created_at?: string
+          design?: string | null
+          effect_direction?: string | null
+          effect_magnitude?: string | null
+          grade_assessment?: string | null
+          population?: string | null
+          sample_size?: number | null
+        }
+        Relationships: []
+      }
+      retraction_log: {
+        Row: {
+          action_taken: string | null
+          atom_id: string
+          created_at: string
+          detected_at: string
+          id: string
+          retracted_at: string | null
+          source_ref: string | null
+        }
+        Insert: {
+          action_taken?: string | null
+          atom_id: string
+          created_at?: string
+          detected_at?: string
+          id?: string
+          retracted_at?: string | null
+          source_ref?: string | null
+        }
+        Update: {
+          action_taken?: string | null
+          atom_id?: string
+          created_at?: string
+          detected_at?: string
+          id?: string
+          retracted_at?: string | null
+          source_ref?: string | null
+        }
+        Relationships: []
+      }
       ancestry_context: {
         Row: {
           confidence: string | null
