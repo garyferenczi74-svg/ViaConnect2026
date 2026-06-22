@@ -66,6 +66,12 @@ import type { PopulationCaveat } from '@/lib/genetics/ancestry/populationMatch';
 // === PROMPT 208a J2 EXTENSION START ===
 import { stableInputsHash, recordRecommendationAudit } from '@/lib/protocol/recommendationAudit';
 // === PROMPT 208a J2 EXTENSION END ===
+// === PROMPT 208b 4.1 EXTENSION START ===
+// Food + supplement reconciliation (4.1-T2). getFoodContributions is fail-open
+// (returns { contributions: [], complete: false } on any error / incomplete data)
+// and buildNutrientIntakeLedger is a fail-open persist (returns [], never throws).
+import { getFoodContributions, buildNutrientIntakeLedger } from '@/lib/nutrition/intakeReconciliation';
+// === PROMPT 208b 4.1 EXTENSION END ===
 
 // ---------------------------------------------------------------------------
 // Public constants
@@ -298,6 +304,34 @@ export async function synthesizeForUser(userId: string): Promise<SynthesisOutput
     consentedSensitiveTopics: [],
     disclaimerVersion: DISCLAIMERS_VERSION,
   };
+
+  // === PROMPT 208b 4.1 EXTENSION START ===
+  // Make the upper-limit safety gate read the reconciled food + supplement total.
+  // APPEND the user's food contributions to the supplement-only currentStack that
+  // was just assembled above. This is done BEFORE gateCtx is spread below, so the
+  // gate (runSafetyGates -> runInterlocks interlock 2 -> sumAgainstUL) sees the
+  // food-inclusive stack.
+  //
+  // Safety properties (all preserved here, the interlock code is untouched):
+  //   - MONOTONIC: food contributions are amounts >= 0, so the gate can only ever
+  //     block MORE, never less. It never removes or alters the supplement entries.
+  //   - FAIL-OPEN TO TODAY: getFoodContributions returns [] on error or when food
+  //     data is incomplete, so with no usable food this is a no-op and the gate is
+  //     byte-for-byte today's supplement-only behavior. Incomplete food is treated
+  //     as NO contribution (it already returns []), never as a zero that would
+  //     relax anything. The try/catch is defense-in-depth: even if the dependency
+  //     were to throw, synthesis degrades to the supplement-only stack rather than
+  //     failing.
+  try {
+    const food = await getFoodContributions(userId);
+    ctx.currentStack = [...ctx.currentStack, ...food.contributions];
+  } catch (err) {
+    safeLog.error('synthesis', 'getFoodContributions threw; UL gate uses supplement-only stack', {
+      userId,
+      err,
+    });
+  }
+  // === PROMPT 208b 4.1 EXTENSION END ===
 
   // === PROMPT 208a I2 EXTENSION START ===
   // Build the SafetyGateContext (superset of InterlockContext).
@@ -554,6 +588,23 @@ export async function synthesizeForUser(userId: string): Promise<SynthesisOutput
   // -------------------------------------------------------------------------
   // Step 8: Return
   // -------------------------------------------------------------------------
+
+  // === PROMPT 208b 4.1 EXTENSION START ===
+  // Additive fail-open side-record: persist the reconciled food + supplement
+  // nutrient intake ledger (display + Section 5). buildNutrientIntakeLedger is
+  // fail-open (returns [] and never throws), so this cannot break synthesis and
+  // NOTHING is gated on it. Awaited like the J2 audit so the row is guaranteed to
+  // persist before the serverless function returns. The try/catch is belt-and-
+  // suspenders only (the function already swallows its own errors).
+  try {
+    await buildNutrientIntakeLedger(userId);
+  } catch (err) {
+    safeLog.error('synthesis', 'buildNutrientIntakeLedger threw; ledger skipped (fail-open)', {
+      userId,
+      err,
+    });
+  }
+  // === PROMPT 208b 4.1 EXTENSION END ===
 
   // === PROMPT 208a J2 EXTENSION START ===
   // Additive fail-open side-record: record which inputs + rule versions produced

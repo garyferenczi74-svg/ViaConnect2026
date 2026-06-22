@@ -43,6 +43,17 @@ vi.mock('@/lib/genetics/qc/qualifiedVariants', () => ({
   getQualifiedUserVariants: vi.fn(),
 }));
 
+// === PROMPT 208b 4.1 EXTENSION START ===
+// Mock intakeReconciliation so the gold harness can feed per-scenario food
+// contributions into the UL gate input and so the ledger side-record never
+// touches a real DB. Defaults are the no-food / fail-open shape; existing
+// scenarios (which omit foodContributions) therefore behave exactly as before.
+vi.mock('@/lib/nutrition/intakeReconciliation', () => ({
+  getFoodContributions: vi.fn().mockResolvedValue({ contributions: [], complete: false }),
+  buildNutrientIntakeLedger: vi.fn().mockResolvedValue([]),
+}));
+// === PROMPT 208b 4.1 EXTENSION END ===
+
 // ---------------------------------------------------------------------------
 // Imports (after vi.mock declarations)
 // ---------------------------------------------------------------------------
@@ -51,6 +62,9 @@ import { synthesizeForUser } from '@/lib/protocol/synthesis';
 import { getPublishedRules, ruleMatchesGenotype } from '@/lib/kb/snpProtocolRules';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getQualifiedUserVariants } from '@/lib/genetics/qc/qualifiedVariants';
+// === PROMPT 208b 4.1 EXTENSION START ===
+import { getFoodContributions } from '@/lib/nutrition/intakeReconciliation';
+// === PROMPT 208b 4.1 EXTENSION END ===
 
 import {
   GOLD_SET,
@@ -128,6 +142,15 @@ beforeEach(() => {
   (createAdminClient as ReturnType<typeof vi.fn>).mockReturnValue(
     buildAdminMock([]),
   );
+
+  // === PROMPT 208b 4.1 EXTENSION START ===
+  // Default: no food (fail-open empty/incomplete). Scenarios that set
+  // inputs.foodContributions override this in runScenario.
+  (getFoodContributions as ReturnType<typeof vi.fn>).mockResolvedValue({
+    contributions: [],
+    complete: false,
+  });
+  // === PROMPT 208b 4.1 EXTENSION END ===
 });
 
 // ---------------------------------------------------------------------------
@@ -147,6 +170,16 @@ async function runScenario(scenario: GoldScenario) {
       scenario.inputs.currentSupplements.map((s) => ({ supplement_name: s })),
     ),
   );
+
+  // === PROMPT 208b 4.1 EXTENSION START ===
+  // Feed the scenario's food contributions into the UL gate input. When a
+  // scenario omits foodContributions, the beforeEach default (no food) stands,
+  // so existing scenarios behave exactly as today (supplement-only).
+  (getFoodContributions as ReturnType<typeof vi.fn>).mockResolvedValue({
+    contributions: scenario.inputs.foodContributions ?? [],
+    complete: (scenario.inputs.foodContributions?.length ?? 0) > 0,
+  });
+  // === PROMPT 208b 4.1 EXTENSION END ===
 
   const output = await synthesizeForUser('gold-user');
   return output;

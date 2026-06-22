@@ -72,6 +72,18 @@ vi.mock('@/lib/protocol/recommendationAudit', () => ({
 }));
 // === PROMPT 208a J2 EXTENSION END ===
 
+// === PROMPT 208b 4.1 EXTENSION START ===
+// Mock intakeReconciliation so synthesis 4.1 tests control the food
+// contributions appended to the UL gate input and assert the ledger side-record.
+// Defaults are the no-food / fail-open shape: getFoodContributions returns an
+// empty incomplete result (degrades to today's supplement-only behavior), and
+// buildNutrientIntakeLedger resolves to [] without throwing.
+vi.mock('@/lib/nutrition/intakeReconciliation', () => ({
+  getFoodContributions: vi.fn().mockResolvedValue({ contributions: [], complete: false }),
+  buildNutrientIntakeLedger: vi.fn().mockResolvedValue([]),
+}));
+// === PROMPT 208b 4.1 EXTENSION END ===
+
 // safeLog is real (no side effects in tests, just console output).
 
 import {
@@ -93,6 +105,10 @@ import { getUserAncestry, populationCaveatFor } from '@/lib/genetics/ancestry/po
 // === PROMPT 208a J2 EXTENSION START ===
 import { recordRecommendationAudit } from '@/lib/protocol/recommendationAudit';
 // === PROMPT 208a J2 EXTENSION END ===
+// === PROMPT 208b 4.1 EXTENSION START ===
+import { getFoodContributions, buildNutrientIntakeLedger } from '@/lib/nutrition/intakeReconciliation';
+import { runInterlocks, type InterlockContext } from '@/lib/protocol/safetyInterlocks';
+// === PROMPT 208b 4.1 EXTENSION END ===
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -279,6 +295,17 @@ beforeEach(() => {
     return (getPublishedRules as ReturnType<typeof vi.fn>)();
   });
   // === PROMPT 208a I3 EXTENSION END ===
+
+  // === PROMPT 208b 4.1 EXTENSION START ===
+  // Default: no food (fail-open empty/incomplete) -> the UL gate input degrades to
+  // exactly today's supplement-only behavior. Ledger persist resolves to [].
+  // Tests that exercise the food path override getFoodContributions per-case.
+  (getFoodContributions as ReturnType<typeof vi.fn>).mockResolvedValue({
+    contributions: [],
+    complete: false,
+  });
+  (buildNutrientIntakeLedger as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+  // === PROMPT 208b 4.1 EXTENSION END ===
 });
 
 // ---------------------------------------------------------------------------
@@ -975,3 +1002,152 @@ describe('J2 Test 15: synthesizeForUser writes one recommendation_audit row', ()
   });
 });
 // === PROMPT 208a J2 EXTENSION END ===
+
+// ---------------------------------------------------------------------------
+// === PROMPT 208b 4.1 EXTENSION START ===
+// 4.1 Tests 16-19: food contributions are APPENDED to the UL gate input.
+//
+// Monotonic + fail-open invariant. The interlock code (safetyInterlocks.ts) and
+// upperLimits.ts are UNCHANGED; synthesis only enriches ctx.currentStack with
+// getFoodContributions before the gate runs.
+//
+// NOTE on the chosen lock path: rule candidates built inside synthesizeForUser do
+// NOT carry candidate.amount (only label/nutrient/supplementName), so the UL
+// interlock (interlock 2) never fires through full synthesis today. We therefore
+// lock the food-inclusive UL verdict with a DIRECT interlock-level test that
+// constructs the InterlockContext EXACTLY as synthesis builds it (food appended
+// to currentStack) and calls the real runInterlocks. Tests 18-19 lock the actual
+// synthesis wiring (ledger side-record + fail-open) through synthesizeForUser.
+// ---------------------------------------------------------------------------
+
+describe('4.1 Test 16: food appended to currentStack flips the UL verdict (direct interlock lock)', () => {
+  it('drops a folic_acid candidate when food (700) + supplement (400) > UL 1000, but passes it with no food', () => {
+    // A folic_acid candidate at 400 mcg. Supplement alone (400) is < UL (1000).
+    const candidate = {
+      label: 'folic acid',
+      nutrient: 'folic_acid',
+      amount: 400,
+      supplementName: 'folic acid',
+    };
+
+    // Base context built exactly like synthesis.ts builds ctx (supplement-only stack).
+    const baseCtx: InterlockContext = {
+      userRiskRsids: [],
+      rules: [],
+      currentStack: [],
+      currentSupplements: [],
+      medications: [],
+      cypStatusMap: {},
+      consentedSensitiveTopics: [],
+      disclaimerVersion: DISCLAIMERS_VERSION,
+    };
+
+    // No food appended -> degrades to today: 400 < 1000 -> candidate PASSES.
+    const noFood = runInterlocks(candidate, baseCtx);
+    expect(noFood.passed).toBe(true);
+
+    // Food contributions appended (exactly what synthesis does:
+    //   ctx.currentStack = [...ctx.currentStack, ...food.contributions]).
+    // 700 (food) + 400 (candidate) = 1100 > 1000 -> candidate DROPPED for upper_limit.
+    const foodInclusiveCtx: InterlockContext = {
+      ...baseCtx,
+      currentStack: [...baseCtx.currentStack, { nutrient: 'folic_acid', amount: 700 }],
+    };
+    const withFood = runInterlocks(candidate, foodInclusiveCtx);
+    expect(withFood.passed).toBe(false);
+    if (!withFood.passed) {
+      expect(withFood.droppedReason).toBe('upper_limit');
+    }
+  });
+});
+
+describe('4.1 Test 17: food contributions are monotonic (cannot relax the gate)', () => {
+  it('a candidate already at the UL is unaffected by zero food, and only ever blocked harder by positive food', () => {
+    // folic_acid candidate AT the UL boundary (1000). Supplement alone == UL is not > UL -> passes.
+    const candidate = {
+      label: 'folic acid',
+      nutrient: 'folic_acid',
+      amount: 1000,
+      supplementName: 'folic acid',
+    };
+    const baseCtx: InterlockContext = {
+      userRiskRsids: [],
+      rules: [],
+      currentStack: [],
+      currentSupplements: [],
+      medications: [],
+      cypStatusMap: {},
+      consentedSensitiveTopics: [],
+      disclaimerVersion: DISCLAIMERS_VERSION,
+    };
+
+    // Zero food (empty contributions) -> identical to today: 1000 is not > 1000 -> passes.
+    const zeroFood = runInterlocks(candidate, {
+      ...baseCtx,
+      currentStack: [...baseCtx.currentStack],
+    });
+    expect(zeroFood.passed).toBe(true);
+
+    // Any positive food contribution can only push the total OVER the UL -> dropped.
+    const positiveFood = runInterlocks(candidate, {
+      ...baseCtx,
+      currentStack: [...baseCtx.currentStack, { nutrient: 'folic_acid', amount: 1 }],
+    });
+    expect(positiveFood.passed).toBe(false);
+  });
+});
+
+describe('4.1 Test 18: synthesizeForUser persists the nutrient intake ledger (additive side-record)', () => {
+  it('invokes buildNutrientIntakeLedger exactly once for the user and still returns recommendations', async () => {
+    const userId = 'user-4-1-ledger';
+
+    (getPublishedRules as ReturnType<typeof vi.fn>).mockResolvedValue([preferFormRule()]);
+    (getQualifiedUserVariants as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { rsid: 'rs1801133', gene: 'MTHFR', genotype: 'TT', panel_key: 'methylation', status: 'confirmed' },
+    ]);
+    (createAdminClient as ReturnType<typeof vi.fn>).mockReturnValue(buildAdminMock([], []));
+
+    // Food returns a real contribution for this user (folic_acid 700 mcg).
+    (getFoodContributions as ReturnType<typeof vi.fn>).mockResolvedValue({
+      contributions: [{ nutrient: 'folic_acid', amount: 700 }],
+      complete: true,
+    });
+
+    const output = await synthesizeForUser(userId);
+
+    // Ledger side-record persisted exactly once for this user.
+    expect(buildNutrientIntakeLedger).toHaveBeenCalledOnce();
+    expect((buildNutrientIntakeLedger as ReturnType<typeof vi.fn>).mock.calls[0][0]).toBe(userId);
+
+    // Recommendations are unchanged by the additive food/ledger wiring
+    // (L-methylfolate carries no UL key, so food folic_acid does not touch it).
+    const rec = output.recommended_vitamins_minerals.find((r) => r.form === 'L-methylfolate');
+    expect(rec).toBeDefined();
+  });
+});
+
+describe('4.1 Test 19: a thrown getFoodContributions does NOT break synthesis (fail-open to today)', () => {
+  it('still produces recommendations when getFoodContributions rejects', async () => {
+    const userId = 'user-4-1-food-throws';
+
+    (getPublishedRules as ReturnType<typeof vi.fn>).mockResolvedValue([preferFormRule()]);
+    (getQualifiedUserVariants as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { rsid: 'rs1801133', gene: 'MTHFR', genotype: 'TT', panel_key: 'methylation', status: 'confirmed' },
+    ]);
+    (createAdminClient as ReturnType<typeof vi.fn>).mockReturnValue(buildAdminMock([], []));
+
+    // getFoodContributions rejects. Synthesis must not throw and must still
+    // recommend (degrades to today's supplement-only behavior).
+    (getFoodContributions as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error('food read exploded'),
+    );
+
+    const output = await synthesizeForUser(userId);
+
+    expect(output).toBeDefined();
+    const rec = output.recommended_vitamins_minerals.find((r) => r.form === 'L-methylfolate');
+    expect(rec).toBeDefined();
+    expect(output.disclaimers_version).toBe(DISCLAIMERS_VERSION);
+  });
+});
+// === PROMPT 208b 4.1 EXTENSION END ===

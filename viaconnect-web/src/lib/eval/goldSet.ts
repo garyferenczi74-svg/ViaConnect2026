@@ -32,6 +32,13 @@ export interface GoldInputs {
   }[];
   publishedRules: SnpProtocolRule[];
   currentSupplements: string[];
+  // === PROMPT 208b 4.1 EXTENSION START ===
+  // Optional food contributions (UL-unit amounts) the harness feeds into
+  // getFoodContributions for this scenario. Used by the food-inclusive UL
+  // invariant. Absent => the harness mocks getFoodContributions to return no
+  // food (the supplement-only, fail-open-to-today default).
+  foodContributions?: { nutrient: string; amount: number }[];
+  // === PROMPT 208b 4.1 EXTENSION END ===
 }
 
 export interface GoldScenario {
@@ -202,6 +209,90 @@ export const GOLD_SET: GoldScenario[] = [
       );
     },
   },
+
+  // ---------------------------------------------------------------------------
+  // === PROMPT 208b 4.1 EXTENSION START ===
+  // Scenario: food + supplement folate overshoot - food is in the UL gate input,
+  // and no over-UL synthetic folic_acid item reaches the user.
+  //
+  // Food contributes folic_acid near the ceiling (700 mcg of the 1000 mcg UL).
+  // After T3, synthesis APPENDS food to the UL gate input
+  // (ctx.currentStack = [...stack, ...food.contributions]) BEFORE the safety gate
+  // runs, so the gate now sees the reconciled food + supplement total.
+  //
+  // FAITHFUL-LEVEL NOTE (honest, not faked): prefer_form candidates built inside
+  // synthesizeForUser do NOT carry candidate.amount, and changing candidate
+  // building is OUT of scope for T3. The UL interlock only fires when a candidate
+  // carries a dose, so the *numeric* guarantee (food 700 + supplement 400 = 1100 >
+  // UL 1000 -> DROPPED for upper_limit; 400 alone -> PASSES) is locked by a DIRECT
+  // runInterlocks test in synthesis.test.ts (4.1 Tests 16-17), which feeds the
+  // food-appended currentStack into the exact engine synthesis uses.
+  //
+  // What THIS gold-set case faithfully locks, end-to-end through the real
+  // synthesizeForUser with food present: (1) the clinically-correct, NON-UL-bound
+  // MTHFR form (L-methylfolate) is recommended -- proving the food-append wiring
+  // runs the full pipeline without breaking it; and (2) no raw synthetic
+  // "folic acid" item is surfaced for an MTHFR carrier. A regression that crashed
+  // on food contributions, dropped methylfolate, or started recommending raw
+  // folic acid for MTHFR would fail this case. It asserts only what is true.
+  // ---------------------------------------------------------------------------
+  {
+    id: 'ul-food-plus-supplement-folate',
+    description:
+      'Food folic_acid near the UL ceiling (700 of 1000 mcg): synthesis runs with food appended to the UL gate input, recommends L-methylfolate, and surfaces no raw folic acid item.',
+    inputs: {
+      variants: [
+        { rsid: 'rs1801133', gene: 'MTHFR', genotype: 'TT', panel_key: 'methylation', status: 'confirmed' },
+      ],
+      publishedRules: [
+        makeRule({
+          id: 'gold-folate-prefer',
+          rsid: 'rs1801133',
+          gene: 'MTHFR',
+          genotype_match: 'TT',
+          effect: 'Homozygous C677T: prefer reduced folate (L-methylfolate) over synthetic folic acid.',
+          action_type: 'prefer_form',
+          recommended_form: 'L-methylfolate',
+          flagged_form: 'folic acid',
+          avoid_list: [],
+          evidence_tier: 2,
+        }),
+      ],
+      currentSupplements: [],
+      // Food already supplies 700 mcg folic_acid (UL is 1000 mcg). With food
+      // appended, the gate input reflects the reconciled food + supplement total.
+      foodContributions: [{ nutrient: 'folic_acid', amount: 700 }],
+    },
+    assert: (o: SynthesisOutput): boolean => {
+      // (1) The safe, non-UL-bound form is recommended (food-append did not break
+      //     the pipeline). (2) No raw synthetic "folic acid" item is surfaced.
+      const hasMethylfolate = o.recommended_vitamins_minerals.some(
+        (r) => r.form.toLowerCase().trim() === 'l-methylfolate',
+      );
+      const noRawFolicAcid = !o.recommended_vitamins_minerals.some(
+        (r) => r.form.toLowerCase().trim() === 'folic acid',
+      );
+      return hasMethylfolate && noRawFolicAcid;
+    },
+    failDetail: (o: SynthesisOutput): string => {
+      const hasMethylfolate = o.recommended_vitamins_minerals.some(
+        (r) => r.form.toLowerCase().trim() === 'l-methylfolate',
+      );
+      const offenders = o.recommended_vitamins_minerals.filter(
+        (r) => r.form.toLowerCase().trim() === 'folic acid',
+      );
+      return (
+        'ul-food-plus-supplement-folate FAILED:' +
+        (!hasMethylfolate ? ' L-methylfolate not recommended (food-append broke the pipeline);' : '') +
+        (offenders.length > 0
+          ? ' a raw folic acid item was surfaced for an MTHFR carrier: ' + JSON.stringify(offenders)
+          : '') +
+        ' recommended=' +
+        JSON.stringify(o.recommended_vitamins_minerals)
+      );
+    },
+  },
+  // === PROMPT 208b 4.1 EXTENSION END ===
 
   // ---------------------------------------------------------------------------
   // Scenario 3: No genetic upload - safe empty output, no crash
