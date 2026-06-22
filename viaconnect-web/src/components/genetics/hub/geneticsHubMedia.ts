@@ -69,20 +69,10 @@ export const GENETICS_CARD_MEDIA: Record<string, SurfaceMedia> = {
   // from the Hero Images bucket. CardMedia renders it and fails open to the
   // MEDIA_TEAL_BL gradient on any load error (the teal keeps the DNA teal / Lab
   // orange continuity the page already teaches).
-  //
-  // Prompt 204 (2026-06-21): the source PNG is ~24.7 MB, which made the hero
-  // appear to never load. It now goes through the Supabase image transform
-  // endpoint (render/image + width/quality), which serves a resized, WebP
-  // negotiated image (about 58 KB in a browser) instead of the raw 24.7 MB file.
-  // The render endpoint is enabled on this project; any failure still falls open
-  // to the MEDIA_TEAL_BL gradient.
   uploadDna: {
     kind: "image",
-    src: "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/render/image/public/Hero%20Images/Mouth%20Swab%201.png?width=1200&quality=70",
+    src: "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Mouth%20Swab%201.png",
     objectPosition: "center",
-    // Show the WHOLE swab photo fitted in the card rather than a zoomed crop
-    // (Gary 2026-06-21); the teal gradient fills the rest of the card.
-    objectFit: "contain",
     gradientClass: MEDIA_TEAL_BL,
   },
   // Prompt 193d (2026-06-13): the Upload Lab Results card plays the Blood Test

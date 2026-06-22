@@ -90,10 +90,7 @@ function ImageMedia({
             setErrored(true);
             logMediaFailure(logKey, 'image', media.src);
           }}
-          style={{ objectPosition: media.objectPosition ?? 'center' }}
-          className={`absolute inset-0 z-0 h-full w-full rounded-[inherit] ${
-            media.objectFit === 'contain' ? 'object-contain' : 'object-cover'
-          }`}
+          className="absolute inset-0 z-0 h-full w-full rounded-[inherit] object-cover"
         />
       ) : null}
     </>
