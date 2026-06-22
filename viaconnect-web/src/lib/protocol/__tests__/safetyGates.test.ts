@@ -368,27 +368,9 @@ describe('HFE gold-set: iron is still blocked by the underlying runInterlocks', 
       sensitive: false,
       review_status: 'published' as const,
       created_at: '2026-01-01T00:00:00Z',
-      recommended_form: null,
+      recommended_form: undefined,
     };
 
-    // Use REAL runInterlocks for this test
-    const realRunInterlocks = vi.importActual<typeof import('@/lib/protocol/safetyInterlocks')>(
-      '@/lib/protocol/safetyInterlocks',
-    );
-
-    // Restore the real implementation for this test
-    (runInterlocks as ReturnType<typeof vi.fn>).mockImplementation(
-      async (...args: unknown[]) => {
-        const mod = await realRunInterlocks;
-        return mod.runInterlocks(
-          args[0] as ProtocolCandidate,
-          args[1] as ReturnType<typeof import('@/lib/protocol/safetyInterlocks')['runInterlocks']> extends (a: infer A, b: infer _B) => unknown ? _B : never,
-        );
-      },
-    );
-
-    // Since we can't easily call the real synchronous function via the async mock,
-    // let's instead test via a direct import alias (re-import with mock bypass).
     // The key assertion: our safetyGates wrapper MUST call runInterlocks with the
     // same candidate+ctx, so the iron block is not bypassed.
     // We validate by using a ctx that has the HFE rule and rsid active.

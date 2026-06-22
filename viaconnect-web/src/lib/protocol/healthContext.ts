@@ -159,7 +159,7 @@ export async function getLatestUserHealthContext(
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(1)
-      .maybeSingle() as Promise<{
+      .maybeSingle() as unknown as Promise<{
       data: { allergies: unknown; medications: unknown; goals: unknown; pregnancy_status: unknown; demographics: unknown } | null;
       error: { message: string } | null;
     }>);
@@ -239,7 +239,7 @@ export async function buildUserHealthContext(
       .eq('status', 'completed')
       .order('version_number', { ascending: false })
       .limit(1)
-      .maybeSingle() as Promise<{ data: Record<string, unknown> | null; error: { message: string } | null }>);
+      .maybeSingle() as unknown as Promise<{ data: Record<string, unknown> | null; error: { message: string } | null }>);
 
     if (error) {
       safeLog.warn('health-context', 'caq_assessment_versions read error - returning empty context', {
@@ -298,7 +298,7 @@ export async function buildUserHealthContext(
       .from('user_medications')
       .select('medication_name, active')
       .eq('user_id', userId)
-      .eq('active', true) as Promise<{
+      .eq('active', true) as unknown as Promise<{
       data: Array<{ medication_name: string; active: boolean }> | null;
       error: { message: string } | null;
     }>);
