@@ -43,6 +43,10 @@ import { getQualifiedUserVariants } from '@/lib/genetics/qc/qualifiedVariants';
 import { computeAndPersistPathways } from '@/lib/genetics/pathways/persistPathways';
 import type { PathwayScore } from '@/lib/genetics/pathways/pathwayScore';
 // === PROMPT 208a EXTENSION END ===
+// === PROMPT 208a E4b EXTENSION START ===
+import { computeAndPersistConcordance } from '@/lib/labs/persistConcordance';
+import type { ConcordanceRecord } from '@/lib/labs/concordance';
+// === PROMPT 208a E4b EXTENSION END ===
 
 // ---------------------------------------------------------------------------
 // Public constants
@@ -84,6 +88,10 @@ export interface SynthesisOutput {
   // Additive informational pathway context (Module D). Never gates an interlock.
   pathway_context?: PathwayScore[];
   // === PROMPT 208a EXTENSION END ===
+  // === PROMPT 208a E4b EXTENSION START ===
+  // Additive informational concordance context (Module E). Never gates an interlock.
+  concordance_context?: ConcordanceRecord[];
+  // === PROMPT 208a E4b EXTENSION END ===
 }
 
 // ---------------------------------------------------------------------------
@@ -331,6 +339,12 @@ export async function synthesizeForUser(userId: string): Promise<SynthesisOutput
   // on any error), so this cannot break synthesis.
   output.pathway_context = await computeAndPersistPathways(userId);
   // === PROMPT 208a EXTENSION END ===
+  // === PROMPT 208a E4b EXTENSION START ===
+  // Module E: enrich the output with genotype-phenotype concordance context
+  // (informational; never gates an interlock). computeAndPersistConcordance is
+  // fail-open (returns [] on any error), so this cannot break synthesis.
+  output.concordance_context = await computeAndPersistConcordance(userId);
+  // === PROMPT 208a E4b EXTENSION END ===
 
   // -------------------------------------------------------------------------
   // Step 8: Return
