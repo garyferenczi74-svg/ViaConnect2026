@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      active_compound_load: {
+        Row: {
+          compound: string
+          created_at: string
+          food_source_total: number
+          id: string
+          metabolizer_context: string | null
+          supplement_source_total: number
+          total: number
+          user_id: string
+        }
+        Insert: {
+          compound: string
+          created_at?: string
+          food_source_total?: number
+          id?: string
+          metabolizer_context?: string | null
+          supplement_source_total?: number
+          total?: number
+          user_id: string
+        }
+        Update: {
+          compound?: string
+          created_at?: string
+          food_source_total?: number
+          id?: string
+          metabolizer_context?: string | null
+          supplement_source_total?: number
+          total?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       nutrient_interactions: {
         Row: {
           created_at: string
