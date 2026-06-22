@@ -66,12 +66,19 @@ export const GENETICS_CARD_MEDIA: Record<string, SurfaceMedia> = {
     gradientClass: MEDIA_TEAL_TL,
   },
   // Prompt 193d (2026-06-13): the Upload Your DNA card shows the Mouth Swab image
-  // from the Hero Images bucket. CardMedia renders it and fails open to the
-  // MEDIA_TEAL_BL gradient on any load error (the teal keeps the DNA teal / Lab
-  // orange continuity the page already teaches).
+  // from the Hero Images bucket. CardMedia renders it (object-cover, original
+  // framing) and fails open to the MEDIA_TEAL_BL gradient on any load error (the
+  // teal keeps the DNA teal / Lab orange continuity the page already teaches).
+  //
+  // Prompt 204 (2026-06-21): the raw PNG is ~24.7 MB, which on a fresh live load
+  // never finishes downloading, leaving the card on its gradient (it looked empty
+  // and flickered). The src now goes through the Supabase image transform endpoint
+  // (render/image + width/quality), which serves a resized, WebP negotiated image
+  // (about 58 KB in a browser). Only the SOURCE size changes here; the card still
+  // uses the original object-cover crop (no objectFit override).
   uploadDna: {
     kind: "image",
-    src: "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Mouth%20Swab%201.png",
+    src: "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/render/image/public/Hero%20Images/Mouth%20Swab%201.png?width=1200&quality=70",
     objectPosition: "center",
     gradientClass: MEDIA_TEAL_BL,
   },
