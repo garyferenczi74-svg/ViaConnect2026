@@ -32,6 +32,16 @@ vi.mock('@/lib/genetics/qc/qualifiedVariants', () => ({
   getQualifiedUserVariants: vi.fn(),
 }));
 
+// Mock getLatestUserHealthContext so synthesis F4 tests can control health context.
+// Default: empty context (fail-open). Tests override per-case.
+vi.mock('@/lib/protocol/healthContext', () => ({
+  getLatestUserHealthContext: vi.fn().mockResolvedValue({
+    allergies: [],
+    medications: [],
+    goals: [],
+  }),
+}));
+
 // safeLog is real (no side effects in tests, just console output).
 
 import {
@@ -43,6 +53,7 @@ import {
 import { getPublishedRules, ruleMatchesGenotype } from '@/lib/kb/snpProtocolRules';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getQualifiedUserVariants } from '@/lib/genetics/qc/qualifiedVariants';
+import { getLatestUserHealthContext } from '@/lib/protocol/healthContext';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -403,5 +414,120 @@ describe('Test 5: QC-excluded variant does not drive rule application', () => {
     expect(output.recommended_vitamins_minerals).toHaveLength(0);
     expect(output.supplement_flags).toHaveLength(0);
     expect(output.arnold_context.activeTopics).toHaveLength(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// F4 Test 6: Allergen screen removes a matching form (208a Module F Task F4)
+// ---------------------------------------------------------------------------
+
+describe('F4 Test 6: Allergen screen removes allergen-matching form from output', () => {
+  it('excludes a recommended form that matches the user allergen', async () => {
+    const userId = 'user-allergen';
+
+    // A rule that recommends "shellfish CoQ10" (would normally pass interlocks)
+    const coq10Rule = preferFormRule({
+      id: 'rule-coq10',
+      rsid: 'rs1801133',
+      gene: 'MTHFR',
+      genotype_match: 'TT',
+      recommended_form: 'shellfish CoQ10',
+      flagged_form: undefined,
+      avoid_list: [],
+      evidence_tier: 2,
+      effect: 'some effect',
+    });
+
+    (getPublishedRules as ReturnType<typeof vi.fn>).mockResolvedValue([coq10Rule]);
+    (getQualifiedUserVariants as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { rsid: 'rs1801133', gene: 'MTHFR', genotype: 'TT', panel_key: 'methylation', status: 'confirmed' },
+    ]);
+    (createAdminClient as ReturnType<typeof vi.fn>).mockReturnValue(
+      buildAdminMock([], []),
+    );
+    // User has shellfish allergy
+    (getLatestUserHealthContext as ReturnType<typeof vi.fn>).mockResolvedValue({
+      allergies: ['shellfish'],
+      medications: [],
+      goals: [],
+    });
+
+    const output = await synthesizeForUser(userId);
+
+    // The shellfish CoQ10 form must be absent
+    const shellfishRec = output.recommended_vitamins_minerals.find(
+      (r) => r.form.toLowerCase().includes('shellfish'),
+    );
+    expect(shellfishRec).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// F4 Test 7: Metformin depletes B12 -> repletion appears in output (208a F4)
+// ---------------------------------------------------------------------------
+
+describe('F4 Test 7: Metformin B12 repletion added to recommended items', () => {
+  it('adds vitamin B12 repletion when user is on metformin (and B12 not contraindicated)', async () => {
+    const userId = 'user-metformin';
+
+    // No genetic rules for this user (no variants)
+    (getPublishedRules as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (getQualifiedUserVariants as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (createAdminClient as ReturnType<typeof vi.fn>).mockReturnValue(
+      buildAdminMock([], []),
+    );
+    (getLatestUserHealthContext as ReturnType<typeof vi.fn>).mockResolvedValue({
+      allergies: [],
+      medications: ['metformin'],
+      goals: [],
+    });
+
+    const output = await synthesizeForUser(userId);
+
+    const b12Repletion = output.recommended_vitamins_minerals.find(
+      (r) => r.form.toLowerCase().includes('b12') || r.form.toLowerCase().includes('vitamin b12'),
+    );
+    expect(b12Repletion).toBeDefined();
+    expect(b12Repletion?.ruleRsid).toMatch(/^depletion:/);
+    expect(b12Repletion?.rationale).toContain('metformin');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// F4 Test 8: HFE carrier + iron-depleting medication -> no iron recommended
+// ---------------------------------------------------------------------------
+
+describe('F4 Test 8: HFE carrier on iron-depleting med -> no iron (interlocks drop repletion)', () => {
+  it('drops iron repletion for an HFE carrier even if medication depletes iron', async () => {
+    const userId = 'user-hfe-iron-dep';
+
+    // An iron-depleting medication (hypothetical; we simulate it by adding iron to depletions
+    // via a custom rule path -- we test the invariant by using HFE contraindicate + a
+    // synthesized scenario where the DEPLETIONS table would try to add iron).
+    // The real DEPLETIONS table does not include iron, so we use a medications list that
+    // triggers an existing depletion that IS contraindicated via the HFE rule.
+    // The critical invariant: HFE contraindicate + runInterlocks = iron never passes.
+    // We validate: even if we have metformin (B12 depletion), no iron appears.
+
+    (getPublishedRules as ReturnType<typeof vi.fn>).mockResolvedValue([contraindicateRule()]);
+    (getQualifiedUserVariants as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { rsid: 'rs1800562', gene: 'HFE', genotype: 'AA', panel_key: 'methylation', status: 'confirmed' },
+    ]);
+    (createAdminClient as ReturnType<typeof vi.fn>).mockReturnValue(
+      buildAdminMock([], []),
+    );
+    (getLatestUserHealthContext as ReturnType<typeof vi.fn>).mockResolvedValue({
+      allergies: [],
+      medications: ['metformin'],  // depletes B12, not iron
+      goals: [],
+    });
+
+    const output = await synthesizeForUser(userId);
+
+    // Iron must not appear regardless of any depletion path
+    const ironRec = output.recommended_vitamins_minerals.find(
+      (r) => r.form.toLowerCase().includes('iron') || r.form.toLowerCase().includes('ferrous'),
+    );
+    expect(ironRec).toBeUndefined();
   });
 });

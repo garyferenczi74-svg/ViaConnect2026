@@ -47,6 +47,11 @@ import type { PathwayScore } from '@/lib/genetics/pathways/pathwayScore';
 import { computeAndPersistConcordance } from '@/lib/labs/persistConcordance';
 import type { ConcordanceRecord } from '@/lib/labs/concordance';
 // === PROMPT 208a E4b EXTENSION END ===
+// === PROMPT 208a F4 EXTENSION START ===
+import { getLatestUserHealthContext } from '@/lib/protocol/healthContext';
+import { depletionsForMedications } from '@/lib/protocol/drugNutrientDepletions';
+import { screenAllergens, goalRank } from '@/lib/protocol/phenotypeEnrich';
+// === PROMPT 208a F4 EXTENSION END ===
 
 // ---------------------------------------------------------------------------
 // Public constants
@@ -222,7 +227,7 @@ export async function synthesizeForUser(userId: string): Promise<SynthesisOutput
   // -------------------------------------------------------------------------
   // Step 5: Process each applicable rule
   // -------------------------------------------------------------------------
-  const recommendedItems: RecommendedItem[] = [];
+  let recommendedItems: RecommendedItem[] = [];
   const supplementFlags: SupplementFlag[] = [];
   const topicsSet = new Set<string>();
 
@@ -290,6 +295,82 @@ export async function synthesizeForUser(userId: string): Promise<SynthesisOutput
     // Other action_types (dose_context, monitor_biomarker, practitioner_only):
     // nutrition_guidance + arnold_context already handled above
   }
+
+  // === PROMPT 208a F4 EXTENSION START ===
+  // Post-processing: allergen screen, depletion repletion, goal weighting.
+  // Runs AFTER recommendedItems is fully built, BEFORE the output object.
+  // Existing candidate-building + interlock logic is UNCHANGED (fenced only).
+  // Fail-open throughout: any error leaves recommendedItems as-is.
+  {
+    let hc: { allergies: string[]; medications: string[]; goals: string[] } = {
+      allergies: [],
+      medications: [],
+      goals: [],
+    };
+    try {
+      hc = await getLatestUserHealthContext(userId);
+    } catch {
+      // fail-open: hc stays empty
+    }
+
+    // Step F4-2: DEPLETION REPLETION
+    // Build a candidate for each depleted nutrient and run through the SAME
+    // runInterlocks (so a contraindicated repletion is dropped).
+    try {
+      const repletions = depletionsForMedications(hc.medications);
+      // Track which nutrients are already recommended to avoid duplicates.
+      const alreadyRecommended = new Set(
+        recommendedItems.map((i) => i.form.toLowerCase()),
+      );
+
+      for (const r of repletions) {
+        const nutrientLower = r.depletedNutrient.toLowerCase();
+        if (alreadyRecommended.has(nutrientLower)) continue;
+
+        const candidate: ProtocolCandidate = {
+          label: r.depletedNutrient,
+          nutrient: canonicalNutrientKey(r.depletedNutrient),
+          supplementName: r.depletedNutrient,
+        };
+
+        const result = runInterlocks(candidate, ctx);
+        if (result.passed) {
+          recommendedItems.push({
+            form: r.depletedNutrient,
+            rationale: `Repletion consideration for ${r.medication}`,
+            evidenceTier: r.evidenceTier,
+            ruleRsid: `depletion:${r.medication}`,
+          });
+          alreadyRecommended.add(nutrientLower);
+        }
+      }
+    } catch {
+      // fail-open: repletion step skipped
+    }
+
+    // Step F4-3: ALLERGEN SCREEN (applied LAST, hard safety exclusion)
+    try {
+      recommendedItems = screenAllergens(recommendedItems, hc.allergies);
+    } catch {
+      // fail-open: screen skipped
+    }
+
+    // Step F4-4: GOAL WEIGHTING (stable-sort descending by goal relevance)
+    // When goals is empty goalRank returns 0 for all -> no reorder.
+    try {
+      if (hc.goals.length > 0) {
+        const goals = hc.goals;
+        // Stable sort: pair each item with its original index, sort, extract.
+        recommendedItems = recommendedItems
+          .map((item, idx) => ({ item, rank: goalRank(item.form, goals), idx }))
+          .sort((a, b) => b.rank - a.rank || a.idx - b.idx)
+          .map(({ item }) => item);
+      }
+    } catch {
+      // fail-open: unsorted order preserved
+    }
+  }
+  // === PROMPT 208a F4 EXTENSION END ===
 
   // -------------------------------------------------------------------------
   // Step 7: Write user_protocol_synthesis row

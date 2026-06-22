@@ -120,6 +120,64 @@ function extractGoals(lifestyle: unknown): unknown[] {
  * @param userId   The authenticated user's UUID.
  * @param client   Optional SupabaseClient for testing (defaults to admin client).
  */
+// ---------------------------------------------------------------------------
+// getLatestUserHealthContext (READ-ONLY; used by synthesis F4 block)
+//
+// Reads the latest user_health_context row and maps to a flat shape.
+// Does NOT write to any table -- synthesis must never trigger a write.
+// Fail-open: returns { allergies:[], medications:[], goals:[] } on any error.
+// ---------------------------------------------------------------------------
+
+export async function getLatestUserHealthContext(
+  userId: string,
+  client?: SupabaseClient,
+): Promise<{ allergies: string[]; medications: string[]; goals: string[] }> {
+  const EMPTY = { allergies: [] as string[], medications: [] as string[], goals: [] as string[] };
+
+  let db: SupabaseClient;
+  try {
+    db = client ?? createAdminClient();
+  } catch {
+    return EMPTY;
+  }
+
+  try {
+    const { data, error } = await (db
+      .from('user_health_context')
+      .select('allergies, medications, goals')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle() as Promise<{
+      data: { allergies: unknown; medications: unknown; goals: unknown } | null;
+      error: { message: string } | null;
+    }>);
+
+    if (error || !data) {
+      return EMPTY;
+    }
+
+    const coerceStringArray = (raw: unknown): string[] => {
+      if (!Array.isArray(raw)) return [];
+      return raw
+        .map((item) => (typeof item === 'string' ? item.trim() : String(item)))
+        .filter((s) => s.length > 0);
+    };
+
+    return {
+      allergies: coerceStringArray(data.allergies),
+      medications: coerceStringArray(data.medications),
+      goals: coerceStringArray(data.goals),
+    };
+  } catch {
+    return EMPTY;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// buildUserHealthContext (WRITES to user_health_context; NOT called from synthesis)
+// ---------------------------------------------------------------------------
+
 export async function buildUserHealthContext(
   userId: string,
   client?: SupabaseClient,

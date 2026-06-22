@@ -8,8 +8,7 @@
 
 import { describe, it, expect, vi, beforeEach, type MockInstance } from 'vitest';
 
-// The module does not exist yet (RED phase).
-import { buildUserHealthContext, type UserHealthContext } from '../healthContext';
+import { buildUserHealthContext, getLatestUserHealthContext, type UserHealthContext } from '../healthContext';
 
 // ---------------------------------------------------------------------------
 // Mock safeLog so we can assert on warn calls
@@ -343,5 +342,75 @@ describe('buildUserHealthContext', () => {
       'Failed to load user_medications; continuing',
       expect.objectContaining({ userId: 'u-9', error: expect.objectContaining({ message: 'RLS denied' }) }),
     );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getLatestUserHealthContext (F4 read-only reader)
+// ---------------------------------------------------------------------------
+
+describe('getLatestUserHealthContext', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('returns mapped arrays from the latest user_health_context row', async () => {
+    const row = {
+      allergies: ['shellfish', 'gluten'],
+      medications: ['metformin', 'atorvastatin'],
+      goals: ['energy', 'weight_loss'],
+    };
+
+    const client = makeAdminClient({
+      user_health_context: { selectResult: { data: row, error: null } },
+    });
+
+    const result = await getLatestUserHealthContext('u-hc-1', client as never);
+
+    expect(result.allergies).toEqual(['shellfish', 'gluten']);
+    expect(result.medications).toEqual(['metformin', 'atorvastatin']);
+    expect(result.goals).toEqual(['energy', 'weight_loss']);
+  });
+
+  it('returns empty arrays (fail-open) when the read returns an error', async () => {
+    const client = makeAdminClient({
+      user_health_context: { selectResult: { data: null, error: { message: 'rls error' } } },
+    });
+
+    const result = await getLatestUserHealthContext('u-hc-2', client as never);
+
+    expect(result.allergies).toEqual([]);
+    expect(result.medications).toEqual([]);
+    expect(result.goals).toEqual([]);
+  });
+
+  it('returns empty arrays (fail-open) when no row exists', async () => {
+    const client = makeAdminClient({
+      user_health_context: { selectResult: { data: null, error: null } },
+    });
+
+    const result = await getLatestUserHealthContext('u-hc-3', client as never);
+
+    expect(result.allergies).toEqual([]);
+    expect(result.medications).toEqual([]);
+    expect(result.goals).toEqual([]);
+  });
+
+  it('coerces non-string array items to strings and filters empties', async () => {
+    const row = {
+      allergies: ['shellfish', 42, '', null],
+      medications: ['metformin'],
+      goals: [],
+    };
+
+    const client = makeAdminClient({
+      user_health_context: { selectResult: { data: row, error: null } },
+    });
+
+    const result = await getLatestUserHealthContext('u-hc-4', client as never);
+
+    // 42 coerced to '42', '' filtered, null coerced to 'null' then filtered (length 4 > 0)
+    expect(result.allergies).toContain('shellfish');
+    expect(result.allergies).toContain('42');
+    // empty string must be filtered
+    expect(result.allergies).not.toContain('');
   });
 });
