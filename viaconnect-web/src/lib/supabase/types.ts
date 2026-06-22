@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      ancestry_context: {
+        Row: {
+          confidence: string | null
+          created_at: string
+          id: string
+          populations: Json
+          source: string | null
+          user_id: string
+        }
+        Insert: {
+          confidence?: string | null
+          created_at?: string
+          id?: string
+          populations?: Json
+          source?: string | null
+          user_id: string
+        }
+        Update: {
+          confidence?: string | null
+          created_at?: string
+          id?: string
+          populations?: Json
+          source?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       diplotype_calls: {
         Row: {
           confidence: string | null
@@ -561,6 +588,7 @@ export type Database = {
           action_type: string
           avoid_list: string[]
           created_at: string
+          cross_population_caveat: string | null
           effect: string | null
           evidence_tier: number | null
           flagged_form: string | null
@@ -572,11 +600,13 @@ export type Database = {
           review_status: string
           rsid: string
           sensitive: boolean
+          validated_populations: string[]
         }
         Insert: {
           action_type: string
           avoid_list?: string[]
           created_at?: string
+          cross_population_caveat?: string | null
           effect?: string | null
           evidence_tier?: number | null
           flagged_form?: string | null
@@ -588,11 +618,13 @@ export type Database = {
           review_status?: string
           rsid: string
           sensitive?: boolean
+          validated_populations?: string[]
         }
         Update: {
           action_type?: string
           avoid_list?: string[]
           created_at?: string
+          cross_population_caveat?: string | null
           effect?: string | null
           evidence_tier?: number | null
           flagged_form?: string | null
@@ -604,6 +636,7 @@ export type Database = {
           review_status?: string
           rsid?: string
           sensitive?: boolean
+          validated_populations?: string[]
         }
         Relationships: []
       }
