@@ -64,6 +64,43 @@ describe('concordanceState', () => {
       state: 'predisposition_only',
       confidence: 'moderate',
     });
+    // discordant: low-risk biomarker pushed HIGH instead
+    expect(concordanceState(true, 1200, b12, 'low')).toEqual({
+      state: 'discordant',
+      confidence: 'low',
+    });
+  });
+
+  it('treats values exactly at the range bounds as in-range (predisposition_only)', () => {
+    const r = { low: 5, high: 10 };
+    expect(concordanceState(true, 5, r, 'high')).toEqual({
+      state: 'predisposition_only',
+      confidence: 'moderate',
+    });
+    expect(concordanceState(true, 10, r, 'high')).toEqual({
+      state: 'predisposition_only',
+      confidence: 'moderate',
+    });
+  });
+
+  it('treats -/+ as present', () => {
+    expect(concordanceState(false, 14, { low: 5, high: 10 }, 'high')).toBeNull();
+    // variantPresent('-/+') is true, so a -/+ carrier with an elevated marker is concordant
+    const r = buildConcordances(
+      [{ gene: 'MTHFR', status: '-/+' }],
+      [{ biomarker: 'homocysteine', value: 14, range: { low: 5, high: 10 } }],
+    );
+    expect(r.find((x) => x.gene === 'MTHFR')?.state).toBe('concordant');
+  });
+});
+
+describe('buildConcordances case-insensitivity', () => {
+  it('matches gene and biomarker regardless of case', () => {
+    const records = buildConcordances(
+      [{ gene: 'mthfr', status: '+/+' }],
+      [{ biomarker: 'HOMOCYSTEINE', value: 14, range: { low: 5, high: 10 } }],
+    );
+    expect(records.find((r) => r.gene === 'MTHFR')?.state).toBe('concordant');
   });
 });
 
