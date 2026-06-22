@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      nutrient_intake_ledger: {
+        Row: {
+          computed_at: string
+          deficiency_gap: number | null
+          food_contribution: number
+          id: string
+          nutrient: string
+          supplement_contribution: number
+          total: number
+          ul_status: string | null
+          unit: string | null
+          user_id: string
+        }
+        Insert: {
+          computed_at?: string
+          deficiency_gap?: number | null
+          food_contribution?: number
+          id?: string
+          nutrient: string
+          supplement_contribution?: number
+          total?: number
+          ul_status?: string | null
+          unit?: string | null
+          user_id: string
+        }
+        Update: {
+          computed_at?: string
+          deficiency_gap?: number | null
+          food_contribution?: number
+          id?: string
+          nutrient?: string
+          supplement_contribution?: number
+          total?: number
+          ul_status?: string | null
+          unit?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       agent_conflict_log: {
         Row: {
           agent_a: string | null
