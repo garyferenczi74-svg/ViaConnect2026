@@ -125,14 +125,25 @@ function extractGoals(lifestyle: unknown): unknown[] {
 //
 // Reads the latest user_health_context row and maps to a flat shape.
 // Does NOT write to any table -- synthesis must never trigger a write.
-// Fail-open: returns { allergies:[], medications:[], goals:[] } on any error.
+// Fail-open: returns { allergies:[], medications:[], goals:[], pregnancyStatus:null, age:null }
+// on any error.
+// === PROMPT 208a I2 EXTENSION START ===
+// Extended to also return pregnancyStatus (string | null) and age (number | null)
+// so synthesis can build the SafetyGateContext without a separate DB read.
+// === PROMPT 208a I2 EXTENSION END ===
 // ---------------------------------------------------------------------------
 
 export async function getLatestUserHealthContext(
   userId: string,
   client?: SupabaseClient,
-): Promise<{ allergies: string[]; medications: string[]; goals: string[] }> {
-  const EMPTY = { allergies: [] as string[], medications: [] as string[], goals: [] as string[] };
+): Promise<{ allergies: string[]; medications: string[]; goals: string[]; pregnancyStatus: string | null; age: number | null }> {
+  const EMPTY = {
+    allergies: [] as string[],
+    medications: [] as string[],
+    goals: [] as string[],
+    pregnancyStatus: null as string | null,
+    age: null as number | null,
+  };
 
   let db: SupabaseClient;
   try {
@@ -144,12 +155,12 @@ export async function getLatestUserHealthContext(
   try {
     const { data, error } = await (db
       .from('user_health_context')
-      .select('allergies, medications, goals')
+      .select('allergies, medications, goals, pregnancy_status, demographics')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle() as Promise<{
-      data: { allergies: unknown; medications: unknown; goals: unknown } | null;
+      data: { allergies: unknown; medications: unknown; goals: unknown; pregnancy_status: unknown; demographics: unknown } | null;
       error: { message: string } | null;
     }>);
 
@@ -164,10 +175,30 @@ export async function getLatestUserHealthContext(
         .filter((s) => s.length > 0);
     };
 
+    // === PROMPT 208a I2 EXTENSION START ===
+    const pregnancyStatus: string | null =
+      typeof data.pregnancy_status === 'string' ? data.pregnancy_status : null;
+
+    // Age: read from demographics jsonb if available, else null.
+    let age: number | null = null;
+    if (typeof data.demographics === 'object' && data.demographics !== null) {
+      const demo = data.demographics as Record<string, unknown>;
+      const rawAge = demo['age'];
+      if (typeof rawAge === 'number' && isFinite(rawAge)) {
+        age = rawAge;
+      } else if (typeof rawAge === 'string') {
+        const parsed = parseInt(rawAge, 10);
+        if (!isNaN(parsed)) age = parsed;
+      }
+    }
+    // === PROMPT 208a I2 EXTENSION END ===
+
     return {
       allergies: coerceStringArray(data.allergies),
       medications: coerceStringArray(data.medications),
       goals: coerceStringArray(data.goals),
+      pregnancyStatus,
+      age,
     };
   } catch {
     return EMPTY;

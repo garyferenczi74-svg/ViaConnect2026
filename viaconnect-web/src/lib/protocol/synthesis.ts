@@ -34,7 +34,7 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getPublishedRules, ruleMatchesGenotype } from '@/lib/kb/snpProtocolRules';
 import { CONSUMER_TIERS } from '@/lib/kb/evidenceTier';
-import { runInterlocks } from '@/lib/protocol/safetyInterlocks';
+// runInterlocks is now called via runSafetyGates (I2 extension); kept as type source only.
 import type { InterlockContext, ProtocolCandidate } from '@/lib/protocol/safetyInterlocks';
 import { nutritionByGeneticsFromRules } from '@/lib/agents/gordon/nutritionByGenetics';
 import { safeLog } from '@/lib/utils/safe-log';
@@ -52,6 +52,10 @@ import { getLatestUserHealthContext } from '@/lib/protocol/healthContext';
 import { depletionsForMedications } from '@/lib/protocol/drugNutrientDepletions';
 import { screenAllergens, goalRank } from '@/lib/protocol/phenotypeEnrich';
 // === PROMPT 208a F4 EXTENSION END ===
+// === PROMPT 208a I2 EXTENSION START ===
+import { runSafetyGates, type SafetyGateContext } from '@/lib/protocol/safetyGates';
+import { getSecondaryFindingsGenes, isSecondaryFindingGene } from '@/lib/kb/secondaryFindings';
+// === PROMPT 208a I2 EXTENSION END ===
 
 // ---------------------------------------------------------------------------
 // Public constants
@@ -97,6 +101,11 @@ export interface SynthesisOutput {
   // Additive informational concordance context (Module E). Never gates an interlock.
   concordance_context?: ConcordanceRecord[];
   // === PROMPT 208a E4b EXTENSION END ===
+  // === PROMPT 208a I2 EXTENSION START ===
+  // Additive secondary-findings routing (Module I). SF-gene variants never drive a
+  // protocol item; they are listed here with routing 'genetic_counseling'.
+  secondary_findings_routing?: { gene: string; routing: string }[];
+  // === PROMPT 208a I2 EXTENSION END ===
 }
 
 // ---------------------------------------------------------------------------
@@ -210,6 +219,50 @@ export async function synthesizeForUser(userId: string): Promise<SynthesisOutput
   // -------------------------------------------------------------------------
   const userRiskRsids = [...new Set(applicableRules.map((r) => r.rsid))];
 
+  // === PROMPT 208a I2 EXTENSION START ===
+  // Step 3b: Load secondary-findings gene set and health-context (both fail-open).
+  // SF gene set: variants in this set NEVER drive a protocol item.
+  // hcEarly: pregnancy + age fields for SafetyGateContext (fail-open empty shape).
+  let sfGenes: Set<string> = new Set();
+  try {
+    sfGenes = await getSecondaryFindingsGenes();
+  } catch {
+    // fail-open: sfGenes stays empty
+  }
+
+  // Filter applicableRules: exclude any rule whose gene is in the SF set.
+  // Collect excluded SF genes for the output routing field.
+  const sfRoutingGenes = new Set<string>();
+  const rulesAfterSfFilter = applicableRules.filter((rule) => {
+    if (isSecondaryFindingGene(rule.gene ?? null, sfGenes)) {
+      if (rule.gene) sfRoutingGenes.add(rule.gene.trim().toUpperCase());
+      return false;
+    }
+    return true;
+  });
+
+  // Early health-context load to get pregnancy + age for SafetyGateContext.
+  // The F4 block below also calls getLatestUserHealthContext; this first call
+  // is only for the gate fields. The full hc is loaded again in F4 (fail-open,
+  // idempotent read).
+  let hcEarly: { pregnancyStatus: string | null; age: number | null } = {
+    pregnancyStatus: null,
+    age: null,
+  };
+  try {
+    const hcFull = await getLatestUserHealthContext(userId);
+    hcEarly = { pregnancyStatus: hcFull.pregnancyStatus, age: hcFull.age };
+  } catch {
+    // fail-open: hcEarly stays null/null
+  }
+
+  // Determine pregnant flag: true if pregnancyStatus is a pregnant/lactating value.
+  const PREGNANT_VALUES = ['pregnant', 'lactating', 'breastfeeding', 'nursing'];
+  const isPregnant: boolean =
+    typeof hcEarly.pregnancyStatus === 'string' &&
+    PREGNANT_VALUES.some((v) => hcEarly.pregnancyStatus!.toLowerCase().includes(v));
+  // === PROMPT 208a I2 EXTENSION END ===
+
   // -------------------------------------------------------------------------
   // Step 4: Build shared InterlockContext
   // -------------------------------------------------------------------------
@@ -224,6 +277,17 @@ export async function synthesizeForUser(userId: string): Promise<SynthesisOutput
     disclaimerVersion: DISCLAIMERS_VERSION,
   };
 
+  // === PROMPT 208a I2 EXTENSION START ===
+  // Build the SafetyGateContext (superset of InterlockContext).
+  // proposedCount is updated before each call to runSafetyGates.
+  const gateCtx: SafetyGateContext = {
+    ...ctx,
+    pregnant: isPregnant,
+    age: hcEarly.age,
+    proposedCount: 0,
+  };
+  // === PROMPT 208a I2 EXTENSION END ===
+
   // -------------------------------------------------------------------------
   // Step 5: Process each applicable rule
   // -------------------------------------------------------------------------
@@ -231,7 +295,11 @@ export async function synthesizeForUser(userId: string): Promise<SynthesisOutput
   const supplementFlags: SupplementFlag[] = [];
   const topicsSet = new Set<string>();
 
-  for (const rule of applicableRules) {
+  // === PROMPT 208a I2 EXTENSION START ===
+  // Use rulesAfterSfFilter (SF-gene variants excluded); topicsSet and supplementFlags
+  // still built from the SF-filtered rule set only.
+  // === PROMPT 208a I2 EXTENSION END ===
+  for (const rule of rulesAfterSfFilter) {
     // --- arnold_context.activeTopics (all rules) ---
     const topic = (rule.gene && rule.gene.trim().length > 0) ? rule.gene.trim() : rule.rsid;
     topicsSet.add(topic);
@@ -244,7 +312,11 @@ export async function synthesizeForUser(userId: string): Promise<SynthesisOutput
         supplementName: rule.recommended_form ?? undefined,
       };
 
-      const result = runInterlocks(candidate, ctx);
+      // === PROMPT 208a I2 EXTENSION START ===
+      // Update proposedCount before the gate call so polypharmacy cap is accurate.
+      gateCtx.proposedCount = recommendedItems.length;
+      const result = runSafetyGates(candidate, gateCtx);
+      // === PROMPT 208a I2 EXTENSION END ===
 
       const tier = rule.evidence_tier;
       const isConsumerTier = tier !== undefined && (CONSUMER_TIERS as readonly number[]).includes(tier);
@@ -333,7 +405,11 @@ export async function synthesizeForUser(userId: string): Promise<SynthesisOutput
           supplementName: r.depletedNutrient,
         };
 
-        const result = runInterlocks(candidate, ctx);
+        // === PROMPT 208a I2 EXTENSION START ===
+        // Update proposedCount before the gate call so polypharmacy cap is accurate.
+        gateCtx.proposedCount = recommendedItems.length;
+        const result = runSafetyGates(candidate, gateCtx);
+        // === PROMPT 208a I2 EXTENSION END ===
         if (result.passed) {
           recommendedItems.push({
             form: r.depletedNutrient,
@@ -378,7 +454,10 @@ export async function synthesizeForUser(userId: string): Promise<SynthesisOutput
   // Use Gordon's translator as the single source of truth for nutrition_guidance.
   // This includes flagged_form items in the avoid list (more correct than the
   // prior inline construction) and keeps the two surfaces in sync.
-  const nutritionGuidance = nutritionByGeneticsFromRules(applicableRules);
+  // === PROMPT 208a I2 EXTENSION START ===
+  // Use rulesAfterSfFilter so SF-gene variants do not drive nutrition guidance either.
+  // === PROMPT 208a I2 EXTENSION END ===
+  const nutritionGuidance = nutritionByGeneticsFromRules(rulesAfterSfFilter);
 
   const output: SynthesisOutput = {
     recommended_vitamins_minerals: recommendedItems,
@@ -388,6 +467,13 @@ export async function synthesizeForUser(userId: string): Promise<SynthesisOutput
       activeTopics: [...topicsSet],
     },
     disclaimers_version: DISCLAIMERS_VERSION,
+    // === PROMPT 208a I2 EXTENSION START ===
+    // List SF-gene variants that were excluded from rule application.
+    // routing 'genetic_counseling' is the standard routing action for SF genes.
+    secondary_findings_routing: sfRoutingGenes.size > 0
+      ? [...sfRoutingGenes].map((gene) => ({ gene, routing: 'genetic_counseling' }))
+      : undefined,
+    // === PROMPT 208a I2 EXTENSION END ===
   };
 
   try {

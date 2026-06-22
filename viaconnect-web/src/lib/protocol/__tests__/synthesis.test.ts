@@ -531,3 +531,153 @@ describe('F4 Test 8: HFE carrier on iron-depleting med -> no iron (interlocks dr
     expect(ironRec).toBeUndefined();
   });
 });
+
+// ---------------------------------------------------------------------------
+// I2 Test 9: Pregnant user - pregnancy-contraindicated item is absent
+// (Prompt 208a Module I Task I2)
+// ---------------------------------------------------------------------------
+
+describe('I2 Test 9: Pregnant user - contraindicated item excluded', () => {
+  it('excludes a retinol-containing recommendation for a pregnant user', async () => {
+    const userId = 'user-pregnant';
+
+    // A rule that would normally recommend "retinol" (vitamin A)
+    const retinolRule = preferFormRule({
+      id: 'rule-retinol',
+      rsid: 'rs1801133',
+      gene: 'MTHFR',
+      genotype_match: 'TT',
+      recommended_form: 'retinol',
+      flagged_form: undefined,
+      avoid_list: [],
+      evidence_tier: 2,
+      effect: 'some effect',
+    });
+
+    (getPublishedRules as ReturnType<typeof vi.fn>).mockResolvedValue([retinolRule]);
+    (getQualifiedUserVariants as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { rsid: 'rs1801133', gene: 'MTHFR', genotype: 'TT', panel_key: 'methylation', status: 'confirmed' },
+    ]);
+    (createAdminClient as ReturnType<typeof vi.fn>).mockReturnValue(
+      buildAdminMock([], []),
+    );
+    // User is pregnant
+    (getLatestUserHealthContext as ReturnType<typeof vi.fn>).mockResolvedValue({
+      allergies: [],
+      medications: [],
+      goals: [],
+      pregnancyStatus: 'pregnant',
+      age: 28,
+    });
+
+    const output = await synthesizeForUser(userId);
+
+    // Retinol must be absent from recommendations for a pregnant user
+    const retinolRec = output.recommended_vitamins_minerals.find(
+      (r) => r.form.toLowerCase().includes('retinol'),
+    );
+    expect(retinolRec).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// I2 Test 10: BRCA1 variant - does NOT drive any recommendation
+// AND secondary_findings_routing lists BRCA1 -> genetic_counseling
+// (Prompt 208a Module I Task I2)
+// ---------------------------------------------------------------------------
+
+describe('I2 Test 10: BRCA1 variant excluded via secondary-findings filter', () => {
+  it('does not drive any recommendation and routes to genetic_counseling', async () => {
+    const userId = 'user-brca1';
+
+    // A rule attached to BRCA1 that would normally recommend something
+    const brca1Rule = preferFormRule({
+      id: 'rule-brca1',
+      rsid: 'rs80357906',
+      gene: 'BRCA1',
+      genotype_match: 'CT',
+      recommended_form: 'some-supplement',
+      flagged_form: undefined,
+      avoid_list: [],
+      evidence_tier: 2,
+      effect: 'BRCA1 variant effect',
+    });
+
+    (getPublishedRules as ReturnType<typeof vi.fn>).mockResolvedValue([brca1Rule]);
+    (getQualifiedUserVariants as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { rsid: 'rs80357906', gene: 'BRCA1', genotype: 'CT', panel_key: 'methylation', status: 'confirmed' },
+    ]);
+
+    // The admin mock must return BRCA1 from secondary_findings_exclusions
+    const baseAdmin = buildAdminMock([], []);
+    const adminWithSf = {
+      from: vi.fn().mockImplementation((table: string) => {
+        if (table === 'secondary_findings_exclusions') {
+          const resp = { data: [{ gene: 'BRCA1' }], error: null };
+          return {
+            select: vi.fn().mockReturnValue({
+              then: (resolve: (v: unknown) => void) => resolve(resp),
+            }),
+          };
+        }
+        return baseAdmin.from(table);
+      }),
+    };
+    (createAdminClient as ReturnType<typeof vi.fn>).mockReturnValue(adminWithSf);
+
+    (getLatestUserHealthContext as ReturnType<typeof vi.fn>).mockResolvedValue({
+      allergies: [],
+      medications: [],
+      goals: [],
+      pregnancyStatus: null,
+      age: 40,
+    });
+
+    const output = await synthesizeForUser(userId);
+
+    // BRCA1 must NOT drive any recommendation
+    const brca1Rec = output.recommended_vitamins_minerals.find(
+      (r) => r.form === 'some-supplement',
+    );
+    expect(brca1Rec).toBeUndefined();
+
+    // secondary_findings_routing must list BRCA1 -> genetic_counseling
+    expect(output.secondary_findings_routing).toBeDefined();
+    const brca1Route = output.secondary_findings_routing?.find((r) => r.gene === 'BRCA1');
+    expect(brca1Route).toBeDefined();
+    expect(brca1Route?.routing).toBe('genetic_counseling');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// I2 Test 11: Minor user (age < 18) - no recommendations (pediatric gate)
+// (Prompt 208a Module I Task I2)
+// ---------------------------------------------------------------------------
+
+describe('I2 Test 11: Minor user (age < 18) gets no recommendations (pediatric gate)', () => {
+  it('drops all candidates for a minor user and returns empty recommendations', async () => {
+    const userId = 'user-minor';
+
+    // A rule that would normally recommend L-methylfolate
+    (getPublishedRules as ReturnType<typeof vi.fn>).mockResolvedValue([preferFormRule()]);
+    (getQualifiedUserVariants as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { rsid: 'rs1801133', gene: 'MTHFR', genotype: 'TT', panel_key: 'methylation', status: 'confirmed' },
+    ]);
+    (createAdminClient as ReturnType<typeof vi.fn>).mockReturnValue(
+      buildAdminMock([], []),
+    );
+    // User is 15 years old (minor)
+    (getLatestUserHealthContext as ReturnType<typeof vi.fn>).mockResolvedValue({
+      allergies: [],
+      medications: [],
+      goals: [],
+      pregnancyStatus: null,
+      age: 15,
+    });
+
+    const output = await synthesizeForUser(userId);
+
+    // No recommendations for a minor
+    expect(output.recommended_vitamins_minerals).toHaveLength(0);
+  });
+});
