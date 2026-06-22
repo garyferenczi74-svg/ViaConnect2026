@@ -39,6 +39,10 @@ import type { InterlockContext, ProtocolCandidate } from '@/lib/protocol/safetyI
 import { nutritionByGeneticsFromRules } from '@/lib/agents/gordon/nutritionByGenetics';
 import { safeLog } from '@/lib/utils/safe-log';
 import { getQualifiedUserVariants } from '@/lib/genetics/qc/qualifiedVariants';
+// === PROMPT 208a EXTENSION START ===
+import { computeAndPersistPathways } from '@/lib/genetics/pathways/persistPathways';
+import type { PathwayScore } from '@/lib/genetics/pathways/pathwayScore';
+// === PROMPT 208a EXTENSION END ===
 
 // ---------------------------------------------------------------------------
 // Public constants
@@ -76,6 +80,10 @@ export interface SynthesisOutput {
     activeTopics: string[];
   };
   disclaimers_version: string;
+  // === PROMPT 208a EXTENSION START ===
+  // Additive informational pathway context (Module D). Never gates an interlock.
+  pathway_context?: PathwayScore[];
+  // === PROMPT 208a EXTENSION END ===
 }
 
 // ---------------------------------------------------------------------------
@@ -316,6 +324,13 @@ export async function synthesizeForUser(userId: string): Promise<SynthesisOutput
     safeLog.error('synthesis', 'user_protocol_synthesis insert threw', { userId, err });
     // Still return the computed output
   }
+
+  // === PROMPT 208a EXTENSION START ===
+  // Module D: enrich the output with composite pathway context (informational;
+  // never gates an interlock). computeAndPersistPathways is fail-open (returns []
+  // on any error), so this cannot break synthesis.
+  output.pathway_context = await computeAndPersistPathways(userId);
+  // === PROMPT 208a EXTENSION END ===
 
   // -------------------------------------------------------------------------
   // Step 8: Return
