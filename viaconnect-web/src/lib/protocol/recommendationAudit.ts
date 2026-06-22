@@ -60,7 +60,7 @@ function canonicalStringify(value: unknown): string {
 // djb2 hash
 //
 // Classic djb2 string hash. No crypto. No external dep. Pure + deterministic.
-// Returns a non-negative 32-bit integer as a decimal string.
+// Returns a non-negative 32-bit integer as a zero-padded 8-character hex string.
 // ---------------------------------------------------------------------------
 
 function djb2(str: string): string {

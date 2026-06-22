@@ -558,8 +558,10 @@ export async function synthesizeForUser(userId: string): Promise<SynthesisOutput
   // === PROMPT 208a J2 EXTENSION START ===
   // Additive fail-open side-record: record which inputs + rule versions produced
   // this recommendation set. Never changes recommendations, never gates anything,
-  // never throws. The await is non-blocking on the return (fire-and-trust pattern
-  // using void; synthesis always returns output immediately).
+  // never throws. Awaited so the audit row is guaranteed to persist before the
+  // serverless function returns (recordRecommendationAudit is fail-open and
+  // cannot throw, so awaiting it adds negligible latency and never blocks
+  // correctness).
   {
     const applicableRuleIds = applicableRules.map((r) => r.id).sort();
     const inputsHash = stableInputsHash({
@@ -568,7 +570,7 @@ export async function synthesizeForUser(userId: string): Promise<SynthesisOutput
       ruleIds: applicableRuleIds,
       supplements: currentSupplementNames,
     });
-    void recordRecommendationAudit(userId, {
+    await recordRecommendationAudit(userId, {
       inputsHash,
       ruleIds: applicableRuleIds,
       snapshotRef: null,
