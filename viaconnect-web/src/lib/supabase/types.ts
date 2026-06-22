@@ -14,6 +14,120 @@ export type Database = {
   }
   public: {
     Tables: {
+      outcome_events: {
+        Row: {
+          adherence: number | null
+          id: string
+          protocol_ref: string | null
+          recorded_at: string
+          subjective_outcome: string | null
+          user_id: string
+        }
+        Insert: {
+          adherence?: number | null
+          id?: string
+          protocol_ref?: string | null
+          recorded_at?: string
+          subjective_outcome?: string | null
+          user_id: string
+        }
+        Update: {
+          adherence?: number | null
+          id?: string
+          protocol_ref?: string | null
+          recorded_at?: string
+          subjective_outcome?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      adverse_events: {
+        Row: {
+          description: string | null
+          id: string
+          implicated_rule_id: string | null
+          item_ref: string | null
+          recorded_at: string
+          severity: string | null
+          user_id: string
+        }
+        Insert: {
+          description?: string | null
+          id?: string
+          implicated_rule_id?: string | null
+          item_ref?: string | null
+          recorded_at?: string
+          severity?: string | null
+          user_id: string
+        }
+        Update: {
+          description?: string | null
+          id?: string
+          implicated_rule_id?: string | null
+          item_ref?: string | null
+          recorded_at?: string
+          severity?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      cohort_signals: {
+        Row: {
+          aggregate_delta: number | null
+          biomarker: string | null
+          computed_at: string
+          id: string
+          n: number
+          protocol_ref: string | null
+          signal_strength: string | null
+        }
+        Insert: {
+          aggregate_delta?: number | null
+          biomarker?: string | null
+          computed_at?: string
+          id?: string
+          n?: number
+          protocol_ref?: string | null
+          signal_strength?: string | null
+        }
+        Update: {
+          aggregate_delta?: number | null
+          biomarker?: string | null
+          computed_at?: string
+          id?: string
+          n?: number
+          protocol_ref?: string | null
+          signal_strength?: string | null
+        }
+        Relationships: []
+      }
+      practitioner_feedback: {
+        Row: {
+          correction: string | null
+          created_at: string
+          id: string
+          practitioner_ref: string | null
+          rule_id: string | null
+          status: string
+        }
+        Insert: {
+          correction?: string | null
+          created_at?: string
+          id?: string
+          practitioner_ref?: string | null
+          rule_id?: string | null
+          status?: string
+        }
+        Update: {
+          correction?: string | null
+          created_at?: string
+          id?: string
+          practitioner_ref?: string | null
+          rule_id?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       atom_archive: {
         Row: {
           archived_at: string
