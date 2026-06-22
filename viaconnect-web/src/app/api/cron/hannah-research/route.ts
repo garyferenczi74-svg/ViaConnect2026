@@ -18,6 +18,9 @@ import { nextDomains } from '@/lib/research/gapScheduler'
 import { runResearchPass } from '@/lib/research/researchPass'
 import { writeHeartbeat } from '@/lib/research/heartbeat'
 import { safeLog } from '@/lib/utils/safe-log'
+// === PROMPT 208a EXTENSION START ===
+import { recordPassCost } from '@/lib/eval/costLedger'
+// === PROMPT 208a EXTENSION END ===
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -66,6 +69,22 @@ export async function GET(request: Request): Promise<Response> {
         durationMs: result.durationMs,
       },
     )
+
+    // === PROMPT 208a EXTENSION START ===
+    // Record estimated cost for this pass. recordPassCost is fail-open and
+    // never throws, so this block cannot affect the existing return behavior.
+    {
+      const apiCalls = result.sourcesQueried.length + result.atomsCreated
+      const tokens = result.atomsCreated * 256
+      const estimatedCost = apiCalls * 0.0002
+      await recordPassCost({
+        passRef: `research:${result.domain}`,
+        tokens,
+        apiCalls,
+        estimatedCost,
+      })
+    }
+    // === PROMPT 208a EXTENSION END ===
 
     return Response.json({ ok: true, domain, result })
   } catch (err) {
