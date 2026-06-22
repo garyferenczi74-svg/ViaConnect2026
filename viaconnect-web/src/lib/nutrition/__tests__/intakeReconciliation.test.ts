@@ -218,6 +218,25 @@ describe('extractUsdaMicronutrients', () => {
     ]);
   });
 
+  it('excludes a negative amount (corrupt payload cannot relax the UL gate)', () => {
+    // A negative micronutrient amount is garbage data. It must be dropped, never
+    // flipped, so it can never feed a negative contribution that subtracts from
+    // the supplement total and relaxes the monotonic UL safety gate.
+    const payload = {
+      foodNutrients: [
+        { nutrient: { number: '1089' }, amount: -2.5 }, // iron - negative, dropped
+        { nutrient: { number: '1162' }, amount: 30 }, // vitamin C - kept
+      ],
+    };
+    const out = extractUsdaMicronutrients(payload);
+    // The negative iron micro is absent entirely...
+    expect(out.find((m) => m.ulKey === 'iron')).toBeUndefined();
+    // ...and no entry is ever negative.
+    expect(out.every((m) => m.amountPer100g >= 0)).toBe(true);
+    // The valid micro still comes through.
+    expect(out).toEqual([{ ulKey: 'vitamin_c', amountPer100g: 30, unit: 'mg' }]);
+  });
+
   it('returns [] on garbage shapes and never throws', () => {
     expect(extractUsdaMicronutrients(null)).toEqual([]);
     expect(extractUsdaMicronutrients(undefined)).toEqual([]);

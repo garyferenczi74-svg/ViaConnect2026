@@ -230,7 +230,8 @@ export interface UsdaMicro {
  *   { nutrient: { number }, amount }        (search/detail responses)
  *   { nutrientNumber, value }               (abridged responses)
  * Returns [] on any shape mismatch. Never throws. Unmapped and food-excluded
- * nutrient numbers (e.g. magnesium 1090) are skipped.
+ * nutrient numbers (e.g. magnesium 1090) are skipped, as are non-finite or
+ * negative amounts (negatives are corrupt data and would relax the UL gate).
  */
 export function extractUsdaMicronutrients(rawPayload: unknown): UsdaMicro[] {
   try {
@@ -258,7 +259,13 @@ export function extractUsdaMicronutrients(rawPayload: unknown): UsdaMicro[] {
       // Resolve the amount from either shape.
       const amountRaw = entry.amount !== undefined ? entry.amount : entry.value;
       const amount = Number(amountRaw);
-      if (!Number.isFinite(amount)) continue;
+      // Drop non-finite AND negative amounts. A negative micronutrient amount is
+      // garbage data (a corrupt raw_payload), and letting it through would feed a
+      // negative contribution into the UL safety gate, SUBTRACTING from the
+      // supplement total and relaxing the gate. The gate's monotonic guarantee
+      // (food can only ever block MORE, never less) must be code-enforced here,
+      // at the food boundary, not assumed of the data. Drop, do not flip sign.
+      if (!Number.isFinite(amount) || amount < 0) continue;
 
       out.push({ ulKey: mapped.ulKey, amountPer100g: amount, unit: mapped.unit });
     }
