@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      energy_balance_signals: {
+        Row: {
+          balance_state: string | null
+          composition_trend: string | null
+          computed_at: string
+          expenditure_estimate: number | null
+          id: string
+          intake_estimate: number | null
+          signal_window: string | null
+          user_id: string
+        }
+        Insert: {
+          balance_state?: string | null
+          composition_trend?: string | null
+          computed_at?: string
+          expenditure_estimate?: number | null
+          id?: string
+          intake_estimate?: number | null
+          signal_window?: string | null
+          user_id: string
+        }
+        Update: {
+          balance_state?: string | null
+          composition_trend?: string | null
+          computed_at?: string
+          expenditure_estimate?: number | null
+          id?: string
+          intake_estimate?: number | null
+          signal_window?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       nutrient_intake_ledger: {
         Row: {
           computed_at: string
