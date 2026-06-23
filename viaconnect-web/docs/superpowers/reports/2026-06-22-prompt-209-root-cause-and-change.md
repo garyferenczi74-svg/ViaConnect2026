@@ -12,7 +12,7 @@ The "Scan My Body" engine produced nothing the surface could show, and the surfa
 
 WRITE path (scan): `BodyScanUploader` POSTs 4 base64 photos to the `body-scan-analyze` edge function (Claude vision); the function returns estimates and inserts the raw audit row into `body_tracker_photo_scans`. NEW: on completion the client calls `POST /api/body/scan/persist`, which derives Total Body Fat percent from the vision range and writes the canonical `body_tracker_entries` (source `scan`) + `body_tracker_segmental_fat` rows.
 
-READ path (surface): `composition/page.tsx` -> NEW `useLatestComposition` -> latest `body_tracker_entries` + `body_tracker_segmental_fat` + `body_tracker_segmental_muscle` (+ profile height and latest weight for BMI) -> `buildMetricCards` / `fatValuesFromSnapshot` / `muscleValuesFromSnapshot` / `resolveSurfaceState` -> the `SegmentalHeatMap` avatar, the four `FloatingMetricCard`s, and the body-part callouts. Manual "Log Data" writes the SAME canonical tables, so scan and manual share one read path.
+READ path (surface): `composition/page.tsx` -> NEW `useLatestComposition` -> latest `body_tracker_entries` + `body_tracker_segmental_fat` + `body_tracker_segmental_muscle` (+ clinical_assessments height and latest weight for BMI) -> `buildMetricCards` / `fatValuesFromSnapshot` / `muscleValuesFromSnapshot` / `resolveSurfaceState` -> the `SegmentalHeatMap` avatar, the four `FloatingMetricCard`s, and the body-part callouts. Manual "Log Data" writes the SAME canonical tables, so scan and manual share one read path.
 
 ## 3. Confirmed root cause
 
@@ -58,7 +58,7 @@ The `SegmentalHeatMap` avatar renders unconditionally in every state; nothing re
 
 ## 10. Honest scan model (DD3) and what is UNKNOWN by design
 
-A photo scan fills Total Body Fat percent (the vision range midpoint) and BMI (computed from profile height and latest weight). Visceral Fat, Body Water, per-region fat percent, and muscle mass are not measurable from a photo and are stored and shown as UNKNOWN (null), never 0. The avatar segment colors are change vs the prior entry (the model the muscle side already used); the first entry paints neutral. The avatar therefore paints meaningfully once segmental (smart-scale or DEXA) data exists via Log Data, or once two entries allow a delta. This is intentional and clinically honest, not a defect.
+A photo scan fills Total Body Fat percent (the vision range midpoint) and BMI (computed from clinical_assessments height and the latest weight; honestly UNKNOWN until a user has CAQ height on file, which no user does today). Visceral Fat, Body Water, per-region fat percent, and muscle mass are not measurable from a photo and are stored and shown as UNKNOWN (null), never 0. The avatar segment colors are change vs the prior entry (the model the muscle side already used); the first entry paints neutral. The avatar therefore paints meaningfully once segmental (smart-scale or DEXA) data exists via Log Data, or once two entries allow a delta. This is intentional and clinically honest, not a defect.
 
 ## 11. Reliability
 
@@ -92,3 +92,10 @@ A correlation id (`newCorrelationId`) is threaded into structured `logScanEvent`
 1. Confirm `ANTHROPIC_API_KEY` is set on the project's Edge Function secrets (the function returns 503 "vision unavailable" without it).
 2. Run one real "Scan My Body" on a device; I will read the edge-function logs to confirm the key, the vision round-trip, and the persist.
 3. Localhost visual sign-off: the four states, both avatar genders, both tabs, and a repaint after a Log Data save (no reload).
+
+## 17. Final whole-branch review and post-review fix
+
+A final cross-cutting review (most-capable model) confirmed the architecture is coherent end to end: the scan write path and the surface read path connect with matching shapes; the honest-UNKNOWN model holds across every module boundary (a null `body_water_pct` and a null per-region fat both surface as a neutral "No data", never 0); idempotency is coherent (unique index + route pre-check + 23505 handling + the entry's `scan_id`); manual Log Data and scan converge on the same read path; and the page edit caused no regression to the gender toggle, the Measurements tab, the Log Data form, or HoverSystem.
+
+It found one Critical defect that all type-level and per-module reviews missed (a runtime schema mismatch, not a type error): `useLatestComposition` read height from `profiles.height_cm`, but the live `profiles` table has no `height_cm` column (height lives on `clinical_assessments.height_cm`), so the query errored and BMI was always null. Verified against the live database (`profiles` has no height column; `clinical_assessments.height_cm` exists, currently 0 non-null rows). Fixed in commit `5a226d2a`: the hook now reads height from `clinical_assessments` (with `clinical_assessments.weight_kg` as a weight fallback), so BMI computes once a user has CAQ height and is honestly UNKNOWN until then. Note: `runScanAnalysis` and `arnold-vision-analyze` read `profiles.height_cm` too and have the same latent bug, but they are out of this prompt's scope (the `/photos` pipeline) and were left unchanged. The three remaining Minor items (no loading skeleton, a redundant `bmiStatus` branch, a few `(supabase as any)` casts) were triaged as acceptable to merge.
+
