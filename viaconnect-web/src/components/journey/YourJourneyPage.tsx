@@ -37,7 +37,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   Activity,
-  HeartPulse,
   Target,
   CalendarDays,
   Salad,
@@ -63,6 +62,8 @@ import { SleepDonut } from '@/components/journey/trio/SleepDonut';
 import { VitalTrends } from '@/components/journey/trio/VitalTrends';
 import { getDisplayName } from '@/lib/user/get-display-name';
 import { JourneyAcceleratorsSection } from '@/components/journey/accelerators/JourneyAcceleratorsSection';
+import { EnergyStressGraph } from '@/components/journey/today/EnergyStressGraph';
+import { TodayStats } from '@/components/journey/today/TodayStats';
 
 // ---------------------------------------------------------------------------
 // Tokens
@@ -273,9 +274,7 @@ export function YourJourneyPage({ userId }: { userId: string | null }) {
             title="Energy and stress"
             icon={Activity}
           >
-            <EmptyNote icon={HeartPulse}>
-              Connect a wearable to see your energy and stress through the day.
-            </EmptyNote>
+            <EnergyStressGraph />
           </SectionShell>
 
           {/* 3.4 GOAL AND PROGRESS */}
@@ -298,10 +297,7 @@ export function YourJourneyPage({ userId }: { userId: string | null }) {
 
           {/* 3.5 TODAY */}
           <SectionShell eyebrow="Right now" title="Today" icon={CalendarDays}>
-            <EmptyNote icon={CalendarDays}>
-              Today&apos;s activity appears when a wearable is connected; hydration
-              shows your logged intake.
-            </EmptyNote>
+            <TodayStats userId={userId} />
           </SectionShell>
 
           {/* 3.6 NUTRITION, SLEEP, VITALS: a three-column trio. Nutrition (live
