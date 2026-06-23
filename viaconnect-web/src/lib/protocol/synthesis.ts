@@ -79,6 +79,14 @@ import { getFoodContributions, buildNutrientIntakeLedger } from '@/lib/nutrition
 // supplement_flags and never removes a recommendation or gates an interlock.
 import { buildLabEfficacyFlags } from '@/lib/protocol/labEfficacyFlags';
 // === PROMPT 208b 4.2 EXTENSION END ===
+// === PROMPT 208b 5.2 EXTENSION START ===
+// Contract-completeness LABEL. assessCompleteness is PURE and cannot throw. It
+// only attaches an informational confidence-floor signal to the output; it NEVER
+// removes a recommendation, changes candidate building, or gates/weakens any
+// interlock. Conservative: an unknown input is treated as missing.
+import { assessCompleteness, type CompletenessInputs } from '@/lib/protocol/contractCompleteness';
+import type { CompletenessReport } from '@/lib/protocol/contractCompleteness';
+// === PROMPT 208b 5.2 EXTENSION END ===
 
 // ---------------------------------------------------------------------------
 // Public constants
@@ -142,6 +150,15 @@ export interface SynthesisOutput {
   // from the user's known ancestry. Empty or absent when ancestry is unknown or matches.
   population_caveats?: PopulationCaveat[];
   // === PROMPT 208a C2 EXTENSION END ===
+  // === PROMPT 208b 5.2 EXTENSION START ===
+  // Additive contract-completeness LABEL (Section 5). Describes whether the
+  // required cross-reference inputs (genetics, labs, health context) were present
+  // and, when not, the confidence floor the recommendations should be shown at.
+  // This LABELS only: when degraded, the recommendations are UNCHANGED and the
+  // surface shows them at completeness.confidenceFloor. Never gates an interlock,
+  // never removes a recommendation. Absent on the fail-open path.
+  completeness?: CompletenessReport;
+  // === PROMPT 208b 5.2 EXTENSION END ===
 }
 
 // ---------------------------------------------------------------------------
@@ -336,9 +353,20 @@ export async function synthesizeForUser(userId: string): Promise<SynthesisOutput
   //     relax anything. The try/catch is defense-in-depth: even if the dependency
   //     were to throw, synthesis degrades to the supplement-only stack rather than
   //     failing.
+  // === PROMPT 208b 5.2 EXTENSION START ===
+  // Capture (best-effort) whether reconciled food/nutrition produced anything,
+  // for the contract-completeness label below. Enriching only: never floors
+  // confidence and never gates anything. Defaults false (conservative).
+  let hasNutritionLedger = false;
+  // === PROMPT 208b 5.2 EXTENSION END ===
   try {
     const food = await getFoodContributions(userId);
     ctx.currentStack = [...ctx.currentStack, ...food.contributions];
+    // === PROMPT 208b 5.2 EXTENSION START ===
+    hasNutritionLedger =
+      (Array.isArray(food.contributions) && food.contributions.length > 0) ||
+      food.complete === true;
+    // === PROMPT 208b 5.2 EXTENSION END ===
   } catch (err) {
     safeLog.error('synthesis', 'getFoodContributions threw; UL gate uses supplement-only stack', {
       userId,
@@ -470,6 +498,15 @@ export async function synthesizeForUser(userId: string): Promise<SynthesisOutput
   }
   // === PROMPT 208b 4.2 EXTENSION END ===
 
+  // === PROMPT 208b 5.2 EXTENSION START ===
+  // Capture (best-effort) whether the user has any health context, for the
+  // contract-completeness label below. Seeded from the early load (pregnancy/age)
+  // and OR'd with the F4 hc load (allergies/medications/goals). Defaults false
+  // (conservative). Labels only; never gates anything.
+  let hasHealthContext =
+    hcEarly.pregnancyStatus !== null || hcEarly.age !== null;
+  // === PROMPT 208b 5.2 EXTENSION END ===
+
   // === PROMPT 208a F4 EXTENSION START ===
   // Post-processing: allergen screen, depletion repletion, goal weighting.
   // Runs AFTER recommendedItems is fully built, BEFORE the output object.
@@ -486,6 +523,14 @@ export async function synthesizeForUser(userId: string): Promise<SynthesisOutput
     } catch {
       // fail-open: hc stays empty
     }
+
+    // === PROMPT 208b 5.2 EXTENSION START ===
+    hasHealthContext =
+      hasHealthContext ||
+      hc.allergies.length > 0 ||
+      hc.medications.length > 0 ||
+      hc.goals.length > 0;
+    // === PROMPT 208b 5.2 EXTENSION END ===
 
     // Step F4-2: DEPLETION REPLETION
     // Build a candidate for each depleted nutrient and run through the SAME
@@ -675,6 +720,51 @@ export async function synthesizeForUser(userId: string): Promise<SynthesisOutput
     });
   }
   // === PROMPT 208a J2 EXTENSION END ===
+
+  // === PROMPT 208b 5.2 EXTENSION START ===
+  // Contract-completeness LABEL. Assess whether the required cross-reference
+  // inputs (genetics, labs, health context) are present and, when any is
+  // missing, attach a degraded confidence floor so the surface can show the
+  // recommendations at lower confidence. "Missing data is visible, never
+  // invisible."
+  //
+  // This LABELS ONLY. It does NOT remove any recommendation, does NOT change
+  // candidate building, and NEVER gates or weakens a safety interlock -- the
+  // recommendations already produced above are returned unchanged; this only
+  // adds output.completeness.
+  //
+  // Inputs are derived from what synthesis ALREADY has (no heavy new reads):
+  //   - hasVariants: the user has at least one QC-qualified variant.
+  //   - hasHealthContext: any allergy/medication/goal OR pregnancy/age loaded.
+  //   - hasNutritionLedger: the food reconciliation produced anything.
+  //   - hasLabs: a cheap signal -- the user has any genotype-phenotype
+  //     concordance records (which require confirmed labs). When unknown/absent
+  //     this is false (CONSERVATIVE: unknown is treated as missing so confidence
+  //     is never over-stated on absent data).
+  //   - hasConnected: false (Connected is flag-off).
+  //
+  // Fail-open: assessCompleteness is pure and cannot throw; if anything around
+  // it errors, leave output.completeness undefined (the recommendations still
+  // produce) and safeLog.
+  try {
+    const inputs: CompletenessInputs = {
+      hasVariants: userVariants.length > 0,
+      hasLabs: Array.isArray(output.concordance_context)
+        ? output.concordance_context.length > 0
+        : false,
+      hasHealthContext,
+      hasNutritionLedger,
+      hasConnected: false,
+    };
+    output.completeness = assessCompleteness(inputs);
+  } catch (err) {
+    safeLog.error('synthesis', 'assessCompleteness wiring threw; completeness label omitted (fail-open)', {
+      userId,
+      err,
+    });
+    // Leave output.completeness undefined; recommendations are unaffected.
+  }
+  // === PROMPT 208b 5.2 EXTENSION END ===
 
   return output;
 }

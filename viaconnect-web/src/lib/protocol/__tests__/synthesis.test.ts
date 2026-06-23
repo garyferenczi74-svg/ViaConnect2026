@@ -94,6 +94,17 @@ vi.mock('@/lib/protocol/labEfficacyFlags', () => ({
 }));
 // === PROMPT 208b 4.2 EXTENSION END ===
 
+// === PROMPT 208b 5.2 EXTENSION START ===
+// Mock persistConcordance so 5.2 completeness tests can control the cheap labs
+// signal (synthesis derives hasLabs from output.concordance_context). Default is
+// [] (no labs) -- this matches the UNMOCKED behavior under the admin mock (the
+// fallback returns no lab rows), so every existing synthesis test is unaffected.
+// The completeness tests below override computeAndPersistConcordance per-case.
+vi.mock('@/lib/labs/persistConcordance', () => ({
+  computeAndPersistConcordance: vi.fn().mockResolvedValue([]),
+}));
+// === PROMPT 208b 5.2 EXTENSION END ===
+
 // safeLog is real (no side effects in tests, just console output).
 
 import {
@@ -122,6 +133,9 @@ import { runInterlocks, type InterlockContext } from '@/lib/protocol/safetyInter
 // === PROMPT 208b 4.2 EXTENSION START ===
 import { buildLabEfficacyFlags } from '@/lib/protocol/labEfficacyFlags';
 // === PROMPT 208b 4.2 EXTENSION END ===
+// === PROMPT 208b 5.2 EXTENSION START ===
+import { computeAndPersistConcordance } from '@/lib/labs/persistConcordance';
+// === PROMPT 208b 5.2 EXTENSION END ===
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -325,6 +339,12 @@ beforeEach(() => {
   // genetic-only behavior. Tests that exercise the lab path override per-case.
   (buildLabEfficacyFlags as ReturnType<typeof vi.fn>).mockResolvedValue([]);
   // === PROMPT 208b 4.2 EXTENSION END ===
+
+  // === PROMPT 208b 5.2 EXTENSION START ===
+  // Default: no concordance records -> hasLabs derives false (conservative).
+  // This matches the prior unmocked behavior, so existing tests are unaffected.
+  (computeAndPersistConcordance as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+  // === PROMPT 208b 5.2 EXTENSION END ===
 });
 
 // ---------------------------------------------------------------------------
@@ -1324,3 +1344,201 @@ describe('4.2 Test 23: lab-efficacy flag is passed the current supplement names'
   });
 });
 // === PROMPT 208b 4.2 EXTENSION END ===
+
+// ---------------------------------------------------------------------------
+// === PROMPT 208b 5.2 EXTENSION START ===
+// 5.2 Tests 24-28: contract-completeness LABEL.
+//
+// Before synthesis finalizes, it assesses whether the required cross-reference
+// inputs (genetics, labs, health context) are present. When any is missing, it
+// attaches output.completeness with a degraded confidence floor so the surface
+// can show the recommendations at lower confidence. This LABELS only: it never
+// removes a recommendation and never gates/weakens a safety interlock. The
+// existing MTHFR/HFE behavior above is UNAFFECTED.
+// ---------------------------------------------------------------------------
+
+describe('5.2 Test 24: variants + health context but NO labs -> completeness reduced', () => {
+  it('labels the output reduced with missing ["labs"] and still recommends', async () => {
+    const userId = 'user-5-2-no-labs';
+
+    (getPublishedRules as ReturnType<typeof vi.fn>).mockResolvedValue([preferFormRule()]);
+    (getQualifiedUserVariants as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { rsid: 'rs1801133', gene: 'MTHFR', genotype: 'TT', panel_key: 'methylation', status: 'confirmed' },
+    ]);
+    (createAdminClient as ReturnType<typeof vi.fn>).mockReturnValue(buildAdminMock([], []));
+    // Health context present (a goal is set).
+    (getLatestUserHealthContext as ReturnType<typeof vi.fn>).mockResolvedValue({
+      allergies: [],
+      medications: [],
+      goals: ['energy'],
+      pregnancyStatus: null,
+      age: 35,
+    });
+    // No labs: concordance is empty -> hasLabs derives false.
+    (computeAndPersistConcordance as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+
+    const output = await synthesizeForUser(userId);
+
+    expect(output.completeness).toBeDefined();
+    expect(output.completeness?.degraded).toBe(true);
+    expect(output.completeness?.confidenceFloor).toBe('reduced');
+    expect(output.completeness?.missing).toContain('labs');
+    expect(output.completeness?.missing).not.toContain('genetics');
+    expect(output.completeness?.missing).not.toContain('health_context');
+    expect(output.completeness?.note.length).toBeGreaterThan(0);
+
+    // The recommendation is UNCHANGED (the label never removes anything).
+    const rec = output.recommended_vitamins_minerals.find((r) => r.form === 'L-methylfolate');
+    expect(rec).toBeDefined();
+  });
+});
+
+describe('5.2 Test 25: fully-populated user -> completeness full, not degraded', () => {
+  it('labels the output full when genetics, labs, and health context are all present', async () => {
+    const userId = 'user-5-2-full';
+
+    (getPublishedRules as ReturnType<typeof vi.fn>).mockResolvedValue([preferFormRule()]);
+    (getQualifiedUserVariants as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { rsid: 'rs1801133', gene: 'MTHFR', genotype: 'TT', panel_key: 'methylation', status: 'confirmed' },
+    ]);
+    (createAdminClient as ReturnType<typeof vi.fn>).mockReturnValue(buildAdminMock([], []));
+    // Health context present.
+    (getLatestUserHealthContext as ReturnType<typeof vi.fn>).mockResolvedValue({
+      allergies: ['shellfish'],
+      medications: ['metformin'],
+      goals: ['energy'],
+      pregnancyStatus: null,
+      age: 35,
+    });
+    // Labs present: concordance returns at least one record -> hasLabs true.
+    (computeAndPersistConcordance as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { gene: 'MTHFR', biomarker: 'homocysteine', state: 'concordant', confidence: 0.8 },
+    ]);
+
+    const output = await synthesizeForUser(userId);
+
+    expect(output.completeness).toBeDefined();
+    expect(output.completeness?.degraded).toBe(false);
+    expect(output.completeness?.confidenceFloor).toBe('full');
+    expect(output.completeness?.missing).toEqual([]);
+    expect(output.completeness?.note).toBe('');
+  });
+});
+
+describe('5.2 Test 26: no variants + no labs + no health context -> minimal', () => {
+  it('labels minimal when all three required inputs are absent', async () => {
+    const userId = 'user-5-2-minimal';
+
+    (getPublishedRules as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    // No variants.
+    (getQualifiedUserVariants as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (createAdminClient as ReturnType<typeof vi.fn>).mockReturnValue(buildAdminMock([], []));
+    // No health context (all empty).
+    (getLatestUserHealthContext as ReturnType<typeof vi.fn>).mockResolvedValue({
+      allergies: [],
+      medications: [],
+      goals: [],
+      pregnancyStatus: null,
+      age: null,
+    });
+    // No labs.
+    (computeAndPersistConcordance as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+
+    const output = await synthesizeForUser(userId);
+
+    expect(output.completeness).toBeDefined();
+    expect(output.completeness?.degraded).toBe(true);
+    expect(output.completeness?.confidenceFloor).toBe('minimal');
+    expect(output.completeness?.missing).toEqual(['genetics', 'labs', 'health_context']);
+  });
+});
+
+describe('5.2 Test 27: completeness label NEVER changes the HFE iron interlock', () => {
+  it('drops iron AND labels the degraded output (label and interlock are orthogonal)', async () => {
+    const userId = 'user-5-2-hfe-label';
+
+    const ironPreferRule = {
+      id: 'rule-hfe-prefer',
+      rsid: 'rs1800562',
+      gene: 'HFE',
+      genotype_match: 'AA',
+      effect: 'HFE iron prefer (SHOULD be dropped by interlock).',
+      action_type: 'prefer_form',
+      recommended_form: 'iron',
+      flagged_form: undefined,
+      avoid_list: [],
+      evidence_tier: 1,
+      sensitive: false,
+      review_status: 'published',
+      created_at: '2026-01-01T00:00:00Z',
+    };
+
+    (getPublishedRules as ReturnType<typeof vi.fn>).mockResolvedValue([
+      contraindicateRule(),
+      ironPreferRule,
+    ]);
+    (getQualifiedUserVariants as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { rsid: 'rs1800562', gene: 'HFE', genotype: 'AA', panel_key: 'methylation', status: 'confirmed' },
+    ]);
+    (createAdminClient as ReturnType<typeof vi.fn>).mockReturnValue(buildAdminMock([], []));
+    // No labs and no health context -> the output is degraded.
+    (getLatestUserHealthContext as ReturnType<typeof vi.fn>).mockResolvedValue({
+      allergies: [],
+      medications: [],
+      goals: [],
+      pregnancyStatus: null,
+      age: null,
+    });
+    (computeAndPersistConcordance as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+
+    const output = await synthesizeForUser(userId);
+
+    // The interlock STILL blocks iron regardless of the completeness label.
+    const ironRec = output.recommended_vitamins_minerals.find((r) =>
+      r.form.toLowerCase().includes('iron'),
+    );
+    expect(ironRec).toBeUndefined();
+
+    // And the output is labeled degraded (missing labs + health_context).
+    expect(output.completeness?.degraded).toBe(true);
+    expect(output.completeness?.missing).toContain('labs');
+    expect(output.completeness?.missing).toContain('health_context');
+  });
+});
+
+describe('5.2 Test 28: completeness is CONSERVATIVE on unknown labs (absent concordance -> missing)', () => {
+  it('treats an unknown/absent labs signal as missing (lower confidence), never over-stated', async () => {
+    const userId = 'user-5-2-labs-unknown';
+
+    (getPublishedRules as ReturnType<typeof vi.fn>).mockResolvedValue([preferFormRule()]);
+    (getQualifiedUserVariants as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { rsid: 'rs1801133', gene: 'MTHFR', genotype: 'TT', panel_key: 'methylation', status: 'confirmed' },
+    ]);
+    (createAdminClient as ReturnType<typeof vi.fn>).mockReturnValue(buildAdminMock([], []));
+    (getLatestUserHealthContext as ReturnType<typeof vi.fn>).mockResolvedValue({
+      allergies: [],
+      medications: [],
+      goals: ['energy'],
+      pregnancyStatus: null,
+      age: 35,
+    });
+    // Concordance returns an empty/unknown labs signal. The conservative rule:
+    // unknown -> treated as missing (lower confidence), so labs is listed missing
+    // and confidence is never over-stated to "full".
+    (computeAndPersistConcordance as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+
+    const output = await synthesizeForUser(userId);
+
+    // Recommendation still produced (label never removes anything).
+    const rec = output.recommended_vitamins_minerals.find((r) => r.form === 'L-methylfolate');
+    expect(rec).toBeDefined();
+
+    // Conservative: labs unknown is treated as missing -> degraded, labs listed,
+    // floor is NOT 'full'.
+    expect(output.completeness).toBeDefined();
+    expect(output.completeness?.degraded).toBe(true);
+    expect(output.completeness?.missing).toContain('labs');
+    expect(output.completeness?.confidenceFloor).not.toBe('full');
+  });
+});
+// === PROMPT 208b 5.2 EXTENSION END ===
