@@ -17,6 +17,9 @@ export default defineConfig({
       '@': path.resolve(__dirname, 'src'),
     },
   },
+  // Top-level oxc.jsx automatic runtime is required so JSX components (.tsx) can be
+  // imported and transformed in the node test runner. Vitest's oxc transform reads it
+  // from the top level. It is a no-op for pure-.ts test files (they contain no JSX).
   oxc: {
     jsx: { runtime: 'automatic' },
   },
@@ -25,6 +28,12 @@ export default defineConfig({
     include: [
       'tests/**/*.test.ts',
       'src/**/__tests__/**/*.test.ts',
+      // This single .tsx test is included by exact name intentionally. A broad *.test.tsx
+      // glob would also pick up four agent-panel render tests (AgentStatusBadge /
+      // AgentActivityFeed / MichelangeloPanel / ArnoldPanel) which require
+      // @testing-library/dom, but that dependency is not installed (package.json is
+      // locked). This test uses react-dom/server renderToStaticMarkup so it needs no DOM.
+      // Add further .tsx files here by exact name as more node-safe render tests are written.
       'src/**/__tests__/JourneyAccelerators.bare.test.tsx',
     ],
     exclude: ['node_modules', '.next', 'supabase'],
