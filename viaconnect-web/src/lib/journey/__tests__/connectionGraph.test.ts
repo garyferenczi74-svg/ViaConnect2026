@@ -143,7 +143,7 @@ describe('buildConnectionGraph - real RELATION_GRAPH (default)', () => {
     for (const n of nodes) {
       expect(n.ref.length).toBeGreaterThan(0);
       expect(n.type.length).toBeGreaterThan(0);
-      expect(n.id.length).toBeGreaterThanOrEqual(0);
+      expect(n.id.length).toBeGreaterThan(0);
       expect(n.label.length).toBeGreaterThan(0);
     }
   });
