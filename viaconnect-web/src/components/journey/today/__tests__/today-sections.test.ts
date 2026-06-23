@@ -77,6 +77,22 @@ describe('EnergyStressGraph', () => {
     expect(html).toContain('6p');
     expect(html).toContain('12a');
   });
+
+  it('does NOT render plotted data paths (SVG series)', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(EnergyStressGraph)
+    );
+    // The honest-empty chart frame has only <line> elements (grid/baseline).
+    // A fabricated energy or stress series would render a <path> element inside
+    // the chart SVG with viewBox="0 0 400 120". We check that no such path exists
+    // by ensuring the chart SVG (the one with viewBox) contains no <path> tags.
+    const chartSvgMatch = html.match(/<svg[^>]*viewBox="0 0 400 120"[^>]*>([\s\S]*?)<\/svg>/);
+    expect(chartSvgMatch).toBeTruthy();
+    if (chartSvgMatch) {
+      const chartSvgContent = chartSvgMatch[1];
+      expect(chartSvgContent).not.toContain('<path');
+    }
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -145,5 +161,16 @@ describe('TodayStats', () => {
       React.createElement(TodayStats, { userId: 'user-abc-123' })
     );
     expect(html).toBeTruthy();
+  });
+
+  it('does NOT render fabricated numeric values in flag-off tile aria-labels', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(TodayStats, { userId: null })
+    );
+    // Each StatTile component sets aria-label={`${label}: ${value}`}.
+    // Flag-off tiles (Steps, Active calories, Exercise, Sleep) must not render
+    // aria-label with a digit immediately after the label. A fabricated value
+    // would fail this check (e.g., aria-label="Steps: 8500").
+    expect(html).not.toMatch(/aria-label="(Steps|Active calories|Exercise|Sleep): \d/);
   });
 });
