@@ -87,10 +87,9 @@ function useTodayMacros(userId: string | null): TodayMacros {
     (async () => {
       try {
         const supabase = createClient();
-        const sb = supabase as unknown as { from: (t: string) => any };
         const { startIso, endIso } = todayBounds();
 
-        const { data } = await sb
+        const { data } = await supabase
           .from('nutrition_logs')
           .select('calories, carbs_g, protein_g, total_fat_g')
           .eq('user_id', userId)
