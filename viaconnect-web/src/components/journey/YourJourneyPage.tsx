@@ -19,7 +19,7 @@
  *   3.5 Today                  - honest-empty
  *   3.6 Nutrition, sleep, vitals - three honest-empty placeholders
  *   3.7 Journey accelerators   - honest-empty
- *   3.8 Connection map         - honest-empty
+ *   3.8 Connection map         - interactive node-link diagram (Prompt 208d, Task D-T7)
  *
  * The spine (3.1) and the BOS hero gauge (3.2) read real data. Every other
  * section is a calm, honest empty-state placeholder that a later 208d task
@@ -64,6 +64,7 @@ import { getDisplayName } from '@/lib/user/get-display-name';
 import { JourneyAcceleratorsSection } from '@/components/journey/accelerators/JourneyAcceleratorsSection';
 import { EnergyStressGraph } from '@/components/journey/today/EnergyStressGraph';
 import { TodayStats } from '@/components/journey/today/TodayStats';
+import { ConnectionMap } from '@/components/journey/connections/ConnectionMap';
 
 // ---------------------------------------------------------------------------
 // Tokens
@@ -130,38 +131,6 @@ function SectionShell({
       )}
       {children}
     </section>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// EmptyNote: a single calm honest line used inside placeholder sections.
-//
-// No fake data. An optional Lucide icon (strokeWidth 1.5) and a muted note.
-// ---------------------------------------------------------------------------
-
-function EmptyNote({
-  icon: Icon,
-  children,
-}: {
-  icon?: LucideIcon;
-  children: ReactNode;
-}) {
-  return (
-    <div className="flex items-start gap-2.5 rounded-xl border border-white/[0.06] bg-[rgba(22,36,64,0.40)] px-3.5 py-3">
-      {Icon && (
-        <Icon
-          className="mt-0.5 h-4 w-4 shrink-0"
-          strokeWidth={1.5}
-          style={{ color: 'rgba(255,255,255,0.45)' }}
-        />
-      )}
-      <p
-        className="text-[13px] leading-relaxed text-white/65"
-        style={{ fontFamily: DM_SANS }}
-      >
-        {children}
-      </p>
-    </div>
   );
 }
 
@@ -330,9 +299,7 @@ export function YourJourneyPage({ userId }: { userId: string | null }) {
             title="Connection map"
             icon={Network}
           >
-            <EmptyNote icon={Network}>
-              Your hub connection map appears here.
-            </EmptyNote>
+            <ConnectionMap />
           </SectionShell>
         </div>
       </div>
