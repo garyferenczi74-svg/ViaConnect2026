@@ -111,6 +111,18 @@ async function failOpen<T>(read: () => Promise<T>, fallback: T): Promise<T> {
   }
 }
 
+/**
+ * Coerce an unknown jsonb value (the user_health_context.goals column) into a
+ * clean string[]. Strings are trimmed; non-string entries are stringified;
+ * empties are dropped. Returns [] for anything that is not an array. Pure.
+ */
+function coerceGoalStrings(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item) => (typeof item === 'string' ? item.trim() : String(item ?? '').trim()))
+    .filter((s) => s.length > 0);
+}
+
 // ---------------------------------------------------------------------------
 // useJourneyState
 // ---------------------------------------------------------------------------
@@ -119,10 +131,9 @@ async function failOpen<T>(read: () => Promise<T>, fallback: T): Promise<T> {
  * Best-effort client hook feeding deriveJourneyState.
  *
  * Wired today:   caqComplete, hasProtocol, recentTrackingDays, retestDue,
- *                retestsCompleted, momentum.currentStreak,
- *                momentum.daysToNextMilestone.
- * Defaulted:     adjustPending (no reliable client signal yet -> false),
- *                goals (no clean client source yet -> []).
+ *                retestsCompleted, goals (user_health_context.goals, owner-scoped
+ *                RLS), momentum.currentStreak, momentum.daysToNextMilestone.
+ * Defaulted:     adjustPending (no reliable client signal yet -> false).
  *
  * @param userId The authenticated user id, or null before auth resolves.
  */
@@ -273,9 +284,24 @@ export function useJourneyState(userId: string | null): UseJourneyStateResult {
         return Math.max(0, Math.ceil(ms / DAY_MS));
       }, null as number | null);
 
+      // ---- goals: the user's CAQ goals (owner-scoped RLS, browser client) ----
+      // user_health_context is owner-scoped (SELECT auth.uid() = user_id), so the
+      // browser client can read the latest goals directly. Fail-open to [] so the
+      // goalPhrase honestly degrades to the generic "supporting your wellness"
+      // line rather than throwing or inventing a goal.
+      const goals = await failOpen(async () => {
+        const { data } = await sb
+          .from('user_health_context')
+          .select('goals')
+          .eq('user_id', userId)
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        return coerceGoalStrings((data as { goals?: unknown } | null)?.goals);
+      }, [] as string[]);
+
       // ---- Defaulted signals (documented in the report) ----
       // adjustPending: no reliable client signal yet -> conservative false.
-      // goals: no clean client source yet -> [].
       const nextSignals: JourneySignals = {
         caqComplete,
         hasProtocol,
@@ -283,7 +309,7 @@ export function useJourneyState(userId: string | null): UseJourneyStateResult {
         retestDue,
         adjustPending: false,
         retestsCompleted,
-        goals: [],
+        goals,
       };
 
       const nextMomentum: JourneyMomentum = {

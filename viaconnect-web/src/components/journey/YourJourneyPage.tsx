@@ -57,6 +57,9 @@ import { PillarGaugeRow } from '@/components/journey/coaching/PillarGaugeRow';
 import { HannahInsightPanel } from '@/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/HannahInsightPanel';
 import { useBioOptimizationTrend } from '@/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/hooks/useBioOptimizationTrend';
 import { useHannahInsights } from '@/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/hooks/useHannahInsights';
+import { GoalProgressCard } from '@/components/journey/progress/GoalProgressCard';
+import { BodyCompositionCard } from '@/components/journey/progress/BodyCompositionCard';
+import { EnergyBalanceTriangle } from '@/components/journey/progress/EnergyBalanceTriangle';
 import { getDisplayName } from '@/lib/user/get-display-name';
 
 // ---------------------------------------------------------------------------
@@ -303,9 +306,16 @@ export function YourJourneyPage({ userId }: { userId: string | null }) {
             title="Goal and progress"
             icon={Target}
           >
-            <EmptyNote icon={Target}>
-              Your goal progress and body composition appear here.
-            </EmptyNote>
+            <div className="flex flex-col gap-4">
+              {/* Goal + progress on top, full width. */}
+              <GoalProgressCard userId={userId} />
+              {/* Body composition + energy balance, side by side on desktop,
+                  stacked on mobile. */}
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <BodyCompositionCard userId={userId} />
+                <EnergyBalanceTriangle userId={userId} />
+              </div>
+            </div>
           </SectionShell>
 
           {/* 3.5 TODAY */}
