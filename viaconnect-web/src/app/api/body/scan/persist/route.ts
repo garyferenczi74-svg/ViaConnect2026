@@ -97,6 +97,10 @@ export async function POST(req: Request): Promise<NextResponse> {
       'scan.persist.idempotency_check'
     );
 
+    if (idempotencyResult.error) {
+      safeLog.warn('scan.persist', 'idempotency_check_error', { correlationId, error: idempotencyResult.error.message });
+    }
+
     if (idempotencyResult.data) {
       const entryId = (idempotencyResult.data as { id: string }).id;
       logScanEvent('completed', correlationId, { userId, scanId, entryId, idempotent: true });

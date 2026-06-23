@@ -5,11 +5,14 @@
 export async function persistScan(
   scanId: string
 ): Promise<{ ok: boolean; entryId?: string; reason?: string }> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 5000);
   try {
     const res = await fetch('/api/body/scan/persist', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ scanId }),
+      signal: controller.signal,
     });
 
     if (!res.ok) {
@@ -18,7 +21,12 @@ export async function persistScan(
 
     const data = (await res.json()) as { ok: boolean; entryId?: string; reason?: string };
     return data;
-  } catch {
+  } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      return { ok: false, reason: 'timeout' };
+    }
     return { ok: false, reason: 'network' };
+  } finally {
+    clearTimeout(timer);
   }
 }

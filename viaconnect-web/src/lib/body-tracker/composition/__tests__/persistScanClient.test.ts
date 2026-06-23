@@ -60,4 +60,18 @@ describe('persistScan', () => {
     expect(result.ok).toBe(false);
     expect(result.reason).toBe('network');
   });
+
+  it('(d) fetch abort (AbortError) returns ok:false reason:timeout, never throws', async () => {
+    const abortError = new Error('The operation was aborted');
+    abortError.name = 'AbortError';
+    const fetchMock = vi.fn().mockRejectedValue(abortError);
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { persistScan } = await import('../persistScanClient');
+    // Must not throw
+    const result = await persistScan('scan-timeout');
+
+    expect(result.ok).toBe(false);
+    expect(result.reason).toBe('timeout');
+  });
 });
