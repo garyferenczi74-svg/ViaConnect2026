@@ -40,6 +40,10 @@ import { PageTransition, StaggerChild, MotionCard, ChartReveal } from "@/lib/mot
 import { BioOptimizationTrend } from "./components/BioOptimizationTrend";
 import { useAnalyticsRealtime } from "./components/BioOptimizationTrend/hooks/useAnalyticsRealtime";
 import { getDisplayName } from "@/lib/user/get-display-name";
+// === PROMPT 208c EXTENSION START ===
+import { JourneySelectionProvider } from "@/components/journey/JourneySelectionContext";
+import { JourneySpine } from "@/components/journey/JourneySpine";
+// === PROMPT 208c EXTENSION END ===
 
 const supabase = createClient();
 
@@ -692,7 +696,14 @@ export default function AnalyticsPage() {
       priority
     />
     <div className="relative z-10 min-h-screen text-white">
+    {/* === PROMPT 208c EXTENSION START === */}
+    <JourneySelectionProvider>
     <PageTransition className="p-6 lg:p-8 space-y-6 max-w-[1440px] mx-auto">
+      {/* Journey Spine: persistent phase band, prepended above existing panels */}
+      <StaggerChild>
+        <JourneySpine userId={userId} />
+      </StaggerChild>
+      {/* === PROMPT 208c EXTENSION END === */}
       {/* Header */}
       <StaggerChild>
         <h1 className="text-2xl font-bold text-white flex items-center gap-2">
@@ -947,6 +958,9 @@ export default function AnalyticsPage() {
         </div>
       </StaggerChild>
     </PageTransition>
+    {/* === PROMPT 208c EXTENSION START === */}
+    </JourneySelectionProvider>
+    {/* === PROMPT 208c EXTENSION END === */}
     </div>
     </>
   );
