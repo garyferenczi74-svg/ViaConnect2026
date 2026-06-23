@@ -230,7 +230,7 @@ export function YourJourneyPage({ userId }: { userId: string | null }) {
   return (
     <JourneySelectionProvider>
       <div className="relative z-10 min-h-screen text-white">
-        <div className="mx-auto w-full max-w-7xl space-y-5 px-4 py-6 md:px-6 md:py-8">
+        <div className="w-full space-y-5 px-4 py-6 md:px-6 md:py-8">
           {/* 3.1 PHASE STRIP: the live spine, pinned-in-feel at the top. */}
           <JourneySpine userId={userId} />
 
