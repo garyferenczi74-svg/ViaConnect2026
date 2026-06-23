@@ -69,5 +69,6 @@ describe('muscleValuesFromSnapshot', () => {
     const vals = muscleValuesFromSnapshot(null);
     expect(vals['right_arm_lbs']).toBeNull();
     expect(vals['total_muscle_mass_lbs']).toBeNull();
+    expect(vals['skeletal_muscle_mass_lbs']).toBeNull();
   });
 });

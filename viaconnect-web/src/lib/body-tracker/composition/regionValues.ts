@@ -37,6 +37,7 @@ export function muscleValuesFromSnapshot(
       right_leg_lbs: null,
       left_leg_lbs: null,
       total_muscle_mass_lbs: null,
+      skeletal_muscle_mass_lbs: null,
     };
   }
   return {
@@ -46,5 +47,6 @@ export function muscleValuesFromSnapshot(
     right_leg_lbs: snap.regionMuscleLbs.right_leg,
     left_leg_lbs: snap.regionMuscleLbs.left_leg,
     total_muscle_mass_lbs: snap.totalMuscleMassLbs,
+    skeletal_muscle_mass_lbs: snap.skeletalMuscleMassLbs,
   };
 }
