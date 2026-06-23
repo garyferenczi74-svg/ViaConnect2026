@@ -61,13 +61,15 @@ export async function POST(req: Request): Promise<NextResponse> {
     // Read the photo scan audit row - scoped to this user for security
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const scanReadResult = await withTimeout(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (supabase as any)
-        .from('body_tracker_photo_scans')
-        .select('id, scan_date, full_response')
-        .eq('id', scanId)
-        .eq('user_id', userId)
-        .maybeSingle(),
+      Promise.resolve(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (supabase as any)
+          .from('body_tracker_photo_scans')
+          .select('id, scan_date, full_response')
+          .eq('id', scanId)
+          .eq('user_id', userId)
+          .maybeSingle()
+      ),
       5000,
       'scan.persist.read_scan'
     );
@@ -86,13 +88,15 @@ export async function POST(req: Request): Promise<NextResponse> {
     // Idempotency check - if an entry already exists for this scan, return it
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const idempotencyResult = await withTimeout(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (supabase as any)
-        .from('body_tracker_entries')
-        .select('id')
-        .eq('scan_id', scanId)
-        .eq('user_id', userId)
-        .maybeSingle(),
+      Promise.resolve(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (supabase as any)
+          .from('body_tracker_entries')
+          .select('id')
+          .eq('scan_id', scanId)
+          .eq('user_id', userId)
+          .maybeSingle()
+      ),
       5000,
       'scan.persist.idempotency_check'
     );
@@ -119,12 +123,14 @@ export async function POST(req: Request): Promise<NextResponse> {
     // Insert the canonical body_tracker_entries row
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const entryInsertResult = await withTimeout(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (supabase as any)
-        .from('body_tracker_entries')
-        .insert(entry)
-        .select('id')
-        .single(),
+      Promise.resolve(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (supabase as any)
+          .from('body_tracker_entries')
+          .insert(entry)
+          .select('id')
+          .single()
+      ),
       5000,
       'scan.persist.insert_entry'
     );
@@ -136,13 +142,15 @@ export async function POST(req: Request): Promise<NextResponse> {
         // Race - another request already inserted; read back the existing entry
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const raceRead = await withTimeout(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (supabase as any)
-            .from('body_tracker_entries')
-            .select('id')
-            .eq('scan_id', scanId)
-            .eq('user_id', userId)
-            .maybeSingle(),
+          Promise.resolve(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (supabase as any)
+              .from('body_tracker_entries')
+              .select('id')
+              .eq('scan_id', scanId)
+              .eq('user_id', userId)
+              .maybeSingle()
+          ),
           5000,
           'scan.persist.race_read'
         );
@@ -159,10 +167,12 @@ export async function POST(req: Request): Promise<NextResponse> {
     // Insert the segmental fat detail row
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const segInsertResult = await withTimeout(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (supabase as any)
-        .from('body_tracker_segmental_fat')
-        .insert({ ...segFat, entry_id: entryId }),
+      Promise.resolve(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (supabase as any)
+          .from('body_tracker_segmental_fat')
+          .insert({ ...segFat, entry_id: entryId })
+      ),
       5000,
       'scan.persist.insert_segfat'
     );
