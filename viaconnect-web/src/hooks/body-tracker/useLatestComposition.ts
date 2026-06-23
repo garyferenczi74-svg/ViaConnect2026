@@ -188,35 +188,47 @@ export function useLatestComposition(userId: string | null): UseLatestCompositio
           }
         }
 
-        // d. Profile height + latest weight for BMI
+        // d. Clinical assessment (height + fallback weight) + latest tracker weight for BMI.
+        // height_cm lives on clinical_assessments, NOT profiles (profiles.height_cm does not exist).
         // UNKNOWN (null) when either is absent or non-positive.
         let bmiValue: number | null = null;
 
-        let heightCm: number | null = null;
+        type ClinicalRowRaw = { height_cm: number | null; weight_kg: number | null };
+        let clinicalRow: ClinicalRowRaw | null = null;
         try {
           const result = await withTimeout(
             (supabase as unknown as {
               from: (t: string) => {
                 select: (cols: string) => {
                   eq: (col: string, val: string) => {
-                    maybeSingle: () => Promise<{ data: { height_cm: number | null } | null; error: { message: string } | null }>;
+                    order: (col: string, opts: { ascending: boolean }) => {
+                      limit: (n: number) => {
+                        maybeSingle: () => Promise<{ data: ClinicalRowRaw | null; error: { message: string } | null }>;
+                      };
+                    };
                   };
                 };
               };
             })
-              .from('profiles')
-              .select('height_cm')
-              .eq('id', userId)
+              .from('clinical_assessments')
+              .select('height_cm, weight_kg')
+              .eq('user_id', userId)
+              .order('created_at', { ascending: false })
+              .limit(1)
               .maybeSingle(),
             TIMEOUT_MS,
-            `${SCOPE}.profile`
+            'composition.latest.height'
           );
-          if (!result.error && result.data) {
-            heightCm = result.data.height_cm;
+          if (result.error) {
+            safeLog.warn(SCOPE, 'clinical_assessments query error (fail-open)', { message: result.error.message });
+          } else {
+            clinicalRow = result.data;
           }
         } catch (e) {
-          safeLog.warn(SCOPE, 'profile fetch failed (fail-open)', { error: e });
+          safeLog.warn(SCOPE, 'clinical_assessments fetch failed (fail-open)', { error: e });
         }
+
+        const heightCm: number | null = clinicalRow?.height_cm ?? null;
 
         let weightLbs: number | null = null;
         try {
@@ -250,13 +262,13 @@ export function useLatestComposition(userId: string | null): UseLatestCompositio
           safeLog.warn(SCOPE, 'weight fetch failed (fail-open)', { error: e });
         }
 
-        if (
-          heightCm !== null &&
-          heightCm > 0 &&
-          weightLbs !== null &&
-          weightLbs > 0
-        ) {
-          const weightKg = weightLbs * 0.45359237;
+        // Prefer body_tracker_weight (lbs converted); fall back to clinical assessment weight_kg.
+        const weightKg: number | null =
+          weightLbs !== null
+            ? weightLbs * 0.45359237
+            : (clinicalRow?.weight_kg ?? null);
+
+        if (heightCm !== null && heightCm > 0 && weightKg !== null && weightKg > 0) {
           const heightM = heightCm / 100;
           bmiValue = weightKg / (heightM * heightM);
         }
