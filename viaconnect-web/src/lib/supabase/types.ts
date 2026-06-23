@@ -3437,6 +3437,7 @@ export type Database = {
           manual_source_id: string | null
           manual_source_tier: string | null
           notes: string | null
+          scan_id: string | null
           scan_photo_url: string | null
           source: string
           time_of_day: string | null
@@ -3453,6 +3454,7 @@ export type Database = {
           manual_source_id?: string | null
           manual_source_tier?: string | null
           notes?: string | null
+          scan_id?: string | null
           scan_photo_url?: string | null
           source?: string
           time_of_day?: string | null
@@ -3469,6 +3471,7 @@ export type Database = {
           manual_source_id?: string | null
           manual_source_tier?: string | null
           notes?: string | null
+          scan_id?: string | null
           scan_photo_url?: string | null
           source?: string
           time_of_day?: string | null
