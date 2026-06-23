@@ -17,9 +17,16 @@ export default defineConfig({
       '@': path.resolve(__dirname, 'src'),
     },
   },
+  oxc: {
+    jsx: { runtime: 'automatic' },
+  },
   test: {
     environment: 'node',
-    include: ['tests/**/*.test.ts', 'src/**/__tests__/**/*.test.ts'],
+    include: [
+      'tests/**/*.test.ts',
+      'src/**/__tests__/**/*.test.ts',
+      'src/**/__tests__/JourneyAccelerators.bare.test.tsx',
+    ],
     exclude: ['node_modules', '.next', 'supabase'],
     globals: true,
     coverage: {

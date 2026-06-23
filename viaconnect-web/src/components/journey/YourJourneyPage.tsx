@@ -62,6 +62,7 @@ import { NutritionDonut } from '@/components/journey/trio/NutritionDonut';
 import { SleepDonut } from '@/components/journey/trio/SleepDonut';
 import { VitalTrends } from '@/components/journey/trio/VitalTrends';
 import { getDisplayName } from '@/lib/user/get-display-name';
+import { JourneyAcceleratorsSection } from '@/components/journey/accelerators/JourneyAcceleratorsSection';
 
 // ---------------------------------------------------------------------------
 // Tokens
@@ -324,9 +325,7 @@ export function YourJourneyPage({ userId }: { userId: string | null }) {
             title="Journey accelerators"
             icon={Sparkles}
           >
-            <EmptyNote icon={Sparkles}>
-              Your accelerators appear here.
-            </EmptyNote>
+            <JourneyAcceleratorsSection userId={userId} />
           </SectionShell>
 
           {/* 3.8 CONNECTION MAP */}
