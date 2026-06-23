@@ -41,8 +41,6 @@ import {
   Target,
   CalendarDays,
   Salad,
-  Moon,
-  Stethoscope,
   Sparkles,
   Network,
   type LucideIcon,
@@ -60,6 +58,9 @@ import { useHannahInsights } from '@/app/(app)/(consumer)/analytics/components/B
 import { GoalProgressCard } from '@/components/journey/progress/GoalProgressCard';
 import { BodyCompositionCard } from '@/components/journey/progress/BodyCompositionCard';
 import { EnergyBalanceTriangle } from '@/components/journey/progress/EnergyBalanceTriangle';
+import { NutritionDonut } from '@/components/journey/trio/NutritionDonut';
+import { SleepDonut } from '@/components/journey/trio/SleepDonut';
+import { VitalTrends } from '@/components/journey/trio/VitalTrends';
 import { getDisplayName } from '@/lib/user/get-display-name';
 
 // ---------------------------------------------------------------------------
@@ -253,32 +254,8 @@ function CoachingHeader({ userId }: { userId: string | null }) {
 // ---------------------------------------------------------------------------
 
 export function YourJourneyPage({ userId }: { userId: string | null }) {
-  // The skeleton does not animate, so it imposes no motion of its own; the
-  // reused spine and PlasmaGauge each honor reduced motion internally. Later
-  // tasks that add motion inside a section should gate it on useReducedMotion.
-  // Stable nutrition/sleep/vitals triad definition (3.6).
-  const triad = useMemo(
-    () =>
-      [
-        {
-          title: 'Nutrition',
-          icon: Salad,
-          note: 'Your nutrition trends appear here as you log meals.',
-        },
-        {
-          title: 'Sleep',
-          icon: Moon,
-          note: 'Your sleep trends appear here when a wearable is connected.',
-        },
-        {
-          title: 'Vital trends',
-          icon: Stethoscope,
-          note: 'Your vital trends appear here when readings are available.',
-        },
-      ] as const,
-    [],
-  );
-
+  // The reused spine and PlasmaGauge each honor reduced motion internally, and
+  // each section component gates any motion of its own on useReducedMotion.
   return (
     <JourneySelectionProvider>
       <div className="relative z-10 min-h-screen text-white">
@@ -326,39 +303,18 @@ export function YourJourneyPage({ userId }: { userId: string | null }) {
             </EmptyNote>
           </SectionShell>
 
-          {/* 3.6 NUTRITION, SLEEP, VITALS */}
+          {/* 3.6 NUTRITION, SLEEP, VITALS: a three-column trio. Nutrition (live
+              macros donut) and the Hydration vital read real data; the sleep
+              donut and the four flag-off vitals are honest-empty. */}
           <SectionShell
             eyebrow="Your inputs"
             title="Nutrition, sleep, and vitals"
             icon={Salad}
           >
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-              {triad.map((t) => (
-                <div
-                  key={t.title}
-                  className="flex flex-col gap-2 rounded-xl border border-white/[0.06] bg-[rgba(22,36,64,0.40)] p-3.5"
-                >
-                  <div className="flex items-center gap-2">
-                    <t.icon
-                      className="h-4 w-4 shrink-0"
-                      strokeWidth={1.5}
-                      style={{ color: TEAL }}
-                    />
-                    <span
-                      className="text-[13px] font-semibold text-white/85"
-                      style={{ fontFamily: DM_SANS }}
-                    >
-                      {t.title}
-                    </span>
-                  </div>
-                  <p
-                    className="text-[12px] leading-relaxed text-white/55"
-                    style={{ fontFamily: DM_SANS }}
-                  >
-                    {t.note}
-                  </p>
-                </div>
-              ))}
+            <div className="grid grid-cols-1 items-stretch gap-3 md:grid-cols-3">
+              <NutritionDonut userId={userId} />
+              <SleepDonut userId={userId} />
+              <VitalTrends userId={userId} />
             </div>
           </SectionShell>
 
