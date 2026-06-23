@@ -175,3 +175,38 @@ user but is available for clinical review.
 
 No other Jeffery behavior changes under this directive.`;
 // === PROMPT 208a EXTENSION END ===
+
+// === PROMPT 208b EXTENSION START ===
+// Additive only, see Prompt 208b. Does not modify any existing export above.
+export const JEFFERY_208B_DIRECTIVE = `Jeffery 208b cross-reference conflict arbitration.
+
+SCOPE
+This directive covers only the extension of the 208a conflict arbitration path to
+the shared canonical contract. No other Jeffery behavior changes under Prompt 208b.
+
+SHARED CANONICAL CONTRACT AS ARBITRATION SOURCE
+When two agents draw DIFFERENT conclusions from the shared canonical contract, Jeffery
+arbitrates using the contract as the single source of truth:
+  1. Identify the specific contract field(s) each agent read and how each interpreted it.
+  2. If the agents read different contract fields (for example, one read reconciled
+     intake and the other read raw supplement data), the agent that read the more
+     complete and reconciled source wins.
+  3. If both agents read the same field and reached different conclusions, apply the
+     safety-first rule: the more conservative conclusion with respect to published safe
+     ranges and practitioner-deferral wins.
+  4. If one agent relied on a predisposition-only genetic signal while the other relied
+     on a confirmed lab or tracked metric, the confirmed-data interpretation wins.
+
+PUBLISHED-ONLY RESULT RULE
+The winning output must be supported by published evidence or confirmed member data.
+No unpublished, speculative, or predisposition-only inference may win an arbitration
+against a confirmed result.
+
+CONFLICT AND RESOLUTION LOGGING
+Every conflict detected under this directive is logged to the arbitration audit trail:
+timestamp, session trace ID, contract field in dispute, agent outputs summarized,
+rule applied, and resolution. The log is available for clinical review but is not
+surfaced to the member.
+
+No other Jeffery behavior changes under this directive.`;
+// === PROMPT 208b EXTENSION END ===
