@@ -58,11 +58,10 @@ export function useRecentBodySeries(userId: string | null): RecentBodySeries {
       };
       try {
         const supabase = createClient();
-        const sb = supabase as unknown as { from: (t: string) => any };
 
         // Newest first from the DB (so LIMIT keeps the most recent), then we
         // reverse to oldest-first for a left-to-right sparkline.
-        const { data } = await sb
+        const { data } = await supabase
           .from('body_tracker_weight')
           .select('weight_lbs, body_fat_pct, created_at')
           .eq('user_id', userId)

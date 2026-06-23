@@ -60,10 +60,9 @@ function useIntakeEstimate(userId: string | null): number | null {
     (async () => {
       try {
         const supabase = createClient();
-        const sb = supabase as unknown as { from: (t: string) => any };
         const sinceIso = new Date(Date.now() - RECENT_WINDOW_DAYS * DAY_MS).toISOString();
 
-        const { data } = await sb
+        const { data } = await supabase
           .from('nutrition_logs')
           .select('calories, logged_at')
           .eq('user_id', userId)
