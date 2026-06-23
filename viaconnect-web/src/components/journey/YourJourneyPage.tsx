@@ -34,7 +34,7 @@
  * reduced-motion safe. PlasmaGauge is reused UNCHANGED.
  */
 
-import { useMemo, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   Activity,
   HeartPulse,
@@ -45,15 +45,19 @@ import {
   Stethoscope,
   Sparkles,
   Network,
-  Gauge,
   type LucideIcon,
 } from 'lucide-react';
 import {
   JourneySelectionProvider,
 } from '@/components/journey/JourneySelectionContext';
 import { JourneySpine } from '@/components/journey/JourneySpine';
-import { PlasmaGauge } from '@/components/gauges/PlasmaGauge';
+import { ProfileCard } from '@/components/journey/coaching/ProfileCard';
+import { NarrativeRead } from '@/components/journey/coaching/NarrativeRead';
+import { PillarGaugeRow } from '@/components/journey/coaching/PillarGaugeRow';
+import { HannahInsightPanel } from '@/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/HannahInsightPanel';
 import { useBioOptimizationTrend } from '@/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/hooks/useBioOptimizationTrend';
+import { useHannahInsights } from '@/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/hooks/useHannahInsights';
+import { getDisplayName } from '@/lib/user/get-display-name';
 
 // ---------------------------------------------------------------------------
 // Tokens
@@ -156,134 +160,85 @@ function EmptyNote({
 }
 
 // ---------------------------------------------------------------------------
-// PillarSlot: a small honest-empty placeholder for a pillar gauge.
-//
-// Renders the pillar label and a quiet "Computing" note. No number, no fake
-// gauge. Task D-T2 replaces these with the real pillar gauges.
-// ---------------------------------------------------------------------------
-
-function PillarSlot({ label }: { label: string }) {
-  return (
-    <div className="flex flex-col items-center gap-1.5 rounded-xl border border-white/[0.06] bg-[rgba(22,36,64,0.45)] px-2 py-3 text-center">
-      <div
-        className="flex h-12 w-12 items-center justify-center rounded-full border border-white/[0.08]"
-        style={{ background: 'rgba(11,17,32,0.55)' }}
-        aria-hidden="true"
-      >
-        <Gauge
-          className="h-4 w-4"
-          strokeWidth={1.5}
-          style={{ color: 'rgba(255,255,255,0.35)' }}
-        />
-      </div>
-      <span
-        className="text-[11px] font-semibold text-white/75"
-        style={{ fontFamily: DM_SANS }}
-      >
-        {label}
-      </span>
-      <span
-        className="text-[9px] uppercase tracking-wider text-white/35"
-        style={{ fontFamily: DM_MONO }}
-      >
-        Computing
-      </span>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
 // CoachingHeader (3.2)
 //
-// LEFT: an honest profile + Hannah-read placeholder.
-// RIGHT: the real Bio Optimization hero PlasmaGauge (value from the existing
-//        useBioOptimizationTrend current score) plus four honest-empty pillar
-//        slots. When the score is null/0 the gauge sits at 0 with an honest
-//        "Score is computing" caption and never a fake number.
+// A two-column header. LEFT stacks the honest ProfileCard over the existing
+// Hannah read (HannahInsightPanel, reused UNCHANGED). RIGHT stacks the
+// NarrativeRead (state word derived from the BOS score) over the PillarGaugeRow
+// (the BOS hero PlasmaGauge plus four pillar gauges, reused UNCHANGED).
+//
+// Real data where it exists: the BOS score and the pillar averages come from
+// useBioOptimizationTrend; the Hannah read comes from useHannahInsights, wired
+// the same way the analytics trend panel wires it (bioScores + current +
+// weeksActive). Honest fallbacks elsewhere; this component never throws.
 // ---------------------------------------------------------------------------
 
-const PILLARS = ['Recovery', 'Sleep', 'Nutrition', 'Movement'] as const;
-
 function CoachingHeader({ userId }: { userId: string | null }) {
-  // Fail-open: the hook is gated on userId and returns current = 0 when there
-  // is no score. "7D" is the same default range the trend panel reads.
-  const { data, isLoading } = useBioOptimizationTrend(userId, '7D');
-  const bos = data?.current ?? null;
-  const gaugeValue = typeof bos === 'number' && isFinite(bos) ? bos : 0;
-  const hasScore = typeof bos === 'number' && isFinite(bos) && bos > 0;
+  // Fail-open: gated on userId; returns current = 0 / zeroed averages when
+  // there is no data. "7D" matches the analytics trend panel default. The
+  // same queryKey is shared with PillarGaugeRow, so react-query dedupes it.
+  const { data } = useBioOptimizationTrend(userId, '7D');
+  const bioPoints = data?.bioScores ?? [];
+  const current = data?.current ?? 0;
+  // Honest score for the narrative: null when there is genuinely no score yet
+  // (so NarrativeRead reads "getting started" rather than a fabricated tier).
+  const narrativeScore =
+    typeof current === 'number' && isFinite(current) && current > 0
+      ? current
+      : null;
+
+  // First name, resolved the same way the spine and ProfileCard do (fail-open).
+  const [displayName, setDisplayName] = useState<string>('');
+  useEffect(() => {
+    let active = true;
+    getDisplayName()
+      .then((n) => {
+        if (active) setDisplayName(n);
+      })
+      .catch(() => {
+        /* keep empty default; the read falls back to "there" */
+      });
+    return () => {
+      active = false;
+    };
+  }, [userId]);
+
+  // weeksActive: spans of the real bio score history, mirroring the trend panel.
+  const weeksActive = useMemo(() => {
+    if (bioPoints.length === 0) return 0;
+    const first = new Date(bioPoints[0].date).getTime();
+    const last = new Date(bioPoints[bioPoints.length - 1].date).getTime();
+    if (!isFinite(first) || !isFinite(last)) return 0;
+    return Math.max(1, Math.round((last - first) / (7 * 24 * 60 * 60 * 1000)));
+  }, [bioPoints]);
+
+  // The existing Hannah read engine, wired exactly as the analytics panel does.
+  const insight = useHannahInsights({
+    userId,
+    displayName,
+    range: '7D',
+    points: bioPoints,
+    current,
+    weeksActive,
+  });
 
   return (
     <SectionShell eyebrow="Your Coaching" title="Coaching summary" icon={Sparkles}>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {/* LEFT: profile + Hannah read placeholder */}
-        <div className="flex flex-col gap-3 rounded-xl border border-white/[0.06] bg-[rgba(22,36,64,0.40)] p-4">
-          <div className="flex items-center gap-2">
-            <span
-              className="rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide"
-              style={{
-                fontFamily: DM_MONO,
-                color: TEAL,
-                background: 'rgba(45,165,160,0.12)',
-                border: '1px solid rgba(45,165,160,0.24)',
-              }}
-            >
-              Hannah
-            </span>
-            <span
-              className="text-[11px] uppercase tracking-wider text-white/40"
-              style={{ fontFamily: DM_MONO }}
-            >
-              Your coach
-            </span>
-          </div>
-          <p
-            className="text-[14px] font-semibold leading-relaxed text-white/85"
-            style={{ fontFamily: DM_SANS }}
-          >
-            Your coaching summary is coming together.
-          </p>
-          <p
-            className="text-[12.5px] leading-relaxed text-white/55"
-            style={{ fontFamily: DM_SANS }}
-          >
-            As you log and connect your data, a personalized read of where you are
-            and what to focus on next will appear here.
-          </p>
+        {/* LEFT: profile card stacked over the existing Hannah read. */}
+        <div className="flex flex-col gap-4">
+          <ProfileCard userId={userId} />
+          <HannahInsightPanel insight={insight} />
         </div>
 
-        {/* RIGHT: BOS hero gauge + four pillar slots */}
-        <div className="flex flex-col items-center gap-4 rounded-xl border border-white/[0.06] bg-[rgba(22,36,64,0.40)] p-4">
-          <div className="flex flex-col items-center">
-            <PlasmaGauge
-              value={gaugeValue}
-              metric="bioscore"
-              variant="hero"
-              size={188}
-              max={100}
-            />
-            <span
-              className="mt-1 text-[11px] font-semibold uppercase tracking-wider text-white/70"
-              style={{ fontFamily: DM_MONO }}
-            >
-              Bio Optimization
-            </span>
-            <span
-              className="mt-0.5 text-[11px] text-white/45"
-              style={{ fontFamily: DM_SANS }}
-            >
-              {hasScore
-                ? 'Your current Bio Optimization Score'
-                : isLoading
-                  ? 'Reading your score'
-                  : 'Score is computing'}
-            </span>
-          </div>
-
-          <div className="grid w-full grid-cols-2 gap-2.5 sm:grid-cols-4">
-            {PILLARS.map((p) => (
-              <PillarSlot key={p} label={p} />
-            ))}
-          </div>
+        {/* RIGHT: narrative read stacked over the BOS hero + pillar gauges. */}
+        <div className="flex flex-col gap-4">
+          <NarrativeRead
+            userId={userId}
+            displayName={displayName}
+            score={narrativeScore}
+          />
+          <PillarGaugeRow userId={userId} />
         </div>
       </div>
     </SectionShell>
