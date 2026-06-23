@@ -4,7 +4,7 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { BackToHubLink } from '@/components/body-tracker/hub/BackToHubLink';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Plus, Camera } from 'lucide-react';
+import { Plus, Camera, Check, RotateCcw } from 'lucide-react';
 import { SegmentalHeatMap } from '@/components/body-tracker/SegmentalHeatMap';
 import { HeatmapLegend } from '@/components/body-tracker/HeatmapLegend';
 import { HoverSystem } from '@/components/body-tracker/HoverSystem';
@@ -20,7 +20,6 @@ import type {
 import { CHANGE_THRESHOLD } from '@/lib/body-tracker/heatmap-colors';
 import {
   getOvalColorFromChange,
-  getOvalColorFromStatus,
   type OvalColor,
 } from '@/lib/body-tracker/heatmap-colors';
 import {
@@ -33,7 +32,7 @@ import { MeasurementsPanel } from '@/components/body-tracker/measurements/Measur
 import { BodyCompositionForm } from '@/components/body-tracker/BodyCompositionForm';
 import { BodyScanUploader, type BodyScanResult } from '@/components/body-tracker/BodyScanUploader';
 import { BodyScanResults } from '@/components/body-tracker/BodyScanResults';
-import { FloatingMetricCard, type MetricStatus } from '@/components/body-tracker/FloatingMetricCard';
+import { FloatingMetricCard } from '@/components/body-tracker/FloatingMetricCard';
 import {
   InlineEntryPanel,
   EntryHistoryTimeline,
@@ -44,36 +43,13 @@ import { useCircumferenceData } from '@/hooks/body-tracker/useCircumferenceData'
 import { useUserBiologicalSex } from '@/hooks/body-tracker/useUserBiologicalSex';
 import { useFatChangeData } from '@/hooks/body-tracker/useFatChangeData';
 import { useMuscleChangeData } from '@/hooks/body-tracker/useMuscleChangeData';
+import { useLatestComposition } from '@/hooks/body-tracker/useLatestComposition';
+import { buildMetricCards } from '@/lib/body-tracker/composition/metricCards';
+import { fatValuesFromSnapshot, muscleValuesFromSnapshot } from '@/lib/body-tracker/composition/regionValues';
+import { resolveSurfaceState } from '@/lib/body-tracker/composition/surfaceState';
+import { persistScan } from '@/lib/body-tracker/composition/persistScanClient';
 import type { MeasurementUnit } from '@/lib/body-tracker/circumference';
 import { getSegmentStatus, type SegmentStatus } from '@/lib/body-tracker/calculations';
-
-const SAMPLE_FAT = {
-  right_arm_pct: 18.2, left_arm_pct: 17.9, trunk_pct: 26.6,
-  right_leg_pct: 19.4, left_leg_pct: 19.7, total_body_fat_pct: 21.3,
-};
-const SAMPLE_FEMALE_MEASUREMENTS = { waist_in: 27.5, hips_in: 36.0 };
-const SAMPLE_MUSCLE = {
-  right_arm_lbs: 6.2, left_arm_lbs: 5.9, trunk_lbs: 54.1,
-  right_leg_lbs: 18.9, left_leg_lbs: 18.9,
-  total_muscle_mass_lbs: 63.8, skeletal_muscle_mass_lbs: 28.3,
-};
-
-interface MetricCardSpec {
-  label: string;
-  value: string;
-  status: MetricStatus;
-  trend?: 'up' | 'down' | 'stable';
-}
-
-// Body Fat summary cards: render in a single horizontal row below the
-// silhouette (Prompt #85e). Display order: Total Body Fat, BMI, Visceral
-// Fat, Body Water.
-const FAT_CARDS: MetricCardSpec[] = [
-  { label: 'Total Body Fat', value: '21.3%', status: 'Standard', trend: 'down' },
-  { label: 'BMI',            value: '24.2',  status: 'Standard' },
-  { label: 'Visceral Fat',   value: '8',     status: 'Standard' },
-  { label: 'Body Water',     value: '55.1%', status: 'Good' },
-];
 
 // Prompt #85k: 12 finer-grained body parts that flank the silhouette.
 // Each card inherits its value from its parent segment (trunk / arm / leg)
@@ -109,24 +85,33 @@ interface BodyPartCard {
   key: string;
   label: string;
   side: 'left' | 'right';
-  value: number;
+  // null === UNKNOWN. A photo scan and a first manual entry leave per-region
+  // values null; a null is rendered as a neutral "no data" callout, never 0.
+  value: number | null;
   unit: string;
-  status: SegmentStatus;
+  // null status === UNKNOWN (neutral). getSegmentStatus is only ever called
+  // with a real number, never with null.
+  status: SegmentStatus | null;
 }
 
+// Prompt #209: per-region values come from the canonical CompositionSnapshot
+// (fatValuesFromSnapshot / muscleValuesFromSnapshot) and may be null. A null
+// value yields a null status (neutral) and getSegmentStatus is skipped so an
+// UNKNOWN region is never scored or coerced to 0.
 function buildBodyPartCards(
   mode: 'fat' | 'muscle',
-  fat: typeof SAMPLE_FAT,
-  muscle: typeof SAMPLE_MUSCLE,
+  fat: Record<string, number | null>,
+  muscle: Record<string, number | null>,
   gender: 'male' | 'female',
 ): BodyPartCard[] {
   const unit = mode === 'fat' ? '%' : 'lbs';
   return BODY_PARTS.map((p) => {
-    const value =
+    const raw =
       mode === 'fat'
-        ? (fat as Record<string, number>)[`${p.parent}_pct`] ?? 0
-        : (muscle as Record<string, number>)[`${p.parent}_lbs`] ?? 0;
-    const status = getSegmentStatus(value, p.segType, mode, gender);
+        ? fat[`${p.parent}_pct`] ?? null
+        : muscle[`${p.parent}_lbs`] ?? null;
+    const value = typeof raw === 'number' ? raw : null;
+    const status = value === null ? null : getSegmentStatus(value, p.segType, mode, gender);
     return { key: p.key, label: p.label, side: p.side, value, unit, status };
   });
 }
@@ -149,17 +134,27 @@ function changeToTrend(change: number | null | undefined): Trend {
   return change > 0 ? 'up' : 'down';
 }
 
+// Prompt #209: a callout with a null (UNKNOWN) value is omitted from the
+// HoverSystem region set entirely. The avatar hit target still renders (its
+// aria label degrades to "<region>. Press Enter to pin." with no number) and
+// the oval color still comes from the change hook, but no card asserts a
+// fabricated "0%" or "0 lbs". The metric.value contract stays a real number.
 function buildBodyRegionData(
   cards: BodyPartCard[],
   changeData: Record<string, { change: number | null }>,
 ): BodyRegionData[] {
-  return cards.map((c) => ({
-    id: c.key as BodyRegionId,
-    label: c.label,
-    metric: { value: c.value, unit: c.unit as '%' | 'lbs' },
-    classification: mapStatusToClassification(c.status),
-    trend: changeToTrend(changeData[c.key]?.change ?? null),
-  }));
+  const out: BodyRegionData[] = [];
+  for (const c of cards) {
+    if (c.value === null || c.status === null) continue;
+    out.push({
+      id: c.key as BodyRegionId,
+      label: c.label,
+      metric: { value: c.value, unit: c.unit as '%' | 'lbs' },
+      classification: mapStatusToClassification(c.status),
+      trend: changeToTrend(changeData[c.key]?.change ?? null),
+    });
+  }
+  return out;
 }
 
 const UNIT_STORAGE_KEY = 'vc.body-tracker.measurement-unit';
@@ -172,47 +167,21 @@ function readStoredUnit(): MeasurementUnit {
   } catch { return 'in'; }
 }
 
-function FemaleSilhouette({ waistIn, hipsIn }: { waistIn: number; hipsIn: number }) {
-  return (
-    <div className="flex flex-col items-center gap-4">
-      <svg viewBox="0 0 400 660" className="h-auto w-full max-w-[320px]">
-        <circle cx="200" cy="80" r="38" fill="rgba(45,165,160,0.08)" stroke="rgba(45,165,160,0.25)" strokeWidth="1.5" />
-        <rect x="190" y="118" width="20" height="24" rx="5" fill="rgba(45,165,160,0.08)" stroke="rgba(45,165,160,0.15)" strokeWidth="1" />
-        <path d="M160 142 L240 142 C248 160 252 200 230 250 C220 275 222 290 225 300 L175 300 C178 290 180 275 170 250 C148 200 152 160 160 142 Z" fill="rgba(45,165,160,0.10)" stroke="rgba(45,165,160,0.45)" strokeWidth="1.5" />
-        <ellipse cx="200" cy="300" rx="28" ry="8" fill="none" stroke="#2DA5A0" strokeWidth="2" strokeDasharray="4 3" />
-        <path d="M175 300 L225 300 C250 325 260 360 258 400 L142 400 C140 360 150 325 175 300 Z" fill="rgba(183,94,24,0.10)" stroke="rgba(183,94,24,0.45)" strokeWidth="1.5" />
-        <ellipse cx="200" cy="395" rx="58" ry="10" fill="none" stroke="#B75E18" strokeWidth="2" strokeDasharray="4 3" />
-        <path d="M148 400 L198 400 L192 580 L185 630 L175 630 L160 520 Z" fill="rgba(45,165,160,0.06)" stroke="rgba(45,165,160,0.30)" strokeWidth="1.2" />
-        <path d="M202 400 L252 400 L240 520 L225 630 L215 630 L208 580 Z" fill="rgba(45,165,160,0.06)" stroke="rgba(45,165,160,0.30)" strokeWidth="1.2" />
-        <path d="M160 145 L140 180 L128 260 L132 360 L140 385 L150 385 L145 340 L152 255 L168 200 Z" fill="rgba(45,165,160,0.06)" stroke="rgba(45,165,160,0.30)" strokeWidth="1.2" />
-        <path d="M240 145 L260 180 L272 260 L268 360 L260 385 L250 385 L255 340 L248 255 L232 200 Z" fill="rgba(45,165,160,0.06)" stroke="rgba(45,165,160,0.30)" strokeWidth="1.2" />
-        <line x1="228" y1="300" x2="300" y2="300" stroke="#2DA5A0" strokeWidth="1" />
-        <text x="305" y="304" fill="#2DA5A0" fontSize="14" fontWeight="600">Waist</text>
-        <text x="305" y="320" fill="white" fontSize="13">{waistIn.toFixed(1)}&quot;</text>
-        <line x1="258" y1="395" x2="320" y2="395" stroke="#B75E18" strokeWidth="1" />
-        <text x="325" y="399" fill="#B75E18" fontSize="14" fontWeight="600">Hips</text>
-        <text x="325" y="415" fill="white" fontSize="13">{hipsIn.toFixed(1)}&quot;</text>
-      </svg>
-      <div className="grid grid-cols-2 gap-3 w-full max-w-[320px]">
-        <div className="rounded-lg border border-[#2DA5A0]/30 bg-[#2DA5A0]/10 px-3 py-2">
-          <p className="text-[10px] text-[#2DA5A0] uppercase tracking-wider">Waist</p>
-          <p className="text-lg font-bold text-white">{waistIn.toFixed(1)}&quot;</p>
-        </div>
-        <div className="rounded-lg border border-[#B75E18]/30 bg-[#B75E18]/10 px-3 py-2">
-          <p className="text-[10px] text-[#B75E18] uppercase tracking-wider">Hips</p>
-          <p className="text-lg font-bold text-white">{hipsIn.toFixed(1)}&quot;</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function formatDate(iso: string | null): string {
   if (!iso) return '';
   try {
     return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   } catch { return iso; }
 }
+
+// Prompt #209: scan persistence status drives the inline success / retry
+// affordance below the scan results. Idle hides it; the avatar and cards
+// never block on this, they read the canonical path.
+type ScanPersistState =
+  | { phase: 'idle' }
+  | { phase: 'saving' }
+  | { phase: 'saved' }
+  | { phase: 'error'; scanId: string; reason?: string };
 
 function CompositionPageInner() {
   const params = useSearchParams();
@@ -226,6 +195,7 @@ function CompositionPageInner() {
   const [open, setOpen] = useState(false);
   const [scanOpen, setScanOpen] = useState(false);
   const [scanResult, setScanResult] = useState<BodyScanResult | null>(null);
+  const [scanPersist, setScanPersist] = useState<ScanPersistState>({ phase: 'idle' });
   const [prefillBodyFat, setPrefillBodyFat] = useState<number | null>(null);
   const [unit, setUnit] = useState<MeasurementUnit>(() => readStoredUnit());
   const [refreshKey, setRefreshKey] = useState(0);
@@ -235,6 +205,17 @@ function CompositionPageInner() {
 
   const { id: userId } = useCurrentUser();
   const { sex: caqSex, source: caqSource, setOverride: setGenderOverride } = useUserBiologicalSex(userId ?? null);
+
+  // Prompt #209: canonical composition read. Drives the four metric cards,
+  // the per-region callout values, and the four-state resolution. UNKNOWN
+  // (null) measurements are preserved as null, never coerced to 0.
+  const {
+    snapshot,
+    bmi,
+    loading: compLoading,
+    error: compError,
+    refresh: refreshComp,
+  } = useLatestComposition(userId ?? null);
 
   async function persistGender(g: 'male' | 'female') {
     setGenderError(null);
@@ -270,35 +251,92 @@ function CompositionPageInner() {
     }
   }, [sectionParam]);
 
+  // Prompt #209: repaint on update. A Log Data save and a scan persist both
+  // bump refreshKey; this effect re-reads the canonical composition snapshot
+  // and the segment change maps (which drive the avatar oval colors) so the
+  // whole surface refreshes with no page reload. Skips the initial mount
+  // (each hook already loads on its own userId effect).
+  useEffect(() => {
+    if (refreshKey === 0) return;
+    refreshComp();
+    fatChange.refresh();
+    muscleChange.refresh();
+    refreshCirc();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshKey]);
+
   const handleSaved = () => {
     setRefreshKey((k) => k + 1);
-    refreshCirc();
   };
+
+  // Prompt #209: persist a completed scan through the canonical path, then
+  // repaint. Fail-open: any failure surfaces an inline retry, never throws
+  // into the render path and never blocks the avatar / cards.
+  const runScanPersist = useCallback(async (scanId: string) => {
+    setScanPersist({ phase: 'saving' });
+    const res = await persistScan(scanId);
+    if (res.ok) {
+      setScanPersist({ phase: 'saved' });
+      setRefreshKey((k) => k + 1);
+    } else {
+      setScanPersist({ phase: 'error', scanId, reason: res.reason });
+    }
+  }, []);
 
   const historyCategory = section === 'muscle' ? 'muscle' : 'composition';
 
+  // Prompt #209: per-region values now come from the canonical snapshot
+  // (null === UNKNOWN), replacing the removed hardcoded mock constants.
+  const fatValues = useMemo(() => fatValuesFromSnapshot(snapshot), [snapshot]);
+  const muscleValues = useMemo(() => muscleValuesFromSnapshot(snapshot), [snapshot]);
+
   // Prompt #85k: 12 body-part callouts inheriting from parent segments.
-  const fatBodyPartCards = buildBodyPartCards('fat', SAMPLE_FAT, SAMPLE_MUSCLE, gender);
-  const muscleBodyPartCards = buildBodyPartCards('muscle', SAMPLE_FAT, SAMPLE_MUSCLE, gender);
-
-  // Prompt #85n v3: per-region oval colors. Fat side reads from each
-  // body-part card's static SegmentStatus (Low / Standard / High);
-  // muscle side reads from the week-over-week change so the oval
-  // matches the change-based badge on the muscle callout card.
-  const fatRegionStatuses: Record<string, OvalColor> = Object.fromEntries(
-    fatBodyPartCards.map((c) => [c.key, getOvalColorFromStatus(c.status)]),
+  const fatBodyPartCards = useMemo(
+    () => buildBodyPartCards('fat', fatValues, muscleValues, gender),
+    [fatValues, muscleValues, gender],
   );
-  const muscleRegionStatuses: Record<string, OvalColor> = Object.fromEntries(
-    BODY_PARTS.map((p) => [
-      p.key,
-      getOvalColorFromChange(muscleChange.data[p.key]?.change ?? null, 'muscle'),
-    ]),
+  const muscleBodyPartCards = useMemo(
+    () => buildBodyPartCards('muscle', fatValues, muscleValues, gender),
+    [fatValues, muscleValues, gender],
   );
 
-  // Prompt #157k: BodyRegionData arrays for the HoverSystem +
-  // LegendBar. Fat regions carry static SegmentStatus classification;
-  // muscle regions carry the same status data + trend reading from
-  // the muscle change hook. Memoized so HoverSystem children do not
+  // Prompt #209: the four global composition metric cards, read from the
+  // canonical snapshot + BMI. UNKNOWN renders as a neutral "No data" card.
+  // The same four are shown on both the fat and muscle tabs (global metrics).
+  const metricCards = useMemo(() => buildMetricCards(snapshot, bmi), [snapshot, bmi]);
+
+  // Prompt #209: surface state. The avatar is ALWAYS the canvas; this only
+  // governs the surrounding affordances (skeleton / empty hint / error banner).
+  const surfaceState = resolveSurfaceState({ loading: compLoading, error: compError, snapshot });
+
+  // Prompt #209 v3: per-region oval colors now read from the week-over-week
+  // change on BOTH tabs (DD2). First entry / no prior / no data => neutral
+  // yellow (the change hooks already return that for a null change), so the
+  // oval matches the change-based trend on the callout card.
+  const fatRegionStatuses: Record<string, OvalColor> = useMemo(
+    () =>
+      Object.fromEntries(
+        BODY_PARTS.map((p) => [
+          p.key,
+          getOvalColorFromChange(fatChange.data[p.key]?.change ?? null, 'fat'),
+        ]),
+      ),
+    [fatChange.data],
+  );
+  const muscleRegionStatuses: Record<string, OvalColor> = useMemo(
+    () =>
+      Object.fromEntries(
+        BODY_PARTS.map((p) => [
+          p.key,
+          getOvalColorFromChange(muscleChange.data[p.key]?.change ?? null, 'muscle'),
+        ]),
+      ),
+    [muscleChange.data],
+  );
+
+  // Prompt #157k: BodyRegionData arrays for the HoverSystem + LegendBar.
+  // Regions with an UNKNOWN (null) value are omitted (no fabricated card);
+  // trend reads the change hook. Memoized so HoverSystem children do not
   // re-render on unrelated state churn.
   const fatRegions = useMemo(
     () => buildBodyRegionData(fatBodyPartCards, fatChange.data),
@@ -323,6 +361,37 @@ function CompositionPageInner() {
     [pinRegion, pinCap],
   );
 
+  // Prompt #209: small on-brand banner shown in the error state with a
+  // Retry that re-reads the canonical snapshot. The avatar stays the canvas.
+  const errorBanner =
+    surfaceState === 'error' ? (
+      <div
+        data-testid="composition-error-banner"
+        role="alert"
+        className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#B75E18]/40 bg-[#B75E18]/10 p-3 text-xs text-white/80"
+      >
+        <span>We could not load your latest composition. Your data is safe.</span>
+        <button
+          type="button"
+          onClick={refreshComp}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-[#B75E18]/50 bg-[#B75E18]/15 px-3 py-1.5 font-medium text-white transition-colors hover:bg-[#B75E18]/25"
+        >
+          <RotateCcw className="h-3.5 w-3.5" strokeWidth={1.5} />
+          Retry
+        </button>
+      </div>
+    ) : null;
+
+  // Prompt #209: empty-state hint shown beneath the avatar when there is no
+  // composition record yet. The cards already render as neutral "No data"
+  // (buildMetricCards yields Unknown cards for a null snapshot).
+  const emptyHint =
+    surfaceState === 'empty' ? (
+      <p data-testid="composition-empty-hint" className="text-center text-xs text-white/50">
+        Scan or Log Data to begin.
+      </p>
+    ) : null;
+
   return (
     <div className="space-y-6 lg:space-y-3" key={refreshKey}>
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -333,7 +402,7 @@ function CompositionPageInner() {
             onClick={() => {
               setOpen(false);
               setScanOpen((o) => !o);
-              if (!scanOpen) setScanResult(null);
+              if (!scanOpen) { setScanResult(null); setScanPersist({ phase: 'idle' }); }
             }}
             className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium min-h-[44px] backdrop-blur-sm transition-all ${
               scanOpen
@@ -377,35 +446,65 @@ function CompositionPageInner() {
 
       <InlineEntryPanel
         open={scanOpen}
-        onOpenChange={(o) => { setScanOpen(o); if (!o) setScanResult(null); }}
+        onOpenChange={(o) => { setScanOpen(o); if (!o) { setScanResult(null); setScanPersist({ phase: 'idle' }); } }}
         title="Body Scan"
         description="AI body composition estimate from 4 photos"
       >
         {scanResult ? (
-          <BodyScanResults
-            result={scanResult}
-            onRetake={() => setScanResult(null)}
-            onClose={() => { setScanOpen(false); setScanResult(null); }}
-            onUseAsBaseline={() => {
-              const midpoint = (
-                scanResult.estimates.estimated_body_fat_min +
-                scanResult.estimates.estimated_body_fat_max
-              ) / 2;
-              const rounded = Math.round(midpoint * 10) / 10;
-              setScanOpen(false);
-              setScanResult(null);
-              setPrefillBodyFat(rounded);
-              setSection('fat');
-              setOpen(true);
-            }}
-          />
+          <div className="space-y-3">
+            <BodyScanResults
+              result={scanResult}
+              onRetake={() => { setScanResult(null); setScanPersist({ phase: 'idle' }); }}
+              onClose={() => { setScanOpen(false); setScanResult(null); setScanPersist({ phase: 'idle' }); }}
+              onUseAsBaseline={() => {
+                const midpoint = (
+                  scanResult.estimates.estimated_body_fat_min +
+                  scanResult.estimates.estimated_body_fat_max
+                ) / 2;
+                const rounded = Math.round(midpoint * 10) / 10;
+                setScanOpen(false);
+                setScanResult(null);
+                setScanPersist({ phase: 'idle' });
+                setPrefillBodyFat(rounded);
+                setSection('fat');
+                setOpen(true);
+              }}
+            />
+            {scanPersist.phase === 'saving' && (
+              <p className="text-xs text-white/55">Saving your scan to your profile.</p>
+            )}
+            {scanPersist.phase === 'saved' && (
+              <p className="inline-flex items-center gap-1.5 text-xs text-[#2DA5A0]">
+                <Check size={14} strokeWidth={1.5} />
+                Saved. Your composition is up to date.
+              </p>
+            )}
+            {scanPersist.phase === 'error' && (
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#B75E18]/40 bg-[#B75E18]/10 p-2.5 text-xs text-white/80">
+                <span>We could not save your scan. You can retry or use it as a baseline.</span>
+                <button
+                  type="button"
+                  onClick={() => void runScanPersist(scanPersist.scanId)}
+                  className="inline-flex items-center gap-1.5 rounded-md border border-[#B75E18]/50 bg-[#B75E18]/15 px-2.5 py-1 font-medium text-white transition-colors hover:bg-[#B75E18]/25"
+                >
+                  <RotateCcw size={12} strokeWidth={1.5} />
+                  Retry
+                </button>
+              </div>
+            )}
+          </div>
         ) : (
           <BodyScanUploader
-            onComplete={(r) => setScanResult(r)}
+            onComplete={(r) => {
+              setScanResult(r);
+              void runScanPersist(r.scanId);
+            }}
             onCancel={() => setScanOpen(false)}
           />
         )}
       </InlineEntryPanel>
+
+      {errorBanner}
 
       {section === 'fat' && (
         <>
@@ -513,7 +612,7 @@ function CompositionPageInner() {
                     </li>
                   </ul>
                 </div>
-                {FAT_CARDS.map((c, i) => (
+                {metricCards.map((c, i) => (
                   <motion.div
                     key={i}
                     initial={{ opacity: 0, y: 12 }}
@@ -532,7 +631,7 @@ function CompositionPageInner() {
               className="mt-3 shrink-0 lg:hidden"
             />
             <div data-testid="bottom-metrics-row" className="mx-auto mt-3 grid w-full max-w-2xl shrink-0 grid-cols-2 gap-3 md:grid-cols-4 lg:hidden">
-              {FAT_CARDS.map((c, i) => (
+              {metricCards.map((c, i) => (
                 <motion.div
                   key={i}
                   initial={{ opacity: 0, y: 12 }}
@@ -543,6 +642,7 @@ function CompositionPageInner() {
                 </motion.div>
               ))}
             </div>
+            {emptyHint}
           </div>
         </>
       )}
@@ -612,7 +712,7 @@ function CompositionPageInner() {
                     </li>
                   </ul>
                 </div>
-                {FAT_CARDS.map((c, i) => (
+                {metricCards.map((c, i) => (
                   <motion.div
                     key={i}
                     initial={{ opacity: 0, y: 12 }}
@@ -631,7 +731,7 @@ function CompositionPageInner() {
               className="mt-3 shrink-0 lg:hidden"
             />
             <div data-testid="bottom-metrics-row" className="mx-auto mt-3 grid w-full max-w-2xl shrink-0 grid-cols-2 gap-3 md:grid-cols-4 lg:hidden">
-              {FAT_CARDS.map((c, i) => (
+              {metricCards.map((c, i) => (
                 <motion.div
                   key={i}
                   initial={{ opacity: 0, y: 12 }}
@@ -642,6 +742,7 @@ function CompositionPageInner() {
                 </motion.div>
               ))}
             </div>
+            {emptyHint}
           </div>
         </>
       )}
