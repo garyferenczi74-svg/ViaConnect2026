@@ -36,7 +36,7 @@
 import { Footprints, Flame, Dumbbell, Moon, Droplets, type LucideIcon } from 'lucide-react';
 import { useHydrationToday } from '@/components/hydration/useHydrationToday';
 import { formatVolumeLabel } from '@/components/hydration/HydrationRing';
-import { severityToken, type SeverityTier } from '@/lib/genetics/severity';
+import { type SeverityTier } from '@/lib/genetics/severity';
 
 const TEAL = '#2DA5A0';
 const DM_SANS = 'var(--font-dm-sans), sans-serif';
@@ -114,14 +114,13 @@ function StatTile({
   const hasFill = typeof fraction === 'number' && fraction !== null;
   const fillPct = hasFill ? `${clamp01(fraction as number) * 100}%` : '0%';
 
-  // Severity fill class: use the accent border class as a background-color proxy.
-  // severityToken returns Tailwind class strings; for the fill div we derive the
-  // border-l color token and reuse it via inline style to avoid dynamic class issues.
-  // The fill div uses a simple inline teal background by default; severity is latent.
-  const severityFillStyle =
+  // Severity fill background: use canonical severity CSS variable when tier is set.
+  // Severity vars are defined in globals.css as --severity-high, --severity-moderate,
+  // --severity-low holding RGB channels. When severity is absent, default to teal.
+  const fillBackgroundColor =
     hasFill && severityTier
-      ? severityToken(severityTier).accent
-      : '';
+      ? `rgb(var(--severity-${severityTier}))`
+      : TEAL;
 
   return (
     <div
@@ -171,12 +170,11 @@ function StatTile({
       >
         {hasFill ? (
           <div
-            className={severityFillStyle || ''}
             style={{
               width: fillPct,
               height: '100%',
               borderRadius: 'inherit',
-              backgroundColor: severityTier ? undefined : TEAL,
+              backgroundColor: fillBackgroundColor,
               transition: 'width 0.4s ease',
             }}
           />
