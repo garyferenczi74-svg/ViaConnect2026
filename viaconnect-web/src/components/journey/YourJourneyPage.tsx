@@ -25,9 +25,11 @@
  */
 
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import Link from 'next/link';
 import {
   Sparkles,
   Network,
+  ArrowRight,
   type LucideIcon,
 } from 'lucide-react';
 import {
@@ -263,8 +265,11 @@ export function YourJourneyPage({ userId }: { userId: string | null }) {
               <VitalTrends userId={userId} />
             </div>
 
-            {/* RIGHT: HannahRead placeholder - equal height, pinned button.
-                G-T5 builds the equal-height HannahRead with pinned button. */}
+            {/* RIGHT: HannahRead card - equal height (items-stretch on grid),
+                inner layout flex-col so the panel grows and the button pins to
+                the bottom via mt-auto. G-T5: button is a real Next.js Link to
+                the same route HannahInsightPanel uses. Label is the verbatim
+                208g 3.3 spec string. */}
             <SectionShell
               eyebrow="Your coach"
               title="Hannah read"
@@ -275,15 +280,23 @@ export function YourJourneyPage({ userId }: { userId: string | null }) {
                   <HannahInsightPanel insight={insight} />
                 </div>
                 <div className="mt-auto pt-4">
-                  <button
-                    type="button"
-                    className="w-full rounded-lg border border-white/20 bg-white/5 px-4 py-3 text-sm font-medium text-white/70 min-h-[44px] hover:bg-white/10 transition-colors"
-                    style={{ fontFamily: DM_SANS }}
-                    disabled
-                    aria-label="View full report with Hannah - coming soon"
+                  <Link
+                    href="/wellness/advisor?report=bio-optimization"
+                    className="flex min-h-[44px] w-full items-center justify-between rounded-lg px-4 py-3 text-sm font-medium transition-colors hover:opacity-90"
+                    style={{
+                      fontFamily: DM_SANS,
+                      background: 'rgba(45,165,160,0.14)',
+                      border: '1px solid rgba(45,165,160,0.35)',
+                      color: TEAL,
+                    }}
                   >
-                    View Full Report with Hannah
-                  </button>
+                    <span>View Full Report with Hannah</span>
+                    <ArrowRight
+                      className="h-4 w-4 shrink-0"
+                      strokeWidth={1.5}
+                      aria-hidden="true"
+                    />
+                  </Link>
                 </div>
               </div>
             </SectionShell>
