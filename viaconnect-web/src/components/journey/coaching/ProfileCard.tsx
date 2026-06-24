@@ -26,6 +26,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Pencil, Target, WifiOff } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { withTimeout } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 import { getDisplayName } from '@/lib/user/get-display-name';
 import { useJourneyState } from '@/hooks/journey/useJourneyState';
 
@@ -71,14 +73,20 @@ export function ProfileCard({ userId }: { userId: string | null }) {
     (async () => {
       try {
         const supabase = createClient();
-        const { data } = await (supabase as any)
-          .from('profiles')
-          .select('avatar_url')
-          .eq('id', userId)
-          .maybeSingle();
+        type ProfileRow = { avatar_url: string | null };
+        const { data } = await withTimeout(
+          (supabase as any)
+            .from('profiles')
+            .select('avatar_url')
+            .eq('id', userId)
+            .maybeSingle() as unknown as Promise<{ data: ProfileRow | null; error: unknown }>,
+          4000,
+          'ProfileCard read',
+        );
         const url = (data?.avatar_url as string | null) ?? null;
         if (active) setAvatarUrl(url && url.trim().length > 0 ? url : null);
-      } catch {
+      } catch (error) {
+        safeLog.warn('ProfileCard', 'read failed, failing open', { error });
         /* keep null: honest initial-circle fallback */
       }
     })();

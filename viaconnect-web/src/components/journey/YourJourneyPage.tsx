@@ -332,6 +332,7 @@ export function YourJourneyPage({ userId }: { userId: string | null }) {
           >
             This page is for education and structure-function reference only.
             Avatar and figures are placeholders until your real data and photo populate.
+            Pillar colors match the dashboard Daily Scores palette.
           </p>
 
         </div>

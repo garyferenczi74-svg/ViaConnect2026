@@ -27,6 +27,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Salad } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { withTimeout } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 import { useNutritionTargets } from '@/hooks/useNutritionTargets';
 import { Donut } from './Donut';
 
@@ -89,13 +91,18 @@ function useTodayMacros(userId: string | null): TodayMacros {
         const supabase = createClient();
         const { startIso, endIso } = todayBounds();
 
-        const { data } = await supabase
-          .from('nutrition_logs')
-          .select('calories, carbs_g, protein_g, total_fat_g')
-          .eq('user_id', userId)
-          .eq('status', 'confirmed')
-          .gte('logged_at', startIso)
-          .lt('logged_at', endIso);
+        type NutritionRow = { calories: number | null; carbs_g: number | null; protein_g: number | null; total_fat_g: number | null };
+        const { data } = await withTimeout(
+          supabase
+            .from('nutrition_logs')
+            .select('calories, carbs_g, protein_g, total_fat_g')
+            .eq('user_id', userId)
+            .eq('status', 'confirmed')
+            .gte('logged_at', startIso)
+            .lt('logged_at', endIso) as unknown as Promise<{ data: NutritionRow[] | null; error: unknown }>,
+          4000,
+          'NutritionDonut read',
+        );
 
         if (!active) return;
 
@@ -113,8 +120,9 @@ function useTodayMacros(userId: string | null): TodayMacros {
           { ...EMPTY },
         );
         setMacros(totals);
-      } catch {
+      } catch (error) {
         if (active) setMacros(EMPTY);
+        safeLog.warn('NutritionDonut', 'read failed, failing open', { error });
       }
     })();
     return () => {

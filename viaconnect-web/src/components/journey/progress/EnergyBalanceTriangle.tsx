@@ -29,6 +29,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Flame, Activity, Scale, Triangle } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { withTimeout } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 import { computeTrend } from '@/lib/labs/trend';
 import {
   deriveBalanceState,
@@ -62,12 +64,17 @@ function useIntakeEstimate(userId: string | null): number | null {
         const supabase = createClient();
         const sinceIso = new Date(Date.now() - RECENT_WINDOW_DAYS * DAY_MS).toISOString();
 
-        const { data } = await supabase
-          .from('nutrition_logs')
-          .select('calories, logged_at')
-          .eq('user_id', userId)
-          .eq('status', 'confirmed')
-          .gte('logged_at', sinceIso);
+        type IntakeRow = { calories: number | null; logged_at: string | null };
+        const { data } = await withTimeout(
+          supabase
+            .from('nutrition_logs')
+            .select('calories, logged_at')
+            .eq('user_id', userId)
+            .eq('status', 'confirmed')
+            .gte('logged_at', sinceIso) as unknown as Promise<{ data: IntakeRow[] | null; error: unknown }>,
+          4000,
+          'EnergyBalanceTriangle read',
+        );
 
         if (!active) return;
 
@@ -92,8 +99,9 @@ function useIntakeEstimate(userId: string | null): number | null {
         let sum = 0;
         for (const total of perDay.values()) sum += total;
         setIntake(sum / perDay.size);
-      } catch {
+      } catch (error) {
         if (active) setIntake(null);
+        safeLog.warn('EnergyBalanceTriangle', 'read failed, failing open', { error });
       }
     })();
     return () => {

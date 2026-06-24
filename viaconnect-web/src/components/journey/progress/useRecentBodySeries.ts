@@ -18,6 +18,8 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { withTimeout } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
 
 export interface RecentBodySeries {
   /** Recent weight in lbs, oldest first. */
@@ -61,12 +63,17 @@ export function useRecentBodySeries(userId: string | null): RecentBodySeries {
 
         // Newest first from the DB (so LIMIT keeps the most recent), then we
         // reverse to oldest-first for a left-to-right sparkline.
-        const { data } = await supabase
-          .from('body_tracker_weight')
-          .select('weight_lbs, body_fat_pct, created_at')
-          .eq('user_id', userId)
-          .order('created_at', { ascending: false })
-          .limit(RECENT_LIMIT);
+        type BodyRow = { weight_lbs: number | null; body_fat_pct: number | null; created_at: string | null };
+        const { data } = await withTimeout(
+          supabase
+            .from('body_tracker_weight')
+            .select('weight_lbs, body_fat_pct, created_at')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false })
+            .limit(RECENT_LIMIT) as unknown as Promise<{ data: BodyRow[] | null; error: unknown }>,
+          4000,
+          'useRecentBodySeries read',
+        );
 
         if (!active) return;
 
@@ -95,8 +102,9 @@ export function useRecentBodySeries(userId: string | null): RecentBodySeries {
         }
 
         setSeries({ weightLbs, bodyFatPct, weightPoints, loading: false });
-      } catch {
+      } catch (error) {
         if (!active) return;
+        safeLog.warn('useRecentBodySeries', 'read failed, failing open', { error });
         setSeries(empty);
       }
     })();
