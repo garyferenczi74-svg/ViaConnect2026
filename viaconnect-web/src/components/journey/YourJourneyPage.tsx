@@ -219,7 +219,6 @@ export function YourJourneyPage({ userId }: { userId: string | null }) {
                   displayName={displayName}
                   score={narrativeScore}
                 />
-                <HannahInsightPanel insight={insight} />
               </div>
             </SectionShell>
 

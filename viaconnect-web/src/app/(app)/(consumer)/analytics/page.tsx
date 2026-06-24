@@ -17,7 +17,6 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { MobileHeroBackground } from "@/components/ui/MobileHeroBackground";
 import { YourJourneyPage } from "@/components/journey/YourJourneyPage";
 
 const supabase = createClient();
@@ -31,16 +30,5 @@ export default function AnalyticsPage() {
     });
   }, []);
 
-  return (
-    <>
-      <MobileHeroBackground
-        src="https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Athlete%2020%20Desktop.png"
-        mobileSrc="https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Mobile%20Hero/Athlete%2020%20Mobile.png"
-        overlayOpacity={0.55}
-        objectPosition="center center"
-        priority
-      />
-      <YourJourneyPage userId={userId} />
-    </>
-  );
+  return <YourJourneyPage userId={userId} />;
 }

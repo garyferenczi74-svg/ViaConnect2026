@@ -41,6 +41,7 @@
  *
  * PURE HELPERS (exported for tests):
  *   scoreLinePath(points, width, height) -> SVG path string or ''
+ *   scoreAreaPath(points, width, height) -> closed SVG path for area fill or ''
  *   rangeToTrendKey(tab) -> TimeRange key
  *   yAxisTicks() -> [0,10,20,...,100]
  *   xAxisMarkers(mode, refMs) -> Array<{ label, xFraction, major }>
@@ -233,6 +234,42 @@ export function scoreLinePath(
     .join(' ');
 }
 
+/**
+ * Maps an array of score points to a CLOSED SVG path string for an area fill
+ * on a fixed 0..100 y-scale. Same x/y mapping as scoreLinePath: x evenly
+ * spaced by index, y=(1 - clamp(score,0,100)/100)*height. The path follows
+ * the composite line across the points, then closes via:
+ *   L lastX,height  (down to the baseline at the last point)
+ *   L 0,height      (across the baseline to x=0)
+ *   Z               (close)
+ * Returns '' for fewer than 2 finite points. Never throws, never produces NaN.
+ */
+export function scoreAreaPath(
+  points: { score: number }[],
+  width: number,
+  height: number
+): string {
+  const finite = points.filter((p) => typeof p.score === 'number' && isFinite(p.score));
+  if (finite.length < 2) return '';
+
+  const n = finite.length;
+  const step = n > 1 ? width / (n - 1) : 0;
+
+  const linePart = finite
+    .map((p, i) => {
+      const clamped = Math.max(0, Math.min(100, p.score));
+      const x = i * step;
+      const y = (1 - clamped / 100) * height;
+      const cmd = i === 0 ? 'M' : 'L';
+      return `${cmd}${x},${y}`;
+    })
+    .join(' ');
+
+  const lastX = (n - 1) * step;
+
+  return `${linePart} L${lastX},${height} L0,${height} Z`;
+}
+
 // ---------------------------------------------------------------------------
 // Pillar legend spec
 // ---------------------------------------------------------------------------
@@ -257,8 +294,9 @@ const PILLARS: PillarSpec[] = [
 // ---------------------------------------------------------------------------
 
 const CHART_W = 600;
-// Plot area height (excludes x-axis label area below)
-const CHART_H = 200;
+// Plot area height (excludes x-axis label area below). Taller so the
+// plotted area is the dominant element and the upper band reads full.
+const CHART_H = 240;
 // Left margin for Y-axis labels
 const MARGIN_LEFT = 32;
 // Bottom margin for X-axis labels
@@ -325,8 +363,10 @@ export function DailyScoresGraph({ userId }: { userId: string | null }) {
     [TABS]
   );
 
+  const areaPath = scoreAreaPath(rawPoints, CHART_W, CHART_H);
+
   return (
-    <div className="flex flex-col gap-4 w-full">
+    <div className="flex flex-col gap-2 w-full">
 
       {/* Segmented switcher (Week / Month / Year) */}
       <div
@@ -407,14 +447,27 @@ export function DailyScoresGraph({ userId }: { userId: string | null }) {
             );
           })}
 
-          {/* Composite trend line (only when 2+ finite points exist) */}
+          {/* Area fill + composite trend line (only when 2+ finite points exist) */}
           {!isSparse && (
             <g transform={`translate(${MARGIN_LEFT},0)`}>
+              {/* Soft gradient area fill under the composite line */}
+              <defs>
+                <linearGradient id="compositeAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={compositeColor} stopOpacity={0.28} />
+                  <stop offset="100%" stopColor={compositeColor} stopOpacity={0.03} />
+                </linearGradient>
+              </defs>
+              <path
+                d={areaPath}
+                fill="url(#compositeAreaGrad)"
+                stroke="none"
+              />
+              {/* Composite line on top of the area fill */}
               <path
                 d={path}
                 fill="none"
                 stroke={compositeColor}
-                strokeWidth={2}
+                strokeWidth={3}
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />

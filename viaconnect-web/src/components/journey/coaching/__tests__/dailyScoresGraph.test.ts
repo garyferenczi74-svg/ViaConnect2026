@@ -19,6 +19,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   scoreLinePath,
+  scoreAreaPath,
   rangeToTrendKey,
   yAxisTicks,
   xAxisMarkers,
@@ -374,6 +375,131 @@ describe('xAxisMarkers - Month mode (29-day: Feb 2024 leap)', () => {
 
   it('never throws', () => {
     expect(() => xAxisMarkers('Month', FEB_10_2024_MS)).not.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// scoreAreaPath
+// ---------------------------------------------------------------------------
+
+describe('scoreAreaPath', () => {
+  it('returns empty string for 0 points', () => {
+    expect(scoreAreaPath([], 400, 200)).toBe('');
+  });
+
+  it('returns empty string for 1 point', () => {
+    expect(scoreAreaPath([{ score: 50 }], 400, 200)).toBe('');
+  });
+
+  it('returns a non-empty string for 2 points', () => {
+    const result = scoreAreaPath([{ score: 50 }, { score: 80 }], 400, 200);
+    expect(result.length).toBeGreaterThan(0);
+  });
+
+  it('returns a non-empty string for 5 points', () => {
+    const result = scoreAreaPath(
+      [{ score: 10 }, { score: 30 }, { score: 50 }, { score: 70 }, { score: 90 }],
+      400,
+      200
+    );
+    expect(result.length).toBeGreaterThan(0);
+  });
+
+  it('closed path ends with Z', () => {
+    const result = scoreAreaPath([{ score: 50 }, { score: 80 }], 400, 200);
+    expect(result.trim().toUpperCase()).toMatch(/Z$/);
+  });
+
+  it('includes a baseline segment down to y=height at last x', () => {
+    // 2 points, width 400, height 200: last x = 400
+    const result = scoreAreaPath([{ score: 50 }, { score: 80 }], 400, 200);
+    // Should contain a line to x=400,y=200 (bottom-right corner)
+    expect(result).toMatch(/L\s*400\s*,?\s*200/);
+  });
+
+  it('includes a line across baseline back to x=0 at y=height', () => {
+    // Should contain a line to x=0,y=200 (bottom-left corner) after bottom-right
+    const result = scoreAreaPath([{ score: 50 }, { score: 80 }], 400, 200);
+    expect(result).toMatch(/L\s*0\s*,?\s*200/);
+  });
+
+  it('maps score 100 to y=0 (top) for the line segment', () => {
+    const result = scoreAreaPath([{ score: 100 }, { score: 50 }], 400, 200);
+    // First point at x=0, y=(1-1)*200=0
+    expect(result).toMatch(/M\s*0\s*,?\s*0/);
+  });
+
+  it('maps score 0 to y=height (bottom) for the line segment', () => {
+    const result = scoreAreaPath([{ score: 0 }, { score: 50 }], 400, 200);
+    // First point at x=0, y=(1-0)*200=200
+    expect(result).toMatch(/M\s*0\s*,?\s*200/);
+  });
+
+  it('clamps score above 100 to 100 (y=0)', () => {
+    const result = scoreAreaPath([{ score: 150 }, { score: 50 }], 400, 200);
+    expect(result).toMatch(/M\s*0\s*,?\s*0/);
+  });
+
+  it('clamps negative score to 0 (y=height)', () => {
+    const result = scoreAreaPath([{ score: -20 }, { score: 50 }], 400, 200);
+    expect(result).toMatch(/M\s*0\s*,?\s*200/);
+  });
+
+  it('returns empty string when all scores are NaN', () => {
+    expect(scoreAreaPath([{ score: NaN }, { score: NaN }], 400, 200)).toBe('');
+  });
+
+  it('returns empty string when only 1 finite point', () => {
+    expect(
+      scoreAreaPath(
+        [{ score: NaN }, { score: 50 }, { score: NaN }],
+        400,
+        200
+      )
+    ).toBe('');
+  });
+
+  it('uses 2 finite points when mixed with NaN', () => {
+    const result = scoreAreaPath(
+      [{ score: NaN }, { score: 40 }, { score: 80 }],
+      400,
+      200
+    );
+    expect(result.length).toBeGreaterThan(0);
+    expect(result.trim().toUpperCase()).toMatch(/Z$/);
+  });
+
+  it('never throws on empty array', () => {
+    expect(() => scoreAreaPath([], 400, 200)).not.toThrow();
+  });
+
+  it('never throws on NaN scores', () => {
+    expect(() =>
+      scoreAreaPath([{ score: NaN }, { score: NaN }], 400, 200)
+    ).not.toThrow();
+  });
+
+  it('never throws on zero dimensions', () => {
+    expect(() =>
+      scoreAreaPath([{ score: 50 }, { score: 80 }], 0, 0)
+    ).not.toThrow();
+  });
+
+  it('is deterministic', () => {
+    const pts = [{ score: 25 }, { score: 75 }, { score: 50 }];
+    const a = scoreAreaPath(pts, 300, 150);
+    const b = scoreAreaPath(pts, 300, 150);
+    expect(a).toBe(b);
+  });
+
+  it('x spacing matches scoreLinePath spacing (same mapping)', () => {
+    const pts = [{ score: 30 }, { score: 70 }, { score: 50 }];
+    const line = scoreLinePath(pts, 300, 150);
+    const area = scoreAreaPath(pts, 300, 150);
+    // Both should start with the same M coordinate
+    const lineStart = line.split(' ')[0];
+    const areaStart = area.split(' ')[0];
+    expect(areaStart).toBe(lineStart);
   });
 });
 
