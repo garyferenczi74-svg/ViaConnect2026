@@ -196,7 +196,7 @@ export function YourJourneyPage({ userId }: { userId: string | null }) {
               Two-part responsive grid: profile rail (left) + main column
               (right). Stacks on mobile with profile first.
           ---------------------------------------------------------------- */}
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[300px_1fr]">
+          <div className="grid grid-cols-1 gap-4 items-stretch lg:grid-cols-[300px_1fr]">
 
             {/* LEFT rail: profile card in a glass panel */}
             <SectionShell eyebrow="Your profile" className="h-full">
