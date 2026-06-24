@@ -17,7 +17,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { YourJourneyPage } from "@/components/journey/YourJourneyPage";
+import { YourJourneyCoaching } from "@/components/journey/YourJourneyCoaching";
 
 const supabase = createClient();
 
@@ -30,5 +30,5 @@ export default function AnalyticsPage() {
     });
   }, []);
 
-  return <YourJourneyPage userId={userId} />;
+  return <YourJourneyCoaching userId={userId} />;
 }
