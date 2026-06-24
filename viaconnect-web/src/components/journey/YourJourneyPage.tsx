@@ -3,43 +3,29 @@
 /**
  * src/components/journey/YourJourneyPage.tsx
  *
- * The single-scrolling "Your Journey" page composition for /analytics
- * (Prompt 208d, Task D-T1: the structural skeleton).
+ * The single-scrolling "Your Journey" page composition for /analytics.
+ * Rebuilt by Prompt 208g (Task G-T1) into the COACHING LAYOUT.
+ * Supersedes the 208d 8-section SectionShell stack.
  *
- * This is the new single-page design that replaces the old multi-panel
- * analytics composition. It lays out the eight sections in 208d's exact
- * top-to-bottom order:
+ * 208g section order (top to bottom):
+ *   3.1 Phase strip        - JourneySpine (keep, flag for Gary)
+ *   3.2 Hero               - profile rail (left) + narrative/Hannah/gauges/graph (right)
+ *   3.3 Goals/Nutrition/Sleep + Body Composition Trio
+ *   3.4 Today + This Week  - TodayStats + VitalTrends (left) + Hannah read (right)
+ *   3.5 Accelerators + Connection Map
+ *   3.6 Footer disclaimer
  *
- *   3.1 Phase strip           - the live JourneySpine (real)
- *   3.2 Coaching header        - profile/Hannah placeholder (left) +
- *                                the live Bio Optimization hero PlasmaGauge
- *                                plus four honest-empty pillar slots (right)
- *   3.3 Energy and stress      - honest-empty (wearable not connected)
- *   3.4 Goal and progress      - honest-empty
- *   3.5 Today                  - honest-empty
- *   3.6 Nutrition, sleep, vitals - three honest-empty placeholders
- *   3.7 Journey accelerators   - honest-empty
- *   3.8 Connection map         - interactive node-link diagram (Prompt 208d, Task D-T7)
+ * REUSE: all existing section components mount unchanged (see imports).
+ * PLACEHOLDERS: GaugeCluster (G-T2), DailyScoresGraph (G-T3), HannahRead button (G-T5).
+ * DROPPED: standalone EnergyStressGraph (208g uses DailyScoresGraph as trend surface).
  *
- * The spine (3.1) and the BOS hero gauge (3.2) read real data. Every other
- * section is a calm, honest empty-state placeholder that a later 208d task
- * fills in. No fake numbers, no mock data, no emojis, no em/en-dashes.
- *
- * The page is fail-open: the BOS read degrades to 0 with an honest caption,
- * and a null userId renders the whole page in its empty state. It never
- * throws.
- *
- * Style: glass-panel surfaces over Deep Navy, brand Teal #2DA5A0 / brand
- * Orange #B75E18 accents, DM Sans, Lucide icons strokeWidth 1.5,
- * reduced-motion safe. PlasmaGauge is reused UNCHANGED.
+ * Constraints: no em-dashes, no en-dashes, no emojis. Lucide strokeWidth={1.5}.
+ * Full content-frame width (w-full, no max-w cap). Responsive: grid-cols-1 mobile,
+ * multi-col on md/lg. Page never throws - all components are fail-open.
  */
 
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
-  Activity,
-  Target,
-  CalendarDays,
-  Salad,
   Sparkles,
   Network,
   type LucideIcon,
@@ -62,7 +48,6 @@ import { SleepDonut } from '@/components/journey/trio/SleepDonut';
 import { VitalTrends } from '@/components/journey/trio/VitalTrends';
 import { getDisplayName } from '@/lib/user/get-display-name';
 import { JourneyAcceleratorsSection } from '@/components/journey/accelerators/JourneyAcceleratorsSection';
-import { EnergyStressGraph } from '@/components/journey/today/EnergyStressGraph';
 import { TodayStats } from '@/components/journey/today/TodayStats';
 import { ConnectionMap } from '@/components/journey/connections/ConnectionMap';
 
@@ -135,34 +120,28 @@ function SectionShell({
 }
 
 // ---------------------------------------------------------------------------
-// CoachingHeader (3.2)
+// YourJourneyPage
 //
-// A two-column header. LEFT stacks the honest ProfileCard over the existing
-// Hannah read (HannahInsightPanel, reused UNCHANGED). RIGHT stacks the
-// NarrativeRead (state word derived from the BOS score) over the PillarGaugeRow
-// (the BOS hero PlasmaGauge plus four pillar gauges, reused UNCHANGED).
-//
-// Real data where it exists: the BOS score and the pillar averages come from
-// useBioOptimizationTrend; the Hannah read comes from useHannahInsights, wired
-// the same way the analytics trend panel wires it (bioScores + current +
-// weeksActive). Honest fallbacks elsewhere; this component never throws.
+// Data wiring lives here so each layout section below can consume it without
+// prop-drilling or re-fetching. The BOS hook is shared (react-query dedupes
+// the same queryKey) between the hero narrative and the gauge row.
 // ---------------------------------------------------------------------------
 
-function CoachingHeader({ userId }: { userId: string | null }) {
-  // Fail-open: gated on userId; returns current = 0 / zeroed averages when
-  // there is no data. "7D" matches the analytics trend panel default. The
-  // same queryKey is shared with PillarGaugeRow, so react-query dedupes it.
+export function YourJourneyPage({ userId }: { userId: string | null }) {
+  // Fail-open BOS read - same wiring as the old CoachingHeader.
   const { data } = useBioOptimizationTrend(userId, '7D');
   const bioPoints = data?.bioScores ?? [];
   const current = data?.current ?? 0;
-  // Honest score for the narrative: null when there is genuinely no score yet
-  // (so NarrativeRead reads "getting started" rather than a fabricated tier).
+
+  // Honest score for the narrative: null means "getting started" tier rather
+  // than a fabricated number at a real tier.
   const narrativeScore =
     typeof current === 'number' && isFinite(current) && current > 0
       ? current
       : null;
 
-  // First name, resolved the same way the spine and ProfileCard do (fail-open).
+  // First name resolved once (fail-open to empty string -> components use
+  // their own fallback copy).
   const [displayName, setDisplayName] = useState<string>('');
   useEffect(() => {
     let active = true;
@@ -171,14 +150,14 @@ function CoachingHeader({ userId }: { userId: string | null }) {
         if (active) setDisplayName(n);
       })
       .catch(() => {
-        /* keep empty default; the read falls back to "there" */
+        /* keep empty default */
       });
     return () => {
       active = false;
     };
   }, [userId]);
 
-  // weeksActive: spans of the real bio score history, mirroring the trend panel.
+  // weeksActive: spans the real bio score history, mirroring the trend panel.
   const weeksActive = useMemo(() => {
     if (bioPoints.length === 0) return 0;
     const first = new Date(bioPoints[0].date).getTime();
@@ -187,7 +166,8 @@ function CoachingHeader({ userId }: { userId: string | null }) {
     return Math.max(1, Math.round((last - first) / (7 * 24 * 60 * 60 * 1000)));
   }, [bioPoints]);
 
-  // The existing Hannah read engine, wired exactly as the analytics panel does.
+  // Hannah insight wired identically to the old CoachingHeader and the
+  // analytics trend panel. Reused in both the hero and the HannahRead section.
   const insight = useHannahInsights({
     userId,
     displayName,
@@ -198,109 +178,150 @@ function CoachingHeader({ userId }: { userId: string | null }) {
   });
 
   return (
-    <SectionShell eyebrow="Your Coaching" title="Coaching summary" icon={Sparkles}>
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {/* LEFT: profile card stacked over the existing Hannah read. */}
-        <div className="flex flex-col gap-4">
-          <ProfileCard userId={userId} />
-          <HannahInsightPanel insight={insight} />
-        </div>
-
-        {/* RIGHT: narrative read stacked over the BOS hero + pillar gauges. */}
-        <div className="flex flex-col gap-4">
-          <NarrativeRead
-            userId={userId}
-            displayName={displayName}
-            score={narrativeScore}
-          />
-          <PillarGaugeRow userId={userId} />
-        </div>
-      </div>
-    </SectionShell>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// YourJourneyPage
-// ---------------------------------------------------------------------------
-
-export function YourJourneyPage({ userId }: { userId: string | null }) {
-  // The reused spine and PlasmaGauge each honor reduced motion internally, and
-  // each section component gates any motion of its own on useReducedMotion.
-  return (
     <JourneySelectionProvider>
       <div className="relative z-10 min-h-screen text-white">
         <div className="w-full space-y-5 px-4 py-6 md:px-6 md:py-8">
-          {/* 3.1 PHASE STRIP: the live spine, pinned-in-feel at the top. */}
+
+          {/* ----------------------------------------------------------------
+              3.1 PHASE STRIP
+              JourneySpine sits at the very top.
+              NOTE for Gary: 208g section 3 does not list the phase strip
+              explicitly. Kept as a low-risk default. If the coaching mockup
+              drops it Gary can remove this line in the next pass.
+          ---------------------------------------------------------------- */}
           <JourneySpine userId={userId} />
 
-          {/* 3.2 COACHING HEADER: profile + Hannah (left), BOS hero + pillars (right). */}
-          <CoachingHeader userId={userId} />
+          {/* ----------------------------------------------------------------
+              3.2 HERO
+              Two-part responsive grid: profile rail (left) + main column
+              (right). Stacks on mobile with profile first.
+          ---------------------------------------------------------------- */}
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[300px_1fr]">
 
-          {/* 3.3 ENERGY AND STRESS */}
-          <SectionShell
-            eyebrow="Through your day"
-            title="Energy and stress"
-            icon={Activity}
-          >
-            <EnergyStressGraph />
-          </SectionShell>
+            {/* LEFT rail: profile card in a glass panel */}
+            <SectionShell eyebrow="Your profile" className="h-full">
+              <ProfileCard userId={userId} />
+            </SectionShell>
 
-          {/* 3.4 GOAL AND PROGRESS */}
-          <SectionShell
-            eyebrow="Where you are headed"
-            title="Goal and progress"
-            icon={Target}
-          >
+            {/* RIGHT main column: narrative + Hannah + gauges + daily scores */}
             <div className="flex flex-col gap-4">
-              {/* Goal + progress on top, full width. */}
-              <GoalProgressCard userId={userId} />
-              {/* Body composition + energy balance, side by side on desktop,
-                  stacked on mobile. */}
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                <BodyCompositionCard userId={userId} />
-                <EnergyBalanceTriangle userId={userId} />
-              </div>
+
+              {/* Narrative headline + Hannah read note */}
+              <SectionShell eyebrow="Your journey" title="Where you stand">
+                <div className="flex flex-col gap-3">
+                  <NarrativeRead
+                    userId={userId}
+                    displayName={displayName}
+                    score={narrativeScore}
+                  />
+                  <HannahInsightPanel insight={insight} />
+                </div>
+              </SectionShell>
+
+              {/* GaugeCluster placeholder - mounts existing PillarGaugeRow.
+                  G-T2 will replace PillarGaugeRow with the 7-pillar GaugeCluster. */}
+              <SectionShell eyebrow="Pillar scores" title="Your pillars">
+                <PillarGaugeRow userId={userId} />
+              </SectionShell>
+
+              {/* DailyScoresGraph placeholder - calm honest text until G-T3.
+                  G-T3 will build the multi-line DailyScoresGraph here. */}
+              <SectionShell eyebrow="Trend" title="Daily Scores">
+                <p
+                  className="text-sm text-white/50"
+                  style={{ fontFamily: DM_SANS }}
+                >
+                  Your Daily Scores trend builds here as your baseline fills in.
+                </p>
+              </SectionShell>
+
             </div>
-          </SectionShell>
+          </div>
 
-          {/* 3.5 TODAY */}
-          <SectionShell eyebrow="Right now" title="Today" icon={CalendarDays}>
-            <TodayStats userId={userId} />
-          </SectionShell>
+          {/* ----------------------------------------------------------------
+              3.3 GOALS / NUTRITION / SLEEP + BODY COMPOSITION TRIO
+          ---------------------------------------------------------------- */}
 
-          {/* 3.6 NUTRITION, SLEEP, VITALS: a three-column trio. Nutrition (live
-              macros donut) and the Hydration vital read real data; the sleep
-              donut and the four flag-off vitals are honest-empty. */}
-          <SectionShell
-            eyebrow="Your inputs"
-            title="Nutrition, sleep, and vitals"
-            icon={Salad}
-          >
-            <div className="grid grid-cols-1 items-stretch gap-3 md:grid-cols-3">
-              <NutritionDonut userId={userId} />
-              <SleepDonut userId={userId} />
+          {/* Equal-height 3-card row */}
+          <div className="grid grid-cols-1 gap-4 items-stretch md:grid-cols-3">
+            <GoalProgressCard userId={userId} />
+            <NutritionDonut userId={userId} />
+            <SleepDonut userId={userId} />
+          </div>
+
+          {/* Body Composition Trio row.
+              BodyCompositionCard already shows lean mass and body fat, so a
+              clean third card does not exist yet. Using 2-up lg:grid-cols-2.
+              G-T4 can extend to 3-up if a dedicated lean-mass card is added. */}
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <BodyCompositionCard userId={userId} />
+            <EnergyBalanceTriangle userId={userId} />
+          </div>
+
+          {/* ----------------------------------------------------------------
+              3.4 TODAY + THIS WEEK
+              Split row: TodayStats + VitalTrends (left), Hannah read (right).
+          ---------------------------------------------------------------- */}
+          <div className="grid grid-cols-1 gap-4 items-stretch lg:grid-cols-[1.4fr_1fr]">
+
+            {/* LEFT: today stats stacked over vital trends */}
+            <div className="flex flex-col gap-4">
+              <TodayStats userId={userId} />
               <VitalTrends userId={userId} />
             </div>
-          </SectionShell>
 
-          {/* 3.7 JOURNEY ACCELERATORS */}
-          <SectionShell
-            eyebrow="What moves you forward"
-            title="Journey accelerators"
-            icon={Sparkles}
-          >
-            <JourneyAcceleratorsSection userId={userId} />
-          </SectionShell>
+            {/* RIGHT: HannahRead placeholder - equal height, pinned button.
+                G-T5 builds the equal-height HannahRead with pinned button. */}
+            <SectionShell
+              eyebrow="Your coach"
+              title="Hannah read"
+              className="h-full flex flex-col"
+            >
+              <div className="flex flex-1 flex-col">
+                <div className="flex-1">
+                  <HannahInsightPanel insight={insight} />
+                </div>
+                <div className="mt-auto pt-4">
+                  <button
+                    type="button"
+                    className="w-full rounded-lg border border-white/20 bg-white/5 px-4 py-3 text-sm font-medium text-white/70 min-h-[44px] hover:bg-white/10 transition-colors"
+                    style={{ fontFamily: DM_SANS }}
+                    disabled
+                    aria-label="View full report with Hannah - coming soon"
+                  >
+                    View Full Report with Hannah
+                  </button>
+                </div>
+              </div>
+            </SectionShell>
 
-          {/* 3.8 CONNECTION MAP */}
-          <SectionShell
-            eyebrow="How it connects"
-            title="Connection map"
-            icon={Network}
+          </div>
+
+          {/* ----------------------------------------------------------------
+              3.5 ACCELERATORS + CONNECTION MAP
+              Split row: accelerators (left), connection map (right).
+          ---------------------------------------------------------------- */}
+          <div className="grid grid-cols-1 gap-4 items-stretch lg:grid-cols-2">
+            <SectionShell eyebrow="What moves you forward" title="Journey accelerators" icon={Sparkles}>
+              <JourneyAcceleratorsSection userId={userId} />
+            </SectionShell>
+            <SectionShell eyebrow="How it connects" title="Connection map" icon={Network}>
+              <ConnectionMap />
+            </SectionShell>
+          </div>
+
+          {/* ----------------------------------------------------------------
+              3.6 FOOTER DISCLAIMER
+              G-T7 finalizes footer + resilience sweep.
+          ---------------------------------------------------------------- */}
+          <p
+            className="text-center text-xs text-white/30 px-4"
+            style={{ fontFamily: DM_SANS }}
           >
-            <ConnectionMap />
-          </SectionShell>
+            This page is for education and structure-function reference only.
+            Avatar and figures are placeholders until your real data and photo populate.
+          </p>
+
         </div>
       </div>
     </JourneySelectionProvider>
