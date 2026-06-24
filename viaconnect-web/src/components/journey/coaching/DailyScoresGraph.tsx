@@ -41,6 +41,7 @@
  */
 
 import { useState } from 'react';
+import { useReducedMotion } from '@/components/body-tracker/HoverSystem/useReducedMotion';
 import { METRIC_COLORS, type GaugeMetric } from '@/components/gauges/PlasmaGauge';
 import { useBioOptimizationTrend } from '@/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/hooks/useBioOptimizationTrend';
 import type { TimeRange } from '@/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/utils/trendCalculations';
@@ -140,6 +141,7 @@ const LABEL_COLOR = 'rgba(255,255,255,0.35)';
 
 export function DailyScoresGraph({ userId }: { userId: string | null }) {
   const [toggleRange, setToggleRange] = useState<ToggleRange>('1W');
+  const reduceMotion = useReducedMotion();
   const trendKey = rangeToTrendKey(toggleRange);
 
   // Fail-open: no data -> sparse/seed state. Never throws.
@@ -176,7 +178,7 @@ export function DailyScoresGraph({ userId }: { userId: string | null }) {
               type="button"
               onClick={() => setToggleRange(label)}
               aria-pressed={active}
-              className="rounded-md px-4 py-2 text-xs font-semibold tracking-wide transition-colors min-h-[44px] min-w-[44px]"
+              className={`rounded-md px-4 py-2 text-xs font-semibold tracking-wide ${reduceMotion ? '' : 'transition-colors'} min-h-[44px] min-w-[44px]`}
               style={{
                 fontFamily: DM_MONO,
                 background: active ? compositeColor : 'rgba(255,255,255,0.06)',
