@@ -4,14 +4,30 @@
 // Allowed adaptations only: "use client", Lucide imports adapted, font injector
 // useEffect removed (Instrument Sans loaded globally), TypeScript prop types added.
 // Sample values, DOM structure, inline styles, class names, breakpoints: unchanged.
+//
+// Prompt 208i Task I-T2a: HERO values wired to real data. Markup/styles unchanged.
+// Real data: useBioOptimizationTrend (gauges + graph), useHydrationToday (hydration
+// gauge), useJourneyState (goal chip), getDisplayName + profiles.avatar_url (profile),
+// stateWordForScore (narrative state word). No-history pillars: flat line at current
+// value (honest "no trend known"). Per-pillar history backend gap flagged for Gary.
+// Pillar colors: mockup hex retained (no canonical per-pillar source differs; flagged).
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Search, Bell, Edit2, Target, Activity, Moon, Salad, Heart, Sparkles, RefreshCw,
   Dna, FlaskConical, ClipboardList, Pill, HeartPulse, ArrowRight, ArrowUpRight,
   TrendingUp, TrendingDown, ChevronDown, ShieldCheck, CircleAlert, Droplet, Flame, Smile, Zap,
   type LucideIcon,
 } from "lucide-react";
+import { useBioOptimizationTrend } from "@/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/hooks/useBioOptimizationTrend";
+import { useHydrationToday } from "@/components/hydration/useHydrationToday";
+import { useJourneyState } from "@/hooks/journey/useJourneyState";
+import { stateWordForScore } from "@/components/journey/coaching/NarrativeRead";
+import { getDisplayName } from "@/lib/user/get-display-name";
+import { createClient } from "@/lib/supabase/client";
+import { withTimeout } from "@/lib/utils/with-timeout";
+import { safeLog } from "@/lib/utils/safe-log";
+import { heroGaugeScore, buildFlatSeries } from "@/components/journey/coaching/heroHelpers";
 
 const C = {
   navy: "#1A2744", card: "#1E3054", inset: "#16203A", raised: "#243a63",
@@ -23,6 +39,10 @@ const SW = 1.5;
 const eyebrow: React.CSSProperties = { textTransform: "uppercase", letterSpacing: 1.3, fontSize: 10.5, fontWeight: 700, color: C.muted };
 
 // Daily Scores pillars, order and colors carried identically on gauges and graph lines.
+// NOTE for Gary: pillar colors below are the mockup hex values. The canonical dashboard
+// Daily Scores coloring uses getScoreColor (score-VALUE-based), NOT a fixed per-pillar
+// palette. There is no conflicting canonical per-pillar source, so the mockup hex stand.
+// If a per-pillar canonical palette is established later, update this array.
 const PILLARS: { key: string; label: string; value: number; delta: number; color: string; icon: LucideIcon; hero?: boolean }[] = [
   { key: "sleep", label: "Sleep Quality", value: 42, delta: -2, color: "#7B6FB0", icon: Moon },
   { key: "energy", label: "Energy Level", value: 58, delta: 3, color: "#D9A441", icon: Zap },
@@ -67,20 +87,24 @@ function GaugeCard({ value, label, color, hero }: { value: number; label: string
   );
 }
 
-// Deterministic organic series so the mockup looks alive without randomness on each render
-function series(base: number, slope: number, n: number, seed: number): number[] {
-  const a: number[] = []; let s = seed;
-  for (let i = 0; i < n; i++) { s = (s * 9301 + 49297) % 233280; const noise = (s / 233280 - 0.5) * 7; a.push(Math.max(4, Math.min(100, Math.round(base + slope * i + noise)))); }
-  return a;
-}
-const SLOPE: Record<string, number> = { sleep: -0.3, energy: 1.3, mood: 0.8, nutrition: 1.4, activity: 1.2, overall: 1.6, hydration: 1.3 };
-const BASE: Record<string, number> = { sleep: 44, energy: 50, mood: 46, nutrition: 60, activity: 52, overall: 48, hydration: 55 };
-function buildRange(n: number): Record<string, number[]> { const o: Record<string, number[]> = {}; PILLARS.forEach((p, i) => { o[p.key] = series(BASE[p.key], SLOPE[p.key] * (n > 8 ? 0.7 : 1), n, (i + 1) * 97 + n); }); return o; }
-const RANGE_DATA: Record<string, Record<string, number[]>> = { "1W": buildRange(7), "1M": buildRange(12), "1Y": buildRange(12) };
+// Pillar value mapping: receive real values keyed by pillar key.
+// overall -> useBioOptimizationTrend.current
+// sleep -> categoryAverages.sleep
+// energy -> categoryAverages.adherence (energy_score avg)
+// mood -> categoryAverages.stress
+// nutrition -> categoryAverages.nutrition
+// activity -> categoryAverages.movement
+// hydration -> useHydrationToday.percentage_of_target
+type PillarValues = Record<string, number>;
 
-function DailyScores() {
+// Graph range data type. Each key is a pillar key; value is an array of scores.
+type RangeData = Record<string, number[]>;
+// Three range slots for 1W / 1M / 1Y.
+type AllRangeData = { "1W": RangeData; "1M": RangeData; "1Y": RangeData };
+
+function DailyScores({ rangeData }: { rangeData: AllRangeData }) {
   const [range, setRange] = useState("1W");
-  const d = RANGE_DATA[range], n = d.overall.length;
+  const d = rangeData[range as keyof AllRangeData], n = d.overall.length;
   const W = 840, H = 220, padL = 6, padR = 6, padT = 12, padB = 12;
   const x = (i: number) => padL + (i / (n - 1)) * (W - padL - padR);
   const y = (v: number) => padT + (1 - v / 100) * (H - padT - padB);
@@ -108,48 +132,146 @@ function DailyScores() {
   );
 }
 
-function ProfileCard() {
+// ProfileCard now accepts real data props. Markup/styles unchanged from verbatim port.
+// Avatar: real photo from profiles.avatar_url when present; else initial tile (honest).
+// Name: from getDisplayName(); Goal: from useJourneyState goalPhrase.
+// Last sync line: "No wearable connected" (wearable connector is not active).
+// Hannah note: state-appropriate, calm, name-aware copy. No fabricated numbers.
+function ProfileCard({
+  displayName,
+  initial,
+  avatarUrl,
+  goalPhrase,
+  stateWord,
+}: {
+  displayName: string;
+  initial: string;
+  avatarUrl: string | null;
+  goalPhrase: string;
+  stateWord: string;
+}) {
+  const [avatarErrored, setAvatarErrored] = useState(false);
+  const showAvatar = !!avatarUrl && !avatarErrored;
+
+  // Hannah note: state-appropriate and calm. One sentence, no em-dashes,
+  // no medical claims, no fabricated numbers. Uses stateWord for tone.
+  const hannahNote = (() => {
+    if (!displayName || displayName === "there") {
+      return "Welcome. As you log and connect your data, your read sharpens here.";
+    }
+    if (stateWord === "getting started") {
+      return `Good to see you, ${displayName}. Your read below sharpens as you log and connect more data.`;
+    }
+    if (stateWord === "recovering") {
+      return `${displayName}, this is a rebuilding stretch. Small, consistent steps restore momentum fastest.`;
+    }
+    if (stateWord === "steady") {
+      return `${displayName}, you are holding a solid baseline. One focused area is usually the next lever.`;
+    }
+    if (stateWord === "building") {
+      return `${displayName}, your trend is moving in the right direction. Consistency carries it higher.`;
+    }
+    return `${displayName}, your signals are clustering near your best. Keep the routine steady.`;
+  })();
+
   return (
     <div style={{ background: C.inset, border: `1px solid ${C.line}`, borderRadius: 14, padding: 15, display: "flex", flexDirection: "column", gap: 13, height: "100%" }}>
       <div style={{ position: "relative", width: 92, height: 92 }}>
-        <div style={{ width: 92, height: 92, borderRadius: 16, background: `radial-gradient(circle at 35% 28%, #34618a, ${C.navy})`, border: `1.5px solid ${C.teal}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, fontWeight: 800 }}>G</div>
+        {showAvatar ? (
+          <img
+            src={avatarUrl!}
+            alt={displayName || "Profile"}
+            onError={() => setAvatarErrored(true)}
+            style={{ width: 92, height: 92, borderRadius: 16, objectFit: "cover", border: `1.5px solid ${C.teal}` }}
+          />
+        ) : (
+          <div style={{ width: 92, height: 92, borderRadius: 16, background: `radial-gradient(circle at 35% 28%, #34618a, ${C.navy})`, border: `1.5px solid ${C.teal}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, fontWeight: 800 }}>{initial}</div>
+        )}
         <span style={{ position: "absolute", right: -5, top: -5, width: 22, height: 22, borderRadius: 999, background: C.card, border: `1px solid ${C.line}`, display: "flex", alignItems: "center", justifyContent: "center", color: C.muted }}><Edit2 size={11} strokeWidth={SW} /></span>
       </div>
       <div>
-        <div style={{ fontSize: 18, fontWeight: 800 }}>Gary Ferenczi</div>
+        <div style={{ fontSize: 18, fontWeight: 800 }}>{displayName || "there"}</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 5, marginTop: 9, fontSize: 11.5, color: C.muted }}>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><RefreshCw size={13} strokeWidth={SW} /> Last sync 3h ago</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><RefreshCw size={13} strokeWidth={SW} /> No wearable connected</span>
         </div>
       </div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 10px", borderRadius: 10, background: C.card, border: `1px solid ${C.line}` }}>
         <span style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 12, color: C.muted }}><Target size={14} strokeWidth={SW} color={C.teal} /> Goal</span>
-        <span style={{ fontSize: 12, fontWeight: 700, color: C.teal }}>Build lean mass</span>
+        <span style={{ fontSize: 12, fontWeight: 700, color: C.teal }}>{goalPhrase || "supporting your wellness"}</span>
       </div>
       <div>
         <div style={{ ...eyebrow, marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}><Sparkles size={12} strokeWidth={SW} color={C.teal} /> Hannah's note</div>
-        <p style={{ margin: 0, fontSize: 12, color: C.muted, lineHeight: 1.5 }}>Sleep has been slipping this week. Pull back evening intensity and reinforce your wind-down.</p>
+        <p style={{ margin: 0, fontSize: 12, color: C.muted, lineHeight: 1.5 }}>{hannahNote}</p>
       </div>
     </div>
   );
 }
 
-function Hero() {
+// Hero receives real values for gauges, graph, narrative, and profile.
+function Hero({
+  pillarValues,
+  rangeData,
+  overallScore,
+  displayName,
+  initial,
+  avatarUrl,
+  goalPhrase,
+}: {
+  pillarValues: PillarValues;
+  rangeData: AllRangeData;
+  overallScore: number | null;
+  displayName: string;
+  initial: string;
+  avatarUrl: string | null;
+  goalPhrase: string;
+}) {
+  const stateWord = stateWordForScore(overallScore);
+
+  // Narrative read: state-appropriate, one paragraph, honest to real score.
+  const narrativeRead = (() => {
+    if (stateWord === "getting started") {
+      return "You are at the start of your read, and that is exactly where it should begin. As you log and connect data, this picture fills in.";
+    }
+    if (stateWord === "recovering") {
+      return "This is a rebuilding stretch, which is a normal part of the cycle. Small, repeatable habits restore momentum fastest.";
+    }
+    if (stateWord === "steady") {
+      return "You are holding a solid, level baseline. A single focused area is usually the next lever to nudge it up.";
+    }
+    if (stateWord === "building") {
+      return "Your trend is moving in the right direction. Consistency over the next stretch is what carries it higher.";
+    }
+    return "Your signals are clustering near your best. Keep the routine steady and let the small wins compound.";
+  })();
+
+  // Build the real pillar values array from pillarValues map, matching PILLARS order.
+  const livePillars = PILLARS.map((p) => ({
+    ...p,
+    value: heroGaugeScore(pillarValues[p.key] ?? 0),
+  }));
+
   return (
     <div style={{ position: "relative", borderRadius: 22, padding: 20, marginBottom: 16, border: `1px solid ${C.line}`, background: `linear-gradient(160deg, #223a66 0%, ${C.card} 55%, #1b2c4e 100%)`, boxShadow: "0 24px 60px rgba(0,0,0,0.34)", overflow: "hidden" }}>
       <Edge active />
       <div className="vc-hero">
-        <ProfileCard />
+        <ProfileCard
+          displayName={displayName}
+          initial={initial}
+          avatarUrl={avatarUrl}
+          goalPhrase={goalPhrase}
+          stateWord={stateWord}
+        />
         <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 16 }}>
           <div className="vc-herotop">
             <div style={{ flex: "1 1 280px" }}>
               <div style={eyebrow}>Your read today</div>
-              <h1 style={{ margin: "8px 0 0", fontSize: 27, fontWeight: 800, letterSpacing: -0.6, lineHeight: 1.12 }}>You are in a <span style={{ color: C.teal }}>steady</span> state today</h1>
-              <p style={{ margin: "10px 0 0", fontSize: 13, color: C.muted, lineHeight: 1.55, maxWidth: 460 }}>Recovery is solid and readiness looks good. Sleep slipped this week and nutrition is holding. Hannah is keeping your protocol steady while you rebuild your wind-down.</p>
+              <h1 style={{ margin: "8px 0 0", fontSize: 27, fontWeight: 800, letterSpacing: -0.6, lineHeight: 1.12 }}>You are in a <span style={{ color: C.teal }}>{stateWord}</span> state today</h1>
+              <p style={{ margin: "10px 0 0", fontSize: 13, color: C.muted, lineHeight: 1.55, maxWidth: 460 }}>{narrativeRead}</p>
             </div>
-            <div className="vc-gaugecluster">{PILLARS.map((p) => <GaugeCard key={p.key} value={p.value} label={p.label} color={p.color} hero={p.hero} />)}</div>
+            <div className="vc-gaugecluster">{livePillars.map((p) => <GaugeCard key={p.key} value={p.value} label={p.label} color={p.color} hero={p.hero} />)}</div>
           </div>
           <div style={{ background: `linear-gradient(180deg, ${C.inset}, ${C.card})`, border: `1px solid ${C.line}`, borderRadius: 16, padding: "16px 16px 14px" }}>
-            <DailyScores />
+            <DailyScores rangeData={rangeData} />
           </div>
         </div>
       </div>
@@ -323,7 +445,150 @@ function AcceleratorsTab() {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Real-data graph builder
+//
+// REALITY: only the OVERALL composite has a real time-series (dailyScores/bioScores
+// from useBioOptimizationTrend). The 6 component pillar lines have NO history source
+// (known backend gap - flagged for Gary). They are represented as FLAT lines at the
+// pillar's current value: honest "no trend known" rather than a fabricated trend.
+//
+// overall line: real history array of scores. If fewer than 2 points, flattened at
+//   the current overall value (honest baseline).
+// pillar lines (sleep/energy/mood/nutrition/activity/hydration): flat array of the
+//   pillar's current gauge value repeated across the point count.
+//
+// The point count matches the data.dailyScores length for the range. If empty,
+// defaults to 7 points so the graph is never empty (all zeros is honest baseline).
+// ---------------------------------------------------------------------------
+
+function buildRangeData(
+  overallPoints: { score: number }[],
+  pillarValues: PillarValues,
+): RangeData {
+  // Determine point count from the real series (minimum 2 for a valid line).
+  const n = Math.max(2, overallPoints.length);
+
+  // Overall line: real scores when >= 2 finite points; flat at current otherwise.
+  const overallScores = overallPoints
+    .map((p) => p.score)
+    .filter((s) => typeof s === "number" && isFinite(s));
+  const overallArr: number[] =
+    overallScores.length >= 2
+      ? overallScores
+      : buildFlatSeries(heroGaugeScore(pillarValues["overall"] ?? 0), n);
+
+  // Pillar lines: flat at the current gauge value (no history, honest representation).
+  const sleepArr = buildFlatSeries(heroGaugeScore(pillarValues["sleep"] ?? 0), n);
+  const energyArr = buildFlatSeries(heroGaugeScore(pillarValues["energy"] ?? 0), n);
+  const moodArr = buildFlatSeries(heroGaugeScore(pillarValues["mood"] ?? 0), n);
+  const nutritionArr = buildFlatSeries(heroGaugeScore(pillarValues["nutrition"] ?? 0), n);
+  const activityArr = buildFlatSeries(heroGaugeScore(pillarValues["activity"] ?? 0), n);
+  const hydrationArr = buildFlatSeries(heroGaugeScore(pillarValues["hydration"] ?? 0), n);
+
+  return {
+    sleep: sleepArr,
+    energy: energyArr,
+    mood: moodArr,
+    nutrition: nutritionArr,
+    activity: activityArr,
+    overall: overallArr,
+    hydration: hydrationArr,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Main component
+// ---------------------------------------------------------------------------
+
 export function YourJourneyCoaching({ userId: _userId }: { userId: string | null }) {
+  const userId = _userId;
+
+  // Real data hooks (fail-open: all return safe defaults on error/loading).
+  const { data: bos7D } = useBioOptimizationTrend(userId, "7D");
+  const { data: bos4W } = useBioOptimizationTrend(userId, "4W");
+  const { data: bos1Y } = useBioOptimizationTrend(userId, "1Y");
+  const { data: hydrationData } = useHydrationToday();
+  const { state: journeyState } = useJourneyState(userId);
+
+  // Display name: resolved async via getDisplayName (mirrors ProfileCard.tsx approach).
+  const [displayName, setDisplayName] = useState<string>("");
+  useEffect(() => {
+    let active = true;
+    getDisplayName()
+      .then((n) => { if (active) setDisplayName(n); })
+      .catch(() => { /* keep empty; renders as "there" */ });
+    return () => { active = false; };
+  }, [userId]);
+
+  // Avatar URL: best-effort direct Supabase read wrapped in withTimeout + try/catch.
+  // Fails open to null (initial tile). Mirrors ProfileCard.tsx resilience pattern.
+  // The Supabase query builder chain is cast to a typed Promise to avoid `any`.
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  useEffect(() => {
+    let active = true;
+    setAvatarUrl(null);
+    if (!userId) return;
+    (async () => {
+      try {
+        const supabase = createClient();
+        type ProfileRow = { avatar_url: string | null };
+        type AvatarQueryResult = { data: ProfileRow | null; error: unknown };
+        // The Supabase client's from().select().eq().maybeSingle() chain returns a
+        // PromiseLike that is not yet typed in the generated types. We cast it to the
+        // known result shape. This is the established pattern across 208g/h/ProfileCard.
+        const queryResult = supabase
+          .from("profiles")
+          .select("avatar_url")
+          .eq("id", userId)
+          .maybeSingle();
+        const { data } = await withTimeout(
+          queryResult as unknown as Promise<AvatarQueryResult>,
+          4000,
+          "YourJourneyCoaching.avatar",
+        );
+        const url = (data?.avatar_url as string | null) ?? null;
+        if (active) setAvatarUrl(url && url.trim().length > 0 ? url : null);
+      } catch (err) {
+        safeLog.warn("YourJourneyCoaching", "avatar read failed, failing open", { error: err });
+      }
+    })();
+    return () => { active = false; };
+  }, [userId]);
+
+  // Derive pillar values from hook data (fail-open: missing data -> 0).
+  const averages = bos7D?.categoryAverages ?? null;
+  const overallCurrent = bos7D?.current ?? 0;
+  const hydrationPct = hydrationData?.percentage_of_target ?? null;
+
+  const pillarValues: PillarValues = {
+    sleep: averages?.sleep ?? 0,
+    energy: averages?.adherence ?? 0,    // adherence = energy_score avg
+    mood: averages?.stress ?? 0,
+    nutrition: averages?.nutrition ?? 0,
+    activity: averages?.movement ?? 0,
+    overall: overallCurrent,
+    hydration: hydrationPct ?? 0,
+  };
+
+  // Build range data for 1W / 1M / 1Y graph tabs.
+  // Overall composite: real history for each range window.
+  // Pillar lines: flat at current value (no per-pillar history; backend gap flagged).
+  const rangeData: AllRangeData = {
+    "1W": buildRangeData(bos7D?.dailyScores ?? bos7D?.bioScores ?? [], pillarValues),
+    "1M": buildRangeData(bos4W?.dailyScores ?? bos4W?.bioScores ?? [], pillarValues),
+    "1Y": buildRangeData(bos1Y?.dailyScores ?? bos1Y?.bioScores ?? [], pillarValues),
+  };
+
+  // Profile card data.
+  const displayNameSafe = displayName && displayName.trim().length > 0 ? displayName : "there";
+  const initial = displayNameSafe.charAt(0).toUpperCase() || "V";
+  const goalPhrase = journeyState.goalPhrase || "supporting your wellness";
+
+  // Overall score for narrative (null when no data = getting started state).
+  const overallScore: number | null =
+    overallCurrent > 0 ? overallCurrent : null;
+
   return (
     <div style={{ fontFamily: "'Instrument Sans', system-ui, sans-serif", background: `radial-gradient(1200px 600px at 70% -12%, #21345c 0%, ${C.navy} 58%)`, minHeight: "100vh", color: C.text, padding: "18px 28px 46px" }}>
       <style>{`
@@ -347,7 +612,15 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
           <div style={{ display: "flex", gap: 12, color: C.muted }}><Search size={18} strokeWidth={SW} /><Bell size={18} strokeWidth={SW} /></div>
         </div>
 
-        <Hero />
+        <Hero
+          pillarValues={pillarValues}
+          rangeData={rangeData}
+          overallScore={overallScore}
+          displayName={displayNameSafe}
+          initial={initial}
+          avatarUrl={avatarUrl}
+          goalPhrase={goalPhrase}
+        />
 
         <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
           <section>
