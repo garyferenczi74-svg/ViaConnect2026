@@ -42,8 +42,7 @@ import { HannahInsightPanel } from '@/app/(app)/(consumer)/analytics/components/
 import { useBioOptimizationTrend } from '@/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/hooks/useBioOptimizationTrend';
 import { useHannahInsights } from '@/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/hooks/useHannahInsights';
 import { GoalProgressCard } from '@/components/journey/progress/GoalProgressCard';
-import { BodyCompositionCard } from '@/components/journey/progress/BodyCompositionCard';
-import { EnergyBalanceTriangle } from '@/components/journey/progress/EnergyBalanceTriangle';
+import { BodyCompositionTrio } from '@/components/journey/progress/BodyCompositionTrio';
 import { NutritionDonut } from '@/components/journey/trio/NutritionDonut';
 import { SleepDonut } from '@/components/journey/trio/SleepDonut';
 import { VitalTrends } from '@/components/journey/trio/VitalTrends';
@@ -248,14 +247,9 @@ export function YourJourneyPage({ userId }: { userId: string | null }) {
             <SleepDonut userId={userId} />
           </div>
 
-          {/* Body Composition Trio row.
-              BodyCompositionCard already shows lean mass and body fat, so a
-              clean third card does not exist yet. Using 2-up lg:grid-cols-2.
-              G-T4 can extend to 3-up if a dedicated lean-mass card is added. */}
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <BodyCompositionCard userId={userId} />
-            <EnergyBalanceTriangle userId={userId} />
-          </div>
+          {/* Body Composition Trio row (G-T4): lean mass, body fat, energy balance.
+              BodyCompositionCard.tsx left on disk; imports removed from this page. */}
+          <BodyCompositionTrio userId={userId} />
 
           {/* ----------------------------------------------------------------
               3.4 TODAY + THIS WEEK

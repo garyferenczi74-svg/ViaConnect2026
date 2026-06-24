@@ -82,7 +82,7 @@ export function GoalProgressCard({ userId }: { userId: string | null }) {
     delta === null ? '-- this cycle' : `${delta > 0 ? '+' : ''}${delta} this cycle`;
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-white/[0.06] bg-[rgba(22,36,64,0.40)] p-4">
+    <div className="flex h-full flex-col gap-3 rounded-xl border border-white/[0.06] bg-[rgba(22,36,64,0.40)] p-4">
       {/* Goal line */}
       <div className="flex items-center gap-2">
         <Target className="h-4 w-4 shrink-0" strokeWidth={1.5} style={{ color: TEAL }} />
