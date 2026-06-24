@@ -75,16 +75,18 @@ function SectionShell({
   icon: Icon,
   children,
   className,
+  solid,
 }: {
   eyebrow?: string;
   title?: string;
   icon?: LucideIcon;
   children: ReactNode;
   className?: string;
+  solid?: boolean;
 }) {
   return (
     <section
-      className={`glass-panel w-full p-4 md:p-5 ${className ?? ''}`}
+      className={`${solid ? 'glass-panel-solid' : 'glass-panel'} w-full p-4 md:p-5 ${className ?? ''}`}
       aria-label={title ?? eyebrow ?? undefined}
     >
       {(title || eyebrow) && (
@@ -194,49 +196,48 @@ export function YourJourneyPage({ userId }: { userId: string | null }) {
           <JourneySpine userId={userId} />
 
           {/* ----------------------------------------------------------------
-              3.2 HERO
-              Two-part responsive grid: profile rail (left) + main column
-              (right). Stacks on mobile with profile first.
+              3.2 HERO (208h rev2 top-region rebuild)
+              Row 1: solid header block LEFT, solid gauge row RIGHT.
+              Row 2: solid DailyScoresGraph full-width below.
+              Mobile: single column, header first then gauges then graph.
+              Desktop (lg+): header narrower left, gauges wider right so
+              7 standard gauges fit one row at 1280, 1440, and 1920.
           ---------------------------------------------------------------- */}
-          <div className="grid grid-cols-1 gap-4 items-stretch lg:grid-cols-[300px_1fr]">
 
-            {/* LEFT rail: profile card in a glass panel */}
-            <SectionShell eyebrow="Your profile" className="h-full">
-              <ProfileCard userId={userId} />
+          {/* Top region: header LEFT + gauge row RIGHT */}
+          <div className="grid grid-cols-1 gap-4 items-start lg:grid-cols-[minmax(300px,1fr)_minmax(0,1.7fr)]">
+
+            {/* LEFT header block: identity (ProfileCard carries name, avatar,
+                Hannah note via getDisplayName) stacked with the narrative
+                headline and Hannah insight read. Solid panel so the hero
+                photo cannot bleed through. */}
+            <SectionShell eyebrow="Your profile" className="h-full" solid>
+              <div className="flex flex-col gap-3">
+                <ProfileCard userId={userId} />
+                <NarrativeRead
+                  userId={userId}
+                  displayName={displayName}
+                  score={narrativeScore}
+                />
+                <HannahInsightPanel insight={insight} />
+              </div>
             </SectionShell>
 
-            {/* RIGHT main column: narrative + Hannah + gauges + daily scores */}
-            <div className="flex flex-col gap-4">
+            {/* RIGHT gauge row: 7 prominent Plasma Core 3D ring gauges.
+                GaugeCluster handles its own responsive layout internally
+                (horizontal scroll on mobile, 7-column grid on lg+).
+                Solid panel so the photo does not sit behind the rings. */}
+            <SectionShell eyebrow="Pillar scores" title="Your pillars" solid>
+              <GaugeCluster userId={userId} />
+            </SectionShell>
 
-              {/* Narrative headline + Hannah read note */}
-              <SectionShell eyebrow="Your journey" title="Where you stand">
-                <div className="flex flex-col gap-3">
-                  <NarrativeRead
-                    userId={userId}
-                    displayName={displayName}
-                    score={narrativeScore}
-                  />
-                  <HannahInsightPanel insight={insight} />
-                </div>
-              </SectionShell>
-
-              {/* GaugeCluster: G-T2 built. 7 tinted Plasma gauges, one per pillar.
-                  PillarGaugeRow.tsx left on disk; no longer imported here. */}
-              <SectionShell eyebrow="Pillar scores" title="Your pillars">
-                <GaugeCluster userId={userId} />
-              </SectionShell>
-
-              {/* DailyScoresGraph: G-T3 built. Multi-line composite trend,
-                  range toggle 1W/1M/1Y, pillar legend, honest seed state.
-                  Only the Bio Optimization composite line is plotted when
-                  history is available. Per-pillar trends have no history
-                  source and appear in the legend only. */}
-              <SectionShell eyebrow="Trend" title="Daily Scores">
-                <DailyScoresGraph userId={userId} />
-              </SectionShell>
-
-            </div>
           </div>
+
+          {/* DailyScoresGraph: full-width solid panel below the top region.
+              Only the position changes here; internals are H-T2 scope. */}
+          <SectionShell eyebrow="Trend" title="Daily Scores" solid>
+            <DailyScoresGraph userId={userId} />
+          </SectionShell>
 
           {/* ----------------------------------------------------------------
               3.3 GOALS / NUTRITION / SLEEP + BODY COMPOSITION TRIO

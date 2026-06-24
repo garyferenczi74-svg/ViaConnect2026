@@ -472,3 +472,17 @@ body {
    src/components/gauges/plasma-gauge.css, co located with the
    component per the canonical reference. The component imports its
    own stylesheet directly; this file no longer carries those rules. */
+
+/* Prompt 208h (2026-06-24): Solid dark surface for gauge, chart, and header
+   panels so the position:fixed hero photo cannot bleed through. Photo is
+   KEPT as MobileHeroBackground; only these panels become opaque.
+   Additive: no existing class changed. */
+.glass-panel-solid {
+  background: #16203A;
+  border: 1px solid rgba(45, 165, 160, 0.18);
+  border-radius: 16px;
+  box-shadow:
+    0 4px 30px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+}

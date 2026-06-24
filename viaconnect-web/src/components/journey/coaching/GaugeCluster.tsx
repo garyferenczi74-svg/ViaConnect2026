@@ -140,37 +140,41 @@ export function GaugeCluster({ userId }: { userId: string | null }) {
     hydrationPct: hydrationData?.percentage_of_target ?? null,
   });
 
+  // Mobile: horizontal scroll row so gauges never shrink below 92px.
+  // Desktop (lg+): single row of 7, no overflow needed.
   return (
-    <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4 lg:grid-cols-7">
-      {specs.map((spec) => {
-        const has = spec.value > 0;
-        return (
-          <div
-            key={spec.label}
-            className="flex flex-col items-center gap-1.5 rounded-xl border border-white/[0.06] bg-[rgba(22,36,64,0.45)] px-2 py-3"
-          >
-            <PlasmaGauge
-              value={spec.value}
-              metric={spec.metric}
-              variant="compact"
-              size={84}
-              max={100}
-              caption={has ? spec.label.toUpperCase() : 'COMPUTING'}
-              ariaLabel={
-                has
-                  ? `${spec.label} ${spec.value} of 100`
-                  : `${spec.label} score is computing`
-              }
-            />
-            <span
-              className="text-center text-[10px] font-medium leading-tight text-white/60"
-              style={{ fontFamily: DM_SANS }}
+    <div className="overflow-x-auto pb-1 lg:overflow-x-visible">
+      <div className="flex gap-2.5 lg:grid lg:grid-cols-7" style={{ minWidth: 'max-content' }} aria-label="Pillar score gauges">
+        {specs.map((spec) => {
+          const has = spec.value > 0;
+          return (
+            <div
+              key={spec.label}
+              className="flex shrink-0 flex-col items-center gap-1.5 rounded-xl border border-white/[0.08] bg-[#16203A] px-2 py-3 lg:shrink"
             >
-              {spec.label}
-            </span>
-          </div>
-        );
-      })}
+              <PlasmaGauge
+                value={spec.value}
+                metric={spec.metric}
+                variant="standard"
+                size={92}
+                max={100}
+                caption={has ? spec.label.toUpperCase() : 'COMPUTING'}
+                ariaLabel={
+                  has
+                    ? `${spec.label} ${spec.value} of 100`
+                    : `${spec.label} score is computing`
+                }
+              />
+              <span
+                className="text-center text-[10px] font-medium leading-tight text-white/60"
+                style={{ fontFamily: DM_SANS }}
+              >
+                {spec.label}
+              </span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
