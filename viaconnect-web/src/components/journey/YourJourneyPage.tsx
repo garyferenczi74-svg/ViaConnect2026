@@ -37,6 +37,7 @@ import { JourneySpine } from '@/components/journey/JourneySpine';
 import { ProfileCard } from '@/components/journey/coaching/ProfileCard';
 import { NarrativeRead } from '@/components/journey/coaching/NarrativeRead';
 import { GaugeCluster } from '@/components/journey/coaching/GaugeCluster';
+import { DailyScoresGraph } from '@/components/journey/coaching/DailyScoresGraph';
 import { HannahInsightPanel } from '@/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/HannahInsightPanel';
 import { useBioOptimizationTrend } from '@/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/hooks/useBioOptimizationTrend';
 import { useHannahInsights } from '@/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/hooks/useHannahInsights';
@@ -224,15 +225,13 @@ export function YourJourneyPage({ userId }: { userId: string | null }) {
                 <GaugeCluster userId={userId} />
               </SectionShell>
 
-              {/* DailyScoresGraph placeholder - calm honest text until G-T3.
-                  G-T3 will build the multi-line DailyScoresGraph here. */}
+              {/* DailyScoresGraph: G-T3 built. Multi-line composite trend,
+                  range toggle 1W/1M/1Y, pillar legend, honest seed state.
+                  Only the Bio Optimization composite line is plotted when
+                  history is available. Per-pillar trends have no history
+                  source and appear in the legend only. */}
               <SectionShell eyebrow="Trend" title="Daily Scores">
-                <p
-                  className="text-sm text-white/50"
-                  style={{ fontFamily: DM_SANS }}
-                >
-                  Your Daily Scores trend builds here as your baseline fills in.
-                </p>
+                <DailyScoresGraph userId={userId} />
               </SectionShell>
 
             </div>
