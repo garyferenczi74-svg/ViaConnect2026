@@ -305,14 +305,20 @@ export function YourJourneyPage({ userId }: { userId: string | null }) {
 
           {/* ----------------------------------------------------------------
               3.5 ACCELERATORS + CONNECTION MAP
-              Split row: accelerators (left), connection map (right).
+              Split row: accelerators 2x2 grid (left), connection map (right).
+              The accelerators block drives the row height via items-stretch.
+              The connection map is a fixed-aspect SVG graphic; it is centered
+              vertically inside a full-height flex container so it scales to
+              fit without dictating the row height.
           ---------------------------------------------------------------- */}
           <div className="grid grid-cols-1 gap-4 items-stretch lg:grid-cols-2">
-            <SectionShell eyebrow="What moves you forward" title="Journey accelerators" icon={Sparkles}>
+            <SectionShell eyebrow="What moves you forward" title="Journey accelerators" icon={Sparkles} className="h-full">
               <JourneyAcceleratorsSection userId={userId} />
             </SectionShell>
-            <SectionShell eyebrow="How it connects" title="Connection map" icon={Network}>
-              <ConnectionMap />
+            <SectionShell eyebrow="How it connects" title="Connection map" icon={Network} className="h-full">
+              <div className="flex h-full items-center justify-center">
+                <ConnectionMap />
+              </div>
             </SectionShell>
           </div>
 
