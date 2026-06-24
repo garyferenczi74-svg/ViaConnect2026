@@ -36,7 +36,7 @@ import {
 import { JourneySpine } from '@/components/journey/JourneySpine';
 import { ProfileCard } from '@/components/journey/coaching/ProfileCard';
 import { NarrativeRead } from '@/components/journey/coaching/NarrativeRead';
-import { PillarGaugeRow } from '@/components/journey/coaching/PillarGaugeRow';
+import { GaugeCluster } from '@/components/journey/coaching/GaugeCluster';
 import { HannahInsightPanel } from '@/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/HannahInsightPanel';
 import { useBioOptimizationTrend } from '@/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/hooks/useBioOptimizationTrend';
 import { useHannahInsights } from '@/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/hooks/useHannahInsights';
@@ -218,10 +218,10 @@ export function YourJourneyPage({ userId }: { userId: string | null }) {
                 </div>
               </SectionShell>
 
-              {/* GaugeCluster placeholder - mounts existing PillarGaugeRow.
-                  G-T2 will replace PillarGaugeRow with the 7-pillar GaugeCluster. */}
+              {/* GaugeCluster: G-T2 built. 7 tinted Plasma gauges, one per pillar.
+                  PillarGaugeRow.tsx left on disk; no longer imported here. */}
               <SectionShell eyebrow="Pillar scores" title="Your pillars">
-                <PillarGaugeRow userId={userId} />
+                <GaugeCluster userId={userId} />
               </SectionShell>
 
               {/* DailyScoresGraph placeholder - calm honest text until G-T3.
