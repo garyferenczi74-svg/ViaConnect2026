@@ -12,7 +12,18 @@
  * Reads mirrored from DailyScoresPanel.computeScores():
  *   1. daily_checkins for today (user_id + check_in_date = todayLocal())
  *   2. meal_logs for today (user_id + meal_date = todayLocal())
- *   3. useHydrationToday() for hydration percentage
+ *   3. localStorage-cached meals (getCachedMeals) merged after DB meal read
+ *   4. useHydrationToday() for hydration percentage
+ *
+ * Parity mechanisms mirrored from DailyScoresPanel:
+ *   getCachedMeals: localStorage key vc_local_meals_cache - date-keyed.
+ *     Merged after DB meal read (dedup by meal_type). Meal_score -> avg is
+ *     primary; quality_rating * 25 is fallback. Prevents nutrition diverging
+ *     when a meal is logged before the DB write reflects.
+ *   sessionStorage overlay: key vc_daily_scores_cache - date-keyed.
+ *     When freshly computed overall confidence is 0 but a prior valid result
+ *     is cached, overlay cached gauge values to prevent flickering to zero.
+ *     Valid computed scores are persisted for subsequent re-reads.
  *
  * Equality guarantee: calculateDailyScores is imported from the same module
  * and called with the same arguments as the dashboard. The date scoping uses
@@ -45,6 +56,7 @@ import {
   mapCheckInToScoringInput,
   getScoreColor,
   type MealLogData,
+  type DailyScoreResult,
 } from '@/lib/scoring/dailyScoreEngineV2';
 import { useHydrationToday } from '@/components/hydration/useHydrationToday';
 import { detectTimezone, localDateString } from '@/lib/timezone';
@@ -57,6 +69,156 @@ import { safeLog } from '@/lib/utils/safe-log';
 
 function todayLocal(): string {
   return localDateString(detectTimezone());
+}
+
+// ---------------------------------------------------------------------------
+// sessionStorage cache (mirrors DailyScoresPanel CACHE_KEY / getCachedScores /
+// setCachedScores). Shared key so the hook and the panel share one cache entry.
+// ---------------------------------------------------------------------------
+
+const CACHE_KEY = 'vc_daily_scores_cache';
+
+function getCachedScores(): DailyScoreResult | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = sessionStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { date: string; scores: DailyScoreResult };
+    if (parsed.date !== todayLocal()) return null;
+    return parsed.scores;
+  } catch { return null; }
+}
+
+function setCachedScores(scores: DailyScoreResult): void {
+  try {
+    sessionStorage.setItem(CACHE_KEY, JSON.stringify({ date: todayLocal(), scores }));
+  } catch {}
+}
+
+// ---------------------------------------------------------------------------
+// localStorage meal cache (mirrors DailyScoresPanel MEALS_CACHE_KEY /
+// getCachedMeals). Shared key so the hook reads the same events the panel
+// caches from meal-logged CustomEvents.
+// ---------------------------------------------------------------------------
+
+const MEALS_CACHE_KEY = 'vc_local_meals_cache';
+
+interface LocalMeal {
+  meal_type: string;
+  quality_rating?: number | null;
+  meal_score?: number | null;
+  calories?: number | null;
+  protein_grams?: number | null;
+  carbs_grams?: number | null;
+  fats_grams?: number | null;
+}
+
+function getCachedMeals(): LocalMeal[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(MEALS_CACHE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as { date: string; meals?: LocalMeal[] };
+    if (parsed.date !== todayLocal()) return [];
+    return parsed.meals ?? [];
+  } catch { return []; }
+}
+
+// ---------------------------------------------------------------------------
+// Pure helper: mergeLocalMeals
+//
+// Exported for TDD. Merges locally-cached meals (from meal-logged events) into
+// the meal list that will be passed to calculateDailyScores. Deduplicates by
+// meal_type: DB rows take precedence; a cached entry is only appended when its
+// meal_type is not already present. Mirrors the dedup logic in
+// DailyScoresPanel.computeScores verbatim.
+// ---------------------------------------------------------------------------
+
+export interface NormalisedMeal {
+  meal_type: string;
+  calories: number | null;
+  protein_grams: number | null;
+  carbs_grams: number | null;
+  fats_grams: number | null;
+  includes_vegetables: boolean;
+  includes_whole_grains: boolean;
+  includes_lean_protein: boolean;
+  meal_quality_rating: number | null;
+}
+
+/**
+ * Merges locally-cached meals from localStorage into the DB meal list.
+ * Returns a new array; never mutates the input. Pure, deterministic.
+ */
+export function mergeLocalMeals(
+  dbMeals: NormalisedMeal[],
+  localMeals: LocalMeal[],
+): NormalisedMeal[] {
+  if (localMeals.length === 0) return dbMeals;
+  const result: NormalisedMeal[] = [...dbMeals];
+  const existing = new Set(dbMeals.map((m) => m.meal_type));
+  for (const lm of localMeals) {
+    if (!existing.has(lm.meal_type)) {
+      result.push({
+        meal_type: lm.meal_type,
+        calories: lm.calories ?? null,
+        protein_grams: lm.protein_grams ?? null,
+        carbs_grams: lm.carbs_grams ?? null,
+        fats_grams: lm.fats_grams ?? null,
+        includes_vegetables: false,
+        includes_whole_grains: false,
+        includes_lean_protein: false,
+        meal_quality_rating: lm.quality_rating ?? null,
+      });
+    }
+  }
+  return result;
+}
+
+// ---------------------------------------------------------------------------
+// Pure helper: applyScoreOverlay
+//
+// Exported for TDD. When freshly computed overall confidence is 0 but a prior
+// valid result is available (from sessionStorage), overlays cached gauge values
+// onto any gauge that has confidence 0 in the fresh result. Recomputes overall
+// from the merged gauges. Mirrors the stale-cache fill-in guard in
+// DailyScoresPanel.computeScores verbatim. Pure, deterministic, never throws.
+// ---------------------------------------------------------------------------
+
+type GaugeKey = 'sleep' | 'energy' | 'moodStress' | 'nutrition' | 'activity';
+
+const GAUGES: GaugeKey[] = ['sleep', 'energy', 'moodStress', 'nutrition', 'activity'];
+
+/**
+ * Overlays cached gauge values onto a freshly computed result when overall
+ * confidence is 0. Returns the same object reference if no overlay is needed
+ * (overall confidence > 0 or no valid cached result). Mutates scores in place
+ * and returns it for convenience. Pure except for the mutation of the input
+ * object (matches the DailyScoresPanel pattern to avoid extra allocations).
+ */
+export function applyScoreOverlay(
+  scores: DailyScoreResult,
+  cached: DailyScoreResult | null,
+): DailyScoreResult {
+  if (scores.overall.confidence > 0 || cached === null || cached.overall.confidence === 0) {
+    return scores;
+  }
+  for (const g of GAUGES) {
+    if (scores[g].confidence === 0 && cached[g].confidence > 0) {
+      scores[g] = cached[g];
+    }
+  }
+  const active = GAUGES.map((g) => scores[g]).filter((s) => s.confidence > 0);
+  if (active.length > 0) {
+    const overallScore = Math.round(active.reduce((s, g) => s + g.score, 0) / active.length);
+    scores.overall = {
+      ...scores.overall,
+      score: overallScore,
+      confidence: active.length / 5,
+      color: getScoreColor(overallScore),
+    };
+  }
+  return scores;
 }
 
 // ---------------------------------------------------------------------------
@@ -186,6 +348,11 @@ export function useDailyScores(userId: string | null): DailyPillarScores {
       ? Math.max(0, Math.min(100, Math.round(hydrationPct)))
       : null;
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // Intentional hydration-effect split: this effect is scoped to userId so the
+  // Supabase reads (checkins, meals, profile) re-run only when the user changes.
+  // A separate effect below tracks hydrationClamped from useHydrationToday so
+  // real-time hydration log events update the gauge without re-fetching DB data.
   useEffect(() => {
     if (!userId) {
       setScores({ ...INITIAL, loading: false });
@@ -221,7 +388,7 @@ export function useDailyScores(userId: string | null): DailyPillarScores {
         }
 
         // ---- Step 2: meal_logs (mirrors DailyScoresPanel.computeScores) ----
-        let mealLog: MealLogData = { meals: [] };
+        let dbMeals: NormalisedMeal[] = [];
         let dbMealScores: number[] = [];
         try {
           const mealsQuery = supabase
@@ -235,20 +402,18 @@ export function useDailyScores(userId: string | null): DailyPillarScores {
             'useDailyScores.meal_logs',
           );
           if (mealRows && mealRows.length > 0) {
-            mealLog = {
-              meals: mealRows.map((m) => ({
-                meal_type: m.meal_type,
-                calories: m.calories,
-                protein_grams: m.protein_g,
-                carbs_grams: m.carbs_g,
-                fats_grams: m.fat_g,
-                includes_vegetables: false,
-                includes_whole_grains: false,
-                includes_lean_protein: false,
-                meal_quality_rating: m.quality_rating,
-              })),
-            };
-            // meal_score is the primary nutrition source (same as DailyScoresPanel Prompt 84).
+            dbMeals = mealRows.map((m) => ({
+              meal_type: m.meal_type,
+              calories: m.calories,
+              protein_grams: m.protein_g,
+              carbs_grams: m.carbs_g,
+              fats_grams: m.fat_g,
+              includes_vegetables: false,
+              includes_whole_grains: false,
+              includes_lean_protein: false,
+              meal_quality_rating: m.quality_rating,
+            }));
+            // meal_score is the primary nutrition source (Prompt 84).
             dbMealScores = mealRows
               .map((m) => m.meal_score)
               .filter((s): s is number => s !== null);
@@ -256,6 +421,12 @@ export function useDailyScores(userId: string | null): DailyPillarScores {
         } catch (err) {
           safeLog.warn('useDailyScores', 'meal_logs read failed, failing open', { error: err });
         }
+
+        // Fix 1: merge localStorage-cached meals (mirrors DailyScoresPanel
+        // getCachedMeals supplementation). Covers users whose DB write is still
+        // in-flight after a meal-logged event, so nutrition matches the dashboard.
+        const mergedMeals = mergeLocalMeals(dbMeals, getCachedMeals());
+        const mealLog: MealLogData = mergedMeals.length > 0 ? { meals: mergedMeals } : { meals: [] };
 
         // ---- Step 3: profiles.bio_optimization_score ----
         let bioOptimizationScore: number | null = null;
@@ -290,39 +461,68 @@ export function useDailyScores(userId: string | null): DailyPillarScores {
         );
 
         // ---- Step 5: nutrition override from meal_score (mirrors DailyScoresPanel Prompt 84) ----
-        if (dbMealScores.length > 0) {
-          const avg = Math.round(
-            dbMealScores.reduce((s, v) => s + v, 0) / dbMealScores.length,
-          );
+        // Primary: meal_score average from DB rows.
+        const mealScores: number[] = [...dbMealScores];
+
+        // Supplement with cached meals when DB returned none (mirrors DailyScoresPanel lines 209-213).
+        if (mealScores.length === 0) {
+          for (const lm of getCachedMeals()) {
+            const s =
+              lm.meal_score != null
+                ? lm.meal_score
+                : lm.quality_rating != null
+                ? Math.min(100, Math.max(0, lm.quality_rating * 25))
+                : null;
+            if (s != null) mealScores.push(s);
+          }
+        }
+
+        // Final fallback: quality_rating from any source (mirrors DailyScoresPanel lines 217-227).
+        if (mealScores.length === 0) {
+          const ratingSource: Array<{ quality_rating?: number | null }> = [
+            ...mergedMeals.map((m) => ({ quality_rating: m.meal_quality_rating })),
+            ...getCachedMeals(),
+          ];
+          for (const r of ratingSource) {
+            if (r.quality_rating != null) {
+              mealScores.push(Math.min(100, Math.max(0, r.quality_rating * 25)));
+            }
+          }
+        }
+
+        if (mealScores.length > 0) {
+          const avg = Math.round(mealScores.reduce((s, v) => s + v, 0) / mealScores.length);
           result.nutrition = {
             ...result.nutrition,
             score: avg,
             manualScore: avg,
             manualWeight: 1,
             wearableWeight: 0,
-            confidence: Math.min(1, 0.4 + dbMealScores.length * 0.15),
+            confidence: Math.min(1, 0.4 + mealScores.length * 0.15),
             color: getScoreColor(avg),
           };
-        } else {
-          // Fallback: quality_rating from meal rows (mirrors DailyScoresPanel).
-          const ratingScores: number[] = mealLog.meals
-            .map((m) => m.meal_quality_rating)
-            .filter((r): r is number => r !== null)
-            .map((r) => Math.min(100, Math.max(0, r * 25)));
-          if (ratingScores.length > 0) {
-            const avg = Math.round(
-              ratingScores.reduce((s, v) => s + v, 0) / ratingScores.length,
-            );
-            result.nutrition = {
-              ...result.nutrition,
-              score: avg,
-              manualScore: avg,
-              manualWeight: 1,
-              wearableWeight: 0,
-              confidence: Math.min(1, 0.4 + ratingScores.length * 0.15),
-              color: getScoreColor(avg),
+          // Recompute overall so the new nutrition value is reflected.
+          const active2 = [result.sleep, result.energy, result.moodStress, result.nutrition, result.activity]
+            .filter((g) => g.confidence > 0);
+          if (active2.length > 0) {
+            const overallScore = Math.round(active2.reduce((s, g) => s + g.score, 0) / active2.length);
+            result.overall = {
+              ...result.overall,
+              score: overallScore,
+              confidence: active2.length / 5,
+              color: getScoreColor(overallScore),
             };
           }
+        }
+
+        // Fix 2: sessionStorage stale-cache overlay (mirrors DailyScoresPanel
+        // lines 258-277). Prevents gauges from dropping to zero on a re-read
+        // or timeout when the DB returns no data but a prior valid result exists.
+        applyScoreOverlay(result, getCachedScores());
+
+        // Persist valid scores to sessionStorage (shared with DailyScoresPanel).
+        if (result.overall.confidence > 0) {
+          setCachedScores(result);
         }
 
         // ---- Step 6: map to canonical pillar shape ----
@@ -356,8 +556,11 @@ export function useDailyScores(userId: string | null): DailyPillarScores {
     return () => {
       active = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId]);
+  }, [userId]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Intentional split: hydration is tracked by its own effect below so that
+  // real-time hydration log events update the gauge without re-running the
+  // Supabase reads above. Adding hydrationClamped here would cause unnecessary
+  // DB round trips on every hydration change.
 
   // Keep hydration in sync with the real-time hook independently of the
   // Supabase reads above (hydration updates on every log event).
