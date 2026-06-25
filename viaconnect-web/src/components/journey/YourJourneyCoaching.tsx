@@ -25,6 +25,7 @@ import { useHannahInsights } from "@/app/(app)/(consumer)/analytics/components/B
 import { useJourneyRecommendations } from "@/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/hooks/useJourneyRecommendations";
 import { useHydrationToday } from "@/components/hydration/useHydrationToday";
 import { useJourneyState } from "@/hooks/journey/useJourneyState";
+import { useDailyScores } from "@/hooks/journey/useDailyScores";
 import { useNutritionTargets } from "@/hooks/useNutritionTargets";
 import { useLatestComposition } from "@/hooks/body-tracker/useLatestComposition";
 import { useRecentBodySeries } from "@/components/journey/progress/useRecentBodySeries";
@@ -53,10 +54,10 @@ const eyebrow: React.CSSProperties = { textTransform: "uppercase", letterSpacing
 const PILLARS: { key: string; label: string; value: number; delta: number; color: string; icon: LucideIcon; hero?: boolean }[] = [
   { key: "sleep", label: "Sleep Quality", value: 42, delta: -2, color: "#7B6FB0", icon: Moon },
   { key: "energy", label: "Energy Level", value: 58, delta: 3, color: "#D9A441", icon: Zap },
-  { key: "mood", label: "Mood & Stress", value: 51, delta: 4, color: "#B75E18", icon: Smile },
+  { key: "mood", label: "Mood and Stress", value: 51, delta: 4, color: "#B75E18", icon: Smile },
   { key: "nutrition", label: "Nutrition", value: 72, delta: 5, color: "#46C18E", icon: Salad },
   { key: "activity", label: "Physical Activity", value: 60, delta: 3, color: "#4F7FB5", icon: Activity },
-  { key: "overall", label: "Overall Wellness", value: 62, delta: 4, color: "#2DA5A0", icon: HeartPulse, hero: true },
+  { key: "overall", label: "Bio Optimization", value: 62, delta: 4, color: "#2DA5A0", icon: HeartPulse, hero: true },
   { key: "hydration", label: "Hydration", value: 64, delta: 6, color: "#38BDD8", icon: Droplet },
 ];
 
@@ -662,6 +663,10 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
   const { data: bos4W } = useBioOptimizationTrend(userId, "4W");
   const { data: bos1Y } = useBioOptimizationTrend(userId, "1Y");
   const { data: hydrationData } = useHydrationToday();
+  // J-T1: useDailyScores reuses calculateDailyScores + the same daily_checkins /
+  // meal_logs / useHydrationToday reads as DailyScoresPanel so pillar values here
+  // equal the dashboard "Your pillars" values for the same user.
+  const dailyScores = useDailyScores(userId);
   const { state: journeyState } = useJourneyState(userId);
   const { targets: nutritionTargets } = useNutritionTargets(userId);
   const { snapshot: compositionSnapshot } = useLatestComposition(userId);
@@ -712,19 +717,21 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
     return () => { active = false; };
   }, [userId]);
 
-  // Derive pillar values from hook data (fail-open: missing data -> 0).
-  const averages = bos7D?.categoryAverages ?? null;
+  // J-T1: pillar values from useDailyScores (TODAY's dashboard values via
+  // calculateDailyScores + same reads as DailyScoresPanel). Null -> 0 so the
+  // GaugeCard renders in its existing computing/0 state (same I-T2a behaviour).
+  // "overall" key maps to Bio Optimization (profiles.bio_optimization_score).
   const overallCurrent = bos7D?.current ?? 0;
   const hydrationPct = hydrationData?.percentage_of_target ?? null;
 
   const pillarValues: PillarValues = {
-    sleep: averages?.sleep ?? 0,
-    energy: averages?.adherence ?? 0,    // adherence = energy_score avg
-    mood: averages?.stress ?? 0,
-    nutrition: averages?.nutrition ?? 0,
-    activity: averages?.movement ?? 0,
-    overall: overallCurrent,
-    hydration: hydrationPct ?? 0,
+    sleep: dailyScores.sleepQuality ?? 0,
+    energy: dailyScores.energyLevel ?? 0,
+    mood: dailyScores.moodStress ?? 0,
+    nutrition: dailyScores.nutrition ?? 0,
+    activity: dailyScores.physicalActivity ?? 0,
+    overall: dailyScores.bioOptimization ?? 0,
+    hydration: dailyScores.hydration ?? hydrationPct ?? 0,
   };
 
   // Build range data for 1W / 1M / 1Y graph tabs.
