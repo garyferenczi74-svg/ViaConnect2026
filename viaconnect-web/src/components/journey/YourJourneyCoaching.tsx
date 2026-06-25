@@ -13,6 +13,7 @@
 // Pillar colors: mockup hex retained (no canonical per-pillar source differs; flagged).
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   Search, Bell, Edit2, Target, Activity, Moon, Salad, Heart, Sparkles, RefreshCw,
   Dna, FlaskConical, ClipboardList, Pill, HeartPulse, ArrowRight, ArrowUpRight,
@@ -33,7 +34,7 @@ import { createClient } from "@/lib/supabase/client";
 import { withTimeout } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
 import { heroGaugeScore, buildFlatSeries } from "@/components/journey/coaching/heroHelpers";
-import { formatMacroLabel, kcalRemaining, goalProgressPct, flatSparkline } from "@/components/journey/coaching/lowerHelpers";
+import { formatMacroLabel, kcalRemaining, flatSparkline } from "@/components/journey/coaching/lowerHelpers";
 
 const C = {
   navy: "#1A2744", card: "#1E3054", inset: "#16203A", raised: "#243a63",
@@ -298,6 +299,7 @@ function HannahRead({
   focusArea: string;
   estimatedImpact: number;
 }) {
+  const router = useRouter();
   return (
     <div style={{ ...panel(true), height: "100%", display: "flex", flexDirection: "column" }}>
       <Edge active />
@@ -315,7 +317,7 @@ function HannahRead({
         <span style={{ fontSize: 11.5, color: C.muted }}>Estimated lift</span>
         <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 700, color: C.green }}><ArrowUpRight size={13} strokeWidth={2} /> +{estimatedImpact} pts</span>
       </div>
-      <button className="vc-focus" style={{ marginTop: 10, width: "100%", cursor: "pointer", background: "transparent", border: `1px solid ${C.teal}`, color: C.teal, borderRadius: 10, padding: "10px 12px", fontSize: 12.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "space-between" }}>View Full Report with Hannah <ArrowRight size={15} strokeWidth={2} /></button>
+      <button className="vc-focus" onClick={() => router.push("/wellness/advisor?report=bio-optimization")} style={{ marginTop: 10, width: "100%", cursor: "pointer", background: "transparent", border: `1px solid ${C.teal}`, color: C.teal, borderRadius: 10, padding: "10px 12px", fontSize: 12.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "space-between" }}>View Full Report with Hannah <ArrowRight size={15} strokeWidth={2} /></button>
     </div>
   );
 }
@@ -884,15 +886,13 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
     ? bodySeries.weightLbs[bodySeries.weightLbs.length - 1]
     : null;
   const firstWeightLbs = bodySeries.weightLbs.length > 0 ? bodySeries.weightLbs[0] : null;
-  // Supportive target: first weight + one step in the right direction when no composition target.
-  // Honest "--" when no data. Never fabricate.
-  const targetWeightLbs = latestWeightLbs !== null && firstWeightLbs !== null && latestWeightLbs !== firstWeightLbs
-    ? Math.round(latestWeightLbs + (latestWeightLbs - firstWeightLbs) * 0.5)
-    : null;
-  const progressPct = goalProgressPct(firstWeightLbs, latestWeightLbs, targetWeightLbs) ?? 0;
+  // No real stored goal target is available. Do not extrapolate or fabricate one.
+  // Target shows "--" and progress is 0 until a real target is stored.
+  const targetWeightLbs: number | null = null;
+  const progressPct = 0;
   const baselineLabel = firstWeightLbs !== null ? `Baseline ${Math.round(firstWeightLbs)} lb` : "Baseline --";
   const nowLabel = latestWeightLbs !== null ? `Now ${Math.round(latestWeightLbs)} lb` : "Now --";
-  const targetLabelStr = targetWeightLbs !== null ? `Target ${targetWeightLbs} lb` : "Target --";
+  const targetLabelStr = "Target --";
   const goalNarrative = latestWeightLbs !== null && firstWeightLbs !== null
     ? "You are building momentum in a supportive direction. Small, consistent steps are what carry the trend."
     : "As you log and track, your progress picture fills in here. Keep going, no rush.";
@@ -901,9 +901,11 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
   // Lean mass: totalMuscleMassLbs from composition snapshot; sparkline from weight series.
   const latestMuscleLbs = compositionSnapshot?.totalMuscleMassLbs ?? null;
   const latestBodyFatPct = compositionSnapshot?.totalBodyFatPct ?? null;
-  const muscleDelta = bodySeries.weightLbs.length >= 2
-    ? Math.round((bodySeries.weightLbs[bodySeries.weightLbs.length - 1] - bodySeries.weightLbs[bodySeries.weightLbs.length - 2]) * 10) / 10
-    : null;
+  // Lean-mass delta: only show when headline and delta come from the SAME series.
+  // The headline is totalMuscleMassLbs (muscle-mass series); the weight series is a
+  // different metric. Passing a weight-series delta for a muscle-mass headline is
+  // misleading. Pass null so no delta renders unless a real muscle-series delta exists.
+  const muscleDelta: number | null = null;
   const bodyFatDelta = bodySeries.bodyFatPct.length >= 2
     ? Math.round((bodySeries.bodyFatPct[bodySeries.bodyFatPct.length - 1] - bodySeries.bodyFatPct[bodySeries.bodyFatPct.length - 2]) * 10) / 10
     : null;
