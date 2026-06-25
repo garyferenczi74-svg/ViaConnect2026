@@ -20,14 +20,20 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useBioOptimizationTrend } from "@/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/hooks/useBioOptimizationTrend";
+import { useHannahInsights } from "@/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/hooks/useHannahInsights";
+import { useJourneyRecommendations } from "@/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/hooks/useJourneyRecommendations";
 import { useHydrationToday } from "@/components/hydration/useHydrationToday";
 import { useJourneyState } from "@/hooks/journey/useJourneyState";
+import { useNutritionTargets } from "@/hooks/useNutritionTargets";
+import { useLatestComposition } from "@/hooks/body-tracker/useLatestComposition";
+import { useRecentBodySeries } from "@/components/journey/progress/useRecentBodySeries";
 import { stateWordForScore } from "@/components/journey/coaching/NarrativeRead";
 import { getDisplayName } from "@/lib/user/get-display-name";
 import { createClient } from "@/lib/supabase/client";
 import { withTimeout } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
 import { heroGaugeScore, buildFlatSeries } from "@/components/journey/coaching/heroHelpers";
+import { formatMacroLabel, kcalRemaining, goalProgressPct, flatSparkline } from "@/components/journey/coaching/lowerHelpers";
 
 const C = {
   navy: "#1A2744", card: "#1E3054", inset: "#16203A", raised: "#243a63",
@@ -279,7 +285,19 @@ function Hero({
   );
 }
 
-function HannahRead() {
+function HannahRead({
+  greeting,
+  analysis,
+  recommendation,
+  focusArea,
+  estimatedImpact,
+}: {
+  greeting: string;
+  analysis: string;
+  recommendation: string;
+  focusArea: string;
+  estimatedImpact: number;
+}) {
   return (
     <div style={{ ...panel(true), height: "100%", display: "flex", flexDirection: "column" }}>
       <Edge active />
@@ -287,15 +305,15 @@ function HannahRead() {
         <span style={{ width: 30, height: 30, borderRadius: 999, background: C.tealSoft, color: C.teal, display: "inline-flex", alignItems: "center", justifyContent: "center" }}><Sparkles size={15} strokeWidth={SW} /></span>
         <div><div style={{ ...eyebrow, color: C.teal }}>Hannah AI</div><div style={{ fontSize: 10.5, color: C.muted }}>Personalized read</div></div>
       </div>
-      <h3 style={{ margin: "0 0 8px", fontSize: 17, fontWeight: 700 }}>Gary, here is this week's read.</h3>
-      <p style={{ margin: 0, fontSize: 12.5, color: C.muted, lineHeight: 1.55 }}>You are building the first data points of your Bio Optimization journey. The next ten days of consistent check ins will unlock pattern detection.</p>
+      <h3 style={{ margin: "0 0 8px", fontSize: 17, fontWeight: 700 }}>{greeting}</h3>
+      <p style={{ margin: 0, fontSize: 12.5, color: C.muted, lineHeight: 1.55 }}>{analysis}</p>
       <div style={{ marginTop: 12, padding: 12, borderRadius: 12, background: C.inset, border: `1px solid ${C.orangeSoft}` }}>
-        <div style={{ ...eyebrow, color: C.orange, marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}><Target size={12} strokeWidth={SW} /> Focus, sleep recovery</div>
-        <p style={{ margin: 0, fontSize: 12.5, color: C.text, lineHeight: 1.5 }}>Hold a consistent sleep window tonight, paired with your evening Magnesium Glycinate.</p>
+        <div style={{ ...eyebrow, color: C.orange, marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}><Target size={12} strokeWidth={SW} /> Focus, {focusArea.toLowerCase()}</div>
+        <p style={{ margin: 0, fontSize: 12.5, color: C.text, lineHeight: 1.5 }}>{recommendation}</p>
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "auto", paddingTop: 12 }}>
         <span style={{ fontSize: 11.5, color: C.muted }}>Estimated lift</span>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 700, color: C.green }}><ArrowUpRight size={13} strokeWidth={2} /> +8 pts</span>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 700, color: C.green }}><ArrowUpRight size={13} strokeWidth={2} /> +{estimatedImpact} pts</span>
       </div>
       <button className="vc-focus" style={{ marginTop: 10, width: "100%", cursor: "pointer", background: "transparent", border: `1px solid ${C.teal}`, color: C.teal, borderRadius: 10, padding: "10px 12px", fontSize: 12.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "space-between" }}>View Full Report with Hannah <ArrowRight size={15} strokeWidth={2} /></button>
     </div>
@@ -316,7 +334,10 @@ function Sparkline({ data, color = C.teal, w = 92, h = 26 }: { data: number[]; c
   const pts = data.map((v, i) => [(i / (data.length - 1)) * w, h - ((v - min) / span) * (h - 4) - 2]);
   return <svg width={w} height={h} style={{ display: "block" }}><path d={pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ")} fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /><circle cx={pts[pts.length - 1][0]} cy={pts[pts.length - 1][1]} r="2.2" fill={color} /></svg>;
 }
-const VITALS: [string, string, string, number[], string][] = [["HRV", "72 ms", "+6", [60, 64, 62, 68, 66, 70, 72], C.teal], ["Resting HR", "58 bpm", "+3", [62, 61, 60, 59, 60, 58, 58], C.teal], ["Respiratory", "14.2", "+1", [15, 14.8, 14.5, 14.6, 14.3, 14.2, 14.2], C.teal], ["Blood Oxygen", "97 %", "+1", [96, 96, 97, 96, 97, 97, 97], C.teal], ["Hydration", "1.6 L", "+0.2", [1.2, 1.4, 1.3, 1.5, 1.4, 1.6, 1.6], "#38BDD8"]];
+// VitalRow: [name, value, delta, sparklineData, color]
+// Wearable-OFF rows use "--" for value and delta, flat sparkline at 1.
+// Hydration row is LIVE when hydrationData is available.
+type VitalRow = [string, string, string, number[], string];
 function Donut({ segments, top, bot, size = 118 }: { segments: { value: number; color: string }[]; top: string; bot: string; size?: number }) {
   const strokeW = Math.max(9, Math.round(size * 0.11));
   const r = size / 2 - strokeW, CIRC = 2 * Math.PI * r; let off = 0; const total = segments.reduce((s, x) => s + x.value, 0);
@@ -337,12 +358,60 @@ function Legend({ items }: { items: { name: string; label: string; color: string
 type AccDot = { hub: string; label: string; icon: LucideIcon; missing?: boolean };
 type AccItem = { headline: string; body: string; tag: string; pts: number; icon: LucideIcon; conf: string; dots: AccDot[] };
 
-const ACCEL: AccItem[] = [
-  { headline: "Activate Foundation Stack", body: "Magnesium Glycinate plus Vitamin D3/K2 to restore the baseline your score needs.", tag: "SUPPLEMENT", pts: 10, icon: Pill, conf: "high", dots: [{ hub: "My Genetics", label: "MTHFR C677T variant", icon: Dna }, { hub: "Lab Results", label: "Homocysteine trending up", icon: FlaskConical }, { hub: "Assessment", label: "Fatigue you reported", icon: ClipboardList }] },
-  { headline: "Anchor Your Sleep Window", body: "Hold a 30 minute sleep/wake window for 7 days. Biggest single lift for Overall Wellness.", tag: "SLEEP", pts: 8, icon: Moon, conf: "high", dots: [{ hub: "Connected", label: "Sleep slipping this week", icon: Moon }, { hub: "My Biology", label: "Recovery below target", icon: HeartPulse }] },
-  { headline: "Add Omega 3 Elite", body: "Bioavailable EPA/DHA at 10 to 28 times absorption, paired with breakfast.", tag: "SUPPLEMENT", pts: 6, icon: Pill, conf: "medium", dots: [{ hub: "Assessment", label: "Inflammation markers in CAQ", icon: ClipboardList }, { hub: "Lab Results", label: "Omega panel not on file yet", icon: FlaskConical, missing: true }] },
-  { headline: "Zone 2 Movement Block", body: "Three 25 minute easy sessions this week, mitochondrial density payoff shows in 14 days.", tag: "MOVEMENT", pts: 5, icon: Activity, conf: "medium", dots: [{ hub: "My Biology", label: "Recovery supports easy load", icon: HeartPulse }, { hub: "Goal", label: "Build lean mass", icon: Target }] },
-];
+// Appendix A seeded provenance dots, indexed by the canonical rec id.
+// Engine-sourced: the useJourneyRecommendations hook seeds these into the DB
+// but does not carry provenance dots. The dots below are the static Appendix A
+// set and are tagged as engine-sourced so they can be swapped later.
+const SEEDED_DOTS: Record<string, AccDot[]> = {
+  "foundation-stack": [
+    { hub: "My Genetics", label: "MTHFR C677T variant", icon: Dna },
+    { hub: "Lab Results", label: "Homocysteine trending up", icon: FlaskConical },
+    { hub: "Assessment", label: "Fatigue you reported", icon: ClipboardList },
+  ],
+  "sleep-window": [
+    { hub: "Connected", label: "Sleep slipping this week", icon: Moon },
+    { hub: "My Biology", label: "Recovery below target", icon: HeartPulse },
+  ],
+  "omega-stack": [
+    { hub: "Assessment", label: "Inflammation markers in CAQ", icon: ClipboardList },
+    { hub: "Lab Results", label: "Omega panel not on file yet", icon: FlaskConical, missing: true },
+  ],
+  "zone-2": [
+    { hub: "My Biology", label: "Recovery supports easy load", icon: HeartPulse },
+    { hub: "Goal", label: "Build lean mass", icon: Target },
+  ],
+  "breath-reset": [
+    { hub: "My Biology", label: "HRV dip at midday", icon: HeartPulse },
+    { hub: "Assessment", label: "Stress level reported", icon: ClipboardList },
+  ],
+};
+
+// Map a JourneyRec icon string to a Lucide icon component.
+function recIconToLucide(icon: string): LucideIcon {
+  if (icon === "sleep") return Moon;
+  if (icon === "nutrition") return Salad;
+  if (icon === "movement") return Activity;
+  if (icon === "stress") return HeartPulse;
+  return Pill; // supplement or unknown
+}
+
+// Map a JourneyRec to the AccItem shape used by AccCard.
+// Provenance dots: use seeded Appendix A dots by rec id; fall back to an
+// empty dots array so the expander renders cleanly with no fabricated data.
+// Tagged engine-sourced via the tag field suffix.
+function recToAccItem(rec: { id: string; title: string; description: string; category: string; estimatedImpact: number; icon: string }): AccItem {
+  const dots = SEEDED_DOTS[rec.id] ?? [];
+  const isHigh = rec.estimatedImpact >= 8;
+  return {
+    headline: rec.title,
+    body: rec.description,
+    tag: rec.category.toUpperCase(),
+    pts: rec.estimatedImpact,
+    icon: recIconToLucide(rec.icon),
+    conf: isHigh ? "high" : "medium",
+    dots,
+  };
+}
 function AccCard({ c }: { c: AccItem }) {
   const [open, setOpen] = useState(false);
   const Ic = c.icon, col = c.conf === "high" ? C.teal : C.orange, Conf = c.conf === "high" ? ShieldCheck : CircleAlert;
@@ -361,8 +430,8 @@ function AccCard({ c }: { c: AccItem }) {
   );
 }
 const HUBS: [string, LucideIcon][] = [["CAQ", ClipboardList], ["Genetics", Dna], ["Labs", FlaskConical], ["Biology", HeartPulse], ["Nutrition", Salad], ["Supplements", Pill]];
-function ConnectionMap() {
-  const active = new Set(["Genetics", "Labs", "CAQ"]);
+function ConnectionMap({ activeHubs }: { activeHubs: string[] }) {
+  const active = new Set(activeHubs);
   const size = 300, cx = size / 2, cy = size / 2, r = 102;
   const nodes = HUBS.map(([key], i) => { const a = (-90 + i * 60) * Math.PI / 180; return { key, x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) }; });
   const litNodes = nodes.filter((n) => active.has(n.key));
@@ -381,66 +450,148 @@ function ConnectionMap() {
   );
 }
 
-function TodayTab() {
+function TodayTab({
+  hydrationValue,
+  hydrationSub,
+  hydrationPct,
+  vitals,
+  hannahGreeting,
+  hannahAnalysis,
+  hannahRecommendation,
+  hannahFocusArea,
+  hannahEstimatedImpact,
+}: {
+  hydrationValue: string;
+  hydrationSub: string;
+  hydrationPct: number;
+  vitals: VitalRow[];
+  hannahGreeting: string;
+  hannahAnalysis: string;
+  hannahRecommendation: string;
+  hannahFocusArea: string;
+  hannahEstimatedImpact: number;
+}) {
   return (
     <div className="vc-split" style={{ alignItems: "stretch" }}>
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         <div style={panel(false)}>
           <div style={{ ...eyebrow, marginBottom: 12 }}>Today</div>
           <div style={{ display: "flex", gap: 18, flexWrap: "wrap" }}>
-            <StatBar icon={Activity} name="Steps" value="7,842" sub="/ 10,000" pct={78} color={C.teal} />
-            <StatBar icon={Heart} name="Active Calories" value="612" sub="/ 800 kcal" pct={76} color={C.teal} />
-            <StatBar icon={Activity} name="Exercise" value="42" sub="/ 60 min" pct={70} color={C.teal} />
-            <StatBar icon={Moon} name="Sleep" value="7h 12m" sub="/ 8h" pct={90} color={C.blue} />
-            <StatBar icon={Droplet} name="Hydration" value="1.6" sub="/ 2.5 L" pct={64} color="#38BDD8" />
+            <StatBar icon={Activity} name="Steps" value="Connect to populate" sub="" pct={0} color={C.teal} />
+            <StatBar icon={Heart} name="Active Calories" value="Connect to populate" sub="" pct={0} color={C.teal} />
+            <StatBar icon={Activity} name="Exercise" value="Connect to populate" sub="" pct={0} color={C.teal} />
+            <StatBar icon={Moon} name="Sleep" value="Connect to populate" sub="" pct={0} color={C.blue} />
+            <StatBar icon={Droplet} name="Hydration" value={hydrationValue} sub={hydrationSub} pct={hydrationPct} color="#38BDD8" />
           </div>
         </div>
         <div style={panel(false)}>
           <div style={{ ...eyebrow, marginBottom: 10 }}>Vital trends</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>{VITALS.map(([n, val, d, data, col]) => <div key={n} style={{ display: "flex", alignItems: "center", gap: 10 }}><span style={{ flex: 1, fontSize: 12, color: C.muted }}>{n}</span><span style={{ fontSize: 12, fontWeight: 600, width: 54, textAlign: "right" }}>{val}</span><span style={{ fontSize: 11, color: C.teal, width: 28 }}>{d}</span><Sparkline data={data} color={col} /></div>)}</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>{vitals.map(([n, val, d, data, col]) => <div key={n} style={{ display: "flex", alignItems: "center", gap: 10 }}><span style={{ flex: 1, fontSize: 12, color: C.muted }}>{n}</span><span style={{ fontSize: 12, fontWeight: 600, width: 54, textAlign: "right" }}>{val}</span><span style={{ fontSize: 11, color: C.teal, width: 28 }}>{d}</span><Sparkline data={data} color={col} /></div>)}</div>
         </div>
       </div>
-      <HannahRead />
+      <HannahRead
+        greeting={hannahGreeting}
+        analysis={hannahAnalysis}
+        recommendation={hannahRecommendation}
+        focusArea={hannahFocusArea}
+        estimatedImpact={hannahEstimatedImpact}
+      />
     </div>
   );
 }
-function GoalCard() {
+function GoalCard({
+  goalLabel,
+  narrative,
+  progressPct,
+  baselineLabel,
+  nowLabel,
+  targetLabel,
+}: {
+  goalLabel: string;
+  narrative: string;
+  progressPct: number;
+  baselineLabel: string;
+  nowLabel: string;
+  targetLabel: string;
+}) {
   return (
     <div style={panel(true)}>
       <Edge active />
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 10 }}>
-        <div><h2 style={{ margin: 0, fontSize: 20, fontWeight: 800 }}>Build lean mass</h2><p style={{ margin: "6px 0 0", fontSize: 12, color: C.muted, maxWidth: 340 }}>You are moving in the right direction. Lean mass is climbing and body fat is easing down. Keep the trend, no rush.</p></div>
-        <div style={{ textAlign: "right" }}><div style={{ fontSize: 26, fontWeight: 800, color: C.teal }}>68%</div><div style={{ fontSize: 11, color: C.muted }}>to your target</div></div>
+        <div><h2 style={{ margin: 0, fontSize: 20, fontWeight: 800 }}>{goalLabel}</h2><p style={{ margin: "6px 0 0", fontSize: 12, color: C.muted, maxWidth: 340 }}>{narrative}</p></div>
+        <div style={{ textAlign: "right" }}><div style={{ fontSize: 26, fontWeight: 800, color: C.teal }}>{progressPct}%</div><div style={{ fontSize: 11, color: C.muted }}>to your target</div></div>
       </div>
-      <div style={{ height: 8, borderRadius: 8, background: C.inset, marginTop: 14, overflow: "hidden" }}><div style={{ height: "100%", width: "68%", background: `linear-gradient(90deg, ${C.teal}, #3fd0c8)`, borderRadius: 8 }} /></div>
-      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, fontSize: 11, color: C.muted }}><span>Baseline 142 lb</span><span>Now 148 lb</span><span>Target 152 lb</span></div>
+      <div style={{ height: 8, borderRadius: 8, background: C.inset, marginTop: 14, overflow: "hidden" }}><div style={{ height: "100%", width: `${progressPct}%`, background: `linear-gradient(90deg, ${C.teal}, #3fd0c8)`, borderRadius: 8 }} /></div>
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, fontSize: 11, color: C.muted }}><span>{baselineLabel}</span><span>{nowLabel}</span><span>{targetLabel}</span></div>
     </div>
   );
 }
-function BodyCompTrio() {
+function BodyCompTrio({
+  leanMassLabel,
+  leanMassDelta,
+  leanMassSeries,
+  bodyFatLabel,
+  bodyFatDelta,
+  bodyFatSeries,
+  energyBalanceRead,
+}: {
+  leanMassLabel: string;
+  leanMassDelta: number | null;
+  leanMassSeries: number[];
+  bodyFatLabel: string;
+  bodyFatDelta: number | null;
+  bodyFatSeries: number[];
+  energyBalanceRead: string;
+}) {
   return (
     <div className="vc-tri">
-      <div style={panel(false)}><div style={{ ...eyebrow, marginBottom: 10 }}>Lean mass</div><div style={{ fontSize: 22, fontWeight: 800 }}>148 lb <span style={{ fontSize: 12 }}><Delta v={1.2} unit=" lb" /></span></div><div style={{ marginTop: 10 }}><Sparkline data={[142, 143, 144, 145, 146, 147, 148]} w={180} h={36} /></div></div>
-      <div style={panel(false)}><div style={{ ...eyebrow, marginBottom: 10 }}>Body fat</div><div style={{ fontSize: 22, fontWeight: 800 }}>18.4 % <span style={{ fontSize: 12 }}><Delta v={-0.6} unit=" pt" /></span></div><div style={{ marginTop: 10 }}><Sparkline data={[20.2, 19.8, 19.5, 19.1, 18.9, 18.6, 18.4]} w={180} h={36} color={C.orange} /></div></div>
-      <div style={panel(false)}><div style={{ ...eyebrow, marginBottom: 12 }}>Energy balance</div><div style={{ display: "flex", justifyContent: "space-around", alignItems: "center" }}>{([["Intake", Salad], ["Activity", Activity], ["Body", HeartPulse]] as [string, LucideIcon][]).map(([n, Ic]) => <div key={n} style={{ textAlign: "center" }}><span style={{ width: 38, height: 38, borderRadius: 999, background: C.tealSoft, color: C.teal, display: "inline-flex", alignItems: "center", justifyContent: "center" }}><Ic size={17} strokeWidth={SW} /></span><div style={{ fontSize: 11, color: C.muted, marginTop: 5 }}>{n}</div></div>)}</div><div style={{ textAlign: "center", marginTop: 12, fontSize: 11, color: C.teal, fontWeight: 600 }}>Surplus supports the trend</div></div>
+      <div style={panel(false)}><div style={{ ...eyebrow, marginBottom: 10 }}>Lean mass</div><div style={{ fontSize: 22, fontWeight: 800 }}>{leanMassLabel} {leanMassDelta !== null && <span style={{ fontSize: 12 }}><Delta v={leanMassDelta} unit=" lb" /></span>}</div><div style={{ marginTop: 10 }}><Sparkline data={leanMassSeries} w={180} h={36} /></div></div>
+      <div style={panel(false)}><div style={{ ...eyebrow, marginBottom: 10 }}>Body fat</div><div style={{ fontSize: 22, fontWeight: 800 }}>{bodyFatLabel} {bodyFatDelta !== null && <span style={{ fontSize: 12 }}><Delta v={bodyFatDelta} unit=" pt" /></span>}</div><div style={{ marginTop: 10 }}><Sparkline data={bodyFatSeries} w={180} h={36} color={C.orange} /></div></div>
+      <div style={panel(false)}><div style={{ ...eyebrow, marginBottom: 12 }}>Energy balance</div><div style={{ display: "flex", justifyContent: "space-around", alignItems: "center" }}>{([["Intake", Salad], ["Activity", Activity], ["Body", HeartPulse]] as [string, LucideIcon][]).map(([n, Ic]) => <div key={n} style={{ textAlign: "center" }}><span style={{ width: 38, height: 38, borderRadius: 999, background: C.tealSoft, color: C.teal, display: "inline-flex", alignItems: "center", justifyContent: "center" }}><Ic size={17} strokeWidth={SW} /></span><div style={{ fontSize: 11, color: C.muted, marginTop: 5 }}>{n}</div></div>)}</div><div style={{ textAlign: "center", marginTop: 12, fontSize: 11, color: C.teal, fontWeight: 600 }}>{energyBalanceRead}</div></div>
     </div>
   );
 }
-function NutritionCard() {
+function NutritionCard({
+  carbsG,
+  proteinG,
+  fatG,
+  kcalTop,
+  kcalBot,
+  carbsLabel,
+  proteinLabel,
+  fatLabel,
+}: {
+  carbsG: number;
+  proteinG: number;
+  fatG: number;
+  kcalTop: string;
+  kcalBot: string;
+  carbsLabel: string;
+  proteinLabel: string;
+  fatLabel: string;
+}) {
+  // When all macros are zero, render a neutral unit-value donut so the arcs
+  // remain visible (using 1/1/1 so each segment draws equally).
+  const totalMacros = carbsG + proteinG + fatG;
+  const segments = totalMacros > 0
+    ? [{ value: carbsG, color: C.green }, { value: proteinG, color: C.orange }, { value: fatG, color: C.blue }]
+    : [{ value: 1, color: C.green }, { value: 1, color: C.orange }, { value: 1, color: C.blue }];
   return (
-    <div style={panel(false)}><div style={{ ...eyebrow, marginBottom: 10 }}>Nutrition</div><div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}><Donut size={86} segments={[{ value: 170, color: C.green }, { value: 92, color: C.orange }, { value: 48, color: C.blue }]} top="1,642" bot="kcal left" /><Legend items={[{ name: "Carbs", label: "170 / 240g", color: C.green }, { name: "Protein", label: "92 / 120g", color: C.orange }, { name: "Fat", label: "48 / 70g", color: C.blue }]} /></div></div>
+    <div style={panel(false)}><div style={{ ...eyebrow, marginBottom: 10 }}>Nutrition</div><div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}><Donut size={86} segments={segments} top={kcalTop} bot={kcalBot} /><Legend items={[{ name: "Carbs", label: carbsLabel, color: C.green }, { name: "Protein", label: proteinLabel, color: C.orange }, { name: "Fat", label: fatLabel, color: C.blue }]} /></div></div>
   );
 }
 function SleepCard() {
+  // Sleep stages are wearable-OFF. Render the same donut at a neutral equal-segment
+  // state (1/1/1/1) with "--" legend values. No fabricated stage minutes.
   return (
-    <div style={panel(false)}><div style={{ ...eyebrow, marginBottom: 10 }}>Sleep breakdown</div><div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}><Donut size={86} segments={[{ value: 108, color: C.teal }, { value: 260, color: C.blue }, { value: 60, color: C.purple }, { value: 20, color: C.orange }]} top="7h 12m" bot="total" /><Legend items={[{ name: "Deep", label: "1h 48m", color: C.teal }, { name: "Light", label: "4h 20m", color: C.blue }, { name: "REM", label: "1h 00m", color: C.purple }, { name: "Awake", label: "0h 20m", color: C.orange }]} /></div></div>
+    <div style={panel(false)}><div style={{ ...eyebrow, marginBottom: 10 }}>Sleep breakdown</div><div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}><Donut size={86} segments={[{ value: 1, color: C.teal }, { value: 1, color: C.blue }, { value: 1, color: C.purple }, { value: 1, color: C.orange }]} top="--" bot="total" /><Legend items={[{ name: "Deep", label: "--", color: C.teal }, { name: "Light", label: "--", color: C.blue }, { name: "REM", label: "--", color: C.purple }, { name: "Awake", label: "--", color: C.orange }]} /></div></div>
   );
 }
-function AcceleratorsTab() {
+function AcceleratorsTab({ accel, activeHubs }: { accel: AccItem[]; activeHubs: string[] }) {
   return (
     <div className="vc-split" style={{ alignItems: "stretch" }}>
-      <div><div style={{ fontSize: 15, fontWeight: 800, marginBottom: 12 }}>Journey accelerators</div><div className="vc-two">{ACCEL.map((c, i) => <AccCard key={i} c={c} />)}</div></div>
-      <div style={{ display: "flex", flexDirection: "column", height: "100%" }}><div style={{ fontSize: 15, fontWeight: 800, marginBottom: 12 }}>Your connection map</div><ConnectionMap /></div>
+      <div><div style={{ fontSize: 15, fontWeight: 800, marginBottom: 12 }}>Journey accelerators</div><div className="vc-two">{accel.map((c, i) => <AccCard key={i} c={c} />)}</div></div>
+      <div style={{ display: "flex", flexDirection: "column", height: "100%" }}><div style={{ fontSize: 15, fontWeight: 800, marginBottom: 12 }}>Your connection map</div><ConnectionMap activeHubs={activeHubs} /></div>
     </div>
   );
 }
@@ -510,6 +661,9 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
   const { data: bos1Y } = useBioOptimizationTrend(userId, "1Y");
   const { data: hydrationData } = useHydrationToday();
   const { state: journeyState } = useJourneyState(userId);
+  const { targets: nutritionTargets } = useNutritionTargets(userId);
+  const { snapshot: compositionSnapshot } = useLatestComposition(userId);
+  const bodySeries = useRecentBodySeries(userId);
 
   // Display name: resolved async via getDisplayName (mirrors ProfileCard.tsx approach).
   const [displayName, setDisplayName] = useState<string>("");
@@ -589,6 +743,191 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
   const overallScore: number | null =
     overallCurrent > 0 ? overallCurrent : null;
 
+  // ---------------------------------------------------------------------------
+  // Lower-section data derivation (I-T2b)
+  // ---------------------------------------------------------------------------
+
+  // Nutrition logs: read today's confirmed macros client-side (fail-open).
+  // Mirrors the NutritionDonut.tsx query pattern (withTimeout + safeLog).
+  const [todayMacros, setTodayMacros] = useState<{
+    carbsG: number; proteinG: number; fatG: number; calories: number; logCount: number;
+  }>({ carbsG: 0, proteinG: 0, fatG: 0, calories: 0, logCount: 0 });
+
+  useEffect(() => {
+    if (!userId) {
+      setTodayMacros({ carbsG: 0, proteinG: 0, fatG: 0, calories: 0, logCount: 0 });
+      return;
+    }
+    let active = true;
+    (async () => {
+      try {
+        const supabase = createClient();
+        const start = new Date();
+        start.setUTCHours(0, 0, 0, 0);
+        const end = new Date(start);
+        end.setUTCDate(end.getUTCDate() + 1);
+        type NutritionRow = { calories: number | null; carbs_g: number | null; protein_g: number | null; total_fat_g: number | null };
+        const { data } = await withTimeout(
+          supabase
+            .from("nutrition_logs")
+            .select("calories, carbs_g, protein_g, total_fat_g")
+            .eq("user_id", userId)
+            .eq("status", "confirmed")
+            .gte("logged_at", start.toISOString())
+            .lt("logged_at", end.toISOString()) as unknown as Promise<{ data: NutritionRow[] | null; error: unknown }>,
+          4000,
+          "YourJourneyCoaching.nutritionLogs",
+        );
+        if (!active) return;
+        const rows = (Array.isArray(data) ? data : []) as Array<Record<string, unknown>>;
+        const fn = (v: unknown): number => {
+          if (typeof v === "number" && isFinite(v)) return v;
+          if (typeof v === "string") { const p = Number(v); if (isFinite(p)) return p; }
+          return 0;
+        };
+        type MacroAcc = { carbsG: number; proteinG: number; fatG: number; calories: number; logCount: number };
+        const totals = rows.reduce<MacroAcc>(
+          (acc, r) => ({
+            carbsG: acc.carbsG + fn(r.carbs_g),
+            proteinG: acc.proteinG + fn(r.protein_g),
+            fatG: acc.fatG + fn(r.total_fat_g),
+            calories: acc.calories + fn(r.calories),
+            logCount: acc.logCount + 1,
+          }),
+          { carbsG: 0, proteinG: 0, fatG: 0, calories: 0, logCount: 0 },
+        );
+        setTodayMacros(totals);
+      } catch (err) {
+        if (!active) return;
+        safeLog.warn("YourJourneyCoaching", "nutrition_logs read failed, failing open", { error: err });
+      }
+    })();
+    return () => { active = false; };
+  }, [userId]);
+
+  // Hannah insights: drive from useBioOptimizationTrend data (7D range).
+  const bos7DPoints = bos7D?.dailyScores ?? bos7D?.bioScores ?? [];
+  const weeksActive = Math.ceil(bos7DPoints.length / 7);
+  const hannahInsight = useHannahInsights({
+    userId,
+    displayName: displayNameSafe,
+    range: "7D",
+    points: bos7DPoints,
+    current: overallCurrent,
+    weeksActive,
+  });
+
+  // Journey recommendations: engine-sourced (falls back to seeded Appendix A defaults).
+  const journeyRecs = useJourneyRecommendations(userId, overallCurrent);
+  const accelItems: AccItem[] = journeyRecs.map(recToAccItem);
+
+  // ConnectionMap active set: derived from top accelerator's seeded dots.
+  // The top rec's SEEDED_DOTS hubs map to the ConnectionMap HUBS keys.
+  // Hub name mapping: "My Genetics" -> "Genetics", "Lab Results" -> "Labs",
+  // "Assessment" -> "CAQ", "My Biology" -> "Biology", "Goal" -> (skip),
+  // "Connected" -> (skip, no hub node). Default: ["Genetics", "Labs", "CAQ"].
+  const HUB_ALIAS: Record<string, string> = {
+    "My Genetics": "Genetics",
+    "Lab Results": "Labs",
+    "Assessment": "CAQ",
+    "My Biology": "Biology",
+    "Nutrition": "Nutrition",
+    "Supplements": "Supplements",
+  };
+  const VALID_HUBS = new Set(HUBS.map(([k]) => k));
+  const topRec = journeyRecs[0];
+  const topDots = topRec ? (SEEDED_DOTS[topRec.id] ?? []) : [];
+  const derivedActive = topDots
+    .map((d) => HUB_ALIAS[d.hub] ?? d.hub)
+    .filter((h) => VALID_HUBS.has(h));
+  const activeHubs = derivedActive.length > 0
+    ? Array.from(new Set(derivedActive))
+    : ["Genetics", "Labs", "CAQ"];
+
+  // Hydration stat bar (LIVE).
+  const hydrationTotalL = hydrationData?.total_ml != null ? hydrationData.total_ml / 1000 : null;
+  const hydrationTargetL = hydrationData?.target_ml != null ? hydrationData.target_ml / 1000 : null;
+  const hydrationValue = hydrationTotalL !== null ? hydrationTotalL.toFixed(1) : "--";
+  const hydrationSub = hydrationTargetL !== null ? `/ ${hydrationTargetL.toFixed(1)} L` : "";
+  const hydrationBarPct = hydrationPct !== null ? Math.min(100, Math.round(hydrationPct)) : 0;
+
+  // Vitals rows: Hydration LIVE; HRV/Resting HR/Respiratory/Blood Oxygen wearable-OFF.
+  const FLAT = flatSparkline();
+  const vitals: VitalRow[] = [
+    ["HRV", "--", "--", FLAT, C.teal],
+    ["Resting HR", "--", "--", FLAT, C.teal],
+    ["Respiratory", "--", "--", FLAT, C.teal],
+    ["Blood Oxygen", "--", "--", FLAT, C.teal],
+    [
+      "Hydration",
+      hydrationValue !== "--" ? `${hydrationValue} L` : "--",
+      "",
+      FLAT,
+      "#38BDD8",
+    ],
+  ];
+
+  // Nutrition donut values.
+  const targetKcal = typeof nutritionTargets?.dailyKcal === "number" ? nutritionTargets.dailyKcal : null;
+  const kcalResult = kcalRemaining(targetKcal, todayMacros.calories);
+  const targetCarbsG = typeof nutritionTargets?.dailyCarbsG === "number" ? nutritionTargets.dailyCarbsG : null;
+  const targetProteinG = typeof nutritionTargets?.dailyProteinG === "number" ? nutritionTargets.dailyProteinG : null;
+  const targetFatG = typeof nutritionTargets?.dailyFatTotalG === "number" ? nutritionTargets.dailyFatTotalG : null;
+  const carbsLabel = formatMacroLabel(todayMacros.carbsG, targetCarbsG);
+  const proteinLabel = formatMacroLabel(todayMacros.proteinG, targetProteinG);
+  const fatLabel = formatMacroLabel(todayMacros.fatG, targetFatG);
+
+  // GoalCard values from useJourneyState + useLatestComposition + useRecentBodySeries.
+  // Weight guardrail: supportive framing only, no aggressive targets.
+  const goalLabel = goalPhrase.charAt(0).toUpperCase() + goalPhrase.slice(1);
+  const latestWeightLbs = bodySeries.weightLbs.length > 0
+    ? bodySeries.weightLbs[bodySeries.weightLbs.length - 1]
+    : null;
+  const firstWeightLbs = bodySeries.weightLbs.length > 0 ? bodySeries.weightLbs[0] : null;
+  // Supportive target: first weight + one step in the right direction when no composition target.
+  // Honest "--" when no data. Never fabricate.
+  const targetWeightLbs = latestWeightLbs !== null && firstWeightLbs !== null && latestWeightLbs !== firstWeightLbs
+    ? Math.round(latestWeightLbs + (latestWeightLbs - firstWeightLbs) * 0.5)
+    : null;
+  const progressPct = goalProgressPct(firstWeightLbs, latestWeightLbs, targetWeightLbs) ?? 0;
+  const baselineLabel = firstWeightLbs !== null ? `Baseline ${Math.round(firstWeightLbs)} lb` : "Baseline --";
+  const nowLabel = latestWeightLbs !== null ? `Now ${Math.round(latestWeightLbs)} lb` : "Now --";
+  const targetLabelStr = targetWeightLbs !== null ? `Target ${targetWeightLbs} lb` : "Target --";
+  const goalNarrative = latestWeightLbs !== null && firstWeightLbs !== null
+    ? "You are building momentum in a supportive direction. Small, consistent steps are what carry the trend."
+    : "As you log and track, your progress picture fills in here. Keep going, no rush.";
+
+  // BodyCompTrio values from useLatestComposition + useRecentBodySeries.
+  // Lean mass: totalMuscleMassLbs from composition snapshot; sparkline from weight series.
+  const latestMuscleLbs = compositionSnapshot?.totalMuscleMassLbs ?? null;
+  const latestBodyFatPct = compositionSnapshot?.totalBodyFatPct ?? null;
+  const muscleDelta = bodySeries.weightLbs.length >= 2
+    ? Math.round((bodySeries.weightLbs[bodySeries.weightLbs.length - 1] - bodySeries.weightLbs[bodySeries.weightLbs.length - 2]) * 10) / 10
+    : null;
+  const bodyFatDelta = bodySeries.bodyFatPct.length >= 2
+    ? Math.round((bodySeries.bodyFatPct[bodySeries.bodyFatPct.length - 1] - bodySeries.bodyFatPct[bodySeries.bodyFatPct.length - 2]) * 10) / 10
+    : null;
+  const leanMassLabel = latestMuscleLbs !== null
+    ? `${latestMuscleLbs.toFixed(1)} lb`
+    : latestWeightLbs !== null
+      ? `${latestWeightLbs.toFixed(1)} lb`
+      : "--";
+  const bodyFatLabel = latestBodyFatPct !== null
+    ? `${latestBodyFatPct.toFixed(1)} %`
+    : bodySeries.bodyFatPct.length > 0
+      ? `${bodySeries.bodyFatPct[bodySeries.bodyFatPct.length - 1].toFixed(1)} %`
+      : "--";
+  const leanMassSeries = bodySeries.weightLbs.length >= 2
+    ? bodySeries.weightLbs
+    : flatSparkline(latestWeightLbs ?? 1);
+  const bodyFatSeries = bodySeries.bodyFatPct.length >= 2
+    ? bodySeries.bodyFatPct
+    : flatSparkline(latestBodyFatPct ?? 1);
+  // Energy balance: honest read based on available nutrition data.
+  const energyBalanceRead = todayMacros.calories > 0 && targetKcal !== null
+    ? (todayMacros.calories < targetKcal ? "On track for your goal" : "Surplus supports the trend")
+    : "Log meals to see your energy balance";
+
   return (
     <div style={{ fontFamily: "'Instrument Sans', system-ui, sans-serif", background: `radial-gradient(1200px 600px at 70% -12%, #21345c 0%, ${C.navy} 58%)`, minHeight: "100vh", color: C.text, padding: "18px 28px 46px" }}>
       <style>{`
@@ -625,15 +964,55 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
         <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
           <section>
             <div style={{ ...eyebrow, marginBottom: 12 }}>Goals, nutrition and sleep</div>
-            <div className="vc-goalrow"><GoalCard /><NutritionCard /><SleepCard /></div>
-            <div style={{ marginTop: 14 }}><BodyCompTrio /></div>
+            <div className="vc-goalrow">
+              <GoalCard
+                goalLabel={goalLabel}
+                narrative={goalNarrative}
+                progressPct={progressPct}
+                baselineLabel={baselineLabel}
+                nowLabel={nowLabel}
+                targetLabel={targetLabelStr}
+              />
+              <NutritionCard
+                carbsG={todayMacros.carbsG}
+                proteinG={todayMacros.proteinG}
+                fatG={todayMacros.fatG}
+                kcalTop={kcalResult.value}
+                kcalBot={kcalResult.label}
+                carbsLabel={carbsLabel}
+                proteinLabel={proteinLabel}
+                fatLabel={fatLabel}
+              />
+              <SleepCard />
+            </div>
+            <div style={{ marginTop: 14 }}>
+              <BodyCompTrio
+                leanMassLabel={leanMassLabel}
+                leanMassDelta={muscleDelta}
+                leanMassSeries={leanMassSeries}
+                bodyFatLabel={bodyFatLabel}
+                bodyFatDelta={bodyFatDelta}
+                bodyFatSeries={bodyFatSeries}
+                energyBalanceRead={energyBalanceRead}
+              />
+            </div>
           </section>
           <section>
             <div style={{ ...eyebrow, marginBottom: 12 }}>Today and this week</div>
-            <TodayTab />
+            <TodayTab
+              hydrationValue={hydrationValue}
+              hydrationSub={hydrationSub}
+              hydrationPct={hydrationBarPct}
+              vitals={vitals}
+              hannahGreeting={hannahInsight.greeting}
+              hannahAnalysis={hannahInsight.analysis}
+              hannahRecommendation={hannahInsight.recommendation}
+              hannahFocusArea={hannahInsight.focusArea}
+              hannahEstimatedImpact={hannahInsight.estimatedImpact}
+            />
           </section>
           <section>
-            <AcceleratorsTab />
+            <AcceleratorsTab accel={accelItems} activeHubs={activeHubs} />
           </section>
         </div>
 
