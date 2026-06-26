@@ -211,6 +211,14 @@ function CompositionPageInner() {
   // 2D pin store). reducedMotion mirrors the existing HoverSystem media query.
   const [selectedBodyPart, setSelectedBodyPart] = useState<string | null>(null);
   const avatarReducedMotion = useReducedMotion();
+  // P2-T2c: the avatar (3D) and its grid must persist across section toggles so
+  // the materialize intro plays once and the morph engine is exercised on real
+  // data changes instead of a remount. The fat and muscle sections share one
+  // grid + one avatar instance; only the per-section peripheral UI swaps. The
+  // avatar's activeTab follows the section. measurements has no avatar slot, so
+  // the shared grid is display:none there (still mounted, identity preserved).
+  const avatarActiveTab: 'bodyFat' | 'muscleMass' | 'measurements' =
+    section === 'muscle' ? 'muscleMass' : section === 'measurements' ? 'measurements' : 'bodyFat';
   // === PROMPT 210b EXTENSION END ===
 
   const { id: userId } = useCurrentUser();
@@ -516,126 +524,170 @@ function CompositionPageInner() {
 
       {errorBanner}
 
-      {section === 'fat' && (
-        <>
-          <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 backdrop-blur-md p-4 sm:p-5 lg:p-3">
-            <h2 className="text-lg font-bold text-white">Body Composition</h2>
-            <p className="text-xs text-white/60">Segmental body fat analysis</p>
-          </div>
-
-          {caqSource === 'caq_other' && !genderManuallySet && (
-            <div className="rounded-xl border border-[#2DA5A0]/30 bg-[#2DA5A0]/10 p-3 text-xs text-white/75">
-              We don&apos;t have your gender on file. Pick a visualization below; you can change it anytime.
-            </div>
-          )}
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              data-testid="gender-toggle-male"
-              onClick={() => { setGenderManuallySet(true); setGender('male'); void persistGender('male'); }}
-              className={`flex-1 rounded-xl border px-4 py-2.5 text-sm font-medium transition-all min-h-[44px] ${
-                gender === 'male'
-                  ? 'border-[#2DA5A0]/60 bg-[#2DA5A0]/15 text-[#2DA5A0]'
-                  : 'border-white/20 bg-white/[0.04] text-white/60 hover:bg-white/[0.08]'
-              }`}
-            >
-              Male
-            </button>
-            <button
-              type="button"
-              data-testid="gender-toggle-female"
-              onClick={() => { setGenderManuallySet(true); setGender('female'); void persistGender('female'); }}
-              className={`flex-1 rounded-xl border px-4 py-2.5 text-sm font-medium transition-all min-h-[44px] ${
-                gender === 'female'
-                  ? 'border-[#B75E18]/60 bg-[#B75E18]/15 text-[#B75E18]'
-                  : 'border-white/20 bg-white/[0.04] text-white/60 hover:bg-white/[0.08]'
-              }`}
-            >
-              Female
-            </button>
-          </div>
-          {genderError && (
-            <p className="text-xs text-[#FCA5A5]">Could not save gender preference: {genderError}</p>
-          )}
-
-          {/* Prompt #157k: HoverSystem replaces the 3-column rail of
-              flanking callout cards. The figure is the primary
-              navigation surface; cards appear on hover (desktop) or
-              tap (mobile) and pin via the FIFO queue. The summary
-              KPI strip below remains persistent. */}
-          <div data-testid="body-tracker-grid" className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm lg:mt-[25vh] lg:flex lg:flex-col lg:p-3 lg:h-[calc(100vh-200px)] lg:min-h-[568px] lg:overflow-hidden">
-            {/* Prompt #157o: top-center title + legend now mobile/tablet
-                only. Desktop relocates them to the top of the right
-                column, above the Total Body Fat KPI card. */}
-            <h3 className="mb-3 shrink-0 text-center text-xs font-semibold uppercase tracking-wider text-white/40 lg:hidden">
-              Segmental Body Fat Analysis
-            </h3>
-            <HeatmapLegend metric="fat" className="mb-4 shrink-0 lg:hidden" />
-            {/* Prompt #157n: desktop main row pairs the avatar (left,
-                lg:flex-1) with the KPI stack (right, fixed lg:w-[200px]).
-                On mobile / tablet the wrapper collapses to flex-col so
-                the avatar stacks above the bottom KPI row exactly as
-                the post-#157k layout did. */}
-            <div className="flex flex-col lg:flex-1 lg:flex-row lg:items-stretch lg:gap-6 lg:min-h-0">
-              <div
-                data-testid="avatar-container"
-                className="relative flex items-center justify-center px-2 py-2 lg:min-h-0 lg:flex-1"
-                style={{ filter: 'drop-shadow(0 0 20px rgba(45, 165, 160, 0.15))' }}
-              >
-                {/* === PROMPT 210b EXTENSION START === */}
-                <BodyCompositionAvatar
-                  sex={gender}
-                  scan={snapshot}
-                  firstScan={null}
-                  circumferences={circumferenceData.latest}
-                  unit={unit}
-                  activeTab="bodyFat"
-                  selectedBodyPart={selectedBodyPart}
-                  onSelectBodyPart={setSelectedBodyPart}
-                  reducedMotion={avatarReducedMotion}
-                >
-                  <HoverSystem view="composition" sex={gender} regions={fatRegions} className="lg:h-full">
-                    <SegmentalHeatMap sex={gender} segmentStatuses={fatRegionStatuses} />
-                  </HoverSystem>
-                </BodyCompositionAvatar>
-                {/* === PROMPT 210b EXTENSION END === */}
-                <LegendBar
-                  pinnedIds={pinnedIds}
-                  hoveredId={hoveredId}
-                  onActivate={handleLegendActivate}
-                  layout="ring"
-                  className="hidden lg:block lg:absolute lg:top-2 lg:bottom-2 lg:left-1/2 lg:-translate-x-1/2 lg:aspect-[720/1152]"
-                />
-              </div>
-              {/* Prompt #157o: title + vertical legend block at the top
-                  of the desktop KPI column. Five proportionate bands
-                  (this block + 4 KPI cards) all share gap-3 from the
-                  parent flex column. Tokens mirror HeatmapLegend
-                  (bg-green-400 / yellow-400 / red-400, text-white/40). */}
-              <aside
-                data-testid="kpi-stack-desktop"
-                aria-label="Body composition summary"
-                className="hidden lg:flex lg:w-[200px] lg:shrink-0 lg:flex-col lg:gap-3"
-              >
-                <div data-testid="kpi-stack-header" className="flex flex-col items-center gap-2 lg:mb-4">
-                  <h3 className="text-center text-xs font-semibold uppercase tracking-wider text-white/40">
-                    Segmental Body Fat Analysis
-                  </h3>
-                  <ul className="flex flex-col gap-1 text-[10px] lg:w-fit lg:mx-auto">
-                    <li className="flex items-center gap-1.5">
-                      <span className="h-2.5 w-2.5 rounded-full bg-green-400" aria-hidden="true" />
-                      <span className="text-white/40">Fat Loss</span>
-                    </li>
-                    <li className="flex items-center gap-1.5">
-                      <span className="h-2.5 w-2.5 rounded-full bg-yellow-400" aria-hidden="true" />
-                      <span className="text-white/40">No Change</span>
-                    </li>
-                    <li className="flex items-center gap-1.5">
-                      <span className="h-2.5 w-2.5 rounded-full bg-red-400" aria-hidden="true" />
-                      <span className="text-white/40">Fat Gain</span>
-                    </li>
-                  </ul>
+      {/* === PROMPT 210b EXTENSION START === */}
+      {/* P2-T2c: the fat and muscle sections now share ONE grid and ONE
+          BodyCompositionAvatar instance so the 3D avatar keeps a stable React
+          identity across the Body Fat / Muscle / Measurements toggle. The intro
+          materialize plays once on initial mount; toggling sections only swaps
+          activeTab + the per-section peripheral UI (titles, legend labels,
+          HoverSystem view, regions, segment statuses), never remounts. On
+          measurements the shared grid is display:none (still mounted), and the
+          measurements UI renders below. The 2D floor stays per-section and
+          unchanged: BodyCompositionAvatar renders the section's own HoverSystem
+          + SegmentalHeatMap on the WebGL fallback. */}
+      {(() => {
+        // 'fat' is the default config for the persistent grid; on measurements
+        // the grid is hidden but kept mounted, so we still feed it a valid
+        // (fat) config. Only 'muscle' flips to the muscle variant.
+        const isMuscle = section === 'muscle';
+        const isMeasurements = section === 'measurements';
+        return (
+          <>
+            {section === 'fat' && (
+              <>
+                <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 backdrop-blur-md p-4 sm:p-5 lg:p-3">
+                  <h2 className="text-lg font-bold text-white">Body Composition</h2>
+                  <p className="text-xs text-white/60">Segmental body fat analysis</p>
                 </div>
+
+                {caqSource === 'caq_other' && !genderManuallySet && (
+                  <div className="rounded-xl border border-[#2DA5A0]/30 bg-[#2DA5A0]/10 p-3 text-xs text-white/75">
+                    We don&apos;t have your gender on file. Pick a visualization below; you can change it anytime.
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    data-testid="gender-toggle-male"
+                    onClick={() => { setGenderManuallySet(true); setGender('male'); void persistGender('male'); }}
+                    className={`flex-1 rounded-xl border px-4 py-2.5 text-sm font-medium transition-all min-h-[44px] ${
+                      gender === 'male'
+                        ? 'border-[#2DA5A0]/60 bg-[#2DA5A0]/15 text-[#2DA5A0]'
+                        : 'border-white/20 bg-white/[0.04] text-white/60 hover:bg-white/[0.08]'
+                    }`}
+                  >
+                    Male
+                  </button>
+                  <button
+                    type="button"
+                    data-testid="gender-toggle-female"
+                    onClick={() => { setGenderManuallySet(true); setGender('female'); void persistGender('female'); }}
+                    className={`flex-1 rounded-xl border px-4 py-2.5 text-sm font-medium transition-all min-h-[44px] ${
+                      gender === 'female'
+                        ? 'border-[#B75E18]/60 bg-[#B75E18]/15 text-[#B75E18]'
+                        : 'border-white/20 bg-white/[0.04] text-white/60 hover:bg-white/[0.08]'
+                    }`}
+                  >
+                    Female
+                  </button>
+                </div>
+                {genderError && (
+                  <p className="text-xs text-[#FCA5A5]">Could not save gender preference: {genderError}</p>
+                )}
+              </>
+            )}
+
+            {isMuscle && (
+              <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 backdrop-blur-md p-4 sm:p-5 lg:p-3">
+                <h2 className="text-lg font-bold text-white">Muscle Analysis</h2>
+                <p className="text-xs text-white/60">Segmental muscle mass breakdown</p>
+              </div>
+            )}
+
+            {/* The persistent grid. Hidden (display:none) on measurements so the
+                avatar identity survives the toggle without consuming layout. */}
+            <div
+              data-testid="body-tracker-grid"
+              className={`rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm lg:mt-[25vh] lg:flex lg:flex-col lg:p-3 lg:h-[calc(100vh-200px)] lg:min-h-[568px] lg:overflow-hidden ${
+                isMeasurements ? 'hidden' : ''
+              }`}
+            >
+              <h3 className="mb-3 shrink-0 text-center text-xs font-semibold uppercase tracking-wider text-white/40 lg:hidden">
+                {isMuscle ? 'Segmental Muscle Analysis' : 'Segmental Body Fat Analysis'}
+              </h3>
+              <HeatmapLegend metric={isMuscle ? 'muscle' : 'fat'} className="mb-4 shrink-0 lg:hidden" />
+              <div className="flex flex-col lg:flex-1 lg:flex-row lg:items-stretch lg:gap-6 lg:min-h-0">
+                <div
+                  data-testid="avatar-container"
+                  className="relative flex items-center justify-center px-2 py-2 lg:min-h-0 lg:flex-1"
+                  style={{ filter: 'drop-shadow(0 0 20px rgba(45, 165, 160, 0.15))' }}
+                >
+                  {/* ONE persistent avatar. activeTab follows the section; the
+                      2D floor children swap per section but the BodyComposition
+                      Avatar node keeps the same position + identity, so no
+                      remount and no intro replay on toggle. */}
+                  <BodyCompositionAvatar
+                    sex={gender}
+                    scan={snapshot}
+                    firstScan={null}
+                    circumferences={circumferenceData.latest}
+                    unit={unit}
+                    activeTab={avatarActiveTab}
+                    selectedBodyPart={selectedBodyPart}
+                    onSelectBodyPart={setSelectedBodyPart}
+                    reducedMotion={avatarReducedMotion}
+                  >
+                    {isMuscle ? (
+                      <HoverSystem view="muscle" sex={gender} regions={muscleRegions} className="lg:h-full">
+                        <SegmentalHeatMap sex={gender} segmentStatuses={muscleRegionStatuses} />
+                      </HoverSystem>
+                    ) : (
+                      <HoverSystem view="composition" sex={gender} regions={fatRegions} className="lg:h-full">
+                        <SegmentalHeatMap sex={gender} segmentStatuses={fatRegionStatuses} />
+                      </HoverSystem>
+                    )}
+                  </BodyCompositionAvatar>
+                  <LegendBar
+                    pinnedIds={pinnedIds}
+                    hoveredId={hoveredId}
+                    onActivate={handleLegendActivate}
+                    layout="ring"
+                    className="hidden lg:block lg:absolute lg:top-2 lg:bottom-2 lg:left-1/2 lg:-translate-x-1/2 lg:aspect-[720/1152]"
+                  />
+                </div>
+                <aside
+                  data-testid="kpi-stack-desktop"
+                  aria-label="Body composition summary"
+                  className="hidden lg:flex lg:w-[200px] lg:shrink-0 lg:flex-col lg:gap-3"
+                >
+                  <div data-testid="kpi-stack-header" className="flex flex-col items-center gap-2 lg:mb-4">
+                    <h3 className="text-center text-xs font-semibold uppercase tracking-wider text-white/40">
+                      {isMuscle ? 'Segmental Muscle Analysis' : 'Segmental Body Fat Analysis'}
+                    </h3>
+                    <ul className="flex flex-col gap-1 text-[10px] lg:w-fit lg:mx-auto">
+                      <li className="flex items-center gap-1.5">
+                        <span className="h-2.5 w-2.5 rounded-full bg-green-400" aria-hidden="true" />
+                        <span className="text-white/40">{isMuscle ? 'Muscle Gain' : 'Fat Loss'}</span>
+                      </li>
+                      <li className="flex items-center gap-1.5">
+                        <span className="h-2.5 w-2.5 rounded-full bg-yellow-400" aria-hidden="true" />
+                        <span className="text-white/40">No Change</span>
+                      </li>
+                      <li className="flex items-center gap-1.5">
+                        <span className="h-2.5 w-2.5 rounded-full bg-red-400" aria-hidden="true" />
+                        <span className="text-white/40">{isMuscle ? 'Muscle Loss' : 'Fat Gain'}</span>
+                      </li>
+                    </ul>
+                  </div>
+                  {metricCards.map((c, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.6 + i * 0.08, duration: 0.35, ease: 'easeOut' }}
+                    >
+                      <FloatingMetricCard {...c} />
+                    </motion.div>
+                  ))}
+                </aside>
+              </div>
+              <LegendBar
+                pinnedIds={pinnedIds}
+                hoveredId={hoveredId}
+                onActivate={handleLegendActivate}
+                className="mt-3 shrink-0 lg:hidden"
+              />
+              <div data-testid="bottom-metrics-row" className="mx-auto mt-3 grid w-full max-w-2xl shrink-0 grid-cols-2 gap-3 md:grid-cols-4 lg:hidden">
                 {metricCards.map((c, i) => (
                   <motion.div
                     key={i}
@@ -646,144 +698,13 @@ function CompositionPageInner() {
                     <FloatingMetricCard {...c} />
                   </motion.div>
                 ))}
-              </aside>
-            </div>
-            <LegendBar
-              pinnedIds={pinnedIds}
-              hoveredId={hoveredId}
-              onActivate={handleLegendActivate}
-              className="mt-3 shrink-0 lg:hidden"
-            />
-            <div data-testid="bottom-metrics-row" className="mx-auto mt-3 grid w-full max-w-2xl shrink-0 grid-cols-2 gap-3 md:grid-cols-4 lg:hidden">
-              {metricCards.map((c, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.6 + i * 0.08, duration: 0.35, ease: 'easeOut' }}
-                >
-                  <FloatingMetricCard {...c} />
-                </motion.div>
-              ))}
-            </div>
-            {emptyHint}
-          </div>
-        </>
-      )}
-
-      {section === 'muscle' && (
-        <>
-          <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 backdrop-blur-md p-4 sm:p-5 lg:p-3">
-            <h2 className="text-lg font-bold text-white">Muscle Analysis</h2>
-            <p className="text-xs text-white/60">Segmental muscle mass breakdown</p>
-          </div>
-
-          {/* Prompt #157k: HoverSystem replaces the muscle 3-column
-              rail. Same FIFO pin queue + LegendBar accessibility row;
-              regions carry change-based muscle classifications. */}
-          <div data-testid="body-tracker-grid" className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-6 backdrop-blur-sm lg:mt-[25vh] lg:flex lg:flex-col lg:p-3 lg:h-[calc(100vh-200px)] lg:min-h-[568px] lg:overflow-hidden">
-            {/* Prompt #157o: top-center title + legend now mobile/tablet
-                only. Desktop relocates them to the top of the right
-                column, above the Total Body Fat KPI card. */}
-            <h3 className="mb-3 shrink-0 text-center text-xs font-semibold uppercase tracking-wider text-white/40 lg:hidden">
-              Segmental Muscle Analysis
-            </h3>
-            <HeatmapLegend metric="muscle" className="mb-4 shrink-0 lg:hidden" />
-            {/* Prompt #157n: desktop main row pairs the avatar with
-                the KPI stack on the right. Same shape as the fat
-                section. */}
-            <div className="flex flex-col lg:flex-1 lg:flex-row lg:items-stretch lg:gap-6 lg:min-h-0">
-              <div
-                data-testid="avatar-container"
-                className="relative flex items-center justify-center px-2 py-2 lg:min-h-0 lg:flex-1"
-                style={{ filter: 'drop-shadow(0 0 20px rgba(45, 165, 160, 0.15))' }}
-              >
-                {/* === PROMPT 210b EXTENSION START === */}
-                <BodyCompositionAvatar
-                  sex={gender}
-                  scan={snapshot}
-                  firstScan={null}
-                  circumferences={circumferenceData.latest}
-                  unit={unit}
-                  activeTab="muscleMass"
-                  selectedBodyPart={selectedBodyPart}
-                  onSelectBodyPart={setSelectedBodyPart}
-                  reducedMotion={avatarReducedMotion}
-                >
-                  <HoverSystem view="muscle" sex={gender} regions={muscleRegions} className="lg:h-full">
-                    <SegmentalHeatMap sex={gender} segmentStatuses={muscleRegionStatuses} />
-                  </HoverSystem>
-                </BodyCompositionAvatar>
-                {/* === PROMPT 210b EXTENSION END === */}
-                <LegendBar
-                  pinnedIds={pinnedIds}
-                  hoveredId={hoveredId}
-                  onActivate={handleLegendActivate}
-                  layout="ring"
-                  className="hidden lg:block lg:absolute lg:top-2 lg:bottom-2 lg:left-1/2 lg:-translate-x-1/2 lg:aspect-[720/1152]"
-                />
               </div>
-              {/* Prompt #157o: muscle variant of the desktop title + legend
-                  block. Labels invert per HeatmapLegend's metric semantics
-                  (Muscle Gain = good, Muscle Loss = bad). */}
-              <aside
-                data-testid="kpi-stack-desktop"
-                aria-label="Body composition summary"
-                className="hidden lg:flex lg:w-[200px] lg:shrink-0 lg:flex-col lg:gap-3"
-              >
-                <div data-testid="kpi-stack-header" className="flex flex-col items-center gap-2 lg:mb-4">
-                  <h3 className="text-center text-xs font-semibold uppercase tracking-wider text-white/40">
-                    Segmental Muscle Analysis
-                  </h3>
-                  <ul className="flex flex-col gap-1 text-[10px] lg:w-fit lg:mx-auto">
-                    <li className="flex items-center gap-1.5">
-                      <span className="h-2.5 w-2.5 rounded-full bg-green-400" aria-hidden="true" />
-                      <span className="text-white/40">Muscle Gain</span>
-                    </li>
-                    <li className="flex items-center gap-1.5">
-                      <span className="h-2.5 w-2.5 rounded-full bg-yellow-400" aria-hidden="true" />
-                      <span className="text-white/40">No Change</span>
-                    </li>
-                    <li className="flex items-center gap-1.5">
-                      <span className="h-2.5 w-2.5 rounded-full bg-red-400" aria-hidden="true" />
-                      <span className="text-white/40">Muscle Loss</span>
-                    </li>
-                  </ul>
-                </div>
-                {metricCards.map((c, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.6 + i * 0.08, duration: 0.35, ease: 'easeOut' }}
-                  >
-                    <FloatingMetricCard {...c} />
-                  </motion.div>
-                ))}
-              </aside>
+              {emptyHint}
             </div>
-            <LegendBar
-              pinnedIds={pinnedIds}
-              hoveredId={hoveredId}
-              onActivate={handleLegendActivate}
-              className="mt-3 shrink-0 lg:hidden"
-            />
-            <div data-testid="bottom-metrics-row" className="mx-auto mt-3 grid w-full max-w-2xl shrink-0 grid-cols-2 gap-3 md:grid-cols-4 lg:hidden">
-              {metricCards.map((c, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.6 + i * 0.08, duration: 0.35, ease: 'easeOut' }}
-                >
-                  <FloatingMetricCard {...c} />
-                </motion.div>
-              ))}
-            </div>
-            {emptyHint}
-          </div>
-        </>
-      )}
+          </>
+        );
+      })()}
+      {/* === PROMPT 210b EXTENSION END === */}
 
       {section === 'measurements' && (
         <>
