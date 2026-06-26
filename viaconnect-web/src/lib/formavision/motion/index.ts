@@ -22,3 +22,19 @@ export {
   type MorphController,
   type MorphControllerOptions,
 } from './morphController';
+export {
+  framingForRegion,
+  FULL_BODY_FRAMING,
+  type CameraFraming,
+} from './regionFraming';
+export {
+  createCameraFramingController,
+  type CameraFramingController,
+  type CameraFramingControllerOptions,
+} from './cameraFramingController';
+export {
+  createIdleTurntable,
+  type IdleTurntable,
+  type IdleTurntableOptions,
+  type IdleTimer,
+} from './idleTurntable';

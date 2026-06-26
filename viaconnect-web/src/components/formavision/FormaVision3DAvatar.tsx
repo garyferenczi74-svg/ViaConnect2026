@@ -80,6 +80,7 @@ export function FormaVision3DAvatar({
   unit,
   heightCm,
   reducedMotion,
+  selectedBodyPart,
   renderTier = 'cinematic',
   onRenderError,
 }: FormaVision3DAvatarProps) {
@@ -120,6 +121,7 @@ export function FormaVision3DAvatar({
           unit={unit}
           heightCm={heightCm}
           reducedMotion={reducedMotion}
+          selectedBodyPart={selectedBodyPart}
           renderTier={renderTier}
         />
       </AvatarErrorBoundary>
