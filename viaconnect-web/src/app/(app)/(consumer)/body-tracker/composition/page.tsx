@@ -11,6 +11,10 @@ import { HoverSystem } from '@/components/body-tracker/HoverSystem';
 // === PROMPT 210b EXTENSION START ===
 import { BodyCompositionAvatar, SelectBodyPartControl } from '@/components/formavision';
 import { useReducedMotion } from '@/components/body-tracker/HoverSystem/useReducedMotion';
+import {
+  buildSegmentTints,
+  type SegmentChild,
+} from '@/lib/formavision/geometry/composSegmentTints';
 // === PROMPT 210b EXTENSION END ===
 // === PROMPT 210b VR (Section 8) START ===
 // Direct-path imports (not the avatar barrel) so this Visual Results surface
@@ -93,6 +97,16 @@ const BODY_PARTS: BodyPartSpec[] = [
   { key: 'l_calf',    label: 'L. Calf',       side: 'left',  parent: 'left_leg',  segType: 'leg' },
   { key: 'r_calf',    label: 'R. Calf',       side: 'right', parent: 'right_leg', segType: 'leg' },
 ];
+
+// === PROMPT 210b EXTENSION START ===
+// OV-T2: the 12 body parts rolled up to the 5 avatar segments. parent is already
+// one of the 5 SEGMENT_INDEX segment names, so this is a direct (key -> segment)
+// projection of BODY_PARTS that buildSegmentTints reduces to one tint per segment.
+const SEGMENT_CHILDREN: SegmentChild[] = BODY_PARTS.map((p) => ({
+  key: p.key,
+  segment: p.parent,
+}));
+// === PROMPT 210b EXTENSION END ===
 
 interface BodyPartCard {
   key: string;
@@ -384,6 +398,21 @@ function CompositionPageInner() {
     [muscleChange.data],
   );
 
+  // === PROMPT 210b EXTENSION START ===
+  // OV-T2: the 5-segment tint record for the 3D avatar, built from the SAME
+  // per-region OvalColor statuses the 2D SegmentalHeatMap consumes, so the 3D
+  // tint and the 2D floor agree exactly. Body Fat uses fatRegionStatuses, Muscle
+  // uses muscleRegionStatuses; Measurements passes null (no tint). A segment with
+  // no present child status stays absent -> neutral (no guessed color).
+  const avatarSegmentTints = useMemo(() => {
+    if (avatarActiveTab === 'measurements') {
+      return null;
+    }
+    const statuses = avatarActiveTab === 'muscleMass' ? muscleRegionStatuses : fatRegionStatuses;
+    return buildSegmentTints(statuses, SEGMENT_CHILDREN);
+  }, [avatarActiveTab, fatRegionStatuses, muscleRegionStatuses]);
+  // === PROMPT 210b EXTENSION END ===
+
   // Prompt #157k: BodyRegionData arrays for the HoverSystem + LegendBar.
   // Regions with an UNKNOWN (null) value are omitted (no fabricated card);
   // trend reads the change hook. Memoized so HoverSystem children do not
@@ -671,6 +700,7 @@ function CompositionPageInner() {
                     selectedBodyPart={selectedBodyPart}
                     onSelectBodyPart={setSelectedBodyPart}
                     reducedMotion={avatarReducedMotion}
+                    segmentTints={avatarSegmentTints}
                   >
                     {isMuscle ? (
                       <HoverSystem view="muscle" sex={gender} regions={muscleRegions} className="lg:h-full">
