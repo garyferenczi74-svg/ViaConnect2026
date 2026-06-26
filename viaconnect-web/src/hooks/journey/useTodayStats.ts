@@ -21,7 +21,7 @@
  * Rules: no em-dashes, no emojis, no `any`.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { detectTimezone, localDateString } from '@/lib/timezone';
 import { withTimeout } from '@/lib/utils/with-timeout';
@@ -109,6 +109,23 @@ const INITIAL: TodayStatsResult = {
  */
 export function useTodayStats(userId: string | null): TodayStatsResult {
   const [result, setResult] = useState<TodayStatsResult>(INITIAL);
+  const [refreshTick, setRefreshTick] = useState(0);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handleFocus = () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        setRefreshTick((t) => t + 1);
+      }, 500);
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (!userId) {
@@ -187,7 +204,7 @@ export function useTodayStats(userId: string | null): TodayStatsResult {
     })();
 
     return () => { active = false; };
-  }, [userId]);
+  }, [userId, refreshTick]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return result;
 }

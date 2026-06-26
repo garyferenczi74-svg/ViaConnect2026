@@ -24,7 +24,7 @@
  * Lucide icons are not imported here (UI layer only); the caller supplies them.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { withTimeout } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
@@ -397,6 +397,23 @@ export function useEngineAccelerators(
   userId: string | null,
 ): EngineAcceleratorsResult {
   const [result, setResult] = useState<EngineAcceleratorsResult>(INITIAL);
+  const [refreshTick, setRefreshTick] = useState(0);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handleFocus = () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        setRefreshTick((t) => t + 1);
+      }, 500);
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (!userId) {
@@ -505,7 +522,7 @@ export function useEngineAccelerators(
     return () => {
       active = false;
     };
-  }, [userId]);
+  }, [userId, refreshTick]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return result;
 }

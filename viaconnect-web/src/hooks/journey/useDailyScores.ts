@@ -49,7 +49,7 @@
  * and YourJourneyCoaching). Lucide strokeWidth 1.5 not applicable (hook only).
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import {
   calculateDailyScores,
@@ -339,6 +339,7 @@ interface ProfileRow {
  */
 export function useDailyScores(userId: string | null): DailyPillarScores {
   const [scores, setScores] = useState<DailyPillarScores>(INITIAL);
+  const [refreshTick, setRefreshTick] = useState(0);
 
   // Hydration: real-time hook (same as DailyScoresPanel).
   const hydrationResult = useHydrationToday();
@@ -556,7 +557,7 @@ export function useDailyScores(userId: string | null): DailyPillarScores {
     return () => {
       active = false;
     };
-  }, [userId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [userId, refreshTick]); // eslint-disable-line react-hooks/exhaustive-deps
   // Intentional split: hydration is tracked by its own effect below so that
   // real-time hydration log events update the gauge without re-running the
   // Supabase reads above. Adding hydrationClamped here would cause unnecessary
@@ -570,6 +571,25 @@ export function useDailyScores(userId: string | null): DailyPillarScores {
       hydration: hydrationClamped,
     }));
   }, [hydrationClamped]);
+
+  // Window focus listener: re-runs DB reads when the user returns to the tab.
+  // Debounced to 500ms to avoid rapid re-fires on focus events.
+  // The ref pattern avoids stale closure issues with the debounce timer.
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handleFocus = () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        setRefreshTick((t) => t + 1);
+      }, 500);
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
 
   return scores;
 }
