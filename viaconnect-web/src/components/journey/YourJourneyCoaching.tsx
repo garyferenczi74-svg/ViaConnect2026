@@ -29,13 +29,15 @@ import { useDailyScores } from "@/hooks/journey/useDailyScores";
 import { useNutritionTargets } from "@/hooks/useNutritionTargets";
 import { useLatestComposition } from "@/hooks/body-tracker/useLatestComposition";
 import { useRecentBodySeries } from "@/components/journey/progress/useRecentBodySeries";
-import { stateWordForScore } from "@/components/journey/coaching/NarrativeRead";
 import { getDisplayName } from "@/lib/user/get-display-name";
 import { createClient } from "@/lib/supabase/client";
 import { withTimeout } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
 import { heroGaugeScore, buildFlatSeries } from "@/components/journey/coaching/heroHelpers";
 import { formatMacroLabel, kcalRemaining, flatSparkline } from "@/components/journey/coaching/lowerHelpers";
+import { useUserDashboardData } from "@/hooks/useUserDashboardData";
+import { useActiveBodyGoal, tierToStateWord } from "@/hooks/journey/useActiveBodyGoal";
+import { getWearableSource } from "@/lib/scoring/sources/wearable-source";
 
 const C = {
   navy: "#1A2744", card: "#1E3054", inset: "#16203A", raised: "#243a63",
@@ -142,8 +144,9 @@ function DailyScores({ rangeData }: { rangeData: AllRangeData }) {
 
 // ProfileCard now accepts real data props. Markup/styles unchanged from verbatim port.
 // Avatar: real photo from profiles.avatar_url when present; else initial tile (honest).
-// Name: from getDisplayName(); Goal: from useJourneyState goalPhrase.
-// Last sync line: "No wearable connected" (wearable connector is not active).
+// Name: from getDisplayName(); Goal chip: from useActiveBodyGoal.goalLabel.
+// Last sync line: from wearable detection (getWearableSource). "Not synced yet" when no
+// active integration has synced. "No wearable connected" when no active integration.
 // Hannah note: state-appropriate, calm, name-aware copy. No fabricated numbers.
 function ProfileCard({
   displayName,
@@ -151,12 +154,14 @@ function ProfileCard({
   avatarUrl,
   goalPhrase,
   stateWord,
+  lastSyncLabel,
 }: {
   displayName: string;
   initial: string;
   avatarUrl: string | null;
   goalPhrase: string;
   stateWord: string;
+  lastSyncLabel: string;
 }) {
   const [avatarErrored, setAvatarErrored] = useState(false);
   const showAvatar = !!avatarUrl && !avatarErrored;
@@ -200,7 +205,7 @@ function ProfileCard({
       <div>
         <div style={{ fontSize: 18, fontWeight: 800 }}>{displayName || "there"}</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 5, marginTop: 9, fontSize: 11.5, color: C.muted }}>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><RefreshCw size={13} strokeWidth={SW} /> No wearable connected</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><RefreshCw size={13} strokeWidth={SW} /> {lastSyncLabel}</span>
         </div>
       </div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 10px", borderRadius: 10, background: C.card, border: `1px solid ${C.line}` }}>
@@ -220,20 +225,26 @@ function Hero({
   pillarValues,
   rangeData,
   overallScore,
+  bioTier,
   displayName,
   initial,
   avatarUrl,
   goalPhrase,
+  lastSyncLabel,
 }: {
   pillarValues: PillarValues;
   rangeData: AllRangeData;
   overallScore: number | null;
+  bioTier: string | null;
   displayName: string;
   initial: string;
   avatarUrl: string | null;
   goalPhrase: string;
+  lastSyncLabel: string;
 }) {
-  const stateWord = stateWordForScore(overallScore);
+  // J-T2: hero narrative state word driven from canonical dashboard tier +
+  // score. Baseline/computing users read as "getting started", not "steady".
+  const stateWord = tierToStateWord(bioTier, overallScore);
 
   // Narrative read: state-appropriate, one paragraph, honest to real score.
   const narrativeRead = (() => {
@@ -268,6 +279,7 @@ function Hero({
           avatarUrl={avatarUrl}
           goalPhrase={goalPhrase}
           stateWord={stateWord}
+          lastSyncLabel={lastSyncLabel}
         />
         <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 16 }}>
           <div className="vc-herotop">
@@ -672,6 +684,68 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
   const { snapshot: compositionSnapshot } = useLatestComposition(userId);
   const bodySeries = useRecentBodySeries(userId);
 
+  // J-T2: dashboard hook for bio_optimization_tier + bio_optimization_score.
+  // Drives the hero narrative state word (canonical, RLS-scoped via dashboard hook).
+  // NEVER reads profiles.vitality_score.
+  const { profile: dashProfile } = useUserDashboardData();
+  const bioDashScore: number | null = dashProfile?.bio_optimization_score ?? null;
+  const bioDashTier: string | null = dashProfile?.bio_optimization_tier ?? null;
+
+  // J-T2: active body_goals row -> goal chip label.
+  // Replaces useJourneyState.goalPhrase as the goal chip data source.
+  const { goalLabel: activeGoalLabel } = useActiveBodyGoal(userId);
+
+  // J-T2: wearable status from getWearableSource.
+  // Drives "No wearable connected" / last-sync label in ProfileCard.
+  // Fail-open: error -> { connected: false, lastSyncLabel: "Not synced yet" }.
+  const [wearableConnected, setWearableConnected] = useState<boolean>(false);
+  const [lastSyncLabel, setLastSyncLabel] = useState<string>("Not synced yet");
+  useEffect(() => {
+    if (!userId) {
+      setWearableConnected(false);
+      setLastSyncLabel("Not synced yet");
+      return;
+    }
+    let active = true;
+    (async () => {
+      try {
+        const supabase = createClient();
+        const ws = await withTimeout(
+          getWearableSource(userId, supabase),
+          4000,
+          "YourJourneyCoaching.wearableSource",
+        );
+        if (!active) return;
+        const count = ws.source_specific?.active_integration_count ?? 0;
+        const connected = count > 0;
+        setWearableConnected(connected);
+        if (!connected) {
+          setLastSyncLabel("No wearable connected");
+          return;
+        }
+        if (!ws.last_engaged_at) {
+          setLastSyncLabel("Not synced yet");
+          return;
+        }
+        const syncMs = Date.now() - new Date(ws.last_engaged_at).getTime();
+        const syncDays = Math.floor(syncMs / (24 * 60 * 60 * 1000));
+        if (syncDays === 0) {
+          setLastSyncLabel("Synced today");
+        } else if (syncDays === 1) {
+          setLastSyncLabel("Synced yesterday");
+        } else {
+          setLastSyncLabel(`Synced ${syncDays} days ago`);
+        }
+      } catch (err) {
+        if (!active) return;
+        safeLog.warn("YourJourneyCoaching", "wearableSource read failed, failing open", { error: err });
+        setWearableConnected(false);
+        setLastSyncLabel("Not synced yet");
+      }
+    })();
+    return () => { active = false; };
+  }, [userId]);
+
   // Display name: resolved async via getDisplayName (mirrors ProfileCard.tsx approach).
   const [displayName, setDisplayName] = useState<string>("");
   useEffect(() => {
@@ -746,9 +820,16 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
   // Profile card data.
   const displayNameSafe = displayName && displayName.trim().length > 0 ? displayName : "there";
   const initial = displayNameSafe.charAt(0).toUpperCase() || "V";
-  const goalPhrase = journeyState.goalPhrase || "supporting your wellness";
+  // J-T2: goal chip now driven by the active body_goals row via useActiveBodyGoal.
+  // Falls back to useJourneyState.goalPhrase when no active goal is set so the
+  // chip always shows a relevant phrase (journeyState is kept for J-T3 GoalCard).
+  const goalPhrase = activeGoalLabel !== "Set a goal"
+    ? activeGoalLabel
+    : journeyState.goalPhrase || "Set a goal";
 
-  // Overall score for narrative (null when no data = getting started state).
+  // J-T2: overallScore for gauges is still from bos7D.current (pillar graph).
+  // The hero narrative state word uses bioDashScore + bioDashTier (canonical
+  // dashboard source) so computing/baseline users read as "getting started".
   const overallScore: number | null =
     overallCurrent > 0 ? overallCurrent : null;
 
@@ -963,11 +1044,13 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
         <Hero
           pillarValues={pillarValues}
           rangeData={rangeData}
-          overallScore={overallScore}
+          overallScore={bioDashScore}
+          bioTier={bioDashTier}
           displayName={displayNameSafe}
           initial={initial}
           avatarUrl={avatarUrl}
           goalPhrase={goalPhrase}
+          lastSyncLabel={lastSyncLabel}
         />
 
         <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
