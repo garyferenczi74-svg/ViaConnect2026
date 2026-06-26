@@ -9,7 +9,7 @@ import { SegmentalHeatMap } from '@/components/body-tracker/SegmentalHeatMap';
 import { HeatmapLegend } from '@/components/body-tracker/HeatmapLegend';
 import { HoverSystem } from '@/components/body-tracker/HoverSystem';
 // === PROMPT 210b EXTENSION START ===
-import { BodyCompositionAvatar } from '@/components/formavision';
+import { BodyCompositionAvatar, SelectBodyPartControl } from '@/components/formavision';
 import { useReducedMotion } from '@/components/body-tracker/HoverSystem/useReducedMotion';
 // === PROMPT 210b EXTENSION END ===
 import { LegendBar } from '@/components/body-tracker/HoverSystem/LegendBar';
@@ -612,6 +612,19 @@ function CompositionPageInner() {
                   className="relative flex items-center justify-center px-2 py-2 lg:min-h-0 lg:flex-1"
                   style={{ filter: 'drop-shadow(0 0 20px rgba(45, 165, 160, 0.15))' }}
                 >
+                  {/* P2-T4a: the Select Body Part picker overlays the top of the
+                      avatar surface. It lives in the persistent avatar-container
+                      (a sibling of the avatar, outside the avatar wrapper's
+                      fallback branch), so the selection survives section toggles
+                      and the control is real, keyboard-operable DOM, never baked
+                      into the canvas. Selecting a region drives selectedBodyPart
+                      (and so the P2-T3 camera framing); All clears to null. */}
+                  <div className="pointer-events-none absolute left-1/2 top-2 z-10 flex -translate-x-1/2 justify-center">
+                    <SelectBodyPartControl
+                      value={selectedBodyPart}
+                      onChange={setSelectedBodyPart}
+                    />
+                  </div>
                   {/* ONE persistent avatar. activeTab follows the section; the
                       2D floor children swap per section but the BodyComposition
                       Avatar node keeps the same position + identity, so no
