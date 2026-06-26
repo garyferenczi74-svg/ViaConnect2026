@@ -8,6 +8,10 @@ import { Plus, Camera, Check, RotateCcw } from 'lucide-react';
 import { SegmentalHeatMap } from '@/components/body-tracker/SegmentalHeatMap';
 import { HeatmapLegend } from '@/components/body-tracker/HeatmapLegend';
 import { HoverSystem } from '@/components/body-tracker/HoverSystem';
+// === PROMPT 210b EXTENSION START ===
+import { BodyCompositionAvatar } from '@/components/formavision';
+import { useReducedMotion } from '@/components/body-tracker/HoverSystem/useReducedMotion';
+// === PROMPT 210b EXTENSION END ===
 import { LegendBar } from '@/components/body-tracker/HoverSystem/LegendBar';
 import { usePinnedCards } from '@/components/body-tracker/HoverSystem/usePinnedCards';
 import { useResponsivePinCap } from '@/components/body-tracker/HoverSystem/useResponsivePinCap';
@@ -202,6 +206,12 @@ function CompositionPageInner() {
   const [gender, setGender] = useState<'male' | 'female'>('male');
   const [genderManuallySet, setGenderManuallySet] = useState(false);
   const [genderError, setGenderError] = useState<string | null>(null);
+  // === PROMPT 210b EXTENSION START ===
+  // Selected body part for the 3D avatar (Phase 1: local, not yet wired to the
+  // 2D pin store). reducedMotion mirrors the existing HoverSystem media query.
+  const [selectedBodyPart, setSelectedBodyPart] = useState<string | null>(null);
+  const avatarReducedMotion = useReducedMotion();
+  // === PROMPT 210b EXTENSION END ===
 
   const { id: userId } = useCurrentUser();
   const { sex: caqSex, source: caqSource, setOverride: setGenderOverride } = useUserBiologicalSex(userId ?? null);
@@ -572,9 +582,23 @@ function CompositionPageInner() {
                 className="relative flex items-center justify-center px-2 py-2 lg:min-h-0 lg:flex-1"
                 style={{ filter: 'drop-shadow(0 0 20px rgba(45, 165, 160, 0.15))' }}
               >
-                <HoverSystem view="composition" sex={gender} regions={fatRegions} className="lg:h-full">
-                  <SegmentalHeatMap sex={gender} segmentStatuses={fatRegionStatuses} />
-                </HoverSystem>
+                {/* === PROMPT 210b EXTENSION START === */}
+                <BodyCompositionAvatar
+                  sex={gender}
+                  scan={snapshot}
+                  firstScan={null}
+                  circumferences={circumferenceData.latest}
+                  unit={unit}
+                  activeTab="bodyFat"
+                  selectedBodyPart={selectedBodyPart}
+                  onSelectBodyPart={setSelectedBodyPart}
+                  reducedMotion={avatarReducedMotion}
+                >
+                  <HoverSystem view="composition" sex={gender} regions={fatRegions} className="lg:h-full">
+                    <SegmentalHeatMap sex={gender} segmentStatuses={fatRegionStatuses} />
+                  </HoverSystem>
+                </BodyCompositionAvatar>
+                {/* === PROMPT 210b EXTENSION END === */}
                 <LegendBar
                   pinnedIds={pinnedIds}
                   hoveredId={hoveredId}
@@ -674,9 +698,23 @@ function CompositionPageInner() {
                 className="relative flex items-center justify-center px-2 py-2 lg:min-h-0 lg:flex-1"
                 style={{ filter: 'drop-shadow(0 0 20px rgba(45, 165, 160, 0.15))' }}
               >
-                <HoverSystem view="muscle" sex={gender} regions={muscleRegions} className="lg:h-full">
-                  <SegmentalHeatMap sex={gender} segmentStatuses={muscleRegionStatuses} />
-                </HoverSystem>
+                {/* === PROMPT 210b EXTENSION START === */}
+                <BodyCompositionAvatar
+                  sex={gender}
+                  scan={snapshot}
+                  firstScan={null}
+                  circumferences={circumferenceData.latest}
+                  unit={unit}
+                  activeTab="muscleMass"
+                  selectedBodyPart={selectedBodyPart}
+                  onSelectBodyPart={setSelectedBodyPart}
+                  reducedMotion={avatarReducedMotion}
+                >
+                  <HoverSystem view="muscle" sex={gender} regions={muscleRegions} className="lg:h-full">
+                    <SegmentalHeatMap sex={gender} segmentStatuses={muscleRegionStatuses} />
+                  </HoverSystem>
+                </BodyCompositionAvatar>
+                {/* === PROMPT 210b EXTENSION END === */}
                 <LegendBar
                   pinnedIds={pinnedIds}
                   hoveredId={hoveredId}
