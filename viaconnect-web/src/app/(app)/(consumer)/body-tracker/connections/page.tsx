@@ -1,241 +1,235 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
-import {
-  Link2,
-  CheckCircle2,
-  Pencil,
-  ShieldCheck,
-  ScrollText,
-  ArrowRight,
-} from 'lucide-react';
+// Prompt 201: Connected Sources. Registry-driven page that supersedes the
+// Prompt 77 / 85 hardcoded source lists. One card per CONNECTED_SOURCES entry.
+//
+// Each card resolves its action from the registry status plus the runtime
+// platform and the native_health_bridge flag:
+//   - apple_health: web shows Import (the Apple Health export flow). On native,
+//     when native_health_bridge is on, it would show Connect Apple Health. The
+//     flag ships off, so that control stays hidden, which is correct.
+//   - manual_entry: Add reading, opening the manual entry modal.
+//   - scaffold sources (Google Health Connect, Fitbit, Garmin): a disabled
+//     control with the honest note. We never present a connect flow that cannot
+//     complete.
+//
+// Last sync time is read from body_tracker_connections by source_id; sources
+// with no row show Never synced.
+//
+// Design tokens: Deep Navy #1A2744 page, Card #1E3054 surfaces, Teal #2DA5A0
+// accent, Orange #B75E18 reserved for warnings. Instrument Sans is inherited
+// from the app shell. Lucide at strokeWidth 1.5. No emojis. No em or en dashes.
+
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { BackToHubLink } from '@/components/body-tracker/hub/BackToHubLink';
 import {
-  ConnectionCard,
-  type ConnectionSource,
-  type ConnectionStatus,
-} from '@/components/body-tracker/ConnectionCard';
+  CONNECTED_SOURCES,
+  type ConnectedSource,
+} from '@/lib/body-tracker/connected-sources/registry';
+import { detectPlatform } from '@/lib/capacitor/camera-capture';
+import { isFeatureEnabled } from '@/lib/config/feature-flags';
+import {
+  ConnectedSourceCard,
+  type SourceAction,
+} from '@/components/body-tracker/connected-sources/ConnectedSourceCard';
+import { AppleHealthImportModal } from '@/components/body-tracker/connected-sources/AppleHealthImportModal';
+import { ManualEntryModal } from '@/components/body-tracker/connected-sources/ManualEntryModal';
 
-/* ── Source registries ───────────────────────────────── */
-const WEARABLE_SOURCES: ConnectionSource[] = [
-  { id: 'apple_watch', name: 'Apple Watch', sourceType: 'wearable', icon: 'Watch', description: 'Heart rate, HRV, activity, sleep', dataProvided: ['hr', 'hrv', 'activity', 'sleep'] },
-  { id: 'whoop', name: 'WHOOP', sourceType: 'wearable', icon: 'Activity', description: 'Strain, recovery, sleep, HRV', dataProvided: ['strain', 'recovery', 'sleep', 'hrv'] },
-  { id: 'oura', name: 'Oura Ring', sourceType: 'wearable', icon: 'CircleDot', description: 'Sleep, readiness, HRV, temperature', dataProvided: ['sleep', 'readiness', 'hrv'] },
-  { id: 'garmin', name: 'Garmin', sourceType: 'wearable', icon: 'Watch', description: 'Weight, HR, activity, training load', dataProvided: ['weight', 'hr', 'activity'] },
-  { id: 'fitbit', name: 'Fitbit', sourceType: 'wearable', icon: 'Watch', description: 'Weight, HR, sleep, activity', dataProvided: ['weight', 'hr', 'sleep', 'activity'] },
-  { id: 'hume_body_pod', name: 'Hume Body Pod', sourceType: 'wearable', icon: 'Scan', description: 'Full segmental body composition', dataProvided: ['composition', 'weight', 'segmental'] },
-  { id: 'withings', name: 'Withings Body+', sourceType: 'wearable', icon: 'Scale', description: 'Weight, body composition, HR', dataProvided: ['weight', 'composition', 'hr'] },
-];
+function resolveAction(
+  source: ConnectedSource,
+  platform: ReturnType<typeof detectPlatform>,
+  nativeBridgeEnabled: boolean,
+  connectorEnabled: boolean,
+  isConnected: boolean,
+): SourceAction {
+  if (source.id === 'apple_health') {
+    // On the native shell, with the bridge enabled, offer the native connect.
+    if (platform !== 'web' && nativeBridgeEnabled) {
+      return { kind: 'native_connect' };
+    }
+    // Web (and native with the flag off) gets the file import flow.
+    return { kind: 'import' };
+  }
 
-const PLUGIN_SOURCES: ConnectionSource[] = [
-  { id: 'apple_health', name: 'Apple Health', sourceType: 'plugin', icon: 'Heart', description: 'Aggregated health data from iOS', dataProvided: ['weight', 'hr', 'activity', 'sleep'] },
-  { id: 'google_fit', name: 'Google Fit', sourceType: 'plugin', icon: 'Activity', description: 'Aggregated fitness data from Android', dataProvided: ['weight', 'hr', 'activity', 'sleep'] },
-  { id: 'myfitnesspal', name: 'MyFitnessPal', sourceType: 'plugin', icon: 'Utensils', description: 'Weight and body measurements', dataProvided: ['weight', 'measurements'] },
-  { id: 'cronometer', name: 'Cronometer', sourceType: 'plugin', icon: 'PieChart', description: 'Weight, measurements, biometrics', dataProvided: ['weight', 'measurements', 'biometrics'] },
-  { id: 'strava', name: 'Strava', sourceType: 'plugin', icon: 'Bike', description: 'Activity and training data', dataProvided: ['activity'] },
-];
+  if (source.id === 'manual_entry') {
+    return { kind: 'add_reading' };
+  }
 
-/* ── Connection state map ────────────────────────────── */
-interface ConnState {
-  status: ConnectionStatus;
-  lastSyncAt?: string;
+  // Google Health OAuth connector, gated by its feature flag. Until the flag is
+  // on (post-staging) it presents as coming soon rather than a dead Connect.
+  if (source.id === 'google_health') {
+    if (!connectorEnabled) return { kind: 'disabled', reason: 'Coming soon' };
+    return { kind: 'oauth_connect', connected: isConnected };
+  }
+
+  // Deprecated source absorbed by another (Fitbit -> Google Health). Point users
+  // to the replacement when it is available; otherwise an honest note.
+  if (source.status === 'deprecated' && source.supersededBy) {
+    const repl = CONNECTED_SOURCES.find((s) => s.id === source.supersededBy);
+    if (repl && connectorEnabled) {
+      return { kind: 'superseded', via: repl.displayName, viaId: repl.id };
+    }
+    return { kind: 'disabled', reason: 'Now part of Google Health' };
+  }
+
+  // Scaffold and coming-soon sources: honest disabled control, no dead flow.
+  if (source.status !== 'active') {
+    const reason =
+      source.authMethod === 'native_bridge' ? 'Available in the app' : 'Coming soon';
+    return { kind: 'disabled', reason };
+  }
+
+  return { kind: 'disabled', reason: 'Coming soon' };
 }
 
-export default function ConnectionsPage() {
-  const [connMap, setConnMap] = useState<Record<string, ConnState>>({});
-  const [loading, setLoading] = useState(true);
+// Friendly copy for the ?error= codes the OAuth routes redirect back with.
+const OAUTH_ERROR_COPY: Record<string, string> = {
+  not_enabled: 'Google Health is not enabled yet.',
+  not_configured: 'Google Health is not configured yet.',
+  bad_state: 'That connection attempt expired. Please try again.',
+  no_code: 'Google did not return an authorization. Please try again.',
+  token_failed: 'Could not complete the Google Health connection.',
+  token_timeout: 'Google Health timed out. Please try again.',
+  auth_timeout: 'The session check timed out. Please try again.',
+  db_error: 'Could not save the Google Health connection.',
+  internal: 'Something went wrong connecting Google Health.',
+};
 
-  /* Fetch existing connections */
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const supabase = createClient();
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (!user) {
-          setLoading(false);
-          return;
+export default function ConnectedSourcesPage() {
+  const [lastSync, setLastSync] = useState<Record<string, string | undefined>>({});
+  const [connected, setConnected] = useState<Record<string, boolean>>({});
+  const [importOpen, setImportOpen] = useState(false);
+  const [manualOpen, setManualOpen] = useState(false);
+
+  // detectPlatform and isFeatureEnabled both read runtime state; resolve once on
+  // mount so the cards stay stable. The native bridge flag is off in this ship.
+  const [platform] = useState(() => detectPlatform());
+  const nativeBridgeEnabled = useMemo(() => isFeatureEnabled('native_health_bridge'), []);
+  // Server routes gate on GOOGLE_HEALTH_CONNECTOR; the card needs a client-readable
+  // signal, so it also honors NEXT_PUBLIC_GOOGLE_HEALTH_CONNECTOR. Set both to true
+  // to activate (server gating + the visible Connect card).
+  const connectorEnabled = useMemo(
+    () =>
+      isFeatureEnabled('google_health_connector') ||
+      process.env.NEXT_PUBLIC_GOOGLE_HEALTH_CONNECTOR === 'true',
+    [],
+  );
+
+  const loadSyncTimes = useCallback(async () => {
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await (supabase as any)
+        .from('body_tracker_connections')
+        .select('source_id, last_sync_at, status')
+        .eq('user_id', user.id);
+      if (Array.isArray(data)) {
+        const syncMap: Record<string, string | undefined> = {};
+        const connMap: Record<string, boolean> = {};
+        for (const row of data) {
+          syncMap[row.source_id] = row.last_sync_at ?? undefined;
+          connMap[row.source_id] = row.status === 'connected' || Boolean(row.last_sync_at);
         }
-
-        const { data } = await (supabase as any)
-          .from('body_tracker_connections')
-          .select('source_id, status, last_sync_at')
-          .eq('user_id', user.id);
-
-        if (!cancelled && data) {
-          const map: Record<string, ConnState> = {};
-          for (const row of data) {
-            map[row.source_id] = {
-              status: row.status ?? 'disconnected',
-              lastSyncAt: row.last_sync_at ?? undefined,
-            };
-          }
-          setConnMap(map);
-        }
-      } catch {
-        /* table may not exist yet */
-      } finally {
-        if (!cancelled) setLoading(false);
+        setLastSync(syncMap);
+        setConnected(connMap);
       }
-    })();
-    return () => {
-      cancelled = true;
-    };
+    } catch {
+      // Table may be unavailable; cards fall back to Never synced.
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadSyncTimes();
+  }, [loadSyncTimes]);
+
+  // Surface the result of an OAuth round-trip (the routes redirect back here
+  // with ?connected= or ?error=), then clean the query string.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const ok = params.get('connected');
+    const err = params.get('error');
+    if (ok) toast.success('Google Health connected.');
+    else if (err) toast.error(OAUTH_ERROR_COPY[err] ?? 'Could not connect Google Health.');
+    if (ok || err) {
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
+  const handleNativeConnect = useCallback(() => {
+    // The native bridge ships off; this path is reachable only when the flag is
+    // flipped on a future native build. Until the plugin lands, be honest.
+    toast('The native health connection ships with the upcoming app.');
   }, []);
 
   const handleConnect = useCallback((sourceId: string) => {
-    toast('Connection coming soon', { icon: '  ' });
+    // OAuth is a full-page redirect to Google; only Google Health uses it today.
+    if (sourceId === 'google_health') {
+      window.location.href = '/api/integrations/google-health/start';
+    }
   }, []);
-
-  const handleDisconnect = useCallback((sourceId: string) => {
-    toast('Disconnection coming soon', { icon: '  ' });
-  }, []);
-
-  const handleSyncNow = useCallback((sourceId: string) => {
-    toast('Sync coming soon', { icon: '  ' });
-  }, []);
-
-  const getStatus = (sourceId: string): ConnectionStatus =>
-    connMap[sourceId]?.status ?? 'disconnected';
-
-  const getLastSync = (sourceId: string): string | undefined =>
-    connMap[sourceId]?.lastSyncAt;
 
   return (
-    <div className="space-y-8">
+    <div className="font-instrument space-y-6">
       <BackToHubLink />
-      {/* Page heading */}
-      <div>
+
+      <header>
         <div className="flex items-center gap-2">
           <Link2 className="h-5 w-5 text-[#2DA5A0]" strokeWidth={1.5} />
-          <h1 className="text-lg font-bold text-white">Connections</h1>
+          <h1 className="text-lg font-bold text-white">Connected Sources</h1>
         </div>
         <p className="mt-1 text-sm text-white/50">
-          Connect apps and devices to enrich your data
+          Bring body composition into My Biology. Hume Body Pod readings that reach Apple Health are tagged automatically.
         </p>
+      </header>
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {CONNECTED_SOURCES.map((source, index) => {
+          const action = resolveAction(
+            source,
+            platform,
+            nativeBridgeEnabled,
+            connectorEnabled,
+            connected[source.id] ?? false,
+          );
+          // With the connector flag off, present Google Health as coming soon so
+          // the pill and the action agree, instead of active-but-disabled.
+          const displaySource =
+            source.id === 'google_health' && !connectorEnabled
+              ? { ...source, status: 'coming_soon' as const }
+              : source;
+          return (
+            <ConnectedSourceCard
+              key={source.id}
+              source={displaySource}
+              index={index}
+              lastSyncAt={lastSync[source.id]}
+              action={action}
+              onImport={() => setImportOpen(true)}
+              onAddReading={() => setManualOpen(true)}
+              onNativeConnect={handleNativeConnect}
+              onConnect={handleConnect}
+            />
+          );
+        })}
       </div>
 
-      {/* Manual Entry (always on) */}
-      <section>
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35 }}
-          className="flex items-center gap-4 rounded-2xl border border-green-500/20 bg-green-500/[0.06] p-4 backdrop-blur-md"
-        >
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-green-500/15">
-            <Pencil className="h-5 w-5 text-green-400" strokeWidth={1.5} />
-          </div>
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-white">Manual Entry</p>
-            <p className="text-xs text-white/45">
-              Always available. Log measurements directly in the app.
-            </p>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <CheckCircle2 className="h-4 w-4 text-green-400" strokeWidth={1.5} />
-            <span className="text-xs font-medium text-green-400">Active</span>
-          </div>
-        </motion.div>
-      </section>
-
-      {/* Wearables */}
-      <section id="wearables" className="scroll-mt-24">
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-white/40">
-          Wearables
-        </h2>
-        <div className="grid gap-3 md:grid-cols-3">
-          {WEARABLE_SOURCES.map((source, i) => (
-            <motion.div
-              key={source.id}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05, duration: 0.35 }}
-            >
-              <ConnectionCard
-                source={source}
-                status={getStatus(source.id)}
-                lastSyncAt={getLastSync(source.id)}
-                onConnect={() => handleConnect(source.id)}
-                onDisconnect={() => handleDisconnect(source.id)}
-                onSyncNow={() => handleSyncNow(source.id)}
-              />
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* Apps */}
-      <section id="apps" className="scroll-mt-24">
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-white/40">
-          Apps
-        </h2>
-        <div className="grid gap-3 md:grid-cols-3">
-          {PLUGIN_SOURCES.map((source, i) => (
-            <motion.div
-              key={source.id}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05, duration: 0.35 }}
-            >
-              <ConnectionCard
-                source={source}
-                status={getStatus(source.id)}
-                lastSyncAt={getLastSync(source.id)}
-                onConnect={() => handleConnect(source.id)}
-                onDisconnect={() => handleDisconnect(source.id)}
-                onSyncNow={() => handleSyncNow(source.id)}
-              />
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* Trust Settings */}
-      <section>
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-white/40">
-          Trust Settings
-        </h2>
-        <div className="grid gap-3 md:grid-cols-2">
-          <Link
-            href="/body-tracker/connections"
-            className="flex items-center justify-between rounded-2xl border border-white/[0.08] bg-white/5 p-4 backdrop-blur-md transition-colors hover:bg-white/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/50"
-          >
-            <div className="flex items-center gap-3">
-              <ShieldCheck className="h-5 w-5 text-[#2DA5A0]" strokeWidth={1.5} />
-              <div>
-                <p className="text-sm font-semibold text-white">Manage Trust Hierarchy</p>
-                <p className="text-xs text-white/45">
-                  Set data priority when sources conflict
-                </p>
-              </div>
-            </div>
-            <ArrowRight className="h-4 w-4 text-white/30" strokeWidth={1.5} />
-          </Link>
-
-          <Link
-            href="/body-tracker/connections"
-            className="flex items-center justify-between rounded-2xl border border-white/[0.08] bg-white/5 p-4 backdrop-blur-md transition-colors hover:bg-white/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/50"
-          >
-            <div className="flex items-center gap-3">
-              <ScrollText className="h-5 w-5 text-[#B75E18]" strokeWidth={1.5} />
-              <div>
-                <p className="text-sm font-semibold text-white">View Reconciliation Log</p>
-                <p className="text-xs text-white/45">
-                  See how conflicting data points were resolved
-                </p>
-              </div>
-            </div>
-            <ArrowRight className="h-4 w-4 text-white/30" strokeWidth={1.5} />
-          </Link>
-        </div>
-      </section>
+      <AppleHealthImportModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onImported={loadSyncTimes}
+      />
+      <ManualEntryModal
+        open={manualOpen}
+        onClose={() => setManualOpen(false)}
+        onSaved={loadSyncTimes}
+      />
     </div>
   );
 }
