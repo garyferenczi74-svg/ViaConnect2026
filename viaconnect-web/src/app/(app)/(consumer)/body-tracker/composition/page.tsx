@@ -12,6 +12,15 @@ import { HoverSystem } from '@/components/body-tracker/HoverSystem';
 import { BodyCompositionAvatar, SelectBodyPartControl } from '@/components/formavision';
 import { useReducedMotion } from '@/components/body-tracker/HoverSystem/useReducedMotion';
 // === PROMPT 210b EXTENSION END ===
+// === PROMPT 210b VR (Section 8) START ===
+// Direct-path imports (not the avatar barrel) so this Visual Results surface
+// stays disjoint from the avatar component files.
+import { BodyFatReadout } from '@/components/formavision/BodyFatReadout';
+import { NotableChanges } from '@/components/formavision/NotableChanges';
+import { useCompositionHistory } from '@/hooks/body-tracker/useCompositionHistory';
+import { useCircumferenceHistory } from '@/hooks/body-tracker/useCircumferenceHistory';
+import { computeCompositionDeltas } from '@/lib/formavision/deltas/compositionDeltas';
+// === PROMPT 210b VR (Section 8) END ===
 import { LegendBar } from '@/components/body-tracker/HoverSystem/LegendBar';
 import { usePinnedCards } from '@/components/body-tracker/HoverSystem/usePinnedCards';
 import { useResponsivePinCap } from '@/components/body-tracker/HoverSystem/useResponsivePinCap';
@@ -254,6 +263,26 @@ function CompositionPageInner() {
   const fatChange = useFatChangeData(userId ?? null);
   const muscleChange = useMuscleChangeData(userId ?? null);
 
+  // === PROMPT 210b VR (Section 8) START ===
+  // Visual Results read: the scan history (first + latest composition) and the
+  // circumference history (first + latest measurements). Both hooks fail open to
+  // empty + honest UNKNOWN. The deltas are computed once via the shared pure
+  // function; the surfaces render that result without recomputing anything.
+  const composHistory = useCompositionHistory(userId ?? null);
+  const circHistory = useCircumferenceHistory(userId ?? null, unit);
+  const vrDeltas = useMemo(
+    () =>
+      computeCompositionDeltas({
+        firstComposition: composHistory.first,
+        latestComposition: composHistory.latest,
+        firstCircumferences: circHistory.first?.measurements ?? null,
+        latestCircumferences: circHistory.latest?.measurements ?? null,
+        unit,
+      }),
+    [composHistory.first, composHistory.latest, circHistory.first, circHistory.latest, unit],
+  );
+  // === PROMPT 210b VR (Section 8) END ===
+
   useEffect(() => {
     try { window.localStorage.setItem(UNIT_STORAGE_KEY, unit); } catch { /* ignore */ }
   }, [unit]);
@@ -280,6 +309,9 @@ function CompositionPageInner() {
     fatChange.refresh();
     muscleChange.refresh();
     refreshCirc();
+    // PROMPT 210b VR: repaint the Visual Results surfaces on save too.
+    composHistory.refresh();
+    circHistory.refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshKey]);
 
@@ -718,6 +750,25 @@ function CompositionPageInner() {
         );
       })()}
       {/* === PROMPT 210b EXTENSION END === */}
+
+      {/* === PROMPT 210b VR (Section 8) START === */}
+      {/* Visual Results: the large latest-vs-first body-fat readout and the
+          Notable Changes summary, mounted beneath the avatar on the Body Fat and
+          Muscle sections. Both read the histories + the shared delta function;
+          they show honest UNKNOWN / invite states on a single scan or missing
+          data, never a fabricated delta. measurements has its own surface below. */}
+      {section !== 'measurements' && (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <BodyFatReadout
+            latestBodyFatPct={composHistory.latest?.totalBodyFatPct ?? null}
+            bodyFat={vrDeltas.bodyFat}
+            firstScanDate={composHistory.first?.recordedAt ?? null}
+            latestScanDate={composHistory.latest?.recordedAt ?? null}
+          />
+          <NotableChanges deltas={vrDeltas} />
+        </div>
+      )}
+      {/* === PROMPT 210b VR (Section 8) END === */}
 
       {section === 'measurements' && (
         <>

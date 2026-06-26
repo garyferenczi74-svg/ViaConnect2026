@@ -1,0 +1,127 @@
+'use client';
+
+// Prompt 210b Section 8 (Visual Results): the Notable Changes summary. Shows the
+// single biggest change as a kind headline, then an ordered list of per-region
+// circumference deltas (already ordered by magnitude by computeCompositionDeltas)
+// each with a label, the change in the active unit, and a direction arrow.
+//
+// Single source of truth: this renders the CompositionDeltasResult from
+// computeCompositionDeltas (P3-delta). No recompute, no re-derivation of sign.
+// shoulderWidth has direction 'neutral' -> shown with a neutral marker, no
+// good/bad arrow. Regions UNKNOWN on either side are already omitted by the
+// delta function, so nothing is fabricated here.
+//
+// Weight-management guardrail (208a): the headline frames progress kindly; a
+// reduction is progress, a gain is neutral and curious, never shaming. With no
+// deltas (single scan) it shows an inviting empty state.
+
+import { ArrowDown, ArrowUp, Minus } from 'lucide-react';
+import type {
+  CircumferenceDelta,
+  CompositionDeltasResult,
+} from '@/lib/formavision/deltas/compositionDeltas';
+
+export interface NotableChangesProps {
+  deltas: CompositionDeltasResult;
+  className?: string;
+}
+
+function formatVal(value: number, unit: string): string {
+  return `${(Math.round(value * 10) / 10).toFixed(1)} ${unit}`;
+}
+
+// Arrow + tone from the semantic direction. Never recomputed from sign here.
+function directionPresentation(direction: CircumferenceDelta['direction']): {
+  Icon: typeof ArrowDown;
+  toneClass: string;
+} {
+  if (direction === 'improved') return { Icon: ArrowDown, toneClass: 'text-[#2DA5A0]' };
+  if (direction === 'worsened') return { Icon: ArrowUp, toneClass: 'text-white/80' };
+  // unchanged or neutral: no good/bad color, a plain marker.
+  return { Icon: Minus, toneClass: 'text-white/50' };
+}
+
+// Kind, non-shaming headline for the single biggest change.
+function headlineFor(deltas: CompositionDeltasResult): string | null {
+  const biggest = deltas.biggest;
+  if (!biggest) return null;
+  if (biggest.kind === 'bodyFat') {
+    const d = biggest.detail;
+    if (d.direction === 'improved') return 'Your body fat is down since your first scan. Nice progress.';
+    if (d.direction === 'worsened') return 'Your body fat is up a little since your first scan. Keep going.';
+    return 'Your body fat is holding steady since your first scan.';
+  }
+  if (biggest.kind === 'circumference') {
+    const d = biggest.detail;
+    if (d.direction === 'improved') return `Your biggest change: ${d.label} is down. Nice progress.`;
+    if (d.direction === 'worsened') return `Your biggest change is in your ${d.label}. Keep going.`;
+    if (d.direction === 'neutral') return `Your biggest change is in your ${d.label}.`;
+    return `Your ${d.label} is holding steady.`;
+  }
+  // muscle
+  const d = biggest.detail;
+  if (d.direction === 'improved') return `Your biggest change: ${d.label} is up. Strong work.`;
+  if (d.direction === 'worsened') return `Your biggest change is in your ${d.label}. Keep going.`;
+  return `Your ${d.label} is holding steady.`;
+}
+
+export function NotableChanges({ deltas, className }: NotableChangesProps) {
+  const headline = headlineFor(deltas);
+  const rows = deltas.circumferences;
+
+  // Honest empty state: nothing to compare yet (single scan or all UNKNOWN).
+  if (!headline && rows.length === 0) {
+    return (
+      <div
+        data-testid="notable-changes"
+        className={`rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-5 backdrop-blur-sm text-center ${className ?? ''}`}
+      >
+        <p className="text-xs uppercase tracking-wider text-white/40">Notable Changes</p>
+        <p data-testid="notable-changes-empty" className="mt-2 text-sm text-white/60">
+          Log another scan to see what has changed since your first one.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      data-testid="notable-changes"
+      className={`rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-5 backdrop-blur-sm ${className ?? ''}`}
+    >
+      <p className="text-xs uppercase tracking-wider text-white/40">Notable Changes</p>
+
+      {headline && (
+        <p data-testid="notable-changes-headline" className="mt-2 text-sm font-medium text-white">
+          {headline}
+        </p>
+      )}
+
+      {rows.length > 0 && (
+        <ul className="mt-4 flex flex-col gap-2">
+          {rows.map((row) => {
+            const present = directionPresentation(row.direction);
+            return (
+              <li
+                key={row.key}
+                data-testid={`notable-row-${row.key}`}
+                data-direction={row.direction}
+                className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2"
+              >
+                <span className="text-sm text-white/80">{row.label}</span>
+                <span className={`inline-flex items-center gap-1.5 text-sm font-medium ${present.toneClass}`}>
+                  <present.Icon className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+                  {formatVal(Math.abs(row.delta), row.unit)}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      <p className="mt-4 text-[10px] leading-relaxed text-white/35">
+        AI derived estimates from your photos and logged data, for wellness tracking, not a medical or diagnostic measurement.
+      </p>
+    </div>
+  );
+}
