@@ -42,6 +42,7 @@ import { useMetabolicVitals } from "@/hooks/journey/useMetabolicVitals";
 import { useTodayMealLogs } from "@/hooks/journey/useTodayMealLogs";
 import { useEngineAccelerators } from "@/hooks/journey/useEngineAccelerators";
 import type { EngineAccItem } from "@/hooks/journey/useEngineAccelerators";
+import { shouldShowSkeleton } from "@/hooks/journey/skeletonHelpers";
 
 const C = {
   navy: "#1A2744", card: "#1E3054", inset: "#16203A", raised: "#243a63",
@@ -59,6 +60,7 @@ function Shimmer({ w, h, radius = 6 }: { w: number | string; h: number | string;
   return (
     <div
       aria-hidden
+      className="vc-shimmer"
       style={{
         width: w,
         height: h,
@@ -363,9 +365,9 @@ function HannahRead({
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "auto", paddingTop: 12 }}>
         <span style={{ fontSize: 11.5, color: C.muted }}>Estimated lift</span>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 700, color: C.green }}><ArrowUpRight size={13} strokeWidth={2} /> +{estimatedImpact} pts</span>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 700, color: C.green }}><ArrowUpRight size={13} strokeWidth={SW} /> +{estimatedImpact} pts</span>
       </div>
-      <button className="vc-focus" onClick={() => router.push("/wellness/advisor?report=bio-optimization")} style={{ marginTop: 10, width: "100%", cursor: "pointer", background: "transparent", border: `1px solid ${C.teal}`, color: C.teal, borderRadius: 10, padding: "10px 12px", fontSize: 12.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "space-between" }}>View Full Report with Hannah <ArrowRight size={15} strokeWidth={2} /></button>
+      <button className="vc-focus" onClick={() => router.push("/wellness/advisor?report=bio-optimization")} style={{ marginTop: 10, width: "100%", cursor: "pointer", background: "transparent", border: `1px solid ${C.teal}`, color: C.teal, borderRadius: 10, padding: "10px 12px", fontSize: 12.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "space-between" }}>View Full Report with Hannah <ArrowRight size={15} strokeWidth={SW} /></button>
     </div>
   );
 }
@@ -1161,11 +1163,16 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
     carbsG: number; proteinG: number; fatG: number; calories: number; logCount: number;
   }>({ carbsG: 0, proteinG: 0, fatG: 0, calories: 0, logCount: 0 });
   const [todayMacrosLoading, setTodayMacrosLoading] = useState<boolean>(true);
+  // Tracks whether the macros read has resolved at least once. Used as the
+  // hasData signal for shouldShowSkeleton so a focus-refetch keeps the stale
+  // populated donut on screen instead of flashing a skeleton.
+  const macrosEverLoadedRef = useRef(false);
 
   useEffect(() => {
     if (!userId) {
       setTodayMacros({ carbsG: 0, proteinG: 0, fatG: 0, calories: 0, logCount: 0 });
       setTodayMacrosLoading(false);
+      macrosEverLoadedRef.current = true;
       return;
     }
     setTodayMacrosLoading(true);
@@ -1209,10 +1216,12 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
         );
         setTodayMacros(totals);
         setTodayMacrosLoading(false);
+        macrosEverLoadedRef.current = true;
       } catch (err) {
         if (!active) return;
         safeLog.warn("YourJourneyCoaching", "nutrition_logs read failed, failing open", { error: err });
         setTodayMacrosLoading(false);
+        macrosEverLoadedRef.current = true;
       }
     })();
     return () => { active = false; };
@@ -1444,8 +1453,8 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
           avatarUrl={avatarUrl}
           goalPhrase={goalPhrase}
           lastSyncLabel={lastSyncLabel}
-          gaugesLoading={bos7DLoading || dailyScores.loading}
-          graphLoading={bos7DLoading || dailyScores.loading}
+          gaugesLoading={shouldShowSkeleton(bos7DLoading || dailyScores.loading, dailyScores.bioOptimization ?? bos7D?.current ?? null)}
+          graphLoading={shouldShowSkeleton(bos7DLoading || dailyScores.loading, bos7D?.dailyScores ?? bos7D?.bioScores ?? null)}
         />
 
         <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
@@ -1459,7 +1468,7 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
                 baselineLabel={baselineLabel}
                 nowLabel={nowLabel}
                 targetLabel={targetLabelStr}
-                loading={activeBodyGoalLoading}
+                loading={shouldShowSkeleton(activeBodyGoalLoading, activeGoal)}
               />
               <NutritionCard
                 carbsG={combinedMacros.carbsG}
@@ -1470,9 +1479,9 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
                 carbsLabel={carbsLabel}
                 proteinLabel={proteinLabel}
                 fatLabel={fatLabel}
-                loading={todayMealLogs.loading || todayMacrosLoading}
+                loading={shouldShowSkeleton(todayMealLogs.loading || todayMacrosLoading, macrosEverLoadedRef.current ? true : null)}
               />
-              <SleepCard sleepHoursTotal={todayStats.sleepHours} loading={todayStats.loading} />
+              <SleepCard sleepHoursTotal={todayStats.sleepHours} loading={shouldShowSkeleton(todayStats.loading, todayStats.sleepHours)} />
             </div>
             <div style={{ marginTop: 14 }}>
               <BodyCompTrio
@@ -1483,7 +1492,7 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
                 bodyFatDelta={bodyFatDelta}
                 bodyFatSeries={bodyFatSeries}
                 energyBalanceRead={energyBalanceRead}
-                loading={metabolicVitals.loading}
+                loading={shouldShowSkeleton(metabolicVitals.loading, latestMuscleLbs ?? latestBodyFatPct)}
               />
             </div>
           </section>
@@ -1508,13 +1517,13 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
               sleepValue={sleepValue}
               sleepSub={sleepSub}
               sleepBarPct={sleepBarPct}
-              statBarsLoading={todayStats.loading}
-              vitalsLoading={metabolicVitals.loading}
-              hannahLoading={bos7DLoading}
+              statBarsLoading={shouldShowSkeleton(todayStats.loading, todayStats.stepsCount ?? todayStats.exerciseMinutes ?? todayStats.sleepHours)}
+              vitalsLoading={shouldShowSkeleton(metabolicVitals.loading, metabolicVitals.hrv ?? metabolicVitals.restingHr ?? metabolicVitals.respiratory ?? metabolicVitals.bloodOxygen)}
+              hannahLoading={shouldShowSkeleton(bos7DLoading, bos7D?.current ?? null)}
             />
           </section>
           <section>
-            <AcceleratorsTab accel={accelItems} activeHubs={activeHubs} narrativeLine={narrativeLine} loading={engineAccel.loading} />
+            <AcceleratorsTab accel={accelItems} activeHubs={activeHubs} narrativeLine={narrativeLine} loading={shouldShowSkeleton(engineAccel.loading, engineAccel.items.length > 0 ? true : null)} />
           </section>
         </div>
 

@@ -13,37 +13,9 @@
 
 import { describe, it, expect } from 'vitest';
 
-// ---------------------------------------------------------------------------
-// Pure helper: shimmerSize
-//
-// Returns the pixel dimensions for a gauge shimmer based on whether the gauge
-// is a hero gauge. Matches the sizes used in the GaugeCard skeleton branch
-// in YourJourneyCoaching.tsx.
-// ---------------------------------------------------------------------------
-
-/**
- * Returns the width and height for a gauge shimmer placeholder.
- * hero gauge: 52x52. standard gauge: 48x48.
- */
-function shimmerSize(hero: boolean): { w: number; h: number } {
-  return hero ? { w: 52, h: 52 } : { w: 48, h: 48 };
-}
-
-// ---------------------------------------------------------------------------
-// Pure helper: shouldShowSkeleton
-//
-// Returns true only when loading is true AND the data is absent (undefined
-// or null). When loading is true but data is already present (stale-while-
-// revalidate pattern), the populated view should be shown, not a skeleton.
-// ---------------------------------------------------------------------------
-
-/**
- * True when loading is true AND data has not yet resolved to a non-null
- * value. False when data is present (show populated view during re-fetch).
- */
-function shouldShowSkeleton(loading: boolean, data: unknown): boolean {
-  return loading && (data === undefined || data === null);
-}
+// J-T5: these helpers are now imported from the real source module so the tests
+// verify production code, not in-test definitions.
+import { shimmerSize, shouldShowSkeleton } from '../skeletonHelpers';
 
 // ---------------------------------------------------------------------------
 // shimmerSize tests
