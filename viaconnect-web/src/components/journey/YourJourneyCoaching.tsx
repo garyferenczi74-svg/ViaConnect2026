@@ -40,6 +40,8 @@ import { getWearableSource } from "@/lib/scoring/sources/wearable-source";
 import { useTodayStats } from "@/hooks/journey/useTodayStats";
 import { useMetabolicVitals } from "@/hooks/journey/useMetabolicVitals";
 import { useTodayMealLogs } from "@/hooks/journey/useTodayMealLogs";
+import { useEngineAccelerators } from "@/hooks/journey/useEngineAccelerators";
+import type { EngineAccItem } from "@/hooks/journey/useEngineAccelerators";
 
 const C = {
   navy: "#1A2744", card: "#1E3054", inset: "#16203A", raised: "#243a63",
@@ -412,6 +414,48 @@ function recIconToLucide(icon: string): LucideIcon {
   return Pill; // supplement or unknown
 }
 
+// Map a Journey hub key to a Lucide icon for the provenance dot.
+// Matches the HUBS array ordering in ConnectionMap.
+function hubKeyToLucide(hub: string): LucideIcon {
+  if (hub === "Genetics") return Dna;
+  if (hub === "Labs") return FlaskConical;
+  if (hub === "CAQ") return ClipboardList;
+  if (hub === "Biology") return HeartPulse;
+  if (hub === "Nutrition") return Salad;
+  if (hub === "Supplements") return Pill;
+  return ClipboardList;
+}
+
+// Map a tag string to a Lucide icon for the AccCard icon disc.
+function tagToLucide(tag: string): LucideIcon {
+  const t = tag.toUpperCase();
+  if (t === "SLEEP") return Moon;
+  if (t === "NUTRITION") return Salad;
+  if (t === "MOVEMENT" || t === "ACTIVITY") return Activity;
+  if (t === "STRESS") return HeartPulse;
+  return Pill;
+}
+
+// Convert an EngineAccItem to the local AccItem shape used by AccCard.
+// Points are derived (tagged via source); icons are mapped from hub keys.
+function engineItemToAccItem(item: EngineAccItem): AccItem {
+  const dots: AccDot[] = item.dots.map((d) => ({
+    hub: d.hub,
+    label: d.label,
+    icon: hubKeyToLucide(d.hub),
+    missing: d.missing,
+  }));
+  return {
+    headline: item.headline,
+    body: item.body,
+    tag: item.tag,
+    pts: item.pts,
+    icon: tagToLucide(item.tag),
+    conf: item.conf,
+    dots,
+  };
+}
+
 // Map a JourneyRec to the AccItem shape used by AccCard.
 // Provenance dots: use seeded Appendix A dots by rec id; fall back to an
 // empty dots array so the expander renders cleanly with no fabricated data.
@@ -447,14 +491,14 @@ function AccCard({ c }: { c: AccItem }) {
   );
 }
 const HUBS: [string, LucideIcon][] = [["CAQ", ClipboardList], ["Genetics", Dna], ["Labs", FlaskConical], ["Biology", HeartPulse], ["Nutrition", Salad], ["Supplements", Pill]];
-function ConnectionMap({ activeHubs }: { activeHubs: string[] }) {
+function ConnectionMap({ activeHubs, narrativeLine }: { activeHubs: string[]; narrativeLine: string }) {
   const active = new Set(activeHubs);
   const size = 300, cx = size / 2, cy = size / 2, r = 102;
   const nodes = HUBS.map(([key], i) => { const a = (-90 + i * 60) * Math.PI / 180; return { key, x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) }; });
   const litNodes = nodes.filter((n) => active.has(n.key));
   return (
     <div style={{ ...panel(false), flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
-      <p style={{ fontSize: 12, color: C.muted, margin: 0 }}>The Foundation Stack insight is drawn from three of your hubs.</p>
+      <p style={{ fontSize: 12, color: C.muted, margin: 0 }}>{narrativeLine}</p>
       <div style={{ flex: 1, position: "relative", minHeight: 0, marginTop: 8 }}>
       <svg viewBox={`0 0 ${size} ${size}`} preserveAspectRatio="xMidYMid meet" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", display: "block" }}>
         {nodes.map((n) => <line key={n.key} x1={cx} y1={cy} x2={n.x} y2={n.y} stroke={active.has(n.key) ? C.teal : C.line} strokeWidth={active.has(n.key) ? 2 : 1} style={{ opacity: active.has(n.key) ? 0.9 : 0.5 }} />)}
@@ -625,11 +669,11 @@ function SleepCard({ sleepHoursTotal }: { sleepHoursTotal: number | null }) {
     <div style={panel(false)}><div style={{ ...eyebrow, marginBottom: 10 }}>Sleep breakdown</div><div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}><Donut size={86} segments={[{ value: 1, color: C.teal }, { value: 1, color: C.blue }, { value: 1, color: C.purple }, { value: 1, color: C.orange }]} top={centerTop} bot="total" /><Legend items={[{ name: "Deep", label: "--", color: C.teal }, { name: "Light", label: "--", color: C.blue }, { name: "REM", label: "--", color: C.purple }, { name: "Awake", label: "--", color: C.orange }]} /></div></div>
   );
 }
-function AcceleratorsTab({ accel, activeHubs }: { accel: AccItem[]; activeHubs: string[] }) {
+function AcceleratorsTab({ accel, activeHubs, narrativeLine }: { accel: AccItem[]; activeHubs: string[]; narrativeLine: string }) {
   return (
     <div className="vc-split" style={{ alignItems: "stretch" }}>
       <div><div style={{ fontSize: 15, fontWeight: 800, marginBottom: 12 }}>Journey accelerators</div><div className="vc-two">{accel.map((c, i) => <AccCard key={i} c={c} />)}</div></div>
-      <div style={{ display: "flex", flexDirection: "column", height: "100%" }}><div style={{ fontSize: 15, fontWeight: 800, marginBottom: 12 }}>Your connection map</div><ConnectionMap activeHubs={activeHubs} /></div>
+      <div style={{ display: "flex", flexDirection: "column", height: "100%" }}><div style={{ fontSize: 15, fontWeight: 800, marginBottom: 12 }}>Your connection map</div><ConnectionMap activeHubs={activeHubs} narrativeLine={narrativeLine} /></div>
     </div>
   );
 }
@@ -999,32 +1043,23 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
     weeksActive,
   });
 
-  // Journey recommendations: engine-sourced (falls back to seeded Appendix A defaults).
+  // J-T4: Journey accelerators from the REAL engine tables.
+  // useEngineAccelerators reads recommendations + ultrathink_recommendations,
+  // merges by rank, pads with Appendix A seeds when fewer than 4 engine recs exist.
+  // All reads are withTimeout(4000ms) + try/catch fail-open + safeLog.
+  // The pts field is always derived (tagged "derived" via the EngineAccItem.derivedPts field).
+  // Falls back to the seeded Appendix A items when the engine tables return nothing.
+  // The useJourneyRecommendations hook below is kept for the Hannah-insight current score
+  // computation but no longer drives the accelerator cards.
   const journeyRecs = useJourneyRecommendations(userId, overallCurrent);
-  const accelItems: AccItem[] = journeyRecs.map(recToAccItem);
+  const engineAccel = useEngineAccelerators(userId);
+  const accelItems: AccItem[] = engineAccel.items.map(engineItemToAccItem);
 
-  // ConnectionMap active set: derived from top accelerator's seeded dots.
-  // The top rec's SEEDED_DOTS hubs map to the ConnectionMap HUBS keys.
-  // Hub name mapping: "My Genetics" -> "Genetics", "Lab Results" -> "Labs",
-  // "Assessment" -> "CAQ", "My Biology" -> "Biology", "Goal" -> (skip),
-  // "Connected" -> (skip, no hub node). Default: ["Genetics", "Labs", "CAQ"].
-  const HUB_ALIAS: Record<string, string> = {
-    "My Genetics": "Genetics",
-    "Lab Results": "Labs",
-    "Assessment": "CAQ",
-    "My Biology": "Biology",
-    "Nutrition": "Nutrition",
-    "Supplements": "Supplements",
-  };
-  const VALID_HUBS = new Set(HUBS.map(([k]) => k));
-  const topRec = journeyRecs[0];
-  const topDots = topRec ? (SEEDED_DOTS[topRec.id] ?? []) : [];
-  const derivedActive = topDots
-    .map((d) => HUB_ALIAS[d.hub] ?? d.hub)
-    .filter((h) => VALID_HUBS.has(h));
-  const activeHubs = derivedActive.length > 0
-    ? Array.from(new Set(derivedActive))
-    : ["Genetics", "Labs", "CAQ"];
+  // ConnectionMap active hubs: from the top engine accelerator's real provenance hubs.
+  // The narrative line uses the real hub count (spoken word), not a hardcoded number.
+  const activeHubs = engineAccel.activeHubs;
+  const topItemName = engineAccel.items.length > 0 ? engineAccel.items[0].headline : "this insight";
+  const narrativeLine = `The ${topItemName} insight is drawn from ${engineAccel.activeHubCountWord} of your hubs.`;
 
   // Hydration stat bar (LIVE).
   const hydrationTotalL = hydrationData?.total_ml != null ? hydrationData.total_ml / 1000 : null;
@@ -1283,7 +1318,7 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
             />
           </section>
           <section>
-            <AcceleratorsTab accel={accelItems} activeHubs={activeHubs} />
+            <AcceleratorsTab accel={accelItems} activeHubs={activeHubs} narrativeLine={narrativeLine} />
           </section>
         </div>
 
