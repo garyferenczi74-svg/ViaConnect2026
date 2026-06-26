@@ -11,7 +11,10 @@ import { HoverSystem } from '@/components/body-tracker/HoverSystem';
 // === PROMPT 210b EXTENSION START ===
 import { BodyCompositionAvatar, SelectBodyPartControl } from '@/components/formavision';
 import { useReducedMotion } from '@/components/body-tracker/HoverSystem/useReducedMotion';
-import { buildSegmentTints } from '@/lib/formavision/geometry/composSegmentTints';
+import {
+  buildSegmentTints,
+  buildSegmentTintsFromChange,
+} from '@/lib/formavision/geometry/composSegmentTints';
 // === PROMPT 210b EXTENSION END ===
 // === PROMPT 210b VR (Section 8) START ===
 // Direct-path imports (not the avatar barrel) so this Visual Results surface
@@ -386,19 +389,31 @@ function CompositionPageInner() {
   );
 
   // === PROMPT 210b EXTENSION START ===
-  // OV-T2: the 5-segment tint record for the 3D avatar, sourced from the canonical
-  // 5-region RegionMap on the snapshot (the SAME data the metric CARDS read), via
-  // the SAME getSegmentStatus -> getOvalColorFromStatus path, so the 3D tint agrees
-  // with the cards. Body Fat reads regionFatPct, Muscle reads regionMuscleLbs;
-  // Measurements passes null (no tint). A null (UNKNOWN) region stays neutral.
+  // OV-T2: the 5-segment tint record for the 3D avatar. The two tabs source
+  // differently so each MATCHES its own 2D floor:
+  //   Body Fat -> ABSOLUTE status from the canonical regionFatPct via
+  //     getSegmentStatus -> getOvalColorFromStatus, agreeing with the fat cards.
+  //   Muscle -> CHANGE based (Arnold OV-T2 review): the latest-vs-first
+  //     regionMuscleLbs delta via getOvalColorFromChange('muscle'), mirroring the
+  //     2D muscle floor below the avatar EXACTLY, so the 3D and 2D can never show
+  //     opposite colors for the same region. EITHER end UNKNOWN -> segment omitted.
+  // Measurements passes null (no tint).
   const avatarSegmentTints = useMemo(() => {
-    if (avatarActiveTab === 'measurements' || !snapshot) {
+    if (avatarActiveTab === 'measurements') {
       return null;
     }
-    return avatarActiveTab === 'muscleMass'
-      ? buildSegmentTints(snapshot.regionMuscleLbs, 'muscle', gender)
-      : buildSegmentTints(snapshot.regionFatPct, 'fat', gender);
-  }, [avatarActiveTab, snapshot, gender]);
+    if (avatarActiveTab === 'muscleMass') {
+      return buildSegmentTintsFromChange(
+        composHistory.first?.regionMuscleLbs ?? null,
+        composHistory.latest?.regionMuscleLbs ?? null,
+        'muscle',
+      );
+    }
+    if (!snapshot) {
+      return null;
+    }
+    return buildSegmentTints(snapshot.regionFatPct, 'fat', gender);
+  }, [avatarActiveTab, snapshot, gender, composHistory.first, composHistory.latest]);
   // === PROMPT 210b EXTENSION END ===
 
   // Prompt #157k: BodyRegionData arrays for the HoverSystem + LegendBar.
