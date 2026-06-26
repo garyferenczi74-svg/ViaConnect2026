@@ -18,14 +18,19 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import { ContactShadows, OrbitControls } from '@react-three/drei';
-import { Mesh } from 'three';
+import { Mesh, Spherical, Vector3 } from 'three';
+import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { scanToParamVector } from '@/lib/formavision/geometry/scanToParamVector';
 import { sampleBodyPositions } from '@/lib/formavision/geometry/sampleBodyPositions';
 import { FORMA_VISION_HEX } from '@/lib/formavision/materials/formaVisionTokens';
 import {
   createMaterializeIntro,
   createMorphController,
+  createCameraFramingController,
+  createIdleTurntable,
   useDemandScheduler,
+  type CameraFraming,
+  type IdleTurntable,
   type MaterializeIntro,
 } from '@/lib/formavision/motion';
 import type { CompositionSnapshot } from '@/lib/body-tracker/composition/types';
@@ -45,6 +50,10 @@ export interface FormaVisionCanvasProps {
   unit: MeasurementUnit;
   heightCm?: number | null;
   reducedMotion?: boolean;
+  // The currently selected body region (a ring id such as 'chest' or 'rThigh'), or
+  // null for the full-body view. Drives the eased camera framing. The picker that
+  // sets this is a later task; here the camera only responds to it.
+  selectedBodyPart?: string | null;
   // Lite tier trims geometry density for low-power devices; cinematic is full.
   renderTier?: 'cinematic' | 'lite';
 }
@@ -67,6 +76,9 @@ function BodyMesh(
     // Set by this mesh so the Canvas pointer handler can skip the intro to its
     // final lit state on the first interaction. Null between mounts.
     introRef: React.MutableRefObject<MaterializeIntro | null>;
+    // The idle turntable, suspended by this mesh while the intro or a morph runs so
+    // the camera does not spin during a shape transition.
+    turntableRef: React.MutableRefObject<IdleTurntable | null>;
   },
 ) {
   const meshRef = useRef<Mesh>(null);
@@ -135,6 +147,9 @@ function BodyMesh(
         },
         recomputeNormals: () => {
           geometry.computeVertexNormals();
+          // Settle hook: recomputeNormals fires once when a morph lands (and on the
+          // reduced-motion snap), so release the turntable suspend here.
+          props.turntableRef.current?.setSuspended(false);
         },
         scheduler,
         reducedMotion: props.reducedMotion,
@@ -146,6 +161,9 @@ function BodyMesh(
     // given body is a no-op (the intro owns first paint). Only a param-vector change
     // against the same body morphs.
     if (morphedBodyRef.current === mounted) {
+      // Pause the idle turntable for the duration of the morph so the camera does
+      // not spin while the body changes shape; recomputeNormals releases it.
+      props.turntableRef.current?.setSuspended(true);
       controller.morphTo(paramVector);
     } else {
       morphedBodyRef.current = mounted;
@@ -164,11 +182,17 @@ function BodyMesh(
   // VisibilityPump. Cancelled on remount or unmount so no frame writes a disposed
   // material.
   useEffect(() => {
+    // Suspend the idle turntable while the intro plays so the camera holds still for
+    // the materialize, then release it on completion (which begins the idle countdown).
+    props.turntableRef.current?.setSuspended(true);
     const intro = createMaterializeIntro({
       target: mounted.materialHandle,
       scheduler,
       reducedMotion: props.reducedMotion,
-      onComplete: invalidate,
+      onComplete: () => {
+        invalidate();
+        props.turntableRef.current?.setSuspended(false);
+      },
     });
     props.introRef.current = intro;
     intro.start();
@@ -193,6 +217,118 @@ function BodyMesh(
   return (
     <mesh ref={meshRef} geometry={mounted.geometry} material={mounted.materialHandle.material} />
   );
+}
+
+// Read the camera's current framing (orbit target height and distance from target)
+// off the live OrbitControls so a framing tween starts from the real pose.
+function readControlsFraming(controls: OrbitControlsImpl): CameraFraming {
+  const offset = new Vector3().subVectors(controls.object.position, controls.target);
+  return { targetY: controls.target.y, distance: offset.length() };
+}
+
+// Apply a framing to the camera: move the orbit target's height and set the camera
+// distance from the target while preserving the current azimuth and polar angle, so
+// a framing move reads as a dolly-and-pan rather than a viewpoint jump.
+function applyControlsFraming(controls: OrbitControlsImpl, framing: CameraFraming): void {
+  const spherical = new Spherical().setFromVector3(
+    new Vector3().subVectors(controls.object.position, controls.target),
+  );
+  spherical.radius = framing.distance;
+  controls.target.y = framing.targetY;
+  controls.object.position.copy(controls.target).add(new Vector3().setFromSpherical(spherical));
+  controls.update();
+}
+
+// Rotate the camera around the orbit target by an azimuth delta (the idle turntable
+// advance), keeping the polar angle and distance fixed.
+function advanceControlsAzimuth(controls: OrbitControlsImpl, deltaRad: number): void {
+  const spherical = new Spherical().setFromVector3(
+    new Vector3().subVectors(controls.object.position, controls.target),
+  );
+  spherical.theta += deltaRad;
+  controls.object.position.copy(controls.target).add(new Vector3().setFromSpherical(spherical));
+  controls.update();
+}
+
+// Camera choreography: eased framing when a region is selected, plus the idle
+// turntable. Composes with the intro and morph (both suspend the turntable via the
+// shared ref) and with the inertial damping wired on OrbitControls onChange. Drives
+// its own demand invalidations while active and stops when idle.
+function CameraChoreography(props: {
+  selectedBodyPart?: string | null;
+  reducedMotion?: boolean;
+  controlsRef: React.MutableRefObject<OrbitControlsImpl | null>;
+  turntableRef: React.MutableRefObject<IdleTurntable | null>;
+}) {
+  const invalidate = useThree((state) => state.invalidate);
+  const scheduler = useDemandScheduler();
+
+  // Build the framing controller and the idle turntable once; they read the live
+  // controls each frame through the ref, so they survive control re-creation.
+  const framingRef = useRef<ReturnType<typeof createCameraFramingController> | null>(null);
+  useEffect(() => {
+    const framing = createCameraFramingController({
+      readFraming: () => {
+        const controls = props.controlsRef.current;
+        return controls ? readControlsFraming(controls) : { targetY: TARGET_Y, distance: 3.2 };
+      },
+      applyFraming: (f) => {
+        const controls = props.controlsRef.current;
+        if (controls) {
+          applyControlsFraming(controls, f);
+          invalidate();
+        }
+      },
+      scheduler,
+      reducedMotion: props.reducedMotion,
+    });
+    framingRef.current = framing;
+
+    const turntable = createIdleTurntable({
+      scheduler,
+      timer: {
+        set: (cb, ms) => window.setTimeout(cb, ms),
+        clear: (handle) => window.clearTimeout(handle),
+      },
+      advanceAzimuth: (delta) => {
+        const controls = props.controlsRef.current;
+        if (controls) {
+          advanceControlsAzimuth(controls, delta);
+          invalidate();
+        }
+      },
+      reducedMotion: props.reducedMotion,
+    });
+    props.turntableRef.current = turntable;
+    turntable.begin();
+
+    return () => {
+      framing.cancel();
+      turntable.dispose();
+      framingRef.current = null;
+      props.turntableRef.current = null;
+    };
+    // reducedMotion is read at construction; the controllers read controls live.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scheduler, invalidate]);
+
+  // React to a selection change: pause the turntable for the move, then ease the
+  // camera to frame the region (or back to full body when cleared). The first run is
+  // skipped when nothing is selected so a fresh mount does not nudge the camera with
+  // a redundant full-body framing tween; the camera already starts at full body.
+  const framedOnceRef = useRef(false);
+  useEffect(() => {
+    const region = props.selectedBodyPart ?? null;
+    if (!framedOnceRef.current && region === null) {
+      framedOnceRef.current = true;
+      return;
+    }
+    framedOnceRef.current = true;
+    props.turntableRef.current?.notifyInteraction();
+    framingRef.current?.frameRegion(region);
+  }, [props.selectedBodyPart, props.turntableRef]);
+
+  return null;
 }
 
 // Bridges browser visibility and viewport intersection to the demand loop. When the
@@ -245,6 +381,12 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
   // Holds the running materialize intro so a pointer interaction can skip it to its
   // final lit state. BodyMesh owns the lifecycle; this is just the skip handle.
   const introRef = useRef<MaterializeIntro | null>(null);
+  // The OrbitControls instance, read by the camera choreography to frame regions and
+  // advance the idle turntable on the live camera.
+  const controlsRef = useRef<OrbitControlsImpl | null>(null);
+  // The idle turntable, shared so the intro and morph (in BodyMesh) can suspend it
+  // and the interaction handlers below can pause it.
+  const turntableRef = useRef<IdleTurntable | null>(null);
 
   // First pointer interaction completes the intro immediately. Harmless once the
   // intro has finished (skip is inert after completion).
@@ -270,7 +412,7 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
         <ambientLight intensity={0.45} />
         <directionalLight position={[2, 4, 3]} intensity={0.35} />
 
-        <BodyMesh {...props} introRef={introRef} />
+        <BodyMesh {...props} introRef={introRef} turntableRef={turntableRef} />
 
         {/* Soft contact shadow grounds the body on the floor plane at y = 0. */}
         <ContactShadows
@@ -284,20 +426,43 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
         />
 
         <OrbitControls
+          ref={controlsRef}
           // Turntable azimuth only: no panning, a clamped polar range so the
           // camera cannot tumble under the floor or over the crown, and a gentle
           // zoom clamp.
           enablePan={false}
+          // Inertial orbit: damping lets a drag glide to rest. Under frameloop
+          // "demand" onChange keeps invalidating while it settles, then stops.
           enableDamping
           dampingFactor={0.08}
           minPolarAngle={Math.PI * 0.28}
           maxPolarAngle={Math.PI * 0.62}
           minDistance={2.2}
           maxDistance={4.5}
-          // No auto-rotate ever: idle spin would violate reducedMotion and the
-          // demand loop. Phase 2 owns motion choreography.
+          // No built-in auto-rotate: the idle turntable owns rotation so it can pause
+          // on interaction and stay disabled under reduced motion.
           autoRotate={false}
           target={[0, TARGET_Y, 0]}
+          // drei's OrbitControls already calls invalidate on every change event, so
+          // the inertial damping settle paints under frameloop "demand" and then goes
+          // quiet on its own; no custom onChange invalidation is needed here.
+          //
+          // A drag start is an interaction: pause the turntable and skip the intro.
+          onStart={() => {
+            turntableRef.current?.notifyInteraction();
+            skipIntro();
+          }}
+          // A drag end re-arms the idle countdown.
+          onEnd={() => {
+            turntableRef.current?.notifyInteraction();
+          }}
+        />
+
+        <CameraChoreography
+          selectedBodyPart={props.selectedBodyPart}
+          reducedMotion={props.reducedMotion}
+          controlsRef={controlsRef}
+          turntableRef={turntableRef}
         />
 
         <VisibilityPump containerRef={containerRef} />
