@@ -60,6 +60,35 @@ const ZERO: TodayMealLogsResult = {
 };
 
 // ---------------------------------------------------------------------------
+// Pure aggregation helper (exported for TDD)
+// ---------------------------------------------------------------------------
+
+/**
+ * Sums calories, protein_g, carbs_g, and fat_g over an array of MealLogRow
+ * objects. Pure and never throws: null, non-numeric, or missing fields are
+ * treated as 0. An empty array returns all-zero totals.
+ */
+export function aggregateMealRows(
+  rows: MealLogRow[],
+): { calories: number; protein_g: number; carbs_g: number; fat_g: number } {
+  const toNum = (v: number | null | undefined): number => {
+    if (typeof v === 'number' && isFinite(v)) return v;
+    if (typeof v === 'string') { const p = Number(v); if (isFinite(p)) return p; }
+    return 0;
+  };
+  type Totals = { calories: number; protein_g: number; carbs_g: number; fat_g: number };
+  return rows.reduce<Totals>(
+    (acc, r) => ({
+      calories: acc.calories + toNum(r.calories),
+      protein_g: acc.protein_g + toNum(r.protein_g),
+      carbs_g: acc.carbs_g + toNum(r.carbs_g),
+      fat_g: acc.fat_g + toNum(r.fat_g),
+    }),
+    { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 },
+  );
+}
+
+// ---------------------------------------------------------------------------
 // useTodayMealLogs
 // ---------------------------------------------------------------------------
 
@@ -97,22 +126,15 @@ export function useTodayMealLogs(userId: string | null): TodayMealLogsResult {
         );
         if (!active) return;
         const rows: MealLogRow[] = Array.isArray(data) ? data : [];
-        const toNum = (v: number | null): number => {
-          if (typeof v === 'number' && isFinite(v)) return v;
-          if (typeof v === 'string') { const p = Number(v); if (isFinite(p)) return p; }
-          return 0;
-        };
-        type Acc = { carbsG: number; proteinG: number; fatG: number; calories: number };
-        const totals = rows.reduce<Acc>(
-          (acc, r) => ({
-            carbsG: acc.carbsG + toNum(r.carbs_g),
-            proteinG: acc.proteinG + toNum(r.protein_g),
-            fatG: acc.fatG + toNum(r.fat_g),
-            calories: acc.calories + toNum(r.calories),
-          }),
-          { carbsG: 0, proteinG: 0, fatG: 0, calories: 0 },
-        );
-        setResult({ ...totals, rowCount: rows.length, loading: false });
+        const totals = aggregateMealRows(rows);
+        setResult({
+          carbsG: totals.carbs_g,
+          proteinG: totals.protein_g,
+          fatG: totals.fat_g,
+          calories: totals.calories,
+          rowCount: rows.length,
+          loading: false,
+        });
       } catch (err) {
         if (!active) return;
         safeLog.warn('useTodayMealLogs', 'meal_logs read failed, failing open', { error: err });

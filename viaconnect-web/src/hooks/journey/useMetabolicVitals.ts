@@ -6,9 +6,11 @@
  * Prompt 208j Task J-T3. Reads the latest body_tracker_metabolic row for the
  * user: HRV, resting HR, respiratory rate, blood oxygen.
  *
- * Schema: body_tracker_metabolic (migration 20260414000020_prompt_140_bio_tracker.sql).
- * Columns used: hrv_ms (types.ts line 3566), resting_hr_bpm, respiratory_rate,
- * blood_oxygen_pct, created_at.
+ * Schema: body_tracker_metabolic.
+ * hrv_ms and resting_hr_bpm are from migration 20260414000020_prompt_140_bio_tracker.sql
+ * (types.ts line 3566). respiratory_rate and blood_oxygen_pct are from migration
+ * 20260416000080_body_tracker_manual_input.sql.
+ * Columns used: hrv_ms, resting_hr_bpm, respiratory_rate, blood_oxygen_pct, created_at.
  *
  * Resilience: withTimeout(4000) + try/catch fail-open + safeLog.
  * Auth scoped: filter by user_id = userId via RLS.
