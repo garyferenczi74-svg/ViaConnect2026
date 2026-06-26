@@ -1112,7 +1112,9 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
   // BodyCompTrio values from useLatestComposition + useRecentBodySeries.
   // Lean mass: body_tracker_weight.lean_body_mass_lbs when available
   // (migration 20260416000080). Falls back to totalMuscleMassLbs from segmental
-  // muscle, then weight_lbs, then "--".
+  // muscle, then "--". Body weight is NOT a lean-mass proxy and must not fall back
+  // to latestWeightLbs here -- that would show a body-weight number under the
+  // "Lean mass" heading, which is misleading.
   const latestMuscleLbs = leanBodyMassLbs ?? compositionSnapshot?.totalMuscleMassLbs ?? null;
   const latestBodyFatPct = compositionSnapshot?.totalBodyFatPct ?? null;
   // Lean-mass delta: only show when headline and delta come from the SAME series.
@@ -1125,9 +1127,7 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
     : null;
   const leanMassLabel = latestMuscleLbs !== null
     ? `${latestMuscleLbs.toFixed(1)} lb`
-    : latestWeightLbs !== null
-      ? `${latestWeightLbs.toFixed(1)} lb`
-      : "--";
+    : "--";
   const bodyFatLabel = latestBodyFatPct !== null
     ? `${latestBodyFatPct.toFixed(1)} %`
     : bodySeries.bodyFatPct.length > 0
