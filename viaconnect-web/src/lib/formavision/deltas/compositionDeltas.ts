@@ -42,11 +42,19 @@ import {
   type MeasurementUnit,
 } from '@/lib/body-tracker/circumference';
 
-export type DeltaDirection = 'improved' | 'worsened' | 'unchanged';
+// improved | worsened | unchanged for the four real progress families
+// (bodyFat, girth, muscle, lean). 'neutral' is reserved for informational
+// metrics where neither direction is "progress" (e.g. shoulder width, which is
+// skeletal/deltoid breadth, not abdominal girth, so losing it is NOT progress).
+// Backward-compatible: fat/girth/muscle/lean still only ever emit
+// improved/worsened/unchanged; only neutral-polarity metrics emit 'neutral'.
+export type DeltaDirection = 'improved' | 'worsened' | 'unchanged' | 'neutral';
 
 // For a "lower is better" metric (fat, girth): a loss is improved, a gain is
-// worsened. For a "higher is better" metric (muscle, lean): inverted.
-type Polarity = 'lower_is_better' | 'higher_is_better';
+// worsened. For a "higher is better" metric (muscle, lean): inverted. For a
+// "neutral" metric: the delta is reported but never framed as progress (the
+// direction is 'neutral' for any non-trivial change, 'unchanged' below epsilon).
+type Polarity = 'lower_is_better' | 'higher_is_better' | 'neutral';
 
 export interface MetricDelta {
   from: number;
@@ -88,13 +96,22 @@ export interface ComputeCompositionDeltasInput {
 
 // Small girth epsilon. 0.2 in / 0.2 cm both round out logging noise without
 // hiding a real change. Documented per-metric epsilon (see header).
+// NOTE: CIRCUMFERENCE_EPSILON and CHANGE_THRESHOLD are intentionally INDEPENDENT
+// constants. Fat and muscle follow CHANGE_THRESHOLD; girth follows this one. If
+// CHANGE_THRESHOLD ever changes, girth does NOT move with it (different scale:
+// percentage points / lbs vs inches / cm). Keep them separate on purpose.
 export const CIRCUMFERENCE_EPSILON = 0.2;
 
-// Circumference is treated as a "lower is better" girth metric (waist/hip/arm/
-// leg/chest/neck reduction = progress). Shoulder width is the one ambiguous
-// region; we keep it under the same lower-is-better convention as the rest of
-// the ring for now and surface it like any other girth delta (documented).
+// Most circumference regions are "lower is better" girth (waist/hip/arm/leg/
+// chest/neck reduction = progress). shoulderWidth is the exception: it is
+// skeletal/deltoid breadth, not abdominal girth, so a reduction is NOT progress.
+// It gets an explicit neutral override so it can never ride the girth default
+// and emit a false 'improved' on a shoulder-width loss (honest-scan invariant).
 const GIRTH_POLARITY: Polarity = 'lower_is_better';
+
+const CIRCUMFERENCE_POLARITY_OVERRIDE: Partial<Record<MeasurementKey, Polarity>> = {
+  shoulderWidth: 'neutral',
+};
 
 function isKnown(v: number | null | undefined): v is number {
   return typeof v === 'number' && Number.isFinite(v);
@@ -111,6 +128,8 @@ function directionFor(
   // getChangeDirection uses CHANGE_THRESHOLD internally; for metrics that need a
   // different epsilon we apply the threshold here and only borrow its sign rule.
   if (Math.abs(rawDelta) < epsilon) return 'unchanged';
+  // Neutral metrics report the change without any progress framing.
+  if (polarity === 'neutral') return 'neutral';
   const raw: ChangeDirection = rawDelta > 0 ? 'gain' : 'loss';
   if (polarity === 'lower_is_better') {
     return raw === 'loss' ? 'improved' : 'worsened';
@@ -181,13 +200,14 @@ export function computeCompositionDeltas(
       const to = latestCircumferences[key];
       if (!isKnown(from) || !isKnown(to)) continue; // UNKNOWN side: skip, never fabricate
       const delta = to - from;
+      const polarity = CIRCUMFERENCE_POLARITY_OVERRIDE[key] ?? GIRTH_POLARITY;
       circumferences.push({
         key,
         label: MEASUREMENT_LABELS[key],
         from,
         to,
         delta,
-        direction: directionFor(delta, GIRTH_POLARITY, CIRCUMFERENCE_EPSILON),
+        direction: directionFor(delta, polarity, CIRCUMFERENCE_EPSILON),
         unit,
       });
     }

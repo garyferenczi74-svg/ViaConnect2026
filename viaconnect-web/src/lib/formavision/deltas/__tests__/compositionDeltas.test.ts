@@ -144,6 +144,41 @@ describe('computeCompositionDeltas: circumferences', () => {
     expect(res.circumferences[0].direction).toBe('unchanged');
   });
 
+  it('shoulderWidth is neutral/informational: a reduction is NOT improved, an increase is NOT worsened', () => {
+    const reduced = computeCompositionDeltas(
+      baseInput({
+        firstCircumferences: circ({ shoulderWidth: 50 }),
+        latestCircumferences: circ({ shoulderWidth: 47 }),
+      }),
+    );
+    const sReduced = reduced.circumferences.find((c) => c.key === 'shoulderWidth')!;
+    expect(sReduced.delta).toBe(-3);
+    expect(sReduced.direction).toBe('neutral');
+    expect(sReduced.direction).not.toBe('improved');
+
+    const increased = computeCompositionDeltas(
+      baseInput({
+        firstCircumferences: circ({ shoulderWidth: 47 }),
+        latestCircumferences: circ({ shoulderWidth: 50 }),
+      }),
+    );
+    const sIncreased = increased.circumferences.find((c) => c.key === 'shoulderWidth')!;
+    expect(sIncreased.delta).toBe(3);
+    expect(sIncreased.direction).toBe('neutral');
+    expect(sIncreased.direction).not.toBe('worsened');
+  });
+
+  it('a sub-epsilon shoulderWidth change is still unchanged (not neutral)', () => {
+    const tiny = CIRCUMFERENCE_EPSILON / 2;
+    const res = computeCompositionDeltas(
+      baseInput({
+        firstCircumferences: circ({ shoulderWidth: 48 }),
+        latestCircumferences: circ({ shoulderWidth: 48 + tiny }),
+      }),
+    );
+    expect(res.circumferences[0].direction).toBe('unchanged');
+  });
+
   it('returns no circumference deltas when either frame is missing', () => {
     const res = computeCompositionDeltas(
       baseInput({ firstCircumferences: circ({ waist: 34 }), latestCircumferences: null }),
