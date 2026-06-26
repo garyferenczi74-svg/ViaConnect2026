@@ -21,6 +21,11 @@ import { ContactShadows, OrbitControls } from '@react-three/drei';
 import { Mesh } from 'three';
 import { scanToParamVector } from '@/lib/formavision/geometry/scanToParamVector';
 import { FORMA_VISION_HEX } from '@/lib/formavision/materials/formaVisionTokens';
+import {
+  createMaterializeIntro,
+  useDemandScheduler,
+  type MaterializeIntro,
+} from '@/lib/formavision/motion';
 import type { CompositionSnapshot } from '@/lib/body-tracker/composition/types';
 import type {
   CircumferenceMeasurements,
@@ -55,9 +60,16 @@ const TARGET_Y = 0.9;
 
 // The single mesh node. It builds and owns the mounted body, drives one demand
 // frame whenever its inputs change, and disposes everything on unmount.
-function BodyMesh(props: FormaVisionCanvasProps) {
+function BodyMesh(
+  props: FormaVisionCanvasProps & {
+    // Set by this mesh so the Canvas pointer handler can skip the intro to its
+    // final lit state on the first interaction. Null between mounts.
+    introRef: React.MutableRefObject<MaterializeIntro | null>;
+  },
+) {
   const meshRef = useRef<Mesh>(null);
   const invalidate = useThree((state) => state.invalidate);
+  const scheduler = useDemandScheduler();
 
   const mounted = useMemo(() => {
     const param = scanToParamVector({
@@ -85,6 +97,30 @@ function BodyMesh(props: FormaVisionCanvasProps) {
   useEffect(() => {
     invalidate();
   }, [mounted, invalidate]);
+
+  // Play the materialize intro once per mounted body. Reduced motion lands the
+  // body fully lit with no animation scheduled (full parity). The intro drives its
+  // own demand invalidations while running, then stops; it does not fight the
+  // VisibilityPump. Cancelled on remount or unmount so no frame writes a disposed
+  // material.
+  useEffect(() => {
+    const intro = createMaterializeIntro({
+      target: mounted.materialHandle,
+      scheduler,
+      reducedMotion: props.reducedMotion,
+      onComplete: invalidate,
+    });
+    props.introRef.current = intro;
+    intro.start();
+    return () => {
+      intro.cancel();
+      if (props.introRef.current === intro) {
+        props.introRef.current = null;
+      }
+    };
+    // The intro is keyed to the mounted body; reducedMotion is read at start time.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mounted, scheduler, invalidate]);
 
   // Dispose the mounted body (geometry, clone, material, texture) on unmount or
   // before the next mount replaces it. No leaks across remounts.
@@ -146,6 +182,15 @@ function VisibilityPump({ containerRef }: { containerRef: React.RefObject<HTMLEl
 
 export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  // Holds the running materialize intro so a pointer interaction can skip it to its
+  // final lit state. BodyMesh owns the lifecycle; this is just the skip handle.
+  const introRef = useRef<MaterializeIntro | null>(null);
+
+  // First pointer interaction completes the intro immediately. Harmless once the
+  // intro has finished (skip is inert after completion).
+  function skipIntro(): void {
+    introRef.current?.skip();
+  }
 
   return (
     <div ref={containerRef} className="absolute inset-0 h-full w-full">
@@ -156,6 +201,7 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
         dpr={[1, 2]}
         gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
         camera={{ position: [0, 1.0, 3.2], fov: 30, near: 0.1, far: 50 }}
+        onPointerDown={skipIntro}
       >
         <color attach="background" args={[FORMA_VISION_HEX.navy]} />
 
@@ -164,7 +210,7 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
         <ambientLight intensity={0.45} />
         <directionalLight position={[2, 4, 3]} intensity={0.35} />
 
-        <BodyMesh {...props} />
+        <BodyMesh {...props} introRef={introRef} />
 
         {/* Soft contact shadow grounds the body on the floor plane at y = 0. */}
         <ContactShadows
