@@ -40,6 +40,7 @@ import type {
 } from '@/lib/body-tracker/circumference';
 import type { Sex } from '@/lib/formavision/geometry/types';
 import { mountBodyGeometry } from './mountBodyGeometry';
+import { MeasurementRing } from './MeasurementRing';
 
 export interface FormaVisionCanvasProps {
   sex: Sex;
@@ -413,6 +414,19 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
         <directionalLight position={[2, 4, 3]} intensity={0.35} />
 
         <BodyMesh {...props} introRef={introRef} turntableRef={turntableRef} />
+
+        {/* The single measurement ring for the selected region. It draws on, counts
+            its value up, and disposes when the selection clears. */}
+        <MeasurementRing
+          sex={props.sex}
+          scan={props.scan}
+          circumferences={props.circumferences}
+          unit={props.unit}
+          heightCm={props.heightCm}
+          selectedBodyPart={props.selectedBodyPart}
+          reducedMotion={props.reducedMotion}
+          turntableRef={turntableRef}
+        />
 
         {/* Soft contact shadow grounds the body on the floor plane at y = 0. */}
         <ContactShadows

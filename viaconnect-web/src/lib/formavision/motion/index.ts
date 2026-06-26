@@ -38,3 +38,13 @@ export {
   type IdleTurntableOptions,
   type IdleTimer,
 } from './idleTurntable';
+export {
+  circumferenceToUnit,
+  formatRingValue,
+  UNKNOWN_VALUE_MARKER,
+} from './measurementValue';
+export {
+  createMeasurementRingController,
+  type MeasurementRingController,
+  type MeasurementRingControllerOptions,
+} from './measurementRingController';
