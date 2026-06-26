@@ -257,6 +257,8 @@ function makeResult(overrides: Partial<{
     activity: makeGauge(o.activityScore, o.activityConf),
     overall: makeGauge(o.overallScore, o.overallConf),
     dataMode: 'manual' as const,
+    manualCompleteness: 1,
+    wearableCompleteness: 0,
   };
 }
 
