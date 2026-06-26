@@ -143,6 +143,61 @@ function buildTrunk(
   return { positions, uvs, indices, vertexCount: rows * radialSegments };
 }
 
+interface LimbControl {
+  // World position of this control ring's center.
+  center: Vector3;
+  // Cross-section circumference in meters at this control ring.
+  circumferenceM: number;
+}
+
+// Loft a tapered limb tube through an ordered list of control rings (top to bottom).
+// Cross-section circumferences are linearly interpolated between adjacent controls,
+// and each row's ring is laid flat in world x/z around the interpolated center. The
+// arms and the legs both use this so the lofting stays DRY.
+function buildLimb(
+  controls: LimbControl[],
+  aspectRatio: number,
+  rows: number,
+  radialSegments: number,
+): { positions: number[]; uvs: number[]; indices: number[]; vertexCount: number } {
+  const rowCount = Math.max(2, Math.floor(rows));
+  const segments = Math.max(1, controls.length - 1);
+  const positions: number[] = [];
+  const uvs: number[] = [];
+
+  for (let row = 0; row < rowCount; row += 1) {
+    const t = rowCount > 1 ? row / (rowCount - 1) : 0;
+    // Map the global parameter t onto the piecewise-linear control chain.
+    const scaled = t * segments;
+    const seg = Math.min(segments - 1, Math.floor(scaled));
+    const local = scaled - seg;
+    const top = controls[seg];
+    const bottom = controls[seg + 1];
+    const circumference = top.circumferenceM + (bottom.circumferenceM - top.circumferenceM) * local;
+    const center = new Vector3().copy(top.center).lerp(bottom.center, local);
+    const ring = ellipsePointsForPerimeter(circumference, aspectRatio, radialSegments);
+    for (let col = 0; col < radialSegments; col += 1) {
+      positions.push(center.x + ring[col].x, center.y, center.z + ring[col].z);
+      uvs.push(col / radialSegments, t);
+    }
+  }
+
+  const indices: number[] = [];
+  for (let row = 0; row < rowCount - 1; row += 1) {
+    for (let col = 0; col < radialSegments; col += 1) {
+      const nextCol = (col + 1) % radialSegments;
+      const a = row * radialSegments + col;
+      const b = row * radialSegments + nextCol;
+      const c = (row + 1) * radialSegments + col;
+      const d = (row + 1) * radialSegments + nextCol;
+      indices.push(a, c, b);
+      indices.push(b, c, d);
+    }
+  }
+
+  return { positions, uvs, indices, vertexCount: rowCount * radialSegments };
+}
+
 // Loft a tapered arm tube from a shoulder anchor down to a wrist anchor, using the
 // bicep circumference at the top and the forearm circumference at the bottom.
 function buildArm(
@@ -164,37 +219,155 @@ function buildArm(
     arm.forearmM === null || arm.forearmM === undefined ? template.arm.forearmM : arm.forearmM;
 
   const rows = Math.max(2, Math.floor(verticalSegments / 4));
+  const limb = buildLimb(
+    [
+      { center: shoulder, circumferenceM: bicep },
+      { center: wrist, circumferenceM: forearm },
+    ],
+    0.95,
+    rows,
+    radialSegments,
+  );
+  return { ...limb, estimated };
+}
+
+// Resolve a leg ring's circumference against the template, tracking whether it fell
+// back. side is 'r' or 'l'; region is 'Thigh' or 'Calf'.
+function resolveLegRing(
+  rings: ResolvedRing[],
+  template: BodyTemplate,
+  id: string,
+): { circumferenceM: number; aspectRatio: number; levelN: number; estimated: boolean } {
+  const ring = rings.find((r) => r.id === id);
+  if (ring) {
+    return {
+      circumferenceM: ring.circumferenceM,
+      aspectRatio: ring.aspectRatio,
+      levelN: ring.levelN,
+      estimated: ring.estimated,
+    };
+  }
+  const templateRing = template.rings.find((r) => r.id === id);
+  const fallback = templateRing ?? { circumferenceM: 0.45, aspectRatio: 0.92, levelN: 0.3 };
+  return {
+    circumferenceM: fallback.circumferenceM,
+    aspectRatio: fallback.aspectRatio,
+    levelN: fallback.levelN,
+    estimated: true,
+  };
+}
+
+// Build one leg: a tapered tube from a hip anchor down through the thigh and calf
+// rings to an ankle, capped with a flat-ish foot cap below the ankle.
+function buildLeg(
+  side: 'r' | 'l',
+  rings: ResolvedRing[],
+  template: BodyTemplate,
+  hipAnchor: Vector3,
+  heightM: number,
+  radialSegments: number,
+  verticalSegments: number,
+): {
+  positions: number[];
+  uvs: number[];
+  indices: number[];
+  vertexCount: number;
+  estimatedIds: string[];
+} {
+  const thighId = side === 'r' ? 'rThigh' : 'lThigh';
+  const calfId = side === 'r' ? 'rCalf' : 'lCalf';
+  const thigh = resolveLegRing(rings, template, thighId);
+  const calf = resolveLegRing(rings, template, calfId);
+
+  const estimatedIds: string[] = [];
+  if (thigh.estimated) {
+    estimatedIds.push(thighId);
+  }
+  if (calf.estimated) {
+    estimatedIds.push(calfId);
+  }
+
+  const thighY = thigh.levelN * heightM;
+  const calfY = calf.levelN * heightM;
+  // Ankle sits a short, calf-derived distance below the calf ring, near the floor.
+  const ankleY = Math.max(0.04 * heightM, calfY - 0.12 * heightM);
+  const ankleCircumference = calf.circumferenceM * 0.62;
+  const aspect = (thigh.aspectRatio + calf.aspectRatio) / 2;
+
+  const rows = Math.max(3, Math.floor(verticalSegments / 3));
+  const limb = buildLimb(
+    [
+      { center: hipAnchor, circumferenceM: thigh.circumferenceM },
+      { center: new Vector3(hipAnchor.x, thighY, 0), circumferenceM: thigh.circumferenceM },
+      { center: new Vector3(hipAnchor.x, calfY, 0), circumferenceM: calf.circumferenceM },
+      { center: new Vector3(hipAnchor.x, ankleY, 0), circumferenceM: ankleCircumference },
+    ],
+    aspect,
+    rows,
+    radialSegments,
+  );
+
+  // Foot cap: a forward-projecting flat ovoid from the ankle toward +z (the front).
+  const ankle = new Vector3(hipAnchor.x, ankleY, 0);
+  const foot = buildFoot(ankle, ankleCircumference, radialSegments);
+
+  const merged = { positions: [...limb.positions], uvs: [...limb.uvs], indices: [...limb.indices], vertexOffset: limb.vertexCount };
+  appendPart(merged, foot);
+
+  return {
+    positions: merged.positions,
+    uvs: merged.uvs,
+    indices: merged.indices,
+    vertexCount: merged.vertexOffset,
+    estimatedIds,
+  };
+}
+
+// Simple foot cap: a low half-ovoid at the ankle that projects forward (+z) and sits
+// just above the floor, closing the bottom of the leg tube.
+function buildFoot(
+  ankle: Vector3,
+  ankleCircumferenceM: number,
+  radialSegments: number,
+): { positions: number[]; uvs: number[]; indices: number[]; vertexCount: number } {
+  const radius = ankleCircumferenceM / (2 * Math.PI);
+  const length = radius * 2.4;
+  const stacks = Math.max(3, Math.floor(radialSegments / 3));
   const positions: number[] = [];
   const uvs: number[] = [];
-  const axis = new Vector3().subVectors(wrist, shoulder);
 
-  for (let row = 0; row < rows; row += 1) {
-    const t = rows > 1 ? row / (rows - 1) : 0;
-    const circumference = bicep + (forearm - bicep) * t;
-    const ring = ellipsePointsForPerimeter(circumference, 0.95, radialSegments);
-    const center = new Vector3().copy(shoulder).addScaledVector(axis, t);
+  for (let stack = 0; stack <= stacks; stack += 1) {
+    // phi runs 0 (at the ankle) to PI/2 (toe tip). The foot drops slightly and
+    // extends forward in +z so it reads as a foot rather than a ball.
+    const phi = (stack / stacks) * (Math.PI / 2);
+    const ringRadius = radius * Math.cos(phi);
+    const y = Math.max(0, ankle.y - radius * 0.6 * Math.sin(phi));
+    const zShift = length * Math.sin(phi);
     for (let col = 0; col < radialSegments; col += 1) {
-      // The arm hangs roughly vertical, so the ring's x and z map straight to world
-      // x and z around the center. This keeps the tube cheap for the wireframe pass.
-      positions.push(center.x + ring[col].x, center.y, center.z + ring[col].z);
-      uvs.push(col / radialSegments, t);
+      const theta = (col / radialSegments) * Math.PI * 2;
+      positions.push(
+        ankle.x + ringRadius * Math.cos(theta),
+        y,
+        ankle.z + zShift + ringRadius * Math.sin(theta),
+      );
+      uvs.push(col / radialSegments, stack / stacks);
     }
   }
 
   const indices: number[] = [];
-  for (let row = 0; row < rows - 1; row += 1) {
+  for (let stack = 0; stack < stacks; stack += 1) {
     for (let col = 0; col < radialSegments; col += 1) {
       const nextCol = (col + 1) % radialSegments;
-      const a = row * radialSegments + col;
-      const b = row * radialSegments + nextCol;
-      const c = (row + 1) * radialSegments + col;
-      const d = (row + 1) * radialSegments + nextCol;
+      const a = stack * radialSegments + col;
+      const b = stack * radialSegments + nextCol;
+      const c = (stack + 1) * radialSegments + col;
+      const d = (stack + 1) * radialSegments + nextCol;
       indices.push(a, c, b);
       indices.push(b, c, d);
     }
   }
 
-  return { positions, uvs, indices, vertexCount: rows * radialSegments, estimated };
+  return { positions, uvs, indices, vertexCount: (stacks + 1) * radialSegments };
 }
 
 // Build an ovoid head above the neck ring, sized from the neck circumference and the
@@ -357,6 +530,29 @@ export function buildBodyGeometry(
     appendPart(merged, hand);
   }
 
+  // Legs: below the hip ring the body splits into two lofted leg tubes. Each leg is
+  // anchored under its side of the hip (offset in X by a quarter of the hip width so
+  // the two legs read as separate limbs), then lofted hip -> thigh -> calf -> ankle
+  // and capped with a foot.
+  const hipPoints = ellipsePointsForPerimeter(
+    hip ? hip.circumferenceM : template.rings[3].circumferenceM,
+    hip ? hip.aspectRatio : template.rings[3].aspectRatio,
+    radialSegments,
+  );
+  const hipHalfWidth = Math.max(...hipPoints.map((p) => Math.abs(p.x)));
+  const hipY = (hip ? hip.levelN : 0.52) * param.heightM;
+  const legOffsetX = hipHalfWidth * 0.5;
+
+  for (const side of ['r', 'l'] as const) {
+    const sign = side === 'r' ? 1 : -1;
+    const hipAnchor = new Vector3(sign * legOffsetX, hipY, 0);
+    const leg = buildLeg(side, rings, template, hipAnchor, param.heightM, radialSegments, verticalSegments);
+    for (const id of leg.estimatedIds) {
+      estimatedRingIds.push(id);
+    }
+    appendPart(merged, leg);
+  }
+
   const geometry = new BufferGeometry();
   geometry.setAttribute('position', new BufferAttribute(new Float32Array(merged.positions), 3));
   geometry.setAttribute('uv', new BufferAttribute(new Float32Array(merged.uvs), 2));
@@ -365,7 +561,8 @@ export function buildBodyGeometry(
 
   return {
     geometry,
-    estimatedRingIds,
+    // Dedupe: a null leg ring is flagged once by resolveRings and again by buildLeg.
+    estimatedRingIds: Array.from(new Set(estimatedRingIds)),
     dispose() {
       geometry.dispose();
     },
