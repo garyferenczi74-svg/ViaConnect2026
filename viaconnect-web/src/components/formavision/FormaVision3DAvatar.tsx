@@ -65,6 +65,9 @@ export interface FormaVision3DAvatarProps {
   activeTab: 'bodyFat' | 'muscleMass' | 'measurements';
   selectedBodyPart?: string | null;
   onSelectBodyPart?: (key: string | null) => void;
+  // Optional region that gets a one-shot orange emphasis accent (a peak change or
+  // win). A later task feeds this from the composition delta; unset means none.
+  emphasisRegion?: string;
   reducedMotion?: boolean;
   // Defaults to cinematic. The full tier provider is Phase 7; lite trims density.
   renderTier?: 'cinematic' | 'lite';
@@ -81,6 +84,7 @@ export function FormaVision3DAvatar({
   heightCm,
   reducedMotion,
   selectedBodyPart,
+  emphasisRegion,
   renderTier = 'cinematic',
   onRenderError,
 }: FormaVision3DAvatarProps) {
@@ -122,6 +126,7 @@ export function FormaVision3DAvatar({
           heightCm={heightCm}
           reducedMotion={reducedMotion}
           selectedBodyPart={selectedBodyPart}
+          emphasisRegion={emphasisRegion}
           renderTier={renderTier}
         />
       </AvatarErrorBoundary>

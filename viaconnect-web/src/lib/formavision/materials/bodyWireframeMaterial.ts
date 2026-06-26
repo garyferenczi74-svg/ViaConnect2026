@@ -43,6 +43,10 @@ export interface BodyWireframeMaterial {
   setScan(yN: number): void;
   // Drive a 0..1 reveal or morph progress for the intro animation.
   setMorph(t: number): void;
+  // Set the selected-region highlight band: yN is the region's normalized level
+  // (pass a value outside 0..1, default -1, to clear it), intensity is the
+  // brightening amount, and range is the optional half-height of the soft band.
+  setHighlight(yN: number, intensity?: number, range?: number): void;
   dispose(): void;
 }
 
@@ -117,6 +121,9 @@ const FRAGMENT_SHADER = /* glsl */ `
   uniform float uFillOpacity;
   uniform float uScanY;
   uniform float uMorph;
+  uniform float uHighlightY;
+  uniform float uHighlightRange;
+  uniform float uHighlightIntensity;
 
   // Edge factor from the barycentric coordinate. fwidth keeps the line a
   // constant width in screen space regardless of zoom, so edges stay crisp.
@@ -161,12 +168,24 @@ const FRAGMENT_SHADER = /* glsl */ `
     }
     vec3 scan = uTeal * band * 1.5;
 
+    // Selected-region highlight: a soft, broad additive teal emphasis centered on
+    // uHighlightY (the selected region's normalized level). Wider and gentler than
+    // the scan band so it reads as a subtle brightening of the region rather than a
+    // line. Off when uHighlightY is outside 0..1 or the intensity is zero. It rides
+    // on the wireframe edges so only the lines brighten, keeping it tasteful.
+    float highlight = 0.0;
+    if (uHighlightY >= 0.0 && uHighlightY <= 1.0) {
+      float range = max(uHighlightRange, 1e-4);
+      highlight = smoothstep(range, 0.0, abs(vHeightN - uHighlightY)) * uHighlightIntensity;
+    }
+    vec3 emphasis = uTeal * highlight * (0.6 + edge);
+
     // Morph reveal: gate the whole body in from the bottom up so the intro can
     // sweep the form into existence. uMorph of 1 reveals everything.
     float reveal = smoothstep(vHeightN - 0.08, vHeightN + 0.02, uMorph);
 
-    vec3 color = fill + line + rim + scan;
-    float alpha = clamp(uFillOpacity + edge + fresnel + band, 0.0, 1.0);
+    vec3 color = fill + line + rim + scan + emphasis;
+    float alpha = clamp(uFillOpacity + edge + fresnel + band + highlight * 0.5, 0.0, 1.0);
 
     color *= reveal;
     alpha *= reveal;
@@ -199,6 +218,12 @@ export function makeBodyWireframeMaterial(
     uScanY: { value: -1 },
     // Fully revealed by default; the intro lowers this and animates up to 1.
     uMorph: { value: 1 },
+    // Selected-region highlight, off by default (uHighlightY outside 0..1). The
+    // scene sets the level on selection; range is the half-height of the soft band
+    // and intensity is the brightening amount (a steady value, or pulsed by motion).
+    uHighlightY: { value: -1 },
+    uHighlightRange: { value: 0.07 },
+    uHighlightIntensity: { value: 0 },
     // Model-space bounds, filled by the scene once the geometry is known so the
     // height normalization and scan band line up with the real mesh extent.
     uBoundsMin: { value: new THREE.Vector3(0, -1, 0) },
@@ -227,6 +252,14 @@ export function makeBodyWireframeMaterial(
     uniforms.uMorph.value = Math.min(Math.max(t, 0), 1);
   }
 
+  function setHighlight(yN: number, intensity = 0, range?: number): void {
+    uniforms.uHighlightY.value = yN;
+    uniforms.uHighlightIntensity.value = Math.max(intensity, 0);
+    if (range !== undefined) {
+      uniforms.uHighlightRange.value = Math.max(range, 1e-4);
+    }
+  }
+
   function dispose(): void {
     material.dispose();
     if (ownsTexture) {
@@ -234,5 +267,5 @@ export function makeBodyWireframeMaterial(
     }
   }
 
-  return { material, uniforms, setScan, setMorph, dispose };
+  return { material, uniforms, setScan, setMorph, setHighlight, dispose };
 }

@@ -48,3 +48,13 @@ export {
   type MeasurementRingController,
   type MeasurementRingControllerOptions,
 } from './measurementRingController';
+export {
+  createHighlightController,
+  type HighlightController,
+  type HighlightControllerOptions,
+} from './highlightController';
+export {
+  createEmphasisParticleController,
+  type EmphasisParticleController,
+  type EmphasisParticleControllerOptions,
+} from './emphasisParticleController';

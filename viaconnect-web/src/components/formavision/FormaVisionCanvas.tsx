@@ -28,11 +28,13 @@ import {
   createMorphController,
   createCameraFramingController,
   createIdleTurntable,
+  createHighlightController,
   useDemandScheduler,
   type CameraFraming,
   type IdleTurntable,
   type MaterializeIntro,
 } from '@/lib/formavision/motion';
+import { ringLoopForRegion } from '@/lib/formavision/geometry/ringLoopForRegion';
 import type { CompositionSnapshot } from '@/lib/body-tracker/composition/types';
 import type {
   CircumferenceMeasurements,
@@ -41,6 +43,7 @@ import type {
 import type { Sex } from '@/lib/formavision/geometry/types';
 import { mountBodyGeometry } from './mountBodyGeometry';
 import { MeasurementRing } from './MeasurementRing';
+import { EmphasisParticles } from './EmphasisParticles';
 
 export interface FormaVisionCanvasProps {
   sex: Sex;
@@ -52,9 +55,14 @@ export interface FormaVisionCanvasProps {
   heightCm?: number | null;
   reducedMotion?: boolean;
   // The currently selected body region (a ring id such as 'chest' or 'rThigh'), or
-  // null for the full-body view. Drives the eased camera framing. The picker that
-  // sets this is a later task; here the camera only responds to it.
+  // null for the full-body view. Drives the eased camera framing and the selected
+  // region highlight. The picker that sets this is a later task; here the avatar only
+  // responds to it.
   selectedBodyPart?: string | null;
+  // Optional region that gets a one-shot orange emphasis particle accent (a peak
+  // change or win). A later task feeds this from the composition delta; unset means
+  // no particles fire.
+  emphasisRegion?: string;
   // Lite tier trims geometry density for low-power devices; cinematic is full.
   renderTier?: 'cinematic' | 'lite';
 }
@@ -176,6 +184,30 @@ function BodyMesh(
     // reducedMotion is read at morph time; buildOptions and scheduler are stable.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mounted, paramVector, invalidate]);
+
+  // Selected-region highlight: gently brighten the wireframe around the selected
+  // region's level via the material highlight uniform. The level comes from the SAME
+  // ringLoopForRegion mapping the ring and camera use, so highlight, ring and camera
+  // agree. Clearing the selection resets the uniform. Reduced motion applies it
+  // statically. Cheap (a uniform update); pulses invalidate only while active.
+  useEffect(() => {
+    const controller = createHighlightController({
+      setHighlight: (yN, intensity) => {
+        mounted.materialHandle.setHighlight(yN, intensity);
+        invalidate();
+      },
+      resolveLevel: (region) => ringLoopForRegion(paramVector, region).levelN,
+      scheduler,
+      reducedMotion: props.reducedMotion,
+    });
+    controller.highlightRegion(props.selectedBodyPart ?? null);
+    return () => {
+      controller.cancel();
+    };
+    // The highlight tracks the selection and the current body level; reducedMotion is
+    // read at apply time.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mounted, paramVector, props.selectedBodyPart, scheduler, invalidate]);
 
   // Play the materialize intro once per mounted body. Reduced motion lands the
   // body fully lit with no animation scheduled (full parity). The intro drives its
@@ -426,6 +458,18 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
           selectedBodyPart={props.selectedBodyPart}
           reducedMotion={props.reducedMotion}
           turntableRef={turntableRef}
+        />
+
+        {/* Prop-driven orange emphasis accent: fires once at emphasisRegion then
+            disposes. Unset means nothing renders. */}
+        <EmphasisParticles
+          sex={props.sex}
+          scan={props.scan}
+          circumferences={props.circumferences}
+          unit={props.unit}
+          heightCm={props.heightCm}
+          emphasisRegion={props.emphasisRegion}
+          reducedMotion={props.reducedMotion}
         />
 
         {/* Soft contact shadow grounds the body on the floor plane at y = 0. */}
