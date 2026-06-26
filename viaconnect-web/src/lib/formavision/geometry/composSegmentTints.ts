@@ -1,67 +1,69 @@
-// Build the avatar's 5-segment tint record from the composition page's existing
-// per-region heat-map statuses (Prompt 210b, OV-T2).
+// Build the avatar's 5-segment tint record from the canonical 5-region composition
+// data (Prompt 210b, OV-T2; sourcing corrected per the OV-T1 review).
 //
-// HONESTY + AGREEMENT: this does NOT recompute anything from raw fat or muscle
-// percentages. It consumes the SAME OvalColor statuses the page already feeds the
-// 2D SegmentalHeatMap (fatRegionStatuses / muscleRegionStatuses), so the 3D tint and
-// the 2D floor are guaranteed to agree for the same segment and tab. A segment with
-// no present status maps to null (NEUTRAL, no tint) rather than a guessed color.
-//
-// REGION -> 5-SEGMENT REDUCTION: the page carries finer-grained body parts (neck,
-// chest, biceps, forearms, thighs, calves ...), each tagged with the parent segment
-// it belongs to (one of the 5 SEGMENT_INDEX segments). Several body parts can fall
-// under one segment, so a segment takes the WORST (most attention-needing) status
-// among its present child parts: red beats yellow beats green. This mirrors what the
-// 2D shows for that area (the most severe child drives the segment summary) and never
-// invents a status: if no child part has a present status, the segment stays null.
+// HONESTY + AGREEMENT: the tint is sourced from the SAME canonical 5-region data the
+// metric CARDS read, the RegionMap on the CompositionSnapshot (regionFatPct /
+// regionMuscleLbs), through the SAME status + heat-map-color helpers the cards use
+// (getSegmentStatus -> getOvalColorFromStatus -> OVAL_HEX green/yellow/red). So the
+// 3D tint and the cards agree by construction. This does NOT reduce the 2D heat map's
+// finer 13-mask regions; it reads the canonical 5-region RegionMap directly, one
+// region per avatar segment. A region with a null (UNKNOWN) value yields null (no
+// tint, neutral) rather than a guessed color, preserving the honest-scan invariant.
 
-import { OVAL_HEX, type OvalColor } from '@/lib/body-tracker/heatmap-colors';
-import { type SegmentName } from './buildBodyGeometry';
+import {
+  getSegmentStatus,
+  type SegmentStatus,
+} from '@/lib/body-tracker/calculations';
+import { OVAL_HEX, getOvalColorFromStatus } from '@/lib/body-tracker/heatmap-colors';
+import type { RegionMap } from '@/lib/body-tracker/composition/types';
+import { SEGMENT_INDEX, type SegmentName } from './buildBodyGeometry';
 import { type SegmentTintRecord } from './segmentTints';
 
-// One finer-grained body part and the avatar segment it rolls up into.
-export interface SegmentChild {
-  key: string;
-  segment: SegmentName;
-}
-
-// Severity ordering for the worst-status reduction: a higher rank wins when more
-// than one child part maps to the same segment.
-const SEVERITY_RANK: Record<OvalColor, number> = {
-  green: 0,
-  yellow: 1,
-  red: 2,
+// getSegmentStatus expects the coarse segment type, not the 5-region name. The two
+// arms share the 'arm' thresholds and the two legs share 'leg'; the trunk is its own.
+const SEGMENT_TYPE: Record<SegmentName, 'arm' | 'trunk' | 'leg'> = {
+  right_arm: 'arm',
+  left_arm: 'arm',
+  trunk: 'trunk',
+  right_leg: 'leg',
+  left_leg: 'leg',
 };
 
-// Reduce the page's per-region OvalColor statuses to the 5 avatar segments and
-// resolve each to its heat-map hex. statuses is the SAME record the 2D heat map
-// consumes (keyed by the page's body-part keys). A segment with no present child
-// status stays absent from the record, which the avatar renders as neutral.
-export function buildSegmentTints(
-  statuses: Record<string, OvalColor>,
-  children: readonly SegmentChild[],
-): SegmentTintRecord {
-  // Worst present OvalColor per segment, or undefined when no child has a status.
-  const worst: Partial<Record<SegmentName, OvalColor>> = {};
+// SEGMENT_INDEX is the single source of the 5 segment names, so the tint record can
+// never drift from the geometry / overlay segment set.
+const ALL_SEGMENTS = Object.keys(SEGMENT_INDEX) as SegmentName[];
 
-  for (const child of children) {
-    const status = statuses[child.key];
-    if (!status) {
-      continue;
-    }
-    const current = worst[child.segment];
-    if (current === undefined || SEVERITY_RANK[status] > SEVERITY_RANK[current]) {
-      worst[child.segment] = status;
-    }
+// Resolve one region value (fat percent or muscle pounds) to a heat-map hex via the
+// card status path, or null when the value is UNKNOWN.
+function tintForValue(
+  value: number | null,
+  segment: SegmentName,
+  mode: 'fat' | 'muscle',
+  gender: 'male' | 'female',
+): string | null {
+  if (value === null) {
+    return null;
   }
+  const status: SegmentStatus = getSegmentStatus(value, SEGMENT_TYPE[segment], mode, gender);
+  return OVAL_HEX[getOvalColorFromStatus(status)];
+}
 
+// Build the per-segment tint record for the active mode from the canonical RegionMap.
+// fat mode reads regionFatPct, muscle mode reads regionMuscleLbs; either way each of
+// the 5 segments gets the card status color for its region, or null when UNKNOWN.
+export function buildSegmentTints(
+  region: RegionMap | null | undefined,
+  mode: 'fat' | 'muscle',
+  gender: 'male' | 'female',
+): SegmentTintRecord {
   const tints: SegmentTintRecord = {};
-  for (const segment of Object.keys(worst) as SegmentName[]) {
-    const color = worst[segment];
-    // Present status -> its heat-map hex; the absent segments are simply omitted
-    // (left undefined), which the overlay treats as neutral (no tint).
-    if (color !== undefined) {
-      tints[segment] = OVAL_HEX[color];
+  if (!region) {
+    return tints;
+  }
+  for (const segment of ALL_SEGMENTS) {
+    const tint = tintForValue(region[segment], segment, mode, gender);
+    if (tint !== null) {
+      tints[segment] = tint;
     }
   }
   return tints;
