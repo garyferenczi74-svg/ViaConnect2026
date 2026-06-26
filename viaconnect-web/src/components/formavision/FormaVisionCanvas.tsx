@@ -29,12 +29,18 @@ import {
   createCameraFramingController,
   createIdleTurntable,
   createHighlightController,
+  createOverlayController,
   useDemandScheduler,
   type CameraFraming,
   type IdleTurntable,
   type MaterializeIntro,
 } from '@/lib/formavision/motion';
 import { ringLoopForRegion } from '@/lib/formavision/geometry/ringLoopForRegion';
+import {
+  segmentTintArray,
+  shouldShowOverlay,
+  type SegmentTintRecord,
+} from '@/lib/formavision/geometry/segmentTints';
 import type { CompositionSnapshot } from '@/lib/body-tracker/composition/types';
 import type {
   CircumferenceMeasurements,
@@ -63,6 +69,13 @@ export interface FormaVisionCanvasProps {
   // change or win). A later task feeds this from the composition delta; unset means
   // no particles fire.
   emphasisRegion?: string;
+  // The active composition tab. The per-segment overlay tint is shown only on the
+  // bodyFat and muscleMass tabs; measurements shows no tint.
+  activeTab?: 'bodyFat' | 'muscleMass' | 'measurements';
+  // Optional per-segment status colors (green/yellow/red) keyed by segment name, or
+  // null where UNKNOWN. A later task (OV-T2/T3) computes these from the heatmap
+  // helpers; unset or null means no overlay tint and the avatar looks as today.
+  segmentTints?: SegmentTintRecord | null;
   // Lite tier trims geometry density for low-power devices; cinematic is full.
   renderTier?: 'cinematic' | 'lite';
 }
@@ -208,6 +221,40 @@ function BodyMesh(
     // read at apply time.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mounted, paramVector, props.selectedBodyPart, scheduler, invalidate]);
+
+  // Per-segment overlay tint: on the bodyFat or muscleMass tab WITH per-segment status
+  // colors, set the material tints and cross-fade the overlay in; on measurements or
+  // with no colors, fade it out (mix 0, avatar unchanged). The status colors are
+  // computed elsewhere (OV-T2/T3) and passed via segmentTints; a null segment stays
+  // neutral here (the material neutralizes it). Reduced motion sets the mix instantly.
+  useEffect(() => {
+    const controller = createOverlayController({
+      setTints: (colors) => {
+        // The material setter neutralizes any null entry to navy (UNKNOWN, no tint),
+        // so positions are preserved and a missing segment never guesses a color.
+        mounted.materialHandle.setSegmentTints(colors);
+        invalidate();
+      },
+      setOverlayMix: (mix) => {
+        mounted.materialHandle.setOverlayMix(mix);
+        invalidate();
+      },
+      scheduler,
+      reducedMotion: props.reducedMotion,
+    });
+
+    if (shouldShowOverlay(props.activeTab, props.segmentTints)) {
+      controller.show(segmentTintArray(props.segmentTints));
+    } else {
+      controller.hide();
+    }
+
+    return () => {
+      controller.cancel();
+    };
+    // reducedMotion is read at apply time; tints and tab drive the show/hide.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mounted, props.activeTab, props.segmentTints, scheduler, invalidate]);
 
   // Play the materialize intro once per mounted body. Reduced motion lands the
   // body fully lit with no animation scheduled (full parity). The intro drives its

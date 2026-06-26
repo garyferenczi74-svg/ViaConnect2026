@@ -31,6 +31,21 @@ export interface BuildOptions {
   verticalSegments?: number;
 }
 
+// The five body segments the composition data and the 2D heat map use, with their
+// stable ordering. This is the single source of the segment ordering: the per-vertex
+// `segment` attribute, the material uSegmentTint array, and the OV-T2/T3 tint feeders
+// all index by these values so the 3D overlay tints the same regions as the 2D.
+// Head and hands follow their parent segment (head -> trunk, hands -> their arm).
+export const SEGMENT_INDEX = {
+  right_arm: 0,
+  left_arm: 1,
+  trunk: 2,
+  right_leg: 3,
+  left_leg: 4,
+} as const;
+
+export type SegmentName = keyof typeof SEGMENT_INDEX;
+
 export interface BodyGeometryResult {
   geometry: BufferGeometry;
   // Every ring or limb that fell back to a template default (UNKNOWN measurement),
@@ -332,13 +347,16 @@ function buildLeg(
   const ankleControl = controls[controls.length - 1];
   const foot = buildFoot(ankleControl.center, ankleControl.circumferenceM, radialSegments);
 
+  // The leg limb plus its foot are merged here as one part; the body-level append
+  // tags the whole leg with its segment, so the local segments buffer is discarded.
   const merged = {
     positions: [...limb.positions],
     uvs: [...limb.uvs],
     indices: [...limb.indices],
+    segments: [] as number[],
     vertexOffset: limb.vertexCount,
   };
-  appendPart(merged, foot);
+  appendPart(merged, foot, 0);
 
   return {
     positions: merged.positions,
@@ -488,10 +506,19 @@ function buildHand(
 }
 
 // Append one part's buffers into the running merged arrays, offsetting its indices
-// by the number of vertices already placed.
+// by the number of vertices already placed and tagging every appended vertex with
+// the part's segment index (additive: positions, uvs, indices and normals are
+// untouched). The segment tag is what the overlay material reads to tint per region.
 function appendPart(
-  target: { positions: number[]; uvs: number[]; indices: number[]; vertexOffset: number },
+  target: {
+    positions: number[];
+    uvs: number[];
+    indices: number[];
+    segments: number[];
+    vertexOffset: number;
+  },
   part: { positions: number[]; uvs: number[]; indices: number[]; vertexCount: number },
+  segmentIndex: number,
 ): void {
   for (const value of part.positions) {
     target.positions.push(value);
@@ -501,6 +528,9 @@ function appendPart(
   }
   for (const index of part.indices) {
     target.indices.push(index + target.vertexOffset);
+  }
+  for (let i = 0; i < part.vertexCount; i += 1) {
+    target.segments.push(segmentIndex);
   }
   target.vertexOffset += part.vertexCount;
 }
@@ -518,16 +548,22 @@ export function buildBodyGeometry(
   const { rings, estimatedIds } = resolveRings(param, template);
   const estimatedRingIds = [...estimatedIds];
 
-  const merged = { positions: [] as number[], uvs: [] as number[], indices: [] as number[], vertexOffset: 0 };
+  const merged = {
+    positions: [] as number[],
+    uvs: [] as number[],
+    indices: [] as number[],
+    segments: [] as number[],
+    vertexOffset: 0,
+  };
 
   // Trunk: the central column from the glute up to the neck base, lofted through the
   // full anatomical level set with measured anchors.
   const trunk = buildTrunk(rings, template, param.heightM, radialSegments, verticalSegments);
-  appendPart(merged, trunk);
+  appendPart(merged, trunk, SEGMENT_INDEX.trunk);
 
-  // Head.
+  // Head follows the trunk segment.
   const head = buildHead(rings, template, param.heightM, radialSegments);
-  appendPart(merged, head);
+  appendPart(merged, head, SEGMENT_INDEX.trunk);
 
   // Arms and hands. Shoulder anchors sit just below the chest ring, offset left and
   // right by roughly half the chest width; wrists hang near the hip level.
@@ -544,17 +580,19 @@ export function buildBodyGeometry(
 
   for (const arm of param.arms) {
     const sign = arm.side === 'r' ? 1 : -1;
+    const armSegment = arm.side === 'r' ? SEGMENT_INDEX.right_arm : SEGMENT_INDEX.left_arm;
     const shoulder = new Vector3(sign * shoulderHalfWidth, chestY, 0);
     const wrist = new Vector3(sign * shoulderHalfWidth, wristY, 0);
     const built = buildArm(arm, template, shoulder, wrist, radialSegments, verticalSegments);
     if (built.estimated) {
       estimatedRingIds.push(arm.side === 'r' ? 'rArm' : 'lArm');
     }
-    appendPart(merged, built);
+    appendPart(merged, built, armSegment);
     const forearm =
       arm.forearmM === null || arm.forearmM === undefined ? template.arm.forearmM : arm.forearmM;
+    // The hand follows its arm segment.
     const hand = buildHand(wrist, forearm, radialSegments);
-    appendPart(merged, hand);
+    appendPart(merged, hand, armSegment);
   }
 
   // Legs: below the glute the body splits into two lofted leg tubes through the leg
@@ -571,17 +609,21 @@ export function buildBodyGeometry(
 
   for (const side of ['r', 'l'] as const) {
     const sign = side === 'r' ? 1 : -1;
+    const legSegment = side === 'r' ? SEGMENT_INDEX.right_leg : SEGMENT_INDEX.left_leg;
     const hipAnchor = new Vector3(sign * legOffsetX, 0, 0);
     const leg = buildLeg(side, rings, template, hipAnchor, param.heightM, radialSegments, verticalSegments);
     for (const id of leg.estimatedIds) {
       estimatedRingIds.push(id);
     }
-    appendPart(merged, leg);
+    appendPart(merged, leg, legSegment);
   }
 
   const geometry = new BufferGeometry();
   geometry.setAttribute('position', new BufferAttribute(new Float32Array(merged.positions), 3));
   geometry.setAttribute('uv', new BufferAttribute(new Float32Array(merged.uvs), 2));
+  // Per-vertex segment tag (additive). One float per vertex, indexing SEGMENT_INDEX.
+  // The overlay material reads this to tint each region; at overlay mix 0 it is unused.
+  geometry.setAttribute('segment', new BufferAttribute(new Float32Array(merged.segments), 1));
   geometry.setIndex(merged.indices);
   geometry.computeVertexNormals();
 

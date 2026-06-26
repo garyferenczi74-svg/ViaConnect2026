@@ -18,7 +18,7 @@
 // provided to bake it onto a non-indexed clone before this material is used.
 
 import * as THREE from 'three';
-import { makeTokenColor } from './formaVisionTokens';
+import { makeTokenColor, FORMA_VISION_COLORS } from './formaVisionTokens';
 import { makeCellTexture } from './cellTexture';
 
 export interface BodyWireframeOptions {
@@ -47,6 +47,13 @@ export interface BodyWireframeMaterial {
   // (pass a value outside 0..1, default -1, to clear it), intensity is the
   // brightening amount, and range is the optional half-height of the soft band.
   setHighlight(yN: number, intensity?: number, range?: number): void;
+  // Set the 5 per-segment overlay tints in SEGMENT_INDEX order (right_arm, left_arm,
+  // trunk, right_leg, left_leg). Pass the status color for a segment, or null for
+  // UNKNOWN, which is neutralized to navy (no guessed tint, no visible shift). Only
+  // visible when overlay mix is above 0. Colors are copied into the uniform array.
+  setSegmentTints(colors: (THREE.Color | null)[]): void;
+  // Cross-fade the overlay in (1) or out (0). At 0 the wireframe is pure teal.
+  setOverlayMix(mix: number): void;
   dispose(): void;
 }
 
@@ -75,12 +82,14 @@ export function addBarycentricAttribute(
 
 const VERTEX_SHADER = /* glsl */ `
   attribute vec3 aBary;
+  attribute float segment;
 
   varying vec3 vBary;
   varying vec2 vUv;
   varying vec3 vViewNormal;
   varying vec3 vViewPos;
   varying float vHeightN;
+  varying float vSegment;
 
   uniform vec3 uBoundsMin;
   uniform vec3 uBoundsMax;
@@ -88,6 +97,10 @@ const VERTEX_SHADER = /* glsl */ `
   void main() {
     vBary = aBary;
     vUv = uv;
+    // All three vertices of a triangle share one segment, so a normal varying
+    // interpolates to the same constant value across the face; the fragment rounds
+    // it back to an integer index. This avoids needing a flat varying (GLSL ES 3).
+    vSegment = segment;
     vViewNormal = normalize(normalMatrix * normal);
 
     vec4 viewPos = modelViewMatrix * vec4(position, 1.0);
@@ -110,6 +123,7 @@ const FRAGMENT_SHADER = /* glsl */ `
   varying vec3 vViewNormal;
   varying vec3 vViewPos;
   varying float vHeightN;
+  varying float vSegment;
 
   uniform vec3 uTeal;
   uniform vec3 uNavy;
@@ -124,6 +138,19 @@ const FRAGMENT_SHADER = /* glsl */ `
   uniform float uHighlightY;
   uniform float uHighlightRange;
   uniform float uHighlightIntensity;
+  uniform vec3 uSegmentTint[5];
+  uniform float uOverlayMix;
+
+  // Pick this fragment's segment tint from the 5-entry array by its rounded segment
+  // index. GLSL ES 1 forbids dynamic array indexing, so select with a small chain.
+  vec3 segmentTint(float segIndex) {
+    int s = int(segIndex + 0.5);
+    if (s <= 0) return uSegmentTint[0];
+    if (s == 1) return uSegmentTint[1];
+    if (s == 2) return uSegmentTint[2];
+    if (s == 3) return uSegmentTint[3];
+    return uSegmentTint[4];
+  }
 
   // Edge factor from the barycentric coordinate. fwidth keeps the line a
   // constant width in screen space regardless of zoom, so edges stay crisp.
@@ -149,10 +176,14 @@ const FRAGMENT_SHADER = /* glsl */ `
     float grain = texture2D(uCellTexture, vUv * uCellRepeat).r;
     fill += uTeal * grain * 0.06;
 
-    // Additive teal wireframe edges. The line intensity is the fake-bloom knob:
-    // pushing it above 1 lets the lines bloom out toward white at the core.
+    // Additive wireframe edges. The line intensity is the fake-bloom knob: pushing
+    // it above 1 lets the lines bloom out toward white at the core. The overlay
+    // blends the segment's status tint into the line base by uOverlayMix on the line
+    // mask only, so at mix 0 the lines are pure teal (the look is unchanged). A
+    // neutral (navy) tint produces no visible shift even at mix 1.
     float edge = edgeFactor();
-    vec3 line = uTeal * edge * uLineIntensity;
+    vec3 lineBase = mix(uTeal, segmentTint(vSegment), clamp(uOverlayMix, 0.0, 1.0));
+    vec3 line = lineBase * edge * uLineIntensity;
 
     // Teal fresnel rim: brightens at the silhouette where facing approaches 0,
     // so the body separates cleanly from the navy canvas.
@@ -224,6 +255,19 @@ export function makeBodyWireframeMaterial(
     uHighlightY: { value: -1 },
     uHighlightRange: { value: 0.07 },
     uHighlightIntensity: { value: 0 },
+    // Per-segment overlay tints (5 in SEGMENT_INDEX order), all neutral navy by
+    // default so the overlay shows nothing until OV-T2/T3 feed real status colors.
+    uSegmentTint: {
+      value: [
+        makeTokenColor('navy'),
+        makeTokenColor('navy'),
+        makeTokenColor('navy'),
+        makeTokenColor('navy'),
+        makeTokenColor('navy'),
+      ],
+    },
+    // Overlay cross-fade, 0 by default (no tint, pure teal wireframe).
+    uOverlayMix: { value: 0 },
     // Model-space bounds, filled by the scene once the geometry is known so the
     // height normalization and scan band line up with the real mesh extent.
     uBoundsMin: { value: new THREE.Vector3(0, -1, 0) },
@@ -260,6 +304,24 @@ export function makeBodyWireframeMaterial(
     }
   }
 
+  function setSegmentTints(colors: (THREE.Color | null)[]): void {
+    const tints = uniforms.uSegmentTint.value as THREE.Color[];
+    for (let i = 0; i < tints.length; i += 1) {
+      // Copy into the existing uniform Color so the array reference is stable; fall
+      // back to neutral navy for any missing or null entry (UNKNOWN, no guessed tint).
+      const next = colors[i];
+      if (next) {
+        tints[i].copy(next);
+      } else {
+        tints[i].copy(FORMA_VISION_COLORS.navy);
+      }
+    }
+  }
+
+  function setOverlayMix(mix: number): void {
+    uniforms.uOverlayMix.value = Math.min(Math.max(mix, 0), 1);
+  }
+
   function dispose(): void {
     material.dispose();
     if (ownsTexture) {
@@ -267,5 +329,14 @@ export function makeBodyWireframeMaterial(
     }
   }
 
-  return { material, uniforms, setScan, setMorph, setHighlight, dispose };
+  return {
+    material,
+    uniforms,
+    setScan,
+    setMorph,
+    setHighlight,
+    setSegmentTints,
+    setOverlayMix,
+    dispose,
+  };
 }

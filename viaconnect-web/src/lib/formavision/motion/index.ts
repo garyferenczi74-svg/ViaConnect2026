@@ -58,3 +58,8 @@ export {
   type EmphasisParticleController,
   type EmphasisParticleControllerOptions,
 } from './emphasisParticleController';
+export {
+  createOverlayController,
+  type OverlayController,
+  type OverlayControllerOptions,
+} from './overlayController';
