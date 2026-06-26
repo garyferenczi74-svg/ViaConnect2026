@@ -60,6 +60,38 @@ export interface TemplateRing {
   aspectRatio: number;
 }
 
+// A vertical anchor level in the trunk loft (Prompt 210a Section 2.1). Some levels
+// are anchored by a real measured ring (anchorRingId set), others are purely
+// structural taper levels with a template circumference and no user measurement.
+// Structural levels are inherently template and are NOT user-measurable, so they
+// are never flagged estimated; only a measured level whose user value is null is.
+export interface TrunkLevel {
+  id: string;
+  // Normalized height of this level. 0 = feet, 1 = crown. Scaled by heightM.
+  levelN: number;
+  // Template circumference in meters (the neutral default and the taper fallback).
+  circumferenceM: number;
+  // Region-specific front-to-side aspect ratio (depth / width) at this level.
+  aspectRatio: number;
+  // When set, this level is anchored by the named measured BodyRing: a real user
+  // circumference at that ring overrides circumferenceM exactly. When undefined,
+  // the level is structural (template-only, never estimated).
+  anchorRingId?: string;
+}
+
+// A vertical anchor level in an arm loft, top (shoulder) to bottom (wrist).
+export interface ArmLevel {
+  id: string;
+  // Fraction along the arm from shoulder (0) to wrist (1).
+  t: number;
+  // Template circumference in meters.
+  circumferenceM: number;
+  aspectRatio: number;
+  // Which measured arm value anchors this level, if any: bicep at mid-upper-arm,
+  // forearm at mid-forearm. Other levels are structural taper.
+  anchor?: 'bicep' | 'forearm';
+}
+
 export interface BodyTemplate {
   sex: Sex;
   heightM: number;
@@ -68,6 +100,11 @@ export interface BodyTemplate {
     bicepM: number;
     forearmM: number;
   };
+  // Full anatomical trunk level set (210a 2.1), foot to head. Used by the enriched
+  // loft. The measured-ring stack above (rings) is kept for the scan mapper.
+  trunkLevels: TrunkLevel[];
+  // Arm level set, shoulder to wrist.
+  armLevels: ArmLevel[];
   // Head ovoid sizing relative to the neck ring, plus its own aspect ratio.
   head: {
     // Multiplier applied to the neck circumference to derive the head circumference.
@@ -91,6 +128,31 @@ export const MALE_TEMPLATE: BodyTemplate = {
     { id: 'rCalf', levelN: 0.22, circumferenceM: 0.37, aspectRatio: 0.9 },
     { id: 'lCalf', levelN: 0.22, circumferenceM: 0.37, aspectRatio: 0.9 },
   ],
+  // Full anatomical level set, foot to head. Structural levels (ankle, knee, glute,
+  // lowWaist, shoulder) taper the silhouette and carry no anchorRingId. Measured
+  // anchors: midCalf<-calf, midThigh<-quad, hip<-hip, navelWaist<-waist,
+  // chest<-chest, neckBase<-neck. Aspect ratios are region-specific: waist and chest
+  // read wider side-to-side (lower aspect), thigh and calf rounder, neck near-round.
+  trunkLevels: [
+    { id: 'ankle', levelN: 0.04, circumferenceM: 0.24, aspectRatio: 0.78 },
+    { id: 'midCalf', levelN: 0.22, circumferenceM: 0.37, aspectRatio: 0.9, anchorRingId: 'rCalf' },
+    { id: 'knee', levelN: 0.30, circumferenceM: 0.38, aspectRatio: 0.92 },
+    { id: 'midThigh', levelN: 0.45, circumferenceM: 0.56, aspectRatio: 0.92, anchorRingId: 'rThigh' },
+    { id: 'glute', levelN: 0.50, circumferenceM: 1.0, aspectRatio: 0.74 },
+    { id: 'hip', levelN: 0.52, circumferenceM: 0.98, aspectRatio: 0.74, anchorRingId: 'hip' },
+    { id: 'lowWaist', levelN: 0.58, circumferenceM: 0.93, aspectRatio: 0.8 },
+    { id: 'navelWaist', levelN: 0.62, circumferenceM: 0.9, aspectRatio: 0.78, anchorRingId: 'waist' },
+    { id: 'chest', levelN: 0.72, circumferenceM: 1.0, aspectRatio: 0.72, anchorRingId: 'chest' },
+    { id: 'shoulder', levelN: 0.81, circumferenceM: 1.12, aspectRatio: 0.66 },
+    { id: 'neckBase', levelN: 0.87, circumferenceM: 0.39, aspectRatio: 0.92, anchorRingId: 'neck' },
+  ],
+  armLevels: [
+    { id: 'shoulder', t: 0.0, circumferenceM: 0.42, aspectRatio: 0.95 },
+    { id: 'midUpperArm', t: 0.28, circumferenceM: 0.33, aspectRatio: 0.95, anchor: 'bicep' },
+    { id: 'elbow', t: 0.52, circumferenceM: 0.28, aspectRatio: 0.95 },
+    { id: 'midForearm', t: 0.74, circumferenceM: 0.27, aspectRatio: 0.95, anchor: 'forearm' },
+    { id: 'wrist', t: 1.0, circumferenceM: 0.17, aspectRatio: 0.95 },
+  ],
   arm: { bicepM: 0.33, forearmM: 0.27 },
   head: { circumferenceFromNeck: 1.45, aspectRatio: 0.85 },
 };
@@ -109,6 +171,28 @@ export const FEMALE_TEMPLATE: BodyTemplate = {
     { id: 'lThigh', levelN: 0.45, circumferenceM: 0.55, aspectRatio: 0.93 },
     { id: 'rCalf', levelN: 0.22, circumferenceM: 0.35, aspectRatio: 0.91 },
     { id: 'lCalf', levelN: 0.22, circumferenceM: 0.35, aspectRatio: 0.91 },
+  ],
+  // Female anatomical level set: narrower waist relative to a wider hip and glute,
+  // narrower shoulder than the male template, slightly rounder cross-sections.
+  trunkLevels: [
+    { id: 'ankle', levelN: 0.04, circumferenceM: 0.22, aspectRatio: 0.8 },
+    { id: 'midCalf', levelN: 0.22, circumferenceM: 0.35, aspectRatio: 0.91, anchorRingId: 'rCalf' },
+    { id: 'knee', levelN: 0.30, circumferenceM: 0.35, aspectRatio: 0.93 },
+    { id: 'midThigh', levelN: 0.45, circumferenceM: 0.55, aspectRatio: 0.93, anchorRingId: 'rThigh' },
+    { id: 'glute', levelN: 0.49, circumferenceM: 1.02, aspectRatio: 0.72 },
+    { id: 'hip', levelN: 0.51, circumferenceM: 0.99, aspectRatio: 0.72, anchorRingId: 'hip' },
+    { id: 'lowWaist', levelN: 0.59, circumferenceM: 0.78, aspectRatio: 0.84 },
+    { id: 'navelWaist', levelN: 0.63, circumferenceM: 0.74, aspectRatio: 0.82, anchorRingId: 'waist' },
+    { id: 'chest', levelN: 0.72, circumferenceM: 0.9, aspectRatio: 0.76, anchorRingId: 'chest' },
+    { id: 'shoulder', levelN: 0.81, circumferenceM: 0.98, aspectRatio: 0.7 },
+    { id: 'neckBase', levelN: 0.87, circumferenceM: 0.33, aspectRatio: 0.94, anchorRingId: 'neck' },
+  ],
+  armLevels: [
+    { id: 'shoulder', t: 0.0, circumferenceM: 0.36, aspectRatio: 0.96 },
+    { id: 'midUpperArm', t: 0.28, circumferenceM: 0.28, aspectRatio: 0.96, anchor: 'bicep' },
+    { id: 'elbow', t: 0.52, circumferenceM: 0.24, aspectRatio: 0.96 },
+    { id: 'midForearm', t: 0.74, circumferenceM: 0.24, aspectRatio: 0.96, anchor: 'forearm' },
+    { id: 'wrist', t: 1.0, circumferenceM: 0.15, aspectRatio: 0.96 },
   ],
   arm: { bicepM: 0.28, forearmM: 0.24 },
   head: { circumferenceFromNeck: 1.6, aspectRatio: 0.86 },
