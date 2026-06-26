@@ -33,10 +33,13 @@ import { createClient } from "@/lib/supabase/client";
 import { withTimeout } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
 import { heroGaugeScore, buildFlatSeries } from "@/components/journey/coaching/heroHelpers";
-import { formatMacroLabel, kcalRemaining, flatSparkline } from "@/components/journey/coaching/lowerHelpers";
+import { formatMacroLabel, kcalRemaining, flatSparkline, goalProgressPct } from "@/components/journey/coaching/lowerHelpers";
 import { useUserDashboardData } from "@/hooks/useUserDashboardData";
 import { useActiveBodyGoal, tierToStateWord } from "@/hooks/journey/useActiveBodyGoal";
 import { getWearableSource } from "@/lib/scoring/sources/wearable-source";
+import { useTodayStats } from "@/hooks/journey/useTodayStats";
+import { useMetabolicVitals } from "@/hooks/journey/useMetabolicVitals";
+import { useTodayMealLogs } from "@/hooks/journey/useTodayMealLogs";
 
 const C = {
   navy: "#1A2744", card: "#1E3054", inset: "#16203A", raised: "#243a63",
@@ -474,6 +477,15 @@ function TodayTab({
   hannahRecommendation,
   hannahFocusArea,
   hannahEstimatedImpact,
+  stepsValue,
+  stepsSub,
+  stepsBarPct,
+  exerciseValue,
+  exerciseSub,
+  exerciseBarPct,
+  sleepValue,
+  sleepSub,
+  sleepBarPct,
 }: {
   hydrationValue: string;
   hydrationSub: string;
@@ -484,6 +496,15 @@ function TodayTab({
   hannahRecommendation: string;
   hannahFocusArea: string;
   hannahEstimatedImpact: number;
+  stepsValue: string;
+  stepsSub: string;
+  stepsBarPct: number;
+  exerciseValue: string;
+  exerciseSub: string;
+  exerciseBarPct: number;
+  sleepValue: string;
+  sleepSub: string;
+  sleepBarPct: number;
 }) {
   return (
     <div className="vc-split" style={{ alignItems: "stretch" }}>
@@ -491,10 +512,10 @@ function TodayTab({
         <div style={panel(false)}>
           <div style={{ ...eyebrow, marginBottom: 12 }}>Today</div>
           <div style={{ display: "flex", gap: 18, flexWrap: "wrap" }}>
-            <StatBar icon={Activity} name="Steps" value="Connect to populate" sub="" pct={0} color={C.teal} />
+            <StatBar icon={Activity} name="Steps" value={stepsValue} sub={stepsSub} pct={stepsBarPct} color={C.teal} />
             <StatBar icon={Heart} name="Active Calories" value="Connect to populate" sub="" pct={0} color={C.teal} />
-            <StatBar icon={Activity} name="Exercise" value="Connect to populate" sub="" pct={0} color={C.teal} />
-            <StatBar icon={Moon} name="Sleep" value="Connect to populate" sub="" pct={0} color={C.blue} />
+            <StatBar icon={Activity} name="Exercise" value={exerciseValue} sub={exerciseSub} pct={exerciseBarPct} color={C.teal} />
+            <StatBar icon={Moon} name="Sleep" value={sleepValue} sub={sleepSub} pct={sleepBarPct} color={C.blue} />
             <StatBar icon={Droplet} name="Hydration" value={hydrationValue} sub={hydrationSub} pct={hydrationPct} color="#38BDD8" />
           </div>
         </div>
@@ -594,11 +615,14 @@ function NutritionCard({
     <div style={panel(false)}><div style={{ ...eyebrow, marginBottom: 10 }}>Nutrition</div><div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}><Donut size={86} segments={segments} top={kcalTop} bot={kcalBot} /><Legend items={[{ name: "Carbs", label: carbsLabel, color: C.green }, { name: "Protein", label: proteinLabel, color: C.orange }, { name: "Fat", label: fatLabel, color: C.blue }]} /></div></div>
   );
 }
-function SleepCard() {
-  // Sleep stages are wearable-OFF. Render the same donut at a neutral equal-segment
-  // state (1/1/1/1) with "--" legend values. No fabricated stage minutes.
+function SleepCard({ sleepHoursTotal }: { sleepHoursTotal: number | null }) {
+  // Sleep stages are wearable-OFF. The total from daily_scores/daily_checkins is
+  // real; stage breakdown remains connect state (no wearable source).
+  // (migration 20260412000010 for daily_checkins.sleep_hours;
+  //  types.ts line 8276 for daily_scores.sleep_hours)
+  const centerTop = sleepHoursTotal !== null ? `${sleepHoursTotal.toFixed(1)} h` : "--";
   return (
-    <div style={panel(false)}><div style={{ ...eyebrow, marginBottom: 10 }}>Sleep breakdown</div><div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}><Donut size={86} segments={[{ value: 1, color: C.teal }, { value: 1, color: C.blue }, { value: 1, color: C.purple }, { value: 1, color: C.orange }]} top="--" bot="total" /><Legend items={[{ name: "Deep", label: "--", color: C.teal }, { name: "Light", label: "--", color: C.blue }, { name: "REM", label: "--", color: C.purple }, { name: "Awake", label: "--", color: C.orange }]} /></div></div>
+    <div style={panel(false)}><div style={{ ...eyebrow, marginBottom: 10 }}>Sleep breakdown</div><div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}><Donut size={86} segments={[{ value: 1, color: C.teal }, { value: 1, color: C.blue }, { value: 1, color: C.purple }, { value: 1, color: C.orange }]} top={centerTop} bot="total" /><Legend items={[{ name: "Deep", label: "--", color: C.teal }, { name: "Light", label: "--", color: C.blue }, { name: "REM", label: "--", color: C.purple }, { name: "Awake", label: "--", color: C.orange }]} /></div></div>
   );
 }
 function AcceleratorsTab({ accel, activeHubs }: { accel: AccItem[]; activeHubs: string[] }) {
@@ -691,7 +715,16 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
 
   // J-T2: active body_goals row -> goal chip label.
   // Replaces useJourneyState.goalPhrase as the goal chip data source.
-  const { goalLabel: activeGoalLabel } = useActiveBodyGoal(userId);
+  const { goalLabel: activeGoalLabel, goal: activeGoal } = useActiveBodyGoal(userId);
+
+  // J-T3: today's stats (steps, exercise, sleep) from daily_scores + checkins fallback.
+  const todayStats = useTodayStats(userId);
+
+  // J-T3: latest metabolic vitals from body_tracker_metabolic.
+  const metabolicVitals = useMetabolicVitals(userId);
+
+  // J-T3: today's meal_logs macros (separate from nutrition_logs already read below).
+  const todayMealLogs = useTodayMealLogs(userId);
 
   // J-T2: wearable status from getWearableSource.
   // Drives "No wearable connected" / last-sync label in ProfileCard.
@@ -784,6 +817,75 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
         if (active) setAvatarUrl(url && url.trim().length > 0 ? url : null);
       } catch (err) {
         safeLog.warn("YourJourneyCoaching", "avatar read failed, failing open", { error: err });
+      }
+    })();
+    return () => { active = false; };
+  }, [userId]);
+
+  // J-T3: lean_body_mass_lbs from body_tracker_weight (migration 20260416000080).
+  // Used as the preferred lean mass label when available, over totalMuscleMassLbs.
+  const [leanBodyMassLbs, setLeanBodyMassLbs] = useState<number | null>(null);
+  useEffect(() => {
+    if (!userId) { setLeanBodyMassLbs(null); return; }
+    let active = true;
+    (async () => {
+      try {
+        const supabase = createClient();
+        type LbmRow = { lean_body_mass_lbs: number | null };
+        type LbmResult = { data: LbmRow | null; error: unknown };
+        const { data } = await withTimeout(
+          supabase
+            .from("body_tracker_weight")
+            .select("lean_body_mass_lbs")
+            .eq("user_id", userId)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle() as unknown as Promise<LbmResult>,
+          4000,
+          "YourJourneyCoaching.leanBodyMass",
+        );
+        if (!active) return;
+        const val = data?.lean_body_mass_lbs ?? null;
+        setLeanBodyMassLbs(typeof val === "number" && isFinite(val) ? val : null);
+      } catch (err) {
+        if (!active) return;
+        safeLog.warn("YourJourneyCoaching", "lean_body_mass_lbs read failed, failing open", { error: err });
+      }
+    })();
+    return () => { active = false; };
+  }, [userId]);
+
+  // J-T3: energy_balance_signals from migration 20260622171000.
+  // balance_state, intake_estimate, expenditure_estimate all exist per types.ts line 149.
+  const [energyBalance, setEnergyBalance] = useState<{
+    balanceState: string | null;
+    intakeEstimate: number | null;
+    expenditureEstimate: number | null;
+  } | null>(null);
+  useEffect(() => {
+    if (!userId) { setEnergyBalance(null); return; }
+    let active = true;
+    (async () => {
+      try {
+        const supabase = createClient();
+        type EbRow = { balance_state: string | null; intake_estimate: number | null; expenditure_estimate: number | null };
+        type EbResult = { data: EbRow | null; error: unknown };
+        const { data } = await withTimeout(
+          supabase
+            .from("energy_balance_signals")
+            .select("balance_state, intake_estimate, expenditure_estimate")
+            .eq("user_id", userId)
+            .order("computed_at", { ascending: false })
+            .limit(1)
+            .maybeSingle() as unknown as Promise<EbResult>,
+          4000,
+          "YourJourneyCoaching.energyBalance",
+        );
+        if (!active) return;
+        if (data) setEnergyBalance({ balanceState: data.balance_state, intakeEstimate: data.intake_estimate, expenditureEstimate: data.expenditure_estimate });
+      } catch (err) {
+        if (!active) return;
+        safeLog.warn("YourJourneyCoaching", "energy_balance_signals read failed, failing open", { error: err });
       }
     })();
     return () => { active = false; };
@@ -931,13 +1033,20 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
   const hydrationSub = hydrationTargetL !== null ? `/ ${hydrationTargetL.toFixed(1)} L` : "";
   const hydrationBarPct = hydrationPct !== null ? Math.min(100, Math.round(hydrationPct)) : 0;
 
-  // Vitals rows: Hydration LIVE; HRV/Resting HR/Respiratory/Blood Oxygen wearable-OFF.
+  // Vitals rows: body_tracker_metabolic for HRV/RestingHR/Respiratory/BloodOxygen
+  // (migration 20260414000020; hrv_ms, resting_hr_bpm, respiratory_rate,
+  // blood_oxygen_pct all exist in types.ts).
+  // Wearable-OFF rows with null values show "--" plus flat sparkline (honest state).
   const FLAT = flatSparkline();
+  const vitHrvStr = metabolicVitals.hrv !== null ? `${Math.round(metabolicVitals.hrv)} ms` : "--";
+  const vitRestHrStr = metabolicVitals.restingHr !== null ? `${Math.round(metabolicVitals.restingHr)} bpm` : "--";
+  const vitRespStr = metabolicVitals.respiratory !== null ? `${metabolicVitals.respiratory.toFixed(1)} brpm` : "--";
+  const vitO2Str = metabolicVitals.bloodOxygen !== null ? `${metabolicVitals.bloodOxygen.toFixed(1)}%` : "--";
   const vitals: VitalRow[] = [
-    ["HRV", "--", "--", FLAT, C.teal],
-    ["Resting HR", "--", "--", FLAT, C.teal],
-    ["Respiratory", "--", "--", FLAT, C.teal],
-    ["Blood Oxygen", "--", "--", FLAT, C.teal],
+    ["HRV", vitHrvStr, "", FLAT, C.teal],
+    ["Resting HR", vitRestHrStr, "", FLAT, C.teal],
+    ["Respiratory", vitRespStr, "", FLAT, C.teal],
+    ["Blood Oxygen", vitO2Str, "", FLAT, C.teal],
     [
       "Hydration",
       hydrationValue !== "--" ? `${hydrationValue} L` : "--",
@@ -947,37 +1056,64 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
     ],
   ];
 
+  // Combined macros: nutrition_logs (confirmed only) + meal_logs for today.
+  // meal_logs uses fat_g (not total_fat_g which is nutrition_logs specific).
+  // (migration 20260411000040 for meal_logs; nutrition_logs already read above)
+  const combinedMacros = {
+    carbsG: todayMacros.carbsG + todayMealLogs.carbsG,
+    proteinG: todayMacros.proteinG + todayMealLogs.proteinG,
+    fatG: todayMacros.fatG + todayMealLogs.fatG,
+    calories: todayMacros.calories + todayMealLogs.calories,
+  };
+
   // Nutrition donut values.
   const targetKcal = typeof nutritionTargets?.dailyKcal === "number" ? nutritionTargets.dailyKcal : null;
-  const kcalResult = kcalRemaining(targetKcal, todayMacros.calories);
+  const kcalResult = kcalRemaining(targetKcal, combinedMacros.calories);
   const targetCarbsG = typeof nutritionTargets?.dailyCarbsG === "number" ? nutritionTargets.dailyCarbsG : null;
   const targetProteinG = typeof nutritionTargets?.dailyProteinG === "number" ? nutritionTargets.dailyProteinG : null;
   const targetFatG = typeof nutritionTargets?.dailyFatTotalG === "number" ? nutritionTargets.dailyFatTotalG : null;
-  const carbsLabel = formatMacroLabel(todayMacros.carbsG, targetCarbsG);
-  const proteinLabel = formatMacroLabel(todayMacros.proteinG, targetProteinG);
-  const fatLabel = formatMacroLabel(todayMacros.fatG, targetFatG);
+  const carbsLabel = formatMacroLabel(combinedMacros.carbsG, targetCarbsG);
+  const proteinLabel = formatMacroLabel(combinedMacros.proteinG, targetProteinG);
+  const fatLabel = formatMacroLabel(combinedMacros.fatG, targetFatG);
 
-  // GoalCard values from useJourneyState + useLatestComposition + useRecentBodySeries.
-  // Weight guardrail: supportive framing only, no aggressive targets.
+  // GoalCard: wire real goal bounds from useActiveBodyGoal (J-T2, J-T3).
+  // start_weight_lb, goal_weight_lb, start_date, target_date exist in body_goals
+  // (migration 20260607020000_prompt_179_body_goals.sql).
+  // 208a weight guardrail: supportive framing only.
   const goalLabel = goalPhrase.charAt(0).toUpperCase() + goalPhrase.slice(1);
+  const goalStartLb = activeGoal?.start_weight_lb ?? null;
+  const goalTargetLb = activeGoal?.goal_weight_lb ?? null;
+
   const latestWeightLbs = bodySeries.weightLbs.length > 0
     ? bodySeries.weightLbs[bodySeries.weightLbs.length - 1]
     : null;
   const firstWeightLbs = bodySeries.weightLbs.length > 0 ? bodySeries.weightLbs[0] : null;
-  // No real stored goal target is available. Do not extrapolate or fabricate one.
-  // Target shows "--" and progress is 0 until a real target is stored.
-  const targetWeightLbs: number | null = null;
-  const progressPct = 0;
-  const baselineLabel = firstWeightLbs !== null ? `Baseline ${Math.round(firstWeightLbs)} lb` : "Baseline --";
+
+  // goalProgressPct from lowerHelpers (migration 20260607020000 covers start/goal bounds).
+  const computedProgressPct = goalProgressPct(goalStartLb, latestWeightLbs, goalTargetLb) ?? 0;
+  const progressPct = computedProgressPct;
+
+  const baselineLabel = goalStartLb !== null
+    ? `Start ${Math.round(goalStartLb)} lb`
+    : firstWeightLbs !== null
+      ? `Baseline ${Math.round(firstWeightLbs)} lb`
+      : "Baseline --";
   const nowLabel = latestWeightLbs !== null ? `Now ${Math.round(latestWeightLbs)} lb` : "Now --";
-  const targetLabelStr = "Target --";
-  const goalNarrative = latestWeightLbs !== null && firstWeightLbs !== null
-    ? "You are building momentum in a supportive direction. Small, consistent steps are what carry the trend."
-    : "As you log and track, your progress picture fills in here. Keep going, no rush.";
+  const targetLabelStr = goalTargetLb !== null
+    ? `Target ${Math.round(goalTargetLb)} lb`
+    : "Target --";
+
+  const goalNarrative = activeGoal === null
+    ? "Set a body goal to see your progress chart here. No rush, build at your own pace."
+    : latestWeightLbs === null
+      ? "Log your weight to see your progress. As you log, this picture fills in."
+      : "You are building momentum in a supportive direction. Small, consistent steps are what carry the trend.";
 
   // BodyCompTrio values from useLatestComposition + useRecentBodySeries.
-  // Lean mass: totalMuscleMassLbs from composition snapshot; sparkline from weight series.
-  const latestMuscleLbs = compositionSnapshot?.totalMuscleMassLbs ?? null;
+  // Lean mass: body_tracker_weight.lean_body_mass_lbs when available
+  // (migration 20260416000080). Falls back to totalMuscleMassLbs from segmental
+  // muscle, then weight_lbs, then "--".
+  const latestMuscleLbs = leanBodyMassLbs ?? compositionSnapshot?.totalMuscleMassLbs ?? null;
   const latestBodyFatPct = compositionSnapshot?.totalBodyFatPct ?? null;
   // Lean-mass delta: only show when headline and delta come from the SAME series.
   // The headline is totalMuscleMassLbs (muscle-mass series); the weight series is a
@@ -1003,10 +1139,54 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
   const bodyFatSeries = bodySeries.bodyFatPct.length >= 2
     ? bodySeries.bodyFatPct
     : flatSparkline(latestBodyFatPct ?? 1);
-  // Energy balance: honest read based on available nutrition data.
-  const energyBalanceRead = todayMacros.calories > 0 && targetKcal !== null
-    ? (todayMacros.calories < targetKcal ? "On track for your goal" : "Surplus supports the trend")
-    : "Log meals to see your energy balance";
+  // Energy balance: prefer energy_balance_signals.balance_state when available
+  // (migration 20260622171000). Falls back to combined macros vs target estimate.
+  const energyBalanceRead = (() => {
+    if (energyBalance?.balanceState) {
+      if (energyBalance.balanceState === "deficit") return "In a calorie deficit";
+      if (energyBalance.balanceState === "surplus") return "In a calorie surplus";
+      if (energyBalance.balanceState === "maintenance") return "Near maintenance balance";
+      return energyBalance.balanceState;
+    }
+    if (combinedMacros.calories > 0 && targetKcal !== null) {
+      return combinedMacros.calories < targetKcal ? "On track for your goal" : "Surplus supports the trend";
+    }
+    return "Log meals to see your energy balance";
+  })();
+
+  // Today stats bar values (J-T3).
+  // Steps: daily_scores.steps_count (types.ts line 8278).
+  // Exercise: daily_scores.exercise_minutes (types.ts line 8270); fallback:
+  //   daily_checkins cardio_duration_min + resistance_duration_min.
+  // Sleep bar: daily_scores.sleep_hours (types.ts line 8276); fallback:
+  //   daily_checkins.sleep_hours. (migration 20260412000010)
+  const STEP_TARGET = 10000;
+  const EXERCISE_TARGET_MIN = 30;
+  const SLEEP_TARGET_H = 8;
+
+  const stepsValue = todayStats.stepsCount !== null
+    ? `${todayStats.stepsCount.toLocaleString()}`
+    : "Connect to populate";
+  const stepsSub = todayStats.stepsCount !== null ? `/ ${STEP_TARGET.toLocaleString()}` : "";
+  const stepsBarPct = todayStats.stepsCount !== null
+    ? Math.min(100, Math.round((todayStats.stepsCount / STEP_TARGET) * 100))
+    : 0;
+
+  const exerciseValue = todayStats.exerciseMinutes !== null
+    ? `${todayStats.exerciseMinutes} min`
+    : "Connect to populate";
+  const exerciseSub = todayStats.exerciseMinutes !== null ? `/ ${EXERCISE_TARGET_MIN} min` : "";
+  const exerciseBarPct = todayStats.exerciseMinutes !== null
+    ? Math.min(100, Math.round((todayStats.exerciseMinutes / EXERCISE_TARGET_MIN) * 100))
+    : 0;
+
+  const sleepValue = todayStats.sleepHours !== null
+    ? `${todayStats.sleepHours.toFixed(1)} h`
+    : "Connect to populate";
+  const sleepSub = todayStats.sleepHours !== null ? `/ ${SLEEP_TARGET_H} h` : "";
+  const sleepBarPct = todayStats.sleepHours !== null
+    ? Math.min(100, Math.round((todayStats.sleepHours / SLEEP_TARGET_H) * 100))
+    : 0;
 
   return (
     <div style={{ fontFamily: "'Instrument Sans', system-ui, sans-serif", background: `radial-gradient(1200px 600px at 70% -12%, #21345c 0%, ${C.navy} 58%)`, minHeight: "100vh", color: C.text, padding: "18px 28px 46px" }}>
@@ -1056,16 +1236,16 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
                 targetLabel={targetLabelStr}
               />
               <NutritionCard
-                carbsG={todayMacros.carbsG}
-                proteinG={todayMacros.proteinG}
-                fatG={todayMacros.fatG}
+                carbsG={combinedMacros.carbsG}
+                proteinG={combinedMacros.proteinG}
+                fatG={combinedMacros.fatG}
                 kcalTop={kcalResult.value}
                 kcalBot={kcalResult.label}
                 carbsLabel={carbsLabel}
                 proteinLabel={proteinLabel}
                 fatLabel={fatLabel}
               />
-              <SleepCard />
+              <SleepCard sleepHoursTotal={todayStats.sleepHours} />
             </div>
             <div style={{ marginTop: 14 }}>
               <BodyCompTrio
@@ -1091,6 +1271,15 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
               hannahRecommendation={hannahInsight.recommendation}
               hannahFocusArea={hannahInsight.focusArea}
               hannahEstimatedImpact={hannahInsight.estimatedImpact}
+              stepsValue={stepsValue}
+              stepsSub={stepsSub}
+              stepsBarPct={stepsBarPct}
+              exerciseValue={exerciseValue}
+              exerciseSub={exerciseSub}
+              exerciseBarPct={exerciseBarPct}
+              sleepValue={sleepValue}
+              sleepSub={sleepSub}
+              sleepBarPct={sleepBarPct}
             />
           </section>
           <section>
