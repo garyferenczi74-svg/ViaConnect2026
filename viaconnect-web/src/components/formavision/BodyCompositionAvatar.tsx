@@ -27,6 +27,7 @@ import type {
   MeasurementUnit,
 } from '@/lib/body-tracker/circumference';
 import type { Sex } from '@/lib/formavision/geometry/types';
+import type { SegmentTintRecord } from '@/lib/formavision/geometry/segmentTints';
 import { FormaVision3DAvatar } from './FormaVision3DAvatar';
 
 export interface BodyCompositionAvatarProps {
@@ -40,6 +41,9 @@ export interface BodyCompositionAvatarProps {
   selectedBodyPart?: string | null;
   onSelectBodyPart?: (key: string | null) => void;
   reducedMotion?: boolean;
+  // OV-T2: per-segment tint colors (heat-map hex) the avatar ramps in by tab.
+  // Forwarded verbatim to the 3D avatar; null or absent segments stay neutral.
+  segmentTints?: SegmentTintRecord | null;
   // The 2D floor for this section, rendered as-is on any fallback.
   children: React.ReactNode;
 }
@@ -55,6 +59,7 @@ export function BodyCompositionAvatar({
   selectedBodyPart = null,
   onSelectBodyPart,
   reducedMotion,
+  segmentTints = null,
   children,
 }: BodyCompositionAvatarProps) {
   // Latched once the avatar reports a WebGL-unavailable gate or a render error.
@@ -81,6 +86,7 @@ export function BodyCompositionAvatar({
         selectedBodyPart={selectedBodyPart}
         onSelectBodyPart={onSelectBodyPart}
         reducedMotion={reducedMotion}
+        segmentTints={segmentTints}
         onRenderError={() => setFellBack(true)}
       />
     </div>
