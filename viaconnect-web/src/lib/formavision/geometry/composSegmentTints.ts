@@ -9,12 +9,26 @@
 // finer 13-mask regions; it reads the canonical 5-region RegionMap directly, one
 // region per avatar segment. A region with a null (UNKNOWN) value yields null (no
 // tint, neutral) rather than a guessed color, preserving the honest-scan invariant.
+//
+// TWO SOURCING MODES (per the Arnold OV-T2 review):
+//   FAT    -> ABSOLUTE status. buildSegmentTints reads regionFatPct via
+//             getSegmentStatus -> getOvalColorFromStatus, matching the fat cards.
+//   MUSCLE -> CHANGE based. buildSegmentTintsFromChange reads the latest-vs-first
+//             regionMuscleLbs delta via getOvalColorFromChange, mirroring the 2D
+//             muscle floor EXACTLY (same helper, same 'muscle' metric). An absolute
+//             muscle tint could render the OPPOSITE color from the 2D floor directly
+//             below it (a region that lost muscle but is high-mass: green absolute,
+//             red change), an on-screen contradiction; the change path removes it.
 
 import {
   getSegmentStatus,
   type SegmentStatus,
 } from '@/lib/body-tracker/calculations';
-import { OVAL_HEX, getOvalColorFromStatus } from '@/lib/body-tracker/heatmap-colors';
+import {
+  OVAL_HEX,
+  getOvalColorFromStatus,
+  getOvalColorFromChange,
+} from '@/lib/body-tracker/heatmap-colors';
 import type { RegionMap } from '@/lib/body-tracker/composition/types';
 import { SEGMENT_INDEX, type SegmentName } from './buildBodyGeometry';
 import { type SegmentTintRecord } from './segmentTints';
@@ -65,6 +79,34 @@ export function buildSegmentTints(
     if (tint !== null) {
       tints[segment] = tint;
     }
+  }
+  return tints;
+}
+
+// Build the per-segment tint record from the latest-vs-first CHANGE, routed through
+// getOvalColorFromChange with the given metric so it mirrors the 2D heat-map floor
+// exactly (the 2D muscle floor colors by getOvalColorFromChange(change, 'muscle')).
+// For each segment the delta is latest - first; if EITHER end is null (UNKNOWN) the
+// delta is unknown and the segment is OMITTED (neutral, no tint), never coerced to a
+// fabricated "No Change" green. A single-scan account (first === latest snapshot, or
+// no first) therefore yields no muscle tint, honestly.
+export function buildSegmentTintsFromChange(
+  first: RegionMap | null | undefined,
+  latest: RegionMap | null | undefined,
+  metric: 'fat' | 'muscle',
+): SegmentTintRecord {
+  const tints: SegmentTintRecord = {};
+  if (!first || !latest) {
+    return tints;
+  }
+  for (const segment of ALL_SEGMENTS) {
+    const a = first[segment];
+    const b = latest[segment];
+    if (a === null || b === null) {
+      // Either end UNKNOWN -> the change is UNKNOWN -> neutral (omit), no guess.
+      continue;
+    }
+    tints[segment] = OVAL_HEX[getOvalColorFromChange(b - a, metric)];
   }
   return tints;
 }

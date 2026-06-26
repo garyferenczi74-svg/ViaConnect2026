@@ -7,12 +7,13 @@
 // space is pinned to OV-T1's SEGMENT_INDEX so the tint can never drift from geometry.
 
 import { describe, it, expect } from 'vitest';
-import { buildSegmentTints } from '../composSegmentTints';
+import { buildSegmentTints, buildSegmentTintsFromChange } from '../composSegmentTints';
 import { SEGMENT_INDEX, type SegmentName } from '../buildBodyGeometry';
 import type { RegionMap } from '@/lib/body-tracker/composition/types';
 import {
   OVAL_HEX,
   getOvalColorFromStatus,
+  getOvalColorFromChange,
 } from '@/lib/body-tracker/heatmap-colors';
 import { getSegmentStatus } from '@/lib/body-tracker/calculations';
 
@@ -57,28 +58,6 @@ describe('buildSegmentTints', () => {
     expect(tints.left_leg).toBeUndefined();
   });
 
-  it('maps a known muscle region to the card status color for that segment', () => {
-    const region: RegionMap = {
-      right_arm: 12, // male arm muscle: standard..high -> yellow/teal bucket
-      left_arm: null,
-      trunk: 65, // male trunk muscle: > standard(60) -> High..VeryHigh
-      right_leg: null,
-      left_leg: 5, // male leg muscle: < veryLow(12) -> Very Low -> green
-    };
-    const tints = buildSegmentTints(region, 'muscle', 'male');
-    expect(tints.right_arm).toBe(
-      OVAL_HEX[getOvalColorFromStatus(getSegmentStatus(12, 'arm', 'muscle', 'male'))],
-    );
-    expect(tints.trunk).toBe(
-      OVAL_HEX[getOvalColorFromStatus(getSegmentStatus(65, 'trunk', 'muscle', 'male'))],
-    );
-    expect(tints.left_leg).toBe(
-      OVAL_HEX[getOvalColorFromStatus(getSegmentStatus(5, 'leg', 'muscle', 'male'))],
-    );
-    expect(tints.left_arm).toBeUndefined();
-    expect(tints.right_leg).toBeUndefined();
-  });
-
   it('only ever emits keys from OV-T1 SEGMENT_INDEX (drift-proof)', () => {
     const tints = buildSegmentTints(FULL_FAT, 'fat', 'female');
     for (const key of Object.keys(tints)) {
@@ -93,5 +72,63 @@ describe('buildSegmentTints', () => {
     const status = getSegmentStatus(9, 'arm', 'fat', 'male');
     const tints = buildSegmentTints(region, 'fat', 'male');
     expect(tints.right_arm).toBe(OVAL_HEX[getOvalColorFromStatus(status)]);
+  });
+});
+
+// Arnold OV-T2 review: the muscle tint is CHANGE based, mirroring the 2D muscle
+// floor (getOvalColorFromChange(change, 'muscle')) so the 3D and 2D can never show
+// opposite colors for the same region on the same screen.
+describe('buildSegmentTintsFromChange (muscle)', () => {
+  const FIRST: RegionMap = {
+    right_arm: 10,
+    left_arm: 10,
+    trunk: 50,
+    right_leg: 20,
+    left_leg: 20,
+  };
+
+  it('returns empty (neutral) when first or latest is missing (single-scan account)', () => {
+    expect(buildSegmentTintsFromChange(null, FIRST, 'muscle')).toEqual({});
+    expect(buildSegmentTintsFromChange(FIRST, null, 'muscle')).toEqual({});
+  });
+
+  it('colors each segment by the latest - first delta via the muscle change helper', () => {
+    const latest: RegionMap = {
+      right_arm: 12, // +2 gained muscle -> green
+      left_arm: 8, // -2 lost muscle -> red
+      trunk: 50, // 0 change -> yellow (neutral)
+      right_leg: 20.1, // +0.1 below CHANGE_THRESHOLD -> yellow (neutral)
+      left_leg: 24, // +4 gained -> green
+    };
+    const tints = buildSegmentTintsFromChange(FIRST, latest, 'muscle');
+    expect(tints.right_arm).toBe(OVAL_HEX.green);
+    expect(tints.left_arm).toBe(OVAL_HEX.red);
+    expect(tints.trunk).toBe(OVAL_HEX.yellow);
+    expect(tints.right_leg).toBe(OVAL_HEX.yellow);
+    expect(tints.left_leg).toBe(OVAL_HEX.green);
+  });
+
+  it('omits a segment when EITHER end is null (UNKNOWN delta -> neutral, never fabricated)', () => {
+    const first: RegionMap = { right_arm: 10, left_arm: null, trunk: 50, right_leg: null, left_leg: 20 };
+    const latest: RegionMap = { right_arm: 12, left_arm: 11, trunk: null, right_leg: 22, left_leg: 24 };
+    const tints = buildSegmentTintsFromChange(first, latest, 'muscle');
+    expect(tints.right_arm).toBe(OVAL_HEX.green); // both present
+    expect(tints.left_arm).toBeUndefined(); // first null
+    expect(tints.trunk).toBeUndefined(); // latest null
+    expect(tints.right_leg).toBeUndefined(); // first null
+    expect(tints.left_leg).toBe(OVAL_HEX.green); // both present
+  });
+
+  it('3D muscle tint == 2D muscle floor for the same region (same getOvalColorFromChange helper)', () => {
+    // The 2D muscle floor colors a region by getOvalColorFromChange(change, 'muscle').
+    // The 3D tint MUST equal OVAL_HEX of that exact call for the latest-first delta,
+    // so a region that lost muscle is red in BOTH, never green in 3D and red in 2D.
+    const first: RegionMap = { right_arm: 14, left_arm: 14, trunk: 60, right_leg: 24, left_leg: 24 };
+    const latest: RegionMap = { right_arm: 11, left_arm: 16, trunk: 60.05, right_leg: 28, left_leg: 21 };
+    const tints = buildSegmentTintsFromChange(first, latest, 'muscle');
+    for (const segment of ALL_SEGMENTS) {
+      const delta = latest[segment]! - first[segment]!;
+      expect(tints[segment]).toBe(OVAL_HEX[getOvalColorFromChange(delta, 'muscle')]);
+    }
   });
 });
