@@ -24,7 +24,6 @@ import { useBioOptimizationTrend } from "@/app/(app)/(consumer)/analytics/compon
 import { useHannahInsights } from "@/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/hooks/useHannahInsights";
 import { useJourneyRecommendations } from "@/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/hooks/useJourneyRecommendations";
 import { useHydrationToday } from "@/components/hydration/useHydrationToday";
-import { useJourneyState } from "@/hooks/journey/useJourneyState";
 import { useDailyScores } from "@/hooks/journey/useDailyScores";
 import { useNutritionTargets } from "@/hooks/useNutritionTargets";
 import { useLatestComposition } from "@/hooks/body-tracker/useLatestComposition";
@@ -679,7 +678,6 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
   // meal_logs / useHydrationToday reads as DailyScoresPanel so pillar values here
   // equal the dashboard "Your pillars" values for the same user.
   const dailyScores = useDailyScores(userId);
-  const { state: journeyState } = useJourneyState(userId);
   const { targets: nutritionTargets } = useNutritionTargets(userId);
   const { snapshot: compositionSnapshot } = useLatestComposition(userId);
   const bodySeries = useRecentBodySeries(userId);
@@ -821,17 +819,9 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
   const displayNameSafe = displayName && displayName.trim().length > 0 ? displayName : "there";
   const initial = displayNameSafe.charAt(0).toUpperCase() || "V";
   // J-T2: goal chip now driven by the active body_goals row via useActiveBodyGoal.
-  // Falls back to useJourneyState.goalPhrase when no active goal is set so the
-  // chip always shows a relevant phrase (journeyState is kept for J-T3 GoalCard).
-  const goalPhrase = activeGoalLabel !== "Set a goal"
-    ? activeGoalLabel
-    : journeyState.goalPhrase || "Set a goal";
+  // When no active goal is set, activeGoalLabel is "Set a goal".
+  const goalPhrase = activeGoalLabel;
 
-  // J-T2: overallScore for gauges is still from bos7D.current (pillar graph).
-  // The hero narrative state word uses bioDashScore + bioDashTier (canonical
-  // dashboard source) so computing/baseline users read as "getting started".
-  const overallScore: number | null =
-    overallCurrent > 0 ? overallCurrent : null;
 
   // ---------------------------------------------------------------------------
   // Lower-section data derivation (I-T2b)
