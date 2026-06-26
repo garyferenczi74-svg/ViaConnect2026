@@ -61,6 +61,37 @@ describe('makeBodyWireframeMaterial', () => {
     m.dispose();
   });
 
+  it('exposes a selected-region highlight that starts cleared (off)', () => {
+    const m = makeBodyWireframeMaterial();
+    expect(m.uniforms.uHighlightY).toBeDefined();
+    expect(m.uniforms.uHighlightY.value).toBeLessThan(0);
+    expect(m.uniforms.uHighlightIntensity).toBeDefined();
+    expect(m.uniforms.uHighlightIntensity.value).toBe(0);
+    expect(m.uniforms.uHighlightRange).toBeDefined();
+    expect(m.uniforms.uHighlightRange.value).toBeGreaterThan(0);
+    m.dispose();
+  });
+
+  it('setHighlight sets the level, intensity and optional range', () => {
+    const m = makeBodyWireframeMaterial();
+    m.setHighlight(0.72, 0.4);
+    expect(m.uniforms.uHighlightY.value).toBe(0.72);
+    expect(m.uniforms.uHighlightIntensity.value).toBe(0.4);
+    // Range is left at its default when not passed.
+    expect(m.uniforms.uHighlightRange.value).toBeGreaterThan(0);
+    m.setHighlight(0.5, 0.6, 0.1);
+    expect(m.uniforms.uHighlightRange.value).toBe(0.1);
+    m.dispose();
+  });
+
+  it('setHighlight clamps a negative intensity to zero and clears off-band', () => {
+    const m = makeBodyWireframeMaterial();
+    m.setHighlight(-1, -3);
+    expect(m.uniforms.uHighlightY.value).toBe(-1);
+    expect(m.uniforms.uHighlightIntensity.value).toBe(0);
+    m.dispose();
+  });
+
   it('is configured for additive transparent emissive rendering', () => {
     const m = makeBodyWireframeMaterial();
     expect(m.material.transparent).toBe(true);

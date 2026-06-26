@@ -60,7 +60,7 @@ export interface SelectBodyPartControlProps {
 export function SelectBodyPartControl({ value, onChange, className }: SelectBodyPartControlProps) {
   return (
     <label
-      className={`pointer-events-auto inline-flex items-center gap-2 rounded-xl border border-[#2DA5A0]/30 bg-[#1A2744]/80 px-3 py-2 text-xs font-medium text-white backdrop-blur-md ${
+      className={`pointer-events-auto inline-flex items-center gap-2 rounded-xl border border-[#2DA5A0]/30 bg-[#1A2744]/80 px-3 py-2 text-xs font-medium text-white backdrop-blur-md transition-colors hover:border-[#2DA5A0]/50 ${
         className ?? ''
       }`}
     >
@@ -70,7 +70,7 @@ export function SelectBodyPartControl({ value, onChange, className }: SelectBody
           aria-label="Select body part to frame"
           value={value ?? ALL_VALUE}
           onChange={(e) => onChange(resolveSelection(e.target.value))}
-          className="min-h-[36px] cursor-pointer appearance-none rounded-lg border border-white/15 bg-[#1A2744] py-1.5 pl-3 pr-8 text-white outline-none transition-colors focus-visible:border-[#2DA5A0]/70 focus-visible:ring-1 focus-visible:ring-[#2DA5A0]/50"
+          className="min-h-[36px] cursor-pointer appearance-none rounded-lg border border-white/15 bg-[#1A2744] py-1.5 pl-3 pr-8 text-white outline-none transition-colors hover:border-[#2DA5A0]/50 active:border-[#2DA5A0]/80 focus-visible:border-[#2DA5A0]/70 focus-visible:ring-1 focus-visible:ring-[#2DA5A0]/50"
         >
           <option value={ALL_VALUE}>All (full body)</option>
           {SELECT_BODY_PART_REGIONS.map((r) => (
