@@ -20,8 +20,12 @@ import type {
 } from '@/lib/body-tracker/circumference';
 
 // Meters per inch and per centimeter. CircumferenceMeasurements values carry no
-// embedded unit (the unit lives on CircumferenceRecord.entryUnit and is applied by
-// the read hook), so the caller passes the display unit the values are currently in.
+// embedded unit. useCircumferenceData returns values ALREADY converted to its
+// opts.displayUnit (see useCircumferenceData.ts where latest/previous are run
+// through convertAllMeasurements into displayUnit, not entryUnit), so the caller
+// (P1-T4) MUST pass that SAME displayUnit into the unit field below. Passing
+// entryUnit, or assuming inches when the values are in cm, silently yields a
+// wrong-size body.
 const METERS_PER_INCH = 0.0254;
 const METERS_PER_CM = 0.01;
 
