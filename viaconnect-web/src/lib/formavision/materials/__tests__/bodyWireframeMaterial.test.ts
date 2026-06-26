@@ -92,6 +92,46 @@ describe('makeBodyWireframeMaterial', () => {
     m.dispose();
   });
 
+  it('exposes a 5-entry segment tint array and overlay mix with safe defaults', () => {
+    const m = makeBodyWireframeMaterial();
+    expect(Array.isArray(m.uniforms.uSegmentTint.value)).toBe(true);
+    expect(m.uniforms.uSegmentTint.value).toHaveLength(5);
+    // Default tints are neutral navy so the overlay shows nothing.
+    const navy = new THREE.Color(FORMA_VISION_HEX.navy).getHexString();
+    for (const c of m.uniforms.uSegmentTint.value as THREE.Color[]) {
+      expect(c.getHexString()).toBe(navy);
+    }
+    // Overlay off by default: the wireframe is pure teal (look unchanged at mix 0).
+    expect(m.uniforms.uOverlayMix.value).toBe(0);
+    m.dispose();
+  });
+
+  it('setSegmentTints copies the colors and falls back to neutral for null entries', () => {
+    const m = makeBodyWireframeMaterial();
+    const red = new THREE.Color('#ff0000');
+    const green = new THREE.Color('#00ff00');
+    // Provide only two tints; the remaining three fall back to neutral navy.
+    m.setSegmentTints([red, green]);
+    const tints = m.uniforms.uSegmentTint.value as THREE.Color[];
+    expect(tints[0].getHexString()).toBe('ff0000');
+    expect(tints[1].getHexString()).toBe('00ff00');
+    const navy = new THREE.Color(FORMA_VISION_HEX.navy).getHexString();
+    expect(tints[2].getHexString()).toBe(navy);
+    expect(tints[4].getHexString()).toBe(navy);
+    m.dispose();
+  });
+
+  it('setOverlayMix clamps to 0..1', () => {
+    const m = makeBodyWireframeMaterial();
+    m.setOverlayMix(0.4);
+    expect(m.uniforms.uOverlayMix.value).toBe(0.4);
+    m.setOverlayMix(5);
+    expect(m.uniforms.uOverlayMix.value).toBe(1);
+    m.setOverlayMix(-2);
+    expect(m.uniforms.uOverlayMix.value).toBe(0);
+    m.dispose();
+  });
+
   it('is configured for additive transparent emissive rendering', () => {
     const m = makeBodyWireframeMaterial();
     expect(m.material.transparent).toBe(true);

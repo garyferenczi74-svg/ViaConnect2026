@@ -31,6 +31,7 @@ import type {
   MeasurementUnit,
 } from '@/lib/body-tracker/circumference';
 import type { Sex } from '@/lib/formavision/geometry/types';
+import type { SegmentTintRecord } from '@/lib/formavision/geometry/segmentTints';
 import { safeLog } from '@/lib/utils/safe-log';
 import { AvatarErrorBoundary } from './AvatarErrorBoundary';
 import { hasWebGL } from './hasWebGL';
@@ -68,6 +69,10 @@ export interface FormaVision3DAvatarProps {
   // Optional region that gets a one-shot orange emphasis accent (a peak change or
   // win). A later task feeds this from the composition delta; unset means none.
   emphasisRegion?: string;
+  // Optional per-segment status colors for the Body Fat / Muscle overlay tint, keyed
+  // by segment name, or null where UNKNOWN. A later task (OV-T2/T3) computes these;
+  // unset means no overlay tint and the avatar looks as today.
+  segmentTints?: SegmentTintRecord | null;
   reducedMotion?: boolean;
   // Defaults to cinematic. The full tier provider is Phase 7; lite trims density.
   renderTier?: 'cinematic' | 'lite';
@@ -85,6 +90,8 @@ export function FormaVision3DAvatar({
   reducedMotion,
   selectedBodyPart,
   emphasisRegion,
+  activeTab,
+  segmentTints,
   renderTier = 'cinematic',
   onRenderError,
 }: FormaVision3DAvatarProps) {
@@ -127,6 +134,8 @@ export function FormaVision3DAvatar({
           reducedMotion={reducedMotion}
           selectedBodyPart={selectedBodyPart}
           emphasisRegion={emphasisRegion}
+          activeTab={activeTab}
+          segmentTints={segmentTints}
           renderTier={renderTier}
         />
       </AvatarErrorBoundary>
