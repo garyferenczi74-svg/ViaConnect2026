@@ -104,7 +104,6 @@ function BodyMesh(props: FormaVisionCanvasProps) {
 // avatar repaints; while hidden or offscreen no frames are requested at all.
 function VisibilityPump({ containerRef }: { containerRef: React.RefObject<HTMLElement> }) {
   const invalidate = useThree((state) => state.invalidate);
-  const gl = useThree((state) => state.gl);
 
   useEffect(() => {
     function onVisible(): void {
@@ -135,10 +134,12 @@ function VisibilityPump({ containerRef }: { containerRef: React.RefObject<HTMLEl
       if (observer) {
         observer.disconnect();
       }
-      // Drop the WebGL context promptly so a remount gets a clean one.
-      gl.dispose();
+      // Canvas owns the WebGL renderer lifecycle and disposes the context on its
+      // own unmount, so this pump must not touch gl: a disposal here would double
+      // free the context, or kill a context the Canvas is still rendering into if
+      // this effect re-runs while the Canvas persists.
     };
-  }, [containerRef, invalidate, gl]);
+  }, [containerRef, invalidate]);
 
   return null;
 }
