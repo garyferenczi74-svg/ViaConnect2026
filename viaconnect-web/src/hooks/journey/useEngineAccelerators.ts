@@ -11,7 +11,7 @@
  *
  * Merge strategy: take top 4 by rank/priority_rank across both tables.
  * Points (pts) are DERIVED from confidence_score or a priority-to-lift map
- * and are tagged "derived" via the source field on each AccelerorItem.
+ * and are tagged "derived" via the source field on each EngineAccItem.
  *
  * Provenance dots come from ultrathink_recommendations.health_signals mapped
  * to the six Journey hubs. recommendation_audit is read once (latest row) to
@@ -203,7 +203,7 @@ export function confLevelFromPriority(priority: string | null): 'high' | 'medium
 // Falls back to null (signal is not mapped to a hub).
 const SIGNAL_HUB_MAP: Array<{ pattern: RegExp; hub: JourneyHubKey }> = [
   { pattern: /gene|mthfr|comt|genetic|snp|variant|dna/i, hub: 'Genetics' },
-  { pattern: /lab|blood|test|panel|marker|result|homocysteine|omega|vitamin d|b12/i, hub: 'Labs' },
+  { pattern: /lab|blood|test|panel|marker|result|homocysteine|vitamin d|b12/i, hub: 'Labs' },
   { pattern: /assessment|caq|questionnaire|report|symptom|fatigue|stress|survey/i, hub: 'CAQ' },
   { pattern: /hrv|recovery|heart rate|resting|sleep|biology|biometric|wearable|body/i, hub: 'Biology' },
   { pattern: /nutrition|diet|macro|calorie|meal|protein|carb|fat|intake/i, hub: 'Nutrition' },
@@ -265,7 +265,7 @@ export function hubCountToWord(count: number): string {
 // Row types (avoids any)
 // ---------------------------------------------------------------------------
 
-interface RecommendationsRow {
+export interface RecommendationsRow {
   product_name: string;
   reason: string;
   category: string | null;
@@ -274,7 +274,7 @@ interface RecommendationsRow {
   priority_rank: number | null;
 }
 
-interface UltrathinkRow {
+export interface UltrathinkRow {
   farmceutica_product: string;
   rationale: string;
   health_signals: string[];
@@ -293,10 +293,32 @@ interface MergeEntry {
 }
 
 // ---------------------------------------------------------------------------
+// Honest missing dot injected when an engine item has no real health_signals
+// ---------------------------------------------------------------------------
+
+const MISSING_DOT: AccDot = {
+  hub: 'CAQ',
+  label: 'No data sources on file yet',
+  missing: true,
+};
+
+/**
+ * Finalize the dots array for any engine item.
+ * When real dots exist, return them unchanged.
+ * When the item has zero real dots (e.g. from the recommendations table which
+ * carries no health_signals), inject a single honest missing-marked dot so the
+ * "Why this, why you" expander is never blank.
+ */
+export function finalizeDots(real: AccDot[]): AccDot[] {
+  if (real.length > 0) return real;
+  return [MISSING_DOT];
+}
+
+// ---------------------------------------------------------------------------
 // Map recommendations row to EngineAccItem
 // ---------------------------------------------------------------------------
 
-function recRowToItem(row: RecommendationsRow): EngineAccItem {
+export function recRowToItem(row: RecommendationsRow): EngineAccItem {
   const pts = liftFromConfidenceScore(row.confidence_score);
   const conf = confLevelFromString(row.confidence_level);
   const tag = row.category ? row.category.toUpperCase() : 'SUPPLEMENT';
@@ -307,7 +329,7 @@ function recRowToItem(row: RecommendationsRow): EngineAccItem {
     pts,
     derivedPts: 'derived',
     conf,
-    dots: [],
+    dots: finalizeDots([]),
     source: 'recommendations',
   };
 }
@@ -316,11 +338,11 @@ function recRowToItem(row: RecommendationsRow): EngineAccItem {
 // Map ultrathink_recommendations row to EngineAccItem
 // ---------------------------------------------------------------------------
 
-function ultrathinkRowToItem(row: UltrathinkRow): EngineAccItem {
+export function ultrathinkRowToItem(row: UltrathinkRow): EngineAccItem {
   const pts = liftFromPriority(row.priority);
   const conf = confLevelFromPriority(row.priority);
   const signals: string[] = Array.isArray(row.health_signals) ? row.health_signals : [];
-  const dots = healthSignalsToDots(signals);
+  const dots = finalizeDots(healthSignalsToDots(signals));
   return {
     headline: row.farmceutica_product,
     body: row.rationale,

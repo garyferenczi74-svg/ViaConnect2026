@@ -26,6 +26,11 @@ import {
   healthSignalsToDots,
   activeHubCount,
   hubCountToWord,
+  finalizeDots,
+  recRowToItem,
+  ultrathinkRowToItem,
+  type RecommendationsRow,
+  type UltrathinkRow,
 } from '../useEngineAccelerators';
 
 // ---------------------------------------------------------------------------
@@ -288,5 +293,99 @@ describe('hubCountToWord', () => {
   it('returns string representation for 10+', () => {
     expect(hubCountToWord(10)).toBe('10');
     expect(hubCountToWord(12)).toBe('12');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Fix 1: omega signal routing
+// ---------------------------------------------------------------------------
+
+describe('signalToHub - omega routing fix', () => {
+  it('routes "Omega 3 supplement" to Supplements, not Labs', () => {
+    expect(signalToHub('Omega 3 supplement')).toBe('Supplements');
+  });
+
+  it('routes "Omega-3 supplement" to Supplements', () => {
+    expect(signalToHub('Omega-3 supplement')).toBe('Supplements');
+  });
+
+  it('routes "omega panel" to Labs (via panel keyword)', () => {
+    expect(signalToHub('omega panel not on file')).toBe('Labs');
+  });
+
+  it('routes "omega lab test" to Labs (via lab keyword)', () => {
+    expect(signalToHub('omega lab test')).toBe('Labs');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Fix 2: honest missing dot for sourceless engine recs
+// ---------------------------------------------------------------------------
+
+describe('finalizeDots', () => {
+  it('returns a single missing dot when real array is empty', () => {
+    const dots = finalizeDots([]);
+    expect(dots).toHaveLength(1);
+    expect(dots[0].missing).toBe(true);
+    expect(dots[0].label).toBe('No data sources on file yet');
+  });
+
+  it('returns real dots unchanged when they exist', () => {
+    const real = [
+      { hub: 'Genetics' as const, label: 'MTHFR variant' },
+      { hub: 'Labs' as const, label: 'Homocysteine high' },
+    ];
+    const dots = finalizeDots(real);
+    expect(dots).toHaveLength(2);
+    expect(dots[0].missing).toBeUndefined();
+    expect(dots[1].missing).toBeUndefined();
+  });
+});
+
+describe('recRowToItem - missing dot injected for recommendations table rows', () => {
+  const baseRow: RecommendationsRow = {
+    product_name: 'Magnesium Elite',
+    reason: 'Support muscle recovery',
+    category: 'supplement',
+    confidence_level: 'high',
+    confidence_score: 0.9,
+    priority_rank: 1,
+  };
+
+  it('yields exactly one missing dot (no health_signals on recommendations table)', () => {
+    const item = recRowToItem(baseRow);
+    expect(item.dots).toHaveLength(1);
+    expect(item.dots[0].missing).toBe(true);
+    expect(item.dots[0].label).toBe('No data sources on file yet');
+  });
+
+  it('source is "recommendations"', () => {
+    const item = recRowToItem(baseRow);
+    expect(item.source).toBe('recommendations');
+  });
+});
+
+describe('ultrathinkRowToItem - real dots kept, no missing dot injected', () => {
+  const rowWithSignals: UltrathinkRow = {
+    farmceutica_product: 'MTHFR+',
+    rationale: 'Support methylation cycle',
+    health_signals: ['MTHFR variant detected', 'Homocysteine blood marker'],
+    priority: 'high',
+    rank: 1,
+    bioavailability_note: null,
+  };
+
+  it('yields real health_signal dots without injecting a missing dot', () => {
+    const item = ultrathinkRowToItem(rowWithSignals);
+    expect(item.dots.length).toBeGreaterThanOrEqual(1);
+    const hasMissing = item.dots.some((d) => d.missing === true);
+    expect(hasMissing).toBe(false);
+  });
+
+  it('yields missing dot when health_signals is empty', () => {
+    const rowNoSignals: UltrathinkRow = { ...rowWithSignals, health_signals: [] };
+    const item = ultrathinkRowToItem(rowNoSignals);
+    expect(item.dots).toHaveLength(1);
+    expect(item.dots[0].missing).toBe(true);
   });
 });
