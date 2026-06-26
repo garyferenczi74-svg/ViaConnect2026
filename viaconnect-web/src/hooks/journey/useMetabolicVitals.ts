@@ -18,7 +18,7 @@
  * Rules: no em-dashes, no emojis, no `any`.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { withTimeout } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
@@ -85,6 +85,23 @@ const INITIAL: MetabolicVitalsResult = {
  */
 export function useMetabolicVitals(userId: string | null): MetabolicVitalsResult {
   const [result, setResult] = useState<MetabolicVitalsResult>(INITIAL);
+  const [refreshTick, setRefreshTick] = useState(0);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handleFocus = () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        setRefreshTick((t) => t + 1);
+      }, 500);
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (!userId) {
@@ -132,7 +149,7 @@ export function useMetabolicVitals(userId: string | null): MetabolicVitalsResult
     })();
 
     return () => { active = false; };
-  }, [userId]);
+  }, [userId, refreshTick]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return result;
 }

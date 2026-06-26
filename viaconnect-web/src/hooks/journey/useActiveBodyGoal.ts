@@ -29,7 +29,7 @@
  * J-T3 GoalCard may refine this label further with its own display logic.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { getActiveGoal } from '@/lib/body-goals/goalsData';
 import { withTimeout } from '@/lib/utils/with-timeout';
@@ -176,6 +176,23 @@ export function useActiveBodyGoal(userId: string | null): ActiveBodyGoalResult {
     goalLabel: 'Set a goal',
     loading: userId !== null,
   });
+  const [refreshTick, setRefreshTick] = useState(0);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handleFocus = () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        setRefreshTick((t) => t + 1);
+      }, 500);
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (!userId) {
@@ -220,7 +237,7 @@ export function useActiveBodyGoal(userId: string | null): ActiveBodyGoalResult {
     return () => {
       active = false;
     };
-  }, [userId]);
+  }, [userId, refreshTick]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return result;
 }

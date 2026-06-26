@@ -12,7 +12,7 @@
 // value (honest "no trend known"). Per-pillar history backend gap flagged for Gary.
 // Pillar colors: mockup hex retained (no canonical per-pillar source differs; flagged).
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Search, Bell, Edit2, Target, Activity, Moon, Salad, Heart, Sparkles, RefreshCw,
@@ -51,6 +51,25 @@ const C = {
 };
 const SW = 1.5;
 const eyebrow: React.CSSProperties = { textTransform: "uppercase", letterSpacing: 1.3, fontSize: 10.5, fontWeight: 700, color: C.muted };
+
+// Inline shimmer block - calm pulsing placeholder sized to the element.
+// Uses the existing C palette. @keyframes vcShimmer is injected once
+// by the component's <style> tag alongside existing vc-* rules.
+function Shimmer({ w, h, radius = 6 }: { w: number | string; h: number | string; radius?: number }) {
+  return (
+    <div
+      aria-hidden
+      style={{
+        width: w,
+        height: h,
+        borderRadius: radius,
+        background: `linear-gradient(90deg, ${C.inset} 25%, ${C.raised} 50%, ${C.inset} 75%)`,
+        backgroundSize: "200% 100%",
+        animation: "vcShimmer 1.6s ease-in-out infinite",
+      }}
+    />
+  );
+}
 
 // Daily Scores pillars, order and colors carried identically on gauges and graph lines.
 // NOTE for Gary: pillar colors below are the mockup hex values. The canonical dashboard
@@ -92,10 +111,14 @@ function PlasmaRing({ value, color, size = 40 }: { value: number; color: string;
     </div>
   );
 }
-function GaugeCard({ value, label, color, hero }: { value: number; label: string; color: string; hero?: boolean }) {
+function GaugeCard({ value, label, color, hero, loading }: { value: number; label: string; color: string; hero?: boolean; loading?: boolean }) {
   return (
     <div style={{ flex: "1 1 0", minWidth: 64, background: C.inset, border: `1px solid ${hero ? color + "66" : C.line}`, borderRadius: 12, padding: "10px 6px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, boxShadow: hero ? `inset 0 0 0 1px ${color}33` : "none" }}>
-      <PlasmaRing value={value} color={color} size={hero ? 52 : 48} />
+      {loading ? (
+        <Shimmer w={hero ? 52 : 48} h={hero ? 52 : 48} radius={999} />
+      ) : (
+        <PlasmaRing value={value} color={color} size={hero ? 52 : 48} />
+      )}
       <span style={{ fontSize: 9, fontWeight: 600, color: C.text, textAlign: "center", lineHeight: 1.1 }}>{label}</span>
     </div>
   );
@@ -116,7 +139,7 @@ type RangeData = Record<string, number[]>;
 // Three range slots for 1W / 1M / 1Y.
 type AllRangeData = { "1W": RangeData; "1M": RangeData; "1Y": RangeData };
 
-function DailyScores({ rangeData }: { rangeData: AllRangeData }) {
+function DailyScores({ rangeData, loading }: { rangeData: AllRangeData; loading?: boolean }) {
   const [range, setRange] = useState("1W");
   const d = rangeData[range as keyof AllRangeData], n = d.overall.length;
   const W = 840, H = 220, padL = 6, padR = 6, padT = 12, padB = 12;
@@ -134,11 +157,15 @@ function DailyScores({ rangeData }: { rangeData: AllRangeData }) {
           ))}
         </div>
       </div>
-      <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block" }}>
-        {[0, 0.25, 0.5, 0.75, 1].map((g, i) => <line key={i} x1={padL} x2={W - padR} y1={padT + g * (H - padT - padB)} y2={padT + g * (H - padT - padB)} stroke={C.line} />)}
-        {ordered.map((p) => <path key={p.key} d={pathFor(d[p.key])} fill="none" stroke={p.color} strokeWidth={p.hero ? 2.6 : 1.7} strokeLinecap="round" strokeLinejoin="round" style={p.hero ? { filter: `drop-shadow(0 0 4px ${p.color}99)` } : { opacity: 0.92 }} />)}
-        {ordered.map((p) => <circle key={p.key + "d"} cx={x(n - 1)} cy={y(d[p.key][n - 1])} r={p.hero ? 3.2 : 2.3} fill={p.color} />)}
-      </svg>
+      {loading ? (
+        <Shimmer w="100%" h={H} radius={8} />
+      ) : (
+        <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block" }}>
+          {[0, 0.25, 0.5, 0.75, 1].map((g, i) => <line key={i} x1={padL} x2={W - padR} y1={padT + g * (H - padT - padB)} y2={padT + g * (H - padT - padB)} stroke={C.line} />)}
+          {ordered.map((p) => <path key={p.key} d={pathFor(d[p.key])} fill="none" stroke={p.color} strokeWidth={p.hero ? 2.6 : 1.7} strokeLinecap="round" strokeLinejoin="round" style={p.hero ? { filter: `drop-shadow(0 0 4px ${p.color}99)` } : { opacity: 0.92 }} />)}
+          {ordered.map((p) => <circle key={p.key + "d"} cx={x(n - 1)} cy={y(d[p.key][n - 1])} r={p.hero ? 3.2 : 2.3} fill={p.color} />)}
+        </svg>
+      )}
       <div style={{ display: "flex", flexWrap: "wrap", gap: "7px 14px", marginTop: 12 }}>
         {PILLARS.map((p) => <span key={p.key} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11, color: C.muted }}><span style={{ width: 12, height: 3, borderRadius: 2, background: p.color, display: "inline-block" }} />{p.label}</span>)}
       </div>
@@ -235,6 +262,8 @@ function Hero({
   avatarUrl,
   goalPhrase,
   lastSyncLabel,
+  gaugesLoading,
+  graphLoading,
 }: {
   pillarValues: PillarValues;
   rangeData: AllRangeData;
@@ -245,6 +274,8 @@ function Hero({
   avatarUrl: string | null;
   goalPhrase: string;
   lastSyncLabel: string;
+  gaugesLoading?: boolean;
+  graphLoading?: boolean;
 }) {
   // J-T2: hero narrative state word driven from canonical dashboard tier +
   // score. Baseline/computing users read as "getting started", not "steady".
@@ -292,10 +323,10 @@ function Hero({
               <h1 style={{ margin: "8px 0 0", fontSize: 27, fontWeight: 800, letterSpacing: -0.6, lineHeight: 1.12 }}>You are in a <span style={{ color: C.teal }}>{stateWord}</span> state today</h1>
               <p style={{ margin: "10px 0 0", fontSize: 13, color: C.muted, lineHeight: 1.55, maxWidth: 460 }}>{narrativeRead}</p>
             </div>
-            <div className="vc-gaugecluster">{livePillars.map((p) => <GaugeCard key={p.key} value={p.value} label={p.label} color={p.color} hero={p.hero} />)}</div>
+            <div className="vc-gaugecluster">{livePillars.map((p) => <GaugeCard key={p.key} value={p.value} label={p.label} color={p.color} hero={p.hero} loading={gaugesLoading} />)}</div>
           </div>
           <div style={{ background: `linear-gradient(180deg, ${C.inset}, ${C.card})`, border: `1px solid ${C.line}`, borderRadius: 16, padding: "16px 16px 14px" }}>
-            <DailyScores rangeData={rangeData} />
+            <DailyScores rangeData={rangeData} loading={graphLoading} />
           </div>
         </div>
       </div>
@@ -339,12 +370,21 @@ function HannahRead({
   );
 }
 
-function StatBar({ icon: Icon, name, value, sub, pct, color }: { icon: LucideIcon; name: string; value: string; sub: string; pct: number; color: string }) {
+function StatBar({ icon: Icon, name, value, sub, pct, color, loading }: { icon: LucideIcon; name: string; value: string; sub: string; pct: number; color: string; loading?: boolean }) {
   return (
     <div style={{ flex: "1 1 150px", minWidth: 140 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 6 }}><Icon size={15} strokeWidth={SW} color={C.muted} /><span style={{ fontSize: 12, color: C.muted }}>{name}</span></div>
-      <div style={{ fontSize: 15, fontWeight: 700 }}>{value} <span style={{ fontSize: 11, color: C.muted, fontWeight: 400 }}>{sub}</span></div>
-      <div style={{ height: 6, borderRadius: 6, background: C.inset, marginTop: 7, overflow: "hidden" }}><div style={{ height: "100%", width: pct + "%", background: color, borderRadius: 6 }} /></div>
+      {loading ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <Shimmer w={90} h={18} radius={4} />
+          <Shimmer w="100%" h={6} radius={6} />
+        </div>
+      ) : (
+        <>
+          <div style={{ fontSize: 15, fontWeight: 700 }}>{value} <span style={{ fontSize: 11, color: C.muted, fontWeight: 400 }}>{sub}</span></div>
+          <div style={{ height: 6, borderRadius: 6, background: C.inset, marginTop: 7, overflow: "hidden" }}><div style={{ height: "100%", width: pct + "%", background: color, borderRadius: 6 }} /></div>
+        </>
+      )}
     </div>
   );
 }
@@ -530,6 +570,9 @@ function TodayTab({
   sleepValue,
   sleepSub,
   sleepBarPct,
+  statBarsLoading,
+  vitalsLoading,
+  hannahLoading,
 }: {
   hydrationValue: string;
   hydrationSub: string;
@@ -549,6 +592,9 @@ function TodayTab({
   sleepValue: string;
   sleepSub: string;
   sleepBarPct: number;
+  statBarsLoading?: boolean;
+  vitalsLoading?: boolean;
+  hannahLoading?: boolean;
 }) {
   return (
     <div className="vc-split" style={{ alignItems: "stretch" }}>
@@ -556,25 +602,56 @@ function TodayTab({
         <div style={panel(false)}>
           <div style={{ ...eyebrow, marginBottom: 12 }}>Today</div>
           <div style={{ display: "flex", gap: 18, flexWrap: "wrap" }}>
-            <StatBar icon={Activity} name="Steps" value={stepsValue} sub={stepsSub} pct={stepsBarPct} color={C.teal} />
+            <StatBar icon={Activity} name="Steps" value={stepsValue} sub={stepsSub} pct={stepsBarPct} color={C.teal} loading={statBarsLoading} />
             <StatBar icon={Heart} name="Active Calories" value="Connect to populate" sub="" pct={0} color={C.teal} />
-            <StatBar icon={Activity} name="Exercise" value={exerciseValue} sub={exerciseSub} pct={exerciseBarPct} color={C.teal} />
-            <StatBar icon={Moon} name="Sleep" value={sleepValue} sub={sleepSub} pct={sleepBarPct} color={C.blue} />
+            <StatBar icon={Activity} name="Exercise" value={exerciseValue} sub={exerciseSub} pct={exerciseBarPct} color={C.teal} loading={statBarsLoading} />
+            <StatBar icon={Moon} name="Sleep" value={sleepValue} sub={sleepSub} pct={sleepBarPct} color={C.blue} loading={statBarsLoading} />
             <StatBar icon={Droplet} name="Hydration" value={hydrationValue} sub={hydrationSub} pct={hydrationPct} color="#38BDD8" />
           </div>
         </div>
         <div style={panel(false)}>
           <div style={{ ...eyebrow, marginBottom: 10 }}>Vital trends</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>{vitals.map(([n, val, d, data, col]) => <div key={n} style={{ display: "flex", alignItems: "center", gap: 10 }}><span style={{ flex: 1, fontSize: 12, color: C.muted }}>{n}</span><span style={{ fontSize: 12, fontWeight: 600, width: 54, textAlign: "right" }}>{val}</span><span style={{ fontSize: 11, color: C.teal, width: 28 }}>{d}</span><Sparkline data={data} color={col} /></div>)}</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+            {vitalsLoading ? (
+              <>
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <Shimmer w={80} h={14} radius={4} />
+                    <Shimmer w={54} h={14} radius={4} />
+                    <Shimmer w={92} h={18} radius={4} />
+                  </div>
+                ))}
+              </>
+            ) : (
+              vitals.map(([n, val, d, data, col]) => <div key={n} style={{ display: "flex", alignItems: "center", gap: 10 }}><span style={{ flex: 1, fontSize: 12, color: C.muted }}>{n}</span><span style={{ fontSize: 12, fontWeight: 600, width: 54, textAlign: "right" }}>{val}</span><span style={{ fontSize: 11, color: C.teal, width: 28 }}>{d}</span><Sparkline data={data} color={col} /></div>)
+            )}
+          </div>
         </div>
       </div>
-      <HannahRead
-        greeting={hannahGreeting}
-        analysis={hannahAnalysis}
-        recommendation={hannahRecommendation}
-        focusArea={hannahFocusArea}
-        estimatedImpact={hannahEstimatedImpact}
-      />
+      {hannahLoading ? (
+        <div style={{ ...panel(true), height: "100%", display: "flex", flexDirection: "column", gap: 12 }}>
+          <Edge active />
+          <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+            <Shimmer w={30} h={30} radius={999} />
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <Shimmer w={80} h={12} radius={4} />
+              <Shimmer w={110} h={10} radius={4} />
+            </div>
+          </div>
+          <Shimmer w="70%" h={20} radius={4} />
+          <Shimmer w="100%" h={60} radius={8} />
+          <Shimmer w="100%" h={70} radius={10} />
+          <Shimmer w="100%" h={36} radius={10} />
+        </div>
+      ) : (
+        <HannahRead
+          greeting={hannahGreeting}
+          analysis={hannahAnalysis}
+          recommendation={hannahRecommendation}
+          focusArea={hannahFocusArea}
+          estimatedImpact={hannahEstimatedImpact}
+        />
+      )}
     </div>
   );
 }
@@ -585,6 +662,7 @@ function GoalCard({
   baselineLabel,
   nowLabel,
   targetLabel,
+  loading,
 }: {
   goalLabel: string;
   narrative: string;
@@ -592,15 +670,27 @@ function GoalCard({
   baselineLabel: string;
   nowLabel: string;
   targetLabel: string;
+  loading?: boolean;
 }) {
   return (
     <div style={panel(true)}>
       <Edge active />
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 10 }}>
         <div><h2 style={{ margin: 0, fontSize: 20, fontWeight: 800 }}>{goalLabel}</h2><p style={{ margin: "6px 0 0", fontSize: 12, color: C.muted, maxWidth: 340 }}>{narrative}</p></div>
-        <div style={{ textAlign: "right" }}><div style={{ fontSize: 26, fontWeight: 800, color: C.teal }}>{progressPct}%</div><div style={{ fontSize: 11, color: C.muted }}>to your target</div></div>
+        <div style={{ textAlign: "right" }}>
+          {loading ? (
+            <Shimmer w={54} h={30} radius={6} />
+          ) : (
+            <div style={{ fontSize: 26, fontWeight: 800, color: C.teal }}>{progressPct}%</div>
+          )}
+          <div style={{ fontSize: 11, color: C.muted }}>to your target</div>
+        </div>
       </div>
-      <div style={{ height: 8, borderRadius: 8, background: C.inset, marginTop: 14, overflow: "hidden" }}><div style={{ height: "100%", width: `${progressPct}%`, background: `linear-gradient(90deg, ${C.teal}, #3fd0c8)`, borderRadius: 8 }} /></div>
+      {loading ? (
+        <Shimmer w="100%" h={8} radius={8} />
+      ) : (
+        <div style={{ height: 8, borderRadius: 8, background: C.inset, marginTop: 14, overflow: "hidden" }}><div style={{ height: "100%", width: `${progressPct}%`, background: `linear-gradient(90deg, ${C.teal}, #3fd0c8)`, borderRadius: 8 }} /></div>
+      )}
       <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, fontSize: 11, color: C.muted }}><span>{baselineLabel}</span><span>{nowLabel}</span><span>{targetLabel}</span></div>
     </div>
   );
@@ -613,6 +703,7 @@ function BodyCompTrio({
   bodyFatDelta,
   bodyFatSeries,
   energyBalanceRead,
+  loading,
 }: {
   leanMassLabel: string;
   leanMassDelta: number | null;
@@ -621,11 +712,32 @@ function BodyCompTrio({
   bodyFatDelta: number | null;
   bodyFatSeries: number[];
   energyBalanceRead: string;
+  loading?: boolean;
 }) {
   return (
     <div className="vc-tri">
-      <div style={panel(false)}><div style={{ ...eyebrow, marginBottom: 10 }}>Lean mass</div><div style={{ fontSize: 22, fontWeight: 800 }}>{leanMassLabel} {leanMassDelta !== null && <span style={{ fontSize: 12 }}><Delta v={leanMassDelta} unit=" lb" /></span>}</div><div style={{ marginTop: 10 }}><Sparkline data={leanMassSeries} w={180} h={36} /></div></div>
-      <div style={panel(false)}><div style={{ ...eyebrow, marginBottom: 10 }}>Body fat</div><div style={{ fontSize: 22, fontWeight: 800 }}>{bodyFatLabel} {bodyFatDelta !== null && <span style={{ fontSize: 12 }}><Delta v={bodyFatDelta} unit=" pt" /></span>}</div><div style={{ marginTop: 10 }}><Sparkline data={bodyFatSeries} w={180} h={36} color={C.orange} /></div></div>
+      <div style={panel(false)}>
+        <div style={{ ...eyebrow, marginBottom: 10 }}>Lean mass</div>
+        {loading ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}><Shimmer w={80} h={26} radius={4} /><Shimmer w={180} h={36} radius={4} /></div>
+        ) : (
+          <>
+            <div style={{ fontSize: 22, fontWeight: 800 }}>{leanMassLabel} {leanMassDelta !== null && <span style={{ fontSize: 12 }}><Delta v={leanMassDelta} unit=" lb" /></span>}</div>
+            <div style={{ marginTop: 10 }}><Sparkline data={leanMassSeries} w={180} h={36} /></div>
+          </>
+        )}
+      </div>
+      <div style={panel(false)}>
+        <div style={{ ...eyebrow, marginBottom: 10 }}>Body fat</div>
+        {loading ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}><Shimmer w={80} h={26} radius={4} /><Shimmer w={180} h={36} radius={4} /></div>
+        ) : (
+          <>
+            <div style={{ fontSize: 22, fontWeight: 800 }}>{bodyFatLabel} {bodyFatDelta !== null && <span style={{ fontSize: 12 }}><Delta v={bodyFatDelta} unit=" pt" /></span>}</div>
+            <div style={{ marginTop: 10 }}><Sparkline data={bodyFatSeries} w={180} h={36} color={C.orange} /></div>
+          </>
+        )}
+      </div>
       <div style={panel(false)}><div style={{ ...eyebrow, marginBottom: 12 }}>Energy balance</div><div style={{ display: "flex", justifyContent: "space-around", alignItems: "center" }}>{([["Intake", Salad], ["Activity", Activity], ["Body", HeartPulse]] as [string, LucideIcon][]).map(([n, Ic]) => <div key={n} style={{ textAlign: "center" }}><span style={{ width: 38, height: 38, borderRadius: 999, background: C.tealSoft, color: C.teal, display: "inline-flex", alignItems: "center", justifyContent: "center" }}><Ic size={17} strokeWidth={SW} /></span><div style={{ fontSize: 11, color: C.muted, marginTop: 5 }}>{n}</div></div>)}</div><div style={{ textAlign: "center", marginTop: 12, fontSize: 11, color: C.teal, fontWeight: 600 }}>{energyBalanceRead}</div></div>
     </div>
   );
@@ -639,6 +751,7 @@ function NutritionCard({
   carbsLabel,
   proteinLabel,
   fatLabel,
+  loading,
 }: {
   carbsG: number;
   proteinG: number;
@@ -648,6 +761,7 @@ function NutritionCard({
   carbsLabel: string;
   proteinLabel: string;
   fatLabel: string;
+  loading?: boolean;
 }) {
   // When all macros are zero, render a neutral unit-value donut so the arcs
   // remain visible (using 1/1/1 so each segment draws equally).
@@ -656,23 +770,71 @@ function NutritionCard({
     ? [{ value: carbsG, color: C.green }, { value: proteinG, color: C.orange }, { value: fatG, color: C.blue }]
     : [{ value: 1, color: C.green }, { value: 1, color: C.orange }, { value: 1, color: C.blue }];
   return (
-    <div style={panel(false)}><div style={{ ...eyebrow, marginBottom: 10 }}>Nutrition</div><div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}><Donut size={86} segments={segments} top={kcalTop} bot={kcalBot} /><Legend items={[{ name: "Carbs", label: carbsLabel, color: C.green }, { name: "Protein", label: proteinLabel, color: C.orange }, { name: "Fat", label: fatLabel, color: C.blue }]} /></div></div>
+    <div style={panel(false)}>
+      <div style={{ ...eyebrow, marginBottom: 10 }}>Nutrition</div>
+      {loading ? (
+        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+          <Shimmer w={86} h={86} radius={999} />
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <Shimmer w={100} h={14} radius={4} />
+            <Shimmer w={100} h={14} radius={4} />
+            <Shimmer w={100} h={14} radius={4} />
+          </div>
+        </div>
+      ) : (
+        <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}><Donut size={86} segments={segments} top={kcalTop} bot={kcalBot} /><Legend items={[{ name: "Carbs", label: carbsLabel, color: C.green }, { name: "Protein", label: proteinLabel, color: C.orange }, { name: "Fat", label: fatLabel, color: C.blue }]} /></div>
+      )}
+    </div>
   );
 }
-function SleepCard({ sleepHoursTotal }: { sleepHoursTotal: number | null }) {
+function SleepCard({ sleepHoursTotal, loading }: { sleepHoursTotal: number | null; loading?: boolean }) {
   // Sleep stages are wearable-OFF. The total from daily_scores/daily_checkins is
   // real; stage breakdown remains connect state (no wearable source).
   // (migration 20260412000010 for daily_checkins.sleep_hours;
   //  types.ts line 8276 for daily_scores.sleep_hours)
   const centerTop = sleepHoursTotal !== null ? `${sleepHoursTotal.toFixed(1)} h` : "--";
   return (
-    <div style={panel(false)}><div style={{ ...eyebrow, marginBottom: 10 }}>Sleep breakdown</div><div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}><Donut size={86} segments={[{ value: 1, color: C.teal }, { value: 1, color: C.blue }, { value: 1, color: C.purple }, { value: 1, color: C.orange }]} top={centerTop} bot="total" /><Legend items={[{ name: "Deep", label: "--", color: C.teal }, { name: "Light", label: "--", color: C.blue }, { name: "REM", label: "--", color: C.purple }, { name: "Awake", label: "--", color: C.orange }]} /></div></div>
+    <div style={panel(false)}>
+      <div style={{ ...eyebrow, marginBottom: 10 }}>Sleep breakdown</div>
+      {loading ? (
+        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+          <Shimmer w={86} h={86} radius={999} />
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <Shimmer w={100} h={14} radius={4} />
+            <Shimmer w={100} h={14} radius={4} />
+            <Shimmer w={100} h={14} radius={4} />
+          </div>
+        </div>
+      ) : (
+        <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}><Donut size={86} segments={[{ value: 1, color: C.teal }, { value: 1, color: C.blue }, { value: 1, color: C.purple }, { value: 1, color: C.orange }]} top={centerTop} bot="total" /><Legend items={[{ name: "Deep", label: "--", color: C.teal }, { name: "Light", label: "--", color: C.blue }, { name: "REM", label: "--", color: C.purple }, { name: "Awake", label: "--", color: C.orange }]} /></div>
+      )}
+    </div>
   );
 }
-function AcceleratorsTab({ accel, activeHubs, narrativeLine }: { accel: AccItem[]; activeHubs: string[]; narrativeLine: string }) {
+function AcceleratorsTab({ accel, activeHubs, narrativeLine, loading }: { accel: AccItem[]; activeHubs: string[]; narrativeLine: string; loading?: boolean }) {
   return (
     <div className="vc-split" style={{ alignItems: "stretch" }}>
-      <div><div style={{ fontSize: 15, fontWeight: 800, marginBottom: 12 }}>Journey accelerators</div><div className="vc-two">{accel.map((c, i) => <AccCard key={i} c={c} />)}</div></div>
+      <div>
+        <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 12 }}>Journey accelerators</div>
+        {loading ? (
+          <div className="vc-two">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} style={panel(false)}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <Shimmer w={38} h={38} radius={999} />
+                  <Shimmer w={60} h={24} radius={999} />
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
+                  <Shimmer w="80%" h={18} radius={4} />
+                  <Shimmer w="100%" h={48} radius={4} />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="vc-two">{accel.map((c, i) => <AccCard key={i} c={c} />)}</div>
+        )}
+      </div>
       <div style={{ display: "flex", flexDirection: "column", height: "100%" }}><div style={{ fontSize: 15, fontWeight: 800, marginBottom: 12 }}>Your connection map</div><ConnectionMap activeHubs={activeHubs} narrativeLine={narrativeLine} /></div>
     </div>
   );
@@ -737,8 +899,28 @@ function buildRangeData(
 export function YourJourneyCoaching({ userId: _userId }: { userId: string | null }) {
   const userId = _userId;
 
+  // Component-level refreshTick: shared counter for the 5 inline useEffect hooks.
+  // Window focus refetch (500ms debounced) re-runs wearable, avatar, leanBodyMass,
+  // energyBalance, and nutritionLogs reads when the user returns to the tab.
+  const [refreshTick, setRefreshTick] = useState(0);
+  const refreshDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handleFocus = () => {
+      if (refreshDebounceRef.current) clearTimeout(refreshDebounceRef.current);
+      refreshDebounceRef.current = setTimeout(() => {
+        setRefreshTick((t) => t + 1);
+      }, 500);
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      if (refreshDebounceRef.current) clearTimeout(refreshDebounceRef.current);
+    };
+  }, []);
+
   // Real data hooks (fail-open: all return safe defaults on error/loading).
-  const { data: bos7D } = useBioOptimizationTrend(userId, "7D");
+  const { data: bos7D, isLoading: bos7DLoading } = useBioOptimizationTrend(userId, "7D");
   const { data: bos4W } = useBioOptimizationTrend(userId, "4W");
   const { data: bos1Y } = useBioOptimizationTrend(userId, "1Y");
   const { data: hydrationData } = useHydrationToday();
@@ -759,7 +941,7 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
 
   // J-T2: active body_goals row -> goal chip label.
   // Replaces useJourneyState.goalPhrase as the goal chip data source.
-  const { goalLabel: activeGoalLabel, goal: activeGoal } = useActiveBodyGoal(userId);
+  const { goalLabel: activeGoalLabel, goal: activeGoal, loading: activeBodyGoalLoading } = useActiveBodyGoal(userId);
 
   // J-T3: today's stats (steps, exercise, sleep) from daily_scores + checkins fallback.
   const todayStats = useTodayStats(userId);
@@ -819,7 +1001,7 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
       }
     })();
     return () => { active = false; };
-  }, [userId]);
+  }, [userId, refreshTick]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Display name: resolved async via getDisplayName (mirrors ProfileCard.tsx approach).
   const [displayName, setDisplayName] = useState<string>("");
@@ -864,7 +1046,7 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
       }
     })();
     return () => { active = false; };
-  }, [userId]);
+  }, [userId, refreshTick]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // J-T3: lean_body_mass_lbs from body_tracker_weight (migration 20260416000080).
   // Used as the preferred lean mass label when available, over totalMuscleMassLbs.
@@ -897,7 +1079,7 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
       }
     })();
     return () => { active = false; };
-  }, [userId]);
+  }, [userId, refreshTick]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // J-T3: energy_balance_signals from migration 20260622171000.
   // balance_state, intake_estimate, expenditure_estimate all exist per types.ts line 149.
@@ -933,7 +1115,7 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
       }
     })();
     return () => { active = false; };
-  }, [userId]);
+  }, [userId, refreshTick]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // J-T1: pillar values from useDailyScores (TODAY's dashboard values via
   // calculateDailyScores + same reads as DailyScoresPanel). Null -> 0 so the
@@ -978,12 +1160,15 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
   const [todayMacros, setTodayMacros] = useState<{
     carbsG: number; proteinG: number; fatG: number; calories: number; logCount: number;
   }>({ carbsG: 0, proteinG: 0, fatG: 0, calories: 0, logCount: 0 });
+  const [todayMacrosLoading, setTodayMacrosLoading] = useState<boolean>(true);
 
   useEffect(() => {
     if (!userId) {
       setTodayMacros({ carbsG: 0, proteinG: 0, fatG: 0, calories: 0, logCount: 0 });
+      setTodayMacrosLoading(false);
       return;
     }
+    setTodayMacrosLoading(true);
     let active = true;
     (async () => {
       try {
@@ -1023,13 +1208,15 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
           { carbsG: 0, proteinG: 0, fatG: 0, calories: 0, logCount: 0 },
         );
         setTodayMacros(totals);
+        setTodayMacrosLoading(false);
       } catch (err) {
         if (!active) return;
         safeLog.warn("YourJourneyCoaching", "nutrition_logs read failed, failing open", { error: err });
+        setTodayMacrosLoading(false);
       }
     })();
     return () => { active = false; };
-  }, [userId]);
+  }, [userId, refreshTick]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Hannah insights: drive from useBioOptimizationTrend data (7D range).
   const bos7DPoints = bos7D?.dailyScores ?? bos7D?.bioScores ?? [];
@@ -1229,6 +1416,7 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
         .vc-focus:focus-visible { outline: 2px solid ${C.teal}; outline-offset: 2px; }
         .vc-edge-active { animation: vcPulse 2.8s ease-in-out infinite; }
         @keyframes vcPulse { 0%,100%{opacity:.55} 50%{opacity:1} }
+        @keyframes vcShimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
         .vc-hero { display: grid; grid-template-columns: 220px 1fr; gap: 18px; align-items: stretch; }
         .vc-herotop { display: flex; gap: 18px; align-items: flex-start; flex-wrap: wrap; }
         .vc-gaugecluster { flex: 1.7 1 340px; display: flex; gap: 8px; align-items: stretch; }
@@ -1238,7 +1426,7 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
         .vc-goalrow { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 14px; align-items: stretch; }
         @media (max-width: 1100px){ .vc-split { grid-template-columns: 1fr; } }
         @media (max-width: 960px){ .vc-hero { grid-template-columns: 1fr; } .vc-tri { grid-template-columns: 1fr; } .vc-two { grid-template-columns: 1fr; } .vc-goalrow { grid-template-columns: 1fr; } }
-        @media (prefers-reduced-motion: reduce){ .vc-edge-active{animation:none;opacity:1} * {transition:none !important} }
+        @media (prefers-reduced-motion: reduce){ .vc-edge-active{animation:none;opacity:1} .vc-shimmer{animation:none !important} * {transition:none !important} }
       `}</style>
       <div style={{ width: "100%", margin: "0 auto" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
@@ -1256,6 +1444,8 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
           avatarUrl={avatarUrl}
           goalPhrase={goalPhrase}
           lastSyncLabel={lastSyncLabel}
+          gaugesLoading={bos7DLoading || dailyScores.loading}
+          graphLoading={bos7DLoading || dailyScores.loading}
         />
 
         <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
@@ -1269,6 +1459,7 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
                 baselineLabel={baselineLabel}
                 nowLabel={nowLabel}
                 targetLabel={targetLabelStr}
+                loading={activeBodyGoalLoading}
               />
               <NutritionCard
                 carbsG={combinedMacros.carbsG}
@@ -1279,8 +1470,9 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
                 carbsLabel={carbsLabel}
                 proteinLabel={proteinLabel}
                 fatLabel={fatLabel}
+                loading={todayMealLogs.loading || todayMacrosLoading}
               />
-              <SleepCard sleepHoursTotal={todayStats.sleepHours} />
+              <SleepCard sleepHoursTotal={todayStats.sleepHours} loading={todayStats.loading} />
             </div>
             <div style={{ marginTop: 14 }}>
               <BodyCompTrio
@@ -1291,6 +1483,7 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
                 bodyFatDelta={bodyFatDelta}
                 bodyFatSeries={bodyFatSeries}
                 energyBalanceRead={energyBalanceRead}
+                loading={metabolicVitals.loading}
               />
             </div>
           </section>
@@ -1315,10 +1508,13 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
               sleepValue={sleepValue}
               sleepSub={sleepSub}
               sleepBarPct={sleepBarPct}
+              statBarsLoading={todayStats.loading}
+              vitalsLoading={metabolicVitals.loading}
+              hannahLoading={bos7DLoading}
             />
           </section>
           <section>
-            <AcceleratorsTab accel={accelItems} activeHubs={activeHubs} narrativeLine={narrativeLine} />
+            <AcceleratorsTab accel={accelItems} activeHubs={activeHubs} narrativeLine={narrativeLine} loading={engineAccel.loading} />
           </section>
         </div>
 
