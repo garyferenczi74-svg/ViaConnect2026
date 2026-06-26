@@ -20,9 +20,11 @@ import { Canvas, useThree } from '@react-three/fiber';
 import { ContactShadows, OrbitControls } from '@react-three/drei';
 import { Mesh } from 'three';
 import { scanToParamVector } from '@/lib/formavision/geometry/scanToParamVector';
+import { sampleBodyPositions } from '@/lib/formavision/geometry/sampleBodyPositions';
 import { FORMA_VISION_HEX } from '@/lib/formavision/materials/formaVisionTokens';
 import {
   createMaterializeIntro,
+  createMorphController,
   useDemandScheduler,
   type MaterializeIntro,
 } from '@/lib/formavision/motion';
@@ -71,32 +73,90 @@ function BodyMesh(
   const invalidate = useThree((state) => state.invalidate);
   const scheduler = useDemandScheduler();
 
+  const buildOptions = useMemo(
+    () => TIER_BUILD[props.renderTier ?? 'cinematic'],
+    [props.renderTier],
+  );
+
+  // The current target param vector is a pure function of every shape input. A
+  // change here is a morph target, not a remount: topology is invariant across
+  // param vectors (lerpParamVector preserves ring ids and counts), so the body
+  // tweens its position attribute to this shape rather than rebuilding.
+  const paramVector = useMemo(
+    () =>
+      scanToParamVector({
+        snapshot: props.scan,
+        circumferences: props.circumferences,
+        sex: props.sex,
+        heightCm: props.heightCm,
+        unit: props.unit,
+      }),
+    [props.scan, props.circumferences, props.sex, props.heightCm, props.unit],
+  );
+
+  // Topology-affecting inputs only. sex keeps the same ring ids and build options,
+  // so it morphs; renderTier changes the segment counts (the vertex count), which
+  // changes topology, so it must remount. The mount is keyed on that pair, built
+  // from the param vector live at mount time, and disposed on remount/unmount.
   const mounted = useMemo(() => {
-    const param = scanToParamVector({
-      snapshot: props.scan,
-      circumferences: props.circumferences,
-      sex: props.sex,
-      heightCm: props.heightCm,
-      unit: props.unit,
-    });
-    return mountBodyGeometry(param, {
-      build: TIER_BUILD[props.renderTier ?? 'cinematic'],
-    });
-    // The mount is a pure function of these inputs; rebuild only when they change.
+    return mountBodyGeometry(paramVector, { build: buildOptions });
+    // Remount only when topology changes (the build options). A param-vector change
+    // is handled by the morph effect below, not by rebuilding here.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    props.sex,
-    props.scan,
-    props.circumferences,
-    props.unit,
-    props.heightCm,
-    props.renderTier,
-  ]);
+  }, [buildOptions]);
 
   // Request a frame whenever a fresh body is mounted (demand loop is otherwise idle).
   useEffect(() => {
     invalidate();
   }, [mounted, invalidate]);
+
+  // Live morph: when the target param vector changes (and the body is past its first
+  // mount), tween the persistent geometry to the new shape by lerping its position
+  // attribute. This REPLACES a remount-and-snap on data change, so the materialize
+  // intro (first-mount only, keyed on mounted) never re-fires on a morph. Reduced
+  // motion snaps with no tween. The morph never rebuilds the geometry per frame: it
+  // samples the from and to positions once, then lerps into the live buffer.
+  //
+  // morphedBodyRef tracks the body the last morph effect ran against. A change of
+  // mounted is a remount (topology changed): that body is freshly built at the
+  // current param vector and the intro owns its first paint, so no morph fires. A
+  // paramVector change against the same mounted is a real morph target.
+  const morphedBodyRef = useRef<typeof mounted | null>(null);
+  useEffect(() => {
+    const geometry = mounted.geometry;
+    const positionAttr = geometry.getAttribute('position');
+    const controller = createMorphController(
+      {
+        samplePositions: (vec) => sampleBodyPositions(vec, buildOptions),
+        writePositions: (positions) => {
+          (positionAttr.array as Float32Array).set(positions);
+          positionAttr.needsUpdate = true;
+          invalidate();
+        },
+        recomputeNormals: () => {
+          geometry.computeVertexNormals();
+        },
+        scheduler,
+        reducedMotion: props.reducedMotion,
+      },
+      paramVector,
+    );
+
+    // A fresh mount is already built at this param vector, so the first pass for a
+    // given body is a no-op (the intro owns first paint). Only a param-vector change
+    // against the same body morphs.
+    if (morphedBodyRef.current === mounted) {
+      controller.morphTo(paramVector);
+    } else {
+      morphedBodyRef.current = mounted;
+    }
+
+    return () => {
+      controller.cancel();
+    };
+    // reducedMotion is read at morph time; buildOptions and scheduler are stable.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mounted, paramVector, invalidate]);
 
   // Play the materialize intro once per mounted body. Reduced motion lands the
   // body fully lit with no animation scheduled (full parity). The intro drives its

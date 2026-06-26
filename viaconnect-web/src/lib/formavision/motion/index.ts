@@ -16,3 +16,9 @@ export {
   type MaterializeIntroOptions,
   type IntroTarget,
 } from './materializeIntro';
+export { assertSameTopology, lerpPositionsInto } from './morphPositions';
+export {
+  createMorphController,
+  type MorphController,
+  type MorphControllerOptions,
+} from './morphController';
