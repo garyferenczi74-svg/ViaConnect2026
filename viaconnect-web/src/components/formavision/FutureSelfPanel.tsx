@@ -31,6 +31,7 @@ import { useActiveBodyGoal } from '@/hooks/journey/useActiveBodyGoal';
 import { useWeightGoalKg } from '@/hooks/useWeightGoalKg';
 import { projectFutureSelfVector } from '@/lib/formavision/projection/projectFutureSelfVector';
 import type { FutureSelfProjection } from '@/lib/formavision/projection/projectFutureSelfVector';
+import { WEEKLY_FAT_LOSS_KG } from '@/lib/arnold/scanning/futureMeProjector';
 import type { CompositionSnapshot } from '@/lib/body-tracker/composition/types';
 import type {
   CircumferenceMeasurements,
@@ -42,10 +43,8 @@ import type { Sex, BodyParamVector } from '@/lib/formavision/geometry/types';
 // Week-summary helpers (pure, exported for TDD)
 // ---------------------------------------------------------------------------
 
-// Weekly conservative weight-change rate that mirrors futureMeProjector.ts
-// (WEEKLY_FAT_LOSS_KG = 0.45, the same constant used in projectFutureMe).
-// Kept here rather than imported because futureMeProjector does not export it.
-const PROJECTED_WEEKLY_LOSS_KG = 0.45;
+// Weekly conservative weight-change rate. Single-sourced from futureMeProjector
+// (WEEKLY_FAT_LOSS_KG) so this readout can never drift from the morph timeline.
 
 export interface WeekSummary {
   weeksToGoal: number;
@@ -75,14 +74,14 @@ export function computeWeekSummary(
     return null;
   }
   const delta = Math.abs(goalWeightKg - currentWeightKg);
-  const weeksToGoal = Math.max(1, Math.ceil(delta / PROJECTED_WEEKLY_LOSS_KG));
+  const weeksToGoal = Math.max(1, Math.ceil(delta / WEEKLY_FAT_LOSS_KG));
   const estimatedDate = new Date(
     Date.now() + weeksToGoal * 7 * 86400000,
   ).toISOString().slice(0, 10);
   return {
     weeksToGoal,
     estimatedDate,
-    assumptionsNote: `Projection assumes consistent protocol adherence, protein intake of at least 0.7 g per lb of body weight, and sustainable weekly weight change of about ${PROJECTED_WEEKLY_LOSS_KG.toFixed(2)} kg. Actual results vary with training, sleep, and individual biology.`,
+    assumptionsNote: `Projection assumes consistent protocol adherence and sustainable weekly weight change of about ${WEEKLY_FAT_LOSS_KG.toFixed(2)} kg. Actual results vary with training, sleep, nutrition, and individual biology.`,
   };
 }
 

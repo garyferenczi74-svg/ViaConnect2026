@@ -237,11 +237,21 @@ describe('FutureSelfPanelContent: disabled no-goal state', () => {
     expect(html).not.toContain('future-self-no-scan');
   });
 
-  it('no fabricated ghost vector in no-goal state', () => {
-    const html = render({ projection: DISABLED_NO_GOAL, showGhost: false, onToggle: () => {}, weekSummary: null });
-    expect(html).not.toContain('future-self-vector');
-    expect(html).not.toContain('ghostVector');
-    expect(html).not.toContain('projected-body');
+  it('no-fabrication contract: a disabled state never surfaces an active ghost toggle, even with a stale showGhost=true', () => {
+    // The real no-fabrication guarantee at the content layer: a disabled
+    // projection must NOT render an interactive, "ghost is on" affordance.
+    // We feed an inconsistent showGhost=true to prove the disabled branch
+    // ignores it and never presents an enabled / pressed ghost control.
+    const html = render({ projection: DISABLED_NO_GOAL, showGhost: true, onToggle: () => {}, weekSummary: null });
+    // No active/pressed ghost toggle can appear in a disabled state.
+    expect(html).not.toContain('aria-pressed="true"');
+    // The interactive (enabled) toggle is absent; only the disabled affordance exists.
+    expect(html).not.toContain('data-testid="future-self-toggle"');
+    expect(html).toContain('data-testid="future-self-toggle-disabled"');
+    // The sole toggle carries the disabled attribute, so it cannot be clicked
+    // to reveal a ghost. (Belt-and-suspenders: it is also aria-disabled.)
+    expect(html).toContain('disabled');
+    expect(html).toContain('aria-disabled="true"');
   });
 });
 

@@ -37,7 +37,11 @@ export const CIRC_DELTA_PER_BF_POINT = {
   neck:  0.15,
 };
 
-const WEEKLY_FAT_LOSS_KG = 0.45; // ~1 lb/week conservative default
+// Conservative weekly weight-change default (~1 lb/week). Exported so the
+// P5-T1c FutureSelfPanel readout single-sources the same rate as this morph
+// timeline, eliminating silent divergence between the two. Additive export
+// only; the value and projectFutureMe logic are unchanged.
+export const WEEKLY_FAT_LOSS_KG = 0.45;
 
 /** Sane lower bound for a projected circumference, in cm. A projection can never
  *  shrink a measurement below this floor. Exported as the single source so
