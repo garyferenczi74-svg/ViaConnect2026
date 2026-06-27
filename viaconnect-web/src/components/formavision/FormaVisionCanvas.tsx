@@ -167,6 +167,10 @@ function BodyMesh(
   // scrub ended, so the next target-morph baselines from there with no jump.
   const scrubActiveRef = useRef(false);
   const lastScrubVectorRef = useRef<BodyParamVector | null>(null);
+  // The live morph controller, held so the scrub effect can cancel an in-flight tween
+  // the instant a scrub begins (a coincident data + scrub change must not leave a tween
+  // running underneath the direct-set scrub).
+  const morphControllerRef = useRef<ReturnType<typeof createMorphController> | null>(null);
   useEffect(() => {
     const geometry = mounted.geometry;
     const positionAttr = geometry.getAttribute('position');
@@ -192,12 +196,18 @@ function BodyMesh(
       },
       baseline,
     );
+    morphControllerRef.current = controller;
 
     // A fresh mount is already built at this param vector, so the first pass for a
     // given body is a no-op (the intro owns first paint). A scrub is in control while
-    // active, so no morph fires then. Otherwise a param-vector change morphs (from the
-    // last scrub shape when one exists), and the consumed scrub baseline is cleared.
-    if (morphedBodyRef.current === mounted && !scrubActiveRef.current) {
+    // active, so no morph fires then. The scrub gate reads props.scrubVector directly
+    // (not just scrubActiveRef) so a coincident data + scrub change in the SAME render,
+    // where the scrub effect has not yet set the ref, still suppresses the tween: scrub
+    // wins, and the data change is honored on the next non-scrub morph from the last
+    // scrub shape. Otherwise a param-vector change morphs (from the last scrub shape
+    // when one exists), and the consumed scrub baseline is cleared.
+    const scrubbing = props.scrubVector != null || scrubActiveRef.current;
+    if (morphedBodyRef.current === mounted && !scrubbing) {
       // Pause the idle turntable for the duration of the morph so the camera does
       // not spin while the body changes shape; recomputeNormals releases it.
       props.turntableRef.current?.setSuspended(true);
@@ -209,33 +219,25 @@ function BodyMesh(
 
     return () => {
       controller.cancel();
+      if (morphControllerRef.current === controller) {
+        morphControllerRef.current = null;
+      }
     };
     // reducedMotion is read at morph time; buildOptions and scheduler are stable.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mounted, paramVector, invalidate]);
 
-  // Scrub mode: when scrubVector is set the body follows it DIRECTLY (no tween), the
-  // shape written immediately on every change. The morph is suspended for the duration
-  // (scrubActiveRef), the idle turntable is paused, and the materialize intro never
-  // fires on a scrub change (it is keyed on mounted, not on scrubVector). Vertex
-  // normals are recomputed on a trailing debounce and at scrub end (throttled, not per
-  // tick). When scrubVector clears the body stays at the last scrubbed shape and the
-  // morph resumes from there. Scrub is inherently direct-set, so it is reduced-motion
-  // safe and leaves no continuous loop running.
+  // Scrub controller lifecycle: build ONE stable scrub controller per mounted body,
+  // held in a ref so scrubTo runs on the same instance across every scrubVector change.
+  // Building it per change (as a scrubVector-keyed effect would) defeats the throttle:
+  // the per-change cleanup would end() synchronously every tick, recomputing normals
+  // per tick. With a stable instance the 90ms debounce actually spans ticks, so a
+  // continuous drag recomputes normals at most once per quiet window. Disposed (its
+  // pending recompute cancelled) on remount and unmount; no leak.
+  const scrubControllerRef = useRef<ReturnType<typeof createScrubController> | null>(null);
   useEffect(() => {
-    const scrubVector = props.scrubVector ?? null;
-    if (!scrubVector) {
-      // Leaving scrub: keep the body where it is. The morph effect baselines from
-      // lastScrubVectorRef so the next target change does not jump.
-      scrubActiveRef.current = false;
-      return;
-    }
-
     const geometry = mounted.geometry;
     const positionAttr = geometry.getAttribute('position');
-    scrubActiveRef.current = true;
-    props.turntableRef.current?.notifyInteraction();
-
     const controller = createScrubController({
       samplePositions: (vec) => sampleBodyPositions(vec, buildOptions),
       writePositions: (positions) => {
@@ -252,18 +254,52 @@ function BodyMesh(
         clear: (handle) => window.clearTimeout(handle),
       },
     });
+    scrubControllerRef.current = controller;
+    return () => {
+      controller.cancel();
+      if (scrubControllerRef.current === controller) {
+        scrubControllerRef.current = null;
+      }
+    };
+    // buildOptions and invalidate are stable; rebuilt only on a remount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mounted, invalidate]);
 
+  // Scrub drive: on each scrubVector change write the shape DIRECTLY (no tween) via the
+  // STABLE controller. While scrubbing the morph is suspended (scrubActiveRef) and any
+  // in-flight tween is cancelled the instant the scrub begins, so a coincident data +
+  // scrub change never leaves a tween fighting the direct-set. The idle turntable is
+  // paused and the materialize intro never fires (it is keyed on mounted, not on the
+  // scrub). Normals recompute on the controller's trailing debounce. When scrubVector
+  // clears, end() settles the rim once at the final shape and the body stays there; the
+  // morph baselines from lastScrubVectorRef so the next target change does not jump.
+  useEffect(() => {
+    const scrubVector = props.scrubVector ?? null;
+    const controller = scrubControllerRef.current;
+    if (!controller) {
+      return;
+    }
+
+    if (!scrubVector) {
+      if (scrubActiveRef.current) {
+        // Scrub just ended: settle the rim once, then keep the body where it is.
+        controller.end();
+        scrubActiveRef.current = false;
+      }
+      return;
+    }
+
+    // Entering or continuing a scrub: cancel a live tween so it cannot fight the scrub.
+    if (!scrubActiveRef.current) {
+      morphControllerRef.current?.cancel();
+      props.turntableRef.current?.notifyInteraction();
+      scrubActiveRef.current = true;
+    }
     controller.scrubTo(scrubVector);
     lastScrubVectorRef.current = scrubVector;
-
-    return () => {
-      // Settle the rim at the final scrubbed shape, then stop the pending recompute.
-      controller.end();
-      controller.cancel();
-    };
     // buildOptions, scheduler and invalidate are stable; positions are direct-set.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mounted, props.scrubVector, invalidate]);
+  }, [props.scrubVector]);
 
   // Selected-region highlight: gently brighten the wireframe around the selected
   // region's level via the material highlight uniform. The level comes from the SAME
