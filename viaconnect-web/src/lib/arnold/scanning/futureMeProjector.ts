@@ -4,7 +4,7 @@
 //
 // The projection is deliberately CONSERVATIVE. It models fat loss as
 // primarily reducing waist, hip, and chest circumferences, with smaller
-// reductions elsewhere. It does not promise the user anything — the UI
+// reductions elsewhere. It does not promise the user anything; the UI
 // layer renders the required "AI projection, not a guarantee" disclaimer.
 
 import type { BodyModelParameters, FutureMeInputs } from './types';
@@ -25,8 +25,9 @@ export interface FutureMeResult {
 
 /** Empirical deltas, per 1 percent body fat change.
  *  Negative sign: fat loss reduces circumference. Applied as multiplier
- *  per percentage point of body fat change. */
-const CIRC_DELTA_PER_BF_POINT = {
+ *  per percentage point of body fat change.
+ *  Exported for reuse by projectFutureSelfVector (P5-T1a). */
+export const CIRC_DELTA_PER_BF_POINT = {
   waist: 0.90,   // 0.90 cm per 1% body fat change; largest for waist
   hip:   0.45,
   chest: 0.35,
