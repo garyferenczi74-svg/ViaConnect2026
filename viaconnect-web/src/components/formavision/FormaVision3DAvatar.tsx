@@ -77,6 +77,12 @@ export interface FormaVision3DAvatarProps {
   // (no tween); null resumes normal target-morph from the last scrubbed shape. P3-T2b
   // drives this from the timeline scrubber.
   scrubVector?: BodyParamVector | null;
+  // Optional projected future-self ghost shape (projectFutureSelfVector, P5-T1a) and
+  // its master gate. When showGhost is true AND ghostVector is non-null, a translucent
+  // ghost is overlaid on the current avatar; both default off (avatar unchanged). The
+  // toggle + goal resolution that drive these land in P5-T1c.
+  ghostVector?: BodyParamVector | null;
+  showGhost?: boolean;
   reducedMotion?: boolean;
   // Defaults to cinematic. The full tier provider is Phase 7; lite trims density.
   renderTier?: 'cinematic' | 'lite';
@@ -97,6 +103,8 @@ export function FormaVision3DAvatar({
   activeTab,
   segmentTints,
   scrubVector,
+  ghostVector,
+  showGhost,
   renderTier = 'cinematic',
   onRenderError,
 }: FormaVision3DAvatarProps) {
@@ -142,6 +150,8 @@ export function FormaVision3DAvatar({
           activeTab={activeTab}
           segmentTints={segmentTints}
           scrubVector={scrubVector}
+          ghostVector={ghostVector}
+          showGhost={showGhost}
           renderTier={renderTier}
         />
       </AvatarErrorBoundary>

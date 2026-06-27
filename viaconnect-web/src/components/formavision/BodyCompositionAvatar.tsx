@@ -48,6 +48,12 @@ export interface BodyCompositionAvatarProps {
   // (no tween, per P3-T2a); null rests the body at its last shape. Forwarded
   // verbatim to the 3D avatar.
   scrubVector?: BodyParamVector | null;
+  // P5-T1b: the projected future-self ghost shape (projectFutureSelfVector, P5-T1a)
+  // and its master gate, forwarded verbatim to the 3D avatar. When showGhost is true
+  // AND ghostVector is non-null, a translucent ghost overlays the current body; both
+  // default off so the avatar is unchanged. P5-T1c wires the toggle + goal resolution.
+  ghostVector?: BodyParamVector | null;
+  showGhost?: boolean;
   // The 2D floor for this section, rendered as-is on any fallback.
   children: React.ReactNode;
 }
@@ -65,6 +71,8 @@ export function BodyCompositionAvatar({
   reducedMotion,
   segmentTints = null,
   scrubVector = null,
+  ghostVector = null,
+  showGhost = false,
   children,
 }: BodyCompositionAvatarProps) {
   // Latched once the avatar reports a WebGL-unavailable gate or a render error.
@@ -93,6 +101,8 @@ export function BodyCompositionAvatar({
         reducedMotion={reducedMotion}
         segmentTints={segmentTints}
         scrubVector={scrubVector}
+        ghostVector={ghostVector}
+        showGhost={showGhost}
         onRenderError={() => setFellBack(true)}
       />
     </div>

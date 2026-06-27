@@ -39,6 +39,12 @@ export const CIRC_DELTA_PER_BF_POINT = {
 
 const WEEKLY_FAT_LOSS_KG = 0.45; // ~1 lb/week conservative default
 
+/** Sane lower bound for a projected circumference, in cm. A projection can never
+ *  shrink a measurement below this floor. Exported as the single source so
+ *  projectFutureSelfVector (P5-T1a) clamps to the same value (it converts to the
+ *  active unit). */
+export const FLOOR_CM = 10;
+
 export function projectFutureMe({
   currentParams,
   currentWeightKg,
@@ -56,7 +62,7 @@ export function projectFutureMe({
     if (circ <= 0) return circ;
     const change = bfDelta * perPoint;
     const next = circ + change;
-    return Math.max(10, round1(next));
+    return Math.max(FLOOR_CM, round1(next));
   };
 
   const params: BodyModelParameters = {

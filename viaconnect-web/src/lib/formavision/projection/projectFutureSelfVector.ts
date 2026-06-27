@@ -12,7 +12,7 @@
 // the caller's `unit` (cm or in). Every delta is converted to the active unit
 // before being applied, so the projection cannot silently 2.54x-distort.
 
-import { CIRC_DELTA_PER_BF_POINT } from '@/lib/arnold/scanning/futureMeProjector';
+import { CIRC_DELTA_PER_BF_POINT, FLOOR_CM } from '@/lib/arnold/scanning/futureMeProjector';
 import { scanToParamVector } from '@/lib/formavision/geometry/scanToParamVector';
 import { MEASUREMENT_KEYS } from '@/lib/body-tracker/circumference';
 import type { BodyParamVector, Sex } from '@/lib/formavision/geometry/types';
@@ -39,8 +39,8 @@ export type FutureSelfProjection =
 
 // ---- internal constants ----------------------------------------------------
 
-// Sane lower bound in cm, mirroring Math.max(10, ...) in futureMeProjector.ts.
-const FLOOR_CM = 10;
+// The projection floor (cm) is single-sourced from futureMeProjector (imported
+// above) so this clamp can never drift from the one in projectFutureMe.
 
 // Empirical model region for each MEASUREMENT_KEY.
 // Keys absent from this map carry no fat-loss delta and stay unchanged.
