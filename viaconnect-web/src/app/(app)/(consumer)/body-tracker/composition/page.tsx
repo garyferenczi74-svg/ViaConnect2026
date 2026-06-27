@@ -30,6 +30,9 @@ import { JourneyTimeline, type JourneyScanReadout } from '@/components/formavisi
 // === PROMPT 210b P4-T1 (GeneticsOverlay) START ===
 import { GeneticsOverlay } from '@/components/formavision/GeneticsOverlay';
 // === PROMPT 210b P4-T1 (GeneticsOverlay) END ===
+// === PROMPT 210b P5-T1c (FutureSelfPanel) START ===
+import { FutureSelfPanel } from '@/components/formavision/FutureSelfPanel';
+// === PROMPT 210b P5-T1c (FutureSelfPanel) END ===
 import { scanToParamVector } from '@/lib/formavision/geometry/scanToParamVector';
 import type { BodyParamVector } from '@/lib/formavision/geometry/types';
 // === PROMPT 210b P3-T2b (Time Machine) END ===
@@ -299,6 +302,13 @@ function CompositionPageInner() {
   // The scrub shape driven by the JourneyTimeline. null rests the avatar at its
   // last shape (normal morph resumes per P3-T2a). Only set while scrubbing.
   const [scrubVector, setScrubVector] = useState<BodyParamVector | null>(null);
+  // === PROMPT 210b P5-T1c (FutureSelfPanel) START ===
+  // Ghost state: lifted up from FutureSelfPanel via onGhostChange and wired into
+  // the BodyCompositionAvatar prop seam (ghostVector + showGhost). Default OFF
+  // so the avatar is byte-identical to today until the user opts in.
+  const [ghostVector, setGhostVector] = useState<BodyParamVector | null>(null);
+  const [showGhost, setShowGhost] = useState(false);
+  // === PROMPT 210b P5-T1c (FutureSelfPanel) END ===
 
   // One BodyParamVector + one honest readout per REAL composition scan, oldest
   // first. Circumferences are aligned to each scan by recordedAt, falling back to
@@ -377,6 +387,11 @@ function CompositionPageInner() {
     // PROMPT 210b P3-T2b: clear any active scrub so a stale Time Machine shape
     // does not linger over freshly saved data; the avatar rests at latest.
     setScrubVector(null);
+    // PROMPT 210b P5-T1c: clear the ghost too - newly saved data may shift the
+    // projection vector. The panel's useEffect will recompute and the user can
+    // re-enable the ghost after review. Keeps the avatar byte-identical on save.
+    setGhostVector(null);
+    setShowGhost(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshKey]);
 
@@ -766,6 +781,8 @@ function CompositionPageInner() {
                     reducedMotion={avatarReducedMotion}
                     segmentTints={avatarSegmentTints}
                     scrubVector={scrubVector}
+                    ghostVector={ghostVector}
+                    showGhost={showGhost}
                   >
                     {isMuscle ? (
                       <HoverSystem view="muscle" sex={gender} regions={muscleRegions} className="lg:h-full">
@@ -888,6 +905,28 @@ function CompositionPageInner() {
           absent -> CTA to /genetics/upload. Fail-open via the shared hook. */}
       {section !== 'measurements' && <GeneticsOverlay />}
       {/* === PROMPT 210b P4-T1 (GeneticsOverlay) END === */}
+
+      {/* === PROMPT 210b P5-T1c (FutureSelfPanel) START === */}
+      {/* Projected Future Self panel. Default OFF (avatar byte-identical to today).
+          Reads stored goal (body-fat + weight goal), computes the ghost vector via
+          projectFutureSelfVector, and drives ghostVector + showGhost on the avatar
+          via the P5-T1b prop seam. Honest-disabled on no-goal or no-current-scan.
+          P5-T2 segmental note always shown (never a fabricated per-region tint). */}
+      {section !== 'measurements' && (
+        <FutureSelfPanel
+          snapshot={snapshot}
+          circumferences={circumferenceData.latest}
+          sex={gender}
+          unit={unit}
+          userId={userId ?? null}
+          reducedMotion={avatarReducedMotion}
+          onGhostChange={(v, s) => {
+            setGhostVector(v);
+            setShowGhost(s);
+          }}
+        />
+      )}
+      {/* === PROMPT 210b P5-T1c (FutureSelfPanel) END === */}
 
       {section === 'measurements' && (
         <>
