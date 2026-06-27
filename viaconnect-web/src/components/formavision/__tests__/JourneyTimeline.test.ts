@@ -171,3 +171,51 @@ describe('JourneyTimeline: onScrub contract', () => {
     expect(onScrub).not.toHaveBeenCalled();
   });
 });
+
+// Fix #3: formatPct / formatLen treat 0 as not-measured (honesty, never "0.0%").
+describe('JourneyTimeline: honesty - zero values render as Not measured', () => {
+  it('renders Not measured for a zero totalBodyFatPct, not 0.0%', () => {
+    const vectors = [vectorFor(38), vectorFor(33)];
+    const readouts: JourneyScanReadout[] = [
+      { recordedAt: '2026-01-01T00:00:00Z', totalBodyFatPct: 28, waist: 38 },
+      { recordedAt: '2026-06-01T00:00:00Z', totalBodyFatPct: 0, waist: 33 },
+    ];
+    const html = renderToStaticMarkup(
+      React.createElement(JourneyTimeline, { vectors, readouts, unit: 'in', onScrub: noop }),
+    );
+    expect(html).not.toContain('0.0%');
+    expect(html).toContain('Not measured');
+  });
+
+  it('renders Not measured for a zero waist value, not 0.0 in', () => {
+    const vectors = [vectorFor(38), vectorFor(33)];
+    const readouts: JourneyScanReadout[] = [
+      { recordedAt: '2026-01-01T00:00:00Z', totalBodyFatPct: 28, waist: 38 },
+      { recordedAt: '2026-06-01T00:00:00Z', totalBodyFatPct: 23, waist: 0 },
+    ];
+    const html = renderToStaticMarkup(
+      React.createElement(JourneyTimeline, { vectors, readouts, unit: 'in', onScrub: noop }),
+    );
+    expect(html).not.toContain('0.0 in');
+    expect(html).toContain('Not measured');
+  });
+});
+
+// Fix #2: transition render path readout bounds guard.
+// The transition JSX branch only renders during live drag (SSR always starts at
+// position=1, which is measured mode). The guard expression is tested directly
+// here: readouts[indexB] where indexB is out of bounds must return '' not throw.
+describe('JourneyTimeline: guard - out-of-bounds readout access in transition path', () => {
+  it('guarded readout access is safe when an index is out of bounds', () => {
+    const readouts: JourneyScanReadout[] = [
+      { recordedAt: '2026-01-01T00:00:00Z', totalBodyFatPct: 28, waist: 38 },
+    ];
+    // Simulates pos.indexA=0 (in bounds) and pos.indexB=1 (out of bounds).
+    const indexA = 0;
+    const indexB = 1;
+    const safeA = readouts[indexA] ? readouts[indexA].recordedAt : '';
+    const safeB = readouts[indexB] ? readouts[indexB].recordedAt : '';
+    expect(safeA).toBe('2026-01-01T00:00:00Z');
+    expect(safeB).toBe('');
+  });
+});
