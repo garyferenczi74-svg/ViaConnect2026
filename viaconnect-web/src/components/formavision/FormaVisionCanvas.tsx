@@ -30,6 +30,7 @@ import {
   createIdleTurntable,
   createHighlightController,
   createOverlayController,
+  createScrubController,
   useDemandScheduler,
   type CameraFraming,
   type IdleTurntable,
@@ -46,7 +47,7 @@ import type {
   CircumferenceMeasurements,
   MeasurementUnit,
 } from '@/lib/body-tracker/circumference';
-import type { Sex } from '@/lib/formavision/geometry/types';
+import type { Sex, BodyParamVector } from '@/lib/formavision/geometry/types';
 import { mountBodyGeometry } from './mountBodyGeometry';
 import { MeasurementRing } from './MeasurementRing';
 import { EmphasisParticles } from './EmphasisParticles';
@@ -77,6 +78,10 @@ export interface FormaVisionCanvasProps {
   // null where UNKNOWN. A later task (OV-T2/T3) computes these from the heatmap
   // helpers; unset or null means no overlay tint and the avatar looks as today.
   segmentTints?: SegmentTintRecord | null;
+  // Optional scrub shape. When set the body follows it DIRECTLY (no tween) on every
+  // change, the foundation for the timeline scrubber (P3-T2b drives it). Null resumes
+  // normal target-morph from the last scrubbed shape.
+  scrubVector?: BodyParamVector | null;
   // Lite tier trims geometry density for low-power devices; cinematic is full.
   renderTier?: 'cinematic' | 'lite';
 }
@@ -157,9 +162,17 @@ function BodyMesh(
   // current param vector and the intro owns its first paint, so no morph fires. A
   // paramVector change against the same mounted is a real morph target.
   const morphedBodyRef = useRef<typeof mounted | null>(null);
+  // True while a scrub is active: the morph stays suspended so it never fights the
+  // direct-set scrub. lastScrubVectorRef holds the shape the body was left at when a
+  // scrub ended, so the next target-morph baselines from there with no jump.
+  const scrubActiveRef = useRef(false);
+  const lastScrubVectorRef = useRef<BodyParamVector | null>(null);
   useEffect(() => {
     const geometry = mounted.geometry;
     const positionAttr = geometry.getAttribute('position');
+    // Baseline the morph at the last scrubbed shape when one exists, so resuming the
+    // tween after a scrub starts from the body on screen rather than a stale target.
+    const baseline = lastScrubVectorRef.current ?? paramVector;
     const controller = createMorphController(
       {
         samplePositions: (vec) => sampleBodyPositions(vec, buildOptions),
@@ -177,17 +190,19 @@ function BodyMesh(
         scheduler,
         reducedMotion: props.reducedMotion,
       },
-      paramVector,
+      baseline,
     );
 
     // A fresh mount is already built at this param vector, so the first pass for a
-    // given body is a no-op (the intro owns first paint). Only a param-vector change
-    // against the same body morphs.
-    if (morphedBodyRef.current === mounted) {
+    // given body is a no-op (the intro owns first paint). A scrub is in control while
+    // active, so no morph fires then. Otherwise a param-vector change morphs (from the
+    // last scrub shape when one exists), and the consumed scrub baseline is cleared.
+    if (morphedBodyRef.current === mounted && !scrubActiveRef.current) {
       // Pause the idle turntable for the duration of the morph so the camera does
       // not spin while the body changes shape; recomputeNormals releases it.
       props.turntableRef.current?.setSuspended(true);
       controller.morphTo(paramVector);
+      lastScrubVectorRef.current = null;
     } else {
       morphedBodyRef.current = mounted;
     }
@@ -198,6 +213,57 @@ function BodyMesh(
     // reducedMotion is read at morph time; buildOptions and scheduler are stable.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mounted, paramVector, invalidate]);
+
+  // Scrub mode: when scrubVector is set the body follows it DIRECTLY (no tween), the
+  // shape written immediately on every change. The morph is suspended for the duration
+  // (scrubActiveRef), the idle turntable is paused, and the materialize intro never
+  // fires on a scrub change (it is keyed on mounted, not on scrubVector). Vertex
+  // normals are recomputed on a trailing debounce and at scrub end (throttled, not per
+  // tick). When scrubVector clears the body stays at the last scrubbed shape and the
+  // morph resumes from there. Scrub is inherently direct-set, so it is reduced-motion
+  // safe and leaves no continuous loop running.
+  useEffect(() => {
+    const scrubVector = props.scrubVector ?? null;
+    if (!scrubVector) {
+      // Leaving scrub: keep the body where it is. The morph effect baselines from
+      // lastScrubVectorRef so the next target change does not jump.
+      scrubActiveRef.current = false;
+      return;
+    }
+
+    const geometry = mounted.geometry;
+    const positionAttr = geometry.getAttribute('position');
+    scrubActiveRef.current = true;
+    props.turntableRef.current?.notifyInteraction();
+
+    const controller = createScrubController({
+      samplePositions: (vec) => sampleBodyPositions(vec, buildOptions),
+      writePositions: (positions) => {
+        (positionAttr.array as Float32Array).set(positions);
+        positionAttr.needsUpdate = true;
+        invalidate();
+      },
+      recomputeNormals: () => {
+        geometry.computeVertexNormals();
+        invalidate();
+      },
+      timer: {
+        set: (cb, ms) => window.setTimeout(cb, ms),
+        clear: (handle) => window.clearTimeout(handle),
+      },
+    });
+
+    controller.scrubTo(scrubVector);
+    lastScrubVectorRef.current = scrubVector;
+
+    return () => {
+      // Settle the rim at the final scrubbed shape, then stop the pending recompute.
+      controller.end();
+      controller.cancel();
+    };
+    // buildOptions, scheduler and invalidate are stable; positions are direct-set.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mounted, props.scrubVector, invalidate]);
 
   // Selected-region highlight: gently brighten the wireframe around the selected
   // region's level via the material highlight uniform. The level comes from the SAME
