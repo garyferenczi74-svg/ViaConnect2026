@@ -52,6 +52,7 @@ import { mountBodyGeometry } from './mountBodyGeometry';
 import { MeasurementRing } from './MeasurementRing';
 import { EmphasisParticles } from './EmphasisParticles';
 import { MeasurementCallouts } from './MeasurementCallouts';
+import { GhostMesh } from './GhostMesh';
 
 export interface FormaVisionCanvasProps {
   sex: Sex;
@@ -82,6 +83,15 @@ export interface FormaVisionCanvasProps {
   // change, the foundation for the timeline scrubber (P3-T2b drives it). Null resumes
   // normal target-morph from the last scrubbed shape.
   scrubVector?: BodyParamVector | null;
+  // Optional projected future-self shape (from projectFutureSelfVector, P5-T1a). When
+  // showGhost is true AND this is non-null, a translucent ghost of the projected body
+  // is overlaid on the current avatar via the sibling GhostMesh. Null/undefined or
+  // showGhost false renders nothing (no fabrication). The toggle + goal resolution that
+  // DRIVE these are the next task (P5-T1c); this is the render-side prop seam only.
+  ghostVector?: BodyParamVector | null;
+  // Master gate for the projected ghost. Defaults to off, so the avatar looks exactly
+  // as today until P5-T1c wires the toggle.
+  showGhost?: boolean;
   // Lite tier trims geometry density for low-power devices; cinematic is full.
   renderTier?: 'cinematic' | 'lite';
 }
@@ -596,6 +606,16 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
         <directionalLight position={[2, 4, 3]} intensity={0.35} />
 
         <BodyMesh {...props} introRef={introRef} turntableRef={turntableRef} />
+
+        {/* Projected future-self ghost: a translucent overlay of the projected body,
+            shown only when showGhost is true AND ghostVector is non-null. It reuses the
+            current body's per-tier build options so it is identical topology. Off by
+            default, so the avatar is byte-identical to today until P5-T1c wires it. */}
+        <GhostMesh
+          ghostVector={props.ghostVector}
+          showGhost={props.showGhost}
+          buildOptions={TIER_BUILD[props.renderTier ?? 'cinematic']}
+        />
 
         {/* The single measurement ring for the selected region. It draws on, counts
             its value up, and disposes when the selection clears. */}
