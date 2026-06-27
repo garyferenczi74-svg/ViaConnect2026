@@ -16,7 +16,7 @@
 // is set (no auto-spin is started anywhere; motion choreography is Phase 2).
 
 import { useEffect, useMemo, useRef } from 'react';
-import { Canvas, useThree } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { ContactShadows, OrbitControls } from '@react-three/drei';
 import { Mesh, Spherical, Vector3 } from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
@@ -37,6 +37,7 @@ import {
   type MaterializeIntro,
 } from '@/lib/formavision/motion';
 import { ringLoopForRegion } from '@/lib/formavision/geometry/ringLoopForRegion';
+import { createFrameBudgetSampler } from '@/lib/formavision/tier/frameBudgetMonitor';
 import {
   segmentTintArray,
   shouldShowOverlay,
@@ -94,6 +95,11 @@ export interface FormaVisionCanvasProps {
   showGhost?: boolean;
   // Lite tier trims geometry density for low-power devices; cinematic is full.
   renderTier?: 'cinematic' | 'lite';
+  // P7-T1: called (at most once per sustained over-budget window) when the demand-loop
+  // frame budget is missed, so the RenderTierProvider can step the tier down. When
+  // absent the frame-budget monitor is not mounted and the scene is byte-identical to
+  // before this phase.
+  onBudgetMissed?: () => void;
 }
 
 // Vertical / radial density per render tier. Lite keeps the silhouette readable
@@ -569,6 +575,59 @@ function VisibilityPump({ containerRef }: { containerRef: React.RefObject<HTMLEl
   return null;
 }
 
+// Runtime frame-budget monitor (P7-T1). Observes the duration between consecutive
+// RENDERED frames and, on a sustained over-budget run, reports ONE budget-miss up to
+// the RenderTierProvider so it can step the tier down.
+//
+// Demand-loop safe by construction: useFrame under frameloop="demand" runs only on
+// frames the loop already produced, and this NEVER calls invalidate, so it adds no
+// frames and starts no continuous loop. It only measures frames that were already
+// going to render. The pure sampler discards idle gaps (a long pause between demand
+// frames is not a slow frame) and applies hysteresis, so a capable device at
+// cinematic never trips it. Mounted only when onBudgetMissed is provided.
+function FrameBudgetMonitor({
+  onBudgetMissed,
+  renderTier,
+}: {
+  onBudgetMissed: () => void;
+  renderTier: 'cinematic' | 'lite';
+}) {
+  const samplerRef = useRef<ReturnType<typeof createFrameBudgetSampler> | null>(null);
+  if (samplerRef.current === null) {
+    samplerRef.current = createFrameBudgetSampler();
+  }
+  const lastFrameTimeRef = useRef<number | null>(null);
+  // One-shot per tier: a step-down remounts the body at the new density, so re-arm
+  // and start a clean measurement window for the new tier rather than double-stepping
+  // off a stale streak.
+  const firedRef = useRef(false);
+  useEffect(() => {
+    samplerRef.current?.reset();
+    lastFrameTimeRef.current = null;
+    firedRef.current = false;
+  }, [renderTier]);
+
+  useFrame(() => {
+    if (firedRef.current) {
+      return;
+    }
+    const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    const last = lastFrameTimeRef.current;
+    lastFrameTimeRef.current = now;
+    if (last === null) {
+      // First rendered frame after mount or a tier change: no prior timestamp to diff.
+      return;
+    }
+    const sampler = samplerRef.current;
+    if (sampler && sampler.sample(now - last)) {
+      firedRef.current = true;
+      onBudgetMissed();
+    }
+  });
+
+  return null;
+}
+
 export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   // Holds the running materialize intro so a pointer interaction can skip it to its
@@ -706,6 +765,16 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
         />
 
         <VisibilityPump containerRef={containerRef} />
+
+        {/* Runtime frame-budget monitor: observes rendered-frame duration and asks
+            the provider to step the tier down on sustained jank. Only mounted when a
+            handler is wired, so the default path stays byte-identical. */}
+        {props.onBudgetMissed ? (
+          <FrameBudgetMonitor
+            onBudgetMissed={props.onBudgetMissed}
+            renderTier={props.renderTier ?? 'cinematic'}
+          />
+        ) : null}
       </Canvas>
     </div>
   );

@@ -84,8 +84,14 @@ export interface FormaVision3DAvatarProps {
   ghostVector?: BodyParamVector | null;
   showGhost?: boolean;
   reducedMotion?: boolean;
-  // Defaults to cinematic. The full tier provider is Phase 7; lite trims density.
+  // Defaults to cinematic. The tier is selected by the RenderTierProvider (P7-T1);
+  // lite trims geometry density.
   renderTier?: 'cinematic' | 'lite';
+  // P7-T1: forwarded into the Canvas frame-budget monitor. Called (at most once per
+  // sustained over-budget window) when the demand-loop frame budget is missed, so
+  // the provider can step the tier down. Optional: when absent the monitor is not
+  // mounted and the avatar is byte-identical to before this phase.
+  onBudgetMissed?: () => void;
   // Called on a WebGL-unavailable gate OR a render error, so the parent can show
   // its 2D floor in place of the 3D avatar.
   onRenderError: (error: unknown) => void;
@@ -106,6 +112,7 @@ export function FormaVision3DAvatar({
   ghostVector,
   showGhost,
   renderTier = 'cinematic',
+  onBudgetMissed,
   onRenderError,
 }: FormaVision3DAvatarProps) {
   // Probe WebGL once per mount. When it is unavailable the component renders
@@ -153,6 +160,7 @@ export function FormaVision3DAvatar({
           ghostVector={ghostVector}
           showGhost={showGhost}
           renderTier={renderTier}
+          onBudgetMissed={onBudgetMissed}
         />
       </AvatarErrorBoundary>
     </div>

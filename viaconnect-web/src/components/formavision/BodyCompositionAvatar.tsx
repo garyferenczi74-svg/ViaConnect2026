@@ -20,7 +20,7 @@
 // useCircumferenceData as the unit prop, which is forwarded verbatim to the
 // avatar (and onward to scanToParamVector). The unit is never assumed here.
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { CompositionSnapshot } from '@/lib/body-tracker/composition/types';
 import type {
   CircumferenceMeasurements,
@@ -29,6 +29,11 @@ import type {
 import type { Sex, BodyParamVector } from '@/lib/formavision/geometry/types';
 import type { SegmentTintRecord } from '@/lib/formavision/geometry/segmentTints';
 import { FormaVision3DAvatar } from './FormaVision3DAvatar';
+import {
+  RenderTierProvider,
+  useRenderTier,
+  useReportBudgetMiss,
+} from './RenderTierProvider';
 
 export interface BodyCompositionAvatarProps {
   sex: Sex;
@@ -58,7 +63,20 @@ export interface BodyCompositionAvatarProps {
   children: React.ReactNode;
 }
 
-export function BodyCompositionAvatar({
+export function BodyCompositionAvatar(props: BodyCompositionAvatarProps) {
+  // The RenderTierProvider (P7-T1) picks the initial tier from the capability probe
+  // and owns the sticky runtime step-down. It wraps the inner avatar so the inner
+  // consumer reads the active tier and the Canvas frame-budget monitor's budget-miss
+  // can step it down. The provider renders no DOM, so the capable default (cinematic,
+  // no step-down) stays byte-identical to before this phase.
+  return (
+    <RenderTierProvider>
+      <BodyCompositionAvatarInner {...props} />
+    </RenderTierProvider>
+  );
+}
+
+function BodyCompositionAvatarInner({
   sex,
   scan,
   firstScan = null,
@@ -79,9 +97,27 @@ export function BodyCompositionAvatar({
   // From that point on the 2D floor is shown for the rest of the session.
   const [fellBack, setFellBack] = useState(false);
 
-  if (fellBack) {
+  // The active render tier (capability probe initially; stepped down at runtime) and
+  // the sticky step-down trigger passed into the Canvas frame-budget monitor.
+  const tier = useRenderTier();
+  const reportBudgetMiss = useReportBudgetMiss();
+
+  // The runtime step-down past 'lite' converges on the SAME fallback latch the WebGL
+  // gate and the render-error boundary use: a '2d' tier flips fellBack, so there is
+  // exactly one 2D-floor decision and one render branch, never a parallel 2D path.
+  useEffect(() => {
+    if (tier === '2d') {
+      setFellBack(true);
+    }
+  }, [tier]);
+
+  if (fellBack || tier === '2d') {
     return <>{children}</>;
   }
+
+  // Only the two 3D tiers reach the avatar here; '2d' was handled above. On a capable
+  // device this is 'cinematic', so the avatar is byte-identical to before this phase.
+  const renderTier: 'cinematic' | 'lite' = tier === 'lite' ? 'lite' : 'cinematic';
 
   // The 3D avatar canvas fills its box absolutely, so it needs an explicit
   // footprint. This mirrors the 2D figure: on mobile a 720/1152 portrait box
@@ -103,6 +139,8 @@ export function BodyCompositionAvatar({
         scrubVector={scrubVector}
         ghostVector={ghostVector}
         showGhost={showGhost}
+        renderTier={renderTier}
+        onBudgetMissed={reportBudgetMiss}
         onRenderError={() => setFellBack(true)}
       />
     </div>

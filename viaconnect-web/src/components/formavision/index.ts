@@ -13,3 +13,9 @@ export type {
   SelectableRegion,
 } from './SelectBodyPartControl';
 export { hasWebGL } from './hasWebGL';
+export {
+  RenderTierProvider,
+  useRenderTier,
+  useReportBudgetMiss,
+} from './RenderTierProvider';
+export type { RenderTierProviderProps } from './RenderTierProvider';
