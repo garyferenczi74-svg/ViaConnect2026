@@ -29,11 +29,7 @@ import type {
 import type { Sex, BodyParamVector } from '@/lib/formavision/geometry/types';
 import type { SegmentTintRecord } from '@/lib/formavision/geometry/segmentTints';
 import { FormaVision3DAvatar } from './FormaVision3DAvatar';
-import {
-  RenderTierProvider,
-  useRenderTier,
-  useReportBudgetMiss,
-} from './RenderTierProvider';
+import { useRenderTier, useReportBudgetMiss } from './RenderTierProvider';
 
 export interface BodyCompositionAvatarProps {
   sex: Sex;
@@ -64,16 +60,12 @@ export interface BodyCompositionAvatarProps {
 }
 
 export function BodyCompositionAvatar(props: BodyCompositionAvatarProps) {
-  // The RenderTierProvider (P7-T1) picks the initial tier from the capability probe
-  // and owns the sticky runtime step-down. It wraps the inner avatar so the inner
-  // consumer reads the active tier and the Canvas frame-budget monitor's budget-miss
-  // can step it down. The provider renders no DOM, so the capable default (cinematic,
-  // no step-down) stays byte-identical to before this phase.
-  return (
-    <RenderTierProvider>
-      <BodyCompositionAvatarInner {...props} />
-    </RenderTierProvider>
-  );
+  // P7-T2: the RenderTierProvider has been hoisted to the composition surface
+  // (page.tsx) so page-level layers can also read the ambient tier. This component
+  // now consumes the ambient provider via useRenderTier/useReportBudgetMiss (in
+  // BodyCompositionAvatarInner). The context default value is 'cinematic', so the
+  // avatar is byte-identical to before when rendered outside a provider.
+  return <BodyCompositionAvatarInner {...props} />;
 }
 
 function BodyCompositionAvatarInner({

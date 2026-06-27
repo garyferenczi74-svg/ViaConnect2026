@@ -38,6 +38,7 @@ import {
 } from '@/lib/formavision/motion';
 import { ringLoopForRegion } from '@/lib/formavision/geometry/ringLoopForRegion';
 import { createFrameBudgetSampler } from '@/lib/formavision/tier/frameBudgetMonitor';
+import { dprForTier, showParticlesForTier } from '@/lib/formavision/tier/tierCost';
 import {
   segmentTintArray,
   shouldShowOverlay,
@@ -652,7 +653,12 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
         // Demand loop: frames are produced only on interaction, mount, or an
         // explicit invalidate. No continuous render, no idle spin.
         frameloop="demand"
-        dpr={[1, 2]}
+        // P7-T2: dpr scaled by tier. Cinematic stays [1, 2] (byte-identical to
+        // before this phase). Lite caps at [1, 1.5] to reduce fill-rate on
+        // low-power GPUs. The tier is already resolved outside the Canvas
+        // (in BodyCompositionAvatarInner) and arrives as props.renderTier so the
+        // r3f reconciler boundary is never crossed for a context read.
+        dpr={dprForTier(props.renderTier ?? 'cinematic')}
         gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
         camera={{ position: [0, 1.0, 3.2], fov: 30, near: 0.1, far: 50 }}
         onPointerDown={skipIntro}
@@ -690,16 +696,21 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
         />
 
         {/* Prop-driven orange emphasis accent: fires once at emphasisRegion then
-            disposes. Unset means nothing renders. */}
-        <EmphasisParticles
-          sex={props.sex}
-          scan={props.scan}
-          circumferences={props.circumferences}
-          unit={props.unit}
-          heightCm={props.heightCm}
-          emphasisRegion={props.emphasisRegion}
-          reducedMotion={props.reducedMotion}
-        />
+            disposes. Unset means nothing renders. P7-T2: suppressed on lite (pure
+            GPU decoration -- additive blending over 14 points) while all data
+            layers remain mounted. Cinematic is byte-identical: showParticlesForTier
+            returns true and the block evaluates to the same mount as today. */}
+        {showParticlesForTier(props.renderTier ?? 'cinematic') && (
+          <EmphasisParticles
+            sex={props.sex}
+            scan={props.scan}
+            circumferences={props.circumferences}
+            unit={props.unit}
+            heightCm={props.heightCm}
+            emphasisRegion={props.emphasisRegion}
+            reducedMotion={props.reducedMotion}
+          />
+        )}
 
         {/* Measurements overlay: staggered callouts with leader lines and anchor dots
             for every circumference. Only renders on the measurements tab. */}

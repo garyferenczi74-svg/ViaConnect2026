@@ -8,11 +8,13 @@ export {
   decideInitialTier,
   probeRenderTier,
   readCapabilitySignals,
+  readRendererString,
   LOW_MEMORY_GB_STRONG,
   LOW_MEMORY_GB_COMBINED,
   LOW_CORE_COUNT_COMBINED,
   LOW_POWER_RENDERER_HINTS,
 } from './capabilityProbe';
+export { dprForTier, showParticlesForTier } from './tierCost';
 export { stepTierDown, isFloorTier } from './tierLadder';
 export {
   createFrameBudgetSampler,
