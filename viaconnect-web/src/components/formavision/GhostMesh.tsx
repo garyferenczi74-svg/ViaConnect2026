@@ -17,7 +17,7 @@
 // motion has full static parity for free and the demand loop stays idle (no continuous
 // render). The ghost is a pure projection of passed-in data and never fabricates a body.
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useThree } from '@react-three/fiber';
 import type { BuildOptions } from '@/lib/formavision/geometry/buildBodyGeometry';
 import type { BodyParamVector } from '@/lib/formavision/geometry/types';
@@ -44,18 +44,20 @@ const GHOST_OFFSET: [number, number, number] = [0, 0, 0];
 export function GhostMesh({ ghostVector, showGhost, buildOptions }: GhostMeshProps) {
   const invalidate = useThree((state) => state.invalidate);
 
-  // The gate: explicitly enabled AND a projected vector present. A primitive boolean,
-  // so the build effect below re-runs only on a real show/hide or vector change.
-  const active = useMemo(
-    () => shouldRenderGhost(showGhost, ghostVector),
-    [showGhost, ghostVector],
-  );
+  // The gate: explicitly enabled AND a projected vector present. Single-sourced through
+  // shouldRenderGhost (so its unit tests guard this real path) and computed inline: it
+  // is a trivial boolean, so no useMemo. As a primitive it still only re-runs the build
+  // effect below on a real show/hide or vector change.
+  const active = shouldRenderGhost(showGhost, ghostVector);
 
   // The mounted ghost body, held in a ref so the build effect owns its lifecycle and a
-  // separate unmount effect can free it without re-running the build. `ready` flips the
-  // render once a body exists (the build runs in an effect, after the first paint).
+  // separate unmount effect can free it without re-running the build. buildCount is a
+  // monotonic version counter: every successful build bumps it so React ALWAYS
+  // re-renders (a boolean ready flag would no-op on an update while shown, leaving the
+  // mesh below bound to the just-disposed previous geometry). buildCount 0 means nothing
+  // has been built yet.
   const mountedRef = useRef<MountedBody | null>(null);
-  const [ready, setReady] = useState(false);
+  const [buildCount, setBuildCount] = useState(0);
 
   // Build / update / clear the ghost. Disposes the prior body at the top so this effect
   // fully owns the show, update and hide transitions and their demand frames. On a hide
@@ -69,16 +71,19 @@ export function GhostMesh({ ghostVector, showGhost, buildOptions }: GhostMeshPro
     }
 
     if (!active || !ghostVector) {
-      setReady(false);
+      // Hide is already a render with active false (returns null below); just clear the
+      // framebuffer if a ghost was actually showing (Canvas still alive).
       if (hadGhost) {
-        // Repaint so the removed ghost clears from the framebuffer (Canvas still alive).
         invalidate();
       }
       return;
     }
 
     mountedRef.current = mountGhostBody(ghostVector, buildOptions);
-    setReady(true);
+    // Bump the version so React re-renders and the mesh rebinds to the NEW geometry
+    // before the next r3f frame draws (a no-op boolean flag would leave it on the old,
+    // now-disposed geometry on an update while shown).
+    setBuildCount((n) => n + 1);
     // Reveal the ghost with one demand frame; it simply appears (no animation).
     invalidate();
     // invalidate is stable; the build is keyed on the gate, the vector, and the tier.
@@ -95,7 +100,7 @@ export function GhostMesh({ ghostVector, showGhost, buildOptions }: GhostMeshPro
     };
   }, []);
 
-  if (!ready || !mountedRef.current || !active) {
+  if (buildCount === 0 || !mountedRef.current || !active) {
     return null;
   }
 

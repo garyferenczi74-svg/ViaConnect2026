@@ -81,9 +81,23 @@ describe('mountGhostBody (the projected ghost body)', () => {
     def.dispose();
   });
 
-  it('disposes geometry and material without throwing (no leak on hide or unmount)', () => {
+  it('actually disposes geometry and material (no leak on hide or unmount)', () => {
     const ghost = mountGhostBody(neutralParam());
+    // Prove real disposal, not just no-throw. three.js (r184) does not expose a
+    // `disposed` flag on BufferGeometry or Material; both only dispatch a 'dispose'
+    // event from dispose(). This listens for it (the same proof bodyWireframeMaterial
+    // uses for its texture), so the assertion verifies the resource was freed.
+    let geometryDisposed = false;
+    let materialDisposed = false;
+    ghost.geometry.addEventListener('dispose', () => {
+      geometryDisposed = true;
+    });
+    ghost.materialHandle.material.addEventListener('dispose', () => {
+      materialDisposed = true;
+    });
     expect(() => ghost.dispose()).not.toThrow();
+    expect(geometryDisposed).toBe(true);
+    expect(materialDisposed).toBe(true);
   });
 });
 
