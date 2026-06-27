@@ -65,6 +65,59 @@ export type RegionProtocolFetchState =
   | { kind: 'data'; vitamins: RecommendedItem[]; flags: SupplementFlag[] }
   | { kind: 'empty' };
 
+/**
+ * The settled (non-loading) result of the fetch seam. 'loading' is the initial
+ * state the wrapper sets before calling the seam, so it is excluded here.
+ */
+export type RegionProtocolResolvedState = Exclude<RegionProtocolFetchState, { kind: 'loading' }>;
+
+// ---------------------------------------------------------------------------
+// Fetch seam (pure, exported for node TDD)
+//
+// Owns the request, the 5 s AbortController timeout, and the response->state
+// mapping. FAIL-OPEN: every non-ok response, missing synthesis, or thrown /
+// aborted error resolves to { kind: 'empty' }. This function NEVER rejects, so
+// the honest-disabled state is the worst case the UI can ever reach.
+// ---------------------------------------------------------------------------
+
+/**
+ * Fetches GET /api/protocol/synthesis and maps the outcome to a resolved state.
+ *
+ *   res ok + { synthesis: row }  -> { kind: 'data', vitamins, flags }
+ *   res ok + { synthesis: null } -> { kind: 'empty' }
+ *   !res.ok (e.g. 401)           -> { kind: 'empty' }
+ *   fetch rejects / timeout      -> { kind: 'empty' } (logged via safeLog)
+ *
+ * Never throws.
+ */
+export async function fetchProtocolPanelState(): Promise<RegionProtocolResolvedState> {
+  const controller = new AbortController();
+  const timerId = setTimeout(() => controller.abort(), 5000);
+
+  try {
+    const res = await fetch('/api/protocol/synthesis', { signal: controller.signal });
+    if (!res.ok) {
+      return { kind: 'empty' };
+    }
+    const json = (await res.json()) as SynthesisResponse;
+    if (!json.synthesis) {
+      return { kind: 'empty' };
+    }
+    return {
+      kind: 'data',
+      vitamins: json.synthesis.recommended_vitamins_minerals ?? [],
+      flags: json.synthesis.supplement_flags ?? [],
+    };
+  } catch (err: unknown) {
+    safeLog.warn('RegionProtocolPanel', 'fetch failed; rendering honest-disabled state', {
+      err,
+    });
+    return { kind: 'empty' };
+  } finally {
+    clearTimeout(timerId);
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Pure content renderer (no hooks; exported for TDD)
 // ---------------------------------------------------------------------------
@@ -151,7 +204,7 @@ export function RegionProtocolPanelContent({
           <Info size={14} strokeWidth={1.5} className="mt-0.5 flex-none text-white/30" />
           <p className="text-xs leading-relaxed text-white/50">
             Your protocol is being personalized. Recommendations appear once
-            clinical guidance has been applied to your profile.
+            your wellness profile has been processed.
           </p>
         </div>
       ) : (
@@ -232,10 +285,10 @@ export interface RegionProtocolPanelProps {
 }
 
 /**
- * Client shell. Fetches GET /api/protocol/synthesis on mount with an
- * AbortController timeout (5 s). Fail-open: any non-ok response or thrown
- * error maps to { kind: 'empty' } (honest-disabled), never throws into the
- * render tree. synthesis null -> empty. synthesis present -> data.
+ * Client shell. On mount calls the pure fetchProtocolPanelState seam (which
+ * owns the request, the 5 s timeout, and the fail-open mapping) and renders the
+ * resolved state. The seam never rejects, so the worst case is the honest-
+ * disabled empty state. A cancelled flag guards against setState after unmount.
  */
 export function RegionProtocolPanel({ reducedMotion }: RegionProtocolPanelProps) {
   const [state, setState] = useState<RegionProtocolFetchState>({ kind: 'loading' });
@@ -244,43 +297,12 @@ export function RegionProtocolPanel({ reducedMotion }: RegionProtocolPanelProps)
     let cancelled = false;
     setState({ kind: 'loading' });
 
-    const controller = new AbortController();
-    const timerId = setTimeout(() => controller.abort(), 5000);
-
-    fetch('/api/protocol/synthesis', { signal: controller.signal })
-      .then(async (res) => {
-        clearTimeout(timerId);
-        if (cancelled) return;
-        if (!res.ok) {
-          setState({ kind: 'empty' });
-          return;
-        }
-        const json = (await res.json()) as SynthesisResponse;
-        if (cancelled) return;
-        if (!json.synthesis) {
-          setState({ kind: 'empty' });
-          return;
-        }
-        setState({
-          kind: 'data',
-          vitamins: json.synthesis.recommended_vitamins_minerals ?? [],
-          flags: json.synthesis.supplement_flags ?? [],
-        });
-      })
-      .catch((err: unknown) => {
-        clearTimeout(timerId);
-        if (!cancelled) {
-          safeLog.warn('RegionProtocolPanel', 'fetch failed; rendering honest-disabled state', {
-            err,
-          });
-          setState({ kind: 'empty' });
-        }
-      });
+    void fetchProtocolPanelState().then((resolved) => {
+      if (!cancelled) setState(resolved);
+    });
 
     return () => {
       cancelled = true;
-      clearTimeout(timerId);
-      controller.abort();
     };
   }, []);
 

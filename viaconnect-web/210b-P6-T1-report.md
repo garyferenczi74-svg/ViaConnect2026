@@ -122,3 +122,76 @@ npx vitest run src/components/formavision/__tests__/RegionProtocolPanel.test.ts
 None. The component is strictly additive (2D floor + avatar untouched), the
 synthesis endpoint is read-only and already fail-open, and the
 no-region-filtering guarantee is enforced at the type level.
+
+---
+
+## P6-T1 FIX (review: Jeffery + Hannah + Michelangelo)
+
+Two Important review items addressed. No other changes (React key index suffix
+left as-is; synthesis route and readSynthesis untouched). page.tsx wiring was
+already committed in 8efbfdec and was not re-touched.
+
+### Fix 1 (Hannah copy) - neutral empty-items sub-state string
+
+`src/components/formavision/RegionProtocolPanel.tsx:153-156`
+(the `!hasItems` sub-state of the data branch in `RegionProtocolPanelContent`).
+
+The phrase "clinical guidance" implied clinical-grade authority and this
+sub-state carries no disclaimer, so it stood unqualified against the panel's own
+"not a clinical finding" framing. Changed the second sentence from:
+
+"Recommendations appear once clinical guidance has been applied to your profile."
+
+to EXACTLY:
+
+"Recommendations appear once your wellness profile has been processed."
+
+(The first sentence "Your protocol is being personalized." is unchanged.)
+
+Locked with a new assertion in the data-state suite: the empty-items message
+must NOT contain "clinical guidance" and MUST contain
+"your wellness profile has been processed".
+
+### Fix 2 (Michelangelo) - extract + test the fail-open fetch seam
+
+The client wrapper's inline fetch (timeout + the three empty-state failure
+paths) previously had zero test coverage. Closed it the codebase way (a pure,
+node-testable seam, like `computeGeneticsPresence` / ghostBody):
+
+- Added exported type `RegionProtocolResolvedState`
+  (= `Exclude<RegionProtocolFetchState, { kind: 'loading' }>`).
+- Added exported async function `fetchProtocolPanelState()`
+  (`RegionProtocolPanel.tsx`): owns the request, the 5 s AbortController
+  timeout, and the response->state mapping. FAIL-OPEN, never rejects:
+    - `res ok + { synthesis: row }`  -> `{ kind: 'data', vitamins, flags }`
+    - `res ok + { synthesis: null }` -> `{ kind: 'empty' }`
+    - `!res.ok` (e.g. 401)           -> `{ kind: 'empty' }`
+    - fetch rejects / timeout        -> `{ kind: 'empty' }` (logged via safeLog)
+- The wrapper's `useEffect` now just calls the seam and sets the resolved state
+  (guarded by a `cancelled` flag against setState-after-unmount).
+
+Added 7 node tests (global.fetch via `vi.stubGlobal`, `vi.spyOn(safeLog,'warn')`,
+no jsdom) asserting: fetch rejects -> empty (and never throws / resolves to a
+value); res.ok false (401) -> empty; res ok + row -> data with the row arrays;
+res ok + row missing arrays -> data with empty arrays; res ok + null -> empty;
+and that the request targets `/api/protocol/synthesis` with an `AbortSignal`.
+
+### Test command + full output
+
+```
+npx vitest run src/components/formavision/__tests__/RegionProtocolPanel.test.ts
+```
+
+```
+ RUN  v4.1.4 C:/Users/garyf/ViaConnect2026/viaconnect-web
+
+ Test Files  1 passed (1)
+       Tests  44 passed (44)
+    Start at  10:54:56
+    Duration  345ms (transform 58ms, setup 0ms, import 162ms, tests 19ms, environment 0ms)
+```
+
+Test count: 36 -> 44 (+1 Hannah-copy assertion, +7 fetch-seam tests).
+
+Self-review re-run: no em/en dashes, no literal `any` token (the seam uses
+`catch (err: unknown)`), "clinical guidance" removed, neutral copy present.

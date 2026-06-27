@@ -16,17 +16,19 @@
 // Node harness; renderToStaticMarkup (same pattern as FutureSelfPanel.test.ts /
 // GeneticsOverlay.test.ts). No @testing-library/dom required.
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import {
   RegionProtocolPanelContent,
+  fetchProtocolPanelState,
 } from '../RegionProtocolPanel';
 import type {
   RegionProtocolFetchState,
   RegionProtocolPanelContentProps,
 } from '../RegionProtocolPanel';
 import type { RecommendedItem, SupplementFlag } from '@/lib/protocol/readSynthesis';
+import { safeLog } from '@/lib/utils/safe-log';
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -143,6 +145,15 @@ describe('RegionProtocolPanelContent: data state (synthesis present)', () => {
     const html = render({ state: DATA_EMPTY_ITEMS });
     expect(html).toContain('data-testid="region-protocol-panel"');
     expect(html.toLowerCase()).toContain('protocol is being personalized');
+  });
+
+  it('empty-items message uses neutral copy, not "clinical guidance" (Hannah review)', () => {
+    const html = render({ state: DATA_EMPTY_ITEMS });
+    // The unqualified "clinical guidance" phrase must not appear (it implied
+    // clinical-grade authority in a sub-state that shows no disclaimer).
+    expect(html.toLowerCase()).not.toContain('clinical guidance');
+    // Exact neutral replacement copy required by review.
+    expect(html).toContain('your wellness profile has been processed');
   });
 });
 
@@ -321,4 +332,128 @@ describe('RegionProtocolPanelContent: no em/en dashes (standing rule)', () => {
       expect(html).not.toContain('&mdash;');
     });
   }
+});
+
+// ---------------------------------------------------------------------------
+// 7. fetchProtocolPanelState: the fail-open fetch seam (node, global.fetch mock)
+//
+// This is the honesty-critical seam: it owns the request, the 5 s timeout, and
+// the response->state mapping. It must NEVER throw; the worst case it can return
+// is the honest-disabled empty state. global.fetch is stubbed per test so these
+// run in the node environment with no jsdom.
+// ---------------------------------------------------------------------------
+
+describe('fetchProtocolPanelState: fail-open fetch seam', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it('fetch rejects -> empty (never throws)', async () => {
+    const warnSpy = vi.spyOn(safeLog, 'warn').mockImplementation(() => {});
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network down')));
+
+    const result = await fetchProtocolPanelState();
+
+    expect(result.kind).toBe('empty');
+    // Fail-open path logged via safeLog (does not surface an error to the user).
+    expect(warnSpy).toHaveBeenCalled();
+  });
+
+  it('does not reject even when fetch throws (resolves to a value)', async () => {
+    vi.spyOn(safeLog, 'warn').mockImplementation(() => {});
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('boom')));
+
+    // If the seam threw, this await would reject and fail the test.
+    await expect(fetchProtocolPanelState()).resolves.toEqual({ kind: 'empty' });
+  });
+
+  it('res.ok false (e.g. 401 unauthorized) -> empty', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 401,
+        json: async () => ({ error: 'Unauthorized' }),
+      }),
+    );
+
+    const result = await fetchProtocolPanelState();
+
+    expect(result.kind).toBe('empty');
+  });
+
+  it('res ok with { synthesis: row } -> data carrying the row vitamins + flags', async () => {
+    const row = {
+      recommended_vitamins_minerals: VITAMINS,
+      supplement_flags: FLAGS,
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({ synthesis: row }),
+      }),
+    );
+
+    const result = await fetchProtocolPanelState();
+
+    expect(result.kind).toBe('data');
+    if (result.kind === 'data') {
+      expect(result.vitamins).toEqual(VITAMINS);
+      expect(result.flags).toEqual(FLAGS);
+    }
+  });
+
+  it('res ok with { synthesis: row } missing arrays -> data with empty arrays (no throw)', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({ synthesis: {} }),
+      }),
+    );
+
+    const result = await fetchProtocolPanelState();
+
+    expect(result.kind).toBe('data');
+    if (result.kind === 'data') {
+      expect(result.vitamins).toEqual([]);
+      expect(result.flags).toEqual([]);
+    }
+  });
+
+  it('res ok with { synthesis: null } -> empty (honest-disabled, never a fabricated protocol)', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({ synthesis: null }),
+      }),
+    );
+
+    const result = await fetchProtocolPanelState();
+
+    expect(result.kind).toBe('empty');
+  });
+
+  it('requests the synthesis endpoint with an abort signal (timeout wiring)', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ synthesis: null }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await fetchProtocolPanelState();
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe('/api/protocol/synthesis');
+    // The 5 s AbortController timeout passes a signal into fetch.
+    expect(init.signal).toBeInstanceOf(AbortSignal);
+  });
 });
