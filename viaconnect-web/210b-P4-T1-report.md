@@ -80,3 +80,43 @@ Test suites:
 - The barrel (`src/components/formavision/index.ts`) was NOT updated because `GeneticsOverlay`
   is imported directly in page.tsx (matching the pattern used for `JourneyTimeline`,
   `BodyFatReadout`, `NotableChanges`). Add to barrel only if other surfaces need it.
+
+## P4-T1 FIX (review findings)
+
+Review (Jeffery + Hannah + Michelangelo) returned FIX with three Important findings, all in
+`src/components/formavision/GeneticsOverlay.tsx`. Applied exactly these three, surgical:
+
+1. Hannah (honest-disabled contract) - present-state body line at `GeneticsOverlay.tsx:75-78`.
+   The old "informs your personalized wellness protocol..." asserted active SNP-to-protocol
+   delivery. Replaced with: "Your genetic profile is on file and will help personalize your
+   wellness protocol as new insights become available. Tendency, not destiny."
+
+2. Hannah - present-state disclaimer at `GeneticsOverlay.tsx:83-86`. Replaced the
+   "Genetic context reflects AI-derived tendencies..." line with: "Genetic insights, when
+   available, reflect AI-derived tendency estimates. For informational context only. Not a
+   clinical finding."
+
+3. Michelangelo - CTA at `GeneticsOverlay.tsx:26` (import) and `GeneticsOverlay.tsx:106-113`.
+   The raw `<a href="/genetics/upload">` forced a full-page hard reload and dropped React
+   state in the App Router. Added `import Link from 'next/link'` and swapped the anchor for
+   `<Link href="/genetics/upload" ...>` with all classNames/children unchanged.
+
+No other changes. No em/en dashes, no emojis. Lucide strokeWidth 1.5 and tokens preserved.
+
+Test file: no change needed. The existing assertions check lowercased substrings
+(`tendency`, `not destiny`, `estimate`, `panel`) which all survive the new copy.
+
+Test command and full output:
+
+```
+npx vitest run src/components/formavision/__tests__/GeneticsOverlay.test.ts
+```
+
+```
+ RUN  v4.1.4 C:/Users/garyf/ViaConnect2026/viaconnect-web
+
+ Test Files  1 passed (1)
+      Tests  25 passed (25)
+   Start at  00:01:16
+   Duration  366ms (transform 49ms, setup 0ms, import 190ms, tests 11ms, environment 0ms)
+```

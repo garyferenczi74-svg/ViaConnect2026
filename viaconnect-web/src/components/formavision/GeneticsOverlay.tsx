@@ -23,6 +23,7 @@
 // strokeWidth 1.5. Design tokens only. Responsive desktop+mobile from first line.
 // 44px touch targets. Fail-open.
 
+import Link from 'next/link';
 import { Info, ArrowRight } from 'lucide-react';
 import { useGeneticsVariants } from '@/components/genetics/hub/useGeneticsVariants';
 import type { GeneticsVariantsData } from '@/components/genetics/hub/useGeneticsVariants';
@@ -73,16 +74,16 @@ export function GeneticsOverlayPanel({ presence }: GeneticsOverlayPanelProps) {
         <div className="flex flex-col gap-2">
           <h3 className="text-sm font-semibold text-white">Your Genetics, Your Protocol</h3>
           <p className="text-xs leading-relaxed text-white/60">
-            Your genetic profile informs your personalized wellness protocol as new
-            insights become available. Tendency, not destiny.
+            Your genetic profile is on file and will help personalize your wellness
+            protocol as new insights become available. Tendency, not destiny.
           </p>
         </div>
         {/* AI-estimate disclaimer block - mirrors the BodyScanResults Info pattern */}
         <div className="mt-3 flex items-start gap-2 rounded-lg border border-white/[0.06] bg-white/[0.03] p-3 text-xs text-white/50">
           <Info size={14} strokeWidth={1.5} className="mt-0.5 flex-none text-white/40" />
           <p>
-            Genetic context reflects AI-derived tendencies. Estimates only, for
-            informational context. Not a clinical finding.
+            Genetic insights, when available, reflect AI-derived tendency estimates.
+            For informational context only. Not a clinical finding.
           </p>
         </div>
       </div>
@@ -103,14 +104,14 @@ export function GeneticsOverlayPanel({ presence }: GeneticsOverlayPanelProps) {
             wellness protocol. Tendencies only, not a clinical result.
           </p>
         </div>
-        <a
+        <Link
           href="/genetics/upload"
           data-testid="genetics-overlay-cta"
           className="inline-flex min-h-[44px] shrink-0 items-center gap-2 self-start rounded-xl border border-[#2DA5A0]/30 bg-[#2DA5A0]/10 px-4 py-2.5 text-sm font-medium text-[#2DA5A0] transition-colors hover:bg-[#2DA5A0]/20 sm:self-center"
         >
           Get Your GENEX360 Panel
           <ArrowRight size={14} strokeWidth={1.5} />
-        </a>
+        </Link>
       </div>
     </div>
   );
