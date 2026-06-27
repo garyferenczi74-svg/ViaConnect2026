@@ -42,6 +42,9 @@ import { AgentNarration } from '@/components/formavision/AgentNarration';
 // === PROMPT 210b P6-T3 (BOSMovementReadout) START ===
 import { BOSMovementReadout } from '@/components/formavision/BOSMovementReadout';
 // === PROMPT 210b P6-T3 (BOSMovementReadout) END ===
+// === PROMPT 210b P6-T4 (MilestoneMoment) START ===
+import { MilestoneMoment } from '@/components/formavision/MilestoneMoment';
+// === PROMPT 210b P6-T4 (MilestoneMoment) END ===
 import { scanToParamVector } from '@/lib/formavision/geometry/scanToParamVector';
 import type { BodyParamVector } from '@/lib/formavision/geometry/types';
 // === PROMPT 210b P3-T2b (Time Machine) END ===
@@ -971,6 +974,18 @@ function CompositionPageInner() {
         <BOSMovementReadout reducedMotion={avatarReducedMotion} />
       )}
       {/* === PROMPT 210b P6-T3 (BOSMovementReadout) END === */}
+
+      {/* === PROMPT 210b P6-T4 (MilestoneMoment) START === */}
+      {/* Consumer-only, celebrate-only fixed overlay. One-shot per session when a
+          genuinely-achieved body-composition milestone (completed_date set by server)
+          exists that the user has not yet seen. Dismissible (44px touch target).
+          Read-only: no economy writes, no helix_score_events, no creditEarning.
+          Carry-forward: server-side milestone -> Helix crediting is a separate task.
+          Fail-open: any read failure renders nothing, never throws. */}
+      {section !== 'measurements' && (
+        <MilestoneMoment reducedMotion={avatarReducedMotion} />
+      )}
+      {/* === PROMPT 210b P6-T4 (MilestoneMoment) END === */}
 
       {section === 'measurements' && (
         <>
