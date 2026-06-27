@@ -39,6 +39,9 @@ import { RegionProtocolPanel } from '@/components/formavision/RegionProtocolPane
 // === PROMPT 210b P6-T2 (AgentNarration) START ===
 import { AgentNarration } from '@/components/formavision/AgentNarration';
 // === PROMPT 210b P6-T2 (AgentNarration) END ===
+// === PROMPT 210b P6-T3 (BOSMovementReadout) START ===
+import { BOSMovementReadout } from '@/components/formavision/BOSMovementReadout';
+// === PROMPT 210b P6-T3 (BOSMovementReadout) END ===
 import { scanToParamVector } from '@/lib/formavision/geometry/scanToParamVector';
 import type { BodyParamVector } from '@/lib/formavision/geometry/types';
 // === PROMPT 210b P3-T2b (Time Machine) END ===
@@ -958,6 +961,16 @@ function CompositionPageInner() {
         />
       )}
       {/* === PROMPT 210b P6-T2 (AgentNarration) END === */}
+
+      {/* === PROMPT 210b P6-T3 (BOSMovementReadout) START === */}
+      {/* Compact Bio Optimization Score movement readout. Reads from the
+          existing useBOSCurrent hook (/api/bos/current SSOT) - no new data
+          path. Shows score + movement since baseline when both are present;
+          honest-disabled on null score or null baseline. Read-only, fail-open. */}
+      {section !== 'measurements' && (
+        <BOSMovementReadout reducedMotion={avatarReducedMotion} />
+      )}
+      {/* === PROMPT 210b P6-T3 (BOSMovementReadout) END === */}
 
       {section === 'measurements' && (
         <>
