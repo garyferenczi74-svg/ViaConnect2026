@@ -117,6 +117,35 @@ const WAIST_IMPROVED: CompositionDeltasResult = {
   },
 };
 
+const WAIST_WORSENED: CompositionDeltasResult = {
+  bodyFat: null,
+  circumferences: [
+    {
+      key: 'waist',
+      label: 'Waist Circumference',
+      from: 32.0,
+      to: 35.0,
+      delta: 3.0,
+      direction: 'worsened',
+      unit: 'in',
+    },
+  ],
+  muscle: [],
+  biggest: {
+    kind: 'circumference',
+    magnitude: 3.0,
+    detail: {
+      key: 'waist',
+      label: 'Waist Circumference',
+      from: 32.0,
+      to: 35.0,
+      delta: 3.0,
+      direction: 'worsened',
+      unit: 'in',
+    },
+  },
+};
+
 const MUSCLE_IMPROVED: CompositionDeltasResult = {
   bodyFat: null,
   circumferences: [],
@@ -273,6 +302,30 @@ describe('buildNarrationLines: worsened delta', () => {
     const lines = buildNarrationLines(WORSENED_BODY_FAT);
     const arnoldLine = lines.find((l) => l.speaker === 'Arnold');
     expect(arnoldLine).toBeDefined();
+  });
+
+  it('worsened circumference: Arnold primary line is constructive and non-shaming', () => {
+    // bodyFat null + worsened circumference -> Arnold falls through to the
+    // circumference "what changed" branch. This exercises the worsened
+    // circumference primary line that no other fixture covered.
+    const lines = buildNarrationLines(WAIST_WORSENED);
+    const arnoldLine = lines.find((l) => l.speaker === 'Arnold');
+    expect(arnoldLine).toBeDefined();
+    const text = (arnoldLine?.text ?? '').toLowerCase();
+    // Names the measurements family (not body fat / muscle).
+    expect(text).toContain('measurements');
+    // Non-shaming.
+    const shameWords = ['bad', 'failure', 'failed', 'wrong', 'terrible', 'shame'];
+    for (const word of shameWords) {
+      expect(text).not.toContain(word);
+    }
+    // Data-framing / constructive phrasing.
+    const constructiveWords = [
+      'useful', 'data', 'story', 'informed', 'aware', 'tracking',
+      'signal', 'normal', 'part of', 'every', 'scan', 'okay', 'ok',
+    ];
+    const hasConstructive = constructiveWords.some((w) => text.includes(w));
+    expect(hasConstructive).toBe(true);
   });
 });
 

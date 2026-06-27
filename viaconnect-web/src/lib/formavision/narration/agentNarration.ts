@@ -87,7 +87,7 @@ function notableLine(biggest: BiggestChange): string {
       return 'Your biggest shift has been in body fat, which has moved in the right direction.';
     }
     if (dir === 'worsened') {
-      return 'Body fat is your biggest change right now, and awareness of it is a good first step.';
+      return 'Body fat has shown the most change across your scans, and tracking it keeps you informed.';
     }
     return 'Body fat has been your most stable metric across your scans.';
   }
