@@ -25,6 +25,11 @@ import { useCompositionHistory } from '@/hooks/body-tracker/useCompositionHistor
 import { useCircumferenceHistory } from '@/hooks/body-tracker/useCircumferenceHistory';
 import { computeCompositionDeltas } from '@/lib/formavision/deltas/compositionDeltas';
 // === PROMPT 210b VR (Section 8) END ===
+// === PROMPT 210b P3-T2b (Time Machine) START ===
+import { JourneyTimeline, type JourneyScanReadout } from '@/components/formavision/JourneyTimeline';
+import { scanToParamVector } from '@/lib/formavision/geometry/scanToParamVector';
+import type { BodyParamVector } from '@/lib/formavision/geometry/types';
+// === PROMPT 210b P3-T2b (Time Machine) END ===
 import { LegendBar } from '@/components/body-tracker/HoverSystem/LegendBar';
 import { usePinnedCards } from '@/components/body-tracker/HoverSystem/usePinnedCards';
 import { useResponsivePinCap } from '@/components/body-tracker/HoverSystem/useResponsivePinCap';
@@ -287,6 +292,56 @@ function CompositionPageInner() {
   );
   // === PROMPT 210b VR (Section 8) END ===
 
+  // === PROMPT 210b P3-T2b (Time Machine) START ===
+  // The scrub shape driven by the JourneyTimeline. null rests the avatar at its
+  // last shape (normal morph resumes per P3-T2a). Only set while scrubbing.
+  const [scrubVector, setScrubVector] = useState<BodyParamVector | null>(null);
+
+  // One BodyParamVector + one honest readout per REAL composition scan, oldest
+  // first. Circumferences are aligned to each scan by recordedAt, falling back to
+  // index. Numbers are real-scan-only; nothing here is fabricated or interpolated
+  // (the interpolation happens in the timeline via lerpParamVector). Memoized so
+  // the snap points are stable across renders.
+  const circByDate = useMemo(() => {
+    const map = new Map<string, (typeof circHistory.entries)[number]>();
+    for (const e of circHistory.entries) map.set(e.recordedAt, e);
+    return map;
+  }, [circHistory.entries]);
+
+  const journeyVectors = useMemo<BodyParamVector[]>(
+    () =>
+      composHistory.snapshots.map((snap, i) => {
+        const circ =
+          circByDate.get(snap.recordedAt)?.measurements ??
+          circHistory.entries[i]?.measurements ??
+          null;
+        return scanToParamVector({
+          snapshot: snap,
+          circumferences: circ,
+          sex: gender,
+          unit,
+        });
+      }),
+    [composHistory.snapshots, circByDate, circHistory.entries, gender, unit],
+  );
+
+  const journeyReadouts = useMemo<JourneyScanReadout[]>(
+    () =>
+      composHistory.snapshots.map((snap, i) => {
+        const circ =
+          circByDate.get(snap.recordedAt)?.measurements ??
+          circHistory.entries[i]?.measurements ??
+          null;
+        return {
+          recordedAt: snap.recordedAt,
+          totalBodyFatPct: snap.totalBodyFatPct,
+          waist: circ?.waist ?? null,
+        };
+      }),
+    [composHistory.snapshots, circByDate, circHistory.entries],
+  );
+  // === PROMPT 210b P3-T2b (Time Machine) END ===
+
   useEffect(() => {
     try { window.localStorage.setItem(UNIT_STORAGE_KEY, unit); } catch { /* ignore */ }
   }, [unit]);
@@ -316,6 +371,9 @@ function CompositionPageInner() {
     // PROMPT 210b VR: repaint the Visual Results surfaces on save too.
     composHistory.refresh();
     circHistory.refresh();
+    // PROMPT 210b P3-T2b: clear any active scrub so a stale Time Machine shape
+    // does not linger over freshly saved data; the avatar rests at latest.
+    setScrubVector(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshKey]);
 
@@ -704,6 +762,7 @@ function CompositionPageInner() {
                     onSelectBodyPart={setSelectedBodyPart}
                     reducedMotion={avatarReducedMotion}
                     segmentTints={avatarSegmentTints}
+                    scrubVector={scrubVector}
                   >
                     {isMuscle ? (
                       <HoverSystem view="muscle" sex={gender} regions={muscleRegions} className="lg:h-full">
@@ -802,6 +861,23 @@ function CompositionPageInner() {
         </div>
       )}
       {/* === PROMPT 210b VR (Section 8) END === */}
+
+      {/* === PROMPT 210b P3-T2b (Time Machine) START === */}
+      {/* The JourneyTimeline scrubber sits beneath the avatar on the Body Fat and
+          Muscle sections. It drives the avatar body via scrubVector across the
+          REAL scans (no fabricated scans). With fewer than two scans it shows an
+          honest invite instead of a fake timeline. Numbers in its readout are
+          real-scan-only; between scans are labeled a visual transition. */}
+      {section !== 'measurements' && (
+        <JourneyTimeline
+          vectors={journeyVectors}
+          readouts={journeyReadouts}
+          unit={unit}
+          reducedMotion={avatarReducedMotion}
+          onScrub={setScrubVector}
+        />
+      )}
+      {/* === PROMPT 210b P3-T2b (Time Machine) END === */}
 
       {section === 'measurements' && (
         <>
