@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   circumferenceToUnit,
   formatRingValue,
+  formatMeasurementValue,
   UNKNOWN_VALUE_MARKER,
 } from '../measurementValue';
 
@@ -32,5 +33,18 @@ describe('formatRingValue', () => {
     expect(label).toBe(UNKNOWN_VALUE_MARKER);
     expect(label).not.toContain('0');
     expect(label).not.toMatch(/\d/);
+  });
+});
+
+describe('formatMeasurementValue (already in unit)', () => {
+  it('formats a real value in the active unit', () => {
+    expect(formatMeasurementValue(38.25, 'cm')).toBe('38.3 cm');
+    expect(formatMeasurementValue(15, 'in')).toBe('15 in');
+  });
+
+  it('shows the UNKNOWN marker for null or undefined, never 0', () => {
+    expect(formatMeasurementValue(null, 'cm')).toBe(UNKNOWN_VALUE_MARKER);
+    expect(formatMeasurementValue(undefined, 'in')).toBe(UNKNOWN_VALUE_MARKER);
+    expect(formatMeasurementValue(null, 'cm')).not.toMatch(/\d/);
   });
 });
