@@ -33,6 +33,9 @@ import { GeneticsOverlay } from '@/components/formavision/GeneticsOverlay';
 // === PROMPT 210b P5-T1c (FutureSelfPanel) START ===
 import { FutureSelfPanel } from '@/components/formavision/FutureSelfPanel';
 // === PROMPT 210b P5-T1c (FutureSelfPanel) END ===
+// === PROMPT 210b P6-T1 (RegionProtocolPanel) START ===
+import { RegionProtocolPanel } from '@/components/formavision/RegionProtocolPanel';
+// === PROMPT 210b P6-T1 (RegionProtocolPanel) END ===
 import { scanToParamVector } from '@/lib/formavision/geometry/scanToParamVector';
 import type { BodyParamVector } from '@/lib/formavision/geometry/types';
 // === PROMPT 210b P3-T2b (Time Machine) END ===
@@ -927,6 +930,17 @@ function CompositionPageInner() {
         />
       )}
       {/* === PROMPT 210b P5-T1c (FutureSelfPanel) END === */}
+
+      {/* === PROMPT 210b P6-T1 (RegionProtocolPanel) START === */}
+      {/* Whole-protocol panel. Shown only when a body region is selected.
+          Content is IDENTICAL for every region: no body-region-to-product
+          mapping exists, so no region-targeted claim is ever produced.
+          synthesis null -> honest-disabled invite + CTA to /supplements.
+          Additive to the existing layer stack; 2D floor + avatar untouched. */}
+      {section !== 'measurements' && selectedBodyPart !== null && (
+        <RegionProtocolPanel reducedMotion={avatarReducedMotion} />
+      )}
+      {/* === PROMPT 210b P6-T1 (RegionProtocolPanel) END === */}
 
       {section === 'measurements' && (
         <>
