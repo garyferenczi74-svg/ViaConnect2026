@@ -27,6 +27,9 @@ import { computeCompositionDeltas } from '@/lib/formavision/deltas/compositionDe
 // === PROMPT 210b VR (Section 8) END ===
 // === PROMPT 210b P3-T2b (Time Machine) START ===
 import { JourneyTimeline, type JourneyScanReadout } from '@/components/formavision/JourneyTimeline';
+// === PROMPT 210b P4-T1 (GeneticsOverlay) START ===
+import { GeneticsOverlay } from '@/components/formavision/GeneticsOverlay';
+// === PROMPT 210b P4-T1 (GeneticsOverlay) END ===
 import { scanToParamVector } from '@/lib/formavision/geometry/scanToParamVector';
 import type { BodyParamVector } from '@/lib/formavision/geometry/types';
 // === PROMPT 210b P3-T2b (Time Machine) END ===
@@ -878,6 +881,13 @@ function CompositionPageInner() {
         />
       )}
       {/* === PROMPT 210b P3-T2b (Time Machine) END === */}
+
+      {/* === PROMPT 210b P4-T1 (GeneticsOverlay) START === */}
+      {/* Honest-disabled genetics layer. Two states: real variants present ->
+          body-positive invitation (tendency-not-destiny, no region band/tint);
+          absent -> CTA to /genetics/upload. Fail-open via the shared hook. */}
+      {section !== 'measurements' && <GeneticsOverlay />}
+      {/* === PROMPT 210b P4-T1 (GeneticsOverlay) END === */}
 
       {section === 'measurements' && (
         <>
