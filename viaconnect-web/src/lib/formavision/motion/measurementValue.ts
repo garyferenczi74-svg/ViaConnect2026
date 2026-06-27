@@ -40,3 +40,18 @@ export function formatRingValue(
   const rounded = Math.round(value * 10) / 10;
   return `${rounded} ${unit}`;
 }
+
+// Format a value already expressed in the display unit (as useCircumferenceData
+// returns it) for a measurement callout. A null value is UNKNOWN and shows the
+// marker, never 0 or a fabricated number. The numeric path rounds to one decimal
+// and appends the unit suffix, matching the ring label format.
+export function formatMeasurementValue(
+  value: number | null | undefined,
+  unit: MeasurementUnit,
+): string {
+  if (value === null || value === undefined) {
+    return UNKNOWN_VALUE_MARKER;
+  }
+  const rounded = Math.round(value * 10) / 10;
+  return `${rounded} ${unit}`;
+}

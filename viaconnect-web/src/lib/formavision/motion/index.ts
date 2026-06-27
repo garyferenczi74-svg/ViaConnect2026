@@ -41,8 +41,21 @@ export {
 export {
   circumferenceToUnit,
   formatRingValue,
+  formatMeasurementValue,
   UNKNOWN_VALUE_MARKER,
 } from './measurementValue';
+export {
+  calloutAnchors,
+  calloutAnchorFor,
+  labelSideFor,
+  type CalloutAnchor,
+  type CalloutSide,
+} from './measurementCallouts';
+export {
+  createCalloutStaggerController,
+  type CalloutStaggerController,
+  type CalloutStaggerControllerOptions,
+} from './calloutStaggerController';
 export {
   createMeasurementRingController,
   type MeasurementRingController,

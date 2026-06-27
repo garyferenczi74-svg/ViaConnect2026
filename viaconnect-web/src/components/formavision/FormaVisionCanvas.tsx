@@ -50,6 +50,7 @@ import type { Sex } from '@/lib/formavision/geometry/types';
 import { mountBodyGeometry } from './mountBodyGeometry';
 import { MeasurementRing } from './MeasurementRing';
 import { EmphasisParticles } from './EmphasisParticles';
+import { MeasurementCallouts } from './MeasurementCallouts';
 
 export interface FormaVisionCanvasProps {
   sex: Sex;
@@ -516,6 +517,18 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
           unit={props.unit}
           heightCm={props.heightCm}
           emphasisRegion={props.emphasisRegion}
+          reducedMotion={props.reducedMotion}
+        />
+
+        {/* Measurements overlay: staggered callouts with leader lines and anchor dots
+            for every circumference. Only renders on the measurements tab. */}
+        <MeasurementCallouts
+          sex={props.sex}
+          scan={props.scan}
+          circumferences={props.circumferences}
+          unit={props.unit}
+          heightCm={props.heightCm}
+          activeTab={props.activeTab}
           reducedMotion={props.reducedMotion}
         />
 
