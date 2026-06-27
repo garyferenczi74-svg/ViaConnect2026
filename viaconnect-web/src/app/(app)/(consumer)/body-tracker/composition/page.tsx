@@ -36,6 +36,9 @@ import { FutureSelfPanel } from '@/components/formavision/FutureSelfPanel';
 // === PROMPT 210b P6-T1 (RegionProtocolPanel) START ===
 import { RegionProtocolPanel } from '@/components/formavision/RegionProtocolPanel';
 // === PROMPT 210b P6-T1 (RegionProtocolPanel) END ===
+// === PROMPT 210b P6-T2 (AgentNarration) START ===
+import { AgentNarration } from '@/components/formavision/AgentNarration';
+// === PROMPT 210b P6-T2 (AgentNarration) END ===
 import { scanToParamVector } from '@/lib/formavision/geometry/scanToParamVector';
 import type { BodyParamVector } from '@/lib/formavision/geometry/types';
 // === PROMPT 210b P3-T2b (Time Machine) END ===
@@ -941,6 +944,20 @@ function CompositionPageInner() {
         <RegionProtocolPanel reducedMotion={avatarReducedMotion} />
       )}
       {/* === PROMPT 210b P6-T1 (RegionProtocolPanel) END === */}
+
+      {/* === PROMPT 210b P6-T2 (AgentNarration) START === */}
+      {/* Agent narration layer. Templated, deterministic lines from Arnold and
+          Hannah: what changed (from vrDeltas), what is notable (biggestChange),
+          one gentle non-prescriptive suggestion. No LLM call, no fetch, no
+          fabricated change. null deltas -> honest first-scan welcome.
+          Consumes vrDeltas already computed on this surface (read-only). */}
+      {section !== 'measurements' && (
+        <AgentNarration
+          deltas={vrDeltas}
+          reducedMotion={avatarReducedMotion}
+        />
+      )}
+      {/* === PROMPT 210b P6-T2 (AgentNarration) END === */}
 
       {section === 'measurements' && (
         <>
