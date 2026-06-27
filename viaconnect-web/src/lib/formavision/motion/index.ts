@@ -23,6 +23,12 @@ export {
   type MorphControllerOptions,
 } from './morphController';
 export {
+  createScrubController,
+  type ScrubController,
+  type ScrubControllerOptions,
+  type ScrubTimer,
+} from './scrubController';
+export {
   framingForRegion,
   FULL_BODY_FRAMING,
   type CameraFraming,

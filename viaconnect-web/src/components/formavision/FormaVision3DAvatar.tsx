@@ -30,7 +30,7 @@ import type {
   CircumferenceMeasurements,
   MeasurementUnit,
 } from '@/lib/body-tracker/circumference';
-import type { Sex } from '@/lib/formavision/geometry/types';
+import type { Sex, BodyParamVector } from '@/lib/formavision/geometry/types';
 import type { SegmentTintRecord } from '@/lib/formavision/geometry/segmentTints';
 import { safeLog } from '@/lib/utils/safe-log';
 import { AvatarErrorBoundary } from './AvatarErrorBoundary';
@@ -73,6 +73,10 @@ export interface FormaVision3DAvatarProps {
   // by segment name, or null where UNKNOWN. A later task (OV-T2/T3) computes these;
   // unset means no overlay tint and the avatar looks as today.
   segmentTints?: SegmentTintRecord | null;
+  // Optional scrub shape for the time machine. When set the body follows it directly
+  // (no tween); null resumes normal target-morph from the last scrubbed shape. P3-T2b
+  // drives this from the timeline scrubber.
+  scrubVector?: BodyParamVector | null;
   reducedMotion?: boolean;
   // Defaults to cinematic. The full tier provider is Phase 7; lite trims density.
   renderTier?: 'cinematic' | 'lite';
@@ -92,6 +96,7 @@ export function FormaVision3DAvatar({
   emphasisRegion,
   activeTab,
   segmentTints,
+  scrubVector,
   renderTier = 'cinematic',
   onRenderError,
 }: FormaVision3DAvatarProps) {
@@ -136,6 +141,7 @@ export function FormaVision3DAvatar({
           emphasisRegion={emphasisRegion}
           activeTab={activeTab}
           segmentTints={segmentTints}
+          scrubVector={scrubVector}
           renderTier={renderTier}
         />
       </AvatarErrorBoundary>
