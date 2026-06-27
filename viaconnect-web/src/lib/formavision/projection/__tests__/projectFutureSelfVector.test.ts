@@ -96,7 +96,7 @@ describe('projectFutureSelfVector: cut direction', () => {
     expect(result.kind).toBe('projected');
     if (result.kind !== 'projected') return;
 
-    expect(result.bfDelta).toBeCloseTo(-5, 10);
+    expect(result.bfDelta).toBe(-5);
     expect(result.projectedBodyFatPct).toBe(20);
 
     const waistRing = result.vector.rings.find((r) => r.id === 'waist')!;
@@ -111,20 +111,31 @@ describe('projectFutureSelfVector: cut direction', () => {
     expect(waistReduction).toBeGreaterThan(bicepReduction);
   });
 
-  it('circumferences do not grow during a cut', () => {
-    // For a negative bfDelta, every mapped key should be <= original value.
+  it('circumferences do not grow during a cut (all 10 mapped keys)', () => {
+    // For a negative bfDelta, every mapped key must shrink, never grow.
+    // BASE_CURRENT_CM values are in cm; the vector stores meters, so the
+    // original-in-meters reference is the cm value / 100.
     const result = projectFutureSelfVector(BASE_CURRENT_CM, 20);
     expect(result.kind).toBe('projected');
     if (result.kind !== 'projected') return;
 
-    const waistRing = result.vector.rings.find((r) => r.id === 'waist')!;
-    const hipRing = result.vector.rings.find((r) => r.id === 'hip')!;
-    const chestRing = result.vector.rings.find((r) => r.id === 'chest')!;
+    const ring = (id: string) => result.vector.rings.find((r) => r.id === id)!;
+    const arm = (side: 'r' | 'l') => result.vector.arms.find((a) => a.side === side)!;
 
-    // Original in meters: waist 0.9, hip 1.0, chest 1.0
-    expect(waistRing.circumferenceM!).toBeLessThan(0.9);
-    expect(hipRing.circumferenceM!).toBeLessThan(1.0);
-    expect(chestRing.circumferenceM!).toBeLessThan(1.0);
+    // Trunk + leg rings. Right/left quadriceps map to rThigh/lThigh rings,
+    // right/left calf map to rCalf/lCalf rings.
+    expect(ring('neck').circumferenceM!).toBeLessThan(38 / 100); // neck 38 cm
+    expect(ring('chest').circumferenceM!).toBeLessThan(100 / 100); // chest 100 cm
+    expect(ring('waist').circumferenceM!).toBeLessThan(90 / 100); // waist 90 cm
+    expect(ring('hip').circumferenceM!).toBeLessThan(100 / 100); // hip 100 cm
+    expect(ring('rThigh').circumferenceM!).toBeLessThan(58 / 100); // rightQuadriceps 58 cm
+    expect(ring('lThigh').circumferenceM!).toBeLessThan(58 / 100); // leftQuadriceps 58 cm
+    expect(ring('rCalf').circumferenceM!).toBeLessThan(37 / 100); // rightCalf 37 cm
+    expect(ring('lCalf').circumferenceM!).toBeLessThan(37 / 100); // leftCalf 37 cm
+
+    // Biceps live on the arm params, not the trunk rings.
+    expect(arm('r').bicepM!).toBeLessThan(36 / 100); // rightBicep 36 cm
+    expect(arm('l').bicepM!).toBeLessThan(36 / 100); // leftBicep 36 cm
   });
 
   it('bfDelta zero when goal equals current: circumferences unchanged', () => {
