@@ -10,10 +10,11 @@
 // is no window/document/coarse-pointer, so it must default to cinematic and never
 // throw.
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   decideInitialTier,
   probeRenderTier,
+  readRendererString,
   LOW_MEMORY_GB_STRONG,
   LOW_MEMORY_GB_COMBINED,
   LOW_CORE_COUNT_COMBINED,
@@ -83,5 +84,71 @@ describe('probeRenderTier (SSR / node)', () => {
 
   it('never throws', () => {
     expect(() => probeRenderTier()).not.toThrow();
+  });
+});
+
+// M1 fix (P7-T2): readRendererString must release the throwaway WebGL context via
+// WEBGL_lose_context before returning, so low-end devices that cap live context
+// slots (commonly 8-16) reclaim the slot immediately instead of waiting for GC.
+describe('readRendererString context release (M1 fix, P7-T2)', () => {
+  it('calls loseContext on the WebGL context and still returns the renderer string', () => {
+    const loseContext = vi.fn();
+    const debugExt = { UNMASKED_RENDERER_WEBGL: 0x9246 };
+    const fakeGl = {
+      getExtension: vi.fn((name: string) => {
+        if (name === 'WEBGL_debug_renderer_info') return debugExt;
+        if (name === 'WEBGL_lose_context') return { loseContext };
+        return null;
+      }),
+      getParameter: vi.fn((_constant: number) => 'ANGLE (NVIDIA Direct3D)'),
+    };
+    const fakeCanvas = {
+      getContext: vi.fn((type: string) => (type === 'webgl' ? fakeGl : null)),
+    };
+    vi.stubGlobal('document', {
+      createElement: vi.fn(() => fakeCanvas),
+    });
+
+    try {
+      const result = readRendererString();
+      expect(result).toBe('ANGLE (NVIDIA Direct3D)');
+      expect(loseContext).toHaveBeenCalledOnce();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('still calls loseContext when the debug renderer extension is absent', () => {
+    // Even when we cannot read the renderer string (no debug extension), the context
+    // slot must be released so no context is held for GC to clean up.
+    const loseContext = vi.fn();
+    const fakeGl = {
+      getExtension: vi.fn((name: string) => {
+        if (name === 'WEBGL_lose_context') return { loseContext };
+        return null; // WEBGL_debug_renderer_info absent
+      }),
+      getParameter: vi.fn(),
+    };
+    const fakeCanvas = {
+      getContext: vi.fn((type: string) => (type === 'webgl' ? fakeGl : null)),
+    };
+    vi.stubGlobal('document', {
+      createElement: vi.fn(() => fakeCanvas),
+    });
+
+    try {
+      const result = readRendererString();
+      expect(result).toBeUndefined();
+      expect(loseContext).toHaveBeenCalledOnce();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('returns undefined safely when document is absent (SSR / node runner)', () => {
+    // readRendererString is the SSR-safe path used by probeRenderTier; with no DOM
+    // it must return undefined and never throw.
+    expect(readRendererString()).toBeUndefined();
+    expect(() => readRendererString()).not.toThrow();
   });
 });

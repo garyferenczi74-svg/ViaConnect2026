@@ -9,7 +9,11 @@ import { SegmentalHeatMap } from '@/components/body-tracker/SegmentalHeatMap';
 import { HeatmapLegend } from '@/components/body-tracker/HeatmapLegend';
 import { HoverSystem } from '@/components/body-tracker/HoverSystem';
 // === PROMPT 210b EXTENSION START ===
-import { BodyCompositionAvatar, SelectBodyPartControl } from '@/components/formavision';
+import {
+  BodyCompositionAvatar,
+  SelectBodyPartControl,
+  RenderTierProvider,
+} from '@/components/formavision';
 import { useReducedMotion } from '@/components/body-tracker/HoverSystem/useReducedMotion';
 import {
   buildSegmentTints,
@@ -1015,12 +1019,19 @@ function CompositionPageInner() {
 }
 
 export default function CompositionPage() {
+  // P7-T2: RenderTierProvider hoisted to the composition surface so page-level
+  // layers can read the ambient tier via useRenderTier. The provider's capability
+  // probe runs once here (SSR-safe: cinematic on the server, lite on a clear
+  // low-power client). BodyCompositionAvatar now consumes the ambient provider
+  // instead of creating its own. The onBudgetMissed prop seam keeps the frame
+  // monitor reporting through the Canvas prop boundary (r3f context does not
+  // cross the reconciler boundary).
   return (
-    <>
+    <RenderTierProvider>
       <BackToHubLink />
       <Suspense fallback={<div className="h-12" />}>
         <CompositionPageInner />
       </Suspense>
-    </>
+    </RenderTierProvider>
   );
 }

@@ -72,19 +72,24 @@ export function decideInitialTier(signals: CapabilitySignals): RenderTier3D {
 }
 
 // Best-effort, one-time read of the unmasked WebGL renderer string. Builds a
-// throwaway canvas / context (like hasWebGL) and lets it be garbage collected. Any
-// failure (no DOM, no context, the debug extension blocked) yields undefined and
-// never throws, so a probe failure can never crash the caller.
-function readRendererString(): string | undefined {
+// throwaway canvas / context (like hasWebGL) and releases it via WEBGL_lose_context
+// in a finally block (M1 fix, P7-T2) so low-end devices that cap live contexts
+// reclaim the slot immediately instead of relying on GC. Any failure (no DOM, no
+// context, the debug extension blocked) yields undefined and never throws, so a
+// probe failure can never crash the caller.
+//
+// Exported so the M1 context-release behavior can be unit-tested with a mocked gl.
+export function readRendererString(): string | undefined {
   if (typeof document === 'undefined') {
     return undefined;
   }
+  let gl: WebGLRenderingContext | null = null;
   try {
     const canvas = document.createElement('canvas');
     if (!canvas || typeof canvas.getContext !== 'function') {
       return undefined;
     }
-    const gl = (canvas.getContext('webgl') ||
+    gl = (canvas.getContext('webgl') ||
       canvas.getContext('experimental-webgl')) as WebGLRenderingContext | null;
     if (!gl) {
       return undefined;
@@ -99,6 +104,12 @@ function readRendererString(): string | undefined {
     return typeof value === 'string' ? value : undefined;
   } catch {
     return undefined;
+  } finally {
+    // Release the throwaway context immediately so it does not hold a live WebGL
+    // slot until the next GC cycle. Low-end devices cap the number of live contexts
+    // (commonly 8-16), so freeing proactively prevents a surprise context-lost event
+    // on the REAL avatar canvas that mounts shortly after.
+    gl?.getExtension('WEBGL_lose_context')?.loseContext();
   }
 }
 
