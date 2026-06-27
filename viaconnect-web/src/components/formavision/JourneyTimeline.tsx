@@ -70,12 +70,12 @@ function formatDate(iso: string): string {
 }
 
 function formatPct(v: number | null): string {
-  if (v === null) return 'Not measured';
+  if (v === null || v === 0) return 'Not measured';
   return `${(Math.round(v * 10) / 10).toFixed(1)}%`;
 }
 
 function formatLen(v: number | null, unit: string): string {
-  if (v === null) return 'Not measured';
+  if (v === null || v === 0) return 'Not measured';
   return `${(Math.round(v * 10) / 10).toFixed(1)} ${unit}`;
 }
 
@@ -265,7 +265,7 @@ export function JourneyTimeline({
           aria-label={playing ? 'Pause journey' : 'Play journey'}
           aria-pressed={playing}
           onClick={togglePlay}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-[#2DA5A0]/40 bg-[#2DA5A0]/10 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#2DA5A0]/20"
+          className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg border border-[#2DA5A0]/40 bg-[#2DA5A0]/10 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#2DA5A0]/20"
         >
           {playing ? (
             <Pause className="h-3.5 w-3.5" strokeWidth={1.5} aria-hidden="true" />
@@ -279,7 +279,7 @@ export function JourneyTimeline({
       {/* Track + snap markers + draggable handle (native range input for drag,
           keyboard, and aria slider semantics). */}
       <div
-        className="relative mt-4 h-8"
+        className="relative mt-4 min-h-[44px]"
         role="group"
         aria-label="Journey timeline scrubber"
         onKeyDown={handleKeyDown}
@@ -325,8 +325,8 @@ export function JourneyTimeline({
       <div className="mt-4" data-testid="journey-readout">
         {readoutMode.kind === 'transition' ? (
           <p data-testid="journey-transition-label" className="text-xs font-medium text-[#2DA5A0]">
-            Transitioning between {formatDate(readouts[pos.indexA].recordedAt)} and{' '}
-            {formatDate(readouts[pos.indexB].recordedAt)}
+            Transitioning between {readouts[pos.indexA] ? formatDate(readouts[pos.indexA].recordedAt) : ''} and{' '}
+            {readouts[pos.indexB] ? formatDate(readouts[pos.indexB].recordedAt) : ''}
           </p>
         ) : (
           <p data-testid="journey-measured-date" className="text-xs font-medium text-white/70">
