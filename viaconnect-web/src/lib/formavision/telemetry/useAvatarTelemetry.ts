@@ -14,7 +14,7 @@
 
 import { useCallback, useRef } from 'react';
 import { emitAvatarEvent, getAvatarSessionId } from './avatarTelemetry';
-import type { AvatarTelemetryEvent } from './avatarTelemetry';
+import type { AvatarTelemetryEvent, AvatarEventProperties } from './avatarTelemetry';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -35,12 +35,12 @@ export interface AvatarTelemetryActions {
   emit: (
     userId: string | null | undefined,
     event: AvatarTelemetryEvent,
-    properties?: Record<string, unknown>,
+    properties?: AvatarEventProperties,
   ) => void;
   emitOnce: (
     userId: string | null | undefined,
     event: AvatarTelemetryEvent,
-    properties?: Record<string, unknown>,
+    properties?: AvatarEventProperties,
   ) => void;
 }
 
@@ -50,7 +50,7 @@ export function createAvatarTelemetryActions(): AvatarTelemetryActions {
   function emit(
     userId: string | null | undefined,
     event: AvatarTelemetryEvent,
-    properties: Record<string, unknown> = {},
+    properties: AvatarEventProperties = {},
   ): void {
     void emitAvatarEvent(userId, event, properties, {
       page: COMPOSITION_PAGE,
@@ -61,7 +61,7 @@ export function createAvatarTelemetryActions(): AvatarTelemetryActions {
   function emitOnce(
     userId: string | null | undefined,
     event: AvatarTelemetryEvent,
-    properties: Record<string, unknown> = {},
+    properties: AvatarEventProperties = {},
   ): void {
     if (onceFired.has(event)) return;
     // Do NOT consume the once-guard while the userId is unresolved. If we
@@ -128,8 +128,8 @@ export function createScrubSettleEmitter(
 // ---------------------------------------------------------------------------
 
 export function useAvatarTelemetry(userId: string | null | undefined): {
-  emit: (event: AvatarTelemetryEvent, properties?: Record<string, unknown>) => void;
-  emitOnce: (event: AvatarTelemetryEvent, properties?: Record<string, unknown>) => void;
+  emit: (event: AvatarTelemetryEvent, properties?: AvatarEventProperties) => void;
+  emitOnce: (event: AvatarTelemetryEvent, properties?: AvatarEventProperties) => void;
 } {
   // Stable factory: persists across re-renders, reset on unmount/remount.
   const actionsRef = useRef<AvatarTelemetryActions | null>(null);
@@ -143,7 +143,7 @@ export function useAvatarTelemetry(userId: string | null | undefined): {
 
   // Stable callbacks: both read from refs only, no deps needed.
   const emit = useCallback(
-    (event: AvatarTelemetryEvent, properties: Record<string, unknown> = {}) => {
+    (event: AvatarTelemetryEvent, properties: AvatarEventProperties = {}) => {
       // actionsRef.current is non-null after the initializer above.
       actionsRef.current!.emit(userIdRef.current, event, properties);
     },
@@ -153,7 +153,7 @@ export function useAvatarTelemetry(userId: string | null | undefined): {
   );
 
   const emitOnce = useCallback(
-    (event: AvatarTelemetryEvent, properties: Record<string, unknown> = {}) => {
+    (event: AvatarTelemetryEvent, properties: AvatarEventProperties = {}) => {
       actionsRef.current!.emitOnce(userIdRef.current, event, properties);
     },
     // Both refs are stable across renders; no dep triggers re-creation.

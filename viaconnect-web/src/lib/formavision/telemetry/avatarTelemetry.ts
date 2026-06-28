@@ -26,6 +26,7 @@
 
 import { createClient } from '@/lib/supabase/client';
 import { safeLog } from '@/lib/utils/safe-log';
+import type { Json } from '@/lib/supabase/types';
 
 // ---------------------------------------------------------------------------
 // Event name union (11 events, all namespaced under "formavision.")
@@ -57,6 +58,14 @@ export interface AvatarQualitySignals {
 }
 
 // ---------------------------------------------------------------------------
+// Serializable properties type: Record<string, Json> is assignable to the
+// analytics_events Insert type's `properties: Json | null` column without
+// a cast. Use this everywhere a properties payload is accepted or returned.
+// ---------------------------------------------------------------------------
+
+export type AvatarEventProperties = Record<string, Json>;
+
+// ---------------------------------------------------------------------------
 // Context bag for buildAvatarEventPayload (optional per field)
 // ---------------------------------------------------------------------------
 
@@ -79,7 +88,7 @@ const DEFAULT_PAGE = '/body-tracker/composition';
 
 export interface AvatarEventPayload {
   event: AvatarTelemetryEvent;
-  properties: Record<string, unknown>;
+  properties: AvatarEventProperties;
   page: string;
   device?: string;
   session_id?: string;
@@ -100,7 +109,7 @@ export interface AvatarEventPayload {
  */
 export function buildAvatarEventPayload(
   event: AvatarTelemetryEvent,
-  properties: Record<string, unknown> = {},
+  properties: AvatarEventProperties = {},
   context: AvatarEventContext = {},
 ): AvatarEventPayload {
   const payload: AvatarEventPayload = {
@@ -177,7 +186,7 @@ export function getAvatarSessionId(): string | undefined {
 export async function emitAvatarEvent(
   userId: string | null | undefined,
   event: AvatarTelemetryEvent,
-  properties: Record<string, unknown> = {},
+  properties: AvatarEventProperties = {},
   context: AvatarEventContext = {},
 ): Promise<void> {
   if (!userId) return;

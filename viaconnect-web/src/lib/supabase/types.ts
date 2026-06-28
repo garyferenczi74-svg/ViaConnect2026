@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      analytics_events: {
+        Row: {
+          device: string | null
+          event: string
+          id: string
+          page: string | null
+          properties: Json | null
+          session_id: string | null
+          timestamp: string | null
+          user_id: string | null
+        }
+        Insert: {
+          device?: string | null
+          event: string
+          id?: string
+          page?: string | null
+          properties?: Json | null
+          session_id?: string | null
+          timestamp?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          device?: string | null
+          event?: string
+          id?: string
+          page?: string | null
+          properties?: Json | null
+          session_id?: string | null
+          timestamp?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       retest_schedule: {
         Row: {
           baseline_value: number | null
