@@ -154,6 +154,28 @@ describe('createAvatarTelemetryActions: emitOnce once-per-session guard', () => 
     await Promise.resolve();
     expect(mockInsert).toHaveBeenCalledTimes(1);
   });
+
+  it('does NOT consume the once-guard while userId is falsy: same instance fires once when auth resolves late', async () => {
+    // This is the real hook lifecycle: ONE factory instance survives across
+    // re-renders (it lives in a ref), and userId is null on the first renders
+    // before auth resolves. A naive guard that marks the event fired on the
+    // null call would permanently lose avatar_viewed. Prove it does not.
+    const actions = createAvatarTelemetryActions();
+
+    // Several mount-time calls while auth is unresolved: all no-op, none
+    // consume the guard.
+    actions.emitOnce(null, 'formavision.avatar_viewed');
+    actions.emitOnce(undefined, 'formavision.avatar_viewed');
+    actions.emitOnce(null, 'formavision.avatar_viewed');
+    await Promise.resolve();
+    expect(mockInsert).not.toHaveBeenCalled();
+
+    // Auth resolves on the SAME instance -> the event fires exactly once.
+    actions.emitOnce('user-1', 'formavision.avatar_viewed');
+    actions.emitOnce('user-1', 'formavision.avatar_viewed');
+    await Promise.resolve();
+    expect(mockInsert).toHaveBeenCalledTimes(1);
+  });
 });
 
 // ---------------------------------------------------------------------------

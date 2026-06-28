@@ -991,7 +991,7 @@ function CompositionPageInner() {
             // P8-T1b: debounce-notify for timeline_scrubbed; fires once per gesture.
             scrubSettleRef.current?.notify();
           }}
-          onPlay={() => telEmitOnce('formavision.journey_played')}
+          onPlay={() => telEmit('formavision.journey_played')}
         />
       )}
       {/* === PROMPT 210b P3-T2b (Time Machine) END === */}
@@ -1027,6 +1027,9 @@ function CompositionPageInner() {
             setGhostVector(v);
             setShowGhost(s);
           }}
+          onUserToggle={(on) =>
+            telEmit('formavision.future_self_toggled', { on })
+          }
         />
       )}
       {/* === PROMPT 210b P5-T1c (FutureSelfPanel) END === */}

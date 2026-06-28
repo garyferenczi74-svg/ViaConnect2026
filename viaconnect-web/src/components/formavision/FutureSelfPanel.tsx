@@ -284,6 +284,13 @@ export interface FutureSelfPanelProps {
    * the user hides the ghost.
    */
   onGhostChange: (ghostVector: BodyParamVector | null, showGhost: boolean) => void;
+  /**
+   * P8-T1b telemetry seam for future_self_toggled. Called ONLY on an explicit
+   * user toggle of the Show/Hide ghost button (inside handleToggle). The
+   * programmatic projection reset bypasses handleToggle, so this never fires a
+   * false positive. Repeatable user action: the parent uses emit, not emitOnce.
+   */
+  onUserToggle?: (on: boolean) => void;
 }
 
 /**
@@ -303,6 +310,7 @@ export function FutureSelfPanel({
   userId,
   reducedMotion,
   onGhostChange,
+  onUserToggle,
 }: FutureSelfPanelProps) {
   const { goal, loading: goalLoading } = useActiveBodyGoal(userId);
   const { goalWeightKg, currentWeightKg, loading: weightLoading } = useWeightGoalKg(userId);
@@ -352,7 +360,9 @@ export function FutureSelfPanel({
     const next = !showGhost;
     setShowGhost(next);
     onGhostChange(next ? projection.vector : null, next);
-  }, [showGhost, projection, onGhostChange]);
+    // P8-T1b: explicit user toggle only. Fail-open optional seam.
+    onUserToggle?.(next);
+  }, [showGhost, projection, onGhostChange, onUserToggle]);
 
   return (
     <FutureSelfPanelContent
