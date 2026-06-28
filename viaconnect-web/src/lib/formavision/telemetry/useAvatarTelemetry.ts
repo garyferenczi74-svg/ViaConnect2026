@@ -64,6 +64,12 @@ export function createAvatarTelemetryActions(): AvatarTelemetryActions {
     properties: Record<string, unknown> = {},
   ): void {
     if (onceFired.has(event)) return;
+    // Do NOT consume the once-guard while the userId is unresolved. If we
+    // marked the event fired here, a falsy-userId call at mount would no-op
+    // the insert yet permanently block the real event once auth resolves
+    // (notably avatar_viewed when auth lands after the first render). Only
+    // mark fired once a real insert can happen.
+    if (!userId) return;
     onceFired.add(event);
     emit(userId, event, properties);
   }
