@@ -95,6 +95,9 @@ export interface FormaVision3DAvatarProps {
   // Called on a WebGL-unavailable gate OR a render error, so the parent can show
   // its 2D floor in place of the 3D avatar.
   onRenderError: (error: unknown) => void;
+  // P8-T1b: forwarded into FormaVisionCanvas for the avatar_rotated telemetry seam.
+  // Called once at the end of each orbit gesture. Absent means no telemetry.
+  onOrbitEnd?: () => void;
 }
 
 export function FormaVision3DAvatar({
@@ -114,6 +117,7 @@ export function FormaVision3DAvatar({
   renderTier = 'cinematic',
   onBudgetMissed,
   onRenderError,
+  onOrbitEnd,
 }: FormaVision3DAvatarProps) {
   // Probe WebGL once per mount. When it is unavailable the component renders
   // nothing and signals the parent to fall back to 2D; the three bundle is never
@@ -161,6 +165,7 @@ export function FormaVision3DAvatar({
           showGhost={showGhost}
           renderTier={renderTier}
           onBudgetMissed={onBudgetMissed}
+          onOrbitEnd={onOrbitEnd}
         />
       </AvatarErrorBoundary>
     </div>

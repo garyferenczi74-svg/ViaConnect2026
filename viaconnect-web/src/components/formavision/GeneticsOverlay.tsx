@@ -25,6 +25,7 @@
 
 import Link from 'next/link';
 import { Info, ArrowRight } from 'lucide-react';
+import { useEffect, useRef } from 'react';
 import { useGeneticsVariants } from '@/components/genetics/hub/useGeneticsVariants';
 import type { GeneticsVariantsData } from '@/components/genetics/hub/useGeneticsVariants';
 
@@ -122,10 +123,28 @@ export function GeneticsOverlayPanel({ presence }: GeneticsOverlayPanelProps) {
 // Fail-open: isLoading shows the loading placeholder; any hook error already
 // returns EMPTY_DATA so computeGeneticsPresence always receives a valid payload.
 // ---------------------------------------------------------------------------
-export function GeneticsOverlay() {
+
+export interface GeneticsOverlayProps {
+  // P8-T1b: telemetry seam. Called once when the overlay first transitions out
+  // of loading (formavision.genetics_overlay_viewed). The state argument is
+  // 'present' or 'absent' -- coarse, non-identifying. Absent means no telemetry.
+  onFirstView?: (state: 'present' | 'absent') => void;
+}
+
+export function GeneticsOverlay({ onFirstView }: GeneticsOverlayProps = {}) {
   const { data, isLoading } = useGeneticsVariants();
   const presence: 'present' | 'absent' | 'loading' = isLoading
     ? 'loading'
     : computeGeneticsPresence(data);
+
+  // P8-T1b: fire once when presence resolves from loading.
+  const firstViewFiredRef = useRef(false);
+  useEffect(() => {
+    if (presence !== 'loading' && !firstViewFiredRef.current) {
+      firstViewFiredRef.current = true;
+      onFirstView?.(presence);
+    }
+  }, [presence, onFirstView]);
+
   return <GeneticsOverlayPanel presence={presence} />;
 }

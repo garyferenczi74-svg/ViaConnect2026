@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BackToHubLink } from '@/components/body-tracker/hub/BackToHubLink';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -49,6 +49,12 @@ import { BOSMovementReadout } from '@/components/formavision/BOSMovementReadout'
 // === PROMPT 210b P6-T4 (MilestoneMoment) START ===
 import { MilestoneMoment } from '@/components/formavision/MilestoneMoment';
 // === PROMPT 210b P6-T4 (MilestoneMoment) END ===
+// === PROMPT 210b P8-T1b (Avatar Telemetry) START ===
+import {
+  useAvatarTelemetry,
+  createScrubSettleEmitter,
+} from '@/lib/formavision/telemetry/useAvatarTelemetry';
+// === PROMPT 210b P8-T1b (Avatar Telemetry) END ===
 import { scanToParamVector } from '@/lib/formavision/geometry/scanToParamVector';
 import type { BodyParamVector } from '@/lib/formavision/geometry/types';
 // === PROMPT 210b P3-T2b (Time Machine) END ===
@@ -262,6 +268,31 @@ function CompositionPageInner() {
   // === PROMPT 210b EXTENSION END ===
 
   const { id: userId } = useCurrentUser();
+
+  // === PROMPT 210b P8-T1b (Avatar Telemetry) START ===
+  // Bind telemetry helpers to the current user. userId may be undefined on first
+  // render (auth not yet resolved); emitAvatarEvent is a no-op until it resolves.
+  const { emit: telEmit, emitOnce: telEmitOnce } = useAvatarTelemetry(userId);
+
+  // Once-guard refs for mount-time events that must fire at most once per session
+  // regardless of re-renders. The emitOnce guard in the hook handles the dedup;
+  // these refs skip the initial-mount default for "on CHANGE" events.
+  const sectionMountedRef = useRef(false);    // skip initial section on mount
+  const bodyPartMountedRef = useRef(false);   // skip initial null selectedBodyPart
+
+  // Debounce helper for timeline_scrubbed: fires once per scrub gesture end.
+  // Stable across renders via useRef; onSettle reads telEmit through a current-ref
+  // so it always uses the latest emit even if userId resolves mid-session.
+  const telEmitRef = useRef(telEmit);
+  telEmitRef.current = telEmit;
+  const scrubSettleRef = useRef<ReturnType<typeof createScrubSettleEmitter> | null>(null);
+  if (scrubSettleRef.current === null) {
+    scrubSettleRef.current = createScrubSettleEmitter(() => {
+      telEmitRef.current('formavision.timeline_scrubbed');
+    });
+  }
+  // === PROMPT 210b P8-T1b (Avatar Telemetry) END ===
+
   const { sex: caqSex, source: caqSource, setOverride: setGenderOverride } = useUserBiologicalSex(userId ?? null);
 
   // Prompt #209: canonical composition read. Drives the four metric cards,
@@ -410,6 +441,47 @@ function CompositionPageInner() {
     setShowGhost(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshKey]);
+
+  // === PROMPT 210b P8-T1b (Avatar Telemetry) START ===
+  // 1. avatar_viewed: fire once on first mount of the composition surface.
+  useEffect(() => {
+    telEmitOnce('formavision.avatar_viewed');
+    // telEmitOnce is stable (no deps); this fires exactly once on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 2. tab_switched: fire on section CHANGE, skip the initial mount default.
+  useEffect(() => {
+    if (!sectionMountedRef.current) {
+      sectionMountedRef.current = true;
+      return;
+    }
+    telEmit('formavision.tab_switched', { tab: section });
+    // telEmit is stable; section is the dependency.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [section]);
+
+  // 3. region_selected: fire on selectedBodyPart CHANGE, skip initial null.
+  useEffect(() => {
+    if (!bodyPartMountedRef.current) {
+      bodyPartMountedRef.current = true;
+      return;
+    }
+    telEmit('formavision.region_selected', { region: selectedBodyPart ?? 'all' });
+    // telEmit is stable; selectedBodyPart is the dependency.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedBodyPart]);
+
+  // 4. protocol_opened: fire once when a body region is first selected
+  //    (RegionProtocolPanel mounts when selectedBodyPart !== null).
+  useEffect(() => {
+    if (selectedBodyPart !== null) {
+      telEmitOnce('formavision.protocol_opened');
+    }
+    // telEmitOnce is stable; selectedBodyPart is the dependency.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedBodyPart]);
+  // === PROMPT 210b P8-T1b (Avatar Telemetry) END ===
 
   const handleSaved = () => {
     setRefreshKey((k) => k + 1);
@@ -799,6 +871,10 @@ function CompositionPageInner() {
                     scrubVector={scrubVector}
                     ghostVector={ghostVector}
                     showGhost={showGhost}
+                    onOrbitEnd={() => telEmit('formavision.avatar_rotated')}
+                    onTierStepDown={(tier) =>
+                      telEmitOnce('formavision.fallback_tier_served', { tier })
+                    }
                   >
                     {isMuscle ? (
                       <HoverSystem view="muscle" sex={gender} regions={muscleRegions} className="lg:h-full">
@@ -910,7 +986,12 @@ function CompositionPageInner() {
           readouts={journeyReadouts}
           unit={unit}
           reducedMotion={avatarReducedMotion}
-          onScrub={setScrubVector}
+          onScrub={(vec) => {
+            setScrubVector(vec);
+            // P8-T1b: debounce-notify for timeline_scrubbed; fires once per gesture.
+            scrubSettleRef.current?.notify();
+          }}
+          onPlay={() => telEmitOnce('formavision.journey_played')}
         />
       )}
       {/* === PROMPT 210b P3-T2b (Time Machine) END === */}
@@ -919,7 +1000,13 @@ function CompositionPageInner() {
       {/* Honest-disabled genetics layer. Two states: real variants present ->
           body-positive invitation (tendency-not-destiny, no region band/tint);
           absent -> CTA to /genetics/upload. Fail-open via the shared hook. */}
-      {section !== 'measurements' && <GeneticsOverlay />}
+      {section !== 'measurements' && (
+        <GeneticsOverlay
+          onFirstView={(state) =>
+            telEmitOnce('formavision.genetics_overlay_viewed', { state })
+          }
+        />
+      )}
       {/* === PROMPT 210b P4-T1 (GeneticsOverlay) END === */}
 
       {/* === PROMPT 210b P5-T1c (FutureSelfPanel) START === */}
@@ -987,7 +1074,10 @@ function CompositionPageInner() {
           Carry-forward: server-side milestone -> Helix crediting is a separate task.
           Fail-open: any read failure renders nothing, never throws. */}
       {section !== 'measurements' && (
-        <MilestoneMoment reducedMotion={avatarReducedMotion} />
+        <MilestoneMoment
+          reducedMotion={avatarReducedMotion}
+          onShown={() => telEmitOnce('formavision.milestone_celebrated')}
+        />
       )}
       {/* === PROMPT 210b P6-T4 (MilestoneMoment) END === */}
 

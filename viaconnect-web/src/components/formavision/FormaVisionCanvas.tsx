@@ -101,6 +101,10 @@ export interface FormaVisionCanvasProps {
   // absent the frame-budget monitor is not mounted and the scene is byte-identical to
   // before this phase.
   onBudgetMissed?: () => void;
+  // P8-T1b: called once at the end of each user orbit gesture (OrbitControls onEnd).
+  // Fire-and-forget telemetry seam for formavision.avatar_rotated. Absent means
+  // no telemetry fires; the scene is byte-identical to before this phase.
+  onOrbitEnd?: () => void;
 }
 
 // Vertical / radial density per render tier. Lite keeps the silhouette readable
@@ -762,9 +766,11 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
             turntableRef.current?.notifyInteraction();
             skipIntro();
           }}
-          // A drag end re-arms the idle countdown.
+          // A drag end re-arms the idle countdown. Also signals the telemetry
+          // seam (P8-T1b): one avatar_rotated event per gesture, fire-and-forget.
           onEnd={() => {
             turntableRef.current?.notifyInteraction();
+            props.onOrbitEnd?.();
           }}
         />
 

@@ -51,6 +51,9 @@ export interface JourneyTimelineProps {
   reducedMotion?: boolean;
   // Push the current scrub shape to the avatar. null clears scrub (rest).
   onScrub: (vec: BodyParamVector | null) => void;
+  // P8-T1b: telemetry seam. Called once when the Play button is pressed to start
+  // playback (formavision.journey_played). Absent means no telemetry.
+  onPlay?: () => void;
   className?: string;
 }
 
@@ -85,6 +88,7 @@ export function JourneyTimeline({
   unit,
   reducedMotion = false,
   onScrub,
+  onPlay,
   className,
 }: JourneyTimelineProps) {
   const count = vectors.length;
@@ -182,13 +186,15 @@ export function JourneyTimeline({
     if (count < 2) return;
     setPlaying(true);
     playStartRef.current = null;
+    // P8-T1b: signal the journey_played telemetry seam when play starts.
+    onPlay?.();
     // Always start a play from the beginning of the journey.
     if (reducedMotion) {
       runJumpPlay();
     } else {
       runSmoothPlay();
     }
-  }, [playing, count, reducedMotion, runJumpPlay, runSmoothPlay, stopPlay]);
+  }, [playing, count, reducedMotion, runJumpPlay, runSmoothPlay, stopPlay, onPlay]);
 
   // Manual scrub from the slider. Reduced motion snaps to the nearest scan.
   const handleScrubInput = useCallback(

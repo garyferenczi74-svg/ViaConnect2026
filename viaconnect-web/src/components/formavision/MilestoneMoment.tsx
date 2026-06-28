@@ -40,7 +40,7 @@
  * 2026-06-27. No em/en dashes.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { X, Trophy } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { withTimeout } from '@/lib/utils/with-timeout';
@@ -72,6 +72,12 @@ export interface MilestoneMomentContentProps {
 export interface MilestoneMomentProps {
   /** When true, disables CSS animations (prefers-reduced-motion override). */
   reducedMotion?: boolean;
+  /**
+   * P8-T1b: telemetry seam. Called once when a qualifying milestone is first
+   * displayed to the user (formavision.milestone_celebrated). Absent means no
+   * telemetry. NO milestone title or health number is passed -- coarse only.
+   */
+  onShown?: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -171,9 +177,18 @@ export function MilestoneMomentContent({
 // NOTE: Does NOT write to any Helix economy table. Read-only entirely.
 // ---------------------------------------------------------------------------
 
-export function MilestoneMoment({ reducedMotion }: MilestoneMomentProps) {
+export function MilestoneMoment({ reducedMotion, onShown }: MilestoneMomentProps) {
   const [milestone, setMilestone] = useState<MilestoneForMoment | null>(null);
   const [dismissed, setDismissed] = useState(false);
+
+  // P8-T1b: fire once when a qualifying milestone is first shown.
+  const shownFiredRef = useRef(false);
+  useEffect(() => {
+    if (milestone !== null && !shownFiredRef.current) {
+      shownFiredRef.current = true;
+      onShown?.();
+    }
+  }, [milestone, onShown]);
 
   useEffect(() => {
     let active = true;
