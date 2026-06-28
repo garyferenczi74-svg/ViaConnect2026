@@ -175,7 +175,7 @@ export function getAvatarSessionId(): string | undefined {
  * @param context - Optional page/device/sessionId overrides.
  */
 export async function emitAvatarEvent(
-  userId: string,
+  userId: string | null | undefined,
   event: AvatarTelemetryEvent,
   properties: Record<string, unknown> = {},
   context: AvatarEventContext = {},

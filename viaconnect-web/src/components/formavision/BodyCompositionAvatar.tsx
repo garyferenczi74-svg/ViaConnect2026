@@ -20,7 +20,7 @@
 // useCircumferenceData as the unit prop, which is forwarded verbatim to the
 // avatar (and onward to scanToParamVector). The unit is never assumed here.
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { CompositionSnapshot } from '@/lib/body-tracker/composition/types';
 import type {
   CircumferenceMeasurements,
@@ -55,6 +55,12 @@ export interface BodyCompositionAvatarProps {
   // default off so the avatar is unchanged. P5-T1c wires the toggle + goal resolution.
   ghostVector?: BodyParamVector | null;
   showGhost?: boolean;
+  // P8-T1b: telemetry seam forwarded to FormaVisionCanvas. Called once at the end
+  // of each orbit gesture (formavision.avatar_rotated). Absent means no telemetry.
+  onOrbitEnd?: () => void;
+  // P8-T1b: telemetry seam. Called once when the tier first steps down below
+  // cinematic (lite) or reaches the 2D floor (2d). Absent means no telemetry.
+  onTierStepDown?: (tier: 'lite' | '2d') => void;
   // The 2D floor for this section, rendered as-is on any fallback.
   children: React.ReactNode;
 }
@@ -83,6 +89,8 @@ function BodyCompositionAvatarInner({
   scrubVector = null,
   ghostVector = null,
   showGhost = false,
+  onOrbitEnd,
+  onTierStepDown,
   children,
 }: BodyCompositionAvatarProps) {
   // Latched once the avatar reports a WebGL-unavailable gate or a render error.
@@ -94,6 +102,11 @@ function BodyCompositionAvatarInner({
   const tier = useRenderTier();
   const reportBudgetMiss = useReportBudgetMiss();
 
+  // P8-T1b: once-guard for the tier step-down telemetry event. Tracks the lowest
+  // tier we have already fired to avoid re-firing on renders after a step-down.
+  // 'none' -> first step-down fires; 'lite' -> already fired lite; '2d' -> floor.
+  const tierFiredRef = useRef<'none' | 'lite' | '2d'>('none');
+
   // The runtime step-down past 'lite' converges on the SAME fallback latch the WebGL
   // gate and the render-error boundary use: a '2d' tier flips fellBack, so there is
   // exactly one 2D-floor decision and one render branch, never a parallel 2D path.
@@ -101,7 +114,24 @@ function BodyCompositionAvatarInner({
     if (tier === '2d') {
       setFellBack(true);
     }
-  }, [tier]);
+    // P8-T1b: fire the step-down telemetry event on the first drop below cinematic.
+    if (tier === 'lite' && tierFiredRef.current === 'none') {
+      tierFiredRef.current = 'lite';
+      onTierStepDown?.('lite');
+    } else if (tier === '2d' && tierFiredRef.current !== '2d') {
+      tierFiredRef.current = '2d';
+      onTierStepDown?.('2d');
+    }
+  }, [tier, onTierStepDown]);
+
+  // P8-T1b: also fire the '2d' tier event when fellBack is set by the WebGL gate or
+  // render-error boundary (which do not go through the tier ladder).
+  useEffect(() => {
+    if (fellBack && tierFiredRef.current !== '2d') {
+      tierFiredRef.current = '2d';
+      onTierStepDown?.('2d');
+    }
+  }, [fellBack, onTierStepDown]);
 
   if (fellBack || tier === '2d') {
     return <>{children}</>;
@@ -134,6 +164,7 @@ function BodyCompositionAvatarInner({
         renderTier={renderTier}
         onBudgetMissed={reportBudgetMiss}
         onRenderError={() => setFellBack(true)}
+        onOrbitEnd={onOrbitEnd}
       />
     </div>
   );
