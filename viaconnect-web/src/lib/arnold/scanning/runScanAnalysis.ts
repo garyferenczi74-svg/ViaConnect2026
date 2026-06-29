@@ -234,25 +234,12 @@ export async function runScanAnalysis({ sessionId, onProgress }: ScanAnalysisInp
 
   const asymmetry = analyzeAsymmetry(measurements);
 
-  // BodyModelParameters requires number; null (UNKNOWN) measurements fall back to 0
-  // so the avatar mesh renders with a neutral/unset girth rather than crashing.
-  // This is an avatar-only concern; the health measurements in body_scan_measurements
-  // retain their honest null values (see cm() helper below).
-  const avatarParameters: BodyModelParameters = {
-    heightCm,
-    shoulderCircCm: measurements.shoulderCirc.cm         ?? 0,
-    chestCircCm:    measurements.chestCirc.cm            ?? 0,
-    waistCircCm:    measurements.waistNaturalCirc.cm     ?? 0,
-    hipCircCm:      measurements.hipCirc.cm              ?? 0,
-    neckCircCm:     measurements.neckCirc.cm             ?? 0,
-    bicepCircCm:    avgOrZero(measurements.rightBicepCirc.cm, measurements.leftBicepCirc.cm),
-    thighCircCm:    avgOrZero(measurements.rightThighCirc.cm, measurements.leftThighCirc.cm),
-    calfCircCm:     avgOrZero(measurements.rightCalfCirc.cm,  measurements.leftCalfCirc.cm),
-    inseamCm:       measurements.inseamCm,
-    torsoLengthCm:  measurements.torsoLengthCm,
+  const avatarParameters = buildAvatarParameters({
+    measurements,
     sex,
-    bodyFatPct:     composition.bodyFatPct.mid,
-  };
+    heightCm,
+    bodyFatPct: composition.bodyFatPct.mid,
+  });
 
   report('saving', 95, 'Saving results');
   await persistScan({
@@ -424,6 +411,60 @@ async function loadManualSnapshot(supabase: ReturnType<typeof createClient>, use
 // avgOrZero: used only for avatar BodyModelParameters which require number.
 // null (UNKNOWN) is treated as "not available for this side"; if both sides
 // are null the result is 0 (the avatar-only unset sentinel).
+/**
+ * Template-default circumferences (cm) for an UNKNOWN region, per sex.
+ * Section 9.2: an undeterminable circumference must render the anatomically
+ * plausible TEMPLATE DEFAULT, never 0 (a zero radius collapses the avatar
+ * segment in generateAvatarMesh, since rFromCirc(0)=0).  These are approximate
+ * adult population averages drawn from published anthropometric references
+ * (ANSUR II U.S. Army survey and CDC NHANES adult body-measurement tables);
+ * they are a neutral visual placeholder, NOT a measured value, and never reach
+ * the honest health rows in body_scan_measurements (those stay null).
+ * Follow-up: a later pass can mark these avatar regions as "estimated"
+ * downstream so the UI can visually distinguish template-filled segments.
+ */
+const AVATAR_TEMPLATE_CM: Record<
+  BiologicalSex,
+  { neck: number; shoulder: number; chest: number; waist: number; hip: number; bicep: number; thigh: number; calf: number }
+> = {
+  male:   { neck: 40, shoulder: 115, chest: 102, waist: 90, hip: 100, bicep: 34, thigh: 56, calf: 38 },
+  female: { neck: 33, shoulder: 98,  chest: 90,  waist: 78, hip: 103, bicep: 29, thigh: 57, calf: 35 },
+};
+
+/**
+ * Build the avatar BodyModelParameters from extracted measurements.
+ * Any UNKNOWN (null) or non-positive circumference is replaced by the per-sex
+ * template default (Section 9.2) so the rendered mesh always has a plausible,
+ * non-zero girth.  `|| template` also defends the invalid_input cm:0 case.
+ * The health rows persisted separately keep their honest null values.
+ */
+export function buildAvatarParameters(args: {
+  measurements: ExtractedMeasurements;
+  sex: BiologicalSex;
+  heightCm: number;
+  bodyFatPct: number;
+}): BodyModelParameters {
+  const { measurements: m, sex, heightCm, bodyFatPct } = args;
+  const t = AVATAR_TEMPLATE_CM[sex];
+  return {
+    heightCm,
+    shoulderCircCm: m.shoulderCirc.cm     || t.shoulder,
+    chestCircCm:    m.chestCirc.cm         || t.chest,
+    waistCircCm:    m.waistNaturalCirc.cm  || t.waist,
+    hipCircCm:      m.hipCirc.cm           || t.hip,
+    neckCircCm:     m.neckCirc.cm          || t.neck,
+    bicepCircCm:    avgOrZero(m.rightBicepCirc.cm, m.leftBicepCirc.cm) || t.bicep,
+    thighCircCm:    avgOrZero(m.rightThighCirc.cm, m.leftThighCirc.cm) || t.thigh,
+    calfCircCm:     avgOrZero(m.rightCalfCirc.cm,  m.leftCalfCirc.cm)  || t.calf,
+    inseamCm:       m.inseamCm,
+    torsoLengthCm:  m.torsoLengthCm,
+    sex,
+    bodyFatPct,
+  };
+}
+
+export { AVATAR_TEMPLATE_CM };
+
 function avgOrZero(a: number | null, b: number | null): number {
   if (a === null && b === null) return 0;
   if (a === null) return b! > 0 ? b! : 0;

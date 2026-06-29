@@ -25,7 +25,11 @@ const CALIBRATED_SOURCES = ['tape_calibrated', 'inbody_calibrated', 'dexa_calibr
 
 export function MeasurementCard({ label, measured, unitSystem }: MeasurementCardProps) {
   const isImperial = unitSystem === 'imperial';
-  const value = isImperial ? measured.cm / 2.54 : measured.cm;
+  // cm is null when the measurement is UNKNOWN (RULE 9). Treat null and any
+  // non-positive value as "not measured" rather than fabricating a number.
+  const cm = measured.cm;
+  const value = cm !== null && cm > 0 ? (isImperial ? cm / 2.54 : cm) : null;
+  const known = value !== null;
   const uncertainty = isImperial ? measured.uncertaintyCm / 2.54 : measured.uncertaintyCm;
   const unit = isImperial ? 'in' : 'cm';
 
@@ -37,7 +41,7 @@ export function MeasurementCard({ label, measured, unitSystem }: MeasurementCard
     <div className="rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2.5">
       <p className="text-[10px] text-white/50 uppercase tracking-wider">{label}</p>
       <div className="flex items-baseline gap-1 mt-0.5">
-        {measured.cm > 0 ? (
+        {known && value !== null ? (
           <>
             <p className="text-sm font-semibold text-white">{value.toFixed(1)}</p>
             <p className="text-[10px] text-white/45">{unit}</p>

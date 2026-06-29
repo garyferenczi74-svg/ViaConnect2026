@@ -5,7 +5,8 @@
 
 import { describe, it, expect } from 'vitest';
 import { extractMeasurements } from '../measurementEngine';
-import type { PoseSilhouette } from '../types';
+import { buildAvatarParameters, AVATAR_TEMPLATE_CM } from '../runScanAnalysis';
+import type { ExtractedMeasurements, MeasuredValue, PoseSilhouette } from '../types';
 
 // ---------------------------------------------------------------------------
 // Helpers: build minimal PoseSilhouette fixtures
@@ -154,5 +155,119 @@ describe('present measurement retains its numeric cm (no regression)', () => {
     expect(result.hipCirc.cm).not.toBeNull();
     expect(typeof result.hipCirc.cm).toBe('number');
     expect(result.hipCirc.cm).toBeGreaterThan(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Section 9.2: avatar BodyModelParameters use the per-sex TEMPLATE DEFAULT for
+// an UNKNOWN region, never 0 (a zero radius collapses the rendered mesh).
+// The health row value for the same region stays null (honest UNKNOWN).
+// ---------------------------------------------------------------------------
+
+function mv(cm: number | null): MeasuredValue {
+  return cm === null
+    ? { cm: null, uncertaintyCm: 0, confidence: 'low', source: 'missing' }
+    : { cm, uncertaintyCm: 1, confidence: 'moderate', source: 'ellipse_frontOnly' };
+}
+
+/** Measurements with a known neck but an UNKNOWN chest and UNKNOWN bicep. */
+function measurementsChestAndBicepUnknown(): ExtractedMeasurements {
+  return {
+    neckCirc:          mv(38),
+    shoulderCirc:      mv(115),
+    chestCirc:         mv(null),  // UNKNOWN
+    waistNaturalCirc:  mv(85),
+    waistNavelCirc:    mv(88),
+    hipCirc:           mv(99),
+    rightBicepCirc:    mv(null),  // UNKNOWN (both sides)
+    leftBicepCirc:     mv(null),
+    rightForearmCirc:  mv(28),
+    leftForearmCirc:   mv(28),
+    rightThighCirc:    mv(56),
+    leftThighCirc:     mv(56),
+    rightCalfCirc:     mv(38),
+    leftCalfCirc:      mv(38),
+    waistToHipRatio:    0.86,
+    waistToHeightRatio: 0.47,
+    shoulderToWaistRatio: 1.35,
+    inseamCm: 80,
+    torsoLengthCm: 50,
+  };
+}
+
+/** All circumferences UNKNOWN (worst case for avatar collapse). */
+function measurementsAllUnknown(): ExtractedMeasurements {
+  return {
+    neckCirc: mv(null), shoulderCirc: mv(null), chestCirc: mv(null),
+    waistNaturalCirc: mv(null), waistNavelCirc: mv(null), hipCirc: mv(null),
+    rightBicepCirc: mv(null), leftBicepCirc: mv(null),
+    rightForearmCirc: mv(null), leftForearmCirc: mv(null),
+    rightThighCirc: mv(null), leftThighCirc: mv(null),
+    rightCalfCirc: mv(null), leftCalfCirc: mv(null),
+    waistToHipRatio: 0, waistToHeightRatio: 0, shoulderToWaistRatio: 0,
+    inseamCm: 0, torsoLengthCm: 0,
+  };
+}
+
+describe('Section 9.2: avatar uses template default for UNKNOWN regions, never 0', () => {
+  it('UNKNOWN chest -> avatar chestCircCm equals the male template default (not 0), health row stays null', () => {
+    const measurements = measurementsChestAndBicepUnknown();
+    const params = buildAvatarParameters({ measurements, sex: 'male', heightCm: 180, bodyFatPct: 18 });
+
+    expect(params.chestCircCm).toBe(AVATAR_TEMPLATE_CM.male.chest);
+    expect(params.chestCircCm).toBeGreaterThan(0);
+    // The health measurement that flows to body_scan_measurements stays null (RULE 9)
+    expect(measurements.chestCirc.cm).toBeNull();
+  });
+
+  it('UNKNOWN bicep (both sides null) -> avatar bicepCircCm equals the male template default (not 0)', () => {
+    const measurements = measurementsChestAndBicepUnknown();
+    const params = buildAvatarParameters({ measurements, sex: 'male', heightCm: 180, bodyFatPct: 18 });
+
+    expect(params.bicepCircCm).toBe(AVATAR_TEMPLATE_CM.male.bicep);
+    expect(params.bicepCircCm).toBeGreaterThan(0);
+  });
+
+  it('present measurements are preserved, not overridden by the template', () => {
+    const measurements = measurementsChestAndBicepUnknown();
+    const params = buildAvatarParameters({ measurements, sex: 'male', heightCm: 180, bodyFatPct: 18 });
+
+    expect(params.neckCircCm).toBe(38);
+    expect(params.shoulderCircCm).toBe(115);
+    expect(params.hipCircCm).toBe(99);
+  });
+
+  it('NO avatar circumference field is 0 even when every region is UNKNOWN (female template)', () => {
+    const params = buildAvatarParameters({
+      measurements: measurementsAllUnknown(),
+      sex: 'female',
+      heightCm: 165,
+      bodyFatPct: 25,
+    });
+
+    const t = AVATAR_TEMPLATE_CM.female;
+    expect(params.neckCircCm).toBe(t.neck);
+    expect(params.shoulderCircCm).toBe(t.shoulder);
+    expect(params.chestCircCm).toBe(t.chest);
+    expect(params.waistCircCm).toBe(t.waist);
+    expect(params.hipCircCm).toBe(t.hip);
+    expect(params.bicepCircCm).toBe(t.bicep);
+    expect(params.thighCircCm).toBe(t.thigh);
+    expect(params.calfCircCm).toBe(t.calf);
+
+    for (const v of [
+      params.neckCircCm, params.shoulderCircCm, params.chestCircCm, params.waistCircCm,
+      params.hipCircCm, params.bicepCircCm, params.thighCircCm, params.calfCircCm,
+    ]) {
+      expect(v).toBeGreaterThan(0);
+    }
+  });
+
+  it('template defaults are all positive for both sexes', () => {
+    for (const sex of ['male', 'female'] as const) {
+      for (const v of Object.values(AVATAR_TEMPLATE_CM[sex])) {
+        expect(v).toBeGreaterThan(0);
+      }
+    }
   });
 });
