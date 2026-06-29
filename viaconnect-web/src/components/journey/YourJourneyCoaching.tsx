@@ -241,9 +241,9 @@ function ProfileCard({
           <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><RefreshCw size={13} strokeWidth={SW} /> {lastSyncLabel}</span>
         </div>
       </div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 10px", borderRadius: 10, background: C.card, border: `1px solid ${C.line}` }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 4, padding: "8px 10px", borderRadius: 10, background: C.card, border: `1px solid ${C.line}` }}>
         <span style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 12, color: C.muted }}><Target size={14} strokeWidth={SW} color={C.teal} /> Goal</span>
-        <span style={{ fontSize: 12, fontWeight: 700, color: C.teal }}>{goalPhrase || "supporting your wellness"}</span>
+        <span style={{ fontSize: 12, fontWeight: 700, color: C.teal, overflowWrap: "anywhere" }}>{goalPhrase || "supporting your wellness"}</span>
       </div>
       <div>
         <div style={{ ...eyebrow, marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}><Sparkles size={12} strokeWidth={SW} color={C.teal} /> Hannah's note</div>
