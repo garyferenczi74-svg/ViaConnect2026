@@ -15,6 +15,7 @@ import { cunbaeBodyFat } from './cunbaeBodyFat';
 import { blendComposition } from './compositionBlender';
 import { applyCalibration } from './calibrationManager';
 import { ingestMeasurementsFromScan, type IngestClient } from '@/lib/body-measurements/ingestScanMeasurements';
+import { safeLog } from '@/lib/utils/safe-log';
 import type {
   BiologicalSex,
   CompositionEstimate,
@@ -55,6 +56,99 @@ export interface ScanAnalysisOutput {
 export interface ScanAnalysisInputs {
   sessionId: string;
   onProgress?: (p: ScanProgress) => void;
+}
+
+// ---------------------------------------------------------------------------
+// In-memory measurement pipeline (Task 9 - Prompt 210c)
+// Runs client-side on the four in-memory capture Blobs.
+// Pixels NEVER leave the device for this path; no bucket download occurs.
+// Each per-view CV inference is wrapped in Promise.race with a 4-second timeout
+// and a try/catch fail-open: a slow or failing view contributes UNKNOWN to
+// extractMeasurements, and the run always completes (never hangs).
+// ---------------------------------------------------------------------------
+
+/** Per-view CV inference timeout in milliseconds. Set to 4 s (Section 13). */
+const VIEW_INFERENCE_TIMEOUT_MS = 4000;
+
+/** Input for the in-memory client-side measurement pipeline. */
+export interface InMemoryPhotoInput {
+  /** The four capture Blobs keyed by PoseId. Absent poses are skipped. */
+  photos: Partial<Record<PoseId, Blob>>;
+  /** User's height in cm (required for pixel-to-cm scale). */
+  heightCm: number;
+  /** Biological sex, used by extractMeasurements. */
+  sex: BiologicalSex;
+  /** Optional progress callback (mirrors ScanProgress phases). */
+  onProgress?: (p: ScanProgress) => void;
+}
+
+/**
+ * Run the full client-side geometric measurement pipeline on in-memory Blobs.
+ * This is the 209 capture path: pixels never leave the device.
+ * Produces ExtractedMeasurements with per-field confidence + UNKNOWN (null)
+ * for any measurement that could not be determined (RULE 9: never cm:0).
+ */
+export async function runInMemoryMeasurement(
+  input: InMemoryPhotoInput,
+): Promise<ExtractedMeasurements> {
+  const { photos, heightCm, sex, onProgress } = input;
+  const report = (phase: ScanProgress['phase'], percent: number, message: string) =>
+    onProgress?.({ phase, percent, message });
+
+  const poses: PoseId[] = ['front', 'back', 'left', 'right'];
+  const progressSteps: Record<PoseId, ScanProgress['phase']> = {
+    front: 'processing_front',
+    back:  'processing_back',
+    left:  'processing_left',
+    right: 'processing_right',
+  };
+
+  const silhouettes: PoseSilhouette[] = [];
+
+  for (let i = 0; i < poses.length; i++) {
+    const pose = poses[i];
+    const blob = photos[pose];
+    if (!blob) continue;
+
+    report(progressSteps[pose], 10 + i * 18, `Processing ${pose} view`);
+
+    try {
+      const silhouette = await Promise.race([
+        (async (): Promise<PoseSilhouette> => {
+          const landmarks = await detectLandmarks(blob);
+          return processSilhouette({ blob, poseId: pose, userHeightCm: heightCm, landmarks });
+        })(),
+        new Promise<never>((_, rej) =>
+          setTimeout(
+            () => rej(new Error(`[T9] ${pose} view CV timeout after ${VIEW_INFERENCE_TIMEOUT_MS}ms`)),
+            VIEW_INFERENCE_TIMEOUT_MS,
+          ),
+        ),
+      ]);
+      silhouettes.push(silhouette);
+    } catch (err) {
+      // Fail-open: log the failure and skip this view.
+      // Its measurements will be UNKNOWN (null), never fabricated (RULE 9).
+      safeLog.warn(
+        'arnold.scanning.inmemory',
+        `${pose} view failed or timed out - treated as UNKNOWN (fail-open)`,
+        { pose, error: err instanceof Error ? err.message : String(err) },
+      );
+    }
+  }
+
+  report('measuring', 82, 'Extracting measurements from silhouettes');
+
+  const measurements = extractMeasurements({ silhouettes, sex, heightCm });
+
+  report('complete', 100, 'Client-side measurement complete');
+  safeLog.info(
+    'arnold.scanning.inmemory',
+    'In-memory scan measurement complete',
+    { viewsProcessed: silhouettes.length, totalViews: poses.filter((p) => p in photos).length },
+  );
+
+  return measurements;
 }
 
 interface SessionRow {

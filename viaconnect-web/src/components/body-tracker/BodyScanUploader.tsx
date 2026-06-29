@@ -3,6 +3,10 @@
 import { useRef, useState } from 'react';
 import { Camera, Check, Loader2, ShieldCheck, X } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { runInMemoryMeasurement } from '@/lib/arnold/scanning/runScanAnalysis';
+import { safeLog } from '@/lib/utils/safe-log';
+import type { ExtractedMeasurements } from '@/lib/arnold/scanning/types';
+import type { PoseId } from '@/lib/arnold/types';
 
 export type PhotoPosition = 'front' | 'back' | 'left_side' | 'right_side';
 
@@ -12,6 +16,15 @@ const POSITIONS: Array<{ key: PhotoPosition; label: string }> = [
   { key: 'left_side',  label: 'Left' },
   { key: 'right_side', label: 'Right' },
 ];
+
+// Map from BodyScanUploader PhotoPosition keys to canonical PoseId values
+// (left_side -> left, right_side -> right; front/back are unchanged).
+const POSITION_TO_POSE_ID: Record<PhotoPosition, PoseId> = {
+  front:      'front',
+  back:       'back',
+  left_side:  'left',
+  right_side: 'right',
+};
 
 const MAX_PHOTO_BYTES = 5_000_000; // 5 MB binary
 const SUPABASE_URL =
@@ -36,9 +49,22 @@ export interface BodyScanResult {
   estimates: BodyScanEstimate;
 }
 
+// Profile shape for the geometric measurement (height + sex only).
+interface ProfileSnapshot {
+  height_cm: number | null;
+  sex: string | null;
+}
+
 interface BodyScanUploaderProps {
   onComplete: (result: BodyScanResult) => void;
   onCancel: () => void;
+  /**
+   * Optional callback invoked with the client-side geometric measurements
+   * once the in-memory pipeline completes (Task 9 additive path).
+   * Fires in the background alongside the Claude Vision call; does not
+   * block the composition result or the UI.
+   */
+  onGeometricMeasurements?: (m: ExtractedMeasurements) => void;
 }
 
 interface SlotState {
@@ -60,7 +86,7 @@ function fileToBase64(file: File): Promise<string> {
   });
 }
 
-export function BodyScanUploader({ onComplete, onCancel }: BodyScanUploaderProps) {
+export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements }: BodyScanUploaderProps) {
   const initialSlots: Record<PhotoPosition, SlotState> = {
     front:      { file: null, base64: null },
     back:       { file: null, base64: null },
@@ -104,6 +130,54 @@ export function BodyScanUploader({ onComplete, onCancel }: BodyScanUploaderProps
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token;
       if (!token) throw new Error('Not signed in');
+
+      // Client-side geometric measurement (additive, Task 9).
+      // Runs in-memory on the captured Blobs before they are discarded.
+      // Pixels never leave the device for this path (Gary decision: ephemeral no-store).
+      // Fire-and-forget: does NOT block the Claude Vision composition call or the UX.
+      void (async () => {
+        try {
+          const userId = sessionData.session?.user?.id;
+          if (!userId) return;
+
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('height_cm, sex')
+            .eq('id', userId)
+            .maybeSingle();
+          const p = profileData as ProfileSnapshot | null;
+          if (!p?.height_cm) {
+            safeLog.warn(
+              'arnold.scanning.uploader',
+              'Skipping geometric measurement - profile height_cm unavailable',
+              { userId },
+            );
+            return;
+          }
+
+          const sex = p.sex === 'female' ? 'female' : 'male';
+          const photos: Partial<Record<PoseId, Blob>> = {};
+          for (const pos of POSITIONS) {
+            const file = slots[pos.key].file;
+            if (file) photos[POSITION_TO_POSE_ID[pos.key]] = file;
+          }
+
+          const measurements = await runInMemoryMeasurement({
+            photos,
+            heightCm: p.height_cm,
+            sex,
+          });
+
+          onGeometricMeasurements?.(measurements);
+        } catch (err) {
+          // Non-fatal: log and continue. The Claude Vision path is unaffected.
+          safeLog.warn(
+            'arnold.scanning.uploader',
+            'Geometric measurement failed (non-fatal)',
+            { error: err instanceof Error ? err.message : String(err) },
+          );
+        }
+      })();
 
       const url = `${SUPABASE_URL.replace(/\/$/, '')}/functions/v1/body-scan-analyze`;
       const res = await fetch(url, {
