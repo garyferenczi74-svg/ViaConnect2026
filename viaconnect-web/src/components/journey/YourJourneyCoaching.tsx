@@ -496,7 +496,7 @@ function HannahRead({
 }) {
   const router = useRouter();
   return (
-    <div style={{ ...panel(true), height: "100%", display: "flex", flexDirection: "column" }}>
+    <div style={{ ...panel(true), display: "flex", flexDirection: "column" }}>
       <Edge active />
       <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 10 }}>
         <span style={{ width: 30, height: 30, borderRadius: 999, background: C.tealSoft, color: C.teal, display: "inline-flex", alignItems: "center", justifyContent: "center" }}><Sparkles size={15} strokeWidth={SW} /></span>
@@ -776,7 +776,7 @@ function TodayTab({
         </div>
       </div>
       {hannahLoading ? (
-        <div style={{ ...panel(true), height: "100%", display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ ...panel(true), display: "flex", flexDirection: "column", gap: 12 }}>
           <Edge active />
           <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
             <Shimmer w={30} h={30} radius={999} />
@@ -1517,7 +1517,7 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
         .vc-hero { display: grid; grid-template-columns: 220px 1fr; gap: 18px; align-items: stretch; }
         .vc-herotop { display: flex; gap: 18px; align-items: flex-start; flex-wrap: wrap; }
         .vc-gaugecluster { flex: 1.7 1 340px; display: flex; gap: 8px; align-items: stretch; }
-        .vc-split { display: grid; grid-template-columns: 1fr 360px; gap: 14px; align-items: start; }
+        .vc-split { display: grid; grid-template-columns: 1fr 360px; gap: 14px; align-items: stretch; }
         .vc-two { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
         .vc-tri { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
         .vc-goalrow { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 14px; align-items: stretch; }
