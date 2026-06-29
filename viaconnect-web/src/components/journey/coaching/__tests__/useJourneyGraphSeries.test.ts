@@ -422,7 +422,8 @@ describe('buildSeriesFromRows - 1M', () => {
 describe('buildSeriesFromRows - 1Y monthly aggregation', () => {
   const today = '2026-06-28';
   const win = windowFor('1Y', 0, today);
-  // Buckets: 2026-06 ... 2027-05 (12 monthly buckets, forward window).
+  // Buckets: 2026-03 ... 2027-02 (12 monthly buckets; 3 history, current month
+  // 2026-06 at index 3, then 8 ahead).
 
   it('series length is 12 for every pillar', () => {
     const series = buildSeriesFromRows(win.buckets, [], [], [], '1Y', today, undefined);

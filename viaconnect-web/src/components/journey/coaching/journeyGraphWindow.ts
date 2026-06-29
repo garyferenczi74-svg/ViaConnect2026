@@ -52,6 +52,11 @@ const FULL_MONTHS = [
 
 const SHORT_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+// 1Y window: how many months of history are shown before the current month. The
+// rest of the 12-month window runs forward. Gary decision 2026-06-29 (revised):
+// 3 prior + current + 8 ahead, so the current month sits at this index.
+const MONTHS_BEFORE_CURRENT = 3;
+
 // ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
@@ -185,12 +190,13 @@ export function windowFor(range: JourneyRange, offset: number, today: string): J
     };
   }
 
-  // --- 1Y: 12 monthly buckets STARTING at the current month, going forward ---
-  // "Year ahead from now" (Gary decision 2026-06-29): offset 0 puts the current month
-  // as the first (left) bucket and runs forward through the next 11 months. Each step
-  // back (offset) shifts the whole 12-month block one year earlier, so offset >= 1 shows
-  // the prior historical year blocks (which carry real data). canGoNext = offset > 0.
-  const startM = subMonths(ty, tm, offset * 12);
+  // --- 1Y: 12 monthly buckets = MONTHS_BEFORE_CURRENT history, current month, then ahead ---
+  // (Gary decision 2026-06-29, revised): offset 0 starts MONTHS_BEFORE_CURRENT months before
+  // the current month and runs forward to fill 12 buckets, so the current month sits at index
+  // MONTHS_BEFORE_CURRENT with recent history to its left and the rest of the year ahead to its
+  // right. Each step back (offset) shifts the whole 12-month block one year earlier, so
+  // offset >= 1 shows the prior historical blocks. canGoNext = offset > 0.
+  const startM = subMonths(ty, tm, MONTHS_BEFORE_CURRENT + offset * 12);
 
   const buckets: JourneyBucket[] = [];
   for (let i = 0; i < 12; i++) {
