@@ -90,6 +90,10 @@ describe("windowFor '1W'", () => {
       expect(w.periodLabel).toBe('Jun 15 to Jun 21');
     });
 
+    it('rangeStart is 2026-06-15', () => {
+      expect(w.rangeStart).toBe('2026-06-15');
+    });
+
     it('canGoNext is true', () => {
       expect(w.canGoNext).toBe(true);
     });
@@ -274,6 +278,10 @@ describe("windowFor '1M'", () => {
       expect(w.buckets[27].date).toBe('2023-02-28');
     });
 
+    it('label for day 28 (last day) is "28"', () => {
+      expect(w.buckets[27].label).toBe('28');
+    });
+
     it('rangeEnd is 2023-02-28', () => {
       expect(w.rangeEnd).toBe('2023-02-28');
     });
@@ -353,6 +361,10 @@ describe("windowFor '1Y'", () => {
       expect(w.periodLabel).toBe('Jul 2024 to Jun 2025');
     });
 
+    it('rangeStart is 2024-07-01', () => {
+      expect(w.rangeStart).toBe('2024-07-01');
+    });
+
     it('canGoNext is true', () => {
       expect(w.canGoNext).toBe(true);
     });
@@ -391,6 +403,16 @@ describe("windowFor '1Y'", () => {
     it('end month April 2026 (30 days) gives rangeEnd 2026-04-30', () => {
       const w = windowFor('1Y', 0, '2026-04-20');
       expect(w.rangeEnd).toBe('2026-04-30');
+    });
+
+    it('end month leap February 2024 gives rangeEnd 2024-02-29', () => {
+      const w = windowFor('1Y', 0, '2024-02-15');
+      expect(w.rangeEnd).toBe('2024-02-29');
+    });
+
+    it('end month non-leap February 2023 gives rangeEnd 2023-02-28', () => {
+      const w = windowFor('1Y', 0, '2023-02-15');
+      expect(w.rangeEnd).toBe('2023-02-28');
     });
   });
 });
@@ -506,7 +528,10 @@ describe('aggregateMonthly', () => {
     ];
     const r1 = aggregateMonthly(input);
     const r2 = aggregateMonthly(input);
-    expect(r1.get('2026-05')).toBe(r2.get('2026-05'));
+    // Probative: assert the concrete expected average (75 + 85) / 2 = 80 on both
+    // results, so two coincidentally-equal undefined or null values cannot pass.
+    expect(r1.get('2026-05')).toBe(80);
+    expect(r2.get('2026-05')).toBe(80);
   });
 
   it('never throws on empty input', () => {
