@@ -58,7 +58,11 @@ import type {
   AvatarQualitySignals,
   AvatarEventProperties,
 } from '@/lib/formavision/telemetry/avatarTelemetry';
+import { recordAvatarView } from '@/lib/formavision/telemetry/avatarTelemetry';
 // === PROMPT 210b P8-T1b (Avatar Telemetry) END ===
+// === PROMPT 210b P8-T2a (Avatar Dwell) START ===
+import { useAvatarDwell } from '@/lib/formavision/telemetry/useAvatarDwell';
+// === PROMPT 210b P8-T2a (Avatar Dwell) END ===
 import { scanToParamVector } from '@/lib/formavision/geometry/scanToParamVector';
 import type { BodyParamVector } from '@/lib/formavision/geometry/types';
 // === PROMPT 210b P3-T2b (Time Machine) END ===
@@ -448,11 +452,23 @@ function CompositionPageInner() {
 
   // === PROMPT 210b P8-T1b (Avatar Telemetry) START ===
   // 1. avatar_viewed: fire once on first mount of the composition surface.
+  //    P8-T2a: enriched with repeatViewCount + daysSinceLastView (localStorage
+  //    persisted; read-increment-write happens on mount, injected clock = Date.now()).
+  //    Destructured into an object literal so AvatarEventProperties (Record<string,Json>)
+  //    receives a plain object without a cast, avoiding the index-signature mismatch.
   useEffect(() => {
-    telEmitOnce('formavision.avatar_viewed');
-    // telEmitOnce is stable (no deps); this fires exactly once on mount.
+    const { repeatViewCount, daysSinceLastView } = recordAvatarView();
+    telEmitOnce('formavision.avatar_viewed', { repeatViewCount, daysSinceLastView });
+    // telEmitOnce is stable (no deps); recordAvatarView() reads/writes localStorage.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // === PROMPT 210b P8-T2a (Avatar Dwell) START ===
+  // Dwell tracking: accumulates active-visible time via visibilitychange + pagehide.
+  // Emits 'formavision.avatar_session_ended' with { dwellMs } on each hide event.
+  // telEmit is stable (useCallback([], [])); the hook registers listeners once.
+  useAvatarDwell(telEmit);
+  // === PROMPT 210b P8-T2a (Avatar Dwell) END ===
 
   // 2. tab_switched: fire on section CHANGE, skip the initial mount default.
   useEffect(() => {
