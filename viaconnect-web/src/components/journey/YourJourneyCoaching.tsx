@@ -140,7 +140,7 @@ function GaugeCard({ value, label, color, hero, loading }: { value: number; labe
 type PillarValues = Record<string, number>;
 
 // Journey: self-contained hero graph component wired to useJourneyGraphSeries.
-// Takes only { userId }; holds range state and calls the hook at offset 0.
+// Takes only { userId }; holds range and offset state (T4 period navigator wires offset).
 // Y axis: 0 to 100 with a gridline and muted label at every 10.
 // X axis: labels from bucket.label (non-empty only, per T1 bucketing rules).
 // Seven pillar lines in their PILLARS colors; Bio Optimization drawn last on top.
