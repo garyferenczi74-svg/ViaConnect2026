@@ -3382,72 +3382,111 @@ export type Database = {
       body_tracker_circumference: {
         Row: {
           chest: number | null
+          chest_confidence: number | null
           created_at: string
           entry_id: string
           entry_unit: string
           hip: number | null
           id: string
           left_calf: number | null
+          left_calf_confidence: number | null
           left_forearm: number | null
+          left_forearm_confidence: number | null
           left_upper_arm: number | null
+          left_upper_arm_confidence: number | null
           left_upper_thigh: number | null
+          left_upper_thigh_confidence: number | null
           neck: number | null
+          neck_confidence: number | null
           right_calf: number | null
+          right_calf_confidence: number | null
           right_forearm: number | null
+          right_forearm_confidence: number | null
           right_upper_arm: number | null
+          right_upper_arm_confidence: number | null
           right_upper_thigh: number | null
+          right_upper_thigh_confidence: number | null
+          scan_calibration_version: string | null
           shoulder_width: number | null
+          shoulder_width_confidence: number | null
           source: string
           scan_id: string | null
           deleted_at: string | null
           user_id: string
           waist: number | null
+          waist_confidence: number | null
         }
         Insert: {
           chest?: number | null
+          chest_confidence?: number | null
           created_at?: string
           entry_id: string
           entry_unit?: string
           hip?: number | null
           id?: string
           left_calf?: number | null
+          left_calf_confidence?: number | null
           left_forearm?: number | null
+          left_forearm_confidence?: number | null
           left_upper_arm?: number | null
+          left_upper_arm_confidence?: number | null
           left_upper_thigh?: number | null
+          left_upper_thigh_confidence?: number | null
           neck?: number | null
+          neck_confidence?: number | null
           right_calf?: number | null
+          right_calf_confidence?: number | null
           right_forearm?: number | null
+          right_forearm_confidence?: number | null
           right_upper_arm?: number | null
+          right_upper_arm_confidence?: number | null
           right_upper_thigh?: number | null
+          right_upper_thigh_confidence?: number | null
+          scan_calibration_version?: string | null
           shoulder_width?: number | null
+          shoulder_width_confidence?: number | null
           source?: string
           scan_id?: string | null
           deleted_at?: string | null
           user_id: string
           waist?: number | null
+          waist_confidence?: number | null
         }
         Update: {
           chest?: number | null
+          chest_confidence?: number | null
           created_at?: string
           entry_id?: string
           entry_unit?: string
           hip?: number | null
           id?: string
           left_calf?: number | null
+          left_calf_confidence?: number | null
           left_forearm?: number | null
+          left_forearm_confidence?: number | null
           left_upper_arm?: number | null
+          left_upper_arm_confidence?: number | null
           left_upper_thigh?: number | null
+          left_upper_thigh_confidence?: number | null
           neck?: number | null
+          neck_confidence?: number | null
           right_calf?: number | null
+          right_calf_confidence?: number | null
           right_forearm?: number | null
+          right_forearm_confidence?: number | null
           right_upper_arm?: number | null
+          right_upper_arm_confidence?: number | null
           right_upper_thigh?: number | null
+          right_upper_thigh_confidence?: number | null
+          scan_calibration_version?: string | null
           shoulder_width?: number | null
+          shoulder_width_confidence?: number | null
           source?: string
           scan_id?: string | null
           deleted_at?: string | null
           user_id?: string
           waist?: number | null
+          waist_confidence?: number | null
         }
         Relationships: [
           {
@@ -4075,6 +4114,7 @@ export type Database = {
           created_at: string
           entry_id: string
           goal_weight_lbs: number | null
+          hips_confidence: number | null
           hips_in: number | null
           id: string
           lean_body_mass_lbs: number | null
@@ -4104,6 +4144,7 @@ export type Database = {
           created_at?: string
           entry_id: string
           goal_weight_lbs?: number | null
+          hips_confidence?: number | null
           hips_in?: number | null
           id?: string
           lean_body_mass_lbs?: number | null
@@ -4133,6 +4174,7 @@ export type Database = {
           created_at?: string
           entry_id?: string
           goal_weight_lbs?: number | null
+          hips_confidence?: number | null
           hips_in?: number | null
           id?: string
           lean_body_mass_lbs?: number | null

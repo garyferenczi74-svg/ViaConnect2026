@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Camera, Check, Loader2, ShieldCheck, X } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { runInMemoryMeasurement } from '@/lib/arnold/scanning/runScanAnalysis';
@@ -49,10 +49,45 @@ export interface BodyScanResult {
   estimates: BodyScanEstimate;
 }
 
-// Profile shape for the geometric measurement (height + sex only).
+// Profile shape for the geometric measurement (sex only; height_cm comes from
+// clinical_assessments per the 209 fix - profiles.height_cm does not exist).
 interface ProfileSnapshot {
-  height_cm: number | null;
   sex: string | null;
+}
+
+// Shape of the clinical_assessments row we read for height_cm.
+interface ClinicalSnapshot {
+  height_cm: number | null;
+}
+
+// Attempt to write geometric circumference measurements to the DB.
+// Fire-and-forget helper: called when both the scan entry (scanId) and the
+// geometric measurements are available. Uses the /api/body/circumference route
+// which looks up the entry_id internally and retries for the composition-persist race.
+async function writeCircumferencesFromScan(
+  measurements: ExtractedMeasurements,
+  scanId: string,
+): Promise<void> {
+  try {
+    const res = await fetch('/api/body/circumference', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ scanId, measurements }),
+    });
+    if (!res.ok) {
+      safeLog.warn(
+        'arnold.scanning.uploader',
+        'circumference persist returned non-ok',
+        { status: res.status, scanId },
+      );
+    }
+  } catch (err) {
+    safeLog.warn(
+      'arnold.scanning.uploader',
+      'circumference persist failed (non-fatal)',
+      { error: err instanceof Error ? err.message : String(err) },
+    );
+  }
 }
 
 interface BodyScanUploaderProps {
@@ -100,6 +135,17 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
     front: null, back: null, left_side: null, right_side: null,
   });
 
+  // Unmount guard: prevents any post-unmount state updates from the async IIFE.
+  const isMountedRef = useRef(true);
+  useEffect(() => () => { isMountedRef.current = false; }, []);
+
+  // Cross-path coordination refs: whichever of (geometric pipeline | Claude Vision)
+  // completes LAST will trigger the circumference write (Task 10).
+  // Both refs are reset at the start of each handleAnalyze call.
+  const geometricMeasurementsRef = useRef<ExtractedMeasurements | null>(null);
+  const visionScanIdRef = useRef<string | null>(null);
+  const writeTriggeredRef = useRef(false);
+
   const allFilled = POSITIONS.every((p) => slots[p.key].base64 !== null);
 
   function clearSlot(key: PhotoPosition) {
@@ -125,37 +171,62 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
     if (!allFilled || submitting) return;
     setSubmitting(true);
     setError(null);
+
+    // Reset cross-path coordination refs for this scan attempt.
+    geometricMeasurementsRef.current = null;
+    visionScanIdRef.current = null;
+    writeTriggeredRef.current = false;
+
     try {
       const supabase = createClient();
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token;
       if (!token) throw new Error('Not signed in');
 
-      // Client-side geometric measurement (additive, Task 9).
+      // Client-side geometric measurement (Task 9 additive path, Task 10 write).
       // Runs in-memory on the captured Blobs before they are discarded.
       // Pixels never leave the device for this path (Gary decision: ephemeral no-store).
       // Fire-and-forget: does NOT block the Claude Vision composition call or the UX.
+      //
+      // Height read: uses clinical_assessments.height_cm (not profiles.height_cm which
+      // does not exist - 209 fix applied per commit 5a226d2a). Skips gracefully when null.
+      //
+      // Coordination (Task 10): after measurements are ready, if the Claude Vision
+      // call has already returned the scanId, trigger the circumference write immediately.
+      // Otherwise, store measurements in geometricMeasurementsRef and let the Vision
+      // completion path pick them up. Either way the write fires exactly once.
       void (async () => {
         try {
           const userId = sessionData.session?.user?.id;
           if (!userId) return;
 
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('height_cm, sex')
-            .eq('id', userId)
+          // height_cm from clinical_assessments (the correct source after 209).
+          // profiles.height_cm does not exist in this schema.
+          const { data: clinicalData } = await supabase
+            .from('clinical_assessments')
+            .select('height_cm')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false })
+            .limit(1)
             .maybeSingle();
-          const p = profileData as ProfileSnapshot | null;
-          if (!p?.height_cm) {
+          const heightCm = (clinicalData as ClinicalSnapshot | null)?.height_cm ?? null;
+          if (!heightCm) {
             safeLog.warn(
               'arnold.scanning.uploader',
-              'Skipping geometric measurement - profile height_cm unavailable',
+              'Skipping geometric measurement - clinical_assessments height_cm unavailable',
               { userId },
             );
             return;
           }
 
-          const sex = p.sex === 'female' ? 'female' : 'male';
+          // Sex still read from profiles (clinical_assessments does not carry sex).
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('sex')
+            .eq('id', userId)
+            .maybeSingle();
+          const sex = (profileData as ProfileSnapshot | null)?.sex === 'female' ? 'female' : 'male';
+
           const photos: Partial<Record<PoseId, Blob>> = {};
           for (const pos of POSITIONS) {
             const file = slots[pos.key].file;
@@ -164,11 +235,23 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
 
           const measurements = await runInMemoryMeasurement({
             photos,
-            heightCm: p.height_cm,
+            heightCm,
             sex,
           });
 
+          // Guard: do not update state or trigger writes after unmount.
+          if (!isMountedRef.current) return;
+
+          geometricMeasurementsRef.current = measurements;
           onGeometricMeasurements?.(measurements);
+
+          // Coordinate with Claude Vision path (Task 10):
+          // if the scanId is already known, trigger circumference write now.
+          const scanId = visionScanIdRef.current;
+          if (scanId && !writeTriggeredRef.current) {
+            writeTriggeredRef.current = true;
+            void writeCircumferencesFromScan(measurements, scanId);
+          }
         } catch (err) {
           // Non-fatal: log and continue. The Claude Vision path is unaffected.
           safeLog.warn(
@@ -206,6 +289,16 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
         scan_date: string;
         estimates: BodyScanEstimate;
       };
+
+      // Coordinate with geometric path (Task 10):
+      // if measurements are already ready, trigger circumference write now.
+      visionScanIdRef.current = out.scan_id;
+      const pendingMeasurements = geometricMeasurementsRef.current;
+      if (pendingMeasurements && !writeTriggeredRef.current) {
+        writeTriggeredRef.current = true;
+        void writeCircumferencesFromScan(pendingMeasurements, out.scan_id);
+      }
+
       onComplete({ scanId: out.scan_id, scanDate: out.scan_date, estimates: out.estimates });
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Analysis failed');
