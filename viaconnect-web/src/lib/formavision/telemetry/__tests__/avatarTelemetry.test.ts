@@ -12,7 +12,7 @@
 //
 // Node harness; no JSX, no DOM. Uses vi.mock for supabase client + safeLog.
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // Module mocks - vi.mock is hoisted to the top of the file by vitest, so any
@@ -50,6 +50,8 @@ import {
   buildAvatarEventPayload,
   emitAvatarEvent,
   getAvatarSessionId,
+  computeDaysDelta,
+  recordAvatarView,
 } from '../avatarTelemetry';
 import type { AvatarTelemetryEvent } from '../avatarTelemetry';
 
@@ -124,11 +126,13 @@ describe('buildAvatarEventPayload: produces deterministic shape', () => {
 });
 
 // ---------------------------------------------------------------------------
-// T2. Event union is exhaustive: all 11 events, typed as AvatarTelemetryEvent[]
+// T2. Event union is exhaustive: all 12 events, typed as AvatarTelemetryEvent[]
+// P8-T2a: 12th event 'formavision.avatar_session_ended' added for dwell tracking.
+// A dropped or renamed event MUST cause a TypeScript compile error in this array.
 // ---------------------------------------------------------------------------
 
-describe('AvatarTelemetryEvent union: exhaustive 11-event catalog', () => {
-  it('the full event catalog contains exactly 11 events', () => {
+describe('AvatarTelemetryEvent union: exhaustive 12-event catalog', () => {
+  it('the full event catalog contains exactly 12 events', () => {
     const ALL_EVENTS: AvatarTelemetryEvent[] = [
       'formavision.avatar_viewed',
       'formavision.avatar_rotated',
@@ -141,8 +145,9 @@ describe('AvatarTelemetryEvent union: exhaustive 11-event catalog', () => {
       'formavision.protocol_opened',
       'formavision.milestone_celebrated',
       'formavision.fallback_tier_served',
+      'formavision.avatar_session_ended',
     ];
-    expect(ALL_EVENTS.length).toBe(11);
+    expect(ALL_EVENTS.length).toBe(12);
   });
 
   it('each event string carries the formavision. prefix', () => {
@@ -158,10 +163,132 @@ describe('AvatarTelemetryEvent union: exhaustive 11-event catalog', () => {
       'formavision.protocol_opened',
       'formavision.milestone_celebrated',
       'formavision.fallback_tier_served',
+      'formavision.avatar_session_ended',
     ];
     for (const e of ALL_EVENTS) {
       expect(e.startsWith('formavision.')).toBe(true);
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// T6. computeDaysDelta: pure math, injected clock values
+// ---------------------------------------------------------------------------
+
+describe('computeDaysDelta: pure days-since calculation', () => {
+  const DAY_MS = 1000 * 60 * 60 * 24;
+
+  it('returns 0 when lastViewMs is 0 (no prior view)', () => {
+    expect(computeDaysDelta(1_000_000, 0)).toBe(0);
+  });
+
+  it('returns 0 when lastViewMs is negative', () => {
+    expect(computeDaysDelta(1_000_000, -1)).toBe(0);
+  });
+
+  it('returns 0 when nowMs and lastViewMs are the same (same-instant view)', () => {
+    expect(computeDaysDelta(1_000_000, 1_000_000)).toBe(0);
+  });
+
+  it('returns 0 when previous view was under 1 full day ago (sub-day delta)', () => {
+    const now = 1_000_000 + DAY_MS - 1;
+    expect(computeDaysDelta(now, 1_000_000)).toBe(0);
+  });
+
+  it('returns 1 when previous view was exactly 1 day ago', () => {
+    const now = 1_000_000 + DAY_MS;
+    expect(computeDaysDelta(now, 1_000_000)).toBe(1);
+  });
+
+  it('returns 2 when previous view was exactly 2 days ago', () => {
+    const now = 1_000_000 + 2 * DAY_MS;
+    expect(computeDaysDelta(now, 1_000_000)).toBe(2);
+  });
+
+  it('returns 0 when nowMs < lastViewMs (clock drift guard)', () => {
+    expect(computeDaysDelta(500, 1000)).toBe(0);
+  });
+
+  it('floors fractional days (e.g., 1.9 days is still 1)', () => {
+    const now = 1_000_000 + Math.floor(1.9 * DAY_MS);
+    expect(computeDaysDelta(now, 1_000_000)).toBe(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// T7. recordAvatarView: count-increment + days-delta with injected clock
+//     Uses vi.stubGlobal to inject a fake localStorage so the math is testable
+//     in the Node harness without touching a real browser storage.
+// ---------------------------------------------------------------------------
+
+describe('recordAvatarView: count-increment and days-since persistence', () => {
+  const DAY_MS = 1000 * 60 * 60 * 24;
+
+  // Build a minimal fake Storage that survives across calls in one test
+  function makeFakeStorage(): Storage {
+    const store: Record<string, string> = {};
+    return {
+      getItem: (key: string) => store[key] ?? null,
+      setItem: (key: string, value: string) => { store[key] = value; },
+      removeItem: (key: string) => { delete store[key]; },
+      clear: () => { Object.keys(store).forEach((k) => delete store[k]); },
+      key: (index: number) => Object.keys(store)[index] ?? null,
+      get length() { return Object.keys(store).length; },
+    };
+  }
+
+  let fakeStorage: Storage;
+
+  beforeEach(() => {
+    fakeStorage = makeFakeStorage();
+    // Stub window + localStorage so the SSR guard sees a window object
+    vi.stubGlobal('localStorage', fakeStorage);
+    vi.stubGlobal('window', { localStorage: fakeStorage });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('returns repeatViewCount=1 and daysSinceLastView=0 on the very first view', () => {
+    const result = recordAvatarView(1_000_000);
+    expect(result.repeatViewCount).toBe(1);
+    expect(result.daysSinceLastView).toBe(0);
+  });
+
+  it('returns repeatViewCount=2 on the second view the same day', () => {
+    recordAvatarView(1_000_000);
+    const result = recordAvatarView(1_000_000 + 100);
+    expect(result.repeatViewCount).toBe(2);
+    expect(result.daysSinceLastView).toBe(0);
+  });
+
+  it('returns daysSinceLastView=1 when returning the next day', () => {
+    recordAvatarView(1_000_000);
+    const result = recordAvatarView(1_000_000 + DAY_MS);
+    expect(result.daysSinceLastView).toBe(1);
+  });
+
+  it('returns daysSinceLastView=7 when returning after a week', () => {
+    recordAvatarView(1_000_000);
+    const result = recordAvatarView(1_000_000 + 7 * DAY_MS);
+    expect(result.daysSinceLastView).toBe(7);
+  });
+
+  it('increments the count correctly across multiple sequential views', () => {
+    recordAvatarView(1_000_000);           // count -> 1
+    recordAvatarView(1_000_000 + 1000);    // count -> 2
+    const result = recordAvatarView(1_000_000 + 2000); // count -> 3
+    expect(result.repeatViewCount).toBe(3);
+  });
+
+  it('persists the timestamp so a later call computes the correct delta', () => {
+    const t0 = 1_720_000_000_000; // arbitrary ms epoch
+    recordAvatarView(t0);
+    const t1 = t0 + 3 * DAY_MS;
+    const result = recordAvatarView(t1);
+    expect(result.daysSinceLastView).toBe(3);
+    expect(result.repeatViewCount).toBe(2);
   });
 });
 
