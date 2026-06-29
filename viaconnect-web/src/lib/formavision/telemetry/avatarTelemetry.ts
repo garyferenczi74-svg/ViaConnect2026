@@ -197,10 +197,13 @@ export function buildAvatarEventPayload(
 // ---------------------------------------------------------------------------
 // Persistence helpers for repeat-view + return-to-watch retention signals
 //
-// P8-T2a: recordAvatarView() is called once per composition surface mount.
-// It reads the prior view count and last-view timestamp from localStorage,
-// increments and persists them, then returns the coarse retention signals
-// that are spread into the 'formavision.avatar_viewed' properties.
+// P8-T2a: recordAvatarView() is called exactly once per emitted avatar_viewed,
+// ATOMICALLY with that emit and only after the userId resolves (the caller gates
+// it behind a userId check + a single-fire ref). It reads the prior view count
+// and last-view timestamp from localStorage, increments and persists them, then
+// returns the coarse retention signals spread into the avatar_viewed properties.
+// Gating the storage write to the actual emit keeps the first repeatViewCount at
+// 1: an unauthenticated session that never emits must never advance the count.
 //
 // localStorage keys (per-browser, no PII, coarse numbers only):
 //   vc_formavision_view_count  - cumulative integer view count

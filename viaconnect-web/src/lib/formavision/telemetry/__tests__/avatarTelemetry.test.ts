@@ -290,6 +290,51 @@ describe('recordAvatarView: count-increment and days-since persistence', () => {
     expect(result.daysSinceLastView).toBe(3);
     expect(result.repeatViewCount).toBe(2);
   });
+
+  // -------------------------------------------------------------------------
+  // Drift guard (review IMPORTANT #1): the page.tsx avatar_viewed effect gates
+  // recordAvatarView behind a resolved userId and a single-fire ref, so the
+  // persisted view count must NOT advance while userId is null. This models
+  // that exact mount lifecycle against the real recordAvatarView + fake storage
+  // to prove the first emitted repeatViewCount is 1 (not 2+).
+  //
+  // Mirrors the effect body precisely:
+  //   if (!userId || ref.current) return;
+  //   ref.current = true;
+  //   const info = recordAvatarView();
+  //   telEmit('formavision.avatar_viewed', info);
+  // -------------------------------------------------------------------------
+  it('does NOT increment the count while userId is null, then emits repeatViewCount=1 once auth resolves', () => {
+    const emitted: Array<{ repeatViewCount: number; daysSinceLastView: number }> = [];
+    const guard = { fired: false };
+
+    function runAvatarViewEffect(userId: string | null, nowMs: number): void {
+      // Exact replica of the page.tsx userId-gated, ref-guarded effect block.
+      if (!userId || guard.fired) return;
+      guard.fired = true;
+      const info = recordAvatarView(nowMs);
+      emitted.push(info);
+    }
+
+    // Several mount renders while auth is unresolved: NO storage write, NO emit.
+    runAvatarViewEffect(null, 1_000_000);
+    runAvatarViewEffect(null, 1_000_050);
+    expect(emitted).toHaveLength(0);
+    // Count key must be untouched: a read of the raw storage still yields null.
+    expect(fakeStorage.getItem('vc_formavision_view_count')).toBeNull();
+
+    // Auth resolves: the effect fires exactly once and the FIRST emitted count is 1.
+    runAvatarViewEffect('user-1', 1_000_100);
+    expect(emitted).toHaveLength(1);
+    expect(emitted[0]?.repeatViewCount).toBe(1);
+    expect(emitted[0]?.daysSinceLastView).toBe(0);
+    expect(fakeStorage.getItem('vc_formavision_view_count')).toBe('1');
+
+    // Further renders after the single-fire are no-ops (no double increment).
+    runAvatarViewEffect('user-1', 1_000_200);
+    expect(emitted).toHaveLength(1);
+    expect(fakeStorage.getItem('vc_formavision_view_count')).toBe('1');
+  });
 });
 
 // ---------------------------------------------------------------------------

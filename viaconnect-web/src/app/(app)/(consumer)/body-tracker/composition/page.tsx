@@ -287,6 +287,11 @@ function CompositionPageInner() {
   // these refs skip the initial-mount default for "on CHANGE" events.
   const sectionMountedRef = useRef(false);    // skip initial section on mount
   const bodyPartMountedRef = useRef(false);   // skip initial null selectedBodyPart
+  // P8-T2a: avatar_viewed fires exactly once, gated on a resolved userId. The
+  // recordAvatarView() storage write must be ATOMIC with the actual emit so the
+  // persisted view count never increments on a session that did not emit (which
+  // would drift the first repeatViewCount above 1).
+  const avatarViewEmittedRef = useRef(false);
 
   // Debounce helper for timeline_scrubbed: fires once per scrub gesture end.
   // Stable across renders via useRef; onSettle reads telEmit through a current-ref
@@ -451,17 +456,24 @@ function CompositionPageInner() {
   }, [refreshKey]);
 
   // === PROMPT 210b P8-T1b (Avatar Telemetry) START ===
-  // 1. avatar_viewed: fire once on first mount of the composition surface.
+  // 1. avatar_viewed: fire exactly once, gated on a resolved userId.
   //    P8-T2a: enriched with repeatViewCount + daysSinceLastView (localStorage
-  //    persisted; read-increment-write happens on mount, injected clock = Date.now()).
+  //    persisted). The recordAvatarView() storage write and the emit are ATOMIC:
+  //    both happen only inside the userId-gated, ref-guarded block, so the
+  //    persisted view count never increments on a session that did not actually
+  //    emit avatar_viewed (which would push the first repeatViewCount above 1).
+  //    A mount-only useEffect([]) would not re-run when userId resolves late, so
+  //    this effect depends on userId and the local ref enforces single-fire.
   //    Destructured into an object literal so AvatarEventProperties (Record<string,Json>)
   //    receives a plain object without a cast, avoiding the index-signature mismatch.
   useEffect(() => {
+    if (!userId || avatarViewEmittedRef.current) return;
+    avatarViewEmittedRef.current = true;
     const { repeatViewCount, daysSinceLastView } = recordAvatarView();
-    telEmitOnce('formavision.avatar_viewed', { repeatViewCount, daysSinceLastView });
-    // telEmitOnce is stable (no deps); recordAvatarView() reads/writes localStorage.
+    telEmit('formavision.avatar_viewed', { repeatViewCount, daysSinceLastView });
+    // telEmit is stable; userId is the dependency. The ref guards single-fire.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [userId]);
 
   // === PROMPT 210b P8-T2a (Avatar Dwell) START ===
   // Dwell tracking: accumulates active-visible time via visibilitychange + pagehide.

@@ -45,14 +45,17 @@ export interface DwellAccumulator {
  * State machine:
  *   onVisible -> records lastVisibleStart
  *   onHidden  -> accumulates (now - lastVisibleStart) into total, clears start,
- *                returns Math.round(total) if total > lastEmittedMs, else 0
+ *                returns Math.round(total) if the rounded dwell advanced, else 0
  */
 export function createDwellAccumulator(
   nowFn: () => number = () => performance.now(),
 ): DwellAccumulator {
   let accumulated = 0;
   let lastVisibleStart: number | null = null;
-  let lastEmittedMs = 0;
+  // Dedup sentinel: the last ROUNDED integer dwellMs we emitted. Comparing
+  // rounded integers (not the raw float accumulator) keeps the guard robust
+  // against float-equality fragility. -1 means nothing emitted yet.
+  let lastEmittedDwellMs = -1;
 
   return {
     onVisible(): void {
@@ -64,12 +67,13 @@ export function createDwellAccumulator(
         accumulated += nowFn() - lastVisibleStart;
         lastVisibleStart = null;
       }
-      // Dedup: skip if no additional visible time accrued since the last emit.
-      if (accumulated <= lastEmittedMs) return 0;
       const dwellMs = Math.round(accumulated);
       // Zero-guard: never emit a 0ms dwell (sub-ms visible time rounds to 0).
       if (dwellMs <= 0) return 0;
-      lastEmittedMs = accumulated;
+      // Dedup: skip if the rounded dwell has not advanced since the last emit
+      // (e.g. visibilitychange->hidden then pagehide with no interleaved visible).
+      if (dwellMs <= lastEmittedDwellMs) return 0;
+      lastEmittedDwellMs = dwellMs;
       return dwellMs;
     },
   };
