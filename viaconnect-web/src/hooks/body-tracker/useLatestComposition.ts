@@ -237,9 +237,11 @@ export function useLatestComposition(userId: string | null): UseLatestCompositio
               from: (t: string) => {
                 select: (cols: string) => {
                   eq: (col: string, val: string) => {
-                    order: (col: string, opts: { ascending: boolean }) => {
-                      limit: (n: number) => {
-                        maybeSingle: () => Promise<{ data: { weight_lbs: number | null } | null; error: { message: string } | null }>;
+                    not: (col: string, op: string, val: null) => {
+                      order: (col: string, opts: { ascending: boolean }) => {
+                        limit: (n: number) => {
+                          maybeSingle: () => Promise<{ data: { weight_lbs: number | null } | null; error: { message: string } | null }>;
+                        };
                       };
                     };
                   };
@@ -249,6 +251,10 @@ export function useLatestComposition(userId: string | null): UseLatestCompositio
               .from('body_tracker_weight')
               .select('weight_lbs')
               .eq('user_id', userId)
+              // Prompt 210c T10: ignore weight rows whose weight_lbs is NULL (e.g. a
+              // hip-only circumference-scan row, or a manual hip entry from #85d) so
+              // such a row can never shadow the real most-recent weight for BMI.
+              .not('weight_lbs', 'is', null)
               .order('created_at', { ascending: false })
               .limit(1)
               .maybeSingle(),

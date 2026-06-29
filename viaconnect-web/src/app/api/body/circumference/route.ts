@@ -36,10 +36,21 @@ export async function POST(req: Request): Promise<NextResponse> {
     }
 
     const scanId = typeof body.scanId === 'string' ? body.scanId.trim() : '';
-    const measurements = body.measurements as ExtractedMeasurements | undefined;
-    if (!scanId || !measurements) {
+
+    // Validate the measurements payload shape before trusting it. A malformed
+    // payload returns ok:false cleanly rather than throwing inside buildCircumferenceWrite.
+    const rawMeasurements = body.measurements;
+    if (
+      !scanId ||
+      typeof rawMeasurements !== 'object' ||
+      rawMeasurements === null ||
+      // minimal shape check: neckCirc is a MeasuredValue with a `cm` field
+      typeof (rawMeasurements as Record<string, unknown>).neckCirc !== 'object' ||
+      (rawMeasurements as Record<string, unknown>).neckCirc === null
+    ) {
       return NextResponse.json({ ok: false, reason: 'bad_request' }, { status: 400 });
     }
+    const measurements = rawMeasurements as ExtractedMeasurements;
 
     // Auth - fail closed
     const supabase = createClient();
@@ -87,9 +98,19 @@ export async function POST(req: Request): Promise<NextResponse> {
         );
         if (!result.error && result.data) {
           entryId = result.data.id;
+        } else if (result.error) {
+          safeLog.warn(SCOPE, 'entry lookup attempt error', {
+            scanId,
+            attempt,
+            error: result.error.message,
+          });
         }
-      } catch {
-        // retry on timeout
+      } catch (err) {
+        safeLog.warn(SCOPE, 'entry lookup attempt timed out', {
+          scanId,
+          attempt,
+          error: err instanceof Error ? err.message : String(err),
+        });
       }
     }
 
@@ -126,21 +147,75 @@ export async function POST(req: Request): Promise<NextResponse> {
 
     // Write hip to body_tracker_weight.hips_in + hips_confidence.
     // Only fires when the hip measurement is present (non-null).
+    //
+    // The scan composition-persist route does NOT create a per-entry weight row,
+    // so normally no row exists for this entry. To avoid inserting a SECOND
+    // weight row (whose NULL weight_lbs could otherwise become the most-recent
+    // row and shadow the real weight for BMI), we UPDATE an existing per-entry
+    // row when one is present and only INSERT when none exists. The read guard
+    // in useLatestComposition (weight_lbs IS NOT NULL) is the belt-and-braces
+    // backstop so a hip-only INSERT can never corrupt BMI either way.
     if (hips.hips_in !== null) {
       try {
-        await withTimeout(
+        // Check for an existing weight row scoped to this entry.
+        type WeightRow = { id: string };
+        const existing = await withTimeout(
           (supabase as unknown as {
             from: (t: string) => {
-              insert: (row: Record<string, unknown>) => Promise<{ error: { message: string; code?: string } | null }>;
+              select: (c: string) => {
+                eq: (c: string, v: string) => {
+                  eq: (c: string, v: string) => {
+                    maybeSingle: () => Promise<{ data: WeightRow | null; error: { message: string } | null }>;
+                  };
+                };
+              };
             };
           })
             .from('body_tracker_weight')
-            .insert({ user_id: userId, entry_id: entryId, ...hips }),
+            .select('id')
+            .eq('entry_id', entryId)
+            .eq('user_id', userId)
+            .maybeSingle(),
           TIMEOUT_MS,
-          `${SCOPE}.insert_hip_weight`
+          `${SCOPE}.hip_weight_lookup`
         );
+
+        if (!existing.error && existing.data) {
+          // UPDATE the existing row so there is at most ONE weight row per entry.
+          await withTimeout(
+            (supabase as unknown as {
+              from: (t: string) => {
+                update: (row: Record<string, unknown>) => {
+                  eq: (c: string, v: string) => {
+                    eq: (c: string, v: string) => Promise<{ error: { message: string } | null }>;
+                  };
+                };
+              };
+            })
+              .from('body_tracker_weight')
+              .update({ ...hips })
+              .eq('entry_id', entryId)
+              .eq('user_id', userId),
+            TIMEOUT_MS,
+            `${SCOPE}.update_hip_weight`
+          );
+        } else {
+          // No per-entry weight row exists: INSERT a hip-only row. Safe because
+          // the useLatestComposition read filters weight_lbs IS NOT NULL.
+          await withTimeout(
+            (supabase as unknown as {
+              from: (t: string) => {
+                insert: (row: Record<string, unknown>) => Promise<{ error: { message: string; code?: string } | null }>;
+              };
+            })
+              .from('body_tracker_weight')
+              .insert({ user_id: userId, entry_id: entryId, ...hips }),
+            TIMEOUT_MS,
+            `${SCOPE}.insert_hip_weight`
+          );
+        }
       } catch (err) {
-        safeLog.warn(SCOPE, 'hip weight insert failed (fail-open)', {
+        safeLog.warn(SCOPE, 'hip weight write failed (fail-open)', {
           entryId,
           error: err instanceof Error ? err.message : String(err),
         });
