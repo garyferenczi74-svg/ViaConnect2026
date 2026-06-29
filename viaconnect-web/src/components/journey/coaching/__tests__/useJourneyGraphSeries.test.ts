@@ -422,7 +422,7 @@ describe('buildSeriesFromRows - 1M', () => {
 describe('buildSeriesFromRows - 1Y monthly aggregation', () => {
   const today = '2026-06-28';
   const win = windowFor('1Y', 0, today);
-  // Buckets: 2025-07 ... 2026-06 (12 monthly buckets).
+  // Buckets: 2026-06 ... 2027-05 (12 monthly buckets, forward window).
 
   it('series length is 12 for every pillar', () => {
     const series = buildSeriesFromRows(win.buckets, [], [], [], '1Y', today, undefined);
@@ -430,41 +430,42 @@ describe('buildSeriesFromRows - 1Y monthly aggregation', () => {
   });
 
   it('averages multiple days within a month for the sleep pillar', () => {
-    // Two check-ins in 2025-08 with different sleep scores.
-    const cHigh = checkin('2025-08-05'); // sleep 90
-    const cLow = checkin('2025-08-15', { sleep_quality_score: 6 }); // (100 + 60)/2 = 80
+    // Two check-ins in 2026-08 (a month inside the forward window) with
+    // different sleep scores.
+    const cHigh = checkin('2026-08-05'); // sleep 90
+    const cLow = checkin('2026-08-15', { sleep_quality_score: 6 }); // (100 + 60)/2 = 80
     const sleepHigh = computeDayPillars(cHigh, []).sleep as number;
     const sleepLow = computeDayPillars(cLow, []).sleep as number;
     const expected = Math.round((sleepHigh + sleepLow) / 2);
 
     const series = buildSeriesFromRows(win.buckets, [cHigh, cLow], [], [], '1Y', today, undefined);
-    const augIdx = win.buckets.findIndex((b) => b.date === '2025-08');
+    const augIdx = win.buckets.findIndex((b) => b.date === '2026-08');
     expect(augIdx).toBeGreaterThanOrEqual(0);
     expect(series.sleep[augIdx]).toBe(expected);
     expect(series.sleep[augIdx]).toBe(85); // concrete: (90 + 80)/2
   });
 
   it('averages bio_optimization_history per month for the overall pillar', () => {
-    const bioRows = [bio('2025-09-05', 64), bio('2025-09-25', 80)];
+    const bioRows = [bio('2026-09-05', 64), bio('2026-09-25', 80)];
     const series = buildSeriesFromRows(win.buckets, [], [], bioRows, '1Y', today, undefined);
-    const sepIdx = win.buckets.findIndex((b) => b.date === '2025-09');
+    const sepIdx = win.buckets.findIndex((b) => b.date === '2026-09');
     expect(series.overall[sepIdx]).toBe(72); // (64 + 80)/2
   });
 
   it('a month with no data is null, not 0', () => {
-    const series = buildSeriesFromRows(win.buckets, [checkin('2025-08-05')], [], [], '1Y', today, undefined);
-    const octIdx = win.buckets.findIndex((b) => b.date === '2025-10');
+    const series = buildSeriesFromRows(win.buckets, [checkin('2026-08-05')], [], [], '1Y', today, undefined);
+    const octIdx = win.buckets.findIndex((b) => b.date === '2026-10');
     expect(series.sleep[octIdx]).toBe(null);
     expect(series.sleep[octIdx]).not.toBe(0);
   });
 
   it('hydration is null for all months without an overlay', () => {
-    const series = buildSeriesFromRows(win.buckets, [checkin('2025-08-05')], [], [], '1Y', today, undefined);
+    const series = buildSeriesFromRows(win.buckets, [checkin('2026-08-05')], [], [], '1Y', today, undefined);
     expect(series.hydration.every((v) => v === null)).toBe(true);
   });
 
   it('never emits 0 across the whole 1Y series', () => {
-    const series = buildSeriesFromRows(win.buckets, [checkin('2025-08-05')], [], [bio('2025-08-05', 70)], '1Y', today, undefined);
+    const series = buildSeriesFromRows(win.buckets, [checkin('2026-08-05')], [], [bio('2026-08-05', 70)], '1Y', today, undefined);
     expect(noZeros(series)).toBe(true);
   });
 });
@@ -494,10 +495,14 @@ describe('buildSeriesFromRows - 1Y today overlay joins the current month', () =>
     expect(series.sleep[junIdx]).toBe(89);
   });
 
-  it('past months are not affected by the overlay', () => {
+  it('other months in the window are not affected by the overlay', () => {
+    // Under the forward window the buckets are the current month plus future
+    // months, so the overlay must touch only today's (current) month. Sep 2026
+    // is a future month inside the window and must stay all null.
     const series = buildSeriesFromRows(win.buckets, [], [], [], '1Y', today, overlay);
-    const mayIdx = win.buckets.findIndex((b) => b.date === '2026-05');
-    PILLAR_KEYS.forEach((k) => expect(series[k][mayIdx]).toBe(null));
+    const futIdx = win.buckets.findIndex((b) => b.date === '2026-09');
+    expect(futIdx).toBeGreaterThanOrEqual(0);
+    PILLAR_KEYS.forEach((k) => expect(series[k][futIdx]).toBe(null));
   });
 });
 

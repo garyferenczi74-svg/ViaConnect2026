@@ -293,7 +293,14 @@ describe("windowFor '1M'", () => {
 // ---------------------------------------------------------------------------
 
 describe("windowFor '1Y'", () => {
-  describe('offset 0 for today 2026-06-28 (Jul 2025 to Jun 2026)', () => {
+  // 1Y forward semantics (Gary decision): offset 0 puts the CURRENT month as
+  // the first (index 0) bucket and runs FORWARD through the next 11 months.
+  // startM = subMonths(today.year, today.month, offset*12);
+  // buckets[i] = addMonths(startM, i) for i=0..11;
+  // endM = addMonths(startM, 11);
+  // canGoNext = offset > 0.
+
+  describe('offset 0 for today 2026-06-28 (Jun 2026 to May 2027)', () => {
     const w: JourneyWindow = windowFor('1Y', 0, '2026-06-28');
 
     it('yields exactly 12 buckets', () => {
@@ -304,37 +311,37 @@ describe("windowFor '1Y'", () => {
       expect(w.buckets.every((b) => b.monthly === true)).toBe(true);
     });
 
-    it('first bucket date is 2025-07', () => {
-      expect(w.buckets[0].date).toBe('2025-07');
+    it('first bucket date is 2026-06', () => {
+      expect(w.buckets[0].date).toBe('2026-06');
     });
 
-    it('last bucket date is 2026-06', () => {
-      expect(w.buckets[11].date).toBe('2026-06');
+    it('last bucket date is 2027-05', () => {
+      expect(w.buckets[11].date).toBe('2027-05');
     });
 
     it('bucket dates are the correct 12 consecutive months', () => {
       const expected = [
-        '2025-07', '2025-08', '2025-09', '2025-10', '2025-11', '2025-12',
-        '2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06',
+        '2026-06', '2026-07', '2026-08', '2026-09', '2026-10', '2026-11',
+        '2026-12', '2027-01', '2027-02', '2027-03', '2027-04', '2027-05',
       ];
       expect(w.buckets.map((b) => b.date)).toEqual(expected);
     });
 
     it('bucket labels are short month names in order', () => {
-      const expected = ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+      const expected = ['Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May'];
       expect(w.buckets.map((b) => b.label)).toEqual(expected);
     });
 
-    it('periodLabel is "Jul 2025 to Jun 2026"', () => {
-      expect(w.periodLabel).toBe('Jul 2025 to Jun 2026');
+    it('periodLabel is "Jun 2026 to May 2027"', () => {
+      expect(w.periodLabel).toBe('Jun 2026 to May 2027');
     });
 
-    it('rangeStart is 2025-07-01', () => {
-      expect(w.rangeStart).toBe('2025-07-01');
+    it('rangeStart is 2026-06-01', () => {
+      expect(w.rangeStart).toBe('2026-06-01');
     });
 
-    it('rangeEnd is 2026-06-30', () => {
-      expect(w.rangeEnd).toBe('2026-06-30');
+    it('rangeEnd is 2027-05-31', () => {
+      expect(w.rangeEnd).toBe('2027-05-31');
     });
 
     it('canGoNext is false', () => {
@@ -342,27 +349,27 @@ describe("windowFor '1Y'", () => {
     });
   });
 
-  describe('offset 1 for today 2026-06-28 (Jul 2024 to Jun 2025)', () => {
+  describe('offset 1 for today 2026-06-28 (Jun 2025 to May 2026)', () => {
     const w: JourneyWindow = windowFor('1Y', 1, '2026-06-28');
 
     it('yields 12 buckets', () => {
       expect(w.buckets).toHaveLength(12);
     });
 
-    it('first bucket date is 2024-07', () => {
-      expect(w.buckets[0].date).toBe('2024-07');
+    it('first bucket date is 2025-06', () => {
+      expect(w.buckets[0].date).toBe('2025-06');
     });
 
-    it('last bucket date is 2025-06', () => {
-      expect(w.buckets[11].date).toBe('2025-06');
+    it('last bucket date is 2026-05', () => {
+      expect(w.buckets[11].date).toBe('2026-05');
     });
 
-    it('periodLabel is "Jul 2024 to Jun 2025"', () => {
-      expect(w.periodLabel).toBe('Jul 2024 to Jun 2025');
+    it('periodLabel is "Jun 2025 to May 2026"', () => {
+      expect(w.periodLabel).toBe('Jun 2025 to May 2026');
     });
 
-    it('rangeStart is 2024-07-01', () => {
-      expect(w.rangeStart).toBe('2024-07-01');
+    it('rangeStart is 2025-06-01', () => {
+      expect(w.rangeStart).toBe('2025-06-01');
     });
 
     it('canGoNext is true', () => {
@@ -370,48 +377,56 @@ describe("windowFor '1Y'", () => {
     });
   });
 
-  describe('crossing year boundary (today 2026-01-15, offset 0)', () => {
+  describe('full calendar year 2026 (today 2026-01-15, offset 0)', () => {
+    // startM = Jan 2026; endM = addMonths(Jan 2026, 11) = Dec 2026.
     const w: JourneyWindow = windowFor('1Y', 0, '2026-01-15');
 
-    it('first bucket date is 2025-02', () => {
-      expect(w.buckets[0].date).toBe('2025-02');
+    it('first bucket date is 2026-01', () => {
+      expect(w.buckets[0].date).toBe('2026-01');
     });
 
-    it('last bucket date is 2026-01', () => {
-      expect(w.buckets[11].date).toBe('2026-01');
+    it('last bucket date is 2026-12', () => {
+      expect(w.buckets[11].date).toBe('2026-12');
     });
 
-    it('periodLabel is "Feb 2025 to Jan 2026"', () => {
-      expect(w.periodLabel).toBe('Feb 2025 to Jan 2026');
+    it('periodLabel is "Jan 2026 to Dec 2026"', () => {
+      expect(w.periodLabel).toBe('Jan 2026 to Dec 2026');
     });
 
-    it('rangeStart is 2025-02-01', () => {
-      expect(w.rangeStart).toBe('2025-02-01');
+    it('rangeStart is 2026-01-01', () => {
+      expect(w.rangeStart).toBe('2026-01-01');
     });
 
-    it('rangeEnd is 2026-01-31', () => {
-      expect(w.rangeEnd).toBe('2026-01-31');
+    it('rangeEnd is 2026-12-31', () => {
+      expect(w.rangeEnd).toBe('2026-12-31');
     });
   });
 
   describe('rangeEnd uses last day of end month', () => {
-    it('end month August 2026 (31 days) gives rangeEnd 2026-08-31', () => {
-      const w = windowFor('1Y', 0, '2026-08-15');
+    // Under forward semantics endM = startM + 11. To target a specific end month,
+    // choose today such that today's month + 11 = the desired end month.
+
+    it('end month August 2026 (31 days), today 2025-09-15, gives rangeEnd 2026-08-31', () => {
+      // startM = Sep 2025; endM = addMonths(Sep 2025, 11) = Aug 2026 (31 days).
+      const w = windowFor('1Y', 0, '2025-09-15');
       expect(w.rangeEnd).toBe('2026-08-31');
     });
 
-    it('end month April 2026 (30 days) gives rangeEnd 2026-04-30', () => {
-      const w = windowFor('1Y', 0, '2026-04-20');
+    it('end month April 2026 (30 days), today 2025-05-15, gives rangeEnd 2026-04-30', () => {
+      // startM = May 2025; endM = addMonths(May 2025, 11) = Apr 2026 (30 days).
+      const w = windowFor('1Y', 0, '2025-05-15');
       expect(w.rangeEnd).toBe('2026-04-30');
     });
 
-    it('end month leap February 2024 gives rangeEnd 2024-02-29', () => {
-      const w = windowFor('1Y', 0, '2024-02-15');
+    it('end month leap February 2024 (endM=Feb 2024), today 2023-03-10, gives rangeEnd 2024-02-29', () => {
+      // startM = Mar 2023; endM = addMonths(Mar 2023, 11) = Feb 2024 (leap, 29 days).
+      const w = windowFor('1Y', 0, '2023-03-10');
       expect(w.rangeEnd).toBe('2024-02-29');
     });
 
-    it('end month non-leap February 2023 gives rangeEnd 2023-02-28', () => {
-      const w = windowFor('1Y', 0, '2023-02-15');
+    it('end month non-leap February 2023 (endM=Feb 2023), today 2022-03-10, gives rangeEnd 2023-02-28', () => {
+      // startM = Mar 2022; endM = addMonths(Mar 2022, 11) = Feb 2023 (non-leap, 28 days).
+      const w = windowFor('1Y', 0, '2022-03-10');
       expect(w.rangeEnd).toBe('2023-02-28');
     });
   });

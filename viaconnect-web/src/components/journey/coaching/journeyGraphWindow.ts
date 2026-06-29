@@ -101,6 +101,16 @@ function subMonths(y: number, m: number, n: number): { y: number; m: number } {
   return { y: ny, m: nm };
 }
 
+/**
+ * Add n calendar months to (y, m). Handles year rollovers in both directions.
+ * n may be negative. Both inputs and outputs use 1-indexed months.
+ */
+function addMonths(y: number, m: number, n: number): { y: number; m: number } {
+  const total = y * 12 + (m - 1) + n;
+  const ny = Math.floor(total / 12);
+  return { y: ny, m: total - ny * 12 + 1 };
+}
+
 /** Return the UTC weekday short name for a given calendar date. */
 function weekdayOf(y: number, m: number, day: number): string {
   const d = new Date(Date.UTC(y, m - 1, day));
@@ -175,14 +185,16 @@ export function windowFor(range: JourneyRange, offset: number, today: string): J
     };
   }
 
-  // --- 1Y: 12 monthly buckets ending in (today's month minus offset*12 months) ---
-  const endM = subMonths(ty, tm, offset * 12);
-  // Start month is 11 months before endM so the window spans exactly 12 months.
-  const startM = subMonths(endM.y, endM.m, 11);
+  // --- 1Y: 12 monthly buckets STARTING at the current month, going forward ---
+  // "Year ahead from now" (Gary decision 2026-06-29): offset 0 puts the current month
+  // as the first (left) bucket and runs forward through the next 11 months. Each step
+  // back (offset) shifts the whole 12-month block one year earlier, so offset >= 1 shows
+  // the prior historical year blocks (which carry real data). canGoNext = offset > 0.
+  const startM = subMonths(ty, tm, offset * 12);
 
   const buckets: JourneyBucket[] = [];
   for (let i = 0; i < 12; i++) {
-    const bm = subMonths(endM.y, endM.m, 11 - i);
+    const bm = addMonths(startM.y, startM.m, i);
     buckets.push({
       date: fmtMonth(bm.y, bm.m),
       label: SHORT_MONTHS[bm.m - 1],
@@ -190,6 +202,7 @@ export function windowFor(range: JourneyRange, offset: number, today: string): J
     });
   }
 
+  const endM = addMonths(startM.y, startM.m, 11);
   const lastDayOfEndMonth = daysInMonth(endM.y, endM.m);
 
   return {

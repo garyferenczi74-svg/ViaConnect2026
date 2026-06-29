@@ -265,7 +265,7 @@ function Journey({ userId }: { userId: string | null }) {
             return (
               <g key={tick}>
                 <line x1={padL} x2={W - padR} y1={cy} y2={cy} stroke={C.line} strokeWidth={0.8} />
-                <text x={padL - 4} y={cy} textAnchor="end" dominantBaseline="middle" fontSize={18} fill={C.muted}>{tick}</text>
+                <text x={padL - 4} y={cy} textAnchor="end" dominantBaseline="middle" fontSize={12} fill={C.muted}>{tick}</text>
               </g>
             );
           })}
@@ -273,7 +273,7 @@ function Journey({ userId }: { userId: string | null }) {
           {/* X axis: bucket label text, centered under each labeled bucket */}
           {buckets.map((b, i) =>
             b.label ? (
-              <text key={b.date} x={xOf(i)} y={H - 6} textAnchor="middle" fontSize={14} fill={C.muted}>{b.label}</text>
+              <text key={b.date} x={xOf(i)} y={H - 6} textAnchor="middle" fontSize={11} fill={C.muted}>{b.label}</text>
             ) : null,
           )}
 
