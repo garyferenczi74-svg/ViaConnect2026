@@ -69,6 +69,29 @@ export interface MeasuredValue {
 }
 
 /**
+ * Per-level ellipse semi-axes produced alongside each circumference (Task 8).
+ * One-model guarantee: aCm and bCm are the exact inputs fed to predictCircumference,
+ * so the same geometry drives both the circumference and the mesh cross-section.
+ *
+ * aCm = front view width divided by 2 (side-to-side half-width, cm).
+ * bCm = averaged side-view depth divided by 2 (front-to-back half-depth, cm).
+ * aspectRatio = bCm divided by aCm (depth-to-width ratio).
+ *
+ * RULE 9: null means UNKNOWN. aspectRatio is null whenever aCm or bCm is null.
+ * Never fabricate: do not substitute 0 for an absent depth.
+ */
+export interface LevelSemiAxes {
+  /** Side-to-side half-width (front view width divided by 2), cm.
+   * null when front width cannot be measured (RULE 9). */
+  aCm: number | null;
+  /** Front-to-back half-depth (averaged side-view depth divided by 2), cm.
+   * null when no side view is available at this level (RULE 9). */
+  bCm: number | null;
+  /** Depth-to-width ratio (bCm divided by aCm). null when aCm or bCm is null (RULE 9). */
+  aspectRatio: number | null;
+}
+
+/**
  * Aggregated corroboration signals produced by Task 6 (back-view + L/R depth
  * averaging). These map directly to ConfidenceInputs.lrCorroboration and
  * ConfidenceInputs.fbCorroboration in confidenceModel.ts (higher = better).
@@ -121,6 +144,29 @@ export interface ExtractedMeasurements {
    * A future task threads these into scoreMeasurementConfidence per field.
    */
   corroborationSignals?: CorroborationSignals;
+
+  /**
+   * Per-level ellipse semi-axes produced alongside each circumference (Task 8).
+   * One-model guarantee: the same aCm and bCm that feed predictCircumference
+   * also feed the mesh cross-section renderer (Section 8.4 / 11.4).
+   * Absent only in manually constructed test fixtures that predate Task 8.
+   */
+  semiAxes?: {
+    neck: LevelSemiAxes;
+    shoulder: LevelSemiAxes;
+    chest: LevelSemiAxes;
+    waistNatural: LevelSemiAxes;
+    waistNavel: LevelSemiAxes;
+    hip: LevelSemiAxes;
+    bicepR: LevelSemiAxes;
+    bicepL: LevelSemiAxes;
+    forearmR: LevelSemiAxes;
+    forearmL: LevelSemiAxes;
+    thighR: LevelSemiAxes;
+    thighL: LevelSemiAxes;
+    calfR: LevelSemiAxes;
+    calfL: LevelSemiAxes;
+  };
 }
 
 export type EstimationMethod = 'navy_primary' | 'visual_primary' | 'calibrated' | 'bmi_fallback';

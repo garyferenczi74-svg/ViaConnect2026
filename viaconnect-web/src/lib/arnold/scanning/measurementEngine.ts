@@ -17,6 +17,7 @@ import type {
   BiologicalSex,
   CorroborationSignals,
   ExtractedMeasurements,
+  LevelSemiAxes,
   MeasuredValue,
   PoseSilhouette,
 } from './types';
@@ -170,6 +171,20 @@ export function extractMeasurements({ silhouettes, sex, heightCm }: ExtractionIn
     return wrapAsMeasured(pred);
   };
 
+  // Task 8: per-level semi-axes emitted alongside each circumference.
+  // One-model guarantee: axes() receives the SAME frontWidth and sideDepth
+  // arguments as circ(), so aCm and bCm are exactly the inputs used by
+  // predictCircumference internally (no second computation).
+  // RULE 9: bCm is null (UNKNOWN) when side depth is absent; aspectRatio is
+  // null whenever aCm or bCm is null. Never substitute 0 for a missing depth.
+  const axes = (frontWidth: number | null, sideDepth: number | undefined | null): LevelSemiAxes => {
+    if (frontWidth === null) return { aCm: null, bCm: null, aspectRatio: null };
+    const aCm = frontWidth / 2;
+    const bCm = (sideDepth != null && sideDepth > 0) ? sideDepth / 2 : null;
+    const aspectRatio = bCm !== null ? bCm / aCm : null;
+    return { aCm, bCm, aspectRatio };
+  };
+
   const neck          = circ(frontWidths.neck,         sideDepths?.neck,         'neck');
   const shoulder      = circ(frontWidths.shoulder,     undefined,                 'shoulder');
   const chest         = circ(frontWidths.chest,        sideDepths?.chest,         'chest');
@@ -185,6 +200,25 @@ export function extractMeasurements({ silhouettes, sex, heightCm }: ExtractionIn
   const thighL        = circ(frontWidths.thighL,       sideDepths?.thigh,         'thigh');
   const calfR         = circ(frontWidths.calfR,        sideDepths?.calf,          'calf');
   const calfL         = circ(frontWidths.calfL,        sideDepths?.calf,          'calf');
+
+  // Task 8: compute semi-axes using the same inputs as the corresponding circ() call.
+  const semiAxes = {
+    neck:         axes(frontWidths.neck,         sideDepths?.neck),
+    shoulder:     axes(frontWidths.shoulder,     undefined),
+    chest:        axes(frontWidths.chest,        sideDepths?.chest),
+    waistNatural: axes(frontWidths.waistNatural, sideDepths?.waistNatural),
+    waistNavel:   axes(frontWidths.waistNavel,   sideDepths?.waistNavel),
+    // Hip uses refinedHipWidth matching the circ() call above.
+    hip:          axes(refinedHipWidth,          sideDepths?.hip),
+    bicepR:       axes(frontWidths.bicepR,       sideDepths?.bicep),
+    bicepL:       axes(frontWidths.bicepL,       sideDepths?.bicep),
+    forearmR:     axes(frontWidths.forearmR,     undefined),
+    forearmL:     axes(frontWidths.forearmL,     undefined),
+    thighR:       axes(frontWidths.thighR,       sideDepths?.thigh),
+    thighL:       axes(frontWidths.thighL,       sideDepths?.thigh),
+    calfR:        axes(frontWidths.calfR,        sideDepths?.calf),
+    calfL:        axes(frontWidths.calfL,        sideDepths?.calf),
+  };
 
   // Lengths
   const inseamCm = inseamLengthCm(front);
@@ -247,6 +281,7 @@ export function extractMeasurements({ silhouettes, sex, heightCm }: ExtractionIn
     inseamCm: round1(inseamCm),
     torsoLengthCm: round1(torsoLengthCm),
     corroborationSignals,
+    semiAxes,
   };
 }
 
