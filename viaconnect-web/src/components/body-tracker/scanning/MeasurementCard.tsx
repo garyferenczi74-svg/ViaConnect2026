@@ -2,6 +2,7 @@
 
 import { Circle } from 'lucide-react';
 import type { ConfidenceLevel, MeasuredValue } from '@/lib/arnold/scanning/types';
+import { confidenceColorVar, confidenceBodyLabel } from '@/lib/arnold/scanning/accuracy/confidenceDisplay';
 
 interface MeasurementCardProps {
   label: string;
@@ -9,17 +10,20 @@ interface MeasurementCardProps {
   unitSystem: 'imperial' | 'metric';
 }
 
-const CONFIDENCE_COLOR: Record<ConfidenceLevel, string> = {
-  high:     '#22C55E',
-  moderate: '#E8803A',
-  low:      '#EF4444',
-};
+// Color via design tokens (--severity-* CSS custom properties from globals.css).
+// Confidence is INVERTED from clinical severity: high confidence is green (severity 'low').
+// confidenceColorVar() is the single source; no inline hex.
+function confidenceColor(level: ConfidenceLevel): string {
+  return confidenceColorVar(level) ?? 'rgb(var(--severity-high))';
+}
 
-const CONFIDENCE_LABEL: Record<ConfidenceLevel, string> = {
-  high:     'High',
-  moderate: 'Moderate',
-  low:      'Low',
-};
+// Body-positive labels per Section 9 / RULE 9 framing.
+// 'Estimated' is used for low-confidence present measurements (not "low confidence").
+// FLAGGED FOR HANNAH REVIEW (tone) before production use.
+function confidenceDisplayLabel(level: ConfidenceLevel, calibrated: boolean): string {
+  const base = confidenceBodyLabel(level) ?? 'Estimated';
+  return calibrated ? `${base}, calibrated` : base;
+}
 
 const CALIBRATED_SOURCES = ['tape_calibrated', 'inbody_calibrated', 'dexa_calibrated'];
 
@@ -34,7 +38,8 @@ export function MeasurementCard({ label, measured, unitSystem }: MeasurementCard
   const unit = isImperial ? 'in' : 'cm';
 
   const calibrated = CALIBRATED_SOURCES.includes(measured.source);
-  const badgeColor = CONFIDENCE_COLOR[measured.confidence];
+  const badgeColor = confidenceColor(measured.confidence);
+  const displayLabel = confidenceDisplayLabel(measured.confidence, calibrated);
   const sourceLabel = sourceToLabel(measured.source);
 
   return (
@@ -46,7 +51,7 @@ export function MeasurementCard({ label, measured, unitSystem }: MeasurementCard
             <p className="text-sm font-semibold text-white">{value.toFixed(1)}</p>
             <p className="text-[10px] text-white/45">{unit}</p>
             {uncertainty > 0 && (
-              <p className="text-[10px] text-white/40">± {uncertainty.toFixed(1)}</p>
+              <p className="text-[10px] text-white/40">+/- {uncertainty.toFixed(1)}</p>
             )}
           </>
         ) : (
@@ -56,8 +61,7 @@ export function MeasurementCard({ label, measured, unitSystem }: MeasurementCard
       <div className="mt-1.5 flex items-center gap-1.5">
         <Circle className="h-2 w-2" strokeWidth={1.5} style={{ color: badgeColor, fill: badgeColor }} />
         <span className="text-[10px] text-white/55">
-          {CONFIDENCE_LABEL[measured.confidence]}
-          {calibrated ? ', calibrated' : ''}
+          {displayLabel}
           {sourceLabel ? `, ${sourceLabel}` : ''}
         </span>
       </div>

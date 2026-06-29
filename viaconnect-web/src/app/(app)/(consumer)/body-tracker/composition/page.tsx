@@ -1138,6 +1138,7 @@ function CompositionPageInner() {
               data={circumferenceData.latest}
               previous={circumferenceData.previous}
               unit={unit}
+              confidence={circumferenceData.latestConfidence ?? null}
             />
           </div>
           <MeasurementsPanel unit={unit} onChanged={refreshCirc} />

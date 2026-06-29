@@ -2,20 +2,27 @@
 
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import type { MeasurementUnit } from '@/lib/body-tracker/circumference';
+import { ConfidenceChip } from './scanning/ConfidenceChip';
 
 interface MeasurementCardProps {
   label: string;
   value: number | null;
   previousValue: number | null;
   unit: MeasurementUnit;
+  /**
+   * Numeric confidence score (0-1) from the DB confidence columns (Task 10).
+   * When present and non-null, renders a ConfidenceChip below the value.
+   * null or omitted = no confidence indicator (manual entries, pre-Task-10 scans).
+   */
+  confidence?: number | null;
 }
 
-export function MeasurementCard({ label, value, previousValue, unit }: MeasurementCardProps) {
+export function MeasurementCard({ label, value, previousValue, unit, confidence }: MeasurementCardProps) {
   if (value === null) {
     return (
       <div className="rounded-xl border border-white/[0.08] bg-white/5 p-3">
         <p className="text-xs uppercase tracking-wider text-white/50 font-medium">{label}</p>
-        <p className="mt-2 text-2xl font-semibold text-white/20">·</p>
+        <p className="mt-2 text-2xl font-semibold text-white/20">.</p>
         <p className="mt-1 text-xs text-white/20">Not yet logged</p>
       </div>
     );
@@ -49,6 +56,11 @@ export function MeasurementCard({ label, value, previousValue, unit }: Measureme
           </>
         )}
       </div>
+      {confidence != null && (
+        <div className="mt-1.5">
+          <ConfidenceChip confidence={confidence} />
+        </div>
+      )}
     </div>
   );
 }

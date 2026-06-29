@@ -28,6 +28,14 @@ export type MeasurementKey = (typeof MEASUREMENT_KEYS)[number];
 
 export type CircumferenceMeasurements = Record<MeasurementKey, number | null>;
 
+/**
+ * Per-measurement confidence scores (0-1) read from the body_tracker_circumference
+ * and body_tracker_weight confidence columns (Task 10, Prompt 210c).
+ * null means the confidence for that key is UNKNOWN (measurement not from a scan,
+ * or the scan pre-dates Task 10). RULE 9: never 0 for an absent confidence value.
+ */
+export type CircumferenceConfidence = Record<MeasurementKey, number | null>;
+
 export interface CircumferenceRecord extends CircumferenceMeasurements {
   entryDate: string;
   entryUnit: MeasurementUnit;
