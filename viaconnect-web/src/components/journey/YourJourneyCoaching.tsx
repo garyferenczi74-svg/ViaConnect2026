@@ -149,9 +149,9 @@ type PillarValues = Record<string, number>;
 // Error: axis + labels + legend + quiet retry affordance (not a blank card).
 // Empty: axis + labels + legend with no lines (honest sparse state).
 // Hydration: past-day history is always null (no per-day source exists).
-//   A "(today only)" note is appended to the Hydration legend swatch when the
-//   series has at most one non-null point so the near-empty line is not mistaken
-//   for a bug. (Hannah handoff - flag for Gary eyeball.)
+//   A "(no daily history yet)" note is appended to the Hydration legend swatch
+//   when the series has at most one non-null point so the near-empty line is not
+//   mistaken for a bug. (Hannah handoff - flag for Gary eyeball.)
 function Journey({ userId }: { userId: string | null }) {
   const [range, setRange] = useState<JourneyRange>("1W");
   const { buckets, series, loading, error } = useJourneyGraphSeries(userId, range, 0);
@@ -182,9 +182,10 @@ function Journey({ userId }: { userId: string | null }) {
     paths[p.key] = buildLinePath(vals, xOf, yOf);
   }
 
-  // End dots: last non-null point of each series.
+  // End dots: last non-null point of each series. Built from `ordered` (hero last)
+  // so the Bio Optimization dot paints on top of the other dots, matching the lines.
   const endDots: { key: string; cx: number; cy: number; color: string; hero: boolean }[] = [];
-  for (const p of PILLARS) {
+  for (const p of ordered) {
     const vals: (number | null)[] = series[p.key as PillarKey] ?? [];
     for (let i = vals.length - 1; i >= 0; i--) {
       const v = vals[i];
@@ -196,7 +197,7 @@ function Journey({ userId }: { userId: string | null }) {
   }
 
   // Hydration note: past-day hydration is always null. When the series has at most
-  // one non-null point (only today), label it "(today only)" in the legend.
+  // one non-null point (only today), label it "(no daily history yet)" in the legend.
   const hydVals: (number | null)[] = series.hydration ?? [];
   const hydrationTodayOnly = hydVals.filter((v) => v !== null).length <= 1;
 
@@ -241,7 +242,7 @@ function Journey({ userId }: { userId: string | null }) {
             return (
               <g key={tick}>
                 <line x1={padL} x2={W - padR} y1={cy} y2={cy} stroke={C.line} strokeWidth={0.8} />
-                <text x={padL - 4} y={cy} textAnchor="end" dominantBaseline="middle" fontSize={10} fill={C.muted}>{tick}</text>
+                <text x={padL - 4} y={cy} textAnchor="end" dominantBaseline="middle" fontSize={18} fill={C.muted}>{tick}</text>
               </g>
             );
           })}
@@ -249,7 +250,7 @@ function Journey({ userId }: { userId: string | null }) {
           {/* X axis: bucket label text, centered under each labeled bucket */}
           {buckets.map((b, i) =>
             b.label ? (
-              <text key={b.date} x={xOf(i)} y={H - 6} textAnchor="middle" fontSize={10} fill={C.muted}>{b.label}</text>
+              <text key={b.date} x={xOf(i)} y={H - 6} textAnchor="middle" fontSize={14} fill={C.muted}>{b.label}</text>
             ) : null,
           )}
 
@@ -287,7 +288,7 @@ function Journey({ userId }: { userId: string | null }) {
             <span style={{ width: 12, height: 3, borderRadius: 2, background: p.color, display: "inline-block" }} />
             {p.label}
             {p.key === "hydration" && hydrationTodayOnly && (
-              <span style={{ fontSize: 10, opacity: 0.72 }}>(today only)</span>
+              <span style={{ fontSize: 10, opacity: 0.72 }}>(no daily history yet)</span>
             )}
           </span>
         ))}
