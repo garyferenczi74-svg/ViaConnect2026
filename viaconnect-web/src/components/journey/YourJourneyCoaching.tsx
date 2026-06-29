@@ -17,7 +17,7 @@ import { useRouter } from "next/navigation";
 import {
   Search, Bell, Edit2, Target, Activity, Moon, Salad, Heart, Sparkles, RefreshCw,
   Dna, FlaskConical, ClipboardList, Pill, HeartPulse, ArrowRight, ArrowUpRight,
-  TrendingUp, TrendingDown, ChevronDown, ShieldCheck, CircleAlert, Droplet, Flame, Smile, Zap,
+  TrendingUp, TrendingDown, ChevronDown, ChevronLeft, ChevronRight, ShieldCheck, CircleAlert, Droplet, Flame, Smile, Zap,
   type LucideIcon,
 } from "lucide-react";
 import { useBioOptimizationTrend } from "@/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/hooks/useBioOptimizationTrend";
@@ -154,7 +154,8 @@ type PillarValues = Record<string, number>;
 //   mistaken for a bug. (Hannah handoff - flag for Gary eyeball.)
 function Journey({ userId }: { userId: string | null }) {
   const [range, setRange] = useState<JourneyRange>("1W");
-  const { buckets, series, loading, error } = useJourneyGraphSeries(userId, range, 0);
+  const [offset, setOffset] = useState<number>(0);
+  const { buckets, series, periodLabel, canGoNext, loading, error } = useJourneyGraphSeries(userId, range, offset);
 
   // SVG coordinate system.
   const W = 840, H = 248;
@@ -228,9 +229,31 @@ function Journey({ userId }: { userId: string | null }) {
         <div style={eyebrow}>Journey</div>
         <div style={{ display: "flex", gap: 6 }}>
           {(["1W", "1M", "1Y"] as JourneyRange[]).map((r) => (
-            <button key={r} onClick={() => setRange(r)} className="vc-focus" style={{ cursor: "pointer", padding: "5px 13px", borderRadius: 999, fontSize: 11.5, fontWeight: 700, border: `1px solid ${range === r ? C.teal : C.line}`, background: range === r ? C.teal : "transparent", color: range === r ? C.navy : C.muted }}>{r}</button>
+            <button key={r} onClick={() => { setRange(r); setOffset(0); }} className="vc-focus" style={{ cursor: "pointer", padding: "5px 13px", borderRadius: 999, fontSize: 11.5, fontWeight: 700, border: `1px solid ${range === r ? C.teal : C.line}`, background: range === r ? C.teal : "transparent", color: range === r ? C.navy : C.muted }}>{r}</button>
           ))}
         </div>
+      </div>
+
+      {/* Period navigator: prev / period label / next */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 10, flexWrap: "wrap" }}>
+        <button
+          className="vc-focus"
+          onClick={() => setOffset((o) => o + 1)}
+          aria-label="Previous period"
+          style={{ cursor: "pointer", background: "transparent", border: `1px solid ${C.line}`, borderRadius: 8, padding: "4px 8px", color: C.muted, display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+        >
+          <ChevronLeft size={16} strokeWidth={SW} />
+        </button>
+        <span style={{ fontSize: 12, fontWeight: 600, color: C.text, minWidth: 130, textAlign: "center" }}>{periodLabel}</span>
+        <button
+          className="vc-focus"
+          onClick={() => setOffset((o) => Math.max(0, o - 1))}
+          disabled={!canGoNext}
+          aria-label="Next period"
+          style={{ cursor: canGoNext ? "pointer" : "default", background: "transparent", border: `1px solid ${C.line}`, borderRadius: 8, padding: "4px 8px", color: C.muted, display: "inline-flex", alignItems: "center", justifyContent: "center", opacity: canGoNext ? 1 : 0.35 }}
+        >
+          <ChevronRight size={16} strokeWidth={SW} />
+        </button>
       </div>
 
       {/* Chart: SVG always renders axis and X labels; plot content varies by state */}
