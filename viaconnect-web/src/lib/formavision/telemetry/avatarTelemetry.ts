@@ -58,6 +58,36 @@ export interface AvatarQualitySignals {
 }
 
 // ---------------------------------------------------------------------------
+// buildAvatarQualitySnapshot - pure assembler for the quality signals payload
+//
+// Called in BodyCompositionAvatar before emitting fallback_tier_served. Always
+// includes tierServed, stepDownCount, and errorCount. Includes
+// timeToFirstInteractiveMs only when a measured value is provided.
+// frameRateBucket is NEVER included: the demand-loop frame-budget sampler
+// (createFrameBudgetSampler) exposes only sample() -> boolean (budget-miss)
+// and consecutiveOverBudget() -> number. Neither provides a genuine rolling fps
+// average. Un-measured values must never be fabricated.
+// ---------------------------------------------------------------------------
+
+export function buildAvatarQualitySnapshot(
+  tierServed: 'cinematic' | 'lite' | '2d',
+  stepDownCount: number,
+  errorCount: number,
+  firstInteractiveMsOrNull: number | null,
+): AvatarQualitySignals {
+  const signals: AvatarQualitySignals = {
+    tierServed,
+    stepDownCount,
+    errorCount,
+  };
+  if (firstInteractiveMsOrNull !== null) {
+    signals.timeToFirstInteractiveMs = firstInteractiveMsOrNull;
+  }
+  // frameRateBucket: OMITTED. See function-level comment above.
+  return signals;
+}
+
+// ---------------------------------------------------------------------------
 // Serializable properties type: Record<string, Json> is assignable to the
 // analytics_events Insert type's `properties: Json | null` column without
 // a cast. Use this everywhere a properties payload is accepted or returned.
