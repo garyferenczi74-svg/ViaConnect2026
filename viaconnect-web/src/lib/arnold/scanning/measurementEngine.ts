@@ -13,6 +13,8 @@ import {
   aggregateFbCorroboration,
   aggregateLrAsymmetry,
 } from './accuracy/corroboration';
+import type { DepthFrame } from './accuracy/depthScale';
+import { findDepthSample, depthDerivedDepthCm } from './accuracy/depthScale';
 import type {
   BiologicalSex,
   CorroborationSignals,
@@ -26,9 +28,18 @@ export interface ExtractionInputs {
   silhouettes: PoseSilhouette[];
   sex: BiologicalSex;
   heightCm: number;
+  /**
+   * Task 14: optional ARKit/ARCore depth frame from the FormaVisionDepth plugin.
+   * When present, depth-derived front-to-back breadth is PREFERRED over the
+   * silhouette-derived side depth at each body level. When absent (undefined or
+   * null), the existing two-view silhouette breadth path is used unchanged
+   * (byte-identical to pre-Task-14 behavior). RULE 9: absent = graceful fallback,
+   * never an error.
+   */
+  depthFrame?: DepthFrame | null;
 }
 
-export function extractMeasurements({ silhouettes, sex, heightCm }: ExtractionInputs): ExtractedMeasurements {
+export function extractMeasurements({ silhouettes, sex, heightCm, depthFrame }: ExtractionInputs): ExtractedMeasurements {
   const front = silhouettes.find((s) => s.poseId === 'front') ?? null;
   const back  = silhouettes.find((s) => s.poseId === 'back')  ?? null;
   const left  = silhouettes.find((s) => s.poseId === 'left')  ?? null;
@@ -159,6 +170,46 @@ export function extractMeasurements({ silhouettes, sex, heightCm }: ExtractionIn
       ? Math.max(frontWidths.hip, backHipWidth)
       : frontWidths.hip;
 
+  // Task 14: depth-derived front-to-back breadth lookup.
+  // Returns the metric depth (cm) from the native depth frame at a given
+  // image Y position, or null when the depth frame is absent/missing/invalid.
+  // When depthFrame is null/undefined, this ALWAYS returns null, so the
+  // effectiveDepths fallback path below is byte-identical to sideDepths.
+  const depthAtLevel = (yPx: number | null): number | null => {
+    if (depthFrame == null || yPx === null || front.imageHeight <= 0) return null;
+    const levelNorm = yPx / front.imageHeight;
+    const sample = findDepthSample(depthFrame, levelNorm);
+    return depthDerivedDepthCm(sample);
+  };
+
+  // Task 14: depth-boosted effective depths.
+  // At each body level, prefer the depth-derived breadth (more accurate) when
+  // available; fall back to the silhouette-derived side depth otherwise.
+  //
+  // BYTE-IDENTICAL GUARANTEE: when depthFrame is absent (null/undefined),
+  // depthAtLevel() returns null for every level. null ?? sideDepths.xxx
+  // equals sideDepths.xxx exactly. effectiveDepths is structurally and
+  // numerically identical to sideDepths, so ALL downstream circ() and axes()
+  // calls receive the same arguments as in the pre-Task-14 code.
+  //
+  // The null case (no side views, no depth) is preserved: effectiveDepths
+  // stays null so effectiveDepths?.xxx returns undefined, matching the
+  // pre-Task-14 sideDepths?.xxx === undefined behavior.
+  const effectiveDepths: typeof sideDepths = (() => {
+    // No side views and no depth frame: preserve the null/undefined path.
+    if (sideDepths === null && depthFrame == null) return null;
+    return {
+      neck:         depthAtLevel(yNeck)              ?? (sideDepths?.neck         ?? null),
+      chest:        depthAtLevel(yChest)             ?? (sideDepths?.chest        ?? null),
+      waistNatural: depthAtLevel(yWaistNatural)      ?? (sideDepths?.waistNatural ?? null),
+      waistNavel:   depthAtLevel(yWaistNavel)        ?? (sideDepths?.waistNavel   ?? null),
+      hip:          depthAtLevel(yHip)               ?? (sideDepths?.hip          ?? null),
+      bicep:        depthAtLevel(yBicepL ?? yBicepR) ?? (sideDepths?.bicep        ?? null),
+      thigh:        depthAtLevel(yThighL ?? yThighR) ?? (sideDepths?.thigh        ?? null),
+      calf:         depthAtLevel(yCalfL ?? yCalfR)   ?? (sideDepths?.calf         ?? null),
+    };
+  })();
+
   // Build circumferences
   const circ = (frontWidth: number | null, sideDepth: number | undefined | null, region: Region): MeasuredValue => {
     if (frontWidth === null) return missing();
@@ -185,39 +236,39 @@ export function extractMeasurements({ silhouettes, sex, heightCm }: ExtractionIn
     return { aCm, bCm, aspectRatio };
   };
 
-  const neck          = circ(frontWidths.neck,         sideDepths?.neck,         'neck');
-  const shoulder      = circ(frontWidths.shoulder,     undefined,                 'shoulder');
-  const chest         = circ(frontWidths.chest,        sideDepths?.chest,         'chest');
-  const waistNatural  = circ(frontWidths.waistNatural, sideDepths?.waistNatural,  'waist_natural');
-  const waistNavel    = circ(frontWidths.waistNavel,   sideDepths?.waistNavel,    'waist_navel');
+  const neck          = circ(frontWidths.neck,         effectiveDepths?.neck,         'neck');
+  const shoulder      = circ(frontWidths.shoulder,     undefined,                     'shoulder');
+  const chest         = circ(frontWidths.chest,        effectiveDepths?.chest,         'chest');
+  const waistNatural  = circ(frontWidths.waistNatural, effectiveDepths?.waistNatural,  'waist_natural');
+  const waistNavel    = circ(frontWidths.waistNavel,   effectiveDepths?.waistNavel,    'waist_navel');
   // Hip uses refinedHipWidth (back-view adjusted) when the back silhouette is available.
-  const hip           = circ(refinedHipWidth,          sideDepths?.hip,           'hip');
-  const bicepR        = circ(frontWidths.bicepR,       sideDepths?.bicep,         'bicep');
-  const bicepL        = circ(frontWidths.bicepL,       sideDepths?.bicep,         'bicep');
-  const forearmR      = circ(frontWidths.forearmR,     undefined,                 'forearm');
-  const forearmL      = circ(frontWidths.forearmL,     undefined,                 'forearm');
-  const thighR        = circ(frontWidths.thighR,       sideDepths?.thigh,         'thigh');
-  const thighL        = circ(frontWidths.thighL,       sideDepths?.thigh,         'thigh');
-  const calfR         = circ(frontWidths.calfR,        sideDepths?.calf,          'calf');
-  const calfL         = circ(frontWidths.calfL,        sideDepths?.calf,          'calf');
+  const hip           = circ(refinedHipWidth,          effectiveDepths?.hip,           'hip');
+  const bicepR        = circ(frontWidths.bicepR,       effectiveDepths?.bicep,         'bicep');
+  const bicepL        = circ(frontWidths.bicepL,       effectiveDepths?.bicep,         'bicep');
+  const forearmR      = circ(frontWidths.forearmR,     undefined,                     'forearm');
+  const forearmL      = circ(frontWidths.forearmL,     undefined,                     'forearm');
+  const thighR        = circ(frontWidths.thighR,       effectiveDepths?.thigh,         'thigh');
+  const thighL        = circ(frontWidths.thighL,       effectiveDepths?.thigh,         'thigh');
+  const calfR         = circ(frontWidths.calfR,        effectiveDepths?.calf,          'calf');
+  const calfL         = circ(frontWidths.calfL,        effectiveDepths?.calf,          'calf');
 
   // Task 8: compute semi-axes using the same inputs as the corresponding circ() call.
   const semiAxes = {
-    neck:         axes(frontWidths.neck,         sideDepths?.neck),
+    neck:         axes(frontWidths.neck,         effectiveDepths?.neck),
     shoulder:     axes(frontWidths.shoulder,     undefined),
-    chest:        axes(frontWidths.chest,        sideDepths?.chest),
-    waistNatural: axes(frontWidths.waistNatural, sideDepths?.waistNatural),
-    waistNavel:   axes(frontWidths.waistNavel,   sideDepths?.waistNavel),
+    chest:        axes(frontWidths.chest,        effectiveDepths?.chest),
+    waistNatural: axes(frontWidths.waistNatural, effectiveDepths?.waistNatural),
+    waistNavel:   axes(frontWidths.waistNavel,   effectiveDepths?.waistNavel),
     // Hip uses refinedHipWidth matching the circ() call above.
-    hip:          axes(refinedHipWidth,          sideDepths?.hip),
-    bicepR:       axes(frontWidths.bicepR,       sideDepths?.bicep),
-    bicepL:       axes(frontWidths.bicepL,       sideDepths?.bicep),
+    hip:          axes(refinedHipWidth,          effectiveDepths?.hip),
+    bicepR:       axes(frontWidths.bicepR,       effectiveDepths?.bicep),
+    bicepL:       axes(frontWidths.bicepL,       effectiveDepths?.bicep),
     forearmR:     axes(frontWidths.forearmR,     undefined),
     forearmL:     axes(frontWidths.forearmL,     undefined),
-    thighR:       axes(frontWidths.thighR,       sideDepths?.thigh),
-    thighL:       axes(frontWidths.thighL,       sideDepths?.thigh),
-    calfR:        axes(frontWidths.calfR,        sideDepths?.calf),
-    calfL:        axes(frontWidths.calfL,        sideDepths?.calf),
+    thighR:       axes(frontWidths.thighR,       effectiveDepths?.thigh),
+    thighL:       axes(frontWidths.thighL,       effectiveDepths?.thigh),
+    calfR:        axes(frontWidths.calfR,        effectiveDepths?.calf),
+    calfL:        axes(frontWidths.calfL,        effectiveDepths?.calf),
   };
 
   // Lengths

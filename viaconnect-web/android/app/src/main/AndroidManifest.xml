@@ -20,6 +20,11 @@
             </intent-filter>
         </activity>
 
+        <!-- Task 14 (Prompt 210c): ARCore optional dependency metadata.
+             android:value="optional" = app works without ARCore installed.
+             Set to "required" only if depth becomes mandatory (not currently planned). -->
+        <meta-data android:name="com.google.ar.core" android:value="optional" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
@@ -39,6 +44,12 @@
          on devices without a camera. -->
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
+
+    <!-- Task 14 (Prompt 210c): ARCore Depth API booster.
+         android:required="false" ensures the app installs on all devices,
+         including those without ARCore or depth sensor support. The depth
+         booster degrades gracefully when unavailable. -->
+    <uses-feature android:name="android.hardware.camera.ar" android:required="false" />
 
     <!-- Android 11+ package visibility for speech recognition service -->
     <queries>

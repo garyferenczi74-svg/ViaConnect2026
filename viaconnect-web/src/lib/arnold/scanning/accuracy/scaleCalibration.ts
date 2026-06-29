@@ -80,11 +80,19 @@ const AGREEMENT_NORMALIZATION = 2 * DISAGREEMENT_RELATIVE_SPREAD_THRESHOLD;
  *   scaleFromReference() in referenceObjectScale.ts. Included ONLY when the
  *   user has explicitly opted in (Section 6.2). Absent (undefined) = not
  *   participating in reconciliation.
+ * depthScaleCmPerPx - OPTIONAL ARKit/ARCore depth-derived scale anchor from
+ *   depthDerivedScaleCmPerPx() in depthScale.ts (Task 14). Uses the thin-lens
+ *   projection formula (physicalSizePerPixel = depthM / focalLengthPx) to
+ *   derive scale from metric depth + camera intrinsics. Absent (undefined) =
+ *   not participating in reconciliation (device has no LiDAR/ARCore, or depth
+ *   probe returned false). This anchor degrades gracefully when absent.
  */
 export interface ReconcileScaleInputs {
   frontScaleCmPerPx: number | null;
   sideScaleCmPerPx: number | null;
   refObjectScaleCmPerPx?: number | null;
+  /** Task 14: optional depth-camera-derived scale anchor. Absent = not participating. */
+  depthScaleCmPerPx?: number | null;
 }
 
 /**
@@ -129,6 +137,10 @@ export function reconcileScale(inputs: ReconcileScaleInputs): ReconcileScaleResu
   if (isValidAnchor(inputs.frontScaleCmPerPx)) anchors.push(inputs.frontScaleCmPerPx!);
   if (isValidAnchor(inputs.sideScaleCmPerPx)) anchors.push(inputs.sideScaleCmPerPx!);
   if (isValidAnchor(inputs.refObjectScaleCmPerPx)) anchors.push(inputs.refObjectScaleCmPerPx!);
+  // Task 14: depth-derived scale anchor (ARKit/ARCore). Participates when
+  // present and valid. Absent when device has no LiDAR/ARCore depth, or when
+  // probeDepthCapability() returned false (graceful degradation).
+  if (isValidAnchor(inputs.depthScaleCmPerPx)) anchors.push(inputs.depthScaleCmPerPx!);
 
   // No anchors: UNKNOWN (RULE 9).
   if (anchors.length === 0) {

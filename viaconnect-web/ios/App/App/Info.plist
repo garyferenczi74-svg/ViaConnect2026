@@ -51,5 +51,14 @@
 	<string>ViaConnect uses speech recognition to turn your spoken meal edits into text. Speech is transcribed on your device when possible; transcripts are used only to apply edits you confirm.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>ViaConnect uses your camera to photograph meals and scan barcodes on packaged foods. Photos are sent to our analysis service only when you choose to log a meal.</string>
+	<!-- Task 14 (Prompt 210c): ARKit LiDAR depth booster. The body scan uses
+	     ARKit scene depth on LiDAR-equipped devices to improve front-to-back
+	     measurement accuracy. Depth data is processed on-device and never sent
+	     to any server. The scan works without LiDAR on all other devices. -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>ViaConnect does not use your location. ARKit requires this key on iOS even when location is not accessed.</string>
+	<!-- ARKit privacy strings (required for App Store submission when using ARKit) -->
+	<key>NSMotionUsageDescription</key>
+	<string>ViaConnect uses device motion to stabilize the body scan camera view for more accurate measurements. Motion data is processed on-device and not transmitted.</string>
 </dict>
 </plist>
