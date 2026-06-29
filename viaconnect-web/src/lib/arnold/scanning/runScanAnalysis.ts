@@ -16,6 +16,8 @@ import { blendComposition } from './compositionBlender';
 import { applyCalibration } from './calibrationManager';
 import { ingestMeasurementsFromScan, type IngestClient } from '@/lib/body-measurements/ingestScanMeasurements';
 import { safeLog } from '@/lib/utils/safe-log';
+import { assessCaptureQuality } from './accuracy/captureQuality';
+import { silhouetteToQualityInput, retakePromptForIssues, type ViewQualityResult } from './accuracy/silhouetteToQualityInput';
 import type {
   BiologicalSex,
   CompositionEstimate,
@@ -26,6 +28,8 @@ import type {
   BodyModelParameters,
   AsymmetryReport,
 } from './types';
+
+export type { ViewQualityResult };
 
 export interface ScanProgress {
   phase:
@@ -80,6 +84,16 @@ export interface InMemoryPhotoInput {
   sex: BiologicalSex;
   /** Optional progress callback (mirrors ScanProgress phases). */
   onProgress?: (p: ScanProgress) => void;
+  /**
+   * Optional per-view quality callback (Task 13b).
+   * Called immediately after each silhouette's quality is assessed.
+   * Fires even for views that fail (pass: false) - the caller can use the
+   * result to display retake prompts or log the failure.
+   * RULE 9: a failed quality result does NOT silently become a good measurement;
+   * the silhouette.qualityScore is set from the assessment so that downstream
+   * confidence scoring reflects the actual capture quality.
+   */
+  onViewQuality?: (result: ViewQualityResult) => void;
 }
 
 /**
@@ -91,7 +105,7 @@ export interface InMemoryPhotoInput {
 export async function runInMemoryMeasurement(
   input: InMemoryPhotoInput,
 ): Promise<ExtractedMeasurements> {
-  const { photos, heightCm, sex, onProgress } = input;
+  const { photos, heightCm, sex, onProgress, onViewQuality } = input;
   const report = (phase: ScanProgress['phase'], percent: number, message: string) =>
     onProgress?.({ phase, percent, message });
 
@@ -125,6 +139,44 @@ export async function runInMemoryMeasurement(
           ),
         ),
       ]);
+
+      // Task 13b: per-view quality assessment (additive, never alters T9/T10 path).
+      // Maps the silhouette to a CaptureQualityInput and runs assessCaptureQuality.
+      // The result populates silhouette.qualityScore + silhouette.qualityIssues so
+      // downstream confidence scoring (confidenceModel.ts) reflects actual capture
+      // quality. RULE 9: a failed view is flagged low-confidence, never silently
+      // treated as good.
+      try {
+        const qualityInput = silhouetteToQualityInput(silhouette, pose);
+        const qualityResult = assessCaptureQuality(qualityInput);
+        // Populate the stubbed fields on the silhouette (Section 5.4)
+        silhouette.qualityScore = qualityResult.score;
+        silhouette.qualityIssues = qualityResult.issues;
+        const viewResult: ViewQualityResult = {
+          poseId: pose,
+          score: qualityResult.score,
+          issues: qualityResult.issues,
+          pass: qualityResult.pass,
+          retakePrompt: qualityResult.pass ? '' : retakePromptForIssues(qualityResult.issues),
+        };
+        onViewQuality?.(viewResult);
+        if (!qualityResult.pass) {
+          safeLog.warn(
+            'arnold.scanning.inmemory',
+            `[T13b] ${pose} view failed quality check - measurements will be low-confidence`,
+            { pose, score: qualityResult.score, issues: qualityResult.issues },
+          );
+        }
+      } catch (qErr) {
+        // Quality assessment is non-fatal: the pipeline continues even if the
+        // quality check itself errors (fail-open, graceful degradation).
+        safeLog.warn(
+          'arnold.scanning.inmemory',
+          `[T13b] ${pose} view quality assessment failed (non-fatal, continuing)`,
+          { pose, error: qErr instanceof Error ? qErr.message : String(qErr) },
+        );
+      }
+
       silhouettes.push(silhouette);
     } catch (err) {
       // Fail-open: log the failure and skip this view.
