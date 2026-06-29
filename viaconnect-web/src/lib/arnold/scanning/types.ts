@@ -52,11 +52,13 @@ export interface PoseSilhouette {
 export type ConfidenceLevel = 'high' | 'moderate' | 'low';
 
 export interface MeasuredValue {
-  cm: number;
+  /** Circumference in cm, or null when the measurement cannot be determined (UNKNOWN).
+   *  null is the honest signal; 0 is NEVER a valid absent-measurement value (RULE 9). */
+  cm: number | null;
   /** +/- symmetric uncertainty in cm. */
   uncertaintyCm: number;
   confidence: ConfidenceLevel;
-  /** Named source, e.g., "ellipse_frontSide" | "geometric_front" | "tape_calibrated". */
+  /** Named source, e.g., "ellipse_frontSide" | "geometric_front" | "tape_calibrated" | "missing". */
   source: string;
 }
 

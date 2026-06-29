@@ -204,12 +204,15 @@ export async function runScanAnalysis({ sessionId, onProgress }: ScanAnalysisInp
   }
 
   report('estimating_composition', 85, 'Estimating body composition');
+  // null (UNKNOWN) circumferences are coerced to 0 for the Navy formula;
+  // navyBodyFat treats 0 as an invalid input and returns valid:false, so
+  // composition.navyBodyFatPct will be null rather than a fabricated estimate.
   const navy = navyBodyFat({
     sex,
     heightCm,
-    neckCm: measurements.neckCirc.cm,
-    waistCm: measurements.waistNaturalCirc.cm,
-    hipCm: sex === 'female' ? measurements.hipCirc.cm : undefined,
+    neckCm:  measurements.neckCirc.cm          ?? 0,
+    waistCm: measurements.waistNaturalCirc.cm  ?? 0,
+    hipCm:   sex === 'female' ? (measurements.hipCirc.cm ?? 0) : undefined,
   });
   const cunbae = cunbaeBodyFat({ weightKg, heightCm, age, sex });
 
@@ -231,13 +234,17 @@ export async function runScanAnalysis({ sessionId, onProgress }: ScanAnalysisInp
 
   const asymmetry = analyzeAsymmetry(measurements);
 
+  // BodyModelParameters requires number; null (UNKNOWN) measurements fall back to 0
+  // so the avatar mesh renders with a neutral/unset girth rather than crashing.
+  // This is an avatar-only concern; the health measurements in body_scan_measurements
+  // retain their honest null values (see cm() helper below).
   const avatarParameters: BodyModelParameters = {
     heightCm,
-    shoulderCircCm: measurements.shoulderCirc.cm,
-    chestCircCm:    measurements.chestCirc.cm,
-    waistCircCm:    measurements.waistNaturalCirc.cm,
-    hipCircCm:      measurements.hipCirc.cm,
-    neckCircCm:     measurements.neckCirc.cm,
+    shoulderCircCm: measurements.shoulderCirc.cm         ?? 0,
+    chestCircCm:    measurements.chestCirc.cm            ?? 0,
+    waistCircCm:    measurements.waistNaturalCirc.cm     ?? 0,
+    hipCircCm:      measurements.hipCirc.cm              ?? 0,
+    neckCircCm:     measurements.neckCirc.cm             ?? 0,
     bicepCircCm:    avgOrZero(measurements.rightBicepCirc.cm, measurements.leftBicepCirc.cm),
     thighCircCm:    avgOrZero(measurements.rightThighCirc.cm, measurements.leftThighCirc.cm),
     calfCircCm:     avgOrZero(measurements.rightCalfCirc.cm,  measurements.leftCalfCirc.cm),
@@ -315,7 +322,9 @@ async function persistScan(args: {
     } as never)
     .eq('id', session.id);
 
-  const cm = (v: { cm: number }): number => round1(v.cm);
+  // cm() maps a MeasuredValue to a nullable DB value; null is stored honestly
+  // rather than fabricating 0 for unknown measurements.
+  const cm = (v: { cm: number | null }): number | null => v.cm !== null ? round1(v.cm) : null;
   const scanMeasurementsRow = {
     user_id: session.user_id,
     session_id: session.id,
@@ -412,7 +421,13 @@ async function loadManualSnapshot(supabase: ReturnType<typeof createClient>, use
   };
 }
 
-function avgOrZero(a: number, b: number): number {
+// avgOrZero: used only for avatar BodyModelParameters which require number.
+// null (UNKNOWN) is treated as "not available for this side"; if both sides
+// are null the result is 0 (the avatar-only unset sentinel).
+function avgOrZero(a: number | null, b: number | null): number {
+  if (a === null && b === null) return 0;
+  if (a === null) return b! > 0 ? b! : 0;
+  if (b === null) return a  > 0 ? a  : 0;
   if (!Number.isFinite(a) || !Number.isFinite(b)) return 0;
   if (a <= 0 && b <= 0) return 0;
   if (a <= 0) return b;

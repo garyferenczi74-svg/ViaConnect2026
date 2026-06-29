@@ -121,9 +121,10 @@ export function extractMeasurements({ silhouettes, sex, heightCm }: ExtractionIn
   const inseamCm = inseamLengthCm(front);
   const torsoLengthCm = torsoCm(front);
 
-  // Derived ratios (only when both values exist)
-  const ratio = (a: number, b: number): number =>
-    (a > 0 && b > 0) ? Math.round((a / b) * 100) / 100 : 0;
+  // Derived ratios (only when both values are known positive numbers).
+  // When either input is null (UNKNOWN), the ratio is unavailable -> sentinel 0.
+  const ratio = (a: number | null, b: number | null): number =>
+    (a !== null && b !== null && a > 0 && b > 0) ? Math.round((a / b) * 100) / 100 : 0;
 
   const waistToHipRatio    = ratio(waistNatural.cm, hip.cm);
   const waistToHeightRatio = ratio(waistNatural.cm, heightCm);
@@ -156,7 +157,9 @@ export function extractMeasurements({ silhouettes, sex, heightCm }: ExtractionIn
 }
 
 function missing(): MeasuredValue {
-  return { cm: 0, uncertaintyCm: 0, confidence: 'low', source: 'missing' };
+  // RULE 9 / Section 17.1: a measurement that cannot be determined is UNKNOWN.
+  // cm:null is the honest signal; cm:0 is FORBIDDEN (0 is a fabricated value).
+  return { cm: null, uncertaintyCm: 0, confidence: 'low', source: 'missing' };
 }
 
 function midY(a: number | undefined, b: number | undefined): number | null {
