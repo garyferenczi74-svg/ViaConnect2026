@@ -1,639 +1,561 @@
 /**
  * src/components/journey/coaching/__tests__/useJourneyGraphSeries.test.ts
  *
- * TDD for the pure mapper buildSeriesFromRows (Prompt 208k Task T2).
+ * TDD for the pure functions in useJourneyGraphSeries (Prompt 208k Task T2 REWORK).
  *
- * Coverage:
- *   - Daily join by date: matching rows produce values; missing day -> null
- *   - Gap rule: missing data is null, never 0
- *   - Out-of-window rows are ignored (mapper trusts buckets array)
- *   - Partial pillar columns: null column -> null for that bucket
- *   - 1Y monthly aggregation via aggregateMonthly
- *   - Monthly gap: no data in a month -> null, never 0
- *   - Today overlay: replaces only the current (today) bucket
- *   - Today overlay with null field: null stays null (honest gap)
- *   - Today overlay does not affect past buckets
- *   - 1Y today overlay patches the current month's bucket
- *   - Honest pillars: energy/mood/nutrition/activity/hydration always null for
- *     past buckets (no per-day stored aggregate in types.ts)
- *   - Overall: prefers bio_optimization_history over daily_scores column
- *   - Overall fallback: uses daily_scores.bio_optimization_score when history absent
- *   - Series length always equals buckets.length
- *   - Never emits 0 for any missing data scenario
- *   - No reference to vitality_score anywhere in the function signature or body
- *   - Empty input arrays -> all null arrays
- *   - Deterministic (same input, same output)
+ * The hook recomputes each past day with the Dashboard scoring engine so history
+ * equals the Dashboard gauges. The two pure pieces under test are:
+ *   - computeDayPillars: per-day check-in + meals -> 5 wellness pillars, mirroring
+ *     src/hooks/journey/useDailyScores.ts (mapCheckInToScoringInput ->
+ *     calculateDailyScores + meal_score nutrition override). A no-data pillar is
+ *     null (a gap), never 0.
+ *   - buildSeriesFromRows: per-bucket assembly aligned to the T1 window, with
+ *     bio_optimization_history.score as the overall line, honest null hydration
+ *     for past days, today overlay, and 1Y monthly aggregation.
  *
- * No Date.now() or argless new Date() in tests.
- * Today is always injected via the 'today' parameter.
+ * Expectations for the engine-derived pillars are derived by reusing
+ * calculateDailyScores + mapCheckInToScoringInput (not by duplicating the
+ * override), plus concrete hardcoded values where the override applies.
+ *
+ * No Date.now() or argless new Date() in tests. Today is injected.
  */
 
 import { describe, it, expect } from 'vitest';
-import { buildSeriesFromRows, PILLAR_KEYS } from '../useJourneyGraphSeries';
-import type { DailyScoreRow, BioHistoryRow, TodayOverlay } from '../useJourneyGraphSeries';
+import {
+  computeDayPillars,
+  buildSeriesFromRows,
+  PILLAR_KEYS,
+  type JourneyCheckinRow,
+  type JourneyMealRow,
+  type BioHistoryRow,
+  type TodayOverlay,
+} from '../useJourneyGraphSeries';
 import { windowFor } from '../journeyGraphWindow';
+import {
+  calculateDailyScores,
+  mapCheckInToScoringInput,
+} from '@/lib/scoring/dailyScoreEngineV2';
 
 // ---------------------------------------------------------------------------
-// Test fixtures
+// Fixtures
 // ---------------------------------------------------------------------------
 
-/** Build a 1W window for a known today. */
-function week1W(today: string) {
-  return windowFor('1W', 0, today);
+/** A populated check-in row producing known per-pillar scores. */
+function checkin(date: string, overrides: Partial<JourneyCheckinRow> = {}): JourneyCheckinRow {
+  return {
+    check_in_date: date,
+    sleep_hours: 8,
+    sleep_quality_score: 8,
+    energy_recovery_score: 7,
+    stress_level_score: 4,
+    cardio_active: true,
+    cardio_duration_min: 30,
+    resistance_active: false,
+    resistance_duration_min: null,
+    activity_level_score: 6,
+    ...overrides,
+  };
 }
 
-/** Build a 1M window for a known today. */
-function month1M(today: string) {
-  return windowFor('1M', 0, today);
+/** An empty check-in row (all score fields null, no exercise). */
+function emptyCheckin(date: string): JourneyCheckinRow {
+  return {
+    check_in_date: date,
+    sleep_hours: null,
+    sleep_quality_score: null,
+    energy_recovery_score: null,
+    stress_level_score: null,
+    cardio_active: false,
+    cardio_duration_min: null,
+    resistance_active: false,
+    resistance_duration_min: null,
+    activity_level_score: null,
+  };
 }
 
-/** Build a 1Y window for a known today. */
-function year1Y(today: string) {
-  return windowFor('1Y', 0, today);
+function meal(date: string, overrides: Partial<JourneyMealRow> = {}): JourneyMealRow {
+  return {
+    meal_date: date,
+    meal_type: 'breakfast',
+    calories: 400,
+    protein_g: 20,
+    carbs_g: 40,
+    fat_g: 10,
+    quality_rating: null,
+    meal_score: null,
+    ...overrides,
+  };
 }
 
-/** Daily row with all fields present. */
-function dailyRow(date: string, sleep: number | null, bioOpt: number | null): DailyScoreRow {
-  return { date, sleep_score: sleep, bio_optimization_score: bioOpt };
-}
-
-/** Bio history row. */
-function bioRow(date: string, score: number): BioHistoryRow {
+function bio(date: string, score: number): BioHistoryRow {
   return { date, score };
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
+/**
+ * Derive the four non-nutrition pillars purely from the engine (reuses
+ * calculateDailyScores + mapCheckInToScoringInput) so computeDayPillars can be
+ * verified against the same path the Dashboard uses, with no meals involved.
+ */
+function engineNonNutritionPillars(cr: JourneyCheckinRow | null) {
+  const checkinData = cr
+    ? mapCheckInToScoringInput(cr as unknown as Record<string, unknown>)
+    : null;
+  const r = calculateDailyScores(checkinData, null, null);
+  return {
+    sleep: r.sleep.confidence > 0 ? r.sleep.score : null,
+    energy: r.energy.confidence > 0 ? r.energy.score : null,
+    mood: r.moodStress.confidence > 0 ? r.moodStress.score : null,
+    activity: r.activity.confidence > 0 ? r.activity.score : null,
+  };
+}
 
-/** Returns true when every element of every pillar array equals null. */
 function allNull(series: Record<string, (number | null)[]>): boolean {
   return PILLAR_KEYS.every((k) => (series[k] ?? []).every((v) => v === null));
 }
 
-/** Returns true when no element of any pillar array equals 0. */
 function noZeros(series: Record<string, (number | null)[]>): boolean {
   return PILLAR_KEYS.every((k) => (series[k] ?? []).every((v) => v !== 0));
 }
 
-// ---------------------------------------------------------------------------
-// Empty input -> all null
-// ---------------------------------------------------------------------------
+// ===========================================================================
+// computeDayPillars
+// ===========================================================================
+
+describe('computeDayPillars - engine parity (no meals)', () => {
+  const cr = checkin('2026-06-22');
+
+  it('matches the engine-derived sleep/energy/mood/activity pillars', () => {
+    const expected = engineNonNutritionPillars(cr);
+    const dp = computeDayPillars(cr, []);
+    expect(dp.sleep).toBe(expected.sleep);
+    expect(dp.energy).toBe(expected.energy);
+    expect(dp.mood).toBe(expected.mood);
+    expect(dp.activity).toBe(expected.activity);
+  });
+
+  it('produces the expected concrete values', () => {
+    const dp = computeDayPillars(cr, []);
+    // sleep: 8h in [7,9] -> 100; quality 8 -> 80; avg 90
+    expect(dp.sleep).toBe(90);
+    // energy 7 -> 70
+    expect(dp.energy).toBe(70);
+    // stress 4 -> 100 - 40 = 60
+    expect(dp.mood).toBe(60);
+    // activity: dur 30 -> 50, intensity 6 -> 60, +20, /3 -> 43
+    expect(dp.activity).toBe(43);
+  });
+
+  it('nutrition is null when there are no meals', () => {
+    const dp = computeDayPillars(cr, []);
+    expect(dp.nutrition).toBe(null);
+  });
+});
+
+describe('computeDayPillars - null and empty check-ins (gaps, never 0)', () => {
+  it('null check-in with no meals yields all null pillars', () => {
+    const dp = computeDayPillars(null, []);
+    expect(dp.sleep).toBe(null);
+    expect(dp.energy).toBe(null);
+    expect(dp.mood).toBe(null);
+    expect(dp.nutrition).toBe(null);
+    expect(dp.activity).toBe(null);
+  });
+
+  it('null check-in never emits 0 for any pillar', () => {
+    const dp = computeDayPillars(null, []);
+    Object.values(dp).forEach((v) => expect(v).not.toBe(0));
+  });
+
+  it('empty check-in yields null sleep/energy/mood/nutrition but activity floor 15', () => {
+    // The engine maps a check-in with no exercise to exercise_type "none",
+    // which scores a fixed 15 (mirrors the Dashboard). Sleep/energy/mood/nutrition
+    // remain null gaps.
+    const dp = computeDayPillars(emptyCheckin('2026-06-22'), []);
+    expect(dp.sleep).toBe(null);
+    expect(dp.energy).toBe(null);
+    expect(dp.mood).toBe(null);
+    expect(dp.nutrition).toBe(null);
+    expect(dp.activity).toBe(15);
+  });
+
+  it('sleep is null when only sleep fields are missing on an otherwise present check-in', () => {
+    const cr = checkin('2026-06-22', { sleep_hours: null, sleep_quality_score: null });
+    const dp = computeDayPillars(cr, []);
+    expect(dp.sleep).toBe(null);
+    // energy still present
+    expect(dp.energy).toBe(70);
+  });
+});
+
+describe('computeDayPillars - meal_score nutrition override', () => {
+  const cr = checkin('2026-06-22');
+
+  it('nutrition equals the average of meal_score values', () => {
+    const meals = [
+      meal('2026-06-22', { meal_type: 'breakfast', meal_score: 80 }),
+      meal('2026-06-22', { meal_type: 'lunch', meal_score: 60 }),
+    ];
+    const dp = computeDayPillars(cr, meals);
+    expect(dp.nutrition).toBe(70); // (80 + 60) / 2
+  });
+
+  it('falls back to quality_rating * 25 when no meal_score present', () => {
+    const meals = [meal('2026-06-22', { meal_type: 'breakfast', quality_rating: 4, meal_score: null })];
+    const dp = computeDayPillars(cr, meals);
+    expect(dp.nutrition).toBe(100); // 4 * 25
+  });
+
+  it('clamps quality_rating * 25 to 100', () => {
+    const meals = [meal('2026-06-22', { quality_rating: 5, meal_score: null })];
+    const dp = computeDayPillars(cr, meals);
+    expect(dp.nutrition).toBe(100); // 5 * 25 = 125 clamped to 100
+  });
+
+  it('nutrition present, other pillars unchanged by the override', () => {
+    const meals = [meal('2026-06-22', { meal_score: 90 })];
+    const dp = computeDayPillars(cr, meals);
+    expect(dp.nutrition).toBe(90);
+    expect(dp.sleep).toBe(90);
+    expect(dp.energy).toBe(70);
+    expect(dp.mood).toBe(60);
+    expect(dp.activity).toBe(43);
+  });
+
+  it('null check-in + meals yields only nutrition (others null)', () => {
+    const meals = [meal('2026-06-22', { meal_score: 80 })];
+    const dp = computeDayPillars(null, meals);
+    expect(dp.nutrition).toBe(80);
+    expect(dp.sleep).toBe(null);
+    expect(dp.energy).toBe(null);
+    expect(dp.mood).toBe(null);
+    expect(dp.activity).toBe(null);
+  });
+});
+
+describe('computeDayPillars - deterministic', () => {
+  it('same input produces identical output', () => {
+    const cr = checkin('2026-06-22');
+    const meals = [meal('2026-06-22', { meal_score: 70 })];
+    expect(computeDayPillars(cr, meals)).toEqual(computeDayPillars(cr, meals));
+  });
+});
+
+// ===========================================================================
+// buildSeriesFromRows - daily ranges
+// ===========================================================================
 
 describe('buildSeriesFromRows - empty input', () => {
   const today = '2026-06-28';
-  const win = week1W(today);
+  const win = windowFor('1W', 0, today);
 
-  it('returns all null when both row arrays are empty', () => {
-    const series = buildSeriesFromRows(win.buckets, [], [], '1W', today, undefined);
+  it('all null when no rows', () => {
+    const series = buildSeriesFromRows(win.buckets, [], [], [], '1W', today, undefined);
     expect(allNull(series)).toBe(true);
   });
 
-  it('series length equals buckets.length for 1W', () => {
-    const series = buildSeriesFromRows(win.buckets, [], [], '1W', today, undefined);
-    PILLAR_KEYS.forEach((k) => {
-      expect(series[k].length).toBe(win.buckets.length);
-    });
-  });
-
-  it('series length equals buckets.length for 1M', () => {
-    const mWin = month1M(today);
-    const series = buildSeriesFromRows(mWin.buckets, [], [], '1M', today, undefined);
-    PILLAR_KEYS.forEach((k) => {
-      expect(series[k].length).toBe(mWin.buckets.length);
-    });
-  });
-
-  it('series length equals buckets.length for 1Y', () => {
-    const yWin = year1Y(today);
-    const series = buildSeriesFromRows(yWin.buckets, [], [], '1Y', today, undefined);
-    PILLAR_KEYS.forEach((k) => {
-      expect(series[k].length).toBe(12);
-    });
+  it('series length equals buckets.length for every pillar', () => {
+    const series = buildSeriesFromRows(win.buckets, [], [], [], '1W', today, undefined);
+    PILLAR_KEYS.forEach((k) => expect(series[k].length).toBe(win.buckets.length));
   });
 
   it('never emits 0 for empty input', () => {
-    const series = buildSeriesFromRows(win.buckets, [], [], '1W', today, undefined);
+    const series = buildSeriesFromRows(win.buckets, [], [], [], '1W', today, undefined);
     expect(noZeros(series)).toBe(true);
   });
 });
-
-// ---------------------------------------------------------------------------
-// Daily join by date (1W)
-// ---------------------------------------------------------------------------
 
 describe('buildSeriesFromRows - daily join 1W', () => {
   const today = '2026-06-28';
-  const win = week1W(today);
-  // Buckets: 2026-06-22 to 2026-06-28 (7 days).
+  const win = windowFor('1W', 0, today);
+  // Buckets: 2026-06-22 (idx 0) to 2026-06-28 (idx 6).
 
-  it('sleep value present when daily row matches bucket date', () => {
-    const rows = [dailyRow('2026-06-22', 70, null)];
-    const series = buildSeriesFromRows(win.buckets, rows, [], '1W', today, undefined);
-    // First bucket is 2026-06-22.
-    expect(series.sleep[0]).toBe(70);
+  it('sleep value present at the bucket matching the check-in date', () => {
+    const series = buildSeriesFromRows(win.buckets, [checkin('2026-06-22')], [], [], '1W', today, undefined);
+    expect(series.sleep[0]).toBe(90);
   });
 
-  it('sleep is null for a bucket with no matching row', () => {
-    const rows = [dailyRow('2026-06-22', 70, null)];
-    const series = buildSeriesFromRows(win.buckets, rows, [], '1W', today, undefined);
-    // Bucket at index 1 is 2026-06-23 - no row.
+  it('sleep is null (gap) on a bucket with no check-in', () => {
+    const series = buildSeriesFromRows(win.buckets, [checkin('2026-06-22')], [], [], '1W', today, undefined);
     expect(series.sleep[1]).toBe(null);
+    expect(series.sleep[1]).not.toBe(0);
   });
 
-  it('sleep is null (not 0) when row has null sleep_score', () => {
-    const rows = [dailyRow('2026-06-22', null, null)];
-    const series = buildSeriesFromRows(win.buckets, rows, [], '1W', today, undefined);
-    expect(series.sleep[0]).toBe(null);
-    expect(series.sleep[0]).not.toBe(0);
+  it('all five engine pillars populate the matching bucket', () => {
+    const series = buildSeriesFromRows(win.buckets, [checkin('2026-06-22')], [meal('2026-06-22', { meal_score: 88 })], [], '1W', today, undefined);
+    expect(series.sleep[0]).toBe(90);
+    expect(series.energy[0]).toBe(70);
+    expect(series.mood[0]).toBe(60);
+    expect(series.nutrition[0]).toBe(88);
+    expect(series.activity[0]).toBe(43);
   });
 
-  it('overall comes from bio_optimization_history when present', () => {
-    const dailyRows = [dailyRow('2026-06-22', null, 55)];
-    const bioRows = [bioRow('2026-06-22', 72)];
-    const series = buildSeriesFromRows(win.buckets, dailyRows, bioRows, '1W', today, undefined);
-    // bioHistory (72) takes priority over daily_scores bio col (55).
-    expect(series.overall[0]).toBe(72);
+  it('overall comes from bio_optimization_history.score by date', () => {
+    const series = buildSeriesFromRows(win.buckets, [], [], [bio('2026-06-22', 77)], '1W', today, undefined);
+    expect(series.overall[0]).toBe(77);
+    expect(series.overall[1]).toBe(null);
   });
 
-  it('overall falls back to daily_scores.bio_optimization_score when history absent', () => {
-    const dailyRows = [dailyRow('2026-06-22', null, 55)];
-    const series = buildSeriesFromRows(win.buckets, dailyRows, [], '1W', today, undefined);
-    expect(series.overall[0]).toBe(55);
-  });
-
-  it('overall is null when neither source has data', () => {
-    const series = buildSeriesFromRows(win.buckets, [], [], '1W', today, undefined);
-    expect(series.overall[0]).toBe(null);
-  });
-
-  it('overall is null (not 0) when bio_optimization_score is null in daily row', () => {
-    const dailyRows = [dailyRow('2026-06-22', null, null)];
-    const series = buildSeriesFromRows(win.buckets, dailyRows, [], '1W', today, undefined);
-    expect(series.overall[0]).toBe(null);
-    expect(series.overall[0]).not.toBe(0);
+  it('hydration is a null gap for all past buckets', () => {
+    const series = buildSeriesFromRows(
+      win.buckets,
+      win.buckets.map((b) => checkin(b.date)),
+      [],
+      win.buckets.map((b) => bio(b.date, 70)),
+      '1W',
+      today,
+      undefined, // no overlay -> today is also a gap for hydration
+    );
+    expect(series.hydration.every((v) => v === null)).toBe(true);
   });
 });
 
-// ---------------------------------------------------------------------------
-// Honest gap rule: energy/mood/nutrition/activity/hydration always null for
-// past buckets (no per-day stored aggregate in types.ts).
-// ---------------------------------------------------------------------------
-
-describe('buildSeriesFromRows - honest gap pillars', () => {
+describe('buildSeriesFromRows - rows outside the window are ignored', () => {
   const today = '2026-06-28';
-  const win = week1W(today);
-  const allDailyRows = win.buckets.map((b) =>
-    dailyRow(b.date, 60, 75),
-  );
-  const allBioRows = win.buckets.map((b) =>
-    bioRow(b.date, 80),
-  );
+  const win = windowFor('1W', 0, today);
 
-  it('energy is null for every past bucket (no stored history)', () => {
-    const series = buildSeriesFromRows(win.buckets, allDailyRows, allBioRows, '1W', today, undefined);
-    // Today is the last bucket (index 6). Past buckets (0-5) should be null.
-    expect(series.energy.slice(0, 6).every((v) => v === null)).toBe(true);
-  });
-
-  it('mood is null for every past bucket', () => {
-    const series = buildSeriesFromRows(win.buckets, allDailyRows, allBioRows, '1W', today, undefined);
-    expect(series.mood.slice(0, 6).every((v) => v === null)).toBe(true);
-  });
-
-  it('nutrition is null for every past bucket', () => {
-    const series = buildSeriesFromRows(win.buckets, allDailyRows, allBioRows, '1W', today, undefined);
-    expect(series.nutrition.slice(0, 6).every((v) => v === null)).toBe(true);
-  });
-
-  it('activity is null for every past bucket', () => {
-    const series = buildSeriesFromRows(win.buckets, allDailyRows, allBioRows, '1W', today, undefined);
-    expect(series.activity.slice(0, 6).every((v) => v === null)).toBe(true);
-  });
-
-  it('hydration is null for every past bucket', () => {
-    const series = buildSeriesFromRows(win.buckets, allDailyRows, allBioRows, '1W', today, undefined);
-    expect(series.hydration.slice(0, 6).every((v) => v === null)).toBe(true);
-  });
-
-  it('sleep is non-null when row data is present', () => {
-    const series = buildSeriesFromRows(win.buckets, allDailyRows, allBioRows, '1W', today, undefined);
-    // All rows have sleep_score = 60.
-    expect(series.sleep.every((v) => v === 60)).toBe(true);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Out-of-window rows are ignored
-// ---------------------------------------------------------------------------
-
-describe('buildSeriesFromRows - rows outside window ignored', () => {
-  const today = '2026-06-28';
-  const win = week1W(today);
-  // Window: 2026-06-22 to 2026-06-28.
-
-  it('row before rangeStart does not contribute to any bucket', () => {
-    const rows = [dailyRow('2026-06-21', 88, 90)]; // one day before window
-    const series = buildSeriesFromRows(win.buckets, rows, [], '1W', today, undefined);
-    // All sleep values should be null (no rows within the window).
+  it('check-in before rangeStart contributes to no bucket', () => {
+    const series = buildSeriesFromRows(win.buckets, [checkin('2026-06-21')], [], [], '1W', today, undefined);
     expect(series.sleep.every((v) => v === null)).toBe(true);
   });
 
-  it('bio_history row before rangeStart does not contribute', () => {
-    const bioRows = [bioRow('2026-06-21', 85)]; // before window
-    const series = buildSeriesFromRows(win.buckets, [], bioRows, '1W', today, undefined);
+  it('meal after rangeEnd contributes to no bucket', () => {
+    const series = buildSeriesFromRows(win.buckets, [], [meal('2026-06-29', { meal_score: 90 })], [], '1W', today, undefined);
+    expect(series.nutrition.every((v) => v === null)).toBe(true);
+  });
+
+  it('bio row outside the window contributes to no bucket', () => {
+    const series = buildSeriesFromRows(win.buckets, [], [], [bio('2026-06-21', 80)], '1W', today, undefined);
     expect(series.overall.every((v) => v === null)).toBe(true);
   });
-
-  it('row after rangeEnd does not contribute', () => {
-    const rows = [dailyRow('2026-06-29', 77, null)]; // one day after window
-    const series = buildSeriesFromRows(win.buckets, rows, [], '1W', today, undefined);
-    expect(series.sleep.every((v) => v === null)).toBe(true);
-  });
 });
 
-// ---------------------------------------------------------------------------
-// Today overlay: replaces only the current bucket
-// ---------------------------------------------------------------------------
-
-describe('buildSeriesFromRows - today overlay 1W', () => {
+describe('buildSeriesFromRows - today overlay (1W)', () => {
   const today = '2026-06-28';
-  const win = week1W(today);
-  // Buckets: 2026-06-22..2026-06-28. Last bucket (index 6) is today.
+  const win = windowFor('1W', 0, today);
+  // today is the last bucket (idx 6).
 
   const overlay: TodayOverlay = {
-    sleep: 85,
-    energy: 70,
-    mood: 65,
-    nutrition: 78,
-    activity: 60,
-    overall: 72,
-    hydration: 55,
+    sleep: 85, energy: 70, mood: 65, nutrition: 78, activity: 60, overall: 72, hydration: 55,
   };
 
-  it('today bucket (last) gets overlay sleep value', () => {
-    const series = buildSeriesFromRows(win.buckets, [], [], '1W', today, overlay);
+  it('today bucket receives every overlay value', () => {
+    const series = buildSeriesFromRows(win.buckets, [], [], [], '1W', today, overlay);
     expect(series.sleep[6]).toBe(85);
-  });
-
-  it('today bucket gets overlay energy value', () => {
-    const series = buildSeriesFromRows(win.buckets, [], [], '1W', today, overlay);
     expect(series.energy[6]).toBe(70);
-  });
-
-  it('today bucket gets overlay mood value', () => {
-    const series = buildSeriesFromRows(win.buckets, [], [], '1W', today, overlay);
     expect(series.mood[6]).toBe(65);
-  });
-
-  it('today bucket gets overlay nutrition value', () => {
-    const series = buildSeriesFromRows(win.buckets, [], [], '1W', today, overlay);
     expect(series.nutrition[6]).toBe(78);
-  });
-
-  it('today bucket gets overlay activity value', () => {
-    const series = buildSeriesFromRows(win.buckets, [], [], '1W', today, overlay);
     expect(series.activity[6]).toBe(60);
-  });
-
-  it('today bucket gets overlay overall value', () => {
-    const series = buildSeriesFromRows(win.buckets, [], [], '1W', today, overlay);
     expect(series.overall[6]).toBe(72);
-  });
-
-  it('today bucket gets overlay hydration value', () => {
-    const series = buildSeriesFromRows(win.buckets, [], [], '1W', today, overlay);
     expect(series.hydration[6]).toBe(55);
   });
 
-  it('past buckets (0..5) are not affected by today overlay', () => {
-    const series = buildSeriesFromRows(win.buckets, [], [], '1W', today, overlay);
-    // energy/mood/nutrition/activity/hydration stay null for past buckets.
+  it('past buckets are unaffected by the today overlay', () => {
+    const series = buildSeriesFromRows(win.buckets, [], [], [], '1W', today, overlay);
     for (let i = 0; i < 6; i++) {
-      expect(series.energy[i]).toBe(null);
-      expect(series.mood[i]).toBe(null);
-      expect(series.nutrition[i]).toBe(null);
-      expect(series.activity[i]).toBe(null);
-      expect(series.hydration[i]).toBe(null);
+      PILLAR_KEYS.forEach((k) => expect(series[k][i]).toBe(null));
     }
   });
 
-  it('overlay does not patch non-today buckets', () => {
-    const series = buildSeriesFromRows(win.buckets, [], [], '1W', '2026-06-25', overlay);
-    // today is 2026-06-25 (index 3 in the 2026-06-22..2026-06-28 window).
-    // Index 3 gets overlay; index 6 (2026-06-28) stays null.
+  it('overlay patches only the bucket matching today (mid-window today)', () => {
+    // today 2026-06-25 -> idx 3 in the 06-22..06-28 window.
+    const series = buildSeriesFromRows(win.buckets, [], [], [], '1W', '2026-06-25', overlay);
     expect(series.sleep[3]).toBe(85);
     expect(series.sleep[6]).toBe(null);
   });
-});
 
-// ---------------------------------------------------------------------------
-// Today overlay with null fields: null stays null (honest gap)
-// ---------------------------------------------------------------------------
-
-describe('buildSeriesFromRows - today overlay with null fields', () => {
-  const today = '2026-06-28';
-  const win = week1W(today);
-
-  it('null overlay field stays null (not coerced to 0)', () => {
-    const overlay: Partial<TodayOverlay> = {
-      sleep: null,
-      energy: null,
-      mood: null,
-      nutrition: null,
-      activity: null,
-      overall: null,
-      hydration: null,
-    };
-    const series = buildSeriesFromRows(win.buckets, [], [], '1W', today, overlay);
-    expect(series.sleep[6]).toBe(null);
-    expect(series.energy[6]).toBe(null);
-    expect(series.mood[6]).toBe(null);
-    expect(series.nutrition[6]).toBe(null);
-    expect(series.activity[6]).toBe(null);
-    expect(series.hydration[6]).toBe(null);
-  });
-
-  it('null overall overlay falls back to stored bio history when available', () => {
-    const bioRows = [bioRow(today, 80)];
-    const overlay: Partial<TodayOverlay> = { overall: null };
-    const series = buildSeriesFromRows(win.buckets, [], bioRows, '1W', today, overlay);
-    // overall overlay is null -> fallback to stored value 80.
+  it('null overlay field falls back to the recomputed stored value', () => {
+    const series = buildSeriesFromRows(
+      win.buckets,
+      [checkin(today)],
+      [],
+      [bio(today, 80)],
+      '1W',
+      today,
+      { sleep: null, overall: null },
+    );
+    // sleep overlay null -> fallback to computed 90; overall null -> fallback to bio 80.
+    expect(series.sleep[6]).toBe(90);
     expect(series.overall[6]).toBe(80);
   });
 
-  it('null sleep overlay falls back to stored daily row sleep_score', () => {
-    const rows = [dailyRow(today, 62, null)];
-    const overlay: Partial<TodayOverlay> = { sleep: null };
-    const series = buildSeriesFromRows(win.buckets, rows, [], '1W', today, overlay);
-    // sleep overlay is null -> fallback to stored value 62.
-    expect(series.sleep[6]).toBe(62);
-  });
-
-  it('never emits 0 when overlay is null', () => {
-    const overlay: Partial<TodayOverlay> = {
-      sleep: null, energy: null, mood: null, nutrition: null,
-      activity: null, overall: null, hydration: null,
-    };
-    const series = buildSeriesFromRows(win.buckets, [], [], '1W', today, overlay);
+  it('null overlay field with no stored data stays null (never 0)', () => {
+    const series = buildSeriesFromRows(win.buckets, [], [], [], '1W', today, {
+      sleep: null, energy: null, mood: null, nutrition: null, activity: null, overall: null, hydration: null,
+    });
+    PILLAR_KEYS.forEach((k) => expect(series[k][6]).toBe(null));
     expect(noZeros(series)).toBe(true);
   });
 });
 
-// ---------------------------------------------------------------------------
-// 1Y monthly aggregation
-// ---------------------------------------------------------------------------
+// ===========================================================================
+// buildSeriesFromRows - 1M
+// ===========================================================================
 
-describe('buildSeriesFromRows - 1Y monthly aggregation', () => {
+describe('buildSeriesFromRows - 1M', () => {
   const today = '2026-06-28';
-  const win = year1Y(today);
-  // Buckets: 12 monthly buckets from 'yyyy-mm'.
+  const win = windowFor('1M', 0, today); // June 2026, 30 day buckets.
 
-  it('aggregates sleep_score values within a month to their average', () => {
-    // Two rows in July 2025, sleep 60 and 80 -> avg 70.
-    const rows: DailyScoreRow[] = [
-      dailyRow('2025-07-10', 60, null),
-      dailyRow('2025-07-20', 80, null),
-    ];
-    const series = buildSeriesFromRows(win.buckets, rows, [], '1Y', today, undefined);
-    // Find the July 2025 bucket index.
-    const julIdx = win.buckets.findIndex((b) => b.date === '2025-07');
-    if (julIdx >= 0) {
-      expect(series.sleep[julIdx]).toBe(70);
-    } else {
-      // July 2025 is outside the 1Y window ending June 2026; skip assertion.
-    }
+  it('has one bucket per day of the month', () => {
+    const series = buildSeriesFromRows(win.buckets, [], [], [], '1M', today, undefined);
+    PILLAR_KEYS.forEach((k) => expect(series[k].length).toBe(30));
   });
 
-  it('monthly bucket with no data is null, not 0', () => {
-    const series = buildSeriesFromRows(win.buckets, [], [], '1Y', today, undefined);
-    // All months should be null.
-    expect(series.sleep.every((v) => v === null)).toBe(true);
-    expect(series.sleep.every((v) => v !== 0)).toBe(true);
+  it('joins a check-in to its day-of-month bucket', () => {
+    const series = buildSeriesFromRows(win.buckets, [checkin('2026-06-10')], [], [], '1M', today, undefined);
+    const idx = win.buckets.findIndex((b) => b.date === '2026-06-10');
+    expect(series.sleep[idx]).toBe(90);
   });
 
-  it('overall aggregation uses bio_optimization_history per month', () => {
-    // Two bio history rows in August 2025.
-    const bioRows: BioHistoryRow[] = [
-      bioRow('2025-08-05', 64),
-      bioRow('2025-08-15', 80),
-    ];
-    const series = buildSeriesFromRows(win.buckets, [], bioRows, '1Y', today, undefined);
-    const augIdx = win.buckets.findIndex((b) => b.date === '2025-08');
-    if (augIdx >= 0) {
-      // Average of 64 and 80 = 72.
-      expect(series.overall[augIdx]).toBe(72);
-    }
-  });
-
-  it('energy/mood/nutrition/activity/hydration are null for all months (no stored source)', () => {
-    const rows = [dailyRow('2025-09-01', 70, 75)];
-    const series = buildSeriesFromRows(win.buckets, rows, [], '1Y', today, undefined);
-    expect(series.energy.every((v) => v === null)).toBe(true);
-    expect(series.mood.every((v) => v === null)).toBe(true);
-    expect(series.nutrition.every((v) => v === null)).toBe(true);
-    expect(series.activity.every((v) => v === null)).toBe(true);
-    expect(series.hydration.every((v) => v === null)).toBe(true);
-  });
-
-  it('series length is always 12 for 1Y', () => {
-    const series = buildSeriesFromRows(win.buckets, [], [], '1Y', today, undefined);
-    PILLAR_KEYS.forEach((k) => {
-      expect(series[k].length).toBe(12);
-    });
+  it('days with no data are null gaps', () => {
+    const series = buildSeriesFromRows(win.buckets, [checkin('2026-06-10')], [], [], '1M', today, undefined);
+    const idx = win.buckets.findIndex((b) => b.date === '2026-06-11');
+    expect(series.sleep[idx]).toBe(null);
   });
 });
 
-// ---------------------------------------------------------------------------
-// 1Y today overlay patches the current month's bucket
-// ---------------------------------------------------------------------------
+// ===========================================================================
+// buildSeriesFromRows - 1Y monthly aggregation
+// ===========================================================================
 
-describe('buildSeriesFromRows - 1Y today overlay', () => {
+describe('buildSeriesFromRows - 1Y monthly aggregation', () => {
   const today = '2026-06-28';
-  const win = year1Y(today);
-  // Current month bucket is '2026-06'.
+  const win = windowFor('1Y', 0, today);
+  // Buckets: 2025-07 ... 2026-06 (12 monthly buckets).
+
+  it('series length is 12 for every pillar', () => {
+    const series = buildSeriesFromRows(win.buckets, [], [], [], '1Y', today, undefined);
+    PILLAR_KEYS.forEach((k) => expect(series[k].length).toBe(12));
+  });
+
+  it('averages multiple days within a month for the sleep pillar', () => {
+    // Two check-ins in 2025-08 with different sleep scores.
+    const cHigh = checkin('2025-08-05'); // sleep 90
+    const cLow = checkin('2025-08-15', { sleep_quality_score: 6 }); // (100 + 60)/2 = 80
+    const sleepHigh = computeDayPillars(cHigh, []).sleep as number;
+    const sleepLow = computeDayPillars(cLow, []).sleep as number;
+    const expected = Math.round((sleepHigh + sleepLow) / 2);
+
+    const series = buildSeriesFromRows(win.buckets, [cHigh, cLow], [], [], '1Y', today, undefined);
+    const augIdx = win.buckets.findIndex((b) => b.date === '2025-08');
+    expect(augIdx).toBeGreaterThanOrEqual(0);
+    expect(series.sleep[augIdx]).toBe(expected);
+    expect(series.sleep[augIdx]).toBe(85); // concrete: (90 + 80)/2
+  });
+
+  it('averages bio_optimization_history per month for the overall pillar', () => {
+    const bioRows = [bio('2025-09-05', 64), bio('2025-09-25', 80)];
+    const series = buildSeriesFromRows(win.buckets, [], [], bioRows, '1Y', today, undefined);
+    const sepIdx = win.buckets.findIndex((b) => b.date === '2025-09');
+    expect(series.overall[sepIdx]).toBe(72); // (64 + 80)/2
+  });
+
+  it('a month with no data is null, not 0', () => {
+    const series = buildSeriesFromRows(win.buckets, [checkin('2025-08-05')], [], [], '1Y', today, undefined);
+    const octIdx = win.buckets.findIndex((b) => b.date === '2025-10');
+    expect(series.sleep[octIdx]).toBe(null);
+    expect(series.sleep[octIdx]).not.toBe(0);
+  });
+
+  it('hydration is null for all months without an overlay', () => {
+    const series = buildSeriesFromRows(win.buckets, [checkin('2025-08-05')], [], [], '1Y', today, undefined);
+    expect(series.hydration.every((v) => v === null)).toBe(true);
+  });
+
+  it('never emits 0 across the whole 1Y series', () => {
+    const series = buildSeriesFromRows(win.buckets, [checkin('2025-08-05')], [], [bio('2025-08-05', 70)], '1Y', today, undefined);
+    expect(noZeros(series)).toBe(true);
+  });
+});
+
+describe('buildSeriesFromRows - 1Y today overlay joins the current month', () => {
+  const today = '2026-06-28';
+  const win = windowFor('1Y', 0, today);
 
   const overlay: TodayOverlay = {
-    sleep: 88,
-    energy: 74,
-    mood: 68,
-    nutrition: 82,
-    activity: 65,
-    overall: 77,
-    hydration: 59,
+    sleep: 88, energy: 74, mood: 68, nutrition: 82, activity: 65, overall: 77, hydration: 59,
   };
 
-  it('patches the current month bucket with overlay values', () => {
-    const series = buildSeriesFromRows(win.buckets, [], [], '1Y', today, overlay);
+  it('current month bucket reflects the overlay when it is the only data point', () => {
+    const series = buildSeriesFromRows(win.buckets, [], [], [], '1Y', today, overlay);
     const junIdx = win.buckets.findIndex((b) => b.date === '2026-06');
     expect(junIdx).toBeGreaterThanOrEqual(0);
     expect(series.sleep[junIdx]).toBe(88);
-    expect(series.energy[junIdx]).toBe(74);
-    expect(series.mood[junIdx]).toBe(68);
-    expect(series.nutrition[junIdx]).toBe(82);
-    expect(series.activity[junIdx]).toBe(65);
     expect(series.overall[junIdx]).toBe(77);
     expect(series.hydration[junIdx]).toBe(59);
   });
 
-  it('does not patch past month buckets', () => {
-    const series = buildSeriesFromRows(win.buckets, [], [], '1Y', today, overlay);
+  it('overlay averages with other days already in the current month', () => {
+    // One stored check-in in June 2026 (sleep 90) plus today overlay sleep 88.
+    const series = buildSeriesFromRows(win.buckets, [checkin('2026-06-10')], [], [], '1Y', today, overlay);
+    const junIdx = win.buckets.findIndex((b) => b.date === '2026-06');
+    // (90 + 88) / 2 = 89
+    expect(series.sleep[junIdx]).toBe(89);
+  });
+
+  it('past months are not affected by the overlay', () => {
+    const series = buildSeriesFromRows(win.buckets, [], [], [], '1Y', today, overlay);
     const mayIdx = win.buckets.findIndex((b) => b.date === '2026-05');
-    if (mayIdx >= 0) {
-      expect(series.energy[mayIdx]).toBe(null);
-      expect(series.mood[mayIdx]).toBe(null);
-    }
+    PILLAR_KEYS.forEach((k) => expect(series[k][mayIdx]).toBe(null));
   });
 });
 
-// ---------------------------------------------------------------------------
-// Never emits 0 for missing data (comprehensive)
-// ---------------------------------------------------------------------------
+// ===========================================================================
+// Invariants
+// ===========================================================================
 
-describe('buildSeriesFromRows - never emits 0', () => {
+describe('buildSeriesFromRows - series length invariant', () => {
   const today = '2026-06-28';
 
-  it('no zeros in 1W with all-present rows', () => {
-    const win = week1W(today);
-    const rows = win.buckets.map((b) => dailyRow(b.date, 55, 65));
-    const series = buildSeriesFromRows(win.buckets, rows, [], '1W', today, undefined);
-    // energy/mood/nutrition/activity/hydration should be null, not 0.
-    expect(noZeros(series)).toBe(true);
+  it('1W: 7 values per pillar', () => {
+    const win = windowFor('1W', 0, today);
+    const series = buildSeriesFromRows(win.buckets, [], [], [], '1W', today, undefined);
+    PILLAR_KEYS.forEach((k) => expect(series[k]).toHaveLength(7));
   });
 
-  it('no zeros in 1M with no rows', () => {
-    const win = month1M(today);
-    const series = buildSeriesFromRows(win.buckets, [], [], '1M', today, undefined);
-    expect(noZeros(series)).toBe(true);
+  it('1M June 2026: 30 values per pillar', () => {
+    const win = windowFor('1M', 0, today);
+    const series = buildSeriesFromRows(win.buckets, [], [], [], '1M', today, undefined);
+    PILLAR_KEYS.forEach((k) => expect(series[k]).toHaveLength(30));
   });
 
-  it('no zeros in 1Y with no rows', () => {
-    const win = year1Y(today);
-    const series = buildSeriesFromRows(win.buckets, [], [], '1Y', today, undefined);
-    expect(noZeros(series)).toBe(true);
-  });
-
-  it('no zeros when overlay fields are all null', () => {
-    const win = week1W(today);
-    const overlay: Partial<TodayOverlay> = {
-      sleep: null, energy: null, mood: null, nutrition: null,
-      activity: null, overall: null, hydration: null,
-    };
-    const series = buildSeriesFromRows(win.buckets, [], [], '1W', today, overlay);
-    expect(noZeros(series)).toBe(true);
+  it('1Y: 12 values per pillar', () => {
+    const win = windowFor('1Y', 0, today);
+    const series = buildSeriesFromRows(win.buckets, [], [], [], '1Y', today, undefined);
+    PILLAR_KEYS.forEach((k) => expect(series[k]).toHaveLength(12));
   });
 });
 
-// ---------------------------------------------------------------------------
-// No vitality_score reference
-// ---------------------------------------------------------------------------
-
 describe('buildSeriesFromRows - vitality_score never used', () => {
-  it('TodayOverlay type has no vitality_score field', () => {
-    // This is a static type check that fails at compile time if vitality_score
-    // were added. The runtime test checks that the series is built from the
-    // overlay fields without any vitality_score-shaped input.
-    const overlay: TodayOverlay = {
-      sleep: 70,
-      energy: 65,
-      mood: 60,
-      nutrition: 75,
-      activity: 55,
-      overall: 68,
-      hydration: 50,
-    };
-    // No vitality_score key should exist on the overlay object.
-    expect(Object.keys(overlay)).not.toContain('vitality_score');
-  });
-
-  it('DailyScoreRow type has no vitality_score field', () => {
-    const row: DailyScoreRow = { date: '2026-06-28', sleep_score: 70, bio_optimization_score: 75 };
-    expect(Object.keys(row)).not.toContain('vitality_score');
-  });
-
   it('PILLAR_KEYS does not include vitality_score', () => {
     expect(PILLAR_KEYS).not.toContain('vitality_score');
   });
-});
 
-// ---------------------------------------------------------------------------
-// Determinism
-// ---------------------------------------------------------------------------
+  it('a check-in row has no vitality_score field', () => {
+    const cr = checkin('2026-06-22');
+    expect(Object.keys(cr)).not.toContain('vitality_score');
+  });
+
+  it('TodayOverlay has no vitality_score field', () => {
+    const o: TodayOverlay = {
+      sleep: 1, energy: 1, mood: 1, nutrition: 1, activity: 1, overall: 1, hydration: 1,
+    };
+    expect(Object.keys(o)).not.toContain('vitality_score');
+  });
+});
 
 describe('buildSeriesFromRows - deterministic', () => {
   const today = '2026-06-28';
-  const win = week1W(today);
-  const rows = [dailyRow('2026-06-22', 60, 70), dailyRow('2026-06-25', 75, 80)];
-  const bioRows = [bioRow('2026-06-22', 65), bioRow('2026-06-28', 82)];
+  const win = windowFor('1W', 0, today);
+  const checkins = [checkin('2026-06-22'), checkin('2026-06-25', { sleep_quality_score: 6 })];
+  const meals = [meal('2026-06-22', { meal_score: 70 })];
+  const bios = [bio('2026-06-23', 65), bio('2026-06-28', 82)];
   const overlay: TodayOverlay = {
     sleep: 90, energy: 72, mood: 68, nutrition: 78, activity: 64, overall: 76, hydration: 58,
   };
 
   it('same input produces identical output', () => {
-    const a = buildSeriesFromRows(win.buckets, rows, bioRows, '1W', today, overlay);
-    const b = buildSeriesFromRows(win.buckets, rows, bioRows, '1W', today, overlay);
-    PILLAR_KEYS.forEach((k) => {
-      expect(a[k]).toEqual(b[k]);
-    });
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Series length invariant
-// ---------------------------------------------------------------------------
-
-describe('buildSeriesFromRows - series length invariant', () => {
-  const today = '2026-06-28';
-
-  it('1W: 7 buckets -> 7 values per pillar', () => {
-    const win = week1W(today);
-    const series = buildSeriesFromRows(win.buckets, [], [], '1W', today, undefined);
-    PILLAR_KEYS.forEach((k) => expect(series[k]).toHaveLength(7));
-  });
-
-  it('1M June 2026: 30 buckets -> 30 values per pillar', () => {
-    const win = month1M(today);
-    const series = buildSeriesFromRows(win.buckets, [], [], '1M', today, undefined);
-    PILLAR_KEYS.forEach((k) => expect(series[k]).toHaveLength(30));
-  });
-
-  it('1Y: 12 buckets -> 12 values per pillar', () => {
-    const win = year1Y(today);
-    const series = buildSeriesFromRows(win.buckets, [], [], '1Y', today, undefined);
-    PILLAR_KEYS.forEach((k) => expect(series[k]).toHaveLength(12));
-  });
-});
-
-// ---------------------------------------------------------------------------
-// bio_optimization_history priority over daily_scores bio column
-// ---------------------------------------------------------------------------
-
-describe('buildSeriesFromRows - overall source priority', () => {
-  const today = '2026-06-28';
-  const win = week1W(today);
-
-  it('bioHistory score wins over daily_scores.bio_optimization_score for same date', () => {
-    const dailyRows = [dailyRow('2026-06-22', null, 50)]; // bio_opt_score = 50
-    const bioRows = [bioRow('2026-06-22', 90)];           // history score = 90
-    const series = buildSeriesFromRows(win.buckets, dailyRows, bioRows, '1W', today, undefined);
-    expect(series.overall[0]).toBe(90);
-  });
-
-  it('daily_scores bio col used as fallback when no history row', () => {
-    const dailyRows = [dailyRow('2026-06-22', null, 50)];
-    const series = buildSeriesFromRows(win.buckets, dailyRows, [], '1W', today, undefined);
-    expect(series.overall[0]).toBe(50);
-  });
-
-  it('overall is null when both sources are absent', () => {
-    const series = buildSeriesFromRows(win.buckets, [], [], '1W', today, undefined);
-    expect(series.overall[0]).toBe(null);
-  });
-
-  it('overall is null when daily_scores bio col is null and no history', () => {
-    const dailyRows = [dailyRow('2026-06-22', null, null)];
-    const series = buildSeriesFromRows(win.buckets, dailyRows, [], '1W', today, undefined);
-    expect(series.overall[0]).toBe(null);
-    expect(series.overall[0]).not.toBe(0);
+    const a = buildSeriesFromRows(win.buckets, checkins, meals, bios, '1W', today, overlay);
+    const b = buildSeriesFromRows(win.buckets, checkins, meals, bios, '1W', today, overlay);
+    PILLAR_KEYS.forEach((k) => expect(a[k]).toEqual(b[k]));
   });
 });
