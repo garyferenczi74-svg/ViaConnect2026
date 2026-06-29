@@ -268,20 +268,10 @@ export function computeDayPillars(
       confidence: Math.min(1, 0.4 + mealScores.length * 0.15),
       color: getScoreColor(avg),
     };
-    // Recompute overall so the new nutrition value is reflected (mirrors
-    // useDailyScores; the engine overall is not used for the series line but
-    // is recomputed to keep the per-day mirror faithful).
-    const active2 = [result.sleep, result.energy, result.moodStress, result.nutrition, result.activity]
-      .filter((g) => g.confidence > 0);
-    if (active2.length > 0) {
-      const overallScore = Math.round(active2.reduce((s, g) => s + g.score, 0) / active2.length);
-      result.overall = {
-        ...result.overall,
-        score: overallScore,
-        confidence: active2.length / 5,
-        color: getScoreColor(overallScore),
-      };
-    }
+    // The engine's result.overall is intentionally NOT recomputed here: the
+    // series Bio Optimization (overall) line comes from bio_optimization_history,
+    // not this composite, so a recompute would be dead work. Only the nutrition
+    // override above is needed (it feeds the nutrition pillar).
   }
 
   // confidence 0 means no data for that pillar -> null gap (never the 0 score).
@@ -430,6 +420,73 @@ export function buildSeriesFromRows(
 }
 
 // ---------------------------------------------------------------------------
+// Concurrent windowed reads (exported for TDD)
+//
+// safeRead races a single Supabase read against a timeout and ALWAYS resolves
+// (never rejects): on success it returns the rows with failed=false; on a throw
+// or timeout it logs and returns an empty rows array with failed=true. This is
+// the per-read fail-open primitive.
+//
+// fetchSeriesData runs all three reads CONCURRENTLY via Promise.all (mirrors the
+// analytics useBioOptimizationTrend pattern) so total latency is one read, not
+// three, and a single slow read cannot serialize behind the others. Because each
+// read is wrapped by safeRead, Promise.all never rejects: a failed read yields an
+// empty result while the others still return their data (partial data preserved).
+// The aggregate error flag is true when ANY read failed, so the consumer (T3) can
+// distinguish a read failure (show a quiet retry) from a genuinely empty window.
+// ---------------------------------------------------------------------------
+
+export interface ReadOutcome<T> {
+  rows: T[];
+  failed: boolean;
+}
+
+export async function safeRead<T>(
+  run: () => Promise<{ data: T[] | null }>,
+  timeoutMs: number,
+  operation: string,
+): Promise<ReadOutcome<T>> {
+  try {
+    const { data } = await withTimeout(run(), timeoutMs, operation);
+    return { rows: data ?? [], failed: false };
+  } catch (err) {
+    safeLog.warn('useJourneyGraphSeries', `${operation} read failed, failing open`, { error: err });
+    return { rows: [], failed: true };
+  }
+}
+
+export interface SeriesReads {
+  checkins: () => Promise<{ data: JourneyCheckinRow[] | null }>;
+  meals: () => Promise<{ data: JourneyMealRow[] | null }>;
+  bio: () => Promise<{ data: BioHistoryRow[] | null }>;
+}
+
+export interface SeriesData {
+  checkinRows: JourneyCheckinRow[];
+  mealRows: JourneyMealRow[];
+  bioHistoryRows: BioHistoryRow[];
+  /** True when at least one of the three reads failed (timeout or throw). */
+  error: boolean;
+}
+
+export async function fetchSeriesData(
+  reads: SeriesReads,
+  timeoutMs = 5000,
+): Promise<SeriesData> {
+  const [checkin, meal, bioHistory] = await Promise.all([
+    safeRead<JourneyCheckinRow>(reads.checkins, timeoutMs, 'useJourneyGraphSeries.daily_checkins'),
+    safeRead<JourneyMealRow>(reads.meals, timeoutMs, 'useJourneyGraphSeries.meal_logs'),
+    safeRead<BioHistoryRow>(reads.bio, timeoutMs, 'useJourneyGraphSeries.bio_optimization_history'),
+  ]);
+  return {
+    checkinRows: checkin.rows,
+    mealRows: meal.rows,
+    bioHistoryRows: bioHistory.rows,
+    error: checkin.failed || meal.failed || bioHistory.failed,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // useJourneyGraphSeries
 // ---------------------------------------------------------------------------
 
@@ -490,6 +547,10 @@ export function useJourneyGraphSeries(
       : undefined;
 
   // Recompute series from stored rows + current live overlay (no re-fetch).
+  // perf: this re-runs the full per-day build on each live change. The engine is
+  // sub-50ms even for a 1Y window, so incremental "patch only today's bucket"
+  // memoization is deliberately skipped to avoid added complexity (1Y would need
+  // current-month re-aggregation); revisit only if profiling shows it matters.
   const recompute = () => {
     const data = rowsRef.current;
     if (!data) return;
@@ -536,65 +597,46 @@ export function useJourneyGraphSeries(
       try {
         const supabase = createClient();
 
-        // ---- Read 1: daily_checkins windowed by check_in_date ----
-        let checkinRows: JourneyCheckinRow[] = [];
-        try {
-          const q = supabase
-            .from('daily_checkins')
-            .select(CHECKIN_COLUMNS)
-            .eq('user_id', userId)
-            .gte('check_in_date', win.rangeStart)
-            .lte('check_in_date', win.rangeEnd)
-            .order('check_in_date', { ascending: true });
-          const { data } = await withTimeout(
-            q as unknown as Promise<{ data: JourneyCheckinRow[] | null; error: unknown }>,
+        // Three windowed reads run CONCURRENTLY (see fetchSeriesData). Each is
+        // user-scoped under RLS, bounded to [rangeStart, rangeEnd], wrapped in
+        // withTimeout(5000) and per-read fail-open. meal_logs is capped at 2000
+        // rows: a 1Y power user can exceed ~1460 meal rows, so bound it (the
+        // other two tables top out near ~365 rows and need no cap).
+        const { checkinRows, mealRows, bioHistoryRows, error: readError } =
+          await fetchSeriesData(
+            {
+              checkins: () =>
+                supabase
+                  .from('daily_checkins')
+                  .select(CHECKIN_COLUMNS)
+                  .eq('user_id', userId)
+                  .gte('check_in_date', win.rangeStart)
+                  .lte('check_in_date', win.rangeEnd)
+                  .order('check_in_date', { ascending: true }) as unknown as Promise<{
+                  data: JourneyCheckinRow[] | null;
+                }>,
+              meals: () =>
+                supabase
+                  .from('meal_logs')
+                  .select(MEAL_COLUMNS)
+                  .eq('user_id', userId)
+                  .gte('meal_date', win.rangeStart)
+                  .lte('meal_date', win.rangeEnd)
+                  .order('meal_date', { ascending: true })
+                  .limit(2000) as unknown as Promise<{ data: JourneyMealRow[] | null }>,
+              bio: () =>
+                supabase
+                  .from('bio_optimization_history')
+                  .select(BIO_HISTORY_COLUMNS)
+                  .eq('user_id', userId)
+                  .gte('date', win.rangeStart)
+                  .lte('date', win.rangeEnd)
+                  .order('date', { ascending: true }) as unknown as Promise<{
+                  data: BioHistoryRow[] | null;
+                }>,
+            },
             5000,
-            'useJourneyGraphSeries.daily_checkins',
           );
-          checkinRows = (data ?? []) as JourneyCheckinRow[];
-        } catch (err) {
-          safeLog.warn('useJourneyGraphSeries', 'daily_checkins read failed, failing open', { error: err });
-        }
-
-        // ---- Read 2: meal_logs windowed by meal_date ----
-        let mealRows: JourneyMealRow[] = [];
-        try {
-          const q = supabase
-            .from('meal_logs')
-            .select(MEAL_COLUMNS)
-            .eq('user_id', userId)
-            .gte('meal_date', win.rangeStart)
-            .lte('meal_date', win.rangeEnd)
-            .order('meal_date', { ascending: true });
-          const { data } = await withTimeout(
-            q as unknown as Promise<{ data: JourneyMealRow[] | null; error: unknown }>,
-            5000,
-            'useJourneyGraphSeries.meal_logs',
-          );
-          mealRows = (data ?? []) as JourneyMealRow[];
-        } catch (err) {
-          safeLog.warn('useJourneyGraphSeries', 'meal_logs read failed, failing open', { error: err });
-        }
-
-        // ---- Read 3: bio_optimization_history windowed by date ----
-        let bioHistoryRows: BioHistoryRow[] = [];
-        try {
-          const q = supabase
-            .from('bio_optimization_history')
-            .select(BIO_HISTORY_COLUMNS)
-            .eq('user_id', userId)
-            .gte('date', win.rangeStart)
-            .lte('date', win.rangeEnd)
-            .order('date', { ascending: true });
-          const { data } = await withTimeout(
-            q as unknown as Promise<{ data: BioHistoryRow[] | null; error: unknown }>,
-            5000,
-            'useJourneyGraphSeries.bio_optimization_history',
-          );
-          bioHistoryRows = (data ?? []) as BioHistoryRow[];
-        } catch (err) {
-          safeLog.warn('useJourneyGraphSeries', 'bio_optimization_history read failed, failing open', { error: err });
-        }
 
         if (!active) return;
 
@@ -617,7 +659,10 @@ export function useJourneyGraphSeries(
           canGoNext: win.canGoNext,
         });
         setLoading(false);
-        setError(false);
+        // A read FAILURE (timeout or throw) surfaces error=true while still
+        // rendering whatever partial data succeeded; a successful read that
+        // simply returns no rows keeps error=false (genuinely empty window).
+        setError(readError);
       } catch (err) {
         safeLog.warn('useJourneyGraphSeries', 'series build failed, failing open', { error: err });
         if (active) {

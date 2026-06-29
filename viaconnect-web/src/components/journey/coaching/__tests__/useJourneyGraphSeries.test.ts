@@ -24,6 +24,8 @@ import { describe, it, expect } from 'vitest';
 import {
   computeDayPillars,
   buildSeriesFromRows,
+  safeRead,
+  fetchSeriesData,
   PILLAR_KEYS,
   type JourneyCheckinRow,
   type JourneyMealRow,
@@ -557,5 +559,137 @@ describe('buildSeriesFromRows - deterministic', () => {
     const a = buildSeriesFromRows(win.buckets, checkins, meals, bios, '1W', today, overlay);
     const b = buildSeriesFromRows(win.buckets, checkins, meals, bios, '1W', today, overlay);
     PILLAR_KEYS.forEach((k) => expect(a[k]).toEqual(b[k]));
+  });
+});
+
+// ===========================================================================
+// safeRead - per-read fail-open primitive
+// ===========================================================================
+
+describe('safeRead', () => {
+  it('returns rows with failed=false on success', async () => {
+    const rows = [bio('2026-06-22', 70)];
+    const out = await safeRead<BioHistoryRow>(() => Promise.resolve({ data: rows }), 5000, 'op');
+    expect(out.failed).toBe(false);
+    expect(out.rows).toEqual(rows);
+  });
+
+  it('coalesces null data to an empty array with failed=false (genuinely empty)', async () => {
+    const out = await safeRead<BioHistoryRow>(() => Promise.resolve({ data: null }), 5000, 'op');
+    expect(out.failed).toBe(false);
+    expect(out.rows).toEqual([]);
+  });
+
+  it('returns failed=true with empty rows on a rejected read (no throw)', async () => {
+    const out = await safeRead<BioHistoryRow>(() => Promise.reject(new Error('boom')), 5000, 'op');
+    expect(out.failed).toBe(true);
+    expect(out.rows).toEqual([]);
+  });
+
+  it('returns failed=true on a timeout (no throw)', async () => {
+    // run never resolves within the 5ms timeout -> withTimeout rejects -> failed.
+    const out = await safeRead<BioHistoryRow>(() => new Promise(() => {}), 5, 'op');
+    expect(out.failed).toBe(true);
+    expect(out.rows).toEqual([]);
+  });
+});
+
+// ===========================================================================
+// fetchSeriesData - concurrent reads + error semantics (item 1 + item 3)
+// ===========================================================================
+
+describe('fetchSeriesData - concurrency', () => {
+  it('initiates all three reads concurrently, not sequentially', async () => {
+    let started = 0;
+    const makeRead = <T>(rows: T[]) => () => {
+      started += 1;
+      return Promise.resolve({ data: rows });
+    };
+    const promise = fetchSeriesData(
+      {
+        checkins: makeRead<JourneyCheckinRow>([]),
+        meals: makeRead<JourneyMealRow>([]),
+        bio: makeRead<BioHistoryRow>([]),
+      },
+      5000,
+    );
+    // All three run() are invoked synchronously while Promise.all builds its
+    // array; sequential awaits would leave this at 1 here.
+    expect(started).toBe(3);
+    await promise;
+  });
+});
+
+describe('fetchSeriesData - error semantics', () => {
+  it('genuine empty (all reads succeed with no rows) -> error=false', async () => {
+    const out = await fetchSeriesData(
+      {
+        checkins: () => Promise.resolve({ data: [] }),
+        meals: () => Promise.resolve({ data: [] }),
+        bio: () => Promise.resolve({ data: [] }),
+      },
+      5000,
+    );
+    expect(out.error).toBe(false);
+    expect(out.checkinRows).toEqual([]);
+    expect(out.mealRows).toEqual([]);
+    expect(out.bioHistoryRows).toEqual([]);
+  });
+
+  it('all reads succeed with data -> error=false and rows pass through', async () => {
+    const checkins = [checkin('2026-06-22')];
+    const bios = [bio('2026-06-22', 80)];
+    const out = await fetchSeriesData(
+      {
+        checkins: () => Promise.resolve({ data: checkins }),
+        meals: () => Promise.resolve({ data: [] }),
+        bio: () => Promise.resolve({ data: bios }),
+      },
+      5000,
+    );
+    expect(out.error).toBe(false);
+    expect(out.checkinRows).toEqual(checkins);
+    expect(out.bioHistoryRows).toEqual(bios);
+  });
+
+  it('one read failure -> error=true while the other reads still return their data (no throw)', async () => {
+    const checkins = [checkin('2026-06-22')];
+    const out = await fetchSeriesData(
+      {
+        checkins: () => Promise.resolve({ data: checkins }),
+        meals: () => Promise.reject(new Error('meal outage')),
+        bio: () => Promise.resolve({ data: [bio('2026-06-22', 70)] }),
+      },
+      5000,
+    );
+    expect(out.error).toBe(true);            // failure surfaced for T3
+    expect(out.checkinRows).toEqual(checkins); // partial data preserved
+    expect(out.mealRows).toEqual([]);          // failed read -> empty, not a throw
+    expect(out.bioHistoryRows).toHaveLength(1);
+  });
+
+  it('a failed read combined with empty series still builds a valid (all-null) series', async () => {
+    const today = '2026-06-28';
+    const win = windowFor('1W', 0, today);
+    const out = await fetchSeriesData(
+      {
+        checkins: () => Promise.reject(new Error('down')),
+        meals: () => Promise.reject(new Error('down')),
+        bio: () => Promise.reject(new Error('down')),
+      },
+      5000,
+    );
+    expect(out.error).toBe(true);
+    const series = buildSeriesFromRows(
+      win.buckets,
+      out.checkinRows,
+      out.mealRows,
+      out.bioHistoryRows,
+      '1W',
+      today,
+      undefined,
+    );
+    expect(allNull(series)).toBe(true);
+    PILLAR_KEYS.forEach((k) => expect(series[k]).toHaveLength(win.buckets.length));
   });
 });
