@@ -6,6 +6,12 @@ import type { PoseId } from '../types';
 
 export type { BiologicalSex, PoseId };
 
+/** Body region identifiers used for circumference prediction and calibration. */
+export type Region =
+  | 'neck' | 'shoulder' | 'chest' | 'under_bust'
+  | 'waist_natural' | 'waist_navel' | 'hip'
+  | 'bicep' | 'forearm' | 'thigh' | 'calf';
+
 export interface Point2D {
   x: number;
   y: number;

@@ -7,6 +7,11 @@
 // +/- 3 to 7 percent; trend accuracy over repeat scans is much better.
 
 import type { BiologicalSex, ConfidenceLevel, MeasuredValue } from './types';
+import type { Region } from './types';
+import { getCorrectionFactor } from './accuracy/calibrationConfig';
+
+// Re-export Region so existing consumers (e.g. measurementEngine.ts) need no changes.
+export type { Region } from './types';
 
 export interface EllipseInputs {
   frontWidthCm: number;   // width of body at the landmark height, from front silhouette
@@ -14,27 +19,6 @@ export interface EllipseInputs {
   region: Region;
   sex: BiologicalSex;
 }
-
-export type Region =
-  | 'neck' | 'shoulder' | 'chest' | 'under_bust'
-  | 'waist_natural' | 'waist_navel' | 'hip'
-  | 'bicep' | 'forearm' | 'thigh' | 'calf';
-
-/** Region-specific correction factors applied after the Ramanujan ellipse math.
- *  Values > 1 expand the ellipse estimate; < 1 contract. Empirical heuristics. */
-const REGION_CORRECTION: Record<Region, { male: number; female: number }> = {
-  neck:          { male: 1.02, female: 1.02 },
-  shoulder:      { male: 0.95, female: 0.96 },   // shoulder is flatter than an ellipse
-  chest:         { male: 1.00, female: 1.04 },
-  under_bust:    { male: 1.00, female: 1.00 },
-  waist_natural: { male: 1.01, female: 1.02 },
-  waist_navel:   { male: 1.02, female: 1.02 },
-  hip:           { male: 1.03, female: 1.05 },   // hip cross section is not truly elliptical
-  bicep:         { male: 0.98, female: 0.98 },
-  forearm:       { male: 0.97, female: 0.97 },
-  thigh:         { male: 1.02, female: 1.03 },
-  calf:          { male: 0.99, female: 0.99 },
-};
 
 /** Ramanujan's approximation (series I) for ellipse perimeter, in cm.
  *  C ~= pi * (3(a + b) - sqrt((3a + b)(a + 3b)))  where a, b are semi-axes. */
@@ -68,7 +52,7 @@ export function predictCircumference(inputs: EllipseInputs): CircumferencePredic
   const a = frontWidthCm / 2;
   const b = depth / 2;
   const raw = ramanujanEllipsePerimeter(a, b);
-  const correction = REGION_CORRECTION[region][sex];
+  const correction = getCorrectionFactor(region, sex).factor;
   const corrected = raw * correction;
 
   const uncertaintyPct = sideProvided ? 0.04 : 0.08; // 4% with side view, 8% without
