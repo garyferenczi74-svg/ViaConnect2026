@@ -74,6 +74,17 @@ function unknownMv(): MeasuredValue {
   return { cm: null, uncertaintyCm: 0, confidence: 'low', source: 'missing' };
 }
 
+// Null semi-axes and zero corroboration: required fields added in Tasks 6 and 8.
+// The ? was removed from both fields in Task 11 (types cleanup). These minimal
+// values satisfy the now-required fields for fixtures not derived from silhouettes.
+const _NULL_AXES = { aCm: null, bCm: null, aspectRatio: null } as const;
+const _MOCK_SEMI_AXES = {
+  neck: _NULL_AXES, shoulder: _NULL_AXES, chest: _NULL_AXES,
+  waistNatural: _NULL_AXES, waistNavel: _NULL_AXES, hip: _NULL_AXES,
+  bicepR: _NULL_AXES, bicepL: _NULL_AXES, forearmR: _NULL_AXES, forearmL: _NULL_AXES,
+  thighR: _NULL_AXES, thighL: _NULL_AXES, calfR: _NULL_AXES, calfL: _NULL_AXES,
+} as const;
+
 const MOCK_MEASUREMENTS: ExtractedMeasurements = {
   neckCirc: unknownMv(), shoulderCirc: unknownMv(), chestCirc: unknownMv(),
   waistNaturalCirc: unknownMv(), waistNavelCirc: unknownMv(), hipCirc: unknownMv(),
@@ -83,6 +94,8 @@ const MOCK_MEASUREMENTS: ExtractedMeasurements = {
   rightCalfCirc: unknownMv(), leftCalfCirc: unknownMv(),
   waistToHipRatio: 0, waistToHeightRatio: 0, shoulderToWaistRatio: 0,
   inseamCm: 0, torsoLengthCm: 0,
+  corroborationSignals: { lrCorroboration: 0, fbCorroboration: 0, lrAsymmetry: null },
+  semiAxes: _MOCK_SEMI_AXES,
 };
 
 function makeSilhouette(poseId: PoseSilhouette['poseId']): PoseSilhouette {

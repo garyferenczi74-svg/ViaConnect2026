@@ -139,19 +139,24 @@ export interface ExtractedMeasurements {
 
   /**
    * Corroboration signals from back-view and L/R depth comparison (Task 6).
-   * Populated when at least one side or back silhouette is provided.
-   * Absent when only a front silhouette is used (legacy single-view path).
+   * Always present in extractMeasurements() output.
+   * When only a front silhouette is used, lrCorroboration is 0 and
+   * fbCorroboration is SINGLE_SOURCE_CREDIT (0.5) per level.
+   * Manually constructed fixtures that predate Task 6 must supply this field.
    * A future task threads these into scoreMeasurementConfidence per field.
    */
-  corroborationSignals?: CorroborationSignals;
+  corroborationSignals: CorroborationSignals;
 
   /**
    * Per-level ellipse semi-axes produced alongside each circumference (Task 8).
+   * Always present in extractMeasurements() output.
+   * Individual axis values may be null per RULE 9 when front width or side depth
+   * is unavailable. Manually constructed fixtures that predate Task 8 must supply
+   * this field (use null axes for missing levels).
    * One-model guarantee: the same aCm and bCm that feed predictCircumference
    * also feed the mesh cross-section renderer (Section 8.4 / 11.4).
-   * Absent only in manually constructed test fixtures that predate Task 8.
    */
-  semiAxes?: {
+  semiAxes: {
     neck: LevelSemiAxes;
     shoulder: LevelSemiAxes;
     chest: LevelSemiAxes;

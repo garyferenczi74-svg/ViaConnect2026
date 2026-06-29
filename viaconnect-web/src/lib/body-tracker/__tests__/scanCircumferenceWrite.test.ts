@@ -18,6 +18,16 @@ function measuredValue(cm: number | null, confidence: ConfidenceLevel = 'high'):
 
 const UNKNOWN = measuredValue(null, 'low');
 
+// Null semi-axes and zero corroboration: required fields added in Tasks 6 and 8.
+// The ? was removed from both fields in Task 11 (types cleanup).
+const _NULL_AX = { aCm: null, bCm: null, aspectRatio: null } as const;
+const _EMPTY_SEMI_AXES = {
+  neck: _NULL_AX, shoulder: _NULL_AX, chest: _NULL_AX,
+  waistNatural: _NULL_AX, waistNavel: _NULL_AX, hip: _NULL_AX,
+  bicepR: _NULL_AX, bicepL: _NULL_AX, forearmR: _NULL_AX, forearmL: _NULL_AX,
+  thighR: _NULL_AX, thighL: _NULL_AX, calfR: _NULL_AX, calfL: _NULL_AX,
+} as const;
+
 function makeEmptyMeasurements(): ExtractedMeasurements {
   return {
     neckCirc:         UNKNOWN,
@@ -39,6 +49,8 @@ function makeEmptyMeasurements(): ExtractedMeasurements {
     shoulderToWaistRatio: 0,
     inseamCm:             0,
     torsoLengthCm:        0,
+    corroborationSignals: { lrCorroboration: 0, fbCorroboration: 0, lrAsymmetry: null },
+    semiAxes: _EMPTY_SEMI_AXES,
   };
 }
 

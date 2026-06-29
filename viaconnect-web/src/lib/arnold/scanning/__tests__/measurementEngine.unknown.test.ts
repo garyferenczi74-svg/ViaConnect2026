@@ -170,6 +170,19 @@ function mv(cm: number | null): MeasuredValue {
     : { cm, uncertaintyCm: 1, confidence: 'moderate', source: 'ellipse_frontOnly' };
 }
 
+// Minimal values for required fields added in Task 8 (semiAxes) and Task 6
+// (corroborationSignals). All axes are null (UNKNOWN) because these fixtures
+// are not derived from real silhouettes. The ? was removed from both fields
+// in Task 11 (types cleanup); these values satisfy the now-required fields.
+const NULL_AXES = { aCm: null, bCm: null, aspectRatio: null } as const;
+const EMPTY_SEMI_AXES = {
+  neck: NULL_AXES, shoulder: NULL_AXES, chest: NULL_AXES,
+  waistNatural: NULL_AXES, waistNavel: NULL_AXES, hip: NULL_AXES,
+  bicepR: NULL_AXES, bicepL: NULL_AXES, forearmR: NULL_AXES, forearmL: NULL_AXES,
+  thighR: NULL_AXES, thighL: NULL_AXES, calfR: NULL_AXES, calfL: NULL_AXES,
+} as const;
+const EMPTY_CORROBORATION = { lrCorroboration: 0, fbCorroboration: 0, lrAsymmetry: null } as const;
+
 /** Measurements with a known neck but an UNKNOWN chest and UNKNOWN bicep. */
 function measurementsChestAndBicepUnknown(): ExtractedMeasurements {
   return {
@@ -192,6 +205,8 @@ function measurementsChestAndBicepUnknown(): ExtractedMeasurements {
     shoulderToWaistRatio: 1.35,
     inseamCm: 80,
     torsoLengthCm: 50,
+    corroborationSignals: EMPTY_CORROBORATION,
+    semiAxes: EMPTY_SEMI_AXES,
   };
 }
 
@@ -206,6 +221,8 @@ function measurementsAllUnknown(): ExtractedMeasurements {
     rightCalfCirc: mv(null), leftCalfCirc: mv(null),
     waistToHipRatio: 0, waistToHeightRatio: 0, shoulderToWaistRatio: 0,
     inseamCm: 0, torsoLengthCm: 0,
+    corroborationSignals: EMPTY_CORROBORATION,
+    semiAxes: EMPTY_SEMI_AXES,
   };
 }
 

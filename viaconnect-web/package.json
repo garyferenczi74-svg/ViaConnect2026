@@ -16,7 +16,8 @@
     "cap:open:android": "npx cap open android",
     "cap:assets": "npx @capacitor/assets generate --iconBackgroundColor '#0B1120' --splashBackgroundColor '#0B1120' --ios --android",
     "smoke:nutrivision": "npx tsx scripts/smoke/nutrivision/run.ts",
-    "audit:nutrivision": "npx tsx scripts/audit/nutrivision-grep-gates.ts"
+    "audit:nutrivision": "npx tsx scripts/audit/nutrivision-grep-gates.ts",
+    "scan:validate": "npx vitest run src/lib/arnold/scanning/accuracy/__tests__/validationHarness.test.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.30.1",
