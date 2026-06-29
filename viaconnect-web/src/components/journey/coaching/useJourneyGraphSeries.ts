@@ -34,6 +34,14 @@
  * forward. The engine's blend() returns score 0 at confidence 0; this hook maps
  * confidence 0 to null so the 0 is never surfaced.
  *
+ * Daily missed-check-in dip exception (Gary decision 2026-06-29): on the daily
+ * ranges (1W/1M) a PAST day (b.date < today) whose check-in pillar is null is
+ * dipped to 0 for the four check-in pillars (sleep, energy, mood, activity) so a
+ * missed day visibly drops and the line stays connected. Today and future days
+ * are never dipped (they keep their live value or an honest null gap), and
+ * nutrition, hydration, and overall (bio) are never dipped. 1Y is unchanged and
+ * still uses honest null gaps for empty months.
+ *
  * Today (offset 0): the current bucket is overlaid with the live useDailyScores
  * snapshot so it equals the Dashboard gauges and updates live.
  *
@@ -381,7 +389,22 @@ export function buildSeriesFromRows(
   if (range !== '1Y') {
     buckets.forEach((b, i) => {
       const vals = hasOverlay && b.date === today ? todayValues(b.date) : dayValues(b.date);
-      for (const k of PILLAR_KEYS) series[k][i] = vals[k];
+      for (const k of PILLAR_KEYS) {
+        let v = vals[k];
+        // Missed check-in dip (Gary decision 2026-06-29): on the daily ranges a PAST day with no
+        // check-in value dips to 0 for the check-in pillars (sleep/energy/mood/activity) so the
+        // line stays connected and visibly drops. Today is never dipped (the day is not over yet,
+        // so it shows the live value or a gap) and future days stay null gaps (never fabricate a
+        // value for a day that has not happened). Nutrition/hydration/overall keep honest gaps.
+        if (
+          v === null &&
+          b.date < today &&
+          (k === 'sleep' || k === 'energy' || k === 'mood' || k === 'activity')
+        ) {
+          v = 0;
+        }
+        series[k][i] = v;
+      }
     });
     return series;
   }

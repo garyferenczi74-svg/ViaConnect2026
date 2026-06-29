@@ -316,6 +316,11 @@ function Journey({ userId }: { userId: string | null }) {
           </span>
         ))}
       </div>
+      {(range === "1W" || range === "1M") && (
+        <p style={{ margin: "8px 0 0", fontSize: 10.5, color: C.muted, opacity: 0.85, lineHeight: 1.4 }}>
+          A line reaching 0 on a past day means no check-in was logged, not a wellness score of zero. Log a check-in to fill in any gap.
+        </p>
+      )}
     </div>
   );
 }

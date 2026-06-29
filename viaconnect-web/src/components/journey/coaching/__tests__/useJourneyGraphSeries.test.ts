@@ -111,10 +111,6 @@ function engineNonNutritionPillars(cr: JourneyCheckinRow | null) {
   };
 }
 
-function allNull(series: Record<string, (number | null)[]>): boolean {
-  return PILLAR_KEYS.every((k) => (series[k] ?? []).every((v) => v === null));
-}
-
 function noZeros(series: Record<string, (number | null)[]>): boolean {
   return PILLAR_KEYS.every((k) => (series[k] ?? []).every((v) => v !== 0));
 }
@@ -250,9 +246,22 @@ describe('buildSeriesFromRows - empty input', () => {
   const today = '2026-06-28';
   const win = windowFor('1W', 0, today);
 
-  it('all null when no rows', () => {
+  it('no rows: past check-in pillars dip to 0; nutrition/hydration/overall and today stay null', () => {
+    // today 2026-06-28 is the last bucket (idx 6); idx 0..5 are past days.
     const series = buildSeriesFromRows(win.buckets, [], [], [], '1W', today, undefined);
-    expect(allNull(series)).toBe(true);
+    for (let i = 0; i < 6; i++) {
+      // Past missed check-in pillars dip to 0 so the line stays connected.
+      expect(series.sleep[i]).toBe(0);
+      expect(series.energy[i]).toBe(0);
+      expect(series.mood[i]).toBe(0);
+      expect(series.activity[i]).toBe(0);
+      // Nutrition, overall, and hydration never dip: honest null gaps.
+      expect(series.nutrition[i]).toBe(null);
+      expect(series.overall[i]).toBe(null);
+      expect(series.hydration[i]).toBe(null);
+    }
+    // Today (idx 6) is never dipped: all pillars null with no data and no overlay.
+    PILLAR_KEYS.forEach((k) => expect(series[k][6]).toBe(null));
   });
 
   it('series length equals buckets.length for every pillar', () => {
@@ -260,9 +269,14 @@ describe('buildSeriesFromRows - empty input', () => {
     PILLAR_KEYS.forEach((k) => expect(series[k].length).toBe(win.buckets.length));
   });
 
-  it('never emits 0 for empty input', () => {
+  it('never emits 0 for the non-dipped pillars or for today on empty input', () => {
     const series = buildSeriesFromRows(win.buckets, [], [], [], '1W', today, undefined);
-    expect(noZeros(series)).toBe(true);
+    // nutrition, overall, and hydration never dip, so they are never 0 anywhere.
+    (['nutrition', 'overall', 'hydration'] as const).forEach((k) => {
+      expect(series[k].every((v) => v !== 0)).toBe(true);
+    });
+    // Today's bucket (idx 6) is never dipped for any pillar.
+    PILLAR_KEYS.forEach((k) => expect(series[k][6]).not.toBe(0));
   });
 });
 
@@ -276,10 +290,12 @@ describe('buildSeriesFromRows - daily join 1W', () => {
     expect(series.sleep[0]).toBe(90);
   });
 
-  it('sleep is null (gap) on a bucket with no check-in', () => {
+  it('sleep dips to 0 on a past bucket with no check-in', () => {
+    // idx 1 is 2026-06-23, a past day (< today 2026-06-28) with no check-in.
     const series = buildSeriesFromRows(win.buckets, [checkin('2026-06-22')], [], [], '1W', today, undefined);
-    expect(series.sleep[1]).toBe(null);
-    expect(series.sleep[1]).not.toBe(0);
+    expect(series.sleep[1]).toBe(0);
+    // overall is not a check-in pillar, so it stays an honest null gap.
+    expect(series.overall[1]).toBe(null);
   });
 
   it('all five engine pillars populate the matching bucket', () => {
@@ -316,8 +332,12 @@ describe('buildSeriesFromRows - rows outside the window are ignored', () => {
   const win = windowFor('1W', 0, today);
 
   it('check-in before rangeStart contributes to no bucket', () => {
+    // 2026-06-21 is before the window, so its real value (90) must never appear.
     const series = buildSeriesFromRows(win.buckets, [checkin('2026-06-21')], [], [], '1W', today, undefined);
-    expect(series.sleep.every((v) => v === null)).toBe(true);
+    expect(series.sleep).not.toContain(90);
+    // With no in-window check-in, every past bucket dips to 0 and today stays null.
+    for (let i = 0; i < 6; i++) expect(series.sleep[i]).toBe(0);
+    expect(series.sleep[6]).toBe(null);
   });
 
   it('meal after rangeEnd contributes to no bucket', () => {
@@ -351,10 +371,19 @@ describe('buildSeriesFromRows - today overlay (1W)', () => {
     expect(series.hydration[6]).toBe(55);
   });
 
-  it('past buckets are unaffected by the today overlay', () => {
+  it('past buckets do not receive the today overlay (check-in pillars dip to 0, others null)', () => {
     const series = buildSeriesFromRows(win.buckets, [], [], [], '1W', today, overlay);
     for (let i = 0; i < 6; i++) {
-      PILLAR_KEYS.forEach((k) => expect(series[k][i]).toBe(null));
+      // The overlay values (85/70/65/60) must not leak into past buckets; the
+      // four check-in pillars dip to 0 instead.
+      expect(series.sleep[i]).toBe(0);
+      expect(series.energy[i]).toBe(0);
+      expect(series.mood[i]).toBe(0);
+      expect(series.activity[i]).toBe(0);
+      // The non-dipped pillars stay honest null gaps (not the overlay 78/72/55).
+      expect(series.nutrition[i]).toBe(null);
+      expect(series.overall[i]).toBe(null);
+      expect(series.hydration[i]).toBe(null);
     }
   });
 
@@ -380,12 +409,15 @@ describe('buildSeriesFromRows - today overlay (1W)', () => {
     expect(series.overall[6]).toBe(80);
   });
 
-  it('null overlay field with no stored data stays null (never 0)', () => {
+  it('null overlay field with no stored data stays null on today (never 0)', () => {
     const series = buildSeriesFromRows(win.buckets, [], [], [], '1W', today, {
       sleep: null, energy: null, mood: null, nutrition: null, activity: null, overall: null, hydration: null,
     });
-    PILLAR_KEYS.forEach((k) => expect(series[k][6]).toBe(null));
-    expect(noZeros(series)).toBe(true);
+    // Today (idx 6) is never dipped: a null overlay field with no data stays null.
+    PILLAR_KEYS.forEach((k) => {
+      expect(series[k][6]).toBe(null);
+      expect(series[k][6]).not.toBe(0);
+    });
   });
 });
 
@@ -408,10 +440,89 @@ describe('buildSeriesFromRows - 1M', () => {
     expect(series.sleep[idx]).toBe(90);
   });
 
-  it('days with no data are null gaps', () => {
+  it('a past day with no data dips to 0 for the check-in pillars', () => {
+    // today is 2026-06-28; 2026-06-11 is a past day with no check-in.
     const series = buildSeriesFromRows(win.buckets, [checkin('2026-06-10')], [], [], '1M', today, undefined);
     const idx = win.buckets.findIndex((b) => b.date === '2026-06-11');
-    expect(series.sleep[idx]).toBe(null);
+    expect(series.sleep[idx]).toBe(0);
+    // overall (bio) never dips, so it stays an honest null gap.
+    expect(series.overall[idx]).toBe(null);
+  });
+});
+
+// ===========================================================================
+// buildSeriesFromRows - missed check-in dip (daily ranges, core new behavior)
+// ===========================================================================
+
+describe('buildSeriesFromRows - missed check-in dip (1M)', () => {
+  // A controlled today gives a clean past / today / future split inside one month.
+  // today 2026-06-15 is idx 14; past = idx 0..13, today = idx 14, future = idx 15..29.
+  const today = '2026-06-15';
+  const win = windowFor('1M', 0, today); // June 2026, 30 day buckets.
+  const idxOf = (d: string) => win.buckets.findIndex((b) => b.date === d);
+  // One stored check-in on a past day (2026-06-05); everything else is missing.
+  const series = buildSeriesFromRows(win.buckets, [checkin('2026-06-05')], [], [], '1M', today, undefined);
+
+  it('(a) a past day with no check-in dips sleep/energy/mood/activity to 0 and keeps the rest null', () => {
+    const i = idxOf('2026-06-10');
+    expect(i).toBeGreaterThanOrEqual(0);
+    expect(series.sleep[i]).toBe(0);
+    expect(series.energy[i]).toBe(0);
+    expect(series.mood[i]).toBe(0);
+    expect(series.activity[i]).toBe(0);
+    expect(series.nutrition[i]).toBe(null);
+    expect(series.hydration[i]).toBe(null);
+    expect(series.overall[i]).toBe(null);
+  });
+
+  it('(b) a past day WITH a check-in shows the real computed values, not 0', () => {
+    const i = idxOf('2026-06-05');
+    expect(series.sleep[i]).toBe(90);
+    expect(series.energy[i]).toBe(70);
+    expect(series.mood[i]).toBe(60);
+    expect(series.activity[i]).toBe(43);
+  });
+
+  it('(c) the today bucket with no check-in stays all null (never dipped)', () => {
+    const i = idxOf('2026-06-15');
+    expect(i).toBeGreaterThanOrEqual(0);
+    PILLAR_KEYS.forEach((k) => expect(series[k][i]).toBe(null));
+  });
+
+  it('(d) a future day in the current month stays null (never dipped)', () => {
+    const i = idxOf('2026-06-20');
+    expect(i).toBeGreaterThanOrEqual(0);
+    PILLAR_KEYS.forEach((k) => expect(series[k][i]).toBe(null));
+  });
+});
+
+describe('buildSeriesFromRows - missed check-in dip (1W)', () => {
+  // today 2026-06-28 is the last bucket (idx 6); idx 0..5 are past days.
+  const today = '2026-06-28';
+  const win = windowFor('1W', 0, today);
+  // One stored check-in on a past day (2026-06-23 = idx 1).
+  const series = buildSeriesFromRows(win.buckets, [checkin('2026-06-23')], [], [], '1W', today, undefined);
+
+  it('a past day with no check-in dips the four check-in pillars to 0, others null', () => {
+    expect(series.sleep[0]).toBe(0); // 2026-06-22, past, no check-in
+    expect(series.energy[0]).toBe(0);
+    expect(series.mood[0]).toBe(0);
+    expect(series.activity[0]).toBe(0);
+    expect(series.nutrition[0]).toBe(null);
+    expect(series.overall[0]).toBe(null);
+    expect(series.hydration[0]).toBe(null);
+  });
+
+  it('a past day WITH a check-in shows the real computed values, not 0', () => {
+    const i = win.buckets.findIndex((b) => b.date === '2026-06-23');
+    expect(series.sleep[i]).toBe(90);
+    expect(series.energy[i]).toBe(70);
+    expect(series.mood[i]).toBe(60);
+    expect(series.activity[i]).toBe(43);
+  });
+
+  it('the today bucket with no check-in stays all null (never dipped)', () => {
+    PILLAR_KEYS.forEach((k) => expect(series[k][6]).toBe(null));
   });
 });
 
@@ -674,7 +785,7 @@ describe('fetchSeriesData - error semantics', () => {
     expect(out.bioHistoryRows).toHaveLength(1);
   });
 
-  it('a failed read combined with empty series still builds a valid (all-null) series', async () => {
+  it('a failed read combined with empty series still builds a valid series (no fabricated data)', async () => {
     const today = '2026-06-28';
     const win = windowFor('1W', 0, today);
     const out = await fetchSeriesData(
@@ -695,7 +806,15 @@ describe('fetchSeriesData - error semantics', () => {
       today,
       undefined,
     );
-    expect(allNull(series)).toBe(true);
+    // Fails open to a valid series: correct length, no fabricated real values.
     PILLAR_KEYS.forEach((k) => expect(series[k]).toHaveLength(win.buckets.length));
+    // nutrition/overall/hydration never dip, so they are honest null gaps.
+    (['nutrition', 'overall', 'hydration'] as const).forEach((k) =>
+      expect(series[k].every((v) => v === null)).toBe(true),
+    );
+    // The four check-in pillars carry only honest gaps or the past-day 0 dip.
+    (['sleep', 'energy', 'mood', 'activity'] as const).forEach((k) =>
+      expect(series[k].every((v) => v === null || v === 0)).toBe(true),
+    );
   });
 });
