@@ -68,6 +68,25 @@ export interface MeasuredValue {
   source: string;
 }
 
+/**
+ * Aggregated corroboration signals produced by Task 6 (back-view + L/R depth
+ * averaging). These map directly to ConfidenceInputs.lrCorroboration and
+ * ConfidenceInputs.fbCorroboration in confidenceModel.ts (higher = better).
+ * Populated by extractMeasurements when multi-view silhouettes are provided.
+ */
+export interface CorroborationSignals {
+  /** Mean L/R depth agreement across all measured levels. [0, 1] */
+  lrCorroboration: number;
+  /** Mean front-back width agreement across key torso levels. [0, 1] */
+  fbCorroboration: number;
+  /**
+   * Mean L/R depth asymmetry ratio across levels where both sides are present.
+   * 0 = perfectly symmetric; 1 = maximum asymmetry.
+   * null when every level is single-source (no bilateral data).
+   */
+  lrAsymmetry: number | null;
+}
+
 /** 18+ measurements, all stored in cm. */
 export interface ExtractedMeasurements {
   neckCirc: MeasuredValue;
@@ -94,6 +113,14 @@ export interface ExtractedMeasurements {
   /** Lengths in cm. */
   inseamCm: number;
   torsoLengthCm: number;
+
+  /**
+   * Corroboration signals from back-view and L/R depth comparison (Task 6).
+   * Populated when at least one side or back silhouette is provided.
+   * Absent when only a front silhouette is used (legacy single-view path).
+   * A future task threads these into scoreMeasurementConfidence per field.
+   */
+  corroborationSignals?: CorroborationSignals;
 }
 
 export type EstimationMethod = 'navy_primary' | 'visual_primary' | 'calibrated' | 'bmi_fallback';

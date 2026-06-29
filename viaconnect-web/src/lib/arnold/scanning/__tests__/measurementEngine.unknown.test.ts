@@ -271,3 +271,217 @@ describe('Section 9.2: avatar uses template default for UNKNOWN regions, never 0
     }
   });
 });
+
+// ---------------------------------------------------------------------------
+// Task 6: L/R depth averaging + back-view corroboration in extractMeasurements
+// ---------------------------------------------------------------------------
+
+/** Side-view silhouette with a rectangular contour of given depth.
+ *  A depth of 70px at 0.4cm/px = 28cm body depth. */
+function makeSideSilhouette(poseId: 'left' | 'right', depthPx = 70): PoseSilhouette {
+  return {
+    poseId,
+    imageWidth: 200,
+    imageHeight: 400,
+    contour: rectContour(50, 380, 65, 65 + depthPx),
+    landmarks: {
+      nose:           { x: 90, y: 60 },
+      left_shoulder:  { x: 75, y: 110 },
+      right_shoulder: { x: 115, y: 110 },
+      left_hip:       { x: 78, y: 280 },
+      right_hip:      { x: 112, y: 280 },
+    },
+    scaleCmPerPx: 0.4,
+    maskDimensions: { width: 200, height: 400 },
+    qualityScore: 0.8,
+    qualityIssues: [],
+  };
+}
+
+/** Back-view silhouette with the same rectangular contour as frontFullLandmarks
+ *  (40-140px, 100px wide = 40cm), so front-back widths agree at all levels. */
+function makeBackSilhouette(widthOffsetPx = 0): PoseSilhouette {
+  return {
+    poseId: 'back',
+    imageWidth: 200,
+    imageHeight: 400,
+    contour: rectContour(50, 380, 40, 140 + widthOffsetPx),
+    landmarks: {
+      nose:           { x: 100, y: 60 },
+      left_shoulder:  { x: 55,  y: 110 },
+      right_shoulder: { x: 145, y: 110 },
+      left_hip:       { x: 60,  y: 280 },
+      right_hip:      { x: 140, y: 280 },
+    },
+    scaleCmPerPx: 0.4,
+    maskDimensions: { width: 200, height: 400 },
+    qualityScore: 0.9,
+    qualityIssues: [],
+  };
+}
+
+describe('Task 6: corroborationSignals is always populated by extractMeasurements', () => {
+  it('is defined even with only a front silhouette', () => {
+    const result = extractMeasurements({
+      silhouettes: [frontFullLandmarks()],
+      sex: 'male',
+      heightCm: 180,
+    });
+    expect(result.corroborationSignals).toBeDefined();
+  });
+
+  it('lrCorroboration is 0 with no side views (no L/R data)', () => {
+    const result = extractMeasurements({
+      silhouettes: [frontFullLandmarks()],
+      sex: 'male',
+      heightCm: 180,
+    });
+    expect(result.corroborationSignals!.lrCorroboration).toBe(0);
+  });
+
+  it('fbCorroboration is 0.5 (SINGLE_SOURCE_CREDIT) with no back view - all 4 fb levels are single-source', () => {
+    const result = extractMeasurements({
+      silhouettes: [frontFullLandmarks()],
+      sex: 'male',
+      heightCm: 180,
+    });
+    // Each fb level: front width present, back null -> SINGLE_SOURCE_CREDIT = 0.5
+    expect(result.corroborationSignals!.fbCorroboration).toBeCloseTo(0.5, 5);
+  });
+
+  it('lrAsymmetry is null with no side views (cannot assess bilateral symmetry)', () => {
+    const result = extractMeasurements({
+      silhouettes: [frontFullLandmarks()],
+      sex: 'male',
+      heightCm: 180,
+    });
+    expect(result.corroborationSignals!.lrAsymmetry).toBeNull();
+  });
+});
+
+describe('Task 6: identical L/R side views produce max lrCorroboration and zero asymmetry', () => {
+  it('lrCorroboration is 1.0 when left and right have the same body depth', () => {
+    const result = extractMeasurements({
+      silhouettes: [frontFullLandmarks(), makeSideSilhouette('left', 70), makeSideSilhouette('right', 70)],
+      sex: 'male',
+      heightCm: 180,
+    });
+    // Identical depths at every level -> lrCorroborationScore = 1.0 per level -> mean = 1.0
+    expect(result.corroborationSignals!.lrCorroboration).toBeCloseTo(1.0, 5);
+  });
+
+  it('lrAsymmetry is 0 when left and right have the same body depth', () => {
+    const result = extractMeasurements({
+      silhouettes: [frontFullLandmarks(), makeSideSilhouette('left', 70), makeSideSilhouette('right', 70)],
+      sex: 'male',
+      heightCm: 180,
+    });
+    expect(result.corroborationSignals!.lrAsymmetry).toBeCloseTo(0, 5);
+  });
+
+  it('chest circumference is a positive number with both side views (no regression)', () => {
+    const result = extractMeasurements({
+      silhouettes: [frontFullLandmarks(), makeSideSilhouette('left', 70), makeSideSilhouette('right', 70)],
+      sex: 'male',
+      heightCm: 180,
+    });
+    expect(result.chestCirc.cm).not.toBeNull();
+    expect(result.chestCirc.cm).toBeGreaterThan(0);
+  });
+});
+
+describe('Task 6: divergent L/R side views produce lowered corroboration and positive asymmetry', () => {
+  it('lrCorroboration < 1 when left and right depths differ', () => {
+    // left: 70px = 28cm depth, right: 80px = 32cm depth, diff = 4cm
+    const result = extractMeasurements({
+      silhouettes: [frontFullLandmarks(), makeSideSilhouette('left', 70), makeSideSilhouette('right', 80)],
+      sex: 'male',
+      heightCm: 180,
+    });
+    expect(result.corroborationSignals!.lrCorroboration).toBeLessThan(1);
+    expect(result.corroborationSignals!.lrCorroboration).toBeGreaterThanOrEqual(0);
+  });
+
+  it('lrAsymmetry > 0 when left and right depths differ', () => {
+    const result = extractMeasurements({
+      silhouettes: [frontFullLandmarks(), makeSideSilhouette('left', 70), makeSideSilhouette('right', 80)],
+      sex: 'male',
+      heightCm: 180,
+    });
+    expect(result.corroborationSignals!.lrAsymmetry).not.toBeNull();
+    expect(result.corroborationSignals!.lrAsymmetry).toBeGreaterThan(0);
+  });
+
+  it('chest circumference uses averaged depth (still a positive number)', () => {
+    const result = extractMeasurements({
+      silhouettes: [frontFullLandmarks(), makeSideSilhouette('left', 70), makeSideSilhouette('right', 80)],
+      sex: 'male',
+      heightCm: 180,
+    });
+    expect(result.chestCirc.cm).not.toBeNull();
+    expect(result.chestCirc.cm).toBeGreaterThan(0);
+  });
+});
+
+describe('Task 6: single side view still produces a measurement (RULE 9 - no fabrication)', () => {
+  it('with only a left view, sideDepths use left depth, lrCorroboration = SINGLE_SOURCE_CREDIT', () => {
+    const result = extractMeasurements({
+      silhouettes: [frontFullLandmarks(), makeSideSilhouette('left', 70)],
+      sex: 'male',
+      heightCm: 180,
+    });
+    // Every L/R level: right = null -> SINGLE_SOURCE_CREDIT = 0.5 per level
+    expect(result.corroborationSignals!.lrCorroboration).toBeCloseTo(0.5, 5);
+    expect(result.corroborationSignals!.lrAsymmetry).toBeNull(); // single source
+    expect(result.chestCirc.cm).not.toBeNull();
+    expect(result.chestCirc.cm).toBeGreaterThan(0);
+  });
+});
+
+describe('Task 6: back view provides fb corroboration and hip refinement', () => {
+  it('fbCorroboration is 1.0 when back silhouette widths match front widths exactly', () => {
+    // makeBackSilhouette(0) uses same contour (40-140px) as frontFullLandmarks
+    const result = extractMeasurements({
+      silhouettes: [frontFullLandmarks(), makeBackSilhouette(0)],
+      sex: 'male',
+      heightCm: 180,
+    });
+    expect(result.corroborationSignals!.fbCorroboration).toBeCloseTo(1.0, 5);
+  });
+
+  it('fbCorroboration < 1 when back silhouette widths differ from front', () => {
+    // widthOffsetPx = 20 -> back is 20px wider -> 8cm wider -> disagrees with front
+    const result = extractMeasurements({
+      silhouettes: [frontFullLandmarks(), makeBackSilhouette(20)],
+      sex: 'male',
+      heightCm: 180,
+    });
+    expect(result.corroborationSignals!.fbCorroboration).toBeLessThan(1.0);
+  });
+
+  it('hipCirc.cm is still a positive number with a back view (no regression)', () => {
+    const result = extractMeasurements({
+      silhouettes: [frontFullLandmarks(), makeBackSilhouette(0)],
+      sex: 'male',
+      heightCm: 180,
+    });
+    expect(result.hipCirc.cm).not.toBeNull();
+    expect(result.hipCirc.cm).toBeGreaterThan(0);
+  });
+
+  it('hip refinement uses max(front, back) when back hip is wider (glute boost)', () => {
+    // Wider back silhouette means back hip width > front hip width -> refined hip >= original
+    const withoutBack = extractMeasurements({
+      silhouettes: [frontFullLandmarks()],
+      sex: 'male',
+      heightCm: 180,
+    });
+    const withWiderBack = extractMeasurements({
+      silhouettes: [frontFullLandmarks(), makeBackSilhouette(20)],
+      sex: 'male',
+      heightCm: 180,
+    });
+    // With a wider back view, hip circumference should be >= without back
+    expect(withWiderBack.hipCirc.cm).toBeGreaterThanOrEqual(withoutBack.hipCirc.cm ?? 0);
+  });
+});

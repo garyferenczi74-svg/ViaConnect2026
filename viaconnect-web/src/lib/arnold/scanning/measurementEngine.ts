@@ -4,8 +4,18 @@
 
 import { widthAtY } from './silhouetteProcessor';
 import { predictCircumference, wrapAsMeasured, type Region } from './circumferencePredictor';
+import {
+  averageDepths,
+  lrAsymmetryScore,
+  lrCorroborationScore,
+  fbCorroborationScore,
+  aggregateLrCorroboration,
+  aggregateFbCorroboration,
+  aggregateLrAsymmetry,
+} from './accuracy/corroboration';
 import type {
   BiologicalSex,
+  CorroborationSignals,
   ExtractedMeasurements,
   MeasuredValue,
   PoseSilhouette,
@@ -22,13 +32,15 @@ export function extractMeasurements({ silhouettes, sex, heightCm }: ExtractionIn
   const back  = silhouettes.find((s) => s.poseId === 'back')  ?? null;
   const left  = silhouettes.find((s) => s.poseId === 'left')  ?? null;
   const right = silhouettes.find((s) => s.poseId === 'right') ?? null;
-  const side = left ?? right;
+  // Task 6: `side = left ?? right` removed - depths are now averaged per level
+  // (see leftDepths / rightDepths / sideDepths below).
 
   if (!front) {
     throw new Error('Front silhouette required for measurement extraction');
   }
 
-  const scale = front.scaleCmPerPx ?? (side?.scaleCmPerPx ?? null);
+  // Scale guard: front is required; side views are optional boosters.
+  const scale = front.scaleCmPerPx ?? (left?.scaleCmPerPx ?? (right?.scaleCmPerPx ?? null));
   if (!scale) {
     throw new Error('Unable to compute pixel-to-cm scale. Verify user height and landmark detection.');
   }
@@ -76,19 +88,75 @@ export function extractMeasurements({ silhouettes, sex, heightCm }: ExtractionIn
     calfR: w(front, yCalfR),
   };
 
-  // Side depths at same Y levels (scale from the side silhouette, which uses its own scale)
-  const sideDepths = side
+  // Task 6: Per-level depths from each side silhouette (cm, using that view's own scale).
+  // Assumption: Y-coordinates from front landmarks are transferable to left/right views
+  // because the 4-photo session uses consistent camera height and framing.
+  const leftDepths = left
     ? {
-        neck: w(side, yNeck),
-        chest: w(side, yChest),
-        waistNatural: w(side, yWaistNatural),
-        waistNavel: w(side, yWaistNavel),
-        hip: w(side, yHip),
-        bicep: w(side, yBicepL ?? yBicepR),
-        thigh: w(side, yThighL ?? yThighR),
-        calf: w(side, yCalfL ?? yCalfR),
+        neck:         w(left, yNeck),
+        chest:        w(left, yChest),
+        waistNatural: w(left, yWaistNatural),
+        waistNavel:   w(left, yWaistNavel),
+        hip:          w(left, yHip),
+        bicep:        w(left, yBicepL ?? yBicepR),
+        thigh:        w(left, yThighL ?? yThighR),
+        calf:         w(left, yCalfL ?? yCalfR),
       }
     : null;
+
+  const rightDepths = right
+    ? {
+        neck:         w(right, yNeck),
+        chest:        w(right, yChest),
+        waistNatural: w(right, yWaistNatural),
+        waistNavel:   w(right, yWaistNavel),
+        hip:          w(right, yHip),
+        bicep:        w(right, yBicepL ?? yBicepR),
+        thigh:        w(right, yThighL ?? yThighR),
+        calf:         w(right, yCalfL ?? yCalfR),
+      }
+    : null;
+
+  // Task 6: L/R averaged depths (replaces single `side = left ?? right`).
+  // averageDepths is null-safe: if one side is absent the other is used;
+  // if both are absent the depth is null (UNKNOWN - RULE 9, never 0).
+  const ld = leftDepths;
+  const rd = rightDepths;
+  const sideDepths = (left !== null || right !== null)
+    ? {
+        neck:         averageDepths(ld?.neck         ?? null, rd?.neck         ?? null),
+        chest:        averageDepths(ld?.chest        ?? null, rd?.chest        ?? null),
+        waistNatural: averageDepths(ld?.waistNatural ?? null, rd?.waistNatural ?? null),
+        waistNavel:   averageDepths(ld?.waistNavel   ?? null, rd?.waistNavel   ?? null),
+        hip:          averageDepths(ld?.hip          ?? null, rd?.hip          ?? null),
+        bicep:        averageDepths(ld?.bicep        ?? null, rd?.bicep        ?? null),
+        thigh:        averageDepths(ld?.thigh        ?? null, rd?.thigh        ?? null),
+        calf:         averageDepths(ld?.calf         ?? null, rd?.calf         ?? null),
+      }
+    : null;
+
+  // Task 6: Back-view widths at key torso levels for front-back corroboration
+  // and glute/hip contour refinement. Same Y-coordinate assumption applies.
+  const backWidths = back !== null
+    ? {
+        chest:        w(back, yChest),
+        waistNatural: w(back, yWaistNatural),
+        waistNavel:   w(back, yWaistNavel),
+        hip:          w(back, yHip),
+      }
+    : null;
+
+  // Task 6: Glute/hip contour refinement using the back view.
+  // The back silhouette often captures the posterior hip contour (glutes) that
+  // can differ from the front silhouette reading. When both views are present,
+  // the max of the two provides a less-biased hip width estimate (front-only
+  // tends to underestimate when the subject tilts slightly forward).
+  // RULE 9: if front hip is null, falls through to null (no fabrication).
+  const backHipWidth: number | null = backWidths?.hip ?? null;
+  const refinedHipWidth: number | null =
+    frontWidths.hip !== null && backHipWidth !== null
+      ? Math.max(frontWidths.hip, backHipWidth)
+      : frontWidths.hip;
 
   // Build circumferences
   const circ = (frontWidth: number | null, sideDepth: number | undefined | null, region: Region): MeasuredValue => {
@@ -107,7 +175,8 @@ export function extractMeasurements({ silhouettes, sex, heightCm }: ExtractionIn
   const chest         = circ(frontWidths.chest,        sideDepths?.chest,         'chest');
   const waistNatural  = circ(frontWidths.waistNatural, sideDepths?.waistNatural,  'waist_natural');
   const waistNavel    = circ(frontWidths.waistNavel,   sideDepths?.waistNavel,    'waist_navel');
-  const hip           = circ(frontWidths.hip,          sideDepths?.hip,           'hip');
+  // Hip uses refinedHipWidth (back-view adjusted) when the back silhouette is available.
+  const hip           = circ(refinedHipWidth,          sideDepths?.hip,           'hip');
   const bicepR        = circ(frontWidths.bicepR,       sideDepths?.bicep,         'bicep');
   const bicepL        = circ(frontWidths.bicepL,       sideDepths?.bicep,         'bicep');
   const forearmR      = circ(frontWidths.forearmR,     undefined,                 'forearm');
@@ -130,8 +199,32 @@ export function extractMeasurements({ silhouettes, sex, heightCm }: ExtractionIn
   const waistToHeightRatio = ratio(waistNatural.cm, heightCm);
   const shoulderToWaistRatio = ratio(shoulder.cm, waistNatural.cm);
 
-  void sideDepths;
-  void back;
+  // Task 6: Compute per-level corroboration signals for future confidence wiring.
+  // These map to ConfidenceInputs.lrCorroboration and .fbCorroboration in
+  // confidenceModel.ts. Full per-field confidence threading is a later task.
+  const lrLevelKeys = [
+    'neck', 'chest', 'waistNatural', 'waistNavel', 'hip', 'bicep', 'thigh', 'calf',
+  ] as const;
+  type LrKey = (typeof lrLevelKeys)[number];
+
+  const lrCorScores = lrLevelKeys.map((k: LrKey) =>
+    lrCorroborationScore(ld?.[k] ?? null, rd?.[k] ?? null)
+  );
+  const asymScores = lrLevelKeys.map((k: LrKey) =>
+    lrAsymmetryScore(ld?.[k] ?? null, rd?.[k] ?? null)
+  );
+  const fbCorScores = [
+    fbCorroborationScore(frontWidths.chest,        backWidths?.chest        ?? null),
+    fbCorroborationScore(frontWidths.waistNatural, backWidths?.waistNatural ?? null),
+    fbCorroborationScore(frontWidths.waistNavel,   backWidths?.waistNavel   ?? null),
+    fbCorroborationScore(frontWidths.hip,          backWidths?.hip          ?? null),
+  ];
+
+  const corroborationSignals: CorroborationSignals = {
+    lrCorroboration: aggregateLrCorroboration(lrCorScores),
+    fbCorroboration: aggregateFbCorroboration(fbCorScores),
+    lrAsymmetry:     aggregateLrAsymmetry(asymScores),
+  };
 
   return {
     neckCirc: neck,
@@ -153,6 +246,7 @@ export function extractMeasurements({ silhouettes, sex, heightCm }: ExtractionIn
     shoulderToWaistRatio,
     inseamCm: round1(inseamCm),
     torsoLengthCm: round1(torsoLengthCm),
+    corroborationSignals,
   };
 }
 
