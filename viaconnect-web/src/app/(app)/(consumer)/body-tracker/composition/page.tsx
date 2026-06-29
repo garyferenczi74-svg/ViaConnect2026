@@ -54,6 +54,10 @@ import {
   useAvatarTelemetry,
   createScrubSettleEmitter,
 } from '@/lib/formavision/telemetry/useAvatarTelemetry';
+import type {
+  AvatarQualitySignals,
+  AvatarEventProperties,
+} from '@/lib/formavision/telemetry/avatarTelemetry';
 // === PROMPT 210b P8-T1b (Avatar Telemetry) END ===
 import { scanToParamVector } from '@/lib/formavision/geometry/scanToParamVector';
 import type { BodyParamVector } from '@/lib/formavision/geometry/types';
@@ -872,9 +876,16 @@ function CompositionPageInner() {
                     ghostVector={ghostVector}
                     showGhost={showGhost}
                     onOrbitEnd={() => telEmit('formavision.avatar_rotated')}
-                    onTierStepDown={(tier) =>
-                      telEmitOnce('formavision.fallback_tier_served', { tier })
-                    }
+                    onTierStepDown={(tier, signals: AvatarQualitySignals) => {
+                      const props: AvatarEventProperties = { tier };
+                      if (signals.tierServed !== undefined) props['tierServed'] = signals.tierServed;
+                      if (signals.stepDownCount !== undefined) props['stepDownCount'] = signals.stepDownCount;
+                      if (signals.errorCount !== undefined) props['errorCount'] = signals.errorCount;
+                      if (signals.timeToFirstInteractiveMs !== undefined) {
+                        props['timeToFirstInteractiveMs'] = signals.timeToFirstInteractiveMs;
+                      }
+                      telEmitOnce('formavision.fallback_tier_served', props);
+                    }}
                   >
                     {isMuscle ? (
                       <HoverSystem view="muscle" sex={gender} regions={muscleRegions} className="lg:h-full">

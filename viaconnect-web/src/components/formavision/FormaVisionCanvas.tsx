@@ -105,6 +105,10 @@ export interface FormaVisionCanvasProps {
   // Fire-and-forget telemetry seam for formavision.avatar_rotated. Absent means
   // no telemetry fires; the scene is byte-identical to before this phase.
   onOrbitEnd?: () => void;
+  // P8-T1c: called once from Canvas onCreated (GL context ready) so the parent
+  // can measure timeToFirstInteractiveMs. Absent means the metric is omitted.
+  // Fire-and-forget; does not affect rendering.
+  onFirstInteractive?: () => void;
 }
 
 // Vertical / radial density per render tier. Lite keeps the silhouette readable
@@ -666,6 +670,9 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
         gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
         camera={{ position: [0, 1.0, 3.2], fov: 30, near: 0.1, far: 50 }}
         onPointerDown={skipIntro}
+        // P8-T1c: fire once when the GL context is ready (observe-only;
+        // does not affect rendering or the demand loop).
+        onCreated={() => { props.onFirstInteractive?.(); }}
       >
         <color attach="background" args={[FORMA_VISION_HEX.navy]} />
 

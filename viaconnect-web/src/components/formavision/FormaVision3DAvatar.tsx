@@ -98,6 +98,10 @@ export interface FormaVision3DAvatarProps {
   // P8-T1b: forwarded into FormaVisionCanvas for the avatar_rotated telemetry seam.
   // Called once at the end of each orbit gesture. Absent means no telemetry.
   onOrbitEnd?: () => void;
+  // P8-T1c: forwarded into FormaVisionCanvas for timeToFirstInteractiveMs.
+  // Called once from Canvas onCreated (GL context ready). Absent means the
+  // metric is omitted from the quality snapshot. Fire-and-forget.
+  onFirstInteractive?: () => void;
 }
 
 export function FormaVision3DAvatar({
@@ -118,6 +122,7 @@ export function FormaVision3DAvatar({
   onBudgetMissed,
   onRenderError,
   onOrbitEnd,
+  onFirstInteractive,
 }: FormaVision3DAvatarProps) {
   // Probe WebGL once per mount. When it is unavailable the component renders
   // nothing and signals the parent to fall back to 2D; the three bundle is never
@@ -166,6 +171,7 @@ export function FormaVision3DAvatar({
           renderTier={renderTier}
           onBudgetMissed={onBudgetMissed}
           onOrbitEnd={onOrbitEnd}
+          onFirstInteractive={onFirstInteractive}
         />
       </AvatarErrorBoundary>
     </div>
