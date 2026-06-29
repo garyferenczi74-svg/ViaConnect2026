@@ -761,7 +761,7 @@ function TodayTab({
             <StatBar icon={Droplet} name="Hydration" value={hydrationValue} sub={hydrationSub} pct={hydrationPct} color="#38BDD8" />
           </div>
         </div>
-        <div style={panel(false)}>
+        <div style={{ ...panel(false), flexGrow: 1 }}>
           <div style={{ ...eyebrow, marginBottom: 10 }}>Vital trends</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
             {vitalsLoading ? (
@@ -1522,7 +1522,7 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
         .vc-hero { display: grid; grid-template-columns: 220px 1fr; gap: 18px; align-items: stretch; }
         .vc-herotop { display: flex; gap: 18px; align-items: flex-start; flex-wrap: wrap; }
         .vc-gaugecluster { flex: 1.7 1 340px; display: flex; gap: 8px; align-items: stretch; }
-        .vc-split { display: grid; grid-template-columns: 1fr 360px; gap: 14px; align-items: stretch; }
+        .vc-split { display: grid; grid-template-columns: 1fr 400px; gap: 14px; align-items: stretch; }
         .vc-two { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
         .vc-tri { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
         .vc-goalrow { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 14px; align-items: stretch; }
