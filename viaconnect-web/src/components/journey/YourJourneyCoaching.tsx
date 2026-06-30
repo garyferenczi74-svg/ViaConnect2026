@@ -17,7 +17,7 @@ import { useRouter } from "next/navigation";
 import {
   Search, Bell, Edit2, Target, Activity, Moon, Salad, Heart, Sparkles, RefreshCw,
   Dna, FlaskConical, ClipboardList, Pill, HeartPulse, ArrowRight, ArrowUpRight,
-  TrendingUp, TrendingDown, ChevronDown, ShieldCheck, CircleAlert, Droplet, Flame, Smile, Zap,
+  TrendingUp, TrendingDown, ChevronDown, ChevronLeft, ChevronRight, ShieldCheck, CircleAlert, Droplet, Flame, Smile, Zap,
   type LucideIcon,
 } from "lucide-react";
 import { useBioOptimizationTrend } from "@/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/hooks/useBioOptimizationTrend";
@@ -32,8 +32,11 @@ import { getDisplayName } from "@/lib/user/get-display-name";
 import { createClient } from "@/lib/supabase/client";
 import { withTimeout } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
-import { heroGaugeScore, buildFlatSeries } from "@/components/journey/coaching/heroHelpers";
+import { heroGaugeScore } from "@/components/journey/coaching/heroHelpers";
 import { formatMacroLabel, kcalRemaining, flatSparkline, goalProgressPct } from "@/components/journey/coaching/lowerHelpers";
+import { useJourneyGraphSeries, type PillarKey } from "@/components/journey/coaching/useJourneyGraphSeries";
+import { type JourneyRange } from "@/components/journey/coaching/journeyGraphWindow";
+import { buildLinePath } from "@/components/journey/coaching/journeyPathBuilder";
 import { useUserDashboardData } from "@/hooks/useUserDashboardData";
 import { useActiveBodyGoal, tierToStateWord } from "@/hooks/journey/useActiveBodyGoal";
 import { getWearableSource } from "@/lib/scoring/sources/wearable-source";
@@ -136,41 +139,188 @@ function GaugeCard({ value, label, color, hero, loading }: { value: number; labe
 // hydration -> useHydrationToday.percentage_of_target
 type PillarValues = Record<string, number>;
 
-// Graph range data type. Each key is a pillar key; value is an array of scores.
-type RangeData = Record<string, number[]>;
-// Three range slots for 1W / 1M / 1Y.
-type AllRangeData = { "1W": RangeData; "1M": RangeData; "1Y": RangeData };
+// Journey: self-contained hero graph component wired to useJourneyGraphSeries.
+// Takes only { userId }; holds range and offset state (T4 period navigator wires offset).
+// Y axis: 0 to 100 with a gridline and muted label at every 10.
+// X axis: labels from bucket.label (non-empty only, per T1 bucketing rules).
+// Seven pillar lines in their PILLARS colors; Bio Optimization drawn last on top.
+// Gaps are honest BREAKS (null -> break, never 0, never flat carry).
+// Loading: skeleton shimmer in the plot area, axis and labels render immediately.
+// Error: axis + labels + legend + quiet retry affordance (not a blank card).
+// Empty: axis + labels + legend with no lines (honest sparse state).
+// Hydration: past-day history is always null (no per-day source exists).
+//   A "(no daily history yet)" note is appended to the Hydration legend swatch
+//   when the series has at most one non-null point so the near-empty line is not
+//   mistaken for a bug. (Hannah handoff - flag for Gary eyeball.)
+function Journey({ userId }: { userId: string | null }) {
+  const [range, setRange] = useState<JourneyRange>("1W");
+  const [offset, setOffset] = useState<number>(0);
+  const { buckets, series, periodLabel, canGoNext, loading, error } = useJourneyGraphSeries(userId, range, offset);
 
-function DailyScores({ rangeData, loading }: { rangeData: AllRangeData; loading?: boolean }) {
-  const [range, setRange] = useState("1W");
-  const d = rangeData[range as keyof AllRangeData], n = d.overall.length;
-  const W = 840, H = 220, padL = 6, padR = 6, padT = 12, padB = 12;
-  const x = (i: number) => padL + (i / (n - 1)) * (W - padL - padR);
-  const y = (v: number) => padT + (1 - v / 100) * (H - padT - padB);
-  const pathFor = (arr: number[]) => arr.map((v, i) => (i ? "L" : "M") + x(i).toFixed(1) + " " + y(v).toFixed(1)).join(" ");
-  const ordered = [...PILLARS].sort((a, b) => (a.hero ? 1 : 0) - (b.hero ? 1 : 0)); // hero drawn last, on top
+  // SVG coordinate system.
+  const W = 840, H = 248;
+  // padL: left gutter for Y-axis labels (right-aligned muted text).
+  // padR: right margin. padT: top margin. padB: bottom strip for X-axis labels.
+  const padL = 52, padR = 10, padT = 10, padB = 30;
+  const plotW = W - padL - padR;
+  const plotH = H - padT - padB;
+
+  const n = buckets.length;
+  const xOf = (i: number): number =>
+    n <= 1 ? padL + plotW / 2 : padL + (i / (n - 1)) * plotW;
+  const yOf = (v: number): number => padT + (1 - v / 100) * plotH;
+
+  // Y axis: gridline and label at every 10 from 0 to 100.
+  const Y_TICKS = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+
+  // Draw hero (overall) line last so it sits on top of all other lines.
+  const ordered = [...PILLARS].sort((a, b) => (a.hero ? 1 : 0) - (b.hero ? 1 : 0));
+
+  // Build SVG path per pillar. Null values produce honest line breaks.
+  const paths: Record<string, string> = {};
+  for (const p of PILLARS) {
+    const vals: (number | null)[] = series[p.key as PillarKey] ?? [];
+    paths[p.key] = buildLinePath(vals, xOf, yOf);
+  }
+
+  // End dots: last non-null point of each series. Built from `ordered` (hero last)
+  // so the Bio Optimization dot paints on top of the other dots, matching the lines.
+  const endDots: { key: string; cx: number; cy: number; color: string; hero: boolean }[] = [];
+  for (const p of ordered) {
+    const vals: (number | null)[] = series[p.key as PillarKey] ?? [];
+    for (let i = vals.length - 1; i >= 0; i--) {
+      const v = vals[i];
+      if (v !== null) {
+        endDots.push({ key: p.key, cx: xOf(i), cy: yOf(v), color: p.color, hero: !!p.hero });
+        break;
+      }
+    }
+  }
+
+  // Hydration note: past-day hydration is always null. When the series has at most
+  // one non-null point (only today), label it "(no daily history yet)" in the legend.
+  const hydVals: (number | null)[] = series.hydration ?? [];
+  const hydrationTodayOnly = hydVals.filter((v) => v !== null).length <= 1;
+
+  // Retry: dispatch focus event to trigger the hook's internal refresh debounce.
+  const handleRetry = () => {
+    if (typeof window !== "undefined") window.dispatchEvent(new FocusEvent("focus"));
+  };
+
+  // Plot-area overlay for the loading skeleton (percentage-based to scale with SVG).
+  const skeletonStyle: React.CSSProperties = {
+    position: "absolute",
+    left: `${((padL / W) * 100).toFixed(2)}%`,
+    right: `${((padR / W) * 100).toFixed(2)}%`,
+    top: `${((padT / H) * 100).toFixed(2)}%`,
+    bottom: `${((padB / H) * 100).toFixed(2)}%`,
+    borderRadius: 4,
+    background: `linear-gradient(90deg, ${C.inset} 25%, ${C.raised} 50%, ${C.inset} 75%)`,
+    backgroundSize: "200% 100%",
+    animation: "vcShimmer 1.6s ease-in-out infinite",
+  };
+
+  const showLines = !loading && !error;
+
   return (
     <div>
+      {/* Header: eyebrow label + 1W / 1M / 1Y range buttons */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
-        <div style={eyebrow}>Daily Scores</div>
+        <div style={eyebrow}>Journey</div>
         <div style={{ display: "flex", gap: 6 }}>
-          {["1W", "1M", "1Y"].map((r) => (
-            <button key={r} onClick={() => setRange(r)} className="vc-focus" style={{ cursor: "pointer", padding: "5px 13px", borderRadius: 999, fontSize: 11.5, fontWeight: 700, border: `1px solid ${range === r ? C.teal : C.line}`, background: range === r ? C.teal : "transparent", color: range === r ? C.navy : C.muted }}>{r}</button>
+          {(["1W", "1M", "1Y"] as JourneyRange[]).map((r) => (
+            <button key={r} onClick={() => { setRange(r); setOffset(0); }} className="vc-focus" style={{ cursor: "pointer", padding: "5px 13px", borderRadius: 999, fontSize: 11.5, fontWeight: 700, border: `1px solid ${range === r ? C.teal : C.line}`, background: range === r ? C.teal : "transparent", color: range === r ? C.navy : C.muted }}>{r}</button>
           ))}
         </div>
       </div>
-      {loading ? (
-        <Shimmer w="100%" h={H} radius={8} />
-      ) : (
-        <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block" }}>
-          {[0, 0.25, 0.5, 0.75, 1].map((g, i) => <line key={i} x1={padL} x2={W - padR} y1={padT + g * (H - padT - padB)} y2={padT + g * (H - padT - padB)} stroke={C.line} />)}
-          {ordered.map((p) => <path key={p.key} d={pathFor(d[p.key])} fill="none" stroke={p.color} strokeWidth={p.hero ? 2.6 : 1.7} strokeLinecap="round" strokeLinejoin="round" style={p.hero ? { filter: `drop-shadow(0 0 4px ${p.color}99)` } : { opacity: 0.92 }} />)}
-          {ordered.map((p) => <circle key={p.key + "d"} cx={x(n - 1)} cy={y(d[p.key][n - 1])} r={p.hero ? 3.2 : 2.3} fill={p.color} />)}
-        </svg>
-      )}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "7px 14px", marginTop: 12 }}>
-        {PILLARS.map((p) => <span key={p.key} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11, color: C.muted }}><span style={{ width: 12, height: 3, borderRadius: 2, background: p.color, display: "inline-block" }} />{p.label}</span>)}
+
+      {/* Period navigator: prev / period label / next */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 10, flexWrap: "wrap" }}>
+        <button
+          className="vc-focus"
+          onClick={() => setOffset((o) => o + 1)}
+          aria-label="Previous period"
+          style={{ cursor: "pointer", background: "transparent", border: `1px solid ${C.line}`, borderRadius: 8, padding: "4px 8px", color: C.muted, display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+        >
+          <ChevronLeft size={16} strokeWidth={SW} />
+        </button>
+        <span style={{ fontSize: 12, fontWeight: 600, color: C.text, minWidth: 130, textAlign: "center" }}>{periodLabel}</span>
+        <button
+          className="vc-focus"
+          onClick={() => setOffset((o) => Math.max(0, o - 1))}
+          disabled={!canGoNext}
+          aria-label="Next period"
+          style={{ cursor: canGoNext ? "pointer" : "default", background: "transparent", border: `1px solid ${C.line}`, borderRadius: 8, padding: "4px 8px", color: C.muted, display: "inline-flex", alignItems: "center", justifyContent: "center", opacity: canGoNext ? 1 : 0.35 }}
+        >
+          <ChevronRight size={16} strokeWidth={SW} />
+        </button>
       </div>
+
+      {/* Chart: SVG always renders axis and X labels; plot content varies by state */}
+      <div style={{ position: "relative" }}>
+        <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block" }}>
+          {/* Y axis: horizontal gridlines and right-aligned muted labels at every 10 */}
+          {Y_TICKS.map((tick) => {
+            const cy = yOf(tick);
+            return (
+              <g key={tick}>
+                <line x1={padL} x2={W - padR} y1={cy} y2={cy} stroke={C.line} strokeWidth={0.8} />
+                <text x={padL - 4} y={cy} textAnchor="end" dominantBaseline="middle" fontSize={12} fill={C.muted}>{tick}</text>
+              </g>
+            );
+          })}
+
+          {/* X axis: bucket label text, centered under each labeled bucket */}
+          {buckets.map((b, i) =>
+            b.label ? (
+              <text key={b.date} x={xOf(i)} y={H - 6} textAnchor="middle" fontSize={11} fill={C.muted}>{b.label}</text>
+            ) : null,
+          )}
+
+          {/* Lines: hero (overall) drawn last so it sits on top */}
+          {showLines && ordered.map((p) =>
+            paths[p.key] ? (
+              <path key={p.key} d={paths[p.key]} fill="none" stroke={p.color} strokeWidth={p.hero ? 2.6 : 1.7} strokeLinecap="round" strokeLinejoin="round" style={p.hero ? { filter: `drop-shadow(0 0 4px ${p.color}99)` } : { opacity: 0.92 }} />
+            ) : null,
+          )}
+
+          {/* End dots: circle at last non-null point of each series */}
+          {showLines && endDots.map((dot) => (
+            <circle key={dot.key + "d"} cx={dot.cx} cy={dot.cy} r={dot.hero ? 3.2 : 2.3} fill={dot.color} />
+          ))}
+        </svg>
+
+        {/* Loading skeleton: shimmer overlay in the plot area only */}
+        {loading && <div aria-hidden style={skeletonStyle} />}
+      </div>
+
+      {/* Error state: quiet retry affordance below the axis (axis still visible above) */}
+      {error && !loading && (
+        <div style={{ textAlign: "center", fontSize: 11, color: C.muted, marginTop: 4 }}>
+          Chart data could not load.{" "}
+          <button className="vc-focus" onClick={handleRetry} style={{ cursor: "pointer", background: "transparent", border: "none", color: C.teal, fontSize: 11, fontWeight: 600, padding: 0 }}>
+            Retry
+          </button>
+        </div>
+      )}
+
+      {/* Legend: seven pillar swatches + labels; hydration note when today-only */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "7px 14px", marginTop: 12 }}>
+        {PILLARS.map((p) => (
+          <span key={p.key} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11, color: C.muted }}>
+            <span style={{ width: 12, height: 3, borderRadius: 2, background: p.color, display: "inline-block" }} />
+            {p.label}
+            {p.key === "hydration" && hydrationTodayOnly && (
+              <span style={{ fontSize: 10, opacity: 0.72 }}>(no daily history yet)</span>
+            )}
+          </span>
+        ))}
+      </div>
+      {(range === "1W" || range === "1M") && (
+        <p style={{ margin: "8px 0 0", fontSize: 10.5, color: C.muted, opacity: 0.85, lineHeight: 1.4 }}>
+          A line reaching 0 on a past day means no check-in was logged, not a wellness score of zero. Log a check-in to fill in any gap.
+        </p>
+      )}
     </div>
   );
 }
@@ -253,10 +403,12 @@ function ProfileCard({
   );
 }
 
-// Hero receives real values for gauges, graph, narrative, and profile.
+// Hero receives real values for gauges, narrative, and profile.
+// Graph is rendered by the self-contained Journey component (T3) which takes userId
+// and calls useJourneyGraphSeries internally. rangeData and graphLoading are removed.
 function Hero({
   pillarValues,
-  rangeData,
+  userId,
   overallScore,
   bioTier,
   displayName,
@@ -265,10 +417,9 @@ function Hero({
   goalPhrase,
   lastSyncLabel,
   gaugesLoading,
-  graphLoading,
 }: {
   pillarValues: PillarValues;
-  rangeData: AllRangeData;
+  userId: string | null;
   overallScore: number | null;
   bioTier: string | null;
   displayName: string;
@@ -277,7 +428,6 @@ function Hero({
   goalPhrase: string;
   lastSyncLabel: string;
   gaugesLoading?: boolean;
-  graphLoading?: boolean;
 }) {
   // J-T2: hero narrative state word driven from canonical dashboard tier +
   // score. Baseline/computing users read as "getting started", not "steady".
@@ -328,7 +478,7 @@ function Hero({
             <div className="vc-gaugecluster">{livePillars.map((p) => <GaugeCard key={p.key} value={p.value} label={p.label} color={p.color} hero={p.hero} loading={gaugesLoading} />)}</div>
           </div>
           <div style={{ background: `linear-gradient(180deg, ${C.inset}, ${C.card})`, border: `1px solid ${C.line}`, borderRadius: 16, padding: "16px 16px 14px" }}>
-            <DailyScores rangeData={rangeData} loading={graphLoading} />
+            <Journey userId={userId} />
           </div>
         </div>
       </div>
@@ -351,7 +501,7 @@ function HannahRead({
 }) {
   const router = useRouter();
   return (
-    <div style={{ ...panel(true), height: "100%", display: "flex", flexDirection: "column" }}>
+    <div style={{ ...panel(true), display: "flex", flexDirection: "column" }}>
       <Edge active />
       <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 10 }}>
         <span style={{ width: 30, height: 30, borderRadius: 999, background: C.tealSoft, color: C.teal, display: "inline-flex", alignItems: "center", justifyContent: "center" }}><Sparkles size={15} strokeWidth={SW} /></span>
@@ -611,7 +761,7 @@ function TodayTab({
             <StatBar icon={Droplet} name="Hydration" value={hydrationValue} sub={hydrationSub} pct={hydrationPct} color="#38BDD8" />
           </div>
         </div>
-        <div style={panel(false)}>
+        <div style={{ ...panel(false), flexGrow: 1 }}>
           <div style={{ ...eyebrow, marginBottom: 10 }}>Vital trends</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
             {vitalsLoading ? (
@@ -631,7 +781,7 @@ function TodayTab({
         </div>
       </div>
       {hannahLoading ? (
-        <div style={{ ...panel(true), height: "100%", display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ ...panel(true), display: "flex", flexDirection: "column", gap: 12 }}>
           <Edge active />
           <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
             <Shimmer w={30} h={30} radius={999} />
@@ -843,58 +993,6 @@ function AcceleratorsTab({ accel, activeHubs, narrativeLine, loading }: { accel:
 }
 
 // ---------------------------------------------------------------------------
-// Real-data graph builder
-//
-// REALITY: only the OVERALL composite has a real time-series (dailyScores/bioScores
-// from useBioOptimizationTrend). The 6 component pillar lines have NO history source
-// (known backend gap - flagged for Gary). They are represented as FLAT lines at the
-// pillar's current value: honest "no trend known" rather than a fabricated trend.
-//
-// overall line: real history array of scores. If fewer than 2 points, flattened at
-//   the current overall value (honest baseline).
-// pillar lines (sleep/energy/mood/nutrition/activity/hydration): flat array of the
-//   pillar's current gauge value repeated across the point count.
-//
-// The point count matches the data.dailyScores length for the range. If empty,
-// defaults to 7 points so the graph is never empty (all zeros is honest baseline).
-// ---------------------------------------------------------------------------
-
-function buildRangeData(
-  overallPoints: { score: number }[],
-  pillarValues: PillarValues,
-): RangeData {
-  // Determine point count from the real series (minimum 2 for a valid line).
-  const n = Math.max(2, overallPoints.length);
-
-  // Overall line: real scores when >= 2 finite points; flat at current otherwise.
-  const overallScores = overallPoints
-    .map((p) => p.score)
-    .filter((s) => typeof s === "number" && isFinite(s));
-  const overallArr: number[] =
-    overallScores.length >= 2
-      ? overallScores
-      : buildFlatSeries(heroGaugeScore(pillarValues["overall"] ?? 0), n);
-
-  // Pillar lines: flat at the current gauge value (no history, honest representation).
-  const sleepArr = buildFlatSeries(heroGaugeScore(pillarValues["sleep"] ?? 0), n);
-  const energyArr = buildFlatSeries(heroGaugeScore(pillarValues["energy"] ?? 0), n);
-  const moodArr = buildFlatSeries(heroGaugeScore(pillarValues["mood"] ?? 0), n);
-  const nutritionArr = buildFlatSeries(heroGaugeScore(pillarValues["nutrition"] ?? 0), n);
-  const activityArr = buildFlatSeries(heroGaugeScore(pillarValues["activity"] ?? 0), n);
-  const hydrationArr = buildFlatSeries(heroGaugeScore(pillarValues["hydration"] ?? 0), n);
-
-  return {
-    sleep: sleepArr,
-    energy: energyArr,
-    mood: moodArr,
-    nutrition: nutritionArr,
-    activity: activityArr,
-    overall: overallArr,
-    hydration: hydrationArr,
-  };
-}
-
-// ---------------------------------------------------------------------------
 // Main component
 // ---------------------------------------------------------------------------
 
@@ -922,9 +1020,10 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
   }, []);
 
   // Real data hooks (fail-open: all return safe defaults on error/loading).
+  // bos7D: drives gaugesLoading, Hannah insights, overallCurrent.
+  // bos4W and bos1Y are removed: the Journey graph (T3) reads its own history
+  // via useJourneyGraphSeries inside the Journey component.
   const { data: bos7D, isLoading: bos7DLoading } = useBioOptimizationTrend(userId, "7D");
-  const { data: bos4W } = useBioOptimizationTrend(userId, "4W");
-  const { data: bos1Y } = useBioOptimizationTrend(userId, "1Y");
   const { data: hydrationData } = useHydrationToday();
   // J-T1: useDailyScores reuses calculateDailyScores + the same daily_checkins /
   // meal_logs / useHydrationToday reads as DailyScoresPanel so pillar values here
@@ -1136,16 +1235,10 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
     hydration: dailyScores.hydration ?? hydrationPct ?? 0,
   };
 
-  // Build range data for 1W / 1M / 1Y graph tabs.
-  // Overall composite: real history for each range window.
-  // Pillar lines: flat at current value (no per-pillar history; backend gap flagged).
-  const rangeData: AllRangeData = {
-    "1W": buildRangeData(bos7D?.dailyScores ?? bos7D?.bioScores ?? [], pillarValues),
-    "1M": buildRangeData(bos4W?.dailyScores ?? bos4W?.bioScores ?? [], pillarValues),
-    "1Y": buildRangeData(bos1Y?.dailyScores ?? bos1Y?.bioScores ?? [], pillarValues),
-  };
-
   // Profile card data.
+  // Note: rangeData (T3-removed), buildRangeData (T3-removed), bos4W (T3-removed),
+  // bos1Y (T3-removed) are all gone. The Journey component now manages its own
+  // series via useJourneyGraphSeries internally.
   const displayNameSafe = displayName && displayName.trim().length > 0 ? displayName : "there";
   const initial = displayNameSafe.charAt(0).toUpperCase() || "V";
   // J-T2: goal chip now driven by the active body_goals row via useActiveBodyGoal.
@@ -1429,7 +1522,7 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
         .vc-hero { display: grid; grid-template-columns: 220px 1fr; gap: 18px; align-items: stretch; }
         .vc-herotop { display: flex; gap: 18px; align-items: flex-start; flex-wrap: wrap; }
         .vc-gaugecluster { flex: 1.7 1 340px; display: flex; gap: 8px; align-items: stretch; }
-        .vc-split { display: grid; grid-template-columns: 1fr 360px; gap: 14px; align-items: start; }
+        .vc-split { display: grid; grid-template-columns: 1fr 400px; gap: 14px; align-items: stretch; }
         .vc-two { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
         .vc-tri { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
         .vc-goalrow { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 14px; align-items: stretch; }
@@ -1445,7 +1538,7 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
 
         <Hero
           pillarValues={pillarValues}
-          rangeData={rangeData}
+          userId={userId}
           overallScore={bioDashScore}
           bioTier={bioDashTier}
           displayName={displayNameSafe}
@@ -1454,7 +1547,6 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
           goalPhrase={goalPhrase}
           lastSyncLabel={lastSyncLabel}
           gaugesLoading={shouldShowSkeleton(bos7DLoading || dailyScores.loading, dailyScores.bioOptimization ?? bos7D?.current ?? null)}
-          graphLoading={shouldShowSkeleton(bos7DLoading || dailyScores.loading, bos7D?.dailyScores ?? bos7D?.bioScores ?? null)}
         />
 
         <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
