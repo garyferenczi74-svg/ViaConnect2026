@@ -78,7 +78,13 @@ export function buildCircumferenceWrite(args: {
     entry_id:  entryId,
     entry_unit: 'cm',
     source:    'scan',
-    scan_id:   scanId,
+    // body_tracker_circumference.scan_id has a FK -> body_photo_sessions(id).
+    // The 209 in-memory vision scanId comes from body_tracker_photo_scans (the
+    // body-scan-analyze edge function), which is NOT a body_photo_sessions id.
+    // Writing the vision scanId here would cause a FK violation and silently
+    // drop the circumference row. The row is already linked to the scan via
+    // entry_id (which is correct and unconstrained). Always write null here.
+    scan_id:   null,
     scan_calibration_version: CALIBRATION_VERSION,
 
     // 12 girth columns (excludes hip which lives in body_tracker_weight)

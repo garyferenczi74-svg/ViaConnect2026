@@ -179,10 +179,14 @@ describe('buildCircumferenceWrite', () => {
     expect(circ.entry_id).toBe('entry-1');
   });
 
-  it('scan_id is passed through to the circ row', () => {
+  // body_tracker_circumference.scan_id FK-references body_photo_sessions(id).
+  // The 209 vision scanId (body_tracker_photo_scans) is not a body_photo_sessions id,
+  // so writing it would cause a FK violation and silently drop the row.
+  // The fix: always write null; the row is identified by entry_id.
+  it('scan_id in circ payload is null (not the vision scanId) to avoid body_photo_sessions FK violation', () => {
     const m = makeEmptyMeasurements();
     const { circ } = buildCircumferenceWrite({ ...BASE, measurements: m });
-    expect(circ.scan_id).toBe('scan-1');
+    expect(circ.scan_id).toBeNull();
   });
 
   it('entry_unit is cm', () => {
