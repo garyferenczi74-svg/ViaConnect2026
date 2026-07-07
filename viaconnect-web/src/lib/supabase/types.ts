@@ -1131,9 +1131,13 @@ export type Database = {
           action: string
           created_at: string
           id: string
+          ip_address: string | null
+          metadata: Json | null
           new_data: Json | null
           old_data: Json | null
           record_id: string
+          resource_id: string | null
+          resource_type: string | null
           table_name: string
           user_id: string | null
         }
@@ -1141,9 +1145,13 @@ export type Database = {
           action: string
           created_at?: string
           id?: string
+          ip_address?: string | null
+          metadata?: Json | null
           new_data?: Json | null
           old_data?: Json | null
           record_id: string
+          resource_id?: string | null
+          resource_type?: string | null
           table_name: string
           user_id?: string | null
         }
@@ -1151,9 +1159,13 @@ export type Database = {
           action?: string
           created_at?: string
           id?: string
+          ip_address?: string | null
+          metadata?: Json | null
           new_data?: Json | null
           old_data?: Json | null
           record_id?: string
+          resource_id?: string | null
+          resource_type?: string | null
           table_name?: string
           user_id?: string | null
         }
@@ -8292,17 +8304,25 @@ export type Database = {
       }
       daily_scores: {
         Row: {
+          activity_score: number | null
           bio_optimization_score: number | null
+          calculated_at: string | null
           created_at: string | null
           daily_composite: number | null
+          data_mode: string | null
           data_source: string | null
           date: string
+          energy_score: number | null
           exercise_minutes: number | null
           exercise_score: number | null
           id: string
+          mood_stress_score: number | null
+          nutrition_score: number | null
+          overall_score: number | null
           recovery_hrv: number | null
           recovery_score: number | null
           regimen_score: number | null
+          score_date: string | null
           sleep_hours: number | null
           sleep_score: number | null
           source_breakdown: Json
@@ -8315,17 +8335,25 @@ export type Database = {
           wearable_type: string | null
         }
         Insert: {
+          activity_score?: number | null
           bio_optimization_score?: number | null
+          calculated_at?: string | null
           created_at?: string | null
           daily_composite?: number | null
+          data_mode?: string | null
           data_source?: string | null
           date?: string
+          energy_score?: number | null
           exercise_minutes?: number | null
           exercise_score?: number | null
           id?: string
+          mood_stress_score?: number | null
+          nutrition_score?: number | null
+          overall_score?: number | null
           recovery_hrv?: number | null
           recovery_score?: number | null
           regimen_score?: number | null
+          score_date?: string | null
           sleep_hours?: number | null
           sleep_score?: number | null
           source_breakdown?: Json
@@ -8338,17 +8366,25 @@ export type Database = {
           wearable_type?: string | null
         }
         Update: {
+          activity_score?: number | null
           bio_optimization_score?: number | null
+          calculated_at?: string | null
           created_at?: string | null
           daily_composite?: number | null
+          data_mode?: string | null
           data_source?: string | null
           date?: string
+          energy_score?: number | null
           exercise_minutes?: number | null
           exercise_score?: number | null
           id?: string
+          mood_stress_score?: number | null
+          nutrition_score?: number | null
+          overall_score?: number | null
           recovery_hrv?: number | null
           recovery_score?: number | null
           regimen_score?: number | null
+          score_date?: string | null
           sleep_hours?: number | null
           sleep_score?: number | null
           source_breakdown?: Json
@@ -18235,6 +18271,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          items: Json | null
           shipping_address: Json | null
           status: string
           stripe_payment_id: string | null
@@ -18245,6 +18282,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          items?: Json | null
           shipping_address?: Json | null
           status?: string
           stripe_payment_id?: string | null
@@ -18255,6 +18293,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          items?: Json | null
           shipping_address?: Json | null
           status?: string
           stripe_payment_id?: string | null
@@ -22135,12 +22174,14 @@ export type Database = {
           hydration_target_ml_per_day_custom: number | null
           id: string
           onboarding_completed: boolean | null
+          phone: string | null
           role: string | null
           sleep_start: string | null
           sleep_wake: string | null
           symptoms_emotional: Json | null
           symptoms_neurological: Json | null
           symptoms_physical: Json | null
+          timezone: string | null
           unit_system: string | null
           updated_at: string | null
           username: string | null
@@ -22170,12 +22211,14 @@ export type Database = {
           hydration_target_ml_per_day_custom?: number | null
           id: string
           onboarding_completed?: boolean | null
+          phone?: string | null
           role?: string | null
           sleep_start?: string | null
           sleep_wake?: string | null
           symptoms_emotional?: Json | null
           symptoms_neurological?: Json | null
           symptoms_physical?: Json | null
+          timezone?: string | null
           unit_system?: string | null
           updated_at?: string | null
           username?: string | null
@@ -22205,12 +22248,14 @@ export type Database = {
           hydration_target_ml_per_day_custom?: number | null
           id?: string
           onboarding_completed?: boolean | null
+          phone?: string | null
           role?: string | null
           sleep_start?: string | null
           sleep_wake?: string | null
           symptoms_emotional?: Json | null
           symptoms_neurological?: Json | null
           symptoms_physical?: Json | null
+          timezone?: string | null
           unit_system?: string | null
           updated_at?: string | null
           username?: string | null
@@ -27468,6 +27513,59 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "master_skus"
             referencedColumns: ["sku"]
+          },
+        ]
+      }
+      subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          plan: string
+          plan_id: string | null
+          status: string
+          stripe_customer_id: string
+          stripe_subscription_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan: string
+          plan_id?: string | null
+          status: string
+          stripe_customer_id?: string
+          stripe_subscription_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan?: string
+          plan_id?: string | null
+          status?: string
+          stripe_customer_id?: string
+          stripe_subscription_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
         ]
       }
