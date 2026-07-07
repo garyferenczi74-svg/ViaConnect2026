@@ -6,12 +6,12 @@ Status values: BUILT (on branch, reviewed) / SIGNED (Gary approved) / APPLIED (l
 
 | Unit | Fixes | Artifact | Status | Gary sign-off | Applied | Rollback run_id |
 |---|---|---|---|---|---|---|
-| P0-2 audit_logs columns | Silent audit-trail loss on 7 routes | migration 20260707081200_prompt_210d_audit_logs_new_shape_columns.sql (commit 3a01f085, review clean) | BUILT | | | |
-| P0-3 orders.items | Stripe one-time order rows lost after payment | migration (commit 52eb10aa, review clean) | BUILT | | | |
-| P0-3 subscriptions table | Membership subscription records lost | DRAFT migration (commit 52eb10aa); decision input: which URL is registered in Stripe dashboard | BUILT (DRAFT) | | | |
-| P0-4 daily_scores columns + upsert index | Every daily-score persistence write rejected; 208k reader empty | migrations 20260707083321 + 20260707090000 (commits 627cea00 + 722e1073, review clean; apply columns then index) | BUILT | | | |
+| P0-2 audit_logs columns | Silent audit-trail loss on 7 routes | migration 20260707081200_prompt_210d_audit_logs_new_shape_columns.sql (commit 3a01f085, review clean) | APPLIED | Gary 2026-07-07 | 2026-07-07 | applied v20260707225210; revert: drop 4 columns |
+| P0-3 orders.items | Stripe one-time order rows lost after payment | migration (commit 52eb10aa, review clean) | APPLIED | Gary 2026-07-07 | 2026-07-07 | applied v20260707225443; revert: drop column items |
+| P0-3 subscriptions table | Membership subscription records lost | DRAFT migration (commit 52eb10aa); decision input: which URL is registered in Stripe dashboard | APPLIED (STORE decision) | Gary 2026-07-07 | 2026-07-07 | applied v20260707225453; revert: drop table subscriptions |
+| P0-4 daily_scores columns + upsert index | Every daily-score persistence write rejected; 208k reader empty | migrations 20260707083321 + 20260707090000 (commits 627cea00 + 722e1073, review clean; apply columns then index) | APPLIED | Gary 2026-07-07 | 2026-07-07 | applied v20260707225426 + v20260707225436; revert: drop 8 columns + index |
 | P0-5 helix + rewards keys | Live dashboard token-award inserts rejected (type key); redemption keys | code fix d8e844dd, review clean; P0-5b read-side follow-up queued | BUILT | | | |
-| P0-6 profiles phone + timezone | Profile saves with phone rejected; timezone sync rejected | migration 20260707101532 (commit 4555f91b, review clean) | BUILT | | | |
+| P0-6 profiles phone + timezone | Profile saves with phone rejected; timezone sync rejected | migration 20260707101532 (commit 4555f91b, review clean) | APPLIED | Gary 2026-07-07 | 2026-07-07 | applied v20260707225228 (client timeout, server success verified); revert: drop 2 columns |
 | P0-7 GENEX import redirect | Parsed variants lost; profile summary write rejected | investigation-stop: needs Gary decision (add user_variants risk_level+category columns, recommended) before redirect lands | DECISION | | | |
 | P0-8 ViaTokens decision | Dormant broken lane; recommend Option B retire | docs/integrity/p0-viatokens-decision.md | BUILT (decision doc) | | n/a | n/a |
 | P0-9b sentinel unification | fail_closed sentinel parity with route | code fix 96367881, controller-verified | BUILT | | | |
