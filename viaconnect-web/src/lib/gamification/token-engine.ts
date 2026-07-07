@@ -1,11 +1,12 @@
 /**
- * ViaConnect Gamification Engine — ViaTokens Earning & Redemption
+ * ViaConnect Gamification Engine - ViaTokens Earning & Redemption
  *
  * Handles all token award logic, rate-limiting, streak multipliers,
  * and reward-store redemption.
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { reportSupabaseError } from '@/lib/utils/schema-drift';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -412,6 +413,33 @@ export async function awardTokens(
 // redeemTokens
 // ---------------------------------------------------------------------------
 
+// Prompt 210d P0-5: redemption insert payload, extracted into a pure builder
+// so the live-shape test (src/lib/gamification/__tests__/live-shape.test.ts)
+// can assert the keys match the live reward_redemptions columns (reward_id
+// and claimed_at; the pre-210d keys item_id and created_at do not exist on
+// the live table, so the insert was silently rejected).
+export interface RewardRedemptionPayload {
+  user_id: string;
+  reward_id: string;
+  tokens_spent: number;
+  status: 'pending';
+  claimed_at: string;
+}
+
+export function buildRewardRedemptionPayload(input: {
+  userId: string;
+  rewardId: string;
+  tokensSpent: number;
+}): RewardRedemptionPayload {
+  return {
+    user_id: input.userId,
+    reward_id: input.rewardId,
+    tokens_spent: input.tokensSpent,
+    status: 'pending',
+    claimed_at: new Date().toISOString(),
+  };
+}
+
 export async function redeemTokens(
   userId: string,
   itemId: string,
@@ -459,7 +487,7 @@ export async function redeemTokens(
     };
   }
 
-  // Deduct tokens — ledger entry with negative amount
+  // Deduct tokens - ledger entry with negative amount
   const { error: ledgerError } = await supabase
     .from('viatokens_ledger')
     .insert({
@@ -496,15 +524,30 @@ export async function redeemTokens(
   }
 
   // Record redemption
-  await supabase
+  const { error: redemptionError } = await supabase
     .from('reward_redemptions')
-    .insert({
-      user_id: userId,
-      item_id: itemId,
-      tokens_spent: item.token_cost,
-      status: 'pending',
-      created_at: new Date().toISOString(),
-    });
+    .insert(
+      buildRewardRedemptionPayload({
+        userId,
+        rewardId: itemId,
+        tokensSpent: item.token_cost,
+      }),
+    );
+
+  if (redemptionError) {
+    // Prompt 210d P0-5: tokens were already deducted above, so the redemption
+    // record stays best effort exactly as before (this response error used to
+    // be discarded). Route it through the P0-1 classifier so schema drift
+    // becomes a reason-tagged safeLog.error, but contain the deliberate
+    // strict-mode rethrow so the return contract is identical to the
+    // pre-change behavior in every environment (drift is logged before the
+    // rethrow, so visibility is kept).
+    try {
+      reportSupabaseError('rewards.redeem', redemptionError, { table: 'reward_redemptions' });
+    } catch {
+      // Strict-mode rethrow stops here; the redemption result stands.
+    }
+  }
 
   return {
     success: true,

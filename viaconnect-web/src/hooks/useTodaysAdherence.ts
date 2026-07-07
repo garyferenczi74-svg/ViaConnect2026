@@ -1,11 +1,12 @@
 'use client';
 
-// useTodaysAdherence — fetches today's protocol_adherence_log rows for the
+// useTodaysAdherence - fetches today's protocol_adherence_log rows for the
 // current user and exposes a toggle that writes/updates a row optimistically.
 // On 100% daily completion, awards bonus Helix points via helix_transactions.
 
 import { useCallback, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { reportSupabaseError } from '@/lib/utils/schema-drift';
 
 type SupabaseAny = ReturnType<typeof createClient>;
 
@@ -28,6 +29,49 @@ const key = (slug: string, t: string) => `${slug}:${t}`;
 
 const POINTS_PER_CHECK = 5;
 const BONUS_FULL_DAY = 15;
+
+// Prompt 210d P0-5: helix award insert payload, extracted into a pure builder
+// so the live-shape test (src/lib/gamification/__tests__/live-shape.test.ts)
+// can assert the keys match the live helix_transactions columns. The live
+// column is `type` (CHECK admits 'earn'); the pre-210d key `transaction_type`
+// does not exist live, so every award insert was silently rejected.
+export interface HelixAwardPayload {
+  user_id: string;
+  amount: number;
+  type: 'earn';
+  source: string;
+  description: string;
+}
+
+export function buildHelixAwardPayload(input: {
+  userId: string;
+  amount: number;
+  source: string;
+  description: string;
+}): HelixAwardPayload {
+  return {
+    user_id: input.userId,
+    amount: input.amount,
+    type: 'earn',
+    source: input.source,
+    description: input.description,
+  };
+}
+
+// Prompt 210d P0-5: award writes are best effort. Route failures through the
+// P0-1 classifier so schema drift becomes a reason-tagged safeLog.error, but
+// contain the deliberate strict-mode rethrow here: a failed award must never
+// reach the outer catch and roll back the already-saved adherence upsert.
+// This preserves the pre-210d control flow exactly (award failures were
+// swallowed by .then(() => {}, () => {})); the drift log is emitted before
+// the rethrow, so visibility is kept in every environment.
+function reportHelixAwardError(error: unknown): void {
+  try {
+    reportSupabaseError('helix.award', error, { table: 'helix_transactions' });
+  } catch {
+    // Strict-mode rethrow stops here; the award stays non-blocking.
+  }
+}
 
 const ADHERENCE_CHANNEL = 'adherence-sync';
 const ADHERENCE_EVENT = 'adherence-changed';
@@ -125,25 +169,37 @@ export function useTodaysAdherence(): UseTodaysAdherenceResult {
 
         // Award per-check Helix points (best effort)
         if (next) {
-          await (supabase as any).from('helix_transactions').insert({
-            user_id: userId,
-            amount: POINTS_PER_CHECK,
-            transaction_type: 'earn',
-            source: 'protocol_adherence',
-            description: `Checked off ${slug}`,
-          }).then(() => {}, () => {});
+          await (supabase as any).from('helix_transactions').insert(
+            buildHelixAwardPayload({
+              userId,
+              amount: POINTS_PER_CHECK,
+              source: 'protocol_adherence',
+              description: `Checked off ${slug}`,
+            }),
+          ).then(
+            (result: { error: unknown } | null) => {
+              if (result?.error) reportHelixAwardError(result.error);
+            },
+            (error: unknown) => reportHelixAwardError(error),
+          );
         }
 
         // Bonus on full-day completion
         const completedNow = Object.entries({ ...entries, [k]: next }).filter(([, v]) => v).length;
         if (next && total > 0 && completedNow === total) {
-          await (supabase as any).from('helix_transactions').insert({
-            user_id: userId,
-            amount: BONUS_FULL_DAY,
-            transaction_type: 'earn',
-            source: 'protocol_adherence_full_day',
-            description: '100% daily protocol adherence bonus',
-          }).then(() => {}, () => {});
+          await (supabase as any).from('helix_transactions').insert(
+            buildHelixAwardPayload({
+              userId,
+              amount: BONUS_FULL_DAY,
+              source: 'protocol_adherence_full_day',
+              description: '100% daily protocol adherence bonus',
+            }),
+          ).then(
+            (result: { error: unknown } | null) => {
+              if (result?.error) reportHelixAwardError(result.error);
+            },
+            (error: unknown) => reportHelixAwardError(error),
+          );
         }
       } catch (e) {
         // Roll back optimistic update on hard failure
