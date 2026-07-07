@@ -205,14 +205,14 @@ describe('buildKelseyEscalateRow (fail-closed insert, live shape)', () => {
     expect(Object.keys(row)).not.toContain('subject_hash');
   });
 
-  it('renames reviewed_by to reviewer_model with the value unchanged', () => {
-    expect(row.reviewer_model).toBe('kelsey-server-helper');
+  it('uses the fail_closed sentinel in reviewer_model (unified with route.ts:96)', () => {
+    expect(row.reviewer_model).toBe('fail_closed');
     expect(Object.keys(row)).not.toContain('reviewed_by');
   });
 
-  it('folds the homeless stage_1_score into stage_2_raw without dropping it', () => {
+  it('folds stage_1_score and source provenance into stage_2_raw without dropping either', () => {
     expect(Object.keys(row)).not.toContain('stage_1_score');
-    expect(row.stage_2_raw).toEqual({ stage_1_score: 4.5 });
+    expect(row.stage_2_raw).toEqual({ stage_1_score: 4.5, source: 'kelsey-server-helper' });
   });
 
   it('adds the required subject_text_excerpt as the first 500 chars (route.ts shape)', () => {

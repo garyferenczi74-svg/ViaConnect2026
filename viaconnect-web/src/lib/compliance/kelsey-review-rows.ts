@@ -9,8 +9,10 @@
 // table regulatory_kelsey_reviews; full table in
 // .superpowers/sdd/task-210d-P0-9-report.md):
 //   subject_hash  -> subject_text_hash (live column name)
-//   reviewed_by   -> reviewer_model on the fail-closed row (no model ran;
-//                    matches the HTTP route's "fail_closed" precedent)
+//   reviewed_by   -> reviewer_model on the fail-closed row; sentinel value is
+//                    FAIL_CLOSED_SENTINEL ("fail_closed"), matching the HTTP
+//                    route's stored value (route.ts:96). Path provenance is
+//                    preserved as stage_2_raw.source ("kelsey-server-helper").
 //   model_used    -> reviewer_model on the Stage-2 row
 //   (added)       -> subject_text_excerpt, REQUIRED by the live Insert type
 //                    (NOT NULL, no default); first 500 chars, route.ts shape
@@ -26,6 +28,11 @@ import type { ValidatedKelseyResponse } from "./kelsey/verdict-schema";
 // Writer-provenance label for rows persisted by the server-side helper
 // (distinguishes them from rows written by the HTTP route).
 const SERVER_HELPER_LABEL = "kelsey-server-helper";
+
+// Sentinel stored in reviewer_model when no LLM ran (fail-closed ESCALATE).
+// Matches the HTTP route's convention (route.ts:96), so both insert sites
+// use the same value for this sentinel semantics.
+const FAIL_CLOSED_SENTINEL = "fail_closed";
 
 const ESCALATE_RATIONALE =
   "Kelsey LLM unavailable or malformed response; fail-closed escalation from server review helper.";
@@ -58,8 +65,8 @@ export function buildKelseyEscalateRow(args: KelseyEscalateRowArgs) {
     rationale: ESCALATE_RATIONALE,
     rule_references: [],
     confidence: 0,
-    reviewer_model: SERVER_HELPER_LABEL,
-    stage_2_raw: { stage_1_score: args.stage1Score },
+    reviewer_model: FAIL_CLOSED_SENTINEL,
+    stage_2_raw: { stage_1_score: args.stage1Score, source: SERVER_HELPER_LABEL },
   };
 }
 
