@@ -213,3 +213,36 @@ describe('journey graph reader select list (DAILY_SCORES_COLUMNS)', () => {
     expect(selected).toContain('score_date');
   });
 });
+
+// ---------------------------------------------------------------------------
+// 4. Unique index migration file (upsert onConflict 42P10 fix)
+// ---------------------------------------------------------------------------
+
+const UPSERT_INDEX_SUFFIX = '_prompt_210d_daily_scores_upsert_unique_index.sql';
+
+function readUpsertIndexMigrationSql(): string {
+  const fileName = readdirSync(MIGRATIONS_DIR).find((f) => f.endsWith(UPSERT_INDEX_SUFFIX));
+  if (!fileName) {
+    throw new Error(
+      `No migration file ending with ${UPSERT_INDEX_SUFFIX} found under supabase/migrations`,
+    );
+  }
+  return readFileSync(join(MIGRATIONS_DIR, fileName), 'utf8');
+}
+
+describe('P0-4 upsert unique index migration file', () => {
+  it('contains exactly one create unique index if not exists on public.daily_scores (user_id, score_date) and zero drop or alter statements', () => {
+    const sql = readUpsertIndexMigrationSql();
+    const normalized = sql.replace(/\s+/g, ' ').toLowerCase();
+    const matches = normalized.match(
+      /create unique index if not exists \S+ on public\.daily_scores \(user_id, score_date\)/g,
+    );
+    expect(matches).toHaveLength(1);
+    const nonCommentLines = sql
+      .split('\n')
+      .filter((line) => !line.trim().startsWith('--'))
+      .join('\n');
+    expect(nonCommentLines).not.toMatch(/\bdrop\b/i);
+    expect(nonCommentLines).not.toMatch(/\balter\b/i);
+  });
+});
