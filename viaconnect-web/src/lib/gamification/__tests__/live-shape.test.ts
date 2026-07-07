@@ -19,6 +19,9 @@
  */
 
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
 
 import { buildHelixAwardPayload } from '@/hooks/useTodaysAdherence';
 import { buildRewardRedemptionPayload } from '@/lib/gamification/token-engine';
@@ -63,6 +66,34 @@ describe('buildHelixAwardPayload (helix_transactions live shape)', () => {
       source: 'protocol_adherence_full_day',
       description: '100% daily protocol adherence bonus',
     });
+  });
+});
+
+// P0-5b: READ side -- HelixRewardsSummary must query the live column `type`, not
+// the pre-210d phantom `transaction_type` (PGRST204 rejects the filter silently).
+// The test reads the component source as text so no React/jsdom is required.
+describe('HelixRewardsSummary read query uses live helix_transactions column type', () => {
+  const testDir = dirname(fileURLToPath(import.meta.url));
+  const src = readFileSync(
+    resolve(testDir, '../../../components/dashboard/HelixRewardsSummary.tsx'),
+    'utf8',
+  );
+
+  it('select does not contain the phantom column transaction_type (RED before P0-5b fix)', () => {
+    expect(src).not.toMatch(/\.select\([^)]*transaction_type/);
+  });
+
+  it('eq filter does not reference the phantom column transaction_type (RED before P0-5b fix)', () => {
+    expect(src).not.toMatch(/\.eq\(['"]transaction_type['"]/);
+  });
+
+  it('select contains the live column type', () => {
+    // \btype\b does not match inside transaction_type (underscore is a word char).
+    expect(src).toMatch(/\.select\([^)]*\btype\b/);
+  });
+
+  it('eq filter references the live column type', () => {
+    expect(src).toMatch(/\.eq\(['"]type['"]/);
   });
 });
 
