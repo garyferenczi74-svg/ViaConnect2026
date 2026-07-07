@@ -1,0 +1,1706 @@
+[
+  {
+    "table": "profiles",
+    "column": "phone",
+    "kind": "select",
+    "site": "src/app/(app)/(consumer)/account/profile/page.tsx:55"
+  },
+  {
+    "table": "profiles",
+    "column": "phone",
+    "kind": "payload-upsert",
+    "site": "src/app/(app)/(consumer)/account/profile/page.tsx:85"
+  },
+  {
+    "table": "daily_scores",
+    "column": "overall_score",
+    "kind": "select",
+    "site": "src/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/hooks/useBioOptimizationTrend.ts:39"
+  },
+  {
+    "table": "daily_scores",
+    "column": "nutrition_score",
+    "kind": "select",
+    "site": "src/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/hooks/useBioOptimizationTrend.ts:39"
+  },
+  {
+    "table": "daily_scores",
+    "column": "activity_score",
+    "kind": "select",
+    "site": "src/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/hooks/useBioOptimizationTrend.ts:39"
+  },
+  {
+    "table": "daily_scores",
+    "column": "mood_stress_score",
+    "kind": "select",
+    "site": "src/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/hooks/useBioOptimizationTrend.ts:39"
+  },
+  {
+    "table": "daily_scores",
+    "column": "energy_score",
+    "kind": "select",
+    "site": "src/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/hooks/useBioOptimizationTrend.ts:39"
+  },
+  {
+    "table": "daily_scores",
+    "column": "score_date",
+    "kind": "select",
+    "site": "src/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/hooks/useBioOptimizationTrend.ts:39"
+  },
+  {
+    "table": "daily_scores",
+    "column": "score_date",
+    "kind": "gte",
+    "site": "src/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/hooks/useBioOptimizationTrend.ts:39"
+  },
+  {
+    "table": "daily_scores",
+    "column": "score_date",
+    "kind": "order",
+    "site": "src/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/hooks/useBioOptimizationTrend.ts:39"
+  },
+  {
+    "table": "user_protocols",
+    "column": "active",
+    "kind": "eq",
+    "site": "src/app/(app)/(consumer)/profile/assessment/page.tsx:267"
+  },
+  {
+    "table": "user_nutrivision_settings",
+    "column": "keep_photos_longer",
+    "kind": "select",
+    "site": "src/app/(app)/(consumer)/settings/nutrivision/page.tsx:48"
+  },
+  {
+    "table": "practitioners",
+    "column": "practice_name",
+    "kind": "select",
+    "site": "src/app/(app)/layout.tsx:64"
+  },
+  {
+    "table": "practitioners",
+    "column": "credential_type",
+    "kind": "select",
+    "site": "src/app/(app)/layout.tsx:64"
+  },
+  {
+    "table": "practitioners",
+    "column": "default_active_tab",
+    "kind": "select",
+    "site": "src/app/(app)/layout.tsx:64"
+  },
+  {
+    "table": "practitioners",
+    "column": "account_status",
+    "kind": "eq",
+    "site": "src/app/(app)/layout.tsx:64"
+  },
+  {
+    "table": "products",
+    "column": "brand_id",
+    "kind": "eq",
+    "site": "src/app/(app)/practitioner/analytics/revenue/page.tsx:37"
+  },
+  {
+    "table": "products",
+    "column": "product_category_id",
+    "kind": "eq",
+    "site": "src/app/(app)/practitioner/analytics/revenue/page.tsx:37"
+  },
+  {
+    "table": "practitioners",
+    "column": "practice_name",
+    "kind": "select",
+    "site": "src/app/(app)/practitioner/billing/page.tsx:69"
+  },
+  {
+    "table": "practitioners",
+    "column": "account_status",
+    "kind": "select",
+    "site": "src/app/(app)/practitioner/billing/page.tsx:69"
+  },
+  {
+    "table": "practitioners",
+    "column": "credential_type",
+    "kind": "select",
+    "site": "src/app/(app)/practitioner/patients/[id]/page.tsx:58"
+  },
+  {
+    "table": "practitioners",
+    "column": "default_patient_view_mode",
+    "kind": "select",
+    "site": "src/app/(app)/practitioner/patients/[id]/page.tsx:58"
+  },
+  {
+    "table": "practitioners",
+    "column": "account_status",
+    "kind": "eq",
+    "site": "src/app/(app)/practitioner/patients/[id]/page.tsx:58"
+  },
+  {
+    "table": "genex360_products",
+    "column": "name",
+    "kind": "select",
+    "site": "src/app/(app)/practitioner/shop/page.tsx:64"
+  },
+  {
+    "table": "genex360_products",
+    "column": "category",
+    "kind": "select",
+    "site": "src/app/(app)/practitioner/shop/page.tsx:64"
+  },
+  {
+    "table": "genex360_products",
+    "column": "image_url",
+    "kind": "select",
+    "site": "src/app/(app)/practitioner/shop/page.tsx:64"
+  },
+  {
+    "table": "daily_scores",
+    "column": "score_date",
+    "kind": "eq",
+    "site": "src/app/actions/dailyScores.ts:32"
+  },
+  {
+    "table": "daily_scores",
+    "column": "score_date",
+    "kind": "payload-upsert",
+    "site": "src/app/actions/dailyScores.ts:63"
+  },
+  {
+    "table": "daily_scores",
+    "column": "data_mode",
+    "kind": "payload-upsert",
+    "site": "src/app/actions/dailyScores.ts:63"
+  },
+  {
+    "table": "daily_scores",
+    "column": "calculated_at",
+    "kind": "payload-upsert",
+    "site": "src/app/actions/dailyScores.ts:63"
+  },
+  {
+    "table": "ingredient_library",
+    "column": "count",
+    "kind": "payload-insert",
+    "site": "src/app/api/admin/custom-formulations/ingredients/import/route.ts:63"
+  },
+  {
+    "table": "governance_configuration_log",
+    "column": "changeType",
+    "kind": "payload-insert",
+    "site": "src/app/api/admin/governance/approvers/route.ts:68"
+  },
+  {
+    "table": "governance_configuration_log",
+    "column": "targetTable",
+    "kind": "payload-insert",
+    "site": "src/app/api/admin/governance/approvers/route.ts:68"
+  },
+  {
+    "table": "governance_configuration_log",
+    "column": "targetId",
+    "kind": "payload-insert",
+    "site": "src/app/api/admin/governance/approvers/route.ts:68"
+  },
+  {
+    "table": "governance_configuration_log",
+    "column": "previousState",
+    "kind": "payload-insert",
+    "site": "src/app/api/admin/governance/approvers/route.ts:68"
+  },
+  {
+    "table": "governance_configuration_log",
+    "column": "newState",
+    "kind": "payload-insert",
+    "site": "src/app/api/admin/governance/approvers/route.ts:68"
+  },
+  {
+    "table": "governance_configuration_log",
+    "column": "changedBy",
+    "kind": "payload-insert",
+    "site": "src/app/api/admin/governance/approvers/route.ts:68"
+  },
+  {
+    "table": "governance_configuration_log",
+    "column": "justification",
+    "kind": "payload-insert",
+    "site": "src/app/api/admin/governance/approvers/route.ts:68"
+  },
+  {
+    "table": "governance_configuration_log",
+    "column": "changeType",
+    "kind": "payload-insert",
+    "site": "src/app/api/admin/governance/approvers/route.ts:117"
+  },
+  {
+    "table": "governance_configuration_log",
+    "column": "targetTable",
+    "kind": "payload-insert",
+    "site": "src/app/api/admin/governance/approvers/route.ts:117"
+  },
+  {
+    "table": "governance_configuration_log",
+    "column": "targetId",
+    "kind": "payload-insert",
+    "site": "src/app/api/admin/governance/approvers/route.ts:117"
+  },
+  {
+    "table": "governance_configuration_log",
+    "column": "previousState",
+    "kind": "payload-insert",
+    "site": "src/app/api/admin/governance/approvers/route.ts:117"
+  },
+  {
+    "table": "governance_configuration_log",
+    "column": "newState",
+    "kind": "payload-insert",
+    "site": "src/app/api/admin/governance/approvers/route.ts:117"
+  },
+  {
+    "table": "governance_configuration_log",
+    "column": "changedBy",
+    "kind": "payload-insert",
+    "site": "src/app/api/admin/governance/approvers/route.ts:117"
+  },
+  {
+    "table": "governance_configuration_log",
+    "column": "justification",
+    "kind": "payload-insert",
+    "site": "src/app/api/admin/governance/approvers/route.ts:117"
+  },
+  {
+    "table": "practitioners",
+    "column": "practice_name",
+    "kind": "select",
+    "site": "src/app/api/admin/practitioner-referrals/fraud-flags/[flagId]/route.ts:66"
+  },
+  {
+    "table": "practitioners",
+    "column": "account_status",
+    "kind": "select",
+    "site": "src/app/api/admin/practitioner-referrals/fraud-flags/[flagId]/route.ts:66"
+  },
+  {
+    "table": "profiles",
+    "column": "height_cm",
+    "kind": "select",
+    "site": "src/app/api/ai/generate-wellness-analytics/route.ts:43"
+  },
+  {
+    "table": "profiles",
+    "column": "weight_kg",
+    "kind": "select",
+    "site": "src/app/api/ai/generate-wellness-analytics/route.ts:43"
+  },
+  {
+    "table": "medication_interactions",
+    "column": "resolved",
+    "kind": "select",
+    "site": "src/app/api/ai/generate-wellness-analytics/route.ts:44"
+  },
+  {
+    "table": "daily_scores",
+    "column": "score_date",
+    "kind": "gte",
+    "site": "src/app/api/ai/generate-wellness-analytics/route.ts:45"
+  },
+  {
+    "table": "daily_scores",
+    "column": "score_date",
+    "kind": "order",
+    "site": "src/app/api/ai/generate-wellness-analytics/route.ts:45"
+  },
+  {
+    "table": "audit_logs",
+    "column": "resource_type",
+    "kind": "payload-insert",
+    "site": "src/app/api/ai/[provider]/route.ts:62"
+  },
+  {
+    "table": "audit_logs",
+    "column": "metadata",
+    "kind": "payload-insert",
+    "site": "src/app/api/ai/[provider]/route.ts:62"
+  },
+  {
+    "table": "audit_logs",
+    "column": "ip_address",
+    "kind": "payload-insert",
+    "site": "src/app/api/ai/[provider]/route.ts:62"
+  },
+  {
+    "table": "audit_logs",
+    "column": "resource_type",
+    "kind": "payload-insert",
+    "site": "src/app/api/auth/callback/route.ts:75"
+  },
+  {
+    "table": "audit_logs",
+    "column": "metadata",
+    "kind": "payload-insert",
+    "site": "src/app/api/auth/callback/route.ts:75"
+  },
+  {
+    "table": "audit_logs",
+    "column": "ip_address",
+    "kind": "payload-insert",
+    "site": "src/app/api/auth/callback/route.ts:75"
+  },
+  {
+    "table": "audit_logs",
+    "column": "resource_type",
+    "kind": "payload-insert",
+    "site": "src/app/api/genex/upload/route.ts:529"
+  },
+  {
+    "table": "audit_logs",
+    "column": "resource_id",
+    "kind": "payload-insert",
+    "site": "src/app/api/genex/upload/route.ts:529"
+  },
+  {
+    "table": "audit_logs",
+    "column": "metadata",
+    "kind": "payload-insert",
+    "site": "src/app/api/genex/upload/route.ts:529"
+  },
+  {
+    "table": "audit_logs",
+    "column": "ip_address",
+    "kind": "payload-insert",
+    "site": "src/app/api/genex/upload/route.ts:529"
+  },
+  {
+    "table": "audit_logs",
+    "column": "resource_type",
+    "kind": "payload-insert",
+    "site": "src/app/api/genex/upload/route.ts:571"
+  },
+  {
+    "table": "audit_logs",
+    "column": "metadata",
+    "kind": "payload-insert",
+    "site": "src/app/api/genex/upload/route.ts:571"
+  },
+  {
+    "table": "audit_logs",
+    "column": "ip_address",
+    "kind": "payload-insert",
+    "site": "src/app/api/genex/upload/route.ts:571"
+  },
+  {
+    "table": "user_supplements",
+    "column": "name",
+    "kind": "select",
+    "site": "src/app/api/interactions/evaluate/route.ts:84"
+  },
+  {
+    "table": "assessment_results",
+    "column": "category",
+    "kind": "select",
+    "site": "src/app/api/interactions/evaluate/route.ts:85"
+  },
+  {
+    "table": "assessment_results",
+    "column": "score",
+    "kind": "select",
+    "site": "src/app/api/interactions/evaluate/route.ts:85"
+  },
+  {
+    "table": "assessment_results",
+    "column": "details",
+    "kind": "select",
+    "site": "src/app/api/interactions/evaluate/route.ts:85"
+  },
+  {
+    "table": "audit_logs",
+    "column": "resource_type",
+    "kind": "payload-insert",
+    "site": "src/app/api/notifications/route.ts:279"
+  },
+  {
+    "table": "audit_logs",
+    "column": "metadata",
+    "kind": "payload-insert",
+    "site": "src/app/api/notifications/route.ts:279"
+  },
+  {
+    "table": "audit_logs",
+    "column": "ip_address",
+    "kind": "payload-insert",
+    "site": "src/app/api/notifications/route.ts:279"
+  },
+  {
+    "table": "profiles",
+    "column": "body_weight_kg",
+    "kind": "select",
+    "site": "src/app/api/nutrition/hydration/history/route.ts:49"
+  },
+  {
+    "table": "profiles",
+    "column": "body_weight_kg",
+    "kind": "select",
+    "site": "src/app/api/nutrition/hydration/target/route.ts:52"
+  },
+  {
+    "table": "profiles",
+    "column": "body_weight_kg",
+    "kind": "select",
+    "site": "src/app/api/nutrition/hydration/today/route.ts:37"
+  },
+  {
+    "table": "practitioners",
+    "column": "account_status",
+    "kind": "select",
+    "site": "src/app/api/practitioner/invite-patient/route.ts:84"
+  },
+  {
+    "table": "practitioners",
+    "column": "practice_name",
+    "kind": "select",
+    "site": "src/app/api/practitioner/invite-patient/route.ts:84"
+  },
+  {
+    "table": "practitioners",
+    "column": "account_status",
+    "kind": "eq",
+    "site": "src/app/api/practitioner/invite-patient/route.ts:84"
+  },
+  {
+    "table": "practitioners",
+    "column": "account_status",
+    "kind": "select",
+    "site": "src/app/api/practitioner/patients/[patientId]/engagement-score/route.ts:48"
+  },
+  {
+    "table": "practitioners",
+    "column": "practice_name",
+    "kind": "select",
+    "site": "src/app/api/practitioner/referrals/code/route.ts:40"
+  },
+  {
+    "table": "practitioners",
+    "column": "account_status",
+    "kind": "select",
+    "site": "src/app/api/practitioner/referrals/code/route.ts:40"
+  },
+  {
+    "table": "practitioners",
+    "column": "practice_name",
+    "kind": "select",
+    "site": "src/app/api/practitioner/referrals/resolve-attribution/route.ts:63"
+  },
+  {
+    "table": "practitioners",
+    "column": "practice_street_address",
+    "kind": "select",
+    "site": "src/app/api/practitioner/referrals/resolve-attribution/route.ts:63"
+  },
+  {
+    "table": "practitioners",
+    "column": "practice_city",
+    "kind": "select",
+    "site": "src/app/api/practitioner/referrals/resolve-attribution/route.ts:63"
+  },
+  {
+    "table": "practitioners",
+    "column": "practice_state",
+    "kind": "select",
+    "site": "src/app/api/practitioner/referrals/resolve-attribution/route.ts:63"
+  },
+  {
+    "table": "practitioners",
+    "column": "practice_postal_code",
+    "kind": "select",
+    "site": "src/app/api/practitioner/referrals/resolve-attribution/route.ts:63"
+  },
+  {
+    "table": "practitioners",
+    "column": "practice_phone",
+    "kind": "select",
+    "site": "src/app/api/practitioner/referrals/resolve-attribution/route.ts:63"
+  },
+  {
+    "table": "practitioners",
+    "column": "practice_name",
+    "kind": "select",
+    "site": "src/app/api/practitioner/referrals/resolve-attribution/route.ts:127"
+  },
+  {
+    "table": "practitioners",
+    "column": "practice_street_address",
+    "kind": "select",
+    "site": "src/app/api/practitioner/referrals/resolve-attribution/route.ts:127"
+  },
+  {
+    "table": "practitioners",
+    "column": "practice_city",
+    "kind": "select",
+    "site": "src/app/api/practitioner/referrals/resolve-attribution/route.ts:127"
+  },
+  {
+    "table": "practitioners",
+    "column": "practice_state",
+    "kind": "select",
+    "site": "src/app/api/practitioner/referrals/resolve-attribution/route.ts:127"
+  },
+  {
+    "table": "practitioners",
+    "column": "practice_postal_code",
+    "kind": "select",
+    "site": "src/app/api/practitioner/referrals/resolve-attribution/route.ts:127"
+  },
+  {
+    "table": "practitioners",
+    "column": "practice_phone",
+    "kind": "select",
+    "site": "src/app/api/practitioner/referrals/resolve-attribution/route.ts:127"
+  },
+  {
+    "table": "practitioners",
+    "column": "practice_name",
+    "kind": "select",
+    "site": "src/app/api/practitioner/white-label/dispensary/route.ts:46"
+  },
+  {
+    "table": "practitioners",
+    "column": "dispensary_slug",
+    "kind": "select",
+    "site": "src/app/api/practitioner/white-label/dispensary/route.ts:46"
+  },
+  {
+    "table": "practitioners",
+    "column": "dispensary_slug",
+    "kind": "eq",
+    "site": "src/app/api/practitioner/white-label/dispensary/route.ts:180"
+  },
+  {
+    "table": "practitioners",
+    "column": "dispensary_slug",
+    "kind": "payload-update",
+    "site": "src/app/api/practitioner/white-label/dispensary/route.ts:187"
+  },
+  {
+    "table": "products",
+    "column": "product_category_id",
+    "kind": "select",
+    "site": "src/app/api/public/brand-storefront/[brandSlug]/route.ts:49"
+  },
+  {
+    "table": "products",
+    "column": "serving_count",
+    "kind": "select",
+    "site": "src/app/api/public/brand-storefront/[brandSlug]/route.ts:49"
+  },
+  {
+    "table": "products",
+    "column": "serving_unit",
+    "kind": "select",
+    "site": "src/app/api/public/brand-storefront/[brandSlug]/route.ts:49"
+  },
+  {
+    "table": "products",
+    "column": "dose_per_serving_text",
+    "kind": "select",
+    "site": "src/app/api/public/brand-storefront/[brandSlug]/route.ts:49"
+  },
+  {
+    "table": "products",
+    "column": "sku_bottle_color_primary_hex",
+    "kind": "select",
+    "site": "src/app/api/public/brand-storefront/[brandSlug]/route.ts:49"
+  },
+  {
+    "table": "products",
+    "column": "sku_typography_primary_hex",
+    "kind": "select",
+    "site": "src/app/api/public/brand-storefront/[brandSlug]/route.ts:49"
+  },
+  {
+    "table": "products",
+    "column": "sku_typography_secondary_hex",
+    "kind": "select",
+    "site": "src/app/api/public/brand-storefront/[brandSlug]/route.ts:49"
+  },
+  {
+    "table": "products",
+    "column": "sku_accent_color_hex",
+    "kind": "select",
+    "site": "src/app/api/public/brand-storefront/[brandSlug]/route.ts:49"
+  },
+  {
+    "table": "products",
+    "column": "sku_dd_mark_primary_hex",
+    "kind": "select",
+    "site": "src/app/api/public/brand-storefront/[brandSlug]/route.ts:49"
+  },
+  {
+    "table": "products",
+    "column": "sku_dd_mark_outline_hex",
+    "kind": "select",
+    "site": "src/app/api/public/brand-storefront/[brandSlug]/route.ts:49"
+  },
+  {
+    "table": "products",
+    "column": "packaging_proof_path",
+    "kind": "select",
+    "site": "src/app/api/public/brand-storefront/[brandSlug]/route.ts:49"
+  },
+  {
+    "table": "products",
+    "column": "brand_id",
+    "kind": "eq",
+    "site": "src/app/api/public/brand-storefront/[brandSlug]/route.ts:49"
+  },
+  {
+    "table": "products",
+    "column": "can_publish_to_storefront",
+    "kind": "eq",
+    "site": "src/app/api/public/brand-storefront/[brandSlug]/route.ts:49"
+  },
+  {
+    "table": "audit_logs",
+    "column": "resource_type",
+    "kind": "payload-insert",
+    "site": "src/app/api/stripe/checkout/route.ts:129"
+  },
+  {
+    "table": "audit_logs",
+    "column": "metadata",
+    "kind": "payload-insert",
+    "site": "src/app/api/stripe/checkout/route.ts:129"
+  },
+  {
+    "table": "audit_logs",
+    "column": "ip_address",
+    "kind": "payload-insert",
+    "site": "src/app/api/stripe/checkout/route.ts:129"
+  },
+  {
+    "table": "audit_logs",
+    "column": "resource_type",
+    "kind": "payload-insert",
+    "site": "src/app/api/stripe/webhook/route.ts:45"
+  },
+  {
+    "table": "audit_logs",
+    "column": "metadata",
+    "kind": "payload-insert",
+    "site": "src/app/api/stripe/webhook/route.ts:45"
+  },
+  {
+    "table": "orders",
+    "column": "items",
+    "kind": "payload-insert",
+    "site": "src/app/api/stripe/webhook/route.ts:121"
+  },
+  {
+    "table": "assessment_results",
+    "column": "category",
+    "kind": "select",
+    "site": "src/app/api/ultrathink/peptide-stack/route.ts:44"
+  },
+  {
+    "table": "assessment_results",
+    "column": "score",
+    "kind": "select",
+    "site": "src/app/api/ultrathink/peptide-stack/route.ts:44"
+  },
+  {
+    "table": "profiles",
+    "column": "sex",
+    "kind": "select",
+    "site": "src/app/api/ultrathink/peptide-stack/route.ts:45"
+  },
+  {
+    "table": "practitioners",
+    "column": "dispensary_slug",
+    "kind": "select",
+    "site": "src/app/dispensary/[slug]/page.tsx:49"
+  },
+  {
+    "table": "practitioners",
+    "column": "practice_name",
+    "kind": "select",
+    "site": "src/app/dispensary/[slug]/page.tsx:49"
+  },
+  {
+    "table": "practitioners",
+    "column": "dispensary_slug",
+    "kind": "eq",
+    "site": "src/app/dispensary/[slug]/page.tsx:49"
+  },
+  {
+    "table": "practitioners",
+    "column": "practice_name",
+    "kind": "select",
+    "site": "src/app/practitioner/join/page.tsx:36"
+  },
+  {
+    "table": "profiles",
+    "column": "first_name",
+    "kind": "select",
+    "site": "src/components/account/UserMenu.tsx:72"
+  },
+  {
+    "table": "profiles",
+    "column": "last_name",
+    "kind": "select",
+    "site": "src/components/account/UserMenu.tsx:72"
+  },
+  {
+    "table": "profiles",
+    "column": "email",
+    "kind": "select",
+    "site": "src/components/account/UserMenu.tsx:72"
+  },
+  {
+    "table": "user_notifications",
+    "column": "read",
+    "kind": "eq",
+    "site": "src/components/account/UserMenu.tsx:102"
+  },
+  {
+    "table": "profiles",
+    "column": "sex",
+    "kind": "select",
+    "site": "src/components/body-tracker/BodyScanUploader.tsx:232"
+  },
+  {
+    "table": "profiles",
+    "column": "has_seen_bodytracker_guide",
+    "kind": "select",
+    "site": "src/components/body-tracker/hub/useGuideLabel.ts:55"
+  },
+  {
+    "table": "body_tracker_milestones",
+    "column": "completed",
+    "kind": "eq",
+    "site": "src/components/body-tracker/hub/useHubMetrics.ts:161"
+  },
+  {
+    "table": "body_tracker_milestones",
+    "column": "completed_at",
+    "kind": "gte",
+    "site": "src/components/body-tracker/hub/useHubMetrics.ts:161"
+  },
+  {
+    "table": "profiles",
+    "column": "sex",
+    "kind": "select",
+    "site": "src/components/body-tracker/scanning/ScanResultsPanel.tsx:63"
+  },
+  {
+    "table": "profiles",
+    "column": "height_cm",
+    "kind": "select",
+    "site": "src/components/body-tracker/scanning/ScanResultsPanel.tsx:63"
+  },
+  {
+    "table": "profiles",
+    "column": "weight_kg",
+    "kind": "select",
+    "site": "src/components/body-tracker/scanning/ScanResultsPanel.tsx:63"
+  },
+  {
+    "table": "practitioners",
+    "column": "practice_name",
+    "kind": "select",
+    "site": "src/components/co-branding/PatientPractitionerBadge.tsx:56"
+  },
+  {
+    "table": "practitioners",
+    "column": "practice_logo_url",
+    "kind": "select",
+    "site": "src/components/co-branding/PatientPractitionerBadge.tsx:56"
+  },
+  {
+    "table": "practitioners",
+    "column": "patient_facing_display_name",
+    "kind": "select",
+    "site": "src/components/co-branding/PatientPractitionerBadge.tsx:56"
+  },
+  {
+    "table": "helix_transactions",
+    "column": "transaction_type",
+    "kind": "select",
+    "site": "src/components/dashboard/HelixRewardsSummary.tsx:95"
+  },
+  {
+    "table": "helix_transactions",
+    "column": "transaction_type",
+    "kind": "eq",
+    "site": "src/components/dashboard/HelixRewardsSummary.tsx:95"
+  },
+  {
+    "table": "practitioners",
+    "column": "credential_type",
+    "kind": "select",
+    "site": "src/components/layout/Sidebar.tsx:221"
+  },
+  {
+    "table": "profiles",
+    "column": "email",
+    "kind": "select",
+    "site": "src/components/practitioner/NaturopathicPatientView.tsx:87"
+  },
+  {
+    "table": "user_current_supplements",
+    "column": "is_active",
+    "kind": "eq",
+    "site": "src/components/practitioner/NaturopathicPatientView.tsx:102"
+  },
+  {
+    "table": "profiles",
+    "column": "email",
+    "kind": "select",
+    "site": "src/components/practitioner/StandardPatientView.tsx:61"
+  },
+  {
+    "table": "user_current_supplements",
+    "column": "is_active",
+    "kind": "select",
+    "site": "src/components/practitioner/StandardPatientView.tsx:67"
+  },
+  {
+    "table": "user_current_supplements",
+    "column": "is_active",
+    "kind": "eq",
+    "site": "src/components/practitioner/StandardPatientView.tsx:67"
+  },
+  {
+    "table": "helix_transactions",
+    "column": "transaction_type",
+    "kind": "payload-insert",
+    "site": "src/hooks/useTodaysAdherence.ts:128"
+  },
+  {
+    "table": "helix_transactions",
+    "column": "transaction_type",
+    "kind": "payload-insert",
+    "site": "src/hooks/useTodaysAdherence.ts:140"
+  },
+  {
+    "table": "helix_balances",
+    "column": "balance",
+    "kind": "select",
+    "site": "src/hooks/useUserDashboardData.ts:145"
+  },
+  {
+    "table": "pathway_scores",
+    "column": "computed_at",
+    "kind": "order",
+    "site": "src/lib/agents/canonicalContext.ts:218"
+  },
+  {
+    "table": "genotype_phenotype_concordance",
+    "column": "computed_at",
+    "kind": "order",
+    "site": "src/lib/agents/canonicalContext.ts:249"
+  },
+  {
+    "table": "profiles",
+    "column": "email",
+    "kind": "select",
+    "site": "src/lib/ai/context-loader.ts:290"
+  },
+  {
+    "table": "profiles",
+    "column": "sex",
+    "kind": "select",
+    "site": "src/lib/ai/context-loader.ts:290"
+  },
+  {
+    "table": "genetic_profiles",
+    "column": "gene",
+    "kind": "select",
+    "site": "src/lib/ai/context-loader.ts:297"
+  },
+  {
+    "table": "genetic_profiles",
+    "column": "variant",
+    "kind": "select",
+    "site": "src/lib/ai/context-loader.ts:297"
+  },
+  {
+    "table": "genetic_profiles",
+    "column": "rs_id",
+    "kind": "select",
+    "site": "src/lib/ai/context-loader.ts:297"
+  },
+  {
+    "table": "genetic_profiles",
+    "column": "genotype",
+    "kind": "select",
+    "site": "src/lib/ai/context-loader.ts:297"
+  },
+  {
+    "table": "genetic_profiles",
+    "column": "impact",
+    "kind": "select",
+    "site": "src/lib/ai/context-loader.ts:297"
+  },
+  {
+    "table": "genetic_profiles",
+    "column": "category",
+    "kind": "select",
+    "site": "src/lib/ai/context-loader.ts:297"
+  },
+  {
+    "table": "genetic_profiles",
+    "column": "panel",
+    "kind": "select",
+    "site": "src/lib/ai/context-loader.ts:297"
+  },
+  {
+    "table": "genetic_profiles",
+    "column": "clinical_significance",
+    "kind": "select",
+    "site": "src/lib/ai/context-loader.ts:297"
+  },
+  {
+    "table": "genetic_profiles",
+    "column": "supplement_recommendations",
+    "kind": "select",
+    "site": "src/lib/ai/context-loader.ts:297"
+  },
+  {
+    "table": "user_protocols",
+    "column": "name",
+    "kind": "select",
+    "site": "src/lib/ai/context-loader.ts:319"
+  },
+  {
+    "table": "user_protocols",
+    "column": "status",
+    "kind": "select",
+    "site": "src/lib/ai/context-loader.ts:319"
+  },
+  {
+    "table": "user_protocols",
+    "column": "status",
+    "kind": "eq",
+    "site": "src/lib/ai/context-loader.ts:319"
+  },
+  {
+    "table": "user_protocols",
+    "column": "active",
+    "kind": "eq",
+    "site": "src/lib/ai/daily-plan-generator.ts:60"
+  },
+  {
+    "table": "genetic_profiles",
+    "column": "gene",
+    "kind": "select",
+    "site": "src/lib/ai/daily-plan-generator.ts:70"
+  },
+  {
+    "table": "genetic_profiles",
+    "column": "variant",
+    "kind": "select",
+    "site": "src/lib/ai/daily-plan-generator.ts:70"
+  },
+  {
+    "table": "genetic_profiles",
+    "column": "phenotype",
+    "kind": "select",
+    "site": "src/lib/ai/daily-plan-generator.ts:70"
+  },
+  {
+    "table": "genetic_profiles",
+    "column": "metaboliser_status",
+    "kind": "select",
+    "site": "src/lib/ai/daily-plan-generator.ts:70"
+  },
+  {
+    "table": "user_protocols",
+    "column": "supplement_name",
+    "kind": "select",
+    "site": "src/lib/ai/interaction-engine.ts:326"
+  },
+  {
+    "table": "user_protocols",
+    "column": "active",
+    "kind": "eq",
+    "site": "src/lib/ai/interaction-engine.ts:326"
+  },
+  {
+    "table": "profiles",
+    "column": "education_level",
+    "kind": "select",
+    "site": "src/lib/analytics/archetype-engine.ts:291"
+  },
+  {
+    "table": "profiles",
+    "column": "income_band",
+    "kind": "select",
+    "site": "src/lib/analytics/archetype-engine.ts:291"
+  },
+  {
+    "table": "profiles",
+    "column": "has_dependent_minors",
+    "kind": "select",
+    "site": "src/lib/analytics/archetype-engine.ts:291"
+  },
+  {
+    "table": "genetic_profiles",
+    "column": "onConflict",
+    "kind": "payload-upsert",
+    "site": "src/lib/api/genetic-import-service.ts:260"
+  },
+  {
+    "table": "profiles",
+    "column": "sex",
+    "kind": "select",
+    "site": "src/lib/arnold/scanning/runScanAnalysis.ts:241"
+  },
+  {
+    "table": "profiles",
+    "column": "height_cm",
+    "kind": "select",
+    "site": "src/lib/arnold/scanning/runScanAnalysis.ts:241"
+  },
+  {
+    "table": "profiles",
+    "column": "weight_kg",
+    "kind": "select",
+    "site": "src/lib/arnold/scanning/runScanAnalysis.ts:241"
+  },
+  {
+    "table": "body_tracker_entries",
+    "column": "is_active",
+    "kind": "select",
+    "site": "src/lib/body-tracker/arnold-recommender.ts:71"
+  },
+  {
+    "table": "body_tracker_entries",
+    "column": "is_outlier",
+    "kind": "select",
+    "site": "src/lib/body-tracker/arnold-recommender.ts:71"
+  },
+  {
+    "table": "body_tracker_entries",
+    "column": "is_active",
+    "kind": "eq",
+    "site": "src/lib/body-tracker/arnold-recommender.ts:71"
+  },
+  {
+    "table": "body_tracker_connections",
+    "column": "source_type",
+    "kind": "select",
+    "site": "src/lib/body-tracker/arnold-recommender.ts:96"
+  },
+  {
+    "table": "body_tracker_connections",
+    "column": "source_name",
+    "kind": "select",
+    "site": "src/lib/body-tracker/arnold-recommender.ts:96"
+  },
+  {
+    "table": "body_tracker_connections",
+    "column": "is_active",
+    "kind": "select",
+    "site": "src/lib/body-tracker/arnold-recommender.ts:96"
+  },
+  {
+    "table": "body_tracker_connections",
+    "column": "is_active",
+    "kind": "eq",
+    "site": "src/lib/body-tracker/arnold-recommender.ts:96"
+  },
+  {
+    "table": "body_tracker_entries",
+    "column": "is_active",
+    "kind": "eq",
+    "site": "src/lib/body-tracker/arnold-reconciler.ts:272"
+  },
+  {
+    "table": "body_tracker_entries",
+    "column": "source_id",
+    "kind": "payload-insert",
+    "site": "src/lib/body-tracker/arnold-reconciler.ts:297"
+  },
+  {
+    "table": "body_tracker_entries",
+    "column": "is_active",
+    "kind": "payload-insert",
+    "site": "src/lib/body-tracker/arnold-reconciler.ts:297"
+  },
+  {
+    "table": "body_tracker_entries",
+    "column": "is_outlier",
+    "kind": "payload-insert",
+    "site": "src/lib/body-tracker/arnold-reconciler.ts:297"
+  },
+  {
+    "table": "body_tracker_entries",
+    "column": "is_active",
+    "kind": "payload-update",
+    "site": "src/lib/body-tracker/arnold-reconciler.ts:332"
+  },
+  {
+    "table": "body_tracker_entries",
+    "column": "reconciliation_notes",
+    "kind": "payload-update",
+    "site": "src/lib/body-tracker/arnold-reconciler.ts:339"
+  },
+  {
+    "table": "profiles",
+    "column": "body_scan_de_response",
+    "kind": "select",
+    "site": "src/lib/body-tracker/disordered-eating-safeguard.ts:75"
+  },
+  {
+    "table": "user_current_supplements",
+    "column": "onConflict",
+    "kind": "payload-upsert",
+    "site": "src/lib/caq/complete-caq.ts:242"
+  },
+  {
+    "table": "supplement_adherence",
+    "column": "onConflict",
+    "kind": "payload-upsert",
+    "site": "src/lib/caq/complete-caq.ts:261"
+  },
+  {
+    "table": "caq_paths",
+    "column": "onConflict",
+    "kind": "payload-upsert",
+    "site": "src/lib/caq/path.ts:85"
+  },
+  {
+    "table": "supplement_reference_canonical",
+    "column": "onConflict",
+    "kind": "payload-upsert",
+    "site": "src/lib/caq/supplements/canonical-ingest.ts:147"
+  },
+  {
+    "table": "supplement_reference_canonical",
+    "column": "ignoreDuplicates",
+    "kind": "payload-upsert",
+    "site": "src/lib/caq/supplements/canonical-ingest.ts:147"
+  },
+  {
+    "table": "profiles",
+    "column": "timezone",
+    "kind": "select",
+    "site": "src/lib/caq/supplements/timing/assignTiming.ts:543"
+  },
+  {
+    "table": "regulatory_kelsey_reviews",
+    "column": "subject_hash",
+    "kind": "payload-insert",
+    "site": "src/lib/compliance/review-server-text.ts:154"
+  },
+  {
+    "table": "regulatory_kelsey_reviews",
+    "column": "stage_1_score",
+    "kind": "payload-insert",
+    "site": "src/lib/compliance/review-server-text.ts:154"
+  },
+  {
+    "table": "regulatory_kelsey_reviews",
+    "column": "reviewed_by",
+    "kind": "payload-insert",
+    "site": "src/lib/compliance/review-server-text.ts:154"
+  },
+  {
+    "table": "regulatory_kelsey_reviews",
+    "column": "subject_hash",
+    "kind": "payload-insert",
+    "site": "src/lib/compliance/review-server-text.ts:189"
+  },
+  {
+    "table": "regulatory_kelsey_reviews",
+    "column": "stage_1_score",
+    "kind": "payload-insert",
+    "site": "src/lib/compliance/review-server-text.ts:189"
+  },
+  {
+    "table": "regulatory_kelsey_reviews",
+    "column": "citations",
+    "kind": "payload-insert",
+    "site": "src/lib/compliance/review-server-text.ts:189"
+  },
+  {
+    "table": "regulatory_kelsey_reviews",
+    "column": "model_used",
+    "kind": "payload-insert",
+    "site": "src/lib/compliance/review-server-text.ts:189"
+  },
+  {
+    "table": "regulatory_kelsey_reviews",
+    "column": "reviewed_by",
+    "kind": "payload-insert",
+    "site": "src/lib/compliance/review-server-text.ts:189"
+  },
+  {
+    "table": "reward_redemptions",
+    "column": "item_id",
+    "kind": "payload-insert",
+    "site": "src/lib/gamification/token-engine.ts:500"
+  },
+  {
+    "table": "reward_redemptions",
+    "column": "created_at",
+    "kind": "payload-insert",
+    "site": "src/lib/gamification/token-engine.ts:500"
+  },
+  {
+    "table": "user_variants",
+    "column": "onConflict",
+    "kind": "payload-upsert",
+    "site": "src/lib/genetics/dnaUploadStore.ts:110"
+  },
+  {
+    "table": "user_epigenetic_markers",
+    "column": "onConflict",
+    "kind": "payload-upsert",
+    "site": "src/lib/genetics/epigenResultStore.ts:87"
+  },
+  {
+    "table": "user_variants",
+    "column": "onConflict",
+    "kind": "payload-upsert",
+    "site": "src/lib/genetics/sampleseed/seedSamplePanels.ts:131"
+  },
+  {
+    "table": "user_epigenetic_markers",
+    "column": "onConflict",
+    "kind": "payload-upsert",
+    "site": "src/lib/genetics/sampleseed/seedSamplePanels.ts:189"
+  },
+  {
+    "table": "lab_biomarkers",
+    "column": "onConflict",
+    "kind": "payload-upsert",
+    "site": "src/lib/labs/labUploadStore.ts:94"
+  },
+  {
+    "table": "marketing_copy_impressions",
+    "column": "ok",
+    "kind": "payload-insert",
+    "site": "src/lib/marketing/variants/impression.ts:86"
+  },
+  {
+    "table": "marketing_copy_impressions",
+    "column": "attempts",
+    "kind": "payload-insert",
+    "site": "src/lib/marketing/variants/impression.ts:86"
+  },
+  {
+    "table": "precheck_clearance_receipts",
+    "column": "text_derived",
+    "kind": "select",
+    "site": "src/lib/marshall/appeals/drift.ts:50"
+  },
+  {
+    "table": "profiles",
+    "column": "timezone",
+    "kind": "select",
+    "site": "src/lib/nutrition/insights/loader.ts:103"
+  },
+  {
+    "table": "profiles",
+    "column": "body_weight_kg",
+    "kind": "select",
+    "site": "src/lib/nutrition/insights/loader.ts:103"
+  },
+  {
+    "table": "shop_orders",
+    "column": "completed_at",
+    "kind": "select",
+    "site": "src/lib/practitioner-referral/milestone-orchestrator.ts:142"
+  },
+  {
+    "table": "shop_orders",
+    "column": "practitioner_id",
+    "kind": "eq",
+    "site": "src/lib/practitioner-referral/milestone-orchestrator.ts:142"
+  },
+  {
+    "table": "shop_orders",
+    "column": "completed_at",
+    "kind": "order",
+    "site": "src/lib/practitioner-referral/milestone-orchestrator.ts:142"
+  },
+  {
+    "table": "practitioners",
+    "column": "practice_name",
+    "kind": "select",
+    "site": "src/lib/practitioner-referral/vesting-orchestrator.ts:255"
+  },
+  {
+    "table": "practitioners",
+    "column": "account_status",
+    "kind": "select",
+    "site": "src/lib/pricing/wholesale-engine.ts:113"
+  },
+  {
+    "table": "practitioners",
+    "column": "account_status",
+    "kind": "eq",
+    "site": "src/lib/pricing/wholesale-engine.ts:113"
+  },
+  {
+    "table": "research_hub_user_tabs",
+    "column": "onConflict",
+    "kind": "payload-upsert",
+    "site": "src/lib/research-hub/service.ts:57"
+  },
+  {
+    "table": "research_hub_user_tabs",
+    "column": "ignoreDuplicates",
+    "kind": "payload-upsert",
+    "site": "src/lib/research-hub/service.ts:57"
+  },
+  {
+    "table": "research_hub_user_sources",
+    "column": "onConflict",
+    "kind": "payload-upsert",
+    "site": "src/lib/research-hub/service.ts:115"
+  },
+  {
+    "table": "research_hub_user_sources",
+    "column": "ignoreDuplicates",
+    "kind": "payload-upsert",
+    "site": "src/lib/research-hub/service.ts:115"
+  },
+  {
+    "table": "body_tracker_weight",
+    "column": "weight_kg",
+    "kind": "select",
+    "site": "src/lib/scoring/sources/body-tracker-source.ts:69"
+  },
+  {
+    "table": "body_tracker_weight",
+    "column": "recorded_at",
+    "kind": "select",
+    "site": "src/lib/scoring/sources/body-tracker-source.ts:69"
+  },
+  {
+    "table": "body_tracker_weight",
+    "column": "recorded_at",
+    "kind": "order",
+    "site": "src/lib/scoring/sources/body-tracker-source.ts:69"
+  },
+  {
+    "table": "profiles",
+    "column": "timezone",
+    "kind": "payload-update",
+    "site": "src/lib/timezone.ts:21"
+  },
+  {
+    "table": "profiles",
+    "column": "body_weight_kg",
+    "kind": "select",
+    "site": "src/lib/wellness/hydrationReconciliation.ts:178"
+  },
+  {
+    "table": "practitioners",
+    "column": "onboarded_at",
+    "kind": "select",
+    "site": "src/lib/white-label/eligibility.ts:162"
+  },
+  {
+    "table": "practitioners",
+    "column": "account_status",
+    "kind": "select",
+    "site": "src/lib/white-label/eligibility.ts:162"
+  },
+  {
+    "table": "profiles",
+    "column": "education_level",
+    "kind": "select",
+    "site": "supabase/functions/archetype-refinement-tick/index.ts:236"
+  },
+  {
+    "table": "profiles",
+    "column": "income_band",
+    "kind": "select",
+    "site": "supabase/functions/archetype-refinement-tick/index.ts:236"
+  },
+  {
+    "table": "profiles",
+    "column": "has_dependent_minors",
+    "kind": "select",
+    "site": "supabase/functions/archetype-refinement-tick/index.ts:236"
+  },
+  {
+    "table": "body_tracker_recommendations",
+    "column": "context_hash",
+    "kind": "eq",
+    "site": "supabase/functions/arnold-cross-reference-recommend/index.ts:375"
+  },
+  {
+    "table": "body_tracker_recommendations",
+    "column": "context_hash",
+    "kind": "payload-insert",
+    "site": "supabase/functions/arnold-cross-reference-recommend/index.ts:466"
+  },
+  {
+    "table": "body_tracker_entries",
+    "column": "is_active",
+    "kind": "eq",
+    "site": "supabase/functions/arnold-tick/index.ts:85"
+  },
+  {
+    "table": "profiles",
+    "column": "sex",
+    "kind": "select",
+    "site": "supabase/functions/arnold-vision-analyze/index.ts:290"
+  },
+  {
+    "table": "profiles",
+    "column": "height_cm",
+    "kind": "select",
+    "site": "supabase/functions/arnold-vision-analyze/index.ts:290"
+  },
+  {
+    "table": "profiles",
+    "column": "weight_kg",
+    "kind": "select",
+    "site": "supabase/functions/arnold-vision-analyze/index.ts:290"
+  },
+  {
+    "table": "products",
+    "column": "packaging_proof_path",
+    "kind": "select",
+    "site": "supabase/functions/brand_compliance_validator/index.ts:168"
+  },
+  {
+    "table": "products",
+    "column": "brand_id",
+    "kind": "select",
+    "site": "supabase/functions/brand_compliance_validator/index.ts:168"
+  },
+  {
+    "table": "products",
+    "column": "product_category_id",
+    "kind": "select",
+    "site": "supabase/functions/brand_compliance_validator/index.ts:168"
+  },
+  {
+    "table": "products",
+    "column": "serving_count",
+    "kind": "select",
+    "site": "supabase/functions/brand_compliance_validator/index.ts:168"
+  },
+  {
+    "table": "products",
+    "column": "serving_unit",
+    "kind": "select",
+    "site": "supabase/functions/brand_compliance_validator/index.ts:168"
+  },
+  {
+    "table": "products",
+    "column": "dose_per_serving_text",
+    "kind": "select",
+    "site": "supabase/functions/brand_compliance_validator/index.ts:168"
+  },
+  {
+    "table": "products",
+    "column": "sku_bottle_color_primary_hex",
+    "kind": "select",
+    "site": "supabase/functions/brand_compliance_validator/index.ts:168"
+  },
+  {
+    "table": "products",
+    "column": "sku_typography_primary_hex",
+    "kind": "select",
+    "site": "supabase/functions/brand_compliance_validator/index.ts:168"
+  },
+  {
+    "table": "profiles",
+    "column": "weight_kg",
+    "kind": "select",
+    "site": "supabase/functions/gordon-generate-targets/index.ts:190"
+  },
+  {
+    "table": "profiles",
+    "column": "height_cm",
+    "kind": "select",
+    "site": "supabase/functions/gordon-generate-targets/index.ts:190"
+  },
+  {
+    "table": "profiles",
+    "column": "age",
+    "kind": "select",
+    "site": "supabase/functions/gordon-generate-targets/index.ts:190"
+  },
+  {
+    "table": "profiles",
+    "column": "biological_sex",
+    "kind": "select",
+    "site": "supabase/functions/gordon-generate-targets/index.ts:190"
+  },
+  {
+    "table": "profiles",
+    "column": "user_id",
+    "kind": "eq",
+    "site": "supabase/functions/gordon-generate-targets/index.ts:190"
+  },
+  {
+    "table": "body_composition_readings",
+    "column": "onConflict",
+    "kind": "payload-upsert",
+    "site": "supabase/functions/ingest-body-composition/index.ts:289"
+  },
+  {
+    "table": "body_composition_readings",
+    "column": "ignoreDuplicates",
+    "kind": "payload-upsert",
+    "site": "supabase/functions/ingest-body-composition/index.ts:289"
+  },
+  {
+    "table": "international_fx_rate_history",
+    "column": "onConflict",
+    "kind": "payload-upsert",
+    "site": "supabase/functions/intl-fx-rate-fetcher/index.ts:120"
+  },
+  {
+    "table": "international_fx_rate_history",
+    "column": "ignoreDuplicates",
+    "kind": "payload-upsert",
+    "site": "supabase/functions/intl-fx-rate-fetcher/index.ts:120"
+  },
+  {
+    "table": "profiles",
+    "column": "phone_number",
+    "kind": "select",
+    "site": "supabase/functions/map_notify_practitioner/index.ts:96"
+  },
+  {
+    "table": "research_hub_user_items",
+    "column": "onConflict",
+    "kind": "payload-upsert",
+    "site": "supabase/functions/sherlock-research-hub/index.ts:213"
+  },
+  {
+    "table": "research_hub_user_items",
+    "column": "ignoreDuplicates",
+    "kind": "payload-upsert",
+    "site": "supabase/functions/sherlock-research-hub/index.ts:213"
+  },
+  {
+    "table": "sherlock_trends",
+    "column": "onConflict",
+    "kind": "payload-upsert",
+    "site": "supabase/functions/sherlock-research-hub/index.ts:336"
+  },
+  {
+    "table": "genex360_products",
+    "column": "genex360_sku",
+    "kind": "select",
+    "site": "supabase/functions/shop_catalog_retirement_executor/index.ts:60"
+  },
+  {
+    "table": "genex360_products",
+    "column": "genex360_sku",
+    "kind": "eq",
+    "site": "supabase/functions/shop_catalog_retirement_executor/index.ts:60"
+  },
+  {
+    "table": "peptide_registry",
+    "column": "peptide_sku",
+    "kind": "select",
+    "site": "supabase/functions/shop_catalog_retirement_executor/index.ts:61"
+  },
+  {
+    "table": "peptide_registry",
+    "column": "peptide_sku",
+    "kind": "eq",
+    "site": "supabase/functions/shop_catalog_retirement_executor/index.ts:61"
+  },
+  {
+    "table": "genex360_products",
+    "column": "genex360_sku",
+    "kind": "select",
+    "site": "supabase/functions/shop_reconciliation_run/index.ts:69"
+  },
+  {
+    "table": "peptide_registry",
+    "column": "peptide_sku",
+    "kind": "select",
+    "site": "supabase/functions/shop_reconciliation_run/index.ts:72"
+  },
+  {
+    "table": "ultrathink_recommendations",
+    "column": "product_name",
+    "kind": "select",
+    "site": "supabase/functions/ultrathink-outcome-collector/index.ts:80"
+  },
+  {
+    "table": "ultrathink_recommendations",
+    "column": "condition_pattern",
+    "kind": "select",
+    "site": "supabase/functions/ultrathink-outcome-collector/index.ts:80"
+  },
+  {
+    "table": "profiles",
+    "column": "age",
+    "kind": "select",
+    "site": "supabase/functions/ultrathink-outcome-collector/index.ts:114"
+  },
+  {
+    "table": "profiles",
+    "column": "sex",
+    "kind": "select",
+    "site": "supabase/functions/ultrathink-outcome-collector/index.ts:114"
+  },
+  {
+    "table": "shop_orders",
+    "column": "shipping_cost_cents",
+    "kind": "select",
+    "site": "supabase/functions/unit-economics-snapshot-tick/index.ts:145"
+  },
+  {
+    "table": "shop_orders",
+    "column": "payment_processing_cents",
+    "kind": "select",
+    "site": "supabase/functions/unit-economics-snapshot-tick/index.ts:145"
+  },
+  {
+    "table": "shop_orders",
+    "column": "cogs_cents",
+    "kind": "select",
+    "site": "supabase/functions/unit-economics-snapshot-tick/index.ts:145"
+  },
+  {
+    "table": "shop_orders",
+    "column": "contribution_margin_cents",
+    "kind": "select",
+    "site": "supabase/functions/unit-economics-snapshot-tick/index.ts:145"
+  },
+  {
+    "table": "memberships",
+    "column": "monthly_price_cents",
+    "kind": "select",
+    "site": "supabase/functions/unit-economics-snapshot-tick/index.ts:149"
+  },
+  {
+    "table": "genex360_purchases",
+    "column": "price_cents",
+    "kind": "select",
+    "site": "supabase/functions/unit-economics-snapshot-tick/index.ts:152"
+  },
+  {
+    "table": "shop_orders",
+    "column": "completed_at",
+    "kind": "select",
+    "site": "supabase/functions/vest-referral-rewards/index.ts:127"
+  },
+  {
+    "table": "shop_orders",
+    "column": "practitioner_id",
+    "kind": "eq",
+    "site": "supabase/functions/vest-referral-rewards/index.ts:127"
+  },
+  {
+    "table": "shop_orders",
+    "column": "completed_at",
+    "kind": "order",
+    "site": "supabase/functions/vest-referral-rewards/index.ts:127"
+  }
+]
