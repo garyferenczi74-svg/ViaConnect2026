@@ -14,7 +14,7 @@ Status values: BUILT (on branch, reviewed) / SIGNED (Gary approved) / APPLIED (l
 | P0-6 profiles phone + timezone | Profile saves with phone rejected; timezone sync rejected | migration 20260707101532 (commit 4555f91b, review clean) | BUILT | | | |
 | P0-7 GENEX import redirect | Parsed variants lost; profile summary write rejected | code fix (target table per investigation) | PENDING | | | |
 | P0-8 ViaTokens decision | Dormant broken lane; recommend Option B retire | docs/integrity/p0-viatokens-decision.md | BUILT (decision doc) | | n/a | n/a |
-| P0-9 kelsey review keys | Compliance review rows lost | code fix only | PENDING | | | |
+| P0-9 kelsey review keys | Compliance review rows lost | code fix 92161eb8, review clean; P0-9b sentinel unification queued | BUILT | | | |
 
 Code-fix-only units (P0-5, P0-7, P0-9) reach prod through the normal main deploy, not a migration apply; their sign-off is the merge sign-off. Migration units additionally need the individual apply sign-off recorded here.
 
