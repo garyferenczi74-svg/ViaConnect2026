@@ -9,7 +9,7 @@ Status values: BUILT (on branch, reviewed) / SIGNED (Gary approved) / APPLIED (l
 | P0-2 audit_logs columns | Silent audit-trail loss on 7 routes | migration 20260707081200_prompt_210d_audit_logs_new_shape_columns.sql (commit 3a01f085, review clean) | BUILT | | | |
 | P0-3 orders.items | Stripe one-time order rows lost after payment | migration ..._prompt_210d_orders_items_column.sql | PENDING | | | |
 | P0-3 subscriptions table | Membership subscription records lost (store-vs-drop decision) | DRAFT migration ..._prompt_210d_subscriptions_table.sql | PENDING | | | |
-| P0-4 daily_scores columns | Every daily-score persistence write rejected; 208k reader empty | migration ..._prompt_210d_daily_scores_pillar_columns.sql + writer/reader adoption | PENDING | | | |
+| P0-4 daily_scores columns + upsert index | Every daily-score persistence write rejected; 208k reader empty | migrations 20260707083321 + 20260707090000 (commits 627cea00 + 722e1073, review clean; apply columns then index) | BUILT | | | |
 | P0-5 helix + rewards keys | Live dashboard token-award inserts rejected (type key); redemption keys | code fix only, no migration | PENDING | | | |
 | P0-6 profiles phone + timezone | Profile saves with phone rejected; timezone sync rejected | migration ..._prompt_210d_profiles_phone_timezone.sql | PENDING | | | |
 | P0-7 GENEX import redirect | Parsed variants lost; profile summary write rejected | code fix (target table per investigation) | PENDING | | | |
