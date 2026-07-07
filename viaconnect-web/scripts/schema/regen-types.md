@@ -44,11 +44,11 @@ migrations; the snapshot must reflect what is actually live.
 
    ```
    SUPABASE_ACCESS_TOKEN=<token> npx supabase gen types typescript \
-     --project-id nnhkcufyqjojdbvdrpky --schema public > /tmp/live-types.ts
+     --project-id nnhkcufyqjojdbvdrpky --schema public > "$TEMP/live-types.ts" (any local temp path; /tmp does not exist on Windows)
    ```
 
    (On a linked checkout `npx supabase gen types typescript --linked` is equivalent.)
-3. Copy `/tmp/live-types.ts` over `docs/integrity/snapshot/live-types.ts` verbatim,
+3. Copy the temp file over `docs/integrity/snapshot/live-types.ts` verbatim,
    then follow steps 3-4 of Procedure A.
 
 ## The preserved tail block (MUST survive every regen)
