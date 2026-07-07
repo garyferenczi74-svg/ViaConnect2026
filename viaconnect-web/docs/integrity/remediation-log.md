@@ -11,7 +11,7 @@ Status values: BUILT (on branch, reviewed) / SIGNED (Gary approved) / APPLIED (l
 | P0-3 subscriptions table | Membership subscription records lost (store-vs-drop decision) | DRAFT migration ..._prompt_210d_subscriptions_table.sql | PENDING | | | |
 | P0-4 daily_scores columns + upsert index | Every daily-score persistence write rejected; 208k reader empty | migrations 20260707083321 + 20260707090000 (commits 627cea00 + 722e1073, review clean; apply columns then index) | BUILT | | | |
 | P0-5 helix + rewards keys | Live dashboard token-award inserts rejected (type key); redemption keys | code fix d8e844dd, review clean; P0-5b read-side follow-up queued | BUILT | | | |
-| P0-6 profiles phone + timezone | Profile saves with phone rejected; timezone sync rejected | migration ..._prompt_210d_profiles_phone_timezone.sql | PENDING | | | |
+| P0-6 profiles phone + timezone | Profile saves with phone rejected; timezone sync rejected | migration 20260707101532 (commit 4555f91b, review clean) | BUILT | | | |
 | P0-7 GENEX import redirect | Parsed variants lost; profile summary write rejected | code fix (target table per investigation) | PENDING | | | |
 | P0-8 ViaTokens decision | Dormant broken lane; recommend Option B retire | docs/integrity/p0-viatokens-decision.md | BUILT (decision doc) | | n/a | n/a |
 | P0-9 kelsey review keys | Compliance review rows lost | code fix only | PENDING | | | |
