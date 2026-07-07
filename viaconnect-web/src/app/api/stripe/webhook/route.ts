@@ -4,6 +4,7 @@ import { createClient as createServiceClient } from "@supabase/supabase-js";
 import type { Json } from "@/lib/supabase/types";
 import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
+import { reportSupabaseError } from "@/lib/utils/schema-drift";
 import { getCircuitBreaker, isCircuitBreakerError } from "@/lib/utils/circuit-breaker";
 
 const stripeBreaker = getCircuitBreaker("stripe-api");
@@ -42,12 +43,15 @@ async function writeAuditLog(
   metadata?: Record<string, unknown>
 ) {
   try {
-    await supabase.from("audit_logs").insert({
+    const auditInsertResult: { error: unknown } = await supabase.from("audit_logs").insert({
       user_id: userId,
       action,
       resource_type: "stripe_webhook",
       metadata: (metadata ?? null) as Json,
     });
+    if (auditInsertResult.error) {
+      reportSupabaseError("audit.insert", auditInsertResult.error, { table: "audit_logs" });
+    }
   } catch {
     // Non-blocking
   }

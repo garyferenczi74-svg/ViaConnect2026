@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { withTimeout, withAbortTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
+import { reportSupabaseError } from "@/lib/utils/schema-drift";
 import { getCircuitBreaker, isCircuitBreakerError } from "@/lib/utils/circuit-breaker";
 
 const claudeBreaker = getCircuitBreaker("claude-api");
@@ -59,13 +60,16 @@ async function writeAuditLog(
   try {
     const supabase = createClient();
     // @ts-expect-error -- audit_logs table not in generated Database type
-    await supabase.from("audit_logs").insert({
+    const auditInsertResult: { error: unknown } = await supabase.from("audit_logs").insert({
       user_id: userId,
       action,
       resource_type: resourceType,
       metadata: (metadata ?? null) as import("@/lib/supabase/types").Json,
       ip_address: ip ?? null,
     });
+    if (auditInsertResult.error) {
+      reportSupabaseError("audit.insert", auditInsertResult.error, { table: "audit_logs" });
+    }
   } catch {
     // Audit log failure should not break the request
   }

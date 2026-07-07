@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
+import { reportSupabaseError } from "@/lib/utils/schema-drift";
 import { persistDnaAnalysis } from "@/lib/genetics/dnaUploadStore";
 import { PANEL_ORDER, type PanelKey } from "@/lib/genetics/panelLabels";
 
@@ -526,7 +527,7 @@ export async function POST(request: Request) {
     );
 
     // Audit log: typegen rejects the jsonb metadata payload structurally; cast
-    await (supabase as any).from("audit_logs").insert({
+    const auditInsertResult: { error: unknown } = await (supabase as any).from("audit_logs").insert({
       user_id: user.id,
       action: "genex_upload_processed",
       resource_type: "genetics",
@@ -540,6 +541,9 @@ export async function POST(request: Request) {
       },
       ip_address: ip,
     });
+    if (auditInsertResult.error) {
+      reportSupabaseError("audit.insert", auditInsertResult.error, { table: "audit_logs" });
+    }
 
     // Build summary response
     const riskSummary = {
@@ -568,13 +572,16 @@ export async function POST(request: Request) {
     if (isTimeoutError(err)) safeLog.warn("api.genex.upload", "operation timeout", { kitId, error: err });
     else safeLog.error("api.genex.upload", "processing error", { kitId, error: err });
 
-    await (supabase as any).from("audit_logs").insert({
+    const auditInsertResult: { error: unknown } = await (supabase as any).from("audit_logs").insert({
       user_id: user.id,
       action: "genex_upload_error",
       resource_type: "genetics",
       metadata: { error: message, kit_id: kitId },
       ip_address: ip,
     });
+    if (auditInsertResult.error) {
+      reportSupabaseError("audit.insert", auditInsertResult.error, { table: "audit_logs" });
+    }
 
     return NextResponse.json(
       apiEnvelope(false, undefined, message, "UPLOAD_ERROR"),
