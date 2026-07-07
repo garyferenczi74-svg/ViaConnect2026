@@ -1,0 +1,7 @@
+[
+  {"viewname": "product_catalog_enriched"},
+  {"viewname": "security_scan_summary"},
+  {"viewname": "v_practitioner_engagement_summary"},
+  {"viewname": "v_practitioner_practice_health"},
+  {"viewname": "v_practitioner_protocol_effectiveness"}
+]
