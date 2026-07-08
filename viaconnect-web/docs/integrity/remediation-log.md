@@ -19,6 +19,8 @@ Status values: BUILT (on branch, reviewed) / SIGNED (Gary approved) / APPLIED (l
 
 Code-fix-only units (P0-5, P0-7, P0-9) reach prod through the normal main deploy, not a migration apply; their sign-off is the merge sign-off. Migration units additionally need the individual apply sign-off recorded here.
 
+| F1 practitioner core additive split | Decision 1: practitioner logins read real data, drops deferred | migration 20260707150000 (commit 5ab280b8, fable review, applied 2x idempotent-safe) | APPLIED | Gary 2026-07-07 (Decision 1) | 2026-07-07 | applied v20260708003638 + v20260708004716; revert: drop 13 new tables + practitioners added columns |
+
 ## Apply order recommendation (after sign-offs)
 
 1. P0-2 audit_logs (restores audit trail platform-wide, zero behavior risk)
