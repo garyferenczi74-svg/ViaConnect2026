@@ -9,10 +9,12 @@
  *   column key `type` with its value unchanged ('earn'). The pre-210d key
  *   `transaction_type` does not exist on the live table, so every award
  *   insert was rejected with PGRST204 and swallowed by fail-open.
- * - reward_redemptions rows (redeemTokens in
- *   src/lib/gamification/token-engine.ts) must use the live column keys
- *   `reward_id` and `claimed_at`. The pre-210d keys `item_id` and
- *   `created_at` do not exist on the live table.
+ * - reward_redemptions rows must use the live column keys `reward_id` and
+ *   `claimed_at`. The pre-210d keys `item_id` and `created_at` do not exist
+ *   on the live table. P0-8b (signed Option B) retired the original writer
+ *   (redeemTokens in the deleted token-engine.ts); the builder now lives in
+ *   src/lib/gamification/reward-redemption-payload.ts as the documented
+ *   contract for any future writer.
  *
  * Only key names change; every value passes through unchanged.
  * Node-safe (no jsdom). No em dashes, no en dashes, no emojis.
@@ -24,7 +26,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
 import { buildHelixAwardPayload } from '@/hooks/useTodaysAdherence';
-import { buildRewardRedemptionPayload } from '@/lib/gamification/token-engine';
+import { buildRewardRedemptionPayload } from '@/lib/gamification/reward-redemption-payload';
 
 describe('buildHelixAwardPayload (helix_transactions live shape)', () => {
   const perCheck = buildHelixAwardPayload({
