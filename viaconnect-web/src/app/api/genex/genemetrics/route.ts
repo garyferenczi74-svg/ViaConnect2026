@@ -17,7 +17,7 @@ const genemetricsBreaker = getCircuitBreaker("genemetrics-api");
  *
  * This endpoint handles two actions:
  * 1. "check" — Polls the Genemetrics partner API for pending results
- * 2. "import" — Pulls completed results and writes to genetic_variants
+ * 2. "import" - Pulls completed results and writes to user_variants (210d P0-7b redirect)
  *
  * Genemetrics is FarmCeutica's lab partner for GENEX360 genetic testing.
  * Results are auto-uploaded when the lab completes analysis.
