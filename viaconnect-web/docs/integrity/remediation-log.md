@@ -23,6 +23,8 @@ Code-fix-only units (P0-5, P0-7, P0-9) reach prod through the normal main deploy
 
 | F3 certification/waitlist additive | Decision 2 schema portion: waitlist form has real tables; cron NOT armed | migration 20260707170000 (commit a21c3bbe, fable review, applied v20260708011939) | APPLIED | Gary 2026-07-07 (Decision 2) | 2026-07-07 | revert: drop 2 FKs then 5 tables |
 
+| F3b practitioner_invitations slice | Decision 2 plan-gap closure; VIP invite flow objects | migration 20260707172000 (commits 582933ba + fix 45faf76d, live-validity test added, applied + RPC smoke-verified) | APPLIED | Gary 2026-07-07 (Decision 2) | 2026-07-07 | revert: drop function + table |
+
 ## Apply order recommendation (after sign-offs)
 
 1. P0-2 audit_logs (restores audit trail platform-wide, zero behavior risk)
