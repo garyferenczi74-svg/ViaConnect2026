@@ -34,7 +34,7 @@
  * Rules: no em dashes, no en dashes, no emojis.
  */
 
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -228,5 +228,54 @@ describe('genemetrics import payload (buildGenemetricsVariantRow)', () => {
 describe('genemetrics import onConflict key', () => {
   it('is the live panel-scoped unique key user_id,rsid,panel_key', () => {
     expect(GENEMETRICS_USER_VARIANTS_ONCONFLICT).toBe('user_id,rsid,panel_key');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 5. Upload route source-text contract (P0-7c)
+//
+// Guards that src/app/api/genex/upload/route.ts has been redirected away from
+// the non-existent genetic_variants table and onto the live user_variants
+// consumer lane using the shared builder and onConflict constant.
+//
+// Source-text assertions are intentionally coarse-grained (substring match on
+// the file as a string), so no runtime execution of the route is required and
+// no genetic data passes through this test.
+//
+// Red-first evidence: before the P0-7c fix the file contained '"genetic_variants"'
+// and lacked the builder/constant references, so every assertion below would fail.
+// After the fix all four pass.
+// ---------------------------------------------------------------------------
+
+describe('upload route source-text contract (P0-7c)', () => {
+  const UPLOAD_ROUTE_PATH = join(
+    REPO_ROOT,
+    'src',
+    'app',
+    'api',
+    'genex',
+    'upload',
+    'route.ts',
+  );
+  let uploadSource: string;
+
+  beforeAll(() => {
+    uploadSource = readFileSync(UPLOAD_ROUTE_PATH, 'utf8');
+  });
+
+  it('no longer references genetic_variants in any string literal', () => {
+    expect(uploadSource).not.toContain('"genetic_variants"');
+  });
+
+  it('upserts to user_variants', () => {
+    expect(uploadSource).toContain('.from("user_variants")');
+  });
+
+  it('uses the shared builder buildGenemetricsVariantRow', () => {
+    expect(uploadSource).toContain('buildGenemetricsVariantRow');
+  });
+
+  it('uses GENEMETRICS_USER_VARIANTS_ONCONFLICT for the onConflict key', () => {
+    expect(uploadSource).toContain('GENEMETRICS_USER_VARIANTS_ONCONFLICT');
   });
 });

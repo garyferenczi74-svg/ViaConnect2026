@@ -5,6 +5,10 @@ import { safeLog } from "@/lib/utils/safe-log";
 import { reportSupabaseError } from "@/lib/utils/schema-drift";
 import { persistDnaAnalysis } from "@/lib/genetics/dnaUploadStore";
 import { PANEL_ORDER, type PanelKey } from "@/lib/genetics/panelLabels";
+import {
+  buildGenemetricsVariantRow,
+  GENEMETRICS_USER_VARIANTS_ONCONFLICT,
+} from "@/lib/genetics/genemetricsImportPayload";
 
 function apiEnvelope(
   success: boolean,
@@ -456,28 +460,37 @@ export async function POST(request: Request) {
       .from("genex-uploads")
       .upload(storagePath, file);
 
-    // Write scored variants to genetic_variants table
+    // Prompt 210d P0-7c: redirect from the non-existent genetic_variants table
+    // to the live consumer lane user_variants. Builder and onConflict constant
+    // are shared with the genemetrics route (genemetricsImportPayload.ts).
+    // Key renames applied by the builder: panel->panel_key,
+    // clinical_summary->clinical_significance. Values are unchanged.
     if (scoredVariants.length > 0) {
-      const variantRows = scoredVariants.map((v) => ({
-        user_id: user.id,
-        panel: v.panel,
-        gene: v.gene,
-        rsid: v.rsid,
-        genotype: v.genotype,
-        risk_level: v.risk_level,
-        category: v.category,
-        clinical_summary: v.clinical_summary,
-      }));
+      const variantRows = scoredVariants.map((v) =>
+        buildGenemetricsVariantRow({
+          userId: user.id,
+          panel: v.panel,
+          gene: v.gene,
+          rsid: v.rsid,
+          genotype: v.genotype,
+          riskLevel: v.risk_level,
+          category: v.category,
+          clinicalSummary: v.clinical_summary,
+        })
+      );
 
-      // genetic_variants table is not in the regenerated typegen, so cast supabase
-      // to any so the upsert chain compiles. Runtime behavior unchanged.
-      const { error: variantError } = await (supabase as any)
-        .from("genetic_variants")
-        .upsert(variantRows, { onConflict: "user_id,rsid" });
+      const { error: variantError } = await supabase
+        .from("user_variants")
+        .upsert(variantRows, { onConflict: GENEMETRICS_USER_VARIANTS_ONCONFLICT });
 
       if (variantError) {
-        // Fall back to insert if upsert fails (constraint may not exist)
-        await (supabase as any).from("genetic_variants").insert(variantRows);
+        // Fail-open: drift stays logged without changing this route's response
+        // contract. Context carries the table name only, no genetic data.
+        try {
+          reportSupabaseError("genex.upload.variants", variantError, { table: "user_variants" });
+        } catch {
+          // continue to the genetic_profiles summary write and the upload response
+        }
       }
     }
 
