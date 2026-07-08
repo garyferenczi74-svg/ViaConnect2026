@@ -46,6 +46,15 @@ jobs:
         # Re-enable blocking once src/lib/supabase/types.ts is regenerated.
         run: npx tsc --noEmit || true
 
+      - name: Schema-scoped type gate
+        # Blocking (Prompt 210d, Task P3-4). Parses the tsc output above and
+        # fails only on new schema-shaped type errors (TS2339/TS2345/TS2769/
+        # TS2322 referencing Database row shapes) whose file+code pair is not
+        # frozen in the legacy allowlist. All other type errors stay advisory.
+        run: |
+          npx tsc --noEmit > tsc-out.txt || true
+          node scripts/schema/check-schema-type-errors.mjs --allowlist scripts/schema/tsc-allowlist.json --tsc-output tsc-out.txt
+
       - name: Next.js build
         run: npm run build
         env:
