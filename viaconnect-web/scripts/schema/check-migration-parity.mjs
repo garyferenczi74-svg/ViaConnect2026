@@ -11,12 +11,13 @@
  *      baseline_stamp must match a manifest entry. A match is either
  *      "<version>_<name>" equal to the filename stem (CLI-style rows where
  *      the DB version is the filename stamp) or the entry's name field
- *      containing the stem (MCP applies record the filename stem as the
+ *      equal to the stem (MCP applies record the filename stem as the
  *      name while the DB version is the apply timestamp).
- *   2. An unmatched post-baseline file is allowed only while its mtime is
- *      younger than the grace window (default 7 days). The grace window
- *      covers migrations that are committed but still awaiting apply
- *      sign-off.
+ *   2. An unmatched post-baseline file is allowed only while its filename
+ *      stamp is younger than the grace window (default 7 days). The grace
+ *      window covers migrations that are committed but still awaiting apply
+ *      sign-off. Grace is derived from the 14-digit filename stamp parsed
+ *      as UTC (CI-deterministic; no fs.stat call).
  *   3. Every post-baseline manifest entry must match at least one repo
  *      migration file. An entry without a file is an orphan and fails.
  *      Entries with a non-numeric version (for example
@@ -28,7 +29,8 @@
  * deterministic. The only current-time dependence is the grace
  * comparison: isWithinGrace takes nowMs as a parameter, and Date.now()
  * is called at the CLI entry only (tests inject a fixed clock with
- * --now-ms).
+ * --now-ms). The grace age is derived from the 14-digit filename stamp
+ * (CI-deterministic; no fs.stat call).
  *
  * Usage:
  *   node scripts/schema/check-migration-parity.mjs \
@@ -41,8 +43,7 @@
  *   2  usage error or unreadable input
  */
 
-import { readFileSync, readdirSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { readFileSync, readdirSync } from "node:fs";
 import process from "node:process";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -140,14 +141,14 @@ function listMigrationFiles(dir) {
 /**
  * A manifest entry matches a repo filename stem when the CLI-style
  * composite "<version>_<name>" equals the stem, or when the name field
- * contains the stem (MCP applies stamp their own version, so the name
- * carries the filename stem and is the durable join key).
+ * equals the stem exactly (MCP applies stamp their own version, so the
+ * name carries the filename stem and is the durable join key).
  */
 function entryMatchesStem(entry, stem) {
   if (`${entry.version}_${entry.name}` === stem) {
     return true;
   }
-  return entry.name.includes(stem);
+  return entry.name === stem;
 }
 
 /** Entries with non-numeric versions are post-baseline by definition. */
@@ -159,14 +160,30 @@ function isPostBaselineEntry(entry, baselineStamp) {
 }
 
 /**
- * The single place current time is consulted. nowMs is injected; the CLI
- * entry defaults it to Date.now(), tests pass --now-ms.
+ * Parse a 14-digit filename stamp (YYYYMMDDHHMMSS) as a UTC millisecond
+ * epoch. CI-deterministic: does not stat the file.
  */
-function isWithinGrace(mtimeMs, graceDays, nowMs) {
-  return nowMs - mtimeMs < graceDays * MS_PER_DAY;
+function stampToMs(stamp) {
+  return Date.UTC(
+    Number(stamp.slice(0, 4)),
+    Number(stamp.slice(4, 6)) - 1,
+    Number(stamp.slice(6, 8)),
+    Number(stamp.slice(8, 10)),
+    Number(stamp.slice(10, 12)),
+    Number(stamp.slice(12, 14)),
+  );
 }
 
-function checkParity(manifest, files, migrationsDir, graceDays, nowMs) {
+/**
+ * The single place current time is consulted. nowMs is injected; the CLI
+ * entry defaults it to Date.now(), tests pass --now-ms. The age compared
+ * is the filename stamp parsed as UTC (not fs mtime).
+ */
+function isWithinGrace(stampMs, graceDays, nowMs) {
+  return nowMs - stampMs < graceDays * MS_PER_DAY;
+}
+
+function checkParity(manifest, files, graceDays, nowMs) {
   const offenders = [];
   const graced = [];
   let matchedFileCount = 0;
@@ -179,17 +196,12 @@ function checkParity(manifest, files, migrationsDir, graceDays, nowMs) {
       matchedFileCount += 1;
       continue;
     }
-    let mtimeMs;
-    try {
-      mtimeMs = statSync(join(migrationsDir, file.fileName)).mtimeMs;
-    } catch (error) {
-      fail(`cannot stat ${file.fileName}: ${error.message}`);
-    }
-    if (isWithinGrace(mtimeMs, graceDays, nowMs)) {
+    const stampMs = stampToMs(file.stamp);
+    if (isWithinGrace(stampMs, graceDays, nowMs)) {
       graced.push(file.fileName);
     } else {
       offenders.push(
-        `[missing-from-manifest] ${file.fileName} (post-baseline, no manifest entry, mtime older than ${graceDays} day grace)`,
+        `[missing-from-manifest] ${file.fileName} (post-baseline, no manifest entry, filename stamp older than ${graceDays} day grace)`,
       );
     }
   }
@@ -224,7 +236,6 @@ function main() {
   const result = checkParity(
     manifest,
     files,
-    args.migrations,
     args.graceDays,
     nowMs,
   );
