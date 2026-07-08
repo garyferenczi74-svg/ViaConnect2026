@@ -3,6 +3,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { withAbortTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
 import { getCircuitBreaker, isCircuitBreakerError } from "@/lib/utils/circuit-breaker";
+import { reportSupabaseError } from "@/lib/utils/schema-drift";
+import {
+  buildGenemetricsVariantRow,
+  GENEMETRICS_USER_VARIANTS_ONCONFLICT,
+  type GenemetricsVariantRow,
+} from "@/lib/genetics/genemetricsImportPayload";
 
 const genemetricsBreaker = getCircuitBreaker("genemetrics-api");
 
@@ -155,7 +161,7 @@ export async function POST(request: NextRequest) {
     let totalHigh = 0;
     let totalModerate = 0;
     let totalLow = 0;
-    const allVariants: Array<any> = [];
+    const allVariants: GenemetricsVariantRow[] = [];
     const recommendations: Array<{ sku: string; reason: string; priority: string }> = [];
     const panelsCovered: string[] = [];
 
@@ -186,16 +192,19 @@ export async function POST(request: NextRequest) {
             panelsCovered.push(mapping.panel);
 
             for (const variant of panel.variants) {
-              const row = {
-                user_id: user.id,
+              // Prompt 210d P0-7b: key renames per the P0-7 comparison table
+              // (panel -> panel_key, clinical_summary -> clinical_significance);
+              // values unchanged.
+              const row = buildGenemetricsVariantRow({
+                userId: user.id,
                 panel: mapping.panel,
                 gene: variant.gene,
                 rsid: variant.rsid,
                 genotype: variant.genotype,
-                risk_level: variant.risk_level,
+                riskLevel: variant.risk_level,
                 category: mapping.category,
-                clinical_summary: variant.clinical_note,
-              };
+                clinicalSummary: variant.clinical_note,
+              });
               allVariants.push(row);
               totalVariants++;
               if (variant.risk_level === "high") totalHigh++;
@@ -230,9 +239,23 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Write variants to genetic_variants table (not in regenerated typegen — cast)
+    // Prompt 210d P0-7b (Gary 2026-07-07): redirect the variant write from the
+    // non-existent genetic_variants table to the live consumer lane user_variants,
+    // upserting on the panel-scoped unique key. See task-210d-P0-7-report.md.
     if (allVariants.length > 0) {
-      await (supabase as any).from("genetic_variants").upsert(allVariants, { onConflict: "user_id,rsid" });
+      const { error: variantUpsertError } = await supabase
+        .from("user_variants")
+        .upsert(allVariants, { onConflict: GENEMETRICS_USER_VARIANTS_ONCONFLICT });
+      if (variantUpsertError) {
+        // Fail-open: the pre-210d code swallowed this error and continued. The
+        // strict-mode rethrow is contained so drift stays logged (safeLog.error)
+        // without changing this route's response contract.
+        try {
+          reportSupabaseError("genex.import", variantUpsertError, { table: "user_variants" });
+        } catch {
+          // continue to the genetic_profiles summary write and the 200 response
+        }
+      }
     }
 
     // Update genetic_profiles

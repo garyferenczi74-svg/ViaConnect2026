@@ -1,0 +1,2 @@
+-- Prompt 210d P0-7 (Gary signed decision 2026-07-07): add risk_level + category to user_variants so the GENEX360 / Genemetrics import maps into the live consumer lane with pure key renames; append-only, idempotent, NOT applied by this task. See .superpowers/sdd/task-210d-P0-7-report.md.
+alter table public.user_variants add column if not exists risk_level text, add column if not exists category text;
