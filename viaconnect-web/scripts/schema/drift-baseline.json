@@ -1,0 +1,437 @@
+{
+  "comment": "Baseline as of 2026-07-07: includes 210f tables applied after the snapshot regen (practitioner core, cert/waitlist, invitations) pending next regen, plus residual audit-known findings pending P1 decisions.",
+  "entries": [
+    {
+      "kind": "bucket",
+      "name": "genex-uploads"
+    },
+    {
+      "kind": "bucket",
+      "name": "practitioner-statements"
+    },
+    {
+      "kind": "bucket",
+      "name": "tax-documents"
+    },
+    {
+      "kind": "rpc",
+      "name": "accept_practitioner_invitation"
+    },
+    {
+      "kind": "rpc",
+      "name": "assign_primary_archetype"
+    },
+    {
+      "kind": "rpc",
+      "name": "clone_label_design_revision"
+    },
+    {
+      "kind": "rpc",
+      "name": "lapse_due_channels"
+    },
+    {
+      "kind": "rpc",
+      "name": "lookup_practitioner_invitation"
+    },
+    {
+      "kind": "rpc",
+      "name": "lookup_referral_code_for_attribution"
+    },
+    {
+      "kind": "rpc",
+      "name": "next_white_label_order_number"
+    },
+    {
+      "kind": "rpc",
+      "name": "read_secret"
+    },
+    {
+      "kind": "rpc",
+      "name": "record_referral_link_click"
+    },
+    {
+      "kind": "rpc",
+      "name": "send_transactional_email"
+    },
+    {
+      "kind": "rpc",
+      "name": "sum_practitioner_wholesale_volume"
+    },
+    {
+      "kind": "rpc",
+      "name": "validate_practitioner_invitation"
+    },
+    {
+      "kind": "table",
+      "name": "agent_activity_log"
+    },
+    {
+      "kind": "table",
+      "name": "agent_messages"
+    },
+    {
+      "kind": "table",
+      "name": "ai_conversations"
+    },
+    {
+      "kind": "table",
+      "name": "archetype_definitions"
+    },
+    {
+      "kind": "table",
+      "name": "arnold_recommendations"
+    },
+    {
+      "kind": "table",
+      "name": "arnold_user_profiles"
+    },
+    {
+      "kind": "table",
+      "name": "biometrics"
+    },
+    {
+      "kind": "table",
+      "name": "body_tracker_reconciliation_log"
+    },
+    {
+      "kind": "table",
+      "name": "brand_compliance_reviews"
+    },
+    {
+      "kind": "table",
+      "name": "brands"
+    },
+    {
+      "kind": "table",
+      "name": "caq_phase_responses"
+    },
+    {
+      "kind": "table",
+      "name": "certification_levels"
+    },
+    {
+      "kind": "table",
+      "name": "cohort_customer_monthly"
+    },
+    {
+      "kind": "table",
+      "name": "constitutional_assessments"
+    },
+    {
+      "kind": "table",
+      "name": "conversations"
+    },
+    {
+      "kind": "table",
+      "name": "customer_acquisition_attribution"
+    },
+    {
+      "kind": "table",
+      "name": "customer_archetypes"
+    },
+    {
+      "kind": "table",
+      "name": "daily_actions"
+    },
+    {
+      "kind": "table",
+      "name": "daily_compliance"
+    },
+    {
+      "kind": "table",
+      "name": "daily_score_inputs"
+    },
+    {
+      "kind": "table",
+      "name": "data_source_connections"
+    },
+    {
+      "kind": "table",
+      "name": "genetic_variants"
+    },
+    {
+      "kind": "table",
+      "name": "genetics_nutritional_guides"
+    },
+    {
+      "kind": "table",
+      "name": "hannah_avatar_sessions"
+    },
+    {
+      "kind": "table",
+      "name": "hannah_avatar_transcripts"
+    },
+    {
+      "kind": "table",
+      "name": "hannah_evidence_citations"
+    },
+    {
+      "kind": "table",
+      "name": "hannah_trend_insights"
+    },
+    {
+      "kind": "table",
+      "name": "hannah_ultrathink_sessions"
+    },
+    {
+      "kind": "table",
+      "name": "hannah_ultrathink_traces"
+    },
+    {
+      "kind": "table",
+      "name": "hounddog_analytics_rollup"
+    },
+    {
+      "kind": "table",
+      "name": "hounddog_pipeline"
+    },
+    {
+      "kind": "table",
+      "name": "hounddog_scripts"
+    },
+    {
+      "kind": "table",
+      "name": "integration_sync_log"
+    },
+    {
+      "kind": "table",
+      "name": "jeffery_agent_panel_tasks"
+    },
+    {
+      "kind": "table",
+      "name": "jeffery_hannah_routing_log"
+    },
+    {
+      "kind": "table",
+      "name": "journey_recommendations"
+    },
+    {
+      "kind": "table",
+      "name": "lab_orders"
+    },
+    {
+      "kind": "table",
+      "name": "lab_results"
+    },
+    {
+      "kind": "table",
+      "name": "marketing_spend"
+    },
+    {
+      "kind": "table",
+      "name": "messages"
+    },
+    {
+      "kind": "table",
+      "name": "pg_policies"
+    },
+    {
+      "kind": "table",
+      "name": "plugin_requests"
+    },
+    {
+      "kind": "table",
+      "name": "practitioner_brand_configurations"
+    },
+    {
+      "kind": "table",
+      "name": "practitioner_category_opt_ins"
+    },
+    {
+      "kind": "table",
+      "name": "practitioner_certifications"
+    },
+    {
+      "kind": "table",
+      "name": "practitioner_cohorts"
+    },
+    {
+      "kind": "table",
+      "name": "practitioner_email_queue"
+    },
+    {
+      "kind": "table",
+      "name": "practitioner_invitations"
+    },
+    {
+      "kind": "table",
+      "name": "practitioner_patients"
+    },
+    {
+      "kind": "table",
+      "name": "practitioner_referral_attributions"
+    },
+    {
+      "kind": "table",
+      "name": "practitioner_referral_codes"
+    },
+    {
+      "kind": "table",
+      "name": "practitioner_referral_credit_balances"
+    },
+    {
+      "kind": "table",
+      "name": "practitioner_referral_credit_ledger"
+    },
+    {
+      "kind": "table",
+      "name": "practitioner_referral_fraud_flags"
+    },
+    {
+      "kind": "table",
+      "name": "practitioner_referral_link_clicks"
+    },
+    {
+      "kind": "table",
+      "name": "practitioner_referral_milestone_events"
+    },
+    {
+      "kind": "table",
+      "name": "practitioner_referral_notification_preferences"
+    },
+    {
+      "kind": "table",
+      "name": "practitioner_referral_parameters"
+    },
+    {
+      "kind": "table",
+      "name": "practitioner_referral_status_tiers"
+    },
+    {
+      "kind": "table",
+      "name": "practitioner_referral_tax_earnings"
+    },
+    {
+      "kind": "table",
+      "name": "practitioner_subscriptions"
+    },
+    {
+      "kind": "table",
+      "name": "practitioner_tiers"
+    },
+    {
+      "kind": "table",
+      "name": "practitioner_waitlist"
+    },
+    {
+      "kind": "table",
+      "name": "predictive_alerts"
+    },
+    {
+      "kind": "table",
+      "name": "product_categories"
+    },
+    {
+      "kind": "table",
+      "name": "product_certification_assignments"
+    },
+    {
+      "kind": "table",
+      "name": "saved_meals"
+    },
+    {
+      "kind": "table",
+      "name": "supplement_compliance"
+    },
+    {
+      "kind": "table",
+      "name": "supplement_logs"
+    },
+    {
+      "kind": "table",
+      "name": "supplement_product_cache"
+    },
+    {
+      "kind": "table",
+      "name": "supplement_protocols"
+    },
+    {
+      "kind": "table",
+      "name": "table"
+    },
+    {
+      "kind": "table",
+      "name": "unit_economics_alerts"
+    },
+    {
+      "kind": "table",
+      "name": "unit_economics_snapshots"
+    },
+    {
+      "kind": "table",
+      "name": "user_health_profile"
+    },
+    {
+      "kind": "table",
+      "name": "user_medications"
+    },
+    {
+      "kind": "table",
+      "name": "wearable_summaries"
+    },
+    {
+      "kind": "table",
+      "name": "white_label_catalog_config"
+    },
+    {
+      "kind": "table",
+      "name": "white_label_compliance_reviewer_roles"
+    },
+    {
+      "kind": "table",
+      "name": "white_label_compliance_reviews"
+    },
+    {
+      "kind": "table",
+      "name": "white_label_discount_tiers"
+    },
+    {
+      "kind": "table",
+      "name": "white_label_dispensary_settings"
+    },
+    {
+      "kind": "table",
+      "name": "white_label_economics"
+    },
+    {
+      "kind": "table",
+      "name": "white_label_enrollments"
+    },
+    {
+      "kind": "table",
+      "name": "white_label_inventory_lots"
+    },
+    {
+      "kind": "table",
+      "name": "white_label_label_designs"
+    },
+    {
+      "kind": "table",
+      "name": "white_label_parameters"
+    },
+    {
+      "kind": "table",
+      "name": "white_label_production_order_items"
+    },
+    {
+      "kind": "table",
+      "name": "white_label_production_orders"
+    },
+    {
+      "kind": "table",
+      "name": "white_label_recalls"
+    },
+    {
+      "kind": "table",
+      "name": "white_label_reviewer_assignments"
+    },
+    {
+      "kind": "table",
+      "name": "white_label_sku_mappings"
+    },
+    {
+      "kind": "table",
+      "name": "wl_pending_reviews_with_sla"
+    }
+  ]
+}

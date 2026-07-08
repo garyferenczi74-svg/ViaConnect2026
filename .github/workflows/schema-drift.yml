@@ -1,0 +1,28 @@
+name: Schema Drift Gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  schema-drift:
+    name: Schema Drift Scan
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: viaconnect-web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Scan code refs against schema snapshot
+        # Zero-dependency scanner; no npm install needed. Fails only on
+        # table/rpc/bucket references absent from both the committed
+        # snapshot and the reviewed baseline. Editing the baseline
+        # requires a PR diff that reviewers see.
+        run: node scripts/schema/scan-code-refs.mjs --baseline scripts/schema/drift-baseline.json --snapshot docs/integrity/snapshot
