@@ -151,3 +151,26 @@ supabase/migrations/20260707150000_prompt_210f_practitioner_core_additive.sql.
    ALTER TABLE public.practitioners ADD CONSTRAINT practitioners_cohort_id_fkey
      FOREIGN KEY (cohort_id) REFERENCES public.practitioner_cohorts(id);
    (Both columns hold zero rows today, so the attach cannot fail on data.)
+
+## Additional deferrals found during F5 extraction
+
+Appended 2026-07-08 by Task F5 while assembling
+supabase/migrations/20260708090000_prompt_210f_white_label_additive.sql.
+
+1. sum_practitioner_wholesale_volume RPC (20260418000430 lines 12-38). Not destructive, but a
+   LIVE-VALIDITY STOP of the F3b incident class: the LANGUAGE sql body reads
+   shop_orders.wholesale_total_cents, shop_orders.placed_by_practitioner_id, and
+   shop_orders.order_type, none of which exist on live shop_orders (live has status and user_id,
+   neither sufficient). Their adding migration, 20260418000130_shop_orders_practitioner_extension.sql,
+   is outside the cluster 1 tranche and remains unapplied. LANGUAGE sql function bodies are validated
+   at CREATE time, so carrying the create would fail the whole F5 apply, and rewriting the body against
+   live columns would fabricate wholesale-eligibility data. The F5 migration carries the full source as
+   an inert comment block (marker: F5 DEFERRED, DO NOT APPLY IN F5). Deferred action, to ride with or
+   immediately after the shop_orders practitioner extension (20260418000130) applies:
+   lift the commented CREATE OR REPLACE FUNCTION public.sum_practitioner_wholesale_volume block
+   verbatim (restore AS $$ delimiters), plus its COMMENT and REVOKE/GRANT pair. Until then,
+   white-label eligibility Path 3 (volume_threshold) callers keep today's fail-open behavior
+   (function absent). The shape test src/lib/__tests__/white-label-migration-shape.test.ts pins the
+   deferral and fails the moment live-types regains the three columns, prompting the lift.
+   Also closed by F5: the P1 sheet row "wl_pending_reviews_with_sla drop/recreate (_500)" rides as
+   CREATE OR REPLACE VIEW (identical column list, view absent live), zero DROP carried.
