@@ -132,3 +132,22 @@ practitioner core; ride with that tranche as-is, covered by the Cluster 1 sign-o
 | patient_practitioner_relationships DROP CASCADE (_160 line 193) | Rewrite drop script (3 MVs + 2 policies) + 14-day window | | |
 | practitioner_patients.patient_id DROP NOT NULL (_150) | Apply with practitioner core tranche | | |
 | wl_pending_reviews_with_sla drop/recreate (_500) | Ride with white label tranche (Cluster 1) | | |
+
+## Additional deferrals found during F1 extraction
+
+Appended 2026-07-07 by Task F1 while assembling
+supabase/migrations/20260707150000_prompt_210f_practitioner_core_additive.sql.
+
+1. practitioners.waitlist_id / practitioners.cohort_id FOREIGN KEY constraints (20260418000160 lines
+   37-38; the same inline clauses appear in 20260418000080 lines 16-17). Not destructive, but the FK
+   targets practitioner_waitlist (20260418000020) and practitioner_cohorts (20260418000010) are Cluster 4
+   objects that do not exist live, so carrying the inline REFERENCES would fail the F1 apply. The F1
+   migration adds both columns as plain UUID and ships a conditional DO block that attaches
+   practitioners_waitlist_id_fkey and practitioners_cohort_id_fkey only when the target tables exist. At
+   F1 apply time the targets are absent, so BOTH CONSTRAINTS REMAIN UNATTACHED live after F1. Deferred
+   action, to ride with or immediately after the F3 waitlist tranche:
+   ALTER TABLE public.practitioners ADD CONSTRAINT practitioners_waitlist_id_fkey
+     FOREIGN KEY (waitlist_id) REFERENCES public.practitioner_waitlist(id);
+   ALTER TABLE public.practitioners ADD CONSTRAINT practitioners_cohort_id_fkey
+     FOREIGN KEY (cohort_id) REFERENCES public.practitioner_cohorts(id);
+   (Both columns hold zero rows today, so the attach cannot fail on data.)
