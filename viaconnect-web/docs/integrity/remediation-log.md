@@ -13,7 +13,7 @@ Status values: BUILT (on branch, reviewed) / SIGNED (Gary approved) / APPLIED (l
 | P0-5 helix + rewards keys | Live dashboard token-award inserts rejected (type key); redemption keys | code fix d8e844dd, review clean; P0-5b read-side follow-up queued | BUILT | | | |
 | P0-6 profiles phone + timezone | Profile saves with phone rejected; timezone sync rejected | migration 20260707101532 (commit 4555f91b, review clean) | APPLIED | Gary 2026-07-07 | 2026-07-07 | applied v20260707225228 (client timeout, server success verified); revert: drop 2 columns |
 | P0-7/7b GENEX import redirect | Parsed variants lost; profile summary write rejected | code fix 65a8383a + migration 20260707160000 (review clean) | APPLIED | Gary 2026-07-07 | 2026-07-07 | revert: drop 2 columns + code revert | | | |
-| P0-8 ViaTokens decision | Dormant broken lane; recommend Option B retire | docs/integrity/p0-viatokens-decision.md | BUILT (decision doc) | | n/a | n/a |
+| P0-8/8b ViaTokens | Dormant broken lane; recommend Option B retire | docs/integrity/p0-viatokens-decision.md  + retirement 73395890, micro-review clean | EXECUTED (Option B) | Gary 2026-07-07 | n/a | git revert 73395890 |
 | P0-9b sentinel unification | fail_closed sentinel parity with route | code fix 96367881, controller-verified | BUILT | | | |
 | P0-9 kelsey review keys | Compliance review rows lost | code fix 92161eb8, review clean; P0-9b sentinel unification queued | BUILT | | | |
 
