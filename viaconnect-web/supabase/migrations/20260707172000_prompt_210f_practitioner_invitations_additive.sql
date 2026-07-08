@@ -27,6 +27,8 @@
 --     retaining its source SECURITY DEFINER, SET search_path = public, pg_temp
 --     pin, and REVOKE/GRANT pair verbatim.
 --   * No seeds in this source; no seed block added.
+--   * Live-schema correction (F3b-fix): source used first_name/last_name which
+--     never existed live; corrected to full_name (profiles.full_name).
 --
 -- Code-consumer column cross-check (src/lib/practitioner/invitations.ts):
 --   Insert payload (line 52): token, invited_by, target_email,
@@ -124,7 +126,7 @@ DECLARE
   v_rows INTEGER;
 BEGIN
   SELECT i.id, i.target_email, i.expected_credential_type, i.personal_note,
-         coalesce(p.first_name || ' ' || p.last_name, 'A ViaCura founder') AS invited_by_display
+         coalesce(p.full_name, 'A ViaCura founder') AS invited_by_display
   INTO r
   FROM public.practitioner_invitations i
   LEFT JOIN public.profiles p ON p.id = i.invited_by

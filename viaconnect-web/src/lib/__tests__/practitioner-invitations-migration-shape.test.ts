@@ -314,3 +314,97 @@ describe('F3b migration covers the live code paths that reference practitioner_i
     }
   });
 });
+
+// ---------------------------------------------------------------------------
+// 5. Live profiles column validity (F3b-fix: caught pre-apply by controller)
+//    Red-first: before the fix, p.first_name and p.last_name are found in the
+//    function body but are absent from live profiles.Row -- the exact defect.
+//    Green after: only p.full_name and p.id remain; both are live columns.
+// ---------------------------------------------------------------------------
+
+/**
+ * Parse the profiles Row column names from docs/integrity/snapshot/live-types.ts.
+ * Uses balanced-brace extraction so the result is resilient to Row key additions.
+ * Returns a Set of lowercase column names that exist in the live profiles table.
+ */
+function liveProfilesRowKeys(): Set<string> {
+  const liveTypesPath = join(REPO_ROOT, 'docs', 'integrity', 'snapshot', 'live-types.ts');
+  const source = readFileSync(liveTypesPath, 'utf8');
+  const profilesMarker = '      profiles: {';
+  const profilesIdx = source.indexOf(profilesMarker);
+  if (profilesIdx === -1) {
+    throw new Error('profiles section not found in docs/integrity/snapshot/live-types.ts');
+  }
+  const rowMarker = '        Row: {';
+  const rowIdx = source.indexOf(rowMarker, profilesIdx);
+  if (rowIdx === -1) {
+    throw new Error('profiles Row block not found in docs/integrity/snapshot/live-types.ts');
+  }
+  // Balanced-brace extraction: start from the opening { of Row: {
+  let depth = 0;
+  let blockStart = -1;
+  let blockEnd = -1;
+  for (let i = rowIdx + rowMarker.length - 1; i < source.length; i++) {
+    const ch = source[i];
+    if (ch === '{') {
+      depth += 1;
+      if (depth === 1) blockStart = i + 1;
+    } else if (ch === '}') {
+      depth -= 1;
+      if (depth === 0) {
+        blockEnd = i;
+        break;
+      }
+    }
+  }
+  if (blockStart === -1 || blockEnd === -1) {
+    throw new Error('Failed to extract profiles Row block (unbalanced braces)');
+  }
+  const block = source.slice(blockStart, blockEnd);
+  const keys = new Set<string>();
+  const lineRe = /^\s+([a-z_]+):/gm;
+  let m: RegExpExecArray | null;
+  while ((m = lineRe.exec(block)) !== null) {
+    keys.add(m[1]);
+  }
+  return keys;
+}
+
+/**
+ * Extract unique p.<column> references from within AS $$ ... $$ function bodies
+ * in the migration SQL (the only context where p is used as a profiles alias).
+ * Returns a sorted array of unique column names.
+ */
+function functionBodyProfileColumnRefs(): string[] {
+  const sql = readMigrationSql();
+  const refs = new Set<string>();
+  const bodyRe = /\bAS\s+\$\$([\s\S]*?)\$\$/g;
+  let bodyMatch: RegExpExecArray | null;
+  while ((bodyMatch = bodyRe.exec(sql)) !== null) {
+    const body = bodyMatch[1];
+    const colRe = /\bp\.([a-z_]+)\b/g;
+    let colMatch: RegExpExecArray | null;
+    while ((colMatch = colRe.exec(body)) !== null) {
+      refs.add(colMatch[1]);
+    }
+  }
+  return [...refs].sort();
+}
+
+describe('F3b migration: p.<column> refs in function bodies are valid live profiles columns', () => {
+  it('finds at least one p.<column> reference in the AS $$ function body', () => {
+    const refs = functionBodyProfileColumnRefs();
+    expect(refs.length, 'regex found zero p.<column> refs -- check scoping').toBeGreaterThan(0);
+  });
+
+  it('every p.<column> reference resolves to a column that exists in live profiles.Row', () => {
+    const refs = functionBodyProfileColumnRefs();
+    const liveKeys = liveProfilesRowKeys();
+    for (const col of refs) {
+      expect(
+        liveKeys.has(col),
+        `p.${col} referenced in migration function body but absent from live profiles.Row (phantom column)`,
+      ).toBe(true);
+    }
+  });
+});
