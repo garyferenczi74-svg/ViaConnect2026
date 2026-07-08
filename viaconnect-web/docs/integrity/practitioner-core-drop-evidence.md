@@ -130,7 +130,7 @@ practitioner core; ride with that tranche as-is, covered by the Cluster 1 sign-o
 |---|---|---|---|
 | practitioners.status DROP COLUMN (_160 line 129) | Drop after admin-guard.ts repoint + 7-day window | | |
 | patient_practitioner_relationships DROP CASCADE (_160 line 193) | Rewrite drop script (3 MVs + 2 policies) + 14-day window | | |
-| practitioner_patients.patient_id DROP NOT NULL (_150) | Apply with practitioner core tranche | | |
+| practitioner_patients.patient_id DROP NOT NULL (_150) | Covered by 210f Decision 1: tranche-new table, zero live exposure. Gary 2026-07-07 | | |
 | wl_pending_reviews_with_sla drop/recreate (_500) | Ride with white label tranche (Cluster 1) | | |
 
 ## Additional deferrals found during F1 extraction
