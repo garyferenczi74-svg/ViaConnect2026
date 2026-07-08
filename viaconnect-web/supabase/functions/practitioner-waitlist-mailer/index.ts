@@ -5,9 +5,43 @@
 // built-in SMTP / Auth admin endpoints. No SendGrid. No third-party providers.
 // Per the project standing rule, all transactional email goes through Supabase.
 //
-// Trigger: pg_cron POSTs every 5 minutes (added in a later migration once
-// Phase 1 lands). Idempotent: each (waitlist_id, step) row is processed at
-// most once-on-success, with attempts tracked for retries.
+// Trigger: pg_cron POSTs every 5 minutes ONCE ARMED (Task F4 arming lifts the
+// cron registration from 20260418000050_practitioner_mailer_cron.sql; see
+// docs/integrity/f4-prearm-checklist.md). Until the arming step seeds the
+// kill-switch flag row, every invocation exits disabled and sends nothing.
+//
+// Prompt 210f Task F4 hardening (Section 3.2 pre-arm checklist):
+//   IDEMPOTENCY   claim-before-send: an atomic compare-and-swap
+//                 (status pending -> sending, RETURNING id) claims each row
+//                 before any SMTP traffic; only the claim winner sends, then
+//                 marks sent. A crash between claim and send leaves the row
+//                 at 'sending', which is NEVER auto-resent (candidate query
+//                 selects pending only) and NEVER silently dropped (the
+//                 stuck-claim scan surfaces it in the heartbeat).
+//   CAPS          PER_RUN_CAP per tick + DAILY_CAP per UTC day, enforced via
+//                 the candidate query limit and a sent-today count checked
+//                 before any send. Unknown budget = no send (fail closed).
+//   KILL SWITCH   public.features row id = 'practitioner_waitlist_mailer'.
+//                 Missing row / read error / kill_switch_engaged all fail
+//                 closed. Single instant disable: engage the kill switch on
+//                 that row. Mechanism documented in mailer-logic.ts.
+//   SCOPE         status='pending' AND step=1 (welcome only; the F3
+//                 AFTER INSERT trigger on voluntary form submissions is the
+//                 only step-1 writer) AND created_at >= FLOOR_TIMESTAMP
+//                 (F3 apply date): no historical sweep by construction.
+//                 Consent: the public application form submission is the
+//                 consent event; waitlist.unsubscribed is the ongoing-consent
+//                 filter, re-checked per lead at send time.
+//   DRIFT         reportSupabaseError on every queue/waitlist/flag read-write
+//                 error path; contexts carry table names only, never emails.
+//   HEALTH        agent_heartbeats upsert (Prompt 208 pattern, live table) at
+//                 run start and end with counts only, plus best-effort
+//                 ultrathink_agent_heartbeat RPC so the F4-armed registry
+//                 health check (ultrathink_agent_events, 20-minute window)
+//                 stays green. No PII in any payload.
+//
+// All decision logic is pure and lives in ./mailer-logic.ts (tested by
+// tests/schema/mailer-prearm-logic.test.ts under vitest, no Deno needed).
 // =============================================================================
 
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
@@ -16,6 +50,26 @@ import { SMTPClient } from 'https://deno.land/x/denomailer@1.6.0/mod.ts';
 import { withTimeout, isTimeoutError } from '../_shared/with-timeout.ts';
 import { safeLog } from '../_shared/safe-log.ts';
 import { getCircuitBreaker, isCircuitBreakerError } from '../_shared/circuit-breaker.ts';
+import { reportSupabaseError } from '../_shared/schema-drift.ts';
+import type { MailerFlagRow } from './mailer-logic.ts';
+import {
+  CANDIDATE_STEP,
+  FLOOR_TIMESTAMP,
+  MAILER_FLAG_ID,
+  claimConfirmed,
+  claimTransition,
+  isWithinCandidateWindow,
+  mailerEnabled,
+  nextRetryStatus,
+  runBudget,
+  shouldStopForDeadline,
+  stuckCutoffIso,
+  utcDayStart,
+} from './mailer-logic.ts';
+
+const AGENT_NAME = 'practitioner-waitlist-mailer';
+const DB_TIMEOUT_MS = 10000;
+const SMTP_TIMEOUT_MS = 15000;
 
 const smtpBreaker = getCircuitBreaker('smtp-email');
 
@@ -52,11 +106,68 @@ function json(data: unknown, status = 200): Response {
   });
 }
 
+// -----------------------------------------------------------------------------
+// HEALTH: heartbeat writes. Counts only, never lead data. Both sinks are
+// best-effort and can never break the run.
+//   1. agent_heartbeats upsert (Prompt 208 pattern; table exists live) is the
+//      primary liveness row: one row per agent, watch it in the internal
+//      health panel or via
+//        select * from agent_heartbeats where agent = 'practitioner-waitlist-mailer';
+//   2. ultrathink_agent_heartbeat RPC feeds ultrathink_agent_events, which the
+//      F4-armed ultrathink_agent_registry health_check_query polls with a
+//      20-minute window; without this the registry would false-alarm.
+// -----------------------------------------------------------------------------
+async function beat(
+  db: SupabaseClient,
+  runId: string,
+  phase: 'start' | 'end',
+  status: 'ok' | 'degraded' | 'error',
+  detail: Record<string, unknown>,
+): Promise<void> {
+  try {
+    const { error } = await withTimeout(
+      db.from('agent_heartbeats').upsert(
+        {
+          agent: AGENT_NAME,
+          status,
+          detail: { phase, run_id: runId, ...detail },
+          last_beat_at: new Date().toISOString(),
+        },
+        { onConflict: 'agent' },
+      ),
+      DB_TIMEOUT_MS,
+      `${AGENT_NAME}.heartbeat-upsert`,
+    );
+    if (error) reportSupabaseError(`${AGENT_NAME}.heartbeat-upsert`, error, { table: 'agent_heartbeats' });
+  } catch (e) {
+    safeLog.warn(AGENT_NAME, 'heartbeat upsert threw', { error: e });
+  }
+
+  try {
+    const { error } = await withTimeout(
+      db.rpc('ultrathink_agent_heartbeat', {
+        p_agent_name: AGENT_NAME,
+        p_run_id: runId,
+        p_event_type: status === 'error' ? 'error' : phase === 'end' ? 'complete' : 'heartbeat',
+        p_payload: { phase, ...detail },
+        p_severity: status === 'ok' ? 'info' : 'warning',
+      }),
+      DB_TIMEOUT_MS,
+      `${AGENT_NAME}.heartbeat-rpc`,
+    );
+    if (error) reportSupabaseError(`${AGENT_NAME}.heartbeat-rpc`, error, { rpc: 'ultrathink_agent_heartbeat' });
+  } catch (e) {
+    safeLog.warn(AGENT_NAME, 'heartbeat rpc threw', { error: e });
+  }
+}
+
 interface QueueRow {
   id: string;
   waitlist_id: string;
   step: number;
   attempts: number;
+  status: string;
+  created_at: string;
 }
 
 interface WaitlistRow {
@@ -155,48 +266,242 @@ serve(async (req: Request) => {
 
   const db = admin();
   const startedAt = Date.now();
+  const nowIso = new Date().toISOString();
+  const runId = crypto.randomUUID();
 
-  // Pull up to 50 due rows.
-  const { data: due, error } = await db
-    .from('practitioner_email_queue')
-    .select('id, waitlist_id, step, attempts')
-    .eq('status', 'pending')
-    .lte('scheduled_for', new Date().toISOString())
-    .order('scheduled_for', { ascending: true })
-    .limit(50);
+  // ---------------------------------------------------------------------------
+  // KILL SWITCH (fail closed). See mailer-logic.ts MAILER_FLAG_ID docs.
+  // A missing flag row, a read error, or an engaged switch all end the run
+  // before any candidate query; queue rows simply stay pending.
+  // ---------------------------------------------------------------------------
+  let flagRow: MailerFlagRow | null = null;
+  try {
+    const { data, error } = await withTimeout(
+      db.from('features')
+        .select('is_active, kill_switch_engaged')
+        .eq('id', MAILER_FLAG_ID)
+        .maybeSingle(),
+      DB_TIMEOUT_MS,
+      `${AGENT_NAME}.flag-read`,
+    );
+    if (error) {
+      reportSupabaseError(`${AGENT_NAME}.flag-read`, error, { table: 'features' });
+      await beat(db, runId, 'end', 'error', { reason: 'flag_read_failed' });
+      return json({ status: 'disabled', reason: 'flag_read_failed' }, 503);
+    }
+    flagRow = (data ?? null) as MailerFlagRow | null;
+  } catch (e) {
+    safeLog.error(AGENT_NAME, 'flag read threw; failing closed', { error: e });
+    await beat(db, runId, 'end', 'error', { reason: 'flag_read_failed' });
+    return json({ status: 'disabled', reason: 'flag_read_failed' }, 503);
+  }
 
-  if (error) return json({ status: 'failed', error: error.message }, 500);
-  const rows = (due ?? []) as QueueRow[];
+  const flag = mailerEnabled(flagRow);
+  if (!flag.enabled) {
+    safeLog.warn(AGENT_NAME, 'run disabled by kill switch', { reason: flag.reason });
+    await beat(db, runId, 'end', 'ok', { reason: flag.reason, sent: 0, failed: 0, skipped: 0 });
+    return json({ status: 'disabled', reason: flag.reason });
+  }
 
+  // ---------------------------------------------------------------------------
+  // HEALTH: stuck-claim scan. Rows at 'sending' older than the cutoff are
+  // crash leftovers from a claim-then-die run. They are surfaced (counted
+  // into the heartbeat and logs) but NEVER auto-resent and never dropped;
+  // reconciliation is a manual operator decision.
+  // ---------------------------------------------------------------------------
+  let claimedStuck = 0;
+  try {
+    const { count, error } = await withTimeout(
+      db.from('practitioner_email_queue')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'sending')
+        .lt('updated_at', stuckCutoffIso(nowIso)),
+      DB_TIMEOUT_MS,
+      `${AGENT_NAME}.stuck-scan`,
+    );
+    if (error) reportSupabaseError(`${AGENT_NAME}.stuck-scan`, error, { table: 'practitioner_email_queue' });
+    else claimedStuck = count ?? 0;
+  } catch (e) {
+    safeLog.warn(AGENT_NAME, 'stuck-claim scan threw', { error: e });
+  }
+  if (claimedStuck > 0) {
+    safeLog.warn(AGENT_NAME, 'stuck claims detected (claimed but never marked sent/failed); manual triage required', {
+      claimedStuck,
+    });
+  }
+  await beat(db, runId, 'start', claimedStuck > 0 ? 'degraded' : 'ok', { claimed_stuck: claimedStuck });
+
+  // ---------------------------------------------------------------------------
+  // CAPS: daily budget. If the sent-today count cannot be read, the budget is
+  // unknown and nothing sends this tick (fail closed).
+  // ---------------------------------------------------------------------------
+  let sentToday = 0;
+  try {
+    const { count, error } = await withTimeout(
+      db.from('practitioner_email_queue')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'sent')
+        .gte('sent_at', utcDayStart(nowIso)),
+      DB_TIMEOUT_MS,
+      `${AGENT_NAME}.daily-count`,
+    );
+    if (error) {
+      reportSupabaseError(`${AGENT_NAME}.daily-count`, error, { table: 'practitioner_email_queue' });
+      await beat(db, runId, 'end', 'error', { reason: 'daily_count_unavailable', claimed_stuck: claimedStuck });
+      return json({ status: 'skipped_run', reason: 'daily_count_unavailable' }, 503);
+    }
+    sentToday = count ?? 0;
+  } catch (e) {
+    safeLog.error(AGENT_NAME, 'daily-count read threw; failing closed', { error: e });
+    await beat(db, runId, 'end', 'error', { reason: 'daily_count_unavailable', claimed_stuck: claimedStuck });
+    return json({ status: 'skipped_run', reason: 'daily_count_unavailable' }, 503);
+  }
+
+  const budget = runBudget(sentToday);
+  if (budget.allowed === 0) {
+    safeLog.warn(AGENT_NAME, 'daily cap reached; no sends this tick', { sentToday });
+    await beat(db, runId, 'end', 'ok', {
+      reason: budget.reason,
+      sent_today: sentToday,
+      claimed_stuck: claimedStuck,
+    });
+    return json({ status: 'capped', reason: budget.reason, sentToday });
+  }
+
+  // ---------------------------------------------------------------------------
+  // SCOPE CONTROL: candidate set = pending welcome-step rows enqueued by the
+  // F3 form trigger on/after the floor date, due now. dueCount (uncapped) is
+  // read first so the heartbeat can report how many rows the caps deferred.
+  // ---------------------------------------------------------------------------
+  let dueCount = 0;
+  try {
+    const { count, error } = await withTimeout(
+      db.from('practitioner_email_queue')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'pending')
+        .eq('step', CANDIDATE_STEP)
+        .gte('created_at', FLOOR_TIMESTAMP)
+        .lte('scheduled_for', nowIso),
+      DB_TIMEOUT_MS,
+      `${AGENT_NAME}.due-count`,
+    );
+    if (error) reportSupabaseError(`${AGENT_NAME}.due-count`, error, { table: 'practitioner_email_queue' });
+    else dueCount = count ?? 0;
+  } catch (e) {
+    safeLog.warn(AGENT_NAME, 'due-count read threw', { error: e });
+  }
+
+  let rows: QueueRow[] = [];
+  try {
+    const { data: due, error } = await withTimeout(
+      db.from('practitioner_email_queue')
+        .select('id, waitlist_id, step, attempts, status, created_at')
+        .eq('status', 'pending')
+        .eq('step', CANDIDATE_STEP)
+        .gte('created_at', FLOOR_TIMESTAMP)
+        .lte('scheduled_for', nowIso)
+        .order('scheduled_for', { ascending: true })
+        .limit(budget.allowed),
+      DB_TIMEOUT_MS,
+      `${AGENT_NAME}.candidate-query`,
+    );
+    if (error) {
+      reportSupabaseError(`${AGENT_NAME}.candidate-query`, error, { table: 'practitioner_email_queue' });
+      await beat(db, runId, 'end', 'error', { reason: 'candidate_query_failed', claimed_stuck: claimedStuck });
+      return json({ status: 'failed', error: error.message }, 500);
+    }
+    rows = (due ?? []) as QueueRow[];
+  } catch (e) {
+    safeLog.error(AGENT_NAME, 'candidate query threw', { error: e });
+    await beat(db, runId, 'end', 'error', { reason: 'candidate_query_failed', claimed_stuck: claimedStuck });
+    return json({ status: 'failed', reason: 'candidate_query_failed' }, 500);
+  }
+  const capped = Math.max(0, dueCount - rows.length);
+
+  let claimed = 0;
+  let claimLost = 0;
   let sent = 0;
   let failed = 0;
   let skipped = 0;
+  let deadlineStopped = false;
 
   for (const row of rows) {
-    // Mark sending (advisory lock — best effort under read-committed)
-    await db.from('practitioner_email_queue')
-      .update({ status: 'sending', attempts: row.attempts + 1, updated_at: new Date().toISOString() })
-      .eq('id', row.id);
+    // RESILIENCE: bounded run. Remaining rows stay pending for the next tick.
+    if (shouldStopForDeadline(startedAt, Date.now())) {
+      deadlineStopped = true;
+      safeLog.warn(AGENT_NAME, 'run soft deadline reached; leaving remaining rows pending', { sent, claimed });
+      break;
+    }
 
-    const { data: waitlist } = await db
+    // SCOPE: pure re-check of the query filters (fail closed on anomalies).
+    if (!isWithinCandidateWindow(row.created_at) || claimTransition(row.status) !== 'claim') {
+      skipped++;
+      continue;
+    }
+
+    // IDEMPOTENCY: atomic claim-before-send. The compare-and-swap only
+    // matches a row still 'pending'; RETURNING proves ownership. Losing the
+    // race means another tick owns the row: do not send.
+    const attemptsAfterClaim = row.attempts + 1;
+    let ownsClaim = false;
+    try {
+      const { data: claimedRows, error: claimError } = await db
+        .from('practitioner_email_queue')
+        .update({ status: 'sending', attempts: attemptsAfterClaim, updated_at: new Date().toISOString() })
+        .eq('id', row.id)
+        .eq('status', 'pending')
+        .select('id');
+      if (claimError) {
+        reportSupabaseError(`${AGENT_NAME}.claim`, claimError, { table: 'practitioner_email_queue' });
+      } else {
+        ownsClaim = claimConfirmed((claimedRows ?? []).length);
+      }
+    } catch (e) {
+      safeLog.warn(AGENT_NAME, 'claim write threw', { error: e });
+    }
+    if (!ownsClaim) {
+      claimLost++;
+      continue;
+    }
+    claimed++;
+
+    const { data: waitlist, error: waitlistError } = await db
       .from('practitioner_waitlist')
       .select('id, email, first_name, last_name, practice_name, credential_type, unsubscribed')
       .eq('id', row.waitlist_id)
       .maybeSingle();
 
-    const w = waitlist as WaitlistRow | null;
-    if (!w) {
-      await db.from('practitioner_email_queue')
-        .update({ status: 'failed', last_error: 'waitlist row missing', updated_at: new Date().toISOString() })
+    if (waitlistError) {
+      reportSupabaseError(`${AGENT_NAME}.waitlist-read`, waitlistError, { table: 'practitioner_waitlist' });
+      // Nothing was sent, so the claim is released with retry accounting.
+      // If this release write also fails, the row stays 'sending' and the
+      // stuck-claim scan surfaces it: no silent resend, no silent drop.
+      const { error: releaseError } = await db.from('practitioner_email_queue')
+        .update({ status: nextRetryStatus(attemptsAfterClaim), last_error: 'waitlist read failed', updated_at: new Date().toISOString() })
         .eq('id', row.id);
+      if (releaseError) reportSupabaseError(`${AGENT_NAME}.claim-release`, releaseError, { table: 'practitioner_email_queue' });
       failed++;
       continue;
     }
 
+    const w = waitlist as WaitlistRow | null;
+    if (!w) {
+      const { error: markError } = await db.from('practitioner_email_queue')
+        .update({ status: 'failed', last_error: 'waitlist row missing', updated_at: new Date().toISOString() })
+        .eq('id', row.id);
+      if (markError) reportSupabaseError(`${AGENT_NAME}.mark-missing`, markError, { table: 'practitioner_email_queue' });
+      failed++;
+      continue;
+    }
+
+    // CONSENT: the voluntary application form submission is the consent
+    // event (the F3 AFTER INSERT trigger is the only enqueue path);
+    // unsubscribed is the ongoing-consent filter, re-checked at send time.
     if (w.unsubscribed) {
-      await db.from('practitioner_email_queue')
+      const { error: skipError } = await db.from('practitioner_email_queue')
         .update({ status: 'skipped', updated_at: new Date().toISOString() })
         .eq('id', row.id);
+      if (skipError) reportSupabaseError(`${AGENT_NAME}.mark-skipped`, skipError, { table: 'practitioner_email_queue' });
       skipped++;
       continue;
     }
@@ -211,37 +516,47 @@ serve(async (req: Request) => {
             text: rendered.text,
             html: rendered.html,
           }),
-          15000,
-          `practitioner-waitlist-mailer.send.step-${row.step}`,
+          SMTP_TIMEOUT_MS,
+          `${AGENT_NAME}.send.step-${row.step}`,
         )
       );
-      await db.from('practitioner_email_queue')
+      sent++;
+      // IDEMPOTENCY: the email is out. If the sent-mark write fails the row
+      // must stay 'sending' (never back to pending): the pending-only
+      // candidate query guarantees no resend, and the stuck-claim scan
+      // surfaces the row for manual reconciliation.
+      const { error: sentError } = await db.from('practitioner_email_queue')
         .update({ status: 'sent', sent_at: new Date().toISOString(), updated_at: new Date().toISOString() })
         .eq('id', row.id);
-      await db.from('practitioner_waitlist')
+      if (sentError) {
+        reportSupabaseError(`${AGENT_NAME}.mark-sent`, sentError, { table: 'practitioner_email_queue' });
+        safeLog.error(AGENT_NAME, 'email sent but sent-mark failed; row left in sending for stuck-claim triage', { step: row.step });
+      }
+      const { error: progressError } = await db.from('practitioner_waitlist')
         .update({ last_email_sent_at: new Date().toISOString(), email_sequence_step: row.step, updated_at: new Date().toISOString() })
         .eq('id', w.id);
-      sent++;
+      if (progressError) reportSupabaseError(`${AGENT_NAME}.waitlist-progress`, progressError, { table: 'practitioner_waitlist' });
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'send failed';
-      if (isCircuitBreakerError(e)) safeLog.warn('practitioner-waitlist-mailer', 'smtp circuit open', { queueId: row.id, step: row.step, error: e });
-      else if (isTimeoutError(e)) safeLog.warn('practitioner-waitlist-mailer', 'smtp timeout', { queueId: row.id, step: row.step, error: e });
-      else safeLog.error('practitioner-waitlist-mailer', 'smtp send failed', { queueId: row.id, step: row.step, error: e });
-      const isPermanent = row.attempts + 1 >= 5;
-      await db.from('practitioner_email_queue')
+      if (isCircuitBreakerError(e)) safeLog.warn(AGENT_NAME, 'smtp circuit open', { queueId: row.id, step: row.step, error: e });
+      else if (isTimeoutError(e)) safeLog.warn(AGENT_NAME, 'smtp timeout', { queueId: row.id, step: row.step, error: e });
+      else safeLog.error(AGENT_NAME, 'smtp send failed', { queueId: row.id, step: row.step, error: e });
+      const retryStatus = nextRetryStatus(attemptsAfterClaim);
+      const { error: failError } = await db.from('practitioner_email_queue')
         .update({
-          status: isPermanent ? 'failed' : 'pending',
+          status: retryStatus,
           last_error: msg,
           updated_at: new Date().toISOString(),
         })
         .eq('id', row.id);
+      if (failError) reportSupabaseError(`${AGENT_NAME}.mark-failed`, failError, { table: 'practitioner_email_queue' });
 
       // On permanent fail, surface to Jeffery's admin LiveFeed so the
       // burndown is visible. Best-effort; do not block the loop.
-      if (isPermanent) {
+      if (retryStatus === 'failed') {
         try {
-          await db.from('agent_messages').insert({
-            from_agent: 'practitioner-waitlist-mailer',
+          const { error: msgError } = await db.from('agent_messages').insert({
+            from_agent: AGENT_NAME,
             to_agent: 'jeffery',
             message_type: 'mailer_permanent_fail',
             user_id: null,
@@ -249,11 +564,12 @@ serve(async (req: Request) => {
               queue_id: row.id,
               waitlist_id: w.id,
               step: row.step,
-              attempts: row.attempts + 1,
+              attempts: attemptsAfterClaim,
               last_error: msg,
             },
             status: 'pending',
           });
+          if (msgError) reportSupabaseError(`${AGENT_NAME}.agent-message`, msgError, { table: 'agent_messages' });
         } catch {
           // ignore secondary failure; primary status is already failed
         }
@@ -262,12 +578,23 @@ serve(async (req: Request) => {
     }
   }
 
-  return json({
-    status: 'ok',
-    durationMs: Date.now() - startedAt,
-    processed: rows.length,
+  // HEALTH: end-of-run heartbeat. Counts only, no PII.
+  const runStatus: 'ok' | 'degraded' = failed > 0 || claimedStuck > 0 ? 'degraded' : 'ok';
+  const counts = {
+    due: dueCount,
+    fetched: rows.length,
+    claimed,
+    claim_lost: claimLost,
     sent,
     failed,
     skipped,
-  });
+    capped,
+    claimed_stuck: claimedStuck,
+    sent_today_before: sentToday,
+    deadline_stopped: deadlineStopped,
+    duration_ms: Date.now() - startedAt,
+  };
+  await beat(db, runId, 'end', runStatus, counts);
+
+  return json({ status: 'ok', ...counts });
 });
