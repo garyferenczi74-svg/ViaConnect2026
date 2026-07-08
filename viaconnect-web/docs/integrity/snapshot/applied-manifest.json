@@ -37,7 +37,7 @@
       "note": "Second apply of the same file (idempotent-safe double-apply per remediation-log F1 row); kept as its own entry because the database recorded two versions."
     },
     {
-      "version": "pending-verification",
+      "version": "20260708003037",
       "name": "20260707160000_prompt_210d_user_variants_risk_category",
       "note": "P0-7/7b apply executed 2026-07-07 per docs/integrity/remediation-log.md, but the version stamp was not recorded at apply time; the controller corrects it at the next snapshot regen."
     },
@@ -46,7 +46,7 @@
       "name": "20260707170000_prompt_210f_certification_waitlist_additive"
     },
     {
-      "version": "pending-verification",
+      "version": "20260708032837",
       "name": "20260707172000_prompt_210f_practitioner_invitations_additive",
       "note": "F3b apply executed 2026-07-07, version stamp not captured; the controller corrects it at the next snapshot regen."
     }
