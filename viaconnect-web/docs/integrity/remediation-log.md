@@ -27,6 +27,8 @@ Code-fix-only units (P0-5, P0-7, P0-9) reach prod through the normal main deploy
 
 | F5 white label additive | Decision 3 schema: 15 tables, 2 locked views, 2 buckets, seeds | migration 20260708090000 (commits 9d7ec65e + 22691ae0, fable review, applied v20260709012307) | APPLIED | Gary 2026-07-07 (Decision 3) | 2026-07-08 | revert: per f5-tranche-verification.md rollback reference |
 
+| F6-index one-current unique | Final-review launch prerequisite: DB-enforce one current label design per practitioner+product | migration 20260709000000 (commit 679fd893, applied, verified live) | APPLIED | Gary (final-review mandate) | 2026-07-09 | revert: drop index uq_label_design_one_current |
+
 ## Apply order recommendation (after sign-offs)
 
 1. P0-2 audit_logs (restores audit trail platform-wide, zero behavior risk)
