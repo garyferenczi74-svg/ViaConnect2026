@@ -130,7 +130,14 @@ const UNSUBSCRIBE_TOKEN_SECRET = Deno.env.get('UNSUBSCRIBE_TOKEN_SECRET') ?? '';
 // by eye instead of looking silently compliant.
 const POSTAL_ADDRESS_LINE = 'TODO-GARY-AT-ARMING';
 
+/** Lowercase UUID shape -- mirrors src/lib/waitlist/unsubscribe-token.ts WAITLIST_ID_RE. */
+const WAITLIST_ID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
 async function signUnsubscribeToken(waitlistId: string): Promise<string> {
+  if (!WAITLIST_ID_RE.test(waitlistId)) {
+    throw new Error('signUnsubscribeToken: waitlistId must be a lowercase UUID');
+  }
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(
     'raw',
@@ -259,6 +266,16 @@ const STEP_SUBJECTS: Record<number, string> = {
   6: 'Your Cohort 1 status',
 };
 
+/** Minimal HTML escaper for user-supplied fields in the HTML email arm. */
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function renderEmail(
   step: number,
   w: WaitlistRow,
@@ -304,9 +321,22 @@ function renderEmail(
     POSTAL_ADDRESS_LINE;
 
   const text = `${greeting}\n\n${body}\n\n${closing}\n\n${complianceFooter}\n`;
+
+  // HTML arm only: escape user-supplied fields before interpolation (Fix 2).
+  // escapeHtml is applied first; newline->br runs after on the already-escaped string.
+  const htmlFirstName = escapeHtml(w.first_name);
+  const htmlPracticeName = escapeHtml(w.practice_name);
+  const htmlGreeting = `Dear ${htmlFirstName},`;
+  // Substitute the escaped practice name into the pre-built body only where
+  // it was interpolated. split/join is a target-safe literal replaceAll; guard
+  // against empty string to avoid split('', ...) splitting every character.
+  const htmlBody = w.practice_name.length > 0
+    ? body.split(w.practice_name).join(htmlPracticeName)
+    : body;
+
   const html =
-    `<p>${greeting.replace(/\n/g, '<br/>')}</p>` +
-    `<p>${body.replace(/\n/g, '<br/>')}</p>` +
+    `<p>${htmlGreeting.replace(/\n/g, '<br/>')}</p>` +
+    `<p>${htmlBody.replace(/\n/g, '<br/>')}</p>` +
     `<p>${closing.replace(/\n/g, '<br/>')}</p>` +
     '<p style="font-size:12px;color:#6b7280;">' +
     `You may <a href="${unsubscribeUrl}">unsubscribe</a> at any time.<br/>` +
