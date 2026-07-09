@@ -34,6 +34,16 @@
 //                 filter, re-checked per lead at send time.
 //   DRIFT         reportSupabaseError on every queue/waitlist/flag read-write
 //                 error path; contexts carry table names only, never emails.
+//                 F4-fix: EVERY DB read and write, pre-loop and in-loop
+//                 (claim, waitlist-read, claim-release, mark-missing,
+//                 mark-skipped, mark-sent, mark-failed), is bounded by
+//                 withTimeout; an in-loop timeout takes that site's existing
+//                 error path and never crashes the loop.
+//   COMPLIANCE    F4b: every rendered email carries an unsubscribe link
+//                 (HMAC token, verified by GET /api/waitlist/unsubscribe)
+//                 and a physical postal address slot. ARMING IS BLOCKED
+//                 while POSTAL_ADDRESS_LINE reads TODO-GARY-AT-ARMING
+//                 (docs/integrity/f4-prearm-checklist.md, Kelsey row).
 //   HEALTH        agent_heartbeats upsert (Prompt 208 pattern, live table) at
 //                 run start and end with counts only, plus best-effort
 //                 ultrathink_agent_heartbeat RPC so the F4-armed registry
@@ -87,6 +97,66 @@ const SMTP_USER = Deno.env.get('SMTP_USER') ?? '';
 const SMTP_PASS = Deno.env.get('SMTP_PASS') ?? '';
 const SMTP_FROM = Deno.env.get('SMTP_FROM') ?? 'no-reply@viacurawellness.com';
 const SMTP_FROM_NAME = Deno.env.get('SMTP_FROM_NAME') ?? 'ViaCura';
+
+// -----------------------------------------------------------------------------
+// COMPLIANCE (Prompt 210f Task F4b): CAN-SPAM / CASL slots.
+// Every rendered email must carry a working unsubscribe link and a valid
+// physical postal address line.
+//
+// Unsubscribe token contract (canonical module with pinned vitest tests:
+// src/lib/waitlist/unsubscribe-token.ts):
+//   token = <waitlistId>.<hex HMAC-SHA256(UNSUBSCRIBE_TOKEN_SECRET, waitlistId)>
+// signUnsubscribeToken below is the Deno crypto.subtle mirror of that node
+// module and MUST keep producing byte-identical tokens. The link lands on
+// GET /api/waitlist/unsubscribe, which verifies the token and sets
+// practitioner_waitlist.unsubscribed = true, exactly the flag this mailer
+// re-checks per lead at send time.
+//
+// At arming Gary sets, with the SAME secret value on both sides:
+//   - UNSUBSCRIBE_TOKEN_SECRET in the Vercel env (route verify side), and
+//   - UNSUBSCRIBE_TOKEN_SECRET plus BASE_URL as Supabase function secrets
+//     here (sign side; BASE_URL is the public site origin the route lives on).
+// If either is missing, the slot renders a loud TODO literal: never a silent
+// blank, never a link signed with an empty secret.
+// -----------------------------------------------------------------------------
+const BASE_URL = Deno.env.get('BASE_URL') ?? '';
+const UNSUBSCRIBE_TOKEN_SECRET = Deno.env.get('UNSUBSCRIBE_TOKEN_SECRET') ?? '';
+
+// !!! ARMING BLOCKER !!! Do NOT arm the cron or seed the kill-switch flag row
+// while this constant reads TODO-GARY-AT-ARMING. CAN-SPAM/CASL require a
+// valid physical postal address in every commercial email; Gary supplies the
+// literal at the Kelsey gate (docs/integrity/f4-prearm-checklist.md). The
+// placeholder is intentionally visible so the internal test send surfaces it
+// by eye instead of looking silently compliant.
+const POSTAL_ADDRESS_LINE = 'TODO-GARY-AT-ARMING';
+
+async function signUnsubscribeToken(waitlistId: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(UNSUBSCRIBE_TOKEN_SECRET),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+  const signature = new Uint8Array(
+    await crypto.subtle.sign('HMAC', key, encoder.encode(waitlistId)),
+  );
+  let hex = '';
+  for (const byte of signature) hex += byte.toString(16).padStart(2, '0');
+  return `${waitlistId}.${hex}`;
+}
+
+async function buildUnsubscribeUrl(waitlistId: string): Promise<string> {
+  if (!BASE_URL || !UNSUBSCRIBE_TOKEN_SECRET) {
+    // Fail LOUD inside the rendered email rather than omitting the legally
+    // required link. The arming checklist blocks until both secrets exist,
+    // and the internal test send would surface this literal immediately.
+    return 'TODO-AT-ARMING-SET-BASE_URL-AND-UNSUBSCRIBE_TOKEN_SECRET';
+  }
+  const token = await signUnsubscribeToken(waitlistId);
+  return `${BASE_URL.replace(/\/+$/, '')}/api/waitlist/unsubscribe?token=${token}`;
+}
 
 function admin(): SupabaseClient {
   return createClient(SUPABASE_URL, SERVICE_KEY, {
@@ -189,9 +259,15 @@ const STEP_SUBJECTS: Record<number, string> = {
   6: 'Your Cohort 1 status',
 };
 
-function renderEmail(step: number, w: WaitlistRow): { subject: string; text: string; html: string } {
+function renderEmail(
+  step: number,
+  w: WaitlistRow,
+  unsubscribeUrl: string,
+): { subject: string; text: string; html: string } {
   const greeting = `Dear ${w.first_name},`;
   const subject = STEP_SUBJECTS[step] ?? 'ViaCura update';
+  // Entity string per Gary decision 2026-07-08: FarmCeutica Wellness LLC
+  // (never Ltd) on customer-facing email text.
   const closing =
     'Sincerely,\nThe ViaCura founding team\nFarmCeutica Wellness LLC';
 
@@ -219,11 +295,23 @@ function renderEmail(step: number, w: WaitlistRow): { subject: string; text: str
       body = `Thank you for your interest in ViaCura.`;
   }
 
-  const text = `${greeting}\n\n${body}\n\n${closing}\n`;
+  // COMPLIANCE FOOTER (F4b): unsubscribe link + physical postal address in
+  // every email, both text and html parts. POSTAL_ADDRESS_LINE is the
+  // TODO-GARY-AT-ARMING slot; arming is BLOCKED until Gary supplies it.
+  const complianceFooter =
+    `You may unsubscribe at any time: ${unsubscribeUrl}\n` +
+    'FarmCeutica Wellness LLC\n' +
+    POSTAL_ADDRESS_LINE;
+
+  const text = `${greeting}\n\n${body}\n\n${closing}\n\n${complianceFooter}\n`;
   const html =
     `<p>${greeting.replace(/\n/g, '<br/>')}</p>` +
     `<p>${body.replace(/\n/g, '<br/>')}</p>` +
-    `<p>${closing.replace(/\n/g, '<br/>')}</p>`;
+    `<p>${closing.replace(/\n/g, '<br/>')}</p>` +
+    '<p style="font-size:12px;color:#6b7280;">' +
+    `You may <a href="${unsubscribeUrl}">unsubscribe</a> at any time.<br/>` +
+    'FarmCeutica Wellness LLC<br/>' +
+    `${POSTAL_ADDRESS_LINE}</p>`;
   return { subject, text, html };
 }
 
@@ -445,18 +533,25 @@ serve(async (req: Request) => {
     const attemptsAfterClaim = row.attempts + 1;
     let ownsClaim = false;
     try {
-      const { data: claimedRows, error: claimError } = await db
-        .from('practitioner_email_queue')
-        .update({ status: 'sending', attempts: attemptsAfterClaim, updated_at: new Date().toISOString() })
-        .eq('id', row.id)
-        .eq('status', 'pending')
-        .select('id');
+      const { data: claimedRows, error: claimError } = await withTimeout(
+        db.from('practitioner_email_queue')
+          .update({ status: 'sending', attempts: attemptsAfterClaim, updated_at: new Date().toISOString() })
+          .eq('id', row.id)
+          .eq('status', 'pending')
+          .select('id'),
+        DB_TIMEOUT_MS,
+        `${AGENT_NAME}.claim`,
+      );
       if (claimError) {
         reportSupabaseError(`${AGENT_NAME}.claim`, claimError, { table: 'practitioner_email_queue' });
       } else {
         ownsClaim = claimConfirmed((claimedRows ?? []).length);
       }
     } catch (e) {
+      // F4-fix: a claim timeout lands here too. Ownership is unproven, so
+      // this run does NOT send (claim-lost path below). If the UPDATE in
+      // fact landed, the row sits at 'sending' and the stuck-claim scan
+      // surfaces it: never a double send, never a crashed loop.
       safeLog.warn(AGENT_NAME, 'claim write threw', { error: e });
     }
     if (!ownsClaim) {
@@ -465,31 +560,65 @@ serve(async (req: Request) => {
     }
     claimed++;
 
-    const { data: waitlist, error: waitlistError } = await db
-      .from('practitioner_waitlist')
-      .select('id, email, first_name, last_name, practice_name, credential_type, unsubscribed')
-      .eq('id', row.waitlist_id)
-      .maybeSingle();
+    // F4-fix: the waitlist read is bounded and throw-contained. A timeout
+    // or throw takes the same claim-release error path an error result
+    // takes; the loop itself never crashes.
+    let w: WaitlistRow | null = null;
+    let waitlistReadFailed = false;
+    try {
+      const { data: waitlist, error: waitlistError } = await withTimeout(
+        db.from('practitioner_waitlist')
+          .select('id, email, first_name, last_name, practice_name, credential_type, unsubscribed')
+          .eq('id', row.waitlist_id)
+          .maybeSingle(),
+        DB_TIMEOUT_MS,
+        `${AGENT_NAME}.waitlist-read`,
+      );
+      if (waitlistError) {
+        reportSupabaseError(`${AGENT_NAME}.waitlist-read`, waitlistError, { table: 'practitioner_waitlist' });
+        waitlistReadFailed = true;
+      } else {
+        w = (waitlist ?? null) as WaitlistRow | null;
+      }
+    } catch (e) {
+      safeLog.warn(AGENT_NAME, 'waitlist read threw', { error: e });
+      waitlistReadFailed = true;
+    }
 
-    if (waitlistError) {
-      reportSupabaseError(`${AGENT_NAME}.waitlist-read`, waitlistError, { table: 'practitioner_waitlist' });
+    if (waitlistReadFailed) {
       // Nothing was sent, so the claim is released with retry accounting.
-      // If this release write also fails, the row stays 'sending' and the
-      // stuck-claim scan surfaces it: no silent resend, no silent drop.
-      const { error: releaseError } = await db.from('practitioner_email_queue')
-        .update({ status: nextRetryStatus(attemptsAfterClaim), last_error: 'waitlist read failed', updated_at: new Date().toISOString() })
-        .eq('id', row.id);
-      if (releaseError) reportSupabaseError(`${AGENT_NAME}.claim-release`, releaseError, { table: 'practitioner_email_queue' });
+      // If this release write also fails or times out, the row stays
+      // 'sending' and the stuck-claim scan surfaces it: no silent resend,
+      // no silent drop.
+      try {
+        const { error: releaseError } = await withTimeout(
+          db.from('practitioner_email_queue')
+            .update({ status: nextRetryStatus(attemptsAfterClaim), last_error: 'waitlist read failed', updated_at: new Date().toISOString() })
+            .eq('id', row.id),
+          DB_TIMEOUT_MS,
+          `${AGENT_NAME}.claim-release`,
+        );
+        if (releaseError) reportSupabaseError(`${AGENT_NAME}.claim-release`, releaseError, { table: 'practitioner_email_queue' });
+      } catch (e) {
+        safeLog.warn(AGENT_NAME, 'claim-release write threw; row left in sending for stuck-claim triage', { error: e });
+      }
       failed++;
       continue;
     }
 
-    const w = waitlist as WaitlistRow | null;
     if (!w) {
-      const { error: markError } = await db.from('practitioner_email_queue')
-        .update({ status: 'failed', last_error: 'waitlist row missing', updated_at: new Date().toISOString() })
-        .eq('id', row.id);
-      if (markError) reportSupabaseError(`${AGENT_NAME}.mark-missing`, markError, { table: 'practitioner_email_queue' });
+      try {
+        const { error: markError } = await withTimeout(
+          db.from('practitioner_email_queue')
+            .update({ status: 'failed', last_error: 'waitlist row missing', updated_at: new Date().toISOString() })
+            .eq('id', row.id),
+          DB_TIMEOUT_MS,
+          `${AGENT_NAME}.mark-missing`,
+        );
+        if (markError) reportSupabaseError(`${AGENT_NAME}.mark-missing`, markError, { table: 'practitioner_email_queue' });
+      } catch (e) {
+        safeLog.warn(AGENT_NAME, 'mark-missing write threw; row left in sending for stuck-claim triage', { error: e });
+      }
       failed++;
       continue;
     }
@@ -498,16 +627,28 @@ serve(async (req: Request) => {
     // event (the F3 AFTER INSERT trigger is the only enqueue path);
     // unsubscribed is the ongoing-consent filter, re-checked at send time.
     if (w.unsubscribed) {
-      const { error: skipError } = await db.from('practitioner_email_queue')
-        .update({ status: 'skipped', updated_at: new Date().toISOString() })
-        .eq('id', row.id);
-      if (skipError) reportSupabaseError(`${AGENT_NAME}.mark-skipped`, skipError, { table: 'practitioner_email_queue' });
+      try {
+        const { error: skipError } = await withTimeout(
+          db.from('practitioner_email_queue')
+            .update({ status: 'skipped', updated_at: new Date().toISOString() })
+            .eq('id', row.id),
+          DB_TIMEOUT_MS,
+          `${AGENT_NAME}.mark-skipped`,
+        );
+        if (skipError) reportSupabaseError(`${AGENT_NAME}.mark-skipped`, skipError, { table: 'practitioner_email_queue' });
+      } catch (e) {
+        safeLog.warn(AGENT_NAME, 'mark-skipped write threw; row left in sending for stuck-claim triage', { error: e });
+      }
       skipped++;
       continue;
     }
 
-    const rendered = renderEmail(row.step, w);
     try {
+      // COMPLIANCE (F4b): the unsubscribe link is signed per lead from the
+      // waitlist row id; renderEmail appends it plus the postal address
+      // slot. Built inside this try so an unexpected crypto failure takes
+      // the retryable send-failure path instead of crashing the loop.
+      const rendered = renderEmail(row.step, w, await buildUnsubscribeUrl(w.id));
       await smtpBreaker.execute(() =>
         withTimeout(
           sendViaSupabaseSmtp({
@@ -525,11 +666,25 @@ serve(async (req: Request) => {
       // must stay 'sending' (never back to pending): the pending-only
       // candidate query guarantees no resend, and the stuck-claim scan
       // surfaces the row for manual reconciliation.
-      const { error: sentError } = await db.from('practitioner_email_queue')
-        .update({ status: 'sent', sent_at: new Date().toISOString(), updated_at: new Date().toISOString() })
-        .eq('id', row.id);
-      if (sentError) {
-        reportSupabaseError(`${AGENT_NAME}.mark-sent`, sentError, { table: 'practitioner_email_queue' });
+      // F4-fix: the nested try/catch is load-bearing. A mark-sent timeout
+      // must take THIS error path (row left at 'sending'), never the outer
+      // send-failure catch, which would set the row back to pending after
+      // the email already went out (double-send hazard).
+      let sentMarkError: unknown = null;
+      try {
+        const { error: sentError } = await withTimeout(
+          db.from('practitioner_email_queue')
+            .update({ status: 'sent', sent_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+            .eq('id', row.id),
+          DB_TIMEOUT_MS,
+          `${AGENT_NAME}.mark-sent`,
+        );
+        sentMarkError = sentError ?? null;
+      } catch (markSentThrew) {
+        sentMarkError = markSentThrew;
+      }
+      if (sentMarkError) {
+        reportSupabaseError(`${AGENT_NAME}.mark-sent`, sentMarkError, { table: 'practitioner_email_queue' });
         safeLog.error(AGENT_NAME, 'email sent but sent-mark failed; row left in sending for stuck-claim triage', { step: row.step });
       }
       const { error: progressError } = await db.from('practitioner_waitlist')
@@ -542,14 +697,25 @@ serve(async (req: Request) => {
       else if (isTimeoutError(e)) safeLog.warn(AGENT_NAME, 'smtp timeout', { queueId: row.id, step: row.step, error: e });
       else safeLog.error(AGENT_NAME, 'smtp send failed', { queueId: row.id, step: row.step, error: e });
       const retryStatus = nextRetryStatus(attemptsAfterClaim);
-      const { error: failError } = await db.from('practitioner_email_queue')
-        .update({
-          status: retryStatus,
-          last_error: msg,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', row.id);
-      if (failError) reportSupabaseError(`${AGENT_NAME}.mark-failed`, failError, { table: 'practitioner_email_queue' });
+      // F4-fix: bounded and throw-contained. A mark-failed timeout inside
+      // this catch block must not escape (it would crash the loop); the row
+      // stays 'sending' and the stuck-claim scan surfaces it.
+      try {
+        const { error: failError } = await withTimeout(
+          db.from('practitioner_email_queue')
+            .update({
+              status: retryStatus,
+              last_error: msg,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', row.id),
+          DB_TIMEOUT_MS,
+          `${AGENT_NAME}.mark-failed`,
+        );
+        if (failError) reportSupabaseError(`${AGENT_NAME}.mark-failed`, failError, { table: 'practitioner_email_queue' });
+      } catch (markFailedThrew) {
+        safeLog.warn(AGENT_NAME, 'mark-failed write threw; row left in sending for stuck-claim triage', { error: markFailedThrew });
+      }
 
       // On permanent fail, surface to Jeffery's admin LiveFeed so the
       // burndown is visible. Best-effort; do not block the loop.

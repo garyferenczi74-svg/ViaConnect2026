@@ -90,6 +90,7 @@ export interface FlagDecision {
  */
 export function mailerEnabled(row: MailerFlagRow | null | undefined): FlagDecision {
   if (!row) return { enabled: false, reason: 'flag_row_missing' };
+  // null treated as not-engaged; safe because the DB column is a non-nullable boolean (features.kill_switch_engaged BOOLEAN NOT NULL DEFAULT false)
   if (row.kill_switch_engaged === true) return { enabled: false, reason: 'kill_switch_engaged' };
   if (row.is_active !== true) return { enabled: false, reason: 'flag_inactive' };
   return { enabled: true, reason: 'enabled' };
