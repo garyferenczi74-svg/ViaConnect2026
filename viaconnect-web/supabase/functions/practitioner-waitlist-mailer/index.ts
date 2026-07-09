@@ -95,8 +95,8 @@ const SMTP_HOST = Deno.env.get('SMTP_HOST') ?? '';
 const SMTP_PORT = Number(Deno.env.get('SMTP_PORT') ?? '587');
 const SMTP_USER = Deno.env.get('SMTP_USER') ?? '';
 const SMTP_PASS = Deno.env.get('SMTP_PASS') ?? '';
-const SMTP_FROM = Deno.env.get('SMTP_FROM') ?? 'no-reply@viacurawellness.com';
-const SMTP_FROM_NAME = Deno.env.get('SMTP_FROM_NAME') ?? 'ViaCura';
+const SMTP_FROM = Deno.env.get('SMTP_FROM') ?? 'info@farmceuticawellness.com';
+const SMTP_FROM_NAME = Deno.env.get('SMTP_FROM_NAME') ?? 'FarmCeutica Wellness';
 
 // -----------------------------------------------------------------------------
 // COMPLIANCE (Prompt 210f Task F4b): CAN-SPAM / CASL slots.
@@ -258,9 +258,9 @@ interface WaitlistRow {
 }
 
 const STEP_SUBJECTS: Record<number, string> = {
-  1: 'Welcome to the ViaCura practitioner waitlist',
+  1: 'Welcome to the ViaConnect practitioner waitlist',
   2: 'A look at the precision wellness platform we are building',
-  3: 'This week at ViaCura',
+  3: 'This week at ViaConnect',
   4: 'Cohort 1 selection coming soon',
   5: 'Cohort 1 selection closing in 9 days',
   6: 'Your Cohort 1 status',
@@ -282,22 +282,22 @@ function renderEmail(
   unsubscribeUrl: string,
 ): { subject: string; text: string; html: string } {
   const greeting = `Dear ${w.first_name},`;
-  const subject = STEP_SUBJECTS[step] ?? 'ViaCura update';
+  const subject = STEP_SUBJECTS[step] ?? 'ViaConnect update';
   // Entity string per Gary decision 2026-07-08: FarmCeutica Wellness LLC
   // (never Ltd) on customer-facing email text.
   const closing =
-    'Sincerely,\nThe ViaCura founding team\nFarmCeutica Wellness LLC';
+    'Sincerely,\nThe ViaConnect founding team\nFarmCeutica Wellness LLC';
 
   let body = '';
   switch (step) {
     case 1:
-      body = `Thank you for joining the ViaCura practitioner waitlist. We received your application for ${w.practice_name}.\n\nHere is what to expect over the next 30 days:\n  Day 3: a closer look at the platform\n  Day 14: Cohort 1 selection notice\n  Day 28: founding cohort invitations\n\nWe will be in touch.`;
+      body = `Thank you for joining the ViaConnect practitioner waitlist. We received your application for ${w.practice_name}.\n\nHere is what to expect over the next 30 days:\n  Day 3: a closer look at the platform\n  Day 14: Cohort 1 selection notice\n  Day 28: founding cohort invitations\n\nWe will be in touch.`;
       break;
     case 2:
-      body = `As promised, here is a closer look at the ViaCura precision wellness platform: pharmaceutical-grade infrastructure, GeneX360 genetic integration, and a dispensary built on FarmCeutica Wellness products at wholesale to your practice.`;
+      body = `As promised, here is a closer look at the ViaConnect precision wellness platform: pharmaceutical-grade infrastructure, GeneX360 genetic integration, and a dispensary built on FarmCeutica Wellness products at wholesale to your practice.`;
       break;
     case 3:
-      body = `A short note on what we shipped at ViaCura this week, and how it shapes the practitioner experience for ${w.practice_name}.`;
+      body = `A short note on what we shipped at ViaConnect this week, and how it shapes the practitioner experience for ${w.practice_name}.`;
       break;
     case 4:
       body = `Cohort 1 selection opens soon. Twenty-five founding practitioners will be invited to onboard with concierge support and direct founder engagement.`;
@@ -309,7 +309,7 @@ function renderEmail(
       body = `A status update on your Cohort 1 application. Please open the linked page in your account to view the details.`;
       break;
     default:
-      body = `Thank you for your interest in ViaCura.`;
+      body = `Thank you for your interest in ViaConnect.`;
   }
 
   // COMPLIANCE FOOTER (F4b): unsubscribe link + physical postal address in
