@@ -1,5 +1,5 @@
 {
-  "comment": "Baseline as of 2026-07-07: includes 210f tables applied after the snapshot regen (practitioner core, cert/waitlist, invitations) pending next regen, plus residual audit-known findings pending P1 decisions.",
+  "comment": "Baseline as of 2026-07-08 (210d P3-1c pre-merge regen): 210f-applied objects (practitioner core, cert/waitlist, invitations, white label tables/views) now exist in the refreshed live-types.ts snapshot and have left this baseline. Remaining entries are residual audit-known findings pending P1 decisions, plus applied RPCs still listed because db-functions.json was not part of this regen.",
   "entries": [
     {
       "kind": "bucket",
@@ -107,15 +107,7 @@
     },
     {
       "kind": "table",
-      "name": "certification_levels"
-    },
-    {
-      "kind": "table",
       "name": "cohort_customer_monthly"
-    },
-    {
-      "kind": "table",
-      "name": "constitutional_assessments"
     },
     {
       "kind": "table",
@@ -231,31 +223,7 @@
     },
     {
       "kind": "table",
-      "name": "practitioner_brand_configurations"
-    },
-    {
-      "kind": "table",
       "name": "practitioner_category_opt_ins"
-    },
-    {
-      "kind": "table",
-      "name": "practitioner_certifications"
-    },
-    {
-      "kind": "table",
-      "name": "practitioner_cohorts"
-    },
-    {
-      "kind": "table",
-      "name": "practitioner_email_queue"
-    },
-    {
-      "kind": "table",
-      "name": "practitioner_invitations"
-    },
-    {
-      "kind": "table",
-      "name": "practitioner_patients"
     },
     {
       "kind": "table",
@@ -303,18 +271,6 @@
     },
     {
       "kind": "table",
-      "name": "practitioner_subscriptions"
-    },
-    {
-      "kind": "table",
-      "name": "practitioner_tiers"
-    },
-    {
-      "kind": "table",
-      "name": "practitioner_waitlist"
-    },
-    {
-      "kind": "table",
       "name": "predictive_alerts"
     },
     {
@@ -343,10 +299,6 @@
     },
     {
       "kind": "table",
-      "name": "supplement_protocols"
-    },
-    {
-      "kind": "table",
       "name": "table"
     },
     {
@@ -368,70 +320,6 @@
     {
       "kind": "table",
       "name": "wearable_summaries"
-    },
-    {
-      "kind": "table",
-      "name": "white_label_catalog_config"
-    },
-    {
-      "kind": "table",
-      "name": "white_label_compliance_reviewer_roles"
-    },
-    {
-      "kind": "table",
-      "name": "white_label_compliance_reviews"
-    },
-    {
-      "kind": "table",
-      "name": "white_label_discount_tiers"
-    },
-    {
-      "kind": "table",
-      "name": "white_label_dispensary_settings"
-    },
-    {
-      "kind": "table",
-      "name": "white_label_economics"
-    },
-    {
-      "kind": "table",
-      "name": "white_label_enrollments"
-    },
-    {
-      "kind": "table",
-      "name": "white_label_inventory_lots"
-    },
-    {
-      "kind": "table",
-      "name": "white_label_label_designs"
-    },
-    {
-      "kind": "table",
-      "name": "white_label_parameters"
-    },
-    {
-      "kind": "table",
-      "name": "white_label_production_order_items"
-    },
-    {
-      "kind": "table",
-      "name": "white_label_production_orders"
-    },
-    {
-      "kind": "table",
-      "name": "white_label_recalls"
-    },
-    {
-      "kind": "table",
-      "name": "white_label_reviewer_assignments"
-    },
-    {
-      "kind": "table",
-      "name": "white_label_sku_mappings"
-    },
-    {
-      "kind": "table",
-      "name": "wl_pending_reviews_with_sla"
     }
   ]
 }

@@ -4762,6 +4762,75 @@ export type Database = {
         }
         Relationships: []
       }
+      certification_levels: {
+        Row: {
+          annual_recertification_price_cents: number | null
+          ce_credits_offered: number | null
+          ce_partnership_status: string
+          created_at: string
+          description: string | null
+          display_name: string
+          estimated_hours: number | null
+          id: string
+          is_active: boolean
+          is_required: boolean
+          level_number: number
+          lms_course_id: string | null
+          price_cents: number
+          sort_order: number
+          stripe_price_id: string | null
+          stripe_product_id: string | null
+          unlocks_custom_formulation: boolean
+          unlocks_white_label: boolean
+          updated_at: string
+          validity_months: number | null
+        }
+        Insert: {
+          annual_recertification_price_cents?: number | null
+          ce_credits_offered?: number | null
+          ce_partnership_status?: string
+          created_at?: string
+          description?: string | null
+          display_name: string
+          estimated_hours?: number | null
+          id: string
+          is_active?: boolean
+          is_required?: boolean
+          level_number: number
+          lms_course_id?: string | null
+          price_cents?: number
+          sort_order: number
+          stripe_price_id?: string | null
+          stripe_product_id?: string | null
+          unlocks_custom_formulation?: boolean
+          unlocks_white_label?: boolean
+          updated_at?: string
+          validity_months?: number | null
+        }
+        Update: {
+          annual_recertification_price_cents?: number | null
+          ce_credits_offered?: number | null
+          ce_partnership_status?: string
+          created_at?: string
+          description?: string | null
+          display_name?: string
+          estimated_hours?: number | null
+          id?: string
+          is_active?: boolean
+          is_required?: boolean
+          level_number?: number
+          lms_course_id?: string | null
+          price_cents?: number
+          sort_order?: number
+          stripe_price_id?: string | null
+          stripe_product_id?: string | null
+          unlocks_custom_formulation?: boolean
+          unlocks_white_label?: boolean
+          updated_at?: string
+          validity_months?: number | null
+        }
+        Relationships: []
+      }
       channel_mix_scenarios: {
         Row: {
           annual_net_profit: number
@@ -5002,6 +5071,62 @@ export type Database = {
           },
         ]
       }
+      clinical_notes: {
+        Row: {
+          author_id: string
+          author_role: string
+          content: string
+          created_at: string
+          id: string
+          is_private: boolean
+          note_type: string
+          patient_id: string
+          referenced_labs: Json | null
+          referenced_protocol_id: string | null
+          referenced_snps: Json | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          author_role: string
+          content: string
+          created_at?: string
+          id?: string
+          is_private?: boolean
+          note_type: string
+          patient_id: string
+          referenced_labs?: Json | null
+          referenced_protocol_id?: string | null
+          referenced_snps?: Json | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          author_role?: string
+          content?: string
+          created_at?: string
+          id?: string
+          is_private?: boolean
+          note_type?: string
+          patient_id?: string
+          referenced_labs?: Json | null
+          referenced_protocol_id?: string | null
+          referenced_snps?: Json | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinical_notes_referenced_protocol_id_fkey"
+            columns: ["referenced_protocol_id"]
+            isOneToOne: false
+            referencedRelation: "supplement_protocols"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cogs_delta_reports: {
         Row: {
           delta: number
@@ -5127,6 +5252,51 @@ export type Database = {
           n?: number
           protocol_ref?: string | null
           signal_strength?: string | null
+        }
+        Relationships: []
+      }
+      collaborative_care: {
+        Row: {
+          created_at: string
+          id: string
+          naturopath_can_view_practitioner_notes: boolean | null
+          naturopath_can_view_practitioner_protocols: boolean | null
+          naturopath_id: string
+          patient_consent_at: string | null
+          patient_id: string
+          practitioner_can_view_naturopath_notes: boolean | null
+          practitioner_can_view_naturopath_protocols: boolean | null
+          practitioner_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          naturopath_can_view_practitioner_notes?: boolean | null
+          naturopath_can_view_practitioner_protocols?: boolean | null
+          naturopath_id: string
+          patient_consent_at?: string | null
+          patient_id: string
+          practitioner_can_view_naturopath_notes?: boolean | null
+          practitioner_can_view_naturopath_protocols?: boolean | null
+          practitioner_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          naturopath_can_view_practitioner_notes?: boolean | null
+          naturopath_can_view_practitioner_protocols?: boolean | null
+          naturopath_id?: string
+          patient_consent_at?: string | null
+          patient_id?: string
+          practitioner_can_view_naturopath_notes?: boolean | null
+          practitioner_can_view_naturopath_protocols?: boolean | null
+          practitioner_id?: string
+          status?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -5978,6 +6148,163 @@ export type Database = {
           version?: string
         }
         Relationships: []
+      }
+      constitutional_assessments: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          framework: string
+          id: string
+          kapha_score: number | null
+          patient_user_id: string
+          pitta_score: number | null
+          practitioner_id: string | null
+          practitioner_notes: string | null
+          primary_dosha: string | null
+          questionnaire_responses: Json
+          recommendations: string | null
+          secondary_dosha: string | null
+          updated_at: string
+          vata_score: number | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          framework: string
+          id?: string
+          kapha_score?: number | null
+          patient_user_id: string
+          pitta_score?: number | null
+          practitioner_id?: string | null
+          practitioner_notes?: string | null
+          primary_dosha?: string | null
+          questionnaire_responses?: Json
+          recommendations?: string | null
+          secondary_dosha?: string | null
+          updated_at?: string
+          vata_score?: number | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          framework?: string
+          id?: string
+          kapha_score?: number | null
+          patient_user_id?: string
+          pitta_score?: number | null
+          practitioner_id?: string | null
+          practitioner_notes?: string | null
+          primary_dosha?: string | null
+          questionnaire_responses?: Json
+          recommendations?: string | null
+          secondary_dosha?: string | null
+          updated_at?: string
+          vata_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "constitutional_assessments_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_engagement_summary_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "constitutional_assessments_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_practice_health_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "constitutional_assessments_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_protocol_effectiveness_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "constitutional_assessments_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "constitutional_assessments_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_engagement_summary"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "constitutional_assessments_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_practice_health"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "constitutional_assessments_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_protocol_effectiveness"
+            referencedColumns: ["practitioner_id"]
+          },
+        ]
+      }
+      consultations: {
+        Row: {
+          created_at: string
+          duration_minutes: number | null
+          ended_at: string | null
+          id: string
+          naturopath_id: string | null
+          notes_id: string | null
+          patient_id: string
+          practitioner_id: string
+          room_sid: string | null
+          started_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          duration_minutes?: number | null
+          ended_at?: string | null
+          id?: string
+          naturopath_id?: string | null
+          notes_id?: string | null
+          patient_id: string
+          practitioner_id: string
+          room_sid?: string | null
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          duration_minutes?: number | null
+          ended_at?: string | null
+          id?: string
+          naturopath_id?: string | null
+          notes_id?: string | null
+          patient_id?: string
+          practitioner_id?: string
+          room_sid?: string | null
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consultations_notes_id_fkey"
+            columns: ["notes_id"]
+            isOneToOne: false
+            referencedRelation: "clinical_notes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       consumer_counterfeit_reports: {
         Row: {
@@ -10918,6 +11245,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      herbal_genomic_interactions: {
+        Row: {
+          created_at: string
+          description: string
+          evidence_level: string
+          gene: string
+          herb_latin_name: string | null
+          herb_name: string
+          id: string
+          interaction_type: string
+          mechanism: string | null
+          references: Json | null
+          related_supplement: string | null
+          updated_at: string
+          variant: string | null
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          evidence_level: string
+          gene: string
+          herb_latin_name?: string | null
+          herb_name: string
+          id?: string
+          interaction_type: string
+          mechanism?: string | null
+          references?: Json | null
+          related_supplement?: string | null
+          updated_at?: string
+          variant?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          evidence_level?: string
+          gene?: string
+          herb_latin_name?: string | null
+          herb_name?: string
+          id?: string
+          interaction_type?: string
+          mechanism?: string | null
+          references?: Json | null
+          related_supplement?: string | null
+          updated_at?: string
+          variant?: string | null
+        }
+        Relationships: []
       }
       herbs: {
         Row: {
@@ -18752,6 +19127,57 @@ export type Database = {
         }
         Relationships: []
       }
+      panel_orders: {
+        Row: {
+          batch_id: string | null
+          created_at: string
+          id: string
+          kit_tracking_number: string | null
+          ordered_by: string
+          ordered_by_role: string
+          panel_type: string
+          patient_id: string
+          results_received_at: string | null
+          results_reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          stripe_payment_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          batch_id?: string | null
+          created_at?: string
+          id?: string
+          kit_tracking_number?: string | null
+          ordered_by: string
+          ordered_by_role: string
+          panel_type: string
+          patient_id: string
+          results_received_at?: string | null
+          results_reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          stripe_payment_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          batch_id?: string | null
+          created_at?: string
+          id?: string
+          kit_tracking_number?: string | null
+          ordered_by?: string
+          ordered_by_role?: string
+          panel_type?: string
+          patient_id?: string
+          results_received_at?: string | null
+          results_reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          stripe_payment_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       pathway_scores: {
         Row: {
           component_variants: Json
@@ -18782,6 +19208,45 @@ export type Database = {
           pathway?: string
           severity_band?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      patient_intake_forms: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          expires_at: string | null
+          form_data: Json | null
+          form_type: string
+          id: string
+          patient_id: string
+          practitioner_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          expires_at?: string | null
+          form_data?: Json | null
+          form_type: string
+          id?: string
+          patient_id: string
+          practitioner_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          expires_at?: string | null
+          form_data?: Json | null
+          form_type?: string
+          id?: string
+          patient_id?: string
+          practitioner_id?: string
+          status?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -19815,6 +20280,63 @@ export type Database = {
           },
         ]
       }
+      portal_messages: {
+        Row: {
+          attached_note_id: string | null
+          attached_protocol_id: string | null
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          read_at: string | null
+          recipient_id: string
+          sender_id: string
+          sender_role: string
+          updated_at: string
+        }
+        Insert: {
+          attached_note_id?: string | null
+          attached_protocol_id?: string | null
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          recipient_id: string
+          sender_id: string
+          sender_role: string
+          updated_at?: string
+        }
+        Update: {
+          attached_note_id?: string | null
+          attached_protocol_id?: string | null
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          recipient_id?: string
+          sender_id?: string
+          sender_role?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_messages_attached_note_id_fkey"
+            columns: ["attached_note_id"]
+            isOneToOne: false
+            referencedRelation: "clinical_notes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portal_messages_attached_protocol_id_fkey"
+            columns: ["attached_protocol_id"]
+            isOneToOne: false
+            referencedRelation: "supplement_protocols"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       portfolio_trends: {
         Row: {
           active_customers: number | null
@@ -19911,6 +20433,405 @@ export type Database = {
         }
         Relationships: []
       }
+      practitioner_brand_configurations: {
+        Row: {
+          accent_color_hex: string | null
+          background_color_hex: string | null
+          brand_config_approved: boolean
+          brand_config_approved_at: string | null
+          brand_config_approved_by: string | null
+          brand_description: string | null
+          brand_font_primary: string | null
+          brand_font_secondary: string | null
+          brand_name: string
+          brand_tagline: string | null
+          created_at: string
+          enrollment_id: string
+          id: string
+          logo_monochrome_url: string | null
+          logo_primary_url: string | null
+          logo_secondary_url: string | null
+          practice_address_line_1: string
+          practice_address_line_2: string | null
+          practice_city: string
+          practice_country: string
+          practice_email: string
+          practice_legal_name: string
+          practice_phone: string
+          practice_postal_code: string
+          practice_prefix: string | null
+          practice_state: string
+          practice_website: string | null
+          practitioner_id: string
+          primary_color_hex: string | null
+          product_naming_scheme: string
+          secondary_color_hex: string | null
+          text_color_hex: string | null
+          updated_at: string
+          wordmark_url: string | null
+        }
+        Insert: {
+          accent_color_hex?: string | null
+          background_color_hex?: string | null
+          brand_config_approved?: boolean
+          brand_config_approved_at?: string | null
+          brand_config_approved_by?: string | null
+          brand_description?: string | null
+          brand_font_primary?: string | null
+          brand_font_secondary?: string | null
+          brand_name: string
+          brand_tagline?: string | null
+          created_at?: string
+          enrollment_id: string
+          id?: string
+          logo_monochrome_url?: string | null
+          logo_primary_url?: string | null
+          logo_secondary_url?: string | null
+          practice_address_line_1: string
+          practice_address_line_2?: string | null
+          practice_city: string
+          practice_country?: string
+          practice_email: string
+          practice_legal_name: string
+          practice_phone: string
+          practice_postal_code: string
+          practice_prefix?: string | null
+          practice_state: string
+          practice_website?: string | null
+          practitioner_id: string
+          primary_color_hex?: string | null
+          product_naming_scheme?: string
+          secondary_color_hex?: string | null
+          text_color_hex?: string | null
+          updated_at?: string
+          wordmark_url?: string | null
+        }
+        Update: {
+          accent_color_hex?: string | null
+          background_color_hex?: string | null
+          brand_config_approved?: boolean
+          brand_config_approved_at?: string | null
+          brand_config_approved_by?: string | null
+          brand_description?: string | null
+          brand_font_primary?: string | null
+          brand_font_secondary?: string | null
+          brand_name?: string
+          brand_tagline?: string | null
+          created_at?: string
+          enrollment_id?: string
+          id?: string
+          logo_monochrome_url?: string | null
+          logo_primary_url?: string | null
+          logo_secondary_url?: string | null
+          practice_address_line_1?: string
+          practice_address_line_2?: string | null
+          practice_city?: string
+          practice_country?: string
+          practice_email?: string
+          practice_legal_name?: string
+          practice_phone?: string
+          practice_postal_code?: string
+          practice_prefix?: string | null
+          practice_state?: string
+          practice_website?: string | null
+          practitioner_id?: string
+          primary_color_hex?: string | null
+          product_naming_scheme?: string
+          secondary_color_hex?: string | null
+          text_color_hex?: string | null
+          updated_at?: string
+          wordmark_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "practitioner_brand_configurations_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "white_label_enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "practitioner_brand_configurations_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: true
+            referencedRelation: "practitioner_engagement_summary_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "practitioner_brand_configurations_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: true
+            referencedRelation: "practitioner_practice_health_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "practitioner_brand_configurations_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: true
+            referencedRelation: "practitioner_protocol_effectiveness_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "practitioner_brand_configurations_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: true
+            referencedRelation: "practitioners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "practitioner_brand_configurations_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: true
+            referencedRelation: "v_practitioner_engagement_summary"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "practitioner_brand_configurations_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: true
+            referencedRelation: "v_practitioner_practice_health"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "practitioner_brand_configurations_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: true
+            referencedRelation: "v_practitioner_protocol_effectiveness"
+            referencedColumns: ["practitioner_id"]
+          },
+        ]
+      }
+      practitioner_certifications: {
+        Row: {
+          amount_paid_cents: number
+          ce_credit_status: string
+          ce_credits_earned: number
+          certificate_number: string | null
+          certificate_url: string | null
+          certification_level_id: string
+          certified_at: string | null
+          completed_at: string | null
+          created_at: string
+          enrolled_at: string
+          expires_at: string | null
+          id: string
+          is_recertification: boolean
+          lms_enrollment_id: string | null
+          lms_last_sync_at: string | null
+          lms_progress_percent: number
+          metadata: Json | null
+          parent_certification_id: string | null
+          practitioner_id: string
+          started_at: string | null
+          status: string
+          stripe_payment_intent_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount_paid_cents?: number
+          ce_credit_status?: string
+          ce_credits_earned?: number
+          certificate_number?: string | null
+          certificate_url?: string | null
+          certification_level_id: string
+          certified_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          enrolled_at?: string
+          expires_at?: string | null
+          id?: string
+          is_recertification?: boolean
+          lms_enrollment_id?: string | null
+          lms_last_sync_at?: string | null
+          lms_progress_percent?: number
+          metadata?: Json | null
+          parent_certification_id?: string | null
+          practitioner_id: string
+          started_at?: string | null
+          status?: string
+          stripe_payment_intent_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount_paid_cents?: number
+          ce_credit_status?: string
+          ce_credits_earned?: number
+          certificate_number?: string | null
+          certificate_url?: string | null
+          certification_level_id?: string
+          certified_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          enrolled_at?: string
+          expires_at?: string | null
+          id?: string
+          is_recertification?: boolean
+          lms_enrollment_id?: string | null
+          lms_last_sync_at?: string | null
+          lms_progress_percent?: number
+          metadata?: Json | null
+          parent_certification_id?: string | null
+          practitioner_id?: string
+          started_at?: string | null
+          status?: string
+          stripe_payment_intent_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "practitioner_certifications_certification_level_id_fkey"
+            columns: ["certification_level_id"]
+            isOneToOne: false
+            referencedRelation: "certification_levels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "practitioner_certifications_parent_certification_id_fkey"
+            columns: ["parent_certification_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_certifications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "practitioner_certifications_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_engagement_summary_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "practitioner_certifications_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_practice_health_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "practitioner_certifications_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_protocol_effectiveness_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "practitioner_certifications_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "practitioner_certifications_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_engagement_summary"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "practitioner_certifications_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_practice_health"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "practitioner_certifications_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_protocol_effectiveness"
+            referencedColumns: ["practitioner_id"]
+          },
+        ]
+      }
+      practitioner_cohorts: {
+        Row: {
+          cohort_number: number
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          onboarding_end_date: string | null
+          onboarding_start_date: string | null
+          status: string
+          target_size: number
+          updated_at: string
+        }
+        Insert: {
+          cohort_number: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          onboarding_end_date?: string | null
+          onboarding_start_date?: string | null
+          status?: string
+          target_size?: number
+          updated_at?: string
+        }
+        Update: {
+          cohort_number?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          onboarding_end_date?: string | null
+          onboarding_start_date?: string | null
+          status?: string
+          target_size?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      practitioner_email_queue: {
+        Row: {
+          attempts: number
+          created_at: string
+          id: string
+          last_error: string | null
+          scheduled_for: string
+          sent_at: string | null
+          status: string
+          step: number
+          transport: string
+          updated_at: string
+          waitlist_id: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          scheduled_for?: string
+          sent_at?: string | null
+          status?: string
+          step: number
+          transport?: string
+          updated_at?: string
+          waitlist_id: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          scheduled_for?: string
+          sent_at?: string | null
+          status?: string
+          step?: number
+          transport?: string
+          updated_at?: string
+          waitlist_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "practitioner_email_queue_waitlist_id_fkey"
+            columns: ["waitlist_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_waitlist"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       practitioner_feedback: {
         Row: {
           correction: string | null
@@ -19935,6 +20856,45 @@ export type Database = {
           practitioner_ref?: string | null
           rule_id?: string | null
           status?: string
+        }
+        Relationships: []
+      }
+      practitioner_invitations: {
+        Row: {
+          created_at: string
+          expected_credential_type: string | null
+          expires_at: string
+          id: string
+          invited_by: string
+          personal_note: string | null
+          target_email: string | null
+          token: string
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          expected_credential_type?: string | null
+          expires_at: string
+          id?: string
+          invited_by: string
+          personal_note?: string | null
+          target_email?: string | null
+          token: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          expected_credential_type?: string | null
+          expires_at?: string
+          id?: string
+          invited_by?: string
+          personal_note?: string | null
+          target_email?: string | null
+          token?: string
+          used_at?: string | null
+          used_by?: string | null
         }
         Relationships: []
       }
@@ -20193,6 +21153,123 @@ export type Database = {
             referencedColumns: ["practitioner_id"]
           },
         ]
+      }
+      practitioner_patients: {
+        Row: {
+          can_order_panels: boolean | null
+          can_prescribe_protocols: boolean | null
+          can_view_ai_conversations: boolean | null
+          can_view_compliance: boolean | null
+          can_view_genetics: boolean | null
+          can_view_labs: boolean | null
+          can_view_medications: boolean | null
+          can_view_supplements: boolean | null
+          can_view_wearables: boolean | null
+          chief_complaint: string | null
+          consent_granted_at: string | null
+          consent_revoked_at: string | null
+          consent_share_caq: boolean
+          consent_share_engagement_score: boolean
+          consent_share_nutrition: boolean
+          consent_share_protocols: boolean
+          consent_updated_at: string | null
+          created_at: string
+          first_visit_date: string | null
+          id: string
+          invitation_accepted_at: string | null
+          invitation_note: string | null
+          invitation_token: string | null
+          invited_at: string | null
+          invited_email: string | null
+          invited_first_name: string | null
+          invited_last_name: string | null
+          patient_id: string | null
+          patient_view_mode_override: string | null
+          practitioner_id: string
+          practitioner_notes: string | null
+          relationship_ended_at: string | null
+          relationship_type: string
+          status: string
+          tags: string[]
+          updated_at: string
+        }
+        Insert: {
+          can_order_panels?: boolean | null
+          can_prescribe_protocols?: boolean | null
+          can_view_ai_conversations?: boolean | null
+          can_view_compliance?: boolean | null
+          can_view_genetics?: boolean | null
+          can_view_labs?: boolean | null
+          can_view_medications?: boolean | null
+          can_view_supplements?: boolean | null
+          can_view_wearables?: boolean | null
+          chief_complaint?: string | null
+          consent_granted_at?: string | null
+          consent_revoked_at?: string | null
+          consent_share_caq?: boolean
+          consent_share_engagement_score?: boolean
+          consent_share_nutrition?: boolean
+          consent_share_protocols?: boolean
+          consent_updated_at?: string | null
+          created_at?: string
+          first_visit_date?: string | null
+          id?: string
+          invitation_accepted_at?: string | null
+          invitation_note?: string | null
+          invitation_token?: string | null
+          invited_at?: string | null
+          invited_email?: string | null
+          invited_first_name?: string | null
+          invited_last_name?: string | null
+          patient_id?: string | null
+          patient_view_mode_override?: string | null
+          practitioner_id: string
+          practitioner_notes?: string | null
+          relationship_ended_at?: string | null
+          relationship_type: string
+          status?: string
+          tags?: string[]
+          updated_at?: string
+        }
+        Update: {
+          can_order_panels?: boolean | null
+          can_prescribe_protocols?: boolean | null
+          can_view_ai_conversations?: boolean | null
+          can_view_compliance?: boolean | null
+          can_view_genetics?: boolean | null
+          can_view_labs?: boolean | null
+          can_view_medications?: boolean | null
+          can_view_supplements?: boolean | null
+          can_view_wearables?: boolean | null
+          chief_complaint?: string | null
+          consent_granted_at?: string | null
+          consent_revoked_at?: string | null
+          consent_share_caq?: boolean
+          consent_share_engagement_score?: boolean
+          consent_share_nutrition?: boolean
+          consent_share_protocols?: boolean
+          consent_updated_at?: string | null
+          created_at?: string
+          first_visit_date?: string | null
+          id?: string
+          invitation_accepted_at?: string | null
+          invitation_note?: string | null
+          invitation_token?: string | null
+          invited_at?: string | null
+          invited_email?: string | null
+          invited_first_name?: string | null
+          invited_last_name?: string | null
+          patient_id?: string | null
+          patient_view_mode_override?: string | null
+          practitioner_id?: string
+          practitioner_notes?: string | null
+          relationship_ended_at?: string | null
+          relationship_type?: string
+          status?: string
+          tags?: string[]
+          updated_at?: string
+        }
+        Relationships: []
       }
       practitioner_payout_methods: {
         Row: {
@@ -20579,6 +21656,126 @@ export type Database = {
           },
         ]
       }
+      practitioner_subscriptions: {
+        Row: {
+          billing_cycle: string
+          cancel_at_period_end: boolean
+          canceled_at: string | null
+          created_at: string
+          current_period_end: string
+          current_period_start: string
+          id: string
+          is_annual_prepay: boolean
+          metadata: Json | null
+          payment_method: string | null
+          paypal_subscription_id: string | null
+          practitioner_id: string
+          started_at: string
+          status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          tier_id: string
+          updated_at: string
+        }
+        Insert: {
+          billing_cycle: string
+          cancel_at_period_end?: boolean
+          canceled_at?: string | null
+          created_at?: string
+          current_period_end: string
+          current_period_start: string
+          id?: string
+          is_annual_prepay?: boolean
+          metadata?: Json | null
+          payment_method?: string | null
+          paypal_subscription_id?: string | null
+          practitioner_id: string
+          started_at: string
+          status: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          tier_id: string
+          updated_at?: string
+        }
+        Update: {
+          billing_cycle?: string
+          cancel_at_period_end?: boolean
+          canceled_at?: string | null
+          created_at?: string
+          current_period_end?: string
+          current_period_start?: string
+          id?: string
+          is_annual_prepay?: boolean
+          metadata?: Json | null
+          payment_method?: string | null
+          paypal_subscription_id?: string | null
+          practitioner_id?: string
+          started_at?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          tier_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "practitioner_subscriptions_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_engagement_summary_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "practitioner_subscriptions_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_practice_health_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "practitioner_subscriptions_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_protocol_effectiveness_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "practitioner_subscriptions_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "practitioner_subscriptions_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_engagement_summary"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "practitioner_subscriptions_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_practice_health"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "practitioner_subscriptions_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_protocol_effectiveness"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "practitioner_subscriptions_tier_id_fkey"
+            columns: ["tier_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_tiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       practitioner_tax_documents: {
         Row: {
           country_of_residence: string
@@ -20679,6 +21876,60 @@ export type Database = {
             referencedColumns: ["practitioner_id"]
           },
         ]
+      }
+      practitioner_tiers: {
+        Row: {
+          annual_price_cents: number
+          annual_savings_cents: number | null
+          co_branding_level: string
+          created_at: string
+          description: string | null
+          display_name: string
+          id: string
+          is_active: boolean
+          monthly_price_cents: number
+          sort_order: number
+          stripe_annual_price_id: string | null
+          stripe_monthly_price_id: string | null
+          stripe_product_id: string | null
+          updated_at: string
+          wholesale_discount_percent: number
+        }
+        Insert: {
+          annual_price_cents: number
+          annual_savings_cents?: number | null
+          co_branding_level: string
+          created_at?: string
+          description?: string | null
+          display_name: string
+          id: string
+          is_active?: boolean
+          monthly_price_cents: number
+          sort_order: number
+          stripe_annual_price_id?: string | null
+          stripe_monthly_price_id?: string | null
+          stripe_product_id?: string | null
+          updated_at?: string
+          wholesale_discount_percent?: number
+        }
+        Update: {
+          annual_price_cents?: number
+          annual_savings_cents?: number | null
+          co_branding_level?: string
+          created_at?: string
+          description?: string | null
+          display_name?: string
+          id?: string
+          is_active?: boolean
+          monthly_price_cents?: number
+          sort_order?: number
+          stripe_annual_price_id?: string | null
+          stripe_monthly_price_id?: string | null
+          stripe_product_id?: string | null
+          updated_at?: string
+          wholesale_discount_percent?: number
+        }
+        Relationships: []
       }
       practitioner_verified_channels: {
         Row: {
@@ -20787,32 +22038,352 @@ export type Database = {
           },
         ]
       }
-      practitioners: {
+      practitioner_waitlist: {
         Row: {
+          admin_notes: string | null
+          approximate_patient_panel_size: number | null
+          assigned_cohort_id: string | null
+          biggest_clinical_challenge: string | null
+          converted_at: string | null
+          converted_to_user_id: string | null
           created_at: string
-          display_name: string | null
+          credential_type: string
+          credential_type_other: string | null
+          currently_dispensing_supplements: boolean | null
+          desired_platform_features: string[] | null
+          email: string
+          email_sequence_step: number | null
+          estimated_monthly_supplement_volume_cents: number | null
+          first_name: string
           id: string
+          interest_reason: string
+          invitation_token: string | null
+          invited_at: string | null
+          invited_by_user_id: string | null
+          ip_address: string | null
+          last_email_sent_at: string | null
+          last_name: string
+          license_number: string | null
+          license_state: string | null
+          npi_number: string | null
+          phone: string | null
+          practice_city: string | null
+          practice_country: string | null
+          practice_name: string
+          practice_postal_code: string | null
+          practice_state: string | null
+          practice_street_address: string | null
+          practice_url: string | null
+          primary_clinical_focus: string
+          primary_clinical_focus_other: string | null
+          priority_score: number | null
+          referral_source: string
+          referral_source_other: string | null
+          referrer_url: string | null
+          specialties: string[] | null
           status: string
+          status_updated_at: string | null
+          status_updated_by: string | null
+          submission_type: string
+          unsubscribed: boolean | null
           updated_at: string
-          user_id: string
+          user_agent: string | null
+          uses_genetic_testing: boolean | null
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          years_in_practice: number | null
         }
         Insert: {
+          admin_notes?: string | null
+          approximate_patient_panel_size?: number | null
+          assigned_cohort_id?: string | null
+          biggest_clinical_challenge?: string | null
+          converted_at?: string | null
+          converted_to_user_id?: string | null
           created_at?: string
-          display_name?: string | null
+          credential_type: string
+          credential_type_other?: string | null
+          currently_dispensing_supplements?: boolean | null
+          desired_platform_features?: string[] | null
+          email: string
+          email_sequence_step?: number | null
+          estimated_monthly_supplement_volume_cents?: number | null
+          first_name: string
           id?: string
+          interest_reason: string
+          invitation_token?: string | null
+          invited_at?: string | null
+          invited_by_user_id?: string | null
+          ip_address?: string | null
+          last_email_sent_at?: string | null
+          last_name: string
+          license_number?: string | null
+          license_state?: string | null
+          npi_number?: string | null
+          phone?: string | null
+          practice_city?: string | null
+          practice_country?: string | null
+          practice_name: string
+          practice_postal_code?: string | null
+          practice_state?: string | null
+          practice_street_address?: string | null
+          practice_url?: string | null
+          primary_clinical_focus: string
+          primary_clinical_focus_other?: string | null
+          priority_score?: number | null
+          referral_source: string
+          referral_source_other?: string | null
+          referrer_url?: string | null
+          specialties?: string[] | null
           status?: string
+          status_updated_at?: string | null
+          status_updated_by?: string | null
+          submission_type?: string
+          unsubscribed?: boolean | null
           updated_at?: string
-          user_id: string
+          user_agent?: string | null
+          uses_genetic_testing?: boolean | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          years_in_practice?: number | null
         }
         Update: {
+          admin_notes?: string | null
+          approximate_patient_panel_size?: number | null
+          assigned_cohort_id?: string | null
+          biggest_clinical_challenge?: string | null
+          converted_at?: string | null
+          converted_to_user_id?: string | null
           created_at?: string
-          display_name?: string | null
+          credential_type?: string
+          credential_type_other?: string | null
+          currently_dispensing_supplements?: boolean | null
+          desired_platform_features?: string[] | null
+          email?: string
+          email_sequence_step?: number | null
+          estimated_monthly_supplement_volume_cents?: number | null
+          first_name?: string
           id?: string
+          interest_reason?: string
+          invitation_token?: string | null
+          invited_at?: string | null
+          invited_by_user_id?: string | null
+          ip_address?: string | null
+          last_email_sent_at?: string | null
+          last_name?: string
+          license_number?: string | null
+          license_state?: string | null
+          npi_number?: string | null
+          phone?: string | null
+          practice_city?: string | null
+          practice_country?: string | null
+          practice_name?: string
+          practice_postal_code?: string | null
+          practice_state?: string | null
+          practice_street_address?: string | null
+          practice_url?: string | null
+          primary_clinical_focus?: string
+          primary_clinical_focus_other?: string | null
+          priority_score?: number | null
+          referral_source?: string
+          referral_source_other?: string | null
+          referrer_url?: string | null
+          specialties?: string[] | null
           status?: string
+          status_updated_at?: string | null
+          status_updated_by?: string | null
+          submission_type?: string
+          unsubscribed?: boolean | null
+          updated_at?: string
+          user_agent?: string | null
+          uses_genetic_testing?: boolean | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          years_in_practice?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "practitioner_waitlist_assigned_cohort_id_fkey"
+            columns: ["assigned_cohort_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_cohorts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      practitioners: {
+        Row: {
+          account_status: string
+          active_patient_panel_size: number
+          bio: string | null
+          brand_accent_color: string | null
+          brand_primary_color: string | null
+          co_branding_enabled: boolean
+          cohort_id: string | null
+          created_at: string
+          credential_type: string | null
+          credential_type_other: string | null
+          custom_domain: string | null
+          default_active_tab: string
+          default_patient_view_mode: string
+          dispensary_slug: string | null
+          display_name: string | null
+          headshot_url: string | null
+          id: string
+          license_number: string | null
+          license_state: string | null
+          license_verified: boolean
+          license_verified_at: string | null
+          license_verified_by: string | null
+          metadata: Json | null
+          npi_number: string | null
+          onboarded_at: string | null
+          patient_facing_display_name: string | null
+          practice_city: string | null
+          practice_country: string | null
+          practice_email: string | null
+          practice_logo_url: string | null
+          practice_name: string | null
+          practice_phone: string | null
+          practice_postal_code: string | null
+          practice_state: string | null
+          practice_street_address: string | null
+          practice_url: string | null
+          prefers_email_notifications: boolean | null
+          prefers_sms_notifications: boolean | null
+          primary_clinical_focus: string | null
+          professional_title: string | null
+          specialties: string[] | null
+          status: string
+          suspended_at: string | null
+          suspended_reason: string | null
+          timezone: string | null
+          updated_at: string
+          user_id: string
+          waitlist_id: string | null
+          years_in_practice: number | null
+        }
+        Insert: {
+          account_status?: string
+          active_patient_panel_size?: number
+          bio?: string | null
+          brand_accent_color?: string | null
+          brand_primary_color?: string | null
+          co_branding_enabled?: boolean
+          cohort_id?: string | null
+          created_at?: string
+          credential_type?: string | null
+          credential_type_other?: string | null
+          custom_domain?: string | null
+          default_active_tab?: string
+          default_patient_view_mode?: string
+          dispensary_slug?: string | null
+          display_name?: string | null
+          headshot_url?: string | null
+          id?: string
+          license_number?: string | null
+          license_state?: string | null
+          license_verified?: boolean
+          license_verified_at?: string | null
+          license_verified_by?: string | null
+          metadata?: Json | null
+          npi_number?: string | null
+          onboarded_at?: string | null
+          patient_facing_display_name?: string | null
+          practice_city?: string | null
+          practice_country?: string | null
+          practice_email?: string | null
+          practice_logo_url?: string | null
+          practice_name?: string | null
+          practice_phone?: string | null
+          practice_postal_code?: string | null
+          practice_state?: string | null
+          practice_street_address?: string | null
+          practice_url?: string | null
+          prefers_email_notifications?: boolean | null
+          prefers_sms_notifications?: boolean | null
+          primary_clinical_focus?: string | null
+          professional_title?: string | null
+          specialties?: string[] | null
+          status?: string
+          suspended_at?: string | null
+          suspended_reason?: string | null
+          timezone?: string | null
+          updated_at?: string
+          user_id: string
+          waitlist_id?: string | null
+          years_in_practice?: number | null
+        }
+        Update: {
+          account_status?: string
+          active_patient_panel_size?: number
+          bio?: string | null
+          brand_accent_color?: string | null
+          brand_primary_color?: string | null
+          co_branding_enabled?: boolean
+          cohort_id?: string | null
+          created_at?: string
+          credential_type?: string | null
+          credential_type_other?: string | null
+          custom_domain?: string | null
+          default_active_tab?: string
+          default_patient_view_mode?: string
+          dispensary_slug?: string | null
+          display_name?: string | null
+          headshot_url?: string | null
+          id?: string
+          license_number?: string | null
+          license_state?: string | null
+          license_verified?: boolean
+          license_verified_at?: string | null
+          license_verified_by?: string | null
+          metadata?: Json | null
+          npi_number?: string | null
+          onboarded_at?: string | null
+          patient_facing_display_name?: string | null
+          practice_city?: string | null
+          practice_country?: string | null
+          practice_email?: string | null
+          practice_logo_url?: string | null
+          practice_name?: string | null
+          practice_phone?: string | null
+          practice_postal_code?: string | null
+          practice_state?: string | null
+          practice_street_address?: string | null
+          practice_url?: string | null
+          prefers_email_notifications?: boolean | null
+          prefers_sms_notifications?: boolean | null
+          primary_clinical_focus?: string | null
+          professional_title?: string | null
+          specialties?: string[] | null
+          status?: string
+          suspended_at?: string | null
+          suspended_reason?: string | null
+          timezone?: string | null
           updated_at?: string
           user_id?: string
+          waitlist_id?: string | null
+          years_in_practice?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "practitioners_cohort_id_fkey"
+            columns: ["cohort_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_cohorts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "practitioners_waitlist_id_fkey"
+            columns: ["waitlist_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_waitlist"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       precheck_clearance_receipts: {
         Row: {
@@ -22151,6 +23722,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          accepting_patients: boolean | null
           assessment_completed: boolean | null
           avatar_url: string | null
           bio_optimization_calculated_at: string | null
@@ -22173,11 +23745,15 @@ export type Database = {
           hydration_notifications_enabled: boolean
           hydration_target_ml_per_day_custom: number | null
           id: string
+          license_number: string | null
           onboarding_completed: boolean | null
           phone: string | null
+          practice_address: Json | null
+          practice_name: string | null
           role: string | null
           sleep_start: string | null
           sleep_wake: string | null
+          specialty: string | null
           symptoms_emotional: Json | null
           symptoms_neurological: Json | null
           symptoms_physical: Json | null
@@ -22188,6 +23764,7 @@ export type Database = {
           vitality_score: number | null
         }
         Insert: {
+          accepting_patients?: boolean | null
           assessment_completed?: boolean | null
           avatar_url?: string | null
           bio_optimization_calculated_at?: string | null
@@ -22210,11 +23787,15 @@ export type Database = {
           hydration_notifications_enabled?: boolean
           hydration_target_ml_per_day_custom?: number | null
           id: string
+          license_number?: string | null
           onboarding_completed?: boolean | null
           phone?: string | null
+          practice_address?: Json | null
+          practice_name?: string | null
           role?: string | null
           sleep_start?: string | null
           sleep_wake?: string | null
+          specialty?: string | null
           symptoms_emotional?: Json | null
           symptoms_neurological?: Json | null
           symptoms_physical?: Json | null
@@ -22225,6 +23806,7 @@ export type Database = {
           vitality_score?: number | null
         }
         Update: {
+          accepting_patients?: boolean | null
           assessment_completed?: boolean | null
           avatar_url?: string | null
           bio_optimization_calculated_at?: string | null
@@ -22247,11 +23829,15 @@ export type Database = {
           hydration_notifications_enabled?: boolean
           hydration_target_ml_per_day_custom?: number | null
           id?: string
+          license_number?: string | null
           onboarding_completed?: boolean | null
           phone?: string | null
+          practice_address?: Json | null
+          practice_name?: string | null
           role?: string | null
           sleep_start?: string | null
           sleep_wake?: string | null
+          specialty?: string | null
           symptoms_emotional?: Json | null
           symptoms_neurological?: Json | null
           symptoms_physical?: Json | null
@@ -27959,6 +29545,131 @@ export type Database = {
         }
         Relationships: []
       }
+      supplement_protocol_items: {
+        Row: {
+          created_at: string
+          dosage: string
+          duration_days: number | null
+          frequency: string
+          genetic_context: Json | null
+          id: string
+          product_id: string | null
+          product_name: string
+          protocol_id: string
+          rationale: string | null
+          sort_order: number
+          timing: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          dosage: string
+          duration_days?: number | null
+          frequency: string
+          genetic_context?: Json | null
+          id?: string
+          product_id?: string | null
+          product_name: string
+          protocol_id: string
+          rationale?: string | null
+          sort_order?: number
+          timing: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          dosage?: string
+          duration_days?: number | null
+          frequency?: string
+          genetic_context?: Json | null
+          id?: string
+          product_id?: string | null
+          product_name?: string
+          protocol_id?: string
+          rationale?: string | null
+          sort_order?: number
+          timing?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplement_protocol_items_protocol_id_fkey"
+            columns: ["protocol_id"]
+            isOneToOne: false
+            referencedRelation: "supplement_protocols"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supplement_protocols: {
+        Row: {
+          accepted_at: string | null
+          botanical_components: Json
+          completed_at: string | null
+          constitutional_framework: string | null
+          created_at: string
+          energetic_notes: string | null
+          id: string
+          lifestyle_interventions: Json
+          notes: string | null
+          patient_id: string
+          prescribed_by: string
+          prescribed_by_role: string
+          protocol_name: string
+          protocol_type: string
+          rejected_at: string | null
+          rejection_reason: string | null
+          sent_at: string | null
+          started_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          botanical_components?: Json
+          completed_at?: string | null
+          constitutional_framework?: string | null
+          created_at?: string
+          energetic_notes?: string | null
+          id?: string
+          lifestyle_interventions?: Json
+          notes?: string | null
+          patient_id: string
+          prescribed_by: string
+          prescribed_by_role: string
+          protocol_name: string
+          protocol_type?: string
+          rejected_at?: string | null
+          rejection_reason?: string | null
+          sent_at?: string | null
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          botanical_components?: Json
+          completed_at?: string | null
+          constitutional_framework?: string | null
+          created_at?: string
+          energetic_notes?: string | null
+          id?: string
+          lifestyle_interventions?: Json
+          notes?: string | null
+          patient_id?: string
+          prescribed_by?: string
+          prescribed_by_role?: string
+          protocol_name?: string
+          protocol_type?: string
+          rejected_at?: string | null
+          rejection_reason?: string | null
+          sent_at?: string | null
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       supplement_reference_canonical: {
         Row: {
           brand: string | null
@@ -31320,6 +33031,7 @@ export type Database = {
         Row: {
           allele1: string | null
           allele2: string | null
+          category: string | null
           chromosome: string | null
           clinical_significance: string | null
           created_at: string
@@ -31329,6 +33041,7 @@ export type Database = {
           is_sample: boolean
           panel_key: string
           position: string | null
+          risk_level: string | null
           rsid: string
           status: string | null
           upload_id: string | null
@@ -31337,6 +33050,7 @@ export type Database = {
         Insert: {
           allele1?: string | null
           allele2?: string | null
+          category?: string | null
           chromosome?: string | null
           clinical_significance?: string | null
           created_at?: string
@@ -31346,6 +33060,7 @@ export type Database = {
           is_sample?: boolean
           panel_key: string
           position?: string | null
+          risk_level?: string | null
           rsid: string
           status?: string | null
           upload_id?: string | null
@@ -31354,6 +33069,7 @@ export type Database = {
         Update: {
           allele1?: string | null
           allele2?: string | null
+          category?: string | null
           chromosome?: string | null
           clinical_significance?: string | null
           created_at?: string
@@ -31363,6 +33079,7 @@ export type Database = {
           is_sample?: boolean
           panel_key?: string
           position?: string | null
+          risk_level?: string | null
           rsid?: string
           status?: string | null
           upload_id?: string | null
@@ -31955,6 +33672,1229 @@ export type Database = {
         }
         Relationships: []
       }
+      white_label_catalog_config: {
+        Row: {
+          base_cogs_cents: number
+          base_msrp_cents: number
+          created_at: string
+          expedited_production_weeks: number
+          flagged_at: string | null
+          flagged_by: string | null
+          id: string
+          is_active: boolean
+          is_retail_exclusive: boolean
+          is_white_label_eligible: boolean
+          product_catalog_id: string
+          production_minimum_moq: number
+          retail_exclusive_reason: string | null
+          standard_production_weeks: number
+          updated_at: string
+        }
+        Insert: {
+          base_cogs_cents: number
+          base_msrp_cents: number
+          created_at?: string
+          expedited_production_weeks?: number
+          flagged_at?: string | null
+          flagged_by?: string | null
+          id?: string
+          is_active?: boolean
+          is_retail_exclusive?: boolean
+          is_white_label_eligible?: boolean
+          product_catalog_id: string
+          production_minimum_moq?: number
+          retail_exclusive_reason?: string | null
+          standard_production_weeks?: number
+          updated_at?: string
+        }
+        Update: {
+          base_cogs_cents?: number
+          base_msrp_cents?: number
+          created_at?: string
+          expedited_production_weeks?: number
+          flagged_at?: string | null
+          flagged_by?: string | null
+          id?: string
+          is_active?: boolean
+          is_retail_exclusive?: boolean
+          is_white_label_eligible?: boolean
+          product_catalog_id?: string
+          production_minimum_moq?: number
+          retail_exclusive_reason?: string | null
+          standard_production_weeks?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "white_label_catalog_config_product_catalog_id_fkey"
+            columns: ["product_catalog_id"]
+            isOneToOne: true
+            referencedRelation: "product_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "white_label_catalog_config_product_catalog_id_fkey"
+            columns: ["product_catalog_id"]
+            isOneToOne: true
+            referencedRelation: "product_catalog_enriched"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      white_label_compliance_reviewer_roles: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          reviewer_role: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          reviewer_role: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          reviewer_role?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      white_label_compliance_reviews: {
+        Row: {
+          checklist_results: Json | null
+          created_at: string
+          decision: string
+          decision_notes: string | null
+          flagged_items: Json | null
+          id: string
+          label_design_id: string
+          review_duration_seconds: number | null
+          review_type: string
+          reviewed_at: string
+          reviewer_role: string | null
+          reviewer_user_id: string | null
+        }
+        Insert: {
+          checklist_results?: Json | null
+          created_at?: string
+          decision: string
+          decision_notes?: string | null
+          flagged_items?: Json | null
+          id?: string
+          label_design_id: string
+          review_duration_seconds?: number | null
+          review_type: string
+          reviewed_at?: string
+          reviewer_role?: string | null
+          reviewer_user_id?: string | null
+        }
+        Update: {
+          checklist_results?: Json | null
+          created_at?: string
+          decision?: string
+          decision_notes?: string | null
+          flagged_items?: Json | null
+          id?: string
+          label_design_id?: string
+          review_duration_seconds?: number | null
+          review_type?: string
+          reviewed_at?: string
+          reviewer_role?: string | null
+          reviewer_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "white_label_compliance_reviews_label_design_id_fkey"
+            columns: ["label_design_id"]
+            isOneToOne: false
+            referencedRelation: "white_label_label_designs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      white_label_discount_tiers: {
+        Row: {
+          discount_percent: number
+          id: string
+          is_active: boolean
+          max_units: number | null
+          min_units: number
+          updated_at: string
+        }
+        Insert: {
+          discount_percent: number
+          id: string
+          is_active?: boolean
+          max_units?: number | null
+          min_units: number
+          updated_at?: string
+        }
+        Update: {
+          discount_percent?: number
+          id?: string
+          is_active?: boolean
+          max_units?: number | null
+          min_units?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      white_label_dispensary_settings: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          is_featured: boolean
+          is_published: boolean
+          label_design_id: string
+          patient_facing_description: string | null
+          practitioner_id: string
+          retail_price_cents: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_featured?: boolean
+          is_published?: boolean
+          label_design_id: string
+          patient_facing_description?: string | null
+          practitioner_id: string
+          retail_price_cents: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_featured?: boolean
+          is_published?: boolean
+          label_design_id?: string
+          patient_facing_description?: string | null
+          practitioner_id?: string
+          retail_price_cents?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "white_label_dispensary_settings_label_design_id_fkey"
+            columns: ["label_design_id"]
+            isOneToOne: false
+            referencedRelation: "white_label_label_designs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "white_label_dispensary_settings_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_engagement_summary_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "white_label_dispensary_settings_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_practice_health_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "white_label_dispensary_settings_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_protocol_effectiveness_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "white_label_dispensary_settings_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "white_label_dispensary_settings_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_engagement_summary"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "white_label_dispensary_settings_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_practice_health"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "white_label_dispensary_settings_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_protocol_effectiveness"
+            referencedColumns: ["practitioner_id"]
+          },
+        ]
+      }
+      white_label_enrollments: {
+        Row: {
+          created_at: string
+          enrolled_at: string
+          first_production_delivered_at: string | null
+          first_production_order_id: string | null
+          id: string
+          lifetime_production_orders: number
+          lifetime_production_revenue_cents: number
+          metadata: Json | null
+          practitioner_id: string
+          qualifying_path: string
+          qualifying_path_evidence: Json
+          qualifying_path_verified_at: string | null
+          qualifying_path_verified_by: string | null
+          status: string
+          suspended_at: string | null
+          suspended_reason: string | null
+          terminated_at: string | null
+          terminated_by: string | null
+          terminated_reason: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enrolled_at?: string
+          first_production_delivered_at?: string | null
+          first_production_order_id?: string | null
+          id?: string
+          lifetime_production_orders?: number
+          lifetime_production_revenue_cents?: number
+          metadata?: Json | null
+          practitioner_id: string
+          qualifying_path: string
+          qualifying_path_evidence?: Json
+          qualifying_path_verified_at?: string | null
+          qualifying_path_verified_by?: string | null
+          status?: string
+          suspended_at?: string | null
+          suspended_reason?: string | null
+          terminated_at?: string | null
+          terminated_by?: string | null
+          terminated_reason?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enrolled_at?: string
+          first_production_delivered_at?: string | null
+          first_production_order_id?: string | null
+          id?: string
+          lifetime_production_orders?: number
+          lifetime_production_revenue_cents?: number
+          metadata?: Json | null
+          practitioner_id?: string
+          qualifying_path?: string
+          qualifying_path_evidence?: Json
+          qualifying_path_verified_at?: string | null
+          qualifying_path_verified_by?: string | null
+          status?: string
+          suspended_at?: string | null
+          suspended_reason?: string | null
+          terminated_at?: string | null
+          terminated_by?: string | null
+          terminated_reason?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "white_label_enrollments_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: true
+            referencedRelation: "practitioner_engagement_summary_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "white_label_enrollments_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: true
+            referencedRelation: "practitioner_practice_health_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "white_label_enrollments_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: true
+            referencedRelation: "practitioner_protocol_effectiveness_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "white_label_enrollments_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: true
+            referencedRelation: "practitioners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "white_label_enrollments_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: true
+            referencedRelation: "v_practitioner_engagement_summary"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "white_label_enrollments_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: true
+            referencedRelation: "v_practitioner_practice_health"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "white_label_enrollments_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: true
+            referencedRelation: "v_practitioner_protocol_effectiveness"
+            referencedColumns: ["practitioner_id"]
+          },
+        ]
+      }
+      white_label_inventory_lots: {
+        Row: {
+          created_at: string
+          expiration_date: string
+          id: string
+          label_design_id: string
+          lot_number: string
+          manufactured_date: string
+          practitioner_id: string
+          product_catalog_id: string
+          production_order_item_id: string
+          status: string
+          storage_location: string
+          units_available: number
+          units_expired: number
+          units_produced: number
+          units_recalled: number
+          units_returned: number
+          units_sold: number
+          updated_at: string
+          viacura_storage_days: number
+          viacura_storage_fee_accrued_cents: number
+        }
+        Insert: {
+          created_at?: string
+          expiration_date: string
+          id?: string
+          label_design_id: string
+          lot_number: string
+          manufactured_date: string
+          practitioner_id: string
+          product_catalog_id: string
+          production_order_item_id: string
+          status?: string
+          storage_location: string
+          units_available: number
+          units_expired?: number
+          units_produced: number
+          units_recalled?: number
+          units_returned?: number
+          units_sold?: number
+          updated_at?: string
+          viacura_storage_days?: number
+          viacura_storage_fee_accrued_cents?: number
+        }
+        Update: {
+          created_at?: string
+          expiration_date?: string
+          id?: string
+          label_design_id?: string
+          lot_number?: string
+          manufactured_date?: string
+          practitioner_id?: string
+          product_catalog_id?: string
+          production_order_item_id?: string
+          status?: string
+          storage_location?: string
+          units_available?: number
+          units_expired?: number
+          units_produced?: number
+          units_recalled?: number
+          units_returned?: number
+          units_sold?: number
+          updated_at?: string
+          viacura_storage_days?: number
+          viacura_storage_fee_accrued_cents?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "white_label_inventory_lots_label_design_id_fkey"
+            columns: ["label_design_id"]
+            isOneToOne: false
+            referencedRelation: "white_label_label_designs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "white_label_inventory_lots_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_engagement_summary_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "white_label_inventory_lots_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_practice_health_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "white_label_inventory_lots_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_protocol_effectiveness_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "white_label_inventory_lots_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "white_label_inventory_lots_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_engagement_summary"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "white_label_inventory_lots_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_practice_health"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "white_label_inventory_lots_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_protocol_effectiveness"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "white_label_inventory_lots_product_catalog_id_fkey"
+            columns: ["product_catalog_id"]
+            isOneToOne: false
+            referencedRelation: "product_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "white_label_inventory_lots_product_catalog_id_fkey"
+            columns: ["product_catalog_id"]
+            isOneToOne: false
+            referencedRelation: "product_catalog_enriched"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "white_label_inventory_lots_production_order_item_id_fkey"
+            columns: ["production_order_item_id"]
+            isOneToOne: false
+            referencedRelation: "white_label_production_order_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      white_label_label_designs: {
+        Row: {
+          allergen_statement: string | null
+          back_panel_image_url: string | null
+          brand_configuration_id: string
+          created_at: string
+          design_proof_generated_at: string | null
+          design_proof_pdf_url: string | null
+          display_product_name: string
+          front_panel_image_url: string | null
+          id: string
+          is_current_version: boolean
+          layout_template: string
+          long_description: string | null
+          manufacturer_line: string
+          other_ingredients: string | null
+          parent_design_id: string | null
+          practitioner_id: string
+          product_catalog_id: string
+          short_description: string | null
+          status: string
+          structure_function_claims: string[]
+          supplement_facts_panel_data: Json
+          tagline: string | null
+          updated_at: string
+          usage_directions: string | null
+          version_number: number
+          warning_text: string | null
+        }
+        Insert: {
+          allergen_statement?: string | null
+          back_panel_image_url?: string | null
+          brand_configuration_id: string
+          created_at?: string
+          design_proof_generated_at?: string | null
+          design_proof_pdf_url?: string | null
+          display_product_name: string
+          front_panel_image_url?: string | null
+          id?: string
+          is_current_version?: boolean
+          layout_template: string
+          long_description?: string | null
+          manufacturer_line?: string
+          other_ingredients?: string | null
+          parent_design_id?: string | null
+          practitioner_id: string
+          product_catalog_id: string
+          short_description?: string | null
+          status?: string
+          structure_function_claims?: string[]
+          supplement_facts_panel_data: Json
+          tagline?: string | null
+          updated_at?: string
+          usage_directions?: string | null
+          version_number?: number
+          warning_text?: string | null
+        }
+        Update: {
+          allergen_statement?: string | null
+          back_panel_image_url?: string | null
+          brand_configuration_id?: string
+          created_at?: string
+          design_proof_generated_at?: string | null
+          design_proof_pdf_url?: string | null
+          display_product_name?: string
+          front_panel_image_url?: string | null
+          id?: string
+          is_current_version?: boolean
+          layout_template?: string
+          long_description?: string | null
+          manufacturer_line?: string
+          other_ingredients?: string | null
+          parent_design_id?: string | null
+          practitioner_id?: string
+          product_catalog_id?: string
+          short_description?: string | null
+          status?: string
+          structure_function_claims?: string[]
+          supplement_facts_panel_data?: Json
+          tagline?: string | null
+          updated_at?: string
+          usage_directions?: string | null
+          version_number?: number
+          warning_text?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "white_label_label_designs_brand_configuration_id_fkey"
+            columns: ["brand_configuration_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_brand_configurations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "white_label_label_designs_parent_design_id_fkey"
+            columns: ["parent_design_id"]
+            isOneToOne: false
+            referencedRelation: "white_label_label_designs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "white_label_label_designs_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_engagement_summary_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "white_label_label_designs_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_practice_health_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "white_label_label_designs_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_protocol_effectiveness_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "white_label_label_designs_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "white_label_label_designs_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_engagement_summary"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "white_label_label_designs_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_practice_health"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "white_label_label_designs_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_protocol_effectiveness"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "white_label_label_designs_product_catalog_id_fkey"
+            columns: ["product_catalog_id"]
+            isOneToOne: false
+            referencedRelation: "product_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "white_label_label_designs_product_catalog_id_fkey"
+            columns: ["product_catalog_id"]
+            isOneToOne: false
+            referencedRelation: "product_catalog_enriched"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wl_label_designs_parent_design_id_fkey"
+            columns: ["parent_design_id"]
+            isOneToOne: false
+            referencedRelation: "white_label_label_designs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      white_label_parameters: {
+        Row: {
+          expedited_surcharge_percent: number
+          free_storage_days: number
+          id: string
+          minimum_order_value_cents: number
+          storage_fee_cents_per_unit_day: number
+          updated_at: string
+        }
+        Insert: {
+          expedited_surcharge_percent: number
+          free_storage_days: number
+          id: string
+          minimum_order_value_cents: number
+          storage_fee_cents_per_unit_day: number
+          updated_at?: string
+        }
+        Update: {
+          expedited_surcharge_percent?: number
+          free_storage_days?: number
+          id?: string
+          minimum_order_value_cents?: number
+          storage_fee_cents_per_unit_day?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      white_label_production_order_items: {
+        Row: {
+          created_at: string
+          expiration_date: string | null
+          id: string
+          label_design_id: string
+          line_subtotal_cents: number
+          lot_number: string | null
+          product_catalog_id: string
+          production_order_id: string
+          qc_notes: string | null
+          qc_passed: boolean | null
+          quantity: number
+          unit_cost_cents: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          expiration_date?: string | null
+          id?: string
+          label_design_id: string
+          line_subtotal_cents: number
+          lot_number?: string | null
+          product_catalog_id: string
+          production_order_id: string
+          qc_notes?: string | null
+          qc_passed?: boolean | null
+          quantity: number
+          unit_cost_cents: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          expiration_date?: string | null
+          id?: string
+          label_design_id?: string
+          line_subtotal_cents?: number
+          lot_number?: string | null
+          product_catalog_id?: string
+          production_order_id?: string
+          qc_notes?: string | null
+          qc_passed?: boolean | null
+          quantity?: number
+          unit_cost_cents?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "white_label_production_order_items_label_design_id_fkey"
+            columns: ["label_design_id"]
+            isOneToOne: false
+            referencedRelation: "white_label_label_designs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "white_label_production_order_items_product_catalog_id_fkey"
+            columns: ["product_catalog_id"]
+            isOneToOne: false
+            referencedRelation: "product_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "white_label_production_order_items_product_catalog_id_fkey"
+            columns: ["product_catalog_id"]
+            isOneToOne: false
+            referencedRelation: "product_catalog_enriched"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "white_label_production_order_items_production_order_id_fkey"
+            columns: ["production_order_id"]
+            isOneToOne: false
+            referencedRelation: "white_label_production_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      white_label_production_orders: {
+        Row: {
+          actual_delivery_date: string | null
+          applied_discount_percent: number
+          applied_discount_tier: string
+          canceled_at: string | null
+          canceled_by: string | null
+          canceled_reason: string | null
+          carrier: string | null
+          created_at: string
+          delivered_at: string | null
+          deposit_amount_cents: number
+          deposit_paid_at: string | null
+          deposit_refunded: boolean
+          enrollment_id: string
+          expedited_surcharge_applied_cents: number
+          expedited_surcharge_cents: number | null
+          final_payment_amount_cents: number
+          final_payment_paid_at: string | null
+          id: string
+          labels_approved_at: string | null
+          order_number: string
+          practitioner_id: string
+          production_started_at: string | null
+          production_timeline: string
+          quality_control_completed_at: string | null
+          quoted_at: string | null
+          quoted_delivery_date: string | null
+          refund_amount_cents: number | null
+          refund_recorded_at: string | null
+          ship_to_viacura_warehouse: boolean
+          shipped_at: string | null
+          shipping_address: Json | null
+          status: string
+          stripe_deposit_payment_intent_id: string | null
+          stripe_final_payment_intent_id: string | null
+          stripe_refund_id: string | null
+          subtotal_cents: number
+          total_cents: number
+          total_units: number
+          tracking_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          actual_delivery_date?: string | null
+          applied_discount_percent: number
+          applied_discount_tier: string
+          canceled_at?: string | null
+          canceled_by?: string | null
+          canceled_reason?: string | null
+          carrier?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          deposit_amount_cents: number
+          deposit_paid_at?: string | null
+          deposit_refunded?: boolean
+          enrollment_id: string
+          expedited_surcharge_applied_cents?: number
+          expedited_surcharge_cents?: number | null
+          final_payment_amount_cents: number
+          final_payment_paid_at?: string | null
+          id?: string
+          labels_approved_at?: string | null
+          order_number: string
+          practitioner_id: string
+          production_started_at?: string | null
+          production_timeline: string
+          quality_control_completed_at?: string | null
+          quoted_at?: string | null
+          quoted_delivery_date?: string | null
+          refund_amount_cents?: number | null
+          refund_recorded_at?: string | null
+          ship_to_viacura_warehouse?: boolean
+          shipped_at?: string | null
+          shipping_address?: Json | null
+          status?: string
+          stripe_deposit_payment_intent_id?: string | null
+          stripe_final_payment_intent_id?: string | null
+          stripe_refund_id?: string | null
+          subtotal_cents: number
+          total_cents: number
+          total_units: number
+          tracking_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          actual_delivery_date?: string | null
+          applied_discount_percent?: number
+          applied_discount_tier?: string
+          canceled_at?: string | null
+          canceled_by?: string | null
+          canceled_reason?: string | null
+          carrier?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          deposit_amount_cents?: number
+          deposit_paid_at?: string | null
+          deposit_refunded?: boolean
+          enrollment_id?: string
+          expedited_surcharge_applied_cents?: number
+          expedited_surcharge_cents?: number | null
+          final_payment_amount_cents?: number
+          final_payment_paid_at?: string | null
+          id?: string
+          labels_approved_at?: string | null
+          order_number?: string
+          practitioner_id?: string
+          production_started_at?: string | null
+          production_timeline?: string
+          quality_control_completed_at?: string | null
+          quoted_at?: string | null
+          quoted_delivery_date?: string | null
+          refund_amount_cents?: number | null
+          refund_recorded_at?: string | null
+          ship_to_viacura_warehouse?: boolean
+          shipped_at?: string | null
+          shipping_address?: Json | null
+          status?: string
+          stripe_deposit_payment_intent_id?: string | null
+          stripe_final_payment_intent_id?: string | null
+          stripe_refund_id?: string | null
+          subtotal_cents?: number
+          total_cents?: number
+          total_units?: number
+          tracking_number?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "white_label_production_orders_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "white_label_enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "white_label_production_orders_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_engagement_summary_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "white_label_production_orders_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_practice_health_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "white_label_production_orders_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_protocol_effectiveness_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "white_label_production_orders_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "white_label_production_orders_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_engagement_summary"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "white_label_production_orders_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_practice_health"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "white_label_production_orders_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_protocol_effectiveness"
+            referencedColumns: ["practitioner_id"]
+          },
+        ]
+      }
+      white_label_recalls: {
+        Row: {
+          affected_lot_numbers: string[]
+          affected_product_catalog_ids: string[]
+          closed_at: string | null
+          closed_by: string | null
+          created_at: string
+          fda_notified: boolean
+          fda_notified_at: string | null
+          fda_recall_number: string | null
+          id: string
+          initiated_at: string
+          initiated_by_user_id: string
+          patients_notified_count: number
+          practitioners_notified_count: number
+          recall_class: string
+          recall_number: string
+          recall_reason: string
+          recall_scope: string
+          status: string
+          units_recalled: number
+          units_returned_to_viacura: number
+          updated_at: string
+        }
+        Insert: {
+          affected_lot_numbers?: string[]
+          affected_product_catalog_ids?: string[]
+          closed_at?: string | null
+          closed_by?: string | null
+          created_at?: string
+          fda_notified?: boolean
+          fda_notified_at?: string | null
+          fda_recall_number?: string | null
+          id?: string
+          initiated_at?: string
+          initiated_by_user_id: string
+          patients_notified_count?: number
+          practitioners_notified_count?: number
+          recall_class: string
+          recall_number: string
+          recall_reason: string
+          recall_scope: string
+          status?: string
+          units_recalled?: number
+          units_returned_to_viacura?: number
+          updated_at?: string
+        }
+        Update: {
+          affected_lot_numbers?: string[]
+          affected_product_catalog_ids?: string[]
+          closed_at?: string | null
+          closed_by?: string | null
+          created_at?: string
+          fda_notified?: boolean
+          fda_notified_at?: string | null
+          fda_recall_number?: string | null
+          id?: string
+          initiated_at?: string
+          initiated_by_user_id?: string
+          patients_notified_count?: number
+          practitioners_notified_count?: number
+          recall_class?: string
+          recall_number?: string
+          recall_reason?: string
+          recall_scope?: string
+          status?: string
+          units_recalled?: number
+          units_returned_to_viacura?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      white_label_reviewer_assignments: {
+        Row: {
+          assigned_at: string
+          completed_at: string | null
+          completed_by_user_id: string | null
+          created_at: string
+          id: string
+          label_design_id: string
+          reviewer_role: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_at?: string
+          completed_at?: string | null
+          completed_by_user_id?: string | null
+          created_at?: string
+          id?: string
+          label_design_id: string
+          reviewer_role: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_at?: string
+          completed_at?: string | null
+          completed_by_user_id?: string | null
+          created_at?: string
+          id?: string
+          label_design_id?: string
+          reviewer_role?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "white_label_reviewer_assignments_label_design_id_fkey"
+            columns: ["label_design_id"]
+            isOneToOne: false
+            referencedRelation: "white_label_label_designs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      white_label_sku_mappings: {
+        Row: {
+          created_at: string
+          display_name: string
+          id: string
+          is_active: boolean
+          label_design_id: string
+          practitioner_id: string
+          practitioner_sku_code: string
+          underlying_viacura_product_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_name: string
+          id?: string
+          is_active?: boolean
+          label_design_id: string
+          practitioner_id: string
+          practitioner_sku_code: string
+          underlying_viacura_product_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string
+          id?: string
+          is_active?: boolean
+          label_design_id?: string
+          practitioner_id?: string
+          practitioner_sku_code?: string
+          underlying_viacura_product_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "white_label_sku_mappings_label_design_id_fkey"
+            columns: ["label_design_id"]
+            isOneToOne: true
+            referencedRelation: "white_label_label_designs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "white_label_sku_mappings_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_engagement_summary_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "white_label_sku_mappings_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_practice_health_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "white_label_sku_mappings_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_protocol_effectiveness_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "white_label_sku_mappings_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "white_label_sku_mappings_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_engagement_summary"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "white_label_sku_mappings_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_practice_health"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "white_label_sku_mappings_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_protocol_effectiveness"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "white_label_sku_mappings_underlying_viacura_product_id_fkey"
+            columns: ["underlying_viacura_product_id"]
+            isOneToOne: false
+            referencedRelation: "product_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "white_label_sku_mappings_underlying_viacura_product_id_fkey"
+            columns: ["underlying_viacura_product_id"]
+            isOneToOne: false
+            referencedRelation: "product_catalog_enriched"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       hydration_aggregations_daily: {
@@ -32110,8 +35050,160 @@ export type Database = {
         }
         Relationships: []
       }
+      white_label_economics: {
+        Row: {
+          average_production_order_cents: number | null
+          enrollment_status: string | null
+          lifetime_production_orders: number | null
+          lifetime_production_revenue_cents: number | null
+          most_recent_delivery_at: string | null
+          practitioner_id: string | null
+          storage_fees_accrued_cents: number | null
+          total_units_sold_to_patients: number | null
+          units_on_hand: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "white_label_enrollments_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: true
+            referencedRelation: "practitioner_engagement_summary_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "white_label_enrollments_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: true
+            referencedRelation: "practitioner_practice_health_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "white_label_enrollments_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: true
+            referencedRelation: "practitioner_protocol_effectiveness_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "white_label_enrollments_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: true
+            referencedRelation: "practitioners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "white_label_enrollments_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: true
+            referencedRelation: "v_practitioner_engagement_summary"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "white_label_enrollments_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: true
+            referencedRelation: "v_practitioner_practice_health"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "white_label_enrollments_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: true
+            referencedRelation: "v_practitioner_protocol_effectiveness"
+            referencedColumns: ["practitioner_id"]
+          },
+        ]
+      }
+      wl_pending_reviews_with_sla: {
+        Row: {
+          assigned_at: string | null
+          assignment_id: string | null
+          display_product_name: string | null
+          hours_pending: number | null
+          label_design_id: string | null
+          label_status: string | null
+          practitioner_id: string | null
+          reviewer_role: string | null
+          sla_status: string | null
+          version_number: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "white_label_label_designs_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_engagement_summary_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "white_label_label_designs_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_practice_health_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "white_label_label_designs_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioner_protocol_effectiveness_mv"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "white_label_label_designs_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "white_label_label_designs_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_engagement_summary"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "white_label_label_designs_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_practice_health"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "white_label_label_designs_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "v_practitioner_protocol_effectiveness"
+            referencedColumns: ["practitioner_id"]
+          },
+          {
+            foreignKeyName: "white_label_reviewer_assignments_label_design_id_fkey"
+            columns: ["label_design_id"]
+            isOneToOne: false
+            referencedRelation: "white_label_label_designs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
+      accept_practitioner_invitation: {
+        Args: {
+          p_can_view_genetics: boolean
+          p_consent_share_caq: boolean
+          p_consent_share_engagement_score: boolean
+          p_consent_share_nutrition: boolean
+          p_consent_share_protocols: boolean
+          p_token: string
+        }
+        Returns: {
+          error_code: string
+          ok: boolean
+          practitioner_user_id: string
+          relationship_id: string
+        }[]
+      }
       allocate_vat_invoice_number: {
         Args: { p_sequence_name: string }
         Returns: string
@@ -32255,6 +35347,10 @@ export type Database = {
         }
         Returns: string
       }
+      clone_label_design_revision: {
+        Args: { p_source_design_id: string }
+        Returns: string
+      }
       compliance_verify_audit_chain: {
         Args: { p_limit?: number }
         Returns: {
@@ -32289,6 +35385,10 @@ export type Database = {
         Returns: {
           detected: number
         }[]
+      }
+      enqueue_practitioner_welcome_email: {
+        Args: { p_waitlist_id: string }
+        Returns: string
       }
       enrichment_queue: {
         Args: { batch_limit?: number }
@@ -32523,6 +35623,22 @@ export type Database = {
         }
         Returns: string
       }
+      lookup_practitioner_invitation: {
+        Args: { p_token: string }
+        Returns: {
+          can_view_genetics: boolean
+          consent_share_caq: boolean
+          consent_share_engagement_score: boolean
+          consent_share_nutrition: boolean
+          consent_share_protocols: boolean
+          invitation_note: string
+          ok: boolean
+          practice_logo_url: string
+          practice_name: string
+          practitioner_display_name: string
+          practitioner_user_id: string
+        }[]
+      }
       lookup_protocol_template: {
         Args: { p_pattern_ids: string[]; p_template_type?: string }
         Returns: {
@@ -32552,6 +35668,7 @@ export type Database = {
           similarity: number
         }[]
       }
+      next_white_label_order_number: { Args: never; Returns: string }
       prescription_check_my_eligibility: {
         Args: { p_skus: string[] }
         Returns: {
@@ -33104,6 +36221,16 @@ export type Database = {
         Returns: undefined
       }
       ultrathink_today_spend: { Args: never; Returns: number }
+      validate_practitioner_invitation: {
+        Args: { p_claim?: boolean; p_token: string }
+        Returns: {
+          expected_credential_type: string
+          invited_by_display: string
+          ok: boolean
+          personal_note: string
+          target_email: string
+        }[]
+      }
       validate_promo_code: {
         Args: { p_code: string; p_subtotal_cents: number }
         Returns: {
