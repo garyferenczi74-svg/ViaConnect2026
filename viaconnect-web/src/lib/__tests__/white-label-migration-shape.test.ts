@@ -805,3 +805,29 @@ describe('F5 migration carries the source manufacturer line unchanged', () => {
     expect(rawSql()).toContain("'Manufactured by FarmCeutica Wellness LLC, Buffalo NY'");
   });
 });
+
+// ---------------------------------------------------------------------------
+// 9. F5-fix Important-1: view lockdown (security_invoker + anon REVOKE)
+// ---------------------------------------------------------------------------
+
+describe('F5-fix Important-1: both owner-rights views carry security_invoker lockdown and anon REVOKE', () => {
+  it('sets security_invoker = on on white_label_economics via ALTER VIEW', () => {
+    expect(rawSql()).toContain(
+      'ALTER VIEW public.white_label_economics SET (security_invoker = on);',
+    );
+  });
+
+  it('revokes ALL from anon on white_label_economics', () => {
+    expect(rawSql()).toContain('REVOKE ALL ON public.white_label_economics FROM anon;');
+  });
+
+  it('sets security_invoker = on on wl_pending_reviews_with_sla via ALTER VIEW', () => {
+    expect(rawSql()).toContain(
+      'ALTER VIEW public.wl_pending_reviews_with_sla SET (security_invoker = on);',
+    );
+  });
+
+  it('revokes ALL from anon on wl_pending_reviews_with_sla', () => {
+    expect(rawSql()).toContain('REVOKE ALL ON public.wl_pending_reviews_with_sla FROM anon;');
+  });
+});

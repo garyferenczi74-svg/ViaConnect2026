@@ -1719,6 +1719,10 @@ GROUP BY wle.practitioner_id, wle.status;
 COMMENT ON VIEW public.white_label_economics IS
   'Per-practitioner white-label aggregates for the unit economics dashboard (Prompt #94). Counts only shipped + delivered production orders toward revenue.';
 
+-- 210f F5-fix Important-1: security_invoker enforces base-table RLS; anon revoked to prevent cross-practitioner revenue data exposure.
+ALTER VIEW public.white_label_economics SET (security_invoker = on);
+REVOKE ALL ON public.white_label_economics FROM anon;
+
 -- =============================================================================
 -- SECTION 9 of 9: from 20260418000500_white_label_audit_remediation.sql
 -- =============================================================================
@@ -1775,6 +1779,10 @@ ORDER BY ra.assigned_at ASC;
 
 COMMENT ON VIEW public.wl_pending_reviews_with_sla IS
   'Inbox source: pending assignments for the current version of each label only. Stale assignments tied to revised-away versions are filtered. Same SLA buckets as the pure classifyReviewSla helper (36h reminder, 48h escalation).';
+
+-- 210f F5-fix Important-1: security_invoker enforces base-table RLS; anon revoked to prevent cross-practitioner data exposure.
+ALTER VIEW public.wl_pending_reviews_with_sla SET (security_invoker = on);
+REVOKE ALL ON public.wl_pending_reviews_with_sla FROM anon;
 
 -- 9.4 Tightened dispensary read policy (replaces the 000480 broad draft,
 -- which is not emitted anywhere in this file). LIVE-VALIDITY REWRITE per
