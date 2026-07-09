@@ -1,0 +1,1070 @@
+[
+  {
+    "kind": "table",
+    "name": "agent_activity_log",
+    "severity": "CRITICAL",
+    "sites": 1,
+    "defined_in_repo_migrations": [
+      "20260412000020_agent_activity_log.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "agent_messages",
+    "severity": "CRITICAL",
+    "sites": 14,
+    "defined_in_repo_migrations": [
+      "20260416000060_arnold_ecosystem.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "brand_compliance_reviews",
+    "severity": "CRITICAL",
+    "sites": 5,
+    "defined_in_repo_migrations": [
+      "20260422000050_brand_compliance_reviews_table.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "conversations",
+    "severity": "CRITICAL",
+    "sites": 3,
+    "defined_in_repo_migrations": []
+  },
+  {
+    "kind": "table",
+    "name": "customer_acquisition_attribution",
+    "severity": "CRITICAL",
+    "sites": 4,
+    "defined_in_repo_migrations": [
+      "20260418000200_customer_acquisition_attribution.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "customer_archetypes",
+    "severity": "CRITICAL",
+    "sites": 7,
+    "defined_in_repo_migrations": [
+      "20260418000210_archetypes.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "data_source_connections",
+    "severity": "CRITICAL",
+    "sites": 9,
+    "defined_in_repo_migrations": [
+      "20260411000010_data_source_connections.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "genetic_variants",
+    "severity": "CRITICAL",
+    "sites": 6,
+    "defined_in_repo_migrations": []
+  },
+  {
+    "kind": "table",
+    "name": "hannah_avatar_sessions",
+    "severity": "CRITICAL",
+    "sites": 5,
+    "defined_in_repo_migrations": [
+      "20260416000050_hannah_ultrathink_avatar.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "hannah_avatar_transcripts",
+    "severity": "CRITICAL",
+    "sites": 1,
+    "defined_in_repo_migrations": [
+      "20260416000050_hannah_ultrathink_avatar.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "hannah_evidence_citations",
+    "severity": "CRITICAL",
+    "sites": 2,
+    "defined_in_repo_migrations": [
+      "20260416000050_hannah_ultrathink_avatar.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "hannah_trend_insights",
+    "severity": "CRITICAL",
+    "sites": 2,
+    "defined_in_repo_migrations": [
+      "20260415000010_hannah_trend_insights.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "hannah_ultrathink_sessions",
+    "severity": "CRITICAL",
+    "sites": 3,
+    "defined_in_repo_migrations": [
+      "20260416000050_hannah_ultrathink_avatar.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "hannah_ultrathink_traces",
+    "severity": "CRITICAL",
+    "sites": 2,
+    "defined_in_repo_migrations": [
+      "20260416000050_hannah_ultrathink_avatar.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "hounddog_pipeline",
+    "severity": "CRITICAL",
+    "sites": 1,
+    "defined_in_repo_migrations": [
+      "20260413000010_hounddog_tables.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "hounddog_scripts",
+    "severity": "CRITICAL",
+    "sites": 1,
+    "defined_in_repo_migrations": [
+      "20260413000010_hounddog_tables.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "integration_sync_log",
+    "severity": "CRITICAL",
+    "sites": 1,
+    "defined_in_repo_migrations": [
+      "20260412000050_integration_sync_log.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "jeffery_agent_panel_tasks",
+    "severity": "CRITICAL",
+    "sites": 2,
+    "defined_in_repo_migrations": [
+      "20260424001200_prompt_126_agent_panel_tasks.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "jeffery_hannah_routing_log",
+    "severity": "CRITICAL",
+    "sites": 1,
+    "defined_in_repo_migrations": [
+      "20260416000050_hannah_ultrathink_avatar.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "journey_recommendations",
+    "severity": "CRITICAL",
+    "sites": 3,
+    "defined_in_repo_migrations": [
+      "20260415000010_hannah_trend_insights.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "marketing_spend",
+    "severity": "CRITICAL",
+    "sites": 6,
+    "defined_in_repo_migrations": [
+      "20260418000190_marketing_spend.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "messages",
+    "severity": "CRITICAL",
+    "sites": 3,
+    "defined_in_repo_migrations": []
+  },
+  {
+    "kind": "table",
+    "name": "plugin_requests",
+    "severity": "CRITICAL",
+    "sites": 1,
+    "defined_in_repo_migrations": []
+  },
+  {
+    "kind": "table",
+    "name": "practitioner_brand_configurations",
+    "severity": "CRITICAL",
+    "sites": 8,
+    "defined_in_repo_migrations": [
+      "20260418000420_white_label_data_model.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "practitioner_category_opt_ins",
+    "severity": "CRITICAL",
+    "sites": 5,
+    "defined_in_repo_migrations": [
+      "20260422000090_practitioner_category_opt_ins.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "practitioner_certifications",
+    "severity": "CRITICAL",
+    "sites": 15,
+    "defined_in_repo_migrations": [
+      "20260418000100_practitioner_certifications.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "practitioner_cohorts",
+    "severity": "CRITICAL",
+    "sites": 4,
+    "defined_in_repo_migrations": [
+      "20260418000010_practitioner_cohorts.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "practitioner_email_queue",
+    "severity": "CRITICAL",
+    "sites": 6,
+    "defined_in_repo_migrations": [
+      "20260418000040_practitioner_email_queue.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "practitioner_invitations",
+    "severity": "CRITICAL",
+    "sites": 1,
+    "defined_in_repo_migrations": [
+      "20260418000030_practitioner_invitations.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "practitioner_patients",
+    "severity": "CRITICAL",
+    "sites": 8,
+    "defined_in_repo_migrations": [
+      "20260326_three_portal_architecture.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "practitioner_referral_attributions",
+    "severity": "CRITICAL",
+    "sites": 19,
+    "defined_in_repo_migrations": [
+      "20260418000510_practitioner_referral_data_model.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "practitioner_referral_codes",
+    "severity": "CRITICAL",
+    "sites": 5,
+    "defined_in_repo_migrations": [
+      "20260418000510_practitioner_referral_data_model.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "practitioner_referral_credit_balances",
+    "severity": "CRITICAL",
+    "sites": 7,
+    "defined_in_repo_migrations": [
+      "20260418000510_practitioner_referral_data_model.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "practitioner_referral_credit_ledger",
+    "severity": "CRITICAL",
+    "sites": 10,
+    "defined_in_repo_migrations": [
+      "20260418000510_practitioner_referral_data_model.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "practitioner_referral_fraud_flags",
+    "severity": "CRITICAL",
+    "sites": 11,
+    "defined_in_repo_migrations": [
+      "20260418000510_practitioner_referral_data_model.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "practitioner_referral_link_clicks",
+    "severity": "CRITICAL",
+    "sites": 3,
+    "defined_in_repo_migrations": [
+      "20260418000510_practitioner_referral_data_model.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "practitioner_referral_milestone_events",
+    "severity": "CRITICAL",
+    "sites": 20,
+    "defined_in_repo_migrations": [
+      "20260418000510_practitioner_referral_data_model.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "practitioner_referral_notification_preferences",
+    "severity": "CRITICAL",
+    "sites": 5,
+    "defined_in_repo_migrations": [
+      "20260418000510_practitioner_referral_data_model.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "practitioner_referral_status_tiers",
+    "severity": "CRITICAL",
+    "sites": 5,
+    "defined_in_repo_migrations": [
+      "20260418000510_practitioner_referral_data_model.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "practitioner_referral_tax_earnings",
+    "severity": "CRITICAL",
+    "sites": 9,
+    "defined_in_repo_migrations": [
+      "20260418000510_practitioner_referral_data_model.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "practitioner_waitlist",
+    "severity": "CRITICAL",
+    "sites": 7,
+    "defined_in_repo_migrations": [
+      "20260418000020_practitioner_waitlist.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "reward_store_items",
+    "severity": "CRITICAL",
+    "sites": 2,
+    "defined_in_repo_migrations": [
+      "20260326_gamification_engine.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "saved_meals",
+    "severity": "CRITICAL",
+    "sites": 3,
+    "defined_in_repo_migrations": [
+      "20260412000010_saved_meals.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "subscriptions",
+    "severity": "CRITICAL",
+    "sites": 4,
+    "defined_in_repo_migrations": []
+  },
+  {
+    "kind": "table",
+    "name": "supplement_product_cache",
+    "severity": "CRITICAL",
+    "sites": 3,
+    "defined_in_repo_migrations": [
+      "20260401_supplement_photo_pipeline.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "unit_economics_alerts",
+    "severity": "CRITICAL",
+    "sites": 4,
+    "defined_in_repo_migrations": [
+      "20260418000380_unit_economics_alerts.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "unit_economics_snapshots",
+    "severity": "CRITICAL",
+    "sites": 4,
+    "defined_in_repo_migrations": [
+      "20260418000220_unit_economics_snapshots.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "viatokens_balance",
+    "severity": "CRITICAL",
+    "sites": 5,
+    "defined_in_repo_migrations": [
+      "20260326_gamification_engine.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "viatokens_ledger",
+    "severity": "CRITICAL",
+    "sites": 16,
+    "defined_in_repo_migrations": [
+      "20260326_gamification_engine.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "white_label_catalog_config",
+    "severity": "CRITICAL",
+    "sites": 5,
+    "defined_in_repo_migrations": [
+      "20260418000420_white_label_data_model.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "white_label_compliance_reviews",
+    "severity": "CRITICAL",
+    "sites": 6,
+    "defined_in_repo_migrations": [
+      "20260418000420_white_label_data_model.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "white_label_dispensary_settings",
+    "severity": "CRITICAL",
+    "sites": 2,
+    "defined_in_repo_migrations": [
+      "20260418000480_white_label_dispensary_settings.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "white_label_enrollments",
+    "severity": "CRITICAL",
+    "sites": 8,
+    "defined_in_repo_migrations": [
+      "20260418000420_white_label_data_model.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "white_label_inventory_lots",
+    "severity": "CRITICAL",
+    "sites": 4,
+    "defined_in_repo_migrations": [
+      "20260418000420_white_label_data_model.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "white_label_label_designs",
+    "severity": "CRITICAL",
+    "sites": 19,
+    "defined_in_repo_migrations": [
+      "20260418000420_white_label_data_model.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "white_label_production_order_items",
+    "severity": "CRITICAL",
+    "sites": 4,
+    "defined_in_repo_migrations": [
+      "20260418000420_white_label_data_model.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "white_label_production_orders",
+    "severity": "CRITICAL",
+    "sites": 22,
+    "defined_in_repo_migrations": [
+      "20260418000420_white_label_data_model.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "white_label_reviewer_assignments",
+    "severity": "CRITICAL",
+    "sites": 3,
+    "defined_in_repo_migrations": [
+      "20260418000450_white_label_reviewer_assignments.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "white_label_sku_mappings",
+    "severity": "CRITICAL",
+    "sites": 2,
+    "defined_in_repo_migrations": [
+      "20260418000420_white_label_data_model.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "ai_conversations",
+    "severity": "HIGH",
+    "sites": 2,
+    "defined_in_repo_migrations": [
+      "20260326_ai_personalization_engine.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "archetype_definitions",
+    "severity": "HIGH",
+    "sites": 2,
+    "defined_in_repo_migrations": [
+      "20260418000210_archetypes.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "brands",
+    "severity": "HIGH",
+    "sites": 2,
+    "defined_in_repo_migrations": [
+      "20260422000010_brands_table.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "caq_phase_responses",
+    "severity": "HIGH",
+    "sites": 1,
+    "defined_in_repo_migrations": []
+  },
+  {
+    "kind": "table",
+    "name": "certification_levels",
+    "severity": "HIGH",
+    "sites": 1,
+    "defined_in_repo_migrations": [
+      "20260418000070_certification_levels.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "cohort_customer_monthly",
+    "severity": "HIGH",
+    "sites": 4,
+    "defined_in_repo_migrations": [
+      "20260418000350_cohort_customer_monthly_mv.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "compliance_streaks",
+    "severity": "HIGH",
+    "sites": 2,
+    "defined_in_repo_migrations": [
+      "20260326_gamification_engine.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "constitutional_assessments",
+    "severity": "HIGH",
+    "sites": 1,
+    "defined_in_repo_migrations": [
+      "20260418000180_revised_p91_view_modes_and_constitutional.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "daily_actions",
+    "severity": "HIGH",
+    "sites": 1,
+    "defined_in_repo_migrations": [
+      "20260326_ai_personalization_engine.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "daily_score_inputs",
+    "severity": "HIGH",
+    "sites": 1,
+    "defined_in_repo_migrations": [
+      "20260411000010_data_source_connections.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "genetics_nutritional_guides",
+    "severity": "HIGH",
+    "sites": 1,
+    "defined_in_repo_migrations": [
+      "20260412000040_genetics_nutritional_guides.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "hounddog_analytics_rollup",
+    "severity": "HIGH",
+    "sites": 1,
+    "defined_in_repo_migrations": [
+      "20260413000010_hounddog_tables.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "practitioner_referral_parameters",
+    "severity": "HIGH",
+    "sites": 1,
+    "defined_in_repo_migrations": [
+      "20260418000540_practitioner_referral_phase7_governance.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "practitioner_subscriptions",
+    "severity": "HIGH",
+    "sites": 6,
+    "defined_in_repo_migrations": [
+      "20260418000090_practitioner_subscriptions.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "practitioner_tiers",
+    "severity": "HIGH",
+    "sites": 2,
+    "defined_in_repo_migrations": [
+      "20260418000060_practitioner_tiers.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "predictive_alerts",
+    "severity": "HIGH",
+    "sites": 2,
+    "defined_in_repo_migrations": [
+      "20260326_ai_personalization_engine.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "product_categories",
+    "severity": "HIGH",
+    "sites": 2,
+    "defined_in_repo_migrations": [
+      "20260422000020_product_categories_table.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "product_certification_assignments",
+    "severity": "HIGH",
+    "sites": 1,
+    "defined_in_repo_migrations": [
+      "20260422000030_product_certifications_tables.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "supplement_compliance",
+    "severity": "HIGH",
+    "sites": 1,
+    "defined_in_repo_migrations": [
+      "20260326_ai_personalization_engine.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "supplement_logs",
+    "severity": "HIGH",
+    "sites": 2,
+    "defined_in_repo_migrations": []
+  },
+  {
+    "kind": "table",
+    "name": "supplement_protocols",
+    "severity": "HIGH",
+    "sites": 1,
+    "defined_in_repo_migrations": [
+      "20260326_three_portal_architecture.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "user_health_profile",
+    "severity": "HIGH",
+    "sites": 2,
+    "defined_in_repo_migrations": [
+      "20260326_ai_personalization_engine.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "user_medications",
+    "severity": "HIGH",
+    "sites": 4,
+    "defined_in_repo_migrations": [
+      "20260326_ai_personalization_engine.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "wearable_summaries",
+    "severity": "HIGH",
+    "sites": 2,
+    "defined_in_repo_migrations": [
+      "20260326_ai_personalization_engine.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "white_label_compliance_reviewer_roles",
+    "severity": "HIGH",
+    "sites": 2,
+    "defined_in_repo_migrations": [
+      "20260418000450_white_label_reviewer_assignments.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "white_label_discount_tiers",
+    "severity": "HIGH",
+    "sites": 1,
+    "defined_in_repo_migrations": [
+      "20260418000490_white_label_phase7_governance_and_economics.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "white_label_economics",
+    "severity": "HIGH",
+    "sites": 1,
+    "defined_in_repo_migrations": [
+      "20260418000490_white_label_phase7_governance_and_economics.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "white_label_parameters",
+    "severity": "HIGH",
+    "sites": 1,
+    "defined_in_repo_migrations": [
+      "20260418000490_white_label_phase7_governance_and_economics.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "white_label_recalls",
+    "severity": "HIGH",
+    "sites": 1,
+    "defined_in_repo_migrations": [
+      "20260418000420_white_label_data_model.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "wl_pending_reviews_with_sla",
+    "severity": "HIGH",
+    "sites": 1,
+    "defined_in_repo_migrations": [
+      "20260418000450_white_label_reviewer_assignments.sql",
+      "20260418000500_white_label_audit_remediation.sql"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "name": "accept_practitioner_invitation",
+    "severity": "MEDIUM",
+    "sites": 1,
+    "defined_in_repo_migrations": [
+      "20260418000150_practitioner_patients_invitation_fixes.sql"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "name": "assign_primary_archetype",
+    "severity": "MEDIUM",
+    "sites": 2,
+    "defined_in_repo_migrations": [
+      "20260418000400_archetype_atomic_swap_rpc.sql"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "name": "clone_label_design_revision",
+    "severity": "MEDIUM",
+    "sites": 1,
+    "defined_in_repo_migrations": [
+      "20260418000460_clone_label_design_revision_rpc.sql"
+    ]
+  },
+  {
+    "kind": "bucket",
+    "name": "genex-uploads",
+    "severity": "MEDIUM",
+    "sites": 1,
+    "defined_in_repo_migrations": []
+  },
+  {
+    "kind": "rpc",
+    "name": "increment_token_balance",
+    "severity": "MEDIUM",
+    "sites": 2,
+    "defined_in_repo_migrations": []
+  },
+  {
+    "kind": "rpc",
+    "name": "lapse_due_channels",
+    "severity": "MEDIUM",
+    "sites": 1,
+    "defined_in_repo_migrations": []
+  },
+  {
+    "kind": "rpc",
+    "name": "lookup_practitioner_invitation",
+    "severity": "MEDIUM",
+    "sites": 1,
+    "defined_in_repo_migrations": [
+      "20260418000150_practitioner_patients_invitation_fixes.sql"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "name": "lookup_referral_code_for_attribution",
+    "severity": "MEDIUM",
+    "sites": 1,
+    "defined_in_repo_migrations": [
+      "20260418000510_practitioner_referral_data_model.sql"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "name": "next_white_label_order_number",
+    "severity": "MEDIUM",
+    "sites": 1,
+    "defined_in_repo_migrations": [
+      "20260418000470_white_label_order_number_seq.sql"
+    ]
+  },
+  {
+    "kind": "bucket",
+    "name": "practitioner-statements",
+    "severity": "MEDIUM",
+    "sites": 1,
+    "defined_in_repo_migrations": []
+  },
+  {
+    "kind": "rpc",
+    "name": "read_secret",
+    "severity": "MEDIUM",
+    "sites": 1,
+    "defined_in_repo_migrations": []
+  },
+  {
+    "kind": "rpc",
+    "name": "record_referral_link_click",
+    "severity": "MEDIUM",
+    "sites": 1,
+    "defined_in_repo_migrations": [
+      "20260418000510_practitioner_referral_data_model.sql"
+    ]
+  },
+  {
+    "kind": "rpc",
+    "name": "send_transactional_email",
+    "severity": "MEDIUM",
+    "sites": 1,
+    "defined_in_repo_migrations": []
+  },
+  {
+    "kind": "rpc",
+    "name": "sum_practitioner_wholesale_volume",
+    "severity": "MEDIUM",
+    "sites": 1,
+    "defined_in_repo_migrations": [
+      "20260418000430_white_label_phase2_helpers.sql"
+    ]
+  },
+  {
+    "kind": "bucket",
+    "name": "tax-documents",
+    "severity": "MEDIUM",
+    "sites": 1,
+    "defined_in_repo_migrations": []
+  },
+  {
+    "kind": "rpc",
+    "name": "validate_practitioner_invitation",
+    "severity": "MEDIUM",
+    "sites": 1,
+    "defined_in_repo_migrations": [
+      "20260418000030_practitioner_invitations.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "a",
+    "severity": "LOW-dormant",
+    "sites": 1,
+    "defined_in_repo_migrations": []
+  },
+  {
+    "kind": "table",
+    "name": "abc",
+    "severity": "LOW-dormant",
+    "sites": 2,
+    "defined_in_repo_migrations": []
+  },
+  {
+    "kind": "table",
+    "name": "arnold_recommendations",
+    "severity": "LOW-dormant",
+    "sites": 3,
+    "defined_in_repo_migrations": [
+      "20260416000060_arnold_ecosystem.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "arnold_user_profiles",
+    "severity": "LOW-dormant",
+    "sites": 1,
+    "defined_in_repo_migrations": [
+      "20260416000060_arnold_ecosystem.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "b",
+    "severity": "LOW-dormant",
+    "sites": 1,
+    "defined_in_repo_migrations": []
+  },
+  {
+    "kind": "table",
+    "name": "biometrics",
+    "severity": "LOW-dormant",
+    "sites": 1,
+    "defined_in_repo_migrations": []
+  },
+  {
+    "kind": "table",
+    "name": "body_tracker_reconciliation_log",
+    "severity": "LOW-dormant",
+    "sites": 1,
+    "defined_in_repo_migrations": [
+      "20260416000060_arnold_ecosystem.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "compliance_logs",
+    "severity": "LOW-dormant",
+    "sites": 1,
+    "defined_in_repo_migrations": []
+  },
+  {
+    "kind": "table",
+    "name": "daily_compliance",
+    "severity": "LOW-dormant",
+    "sites": 1,
+    "defined_in_repo_migrations": []
+  },
+  {
+    "kind": "table",
+    "name": "hello",
+    "severity": "LOW-dormant",
+    "sites": 1,
+    "defined_in_repo_migrations": []
+  },
+  {
+    "kind": "table",
+    "name": "img",
+    "severity": "LOW-dormant",
+    "sites": 1,
+    "defined_in_repo_migrations": []
+  },
+  {
+    "kind": "table",
+    "name": "lab_orders",
+    "severity": "LOW-dormant",
+    "sites": 1,
+    "defined_in_repo_migrations": []
+  },
+  {
+    "kind": "table",
+    "name": "lab_results",
+    "severity": "LOW-dormant",
+    "sites": 1,
+    "defined_in_repo_migrations": []
+  },
+  {
+    "kind": "table",
+    "name": "push_tokens",
+    "severity": "LOW-dormant",
+    "sites": 1,
+    "defined_in_repo_migrations": []
+  },
+  {
+    "kind": "table",
+    "name": "streaks",
+    "severity": "LOW-dormant",
+    "sites": 1,
+    "defined_in_repo_migrations": []
+  },
+  {
+    "kind": "table",
+    "name": "token_balances",
+    "severity": "LOW-dormant",
+    "sites": 1,
+    "defined_in_repo_migrations": []
+  },
+  {
+    "kind": "table",
+    "name": "user_achievements",
+    "severity": "LOW-dormant",
+    "sites": 2,
+    "defined_in_repo_migrations": [
+      "20260326_gamification_engine.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "user_connections",
+    "severity": "LOW-dormant",
+    "sites": 3,
+    "defined_in_repo_migrations": []
+  },
+  {
+    "kind": "table",
+    "name": "user_health_levels",
+    "severity": "LOW-dormant",
+    "sites": 2,
+    "defined_in_repo_migrations": [
+      "20260326_gamification_engine.sql"
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "widget_cache",
+    "severity": "LOW-dormant",
+    "sites": 1,
+    "defined_in_repo_migrations": []
+  }
+]

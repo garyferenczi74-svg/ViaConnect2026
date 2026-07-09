@@ -10,6 +10,7 @@
 // =============================================================================
 
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
+import { reportSupabaseError } from '../_shared/schema-drift.ts';
 
 const SITE_URL = Deno.env.get('SITE_URL') ?? 'https://www.viaconnectapp.com';
 const CRON_SECRET = Deno.env.get('INSIGHTS_CRON_SECRET') ?? Deno.env.get('CRON_SECRET') ?? '';
@@ -59,6 +60,15 @@ serve(async (req) => {
       duration_ms: Date.now() - startedAt,
       body: text.slice(0, 300),
     });
+    if (!res.ok) {
+      // 210d P3-5: the downstream cron route surfaces Supabase errors in its
+      // response body; classify the relayed text so schema drift gets tagged
+      // at the relay too. Fail-open: control flow below is unchanged.
+      reportSupabaseError('nutrition-insights-daily.relay', text.slice(0, 300), {
+        route: '/api/nutrition/insights/cron',
+        status: res.status,
+      });
+    }
     return new Response(text || JSON.stringify({ ok: res.ok }), {
       status: res.status,
       headers: { 'Content-Type': 'application/json' },
