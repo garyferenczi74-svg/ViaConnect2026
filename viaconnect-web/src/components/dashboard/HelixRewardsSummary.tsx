@@ -1,6 +1,6 @@
 'use client';
 
-// HelixRewardsSummary — tier badge, points, streak (Flame icon), progress
+// HelixRewardsSummary -- tier badge, points, streak (Flame icon), progress
 // to next tier, and recent activity. Consumer portal ONLY.
 
 import { useEffect, useState } from 'react';
@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowRight, Flame, Hexagon, Sparkles } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { reportSupabaseError } from '@/lib/utils/schema-drift';
 
 interface HelixRewardsSummaryProps {
   totalPoints: number;
@@ -91,14 +92,18 @@ export function HelixRewardsSummary({ totalPoints, currentStreak, longestStreak 
         } = await supabase.auth.getUser();
         if (!user || cancelled) return;
 
-        const { data } = await (supabase as any)
+        const { data, error: readError } = await (supabase as any)
           .from('helix_transactions')
-          .select('id, description, amount, created_at, transaction_type')
+          .select('id, description, amount, created_at, type')
           .eq('user_id', user.id)
-          .eq('transaction_type', 'earn')
+          .eq('type', 'earn')
           .order('created_at', { ascending: false })
           .limit(4);
 
+        if (readError) {
+          reportSupabaseError('helix.rewardsSummary.read', readError, { table: 'helix_transactions' });
+          return;
+        }
         if (cancelled || !Array.isArray(data)) return;
         setActivity(
           data.map((row: { id: string; description: string; amount: number; created_at: string }) => ({
@@ -108,8 +113,8 @@ export function HelixRewardsSummary({ totalPoints, currentStreak, longestStreak 
             createdAt: row.created_at,
           })),
         );
-      } catch {
-        /* ignore */
+      } catch (err) {
+        reportSupabaseError('helix.rewardsSummary.read', err, { table: 'helix_transactions' });
       }
     })();
     return () => {
@@ -134,7 +139,7 @@ export function HelixRewardsSummary({ totalPoints, currentStreak, longestStreak 
             <Hexagon className={`h-5 w-5 flex-shrink-0 ${style.text}`} strokeWidth={1.5} />
             <div className="min-w-0">
               <p className={`truncate text-sm font-bold ${style.text}`}>{tierInfo.current} Tier</p>
-              <p className="text-[10px] text-white/40">{style.multiplier}× multiplier</p>
+              <p className="text-[10px] text-white/40">{style.multiplier}x multiplier</p>
             </div>
           </div>
           <div className="text-right">

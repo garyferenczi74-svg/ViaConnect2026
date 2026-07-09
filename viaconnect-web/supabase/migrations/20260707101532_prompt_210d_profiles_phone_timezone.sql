@@ -1,0 +1,2 @@
+-- Prompt 210d P0-6: append-only phone + timezone columns for public.profiles; the account profile upsert (src/app/(app)/(consumer)/account/profile/page.tsx) writes phone and syncTimezone (src/lib/timezone.ts) updates timezone, but neither column exists live (2026-07-06 snapshot: docs/integrity/snapshot/live-types.ts), so both writes were rejected whole. Shape test: src/lib/__tests__/profiles-write-shape.test.ts parses this file.
+alter table public.profiles add column if not exists phone text, add column if not exists timezone text;

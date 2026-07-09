@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { createClient } from "@/lib/supabase/client";
+import { reportSupabaseError } from "@/lib/utils/schema-drift";
+import { buildProfileSavePayload } from "./profile-save-payload";
 
 interface ProfileForm {
   first_name: string;
@@ -80,21 +82,30 @@ export default function ProfilePage() {
       setSavingProfile(false);
       return;
     }
-    const fullName = `${profile.first_name.trim()} ${profile.last_name.trim()}`.trim();
+    // Prompt 210d P0-6: payload built by the pure helper (same keys and value
+    // shaping as the former inline literal) so the write-shape test can assert
+    // its keys against the live profiles columns plus the P0-6 migration.
     const { error } = await (supabase as any)
       .from("profiles")
       .upsert(
-        {
-          id: user.id,
-          full_name: fullName || null,
-          phone: profile.phone.trim() || null,
-          updated_at: new Date().toISOString(),
-        },
+        buildProfileSavePayload({
+          userId: user.id,
+          firstName: profile.first_name,
+          lastName: profile.last_name,
+          phone: profile.phone,
+        }),
         { onConflict: "id" },
       );
     setSavingProfile(false);
     if (error) {
       toast.error(error.message ?? "Could not save profile");
+      // Prompt 210d P0-6: the save error was only ever a toast, so schema
+      // drift (profiles.phone absent live) stayed invisible in logs. Report
+      // it via the P0-1 classifier after the toast, preserving the existing
+      // user-facing flow; production stays fail-open and the strict-mode
+      // rethrow cannot engage in the browser bundle. Context carries object
+      // names only, never the payload.
+      reportSupabaseError("profiles.save", error, { table: "profiles" });
     } else {
       toast.success("Profile updated");
     }

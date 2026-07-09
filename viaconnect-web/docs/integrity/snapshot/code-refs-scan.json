@@ -1,0 +1,785 @@
+{
+  "scanned_files": 3458,
+  "distinct_table_refs": 539,
+  "distinct_rpc_refs": 67,
+  "distinct_bucket_refs": 11,
+  "dynamic_unresolved": {
+    "from": 28,
+    "rpc": 1,
+    "bucket": 32,
+    "sites": [
+      "bucket src/app/(app)/(consumer)/nutrition/components/NutriVisionTab/index.tsx:153",
+      "from src/app/(app)/admin/compliance/page.tsx:18",
+      "from src/app/(app)/admin/exec-reporting/page.tsx:27",
+      "from src/app/(app)/admin/international/page.tsx:10",
+      "from src/app/(app)/admin/notifications/page.tsx:9",
+      "from src/app/(app)/admin/shop/page.tsx:24",
+      "bucket src/app/api/admin/exec-reporting/packs/[packId]/render/route.ts:227",
+      "bucket src/app/api/admin/exec-reporting/packs/[packId]/render/route.ts:250",
+      "bucket src/app/api/admin/legal/cases/[caseId]/evidence/route.ts:108",
+      "bucket src/app/api/admin/legal/cases/[caseId]/evidence/route.ts:137",
+      "bucket src/app/api/admin/shop/upload/route.ts:83",
+      "bucket src/app/api/admin/shop/upload/route.ts:122",
+      "from src/app/api/admin/soc2/pseudonym-requests/[logId]/approve/route.ts:184",
+      "bucket src/app/api/board/packs/[distributionId]/download/route.ts:264",
+      "bucket src/app/api/board/packs/[distributionId]/download/route.ts:279",
+      "bucket src/app/api/board/packs/[distributionId]/download/route.ts:285",
+      "bucket src/app/api/caq/supplements/barcode-capture/route.ts:134",
+      "bucket src/app/api/hipaa/risk-analysis/route.ts:52",
+      "from src/app/api/nutrition/meals/[mealId]/route.ts:263",
+      "from src/app/api/nutrition/meals/[mealId]/__tests__/route.test.ts:35",
+      "bucket src/components/body-tracker/connected-sources/AppleHealthImportModal.tsx:146",
+      "from src/components/body-tracker/manual-input/EntryHistoryTimeline.tsx:47",
+      "from src/components/body-tracker/manual-input/ScanPhotoGallery.tsx:40",
+      "bucket src/components/body-tracker/manual-input/ScanPhotoUpload.tsx:59",
+      "bucket src/components/body-tracker/manual-input/ScanPhotoUpload.tsx:64",
+      "from src/components/body-tracker/manual-input/submitEntry.ts:75",
+      "bucket src/components/body-tracker/photos/PhotoSessionCapture.tsx:87",
+      "bucket src/components/body-tracker/photos/PhotoSessionCapture.tsx:88",
+      "bucket src/components/body-tracker/photos/PhotoSessionCapture.tsx:109",
+      "bucket src/components/nutrition/genetics/UploadNutritionTestTab.tsx:349",
+      "rpc src/components/provider/SharedPatientProtocol.tsx:491",
+      "from src/lib/api/monitoring.ts:89",
+      "from src/lib/genetics/sampleseed/__tests__/seedSamplePanels.test.ts:5",
+      "from src/lib/governance/activation.ts:117",
+      "from src/lib/governance/rollback.ts:161",
+      "bucket src/lib/marshall/vision/consumerIntake.ts:117",
+      "from src/lib/nutrition/barcode/cache.ts:34",
+      "from src/lib/nutrition/barcode/cache.ts:58",
+      "from src/lib/nutrition/barcode/cache.ts:78",
+      "from src/lib/nutrition/barcode/rate-limit.ts:36",
+      "bucket src/lib/nutrition/corpus/photo-contribution.ts:122",
+      "from src/lib/nutrition/databases/farmceutica-curated.ts:111",
+      "from src/lib/nutrition/databases/farmceutica-curated.ts:140",
+      "from src/lib/nutrition/__tests__/intakeReconciliation.test.ts:51",
+      "from src/lib/pricing/drop-ship.ts:78",
+      "from src/lib/pricing/drop-ship.ts:134",
+      "from src/lib/protocol/__tests__/synthesis.test.ts:737",
+      "bucket src/lib/soc2/assemble/persist.ts:47",
+      "from src/lib/soc2/collectors/supabaseFetcher.ts:17",
+      "bucket src/lib/soc2/manualEvidence/loader.ts:83",
+      "bucket src/lib/soc2/manualEvidence/upload.ts:56",
+      "from supabase/functions/activate-approved-proposals/index.ts:145",
+      "bucket supabase/functions/arnold-vision-analyze/index.ts:420",
+      "bucket supabase/functions/brand_compliance_validator/index.ts:198",
+      "from supabase/functions/execute-scheduled-flags/index.ts:134",
+      "bucket supabase/functions/hannah-analyze-nutrition-test/index.ts:320",
+      "bucket supabase/functions/photo-meal-blob-cleanup/index.ts:92",
+      "bucket supabase/functions/supplement_photo_inventory_sync/index.ts:35",
+      "bucket supabase/functions/supplement_photo_inventory_sync/index.ts:67",
+      "bucket supabase/functions/supplement_photo_inventory_sync/index.ts:114",
+      "bucket supabase/functions/supplement_photo_sha256_verifier/index.ts:46"
+    ]
+  },
+  "table_phantoms": {
+    "hannah_trend_insights": [
+      "src/app/(app)/(consumer)/analytics/actions/hannah.ts:58",
+      "src/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/hooks/useHannahInsights.ts:113"
+    ],
+    "journey_recommendations": [
+      "src/app/(app)/(consumer)/analytics/actions/hannah.ts:134",
+      "src/app/(app)/(consumer)/analytics/actions/hannah.ts:156",
+      "src/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/hooks/useJourneyRecommendations.ts:92"
+    ],
+    "genetic_variants": [
+      "src/app/(app)/(consumer)/genetics/[panelId]/page.tsx:71",
+      "src/app/(app)/(consumer)/profile/assessment/page.tsx:282",
+      "src/app/api/ai/generate-wellness-analytics/route.ts:50",
+      "src/app/api/genex/genemetrics/route.ts:235",
+      "src/app/api/genex/upload/route.ts:474",
+      "src/app/api/genex/upload/route.ts:479"
+    ],
+    "conversations": [
+      "src/app/(app)/(consumer)/messages/page.tsx:48",
+      "src/app/(app)/(consumer)/messages/page.tsx:151",
+      "src/app/(app)/(consumer)/profile/page.tsx:103"
+    ],
+    "messages": [
+      "src/app/(app)/(consumer)/messages/page.tsx:84",
+      "src/app/(app)/(consumer)/messages/page.tsx:131",
+      "src/app/(app)/(consumer)/messages/page.tsx:142"
+    ],
+    "plugin_requests": [
+      "src/app/(app)/(consumer)/plugins/page.tsx:135"
+    ],
+    "supplement_logs": [
+      "src/app/(app)/(consumer)/profile/assessment/page.tsx:262",
+      "src/app/api/ai/generate-wellness-analytics/route.ts:49"
+    ],
+    "data_source_connections": [
+      "src/app/(app)/(consumer)/settings/integrations/page.tsx:32",
+      "src/app/(app)/(consumer)/settings/integrations/page.tsx:64",
+      "src/app/api/integrations/oauth/[appId]/callback/route.ts:107",
+      "src/app/api/integrations/webhook/[appId]/route.ts:20",
+      "src/app/api/integrations/webhook/[appId]/route.ts:50",
+      "src/components/nutrition/ConnectedAppMealDropdown.tsx:43",
+      "src/lib/integrations/tokenManager.ts:15",
+      "src/lib/integrations/tokenManager.ts:37",
+      "src/lib/integrations/tokenManager.ts:58"
+    ],
+    "unit_economics_alerts": [
+      "src/app/(app)/admin/analytics/alerts/page.tsx:61",
+      "src/app/(app)/admin/analytics/alerts/page.tsx:80",
+      "src/app/(app)/admin/analytics/board-pack/page.tsx:100",
+      "supabase/functions/unit-economics-snapshot-tick/index.ts:378"
+    ],
+    "archetype_definitions": [
+      "src/app/(app)/admin/analytics/archetypes/page.tsx:48",
+      "src/app/(app)/admin/analytics/board-pack/page.tsx:93"
+    ],
+    "customer_archetypes": [
+      "src/app/(app)/admin/analytics/archetypes/page.tsx:53",
+      "src/app/(app)/admin/analytics/board-pack/page.tsx:97",
+      "src/app/api/admin/analytics/archetype-override/route.ts:53",
+      "supabase/functions/archetype-refinement-tick/index.ts:307",
+      "supabase/functions/archetype-refinement-tick/index.ts:323",
+      "supabase/functions/archetype-refinement-tick/index.ts:326",
+      "supabase/functions/archetype-refinement-tick/index.ts:340"
+    ],
+    "unit_economics_snapshots": [
+      "src/app/(app)/admin/analytics/board-pack/page.tsx:87",
+      "src/app/(app)/admin/analytics/overview/page.tsx:76",
+      "src/app/(app)/admin/analytics/snapshots/page.tsx:78",
+      "supabase/functions/unit-economics-snapshot-tick/index.ts:294"
+    ],
+    "marketing_spend": [
+      "src/app/(app)/admin/analytics/marketing-spend/page.tsx:74",
+      "src/app/(app)/admin/analytics/marketing-spend/page.tsx:119",
+      "src/app/(app)/admin/analytics/marketing-spend/page.tsx:143",
+      "src/lib/analytics/cac-engine.ts:211",
+      "src/lib/analytics/cac-engine.ts:239",
+      "supabase/functions/unit-economics-snapshot-tick/index.ts:157"
+    ],
+    "practitioner_cohorts": [
+      "src/app/(app)/admin/cohorts/page.tsx:60",
+      "src/app/(app)/admin/cohorts/page.tsx:100",
+      "src/app/(app)/admin/waitlist/page.tsx:96",
+      "src/app/practitioners/onboard/page.tsx:102"
+    ],
+    "practitioner_waitlist": [
+      "src/app/(app)/admin/cohorts/page.tsx:64",
+      "src/app/(app)/admin/waitlist/page.tsx:88",
+      "src/app/(app)/admin/waitlist/page.tsx:124",
+      "src/app/api/waitlist/practitioner/route.ts:67",
+      "src/app/practitioners/onboard/page.tsx:78",
+      "supabase/functions/practitioner-waitlist-mailer/index.ts:182",
+      "supabase/functions/practitioner-waitlist-mailer/index.ts:221"
+    ],
+    "hannah_ultrathink_sessions": [
+      "src/app/(app)/admin/hannah/ultrathink/page.tsx:51",
+      "src/app/(app)/admin/hannah/ultrathink/page.tsx:91",
+      "src/app/api/hannah/ultrathink/route.ts:78"
+    ],
+    "hannah_ultrathink_traces": [
+      "src/app/(app)/admin/hannah/ultrathink/page.tsx:80",
+      "src/app/api/hannah/ultrathink/route.ts:96"
+    ],
+    "hannah_evidence_citations": [
+      "src/app/(app)/admin/hannah/ultrathink/page.tsx:100",
+      "src/app/api/hannah/ultrathink/route.ts:107"
+    ],
+    "hannah_avatar_sessions": [
+      "src/app/(app)/admin/hannah/ultrathink/page.tsx:119",
+      "src/app/api/hannah/avatar/end/route.ts:27",
+      "src/app/api/hannah/avatar/end/route.ts:61",
+      "src/app/api/hannah/avatar/session/route.ts:64",
+      "src/app/api/hannah/avatar/transcript/route.ts:26"
+    ],
+    "white_label_enrollments": [
+      "src/app/(app)/admin/white-label/page.tsx:65",
+      "src/app/(app)/admin/white-label/page.tsx:66",
+      "src/app/api/admin/white-label/reporting/route.ts:50",
+      "src/app/api/practitioner/white-label/brand/route.ts:61",
+      "src/app/api/practitioner/white-label/brand/route.ts:169",
+      "src/app/api/practitioner/white-label/enroll/route.ts:68",
+      "src/app/api/practitioner/white-label/enroll/route.ts:83",
+      "src/app/api/practitioner/white-label/orders/route.ts:117"
+    ],
+    "white_label_production_orders": [
+      "src/app/(app)/admin/white-label/page.tsx:67",
+      "src/app/api/admin/white-label/production/[orderId]/route.ts:34",
+      "src/app/api/admin/white-label/production/[orderId]/transition/route.ts:71",
+      "src/app/api/admin/white-label/production/[orderId]/transition/route.ts:98",
+      "src/app/api/admin/white-label/reporting/route.ts:58",
+      "src/app/api/admin/white-label/reporting/route.ts:115",
+      "src/app/api/admin/white-label/reporting/route.ts:126",
+      "src/app/api/practitioner/white-label/orders/route.ts:72",
+      "src/app/api/practitioner/white-label/orders/route.ts:225",
+      "src/app/api/practitioner/white-label/orders/[orderId]/cancel/route.ts:76",
+      "src/app/api/practitioner/white-label/orders/[orderId]/cancel/route.ts:127",
+      "src/app/api/practitioner/white-label/orders/[orderId]/cancel/route.ts:169",
+      "src/app/api/practitioner/white-label/orders/[orderId]/checkout-deposit/route.ts:61",
+      "src/app/api/practitioner/white-label/orders/[orderId]/checkout-final/route.ts:61",
+      "src/app/api/practitioner/white-label/orders/[orderId]/route.ts:49",
+      "src/lib/custom-formulations/eligibility.ts:206",
+      "src/lib/practitioner-referral/milestone-orchestrator.ts:185",
+      "src/lib/white-label/stripe-production-payment.ts:41",
+      "src/lib/white-label/stripe-production-payment.ts:115",
+      "src/lib/white-label/stripe-production-payment.ts:141",
+      "src/lib/white-label/stripe-production-payment.ts:189",
+      "supabase/functions/vest-referral-rewards/index.ts:163"
+    ],
+    "white_label_compliance_reviews": [
+      "src/app/(app)/admin/white-label/page.tsx:68",
+      "src/app/api/admin/white-label/compliance/decide/[designId]/route.ts:97",
+      "src/app/api/admin/white-label/compliance/reviews/route.ts:34",
+      "src/app/api/admin/white-label/reporting/route.ts:104",
+      "src/lib/white-label/compliance-orchestrator.ts:69",
+      "src/lib/white-label/compliance-orchestrator.ts:163"
+    ],
+    "white_label_recalls": [
+      "src/app/(app)/admin/white-label/page.tsx:69"
+    ],
+    "white_label_catalog_config": [
+      "src/app/(app)/admin/white-label/page.tsx:70",
+      "src/app/api/admin/white-label/catalog/route.ts:53",
+      "src/app/api/admin/white-label/catalog/route.ts:123",
+      "src/app/api/practitioner/white-label/labels/route.ts:118",
+      "src/app/api/practitioner/white-label/orders/route.ts:166"
+    ],
+    "practitioner_subscriptions": [
+      "src/app/(app)/practitioner/billing/page.tsx:79",
+      "src/lib/practitioner-referral/milestone-orchestrator.ts:132",
+      "src/lib/pricing/wholesale-engine.ts:123",
+      "src/lib/white-label/eligibility.ts:156",
+      "src/lib/white-label/stripe-production-payment.ts:84",
+      "supabase/functions/vest-referral-rewards/index.ts:117"
+    ],
+    "practitioner_tiers": [
+      "src/app/(app)/practitioner/billing/page.tsx:93",
+      "src/lib/pricing/wholesale-engine.ts:138"
+    ],
+    "certification_levels": [
+      "src/app/(app)/practitioner/certification/page.tsx:75"
+    ],
+    "practitioner_certifications": [
+      "src/app/(app)/practitioner/certification/page.tsx:81",
+      "src/app/api/webhooks/lms/route.ts:71",
+      "src/lib/certification/enrollment.ts:82",
+      "src/lib/certification/enrollment.ts:100",
+      "src/lib/certification/enrollment.ts:137",
+      "src/lib/certification/enrollment.ts:145",
+      "src/lib/certification/enrollment.ts:197",
+      "src/lib/custom-formulations/eligibility.ts:159",
+      "src/lib/practitioner-referral/milestone-orchestrator.ts:167",
+      "src/lib/pricing/wholesale-engine.ts:131",
+      "src/lib/white-label/eligibility.ts:148",
+      "supabase/functions/cert-reminder-tick/index.ts:77",
+      "supabase/functions/cert-reminder-tick/index.ts:85",
+      "supabase/functions/cert-reminder-tick/index.ts:97",
+      "supabase/functions/vest-referral-rewards/index.ts:148"
+    ],
+    "practitioner_patients": [
+      "src/app/(app)/practitioner/patients/[id]/page.tsx:72",
+      "src/app/api/practitioner/invite-patient/route.ts:106",
+      "src/app/api/practitioner/patient-view-preference/route.ts:68",
+      "src/app/api/practitioner/patients/[patientId]/engagement-score/route.ts:67",
+      "src/components/co-branding/PatientPractitionerBadge.tsx:44",
+      "src/lib/analytics/acquisition-attribution.ts:124",
+      "src/lib/analytics/archetype-engine.ts:329",
+      "supabase/functions/archetype-refinement-tick/index.ts:261"
+    ],
+    "brand_compliance_reviews": [
+      "src/app/api/admin/brand-compliance/route.ts:36",
+      "src/app/api/admin/brand-compliance/[reviewId]/route.ts:42",
+      "src/app/api/admin/brand-compliance/[reviewId]/route.ts:95",
+      "src/app/api/admin/brand-compliance/[reviewId]/route.ts:110",
+      "supabase/functions/brand_compliance_validator/index.ts:283"
+    ],
+    "practitioner_referral_credit_balances": [
+      "src/app/api/admin/practitioner-referrals/adjustment/route.ts:67",
+      "src/app/api/admin/practitioner-referrals/reporting/route.ts:52",
+      "src/app/api/practitioner/referrals/apply-credit/route.ts:75",
+      "src/app/api/practitioner/referrals/credits/route.ts:49",
+      "src/lib/practitioner-referral/fraud-resolution-orchestrator.ts:144",
+      "supabase/functions/expire-referral-credits/index.ts:161",
+      "supabase/functions/expire-referral-credits/index.ts:197"
+    ],
+    "practitioner_referral_credit_ledger": [
+      "src/app/api/admin/practitioner-referrals/adjustment/route.ts:79",
+      "src/app/api/admin/practitioner-referrals/reporting/route.ts:119",
+      "src/app/api/practitioner/referrals/apply-credit/route.ts:101",
+      "src/app/api/practitioner/referrals/credits/route.ts:52",
+      "src/lib/practitioner-referral/fraud-resolution-orchestrator.ts:150",
+      "src/lib/practitioner-referral/vesting-orchestrator.ts:149",
+      "supabase/functions/expire-referral-credits/index.ts:131",
+      "supabase/functions/expire-referral-credits/index.ts:152",
+      "supabase/functions/expire-referral-credits/index.ts:168",
+      "supabase/functions/vest-referral-rewards/index.ts:290"
+    ],
+    "practitioner_referral_fraud_flags": [
+      "src/app/api/admin/practitioner-referrals/fraud-flags/route.ts:44",
+      "src/app/api/admin/practitioner-referrals/fraud-flags/[flagId]/route.ts:38",
+      "src/app/api/admin/practitioner-referrals/fraud-flags/[flagId]/route.ts:71",
+      "src/app/api/admin/practitioner-referrals/reporting/route.ts:51",
+      "src/app/api/practitioner/referrals/resolve-attribution/route.ts:194",
+      "src/lib/practitioner-referral/fraud-detection-orchestrator.ts:48",
+      "src/lib/practitioner-referral/fraud-resolution-orchestrator.ts:48",
+      "src/lib/practitioner-referral/fraud-resolution-orchestrator.ts:83",
+      "src/lib/practitioner-referral/fraud-resolution-orchestrator.ts:107",
+      "src/lib/practitioner-referral/vesting-orchestrator.ts:97",
+      "supabase/functions/vest-referral-rewards/index.ts:254"
+    ],
+    "practitioner_referral_attributions": [
+      "src/app/api/admin/practitioner-referrals/fraud-flags/[flagId]/route.ts:51",
+      "src/app/api/admin/practitioner-referrals/reporting/route.ts:49",
+      "src/app/api/practitioner/referrals/attribution-info/route.ts:53",
+      "src/app/api/practitioner/referrals/redeem-cert-discount/route.ts:60",
+      "src/app/api/practitioner/referrals/redeem-cert-discount/route.ts:88",
+      "src/app/api/practitioner/referrals/redeem-subscription-discount/route.ts:64",
+      "src/app/api/practitioner/referrals/redeem-subscription-discount/route.ts:93",
+      "src/app/api/practitioner/referrals/resolve-attribution/route.ts:91",
+      "src/app/api/practitioner/referrals/resolve-attribution/route.ts:152",
+      "src/lib/practitioner-referral/fraud-detection-orchestrator.ts:75",
+      "src/lib/practitioner-referral/fraud-detection-orchestrator.ts:105",
+      "src/lib/practitioner-referral/fraud-detection-orchestrator.ts:154",
+      "src/lib/practitioner-referral/fraud-resolution-orchestrator.ts:167",
+      "src/lib/practitioner-referral/milestone-orchestrator.ts:54",
+      "src/lib/practitioner-referral/milestone-orchestrator.ts:102",
+      "src/lib/practitioner-referral/vesting-orchestrator.ts:214",
+      "supabase/functions/vest-referral-rewards/index.ts:83",
+      "supabase/functions/vest-referral-rewards/index.ts:337",
+      "supabase/functions/vest-referral-rewards/index.ts:382"
+    ],
+    "practitioner_referral_milestone_events": [
+      "src/app/api/admin/practitioner-referrals/fraud-flags/[flagId]/route.ts:56",
+      "src/app/api/admin/practitioner-referrals/reporting/route.ts:50",
+      "src/app/api/admin/practitioner-referrals/reporting/route.ts:112",
+      "src/app/api/practitioner/referrals/credits/route.ts:57",
+      "src/lib/practitioner-referral/fraud-detection-orchestrator.ts:82",
+      "src/lib/practitioner-referral/fraud-resolution-orchestrator.ts:62",
+      "src/lib/practitioner-referral/fraud-resolution-orchestrator.ts:120",
+      "src/lib/practitioner-referral/fraud-resolution-orchestrator.ts:136",
+      "src/lib/practitioner-referral/milestone-orchestrator.ts:61",
+      "src/lib/practitioner-referral/milestone-orchestrator.ts:82",
+      "src/lib/practitioner-referral/vesting-orchestrator.ts:74",
+      "src/lib/practitioner-referral/vesting-orchestrator.ts:122",
+      "src/lib/practitioner-referral/vesting-orchestrator.ts:131",
+      "src/lib/practitioner-referral/vesting-orchestrator.ts:169",
+      "supabase/functions/vest-referral-rewards/index.ts:92",
+      "supabase/functions/vest-referral-rewards/index.ts:103",
+      "supabase/functions/vest-referral-rewards/index.ts:219",
+      "supabase/functions/vest-referral-rewards/index.ts:262",
+      "supabase/functions/vest-referral-rewards/index.ts:276",
+      "supabase/functions/vest-referral-rewards/index.ts:308"
+    ],
+    "practitioner_referral_codes": [
+      "src/app/api/admin/practitioner-referrals/fraud-flags/[flagId]/route.ts:61",
+      "src/app/api/admin/practitioner-referrals/reporting/route.ts:48",
+      "src/lib/practitioner-referral/code-generation.ts:52",
+      "src/lib/practitioner-referral/code-generation.ts:72",
+      "src/lib/practitioner-referral/fraud-resolution-orchestrator.ts:180"
+    ],
+    "practitioner_referral_status_tiers": [
+      "src/app/api/admin/practitioner-referrals/reporting/route.ts:92",
+      "src/lib/practitioner-referral/vesting-orchestrator.ts:222",
+      "src/lib/practitioner-referral/vesting-orchestrator.ts:241",
+      "supabase/functions/vest-referral-rewards/index.ts:344",
+      "supabase/functions/vest-referral-rewards/index.ts:357"
+    ],
+    "practitioner_referral_tax_earnings": [
+      "src/app/api/admin/practitioner-referrals/reporting/route.ts:126",
+      "src/app/api/admin/practitioner-referrals/tax/route.ts:40",
+      "src/app/api/admin/practitioner-referrals/tax/[practitionerId]/[taxYear]/route.ts:86",
+      "src/app/api/admin/practitioner-referrals/tax/[practitionerId]/[taxYear]/route.ts:98",
+      "src/app/api/admin/practitioner-referrals/tax/[practitionerId]/[taxYear]/route.ts:113",
+      "src/lib/practitioner-referral/vesting-orchestrator.ts:183",
+      "src/lib/practitioner-referral/vesting-orchestrator.ts:197",
+      "supabase/functions/vest-referral-rewards/index.ts:318",
+      "supabase/functions/vest-referral-rewards/index.ts:325"
+    ],
+    "white_label_compliance_reviewer_roles": [
+      "src/app/api/admin/white-label/compliance/decide/[designId]/route.ts:66",
+      "src/app/api/admin/white-label/compliance/inbox/route.ts:47"
+    ],
+    "white_label_label_designs": [
+      "src/app/api/admin/white-label/compliance/decide/[designId]/route.ts:78",
+      "src/app/api/admin/white-label/compliance/decide/[designId]/route.ts:147",
+      "src/app/api/practitioner/white-label/dispensary/route.ts:75",
+      "src/app/api/practitioner/white-label/dispensary/route.ts:92",
+      "src/app/api/practitioner/white-label/dispensary/route.ts:132",
+      "src/app/api/practitioner/white-label/labels/route.ts:63",
+      "src/app/api/practitioner/white-label/labels/route.ts:133",
+      "src/app/api/practitioner/white-label/labels/route.ts:173",
+      "src/app/api/practitioner/white-label/labels/[designId]/revise/route.ts:57",
+      "src/app/api/practitioner/white-label/labels/[designId]/route.ts:49",
+      "src/app/api/practitioner/white-label/labels/[designId]/route.ts:165",
+      "src/app/api/practitioner/white-label/labels/[designId]/submit/route.ts:69",
+      "src/app/api/practitioner/white-label/labels/[designId]/submit/route.ts:125",
+      "src/app/api/practitioner/white-label/labels/[designId]/submit/route.ts:150",
+      "src/app/api/practitioner/white-label/orders/route.ts:130",
+      "src/lib/white-label/compliance-orchestrator.ts:37",
+      "src/lib/white-label/compliance-orchestrator.ts:109",
+      "src/lib/white-label/compliance-orchestrator.ts:116",
+      "src/lib/white-label/compliance-orchestrator.ts:154"
+    ],
+    "white_label_reviewer_assignments": [
+      "src/app/api/admin/white-label/compliance/decide/[designId]/route.ts:120",
+      "src/lib/white-label/compliance-orchestrator.ts:124",
+      "src/lib/white-label/compliance-orchestrator.ts:138"
+    ],
+    "white_label_sku_mappings": [
+      "src/app/api/admin/white-label/compliance/decide/[designId]/route.ts:158",
+      "src/lib/white-label/supplement-resolution.ts:53"
+    ],
+    "wl_pending_reviews_with_sla": [
+      "src/app/api/admin/white-label/compliance/inbox/route.ts:60"
+    ],
+    "white_label_inventory_lots": [
+      "src/app/api/admin/white-label/inventory/route.ts:34",
+      "src/app/api/practitioner/white-label/inventory/route.ts:50",
+      "src/app/api/practitioner/white-label/inventory/[lotId]/transfer/route.ts:66",
+      "src/app/api/practitioner/white-label/inventory/[lotId]/transfer/route.ts:97"
+    ],
+    "white_label_production_order_items": [
+      "src/app/api/admin/white-label/production/[orderId]/route.ts:46",
+      "src/app/api/admin/white-label/production/[orderId]/transition/route.ts:110",
+      "src/app/api/practitioner/white-label/orders/route.ts:266",
+      "src/app/api/practitioner/white-label/orders/[orderId]/route.ts:69"
+    ],
+    "white_label_economics": [
+      "src/app/api/admin/white-label/reporting/route.ts:95"
+    ],
+    "agent_activity_log": [
+      "src/app/api/ai/nutrition/route.ts:88"
+    ],
+    "hannah_avatar_transcripts": [
+      "src/app/api/hannah/avatar/transcript/route.ts:44"
+    ],
+    "jeffery_hannah_routing_log": [
+      "src/app/api/hannah/ultrathink/route.ts:44"
+    ],
+    "integration_sync_log": [
+      "src/app/api/integrations/webhook/[appId]/route.ts:35"
+    ],
+    "practitioner_category_opt_ins": [
+      "src/app/api/practitioner/category-opt-ins/route.ts:53",
+      "src/app/api/practitioner/category-opt-ins/route.ts:109",
+      "src/app/api/practitioner/category-opt-ins/route.ts:129",
+      "src/app/api/practitioner/category-opt-ins/route.ts:141",
+      "src/app/api/practitioner/category-opt-ins/route.ts:154"
+    ],
+    "agent_messages": [
+      "src/app/api/practitioner/invite-patient/route.ts:150",
+      "src/app/api/practitioner/patient-view-preference/route.ts:100",
+      "src/app/api/waitlist/practitioner/route.ts:145",
+      "src/lib/agents/message-bus.ts:64",
+      "src/lib/agents/message-bus.ts:229",
+      "src/lib/agents/message-bus.ts:253",
+      "src/lib/agents/message-bus.ts:273",
+      "supabase/functions/arnold-tick/index.ts:94",
+      "supabase/functions/arnold-tick/index.ts:125",
+      "supabase/functions/arnold-vision-analyze/index.ts:597",
+      "supabase/functions/arnold-vision-analyze/index.ts:641",
+      "supabase/functions/cert-reminder-tick/index.ts:116",
+      "supabase/functions/cert-reminder-tick/index.ts:126",
+      "supabase/functions/practitioner-waitlist-mailer/index.ts:243"
+    ],
+    "practitioner_referral_notification_preferences": [
+      "src/app/api/practitioner/referrals/attribution-info/route.ts:75",
+      "src/app/api/practitioner/referrals/notification-preferences/route.ts:61",
+      "src/app/api/practitioner/referrals/notification-preferences/route.ts:79",
+      "src/app/api/practitioner/referrals/resolve-attribution/route.ts:185",
+      "src/lib/practitioner-referral/vesting-orchestrator.ts:250"
+    ],
+    "practitioner_referral_link_clicks": [
+      "src/app/api/practitioner/referrals/resolve-attribution/route.ts:102",
+      "src/app/api/practitioner/referrals/resolve-attribution/route.ts:178",
+      "src/lib/practitioner-referral/fraud-detection-orchestrator.ts:192"
+    ],
+    "practitioner_brand_configurations": [
+      "src/app/api/practitioner/white-label/brand/route.ts:98",
+      "src/app/api/practitioner/white-label/brand/route.ts:141",
+      "src/app/api/practitioner/white-label/brand/route.ts:152",
+      "src/app/api/practitioner/white-label/brand/route.ts:195",
+      "src/app/api/practitioner/white-label/brand/route.ts:229",
+      "src/app/api/practitioner/white-label/labels/route.ts:36",
+      "src/app/api/practitioner/white-label/labels/[designId]/route.ts:90",
+      "src/app/api/practitioner/white-label/labels/[designId]/submit/route.ts:90"
+    ],
+    "white_label_dispensary_settings": [
+      "src/app/api/practitioner/white-label/dispensary/route.ts:160",
+      "src/app/dispensary/[slug]/page.tsx:59"
+    ],
+    "brands": [
+      "src/app/api/public/brand-storefront/[brandSlug]/route.ts:26",
+      "supabase/functions/brand_compliance_validator/index.ts:179"
+    ],
+    "product_categories": [
+      "src/app/api/public/brand-storefront/[brandSlug]/route.ts:38",
+      "supabase/functions/brand_compliance_validator/index.ts:182"
+    ],
+    "subscriptions": [
+      "src/app/api/stripe/webhook/route.ts:97",
+      "src/app/api/stripe/webhook/route.ts:149",
+      "src/app/api/stripe/webhook/route.ts:178",
+      "src/app/api/stripe/webhook/route.ts:212"
+    ],
+    "saved_meals": [
+      "src/components/nutrition/hub/useNutritionHubMetrics.ts:455",
+      "src/components/nutrition/MyMeals.tsx:26",
+      "src/components/nutrition/MyMeals.tsx:56"
+    ],
+    "constitutional_assessments": [
+      "src/components/practitioner/NaturopathicPatientView.tsx:93"
+    ],
+    "supplement_protocols": [
+      "src/components/practitioner/NaturopathicPatientView.tsx:109"
+    ],
+    "table": [
+      "src/lib/actions/types.ts:18",
+      "supabase/functions/_shared/with-timeout.ts:24"
+    ],
+    "jeffery_agent_panel_tasks": [
+      "src/lib/agents/activity-tracker.ts:146",
+      "src/lib/agents/activity-tracker.ts:191"
+    ],
+    "genetics_nutritional_guides": [
+      "src/lib/agents/gordon/generateNutritionalGuide.ts:107"
+    ],
+    "wearable_summaries": [
+      "src/lib/ai/context-loader.ts:303",
+      "src/lib/ai/context-loader.ts:311"
+    ],
+    "supplement_compliance": [
+      "src/lib/ai/context-loader.ts:326"
+    ],
+    "user_medications": [
+      "src/lib/ai/context-loader.ts:334",
+      "src/lib/ai/daily-plan-generator.ts:65",
+      "src/lib/ai/interaction-engine.ts:314",
+      "src/lib/protocol/healthContext.ts:298"
+    ],
+    "daily_actions": [
+      "src/lib/ai/context-loader.ts:341"
+    ],
+    "ai_conversations": [
+      "src/lib/ai/context-loader.ts:349",
+      "src/lib/gamification/achievement-engine.ts:485"
+    ],
+    "predictive_alerts": [
+      "src/lib/ai/context-loader.ts:358",
+      "src/lib/ai/daily-plan-generator.ts:90"
+    ],
+    "user_health_profile": [
+      "src/lib/ai/context-loader.ts:366",
+      "supabase/functions/arnold-chronic-risk-compute/index.ts:228"
+    ],
+    "biometrics": [
+      "src/lib/ai/daily-plan-generator.ts:74"
+    ],
+    "lab_orders": [
+      "src/lib/ai/daily-plan-generator.ts:80"
+    ],
+    "lab_results": [
+      "src/lib/ai/daily-plan-generator.ts:85"
+    ],
+    "daily_compliance": [
+      "src/lib/ai/daily-plan-generator.ts:129"
+    ],
+    "customer_acquisition_attribution": [
+      "src/lib/analytics/acquisition-attribution.ts:159",
+      "src/lib/analytics/cac-engine.ts:215",
+      "src/lib/analytics/cac-engine.ts:244",
+      "supabase/functions/unit-economics-snapshot-tick/index.ts:160"
+    ],
+    "cohort_customer_monthly": [
+      "src/lib/analytics/cohort-bucket-loader.ts:34",
+      "src/lib/analytics/ltv-engine.ts:194",
+      "supabase/functions/unit-economics-snapshot-tick/index.ts:164",
+      "supabase/functions/unit-economics-snapshot-tick/index.ts:224"
+    ],
+    "push_tokens": [
+      "src/lib/api/notification-service.ts:50"
+    ],
+    "compliance_logs": [
+      "src/lib/api/notification-service.ts:215"
+    ],
+    "streaks": [
+      "src/lib/api/notification-service.ts:222"
+    ],
+    "token_balances": [
+      "src/lib/api/notification-service.ts:227"
+    ],
+    "widget_cache": [
+      "src/lib/api/notification-service.ts:243"
+    ],
+    "arnold_recommendations": [
+      "src/lib/body-tracker/arnold-recommender.ts:102",
+      "src/lib/body-tracker/arnold-recommender.ts:371",
+      "src/lib/body-tracker/arnold-recommender.ts:395"
+    ],
+    "arnold_user_profiles": [
+      "src/lib/body-tracker/arnold-reconciler.ts:242"
+    ],
+    "body_tracker_reconciliation_log": [
+      "src/lib/body-tracker/arnold-reconciler.ts:371"
+    ],
+    "user_achievements": [
+      "src/lib/gamification/achievement-engine.ts:412",
+      "src/lib/gamification/achievement-engine.ts:576"
+    ],
+    "compliance_streaks": [
+      "src/lib/gamification/achievement-engine.ts:444",
+      "src/lib/gamification/token-engine.ts:251"
+    ],
+    "viatokens_ledger": [
+      "src/lib/gamification/achievement-engine.ts:450",
+      "src/lib/gamification/achievement-engine.ts:456",
+      "src/lib/gamification/achievement-engine.ts:462",
+      "src/lib/gamification/achievement-engine.ts:468",
+      "src/lib/gamification/achievement-engine.ts:479",
+      "src/lib/gamification/achievement-engine.ts:490",
+      "src/lib/gamification/achievement-engine.ts:496",
+      "src/lib/gamification/achievement-engine.ts:502",
+      "src/lib/gamification/achievement-engine.ts:508",
+      "src/lib/gamification/achievement-engine.ts:531",
+      "src/lib/gamification/achievement-engine.ts:537",
+      "src/lib/gamification/achievement-engine.ts:592",
+      "src/lib/gamification/token-engine.ts:213",
+      "src/lib/gamification/token-engine.ts:232",
+      "src/lib/gamification/token-engine.ts:337",
+      "src/lib/gamification/token-engine.ts:464"
+    ],
+    "user_connections": [
+      "src/lib/gamification/achievement-engine.ts:514",
+      "src/lib/gamification/achievement-engine.ts:520",
+      "src/lib/gamification/achievement-engine.ts:526"
+    ],
+    "user_health_levels": [
+      "src/lib/gamification/achievement-engine.ts:631",
+      "src/lib/gamification/achievement-engine.ts:647"
+    ],
+    "viatokens_balance": [
+      "src/lib/gamification/token-engine.ts:359",
+      "src/lib/gamification/token-engine.ts:368",
+      "src/lib/gamification/token-engine.ts:377",
+      "src/lib/gamification/token-engine.ts:442",
+      "src/lib/gamification/token-engine.ts:482"
+    ],
+    "reward_store_items": [
+      "src/lib/gamification/token-engine.ts:423",
+      "src/lib/gamification/token-engine.ts:493"
+    ],
+    "hounddog_analytics_rollup": [
+      "src/lib/hounddog/analytics.ts:22"
+    ],
+    "hounddog_pipeline": [
+      "src/lib/hounddog/analytics.ts:52"
+    ],
+    "hounddog_scripts": [
+      "src/lib/hounddog/analytics.ts:78"
+    ],
+    "daily_score_inputs": [
+      "src/lib/integrations/deduplicator.ts:26"
+    ],
+    "hello": [
+      "src/lib/nutrition/cache/__tests__/recognition-cache.test.ts:138"
+    ],
+    "abc": [
+      "src/lib/nutrition/cache/__tests__/recognition-cache.test.ts:143",
+      "src/lib/nutrition/cache/__tests__/recognition-cache.test.ts:144"
+    ],
+    "a": [
+      "src/lib/nutrition/cache/__tests__/recognition-cache.test.ts:149"
+    ],
+    "b": [
+      "src/lib/nutrition/cache/__tests__/recognition-cache.test.ts:149"
+    ],
+    "img": [
+      "src/lib/nutrition/vision/__tests__/detect.test.ts:115"
+    ],
+    "fake": [
+      "src/lib/nutrition/__tests__/gemini-client.test.ts:112",
+      "src/lib/nutrition/__tests__/gemini-client.test.ts:126"
+    ],
+    "practitioner_invitations": [
+      "src/lib/practitioner/invitations.ts:52"
+    ],
+    "practitioner_referral_parameters": [
+      "src/lib/practitioner-referral/governed-params.ts:104"
+    ],
+    "pg_policies": [
+      "src/lib/soc2/collectors/rls-policies.ts:3"
+    ],
+    "supplement_product_cache": [
+      "src/lib/supplements/cacheManager.ts:14",
+      "src/lib/supplements/cacheManager.ts:45",
+      "src/plugins/core/farmceuticaCache.ts:24"
+    ],
+    "white_label_parameters": [
+      "src/lib/white-label/governed-params.ts:29"
+    ],
+    "white_label_discount_tiers": [
+      "src/lib/white-label/governed-params.ts:30"
+    ],
+    "product_certification_assignments": [
+      "supabase/functions/brand_compliance_validator/index.ts:186"
+    ],
+    "caq_phase_responses": [
+      "supabase/functions/gordon-generate-targets/index.ts:152"
+    ],
+    "practitioner_email_queue": [
+      "supabase/functions/practitioner-waitlist-mailer/index.ts:161",
+      "supabase/functions/practitioner-waitlist-mailer/index.ts:177",
+      "supabase/functions/practitioner-waitlist-mailer/index.ts:189",
+      "supabase/functions/practitioner-waitlist-mailer/index.ts:197",
+      "supabase/functions/practitioner-waitlist-mailer/index.ts:218",
+      "supabase/functions/practitioner-waitlist-mailer/index.ts:231"
+    ]
+  },
+  "rpc_phantoms": {
+    "assign_primary_archetype": [
+      "src/app/api/admin/analytics/archetype-classify/route.ts:61",
+      "src/app/api/admin/analytics/archetype-override/route.ts:72"
+    ],
+    "clone_label_design_revision": [
+      "src/app/api/practitioner/white-label/labels/[designId]/revise/route.ts:81"
+    ],
+    "next_white_label_order_number": [
+      "src/app/api/practitioner/white-label/orders/route.ts:214"
+    ],
+    "record_referral_link_click": [
+      "src/app/api/public/referral-click/route.ts:63"
+    ],
+    "lookup_practitioner_invitation": [
+      "src/app/patients/invited/page.tsx:87"
+    ],
+    "accept_practitioner_invitation": [
+      "src/app/patients/invited/page.tsx:133"
+    ],
+    "lookup_referral_code_for_attribution": [
+      "src/app/practitioner/join/page.tsx:31"
+    ],
+    "increment_token_balance": [
+      "src/lib/gamification/achievement-engine.ts:603",
+      "src/lib/gamification/token-engine.ts:351"
+    ],
+    "validate_practitioner_invitation": [
+      "src/lib/practitioner/invitations.ts:92"
+    ],
+    "read_secret": [
+      "src/lib/soc2/distribute/helpers.ts:70"
+    ],
+    "sum_practitioner_wholesale_volume": [
+      "src/lib/white-label/eligibility.ts:170"
+    ],
+    "lapse_due_channels": [
+      "supabase/functions/channel_re_verify_cron/index.ts:11"
+    ],
+    "send_transactional_email": [
+      "supabase/functions/map_notify_practitioner/index.ts:73"
+    ]
+  },
+  "bucket_phantoms": {
+    "genex-uploads": [
+      "src/app/api/genex/upload/route.ts:454"
+    ],
+    "practitioner-statements": [
+      "supabase/functions/payout_statement_generator/index.ts:91"
+    ],
+    "tax-documents": [
+      "supabase/functions/tax_form_year_end_generator/index.ts:69"
+    ]
+  }
+}

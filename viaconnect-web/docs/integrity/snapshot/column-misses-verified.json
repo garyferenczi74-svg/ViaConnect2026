@@ -1,0 +1,1352 @@
+[
+  {
+    "table": "profiles",
+    "column": "phone",
+    "verdict": "REAL",
+    "severity": "CRITICAL",
+    "kind": "select+payload-upsert",
+    "site": "src/app/(app)/(consumer)/account/profile/page.tsx:55",
+    "note": "Account page selects and upserts phone on profiles, absent live (only full_name), so every profile save upsert is rejected whole."
+  },
+  {
+    "table": "daily_scores",
+    "column": "overall_score",
+    "verdict": "REAL",
+    "severity": "CRITICAL",
+    "kind": "select+payload-upsert",
+    "site": "src/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/hooks/useBioOptimizationTrend.ts:39",
+    "note": "Selected in the trend hook and written by shorthand into the gauge upsert at src/app/actions/dailyScores.ts:63; absent live so the whole daily score write is rejected."
+  },
+  {
+    "table": "daily_scores",
+    "column": "nutrition_score",
+    "verdict": "REAL",
+    "severity": "CRITICAL",
+    "kind": "select+payload-upsert",
+    "site": "src/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/hooks/useBioOptimizationTrend.ts:39",
+    "note": "Selected in the trend hook and always spread into the gauge upsert payload at dailyScores.ts:63; absent live."
+  },
+  {
+    "table": "daily_scores",
+    "column": "activity_score",
+    "verdict": "REAL",
+    "severity": "CRITICAL",
+    "kind": "select+payload-upsert",
+    "site": "src/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/hooks/useBioOptimizationTrend.ts:39",
+    "note": "Selected in the trend hook and always spread into the gauge upsert payload; absent live."
+  },
+  {
+    "table": "daily_scores",
+    "column": "mood_stress_score",
+    "verdict": "REAL",
+    "severity": "CRITICAL",
+    "kind": "select+payload-upsert",
+    "site": "src/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/hooks/useBioOptimizationTrend.ts:39",
+    "note": "Selected in the trend hook and always spread into the gauge upsert payload; absent live."
+  },
+  {
+    "table": "daily_scores",
+    "column": "energy_score",
+    "verdict": "REAL",
+    "severity": "CRITICAL",
+    "kind": "select+payload-upsert",
+    "site": "src/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/hooks/useBioOptimizationTrend.ts:39",
+    "note": "Selected in the trend hook and always spread into the gauge upsert payload; absent live."
+  },
+  {
+    "table": "daily_scores",
+    "column": "score_date",
+    "verdict": "REAL",
+    "severity": "CRITICAL",
+    "kind": "select+gte+order+eq+payload-upsert",
+    "site": "src/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/hooks/useBioOptimizationTrend.ts:39",
+    "note": "Used as the date key in selects, filters, ordering and the gauge upsert payload, but the live column is date, so reads error and the upsert is rejected whole."
+  },
+  {
+    "table": "user_protocols",
+    "column": "active",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "eq",
+    "site": "src/app/(app)/(consumer)/profile/assessment/page.tsx:267",
+    "note": "Three call sites filter eq active true but the live column is is_active, so active protocol lookups error and read as empty."
+  },
+  {
+    "table": "user_nutrivision_settings",
+    "column": "keep_photos_longer",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/app/(app)/(consumer)/settings/nutrivision/page.tsx:48",
+    "note": "Settings page selects keep_photos_longer which live lacks; the whole select errors and is silently swallowed."
+  },
+  {
+    "table": "practitioners",
+    "column": "practice_name",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/app/(app)/layout.tsx:64",
+    "note": "Selected in twelve files but live practitioners has only display_name among name fields, erroring every such select."
+  },
+  {
+    "table": "practitioners",
+    "column": "credential_type",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/app/(app)/layout.tsx:64",
+    "note": "Portal layout, sidebar and patient page gate naturopath UI on credential_type which live practitioners lacks."
+  },
+  {
+    "table": "practitioners",
+    "column": "default_active_tab",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/app/(app)/layout.tsx:64",
+    "note": "Layout expects the P91 migration _180 column which never reached the live schema."
+  },
+  {
+    "table": "practitioners",
+    "column": "account_status",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "eq+select",
+    "site": "src/app/(app)/layout.tsx:64",
+    "note": "Copy pasted active practitioner gate filters eq account_status active across nine files, but the live column is status, so every gate query errors."
+  },
+  {
+    "table": "products",
+    "column": "brand_id",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "eq+select",
+    "site": "src/app/(app)/practitioner/analytics/revenue/page.tsx:37",
+    "note": "Revenue page, public storefront and compliance validator filter products by brand_id, absent from live products."
+  },
+  {
+    "table": "products",
+    "column": "product_category_id",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "eq+select",
+    "site": "src/app/(app)/practitioner/analytics/revenue/page.tsx:37",
+    "note": "Brand refresh schema column selected and filtered in three files but absent from live products."
+  },
+  {
+    "table": "practitioners",
+    "column": "default_patient_view_mode",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/app/(app)/practitioner/patients/[id]/page.tsx:58",
+    "note": "Patient detail page selects this missing P91 column, so the practitioner row read fails and the page falls back to the legacy view."
+  },
+  {
+    "table": "genex360_products",
+    "column": "name",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/app/(app)/practitioner/shop/page.tsx:64",
+    "note": "Practitioner shop selects name but live genex360_products has display_name, erroring the catalog query."
+  },
+  {
+    "table": "genex360_products",
+    "column": "category",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/app/(app)/practitioner/shop/page.tsx:64",
+    "note": "Practitioner shop selects category which live genex360_products lacks."
+  },
+  {
+    "table": "genex360_products",
+    "column": "image_url",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/app/(app)/practitioner/shop/page.tsx:64",
+    "note": "Practitioner shop selects image_url which live genex360_products lacks."
+  },
+  {
+    "table": "daily_scores",
+    "column": "data_mode",
+    "verdict": "REAL",
+    "severity": "CRITICAL",
+    "kind": "payload-upsert",
+    "site": "src/app/actions/dailyScores.ts:63",
+    "note": "Written in the gauge upsert payload at dailyScores.ts:63; no such live column, rejecting the entire row."
+  },
+  {
+    "table": "daily_scores",
+    "column": "calculated_at",
+    "verdict": "REAL",
+    "severity": "CRITICAL",
+    "kind": "payload-upsert",
+    "site": "src/app/actions/dailyScores.ts:63",
+    "note": "Written in the gauge upsert payload; no such live column, rejecting the entire row."
+  },
+  {
+    "table": "ingredient_library",
+    "column": "count",
+    "verdict": "FALSE_POSITIVE",
+    "severity": null,
+    "kind": "payload-insert",
+    "site": "src/app/api/admin/custom-formulations/ingredients/import/route.ts:63",
+    "note": "count exact is the insert options argument, not a payload column."
+  },
+  {
+    "table": "governance_configuration_log",
+    "column": "changeType",
+    "verdict": "FALSE_POSITIVE",
+    "severity": null,
+    "kind": "payload-insert",
+    "site": "src/app/api/admin/governance/approvers/route.ts:68",
+    "note": "camelCase key is an argument to buildConfigLogRow which maps it to the live change_type column."
+  },
+  {
+    "table": "governance_configuration_log",
+    "column": "targetTable",
+    "verdict": "FALSE_POSITIVE",
+    "severity": null,
+    "kind": "payload-insert",
+    "site": "src/app/api/admin/governance/approvers/route.ts:68",
+    "note": "Helper argument mapped by buildConfigLogRow to the live target_table column."
+  },
+  {
+    "table": "governance_configuration_log",
+    "column": "targetId",
+    "verdict": "FALSE_POSITIVE",
+    "severity": null,
+    "kind": "payload-insert",
+    "site": "src/app/api/admin/governance/approvers/route.ts:68",
+    "note": "Helper argument mapped by buildConfigLogRow to the live target_id column."
+  },
+  {
+    "table": "governance_configuration_log",
+    "column": "previousState",
+    "verdict": "FALSE_POSITIVE",
+    "severity": null,
+    "kind": "payload-insert",
+    "site": "src/app/api/admin/governance/approvers/route.ts:68",
+    "note": "Helper argument mapped by buildConfigLogRow to the live previous_state column."
+  },
+  {
+    "table": "governance_configuration_log",
+    "column": "newState",
+    "verdict": "FALSE_POSITIVE",
+    "severity": null,
+    "kind": "payload-insert",
+    "site": "src/app/api/admin/governance/approvers/route.ts:68",
+    "note": "Helper argument mapped by buildConfigLogRow to the live new_state column."
+  },
+  {
+    "table": "governance_configuration_log",
+    "column": "changedBy",
+    "verdict": "FALSE_POSITIVE",
+    "severity": null,
+    "kind": "payload-insert",
+    "site": "src/app/api/admin/governance/approvers/route.ts:68",
+    "note": "Helper argument mapped by buildConfigLogRow to the live changed_by column."
+  },
+  {
+    "table": "governance_configuration_log",
+    "column": "justification",
+    "verdict": "FALSE_POSITIVE",
+    "severity": null,
+    "kind": "payload-insert",
+    "site": "src/app/api/admin/governance/approvers/route.ts:68",
+    "note": "Helper argument mapped by buildConfigLogRow to the live change_justification column."
+  },
+  {
+    "table": "profiles",
+    "column": "height_cm",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/app/api/ai/generate-wellness-analytics/route.ts:43",
+    "note": "Selected on profiles in wellness analytics, scan results and vision analyze, but live profiles carries no anthropometric columns so the whole select errors."
+  },
+  {
+    "table": "profiles",
+    "column": "weight_kg",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/app/api/ai/generate-wellness-analytics/route.ts:43",
+    "note": "Same missing anthropometric column selected across analytics, scanning and gordon targets; profile reads fail open to null."
+  },
+  {
+    "table": "medication_interactions",
+    "column": "resolved",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/app/api/ai/generate-wellness-analytics/route.ts:44",
+    "note": "Wellness analytics selects severity, resolved but live medication_interactions has no resolved column, erroring the whole select."
+  },
+  {
+    "table": "audit_logs",
+    "column": "resource_type",
+    "verdict": "REAL",
+    "severity": "CRITICAL",
+    "kind": "payload-insert",
+    "site": "src/app/api/ai/[provider]/route.ts:62",
+    "note": "Seven routes insert audit rows with resource_type, metadata and ip_address, but live audit_logs has table_name, record_id, old_data and new_data; every insert is rejected and swallowed, silently losing the audit trail."
+  },
+  {
+    "table": "audit_logs",
+    "column": "metadata",
+    "verdict": "REAL",
+    "severity": "CRITICAL",
+    "kind": "payload-insert",
+    "site": "src/app/api/ai/[provider]/route.ts:62",
+    "note": "Same new schema audit insert payload; live table stores old_data and new_data instead."
+  },
+  {
+    "table": "audit_logs",
+    "column": "ip_address",
+    "verdict": "REAL",
+    "severity": "CRITICAL",
+    "kind": "payload-insert",
+    "site": "src/app/api/ai/[provider]/route.ts:62",
+    "note": "Same new schema audit insert payload; live audit_logs has no ip_address."
+  },
+  {
+    "table": "audit_logs",
+    "column": "resource_id",
+    "verdict": "REAL",
+    "severity": "CRITICAL",
+    "kind": "payload-insert",
+    "site": "src/app/api/genex/upload/route.ts:529",
+    "note": "genex upload audit insert uses resource_id but the live column is record_id, same rejected insert."
+  },
+  {
+    "table": "user_supplements",
+    "column": "name",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/app/api/interactions/evaluate/route.ts:84",
+    "note": "interactions evaluate selects name but the live column is product_name, so the supplement list read errors."
+  },
+  {
+    "table": "assessment_results",
+    "column": "category",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/app/api/interactions/evaluate/route.ts:85",
+    "note": "evaluate and peptide stack select category, score, details but live assessment_results stores only phase plus a data jsonb blob."
+  },
+  {
+    "table": "assessment_results",
+    "column": "score",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/app/api/interactions/evaluate/route.ts:85",
+    "note": "Same select against the phase and data shaped live table."
+  },
+  {
+    "table": "assessment_results",
+    "column": "details",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/app/api/interactions/evaluate/route.ts:85",
+    "note": "Same select against the phase and data shaped live table."
+  },
+  {
+    "table": "profiles",
+    "column": "body_weight_kg",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/app/api/nutrition/hydration/history/route.ts:49",
+    "note": "Hydration routes and nutrition loader select body_weight_kg, absent live, so hydration targets always fall back to defaults."
+  },
+  {
+    "table": "practitioners",
+    "column": "practice_street_address",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/app/api/practitioner/referrals/resolve-attribution/route.ts:63",
+    "note": "Referral attribution selects six practice address fields, none of which exist on the six column live table."
+  },
+  {
+    "table": "practitioners",
+    "column": "practice_city",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/app/api/practitioner/referrals/resolve-attribution/route.ts:63",
+    "note": "Part of the same referral attribution select on missing practice address columns."
+  },
+  {
+    "table": "practitioners",
+    "column": "practice_state",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/app/api/practitioner/referrals/resolve-attribution/route.ts:63",
+    "note": "Part of the same referral attribution select on missing practice address columns."
+  },
+  {
+    "table": "practitioners",
+    "column": "practice_postal_code",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/app/api/practitioner/referrals/resolve-attribution/route.ts:63",
+    "note": "Part of the same referral attribution select on missing practice address columns."
+  },
+  {
+    "table": "practitioners",
+    "column": "practice_phone",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/app/api/practitioner/referrals/resolve-attribution/route.ts:63",
+    "note": "Part of the same referral attribution select on missing practice address columns."
+  },
+  {
+    "table": "practitioners",
+    "column": "dispensary_slug",
+    "verdict": "REAL",
+    "severity": "CRITICAL",
+    "kind": "select+eq+payload-update",
+    "site": "src/app/api/practitioner/white-label/dispensary/route.ts:46",
+    "note": "White label route selects, filters and updates dispensary_slug (update at route.ts:187) on first publish; column absent live so the slug write is rejected whole."
+  },
+  {
+    "table": "products",
+    "column": "serving_count",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/app/api/public/brand-storefront/[brandSlug]/route.ts:49",
+    "note": "Storefront and compliance validator select serving_count which live products lacks, erroring the whole query."
+  },
+  {
+    "table": "products",
+    "column": "serving_unit",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/app/api/public/brand-storefront/[brandSlug]/route.ts:49",
+    "note": "Same missing brand refresh column in the storefront and validator selects."
+  },
+  {
+    "table": "products",
+    "column": "dose_per_serving_text",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/app/api/public/brand-storefront/[brandSlug]/route.ts:49",
+    "note": "Same missing brand refresh column in the storefront and validator selects."
+  },
+  {
+    "table": "products",
+    "column": "sku_bottle_color_primary_hex",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/app/api/public/brand-storefront/[brandSlug]/route.ts:49",
+    "note": "SKU palette column selected by storefront and validator, absent from live products."
+  },
+  {
+    "table": "products",
+    "column": "sku_typography_primary_hex",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/app/api/public/brand-storefront/[brandSlug]/route.ts:49",
+    "note": "SKU palette column selected by storefront and validator, absent from live products."
+  },
+  {
+    "table": "products",
+    "column": "sku_typography_secondary_hex",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/app/api/public/brand-storefront/[brandSlug]/route.ts:49",
+    "note": "SKU palette column selected by the public storefront, absent from live products."
+  },
+  {
+    "table": "products",
+    "column": "sku_accent_color_hex",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/app/api/public/brand-storefront/[brandSlug]/route.ts:49",
+    "note": "SKU palette column selected by the public storefront, absent from live products."
+  },
+  {
+    "table": "products",
+    "column": "sku_dd_mark_primary_hex",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/app/api/public/brand-storefront/[brandSlug]/route.ts:49",
+    "note": "SKU palette column selected by the public storefront, absent from live products."
+  },
+  {
+    "table": "products",
+    "column": "sku_dd_mark_outline_hex",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/app/api/public/brand-storefront/[brandSlug]/route.ts:49",
+    "note": "SKU palette column selected by the public storefront, absent from live products."
+  },
+  {
+    "table": "products",
+    "column": "packaging_proof_path",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/app/api/public/brand-storefront/[brandSlug]/route.ts:49",
+    "note": "Storefront and compliance validator select packaging_proof_path which live products lacks."
+  },
+  {
+    "table": "products",
+    "column": "can_publish_to_storefront",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "eq",
+    "site": "src/app/api/public/brand-storefront/[brandSlug]/route.ts:49",
+    "note": "Public storefront filters on this missing flag, so the product list query errors and the storefront renders empty."
+  },
+  {
+    "table": "orders",
+    "column": "items",
+    "verdict": "REAL",
+    "severity": "CRITICAL",
+    "kind": "payload-insert",
+    "site": "src/app/api/stripe/webhook/route.ts:121",
+    "note": "Stripe webhook one time payment handler inserts an items jsonb which live orders lacks, so the whole order row is lost after a successful payment."
+  },
+  {
+    "table": "profiles",
+    "column": "sex",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/app/api/ultrathink/peptide-stack/route.ts:45",
+    "note": "Selected in peptide stack, body scan uploader, scan results, vision analyze and outcome collector; live profiles has no sex column."
+  },
+  {
+    "table": "profiles",
+    "column": "first_name",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/components/account/UserMenu.tsx:72",
+    "note": "UserMenu selects first_name which live lacks (full_name only), erroring the whole profile select."
+  },
+  {
+    "table": "profiles",
+    "column": "last_name",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/components/account/UserMenu.tsx:72",
+    "note": "UserMenu selects last_name which live lacks, same failed select as first_name."
+  },
+  {
+    "table": "profiles",
+    "column": "email",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/components/account/UserMenu.tsx:72",
+    "note": "UserMenu, both practitioner patient views and the AI context loader select email, absent from live profiles."
+  },
+  {
+    "table": "user_notifications",
+    "column": "read",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "eq",
+    "site": "src/components/account/UserMenu.tsx:102",
+    "note": "UserMenu unread count filters eq read false but the live column is is_read, so the count query errors and the badge stays zero."
+  },
+  {
+    "table": "profiles",
+    "column": "has_seen_bodytracker_guide",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/components/body-tracker/hub/useGuideLabel.ts:55",
+    "note": "Guide label hook reads this missing column; code comment admits it may not exist and defaults to first run."
+  },
+  {
+    "table": "body_tracker_milestones",
+    "column": "completed",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "eq",
+    "site": "src/components/body-tracker/hub/useHubMetrics.ts:161",
+    "note": "Hub metrics filters completed true but live milestones use status and completed_date, so the weekly count query errors."
+  },
+  {
+    "table": "body_tracker_milestones",
+    "column": "completed_at",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "gte",
+    "site": "src/components/body-tracker/hub/useHubMetrics.ts:161",
+    "note": "Same query filters completed_at gte; live has achieved_at and completed_date instead."
+  },
+  {
+    "table": "practitioners",
+    "column": "practice_logo_url",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/components/co-branding/PatientPractitionerBadge.tsx:56",
+    "note": "Co branding badge selects practice_logo_url which live practitioners lacks."
+  },
+  {
+    "table": "practitioners",
+    "column": "patient_facing_display_name",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/components/co-branding/PatientPractitionerBadge.tsx:56",
+    "note": "Co branding badge selects patient_facing_display_name which live practitioners lacks."
+  },
+  {
+    "table": "helix_transactions",
+    "column": "transaction_type",
+    "verdict": "REAL",
+    "severity": "CRITICAL",
+    "kind": "select+eq+payload-insert",
+    "site": "src/components/dashboard/HelixRewardsSummary.tsx:95",
+    "note": "Adherence hook inserts token awards with transaction_type (useTodaysAdherence.ts:128,140) but the live column is type, so both award inserts are rejected whole and the errors are swallowed."
+  },
+  {
+    "table": "user_current_supplements",
+    "column": "is_active",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "eq+select",
+    "site": "src/components/practitioner/NaturopathicPatientView.tsx:102",
+    "note": "Both practitioner patient views filter is_active but the live column is is_current, so patient supplement lists render empty."
+  },
+  {
+    "table": "helix_balances",
+    "column": "balance",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/hooks/useUserDashboardData.ts:145",
+    "note": "Dashboard selects current_balance:balance assuming the live column is balance, but live has current_balance, so the aliased select errors; the code comment is backwards."
+  },
+  {
+    "table": "pathway_scores",
+    "column": "computed_at",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "order",
+    "site": "src/lib/agents/canonicalContext.ts:218",
+    "note": "canonicalContext orders by computed_at but the live column is created_at, so the read fails open to an empty list."
+  },
+  {
+    "table": "genotype_phenotype_concordance",
+    "column": "computed_at",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "order",
+    "site": "src/lib/agents/canonicalContext.ts:249",
+    "note": "Same order by computed_at where live has created_at, failing open to empty."
+  },
+  {
+    "table": "genetic_profiles",
+    "column": "gene",
+    "verdict": "REAL",
+    "severity": "CRITICAL",
+    "kind": "select+payload-upsert",
+    "site": "src/lib/ai/context-loader.ts:297",
+    "note": "genetic-import-service.ts:260 upserts variant shaped records (gene, variant, rs_id, genotype, impact, category, panel) into genetic_profiles, whose live shape is a one row summary, so the whole import upsert is rejected."
+  },
+  {
+    "table": "genetic_profiles",
+    "column": "variant",
+    "verdict": "REAL",
+    "severity": "CRITICAL",
+    "kind": "select+payload-upsert",
+    "site": "src/lib/ai/context-loader.ts:297",
+    "note": "Written in the same variant shaped import upsert and selected by the AI context loader; absent live."
+  },
+  {
+    "table": "genetic_profiles",
+    "column": "rs_id",
+    "verdict": "REAL",
+    "severity": "CRITICAL",
+    "kind": "select+payload-upsert",
+    "site": "src/lib/ai/context-loader.ts:297",
+    "note": "Written in the same import upsert (also its onConflict key); absent live."
+  },
+  {
+    "table": "genetic_profiles",
+    "column": "genotype",
+    "verdict": "REAL",
+    "severity": "CRITICAL",
+    "kind": "select+payload-upsert",
+    "site": "src/lib/ai/context-loader.ts:297",
+    "note": "Written in the same import upsert and selected by the context loader; absent live."
+  },
+  {
+    "table": "genetic_profiles",
+    "column": "impact",
+    "verdict": "REAL",
+    "severity": "CRITICAL",
+    "kind": "select+payload-upsert",
+    "site": "src/lib/ai/context-loader.ts:297",
+    "note": "Written in the same import upsert and selected by the context loader; absent live."
+  },
+  {
+    "table": "genetic_profiles",
+    "column": "category",
+    "verdict": "REAL",
+    "severity": "CRITICAL",
+    "kind": "select+payload-upsert",
+    "site": "src/lib/ai/context-loader.ts:297",
+    "note": "Written in the same import upsert and selected by the context loader; absent live."
+  },
+  {
+    "table": "genetic_profiles",
+    "column": "panel",
+    "verdict": "REAL",
+    "severity": "CRITICAL",
+    "kind": "select+payload-upsert",
+    "site": "src/lib/ai/context-loader.ts:297",
+    "note": "Written in the same import upsert and selected by the context loader; absent live."
+  },
+  {
+    "table": "genetic_profiles",
+    "column": "clinical_significance",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/lib/ai/context-loader.ts:297",
+    "note": "Context loader selects variant level columns that never existed on the live summary shaped table."
+  },
+  {
+    "table": "genetic_profiles",
+    "column": "supplement_recommendations",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/lib/ai/context-loader.ts:297",
+    "note": "Context loader selects this variant level column absent from the live summary table."
+  },
+  {
+    "table": "user_protocols",
+    "column": "name",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/lib/ai/context-loader.ts:319",
+    "note": "AI context loader selects name but live user_protocols has protocol_name."
+  },
+  {
+    "table": "user_protocols",
+    "column": "status",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select+eq",
+    "site": "src/lib/ai/context-loader.ts:319",
+    "note": "AI context loader selects and filters status but live user_protocols has is_active instead."
+  },
+  {
+    "table": "genetic_profiles",
+    "column": "phenotype",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/lib/ai/daily-plan-generator.ts:70",
+    "note": "daily-plan-generator still selects phenotype; an interaction-engine comment confirms these columns never existed on genetic_profiles."
+  },
+  {
+    "table": "genetic_profiles",
+    "column": "metaboliser_status",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/lib/ai/daily-plan-generator.ts:70",
+    "note": "Same unfixed variant level select noted as never existing by the 2026-06-12 interaction-engine fix comment."
+  },
+  {
+    "table": "user_protocols",
+    "column": "supplement_name",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/lib/ai/interaction-engine.ts:326",
+    "note": "Interaction engine selects supplement_name which user_protocols never had (protocol_data jsonb), so the medication interaction check sees no supplements."
+  },
+  {
+    "table": "profiles",
+    "column": "education_level",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/lib/analytics/archetype-engine.ts:291",
+    "note": "Archetype engine and archetype-refinement-tick select education_level, income_band and has_dependent_minors, none of which exist live."
+  },
+  {
+    "table": "profiles",
+    "column": "income_band",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/lib/analytics/archetype-engine.ts:291",
+    "note": "Part of the same archetype enrichment select on columns absent from live profiles."
+  },
+  {
+    "table": "profiles",
+    "column": "has_dependent_minors",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/lib/analytics/archetype-engine.ts:291",
+    "note": "Part of the same archetype enrichment select on columns absent from live profiles."
+  },
+  {
+    "table": "genetic_profiles",
+    "column": "onConflict",
+    "verdict": "FALSE_POSITIVE",
+    "severity": null,
+    "kind": "payload-upsert",
+    "site": "src/lib/api/genetic-import-service.ts:260",
+    "note": "Upsert options argument, though the payload columns beside it are separately real misses."
+  },
+  {
+    "table": "body_tracker_entries",
+    "column": "is_active",
+    "verdict": "REAL",
+    "severity": "CRITICAL",
+    "kind": "select+eq+payload-insert+payload-update",
+    "site": "src/lib/body-tracker/arnold-recommender.ts:71",
+    "note": "Recommender, reconciler and arnold-tick filter is_active and the reconciler inserts and updates it, but live entries has no is_active, so entry writes are rejected whole."
+  },
+  {
+    "table": "body_tracker_entries",
+    "column": "is_outlier",
+    "verdict": "REAL",
+    "severity": "CRITICAL",
+    "kind": "select+payload-insert",
+    "site": "src/lib/body-tracker/arnold-recommender.ts:71",
+    "note": "Reconciler insert payload includes is_outlier which live lacks, rejecting the stored entry."
+  },
+  {
+    "table": "body_tracker_connections",
+    "column": "source_type",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/lib/body-tracker/arnold-recommender.ts:96",
+    "note": "Recommender selects source_type, source_name, is_active but live connections has source_id, status and metadata only."
+  },
+  {
+    "table": "body_tracker_connections",
+    "column": "source_name",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/lib/body-tracker/arnold-recommender.ts:96",
+    "note": "Part of the same select on columns absent from live connections."
+  },
+  {
+    "table": "body_tracker_connections",
+    "column": "is_active",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select+eq",
+    "site": "src/lib/body-tracker/arnold-recommender.ts:96",
+    "note": "Selected and filtered but the live column is status, erroring the connections query."
+  },
+  {
+    "table": "body_tracker_entries",
+    "column": "source_id",
+    "verdict": "REAL",
+    "severity": "CRITICAL",
+    "kind": "payload-insert",
+    "site": "src/lib/body-tracker/arnold-reconciler.ts:297",
+    "note": "Reconciler insert uses source_id but the live column is manual_source_id, rejecting the entry insert."
+  },
+  {
+    "table": "body_tracker_entries",
+    "column": "reconciliation_notes",
+    "verdict": "REAL",
+    "severity": "CRITICAL",
+    "kind": "payload-update",
+    "site": "src/lib/body-tracker/arnold-reconciler.ts:339",
+    "note": "Reconciler update writes reconciliation_notes which live lacks, so the whole update is rejected."
+  },
+  {
+    "table": "profiles",
+    "column": "body_scan_de_response",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/lib/body-tracker/disordered-eating-safeguard.ts:75",
+    "note": "Disordered eating safeguard reads this missing column and swallows the error, silently defaulting to the non safety tone."
+  },
+  {
+    "table": "user_current_supplements",
+    "column": "onConflict",
+    "verdict": "FALSE_POSITIVE",
+    "severity": null,
+    "kind": "payload-upsert",
+    "site": "src/lib/caq/complete-caq.ts:242",
+    "note": "Upsert options argument; the supplement entry payload keys all exist live."
+  },
+  {
+    "table": "supplement_adherence",
+    "column": "onConflict",
+    "verdict": "FALSE_POSITIVE",
+    "severity": null,
+    "kind": "payload-upsert",
+    "site": "src/lib/caq/complete-caq.ts:261",
+    "note": "Upsert options argument; the actual payload keys all exist live."
+  },
+  {
+    "table": "caq_paths",
+    "column": "onConflict",
+    "verdict": "FALSE_POSITIVE",
+    "severity": null,
+    "kind": "payload-upsert",
+    "site": "src/lib/caq/path.ts:85",
+    "note": "Upsert options argument; payload keys user_id, path and upgraded_to_complete_at all exist live."
+  },
+  {
+    "table": "supplement_reference_canonical",
+    "column": "onConflict",
+    "verdict": "FALSE_POSITIVE",
+    "severity": null,
+    "kind": "payload-upsert",
+    "site": "src/lib/caq/supplements/canonical-ingest.ts:147",
+    "note": "Upsert options argument; the canonical row payload keys all exist live."
+  },
+  {
+    "table": "supplement_reference_canonical",
+    "column": "ignoreDuplicates",
+    "verdict": "FALSE_POSITIVE",
+    "severity": null,
+    "kind": "payload-upsert",
+    "site": "src/lib/caq/supplements/canonical-ingest.ts:147",
+    "note": "Upsert options argument, not a column."
+  },
+  {
+    "table": "profiles",
+    "column": "timezone",
+    "verdict": "REAL",
+    "severity": "CRITICAL",
+    "kind": "select+payload-update",
+    "site": "src/lib/caq/supplements/timing/assignTiming.ts:543",
+    "note": "syncTimezone at src/lib/timezone.ts:21 updates profiles.timezone which does not exist live, so the whole update is rejected and all timing code falls back to UTC."
+  },
+  {
+    "table": "regulatory_kelsey_reviews",
+    "column": "subject_hash",
+    "verdict": "REAL",
+    "severity": "CRITICAL",
+    "kind": "payload-insert",
+    "site": "src/lib/compliance/review-server-text.ts:154",
+    "note": "Both Kelsey review inserts use subject_hash but the live column is subject_text_hash, so the compliance review audit rows are rejected whole and unchecked."
+  },
+  {
+    "table": "regulatory_kelsey_reviews",
+    "column": "stage_1_score",
+    "verdict": "REAL",
+    "severity": "CRITICAL",
+    "kind": "payload-insert",
+    "site": "src/lib/compliance/review-server-text.ts:154",
+    "note": "No stage_1_score column live (only stage_1_flags), part of the same rejected Kelsey inserts."
+  },
+  {
+    "table": "regulatory_kelsey_reviews",
+    "column": "reviewed_by",
+    "verdict": "REAL",
+    "severity": "CRITICAL",
+    "kind": "payload-insert",
+    "site": "src/lib/compliance/review-server-text.ts:154",
+    "note": "Live column is reviewer_model, part of the same rejected Kelsey inserts."
+  },
+  {
+    "table": "regulatory_kelsey_reviews",
+    "column": "citations",
+    "verdict": "REAL",
+    "severity": "CRITICAL",
+    "kind": "payload-insert",
+    "site": "src/lib/compliance/review-server-text.ts:189",
+    "note": "No citations column live, part of the rejected second stage Kelsey insert."
+  },
+  {
+    "table": "regulatory_kelsey_reviews",
+    "column": "model_used",
+    "verdict": "REAL",
+    "severity": "CRITICAL",
+    "kind": "payload-insert",
+    "site": "src/lib/compliance/review-server-text.ts:189",
+    "note": "Live column is reviewer_model, part of the rejected second stage Kelsey insert."
+  },
+  {
+    "table": "reward_redemptions",
+    "column": "item_id",
+    "verdict": "REAL",
+    "severity": "CRITICAL",
+    "kind": "payload-insert",
+    "site": "src/lib/gamification/token-engine.ts:500",
+    "note": "Redemption insert uses item_id but the live column is reward_id, so the redemption record is rejected whole with no error check."
+  },
+  {
+    "table": "reward_redemptions",
+    "column": "created_at",
+    "verdict": "REAL",
+    "severity": "CRITICAL",
+    "kind": "payload-insert",
+    "site": "src/lib/gamification/token-engine.ts:500",
+    "note": "Same insert writes created_at where live has claimed_at, part of the rejected redemption row."
+  },
+  {
+    "table": "user_variants",
+    "column": "onConflict",
+    "verdict": "FALSE_POSITIVE",
+    "severity": null,
+    "kind": "payload-upsert",
+    "site": "src/lib/genetics/dnaUploadStore.ts:110",
+    "note": "Upsert options argument; the variant row payload keys all exist live."
+  },
+  {
+    "table": "user_epigenetic_markers",
+    "column": "onConflict",
+    "verdict": "FALSE_POSITIVE",
+    "severity": null,
+    "kind": "payload-upsert",
+    "site": "src/lib/genetics/epigenResultStore.ts:87",
+    "note": "Upsert options argument; the marker row payload keys all exist live."
+  },
+  {
+    "table": "lab_biomarkers",
+    "column": "onConflict",
+    "verdict": "FALSE_POSITIVE",
+    "severity": null,
+    "kind": "payload-upsert",
+    "site": "src/lib/labs/labUploadStore.ts:94",
+    "note": "Upsert options argument; the biomarker row payload keys all exist live."
+  },
+  {
+    "table": "marketing_copy_impressions",
+    "column": "ok",
+    "verdict": "FALSE_POSITIVE",
+    "severity": null,
+    "kind": "payload-insert",
+    "site": "src/lib/marketing/variants/impression.ts:86",
+    "note": "Key of the returned result object, not the insert payload; the actual row keys all exist live."
+  },
+  {
+    "table": "marketing_copy_impressions",
+    "column": "attempts",
+    "verdict": "FALSE_POSITIVE",
+    "severity": null,
+    "kind": "payload-insert",
+    "site": "src/lib/marketing/variants/impression.ts:86",
+    "note": "Key of the returned result object, parser window bleed."
+  },
+  {
+    "table": "precheck_clearance_receipts",
+    "column": "text_derived",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/lib/marshall/appeals/drift.ts:50",
+    "note": "Marshall appeals drift check selects text_derived which live receipts lack, so drift assessment fails open to none."
+  },
+  {
+    "table": "shop_orders",
+    "column": "completed_at",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select+order",
+    "site": "src/lib/practitioner-referral/milestone-orchestrator.ts:142",
+    "note": "Referral milestone and vesting orchestrators select and order by completed_at, but live shop_orders has delivered_at and created_at only."
+  },
+  {
+    "table": "shop_orders",
+    "column": "practitioner_id",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "eq",
+    "site": "src/lib/practitioner-referral/milestone-orchestrator.ts:142",
+    "note": "Same queries filter shop_orders by practitioner_id which live lacks (user_id only), so milestone detection finds nothing."
+  },
+  {
+    "table": "research_hub_user_tabs",
+    "column": "onConflict",
+    "verdict": "FALSE_POSITIVE",
+    "severity": null,
+    "kind": "payload-upsert",
+    "site": "src/lib/research-hub/service.ts:57",
+    "note": "Upsert options argument; payload keys user_id, category_id, is_active all exist live."
+  },
+  {
+    "table": "research_hub_user_tabs",
+    "column": "ignoreDuplicates",
+    "verdict": "FALSE_POSITIVE",
+    "severity": null,
+    "kind": "payload-upsert",
+    "site": "src/lib/research-hub/service.ts:57",
+    "note": "Upsert options argument, not a column."
+  },
+  {
+    "table": "research_hub_user_sources",
+    "column": "onConflict",
+    "verdict": "FALSE_POSITIVE",
+    "severity": null,
+    "kind": "payload-upsert",
+    "site": "src/lib/research-hub/service.ts:115",
+    "note": "Upsert options argument; the source row payload keys all exist live."
+  },
+  {
+    "table": "research_hub_user_sources",
+    "column": "ignoreDuplicates",
+    "verdict": "FALSE_POSITIVE",
+    "severity": null,
+    "kind": "payload-upsert",
+    "site": "src/lib/research-hub/service.ts:115",
+    "note": "Upsert options argument, not a column."
+  },
+  {
+    "table": "body_tracker_weight",
+    "column": "weight_kg",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/lib/scoring/sources/body-tracker-source.ts:69",
+    "note": "Scoring source selects weight_kg but live body_tracker_weight stores weight_lbs, so the latest weight read errors and fails open."
+  },
+  {
+    "table": "body_tracker_weight",
+    "column": "recorded_at",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select+order",
+    "site": "src/lib/scoring/sources/body-tracker-source.ts:69",
+    "note": "Same query selects and orders by recorded_at where live has created_at."
+  },
+  {
+    "table": "practitioners",
+    "column": "onboarded_at",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "src/lib/white-label/eligibility.ts:162",
+    "note": "White label eligibility selects onboarded_at which live lacks, so the wholesale volume gate never evaluates."
+  },
+  {
+    "table": "body_tracker_recommendations",
+    "column": "context_hash",
+    "verdict": "REAL",
+    "severity": "CRITICAL",
+    "kind": "eq+payload-insert",
+    "site": "supabase/functions/arnold-cross-reference-recommend/index.ts:375",
+    "note": "Arnold cross reference edge function filters the cache by context_hash and inserts it (index.ts:466); the column is absent live so every recommendation persist fails."
+  },
+  {
+    "table": "profiles",
+    "column": "age",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "supabase/functions/gordon-generate-targets/index.ts:190",
+    "note": "gordon-generate-targets and ultrathink outcome collector select age; live profiles only stores date_of_birth."
+  },
+  {
+    "table": "profiles",
+    "column": "biological_sex",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "supabase/functions/gordon-generate-targets/index.ts:190",
+    "note": "gordon-generate-targets selects biological_sex which live profiles lacks."
+  },
+  {
+    "table": "profiles",
+    "column": "user_id",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "eq",
+    "site": "supabase/functions/gordon-generate-targets/index.ts:190",
+    "note": "gordon-generate-targets filters profiles by user_id but live profiles keys on id and has no user_id column, so the query errors."
+  },
+  {
+    "table": "body_composition_readings",
+    "column": "onConflict",
+    "verdict": "FALSE_POSITIVE",
+    "severity": null,
+    "kind": "payload-upsert",
+    "site": "supabase/functions/ingest-body-composition/index.ts:289",
+    "note": "Upsert options argument; the reading row payload keys all exist live."
+  },
+  {
+    "table": "body_composition_readings",
+    "column": "ignoreDuplicates",
+    "verdict": "FALSE_POSITIVE",
+    "severity": null,
+    "kind": "payload-upsert",
+    "site": "supabase/functions/ingest-body-composition/index.ts:289",
+    "note": "Upsert options argument, not a column."
+  },
+  {
+    "table": "international_fx_rate_history",
+    "column": "onConflict",
+    "verdict": "FALSE_POSITIVE",
+    "severity": null,
+    "kind": "payload-upsert",
+    "site": "supabase/functions/intl-fx-rate-fetcher/index.ts:120",
+    "note": "Upsert options argument; fx rate row keys match the live table."
+  },
+  {
+    "table": "international_fx_rate_history",
+    "column": "ignoreDuplicates",
+    "verdict": "FALSE_POSITIVE",
+    "severity": null,
+    "kind": "payload-upsert",
+    "site": "supabase/functions/intl-fx-rate-fetcher/index.ts:120",
+    "note": "Upsert options argument, not a column."
+  },
+  {
+    "table": "profiles",
+    "column": "phone_number",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "supabase/functions/map_notify_practitioner/index.ts:96",
+    "note": "MAP notify edge function selects phone_number which live lacks, so red and black severity SMS alerts are silently skipped."
+  },
+  {
+    "table": "research_hub_user_items",
+    "column": "onConflict",
+    "verdict": "FALSE_POSITIVE",
+    "severity": null,
+    "kind": "payload-upsert",
+    "site": "supabase/functions/sherlock-research-hub/index.ts:213",
+    "note": "Upsert options argument; the scored item payload keys all exist live."
+  },
+  {
+    "table": "research_hub_user_items",
+    "column": "ignoreDuplicates",
+    "verdict": "FALSE_POSITIVE",
+    "severity": null,
+    "kind": "payload-upsert",
+    "site": "supabase/functions/sherlock-research-hub/index.ts:213",
+    "note": "Upsert options argument, not a column."
+  },
+  {
+    "table": "sherlock_trends",
+    "column": "onConflict",
+    "verdict": "FALSE_POSITIVE",
+    "severity": null,
+    "kind": "payload-upsert",
+    "site": "supabase/functions/sherlock-research-hub/index.ts:336",
+    "note": "Upsert options argument; the trend row payload keys all exist live."
+  },
+  {
+    "table": "genex360_products",
+    "column": "genex360_sku",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select+eq",
+    "site": "supabase/functions/shop_catalog_retirement_executor/index.ts:60",
+    "note": "Retirement executor and reconciliation guard on genex360_sku which live lacks, so the GeneX360 scope breach defense fails open."
+  },
+  {
+    "table": "peptide_registry",
+    "column": "peptide_sku",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select+eq",
+    "site": "supabase/functions/shop_catalog_retirement_executor/index.ts:61",
+    "note": "Retirement executor and reconciliation guard on peptide_sku, but live peptide_registry has peptide_id and product_number, so the peptide scope defense fails open."
+  },
+  {
+    "table": "ultrathink_recommendations",
+    "column": "product_name",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "supabase/functions/ultrathink-outcome-collector/index.ts:80",
+    "note": "Outcome collector selects product_name but live has farmceutica_product, erroring the recommendation fetch."
+  },
+  {
+    "table": "ultrathink_recommendations",
+    "column": "condition_pattern",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "supabase/functions/ultrathink-outcome-collector/index.ts:80",
+    "note": "Same select; live has product_category instead of condition_pattern."
+  },
+  {
+    "table": "shop_orders",
+    "column": "shipping_cost_cents",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "supabase/functions/unit-economics-snapshot-tick/index.ts:145",
+    "note": "Unit economics selects shipping_cost_cents but the live column is shipping_cents, erroring the whole month order query."
+  },
+  {
+    "table": "shop_orders",
+    "column": "payment_processing_cents",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "supabase/functions/unit-economics-snapshot-tick/index.ts:145",
+    "note": "No such live column, part of the same failed unit economics select."
+  },
+  {
+    "table": "shop_orders",
+    "column": "cogs_cents",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "supabase/functions/unit-economics-snapshot-tick/index.ts:145",
+    "note": "No such live column, part of the same failed unit economics select."
+  },
+  {
+    "table": "shop_orders",
+    "column": "contribution_margin_cents",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "supabase/functions/unit-economics-snapshot-tick/index.ts:145",
+    "note": "No such live column, part of the same failed unit economics select."
+  },
+  {
+    "table": "memberships",
+    "column": "monthly_price_cents",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "supabase/functions/unit-economics-snapshot-tick/index.ts:149",
+    "note": "Unit economics selects monthly_price_cents which live memberships lacks, so MRR computation gets no rows."
+  },
+  {
+    "table": "genex360_purchases",
+    "column": "price_cents",
+    "verdict": "REAL",
+    "severity": "HIGH",
+    "kind": "select",
+    "site": "supabase/functions/unit-economics-snapshot-tick/index.ts:152",
+    "note": "Unit economics selects price_cents but the live column is price_paid_cents, erroring the revenue query."
+  }
+]

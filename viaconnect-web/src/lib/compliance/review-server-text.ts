@@ -1,4 +1,4 @@
-// Prompt #113 hotfix P0 #2 — server-side Kelsey review helper.
+// Prompt #113 hotfix P0 #2 - server-side Kelsey review helper.
 //
 // Closes the Arnold coaching leak: every Claude-generated recommendation
 // must pass through Stage 1 (deterministic disease-claim detector) and,
@@ -17,7 +17,7 @@
 //   - Output: { decision, text } where decision is one of the 4 verdicts
 //     plus "pass_stage_1" (no Stage 2 needed) and text is either the
 //     original text (APPROVED / pass_stage_1), the suggested rewrite
-//     (CONDITIONAL), or null (BLOCKED / ESCALATE — caller drops the
+//     (CONDITIONAL), or null (BLOCKED / ESCALATE - caller drops the
 //     candidate).
 //
 // Failure mode: fail-closed. LLM timeout, malformed response, or any
@@ -31,6 +31,8 @@ import { hashSubject, lookupCached } from "./kelsey/cache";
 import { callKelseyLLM } from "./kelsey/client";
 import { getJurisdictionId } from "./jurisdiction";
 import { recordRegulatoryAudit } from "./audit-logger";
+import { buildKelseyEscalateRow, buildKelseyReviewRow } from "./kelsey-review-rows";
+import { reportSupabaseError } from "@/lib/utils/schema-drift";
 import {
   kelseyEscalateToJeffery,
   kelseyAskSherlock,
@@ -84,6 +86,21 @@ export interface ServerReviewResult {
 // The detector already returns `requires_stage2: true` when the score
 // crosses the threshold, so callers don't need to know the exact value.
 
+// Prompt 210d P0-9: route regulatory_kelsey_reviews insert failures through
+// the P0-1 classifier so schema drift becomes a reason-tagged safeLog.error
+// instead of a silently discarded response error. The deliberate strict-mode
+// rethrow is contained so the helper's return contract stays identical to
+// the pre-change behavior in every environment (the drift log is emitted
+// before the rethrow, so visibility is kept). Context carries the table
+// name only, never review content.
+function reportKelseyInsertError(error: unknown): void {
+  try {
+    reportSupabaseError("kelsey.review", error, { table: "regulatory_kelsey_reviews" });
+  } catch {
+    // Strict-mode rethrow stops here; the review verdict flow stands.
+  }
+}
+
 /**
  * Run the two-stage review on a piece of text. Returns the decision +
  * the text the caller should use (or null to drop).
@@ -93,7 +110,7 @@ export interface ServerReviewResult {
  * worst case is one Anthropic round-trip (~1-3 s).
  */
 export async function reviewServerText(input: ServerReviewInput): Promise<ServerReviewResult> {
-  // Stage 1 — always runs. Fast, deterministic.
+  // Stage 1 - always runs. Fast, deterministic.
   const stage1 = await detectDiseaseClaim(input.text);
 
   if (!stage1.requires_stage2) {
@@ -120,7 +137,7 @@ export async function reviewServerText(input: ServerReviewInput): Promise<Server
     };
   }
 
-  // Cache lookup — 90-day TTL keyed by SHA-256(normalize(text)+jurisdiction+scope).
+  // Cache lookup - 90-day TTL keyed by SHA-256(normalize(text)+jurisdiction+scope).
   const subjectHash = hashSubject(input.text, input.jurisdiction, input.ingredient_scope ?? []);
   const cached = await lookupCached(subjectHash, jurisdictionId);
 
@@ -135,7 +152,7 @@ export async function reviewServerText(input: ServerReviewInput): Promise<Server
     rewrite = cached.suggested_rewrite ?? null;
     reviewId = cached.review_id;
   } else {
-    // Stage 2 — LLM.
+    // Stage 2 - LLM.
     const llm = await callKelseyLLM({
       text: input.text,
       jurisdiction: input.jurisdiction,
@@ -150,21 +167,23 @@ export async function reviewServerText(input: ServerReviewInput): Promise<Server
       // LLM unavailable or returned malformed JSON. Fail-closed: ESCALATE.
       const admin = createAdminClient();
       reviewId = crypto.randomUUID();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (admin as any).from("regulatory_kelsey_reviews").insert({
-        id: reviewId,
-        subject_type: input.subject_type,
-        subject_id: input.subject_id ?? reviewId,
-        jurisdiction_id: jurisdictionId,
-        subject_hash: subjectHash,
-        stage_1_flags: stage1.flags,
-        stage_1_score: stage1.total_score,
-        verdict: "ESCALATE" as KelseyVerdictType,
-        rationale: "Kelsey LLM unavailable or malformed response; fail-closed escalation from server review helper.",
-        rule_references: [],
-        confidence: 0,
-        reviewed_by: "kelsey-server-helper",
-      });
+      const { error: escalateInsertError } = await admin
+        .from("regulatory_kelsey_reviews")
+        .insert(
+          buildKelseyEscalateRow({
+            reviewId,
+            subjectType: input.subject_type,
+            subjectId: input.subject_id,
+            jurisdictionId,
+            subjectHash,
+            text: input.text,
+            stage1Flags: stage1.flags,
+            stage1Score: stage1.total_score,
+          }),
+        );
+      if (escalateInsertError) {
+        reportKelseyInsertError(escalateInsertError);
+      }
       return {
         decision: "ESCALATE",
         text: null,
@@ -185,25 +204,26 @@ export async function reviewServerText(input: ServerReviewInput): Promise<Server
     // trail.
     const admin = createAdminClient();
     reviewId = crypto.randomUUID();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (admin as any).from("regulatory_kelsey_reviews").insert({
-      id: reviewId,
-      subject_type: input.subject_type,
-      subject_id: input.subject_id ?? reviewId,
-      jurisdiction_id: jurisdictionId,
-      subject_hash: subjectHash,
-      stage_1_flags: stage1.flags,
-      stage_1_score: stage1.total_score,
-      verdict,
-      rationale,
-      rule_references: llm.validated.rule_references,
-      suggested_rewrite: rewrite,
-      confidence: llm.validated.confidence,
-      citations: llm.validated.citations,
-      stage_2_raw: llm.raw_response,
-      model_used: llm.model_used,
-      reviewed_by: "kelsey-server-helper",
-    });
+    const { error: reviewInsertError } = await admin
+      .from("regulatory_kelsey_reviews")
+      .insert(
+        buildKelseyReviewRow({
+          reviewId,
+          subjectType: input.subject_type,
+          subjectId: input.subject_id,
+          jurisdictionId,
+          subjectHash,
+          text: input.text,
+          stage1Flags: stage1.flags,
+          stage1Score: stage1.total_score,
+          validated: llm.validated,
+          rawResponse: llm.raw_response,
+          modelUsed: llm.model_used,
+        }),
+      );
+    if (reviewInsertError) {
+      reportKelseyInsertError(reviewInsertError);
+    }
   }
 
   // Audit log every decision so compliance reviewers can trace every

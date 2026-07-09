@@ -1,0 +1,2 @@
+-- Prompt 210d P0-3: append-only items jsonb column for public.orders; the stripe webhook one-time-payment branch (src/app/api/stripe/webhook/route.ts) inserts an items key, but live orders has no items column (2026-07-06 snapshot: docs/integrity/snapshot/live-types.ts), so the whole order row was rejected after a successful payment. Shape test: src/app/api/stripe/__tests__/webhook-shapes.test.ts parses this file.
+alter table public.orders add column if not exists items jsonb;

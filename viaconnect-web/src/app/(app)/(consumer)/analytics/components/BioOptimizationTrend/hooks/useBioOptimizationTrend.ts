@@ -1,9 +1,18 @@
 import { useQuery } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
+import { reportSupabaseError } from "@/lib/utils/schema-drift";
 import type { ScorePoint, TimeRange } from "../utils/trendCalculations";
 import { RANGE_DAYS } from "../utils/trendCalculations";
 
 const supabase = createClient();
+
+// Prompt 210d P0-4: the daily_scores columns selected by the windowed journey
+// graph read below, centralized (208k CHECKIN_COLUMNS pattern) so the shape
+// test (src/app/actions/__tests__/daily-scores-shape.test.ts) can assert every
+// column exists in the live schema union the P0-4 additive migration. The
+// selected keys are UNCHANGED from the previous inline string.
+export const DAILY_SCORES_COLUMNS =
+  "overall_score, sleep_score, nutrition_score, activity_score, mood_stress_score, energy_score, score_date" as const;
 
 export type BioTrendData = {
   bioScores: ScorePoint[];
@@ -37,11 +46,21 @@ export function useBioOptimizationTrend(userId: string | null, range: TimeRange)
           .order("created_at", { ascending: true }),
         sb
           .from("daily_scores")
-          .select("overall_score, sleep_score, nutrition_score, activity_score, mood_stress_score, energy_score, score_date")
+          .select(DAILY_SCORES_COLUMNS)
           .eq("user_id", userId!)
           .gte("score_date", sinceDate)
           .order("score_date", { ascending: true }),
       ]);
+
+      // Prompt 210d P0-4: schema drift on this select was previously invisible
+      // (the error object was discarded and dailyScores rendered silently
+      // empty). Report it via the P0-1 classifier: production stays fail-open
+      // (log only, the empty-array fallback below is unchanged) while strict
+      // mode (dev/preview/test) rethrows so the query surfaces the failure.
+      // Context carries object names only.
+      if (dailyRes.error) {
+        reportSupabaseError("journeyGraph.read", dailyRes.error, { table: "daily_scores" });
+      }
 
       const bioScores: ScorePoint[] = (bioRes.data ?? [])
         .filter((r: any) => typeof r.score === "number" && r.created_at)

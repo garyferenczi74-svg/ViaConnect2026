@@ -19,6 +19,7 @@ import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-
 import { withAbortTimeout, isTimeoutError } from '../_shared/with-timeout.ts';
 import { safeLog } from '../_shared/safe-log.ts';
 import { getCircuitBreaker, isCircuitBreakerError } from '../_shared/circuit-breaker.ts';
+import { reportSupabaseError } from '../_shared/schema-drift.ts';
 
 const visionBreaker = getCircuitBreaker('claude-vision');
 
@@ -343,6 +344,9 @@ serve(async (req) => {
   } as never).select('id, scan_date').single();
 
   if (insertResult.error || !insertResult.data) {
+    reportSupabaseError('body-scan-analyze.scan-insert', insertResult.error, {
+      table: 'body_tracker_photo_scans',
+    });
     safeLog.error('body-scan-analyze', 'insert failed', {
       user_id: user.id,
       error: insertResult.error?.message ?? 'no data',
