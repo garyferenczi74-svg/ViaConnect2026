@@ -495,22 +495,92 @@ describe('INVARIANT 4: PERSONA-INTEGRITY', () => {
     expect(getDisplayName('hannah')).toBe('Hannah');
   });
 
-  it('the gordon slug stays lowercase as an input token (display resolves to "Gordon", slug is never mutated)', () => {
+  it('the gordon slug resolves through getDisplayName without ad-hoc slug rewriting (lowercase and mixed-case both map to "Gordon")', () => {
     // The canonical slug is lowercase 'gordon'; getDisplayName lower-cases its key
     // before lookup, so passing the lowercase slug resolves to the display name
-    // without the caller having to upper-case the slug anywhere.
-    const slug = 'gordon';
-    expect(slug).toBe(slug.toLowerCase());
-    expect(getDisplayName(slug)).toBe('Gordon');
-    // A mixed-case value still resolves, proving the slug itself is the lowercase
-    // canonical form and casing is handled centrally, not by ad-hoc slug rewriting.
+    // without the caller having to upper-case the slug anywhere. A mixed-case value
+    // still resolves, proving casing is handled centrally, not by ad-hoc slug
+    // rewriting. (The tautological `slug === slug.toLowerCase()` self-equality that
+    // used to sit here was dropped: it asserted a literal about itself, not behavior.)
+    expect(getDisplayName('gordon')).toBe('Gordon');
     expect(getDisplayName('GORDON')).toBe('Gordon');
   });
 
-  it('the formavision milestone lib contract states Helix is read-only with no economy write (cited, not fabricated)', () => {
-    // FormaVision touches the Helix economy only as an explicitly-disabled write
-    // path. Rather than fabricate a check, we cite the binding ECONOMY CONTRACT in
-    // the milestone LIB module: read-only, no creditEarning, no helix write calls.
+  // ---------------------------------------------------------------------------
+  // 4.3 STRUCTURAL GUARD (the real absence proof): scan every formavision source
+  // file and assert NONE of them writes the Helix economy ledger. FormaVision is a
+  // Helix CONSUMER-ONLY (visualization) surface; a write here would be a real
+  // consumer-only-violation to escalate. This is the load-bearing check. The two
+  // comment-citation tests below (4.4, 4.5) are kept as defense-in-depth on the
+  // documented contract text, but they are source-COMMENT sentinels, not proofs;
+  // THIS test is the proof, independent of any comment wording.
+  // ---------------------------------------------------------------------------
+  it('4.3 STRUCTURAL GUARD: no formavision source file performs a helix_score_events insert/upsert (real absence proof, not a comment)', () => {
+    // EXACT CHECK: recursively collect every .ts/.tsx under src/lib/formavision and
+    // src/components/formavision, then for each file assert it does NOT contain a
+    // helix_score_events write. A "write" is either
+    //   (a) a supabase table reference `.from('helix_score_events')` /
+    //       `.from("helix_score_events")` (the precise ledger-write shape), OR
+    //   (b) the file containing BOTH the table name 'helix_score_events' AND a
+    //       '.insert(' or '.upsert(' call (the simpler both-present belt).
+    // A file whose ONLY mention of helix_score_events is inside a prose comment (as
+    // the two milestone files are) has no '.insert('/'.upsert(' and no `.from(...)`
+    // targeting that table, so it passes. A genuine ledger write would trip (a) and
+    // (b) at once and fail loudly. If this ever fails, STOP: it is a real
+    // Helix-consumer-only violation to escalate, not a test to relax.
+    const roots = [
+      path.resolve(__dirname, '..'), // src/lib/formavision
+      path.resolve(__dirname, '..', '..', '..', 'components', 'formavision'), // src/components/formavision
+    ];
+
+    function collectSourceFiles(dir: string): string[] {
+      const out: string[] = [];
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          // Skip test harnesses: __tests__ files (this one included) legitimately
+          // contain the string 'helix_score_events' and '.insert(' as ASSERTION
+          // TEXT, not as a product write path. Scanning them would false-positive on
+          // the very guard that proves the PRODUCT never writes the ledger. The
+          // proof is about shipped source, so test dirs are excluded by design.
+          if (entry.name === '__tests__') {
+            continue;
+          }
+          out.push(...collectSourceFiles(full));
+        } else if (entry.isFile() && /\.tsx?$/.test(entry.name)) {
+          out.push(full);
+        }
+      }
+      return out;
+    }
+
+    const fromHelixLedger = /\.from\(\s*['"]helix_score_events['"]\s*\)/;
+    const files = roots.flatMap(collectSourceFiles);
+    // Guard the guard: the sweep must actually see files, or the proof is vacuous.
+    expect(files.length).toBeGreaterThan(0);
+
+    const offenders: string[] = [];
+    for (const file of files) {
+      const src = fs.readFileSync(file, 'utf8');
+      const mentionsLedger = src.includes('helix_score_events');
+      const writesRows = src.includes('.insert(') || src.includes('.upsert(');
+      const writesLedgerTable = fromHelixLedger.test(src);
+      if (writesLedgerTable || (mentionsLedger && writesRows)) {
+        offenders.push(path.relative(process.cwd(), file));
+      }
+    }
+
+    // ZERO occurrences expected today (formavision genuinely never writes the
+    // ledger). The message names any offender so an escalation is actionable.
+    expect(offenders).toEqual([]);
+  });
+
+  it('4.4 SOURCE-CONTRACT CITATION (defense in depth, comment sentinel): the milestone LIB documents read-only, no helix_score_events write', () => {
+    // Defense-in-depth companion to the 4.3 structural guard: this asserts the
+    // documented ECONOMY CONTRACT text is present in the milestone LIB module. It is
+    // a source-COMMENT sentinel (it can drift if the wording changes), so it is NOT
+    // the proof; 4.3 is. Kept because a human reading the file should still find the
+    // binding read-only contract stated in prose.
     const libSource = fs.readFileSync(
       path.resolve(__dirname, '..', 'milestone', 'milestoneMoment.ts'),
       'utf8',
@@ -520,10 +590,11 @@ describe('INVARIANT 4: PERSONA-INTEGRITY', () => {
     expect(libSource.toLowerCase()).toContain('read-only');
   });
 
-  it('the formavision milestone component contract states it is consumer-only with NO practitioner path (cited, not fabricated)', () => {
-    // FormaVision has no practitioner surface. We cite the milestone COMPONENT,
-    // the only formavision surface that references Helix at all, which documents
-    // that it is mounted consumer-only and adds no practitioner path.
+  it('4.5 SOURCE-CONTRACT CITATION (defense in depth, comment sentinel): the milestone COMPONENT documents consumer-only with NO practitioner path', () => {
+    // Defense-in-depth companion to 4.3: cites the milestone COMPONENT prose, the
+    // only formavision surface that references Helix at all, documenting that it is
+    // mounted consumer-only and adds no practitioner path. Comment sentinel, not a
+    // proof; retained for human readability of the contract.
     const componentSource = fs.readFileSync(
       path.resolve(
         __dirname,
