@@ -227,6 +227,12 @@ describe('CHECK 1: TIMED-OUT read resolves to the fail-open empty state via real
 // ===========================================================================
 
 describe('CHECK 2: DROPPED mid-write connection fails open with table-context log, no PII', () => {
+  afterEach(() => {
+    // Guard the env stubs used by the reportSupabaseError case below so a failed
+    // assertion there cannot leak SCHEMA_STRICT_MODE / VERCEL_ENV into later tests.
+    vi.unstubAllEnvs();
+  });
+
   it('emitAvatarEvent does not throw when the insert rejects mid-write (fail-open preserved)', async () => {
     supabaseInsertImpl.fn = () => Promise.reject(new Error('connection reset by peer'));
     await expect(
