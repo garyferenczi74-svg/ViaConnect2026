@@ -227,6 +227,12 @@ export function MeasurementRing(props: MeasurementRingProps) {
         zIndexRange={[20, 0]}
       >
         <div
+          // E3b: the count-up ring value is the drei Html readout. This testid
+          // sits on the inner value div (the most specific stable node; the Html
+          // wrapper carries no stable class of its own) so Playwright can assert
+          // the counted-up measurement text directly instead of only that a ring
+          // exists. Attribute-only; no behavior change.
+          data-testid="measurement-ring-readout"
           className="pointer-events-none select-none rounded-full px-2 py-1 text-xs font-medium"
           style={{
             color: '#FFFFFF',

@@ -658,6 +658,12 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
   return (
     <div ref={containerRef} className="absolute inset-0 h-full w-full">
       <Canvas
+        // E3b: exact cinematic discriminator seam. react-three-fiber forwards
+        // unknown DOM props onto the real <canvas> element it renders, so this
+        // testid lands on the 3D canvas specifically. Playwright selects it to
+        // prove the cinematic (WebGL) path mounted, instead of the brittle
+        // "any canvas is present" proxy. Attribute-only; no behavior change.
+        data-testid="formavision-avatar-canvas"
         // Demand loop: frames are produced only on interaction, mount, or an
         // explicit invalidate. No continuous render, no idle spin.
         frameloop="demand"

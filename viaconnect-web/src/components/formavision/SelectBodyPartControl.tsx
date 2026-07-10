@@ -67,6 +67,12 @@ export function SelectBodyPartControl({ value, onChange, className }: SelectBody
       <span className="shrink-0 text-white/60">Select Body Part</span>
       <span className="relative inline-flex items-center">
         <select
+          // E3b: the body-part picker control. The native select is the specific
+          // stable interactive node (it is what the user and Playwright operate);
+          // the testid lets the spec target it exactly instead of relying on the
+          // aria-label alone. The aria-label is retained for accessibility.
+          // Attribute-only; no behavior change.
+          data-testid="select-body-part"
           aria-label="Select body part to frame"
           value={value ?? ALL_VALUE}
           onChange={(e) => onChange(resolveSelection(e.target.value))}
