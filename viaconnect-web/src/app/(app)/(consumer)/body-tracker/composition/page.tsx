@@ -25,6 +25,8 @@ import {
 // stays disjoint from the avatar component files.
 import { BodyFatReadout } from '@/components/formavision/BodyFatReadout';
 import { NotableChanges } from '@/components/formavision/NotableChanges';
+// Prompt 211a W3: doctor-ready scan report download / share control.
+import { DownloadReportButton } from '@/components/formavision/DownloadReportButton';
 import { useCompositionHistory } from '@/hooks/body-tracker/useCompositionHistory';
 import { useCircumferenceHistory } from '@/hooks/body-tracker/useCircumferenceHistory';
 import { computeCompositionDeltas } from '@/lib/formavision/deltas/compositionDeltas';
@@ -703,6 +705,10 @@ function CompositionPageInner() {
             <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
             Log Data
           </button>
+          {/* Prompt 211a W3: doctor-ready scan report. Two-tap export
+              (generate then share/download); native share falls back to a
+              download since @capacitor/share is not installed. */}
+          <DownloadReportButton userId={userId ?? null} surface="/body-tracker/composition" />
         </div>
       </div>
 

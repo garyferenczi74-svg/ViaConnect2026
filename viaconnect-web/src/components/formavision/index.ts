@@ -13,6 +13,9 @@ export type {
   SelectableRegion,
 } from './SelectBodyPartControl';
 export { hasWebGL } from './hasWebGL';
+// Prompt 211a W3: doctor-ready scan report download / share control.
+export { DownloadReportButton } from './DownloadReportButton';
+export type { DownloadReportButtonProps } from './DownloadReportButton';
 export {
   RenderTierProvider,
   useRenderTier,
