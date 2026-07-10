@@ -32,7 +32,7 @@ on:
     branches: [main, master]
 
 jobs:
-  # ──────────────────────────────────────────────────
+  # --------------------------------------------------
   # HARD GATE: node-safe Vitest suites under strict mode.
   #   - E1 seam tests: telemetry sink/catalog/PII + region-tap whole-protocol.
   #   - E2 invariants: avatar == card == vector, no-fabrication, sign, persona,
@@ -42,7 +42,7 @@ jobs:
   # make strict mode explicit and environment-independent per 210d: a
   # missing-table / missing-column / missing-function drift error rethrows and
   # fails the run rather than being swallowed.
-  # ──────────────────────────────────────────────────
+  # --------------------------------------------------
   formavision-vitest:
     name: FormaVision Vitest (strict mode)
     runs-on: ubuntu-latest
@@ -73,14 +73,14 @@ jobs:
           src/components/formavision/__tests__/seam-region-protocol.test.ts
           src/lib/formavision/__tests__/invariants.test.ts
 
-  # ──────────────────────────────────────────────────
+  # --------------------------------------------------
   # OPT-IN, NON-BLOCKING: Playwright @fallback (forced 2D floor) headless.
   # continue-on-error: this job starts a dev server and runs ONLY the @fallback
   # tag, but /body-tracker/composition is auth-gated and needs a seeded session
   # plus Supabase env that a bare runner does not have. It is wired so it CAN run
   # (chromium installed, @fallback grep) and documents the tier honestly; it does
   # not gate merge. @cinematic + visual-regression are the GL tier, NOT run here.
-  # ──────────────────────────────────────────────────
+  # --------------------------------------------------
   formavision-fallback-playwright:
     name: FormaVision Playwright @fallback (2D floor, opt-in)
     runs-on: ubuntu-latest
