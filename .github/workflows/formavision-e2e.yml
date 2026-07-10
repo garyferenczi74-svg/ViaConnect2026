@@ -72,6 +72,7 @@ jobs:
           src/lib/formavision/telemetry/__tests__/seam-telemetry.test.ts
           src/components/formavision/__tests__/seam-region-protocol.test.ts
           src/lib/formavision/__tests__/invariants.test.ts
+          src/lib/formavision/__tests__/resilience.test.ts
 
   # --------------------------------------------------
   # OPT-IN, NON-BLOCKING: Playwright @fallback (forced 2D floor) headless.

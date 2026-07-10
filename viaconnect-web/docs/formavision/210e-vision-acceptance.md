@@ -111,10 +111,9 @@ count-up target equals the stored circumference the cards use.
 Backstop: unit-vitest (`measurementRingController.test.ts`, `ringLoopForRegion.test.ts`
 for the count-up target; `scanToParamVector.test.ts` for the shared number) and
 E2-vitest (ONE-SOURCE: avatar ring meters == stored inches). The animated count-up
-over the live GL ring is GL-tier @cinematic. Note: the ring value text needs the
-`measurement-ring-readout` testid before the cinematic run can assert the counted-up
-NUMBER (see Open Items); until then @cinematic asserts the selection took, not the
-value.
+over the live GL ring is GL-tier @cinematic. The `measurement-ring-readout` testid
+landed in E3b, so the @cinematic spec now asserts the counted-up NUMBER directly
+(journey.spec.ts); executing that assertion is the GL-tier first cinematic run.
 
 ### Step 4: Switch Body Fat / Muscle / Measurements overlays (same numbers as the cards)
 
@@ -430,13 +429,12 @@ ________________________________________   Date: __________
 Everything here is a real gate carried from E1 through E5, not a placeholder. None is
 fabricated as done.
 
-1. E3b testids before the first GL cinematic run: the `@cinematic` specs proxy the
-   3D path by "is there a `<canvas>` inside `avatar-container`". Add
-   `formavision-avatar-canvas` on the r3f 3D canvas root, `measurement-ring-readout`
-   on the `MeasurementRing` value text, and (optional) `select-body-part` on the
-   Select Body Part control, so the cinematic-vs-floor assertion and the ring
-   count-up VALUE (walk step 3) are exact rather than proxied. Source: E3 report,
-   "TESTIDS TO ADD".
+1. First GL cinematic run: the three E3b testids LANDED (`formavision-avatar-canvas`
+   on the r3f 3D canvas root, `measurement-ring-readout` on the `MeasurementRing`
+   value text, `select-body-part` on the Select Body Part control), so the
+   cinematic-vs-floor discriminator is now EXACT (not a canvas-presence proxy) and
+   the ring count-up VALUE (walk step 3) is asserted directly. Remaining open part:
+   execute the first `@cinematic` run in a GL-capable environment to capture results.
 
 2. Seeded-auth storage-state before @fallback becomes a hard gate: the
    `formavision-fallback-playwright` job is `continue-on-error: true` because the

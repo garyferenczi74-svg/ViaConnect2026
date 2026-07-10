@@ -562,6 +562,11 @@ describe('INVARIANT 4: PERSONA-INTEGRITY', () => {
     const offenders: string[] = [];
     for (const file of files) {
       const src = fs.readFileSync(file, 'utf8');
+      // fromHelixLedger (a) is the load-bearing proof. The mentions+writes belt
+      // (b) is redundant defense in depth with a known tradeoff: a future file
+      // mixing a prose 'helix_score_events' comment beside an unrelated .insert()
+      // would flag here. That failure is loud-and-safe (a human sees the named
+      // offender and clears it), never a silent miss, so the belt stays.
       const mentionsLedger = src.includes('helix_score_events');
       const writesRows = src.includes('.insert(') || src.includes('.upsert(');
       const writesLedgerTable = fromHelixLedger.test(src);
