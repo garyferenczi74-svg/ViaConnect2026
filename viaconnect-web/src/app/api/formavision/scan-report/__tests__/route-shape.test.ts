@@ -1,57 +1,58 @@
 /**
  * src/app/api/formavision/scan-report/__tests__/route-shape.test.ts
  *
- * Prompt 211a Workstream 3: source-text shape assertions for the scan-report
- * API route (src/app/api/formavision/scan-report/route.ts).
+ * Prompt 211a Workstream 3 (whole-branch fix): source-text shape assertions for
+ * the scan-report API route (src/app/api/formavision/scan-report/route.ts).
  *
- * All assertions are static text checks against the route source and the live
- * migration. No network, no DB, no route execution. Node-safe (no jsdom), node
- * builtins only, zero any. Rules: no em dashes, no en dashes, no emojis.
+ * All assertions are static text checks against the route source and the shared
+ * circumference lib. No network, no DB, no route execution. Node-safe (no jsdom),
+ * node builtins only, zero any. Rules: no em dashes, no en dashes, no emojis.
+ *
+ * ONE-SOURCE INVARIANT (the reason this suite exists). Section 8 bans showing a
+ * number that disagrees with the cards. The FormaVision composition + circumference
+ * cards render from the body_tracker_* SPINE, so the report route must read that
+ * SAME spine and must NOT read body_scan_measurements for the numeric values.
+ * (An earlier version of this test asserted the OPPOSITE - that the route must not
+ *  read body_tracker_circumference - which enforced the divergence. That assertion
+ *  is inverted here.)
  *
  * Invariants guarded:
  *   1. Runtime is nodejs (pdf-lib + Buffer need the node runtime).
  *   2. Server-confirmed auth: createClient().auth.getUser() gate.
- *   3. Single contract: the route SELECTs from body_scan_measurements only, and
- *      every column it names is a real column of that table (parsed from the
- *      migration). No second data path (no body_tracker_circumference read here).
- *   4. Resilience: withTimeout + reportSupabaseError are used; logs carry a
+ *   3. One source: the route READS the body_tracker_* card spine
+ *      (circumference + segmental_fat + segmental_muscle + weight) and does NOT
+ *      read body_scan_measurements for the numeric values.
+ *   4. Same-source mapping: each report value reads the SAME column the card hooks
+ *      read (girths + *_confidence on body_tracker_circumference; hip + hips_confidence
+ *      on body_tracker_weight; total_body_fat_pct on segmental_fat; total_muscle_mass_lbs
+ *      on segmental_muscle). Girth columns come from the shared MEASUREMENT_DB_COLUMN.
+ *   5. Resilience: withTimeout + reportSupabaseError are used; logs carry a
  *      table context only (no PII).
- *   5. Upload target is the body-scan-pdfs bucket; a signed URL is returned.
- *   6. Helix-absent: the route source names no Helix / streak / token strings.
+ *   6. Upload target is the body-scan-pdfs bucket; a signed URL is returned.
+ *   7. Helix-absent: the route source names no Helix / streak / token strings.
+ *   8. No `any` (the admin cast is narrowed to a typed client).
  */
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  MEASUREMENT_DB_COLUMN,
+  MEASUREMENT_EXTERNAL_KEYS,
+} from '@/lib/body-tracker/circumference';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const ROUTE_PATH = resolve(here, '..', 'route.ts');
 const src = readFileSync(ROUTE_PATH, 'utf-8');
 
-// Parse the live body_scan_measurements columns out of the CREATE TABLE block
-// in the canonical migration, so the subset assertion tracks the real schema.
-const MIGRATION_PATH = resolve(
-  here,
-  '..', '..', '..', '..', '..', '..',
-  'supabase', 'migrations', '20260416000100_body_scan_measurements.sql',
-);
-const migration = readFileSync(MIGRATION_PATH, 'utf-8');
-
-function liveColumns(): Set<string> {
-  const start = migration.indexOf('CREATE TABLE IF NOT EXISTS body_scan_measurements');
-  const end = migration.indexOf('ALTER TABLE body_scan_measurements ENABLE ROW LEVEL SECURITY');
-  const block = migration.slice(start, end);
-  const cols = new Set<string>();
-  for (const line of block.split('\n')) {
-    // Column definitions look like: `  neck_circ_cm              NUMERIC(5,1),`
-    const m = line.match(/^\s{2,}([a-z][a-z0-9_]*)\s+[A-Z]/);
-    if (m) cols.add(m[1]);
-  }
-  return cols;
-}
-
-const LIVE = liveColumns();
+// The spine tables the FormaVision cards render from (single source of truth).
+const SPINE_TABLES = [
+  'body_tracker_circumference',
+  'body_tracker_segmental_fat',
+  'body_tracker_segmental_muscle',
+  'body_tracker_weight',
+] as const;
 
 describe('scan-report route: runtime + auth', () => {
   it('declares the nodejs runtime', () => {
@@ -68,40 +69,86 @@ describe('scan-report route: runtime + auth', () => {
   });
 });
 
-describe('scan-report route: single contract (body_scan_measurements)', () => {
-  it('reads from body_scan_measurements', () => {
-    expect(src).toContain("from('body_scan_measurements')");
+describe('scan-report route: one source (reads the body_tracker_* card spine)', () => {
+  it('reads every body_tracker_* spine table the cards render from', () => {
+    for (const table of SPINE_TABLES) {
+      expect(src).toContain(`'${table}'`);
+    }
   });
 
-  it('does NOT open a second data path via body_tracker_circumference', () => {
-    // The single-contract rule: body_scan_measurements already carries the 12
-    // *_circ_cm columns + composition + confidence_map, so no second read.
-    expect(src).not.toContain("from('body_tracker_circumference')");
+  it('reads the card body-fat source (segmental_fat.total_body_fat_pct)', () => {
+    expect(src).toContain('body_tracker_segmental_fat');
+    expect(src).toContain('total_body_fat_pct');
   });
 
-  it('every selected column name exists on the live body_scan_measurements table', () => {
-    // The migration parse must have found the real columns.
-    expect(LIVE.has('neck_circ_cm')).toBe(true);
-    expect(LIVE.has('lean_mass_kg')).toBe(true);
-    expect(LIVE.has('overall_confidence')).toBe(true);
+  it('reads the card lean-mass source (segmental_muscle.total_muscle_mass_lbs)', () => {
+    expect(src).toContain('body_tracker_segmental_muscle');
+    expect(src).toContain('total_muscle_mass_lbs');
+  });
 
-    // Pull the column list from the .select('...') call(s) in the route and
-    // assert each token is a subset of the live columns (or a known meta col).
-    const META = new Set(['id', 'user_id', 'session_id', 'scan_date', 'created_at']);
+  it('reads hip + hip confidence from body_tracker_weight (the #85d card source)', () => {
+    expect(src).toContain('body_tracker_weight');
+    expect(src).toContain('hips_in');
+    expect(src).toContain('hips_confidence');
+  });
+
+  it('does NOT read body_scan_measurements for the numeric values (no divergent source)', () => {
+    // The whole point of the fix: the old divergent table must not be READ. A
+    // prose mention in the header comment explaining WHY it is excluded is fine;
+    // what must not exist is an actual query against it or its divergent columns.
+    expect(src).not.toMatch(/\bfrom\(\s*['"`]body_scan_measurements['"`]\s*\)/);
+    // And none of its divergent numeric columns may leak into the route.
+    expect(src).not.toContain('body_fat_pct_mid');
+    expect(src).not.toContain('lean_mass_kg');
+    expect(src).not.toContain('fat_mass_kg');
+    expect(src).not.toContain('_circ_cm');
+    // The single-contract SELECT constant / TABLE alias from the old version is gone.
+    expect(src).not.toContain('confidence_map');
+  });
+});
+
+describe('scan-report route: same-source mapping (report value == card column)', () => {
+  it('sources girth columns from the shared MEASUREMENT_DB_COLUMN (the card hook map)', () => {
+    // The route reads columns via MEASUREMENT_DB_COLUMN[key] rather than a private
+    // per-column list, so the report girths track the exact card hook columns.
+    expect(src).toContain('MEASUREMENT_DB_COLUMN');
+    expect(src).toContain('MEASUREMENT_EXTERNAL_KEYS');
+    expect(src).toContain('convertMeasurement');
+  });
+
+  it('selects each of the 12 card girth columns from body_tracker_circumference', () => {
+    // Pull the body_tracker_circumference .select('...') column list and assert it
+    // names every non-hip MEASUREMENT_DB_COLUMN value plus its *_confidence twin.
     const selectRe = /\.select\(\s*['"`]([^'"`]+)['"`]\s*\)/g;
+    let circSelect: string | null = null;
     let m: RegExpExecArray | null;
-    let sawScanSelect = false;
     while ((m = selectRe.exec(src)) !== null) {
-      const cols = m[1].split(',').map((c) => c.trim()).filter(Boolean);
-      // Only check the select that names scan columns (skip unrelated selects).
-      if (!cols.some((c) => c.endsWith('_circ_cm') || c === 'body_fat_pct_mid')) continue;
-      sawScanSelect = true;
-      for (const col of cols) {
-        const bare = col.replace(/\s+/g, '');
-        expect(LIVE.has(bare) || META.has(bare)).toBe(true);
+      const cols = m[1];
+      if (cols.includes('neck') && cols.includes('waist') && cols.includes('right_upper_arm')) {
+        circSelect = cols;
+        break;
       }
     }
-    expect(sawScanSelect).toBe(true);
+    // The CIRC_COLS constant is defined as a concatenation; also fold the whole
+    // source in as a fallback so the assertion is robust to how it is spelled.
+    const haystack = (circSelect ?? '') + '\n' + src;
+    for (const [key, col] of Object.entries(MEASUREMENT_DB_COLUMN)) {
+      if (MEASUREMENT_EXTERNAL_KEYS[key as keyof typeof MEASUREMENT_EXTERNAL_KEYS]) continue; // hip is external
+      expect(haystack).toContain(col);
+      expect(haystack).toContain(`${col}_confidence`);
+    }
+  });
+
+  it('maps confidence through numericToConfidenceLevel (the same helper the card chips use)', () => {
+    expect(src).toContain('numericToConfidenceLevel');
+    expect(src).toContain('confidenceDisplay');
+  });
+
+  it('converts stored girths with the shared lib rather than a private conversion', () => {
+    // Values are stored in entry_unit and converted with convertMeasurement, the
+    // exact conversion the card history hook applies. No ad-hoc * 2.54 literals.
+    expect(src).toContain('entry_unit');
+    expect(src).toContain('convertMeasurement');
   });
 });
 
@@ -116,7 +163,9 @@ describe('scan-report route: resilience + logging', () => {
   });
 
   it('log context carries a table name only (no PII)', () => {
-    expect(src).toContain("table: 'body_scan_measurements'");
+    expect(src).toContain('table:');
+    // The spine table names appear in the error context.
+    expect(src).toContain("table: 'body_tracker_weight'");
   });
 });
 
@@ -141,5 +190,14 @@ describe('scan-report route: Helix-absent (Section 8)', () => {
     for (const w of banned) {
       expect(lower).not.toContain(w);
     }
+  });
+});
+
+describe('scan-report route: typed admin client (no any)', () => {
+  it('does not cast the admin client through any', () => {
+    expect(src).not.toContain('as unknown as any');
+    expect(src).not.toContain(': any');
+    // The admin storage client is a typed SupabaseClient.
+    expect(src).toContain('SupabaseClient');
   });
 });

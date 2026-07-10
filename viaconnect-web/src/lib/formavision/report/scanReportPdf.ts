@@ -162,10 +162,29 @@ export function formatTrendDelta(first: number | null, latest: number | null): s
   return `${sign}${Math.abs(delta)} points`;
 }
 
-/** Safe date formatting; falls back to the raw string, never throws. */
+// Month names built explicitly so the human date carries NO locale-injected
+// punctuation (some locales render dates with en dashes, which the guardrail
+// would reject). ASCII-only, hyphen-free by construction.
+const MONTH_NAMES: readonly string[] = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
+/**
+ * Human-readable date for the doctor report, e.g. "July 1, 2026". Deterministic
+ * and locale-free: the ISO yyyy-mm-dd is parsed by hand and the string is built
+ * explicitly, so no locale can inject an em / en dash. Falls back to UNKNOWN when
+ * absent, and to the raw string when the input is not a clean ISO date (never throws).
+ */
 function fmtDate(iso: string | null): string {
   if (!iso) return UNKNOWN;
-  return iso;
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+  if (!m) return iso;
+  const year = Number(m[1]);
+  const monthIdx = Number(m[2]) - 1;
+  const day = Number(m[3]);
+  if (monthIdx < 0 || monthIdx > 11 || day < 1 || day > 31) return iso;
+  return `${MONTH_NAMES[monthIdx]} ${day}, ${year}`;
 }
 
 // ---------------------------------------------------------------------------

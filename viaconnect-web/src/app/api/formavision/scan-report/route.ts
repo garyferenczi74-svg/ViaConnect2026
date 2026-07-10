@@ -3,21 +3,34 @@
 // POST /api/formavision/scan-report
 // Returns: { signedUrl, storagePath, scanDate }  (200)
 //
-// Pipeline (mirrors the board download route pattern):
-//   1. Server-confirmed auth via createClient().auth.getUser().
-//   2. Read the user's scan history from the SAME single contract W3 reads:
-//      body_scan_measurements (the composition history source). That one table
-//      already carries the 12 *_circ_cm girths, the composition (lean_mass_kg,
-//      fat_mass_kg, body_fat_pct_mid), overall_confidence, and the per-
-//      measurement confidence_map. There is NO second data path.
-//   3. Map the latest + genuine-first rows into the honest renderer input.
-//   4. Render bytes via the reused pdf-lib renderer (renderScanReportPdf).
-//   5. Upload to the private body-scan-pdfs bucket and return a signed URL.
+// ONE-SOURCE GUARANTEE (Section 8: "do not show a number that disagrees with the
+// cards"). This route reads the SAME body_tracker_* SPINE the FormaVision
+// composition + circumference cards render from, so the report numbers EQUAL the
+// card numbers BY CONSTRUCTION:
+//
+//   - 12 girths + per-girth confidence: body_tracker_circumference (values stored
+//     in entry_unit, converted to cm with the SHARED circumference lib; confidence
+//     from the *_confidence columns via numericToConfidenceLevel) - exactly what
+//     useCircumferenceData / useCircumferenceHistory read and the ConfidenceChip shows.
+//   - Hip (13th) + hip confidence: body_tracker_weight.hips_in / hips_confidence
+//     (per the #85d WHR-as-source storage decision) - same as the card hooks.
+//   - Body fat %: body_tracker_segmental_fat.total_body_fat_pct - the exact
+//     snapshot.totalBodyFatPct that useLatestComposition -> BodyCompositionCard renders.
+//   - Lean mass: body_tracker_segmental_muscle.total_muscle_mass_lbs (converted
+//     lbs -> kg) - the same snapshot.totalMuscleMassLbs the card shows, with the
+//     SAME weight x (1 - bf/100) fallback the card uses when muscle mass is absent.
+//   - Fat mass: derived from the SAME card-consistent inputs (weight_kg - leanMassKg).
+//     The composition cards persist no fat-mass figure, so we never surface a number
+//     the cards contradict; UNKNOWN when weight is absent (never fabricated, never 0).
+//
+// The rows are joined by entry_id off one body_tracker_entries header, exactly as
+// the card hooks join them. body_scan_measurements (the old divergent source) is
+// NOT read for any numeric value.
 //
 // Resilience: every supabase call is wrapped in withTimeout; failures are
 // surfaced via reportSupabaseError (fail-open with drift visibility) with a
 // table context only. NO PII in logs. Confidence is never upgraded: an absent
-// confidence_map entry is UNKNOWN (null), never a fabricated value.
+// *_confidence value is UNKNOWN (null), never a fabricated value.
 //
 // Legal entity in the artifact is FarmCeutica Wellness LLC and the brand is
 // Via Cura (both live inside the renderer). The report is strictly clinical:
@@ -26,6 +39,7 @@
 // Standing rules honored: no em dashes, no en dashes, no emojis, zero any.
 
 import { NextRequest, NextResponse } from 'next/server';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
@@ -33,105 +47,163 @@ import { reportSupabaseError } from '@/lib/utils/schema-drift';
 import { safeLog } from '@/lib/utils/safe-log';
 import { numericToConfidenceLevel } from '@/lib/arnold/scanning/accuracy/confidenceDisplay';
 import {
+  MEASUREMENT_DB_COLUMN,
+  MEASUREMENT_EXTERNAL_KEYS,
+  convertMeasurement,
+  type MeasurementKey,
+  type MeasurementUnit,
+} from '@/lib/body-tracker/circumference';
+import {
   renderScanReportPdf,
   type ScanReportCircumference,
   type ScanReportInput,
 } from '@/lib/formavision/report/scanReportPdf';
-import type { ConfidenceLevel } from '@/lib/arnold/scanning/types';
 
 export const runtime = 'nodejs';
 
 const BUCKET = 'body-scan-pdfs';
-const TABLE = 'body_scan_measurements';
 const SCOPE = 'api.formavision.scan-report';
 const TIMEOUT_MS = 8000;
 const SIGNED_URL_TTL_SECONDS = 600;
 
-// Columns read from the single contract. Every name here is a real column of
-// body_scan_measurements (migration 20260416000100).
-const SCAN_COLS =
-  'scan_date,' +
-  'neck_circ_cm,shoulder_circ_cm,chest_circ_cm,waist_natural_circ_cm,hip_circ_cm,' +
-  'right_bicep_circ_cm,left_bicep_circ_cm,right_forearm_circ_cm,left_forearm_circ_cm,' +
-  'right_thigh_circ_cm,left_thigh_circ_cm,right_calf_circ_cm,' +
-  'body_fat_pct_mid,lean_mass_kg,fat_mass_kg,overall_confidence,confidence_map';
+// lbs -> kg (the exact factor useLatestComposition uses for the weight source).
+const LB_TO_KG = 0.45359237;
 
-// The 12 report rows: DB circumference column -> { confidence_map key, label }.
-// The confidence_map keys are the camelCase ExtractedMeasurements field names
-// written by buildConfidenceMap in runScanAnalysis. Hip has no confidence_map
-// entry (it is derived), so its confidence resolves to UNKNOWN honestly.
-const ROW_SPEC: ReadonlyArray<{ col: string; confKey: string | null; label: string }> = [
-  { col: 'neck_circ_cm', confKey: 'neckCirc', label: 'Neck' },
-  { col: 'shoulder_circ_cm', confKey: 'shoulderCirc', label: 'Shoulders' },
-  { col: 'chest_circ_cm', confKey: 'chestCirc', label: 'Chest' },
-  { col: 'waist_natural_circ_cm', confKey: 'waistNaturalCirc', label: 'Waist' },
-  { col: 'hip_circ_cm', confKey: 'hipCirc', label: 'Hips' },
-  { col: 'right_bicep_circ_cm', confKey: 'rightBicepCirc', label: 'R. Upper Arm' },
-  { col: 'left_bicep_circ_cm', confKey: 'leftBicepCirc', label: 'L. Upper Arm' },
-  { col: 'right_forearm_circ_cm', confKey: 'rightForearmCirc', label: 'R. Forearm' },
-  { col: 'left_forearm_circ_cm', confKey: 'leftForearmCirc', label: 'L. Forearm' },
-  { col: 'right_thigh_circ_cm', confKey: 'rightThighCirc', label: 'R. Thigh' },
-  { col: 'left_thigh_circ_cm', confKey: 'leftThighCirc', label: 'L. Thigh' },
-  { col: 'right_calf_circ_cm', confKey: 'rightCalfCirc', label: 'R. Calf' },
+// The 12 circumference report rows, in the doctor-report display order. Each row
+// names the shared MeasurementKey (single source of truth for the DB column +
+// confidence column + external-table routing), so the report reads the SAME
+// column the card hooks read. Hip is the MEASUREMENT_EXTERNAL_KEYS.hip key and
+// resolves to body_tracker_weight.hips_in / hips_confidence, exactly like the cards.
+const ROW_SPEC: ReadonlyArray<{ key: MeasurementKey; label: string }> = [
+  { key: 'neck', label: 'Neck' },
+  { key: 'shoulderWidth', label: 'Shoulders' },
+  { key: 'chest', label: 'Chest' },
+  { key: 'waist', label: 'Waist' },
+  { key: 'hip', label: 'Hips' },
+  { key: 'rightBicep', label: 'R. Upper Arm' },
+  { key: 'leftBicep', label: 'L. Upper Arm' },
+  { key: 'rightForearm', label: 'R. Forearm' },
+  { key: 'leftForearm', label: 'L. Forearm' },
+  { key: 'rightQuadriceps', label: 'R. Thigh' },
+  { key: 'leftQuadriceps', label: 'L. Thigh' },
+  { key: 'rightCalf', label: 'R. Calf' },
 ];
 
-// Minimal structural view of a scan row (only the fields we read).
-type ScanRow = Record<string, unknown>;
+// Columns pulled from body_tracker_circumference: the 12 girths the cards read
+// (MEASUREMENT_DB_COLUMN, minus hip which lives in body_tracker_weight) plus each
+// girth's *_confidence column (Task 10 / migration 20260629090000) and entry_unit.
+const CIRC_COLS =
+  'entry_id,entry_unit,created_at,' +
+  'neck,neck_confidence,' +
+  'shoulder_width,shoulder_width_confidence,' +
+  'chest,chest_confidence,' +
+  'waist,waist_confidence,' +
+  'right_upper_arm,right_upper_arm_confidence,' +
+  'left_upper_arm,left_upper_arm_confidence,' +
+  'right_forearm,right_forearm_confidence,' +
+  'left_forearm,left_forearm_confidence,' +
+  'right_upper_thigh,right_upper_thigh_confidence,' +
+  'left_upper_thigh,left_upper_thigh_confidence,' +
+  'right_calf,right_calf_confidence,' +
+  'left_calf,left_calf_confidence';
 
-// Minimal result shape of a maybeSingle() read. The generated PostgrestBuilder
-// is a thenable but not typed as a Promise, so each query is wrapped in
-// Promise.resolve(...) and awaited as this shape (mirrors measurementsAccess.ts).
-type ScanQueryResult = { data: ScanRow | null; error: { message: string } | null };
-
-// Confidence-map value shape written by buildConfidenceMap.
-interface ConfMapEntry {
-  confidence?: string;
-  source?: string;
-}
+// Minimal structural row views (only the fields this route reads). The generated
+// PostgrestBuilder is a thenable but not typed as a Promise, so each query is
+// wrapped in Promise.resolve(...) and awaited as one of these shapes.
+type Row = Record<string, unknown>;
+type QueryResult<T> = { data: T | null; error: { message: string } | null };
 
 function numOrNull(v: unknown): number | null {
   return typeof v === 'number' && Number.isFinite(v) ? v : null;
 }
 
+function strOrNull(v: unknown): string | null {
+  return typeof v === 'string' ? v : null;
+}
+
+/** Circumference display unit for the report. cm mirrors the renderer's unit. */
+const DISPLAY_UNIT: MeasurementUnit = 'cm';
+
 /**
- * Resolve a row's per-measurement confidence honestly. Preference order:
- *   1. The confidence_map entry's level string ('high' | 'moderate' | 'low').
- *   2. Fall back to the row overall_confidence numeric via numericToConfidenceLevel.
- *   3. null (UNKNOWN) when neither is present. Never upgraded, never fabricated.
- * If the value itself is null (UNKNOWN measurement), confidence is forced null.
+ * Build the 12 circumference report rows from the spine rows the cards read.
+ *
+ * girths + girth confidence: body_tracker_circumference (values in entry_unit,
+ * converted to cm with the shared convertMeasurement; confidence from the
+ * <col>_confidence columns via numericToConfidenceLevel).
+ * hip + hip confidence: body_tracker_weight.hips_in / hips_confidence (inches).
+ *
+ * Every value is the SAME number the card hooks surface. A null measurement
+ * stays null (UNKNOWN, never 0); a null confidence stays null (never upgraded).
  */
-function resolveConfidence(
-  valueCm: number | null,
-  confKey: string | null,
-  confMap: Record<string, ConfMapEntry> | null,
-  overall: number | null,
-): ConfidenceLevel | null {
-  if (valueCm === null) return null; // UNKNOWN measurement -> UNKNOWN confidence
-  if (confKey && confMap) {
-    const entry = confMap[confKey];
-    const lvl = entry?.confidence;
-    if (lvl === 'high' || lvl === 'moderate' || lvl === 'low') return lvl;
-  }
-  return numericToConfidenceLevel(overall);
-}
+function buildCircumferences(
+  circRow: Row | null,
+  hipInches: number | null,
+  hipConfidenceRaw: number | null,
+): ScanReportCircumference[] {
+  const entryUnit: MeasurementUnit =
+    circRow && circRow.entry_unit === 'in' ? 'in' : 'cm';
+  const hipExternal = MEASUREMENT_EXTERNAL_KEYS.hip;
 
-function parseConfMap(raw: unknown): Record<string, ConfMapEntry> | null {
-  if (raw === null || typeof raw !== 'object') return null;
-  return raw as Record<string, ConfMapEntry>;
-}
-
-function buildCircumferences(row: ScanRow): ScanReportCircumference[] {
-  const confMap = parseConfMap(row.confidence_map);
-  const overall = numOrNull(row.overall_confidence);
   return ROW_SPEC.map((spec) => {
-    const valueCm = numOrNull(row[spec.col]);
+    if (MEASUREMENT_EXTERNAL_KEYS[spec.key]) {
+      // Hip: external table (body_tracker_weight), stored in inches.
+      const valueCm =
+        hipInches !== null && hipExternal
+          ? convertMeasurement(hipInches, hipExternal.storedUnit, DISPLAY_UNIT)
+          : null;
+      return {
+        key: MEASUREMENT_DB_COLUMN[spec.key],
+        label: spec.label,
+        valueCm,
+        confidence: valueCm === null ? null : numericToConfidenceLevel(hipConfidenceRaw),
+      };
+    }
+
+    const dbCol = MEASUREMENT_DB_COLUMN[spec.key];
+    const rawValue = circRow ? numOrNull(circRow[dbCol]) : null;
+    const valueCm = convertMeasurement(rawValue, entryUnit, DISPLAY_UNIT);
+    const confRaw = circRow ? numOrNull(circRow[`${dbCol}_confidence`]) : null;
     return {
-      key: spec.col,
+      key: dbCol,
       label: spec.label,
       valueCm,
-      confidence: resolveConfidence(valueCm, spec.confKey, confMap, overall),
+      // UNKNOWN measurement -> UNKNOWN confidence; otherwise the spine's own score.
+      confidence: valueCm === null ? null : numericToConfidenceLevel(confRaw),
     };
   });
+}
+
+/**
+ * Latest single row of a body_tracker_* detail table for the user, most recent by
+ * created_at. Returns null on absence or a soft error (fail-open with drift log).
+ */
+async function fetchLatest(
+  supabase: SupabaseClient,
+  table: string,
+  cols: string,
+  userId: string,
+  activeOnly: boolean,
+): Promise<Row | null> {
+  try {
+    const base = supabase.from(table).select(cols).eq('user_id', userId);
+    const scoped = activeOnly ? base.is('deleted_at', null) : base;
+    const res = await withTimeout<QueryResult<Row[]>>(
+      Promise.resolve(
+        scoped.order('created_at', { ascending: false }).limit(1),
+      ) as unknown as Promise<QueryResult<Row[]>>,
+      TIMEOUT_MS,
+      `${SCOPE}.${table}`,
+    );
+    if (res.error) {
+      reportSupabaseError(`${SCOPE}.${table}`, res.error, { table });
+      return null;
+    }
+    return (res.data && res.data[0]) ?? null;
+  } catch (e) {
+    if (isTimeoutError(e)) throw e;
+    reportSupabaseError(`${SCOPE}.${table}`, e, { table });
+    return null;
+  }
 }
 
 export async function POST(_request: NextRequest): Promise<NextResponse> {
@@ -145,91 +217,181 @@ export async function POST(_request: NextRequest): Promise<NextResponse> {
     const user = userData.user;
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    // 1. Latest scan (most recent by scan_date).
-    let latestRow: ScanRow | null = null;
+    // 1. Latest circumference row (girths + per-girth confidence) - active only,
+    //    exactly as useCircumferenceData reads (deleted_at IS NULL).
+    const circRow = await fetchLatest(
+      supabase,
+      'body_tracker_circumference',
+      CIRC_COLS,
+      user.id,
+      true,
+    );
+
+    // 2. Latest segmental fat row (total_body_fat_pct) - the card body-fat source.
+    const fatRow = await fetchLatest(
+      supabase,
+      'body_tracker_segmental_fat',
+      'total_body_fat_pct,entry_id,created_at',
+      user.id,
+      false,
+    );
+
+    // 3. Latest segmental muscle row (total_muscle_mass_lbs) - the card lean-mass source.
+    const muscleRow = await fetchLatest(
+      supabase,
+      'body_tracker_segmental_muscle',
+      'total_muscle_mass_lbs,entry_id,created_at',
+      user.id,
+      false,
+    );
+
+    // 4. Latest weight row carrying a real weight (hip lives here too, per #85d).
+    //    weight_lbs feeds the lean/fat-mass fallback exactly as the card does;
+    //    hips_in / hips_confidence feed the hip circumference row.
+    let weightRow: Row | null = null;
     try {
-      const res = await withTimeout<ScanQueryResult>(
+      const res = await withTimeout<QueryResult<Row[]>>(
         Promise.resolve(
           supabase
-            .from('body_scan_measurements')
-            .select(SCAN_COLS)
+            .from('body_tracker_weight')
+            .select('weight_lbs,hips_in,hips_confidence,created_at')
             .eq('user_id', user.id)
-            .order('scan_date', { ascending: false })
-            .limit(1)
-            .maybeSingle(),
-        ) as Promise<ScanQueryResult>,
+            .not('weight_lbs', 'is', null)
+            .order('created_at', { ascending: false })
+            .limit(1),
+        ) as unknown as Promise<QueryResult<Row[]>>,
         TIMEOUT_MS,
-        `${SCOPE}.latest`,
+        `${SCOPE}.body_tracker_weight`,
       );
       if (res.error) {
-        reportSupabaseError(`${SCOPE}.latest`, res.error, { table: 'body_scan_measurements' });
+        reportSupabaseError(`${SCOPE}.body_tracker_weight`, res.error, { table: 'body_tracker_weight' });
       } else {
-        latestRow = (res.data as ScanRow | null) ?? null;
+        weightRow = (res.data && res.data[0]) ?? null;
       }
     } catch (e) {
       if (isTimeoutError(e)) throw e;
-      reportSupabaseError(`${SCOPE}.latest`, e, { table: TABLE });
+      reportSupabaseError(`${SCOPE}.body_tracker_weight`, e, { table: 'body_tracker_weight' });
     }
 
-    if (!latestRow) {
+    // Hip comes from body_tracker_weight even when weight_lbs is null on the hip
+    // row, so probe a dedicated latest-hip row when the weight-carrying row has none.
+    let hipInches = weightRow ? numOrNull(weightRow.hips_in) : null;
+    let hipConfidenceRaw = weightRow ? numOrNull(weightRow.hips_confidence) : null;
+    if (hipInches === null) {
+      const hipRow = await fetchLatest(
+        supabase,
+        'body_tracker_weight',
+        'hips_in,hips_confidence,created_at',
+        user.id,
+        false,
+      );
+      if (hipRow) {
+        hipInches = numOrNull(hipRow.hips_in);
+        hipConfidenceRaw = numOrNull(hipRow.hips_confidence);
+      }
+    }
+
+    // Genuine earliest body-fat reading (trend baseline) from the SAME fat spine.
+    let firstFatRow: Row | null = null;
+    try {
+      const res = await withTimeout<QueryResult<Row[]>>(
+        Promise.resolve(
+          supabase
+            .from('body_tracker_segmental_fat')
+            .select('total_body_fat_pct,created_at')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: true })
+            .limit(1),
+        ) as unknown as Promise<QueryResult<Row[]>>,
+        TIMEOUT_MS,
+        `${SCOPE}.body_tracker_segmental_fat.first`,
+      );
+      if (res.error) {
+        reportSupabaseError(`${SCOPE}.body_tracker_segmental_fat.first`, res.error, {
+          table: 'body_tracker_segmental_fat',
+        });
+      } else {
+        firstFatRow = (res.data && res.data[0]) ?? null;
+      }
+    } catch (e) {
+      if (isTimeoutError(e)) throw e;
+      reportSupabaseError(`${SCOPE}.body_tracker_segmental_fat.first`, e, {
+        table: 'body_tracker_segmental_fat',
+      });
+    }
+
+    // A report needs at least one spine reading. Without any composition or
+    // circumference row there is nothing honest to render.
+    if (!circRow && !fatRow && !muscleRow && hipInches === null) {
       return NextResponse.json({ error: 'No scan on record yet.' }, { status: 404 });
     }
 
-    // 2. Genuine first scan (oldest by scan_date) for the trend baseline.
-    let firstRow: ScanRow | null = null;
-    try {
-      const res = await withTimeout<ScanQueryResult>(
-        Promise.resolve(
-          supabase
-            .from(TABLE)
-            .select('scan_date,body_fat_pct_mid')
-            .eq('user_id', user.id)
-            .order('scan_date', { ascending: true })
-            .limit(1)
-            .maybeSingle(),
-        ) as Promise<ScanQueryResult>,
-        TIMEOUT_MS,
-        `${SCOPE}.first`,
-      );
-      if (res.error) {
-        reportSupabaseError(`${SCOPE}.first`, res.error, { table: TABLE });
-      } else {
-        firstRow = (res.data as ScanRow | null) ?? null;
-      }
-    } catch (e) {
-      if (isTimeoutError(e)) throw e;
-      // Fail open: without a first row the trend is simply omitted (honest).
-      reportSupabaseError(`${SCOPE}.first`, e, { table: TABLE });
-    }
-
-    // 3. Resolve a display name from the caller identity (never fabricated).
-    //    user_metadata.full_name if present, otherwise the email local part,
-    //    otherwise a neutral fallback. No extra table read.
+    // 5. Display name from the caller identity (never fabricated): user_metadata
+    //    full_name, else the email local part, else a neutral fallback.
     const meta = (user.user_metadata ?? {}) as Record<string, unknown>;
     const metaName = typeof meta.full_name === 'string' ? meta.full_name.trim() : '';
     const emailLocal = typeof user.email === 'string' ? user.email.split('@')[0] : '';
     const displayName = metaName || emailLocal || 'Member';
 
+    // Latest / first scan dates from the spine rows' created_at (the same
+    // timestamps the history hooks order by). Latest is the most recent of the
+    // composition/circumference rows we read.
+    const latestCandidates = [circRow?.created_at, fatRow?.created_at, muscleRow?.created_at]
+      .map(strOrNull)
+      .filter((d): d is string => d !== null);
     const latestScanDate =
-      typeof latestRow.scan_date === 'string' ? latestRow.scan_date : null;
-    const firstScanDate =
-      firstRow && typeof firstRow.scan_date === 'string' ? firstRow.scan_date : null;
+      latestCandidates.length > 0
+        ? latestCandidates.reduce((a, b) => (new Date(a) >= new Date(b) ? a : b))
+        : null;
+    const firstScanDate = firstFatRow ? strOrNull(firstFatRow.created_at) : null;
 
-    // Trend baseline: only honest when there is a genuine earlier scan.
-    const latestBodyFatPct = numOrNull(latestRow.body_fat_pct_mid);
+    // Body fat + trend from the fat spine (snapshot.totalBodyFatPct on the card).
+    const latestBodyFatPct = fatRow ? numOrNull(fatRow.total_body_fat_pct) : null;
     const isSingleScan = !firstScanDate || firstScanDate === latestScanDate;
-    const firstBodyFatPct = isSingleScan ? null : numOrNull(firstRow?.body_fat_pct_mid);
+    const firstBodyFatPct = isSingleScan
+      ? null
+      : firstFatRow
+        ? numOrNull(firstFatRow.total_body_fat_pct)
+        : null;
+
+    // Lean mass = total_muscle_mass_lbs (card source), converted lbs -> kg. When
+    // muscle mass is absent the card derives lean from weight x (1 - bf/100); we
+    // mirror that exact fallback so the report equals the card either way.
+    const weightLbs = weightRow ? numOrNull(weightRow.weight_lbs) : null;
+    const weightKg = weightLbs !== null ? weightLbs * LB_TO_KG : null;
+    const muscleLbs = muscleRow ? numOrNull(muscleRow.total_muscle_mass_lbs) : null;
+
+    let leanMassKg: number | null = null;
+    if (muscleLbs !== null) {
+      leanMassKg = muscleLbs * LB_TO_KG;
+    } else if (
+      weightKg !== null &&
+      weightKg > 0 &&
+      latestBodyFatPct !== null &&
+      latestBodyFatPct >= 0 &&
+      latestBodyFatPct < 100
+    ) {
+      leanMassKg = weightKg * (1 - latestBodyFatPct / 100);
+    }
+
+    // Fat mass from the SAME card-consistent inputs: weight_kg - leanMassKg. The
+    // composition cards persist no fat-mass figure, so we never surface a number
+    // the cards contradict; UNKNOWN (null, never 0) when weight is absent.
+    const fatMassKg =
+      weightKg !== null && weightKg > 0 && leanMassKg !== null
+        ? Math.max(0, weightKg - leanMassKg)
+        : null;
 
     const input: ScanReportInput = {
       displayName,
       latestScanDate,
       firstScanDate: isSingleScan ? null : firstScanDate,
       avatarPng: null, // no server-side avatar snapshot in this path; omitted honestly
-      circumferences: buildCircumferences(latestRow),
+      circumferences: buildCircumferences(circRow, hipInches, hipConfidenceRaw),
       composition: {
         bodyFatPct: latestBodyFatPct,
-        leanMassKg: numOrNull(latestRow.lean_mass_kg),
-        fatMassKg: numOrNull(latestRow.fat_mass_kg),
+        leanMassKg,
+        fatMassKg,
       },
       trend: {
         firstBodyFatPct,
@@ -237,22 +399,20 @@ export async function POST(_request: NextRequest): Promise<NextResponse> {
       },
     };
 
-    // 4. Render.
+    // 6. Render (source-agnostic renderer, unchanged).
     let bytes: Uint8Array;
     try {
       bytes = await renderScanReportPdf(input);
     } catch (err) {
       safeLog.error(SCOPE, 'render failed', {
-        table: TABLE,
         error: err instanceof Error ? err.message : 'unknown',
       });
       return NextResponse.json({ error: 'report_render_failed' }, { status: 500 });
     }
 
-    // 5. Upload to the private bucket and sign. Admin client for storage write
-    //    (RLS on storage.objects); path is namespaced per user.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const admin = createAdminClient() as unknown as any;
+    // 7. Upload to the private bucket and sign. Admin (service-role) client for the
+    //    storage write (RLS on storage.objects); path is namespaced per user.
+    const admin: SupabaseClient = createAdminClient();
     const storagePath = `${user.id}/scan-report-${Date.now()}.pdf`;
 
     const { error: upErr } = await admin.storage.from(BUCKET).upload(storagePath, bytes, {
@@ -279,10 +439,10 @@ export async function POST(_request: NextRequest): Promise<NextResponse> {
     });
   } catch (err) {
     if (isTimeoutError(err)) {
-      safeLog.error(SCOPE, 'database timeout', { table: TABLE, error: err });
+      safeLog.error(SCOPE, 'database timeout', { error: err });
       return NextResponse.json({ error: 'Request timed out. Please try again.' }, { status: 503 });
     }
-    safeLog.error(SCOPE, 'unexpected error', { table: TABLE, error: err });
+    safeLog.error(SCOPE, 'unexpected error', { error: err });
     return NextResponse.json({ error: 'An unexpected error occurred.' }, { status: 500 });
   }
 }
