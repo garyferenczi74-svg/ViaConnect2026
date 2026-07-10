@@ -32,20 +32,27 @@
 //   region-protocol-panel, region-protocol-empty,
 //   bos-movement-readout, bos-movement-score, bos-movement-no-score,
 //   milestone-moment-toast, milestone-moment-dismiss.
-// The Select Body Part control has no testid but exposes an accessible name
-// ("Select body part to frame") via aria-label; the CompositionSectionToggle
-// exposes role=radio with aria-checked. Those a11y hooks are i18n-adjacent but
-// stable (aria-label is authored copy, not user data) and are the only handle
-// the components give today. See the E3 report "testids to add" list for the
-// gaps (avatar 3D canvas marker, measurement-ring readout, select-body-part).
+// E3b ADDED (the three seam testids this spec now uses as exact handles):
+//   formavision-avatar-canvas  -> the r3f <Canvas> element (exact cinematic
+//     discriminator; replaces the brittle "any canvas in the container" proxy),
+//   measurement-ring-readout   -> the drei Html ring count-up value,
+//   select-body-part           -> the body-part picker <select>.
+// The CompositionSectionToggle still exposes role=radio with aria-checked. The
+// Select Body Part control retains its aria-label ("Select body part to frame")
+// for accessibility; the select-body-part testid is now the primary handle.
 
 import { test, expect, type Page } from '@playwright/test';
 import {
   COMPOSITION_PATH,
   forceWebGLUnavailable,
   cinematicCanvasIsUp,
+  AVATAR_CANVAS_TESTID,
   SYNTHETIC_JOURNEY_CAPTURES,
 } from './fixtures';
+
+// The exact 3D-canvas locator (the react-three-fiber <Canvas> element), used as
+// the cinematic discriminator instead of the old canvas-presence proxy.
+const AVATAR_CANVAS = `[data-testid="${AVATAR_CANVAS_TESTID}"]`;
 
 // The three composition overlays are the three CompositionSectionToggle tabs
 // (Body Fat / Muscle / Measurements). They paint the SAME avatar instance from
@@ -82,8 +89,10 @@ test.describe('FormaVision fallback ladder: 2D floor @fallback', () => {
     await expect(page.locator('[data-testid="segmental-heat-map"]').first()).toBeVisible();
 
     // And crucially NO r3f canvas mounted inside the avatar container: the WebGL
-    // gate latched fellBack and returned the children (the floor) instead.
-    await expect(page.locator('[data-testid="avatar-container"] canvas')).toHaveCount(0);
+    // gate latched fellBack and returned the children (the floor) instead. E3b:
+    // assert the EXACT avatar-canvas testid is absent (the r3f <Canvas> never
+    // mounted), which is stronger than "no canvas of any kind is present".
+    await expect(page.locator(AVATAR_CANVAS)).toHaveCount(0);
 
     // Sanity: the cinematic discriminator agrees the 3D path is down.
     expect(await cinematicCanvasIsUp(page)).toBe(false);
@@ -274,15 +283,16 @@ test.describe('FormaVision Section-7 cinematic trace @cinematic', () => {
   test('avatar surface loads and the 3D canvas materializes', async ({ page }) => {
     await requireCinematic(page);
     // The r3f canvas is mounted inside the avatar container (the materialize intro
-    // plays on first mount; we assert presence, not the animation frames).
-    await expect(page.locator('[data-testid="avatar-container"] canvas').first()).toBeVisible();
+    // plays on first mount; we assert presence, not the animation frames). E3b:
+    // target the exact avatar-canvas testid rather than any canvas descendant.
+    await expect(page.locator(AVATAR_CANVAS).first()).toBeVisible();
   });
 
   test('rotate the avatar, then select a region for the ring count-up', async ({ page }) => {
     await requireCinematic(page);
 
     // Rotate: a pointer drag over the canvas turns the turntable (OrbitControls).
-    const canvas = page.locator('[data-testid="avatar-container"] canvas').first();
+    const canvas = page.locator(AVATAR_CANVAS).first();
     const box = await canvas.boundingBox();
     if (!box) throw new Error('avatar canvas box failed to resolve');
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
@@ -291,19 +301,25 @@ test.describe('FormaVision Section-7 cinematic trace @cinematic', () => {
     await page.mouse.up();
 
     // Select a measured region: the camera frames it and the single MeasurementRing
-    // draws on and counts its value up. The ring value renders as real DOM text via
-    // drei <Html> but has NO testid today (see report "testids to add"); we assert
-    // the selection took on the control and the canvas is still up. A ring-readout
-    // testid would let this assert the counted-up number directly.
-    const picker = page.getByLabel('Select body part to frame');
+    // draws on and counts its value up. E3b: the ring value now carries the
+    // measurement-ring-readout testid (drei <Html>), so we assert the readout
+    // itself becomes visible and settles on the measured unit (Waist is measured in
+    // the seeded fixture), not merely that the selection took. The count-up settles
+    // to the formatted value, so we wait for a unit-suffixed number to appear.
+    const picker = page.getByTestId('select-body-part');
     await picker.selectOption({ label: 'Waist' });
     await expect(picker).toHaveValue('waist');
+    const ringReadout = page.getByTestId('measurement-ring-readout');
+    await expect(ringReadout).toBeVisible();
+    // The readout resolves to an honest state: either the counted-up measured value
+    // (a number plus a unit) or the explicit "not measured" marker, never blank.
+    await expect(ringReadout).toHaveText(/\d|not measured/i);
     await expect(canvas).toBeVisible();
   });
 
   test('the three overlays paint the same avatar from the same numbers', async ({ page }) => {
     await requireCinematic(page);
-    const canvas = page.locator('[data-testid="avatar-container"] canvas').first();
+    const canvas = page.locator(AVATAR_CANVAS).first();
     // Switching tabs must NOT remount the canvas (one persistent avatar); it only
     // changes activeTab and the per-segment overlay tint. Assert the same canvas
     // stays up across all three overlays.
@@ -357,8 +373,9 @@ test.describe('FormaVision Section-7 cinematic trace @cinematic', () => {
   }) => {
     await requireCinematic(page);
     // Gary's 210e decision: region tap = whole-protocol landing (no region-filtered
-    // engine). Selecting any region mounts the identical protocol panel below.
-    const picker = page.getByLabel('Select body part to frame');
+    // engine). Selecting any region mounts the identical protocol panel below. E3b:
+    // reach the picker by its select-body-part testid.
+    const picker = page.getByTestId('select-body-part');
     await picker.selectOption({ label: 'Right Bicep' });
     const panel = page.locator('[data-testid="region-protocol-panel"]');
     const empty = page.locator('[data-testid="region-protocol-empty"]');
@@ -415,8 +432,9 @@ test.describe('FormaVision visual-regression (GL CI only) @cinematic', () => {
     await expect(container).toHaveScreenshot('avatar-overlay-measurements.png');
     await page.getByRole('radio', { name: 'Body Fat' }).click();
 
-    // Ring: a selected region draws the measurement ring.
-    await page.getByLabel('Select body part to frame').selectOption({ label: 'Waist' });
+    // Ring: a selected region draws the measurement ring. E3b: reach the picker by
+    // its select-body-part testid.
+    await page.getByTestId('select-body-part').selectOption({ label: 'Waist' });
     await expect(container).toHaveScreenshot('avatar-ring.png');
 
     // Morph midpoint: scrub the Time Machine to roughly the middle of the journey

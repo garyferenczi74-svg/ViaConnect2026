@@ -72,12 +72,18 @@ export async function forceWebGLUnavailable(page: Page): Promise<void> {
 // which renders a real <canvas> element; the 2D floor never does. This is the
 // honest, capability-dependent discriminator used to skip @cinematic steps when
 // the environment has no GL (headless). It reads live DOM, it does not force
-// anything. Note: the avatar container testid is 'avatar-container' (present on
-// composition/page.tsx); the 3D canvas element itself carries no testid today
-// (see the "testids to add" list in the E3 report).
+// anything.
+//
+// E3b: this now keys on the EXACT `formavision-avatar-canvas` testid that
+// react-three-fiber forwards onto the 3D <canvas> element, instead of the old
+// "any canvas descendant of avatar-container" proxy. That proxy would also match
+// an unrelated 2D <canvas> (e.g. a future sparkline) inside the container; the
+// exact testid discriminates the WebGL avatar canvas specifically.
+export const AVATAR_CANVAS_TESTID = 'formavision-avatar-canvas';
+
 export async function cinematicCanvasIsUp(page: Page): Promise<boolean> {
   return page
-    .locator('[data-testid="avatar-container"] canvas')
+    .locator(`[data-testid="${AVATAR_CANVAS_TESTID}"]`)
     .first()
     .isVisible()
     .catch(() => false);
