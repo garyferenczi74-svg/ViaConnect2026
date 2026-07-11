@@ -27,6 +27,12 @@ import { BodyFatReadout } from '@/components/formavision/BodyFatReadout';
 import { NotableChanges } from '@/components/formavision/NotableChanges';
 // Prompt 211a W3: doctor-ready scan report download / share control.
 import { DownloadReportButton } from '@/components/formavision/DownloadReportButton';
+// Prompt 211a W1: shareable transformation clip (the growth engine). Imported
+// directly (NOT via the barrel) so the consumer-only structural discipline holds:
+// no practitioner route pulls the clip surface into its import graph.
+import { ClipCreatorSurface, type ClipScanRef } from '@/components/formavision/ClipCreatorSurface';
+import { lerpParamVector } from '@/lib/formavision/geometry/lerpParamVector';
+import { useRenderTier } from '@/components/formavision/RenderTierProvider';
 import { useCompositionHistory } from '@/hooks/body-tracker/useCompositionHistory';
 import { useCircumferenceHistory } from '@/hooks/body-tracker/useCircumferenceHistory';
 import { computeCompositionDeltas } from '@/lib/formavision/deltas/compositionDeltas';
@@ -51,6 +57,19 @@ import { BOSMovementReadout } from '@/components/formavision/BOSMovementReadout'
 // === PROMPT 210b P6-T4 (MilestoneMoment) START ===
 import { MilestoneMoment } from '@/components/formavision/MilestoneMoment';
 // === PROMPT 210b P6-T4 (MilestoneMoment) END ===
+// === PROMPT 211a W4-2 (Cadence + Streak surfaces) START ===
+// ScanStreakDisplay is imported DIRECTLY (not via the formavision barrel) so the
+// consumer-only import graph stays explicit: only this (consumer) route pulls it
+// in, which the invariants 4.6 structural test relies on. The other three
+// surfaces come from the barrel (presentational, safe to reuse).
+import { ScanStreakDisplay } from '@/components/formavision/ScanStreakDisplay';
+import {
+  CadenceReminderOptIn,
+  FingerprintFlag,
+  ConsistencyTip,
+} from '@/components/formavision';
+import { useScanFingerprints } from '@/hooks/body-tracker/useScanFingerprints';
+// === PROMPT 211a W4-2 (Cadence + Streak surfaces) END ===
 // === PROMPT 210b P8-T1b (Avatar Telemetry) START ===
 import {
   useAvatarTelemetry,
@@ -347,6 +366,12 @@ function CompositionPageInner() {
   // function; the surfaces render that result without recomputing anything.
   const composHistory = useCompositionHistory(userId ?? null);
   const circHistory = useCircumferenceHistory(userId ?? null, unit);
+  // === PROMPT 211a W4-2 (Cadence + Streak) START ===
+  // Own-row read of the user's scan fingerprints. Drives the opt-in default time
+  // (scanHistory -> recommendCadence), the outlier flag for the latest scan, and
+  // the consistency tip. Fail-open: empty history -> surfaces render nothing.
+  const scanFp = useScanFingerprints(userId ?? null);
+  // === PROMPT 211a W4-2 (Cadence + Streak) END ===
   const vrDeltas = useMemo(
     () =>
       computeCompositionDeltas({
@@ -364,6 +389,20 @@ function CompositionPageInner() {
   // The scrub shape driven by the JourneyTimeline. null rests the avatar at its
   // last shape (normal morph resumes per P3-T2a). Only set while scrubbing.
   const [scrubVector, setScrubVector] = useState<BodyParamVector | null>(null);
+  // === PROMPT 211a W1 (shareable clip) START ===
+  // The r3f frameloop mode, forwarded to BodyCompositionAvatar. Default demand
+  // (undefined); the clip recorder flips it to 'always' while recording so
+  // canvas.captureStream() emits every painted morph frame, then back to demand.
+  const [clipFrameloopMode, setClipFrameloopMode] = useState<'always' | 'demand' | undefined>(undefined);
+  // Ref to the avatar container; the clip recorder reads the live WebGL canvas from
+  // it by the canonical data-testid. Only used on the WebM path (capable devices).
+  const avatarContainerRef = useRef<HTMLDivElement>(null);
+  // The active render tier, read from the ambient provider so the clip surface can
+  // branch to the static-card fallback on the 2D floor (baseline item 1+2).
+  const clipRenderTier = useRenderTier();
+  // The clip morph raf handle, so a new recording cancels a stale one.
+  const clipMorphRafRef = useRef<number | null>(null);
+  // === PROMPT 211a W1 (shareable clip) END ===
   // === PROMPT 210b P5-T1c (FutureSelfPanel) START ===
   // Ghost state: lifted up from FutureSelfPanel via onGhostChange and wired into
   // the BodyCompositionAvatar prop seam (ghostVector + showGhost). Default OFF
@@ -416,6 +455,59 @@ function CompositionPageInner() {
     [composHistory.snapshots, circByDate, circHistory.entries],
   );
   // === PROMPT 210b P3-T2b (Time Machine) END ===
+
+  // === PROMPT 211a W1 (shareable clip) START ===
+  // The choose-able scan history for the clip range picker, oldest first. Dates come
+  // from the SAME composition history the Time Machine uses. Per-scan confidence is
+  // not exposed on this read path (useCompositionHistory returns CompositionSnapshot,
+  // which carries no confidence), so it is passed as null (honest UNKNOWN): the
+  // low-confidence warning treats UNKNOWN as not-low and never fabricates a tier.
+  const clipScans = useMemo<ClipScanRef[]>(
+    () => composHistory.snapshots.map((snap) => ({ recordedAt: snap.recordedAt, confidence: null })),
+    [composHistory.snapshots],
+  );
+
+  // Reads the live avatar canvas from the container by its canonical data-testid.
+  // Returns null when the 2D floor is shown (no canvas) so the clip surface serves
+  // the static-card fallback honestly.
+  const getClipCanvas = useCallback((): HTMLCanvasElement | null => {
+    const root = avatarContainerRef.current;
+    if (!root) return null;
+    return root.querySelector<HTMLCanvasElement>('[data-testid="formavision-avatar-canvas"]');
+  }, []);
+
+  // Flip the frameloop for the clip recorder (always while recording, demand after).
+  const setClipFrameloopAlways = useCallback((always: boolean) => {
+    setClipFrameloopMode(always ? 'always' : 'demand');
+  }, []);
+
+  // Drive the morph play for the clip over the chosen range. Reuses the EXACT PLAY
+  // math the JourneyTimeline uses: lerpParamVector between the two real scan vectors
+  // across PLAY_DURATION_MS. Numbers are never fabricated; only the shape interpolates
+  // between real scans. The clip surface passes the chosen range via a closure below.
+  const playClipMorph = useCallback(
+    (startIndex: number, endIndex: number) => {
+      const a = journeyVectors[startIndex];
+      const b = journeyVectors[endIndex];
+      if (!a || !b) return;
+      if (clipMorphRafRef.current !== null) cancelAnimationFrame(clipMorphRafRef.current);
+      const PLAY_MS = 4000; // mirrors JourneyTimeline.PLAY_DURATION_MS
+      let start: number | null = null;
+      const tick = (now: number) => {
+        if (start === null) start = now;
+        const t = Math.min(1, (now - start) / PLAY_MS);
+        setScrubVector(lerpParamVector(a, b, t));
+        if (t < 1) {
+          clipMorphRafRef.current = requestAnimationFrame(tick);
+        } else {
+          clipMorphRafRef.current = null;
+        }
+      };
+      clipMorphRafRef.current = requestAnimationFrame(tick);
+    },
+    [journeyVectors],
+  );
+  // === PROMPT 211a W1 (shareable clip) END ===
 
   useEffect(() => {
     try { window.localStorage.setItem(UNIT_STORAGE_KEY, unit); } catch { /* ignore */ }
@@ -874,6 +966,7 @@ function CompositionPageInner() {
               <HeatmapLegend metric={isMuscle ? 'muscle' : 'fat'} className="mb-4 shrink-0 lg:hidden" />
               <div className="flex flex-col lg:flex-1 lg:flex-row lg:items-stretch lg:gap-6 lg:min-h-0">
                 <div
+                  ref={avatarContainerRef}
                   data-testid="avatar-container"
                   className="relative flex items-center justify-center px-2 py-2 lg:min-h-0 lg:flex-1"
                   style={{ filter: 'drop-shadow(0 0 20px rgba(45, 165, 160, 0.15))' }}
@@ -909,6 +1002,7 @@ function CompositionPageInner() {
                     scrubVector={scrubVector}
                     ghostVector={ghostVector}
                     showGhost={showGhost}
+                    frameloopMode={clipFrameloopMode}
                     onOrbitEnd={() => telEmit('formavision.avatar_rotated')}
                     onTierStepDown={(tier, signals: AvatarQualitySignals) => {
                       const props: AvatarEventProperties = { tier };
@@ -1041,6 +1135,28 @@ function CompositionPageInner() {
       )}
       {/* === PROMPT 210b P3-T2b (Time Machine) END === */}
 
+      {/* === PROMPT 211a W1 (shareable transformation clip) START === */}
+      {/* The growth engine: turn the real transformation into a shareable clip.
+          One-source numbers (vrDeltas, same as the cards). Explicit consent gate
+          before anything leaves the device. No-dependency WebM on desktop / modern
+          Android via MediaRecorder(canvas.captureStream()); honest static-card
+          fallback on iOS / the 2D floor (never a fake video, never a raw photo).
+          Consumer-only (imported directly, not barreled). Fewer than two scans
+          shows an honest invite. */}
+      {section !== 'measurements' && (
+        <ClipCreatorSurface
+          userId={userId ?? null}
+          tier={clipRenderTier}
+          deltas={vrDeltas}
+          scans={clipScans}
+          getCanvas={getClipCanvas}
+          playMorph={playClipMorph}
+          setFrameloopAlways={setClipFrameloopAlways}
+          surface="/body-tracker/composition"
+        />
+      )}
+      {/* === PROMPT 211a W1 (shareable transformation clip) END === */}
+
       {/* === PROMPT 210b P4-T1 (GeneticsOverlay) START === */}
       {/* Honest-disabled genetics layer. Two states: real variants present ->
           body-positive invitation (tendency-not-destiny, no region band/tint);
@@ -1128,6 +1244,24 @@ function CompositionPageInner() {
         />
       )}
       {/* === PROMPT 210b P6-T4 (MilestoneMoment) END === */}
+
+      {/* === PROMPT 211a W4-2 (Cadence + Streak surfaces) START === */}
+      {/* Four consumer-only surfaces. The outlier fingerprint FLAG appears BEFORE
+          the trend so a lighting/time change is not misread as a body change. The
+          consistency TIP names the user's own best conditions (null on thin
+          history, never generic). The scan STREAK is read-only from scan_streak
+          (own-row). The reminder OPT-IN is off by default and revocable, and its
+          default time is the user's own historical scan time. Streak credit stays
+          in the server award lane, never written from these visual surfaces. */}
+      {section !== 'measurements' && (
+        <div className="space-y-3">
+          {scanFp.flagDecision && <FingerprintFlag decision={scanFp.flagDecision} />}
+          <ScanStreakDisplay />
+          <ConsistencyTip tip={scanFp.consistencyTip} />
+          <CadenceReminderOptIn scanHistory={scanFp.scanHistory} />
+        </div>
+      )}
+      {/* === PROMPT 211a W4-2 (Cadence + Streak surfaces) END === */}
 
       {section === 'measurements' && (
         <>

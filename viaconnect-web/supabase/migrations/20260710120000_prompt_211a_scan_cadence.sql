@@ -126,7 +126,96 @@ BEGIN
   END IF;
 END $$;
 
+-- -----------------------------------------------------------------------------
+-- 3. scan_cadence_reminders  (Part 2: the OPT-IN reminder preference)
+-- -----------------------------------------------------------------------------
+-- The cadence nudge cron NEVER nags. It sends a gentle reminder ONLY to users
+-- who explicitly turned reminders on. That opt-in needs a persisted, own-row
+-- home the cron (service role) can read and the consumer UI can write. One row
+-- per user; opt_in defaults FALSE so a user is silent until they choose in.
+-- reminder_time_of_day defaults to the user's own historical scan time
+-- (recommendCadence.defaultReminderTimeOfDay), stored as a coarse bucket so no
+-- precise routine is implied. Revocable: the UI flips opt_in back to FALSE.
+--
+-- Mirrors the compliance_streaks / scan_streak RLS posture: own-row read /
+-- insert / update, no practitioner policy. The nudge itself is written to
+-- user_notifications by the cron; this table only records the preference.
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.scan_cadence_reminders (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
+  opt_in BOOLEAN NOT NULL DEFAULT false,
+  reminder_time_of_day TEXT
+    CHECK (reminder_time_of_day IS NULL OR reminder_time_of_day IN ('morning','afternoon','evening','night')),
+  opted_in_at TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+COMMENT ON TABLE public.scan_cadence_reminders IS
+  'Consumer-only opt-in for the Prompt 211a W4 scan cadence nudge. opt_in defaults FALSE (never nag). The cron reads opt_in=TRUE rows only; the consumer UI writes the opt-in and can revoke it. One row per user, own-row RLS, no practitioner policy.';
+
+ALTER TABLE public.scan_cadence_reminders ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'scan_cadence_reminders'
+      AND policyname = 'Users can view own cadence reminder'
+  ) THEN
+    CREATE POLICY "Users can view own cadence reminder"
+      ON public.scan_cadence_reminders FOR SELECT
+      USING ((select auth.uid()) = user_id);
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'scan_cadence_reminders'
+      AND policyname = 'Users can insert own cadence reminder'
+  ) THEN
+    CREATE POLICY "Users can insert own cadence reminder"
+      ON public.scan_cadence_reminders FOR INSERT
+      WITH CHECK ((select auth.uid()) = user_id);
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'scan_cadence_reminders'
+      AND policyname = 'Users can update own cadence reminder'
+  ) THEN
+    CREATE POLICY "Users can update own cadence reminder"
+      ON public.scan_cadence_reminders FOR UPDATE
+      USING ((select auth.uid()) = user_id)
+      WITH CHECK ((select auth.uid()) = user_id);
+  END IF;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_scan_cadence_reminders_optin
+  ON public.scan_cadence_reminders(user_id)
+  WHERE opt_in = true;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_scan_cadence_reminders_updated_at') THEN
+    CREATE TRIGGER trg_scan_cadence_reminders_updated_at
+      BEFORE UPDATE ON public.scan_cadence_reminders
+      FOR EACH ROW EXECUTE FUNCTION public.scan_streak_set_updated_at();
+  END IF;
+END $$;
+
 -- =============================================================================
--- Done. scan_streak created (consumer-only own-row RLS). No fingerprint table:
--- body_photo_sessions + body_scan_measurements already hold the quality fields.
+-- Done. scan_streak + scan_cadence_reminders created (consumer-only own-row
+-- RLS). No fingerprint table: body_photo_sessions + body_scan_measurements
+-- already hold the quality fields. The nudge cron reads opt_in=TRUE rows and
+-- writes gentle user_notifications; streak credit stays in the server award
+-- lane, never the avatar surface.
 -- =============================================================================
