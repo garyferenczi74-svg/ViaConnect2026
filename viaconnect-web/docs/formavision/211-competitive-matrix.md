@@ -20,7 +20,7 @@ investor or Nexus materials before its feature is Shipped is a Gary escalation (
 | Hardware required | None. Shipped | Optional suit | Required pod |
 | 3D avatar | Parametric wireframe, cinematic, data-true. Shipped | 3D mesh viewer | None |
 | Journey animation | Time machine morph across full history. Shipped | Side-by-side, BodyMorph video | Trend graphs only |
-| Shareable transformation video | 211a | Shipped (BodyMorph) | None |
+| Shareable transformation video | Shipped, partial (WebM on desktop and Android; iOS shareable card in progress) | Shipped (BodyMorph) | None |
 | Measurement regions | 12 circumferences plus segments. Shipped | 16 locations | Segmental BIA (arms, legs, torso) |
 | Body fat method | Photo AI estimate with confidence. Shipped | Navy method from measurements | 8-electrode multi-frequency BIA |
 | Published accuracy | 211b (per-region error bands, methodology public) | 0.15 inch average error, with suit | DEXA correlation claims |
@@ -37,11 +37,11 @@ investor or Nexus materials before its feature is Shipped is a Gary escalation (
 | Protocol and supplement action loop | Shipped platform, avatar tap-through in 211c | Workout video suggestions | Content articles |
 | AI coaching | Named agents, Kelsey-cleared, protocol-connected. Shipped, upgraded 211c | Generic smart assistant chat | AI insights (Pro.f) |
 | Unified health score | Bio Optimization Score. Shipped | None | Health scores |
-| Health platform sync | 211a (HealthKit, Health Connect, read and write) | Shipped | Shipped (plus Fitbit, Garmin) |
-| PDF and doctor report | 211a | Shipped (PDF stats) | Shipped (doctor share) |
+| Health platform sync | 211a foundation (flag off by default; iOS write pending a write-capable plugin, Android partial) | Shipped | Shipped (plus Fitbit, Garmin) |
+| PDF and doctor report | Shipped (one-source with the app; non-dismissible AI-estimate disclaimer) | Shipped (PDF stats) | Shipped (doctor share) |
 | Practitioner channel | 211d (in-platform practitioners, software only) | Trainer use informal | B2B hardware to clinics |
 | Privacy posture | 211d headline (on-device extraction, photo deletion, vector-only persistence) | Cloud processing | Encrypted, HIPAA-grade storage |
-| Gamification and streaks | Helix, consumer only. Streak in 211a | None | Community |
+| Gamification and streaks | Helix, consumer only. Streak Shipped | None | Community |
 | AR experience | 211d (past self and goal body in AR) | None | None |
 | Accuracy guardrail culture (UNKNOWN, never fabricate) | Shipped, series-wide invariant | None stated | None stated |
 
@@ -50,3 +50,4 @@ investor or Nexus materials before its feature is Shipped is a Gary escalation (
 | Date | Editor | Change | Evidence |
 |---|---|---|---|
 | 2026-07-09 | Charter filing | Baseline matrix filed from Prompt 211 Appendix A | Prompt 211 charter |
+| 2026-07-11 | 211a merge | Doctor report and streak moved to Shipped; shareable video to Shipped-partial (iOS card follow-up); health sync recorded as 211a foundation, NOT Shipped (iOS write pending a write-capable plugin) | Branch feat/211a-growth: opus whole-branch review clean, 1254 tests green |
