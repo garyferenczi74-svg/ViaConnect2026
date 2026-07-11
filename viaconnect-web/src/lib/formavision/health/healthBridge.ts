@@ -222,11 +222,6 @@ export class IosHealthBridge implements HealthBridge {
     // This limitation is documented in docs/formavision/211a-w2-health-sync.md.
     // Until a write-capable plugin is available, this bridge correctly signals
     // all metrics as failed so the sync service can emit telemetry and fail-open.
-    const metrics: HealthMetric[] = ['weight', 'body_fat', 'lean_mass'];
-    const failed: HealthMetric[] = [];
-    for (const m of metrics) {
-      if (_grants[m]) failed.push(m);
-    }
     throw new Error(
       'IosHealthBridge.writeBodyComposition: not implemented -- @perfood/capacitor-healthkit v1.3.2 is a read-only plugin. A write-capable native bridge is required for iOS writes. See docs/formavision/211a-w2-health-sync.md.',
     );

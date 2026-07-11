@@ -34,7 +34,7 @@
  */
 
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { Film, Download, Share2, ShieldCheck, Loader2, RotateCcw, Eye, EyeOff, ImageIcon } from 'lucide-react';
+import { Film, Download, Share2, ShieldCheck, Loader2, Eye, EyeOff, ImageIcon } from 'lucide-react';
 import type { RenderTier } from '@/lib/formavision/tier/types';
 import type { CompositionDeltasResult } from '@/lib/formavision/deltas/compositionDeltas';
 import { buildClipCaption } from '@/lib/formavision/clip/composition';
@@ -118,8 +118,7 @@ type Phase =
   | { kind: 'consent' }
   | { kind: 'encoding' }
   | { kind: 'ready_webm'; url: string }
-  | { kind: 'ready_card' }
-  | { kind: 'error'; message: string };
+  | { kind: 'ready_card' };
 
 export function ClipCreatorSurface({
   userId,
@@ -177,7 +176,10 @@ export function ClipCreatorSurface({
   const lowConfWarning = useMemo(() => lowConfidenceRangeWarning(rangeConfidences), [rangeConfidences]);
 
   const canEncode = useMemo(() => canSupportOnDeviceEncode(tier), [tier]);
-  const staticReason: StaticCardReason = tier === '2d' ? 'tier2d' : isIOS() ? 'ios' : 'no_encode';
+  // isIOS() reads navigator.userAgent which never changes during the component
+  // lifetime, so memoize once to avoid re-invoking on every render.
+  const ios = useMemo(() => isIOS(), []);
+  const staticReason: StaticCardReason = tier === '2d' ? 'tier2d' : ios ? 'ios' : 'no_encode';
   const staticCard = useMemo(() => buildStaticCardFallback(caption, staticReason), [caption, staticReason]);
 
   const disabled = !userId || !plan.valid || phase.kind === 'encoding';
@@ -484,19 +486,6 @@ export function ClipCreatorSurface({
             </div>
           )}
 
-          {phase.kind === 'error' && (
-            <div data-testid="clip-error" role="alert" className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#B75E18]/40 bg-[#B75E18]/10 p-2.5 text-xs text-white/80">
-              <span>{phase.message}</span>
-              <button
-                type="button"
-                onClick={() => setPhase({ kind: 'idle' })}
-                className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg border border-[#B75E18]/50 bg-[#B75E18]/15 px-2.5 py-1 font-medium text-white transition-colors hover:bg-[#B75E18]/25"
-              >
-                <RotateCcw className="h-3.5 w-3.5" strokeWidth={1.5} aria-hidden="true" />
-                Try again
-              </button>
-            </div>
-          )}
         </>
       )}
 

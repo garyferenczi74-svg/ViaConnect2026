@@ -271,7 +271,32 @@ async function sweepNudges(db: SupabaseClient, nowMs: number): Promise<{ nudged:
       const timeOfDay = optIn.reminder_time_of_day ?? 'morning';
       const nudge = buildNudge(timeOfDay);
 
-      // Write the gentle notification (the nudge sink).
+      // LEDGER-FIRST: write the idempotency marker before sending the notification.
+      // If the ledger insert fails we skip the send entirely (retried next run).
+      // If the ledger insert succeeds but the send later fails, the next run's
+      // ledger insert will UNIQUE-conflict and skip -> at most a MISSED nudge,
+      // never a duplicate. A concurrent pass that races past the SELECT guard
+      // above is also stopped here by the UNIQUE(user_id, trigger_key) constraint.
+      const ledgerResult = await withTimeout(
+        db.from('scan_calibration_nudges').insert({
+          user_id: optIn.user_id,
+          trigger_key: triggerKey,
+        }) as unknown as Promise<{ error: unknown }>,
+        15000,
+        'scan-cadence-nudge-tick.ledger-insert',
+      );
+
+      if (ledgerResult.error) {
+        // A UNIQUE conflict means this (user, trigger_key) is already recorded
+        // (either a concurrent pass or a prior run): skip the send, idempotent.
+        // Any other error is logged and we skip to avoid a send without a ledger row.
+        reportSupabaseError('scan-cadence-nudge-tick.ledger-insert', ledgerResult.error, {
+          table: 'scan_calibration_nudges',
+        });
+        continue;
+      }
+
+      // Ledger write succeeded: safe to send the gentle notification.
       const notifyResult = await withTimeout(
         db.from('user_notifications').insert({
           user_id: optIn.user_id,
@@ -286,31 +311,12 @@ async function sweepNudges(db: SupabaseClient, nowMs: number): Promise<{ nudged:
       );
 
       if (notifyResult.error) {
+        // Send failed after a successful ledger write. Next run will find the
+        // ledger row and skip -> at most one missed nudge, never a duplicate.
         reportSupabaseError('scan-cadence-nudge-tick.notify-insert', notifyResult.error, {
           table: 'user_notifications',
         });
         continue;
-      }
-
-      // Record the nudge ledger row (idempotency marker). If a concurrent pass
-      // raced us the UNIQUE(user_id, trigger_key) constraint rejects this; that
-      // is fine, the notification was written at most once by the guard above.
-      const ledgerResult = await withTimeout(
-        db.from('scan_calibration_nudges').insert({
-          user_id: optIn.user_id,
-          trigger_key: triggerKey,
-        }) as unknown as Promise<{ error: unknown }>,
-        15000,
-        'scan-cadence-nudge-tick.ledger-insert',
-      );
-
-      if (ledgerResult.error) {
-        // Non-fatal: log the reason and continue. The notification is already
-        // sent; a failed ledger write only risks a same-day duplicate, which is
-        // rare and gentle, not a correctness failure.
-        reportSupabaseError('scan-cadence-nudge-tick.ledger-insert', ledgerResult.error, {
-          table: 'scan_calibration_nudges',
-        });
       }
 
       nudged += 1;
