@@ -65,6 +65,10 @@ export interface BodyCompositionAvatarProps {
   // is included so the call site can enrich the fallback_tier_served event.
   // Absent means no telemetry.
   onTierStepDown?: (tier: 'lite' | '2d', signals: AvatarQualitySignals) => void;
+  // Prompt 211a W1: forwarded verbatim to the 3D avatar so the clip recorder can
+  // flip the r3f frameloop to "always" during a recording. Absent / "demand"
+  // keeps the byte-identical demand loop. The 2D floor ignores it (no canvas).
+  frameloopMode?: 'always' | 'demand';
   // The 2D floor for this section, rendered as-is on any fallback.
   children: React.ReactNode;
 }
@@ -95,6 +99,7 @@ function BodyCompositionAvatarInner({
   showGhost = false,
   onOrbitEnd,
   onTierStepDown,
+  frameloopMode,
   children,
 }: BodyCompositionAvatarProps) {
   // Latched once the avatar reports a WebGL-unavailable gate or a render error.
@@ -207,6 +212,7 @@ function BodyCompositionAvatarInner({
         }}
         onOrbitEnd={onOrbitEnd}
         onFirstInteractive={handleFirstInteractive}
+        frameloopMode={frameloopMode}
       />
     </div>
   );
