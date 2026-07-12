@@ -149,3 +149,70 @@ export const SYNTHETIC_JOURNEY_CAPTURES: readonly SyntheticCompositionCapture[] 
 export function describeFixtureScanSeed(): readonly string[] {
   return SYNTHETIC_JOURNEY_CAPTURES.map((c) => c.label);
 }
+
+// ---------------------------------------------------------------------------
+// Prompt 211a additions: 4 new seam constants
+// ---------------------------------------------------------------------------
+//
+// These constants are LABELLED SYNTHETIC and are used only as test-authoring
+// scaffolding for the W1 clip, W3 report, W4 cadence, and W2 health sync
+// seams. They document the shapes a seeded fixture user would carry. They are
+// NOT imported by the product and NOT written to any store here.
+
+// W1 clip: the minimum scan pair a ClipCreatorSurface needs to leave the honest
+// empty state and show the full creator UI. Two scans (oldest first), with null
+// confidence (honest UNKNOWN -- no fabricated tier). The clip caption is built
+// from computeCompositionDeltas using these scans (ONE-SOURCE).
+export interface SyntheticClipScanRef {
+  readonly label: string;
+  readonly recordedAt: string;
+  /** Confidence (0-1) or null when UNKNOWN. */
+  readonly confidence: number | null;
+}
+
+export const SYNTHETIC_CLIP_SCANS: readonly SyntheticClipScanRef[] = [
+  {
+    label: 'synthetic-clip-first-scan',
+    recordedAt: '2026-01-06T00:00:00.000Z',
+    confidence: null, // UNKNOWN (honest: no confidence fabricated)
+  },
+  {
+    label: 'synthetic-clip-latest-scan',
+    recordedAt: '2026-06-06T00:00:00.000Z',
+    confidence: null,
+  },
+] as const;
+
+// W4 cadence: a synthetic streak row shape mirroring what readOwnScanStreak
+// returns from scan_streak. Oldest-first, own-row RLS. Values reflect a real
+// 5-week streak (no inflated milestone). Used only to document what the seeded
+// fixture user would carry; the surface reads its own DB row, not this constant.
+export interface SyntheticScanStreakRow {
+  readonly label: string;
+  readonly currentStreak: number;
+  readonly longestStreak: number;
+}
+
+export const SYNTHETIC_SCAN_STREAK: SyntheticScanStreakRow = {
+  label: 'synthetic-scan-streak',
+  currentStreak: 5,
+  longestStreak: 5,
+} as const;
+
+// W2 health sync: for documentation purposes only. The healthSync service is a
+// background-lane service with no navigable UI surface. Its seam is fully
+// covered by the Vitest suite (healthSync.test.ts). The synthetic input shape
+// mirrors ScanCompositionInput for a pure vision scan (body_fat only, RULE 9).
+export interface SyntheticHealthSyncInput {
+  readonly label: string;
+  readonly bodyFatPct: number;
+  readonly weightLbs: null;  // null on a pure vision scan (RULE 9)
+  readonly leanMassLbs: null; // null on a pure vision scan (RULE 9)
+}
+
+export const SYNTHETIC_HEALTH_SYNC_PURE_SCAN: SyntheticHealthSyncInput = {
+  label: 'synthetic-health-sync-pure-scan',
+  bodyFatPct: 24.1,
+  weightLbs: null,
+  leanMassLbs: null,
+} as const;

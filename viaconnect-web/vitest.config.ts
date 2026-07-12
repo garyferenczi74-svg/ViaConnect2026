@@ -39,6 +39,12 @@ export default defineConfig({
       // Task 12 (Prompt 210c): per-measurement confidence chip + gated accuracy claim
       'src/components/body-tracker/scanning/__tests__/ScanAccuracyClaim.bare.test.tsx',
       'src/components/body-tracker/scanning/__tests__/ConfidenceChip.bare.test.tsx',
+      // Prompt 211a W4-2: cadence UI surfaces (streak / fingerprint flag / tip / opt-in).
+      'src/components/formavision/__tests__/CadenceSurfaces.bare.test.tsx',
+      // Prompt 211a W1: clip creator surface (consent gate + one-source + no photo)
+      'src/components/formavision/__tests__/ClipCreatorSurface.bare.test.tsx',
+      // Prompt 211a W1: consumer-only Helix first-share moment (celebrate-only)
+      'src/components/formavision/__tests__/ClipShareMoment.bare.test.tsx',
     ],
     exclude: ['node_modules', '.next', 'supabase'],
     globals: true,

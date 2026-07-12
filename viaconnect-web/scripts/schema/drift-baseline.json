@@ -1,5 +1,5 @@
 {
-  "comment": "Baseline as of 2026-07-08 (210d P3-1c pre-merge regen): 210f-applied objects (practitioner core, cert/waitlist, invitations, white label tables/views) now exist in the refreshed live-types.ts snapshot and have left this baseline. Remaining entries are residual audit-known findings pending P1 decisions, plus applied RPCs still listed because db-functions.json was not part of this regen.",
+  "comment": "Baseline as of 2026-07-08 (210d P3-1c pre-merge regen): 210f-applied objects (practitioner core, cert/waitlist, invitations, white label tables/views) now exist in the refreshed live-types.ts snapshot and have left this baseline. Remaining entries are residual audit-known findings pending P1 decisions, plus applied RPCs still listed because db-functions.json was not part of this regen. 2026-07-12 (Prompt 211a): scan_cadence_reminders and scan_streak were applied to prod (migrations 20260710120000 / 20260712000500) and are baselined here pending the next live-types.ts snapshot regen, which moves them into the snapshot and out of this baseline (same lifecycle the 210f tables followed).",
   "entries": [
     {
       "kind": "bucket",
@@ -284,6 +284,14 @@
     {
       "kind": "table",
       "name": "saved_meals"
+    },
+    {
+      "kind": "table",
+      "name": "scan_cadence_reminders"
+    },
+    {
+      "kind": "table",
+      "name": "scan_streak"
     },
     {
       "kind": "table",

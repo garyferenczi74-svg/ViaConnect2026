@@ -103,6 +103,78 @@ The scratch file was deleted; NO phantom reference is committed. This proves the
 same scan protects every FormaVision Supabase target (the `analytics_events`
 telemetry sink included).
 
+## Prompt 211a additions (feat/211a-growth, 2026-07-11)
+
+### New spec file: tests/e2e/formavision/journey-211a.spec.ts
+
+Adds E2E coverage for 4 new 211a seams. Run mode and execution-gating match
+the 210e suite exactly.
+
+#### W1 clip (shareable transformation video) @fallback
+Playwright @fallback (forces WebGL unavailable, 2D floor, hermetic).
+Covers:
+- ClipCreatorSurface is present on the consumer composition route.
+- Consent gate blocks share: create button opens the gate; cancel closes it
+  without producing anything.
+- ONE-SOURCE: clip preview is present and non-blank (caption from
+  computeCompositionDeltas = same source as the cards).
+- No-raw-photo guarantee: fallback note is visible on 2D floor; note text
+  contains no raw image path (no blob:, no body-progress-photos reference).
+- Range pickers (clip-range-start, clip-range-end) are rendered.
+- @cinematic variant: consent gate renders over 3D avatar without remounting
+  the canvas (self-skips when no GL browser).
+Encoding (WebM, canvas captureStream) and native share (@capacitor/share
+absent) are execution-gated: require GL browser + @capacitor/share install.
+
+#### W3 report (doctor-ready PDF) @fallback
+Playwright @fallback (2D floor, hermetic).
+Covers:
+- DownloadReportButton is present in idle state (scan-report-generate testid).
+- State machine: clicking generate transitions out of idle (generating ->
+  ready or error; both are valid post-click states depending on session/server).
+- One-source structural documentation note (route reads same body_tracker_*
+  spine as the card hooks; deterministic contract is in the Vitest layer).
+Execution-gated: actual report generation (POST /api/formavision/scan-report)
+requires a running server with Supabase env and an authenticated session. On
+a bare headless runner it 401s -> error state (valid). Manual / live-smoke:
+verify report numbers == card numbers on a seeded fixture user.
+
+#### W4 cadence (streak + fingerprint + tip) @fallback
+Playwright @fallback (2D floor, hermetic).
+Covers:
+- ScanStreakDisplay is mounted on the consumer composition route (presence OR
+  honest-absent fail-open; both valid).
+- When streak IS rendered: label and caption are visible and non-blank.
+- Own-row posture: streak label starts with a digit (real streak count).
+- FingerprintFlag: absence (no outlier) and presence (outlier + reason text)
+  are both honest states; no fabrication either way.
+- ConsistencyTip: absence (thin history) and presence (tip text) both valid.
+- Consumer-only structural documentation note (ScanStreakDisplay import
+  discipline enforced by invariants.test.ts 4.6 in the Vitest layer).
+Practitioner-absence is a structural (import-graph) assertion, not a
+navigable Playwright URL; it lives in the Vitest layer per the matrix.
+
+#### W2 health sync (flag-inertness + honest-omit)
+VITEST ONLY -- the health sync service has no UI surface for Playwright.
+The journey-211a.spec.ts W2 describe block is always-skipped and documents
+the seam. Coverage is:
+- Vitest (src/lib/formavision/health/__tests__/healthSync.test.ts): flag-off
+  inertness (no bridge call when native_health_bridge is off), RULE 9
+  honest-omit / no-0-substitution on pure scan, revoked grant, fail-open,
+  PHI-clean telemetry, Helix-invisible.
+- DEVICE-GATED: iOS write path (IosHealthBridge.writeBodyComposition throws
+  "not implemented"; read-only plugin limitation per healthBridge.ts). Requires
+  a real iOS device + write-capable native plugin. Matches 210e pattern for
+  untestable native paths.
+- Android lean-mass omission: covered by Vitest RULE 9 suite.
+
+### Updated fixtures.ts
+Four new synthetic constant exports added to tests/e2e/formavision/fixtures.ts:
+- SYNTHETIC_CLIP_SCANS (W1): two scan refs for the clip range picker fixture.
+- SYNTHETIC_SCAN_STREAK (W4): synthetic streak row for documentation.
+- SYNTHETIC_HEALTH_SYNC_PURE_SCAN (W2): pure-scan input shape for documentation.
+All labelled synthetic; none imported by the product.
+
 ## Seam matrix reference
 
 Seam names, producer/consumer file:line, and per-seam automated-test coverage:

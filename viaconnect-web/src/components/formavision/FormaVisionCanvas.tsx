@@ -109,6 +109,13 @@ export interface FormaVisionCanvasProps {
   // can measure timeToFirstInteractiveMs. Absent means the metric is omitted.
   // Fire-and-forget; does not affect rendering.
   onFirstInteractive?: () => void;
+  // Prompt 211a W1 (shareable clip): the r3f frameloop mode. The canvas is
+  // "demand" by default (frames only on interaction / invalidate). The clip
+  // recorder sets this to "always" for the duration of a recording so
+  // canvas.captureStream() emits every painted morph frame, then restores it to
+  // undefined (demand) when done. ADDITIVE + minimal: when absent the canvas is
+  // byte-identical to before this prop (demand). No other behavior changes.
+  frameloopMode?: 'always' | 'demand';
 }
 
 // Vertical / radial density per render tier. Lite keeps the silhouette readable
@@ -666,7 +673,10 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
         data-testid="formavision-avatar-canvas"
         // Demand loop: frames are produced only on interaction, mount, or an
         // explicit invalidate. No continuous render, no idle spin.
-        frameloop="demand"
+        // Prompt 211a W1: the clip recorder can flip this to "always" via
+        // frameloopMode so captureStream() emits every morph frame during a
+        // recording; absent / "demand" keeps the byte-identical demand loop.
+        frameloop={props.frameloopMode ?? 'demand'}
         // P7-T2: dpr scaled by tier. Cinematic stays [1, 2] (byte-identical to
         // before this phase). Lite caps at [1, 1.5] to reduce fill-rate on
         // low-power GPUs. The tier is already resolved outside the Canvas

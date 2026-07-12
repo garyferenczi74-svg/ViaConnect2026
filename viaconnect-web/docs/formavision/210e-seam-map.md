@@ -54,6 +54,20 @@ Not built. 210d is at STEP 0 (read-only baseline). Consequences for 210e accepta
 7. P8-T2b CARRYOVER: the 12 events have never been verified arriving in live analytics_events. The E2E trace covers this.
 8. body-scan-analyze live edge function has a nonstandard entrypoint path (source/body-scan-analyze/index.ts per the 210d snapshot); repo and live should be reconciled during 210d function-parity work. Not walk-blocking.
 
+## 7. Prompt 211a additions: 4 new seams (feat/211a-growth)
+
+Added 2026-07-11 on branch feat/211a-growth. Each seam entry mirrors the Section-2
+per-seam format: Producer, Consumer, Seam status (from code reading), Coverage decision.
+
+| Seam | Producer | Consumer | Status |
+|---|---|---|---|
+| W1 clip (shareable transformation video) | ClipCreatorSurface.tsx (buildClipCaption <- computeCompositionDeltas); lib/formavision/clip/captureController.ts; lib/formavision/clip/staticCardFallback.ts | Consumer composition page (direct import, not barrel); clip preview DOM (clip-preview, clip-consent-gate, etc.) | WIRED. Consent gate is the only path to produce an artifact. One-source: buildClipCaption receives the SAME vrDeltas as the cards. No raw photo: canvas captureStream on WebGL avatar only; 2D floor serves static card. |
+| W3 report (doctor-ready PDF) | DownloadReportButton.tsx (POST /api/formavision/scan-report); src/app/api/formavision/scan-report/route.ts reads body_tracker_* spine via fetchLatest; renderScanReportPdf in lib/formavision/report/scanReportPdf.ts | Consumer composition page header controls; any authenticated user via fetch | WIRED. One-source: route reads body_tracker_circumference, body_tracker_segmental_fat, body_tracker_segmental_muscle, body_tracker_weight -- the SAME tables/columns the card hooks use. Non-dismissible DISCLAIMER_LINES always drawn. Legal entity LEGAL_ENTITY = 'FarmCeutica Wellness LLC'. |
+| W4 cadence (streak + fingerprint + tip) | ScanStreakDisplay.tsx (readOwnScanStreak from scan_streak, own-row RLS); FingerprintFlag.tsx (decideFingerprintFlag); ConsistencyTip.tsx (buildConsistencyTip) | Consumer composition page ONLY (ScanStreakDisplay imported directly, not via barrel, per page.tsx line 65). FingerprintFlag and ConsistencyTip imported via barrel (safe, presentational). | WIRED. Consumer-only: invariants.test.ts 4.6 enforces no practitioner route imports ScanStreakDisplay. Streak is own-row read only (no credit). All three are fail-open (null/absent -> renders nothing, never fabricates). |
+| W2 health sync (flagged-off foundation) | lib/formavision/health/healthSync.ts (syncHealthData); isFeatureEnabled('native_health_bridge') defaults false; healthBridge.ts (IosHealthBridge, AndroidHealthBridge) | Called in the scan-completion background lane; no UI surface on the composition page | WIRED (flag-off + RULE 9 layer). native_health_bridge defaults false in feature-flags.ts -> syncHealthData returns immediately without calling any bridge method. iOS: IosHealthBridge.writeBodyComposition throws "not implemented" (read-only plugin). Android lean-mass: RULE 9 null-preservation. DEVICE-GATED: native write path not verifiable without a device build. |
+
+## 8. Reference confirmations (Section 16)
+
 ## 6. Reference confirmations (Section 16)
 
 Playwright present (config + dependency). My Biology hub = /body-tracker (Prompt 180 title), scan entry = Body Composition surface, avatar hosts there behind the WebGL gate. Capacitor config present (hosted-shell model pointing at production URL). BOS path = /api/bos/current SSOT. Via Cura engine = getOrComputeUserProtocolSynthesis behind /api/protocol/synthesis. The 171-series dashboards read helix and engagement tables, NOT analytics_events.

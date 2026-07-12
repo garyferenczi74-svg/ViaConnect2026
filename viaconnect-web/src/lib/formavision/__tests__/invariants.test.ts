@@ -615,6 +615,84 @@ describe('INVARIANT 4: PERSONA-INTEGRITY', () => {
     expect(componentSource).toContain('No practitioner path added here');
     expect(componentSource).toContain('Consumer-only');
   });
+
+  // ---------------------------------------------------------------------------
+  // 4.6 STRUCTURAL GUARD (Prompt 211a W4-2, Section 5 Helix-invisibility re-verify):
+  // the CONSUMER-ONLY scan streak surface must never be imported by a practitioner
+  // route, and its read must be own-row. This mirrors the 4.3 pattern: a real
+  // absence proof over shipped source, not a comment sentinel.
+  // ---------------------------------------------------------------------------
+  it('4.6 STRUCTURAL GUARD: no practitioner route imports the consumer-only ScanStreakDisplay (Helix invisibility, W4-2)', () => {
+    // Recursively collect every .ts/.tsx under each practitioner route root and
+    // assert NONE imports ScanStreakDisplay. The streak surface is deliberately
+    // kept out of the formavision barrel and imported directly by the (consumer)
+    // composition route only, so a practitioner import would be a genuine
+    // consumer-only violation to escalate. If this fails, STOP: it is a real
+    // Helix-consumer-only leak, not a test to relax.
+    const appRoot = path.resolve(__dirname, '..', '..', '..', 'app');
+    const practitionerRoots = [
+      path.join(appRoot, 'practitioner'),
+      path.join(appRoot, 'practitioners'),
+      path.join(appRoot, '(app)', 'practitioner'),
+    ].filter((p) => fs.existsSync(p));
+
+    // Guard the guard: at least one practitioner root must exist, or the proof is
+    // vacuous (the practitioner portal is a core surface, so this is real).
+    expect(practitionerRoots.length).toBeGreaterThan(0);
+
+    function collectSourceFiles(dir: string): string[] {
+      const out: string[] = [];
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          out.push(...collectSourceFiles(full));
+        } else if (entry.isFile() && /\.tsx?$/.test(entry.name)) {
+          out.push(full);
+        }
+      }
+      return out;
+    }
+
+    const files = practitionerRoots.flatMap(collectSourceFiles);
+    const offenders: string[] = [];
+    for (const file of files) {
+      const src = fs.readFileSync(file, 'utf8');
+      // Any mention of the streak surface component name in a practitioner file
+      // is a leak: import path or symbol.
+      if (src.includes('ScanStreakDisplay')) {
+        offenders.push(path.relative(process.cwd(), file));
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it('4.6b OWN-ROW READ: the scan streak read targets scan_streak filtered by the authenticated user id (own-row RLS, per 210e invariant 4.3)', () => {
+    // The consumer-only streak read must be own-row: it filters scan_streak by
+    // the auth user id, and scan_streak carries own-row RLS (migration
+    // 20260710120000). The query lives in the thin typed accessor cadenceDb.ts
+    // (the table is not yet in the generated Database type). We prove the filter
+    // STRUCTURALLY there: the accessor targets scan_streak and constrains by
+    // user_id. The surface then consumes that accessor and never writes.
+    const dbSource = fs.readFileSync(
+      path.resolve(__dirname, '..', 'cadence', 'cadenceDb.ts'),
+      'utf8',
+    );
+    // The accessor reads scan_streak, constrained to the user's own row.
+    expect(dbSource).toContain("from('scan_streak')");
+    expect(dbSource).toContain(".eq('user_id', userId)");
+
+    const streakSource = fs.readFileSync(
+      path.resolve(__dirname, '..', '..', '..', 'components', 'formavision', 'ScanStreakDisplay.tsx'),
+      'utf8',
+    );
+    // The surface reads via the own-row accessor.
+    expect(streakSource).toContain('readOwnScanStreak');
+    // And never writes any economy ledger or a streak row from this visual
+    // surface (read-only). Streak credit stays in the server award lane.
+    expect(streakSource).not.toContain('helix_score_events');
+    expect(streakSource.includes('.insert(')).toBe(false);
+    expect(streakSource.includes('.upsert(')).toBe(false);
+  });
 });
 
 // ===========================================================================
