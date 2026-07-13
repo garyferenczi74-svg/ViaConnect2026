@@ -37,6 +37,13 @@ import { useCompositionHistory } from '@/hooks/body-tracker/useCompositionHistor
 import { useCircumferenceHistory } from '@/hooks/body-tracker/useCircumferenceHistory';
 import { computeCompositionDeltas } from '@/lib/formavision/deltas/compositionDeltas';
 // === PROMPT 210b VR (Section 8) END ===
+// === PROMPT 211b W2 (Statistical Honesty) START ===
+// Noise classification: classifies every displayed delta through the MDC engine
+// and wires WITHIN_NOISE / MEANINGFUL into the readout + notable-changes surfaces.
+// Telemetry: counts/flags only, no PHI, no measurement values.
+import { classifyCompositionDeltas } from '@/lib/formavision/noise/noiseDeltaClassifier';
+import { emitNoiseEvent } from '@/lib/formavision/noise/noiseTelemetry';
+// === PROMPT 211b W2 (Statistical Honesty) END ===
 // === PROMPT 210b P3-T2b (Time Machine) START ===
 import { JourneyTimeline, type JourneyScanReadout } from '@/components/formavision/JourneyTimeline';
 // === PROMPT 210b P4-T1 (GeneticsOverlay) START ===
@@ -385,6 +392,23 @@ function CompositionPageInner() {
   );
   // === PROMPT 210b VR (Section 8) END ===
 
+  // === PROMPT 211b W2 (Statistical Honesty) START ===
+  // Classify every displayed delta through the MDC engine. The classification is
+  // a pure parallel overlay -- the underlying numbers in vrDeltas are never changed.
+  const vrNoiseClassification = useMemo(
+    () => classifyCompositionDeltas(vrDeltas),
+    [vrDeltas],
+  );
+  // Build the per-key noise map for NotableChanges.
+  const circumferenceNoiseMap = useMemo(() => {
+    const map: Record<string, 'WITHIN_NOISE' | 'MEANINGFUL' | null> = {};
+    for (const c of vrNoiseClassification.circumferences) {
+      map[c.delta.key] = c.classification;
+    }
+    return map;
+  }, [vrNoiseClassification.circumferences]);
+  // === PROMPT 211b W2 (Statistical Honesty) END ===
+
   // === PROMPT 210b P3-T2b (Time Machine) START ===
   // The scrub shape driven by the JourneyTimeline. null rests the avatar at its
   // last shape (normal morph resumes per P3-T2a). Only set while scrubbing.
@@ -608,6 +632,31 @@ function CompositionPageInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedBodyPart]);
   // === PROMPT 210b P8-T1b (Avatar Telemetry) END ===
+
+  // === PROMPT 211b W2 (Statistical Honesty Telemetry) START ===
+  // 5. within_noise_shown: fire when at least one delta is classified as
+  //    WITHIN_NOISE. Counts only, no PHI, no measurement values.
+  //    Only fires when userId is resolved and there is something to classify.
+  //    Uses a ref to fire at most once per vrNoiseClassification change so we
+  //    do not re-emit on every render. The guard resets when vrNoiseClassification
+  //    changes (new scan data refreshes the deltas and their classification).
+  const noiseEmittedKey = useRef<string | null>(null);
+  useEffect(() => {
+    if (!userId) return;
+    if (vrNoiseClassification.totalClassified === 0) return;
+    // Build a stable key so this fires at most once per delta set.
+    const key = `${vrNoiseClassification.withinNoiseCount}:${vrNoiseClassification.meaningfulCount}`;
+    if (noiseEmittedKey.current === key) return;
+    noiseEmittedKey.current = key;
+    if (vrNoiseClassification.withinNoiseCount > 0) {
+      void emitNoiseEvent(userId, 'formavision.within_noise_shown', {
+        withinNoiseCount: vrNoiseClassification.withinNoiseCount,
+        meaningfulCount: vrNoiseClassification.meaningfulCount,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, vrNoiseClassification.withinNoiseCount, vrNoiseClassification.meaningfulCount, vrNoiseClassification.totalClassified]);
+  // === PROMPT 211b W2 (Statistical Honesty Telemetry) END ===
 
   const handleSaved = () => {
     setRefreshKey((k) => k + 1);
@@ -1102,13 +1151,22 @@ function CompositionPageInner() {
           data, never a fabricated delta. measurements has its own surface below. */}
       {section !== 'measurements' && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {/* Prompt 211b W2: bodyFatNoise wires the MDC classification into the
+              readout. WITHIN_NOISE shows kind honest copy; MEANINGFUL keeps the
+              existing arrow. null means UNKNOWN (no classification available). */}
           <BodyFatReadout
             latestBodyFatPct={composHistory.latest?.totalBodyFatPct ?? null}
             bodyFat={vrDeltas.bodyFat}
             firstScanDate={composHistory.first?.recordedAt ?? null}
             latestScanDate={composHistory.latest?.recordedAt ?? null}
+            bodyFatNoise={vrNoiseClassification.bodyFat?.classification ?? null}
           />
-          <NotableChanges deltas={vrDeltas} />
+          {/* Prompt 211b W2: noiseClassifications wires per-row MDC classifications
+              into Notable Changes. Each row gets a within-noise badge when applicable. */}
+          <NotableChanges
+            deltas={vrDeltas}
+            noiseClassifications={circumferenceNoiseMap}
+          />
         </div>
       )}
       {/* === PROMPT 210b VR (Section 8) END === */}

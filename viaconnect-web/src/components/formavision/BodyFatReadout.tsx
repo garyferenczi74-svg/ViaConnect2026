@@ -10,12 +10,20 @@
 // semantic `direction`. UNKNOWN (no first, no latest, or null fat) shows the
 // latest value alone or an honest invite, never a fabricated delta, never 0.
 //
+// Prompt 211b W2: noise classification. When a bodyFatNoise classification is
+// supplied and it is WITHIN_NOISE, the delta row is replaced with the honest
+// within-noise copy (never a failure state, never hidden). A MEANINGFUL delta
+// keeps its arrow. null classification leaves the existing presentation intact.
+//
 // Weight-management guardrail (208a): a reduction is framed as progress; a gain
 // is neutral and curious, never shaming. These are AI-derived estimates, so the
 // disclaimer stays visible nearby.
 
 import { ArrowDown, ArrowUp, Minus } from 'lucide-react';
 import type { MetricDelta } from '@/lib/formavision/deltas/compositionDeltas';
+import type { NoiseClassification } from '@/lib/formavision/noise/mdcEngine';
+import { withinNoiseCopy, WITHIN_NOISE_INLINE_LABEL } from '@/lib/formavision/noise/mdcEngine';
+import { WithinNoiseBadge } from './WithinNoiseBadge';
 
 export interface BodyFatReadoutProps {
   // The latest total body fat percent, or null when UNKNOWN. This is the raw
@@ -26,6 +34,11 @@ export interface BodyFatReadoutProps {
   // ISO timestamps of the first and latest scans for the date line.
   firstScanDate: string | null;
   latestScanDate: string | null;
+  // Prompt 211b W2: optional noise classification for the body-fat delta.
+  // WITHIN_NOISE -> show kind honest copy instead of the arrow row.
+  // MEANINGFUL -> keep the existing arrow row (unchanged behavior).
+  // null / undefined -> no classification available; existing behavior.
+  bodyFatNoise?: NoiseClassification | null;
   className?: string;
 }
 
@@ -70,6 +83,7 @@ export function BodyFatReadout({
   bodyFat,
   firstScanDate,
   latestScanDate,
+  bodyFatNoise,
   className,
 }: BodyFatReadoutProps) {
   const hasLatest = typeof latestBodyFatPct === 'number' && Number.isFinite(latestBodyFatPct);
@@ -90,6 +104,8 @@ export function BodyFatReadout({
   }
 
   const present = bodyFat ? deltaPresentation(bodyFat.direction) : null;
+  // Prompt 211b W2: within-noise takes precedence over the arrow row.
+  const isWithinNoise = bodyFatNoise === 'WITHIN_NOISE';
 
   return (
     <div
@@ -104,7 +120,21 @@ export function BodyFatReadout({
           </p>
         </div>
 
-        {present && bodyFat ? (
+        {isWithinNoise && bodyFat ? (
+          /* Prompt 211b W2: WITHIN_NOISE -- kind honest copy, never a failure state. */
+          <div
+            data-testid="body-fat-within-noise"
+            className="flex max-w-[240px] flex-col items-center gap-1.5 sm:items-end"
+          >
+            <WithinNoiseBadge metricLabel="body fat" />
+            <span
+              data-testid="body-fat-within-noise-copy"
+              className="text-center text-[11px] leading-relaxed text-white/55 sm:text-right"
+            >
+              {withinNoiseCopy({ metricLabel: 'body fat' })}
+            </span>
+          </div>
+        ) : present && bodyFat ? (
           <div className="flex flex-col items-center sm:items-end">
             <span
               data-testid="body-fat-delta"

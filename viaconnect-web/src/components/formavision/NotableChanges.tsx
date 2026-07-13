@@ -11,6 +11,12 @@
 // good/bad arrow. Regions UNKNOWN on either side are already omitted by the
 // delta function, so nothing is fabricated here.
 //
+// Prompt 211b W2: optional noise classifications per circumference row. When a
+// row's classification is WITHIN_NOISE, the arrow is replaced with the inline
+// WithinNoiseBadge (kind, never failure). MEANINGFUL keeps its arrow. null keeps
+// the existing presentation. The classification is a parallel overlay -- the
+// underlying numbers are never changed.
+//
 // Weight-management guardrail (208a): the headline frames progress kindly; a
 // reduction is progress, a gain is neutral and curious, never shaming. With no
 // deltas (single scan) it shows an inviting empty state.
@@ -20,9 +26,19 @@ import type {
   CircumferenceDelta,
   CompositionDeltasResult,
 } from '@/lib/formavision/deltas/compositionDeltas';
+import type { MeasurementKey } from '@/lib/body-tracker/circumference';
+import type { NoiseClassification } from '@/lib/formavision/noise/mdcEngine';
+import { WithinNoiseBadge } from './WithinNoiseBadge';
 
 export interface NotableChangesProps {
   deltas: CompositionDeltasResult;
+  /**
+   * Prompt 211b W2: optional map of MeasurementKey -> noise classification.
+   * When provided and a key's value is 'WITHIN_NOISE', that row shows the
+   * within-noise badge in place of its directional arrow.
+   * Missing entries (undefined) fall through to the existing presentation.
+   */
+  noiseClassifications?: Partial<Record<MeasurementKey, NoiseClassification | null>>;
   className?: string;
 }
 
@@ -65,7 +81,7 @@ function headlineFor(deltas: CompositionDeltasResult): string | null {
   return `Your ${d.label} is holding steady.`;
 }
 
-export function NotableChanges({ deltas, className }: NotableChangesProps) {
+export function NotableChanges({ deltas, noiseClassifications, className }: NotableChangesProps) {
   const headline = headlineFor(deltas);
   const rows = deltas.circumferences;
 
@@ -101,17 +117,30 @@ export function NotableChanges({ deltas, className }: NotableChangesProps) {
         <ul className="mt-4 flex flex-col gap-2">
           {rows.map((row) => {
             const present = directionPresentation(row.direction);
+            // Prompt 211b W2: check if this row is classified as WITHIN_NOISE.
+            const rowNoise = noiseClassifications?.[row.key];
+            const isWithinNoise = rowNoise === 'WITHIN_NOISE';
             return (
               <li
                 key={row.key}
                 data-testid={`notable-row-${row.key}`}
                 data-direction={row.direction}
-                className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2"
+                data-noise={rowNoise ?? undefined}
+                className="flex flex-col gap-1.5 rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
               >
                 <span className="text-sm text-white/80">{row.label}</span>
-                <span className={`inline-flex items-center gap-1.5 text-sm font-medium ${present.toneClass}`}>
-                  <present.Icon className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
-                  {formatVal(Math.abs(row.delta), row.unit)}
+                <span className="flex flex-col items-start gap-1 sm:items-end">
+                  <span className={`inline-flex items-center gap-1.5 text-sm font-medium ${present.toneClass}`}>
+                    <present.Icon className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+                    {formatVal(Math.abs(row.delta), row.unit)}
+                  </span>
+                  {/* Prompt 211b W2: within-noise badge shown inline; never hides the value. */}
+                  {isWithinNoise && (
+                    <WithinNoiseBadge
+                      metricLabel={row.label.toLowerCase()}
+                      className="mt-0.5"
+                    />
+                  )}
                 </span>
               </li>
             );
