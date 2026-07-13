@@ -8,10 +8,15 @@
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { JourneyTimeline, type JourneyScanReadout } from '../JourneyTimeline';
+import {
+  JourneyTimeline,
+  sequentialBodyFatClassifications,
+  type JourneyScanReadout,
+} from '../JourneyTimeline';
 import { scanToParamVector } from '@/lib/formavision/geometry/scanToParamVector';
 import { lerpParamVector } from '@/lib/formavision/geometry/lerpParamVector';
 import { resolveTimelinePosition } from '@/lib/formavision/timeline/journeyTimeline';
+import { confidenceBandAriaLabel } from '@/lib/formavision/noise/trendConfidenceBand';
 import type { BodyParamVector } from '@/lib/formavision/geometry/types';
 import {
   emptyMeasurements,
@@ -217,5 +222,202 @@ describe('JourneyTimeline: guard - out-of-bounds readout access in transition pa
     const safeB = readouts[indexB] ? readouts[indexB].recordedAt : '';
     expect(safeA).toBe('2026-01-01T00:00:00Z');
     expect(safeB).toBe('');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Prompt 211b W2c: trend honesty wiring (confidence band, plateau, spike).
+// ---------------------------------------------------------------------------
+
+describe('sequentialBodyFatClassifications (pure bridge)', () => {
+  it('returns one classification per consecutive pair, newest first', () => {
+    const readouts: JourneyScanReadout[] = [
+      { recordedAt: '2026-01-01T00:00:00Z', totalBodyFatPct: 25, waist: 38 },
+      { recordedAt: '2026-02-01T00:00:00Z', totalBodyFatPct: 24.9, waist: 37 },
+      { recordedAt: '2026-03-01T00:00:00Z', totalBodyFatPct: 24.8, waist: 36 },
+    ];
+    const result = sequentialBodyFatClassifications(readouts);
+    expect(result.length).toBe(2);
+    // Tiny deltas (0.1) are well within the MDC95 noise band.
+    expect(result[0]).toBe('WITHIN_NOISE');
+    expect(result[1]).toBe('WITHIN_NOISE');
+  });
+
+  it('a large delta between the two most recent scans classifies as MEANINGFUL', () => {
+    const readouts: JourneyScanReadout[] = [
+      { recordedAt: '2026-01-01T00:00:00Z', totalBodyFatPct: 20, waist: 38 },
+      { recordedAt: '2026-02-01T00:00:00Z', totalBodyFatPct: 30, waist: 36 },
+    ];
+    const result = sequentialBodyFatClassifications(readouts);
+    expect(result[0]).toBe('MEANINGFUL');
+  });
+
+  it('UNKNOWN (null) on either side yields a null (honest UNKNOWN) entry', () => {
+    const readouts: JourneyScanReadout[] = [
+      { recordedAt: '2026-01-01T00:00:00Z', totalBodyFatPct: null, waist: 38 },
+      { recordedAt: '2026-02-01T00:00:00Z', totalBodyFatPct: 24, waist: 36 },
+    ];
+    const result = sequentialBodyFatClassifications(readouts);
+    expect(result[0]).toBeNull();
+  });
+});
+
+describe('JourneyTimeline: confidence band annotation (Prompt 211b W2c)', () => {
+  const vectors = [vectorFor(38), vectorFor(35), vectorFor(33)];
+  const readouts: JourneyScanReadout[] = [
+    { recordedAt: '2026-01-01T00:00:00Z', totalBodyFatPct: 28, waist: 38 },
+    { recordedAt: '2026-03-01T00:00:00Z', totalBodyFatPct: 25.1, waist: 35 },
+    { recordedAt: '2026-06-01T00:00:00Z', totalBodyFatPct: 25, waist: 33 },
+  ];
+
+  it('renders a qualitative band annotation for body fat and waist when measured', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(JourneyTimeline, { vectors, readouts, unit: 'in', onScrub: noop }),
+    );
+    expect(html).toContain('journey-band-bodyfat');
+    expect(html).toContain('journey-band-waist');
+  });
+
+  it('the band annotation never contains a digit (no precision figure)', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(JourneyTimeline, { vectors, readouts, unit: 'in', onScrub: noop }),
+    );
+    // Pull the two aria-label attribute values straight out of the markup and
+    // assert neither contains a digit (the qualitative-only contract).
+    const bodyFatMatch = html.match(/data-testid="journey-band-bodyfat" aria-label="([^"]*)"/);
+    const waistMatch = html.match(/data-testid="journey-band-waist" aria-label="([^"]*)"/);
+    expect(bodyFatMatch).not.toBeNull();
+    expect(waistMatch).not.toBeNull();
+    // Strip HTML entities (e.g. the escaped apostrophe &#x27; contains digits
+    // in its own encoding) before checking for a real numeric precision figure.
+    const stripEntities = (s: string) => s.replace(/&#x[0-9a-f]+;/gi, '').replace(/&\w+;/g, '');
+    expect(stripEntities(bodyFatMatch![1])).not.toMatch(/\d/);
+    expect(stripEntities(waistMatch![1])).not.toMatch(/\d/);
+    // The exported helper itself is digit-free regardless of the args passed.
+    expect(confidenceBandAriaLabel('body fat', 0, 'pct')).not.toMatch(/\d/);
+  });
+
+  it('omits the band annotation honestly when the value is not measured', () => {
+    const unmeasured: JourneyScanReadout[] = [
+      { recordedAt: '2026-01-01T00:00:00Z', totalBodyFatPct: 28, waist: 38 },
+      { recordedAt: '2026-06-01T00:00:00Z', totalBodyFatPct: 0, waist: 33 },
+    ];
+    const html = renderToStaticMarkup(
+      React.createElement(JourneyTimeline, {
+        vectors: [vectorFor(38), vectorFor(33)],
+        readouts: unmeasured,
+        unit: 'in',
+        onScrub: noop,
+      }),
+    );
+    expect(html).not.toContain('journey-band-bodyfat');
+  });
+});
+
+describe('JourneyTimeline: plateau detection (Prompt 211b W2c)', () => {
+  it('shows the Hannah-toned plateau copy when recent scans are all within noise', () => {
+    const vectors = [vectorFor(38), vectorFor(37), vectorFor(36)];
+    const readouts: JourneyScanReadout[] = [
+      { recordedAt: '2026-01-01T00:00:00Z', totalBodyFatPct: 25, waist: 38 },
+      { recordedAt: '2026-02-01T00:00:00Z', totalBodyFatPct: 24.9, waist: 37 },
+      { recordedAt: '2026-03-01T00:00:00Z', totalBodyFatPct: 24.8, waist: 36 },
+    ];
+    const html = renderToStaticMarkup(
+      React.createElement(JourneyTimeline, { vectors, readouts, unit: 'in', onScrub: noop }),
+    );
+    expect(html).toContain('journey-plateau-copy');
+    expect(html).toContain('body fat');
+    expect(html.toLowerCase()).not.toMatch(/\b(fail|wrong|stuck|regress|decline|shame)\b/);
+  });
+
+  it('does NOT fabricate a plateau when the most recent change is meaningful', () => {
+    const vectors = [vectorFor(38), vectorFor(33)];
+    const readouts: JourneyScanReadout[] = [
+      { recordedAt: '2026-01-01T00:00:00Z', totalBodyFatPct: 20, waist: 38 },
+      { recordedAt: '2026-02-01T00:00:00Z', totalBodyFatPct: 30, waist: 33 },
+    ];
+    const html = renderToStaticMarkup(
+      React.createElement(JourneyTimeline, { vectors, readouts, unit: 'in', onScrub: noop }),
+    );
+    expect(html).not.toContain('journey-plateau-copy');
+  });
+});
+
+describe('JourneyTimeline: fingerprint spike softening (Prompt 211b W2c)', () => {
+  const vectors = [vectorFor(38), vectorFor(33)];
+  const spikeReadouts: JourneyScanReadout[] = [
+    { recordedAt: '2026-01-01T00:00:00Z', totalBodyFatPct: 20, waist: 38 },
+    { recordedAt: '2026-02-01T00:00:00Z', totalBodyFatPct: 30, waist: 33 },
+  ];
+
+  it('a meaningful delta with an outlier fingerprint is flagged as a spike, and the raw point stays visible', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(JourneyTimeline, {
+        vectors,
+        readouts: spikeReadouts,
+        unit: 'in',
+        onScrub: noop,
+        latestFingerprintIsOutlier: true,
+      }),
+    );
+    expect(html).toContain('journey-spike-copy');
+    expect(html).toContain('still shown as a real data point');
+    // The raw reading itself is untouched and visible.
+    expect(html).toContain('30.0%');
+    // The latest snap marker is softened, never removed.
+    expect(html).toContain('journey-snap-1');
+    expect(html).toContain('data-spike="true"');
+  });
+
+  it('a meaningful delta WITHOUT an outlier fingerprint is not softened', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(JourneyTimeline, {
+        vectors,
+        readouts: spikeReadouts,
+        unit: 'in',
+        onScrub: noop,
+        latestFingerprintIsOutlier: false,
+      }),
+    );
+    expect(html).not.toContain('journey-spike-copy');
+    expect(html).not.toContain('data-spike="true"');
+  });
+
+  it('a within-noise delta is never treated as a spike, even with an outlier fingerprint', () => {
+    const stableReadouts: JourneyScanReadout[] = [
+      { recordedAt: '2026-01-01T00:00:00Z', totalBodyFatPct: 25, waist: 38 },
+      { recordedAt: '2026-02-01T00:00:00Z', totalBodyFatPct: 24.9, waist: 33 },
+    ];
+    const html = renderToStaticMarkup(
+      React.createElement(JourneyTimeline, {
+        vectors,
+        readouts: stableReadouts,
+        unit: 'in',
+        onScrub: noop,
+        latestFingerprintIsOutlier: true,
+      }),
+    );
+    expect(html).not.toContain('journey-spike-copy');
+  });
+});
+
+describe('JourneyTimeline: reduced motion parity for trend honesty context (Prompt 211b W2c)', () => {
+  it('the band annotation and plateau copy render identically under reduced motion', () => {
+    const vectors = [vectorFor(38), vectorFor(37), vectorFor(36)];
+    const readouts: JourneyScanReadout[] = [
+      { recordedAt: '2026-01-01T00:00:00Z', totalBodyFatPct: 25, waist: 38 },
+      { recordedAt: '2026-02-01T00:00:00Z', totalBodyFatPct: 24.9, waist: 37 },
+      { recordedAt: '2026-03-01T00:00:00Z', totalBodyFatPct: 24.8, waist: 36 },
+    ];
+    const reduced = renderToStaticMarkup(
+      React.createElement(JourneyTimeline, { vectors, readouts, unit: 'in', reducedMotion: true, onScrub: noop }),
+    );
+    const full = renderToStaticMarkup(
+      React.createElement(JourneyTimeline, { vectors, readouts, unit: 'in', reducedMotion: false, onScrub: noop }),
+    );
+    for (const marker of ['journey-band-bodyfat', 'journey-band-waist', 'journey-plateau-copy']) {
+      expect(reduced).toContain(marker);
+      expect(full).toContain(marker);
+    }
   });
 });

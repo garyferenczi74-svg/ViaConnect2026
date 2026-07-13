@@ -478,6 +478,19 @@ function CompositionPageInner() {
       }),
     [composHistory.snapshots, circByDate, circHistory.entries],
   );
+
+  // === PROMPT 211b W2c (Trend Honesty Wiring) START ===
+  // The LATEST composition entry's fingerprint-outlier verdict, ONLY when that
+  // latest entry is itself a scan (source === 'scan'). scanFp.flagDecision is
+  // computed by useScanFingerprints specifically for the latest body_photo_session
+  // vs the user's prior ones; gating on composHistory.latest.source keeps this
+  // honest -- a manually logged entry has no fingerprint of its own and must
+  // never inherit an outlier verdict from an unrelated photo session.
+  const latestFingerprintIsOutlier = useMemo(
+    () => (composHistory.latest?.source === 'scan' ? scanFp.flagDecision?.showFlag ?? false : false),
+    [composHistory.latest?.source, scanFp.flagDecision],
+  );
+  // === PROMPT 211b W2c (Trend Honesty Wiring) END ===
   // === PROMPT 210b P3-T2b (Time Machine) END ===
 
   // === PROMPT 211a W1 (shareable clip) START ===
@@ -1183,6 +1196,7 @@ function CompositionPageInner() {
           readouts={journeyReadouts}
           unit={unit}
           reducedMotion={avatarReducedMotion}
+          latestFingerprintIsOutlier={latestFingerprintIsOutlier}
           onScrub={(vec) => {
             setScrubVector(vec);
             // P8-T1b: debounce-notify for timeline_scrubbed; fires once per gesture.

@@ -20,7 +20,7 @@
 // scrubber rests at the latest scan on mount (sensible default).
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Play, Pause } from 'lucide-react';
+import { Play, Pause, Info } from 'lucide-react';
 import type { BodyParamVector } from '@/lib/formavision/geometry/types';
 import { lerpParamVector } from '@/lib/formavision/geometry/lerpParamVector';
 import {
@@ -31,6 +31,19 @@ import {
   positionForIndex,
   type ReadoutMode,
 } from '@/lib/formavision/timeline/journeyTimeline';
+// Prompt 211b W2c: wires the already-corrected W2 noise library onto this real
+// history surface. sequentialBodyFatClassifications below is the only new
+// logic (a bridge from a per-scan readout series to the pure classify
+// function); detectPlateau, getSpikeContext, and the band helpers are consumed
+// as-is, never re-derived.
+import { classifyBodyFatDelta, type NoiseClassification } from '@/lib/formavision/noise/mdcEngine';
+import { detectPlateau, getSpikeContext } from '@/lib/formavision/noise/noiseDeltaClassifier';
+import {
+  bodyFatBandHalfWidth,
+  circumferenceBandHalfWidth,
+  confidenceBandAriaLabel,
+} from '@/lib/formavision/noise/trendConfidenceBand';
+import { PER_MEASUREMENT_PCT } from '@/lib/arnold/scanning/accuracy/accuracyTargets';
 
 // Per-scan readout values. Numbers are the REAL measured values for that scan
 // (null === UNKNOWN, never fabricated, never 0).
@@ -54,6 +67,11 @@ export interface JourneyTimelineProps {
   // P8-T1b: telemetry seam. Called once when the Play button is pressed to start
   // playback (formavision.journey_played). Absent means no telemetry.
   onPlay?: () => void;
+  // Prompt 211b W2c: whether the LATEST scan's condition fingerprint is a
+  // known outlier vs the user's own history (from decideFingerprintFlag /
+  // useScanFingerprints, computed by the caller). Absent/false means no spike
+  // softening is applied. This never affects which numbers are shown.
+  latestFingerprintIsOutlier?: boolean;
   className?: string;
 }
 
@@ -82,6 +100,29 @@ function formatLen(v: number | null, unit: string): string {
   return `${(Math.round(v * 10) / 10).toFixed(1)} ${unit}`;
 }
 
+// Prompt 211b W2c: sequential (scan-over-scan) body fat noise classifications,
+// NEWEST FIRST, one per consecutive real-scan pair in `readouts` (oldest
+// first, the same order the timeline already receives). This is the honest
+// bridge detectPlateau's own doc calls for ("trend views that show sequential
+// scan-to-scan deltas, not just first-to-latest"): it only pairs up readouts
+// and hands them to the existing classifyBodyFatDelta; the MDC math itself is
+// untouched. null entries are the honest UNKNOWN (either side not measured).
+export function sequentialBodyFatClassifications(
+  readouts: JourneyScanReadout[],
+): Array<NoiseClassification | null> {
+  const out: Array<NoiseClassification | null> = [];
+  for (let i = readouts.length - 1; i > 0; i--) {
+    const to = readouts[i].totalBodyFatPct;
+    const from = readouts[i - 1].totalBodyFatPct;
+    if (from === null || from <= 0 || to === null) {
+      out.push(null);
+      continue;
+    }
+    out.push(classifyBodyFatDelta(to - from, from, PER_MEASUREMENT_PCT));
+  }
+  return out;
+}
+
 export function JourneyTimeline({
   vectors,
   readouts,
@@ -89,6 +130,7 @@ export function JourneyTimeline({
   reducedMotion = false,
   onScrub,
   onPlay,
+  latestFingerprintIsOutlier,
   className,
 }: JourneyTimelineProps) {
   const count = vectors.length;
@@ -258,6 +300,24 @@ export function JourneyTimeline({
   // Slider value uses scan-index space so the native step lands on snaps.
   const sliderValue = position * last;
 
+  // Prompt 211b W2c: trend honesty context, derived fresh each render from the
+  // real readouts/props above (cheap pure math over a small array, no memo
+  // needed). Never mutates readouts or vectors.
+  //
+  // 1. Confidence band: a qualitative "within precision" annotation, never a
+  //    printed number. null halfWidth (honest UNKNOWN) simply omits the icon.
+  const bodyFatBand = bodyFatBandHalfWidth(shown.totalBodyFatPct);
+  const waistBand = circumferenceBandHalfWidth('waist', unit);
+  // 2. Plateau: sequential scan-over-scan classifications, newest first.
+  const sequentialClassifications = sequentialBodyFatClassifications(readouts);
+  const plateau = detectPlateau(sequentialClassifications, 'body fat');
+  // 3. Spike softening: only the latest scan-over-scan delta can be a
+  //    single-scan spike. latestFingerprintIsOutlier is the caller's own
+  //    verdict for that same latest scan (never re-derived here).
+  const latestClassification = sequentialClassifications[0] ?? null;
+  const spike = getSpikeContext(latestClassification, latestFingerprintIsOutlier ?? false, 'body fat');
+  const isLatestSnapSpike = spike.isSuspectedSpike;
+
   return (
     <div
       data-testid="journey-timeline"
@@ -297,16 +357,25 @@ export function JourneyTimeline({
           className="pointer-events-none absolute left-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-[#2DA5A0]"
           style={{ width: `${position * 100}%` }}
         />
-        {/* Snap markers, one per real scan. */}
-        {snaps.map((s) => (
-          <span
-            key={s.index}
-            data-testid={`journey-snap-${s.index}`}
-            className="pointer-events-none absolute top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/40 bg-[#1E3054]"
-            style={{ left: `${s.p * 100}%` }}
-            aria-hidden="true"
-          />
-        ))}
+        {/* Snap markers, one per real scan. Prompt 211b W2c: the LATEST marker is
+            visually softened (lower opacity, dashed ring) when it is a
+            suspected single-scan spike, but it is NEVER removed or hidden -
+            the real data point stays on the track at full size. */}
+        {snaps.map((s) => {
+          const softened = s.index === last && isLatestSnapSpike;
+          return (
+            <span
+              key={s.index}
+              data-testid={`journey-snap-${s.index}`}
+              data-spike={softened ? 'true' : undefined}
+              className={`pointer-events-none absolute top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#1E3054] ${
+                softened ? 'border border-dashed border-[#B75E18]/60 opacity-60' : 'border border-white/40'
+              }`}
+              style={{ left: `${s.p * 100}%` }}
+              aria-hidden="true"
+            />
+          );
+        })}
         {/* The real input: spans index space 0..last with native snapping. The
             visible handle is the input thumb (styled via accent color). */}
         <input
@@ -344,16 +413,55 @@ export function JourneyTimeline({
           <span className="text-sm text-white/80">
             <span className="text-white/40">Body fat </span>
             {formatPct(shown.totalBodyFatPct)}
+            {/* Prompt 211b W2c: qualitative precision-band annotation. Never a
+                printed number; null halfWidth (honest UNKNOWN) omits the icon. */}
+            {bodyFatBand.halfWidth !== null && (
+              <span
+                role="img"
+                data-testid="journey-band-bodyfat"
+                aria-label={confidenceBandAriaLabel('body fat', bodyFatBand.halfWidth, bodyFatBand.unit)}
+                className="ml-1 inline-flex align-text-top"
+              >
+                <Info className="h-3 w-3 text-white/30" strokeWidth={1.5} aria-hidden="true" />
+              </span>
+            )}
           </span>
           <span className="text-sm text-white/80">
             <span className="text-white/40">Waist </span>
             {formatLen(shown.waist, unit)}
+            {waistBand.halfWidth !== null && (
+              <span
+                role="img"
+                data-testid="journey-band-waist"
+                aria-label={confidenceBandAriaLabel('waist', waistBand.halfWidth, waistBand.unit)}
+                className="ml-1 inline-flex align-text-top"
+              >
+                <Info className="h-3 w-3 text-white/30" strokeWidth={1.5} aria-hidden="true" />
+              </span>
+            )}
           </span>
         </div>
 
         {readoutMode.kind === 'transition' && (
           <p className="mt-2 text-[10px] leading-relaxed text-white/35">
             The body shape is a visual transition between your measured scans. The numbers shown are from your {formatDate(shown.recordedAt)} scan, the nearest measured point.
+          </p>
+        )}
+
+        {/* Prompt 211b W2c: plateau, shown supportively (never as failure), only
+            while resting on the latest real scan and only when the classifier
+            actually reports a plateau (never fabricated). */}
+        {readoutMode.kind === 'measured' && shownIndex === last && plateau?.isOnPlateau && (
+          <p data-testid="journey-plateau-copy" className="mt-2 text-[11px] leading-relaxed text-[#2DA5A0]">
+            {plateau.plateauCopy}
+          </p>
+        )}
+
+        {/* Prompt 211b W2c: spike context for the latest scan. The data point
+            above is unchanged and fully visible; this only adds honest context. */}
+        {readoutMode.kind === 'measured' && shownIndex === last && isLatestSnapSpike && (
+          <p data-testid="journey-spike-copy" className="mt-2 text-[11px] leading-relaxed text-[#e8b78c]">
+            {spike.spikeCopy}
           </p>
         )}
       </div>
