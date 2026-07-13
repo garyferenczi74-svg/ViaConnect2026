@@ -54,7 +54,7 @@ export function WithinNoiseBadge({ metricLabel, className }: WithinNoiseBadgePro
       <span
         role="img"
         aria-label={ariaLabel}
-        aria-describedby={tooltipId}
+        aria-describedby={tooltipOpen ? tooltipId : undefined}
         data-testid="within-noise-badge"
         className="inline-flex items-center gap-1 rounded-full border border-[#2DA5A0]/40 bg-[#2DA5A0]/10 px-2 py-0.5 text-[10px] font-medium text-[#2DA5A0]"
       >

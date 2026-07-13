@@ -130,11 +130,20 @@ export function NotableChanges({ deltas, noiseClassifications, className }: Nota
               >
                 <span className="text-sm text-white/80">{row.label}</span>
                 <span className="flex flex-col items-start gap-1 sm:items-end">
-                  <span className={`inline-flex items-center gap-1.5 text-sm font-medium ${present.toneClass}`}>
-                    <present.Icon className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
-                    {formatVal(Math.abs(row.delta), row.unit)}
-                  </span>
-                  {/* Prompt 211b W2: within-noise badge shown inline; never hides the value. */}
+                  {/* Prompt 211b W2 (review C1): WITHIN_NOISE never gets the toned
+                      directional arrow -- it would imply a gain/loss precision the
+                      harness has not proven. Value stays visible; badge carries the
+                      classification, matching BodyFatReadout's treatment. */}
+                  {isWithinNoise ? (
+                    <span className="inline-flex items-center gap-1.5 text-sm font-medium text-white/70">
+                      {formatVal(Math.abs(row.delta), row.unit)}
+                    </span>
+                  ) : (
+                    <span className={`inline-flex items-center gap-1.5 text-sm font-medium ${present.toneClass}`}>
+                      <present.Icon className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+                      {formatVal(Math.abs(row.delta), row.unit)}
+                    </span>
+                  )}
                   {isWithinNoise && (
                     <WithinNoiseBadge
                       metricLabel={row.label.toLowerCase()}

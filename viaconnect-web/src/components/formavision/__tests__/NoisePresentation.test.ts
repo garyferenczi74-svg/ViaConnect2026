@@ -258,6 +258,28 @@ describe('NotableChanges: within-noise per-row badges (Prompt 211b W2)', () => {
     expect(html).toContain('notable-row-waist');
   });
 
+  it('WITHIN_NOISE row: no toned directional arrow rendered (review C1)', () => {
+    // Single-row scenario (only waist differs) so the absence of an arrow is
+    // unambiguous: no other row's arrow can leak into the assertion.
+    const singleRowDeltas = computeCompositionDeltas({
+      firstComposition: null,
+      latestComposition: null,
+      firstCircumferences: circ({ waist: 36 }),
+      latestCircumferences: circ({ waist: 34 }),
+      unit: 'cm',
+    });
+    const html = renderToStaticMarkup(
+      React.createElement(NotableChanges, {
+        deltas: singleRowDeltas,
+        noiseClassifications: { waist: 'WITHIN_NOISE' },
+      }),
+    );
+    expect(hasArrowDown(html)).toBe(false);
+    expect(hasArrowUp(html)).toBe(false);
+    expect(html).toContain('within-noise-badge');
+    expect(html).toContain('notable-row-waist');
+  });
+
   it('data-noise attribute is set correctly on within-noise rows', () => {
     const html = renderToStaticMarkup(
       React.createElement(NotableChanges, {

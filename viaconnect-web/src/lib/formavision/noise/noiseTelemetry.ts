@@ -15,12 +15,9 @@
  *   - Fail-open: a telemetry failure must never propagate to the UI.
  *   - Same analytics_events sink as avatarTelemetry / reportTelemetry.
  *
- * Two events:
+ * One event:
  *   formavision.within_noise_shown  -- a within-noise badge was shown for at
  *     least one metric. Properties: withinNoiseCount, meaningfulCount.
- *   formavision.noise_session_summary -- one-per-session summary of all
- *     within-noise impressions. Properties: withinNoiseCount, meaningfulCount,
- *     totalClassified.
  *
  * Standing rules: no em dashes, no en dashes, no emojis, zero any.
  */
@@ -33,14 +30,7 @@ import type { Json } from '@/lib/supabase/types';
 // Event types
 // ---------------------------------------------------------------------------
 
-export type NoiseTelemetryEvent =
-  | 'formavision.within_noise_shown'
-  | 'formavision.noise_session_summary';
-
-export const ALL_NOISE_EVENTS: NoiseTelemetryEvent[] = [
-  'formavision.within_noise_shown',
-  'formavision.noise_session_summary',
-];
+export type NoiseTelemetryEvent = 'formavision.within_noise_shown';
 
 // Coarse, PII-clean counts only. No measurement values, no body fat readings.
 export interface NoiseEventProperties {

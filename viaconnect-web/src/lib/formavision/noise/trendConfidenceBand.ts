@@ -99,12 +99,12 @@ export function circumferenceBandHalfWidth(
     return { halfWidth: null, unit: displayUnit };
   }
 
-  // The band is symmetric: halfWidth = MDC95 / 2 is actually the full MDC95 value
-  // used as the +/- envelope. Each point is shown with a band of +/- (MDC95/2).
-  // This gives a visual sense of where the noise floor is without overstating it.
-  // We use the full MDC95 as the half-width so the user sees "within this corridor
-  // I cannot distinguish two readings."
-  const halfWidthCm = mdc95Cm;
+  // The band is symmetric: the indistinguishability half-width is MDC95 / 2.
+  // Each point is shown with a band of +/- (MDC95/2), so the full visible
+  // corridor spans MDC95 total -- "within this corridor I cannot distinguish
+  // two readings." Using the full MDC95 as the half-width would double the
+  // corridor and overstate the noise floor.
+  const halfWidthCm = mdc95Cm / 2;
   const halfWidth = displayUnit === 'in' ? halfWidthCm / 2.54 : halfWidthCm;
 
   return { halfWidth, unit: displayUnit };
@@ -171,8 +171,12 @@ export function circumferenceTrendBands(
 /**
  * Returns the aria-label for a confidence band annotation on a trend line.
  * Used on screen-reader-only elements accompanying visual bands.
+ *
+ * Review C2: no accuracy/precision NUMBER may appear in user-facing copy until
+ * a real held-out cohort passes. This label speaks qualitatively only; the
+ * halfWidth and unit parameters are kept for call-site compatibility with the
+ * band computation but are not interpolated into the string.
  */
 export function confidenceBandAriaLabel(metricLabel: string, halfWidth: number, unit: string): string {
-  const formatted = `${(Math.round(halfWidth * 10) / 10).toFixed(1)} ${unit}`;
-  return `${metricLabel} precision band: plus or minus ${formatted}. Changes within this range may be within measurement noise.`;
+  return `${metricLabel} precision band: within your scan's measurement precision. Changes within this range may be within measurement noise.`;
 }
