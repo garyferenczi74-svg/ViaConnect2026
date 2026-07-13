@@ -332,6 +332,41 @@ BEGIN
   END IF;
 END $$;
 
+-- ============================================================================
+-- 3b. Immutability trigger for cohort_validation_runs
+--     The admin UPDATE policy above can technically write ANY column. But a
+--     validation run is EVIDENCE: once inserted, its report, held_out_pass,
+--     calibration_version, run_at, id, and created_at must never change, so a
+--     signed-off accuracy claim can never be retroactively altered. Only
+--     gary_signed_off and notes may be mutated post-insert (the sign-off act).
+--     Enforced at row level, independent of RLS. Idempotent (CREATE OR REPLACE
+--     + DROP TRIGGER IF EXISTS). search_path pinned.
+-- ============================================================================
+CREATE OR REPLACE FUNCTION public.enforce_cohort_run_immutable()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = public, pg_temp
+AS $$
+BEGIN
+  IF NEW.report              IS DISTINCT FROM OLD.report
+     OR NEW.held_out_pass       IS DISTINCT FROM OLD.held_out_pass
+     OR NEW.calibration_version IS DISTINCT FROM OLD.calibration_version
+     OR NEW.run_at              IS DISTINCT FROM OLD.run_at
+     OR NEW.id                  IS DISTINCT FROM OLD.id
+     OR NEW.created_at          IS DISTINCT FROM OLD.created_at THEN
+    RAISE EXCEPTION
+      'cohort_validation_runs is append-only: report, held_out_pass, calibration_version, run_at, id and created_at are immutable after insert; only gary_signed_off and notes may change';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_cohort_run_immutable ON public.cohort_validation_runs;
+CREATE TRIGGER trg_cohort_run_immutable
+  BEFORE UPDATE ON public.cohort_validation_runs
+  FOR EACH ROW
+  EXECUTE FUNCTION public.enforce_cohort_run_immutable();
+
 -- =============================================================================
 -- DEXA import: DEFERRED TO W3
 -- A dexa_imports table for DEXA/bodpod reference instrument imports is deferred
@@ -346,6 +381,12 @@ END $$;
 -- Tables: cohort_subjects + cohort_labeled_measurements + cohort_validation_runs
 -- RLS: admin/superadmin/researcher SELECT+INSERT; admin/superadmin UPDATE only.
 -- gary_signed_off defaults FALSE; no accuracy claim can surface until it is TRUE.
+-- validation runs are immutable after insert via trg_cohort_run_immutable
+--   (only gary_signed_off and notes mutable).
+-- No DELETE policy on any table by design: research records are append-only for
+--   chain-of-custody. Consent revocation / erasure is a deliberate superuser
+--   operation (not a self-serve RLS path), handled out of band per the consent
+--   ledger revocation flow.
 -- DEXA imports deferred to W3.
 -- APPEND-ONLY: no existing table, column, policy, or migration touched.
 -- =============================================================================
