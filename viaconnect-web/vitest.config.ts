@@ -45,6 +45,8 @@ export default defineConfig({
       'src/components/formavision/__tests__/ClipCreatorSurface.bare.test.tsx',
       // Prompt 211a W1: consumer-only Helix first-share moment (celebrate-only)
       'src/components/formavision/__tests__/ClipShareMoment.bare.test.tsx',
+      // Prompt 211b W1b: admin cohort claim-gated report panel (no fabricated number)
+      'src/components/admin/cohort/__tests__/GatedReportPanel.bare.test.tsx',
     ],
     exclude: ['node_modules', '.next', 'supabase'],
     globals: true,
