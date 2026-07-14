@@ -98,7 +98,7 @@ import { AnchorEntryEntryPoint } from '@/components/formavision/AnchorEntryEntry
 // structural discipline ScanStreakDisplay / PersonalPrecisionPanel established.
 import { CycleOptIn } from '@/components/formavision/CycleOptIn';
 import { PregnancyModeControl } from '@/components/formavision/PregnancyModeControl';
-import { usePregnancyGating } from '@/hooks/body-tracker/usePregnancyGating';
+import { usePregnancyGating, deriveCompositionGate } from '@/hooks/body-tracker/usePregnancyGating';
 import type { CyclePhase } from '@/lib/formavision/noise/cyclePhaseAware';
 // === PROMPT 211b W4b (Cycle opt-in + pregnancy-mode suppression) END ===
 // === PROMPT 210b P8-T1b (Avatar Telemetry) START ===
@@ -412,6 +412,19 @@ function CompositionPageInner() {
   // never indicated pregnancy/lactation sees compositionSuppressed: false and
   // the page is unchanged.
   const pregnancyGating = usePregnancyGating(userId ?? null);
+  // Task 211b-W4b review fix (C1, Critical, safety): every composition-ESTIMATE
+  // surface must gate on (compositionSuppressed OR loading), never on
+  // compositionSuppressed alone -- otherwise a pregnant user's estimate can
+  // flash on-screen for the whole initial-read window. The hook's `gating`
+  // already fails closed on a read ERROR (see usePregnancyGating.ts);
+  // deriveCompositionGate additionally fails closed for the pure LOADING
+  // window and picks the right copy for each cause, so a non-pregnant user is
+  // never told pregnancy/lactation mode is active while the read is merely
+  // in flight.
+  const { active: compositionGateActive, copy: compositionGateCopy } = deriveCompositionGate(
+    pregnancyGating.gating,
+    pregnancyGating.loading,
+  );
   // === PROMPT 211b W4b (Pregnancy-mode gating) END ===
   // === PROMPT 211b W3c (Personal Precision Display) START ===
   // Own-row read of the user's honest per-region calibration precision. Fails
@@ -419,10 +432,11 @@ function CompositionPageInner() {
   // renders nothing when the user has never added an anchor -- default OFF).
   // Task 211b-W4b (SAFETY-CRITICAL): the second argument gates the read itself
   // -- runPersonalFusion (a composition-estimate call) is never invoked while
-  // pregnancy mode is active, not merely hidden from the rendered panel.
+  // pregnancy mode is active OR while it is still loading/unconfirmed (review
+  // C1), not merely hidden from the rendered panel.
   const personalPrecision = usePersonalPrecision(
     userId ?? null,
-    !pregnancyGating.gating.compositionSuppressed,
+    !compositionGateActive,
   );
   // === PROMPT 211b W3c (Personal Precision Display) END ===
   // === PROMPT 211b W4b (Cycle opt-in context) START ===
@@ -1229,16 +1243,16 @@ function CompositionPageInner() {
             firstScanDate={composHistory.first?.recordedAt ?? null}
             latestScanDate={composHistory.latest?.recordedAt ?? null}
             bodyFatNoise={vrNoiseClassification.bodyFat?.classification ?? null}
-            compositionSuppressed={pregnancyGating.gating.compositionSuppressed}
-            suppressedCopy={pregnancyGating.gating.reason}
+            compositionSuppressed={compositionGateActive}
+            suppressedCopy={compositionGateCopy}
           />
           {/* Prompt 211b W2: noiseClassifications wires per-row MDC classifications
               into Notable Changes. Each row gets a within-noise badge when applicable. */}
           <NotableChanges
             deltas={vrDeltas}
             noiseClassifications={circumferenceNoiseMap}
-            compositionSuppressed={pregnancyGating.gating.compositionSuppressed}
-            suppressedCopy={pregnancyGating.gating.reason}
+            compositionSuppressed={compositionGateActive}
+            suppressedCopy={compositionGateCopy}
           />
         </div>
       )}
@@ -1324,8 +1338,8 @@ function CompositionPageInner() {
           onUserToggle={(on) =>
             telEmit('formavision.future_self_toggled', { on })
           }
-          suppressed={pregnancyGating.gating.compositionSuppressed}
-          suppressedCopy={pregnancyGating.gating.reason}
+          suppressed={compositionGateActive}
+          suppressedCopy={compositionGateCopy}
         />
       )}
       {/* === PROMPT 210b P5-T1c (FutureSelfPanel) END === */}
@@ -1444,19 +1458,20 @@ function CompositionPageInner() {
               Honest-empty by default: renders nothing until the user has
               recorded at least one anchor (tape/DEXA/scale). No numeric band
               is ever shown pre-cohort; qualitative status only.
-              Task 211b-W4b (SAFETY-CRITICAL): while pregnancy mode is active,
-              usePersonalPrecision's `enabled` argument above already guarantees
-              runPersonalFusion (the composition-estimate call) is never invoked,
-              so personalPrecision.result is always null here and the panel
-              renders nothing; the supportive copy below replaces it instead of
-              a silent gap. Girth MeasurementsGrid/MeasurementsPanel above are
-              unaffected and always keep rendering. */}
-          {pregnancyGating.gating.compositionSuppressed ? (
+              Task 211b-W4b (SAFETY-CRITICAL): while pregnancy mode is active OR
+              still loading/unconfirmed (review C1), usePersonalPrecision's
+              `enabled` argument above already guarantees runPersonalFusion (the
+              composition-estimate call) is never invoked, so
+              personalPrecision.result is always null here and the panel
+              renders nothing; the supportive/neutral copy below replaces it
+              instead of a silent gap. Girth MeasurementsGrid/MeasurementsPanel
+              above are unaffected and always keep rendering. */}
+          {compositionGateActive ? (
             <p
               data-testid="personal-precision-composition-suppressed"
               className="text-xs leading-relaxed text-white/60"
             >
-              {pregnancyGating.gating.reason}
+              {compositionGateCopy}
             </p>
           ) : (
             <PersonalPrecisionPanel result={personalPrecision.result} />

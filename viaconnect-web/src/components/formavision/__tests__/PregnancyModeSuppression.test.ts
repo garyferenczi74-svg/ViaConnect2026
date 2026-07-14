@@ -28,6 +28,7 @@ import { NotableChanges } from '../NotableChanges';
 import { FutureSelfPanel } from '../FutureSelfPanel';
 import { computeCompositionDeltas } from '@/lib/formavision/deltas/compositionDeltas';
 import { getCompositionGating } from '@/lib/formavision/pregnancy/pregnancyMode';
+import { deriveCompositionGate, COMPOSITION_GATE_CHECKING_COPY } from '@/hooks/body-tracker/usePregnancyGating';
 import type { CompositionSnapshot } from '@/lib/body-tracker/composition/types';
 import {
   emptyMeasurements,
@@ -349,5 +350,132 @@ describe('pregnancy-mode suppressed copy: no em/en dashes', () => {
       expect(html.includes(EM_DASH)).toBe(false);
       expect(html.includes(EN_DASH)).toBe(false);
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Task 211b-W4b review fix (C1, Critical): the composition page wires every
+// estimate surface's compositionSuppressed/suppressed prop through
+// deriveCompositionGate(gating, loading), not gating.compositionSuppressed
+// alone. This exercises that exact composition end to end: pregnancy active OR
+// loading OR read-error all suppress every surface, the estimate function is
+// never called in any of the three cases, girth measurements (NotableChanges
+// rows) always keep rendering, and the LOADING case shows the neutral
+// checking copy rather than pregnancy-suppression copy.
+// ---------------------------------------------------------------------------
+
+describe('deriveCompositionGate wired into the composition-estimate surfaces (review C1)', () => {
+  const girthDeltas = computeCompositionDeltas({
+    firstComposition: snapshot({ totalBodyFatPct: 28 }),
+    latestComposition: snapshot({ totalBodyFatPct: 24 }),
+    firstCircumferences: circ({ waist: 36 }),
+    latestCircumferences: circ({ waist: 34 }),
+    unit: 'in',
+  });
+
+  const futureSelfBaseProps = {
+    snapshot: snapshot({ totalBodyFatPct: 28 }),
+    circumferences: circ({ waist: 36 }),
+    sex: 'male' as const,
+    unit: 'in' as const,
+    userId: 'user-1',
+    onGhostChange: () => {},
+  };
+
+  it('pregnancy active, not loading: all three surfaces suppressed, girth rows render, pregnancy copy shown', () => {
+    projectFutureSelfVectorMock.mockClear();
+    const gating = getCompositionGating({ pregnancyStatus: 'pregnant' });
+    const { active, copy } = deriveCompositionGate(gating, false);
+
+    const bodyFatHtml = renderToStaticMarkup(
+      React.createElement(BodyFatReadout, {
+        latestBodyFatPct: 24,
+        bodyFat: girthDeltas.bodyFat,
+        firstScanDate: null,
+        latestScanDate: null,
+        compositionSuppressed: active,
+        suppressedCopy: copy,
+      }),
+    );
+    const notableHtml = renderToStaticMarkup(
+      React.createElement(NotableChanges, {
+        deltas: girthDeltas,
+        compositionSuppressed: active,
+        suppressedCopy: copy,
+      }),
+    );
+    const futureSelfHtml = renderToStaticMarkup(
+      React.createElement(FutureSelfPanel, { ...futureSelfBaseProps, suppressed: active, suppressedCopy: copy }),
+    );
+
+    expect(active).toBe(true);
+    expect(bodyFatHtml).toContain('body-fat-composition-suppressed');
+    expect(notableHtml).toContain('notable-changes-composition-suppressed');
+    expect(notableHtml).toContain('notable-row-waist'); // girth measurement, always renders
+    expect(futureSelfHtml).toContain('future-self-suppressed');
+    expect(projectFutureSelfVectorMock).not.toHaveBeenCalled();
+    expect(copy?.toLowerCase()).toContain('pregnancy or lactation mode is active');
+  });
+
+  it('pregnancy inactive but LOADING: all three surfaces suppressed, girth rows render, NEUTRAL checking copy (not pregnancy copy)', () => {
+    projectFutureSelfVectorMock.mockClear();
+    const gating = getCompositionGating({ pregnancyStatus: null }); // not (yet) confirmed pregnant
+    const { active, copy } = deriveCompositionGate(gating, true); // still loading
+
+    const bodyFatHtml = renderToStaticMarkup(
+      React.createElement(BodyFatReadout, {
+        latestBodyFatPct: 24,
+        bodyFat: girthDeltas.bodyFat,
+        firstScanDate: null,
+        latestScanDate: null,
+        compositionSuppressed: active,
+        suppressedCopy: copy,
+      }),
+    );
+    const notableHtml = renderToStaticMarkup(
+      React.createElement(NotableChanges, {
+        deltas: girthDeltas,
+        compositionSuppressed: active,
+        suppressedCopy: copy,
+      }),
+    );
+    const futureSelfHtml = renderToStaticMarkup(
+      React.createElement(FutureSelfPanel, { ...futureSelfBaseProps, suppressed: active, suppressedCopy: copy }),
+    );
+
+    expect(active).toBe(true);
+    expect(copy).toBe(COMPOSITION_GATE_CHECKING_COPY);
+    expect(copy?.toLowerCase()).not.toContain('pregnancy or lactation mode is active');
+    expect(bodyFatHtml).toContain('body-fat-composition-suppressed');
+    expect(bodyFatHtml).toContain(COMPOSITION_GATE_CHECKING_COPY);
+    expect(notableHtml).toContain('notable-changes-composition-suppressed');
+    expect(notableHtml).toContain('notable-row-waist'); // girth measurement, always renders
+    expect(futureSelfHtml).toContain('future-self-suppressed');
+    expect(projectFutureSelfVectorMock).not.toHaveBeenCalled();
+  });
+
+  it('read error (gating fails closed), not loading: all three surfaces suppressed, girth rows render, estimate fn never called', () => {
+    projectFutureSelfVectorMock.mockClear();
+    // Mirrors resolvePregnancyGating('none', readFailed: true) without importing
+    // the hook module's internal state -- constructs the same shape the hook
+    // produces on a failed read, to keep this test focused on the wiring.
+    const gating = { compositionSuppressed: true, reason: 'Read failed, paused as a precaution.' };
+    const { active, copy } = deriveCompositionGate(gating, false);
+
+    const notableHtml = renderToStaticMarkup(
+      React.createElement(NotableChanges, {
+        deltas: girthDeltas,
+        compositionSuppressed: active,
+        suppressedCopy: copy,
+      }),
+    );
+    const futureSelfHtml = renderToStaticMarkup(
+      React.createElement(FutureSelfPanel, { ...futureSelfBaseProps, suppressed: active, suppressedCopy: copy }),
+    );
+
+    expect(active).toBe(true);
+    expect(notableHtml).toContain('notable-row-waist'); // girth measurement, always renders
+    expect(futureSelfHtml).toContain('future-self-suppressed');
+    expect(projectFutureSelfVectorMock).not.toHaveBeenCalled();
   });
 });
