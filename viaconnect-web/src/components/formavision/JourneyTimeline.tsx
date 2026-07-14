@@ -36,6 +36,11 @@ import {
 // logic (a bridge from a per-scan readout series to the pure classify
 // function); detectPlateau, getSpikeContext, and the band helpers are consumed
 // as-is, never re-derived.
+//
+// Task 211b-W2d: extends the SAME bridge pattern to the girth (waist/hip)
+// series (sequentialGirthClassifications below) and threads the pregnancy
+// gate (usePregnancyGating, already committed by W4b-fix) so historical
+// BODY-FAT numbers are suppressed while girth history keeps rendering.
 import { classifyBodyFatDelta, type NoiseClassification } from '@/lib/formavision/noise/mdcEngine';
 import {
   detectPlateau,
@@ -66,6 +71,11 @@ export interface JourneyScanReadout {
   totalBodyFatPct: number | null;
   // A key circumference (waist) in the active unit, or null when UNKNOWN.
   waist: number | null;
+  // Task 211b-W2d: hip circumference in the active unit, or null when UNKNOWN.
+  // Optional (absent === no hip series at all) so existing callers/tests that
+  // never populate hip keep compiling unchanged; the Hip row on the timeline
+  // only renders when at least one real hip value exists across the series.
+  hip?: number | null;
 }
 
 export interface JourneyTimelineProps {
@@ -91,8 +101,29 @@ export interface JourneyTimelineProps {
   // phase are all a no-op (unchanged trend, per applyCyclePhaseAwareness's
   // own contract). Default OFF: a user who has not opted in sees NO change.
   cycleContext?: CyclePhaseAwareContext;
+  // Task 211b-W2d (SAFETY-CRITICAL): the pregnancy gate's combined outcome
+  // (usePregnancyGating's compositionSuppressed || loading, via
+  // deriveCompositionGate -- the SAME value every other composition-ESTIMATE
+  // surface on this page gates on). When true, historical BODY-FAT numbers
+  // (a composition estimate) are suppressed on this timeline; the classifier
+  // calls for body fat are skipped entirely (not merely hidden). GIRTH
+  // (waist/hip) history is never part of this gate and keeps rendering.
+  // Absent/false is unchanged behavior.
+  compositionSuppressed?: boolean;
+  // The supportive, cause-specific copy shown in place of the body-fat number
+  // while suppressed (deriveCompositionGate's copy: pregnancy-safety copy when
+  // genuinely suppressed, a neutral "checking" copy during the pure loading
+  // window). Never implies pregnancy/lactation when the cause is loading.
+  suppressedCopy?: string | null;
   className?: string;
 }
+
+// Task 211b-W2d: default fallback when compositionSuppressed is true but the
+// caller did not supply suppressedCopy. Mirrors BodyFatReadout's own default
+// (the approved copy for this exact condition) plus an explicit note that
+// girth stays available, matching this component's own honesty contract.
+const DEFAULT_BODYFAT_SUPPRESSED_COPY =
+  'Body fat estimates are paused while pregnancy or lactation mode is active. Girth measurements stay available.';
 
 // A user who has not opted in (or whose CycleOptIn read has not resolved yet)
 // gets exactly today's unchanged behavior -- applyCyclePhaseAwareness treats
@@ -147,6 +178,45 @@ export function sequentialBodyFatClassifications(
   return out;
 }
 
+// Task 211b-W2d: sequential (scan-over-scan) GIRTH noise classifications,
+// NEWEST FIRST, one per consecutive real-scan pair, for a single circumference
+// key (waist or hip). Mirrors sequentialBodyFatClassifications's honest bridge
+// exactly: it only pairs up readouts and hands them to the already-wired
+// classifyCircumferenceDelta (imported above); no MDC math is re-derived here.
+// 0 is treated as the codebase's UNKNOWN sentinel for length values (the same
+// convention formatLen and sequentialBodyFatClassifications already use),
+// never a fabricated classification from a delta against an unmeasured value.
+// null entries are the honest UNKNOWN (either side not measured).
+export function sequentialGirthClassifications(
+  readouts: JourneyScanReadout[],
+  key: 'waist' | 'hip',
+  unit: 'in' | 'cm',
+): Array<NoiseClassification | null> {
+  const out: Array<NoiseClassification | null> = [];
+  for (let i = readouts.length - 1; i > 0; i--) {
+    const to = readouts[i][key] ?? null;
+    const from = readouts[i - 1][key] ?? null;
+    if (from === null || from === 0 || to === null || to === 0) {
+      out.push(null);
+      continue;
+    }
+    const delta = to - from;
+    const direction: CircumferenceDelta['direction'] =
+      Math.abs(delta) < CIRCUMFERENCE_EPSILON ? 'unchanged' : delta > 0 ? 'worsened' : 'improved';
+    const circDelta: CircumferenceDelta = {
+      key,
+      label: MEASUREMENT_LABELS[key],
+      from,
+      to,
+      delta,
+      direction,
+      unit,
+    };
+    out.push(classifyCircumferenceDelta(circDelta).classification);
+  }
+  return out;
+}
+
 // Task 211b-W4b: the honest scan-over-scan waist noise classification for the
 // LATEST real-scan pair only (mirrors the existing latest-only convention for
 // spike/plateau context on this timeline). Direction uses the same
@@ -188,6 +258,8 @@ export function JourneyTimeline({
   onPlay,
   latestFingerprintIsOutlier,
   cycleContext = CYCLE_CONTEXT_DEFAULT,
+  compositionSuppressed = false,
+  suppressedCopy,
   className,
 }: JourneyTimelineProps) {
   const count = vectors.length;
@@ -363,17 +435,25 @@ export function JourneyTimeline({
   //
   // 1. Confidence band: a qualitative "within precision" annotation, never a
   //    printed number. null halfWidth (honest UNKNOWN) simply omits the icon.
-  const bodyFatBand = bodyFatBandHalfWidth(shown.totalBodyFatPct);
+  //    Task 211b-W2d (SAFETY-CRITICAL): the body-fat classifier calls are
+  //    skipped ENTIRELY while compositionSuppressed -- not merely hidden from
+  //    render -- so no composition-estimate computation runs for a suppressed
+  //    user. Girth (waist/hip) is never part of this gate.
+  const bodyFatBand = compositionSuppressed
+    ? { halfWidth: null, unit: 'pct' as const }
+    : bodyFatBandHalfWidth(shown.totalBodyFatPct);
   const waistBand = circumferenceBandHalfWidth('waist', unit);
   // 2. Plateau: sequential scan-over-scan classifications, newest first.
-  const sequentialClassifications = sequentialBodyFatClassifications(readouts);
-  const plateau = detectPlateau(sequentialClassifications, 'body fat');
+  const sequentialClassifications = compositionSuppressed ? [] : sequentialBodyFatClassifications(readouts);
+  const plateau = compositionSuppressed ? null : detectPlateau(sequentialClassifications, 'body fat');
   // 3. Spike softening: only the latest scan-over-scan delta can be a
   //    single-scan spike. latestFingerprintIsOutlier is the caller's own
   //    verdict for that same latest scan (never re-derived here).
   const latestClassification = sequentialClassifications[0] ?? null;
-  const spike = getSpikeContext(latestClassification, latestFingerprintIsOutlier ?? false, 'body fat');
-  const isLatestSnapSpike = spike.isSuspectedSpike;
+  const spike = compositionSuppressed
+    ? { isSuspectedSpike: false, spikeCopy: '' }
+    : getSpikeContext(latestClassification, latestFingerprintIsOutlier ?? false, 'body fat');
+  const isLatestBodyFatSpike = spike.isSuspectedSpike;
   // 4. Task 211b-W4b: cycle phase context for the latest waist scan-over-scan
   //    delta, via the APPROVED W4a service unmodified. Opt-out or unknown
   //    phase (the CYCLE_CONTEXT_DEFAULT, or any caller-supplied equivalent) is
@@ -384,6 +464,34 @@ export function JourneyTimeline({
   const waistPhaseAware = latestWaistNoise
     ? applyCyclePhaseAwareness(latestWaistNoise, cycleContext)
     : null;
+
+  // Task 211b-W2d: girth (waist/hip) plateau + spike, mirroring the body-fat
+  // pattern above exactly, but NEVER gated on compositionSuppressed -- girth
+  // measurements are never part of the pregnancy composition-estimate gate
+  // (see usePregnancyGating.ts). Waist is always computed. Hip is only
+  // computed/rendered when the series carries a real (non-UNKNOWN) hip value
+  // at least once (hasHipSeries) -- an honest gate for users who have never
+  // tracked hip, not a fabricated row of "Not measured".
+  const waistClassifications = sequentialGirthClassifications(readouts, 'waist', unit);
+  const waistPlateau = detectPlateau(waistClassifications, 'waist');
+  const waistLatestClassification = waistClassifications[0] ?? null;
+  const waistSpike = getSpikeContext(waistLatestClassification, latestFingerprintIsOutlier ?? false, 'waist');
+
+  const hasHipSeries = readouts.some((r) => typeof r.hip === 'number' && r.hip !== 0);
+  const hipBand = circumferenceBandHalfWidth('hip', unit);
+  const hipClassifications = hasHipSeries ? sequentialGirthClassifications(readouts, 'hip', unit) : [];
+  const hipPlateau = hasHipSeries ? detectPlateau(hipClassifications, 'hip') : null;
+  const hipLatestClassification = hipClassifications[0] ?? null;
+  const hipSpike = hasHipSeries
+    ? getSpikeContext(hipLatestClassification, latestFingerprintIsOutlier ?? false, 'hip')
+    : { isSuspectedSpike: false, spikeCopy: '' };
+
+  // The shared snap-marker dot represents the whole scan point (not one
+  // metric), so it softens when ANY metric's latest delta is a suspected
+  // spike for this same latest scan -- body fat (only when not suppressed) or
+  // either girth series.
+  const isLatestSnapSpike = isLatestBodyFatSpike || waistSpike.isSuspectedSpike || hipSpike.isSuspectedSpike;
+  const shownHip = shown.hip ?? null;
 
   return (
     <div
@@ -479,18 +587,30 @@ export function JourneyTimeline({
         <div className="mt-2 flex flex-wrap gap-x-6 gap-y-1">
           <span className="text-sm text-white/80">
             <span className="text-white/40">Body fat </span>
-            {formatPct(shown.totalBodyFatPct)}
-            {/* Prompt 211b W2c: qualitative precision-band annotation. Never a
-                printed number; null halfWidth (honest UNKNOWN) omits the icon. */}
-            {bodyFatBand.halfWidth !== null && (
-              <span
-                role="img"
-                data-testid="journey-band-bodyfat"
-                aria-label={confidenceBandAriaLabel('body fat', bodyFatBand.halfWidth, bodyFatBand.unit)}
-                className="ml-1 inline-flex align-text-top"
-              >
-                <Info className="h-3 w-3 text-white/30" strokeWidth={1.5} aria-hidden="true" />
+            {/* Task 211b-W2d (SAFETY-CRITICAL): while compositionSuppressed the
+                historical BODY-FAT number (a composition estimate) is replaced
+                with supportive, cause-specific copy -- never rendered alongside
+                the number, never a fabricated figure. Girth below is unaffected. */}
+            {compositionSuppressed ? (
+              <span data-testid="journey-bodyfat-suppressed" className="text-white/60">
+                {suppressedCopy ?? DEFAULT_BODYFAT_SUPPRESSED_COPY}
               </span>
+            ) : (
+              <>
+                {formatPct(shown.totalBodyFatPct)}
+                {/* Prompt 211b W2c: qualitative precision-band annotation. Never a
+                    printed number; null halfWidth (honest UNKNOWN) omits the icon. */}
+                {bodyFatBand.halfWidth !== null && (
+                  <span
+                    role="img"
+                    data-testid="journey-band-bodyfat"
+                    aria-label={confidenceBandAriaLabel('body fat', bodyFatBand.halfWidth, bodyFatBand.unit)}
+                    className="ml-1 inline-flex align-text-top"
+                  >
+                    <Info className="h-3 w-3 text-white/30" strokeWidth={1.5} aria-hidden="true" />
+                  </span>
+                )}
+              </>
             )}
           </span>
           <span className="text-sm text-white/80">
@@ -507,6 +627,27 @@ export function JourneyTimeline({
               </span>
             )}
           </span>
+          {/* Task 211b-W2d: Hip, mirroring the Waist row exactly. GIRTH history
+              is never part of the pregnancy gate, so this renders regardless of
+              compositionSuppressed. Only shown when the series has ever carried
+              a real hip value (hasHipSeries) -- an honest gate, not a fabricated
+              row for a metric the user has never tracked. */}
+          {hasHipSeries && (
+            <span className="text-sm text-white/80">
+              <span className="text-white/40">Hip </span>
+              {formatLen(shownHip, unit)}
+              {shownHip !== null && hipBand.halfWidth !== null && (
+                <span
+                  role="img"
+                  data-testid="journey-band-hip"
+                  aria-label={confidenceBandAriaLabel('hip', hipBand.halfWidth, hipBand.unit)}
+                  className="ml-1 inline-flex align-text-top"
+                >
+                  <Info className="h-3 w-3 text-white/30" strokeWidth={1.5} aria-hidden="true" />
+                </span>
+              )}
+            </span>
+          )}
         </div>
 
         {readoutMode.kind === 'transition' && (
@@ -517,7 +658,8 @@ export function JourneyTimeline({
 
         {/* Prompt 211b W2c: plateau, shown supportively (never as failure), only
             while resting on the latest real scan and only when the classifier
-            actually reports a plateau (never fabricated). */}
+            actually reports a plateau (never fabricated). Task 211b-W2d: never
+            rendered while compositionSuppressed (plateau is null then). */}
         {readoutMode.kind === 'measured' && shownIndex === last && plateau?.isOnPlateau && (
           <p data-testid="journey-plateau-copy" className="mt-2 text-[11px] leading-relaxed text-[#2DA5A0]">
             {plateau.plateauCopy}
@@ -525,12 +667,42 @@ export function JourneyTimeline({
         )}
 
         {/* Prompt 211b W2c: spike context for the latest scan. The data point
-            above is unchanged and fully visible; this only adds honest context. */}
-        {readoutMode.kind === 'measured' && shownIndex === last && isLatestSnapSpike && (
+            above is unchanged and fully visible; this only adds honest context.
+            Task 211b-W2d: gated on isLatestBodyFatSpike specifically (not the
+            shared marker flag) so this body-fat copy never renders for a girth
+            only spike, and never while compositionSuppressed. */}
+        {readoutMode.kind === 'measured' && shownIndex === last && isLatestBodyFatSpike && (
           // M1: #e8b78c is a lightened tint of brand orange #B75E18, chosen for
           // legible contrast on the dark navy card background (not a new hue).
           <p data-testid="journey-spike-copy" className="mt-2 text-[11px] leading-relaxed text-[#e8b78c]">
             {spike.spikeCopy}
+          </p>
+        )}
+
+        {/* Task 211b-W2d: girth (waist) plateau + spike, mirroring the body-fat
+            blocks above exactly. Never gated on compositionSuppressed -- girth
+            is never part of the pregnancy composition-estimate gate. */}
+        {readoutMode.kind === 'measured' && shownIndex === last && waistPlateau?.isOnPlateau && (
+          <p data-testid="journey-girth-plateau-waist" className="mt-2 text-[11px] leading-relaxed text-[#2DA5A0]">
+            {waistPlateau.plateauCopy}
+          </p>
+        )}
+        {readoutMode.kind === 'measured' && shownIndex === last && waistSpike.isSuspectedSpike && (
+          <p data-testid="journey-girth-spike-waist" className="mt-2 text-[11px] leading-relaxed text-[#e8b78c]">
+            {waistSpike.spikeCopy}
+          </p>
+        )}
+
+        {/* Task 211b-W2d: girth (hip) plateau + spike, only when hasHipSeries
+            (the user has ever tracked hip). */}
+        {hasHipSeries && readoutMode.kind === 'measured' && shownIndex === last && hipPlateau?.isOnPlateau && (
+          <p data-testid="journey-girth-plateau-hip" className="mt-2 text-[11px] leading-relaxed text-[#2DA5A0]">
+            {hipPlateau.plateauCopy}
+          </p>
+        )}
+        {hasHipSeries && readoutMode.kind === 'measured' && shownIndex === last && hipSpike.isSuspectedSpike && (
+          <p data-testid="journey-girth-spike-hip" className="mt-2 text-[11px] leading-relaxed text-[#e8b78c]">
+            {hipSpike.spikeCopy}
           </p>
         )}
 

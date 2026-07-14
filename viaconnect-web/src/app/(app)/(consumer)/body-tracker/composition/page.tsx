@@ -544,6 +544,11 @@ function CompositionPageInner() {
           recordedAt: snap.recordedAt,
           totalBodyFatPct: snap.totalBodyFatPct,
           waist: circ?.waist ?? null,
+          // Task 211b-W2d: hip circumference, same alignment as waist above
+          // (by recordedAt, falling back to index). Optional on the type; the
+          // timeline itself only renders a Hip row when this series has ever
+          // carried a real value.
+          hip: circ?.hip ?? null,
         };
       }),
     [composHistory.snapshots, circByDate, circHistory.entries],
@@ -1272,6 +1277,13 @@ function CompositionPageInner() {
           reducedMotion={avatarReducedMotion}
           latestFingerprintIsOutlier={latestFingerprintIsOutlier}
           cycleContext={cycleContext}
+          // Task 211b-W2d (SAFETY-CRITICAL): the SAME combined gate every other
+          // composition-ESTIMATE surface on this page uses (compositionGateActive
+          // = compositionSuppressed || loading, compositionGateCopy = the
+          // cause-specific copy). GIRTH history keeps rendering; only the
+          // historical BODY-FAT numbers are suppressed inside JourneyTimeline.
+          compositionSuppressed={compositionGateActive}
+          suppressedCopy={compositionGateCopy}
           onScrub={(vec) => {
             setScrubVector(vec);
             // P8-T1b: debounce-notify for timeline_scrubbed; fires once per gesture.
