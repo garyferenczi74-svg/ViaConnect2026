@@ -260,6 +260,18 @@ describe('sequentialBodyFatClassifications (pure bridge)', () => {
     const result = sequentialBodyFatClassifications(readouts);
     expect(result[0]).toBeNull();
   });
+
+  // Review I2: 0 is the codebase's UNKNOWN sentinel (same as null). A latest
+  // value of 0 must not yield a fabricated MEANINGFUL classification from
+  // delta = 0 - from; it must be treated as UNKNOWN symmetrically with `from`.
+  it('a latest value of 0 (the UNKNOWN sentinel) yields a null entry, not a fabricated MEANINGFUL (I2)', () => {
+    const readouts: JourneyScanReadout[] = [
+      { recordedAt: '2026-01-01T00:00:00Z', totalBodyFatPct: 25, waist: 38 },
+      { recordedAt: '2026-02-01T00:00:00Z', totalBodyFatPct: 0, waist: 36 },
+    ];
+    const result = sequentialBodyFatClassifications(readouts);
+    expect(result[0]).toBeNull();
+  });
 });
 
 describe('JourneyTimeline: confidence band annotation (Prompt 211b W2c)', () => {
@@ -311,6 +323,27 @@ describe('JourneyTimeline: confidence band annotation (Prompt 211b W2c)', () => 
       }),
     );
     expect(html).not.toContain('journey-band-bodyfat');
+  });
+
+  // Review I1: the waist band gate must depend on shown.waist itself, not just
+  // waistBand.halfWidth (which is value-independent, always non-null for a
+  // valid unit). Null waist must never render a precision annotation next to
+  // "Not measured".
+  it('omits the waist band annotation when shown.waist is null (I1)', () => {
+    const nullWaist: JourneyScanReadout[] = [
+      { recordedAt: '2026-01-01T00:00:00Z', totalBodyFatPct: 28, waist: 38 },
+      { recordedAt: '2026-06-01T00:00:00Z', totalBodyFatPct: 25, waist: null },
+    ];
+    const html = renderToStaticMarkup(
+      React.createElement(JourneyTimeline, {
+        vectors: [vectorFor(38), vectorFor(0)],
+        readouts: nullWaist,
+        unit: 'in',
+        onScrub: noop,
+      }),
+    );
+    expect(html).toContain('Not measured');
+    expect(html).not.toContain('journey-band-waist');
   });
 });
 
@@ -381,6 +414,28 @@ describe('JourneyTimeline: fingerprint spike softening (Prompt 211b W2c)', () =>
     );
     expect(html).not.toContain('journey-spike-copy');
     expect(html).not.toContain('data-spike="true"');
+  });
+
+  // Review I2 (component level): a latest body-fat value of 0 (UNKNOWN
+  // sentinel) must never produce spike or plateau annotations against a
+  // "Not measured" readout, even with an outlier fingerprint.
+  it('a latest value of 0 (Not measured) never renders spike or plateau copy (I2)', () => {
+    const zeroReadouts: JourneyScanReadout[] = [
+      { recordedAt: '2026-01-01T00:00:00Z', totalBodyFatPct: 25, waist: 38 },
+      { recordedAt: '2026-02-01T00:00:00Z', totalBodyFatPct: 0, waist: 33 },
+    ];
+    const html = renderToStaticMarkup(
+      React.createElement(JourneyTimeline, {
+        vectors,
+        readouts: zeroReadouts,
+        unit: 'in',
+        onScrub: noop,
+        latestFingerprintIsOutlier: true,
+      }),
+    );
+    expect(html).toContain('Not measured');
+    expect(html).not.toContain('journey-spike-copy');
+    expect(html).not.toContain('journey-plateau-copy');
   });
 
   it('a within-noise delta is never treated as a spike, even with an outlier fingerprint', () => {

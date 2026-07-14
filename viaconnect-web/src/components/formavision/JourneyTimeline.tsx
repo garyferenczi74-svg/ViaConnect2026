@@ -114,7 +114,7 @@ export function sequentialBodyFatClassifications(
   for (let i = readouts.length - 1; i > 0; i--) {
     const to = readouts[i].totalBodyFatPct;
     const from = readouts[i - 1].totalBodyFatPct;
-    if (from === null || from <= 0 || to === null) {
+    if (from === null || from <= 0 || to === null || to <= 0) {
       out.push(null);
       continue;
     }
@@ -429,7 +429,7 @@ export function JourneyTimeline({
           <span className="text-sm text-white/80">
             <span className="text-white/40">Waist </span>
             {formatLen(shown.waist, unit)}
-            {waistBand.halfWidth !== null && (
+            {shown.waist !== null && waistBand.halfWidth !== null && (
               <span
                 role="img"
                 data-testid="journey-band-waist"
@@ -460,6 +460,8 @@ export function JourneyTimeline({
         {/* Prompt 211b W2c: spike context for the latest scan. The data point
             above is unchanged and fully visible; this only adds honest context. */}
         {readoutMode.kind === 'measured' && shownIndex === last && isLatestSnapSpike && (
+          // M1: #e8b78c is a lightened tint of brand orange #B75E18, chosen for
+          // legible contrast on the dark navy card background (not a new hue).
           <p data-testid="journey-spike-copy" className="mt-2 text-[11px] leading-relaxed text-[#e8b78c]">
             {spike.spikeCopy}
           </p>
