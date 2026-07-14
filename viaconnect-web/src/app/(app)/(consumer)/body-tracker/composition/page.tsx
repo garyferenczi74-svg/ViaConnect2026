@@ -77,6 +77,13 @@ import {
 } from '@/components/formavision';
 import { useScanFingerprints } from '@/hooks/body-tracker/useScanFingerprints';
 // === PROMPT 211a W4-2 (Cadence + Streak surfaces) END ===
+// === PROMPT 211b W3c (Personal Precision Display) START ===
+// Consumer-only honest display of the W3b personalFusionService result.
+// Imported directly (not via the formavision barrel), matching the
+// consumer-only structural discipline ScanStreakDisplay already established.
+import { PersonalPrecisionPanel } from '@/components/formavision/PersonalPrecisionPanel';
+import { usePersonalPrecision } from '@/hooks/body-tracker/usePersonalPrecision';
+// === PROMPT 211b W3c (Personal Precision Display) END ===
 // === PROMPT 210b P8-T1b (Avatar Telemetry) START ===
 import {
   useAvatarTelemetry,
@@ -379,6 +386,12 @@ function CompositionPageInner() {
   // the consistency tip. Fail-open: empty history -> surfaces render nothing.
   const scanFp = useScanFingerprints(userId ?? null);
   // === PROMPT 211a W4-2 (Cadence + Streak) END ===
+  // === PROMPT 211b W3c (Personal Precision Display) START ===
+  // Own-row read of the user's honest per-region calibration precision. Fails
+  // open to result: null (PersonalPrecisionPanel renders nothing on null, and
+  // renders nothing when the user has never added an anchor -- default OFF).
+  const personalPrecision = usePersonalPrecision(userId ?? null);
+  // === PROMPT 211b W3c (Personal Precision Display) END ===
   const vrDeltas = useMemo(
     () =>
       computeCompositionDeltas({
@@ -1354,6 +1367,12 @@ function CompositionPageInner() {
             />
           </div>
           <MeasurementsPanel unit={unit} onChanged={refreshCirc} />
+          {/* === PROMPT 211b W3c (Personal Precision Display) START ===
+              Honest-empty by default: renders nothing until the user has
+              recorded at least one anchor (tape/DEXA/scale). No numeric band
+              is ever shown pre-cohort; qualitative status only. */}
+          <PersonalPrecisionPanel result={personalPrecision.result} />
+          {/* === PROMPT 211b W3c (Personal Precision Display) END === */}
         </>
       )}
 
