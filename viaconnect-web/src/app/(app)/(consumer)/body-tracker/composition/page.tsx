@@ -84,6 +84,13 @@ import { useScanFingerprints } from '@/hooks/body-tracker/useScanFingerprints';
 import { PersonalPrecisionPanel } from '@/components/formavision/PersonalPrecisionPanel';
 import { usePersonalPrecision } from '@/hooks/body-tracker/usePersonalPrecision';
 // === PROMPT 211b W3c (Personal Precision Display) END ===
+// === PROMPT 211b W3d (Anchor Entry: tape guided flow + DEXA import) START ===
+// Consumer-only, consent-gated anchor ENTRY surface (the input path that
+// feeds W3b's fusion service). Imported directly (not via the formavision
+// barrel), matching the same consumer-only structural discipline
+// ScanStreakDisplay / PersonalPrecisionPanel / CycleOptIn already established.
+import { AnchorEntryEntryPoint } from '@/components/formavision/AnchorEntryEntryPoint';
+// === PROMPT 211b W3d (Anchor Entry: tape guided flow + DEXA import) END ===
 // === PROMPT 211b W4b (Cycle opt-in + pregnancy-mode suppression) START ===
 // Consumer-only, consent-gated cycle opt-in (own-row user_cycle_context) and
 // the SAFETY-CRITICAL pregnancy-mode indication control. Imported directly
@@ -1455,6 +1462,16 @@ function CompositionPageInner() {
             <PersonalPrecisionPanel result={personalPrecision.result} />
           )}
           {/* === PROMPT 211b W3c (Personal Precision Display) END === */}
+
+          {/* === PROMPT 211b W3d (Anchor Entry) START ===
+              Consumer-only entry point for the two anchor ENTRY flows (tape
+              guided entry, DEXA/clinic import). This writes the user's OWN
+              measurement, own-row, consent-gated per source; it is not a
+              composition ESTIMATE, so it is not gated by pregnancyGating
+              (only the fused ESTIMATE display above is). Collapsed by
+              default: a user who never opens it writes nothing. */}
+          <AnchorEntryEntryPoint userId={userId ?? null} />
+          {/* === PROMPT 211b W3d (Anchor Entry) END === */}
         </>
       )}
 
