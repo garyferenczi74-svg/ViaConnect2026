@@ -179,7 +179,6 @@ export function PersonalPrecisionPanel({ result, className }: PersonalPrecisionP
           >
             <span className="text-sm text-white/80">{row.label}</span>
             <span
-              role="status"
               aria-label={personalPrecisionRegionAriaLabel(row.label, row.status)}
               className={`text-xs sm:text-right sm:max-w-[60%] ${statusToneClass(row.status)}`}
             >

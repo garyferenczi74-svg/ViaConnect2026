@@ -16,6 +16,7 @@ import {
   TapeAnchorEntryContent,
   type TapeAnchorEntryContentProps,
   parsePositiveValue,
+  parseDateInputToTakenAt,
   TAPE_REGION_LABEL,
 } from '../TapeAnchorEntry';
 
@@ -60,6 +61,37 @@ describe('parsePositiveValue: never substitutes a default for an invalid entry',
     expect(parsePositiveValue('0')).toBeNull();
     expect(parsePositiveValue('-5')).toBeNull();
     expect(parsePositiveValue('abc')).toBeNull();
+  });
+});
+
+describe('parseDateInputToTakenAt: a cleared or invalid date never throws', () => {
+  it('returns null (never throws) for an empty date string', () => {
+    expect(() => parseDateInputToTakenAt('')).not.toThrow();
+    expect(parseDateInputToTakenAt('')).toBeNull();
+  });
+
+  it('returns null (never throws) for a blank/whitespace date string', () => {
+    expect(() => parseDateInputToTakenAt('   ')).not.toThrow();
+    expect(parseDateInputToTakenAt('   ')).toBeNull();
+  });
+
+  it('returns null (never throws) for an unparseable date string', () => {
+    expect(() => parseDateInputToTakenAt('not-a-date')).not.toThrow();
+    expect(parseDateInputToTakenAt('not-a-date')).toBeNull();
+  });
+
+  it('returns a valid ISO timestamp for a well-formed date', () => {
+    const iso = parseDateInputToTakenAt('2026-07-13');
+    expect(iso).not.toBeNull();
+    expect(() => new Date(iso as string).toISOString()).not.toThrow();
+  });
+});
+
+describe('TapeAnchorEntryContent: clearing the date shows the validation state, not a crash', () => {
+  it('renders the date-validation error message when the date guard rejects it', () => {
+    const html = render(baseProps({ dateText: '', error: 'Enter a valid date.' }));
+    expect(html).toContain('tape-anchor-error');
+    expect(html).toContain('Enter a valid date.');
   });
 });
 

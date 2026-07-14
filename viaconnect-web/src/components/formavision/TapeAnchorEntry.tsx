@@ -85,6 +85,17 @@ export function parsePositiveValue(text: string): number | null {
   return n;
 }
 
+/** Pure: an ISO takenAt timestamp for a YYYY-MM-DD date input, or null when
+ *  the date is empty or unparseable. Never throws; a cleared/invalid date
+ *  blocks submission instead of raising an unhandled RangeError. */
+export function parseDateInputToTakenAt(dateText: string): string | null {
+  const trimmed = dateText.trim();
+  if (trimmed === '') return null;
+  const d = new Date(`${trimmed}T12:00:00.000Z`);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toISOString();
+}
+
 // ---------------------------------------------------------------------------
 // Pure content renderer (exported for renderToStaticMarkup tests, no hooks).
 // ---------------------------------------------------------------------------
@@ -285,11 +296,15 @@ export function TapeAnchorEntry({ userId }: TapeAnchorEntryProps) {
       setError('Enter a measurement greater than zero.');
       return;
     }
+    const takenAt = parseDateInputToTakenAt(dateText);
+    if (takenAt === null) {
+      setError('Enter a valid date.');
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
       const supabase = createClient();
-      const takenAt = new Date(`${dateText}T12:00:00.000Z`).toISOString();
       const ok = await writeTapeAnchorFailOpen(supabase, {
         userId,
         region,

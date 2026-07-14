@@ -18,6 +18,8 @@ import {
   buildInitialDexaRegionState,
   hasAnyValidDexaEntry,
   parsePositiveValue,
+  parseDateInputToTakenAt,
+  applyDexaRegionSubmitResult,
   DEXA_REGION_LABEL,
 } from '../DexaAnchorImport';
 
@@ -66,6 +68,64 @@ describe('parsePositiveValue (DEXA form): never substitutes a default for an inv
     expect(parsePositiveValue('0')).toBeNull();
     expect(parsePositiveValue('-1')).toBeNull();
     expect(parsePositiveValue('nope')).toBeNull();
+  });
+});
+
+describe('parseDateInputToTakenAt: a cleared or invalid report date never throws', () => {
+  it('returns null (never throws) for an empty date string', () => {
+    expect(() => parseDateInputToTakenAt('')).not.toThrow();
+    expect(parseDateInputToTakenAt('')).toBeNull();
+  });
+
+  it('returns null (never throws) for an unparseable date string', () => {
+    expect(() => parseDateInputToTakenAt('not-a-date')).not.toThrow();
+    expect(parseDateInputToTakenAt('not-a-date')).toBeNull();
+  });
+
+  it('returns a valid ISO timestamp for a well-formed date', () => {
+    const iso = parseDateInputToTakenAt('2026-07-13');
+    expect(iso).not.toBeNull();
+    expect(() => new Date(iso as string).toISOString()).not.toThrow();
+  });
+});
+
+describe('applyDexaRegionSubmitResult: preserves failed rows for retry, only clears succeeded ones', () => {
+  it('resets a succeeded region (unchecked, value cleared) and leaves a failed region untouched', () => {
+    const regions = buildInitialDexaRegionState();
+    regions[0] = { ...regions[0], included: true, valueText: '22' }; // succeeds
+    regions[1] = { ...regions[1], included: true, valueText: '33' }; // fails
+
+    const succeeded = new Set([regions[0].region]);
+    const next = applyDexaRegionSubmitResult(regions, succeeded);
+
+    expect(next[0]).toEqual({ region: regions[0].region, included: false, valueText: '' });
+    // Failed row's entered value is preserved exactly, so "try again" is actionable.
+    expect(next[1]).toEqual({ region: regions[1].region, included: true, valueText: '33' });
+  });
+
+  it('leaves every region untouched when none succeeded (total failure, nothing wiped)', () => {
+    const regions = buildInitialDexaRegionState();
+    regions[0] = { ...regions[0], included: true, valueText: '22' };
+    const next = applyDexaRegionSubmitResult(regions, new Set());
+    expect(next).toEqual(regions);
+  });
+
+  it('resets every region when all succeeded', () => {
+    const regions = buildInitialDexaRegionState();
+    regions[0] = { ...regions[0], included: true, valueText: '22' };
+    regions[1] = { ...regions[1], included: true, valueText: '33' };
+    const succeeded = new Set([regions[0].region, regions[1].region]);
+    const next = applyDexaRegionSubmitResult(regions, succeeded);
+    expect(next[0]).toEqual({ region: regions[0].region, included: false, valueText: '' });
+    expect(next[1]).toEqual({ region: regions[1].region, included: false, valueText: '' });
+  });
+});
+
+describe('DexaAnchorImportContent: clearing the date shows the validation state, not a crash', () => {
+  it('renders the date-validation error message when the date guard rejects it', () => {
+    const html = render(baseProps({ dateText: '', error: 'Enter a valid report date.' }));
+    expect(html).toContain('dexa-anchor-error');
+    expect(html).toContain('Enter a valid report date.');
   });
 });
 

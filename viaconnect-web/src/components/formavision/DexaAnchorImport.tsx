@@ -75,6 +75,31 @@ export function parsePositiveValue(text: string): number | null {
   return n;
 }
 
+/** Pure: an ISO takenAt timestamp for a YYYY-MM-DD date input, or null when
+ *  the date is empty or unparseable. Never throws; a cleared/invalid date
+ *  blocks submission instead of raising an unhandled RangeError. */
+export function parseDateInputToTakenAt(dateText: string): string | null {
+  const trimmed = dateText.trim();
+  if (trimmed === '') return null;
+  const d = new Date(`${trimmed}T12:00:00.000Z`);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toISOString();
+}
+
+/** Pure: applies a partial-failure submit result to the region list. Only
+ *  the regions that saved successfully are reset (unchecked, value cleared);
+ *  failed or untouched regions -- and whatever the user typed into them --
+ *  are left exactly as they were, so a "try again" retry has something
+ *  actionable to resubmit instead of wiping the whole form. */
+export function applyDexaRegionSubmitResult(
+  regions: DexaRegionEntryState[],
+  succeededRegions: ReadonlySet<Region>,
+): DexaRegionEntryState[] {
+  return regions.map((r) =>
+    succeededRegions.has(r.region) ? { region: r.region, included: false, valueText: '' } : r,
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Pure state + helpers
 // ---------------------------------------------------------------------------
@@ -344,14 +369,19 @@ export function DexaAnchorImport({ userId }: DexaAnchorImportProps) {
       setError('Enter at least one measurement or your weight from the report.');
       return;
     }
+    const takenAt = parseDateInputToTakenAt(dateText);
+    if (takenAt === null) {
+      setError('Enter a valid report date.');
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
       const supabase = createClient();
-      const takenAt = new Date(`${dateText}T12:00:00.000Z`).toISOString();
       let successCount = 0;
       let anyAttempted = false;
       let anyFailed = false;
+      const succeededRegions = new Set<Region>();
 
       for (const r of regions) {
         if (!r.included) continue;
@@ -365,10 +395,15 @@ export function DexaAnchorImport({ userId }: DexaAnchorImportProps) {
           unit,
           takenAt,
         });
-        if (ok) successCount += 1;
-        else anyFailed = true;
+        if (ok) {
+          successCount += 1;
+          succeededRegions.add(r.region);
+        } else {
+          anyFailed = true;
+        }
       }
 
+      let weightSucceeded = false;
       const parsedWeight = parsePositiveValue(weightText);
       if (parsedWeight !== null) {
         anyAttempted = true;
@@ -378,14 +413,18 @@ export function DexaAnchorImport({ userId }: DexaAnchorImportProps) {
           unit: weightUnit,
           takenAt,
         });
-        if (ok) successCount += 1;
-        else anyFailed = true;
+        if (ok) {
+          successCount += 1;
+          weightSucceeded = true;
+        } else {
+          anyFailed = true;
+        }
       }
 
       if (successCount > 0) {
         setSavedCount((prev) => prev + successCount);
-        setRegions(buildInitialDexaRegionState());
-        setWeightText('');
+        setRegions((prev) => applyDexaRegionSubmitResult(prev, succeededRegions));
+        if (weightSucceeded) setWeightText('');
       }
       if (anyFailed || !anyAttempted) {
         setError(

@@ -594,7 +594,7 @@ function AddMeasurementsForm({
                 type="button"
                 onClick={() => removePair(i)}
                 aria-label={`Remove ${p.region} pair`}
-                className="inline-flex h-[36px] w-[36px] items-center justify-center rounded-md text-white/40 hover:bg-white/[0.06] hover:text-red-300"
+                className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md text-white/40 hover:bg-white/[0.06] hover:text-red-300"
               >
                 <Trash2 className="w-4 h-4" strokeWidth={1.5} aria-hidden />
               </button>
