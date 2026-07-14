@@ -23,10 +23,10 @@ investor or Nexus materials before its feature is Shipped is a Gary escalation (
 | Shareable transformation video | Shipped, partial (WebM on desktop and Android; iOS shareable card in progress) | Shipped (BodyMorph) | None |
 | Measurement regions | 12 circumferences plus segments. Shipped | 16 locations | Segmental BIA (arms, legs, torso) |
 | Body fat method | Photo AI estimate with confidence. Shipped | Navy method from measurements | 8-electrode multi-frequency BIA |
-| Published accuracy | 211b (per-region error bands, methodology public) | 0.15 inch average error, with suit | DEXA correlation claims |
-| Statistical honesty (noise versus real change) | 211b | None | Trend averages only |
-| Per-user calibration fusion (scale, wearable, DEXA anchor) | 211b | None | Own hardware only |
-| Cycle-aware modeling | 211b | None | None |
+| Published accuracy | 211b merge ships the validation machinery, cohort schema, held-out harness, and public methodology (whitepaper draft). The accuracy figure itself is GATED on a real labeled held-out cohort plus Gary's explicit sign-off, neither of which exist yet. Not Shipped; no number to cite externally. | 0.15 inch average error, with suit | DEXA correlation claims |
+| Statistical honesty (noise versus real change) | 211b merge ships the minimum-detectable-change engine, within-noise classification, trend confidence bands, plateau detection, and spike softening as live machinery behind honest states. Pre-launch production data is mostly empty, so this is honest-state machinery, not a demonstrated live accuracy claim. | None | Trend averages only |
+| Per-user calibration fusion (scale, wearable, DEXA anchor) | 211b merge ships the fusion machinery (scale via Prompt 201, guided tape entry, DEXA import) and the honest tightened or not-tightened consumer display, evaluated by its own fusion-mode harness. Pre-launch, most users carry no anchor data yet, so this is machinery, not a live accuracy claim. | None | Own hardware only |
+| Cycle-aware modeling | 211b merge ships the opt-in cycle-context data model, phase-aware classification wrapper, and pregnancy-mode composition suppression (fails closed). GATED on Kelsey clinical and sensitivity clearance before any user-facing surface ships. | None | None |
 | Goal setting per region | 211c | Shipped | Goal weight only |
 | Interactive goal body with generated plan | 211c (goal body plus Gordon plan plus protocol) | Goal Simulator (shape preview only) | None |
 | Nutrition logging | NutriVision photo AI, Gordon-scored. Shipped | AI food journal (photo, barcode) | Meal scoring |
@@ -51,3 +51,4 @@ investor or Nexus materials before its feature is Shipped is a Gary escalation (
 |---|---|---|---|
 | 2026-07-09 | Charter filing | Baseline matrix filed from Prompt 211 Appendix A | Prompt 211 charter |
 | 2026-07-11 | 211a merge | Doctor report and streak moved to Shipped; shareable video to Shipped-partial (iOS card follow-up); health sync recorded as 211a foundation, NOT Shipped (iOS write pending a write-capable plugin) | Branch feat/211a-growth: opus whole-branch review clean, 1254 tests green |
+| 2026-07-14 | 211b merge (prepared) | Published accuracy, statistical honesty, per-user calibration fusion, and cycle-aware modeling cells updated to describe what 211b actually ships: the trust MACHINERY (cohort schema, held-out harness, claim gate, MDC and noise engine, trend bands, fusion service, cycle and pregnancy gating) behind honest gated or empty states. None of these four cells moved to Shipped. The published accuracy NUMBER remains gated on a real held-out cohort plus Gary's sign-off (does not exist yet). Cycle-aware modeling additionally remains gated on Kelsey clinical clearance before any user-facing ship. | Branch feat/211b-trust: all 18 tasks per-task reviewed clean; final whole-branch review pending; 1545 tests green; 3 merge-deferred migrations |
