@@ -40,7 +40,18 @@ export interface UsePersonalPrecisionResult {
   refresh: () => void;
 }
 
-export function usePersonalPrecision(userId: string | null): UsePersonalPrecisionResult {
+/**
+ * @param userId The authenticated user id, or null.
+ * @param enabled Task 211b-W4b (SAFETY-CRITICAL) guard: when false (pregnancy
+ *   mode active per getCompositionGating), this hook NEVER calls
+ *   runPersonalFusion -- the composition-estimate call site is guarded here,
+ *   not merely hidden from the rendered PersonalPrecisionPanel output.
+ *   Defaults to true (unchanged behavior) so every existing caller is unaffected.
+ */
+export function usePersonalPrecision(
+  userId: string | null,
+  enabled: boolean = true,
+): UsePersonalPrecisionResult {
   const [result, setResult] = useState<PersonalFusionResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [reloadKey, setReloadKey] = useState(0);
@@ -48,7 +59,7 @@ export function usePersonalPrecision(userId: string | null): UsePersonalPrecisio
   const refresh = useCallback(() => setReloadKey((k) => k + 1), []);
 
   useEffect(() => {
-    if (!userId) {
+    if (!userId || !enabled) {
       setResult(null);
       setLoading(false);
       return;
@@ -81,7 +92,7 @@ export function usePersonalPrecision(userId: string | null): UsePersonalPrecisio
     return () => {
       cancelled = true;
     };
-  }, [userId, reloadKey]);
+  }, [userId, enabled, reloadKey]);
 
   return { result, loading, refresh };
 }

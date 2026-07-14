@@ -26,7 +26,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Info, Eye, EyeOff, Target } from 'lucide-react';
+import { Info, Eye, EyeOff, Target, Heart } from 'lucide-react';
 import { useActiveBodyGoal } from '@/hooks/journey/useActiveBodyGoal';
 import { useWeightGoalKg } from '@/hooks/useWeightGoalKg';
 import { projectFutureSelfVector } from '@/lib/formavision/projection/projectFutureSelfVector';
@@ -96,6 +96,13 @@ export interface FutureSelfPanelContentProps {
   onToggle: () => void;
   weekSummary: WeekSummary | null;
   reducedMotion?: boolean;
+  // Task 211b-W4b (SAFETY-CRITICAL): when true, the projection itself is
+  // suppressed (pregnancy mode active per getCompositionGating). The whole
+  // panel swaps to supportive copy; no projection, ghost toggle, or estimate
+  // is ever rendered. The wrapper below guarantees projectFutureSelfVector
+  // (the composition-estimate function) is never even called while this is true.
+  suppressed?: boolean;
+  suppressedCopy?: string | null;
 }
 
 /**
@@ -108,7 +115,28 @@ export function FutureSelfPanelContent({
   onToggle,
   weekSummary,
   reducedMotion = false,
+  suppressed = false,
+  suppressedCopy,
 }: FutureSelfPanelContentProps) {
+  // Task 211b-W4b (SAFETY-CRITICAL): suppression takes precedence over the
+  // loading skeleton and every projected/disabled state below.
+  if (suppressed) {
+    return (
+      <div
+        data-testid="future-self-suppressed"
+        className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-4 sm:p-5 backdrop-blur-sm"
+      >
+        <div className="flex items-start gap-2">
+          <Heart className="mt-0.5 h-4 w-4 flex-none text-[#B75E18]" strokeWidth={1.5} aria-hidden="true" />
+          <p className="text-sm leading-relaxed text-white/70">
+            {suppressedCopy ??
+              'Projected self estimates are paused while pregnancy or lactation mode is active.'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   // Loading skeleton while goal / scan data resolve.
   if (projection === null) {
     return (
@@ -291,6 +319,15 @@ export interface FutureSelfPanelProps {
    * false positive. Repeatable user action: the parent uses emit, not emitOnce.
    */
   onUserToggle?: (on: boolean) => void;
+  /**
+   * Task 211b-W4b (SAFETY-CRITICAL): when true (pregnancy mode active per
+   * getCompositionGating), this wrapper NEVER calls projectFutureSelfVector
+   * (the composition-estimate function) -- the guard is in the projection
+   * useMemo below, not just in what is displayed. The avatar ghost is cleared
+   * (onGhostChange(null, false)) the moment this becomes true.
+   */
+  suppressed?: boolean;
+  suppressedCopy?: string | null;
 }
 
 /**
@@ -311,6 +348,8 @@ export function FutureSelfPanel({
   reducedMotion,
   onGhostChange,
   onUserToggle,
+  suppressed = false,
+  suppressedCopy,
 }: FutureSelfPanelProps) {
   const { goal, loading: goalLoading } = useActiveBodyGoal(userId);
   const { goalWeightKg, currentWeightKg, loading: weightLoading } = useWeightGoalKg(userId);
@@ -324,7 +363,13 @@ export function FutureSelfPanel({
 
   // The projection is pure (projectFutureSelfVector is deterministic). Recompute
   // whenever the inputs change. null while loading (shows skeleton).
+  //
+  // Task 211b-W4b (SAFETY-CRITICAL): `suppressed` is checked FIRST and the
+  // function returns before ever calling projectFutureSelfVector -- the
+  // composition-estimate function is never invoked while pregnancy mode is
+  // active, not merely hidden from the rendered output.
   const projection = useMemo<FutureSelfProjection | null>(() => {
+    if (suppressed) return null;
     if (isLoading) return null;
     // No snapshot -> cannot compute a delta; return no-current-scan.
     if (!snapshot) return { kind: 'disabled', reason: 'no-current-scan' };
@@ -332,7 +377,18 @@ export function FutureSelfPanel({
       { snapshot, circumferences, sex, unit },
       goalBodyFatPct,
     );
-  }, [snapshot, circumferences, sex, unit, goalBodyFatPct, isLoading]);
+  }, [snapshot, circumferences, sex, unit, goalBodyFatPct, isLoading, suppressed]);
+
+  // Task 211b-W4b (SAFETY-CRITICAL): clear any active ghost immediately the
+  // moment suppression turns on, independent of the kind-transition effect
+  // below (which only fires on a DEFINED projection kind change).
+  useEffect(() => {
+    if (suppressed) {
+      setShowGhost(false);
+      onGhostChange(null, false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [suppressed]);
 
   // Week summary: only when both weight goal and BF goal are present.
   const weekSummary = useMemo(
@@ -371,6 +427,8 @@ export function FutureSelfPanel({
       onToggle={handleToggle}
       weekSummary={weekSummary}
       reducedMotion={reducedMotion}
+      suppressed={suppressed}
+      suppressedCopy={suppressedCopy}
     />
   );
 }

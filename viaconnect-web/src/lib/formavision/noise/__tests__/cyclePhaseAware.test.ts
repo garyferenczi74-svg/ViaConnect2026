@@ -148,4 +148,29 @@ describe('applyCyclePhaseAwareness', () => {
     expect(result.isPhaseTypical).toBe(false);
     expect(result.phaseContextCopy).toBeNull();
   });
+
+  // Task 211b-W4b STEP 0 review nits (folded in before wiring this copy to UI).
+  it('STEP 0a: uses "can be typical" (softened, no causal over-attribution), not "is typical"', () => {
+    const base = meaningfulWaistResult('worsened');
+    const cycle: CyclePhaseAwareContext = { optIn: true, phase: 'luteal' };
+    const result = applyCyclePhaseAwareness(base, cycle);
+    expect(result.phaseContextCopy).toContain('can be typical for your current cycle phase');
+    expect(result.phaseContextCopy).not.toContain('is typical for your current cycle phase');
+  });
+
+  it('STEP 0b: phaseContextCopy (which interpolates delta.label) never contains an em or en dash, for waist or hip', () => {
+    const EM_DASH = String.fromCharCode(0x2014);
+    const EN_DASH = String.fromCharCode(0x2013);
+    const cycle: CyclePhaseAwareContext = { optIn: true, phase: 'luteal' };
+    const waist = applyCyclePhaseAwareness(meaningfulWaistResult('worsened'), cycle);
+    const hip = applyCyclePhaseAwareness(
+      { delta: circDelta('hip', 'Hip', 38, 39, 'worsened'), classification: 'MEANINGFUL', mdc95: 0.5 },
+      cycle,
+    );
+    for (const copy of [waist.phaseContextCopy, hip.phaseContextCopy]) {
+      expect(copy).not.toBeNull();
+      expect((copy as string).includes(EM_DASH)).toBe(false);
+      expect((copy as string).includes(EN_DASH)).toBe(false);
+    }
+  });
 });

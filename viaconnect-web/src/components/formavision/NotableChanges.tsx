@@ -39,6 +39,15 @@ export interface NotableChangesProps {
    * Missing entries (undefined) fall through to the existing presentation.
    */
   noiseClassifications?: Partial<Record<MeasurementKey, NoiseClassification | null>>;
+  // Task 211b-W4b (SAFETY-CRITICAL): when true, the synthesized headline (which
+  // can summarize a body-fat or muscle composition ESTIMATE, e.g. "Your body
+  // fat is down...") is replaced with supportive copy. The per-region
+  // circumference ROWS below are girth MEASUREMENTS, not composition
+  // estimates, and always keep rendering regardless of this flag.
+  compositionSuppressed?: boolean;
+  // The supportive copy shown in place of the headline when suppressed
+  // (getCompositionGating(...).reason). Required when compositionSuppressed is true.
+  suppressedCopy?: string | null;
   className?: string;
 }
 
@@ -81,12 +90,23 @@ function headlineFor(deltas: CompositionDeltasResult): string | null {
   return `Your ${d.label} is holding steady.`;
 }
 
-export function NotableChanges({ deltas, noiseClassifications, className }: NotableChangesProps) {
-  const headline = headlineFor(deltas);
+export function NotableChanges({
+  deltas,
+  noiseClassifications,
+  compositionSuppressed,
+  suppressedCopy,
+  className,
+}: NotableChangesProps) {
+  // Task 211b-W4b (SAFETY-CRITICAL): the synthesized headline can summarize a
+  // body-fat or muscle composition ESTIMATE (headlineFor reads deltas.biggest,
+  // which may be kind 'bodyFat' or 'muscle'). While suppressed it is replaced
+  // wholesale with supportive copy; the circumference rows below (girth
+  // measurements) are unaffected and always keep rendering.
+  const headline = compositionSuppressed ? null : headlineFor(deltas);
   const rows = deltas.circumferences;
 
   // Honest empty state: nothing to compare yet (single scan or all UNKNOWN).
-  if (!headline && rows.length === 0) {
+  if (!compositionSuppressed && !headline && rows.length === 0) {
     return (
       <div
         data-testid="notable-changes"
@@ -106,6 +126,16 @@ export function NotableChanges({ deltas, noiseClassifications, className }: Nota
       className={`rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-5 backdrop-blur-sm ${className ?? ''}`}
     >
       <p className="text-xs uppercase tracking-wider text-white/40">Notable Changes</p>
+
+      {compositionSuppressed && (
+        <p
+          data-testid="notable-changes-composition-suppressed"
+          className="mt-2 text-sm leading-relaxed text-white/70"
+        >
+          {suppressedCopy ??
+            'Composition estimate summaries are paused while pregnancy or lactation mode is active.'}
+        </p>
+      )}
 
       {headline && (
         <p data-testid="notable-changes-headline" className="mt-2 text-sm font-medium text-white">

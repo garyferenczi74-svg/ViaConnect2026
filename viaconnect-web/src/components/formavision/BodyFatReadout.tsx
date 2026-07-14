@@ -19,7 +19,7 @@
 // is neutral and curious, never shaming. These are AI-derived estimates, so the
 // disclaimer stays visible nearby.
 
-import { ArrowDown, ArrowUp, Minus } from 'lucide-react';
+import { ArrowDown, ArrowUp, Minus, Heart } from 'lucide-react';
 import type { MetricDelta } from '@/lib/formavision/deltas/compositionDeltas';
 import type { NoiseClassification } from '@/lib/formavision/noise/mdcEngine';
 import { withinNoiseCopy, WITHIN_NOISE_INLINE_LABEL } from '@/lib/formavision/noise/mdcEngine';
@@ -39,6 +39,14 @@ export interface BodyFatReadoutProps {
   // MEANINGFUL -> keep the existing arrow row (unchanged behavior).
   // null / undefined -> no classification available; existing behavior.
   bodyFatNoise?: NoiseClassification | null;
+  // Task 211b-W4b (SAFETY-CRITICAL): when true, the entire body-fat figure and
+  // delta are a composition ESTIMATE that must be suppressed (pregnancy mode
+  // active per getCompositionGating). The whole card swaps to supportive copy;
+  // no body-fat number or delta is rendered. Absent/false -> unchanged behavior.
+  compositionSuppressed?: boolean;
+  // The supportive copy shown in place of the estimate when suppressed
+  // (getCompositionGating(...).reason). Required when compositionSuppressed is true.
+  suppressedCopy?: string | null;
   className?: string;
 }
 
@@ -84,9 +92,35 @@ export function BodyFatReadout({
   firstScanDate,
   latestScanDate,
   bodyFatNoise,
+  compositionSuppressed,
+  suppressedCopy,
   className,
 }: BodyFatReadoutProps) {
   const hasLatest = typeof latestBodyFatPct === 'number' && Number.isFinite(latestBodyFatPct);
+
+  // Task 211b-W4b (SAFETY-CRITICAL): pregnancy-mode suppression takes
+  // precedence over every other state. No body-fat figure or delta is ever
+  // rendered while suppressed, regardless of whether data is present.
+  if (compositionSuppressed) {
+    return (
+      <div
+        data-testid="body-fat-readout"
+        className={`rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-5 backdrop-blur-sm text-center ${className ?? ''}`}
+      >
+        <p className="text-xs uppercase tracking-wider text-white/40">Total Body Fat</p>
+        <div
+          data-testid="body-fat-composition-suppressed"
+          className="mt-3 flex flex-col items-center gap-2"
+        >
+          <Heart className="h-5 w-5 text-[#B75E18]" strokeWidth={1.5} aria-hidden="true" />
+          <p className="text-sm leading-relaxed text-white/70">
+            {suppressedCopy ??
+              'Body composition estimates are paused while pregnancy or lactation mode is active.'}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // Honest empty state: no latest body fat at all.
   if (!hasLatest) {

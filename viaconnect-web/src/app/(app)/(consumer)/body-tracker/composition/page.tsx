@@ -84,6 +84,16 @@ import { useScanFingerprints } from '@/hooks/body-tracker/useScanFingerprints';
 import { PersonalPrecisionPanel } from '@/components/formavision/PersonalPrecisionPanel';
 import { usePersonalPrecision } from '@/hooks/body-tracker/usePersonalPrecision';
 // === PROMPT 211b W3c (Personal Precision Display) END ===
+// === PROMPT 211b W4b (Cycle opt-in + pregnancy-mode suppression) START ===
+// Consumer-only, consent-gated cycle opt-in (own-row user_cycle_context) and
+// the SAFETY-CRITICAL pregnancy-mode indication control. Imported directly
+// (not via the formavision barrel), matching the same consumer-only
+// structural discipline ScanStreakDisplay / PersonalPrecisionPanel established.
+import { CycleOptIn } from '@/components/formavision/CycleOptIn';
+import { PregnancyModeControl } from '@/components/formavision/PregnancyModeControl';
+import { usePregnancyGating } from '@/hooks/body-tracker/usePregnancyGating';
+import type { CyclePhase } from '@/lib/formavision/noise/cyclePhaseAware';
+// === PROMPT 211b W4b (Cycle opt-in + pregnancy-mode suppression) END ===
 // === PROMPT 210b P8-T1b (Avatar Telemetry) START ===
 import {
   useAvatarTelemetry,
@@ -386,12 +396,38 @@ function CompositionPageInner() {
   // the consistency tip. Fail-open: empty history -> surfaces render nothing.
   const scanFp = useScanFingerprints(userId ?? null);
   // === PROMPT 211a W4-2 (Cadence + Streak) END ===
+  // === PROMPT 211b W4b (Pregnancy-mode gating) START ===
+  // SAFETY-CRITICAL: the single usePregnancyGating call this page makes. Its
+  // result (compositionSuppressed) is shared, unmodified, with every
+  // composition-ESTIMATE surface below (BodyFatReadout, NotableChanges'
+  // headline, FutureSelfPanel, PersonalPrecisionPanel's read gate). Girth
+  // measurements are never part of this gate. Default OFF: a user who has
+  // never indicated pregnancy/lactation sees compositionSuppressed: false and
+  // the page is unchanged.
+  const pregnancyGating = usePregnancyGating(userId ?? null);
+  // === PROMPT 211b W4b (Pregnancy-mode gating) END ===
   // === PROMPT 211b W3c (Personal Precision Display) START ===
   // Own-row read of the user's honest per-region calibration precision. Fails
   // open to result: null (PersonalPrecisionPanel renders nothing on null, and
   // renders nothing when the user has never added an anchor -- default OFF).
-  const personalPrecision = usePersonalPrecision(userId ?? null);
+  // Task 211b-W4b (SAFETY-CRITICAL): the second argument gates the read itself
+  // -- runPersonalFusion (a composition-estimate call) is never invoked while
+  // pregnancy mode is active, not merely hidden from the rendered panel.
+  const personalPrecision = usePersonalPrecision(
+    userId ?? null,
+    !pregnancyGating.gating.compositionSuppressed,
+  );
   // === PROMPT 211b W3c (Personal Precision Display) END ===
+  // === PROMPT 211b W4b (Cycle opt-in context) START ===
+  // Lifted from CycleOptIn's own-row read/write so JourneyTimeline's
+  // phase-context labeling shares the SAME confirmed (never mid-edit-draft)
+  // opt-in state. Default OFF: { optIn: false, phase: null } is a no-op for
+  // applyCyclePhaseAwareness, so a user who has not opted in sees no change.
+  const [cycleContext, setCycleContext] = useState<{ optIn: boolean; phase: CyclePhase | null }>({
+    optIn: false,
+    phase: null,
+  });
+  // === PROMPT 211b W4b (Cycle opt-in context) END ===
   const vrDeltas = useMemo(
     () =>
       computeCompositionDeltas({
@@ -1186,12 +1222,16 @@ function CompositionPageInner() {
             firstScanDate={composHistory.first?.recordedAt ?? null}
             latestScanDate={composHistory.latest?.recordedAt ?? null}
             bodyFatNoise={vrNoiseClassification.bodyFat?.classification ?? null}
+            compositionSuppressed={pregnancyGating.gating.compositionSuppressed}
+            suppressedCopy={pregnancyGating.gating.reason}
           />
           {/* Prompt 211b W2: noiseClassifications wires per-row MDC classifications
               into Notable Changes. Each row gets a within-noise badge when applicable. */}
           <NotableChanges
             deltas={vrDeltas}
             noiseClassifications={circumferenceNoiseMap}
+            compositionSuppressed={pregnancyGating.gating.compositionSuppressed}
+            suppressedCopy={pregnancyGating.gating.reason}
           />
         </div>
       )}
@@ -1210,6 +1250,7 @@ function CompositionPageInner() {
           unit={unit}
           reducedMotion={avatarReducedMotion}
           latestFingerprintIsOutlier={latestFingerprintIsOutlier}
+          cycleContext={cycleContext}
           onScrub={(vec) => {
             setScrubVector(vec);
             // P8-T1b: debounce-notify for timeline_scrubbed; fires once per gesture.
@@ -1276,6 +1317,8 @@ function CompositionPageInner() {
           onUserToggle={(on) =>
             telEmit('formavision.future_self_toggled', { on })
           }
+          suppressed={pregnancyGating.gating.compositionSuppressed}
+          suppressedCopy={pregnancyGating.gating.reason}
         />
       )}
       {/* === PROMPT 210b P5-T1c (FutureSelfPanel) END === */}
@@ -1348,6 +1391,29 @@ function CompositionPageInner() {
       )}
       {/* === PROMPT 211a W4-2 (Cadence + Streak surfaces) END === */}
 
+      {/* === PROMPT 211b W4b (Cycle opt-in + Pregnancy mode) START === */}
+      {/* Two consumer-private, consent-gated surfaces. CycleOptIn is off by
+          default and revocable (consent_ledger 'cycle_tracking'); its confirmed
+          {optIn, phase} is lifted into cycleContext above for JourneyTimeline.
+          PregnancyModeControl is SAFETY-CRITICAL: its indication drives
+          pregnancyGating.gating, shared unmodified with every composition
+          ESTIMATE surface on this page. Both default to no change until the
+          user explicitly acts. */}
+      {section !== 'measurements' && (
+        <div className="space-y-3">
+          <PregnancyModeControl
+            indication={pregnancyGating.indication}
+            saving={pregnancyGating.saving}
+            error={pregnancyGating.error}
+            onChange={pregnancyGating.setIndication}
+          />
+          <CycleOptIn
+            onCycleContextChange={(optIn, phase) => setCycleContext({ optIn, phase })}
+          />
+        </div>
+      )}
+      {/* === PROMPT 211b W4b (Cycle opt-in + Pregnancy mode) END === */}
+
       {section === 'measurements' && (
         <>
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -1370,8 +1436,24 @@ function CompositionPageInner() {
           {/* === PROMPT 211b W3c (Personal Precision Display) START ===
               Honest-empty by default: renders nothing until the user has
               recorded at least one anchor (tape/DEXA/scale). No numeric band
-              is ever shown pre-cohort; qualitative status only. */}
-          <PersonalPrecisionPanel result={personalPrecision.result} />
+              is ever shown pre-cohort; qualitative status only.
+              Task 211b-W4b (SAFETY-CRITICAL): while pregnancy mode is active,
+              usePersonalPrecision's `enabled` argument above already guarantees
+              runPersonalFusion (the composition-estimate call) is never invoked,
+              so personalPrecision.result is always null here and the panel
+              renders nothing; the supportive copy below replaces it instead of
+              a silent gap. Girth MeasurementsGrid/MeasurementsPanel above are
+              unaffected and always keep rendering. */}
+          {pregnancyGating.gating.compositionSuppressed ? (
+            <p
+              data-testid="personal-precision-composition-suppressed"
+              className="text-xs leading-relaxed text-white/60"
+            >
+              {pregnancyGating.gating.reason}
+            </p>
+          ) : (
+            <PersonalPrecisionPanel result={personalPrecision.result} />
+          )}
           {/* === PROMPT 211b W3c (Personal Precision Display) END === */}
         </>
       )}

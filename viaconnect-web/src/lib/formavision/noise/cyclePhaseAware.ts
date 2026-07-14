@@ -97,8 +97,15 @@ export function applyCyclePhaseAwareness(
   return {
     classification: base.classification,
     isPhaseTypical: true,
+    // Task 211b-W4b review nit (STEP 0a): "is typical" softened to "can be
+    // typical" to avoid causal over-attribution -- this is a supportive,
+    // non-diagnostic possibility, not a claimed cause of this specific reading.
+    // STEP 0b: base.delta.label comes from MEASUREMENT_LABELS (compositionDeltas.ts
+    // / circumference.ts), which contains no em/en dash for any key this wrapper
+    // ever reaches (waist/hip only); confirmed by the dash-sweep test alongside
+    // this module's other tests.
     phaseContextCopy:
-      `This ${base.delta.label.toLowerCase()} fluctuation is typical for your current cycle phase. ` +
+      `This ${base.delta.label.toLowerCase()} fluctuation can be typical for your current cycle phase. ` +
       'Your measurement is still shown exactly as scanned.',
   };
 }

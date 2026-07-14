@@ -37,13 +37,27 @@ import {
 // function); detectPlateau, getSpikeContext, and the band helpers are consumed
 // as-is, never re-derived.
 import { classifyBodyFatDelta, type NoiseClassification } from '@/lib/formavision/noise/mdcEngine';
-import { detectPlateau, getSpikeContext } from '@/lib/formavision/noise/noiseDeltaClassifier';
+import {
+  detectPlateau,
+  getSpikeContext,
+  classifyCircumferenceDelta,
+  type CircumferenceNoiseResult,
+} from '@/lib/formavision/noise/noiseDeltaClassifier';
 import {
   bodyFatBandHalfWidth,
   circumferenceBandHalfWidth,
   confidenceBandAriaLabel,
 } from '@/lib/formavision/noise/trendConfidenceBand';
 import { PER_MEASUREMENT_PCT } from '@/lib/arnold/scanning/accuracy/accuracyTargets';
+// Task 211b-W4b: consumes the APPROVED W4a service unmodified. This wrapper
+// only ADDS a phase-context label alongside an already-MEANINGFUL waist
+// increase; it never reframes, hides, or reclassifies the underlying delta.
+import {
+  applyCyclePhaseAwareness,
+  type CyclePhaseAwareContext,
+} from '@/lib/formavision/noise/cyclePhaseAware';
+import { CIRCUMFERENCE_EPSILON, type CircumferenceDelta } from '@/lib/formavision/deltas/compositionDeltas';
+import { MEASUREMENT_LABELS } from '@/lib/body-tracker/circumference';
 
 // Per-scan readout values. Numbers are the REAL measured values for that scan
 // (null === UNKNOWN, never fabricated, never 0).
@@ -72,8 +86,18 @@ export interface JourneyTimelineProps {
   // useScanFingerprints, computed by the caller). Absent/false means no spike
   // softening is applied. This never affects which numbers are shown.
   latestFingerprintIsOutlier?: boolean;
+  // Task 211b-W4b: the caller's own cycle opt-in state and current phase
+  // (from user_cycle_context, own-row). Absent, optIn: false, or an unknown
+  // phase are all a no-op (unchanged trend, per applyCyclePhaseAwareness's
+  // own contract). Default OFF: a user who has not opted in sees NO change.
+  cycleContext?: CyclePhaseAwareContext;
   className?: string;
 }
+
+// A user who has not opted in (or whose CycleOptIn read has not resolved yet)
+// gets exactly today's unchanged behavior -- applyCyclePhaseAwareness treats
+// optIn: false as a pass-through no-op.
+const CYCLE_CONTEXT_DEFAULT: CyclePhaseAwareContext = { optIn: false, phase: null };
 
 const PLAY_DURATION_MS = 4000; // first to latest cinematic length
 const REDUCED_STEP_PAUSE_MS = 700; // dwell on each scan when reduced motion
@@ -123,6 +147,38 @@ export function sequentialBodyFatClassifications(
   return out;
 }
 
+// Task 211b-W4b: the honest scan-over-scan waist noise classification for the
+// LATEST real-scan pair only (mirrors the existing latest-only convention for
+// spike/plateau context on this timeline). Direction uses the same
+// "lower is better" girth polarity and CIRCUMFERENCE_EPSILON already
+// single-sourced in compositionDeltas.ts; only the trivial sign-to-direction
+// mapping is inlined here (waist carries no CIRCUMFERENCE_POLARITY_OVERRIDE),
+// since compositionDeltas.ts does not export its internal directionFor helper.
+// Returns null when there are fewer than two real scans or either waist value
+// is UNKNOWN (honest UNKNOWN, never fabricated).
+export function latestWaistNoiseResult(
+  readouts: JourneyScanReadout[],
+  unit: 'in' | 'cm',
+): CircumferenceNoiseResult | null {
+  if (readouts.length < 2) return null;
+  const to = readouts[readouts.length - 1].waist;
+  const from = readouts[readouts.length - 2].waist;
+  if (from === null || to === null) return null;
+  const delta = to - from;
+  const direction: CircumferenceDelta['direction'] =
+    Math.abs(delta) < CIRCUMFERENCE_EPSILON ? 'unchanged' : delta > 0 ? 'worsened' : 'improved';
+  const waistDelta: CircumferenceDelta = {
+    key: 'waist',
+    label: MEASUREMENT_LABELS.waist,
+    from,
+    to,
+    delta,
+    direction,
+    unit,
+  };
+  return classifyCircumferenceDelta(waistDelta);
+}
+
 export function JourneyTimeline({
   vectors,
   readouts,
@@ -131,6 +187,7 @@ export function JourneyTimeline({
   onScrub,
   onPlay,
   latestFingerprintIsOutlier,
+  cycleContext = CYCLE_CONTEXT_DEFAULT,
   className,
 }: JourneyTimelineProps) {
   const count = vectors.length;
@@ -317,6 +374,16 @@ export function JourneyTimeline({
   const latestClassification = sequentialClassifications[0] ?? null;
   const spike = getSpikeContext(latestClassification, latestFingerprintIsOutlier ?? false, 'body fat');
   const isLatestSnapSpike = spike.isSuspectedSpike;
+  // 4. Task 211b-W4b: cycle phase context for the latest waist scan-over-scan
+  //    delta, via the APPROVED W4a service unmodified. Opt-out or unknown
+  //    phase (the CYCLE_CONTEXT_DEFAULT, or any caller-supplied equivalent) is
+  //    always a no-op here -- applyCyclePhaseAwareness's own contract, not
+  //    re-derived. The underlying waist number rendered below is NEVER changed
+  //    by this; the copy is added alongside it, never replacing it.
+  const latestWaistNoise = latestWaistNoiseResult(readouts, unit);
+  const waistPhaseAware = latestWaistNoise
+    ? applyCyclePhaseAwareness(latestWaistNoise, cycleContext)
+    : null;
 
   return (
     <div
@@ -464,6 +531,17 @@ export function JourneyTimeline({
           // legible contrast on the dark navy card background (not a new hue).
           <p data-testid="journey-spike-copy" className="mt-2 text-[11px] leading-relaxed text-[#e8b78c]">
             {spike.spikeCopy}
+          </p>
+        )}
+
+        {/* Task 211b-W4b: cycle phase context for the latest waist scan-over-scan
+            delta. The waist number above (shown.waist) is NEVER changed by this;
+            this only adds a labeled, supportive note alongside it. Opt-out or
+            unknown phase never renders this (waistPhaseAware.isPhaseTypical stays
+            false, matching applyCyclePhaseAwareness's own contract). */}
+        {readoutMode.kind === 'measured' && shownIndex === last && waistPhaseAware?.isPhaseTypical && (
+          <p data-testid="journey-phase-context-copy" className="mt-2 text-[11px] leading-relaxed text-[#2DA5A0]">
+            {waistPhaseAware.phaseContextCopy}
           </p>
         )}
       </div>
