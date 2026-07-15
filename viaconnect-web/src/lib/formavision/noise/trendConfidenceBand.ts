@@ -128,8 +128,15 @@ export function bodyFatBandHalfWidth(referencePct: number | null): ConfidenceBan
     tolerancePct: PER_MEASUREMENT_PCT,
     referenceValue: referencePct,
   });
+  if (mdc95 === null) {
+    return { halfWidth: null, unit: 'pct' };
+  }
 
-  return { halfWidth: mdc95, unit: 'pct' };
+  // The band is symmetric: the indistinguishability half-width is MDC95 / 2,
+  // matching circumferenceBandHalfWidth's convention (see comment above).
+  // Using the full MDC95 as the half-width would double the corridor and
+  // overstate the noise floor.
+  return { halfWidth: mdc95 / 2, unit: 'pct' };
 }
 
 /**

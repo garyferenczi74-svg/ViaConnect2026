@@ -80,6 +80,9 @@ CREATE INDEX IF NOT EXISTS idx_user_measurement_anchors_user_taken
 CREATE INDEX IF NOT EXISTS idx_user_measurement_anchors_user_source
   ON public.user_measurement_anchors (user_id, source);
 
+CREATE INDEX IF NOT EXISTS idx_user_measurement_anchors_consent
+  ON public.user_measurement_anchors (consent_ledger_id) WHERE consent_ledger_id IS NOT NULL;
+
 ALTER TABLE public.user_measurement_anchors ENABLE ROW LEVEL SECURITY;
 
 DO $$
@@ -92,7 +95,7 @@ BEGIN
   ) THEN
     CREATE POLICY "Users select own measurement anchors"
       ON public.user_measurement_anchors FOR SELECT TO authenticated
-      USING (auth.uid() = user_id);
+      USING ((select auth.uid()) = user_id);
   END IF;
 END $$;
 
@@ -106,7 +109,7 @@ BEGIN
   ) THEN
     CREATE POLICY "Users insert own measurement anchors"
       ON public.user_measurement_anchors FOR INSERT TO authenticated
-      WITH CHECK (auth.uid() = user_id);
+      WITH CHECK ((select auth.uid()) = user_id);
   END IF;
 END $$;
 
@@ -120,8 +123,8 @@ BEGIN
   ) THEN
     CREATE POLICY "Users update own measurement anchors"
       ON public.user_measurement_anchors FOR UPDATE TO authenticated
-      USING (auth.uid() = user_id)
-      WITH CHECK (auth.uid() = user_id);
+      USING ((select auth.uid()) = user_id)
+      WITH CHECK ((select auth.uid()) = user_id);
   END IF;
 END $$;
 
@@ -135,7 +138,7 @@ BEGIN
   ) THEN
     CREATE POLICY "Users delete own measurement anchors"
       ON public.user_measurement_anchors FOR DELETE TO authenticated
-      USING (auth.uid() = user_id);
+      USING ((select auth.uid()) = user_id);
   END IF;
 END $$;
 

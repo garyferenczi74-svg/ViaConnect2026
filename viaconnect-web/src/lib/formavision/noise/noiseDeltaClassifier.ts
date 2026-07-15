@@ -127,8 +127,10 @@ export function classifyBodyFatMetricDelta(
   if (delta === null) return null;
 
   // Use the 'from' value as the reference for the pct-of-truth band.
-  // If 'from' is 0 or negative the band cannot be computed (UNKNOWN).
-  if (delta.from <= 0) {
+  // If 'from' or 'to' is 0 or negative, either the band cannot be computed
+  // (from) or 0 is the honest "not measured" sentinel (to) -- either way the
+  // classification would be fabricated, so both sides are guarded (UNKNOWN).
+  if (delta.from <= 0 || delta.to <= 0) {
     return { delta, classification: null, mdc95: null };
   }
 

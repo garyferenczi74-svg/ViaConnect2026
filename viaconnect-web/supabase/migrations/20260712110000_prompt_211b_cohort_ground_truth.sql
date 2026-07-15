@@ -111,7 +111,7 @@ BEGIN
   ) THEN
     CREATE POLICY "Research admins can select cohort subjects"
       ON public.cohort_subjects FOR SELECT TO authenticated
-      USING (public.is_research_admin());
+      USING ((select public.is_research_admin()));
   END IF;
 END $$;
 
@@ -125,7 +125,7 @@ BEGIN
   ) THEN
     CREATE POLICY "Research admins can insert cohort subjects"
       ON public.cohort_subjects FOR INSERT TO authenticated
-      WITH CHECK (public.is_research_admin());
+      WITH CHECK ((select public.is_research_admin()));
   END IF;
 END $$;
 
@@ -139,8 +139,8 @@ BEGIN
   ) THEN
     CREATE POLICY "Research admins can update cohort subjects"
       ON public.cohort_subjects FOR UPDATE TO authenticated
-      USING  (public.is_research_admin())
-      WITH CHECK (public.is_research_admin());
+      USING  ((select public.is_research_admin()))
+      WITH CHECK ((select public.is_research_admin()));
   END IF;
 END $$;
 
@@ -202,7 +202,7 @@ BEGIN
   ) THEN
     CREATE POLICY "Research admins can select labeled measurements"
       ON public.cohort_labeled_measurements FOR SELECT TO authenticated
-      USING (public.is_research_admin());
+      USING ((select public.is_research_admin()));
   END IF;
 END $$;
 
@@ -216,7 +216,7 @@ BEGIN
   ) THEN
     CREATE POLICY "Research admins can insert labeled measurements"
       ON public.cohort_labeled_measurements FOR INSERT TO authenticated
-      WITH CHECK (public.is_research_admin());
+      WITH CHECK ((select public.is_research_admin()));
   END IF;
 END $$;
 
@@ -230,8 +230,8 @@ BEGIN
   ) THEN
     CREATE POLICY "Research admins can update labeled measurements"
       ON public.cohort_labeled_measurements FOR UPDATE TO authenticated
-      USING  (public.is_research_admin())
-      WITH CHECK (public.is_research_admin());
+      USING  ((select public.is_research_admin()))
+      WITH CHECK ((select public.is_research_admin()));
   END IF;
 END $$;
 
@@ -286,7 +286,7 @@ BEGIN
   ) THEN
     CREATE POLICY "Research admins can select validation runs"
       ON public.cohort_validation_runs FOR SELECT TO authenticated
-      USING (public.is_research_admin());
+      USING ((select public.is_research_admin()));
   END IF;
 END $$;
 
@@ -300,7 +300,7 @@ BEGIN
   ) THEN
     CREATE POLICY "Research admins can insert validation runs"
       ON public.cohort_validation_runs FOR INSERT TO authenticated
-      WITH CHECK (public.is_research_admin());
+      WITH CHECK ((select public.is_research_admin()));
   END IF;
 END $$;
 

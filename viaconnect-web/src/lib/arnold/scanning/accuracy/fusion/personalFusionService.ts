@@ -48,6 +48,7 @@ import {
   type ConsentLedgerRow,
   type AnchorConsentType,
 } from './anchorIngestion';
+import { emitBandTightened, bucketTightening } from './fusionTelemetry';
 
 // ---------------------------------------------------------------------------
 // Per-region global band (cm), extended from accuracyTargets.ts's documented
@@ -289,6 +290,22 @@ export async function runPersonalFusion(
   const perRegion: PersonalFusionRegionResult[] = regions.map(region =>
     deriveRegionResult(region, pairsByRegion[region]!.length, REGION_BAND_CM[region], correctionResult),
   );
+
+  // Fire-and-forget band-tightening telemetry: only for regions whose status
+  // is strictly 'tightened' (handoff #1's honesty rule, read directly off the
+  // already-derived field - never re-derived from raw cm here). The bucket is
+  // a coarse ratio ('slight' | 'moderate' | 'substantial'); the raw
+  // personal/global cm numbers used to compute it never leave this function.
+  // emitBandTightened is itself fail-open (try/catch + safeLog).
+  for (const result of perRegion) {
+    if (result.status === 'tightened' && result.personalBandCm !== null) {
+      void emitBandTightened(
+        userId,
+        result.region,
+        bucketTightening(result.personalBandCm, result.globalBandCm),
+      );
+    }
+  }
 
   return {
     calibrationVersion,

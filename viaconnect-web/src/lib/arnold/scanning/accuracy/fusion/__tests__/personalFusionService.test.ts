@@ -5,7 +5,19 @@
 // W3a review handoff #1) tightened vs not-tightened labeling - a personal
 // band that is NOT strictly narrower than global must never read 'tightened'.
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+// I6: emitBandTightened is mocked so the wiring can be asserted without a
+// real Supabase round trip (it is exercised end-to-end by
+// fusionTelemetry.test.ts); bucketTightening stays the real pure function.
+vi.mock('../fusionTelemetry', async () => {
+  const actual = await vi.importActual<typeof import('../fusionTelemetry')>('../fusionTelemetry');
+  return {
+    ...actual,
+    emitBandTightened: vi.fn(() => Promise.resolve()),
+  };
+});
+
 import {
   scanRowToRegionValues,
   buildPersonalPairs,
@@ -15,6 +27,7 @@ import {
   type ScanCircumferenceRow,
   type PersonalFusionReaders,
 } from '../personalFusionService';
+import { emitBandTightened } from '../fusionTelemetry';
 import type { AnchorReading } from '../anchorTypes';
 import { MIN_ANCHOR_PAIRS_PER_REGION, type PersonalCorrectionResult } from '../personalCorrection';
 import type {
@@ -22,6 +35,10 @@ import type {
   UserMeasurementAnchorRow,
   ConsentLedgerRow,
 } from '../anchorIngestion';
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
 
 function scanRow(overrides: Partial<ScanCircumferenceRow> = {}): ScanCircumferenceRow {
   return {
@@ -297,5 +314,73 @@ describe('runPersonalFusion', () => {
     // torso band -> tightened.
     expect(waist!.status).toBe('tightened');
     expect(waist!.globalBandCm).toBe(REGION_BAND_CM.waist_natural);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// I6 (final whole-branch review): emitBandTightened fires when (and only
+// when) a region result reaches status 'tightened', carrying only the
+// region + coarse bucket -- never a raw cm figure (no PHI).
+// ---------------------------------------------------------------------------
+
+describe('I6: emitBandTightened fires only for tightened regions, no PHI', () => {
+  it('fires once for the tightened waist_natural region, with region + bucket only', async () => {
+    const scans: ScanCircumferenceRow[] = Array.from({ length: MIN_ANCHOR_PAIRS_PER_REGION }, (_, i) =>
+      scanRow({ created_at: `2026-06-0${i + 1}T00:00:00.000Z`, waist: 80 + i }),
+    );
+    const tapeRows: UserMeasurementAnchorRow[] = Array.from({ length: MIN_ANCHOR_PAIRS_PER_REGION }, (_, i) => ({
+      source: 'tape',
+      region: 'waist_natural',
+      value_cm: 78 + i,
+      weight_kg: null,
+      stated_reliability: 'medium',
+      taken_at: `2026-06-0${i + 1}T00:00:00.000Z`,
+    }));
+    const consent: ConsentLedgerRow = {
+      consent_type: 'tape_anchor', granted: true, granted_at: '2026-06-01T00:00:00.000Z', revoked_at: null,
+    };
+
+    const result = await runPersonalFusion('user-1', readers({
+      fetchScanCircumferenceRows: async () => scans,
+      fetchTapeDexaAnchorRows: async () => tapeRows,
+      fetchConsentLedger: async () => [consent],
+    }));
+
+    const waist = result.perRegion.find(r => r.region === 'waist_natural');
+    expect(waist!.status).toBe('tightened');
+
+    expect(emitBandTightened).toHaveBeenCalledTimes(1);
+    const [userId, region, bucket] = (emitBandTightened as unknown as { mock: { calls: unknown[][] } }).mock.calls[0];
+    expect(userId).toBe('user-1');
+    expect(region).toBe('waist_natural');
+    expect(['slight', 'moderate', 'substantial']).toContain(bucket);
+    // No raw cm number is ever passed as an argument to the emitter.
+    expect(typeof bucket).toBe('string');
+  });
+
+  it('does NOT fire when there are no anchors at all (nothing tightened)', async () => {
+    await runPersonalFusion('user-1', readers());
+    expect(emitBandTightened).not.toHaveBeenCalled();
+  });
+
+  it('does NOT fire for a not-tightened region (personal band wider than global)', async () => {
+    // Reuse the exact not-tightened fixture from deriveRegionResult's own
+    // suite, wired through runPersonalFusion's real correction status by
+    // asserting on deriveRegionResult directly is already covered above;
+    // here we assert the service-level contract: a correctionStatus of
+    // 'insufficient' (too few anchors) never reaches 'tightened' and never emits.
+    const tapeRow: UserMeasurementAnchorRow = {
+      source: 'tape', region: 'hip', value_cm: 96, weight_kg: null,
+      stated_reliability: 'medium', taken_at: '2026-07-01T00:00:00.000Z',
+    };
+    const consent: ConsentLedgerRow = {
+      consent_type: 'tape_anchor', granted: true, granted_at: '2026-06-01T00:00:00.000Z', revoked_at: null,
+    };
+    await runPersonalFusion('user-1', readers({
+      fetchTapeDexaAnchorRows: async () => [tapeRow],
+      fetchScanCircumferenceRows: async () => [scanRow({ waist: 82 })],
+      fetchConsentLedger: async () => [consent],
+    }));
+    expect(emitBandTightened).not.toHaveBeenCalled();
   });
 });

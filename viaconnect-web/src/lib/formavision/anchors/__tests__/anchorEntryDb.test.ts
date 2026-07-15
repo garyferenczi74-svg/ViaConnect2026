@@ -33,7 +33,15 @@ vi.mock('@/lib/utils/safe-log', () => ({
   },
 }));
 
+// I6: fusionTelemetry is mocked so the emitAnchorAdopted wiring can be
+// asserted without a real Supabase round trip (emitAnchorAdopted itself is
+// exercised end-to-end by fusionTelemetry.test.ts).
+vi.mock('@/lib/arnold/scanning/accuracy/fusion/fusionTelemetry', () => ({
+  emitAnchorAdopted: vi.fn(() => Promise.resolve()),
+}));
+
 import { safeLog } from '@/lib/utils/safe-log';
+import { emitAnchorAdopted } from '@/lib/arnold/scanning/accuracy/fusion/fusionTelemetry';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   inchesToCm,
@@ -449,5 +457,78 @@ describe('low-level accessors: insertAnchorConsent / insertMeasurementAnchor', (
       consent_ledger_id: null,
     });
     expect(result.error).toBeNull();
+  });
+});
+
+// ===========================================================================
+// I6 (final whole-branch review): fusionTelemetry.emitAnchorAdopted fires
+// after a SUCCESSFUL anchor write, for both tape and dexa, and carries no
+// raw measurement (source only -- no PHI).
+// ===========================================================================
+
+describe('I6: emitAnchorAdopted fires on a successful anchor write, no PHI', () => {
+  it('fires with source "tape" after a successful tape write', async () => {
+    const { client } = makeFakeSupabase();
+    await writeTapeAnchorFailOpen(client, {
+      userId: 'user-8',
+      region: 'waist_natural',
+      value: 30,
+      unit: 'in',
+      takenAt: '2026-07-13T12:00:00.000Z',
+    });
+    expect(emitAnchorAdopted).toHaveBeenCalledWith('user-8', 'tape');
+  });
+
+  it('fires with source "dexa" after a successful DEXA region write', async () => {
+    const { client } = makeFakeSupabase();
+    await writeDexaRegionAnchorFailOpen(client, {
+      userId: 'user-9',
+      region: 'thigh',
+      value: 22,
+      unit: 'in',
+      takenAt: '2026-07-13T09:00:00.000Z',
+    });
+    expect(emitAnchorAdopted).toHaveBeenCalledWith('user-9', 'dexa');
+  });
+
+  it('fires with source "dexa" after a successful DEXA weight-only write', async () => {
+    const { client } = makeFakeSupabase();
+    await writeDexaWeightAnchorFailOpen(client, {
+      userId: 'user-10',
+      value: 150,
+      unit: 'lbs',
+      takenAt: '2026-07-13T09:00:00.000Z',
+    });
+    expect(emitAnchorAdopted).toHaveBeenCalledWith('user-10', 'dexa');
+  });
+
+  it('does NOT fire when the anchor write itself fails', async () => {
+    const { client } = makeFakeSupabase({ anchorResult: { error: { message: 'connection reset' } } });
+    await writeTapeAnchorFailOpen(client, {
+      userId: 'user-11',
+      region: 'chest',
+      value: 40,
+      unit: 'in',
+      takenAt: '2026-07-13T00:00:00.000Z',
+    });
+    expect(emitAnchorAdopted).not.toHaveBeenCalled();
+  });
+
+  it('every call carries only (userId, source) -- no cm/kg figure, no PHI', async () => {
+    const { client } = makeFakeSupabase();
+    await writeTapeAnchorFailOpen(client, {
+      userId: 'user-12',
+      region: 'hip',
+      value: 95.5,
+      unit: 'cm',
+      takenAt: '2026-07-13T00:00:00.000Z',
+    });
+    const mockCalls = (emitAnchorAdopted as unknown as { mock: { calls: unknown[][] } }).mock.calls;
+    expect(mockCalls.length).toBeGreaterThan(0);
+    for (const args of mockCalls) {
+      expect(args).toHaveLength(2);
+      expect(typeof args[0]).toBe('string');
+      expect(['scale', 'tape', 'dexa']).toContain(args[1]);
+    }
   });
 });

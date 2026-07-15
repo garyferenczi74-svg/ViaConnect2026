@@ -76,6 +76,13 @@ describe('classifyBodyFatMetricDelta', () => {
     expect(result!.mdc95).toBeNull();
   });
 
+  it('returns null classification when to is 0, the UNKNOWN sentinel, not a fabricated delta (review I2)', () => {
+    const result = classifyBodyFatMetricDelta(fatDelta(25, 0));
+    expect(result).not.toBeNull();
+    expect(result!.classification).toBeNull();
+    expect(result!.mdc95).toBeNull();
+  });
+
   it('classifies a WITHIN_NOISE body fat delta correctly', () => {
     // At 25% body fat, MDC95 = 1.96 * sqrt(2) * (0.10 * 25 / 2) = ~3.46
     // A delta of 1 percentage point should be WITHIN_NOISE

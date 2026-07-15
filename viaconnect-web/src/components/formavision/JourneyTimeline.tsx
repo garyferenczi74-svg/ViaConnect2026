@@ -233,7 +233,7 @@ export function latestWaistNoiseResult(
   if (readouts.length < 2) return null;
   const to = readouts[readouts.length - 1].waist;
   const from = readouts[readouts.length - 2].waist;
-  if (from === null || to === null) return null;
+  if (from === null || from === 0 || to === null || to === 0) return null;
   const delta = to - from;
   const direction: CircumferenceDelta['direction'] =
     Math.abs(delta) < CIRCUMFERENCE_EPSILON ? 'unchanged' : delta > 0 ? 'worsened' : 'improved';

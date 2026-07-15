@@ -39,6 +39,7 @@ import {
   type AnchorSource,
   type StatedReliability,
 } from '@/lib/arnold/scanning/accuracy/fusion/anchorTypes';
+import { emitAnchorAdopted } from '@/lib/arnold/scanning/accuracy/fusion/fusionTelemetry';
 
 const SCOPE = 'formavision.anchor-entry';
 const WRITE_TIMEOUT_MS = 5000;
@@ -213,6 +214,12 @@ export async function writeAnchorFailOpen(
       `${SCOPE}.anchor`,
     );
     if (result.error) throw new Error(result.error.message);
+    // Fire-and-forget adoption telemetry: only after the anchor row actually
+    // landed. fusionTelemetry.emitAnchorAdopted is itself fail-open (try/catch
+    // + safeLog); source is the already-typed AnchorSource enum value, never
+    // a raw measurement, so no PHI leaves this call. Covers tape and dexa (the
+    // only sources this write path ever receives - see the file banner).
+    void emitAnchorAdopted(params.userId, params.source);
     return true;
   } catch (error) {
     safeLog.warn(SCOPE, 'anchor write failed, failing open', {

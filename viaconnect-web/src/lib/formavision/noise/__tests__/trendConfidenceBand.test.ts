@@ -12,9 +12,11 @@
 import { describe, it, expect } from 'vitest';
 import { computeMDC95 } from '../mdcEngine';
 import { RegionToleranceCm } from '@/lib/arnold/scanning/accuracy/accuracyTargets';
+import { PER_MEASUREMENT_PCT } from '@/lib/arnold/scanning/accuracy/accuracyTargets';
 import {
   confidenceBandAriaLabel,
   circumferenceBandHalfWidth,
+  bodyFatBandHalfWidth,
 } from '../trendConfidenceBand';
 
 describe('confidenceBandAriaLabel (review C2)', () => {
@@ -53,6 +55,40 @@ describe('circumferenceBandHalfWidth (review I2)', () => {
 
   it('returns null for a measurement key with no GirthRegion mapping', () => {
     const result = circumferenceBandHalfWidth('shoulderWidth', 'cm');
+    expect(result.halfWidth).toBeNull();
+  });
+});
+
+describe('bodyFatBandHalfWidth (review M1: half-width, not the full MDC95)', () => {
+  it('returns MDC95 / 2 for a positive reference, not the full MDC95', () => {
+    const referencePct = 25;
+    const mdc95 = computeMDC95({ tolerancePct: PER_MEASUREMENT_PCT, referenceValue: referencePct });
+    expect(mdc95).not.toBeNull();
+    const expectedHalfWidth = (mdc95 as number) / 2;
+
+    const result = bodyFatBandHalfWidth(referencePct);
+    expect(result.unit).toBe('pct');
+    expect(result.halfWidth).not.toBeNull();
+    expect(result.halfWidth as number).toBeCloseTo(expectedHalfWidth, 10);
+    // Guard against the M1 regression: the half-width must NOT equal the
+    // full MDC95 value.
+    expect(result.halfWidth as number).not.toBeCloseTo(mdc95 as number, 10);
+  });
+
+  it('matches circumferenceBandHalfWidth\'s halving convention', () => {
+    const result = bodyFatBandHalfWidth(25);
+    const full = computeMDC95({ tolerancePct: PER_MEASUREMENT_PCT, referenceValue: 25 }) as number;
+    expect(result.halfWidth as number).toBeCloseTo(full / 2, 10);
+  });
+
+  it('returns null halfWidth when referencePct is null', () => {
+    const result = bodyFatBandHalfWidth(null);
+    expect(result.halfWidth).toBeNull();
+    expect(result.unit).toBe('pct');
+  });
+
+  it('returns null halfWidth when referencePct is 0 (UNKNOWN sentinel)', () => {
+    const result = bodyFatBandHalfWidth(0);
     expect(result.halfWidth).toBeNull();
   });
 });

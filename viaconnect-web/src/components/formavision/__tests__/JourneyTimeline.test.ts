@@ -12,6 +12,7 @@ import {
   JourneyTimeline,
   sequentialBodyFatClassifications,
   sequentialGirthClassifications,
+  latestWaistNoiseResult,
   type JourneyScanReadout,
 } from '../JourneyTimeline';
 import { scanToParamVector } from '@/lib/formavision/geometry/scanToParamVector';
@@ -540,6 +541,49 @@ describe('sequentialGirthClassifications (pure bridge, Task 211b-W2d)', () => {
     const result = sequentialGirthClassifications(readouts, 'hip', 'in');
     // 5in (12.7cm) is well above the 3cm torso MDC95 band.
     expect(result[0]).toBe('MEANINGFUL');
+  });
+});
+
+describe('latestWaistNoiseResult (review I1: symmetric 0-sentinel guard)', () => {
+  it('classifies the latest real waist pair normally', () => {
+    const readouts: JourneyScanReadout[] = [
+      { recordedAt: '2026-01-01T00:00:00Z', totalBodyFatPct: 25, waist: 38 },
+      { recordedAt: '2026-02-01T00:00:00Z', totalBodyFatPct: 25, waist: 33 },
+    ];
+    const result = latestWaistNoiseResult(readouts, 'in');
+    expect(result).not.toBeNull();
+    expect(result!.classification).toBe('MEANINGFUL');
+  });
+
+  it('returns null when fewer than two real scans', () => {
+    const readouts: JourneyScanReadout[] = [
+      { recordedAt: '2026-01-01T00:00:00Z', totalBodyFatPct: 25, waist: 38 },
+    ];
+    expect(latestWaistNoiseResult(readouts, 'in')).toBeNull();
+  });
+
+  it('returns null when the latest (to) waist is null', () => {
+    const readouts: JourneyScanReadout[] = [
+      { recordedAt: '2026-01-01T00:00:00Z', totalBodyFatPct: 25, waist: 38 },
+      { recordedAt: '2026-02-01T00:00:00Z', totalBodyFatPct: 25, waist: null },
+    ];
+    expect(latestWaistNoiseResult(readouts, 'in')).toBeNull();
+  });
+
+  it('returns null when the latest (to) waist is 0, the UNKNOWN sentinel, not a fabricated delta (I1)', () => {
+    const readouts: JourneyScanReadout[] = [
+      { recordedAt: '2026-01-01T00:00:00Z', totalBodyFatPct: 25, waist: 38 },
+      { recordedAt: '2026-02-01T00:00:00Z', totalBodyFatPct: 25, waist: 0 },
+    ];
+    expect(latestWaistNoiseResult(readouts, 'in')).toBeNull();
+  });
+
+  it('returns null when the earlier (from) waist is 0, the UNKNOWN sentinel, not a fabricated delta (I1)', () => {
+    const readouts: JourneyScanReadout[] = [
+      { recordedAt: '2026-01-01T00:00:00Z', totalBodyFatPct: 25, waist: 0 },
+      { recordedAt: '2026-02-01T00:00:00Z', totalBodyFatPct: 25, waist: 33 },
+    ];
+    expect(latestWaistNoiseResult(readouts, 'in')).toBeNull();
   });
 });
 
