@@ -978,7 +978,11 @@ function CompositionPageInner() {
                       and the control is real, keyboard-operable DOM, never baked
                       into the canvas. Selecting a region drives selectedBodyPart
                       (and so the P2-T3 camera framing); All clears to null. */}
-                  <div className="pointer-events-none absolute left-1/2 top-2 z-10 flex -translate-x-1/2 justify-center">
+                  {/* Prompt 210f: moved from top-center (left-1/2 -translate-x-1/2)
+                      to the top-left corner so the control no longer covers the
+                      Neck region tab. Position only; the control keeps its exact
+                      styling, size, and behavior. */}
+                  <div className="pointer-events-none absolute left-2 top-2 z-10 flex justify-start">
                     <SelectBodyPartControl
                       value={selectedBodyPart}
                       onChange={setSelectedBodyPart}
@@ -1038,11 +1042,15 @@ function CompositionPageInner() {
                   aria-label="Body composition summary"
                   className="hidden lg:flex lg:w-[200px] lg:shrink-0 lg:flex-col lg:gap-3"
                 >
-                  <div data-testid="kpi-stack-header" className="flex flex-col items-center gap-2 lg:mb-4">
+                  {/* Prompt 210f: uniform 1.5 gap between the heading, the legend
+                      rows, and each dot-to-label so the block reads as evenly
+                      spaced. Dot and label are already middle-aligned (items-center).
+                      Spacing only; block position and every card are unchanged. */}
+                  <div data-testid="kpi-stack-header" className="flex flex-col items-center gap-1.5 lg:mb-4">
                     <h3 className="text-center text-xs font-semibold uppercase tracking-wider text-white/40">
                       {isMuscle ? 'Segmental Muscle Analysis' : 'Segmental Body Fat Analysis'}
                     </h3>
-                    <ul className="flex flex-col gap-1 text-[10px] lg:w-fit lg:mx-auto">
+                    <ul className="flex flex-col gap-1.5 text-[10px] lg:w-fit lg:mx-auto">
                       <li className="flex items-center gap-1.5">
                         <span className="h-2.5 w-2.5 rounded-full bg-green-400" aria-hidden="true" />
                         <span className="text-white/40">{isMuscle ? 'Muscle Gain' : 'Fat Loss'}</span>
