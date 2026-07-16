@@ -424,6 +424,26 @@ ________________________________________   Date: __________
 
 ---
 
+## Inherited layout requirements (Prompt 210f, must not regress)
+
+Two layout fixes shipped in Prompt 210f on the current Body Composition surface
+(`src/app/(app)/(consumer)/body-tracker/composition/page.tsx`). The 210e redesign MUST
+preserve both; a regression of either fails conformance. Detail and before evidence:
+`docs/formavision/210f-ui-fixes.md`.
+
+1. Select Body Part control in the top-left corner. The Select Body Part control sits in
+   the top-left corner of the avatar canvas area, not top-center, so it never covers the
+   Neck region tab. Every region tab (Neck included) stays fully visible and clickable at
+   desktop, tablet, and phone widths, with the dropdown open and closed. This is the same
+   control the vision walk step 3 operates.
+
+2. Segmental Body Fat legend spacing is even. The Segmental Body Fat (and Muscle) legend
+   block uses uniform spacing between the heading, the legend rows, and each dot-to-label,
+   with the dot and label middle-aligned on each row. Note: the original 210f wording said
+   "legend centered"; per Gary's decision the shipped requirement is even spacing only (the
+   legend is the top block of the tall right column, not a fixed-height card), so the
+   redesign inherits even spacing, not vertical centering.
+
 ## Open items (gated; must land or be captured before the row above can pass)
 
 Everything here is a real gate carried from E1 through E5, not a placeholder. None is
