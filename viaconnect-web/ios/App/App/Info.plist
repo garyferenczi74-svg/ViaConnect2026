@@ -51,5 +51,9 @@
 	<string>ViaConnect uses speech recognition to turn your spoken meal edits into text. Speech is transcribed on your device when possible; transcripts are used only to apply edits you confirm.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>ViaConnect uses your camera to photograph meals and scan barcodes on packaged foods. Photos are sent to our analysis service only when you choose to log a meal.</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>ViaCura reads heart rate, HRV, sleep, steps, and body composition from Apple Health to personalize your Bio Optimization Score. Health data is never used for advertising.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>ViaCura does not write health samples to Apple Health. This permission is listed only for compatibility with the health plugin.</string>
 </dict>
 </plist>

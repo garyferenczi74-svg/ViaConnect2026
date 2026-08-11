@@ -102,11 +102,23 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/practitioners/") ||
     pathname === "/patients/invited" ||
     pathname.startsWith("/patients/invited/") ||
+    // Public acquisition + brand-protection surfaces (pre-auth).
+    pathname === "/waitlist" ||
+    pathname.startsWith("/waitlist/") ||
+    pathname === "/report-counterfeit" ||
+    pathname.startsWith("/report-counterfeit/") ||
+    pathname === "/dispensary" ||
+    pathname.startsWith("/dispensary/") ||
     pathname.startsWith("/api/waitlist/") ||
     pathname.startsWith("/api/auth/") ||
     pathname.startsWith("/api/stripe/webhook") ||
+    // Via Cura shop Stripe webhook (order finalize / refund / dispute).
+    // Authorizes via Stripe signature inside the handler — must not 307 to /login.
+    pathname.startsWith("/api/shop/webhook") ||
     pathname.startsWith("/api/webhooks/") ||
     pathname.startsWith("/api/pricing/") ||
+    // Anonymous public APIs (referral click, brand storefront, etc.)
+    pathname.startsWith("/api/public/") ||
     // Marshall compliance surfaces (Prompt #119): public DSAR form, trust
     // page, incident history, and the DSAR submit endpoint.
     pathname === "/trust-compliance" ||
@@ -129,12 +141,42 @@ export async function updateSession(request: NextRequest) {
     // inside the handler and is flag-gated off; must bypass the session redirect
     // so Vercel Cron can reach it.
     pathname === "/api/integrations/google-health/sync" ||
+    // Google Health inbound webhook (provider-signed; no user session).
+    pathname === "/api/integrations/google-health/webhook" ||
+    // Prompt 212: WHOOP webhooks (signature validated in handler).
+    pathname === "/api/integrations/whoop/webhook" ||
+    // Prompt 212: wearable event processor (CRON_SECRET).
+    pathname === "/api/integrations/whoop/process" ||
+    // Hannah research cron (vercel.json) — CRON_SECRET auth inside handler.
+    pathname === "/api/cron/hannah-research" ||
+    pathname.startsWith("/api/cron/") ||
+    // Nutrition insights cron (CRON_SECRET inside handler).
+    pathname === "/api/nutrition/insights/cron" ||
+    // Safety-mode status is intentionally public (feature kill-switch probe).
+    pathname === "/api/safety-mode/status" ||
     // Marshall pre-check public JWKS (Prompt #121). Standard .well-known
     // discovery endpoint for third parties verifying clearance receipts.
-    pathname === "/.well-known/marshall-clearance-jwks.json";
+    pathname === "/.well-known/marshall-clearance-jwks.json" ||
+    pathname.startsWith("/.well-known/");
 
-  // If not authenticated and trying to access protected route, redirect to login
+  // If not authenticated and trying to access protected route:
+  // - API routes return JSON 401 (Capacitor/fetch/webhooks must not get HTML /login)
+  // - Page routes redirect to /login with redirectTo
   if (!user && !isPublicRoute) {
+    if (pathname.startsWith("/api/")) {
+      safeLog.info("middleware.auth", "unauthenticated API request", {
+        path: pathname,
+      });
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Unauthorized",
+          errorCode: "AUTH_REQUIRED",
+          timestamp: new Date().toISOString(),
+        },
+        { status: 401, headers: { "Content-Type": "application/json" } },
+      );
+    }
     safeLog.info("middleware.auth", "redirecting unauthenticated request to login", {
       path: pathname,
     });

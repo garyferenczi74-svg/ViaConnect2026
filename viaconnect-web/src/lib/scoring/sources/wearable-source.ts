@@ -1,12 +1,13 @@
 // Wearable source for the Bio Optimization Score compute bundle.
 //
-// Pulls from two tables:
-//   wearable_integrations : the configured device list (7 cols).
-//   daily_scores          : the per-day signal payload (filter
-//                           data_source IN ('wearable', 'mixed')).
+// Pulls from:
+//   wearable_integrations : legacy configured device list (7 cols).
+//   connected_sources     : Prompt 212 WHOOP / HealthKit / Health Connect.
+//   wearable_recovery / wearable_sleep_sessions : Prompt 212 normalized layer.
+//   daily_scores          : per-day signal payload (wearable / mixed).
 //
-// last_engaged_at = MAX of integrations.last_sync_date and
-// daily_scores.updated_at across the two slices.
+// last_engaged_at = MAX of integrations, connected_sources, and daily_scores.
+// Prefers normalized wearable_* metrics when present (null stays UNKNOWN, never 0).
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 
@@ -80,6 +81,55 @@ export async function getWearableSource(
     }
     const integrations = (integrationsResult.data as IntegrationRow[] | null) ?? [];
 
+    // Prompt 212 connected sources (fail open if table missing).
+    let connectedSync: string | null = null;
+    let connectedTypes: string[] = [];
+    try {
+      const cs = await (supabase as any)
+        .from('connected_sources')
+        .select('provider, status, last_sync_at')
+        .eq('user_id', userId)
+        .eq('status', 'connected');
+      const rows = (cs.data ?? []) as Array<{ provider?: string; last_sync_at?: string }>;
+      connectedTypes = rows.map((r) => r.provider).filter(Boolean) as string[];
+      connectedSync = rows
+        .map((r) => r.last_sync_at)
+        .filter((t): t is string => typeof t === 'string')
+        .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0] ?? null;
+    } catch {
+      /* table may not exist yet */
+    }
+
+    // Normalized recovery / sleep (null stays null — never 0).
+    let latest_hrv: number | null = null;
+    let latest_sleep_hours: number | null = null;
+    try {
+      const rec = await (supabase as any)
+        .from('wearable_recovery')
+        .select('hrv_ms, cycle_date')
+        .eq('user_id', userId)
+        .is('deleted_at', null)
+        .order('cycle_date', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (rec.data?.hrv_ms != null && Number.isFinite(Number(rec.data.hrv_ms))) {
+        latest_hrv = Number(rec.data.hrv_ms);
+      }
+      const sleep = await (supabase as any)
+        .from('wearable_sleep_sessions')
+        .select('total_sleep_min, end_at')
+        .eq('user_id', userId)
+        .is('deleted_at', null)
+        .order('end_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (sleep.data?.total_sleep_min != null && Number.isFinite(Number(sleep.data.total_sleep_min))) {
+        latest_sleep_hours = Number(sleep.data.total_sleep_min) / 60;
+      }
+    } catch {
+      /* normalized tables may not exist yet */
+    }
+
     const dailyResult = await supabase
       .from('daily_scores')
       .select('updated_at, date, data_source, recovery_hrv, sleep_hours')
@@ -102,7 +152,10 @@ export async function getWearableSource(
       .filter((t): t is string => typeof t === 'string')
       .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0];
 
-    const last_engaged_at = maxIso(latestSync ?? null, latestDaily ?? null);
+    const last_engaged_at = maxIso(
+      maxIso(latestSync ?? null, latestDaily ?? null),
+      connectedSync,
+    );
 
     const sevenAgo = windowStart(7);
     const thirtyAgo = windowStart(30);
@@ -111,28 +164,39 @@ export async function getWearableSource(
 
     const device_types = Array.from(
       new Set(
-        integrations
-          .map((i) => i.device_type)
-          .filter((d): d is string => typeof d === 'string'),
+        [
+          ...integrations
+            .map((i) => i.device_type)
+            .filter((d): d is string => typeof d === 'string'),
+          ...connectedTypes,
+        ],
       ),
     );
 
-    // latest_hrv / latest_sleep_hours come from the most recent daily row
-    const sortedDaily = [...daily].sort((a, b) => {
-      const av = a.updated_at ? new Date(a.updated_at).getTime() : 0;
-      const bv = b.updated_at ? new Date(b.updated_at).getTime() : 0;
-      return bv - av;
-    });
-    const top = sortedDaily[0];
-    const latest_hrv = top?.recovery_hrv != null ? Number(top.recovery_hrv) : null;
-    const latest_sleep_hours = top?.sleep_hours != null ? Number(top.sleep_hours) : null;
+    // Prefer normalized layer; fall back to daily_scores only when still null.
+    if (latest_hrv == null || latest_sleep_hours == null) {
+      const sortedDaily = [...daily].sort((a, b) => {
+        const av = a.updated_at ? new Date(a.updated_at).getTime() : 0;
+        const bv = b.updated_at ? new Date(b.updated_at).getTime() : 0;
+        return bv - av;
+      });
+      const top = sortedDaily[0];
+      if (latest_hrv == null && top?.recovery_hrv != null) {
+        const n = Number(top.recovery_hrv);
+        if (Number.isFinite(n)) latest_hrv = n;
+      }
+      if (latest_sleep_hours == null && top?.sleep_hours != null) {
+        const n = Number(top.sleep_hours);
+        if (Number.isFinite(n)) latest_sleep_hours = n;
+      }
+    }
 
     return {
       last_engaged_at,
       recent_events_7d: within7,
       recent_events_30d: within30,
       source_specific: {
-        active_integration_count: activeIntegrations.length,
+        active_integration_count: activeIntegrations.length + connectedTypes.length,
         device_types,
         latest_hrv: latest_hrv != null && Number.isFinite(latest_hrv) ? latest_hrv : null,
         latest_sleep_hours:
