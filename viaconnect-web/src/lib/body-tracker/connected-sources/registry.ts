@@ -107,6 +107,43 @@ export const CONNECTED_SOURCES: ConnectedSource[] = [
     capabilities: ["weight", "body_fat_pct"],
     notes: "Coming soon. Will sync weight and body fat once the connection is enabled.",
   },
+  // Prompt 212: WHOOP cloud OAuth + Hume via phone health store
+  {
+    id: "whoop",
+    displayName: "WHOOP",
+    icon: "Activity",
+    category: "wearable",
+    status: "active",
+    authMethod: "oauth2",
+    capabilities: ["weight", "body_fat_pct"],
+    dataTypes: ["Recovery", "Sleep", "HRV", "Strain", "Workouts"],
+    notes:
+      "Connect WHOOP through the official WHOOP Developer API. Recovery, sleep, HRV, and workouts feed your Bio Optimization Score. Missing metrics stay UNKNOWN, never zero.",
+  },
+  {
+    id: "hume_band",
+    displayName: "Hume Band",
+    icon: "Scan",
+    category: "wearable",
+    status: "active",
+    authMethod: "native_bridge",
+    capabilities: [...CORE_METRIC_KEYS],
+    dataTypes: ["HRV", "Sleep", "Steps", "Body composition"],
+    notes:
+      "Hume has no public cloud API. Enable Hume to Apple Health (or Health Connect) sync in the Hume app, then grant ViaCura phone health permissions. Guided setup walks you through each step.",
+  },
+  {
+    id: "phone_health",
+    displayName: "Phone Health Data",
+    icon: "Heart",
+    category: "aggregator",
+    status: "active",
+    authMethod: "native_bridge",
+    capabilities: [...CORE_METRIC_KEYS],
+    dataTypes: ["Heart rate", "HRV", "Sleep", "Steps", "Body composition"],
+    notes:
+      "Apple Health (iOS) and Health Connect (Android, flag-gated). Also covers Apple Watch, Oura, Garmin, and other apps that write into the phone health store, including Hume.",
+  },
 ];
 
 export function getSource(id: string): ConnectedSource | undefined {
