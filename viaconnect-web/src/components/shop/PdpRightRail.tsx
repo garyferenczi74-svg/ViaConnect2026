@@ -39,9 +39,7 @@ import {
     ShoppingBag,
     Users,
 } from 'lucide-react'
-import { Accordion } from './Accordion'
 import { FormatIndicator } from './FormatIndicator'
-import { PdpFormulationTable } from './PdpFormulationTable'
 import { SectionHeading } from '@/components/ui/SectionHeading'
 import { TabPills } from '@/components/ui/TabPills'
 import { addToCart } from '@/lib/shop/cart-store'
@@ -202,7 +200,6 @@ export function PdpRightRail({ product, variant }: PdpRightRailProps) {
     const snpTargets = product.snp_targets ?? []
     const summary = product.summary ?? ''
     const description = product.description ?? ''
-    const ingredients = product.ingredients ?? []
     const meta = product.testing_meta ?? {}
 
     const panelTransition = reducedMotion
@@ -311,27 +308,13 @@ export function PdpRightRail({ product, variant }: PdpRightRailProps) {
                 )}
             </div>
 
-            <div className="mt-2 border-t border-white/10 pt-2">
-                <Accordion heading="Full Description" id="pdp-description">
-                    {description ? (
-                        isStructuredDescription(description) ? (
-                            renderStructuredDescription(description)
-                        ) : (
-                            <p className="whitespace-pre-line text-sm leading-relaxed text-white/80 md:text-base">
-                                {renderDescriptionWithEmphasis(description, product.slug)}
-                            </p>
-                        )
-                    ) : (
-                        <p className="text-sm text-white/45">Description coming soon.</p>
-                    )}
-                </Accordion>
-
-                {variant === 'supplement' && (
-                    <Accordion heading="Formulation" id="pdp-formulation">
-                        <PdpFormulationTable ingredients={ingredients} />
-                    </Accordion>
-                )}
-            </div>
+            {/* Prompt 215: long-scroll description/formulation removed for supplements.
+                Five-tab ProductTabs shell renders below the purchase rail on the page. */}
+            {variant === 'supplement' && (
+                <p className="mt-2 text-xs text-white/40 border-t border-white/10 pt-3">
+                    Full product details, formulation, and genetic compatibility are in the tabs below.
+                </p>
+            )}
 
             {variant === 'testing' && (
                 <section className="mt-2 border-t border-white/10 pt-8">

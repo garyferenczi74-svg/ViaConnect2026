@@ -17,12 +17,16 @@ import { BreadcrumbPills, type BreadcrumbItem } from '@/components/BreadcrumbPil
 import { CartChrome } from '@/components/shop/CartChrome'
 import { CategoryFallbackImage } from '@/components/shop/CategoryFallbackImage'
 import { PdpRightRail } from '@/components/shop/PdpRightRail'
+import { ProductTabs } from '@/components/shop/ProductTabs'
 import { getShopCategoryBySlug } from '@/lib/shop/categories'
 import { getProductBySlug } from '@/lib/shop/queries'
 import { getCurrentShopSession, isConsumerSession } from '@/lib/shop/role'
+import { loadProductTabContent } from '@/lib/shop/productTabs/loadContent'
+import { loadProductCompatibility } from '@/lib/shop/productTabs/loadCompatibility'
 
 interface PageProps {
     params: Promise<{ slug: string }>
+    searchParams?: Promise<{ tab?: string }>
 }
 
 export async function generateMetadata(props: PageProps) {
@@ -39,6 +43,7 @@ export async function generateMetadata(props: PageProps) {
 
 export default async function ProductDetailPage(props: PageProps) {
     const params = await props.params;
+    const searchParams = props.searchParams ? await props.searchParams : {};
     const [product, session] = await Promise.all([
         getProductBySlug(params.slug),
         getCurrentShopSession(),
@@ -46,6 +51,7 @@ export default async function ProductDetailPage(props: PageProps) {
     if (!product) notFound()
     const consumerSession = isConsumerSession(session.role)
 
+    const slug = product.slug ?? params.slug
     const category = product.category_slug ? getShopCategoryBySlug(product.category_slug) : null
     const variant = category?.cardVariant ?? 'supplement'
     const images =
@@ -56,6 +62,12 @@ export default async function ProductDetailPage(props: PageProps) {
               : []) ?? []
     const primaryImage = images[0] ?? null
     const thumbs = images.slice(0, 4)
+
+    // Prompt 215: five-tab content + genetic compatibility (server-side score)
+    const [tabContent, compatibility] = await Promise.all([
+        loadProductTabContent(slug),
+        loadProductCompatibility(slug),
+    ])
 
     return (
         <div className="min-h-screen bg-[#0F1A2E] text-white">
@@ -69,7 +81,7 @@ export default async function ProductDetailPage(props: PageProps) {
                         }
                         items.push({
                             label: product.name,
-                            href: `/shop/product/${product.slug ?? params.slug}`,
+                            href: `/shop/product/${slug}`,
                         })
                         return items
                     })()}
@@ -113,6 +125,15 @@ export default async function ProductDetailPage(props: PageProps) {
 
                     <PdpRightRail product={product} variant={variant} />
                 </div>
+
+                {variant === 'supplement' && tabContent.length > 0 && (
+                    <ProductTabs
+                        productSlug={slug}
+                        tabs={tabContent}
+                        compatibility={compatibility}
+                        initialTab={searchParams.tab ?? null}
+                    />
+                )}
             </div>
             <CartChrome consumerSession={consumerSession} userId={session.userId} />
         </div>
