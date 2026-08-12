@@ -1,9 +1,17 @@
-// Pure ellipse-perimeter solver for the FormaVision parametric body (Prompt 210b).
+// Pure ellipse-perimeter solver for the FormaVision parametric body (Prompt 210b)
+// plus 210e-2 Revision C anatomical rings (Prompt 210g).
 //
 // Given a target circumference (perimeter) and an aspect ratio b / a, this module
 // solves the ellipse semi-axes whose perimeter matches the target, then samples the
-// ellipse into a closed ring of (x, z) points. Everything here is pure and
-// deterministic: the same inputs always yield byte-identical output.
+// ellipse into a closed ring of (x, z) points. Anatomical rings apply angular
+// shape-correction and re-normalize so circumference still matches.
+
+import type { Sex } from './types';
+import {
+  regionForLevelId,
+  shapeCorrectionFactor,
+  type ShapeRegion,
+} from './shapeCorrection';
 
 export interface Point2 {
   x: number;
@@ -50,6 +58,7 @@ export function polygonPerimeter(points: Point2[]): number {
 
 // Sample a perimeter-matched ellipse into `segments` evenly-angled points on the
 // x and z axes. x spans the width (major axis a), z spans the depth (minor axis b).
+// Pure ellipse (no angular shape-correction). Prefer anatomicalRingPoints for body.
 export function ellipsePointsForPerimeter(
   perimeterM: number,
   aspectRatio: number,
@@ -66,4 +75,55 @@ export function ellipsePointsForPerimeter(
     };
   }
   return points;
+}
+
+export interface AnatomicalRingOptions {
+  levelId?: string;
+  region?: ShapeRegion;
+  sex?: Sex;
+  // When true, skip angular correction (tests / deliberate degradation gate).
+  disableShapeCorrection?: boolean;
+}
+
+/**
+ * 210e-2 Rev C ring: perimeter-matched ellipse modulated by angular shape
+ * correction, then uniformly scaled so the closed polygon perimeter still equals
+ * perimeterM (measured circumference preserved).
+ */
+export function anatomicalRingPoints(
+  perimeterM: number,
+  aspectRatio: number,
+  segments: number,
+  opts?: AnatomicalRingOptions,
+): Point2[] {
+  const base = ellipsePointsForPerimeter(perimeterM, aspectRatio, segments);
+  if (opts?.disableShapeCorrection) {
+    return base;
+  }
+  const sex = opts?.sex ?? 'male';
+  const region =
+    opts?.region ??
+    (opts?.levelId ? regionForLevelId(opts.levelId) : 'default');
+  const count = base.length;
+  const corrected: Point2[] = new Array(count);
+  for (let i = 0; i < count; i += 1) {
+    const theta = (i / count) * Math.PI * 2;
+    const factor = shapeCorrectionFactor(theta, region, sex);
+    corrected[i] = {
+      x: base[i].x * factor,
+      z: base[i].z * factor,
+    };
+  }
+  const poly = polygonPerimeter(corrected);
+  if (!(poly > 0)) {
+    return corrected;
+  }
+  const scale = (perimeterM > 0 ? perimeterM : 1e-3) / poly;
+  for (let i = 0; i < count; i += 1) {
+    corrected[i] = {
+      x: corrected[i].x * scale,
+      z: corrected[i].z * scale,
+    };
+  }
+  return corrected;
 }

@@ -137,12 +137,14 @@ describe('measured anchors hold under enrichment', () => {
   it('mid-upper-arm extent tracks the bicep circumference', () => {
     // A bigger bicep widens the arm ring at the mid-upper-arm level, pushing the
     // body's maximum X outward at that band. The arms are the outermost geometry in
-    // X, so the max X extent at the arm band is a clean proxy for the arm girth.
-    const shoulderY = levelY('chest');
+    // Sample only right_arm segment vertices (index 0) near mid-upper-arm so trunk
+    // shoulder width cannot dominate the max-X proxy after 25 degree arm hang.
+    const shoulderY = levelY('shoulder');
     const wristY = MALE_TEMPLATE.rings.find((r) => r.id === 'hip')!.levelN * H;
     const armY = shoulderY + (wristY - shoulderY) * 0.28;
+    const RIGHT_ARM = 0;
 
-    function maxXAt(bicepM: number): number {
+    function meanArmRadius(bicepM: number): number {
       const v = measuredVector();
       v.arms = [
         { side: 'r', bicepM, forearmM: MALE_TEMPLATE.arm.forearmM, estimated: false },
@@ -150,17 +152,32 @@ describe('measured anchors hold under enrichment', () => {
       ];
       const result = buildBodyGeometry(v);
       const pos = result.geometry.getAttribute('position');
-      let maxX = 0;
+      const segment = result.geometry.getAttribute('segment');
+      let cx = 0;
+      let n = 0;
       for (let i = 0; i < pos.count; i += 1) {
-        if (Math.abs(pos.getY(i) - armY) > 0.03) continue;
-        maxX = Math.max(maxX, pos.getX(i));
+        if (segment.getX(i) !== RIGHT_ARM) continue;
+        if (Math.abs(pos.getY(i) - armY) > 0.04) continue;
+        cx += pos.getX(i);
+        n += 1;
+      }
+      if (n === 0) {
+        result.dispose();
+        return 0;
+      }
+      cx /= n;
+      let r = 0;
+      for (let i = 0; i < pos.count; i += 1) {
+        if (segment.getX(i) !== RIGHT_ARM) continue;
+        if (Math.abs(pos.getY(i) - armY) > 0.04) continue;
+        r += Math.hypot(pos.getX(i) - cx, pos.getZ(i));
       }
       result.dispose();
-      return maxX;
+      return r / n;
     }
 
-    const lean = maxXAt(0.27);
-    const heavy = maxXAt(0.45);
+    const lean = meanArmRadius(0.27);
+    const heavy = meanArmRadius(0.45);
     expect(lean).toBeGreaterThan(0);
     expect(lean).toBeLessThan(heavy);
   });
@@ -186,13 +203,13 @@ describe('structural levels are not flagged estimated', () => {
   });
 });
 
-describe('40 radial points per ring', () => {
-  it('uses 40 radial segments by default', () => {
+describe('64 radial points per ring (210e-2 Rev C / 210g)', () => {
+  it('uses 64 radial segments by default', () => {
     const result = buildBodyGeometry(measuredVector());
     const pos = result.geometry.getAttribute('position');
     // Every part is a multiple of the radial segment count, so the total vertex
-    // count is divisible by 40.
-    expect(pos.count % 40).toBe(0);
+    // count is divisible by 64.
+    expect(pos.count % 64).toBe(0);
     result.dispose();
   });
 });

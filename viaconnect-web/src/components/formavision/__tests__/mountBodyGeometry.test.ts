@@ -55,10 +55,10 @@ describe('mountBodyGeometry', () => {
 
   it('honors the lite render tier with a lower vertex count than cinematic', () => {
     const cinematic = mountBodyGeometry(neutralParam(), {
-      build: { radialSegments: 40, verticalSegments: 48 },
+      build: { radialSegments: 64, verticalSegments: 48 },
     });
     const lite = mountBodyGeometry(neutralParam(), {
-      build: { radialSegments: 28, verticalSegments: 28 },
+      build: { radialSegments: 40, verticalSegments: 32 },
     });
     expect(lite.geometry.getAttribute('position').count).toBeLessThan(
       cinematic.geometry.getAttribute('position').count,

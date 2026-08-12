@@ -410,6 +410,30 @@ function CompositionPageInner() {
   const [ghostVector, setGhostVector] = useState<BodyParamVector | null>(null);
   const [showGhost, setShowGhost] = useState(false);
   // === PROMPT 210b P5-T1c (FutureSelfPanel) END ===
+  // === PROMPT 210g (first-scan comparison ghost) START ===
+  // Show Comparison Overlay: ghost is the first scan through the same parametric
+  // engine. Honest-disabled when no first scan exists. Comparison takes priority
+  // over Future Self ghost when enabled so both do not fight for the seam.
+  const [comparisonOverlayOn, setComparisonOverlayOn] = useState(false);
+  const firstScanVector = useMemo<BodyParamVector | null>(() => {
+    const first = composHistory.first;
+    if (!first) return null;
+    return scanToParamVector({
+      snapshot: first,
+      circumferences: circHistory.first?.measurements ?? null,
+      sex: gender,
+      unit,
+    });
+  }, [composHistory.first, circHistory.first, gender, unit]);
+  const effectiveGhostVector =
+    comparisonOverlayOn && firstScanVector ? firstScanVector : ghostVector;
+  const effectiveShowGhost =
+    comparisonOverlayOn && firstScanVector
+      ? true
+      : comparisonOverlayOn
+        ? false
+        : showGhost;
+  // === PROMPT 210g (first-scan comparison ghost) END ===
 
   // One BodyParamVector + one honest readout per REAL composition scan, oldest
   // first. Circumferences are aligned to each scan by recordedAt, falling back to
@@ -988,6 +1012,24 @@ function CompositionPageInner() {
                       onChange={setSelectedBodyPart}
                     />
                   </div>
+                  {/* Prompt 210g: first-scan comparison overlay (same geometry engine). */}
+                  <div className="pointer-events-auto absolute right-2 top-2 z-10 flex max-w-[11rem] flex-col items-end gap-1">
+                    <button
+                      type="button"
+                      data-testid="comparison-overlay-toggle"
+                      aria-pressed={comparisonOverlayOn}
+                      disabled={!firstScanVector}
+                      onClick={() => setComparisonOverlayOn((v) => !v)}
+                      className="rounded-lg border border-white/15 bg-[#0D1520]/85 px-2.5 py-1.5 text-[11px] font-medium text-white/80 backdrop-blur-sm disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      {comparisonOverlayOn ? 'Hide Comparison Overlay' : 'Show Comparison Overlay'}
+                    </button>
+                    {!firstScanVector && (
+                      <p className="text-right text-[10px] leading-snug text-white/45">
+                        Comparison needs a prior scan. Complete a second scan to overlay your first body.
+                      </p>
+                    )}
+                  </div>
                   {/* ONE persistent avatar. activeTab follows the section; the
                       2D floor children swap per section but the BodyComposition
                       Avatar node keeps the same position + identity, so no
@@ -995,7 +1037,7 @@ function CompositionPageInner() {
                   <BodyCompositionAvatar
                     sex={gender}
                     scan={snapshot}
-                    firstScan={null}
+                    firstScan={composHistory.first}
                     circumferences={circumferenceData.latest}
                     unit={unit}
                     activeTab={avatarActiveTab}
@@ -1004,8 +1046,8 @@ function CompositionPageInner() {
                     reducedMotion={avatarReducedMotion}
                     segmentTints={avatarSegmentTints}
                     scrubVector={scrubVector}
-                    ghostVector={ghostVector}
-                    showGhost={showGhost}
+                    ghostVector={effectiveGhostVector}
+                    showGhost={effectiveShowGhost}
                     frameloopMode={clipFrameloopMode}
                     onOrbitEnd={() => telEmit('formavision.avatar_rotated')}
                     onTierStepDown={(tier, signals: AvatarQualitySignals) => {

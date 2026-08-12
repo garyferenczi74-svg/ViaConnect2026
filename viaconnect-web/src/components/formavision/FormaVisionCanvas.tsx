@@ -120,9 +120,10 @@ export interface FormaVisionCanvasProps {
 
 // Vertical / radial density per render tier. Lite keeps the silhouette readable
 // while roughly halving the row count for low-power GPUs.
+// Prompt 210g / 210e-2 Rev C: cinematic uses 64 radial samples (was 40 ellipse stack).
 const TIER_BUILD = {
-  cinematic: { radialSegments: 40, verticalSegments: 48 },
-  lite: { radialSegments: 28, verticalSegments: 28 },
+  cinematic: { radialSegments: 64, verticalSegments: 48 },
+  lite: { radialSegments: 40, verticalSegments: 32 },
 } as const;
 
 // The body geometry is authored in meters with the floor at y = 0; this lifts the
