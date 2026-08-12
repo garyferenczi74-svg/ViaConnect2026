@@ -3,10 +3,9 @@
 // Auth: Bearer CRON_SECRET.
 
 import { timingSafeEqual } from 'node:crypto';
-import { createAdminClient } from '@/lib/supabase/admin';
 import { runHannahCompilationBatch } from '@/lib/hannah/compilation/runCompilation';
-import { ingestDemoClinicalStudy } from '@/lib/hounddog/ingestDemo';
-import { processHoundDogGateQueue } from '@/lib/hounddog/contentGate';
+import { runHoundDogDailyIngest } from '@/lib/hounddog/ingest/runDailyIngest';
+import { runSherlockCuration } from '@/lib/sherlock/curate';
 import { safeLog } from '@/lib/utils/safe-log';
 
 export const dynamic = 'force-dynamic';
@@ -29,16 +28,17 @@ export async function GET(request: Request): Promise<Response> {
   }
 
   try {
-    const supabase = createAdminClient();
-
-    // Hound Dog: one ingest path + gate (never ungated to consumers).
-    const ingest = await ingestDemoClinicalStudy(supabase);
-    const gate = await processHoundDogGateQueue(supabase, 25);
-
+    // Stage 1 + gate: Firecrawl/PubMed/social ingest (214b)
+    const ingest = await runHoundDogDailyIngest({
+      runId: `compile-ingest-${new Date().toISOString().slice(0, 10)}`,
+    });
+    // Stage 3: Sherlock curation from gated items
+    const curate = await runSherlockCuration(40);
+    // Stage 5: Hannah compose for active users
     const batch = await runHannahCompilationBatch(40);
 
-    safeLog.info('cron.hannah-compile', 'complete', { ingest, gate, batch });
-    return Response.json({ ok: true, ingest, gate, batch }, { status: 200 });
+    safeLog.info('cron.hannah-compile', 'complete', { ingest, curate, batch });
+    return Response.json({ ok: true, ingest, curate, batch }, { status: 200 });
   } catch (err) {
     safeLog.error('cron.hannah-compile', 'failed open', { error: err });
     return Response.json(

@@ -10,6 +10,7 @@ import { useAgentHeartbeats } from "@/hooks/useAgentHeartbeats";
 import { useAgentDeepLink } from "@/hooks/useAgentDeepLink";
 import { deriveStatus } from "@/lib/agents/status";
 import { PipelineChainView } from "@/components/admin/jeffery/PipelineChainView";
+import { IngestOpsPanel } from "@/components/admin/jeffery/IngestOpsPanel";
 import type {
   AgentActivityEvent,
   AgentCurrentTask,
@@ -79,8 +80,9 @@ export default function AgentsClient({
         </div>
       )}
 
-      <div className="px-4 md:px-8 pt-4">
+      <div className="px-4 md:px-8 pt-4 space-y-0">
         <PipelineChainView />
+        <IngestOpsPanel />
       </div>
 
       <AgentTabBar

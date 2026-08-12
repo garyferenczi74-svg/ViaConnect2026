@@ -80,7 +80,7 @@ function makeRunId(runDate: string): string {
   return `sync-${runDate}`;
 }
 
-/** Default Stage 1: Hound Dog ingest into staging (simulated counts when no live scrape). */
+/** Default Stage 1: Hound Dog multi-source ingest (214b Firecrawl + PubMed). */
 async function runIngest(ctx: StageContext): Promise<StageResult> {
   const t0 = ctx.now().getTime();
   if (ctx.killHoundDog) {
@@ -95,16 +95,35 @@ async function runIngest(ctx: StageContext): Promise<StageResult> {
       error: 'Hound Dog unavailable',
     };
   }
-  // Live scrape is edge-owned; chain records a healthy no-op poll count for idempotent days.
-  return {
-    stage: 'ingest',
-    status: 'ok',
-    producer: 'hounddog',
-    recordsIn: 0,
-    recordsOut: 0,
-    durationMs: ctx.now().getTime() - t0,
-    detail: { mode: 'poll', note: 'Staging poll complete' },
-  };
+  try {
+    const { runHoundDogDailyIngest } = await import('@/lib/hounddog/ingest/runDailyIngest');
+    const stats = await runHoundDogDailyIngest({
+      runId: `${ctx.runId}-ingest`,
+      runDate: ctx.runDate,
+    });
+    const out =
+      stats.pubmed.staged + stats.social.staged + (stats.genomes.snps > 0 ? 1 : 0);
+    return {
+      stage: 'ingest',
+      status: stats.hitBudget ? 'partial' : 'ok',
+      producer: 'hounddog',
+      recordsIn: stats.pubmed.discovered + stats.social.staged,
+      recordsOut: out,
+      durationMs: ctx.now().getTime() - t0,
+      detail: { ...stats, mode: 'firecrawl_pubmed_social' },
+    };
+  } catch (err) {
+    return {
+      stage: 'ingest',
+      status: 'failed',
+      producer: 'hounddog',
+      recordsIn: 0,
+      recordsOut: 0,
+      durationMs: ctx.now().getTime() - t0,
+      detail: {},
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
 }
 
 /** Stage 2: Marshall gate + Lex escalation queue. Halts promotion if ingest failed. */
@@ -137,7 +156,7 @@ async function runGate(ctx: StageContext): Promise<StageResult> {
   };
 }
 
-/** Stage 3: Sherlock curates only gate-approved content. */
+/** Stage 3: Sherlock curates only gate-approved content (214b). */
 async function runCurate(ctx: StageContext): Promise<StageResult> {
   const t0 = ctx.now().getTime();
   const gate = ctx.prior.find((s) => s.stage === 'gate');
@@ -153,18 +172,35 @@ async function runCurate(ctx: StageContext): Promise<StageResult> {
       detail: { reason: 'no_gate_approved_content' },
     };
   }
-  // Sherlock must not read raw Hound Dog; only gate.recordsOut.
-  const approved = gate.recordsOut;
-  return {
-    stage: 'curate',
-    status: 'ok',
-    producer: 'sherlock',
-    consumer: 'hannah',
-    recordsIn: approved,
-    recordsOut: approved,
-    durationMs: ctx.now().getTime() - t0,
-    detail: { source: 'gate_approved_only' },
-  };
+  try {
+    const { runSherlockCuration } = await import('@/lib/sherlock/curate');
+    const result = await runSherlockCuration(30);
+    return {
+      stage: 'curate',
+      status: 'ok',
+      producer: 'sherlock',
+      consumer: ['hannah', 'arnold', 'gordon'],
+      recordsIn: gate.recordsOut,
+      recordsOut: result.curated,
+      durationMs: ctx.now().getTime() - t0,
+      detail: {
+        source: 'gate_approved_only',
+        upgrades: result.upgrades,
+      },
+    };
+  } catch (err) {
+    return {
+      stage: 'curate',
+      status: 'failed',
+      producer: 'sherlock',
+      consumer: 'hannah',
+      recordsIn: gate.recordsOut,
+      recordsOut: 0,
+      durationMs: ctx.now().getTime() - t0,
+      detail: {},
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
 }
 
 /** Stage 4: Gordon + Arnold digests (parallel to scrape stages conceptually). */

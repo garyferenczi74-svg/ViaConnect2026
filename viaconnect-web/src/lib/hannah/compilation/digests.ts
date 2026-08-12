@@ -7,6 +7,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { withTimeout } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 import type { DigestFn, DigestItem, SupplierDigest } from './types';
+// SupplierDigest used by genomics/evidence helpers below.
 
 const TIMEOUT_MS = 4000;
 
@@ -304,47 +305,48 @@ export const getJefferyDailyDigest: DigestFn = async (userId, sinceIso) =>
     return items;
   });
 
-/** Sherlock: research / gated curation (reads finished research tables when present). */
+/** Sherlock: finished curation outputs (Prompt 214b). */
 export const getSherlockDailyDigest: DigestFn = async (userId, sinceIso) =>
   timedDigest('sherlock', async () => {
     const supabase = createAdminClient();
     const items: DigestItem[] = [];
 
-    // Prefer gated Hound Dog content curated for research (global, not user PII).
-    const { data: gated } = await supabase
-      .from('hounddog_gated_items')
-      .select('id, title, summary, source_url, approved_at')
-      .gte('approved_at', sinceIso)
-      .order('approved_at', { ascending: false })
+    const { data: curated } = await supabase
+      .from('sherlock_curation_items')
+      .select('id, title, summary, source_url, quality_grade, is_upgrade, route_tags, created_at')
+      .contains('route_tags', ['hannah'])
+      .gte('created_at', sinceIso)
+      .order('created_at', { ascending: false })
       .limit(5);
 
-    const gatedRows = Array.isArray(gated) ? gated : [];
-    if (gatedRows.length > 0) {
-      for (const g of gatedRows) {
+    const rows = Array.isArray(curated) ? curated : [];
+    if (rows.length > 0) {
+      for (const g of rows) {
         const row = g as {
           id?: string;
           title?: string;
           summary?: string;
           source_url?: string;
+          is_upgrade?: boolean;
+          quality_grade?: string;
         };
         items.push({
-          id: `sherlock-gated-${row.id ?? 'x'}`,
+          id: `sherlock-curate-${row.id ?? 'x'}`,
           hub: 'Supplements',
-          summary: `${row.title ?? 'Study'}: ${row.summary ?? ''}`.slice(0, 280),
-          refs: [row.source_url ?? row.id ?? 'gated'],
+          summary: `${row.is_upgrade ? 'Evidence upgrade: ' : ''}${row.title ?? 'Study'}: ${row.summary ?? ''} [${row.quality_grade ?? 'unknown'}]`.slice(0, 320),
+          refs: [row.source_url ?? row.id ?? 'curate'],
         });
       }
     } else {
       items.push({
         id: 'sherlock-sparse',
         hub: 'Supplements',
-        summary: 'No newly gated research in window. Sherlock will attach studies as Hound Dog promotions land.',
+        summary: 'No newly curated research in window. Sherlock will attach studies as gated promotions land.',
         metricValue: null,
-        refs: ['hounddog_gated_items'],
+        refs: ['sherlock_curation_items'],
       });
     }
 
-    // userId reserved for personalization later; silence unused lint via ref
     void userId;
     return items;
   });
@@ -388,6 +390,94 @@ export const getHoundDogDailyDigest: DigestFn = async (_userId, sinceIso) =>
       };
     });
   });
+
+/** Arnold genetics context from versioned allele freq reference (214b). */
+export async function getArnoldGenomicsContextDigest(
+  userId: string,
+  sinceIso: string,
+): Promise<SupplierDigest> {
+  return timedDigest('arnold', async () => {
+    const supabase = createAdminClient();
+    const { data: freqs } = await supabase
+      .from('genomics_panel_allele_freq')
+      .select('rsid, gene_symbol, alt_allele_freq, release_id, source_url')
+      .limit(8);
+
+    const rows = Array.isArray(freqs) ? freqs : [];
+    if (rows.length === 0) {
+      return [
+        {
+          id: 'arnold-genomics-empty',
+          hub: 'Genetics' as const,
+          summary: 'No panel-scoped genomic reference frequencies loaded yet.',
+          metricValue: null,
+          refs: ['genomics_panel_allele_freq'],
+        },
+      ];
+    }
+
+    void userId;
+    void sinceIso;
+    return rows.map((r) => {
+      const row = r as {
+        rsid?: string;
+        gene_symbol?: string;
+        alt_allele_freq?: number;
+        release_id?: string;
+        source_url?: string;
+      };
+      return {
+        id: `arnold-freq-${row.rsid ?? 'x'}`,
+        hub: 'Genetics' as const,
+        summary: `${row.gene_symbol ?? 'gene'} ${row.rsid ?? ''}: population alt freq ${row.alt_allele_freq ?? 'UNKNOWN'} (release ${row.release_id ?? 'n/a'}).`,
+        metricLabel: 'alt_allele_freq',
+        metricValue:
+          typeof row.alt_allele_freq === 'number' ? String(row.alt_allele_freq) : null,
+        refs: [row.source_url ?? row.rsid ?? 'freq'],
+      };
+    });
+  });
+}
+
+/** Gordon nutrition evidence from Sherlock route_tags (never alters meal math). */
+export async function getGordonEvidenceDigest(
+  _userId: string,
+  sinceIso: string,
+): Promise<SupplierDigest> {
+  return timedDigest('gordon', async () => {
+    const supabase = createAdminClient();
+    const { data } = await supabase
+      .from('sherlock_curation_items')
+      .select('id, title, summary, source_url, created_at')
+      .contains('route_tags', ['gordon'])
+      .gte('created_at', sinceIso)
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    const rows = Array.isArray(data) ? data : [];
+    if (rows.length === 0) {
+      return [
+        {
+          id: 'gordon-evidence-empty',
+          hub: 'Nutrition' as const,
+          summary: 'No newly curated nutrition science items in window. Meal computation unchanged.',
+          metricValue: null,
+          refs: ['sherlock_curation:gordon'],
+        },
+      ];
+    }
+
+    return rows.map((r) => {
+      const row = r as { id?: string; title?: string; summary?: string; source_url?: string };
+      return {
+        id: `gordon-ev-${row.id ?? 'x'}`,
+        hub: 'Nutrition' as const,
+        summary: `Evidence context (not meal math): ${row.title ?? ''}: ${row.summary ?? ''}`.slice(0, 320),
+        refs: [row.source_url ?? row.id ?? 'evidence'],
+      };
+    });
+  });
+}
 
 /** User input: goals / profile changes. */
 export const getUserInputDailyDigest: DigestFn = async (userId, sinceIso) =>
