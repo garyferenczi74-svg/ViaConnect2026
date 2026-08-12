@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import { BackToHubLink } from '@/components/body-tracker/hub/BackToHubLink';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -930,6 +931,15 @@ function CompositionPageInner() {
                 <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 backdrop-blur-md p-4 sm:p-5 lg:p-3">
                   <h2 className="text-lg font-bold text-white">Body Composition</h2>
                   <p className="text-xs text-white/60">Segmental body fat analysis</p>
+                  {(composHistory.latest || circumferenceData.latest) && (
+                    <Link
+                      href="/body-tracker/formavision"
+                      data-testid="open-formavision-link"
+                      className="mt-2 inline-flex text-xs font-medium text-[#B75E18] underline-offset-2 hover:underline"
+                    >
+                      View your 3D body in FormaVision
+                    </Link>
+                  )}
                 </div>
 
                 {caqSource === 'caq_other' && !genderManuallySet && (
@@ -995,82 +1005,17 @@ function CompositionPageInner() {
                   className="relative flex items-center justify-center px-2 py-2 lg:min-h-0 lg:flex-1"
                   style={{ filter: 'drop-shadow(0 0 20px rgba(45, 165, 160, 0.15))' }}
                 >
-                  {/* P2-T4a: the Select Body Part picker overlays the top of the
-                      avatar surface. It lives in the persistent avatar-container
-                      (a sibling of the avatar, outside the avatar wrapper's
-                      fallback branch), so the selection survives section toggles
-                      and the control is real, keyboard-operable DOM, never baked
-                      into the canvas. Selecting a region drives selectedBodyPart
-                      (and so the P2-T3 camera framing); All clears to null. */}
-                  {/* Prompt 210f: moved from top-center (left-1/2 -translate-x-1/2)
-                      to the top-left corner so the control no longer covers the
-                      Neck region tab. Position only; the control keeps its exact
-                      styling, size, and behavior. */}
-                  <div className="pointer-events-none absolute left-2 top-2 z-10 flex justify-start">
-                    <SelectBodyPartControl
-                      value={selectedBodyPart}
-                      onChange={setSelectedBodyPart}
-                    />
-                  </div>
-                  {/* Prompt 210g: first-scan comparison overlay (same geometry engine). */}
-                  <div className="pointer-events-auto absolute right-2 top-2 z-10 flex max-w-[11rem] flex-col items-end gap-1">
-                    <button
-                      type="button"
-                      data-testid="comparison-overlay-toggle"
-                      aria-pressed={comparisonOverlayOn}
-                      disabled={!firstScanVector}
-                      onClick={() => setComparisonOverlayOn((v) => !v)}
-                      className="rounded-lg border border-white/15 bg-[#0D1520]/85 px-2.5 py-1.5 text-[11px] font-medium text-white/80 backdrop-blur-sm disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      {comparisonOverlayOn ? 'Hide Comparison Overlay' : 'Show Comparison Overlay'}
-                    </button>
-                    {!firstScanVector && (
-                      <p className="text-right text-[10px] leading-snug text-white/45">
-                        Comparison needs a prior scan. Complete a second scan to overlay your first body.
-                      </p>
-                    )}
-                  </div>
-                  {/* ONE persistent avatar. activeTab follows the section; the
-                      2D floor children swap per section but the BodyComposition
-                      Avatar node keeps the same position + identity, so no
-                      remount and no intro replay on toggle. */}
-                  <BodyCompositionAvatar
-                    sex={gender}
-                    scan={snapshot}
-                    firstScan={composHistory.first}
-                    circumferences={circumferenceData.latest}
-                    unit={unit}
-                    activeTab={avatarActiveTab}
-                    selectedBodyPart={selectedBodyPart}
-                    onSelectBodyPart={setSelectedBodyPart}
-                    reducedMotion={avatarReducedMotion}
-                    segmentTints={avatarSegmentTints}
-                    scrubVector={scrubVector}
-                    ghostVector={effectiveGhostVector}
-                    showGhost={effectiveShowGhost}
-                    frameloopMode={clipFrameloopMode}
-                    onOrbitEnd={() => telEmit('formavision.avatar_rotated')}
-                    onTierStepDown={(tier, signals: AvatarQualitySignals) => {
-                      const props: AvatarEventProperties = { tier };
-                      if (signals.tierServed !== undefined) props['tierServed'] = signals.tierServed;
-                      if (signals.stepDownCount !== undefined) props['stepDownCount'] = signals.stepDownCount;
-                      if (signals.errorCount !== undefined) props['errorCount'] = signals.errorCount;
-                      if (signals.timeToFirstInteractiveMs !== undefined) {
-                        props['timeToFirstInteractiveMs'] = signals.timeToFirstInteractiveMs;
-                      }
-                      telEmitOnce('formavision.fallback_tier_served', props);
-                    }}
-                  >
-                    {isMuscle ? (
-                      <HoverSystem view="muscle" sex={gender} regions={muscleRegions} className="lg:h-full">
-                        <SegmentalHeatMap sex={gender} segmentStatuses={muscleRegionStatuses} />
-                      </HoverSystem>
-                    ) : (
-                      <HoverSystem view="composition" sex={gender} regions={fatRegions} className="lg:h-full">
-                        <SegmentalHeatMap sex={gender} segmentStatuses={fatRegionStatuses} />
-                      </HoverSystem>
-                    )}
-                  </BodyCompositionAvatar>
+                  {/* Prompt 210h Rev C: 3D mounts live only on /body-tracker/formavision.
+                      This surface keeps the 2D segmental avatars for numbers and Log Data. */}
+                  {isMuscle ? (
+                    <HoverSystem view="muscle" sex={gender} regions={muscleRegions} className="lg:h-full">
+                      <SegmentalHeatMap sex={gender} segmentStatuses={muscleRegionStatuses} />
+                    </HoverSystem>
+                  ) : (
+                    <HoverSystem view="composition" sex={gender} regions={fatRegions} className="lg:h-full">
+                      <SegmentalHeatMap sex={gender} segmentStatuses={fatRegionStatuses} />
+                    </HoverSystem>
+                  )}
                   <LegendBar
                     pinnedIds={pinnedIds}
                     hoveredId={hoveredId}

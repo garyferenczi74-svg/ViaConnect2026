@@ -83,6 +83,10 @@ export interface AnatomicalRingOptions {
   sex?: Sex;
   // When true, skip angular correction (tests / deliberate degradation gate).
   disableShapeCorrection?: boolean;
+  // Prompt 210h: measured semi-axes in meters (side-to-side half-width / depth).
+  // When both present, they define the base ellipse before shape-correction.
+  aM?: number | null;
+  bM?: number | null;
 }
 
 /**
@@ -96,7 +100,27 @@ export function anatomicalRingPoints(
   segments: number,
   opts?: AnatomicalRingOptions,
 ): Point2[] {
-  const base = ellipsePointsForPerimeter(perimeterM, aspectRatio, segments);
+  const count = Math.max(3, Math.floor(segments));
+  // Prefer measured semi-axes when both are present (user scan contours).
+  let base: Point2[];
+  const aM = opts?.aM;
+  const bM = opts?.bM;
+  if (
+    aM !== null &&
+    aM !== undefined &&
+    aM > 0 &&
+    bM !== null &&
+    bM !== undefined &&
+    bM > 0
+  ) {
+    base = new Array(count);
+    for (let i = 0; i < count; i += 1) {
+      const theta = (i / count) * Math.PI * 2;
+      base[i] = { x: aM * Math.cos(theta), z: bM * Math.sin(theta) };
+    }
+  } else {
+    base = ellipsePointsForPerimeter(perimeterM, aspectRatio, segments);
+  }
   if (opts?.disableShapeCorrection) {
     return base;
   }
@@ -104,7 +128,6 @@ export function anatomicalRingPoints(
   const region =
     opts?.region ??
     (opts?.levelId ? regionForLevelId(opts.levelId) : 'default');
-  const count = base.length;
   const corrected: Point2[] = new Array(count);
   for (let i = 0; i < count; i += 1) {
     const theta = (i / count) * Math.PI * 2;
@@ -114,11 +137,24 @@ export function anatomicalRingPoints(
       z: base[i].z * factor,
     };
   }
+  // When semi-axes drove the base, preserve their perimeter (shape of the user).
+  // When only circumference is known, re-normalize to that circumference.
+  const targetPerimeter =
+    aM !== null &&
+    aM !== undefined &&
+    aM > 0 &&
+    bM !== null &&
+    bM !== undefined &&
+    bM > 0
+      ? polygonPerimeter(base)
+      : perimeterM > 0
+        ? perimeterM
+        : 1e-3;
   const poly = polygonPerimeter(corrected);
   if (!(poly > 0)) {
     return corrected;
   }
-  const scale = (perimeterM > 0 ? perimeterM : 1e-3) / poly;
+  const scale = targetPerimeter / poly;
   for (let i = 0; i < count; i += 1) {
     corrected[i] = {
       x: corrected[i].x * scale,

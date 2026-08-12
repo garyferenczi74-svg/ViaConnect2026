@@ -118,6 +118,22 @@ export const SURFACES: SurfaceCard[] = [
     },
   },
   {
+    id: "formavision",
+    title: "FormaVision",
+    description: "Your 3D body from your scan, with a ghost of where you started.",
+    href: "/body-tracker/formavision",
+    icon: Activity,
+    accent: "orange",
+    metricKey: "body_fat_pct",
+    metricLabel: "scan body",
+    gridClass: "md:col-span-1 lg:col-span-2 lg:row-span-1",
+    media: {
+      kind: "gradient",
+      gradientClass:
+        "bg-[radial-gradient(110%_110%_at_0%_100%,rgba(183,94,24,0.35)_0%,rgba(30,48,84,0.9)_55%,rgba(26,39,68,1)_100%)]",
+    },
+  },
+  {
     id: "progress",
     title: "Goals and Progress",
     description: "Your whole journey: CAQ targets, nutrition, supplements, training, AI body composition.",

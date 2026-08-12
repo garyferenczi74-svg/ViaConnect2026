@@ -68,6 +68,8 @@ interface ResolvedRing {
   levelN: number;
   circumferenceM: number;
   aspectRatio: number;
+  aM: number | null;
+  bM: number | null;
   estimated: boolean;
 }
 
@@ -86,11 +88,18 @@ function resolveRings(
     if (isEstimated) {
       estimatedIds.push(ring.id);
     }
+    const aM =
+      ring.aM !== null && ring.aM !== undefined && ring.aM > 0 ? ring.aM : null;
+    const bM =
+      ring.bM !== null && ring.bM !== undefined && ring.bM > 0 ? ring.bM : null;
     return {
       id: ring.id,
       levelN: ring.levelN,
       circumferenceM: measured === null || measured === undefined ? fallback : measured,
-      aspectRatio: ring.aspectRatio,
+      aspectRatio:
+        aM !== null && bM !== null && aM > 0 ? bM / aM : ring.aspectRatio,
+      aM,
+      bM,
       estimated: isEstimated,
     };
   });
@@ -155,12 +164,22 @@ function buildTrunk(
   );
   // Top (neck base) to bottom (glute) so buildLimb runs head to foot like the arms.
   levels.sort((a, b) => b.levelN - a.levelN);
-  const controls: LimbControl[] = levels.map((level) => ({
-    center: new Vector3(0, level.levelN * heightM, 0),
-    circumferenceM: resolveTrunkLevelCircumference(level, rings),
-    aspectRatio: level.aspectRatio,
-    levelId: level.id,
-  }));
+  const controls: LimbControl[] = levels.map((level) => {
+    const anchor = level.anchorRingId
+      ? rings.find((r) => r.id === level.anchorRingId)
+      : undefined;
+    return {
+      center: new Vector3(0, level.levelN * heightM, 0),
+      circumferenceM: resolveTrunkLevelCircumference(level, rings),
+      aspectRatio:
+        anchor?.aM && anchor?.bM && anchor.aM > 0
+          ? anchor.bM / anchor.aM
+          : level.aspectRatio,
+      levelId: level.id,
+      aM: anchor?.aM ?? null,
+      bM: anchor?.bM ?? null,
+    };
+  });
   return buildLimb(controls, verticalSegments, radialSegments, sex, disableShapeCorrection);
 }
 
@@ -173,6 +192,8 @@ interface LimbControl {
   aspectRatio: number;
   // Anatomical level id for angular shape-correction.
   levelId: string;
+  aM?: number | null;
+  bM?: number | null;
 }
 
 // Loft a tapered limb or trunk tube through an ordered list of control rings (top to
@@ -199,6 +220,8 @@ function buildLimb(
       levelId: c.levelId,
       sex,
       disableShapeCorrection,
+      aM: c.aM,
+      bM: c.bM,
     }),
   );
 

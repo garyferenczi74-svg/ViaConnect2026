@@ -29,6 +29,12 @@ import type {
 const METERS_PER_INCH = 0.0254;
 const METERS_PER_CM = 0.01;
 
+// Optional per-level scan semi-axes in cm (210c Task 8 / 210h Rev C).
+export interface ScanSemiAxesCm {
+  aCm: number | null;
+  bCm: number | null;
+}
+
 export interface ScanToParamInput {
   // Composition readouts (fat / muscle). Present for context only; this mapper does
   // NOT read girth from it. Accepted so the render layer can pass the same bundle.
@@ -43,6 +49,9 @@ export interface ScanToParamInput {
   // inches, matching the body_tracker_weight hip storedUnit and the inch-first
   // measurement UI; pass 'cm' when the values are metric.
   unit?: MeasurementUnit;
+  // Prompt 210h: optional measured semi-axes (cm) keyed by ring id (neck, chest,
+  // waist, hip, rThigh, ...). When present, mesh uses user contours directly.
+  semiAxesByRingId?: Partial<Record<string, ScanSemiAxesCm>> | null;
 }
 
 // Ring id -> the circumference measurement key that fills it. shoulderWidth is a
@@ -85,15 +94,30 @@ export function scanToParamVector(input: ScanToParamInput): BodyParamVector {
   // Build one ring per template ring, carrying the template's levelN and aspect
   // ratio (geometry hints) and filling the circumference from the matching
   // measurement in meters, or null when absent.
+  const semi = input.semiAxesByRingId ?? null;
   const rings: BodyRing[] = template.rings.map((tplRing) => {
     const key = RING_TO_MEASUREMENT[tplRing.id];
     const raw = key && circumferences ? circumferences[key] : null;
     const circumferenceM = toMeters(raw, factor);
+    const axes = semi ? semi[tplRing.id] : undefined;
+    // Semi-axes from the scan engine are always in cm.
+    const aM =
+      axes?.aCm !== null && axes?.aCm !== undefined && axes.aCm > 0
+        ? axes.aCm * METERS_PER_CM
+        : null;
+    const bM =
+      axes?.bCm !== null && axes?.bCm !== undefined && axes.bCm > 0
+        ? axes.bCm * METERS_PER_CM
+        : null;
+    const aspectRatio =
+      aM !== null && bM !== null && aM > 0 ? bM / aM : tplRing.aspectRatio;
     return {
       id: tplRing.id,
       levelN: tplRing.levelN,
       circumferenceM,
-      aspectRatio: tplRing.aspectRatio,
+      aspectRatio,
+      aM,
+      bM,
       estimated: circumferenceM === null,
     };
   });
