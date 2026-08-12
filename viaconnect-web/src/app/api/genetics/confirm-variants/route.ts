@@ -85,6 +85,13 @@ export async function POST(request: Request): Promise<NextResponse> {
       brandedProductCode: null,
       sourceFilename,
     });
+    // Prompt 213a: genetics landing triggers off-cycle Hannah recompile (fail-open).
+    try {
+      const { runHannahCompilation } = await import('@/lib/hannah/compilation/runCompilation');
+      void runHannahCompilation({ userId: user.id });
+    } catch {
+      /* fail-open */
+    }
     return NextResponse.json({
       saved: result.variantCount,
       panelCounts: result.panelCounts,

@@ -19,6 +19,7 @@
     { "path": "/api/integrations/google-health/sync", "schedule": "0 */6 * * *" },
     { "path": "/api/cron/hannah-research", "schedule": "0 */3 * * *" },
     { "path": "/api/integrations/whoop/process", "schedule": "*/5 * * * *" },
-    { "path": "/api/cron/synchronism-daily", "schedule": "15 6 * * *" }
+    { "path": "/api/cron/synchronism-daily", "schedule": "15 6 * * *" },
+    { "path": "/api/cron/hannah-compile", "schedule": "30 6 * * *" }
   ]
 }

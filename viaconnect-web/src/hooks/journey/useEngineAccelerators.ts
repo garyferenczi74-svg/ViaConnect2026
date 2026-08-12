@@ -568,6 +568,76 @@ export function useEngineAccelerators(
     (async () => {
       const entries: MergeEntry[] = [];
 
+      // Prompt 213a: prefer Hannah daily compiled insights (provenance-tagged).
+      try {
+        const supabase = createClient();
+        type HannahRow = {
+          id?: string;
+          insight_key?: string;
+          title?: string;
+          description?: string;
+          category?: string;
+          source_hub?: string;
+          supplier_agent?: string;
+          estimated_impact?: number;
+          priority?: number;
+          expires_at?: string | null;
+        };
+        type HannahResult = { data: HannahRow[] | null; error: unknown };
+        const { data } = await withTimeout(
+          supabase
+            .from('hannah_accelerator_insights')
+            .select(
+              'id, insight_key, title, description, category, source_hub, supplier_agent, estimated_impact, priority, expires_at',
+            )
+            .eq('user_id', userId)
+            .eq('status', 'active')
+            .order('priority', { ascending: false })
+            .limit(8) as unknown as Promise<HannahResult>,
+          4000,
+          'useEngineAccelerators.hannah_accelerator_insights',
+        );
+        const now = Date.now();
+        const rows = (Array.isArray(data) ? data : []).filter((r) => {
+          if (!r.expires_at) return true;
+          return new Date(r.expires_at).getTime() > now;
+        });
+        for (const row of rows) {
+          const hub = (row.source_hub ?? 'CAQ') as JourneyHubKey;
+          const key = row.insight_key || insightKeyFromHeadline(row.title ?? 'insight');
+          const pts =
+            typeof row.estimated_impact === 'number' && isFinite(row.estimated_impact)
+              ? Math.max(1, Math.min(10, Math.round(row.estimated_impact)))
+              : 4;
+          entries.push({
+            rank: typeof row.priority === 'number' ? -row.priority : 0,
+            item: {
+              id: row.id ?? `hannah-${key}`,
+              insightKey: key,
+              headline: row.title ?? 'Insight',
+              body: row.description ?? '',
+              tag: (row.category ?? hub).toString().split('|')[0].toUpperCase(),
+              pts,
+              derivedPts: 'derived',
+              conf: pts >= 8 ? 'high' : 'medium',
+              dots: finalizeDots([
+                {
+                  hub: JOURNEY_HUB_KEYS.includes(hub) ? hub : 'CAQ',
+                  label: `${row.supplier_agent ?? 'hannah'} · ${hub}`,
+                },
+              ]),
+              source: 'seeded',
+            },
+          });
+        }
+      } catch (err) {
+        safeLog.warn(
+          'useEngineAccelerators',
+          'hannah_accelerator_insights read failed, failing open',
+          { error: err },
+        );
+      }
+
       // Read from recommendations table
       try {
         const supabase = createClient();
