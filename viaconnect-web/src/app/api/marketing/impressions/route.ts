@@ -13,6 +13,8 @@ import type { Viewport } from '@/lib/marketing/variants/types';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   const body = (await request.json().catch(() => null)) as {
     visitor_id?: string;

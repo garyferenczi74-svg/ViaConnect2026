@@ -6,6 +6,8 @@ import { addSubscription, isValidSubscription } from "@/lib/notifications/adapte
 import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: Request) {
   try {
     const supabase = createClient();

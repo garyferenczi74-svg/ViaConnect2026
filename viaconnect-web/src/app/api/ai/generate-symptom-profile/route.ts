@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
 
+export const dynamic = 'force-dynamic';
+
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || "";
 
 const SYSTEM_PROMPT = `You are ViaConnect Clinical Intelligence, a comprehensive health analysis engine synthesizing 25 years of multi-disciplinary clinical expertise across 14 specialties: Genomics, Nutraceuticals, Herbal Medicine, Vitamins & Minerals, Peptide Therapy, Medical Cannabis, TCM, Ayurvedic Medicine, Disease Pathophysiology, Physiotherapy, Massage Therapy, General Medicine, Specialist Medicine, and Functional Medicine.

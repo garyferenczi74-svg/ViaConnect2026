@@ -13,6 +13,8 @@ import { resolveMealFatBreakdown, loadFatSourceById } from '@/lib/nutrition/fat-
 import { scoreMealForServerInsert } from '@/lib/gordon/scoreMealForServerInsert';
 import { computeMealKcal, isMacroBearing } from '@/lib/nutrition/compute-meal-kcal';
 
+export const dynamic = 'force-dynamic';
+
 interface MaybeEdits {
   serving_description?: string;
   calories?: number;

@@ -11,6 +11,8 @@ import {
   buildSubscriptionUpsertPayload,
 } from "./payload-shapes";
 
+export const dynamic = 'force-dynamic';
+
 const stripeBreaker = getCircuitBreaker("stripe-api");
 
 function getStripe() {

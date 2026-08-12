@@ -17,6 +17,8 @@ import {
   mapEpigeneticRows,
 } from "@/lib/genetics/extractEpigeneticReport";
 
+export const dynamic = 'force-dynamic';
+
 const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
 const ACCEPTED_TYPES = ["application/pdf", "image/png", "image/jpeg", "image/webp", "image/heic"];
 

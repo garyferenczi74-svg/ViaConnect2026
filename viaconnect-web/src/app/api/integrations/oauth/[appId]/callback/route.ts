@@ -5,6 +5,8 @@ import { withTimeout, withAbortTimeout, isTimeoutError } from '@/lib/utils/with-
 import { safeLog } from '@/lib/utils/safe-log';
 import { getCircuitBreaker, isCircuitBreakerError } from '@/lib/utils/circuit-breaker';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest, { params }: { params: { appId: string } }) {
   const { appId } = params;
   const url = new URL(req.url);

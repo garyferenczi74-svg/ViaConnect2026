@@ -11,6 +11,8 @@ import { SCHEDULER_PLATFORMS, type SchedulerPlatform } from '@/lib/marshall/sche
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 const VALID_MODES = new Set(['active', 'scan_only', 'disabled']);

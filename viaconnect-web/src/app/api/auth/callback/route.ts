@@ -4,6 +4,8 @@ import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
 import { reportSupabaseError } from "@/lib/utils/schema-drift";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");

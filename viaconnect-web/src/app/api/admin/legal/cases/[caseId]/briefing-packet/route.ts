@@ -12,6 +12,8 @@ import { buildBriefingPacketMarkdown } from '@/lib/legal/counsel/briefingPacketB
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 const LEGAL_OPS_ROLES = new Set(['admin', 'compliance_officer', 'legal_ops']);

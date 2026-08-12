@@ -5,6 +5,8 @@ import { flagMessage } from "@/lib/jeffery/message-bus";
 import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: Request) {
   try {
     const supabase = createServerClient();

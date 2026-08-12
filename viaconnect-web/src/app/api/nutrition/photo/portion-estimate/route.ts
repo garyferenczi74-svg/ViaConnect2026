@@ -17,6 +17,8 @@ import { estimatePortion } from '@/lib/nutrition/portion/volume-estimate';
 import type { ReferenceObjectKind, ReferenceObject } from '@/lib/nutrition/portion/types';
 import type { VisionItem, BoundingBox } from '@/lib/nutrition/vision/types';
 
+export const dynamic = 'force-dynamic';
+
 const ROUTE = '/api/nutrition/photo/portion-estimate';
 
 const BoundingBoxSchema = z.object({

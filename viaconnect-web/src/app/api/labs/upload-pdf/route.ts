@@ -10,6 +10,8 @@ import { extractPdfText } from '@/lib/pdf/extractPdfText';
 import { parseLabReportText } from '@/lib/labs/parseLabReportText';
 import { inMemoryRateLimit } from '@/lib/utils/inMemoryRateLimit';
 
+export const dynamic = 'force-dynamic';
+
 const MAX_PDF_BYTES = 10 * 1024 * 1024; // 10 MB
 export const maxDuration = 60;
 

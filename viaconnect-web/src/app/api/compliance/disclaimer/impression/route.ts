@@ -8,6 +8,8 @@ import { getJurisdictionId } from "@/lib/compliance/jurisdiction";
 import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
 
+export const dynamic = 'force-dynamic';
+
 interface Body {
   surface: string;
   surface_id?: string;

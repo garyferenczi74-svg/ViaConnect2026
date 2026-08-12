@@ -12,6 +12,8 @@ import { checkLevel4Eligibility } from '@/lib/custom-formulations/eligibility';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
   try {

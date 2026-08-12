@@ -20,6 +20,8 @@ import { CONTEXT_TO_TABLE, resolvePseudonym } from '@/lib/soc2/auditor/resolvePs
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 type ApprovalSlot = 'steve' | 'thomas';

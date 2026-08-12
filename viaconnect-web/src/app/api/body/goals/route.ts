@@ -14,6 +14,8 @@ import { getLatestWeight } from '@/lib/body-goals/goalsData';
 import { createBodyGoal } from '@/lib/body-goals/createGoal';
 import type { GoalActivityLevel, GoalDriver, GoalOrigin, PacePreset } from '@/lib/body-goals/types';
 
+export const dynamic = 'force-dynamic';
+
 interface CreateGoalBody {
   driver: GoalDriver;
   goalWeightLb: number;

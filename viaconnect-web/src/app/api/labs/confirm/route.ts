@@ -8,6 +8,8 @@ import { createClient } from '@/lib/supabase/server';
 import { safeLog } from '@/lib/utils/safe-log';
 import { persistLabBiomarkers, type ConfirmedBiomarker } from '@/lib/labs/labUploadStore';
 
+export const dynamic = 'force-dynamic';
+
 const MAX_ROWS = 2000;
 
 interface ConfirmBody {

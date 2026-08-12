@@ -12,6 +12,8 @@ import { loadLabResults } from '@/lib/labs/loadLabResults';
 import { decipherLabResults } from '@/lib/labs/hannahDecipher';
 import { getDisplayName } from '@/lib/getDisplayName';
 
+export const dynamic = 'force-dynamic';
+
 export const maxDuration = 60;
 
 export async function POST(): Promise<NextResponse> {

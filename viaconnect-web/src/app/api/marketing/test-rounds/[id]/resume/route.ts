@@ -10,6 +10,8 @@ import { requireMarketingAdmin } from '@/lib/flags/admin-guard';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(
   _request: NextRequest,
   { params }: { params: { id: string } },

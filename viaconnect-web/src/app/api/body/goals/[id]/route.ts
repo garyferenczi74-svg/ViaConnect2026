@@ -10,6 +10,8 @@ import { getGoalById, getLatestWeight, insertGoalTarget } from '@/lib/body-goals
 import { projectGoalToWeightGoals } from '@/lib/body-goals/projectWeightGoal';
 import type { GoalActivityLevel, GoalDriver } from '@/lib/body-goals/types';
 
+export const dynamic = 'force-dynamic';
+
 interface PatchBody {
   driver?: GoalDriver;
   goalWeightLb?: number;

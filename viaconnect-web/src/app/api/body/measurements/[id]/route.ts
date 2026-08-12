@@ -8,6 +8,8 @@ import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 import { softDeleteMeasurement, type AccessClient } from '@/lib/body-measurements/measurementsAccess';
 
+export const dynamic = 'force-dynamic';
+
 export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
   try {
     const sb = createClient();

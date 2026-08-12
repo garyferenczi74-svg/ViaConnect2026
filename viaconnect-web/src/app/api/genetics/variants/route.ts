@@ -11,6 +11,8 @@ import { severityFor, methylationSeverityFor } from '@/lib/genetics/variantSever
 import type { SeverityTier } from '@/lib/genetics/severity';
 import { PANEL_LABELS, type PanelKey } from '@/lib/genetics/panelLabels';
 
+export const dynamic = 'force-dynamic';
+
 // The raw shape selected from user_variants. status is the zygosity notation
 // (the genotype chip), kept distinct from severity (the score).
 interface DbVariantRow {

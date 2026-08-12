@@ -11,6 +11,8 @@ import type { VariantSurface } from '@/lib/marketing/variants/types';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 const VALID_SURFACES: VariantSurface[] = ['hero'];
 
 export async function GET(request: NextRequest) {

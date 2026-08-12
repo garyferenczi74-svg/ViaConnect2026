@@ -5,6 +5,8 @@ import { processCommentDirective } from "@/lib/jeffery/directive-processor";
 import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: Request) {
   try {
     const supabase = createServerClient();

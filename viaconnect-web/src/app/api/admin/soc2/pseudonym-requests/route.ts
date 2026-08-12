@@ -8,6 +8,8 @@ import { classifyFromRows, type LogRow } from '@/lib/soc2/auditor/pseudonymAppro
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 const COMPLIANCE_ROLES = new Set(['compliance_officer', 'compliance_admin', 'admin', 'superadmin', 'legal_counsel']);

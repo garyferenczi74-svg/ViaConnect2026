@@ -4,6 +4,8 @@ import { redeemCatalogItem } from '@/lib/helix/redemption-engine';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 interface Body {
   catalogItemId: string;
   applicationContext?: Record<string, unknown>;

@@ -9,6 +9,8 @@ import { createClient } from '@/lib/supabase/server';
 import { safeLog } from '@/lib/utils/safe-log';
 import { loadLabResults } from '@/lib/labs/loadLabResults';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(): Promise<NextResponse> {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();

@@ -9,6 +9,8 @@ import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 import { ingestMeasurementsFromScan, type IngestClient } from '@/lib/body-measurements/ingestScanMeasurements';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(_req: Request, { params }: { params: { scanId: string } }) {
   try {
     const sb = createClient();

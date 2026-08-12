@@ -10,6 +10,8 @@ import {
   GENEMETRICS_USER_VARIANTS_ONCONFLICT,
 } from "@/lib/genetics/genemetricsImportPayload";
 
+export const dynamic = 'force-dynamic';
+
 function apiEnvelope(
   success: boolean,
   data?: unknown,

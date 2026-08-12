@@ -21,6 +21,8 @@ import { extractRequestMetadata } from '@/lib/soc2/auditor/accessLog';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 const PSEUDONYM_RE = /^[A-Z2-7]{26}$/;

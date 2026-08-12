@@ -8,6 +8,8 @@ import { createClient } from "@/lib/supabase/server";
 import { safeLog } from "@/lib/utils/safe-log";
 import { loadEpigeneticResults } from "@/lib/genetics/loadEpigeneticResults";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(): Promise<NextResponse> {
   const supabase = createClient();
 

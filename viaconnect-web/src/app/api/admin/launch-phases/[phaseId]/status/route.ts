@@ -16,6 +16,8 @@ import { invalidateFlag } from '@/lib/flags/cache';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 const ALLOWED_STATUSES = new Set(['active', 'paused', 'completed', 'canceled', 'scheduled', 'planned']);
 
 export async function POST(

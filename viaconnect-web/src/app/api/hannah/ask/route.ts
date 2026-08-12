@@ -26,6 +26,8 @@ import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { reviewServerText } from '@/lib/compliance/review-server-text';
 import { getUserJurisdictionCode } from '@/lib/compliance/jurisdiction';
 
+export const dynamic = 'force-dynamic';
+
 // ---------------------------------------------------------------------------
 // Per-user in-memory rate limiter (mirrors /api/ai/[provider] pattern).
 // 15 requests per 60 s per user. No external dependency.

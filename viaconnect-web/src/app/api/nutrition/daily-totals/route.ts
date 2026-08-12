@@ -7,6 +7,8 @@ import { safeLog } from '@/lib/utils/safe-log';
 import { createClient } from '@/lib/supabase/server';
 import { computeFallbackTargets, type NutritionTargets } from '@/lib/nutrition/target-fallback';
 
+export const dynamic = 'force-dynamic';
+
 const MAX_BACKDATE_DAYS = 90;
 
 interface ChartTotals {

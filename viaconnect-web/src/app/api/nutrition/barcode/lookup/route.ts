@@ -33,6 +33,8 @@ import {
   type OFFProduct,
 } from '@/lib/nutrition/databases/open-food-facts';
 
+export const dynamic = 'force-dynamic';
+
 const ROUTE = '/api/nutrition/barcode/lookup';
 
 const RequestSchema = z.object({

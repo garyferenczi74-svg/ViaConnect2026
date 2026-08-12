@@ -12,6 +12,8 @@ import { logVariantEvent } from '@/lib/marketing/variants/logging';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } },

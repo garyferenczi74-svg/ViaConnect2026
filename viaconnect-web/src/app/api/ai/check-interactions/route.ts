@@ -5,6 +5,8 @@ import { safeLog } from "@/lib/utils/safe-log";
 import { getCircuitBreaker, isCircuitBreakerError } from "@/lib/utils/circuit-breaker";
 import { checkProductInteractions } from "@/lib/ai/interaction-engine";
 
+export const dynamic = 'force-dynamic';
+
 const claudeBreaker = getCircuitBreaker("claude-api");
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || "";

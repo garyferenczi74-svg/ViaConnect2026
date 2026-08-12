@@ -12,6 +12,8 @@ import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 import type { FormulationStatus, ReviewDecision } from '@/types/custom-formulations';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } },

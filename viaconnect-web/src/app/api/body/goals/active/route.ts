@@ -19,6 +19,8 @@ import { backfillActiveGoalIfMissing } from '@/lib/body-goals/backfill';
 import { projectAndMarkSync } from '@/lib/body-goals/projectWeightGoal';
 import { readWeightGoal } from '@/lib/weight-goals/accessor';
 
+export const dynamic = 'force-dynamic';
+
 const DAY_MS = 86_400_000;
 function addDaysISO(from: string, days: number): string {
   return new Date(new Date(`${from}T00:00:00Z`).getTime() + days * DAY_MS).toISOString().slice(0, 10);

@@ -12,6 +12,8 @@ import { createClient } from "@/lib/supabase/server";
 import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
 
+export const dynamic = 'force-dynamic';
+
 interface AddBrandPayload {
   brand_name: string;
   tier: number;          // 1-5

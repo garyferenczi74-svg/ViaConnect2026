@@ -10,6 +10,8 @@ import {
   type GenemetricsVariantRow,
 } from "@/lib/genetics/genemetricsImportPayload";
 
+export const dynamic = 'force-dynamic';
+
 const genemetricsBreaker = getCircuitBreaker("genemetrics-api");
 
 /**

@@ -7,6 +7,8 @@ import { requireCustomFormulationsAdmin } from '@/lib/custom-formulations/admin-
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 const ALLOWED_FIELDS = new Set([
   'common_name', 'scientific_name', 'alternate_names',
   'category', 'subcategory',

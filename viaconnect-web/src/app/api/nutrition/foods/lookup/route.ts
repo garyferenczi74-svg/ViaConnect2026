@@ -17,6 +17,8 @@ import { lookupByBarcode } from '@/lib/nutrition/databases/open-food-facts';
 import { lookupFood, EXTRACTION_VERSION } from '@/lib/nutrition/usda-client';
 import type { ResolvedNutrients } from '@/lib/nutrition/databases/resolver';
 
+export const dynamic = 'force-dynamic';
+
 const ROUTE = '/api/nutrition/foods/lookup';
 const UUID_RX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 

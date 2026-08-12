@@ -1,6 +1,8 @@
 {
   "framework": "nextjs",
   "rootDirectory": "viaconnect-web",
+  "installCommand": "HUSKY=0 npm install --prefer-offline --no-audit --no-fund",
+  "buildCommand": "NODE_OPTIONS=--max-old-space-size=8192 next build",
   "headers": [
     {
       "source": "/(.*)",

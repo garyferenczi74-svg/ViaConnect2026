@@ -17,6 +17,8 @@ import { buildConfigLogRow } from '@/lib/governance/config-log';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 const VALID_ROLES = new Set(['ceo', 'cfo', 'advisory_cto', 'advisory_medical', 'board_member']);
 
 export async function POST(request: NextRequest) {

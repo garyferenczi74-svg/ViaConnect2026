@@ -11,6 +11,8 @@ import { parseIngredientCsv } from '@/lib/custom-formulations/ingredient-csv';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     const auth = await requireCustomFormulationsAdmin();

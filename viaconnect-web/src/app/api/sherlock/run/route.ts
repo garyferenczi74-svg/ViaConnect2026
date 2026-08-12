@@ -7,6 +7,8 @@ import { NextResponse } from 'next/server';
 import { withAbortTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const FUNCTION_NAME = 'sherlock-research-hub';
 

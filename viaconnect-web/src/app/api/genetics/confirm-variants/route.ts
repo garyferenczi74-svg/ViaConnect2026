@@ -17,6 +17,8 @@ import { analyzeVariants, type ParsedSnpRow, type InterpretedVariant } from '@/l
 import { interpretMethylationByRsid } from '@/lib/genetics/extractMethylationReport';
 import { PANEL_ORDER, type PanelKey } from '@/lib/genetics/panelLabels';
 
+export const dynamic = 'force-dynamic';
+
 const MAX_ROWS = 5000;
 const GENOTYPE_RE = /^[ACGT]{2}$/i;
 

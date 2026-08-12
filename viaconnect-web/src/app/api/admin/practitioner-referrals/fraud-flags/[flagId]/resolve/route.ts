@@ -15,6 +15,8 @@ import { resolveFraudFlag } from '@/lib/practitioner-referral/fraud-resolution-o
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 const schema = z.object({

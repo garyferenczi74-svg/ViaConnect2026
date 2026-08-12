@@ -43,6 +43,8 @@ import type {
   VisionItem,
 } from '@/lib/nutrition/vision/types';
 
+export const dynamic = 'force-dynamic';
+
 const ROUTE = '/api/nutrition/photo/analyze';
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
 const HANDLER_TIMEOUT_MS = 30_000;

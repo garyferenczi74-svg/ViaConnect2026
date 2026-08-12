@@ -30,6 +30,8 @@ import type { SchedulerConnection, SchedulerPlatform } from '@/lib/marshall/sche
 import { isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 function authorize(req: NextRequest): boolean {

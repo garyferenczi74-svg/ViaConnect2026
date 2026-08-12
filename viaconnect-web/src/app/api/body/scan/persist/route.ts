@@ -14,6 +14,8 @@ import { buildScanWrite } from '@/lib/body-tracker/composition/buildScanWrite';
 import { newCorrelationId, logScanEvent } from '@/lib/body-tracker/composition/correlation';
 import type { BodyScanEstimate } from '@/components/body-tracker/BodyScanUploader';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: Request): Promise<NextResponse> {
   let correlationId = 'scan_unresolved';
 

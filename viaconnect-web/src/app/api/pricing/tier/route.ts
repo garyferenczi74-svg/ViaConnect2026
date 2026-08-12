@@ -5,6 +5,8 @@ import { tierIdToLevel } from '@/types/pricing';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
   const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
   try {

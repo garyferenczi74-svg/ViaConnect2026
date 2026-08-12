@@ -6,6 +6,8 @@ import { safeLog } from "@/lib/utils/safe-log";
 import { reportSupabaseError } from "@/lib/utils/schema-drift";
 import { getCircuitBreaker, isCircuitBreakerError } from "@/lib/utils/circuit-breaker";
 
+export const dynamic = 'force-dynamic';
+
 const stripeBreaker = getCircuitBreaker("stripe-api");
 
 function getStripe() {

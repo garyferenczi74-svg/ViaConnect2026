@@ -59,6 +59,8 @@ import {
   type ScanReportInput,
 } from '@/lib/formavision/report/scanReportPdf';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 const BUCKET = 'body-scan-pdfs';

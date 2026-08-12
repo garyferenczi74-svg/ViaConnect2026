@@ -60,6 +60,8 @@ import type { NutritionSource } from '@/lib/nutrition/schema';
 import type { CuisineTag } from '@/lib/nutrition/vision/types';
 import type { CookingOilType, CookingOilSelection } from '@/lib/nutrition/cooking-oil/suggester';
 
+export const dynamic = 'force-dynamic';
+
 // The Helix bridge expects the legacy NutritionSource enum (manual_text,
 // photo_ai, barcode, imported, quick_calories). The new meals route uses
 // MealSource (quick_log, full_manual, photo_ai, tracker_api, wearable_cgm).

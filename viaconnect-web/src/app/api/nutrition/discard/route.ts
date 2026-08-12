@@ -6,6 +6,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { safeLog } from '@/lib/utils/safe-log';
 import { createClient } from '@/lib/supabase/server';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
   try {
     const supabase = createClient();

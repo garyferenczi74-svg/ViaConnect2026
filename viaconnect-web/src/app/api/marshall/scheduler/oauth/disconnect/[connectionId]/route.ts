@@ -20,6 +20,8 @@ import type { SchedulerAdapter } from '@/lib/marshall/scheduler/adapters/types';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 const VALID_REASONS = new Set<DisconnectReason>([

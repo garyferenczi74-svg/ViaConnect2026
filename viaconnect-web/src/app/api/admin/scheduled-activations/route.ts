@@ -11,6 +11,8 @@ import { requireAdmin } from '@/lib/flags/admin-guard';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 const ALLOWED_ACTIONS = new Set([
   'activate', 'deactivate',
   'kill_switch_engage', 'kill_switch_release',

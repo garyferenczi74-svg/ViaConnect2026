@@ -23,5 +23,19 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "scripts", "supabase", "extension"]
+  "exclude": [
+    "node_modules",
+    "scripts",
+    "supabase",
+    "extension",
+    "e2e",
+    "playwright",
+    "coverage",
+    "tmp",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "**/__tests__/**"
+  ]
 }

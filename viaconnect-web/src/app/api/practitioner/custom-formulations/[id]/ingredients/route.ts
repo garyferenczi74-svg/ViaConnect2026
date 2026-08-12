@@ -9,6 +9,8 @@ import { requirePractitioner } from '@/lib/custom-formulations/admin-guard';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 async function assertDraftOwnership(
   supabase: ReturnType<typeof createClient>,
   formulationId: string,

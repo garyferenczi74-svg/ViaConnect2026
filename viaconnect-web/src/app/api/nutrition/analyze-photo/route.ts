@@ -26,6 +26,8 @@ import { reconcileMealKcal } from '@/lib/nutrition/compute-meal-kcal';
 // to ONE shared constant. The 3 kcal kcalRecon guard below is telemetry only.
 import { MATCH_CONFIDENCE_LOW_BAND, macroCaloriesReconciled } from '@/lib/nutrition/match-confidence';
 
+export const dynamic = 'force-dynamic';
+
 const ROUTE = '/api/nutrition/analyze-photo';
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
 const ALLOWED_MIME = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp']);

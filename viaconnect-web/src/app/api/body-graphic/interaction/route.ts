@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
 
+export const dynamic = 'force-dynamic';
+
 const VALID_MODES = new Set(["composition", "muscle"]);
 const VALID_GENDERS = new Set(["male", "female"]);
 const VALID_VIEWS = new Set(["front", "back"]);

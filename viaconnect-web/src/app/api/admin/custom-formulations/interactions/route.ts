@@ -10,6 +10,8 @@ import { requireCustomFormulationsAdmin } from '@/lib/custom-formulations/admin-
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 const VALID_SEVERITIES = new Set(['minor', 'moderate', 'major', 'contraindicated']);
 
 export async function POST(request: NextRequest) {

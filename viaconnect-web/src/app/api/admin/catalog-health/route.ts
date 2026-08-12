@@ -11,6 +11,8 @@ import { PUBLIC_PREFIX, type ImageUrlClassification } from '@/lib/photoSync/type
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 interface ProfileLite { role: string }

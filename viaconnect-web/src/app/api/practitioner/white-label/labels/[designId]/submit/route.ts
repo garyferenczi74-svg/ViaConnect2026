@@ -26,6 +26,8 @@ import { determineRequiredReviewers } from '@/lib/white-label/compliance';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 export async function POST(

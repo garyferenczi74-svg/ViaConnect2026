@@ -17,6 +17,8 @@ import { safeLog } from '@/lib/utils/safe-log';
 import { buildCircumferenceWrite } from '@/lib/body-tracker/composition/buildScanWrite';
 import type { ExtractedMeasurements } from '@/lib/arnold/scanning/types';
 
+export const dynamic = 'force-dynamic';
+
 const SCOPE = 'body.circumference.persist';
 const TIMEOUT_MS = 5000;
 

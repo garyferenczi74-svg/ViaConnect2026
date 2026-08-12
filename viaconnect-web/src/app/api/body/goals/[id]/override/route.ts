@@ -14,6 +14,8 @@ import { getGoalById, getLatestWeight, insertGoalTarget } from '@/lib/body-goals
 import { goalToHydrationActivity } from '@/lib/body-goals/activity';
 import type { GoalDirection } from '@/lib/weight-goals/accessor';
 
+export const dynamic = 'force-dynamic';
+
 const IN_TO_CM = 2.54;
 const MAINTAIN_BAND_LB = 2.2;
 

@@ -14,6 +14,8 @@ import type { TestRoundEndedReason } from '@/lib/marketing/variants/types';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 const VALID_REASONS: TestRoundEndedReason[] = [
   'winner_promoted', 'no_winner_archived', 'manual_terminated', 'superseded',
 ];

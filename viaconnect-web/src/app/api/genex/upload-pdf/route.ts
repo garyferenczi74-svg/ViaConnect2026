@@ -16,6 +16,8 @@ import { extractMethylationFromPdf, mapMethylationRows } from '@/lib/genetics/ex
 import { inMemoryRateLimit } from '@/lib/utils/inMemoryRateLimit';
 import { PANEL_ORDER, type PanelKey } from '@/lib/genetics/panelLabels';
 
+export const dynamic = 'force-dynamic';
+
 const MAX_PDF_BYTES = 10 * 1024 * 1024; // 10 MB
 
 // Bound a single OCR-capable invocation so a large scanned PDF cannot run away.

@@ -13,6 +13,8 @@ import { isTimeoutError } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
 import { getCircuitBreaker, isCircuitBreakerError } from "@/lib/utils/circuit-breaker";
 
+export const dynamic = 'force-dynamic';
+
 const claudeBreaker = getCircuitBreaker("claude-api");
 
 const ARNOLD_MODEL = process.env.ARNOLD_MODEL ?? "claude-sonnet-4-6";

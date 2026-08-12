@@ -20,6 +20,8 @@ import { ACQUISITION_CHANNELS } from '@/lib/analytics/acquisition-attribution';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 const querySchema = z.object({

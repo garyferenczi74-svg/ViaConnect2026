@@ -12,6 +12,8 @@ import { createClient } from '@/lib/supabase/server';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 const VALID_ROLES = new Set(['compliance_officer', 'medical_director']);

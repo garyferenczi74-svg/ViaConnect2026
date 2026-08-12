@@ -16,6 +16,8 @@ import { registerAgent, type RegisterPayload } from "@/lib/ultrathink/agentRegis
 import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
 
+export const dynamic = 'force-dynamic';
+
 const VALID_AGENT_TYPES = new Set([
   "data","safety","scoring","analytics","infra","engagement",
   "protocol","research","ai","learning","perf","control",
