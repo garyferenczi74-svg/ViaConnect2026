@@ -15,7 +15,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => ({}));
     const trigger = body.trigger || "manual";
-    const supabase = createClient();
+    const supabase = await createClient();
 
     let user;
     try {

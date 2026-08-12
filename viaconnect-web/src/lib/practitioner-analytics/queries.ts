@@ -30,7 +30,7 @@ export async function fetchCachedSherlockInsight(
   generatedAt: string;
 }> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as unknown as any;
+  const supabase = await createClient() as unknown as any;
   const today = new Date().toISOString().slice(0, 10);
   const { data } = await supabase
     .from('sherlock_insights_cache')

@@ -1,3 +1,6 @@
+/* Font imports must precede all other rules (Turbopack / Lightning CSS). */
+@import url("https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -400,11 +403,9 @@ body {
   font-size: 1.1rem;
 }
 
-/* Instrument Sans for Helix Rewards */
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap');
-
+/* Instrument Sans for Helix Rewards (loaded via @import at top of file) */
 .font-instrument {
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: "Instrument Sans", sans-serif;
 }
 
 /* --- No scrollbar ----------------------------------------------------------- */

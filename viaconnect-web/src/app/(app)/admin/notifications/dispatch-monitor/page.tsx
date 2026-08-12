@@ -23,7 +23,7 @@ function statusTone(s: string): string {
 }
 
 export default async function Page() {
-  const sb = createClient();
+  const sb = await createClient();
   const { data } = await sb.from("notifications_dispatched")
     .select("dispatch_id, occurred_at, event_code, channel, delivery_status, priority_resolved, context_ref, attorney_work_product_bypass, carrier_message_id")
     .order("occurred_at", { ascending: false }).limit(500);

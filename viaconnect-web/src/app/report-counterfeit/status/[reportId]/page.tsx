@@ -14,7 +14,7 @@ import { ShieldCheck, ShieldAlert, CircleDashed, Clock } from 'lucide-react';
 export const dynamic = 'force-dynamic';
 
 interface Props {
-  params: { reportId: string };
+  params: Promise<{ reportId: string }>;
 }
 
 interface ReportRow {
@@ -25,7 +25,8 @@ interface ReportRow {
   determination_summary: string | null;
 }
 
-export default async function ReportStatusPage({ params }: Props) {
+export default async function ReportStatusPage(props: Props) {
+  const params = await props.params;
   // Use the admin client intentionally: the report_id is the shared
   // secret that authorizes this lookup for anonymous consumers.
   const sb = createAdminClient();

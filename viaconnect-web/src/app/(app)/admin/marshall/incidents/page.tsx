@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export default async function IncidentsPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const { data } = await supabase
     .from("compliance_incidents")
     .select("id, incident_id, title, severity, opened_by, opened_at, closed_at, dev_side_escape")

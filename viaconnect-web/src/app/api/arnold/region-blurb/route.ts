@@ -47,7 +47,7 @@ function extractJson(raw: string): string | null {
 
 export async function POST(request: Request) {
   const start = Date.now();
-  const sb = createClient();
+  const sb = await createClient();
   const { data: { user } } = await sb.auth.getUser();
   if (!user) return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
 

@@ -32,7 +32,7 @@ export async function FeatureGate({
   fallback,
   showUpgradePrompt = false,
 }: FeatureGateProps) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: userData } = await supabase.auth.getUser();
   const userId = userData.user?.id ?? null;
 

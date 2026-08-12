@@ -53,7 +53,7 @@ const FIELDS: QuickFieldSpec[] = [
 
 export default async function NonconformitiesPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const { data } = await supabase
     .from('iso_nonconformities')
     .select('id, nc_ref, source, severity, status, description, target_date, actual_closure_date, recorded_at')

@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, "api.notifications.push.subscribe.auth");
     if (!user) return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
 

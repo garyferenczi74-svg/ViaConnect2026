@@ -44,10 +44,8 @@ const ALLOWED_FIELDS = new Set([
   'emergency_justification',
 ]);
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function PATCH(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const auth = await requireGovernanceAdmin();
   if (auth.kind === 'error') return auth.response;
 
@@ -62,7 +60,7 @@ export async function PATCH(
     return NextResponse.json({ error: 'No allowed fields in patch' }, { status: 400 });
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
 
   try {
     const existingRes = await withTimeout(

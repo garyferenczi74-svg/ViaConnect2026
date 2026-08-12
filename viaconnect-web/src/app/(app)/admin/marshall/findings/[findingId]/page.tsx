@@ -28,7 +28,7 @@ interface FindingRow {
 export default async function FindingDetailPage({ params }: { params: Promise<{ findingId: string }> }) {
   const { findingId } = await params;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const { data } = await supabase
     .from("compliance_findings")
     .select("*")

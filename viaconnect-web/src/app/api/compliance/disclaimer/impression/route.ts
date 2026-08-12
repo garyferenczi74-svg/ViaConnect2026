@@ -20,7 +20,7 @@ interface Body {
 
 export async function POST(request: Request) {
   try {
-    const sb = createClient();
+    const sb = await createClient();
     const { data: { user } } = await withTimeout(sb.auth.getUser(), 5000, 'api.compliance.disclaimer.auth');
     const body = (await request.json().catch(() => null)) as Body | null;
     if (!body || typeof body.surface !== "string" || typeof body.displayed !== "boolean") {

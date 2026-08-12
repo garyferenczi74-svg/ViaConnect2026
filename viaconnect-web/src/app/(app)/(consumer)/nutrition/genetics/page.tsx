@@ -95,7 +95,7 @@ async function hasPendingNutrigenDx(db: SupabaseLike, userId: string): Promise<b
 }
 
 export default async function NutritionGeneticsPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

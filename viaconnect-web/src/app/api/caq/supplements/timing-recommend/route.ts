@@ -124,7 +124,7 @@ export async function POST(request: Request) {
   let userSupplements: ReadonlyArray<{ name: string; time_of_day?: ReadonlyArray<TimeOfDay> | null }> = [];
   if (payload.skip_user_lookup !== true) {
     try {
-      const supabase = createClient();
+      const supabase = await createClient();
       const { data: userData } = await supabase.auth.getUser();
       const userId: string | null = userData?.user?.id ?? null;
       if (userId) {

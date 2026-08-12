@@ -28,7 +28,7 @@ export default async function SupplementsPage() {
   // Fail gracefully: if no session, pass empty arrays so panels show empty states.
   let userId: string | null = null;
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();

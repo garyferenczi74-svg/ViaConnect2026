@@ -15,7 +15,7 @@ interface AuditRow {
 }
 
 export default async function Page() {
-  const sb = createClient();
+  const sb = await createClient();
   const { data } = await sb.from("international_audit_log")
     .select("audit_id, occurred_at, actor_role, action_category, action_verb, target_table, market_code, currency_code, typed_confirmation_text")
     .order("occurred_at", { ascending: false })

@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export default async function SignalDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const { data: signal } = await supabase.from("social_signals").select("*").eq("id", id).maybeSingle();
   if (!signal) notFound();
   const { data: evidence } = await supabase

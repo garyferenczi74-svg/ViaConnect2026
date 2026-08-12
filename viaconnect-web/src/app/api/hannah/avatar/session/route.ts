@@ -14,7 +14,7 @@ const tavusBreaker = getCircuitBreaker('tavus-api');
 
 export async function POST(_request: Request) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const {
       data: { user },
     } = await withTimeout(supabase.auth.getUser(), 5000, 'api.hannah.avatar.session.auth');

@@ -36,7 +36,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     correlationId = newCorrelationId(scanId);
 
     // Auth - fail closed: timeout or missing user both return 401
-    const supabase = createClient();
+    const supabase = await createClient();
     let user: { id: string } | null = null;
     try {
       const authResult = await withTimeout(

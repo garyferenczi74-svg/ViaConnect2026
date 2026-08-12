@@ -81,7 +81,7 @@ async function requireLegalOrExec(supabase: ReturnType<typeof createClient>) {
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const ctx = await requireLegalOrExec(supabase);
     if (!ctx.ok) return ctx.response;
 
@@ -133,7 +133,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const ctx = await requireLegalOrExec(supabase);
     if (!ctx.ok) return ctx.response;
     if (!ctx.is_legal_ops) {

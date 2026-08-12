@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'action and justification required' }, { status: 400 });
     }
 
-    const supabase = createClient();
+    const supabase = await createClient();
 
   if (body.action === 'assign') {
     if (!body.approver_role || !body.user_id) {

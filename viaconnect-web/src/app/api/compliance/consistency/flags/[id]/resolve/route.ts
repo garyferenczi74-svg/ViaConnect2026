@@ -20,7 +20,8 @@ interface Body {
   resolutionNote?: string;
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const session = createServerClient();
     const { data: { user } } = await withTimeout(session.auth.getUser(), 5000, 'api.compliance.consistency.resolve.auth');

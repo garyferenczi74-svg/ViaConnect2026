@@ -332,7 +332,7 @@ function getRecommendations(
 // ---------- Route handler ----------
 
 export async function POST(request: Request) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   let user;
   try {

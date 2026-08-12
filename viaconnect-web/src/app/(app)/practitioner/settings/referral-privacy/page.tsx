@@ -8,7 +8,7 @@ import { Hourglass } from 'lucide-react';
 export const dynamic = 'force-dynamic';
 
 export default async function ReferralPrivacySettingsPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const active = await isLaunchPhaseActive('practitioner_referral_2027', supabase);
   if (!active) {
     return (

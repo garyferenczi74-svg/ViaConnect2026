@@ -1,4 +1,5 @@
-'use client';
+'use client';;
+import { use } from "react";
 
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -81,10 +82,11 @@ const EVIDENCE_STYLE: Record<string, { bg: string; text: string; border: string;
 };
 
 interface PageProps {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }
 
-export default function PeptideDetailPage({ params }: PageProps) {
+export default function PeptideDetailPage(props: PageProps) {
+  const params = use(props.params);
   const peptide = getPeptideById(params.slug);
 
   if (!peptide) {

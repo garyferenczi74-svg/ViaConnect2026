@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function PseudonymRequestsPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return <GuardMessage message="Sign in required." />;

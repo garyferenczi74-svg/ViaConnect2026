@@ -210,7 +210,7 @@ async function fetchLatest(
 
 export async function POST(_request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: userData } = await withTimeout(
       supabase.auth.getUser(),
       5000,

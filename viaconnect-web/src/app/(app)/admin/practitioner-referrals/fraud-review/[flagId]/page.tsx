@@ -2,7 +2,7 @@
 
 // Prompt #98 Phase 6: Fraud review detail + resolution.
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 import Link from 'next/link';
 import {
   ArrowLeft,
@@ -54,7 +54,8 @@ type Action = 'confirm_fraud' | 'clear_benign' | 'admin_override';
 
 const REASON_MIN: Record<Action, number> = { confirm_fraud: 20, clear_benign: 20, admin_override: 50 };
 
-export default function FraudReviewDetailPage({ params }: { params: { flagId: string } }) {
+export default function FraudReviewDetailPage(props: { params: Promise<{ flagId: string }> }) {
+  const params = use(props.params);
   const [data, setData] = useState<DetailPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState<Action | null>(null);

@@ -33,7 +33,7 @@ export async function POST(request: Request) {
 
   try {
     const stripe = getStripe();
-    const supabase = createClient();
+    const supabase = await createClient();
 
     let user;
     try {

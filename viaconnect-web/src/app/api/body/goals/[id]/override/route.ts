@@ -19,9 +19,10 @@ export const dynamic = 'force-dynamic';
 const IN_TO_CM = 2.54;
 const MAINTAIN_BAND_LB = 2.2;
 
-export async function POST(request: Request, { params }: { params: { id: string } }) {
+export async function POST(request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
-    const sb = createClient();
+    const sb = await createClient();
     const { data: { user } } = await withTimeout(sb.auth.getUser(), 5000, 'api.body.goals.override.auth');
     if (!user) return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 });
 

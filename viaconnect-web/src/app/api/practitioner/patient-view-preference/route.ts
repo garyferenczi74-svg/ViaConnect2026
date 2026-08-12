@@ -39,7 +39,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     let user;
     try {

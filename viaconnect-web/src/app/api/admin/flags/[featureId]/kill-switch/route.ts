@@ -15,10 +15,8 @@ import { safeLog } from '@/lib/utils/safe-log';
 
 export const dynamic = 'force-dynamic';
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { featureId: string } },
-) {
+export async function POST(request: NextRequest, props: { params: Promise<{ featureId: string }> }) {
+  const params = await props.params;
   try {
     const auth = await requireAdmin();
     if (auth.kind === 'error') return auth.response;
@@ -36,7 +34,7 @@ export async function POST(
       );
     }
 
-    const supabase = createClient();
+    const supabase = await createClient();
     const engage = body.action === 'engage';
 
     const updateRes = await withTimeout(

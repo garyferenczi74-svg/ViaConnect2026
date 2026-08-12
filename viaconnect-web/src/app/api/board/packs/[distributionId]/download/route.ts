@@ -52,10 +52,11 @@ interface DownloadBody {
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { distributionId: string } },
+  props: { params: Promise<{ distributionId: string }> }
 ): Promise<NextResponse> {
+  const params = await props.params;
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: userData } = await withTimeout(supabase.auth.getUser(), 5000, 'api.board.download.auth');
     const user = userData.user;
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

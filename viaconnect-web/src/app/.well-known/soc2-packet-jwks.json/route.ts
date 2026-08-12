@@ -27,7 +27,7 @@ export async function GET(): Promise<NextResponse> {
   // client to fetch. We only expose the public key material — the
   // private_key_ref (Vault pointer) is intentionally not included.
   //
-  // createClient() is not used here because we deliberately do not
+  // await createClient() is not used here because we deliberately do not
   // require a user session for this endpoint.
   void createClient;
 

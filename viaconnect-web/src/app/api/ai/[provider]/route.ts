@@ -60,7 +60,7 @@ async function writeAuditLog(
   ip?: string | null
 ) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     // @ts-expect-error -- audit_logs table not in generated Database type
     const auditInsertResult: { error: unknown } = await supabase.from("audit_logs").insert({
       user_id: userId,
@@ -372,7 +372,7 @@ export async function POST(
   }
 
   // Auth check
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

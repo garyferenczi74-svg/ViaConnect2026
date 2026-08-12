@@ -45,7 +45,7 @@ async function requireAdmin(supabase: ReturnType<typeof createClient>) {
 
 export async function GET(): Promise<NextResponse> {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const auth = await requireAdmin(supabase);
     if (!auth.ok) return auth.response;
 
@@ -81,7 +81,7 @@ export async function GET(): Promise<NextResponse> {
 
 export async function PATCH(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const auth = await requireAdmin(supabase);
     if (!auth.ok) return auth.response;
 

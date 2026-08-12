@@ -65,7 +65,7 @@ const NOTIFICATION_TEMPLATES: Record<
 export async function POST(request: Request) {
   const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     let user;
     try {
       const authResult = await withTimeout(

@@ -11,7 +11,7 @@ import { loadEpigeneticResults } from "@/lib/genetics/loadEpigeneticResults";
 export const dynamic = 'force-dynamic';
 
 export async function GET(): Promise<NextResponse> {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const {
     data: { user },

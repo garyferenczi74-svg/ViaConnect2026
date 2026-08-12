@@ -35,7 +35,8 @@ interface ScanRow {
   connection: { platform: SchedulerPlatform; external_account_label: string | null } | null;
 }
 
-export default async function ScanDetailPage({ params }: { params: { id: string } }) {
+export default async function ScanDetailPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const supabase = createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, use } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { Card } from "@/components/ui/Card";
@@ -42,11 +42,12 @@ const riskBadgeVariant: Record<string, "active" | "pending" | "danger"> = {
   high: "danger",
 };
 
-export default function PanelDeepDivePage({
-  params,
-}: {
-  params: { panelId: string };
-}) {
+export default function PanelDeepDivePage(
+  props: {
+    params: Promise<{ panelId: string }>;
+  }
+) {
+  const params = use(props.params);
   const { panelId } = params;
   const panel = panelMeta[panelId] ?? { name: panelId, description: "Genetic panel data" };
 

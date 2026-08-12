@@ -92,7 +92,7 @@ interface RecordationLite {
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const ctx = await requireLegalOrExec(supabase);
     if (!ctx.ok) return ctx.response;
 

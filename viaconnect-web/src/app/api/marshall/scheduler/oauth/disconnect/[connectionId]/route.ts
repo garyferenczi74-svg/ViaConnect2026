@@ -43,7 +43,8 @@ interface DisconnectBody {
   reason?: DisconnectReason;
 }
 
-export async function POST(req: NextRequest, { params }: { params: { connectionId: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ connectionId: string }> }) {
+  const params = await props.params;
   try {
     const connectionId = (params.connectionId ?? '').trim();
     if (!connectionId) return NextResponse.json({ error: 'missing_connection_id' }, { status: 400 });

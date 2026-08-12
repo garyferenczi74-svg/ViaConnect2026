@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ReceiptsListPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const { data } = await supabase
     .from("precheck_clearance_receipts")
     .select("receipt_id, draft_hash_sha256, issued_at, expires_at, revoked")

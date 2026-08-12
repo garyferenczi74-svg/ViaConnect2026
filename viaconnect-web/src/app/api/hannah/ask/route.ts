@@ -210,7 +210,7 @@ export async function generateGroundedAnswer(
 export async function POST(request: Request): Promise<NextResponse> {
   // Auth: resolve the user from the server session.
   // Auth timeout fails CLOSED: a timeout is treated as unauthenticated (401).
-  const supabase = createClient();
+  const supabase = await createClient();
   let user: { id: string } | null = null;
   try {
     const { data } = await withTimeout(

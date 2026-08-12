@@ -7,9 +7,10 @@ import { safeLog } from "@/lib/utils/safe-log";
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(_request: Request, { params }: { params: { id: string } }) {
+export async function GET(_request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
-    const sb = createClient();
+    const sb = await createClient();
     const { data: { user } } = await withTimeout(sb.auth.getUser(), 5000, 'api.compliance.sku.auth');
     if (!user) return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
 

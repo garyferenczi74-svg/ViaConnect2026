@@ -19,7 +19,8 @@ export const runtime = 'nodejs';
 
 const SIGNED_URL_TTL_SECONDS = 5 * 60;
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const session = createServerClient();
     const { data: { user } } = await withTimeout(session.auth.getUser(), 5000, 'api.auditor.download.auth');

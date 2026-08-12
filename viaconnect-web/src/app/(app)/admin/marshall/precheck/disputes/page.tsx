@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 export default async function DisputesPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const { data } = await supabase
     .from("precheck_findings")
     .select("id, session_id, rule_id, severity, remediation_kind, created_at")

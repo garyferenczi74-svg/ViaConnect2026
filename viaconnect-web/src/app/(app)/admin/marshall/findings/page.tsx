@@ -15,7 +15,7 @@ const SEV_STYLE: Record<string, string> = {
 export default async function FindingsPage({ searchParams }: { searchParams: Promise<{ severity?: string; status?: string }> }) {
   const params = await searchParams;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const query = supabase
     .from("compliance_findings")
     .select("id, finding_id, rule_id, severity, surface, source, message, status, created_at, assigned_to")

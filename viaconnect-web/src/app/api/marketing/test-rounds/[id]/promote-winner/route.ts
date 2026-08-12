@@ -22,10 +22,8 @@ const VALID_REASONS: TestRoundEndedReason[] = [
 
 const STEVE_LEVEL_ROLES = new Set(['compliance_admin', 'superadmin', 'admin', 'founder']);
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function POST(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const auth = await requireMarketingAdmin();
     if (auth.kind === 'error') return auth.response;
@@ -47,7 +45,7 @@ export async function POST(
       return NextResponse.json({ error: 'winner_slot_id required when ended_reason=winner_promoted' }, { status: 400 });
     }
 
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: round } = await withTimeout(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (async () => (supabase as any)

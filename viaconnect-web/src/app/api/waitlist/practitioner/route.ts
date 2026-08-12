@@ -47,7 +47,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'Invalid submission' }, { status: 400 });
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const userAgent = request.headers.get('user-agent') ?? null;
   const ipAddress = request.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? null;
   const referrer = request.headers.get('referer') ?? null;

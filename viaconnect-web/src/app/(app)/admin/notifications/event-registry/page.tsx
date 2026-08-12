@@ -14,7 +14,7 @@ interface Row {
 }
 
 export default async function Page() {
-  const sb = createClient();
+  const sb = await createClient();
   const { data } = await sb.from("notification_event_registry")
     .select("event_code, display_name, source_prompt, default_priority, default_channels, legal_ops_scope, attorney_work_product, default_enabled")
     .order("source_prompt").order("event_code");

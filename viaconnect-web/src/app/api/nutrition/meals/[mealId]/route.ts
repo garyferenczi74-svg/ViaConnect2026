@@ -38,7 +38,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 interface RouteContext {
-  params: { mealId: string };
+  params: Promise<{ mealId: string }>;
 }
 
 const HANDLER_TIMEOUT_MS = 10_000;
@@ -142,13 +142,13 @@ export async function DELETE(_req: NextRequest, ctx: RouteContext): Promise<Next
   const timeoutId = setTimeout(() => controller.abort(), HANDLER_TIMEOUT_MS);
 
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const mealId = ctx.params.mealId;
+    const mealId = (await ctx.params).mealId;
     if (!mealId || typeof mealId !== 'string') {
       return NextResponse.json({ error: 'Missing mealId' }, { status: 400 });
     }

@@ -48,7 +48,8 @@ interface OverrideRow {
   pattern_flag_triggered: boolean;
 }
 
-export default async function AdminScanDetailPage({ params }: { params: { id: string } }) {
+export default async function AdminScanDetailPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const supabase = createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');

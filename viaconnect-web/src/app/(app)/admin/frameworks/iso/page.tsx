@@ -25,7 +25,7 @@ const TILES = [
 
 export default async function IsoOverviewPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
 
   const [
     soaAllRes, soaApplicableRes, soaExcludedRes,

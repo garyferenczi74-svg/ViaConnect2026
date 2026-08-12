@@ -12,13 +12,11 @@ export const dynamic = 'force-dynamic';
 
 export const runtime = 'nodejs';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { orderId: string } },
-): Promise<NextResponse> {
+export async function GET(request: NextRequest, props: { params: Promise<{ orderId: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     let user;
     try {

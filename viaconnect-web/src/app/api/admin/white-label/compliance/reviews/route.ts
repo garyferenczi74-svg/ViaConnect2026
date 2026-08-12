@@ -13,7 +13,7 @@ export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.white-label.compliance-reviews.auth');
     if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
 

@@ -57,7 +57,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // Caller must be authenticated.
     let user;

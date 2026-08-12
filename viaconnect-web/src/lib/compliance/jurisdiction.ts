@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { JurisdictionCode } from "./types";
 
 export async function getUserJurisdictionCode(): Promise<JurisdictionCode> {
-  const sb = createClient();
+  const sb = await createClient();
   const { data: { user } } = await sb.auth.getUser();
   if (!user) return "US";
   // profiles.billing_country is not yet in schema; reserve this lookup site.
@@ -16,7 +16,7 @@ export async function getUserJurisdictionCode(): Promise<JurisdictionCode> {
 }
 
 export async function getJurisdictionId(code: JurisdictionCode): Promise<string | null> {
-  const sb = createClient();
+  const sb = await createClient();
   const { data } = await sb
     .from("regulatory_jurisdictions")
     .select("id")

@@ -29,7 +29,7 @@ const querySchema = z.object({
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.analytics.cohort.revenue.auth');
     if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
 

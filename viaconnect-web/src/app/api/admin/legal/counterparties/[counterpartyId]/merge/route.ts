@@ -35,10 +35,11 @@ async function requireLegalOps(supabase: ReturnType<typeof createClient>) {
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { counterpartyId: string } },
+  props: { params: Promise<{ counterpartyId: string }> }
 ): Promise<NextResponse> {
+  const params = await props.params;
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const ctx = await requireLegalOps(supabase);
     if (!ctx.ok) return ctx.response;
 

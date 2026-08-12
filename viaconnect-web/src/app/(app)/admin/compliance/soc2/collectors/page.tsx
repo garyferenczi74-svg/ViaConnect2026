@@ -17,7 +17,7 @@ interface CollectorRow {
 
 export default async function CollectorsPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const { data } = await supabase
     .from('soc2_collector_config')
     .select('collector_id, enabled, api_key_ref, last_run_at, last_heartbeat_at, notes, updated_at')

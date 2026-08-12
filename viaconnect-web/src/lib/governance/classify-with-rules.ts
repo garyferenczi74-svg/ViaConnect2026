@@ -17,7 +17,7 @@ import type {
 export async function classifyWithRules(
   params: ClassifyInput,
 ): Promise<ClassificationResult> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from('decision_rights_rules')
     .select('*')

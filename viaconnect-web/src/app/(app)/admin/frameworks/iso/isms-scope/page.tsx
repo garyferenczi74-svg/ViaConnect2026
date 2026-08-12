@@ -20,7 +20,7 @@ interface Row {
 
 export default async function IsmsScopePage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const { data } = await supabase
     .from('iso_isms_scope_documents')
     .select('id, version, scope_description, included_boundaries, exclusions, effective_from, effective_until, storage_key, approved_at, recorded_at')

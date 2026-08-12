@@ -47,12 +47,10 @@ interface SettlementRow {
   payment_received_at: string | null;
 }
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { settlementId: string } },
-): Promise<NextResponse> {
+export async function PATCH(request: NextRequest, props: { params: Promise<{ settlementId: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const ctx = await requireRole(supabase, READ_ROLES);
     if (!ctx.ok) return ctx.response;
 

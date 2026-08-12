@@ -26,10 +26,8 @@ const ALLOWED_FIELDS = new Set([
   'gate_behavior',
 ]);
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { featureId: string } },
-) {
+export async function POST(request: NextRequest, props: { params: Promise<{ featureId: string }> }) {
+  const params = await props.params;
   try {
     const auth = await requireAdmin();
     if (auth.kind === 'error') return auth.response;
@@ -49,7 +47,7 @@ export async function POST(
       return NextResponse.json({ error: 'No allowed fields in patch' }, { status: 400 });
     }
 
-    const supabase = createClient();
+    const supabase = await createClient();
 
     const prevRes = await withTimeout(
       (async () => supabase

@@ -114,7 +114,7 @@ export function computeEligibility(input: EligibilityInput): EligibilityResult {
 export async function checkLevel4Eligibility(
   practitionerId: string,
 ): Promise<EligibilityResult> {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const missing = await getMissingDependencies(supabase);
   if (missing.length > 0) {

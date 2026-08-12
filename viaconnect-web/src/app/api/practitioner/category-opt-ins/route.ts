@@ -45,7 +45,7 @@ function handleOuterError(err: unknown, requestId: string): NextResponse {
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const ctx = await getPractitionerId(supabase);
     if (!ctx.ok) return ctx.response;
 
@@ -96,7 +96,7 @@ interface DesiredOptIn {
 export async function PUT(request: NextRequest): Promise<NextResponse> {
   const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const ctx = await getPractitionerId(supabase);
     if (!ctx.ok) return ctx.response;
 

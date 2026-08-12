@@ -17,7 +17,7 @@ interface TestBuyRow {
 
 export default async function TestBuysPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const { data } = await supabase
     .from('counterfeit_test_buys')
     .select('id, target_listing_url, budget_usd, ordered_at, arrived_at, outcome, initiated_at, closed_at')

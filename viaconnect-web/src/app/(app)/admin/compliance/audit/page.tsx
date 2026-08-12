@@ -13,7 +13,7 @@ interface Row {
 }
 
 export default async function Page() {
-  const sb = createClient();
+  const sb = await createClient();
   const { data } = await sb
     .from("regulatory_audit_log")
     .select("id, created_at, actor_role, action, target_type, target_id, justification")

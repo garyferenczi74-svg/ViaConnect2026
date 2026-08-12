@@ -76,12 +76,10 @@ async function requireLegalOrExec(supabase: ReturnType<typeof createClient>) {
   return { ok: true as const, user_id: user.id, role: profile.role, is_legal_ops: isLegalOps };
 }
 
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: { id: string } },
-): Promise<NextResponse> {
+export async function GET(_request: NextRequest, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const ctx = await requireLegalOrExec(supabase);
     if (!ctx.ok) return ctx.response;
 
@@ -142,12 +140,10 @@ export async function GET(
   }
 }
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } },
-): Promise<NextResponse> {
+export async function POST(request: NextRequest, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const ctx = await requireLegalOrExec(supabase);
     if (!ctx.ok) return ctx.response;
     if (!ctx.is_legal_ops) {
@@ -230,12 +226,10 @@ export async function POST(
   }
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } },
-): Promise<NextResponse> {
+export async function DELETE(request: NextRequest, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const ctx = await requireLegalOrExec(supabase);
     if (!ctx.ok) return ctx.response;
     if (!ctx.is_legal_ops) {

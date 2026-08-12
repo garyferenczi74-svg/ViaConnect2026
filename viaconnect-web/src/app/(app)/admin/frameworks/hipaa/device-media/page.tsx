@@ -38,7 +38,7 @@ const FIELDS: QuickFieldSpec[] = [
 
 export default async function DeviceMediaPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const { data } = await supabase
     .from('hipaa_device_media_events')
     .select('id, device_id, event_kind, event_date, method, notes, responsible_party, recorded_at')

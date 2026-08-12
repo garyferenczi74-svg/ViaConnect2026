@@ -29,8 +29,9 @@ interface DispensaryItem {
 
 const fmtUsd = (c: number) => `$${(c / 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
 
-export default async function PatientDispensaryPage({ params }: { params: { slug: string } }) {
-  const supabase = createClient();
+export default async function PatientDispensaryPage(props: { params: Promise<{ slug: string }> }) {
+  const params = await props.params;
+  const supabase = await createClient();
   const active = await isLaunchPhaseActive('white_label_products_2028', supabase);
   if (!active) {
     return (

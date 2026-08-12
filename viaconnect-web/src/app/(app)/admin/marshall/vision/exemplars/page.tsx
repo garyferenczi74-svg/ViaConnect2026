@@ -16,7 +16,7 @@ interface ExemplarRow {
 
 export default async function ExemplarsPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const { data } = await supabase
     .from('counterfeit_exemplars')
     .select('id, tier, source_platform, storage_key, confirmed_at, curation_note, takedown_request_id')

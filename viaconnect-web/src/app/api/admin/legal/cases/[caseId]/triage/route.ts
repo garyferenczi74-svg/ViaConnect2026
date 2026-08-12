@@ -57,11 +57,9 @@ interface CaseRow {
 
 interface EvidenceRow { artifact_type: string; description: string | null; captured_at: string }
 
-export async function POST(
-  _request: NextRequest,
-  { params }: { params: { caseId: string } },
-): Promise<NextResponse> {
-  const supabase = createClient();
+export async function POST(_request: NextRequest, props: { params: Promise<{ caseId: string }> }): Promise<NextResponse> {
+  const params = await props.params;
+  const supabase = await createClient();
   const ctx = await requireLegalOps(supabase);
   if (!ctx.ok) return ctx.response;
 

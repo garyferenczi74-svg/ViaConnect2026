@@ -66,7 +66,7 @@ const ENGAGEMENT_ORDER: EngagementPill['key'][] = [
 // ---------------------------------------------------------------------------
 
 export async function GET(_request: Request): Promise<Response> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

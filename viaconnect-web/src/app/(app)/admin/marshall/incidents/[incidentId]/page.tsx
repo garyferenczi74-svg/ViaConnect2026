@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export default async function IncidentDetailPage({ params }: { params: Promise<{ incidentId: string }> }) {
   const { incidentId } = await params;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const { data } = await supabase.from("compliance_incidents").select("*").eq("incident_id", incidentId).maybeSingle();
   if (!data) notFound();
   const i = data as { incident_id: string; title: string; severity: string; opened_by: string; opened_at: string; closed_at: string | null; root_cause: string | null; dev_side_escape: boolean; narrative: string | null; related_finding_ids: string[] };

@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export default async function NoticeDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const { data } = await supabase
     .from("practitioner_notices")
     .select("*, finding:compliance_findings(rule_id, severity, message, citation, excerpt, remediation)")

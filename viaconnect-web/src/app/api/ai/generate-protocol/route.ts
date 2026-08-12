@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 export async function POST(request: Request) {
   try {
     await request.json().catch(() => ({}));
-    const supabase = createClient();
+    const supabase = await createClient();
 
     let user;
     try {

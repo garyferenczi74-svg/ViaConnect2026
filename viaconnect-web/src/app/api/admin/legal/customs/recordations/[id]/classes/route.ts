@@ -56,12 +56,10 @@ async function requireLegalOps(supabase: ReturnType<typeof createClient>) {
   return { ok: true as const, user_id: user.id, role: profile.role };
 }
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } },
-): Promise<NextResponse> {
+export async function POST(request: NextRequest, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const ctx = await requireLegalOps(supabase);
     if (!ctx.ok) return ctx.response;
 
@@ -158,12 +156,10 @@ export async function POST(
   }
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } },
-): Promise<NextResponse> {
+export async function DELETE(request: NextRequest, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const ctx = await requireLegalOps(supabase);
     if (!ctx.ok) return ctx.response;
 

@@ -26,7 +26,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 interface RouteContext {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 function safeMul(perServing: number | null, servingsConsumed: number): number {
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest, ctx: RouteContext): Promise<NextRes
     return NextResponse.json({ error: 'Recipe library is temporarily unavailable.' }, { status: 503 });
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -59,7 +59,7 @@ export async function POST(req: NextRequest, ctx: RouteContext): Promise<NextRes
   const { data: recipe } = await admin
     .from('recipes')
     .select('id, user_id, name, servings, total_calories, total_protein_g, total_carbs_g, total_fat_g, total_sat_fat_g, total_fiber_g, total_sugar_g, total_sodium_mg, log_count')
-    .eq('id', ctx.params.id)
+    .eq('id', (await ctx.params).id)
     .maybeSingle();
 
   if (!recipe || recipe.user_id !== user.id) {

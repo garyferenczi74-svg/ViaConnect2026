@@ -10,7 +10,7 @@
  * update will match zero rows (and return no data) if the row does not belong
  * to the requesting user, returning a 500 to the client.
  *
- * CRITICAL: uses createClient() (session client), NOT createAdminClient().
+ * CRITICAL: uses await createClient() (session client), NOT createAdminClient().
  * The RLS policies and the user_hash column default require auth.uid() to be
  * populated, which only the session client provides.
  */
@@ -40,11 +40,9 @@ const PatchBeverageSchema = z
 
 // ---- PATCH ----------------------------------------------------------------
 
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: { id: string } },
-): Promise<NextResponse> {
-  const supabase = createClient();
+export async function PATCH(req: NextRequest, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
+  const params = await props.params;
+  const supabase = await createClient();
 
   let user: { id: string } | null = null;
   try {

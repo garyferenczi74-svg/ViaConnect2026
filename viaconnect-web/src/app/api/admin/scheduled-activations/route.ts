@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'scheduled_for must be a future ISO timestamp' }, { status: 400 });
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
 
   let data, error;
   try {

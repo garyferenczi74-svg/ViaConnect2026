@@ -46,7 +46,8 @@ function authorize(req: NextRequest): boolean {
   }
 }
 
-export async function POST(req: NextRequest, { params }: { params: { connectionId: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ connectionId: string }> }) {
+  const params = await props.params;
   try {
     if (!authorize(req)) {
       return NextResponse.json({ error: 'poll_auth_required' }, { status: 401 });

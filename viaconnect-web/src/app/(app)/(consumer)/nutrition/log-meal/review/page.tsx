@@ -8,14 +8,15 @@ import { BackToNutritionLink } from '@/components/nutrition/hub/BackToNutritionL
 import type { NutritionAnalysis } from '@/lib/nutrition/schema';
 
 interface ReviewPageProps {
-  searchParams: { logId?: string };
+  searchParams: Promise<{ logId?: string }>;
 }
 
-export default async function ReviewPage({ searchParams }: ReviewPageProps) {
+export default async function ReviewPage(props: ReviewPageProps) {
+  const searchParams = await props.searchParams;
   const { logId } = searchParams;
   if (!logId) redirect('/nutrition/log-meal');
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 

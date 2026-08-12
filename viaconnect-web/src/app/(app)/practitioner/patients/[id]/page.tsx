@@ -24,8 +24,8 @@ export const dynamic = 'force-dynamic';
 const NATUROPATH_LIKE = new Set(['nd', 'dc', 'lac']);
 
 interface PageProps {
-  params: { id: string };
-  searchParams: { view?: string };
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ view?: string }>;
 }
 
 interface PractitionerSlim {
@@ -44,11 +44,10 @@ interface RelationshipSlim {
   patient_view_mode_override: 'standard' | 'naturopathic' | null;
 }
 
-export default async function PractitionerPatientDetailPage({
-  params,
-  searchParams,
-}: PageProps) {
-  const supabase = createClient();
+export default async function PractitionerPatientDetailPage(props: PageProps) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

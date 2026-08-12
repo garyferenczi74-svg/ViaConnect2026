@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const breakdown = await withTimeout(
       calculateFamilyPricing(supabase, {
         totalAdults: adults,

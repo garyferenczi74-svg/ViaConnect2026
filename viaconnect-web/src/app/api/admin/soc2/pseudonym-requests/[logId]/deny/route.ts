@@ -20,7 +20,8 @@ interface Body {
   reason?: string;
 }
 
-export async function POST(req: NextRequest, { params }: { params: { logId: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ logId: string }> }) {
+  const params = await props.params;
   const logId = Number.parseInt(params.logId, 10);
   try {
     if (!Number.isFinite(logId)) {

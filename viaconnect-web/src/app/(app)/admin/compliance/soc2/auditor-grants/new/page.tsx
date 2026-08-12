@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function NewGrantPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const { data } = await supabase
     .from('soc2_packets')
     .select('id, packet_uuid, period_start, period_end')

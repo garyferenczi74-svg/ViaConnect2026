@@ -13,7 +13,7 @@
  *        caq_compute_user_hash(auth.uid()) resolves it via the session client),
  *        and returns the created row as { beverage }.
  *
- * CRITICAL: uses createClient() (session client) for ALL reads and writes so
+ * CRITICAL: uses await createClient() (session client) for ALL reads and writes so
  * that auth.uid() is set, RLS WITH CHECK resolves, and the user_hash column
  * default fills correctly. createAdminClient() must NOT be used here.
  *
@@ -45,7 +45,7 @@ const CreateBeverageSchema = z.object({
 // ---- GET ------------------------------------------------------------------
 
 export async function GET(): Promise<NextResponse> {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   let user: { id: string } | null = null;
   try {
@@ -86,7 +86,7 @@ export async function GET(): Promise<NextResponse> {
 // ---- POST -----------------------------------------------------------------
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   let user: { id: string } | null = null;
   try {

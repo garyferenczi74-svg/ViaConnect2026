@@ -30,14 +30,12 @@ export const dynamic = 'force-dynamic';
 
 export const runtime = 'nodejs';
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { designId: string } },
-): Promise<NextResponse> {
+export async function POST(request: NextRequest, props: { params: Promise<{ designId: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
 
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     let user;
     try {

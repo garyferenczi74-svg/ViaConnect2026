@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
   const referrerCategory = categorizeReferrer(body.referrer ?? request.headers.get('referer'));
 
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const result = await withTimeout(
       recordImpression(supabase, {
         visitorId: body.visitor_id,

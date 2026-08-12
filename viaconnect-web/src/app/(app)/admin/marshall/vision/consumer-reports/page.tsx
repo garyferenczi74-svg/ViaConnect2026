@@ -17,7 +17,7 @@ interface ReportRow {
 
 export default async function ConsumerReportsPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const { data } = await supabase
     .from('consumer_counterfeit_reports')
     .select('id, report_id, purchase_location, status, phi_redaction_applied, submitted_at, image_storage_keys, concern_description')

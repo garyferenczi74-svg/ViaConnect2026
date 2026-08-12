@@ -24,7 +24,7 @@ const SOURCE_LABEL: Record<string, string> = {
 };
 
 export default async function Page() {
-  const sb = createClient();
+  const sb = await createClient();
   const { data } = await sb
     .from("regulatory_alerts")
     .select("id, source, url, title, effective_date, kelsey_severity, resolved_at, created_at")

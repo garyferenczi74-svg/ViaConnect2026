@@ -65,7 +65,7 @@ export async function POST(request: Request) {
   }
 
   // Check cache first
-  const supabase = createClient();
+  const supabase = await createClient();
   const normalized = query.toLowerCase().trim();
   const { data: cached } = await supabase
     .from("product_lookup_cache")

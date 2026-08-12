@@ -28,10 +28,8 @@ const ALLOWED_FIELDS = new Set([
   'is_available_for_custom_formulation', 'inclusion_justification', 'excluded_reason',
 ]);
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function POST(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const auth = await requireCustomFormulationsAdmin();
     if (auth.kind === 'error') return auth.response;
@@ -52,7 +50,7 @@ export async function POST(
     patch.last_reviewed_at = new Date().toISOString();
     patch.last_reviewed_by = auth.userId;
 
-    const supabase = createClient();
+    const supabase = await createClient();
     const updateRes = await withTimeout(
       (async () => supabase
         .from('ingredient_library')

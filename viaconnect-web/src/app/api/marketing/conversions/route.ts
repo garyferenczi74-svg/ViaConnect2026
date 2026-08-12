@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const result = await withTimeout(
       recordConversion(supabase, {
         visitorId: body.visitor_id,

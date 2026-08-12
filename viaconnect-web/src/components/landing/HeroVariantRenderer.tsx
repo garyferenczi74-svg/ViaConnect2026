@@ -36,7 +36,7 @@ interface SelectedVariant {
 }
 
 export async function HeroVariantRenderer() {
-  const visitorId = cookies().get(VISITOR_COOKIE_NAME)?.value ?? null;
+  const visitorId = (await cookies()).get(VISITOR_COOKIE_NAME)?.value ?? null;
   const selected = visitorId ? await selectVariantForVisitor(visitorId) : null;
 
   if (!selected || selected.slot_id === CONTROL_SLOT_ID) {
@@ -63,7 +63,7 @@ export async function HeroVariantRenderer() {
 
 async function selectVariantForVisitor(visitorId: string): Promise<SelectedVariant | null> {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // Find the most recent running test round for the hero surface.
     // Running = ended_at IS NULL AND paused_at IS NULL (per spec section 6.6).

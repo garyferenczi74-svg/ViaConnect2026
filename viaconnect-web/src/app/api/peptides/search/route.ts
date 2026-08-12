@@ -14,7 +14,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ results: [] });
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
 
   try {
     const { data, error } = await withTimeout(

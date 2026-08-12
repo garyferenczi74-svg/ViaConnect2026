@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
         ? [body.ingredient_a_id, body.ingredient_b_id]
         : [body.ingredient_b_id, body.ingredient_a_id];
 
-    const supabase = createClient();
+    const supabase = await createClient();
     const insertRes = await withTimeout(
       (async () => supabase
         .from('ingredient_library_interactions')

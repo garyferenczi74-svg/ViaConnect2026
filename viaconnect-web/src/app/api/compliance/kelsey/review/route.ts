@@ -19,7 +19,7 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   try {
-    const sb = createClient();
+    const sb = await createClient();
     const { data: { user } } = await withTimeout(sb.auth.getUser(), 5000, 'api.compliance.kelsey.auth');
     if (!user) return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
 

@@ -54,12 +54,10 @@ interface ActionRow {
   legal_investigation_cases: { case_label: string; bucket: string } | null;
 }
 
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: { actionId: string } },
-): Promise<NextResponse> {
+export async function GET(_request: NextRequest, props: { params: Promise<{ actionId: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const ctx = await requireLegalOps(supabase);
     if (!ctx.ok) return ctx.response;
 
@@ -82,12 +80,10 @@ export async function GET(
   }
 }
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { actionId: string } },
-): Promise<NextResponse> {
+export async function PATCH(request: NextRequest, props: { params: Promise<{ actionId: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const ctx = await requireLegalOps(supabase);
     if (!ctx.ok) return ctx.response;
 

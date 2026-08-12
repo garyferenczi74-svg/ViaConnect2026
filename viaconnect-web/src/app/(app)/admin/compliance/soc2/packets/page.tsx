@@ -22,7 +22,7 @@ interface PacketRow {
 
 export default async function PacketsListPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const { data, error } = await supabase
     .from('soc2_packets')
     .select('id, packet_uuid, period_start, period_end, attestation_type, status, generated_at, root_hash, size_bytes, tsc_in_scope, signing_key_id, legal_hold, retention_until')

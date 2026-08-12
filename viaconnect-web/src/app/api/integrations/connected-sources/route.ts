@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 const SCOPE = "api.integrations.connected-sources";
 
 async function authUserId(): Promise<string | null> {
-  const supabase = createClient();
+  const supabase = await createClient();
   try {
     const { data } = await withTimeout(supabase.auth.getUser(), 5000, `${SCOPE}.auth`);
     return data.user?.id ?? null;

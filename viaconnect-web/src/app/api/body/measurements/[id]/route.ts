@@ -10,9 +10,10 @@ import { softDeleteMeasurement, type AccessClient } from '@/lib/body-measurement
 
 export const dynamic = 'force-dynamic';
 
-export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_req: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
-    const sb = createClient();
+    const sb = await createClient();
     const {
       data: { user },
     } = await withTimeout(sb.auth.getUser(), 5000, 'api.body.measurements.delete.auth');

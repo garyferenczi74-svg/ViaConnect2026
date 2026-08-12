@@ -14,10 +14,8 @@ import { safeLog } from '@/lib/utils/safe-log';
 
 export const dynamic = 'force-dynamic';
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function POST(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const auth = await requireMarketingAdmin();
     if (auth.kind === 'error') return auth.response;
@@ -27,7 +25,7 @@ export async function POST(
       return NextResponse.json({ error: 'archived boolean required' }, { status: 400 });
     }
 
-    const supabase = createClient();
+    const supabase = await createClient();
     const now = new Date().toISOString();
     const { error } = await withTimeout(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

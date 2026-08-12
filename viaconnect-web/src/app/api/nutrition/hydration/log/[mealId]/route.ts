@@ -40,7 +40,7 @@ const FOOD_NAME_BY_KIND: Record<string, string> = {
 };
 
 interface RouteContext {
-  params: { mealId: string };
+  params: Promise<{ mealId: string }>;
 }
 
 async function loadOwnedMeal(adminClient: ReturnType<typeof createAdminClient>, mealId: string, userId: string) {
@@ -56,7 +56,7 @@ async function loadOwnedMeal(adminClient: ReturnType<typeof createAdminClient>, 
 export async function PUT(req: NextRequest, ctx: RouteContext): Promise<NextResponse> {
   // Prompt 177m (2026-06-09): 170o launch gate removed (see quick-log).
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -78,7 +78,7 @@ export async function PUT(req: NextRequest, ctx: RouteContext): Promise<NextResp
   }
 
   const admin = createAdminClient();
-  const meal = await loadOwnedMeal(admin, ctx.params.mealId, user.id);
+  const meal = await loadOwnedMeal(admin, (await ctx.params).mealId, user.id);
   if (!meal) {
     return NextResponse.json({ error: 'Hydration log not found' }, { status: 404 });
   }
@@ -93,7 +93,7 @@ export async function PUT(req: NextRequest, ctx: RouteContext): Promise<NextResp
   const { data: itemRow } = await admin
     .from('meal_items')
     .select('id, hydration_source_kind, portion_volume_ml, food_name')
-    .eq('meal_id', ctx.params.mealId)
+    .eq('meal_id', (await ctx.params).mealId)
     .not('hydration_source_kind', 'is', null)
     .limit(1)
     .maybeSingle();
@@ -134,7 +134,7 @@ export async function PUT(req: NextRequest, ctx: RouteContext): Promise<NextResp
     .eq('id', itemRow.id);
 
   if (itemErr) {
-    safeLog.error('api.hydration.log.put', 'meal_item update failed', { error: itemErr, userId: user.id, mealId: ctx.params.mealId });
+    safeLog.error('api.hydration.log.put', 'meal_item update failed', { error: itemErr, userId: user.id, mealId: (await ctx.params).mealId });
     return NextResponse.json({ error: 'Could not update hydration log' }, { status: 500 });
   }
 
@@ -142,7 +142,7 @@ export async function PUT(req: NextRequest, ctx: RouteContext): Promise<NextResp
     await admin
       .from('meals')
       .update({ meal_name: foodName })
-      .eq('meal_id', ctx.params.mealId);
+      .eq('meal_id', (await ctx.params).mealId);
   }
 
   try {
@@ -152,7 +152,7 @@ export async function PUT(req: NextRequest, ctx: RouteContext): Promise<NextResp
   }
 
   return NextResponse.json({
-    meal_id: ctx.params.mealId,
+    meal_id: (await ctx.params).mealId,
     hydration_ml: newHydrationMl,
     portion_volume_ml: newVolume,
     beverage_kind: newKind,
@@ -162,14 +162,14 @@ export async function PUT(req: NextRequest, ctx: RouteContext): Promise<NextResp
 export async function DELETE(_req: NextRequest, ctx: RouteContext): Promise<NextResponse> {
   // Prompt 177m (2026-06-09): 170o launch gate removed (see quick-log).
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const admin = createAdminClient();
-  const meal = await loadOwnedMeal(admin, ctx.params.mealId, user.id);
+  const meal = await loadOwnedMeal(admin, (await ctx.params).mealId, user.id);
   if (!meal) {
     return NextResponse.json({ error: 'Hydration log not found' }, { status: 404 });
   }
@@ -178,19 +178,19 @@ export async function DELETE(_req: NextRequest, ctx: RouteContext): Promise<Next
     const { error: mealErr } = await admin
       .from('meals')
       .delete()
-      .eq('meal_id', ctx.params.mealId);
+      .eq('meal_id', (await ctx.params).mealId);
     if (mealErr) {
-      safeLog.error('api.hydration.log.delete', 'meal delete failed', { error: mealErr, userId: user.id, mealId: ctx.params.mealId });
+      safeLog.error('api.hydration.log.delete', 'meal delete failed', { error: mealErr, userId: user.id, mealId: (await ctx.params).mealId });
       return NextResponse.json({ error: 'Could not delete hydration log' }, { status: 500 });
     }
   } else {
     const { error: itemErr } = await admin
       .from('meal_items')
       .delete()
-      .eq('meal_id', ctx.params.mealId)
+      .eq('meal_id', (await ctx.params).mealId)
       .not('hydration_source_kind', 'is', null);
     if (itemErr) {
-      safeLog.error('api.hydration.log.delete', 'item delete failed', { error: itemErr, userId: user.id, mealId: ctx.params.mealId });
+      safeLog.error('api.hydration.log.delete', 'item delete failed', { error: itemErr, userId: user.id, mealId: (await ctx.params).mealId });
       return NextResponse.json({ error: 'Could not delete hydration entry' }, { status: 500 });
     }
   }
@@ -201,5 +201,5 @@ export async function DELETE(_req: NextRequest, ctx: RouteContext): Promise<Next
     safeLog.warn('api.hydration.log.delete', 'bos recompute failed', { error: bosErr });
   }
 
-  return NextResponse.json({ deleted: true, meal_id: ctx.params.mealId });
+  return NextResponse.json({ deleted: true, meal_id: (await ctx.params).mealId });
 }

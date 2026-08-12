@@ -18,7 +18,8 @@ export const dynamic = 'force-dynamic';
 
 export const runtime = 'nodejs';
 
-export async function GET(req: NextRequest, { params }: { params: { platform: string } }) {
+export async function GET(req: NextRequest, props: { params: Promise<{ platform: string }> }) {
+  const params = await props.params;
   try {
     const platform = (params.platform ?? '').trim();
     if (!SCHEDULER_PLATFORMS.includes(platform as SchedulerPlatform)) {

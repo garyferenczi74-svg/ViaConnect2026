@@ -7,7 +7,7 @@ interface RegistryRow { event_code: string; display_name: string; default_priori
 interface PrefRow { event_code: string; sms_enabled: boolean; slack_enabled: boolean; push_enabled: boolean; email_enabled: boolean; in_app_enabled: boolean; priority_override: string | null }
 
 export default async function Page() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 

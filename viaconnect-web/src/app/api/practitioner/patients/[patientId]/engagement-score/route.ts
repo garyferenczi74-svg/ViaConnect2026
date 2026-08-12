@@ -13,14 +13,12 @@ import { safeLog } from '@/lib/utils/safe-log';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(
-  request: Request,
-  { params }: { params: { patientId: string } },
-) {
+export async function GET(request: Request, props: { params: Promise<{ patientId: string }> }) {
+  const params = await props.params;
   const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
 
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     let user;
     try {

@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 
 async function getCounts() {
-  const sb = createClient();
+  const sb = await createClient();
   // Type escape hatch: Supabase's `from<T>()` returns a
   // PostgrestQueryBuilder<Row-for-T> that narrows per table, so a single
   // variable typed against one table can't hold a builder for another.

@@ -43,7 +43,9 @@ interface PoseModule {
 let poseModulePromise: Promise<PoseModule> | null = null;
 function loadPoseModule(): Promise<PoseModule> {
   if (!poseModulePromise) {
-    poseModulePromise = import('@mediapipe/pose') as unknown as Promise<PoseModule>;
+    poseModulePromise = import(
+      /* turbopackIgnore: true */ "@mediapipe/pose"
+    ) as unknown as Promise<PoseModule>;
   }
   return poseModulePromise;
 }

@@ -66,7 +66,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     const { data: row } = await withTimeout(
       (async () => (supabase as any)

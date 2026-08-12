@@ -34,7 +34,7 @@ const FIELDS: QuickFieldSpec[] = [
 
 export default async function InternalAuditsPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const { data } = await supabase
     .from('iso_internal_audits')
     .select('id, audit_ref, audit_date, scope, auditor, auditor_is_independent, major_findings_count, minor_findings_count, observations_count, summary, storage_key')

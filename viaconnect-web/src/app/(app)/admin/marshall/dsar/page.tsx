@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 export default async function DsarPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const { data } = await supabase
     .from("dsar_requests")
     .select("id, email, request_type, jurisdiction, opened_at, sla_due_at, completed_at, status")

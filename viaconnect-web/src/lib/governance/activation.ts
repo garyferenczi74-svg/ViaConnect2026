@@ -33,7 +33,7 @@ export async function activateProposal(
   proposalId: string,
   activatedBy: string,
 ): Promise<ActivateResult> {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: proposalData } = await supabase
     .from('pricing_proposals')

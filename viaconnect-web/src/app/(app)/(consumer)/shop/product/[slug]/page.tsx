@@ -22,10 +22,11 @@ import { getProductBySlug } from '@/lib/shop/queries'
 import { getCurrentShopSession, isConsumerSession } from '@/lib/shop/role'
 
 interface PageProps {
-    params: { slug: string }
+    params: Promise<{ slug: string }>
 }
 
-export async function generateMetadata({ params }: PageProps) {
+export async function generateMetadata(props: PageProps) {
+    const params = await props.params;
     const product = await getProductBySlug(params.slug)
     if (!product) {
         return { title: 'Product not found | Via Cura' }
@@ -36,7 +37,8 @@ export async function generateMetadata({ params }: PageProps) {
     }
 }
 
-export default async function ProductDetailPage({ params }: PageProps) {
+export default async function ProductDetailPage(props: PageProps) {
+    const params = await props.params;
     const [product, session] = await Promise.all([
         getProductBySlug(params.slug),
         getCurrentShopSession(),

@@ -49,7 +49,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   // against the auth server (detects a revoked/logged-out session that the
   // getClaims middleware would not catch until token expiry), and gives this
   // AI-cost endpoint a real user to enforce the per-user rate limit (Sec 18.2).
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });

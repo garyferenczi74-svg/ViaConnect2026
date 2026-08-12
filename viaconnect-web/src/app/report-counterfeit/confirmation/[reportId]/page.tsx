@@ -6,10 +6,11 @@ import { CheckCircle2, Clock } from 'lucide-react';
 export const dynamic = 'force-dynamic';
 
 interface Props {
-  params: { reportId: string };
+  params: Promise<{ reportId: string }>;
 }
 
-export default function ReportConfirmationPage({ params }: Props) {
+export default async function ReportConfirmationPage(props: Props) {
+  const params = await props.params;
   return (
     <div className="min-h-screen bg-[#0B1120] text-white">
       <div className="max-w-2xl mx-auto px-4 md:px-6 py-12 md:py-20 space-y-6">

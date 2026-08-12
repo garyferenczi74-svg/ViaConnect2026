@@ -17,7 +17,7 @@ function money(cents: number, currency: string) {
 }
 
 export default async function Page() {
-  const sb = createClient();
+  const sb = await createClient();
   const { data } = await sb.from("international_settlement_daily_reports").select("*").order("report_date", { ascending: false }).limit(30);
   const reports = (data ?? []) as unknown as Report[];
   return (

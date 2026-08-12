@@ -20,10 +20,8 @@ export const dynamic = 'force-dynamic';
 
 const ALLOWED_STATUSES = new Set(['active', 'paused', 'completed', 'canceled', 'scheduled', 'planned']);
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { phaseId: string } },
-) {
+export async function POST(request: NextRequest, props: { params: Promise<{ phaseId: string }> }) {
+  const params = await props.params;
   try {
     const auth = await requireAdmin();
     if (auth.kind === 'error') return auth.response;
@@ -42,7 +40,7 @@ export async function POST(
       );
     }
 
-    const supabase = createClient();
+    const supabase = await createClient();
 
     const updates: Record<string, unknown> = {
       activation_status: body.status,

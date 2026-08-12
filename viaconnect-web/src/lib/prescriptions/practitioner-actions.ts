@@ -110,7 +110,7 @@ export async function serverIssuePrescription(
         return { ok: false, error: 'Expiration must be a valid future date.' }
     }
     try {
-        const supabase = createClient()
+        const supabase = await createClient()
         const sb = supabase as unknown as {
             rpc: (
                 fn: string,
@@ -163,7 +163,7 @@ export async function serverRevokePrescription(
         return { ok: false, error: 'Revocation reason is required.' }
     }
     try {
-        const supabase = createClient()
+        const supabase = await createClient()
         const sb = supabase as unknown as {
             rpc: (
                 fn: string,
@@ -198,7 +198,7 @@ export async function serverListMyIssuedPrescriptions(
     filters: ListIssuedFilters = {},
 ): Promise<ListIssuedResult> {
     try {
-        const supabase = createClient()
+        const supabase = await createClient()
         const sb = supabase as unknown as {
             from: (t: string) => any
         }
@@ -277,7 +277,7 @@ export async function serverGetIssuedPrescriptionClinicalNotes(
         return { ok: false, error: 'Token id is required.' }
     }
     try {
-        const supabase = createClient()
+        const supabase = await createClient()
         const sb = supabase as unknown as {
             rpc: (
                 fn: string,

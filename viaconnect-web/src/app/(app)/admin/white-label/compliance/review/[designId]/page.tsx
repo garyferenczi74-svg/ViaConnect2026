@@ -6,7 +6,7 @@
 // Right pane: automated checklist results + decision controls
 // (approve / request revision / reject) per reviewer role.
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, use } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -48,7 +48,8 @@ interface AutomatedReview {
   decision_notes: string | null;
 }
 
-export default function ComplianceReviewPage({ params }: { params: { designId: string } }) {
+export default function ComplianceReviewPage(props: { params: Promise<{ designId: string }> }) {
+  const params = use(props.params);
   const searchParams = useSearchParams();
   const role = (searchParams.get('role') === 'medical_director' ? 'medical_director' : 'compliance_officer') as
     'compliance_officer' | 'medical_director';

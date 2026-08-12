@@ -7,7 +7,7 @@ import Link from "next/link";
 import { Globe, DollarSign, MapPin, FileText, TrendingUp, Receipt, RefreshCw, ScrollText } from "lucide-react";
 
 export default async function InternationalAdminLayout({ children }: { children: React.ReactNode }) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();

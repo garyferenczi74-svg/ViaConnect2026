@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     const surface = url.searchParams.get('surface');
     const includeArchived = url.searchParams.get('includeArchived') === 'true';
 
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data, error } = await withTimeout(
       (async () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid framing' }, { status: 400 });
     }
 
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data, error } = await withTimeout(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (async () => (supabase as any)

@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Missing feature query parameter' }, { status: 400 });
     }
 
-    const supabase = createClient();
+    const supabase = await createClient();
     let userData;
     try {
       userData = (await withTimeout(

@@ -9,7 +9,7 @@ export default async function RuleDetailPage({ params }: { params: Promise<{ rul
   const { ruleId } = await params;
   const decoded = decodeURIComponent(ruleId);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const { data } = await supabase.from("compliance_rules").select("*").eq("id", decoded).maybeSingle();
   if (!data) notFound();
   const r = data as { id: string; pillar: string; severity: string; surfaces: string[]; citation: string; description: string; enabled: boolean; threshold_config: Record<string, unknown> | null; last_reviewed: string };

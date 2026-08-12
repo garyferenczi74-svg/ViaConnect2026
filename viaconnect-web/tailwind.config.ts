@@ -11,6 +11,10 @@ const config: Config = {
     // arbitrary value classes are never generated, so the severity pills and row
     // badges render with no color. Scan src/lib so they are emitted.
     "./src/lib/**/*.{js,ts,jsx,tsx,mdx}",
+    // Turbopack/LightningCSS rejects template-literal class strings that tests
+    // construct (e.g. `border-[rgb(var(--severity-${tier}))]`). Keep tests out.
+    "!./src/**/__tests__/**",
+    "!./src/**/*.{test,spec}.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {

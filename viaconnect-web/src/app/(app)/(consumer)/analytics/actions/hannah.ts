@@ -30,7 +30,7 @@ const TTL_HOURS: Record<HannahInsightPayload["timeRange"], number> = {
 
 export async function persistHannahInsight(payload: HannahInsightPayload) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     const { data: { user } } = await withTimeout(
       supabase.auth.getUser(),
@@ -102,7 +102,7 @@ type JourneyRecPayload = {
 
 export async function seedJourneyRecommendations(recs: JourneyRecPayload[]) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     const { data: { user } } = await withTimeout(
       supabase.auth.getUser(),

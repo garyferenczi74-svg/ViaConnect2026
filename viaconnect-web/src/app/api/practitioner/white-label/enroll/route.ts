@@ -19,7 +19,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
 
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     let user;
     try {

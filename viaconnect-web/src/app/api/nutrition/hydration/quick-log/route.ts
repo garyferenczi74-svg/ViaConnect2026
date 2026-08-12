@@ -93,7 +93,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   // Hydration is GA and ships unconditionally; rollback now flows
   // through the same channels every other GA feature uses.
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

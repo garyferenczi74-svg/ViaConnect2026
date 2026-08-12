@@ -63,7 +63,7 @@ async function attachImageUrls(
 
 export async function GET() {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'Unauthorized', protocol: null }, { status: 401 });
 
@@ -95,7 +95,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const startTime = Date.now();
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 

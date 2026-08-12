@@ -23,13 +23,11 @@ const schema = z.object({
   to: z.enum(STORAGE_LOCATIONS),
 });
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { lotId: string } },
-): Promise<NextResponse> {
+export async function POST(request: NextRequest, props: { params: Promise<{ lotId: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     let user;
     try {

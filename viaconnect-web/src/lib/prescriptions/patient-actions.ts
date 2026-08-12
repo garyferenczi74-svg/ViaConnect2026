@@ -89,7 +89,7 @@ export async function serverListMyPrescriptions(
     filters: ListMyPrescriptionsFilters = {},
 ): Promise<ListMyPrescriptionsResult> {
     try {
-        const supabase = createClient()
+        const supabase = await createClient()
         const sb = supabase as unknown as {
             from: (t: string) => any
         }
@@ -180,7 +180,7 @@ export async function serverCheckRxEligibility(
         }
     }
     try {
-        const supabase = createClient()
+        const supabase = await createClient()
         const sb = supabase as unknown as {
             rpc: (
                 fn: string,

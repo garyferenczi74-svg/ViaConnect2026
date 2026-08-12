@@ -16,7 +16,7 @@ export const dynamic = 'force-dynamic';
 const slackBreaker = getCircuitBreaker("slack-oauth");
 
 export async function GET(request: Request) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   let user;
   try {

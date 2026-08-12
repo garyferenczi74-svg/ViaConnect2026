@@ -18,7 +18,7 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(): Promise<NextResponse> {
   // Prompt 177m (2026-06-09): 170o launch gate removed (see quick-log).
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -40,7 +40,7 @@ export async function GET(): Promise<NextResponse> {
 
 export async function PUT(req: NextRequest): Promise<NextResponse> {
   // Prompt 177m (2026-06-09): 170o launch gate removed (see quick-log).
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

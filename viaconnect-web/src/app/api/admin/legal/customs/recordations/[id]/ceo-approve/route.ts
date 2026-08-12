@@ -47,12 +47,10 @@ async function requireAuthed(supabase: ReturnType<typeof createClient>) {
   };
 }
 
-export async function POST(
-  _request: NextRequest,
-  { params }: { params: { id: string } },
-): Promise<NextResponse> {
+export async function POST(_request: NextRequest, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const ctx = await requireAuthed(supabase);
     if (!ctx.ok) return ctx.response;
 

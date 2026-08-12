@@ -1,16 +1,27 @@
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Ensure build succeeds on Vercel even if env-specific type/lint
-  // differences arise between local and CI environments
+  // Ensure build succeeds on Vercel even if env-specific type differences arise
   typescript: {
     ignoreBuildErrors: true,
   },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  swcMinify: true,
   poweredByHeader: false,
-  // Build-time wins: barrel-package optimization + parallel webpack + lean traces
+  // Pin Turbopack root to this package (monorepo has a parent lockfile)
+  turbopack: {
+    root: __dirname,
+    resolveAlias: {
+      // MediaPipe ships non-ESM builds; body-segmentation still static-imports them.
+      // Relative aliases only (absolute Windows paths are not supported by Turbopack).
+      "@mediapipe/selfie_segmentation":
+        "./src/shims/mediapipe-selfie-segmentation.ts",
+      "@mediapipe/pose": "./src/shims/mediapipe-pose.ts",
+    },
+  },
+  // Barrel-package optimization
   experimental: {
     optimizePackageImports: [
       "lucide-react",
@@ -26,36 +37,36 @@ const nextConfig = {
       "@radix-ui/react-tabs",
       "@radix-ui/react-tooltip",
     ],
-    webpackBuildWorker: true,
-    serverComponentsExternalPackages: [
-      "exceljs",
-      "@google-cloud/vision",
-      "sharp",
-      "tesseract.js",
-      "pdf-lib",
-      "pptxgenjs",
-      "unpdf",
-      "@tensorflow/tfjs",
-      "@tensorflow-models/body-segmentation",
-      "@mediapipe/pose",
-      "@mediapipe/selfie_segmentation",
+    turbopackFileSystemCacheForBuild: true,
+  },
+  serverExternalPackages: [
+    "exceljs",
+    "@google-cloud/vision",
+    "sharp",
+    "tesseract.js",
+    "pdf-lib",
+    "pptxgenjs",
+    "unpdf",
+    "@tensorflow/tfjs",
+    "@tensorflow-models/body-segmentation",
+    "@mediapipe/pose",
+    "@mediapipe/selfie_segmentation",
+  ],
+  outputFileTracingExcludes: {
+    "*": [
+      "node_modules/@swc/core-linux-x64-gnu",
+      "node_modules/@swc/core-linux-x64-musl",
+      "node_modules/@esbuild/**/*",
+      "node_modules/webpack/**/*",
+      "node_modules/typescript/**/*",
+      "node_modules/playwright/**/*",
+      "node_modules/@playwright/**/*",
+      "node_modules/vitest/**/*",
+      "node_modules/@capacitor/**/*",
+      "node_modules/@capacitor-community/**/*",
+      "node_modules/@perfood/capacitor-healthkit/**/*",
+      "node_modules/capacitor-health-connect/**/*",
     ],
-    outputFileTracingExcludes: {
-      "*": [
-        "node_modules/@swc/core-linux-x64-gnu",
-        "node_modules/@swc/core-linux-x64-musl",
-        "node_modules/@esbuild/**/*",
-        "node_modules/webpack/**/*",
-        "node_modules/typescript/**/*",
-        "node_modules/playwright/**/*",
-        "node_modules/@playwright/**/*",
-        "node_modules/vitest/**/*",
-        "node_modules/@capacitor/**/*",
-        "node_modules/@capacitor-community/**/*",
-        "node_modules/@perfood/capacitor-healthkit/**/*",
-        "node_modules/capacitor-health-connect/**/*",
-      ],
-    },
   },
   images: {
     remotePatterns: [
@@ -73,16 +84,11 @@ const nextConfig = {
       { source: "/genomics", destination: "/#genomics", permanent: true },
       { source: "/process", destination: "/#process", permanent: true },
       { source: "/about", destination: "/#about", permanent: true },
-      // Prompt #175a: Photos tab removed from the Body Tracker nav (FormaVision
-      // supersedes it). The route and its files are kept on disk; temporary
-      // redirect sends stale links to the Body Composition default.
       {
         source: "/body-tracker/photos",
         destination: "/body-tracker/composition",
         permanent: false,
       },
-      // Prompt 204: canonical legal route redirects for external and app-store
-      // references.
       { source: "/privacy-policy", destination: "/privacy", permanent: true },
       { source: "/terms-of-service", destination: "/terms", permanent: true },
       { source: "/tos", destination: "/terms", permanent: true },

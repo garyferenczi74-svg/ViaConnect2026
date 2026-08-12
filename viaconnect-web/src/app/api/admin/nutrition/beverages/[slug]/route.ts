@@ -65,10 +65,8 @@ type BeverageCatalogPatch = z.infer<typeof BeverageCatalogPatchSchema>;
 // PATCH handler
 // ---------------------------------------------------------------------------
 
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: { slug: string } },
-): Promise<NextResponse> {
+export async function PATCH(req: NextRequest, props: { params: Promise<{ slug: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   const auth = await requireAdmin();
   if (auth.kind === 'error') return auth.response;
 

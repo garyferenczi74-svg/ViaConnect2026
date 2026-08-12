@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'timeline must be standard or expedited' }, { status: 400 });
     }
 
-    const supabase = createClient();
+    const supabase = await createClient();
 
     const formulationIds = body.items.map((i) => i.custom_formulation_id);
     const formulationsRes = await withTimeout(

@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
   const creds = getWhoopCreds()!;
 
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     let userId: string | null = null;
     try {
       const { data } = await withTimeout(supabase.auth.getUser(), 5000, `${SCOPE}.auth`);

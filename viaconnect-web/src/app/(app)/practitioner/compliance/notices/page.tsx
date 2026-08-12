@@ -14,7 +14,7 @@ const SEV_STYLE: Record<string, string> = {
 
 export default async function NoticesListPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const { data } = await supabase
     .from("practitioner_notices")
     .select("id, notice_id, severity, status, remediation_due_at, created_at")

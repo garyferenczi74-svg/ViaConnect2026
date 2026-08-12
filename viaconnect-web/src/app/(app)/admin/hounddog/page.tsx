@@ -7,7 +7,7 @@ import { HounddogCommandCenter } from '@/components/admin/hounddog/HounddogComma
 // if (!isAdmin && !isContentManager) redirect('/dashboard')
 
 export default async function HounddogPage() {
-  const supabase = createClient()
+  const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()

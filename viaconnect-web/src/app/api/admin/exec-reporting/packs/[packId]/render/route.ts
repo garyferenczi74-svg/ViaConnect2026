@@ -49,10 +49,8 @@ interface RenderBody {
   distributionId?: string;
 }
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { packId: string } },
-): Promise<NextResponse> {
+export async function POST(request: NextRequest, props: { params: Promise<{ packId: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   try {
     const auth = await requireExecReportingAdmin();
     if (auth.kind === 'error') return auth.response;

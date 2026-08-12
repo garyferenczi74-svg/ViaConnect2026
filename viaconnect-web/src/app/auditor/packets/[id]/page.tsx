@@ -34,7 +34,8 @@ interface FileRow {
   controls: string[];
 }
 
-export default async function AuditorPacketDetailPage({ params }: { params: { id: string } }) {
+export default async function AuditorPacketDetailPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const session = createServerClient();
   const { data: { user } } = await session.auth.getUser();
   if (!user || !user.email) {

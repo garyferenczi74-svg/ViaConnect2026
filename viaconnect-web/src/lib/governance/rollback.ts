@@ -89,7 +89,7 @@ export async function rollbackProposal(params: {
     return { ok: false, error: 'Rollback justification must be at least 50 characters' };
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: proposalData } = await supabase
     .from('pricing_proposals')

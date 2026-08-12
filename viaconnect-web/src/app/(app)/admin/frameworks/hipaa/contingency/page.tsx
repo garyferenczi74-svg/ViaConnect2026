@@ -31,7 +31,7 @@ const FIELDS: QuickFieldSpec[] = [
 
 export default async function ContingencyPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const { data } = await supabase
     .from('hipaa_contingency_plan_tests')
     .select('id, test_date, test_kind, scope, outcome_summary, recorded_at')

@@ -66,7 +66,7 @@ function handleOuterError(err: unknown, requestId: string): NextResponse {
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const ctx = await loadCtx(supabase);
     if (!ctx.ok) return ctx.response;
 
@@ -117,7 +117,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 export async function PATCH(request: NextRequest): Promise<NextResponse> {
   const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const ctx = await loadCtx(supabase);
     if (!ctx.ok) return ctx.response;
 

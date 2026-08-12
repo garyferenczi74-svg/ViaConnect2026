@@ -39,7 +39,7 @@ export interface ShopSession {
 
 export async function getCurrentShopSession(): Promise<ShopSession> {
     try {
-        const supabase = createClient()
+        const supabase = await createClient()
         const userResult = await withTimeout(
             supabase.auth.getUser(),
             2000,

@@ -23,7 +23,8 @@ interface OverrideBody {
   justification?: string;
 }
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const scanId = (params.id ?? '').trim();
     if (!scanId) return NextResponse.json({ error: 'missing_scan_id' }, { status: 400 });

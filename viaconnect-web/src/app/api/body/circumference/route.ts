@@ -55,7 +55,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     const measurements = rawMeasurements as ExtractedMeasurements;
 
     // Auth - fail closed
-    const supabase = createClient();
+    const supabase = await createClient();
     let user: { id: string } | null = null;
     try {
       const authResult = await withTimeout(supabase.auth.getUser(), TIMEOUT_MS, `${SCOPE}.auth`);

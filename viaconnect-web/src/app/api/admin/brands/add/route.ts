@@ -54,7 +54,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "tier required (1-5)" }, { status: 400 });
     }
 
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // auth: must be a signed-in user; admin gating happens in RLS or via
     // a separate role check the project may already enforce

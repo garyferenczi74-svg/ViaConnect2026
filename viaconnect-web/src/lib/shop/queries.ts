@@ -69,7 +69,7 @@ export interface ShopProduct {
 export async function getShopCategories(): Promise<ShopCategoryRow[]> {
     // Casting because categories table is added by migration 20260429000000;
     // generated Database types are stale until `supabase gen types` is rerun.
-    const sb = createClient() as unknown as {
+    const sb = await createClient() as unknown as {
         from: (table: string) => any
     }
     try {
@@ -102,7 +102,7 @@ export async function getShopCategories(): Promise<ShopCategoryRow[]> {
 }
 
 export async function getProductsByCategory(slug: string): Promise<ShopProduct[]> {
-    const sb = createClient() as unknown as {
+    const sb = await createClient() as unknown as {
         from: (table: string) => any
     }
     try {
@@ -136,7 +136,7 @@ export async function getProductsByCategory(slug: string): Promise<ShopProduct[]
 }
 
 export async function getProductBySlug(productSlug: string): Promise<ShopProduct | null> {
-    const sb = createClient() as unknown as {
+    const sb = await createClient() as unknown as {
         from: (table: string) => any
     }
     try {
@@ -172,7 +172,7 @@ export async function getProductBySlug(productSlug: string): Promise<ShopProduct
 export async function searchProducts(searchQuery: string): Promise<ShopProduct[]> {
     const trimmed = searchQuery.trim()
     if (!trimmed) return []
-    const sb = createClient() as unknown as {
+    const sb = await createClient() as unknown as {
         from: (table: string) => any
     }
     try {

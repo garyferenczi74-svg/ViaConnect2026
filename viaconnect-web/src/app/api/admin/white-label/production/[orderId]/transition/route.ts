@@ -42,12 +42,10 @@ const TIMESTAMP_FIELD: Partial<Record<string, string>> = {
   delivered: 'delivered_at',
 };
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { orderId: string } },
-): Promise<NextResponse> {
+export async function POST(request: NextRequest, props: { params: Promise<{ orderId: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.white-label.production-transition.auth');
     if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
 

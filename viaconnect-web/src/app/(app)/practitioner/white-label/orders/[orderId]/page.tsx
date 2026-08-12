@@ -9,7 +9,7 @@
 // passed to Stripe Elements (for now we link to the hosted page when
 // available; the inline Elements form is a follow-up).
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -55,7 +55,8 @@ interface Item {
 const fmtUsd = (c: number) => `$${(c / 100).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 const fmtDate = (iso: string | null) => iso ? new Date(iso).toLocaleString() : 'n/a';
 
-export default function OrderDetailPage({ params }: { params: { orderId: string } }) {
+export default function OrderDetailPage(props: { params: Promise<{ orderId: string }> }) {
+  const params = use(props.params);
   const router = useRouter();
   const [order, setOrder] = useState<Order | null>(null);
   const [items, setItems] = useState<Item[]>([]);

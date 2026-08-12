@@ -68,7 +68,7 @@ export async function updateGaugeScores(
     activity_score: number | null;
   }>,
 ): Promise<void> {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   try {
     const { data: existing } = await withTimeout(
@@ -143,7 +143,7 @@ export async function recalculateNutritionOnly(
   userId: string,
   date: string,
 ): Promise<number> {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   try {
     const { data: meals } = await withTimeout(
@@ -196,7 +196,7 @@ export async function recalculateCheckInOnly(
   userId: string,
   date: string,
 ): Promise<void> {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   try {
     const { data: checkinRaw } = await withTimeout(
@@ -240,7 +240,7 @@ export async function recalculateDailyScores(
   userId: string,
   date: string,
 ): Promise<DailyScoreResult> {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   try {
     const [checkinRes, mealsRes] = await withTimeout(

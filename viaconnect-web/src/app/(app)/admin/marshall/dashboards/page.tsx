@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export default async function DashboardsPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const since30 = new Date(Date.now() - 30 * 86_400_000).toISOString();
 
   const [bySeverity, escapes, staleRules, ruleBreakdown] = await Promise.all([

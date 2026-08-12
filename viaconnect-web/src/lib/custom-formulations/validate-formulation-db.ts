@@ -18,7 +18,7 @@ import {
 } from './validation-engine';
 
 export async function validateFormulation(formulationId: string): Promise<ValidationResult> {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: formulationRow } = await supabase
     .from('custom_formulations')

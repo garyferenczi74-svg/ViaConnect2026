@@ -19,7 +19,7 @@ export async function estimateAffectedCustomers(
   pricingDomainId: string,
   targetObjectIds: string[],
 ): Promise<AffectedCustomersResult> {
-  const supabase = createClient() as unknown as PricingSupabaseClient;
+  const supabase = await createClient() as unknown as PricingSupabaseClient;
   const notes: string[] = [];
 
   // ---- Consumer subscription tiers --------------------------------------

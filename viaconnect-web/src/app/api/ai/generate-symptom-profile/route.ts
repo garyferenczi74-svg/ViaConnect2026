@@ -15,7 +15,7 @@ RULES: Do NOT diagnose. Say "patterns suggest" or "worth investigating." Referen
 
 export async function POST() {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     let user;
     try {

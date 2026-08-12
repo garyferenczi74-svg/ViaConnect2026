@@ -48,10 +48,8 @@ function handleOuterError(err: unknown, requestId: string): NextResponse {
   return NextResponse.json({ error: 'An unexpected error occurred.' }, { status: 500 });
 }
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function POST(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
   try {
     const auth = await requirePractitioner();
@@ -79,7 +77,7 @@ export async function POST(
       );
     }
 
-    const supabase = createClient();
+    const supabase = await createClient();
     const guardRes = await assertDraftOwnership(supabase, params.id, auth.practitionerId);
     if (guardRes) return guardRes;
 
@@ -118,10 +116,8 @@ export async function POST(
   }
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function DELETE(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
   try {
     const auth = await requirePractitioner();
@@ -132,7 +128,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'ingredient_id query param required' }, { status: 400 });
     }
 
-    const supabase = createClient();
+    const supabase = await createClient();
     const guardRes = await assertDraftOwnership(supabase, params.id, auth.practitionerId);
     if (guardRes) return guardRes;
 

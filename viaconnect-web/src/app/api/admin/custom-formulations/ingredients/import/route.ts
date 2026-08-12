@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = createClient();
+    const supabase = await createClient();
     const rows = parsed.valid.map((r) => ({
       ...r,
       added_by: auth.userId,

@@ -28,10 +28,8 @@ const ALLOWED_FIELDS = new Set([
   'is_active',
 ]);
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { ruleId: string } },
-) {
+export async function POST(request: NextRequest, props: { params: Promise<{ ruleId: string }> }) {
+  const params = await props.params;
   try {
     const auth = await requireGovernanceAdmin();
     if (auth.kind === 'error') return auth.response;
@@ -55,7 +53,7 @@ export async function POST(
       return NextResponse.json({ error: 'No allowed fields in patch' }, { status: 400 });
     }
 
-    const supabase = createClient();
+    const supabase = await createClient();
 
     const prevRes = await withTimeout(
       (async () => supabase

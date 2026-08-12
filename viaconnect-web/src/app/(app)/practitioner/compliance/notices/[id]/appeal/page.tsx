@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, FileWarning, Loader2 } from "lucide-react";
@@ -12,7 +12,8 @@ const CLAIM_TYPES = [
   { value: "other", label: "Other reason" },
 ];
 
-export default function AppealPage({ params }: { params: { id: string } }) {
+export default function AppealPage(props: { params: Promise<{ id: string }> }) {
+  const params = use(props.params);
   const router = useRouter();
   const [claimType, setClaimType] = useState("dispute_interpretation");
   const [rebuttal, setRebuttal] = useState("");

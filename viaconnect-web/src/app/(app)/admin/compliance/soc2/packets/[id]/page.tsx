@@ -54,9 +54,10 @@ interface DistRow {
   error_message: string | null;
 }
 
-export default async function PacketDetailPage({ params }: { params: { id: string } }) {
+export default async function PacketDetailPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
 
   const { data: packet } = await supabase
     .from('soc2_packets')

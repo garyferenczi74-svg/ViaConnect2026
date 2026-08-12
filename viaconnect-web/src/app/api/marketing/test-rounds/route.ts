@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     const surface = url.searchParams.get('surface');
     const includeEnded = url.searchParams.get('includeEnded') === 'true';
 
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data, error } = await withTimeout(
       (async () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify every cited slot is currently active_in_test.
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: variants } = await withTimeout(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (async () => (supabase as any)

@@ -20,7 +20,8 @@ interface Body {
   notes?: string | null;
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { platform: string } }) {
+export async function PATCH(req: NextRequest, props: { params: Promise<{ platform: string }> }) {
+  const params = await props.params;
   try {
     if (!VALID_PLATFORMS.has(params.platform)) {
       return NextResponse.json({ error: 'invalid_platform' }, { status: 400 });

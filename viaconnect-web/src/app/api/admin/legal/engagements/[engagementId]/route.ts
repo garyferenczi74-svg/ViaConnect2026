@@ -46,12 +46,10 @@ interface EngagementRow {
   ceo_approved_at: string | null;
 }
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { engagementId: string } },
-): Promise<NextResponse> {
+export async function PATCH(request: NextRequest, props: { params: Promise<{ engagementId: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     // Require any of the read-eligible roles to even hit this endpoint;
     // each branch then checks the role required for the specific action.
     const ctx = await requireRole(supabase, READ_ROLES);

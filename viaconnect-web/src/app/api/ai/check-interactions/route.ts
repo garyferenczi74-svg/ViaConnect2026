@@ -232,7 +232,7 @@ export async function POST(request: Request) {
     let cypStatusMap: Record<string, string> = {};
     if (userId) {
       try {
-        const supabase = createClient();
+        const supabase = await createClient();
         const { data: gpRow } = await supabase
           .from("genetic_profiles")
           .select("cyp2d6_status, additional_genes")
@@ -272,7 +272,7 @@ export async function POST(request: Request) {
 
     // Save to database if userId provided
     if (userId) {
-      const supabase = createClient();
+      const supabase = await createClient();
       for (const i of interactions) {
         await supabase.from("medication_interactions").upsert({
           user_id: userId,

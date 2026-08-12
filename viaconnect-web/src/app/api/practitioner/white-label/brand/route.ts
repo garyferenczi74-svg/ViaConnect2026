@@ -90,7 +90,7 @@ function handleOuterError(err: unknown, requestId: string, scope: string): NextR
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const ctx = await loadPractitionerAndEnrollment(supabase);
     if (!ctx.ok) return ctx.response;
 
@@ -120,7 +120,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const ctx = await loadPractitionerAndEnrollment(supabase);
     if (!ctx.ok) return ctx.response;
 
@@ -185,7 +185,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 export async function PATCH(request: NextRequest): Promise<NextResponse> {
   const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const ctx = await loadPractitionerAndEnrollment(supabase);
     if (!ctx.ok) return ctx.response;
 

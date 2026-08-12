@@ -60,7 +60,7 @@ function rowToSyncLine(row: RawCartRow): SyncCartLine {
 
 export async function serverGetCart(): Promise<SyncCartLine[]> {
     try {
-        const supabase = createClient()
+        const supabase = await createClient()
         const userResult = await withTimeout(
             supabase.auth.getUser(),
             2000,
@@ -103,7 +103,7 @@ export async function serverGetCart(): Promise<SyncCartLine[]> {
 
 export async function serverReplaceCart(lines: SyncCartLine[]): Promise<SyncCartLine[]> {
     try {
-        const supabase = createClient()
+        const supabase = await createClient()
         const userResult = await withTimeout(
             supabase.auth.getUser(),
             2000,
@@ -175,7 +175,7 @@ export async function serverInitialSync(localLines: SyncCartLine[]): Promise<Syn
 
 export async function serverClearCart(): Promise<void> {
     try {
-        const supabase = createClient()
+        const supabase = await createClient()
         const userResult = await withTimeout(
             supabase.auth.getUser(),
             2000,

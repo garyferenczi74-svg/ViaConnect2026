@@ -69,10 +69,11 @@ function handleOuterError(err: unknown, requestId: string): NextResponse {
   return NextResponse.json({ error: 'An unexpected error occurred.' }, { status: 500 });
 }
 
-export async function GET(request: NextRequest, { params }: { params: { designId: string } }): Promise<NextResponse> {
+export async function GET(request: NextRequest, props: { params: Promise<{ designId: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const ctx = await loadCtx(supabase, params.designId);
     if (!ctx.ok) return ctx.response;
 
@@ -104,10 +105,11 @@ export async function GET(request: NextRequest, { params }: { params: { designId
   }
 }
 
-export async function PATCH(request: NextRequest, { params }: { params: { designId: string } }): Promise<NextResponse> {
+export async function PATCH(request: NextRequest, props: { params: Promise<{ designId: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const ctx = await loadCtx(supabase, params.designId);
     if (!ctx.ok) return ctx.response;
 

@@ -28,7 +28,7 @@ function addDaysISO(from: string, days: number): string {
 
 export async function GET() {
   try {
-    const sb = createClient();
+    const sb = await createClient();
     const { data: { user } } = await withTimeout(sb.auth.getUser(), 5000, 'api.body.goals.active.auth');
     if (!user) return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 });
 

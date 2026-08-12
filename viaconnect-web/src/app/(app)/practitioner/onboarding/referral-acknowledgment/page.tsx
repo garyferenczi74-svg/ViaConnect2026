@@ -9,7 +9,7 @@ import { redirect } from 'next/navigation';
 export const dynamic = 'force-dynamic';
 
 export default async function ReferralAcknowledgmentPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // When the launch flag is off, skip the step entirely - the
   // referred practitioner does not yet exist in the program.

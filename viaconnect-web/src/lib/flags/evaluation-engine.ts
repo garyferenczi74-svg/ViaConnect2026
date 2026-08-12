@@ -255,7 +255,7 @@ export async function evaluateFlag(params: {
   userId: string | null;
   featureId: string;
 }): Promise<FlagEvaluationResult> {
-  const supabase = createClient() as unknown as PricingSupabaseClient;
+  const supabase = await createClient() as unknown as PricingSupabaseClient;
 
   const { data: featureRow } = await supabase
     .from('features')

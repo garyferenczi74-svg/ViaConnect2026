@@ -42,7 +42,7 @@ interface ProductLite {
 
 export async function GET(_request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const auth = await requireAdmin(supabase);
     if (!auth.ok) return auth.response;
 
