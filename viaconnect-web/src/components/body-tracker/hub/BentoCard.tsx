@@ -53,7 +53,16 @@ export function BentoCard({ surface, metricValue }: BentoCardProps) {
 
       <div className={`mt-auto flex flex-col gap-1 ${isFeatured ? '' : 'pb-10 pr-16'}`}>
         <h3 className="text-[15px] font-semibold leading-tight text-white md:text-base">
-          {surface.title}
+          {surface.id === 'composition' ? (
+            // Prompt 210j: two-tone FormaVision wordmark + Body Composition.
+            <>
+              <span className="text-[#B75E18]">Forma</span>
+              <span className="text-white">Vision</span>
+              <span className="text-white"> Body Composition</span>
+            </>
+          ) : (
+            surface.title
+          )}
         </h3>
         <p className={`text-[12px] leading-relaxed text-white/[0.62] md:text-[13px] ${isFeatured ? '' : 'line-clamp-2'}`}>
           {surface.description}

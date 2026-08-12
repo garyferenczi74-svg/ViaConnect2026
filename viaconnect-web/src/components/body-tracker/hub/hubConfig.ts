@@ -69,12 +69,10 @@ export interface SurfaceCard {
 }
 
 // Source order is preserved in the DOM so grid auto placement produces
-// the desktop layout from Section 5 without explicit row / column
-// lines: Dashboard, Body Composition, Progress, Weight, Milestones,
-// Metabolic. The Progress card routes to a coming soon placeholder
-// at /body-tracker/progress while the 179b weight trajectory series
-// is in flight; when that lands the placeholder is replaced by the
-// real surface and no hub config edit is needed.
+// the desktop layout without explicit row / column lines: Dashboard,
+// FormaVision Body Composition, Progress, Weight, Milestones, Metabolic.
+// Prompt 210j: no standalone FormaVision hub card; tabs inside composition
+// reach the 3D surface.
 export const SURFACES: SurfaceCard[] = [
   {
     id: "dashboard",
@@ -98,8 +96,9 @@ export const SURFACES: SurfaceCard[] = [
     },
   },
   {
+    // Prompt 210j: single hub entry for composition + FormaVision tabs (no separate card).
     id: "composition",
-    title: "Body Composition",
+    title: "FormaVision Body Composition",
     description: "Segmental body fat, muscle, and the 13 point measurements.",
     href: "/body-tracker/composition",
     icon: Ruler,
@@ -115,22 +114,6 @@ export const SURFACES: SurfaceCard[] = [
       objectPosition: "center",
       gradientClass:
         "bg-[radial-gradient(110%_110%_at_100%_0%,rgba(45,165,160,0.28)_0%,rgba(30,48,84,0.85)_60%,rgba(26,39,68,1)_100%)]",
-    },
-  },
-  {
-    id: "formavision",
-    title: "FormaVision",
-    description: "Your 3D body from your scan, with a ghost of where you started.",
-    href: "/body-tracker/formavision",
-    icon: Activity,
-    accent: "orange",
-    metricKey: "body_fat_pct",
-    metricLabel: "scan body",
-    gridClass: "md:col-span-1 lg:col-span-2 lg:row-span-1",
-    media: {
-      kind: "gradient",
-      gradientClass:
-        "bg-[radial-gradient(110%_110%_at_0%_100%,rgba(183,94,24,0.35)_0%,rgba(30,48,84,0.9)_55%,rgba(26,39,68,1)_100%)]",
     },
   },
   {
