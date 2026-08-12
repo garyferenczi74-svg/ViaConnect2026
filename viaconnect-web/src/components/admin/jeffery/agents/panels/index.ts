@@ -11,6 +11,8 @@ import HannahPanel from "./HannahPanel";
 import MichelangeloPanel from "./MichelangeloPanel";
 import SherlockPanel from "./SherlockPanel";
 import ArnoldPanel from "./ArnoldPanel";
+import GordonPanel from "./GordonPanel";
+import KelseyPanel from "./KelseyPanel";
 import MarshallPanel from "./MarshallPanel";
 import LexPanel from "./LexPanel";
 
@@ -27,6 +29,8 @@ export const AGENT_PANELS: Record<AgentId, ComponentType<AgentPanelProps>> = {
   michelangelo: MichelangeloPanel,
   sherlock:     SherlockPanel,
   arnold:       ArnoldPanel,
+  gordon:       GordonPanel,
+  kelsey:       KelseyPanel,
   marshall:     MarshallPanel,
   lex:          LexPanel,
 };

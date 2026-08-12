@@ -14,7 +14,7 @@ import type {
   AgentHeartbeat,
   AgentId,
 } from "./types";
-import { AGENT_IDS } from "./types";
+import { resolveAgentId } from "./types";
 import { AGENT_REGISTRY } from "./registry";
 
 // ── Event-type mapping ──────────────────────────────────────────────────────
@@ -67,17 +67,18 @@ export interface UltrathinkRegistryRow {
 }
 
 export function mapUltrathinkEvent(row: UltrathinkEventRow): AgentActivityEvent | null {
-  if (!AGENT_IDS.includes(row.agent_name as AgentId)) return null;
+  const agentId = resolveAgentId(row.agent_name);
+  if (!agentId) return null;
   const message = typeof row.payload?.message === "string"
     ? (row.payload.message as string)
-    : humanizeEvent(row.event_type, row.agent_name);
+    : humanizeEvent(row.event_type, agentId);
   return {
     id: row.id,
-    agent_id: row.agent_name as AgentId,
+    agent_id: agentId,
     event_type: EVENT_TYPE_MAP[row.event_type] ?? "info",
     severity: SEVERITY_MAP[row.severity] ?? "info",
     message,
-    metadata: row.payload ?? {},
+    metadata: { ...row.payload, source_agent_name: row.agent_name },
     correlation_id: row.run_id,
     user_id: null,
     created_at: row.created_at,
@@ -85,14 +86,15 @@ export function mapUltrathinkEvent(row: UltrathinkEventRow): AgentActivityEvent 
 }
 
 export function mapUltrathinkRegistry(row: UltrathinkRegistryRow): AgentHeartbeat | null {
-  if (!AGENT_IDS.includes(row.agent_name as AgentId)) return null;
+  const agentId = resolveAgentId(row.agent_name);
+  if (!agentId) return null;
   return {
-    agent_id: row.agent_name as AgentId,
+    agent_id: agentId,
     status: HEALTH_STATUS_MAP[row.health_status] ?? "idle",
     last_heartbeat: row.last_heartbeat_at ?? new Date(0).toISOString(),
     health_score: row.health_status === "healthy" ? 100 : row.health_status === "degraded" ? 60 : 0,
     error_count_24h: row.consecutive_misses ?? 0,
-    metadata: {},
+    metadata: { source_agent_name: row.agent_name },
   };
 }
 

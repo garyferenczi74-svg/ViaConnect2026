@@ -3,14 +3,24 @@ import { AGENT_REGISTRY, orderedRegistry, isKnownAgentId } from "../registry";
 import { AGENT_IDS } from "../types";
 
 describe("AGENT_REGISTRY", () => {
-  it("contains exactly the canonical 7 agents", () => {
+  it("contains exactly the canonical 9 agents (Prompt 214)", () => {
     expect(Object.keys(AGENT_REGISTRY).sort()).toEqual([...AGENT_IDS].sort());
+    expect(AGENT_IDS).toHaveLength(9);
   });
 
   it("produces a stable sort order", () => {
     const ids = orderedRegistry().map((r) => r.agent_id);
-    // 2026-06-12: marshall and lex joined the fleet per Gary's directive.
-    expect(ids).toEqual(["jeffery", "hannah", "michelangelo", "sherlock", "arnold", "marshall", "lex"]);
+    expect(ids).toEqual([
+      "jeffery",
+      "hannah",
+      "michelangelo",
+      "sherlock",
+      "arnold",
+      "gordon",
+      "kelsey",
+      "marshall",
+      "lex",
+    ]);
   });
 
   it("every row has valid accent color from palette", () => {
@@ -26,9 +36,11 @@ describe("AGENT_REGISTRY", () => {
     }
   });
 
-  it("rejects unknown agent IDs", () => {
+  it("accepts gordon and kelsey; rejects unknown", () => {
     expect(isKnownAgentId("jeffery")).toBe(true);
-    expect(isKnownAgentId("gordon")).toBe(false);
+    expect(isKnownAgentId("gordon")).toBe(true);
+    expect(isKnownAgentId("kelsey")).toBe(true);
     expect(isKnownAgentId("")).toBe(false);
+    expect(isKnownAgentId("hounddog")).toBe(false);
   });
 });

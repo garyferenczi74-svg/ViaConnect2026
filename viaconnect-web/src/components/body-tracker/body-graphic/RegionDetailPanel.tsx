@@ -10,9 +10,12 @@ import { motion } from "framer-motion";
 import { motionPresets, REDUCED_MOTION } from "./utils/motion-presets";
 import { useBodyGraphicState } from "./hooks/useBodyGraphicState";
 import { useArnoldBlurb } from "./hooks/useArnoldBlurb";
-import { getDisplayName } from "./utils/region-lookup";
+import { getDisplayName as getRegionDisplayName } from "./utils/region-lookup";
+import { getDisplayName } from "@/lib/getDisplayName";
 import { DSHEADisclaimer } from "@/components/compliance/DSHEADisclaimer";
 import type { BodyMode, RegionId, RegionOverlayData } from "./BodyGraphic.types";
+
+const ARNOLD_NAME = getDisplayName("arnold");
 
 interface Props {
   regionId: RegionId;
@@ -40,14 +43,14 @@ export const RegionDetailPanel: FC<Props> = ({ regionId, overlayData, mode, onCl
     <motion.aside
       {...(prefersReducedMotion ? { initial: false, transition: REDUCED_MOTION } : motionPresets.panelSlideIn)}
       role="complementary"
-      aria-label={`Details for ${getDisplayName(regionId, locale)}`}
+      aria-label={`Details for ${getRegionDisplayName(regionId, locale)}`}
       className="fixed inset-y-0 right-0 z-20 w-full sm:w-96 lg:relative lg:inset-auto lg:w-auto
                  bg-[#1E3054] border-l border-slate-700 lg:rounded-2xl lg:border shadow-xl flex flex-col"
       style={{ borderColor: "rgba(45,165,160,0.15)" }}
     >
       <header className="flex items-start justify-between gap-3 border-b border-slate-700 px-5 py-4">
         <div>
-          <h3 className="text-base font-semibold text-slate-100">{getDisplayName(regionId, locale)}</h3>
+          <h3 className="text-base font-semibold text-slate-100">{getRegionDisplayName(regionId, locale)}</h3>
           <p className="text-xs text-slate-500 capitalize">{mode}</p>
         </div>
         <button type="button" aria-label="Close panel" onClick={onClose}
@@ -68,17 +71,17 @@ export const RegionDetailPanel: FC<Props> = ({ regionId, overlayData, mode, onCl
               <span className="ml-1 text-base font-normal text-slate-400">{overlayData.unit ?? ""}</span>
             </div>
           ) : (
-            <div className="mt-1 text-sm text-slate-500">No measurement yet. Log one to get Arnold coaching.</div>
+            <div className="mt-1 text-sm text-slate-500">No measurement yet. Log one to get {ARNOLD_NAME} coaching.</div>
           )}
           {overlayData?.lastMeasuredAt && (
             <div className="mt-1 text-xs text-slate-500">Measured {new Date(overlayData.lastMeasuredAt).toLocaleDateString()}</div>
           )}
         </section>
 
-        <section aria-label="Arnold coaching" className="rounded-lg bg-slate-950/60 border border-slate-800 p-3">
+        <section aria-label={`${ARNOLD_NAME} coaching`} className="rounded-lg bg-slate-950/60 border border-slate-800 p-3">
           <div className="flex items-center gap-2">
             <Activity className="h-4 w-4 text-[#B75E18]" strokeWidth={1.5} aria-hidden />
-            <div className="text-xs uppercase tracking-wider text-slate-400">Arnold</div>
+            <div className="text-xs uppercase tracking-wider text-slate-400">{ARNOLD_NAME}</div>
           </div>
           {arnold.loading && <div className="mt-2 h-8 animate-pulse rounded bg-slate-800" />}
           {arnold.error && <div className="mt-2 text-sm text-slate-400">Keep at it, champ.</div>}

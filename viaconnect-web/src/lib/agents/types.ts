@@ -5,9 +5,20 @@
  * to the UI via the mapper in activity-tracker.ts.
  */
 
-// 2026-06-12: marshall (compliance, Prompt #119/#129a) and lex (litigation,
-// Prompt #116/#129a) join the fleet per Gary's directive.
-export type AgentId = "jeffery" | "hannah" | "michelangelo" | "sherlock" | "arnold" | "marshall" | "lex";
+// Prompt 214: full nine-agent roster (gordon + kelsey join the fleet panel).
+// Baseline: Jeffery, Hannah, Michelangelo, Sherlock, Arnold, Gordon, Kelsey,
+// Marshall, Lex. Hounddog remains a Marshall bridge product surface, not a
+// ninth panel seat (Gary ruling if that changes).
+export type AgentId =
+  | "jeffery"
+  | "hannah"
+  | "michelangelo"
+  | "sherlock"
+  | "arnold"
+  | "gordon"
+  | "kelsey"
+  | "marshall"
+  | "lex";
 
 export const AGENT_IDS: readonly AgentId[] = [
   "jeffery",
@@ -15,9 +26,35 @@ export const AGENT_IDS: readonly AgentId[] = [
   "michelangelo",
   "sherlock",
   "arnold",
+  "gordon",
+  "kelsey",
   "marshall",
   "lex",
 ] as const;
+
+/**
+ * Maps ultrathink_agent_registry / event agent_name values onto panel AgentIds.
+ * Name mismatches (sherlock_research_hub, jeffery_master) previously dropped
+ * live heartbeats from the Admin Command Center (Prompt 214 finding).
+ */
+export const AGENT_NAME_ALIASES: Readonly<Record<string, AgentId>> = {
+  jeffery: "jeffery",
+  jeffery_master: "jeffery",
+  hannah: "hannah",
+  michelangelo: "michelangelo",
+  sherlock: "sherlock",
+  sherlock_research_hub: "sherlock",
+  arnold: "arnold",
+  gordon: "gordon",
+  kelsey: "kelsey",
+  marshall: "marshall",
+  lex: "lex",
+};
+
+export function resolveAgentId(raw: string): AgentId | null {
+  const key = raw.trim().toLowerCase();
+  return AGENT_NAME_ALIASES[key] ?? null;
+}
 
 export type AgentStatus = "healthy" | "degraded" | "error" | "idle" | "paused" | "stale";
 

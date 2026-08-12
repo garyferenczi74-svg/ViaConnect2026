@@ -1,12 +1,11 @@
 /**
- * Static agent registry for the admin Agents panel (Prompt #126).
- * Seven agents are surfaced in the tab bar (marshall + lex added
- * 2026-06-12). Display metadata (icon, accent
+ * Static agent registry for the admin Agents panel (Prompt #126 + #214).
+ * Nine agents are surfaced in the tab bar. Display metadata (icon, accent
  * color, role label, description) lives here so new agent additions are a
  * one-line change rather than a DB seed + migration.
  *
  * Heartbeat + activity data is sourced from ultrathink_agent_registry and
- * ultrathink_agent_events via activity-tracker.ts.
+ * ultrathink_agent_events via activity-tracker.ts (with name alias resolution).
  */
 
 import type { AgentId, AgentRegistryRow } from "./types";
@@ -26,9 +25,9 @@ export const AGENT_REGISTRY: Readonly<Record<AgentId, AgentRegistryRow>> = {
   hannah: {
     agent_id: "hannah",
     display_name: "Hannah",
-    role_label: "UX Guide / Tutorial",
+    role_label: "UX Guide / Wellness Assistant",
     description:
-      "Tavus avatar and Ultrathink engine for CAQ interstitials and onboarding.",
+      "Tavus avatar, Ultrathink engine, Journey accelerators, and onboarding surfaces.",
     icon_name: "MessageCircle",
     accent_color: "#B75E18",
     sort_order: 2,
@@ -58,23 +57,45 @@ export const AGENT_REGISTRY: Readonly<Record<AgentId, AgentRegistryRow>> = {
   arnold: {
     agent_id: "arnold",
     display_name: "Arnold",
-    role_label: "Body Tracker Module",
+    role_label: "Body Tracker / FormaVision",
     description:
-      "Reconciliation Layer, Claude API recommendation engine, coaching engine.",
+      "Body metrics over time, FormaVision composition pipeline, coaching engine.",
     icon_name: "Dumbbell",
     accent_color: "#2DA5A0",
     sort_order: 5,
     is_active: true,
   },
+  gordon: {
+    agent_id: "gordon",
+    display_name: "Gordon",
+    role_label: "Nutrition Computation",
+    description:
+      "Sole owner of nutrition scoring, targets, and unified meals writes.",
+    icon_name: "Utensils",
+    accent_color: "#B75E18",
+    sort_order: 6,
+    is_active: true,
+  },
+  kelsey: {
+    agent_id: "kelsey",
+    display_name: "Kelsey",
+    role_label: "Compliance Review",
+    description:
+      "Two-stage disease-claim and claims-language gate on protocol and free-text surfaces.",
+    icon_name: "ClipboardCheck",
+    accent_color: "#2DA5A0",
+    sort_order: 7,
+    is_active: true,
+  },
   marshall: {
     agent_id: "marshall",
     display_name: "Marshall",
-    role_label: "Compliance / Customs",
+    role_label: "Compliance / Lexicon / Customs",
     description:
-      "Compliance rule engine across all 14 pillars, protocol safety gate compliance lane, and CBP customs case work.",
+      "Rule engine, brand lexicon enforcement, protocol safety gate, and CBP customs case work.",
     icon_name: "ShieldCheck",
     accent_color: "#B75E18",
-    sort_order: 6,
+    sort_order: 8,
     is_active: true,
   },
   lex: {
@@ -85,7 +106,7 @@ export const AGENT_REGISTRY: Readonly<Record<AgentId, AgentRegistryRow>> = {
       "Litigation case management, legal exposure review of claims language, and the protocol safety gate legal lane.",
     icon_name: "Scale",
     accent_color: "#2DA5A0",
-    sort_order: 7,
+    sort_order: 9,
     is_active: true,
   },
 };

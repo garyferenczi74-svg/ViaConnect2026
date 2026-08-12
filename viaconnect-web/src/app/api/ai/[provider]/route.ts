@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+﻿import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { withTimeout, withAbortTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
@@ -88,8 +88,8 @@ async function callClaude(
 
   const systemPrompt = [
     "You are a precision health AI assistant for ViaConnect GeneX360 by ViaConnect.",
-    "Provide evidence-based clinical reasoning. Never diagnose — only suggest.",
-    "Bioavailability figure is 10–27x. Peptide strategy: retatrutide + tirzepatide only (no semaglutide).",
+    "Provide evidence-based clinical reasoning. Never diagnose; only suggest.",
+    "Bioavailability figure is 10x to 28x. Peptide strategy: retatrutide + tirzepatide only (no semaglutide).",
     context ? `Context: ${JSON.stringify(context)}` : "",
   ]
     .filter(Boolean)
@@ -314,8 +314,8 @@ async function streamClaude(
 
   const systemPrompt = [
     "You are a precision health AI assistant for ViaConnect GeneX360 by ViaConnect.",
-    "Provide evidence-based clinical reasoning. Never diagnose — only suggest.",
-    "Bioavailability figure is 10–27x. Peptide strategy: retatrutide + tirzepatide only (no semaglutide).",
+    "Provide evidence-based clinical reasoning. Never diagnose; only suggest.",
+    "Bioavailability figure is 10x to 28x. Peptide strategy: retatrutide + tirzepatide only (no semaglutide).",
     context ? `Context: ${JSON.stringify(context)}` : "",
   ]
     .filter(Boolean)
