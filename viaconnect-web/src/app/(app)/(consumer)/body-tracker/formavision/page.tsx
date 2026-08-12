@@ -21,15 +21,33 @@ import { JourneyTimeline, type JourneyScanReadout } from '@/components/formavisi
 import { FutureSelfPanel } from '@/components/formavision/FutureSelfPanel';
 import { useReducedMotion } from '@/components/body-tracker/HoverSystem/useReducedMotion';
 import { SegmentalHeatMap } from '@/components/body-tracker/SegmentalHeatMap';
+import { UnitToggle } from '@/components/body-tracker/UnitToggle';
 import { useCompositionHistory } from '@/hooks/body-tracker/useCompositionHistory';
 import { useCircumferenceHistory } from '@/hooks/body-tracker/useCircumferenceHistory';
 import { useCircumferenceData } from '@/hooks/body-tracker/useCircumferenceData';
 import { useUserBiologicalSex } from '@/hooks/body-tracker/useUserBiologicalSex';
 import { useCurrentUser } from '@/components/body-tracker/manual-input';
+import type { MeasurementUnit } from '@/lib/body-tracker/circumference';
+import {
+  compositionScanHref,
+  compositionSectionHref,
+} from '@/lib/body-tracker/compositionNav';
 import { scanToParamVector } from '@/lib/formavision/geometry/scanToParamVector';
 import { buildSegmentTintsFromChange } from '@/lib/formavision/geometry/composSegmentTints';
 import type { BodyParamVector } from '@/lib/formavision/geometry/types';
 import { useAvatarTelemetry } from '@/lib/formavision/telemetry/useAvatarTelemetry';
+
+const UNIT_STORAGE_KEY = 'vc.body-tracker.measurement-unit';
+
+function readStoredUnit(): MeasurementUnit {
+  if (typeof window === 'undefined') return 'in';
+  try {
+    const v = window.localStorage.getItem(UNIT_STORAGE_KEY);
+    return v === 'cm' ? 'cm' : 'in';
+  } catch {
+    return 'in';
+  }
+}
 
 export default function FormaVisionPage() {
   return (
@@ -43,26 +61,52 @@ function FormaVisionSurface() {
   const router = useRouter();
   const { id: userId } = useCurrentUser();
   const reducedMotion = useReducedMotion();
-  const { sex: caqSex } = useUserBiologicalSex(userId ?? null);
+  const {
+    sex: caqSex,
+    setOverride: setGenderOverride,
+  } = useUserBiologicalSex(userId ?? null);
 
   const onSectionNav = useCallback(
     (tab: CompositionNavTab) => {
       if (tab === 'formavision') return;
-      router.push(`/body-tracker/composition?section=${tab}`);
+      router.push(compositionSectionHref(tab));
     },
     [router],
   );
   const [gender, setGender] = useState<'male' | 'female'>('male');
+  const [genderManuallySet, setGenderManuallySet] = useState(false);
   const [selectedBodyPart, setSelectedBodyPart] = useState<string | null>(null);
   const [scrubVector, setScrubVector] = useState<BodyParamVector | null>(null);
   const [ghostVector, setGhostVector] = useState<BodyParamVector | null>(null);
   const [showGhost, setShowGhost] = useState(false);
   const [comparisonOverlayOn, setComparisonOverlayOn] = useState(false);
-  const unit = 'in' as const;
+  // Prompt 210k: same unit spine as composition (localStorage key shared).
+  const [unit, setUnit] = useState<MeasurementUnit>(() => readStoredUnit());
 
   useEffect(() => {
-    if (caqSex === 'male' || caqSex === 'female') setGender(caqSex);
-  }, [caqSex]);
+    if (!genderManuallySet && (caqSex === 'male' || caqSex === 'female')) {
+      setGender(caqSex);
+    }
+  }, [caqSex, genderManuallySet]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(UNIT_STORAGE_KEY, unit);
+    } catch {
+      /* ignore */
+    }
+  }, [unit]);
+
+  const persistGender = useCallback(
+    async (g: 'male' | 'female') => {
+      try {
+        await setGenderOverride(g);
+      } catch {
+        /* fail-open: local toggle still updates the body */
+      }
+    },
+    [setGenderOverride],
+  );
 
   const { emit: telEmit, emitOnce: telEmitOnce } = useAvatarTelemetry(userId);
   useEffect(() => {
@@ -187,13 +231,13 @@ function FormaVisionSurface() {
           </p>
           <div className="mt-4 flex flex-wrap justify-center gap-3">
             <Link
-              href="/body-tracker/photos"
+              href={compositionScanHref()}
               className="min-h-[44px] rounded-xl border border-[#B75E18]/50 bg-[#B75E18]/15 px-4 py-2.5 text-sm font-medium text-[#B75E18]"
             >
               Scan My Body
             </Link>
             <Link
-              href="/body-tracker/composition"
+              href={compositionSectionHref('measurements')}
               className="min-h-[44px] rounded-xl border border-white/20 bg-white/[0.06] px-4 py-2.5 text-sm font-medium text-white/80"
             >
               Log measurements
@@ -202,29 +246,42 @@ function FormaVisionSurface() {
         </div>
       )}
 
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={() => setGender('male')}
-          className={`min-h-[44px] flex-1 rounded-xl border px-4 py-2.5 text-sm font-medium ${
-            gender === 'male'
-              ? 'border-[#2DA5A0]/60 bg-[#2DA5A0]/15 text-[#2DA5A0]'
-              : 'border-white/20 bg-white/[0.04] text-white/60'
-          }`}
-        >
-          Male
-        </button>
-        <button
-          type="button"
-          onClick={() => setGender('female')}
-          className={`min-h-[44px] flex-1 rounded-xl border px-4 py-2.5 text-sm font-medium ${
-            gender === 'female'
-              ? 'border-[#B75E18]/60 bg-[#B75E18]/15 text-[#B75E18]'
-              : 'border-white/20 bg-white/[0.04] text-white/60'
-          }`}
-        >
-          Female
-        </button>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <button
+            type="button"
+            data-testid="formavision-gender-male"
+            onClick={() => {
+              setGenderManuallySet(true);
+              setGender('male');
+              void persistGender('male');
+            }}
+            className={`min-h-[44px] flex-1 rounded-xl border px-4 py-2.5 text-sm font-medium ${
+              gender === 'male'
+                ? 'border-[#2DA5A0]/60 bg-[#2DA5A0]/15 text-[#2DA5A0]'
+                : 'border-white/20 bg-white/[0.04] text-white/60'
+            }`}
+          >
+            Male
+          </button>
+          <button
+            type="button"
+            data-testid="formavision-gender-female"
+            onClick={() => {
+              setGenderManuallySet(true);
+              setGender('female');
+              void persistGender('female');
+            }}
+            className={`min-h-[44px] flex-1 rounded-xl border px-4 py-2.5 text-sm font-medium ${
+              gender === 'female'
+                ? 'border-[#B75E18]/60 bg-[#B75E18]/15 text-[#B75E18]'
+                : 'border-white/20 bg-white/[0.04] text-white/60'
+            }`}
+          >
+            Female
+          </button>
+        </div>
+        <UnitToggle value={unit} onChange={setUnit} layoutId="formavision-page-unit" />
       </div>
 
       <div

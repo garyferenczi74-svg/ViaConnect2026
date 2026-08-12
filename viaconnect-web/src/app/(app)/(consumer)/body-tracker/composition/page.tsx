@@ -9,17 +9,22 @@ import { SegmentalHeatMap } from '@/components/body-tracker/SegmentalHeatMap';
 import { HeatmapLegend } from '@/components/body-tracker/HeatmapLegend';
 import { HoverSystem } from '@/components/body-tracker/HoverSystem';
 // === PROMPT 210b EXTENSION START ===
-import {
-  BodyCompositionAvatar,
-  SelectBodyPartControl,
-  RenderTierProvider,
-} from '@/components/formavision';
+// Prompt 210h / 210k: 3D BodyCompositionAvatar + SelectBodyPart live only on
+// /body-tracker/formavision. This surface keeps the 2D HoverSystem floor.
+import { RenderTierProvider } from '@/components/formavision';
 import { useReducedMotion } from '@/components/body-tracker/HoverSystem/useReducedMotion';
 import {
   buildSegmentTints,
   buildSegmentTintsFromChange,
 } from '@/lib/formavision/geometry/composSegmentTints';
 // === PROMPT 210b EXTENSION END ===
+// Prompt 210k: tab URL sync, scan deep link, post-scan FormaVision landing.
+import {
+  compositionSectionHref,
+  formavisionAfterScanHref,
+  parseCompositionSection,
+  shouldOpenScanFromQuery,
+} from '@/lib/body-tracker/compositionNav';
 // === PROMPT 210b VR (Section 8) START ===
 // Direct-path imports (not the avatar barrel) so this Visual Results surface
 // stays disjoint from the avatar component files.
@@ -267,26 +272,27 @@ function CompositionPageInner() {
   const params = useSearchParams();
   const router = useRouter();
   const sectionParam = params?.get('section');
+  const scanParam = params?.get('scan');
   const initialSection: CompositionSection =
-    sectionParam === 'muscle' || sectionParam === 'measurements' || sectionParam === 'fat'
-      ? (sectionParam as CompositionSection)
-      : 'fat';
+    parseCompositionSection(sectionParam) ?? 'fat';
 
   const [section, setSection] = useState<CompositionSection>(initialSection);
 
-  // Prompt 210i: FormaVision is a nav tab, not an in-page section.
+  // Prompt 210i + 210k: FormaVision is a nav tab; content tabs keep ?section= in the URL.
   const onSectionNav = useCallback(
     (tab: CompositionNavTab) => {
       if (tab === 'formavision') {
-        router.push('/body-tracker/formavision');
+        router.push(formavisionAfterScanHref());
         return;
       }
       setSection(tab);
+      router.replace(compositionSectionHref(tab), { scroll: false });
     },
     [router],
   );
   const [open, setOpen] = useState(false);
-  const [scanOpen, setScanOpen] = useState(false);
+  // Prompt 210k: ?scan=1 opens Scan My Body (FormaVision empty-state CTA deep link).
+  const [scanOpen, setScanOpen] = useState(() => shouldOpenScanFromQuery(scanParam));
   const [scanResult, setScanResult] = useState<BodyScanResult | null>(null);
   const [scanPersist, setScanPersist] = useState<ScanPersistState>({ phase: 'idle' });
   const [prefillBodyFat, setPrefillBodyFat] = useState<number | null>(null);
@@ -557,10 +563,19 @@ function CompositionPageInner() {
   }, [caqSex, genderManuallySet]);
 
   useEffect(() => {
-    if (sectionParam === 'muscle' || sectionParam === 'measurements' || sectionParam === 'fat') {
-      setSection(sectionParam as CompositionSection);
-    }
+    const parsed = parseCompositionSection(sectionParam);
+    if (parsed) setSection(parsed);
   }, [sectionParam]);
+
+  // Prompt 210k: honor ?scan=1 after client navigation (empty-state CTA from FormaVision).
+  useEffect(() => {
+    if (shouldOpenScanFromQuery(scanParam)) {
+      setOpen(false);
+      setScanOpen(true);
+      setScanResult(null);
+      setScanPersist({ phase: 'idle' });
+    }
+  }, [scanParam]);
 
   // Prompt #209: repaint on update. A Log Data save and a scan persist both
   // bump refreshKey; this effect re-reads the canonical composition snapshot
@@ -651,19 +666,21 @@ function CompositionPageInner() {
     setRefreshKey((k) => k + 1);
   };
 
-  // Prompt #209: persist a completed scan through the canonical path, then
-  // repaint. Fail-open: any failure surfaces an inline retry, never throws
-  // into the render path and never blocks the avatar / cards.
+  // Prompt #209 + 210k: persist a completed scan through the canonical path,
+  // then land on FormaVision (210h Rev C) so the 3D surface shows the new scan.
+  // Fail-open: any failure surfaces an inline retry, never throws into render.
   const runScanPersist = useCallback(async (scanId: string) => {
     setScanPersist({ phase: 'saving' });
     const res = await persistScan(scanId);
     if (res.ok) {
       setScanPersist({ phase: 'saved' });
       setRefreshKey((k) => k + 1);
+      // 210h Rev C / 210k seed 8: completed scan lands on FormaVision with results.
+      router.push(formavisionAfterScanHref());
     } else {
       setScanPersist({ phase: 'error', scanId, reason: res.reason });
     }
-  }, []);
+  }, [router]);
 
   const historyCategory = section === 'muscle' ? 'muscle' : 'composition';
 
