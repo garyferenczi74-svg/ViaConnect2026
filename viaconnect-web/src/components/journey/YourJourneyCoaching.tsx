@@ -567,7 +567,7 @@ function Legend({ items }: { items: { name: string; label: string; color: string
 }
 
 type AccDot = { hub: string; label: string; icon: LucideIcon; missing?: boolean };
-type AccItem = { headline: string; body: string; tag: string; pts: number; icon: LucideIcon; conf: string; dots: AccDot[] };
+type AccItem = { id: string; headline: string; body: string; tag: string; pts: number; icon: LucideIcon; conf: string; dots: AccDot[]; placeholder?: boolean };
 
 // Appendix A seeded provenance dots, indexed by the canonical rec id.
 // Engine-sourced: the useJourneyRecommendations hook seeds these into the DB
@@ -638,6 +638,7 @@ function engineItemToAccItem(item: EngineAccItem): AccItem {
     missing: d.missing,
   }));
   return {
+    id: item.id,
     headline: item.headline,
     body: item.body,
     tag: item.tag,
@@ -645,6 +646,21 @@ function engineItemToAccItem(item: EngineAccItem): AccItem {
     icon: tagToLucide(item.tag),
     conf: item.conf,
     dots,
+  };
+}
+
+/** Honest empty-slot card when fewer than 4 distinct insights exist (Prompt 213). */
+function moreInsightsPlaceholder(slot: number): AccItem {
+  return {
+    id: `placeholder-more-${slot}`,
+    headline: 'More insights as your data grows',
+    body: 'Connect Genetics, Labs, Nutrition, and Biology so Hannah can open new accelerators.',
+    tag: 'GROWING',
+    pts: 0,
+    icon: Sparkles,
+    conf: 'medium',
+    dots: [],
+    placeholder: true,
   };
 }
 
@@ -656,6 +672,7 @@ function recToAccItem(rec: { id: string; title: string; description: string; cat
   const dots = SEEDED_DOTS[rec.id] ?? [];
   const isHigh = rec.estimatedImpact >= 8;
   return {
+    id: rec.id,
     headline: rec.title,
     body: rec.description,
     tag: rec.category.toUpperCase(),
@@ -668,8 +685,19 @@ function recToAccItem(rec: { id: string; title: string; description: string; cat
 function AccCard({ c }: { c: AccItem }) {
   const [open, setOpen] = useState(false);
   const Ic = c.icon, col = c.conf === "high" ? C.teal : C.orange, Conf = c.conf === "high" ? ShieldCheck : CircleAlert;
+  if (c.placeholder) {
+    return (
+      <div style={{ ...panel(false), opacity: 0.85 }} data-testid="accelerator-placeholder">
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <span style={{ width: 38, height: 38, borderRadius: 999, background: C.inset, border: `1px solid ${C.teal}`, color: C.teal, display: "inline-flex", alignItems: "center", justifyContent: "center" }}><Ic size={17} strokeWidth={SW} /></span>
+        </div>
+        <h3 style={{ margin: "12px 0 6px", fontSize: 16, fontWeight: 700 }}>{c.headline}</h3>
+        <p style={{ margin: 0, fontSize: 12.5, color: C.muted, lineHeight: 1.5 }}>{c.body}</p>
+      </div>
+    );
+  }
   return (
-    <div style={panel(false)}>
+    <div style={panel(false)} data-testid={`accelerator-card-${c.id}`}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <span style={{ width: 38, height: 38, borderRadius: 999, background: C.inset, border: `1px solid ${C.orange}`, color: C.orange, display: "inline-flex", alignItems: "center", justifyContent: "center" }}><Ic size={17} strokeWidth={SW} /></span>
         <span style={{ padding: "4px 9px", borderRadius: 999, background: C.greenSoft, color: C.green, fontSize: 11.5, fontWeight: 700 }}>+{c.pts} pts</span>
@@ -964,6 +992,13 @@ function SleepCard({ sleepHoursTotal, loading }: { sleepHoursTotal: number | nul
   );
 }
 function AcceleratorsTab({ accel, activeHubs, narrativeLine, loading }: { accel: AccItem[]; activeHubs: string[]; narrativeLine: string; loading?: boolean }) {
+  // Prompt 213: fill empty slots with honest placeholders, never clone a real insight.
+  const real = accel.filter((c) => !c.placeholder);
+  const slots: AccItem[] = [...real];
+  let p = 0;
+  while (slots.length < 4) {
+    slots.push(moreInsightsPlaceholder(p++));
+  }
   return (
     <div className="vc-split" style={{ alignItems: "stretch" }}>
       <div>
@@ -984,7 +1019,7 @@ function AcceleratorsTab({ accel, activeHubs, narrativeLine, loading }: { accel:
             ))}
           </div>
         ) : (
-          <div className="vc-two">{accel.map((c, i) => <AccCard key={i} c={c} />)}</div>
+          <div className="vc-two">{slots.map((c) => <AccCard key={c.id} c={c} />)}</div>
         )}
       </div>
       <div style={{ display: "flex", flexDirection: "column", height: "100%" }}><div style={{ fontSize: 15, fontWeight: 800, marginBottom: 12 }}>Your connection map</div><ConnectionMap activeHubs={activeHubs} narrativeLine={narrativeLine} /></div>
@@ -1344,11 +1379,9 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
   const engineAccel = useEngineAccelerators(userId);
   const accelItems: AccItem[] = engineAccel.items.map(engineItemToAccItem);
 
-  // ConnectionMap active hubs: from the top engine accelerator's real provenance hubs.
-  // The narrative line uses the real hub count (spoken word), not a hardcoded number.
+  // Prompt 213: hubs and caption come from the full distinct insight set.
   const activeHubs = engineAccel.activeHubs;
-  const topItemName = engineAccel.items.length > 0 ? engineAccel.items[0].headline : "this insight";
-  const narrativeLine = `The ${topItemName} insight is drawn from ${engineAccel.activeHubCountWord} of your hubs.`;
+  const narrativeLine = engineAccel.narrativeLine;
 
   // Hydration stat bar (LIVE).
   const hydrationTotalL = hydrationData?.total_ml != null ? hydrationData.total_ml / 1000 : null;

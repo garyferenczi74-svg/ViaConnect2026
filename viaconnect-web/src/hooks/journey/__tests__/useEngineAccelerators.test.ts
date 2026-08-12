@@ -29,8 +29,16 @@ import {
   finalizeDots,
   recRowToItem,
   ultrathinkRowToItem,
+  insightKeyFromHeadline,
+  dedupeEngineEntries,
+  selectDistinctAccelerators,
+  activeHubsFromItems,
+  buildConnectionNarrative,
+  canInsertInsightKey,
   type RecommendationsRow,
   type UltrathinkRow,
+  type MergeEntry,
+  type EngineAccItem,
 } from '../useEngineAccelerators';
 
 // ---------------------------------------------------------------------------
@@ -387,5 +395,120 @@ describe('ultrathinkRowToItem - real dots kept, no missing dot injected', () => 
     const item = ultrathinkRowToItem(rowNoSignals);
     expect(item.dots).toHaveLength(1);
     expect(item.dots[0].missing).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Prompt 213: Journey accelerator cardinality + connection map
+// ---------------------------------------------------------------------------
+
+function mkItem(
+  headline: string,
+  dots: EngineAccItem['dots'],
+  id?: string,
+): EngineAccItem {
+  return {
+    id: id ?? `id-${insightKeyFromHeadline(headline)}`,
+    insightKey: insightKeyFromHeadline(headline),
+    headline,
+    body: `${headline} body`,
+    tag: 'SUPPLEMENT',
+    pts: 10,
+    derivedPts: 'derived',
+    conf: 'high',
+    dots,
+    source: 'ultrathink_recommendations',
+  };
+}
+
+describe('Prompt 213 insightKeyFromHeadline', () => {
+  it('normalizes Replenish NAD+ variants to one key', () => {
+    expect(insightKeyFromHeadline('Replenish NAD+')).toBe('replenish-nad');
+    expect(insightKeyFromHeadline('  replenish nad+ ')).toBe('replenish-nad');
+  });
+});
+
+describe('Prompt 213 dedupeEngineEntries / selectDistinctAccelerators', () => {
+  it('collapses four identical Replenish NAD+ rows to one insight', () => {
+    const dup = mkItem('Replenish NAD+', [
+      { hub: 'CAQ', label: 'Fatigue reported' },
+    ]);
+    const entries: MergeEntry[] = [0, 1, 2, 3].map((i) => ({
+      item: { ...dup, id: `row-${i}` },
+      rank: i + 1,
+    }));
+    const unique = dedupeEngineEntries(entries);
+    expect(unique).toHaveLength(1);
+    expect(unique[0].item.headline).toBe('Replenish NAD+');
+
+    const selected = selectDistinctAccelerators(entries, 4);
+    expect(selected).toHaveLength(1);
+    expect(selected.map((s) => s.headline)).toEqual(['Replenish NAD+']);
+  });
+
+  it('keeps four distinct product headlines', () => {
+    const entries: MergeEntry[] = [
+      { item: mkItem('Replenish NAD+', [{ hub: 'CAQ', label: 'Fatigue' }]), rank: 1 },
+      { item: mkItem('Omega 3 Elite', [{ hub: 'Labs', label: 'Omega panel' }]), rank: 2 },
+      { item: mkItem('Anchor Sleep', [{ hub: 'Biology', label: 'Recovery' }]), rank: 3 },
+      { item: mkItem('Zone 2 Block', [{ hub: 'Biology', label: 'Load ready' }]), rank: 4 },
+    ];
+    const selected = selectDistinctAccelerators(entries, 4);
+    expect(selected).toHaveLength(4);
+    const keys = new Set(selected.map((s) => s.insightKey));
+    expect(keys.size).toBe(4);
+  });
+
+  it('does not pad sparse engine results by cloning the first insight', () => {
+    const entries: MergeEntry[] = [
+      { item: mkItem('Replenish NAD+', [{ hub: 'CAQ', label: 'Fatigue' }]), rank: 1 },
+    ];
+    const selected = selectDistinctAccelerators(entries, 4);
+    expect(selected).toHaveLength(1);
+    expect(selected.every((s) => s.headline === 'Replenish NAD+')).toBe(true);
+  });
+});
+
+describe('Prompt 213 activeHubsFromItems + buildConnectionNarrative', () => {
+  it('lights exactly the hubs present across the insight set', () => {
+    const items = [
+      mkItem('A', [{ hub: 'CAQ', label: 'Fatigue' }]),
+      mkItem('B', [{ hub: 'Genetics', label: 'MTHFR' }, { hub: 'Labs', label: 'Homocysteine' }]),
+      mkItem('C', [{ hub: 'CAQ', label: 'dup' }, { hub: 'Supplements', label: 'Stack gap' }]),
+    ];
+    expect(activeHubsFromItems(items)).toEqual(['CAQ', 'Genetics', 'Labs', 'Supplements']);
+  });
+
+  it('ignores missing-marked dots when lighting spokes', () => {
+    const items = [
+      mkItem('A', [{ hub: 'CAQ', label: 'No data yet', missing: true }]),
+      mkItem('B', [{ hub: 'Biology', label: 'Recovery' }]),
+    ];
+    expect(activeHubsFromItems(items)).toEqual(['Biology']);
+  });
+
+  it('uses singular caption for one insight and plural for many', () => {
+    const one = [mkItem('Replenish NAD+', [{ hub: 'CAQ', label: 'Fatigue' }])];
+    const many = [
+      mkItem('Replenish NAD+', [{ hub: 'CAQ', label: 'Fatigue' }]),
+      mkItem('Omega 3 Elite', [{ hub: 'Labs', label: 'Omega' }]),
+    ];
+    expect(buildConnectionNarrative(one, ['CAQ'])).toContain('The Replenish NAD+ insight');
+    expect(buildConnectionNarrative(one, ['CAQ'])).toContain('one of your hubs');
+    expect(buildConnectionNarrative(many, ['CAQ', 'Labs'])).toContain('These 2 insights');
+    expect(buildConnectionNarrative(many, ['CAQ', 'Labs'])).toContain('two of your hubs');
+  });
+});
+
+describe('Prompt 213 canInsertInsightKey (writer reject duplicate)', () => {
+  it('rejects a second insert with an identical insight_key', () => {
+    const existing = new Set(['replenish-nad', 'omega-3-elite']);
+    expect(canInsertInsightKey(existing, 'replenish-nad')).toBe(false);
+    expect(canInsertInsightKey(existing, 'Replenish-NAD')).toBe(false);
+    expect(canInsertInsightKey(existing, 'zone-2-movement-block')).toBe(true);
+  });
+
+  it('rejects empty keys', () => {
+    expect(canInsertInsightKey(new Set(), '')).toBe(false);
   });
 });

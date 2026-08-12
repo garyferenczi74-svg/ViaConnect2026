@@ -59,6 +59,11 @@ export interface AccDot {
 // ---------------------------------------------------------------------------
 
 export interface EngineAccItem {
+  /**
+   * Stable id for React keys and dedupe. Prefer the DB row id when present;
+   * seeded items use their fixed slug.
+   */
+  id: string;
   /** Display headline */
   headline: string;
   /** Body copy */
@@ -79,6 +84,11 @@ export interface EngineAccItem {
   dots: AccDot[];
   /** Which engine produced this rec */
   source: 'recommendations' | 'ultrathink_recommendations' | 'seeded';
+  /**
+   * Normalized insight key for uniqueness (user_id, insight_key).
+   * Derived from the product/headline; never a fabricated category pad.
+   */
+  insightKey: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -91,6 +101,8 @@ export interface EngineAccItem {
  */
 export const APPENDIX_A_SEEDS: EngineAccItem[] = [
   {
+    id: 'seed-foundation-stack',
+    insightKey: 'activate-foundation-stack',
     headline: 'Activate Foundation Stack',
     body: 'Magnesium Glycinate plus Vitamin D3/K2 to restore the baseline your score needs.',
     tag: 'SUPPLEMENT',
@@ -105,6 +117,8 @@ export const APPENDIX_A_SEEDS: EngineAccItem[] = [
     source: 'seeded',
   },
   {
+    id: 'seed-sleep-window',
+    insightKey: 'anchor-your-sleep-window',
     headline: 'Anchor Your Sleep Window',
     body: 'Hold a 30 minute sleep/wake window for 7 days. Biggest single lift for Bio Optimization.',
     tag: 'SLEEP',
@@ -117,6 +131,8 @@ export const APPENDIX_A_SEEDS: EngineAccItem[] = [
     source: 'seeded',
   },
   {
+    id: 'seed-omega-3',
+    insightKey: 'add-omega-3-elite',
     headline: 'Add Omega 3 Elite',
     body: 'Bioavailable EPA/DHA at 10x to 28x absorption, paired with breakfast.',
     tag: 'SUPPLEMENT',
@@ -130,6 +146,8 @@ export const APPENDIX_A_SEEDS: EngineAccItem[] = [
     source: 'seeded',
   },
   {
+    id: 'seed-zone-2',
+    insightKey: 'zone-2-movement-block',
     headline: 'Zone 2 Movement Block',
     body: 'Three 25 minute easy sessions this week; mitochondrial density payoff shows in 14 days.',
     tag: 'MOVEMENT',
@@ -266,6 +284,7 @@ export function hubCountToWord(count: number): string {
 // ---------------------------------------------------------------------------
 
 export interface RecommendationsRow {
+  id?: string;
   product_name: string;
   reason: string;
   category: string | null;
@@ -275,6 +294,7 @@ export interface RecommendationsRow {
 }
 
 export interface UltrathinkRow {
+  id?: string;
   farmceutica_product: string;
   rationale: string;
   health_signals: string[];
@@ -287,9 +307,110 @@ export interface UltrathinkRow {
 // Internal merger entry - carries rank for sorting
 // ---------------------------------------------------------------------------
 
-interface MergeEntry {
+export interface MergeEntry {
   item: EngineAccItem;
   rank: number;
+}
+
+// ---------------------------------------------------------------------------
+// Prompt 213: dedupe + hub aggregation + write uniqueness (pure)
+// ---------------------------------------------------------------------------
+
+/**
+ * Normalize a product headline into a stable insight_key.
+ * Collapses case, punctuation, and whitespace so "Replenish NAD+" and
+ * "replenish nad+" map to the same key.
+ */
+export function insightKeyFromHeadline(headline: string): string {
+  return headline
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+/**
+ * Keep the best-ranked entry per insight_key.
+ */
+export function dedupeEngineEntries(entries: MergeEntry[]): MergeEntry[] {
+  const byKey = new Map<string, MergeEntry>();
+  const sorted = [...entries].sort((a, b) => a.rank - b.rank);
+  for (const entry of sorted) {
+    const key = entry.item.insightKey || insightKeyFromHeadline(entry.item.headline);
+    if (!byKey.has(key)) {
+      byKey.set(key, entry);
+    }
+  }
+  return Array.from(byKey.values()).sort((a, b) => a.rank - b.rank);
+}
+
+/**
+ * Select up to `max` DISTINCT engine items. Never pads by cloning a real insight.
+ * Empty engine set falls back to Appendix A seeds (distinct templates only).
+ * Non-empty short set returns only the real items (UI may show honest placeholders).
+ */
+export function selectDistinctAccelerators(
+  entries: MergeEntry[],
+  max = 4,
+): EngineAccItem[] {
+  const unique = dedupeEngineEntries(entries);
+  const engineItems = unique.slice(0, max).map((e) => e.item);
+  if (engineItems.length === 0) {
+    return APPENDIX_A_SEEDS.slice(0, max);
+  }
+  return engineItems;
+}
+
+/**
+ * Union of non-missing hubs across the full insight set (not only the top card).
+ */
+export function activeHubsFromItems(items: EngineAccItem[]): string[] {
+  const hubSet = new Set<string>();
+  for (const item of items) {
+    for (const d of item.dots) {
+      if (d.missing) continue;
+      hubSet.add(d.hub);
+    }
+  }
+  return JOURNEY_HUB_KEYS.filter((h) => hubSet.has(h));
+}
+
+/**
+ * Caption for the connection map. Singular only when exactly one real insight.
+ */
+export function buildConnectionNarrative(
+  items: EngineAccItem[],
+  activeHubs: string[],
+): string {
+  const count = activeHubs.length;
+  const hubWord = hubCountToWord(count);
+  if (items.length === 0) {
+    return 'Connect more hubs to light this map as insights arrive.';
+  }
+  if (items.length === 1) {
+    const name = items[0].headline;
+    if (count <= 0) {
+      return `The ${name} insight is ready. Source hubs will light as provenance lands.`;
+    }
+    return `The ${name} insight is drawn from ${hubWord} of your hubs.`;
+  }
+  if (count <= 0) {
+    return `${items.length} distinct insights are ready. Source hubs will light as provenance lands.`;
+  }
+  return `These ${items.length} insights are drawn from ${hubWord} of your hubs.`;
+}
+
+/**
+ * Writer guard: reject a second insert when insight_key is already present.
+ */
+export function canInsertInsightKey(
+  existingKeys: ReadonlySet<string> | readonly string[],
+  nextKey: string,
+): boolean {
+  const key = nextKey.trim().toLowerCase();
+  if (!key) return false;
+  if (existingKeys instanceof Set) return !existingKeys.has(key);
+  return !existingKeys.map((k) => k.toLowerCase()).includes(key);
 }
 
 // ---------------------------------------------------------------------------
@@ -322,7 +443,10 @@ export function recRowToItem(row: RecommendationsRow): EngineAccItem {
   const pts = liftFromConfidenceScore(row.confidence_score);
   const conf = confLevelFromString(row.confidence_level);
   const tag = row.category ? row.category.toUpperCase() : 'SUPPLEMENT';
+  const insightKey = insightKeyFromHeadline(row.product_name);
   return {
+    id: row.id ?? `rec-${insightKey}`,
+    insightKey,
     headline: row.product_name,
     body: row.reason,
     tag,
@@ -343,7 +467,10 @@ export function ultrathinkRowToItem(row: UltrathinkRow): EngineAccItem {
   const conf = confLevelFromPriority(row.priority);
   const signals: string[] = Array.isArray(row.health_signals) ? row.health_signals : [];
   const dots = finalizeDots(healthSignalsToDots(signals));
+  const insightKey = insightKeyFromHeadline(row.farmceutica_product);
   return {
+    id: row.id ?? `ut-${insightKey}`,
+    insightKey,
     headline: row.farmceutica_product,
     body: row.rationale,
     tag: 'SUPPLEMENT',
@@ -361,26 +488,33 @@ export function ultrathinkRowToItem(row: UltrathinkRow): EngineAccItem {
 
 export interface EngineAcceleratorsResult {
   /**
-   * Always exactly 4 items: engine-sourced first, then seeded to fill.
-   * Never empty. Never fewer than 4.
+   * Up to 4 DISTINCT insights. Never pads by cloning one real insight.
+   * Empty engine set uses Appendix A seeds (distinct templates).
+   * Sparse engine set returns only the real items (UI shows honest placeholders).
    */
   items: EngineAccItem[];
   /** True while the reads are in-flight */
   loading: boolean;
-  /** Active hubs derived from the top item's dots */
+  /** Active hubs derived from the full insight set's non-missing dots */
   activeHubs: string[];
   /**
    * Spoken-word count of active hubs ("two", "three", etc.)
    * for use in the ConnectionMap narrative line.
    */
   activeHubCountWord: string;
+  /** Connection map caption reflecting singular vs plural insight set */
+  narrativeLine: string;
 }
 
 const INITIAL: EngineAcceleratorsResult = {
   items: APPENDIX_A_SEEDS.slice(0, 4),
   loading: true,
-  activeHubs: ['Genetics', 'Labs', 'CAQ'],
-  activeHubCountWord: 'three',
+  activeHubs: activeHubsFromItems(APPENDIX_A_SEEDS.slice(0, 4)),
+  activeHubCountWord: hubCountToWord(activeHubsFromItems(APPENDIX_A_SEEDS.slice(0, 4)).length),
+  narrativeLine: buildConnectionNarrative(
+    APPENDIX_A_SEEDS.slice(0, 4),
+    activeHubsFromItems(APPENDIX_A_SEEDS.slice(0, 4)),
+  ),
 };
 
 /**
@@ -417,11 +551,14 @@ export function useEngineAccelerators(
 
   useEffect(() => {
     if (!userId) {
+      const seeds = APPENDIX_A_SEEDS.slice(0, 4);
+      const hubs = activeHubsFromItems(seeds);
       setResult({
-        items: APPENDIX_A_SEEDS.slice(0, 4),
+        items: seeds,
         loading: false,
-        activeHubs: ['Genetics', 'Labs', 'CAQ'],
-        activeHubCountWord: 'three',
+        activeHubs: hubs,
+        activeHubCountWord: hubCountToWord(hubs.length),
+        narrativeLine: buildConnectionNarrative(seeds, hubs),
       });
       return;
     }
@@ -438,10 +575,10 @@ export function useEngineAccelerators(
         const { data } = await withTimeout(
           supabase
             .from('recommendations')
-            .select('product_name, reason, category, confidence_level, confidence_score, priority_rank')
+            .select('id, product_name, reason, category, confidence_level, confidence_score, priority_rank')
             .eq('user_id', userId)
             .order('priority_rank', { ascending: true })
-            .limit(8) as unknown as Promise<RecResult>,
+            .limit(16) as unknown as Promise<RecResult>,
           4000,
           'useEngineAccelerators.recommendations',
         );
@@ -468,10 +605,10 @@ export function useEngineAccelerators(
         const { data } = await withTimeout(
           supabase
             .from('ultrathink_recommendations')
-            .select('farmceutica_product, rationale, health_signals, priority, rank, bioavailability_note')
+            .select('id, farmceutica_product, rationale, health_signals, priority, rank, bioavailability_note')
             .eq('user_id', userId)
             .order('rank', { ascending: true })
-            .limit(8) as unknown as Promise<UtResult>,
+            .limit(16) as unknown as Promise<UtResult>,
           4000,
           'useEngineAccelerators.ultrathink_recommendations',
         );
@@ -479,8 +616,7 @@ export function useEngineAccelerators(
         for (const row of rows) {
           const rank =
             typeof row.rank === 'number' && isFinite(row.rank) ? row.rank : 999;
-          // Offset ultrathink ranks by 0.5 so that when priority_ranks and ranks
-          // are equal, recommendations (more specific to this user) come first.
+          // Offset ultrathink ranks by 0.5 so recommendations win on equal rank.
           entries.push({ item: ultrathinkRowToItem(row), rank: rank + 0.5 });
         }
       } catch (err) {
@@ -491,31 +627,27 @@ export function useEngineAccelerators(
         );
       }
 
-      // Sort by rank ascending, take top 4.
-      entries.sort((a, b) => a.rank - b.rank);
-      const engineItems = entries.slice(0, 4).map((e) => e.item);
-
-      // Pad to 4 with Appendix A seeds when engine has fewer items.
-      const seedsNeeded = 4 - engineItems.length;
-      const padded: EngineAccItem[] =
-        seedsNeeded > 0
-          ? [...engineItems, ...APPENDIX_A_SEEDS.slice(0, seedsNeeded)]
-          : engineItems;
+      // Prompt 213: dedupe by insight_key, never clone one product into four cards.
+      const items = selectDistinctAccelerators(entries, 4);
 
       if (!active) return;
 
-      // Derive active hubs from top item's dots.
-      const topDots = padded.length > 0 ? padded[0].dots : [];
-      const hubSet = new Set<string>(topDots.map((d) => d.hub));
-      const activeHubs =
-        hubSet.size > 0 ? Array.from(hubSet) : ['Genetics', 'Labs', 'CAQ'];
+      const activeHubs = activeHubsFromItems(items);
       const count = activeHubs.length;
 
+      safeLog.info('useEngineAccelerators', 'fetch complete', {
+        userId,
+        entryCount: entries.length,
+        distinctCount: items.length,
+        activeHubCount: count,
+      });
+
       setResult({
-        items: padded,
+        items,
         loading: false,
         activeHubs,
         activeHubCountWord: hubCountToWord(count),
+        narrativeLine: buildConnectionNarrative(items, activeHubs),
       });
     })();
 
