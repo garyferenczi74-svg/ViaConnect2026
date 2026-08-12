@@ -9,9 +9,9 @@
 
 | Metric | Count |
 | :---- | :---- |
-| Elements audited (seeded + discovered) | 42 |
-| Wiring fixed this prompt | 6 |
-| Escalated for Gary (not improvised) | 5 |
+| Elements audited (seeded + discovered) | 48 |
+| Wiring fixed this prompt | 8 |
+| Escalated for Gary (not improvised) | 4 |
 
 ---
 
@@ -56,14 +56,14 @@ Legend: **PASS** observed or contract-proven; **FIXED** break repaired this prom
 | B10 | Doctor report (`DownloadReportButton`) | Gated no-scan message + generate with data | 404 → "Scan your body first…"; POST `/api/formavision/scan-report` | PASS (CODE) | Live generate needs scanned account |
 | B11 | Show Comparison Overlay | Ghost first scan; honest single-scan | FormaVision toggle; disabled without first scan + honest copy | PASS (CODE) | |
 | B12 | Select Body Part (13 regions) | Zoom/frame all regions | 12 ring keys in `SELECT_BODY_PART_REGIONS` (+ All) | ESCALATED | Spec says 13; picker has 12 (no 13th ring). Confirm intended count with Gary |
-| B13 | Male / Female toggle | Both surfaces; state across tabs | Composition persisted; **formavision was local-only** | FIXED | FormaVision now persists via `setGenderOverride` |
+| B13 | Male / Female toggle | Both surfaces; state across tabs | Composition persisted; **formavision was local-only**; gender was fat-tab-only on composition | FIXED | FormaVision persists; gender shown on fat **and** muscle |
 | B14 | Units control | Converts both directions, section-wide | Only measurements tab had toggle; formavision hardcoded `in` | FIXED | FormaVision mounts shared `UnitToggle` + same localStorage key |
 | B15a | Time Machine (formavision) | Scrub/play drive avatar | `JourneyTimeline` → `scrubVector` → avatar | PASS (CODE) | |
 | B15b | Time Machine (composition) | Spec listed under section | Scrub still set but **no 3D avatar** after 210h freeze; readouts still show | ESCALATED | Numbers timeline is honest; morph scrub is dead on 2D surface by design of freeze. Decide: remove scrub wiring or accept display-only |
 | B15c | DetailDrawer / callouts | Tappable regions | HoverSystem + LegendBar pin regions on composition 2D | PASS (CODE) | |
 | B15d | Future Self (formavision) | Ghost projection | Wired to avatar ghost props | PASS (CODE) | |
 | B15e | Future Self / Clip on composition | 3D-era panels | Future Self ghost + clip canvas look for missing 3D mesh; static-card path only | ESCALATED | Post-210h leftover; either relocate to formavision only or leave as numbers/static. Not a silent fail for clip (honest 2D fallback) |
-| B15f | RegionProtocolPanel on composition | Shows when region selected | `selectedBodyPart` never set (SelectBodyPart removed with 3D) | ESCALATED | Dead path on composition; panel never mounts |
+| B15f | RegionProtocolPanel | Shows when region selected | Was composition-only with no selector | FIXED | Mounted on FormaVision when Select Body Part ≠ All |
 
 ### Data wiring and states
 
@@ -97,8 +97,12 @@ Legend: **PASS** observed or contract-proven; **FIXED** break repaired this prom
 4. **Gender persist on FormaVision** — same `setGenderOverride` spine as composition.
 5. **Units on FormaVision** — shared `UnitToggle` + `vc.body-tracker.measurement-unit`.
 6. **Dead 3D imports on composition** — removed unused `BodyCompositionAvatar` / `SelectBodyPartControl` imports (surface stays 2D per 210h).
+7. **Gender on muscle tab** — Male/Female control shown for fat and muscle (2D floors both use sex).
+8. **RegionProtocolPanel** — mounts on FormaVision when a body part is selected (was split dead across routes).
 
 Regression tests: `src/lib/body-tracker/__tests__/compositionNav.test.ts` (5 cases).
+
+Explore inventory (STEP 0) also listed hub GuidanceStrip stub, Connections all-disconnected, orphaned `BodyTrackerTabs`, and composition layers that still hold scrub/ghost/clip state without a 3D mesh. Those remain escalations, not silent greened rows.
 
 ---
 
@@ -107,8 +111,8 @@ Regression tests: `src/lib/body-tracker/__tests__/compositionNav.test.ts` (5 cas
 1. **Body part count 12 vs 13** — picker has 12 rings; hub subtitle says 13 point measurements. Align copy or add missing region.
 2. **Composition Time Machine scrub** — morph target removed with 3D freeze; keep as numbers-only or hide scrub controls on composition.
 3. **Future Self / Clip placement** — 3D-dependent affordances still mounted on frozen composition; prefer formavision-only?
-4. **RegionProtocolPanel on composition** — never reachable without Select Body Part; mount control on 2D or formavision-only.
-5. **Telemetry + reason-log quiet walk** — requires authenticated production session and dashboard access (non-delegable ops/Gary).
+4. **Telemetry + reason-log quiet walk** — requires authenticated production session and dashboard access (non-delegable ops/Gary).
+5. **Optional cleanup** — orphaned `BodyTrackerTabs` component; composition dead state (`comparisonOverlayOn`, unused tints) after 210h freeze.
 
 ---
 

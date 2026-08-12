@@ -19,6 +19,7 @@ import {
 } from '@/components/formavision';
 import { JourneyTimeline, type JourneyScanReadout } from '@/components/formavision/JourneyTimeline';
 import { FutureSelfPanel } from '@/components/formavision/FutureSelfPanel';
+import { RegionProtocolPanel } from '@/components/formavision/RegionProtocolPanel';
 import { useReducedMotion } from '@/components/body-tracker/HoverSystem/useReducedMotion';
 import { SegmentalHeatMap } from '@/components/body-tracker/SegmentalHeatMap';
 import { UnitToggle } from '@/components/body-tracker/UnitToggle';
@@ -358,6 +359,11 @@ function FormaVisionSurface() {
         }}
         onUserToggle={(on) => telEmit('formavision.future_self_toggled', { on })}
       />
+
+      {/* Prompt 210k: protocol panel follows body-part selection (lives with Select Body Part). */}
+      {selectedBodyPart !== null && (
+        <RegionProtocolPanel reducedMotion={reducedMotion} />
+      )}
     </div>
   );
 }

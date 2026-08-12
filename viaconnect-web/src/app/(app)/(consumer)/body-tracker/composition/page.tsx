@@ -957,12 +957,22 @@ function CompositionPageInner() {
         return (
           <>
             {section === 'fat' && (
-              <>
-                <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 backdrop-blur-md p-4 sm:p-5 lg:p-3">
-                  <h2 className="text-lg font-bold text-white">Body Composition</h2>
-                  <p className="text-xs text-white/60">Segmental body fat analysis</p>
-                </div>
+              <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 backdrop-blur-md p-4 sm:p-5 lg:p-3">
+                <h2 className="text-lg font-bold text-white">Body Composition</h2>
+                <p className="text-xs text-white/60">Segmental body fat analysis</p>
+              </div>
+            )}
 
+            {isMuscle && (
+              <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 backdrop-blur-md p-4 sm:p-5 lg:p-3">
+                <h2 className="text-lg font-bold text-white">Muscle Analysis</h2>
+                <p className="text-xs text-white/60">Segmental muscle mass breakdown</p>
+              </div>
+            )}
+
+            {/* Prompt 210k: gender drives fat and muscle 2D floors; show on both (not measurements). */}
+            {(section === 'fat' || isMuscle) && (
+              <>
                 {caqSource === 'caq_other' && !genderManuallySet && (
                   <div className="rounded-xl border border-[#2DA5A0]/30 bg-[#2DA5A0]/10 p-3 text-xs text-white/75">
                     We don&apos;t have your gender on file. Pick a visualization below; you can change it anytime.
@@ -998,13 +1008,6 @@ function CompositionPageInner() {
                   <p className="text-xs text-[#FCA5A5]">Could not save gender preference: {genderError}</p>
                 )}
               </>
-            )}
-
-            {isMuscle && (
-              <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 backdrop-blur-md p-4 sm:p-5 lg:p-3">
-                <h2 className="text-lg font-bold text-white">Muscle Analysis</h2>
-                <p className="text-xs text-white/60">Segmental muscle mass breakdown</p>
-              </div>
             )}
 
             {/* The persistent grid. Hidden (display:none) on measurements so the
