@@ -9,6 +9,7 @@ import { useAgentRealtime } from "@/hooks/useAgentRealtime";
 import { useAgentHeartbeats } from "@/hooks/useAgentHeartbeats";
 import { useAgentDeepLink } from "@/hooks/useAgentDeepLink";
 import { deriveStatus } from "@/lib/agents/status";
+import { PipelineChainView } from "@/components/admin/jeffery/PipelineChainView";
 import type {
   AgentActivityEvent,
   AgentCurrentTask,
@@ -77,6 +78,10 @@ export default function AgentsClient({
           Reconnecting realtime stream
         </div>
       )}
+
+      <div className="px-4 md:px-8 pt-4">
+        <PipelineChainView />
+      </div>
 
       <AgentTabBar
         registry={initialRegistry}

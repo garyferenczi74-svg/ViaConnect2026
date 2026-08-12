@@ -1,54 +1,66 @@
 /**
- * Agent activity panel types (Prompt #126).
+ * Agent activity panel types (Prompt #126 + #214 + #214a).
  * Source-of-truth heartbeat/registry data comes from ultrathink_agent_registry
  * and ultrathink_agent_events; these types present the spec's canonical shape
  * to the UI via the mapper in activity-tracker.ts.
  */
 
-// Prompt 214: full nine-agent roster (gordon + kelsey join the fleet panel).
-// Baseline: Jeffery, Hannah, Michelangelo, Sherlock, Arnold, Gordon, Kelsey,
-// Marshall, Lex. Hounddog remains a Marshall bridge product surface, not a
-// ninth panel seat (Gary ruling if that changes).
+/**
+ * Prompt 214a eleven-agent roster (canonical).
+ * Kelsey is retired as a live AgentId; historical slug maps via aliases to lex.
+ */
 export type AgentId =
   | "jeffery"
   | "hannah"
-  | "michelangelo"
-  | "sherlock"
-  | "arnold"
   | "gordon"
-  | "kelsey"
+  | "arnold"
+  | "michelangelo"
+  | "hounddog"
+  | "sherlock"
   | "marshall"
-  | "lex";
+  | "lex"
+  | "security_advisor"
+  | "performance_advisor";
 
 export const AGENT_IDS: readonly AgentId[] = [
   "jeffery",
   "hannah",
-  "michelangelo",
-  "sherlock",
-  "arnold",
   "gordon",
-  "kelsey",
+  "arnold",
+  "michelangelo",
+  "hounddog",
+  "sherlock",
   "marshall",
   "lex",
+  "security_advisor",
+  "performance_advisor",
 ] as const;
 
 /**
- * Maps ultrathink_agent_registry / event agent_name values onto panel AgentIds.
- * Name mismatches (sherlock_research_hub, jeffery_master) previously dropped
- * live heartbeats from the Admin Command Center (Prompt 214 finding).
+ * Maps registry / event agent_name values onto panel AgentIds.
+ * Includes legacy Kelsey → Lex and name-mismatch aliases from Prompt 214.
  */
 export const AGENT_NAME_ALIASES: Readonly<Record<string, AgentId>> = {
   jeffery: "jeffery",
   jeffery_master: "jeffery",
   hannah: "hannah",
+  gordon: "gordon",
+  gordan: "gordon",
+  arnold: "arnold",
   michelangelo: "michelangelo",
+  hounddog: "hounddog",
+  hound_dog: "hounddog",
+  marshall_hounddog: "hounddog",
   sherlock: "sherlock",
   sherlock_research_hub: "sherlock",
-  arnold: "arnold",
-  gordon: "gordon",
-  kelsey: "kelsey",
   marshall: "marshall",
   lex: "lex",
+  // Prompt 214a: Kelsey retired; historical events still resolve for ACC.
+  kelsey: "lex",
+  security_advisor: "security_advisor",
+  performance_advisor: "performance_advisor",
+  security: "security_advisor",
+  performance: "performance_advisor",
 };
 
 export function resolveAgentId(raw: string): AgentId | null {

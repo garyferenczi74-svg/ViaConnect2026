@@ -1,8 +1,11 @@
-// Prompt #113 hotfix P0 #2 - server-side Kelsey review helper.
+// Prompt #113 hotfix P0 #2 - server-side compliance review helper.
+// Prompt 214a ownership: Stage 1 detector = Marshall (content/lexicon);
+// Stage 2 LLM legal review = Lex (former Kelsey duty). Implementation
+// modules under compliance/kelsey/* retain path names for DB history.
 //
 // Closes the Arnold coaching leak: every Claude-generated recommendation
 // must pass through Stage 1 (deterministic disease-claim detector) and,
-// when Stage 1 flags cross the threshold, Stage 2 (Kelsey LLM) before
+// when Stage 1 flags cross the threshold, Stage 2 (Lex LLM) before
 // being rendered or persisted.
 //
 // This helper mirrors the orchestration in

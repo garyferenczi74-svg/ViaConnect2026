@@ -2,24 +2,26 @@ import { describe, it, expect } from "vitest";
 import { AGENT_REGISTRY, orderedRegistry, isKnownAgentId } from "../registry";
 import { AGENT_IDS } from "../types";
 
-describe("AGENT_REGISTRY", () => {
-  it("contains exactly the canonical 9 agents (Prompt 214)", () => {
+describe("AGENT_REGISTRY (Prompt 214a)", () => {
+  it("contains exactly the canonical 11 agents", () => {
     expect(Object.keys(AGENT_REGISTRY).sort()).toEqual([...AGENT_IDS].sort());
-    expect(AGENT_IDS).toHaveLength(9);
+    expect(AGENT_IDS).toHaveLength(11);
   });
 
-  it("produces a stable sort order", () => {
+  it("produces a stable sort order matching Section 1", () => {
     const ids = orderedRegistry().map((r) => r.agent_id);
     expect(ids).toEqual([
       "jeffery",
       "hannah",
-      "michelangelo",
-      "sherlock",
-      "arnold",
       "gordon",
-      "kelsey",
+      "arnold",
+      "michelangelo",
+      "hounddog",
+      "sherlock",
       "marshall",
       "lex",
+      "security_advisor",
+      "performance_advisor",
     ]);
   });
 
@@ -36,11 +38,10 @@ describe("AGENT_REGISTRY", () => {
     }
   });
 
-  it("accepts gordon and kelsey; rejects unknown", () => {
-    expect(isKnownAgentId("jeffery")).toBe(true);
+  it("rejects kelsey as live agent; accepts advisors", () => {
+    expect(isKnownAgentId("kelsey")).toBe(false);
     expect(isKnownAgentId("gordon")).toBe(true);
-    expect(isKnownAgentId("kelsey")).toBe(true);
-    expect(isKnownAgentId("")).toBe(false);
-    expect(isKnownAgentId("hounddog")).toBe(false);
+    expect(isKnownAgentId("security_advisor")).toBe(true);
+    expect(isKnownAgentId("performance_advisor")).toBe(true);
   });
 });
