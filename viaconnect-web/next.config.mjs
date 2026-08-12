@@ -92,6 +92,17 @@ const nextConfig = {
       { source: "/privacy-policy", destination: "/privacy", permanent: true },
       { source: "/terms-of-service", destination: "/terms", permanent: true },
       { source: "/tos", destination: "/terms", permanent: true },
+      // Prompt 214d Gap 3: peptides are educational only; retire consumer shop surface
+      {
+        source: "/shop/peptides",
+        destination: "/peptide-protocol",
+        permanent: true,
+      },
+      {
+        source: "/shop/peptides/:path*",
+        destination: "/peptide-protocol",
+        permanent: true,
+      },
     ];
   },
 };

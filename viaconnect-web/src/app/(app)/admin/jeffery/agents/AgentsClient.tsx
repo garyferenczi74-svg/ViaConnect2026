@@ -12,6 +12,7 @@ import { deriveStatus } from "@/lib/agents/status";
 import { PipelineChainView } from "@/components/admin/jeffery/PipelineChainView";
 import { IngestOpsPanel } from "@/components/admin/jeffery/IngestOpsPanel";
 import { AuthoritiesAllowlistPanel } from "@/components/admin/jeffery/AuthoritiesAllowlistPanel";
+import { RegistryReconciliationPanel } from "@/components/admin/jeffery/RegistryReconciliationPanel";
 import type {
   AgentActivityEvent,
   AgentCurrentTask,
@@ -85,6 +86,7 @@ export default function AgentsClient({
         <PipelineChainView />
         <IngestOpsPanel />
         <AuthoritiesAllowlistPanel />
+        <RegistryReconciliationPanel />
       </div>
 
       <AgentTabBar

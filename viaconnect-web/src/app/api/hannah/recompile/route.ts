@@ -2,7 +2,7 @@
 // Auth: user session. Call after genetics/scan/lab landings.
 
 import { createClient } from '@/lib/supabase/server';
-import { runHannahCompilation } from '@/lib/hannah/compilation/runCompilation';
+import { compileViaChain } from '@/lib/hannah/compilation/chainEntry';
 import { safeLog } from '@/lib/utils/safe-log';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 
@@ -18,13 +18,15 @@ export async function POST(): Promise<Response> {
       return Response.json({ ok: false, error: 'unauthenticated' }, { status: 401 });
     }
 
-    const result = await runHannahCompilation({ userId: user.id });
+    // 214d: event-driven recompile routes through chain entry only
+    const result = await compileViaChain({ userId: user.id, reason: 'event_manual' });
     return Response.json(
       {
         ok: true,
         runId: result.runId,
         status: result.status,
         insights: result.insights.length,
+        chain_entry: true,
       },
       { status: 200 },
     );

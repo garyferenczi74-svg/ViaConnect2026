@@ -169,7 +169,7 @@ export function PeptideCatalogCard({ peptide, translucent = false }: PeptideCata
       <div className="mt-3 flex gap-2">
         <SharePeptideButton peptide={peptide} compact />
         <Link
-          href={`/shop/peptides/${peptide.id}`}
+          href={`/peptide-protocol`}
           className="inline-flex min-h-[36px] flex-1 items-center justify-center gap-1 rounded-xl border border-[rgba(45,165,160,0.30)] bg-[rgba(45,165,160,0.15)] px-3 py-2 text-xs font-medium text-[#2DA5A0] transition-all duration-200 hover:border-[rgba(45,165,160,0.50)] hover:bg-[rgba(45,165,160,0.25)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744]"
         >
           Full Profile

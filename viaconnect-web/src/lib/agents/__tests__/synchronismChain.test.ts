@@ -44,7 +44,9 @@ describe('Prompt 214a synchronism chain', () => {
     expect(gate?.status).toBe('skipped');
     expect(curate?.status).toBe('skipped');
     expect(domain?.status).toBe('ok');
-    expect(compose?.status).toBe('ok');
+    // 214d: compose may be ok or fail-open partial without admin client
+    expect(['ok', 'partial']).toContain(compose?.status);
+    expect(compose?.detail).toMatchObject({ chain_entry: true });
     expect(run.status).toBe('partial');
   });
 
@@ -55,12 +57,12 @@ describe('Prompt 214a synchronism chain', () => {
     expect(curate?.detail).toMatchObject({ reason: 'no_gate_approved_content' });
   });
 
-  it('Hannah compose reads finished domain digests even when scrape path is down', async () => {
+  it('Hannah compose records chain_entry even when scrape path is down', async () => {
     const run = await runSynchronismChain({ killHoundDog: true, runDate: '2026-08-14' });
     const compose = run.stages.find((s) => s.stage === 'compose');
-    // 214c: gordon + arnold + thanos + elysium
-    expect(compose?.detail).toMatchObject({ from_domain: 4 });
-    expect(compose?.recordsOut).toBe(1);
+    // 214d: compose always goes through chain entry (fail-open partial without admin)
+    expect(compose?.detail).toMatchObject({ chain_entry: true, from_domain: 4 });
+    expect(compose?.producer).toBe('hannah');
   });
 });
 

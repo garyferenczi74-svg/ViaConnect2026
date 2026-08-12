@@ -1,23 +1,25 @@
-// Tests for src/lib/scoring/sources/genetics-source.ts.
-//
-// Reads two tables: genex360_purchases and genetic_profiles.
+// Prompt 214d Gap 2: genetics score source reads ONLY Elysium finished outputs.
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getGeneticsSource } from '../../sources/genetics-source';
+import {
+  getGeneticsSource,
+  GENETICS_SCORE_TABLES,
+  FORBIDDEN_SCORE_GENETICS_TABLES,
+} from '../../sources/genetics-source';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 interface MockState {
-  purchase: Record<string, unknown> | null;
-  profile: Record<string, unknown> | null;
-  purchaseError?: unknown;
-  profileError?: unknown;
+  coverage: Record<string, unknown> | null;
+  catalog: Array<Record<string, unknown>>;
 }
 
 function makeClient(state: MockState) {
   const from = vi.fn((table: string) => {
-    if (table === 'genex360_purchases') {
+    if (table === 'elysium_upload_coverage') {
       const maybeSingle = vi.fn().mockResolvedValue({
-        data: state.purchase,
-        error: state.purchaseError ?? null,
+        data: state.coverage,
+        error: null,
       });
       const limit = vi.fn().mockReturnValue({ maybeSingle });
       const order = vi.fn().mockReturnValue({ limit });
@@ -25,93 +27,81 @@ function makeClient(state: MockState) {
       const select = vi.fn().mockReturnValue({ eq });
       return { select };
     }
-    if (table === 'genetic_profiles') {
-      const maybeSingle = vi.fn().mockResolvedValue({
-        data: state.profile,
-        error: state.profileError ?? null,
+    if (table === 'elysium_variant_interpretations') {
+      const limit = vi.fn().mockResolvedValue({
+        data: state.catalog,
+        error: null,
       });
-      const limit = vi.fn().mockReturnValue({ maybeSingle });
       const order = vi.fn().mockReturnValue({ limit });
       const eq = vi.fn().mockReturnValue({ order });
       const select = vi.fn().mockReturnValue({ eq });
       return { select };
     }
-    throw new Error(`Unexpected table ${table}`);
+    throw new Error(`Forbidden raw genetics table in score path: ${table}`);
   });
   return { from };
 }
 
-describe('genetics-source', () => {
+describe('genetics-source (214d Elysium-only)', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('returns empty / not-present when neither table has a row', async () => {
-    const client = makeClient({ purchase: null, profile: null });
+  it('absent when no Elysium coverage (no score delta)', async () => {
+    const client = makeClient({ coverage: null, catalog: [] });
     const result = await getGeneticsSource('u-1', client as never);
     expect(result.present).toBe(false);
-    expect(result.processed_at).toBeNull();
-    expect(result.panel).toBeNull();
+    expect(result.source_specific?.contribution).toBe('none');
     expect(result.source_specific?.lifecycle_status).toBe('genex360_purchase');
   });
 
-  it('marks present = true when a genetic_profiles row has SNP statuses', async () => {
+  it('pending when coverage exists but mapped_count is 0', async () => {
     const client = makeClient({
-      purchase: null,
-      profile: {
-        mthfr_status: 'C677T heterozygous',
-        comt_status: 'val/met',
-        cyp2d6_status: 'normal',
-        report_date: '2026-04-15',
+      coverage: {
+        mapped_count: 0,
+        pending_count: 3,
+        unknown_count: 1,
+        created_at: '2026-08-12T00:00:00Z',
       },
+      catalog: [{ rsid: 'rs1801133', interpretation_status: 'interpreted' }],
     });
     const result = await getGeneticsSource('u-1', client as never);
-    expect(result.present).toBe(true);
-    expect(result.source_specific?.lifecycle_status).toBe('complete');
+    expect(result.present).toBe(false);
+    expect(result.source_specific?.contribution).toBe('pending');
+    expect(result.source_specific?.lifecycle_status).toBe('pending_interpretation');
   });
 
-  it('marks present = true when test_results_delivered_at is set on purchase', async () => {
+  it('present only when mapped interpretations and catalog interpreted rows exist', async () => {
     const client = makeClient({
-      purchase: {
-        product_id: 'fc-genex360',
-        test_results_delivered_at: '2026-04-20T10:00:00Z',
-        lifecycle_status: 'delivered',
+      coverage: {
+        mapped_count: 4,
+        pending_count: 1,
+        unknown_count: 0,
+        created_at: '2026-08-12T12:00:00Z',
       },
-      profile: null,
+      catalog: [
+        { rsid: 'rs1801133', interpretation_status: 'interpreted' },
+        { rsid: 'rs4680', interpretation_status: 'interpreted' },
+      ],
     });
     const result = await getGeneticsSource('u-1', client as never);
     expect(result.present).toBe(true);
     expect(result.panel).toBe('genex360_v1');
+    expect(result.source_specific?.contribution).toBe('active');
+    expect(result.source_specific?.interpreted_count).toBe(4);
   });
 
-  it('picks the more recent of profile.report_date vs purchase.test_results_delivered_at', async () => {
-    const client = makeClient({
-      purchase: {
-        product_id: 'fc-genex360',
-        test_results_delivered_at: '2026-04-20T10:00:00Z',
-        lifecycle_status: 'delivered',
-      },
-      profile: {
-        mthfr_status: 'wild',
-        comt_status: 'wild',
-        cyp2d6_status: 'wild',
-        report_date: '2026-05-01',
-      },
-    });
-    const result = await getGeneticsSource('u-1', client as never);
-    // Latest is report_date 2026-05-01 vs purchase delivered 2026-04-20.
-    expect(result.processed_at?.startsWith('2026-05-01')).toBe(true);
-  });
+  it('does not treat raw genetic_profiles tables as allowed score sources', () => {
+    expect(GENETICS_SCORE_TABLES).toContain('elysium_variant_interpretations');
+    expect(GENETICS_SCORE_TABLES).toContain('elysium_upload_coverage');
+    expect(FORBIDDEN_SCORE_GENETICS_TABLES).toContain('genetic_profiles');
+    expect(FORBIDDEN_SCORE_GENETICS_TABLES).toContain('genex360_purchases');
 
-  it('lifecycle_status = genex360_status when purchase exists but no results yet', async () => {
-    const client = makeClient({
-      purchase: {
-        product_id: 'fc-genex360',
-        test_results_delivered_at: null,
-        lifecycle_status: 'sample_received',
-      },
-      profile: null,
-    });
-    const result = await getGeneticsSource('u-1', client as never);
-    expect(result.present).toBe(false);
-    expect(result.source_specific?.lifecycle_status).toBe('genex360_status');
+    const src = readFileSync(
+      join(process.cwd(), 'src/lib/scoring/sources/genetics-source.ts'),
+      'utf8',
+    );
+    expect(src).not.toMatch(/from\(['"]genetic_profiles['"]\)/);
+    expect(src).not.toMatch(/from\(['"]genex360_purchases['"]\)/);
+    expect(src).toMatch(/elysium_variant_interpretations/);
+    expect(src).toMatch(/elysium_upload_coverage/);
   });
 });

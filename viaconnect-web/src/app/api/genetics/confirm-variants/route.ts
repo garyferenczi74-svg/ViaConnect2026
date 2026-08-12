@@ -85,10 +85,10 @@ export async function POST(request: Request): Promise<NextResponse> {
       brandedProductCode: null,
       sourceFilename,
     });
-    // Prompt 213a: genetics landing triggers off-cycle Hannah recompile (fail-open).
+    // Prompt 214d: genetics landing recompile via chain entry only (fail-open).
     try {
-      const { runHannahCompilation } = await import('@/lib/hannah/compilation/runCompilation');
-      void runHannahCompilation({ userId: user.id });
+      const { compileViaChain } = await import('@/lib/hannah/compilation/chainEntry');
+      void compileViaChain({ userId: user.id, reason: 'event_genetics' });
     } catch {
       /* fail-open */
     }

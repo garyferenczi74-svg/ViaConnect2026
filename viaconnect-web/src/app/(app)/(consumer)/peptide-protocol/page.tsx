@@ -86,6 +86,19 @@ export default function PeptideProtocolRoute() {
             <PeptideCatalogSection />
             <PeptidePractitionerAccess />
 
+            {/* Prompt 214d Gap 5: pathway only (no depth content leakage) */}
+            <div
+              data-testid="discuss-with-practitioner-pathway"
+              className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/50 p-4"
+            >
+              <p className="text-sm font-medium text-white">Discuss with your practitioner</p>
+              <p className="text-xs text-white/50 mt-1 leading-relaxed">
+                Educational peptide material only. Protocol depth and dosing research context
+                are available to authenticated practitioners. Ask your qualified practitioner
+                to review frameworks with you.
+              </p>
+            </div>
+
           </div>
         </div>
       </div>

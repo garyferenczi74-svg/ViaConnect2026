@@ -13,7 +13,7 @@ import { deriveScanComposition } from '@/lib/body-tracker/composition/deriveScan
 import { buildScanWrite } from '@/lib/body-tracker/composition/buildScanWrite';
 import { newCorrelationId, logScanEvent } from '@/lib/body-tracker/composition/correlation';
 import type { BodyScanEstimate } from '@/components/body-tracker/BodyScanUploader';
-import { runHannahCompilation } from '@/lib/hannah/compilation/runCompilation';
+import { compileViaChain } from '@/lib/hannah/compilation/chainEntry';
 
 export const dynamic = 'force-dynamic';
 
@@ -200,7 +200,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     });
 
     // Prompt 213a: off-cycle recompile after FormaVision/scan landing (fail-open).
-    void runHannahCompilation({ userId }).catch((e) => {
+    void compileViaChain({ userId, reason: 'event_scan' }).catch((e) => {
       safeLog.warn('scan.persist', 'hannah recompile skipped', {
         correlationId,
         error: e instanceof Error ? e.message : String(e),
