@@ -1,38 +1,37 @@
-# Mobile / non-web
-viaconnect-mobile/
-android/
-ios/
+# Mobile / non-web (repo root only)
+/viaconnect-mobile/
+/android/
+/ios/
 
-# Dependencies and VCS (redundant but safe)
-node_modules/
+# Dependencies and VCS
+/node_modules/
 .git/
 
-# Tests and local automation (not needed on Vercel)
-__tests__/
-e2e/
+# Tests and local automation
+/__tests__/
+/e2e/
 **/__tests__/
 **/*.test.ts
 **/*.test.tsx
 **/*.spec.ts
 **/*.spec.tsx
-playwright/
-playwright-report/
-test-results/
-coverage/
+/playwright/
+/playwright-report/
+/test-results/
+/coverage/
 vitest.config.*
 playwright.config.*
 
-# Tooling / ops bulk at monorepo root
-exports/
-*.ps1
-*.sql
-*.csv
-*.html
-tmp/
-docs/
-scripts/
-supabase/
-extension/
+# Tooling / ops bulk at monorepo ROOT only (do not match src/lib/supabase etc.)
+/exports/
+/*.ps1
+/*.sql
+/*.csv
+/tmp/
+/docs/
+/scripts/
+/supabase/
+/extension/
 
 # Local env / caches
 .env*.local
@@ -42,10 +41,9 @@ extension/
 *.log
 .DS_Store
 
-# Large local artifacts
-viaconnect-web/tmp/
-viaconnect-web/scripts/
-viaconnect-web/supabase/
-viaconnect-web/android/
-viaconnect-web/ios/
-viaconnect-web/public/**/*.mp4
+# Large app-local artifacts under web package only
+/viaconnect-web/tmp/
+/viaconnect-web/scripts/
+/viaconnect-web/supabase/
+/viaconnect-web/android/
+/viaconnect-web/ios/
