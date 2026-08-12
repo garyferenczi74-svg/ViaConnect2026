@@ -6,7 +6,7 @@ import { timingSafeEqual } from 'node:crypto';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { runHannahCompilationBatch } from '@/lib/hannah/compilation/runCompilation';
 import { ingestDemoClinicalStudy } from '@/lib/hounddog/ingestDemo';
-import { processHoundDogGateQueue } from '@/lib/hounddog/gate';
+import { processHoundDogGateQueue } from '@/lib/hounddog/contentGate';
 import { safeLog } from '@/lib/utils/safe-log';
 
 export const dynamic = 'force-dynamic';

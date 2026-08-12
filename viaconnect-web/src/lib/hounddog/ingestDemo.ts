@@ -4,7 +4,7 @@
  */
 
 import type { createAdminClient } from '@/lib/supabase/admin';
-import { evaluateHoundDogGate, processHoundDogGateQueue } from './gate';
+import { evaluateHoundDogGate, processHoundDogGateQueue } from './contentGate';
 
 type AdminClient = ReturnType<typeof createAdminClient>;
 

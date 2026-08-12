@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import { composeAcceleratorInsights, composePersonalizedRead } from '../compose';
 import type { SupplierDigest } from '../types';
-import { evaluateHoundDogGate } from '@/lib/hounddog/gate';
+import { evaluateHoundDogGate } from '@/lib/hounddog/contentGate';
 import { canInsertInsightKey, insightKeyFromHeadline } from '@/hooks/journey/useEngineAccelerators';
 
 function digest(
