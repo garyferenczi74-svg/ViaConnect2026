@@ -200,7 +200,14 @@ export function BodyCompositionForm({
       {sourceId && (
         <>
           <div className="flex">
-            <CompositionSectionToggle active={section} onChange={setSection} />
+            <CompositionSectionToggle
+              active={section}
+              onChange={(tab) => {
+                if (tab === 'formavision') return;
+                setSection(tab);
+              }}
+              includeFormaVision={false}
+            />
           </div>
 
           {section === 'fat' && (

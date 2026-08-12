@@ -6,7 +6,12 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { BackToHubLink } from '@/components/body-tracker/hub/BackToHubLink';
+import {
+  CompositionSectionToggle,
+  type CompositionNavTab,
+} from '@/components/body-tracker/CompositionSectionToggle';
 import {
   BodyCompositionAvatar,
   SelectBodyPartControl,
@@ -35,9 +40,18 @@ export default function FormaVisionPage() {
 }
 
 function FormaVisionSurface() {
+  const router = useRouter();
   const { id: userId } = useCurrentUser();
   const reducedMotion = useReducedMotion();
   const { sex: caqSex } = useUserBiologicalSex(userId ?? null);
+
+  const onSectionNav = useCallback(
+    (tab: CompositionNavTab) => {
+      if (tab === 'formavision') return;
+      router.push(`/body-tracker/composition?section=${tab}`);
+    },
+    [router],
+  );
   const [gender, setGender] = useState<'male' | 'female'>('male');
   const [selectedBodyPart, setSelectedBodyPart] = useState<string | null>(null);
   const [scrubVector, setScrubVector] = useState<BodyParamVector | null>(null);
@@ -146,6 +160,10 @@ function FormaVisionSurface() {
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 pb-16 pt-4 md:px-6">
       <BackToHubLink />
 
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <CompositionSectionToggle active="formavision" onChange={onSectionNav} />
+      </div>
+
       <header className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-4 backdrop-blur-md sm:p-5">
         <h1 className="text-2xl font-bold tracking-tight">
           <span className="text-[#B75E18]">Forma</span>
@@ -155,16 +173,6 @@ function FormaVisionSurface() {
           {hasScanData
             ? 'Your body, built from your scan and measurements. A ghost overlay shows where you started.'
             : 'Scan your body or log measurements to build your 3D form. No photographic surface reconstruction.'}
-        </p>
-        <p className="mt-2 text-xs text-white/45">
-          Numbers and manual Log Data stay on{' '}
-          <Link
-            href="/body-tracker/composition"
-            className="text-[#2DA5A0] underline-offset-2 hover:underline"
-          >
-            Body Composition
-          </Link>
-          .
         </p>
       </header>
 

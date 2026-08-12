@@ -1,9 +1,8 @@
 'use client';
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import Link from 'next/link';
 import { BackToHubLink } from '@/components/body-tracker/hub/BackToHubLink';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Plus, Camera, Check, RotateCcw } from 'lucide-react';
 import { SegmentalHeatMap } from '@/components/body-tracker/SegmentalHeatMap';
@@ -105,6 +104,7 @@ import {
 import {
   CompositionSectionToggle,
   type CompositionSection,
+  type CompositionNavTab,
 } from '@/components/body-tracker/CompositionSectionToggle';
 import { UnitToggle } from '@/components/body-tracker/UnitToggle';
 import { MeasurementsGrid } from '@/components/body-tracker/MeasurementsGrid';
@@ -265,6 +265,7 @@ type ScanPersistState =
 
 function CompositionPageInner() {
   const params = useSearchParams();
+  const router = useRouter();
   const sectionParam = params?.get('section');
   const initialSection: CompositionSection =
     sectionParam === 'muscle' || sectionParam === 'measurements' || sectionParam === 'fat'
@@ -272,6 +273,18 @@ function CompositionPageInner() {
       : 'fat';
 
   const [section, setSection] = useState<CompositionSection>(initialSection);
+
+  // Prompt 210i: FormaVision is a nav tab, not an in-page section.
+  const onSectionNav = useCallback(
+    (tab: CompositionNavTab) => {
+      if (tab === 'formavision') {
+        router.push('/body-tracker/formavision');
+        return;
+      }
+      setSection(tab);
+    },
+    [router],
+  );
   const [open, setOpen] = useState(false);
   const [scanOpen, setScanOpen] = useState(false);
   const [scanResult, setScanResult] = useState<BodyScanResult | null>(null);
@@ -792,7 +805,7 @@ function CompositionPageInner() {
   return (
     <div className="space-y-6 lg:space-y-3" key={refreshKey}>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <CompositionSectionToggle active={section} onChange={setSection} />
+        <CompositionSectionToggle active={section} onChange={onSectionNav} />
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -931,15 +944,6 @@ function CompositionPageInner() {
                 <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 backdrop-blur-md p-4 sm:p-5 lg:p-3">
                   <h2 className="text-lg font-bold text-white">Body Composition</h2>
                   <p className="text-xs text-white/60">Segmental body fat analysis</p>
-                  {(composHistory.latest || circumferenceData.latest) && (
-                    <Link
-                      href="/body-tracker/formavision"
-                      data-testid="open-formavision-link"
-                      className="mt-2 inline-flex text-xs font-medium text-[#B75E18] underline-offset-2 hover:underline"
-                    >
-                      View your 3D body in FormaVision
-                    </Link>
-                  )}
                 </div>
 
                 {caqSource === 'caq_other' && !genderManuallySet && (
