@@ -1,5 +1,5 @@
 /**
- * Prompt 214a: roster integrity (eleven agents) + Kelsey retirement.
+ * Prompt 214a/214c: roster integrity (thirteen agents) + Kelsey retirement.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -48,12 +48,20 @@ export const AGENT_TRIGGER_CATALOG: Record<
   ],
   security_advisor: [{ kind: 'chain', path: 'synchronism stage guard' }],
   performance_advisor: [{ kind: 'chain', path: 'synchronism stage guard' }],
+  thanos: [
+    { kind: 'chain', path: 'synchronism stage ingest + domain_refresh' },
+    { kind: 'request', path: 'peptide education allowlist ingest' },
+  ],
+  elysium: [
+    { kind: 'chain', path: 'synchronism stage ingest + domain_refresh' },
+    { kind: 'request', path: 'genetics interpretation + IGSR watch' },
+  ],
 };
 
-describe('Prompt 214a roster integrity', () => {
-  it('registers exactly eleven agents', () => {
-    expect(AGENT_IDS).toHaveLength(11);
-    expect(Object.keys(AGENT_REGISTRY)).toHaveLength(11);
+describe('Prompt 214c roster integrity', () => {
+  it('registers exactly thirteen agents', () => {
+    expect(AGENT_IDS).toHaveLength(13);
+    expect(Object.keys(AGENT_REGISTRY)).toHaveLength(13);
   });
 
   it('does not register kelsey as a live AgentId', () => {
@@ -65,10 +73,12 @@ describe('Prompt 214a roster integrity', () => {
     expect(resolveAgentId('kelsey')).toBe('lex');
   });
 
-  it('includes hounddog and both advisors', () => {
+  it('includes hounddog, advisors, thanos, and elysium', () => {
     expect(isKnownAgentId('hounddog')).toBe(true);
     expect(isKnownAgentId('security_advisor')).toBe(true);
     expect(isKnownAgentId('performance_advisor')).toBe(true);
+    expect(isKnownAgentId('thanos')).toBe(true);
+    expect(isKnownAgentId('elysium')).toBe(true);
   });
 
   it('orderedRegistry matches Section 1 order', () => {
@@ -93,6 +103,8 @@ describe('Prompt 214a roster integrity', () => {
       expect(getDisplayName(id).length).toBeGreaterThan(0);
     }
     expect(getDisplayName('hounddog')).toBe('Hound Dog');
+    expect(getDisplayName('thanos')).toBe('Thanos');
+    expect(getDisplayName('elysium')).toBe('Elysium');
   });
 
   it('Kelsey duty map reassigns every duty to marshall or lex', () => {

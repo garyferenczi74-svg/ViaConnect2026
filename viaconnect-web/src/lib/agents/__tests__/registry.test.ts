@@ -2,10 +2,10 @@ import { describe, it, expect } from "vitest";
 import { AGENT_REGISTRY, orderedRegistry, isKnownAgentId } from "../registry";
 import { AGENT_IDS } from "../types";
 
-describe("AGENT_REGISTRY (Prompt 214a)", () => {
-  it("contains exactly the canonical 11 agents", () => {
+describe("AGENT_REGISTRY (Prompt 214c thirteen agents)", () => {
+  it("contains exactly the canonical 13 agents", () => {
     expect(Object.keys(AGENT_REGISTRY).sort()).toEqual([...AGENT_IDS].sort());
-    expect(AGENT_IDS).toHaveLength(11);
+    expect(AGENT_IDS).toHaveLength(13);
   });
 
   it("produces a stable sort order matching Section 1", () => {
@@ -22,6 +22,8 @@ describe("AGENT_REGISTRY (Prompt 214a)", () => {
       "lex",
       "security_advisor",
       "performance_advisor",
+      "thanos",
+      "elysium",
     ]);
   });
 
@@ -38,10 +40,12 @@ describe("AGENT_REGISTRY (Prompt 214a)", () => {
     }
   });
 
-  it("rejects kelsey as live agent; accepts advisors", () => {
+  it("rejects kelsey as live agent; accepts advisors and 214c agents", () => {
     expect(isKnownAgentId("kelsey")).toBe(false);
     expect(isKnownAgentId("gordon")).toBe(true);
     expect(isKnownAgentId("security_advisor")).toBe(true);
     expect(isKnownAgentId("performance_advisor")).toBe(true);
+    expect(isKnownAgentId("thanos")).toBe(true);
+    expect(isKnownAgentId("elysium")).toBe(true);
   });
 });

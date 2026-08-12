@@ -30,6 +30,7 @@ function mindateDaysAgo(days: number): string {
 export async function runHoundDogDailyIngest(opts?: {
   runId?: string;
   runDate?: string;
+  /** Default: Mondays only. Prompt 214c sets false; Elysium owns IGSR. */
   includeGenomes?: boolean;
   enrichFullText?: boolean;
 }): Promise<IngestRunStats> {
@@ -139,9 +140,10 @@ export async function runHoundDogDailyIngest(opts?: {
     }
   }
 
-  // Genomes weekly: caller can force; otherwise only on Mondays UTC
+  // Genomes weekly: default Mondays UTC. Explicit false disables (214c Elysium owns IGSR).
   const isMonday = new Date().getUTCDay() === 1;
-  if (opts?.includeGenomes || isMonday) {
+  const includeGenomes = opts?.includeGenomes ?? isMonday;
+  if (includeGenomes) {
     const { data: lastRel } = await supabase
       .from('genomics_reference_releases')
       .select('release_id')
@@ -155,7 +157,7 @@ export async function runHoundDogDailyIngest(opts?: {
     stats.genomes.releaseId = watch.releaseId;
     stats.genomes.isNew = watch.isNew;
 
-    if (watch.releaseId && (watch.isNew || opts?.includeGenomes)) {
+    if (watch.releaseId && (watch.isNew || includeGenomes)) {
       await supabase.from('genomics_reference_releases').upsert(
         {
           release_id: watch.releaseId,

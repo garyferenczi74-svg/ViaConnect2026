@@ -29,6 +29,11 @@ const NAME_MAP: Readonly<Record<string, string>> = {
   performance: "Performance Advisor",
   marshall_precheck: "Marshall Pre-Check",
   marshall_extension: "Marshall Pre-Check Extension",
+  // Prompt 214c
+  thanos: "Thanos",
+  elysium: "Elysium",
+  my_genetics: "Elysium",
+  peptide_education: "Thanos",
   // Humans
   gary: "Gary",
   steve_rica: "Steve Rica",

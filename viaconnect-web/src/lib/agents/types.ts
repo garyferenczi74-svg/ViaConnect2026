@@ -6,8 +6,9 @@
  */
 
 /**
- * Prompt 214a eleven-agent roster (canonical).
+ * Prompt 214c thirteen-agent roster (canonical).
  * Kelsey is retired as a live AgentId; historical slug maps via aliases to lex.
+ * Thanos = Peptide Education; Elysium = My Genetics (genetics handoff from Arnold).
  */
 export type AgentId =
   | "jeffery"
@@ -20,7 +21,9 @@ export type AgentId =
   | "marshall"
   | "lex"
   | "security_advisor"
-  | "performance_advisor";
+  | "performance_advisor"
+  | "thanos"
+  | "elysium";
 
 export const AGENT_IDS: readonly AgentId[] = [
   "jeffery",
@@ -34,6 +37,8 @@ export const AGENT_IDS: readonly AgentId[] = [
   "lex",
   "security_advisor",
   "performance_advisor",
+  "thanos",
+  "elysium",
 ] as const;
 
 /**
@@ -61,6 +66,11 @@ export const AGENT_NAME_ALIASES: Readonly<Record<string, AgentId>> = {
   performance_advisor: "performance_advisor",
   security: "security_advisor",
   performance: "performance_advisor",
+  // Prompt 214c
+  thanos: "thanos",
+  elysium: "elysium",
+  my_genetics: "elysium",
+  peptide_education: "thanos",
 };
 
 export function resolveAgentId(raw: string): AgentId | null {

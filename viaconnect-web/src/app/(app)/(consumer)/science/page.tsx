@@ -115,6 +115,22 @@ export default function SciencePage() {
         </p>
       </div>
 
+      {/* Prompt 214c: living crawl allowlist backbone (Thanos + Elysium) */}
+      <div
+        data-testid="authorities-allowlist-note"
+        className="rounded-xl bg-[#1E3054]/50 border border-white/[0.08] p-4 space-y-2"
+      >
+        <p className="text-[10px] uppercase tracking-wider text-white/30 font-semibold">
+          Evidence backbone
+        </p>
+        <p className="text-xs text-white/40 leading-relaxed">
+          Thanos (Peptide Education) and Elysium (My Genetics) refresh content only from
+          Science &amp; Authorities allowlisted domains. Crawl additions are proposed in the
+          Admin Command Center and approved by Gary. Provenance stays attached from source URL
+          through Marshall gate to Hannah insights.
+        </p>
+      </div>
+
       {/* Domain filters */}
       <div className="flex flex-wrap gap-2">
         <button

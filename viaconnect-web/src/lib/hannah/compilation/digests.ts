@@ -391,52 +391,34 @@ export const getHoundDogDailyDigest: DigestFn = async (_userId, sinceIso) =>
     });
   });
 
-/** Arnold genetics context from versioned allele freq reference (214b). */
+/**
+ * @deprecated Prompt 214c: genetics context owned by Elysium.
+ * Re-exports Elysium digest so legacy callers do not read Arnold-owned genetics tables.
+ */
 export async function getArnoldGenomicsContextDigest(
   userId: string,
   sinceIso: string,
 ): Promise<SupplierDigest> {
-  return timedDigest('arnold', async () => {
-    const supabase = createAdminClient();
-    const { data: freqs } = await supabase
-      .from('genomics_panel_allele_freq')
-      .select('rsid, gene_symbol, alt_allele_freq, release_id, source_url')
-      .limit(8);
+  const { getElysiumDailyDigest } = await import('@/lib/elysium/digest');
+  return getElysiumDailyDigest(userId, sinceIso);
+}
 
-    const rows = Array.isArray(freqs) ? freqs : [];
-    if (rows.length === 0) {
-      return [
-        {
-          id: 'arnold-genomics-empty',
-          hub: 'Genetics' as const,
-          summary: 'No panel-scoped genomic reference frequencies loaded yet.',
-          metricValue: null,
-          refs: ['genomics_panel_allele_freq'],
-        },
-      ];
-    }
+/** Prompt 214c: Thanos peptide education digest. */
+export async function getThanosDailyDigest(
+  userId: string,
+  sinceIso: string,
+): Promise<SupplierDigest> {
+  const { getThanosDailyDigest: fn } = await import('@/lib/thanos/digest');
+  return fn(userId, sinceIso);
+}
 
-    void userId;
-    void sinceIso;
-    return rows.map((r) => {
-      const row = r as {
-        rsid?: string;
-        gene_symbol?: string;
-        alt_allele_freq?: number;
-        release_id?: string;
-        source_url?: string;
-      };
-      return {
-        id: `arnold-freq-${row.rsid ?? 'x'}`,
-        hub: 'Genetics' as const,
-        summary: `${row.gene_symbol ?? 'gene'} ${row.rsid ?? ''}: population alt freq ${row.alt_allele_freq ?? 'UNKNOWN'} (release ${row.release_id ?? 'n/a'}).`,
-        metricLabel: 'alt_allele_freq',
-        metricValue:
-          typeof row.alt_allele_freq === 'number' ? String(row.alt_allele_freq) : null,
-        refs: [row.source_url ?? row.rsid ?? 'freq'],
-      };
-    });
-  });
+/** Prompt 214c: Elysium genetics digest. */
+export async function getElysiumDailyDigest(
+  userId: string,
+  sinceIso: string,
+): Promise<SupplierDigest> {
+  const { getElysiumDailyDigest: fn } = await import('@/lib/elysium/digest');
+  return fn(userId, sinceIso);
 }
 
 /** Gordon nutrition evidence from Sherlock route_tags (never alters meal math). */
@@ -527,4 +509,6 @@ export const ALL_DIGEST_FNS: DigestFn[] = [
   getSherlockDailyDigest,
   getHoundDogDailyDigest,
   getUserInputDailyDigest,
+  getThanosDailyDigest,
+  getElysiumDailyDigest,
 ];

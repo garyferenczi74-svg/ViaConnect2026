@@ -80,7 +80,10 @@ function makeRunId(runDate: string): string {
   return `sync-${runDate}`;
 }
 
-/** Default Stage 1: Hound Dog multi-source ingest (214b Firecrawl + PubMed). */
+/**
+ * Default Stage 1: Hound Dog multi-source ingest (214b) plus Thanos + Elysium
+ * allowlist-scoped runs (214c). Fail-open per agent.
+ */
 async function runIngest(ctx: StageContext): Promise<StageResult> {
   const t0 = ctx.now().getTime();
   if (ctx.killHoundDog) {
@@ -100,17 +103,61 @@ async function runIngest(ctx: StageContext): Promise<StageResult> {
     const stats = await runHoundDogDailyIngest({
       runId: `${ctx.runId}-ingest`,
       runDate: ctx.runDate,
+      // 214c: IGSR weekly watch owned by Elysium
+      includeGenomes: false,
     });
+
+    let thanosOut = 0;
+    let elysiumOut = 0;
+    let thanosDetail: Record<string, unknown> = {};
+    let elysiumDetail: Record<string, unknown> = {};
+    try {
+      const { runThanosDailyIngest } = await import('@/lib/thanos/allowlistIngest');
+      const t = await runThanosDailyIngest({
+        runId: `${ctx.runId}-thanos`,
+        runDate: ctx.runDate,
+      });
+      thanosOut = t.staged + t.refreshed;
+      thanosDetail = { ...t };
+    } catch (err) {
+      thanosDetail = {
+        error: err instanceof Error ? err.message : String(err),
+        fail_open: true,
+      };
+    }
+    try {
+      const { runElysiumDailyIngest } = await import('@/lib/elysium/allowlistIngest');
+      const e = await runElysiumDailyIngest({
+        runId: `${ctx.runId}-elysium`,
+        runDate: ctx.runDate,
+      });
+      elysiumOut = e.staged + e.coverageSeeded;
+      elysiumDetail = { ...e };
+    } catch (err) {
+      elysiumDetail = {
+        error: err instanceof Error ? err.message : String(err),
+        fail_open: true,
+      };
+    }
+
     const out =
-      stats.pubmed.staged + stats.social.staged + (stats.genomes.snps > 0 ? 1 : 0);
+      stats.pubmed.staged +
+      stats.social.staged +
+      (stats.genomes.snps > 0 ? 1 : 0) +
+      thanosOut +
+      elysiumOut;
     return {
       stage: 'ingest',
       status: stats.hitBudget ? 'partial' : 'ok',
-      producer: 'hounddog',
-      recordsIn: stats.pubmed.discovered + stats.social.staged,
+      producer: ['hounddog', 'thanos', 'elysium'],
+      recordsIn: stats.pubmed.discovered + stats.social.staged + thanosOut + elysiumOut,
       recordsOut: out,
       durationMs: ctx.now().getTime() - t0,
-      detail: { ...stats, mode: 'firecrawl_pubmed_social' },
+      detail: {
+        hounddog: { ...stats, mode: 'firecrawl_pubmed_social' },
+        thanos: thanosDetail,
+        elysium: elysiumDetail,
+      },
     };
   } catch (err) {
     return {
@@ -203,20 +250,27 @@ async function runCurate(ctx: StageContext): Promise<StageResult> {
   }
 }
 
-/** Stage 4: Gordon + Arnold digests (parallel to scrape stages conceptually). */
+/** Stage 4: Gordon + Arnold + Thanos + Elysium digests. */
 async function runDomainRefresh(ctx: StageContext): Promise<StageResult> {
   const t0 = ctx.now().getTime();
   return {
     stage: 'domain_refresh',
     status: 'ok',
-    producer: ['gordon', 'arnold'],
+    producer: ['gordon', 'arnold', 'thanos', 'elysium'],
     consumer: 'hannah',
-    recordsIn: 2,
-    recordsOut: 2,
+    recordsIn: 4,
+    recordsOut: 4,
     durationMs: ctx.now().getTime() - t0,
     detail: {
-      digests: ['nutrition_daily', 'biology_daily'],
+      digests: [
+        'nutrition_daily',
+        'biology_daily',
+        'peptide_education_daily',
+        'genetics_daily',
+      ],
       independent_of_scrape: true,
+      genetics_owner: 'elysium',
+      peptide_owner: 'thanos',
     },
   };
 }

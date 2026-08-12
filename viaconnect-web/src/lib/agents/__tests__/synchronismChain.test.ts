@@ -58,7 +58,8 @@ describe('Prompt 214a synchronism chain', () => {
   it('Hannah compose reads finished domain digests even when scrape path is down', async () => {
     const run = await runSynchronismChain({ killHoundDog: true, runDate: '2026-08-14' });
     const compose = run.stages.find((s) => s.stage === 'compose');
-    expect(compose?.detail).toMatchObject({ from_domain: 2 });
+    // 214c: gordon + arnold + thanos + elysium
+    expect(compose?.detail).toMatchObject({ from_domain: 4 });
     expect(compose?.recordsOut).toBe(1);
   });
 });
@@ -93,11 +94,15 @@ describe('Prompt 214a gate reassignment', () => {
   });
 });
 
-describe('Prompt 214a one-writer contract (documentation lock)', () => {
-  it('domain digests are produced only by gordon and arnold', async () => {
+describe('Prompt 214c one-writer contract (documentation lock)', () => {
+  it('domain digests are produced by gordon, arnold, thanos, and elysium', async () => {
     const run = await runSynchronismChain({ runDate: '2026-08-15' });
     const domain = run.stages.find((s) => s.stage === 'domain_refresh');
-    expect(domain?.producer).toEqual(['gordon', 'arnold']);
+    expect(domain?.producer).toEqual(['gordon', 'arnold', 'thanos', 'elysium']);
+    expect(domain?.detail).toMatchObject({
+      genetics_owner: 'elysium',
+      peptide_owner: 'thanos',
+    });
   });
 
   it('compose producer is only hannah', async () => {

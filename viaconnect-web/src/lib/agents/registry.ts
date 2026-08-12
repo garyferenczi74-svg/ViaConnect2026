@@ -1,6 +1,7 @@
 /**
- * Static agent registry for the admin Agents panel (Prompt #214a).
- * Eleven agents. Kelsey is retired (alias to Lex for historical events only).
+ * Static agent registry for the admin Agents panel (Prompt #214a + #214c).
+ * Thirteen agents. Kelsey is retired (alias to Lex for historical events only).
+ * Thanos owns Peptide Education; Elysium owns My Genetics.
  */
 
 import type { AgentId, AgentRegistryRow } from "./types";
@@ -44,7 +45,7 @@ export const AGENT_REGISTRY: Readonly<Record<AgentId, AgentRegistryRow>> = {
     display_name: "Arnold",
     role_label: "My Biology Agent",
     description:
-      "My Biology hub: FormaVision body composition, vitals trends, wearables-derived biology metrics.",
+      "My Biology hub: FormaVision body composition, vitals trends, wearables-derived biology metrics. Genetics context via Elysium digest only.",
     icon_name: "Dumbbell",
     accent_color: "#B75E18",
     sort_order: 4,
@@ -125,6 +126,28 @@ export const AGENT_REGISTRY: Readonly<Record<AgentId, AgentRegistryRow>> = {
     icon_name: "Gauge",
     accent_color: "#2DA5A0",
     sort_order: 11,
+    is_active: true,
+  },
+  thanos: {
+    agent_id: "thanos",
+    display_name: "Thanos",
+    role_label: "Peptide Education Agent",
+    description:
+      "Owns Peptide Education end to end: allowlist research freshness, educational catalog, practitioner protocol guidance with Hannah. Never commercial product paths.",
+    icon_name: "FlaskConical",
+    accent_color: "#B75E18",
+    sort_order: 12,
+    is_active: true,
+  },
+  elysium: {
+    agent_id: "elysium",
+    display_name: "Elysium",
+    role_label: "My Genetics Agent",
+    description:
+      "Owns My Genetics: GENEX360 interpretations, upload mapping, 1000 Genomes population context, genetics education with Hannah.",
+    icon_name: "Dna",
+    accent_color: "#2DA5A0",
+    sort_order: 13,
     is_active: true,
   },
 };

@@ -18,7 +18,9 @@ export type SupplierAgent =
   | 'sherlock'
   | 'hounddog'
   | 'user_input'
-  | 'hannah';
+  | 'hannah'
+  | 'thanos'
+  | 'elysium';
 
 export interface DigestItem {
   id: string;

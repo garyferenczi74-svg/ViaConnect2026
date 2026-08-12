@@ -11,6 +11,7 @@ import { useAgentDeepLink } from "@/hooks/useAgentDeepLink";
 import { deriveStatus } from "@/lib/agents/status";
 import { PipelineChainView } from "@/components/admin/jeffery/PipelineChainView";
 import { IngestOpsPanel } from "@/components/admin/jeffery/IngestOpsPanel";
+import { AuthoritiesAllowlistPanel } from "@/components/admin/jeffery/AuthoritiesAllowlistPanel";
 import type {
   AgentActivityEvent,
   AgentCurrentTask,
@@ -83,6 +84,7 @@ export default function AgentsClient({
       <div className="px-4 md:px-8 pt-4 space-y-0">
         <PipelineChainView />
         <IngestOpsPanel />
+        <AuthoritiesAllowlistPanel />
       </div>
 
       <AgentTabBar

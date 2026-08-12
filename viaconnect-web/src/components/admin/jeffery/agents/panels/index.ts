@@ -17,6 +17,8 @@ import MarshallPanel from "./MarshallPanel";
 import LexPanel from "./LexPanel";
 import SecurityAdvisorPanel from "./SecurityAdvisorPanel";
 import PerformanceAdvisorPanel from "./PerformanceAdvisorPanel";
+import ThanosPanel from "./ThanosPanel";
+import ElysiumPanel from "./ElysiumPanel";
 
 export interface AgentPanelProps {
   registry: AgentRegistryRow;
@@ -37,4 +39,6 @@ export const AGENT_PANELS: Record<AgentId, ComponentType<AgentPanelProps>> = {
   lex: LexPanel,
   security_advisor: SecurityAdvisorPanel,
   performance_advisor: PerformanceAdvisorPanel,
+  thanos: ThanosPanel,
+  elysium: ElysiumPanel,
 };
