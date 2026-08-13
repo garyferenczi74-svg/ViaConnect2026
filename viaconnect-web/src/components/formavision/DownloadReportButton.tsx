@@ -28,6 +28,11 @@ export interface DownloadReportButtonProps {
   /** Coarse surface id for telemetry (defaults to the composition route). */
   surface?: string;
   className?: string;
+  /**
+   * Prompt 217: "biology" matches My Biology action-row variant
+   * (48px, Card surface, "Doctor's Report" label, no full-width stretch).
+   */
+  variant?: 'default' | 'biology';
 }
 
 // Capacitor's runtime global, typed narrowly so this component does not
@@ -55,9 +60,18 @@ type Phase =
 
 const DEFAULT_SURFACE = '/body-tracker/composition';
 
-export function DownloadReportButton({ userId, surface, className }: DownloadReportButtonProps) {
+const BIOLOGY_BTN =
+  'inline-flex h-12 shrink-0 snap-start items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-white/15 bg-[rgba(30,48,84,0.92)] px-3.5 text-xs font-medium text-white backdrop-blur-md transition-all hover:bg-[rgba(30,48,84,0.98)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/45 disabled:cursor-not-allowed disabled:opacity-50';
+
+export function DownloadReportButton({
+  userId,
+  surface,
+  className,
+  variant = 'default',
+}: DownloadReportButtonProps) {
   const [phase, setPhase] = useState<Phase>({ kind: 'idle' });
   const surfaceId = surface ?? DEFAULT_SURFACE;
+  const isBiology = variant === 'biology';
 
   const generate = useCallback(async () => {
     setPhase({ kind: 'generating' });
@@ -127,14 +141,20 @@ export function DownloadReportButton({ userId, surface, className }: DownloadRep
         type="button"
         data-testid="scan-report-share"
         onClick={() => share(phase.signedUrl)}
-        className={`inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-[#2DA5A0]/50 bg-[#2DA5A0]/15 px-3 py-2 text-xs font-medium text-white min-h-[44px] transition-colors hover:bg-[#2DA5A0]/25 sm:w-auto ${className ?? ''}`}
+        className={
+          isBiology
+            ? `${BIOLOGY_BTN} border-[rgba(45,165,160,0.55)] ${className ?? ''}`
+            : `inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-[#2DA5A0]/50 bg-[#2DA5A0]/15 px-3 py-2 text-xs font-medium text-white min-h-[44px] transition-colors hover:bg-[#2DA5A0]/25 sm:w-auto ${className ?? ''}`
+        }
       >
         {nativeLabel ? (
-          <Share2 className="h-3.5 w-3.5" strokeWidth={1.5} />
+          <Share2 className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
         ) : (
-          <Download className="h-3.5 w-3.5" strokeWidth={1.5} />
+          <Download className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
         )}
-        {nativeLabel ? 'Share report' : 'Download report'}
+        <span className="whitespace-nowrap">
+          {nativeLabel ? 'Share report' : 'Download report'}
+        </span>
       </button>
     );
   }
@@ -144,13 +164,17 @@ export function DownloadReportButton({ userId, surface, className }: DownloadRep
       <div
         data-testid="scan-report-error"
         role="alert"
-        className={`flex w-full flex-wrap items-center justify-between gap-2 rounded-xl border border-[#B75E18]/40 bg-[#B75E18]/10 p-2.5 text-xs text-white/80 sm:w-auto ${className ?? ''}`}
+        className={
+          isBiology
+            ? `inline-flex h-12 shrink-0 snap-start items-center gap-2 whitespace-nowrap rounded-xl border border-[#B75E18]/40 bg-[rgba(30,48,84,0.95)] px-3 text-xs text-white/85 backdrop-blur-md ${className ?? ''}`
+            : `flex w-full flex-wrap items-center justify-between gap-2 rounded-xl border border-[#B75E18]/40 bg-[#B75E18]/10 p-2.5 text-xs text-white/80 sm:w-auto ${className ?? ''}`
+        }
       >
-        <span>{phase.message}</span>
+        <span className={isBiology ? 'max-w-[9rem] truncate' : undefined}>{phase.message}</span>
         <button
           type="button"
           onClick={() => void generate()}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-[#B75E18]/50 bg-[#B75E18]/15 px-2.5 py-1 font-medium text-white min-h-[44px] transition-colors hover:bg-[#B75E18]/25"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-[#B75E18]/50 bg-[#B75E18]/15 px-2.5 py-1 font-medium text-white min-h-[40px] transition-colors hover:bg-[#B75E18]/25"
         >
           <RotateCcw className="h-3.5 w-3.5" strokeWidth={1.5} />
           Retry
@@ -165,14 +189,24 @@ export function DownloadReportButton({ userId, surface, className }: DownloadRep
       data-testid="scan-report-generate"
       disabled={disabled}
       onClick={() => void generate()}
-      className={`inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-[#5B8DEF]/30 bg-[#2A4C9E]/15 px-3 py-2 text-xs font-medium text-white min-h-[44px] backdrop-blur-sm transition-all hover:bg-[#2A4C9E]/25 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto ${className ?? ''}`}
+      className={
+        isBiology
+          ? `${BIOLOGY_BTN} ${className ?? ''}`
+          : `inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-[#5B8DEF]/30 bg-[#2A4C9E]/15 px-3 py-2 text-xs font-medium text-white min-h-[44px] backdrop-blur-sm transition-all hover:bg-[#2A4C9E]/25 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto ${className ?? ''}`
+      }
     >
       {phase.kind === 'generating' ? (
-        <Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={1.5} />
+        <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" strokeWidth={1.5} />
       ) : (
-        <FileText className="h-3.5 w-3.5" strokeWidth={1.5} />
+        <FileText className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
       )}
-      {phase.kind === 'generating' ? 'Preparing report' : 'Doctor report'}
+      <span className="whitespace-nowrap">
+        {phase.kind === 'generating'
+          ? 'Preparing report'
+          : isBiology
+            ? "Doctor's Report"
+            : 'Doctor report'}
+      </span>
     </button>
   );
 }

@@ -4,7 +4,7 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { BackToHubLink } from '@/components/body-tracker/hub/BackToHubLink';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Plus, Camera, Check, RotateCcw } from 'lucide-react';
+import { Check, RotateCcw } from 'lucide-react';
 import { SegmentalHeatMap } from '@/components/body-tracker/SegmentalHeatMap';
 import { HeatmapLegend } from '@/components/body-tracker/HeatmapLegend';
 import { HoverSystem } from '@/components/body-tracker/HoverSystem';
@@ -30,8 +30,8 @@ import {
 // stays disjoint from the avatar component files.
 import { BodyFatReadout } from '@/components/formavision/BodyFatReadout';
 import { NotableChanges } from '@/components/formavision/NotableChanges';
-// Prompt 211a W3: doctor-ready scan report download / share control.
-import { DownloadReportButton } from '@/components/formavision/DownloadReportButton';
+// Prompt 217: uniform My Biology action row (FormaVision / Log Data / Doctor's Report).
+import { BiologyActionRow } from '@/components/body-tracker/BiologyActionRow';
 // Prompt 211a W1: shareable transformation clip (the growth engine). Imported
 // directly (NOT via the barrel) so the consumer-only structural discipline holds:
 // no practitioner route pulls the clip surface into its import graph.
@@ -821,42 +821,28 @@ function CompositionPageInner() {
 
   return (
     <div className="space-y-6 lg:space-y-3" key={refreshKey}>
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      {/* Prompt 217: stacked on mobile so pill row + action row each scroll
+          internally (no page-level overflow, no orphan wrap). Desktop keeps
+          a single header row when space allows. */}
+      <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between">
         <CompositionSectionToggle active={section} onChange={onSectionNav} />
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              setOpen(false);
-              setScanOpen((o) => !o);
-              if (!scanOpen) { setScanResult(null); setScanPersist({ phase: 'idle' }); }
-            }}
-            className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium min-h-[44px] backdrop-blur-sm transition-all ${
-              scanOpen
-                ? 'border-[#5B8DEF]/50 bg-[#2A4C9E]/25 text-white'
-                : 'border-[#5B8DEF]/25 bg-[#2A4C9E]/10 text-white hover:bg-[#2A4C9E]/20'
-            }`}
-          >
-            <Camera className="h-3.5 w-3.5" strokeWidth={1.5} />
-            Scan My Body
-          </button>
-          <button
-            type="button"
-            onClick={() => { setScanOpen(false); setOpen((o) => !o); }}
-            className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium min-h-[44px] backdrop-blur-sm transition-all ${
-              open
-                ? 'border-[#5B8DEF]/60 bg-[#2A4C9E]/35 text-white'
-                : 'border-[#5B8DEF]/30 bg-[#2A4C9E]/15 text-white hover:bg-[#2A4C9E]/25'
-            }`}
-          >
-            <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
-            Log Data
-          </button>
-          {/* Prompt 211a W3: doctor-ready scan report. Two-tap export
-              (generate then share/download); native share falls back to a
-              download since @capacitor/share is not installed. */}
-          <DownloadReportButton userId={userId ?? null} surface="/body-tracker/composition" />
-        </div>
+        <BiologyActionRow
+          userId={userId ?? null}
+          scanOpen={scanOpen}
+          logOpen={open}
+          onToggleScan={() => {
+            setOpen(false);
+            setScanOpen((o) => !o);
+            if (!scanOpen) {
+              setScanResult(null);
+              setScanPersist({ phase: 'idle' });
+            }
+          }}
+          onToggleLog={() => {
+            setScanOpen(false);
+            setOpen((o) => !o);
+          }}
+        />
       </div>
 
       <InlineEntryPanel

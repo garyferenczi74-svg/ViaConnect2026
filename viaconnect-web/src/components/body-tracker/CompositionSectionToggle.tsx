@@ -1,7 +1,8 @@
 'use client';
 
 // Prompt 210i: four-tab row (Body Fat, Muscle Mass, Measurements, FormaVision).
-// Existing pill treatment preserved; FormaVision is navigation to the 3D surface.
+// Prompt 217: mobile single-line horizontal snap scroll (no orphan wrap);
+// 44px touch targets; FormaVision two-tone wordmark preserved.
 
 import { motion } from 'framer-motion';
 import { PieChart, Dumbbell, Ruler, Box } from 'lucide-react';
@@ -30,7 +31,7 @@ const FORMAVISION_TAB = {
 
 function TabLabel({ id, label, isActive }: { id: string; label: string; isActive: boolean }) {
   if (id === 'formavision') {
-    // Two-tone wordmark at the existing tab type scale (210i Section 1.2).
+    // Two-tone wordmark: Forma Orange #B75E18, Vision white (210i / 217).
     return (
       <span className="relative z-10">
         <span style={{ color: isActive ? '#B75E18' : 'rgba(183,94,24,0.65)' }}>Forma</span>
@@ -55,7 +56,8 @@ export function CompositionSectionToggle({
       role="radiogroup"
       aria-label="Body composition section"
       data-testid="composition-section-toggle"
-      className="relative inline-flex max-w-full flex-wrap gap-1 rounded-full bg-white/[0.03] p-1"
+      className="relative flex w-full max-w-full min-w-0 gap-1 overflow-x-auto overscroll-x-contain scroll-smooth snap-x snap-mandatory rounded-full bg-white/[0.03] p-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:inline-flex md:w-auto md:max-w-none md:overflow-visible md:snap-none"
+      style={{ WebkitOverflowScrolling: 'touch' }}
     >
       {sections.map((s) => {
         const Icon = s.icon;
@@ -69,7 +71,7 @@ export function CompositionSectionToggle({
             data-testid={`composition-tab-${s.id}`}
             data-active={isActive ? 'true' : 'false'}
             onClick={() => onChange(s.id)}
-            className="relative z-10 inline-flex min-h-[36px] items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-colors sm:px-4"
+            className="relative z-10 inline-flex h-11 min-h-[44px] shrink-0 snap-start items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-2 text-xs font-medium transition-colors sm:px-4"
             style={{ color: isActive ? '#ffffff' : 'rgba(255,255,255,0.5)' }}
           >
             {isActive && (
@@ -79,7 +81,7 @@ export function CompositionSectionToggle({
                 transition={{ type: 'spring', stiffness: 400, damping: 30 }}
               />
             )}
-            <Icon className="relative z-10" size={14} strokeWidth={1.5} />
+            <Icon className="relative z-10 shrink-0" size={14} strokeWidth={1.5} />
             <TabLabel id={s.id} label={s.label} isActive={isActive} />
           </button>
         );
