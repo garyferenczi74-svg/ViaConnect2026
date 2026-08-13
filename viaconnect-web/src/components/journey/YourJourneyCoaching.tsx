@@ -29,9 +29,11 @@ import { useNutritionTargets } from "@/hooks/useNutritionTargets";
 import { useLatestComposition } from "@/hooks/body-tracker/useLatestComposition";
 import { useRecentBodySeries } from "@/components/journey/progress/useRecentBodySeries";
 import { getDisplayName } from "@/lib/user/get-display-name";
+import { getDisplayName as getAgentDisplayName } from "@/lib/getDisplayName";
 import { createClient } from "@/lib/supabase/client";
 import { withTimeout } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
+import { useHannahDailyNote } from "@/hooks/journey/useHannahDailyNote";
 import { heroGaugeScore } from "@/components/journey/coaching/heroHelpers";
 import { formatMacroLabel, kcalRemaining, flatSparkline, goalProgressPct } from "@/components/journey/coaching/lowerHelpers";
 import { useJourneyGraphSeries, type PillarKey } from "@/components/journey/coaching/useJourneyGraphSeries";
@@ -419,45 +421,34 @@ function Journey({ userId }: { userId: string | null }) {
 // Name: from getDisplayName(); Goal chip: from useActiveBodyGoal.goalLabel.
 // Last sync line: from wearable detection (getWearableSource). "Not synced yet" when no
 // active integration has synced. "No wearable connected" when no active integration.
-// Hannah note: state-appropriate, calm, name-aware copy. No fabricated numbers.
+// Hannah note (216d): compiled daily note from runHannahCompilation, never stateWord stub.
 function ProfileCard({
+  userId,
   displayName,
   initial,
   avatarUrl,
   goalPhrase,
-  stateWord,
   lastSyncLabel,
+  readTodaySubtext,
 }: {
+  userId: string | null;
   displayName: string;
   initial: string;
   avatarUrl: string | null;
   goalPhrase: string;
-  stateWord: string;
   lastSyncLabel: string;
+  readTodaySubtext: string;
 }) {
   const [avatarErrored, setAvatarErrored] = useState(false);
   const showAvatar = !!avatarUrl && !avatarErrored;
 
-  // Hannah note: state-appropriate and calm. One sentence, no em-dashes,
-  // no medical claims, no fabricated numbers. Uses stateWord for tone.
-  const hannahNote = (() => {
-    if (!displayName || displayName === "there") {
-      return "Welcome. As you log and connect your data, your read sharpens here.";
-    }
-    if (stateWord === "getting started") {
-      return `Good to see you, ${displayName}. Your read below sharpens as you log and connect more data.`;
-    }
-    if (stateWord === "recovering") {
-      return `${displayName}, this is a rebuilding stretch. Small, consistent steps restore momentum fastest.`;
-    }
-    if (stateWord === "steady") {
-      return `${displayName}, you are holding a solid baseline. One focused area is usually the next lever.`;
-    }
-    if (stateWord === "building") {
-      return `${displayName}, your trend is moving in the right direction. Consistency carries it higher.`;
-    }
-    return `${displayName}, your signals are clustering near your best. Keep the routine steady.`;
-  })();
+  // Prompt 216d: latest compiled note (welcome fail-open). Distinct from read-today.
+  const { noteText: hannahNote } = useHannahDailyNote(
+    userId,
+    displayName || "there",
+    readTodaySubtext,
+  );
+  const hannahLabel = getAgentDisplayName("hannah");
 
   // Prompt 216c: copy over profile hero video is white for legibility (Hannah note included).
   const onVideoText = "#FFFFFF";
@@ -512,8 +503,8 @@ function ProfileCard({
           <span style={{ fontSize: 12, fontWeight: 700, color: onVideoText, overflowWrap: "anywhere" }}>{goalPhrase || "supporting your wellness"}</span>
         </div>
         <div>
-          <div style={{ ...eyebrow, marginBottom: 6, display: "flex", alignItems: "center", gap: 6, color: onVideoText }}><Sparkles size={12} strokeWidth={SW} color={C.teal} /> Hannah&apos;s note</div>
-          <p style={{ margin: 0, fontSize: 12, color: onVideoText, lineHeight: 1.5 }}>{hannahNote}</p>
+          <div style={{ ...eyebrow, marginBottom: 6, display: "flex", alignItems: "center", gap: 6, color: onVideoText }}><Sparkles size={12} strokeWidth={SW} color={C.teal} /> {hannahLabel}&apos;s note</div>
+          <p style={{ margin: 0, fontSize: 12, color: onVideoText, lineHeight: 1.5 }} data-testid="hannah-daily-note">{hannahNote}</p>
         </div>
       </div>
     </div>
@@ -590,12 +581,13 @@ function Hero({
       <Edge active />
       <div className="vc-hero">
         <ProfileCard
+          userId={userId}
           displayName={displayName}
           initial={initial}
           avatarUrl={avatarUrl}
           goalPhrase={goalPhrase}
-          stateWord={stateWord}
           lastSyncLabel={lastSyncLabel}
+          readTodaySubtext={narrativeRead}
         />
         <div className="vc-hero-main" style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 16 }}>
           <div className="vc-herotop">
@@ -604,7 +596,7 @@ function Hero({
               <h1 className="vc-hero-heading" style={{ margin: "8px 0 0", fontSize: 27, fontWeight: 800, letterSpacing: -0.6, lineHeight: 1.12 }}>
                 You are in a <span style={{ color: C.teal }}>{stateWord}</span> state today
               </h1>
-              <p className="vc-hero-body" style={{ margin: "10px 0 0", fontSize: 13, color: C.muted, lineHeight: 1.55, maxWidth: 460 }}>
+              <p className="vc-hero-body" style={{ margin: "10px 0 0", fontSize: 13, color: C.muted, lineHeight: 1.55, maxWidth: 460 }} data-testid="journey-read-today-body">
                 {narrativeRead}
               </p>
             </div>

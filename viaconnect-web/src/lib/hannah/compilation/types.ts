@@ -53,6 +53,16 @@ export interface ComposedInsight {
   priority: number;
 }
 
+/** Prompt 216d: personal Hannah note produced with each compile. */
+export interface ComposedHannahNoteResult {
+  noteText: string;
+  noteKind: 'compiled' | 'welcome';
+  sourceRefs: string[];
+  supplierAgents: string[];
+  readTodaySnapshot: string;
+  generatedAt: string;
+}
+
 export interface CompilationResult {
   runId: string;
   userId: string;
@@ -67,6 +77,8 @@ export interface CompilationResult {
     focusArea: string;
     estimatedImpact: number;
   };
+  /** Prompt 216d daily personal note (always set on successful compose path). */
+  hannahNote: ComposedHannahNoteResult;
   startedAt: string;
   endedAt: string;
 }
