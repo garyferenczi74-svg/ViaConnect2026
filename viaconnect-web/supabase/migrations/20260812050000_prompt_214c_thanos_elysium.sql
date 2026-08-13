@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS public.authorities_sources (
   domain text NOT NULL UNIQUE,
   label text NOT NULL,
   source_kind text NOT NULL DEFAULT 'institution'
-    CHECK (source_kind IN ('journal', 'institution', 'regulatory', 'reference', 'expert_affiliation', 'other')),
+    CHECK (source_kind IN ('journal', 'institution', 'regulatory', 'reference', 'registry', 'expert_affiliation', 'other')),
   domain_tags text[] NOT NULL DEFAULT ARRAY[]::text[],
   base_url text,
   is_active boolean NOT NULL DEFAULT true,

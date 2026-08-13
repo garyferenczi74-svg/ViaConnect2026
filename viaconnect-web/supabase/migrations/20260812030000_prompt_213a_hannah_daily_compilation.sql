@@ -40,16 +40,21 @@ CREATE POLICY "Users read own hannah accel insights"
 -- Service role writes via admin client (no consumer insert policy).
 
 -- Extend journey_recommendations with provenance for dual-read compatibility.
-ALTER TABLE public.journey_recommendations
-  ADD COLUMN IF NOT EXISTS insight_key text,
-  ADD COLUMN IF NOT EXISTS source_hub text,
-  ADD COLUMN IF NOT EXISTS supplier_agent text,
-  ADD COLUMN IF NOT EXISTS source_refs jsonb DEFAULT '[]'::jsonb,
-  ADD COLUMN IF NOT EXISTS generated_at timestamptz;
-
-CREATE UNIQUE INDEX IF NOT EXISTS uq_journey_recs_user_insight_key
-  ON public.journey_recommendations (user_id, insight_key)
-  WHERE insight_key IS NOT NULL;
+-- Guarded: some environments never created the legacy table.
+DO $$
+BEGIN
+  IF to_regclass('public.journey_recommendations') IS NOT NULL THEN
+    ALTER TABLE public.journey_recommendations
+      ADD COLUMN IF NOT EXISTS insight_key text,
+      ADD COLUMN IF NOT EXISTS source_hub text,
+      ADD COLUMN IF NOT EXISTS supplier_agent text,
+      ADD COLUMN IF NOT EXISTS source_refs jsonb DEFAULT '[]'::jsonb,
+      ADD COLUMN IF NOT EXISTS generated_at timestamptz;
+    CREATE UNIQUE INDEX IF NOT EXISTS uq_journey_recs_user_insight_key
+      ON public.journey_recommendations (user_id, insight_key)
+      WHERE insight_key IS NOT NULL;
+  END IF;
+END $$;
 
 -- ---------------------------------------------------------------------------
 -- 2) Hound Dog staging (raw scrape) + gated promotion
