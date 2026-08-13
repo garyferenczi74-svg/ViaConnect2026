@@ -40,6 +40,7 @@ import {
     Users,
 } from 'lucide-react'
 import { FormatIndicator } from './FormatIndicator'
+import { ProductAccordions } from './ProductAccordions'
 import { SectionHeading } from '@/components/ui/SectionHeading'
 import { TabPills } from '@/components/ui/TabPills'
 import { addToCart } from '@/lib/shop/cart-store'
@@ -184,9 +185,19 @@ export function renderStructuredDescription(text: string): ReactNode {
 interface PdpRightRailProps {
     product: ShopProduct
     variant: ShopCardVariant
+    /** Prompt 215a: five accordion sections (always for supplements) */
+    accordionSections?: import('@/lib/shop/productTabs/types').ProductTabContent[]
+    compatibility?: import('@/lib/shop/productTabs/types').CompatibilityResult
+    initialSectionHash?: string | null
 }
 
-export function PdpRightRail({ product, variant }: PdpRightRailProps) {
+export function PdpRightRail({
+    product,
+    variant,
+    accordionSections,
+    compatibility,
+    initialSectionHash,
+}: PdpRightRailProps) {
     const tabOptions = variant === 'testing' ? TESTING_TAB_OPTIONS : SUPPLEMENT_TAB_OPTIONS
     const [activeTab, setActiveTab] = useState<string>(tabOptions[0].value)
     const [quantity, setQuantity] = useState<number>(1)
@@ -308,12 +319,14 @@ export function PdpRightRail({ product, variant }: PdpRightRailProps) {
                 )}
             </div>
 
-            {/* Prompt 215: long-scroll description/formulation removed for supplements.
-                Five-tab ProductTabs shell renders below the purchase rail on the page. */}
-            {variant === 'supplement' && (
-                <p className="mt-2 text-xs text-white/40 border-t border-white/10 pt-3">
-                    Full product details, formulation, and genetic compatibility are in the tabs below.
-                </p>
+            {/* Prompt 215a: five accordion sections always mounted for supplements */}
+            {variant === 'supplement' && accordionSections && compatibility && (
+                <ProductAccordions
+                    productSlug={product.slug ?? product.sku}
+                    sections={accordionSections}
+                    compatibility={compatibility}
+                    initialHash={initialSectionHash}
+                />
             )}
 
             {variant === 'testing' && (

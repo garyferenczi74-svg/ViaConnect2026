@@ -17,11 +17,10 @@ import { BreadcrumbPills, type BreadcrumbItem } from '@/components/BreadcrumbPil
 import { CartChrome } from '@/components/shop/CartChrome'
 import { CategoryFallbackImage } from '@/components/shop/CategoryFallbackImage'
 import { PdpRightRail } from '@/components/shop/PdpRightRail'
-import { ProductTabs } from '@/components/shop/ProductTabs'
 import { getShopCategoryBySlug } from '@/lib/shop/categories'
 import { getProductBySlug } from '@/lib/shop/queries'
 import { getCurrentShopSession, isConsumerSession } from '@/lib/shop/role'
-import { loadProductTabContent } from '@/lib/shop/productTabs/loadContent'
+import { buildFiveSections } from '@/lib/shop/productTabs/buildFromProduct'
 import { loadProductCompatibility } from '@/lib/shop/productTabs/loadCompatibility'
 
 interface PageProps {
@@ -63,11 +62,11 @@ export default async function ProductDetailPage(props: PageProps) {
     const primaryImage = images[0] ?? null
     const thumbs = images.slice(0, 4)
 
-    // Prompt 215: five-tab content + genetic compatibility (server-side score)
-    const [tabContent, compatibility] = await Promise.all([
-        loadProductTabContent(slug),
-        loadProductCompatibility(slug),
-    ])
+    // Prompt 215a: always five accordion sections + genetic compatibility
+    const accordionSections = buildFiveSections(product, slug)
+    const compatibility = await loadProductCompatibility(slug)
+    const initialHash =
+        searchParams.tab?.replace(/_/g, '-') ?? null
 
     return (
         <div className="min-h-screen bg-[#0F1A2E] text-white">
@@ -123,17 +122,18 @@ export default async function ProductDetailPage(props: PageProps) {
                         )}
                     </div>
 
-                    <PdpRightRail product={product} variant={variant} />
-                </div>
-
-                {variant === 'supplement' && tabContent.length > 0 && (
-                    <ProductTabs
-                        productSlug={slug}
-                        tabs={tabContent}
-                        compatibility={compatibility}
-                        initialTab={searchParams.tab ?? null}
+                    <PdpRightRail
+                        product={product}
+                        variant={variant}
+                        accordionSections={
+                            variant === 'supplement' ? accordionSections : undefined
+                        }
+                        compatibility={
+                            variant === 'supplement' ? compatibility : undefined
+                        }
+                        initialSectionHash={initialHash}
                     />
-                )}
+                </div>
             </div>
             <CartChrome consumerSession={consumerSession} userId={session.userId} />
         </div>

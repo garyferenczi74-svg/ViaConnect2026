@@ -12,7 +12,7 @@
  * Implementation choices documented in #152p §Component design notes.
  */
 
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { ChevronDown } from 'lucide-react'
 
@@ -26,9 +26,18 @@ interface AccordionProps {
     /**
      * Initial expanded state for the very first render (server-side).
      * For the SSR-safe pattern, this is true (rendered expanded server-side),
-     * then collapsed on hydration via a useEffect. Default: true.
+     * then hydrated to defaultOpenAfterHydrate. Default: true.
      */
     defaultExpandedSSR?: boolean
+    /**
+     * After client hydrate, whether the panel should stay open.
+     * Prompt 215a: Full Description true; others false. Default: false.
+     */
+    defaultOpenAfterHydrate?: boolean
+    /**
+     * Controlled expand from parent (e.g. deep-link hash). When true, forces open.
+     */
+    forceExpanded?: boolean
     /**
      * Accessibility: an optional aria-label override. If omitted, the heading text is used.
      */
@@ -40,6 +49,8 @@ export function Accordion({
     children,
     id,
     defaultExpandedSSR = true,
+    defaultOpenAfterHydrate = false,
+    forceExpanded,
     ariaLabel,
 }: AccordionProps) {
     const [isExpanded, setIsExpanded] = useState(defaultExpandedSSR)
@@ -49,16 +60,31 @@ export function Accordion({
 
     useEffect(() => {
         setHasHydrated(true)
-        setIsExpanded(false)
-    }, [])
+        setIsExpanded(Boolean(forceExpanded) || defaultOpenAfterHydrate)
+    }, [defaultOpenAfterHydrate, forceExpanded])
+
+    useEffect(() => {
+        if (forceExpanded) setIsExpanded(true)
+    }, [forceExpanded])
 
     const headingId = id ? `${id}-heading` : undefined
     const panelId = id ? `${id}-panel` : undefined
 
     const toggle = () => setIsExpanded((prev) => !prev)
 
+    const onKeyDown = (e: KeyboardEvent<HTMLButtonElement>) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            toggle()
+        }
+    }
+
     return (
-        <div className="border-b border-white/10 last:border-b-0" data-accordion-section={id}>
+        <div
+            className="border-b border-white/10 last:border-b-0"
+            data-accordion-section={id}
+            data-accordion-heading={heading}
+        >
             <button
                 type="button"
                 id={headingId}
@@ -66,6 +92,7 @@ export function Accordion({
                 aria-controls={panelId}
                 aria-label={ariaLabel ?? heading}
                 onClick={toggle}
+                onKeyDown={onKeyDown}
                 className="flex w-full items-center justify-between gap-3 py-4 text-left text-base font-medium uppercase tracking-wide text-white transition-colors hover:text-[#2DA5A0] focus-visible:text-[#2DA5A0] focus-visible:outline-none md:py-5 md:text-lg"
             >
                 <span>{heading}</span>
