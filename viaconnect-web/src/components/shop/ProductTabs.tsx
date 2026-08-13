@@ -24,6 +24,7 @@ import {
 import { GeneticCompatibilityPanel } from './GeneticCompatibilityPanel';
 
 const TAB_ICONS: Record<ProductTabKey, LucideIcon> = {
+  // Prompt 215b: first section labeled Description
   full_description: FileText,
   ingredient_breakdown: ListTree,
   who_benefits: Users,

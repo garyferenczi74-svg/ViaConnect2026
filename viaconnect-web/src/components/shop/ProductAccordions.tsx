@@ -13,6 +13,7 @@ import { PRODUCT_TAB_KEYS } from '@/lib/shop/productTabs/types';
 import {
   SECTION_HEADERS,
   TAB_KEY_TO_HASH,
+  resolveSectionHash,
   type SectionHashId,
 } from '@/lib/shop/productTabs/resolveSlug';
 
@@ -112,19 +113,18 @@ export function ProductAccordions({
       initialHash?.replace(/^#/, '') ||
       new URLSearchParams(window.location.search).get('tab') ||
       '';
-    const normalized = raw.replace(/_/g, '-') as SectionHashId;
-    const known = Object.values(TAB_KEY_TO_HASH);
-    if ((known as string[]).includes(normalized)) {
-      setForceHash(normalized);
-      // Scroll into view after paint
+    // Prompt 215b: #description primary; #full-description aliased
+    const resolved = resolveSectionHash(raw);
+    if (resolved) {
+      setForceHash(resolved);
       requestAnimationFrame(() => {
-        document.getElementById(normalized)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        document.getElementById(resolved)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
     }
 
     const onHash = () => {
-      const h = window.location.hash.replace(/^#/, '') as SectionHashId;
-      if ((known as string[]).includes(h)) {
+      const h = resolveSectionHash(window.location.hash.replace(/^#/, ''));
+      if (h) {
         setForceHash(h);
         document.getElementById(h)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }

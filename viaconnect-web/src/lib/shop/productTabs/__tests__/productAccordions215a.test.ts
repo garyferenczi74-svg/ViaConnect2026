@@ -77,10 +77,10 @@ describe('215a slug resolution', () => {
 });
 
 describe('215a always five accordion sections', () => {
-  it('headers match Phase 1.1 exactly and in order', () => {
+  it('headers match Phase 1.1 exactly and in order (215b Description rename)', () => {
     expect([...expectedSectionHeaders()]).toEqual([...SECTION_HEADERS]);
     expect(SECTION_HEADERS).toEqual([
-      'Full Description',
+      'Description',
       'Ingredient Breakdown',
       'Who Benefits & What Makes This Different?',
       'Formulation',
@@ -141,7 +141,8 @@ describe('215a ProductAccordions markup contract', () => {
     for (const h of SECTION_HEADERS) {
       expect(labels).toContain(h);
     }
-    expect(labels).toMatch(/full-description/);
+    expect(labels).toMatch(/description/);
+    expect(labels).toMatch(/full-description/); // alias retained
     expect(labels).toMatch(/genetic-compatibility/);
   });
 });

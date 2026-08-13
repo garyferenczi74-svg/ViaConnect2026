@@ -1,22 +1,27 @@
 /**
- * Prompt 215a: always produce five section bodies for any shop product.
- * Prefer MASTER_FORMULATIONS via slug resolve; fall back to ShopProduct fields.
+ * Prompt 215a/215b: always produce five section bodies for any shop product.
+ * Description is narrative-only; long-scroll category blocks are moved.
  */
 
 import type { ShopProduct } from '@/lib/shop/queries';
 import { normalizeProductCopy } from './lexicon';
 import { buildTabsForProduct } from './contentSeed';
 import { resolveFormulationBySlug } from './resolveSlug';
+import {
+  formatDescriptionNarrative,
+  splitLongScrollDescription,
+  type ParityLogRow,
+} from './dedupeDescription';
 import type { ProductTabContent } from './types';
 import { PRODUCT_TAB_KEYS } from './types';
 
 function fromShopProduct(product: ShopProduct): ProductTabContent[] {
   const slug = product.slug ?? product.sku ?? 'unknown';
-  const desc = normalizeProductCopy(
-    product.description || product.summary || `${product.name} details are being finalized.`,
-  );
+  const rawDesc =
+    product.description || product.summary || `${product.name} details are being finalized.`;
+  const split = splitLongScrollDescription(rawDesc);
   const ingredients = product.ingredients ?? [];
-  const ingList =
+  const ingListFromRecord =
     ingredients.length > 0
       ? ingredients
           .map((i) => {
@@ -25,7 +30,13 @@ function fromShopProduct(product: ShopProduct): ProductTabContent[] {
             return `- **${i.name}:** ${dose}${i.role ? ` (${i.role})` : ''}`;
           })
           .join('\n')
-      : '- Formulation ingredients are being finalized from the product record.';
+      : null;
+
+  const ingBody =
+    split.ingredientBreakdown && split.ingredientBreakdown.trim().length > 0
+      ? split.ingredientBreakdown
+      : ingListFromRecord ??
+        '- Formulation ingredients are being finalized from the product record.';
 
   const now = new Date().toISOString();
   const mk = (
@@ -38,36 +49,49 @@ function fromShopProduct(product: ShopProduct): ProductTabContent[] {
     bodyMd,
     gateStatus: gate,
     lastVerifiedAt: gate === 'approved' ? now : null,
-    provenance: [{ source: 'shop_product', slug }],
+    provenance: [
+      { source: 'shop_product', slug },
+      ...(split.moved.length ? [{ source: '215b_dedupe', moved: split.moved }] : []),
+    ],
   });
 
-  return [
-    mk(
-      'full_description',
-      normalizeProductCopy(`## Full Description\n\n${desc}`),
-      product.description || product.summary ? 'approved' : 'pending',
-    ),
-    mk(
-      'ingredient_breakdown',
-      normalizeProductCopy(`## Ingredient Breakdown\n\n${ingList}`),
-      ingredients.length > 0 ? 'approved' : 'pending',
-    ),
-    mk(
-      'who_benefits',
-      normalizeProductCopy(
+  const whoFromSplit = split.whoBenefits?.trim();
+  const whoBody = whoFromSplit
+    ? normalizeProductCopy(
+        `## Who Benefits & What Makes This Different?\n\n${whoFromSplit}`,
+      )
+    : normalizeProductCopy(
         `## Who Benefits & What Makes This Different?\n\n` +
           `**Who benefits:** People seeking targeted support with ${product.name}.\n\n` +
           `**What makes this different:** Via Cura formulates with bioactive nutrient forms and delivery technologies designed for higher bioavailability. Where bioavailability multipliers appear, the locked phrase is **10x to 28x**. Built For Your Biology.\n\n` +
           `This section is being finalized with Marshall-gated copy.`,
-      ),
-      'pending',
+      );
+
+  const formFromSplit = split.formulation?.trim();
+  const formBody = formFromSplit
+    ? normalizeProductCopy(
+        `## Formulation\n\nFormat: **${product.format ?? 'as labeled'}**\n\n${formFromSplit}`,
+      )
+    : normalizeProductCopy(
+        `## Formulation\n\nFormat: **${product.format ?? 'as labeled'}**\n\n${ingBody}`,
+      );
+
+  return [
+    mk(
+      'full_description',
+      formatDescriptionNarrative(product.name, split.description),
+      product.description || product.summary ? 'approved' : 'pending',
     ),
     mk(
+      'ingredient_breakdown',
+      normalizeProductCopy(`## Ingredient Breakdown\n\n${ingBody}`),
+      ingredients.length > 0 || Boolean(split.ingredientBreakdown) ? 'approved' : 'pending',
+    ),
+    mk('who_benefits', whoBody, whoFromSplit ? 'approved' : 'pending'),
+    mk(
       'formulation',
-      normalizeProductCopy(
-        `## Formulation\n\nFormat: **${product.format ?? 'as labeled'}**\n\n${ingList}`,
-      ),
-      ingredients.length > 0 ? 'approved' : 'pending',
+      formBody,
+      ingredients.length > 0 || Boolean(formFromSplit) ? 'approved' : 'pending',
     ),
     mk(
       'genetic_compatibility',
@@ -81,7 +105,7 @@ function fromShopProduct(product: ShopProduct): ProductTabContent[] {
 
 /**
  * Always returns exactly five sections in PRODUCT_TAB_KEYS order.
- * Never returns empty array for a valid product page.
+ * Description is de-duplicated narrative only.
  */
 export function buildFiveSections(
   product: ShopProduct,
@@ -92,35 +116,91 @@ export function buildFiveSections(
   const seeded = formulation ? buildTabsForProduct(formulation) : [];
   const fallback = fromShopProduct(product);
 
-  // Prefer product.description for full_description when richer than seed marketing
+  // Prefer product.description when present (after de-dupe), else seed narrative
   const productDesc = (product.description ?? '').trim();
+  const splitProduct = productDesc
+    ? splitLongScrollDescription(productDesc)
+    : null;
+
   const merged = PRODUCT_TAB_KEYS.map((key) => {
     const seed = seeded.find((s) => s.tabKey === key);
     const fb = fallback.find((s) => s.tabKey === key)!;
-    if (key === 'full_description' && productDesc.length > (seed?.bodyMd.length ?? 0)) {
+
+    if (key === 'full_description' && splitProduct) {
       return {
         ...fb,
-        bodyMd: normalizeProductCopy(`## Full Description\n\n${productDesc}`),
+        bodyMd: formatDescriptionNarrative(product.name, splitProduct.description),
         gateStatus: 'approved' as const,
       };
     }
+
+    // If description carried ingredient text and seed/fallback is thin, prefer moved content
+    if (key === 'ingredient_breakdown' && splitProduct?.ingredientBreakdown) {
+      const body = normalizeProductCopy(
+        `## Ingredient Breakdown\n\n${splitProduct.ingredientBreakdown}`,
+      );
+      if (body.length > (seed?.bodyMd.length ?? 0) && body.length > (fb.bodyMd.length ?? 0)) {
+        return { ...fb, bodyMd: body, gateStatus: 'approved' as const };
+      }
+    }
+
+    if (key === 'who_benefits' && splitProduct?.whoBenefits) {
+      return {
+        ...fb,
+        bodyMd: normalizeProductCopy(
+          `## Who Benefits & What Makes This Different?\n\n${splitProduct.whoBenefits}`,
+        ),
+        gateStatus: 'approved' as const,
+      };
+    }
+
     if (key === 'formulation' && (product.ingredients?.length ?? 0) > 0) {
-      // Prefer live product record ingredients so page and DB cannot drift
       return fb;
     }
+
     return seed ?? fb;
   });
 
   return merged;
 }
 
-/** DOM completeness helper: labels in order. */
+/** DOM completeness helper: labels in order (215b). */
 export function expectedSectionHeaders(): readonly string[] {
   return [
-    'Full Description',
+    'Description',
     'Ingredient Breakdown',
     'Who Benefits & What Makes This Different?',
     'Formulation',
     'Genetic Compatibility',
   ];
+}
+
+/** Parity log for a single product after buildFiveSections. */
+export function parityLogForProduct(
+  product: ShopProduct,
+  slugOverride?: string,
+): ParityLogRow {
+  const slug = slugOverride ?? product.slug ?? product.sku ?? '';
+  const before = product.description || product.summary || '';
+  const split = splitLongScrollDescription(before);
+  const sections = buildFiveSections(product, slug);
+  const desc = sections.find((s) => s.tabKey === 'full_description');
+  const ing = sections.find((s) => s.tabKey === 'ingredient_breakdown');
+  const who = sections.find((s) => s.tabKey === 'who_benefits');
+  const form = sections.find((s) => s.tabKey === 'formulation');
+  return {
+    slug,
+    hadDuplication: split.hadDuplication,
+    moved: split.moved,
+    descriptionLenBefore: before.length,
+    descriptionLenAfter: desc?.bodyMd.length ?? 0,
+    ingredientHasContent: (ing?.bodyMd.length ?? 0) > 20,
+    whoHasContent: (who?.bodyMd.length ?? 0) > 20,
+    formulationHasContent: (form?.bodyMd.length ?? 0) > 20,
+    zeroLoss:
+      (desc?.bodyMd.length ?? 0) > 0 &&
+      (ing?.bodyMd.length ?? 0) > 20 &&
+      (who?.bodyMd.length ?? 0) > 20 &&
+      (form?.bodyMd.length ?? 0) > 20,
+  };
 }

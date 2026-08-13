@@ -64,7 +64,7 @@ export function resolveFormulationBySlug(slug: string): ProductFormulation | und
 }
 
 export const SECTION_HASH_IDS = [
-  'full-description',
+  'description',
   'ingredient-breakdown',
   'who-benefits',
   'formulation',
@@ -73,8 +73,9 @@ export const SECTION_HASH_IDS = [
 
 export type SectionHashId = (typeof SECTION_HASH_IDS)[number];
 
+/** Prompt 215b exact accordion labels (order fixed). */
 export const SECTION_HEADERS = [
-  'Full Description',
+  'Description',
   'Ingredient Breakdown',
   'Who Benefits & What Makes This Different?',
   'Formulation',
@@ -82,9 +83,25 @@ export const SECTION_HEADERS = [
 ] as const;
 
 export const TAB_KEY_TO_HASH: Record<string, SectionHashId> = {
-  full_description: 'full-description',
+  full_description: 'description',
   ingredient_breakdown: 'ingredient-breakdown',
   who_benefits: 'who-benefits',
   formulation: 'formulation',
   genetic_compatibility: 'genetic-compatibility',
 };
+
+/** Legacy hash alias: #full-description resolves to Description section. */
+export const HASH_ALIASES: Record<string, SectionHashId> = {
+  'full-description': 'description',
+  description: 'description',
+  'ingredient-breakdown': 'ingredient-breakdown',
+  'who-benefits': 'who-benefits',
+  formulation: 'formulation',
+  'genetic-compatibility': 'genetic-compatibility',
+};
+
+export function resolveSectionHash(raw: string | null | undefined): SectionHashId | null {
+  if (!raw) return null;
+  const cleaned = raw.replace(/^#/, '').replace(/^tab=/, '').replace(/_/g, '-').toLowerCase();
+  return HASH_ALIASES[cleaned] ?? null;
+}

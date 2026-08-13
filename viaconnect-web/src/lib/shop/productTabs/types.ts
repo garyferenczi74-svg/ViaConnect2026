@@ -13,9 +13,10 @@ export const PRODUCT_TAB_KEYS = [
 export type ProductTabKey = (typeof PRODUCT_TAB_KEYS)[number];
 
 export const PRODUCT_TAB_LABELS: Record<ProductTabKey, string> = {
-  full_description: 'Full Description',
+  // Prompt 215b: first section is "Description" (internal key stays full_description for DB stability)
+  full_description: 'Description',
   ingredient_breakdown: 'Ingredient Breakdown',
-  who_benefits: 'Who Benefits and What Makes This Different?',
+  who_benefits: 'Who Benefits & What Makes This Different?',
   formulation: 'Formulation',
   genetic_compatibility: 'Genetic Compatibility',
 };

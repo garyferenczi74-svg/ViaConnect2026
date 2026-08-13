@@ -17,7 +17,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { ChevronDown } from 'lucide-react'
 
 interface AccordionProps {
-    /** Heading text rendered in the trigger row, e.g. "Full Description" or "Formulation" */
+    /** Heading text rendered in the trigger row, e.g. "Description" or "Formulation" */
     heading: string
     /** Body content to be revealed/hidden when toggled */
     children: ReactNode
@@ -31,7 +31,7 @@ interface AccordionProps {
     defaultExpandedSSR?: boolean
     /**
      * After client hydrate, whether the panel should stay open.
-     * Prompt 215a: Full Description true; others false. Default: false.
+     * Prompt 215a/b: Description true after hydrate; others false. Default: false.
      */
     defaultOpenAfterHydrate?: boolean
     /**
