@@ -223,14 +223,18 @@ function Journey({ userId }: { userId: string | null }) {
 
   const showLines = !loading && !error;
 
+  // Prompt 216 follow-up: all copy over the hero video is pure white for legibility.
+  const onVideoText = "#FFFFFF";
+  const onVideoLine = "rgba(255,255,255,0.28)";
+
   return (
-    <div style={{ position: "relative", zIndex: 1 }}>
+    <div style={{ position: "relative", zIndex: 1, color: onVideoText }}>
       {/* Header: eyebrow label + 1W / 1M / 1Y range buttons */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
-        <div style={eyebrow}>Journey</div>
+        <div style={{ ...eyebrow, color: onVideoText }}>Journey</div>
         <div style={{ display: "flex", gap: 6 }}>
           {(["1W", "1M", "1Y"] as JourneyRange[]).map((r) => (
-            <button key={r} onClick={() => { setRange(r); setOffset(0); }} className="vc-focus" style={{ cursor: "pointer", padding: "5px 13px", borderRadius: 999, fontSize: 11.5, fontWeight: 700, border: `1px solid ${range === r ? C.teal : C.line}`, background: range === r ? C.teal : "rgba(26,39,68,0.55)", color: range === r ? C.navy : C.text }}>{r}</button>
+            <button key={r} onClick={() => { setRange(r); setOffset(0); }} className="vc-focus" style={{ cursor: "pointer", padding: "5px 13px", borderRadius: 999, fontSize: 11.5, fontWeight: 700, border: `1px solid ${range === r ? C.teal : onVideoLine}`, background: range === r ? C.teal : "rgba(26,39,68,0.55)", color: onVideoText }}>{r}</button>
           ))}
         </div>
       </div>
@@ -241,17 +245,17 @@ function Journey({ userId }: { userId: string | null }) {
           className="vc-focus"
           onClick={() => setOffset((o) => o + 1)}
           aria-label="Previous period"
-          style={{ cursor: "pointer", background: "transparent", border: `1px solid ${C.line}`, borderRadius: 8, padding: "4px 8px", color: C.muted, display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+          style={{ cursor: "pointer", background: "transparent", border: `1px solid ${onVideoLine}`, borderRadius: 8, padding: "4px 8px", color: onVideoText, display: "inline-flex", alignItems: "center", justifyContent: "center" }}
         >
           <ChevronLeft size={16} strokeWidth={SW} />
         </button>
-        <span style={{ fontSize: 12, fontWeight: 600, color: C.text, minWidth: 130, textAlign: "center" }}>{periodLabel}</span>
+        <span style={{ fontSize: 12, fontWeight: 600, color: onVideoText, minWidth: 130, textAlign: "center" }}>{periodLabel}</span>
         <button
           className="vc-focus"
           onClick={() => setOffset((o) => Math.max(0, o - 1))}
           disabled={!canGoNext}
           aria-label="Next period"
-          style={{ cursor: canGoNext ? "pointer" : "default", background: "transparent", border: `1px solid ${C.line}`, borderRadius: 8, padding: "4px 8px", color: C.muted, display: "inline-flex", alignItems: "center", justifyContent: "center", opacity: canGoNext ? 1 : 0.35 }}
+          style={{ cursor: canGoNext ? "pointer" : "default", background: "transparent", border: `1px solid ${onVideoLine}`, borderRadius: 8, padding: "4px 8px", color: onVideoText, display: "inline-flex", alignItems: "center", justifyContent: "center", opacity: canGoNext ? 1 : 0.35 }}
         >
           <ChevronRight size={16} strokeWidth={SW} />
         </button>
@@ -260,13 +264,13 @@ function Journey({ userId }: { userId: string | null }) {
       {/* Chart: SVG always renders axis and X labels; plot content varies by state */}
       <div style={{ position: "relative" }}>
         <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block" }}>
-          {/* Y axis: horizontal gridlines and right-aligned muted labels at every 10 */}
+          {/* Y axis: horizontal gridlines and right-aligned white labels at every 10 */}
           {Y_TICKS.map((tick) => {
             const cy = yOf(tick);
             return (
               <g key={tick}>
-                <line x1={padL} x2={W - padR} y1={cy} y2={cy} stroke={C.line} strokeWidth={0.8} />
-                <text x={padL - 4} y={cy} textAnchor="end" dominantBaseline="middle" fontSize={12} fill={C.muted}>{tick}</text>
+                <line x1={padL} x2={W - padR} y1={cy} y2={cy} stroke={onVideoLine} strokeWidth={0.8} />
+                <text x={padL - 4} y={cy} textAnchor="end" dominantBaseline="middle" fontSize={12} fill={onVideoText}>{tick}</text>
               </g>
             );
           })}
@@ -274,7 +278,7 @@ function Journey({ userId }: { userId: string | null }) {
           {/* X axis: bucket label text, centered under each labeled bucket */}
           {buckets.map((b, i) =>
             b.label ? (
-              <text key={b.date} x={xOf(i)} y={H - 6} textAnchor="middle" fontSize={11} fill={C.muted}>{b.label}</text>
+              <text key={b.date} x={xOf(i)} y={H - 6} textAnchor="middle" fontSize={11} fill={onVideoText}>{b.label}</text>
             ) : null,
           )}
 
@@ -297,9 +301,9 @@ function Journey({ userId }: { userId: string | null }) {
 
       {/* Error state: quiet retry affordance below the axis (axis still visible above) */}
       {error && !loading && (
-        <div style={{ textAlign: "center", fontSize: 11, color: C.muted, marginTop: 4 }}>
+        <div style={{ textAlign: "center", fontSize: 11, color: onVideoText, marginTop: 4 }}>
           Chart data could not load.{" "}
-          <button className="vc-focus" onClick={handleRetry} style={{ cursor: "pointer", background: "transparent", border: "none", color: C.teal, fontSize: 11, fontWeight: 600, padding: 0 }}>
+          <button className="vc-focus" onClick={handleRetry} style={{ cursor: "pointer", background: "transparent", border: "none", color: onVideoText, fontSize: 11, fontWeight: 600, padding: 0, textDecoration: "underline" }}>
             Retry
           </button>
         </div>
@@ -308,17 +312,17 @@ function Journey({ userId }: { userId: string | null }) {
       {/* Legend: seven pillar swatches + labels; hydration note when today-only */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: "7px 14px", marginTop: 12 }}>
         {PILLARS.map((p) => (
-          <span key={p.key} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11, color: C.muted }}>
+          <span key={p.key} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11, color: onVideoText }}>
             <span style={{ width: 12, height: 3, borderRadius: 2, background: p.color, display: "inline-block" }} />
             {p.label}
             {p.key === "hydration" && hydrationTodayOnly && (
-              <span style={{ fontSize: 10, opacity: 0.72 }}>(no daily history yet)</span>
+              <span style={{ fontSize: 10, opacity: 0.9 }}>(no daily history yet)</span>
             )}
           </span>
         ))}
       </div>
       {(range === "1W" || range === "1M") && (
-        <p style={{ margin: "8px 0 0", fontSize: 10.5, color: C.muted, opacity: 0.85, lineHeight: 1.4 }}>
+        <p style={{ margin: "8px 0 0", fontSize: 10.5, color: onVideoText, opacity: 0.95, lineHeight: 1.4 }}>
           A line reaching 0 on a past day means no check-in was logged, not a wellness score of zero. Log a check-in to fill in any gap.
         </p>
       )}
