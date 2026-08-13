@@ -12,18 +12,27 @@ import { safeLog } from "@/lib/utils/safe-log";
 import { GOOGLE_HEALTH_SOURCE_ID } from "@/lib/integrations/google-health/config";
 import { exchangeCode, storeConnection, isConnectorConfigured } from "@/lib/integrations/google-health/auth";
 import { fetchIdentity } from "@/lib/integrations/google-health/client";
+import { compileViaChain } from "@/lib/hannah/compilation/chainEntry";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const SCOPE = "api.integrations.google-health.callback";
-const CONNECTIONS = "/body-tracker/connections";
+const DEFAULT_RETURN = "/body-tracker/connections";
+
+function safeReturnTo(raw: string | undefined): string {
+  if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return DEFAULT_RETURN;
+  if (raw.startsWith("/plugins") || raw.startsWith("/body-tracker/connections")) return raw;
+  return DEFAULT_RETURN;
+}
 
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
+  const returnTo = safeReturnTo(req.cookies.get("gh_oauth_return")?.value);
   const back = (q: string) => {
-    const res = NextResponse.redirect(new URL(`${CONNECTIONS}?${q}`, req.url));
+    const res = NextResponse.redirect(new URL(`${returnTo}?${q}`, req.url));
     res.cookies.delete("gh_oauth_state");
+    res.cookies.delete("gh_oauth_return");
     return res;
   };
 
@@ -73,7 +82,14 @@ export async function GET(req: NextRequest) {
       return back("error=db_error");
     }
 
-    safeLog.info(SCOPE, "connected", { userId });
+    // Prompt 218 / 213a: off-cycle recompile so Hannah digests pick up the new source same day.
+    void compileViaChain({ userId, reason: "event_manual" }).catch((e) => {
+      safeLog.warn(SCOPE, "post-connect recompile failed open", {
+        error: e instanceof Error ? e.message : String(e),
+      });
+    });
+
+    safeLog.info(SCOPE, "connected", { userId: userId.slice(0, 8) });
     return back(`connected=${GOOGLE_HEALTH_SOURCE_ID}`);
   } catch (err) {
     safeLog.error(SCOPE, "unexpected error", { error: err });

@@ -17,11 +17,19 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const SCOPE = "api.integrations.google-health.start";
-const CONNECTIONS = "/body-tracker/connections";
+const DEFAULT_RETURN = "/body-tracker/connections";
+
+function safeReturnTo(raw: string | null): string {
+  if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return DEFAULT_RETURN;
+  // Allow plugins and connections surfaces only (open redirect guard).
+  if (raw.startsWith("/plugins") || raw.startsWith("/body-tracker/connections")) return raw;
+  return DEFAULT_RETURN;
+}
 
 export async function GET(req: NextRequest) {
   const origin = new URL(req.url).origin;
-  const back = (q: string) => NextResponse.redirect(new URL(`${CONNECTIONS}?${q}`, req.url));
+  const returnTo = safeReturnTo(new URL(req.url).searchParams.get("return_to"));
+  const back = (q: string) => NextResponse.redirect(new URL(`${returnTo}?${q}`, req.url));
 
   if (!isFeatureEnabled("google_health_connector")) {
     return back("error=not_enabled");
@@ -62,6 +70,14 @@ export async function GET(req: NextRequest) {
 
     const res = NextResponse.redirect(url);
     res.cookies.set("gh_oauth_state", state, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 600,
+    });
+    // Prompt 218: remember return surface (plugins vs connections).
+    res.cookies.set("gh_oauth_return", returnTo, {
       httpOnly: true,
       secure: true,
       sameSite: "lax",
