@@ -19,8 +19,8 @@
  * gordon is lowercase in any user-facing label. Honest-empty when there are no
  * logs today ("Log a meal to see your macros"). Never throws.
  *
- * Style: glass surface over Deep Navy, Teal #2DA5A0 (carbs) / Orange #B75E18
- * (protein) / muted slate (fat), DM Sans, Lucide strokeWidth 1.5, no emojis,
+ * Style: glass surface over Deep Navy; segment colors from chartPalette /
+ * nutritionChartColors (Prompt 216b). DM Sans, Lucide strokeWidth 1.5, no emojis,
  * no em/en-dashes, reduced-motion safe (the Donut handles motion).
  */
 
@@ -31,10 +31,11 @@ import { withTimeout } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 import { useNutritionTargets } from '@/hooks/useNutritionTargets';
 import { Donut } from './Donut';
+import {
+  chartPalette,
+  nutritionChartColors,
+} from '@/lib/design-tokens';
 
-const TEAL = '#2DA5A0';
-const ORANGE = '#B75E18';
-const SLATE = '#6C7A99';
 const DM_SANS = 'var(--font-dm-sans), sans-serif';
 const DM_MONO = 'var(--font-dm-mono), monospace';
 
@@ -172,15 +173,19 @@ export function NutritionDonut({ userId }: { userId: string | null }) {
   const { targets } = useNutritionTargets(userId);
 
   const hasLogs = macros.logCount > 0;
+  const totalMacros = macros.carbsG + macros.proteinG + macros.fatG;
 
-  const segments = useMemo(
-    () => [
-      { value: macros.carbsG, color: TEAL, label: 'Carbs' },
-      { value: macros.proteinG, color: ORANGE, label: 'Protein' },
-      { value: macros.fatG, color: SLATE, label: 'Fat' },
-    ],
-    [macros.carbsG, macros.proteinG, macros.fatG],
-  );
+  // Prompt 216b: chartPalette only. No-data = full empty ring (not fake macro split).
+  const segments = useMemo(() => {
+    if (!hasLogs || totalMacros <= 0) {
+      return [{ value: 1, color: chartPalette.empty, label: 'No data' }];
+    }
+    return [
+      { value: macros.carbsG, color: nutritionChartColors.carbs, label: 'Carbs' },
+      { value: macros.proteinG, color: nutritionChartColors.protein, label: 'Protein' },
+      { value: macros.fatG, color: nutritionChartColors.fat, label: 'Fat' },
+    ];
+  }, [hasLogs, totalMacros, macros.carbsG, macros.proteinG, macros.fatG]);
 
   // Center: kcal remaining (target - consumed) when a target exists; else the
   // consumed kcal with a neutral label. Honest "--" when there is no target and
@@ -211,12 +216,12 @@ export function NutritionDonut({ userId }: { userId: string | null }) {
         <Salad
           className="h-4 w-4 shrink-0"
           strokeWidth={1.5}
-          style={{ color: TEAL }}
+          style={{ color: chartPalette.chart1 }}
         />
         <div className="flex min-w-0 flex-col">
           <span
             className="text-[10px] font-semibold uppercase tracking-wider"
-            style={{ fontFamily: DM_MONO, color: TEAL }}
+            style={{ fontFamily: DM_MONO, color: chartPalette.chart1 }}
           >
             Nutrition
           </span>
@@ -240,9 +245,9 @@ export function NutritionDonut({ userId }: { userId: string | null }) {
 
         {hasLogs ? (
           <div className="flex w-full flex-col gap-1.5">
-            <LegendRow color={TEAL} label="Carbs" grams={macros.carbsG} />
-            <LegendRow color={ORANGE} label="Protein" grams={macros.proteinG} />
-            <LegendRow color={SLATE} label="Fat" grams={macros.fatG} />
+            <LegendRow color={nutritionChartColors.carbs} label="Carbs" grams={macros.carbsG} />
+            <LegendRow color={nutritionChartColors.protein} label="Protein" grams={macros.proteinG} />
+            <LegendRow color={nutritionChartColors.fat} label="Fat" grams={macros.fatG} />
           </div>
         ) : (
           <p

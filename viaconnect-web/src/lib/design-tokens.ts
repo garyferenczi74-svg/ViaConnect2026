@@ -45,6 +45,41 @@ export const colors = {
   portalGold: '#C4944A',
 } as const;
 
+/**
+ * Prompt 216b: categorical chart palette (donuts and similar multi-series charts).
+ * NOT severityToken() — reserved for severity semantics only.
+ * Tuned for Card #1E3054 / Deep Navy #1A2744; lightness varies for CVD distinctness.
+ */
+export const chartPalette = {
+  /** chart-1 Teal — brand teal */
+  chart1: '#2DA5A0',
+  /** chart-2 Amber — muted amber harmonious with brand Orange #B75E18 */
+  chart2: '#C98A3D',
+  /** chart-3 Slate Blue — muted blue in the navy family */
+  chart3: '#5B7FA6',
+  /** chart-4 Violet — muted violet, distinct from chart-3 */
+  chart4: '#8B7BB8',
+  /** chart-empty — desaturated navy for no-data ring */
+  empty: '#2E4066',
+} as const;
+
+/** Nutrition donut segment assignments (Prompt 216b). */
+export const nutritionChartColors = {
+  carbs: chartPalette.chart1,
+  protein: chartPalette.chart2,
+  fat: chartPalette.chart3,
+} as const;
+
+/** Sleep breakdown donut segment assignments (Prompt 216b). */
+export const sleepChartColors = {
+  deep: chartPalette.chart1,
+  light: chartPalette.chart3,
+  rem: chartPalette.chart4,
+  awake: chartPalette.chart2,
+} as const;
+
+export type ChartPaletteKey = keyof typeof chartPalette;
+
 export const spacing = {
   1: '4px',
   2: '8px',

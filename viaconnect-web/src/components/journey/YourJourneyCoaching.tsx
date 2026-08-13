@@ -47,6 +47,11 @@ import { useEngineAccelerators } from "@/hooks/journey/useEngineAccelerators";
 import type { EngineAccItem } from "@/hooks/journey/useEngineAccelerators";
 import { shouldShowSkeleton } from "@/hooks/journey/skeletonHelpers";
 import { JourneyGraphHeroVideo } from "@/components/journey/JourneyGraphHeroVideo";
+import {
+  chartPalette,
+  nutritionChartColors,
+  sleepChartColors,
+} from "@/lib/design-tokens";
 
 const C = {
   navy: "#1A2744", card: "#1E3054", inset: "#16203A", raised: "#243a63",
@@ -1071,12 +1076,16 @@ function NutritionCard({
   fatLabel: string;
   loading?: boolean;
 }) {
-  // When all macros are zero, render a neutral unit-value donut so the arcs
-  // remain visible (using 1/1/1 so each segment draws equally).
+  // Prompt 216b: chartPalette tokens only. No-data = full chart-empty ring (not fake proportions).
   const totalMacros = carbsG + proteinG + fatG;
-  const segments = totalMacros > 0
-    ? [{ value: carbsG, color: C.green }, { value: proteinG, color: C.orange }, { value: fatG, color: C.blue }]
-    : [{ value: 1, color: C.green }, { value: 1, color: C.orange }, { value: 1, color: C.blue }];
+  const segments =
+    totalMacros > 0
+      ? [
+          { value: carbsG, color: nutritionChartColors.carbs },
+          { value: proteinG, color: nutritionChartColors.protein },
+          { value: fatG, color: nutritionChartColors.fat },
+        ]
+      : [{ value: 1, color: chartPalette.empty }];
   return (
     <div style={panel(false)}>
       <div style={{ ...eyebrow, marginBottom: 10 }}>Nutrition</div>
@@ -1090,7 +1099,16 @@ function NutritionCard({
           </div>
         </div>
       ) : (
-        <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}><Donut size={86} segments={segments} top={kcalTop} bot={kcalBot} /><Legend items={[{ name: "Carbs", label: carbsLabel, color: C.green }, { name: "Protein", label: proteinLabel, color: C.orange }, { name: "Fat", label: fatLabel, color: C.blue }]} /></div>
+        <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+          <Donut size={86} segments={segments} top={kcalTop} bot={kcalBot} />
+          <Legend
+            items={[
+              { name: "Carbs", label: carbsLabel, color: nutritionChartColors.carbs },
+              { name: "Protein", label: proteinLabel, color: nutritionChartColors.protein },
+              { name: "Fat", label: fatLabel, color: nutritionChartColors.fat },
+            ]}
+          />
+        </div>
       )}
     </div>
   );
@@ -1098,9 +1116,9 @@ function NutritionCard({
 function SleepCard({ sleepHoursTotal, loading }: { sleepHoursTotal: number | null; loading?: boolean }) {
   // Sleep stages are wearable-OFF. The total from daily_scores/daily_checkins is
   // real; stage breakdown remains connect state (no wearable source).
-  // (migration 20260412000010 for daily_checkins.sleep_hours;
-  //  types.ts line 8276 for daily_scores.sleep_hours)
+  // Prompt 216b: no-data ring uses chartPalette.empty (not colorful fake stages).
   const centerTop = sleepHoursTotal !== null ? `${sleepHoursTotal.toFixed(1)} h` : "--";
+  const noDataSegments = [{ value: 1, color: chartPalette.empty }];
   return (
     <div style={panel(false)}>
       <div style={{ ...eyebrow, marginBottom: 10 }}>Sleep breakdown</div>
@@ -1114,7 +1132,17 @@ function SleepCard({ sleepHoursTotal, loading }: { sleepHoursTotal: number | nul
           </div>
         </div>
       ) : (
-        <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}><Donut size={86} segments={[{ value: 1, color: C.teal }, { value: 1, color: C.blue }, { value: 1, color: C.purple }, { value: 1, color: C.orange }]} top={centerTop} bot="total" /><Legend items={[{ name: "Deep", label: "--", color: C.teal }, { name: "Light", label: "--", color: C.blue }, { name: "REM", label: "--", color: C.purple }, { name: "Awake", label: "--", color: C.orange }]} /></div>
+        <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+          <Donut size={86} segments={noDataSegments} top={centerTop} bot="total" />
+          <Legend
+            items={[
+              { name: "Deep", label: "--", color: sleepChartColors.deep },
+              { name: "Light", label: "--", color: sleepChartColors.light },
+              { name: "REM", label: "--", color: sleepChartColors.rem },
+              { name: "Awake", label: "--", color: sleepChartColors.awake },
+            ]}
+          />
+        </div>
       )}
     </div>
   );
