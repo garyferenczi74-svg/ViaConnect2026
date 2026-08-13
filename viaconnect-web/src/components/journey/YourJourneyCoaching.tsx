@@ -46,6 +46,7 @@ import { useTodayMealLogs } from "@/hooks/journey/useTodayMealLogs";
 import { useEngineAccelerators } from "@/hooks/journey/useEngineAccelerators";
 import type { EngineAccItem } from "@/hooks/journey/useEngineAccelerators";
 import { shouldShowSkeleton } from "@/hooks/journey/skeletonHelpers";
+import { JourneyGraphHeroVideo } from "@/components/journey/JourneyGraphHeroVideo";
 
 const C = {
   navy: "#1A2744", card: "#1E3054", inset: "#16203A", raised: "#243a63",
@@ -223,13 +224,13 @@ function Journey({ userId }: { userId: string | null }) {
   const showLines = !loading && !error;
 
   return (
-    <div>
+    <div style={{ position: "relative", zIndex: 1 }}>
       {/* Header: eyebrow label + 1W / 1M / 1Y range buttons */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
         <div style={eyebrow}>Journey</div>
         <div style={{ display: "flex", gap: 6 }}>
           {(["1W", "1M", "1Y"] as JourneyRange[]).map((r) => (
-            <button key={r} onClick={() => { setRange(r); setOffset(0); }} className="vc-focus" style={{ cursor: "pointer", padding: "5px 13px", borderRadius: 999, fontSize: 11.5, fontWeight: 700, border: `1px solid ${range === r ? C.teal : C.line}`, background: range === r ? C.teal : "transparent", color: range === r ? C.navy : C.muted }}>{r}</button>
+            <button key={r} onClick={() => { setRange(r); setOffset(0); }} className="vc-focus" style={{ cursor: "pointer", padding: "5px 13px", borderRadius: 999, fontSize: 11.5, fontWeight: 700, border: `1px solid ${range === r ? C.teal : C.line}`, background: range === r ? C.teal : "rgba(26,39,68,0.55)", color: range === r ? C.navy : C.text }}>{r}</button>
           ))}
         </div>
       </div>
@@ -477,7 +478,20 @@ function Hero({
             </div>
             <div className="vc-gaugecluster">{livePillars.map((p) => <GaugeCard key={p.key} value={p.value} label={p.label} color={p.color} hero={p.hero} loading={gaugesLoading} />)}</div>
           </div>
-          <div style={{ background: `linear-gradient(180deg, ${C.inset}, ${C.card})`, border: `1px solid ${C.line}`, borderRadius: 16, padding: "16px 16px 14px" }}>
+          {/* Prompt 216: Journey graph card with full-bleed hero video background */}
+          <div
+            data-testid="journey-graph-card"
+            style={{
+              position: "relative",
+              border: `1px solid ${C.line}`,
+              borderRadius: 16,
+              padding: "16px 16px 14px",
+              overflow: "hidden",
+              // Static fallback surface when video fails / reduced-motion (scrim paints over)
+              background: `linear-gradient(180deg, ${C.inset}, ${C.card})`,
+            }}
+          >
+            <JourneyGraphHeroVideo />
             <Journey userId={userId} />
           </div>
         </div>
