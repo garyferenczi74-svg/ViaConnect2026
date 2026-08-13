@@ -169,14 +169,24 @@ export function JourneyGraphHeroVideo({ forceError = false }: JourneyGraphHeroVi
       */}
       <div
         data-testid="journey-graph-video-scrim"
+        className="vc-journey-video-scrim"
+        data-scrim-mode={failed || reducedMotion || !showVideo ? 'static' : 'video'}
         style={{
           position: 'absolute',
           inset: 0,
+          // Desktop scrim (216). Mobile video scrim deepened via CSS (216a).
           background: failed || reducedMotion || !showVideo
             ? `linear-gradient(180deg, #16203A 0%, #1A2744 55%, #1E3054 100%)`
             : `linear-gradient(180deg, rgba(26,39,68,0.72) 0%, rgba(26,39,68,0.78) 45%, rgba(26,39,68,0.88) 100%)`,
         }}
       />
+      <style>{`
+        @media (max-width: 767px) {
+          .vc-journey-video-scrim[data-scrim-mode="video"] {
+            background: linear-gradient(180deg, rgba(26,39,68,0.82) 0%, rgba(26,39,68,0.88) 45%, rgba(26,39,68,0.94) 100%) !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

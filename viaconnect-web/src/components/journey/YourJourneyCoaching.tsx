@@ -119,7 +119,23 @@ function PlasmaRing({ value, color, size = 40 }: { value: number; color: string;
 }
 function GaugeCard({ value, label, color, hero, loading }: { value: number; label: string; color: string; hero?: boolean; loading?: boolean }) {
   return (
-    <div style={{ flex: "1 1 0", minWidth: 64, background: C.inset, border: `1px solid ${hero ? color + "66" : C.line}`, borderRadius: 12, padding: "10px 6px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, boxShadow: hero ? `inset 0 0 0 1px ${color}33` : "none" }}>
+    <div
+      className="vc-gauge-tile"
+      style={{
+        flex: "1 1 0",
+        minWidth: 64,
+        background: C.inset,
+        border: `1px solid ${hero ? color + "66" : C.line}`,
+        borderRadius: 12,
+        padding: "10px 6px",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 6,
+        boxShadow: hero ? `inset 0 0 0 1px ${color}33` : "none",
+      }}
+    >
       {loading ? (
         <Shimmer w={hero ? 52 : 48} h={hero ? 52 : 48} radius={999} />
       ) : (
@@ -153,16 +169,31 @@ type PillarValues = Record<string, number>;
 //   A "(no daily history yet)" note is appended to the Hydration legend swatch
 //   when the series has at most one non-null point so the near-empty line is not
 //   mistaken for a bug. (Hannah handoff - flag for Gary eyeball.)
+function useIsMobileJourney(): boolean {
+  const [mobile, setMobile] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(max-width: 767px)");
+    const apply = () => setMobile(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
+  return mobile;
+}
+
 function Journey({ userId }: { userId: string | null }) {
   const [range, setRange] = useState<JourneyRange>("1W");
   const [offset, setOffset] = useState<number>(0);
   const { buckets, series, periodLabel, canGoNext, loading, error } = useJourneyGraphSeries(userId, range, offset);
+  const isMobile = useIsMobileJourney();
 
-  // SVG coordinate system.
-  const W = 840, H = 248;
+  // SVG coordinate system. Desktop H=248 unchanged; mobile taller for readability (plot >= 260).
+  const W = 840;
+  const H = isMobile ? 320 : 248;
   // padL: left gutter for Y-axis labels (right-aligned muted text).
   // padR: right margin. padT: top margin. padB: bottom strip for X-axis labels.
-  const padL = 52, padR = 10, padT = 10, padB = 30;
+  const padL = isMobile ? 40 : 52, padR = 10, padT = 10, padB = isMobile ? 34 : 30;
   const plotW = W - padL - padR;
   const plotH = H - padT - padB;
 
@@ -171,8 +202,10 @@ function Journey({ userId }: { userId: string | null }) {
     n <= 1 ? padL + plotW / 2 : padL + (i / (n - 1)) * plotW;
   const yOf = (v: number): number => padT + (1 - v / 100) * plotH;
 
-  // Y axis: gridline and label at every 10 from 0 to 100.
-  const Y_TICKS = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+  // Y axis: every 10 on desktop; every 20 on mobile (Prompt 216a).
+  const Y_TICKS = isMobile
+    ? [0, 20, 40, 60, 80, 100]
+    : [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
 
   // Draw hero (overall) line last so it sits on top of all other lines.
   const ordered = [...PILLARS].sort((a, b) => (a.hero ? 1 : 0) - (b.hero ? 1 : 0));
@@ -234,7 +267,25 @@ function Journey({ userId }: { userId: string | null }) {
         <div style={{ ...eyebrow, color: onVideoText }}>Journey</div>
         <div style={{ display: "flex", gap: 6 }}>
           {(["1W", "1M", "1Y"] as JourneyRange[]).map((r) => (
-            <button key={r} onClick={() => { setRange(r); setOffset(0); }} className="vc-focus" style={{ cursor: "pointer", padding: "5px 13px", borderRadius: 999, fontSize: 11.5, fontWeight: 700, border: `1px solid ${range === r ? C.teal : onVideoLine}`, background: range === r ? C.teal : "rgba(26,39,68,0.55)", color: onVideoText }}>{r}</button>
+            <button
+              key={r}
+              onClick={() => { setRange(r); setOffset(0); }}
+              className="vc-focus vc-journey-range-btn"
+              style={{
+                cursor: "pointer",
+                padding: "5px 13px",
+                borderRadius: 999,
+                fontSize: 11.5,
+                fontWeight: 700,
+                border: `1px solid ${range === r ? C.teal : onVideoLine}`,
+                background: range === r ? C.teal : "rgba(26,39,68,0.55)",
+                color: onVideoText,
+                minHeight: isMobile ? 44 : undefined,
+                minWidth: isMobile ? 44 : undefined,
+              }}
+            >
+              {r}
+            </button>
           ))}
         </div>
       </div>
@@ -242,35 +293,60 @@ function Journey({ userId }: { userId: string | null }) {
       {/* Period navigator: prev / period label / next */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 10, flexWrap: "wrap" }}>
         <button
-          className="vc-focus"
+          className="vc-focus vc-journey-nav-btn"
           onClick={() => setOffset((o) => o + 1)}
           aria-label="Previous period"
-          style={{ cursor: "pointer", background: "transparent", border: `1px solid ${onVideoLine}`, borderRadius: 8, padding: "4px 8px", color: onVideoText, display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+          style={{
+            cursor: "pointer",
+            background: "transparent",
+            border: `1px solid ${onVideoLine}`,
+            borderRadius: 8,
+            padding: "4px 8px",
+            color: onVideoText,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: isMobile ? 44 : undefined,
+            minWidth: isMobile ? 44 : undefined,
+          }}
         >
           <ChevronLeft size={16} strokeWidth={SW} />
         </button>
         <span style={{ fontSize: 12, fontWeight: 600, color: onVideoText, minWidth: 130, textAlign: "center" }}>{periodLabel}</span>
         <button
-          className="vc-focus"
+          className="vc-focus vc-journey-nav-btn"
           onClick={() => setOffset((o) => Math.max(0, o - 1))}
           disabled={!canGoNext}
           aria-label="Next period"
-          style={{ cursor: canGoNext ? "pointer" : "default", background: "transparent", border: `1px solid ${onVideoLine}`, borderRadius: 8, padding: "4px 8px", color: onVideoText, display: "inline-flex", alignItems: "center", justifyContent: "center", opacity: canGoNext ? 1 : 0.35 }}
+          style={{
+            cursor: canGoNext ? "pointer" : "default",
+            background: "transparent",
+            border: `1px solid ${onVideoLine}`,
+            borderRadius: 8,
+            padding: "4px 8px",
+            color: onVideoText,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            opacity: canGoNext ? 1 : 0.35,
+            minHeight: isMobile ? 44 : undefined,
+            minWidth: isMobile ? 44 : undefined,
+          }}
         >
           <ChevronRight size={16} strokeWidth={SW} />
         </button>
       </div>
 
       {/* Chart: SVG always renders axis and X labels; plot content varies by state */}
-      <div style={{ position: "relative" }}>
-        <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block" }}>
-          {/* Y axis: horizontal gridlines and right-aligned white labels at every 10 */}
+      <div style={{ position: "relative" }} className="vc-journey-chart-plot">
+        <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block", minHeight: isMobile ? 260 : undefined }}>
+          {/* Y axis: gridlines + labels (every 10 desktop, every 20 mobile) */}
           {Y_TICKS.map((tick) => {
             const cy = yOf(tick);
             return (
               <g key={tick}>
                 <line x1={padL} x2={W - padR} y1={cy} y2={cy} stroke={onVideoLine} strokeWidth={0.8} />
-                <text x={padL - 4} y={cy} textAnchor="end" dominantBaseline="middle" fontSize={12} fill={onVideoText}>{tick}</text>
+                <text x={padL - 4} y={cy} textAnchor="end" dominantBaseline="middle" fontSize={isMobile ? 11 : 12} fill={onVideoText}>{tick}</text>
               </g>
             );
           })}
@@ -309,20 +385,22 @@ function Journey({ userId }: { userId: string | null }) {
         </div>
       )}
 
-      {/* Legend: seven pillar swatches + labels; hydration note when today-only */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "7px 14px", marginTop: 12 }}>
+      {/* Legend: desktop wrap; mobile two-column grid (Prompt 216a) */}
+      <div className="vc-journey-legend" style={{ display: "flex", flexWrap: "wrap", gap: "7px 14px", marginTop: 12 }}>
         {PILLARS.map((p) => (
-          <span key={p.key} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11, color: onVideoText }}>
-            <span style={{ width: 12, height: 3, borderRadius: 2, background: p.color, display: "inline-block" }} />
-            {p.label}
-            {p.key === "hydration" && hydrationTodayOnly && (
-              <span style={{ fontSize: 10, opacity: 0.9 }}>(no daily history yet)</span>
-            )}
+          <span key={p.key} className="vc-journey-legend-item" style={{ display: "inline-flex", alignItems: "flex-start", gap: 6, fontSize: 11, color: onVideoText }}>
+            <span style={{ width: 12, height: 3, borderRadius: 2, background: p.color, display: "inline-block", marginTop: 5, flexShrink: 0 }} />
+            <span style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
+              <span>{p.label}</span>
+              {p.key === "hydration" && hydrationTodayOnly && (
+                <span style={{ fontSize: 10, opacity: 0.9 }}>(no daily history yet)</span>
+              )}
+            </span>
           </span>
         ))}
       </div>
       {(range === "1W" || range === "1M") && (
-        <p style={{ margin: "8px 0 0", fontSize: 10.5, color: onVideoText, opacity: 0.95, lineHeight: 1.4 }}>
+        <p className="vc-journey-footnote" style={{ margin: "8px 0 0", fontSize: 10.5, color: onVideoText, opacity: 0.95, lineHeight: 1.4, width: "100%" }}>
           A line reaching 0 on a past day means no check-in was logged, not a wellness score of zero. Log a check-in to fill in any gap.
         </p>
       )}
@@ -376,7 +454,19 @@ function ProfileCard({
   })();
 
   return (
-    <div style={{ background: C.inset, border: `1px solid ${C.line}`, borderRadius: 14, padding: 15, display: "flex", flexDirection: "column", gap: 13, height: "100%" }}>
+    <div
+      className="vc-profile-card"
+      style={{
+        background: C.inset,
+        border: `1px solid ${C.line}`,
+        borderRadius: 14,
+        padding: 15,
+        display: "flex",
+        flexDirection: "column",
+        gap: 13,
+        height: "100%",
+      }}
+    >
       <div style={{ position: "relative", width: 92, height: 92 }}>
         {showAvatar ? (
           <img
@@ -462,7 +552,19 @@ function Hero({
   }));
 
   return (
-    <div style={{ position: "relative", borderRadius: 22, padding: 20, marginBottom: 16, border: `1px solid ${C.line}`, background: `linear-gradient(160deg, #223a66 0%, ${C.card} 55%, #1b2c4e 100%)`, boxShadow: "0 24px 60px rgba(0,0,0,0.34)", overflow: "hidden" }}>
+    <div
+      className="vc-hero-shell"
+      style={{
+        position: "relative",
+        borderRadius: 22,
+        padding: 20,
+        marginBottom: 16,
+        border: `1px solid ${C.line}`,
+        background: `linear-gradient(160deg, #223a66 0%, ${C.card} 55%, #1b2c4e 100%)`,
+        boxShadow: "0 24px 60px rgba(0,0,0,0.34)",
+        overflow: "hidden",
+      }}
+    >
       <Edge active />
       <div className="vc-hero">
         <ProfileCard
@@ -473,25 +575,33 @@ function Hero({
           stateWord={stateWord}
           lastSyncLabel={lastSyncLabel}
         />
-        <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 16 }}>
+        <div className="vc-hero-main" style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 16 }}>
           <div className="vc-herotop">
-            <div style={{ flex: "1 1 280px" }}>
+            <div className="vc-hero-copy" style={{ flex: "1 1 280px" }}>
               <div style={eyebrow}>Your read today</div>
-              <h1 style={{ margin: "8px 0 0", fontSize: 27, fontWeight: 800, letterSpacing: -0.6, lineHeight: 1.12 }}>You are in a <span style={{ color: C.teal }}>{stateWord}</span> state today</h1>
-              <p style={{ margin: "10px 0 0", fontSize: 13, color: C.muted, lineHeight: 1.55, maxWidth: 460 }}>{narrativeRead}</p>
+              <h1 className="vc-hero-heading" style={{ margin: "8px 0 0", fontSize: 27, fontWeight: 800, letterSpacing: -0.6, lineHeight: 1.12 }}>
+                You are in a <span style={{ color: C.teal }}>{stateWord}</span> state today
+              </h1>
+              <p className="vc-hero-body" style={{ margin: "10px 0 0", fontSize: 13, color: C.muted, lineHeight: 1.55, maxWidth: 460 }}>
+                {narrativeRead}
+              </p>
             </div>
-            <div className="vc-gaugecluster">{livePillars.map((p) => <GaugeCard key={p.key} value={p.value} label={p.label} color={p.color} hero={p.hero} loading={gaugesLoading} />)}</div>
+            <div className="vc-gaugecluster">
+              {livePillars.map((p) => (
+                <GaugeCard key={p.key} value={p.value} label={p.label} color={p.color} hero={p.hero} loading={gaugesLoading} />
+              ))}
+            </div>
           </div>
           {/* Prompt 216: Journey graph card with full-bleed hero video background */}
           <div
             data-testid="journey-graph-card"
+            className="vc-journey-graph-card"
             style={{
               position: "relative",
               border: `1px solid ${C.line}`,
               borderRadius: 16,
               padding: "16px 16px 14px",
               overflow: "hidden",
-              // Static fallback surface when video fails / reduced-motion (scrim paints over)
               background: `linear-gradient(180deg, ${C.inset}, ${C.card})`,
             }}
           >
@@ -1564,7 +1674,20 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
     : 0;
 
   return (
-    <div style={{ fontFamily: "'Instrument Sans', system-ui, sans-serif", background: `radial-gradient(1200px 600px at 70% -12%, #21345c 0%, ${C.navy} 58%)`, minHeight: "100vh", color: C.text, padding: "18px 28px 46px" }}>
+    <div
+      className="vc-page"
+      data-testid="your-journey-page"
+      style={{
+        fontFamily: "'Instrument Sans', system-ui, sans-serif",
+        background: `radial-gradient(1200px 600px at 70% -12%, #21345c 0%, ${C.navy} 58%)`,
+        minHeight: "100vh",
+        color: C.text,
+        padding: "18px 28px 46px",
+        boxSizing: "border-box",
+        maxWidth: "100%",
+        overflowX: "hidden",
+      }}
+    >
       <style>{`
         .vc-focus:focus-visible { outline: 2px solid ${C.teal}; outline-offset: 2px; }
         .vc-edge-active { animation: vcPulse 2.8s ease-in-out infinite; }
@@ -1577,12 +1700,97 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
         .vc-two { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
         .vc-tri { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
         .vc-goalrow { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 14px; align-items: stretch; }
+        .vc-page-sections { display: flex; flex-direction: column; gap: 22px; }
+        .vc-section-label { margin-bottom: 12px; }
         @media (max-width: 1100px){ .vc-split { grid-template-columns: 1fr; } }
         @media (max-width: 960px){ .vc-hero { grid-template-columns: 1fr; } .vc-tri { grid-template-columns: 1fr; } .vc-two { grid-template-columns: 1fr; } .vc-goalrow { grid-template-columns: 1fr; } }
+        /* Prompt 216a: mobile layout only (max-width 767px). Desktop rules above unchanged. */
+        @media (max-width: 767px) {
+          .vc-page {
+            padding: 16px 16px calc(40px + env(safe-area-inset-bottom, 0px)) !important;
+            padding-left: max(16px, env(safe-area-inset-left, 0px)) !important;
+            padding-right: max(16px, env(safe-area-inset-right, 0px)) !important;
+            overflow-x: hidden !important;
+            max-width: 100vw !important;
+          }
+          .vc-page-header { display: none !important; }
+          .vc-page-sections { gap: 16px !important; }
+          .vc-section-label { margin-bottom: 10px !important; }
+          .vc-hero-shell {
+            padding: 16px !important;
+            margin-bottom: 16px !important;
+            border-radius: 16px !important;
+          }
+          /* Flatten profile card-in-card: one surface, one border (shell) */
+          .vc-profile-card {
+            background: transparent !important;
+            border: none !important;
+            padding: 0 !important;
+            box-shadow: none !important;
+            height: auto !important;
+          }
+          .vc-hero-heading {
+            font-size: 30px !important;
+            letter-spacing: -0.4px !important;
+            line-height: 1.15 !important;
+          }
+          .vc-hero-body {
+            font-size: 14px !important;
+            max-width: none !important;
+          }
+          .vc-herotop {
+            flex-direction: column !important;
+            gap: 14px !important;
+            width: 100% !important;
+          }
+          .vc-hero-copy { flex: none !important; width: 100% !important; }
+          /* Metric tiles: horizontal snap carousel (~3.5 tiles visible) */
+          .vc-gaugecluster {
+            flex: none !important;
+            display: flex !important;
+            flex-wrap: nowrap !important;
+            gap: 10px !important;
+            align-items: stretch !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+            scroll-snap-type: x mandatory !important;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            padding-bottom: 2px;
+          }
+          .vc-gaugecluster::-webkit-scrollbar { display: none; }
+          .vc-gauge-tile {
+            flex: 0 0 calc((100% - 20px) / 3.5) !important;
+            min-width: 96px !important;
+            max-width: 120px !important;
+            scroll-snap-align: start !important;
+          }
+          .vc-journey-graph-card {
+            border-radius: 14px !important;
+          }
+          .vc-journey-legend {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            column-gap: 12px !important;
+            row-gap: 10px !important;
+            align-items: start !important;
+          }
+          .vc-journey-legend-item {
+            display: flex !important;
+            min-height: 22px;
+          }
+          .vc-journey-range-btn,
+          .vc-journey-nav-btn {
+            min-height: 44px !important;
+            min-width: 44px !important;
+          }
+        }
         @media (prefers-reduced-motion: reduce){ .vc-edge-active{animation:none;opacity:1} .vc-shimmer{animation:none !important} * {transition:none !important} }
       `}</style>
-      <div style={{ width: "100%", margin: "0 auto" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+      <div style={{ width: "100%", margin: "0 auto", maxWidth: "100%", boxSizing: "border-box" }}>
+        <div className="vc-page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
           <div style={{ fontWeight: 800, fontSize: 17 }}><span style={{ color: C.orange }}>Via</span><span style={{ color: C.text }}>Connect</span><span style={{ ...eyebrow, marginLeft: 12 }}>Your Journey</span></div>
           <div style={{ display: "flex", gap: 12, color: C.muted }}><Search size={18} strokeWidth={SW} /><Bell size={18} strokeWidth={SW} /></div>
         </div>
@@ -1600,9 +1808,9 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
           gaugesLoading={shouldShowSkeleton(bos7DLoading || dailyScores.loading, dailyScores.bioOptimization ?? bos7D?.current ?? null)}
         />
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
+        <div className="vc-page-sections" style={{ display: "flex", flexDirection: "column", gap: 22 }}>
           <section>
-            <div style={{ ...eyebrow, marginBottom: 12 }}>Goals, nutrition and sleep</div>
+            <div className="vc-section-label" style={{ ...eyebrow, marginBottom: 12 }}>Goals, nutrition and sleep</div>
             <div className="vc-goalrow">
               <GoalCard
                 goalLabel={goalLabel}
@@ -1640,7 +1848,7 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
             </div>
           </section>
           <section>
-            <div style={{ ...eyebrow, marginBottom: 12 }}>Today and this week</div>
+            <div className="vc-section-label" style={{ ...eyebrow, marginBottom: 12 }}>Today and this week</div>
             <TodayTab
               hydrationValue={hydrationValue}
               hydrationSub={hydrationSub}
