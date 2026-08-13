@@ -28,9 +28,9 @@ describe('Prompt 216 Journey graph hero video', () => {
     expect((src.match(/<JourneyGraphHeroVideo/g) ?? []).length).toBe(1);
   });
 
-  it('video element is decorative and fail-open with reduced-motion and preload metadata', () => {
+  it('shared HeroVideoBackground owns decorative video contracts', () => {
     const src = readFileSync(
-      join(root, 'src/components/journey/JourneyGraphHeroVideo.tsx'),
+      join(root, 'src/components/journey/HeroVideoBackground.tsx'),
       'utf8',
     );
     expect(src).toMatch(/aria-hidden="true"/);
@@ -43,9 +43,9 @@ describe('Prompt 216 Journey graph hero video', () => {
     expect(src).not.toMatch(/from ['\"]react-player|video\.js|plyr/);
   });
 
-  it('scrim uses Deep Navy with documented opacities', () => {
+  it('journey-graph scrim uses Deep Navy with documented opacities', () => {
     const src = readFileSync(
-      join(root, 'src/components/journey/JourneyGraphHeroVideo.tsx'),
+      join(root, 'src/components/journey/HeroVideoBackground.tsx'),
       'utf8',
     );
     expect(src).toMatch(/rgba\(26,39,68,0\.72\)/);

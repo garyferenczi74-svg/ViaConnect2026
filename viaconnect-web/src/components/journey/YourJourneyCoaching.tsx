@@ -47,6 +47,7 @@ import { useEngineAccelerators } from "@/hooks/journey/useEngineAccelerators";
 import type { EngineAccItem } from "@/hooks/journey/useEngineAccelerators";
 import { shouldShowSkeleton } from "@/hooks/journey/skeletonHelpers";
 import { JourneyGraphHeroVideo } from "@/components/journey/JourneyGraphHeroVideo";
+import { HeroVideoBackground } from "@/components/journey/HeroVideoBackground";
 import {
   chartPalette,
   nutritionChartColors,
@@ -458,10 +459,16 @@ function ProfileCard({
     return `${displayName}, your signals are clustering near your best. Keep the routine steady.`;
   })();
 
+  // Prompt 216c: copy over profile hero video is white for legibility (Hannah note included).
+  const onVideoText = "#FFFFFF";
+  const goalInsetBg = "rgba(26,39,68,0.72)";
+
   return (
     <div
       className="vc-profile-card"
+      data-testid="journey-profile-card"
       style={{
+        position: "relative",
         background: C.inset,
         border: `1px solid ${C.line}`,
         borderRadius: 14,
@@ -470,34 +477,44 @@ function ProfileCard({
         flexDirection: "column",
         gap: 13,
         height: "100%",
+        overflow: "hidden",
       }}
     >
-      <div style={{ position: "relative", width: 92, height: 92 }}>
-        {showAvatar ? (
-          <img
-            src={avatarUrl!}
-            alt={displayName || "Profile"}
-            onError={() => setAvatarErrored(true)}
-            style={{ width: 92, height: 92, borderRadius: 16, objectFit: "cover", border: `1.5px solid ${C.teal}` }}
-          />
-        ) : (
-          <div style={{ width: 92, height: 92, borderRadius: 16, background: `radial-gradient(circle at 35% 28%, #34618a, ${C.navy})`, border: `1.5px solid ${C.teal}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, fontWeight: 800 }}>{initial}</div>
-        )}
-        <span style={{ position: "absolute", right: -5, top: -5, width: 22, height: 22, borderRadius: 999, background: C.card, border: `1px solid ${C.line}`, display: "flex", alignItems: "center", justifyContent: "center", color: C.muted }}><Edit2 size={11} strokeWidth={SW} /></span>
-      </div>
-      <div>
-        <div style={{ fontSize: 18, fontWeight: 800 }}>{displayName || "there"}</div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 5, marginTop: 9, fontSize: 11.5, color: C.muted }}>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><RefreshCw size={13} strokeWidth={SW} /> {lastSyncLabel}</span>
+      {/* Shared HeroVideoBackground: 9x16 at all breakpoints (Prompt 216c) */}
+      <HeroVideoBackground
+        sourceMode="portrait"
+        scrimPreset="profile"
+        testId="profile-hero-video"
+        logScope="journey.profileVideo"
+      />
+      <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", gap: 13, color: onVideoText }}>
+        <div style={{ position: "relative", width: 92, height: 92 }}>
+          {showAvatar ? (
+            <img
+              src={avatarUrl!}
+              alt={displayName || "Profile"}
+              onError={() => setAvatarErrored(true)}
+              style={{ width: 92, height: 92, borderRadius: 16, objectFit: "cover", border: `1.5px solid ${C.teal}` }}
+            />
+          ) : (
+            <div style={{ width: 92, height: 92, borderRadius: 16, background: `radial-gradient(circle at 35% 28%, #34618a, ${C.navy})`, border: `1.5px solid ${C.teal}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, fontWeight: 800, color: onVideoText }}>{initial}</div>
+          )}
+          <span style={{ position: "absolute", right: -5, top: -5, width: 22, height: 22, borderRadius: 999, background: "rgba(26,39,68,0.9)", border: `1px solid rgba(255,255,255,0.25)`, display: "flex", alignItems: "center", justifyContent: "center", color: onVideoText }}><Edit2 size={11} strokeWidth={SW} /></span>
         </div>
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 4, padding: "8px 10px", borderRadius: 10, background: C.card, border: `1px solid ${C.line}` }}>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 12, color: C.muted }}><Target size={14} strokeWidth={SW} color={C.teal} /> Goal</span>
-        <span style={{ fontSize: 12, fontWeight: 700, color: C.teal, overflowWrap: "anywhere" }}>{goalPhrase || "supporting your wellness"}</span>
-      </div>
-      <div>
-        <div style={{ ...eyebrow, marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}><Sparkles size={12} strokeWidth={SW} color={C.teal} /> Hannah's note</div>
-        <p style={{ margin: 0, fontSize: 12, color: C.muted, lineHeight: 1.5 }}>{hannahNote}</p>
+        <div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: onVideoText }}>{displayName || "there"}</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 5, marginTop: 9, fontSize: 11.5, color: onVideoText }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><RefreshCw size={13} strokeWidth={SW} /> {lastSyncLabel}</span>
+          </div>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4, padding: "8px 10px", borderRadius: 10, background: goalInsetBg, border: `1px solid rgba(255,255,255,0.18)` }}>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 12, color: onVideoText }}><Target size={14} strokeWidth={SW} color={C.teal} /> Goal</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: onVideoText, overflowWrap: "anywhere" }}>{goalPhrase || "supporting your wellness"}</span>
+        </div>
+        <div>
+          <div style={{ ...eyebrow, marginBottom: 6, display: "flex", alignItems: "center", gap: 6, color: onVideoText }}><Sparkles size={12} strokeWidth={SW} color={C.teal} /> Hannah&apos;s note</div>
+          <p style={{ margin: 0, fontSize: 12, color: onVideoText, lineHeight: 1.5 }}>{hannahNote}</p>
+        </div>
       </div>
     </div>
   );
@@ -1749,13 +1766,10 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
             margin-bottom: 16px !important;
             border-radius: 16px !important;
           }
-          /* Flatten profile card-in-card: one surface, one border (shell) */
+          /* Profile card keeps radius/overflow for hero video; drop double shell border feel */
           .vc-profile-card {
-            background: transparent !important;
-            border: none !important;
-            padding: 0 !important;
-            box-shadow: none !important;
             height: auto !important;
+            min-height: 0 !important;
           }
           .vc-hero-heading {
             font-size: 30px !important;

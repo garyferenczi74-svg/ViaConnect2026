@@ -10,7 +10,7 @@ const root = process.cwd();
 const coaching = () =>
   readFileSync(join(root, 'src/components/journey/YourJourneyCoaching.tsx'), 'utf8');
 const video = () =>
-  readFileSync(join(root, 'src/components/journey/JourneyGraphHeroVideo.tsx'), 'utf8');
+  readFileSync(join(root, 'src/components/journey/HeroVideoBackground.tsx'), 'utf8');
 
 describe('Prompt 216a mobile Journey layout', () => {
   it('hides redundant page header on mobile only', () => {
@@ -20,12 +20,13 @@ describe('Prompt 216a mobile Journey layout', () => {
     expect(src).toMatch(/\.vc-page-header\s*\{\s*display:\s*none\s*!important/);
   });
 
-  it('flattens profile card nesting and uses 16px shell padding on mobile', () => {
+  it('uses 16px shell padding on mobile; profile card keeps overflow for hero video', () => {
     const src = coaching();
     expect(src).toMatch(/vc-profile-card/);
     expect(src).toMatch(/vc-hero-shell/);
-    expect(src).toMatch(/\.vc-profile-card[\s\S]*border:\s*none\s*!important/);
     expect(src).toMatch(/\.vc-hero-shell[\s\S]*padding:\s*16px\s*!important/);
+    expect(src).toMatch(/HeroVideoBackground/);
+    expect(src).toMatch(/overflow:\s*"hidden"/);
   });
 
   it('metric tiles use horizontal snap carousel on mobile', () => {
@@ -57,7 +58,7 @@ describe('Prompt 216a mobile Journey layout', () => {
     expect(src).toMatch(/data-scrim-mode/);
     expect(src).toMatch(/0\.82/);
     expect(src).toMatch(/0\.94/);
-    expect(src).toMatch(/data-scrim-mode="video"/);
+    expect(src).toMatch(/mobileVideo/);
   });
 
   it('desktop media rules for hero grid remain present', () => {
