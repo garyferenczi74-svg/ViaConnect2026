@@ -1,9 +1,12 @@
 'use client';
 
-// Prompt 185a / 219: compact Daily Schedule checklist row (shared across columns).
-// Anatomy: drag | checkbox | name + dose | info, move, delete.
-// Target ~56 to 64px single-line; long names wrap up to ~80px. No name truncation.
-// Functions unchanged: take toggle, drag, move, remove, rationale. No emojis, no em/en dashes.
+// Prompt 185a / 219 / 219a: Daily Schedule checklist row (shared across columns).
+// 219: compact density. 219a: rows size to CONTENT (min-height 56px, height auto).
+// Never fixed/max height; never clip or bleed name or chips outside the row.
+// Name wraps at word boundaries; long chemical tokens may break-word; full text always shown.
+// Chips sit inside the row under dose and wrap as needed. Controls vertical-center.
+// Functions unchanged: take toggle, drag, move, remove, rationale.
+// No emojis, no em/en dashes.
 
 import type { PointerEvent as ReactPointerEvent } from 'react';
 import { Utensils, Ban, Droplet, ArrowLeftRight, GripVertical, Check, Trash2 } from 'lucide-react';
@@ -23,9 +26,9 @@ const ROW_SURFACE =
 
 function Chip({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
   return (
-    <span className="inline-flex items-center gap-0.5 rounded border border-white/10 bg-white/[0.04] px-1 py-px text-[9px] leading-none text-white/50">
+    <span className="inline-flex max-w-full items-center gap-0.5 rounded border border-white/10 bg-white/[0.04] px-1 py-0.5 text-[9px] leading-tight text-white/50">
       <Icon className="h-2.5 w-2.5 shrink-0" strokeWidth={1.5} />
-      {label}
+      <span className="min-w-0 break-words">{label}</span>
     </span>
   );
 }
@@ -56,16 +59,17 @@ export function ScheduleSupplementCard({
   return (
     <div
       data-testid="schedule-compact-row"
-      className={`relative flex min-h-[56px] max-h-[80px] items-center gap-1 px-1.5 py-1 ${ROW_SURFACE}`}
+      data-row-sizing="content"
+      className={`relative flex h-auto min-h-[56px] items-center gap-1 overflow-visible px-1.5 py-1.5 ${ROW_SURFACE}`}
     >
-      {/* Drag handle: 44px touch target via padding */}
+      {/* Drag handle: 44px touch target; centers to final row height */}
       <button
         type="button"
         aria-label={`Drag to reschedule ${card.name}`}
         data-drag-handle
         onPointerDown={onHandlePointerDown}
         style={{ touchAction: 'none' }}
-        className="flex h-11 min-h-[44px] w-9 flex-shrink-0 cursor-grab items-center justify-center text-white/30 transition-colors hover:text-white/55 active:cursor-grabbing"
+        className="flex h-11 min-h-[44px] w-9 flex-shrink-0 cursor-grab items-center justify-center self-center text-white/30 transition-colors hover:text-white/55 active:cursor-grabbing"
       >
         <GripVertical className="h-4 w-4" strokeWidth={1.5} />
       </button>
@@ -76,7 +80,7 @@ export function ScheduleSupplementCard({
         onClick={onToggle}
         aria-pressed={taken}
         aria-label={`${taken ? 'Mark not taken' : 'Mark taken'}: ${card.name}`}
-        className="flex h-11 min-h-[44px] min-w-[44px] flex-shrink-0 items-center justify-center"
+        className="flex h-11 min-h-[44px] min-w-[44px] flex-shrink-0 items-center justify-center self-center"
       >
         {taken ? (
           <span className="flex h-5 w-5 items-center justify-center rounded-full border border-[#2DA5A0]/45 bg-[#2DA5A0]/20">
@@ -87,20 +91,25 @@ export function ScheduleSupplementCard({
         )}
       </button>
 
-      {/* Name + dose (wrap, never truncate name) */}
-      <div className="min-w-0 flex-1 py-0.5">
+      {/* Name + dose + chips (content-driven height; full name always shown) */}
+      <div className="min-w-0 flex-1 self-center py-0.5">
         <p
-          className={`text-[13px] font-medium leading-snug break-words ${
+          className={`text-[13px] font-medium leading-snug [overflow-wrap:anywhere] break-words ${
             taken ? 'text-white/40 line-through' : 'text-white/90'
           }`}
         >
           {card.name}
         </p>
         {card.dose ? (
-          <p className="mt-px text-[11px] leading-tight text-white/45">{card.dose}</p>
+          <p className="mt-0.5 text-[11px] leading-tight text-white/45 break-words">
+            {card.dose}
+          </p>
         ) : null}
         {chips.length > 0 ? (
-          <div className="mt-0.5 flex flex-wrap gap-0.5">
+          <div
+            data-testid="schedule-row-chips"
+            className="mt-1 flex flex-wrap content-start gap-0.5"
+          >
             {chips.map((c) => (
               <Chip key={c.label} icon={c.icon} label={c.label} />
             ))}
@@ -108,8 +117,8 @@ export function ScheduleSupplementCard({
         ) : null}
       </div>
 
-      {/* Right action cluster: info, move, delete (44px targets) */}
-      <div className="flex flex-shrink-0 items-center gap-0">
+      {/* Right action cluster: info, move, delete (44px targets), vertical center */}
+      <div className="flex flex-shrink-0 items-center gap-0 self-center">
         {card.rationale ? (
           <RationalePeek label={`Why this time, per ${AGENT_NAME}`} text={card.rationale} />
         ) : null}
