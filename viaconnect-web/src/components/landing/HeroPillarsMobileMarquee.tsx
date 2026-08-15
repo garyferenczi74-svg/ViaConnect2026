@@ -1,16 +1,15 @@
 'use client'
 
 /**
- * Prompt 220: mobile journey cards as a native CSS scroll-snap carousel.
+ * Prompt 220 (revised): mobile journey cards auto-rotating scroll-snap carousel.
  *
- * Root cause (pre-220): this file was a continuous CSS marquee
- * (overflow: hidden + transform animation). Touch only paused the animation;
- * users could not swipe to advance. Card 02 peeked as a clipped artifact of
- * the marquee edge mask, not as a scroll affordance.
+ * Root cause (pre-220): continuous CSS marquee with overflow:hidden; touch only
+ * paused animation; cards 02/03 unreachable by swipe or rotation.
+ * 220 first pass: snap + swipe + dots, no auto-advance.
+ * 220 revised: auto-rotate (primary), swipe/dots as supplements that reset the timer.
  *
- * Fix: horizontal overflow-x auto track, scroll-snap-type x mandatory,
- * cards ~85vw with next-card peek, synced tappable pagination dots.
- * No carousel library. Desktop still uses the HeroPillars grid (sm+).
+ * Desktop: HeroPillars grid (sm+) is static; no rotation there.
+ * No carousel library. No package.json changes.
  */
 
 import {
@@ -19,8 +18,12 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type TouchEvent as ReactTouchEvent,
 } from 'react'
 import type { PillarData } from './HeroPillars'
+
+/** Dwell per card before auto-advance (Gary-tunable). */
+export const HERO_PILLAR_DWELL_MS = 6000
 
 interface MobileOverride {
   surfaceOverlay: string
@@ -71,9 +74,23 @@ function usePrefersReducedMotion(): boolean {
 }
 
 export function HeroPillarsMobileMarquee({ pillars }: Props) {
+  const rootRef = useRef<HTMLDivElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
   const [active, setActive] = useState(0)
+  const activeRef = useRef(0)
   const reducedMotion = usePrefersReducedMotion()
+
+  const [inView, setInView] = useState(true)
+  const [tabVisible, setTabVisible] = useState(true)
+  const [userTouching, setUserTouching] = useState(false)
+  const [userScrolling, setUserScrolling] = useState(false)
+  /** Bumps to restart the dwell timer after manual input. */
+  const [timerEpoch, setTimerEpoch] = useState(0)
+
+  const programmaticScrollRef = useRef(false)
+  const scrollEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const n = pillars.length
 
   const syncActiveFromScroll = useCallback(() => {
     const track = trackRef.current
@@ -81,8 +98,7 @@ export function HeroPillarsMobileMarquee({ pillars }: Props) {
     const slides = track.querySelectorAll<HTMLElement>('[data-pillar-slide]')
     if (slides.length === 0) return
 
-    const trackRect = track.getBoundingClientRect()
-    const trackCenter = track.scrollLeft + trackRect.width / 2
+    const trackCenter = track.scrollLeft + track.clientWidth / 2
     let bestIdx = 0
     let bestDist = Number.POSITIVE_INFINITY
     slides.forEach((slide, i) => {
@@ -93,46 +109,139 @@ export function HeroPillarsMobileMarquee({ pillars }: Props) {
         bestIdx = i
       }
     })
+    activeRef.current = bestIdx
     setActive((prev) => (prev === bestIdx ? prev : bestIdx))
   }, [])
 
+  const goTo = useCallback(
+    (index: number, opts?: { fromUser?: boolean; smooth?: boolean }) => {
+      const track = trackRef.current
+      if (!track || n === 0) return
+      const target = ((index % n) + n) % n
+      const slide = track.querySelector<HTMLElement>(
+        `[data-pillar-slide="${target}"]`,
+      )
+      if (!slide) return
+
+      if (opts?.fromUser) {
+        setTimerEpoch((e) => e + 1)
+      }
+
+      programmaticScrollRef.current = true
+      const left =
+        slide.offsetLeft - (track.clientWidth - slide.offsetWidth) / 2
+      const smooth = opts?.smooth ?? !reducedMotion
+      track.scrollTo({
+        left: Math.max(0, left),
+        behavior: smooth ? 'smooth' : 'auto',
+      })
+      activeRef.current = target
+      setActive(target)
+
+      // Clear programmatic flag after scroll settles so user swipes are detected.
+      window.setTimeout(
+        () => {
+          programmaticScrollRef.current = false
+          syncActiveFromScroll()
+        },
+        smooth ? 450 : 50,
+      )
+    },
+    [n, reducedMotion, syncActiveFromScroll],
+  )
+
+  // Scroll listener: sync dots; user pan resets timer.
   useEffect(() => {
     const track = trackRef.current
     if (!track) return
-    syncActiveFromScroll()
-    track.addEventListener('scroll', syncActiveFromScroll, { passive: true })
-    window.addEventListener('resize', syncActiveFromScroll)
-    return () => {
-      track.removeEventListener('scroll', syncActiveFromScroll)
-      window.removeEventListener('resize', syncActiveFromScroll)
-    }
-  }, [syncActiveFromScroll, pillars.length])
 
-  const goTo = useCallback(
-    (index: number) => {
-      const track = trackRef.current
-      if (!track) return
-      const slide = track.querySelector<HTMLElement>(
-        `[data-pillar-slide="${index}"]`,
-      )
-      if (!slide) return
-      const left =
-        slide.offsetLeft - (track.clientWidth - slide.offsetWidth) / 2
-      track.scrollTo({
-        left: Math.max(0, left),
-        behavior: reducedMotion ? 'auto' : 'smooth',
-      })
-    },
-    [reducedMotion],
-  )
+    const onScroll = () => {
+      syncActiveFromScroll()
+      if (programmaticScrollRef.current) return
+
+      setUserScrolling(true)
+      setTimerEpoch((e) => e + 1)
+      if (scrollEndTimerRef.current) clearTimeout(scrollEndTimerRef.current)
+      scrollEndTimerRef.current = setTimeout(() => {
+        setUserScrolling(false)
+        setTimerEpoch((e) => e + 1)
+      }, 180)
+    }
+
+    track.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', syncActiveFromScroll)
+    syncActiveFromScroll()
+    return () => {
+      track.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', syncActiveFromScroll)
+      if (scrollEndTimerRef.current) clearTimeout(scrollEndTimerRef.current)
+    }
+  }, [syncActiveFromScroll, n])
+
+  // IntersectionObserver: pause when carousel leaves viewport.
+  useEffect(() => {
+    const root = rootRef.current
+    if (!root || typeof IntersectionObserver === 'undefined') return
+    const io = new IntersectionObserver(
+      (entries) => {
+        const hit = entries[0]
+        setInView(Boolean(hit?.isIntersecting))
+      },
+      { threshold: 0.25 },
+    )
+    io.observe(root)
+    return () => io.disconnect()
+  }, [])
+
+  // Page Visibility API: pause when tab hidden.
+  useEffect(() => {
+    const onVis = () => setTabVisible(document.visibilityState === 'visible')
+    onVis()
+    document.addEventListener('visibilitychange', onVis)
+    return () => document.removeEventListener('visibilitychange', onVis)
+  }, [])
+
+  // Auto-rotate: only when not reduced-motion and not paused.
+  const rotationPaused =
+    reducedMotion ||
+    !inView ||
+    !tabVisible ||
+    userTouching ||
+    userScrolling ||
+    n < 2
+
+  useEffect(() => {
+    if (rotationPaused) return
+    const id = window.setInterval(() => {
+      const next = (activeRef.current + 1) % n
+      goTo(next, { fromUser: false, smooth: true })
+    }, HERO_PILLAR_DWELL_MS)
+    return () => window.clearInterval(id)
+  }, [rotationPaused, n, goTo, timerEpoch])
+
+  const onTouchStart = (_e: ReactTouchEvent) => {
+    setUserTouching(true)
+    setTimerEpoch((e) => e + 1)
+  }
+  const onTouchEnd = () => {
+    setUserTouching(false)
+    setTimerEpoch((e) => e + 1)
+  }
+
+  const onDotClick = (i: number) => {
+    goTo(i, { fromUser: true, smooth: !reducedMotion })
+  }
 
   return (
     <div
+      ref={rootRef}
       className="hero-pillar-snap mt-6 w-full sm:hidden"
       role="region"
       aria-roledescription="carousel"
       aria-label="ViaConnect three step process"
       data-testid="hero-pillars-mobile-carousel"
+      data-auto-rotate={rotationPaused ? 'paused' : 'on'}
+      data-dwell-ms={HERO_PILLAR_DWELL_MS}
     >
       <style jsx>{`
         .hero-pillar-snap-track {
@@ -166,6 +275,9 @@ export function HeroPillarsMobileMarquee({ pillars }: Props) {
         ref={trackRef}
         className="hero-pillar-snap-track"
         data-testid="hero-pillars-mobile-track"
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+        onTouchCancel={onTouchEnd}
       >
         {pillars.map((pillar, cardIdx) => (
           <div
@@ -195,7 +307,7 @@ export function HeroPillarsMobileMarquee({ pillars }: Props) {
               aria-label={`Go to step ${i + 1}`}
               data-testid={`hero-pillars-dot-${i}`}
               data-active={isActive ? 'true' : 'false'}
-              onClick={() => goTo(i)}
+              onClick={() => onDotClick(i)}
               className="flex h-11 min-h-[44px] min-w-[44px] items-center justify-center"
             >
               <span

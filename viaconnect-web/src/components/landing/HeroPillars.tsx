@@ -233,8 +233,8 @@ export function HeroPillars() {
         }
       `}</style>
 
-      {/* Mobile: Prompt 220 native scroll-snap carousel (swipe + dots).
-          Desktop/tablet: static grid below (unchanged). */}
+      {/* Mobile: Prompt 220 revised auto-rotating scroll-snap carousel
+          (dwell HERO_PILLAR_DWELL_MS; swipe/dots reset timer). Desktop: static grid. */}
       <HeroPillarsMobileMarquee pillars={PILLARS} />
 
       {/* Tablet and desktop: existing grid */}
