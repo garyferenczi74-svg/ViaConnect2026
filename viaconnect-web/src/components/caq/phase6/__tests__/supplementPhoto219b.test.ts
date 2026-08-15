@@ -93,4 +93,24 @@ describe('Prompt 219b supplement label photo flow', () => {
     expect(src).toMatch(/label_photo_path/);
     expect(src).toMatch(/label_photo_bucket/);
   });
+
+  it('photo confirm offers catalog one-tap matches', () => {
+    const src = readFileSync(
+      join(root, 'src/components/caq/phase6/SupplementBarcodeConfirm.tsx'),
+      'utf8',
+    );
+    expect(src).toMatch(/photo-catalog-matches/);
+    expect(src).toMatch(/search_supplements/);
+    expect(src).toMatch(/Catalog matches/);
+  });
+
+  it('soft-remove cleans private label photo best-effort', () => {
+    const src = readFileSync(
+      join(root, 'src/lib/caq/supplements/timing/assignTiming.ts'),
+      'utf8',
+    );
+    expect(src).toMatch(/label photo remove|label_photo_path/);
+    expect(src).toMatch(/storage/);
+    expect(src).toMatch(/user-supplement-label-photos/);
+  });
 });

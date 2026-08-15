@@ -24,11 +24,17 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Barcode, Camera, ChevronDown, CircleAlert, Loader2, Plus, Search, Trash2 } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 import type {
   Frequency as TimingFrequency,
   TimeOfDay,
   TimingRecommendation,
 } from '@/lib/caq/supplements/timing/types';
+
+type CatalogMatchHit = {
+  brand_name: string;
+  product_name: string;
+};
 
 const ORANGE = '#B75E18';
 const TEAL = '#2DA5A0';
@@ -252,6 +258,56 @@ export function SupplementBarcodeConfirm({
     source === 'photo' ? 'photo_ai' : null,
   );
 
+  // Prompt 219b: one-tap catalog matches for photo path (Via Cura / catalog).
+  // Photo is retained on the entry either way; match only fills name/brand.
+  const [catalogMatches, setCatalogMatches] = useState<CatalogMatchHit[]>([]);
+  const [catalogLoading, setCatalogLoading] = useState(false);
+
+  useEffect(() => {
+    if (source !== 'photo') {
+      setCatalogMatches([]);
+      return;
+    }
+    const q = `${brand} ${name}`.trim();
+    if (q.length < 2) {
+      setCatalogMatches([]);
+      return;
+    }
+    let cancelled = false;
+    setCatalogLoading(true);
+    const t = setTimeout(async () => {
+      try {
+        const supabase = createClient();
+        const { data } = await supabase.rpc('search_supplements', {
+          search_query: q.toLowerCase(),
+          result_limit: 4,
+        });
+        if (cancelled) return;
+        if (Array.isArray(data)) {
+          setCatalogMatches(
+            (data as Array<Record<string, unknown>>)
+              .map((r) => ({
+                brand_name: (r.brand_name as string) || '',
+                product_name: (r.product_name as string) || '',
+              }))
+              .filter((r) => r.product_name.length > 0)
+              .slice(0, 4),
+          );
+        } else {
+          setCatalogMatches([]);
+        }
+      } catch {
+        if (!cancelled) setCatalogMatches([]);
+      } finally {
+        if (!cancelled) setCatalogLoading(false);
+      }
+    }, 280);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [source, name, brand]);
+
   // Prompt 175g (2026-06-05): fetch /api/caq/supplements/resolve on
   // mount so the panel pre-fills name + brand + form + dosage before
   // the user types anything. The resolver cascades: canonical first,
@@ -469,6 +525,49 @@ export function SupplementBarcodeConfirm({
           </div>
         )}
       </div>
+
+      {/* Prompt 219b: catalog / Via Cura one-tap matches after photo extract.
+          Selecting a match fills name + brand; label photo stays attached. */}
+      {source === 'photo' && (catalogLoading || catalogMatches.length > 0) ? (
+        <div
+          className="rounded-xl border border-white/10 bg-white/[0.02] p-3 space-y-2"
+          data-testid="photo-catalog-matches"
+        >
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-white/40">
+            Catalog matches
+            {catalogLoading ? ' (looking up...)' : ''}
+          </p>
+          {catalogMatches.length === 0 && catalogLoading ? (
+            <p className="text-xs text-white/35">Searching catalog...</p>
+          ) : null}
+          <div className="flex flex-col gap-1.5">
+            {catalogMatches.map((m, idx) => (
+              <button
+                key={`${m.brand_name}-${m.product_name}-${idx}`}
+                type="button"
+                onClick={() => {
+                  setName(m.product_name);
+                  if (m.brand_name) setBrand(m.brand_name);
+                  setFieldSources((prev) => ({
+                    ...prev,
+                    product_name: 'catalog_match',
+                    brand: m.brand_name ? 'catalog_match' : prev.brand,
+                  }));
+                }}
+                className="w-full min-h-[44px] text-left px-3 py-2 rounded-lg border border-white/10 bg-white/[0.03] hover:border-teal-400/40 hover:bg-teal-400/[0.06] transition-colors"
+              >
+                <span className="text-sm text-white/90 block truncate">{m.product_name}</span>
+                {m.brand_name ? (
+                  <span className="text-[11px] text-white/40">{m.brand_name}</span>
+                ) : null}
+              </button>
+            ))}
+          </div>
+          <p className="text-[10px] text-white/30">
+            One tap fills name and brand. Your label photo stays on this entry.
+          </p>
+        </div>
+      ) : null}
 
       {/* Product Name + Brand */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
