@@ -16,8 +16,10 @@ describe('Prompt 219c genetics DNA card media framing', () => {
     );
     expect(media).toMatch(/uploadDna:\s*\{[\s\S]*?objectFit:\s*["']contain["']/);
     expect(media).toMatch(/Mouth%20Swab%201\.png|Mouth Swab 1/);
-    // Same asset family, no silent swap to a different product photo
-    expect(media).not.toMatch(/uploadDna:[\s\S]*?kind:\s*["']video["']/);
+    // uploadDna block is still an image (not a video swap)
+    expect(media).toMatch(
+      /uploadDna:\s*\{\s*kind:\s*["']image["']/,
+    );
   });
 
   it('CardMedia ImageMedia honors objectFit and objectPosition', () => {
