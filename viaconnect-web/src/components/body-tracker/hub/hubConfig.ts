@@ -48,6 +48,10 @@ export interface SurfaceMedia {
   // "center" or "top". CardMedia defaults to "top" when unset, which
   // preserves the Dashboard hero framing; set "center" to crop centered.
   objectPosition?: string;
+  // Prompt 219c: object-fit for image/video fill. Default "cover" keeps
+  // full-bleed framing for videos and existing Biology cards. Use
+  // "contain" when the full subject must stay in frame (no crop).
+  objectFit?: 'cover' | 'contain';
   // Tailwind classes for the gradient placeholder used when kind is
   // "gradient" or when an image or video fails to load.
   gradientClass: string;
