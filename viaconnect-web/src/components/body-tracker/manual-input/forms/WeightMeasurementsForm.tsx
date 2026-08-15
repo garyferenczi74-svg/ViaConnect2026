@@ -124,6 +124,80 @@ export function WeightMeasurementsForm({ open, onOpenChange, onSaved }: WeightMe
     setError(null);
     try {
       const source = getDataSource(state.sourceId)!;
+      const neckIn = toStoredIn(state.neck, state.lengthUnit);
+      const chestIn = toStoredIn(state.chest, state.lengthUnit);
+      const waistIn = toStoredIn(state.waist, state.lengthUnit);
+      const hipsIn = toStoredIn(state.hips, state.lengthUnit);
+      const rightArmIn = toStoredIn(state.rightArm, state.lengthUnit);
+      const leftArmIn = toStoredIn(state.leftArm, state.lengthUnit);
+      const rightThighIn = toStoredIn(state.rightThigh, state.lengthUnit);
+      const leftThighIn = toStoredIn(state.leftThigh, state.lengthUnit);
+      const rightCalfIn = toStoredIn(state.rightCalf, state.lengthUnit);
+      const leftCalfIn = toStoredIn(state.leftCalf, state.lengthUnit);
+
+      // Prompt 210l: dual-write girths into body_tracker_circumference so the
+      // FormaVision spine and measurements surface read the same contract as
+      // scan writes. Hip stays on body_tracker_weight.hips_in (canonical).
+      // Composition fat/muscle % are NOT fabricated from girths (UNKNOWN discipline).
+      const hasAnyGirth = [
+        neckIn,
+        chestIn,
+        waistIn,
+        rightArmIn,
+        leftArmIn,
+        rightThighIn,
+        leftThighIn,
+        rightCalfIn,
+        leftCalfIn,
+      ].some((v) => v !== null);
+
+      const details: Array<{
+        table:
+          | 'body_tracker_weight'
+          | 'body_tracker_circumference';
+        row: Record<string, unknown>;
+      }> = [
+        {
+          table: 'body_tracker_weight',
+          row: {
+            weight_lbs: toStoredLbs(state.weight, state.weightUnit),
+            goal_weight_lbs: toStoredLbs(state.goalWeight, state.weightUnit),
+            waist_in: waistIn,
+            hips_in: hipsIn,
+            chest_in: chestIn,
+            neck_in: neckIn,
+            right_arm_in: rightArmIn,
+            left_arm_in: leftArmIn,
+            right_thigh_in: rightThighIn,
+            left_thigh_in: leftThighIn,
+            right_calf_in: rightCalfIn,
+            left_calf_in: leftCalfIn,
+          },
+        },
+      ];
+
+      if (hasAnyGirth) {
+        details.push({
+          table: 'body_tracker_circumference',
+          row: {
+            entry_unit: 'in',
+            source: 'manual',
+            neck: neckIn,
+            chest: chestIn,
+            waist: waistIn,
+            right_upper_arm: rightArmIn,
+            left_upper_arm: leftArmIn,
+            right_upper_thigh: rightThighIn,
+            left_upper_thigh: leftThighIn,
+            right_calf: rightCalfIn,
+            left_calf: leftCalfIn,
+            shoulder_width: null,
+            right_forearm: null,
+            left_forearm: null,
+          },
+        });
+      }
+
       await submitEntry({
         userId,
         entryDate: state.date,
@@ -131,25 +205,7 @@ export function WeightMeasurementsForm({ open, onOpenChange, onSaved }: WeightMe
         scanPhotoUrl: state.scanPhotoUrl,
         notes: state.notes || null,
         timeOfDay: state.timeOfDay,
-        details: [
-          {
-            table: 'body_tracker_weight',
-            row: {
-              weight_lbs:      toStoredLbs(state.weight, state.weightUnit),
-              goal_weight_lbs: toStoredLbs(state.goalWeight, state.weightUnit),
-              waist_in:       toStoredIn(state.waist, state.lengthUnit),
-              hips_in:        toStoredIn(state.hips, state.lengthUnit),
-              chest_in:       toStoredIn(state.chest, state.lengthUnit),
-              neck_in:        toStoredIn(state.neck, state.lengthUnit),
-              right_arm_in:   toStoredIn(state.rightArm, state.lengthUnit),
-              left_arm_in:    toStoredIn(state.leftArm, state.lengthUnit),
-              right_thigh_in: toStoredIn(state.rightThigh, state.lengthUnit),
-              left_thigh_in:  toStoredIn(state.leftThigh, state.lengthUnit),
-              right_calf_in:  toStoredIn(state.rightCalf, state.lengthUnit),
-              left_calf_in:   toStoredIn(state.leftCalf, state.lengthUnit),
-            },
-          },
-        ],
+        details,
       });
       reset();
       onOpenChange(false);

@@ -5,6 +5,7 @@ import { AlertTriangle, Camera, Check, Loader2, RotateCcw, ShieldCheck, X } from
 import { createClient } from '@/lib/supabase/client';
 import { runInMemoryMeasurement } from '@/lib/arnold/scanning/runScanAnalysis';
 import type { ViewQualityResult } from '@/lib/arnold/scanning/runScanAnalysis';
+import { persistScan } from '@/lib/body-tracker/composition/persistScanClient';
 import { safeLog } from '@/lib/utils/safe-log';
 import type { ExtractedMeasurements } from '@/lib/arnold/scanning/types';
 import type { PoseId } from '@/lib/arnold/types';
@@ -316,13 +317,46 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
         estimates: BodyScanEstimate;
       };
 
-      // Coordinate with geometric path (Task 10):
-      // if measurements are already ready, trigger circumference write now.
+      // Prompt 210l: persist the composition spine BEFORE circumference write
+      // so entry lookup does not race-fail. persistScan is idempotent; the
+      // composition page may call it again after onComplete.
       visionScanIdRef.current = out.scan_id;
-      const pendingMeasurements = geometricMeasurementsRef.current;
-      if (pendingMeasurements && !writeTriggeredRef.current) {
-        writeTriggeredRef.current = true;
-        void writeCircumferencesFromScan(pendingMeasurements, out.scan_id);
+      const persistRes = await persistScan(out.scan_id);
+      if (!persistRes.ok) {
+        safeLog.warn('arnold.scanning.uploader', 'scan persist failed after vision', {
+          scanId: out.scan_id,
+          reason: persistRes.reason ?? 'unknown',
+        });
+        // Still hand off to parent so the UI can show retry (parent also persists).
+        // Do not pretend success without a spine row.
+        if (persistRes.reason === 'timeout') {
+          setError(
+            'Saving your scan is taking longer than expected. Tap Analyze again to retry save, or open FormaVision after a moment.',
+          );
+        } else {
+          setError(
+            'Scan analysis finished but could not save to your body log. Retry Analyze to save.',
+          );
+        }
+      }
+
+      // After persist (or on failure), still try girth write if geometric finished.
+      // Circumference route retries entry lookup; longer window after 210l.
+      const flushCirc = () => {
+        const pending = geometricMeasurementsRef.current;
+        if (pending && !writeTriggeredRef.current) {
+          writeTriggeredRef.current = true;
+          void writeCircumferencesFromScan(pending, out.scan_id);
+        }
+      };
+      flushCirc();
+      // Wait up to 10s for in-memory geometric pipeline if vision finished first.
+      if (!writeTriggeredRef.current) {
+        for (let i = 0; i < 20 && !writeTriggeredRef.current; i++) {
+          await new Promise<void>((r) => setTimeout(r, 500));
+          if (!isMountedRef.current) return;
+          flushCirc();
+        }
       }
 
       onComplete({ scanId: out.scan_id, scanDate: out.scan_date, estimates: out.estimates });

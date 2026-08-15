@@ -23,9 +23,11 @@ const SCOPE = 'body.circumference.persist';
 const TIMEOUT_MS = 5000;
 
 // Entry lookup retries: the composition persist route runs concurrently.
-// Retry up to 5 times with 600 ms delay (3 s total) to let the entry appear.
-const ENTRY_LOOKUP_RETRIES = 5;
-const ENTRY_LOOKUP_DELAY_MS = 600;
+// Prompt 210l: geometric girths often finish before persist commits the entry.
+// Prior window was 5 x 600ms (3s) and dropped girths while persist still ran.
+// 15 x 1000ms = 15s covers multi-step persist without lengthening global timeouts.
+const ENTRY_LOOKUP_RETRIES = 15;
+const ENTRY_LOOKUP_DELAY_MS = 1000;
 
 export async function POST(req: Request): Promise<NextResponse> {
   try {

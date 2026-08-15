@@ -148,8 +148,12 @@ export function useLatestComposition(userId: string | null): UseLatestCompositio
           safeLog.warn(SCOPE, 'muscle row fetch failed (fail-open)', { error: e });
         }
 
-        // c. Parent body_tracker_entries row
-        // Use fat entry_id if present, else muscle entry_id.
+        // c. Parent body_tracker_entries row.
+        // Prefer the entry linked to the latest fat/muscle detail row.
+        // Prompt 210l: if the user only logged weight/girths (manual path), there
+        // may be no segmental rows yet. Fall back to the latest parent entry so
+        // the fat/muscle tabs still mount with honest No data for composition
+        // fields instead of blanking the entire spine.
         const entryId = fatRow?.entry_id ?? muscleRow?.entry_id ?? null;
 
         type EntryRowRaw = {
@@ -185,6 +189,43 @@ export function useLatestComposition(userId: string | null): UseLatestCompositio
             }
           } catch (e) {
             safeLog.warn(SCOPE, 'entry row fetch failed (fail-open)', { error: e });
+          }
+        }
+
+        if (!entryRow) {
+          try {
+            const result = await withTimeout(
+              (supabase as unknown as {
+                from: (t: string) => {
+                  select: (cols: string) => {
+                    eq: (col: string, val: string) => {
+                      order: (col: string, opts: { ascending: boolean }) => {
+                        limit: (n: number) => {
+                          maybeSingle: () => Promise<{ data: EntryRowRaw | null; error: { message: string } | null }>;
+                        };
+                      };
+                    };
+                  };
+                };
+              })
+                .from('body_tracker_entries')
+                .select('id,source,created_at')
+                .eq('user_id', userId)
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .maybeSingle(),
+              TIMEOUT_MS,
+              `${SCOPE}.entry_fallback`
+            );
+            if (result.error) {
+              safeLog.warn(SCOPE, 'entry fallback query error', {
+                message: result.error.message,
+              });
+            } else {
+              entryRow = result.data;
+            }
+          } catch (e) {
+            safeLog.warn(SCOPE, 'entry fallback fetch failed (fail-open)', { error: e });
           }
         }
 
