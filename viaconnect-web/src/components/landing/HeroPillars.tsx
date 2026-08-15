@@ -233,16 +233,14 @@ export function HeroPillars() {
         }
       `}</style>
 
-      {/* Mobile: continuous CSS marquee, 3 sets of 3 cards, right-to-left
-          at constant velocity, footer × 1/1.3 cycle duration, pause on
-          touch + tab hidden + reduced-motion. Replaces the 138k Pattern C
-          discrete slideshow. See HeroPillarsMobileMarquee for spec
-          details (Prompt 138k v2). */}
+      {/* Mobile: Prompt 220 native scroll-snap carousel (swipe + dots).
+          Desktop/tablet: static grid below (unchanged). */}
       <HeroPillarsMobileMarquee pillars={PILLARS} />
 
       {/* Tablet and desktop: existing grid */}
       <div
         role="list"
+        data-testid="hero-pillars-desktop-grid"
         className="mt-6 hidden sm:grid sm:grid-cols-2 sm:gap-3 lg:grid-cols-3 lg:gap-4"
       >
         {PILLARS.map((pillar, index) => (
