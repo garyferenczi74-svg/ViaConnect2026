@@ -300,29 +300,29 @@ export function DailySchedule() {
   }
 
   return (
-    <div className="p-4 md:p-6">
-      {/* Desktop: three columns */}
-      <div className="hidden gap-4 md:grid md:grid-cols-3">
+    <div className="p-3 md:p-4">
+      {/* Desktop: three columns; compact rows (Prompt 219) */}
+      <div className="hidden gap-3 md:grid md:grid-cols-3">
         {BUCKETS.map((b) => {
           const cards = view[b.id] ?? [];
           const Icon = b.icon;
           return (
-            <div key={b.id} ref={(el) => { bucketRefs.current[b.id] = el; }} className="flex flex-col overflow-hidden rounded-xl border border-white/5 bg-white/[0.02]">
-              <div className="flex items-center gap-2 border-b border-white/5 px-4 py-3">
-                <span className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ background: `${b.color}1A` }}>
-                  <Icon className="h-4 w-4" strokeWidth={1.5} style={{ color: b.color }} />
+            <div key={b.id} ref={(el) => { bucketRefs.current[b.id] = el; }} className="flex flex-col overflow-hidden rounded-xl border border-white/10 bg-[rgba(30,48,84,0.55)]">
+              <div className="flex items-center gap-2 border-b border-white/10 px-3 py-2">
+                <span className="flex h-6 w-6 items-center justify-center rounded-md" style={{ background: `${b.color}1A` }}>
+                  <Icon className="h-3.5 w-3.5" strokeWidth={1.5} style={{ color: b.color }} />
                 </span>
                 <span className="flex-1 text-sm font-semibold" style={{ color: b.color }}>{b.label}</span>
-                <span className="text-[11px] text-white/40">{bucketTaken(cards)}/{cards.length}</span>
+                <span className="text-[11px] text-white/45">{bucketTaken(cards)}/{cards.length}</span>
               </div>
               {cards.length > 0 ? (
-                <div className="flex flex-col gap-2 p-2">
+                <div className="flex flex-col gap-2 p-1.5">
                   {cards.map((c) => (
                     <DraggableScheduleCard key={c.slot_id} card={c} taken={c.taken} onToggle={() => handleToggle(c)} onMove={(t) => handleMove(c, t)} onRemove={() => handleRemove(c)} onCardDragEnd={onCardDragEnd} />
                   ))}
                 </div>
               ) : (
-                <div className="flex flex-1 items-center justify-center px-4 py-8">
+                <div className="flex flex-1 items-center justify-center px-4 py-6">
                   <p className="text-center text-xs text-white/25">Nothing scheduled</p>
                 </div>
               )}
@@ -338,29 +338,29 @@ export function DailySchedule() {
           const isOpen = openMobile === b.id;
           const Icon = b.icon;
           return (
-            <div key={b.id} className="overflow-hidden rounded-xl border border-white/5 bg-white/[0.02]">
+            <div key={b.id} className="overflow-hidden rounded-xl border border-white/10 bg-[rgba(30,48,84,0.55)]">
               <button
                 type="button"
                 onClick={() => setOpenMobile(isOpen ? null : b.id)}
                 aria-expanded={isOpen}
-                className="flex min-h-[44px] w-full items-center gap-2 px-4 py-3"
+                className="flex min-h-[44px] w-full items-center gap-2 px-3 py-2"
               >
-                <span className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ background: `${b.color}1A` }}>
-                  <Icon className="h-4 w-4" strokeWidth={1.5} style={{ color: b.color }} />
+                <span className="flex h-6 w-6 items-center justify-center rounded-md" style={{ background: `${b.color}1A` }}>
+                  <Icon className="h-3.5 w-3.5" strokeWidth={1.5} style={{ color: b.color }} />
                 </span>
                 <span className="flex-1 text-left text-sm font-semibold" style={{ color: b.color }}>{b.label}</span>
-                <span className="text-[11px] text-white/40">{bucketTaken(cards)}/{cards.length}</span>
+                <span className="text-[11px] text-white/45">{bucketTaken(cards)}/{cards.length}</span>
                 <ChevronDown className={`h-4 w-4 text-white/40 transition-transform ${isOpen ? 'rotate-180' : ''}`} strokeWidth={1.5} />
               </button>
               {isOpen ? (
                 cards.length > 0 ? (
-                  <div className="flex flex-col gap-2 p-2">
+                  <div className="flex flex-col gap-2 p-1.5">
                     {cards.map((c) => (
                       <DraggableScheduleCard key={c.slot_id} card={c} taken={c.taken} onToggle={() => handleToggle(c)} onMove={(t) => handleMove(c, t)} onRemove={() => handleRemove(c)} onCardDragEnd={onCardDragEnd} />
                     ))}
                   </div>
                 ) : (
-                  <div className="px-4 py-6"><p className="text-center text-xs text-white/25">Nothing scheduled</p></div>
+                  <div className="px-4 py-5"><p className="text-center text-xs text-white/25">Nothing scheduled</p></div>
                 )
               ) : null}
             </div>
