@@ -123,13 +123,12 @@ describe('NutritionHub source', () => {
   });
 
   it('icon removal (Gary 2026-06-11): no decorative badge chips remain on any card', () => {
-    // BadgeChip and its six call sites are gone. Only the functional control
-    // icons survive in the lucide import: the teal glass pill CTAs (PenLine,
-    // Camera, Droplet), the Open chevrons, and the handoff banner X. Prompt 192:
-    // ChevronDown left with the ExpandTile. Prompt 207: Droplet added for Hydration pill.
+    // BadgeChip and its six call sites are gone. Prompt 219e: meal action icons
+    // (Camera, PenLine, Droplet) live on LogYourMealActions; the hub keeps
+    // Open chevrons and the handoff banner X.
     expect(source).not.toContain('BadgeChip');
     expect(source).toContain(
-      "import { Camera, ChevronRight, Droplet, PenLine, X } from 'lucide-react'",
+      "import { ChevronRight, X } from 'lucide-react'",
     );
   });
 
