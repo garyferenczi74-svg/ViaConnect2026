@@ -201,9 +201,12 @@ export default function ConsumerDashboard() {
     <MobileHeroVideoBackground
       src={DASHBOARD_HERO_VIDEO}
       poster={DASHBOARD_HERO_POSTER}
-      overlayOpacity={0.35}
-      // Prefer upper frame so the raised bottle stays in view (not tight face crop).
-      objectPosition="center 22%"
+      overlayOpacity={0.3}
+      // contain: show the full Athlete 12 frame (bottle + face), no crop.
+      // cover was always cropping; letterbox fills with Deep Navy.
+      objectFit="contain"
+      objectPosition="center center"
+      letterboxColor="#0D1520"
     />
 
     <div className="relative z-10 min-h-screen w-full text-white">
