@@ -38,9 +38,9 @@ import {
 import { MobileHeroVideoBackground } from '@/components/ui/MobileHeroVideoBackground';
 import { RefreshCw, FileQuestion } from 'lucide-react';
 
-// Dashboard hero video (Hero Videos bucket). PNG still used as poster for first paint.
+// Dashboard hero video: 16x9 master for landscape frame fill. PNG poster for first paint.
 const DASHBOARD_HERO_VIDEO =
-  'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Videos/Athlete%2012%20MP4.mp4';
+  'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Videos/Athlete%2012%2016x9%20MP4.mp4';
 const DASHBOARD_HERO_POSTER =
   'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Athlete%2012.png';
 
@@ -201,12 +201,10 @@ export default function ConsumerDashboard() {
     <MobileHeroVideoBackground
       src={DASHBOARD_HERO_VIDEO}
       poster={DASHBOARD_HERO_POSTER}
-      overlayOpacity={0.3}
-      // contain: show the full Athlete 12 frame (bottle + face), no crop.
-      // cover was always cropping; letterbox fills with Deep Navy.
-      objectFit="contain"
+      overlayOpacity={0.35}
+      // 16x9 source matches desktop frame; cover fills without portrait letterbox.
+      objectFit="cover"
       objectPosition="center center"
-      letterboxColor="#0D1520"
     />
 
     <div className="relative z-10 min-h-screen w-full text-white">
