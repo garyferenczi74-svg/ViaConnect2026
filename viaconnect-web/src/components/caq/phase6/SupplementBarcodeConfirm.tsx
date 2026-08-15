@@ -66,6 +66,13 @@ export interface BarcodeConfirmRecord {
     unit: string | null;
     form: string | null;
   }>;
+  /**
+   * Prompt 219b: private storage pointer for the label photo (never a
+   * public URL). Optional; present when the photo path uploaded
+   * successfully before confirm.
+   */
+  label_photo_bucket?: string | null;
+  label_photo_path?: string | null;
 }
 
 /**
@@ -96,6 +103,9 @@ export interface SupplementConfirmInitialDraft {
    * barcode flow.
    */
   fieldSources?: Record<string, string>;
+  /** Prompt 219b: private label photo storage pointer. */
+  label_photo_bucket?: string | null;
+  label_photo_path?: string | null;
 }
 
 export interface SupplementBarcodeConfirmProps {
@@ -185,14 +195,22 @@ export function SupplementBarcodeConfirm({
   const [form, setForm] = useState<string>(
     initialDraft?.form ?? seedPrimary?.form ?? '',
   );
-  const [dosage, setDosage] = useState<string>(
-    initialDraft?.dosage ?? (seedPrimary?.amount !== null && seedPrimary?.amount !== undefined
-      ? String(seedPrimary.amount)
-      : ''),
-  );
-  const [unit, setUnit] = useState<string>(
-    initialDraft?.unit ?? seedPrimary?.unit ?? 'mg',
-  );
+  // Prompt 219b UNKNOWN discipline: never invent a dose or unit. Blank
+  // when the label did not yield a confident amount (health-relevant).
+  const seededAmount =
+    typeof initialDraft?.dosage === 'string' && initialDraft.dosage.length > 0
+      ? initialDraft.dosage
+      : seedPrimary?.amount !== null && seedPrimary?.amount !== undefined
+        ? String(seedPrimary.amount)
+        : '';
+  const seededUnit =
+    typeof initialDraft?.unit === 'string' && initialDraft.unit.length > 0
+      ? initialDraft.unit
+      : seededAmount && seedPrimary?.unit
+        ? seedPrimary.unit
+        : '';
+  const [dosage, setDosage] = useState<string>(seededAmount);
+  const [unit, setUnit] = useState<string>(seededUnit);
   const [frequency, setFrequency] = useState<string>(initialDraft?.frequency ?? 'once_daily');
   const [reason, setReason] = useState<string>('');
 
@@ -540,8 +558,10 @@ export function SupplementBarcodeConfirm({
             <select
               value={unit}
               onChange={(e) => setUnit(e.target.value)}
-              className="w-20 px-2 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-center appearance-none cursor-pointer focus:border-teal-400/50 focus:ring-1 focus:ring-teal-400/30 focus:outline-none transition-all text-sm [&>option]:bg-[#1E2D4A] [&>option]:text-white"
+              className="w-24 px-2 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-center appearance-none cursor-pointer focus:border-teal-400/50 focus:ring-1 focus:ring-teal-400/30 focus:outline-none transition-all text-sm [&>option]:bg-[#1E2D4A] [&>option]:text-white"
             >
+              {/* Prompt 219b: empty unit when dose is unknown (no fabricated mg). */}
+              <option value="">Unit</option>
               {UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
             </select>
           </div>
@@ -842,6 +862,8 @@ export function SupplementBarcodeConfirm({
               timing_reason: timingReason,
               timing_source: timingChanged ? 'user_set' : 'hannah_recommended',
               structured_ingredients: fullIngredients,
+              label_photo_bucket: initialDraft?.label_photo_bucket ?? null,
+              label_photo_path: initialDraft?.label_photo_path ?? null,
             });
           }}
           className={`flex-1 py-3 rounded-xl font-medium text-sm transition-all ${
