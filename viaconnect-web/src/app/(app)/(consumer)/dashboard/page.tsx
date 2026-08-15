@@ -35,14 +35,14 @@ import {
   clearNutrivisionManualLogHandoff,
   readNutrivisionManualLogHandoff,
 } from '@/hooks/useNutrivisionManualLogHandoff';
-import { MobileHeroBackground } from '@/components/ui/MobileHeroBackground';
+import { MobileHeroVideoBackground } from '@/components/ui/MobileHeroVideoBackground';
 import { RefreshCw, FileQuestion } from 'lucide-react';
 
-// Pre-uploaded hero image (Hero Images bucket, already public, full URL)
-const DASHBOARD_HERO_IMAGE =
+// Dashboard hero video (Hero Videos bucket). PNG still used as poster for first paint.
+const DASHBOARD_HERO_VIDEO =
+  'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Videos/Athlete%2012%20MP4.mp4';
+const DASHBOARD_HERO_POSTER =
   'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Athlete%2012.png';
-const DASHBOARD_HERO_IMAGE_MOBILE =
-  'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Mobile%20Hero/Athlete%2012%20Mobile.png';
 
 /* ── Skeleton ───────────────────────────────────────────────── */
 function DashboardSkeleton() {
@@ -195,24 +195,19 @@ export default function ConsumerDashboard() {
   const longestStreak = streak?.longest_count ?? 0;
 
   return (
-    // Full-page fixed background (Prompt #62L sonar pattern, migrated to
-    // Next.js Image via MobileHeroBackground for reliable object-cover
-    // on all viewports; replaces CSS bg-fixed + bg-cover that left a
-    // frame on browsers where background-attachment: fixed misbehaves.
+    // Full-page fixed hero video (Athlete 12 MP4). Poster is the prior still
+    // for first paint and reduced-motion pause. Overlay scrim keeps copy legible.
     <>
-    <MobileHeroBackground
-      src={DASHBOARD_HERO_IMAGE}
-      mobileSrc={DASHBOARD_HERO_IMAGE_MOBILE}
+    <MobileHeroVideoBackground
+      src={DASHBOARD_HERO_VIDEO}
+      poster={DASHBOARD_HERO_POSTER}
       overlayOpacity={0.35}
-      priority
       objectPosition="center 45%"
     />
 
     <div className="relative z-10 min-h-screen w-full text-white">
-      {/* Shadow filter lives on the fixed hero (via MobileHeroBackground's
-          built-in overlay) so it scales with the image and never extends
-          past its bounds; no scrolling page-level gradient to avoid the
-          bordering effect where the inner-div overlay outran the hero. */}
+      {/* Shadow filter lives on the fixed hero video overlay so it scales with
+          the footage and never extends past its bounds. */}
       <div className="min-h-screen">
 
         {/* Tagline, image fully visible */}
