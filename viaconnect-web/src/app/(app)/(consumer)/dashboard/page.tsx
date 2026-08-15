@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useState, useCallback } from 'react';
 import { useUserDashboardData } from '@/hooks/useUserDashboardData';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { BOSCard } from '@/components/dashboard/bos-card';
@@ -12,29 +11,14 @@ import { EngagementNudge } from '@/components/dashboard/EngagementNudge';
 import type { EngagementNudge as Nudge } from '@/lib/scoring/engagementNudges';
 import { HelixRewardsSummary } from '@/components/dashboard/HelixRewardsSummary';
 import { DailyInsightsCard } from '@/components/dashboard/DailyInsightsCard';
-// Prompt 170o Phase 1 Phase C: hydration tracking surfaces on Consumer Dashboard.
-// Gary 2026-06-03: standalone HydrationWidget desktop bubble retired in favor
-// of the 5th Hydration pill in the QuickLogsSurface meal-type row.
-// Prompt 175 (2026-06-05): HydrationFloatingActionButton removed entirely; the
-// Quick Log Hydration tile is the single supported entry point.
+// Prompt 219e: Quick Log removed. Dashboard Log Your Meal is a window into
+// My Nutrition (shared actions, Today's Meals, Daily Macros). Hydration FAB
+// remains retired; Hydration is one of the three shared Log Your Meal actions.
 import { PatternCirclePreview } from '@/components/community/PatternCirclePreview';
 import { ConnectCard } from '@/components/dashboard/ConnectCard';
 import { DashboardLinkCard } from '@/components/dashboard/DashboardLinkCard';
 import { DailyCheckIn } from '@/components/dashboard/DailyCheckIn';
-// Prompt 168c section 2.1 + 2.8: inline Quick Log surface with horizontal
-// meal-type tab strip replaces the Log Meal button + QuickLogModal pattern.
-// The 3 nutrition tiles (TodaysMealsSummary, DailyMacroRings, AverageQualityScoreTile)
-// move to a new Daily Totals tab in the Nutrition section per Phase 5.
-import { useUserMeals } from '@/hooks/useUserMeals';
-import { useNutritionTargets } from '@/hooks/useNutritionTargets';
-import { QuickLogsSurface } from '@/components/dashboard/QuickLogsSurface';
-import type { QuickLogDraft } from '@/components/meals/QuickLogModal';
-import { generateTargets } from '@/lib/gordon/generateTargets';
-import { safeLog } from '@/lib/utils/safe-log';
-import {
-  clearNutrivisionManualLogHandoff,
-  readNutrivisionManualLogHandoff,
-} from '@/hooks/useNutrivisionManualLogHandoff';
+import { DashboardLogYourMealSection } from '@/components/dashboard/DashboardLogYourMealSection';
 import { MobileHeroVideoBackground } from '@/components/ui/MobileHeroVideoBackground';
 import { RefreshCw, FileQuestion } from 'lucide-react';
 
@@ -77,94 +61,6 @@ export default function ConsumerDashboard() {
     streak,
     assessmentCompleted,
   } = useUserDashboardData();
-
-  // Prompt 168 dashboard tiles: meals + targets feed for new section.
-  // Both hooks return safe defaults on null userId so initial render is clean.
-  const { meals: prompt168Meals } = useUserMeals(userId, { days: 7, includeLegacy: true });
-  const { targets: prompt168Targets } = useNutritionTargets(userId);
-  // Prompt 180d (2026-06-08): explicit cache invalidation on save. The
-  // QueryClient default staleTime is 5 minutes; the realtime channel
-  // alone is unreliable. Same pattern as 180c on NutriVisionTab.
-  const queryClient = useQueryClient();
-
-  // USDA fallback when no nutrition_targets row exists yet (pre-CAQ users).
-  // QuickLogsSurface always renders so non-CAQ users can still log meals
-  // against generic adult defaults; useNutritionTargets swaps to personalized
-  // targets once CAQ + Gordon target generation populates a real row.
-  const effectiveTargets = useMemo(() => (
-    prompt168Targets
-    ?? generateTargets({ caqSnapshot: null, bodySnapshot: null, bioOptDay: null, mealPatternHistory: null })
-  ), [prompt168Targets]);
-
-  // Prompt 168d Phase 4: route the Quick Logs save through the new server
-  // endpoint at POST /api/nutrition/meals. The server is the single Gordon
-  // scorer and the single point of replace-on-save logic for B/L/D. The
-  // realtime subscription on the meals table propagates the new row into
-  // Today's Meals without any client-side optimistic insert.
-  // Returns true on success, false on failure so SnackStackContainer can
-  // keep the draft panel open for retry.
-  const handleSaveMeal = useCallback(async (draft: QuickLogDraft, snackIndex: number | null): Promise<boolean> => {
-    if (!userId) return false;
-
-    // #170a supplement §20.D + Deviation B: when the user bounced here from
-    // a NutriVision error card via Log-Manually, the stashed photo blob id
-    // rides on this save so the meals row carries the attachment. Cleared
-    // on a successful 2xx response.
-    const handoff = readNutrivisionManualLogHandoff();
-
-    try {
-      const res = await fetch('/api/nutrition/meals', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          logged_at: draft.loggedAt,
-          meal_type: draft.mealType,
-          source: draft.source,
-          source_confidence: draft.sourceConfidence,
-          protein_g: draft.proteinG,
-          carbs_g: draft.carbsG,
-          fat_total_g: draft.fatTotalG,
-          fat_source_id: draft.fatSourceId,
-          fiber_g: draft.fiberG,
-          sugar_g: draft.sugarG,
-          sodium_mg: draft.sodiumMg,
-          calories_kcal: draft.caloriesKcal,
-          calories_auto_calc: draft.caloriesAutoCalc,
-          whole_food_flag: draft.wholeFoodFlag,
-          meal_name: draft.mealName,
-          raw_input: draft.rawInput,
-          snack_index: snackIndex,
-          ...(handoff ? { source_photo_blob_id: handoff.source_photo_blob_id } : {}),
-        }),
-      });
-
-      if (!res.ok) {
-        safeLog.warn('dashboard.handleSaveMeal', 'meals POST failed', {
-          status: res.status,
-          mealType: draft.mealType,
-        });
-        return false;
-      }
-
-      // §20.D: clear the handoff only on a successful save. Failures keep
-      // the handoff so the user can try again from the same stash.
-      if (handoff) {
-        clearNutrivisionManualLogHandoff();
-      }
-      // Prompt 180d (2026-06-08): invalidate every cached user-meals
-      // tuple so Today's Meals, Daily Macros, Nutrition Score, and
-      // the Total Daily Macros card all refresh on the next render.
-      // The realtime postgres_changes channel on the meals table is
-      // the other refresh signal but cannot be relied on alone; the
-      // QueryClient default staleTime is 5 minutes and a returning
-      // user would otherwise see stale data.
-      void queryClient.invalidateQueries({ queryKey: ['user-meals'] });
-      return true;
-    } catch (err) {
-      safeLog.warn('dashboard.handleSaveMeal', 'meals POST threw', { error: err });
-      return false;
-    }
-  }, [userId, queryClient]);
 
   // Prompt 180g (2026-06-08): nudge surfaced by DailyScoresPanel.
   // Rendered below the Daily Check-In card instead of inline above
@@ -250,22 +146,8 @@ export default function ConsumerDashboard() {
             nudge through onNudge whenever scores load. */}
         {engagementNudge && <EngagementNudge nudge={engagementNudge} />}
 
-        {/* Prompt 168c section 2.1 + 2.8: inline Quick Log surface with horizontal */}
-        {/* meal-type tab strip. Replaces the prior modal-button pattern + the 3 */}
-        {/* tile cards (TodaysMealsSummary, DailyMacroRings, AverageQualityScoreTile). */}
-        {/* Those tiles relocate to the Daily Totals tab in /nutrition per Phase 5. */}
-        <QuickLogsSurface
-          userId={userId}
-          targets={effectiveTargets}
-          mealDistribution={prompt168Targets?.mealDistribution}
-          todaysMeals={prompt168Meals.filter((m) => {
-            const today = new Date(); today.setHours(0, 0, 0, 0);
-            const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
-            const t = m.loggedAt ? Date.parse(m.loggedAt) : 0;
-            return t >= today.getTime() && t < tomorrow.getTime();
-          })}
-          onSaveMeal={handleSaveMeal}
-        />
+        {/* Prompt 219e: Log Your Meal (shared My Nutrition actions + Today's Meals + Daily Macros). Quick Log removed. */}
+        <DashboardLogYourMealSection userId={userId} />
 
         {/* ── 4. Today's Protocol + (Wellness Snapshot / Helix Rewards stack) ── */}
         <div className="grid items-stretch gap-5 lg:grid-cols-[1.4fr_1fr]">
@@ -302,13 +184,8 @@ export default function ConsumerDashboard() {
           </div>
         </div>
 
-        {/* Gary 2026-06-03: prior 170o Phase 1 Phase C HydrationWidget bubble
-            removed from this slot. Hydration is now the 5th pill in the
-            QuickLogsSurface meal-type row above, tapping it routes to the
-            same /wellness-analytics/hydration detail view this widget linked
-            to. Prompt 175 (2026-06-05): the bottom-right
-            HydrationFloatingActionButton was also removed; Quick Log is now
-            the single hydration entry point on the dashboard. */}
+        {/* Prompt 219e: hydration entry is the Hydration action under Log Your Meal
+            (shared with My Nutrition), routing to /wellness-analytics/hydration. */}
 
         {/* Daily Insights (Prompt #61, replaces DailyUltrathinkTip) */}
         <DailyInsightsCard profile={profile} supplements={supplements} />

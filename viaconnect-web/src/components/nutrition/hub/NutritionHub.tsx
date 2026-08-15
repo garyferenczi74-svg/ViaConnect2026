@@ -42,11 +42,12 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Camera, ChevronRight, Droplet, PenLine, X } from 'lucide-react';
+import { ChevronRight, X } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useNutrivisionManualLogHandoff } from '@/hooks/useNutrivisionManualLogHandoff';
 import { PlasmaGauge, type PlasmaGaugeProps } from '@/components/gauges/PlasmaGauge';
 import { ConnectedAppMealDropdown } from '@/components/nutrition/ConnectedAppMealDropdown';
+import { LogYourMealActions } from '@/components/nutrition/LogYourMealActions';
 import { CardMedia } from '@/components/body-tracker/hub/CardMedia';
 import type { SurfaceMedia } from '@/components/body-tracker/hub/hubConfig';
 import { AssessmentRetakeCard } from '@/components/body-tracker/hub/AssessmentRetakeCard';
@@ -125,27 +126,6 @@ function HubTile({
         {children}
       </div>
     </div>
-  );
-}
-
-// A white glass pill used by the priority Log Your Meal tile (Gary
-// 2026-06-11: switched from the teal fill to white translucent glass): white
-// translucent fill, backdrop blur, soft white border, a faint top highlight,
-// white text. The focus ring keeps the teal accent.
-function GlassPill({ href, icon: Icon, label }: { href: string; icon: typeof PenLine; label: string }) {
-  return (
-    <Link
-      href={href}
-      className="group relative flex min-h-[44px] w-full items-center justify-center gap-2 overflow-hidden rounded-xl border border-white/20 bg-white/[0.08] px-4 py-2.5 text-[13px] font-semibold text-white no-underline backdrop-blur-md transition-all duration-200 hover:border-white/35 hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] active:scale-[0.98]"
-    >
-      {/* Faint top highlight on the glass. */}
-      <span
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/20 to-transparent opacity-70"
-      />
-      <Icon aria-hidden="true" className="relative h-4 w-4" strokeWidth={1.5} />
-      <span className="relative">{label}</span>
-    </Link>
   );
 }
 
@@ -470,12 +450,9 @@ export function NutritionHub() {
               The fastest way to add what you ate
             </p>
           </div>
-          {/* Gary (2026-06-11): NutriVision sits ABOVE Log a Full Meal.
-              Prompt 207: Hydration pill added as the third entry point. */}
-          <div className="mt-auto flex w-full flex-col items-center gap-3 pt-4">
-            <GlassPill href="/nutrition/photo-ai" icon={Camera} label="NutriVision" />
-            <GlassPill href="/nutrition/log-meal" icon={PenLine} label="Log a Full Meal" />
-            <GlassPill href="/wellness-analytics/hydration" icon={Droplet} label="Hydration" />
+          {/* Prompt 219e: shared LogYourMealActions (same component as Dashboard). */}
+          <div className="mt-auto w-full pt-4">
+            <LogYourMealActions className="flex w-full flex-col gap-3" />
           </div>
         </HubTile>
 

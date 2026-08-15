@@ -152,7 +152,8 @@ describe('NutritionHub source', () => {
     expect(centered.length).toBe(3);
     // The controls keep their bottom anchor + guaranteed gap.
     expect(source).toContain('mt-auto flex pt-4');
-    expect(source).toContain('mt-auto flex w-full flex-col items-center gap-3 pt-4');
+    // Prompt 219e: Log Your Meal actions share LogYourMealActions; hub wraps with mt-auto.
+    expect(source).toContain('mt-auto w-full pt-4');
   });
 
   it('Row 1 carries no tier word and no Open affordance on the gauge cards', () => {
@@ -165,39 +166,34 @@ describe('NutritionHub source', () => {
   });
 
   it('Row 1 Log Your Meal has three internal glass pills: NutriVision, Log a Full Meal, Hydration', () => {
-    // Prompt 207: third pill added for Hydration entry point consolidation.
-    expect(source).toContain('GlassPill');
+    // Prompt 219e: shared LogYourMealActions (same component as Dashboard).
     expect(source).not.toContain('TealGlassPill');
-    expect(source).toContain('href="/nutrition/log-meal"');
-    expect(source).toContain('href="/nutrition/photo-ai"');
-    expect(source).toContain('href="/wellness-analytics/hydration"');
-    expect(source).toContain('Log a Full Meal');
-    expect(source).toContain('NutriVision');
-    expect(source).toContain('Hydration');
-    // Order: NutriVision above Log a Full Meal above Hydration.
-    const iPhoto = source.indexOf('<GlassPill href="/nutrition/photo-ai"');
-    const iManual = source.indexOf('<GlassPill href="/nutrition/log-meal"');
-    const iHydration = source.indexOf('<GlassPill href="/wellness-analytics/hydration"');
-    expect(iPhoto).toBeGreaterThan(-1);
-    expect(iManual).toBeGreaterThan(-1);
-    expect(iHydration).toBeGreaterThan(-1);
-    expect(iPhoto).toBeLessThan(iManual);
-    expect(iManual).toBeLessThan(iHydration);
-    // Internal Next.js Link, not an absolute URL.
+    expect(source).not.toContain('function GlassPill');
+    expect(source).toContain('LogYourMealActions');
+    expect(source).toContain("import { LogYourMealActions } from '@/components/nutrition/LogYourMealActions'");
+    // Internal Next.js Link, not an absolute URL (actions component owns routes).
     expect(source).toContain("import Link from 'next/link'");
     expect(source).not.toMatch(/href=["']https?:\/\//);
   });
 
   it('the glass pill is a WHITE translucent fill with blur, border, and a top highlight', () => {
-    // Gary (2026-06-11): pills switched from the teal fill to white glass,
-    // then the tint was halved again so the media reads through.
-    expect(source).toContain('bg-white/[0.08]');
-    expect(source).toContain('border border-white/20');
-    expect(source).not.toContain('bg-[#2DA5A0]/[0.18]');
-    expect(source).toContain('backdrop-blur-md');
-    // Faint top highlight band.
-    expect(source).toContain('from-white/20 to-transparent');
-    // The Open pills are halved too (media visible through them).
+    // Prompt 219e: glass styles live on LogYourMealActions (shared with Dashboard).
+    const actions = readFileSync(
+      path.resolve(__dirname, '..', '..', 'LogYourMealActions.tsx'),
+      'utf8',
+    );
+    expect(actions).toContain('bg-white/[0.08]');
+    expect(actions).toContain('border border-white/20');
+    expect(actions).not.toContain('bg-[#2DA5A0]/[0.18]');
+    expect(actions).toContain('backdrop-blur-md');
+    expect(actions).toContain('from-white/20 to-transparent');
+    // Order: NutriVision, Log a Full Meal, Hydration.
+    const n = actions.indexOf('NutriVision');
+    const f = actions.indexOf('Log a Full Meal');
+    const h = actions.indexOf('Hydration');
+    expect(n).toBeLessThan(f);
+    expect(f).toBeLessThan(h);
+    // The Open pills on hub tiles remain halved (media visible through them).
     expect(source).toContain('bg-[#2A4C9E]/[0.12]');
     expect(source).not.toContain('bg-[#2A4C9E]/25');
   });
