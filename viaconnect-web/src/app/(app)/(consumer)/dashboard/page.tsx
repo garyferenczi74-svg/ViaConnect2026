@@ -204,7 +204,7 @@ export default function ConsumerDashboard() {
       overlayOpacity={0.35}
       // 16x9 source matches desktop frame; cover fills without portrait letterbox.
       objectFit="cover"
-      objectPosition="center center"
+      objectPosition="center top"
     />
 
     <div className="relative z-10 min-h-screen w-full text-white">
