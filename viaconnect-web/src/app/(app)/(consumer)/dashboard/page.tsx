@@ -202,7 +202,8 @@ export default function ConsumerDashboard() {
       src={DASHBOARD_HERO_VIDEO}
       poster={DASHBOARD_HERO_POSTER}
       overlayOpacity={0.35}
-      objectPosition="center 45%"
+      // Prefer upper frame so the raised bottle stays in view (not tight face crop).
+      objectPosition="center 22%"
     />
 
     <div className="relative z-10 min-h-screen w-full text-white">
