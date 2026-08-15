@@ -65,16 +65,18 @@ export const GENETICS_CARD_MEDIA: Record<string, SurfaceMedia> = {
     objectPosition: "center",
     gradientClass: MEDIA_TEAL_TL,
   },
-  // Prompt 193d / 204 / 219c: Mouth Swab still from Hero Images (transform
-  // endpoint for weight). Prompt 219c: object-cover hard-cropped the kit
-  // subject out of the short card frame; ImageMedia also ignored objectPosition.
-  // Fit is contain so the full swab subject stays recognizable; gradient fills
-  // letterbox. Same CardMedia + BentoTile scrim path as the video cards.
+  // Prompt 193d / 204 / 219c: Mouth Swab still from Hero Images.
+  // Native asset is extremely tall (~1200x4167, aspect ~0.29). CardMedia
+  // object-cover on that ratio zooms into a dark crop and hides the subject.
+  // Prompt 219c (b): serve a card-aspect crop via Supabase transform
+  // (900x600, resize=cover, center) so cover fill matches the three video
+  // cards without distortion. Original object path is untouched; only the
+  // render/image query changes. ImageMedia now honors objectFit/Position.
   uploadDna: {
     kind: "image",
-    src: "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/render/image/public/Hero%20Images/Mouth%20Swab%201.png?width=1200&quality=70",
+    src: "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/render/image/public/Hero%20Images/Mouth%20Swab%201.png?width=900&height=600&resize=cover&quality=75",
     objectPosition: "center",
-    objectFit: "contain",
+    objectFit: "cover",
     gradientClass: MEDIA_TEAL_BL,
   },
   // Prompt 193d: Upload Lab Results Blood Test video. Cover + center (subjects

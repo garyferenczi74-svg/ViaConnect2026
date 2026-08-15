@@ -9,16 +9,22 @@ import { join } from 'node:path';
 const root = process.cwd();
 
 describe('Prompt 219c genetics DNA card media framing', () => {
-  it('uploadDna uses object-fit contain so the subject is not cover-cropped', () => {
+  it('uploadDna uses a card-aspect transform crop so cover no longer over-zooms', () => {
     const media = readFileSync(
       join(root, 'src/components/genetics/hub/geneticsHubMedia.ts'),
       'utf8',
     );
-    expect(media).toMatch(/uploadDna:\s*\{[\s\S]*?objectFit:\s*["']contain["']/);
-    expect(media).toMatch(/Mouth%20Swab%201\.png|Mouth Swab 1/);
-    // uploadDna block is still an image (not a video swap)
+    // Same original object; render/image with width+height+resize=cover
+    expect(media).toMatch(/Mouth%20Swab%201\.png/);
+    expect(media).toMatch(/width=900/);
+    expect(media).toMatch(/height=600/);
+    expect(media).toMatch(/resize=cover/);
     expect(media).toMatch(
       /uploadDna:\s*\{\s*kind:\s*["']image["']/,
+    );
+    // Framed like sibling video cards (full-bleed cover + center)
+    expect(media).toMatch(
+      /uploadDna:\s*\{[\s\S]*?objectFit:\s*["']cover["']/,
     );
   });
 
