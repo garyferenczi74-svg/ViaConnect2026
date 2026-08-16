@@ -86,14 +86,23 @@ WHERE scheduler_mechanism IS NULL OR cron_expression IS NULL OR invocation_targe
 CREATE EXTENSION IF NOT EXISTS pg_cron WITH SCHEMA extensions;
 CREATE EXTENSION IF NOT EXISTS pg_net WITH SCHEMA extensions;
 
--- 4) SECURITY DEFINER invoker: never embeds the secret in SQL source.
--- Secret resolution order: vault.decrypted_secrets name OPS_CRON_SECRET,
--- then app.settings.cron_secret (set by dashboard / ALTER DATABASE).
+-- 4) Secret store (written at runtime by ensureSchema from CRON_SECRET env)
+CREATE TABLE IF NOT EXISTS public.ops_internal_secrets (
+  key text PRIMARY KEY,
+  value text NOT NULL,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+REVOKE ALL ON TABLE public.ops_internal_secrets FROM PUBLIC;
+REVOKE ALL ON TABLE public.ops_internal_secrets FROM anon, authenticated;
+ALTER TABLE public.ops_internal_secrets ENABLE ROW LEVEL SECURITY;
+
+-- 5) SECURITY DEFINER invoker: never embeds the secret in SQL source.
+-- Secret resolution: ops_internal_secrets.CRON_SECRET, then vault, then app.settings.
 CREATE OR REPLACE FUNCTION public.invoke_ops_tick()
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public, extensions, pg_temp
+SET search_path = public, extensions, net, pg_temp
 AS $$
 DECLARE
   secret text;
@@ -104,14 +113,24 @@ DECLARE
 BEGIN
   secret := null;
   BEGIN
-    SELECT ds.decrypted_secret INTO secret
-    FROM vault.decrypted_secrets ds
-    WHERE ds.name = 'OPS_CRON_SECRET'
+    SELECT s.value INTO secret
+    FROM public.ops_internal_secrets s
+    WHERE s.key = 'CRON_SECRET'
     LIMIT 1;
-  EXCEPTION
-    WHEN undefined_table THEN NULL;
-    WHEN OTHERS THEN NULL;
+  EXCEPTION WHEN OTHERS THEN secret := null;
   END;
+
+  IF secret IS NULL OR btrim(secret) = '' THEN
+    BEGIN
+      SELECT ds.decrypted_secret INTO secret
+      FROM vault.decrypted_secrets ds
+      WHERE ds.name = 'OPS_CRON_SECRET'
+      LIMIT 1;
+    EXCEPTION
+      WHEN undefined_table THEN NULL;
+      WHEN OTHERS THEN NULL;
+    END;
+  END IF;
 
   IF secret IS NULL OR btrim(secret) = '' THEN
     BEGIN
@@ -122,30 +141,31 @@ BEGIN
   END IF;
 
   IF secret IS NULL OR btrim(secret) = '' THEN
-    RAISE WARNING 'invoke_ops_tick: OPS_CRON_SECRET / app.settings.cron_secret not configured; skip';
+    RAISE WARNING 'invoke_ops_tick: CRON_SECRET not configured; skip';
     RETURN;
   END IF;
 
-  PERFORM net.http_post(
-    url := base_url || '/api/cron/ops-tick',
-    headers := jsonb_build_object(
-      'Content-Type', 'application/json',
-      'Authorization', 'Bearer ' || secret
-    ),
-    body := '{}'::jsonb,
-    timeout_milliseconds := 290000
-  );
-EXCEPTION
-  WHEN undefined_function THEN
-    -- Fallback older http extension shape
-    PERFORM extensions.http_post(
+  BEGIN
+    PERFORM net.http_post(
       url := base_url || '/api/cron/ops-tick',
       headers := jsonb_build_object(
         'Content-Type', 'application/json',
         'Authorization', 'Bearer ' || secret
       ),
-      body := '{}'::jsonb
+      body := '{}'::jsonb,
+      timeout_milliseconds := 290000
     );
+  EXCEPTION
+    WHEN undefined_function THEN
+      PERFORM extensions.http_post(
+        url := base_url || '/api/cron/ops-tick',
+        headers := jsonb_build_object(
+          'Content-Type', 'application/json',
+          'Authorization', 'Bearer ' || secret
+        ),
+        body := '{}'::jsonb
+      );
+  END;
 END;
 $$;
 

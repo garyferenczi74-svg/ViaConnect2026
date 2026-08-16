@@ -210,6 +210,77 @@ INSERT INTO public.discovery_cursors (source_key, topic_key, cursor_date, last_r
 ON CONFLICT (source_key, topic_key) DO NOTHING;
 `;
 
+/**
+ * 219M: store CRON secret for pg_cron HTTP invoke + schedule jobs.
+ * Secret comes from process.env.CRON_SECRET at runtime (never committed).
+ */
+const EMBEDDED_219M_CRON_SQL = `
+CREATE TABLE IF NOT EXISTS public.ops_internal_secrets (
+  key text PRIMARY KEY,
+  value text NOT NULL,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+REVOKE ALL ON TABLE public.ops_internal_secrets FROM PUBLIC;
+REVOKE ALL ON TABLE public.ops_internal_secrets FROM anon, authenticated;
+ALTER TABLE public.ops_internal_secrets ENABLE ROW LEVEL SECURITY;
+
+CREATE OR REPLACE FUNCTION public.invoke_ops_tick()
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, extensions, net, pg_temp
+AS $$
+DECLARE
+  secret text;
+  base_url text := 'https://www.viaconnectapp.com';
+BEGIN
+  SELECT s.value INTO secret
+  FROM public.ops_internal_secrets s
+  WHERE s.key = 'CRON_SECRET'
+  LIMIT 1;
+
+  IF secret IS NULL OR btrim(secret) = '' THEN
+    BEGIN
+      secret := nullif(current_setting('app.settings.cron_secret', true), '');
+    EXCEPTION WHEN OTHERS THEN
+      secret := null;
+    END;
+  END IF;
+
+  IF secret IS NULL OR btrim(secret) = '' THEN
+    RAISE WARNING 'invoke_ops_tick: CRON_SECRET not configured in ops_internal_secrets';
+    RETURN;
+  END IF;
+
+  BEGIN
+    PERFORM net.http_post(
+      url := base_url || '/api/cron/ops-tick',
+      headers := jsonb_build_object(
+        'Content-Type', 'application/json',
+        'Authorization', 'Bearer ' || secret
+      ),
+      body := '{}'::jsonb,
+      timeout_milliseconds := 290000
+    );
+  EXCEPTION
+    WHEN undefined_function THEN
+      PERFORM extensions.http_post(
+        url := base_url || '/api/cron/ops-tick',
+        headers := jsonb_build_object(
+          'Content-Type', 'application/json',
+          'Authorization', 'Bearer ' || secret
+        ),
+        body := '{}'::jsonb
+      );
+  END;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.invoke_ops_tick() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.invoke_ops_tick() TO postgres;
+GRANT EXECUTE ON FUNCTION public.invoke_ops_tick() TO service_role;
+`;
+
 export async function ensureContinuousOpsSchema(): Promise<{
   ok: boolean;
   applied: boolean;
@@ -241,16 +312,61 @@ export async function ensureContinuousOpsSchema(): Promise<{
       // Always run full migration: CREATE IF NOT EXISTS + ON CONFLICT seed upsert.
       const ddl = loadMigrationSql();
       await sql.unsafe(ddl);
+
+      // 219M cron + secret table
+      await sql.unsafe(EMBEDDED_219M_CRON_SQL);
+      const cronSecret = (process.env.CRON_SECRET ?? "").trim();
+      if (cronSecret.length >= 8) {
+        await sql`
+          INSERT INTO public.ops_internal_secrets (key, value, updated_at)
+          VALUES ('CRON_SECRET', ${cronSecret}, now())
+          ON CONFLICT (key) DO UPDATE
+          SET value = EXCLUDED.value, updated_at = now()
+        `;
+      } else {
+        safeLog.warn("ops.ensureSchema", "CRON_SECRET env empty; pg_cron invoke will no-op until set");
+      }
+
+      // Schedule pg_cron jobs (idempotent unschedule)
+      try {
+        await sql.unsafe(`
+          DO $$ BEGIN PERFORM cron.unschedule('viaconnect_ops_tick_15m'); EXCEPTION WHEN OTHERS THEN NULL; END $$;
+          SELECT cron.schedule('viaconnect_ops_tick_15m', '*/15 * * * *', $cron$ SELECT public.invoke_ops_tick(); $cron$);
+          DO $$ BEGIN PERFORM cron.unschedule('viaconnect_ops_discovery_6h'); EXCEPTION WHEN OTHERS THEN NULL; END $$;
+          SELECT cron.schedule('viaconnect_ops_discovery_6h', '22 */6 * * *', $cron$ SELECT public.invoke_ops_tick(); $cron$);
+        `);
+        safeLog.info("ops.ensureSchema", "219M pg_cron jobs scheduled");
+      } catch (cronErr) {
+        safeLog.warn("ops.ensureSchema", "pg_cron schedule failed open", {
+          error: cronErr instanceof Error ? cronErr.message : String(cronErr),
+        });
+      }
+
       const [{ n }] = await sql<{ n: number }[]>`
         select count(*)::int as n from public.agent_cadence_jobs
       `;
+      let cursorN = 0;
+      try {
+        const rows = await sql<{ n: number }[]>`
+          select count(*)::int as n from public.discovery_cursors
+        `;
+        cursorN = rows[0]?.n ?? 0;
+      } catch {
+        /* open */
+      }
       appliedThisProcess = true;
-      safeLog.info("ops.ensureSchema", "219H schema applied", {
+      safeLog.info("ops.ensureSchema", "219H/219M schema applied", {
         bytes: ddl.length,
         cadenceRows: n,
+        cursorRows: cursorN,
+        cronSecretStored: cronSecret.length >= 8,
         wasMissing: missing,
       });
-      return { ok: true, applied: true, reason: `cadence_rows=${n}` };
+      return {
+        ok: true,
+        applied: true,
+        reason: `cadence_rows=${n};cursors=${cursorN};cron_secret=${cronSecret.length >= 8}`,
+      };
     } finally {
       await sql.end({ timeout: 5 });
     }
