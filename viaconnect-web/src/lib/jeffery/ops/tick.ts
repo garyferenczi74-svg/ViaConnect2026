@@ -27,6 +27,8 @@ export interface OpsTickResult {
   freshness: Awaited<ReturnType<typeof measureFreshness>>;
   registryEnsured: number;
   pausedSkipped: number;
+  schema?: { ok: boolean; applied: boolean; reason?: string };
+  discoveryCursors?: number;
 }
 
 export async function runOpsTick(opts?: {
@@ -38,14 +40,23 @@ export async function runOpsTick(opts?: {
   let pausedSkipped = 0;
   let registryEnsured = 0;
 
-  // 0) Schema bootstrap (219H tables)
+  // 0) Schema bootstrap (219H tables + 219M cursors/pg_cron)
+  let schemaResult: OpsTickResult["schema"] = undefined;
+  let discoveryCursorCount = 0;
   try {
     const { ensureContinuousOpsSchema } = await import("./ensureSchema");
     const schema = await ensureContinuousOpsSchema();
+    schemaResult = schema;
     if (schema.applied) {
       safeLog.info("ops.tick", "schema bootstrap applied", { reason: schema.reason });
     } else if (!schema.ok) {
       safeLog.warn("ops.tick", "schema bootstrap skipped", { reason: schema.reason });
+    }
+    try {
+      const { listDiscoveryCursors } = await import("./discoveryCursors");
+      discoveryCursorCount = (await listDiscoveryCursors()).length;
+    } catch {
+      /* open */
     }
   } catch (err) {
     safeLog.warn("ops.tick", "schema bootstrap threw", { error: err });
@@ -228,5 +239,7 @@ export async function runOpsTick(opts?: {
     freshness,
     registryEnsured,
     pausedSkipped,
+    schema: schemaResult,
+    discoveryCursors: discoveryCursorCount,
   };
 }
