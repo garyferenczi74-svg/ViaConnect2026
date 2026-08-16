@@ -125,10 +125,11 @@ jobs:
           echo "✓ Found $count migration file(s)"
           test "$count" -gt 0
 
-  # Prompt 219k: one ops-surface ping per failed main run (coalesced server-side)
+  # Prompt 219k: one ops-surface ping per failed main run (coalesced server-side).
+  # Note: secrets cannot be used in job if: conditions; check inside the step.
   notify-ops-on-failure:
     name: Notify ACC on main failure
-    if: ${{ failure() && github.ref == 'refs/heads/main' && secrets.CRON_SECRET != '' }}
+    if: failure() && github.ref == 'refs/heads/main'
     needs: [root-check, web-check, expo-check, supabase-check]
     runs-on: ubuntu-latest
     steps:
@@ -136,8 +137,11 @@ jobs:
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
+          if [ -z "${CRON_SECRET}" ]; then
+            echo "CRON_SECRET not set in GitHub Actions secrets; skip ACC notify"
+            exit 0
+          fi
           curl -sS -X POST "https://www.viaconnectapp.com/api/cron/ci-failure" \
             -H "Authorization: Bearer ${CRON_SECRET}" \
             -H "Content-Type: application/json" \
-            -d "{\"workflow\":\"CI — ViaConnect GeneX360\",\"runId\":\"${{ github.run_id }}\",\"runUrl\":\"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\",\"headSha\":\"${{ github.sha }}\",\"conclusion\":\"failure\"}" \
-            || true
+            -d "{\"workflow\":\"CI ViaConnect GeneX360\",\"runId\":\"${{ github.run_id }}\",\"runUrl\":\"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\",\"headSha\":\"${{ github.sha }}\",\"conclusion\":\"failure\"}"
