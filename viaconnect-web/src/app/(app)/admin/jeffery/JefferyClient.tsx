@@ -13,13 +13,14 @@
  */
 
 import { useState } from "react";
-import { Cpu, Radio, ClipboardCheck, Compass, Brain, Database, Users, Zap } from "lucide-react";
+import { Cpu, Radio, ClipboardCheck, Compass, Brain, Database, Users, Zap, Activity } from "lucide-react";
 import LiveFeed from "@/components/admin/jeffery/LiveFeed";
 import ReviewQueue from "@/components/admin/jeffery/ReviewQueue";
 import SteeringConsole from "@/components/admin/jeffery/SteeringConsole";
 import EvolutionTimeline from "@/components/admin/jeffery/EvolutionTimeline";
 import KnowledgeExplorer from "@/components/admin/jeffery/KnowledgeExplorer";
 import CapabilityUsagePanel from "@/components/admin/jeffery/CapabilityUsagePanel";
+import ContinuousOpsPanel from "@/components/admin/jeffery/ContinuousOpsPanel";
 import AgentsClient from "./agents/AgentsClient";
 import type {
   AgentActivityEvent,
@@ -32,6 +33,7 @@ const TABS = [
   { id: "feed",      label: "Live Feed",      icon: Radio },
   { id: "agents",    label: "Agents",         icon: Users },
   { id: "caps",      label: "Capabilities",   icon: Zap },
+  { id: "ops",       label: "Ops 24/7",       icon: Activity },
   { id: "review",    label: "Review Queue",   icon: ClipboardCheck },
   { id: "steer",     label: "Steering",       icon: Compass },
   { id: "evolution", label: "Evolution",      icon: Brain },
@@ -117,7 +119,11 @@ export default function JefferyClient({
         id={`jeffery-tab-panel-${activeTab}`}
         role="tabpanel"
         aria-labelledby={`jeffery-tab-${activeTab}`}
-        className={activeTab === "agents" || activeTab === "caps" ? "" : "px-4 md:px-8 py-6"}
+        className={
+          activeTab === "agents" || activeTab === "caps" || activeTab === "ops"
+            ? ""
+            : "px-4 md:px-8 py-6"
+        }
       >
         {activeTab === "feed"      && <LiveFeed />}
         {activeTab === "review"    && <ReviewQueue onCountChange={setPendingCount} />}
@@ -127,6 +133,11 @@ export default function JefferyClient({
         {activeTab === "caps"      && (
           <div className="px-0 md:px-4">
             <CapabilityUsagePanel />
+          </div>
+        )}
+        {activeTab === "ops"       && (
+          <div className="px-0 md:px-4">
+            <ContinuousOpsPanel />
           </div>
         )}
         {activeTab === "agents"    && (

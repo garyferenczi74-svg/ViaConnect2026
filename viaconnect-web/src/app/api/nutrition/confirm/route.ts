@@ -206,6 +206,22 @@ export async function POST(req: NextRequest) {
       safeLog.warn('api.nutrition.confirm', 'bos recompute failed', { error: bosErr, userId: user.id });
     }
 
+    // Prompt 219H: platform event bus (idempotent coalesce) for continuous digests.
+    try {
+      const { emitPlatformEvent } = await import('@/lib/jeffery/ops/eventBus');
+      await emitPlatformEvent({
+        eventType: 'meal_logged',
+        userId: user.id,
+        payload: { logId, logged_at: row.logged_at },
+        coalesceKey: `meal_logged:${user.id}`,
+      });
+    } catch (evtErr) {
+      safeLog.warn('api.nutrition.confirm', 'platform event failed open', {
+        error: evtErr,
+        userId: user.id,
+      });
+    }
+
     return NextResponse.json({ ok: true });
   } catch (err) {
     safeLog.error('api.nutrition.confirm', 'unexpected', { error: err });
