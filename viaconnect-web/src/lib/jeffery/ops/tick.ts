@@ -26,6 +26,19 @@ export async function runOpsTick(): Promise<OpsTickResult> {
   const startedAt = new Date().toISOString();
   const jobsRun: JobRunResult[] = [];
 
+  // 0) One-time schema bootstrap (219H tables) when missing
+  try {
+    const { ensureContinuousOpsSchema } = await import("./ensureSchema");
+    const schema = await ensureContinuousOpsSchema();
+    if (schema.applied) {
+      safeLog.info("ops.tick", "schema bootstrap applied", { reason: schema.reason });
+    } else if (!schema.ok) {
+      safeLog.warn("ops.tick", "schema bootstrap skipped", { reason: schema.reason });
+    }
+  } catch (err) {
+    safeLog.warn("ops.tick", "schema bootstrap threw", { error: err });
+  }
+
   // 1) Due cadence jobs (priority order), skip pure watchdog (run later)
   const jobs = await loadCadenceJobs();
   const due = jobsDueNow(jobs).filter((j) => j.job_key !== "watchdog.tick");
