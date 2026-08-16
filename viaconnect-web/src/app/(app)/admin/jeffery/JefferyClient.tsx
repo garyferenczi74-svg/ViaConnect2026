@@ -13,12 +13,13 @@
  */
 
 import { useState } from "react";
-import { Cpu, Radio, ClipboardCheck, Compass, Brain, Database, Users } from "lucide-react";
+import { Cpu, Radio, ClipboardCheck, Compass, Brain, Database, Users, Zap } from "lucide-react";
 import LiveFeed from "@/components/admin/jeffery/LiveFeed";
 import ReviewQueue from "@/components/admin/jeffery/ReviewQueue";
 import SteeringConsole from "@/components/admin/jeffery/SteeringConsole";
 import EvolutionTimeline from "@/components/admin/jeffery/EvolutionTimeline";
 import KnowledgeExplorer from "@/components/admin/jeffery/KnowledgeExplorer";
+import CapabilityUsagePanel from "@/components/admin/jeffery/CapabilityUsagePanel";
 import AgentsClient from "./agents/AgentsClient";
 import type {
   AgentActivityEvent,
@@ -30,6 +31,7 @@ import type {
 const TABS = [
   { id: "feed",      label: "Live Feed",      icon: Radio },
   { id: "agents",    label: "Agents",         icon: Users },
+  { id: "caps",      label: "Capabilities",   icon: Zap },
   { id: "review",    label: "Review Queue",   icon: ClipboardCheck },
   { id: "steer",     label: "Steering",       icon: Compass },
   { id: "evolution", label: "Evolution",      icon: Brain },
@@ -115,13 +117,18 @@ export default function JefferyClient({
         id={`jeffery-tab-panel-${activeTab}`}
         role="tabpanel"
         aria-labelledby={`jeffery-tab-${activeTab}`}
-        className={activeTab === "agents" ? "" : "px-4 md:px-8 py-6"}
+        className={activeTab === "agents" || activeTab === "caps" ? "" : "px-4 md:px-8 py-6"}
       >
         {activeTab === "feed"      && <LiveFeed />}
         {activeTab === "review"    && <ReviewQueue onCountChange={setPendingCount} />}
         {activeTab === "steer"     && <SteeringConsole />}
         {activeTab === "evolution" && <EvolutionTimeline />}
         {activeTab === "knowledge" && <KnowledgeExplorer />}
+        {activeTab === "caps"      && (
+          <div className="px-0 md:px-4">
+            <CapabilityUsagePanel />
+          </div>
+        )}
         {activeTab === "agents"    && (
           <AgentsClient
             embedded
