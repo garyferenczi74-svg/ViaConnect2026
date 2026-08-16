@@ -13,7 +13,7 @@ const ADMIN_ROLES = new Set(['admin', 'superadmin', 'compliance_officer', 'compl
 
 export async function GET(_req: NextRequest) {
   try {
-    const supabase = createServerClient();
+    const supabase = await createServerClient();
     const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.soc2.packets.list.auth');
     if (!user) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });

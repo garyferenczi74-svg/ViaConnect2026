@@ -23,7 +23,7 @@ interface Body {
 export async function PATCH(req: NextRequest, props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
   try {
-    const session = createServerClient();
+    const session = await createServerClient();
     const { data: { user } } = await withTimeout(session.auth.getUser(), 5000, 'api.compliance.consistency.resolve.auth');
     if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     const { data: profile } = await withTimeout(

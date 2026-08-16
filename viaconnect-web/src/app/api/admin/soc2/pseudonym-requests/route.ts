@@ -16,7 +16,7 @@ const COMPLIANCE_ROLES = new Set(['compliance_officer', 'compliance_admin', 'adm
 
 export async function GET(_req: NextRequest) {
   try {
-    const supabase = createServerClient();
+    const supabase = await createServerClient();
     const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.soc2.pseudonym-requests.list.auth');
     if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     const profileRes = await withTimeout(

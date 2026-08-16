@@ -38,7 +38,7 @@ interface Body {
 export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
   try {
-    const supabase = createServerClient();
+    const supabase = await createServerClient();
     const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.marshall.vision.disposition.auth');
     if (!user) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });

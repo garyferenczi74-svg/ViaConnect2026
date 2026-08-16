@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [main, master]
 
+# Prompt 219k: cancel superseded runs so one red window is not a flood
+concurrency:
+  group: ci-genex360-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # ──────────────────────────────────────────────────
   # Root landing page — Vercel deploys automatically
@@ -119,3 +124,20 @@ jobs:
           count=$(find viaconnect-mobile/supabase/migrations -name "*.sql" | wc -l)
           echo "✓ Found $count migration file(s)"
           test "$count" -gt 0
+
+  # Prompt 219k: one ops-surface ping per failed main run (coalesced server-side)
+  notify-ops-on-failure:
+    name: Notify ACC on main failure
+    if: ${{ failure() && github.ref == 'refs/heads/main' && secrets.CRON_SECRET != '' }}
+    needs: [root-check, web-check, expo-check, supabase-check]
+    runs-on: ubuntu-latest
+    steps:
+      - name: POST ci_failure event
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -sS -X POST "https://www.viaconnectapp.com/api/cron/ci-failure" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -H "Content-Type: application/json" \
+            -d "{\"workflow\":\"CI — ViaConnect GeneX360\",\"runId\":\"${{ github.run_id }}\",\"runUrl\":\"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\",\"headSha\":\"${{ github.sha }}\",\"conclusion\":\"failure\"}" \
+            || true

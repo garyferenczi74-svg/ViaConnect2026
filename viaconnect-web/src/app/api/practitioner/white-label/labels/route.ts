@@ -18,7 +18,7 @@ export const dynamic = 'force-dynamic';
 
 export const runtime = 'nodejs';
 
-async function loadCtx(supabase: ReturnType<typeof createClient>) {
+async function loadCtx(supabase: Awaited<ReturnType<typeof createClient>>) {
   const authResult = await withTimeout(
     supabase.auth.getUser(),
     5000,

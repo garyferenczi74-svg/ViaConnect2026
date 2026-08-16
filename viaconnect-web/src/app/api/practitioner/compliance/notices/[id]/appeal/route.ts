@@ -13,14 +13,14 @@ function serviceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) throw new Error("missing supabase env");
-  return createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
+  return await createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
 }
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const requestId = req.headers.get('x-request-id') ?? crypto.randomUUID();
   try {
     const { id } = await params;
-    const userClient = createServerClient();
+    const userClient = await createServerClient();
     let user;
     try {
       const authResult = await withTimeout(

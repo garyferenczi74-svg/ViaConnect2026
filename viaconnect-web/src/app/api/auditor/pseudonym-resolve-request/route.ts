@@ -36,7 +36,7 @@ interface Body {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = createServerClient();
+    const session = await createServerClient();
     const { data: { user } } = await withTimeout(session.auth.getUser(), 5000, 'api.auditor.pseudonym.auth');
     if (!user || !user.email) {
       return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });

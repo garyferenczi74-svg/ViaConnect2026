@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
-    const supabase = createServerClient();
+    const supabase = await createServerClient();
     const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, "api.admin.jeffery.verify-knowledge.auth");
     if (!user) return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
     const profileRes = await withTimeout(

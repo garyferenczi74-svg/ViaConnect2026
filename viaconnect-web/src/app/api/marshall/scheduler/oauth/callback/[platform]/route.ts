@@ -49,7 +49,7 @@ export async function GET(req: NextRequest, props: { params: Promise<{ platform:
       return NextResponse.json({ error: 'missing_code_or_state' }, { status: 400 });
     }
 
-    const session = createServerClient();
+    const session = await createServerClient();
     const { data: { user } } = await withTimeout(session.auth.getUser(), 5000, 'api.marshall.scheduler.oauth.callback.auth');
     if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
 

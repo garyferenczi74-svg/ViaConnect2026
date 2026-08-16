@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
     // Uses Supabase's already-configured email path. This does NOT modify any
     // auth template or SMTP wiring; those are explicitly locked per Gary's
     // memo. signInWithOtp triggers Supabase to email the user the link.
-    const session = createServerClient();
+    const session = await createServerClient();
     const { error } = await withTimeout(
       session.auth.signInWithOtp({
         email,

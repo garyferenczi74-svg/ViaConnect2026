@@ -21,7 +21,7 @@ const VALID_FRAMEWORKS = new Set(['soc2', 'hipaa_security', 'iso_27001_2022']);
 async function requireCompliance(): Promise<
   { ok: true; userId: string } | { ok: false; response: NextResponse }
 > {
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.soc2.auditor-grants.auth');
   if (!user) return { ok: false, response: NextResponse.json({ error: 'Authentication required' }, { status: 401 }) };
   const profileRes = await withTimeout(
@@ -41,7 +41,7 @@ export async function GET(_req: NextRequest) {
     const auth = await requireCompliance();
     if (!auth.ok) return auth.response;
 
-    const supabase = createServerClient();
+    const supabase = await createServerClient();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sb = supabase as any;
     const { data, error } = await withTimeout(
@@ -115,7 +115,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'expires_at_exceeds_90_days' }, { status: 400 });
     }
 
-    const supabase = createServerClient();
+    const supabase = await createServerClient();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sb = supabase as any;
     const { data, error } = await withTimeout(

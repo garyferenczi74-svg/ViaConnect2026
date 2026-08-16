@@ -14,7 +14,7 @@ const COMPLIANCE_ROLES = new Set(['compliance_officer', 'compliance_admin', 'adm
 export async function POST(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
   try {
-    const supabase = createServerClient();
+    const supabase = await createServerClient();
     const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.soc2.auditor-grants.revoke.auth');
     if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     const profileRes = await withTimeout(

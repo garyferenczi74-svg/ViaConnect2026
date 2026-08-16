@@ -28,7 +28,7 @@ export async function POST(req: NextRequest, props: { params: Promise<{ logId: s
       return NextResponse.json({ error: 'invalid_log_id' }, { status: 400 });
     }
 
-    const session = createServerClient();
+    const session = await createServerClient();
     const { data: { user } } = await withTimeout(session.auth.getUser(), 5000, 'api.soc2.pseudonym-requests.deny.auth');
     if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
 

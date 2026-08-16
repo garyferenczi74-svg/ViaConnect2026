@@ -12,7 +12,7 @@ import { safeLog } from '@/lib/utils/safe-log';
 export const dynamic = 'force-dynamic';
 
 async function assertDraftOwnership(
-  supabase: ReturnType<typeof createClient>,
+  supabase: Awaited<ReturnType<typeof createClient>>,
   formulationId: string,
   practitionerId: string,
 ): Promise<NextResponse | null> {

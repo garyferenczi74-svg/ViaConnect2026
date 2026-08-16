@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const userClient = createServerClient();
+    const userClient = await createServerClient();
     const { data: { user } } = await withTimeout(userClient.auth.getUser(), 5000, 'api.marshall.precheck.receipts.auth');
     if (!user) return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
 

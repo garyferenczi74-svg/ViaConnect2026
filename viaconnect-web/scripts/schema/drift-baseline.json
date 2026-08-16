@@ -1,5 +1,5 @@
 {
-  "comment": "Baseline as of 2026-07-08 (210d P3-1c pre-merge regen): 210f-applied objects (practitioner core, cert/waitlist, invitations, white label tables/views) now exist in the refreshed live-types.ts snapshot and have left this baseline. Remaining entries are residual audit-known findings pending P1 decisions, plus applied RPCs still listed because db-functions.json was not part of this regen. 2026-07-12 (Prompt 211a): scan_cadence_reminders and scan_streak were applied to prod (migrations 20260710120000 / 20260712000500) and are baselined here pending the next live-types.ts snapshot regen, which moves them into the snapshot and out of this baseline (same lifecycle the 210f tables followed).",
+  "comment": "Baseline as of 2026-07-08 (210d P3-1c pre-merge regen): 210f-applied objects (practitioner core, cert/waitlist, invitations, white label tables/views) now exist in the refreshed live-types.ts snapshot and have left this baseline. Remaining entries are residual audit-known findings pending P1 decisions, plus applied RPCs still listed because db-functions.json was not part of this regen. 2026-07-12 (Prompt 211a): scan_cadence_reminders and scan_streak were applied to prod (migrations 20260710120000 / 20260712000500) and are baselined here pending the next live-types.ts snapshot regen, which moves them into the snapshot and out of this baseline (same lifecycle the 210f tables followed). 2026-08-16 (Prompt 219k): baselined 36 post-213/219 table refs used in app code (continuous ops, wearables, hannah/elysium/hounddog) pending next live-types.ts snapshot regen per apply-procedure.",
   "entries": [
     {
       "kind": "bucket",
@@ -67,6 +67,22 @@
     },
     {
       "kind": "table",
+      "name": "agent_cadence_jobs"
+    },
+    {
+      "kind": "table",
+      "name": "agent_capabilities"
+    },
+    {
+      "kind": "table",
+      "name": "agent_job_backlog"
+    },
+    {
+      "kind": "table",
+      "name": "agent_job_dead_letters"
+    },
+    {
+      "kind": "table",
       "name": "agent_messages"
     },
     {
@@ -87,7 +103,15 @@
     },
     {
       "kind": "table",
+      "name": "authorities_sources"
+    },
+    {
+      "kind": "table",
       "name": "biometrics"
+    },
+    {
+      "kind": "table",
+      "name": "body_tracker_composition"
     },
     {
       "kind": "table",
@@ -108,6 +132,10 @@
     {
       "kind": "table",
       "name": "cohort_customer_monthly"
+    },
+    {
+      "kind": "table",
+      "name": "connected_sources"
     },
     {
       "kind": "table",
@@ -139,6 +167,22 @@
     },
     {
       "kind": "table",
+      "name": "elysium_upload_coverage"
+    },
+    {
+      "kind": "table",
+      "name": "elysium_variant_interpretations"
+    },
+    {
+      "kind": "table",
+      "name": "firecrawl_run_ledger"
+    },
+    {
+      "kind": "table",
+      "name": "freshness_targets"
+    },
+    {
+      "kind": "table",
       "name": "genetic_variants"
     },
     {
@@ -147,11 +191,31 @@
     },
     {
       "kind": "table",
+      "name": "genomics_panel_allele_freq"
+    },
+    {
+      "kind": "table",
+      "name": "genomics_reference_releases"
+    },
+    {
+      "kind": "table",
+      "name": "hannah_accelerator_insights"
+    },
+    {
+      "kind": "table",
       "name": "hannah_avatar_sessions"
     },
     {
       "kind": "table",
       "name": "hannah_avatar_transcripts"
+    },
+    {
+      "kind": "table",
+      "name": "hannah_compile_runs"
+    },
+    {
+      "kind": "table",
+      "name": "hannah_daily_notes"
     },
     {
       "kind": "table",
@@ -175,11 +239,27 @@
     },
     {
       "kind": "table",
+      "name": "hounddog_gated_items"
+    },
+    {
+      "kind": "table",
       "name": "hounddog_pipeline"
     },
     {
       "kind": "table",
       "name": "hounddog_scripts"
+    },
+    {
+      "kind": "table",
+      "name": "hounddog_staging_items"
+    },
+    {
+      "kind": "table",
+      "name": "ingest_topic_registry"
+    },
+    {
+      "kind": "table",
+      "name": "ingredient_snp_relevance"
     },
     {
       "kind": "table",
@@ -215,7 +295,23 @@
     },
     {
       "kind": "table",
+      "name": "peptide_education_entries"
+    },
+    {
+      "kind": "table",
       "name": "pg_policies"
+    },
+    {
+      "kind": "table",
+      "name": "pipeline_runs"
+    },
+    {
+      "kind": "table",
+      "name": "platform_events"
+    },
+    {
+      "kind": "table",
+      "name": "plugin_app_registry"
     },
     {
       "kind": "table",
@@ -283,6 +379,10 @@
     },
     {
       "kind": "table",
+      "name": "product_content"
+    },
+    {
+      "kind": "table",
       "name": "saved_meals"
     },
     {
@@ -292,6 +392,10 @@
     {
       "kind": "table",
       "name": "scan_streak"
+    },
+    {
+      "kind": "table",
+      "name": "sherlock_curation_items"
     },
     {
       "kind": "table",
@@ -327,7 +431,47 @@
     },
     {
       "kind": "table",
+      "name": "wearable_audit_log"
+    },
+    {
+      "kind": "table",
+      "name": "wearable_body_composition"
+    },
+    {
+      "kind": "table",
+      "name": "wearable_daily_vitals"
+    },
+    {
+      "kind": "table",
+      "name": "wearable_events"
+    },
+    {
+      "kind": "table",
+      "name": "wearable_metric_precedence"
+    },
+    {
+      "kind": "table",
+      "name": "wearable_oauth_states"
+    },
+    {
+      "kind": "table",
+      "name": "wearable_oauth_tokens"
+    },
+    {
+      "kind": "table",
+      "name": "wearable_recovery"
+    },
+    {
+      "kind": "table",
+      "name": "wearable_sleep_sessions"
+    },
+    {
+      "kind": "table",
       "name": "wearable_summaries"
+    },
+    {
+      "kind": "table",
+      "name": "wearable_workouts"
     }
   ]
 }

@@ -164,7 +164,7 @@ export async function activateProposal(
 }
 
 interface SnapshotArgs {
-  supabase: ReturnType<typeof createClient>;
+  supabase: Awaited<ReturnType<typeof createClient>>;
   proposalId: string;
   pricingDomainId: string;
   domainCategory: string;

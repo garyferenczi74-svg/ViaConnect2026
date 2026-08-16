@@ -29,7 +29,7 @@ export async function POST(req: NextRequest, props: { params: Promise<{ id: stri
     const scanId = (params.id ?? '').trim();
     if (!scanId) return NextResponse.json({ error: 'missing_scan_id' }, { status: 400 });
 
-    const supabase = createServerClient();
+    const supabase = await createServerClient();
     const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.marshall.scheduler.scans.override.auth');
     if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
 

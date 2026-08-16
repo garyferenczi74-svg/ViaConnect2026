@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [main]
 
+# Prompt 219k: cancel superseded runs so one red window is not a flood
+concurrency:
+  group: schema-drift-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   schema-drift:
     name: Schema Drift Scan
@@ -46,3 +51,20 @@ jobs:
         # (outside the 7 day sign-off grace window) or when a manifest
         # entry has no repo file. Apply rule: docs/integrity/apply-procedure.md.
         run: node scripts/schema/check-migration-parity.mjs --manifest docs/integrity/snapshot/applied-manifest.json --migrations supabase/migrations
+
+  # Prompt 219k: one ops-surface ping per failed main run (coalesced server-side)
+  notify-ops-on-failure:
+    name: Notify ACC on main failure
+    if: ${{ failure() && github.ref == 'refs/heads/main' && secrets.CRON_SECRET != '' }}
+    needs: [schema-drift, migration-parity]
+    runs-on: ubuntu-latest
+    steps:
+      - name: POST ci_failure event
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -sS -X POST "https://www.viaconnectapp.com/api/cron/ci-failure" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -H "Content-Type: application/json" \
+            -d "{\"workflow\":\"Schema Drift Gate\",\"runId\":\"${{ github.run_id }}\",\"runUrl\":\"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\",\"headSha\":\"${{ github.sha }}\",\"conclusion\":\"failure\"}" \
+            || true

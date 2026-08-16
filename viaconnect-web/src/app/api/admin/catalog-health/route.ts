@@ -17,7 +17,7 @@ export const runtime = 'nodejs';
 
 interface ProfileLite { role: string }
 
-async function requireAdmin(supabase: ReturnType<typeof createClient>) {
+async function requireAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.catalog-health.auth');
   if (!user) return { ok: false as const, response: NextResponse.json({ error: 'Authentication required' }, { status: 401 }) };
   const sb = supabase as unknown as { from: (t: string) => { select: (s: string) => { eq: (k: string, v: string) => { maybeSingle: () => Promise<{ data: ProfileLite | null }> } } } };

@@ -26,7 +26,7 @@ interface GrantRow {
 }
 
 export default async function AuditorPortalPage() {
-  const session = createServerClient();
+  const session = await createServerClient();
   const { data: { user } } = await session.auth.getUser();
   if (!user || !user.email) {
     redirect('/auditor');

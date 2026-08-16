@@ -37,7 +37,7 @@ interface ScanRow {
 }
 
 export default async function PostsDashboardPage() {
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 

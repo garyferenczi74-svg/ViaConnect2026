@@ -36,7 +36,7 @@ interface FileRow {
 
 export default async function AuditorPacketDetailPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
-  const session = createServerClient();
+  const session = await createServerClient();
   const { data: { user } } = await session.auth.getUser();
   if (!user || !user.email) {
     redirect('/auditor');

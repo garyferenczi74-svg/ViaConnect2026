@@ -41,7 +41,7 @@ interface LinkedRowEnriched {
   product_msrp: number | null;
 }
 
-async function requireLegalOrExec(supabase: ReturnType<typeof createClient>) {
+async function requireLegalOrExec(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.admin.legal.customs.recordations.products.auth');
   if (!user) {
     return {

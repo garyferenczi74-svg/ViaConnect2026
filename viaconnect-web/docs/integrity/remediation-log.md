@@ -41,3 +41,6 @@ Code-fix-only units (P0-5, P0-7, P0-9) reach prod through the normal main deploy
 
 - P0-8: no apply; awaiting Gary Option A/B/C selection (recommend B; C is the live default via drift tagging).
 - P1 tranche applies are governed by docs/integrity/p1-decision-sheet.md, not this log; any P1 apply gets its own row here at execution time.
+
+| 219k CI schema gate honesty | Migration parity 211a + drift baseline 36 tables + await createClient (114 files) | code + docs/integrity/snapshot/applied-manifest.json + scripts/schema/drift-baseline.json | BUILT | | | |
+

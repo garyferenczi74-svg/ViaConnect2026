@@ -28,7 +28,7 @@ const patchSchema = z.object({
   is_active: z.boolean().optional(),
 });
 
-async function requireAdmin(supabase: ReturnType<typeof createClient>) {
+async function requireAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.white-label.catalog.auth');
   if (!user) return { ok: false as const, response: NextResponse.json({ error: 'Authentication required' }, { status: 401 }) };
   const profileRes = await withTimeout(

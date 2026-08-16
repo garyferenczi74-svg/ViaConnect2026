@@ -26,7 +26,7 @@ export async function PATCH(req: NextRequest, props: { params: Promise<{ platfor
     if (!VALID_PLATFORMS.has(params.platform)) {
       return NextResponse.json({ error: 'invalid_platform' }, { status: 400 });
     }
-    const supabase = createServerClient();
+    const supabase = await createServerClient();
     const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.soc2.distribution-targets.auth');
     if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     const profileRes = await withTimeout(

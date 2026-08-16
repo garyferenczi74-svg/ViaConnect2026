@@ -44,7 +44,7 @@ interface RecordationRow {
   updated_at: string;
 }
 
-async function requireLegalOrExec(supabase: ReturnType<typeof createClient>) {
+async function requireLegalOrExec(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.admin.legal.customs.recordations.auth');
   if (!user) {
     return {

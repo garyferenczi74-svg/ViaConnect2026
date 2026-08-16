@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic';
 
 export const runtime = 'nodejs';
 
-async function getPractitionerId(supabase: ReturnType<typeof createClient>): Promise<{ ok: true; practitioner_id: string; user_id: string } | { ok: false; response: NextResponse }> {
+async function getPractitionerId(supabase: Awaited<ReturnType<typeof createClient>>): Promise<{ ok: true; practitioner_id: string; user_id: string } | { ok: false; response: NextResponse }> {
   const authResult = await withTimeout(
     supabase.auth.getUser(),
     5000,

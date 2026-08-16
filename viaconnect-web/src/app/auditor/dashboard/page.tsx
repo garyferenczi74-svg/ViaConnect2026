@@ -31,7 +31,7 @@ interface PacketRow {
 }
 
 export default async function AuditorDashboardPage() {
-  const session = createServerClient();
+  const session = await createServerClient();
   const { data: { user } } = await session.auth.getUser();
   if (!user || !user.email) {
     redirect('/auditor');

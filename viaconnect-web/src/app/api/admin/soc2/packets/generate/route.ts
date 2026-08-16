@@ -53,7 +53,7 @@ async function authenticate(req: NextRequest): Promise<
   }
 
   // Path 2: admin user session.
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.soc2.packets.generate.auth');
   if (!user) {
     return {

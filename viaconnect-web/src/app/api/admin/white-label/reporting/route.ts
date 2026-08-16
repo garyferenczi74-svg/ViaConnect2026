@@ -17,7 +17,7 @@ export const runtime = 'nodejs';
 
 type Section = 'program' | 'practitioner' | 'compliance' | 'operations' | 'financial';
 
-async function requireAdmin(supabase: ReturnType<typeof createClient>) {
+async function requireAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.white-label.reporting.auth');
   if (!user) return { ok: false as const, response: NextResponse.json({ error: 'Authentication required' }, { status: 401 }) };
   const sb = supabase as any;

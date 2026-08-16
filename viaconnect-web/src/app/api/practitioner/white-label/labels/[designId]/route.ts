@@ -30,7 +30,7 @@ const ALLOWED_STATUS_TRANSITIONS_FROM_PRACTITIONER = new Set<string>([
   'draft', 'ready_for_review', 'archived',
 ]);
 
-async function loadCtx(supabase: ReturnType<typeof createClient>, designId: string) {
+async function loadCtx(supabase: Awaited<ReturnType<typeof createClient>>, designId: string) {
   const authResult = await withTimeout(
     supabase.auth.getUser(),
     5000,

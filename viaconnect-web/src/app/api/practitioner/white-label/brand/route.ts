@@ -38,7 +38,7 @@ const VALIDATABLE_FIELDS = new Set([
   'product_naming_scheme', 'practice_prefix',
 ]);
 
-async function loadPractitionerAndEnrollment(supabase: ReturnType<typeof createClient>) {
+async function loadPractitionerAndEnrollment(supabase: Awaited<ReturnType<typeof createClient>>) {
   const authResult = await withTimeout(
     supabase.auth.getUser(),
     5000,

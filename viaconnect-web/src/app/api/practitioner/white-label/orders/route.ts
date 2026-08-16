@@ -33,7 +33,7 @@ const createSchema = z.object({
   timeline: z.enum(['standard', 'expedited']),
 });
 
-async function loadPractitioner(supabase: ReturnType<typeof createClient>) {
+async function loadPractitioner(supabase: Awaited<ReturnType<typeof createClient>>) {
   const authResult = await withTimeout(
     supabase.auth.getUser(),
     5000,

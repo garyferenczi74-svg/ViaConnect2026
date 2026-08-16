@@ -25,7 +25,7 @@ interface ProfileLite {
   role: string;
 }
 
-async function requireLegalOps(supabase: ReturnType<typeof createClient>) {
+async function requireLegalOps(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.admin.legal.customs.alerts.open-as-case.auth');
   if (!user) {
     return {

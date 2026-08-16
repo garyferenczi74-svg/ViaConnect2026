@@ -35,7 +35,7 @@ function slugify(input: string): string {
     .slice(0, 60) || 'practice';
 }
 
-async function loadCtx(supabase: ReturnType<typeof createClient>) {
+async function loadCtx(supabase: Awaited<ReturnType<typeof createClient>>) {
   const authResult = await withTimeout(
     supabase.auth.getUser(),
     5000,

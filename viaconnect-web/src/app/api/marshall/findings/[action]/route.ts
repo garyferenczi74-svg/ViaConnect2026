@@ -20,7 +20,7 @@ function serviceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) throw new Error("missing supabase env");
-  return createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
+  return await createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
 }
 
 export async function POST(req: Request, { params }: { params: Promise<{ action: string }> }) {
@@ -28,7 +28,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ action:
     const { action } = await params;
     if (!ALLOWED.has(action)) return NextResponse.json({ error: "Unknown action" }, { status: 400 });
 
-    const userClient = createServerClient();
+    const userClient = await createServerClient();
     const { data: { user } } = await withTimeout(userClient.auth.getUser(), 5000, 'api.marshall.findings.auth');
     if (!user) return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
     const { data: profile } = await userClient.from("profiles").select("role").eq("id", user.id).maybeSingle();

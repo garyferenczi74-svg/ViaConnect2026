@@ -57,6 +57,21 @@
     {
       "version": "20260709154004",
       "name": "20260709000000_prompt_210f_label_design_one_current_unique"
+    },
+    {
+      "version": "pending-verification",
+      "name": "20260710120000_prompt_211a_scan_cadence",
+      "note": "Prompt 219k: migration file present; baseline comment states 211a scan_cadence tables applied to prod 2026-07-12; version stamp not captured at apply time (apply-procedure pending-verification)."
+    },
+    {
+      "version": "pending-verification",
+      "name": "20260710120500_prompt_211a_scan_cadence_nudge_cron",
+      "note": "Prompt 219k: migration file present; baseline comment states 211a scan_cadence tables applied to prod 2026-07-12; version stamp not captured at apply time (apply-procedure pending-verification)."
+    },
+    {
+      "version": "pending-verification",
+      "name": "20260712000500_prompt_211a_scan_cadence_nudge_cron_fix",
+      "note": "Prompt 219k: migration file present; baseline comment states 211a scan_cadence tables applied to prod 2026-07-12; version stamp not captured at apply time (apply-procedure pending-verification)."
     }
   ]
 }

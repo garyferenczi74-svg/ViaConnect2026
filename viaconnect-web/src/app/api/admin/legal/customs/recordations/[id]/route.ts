@@ -52,7 +52,7 @@ interface ProfileLite {
   role: string;
 }
 
-async function requireLegalOrExec(supabase: ReturnType<typeof createClient>) {
+async function requireLegalOrExec(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.admin.legal.customs.recordations.detail.auth');
   if (!user) {
     return {

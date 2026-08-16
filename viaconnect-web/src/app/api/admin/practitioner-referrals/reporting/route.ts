@@ -13,7 +13,7 @@ export const runtime = 'nodejs';
 
 type Section = 'program' | 'per_referrer' | 'milestones' | 'financial' | 'tax';
 
-async function requireAdmin(supabase: ReturnType<typeof createClient>) {
+async function requireAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: { user } } = await withTimeout(
     supabase.auth.getUser(),
     5000,

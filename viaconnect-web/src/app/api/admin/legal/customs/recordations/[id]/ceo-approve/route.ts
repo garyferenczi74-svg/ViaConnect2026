@@ -22,7 +22,7 @@ interface ProfileLite {
   role: string;
 }
 
-async function requireAuthed(supabase: ReturnType<typeof createClient>) {
+async function requireAuthed(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.admin.legal.customs.recordations.ceo-approve.auth');
   if (!user) {
     return {

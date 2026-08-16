@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Optional user context (if the consumer is logged in).
-    const sessionClient = createServerClient();
+    const sessionClient = await createServerClient();
     const { data: { user } } = await withTimeout(sessionClient.auth.getUser(), 5000, 'api.marshall.vision.consumer-reports.auth');
 
     const supabaseWriter = createAdminClient();

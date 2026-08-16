@@ -37,7 +37,7 @@ export async function POST(req: NextRequest, props: { params: Promise<{ platform
       return NextResponse.json({ error: 'invalid_platform' }, { status: 400 });
     }
 
-    const supabase = createServerClient();
+    const supabase = await createServerClient();
     const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.marshall.scheduler.admin.approve.auth');
     if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

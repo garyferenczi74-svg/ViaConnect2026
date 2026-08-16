@@ -19,7 +19,8 @@ export type PlatformEventType =
   | "purchase_completed"
   | "interpretation_updated"
   | "product_evidence"
-  | "manual_refresh";
+  | "manual_refresh"
+  | "ci_failure";
 
 export interface CadenceJob {
   job_key: string;

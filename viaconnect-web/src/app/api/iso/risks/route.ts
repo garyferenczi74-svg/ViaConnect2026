@@ -36,7 +36,7 @@ function isInt1to5(n: unknown): n is number {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = createServerClient();
+    const session = await createServerClient();
     const { data: { user } } = await withTimeout(session.auth.getUser(), 5000, 'api.iso.risks.auth');
     if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     const { data: profile } = await withTimeout(
