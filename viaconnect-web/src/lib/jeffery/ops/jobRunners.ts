@@ -327,19 +327,26 @@ async function runDigestRollup(): Promise<Record<string, unknown>> {
 
 /** Security Advisor: verify job secrets; missing keys are named in structured detail. */
 async function runSecurityAdvisorDaily(): Promise<Record<string, unknown>> {
-  const required = [
-    "NEXT_PUBLIC_SUPABASE_URL",
-    "SUPABASE_SERVICE_ROLE_KEY",
-    "CRON_SECRET",
-    "XAI_API_KEY",
-    "FIRECRAWL_API_KEY",
-  ] as const;
+  // Accept alternate names used in Vercel (GROK vs XAI, lower-case firecrawl key)
+  const requiredGroups: { label: string; keys: string[] }[] = [
+    { label: "NEXT_PUBLIC_SUPABASE_URL", keys: ["NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_URL"] },
+    { label: "SUPABASE_SERVICE_ROLE_KEY", keys: ["SUPABASE_SERVICE_ROLE_KEY"] },
+    { label: "CRON_SECRET", keys: ["CRON_SECRET"] },
+    { label: "XAI_OR_GROK_API_KEY", keys: ["XAI_API_KEY", "GROK_API_KEY"] },
+    {
+      label: "FIRECRAWL_API_KEY",
+      keys: ["FIRECRAWL_API_KEY", "firecrawl_api_key"],
+    },
+  ];
   const present: string[] = [];
   const missing_keys: string[] = [];
-  for (const key of required) {
-    const v = process.env[key];
-    if (v && v.trim().length > 0) present.push(key);
-    else missing_keys.push(key);
+  for (const g of requiredGroups) {
+    const hit = g.keys.find((k) => {
+      const v = process.env[k];
+      return Boolean(v && v.trim().length > 0);
+    });
+    if (hit) present.push(hit);
+    else missing_keys.push(g.label);
   }
   if (missing_keys.length > 0) {
     safeLog.error("ops.security", "missing required env secrets", { missing_keys });

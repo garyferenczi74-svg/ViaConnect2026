@@ -29,7 +29,10 @@ export interface OpsTickResult {
   pausedSkipped: number;
 }
 
-export async function runOpsTick(): Promise<OpsTickResult> {
+export async function runOpsTick(opts?: {
+  /** When true, treat all enabled cron_tick/hybrid jobs as due (activation / catch-up). */
+  forceDue?: boolean;
+}): Promise<OpsTickResult> {
   const startedAt = new Date().toISOString();
   const jobsRun: JobRunResult[] = [];
   let pausedSkipped = 0;
@@ -69,9 +72,26 @@ export async function runOpsTick(): Promise<OpsTickResult> {
   const paused = await loadPausedAgentIds();
 
   // 1) Due cadence jobs (priority order), skip pure watchdog (run later)
-  const due = jobsDueNow(jobs).filter((j) => j.job_key !== "watchdog.tick");
+  const nowMs = Date.now();
+  const dueBase = opts?.forceDue
+    ? jobs
+        .filter(
+          (j) =>
+            j.enabled &&
+            j.job_key !== "watchdog.tick" &&
+            j.mechanism !== "event" &&
+            !(j.mechanism === "cron_daily" && j.job_key !== "watchdog.tick")
+        )
+        // Advance catch-up: skip jobs that already ran in the last 3 minutes
+        .filter((j) => {
+          if (!j.last_run_at) return true;
+          const age = nowMs - new Date(j.last_run_at).getTime();
+          return !Number.isFinite(age) || age > 3 * 60_000;
+        })
+        .sort((a, b) => a.priority - b.priority)
+    : jobsDueNow(jobs).filter((j) => j.job_key !== "watchdog.tick");
   // Cap work per tick to stay under maxDuration; stagger backlog catch-up
-  const batch = due.slice(0, 6);
+  const batch = dueBase.slice(0, 6);
   for (const job of batch) {
     const isPaused = paused.has(job.agent_id);
     if (isPaused) pausedSkipped += 1;

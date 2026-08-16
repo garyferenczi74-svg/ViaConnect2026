@@ -15,8 +15,12 @@ export async function GET(request: Request): Promise<Response> {
   }
 
   try {
-    const result = await runOpsTick();
-    return Response.json({ ok: true, result }, { status: 200 });
+    const url = new URL(request.url);
+    const forceDue =
+      url.searchParams.get("force") === "1" ||
+      url.searchParams.get("force") === "true";
+    const result = await runOpsTick({ forceDue });
+    return Response.json({ ok: true, forceDue, result }, { status: 200 });
   } catch (err) {
     safeLog.error("cron.ops-tick", "threw", { error: err });
     return Response.json(
