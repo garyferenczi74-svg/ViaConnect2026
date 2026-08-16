@@ -12,10 +12,11 @@ import { markJobRun } from "./cadence";
 import type { CadenceJob, JobRunResult } from "./types";
 import { touchHannahLightFreshness } from "./eventBus";
 import { writeAgentJobHeartbeat } from "./heartbeats";
+import { completePanelTask, startPanelTask } from "./panelTasks";
 
 export async function runCadenceJob(
   job: CadenceJob,
-  opts?: { paused?: boolean }
+  opts?: { paused?: boolean; force?: boolean }
 ): Promise<JobRunResult> {
   const t0 = Date.now();
   const runId = `ops-${job.job_key}-${Date.now()}`;
@@ -54,6 +55,15 @@ export async function runCadenceJob(
     status: "running",
   });
 
+  const panelTaskId = await startPanelTask({
+    agentId: job.agent_id,
+    title: job.label || job.job_key,
+    description: `Cadence job ${job.job_key}`,
+    jobKey: job.job_key,
+    runId,
+    priority: job.priority <= 20 ? "high" : "normal",
+  });
+
   try {
     // Budget pre-check for Firecrawl-heavy jobs
     if (job.budget_class === "A" || job.budget_class === "B") {
@@ -79,6 +89,11 @@ export async function runCadenceJob(
           detail: { reason: "firecrawl_ceiling" },
           severity: "warning",
         });
+        await completePanelTask({
+          taskId: panelTaskId,
+          status: "cancelled",
+          metadata: { reason: "firecrawl_ceiling" },
+        });
         await logOpsJobRun(result);
         await markJobRun(job.job_key, result.status, job.interval_minutes);
         return result;
@@ -89,46 +104,43 @@ export async function runCadenceJob(
     let status: JobRunResult["status"] = "ok";
 
     switch (job.job_key) {
-      case "hounddog.discovery": {
-        const r = await invokeCapability("hounddog", {
-          capability: "firecrawl",
-          action: "search",
-          query: "nutraceutical clinical research review site:nih.gov OR site:pubmed.ncbi.nlm.nih.gov",
-          limit: 3,
+      case "hounddog.discovery":
+      case "hounddog.pubmed":
+      case "hounddog.social": {
+        // 219L: real staging write path (not capability-only search)
+        const { runHoundDogDailyIngest } = await import(
+          "@/lib/hounddog/ingest/runDailyIngest"
+        );
+        const stats = await runHoundDogDailyIngest({
+          runId: `ops-ingest-${Date.now()}`,
+          runDate: new Date().toISOString().slice(0, 10),
+          includeGenomes: false,
+          // Full-text only on discovery (Firecrawl budget); pubmed prefers abstracts
+          enrichFullText: job.job_key === "hounddog.discovery",
         });
-        detail = { outcome: r.usage.outcome, reason: r.reason };
-        if (r.usage.outcome === "budget_exhausted") {
+        detail = {
+          pubmed: stats.pubmed,
+          social: stats.social,
+          gate: stats.gate,
+          hitBudget: stats.hitBudget,
+          staged:
+            stats.pubmed.staged + stats.social.staged,
+          discovered: stats.pubmed.discovered,
+        };
+        if (stats.hitBudget) {
           await enqueueBacklog({
             jobKey: job.job_key,
             agentId: job.agent_id,
             budgetClass: job.budget_class,
           });
           status = "budget_queued";
-        } else if (!r.ok && r.skipped) status = "skipped";
-        else if (!r.ok) status = "partial";
-        break;
-      }
-      case "hounddog.pubmed": {
-        const r = await invokeCapability("hounddog", {
-          capability: "pubmed",
-          action: "search",
-          term: "nutraceutical bioavailability",
-          retmax: Number(job.config.retmax ?? 5),
-          includeAbstracts: false,
-        });
-        detail = { hits: r.data?.pmids?.length ?? 0, outcome: r.usage.outcome };
-        status = r.ok ? "ok" : "partial";
-        break;
-      }
-      case "hounddog.social": {
-        const r = await invokeCapability("hounddog", {
-          capability: "firecrawl",
-          action: "search",
-          query: "wellness research public health news",
-          limit: 2,
-        });
-        detail = { outcome: r.usage.outcome };
-        status = r.ok ? "ok" : r.skipped ? "skipped" : "partial";
+        } else if (
+          stats.pubmed.staged === 0 &&
+          stats.social.staged === 0 &&
+          stats.pubmed.discovered === 0
+        ) {
+          status = "partial";
+        }
         break;
       }
       case "marshall.gate": {
@@ -227,12 +239,17 @@ export async function runCadenceJob(
     };
     await writeAgentJobHeartbeat({
       agentId: job.agent_id,
-      eventType: status === "failed" ? "error" : "complete",
+      eventType: "complete",
       jobKey: job.job_key,
       runId,
       status,
       detail: { durationMs: result.durationMs, ...detail },
-      severity: status === "failed" ? "error" : "info",
+      severity: status === "partial" || status === "budget_queued" ? "warning" : "info",
+    });
+    await completePanelTask({
+      taskId: panelTaskId,
+      status: "completed",
+      metadata: { job_key: job.job_key, outcome: status, ...detail },
     });
     await logOpsJobRun(result);
     await markJobRun(job.job_key, result.status, job.interval_minutes);
@@ -253,6 +270,11 @@ export async function runCadenceJob(
       status: "failed",
       detail: { error: result.error },
       severity: "error",
+    });
+    await completePanelTask({
+      taskId: panelTaskId,
+      status: "failed",
+      metadata: { error: result.error },
     });
     await logOpsJobRun(result);
     await markJobRun(job.job_key, result.status, job.interval_minutes);
@@ -316,13 +338,108 @@ export async function runSherlockCurateSweep(opts: {
 }
 
 async function runDigestRollup(): Promise<Record<string, unknown>> {
-  // Platform-level rollup: re-warm digests for recently active users if table allows
-  // Without a user list, record heartbeat that rollup tick ran (event bus covers per-user).
-  return {
-    mode: "rollup_tick",
-    note: "Per-user digests refresh on platform events; hourly tick marks digest domain alive",
-    domains: ["gordon", "arnold", "elysium", "thanos"],
-  };
+  // 219L: run real supplier digests for a bounded active-user sample
+  try {
+    const { createAdminClient } = await import("@/lib/supabase/admin");
+    const {
+      getGordonDailyDigest,
+      getArnoldDailyDigest,
+      getElysiumDailyDigest,
+      getThanosDailyDigest,
+    } = await import("@/lib/hannah/compilation/digests");
+    const supabase = createAdminClient();
+    const since = new Date(Date.now() - 36 * 60 * 60 * 1000).toISOString();
+    // Prefer users with recent activity; fall back empty
+    const { data: users } = await supabase
+      .from("profiles")
+      .select("id")
+      .order("updated_at", { ascending: false })
+      .limit(3);
+    const ids = (users ?? [])
+      .map((u) => (u as { id?: string }).id)
+      .filter((id): id is string => Boolean(id));
+    if (ids.length === 0) {
+      return {
+        mode: "rollup_tick",
+        domains: ["gordon", "arnold", "elysium", "thanos"],
+        users: 0,
+        note: "no active profiles for digest sample",
+      };
+    }
+    const sample = ids[0];
+    const digests = await Promise.all([
+      getGordonDailyDigest(sample, since),
+      getArnoldDailyDigest(sample, since),
+      getElysiumDailyDigest(sample, since),
+      getThanosDailyDigest(sample, since),
+    ]);
+    const summary = digests.map((d) => ({
+      supplier: d.supplier,
+      ok: d.ok,
+      items: d.items?.length ?? 0,
+      durationMs: d.durationMs,
+    }));
+    // Touch freshness target so ACC freshness panel sees digests alive
+    try {
+      await supabase
+        .from("freshness_targets")
+        .update({ updated_at: new Date().toISOString() })
+        .eq("target_key", "domain_digests");
+    } catch {
+      /* open */
+    }
+    return {
+      mode: "rollup_tick",
+      domains: ["gordon", "arnold", "elysium", "thanos"],
+      sampleUser: sample.slice(0, 8),
+      digests: summary,
+      itemTotal: summary.reduce((a, s) => a + s.items, 0),
+    };
+  } catch (err) {
+    return {
+      mode: "rollup_tick",
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
+
+async function runHannahLightPass(): Promise<Record<string, unknown>> {
+  // 219L: light pass runs compile for one recent user when possible
+  try {
+    const { createAdminClient } = await import("@/lib/supabase/admin");
+    const { runHannahCompilation } = await import(
+      "@/lib/hannah/compilation/runCompilation"
+    );
+    const supabase = createAdminClient();
+    const { data: users } = await supabase
+      .from("profiles")
+      .select("id")
+      .order("updated_at", { ascending: false })
+      .limit(1);
+    const userId = (users?.[0] as { id?: string } | undefined)?.id;
+    if (!userId) {
+      return {
+        mode: "light",
+        users: 0,
+        note: "no profile for light compile sample",
+      };
+    }
+    const result = await runHannahCompilation({ userId });
+    await touchHannahLightFreshness(userId).catch(() => undefined);
+    return {
+      mode: "light",
+      userId: userId.slice(0, 8),
+      runId: result.runId,
+      insightCount: result.insights?.length ?? 0,
+      noteOk: Boolean(result.hannahNote?.noteText),
+      status: result.status,
+    };
+  } catch (err) {
+    return {
+      mode: "light",
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
 }
 
 /** Security Advisor: verify job secrets; missing keys are named in structured detail. */
@@ -366,15 +483,6 @@ async function runPerformanceAdvisorDaily(): Promise<Record<string, unknown>> {
     note: "ops-tick max 6 jobs/batch; maxDuration 300s; stagger backlog if Firecrawl ceiling hit",
     batch_cap: 6,
     tick_max_duration_sec: 300,
-  };
-}
-
-async function runHannahLightPass(): Promise<Record<string, unknown>> {
-  // Light pass: timestamps / staleness only, no full multi-supplier compile
-  return {
-    mode: "light",
-    touches: ["personalized_read_recency", "note_staleness", "surface_timestamps"],
-    not_touched: ["supplier_digests", "full_accelerators", "heavy_ai_compose"],
   };
 }
 

@@ -208,12 +208,17 @@ export async function fetchCurrentTasks(db: SupabaseClient): Promise<AgentCurren
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const client = db as any;
+    const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    // Active queue + completed last 24h so ACC "Tasks done (24h)" is real
     const { data, error } = await client
       .from("jeffery_agent_panel_tasks")
       .select("*")
       .in("agent_id", [...AGENT_IDS])
-      .in("task_status", ["queued", "running", "blocked"])
-      .order("updated_at", { ascending: false });
+      .or(
+        `task_status.in.(queued,running,blocked),and(task_status.eq.completed,completed_at.gte.${since24h})`
+      )
+      .order("updated_at", { ascending: false })
+      .limit(200);
     if (error) {
       safeLog.warn("agents.activity", "fetchCurrentTasks query failed open", {
         code: error.code,
