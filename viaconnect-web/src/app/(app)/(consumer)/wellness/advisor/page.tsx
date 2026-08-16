@@ -3,6 +3,8 @@
 import AdvisorChat from "@/components/advisor/AdvisorChat";
 import { MessageCircleHeart } from "lucide-react";
 import { useEffect, useState } from "react";
+import { getDisplayName } from "@/lib/getDisplayName";
+import { HANNAH_CONSUMER_SUBTITLE } from "@/lib/jeffery/hannah-persona";
 
 interface PendingReport {
   topic: string;
@@ -24,12 +26,14 @@ function buildReportPrompt(report: PendingReport): string {
     if (typeof report.estimatedImpact === "number")
       parts.push(`Estimated lift from the recommendation: +${report.estimatedImpact} points.`);
     parts.push(
-      "Write the full report with these sections: Summary, Strengths, Risks/Gaps, Protocol Adjustments, 7-Day Action Plan, and Expected Outcomes. Use my data; be specific and actionable.",
+      "Write the full report with these sections: Summary, Strengths, Risks/Gaps, Protocol Adjustments, 7-Day Action Plan, and Expected Outcomes. Use my data; be specific and actionable."
     );
     return parts.join(" ");
   }
   return `Generate a full personalized ${report.topic} report.`;
 }
+
+const HANNAH_NAME = getDisplayName("hannah");
 
 export default function ConsumerAdvisorPage() {
   const [initialPrompt, setInitialPrompt] = useState<string | undefined>(undefined);
@@ -45,16 +49,24 @@ export default function ConsumerAdvisorPage() {
       sessionStorage.removeItem("hannah-pending-report");
       url.searchParams.delete("report");
       window.history.replaceState({}, "", url.toString());
-    } catch { /* no-op */ }
+    } catch {
+      /* no-op */
+    }
   }, []);
 
   return (
     <AdvisorChat
       role="consumer"
       accentColor="#2DA5A0"
-      title="Hannah our AI Wellness Assistant"
-      subtitle="Your personal wellness assistant from FarmCeutica Wellness"
-      icon={<MessageCircleHeart className="w-5 h-5" strokeWidth={1.5} style={{ color: "#2DA5A0" }} />}
+      title={`${HANNAH_NAME} AI Wellness Assistant`}
+      subtitle={HANNAH_CONSUMER_SUBTITLE}
+      icon={
+        <MessageCircleHeart
+          className="w-5 h-5"
+          strokeWidth={1.5}
+          style={{ color: "#2DA5A0" }}
+        />
+      }
       suggestedPrompts={[
         "How can I improve my Bio Optimization Score?",
         "Should I take my supplements with food?",

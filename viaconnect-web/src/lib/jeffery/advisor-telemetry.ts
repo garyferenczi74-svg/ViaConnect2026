@@ -1,16 +1,14 @@
 /**
- * Jeffery Advisor Telemetry (Prompt #60b — Section 3B)
+ * Jeffery Advisor Telemetry (Prompt #60b — Section 3B; Prompt 219F)
  *
- * Two responsibilities:
- *   1. Pre-flight: log the incoming query into ultrathink_advisor_query_log
- *      and return a query id the route handler can correlate with later.
- *   2. Post-flight: write the user message + assistant response into
- *      ultrathink_advisor_conversations once the stream finishes (called
- *      from a fire-and-forget waitUntil so it never blocks the response).
+ * Pre-flight query log + post-flight conversation persist.
+ * Returns assistant message id so the client can wire thumbs feedback.
+ * Structured logs never include plaintext message content.
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AdvisorRole } from "./advisor-context-builder";
+import { safeLog } from "@/lib/utils/safe-log";
 
 export interface QueryLogPayload {
   userId: string;
@@ -20,10 +18,6 @@ export interface QueryLogPayload {
   contextSnapshot: Record<string, string>;
 }
 
-/**
- * Pre-flight: log the user query for Jeffery's weekly analysis.
- * Returns the query id (for correlation with assistant message).
- */
 export async function logAdvisorQuery(
   db: SupabaseClient,
   payload: QueryLogPayload
@@ -41,15 +35,19 @@ export async function logAdvisorQuery(
     .select("id")
     .single();
   if (error) {
-    console.warn(`[advisor-telemetry] log query failed: ${error.message}`);
+    safeLog.warn("advisor.telemetry", "log query failed", { code: error.code });
     return null;
   }
   return (data as { id: string }).id;
 }
 
+export interface PersistTurnResult {
+  userMessageId: string | null;
+  assistantMessageId: string | null;
+}
+
 /**
- * Post-flight: persist the user turn + the assistant response into the
- * conversation history. Called via waitUntil after the stream resolves.
+ * Post-flight: persist user + assistant turns. Returns ids for feedback wiring.
  */
 export async function persistConversationTurn(
   db: SupabaseClient,
@@ -65,40 +63,79 @@ export async function persistConversationTurn(
     outputTokens: number;
     error?: string;
   }
-): Promise<void> {
-  // user turn
-  await db.from("ultrathink_advisor_conversations").insert({
-    user_id: args.userId,
-    advisor_role: args.role,
-    patient_id: args.patientId,
-    message_role: "user",
-    content: args.userMessage,
-    response_length: args.userMessage.length,
-    context_snapshot: args.contextSnapshot,
-  });
+): Promise<PersistTurnResult> {
+  let userMessageId: string | null = null;
+  let assistantMessageId: string | null = null;
 
-  // assistant turn
-  await db.from("ultrathink_advisor_conversations").insert({
-    user_id: args.userId,
-    advisor_role: args.role,
-    patient_id: args.patientId,
-    message_role: "assistant",
-    content: args.assistantMessage,
-    response_length: args.assistantMessage.length,
-    context_snapshot: { tokens_in: String(args.inputTokens), tokens_out: String(args.outputTokens), duration_ms: String(args.durationMs) },
-    escalated: !!args.error,
-  });
-
-  // Update the query log row with completion data (best-effort upsert by latest)
-  await db
-    .from("ultrathink_advisor_query_log")
-    .update({
-      response_time_ms: args.durationMs,
-      tokens_used: args.inputTokens + args.outputTokens,
+  const { data: userRow, error: userErr } = await db
+    .from("ultrathink_advisor_conversations")
+    .insert({
+      user_id: args.userId,
+      advisor_role: args.role,
+      patient_id: args.patientId,
+      message_role: "user",
+      content: args.userMessage,
+      response_length: args.userMessage.length,
+      context_snapshot: args.contextSnapshot,
     })
-    .eq("user_id", args.userId)
-    .eq("advisor_role", args.role)
-    .eq("message", args.userMessage)
-    .order("created_at", { ascending: false })
-    .limit(1);
+    .select("id")
+    .single();
+
+  if (userErr) {
+    safeLog.warn("advisor.telemetry", "persist user turn failed", { code: userErr.code });
+  } else {
+    userMessageId = (userRow as { id: string }).id;
+  }
+
+  const { data: asstRow, error: asstErr } = await db
+    .from("ultrathink_advisor_conversations")
+    .insert({
+      user_id: args.userId,
+      advisor_role: args.role,
+      patient_id: args.patientId,
+      message_role: "assistant",
+      content: args.assistantMessage,
+      response_length: args.assistantMessage.length,
+      context_snapshot: {
+        tokens_in: String(args.inputTokens),
+        tokens_out: String(args.outputTokens),
+        duration_ms: String(args.durationMs),
+      },
+      escalated: !!args.error,
+    })
+    .select("id")
+    .single();
+
+  if (asstErr) {
+    safeLog.warn("advisor.telemetry", "persist assistant turn failed", { code: asstErr.code });
+  } else {
+    assistantMessageId = (asstRow as { id: string }).id;
+  }
+
+  // Best-effort completion metadata on latest matching query log row
+  try {
+    await db
+      .from("ultrathink_advisor_query_log")
+      .update({
+        response_time_ms: args.durationMs,
+        tokens_used: args.inputTokens + args.outputTokens,
+      })
+      .eq("user_id", args.userId)
+      .eq("advisor_role", args.role)
+      .eq("message", args.userMessage)
+      .order("created_at", { ascending: false })
+      .limit(1);
+  } catch {
+    /* ignore */
+  }
+
+  safeLog.info("advisor.telemetry", "turn persisted", {
+    userId: args.userId,
+    role: args.role,
+    durationMs: args.durationMs,
+    hasAssistantId: !!assistantMessageId,
+    hadError: !!args.error,
+  });
+
+  return { userMessageId, assistantMessageId };
 }
