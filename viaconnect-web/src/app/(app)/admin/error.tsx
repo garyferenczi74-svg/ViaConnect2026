@@ -1,5 +1,10 @@
 'use client'
 
+/**
+ * Prompt 219I: route-level admin error boundary (last resort for shell failures only).
+ * Hygiene: Error ID + plain message only. No stack, query, table, or env hints.
+ */
+
 import { useEffect } from 'react'
 import { AlertCircle, RefreshCw } from 'lucide-react'
 
@@ -10,8 +15,7 @@ interface ErrorBoundaryProps {
 
 export default function AdminError({ error, reset }: ErrorBoundaryProps) {
   useEffect(() => {
-    // Admin errors get logged with the full error details so Gary can diagnose
-    // agent / governance / compliance dashboard failures from runtime logs.
+    // Full detail stays in logs only (never rendered).
     console.error('[error-boundary][admin]', {
       name: error.name,
       message: error.message,
@@ -30,7 +34,7 @@ export default function AdminError({ error, reset }: ErrorBoundaryProps) {
           Admin surface error
         </h1>
         <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8">
-          The admin dashboard hit an unexpected error. Check Vercel runtime logs for the full trace, then try again.
+          The admin shell hit an unexpected error. Check Vercel runtime logs for the full trace, then try again.
         </p>
         {error.digest && (
           <p className="text-xs text-gray-500 mb-4 font-mono">Error ID: {error.digest}</p>

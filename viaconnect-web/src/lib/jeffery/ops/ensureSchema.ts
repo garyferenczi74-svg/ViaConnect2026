@@ -7,7 +7,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { safeLog } from "@/lib/utils/safe-log";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClientOrNull } from "@/lib/supabase/admin";
 
 let appliedThisProcess = false;
 
@@ -32,7 +32,8 @@ function buildConnectionString(): string | null {
 
 async function tablesMissing(): Promise<boolean> {
   try {
-    const sb = createAdminClient();
+    const sb = createAdminClientOrNull();
+    if (!sb) return true;
     const { error } = await sb.from("agent_cadence_jobs").select("job_key").limit(1);
     // PGRST205 = table not in schema cache
     if (error && (error.code === "PGRST205" || /Could not find the table/i.test(error.message))) {

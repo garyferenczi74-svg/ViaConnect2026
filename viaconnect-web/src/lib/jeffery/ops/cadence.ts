@@ -2,7 +2,7 @@
  * Prompt 219H: cadence matrix load/update.
  */
 
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClientOrNull } from "@/lib/supabase/admin";
 import { safeLog } from "@/lib/utils/safe-log";
 import { DEFAULT_CADENCE_SEED, type CadenceJob } from "./types";
 
@@ -27,7 +27,15 @@ function mapRow(r: Record<string, unknown>): CadenceJob {
 
 export async function loadCadenceJobs(): Promise<CadenceJob[]> {
   try {
-    const supabase = createAdminClient();
+    const supabase = createAdminClientOrNull();
+    if (!supabase) {
+      return DEFAULT_CADENCE_SEED.map((j) => ({
+        ...j,
+        last_run_at: null,
+        last_status: null,
+        next_run_at: null,
+      }));
+    }
     const { data, error } = await supabase
       .from("agent_cadence_jobs")
       .select("*")
@@ -84,7 +92,8 @@ export async function markJobRun(
 ): Promise<void> {
   const next = new Date(now.getTime() + intervalMinutes * 60_000).toISOString();
   try {
-    const supabase = createAdminClient();
+    const supabase = createAdminClientOrNull();
+    if (!supabase) return;
     await supabase
       .from("agent_cadence_jobs")
       .update({

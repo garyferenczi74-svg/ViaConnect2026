@@ -3,7 +3,7 @@
  * Idempotent on event_id; coalesces bursts by coalesce_key within window.
  */
 
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClientOrNull } from "@/lib/supabase/admin";
 import { safeLog } from "@/lib/utils/safe-log";
 import type { PlatformEventType } from "./types";
 
@@ -37,7 +37,8 @@ export async function emitPlatformEvent(input: EmitPlatformEventInput): Promise<
       : `${input.eventType}:global`);
 
   try {
-    const supabase = createAdminClient();
+    const supabase = createAdminClientOrNull();
+    if (!supabase) return { accepted: false, eventId };
 
     // Coalesce: if pending event with same coalesce_key in window, mark new as coalesced
     const since = new Date(Date.now() - DEFAULT_COALESCE_SEC * 1000).toISOString();
@@ -104,7 +105,8 @@ export interface PendingEvent {
 
 export async function fetchPendingEvents(limit = 40): Promise<PendingEvent[]> {
   try {
-    const supabase = createAdminClient();
+    const supabase = createAdminClientOrNull();
+    if (!supabase) return [];
     const { data, error } = await supabase
       .from("platform_events")
       .select("id, event_id, event_type, user_id, payload, coalesce_key")
@@ -131,7 +133,8 @@ export async function markEventDone(
   error?: string
 ): Promise<void> {
   try {
-    const supabase = createAdminClient();
+    const supabase = createAdminClientOrNull();
+    if (!supabase) return;
     await supabase
       .from("platform_events")
       .update({
@@ -264,7 +267,8 @@ async function handleEvent(evt: PendingEvent): Promise<void> {
 /** Light freshness: stamp recency metadata only (no full compile). */
 export async function touchHannahLightFreshness(userId: string): Promise<void> {
   try {
-    const supabase = createAdminClient();
+    const supabase = createAdminClientOrNull();
+    if (!supabase) return;
     // Upsert a lightweight recency row if table exists; fail-open otherwise
     await supabase.from("hannah_daily_notes").upsert(
       {

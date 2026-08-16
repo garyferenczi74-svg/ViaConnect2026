@@ -2,7 +2,7 @@
  * Prompt 219H: budget-aware backlog (queue when ceiling hit, resume later).
  */
 
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClientOrNull } from "@/lib/supabase/admin";
 import { safeLog } from "@/lib/utils/safe-log";
 import { snapshotBudgets } from "@/lib/jeffery/capabilities/budgets";
 import type { BudgetClass } from "./types";
@@ -15,7 +15,8 @@ export async function enqueueBacklog(args: {
   payload?: Record<string, unknown>;
 }): Promise<void> {
   try {
-    const supabase = createAdminClient();
+    const supabase = createAdminClientOrNull();
+    if (!supabase) return;
     await supabase.from("agent_job_backlog").insert({
       job_key: args.jobKey,
       agent_id: args.agentId,
@@ -43,7 +44,8 @@ export async function listQueuedBacklog(limit = 50): Promise<
   }>
 > {
   try {
-    const supabase = createAdminClient();
+    const supabase = createAdminClientOrNull();
+    if (!supabase) return [];
     const { data } = await supabase
       .from("agent_job_backlog")
       .select("id, job_key, agent_id, budget_class, reason, created_at")
@@ -76,11 +78,13 @@ export async function resumeBacklogIfPossible(
     if (!classOk) continue;
     try {
       await runner(item.job_key);
-      const supabase = createAdminClient();
-      await supabase
-        .from("agent_job_backlog")
-        .update({ status: "resumed", resumed_at: new Date().toISOString() })
-        .eq("id", item.id);
+      const supabase = createAdminClientOrNull();
+      if (supabase) {
+        await supabase
+          .from("agent_job_backlog")
+          .update({ status: "resumed", resumed_at: new Date().toISOString() })
+          .eq("id", item.id);
+      }
       resumed += 1;
     } catch (err) {
       safeLog.warn("ops.backlog", "resume failed", {

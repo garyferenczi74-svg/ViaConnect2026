@@ -3,7 +3,7 @@
  * Static fallback matches migration seed so registry works before DB apply.
  */
 
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClientOrNull } from "@/lib/supabase/admin";
 import { safeLog } from "@/lib/utils/safe-log";
 import {
   CAPABILITY_IDS,
@@ -29,7 +29,11 @@ function grantKey(agent: string, capability: string): string {
 
 export async function refreshGrantsFromDb(): Promise<void> {
   try {
-    const supabase = createAdminClient();
+    const supabase = createAdminClientOrNull();
+    if (!supabase) {
+      dbLoaded = false;
+      return;
+    }
     const { data, error } = await supabase
       .from("agent_capabilities")
       .select("agent_id, capability_id, granted")

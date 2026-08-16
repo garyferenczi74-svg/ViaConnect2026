@@ -2,7 +2,7 @@
  * Prompt 219H: Jeffery watchdog — missed/stuck job detection, one retry, dead-letter.
  */
 
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClientOrNull } from "@/lib/supabase/admin";
 import { safeLog } from "@/lib/utils/safe-log";
 import { loadCadenceJobs } from "./cadence";
 import { runCadenceJob } from "./jobRunners";
@@ -101,7 +101,8 @@ export async function runWatchdog(now = new Date()): Promise<WatchdogResult> {
 
 async function countRecentDeadOrFails(jobKey: string): Promise<number> {
   try {
-    const supabase = createAdminClient();
+    const supabase = createAdminClientOrNull();
+    if (!supabase) return 0;
     const since = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
     const { data } = await supabase
       .from("agent_job_dead_letters")
@@ -121,7 +122,8 @@ export async function writeDeadLetter(
   context: Record<string, unknown>
 ): Promise<void> {
   try {
-    const supabase = createAdminClient();
+    const supabase = createAdminClientOrNull();
+    if (!supabase) return;
     await supabase.from("agent_job_dead_letters").insert({
       job_key: job.job_key,
       agent_id: job.agent_id,
@@ -148,7 +150,8 @@ export async function listOpenDeadLetters(limit = 30): Promise<
   }>
 > {
   try {
-    const supabase = createAdminClient();
+    const supabase = createAdminClientOrNull();
+    if (!supabase) return [];
     const { data } = await supabase
       .from("agent_job_dead_letters")
       .select("id, job_key, agent_id, failure_class, context, created_at")

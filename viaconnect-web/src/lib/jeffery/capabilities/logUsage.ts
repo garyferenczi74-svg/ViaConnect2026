@@ -4,7 +4,7 @@
  * Never log message content / PHI / API keys.
  */
 
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClientOrNull } from "@/lib/supabase/admin";
 import { safeLog } from "@/lib/utils/safe-log";
 import type { CapabilityUsageRecord } from "./types";
 
@@ -42,7 +42,8 @@ export async function logCapabilityUsage(usage: CapabilityUsageRecord): Promise<
   };
 
   try {
-    const supabase = createAdminClient();
+    const supabase = createAdminClientOrNull();
+    if (!supabase) return null;
     const { error } = await supabase.from("pipeline_runs").insert({
       run_id: runId,
       run_date: runDate,
@@ -94,7 +95,8 @@ export interface CapabilityUsageRow {
 /** Read recent capability_call stages for Admin Command Center. */
 export async function fetchCapabilityUsage(limit = 50): Promise<CapabilityUsageRow[]> {
   try {
-    const supabase = createAdminClient();
+    const supabase = createAdminClientOrNull();
+    if (!supabase) return [];
     const { data, error } = await supabase
       .from("pipeline_runs")
       .select("run_id, run_date, status, started_at, stages")

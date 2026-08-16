@@ -2,7 +2,7 @@
  * Prompt 219H: freshness target measurement for ACC.
  */
 
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient, createAdminClientOrNull } from "@/lib/supabase/admin";
 import { safeLog } from "@/lib/utils/safe-log";
 import type { FreshnessReading } from "./types";
 
@@ -75,7 +75,17 @@ async function ageHoursFromTable(
 export async function measureFreshness(): Promise<FreshnessReading[]> {
   let targets = DEFAULT_TARGETS;
   try {
-    const supabase = createAdminClient();
+    const supabase = createAdminClientOrNull();
+    if (!supabase) {
+      return DEFAULT_TARGETS.map((t) => ({
+        targetKey: t.target_key,
+        label: t.label,
+        maxAgeHours: t.max_age_hours,
+        ageHours: null,
+        status: "unknown" as const,
+        domain: t.domain,
+      }));
+    }
     const { data } = await supabase.from("freshness_targets").select("*");
     if (data?.length) {
       targets = data.map((r) => ({

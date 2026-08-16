@@ -2,7 +2,7 @@
  * Log continuous-ops job runs into pipeline_runs (run_id ops-{job}-{uuid}).
  */
 
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClientOrNull } from "@/lib/supabase/admin";
 import { safeLog } from "@/lib/utils/safe-log";
 import type { JobRunResult } from "./types";
 
@@ -21,7 +21,8 @@ export async function logOpsJobRun(result: JobRunResult): Promise<string | null>
         : "failed";
 
   try {
-    const supabase = createAdminClient();
+    const supabase = createAdminClientOrNull();
+    if (!supabase) return null;
     const { error } = await supabase.from("pipeline_runs").insert({
       run_id: runId,
       run_date: now.slice(0, 10),
@@ -65,7 +66,8 @@ export async function fetchOpsJobRuns(limit = 80): Promise<
   }>
 > {
   try {
-    const supabase = createAdminClient();
+    const supabase = createAdminClientOrNull();
+    if (!supabase) return [];
     const { data, error } = await supabase
       .from("pipeline_runs")
       .select("run_id, started_at, stages, status")
