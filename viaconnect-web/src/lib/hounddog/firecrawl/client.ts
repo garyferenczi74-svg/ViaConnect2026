@@ -46,8 +46,12 @@ export function recordSpend(budget: FirecrawlBudget, pages = 1, credits = 1): vo
 }
 
 function apiKey(): string | null {
-  const k = process.env.FIRECRAWL_API_KEY?.trim();
-  return k && k.length > 0 ? k : null;
+  // Production historically used lower-case firecrawl_api_key in Vercel
+  const k =
+    process.env.FIRECRAWL_API_KEY?.trim() ||
+    process.env.firecrawl_api_key?.trim() ||
+    "";
+  return k.length > 0 ? k : null;
 }
 
 export interface ScrapeResult {
