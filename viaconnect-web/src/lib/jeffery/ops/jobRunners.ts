@@ -11,13 +11,48 @@ import { logOpsJobRun } from "./logJobRun";
 import { markJobRun } from "./cadence";
 import type { CadenceJob, JobRunResult } from "./types";
 import { touchHannahLightFreshness } from "./eventBus";
+import { writeAgentJobHeartbeat } from "./heartbeats";
 
-export async function runCadenceJob(job: CadenceJob): Promise<JobRunResult> {
+export async function runCadenceJob(
+  job: CadenceJob,
+  opts?: { paused?: boolean }
+): Promise<JobRunResult> {
   const t0 = Date.now();
+  const runId = `ops-${job.job_key}-${Date.now()}`;
   const base = {
     jobKey: job.job_key,
     agentId: job.agent_id,
   };
+
+  // Pause: skip with logged paused event (distinguishable from dead)
+  if (opts?.paused) {
+    await writeAgentJobHeartbeat({
+      agentId: job.agent_id,
+      eventType: "heartbeat",
+      jobKey: job.job_key,
+      runId,
+      status: "paused",
+      detail: { skipped: true, reason: "agent_paused" },
+      severity: "info",
+    });
+    const result: JobRunResult = {
+      ...base,
+      status: "skipped",
+      durationMs: Date.now() - t0,
+      detail: { reason: "agent_paused" },
+    };
+    await logOpsJobRun(result);
+    await markJobRun(job.job_key, result.status, job.interval_minutes);
+    return result;
+  }
+
+  await writeAgentJobHeartbeat({
+    agentId: job.agent_id,
+    eventType: "start",
+    jobKey: job.job_key,
+    runId,
+    status: "running",
+  });
 
   try {
     // Budget pre-check for Firecrawl-heavy jobs
@@ -35,6 +70,15 @@ export async function runCadenceJob(job: CadenceJob): Promise<JobRunResult> {
           durationMs: Date.now() - t0,
           detail: { reason: "firecrawl_ceiling" },
         };
+        await writeAgentJobHeartbeat({
+          agentId: job.agent_id,
+          eventType: "complete",
+          jobKey: job.job_key,
+          runId,
+          status: "budget_queued",
+          detail: { reason: "firecrawl_ceiling" },
+          severity: "warning",
+        });
         await logOpsJobRun(result);
         await markJobRun(job.job_key, result.status, job.interval_minutes);
         return result;
@@ -95,10 +139,6 @@ export async function runCadenceJob(job: CadenceJob): Promise<JobRunResult> {
         detail = await runSherlockCurateSweep({ fromEvent: false });
         break;
       }
-      case "digest.rollup": {
-        detail = await runDigestRollup();
-        break;
-      }
       case "hannah.light_freshness": {
         detail = await runHannahLightPass();
         break;
@@ -140,14 +180,38 @@ export async function runCadenceJob(job: CadenceJob): Promise<JobRunResult> {
         detail = { note: "watchdog runs in ops tick orchestrator" };
         break;
       }
-      case "hannah.full_compile":
-      case "security.daily":
-      case "performance.daily": {
+      case "hannah.full_compile": {
         detail = {
           note: "owned by dedicated daily cron / synchronism chain",
           mechanism: job.mechanism,
         };
         status = "skipped";
+        break;
+      }
+      case "security.daily": {
+        detail = await runSecurityAdvisorDaily();
+        if (detail.missing_keys && Array.isArray(detail.missing_keys) && (detail.missing_keys as string[]).length > 0) {
+          status = "partial";
+        }
+        break;
+      }
+      case "performance.daily": {
+        detail = await runPerformanceAdvisorDaily();
+        break;
+      }
+      case "digest.rollup": {
+        detail = await runDigestRollup();
+        // Pulse domain agents so ACC roster reflects digest ownership
+        for (const domainAgent of ["gordon", "arnold", "elysium", "thanos"] as const) {
+          await writeAgentJobHeartbeat({
+            agentId: domainAgent,
+            eventType: "complete",
+            jobKey: "digest.rollup",
+            runId,
+            status: "ok",
+            detail: { domain: domainAgent, parent: "digest.rollup" },
+          });
+        }
         break;
       }
       default:
@@ -161,6 +225,15 @@ export async function runCadenceJob(job: CadenceJob): Promise<JobRunResult> {
       durationMs: Date.now() - t0,
       detail,
     };
+    await writeAgentJobHeartbeat({
+      agentId: job.agent_id,
+      eventType: status === "failed" ? "error" : "complete",
+      jobKey: job.job_key,
+      runId,
+      status,
+      detail: { durationMs: result.durationMs, ...detail },
+      severity: status === "failed" ? "error" : "info",
+    });
     await logOpsJobRun(result);
     await markJobRun(job.job_key, result.status, job.interval_minutes);
     return result;
@@ -172,6 +245,15 @@ export async function runCadenceJob(job: CadenceJob): Promise<JobRunResult> {
       detail: {},
       error: err instanceof Error ? err.message : String(err),
     };
+    await writeAgentJobHeartbeat({
+      agentId: job.agent_id,
+      eventType: "error",
+      jobKey: job.job_key,
+      runId,
+      status: "failed",
+      detail: { error: result.error },
+      severity: "error",
+    });
     await logOpsJobRun(result);
     await markJobRun(job.job_key, result.status, job.interval_minutes);
     return result;
@@ -240,6 +322,43 @@ async function runDigestRollup(): Promise<Record<string, unknown>> {
     mode: "rollup_tick",
     note: "Per-user digests refresh on platform events; hourly tick marks digest domain alive",
     domains: ["gordon", "arnold", "elysium", "thanos"],
+  };
+}
+
+/** Security Advisor: verify job secrets; missing keys are named in structured detail. */
+async function runSecurityAdvisorDaily(): Promise<Record<string, unknown>> {
+  const required = [
+    "NEXT_PUBLIC_SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "CRON_SECRET",
+    "XAI_API_KEY",
+    "FIRECRAWL_API_KEY",
+  ] as const;
+  const present: string[] = [];
+  const missing_keys: string[] = [];
+  for (const key of required) {
+    const v = process.env[key];
+    if (v && v.trim().length > 0) present.push(key);
+    else missing_keys.push(key);
+  }
+  if (missing_keys.length > 0) {
+    safeLog.error("ops.security", "missing required env secrets", { missing_keys });
+  }
+  return {
+    check: "env_secrets",
+    present_count: present.length,
+    missing_keys,
+    present,
+  };
+}
+
+/** Performance Advisor: light ops load note after activation. */
+async function runPerformanceAdvisorDaily(): Promise<Record<string, unknown>> {
+  return {
+    check: "ops_load_note",
+    note: "ops-tick max 6 jobs/batch; maxDuration 300s; stagger backlog if Firecrawl ceiling hit",
+    batch_cap: 6,
+    tick_max_duration_sec: 300,
   };
 }
 

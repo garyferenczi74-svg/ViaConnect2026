@@ -22,7 +22,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       return NextResponse.json({ error: "Unknown agent" }, { status: 400 });
     }
 
-    const userClient = createServerClient();
+    // createClient from server is async (await cookies)
+    const userClient = await createServerClient();
     const { data: { user } } = await withTimeout(userClient.auth.getUser(), 5000, 'api.agents.status.auth');
     if (!user) return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
 
@@ -53,12 +54,18 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const svc = serviceClient() as any;
+    // 219J: pause persists as is_active=false + health_status=disabled so ops-tick skips
     const nextHealth = action === "pause" ? "disabled" : "unknown";
+    const nextActive = action !== "pause";
 
     await withTimeout(
       (async () => svc
         .from("ultrathink_agent_registry")
-        .update({ health_status: nextHealth, updated_at: new Date().toISOString() })
+        .update({
+          health_status: nextHealth,
+          is_active: nextActive,
+          updated_at: new Date().toISOString(),
+        })
         .eq("agent_name", id))(),
       8000,
       'api.agents.status.update-registry',
@@ -85,7 +92,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       // best-effort
     }
 
-    return NextResponse.json({ ok: true, agentId: id, action, nextHealth });
+    return NextResponse.json({
+      ok: true,
+      agentId: id,
+      action,
+      nextHealth,
+      is_active: nextActive,
+    });
   } catch (err) {
     if (isTimeoutError(err)) {
       safeLog.error('api.agents.status', 'database timeout', { id, error: err });

@@ -94,7 +94,15 @@ export default function AgentsClient({
         heartbeats={heartbeatByAgent}
         activeAgent={activeAgent}
         onChange={setActiveAgent}
-        deriveStatus={(hb) => deriveStatus(hb)}
+        deriveStatus={(hb) =>
+          deriveStatus(
+            hb,
+            Date.now(),
+            typeof hb?.metadata?.expected_period_minutes === "number"
+              ? (hb.metadata.expected_period_minutes as number)
+              : undefined,
+          )
+        }
       />
 
       <div

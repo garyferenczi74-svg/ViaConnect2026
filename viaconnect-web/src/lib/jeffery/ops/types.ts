@@ -198,7 +198,8 @@ export const DEFAULT_CADENCE_SEED: Omit<
     interval_minutes: 1440,
     priority: 60,
     budget_class: "none",
-    mechanism: "cron_daily",
+    // 219J: hybrid so ops-tick can run when due (no dedicated Vercel cron path)
+    mechanism: "hybrid",
     enabled: true,
     timeout_minutes: 30,
     coalesce_window_sec: 600,
@@ -211,7 +212,8 @@ export const DEFAULT_CADENCE_SEED: Omit<
     interval_minutes: 1440,
     priority: 60,
     budget_class: "none",
-    mechanism: "cron_daily",
+    // 219J: hybrid so ops-tick can run when due
+    mechanism: "hybrid",
     enabled: true,
     timeout_minutes: 30,
     coalesce_window_sec: 600,

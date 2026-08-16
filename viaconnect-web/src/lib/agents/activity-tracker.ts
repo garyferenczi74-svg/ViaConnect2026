@@ -65,6 +65,7 @@ export interface UltrathinkRegistryRow {
   last_heartbeat_at: string | null;
   consecutive_misses: number;
   is_active: boolean;
+  expected_period_minutes?: number | null;
 }
 
 export function mapUltrathinkEvent(row: UltrathinkEventRow): AgentActivityEvent | null {
@@ -89,13 +90,34 @@ export function mapUltrathinkEvent(row: UltrathinkEventRow): AgentActivityEvent 
 export function mapUltrathinkRegistry(row: UltrathinkRegistryRow): AgentHeartbeat | null {
   const agentId = resolveAgentId(row.agent_name);
   if (!agentId) return null;
+  // Disabled registry rows are paused (ACC Pause control).
+  const status =
+    row.is_active === false
+      ? "paused"
+      : (HEALTH_STATUS_MAP[row.health_status] ?? "idle");
+  // Never invent epoch timestamps: missing heartbeat stays empty so deriveStatus
+  // returns idle, not permanent Stale (219J).
+  const last =
+    row.last_heartbeat_at && row.last_heartbeat_at.length > 0
+      ? row.last_heartbeat_at
+      : "";
+  const period =
+    typeof row.expected_period_minutes === "number" &&
+    Number.isFinite(row.expected_period_minutes) &&
+    row.expected_period_minutes > 0
+      ? row.expected_period_minutes
+      : undefined;
   return {
     agent_id: agentId,
-    status: HEALTH_STATUS_MAP[row.health_status] ?? "idle",
-    last_heartbeat: row.last_heartbeat_at ?? new Date(0).toISOString(),
-    health_score: row.health_status === "healthy" ? 100 : row.health_status === "degraded" ? 60 : 0,
+    status: status as AgentHeartbeat["status"],
+    last_heartbeat: last,
+    health_score:
+      status === "healthy" ? 100 : status === "degraded" ? 60 : status === "paused" ? 0 : 0,
     error_count_24h: row.consecutive_misses ?? 0,
-    metadata: { source_agent_name: row.agent_name },
+    metadata: {
+      source_agent_name: row.agent_name,
+      expected_period_minutes: period,
+    },
   };
 }
 
@@ -151,7 +173,9 @@ export async function fetchHeartbeats(db: SupabaseClient): Promise<AgentHeartbea
     const client = db as any;
     const { data, error } = await client
       .from("ultrathink_agent_registry")
-      .select("agent_name, display_name, health_status, last_heartbeat_at, consecutive_misses, is_active")
+      .select(
+        "agent_name, display_name, health_status, last_heartbeat_at, consecutive_misses, is_active, expected_period_minutes"
+      )
       .in("agent_name", [...AGENT_IDS]);
     if (error) {
       safeLog.warn("agents.activity", "fetchHeartbeats query failed open", {
@@ -159,8 +183,18 @@ export async function fetchHeartbeats(db: SupabaseClient): Promise<AgentHeartbea
       });
       return [];
     }
-    return ((data ?? []) as UltrathinkRegistryRow[])
-      .map(mapUltrathinkRegistry)
+    return ((data ?? []) as Array<UltrathinkRegistryRow & { expected_period_minutes?: number | null }>)
+      .map((row) => {
+        const hb = mapUltrathinkRegistry(row);
+        if (!hb) return null;
+        if (row.expected_period_minutes != null) {
+          hb.metadata = {
+            ...hb.metadata,
+            expected_period_minutes: row.expected_period_minutes,
+          };
+        }
+        return hb;
+      })
       .filter((h): h is AgentHeartbeat => h !== null);
   } catch (err) {
     safeLog.warn("agents.activity", "fetchHeartbeats threw fail-open", {

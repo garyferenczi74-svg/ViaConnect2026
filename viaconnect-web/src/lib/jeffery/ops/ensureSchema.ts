@@ -159,8 +159,8 @@ INSERT INTO public.agent_cadence_jobs (job_key, agent_id, label, interval_minute
   ('hannah.full_compile', 'hannah', 'Hannah full daily compile (via sync chain)', 1440, 20, 'A', 'cron_daily', 120, '{"via": "synchronism-daily"}'::jsonb),
   ('elysium.allowlist', 'elysium', 'Elysium genetics allowlist crawl', 720, 45, 'B', 'cron_tick', 40, '{}'::jsonb),
   ('thanos.allowlist', 'thanos', 'Thanos peptide allowlist crawl', 720, 45, 'B', 'cron_tick', 40, '{}'::jsonb),
-  ('security.daily', 'security_advisor', 'Security Advisor daily', 1440, 60, 'none', 'cron_daily', 30, '{}'::jsonb),
-  ('performance.daily', 'performance_advisor', 'Performance Advisor daily', 1440, 60, 'none', 'cron_daily', 30, '{}'::jsonb),
+  ('security.daily', 'security_advisor', 'Security Advisor daily', 1440, 60, 'none', 'hybrid', 30, '{}'::jsonb),
+  ('performance.daily', 'performance_advisor', 'Performance Advisor daily', 1440, 60, 'none', 'hybrid', 30, '{}'::jsonb),
   ('product.freshness', 'jeffery', 'Product layer evidence freshness', 720, 55, 'C', 'hybrid', 30, '{"touches": ["ingredient_snp_relevance","product_content"]}'::jsonb),
   ('watchdog.tick', 'jeffery', 'Jeffery watchdog', 15, 5, 'none', 'cron_tick', 10, '{}'::jsonb)
 ON CONFLICT (job_key) DO UPDATE SET interval_minutes = EXCLUDED.interval_minutes, priority = EXCLUDED.priority, budget_class = EXCLUDED.budget_class, mechanism = EXCLUDED.mechanism, label = EXCLUDED.label, updated_at = now();
