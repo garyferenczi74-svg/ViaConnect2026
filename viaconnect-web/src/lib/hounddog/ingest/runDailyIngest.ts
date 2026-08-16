@@ -59,7 +59,31 @@ export async function runHoundDogDailyIngest(opts?: {
     .limit(20);
 
   const topicRows = Array.isArray(topics) ? topics : [];
-  const mindate = mindateDaysAgo(14);
+  // 219M: default forward window if cursors unavailable (still bounded)
+  const fallbackMindate = mindateDaysAgo(3);
+
+  // Cursor helpers (fail-open if table missing)
+  let loadCursor: typeof import('@/lib/jeffery/ops/discoveryCursors').loadDiscoveryCursor | null =
+    null;
+  let ensureCursor: typeof import('@/lib/jeffery/ops/discoveryCursors').ensureDiscoveryCursor | null =
+    null;
+  let advanceCursor: typeof import('@/lib/jeffery/ops/discoveryCursors').advanceDiscoveryCursor | null =
+    null;
+  let pubmedMindateFromCursor:
+    | typeof import('@/lib/jeffery/ops/discoveryCursors').pubmedMindateFromCursor
+    | null = null;
+  let todayUtcDate: typeof import('@/lib/jeffery/ops/discoveryCursors').todayUtcDate | null =
+    null;
+  try {
+    const cursors = await import('@/lib/jeffery/ops/discoveryCursors');
+    loadCursor = cursors.loadDiscoveryCursor;
+    ensureCursor = cursors.ensureDiscoveryCursor;
+    advanceCursor = cursors.advanceDiscoveryCursor;
+    pubmedMindateFromCursor = cursors.pubmedMindateFromCursor;
+    todayUtcDate = cursors.todayUtcDate;
+  } catch {
+    /* open */
+  }
 
   for (const t of topicRows) {
     if (budget.hitBudget) break;
@@ -73,69 +97,159 @@ export async function runHoundDogDailyIngest(opts?: {
     const query = row.query_text ?? topicKey;
 
     if (classes.includes('pubmed')) {
-      const pm = await runPubMedTopicDiscovery({
-        topicKey,
-        query,
-        mindate,
-        budget,
-        enrichFullText: opts?.enrichFullText ?? true,
-      });
-      stats.pubmed.discovered += pm.discovered;
-      for (const rec of pm.staged) {
-        const { error } = await supabase.from('hounddog_staging_items').upsert(
-          {
-            source_url: rec.sourceUrl,
-            source_type: 'clinical_study',
-            title: rec.title.slice(0, 500),
-            summary: (rec.abstract || rec.fullTextExcerpt || '').slice(0, 4000),
-            retrieved_at: new Date().toISOString(),
-            raw_payload: {
-              pmid: rec.pmid,
-              pubDate: rec.pubDate,
-              supersedes: rec.supersedesExternalId,
-            },
-            is_aggregate_only: true,
-            robots_ok: true,
-            gate_status: 'pending',
-            content_hash: rec.contentHash,
-            external_id: rec.externalId,
-            topic_key: topicKey,
-            relevance_score: 1,
-            supersedes_external_id: rec.supersedesExternalId ?? null,
-            full_text_excerpt: rec.fullTextExcerpt ?? null,
-          },
-          { onConflict: 'source_url' },
-        );
-        if (!error) {
-          stats.pubmed.staged += 1;
-          if (rec.fullTextExcerpt) stats.pubmed.enriched += 1;
-        }
+      if (ensureCursor) {
+        await ensureCursor({
+          sourceKey: 'pubmed',
+          topicKey,
+          seedDate: '2026-08-15',
+        });
       }
+      const cur = loadCursor ? await loadCursor('pubmed', topicKey) : null;
+      const mindate =
+        pubmedMindateFromCursor && cur
+          ? pubmedMindateFromCursor(cur.cursor_date)
+          : fallbackMindate;
+
+      let pmStagedThisTopic = 0;
+      let pmDiscoveredThisTopic = 0;
+      let pmFailed = false;
+      try {
+        const pm = await runPubMedTopicDiscovery({
+          topicKey,
+          query,
+          mindate,
+          budget,
+          enrichFullText: opts?.enrichFullText ?? true,
+        });
+        stats.pubmed.discovered += pm.discovered;
+        pmDiscoveredThisTopic = pm.discovered;
+        for (const rec of pm.staged) {
+          const { error } = await supabase.from('hounddog_staging_items').upsert(
+            {
+              source_url: rec.sourceUrl,
+              source_type: 'clinical_study',
+              title: rec.title.slice(0, 500),
+              summary: (rec.abstract || rec.fullTextExcerpt || '').slice(0, 4000),
+              retrieved_at: new Date().toISOString(),
+              raw_payload: {
+                pmid: rec.pmid,
+                pubDate: rec.pubDate,
+                supersedes: rec.supersedesExternalId,
+                mindate,
+              },
+              is_aggregate_only: true,
+              robots_ok: true,
+              gate_status: 'pending',
+              content_hash: rec.contentHash,
+              external_id: rec.externalId,
+              topic_key: topicKey,
+              relevance_score: 1,
+              supersedes_external_id: rec.supersedesExternalId ?? null,
+              full_text_excerpt: rec.fullTextExcerpt ?? null,
+            },
+            { onConflict: 'source_url' },
+          );
+          if (!error) {
+            stats.pubmed.staged += 1;
+            pmStagedThisTopic += 1;
+            if (rec.fullTextExcerpt) stats.pubmed.enriched += 1;
+          }
+        }
+      } catch (err) {
+        pmFailed = true;
+        safeLog.warn('ingest.pubmed', 'topic failed', {
+          topicKey,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+
+      if (advanceCursor) {
+        const status = pmFailed
+          ? 'failed'
+          : pmStagedThisTopic > 0
+            ? 'ok'
+            : 'empty';
+        await advanceCursor({
+          sourceKey: 'pubmed',
+          topicKey,
+          status,
+          newItems: pmStagedThisTopic,
+          // Full success advances covered-through to today (forward only)
+          cursorDate:
+            status === 'ok' || status === 'empty'
+              ? todayUtcDate
+                ? todayUtcDate()
+                : new Date().toISOString().slice(0, 10)
+              : undefined,
+          error: pmFailed ? 'pubmed_topic_failed' : null,
+        });
+      }
+      void pmDiscoveredThisTopic;
     }
 
     if (classes.includes('social') && !budget.hitBudget) {
-      const soc = await runSocialDiscovery({ topicKey, query, budget });
-      stats.social.skippedDisallowed += soc.skippedDisallowed;
-      for (const item of soc.items) {
-        const { error } = await supabase.from('hounddog_staging_items').upsert(
-          {
-            source_url: item.sourceUrl,
-            source_type: 'social_aggregate',
-            title: item.title,
-            summary: item.summary,
-            retrieved_at: new Date().toISOString(),
-            raw_payload: { relevance: item.relevance },
-            is_aggregate_only: true,
-            robots_ok: true,
-            gate_status: 'pending',
-            content_hash: item.contentHash,
-            external_id: item.externalId,
-            topic_key: topicKey,
-            relevance_score: item.relevance,
-          },
-          { onConflict: 'source_url' },
-        );
-        if (!error) stats.social.staged += 1;
+      if (ensureCursor) {
+        await ensureCursor({
+          sourceKey: 'firecrawl_social',
+          topicKey,
+          seedDate: '2026-08-15',
+        });
+      }
+      let socialStaged = 0;
+      let socialFailed = false;
+      try {
+        const soc = await runSocialDiscovery({ topicKey, query, budget });
+        stats.social.skippedDisallowed += soc.skippedDisallowed;
+        for (const item of soc.items) {
+          const { error } = await supabase.from('hounddog_staging_items').upsert(
+            {
+              source_url: item.sourceUrl,
+              source_type: 'social_aggregate',
+              title: item.title,
+              summary: item.summary,
+              retrieved_at: new Date().toISOString(),
+              raw_payload: { relevance: item.relevance },
+              is_aggregate_only: true,
+              robots_ok: true,
+              gate_status: 'pending',
+              content_hash: item.contentHash,
+              external_id: item.externalId,
+              topic_key: topicKey,
+              relevance_score: item.relevance,
+            },
+            { onConflict: 'source_url' },
+          );
+          // Upsert: count only when row is new enough; conflict still ok for novelty metric
+          // Prefer counting successful writes without error as processed; novelty uses hash dedupe at source.
+          if (!error) {
+            stats.social.staged += 1;
+            socialStaged += 1;
+          }
+        }
+      } catch (err) {
+        socialFailed = true;
+        safeLog.warn('ingest.social', 'topic failed', {
+          topicKey,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+      if (advanceCursor) {
+        const status = socialFailed
+          ? 'failed'
+          : socialStaged > 0
+            ? 'ok'
+            : 'empty';
+        await advanceCursor({
+          sourceKey: 'firecrawl_social',
+          topicKey,
+          status,
+          newItems: socialStaged,
+          cursorTimestamp:
+            status === 'ok' || status === 'empty'
+              ? new Date().toISOString()
+              : undefined,
+          error: socialFailed ? 'social_topic_failed' : null,
+        });
       }
     }
   }

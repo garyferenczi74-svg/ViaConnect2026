@@ -43,13 +43,26 @@ export async function GET() {
     const gate = await requireAdmin();
     if ("error" in gate) return gate.error;
 
-    const [cadence, runs, deadLetters, freshness, backlog] = await Promise.all([
-      loadCadenceJobs(),
-      fetchOpsJobRuns(60),
-      listOpenDeadLetters(20),
-      measureFreshness(),
-      listQueuedBacklog(30),
-    ]);
+    const { listDiscoveryCursors, cursorFreshnessStatus } = await import(
+      "@/lib/jeffery/ops/discoveryCursors"
+    );
+    const [cadence, runs, deadLetters, freshness, backlog, discoveryCursors] =
+      await Promise.all([
+        loadCadenceJobs(),
+        fetchOpsJobRuns(60),
+        listOpenDeadLetters(20),
+        measureFreshness(),
+        listQueuedBacklog(30),
+        listDiscoveryCursors(),
+      ]);
+
+    const expectedMinutes: Record<string, number> = {
+      pubmed: 360,
+      firecrawl_social: 360,
+      elysium_allowlist: 720,
+      thanos_allowlist: 720,
+      genomes_igsr: 10080,
+    };
 
     return Response.json({
       cadence,
@@ -58,24 +71,32 @@ export async function GET() {
       deadLetters,
       freshness,
       backlog,
+      discoveryCursors: discoveryCursors.map((c) => ({
+        ...c,
+        freshness: cursorFreshnessStatus(
+          c.last_run_at,
+          expectedMinutes[c.source_key] ?? 360
+        ),
+        expectedMinutes: expectedMinutes[c.source_key] ?? 360,
+      })),
       budgets: snapshotBudgets(),
       budgetProjection: projectDailyBudgetConsumption(),
       hannahLightTouches: HANNAH_LIGHT_PASS_TOUCHES,
       hannahFullTouches: HANNAH_FULL_COMPILE_TOUCHES,
       mechanisms: {
-        "hounddog.discovery": "Vercel cron ops-tick every 15m; due when interval elapsed",
-        "hounddog.pubmed": "ops-tick cadence",
-        "hounddog.social": "ops-tick cadence",
-        "marshall.gate": "hybrid: platform_events staging_landed + ops-tick every 15m (SLA 30m)",
-        "sherlock.curate": "hybrid: content_gated event + 12h sweep",
-        "digest.rollup": "ops-tick hourly + meal/scan events",
-        "hannah.light_freshness": "ops-tick every 4h; meal events touch recency only",
-        "hannah.full_compose": "cron_daily synchronism-daily Compose stage",
-        "elysium.allowlist": "ops-tick 12h",
-        "thanos.allowlist": "ops-tick 12h",
-        "watchdog.tick": "ops-tick every 15m",
-        "security.daily": "cron_daily (existing advisor sweeps)",
-        "performance.daily": "cron_daily (existing advisor sweeps)",
+        "hounddog.discovery": "pg_cron invoke_ops_tick every 15m + 6h discovery window; due when interval elapsed",
+        "hounddog.pubmed": "pg_cron ops-tick; cursor-forward PubMed",
+        "hounddog.social": "pg_cron ops-tick; cursor-forward social",
+        "marshall.gate": "hybrid: platform_events staging_landed + pg_cron every 15m (SLA 30m)",
+        "sherlock.curate": "hybrid: content_gated event + 12h sweep via ops-tick",
+        "digest.rollup": "pg_cron ops-tick hourly + meal/scan events",
+        "hannah.light_freshness": "pg_cron ops-tick every 4h; meal events touch recency only",
+        "hannah.full_compose": "vercel_cron synchronism-daily Compose stage",
+        "elysium.allowlist": "pg_cron ops-tick 12h",
+        "thanos.allowlist": "pg_cron ops-tick 12h",
+        "watchdog.tick": "pg_cron ops-tick every 15m",
+        "security.daily": "vercel_cron / hybrid daily",
+        "performance.daily": "vercel_cron / hybrid daily",
         "product.freshness": "hybrid event + 12h tick",
       },
     });

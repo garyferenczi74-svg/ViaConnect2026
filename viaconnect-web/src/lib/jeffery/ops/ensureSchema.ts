@@ -174,6 +174,40 @@ INSERT INTO public.freshness_targets (target_key, label, max_age_hours, domain) 
 ON CONFLICT (target_key) DO UPDATE SET max_age_hours = EXCLUDED.max_age_hours, label = EXCLUDED.label, updated_at = now();
 
 CREATE INDEX IF NOT EXISTS idx_pipeline_runs_capability_prefix ON public.pipeline_runs (run_id) WHERE run_id LIKE 'cap-%';
+
+-- 219M: discovery_cursors (also in migration 20260816120000)
+CREATE TABLE IF NOT EXISTS public.discovery_cursors (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  source_key text NOT NULL,
+  topic_key text NOT NULL DEFAULT 'global',
+  cursor_date text,
+  cursor_timestamp timestamptz,
+  cursor_version text,
+  last_content_hash text,
+  last_run_at timestamptz,
+  last_run_status text,
+  last_new_items integer NOT NULL DEFAULT 0,
+  last_error text,
+  new_items_history jsonb NOT NULL DEFAULT '[]'::jsonb,
+  config jsonb NOT NULL DEFAULT '{}'::jsonb,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (source_key, topic_key)
+);
+CREATE INDEX IF NOT EXISTS idx_discovery_cursors_source ON public.discovery_cursors (source_key, last_run_at DESC);
+ALTER TABLE public.discovery_cursors ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS discovery_cursors_admin_read ON public.discovery_cursors;
+CREATE POLICY discovery_cursors_admin_read ON public.discovery_cursors FOR SELECT TO authenticated USING (EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = (SELECT auth.uid()) AND p.role = 'admin'));
+ALTER TABLE public.agent_cadence_jobs ADD COLUMN IF NOT EXISTS scheduler_mechanism text;
+ALTER TABLE public.agent_cadence_jobs ADD COLUMN IF NOT EXISTS cron_expression text;
+ALTER TABLE public.agent_cadence_jobs ADD COLUMN IF NOT EXISTS invocation_target text;
+INSERT INTO public.discovery_cursors (source_key, topic_key, cursor_date, last_run_status) VALUES
+  ('pubmed', 'global', '2026-08-15', 'empty'),
+  ('firecrawl_social', 'global', '2026-08-15', 'empty'),
+  ('elysium_allowlist', 'global', '2026-08-15', 'empty'),
+  ('thanos_allowlist', 'global', '2026-08-15', 'empty'),
+  ('genomes_igsr', 'global', NULL, 'empty')
+ON CONFLICT (source_key, topic_key) DO NOTHING;
 `;
 
 export async function ensureContinuousOpsSchema(): Promise<{

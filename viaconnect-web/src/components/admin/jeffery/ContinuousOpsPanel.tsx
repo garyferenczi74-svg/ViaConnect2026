@@ -31,6 +31,20 @@ interface FreshnessRow {
   domain: string;
 }
 
+interface DiscoveryCursorRow {
+  source_key: string;
+  topic_key: string;
+  cursor_date: string | null;
+  cursor_timestamp: string | null;
+  last_run_at: string | null;
+  last_run_status: string | null;
+  last_new_items: number;
+  new_items_history: number[];
+  freshness: string;
+  expectedMinutes: number;
+  last_error: string | null;
+}
+
 interface Payload {
   cadence: CadenceRow[];
   recentRuns: Array<{
@@ -49,6 +63,7 @@ interface Payload {
     created_at: string;
   }>;
   freshness: FreshnessRow[];
+  discoveryCursors?: DiscoveryCursorRow[];
   backlog: Array<{ job_key: string; agent_id: string; reason: string; created_at: string }>;
   budgetProjection: {
     firecrawl: { projectedCredits: number; ceilingCredits: number; flag: boolean };
@@ -56,6 +71,35 @@ interface Payload {
     flags: string[];
   };
   mechanisms: Record<string, string>;
+}
+
+function Sparkline({ values }: { values: number[] }) {
+  const pts = values.slice(-24);
+  if (pts.length === 0) {
+    return <p className="text-[10px] text-white/30">No windows yet</p>;
+  }
+  const max = Math.max(1, ...pts);
+  const w = 120;
+  const h = 22;
+  const step = pts.length > 1 ? w / (pts.length - 1) : w;
+  const d = pts
+    .map((v, i) => {
+      const x = i * step;
+      const y = h - (v / max) * (h - 2) - 1;
+      return `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(" ");
+  return (
+    <svg
+      width="100%"
+      height={h}
+      viewBox={`0 0 ${w} ${h}`}
+      className="max-w-[160px] text-[#2DA5A0]"
+      aria-label={`New items sparkline: ${pts.join(", ")}`}
+    >
+      <path d={d} fill="none" stroke="currentColor" strokeWidth="1.5" />
+    </svg>
+  );
 }
 
 export default function ContinuousOpsPanel() {
@@ -207,6 +251,72 @@ export default function ContinuousOpsPanel() {
           ))}
           {freshness.length === 0 && (
             <li className="text-xs text-white/40">No measurements yet.</li>
+          )}
+        </ul>
+      </div>
+
+      {/* 219M Discovery Freshness: cursor + novelty sparkline */}
+      <div className="rounded-xl border border-white/[0.08] bg-[#1E3054]/40 p-3">
+        <p className="text-xs uppercase tracking-wider text-white/40 mb-1">
+          Discovery freshness (source x topic)
+        </p>
+        <p className="text-[11px] text-white/35 mb-2">
+          Cursor advances only on full success (including honest empty). Breach = no advance within 2x cadence.
+        </p>
+        <ul className="space-y-2">
+          {(data?.discoveryCursors ?? []).map((c) => (
+            <li
+              key={`${c.source_key}:${c.topic_key}`}
+              className="border border-white/[0.06] rounded-lg px-3 py-2 space-y-1"
+            >
+              <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs items-center">
+                <span className="text-white/85 font-medium min-w-0 flex-1">
+                  {c.source_key}
+                  <span className="text-white/40 font-normal"> / {c.topic_key}</span>
+                </span>
+                <span
+                  className={
+                    c.freshness === "ok"
+                      ? "text-emerald-400"
+                      : c.freshness === "breach"
+                        ? "text-red-400"
+                        : c.freshness === "warning"
+                          ? "text-amber-300"
+                          : "text-white/40"
+                  }
+                >
+                  {c.freshness}
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-white/45">
+                <span>
+                  cursor{" "}
+                  {c.cursor_date ??
+                    (c.cursor_timestamp
+                      ? new Date(c.cursor_timestamp).toISOString().slice(0, 16)
+                      : "—")}
+                </span>
+                <span>
+                  last{" "}
+                  {c.last_run_at
+                    ? new Date(c.last_run_at).toLocaleString()
+                    : "never"}
+                </span>
+                <span>
+                  outcome {c.last_run_status ?? "—"} ({c.last_new_items} new)
+                </span>
+                <span>expect {c.expectedMinutes}m</span>
+              </div>
+              <Sparkline values={c.new_items_history ?? []} />
+              {c.last_error && (
+                <p className="text-[10px] text-red-300/80 break-all">{c.last_error}</p>
+              )}
+            </li>
+          ))}
+          {(data?.discoveryCursors ?? []).length === 0 && (
+            <li className="text-xs text-white/40">
+              No discovery cursors yet (migration / ensureSchema will seed).
+            </li>
           )}
         </ul>
       </div>
