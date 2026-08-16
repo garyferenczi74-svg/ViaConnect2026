@@ -45,15 +45,10 @@ async function tablesMissing(): Promise<boolean> {
 }
 
 function loadMigrationSql(): string {
-  // Prefer reading from repo path; fall back to embedded critical DDL if not found.
-  const candidates = [
-    path.join(process.cwd(), "supabase/migrations/20260816010000_prompt_219h_continuous_ops.sql"),
-    path.join(process.cwd(), "viaconnect-web/supabase/migrations/20260816010000_prompt_219h_continuous_ops.sql"),
-  ];
-  for (const p of candidates) {
-    if (fs.existsSync(p)) return fs.readFileSync(p, "utf8");
-  }
-  // Minimal embedded fallback (tables + seed) if file not in deployment bundle
+  // Always use embedded DDL in serverless to avoid project-wide filesystem tracing.
+  // Migration file remains source of truth in git; keep EMBEDDED_219H_SQL in sync.
+  void fs;
+  void path;
   return EMBEDDED_219H_SQL;
 }
 
@@ -188,18 +183,19 @@ export async function ensureContinuousOpsSchema(): Promise<{
   if (appliedThisProcess) return { ok: true, applied: false, reason: "already_applied_this_process" };
 
   const missing = await tablesMissing();
-  if (!missing) {
-    appliedThisProcess = true;
-    return { ok: true, applied: false, reason: "tables_present" };
-  }
-
   const conn = buildConnectionString();
   if (!conn) {
     safeLog.warn("ops.ensureSchema", "no database connection string in env", {
       hasHost: Boolean(process.env.POSTGRES_HOST),
       hasPassword: Boolean(process.env.POSTGRES_PASSWORD),
       hasUrl: Boolean(process.env.POSTGRES_URL || process.env.DATABASE_URL),
+      missing,
     });
+    // Tables may already be present from a prior apply even without a re-connect.
+    if (!missing) {
+      appliedThisProcess = true;
+      return { ok: true, applied: false, reason: "tables_present_no_conn" };
+    }
     return { ok: false, applied: false, reason: "no_connection_string" };
   }
 
@@ -207,11 +203,19 @@ export async function ensureContinuousOpsSchema(): Promise<{
     const postgres = (await import("postgres")).default;
     const sql = postgres(conn, { max: 1, idle_timeout: 5, connect_timeout: 15 });
     try {
+      // Always run full migration: CREATE IF NOT EXISTS + ON CONFLICT seed upsert.
       const ddl = loadMigrationSql();
       await sql.unsafe(ddl);
+      const [{ n }] = await sql<{ n: number }[]>`
+        select count(*)::int as n from public.agent_cadence_jobs
+      `;
       appliedThisProcess = true;
-      safeLog.info("ops.ensureSchema", "219H schema applied", { bytes: ddl.length });
-      return { ok: true, applied: true };
+      safeLog.info("ops.ensureSchema", "219H schema applied", {
+        bytes: ddl.length,
+        cadenceRows: n,
+        wasMissing: missing,
+      });
+      return { ok: true, applied: true, reason: `cadence_rows=${n}` };
     } finally {
       await sql.end({ timeout: 5 });
     }
@@ -219,6 +223,14 @@ export async function ensureContinuousOpsSchema(): Promise<{
     safeLog.error("ops.ensureSchema", "apply failed", {
       error: err instanceof Error ? err.message : String(err),
     });
+    if (!missing) {
+      appliedThisProcess = true;
+      return {
+        ok: true,
+        applied: false,
+        reason: `tables_present_apply_error:${err instanceof Error ? err.message : String(err)}`,
+      };
+    }
     return {
       ok: false,
       applied: false,
