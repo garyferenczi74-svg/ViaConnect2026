@@ -181,68 +181,23 @@ export async function runCadenceJob(job: CadenceJob): Promise<JobRunResult> {
 export async function processPendingStagingGate(): Promise<Record<string, unknown>> {
   try {
     const { createAdminClient } = await import("@/lib/supabase/admin");
-    const { evaluateHoundDogGate } = await import("@/lib/hounddog/contentGate");
+    const { processHoundDogGateQueue } = await import("@/lib/hounddog/contentGate");
     const supabase = createAdminClient();
-    const { data: rows } = await supabase
-      .from("hounddog_staging_items")
-      .select("id, title, summary, source_url, source_type, status")
-      .eq("status", "pending")
-      .order("created_at", { ascending: true })
-      .limit(20);
-
-    let approved = 0;
-    let blocked = 0;
-    let escalated = 0;
-    for (const row of rows ?? []) {
-      const r = row as {
-        id: string;
-        title?: string;
-        summary?: string;
-        source_url?: string;
-        source_type?: string;
-      };
-      const gate = evaluateHoundDogGate({
-        title: r.title ?? "",
-        summary: r.summary ?? "",
-        source_url: r.source_url ?? "",
-        source_type: r.source_type ?? "staging",
-      });
-      if (gate.verdict === "approved") {
-        approved += 1;
-        await supabase
-          .from("hounddog_staging_items")
-          .update({ status: "approved", gate_notes: gate.notes })
-          .eq("id", r.id);
-        // Promote pattern may live in contentGate processStaging; best-effort gated insert
-        try {
-          await supabase.from("hounddog_gated_items").upsert(
-            {
-              id: r.id,
-              title: r.title,
-              summary: r.summary,
-              attribution: r.source_url,
-              approved_at: new Date().toISOString(),
-            } as never,
-            { onConflict: "id" }
-          );
-        } catch {
-          /* schema may differ */
-        }
-      } else if (gate.verdict === "blocked") {
-        blocked += 1;
-        await supabase
-          .from("hounddog_staging_items")
-          .update({ status: "blocked", gate_notes: gate.notes })
-          .eq("id", r.id);
-      } else {
-        escalated += 1;
-        await supabase
-          .from("hounddog_staging_items")
-          .update({ status: "escalated", gate_notes: gate.notes })
-          .eq("id", r.id);
+    // Uses gate_status (not status) per 213a schema
+    const counts = await processHoundDogGateQueue(supabase, 20);
+    if (counts.approved > 0) {
+      try {
+        const { emitPlatformEvent } = await import("./eventBus");
+        await emitPlatformEvent({
+          eventType: "content_gated",
+          payload: { approved: counts.approved },
+          coalesceKey: "content_gated:global",
+        });
+      } catch {
+        /* fail-open */
       }
     }
-    return { pending: rows?.length ?? 0, approved, blocked, escalated };
+    return { ...counts };
   } catch (err) {
     safeLog.warn("ops.gate", "staging gate fail-open", {
       error: err instanceof Error ? err.message : String(err),

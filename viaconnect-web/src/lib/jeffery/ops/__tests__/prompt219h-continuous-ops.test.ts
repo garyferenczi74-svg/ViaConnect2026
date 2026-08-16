@@ -106,6 +106,24 @@ describe("Prompt 219H source shape", () => {
     expect(src).toMatch(/meal_logged/);
   });
 
+  it("scan, genetics, health, and ingest emit platform events", () => {
+    expect(read("src/app/api/body/scan/persist/route.ts")).toMatch(/scan_landed/);
+    expect(read("src/app/api/genetics/confirm-variants/route.ts")).toMatch(
+      /genetics_confirmed/
+    );
+    expect(read("src/app/api/integrations/google-health/callback/route.ts")).toMatch(
+      /health_connected/
+    );
+    expect(read("src/lib/hounddog/ingest/runDailyIngest.ts")).toMatch(/staging_landed/);
+    expect(read("src/lib/hounddog/ingest/runDailyIngest.ts")).toMatch(/content_gated/);
+  });
+
+  it("marshall gate runner uses processHoundDogGateQueue (gate_status schema)", () => {
+    const src = read("src/lib/jeffery/ops/jobRunners.ts");
+    expect(src).toMatch(/processHoundDogGateQueue/);
+    expect(src).not.toMatch(/\.eq\("status", "pending"\)/);
+  });
+
   it("definition discipline: no self-modifying agent code patterns in ops", () => {
     const tick = read("src/lib/jeffery/ops/tick.ts");
     expect(tick).not.toMatch(/eval\(/);

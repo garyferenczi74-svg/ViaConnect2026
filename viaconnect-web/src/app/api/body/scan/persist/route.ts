@@ -207,6 +207,23 @@ export async function POST(req: Request): Promise<NextResponse> {
       });
     });
 
+    // Prompt 219H: platform event bus (coalesced digest refresh path).
+    void import('@/lib/jeffery/ops/eventBus')
+      .then(({ emitPlatformEvent }) =>
+        emitPlatformEvent({
+          eventType: 'scan_landed',
+          userId,
+          payload: { scanId, entryId },
+          coalesceKey: `scan_landed:${userId}`,
+        }),
+      )
+      .catch((e) => {
+        safeLog.warn('scan.persist', 'platform event failed open', {
+          correlationId,
+          error: e instanceof Error ? e.message : String(e),
+        });
+      });
+
     return NextResponse.json({ ok: true, entryId });
 
   } catch (err) {

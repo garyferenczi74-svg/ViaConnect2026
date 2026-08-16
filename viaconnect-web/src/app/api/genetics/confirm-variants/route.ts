@@ -92,6 +92,18 @@ export async function POST(request: Request): Promise<NextResponse> {
     } catch {
       /* fail-open */
     }
+    // Prompt 219H: platform event for continuous digests / coalescing.
+    try {
+      const { emitPlatformEvent } = await import('@/lib/jeffery/ops/eventBus');
+      void emitPlatformEvent({
+        eventType: 'genetics_confirmed',
+        userId: user.id,
+        payload: { saved: result.variantCount, uploadId: result.uploadId },
+        coalesceKey: `genetics_confirmed:${user.id}`,
+      });
+    } catch {
+      /* fail-open */
+    }
     return NextResponse.json({
       saved: result.variantCount,
       panelCounts: result.panelCounts,

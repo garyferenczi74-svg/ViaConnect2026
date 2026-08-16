@@ -182,6 +182,29 @@ export async function runHoundDogDailyIngest(opts?: {
   stats.hitBudget = budget.hitBudget;
   stats.budget = budget;
 
+  // Prompt 219H: platform events for continuous ops (fail-open)
+  try {
+    const { emitPlatformEvent } = await import('@/lib/jeffery/ops/eventBus');
+    const staged =
+      (stats.pubmed?.staged ?? 0) + (stats.social?.staged ?? 0);
+    if (staged > 0) {
+      await emitPlatformEvent({
+        eventType: 'staging_landed',
+        payload: { staged, runId },
+        coalesceKey: 'staging_landed:global',
+      });
+    }
+    if ((stats.gate?.approved ?? 0) > 0) {
+      await emitPlatformEvent({
+        eventType: 'content_gated',
+        payload: { approved: stats.gate.approved, runId },
+        coalesceKey: 'content_gated:global',
+      });
+    }
+  } catch {
+    /* fail-open */
+  }
+
   // Ledger
   await supabase.from('firecrawl_run_ledger').insert({
     run_id: runId,

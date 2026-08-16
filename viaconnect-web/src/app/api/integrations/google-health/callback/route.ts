@@ -88,6 +88,21 @@ export async function GET(req: NextRequest) {
         error: e instanceof Error ? e.message : String(e),
       });
     });
+    // Prompt 219H: continuous ops event bus
+    void import("@/lib/jeffery/ops/eventBus")
+      .then(({ emitPlatformEvent }) =>
+        emitPlatformEvent({
+          eventType: "health_connected",
+          userId,
+          payload: { source: "google_health" },
+          coalesceKey: `health_connected:${userId}`,
+        }),
+      )
+      .catch((e) => {
+        safeLog.warn(SCOPE, "platform event failed open", {
+          error: e instanceof Error ? e.message : String(e),
+        });
+      });
 
     safeLog.info(SCOPE, "connected", { userId: userId.slice(0, 8) });
     return back(`connected=${GOOGLE_HEALTH_SOURCE_ID}`);
