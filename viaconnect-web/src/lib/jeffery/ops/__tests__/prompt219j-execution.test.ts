@@ -11,6 +11,10 @@ import {
   deriveStatus,
   staleThresholdMs,
 } from "@/lib/agents/status";
+import {
+  isUuidString,
+  resolveHeartbeatRunId,
+} from "@/lib/jeffery/ops/heartbeats";
 
 const root = process.cwd();
 function read(rel: string): string {
@@ -27,6 +31,49 @@ describe("Prompt 219J Stale contract", () => {
 
   it("null heartbeat is idle not stale", () => {
     expect(deriveStatus(null)).toBe("idle");
+  });
+});
+
+describe("Prompt 219J heartbeat p_run_id UUID contract", () => {
+  it("accepts UUID-shaped strings and rejects ops run ids", () => {
+    expect(isUuidString("550e8400-e29b-41d4-a716-446655440000")).toBe(true);
+    expect(isUuidString("ops-marshall.gate-1734")).toBe(false);
+    expect(isUuidString("marshall.gate")).toBe(false);
+    expect(isUuidString(undefined)).toBe(false);
+    expect(isUuidString(null)).toBe(false);
+  });
+
+  it("reuses caller UUID as p_run_id", () => {
+    const uuid = "550e8400-e29b-41d4-a716-446655440000";
+    const r = resolveHeartbeatRunId(uuid);
+    expect(r.pRunId).toBe(uuid);
+    expect(r.opsRunId).toBeNull();
+    expect(isUuidString(r.pRunId)).toBe(true);
+  });
+
+  it("mints UUID when ops run id is non-UUID and keeps ops correlation", () => {
+    const ops = "ops-marshall.gate-1734";
+    const r = resolveHeartbeatRunId(ops);
+    expect(isUuidString(r.pRunId)).toBe(true);
+    expect(r.pRunId).not.toBe(ops);
+    expect(r.opsRunId).toBe(ops);
+  });
+
+  it("mints UUID when runId is missing", () => {
+    const r = resolveHeartbeatRunId(undefined);
+    expect(isUuidString(r.pRunId)).toBe(true);
+    expect(r.opsRunId).toBeNull();
+  });
+
+  it("writeAgentJobHeartbeat never passes non-UUID as p_run_id (source shape)", () => {
+    const src = read("src/lib/jeffery/ops/heartbeats.ts");
+    // Must not fall back to jobKey / raw runId for the RPC uuid arg
+    expect(src).not.toMatch(/p_run_id:\s*args\.runId\s*\?\?\s*args\.jobKey/);
+    expect(src).toMatch(/resolveHeartbeatRunId/);
+    expect(src).toMatch(/p_run_id:\s*pRunId/);
+    expect(src).toMatch(/ops_run_id/);
+    expect(src).toMatch(/run_id_text/);
+    expect(src).toMatch(/crypto\.randomUUID/);
   });
 });
 

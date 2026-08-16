@@ -24,6 +24,31 @@ export type HeartbeatEventType =
   | "data_available"
   | "health_check";
 
+/** RFC 4122 UUID string (any version); used for ultrathink p_run_id. */
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function isUuidString(value: string | null | undefined): boolean {
+  return typeof value === "string" && UUID_RE.test(value);
+}
+
+/**
+ * p_run_id must be uuid for ultrathink_agent_heartbeat.
+ * Reuse caller UUID when valid; otherwise mint a fresh one.
+ * Non-UUID ops run ids stay in payload (ops_run_id / run_id_text).
+ */
+export function resolveHeartbeatRunId(runId?: string | null): {
+  pRunId: string;
+  opsRunId: string | null;
+} {
+  if (isUuidString(runId)) {
+    return { pRunId: runId as string, opsRunId: null };
+  }
+  const opsRunId =
+    typeof runId === "string" && runId.trim().length > 0 ? runId : null;
+  return { pRunId: crypto.randomUUID(), opsRunId };
+}
+
 /** Map cadence agent_id strings onto registry AgentIds. */
 export function resolveOpsAgentId(raw: string): AgentId | null {
   const key = raw.trim().toLowerCase();
@@ -59,16 +84,22 @@ export async function writeAgentJobHeartbeat(args: {
     return false;
   }
 
+  // Prefer caller runId when UUID; never pass ops-*-style strings as p_run_id.
+  const { pRunId, opsRunId } = resolveHeartbeatRunId(args.runId);
+
   try {
     const { error } = await supabase.rpc("ultrathink_agent_heartbeat", {
       p_agent_name: agent,
-      p_run_id: args.runId ?? args.jobKey,
+      p_run_id: pRunId,
       p_event_type: args.eventType,
       p_payload: {
         message: `${args.jobKey} ${args.eventType}`,
         job_key: args.jobKey,
         status: args.status ?? args.eventType,
         source: "ops_tick",
+        ...(opsRunId
+          ? { ops_run_id: opsRunId, run_id_text: opsRunId }
+          : {}),
         ...(args.detail ?? {}),
       },
       p_severity: args.severity ?? (args.eventType === "error" ? "error" : "info"),
