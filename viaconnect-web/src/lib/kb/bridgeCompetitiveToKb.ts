@@ -53,14 +53,8 @@ export async function bridgeCompetitiveToKb(
   }
   const collectionId = String(coll.id);
 
-  // Prefer Marshall-approved gated rows; fall back to approved staging
-  const { data: gated } = await sb
-    .from("hounddog_gated_items")
-    .select("id, staging_id, source_url, source_type, title, summary")
-    .eq("source_type", "competitive_product")
-    .order("created_at", { ascending: false })
-    .limit(limit * 2);
-
+  // Prefer freshly retrieved staging (SKU seeds land here with ingredient_rows).
+  // Gated-only was starving seed updates because old UNKNOWN gated rows filled the window.
   let rows: Array<{
     id: string;
     staging_id?: string;
@@ -72,68 +66,99 @@ export async function bridgeCompetitiveToKb(
     full_text?: string;
     payload?: Record<string, unknown>;
   }> = [];
+  const seenUrls = new Set<string>();
 
-  if (gated?.length) {
-    for (const g of gated) {
+  const pushStaging = (s: {
+    id?: string;
+    source_url?: string;
+    title?: string;
+    summary?: string;
+    raw_payload?: unknown;
+    full_text_excerpt?: string;
+  }) => {
+    const url = String(s.source_url ?? "");
+    if (!url || seenUrls.has(url)) return;
+    seenUrls.add(url);
+    const payload =
+      s.raw_payload && typeof s.raw_payload === "object"
+        ? (s.raw_payload as Record<string, unknown>)
+        : {};
+    rows.push({
+      id: String(s.id ?? ""),
+      source_url: url,
+      title: String(s.title ?? ""),
+      summary: String(s.summary ?? ""),
+      brand: typeof payload.brand === "string" ? payload.brand : undefined,
+      category:
+        typeof payload.category === "string" ? payload.category : undefined,
+      full_text: String(s.full_text_excerpt || s.summary || ""),
+      payload,
+    });
+  };
+
+  // 1) Seed / recent staging first (has title-dose + deep extract payload)
+  const { data: staged } = await sb
+    .from("hounddog_staging_items")
+    .select(
+      "id, source_url, title, summary, raw_payload, gate_status, full_text_excerpt, retrieved_at"
+    )
+    .eq("source_type", "competitive_product")
+    .in("gate_status", ["approved", "pending"])
+    .order("retrieved_at", { ascending: false })
+    .limit(limit * 3);
+  for (const s of staged ?? []) pushStaging(s);
+
+  // 2) Supplement with gated if window still open
+  if (rows.length < limit * 2) {
+    const { data: gated } = await sb
+      .from("hounddog_gated_items")
+      .select("id, staging_id, source_url, source_type, title, summary")
+      .eq("source_type", "competitive_product")
+      .order("created_at", { ascending: false })
+      .limit(limit * 2);
+    for (const g of gated ?? []) {
+      const url = String((g as { source_url?: string }).source_url ?? "");
+      if (!url || seenUrls.has(url)) continue;
       const { data: st } = await sb
         .from("hounddog_staging_items")
-        .select("raw_payload, full_text_excerpt, summary")
+        .select("id, source_url, title, summary, raw_payload, full_text_excerpt")
         .eq("id", (g as { staging_id?: string }).staging_id ?? "")
         .maybeSingle();
-      const payload =
-        st?.raw_payload && typeof st.raw_payload === "object"
-          ? (st.raw_payload as Record<string, unknown>)
-          : {};
-      rows.push({
-        id: String((g as { id: string }).id),
-        staging_id: (g as { staging_id?: string }).staging_id,
-        source_url: String((g as { source_url: string }).source_url ?? ""),
-        title: String((g as { title: string }).title ?? ""),
-        summary: String((g as { summary: string }).summary ?? ""),
-        brand: typeof payload.brand === "string" ? payload.brand : undefined,
-        category:
-          typeof payload.category === "string" ? payload.category : undefined,
-        full_text: String(
-          (st as { full_text_excerpt?: string } | null)?.full_text_excerpt ||
-            (st as { summary?: string } | null)?.summary ||
-            (g as { summary?: string }).summary ||
-            ""
-        ),
-        payload,
-      });
-    }
-  } else {
-    const { data: staged } = await sb
-      .from("hounddog_staging_items")
-      .select(
-        "id, source_url, title, summary, raw_payload, gate_status, full_text_excerpt"
-      )
-      .eq("source_type", "competitive_product")
-      .in("gate_status", ["approved", "pending"])
-      .order("retrieved_at", { ascending: false })
-      .limit(limit * 2);
-    for (const s of staged ?? []) {
-      const payload =
-        s.raw_payload && typeof s.raw_payload === "object"
-          ? (s.raw_payload as Record<string, unknown>)
-          : {};
-      rows.push({
-        id: String(s.id),
-        source_url: String(s.source_url ?? ""),
-        title: String(s.title ?? ""),
-        summary: String(s.summary ?? ""),
-        brand: typeof payload.brand === "string" ? payload.brand : undefined,
-        category:
-          typeof payload.category === "string" ? payload.category : undefined,
-        full_text: String(
-          (s as { full_text_excerpt?: string }).full_text_excerpt ||
-            s.summary ||
-            ""
-        ),
-        payload,
-      });
+      if (st) {
+        pushStaging(st);
+      } else {
+        seenUrls.add(url);
+        rows.push({
+          id: String((g as { id: string }).id),
+          staging_id: (g as { staging_id?: string }).staging_id,
+          source_url: url,
+          title: String((g as { title: string }).title ?? ""),
+          summary: String((g as { summary: string }).summary ?? ""),
+          full_text: String((g as { summary?: string }).summary || ""),
+          payload: {},
+        });
+      }
     }
   }
+
+  // Prefer rows that already have parseable ingredients (seed wins)
+  rows.sort((a, b) => {
+    const aGood =
+      Array.isArray(a.payload?.ingredient_rows) &&
+      !hasUnknownOnlyIngredients(
+        a.payload!.ingredient_rows as CompetitiveIngredientRow[]
+      )
+        ? 0
+        : 1;
+    const bGood =
+      Array.isArray(b.payload?.ingredient_rows) &&
+      !hasUnknownOnlyIngredients(
+        b.payload!.ingredient_rows as CompetitiveIngredientRow[]
+      )
+        ? 0
+        : 1;
+    return aGood - bGood;
+  });
 
   for (const row of rows) {
     if (stats.inserted + stats.skipped + stats.errors >= limit) break;
