@@ -977,11 +977,21 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
 
   // Thorne catalog from https://www.thorne.com/products (+ methylation/multi categories)
 
+  // Thorne catalog from https://www.thorne.com/products (+ methylation/multi categories)
+
+  // Thorne catalog from https://www.thorne.com/products (+ methylation/multi categories)
+
   {
     url: "https://www.thorne.com/products/dp/3-k-complete",
     category: "base-formulations",
     brandHint: "Thorne",
     productHint: "3 K Complete",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/5-hydroxytryptophan",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "5 Hydroxytryptophan",
   },
   {
     url: "https://www.thorne.com/products/dp/5-mthf-1-mg",
@@ -1014,10 +1024,46 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     productHint: "Advanced Dha",
   },
   {
+    url: "https://www.thorne.com/products/dp/advanced-pre-workout-rainbow-sherbet-flavor",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Advanced Pre Workout Rainbow Sherbet Flavor",
+  },
+  {
     url: "https://www.thorne.com/products/dp/advanced-testosterone-support",
     category: "base-formulations",
     brandHint: "Thorne",
     productHint: "Advanced Testosterone Support",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/amino-complex-berry",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Amino Complex Berry",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/amino-complex-berry-sp641p",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Amino Complex Berry Sp641P",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/amino-complex-lemon",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Amino Complex Lemon",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/amino-complex-lemon-sp637p",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Amino Complex Lemon Sp637P",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/ar-encap-reg",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Ar Encap Reg",
   },
   {
     url: "https://www.thorne.com/products/dp/ascorbic-acid",
@@ -1038,6 +1084,12 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     productHint: "B Complex 12",
   },
   {
+    url: "https://www.thorne.com/products/dp/b-complex-6",
+    category: "methylation-snp",
+    brandHint: "Thorne",
+    productHint: "B Complex 6",
+  },
+  {
     url: "https://www.thorne.com/products/dp/bacillus-coagulans",
     category: "base-formulations",
     brandHint: "Thorne",
@@ -1048,6 +1100,12 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     category: "methylation-snp",
     brandHint: "Thorne",
     productHint: "Basic B Complex",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/basic-nutrients-2-day",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Basic Nutrients 2 Day",
   },
   {
     url: "https://www.thorne.com/products/dp/basic-nutrients-2-day-120",
@@ -1080,10 +1138,76 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     productHint: "Berberine 500",
   },
   {
+    url: "https://www.thorne.com/products/dp/beta-alanine-sr",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Beta Alanine Sr",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/betaine-hcl-pepsin-225-s",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Betaine Hcl Pepsin 225 S",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/bio-gest-reg-60-s-1",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Bio Gest Reg 60 S 1",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/biotin-8",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Biotin 8",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/boswellia-phytosome",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Boswellia Phytosome",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/brain-factors",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Brain Factors",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/buffered-c-powder",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Buffered C Powder",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/calcium-magnesium-malate",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Calcium Magnesium Malate",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/carnityl-reg",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Carnityl Reg",
+  },
+  {
     url: "https://www.thorne.com/products/dp/cdn-dipan",
     category: "base-formulations",
     brandHint: "Thorne",
     productHint: "Cdn Dipan",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/choleast-900",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Choleast 900",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/choleast-trade",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Choleast Trade",
   },
   {
     url: "https://www.thorne.com/products/dp/chromium-picolinate",
@@ -1092,10 +1216,34 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     productHint: "Chromium Picolinate",
   },
   {
+    url: "https://www.thorne.com/products/dp/clear-focus",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Clear Focus",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/cognitive-vitality",
+    category: "advanced-formulas",
+    brandHint: "Thorne",
+    productHint: "Cognitive Vitality",
+  },
+  {
     url: "https://www.thorne.com/products/dp/collagen-fit",
     category: "advanced-formulas",
     brandHint: "Thorne",
     productHint: "Collagen Fit",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/collagen-plus",
+    category: "advanced-formulas",
+    brandHint: "Thorne",
+    productHint: "Collagen Plus",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/complete-biotic",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Complete Biotic",
   },
   {
     url: "https://www.thorne.com/products/dp/copper-bisglycinate",
@@ -1122,6 +1270,12 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     productHint: "Creatine Bcaas Peach Mango Flavored",
   },
   {
+    url: "https://www.thorne.com/products/dp/creatine-pineapple-orange-flavored",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Creatine Pineapple Orange Flavored",
+  },
+  {
     url: "https://www.thorne.com/products/dp/creatine-sf903p",
     category: "base-formulations",
     brandHint: "Thorne",
@@ -1132,6 +1286,30 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     category: "base-formulations",
     brandHint: "Thorne",
     productHint: "Creatine Sf904",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/creatine-strawberry-flavored",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Creatine Strawberry Flavored",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/crucera-sgs",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Crucera Sgs",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/cysteplus-reg",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Cysteplus Reg",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/d-1-000-180",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "D 1 000 180",
   },
   {
     url: "https://www.thorne.com/products/dp/d-10-000",
@@ -1146,16 +1324,100 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     productHint: "D 1000 Vitamin D Capsule",
   },
   {
+    url: "https://www.thorne.com/products/dp/d-5-000-120",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "D 5 000 120",
+  },
+  {
     url: "https://www.thorne.com/products/dp/d-5-000-vitamin-d-capsule",
     category: "base-formulations",
     brandHint: "Thorne",
     productHint: "D 5 000 Vitamin D Capsule",
   },
   {
+    url: "https://www.thorne.com/products/dp/daily-electrolytes-blackberry-flavored-drink-mix",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Daily Electrolytes Blackberry Flavored Drink Mix",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/daily-electrolytes-blood-orange-flavored-drink-mix",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Daily Electrolytes Blood Orange Flavored Drink Mix",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/daily-electrolytes-grapefruit-flavored-drink-mix",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Daily Electrolytes Grapefruit Flavored Drink Mix",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/daily-electrolytes-mangolimeade-flavored-drink-mix",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Daily Electrolytes Mangolimeade Flavored Drink Mix",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/daily-electrolytes-strawberry-lem-flavor-drink-mix",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Daily Electrolytes Strawberry Lem Flavor Drink Mix",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/daily-electrolytes-watermelon-flavored-drink-mix",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Daily Electrolytes Watermelon Flavored Drink Mix",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/daily-greens-plus",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Daily Greens Plus",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/deep-sleep-complex",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Deep Sleep Complex",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/deproloft-hf",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Deproloft Hf",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/dicalcium-malate",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Dicalcium Malate",
+  },
+  {
     url: "https://www.thorne.com/products/dp/dim-crucera",
     category: "base-formulations",
     brandHint: "Thorne",
     productHint: "Dim Crucera",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/dipan-9-reg-60-s-2",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Dipan 9 Reg 60 S 2",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/double-strength-zinc-picolinate-60-s",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Double Strength Zinc Picolinate 60 S",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/double-strength-zinc-picolinate-60-s-1",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Double Strength Zinc Picolinate 60 S 1",
   },
   {
     url: "https://www.thorne.com/products/dp/enteromend",
@@ -1176,16 +1438,52 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     productHint: "Ferrasorb Reg",
   },
   {
+    url: "https://www.thorne.com/products/dp/fibermend-trade",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Fibermend Trade",
+  },
+  {
     url: "https://www.thorne.com/products/dp/floramend-prime-probiotic",
     category: "base-formulations",
     brandHint: "Thorne",
     productHint: "Floramend Prime Probiotic",
   },
   {
+    url: "https://www.thorne.com/products/dp/florasport-20b",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Florasport 20B",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/formula-sf722-reg",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Formula Sf722 Reg",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/gi-encap-reg-1",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Gi Encap Reg 1",
+  },
+  {
     url: "https://www.thorne.com/products/dp/gingerpro",
     category: "base-formulations",
     brandHint: "Thorne",
     productHint: "Gingerpro",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/ginseng-plus",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Ginseng Plus",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/glucosamine-chondroitin",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Glucosamine Chondroitin",
   },
   {
     url: "https://www.thorne.com/products/dp/glutathione-sr",
@@ -1200,10 +1498,40 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     productHint: "Glycine",
   },
   {
+    url: "https://www.thorne.com/products/dp/green-tea-phytosome",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Green Tea Phytosome",
+  },
+  {
     url: "https://www.thorne.com/products/dp/iron-bisglycinate",
     category: "base-formulations",
     brandHint: "Thorne",
     productHint: "Iron Bisglycinate",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/iso-phos-reg",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Iso Phos Reg",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/l-glutamine",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "L Glutamine",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/l-glutamine-powder",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "L Glutamine Powder",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/l-lysine",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "L Lysine",
   },
   {
     url: "https://www.thorne.com/products/dp/liver-cleanse",
@@ -1230,6 +1558,12 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     productHint: "Magnesium Citramate",
   },
   {
+    url: "https://www.thorne.com/products/dp/magnesium-citrate-m286",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Magnesium Citrate M286",
+  },
+  {
     url: "https://www.thorne.com/products/dp/magnesium-glycinate",
     category: "base-formulations",
     brandHint: "Thorne",
@@ -1242,10 +1576,64 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     productHint: "Magnesium Glycinate 180",
   },
   {
+    url: "https://www.thorne.com/products/dp/mediclear-plus-reg",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Mediclear Plus Reg",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/mediclear-sgs-trade",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Mediclear Sgs Trade",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/mediclear-sgs-vanilla",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Mediclear Sgs Vanilla",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/melaton-3-trade",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Melaton 3 Trade",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/melaton-5-trade",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Melaton 5 Trade",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/memoractiv-trade",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Memoractiv Trade",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/mens-multi-50",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Mens Multi 50",
+  },
+  {
     url: "https://www.thorne.com/products/dp/meriva-500-sf-120",
     category: "base-formulations",
     brandHint: "Thorne",
     productHint: "Meriva 500 Sf 120",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/meriva-500-sf-60",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Meriva 500 Sf 60",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/meriva-500-sf-nsf",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Meriva 500 Sf Nsf",
   },
   {
     url: "https://www.thorne.com/products/dp/meriva-sf",
@@ -1278,16 +1666,82 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     productHint: "Methylcobalamin",
   },
   {
+    url: "https://www.thorne.com/products/dp/multi-vitamin-elite",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Multi Vitamin Elite",
+  },
+  {
     url: "https://www.thorne.com/products/dp/multi-vitamin-elite-vm114nc",
     category: "base-formulations",
     brandHint: "Thorne",
     productHint: "Multi Vitamin Elite Vm114Nc",
   },
   {
+    url: "https://www.thorne.com/products/dp/nac-180",
+    category: "advanced-formulas",
+    brandHint: "Thorne",
+    productHint: "Nac 180",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/niacel-400",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Niacel 400",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/niacinamide",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Niacinamide",
+  },
+  {
     url: "https://www.thorne.com/products/dp/omega-3-w-coq10",
     category: "advanced-formulas",
     brandHint: "Thorne",
     productHint: "Omega 3 W Coq10",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/omega-superb-ndash-lemon-berry",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Omega Superb Ndash Lemon Berry",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/oscap",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Oscap",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/ovarian-care",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Ovarian Care",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/perfusia-plus-reg",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Perfusia Plus Reg",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/perfusia-sr-reg",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Perfusia Sr Reg",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/perimenopause-complete",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Perimenopause Complete",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/pharmagaba-100",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Pharmagaba 100",
   },
   {
     url: "https://www.thorne.com/products/dp/pharmagaba-250",
@@ -1302,16 +1756,118 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     productHint: "Phosphatidyl Choline",
   },
   {
+    url: "https://www.thorne.com/products/dp/phytisone-reg",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Phytisone Reg",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/phytoprofen-reg-60-s",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Phytoprofen Reg 60 S",
+  },
+  {
     url: "https://www.thorne.com/products/dp/phytoprofenvet",
     category: "base-formulations",
     brandHint: "Thorne",
     productHint: "Phytoprofenvet",
   },
   {
+    url: "https://www.thorne.com/products/dp/plant-protein-chocolate-flavored",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Plant Protein Chocolate Flavored",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/plant-protein-vanilla",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Plant Protein Vanilla",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/polyresveratrol-sr-reg",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Polyresveratrol Sr Reg",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/potassium-citrate",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Potassium Citrate",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/prenatal-dha",
+    category: "womens-health",
+    brandHint: "Thorne",
+    productHint: "Prenatal Dha",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/pro-resolving-mediators",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Pro Resolving Mediators",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/protein-optimizer",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Protein Optimizer",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/pyridoxal-5-phosphate-60-s-1",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Pyridoxal 5 Phosphate 60 S 1",
+  },
+  {
     url: "https://www.thorne.com/products/dp/q-best-100",
     category: "advanced-formulas",
     brandHint: "Thorne",
     productHint: "Q Best 100",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/q10-plus-reg",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Q10 Plus Reg",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/quercenase-reg",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Quercenase Reg",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/quercetin-phytosome",
+    category: "advanced-formulas",
+    brandHint: "Thorne",
+    productHint: "Quercetin Phytosome",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/radiant-skin-complex",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Radiant Skin Complex",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/rapid-relief-saffron",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Rapid Relief Saffron",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/recoverypro-sp114",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Recoverypro Sp114",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/resveracel",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Resveracel",
   },
   {
     url: "https://www.thorne.com/products/dp/rhodiola",
@@ -1324,6 +1880,18 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     category: "methylation-snp",
     brandHint: "Thorne",
     productHint: "Riboflavin 5 Phosphate",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/s-a-t-reg",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "S A T Reg",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/sacro-b-trade",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Sacro B Trade",
   },
   {
     url: "https://www.thorne.com/products/dp/selenomethionine",
@@ -1344,6 +1912,30 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     productHint: "Sleep",
   },
   {
+    url: "https://www.thorne.com/products/dp/stress-b-complex",
+    category: "methylation-snp",
+    brandHint: "Thorne",
+    productHint: "Stress B Complex",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/super-epa",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Super Epa",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/super-epa-180",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Super Epa 180",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/super-epa-pro-60-s-1",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Super Epa Pro 60 S 1",
+  },
+  {
     url: "https://www.thorne.com/products/dp/super-epa-sp608nc",
     category: "base-formulations",
     brandHint: "Thorne",
@@ -1354,6 +1946,12 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     category: "base-formulations",
     brandHint: "Thorne",
     productHint: "Synaquell",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/synaquell-plus",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Synaquell Plus",
   },
   {
     url: "https://www.thorne.com/products/dp/theanine",
@@ -1368,10 +1966,34 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     productHint: "Thiocid 300 Reg",
   },
   {
+    url: "https://www.thorne.com/products/dp/thyrocsin-trade-60-s-1",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Thyrocsin Trade 60 S 1",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/trace-minerals",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Trace Minerals",
+  },
+  {
     url: "https://www.thorne.com/products/dp/ubiquinol",
     category: "base-formulations",
     brandHint: "Thorne",
     productHint: "Ubiquinol",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/ultimate-e-reg",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Ultimate E Reg",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/valerian-root",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Valerian Root",
   },
   {
     url: "https://www.thorne.com/products/dp/vit-c-w-flavonoids",
@@ -1398,10 +2020,22 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     productHint: "Vitamin D3",
   },
   {
+    url: "https://www.thorne.com/products/dp/vitamin-k2-liquid",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Vitamin K2 Liquid",
+  },
+  {
     url: "https://www.thorne.com/products/dp/whey-protein-isolate-chocolate",
     category: "base-formulations",
     brandHint: "Thorne",
     productHint: "Whey Protein Isolate Chocolate",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/whey-protein-isolate-chocolate-sp110p",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Whey Protein Isolate Chocolate Sp110P",
   },
   {
     url: "https://www.thorne.com/products/dp/whey-protein-isolate-vanilla",
@@ -1410,10 +2044,22 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     productHint: "Whey Protein Isolate Vanilla",
   },
   {
+    url: "https://www.thorne.com/products/dp/whey-protein-isolate-vanilla-sp111p",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Whey Protein Isolate Vanilla Sp111P",
+  },
+  {
     url: "https://www.thorne.com/products/dp/women-s-daily-probiotic",
     category: "womens-health",
     brandHint: "Thorne",
     productHint: "Women S Daily Probiotic",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/womens-libido-boost",
+    category: "womens-health",
+    brandHint: "Thorne",
+    productHint: "Womens Libido Boost",
   },
   {
     url: "https://www.thorne.com/products/dp/womens-multi-50",
@@ -1422,10 +2068,28 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     productHint: "Womens Multi 50",
   },
   {
+    url: "https://www.thorne.com/products/dp/zinc-bisglycinate-15-mg",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Zinc Bisglycinate 15 Mg",
+  },
+  {
     url: "https://www.thorne.com/products/dp/zinc-bisglycinate-30-mg",
     category: "base-formulations",
     brandHint: "Thorne",
     productHint: "Zinc Bisglycinate 30 Mg",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/zinc-picolinate",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Zinc Picolinate",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/zinc-picolinate-30mg",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Zinc Picolinate 30Mg",
   },
 ] as const;
 
