@@ -30,8 +30,9 @@ export async function POST(request: Request): Promise<Response> {
       // Seeds-only budget: deep path is heavy; discovery optional
       maxQueries: 0,
     });
-    const bridge = await bridgeCompetitiveToKb(12);
-    const enrich = await enrichCompetitiveProducts(8, { allowScrape: true });
+    const bridge = await bridgeCompetitiveToKb(16);
+    // Larger enrich batch to clear Serv.Size / UNKNOWN noise after seed
+    const enrich = await enrichCompetitiveProducts(12, { allowScrape: true });
 
     return Response.json({
       ok: ingest.staged > 0 || bridge.withIngredients > 0 || enrich.enriched > 0,

@@ -261,6 +261,10 @@ export function parseIngredientLine(line: string): CompetitiveIngredientRow | nu
   if (dose_unit === "mL" && /oz|net|bottle|serv/i.test(raw)) {
     return null;
   }
+  // Serving size expressed as volume is not an ingredient
+  if (dose_unit === "mL" && /serv/i.test(name)) {
+    return null;
+  }
 
   return {
     ingredient_name: name,

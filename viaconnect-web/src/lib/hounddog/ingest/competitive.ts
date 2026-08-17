@@ -308,9 +308,10 @@ export async function runCompetitiveIngest(opts?: {
   };
 
   // 1) Curated SKU seeds first (small window: deep interact+vision is slow)
+  // Rotate every ~15 minutes so consecutive force runs hit different SKUs
   const seedWindow = 4;
   const seedOffset =
-    Math.floor(Date.now() / (1000 * 60 * 60 * 6)) %
+    Math.floor(Date.now() / (1000 * 60 * 15)) %
     Math.max(1, COMPETITIVE_SKU_SEEDS.length);
   const seeds = [
     ...COMPETITIVE_SKU_SEEDS.slice(seedOffset, seedOffset + seedWindow),

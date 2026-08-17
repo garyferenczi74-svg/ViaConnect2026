@@ -91,6 +91,7 @@ export async function enrichCompetitiveProducts(
     .maybeSingle();
   if (!coll?.id) return stats;
 
+  // Prefer low confidence / older rows so UNKNOWN and noise get fixed first
   const { data: items, error } = await sb
     .from("kb_items")
     .select("id, title, source_urls, extraction_confidence")
@@ -98,8 +99,9 @@ export async function enrichCompetitiveProducts(
     .eq("payload_type", "product")
     .in("gate_status", ["approved", "lex_approved"])
     .eq("jeffery_verdict", "approved")
+    .order("extraction_confidence", { ascending: true })
     .order("updated_at", { ascending: true })
-    .limit(limit * 2);
+    .limit(limit * 3);
 
   if (error || !items?.length) {
     if (error) {
