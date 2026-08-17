@@ -231,9 +231,22 @@ export async function enrichCompetitiveProducts(
       }
       if (hasUnknownOnlyIngredients(facts.ingredient_rows)) {
         stats.stillUnknown += 1;
-        if (facts.list_price || facts.serving_size) {
-          await applyProductFacts(sb, itemId, facts, { onlyShell: true });
-        }
+        // Clear packaging-noise rows so coverage reflects honest UNKNOWN
+        await applyProductFacts(sb, itemId, {
+          ...facts,
+          ingredient_rows: [
+            {
+              ingredient_name: "UNKNOWN",
+              canonical_ingredient_id: null,
+              dose_amount: null,
+              dose_unit: null,
+              form: null,
+              dose_confidence: 0,
+              note: "No parseable Supplement Facts dose lines after scrape",
+            },
+          ],
+          extraction_confidence: Math.min(facts.extraction_confidence, 50),
+        });
         continue;
       }
 
