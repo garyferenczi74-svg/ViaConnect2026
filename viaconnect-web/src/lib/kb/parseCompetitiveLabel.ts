@@ -51,7 +51,7 @@ const SKIP_LINE =
   /^(supplement facts|amount per serving|daily value|% daily value|other ingredients|contains|directions|suggested use|warning|keep out|storage|manufactured|distributed|these statements|fda|serving size|servings per|calories|total fat|sodium|protein|carbohydrate|free shipping|add to cart|buy now|subscribe|reviews?|rating|sku:|item #|net wt|net weight|fl oz|shipping|promo|coupon|save \d)/i;
 
 const SKIP_NAME =
-  /^(net wt|net weight|fl oz|fluid ounce|calories?|total (fat|carb)|trans fat|cholesterol|dietary fiber|added sugars?|softgels? per serving|capsules? per serving|tablets? per serving)$/i;
+  /^(net wt|net weight|fl oz|fluid ounce|calories?|total (fat|carb)|trans fat|cholesterol|dietary fiber|added sugars?|softgels? per serving|capsules? per serving|tablets? per serving|level teaspoons?|approx\.?|serving|several professional|source of dha)$/i;
 
 const FORM_FROM_TEXT: Array<{ re: RegExp; form: string }> = [
   { re: /\bliposomal\b/i, form: "liposomal" },
@@ -229,6 +229,14 @@ export function parseIngredientLine(line: string): CompetitiveIngredientRow | nu
   // Packaging / nutrition facts noise with volume units
   if (/net\s*wt|fl\.?\s*oz|fluid ounce/i.test(raw)) return null;
   if (/calories?/i.test(name) && dose_unit === "g") return null;
+  if (/teaspoons?|tablespoons?|per serving|approx/i.test(name) && !/\b(vitamin|mineral|magnesium|calcium|omega|curcumin|folate|b\d|zinc|iron|epa|dha)\b/i.test(name)) {
+    return null;
+  }
+  // Reject prose sentences mistaken for ingredients
+  if (/\b(suggest|providing approximately|professional groups)\b/i.test(name)) {
+    return null;
+  }
+  if (/per serving/i.test(name) && name.split(/\s+/).length <= 4) return null;
   // Reject if name is mostly non-letters
   const letters = (name.match(/[A-Za-z]/g) || []).length;
   if (letters < 3) return null;
