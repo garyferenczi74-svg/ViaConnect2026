@@ -161,12 +161,18 @@ export async function enrichCompetitiveProducts(
     // Cheap path: re-filter existing rows through latest parser (no scrape)
     if (
       Array.isArray(product.ingredient_rows) &&
-      isLowQualityRows(product.ingredient_rows) &&
-      !isUnknownRows(product.ingredient_rows)
+      isLowQualityRows(product.ingredient_rows)
     ) {
       const rebuilt: CompetitiveIngredientRow[] = [];
       for (const row of product.ingredient_rows as CompetitiveIngredientRow[]) {
         const line = `${row.ingredient_name ?? ""} ${row.dose_amount ?? ""} ${row.dose_unit ?? ""}`.trim();
+        // Direct line parse rejects Serv.Size / cart chrome
+        const { parseIngredientLine } = await import("./parseCompetitiveLabel");
+        const one = parseIngredientLine(line);
+        if (one && one.ingredient_name !== "UNKNOWN" && one.dose_amount != null) {
+          rebuilt.push(one);
+          continue;
+        }
         const parsed = parseCompetitiveLabelText(line, { title });
         for (const r of parsed.ingredient_rows) {
           if (r.ingredient_name !== "UNKNOWN" && r.dose_amount != null) {
@@ -174,11 +180,19 @@ export async function enrichCompetitiveProducts(
           }
         }
       }
-      if (rebuilt.length > 0 && !isLowQualityRows(rebuilt)) {
+      // Dedupe by name+dose
+      const seen = new Set<string>();
+      const unique = rebuilt.filter((r) => {
+        const k = `${r.ingredient_name}|${r.dose_amount}|${r.dose_unit}`;
+        if (seen.has(k)) return false;
+        seen.add(k);
+        return true;
+      });
+      if (unique.length > 0 && !isLowQualityRows(unique)) {
         const shell = parseCompetitiveLabelText("", { title });
         await applyProductFacts(sb, itemId, {
           ...shell,
-          ingredient_rows: rebuilt,
+          ingredient_rows: unique,
           serving_size:
             (product.serving_size as string | null) ?? shell.serving_size,
           servings_per_container:
@@ -194,13 +208,13 @@ export async function enrichCompetitiveProducts(
         stats.enriched += 1;
         stats.sample.push({
           itemId,
-          ingredientCount: rebuilt.length,
+          ingredientCount: unique.length,
           confidence: 80,
         });
         continue;
       }
-      // Pure noise only: clear to honest UNKNOWN without burning scrape budget
-      if (rebuilt.length === 0) {
+      // Pure noise or still-low-quality: clear to honest UNKNOWN (no scrape)
+      if (unique.length === 0 || isLowQualityRows(unique)) {
         const shell = parseCompetitiveLabelText("", { title });
         await applyProductFacts(sb, itemId, {
           ...shell,
