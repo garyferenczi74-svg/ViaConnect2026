@@ -24,11 +24,19 @@ export async function POST(request: Request): Promise<Response> {
       "@/lib/kb/enrichCompetitiveProducts"
     );
 
+    // Optional ?offset=N to pin seed window; else wall-clock seconds
+    const url = new URL(request.url);
+    const offsetParam = url.searchParams.get("offset");
+    const seedOffset = offsetParam != null && Number.isFinite(Number(offsetParam))
+      ? Number(offsetParam)
+      : Math.floor(Date.now() / 1000);
+
     const ingest = await runCompetitiveIngest({
       runId: `cron-competitive-seed-${Date.now()}`,
       runDate: new Date().toISOString().slice(0, 10),
       // Seeds-only budget: deep path is heavy; discovery optional
       maxQueries: 0,
+      seedOffset,
     });
     const bridge = await bridgeCompetitiveToKb(16);
     // Larger enrich batch to clear Serv.Size / UNKNOWN noise after seed

@@ -112,6 +112,8 @@ export async function runCompetitiveIngest(opts?: {
   runDate?: string;
   budget?: FirecrawlBudget;
   maxQueries?: number;
+  /** Override seed list rotation (for consecutive force runs). */
+  seedOffset?: number;
 }): Promise<CompetitiveIngestStats> {
   const runDate = opts?.runDate ?? new Date().toISOString().slice(0, 10);
   const runId = opts?.runId ?? `competitive-${runDate}`;
@@ -308,10 +310,9 @@ export async function runCompetitiveIngest(opts?: {
   };
 
   // 1) Curated SKU seeds first (small window: deep interact+vision is slow)
-  // Rotate every ~15 minutes so consecutive force runs hit different SKUs
   const seedWindow = 4;
   const seedOffset =
-    Math.floor(Date.now() / (1000 * 60 * 15)) %
+    (opts?.seedOffset ?? Math.floor(Date.now() / 1000)) %
     Math.max(1, COMPETITIVE_SKU_SEEDS.length);
   const seeds = [
     ...COMPETITIVE_SKU_SEEDS.slice(seedOffset, seedOffset + seedWindow),
