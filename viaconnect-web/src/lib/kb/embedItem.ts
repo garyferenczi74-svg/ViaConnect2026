@@ -1,11 +1,31 @@
 /**
  * Prompt 221 Phase 1: embed kb_items for hybrid search.
  * Fail-open: missing key / API error leaves embedding null; item still stored.
+ * Prefer direct Postgres write for pgvector (PostgREST vector updates are fragile).
  */
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { safeLog } from "@/lib/utils/safe-log";
 import { embedText, EMBEDDING_DIMS } from "./embeddings";
+
+function buildConnectionString(): string | null {
+  const direct =
+    process.env.POSTGRES_URL_NON_POOLING ||
+    process.env.POSTGRES_URL ||
+    process.env.DATABASE_URL ||
+    process.env.POSTGRES_PRISMA_URL;
+  if (direct && direct.trim().length > 0) {
+    return direct.trim().replace(/^["']|["']$/g, "");
+  }
+  const host = process.env.POSTGRES_HOST?.trim();
+  const user = process.env.POSTGRES_USER?.trim() || "postgres";
+  const password = process.env.POSTGRES_PASSWORD?.trim();
+  const database = process.env.POSTGRES_DATABASE?.trim() || "postgres";
+  if (host && password) {
+    return `postgresql://${user}:${encodeURIComponent(password)}@${host}:5432/${database}`;
+  }
+  return null;
+}
 
 /** Compose representative text for embedding (Part E chunking rule, short form). */
 export function composeItemEmbedText(row: {
@@ -30,7 +50,7 @@ export async function embedAndStoreKbItem(itemId: string): Promise<boolean> {
   const sb = createAdminClient();
   const { data: row, error } = await sb
     .from("kb_items")
-    .select("id, title, summary, payload_type, evidence_grade, embedding")
+    .select("id, title, summary, payload_type, evidence_grade")
     .eq("id", itemId)
     .maybeSingle();
 
@@ -47,11 +67,37 @@ export async function embedAndStoreKbItem(itemId: string): Promise<boolean> {
 
   const values = await embedText(text);
   if (!values || values.length !== EMBEDDING_DIMS) {
+    safeLog.warn("kb.embedItem", "embedText returned null", { itemId });
     return false;
   }
 
-  // PostgREST pgvector: pass as literal string "[v1,v2,...]"
   const vectorLiteral = `[${values.join(",")}]`;
+  const conn = buildConnectionString();
+
+  if (conn) {
+    try {
+      const postgres = (await import("postgres")).default;
+      const sql = postgres(conn, { max: 1, idle_timeout: 5, connect_timeout: 15 });
+      try {
+        await sql.unsafe(
+          `UPDATE public.kb_items
+           SET embedding = $1::extensions.vector,
+               updated_at = now()
+           WHERE id = $2::uuid`,
+          [vectorLiteral, itemId]
+        );
+        return true;
+      } finally {
+        await sql.end({ timeout: 5 });
+      }
+    } catch (err) {
+      safeLog.warn("kb.embedItem", "postgres write failed, trying supabase", {
+        itemId,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+
   const { error: upErr } = await sb
     .from("kb_items")
     .update({
@@ -61,7 +107,7 @@ export async function embedAndStoreKbItem(itemId: string): Promise<boolean> {
     .eq("id", itemId);
 
   if (upErr) {
-    safeLog.warn("kb.embedItem", "update failed", {
+    safeLog.warn("kb.embedItem", "supabase update failed", {
       itemId,
       error: upErr.message,
     });
@@ -77,11 +123,44 @@ export async function backfillKbEmbeddings(limit = 20): Promise<{
   attempted: number;
   embedded: number;
   failed: number;
+  reason?: string;
 }> {
-  const stats = { attempted: 0, embedded: 0, failed: 0 };
-  const sb = createAdminClient();
+  const stats = { attempted: 0, embedded: 0, failed: 0, reason: undefined as string | undefined };
+  const conn = buildConnectionString();
 
-  // PostgREST: null embedding filter
+  if (conn) {
+    try {
+      const postgres = (await import("postgres")).default;
+      const sql = postgres(conn, { max: 1, idle_timeout: 5, connect_timeout: 15 });
+      try {
+        const rows = await sql<{ id: string }[]>`
+          SELECT id::text AS id
+          FROM public.kb_items
+          WHERE jeffery_verdict = 'approved'
+            AND gate_status IN ('approved', 'lex_approved')
+            AND embedding IS NULL
+          ORDER BY updated_at DESC
+          LIMIT ${limit}
+        `;
+        for (const row of rows) {
+          stats.attempted += 1;
+          const ok = await embedAndStoreKbItem(row.id);
+          if (ok) stats.embedded += 1;
+          else stats.failed += 1;
+        }
+        return stats;
+      } finally {
+        await sql.end({ timeout: 5 });
+      }
+    } catch (err) {
+      stats.reason = err instanceof Error ? err.message : String(err);
+      safeLog.warn("kb.embedItem", "postgres backfill list failed", {
+        error: stats.reason,
+      });
+    }
+  }
+
+  const sb = createAdminClient();
   const { data, error } = await sb
     .from("kb_items")
     .select("id")
@@ -96,6 +175,7 @@ export async function backfillKbEmbeddings(limit = 20): Promise<{
       safeLog.warn("kb.embedItem", "backfill list failed", {
         error: error.message,
       });
+      stats.reason = error.message;
     }
     return stats;
   }
