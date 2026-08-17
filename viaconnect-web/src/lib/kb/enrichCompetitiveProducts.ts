@@ -158,10 +158,12 @@ export async function enrichCompetitiveProducts(
       continue;
     }
 
-    // Cheap path: re-filter existing rows through latest parser (no scrape)
+    // Cheap path: re-filter noisy rows through latest parser (no scrape).
+    // Skip pure UNKNOWN so deep scrape can still try later.
     if (
       Array.isArray(product.ingredient_rows) &&
-      isLowQualityRows(product.ingredient_rows)
+      isLowQualityRows(product.ingredient_rows) &&
+      !isUnknownRows(product.ingredient_rows)
     ) {
       const rebuilt: CompetitiveIngredientRow[] = [];
       for (const row of product.ingredient_rows as CompetitiveIngredientRow[]) {
