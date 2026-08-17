@@ -158,11 +158,15 @@ export async function runCadenceJob(
             "@/lib/kb/promotePipeline"
           );
           const { backfillKbEmbeddings } = await import("@/lib/kb/embedItem");
+          const { syncPhase1CollectionStatus } = await import(
+            "@/lib/kb/syncCollectionStatus"
+          );
           const bridge = await bridgeGatedItemsToKb(12);
           const peptides = await bridgePeptideEducationToKb(20);
           const reviews = await processPendingJefferyKbReviews(20);
           const embeds = await backfillKbEmbeddings(25);
-          detail = { bridge, peptides, reviews, embeds };
+          const collectionStatus = await syncPhase1CollectionStatus();
+          detail = { bridge, peptides, reviews, embeds, collectionStatus };
           if (
             bridge.errors > 0 ||
             peptides.errors > 0 ||

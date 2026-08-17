@@ -212,19 +212,20 @@ export default function JefferyReviewDesk() {
         <div className="flex flex-wrap gap-3 text-xs text-white/70">
           <span>Items: {data?.corpus.items ?? 0}</span>
           <span>Live retrievable: {data?.corpus.liveRetrievable ?? 0}</span>
-          <span>
-            Collections: {data?.collections.length ?? 0} (all planned until phase
-            gates)
-          </span>
+          <span>Collections: {data?.collections.length ?? 0}</span>
         </div>
         <div className="mt-2 flex flex-wrap gap-1.5">
           {(data?.collections ?? []).map((c) => (
             <span
               key={c.slug}
-              className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-white/60 border border-white/10"
-              title={c.gate_profile}
+              className={`text-[10px] px-1.5 py-0.5 rounded border ${
+                c.status === "live"
+                  ? "bg-emerald-500/15 text-emerald-200 border-emerald-500/30"
+                  : "bg-white/5 text-white/60 border-white/10"
+              }`}
+              title={`${c.gate_profile} · ${c.status}`}
             >
-              P{c.seeding_phase} {c.slug}
+              P{c.seeding_phase} {c.slug} · {c.status}
             </span>
           ))}
         </div>
