@@ -1,13 +1,34 @@
 /**
  * Prompt 221 Phase 1 wire: Marshall-approved hounddog_gated_items -> kb_items
  * then promote + Jeffery review (fail-closed retrieval).
+ * Phase 2: never route competitive/genetic brand pages into clinical studies.
  */
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { safeLog } from "@/lib/utils/safe-log";
+import {
+  hostFromUrl,
+  isHostAllowlisted,
+  loadApprovedCompetitiveDomains,
+} from "./competitiveAllowlist";
 import { contentHashFromParts } from "./contentHash";
 import { defaultGradeForStudyType } from "./grades";
 import { promoteThenJefferyReview } from "./promotePipeline";
+
+/** Only research-shaped staging types may enter clinical/bioavailability collections. */
+const CLINICAL_SOURCE_TYPES = new Set([
+  "clinical_study",
+  "news",
+]);
+
+const NON_CLINICAL_SOURCE_TYPES = new Set([
+  "competitive_product",
+  "genetic_test",
+  "thanos_peptide",
+  "elysium_genetics",
+  "social_aggregate",
+  "authority_source",
+]);
 
 function extractPmid(url: string): string | null {
   const m = url.match(/pubmed\.ncbi\.nlm\.nih\.gov\/(\d+)/i)
@@ -26,6 +47,12 @@ function looksBioavailability(title: string, summary: string): boolean {
     t.includes("cmax") ||
     t.includes("auc ")
   );
+}
+
+function isClinicalSourceType(sourceType: string | undefined): boolean {
+  if (!sourceType) return true; // legacy rows without type: allow if host check passes
+  if (NON_CLINICAL_SOURCE_TYPES.has(sourceType)) return false;
+  return CLINICAL_SOURCE_TYPES.has(sourceType);
 }
 
 export interface BridgeResult {
@@ -80,6 +107,8 @@ export async function bridgeGatedItemsToKb(limit = 15): Promise<BridgeResult> {
     return stats;
   }
 
+  const competitiveHosts = await loadApprovedCompetitiveDomains();
+
   for (const raw of gated) {
     if (stats.inserted + stats.skipped + stats.errors >= limit * 2) break;
     const row = raw as {
@@ -97,6 +126,22 @@ export async function bridgeGatedItemsToKb(limit = 15): Promise<BridgeResult> {
     const summary = (row.summary || "").trim() || "UNKNOWN";
     if (!title || !url) {
       stats.skipped += 1;
+      continue;
+    }
+
+    // Phase 2: competitive/genetic/social lanes have dedicated bridges
+    if (!isClinicalSourceType(row.source_type)) {
+      stats.skipped += 1;
+      continue;
+    }
+
+    const host = hostFromUrl(url);
+    if (host && competitiveHosts.length > 0 && isHostAllowlisted(host, competitiveHosts)) {
+      stats.skipped += 1;
+      safeLog.info("kb.bridge", "skip competitive host from clinical bridge", {
+        host,
+        source_type: row.source_type ?? null,
+      });
       continue;
     }
 
