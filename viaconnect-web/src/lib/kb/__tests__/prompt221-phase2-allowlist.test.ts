@@ -18,7 +18,11 @@ describe("221 phase2 competitive allowlist", () => {
     );
     expect(PHASE2_COMPETITIVE_SEED_DOMAINS).toContain("23andme.com");
     expect(PHASE2_COMPETITIVE_SEED_DOMAINS).toContain("invitae.com");
-    expect(PHASE2_COMPETITIVE_SEED_DOMAINS.length).toBeGreaterThanOrEqual(25);
+    expect(PHASE2_COMPETITIVE_SEED_DOMAINS).toContain("codeage.com");
+    expect(PHASE2_COMPETITIVE_SEED_DOMAINS).toContain("metagenics.com");
+    expect(PHASE2_COMPETITIVE_SEED_DOMAINS).toContain("organika.com");
+    expect(PHASE2_COMPETITIVE_SEED_DOMAINS).toContain("aor.ca");
+    expect(PHASE2_COMPETITIVE_SEED_DOMAINS.length).toBeGreaterThanOrEqual(40);
   });
 
   it("matches host and subdomains against allowlist", () => {
