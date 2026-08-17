@@ -93,7 +93,7 @@ CREATE OR REPLACE FUNCTION public.kb_search(
 LANGUAGE sql
 STABLE
 SECURITY INVOKER
-SET search_path = public
+SET search_path = public, extensions
 AS $$
   WITH grade_rank AS (
     SELECT * FROM (VALUES
@@ -114,7 +114,7 @@ AS $$
     i.gate_status,
     c.slug AS collection_slug,
     i.payload_type,
-    (i.embedding <=> p_query_embedding)::float AS distance,
+    (i.embedding OPERATOR(extensions.<=>) p_query_embedding)::float AS distance,
     i.provenance
   FROM public.kb_items i
   JOIN public.kb_collections c ON c.id = i.primary_collection_id
@@ -132,7 +132,7 @@ AS $$
       i.evidence_grade IS NULL
       OR COALESCE(gr.r, 5) <= (SELECT r FROM min_r)
     )
-  ORDER BY i.embedding <=> p_query_embedding
+  ORDER BY i.embedding OPERATOR(extensions.<=>) p_query_embedding
   LIMIT GREATEST(1, LEAST(COALESCE(p_limit, 6), 50));
 $$;
 
