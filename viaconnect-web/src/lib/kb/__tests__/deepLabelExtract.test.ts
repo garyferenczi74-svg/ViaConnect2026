@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import { extractLabelAssetUrls } from "../geminiLabelVision";
 import { COMPETITIVE_SKU_SEEDS } from "../competitiveSkuSeeds";
 import { materializeScreenshotToBase64 } from "@/lib/hounddog/firecrawl/client";
+import { normalizeProductUrl } from "../enrichCompetitiveProducts";
 
 describe("extractLabelAssetUrls", () => {
   it("scores supplement-facts image higher than logo", () => {
@@ -44,5 +45,18 @@ describe("materializeScreenshotToBase64", () => {
 describe("expanded SKU seeds", () => {
   it("has 40+ curated product URLs", () => {
     expect(COMPETITIVE_SKU_SEEDS.length).toBeGreaterThanOrEqual(40);
+  });
+});
+
+describe("normalizeProductUrl for seed enrich matching", () => {
+  it("strips www, query, hash, trailing slash", () => {
+    expect(
+      normalizeProductUrl(
+        "https://www.thorne.com/products/dp/vitamin-d-5000/?utm=1#facts"
+      )
+    ).toBe("thorne.com/products/dp/vitamin-d-5000");
+    expect(
+      normalizeProductUrl("https://thorne.com/products/dp/vitamin-d-5000/")
+    ).toBe("thorne.com/products/dp/vitamin-d-5000");
   });
 });

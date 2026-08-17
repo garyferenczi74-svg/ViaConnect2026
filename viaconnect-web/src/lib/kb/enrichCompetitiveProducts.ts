@@ -6,6 +6,10 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { safeLog } from "@/lib/utils/safe-log";
 import { defaultBudget } from "@/lib/hounddog/firecrawl/client";
+import {
+  augmentProductHintWithUrlDose,
+  COMPETITIVE_SKU_SEEDS,
+} from "./competitiveSkuSeeds";
 import { deepExtractCompetitiveLabel } from "./deepLabelExtract";
 import {
   hasUnknownOnlyIngredients,
@@ -21,6 +25,10 @@ export interface EnrichCompetitiveResult {
   geminiUsed: number;
   visionUsed: number;
   interactUsed: number;
+  /** UNKNOWN (or noise) products whose source_url matched a curated SKU seed. */
+  seedMatched: number;
+  /** Deep scrapes forced for seed-matched UNKNOWN rows. */
+  seedForcedScrapes: number;
   skipped: number;
   errors: number;
   sample: Array<{
@@ -28,6 +36,52 @@ export interface EnrichCompetitiveResult {
     ingredientCount: number;
     confidence: number;
   }>;
+}
+
+/** Normalize product URLs for seed matching (host, path, no trailing slash). */
+export function normalizeProductUrl(raw: string): string {
+  try {
+    const u = new URL(raw.trim());
+    u.hash = "";
+    u.search = "";
+    let host = u.hostname.toLowerCase().replace(/^www\./, "");
+    let path = u.pathname.replace(/\/+$/, "") || "";
+    path = path.toLowerCase();
+    return `${host}${path}`;
+  } catch {
+    return raw.trim().toLowerCase().replace(/\/+$/, "").replace(/^https?:\/\//, "").replace(/^www\./, "");
+  }
+}
+
+function buildSeedUrlIndex(): {
+  byNorm: Map<string, { url: string; productHint: string; brandHint: string }>;
+} {
+  const byNorm = new Map<
+    string,
+    { url: string; productHint: string; brandHint: string }
+  >();
+  for (const s of COMPETITIVE_SKU_SEEDS) {
+    const n = normalizeProductUrl(s.url);
+    if (!byNorm.has(n)) {
+      byNorm.set(n, {
+        url: s.url,
+        productHint: s.productHint,
+        brandHint: s.brandHint,
+      });
+    }
+  }
+  return { byNorm };
+}
+
+function matchSeed(
+  sourceUrls: string[],
+  byNorm: Map<string, { url: string; productHint: string; brandHint: string }>
+): { url: string; productHint: string; brandHint: string } | null {
+  for (const u of sourceUrls) {
+    const hit = byNorm.get(normalizeProductUrl(u));
+    if (hit) return hit;
+  }
+  return null;
 }
 
 function isUnknownRows(rows: unknown): boolean {
@@ -74,9 +128,20 @@ function isLowQualityRows(rows: unknown): boolean {
 
 export async function enrichCompetitiveProducts(
   limit = 15,
-  opts?: { allowScrape?: boolean }
+  opts?: {
+    allowScrape?: boolean;
+    /**
+     * Prefer curated COMPETITIVE_SKU_SEEDS URLs that are still UNKNOWN and
+     * force deep re-scrape (interact + vision). Default true.
+     */
+    preferSeedUnknown?: boolean;
+    /** Max deep scrapes this run (seed-matched get first claim). */
+    maxScrapes?: number;
+  }
 ): Promise<EnrichCompetitiveResult> {
   const allowScrape = opts?.allowScrape !== false;
+  const preferSeedUnknown = opts?.preferSeedUnknown !== false;
+  const maxScrapes = opts?.maxScrapes ?? 10;
   const stats: EnrichCompetitiveResult = {
     considered: 0,
     enriched: 0,
@@ -85,6 +150,8 @@ export async function enrichCompetitiveProducts(
     geminiUsed: 0,
     visionUsed: 0,
     interactUsed: 0,
+    seedMatched: 0,
+    seedForcedScrapes: 0,
     skipped: 0,
     errors: 0,
     sample: [],
@@ -98,6 +165,9 @@ export async function enrichCompetitiveProducts(
     .maybeSingle();
   if (!coll?.id) return stats;
 
+  const { byNorm: seedByNorm } = buildSeedUrlIndex();
+
+  // Pull a wide window so seed-matched UNKNOWN is not starved by recent updates
   const { data: items, error } = await sb
     .from("kb_items")
     .select("id, title, source_urls, extraction_confidence, updated_at")
@@ -105,8 +175,8 @@ export async function enrichCompetitiveProducts(
     .eq("payload_type", "product")
     .in("gate_status", ["approved", "lex_approved"])
     .eq("jeffery_verdict", "approved")
-    .order("updated_at", { ascending: false })
-    .limit(Math.max(limit * 6, 100));
+    .order("updated_at", { ascending: true }) // oldest first; seeds re-ranked below
+    .limit(Math.max(limit * 12, 200));
 
   if (error || !items?.length) {
     if (error) {
@@ -117,14 +187,23 @@ export async function enrichCompetitiveProducts(
     return stats;
   }
 
-  // Load product rows and prioritize: low-quality noise first, then UNKNOWN
+  // Priority:
+  //  0 = UNKNOWN (or noise) on curated seed URL → force re-scrape first
+  //  1 = low-quality noise (refilter cheap)
+  //  2 = UNKNOWN non-seed
+  //  3 = already good
   const ranked: Array<{
     item: (typeof items)[0];
     product: Record<string, unknown>;
     priority: number;
+    seed: { url: string; productHint: string; brandHint: string } | null;
   }> = [];
   for (const item of items) {
     const itemId = String((item as { id: string }).id);
+    const urls = Array.isArray((item as { source_urls?: string[] }).source_urls)
+      ? ((item as { source_urls: string[] }).source_urls as string[])
+      : [];
+    const seed = preferSeedUnknown ? matchSeed(urls, seedByNorm) : null;
     const { data: product } = await sb
       .from("kb_products")
       .select(
@@ -134,26 +213,48 @@ export async function enrichCompetitiveProducts(
       .maybeSingle();
     if (!product) continue;
     const rows = product.ingredient_rows;
+    const unknown = isUnknownRows(rows);
+    const noisy = isLowQualityRows(rows) && !unknown;
     let priority = 3;
-    if (isLowQualityRows(rows) && !isUnknownRows(rows)) priority = 0; // noise first
-    else if (isUnknownRows(rows)) priority = 1;
-    else priority = 2; // already good
-    ranked.push({ item, product: product as Record<string, unknown>, priority });
+    if (preferSeedUnknown && seed && (unknown || noisy)) {
+      priority = 0; // seed UNKNOWN / noise first — force scrape
+    } else if (noisy) {
+      priority = 1;
+    } else if (unknown) {
+      priority = 2;
+    } else {
+      priority = 3;
+    }
+    ranked.push({
+      item,
+      product: product as Record<string, unknown>,
+      priority,
+      seed,
+    });
   }
   ranked.sort((a, b) => a.priority - b.priority);
 
   const budget = defaultBudget();
-  budget.maxPages = Math.min(budget.maxPages, 12);
+  // Seed force-rescrape burns more pages; allow a bit more headroom
+  budget.maxPages = Math.min(budget.maxPages, preferSeedUnknown ? 16 : 12);
 
-  for (const { item, product } of ranked) {
+  for (const { item, product, seed } of ranked) {
     if (stats.enriched + stats.stillUnknown + stats.errors >= limit) break;
     stats.considered += 1;
     const itemId = String((item as { id: string }).id);
-    const title = String((item as { title?: string }).title ?? "");
+    let title = String((item as { title?: string }).title ?? "");
     const urls = Array.isArray((item as { source_urls?: string[] }).source_urls)
       ? ((item as { source_urls: string[] }).source_urls as string[])
       : [];
-    const url = urls[0] ?? "";
+    // Prefer seed canonical URL (stable PDP) over whatever was stored first
+    const url = seed?.url || urls[0] || "";
+    const isSeedMatch = Boolean(seed);
+    if (isSeedMatch) stats.seedMatched += 1;
+    // Seed productHint + URL dose for title_dose when page markdown is thin
+    if (seed?.productHint) {
+      title =
+        augmentProductHintWithUrlDose(seed.url, seed.productHint) || title;
+    }
 
     const alreadyKnown =
       !isUnknownRows(product.ingredient_rows) &&
@@ -166,11 +267,12 @@ export async function enrichCompetitiveProducts(
     }
 
     // Cheap path: re-filter noisy rows through latest parser (no scrape).
-    // Skip pure UNKNOWN so deep scrape can still try later.
+    // Seed-matched UNKNOWN/noise falls through to force deep scrape instead.
     if (
       Array.isArray(product.ingredient_rows) &&
       isLowQualityRows(product.ingredient_rows) &&
-      !isUnknownRows(product.ingredient_rows)
+      !isUnknownRows(product.ingredient_rows) &&
+      !isSeedMatch
     ) {
       const rebuilt: CompetitiveIngredientRow[] = [];
       for (const row of product.ingredient_rows as CompetitiveIngredientRow[]) {
@@ -223,6 +325,7 @@ export async function enrichCompetitiveProducts(
         continue;
       }
       // Pure noise or still-low-quality: clear to honest UNKNOWN (no scrape)
+      // Non-seed only — seed matches force scrape below
       if (unique.length === 0 || isLowQualityRows(unique)) {
         const shell = parseCompetitiveLabelText("", { title });
         await applyProductFacts(sb, itemId, {
@@ -246,72 +349,83 @@ export async function enrichCompetitiveProducts(
       }
     }
 
-    // Prefer staging full_text for this URL
+    // Prefer staging full_text for this URL (try seed URL + stored URLs)
     let text = "";
-    if (url) {
+    let appliedFromStaging = false;
+    const stagingUrls = Array.from(new Set([url, ...urls].filter(Boolean)));
+    for (const stagingUrl of stagingUrls) {
       const { data: staged } = await sb
         .from("hounddog_staging_items")
         .select("full_text_excerpt, summary, title, raw_payload")
-        .eq("source_url", url)
+        .eq("source_url", stagingUrl)
         .maybeSingle();
-      if (staged) {
-        text = String(
-          (staged as { full_text_excerpt?: string }).full_text_excerpt ||
-            (staged as { summary?: string }).summary ||
-            ""
-        );
-        const payload = (staged as { raw_payload?: Record<string, unknown> })
-          .raw_payload;
-        if (
-          payload &&
-          Array.isArray(payload.ingredient_rows) &&
-          !isUnknownRows(payload.ingredient_rows) &&
-          !isLowQualityRows(payload.ingredient_rows)
-        ) {
-          const pre = parseCompetitiveLabelText(text, { title });
-          const rows = payload.ingredient_rows as CompetitiveIngredientRow[];
-          const facts = {
-            ...pre,
-            ingredient_rows: rows,
-            extraction_confidence: Math.max(pre.extraction_confidence, 78),
-          };
-          await applyProductFacts(sb, itemId, facts);
-          stats.enriched += 1;
-          stats.sample.push({
-            itemId,
-            ingredientCount: rows.filter((r) => r.ingredient_name !== "UNKNOWN")
-              .length,
-            confidence: facts.extraction_confidence,
-          });
-          continue;
-        }
+      if (!staged) continue;
+      const excerpt = String(
+        (staged as { full_text_excerpt?: string }).full_text_excerpt ||
+          (staged as { summary?: string }).summary ||
+          ""
+      );
+      if (excerpt.length > text.length) text = excerpt;
+      const payload = (staged as { raw_payload?: Record<string, unknown> })
+        .raw_payload;
+      // Apply good staging ingredients when present (seed or not).
+      // Stale UNKNOWN staging is ignored → falls through to force re-scrape.
+      if (
+        payload &&
+        Array.isArray(payload.ingredient_rows) &&
+        !isUnknownRows(payload.ingredient_rows) &&
+        !isLowQualityRows(payload.ingredient_rows)
+      ) {
+        const pre = parseCompetitiveLabelText(text || title, { title });
+        const rows = payload.ingredient_rows as CompetitiveIngredientRow[];
+        const factsFromStage = {
+          ...pre,
+          ingredient_rows: rows,
+          extraction_confidence: Math.max(pre.extraction_confidence, 78),
+        };
+        await applyProductFacts(sb, itemId, factsFromStage);
+        stats.enriched += 1;
+        stats.sample.push({
+          itemId,
+          ingredientCount: rows.filter((r) => r.ingredient_name !== "UNKNOWN")
+            .length,
+          confidence: factsFromStage.extraction_confidence,
+        });
+        appliedFromStaging = true;
+        break;
       }
     }
+    if (appliedFromStaging) continue;
 
     // Deep path: interact tabs + Gemini text + vision OCR
+    // Seed-matched UNKNOWN always force-scrapes when budget remains.
     let facts = parseCompetitiveLabelText(text || title, { title });
-    if (
+    const needsDeep =
+      hasUnknownOnlyIngredients(facts.ingredient_rows) ||
+      isLowQualityRows(facts.ingredient_rows) ||
+      (isSeedMatch && isUnknownRows(product.ingredient_rows));
+    const canScrape =
       allowScrape &&
       url &&
-      (hasUnknownOnlyIngredients(facts.ingredient_rows) ||
-        isLowQualityRows(facts.ingredient_rows)) &&
+      needsDeep &&
       !budget.hitBudget &&
-      stats.scraped < 8
-    ) {
+      stats.scraped < maxScrapes;
+
+    if (canScrape) {
       try {
+        if (isSeedMatch) stats.seedForcedScrapes += 1;
         const deep = await deepExtractCompetitiveLabel({
           url,
           title,
-          existingMarkdown: text,
+          // Seed force path: ignore thin/stale markdown so interact+vision run
+          existingMarkdown: isSeedMatch ? "" : text,
           budget,
           allowInteract: true,
-          // Raise vision cap so UNKNOWN PDP rows can still hit OCR path
-          allowVision: stats.visionUsed < 8,
+          allowVision: stats.visionUsed < (isSeedMatch ? 10 : 8),
         });
         stats.scraped += deep.scraped ? 1 : 0;
         if (deep.interacted) stats.interactUsed += 1;
         if (deep.path === "gemini_text") stats.geminiUsed += 1;
-        // Count vision attempts (budget + smoke), not only successful OCR
         if (deep.visionUsed) stats.visionUsed += 1;
         facts = deep.facts;
         if (deep.markdown) text = deep.markdown;
@@ -337,7 +451,8 @@ export async function enrichCompetitiveProducts(
               list_price: facts.list_price,
               extraction_confidence: facts.extraction_confidence,
               parse_notes: facts.parse_notes,
-              handler_version: "221.phase2.c1deep.1",
+              seed_forced: isSeedMatch,
+              handler_version: "221.phase2.c1deep.2",
             },
           })
           .eq("source_url", url);
@@ -349,8 +464,17 @@ export async function enrichCompetitiveProducts(
     }
 
     if (!text.trim() && hasUnknownOnlyIngredients(facts.ingredient_rows)) {
-      stats.stillUnknown += 1;
-      continue;
+      // Last resort: title_dose from seed productHint (already in title)
+      const titleOnly = parseCompetitiveLabelText("", { title });
+      if (!hasUnknownOnlyIngredients(titleOnly.ingredient_rows)) {
+        facts = {
+          ...titleOnly,
+          parse_notes: ["seed_title_dose", ...titleOnly.parse_notes],
+        };
+      } else {
+        stats.stillUnknown += 1;
+        continue;
+      }
     }
 
     try {
@@ -360,7 +484,6 @@ export async function enrichCompetitiveProducts(
       }
       if (hasUnknownOnlyIngredients(facts.ingredient_rows)) {
         stats.stillUnknown += 1;
-        // Clear packaging-noise rows so coverage reflects honest UNKNOWN
         await applyProductFacts(sb, itemId, {
           ...facts,
           ingredient_rows: [
@@ -371,7 +494,9 @@ export async function enrichCompetitiveProducts(
               dose_unit: null,
               form: null,
               dose_confidence: 0,
-              note: "No parseable Supplement Facts dose lines after scrape",
+              note: isSeedMatch
+                ? "Seed force re-scrape: no parseable dose lines"
+                : "No parseable Supplement Facts dose lines after scrape",
             },
           ],
           extraction_confidence: Math.min(facts.extraction_confidence, 50),

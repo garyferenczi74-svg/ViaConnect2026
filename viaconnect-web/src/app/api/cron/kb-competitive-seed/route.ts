@@ -41,8 +41,12 @@ export async function POST(request: Request): Promise<Response> {
     // Larger bridge window so seed staging with ingredients is not starved
     // by older UNKNOWN gated rows.
     const bridge = await bridgeCompetitiveToKb(24);
-    // Larger enrich batch to clear Serv.Size / UNKNOWN noise after seed
-    const enrich = await enrichCompetitiveProducts(14, { allowScrape: true });
+    // Prefer curated seed URLs that are still UNKNOWN → force deep re-scrape
+    const enrich = await enrichCompetitiveProducts(18, {
+      allowScrape: true,
+      preferSeedUnknown: true,
+      maxScrapes: 12,
+    });
 
     return Response.json({
       ok: ingest.staged > 0 || bridge.withIngredients > 0 || enrich.enriched > 0,

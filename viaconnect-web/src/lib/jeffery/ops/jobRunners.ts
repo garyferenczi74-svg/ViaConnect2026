@@ -177,8 +177,10 @@ export async function runCadenceJob(
           const { enrichCompetitiveProducts } = await import(
             "@/lib/kb/enrichCompetitiveProducts"
           );
-          const competitiveEnrich = await enrichCompetitiveProducts(12, {
+          const competitiveEnrich = await enrichCompetitiveProducts(14, {
             allowScrape: true,
+            preferSeedUnknown: true,
+            maxScrapes: 10,
           });
           const misbridgeRepair = await repairMisbridgedCompetitiveStudies(40);
           const reviews = await processPendingJefferyKbReviews(20);
