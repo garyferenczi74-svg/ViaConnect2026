@@ -42,12 +42,16 @@ function isLowQualityRows(rows: unknown): boolean {
   const bad = list.filter((r) => {
     const n = String(r.ingredient_name ?? "");
     return (
-      /net\s*wt|fl\.?\s*oz|calories?|softgels?\s+per\s+serving/i.test(n) ||
-      (r.dose_unit === "mL" && /oz|net|bottle|wt/i.test(n))
+      /net\s*wt|fl\.?\s*oz|calories?|softgels?\s*per\s*serving|per serving|teaspoons?|tablespoons?|approx|providing approximately|professional groups|salmon is|level teaspoon/i.test(
+        n
+      ) ||
+      (r.dose_unit === "mL" && /oz|net|bottle|wt/i.test(n)) ||
+      // Product marketing titles used as the only "ingredient"
+      (n.length > 40 && r.dose_amount != null && !/\b(vitamin|magnesium|calcium|omega|curcumin|folate|zinc|iron|epa|dha|methyl)\b/i.test(n))
     );
   });
-  // All rows bad, or majority packaging noise
-  return bad.length > 0 && bad.length >= Math.ceil(list.length / 2);
+  // Re-enrich if any packaging/prose noise remains
+  return bad.length > 0;
 }
 
 export async function enrichCompetitiveProducts(
