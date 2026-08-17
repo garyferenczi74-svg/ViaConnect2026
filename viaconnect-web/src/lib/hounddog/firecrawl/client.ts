@@ -58,9 +58,10 @@ function apiKey(): string | null {
 
 export type FirecrawlAction =
   | { type: 'wait'; milliseconds?: number; selector?: string }
-  | { type: 'click'; selector: string }
-  | { type: 'scroll'; direction?: 'up' | 'down'; }
-  | { type: 'screenshot'; fullPage?: boolean };
+  | { type: 'click'; selector: string; all?: boolean }
+  | { type: 'scroll'; direction?: 'up' | 'down' }
+  | { type: 'screenshot'; fullPage?: boolean }
+  | { type: 'executeJavascript'; script: string };
 
 export interface ScrapeResult {
   ok: boolean;
@@ -205,6 +206,12 @@ export async function firecrawlScrape(
       if (a.type === 'screenshot') {
         return { type: 'screenshot', fullPage: a.fullPage ?? true };
       }
+      if (a.type === 'executeJavascript') {
+        return { type: 'executeJavascript', script: a.script };
+      }
+      if (a.type === 'click') {
+        return { type: 'click', selector: a.selector, all: a.all ?? false };
+      }
       return a;
     });
   }
@@ -294,21 +301,45 @@ export async function firecrawlScrapeSupplementFacts(
   budget: FirecrawlBudget,
   opts?: { timeoutMs?: number; screenshot?: boolean },
 ): Promise<ScrapeResult> {
-  // Lightweight interact: wait for JS hydration + scroll + optional screenshot action.
-  // formats.screenshot is primary; action screenshot populates actions.screenshots.
+  // Interact: hydrate → open facts/ingredients tab → scroll → screenshot.
+  // JS click is more reliable than brittle CSS across brand PDPs.
   const wantShot = opts?.screenshot ?? true;
+  const openFactsTabScript = `
+(() => {
+  const re = /supplement\\s*facts|nutrition\\s*facts|ingredients|label|drug\\s*facts/i;
+  const nodes = Array.from(document.querySelectorAll(
+    'button, a, [role="tab"], [data-tab], .tab, .accordion-title, summary, h2, h3'
+  ));
+  for (const el of nodes) {
+    const t = (el.innerText || el.textContent || el.getAttribute('aria-label') || '').trim();
+    if (t && re.test(t) && t.length < 80) {
+      try { el.click(); return 'clicked:' + t.slice(0, 40); } catch (e) {}
+    }
+  }
+  // Expand collapsed sections that mention facts
+  for (const el of Array.from(document.querySelectorAll('details'))) {
+    const t = (el.innerText || '').slice(0, 120);
+    if (re.test(t)) { try { el.open = true; } catch (e) {} }
+  }
+  return 'no-tab';
+})()
+`.trim();
+
   const actions: FirecrawlAction[] = [
-    { type: 'wait', milliseconds: 1800 },
-    { type: 'scroll', direction: 'down' },
-    { type: 'wait', milliseconds: 900 },
+    { type: 'wait', milliseconds: 1600 },
+    // JS click is fail-open (returns no-tab); avoid CSS click that can 400 the scrape
+    { type: 'executeJavascript', script: openFactsTabScript },
+    { type: 'wait', milliseconds: 1000 },
     { type: 'scroll', direction: 'down' },
     { type: 'wait', milliseconds: 700 },
+    { type: 'scroll', direction: 'down' },
+    { type: 'wait', milliseconds: 600 },
   ];
   if (wantShot) {
     actions.push({ type: 'screenshot', fullPage: true });
   }
   return firecrawlScrape(url, budget, {
-    timeoutMs: opts?.timeoutMs ?? 50_000,
+    timeoutMs: opts?.timeoutMs ?? 55_000,
     includeScreenshot: wantShot,
     onlyMainContent: false,
     actions,

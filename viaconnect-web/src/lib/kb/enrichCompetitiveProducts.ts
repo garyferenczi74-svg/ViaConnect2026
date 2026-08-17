@@ -43,7 +43,7 @@ function isLowQualityRows(rows: unknown): boolean {
   const bad = list.filter((r) => {
     const n = String(r.ingredient_name ?? "");
     return (
-      /net\s*wt|fl\.?\s*oz|calories?|softgels?\s*per\s*serving|per serving|teaspoons?|tablespoons?|approx|providing approximately|professional groups|salmon is|level teaspoon|ultimate omega|recommended daily|daily intake|serv\.?\s*size|provides?\s|add\s+l-|!\[|\]\(|also available|travel[- ]friendly|supercharged|brain function|by adding|double strength/i.test(
+      /net\s*wt|fl\.?\s*oz|calories?|softgels?\s*per\s*serving|per serving|teaspoons?|tablespoons?|approx|providing approximately|professional groups|salmon is|level teaspoon|ultimate omega|recommended daily|daily intake|serv\.?\s*size|provides?\s|add\s+l-|!\[|\]\(|also available|travel[- ]friendly|supercharged|brain function|by adding|double strength|mega vitamin|iu\)|customers also|you may also|related products|member price/i.test(
         n
       ) ||
       (r.dose_unit === "mL" &&
@@ -53,6 +53,13 @@ function isLowQualityRows(rows: unknown): boolean {
       // Serving-size lines mistaken for ingredients
       /^\d/.test(n.trim()) ||
       /^[a-z]{1,3}\s/i.test(n.trim()) ||
+      // OCR fragments / dangling punctuation names
+      /^[A-Za-z]{1,4}\)/.test(n.trim()) ||
+      // Implausible single-nutrient mega doses often from cross-sell scrape
+      (r.dose_amount != null &&
+        r.dose_amount >= 10000 &&
+        /k2|vitamin\s*k/i.test(n) &&
+        r.dose_unit === "mcg") ||
       // Product marketing titles / long prose used as "ingredient"
       (n.length > 35 &&
         r.dose_amount != null &&

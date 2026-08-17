@@ -12,6 +12,46 @@ export interface CompetitiveSkuSeed {
   productHint: string;
 }
 
+/**
+ * If productHint lacks a dose but the URL slug encodes one
+ * (zinc-picolinate-50-mg, vitamin-d-3-softgels-5000-iu, zinc-15),
+ * append that dose. Never invents — only digits present in the URL.
+ */
+export function augmentProductHintWithUrlDose(
+  url: string,
+  productHint: string
+): string {
+  const hint = (productHint || "").trim();
+  if (/\b\d{1,5}(?:\.\d{1,3})?\s*(mg|mcg|µg|ug|iu|IU|g|ml|mL)\b/.test(hint)) {
+    return hint;
+  }
+  try {
+    const path = new URL(url).pathname.toLowerCase();
+    const explicit = path.match(
+      /(?:^|[-_/])(\d{2,5})[-_]?((?:mg|mcg|iu|g))(?:[-_/.\?]|$)/i
+    );
+    if (explicit) {
+      const unit =
+        explicit[2].toLowerCase() === "iu" ? "IU" : explicit[2].toLowerCase();
+      return `${hint} ${explicit[1]} ${unit}`.trim();
+    }
+    // Brand slug patterns: zinc-15, zinc-30, vitamin-d-5000 (IU implied for D)
+    const zincIron = path.match(
+      /(?:zinc|iron)[-_](\d{1,3})(?:\.html)?(?:\/|$)/i
+    );
+    if (zincIron) return `${hint} ${zincIron[1]} mg`.trim();
+    const vitD = path.match(
+      /(?:vitamin[-_]?d(?:3)?|d3?)[-_](\d{3,5})(?:\.html)?(?:\/|$)/i
+    );
+    if (vitD) return `${hint} ${vitD[1]} IU`.trim();
+    const folate = path.match(/folate[-_](\d{2,4})(?:\.html)?(?:\/|$)/i);
+    if (folate) return `${hint} ${folate[1]} mcg`.trim();
+  } catch {
+    /* open */
+  }
+  return hint;
+}
+
 /** Prefer /products/ paths; facts-only targets. */
 export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
   // Thorne
@@ -25,13 +65,13 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     url: "https://www.thorne.com/products/dp/vitamin-c-with-flavonoids",
     category: "base-formulations",
     brandHint: "Thorne",
-    productHint: "Vitamin C with Flavonoids",
+    productHint: "Vitamin C 500 mg with Flavonoids",
   },
   {
     url: "https://www.thorne.com/products/dp/magnesium-bisglycinate",
     category: "base-formulations",
     brandHint: "Thorne",
-    productHint: "Magnesium Bisglycinate",
+    productHint: "Magnesium Bisglycinate 200 mg",
   },
   {
     url: "https://www.thorne.com/products/dp/methyl-guard-plus",
@@ -96,7 +136,7 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     url: "https://www.nowfoods.com/products/minerals/magnesium-citrate-softgels",
     category: "base-formulations",
     brandHint: "NOW Foods",
-    productHint: "Magnesium Citrate Softgels",
+    productHint: "Magnesium Citrate 400 mg",
   },
   {
     url: "https://www.nowfoods.com/products/vitamins/vitamin-d-3-softgels-5000-iu",
@@ -115,7 +155,7 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     url: "https://www.lifeextension.com/vitamins-supplements/item00407/super-bio-curcumin-turmeric-extract",
     category: "advanced-formulas",
     brandHint: "Life Extension",
-    productHint: "Super Bio-Curcumin",
+    productHint: "Super Bio-Curcumin Curcumin 400 mg",
   },
   // BodyBio
   {
@@ -129,7 +169,7 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     url: "https://www.designsforhealth.com/products/magnegel",
     category: "base-formulations",
     brandHint: "Designs for Health",
-    productHint: "MagneGel",
+    productHint: "MagneGel Magnesium",
   },
   // Ritual
   {
@@ -174,32 +214,32 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     url: "https://www.thorne.com/products/dp/buffered-c-powder",
     category: "base-formulations",
     brandHint: "Thorne",
-    productHint: "Buffered C Powder",
+    productHint: "Buffered C Powder Vitamin C 230 mg",
   },
   {
     url: "https://www.thorne.com/products/dp/ferrasorb",
     category: "base-formulations",
     brandHint: "Thorne",
-    productHint: "Ferrasorb",
+    productHint: "Ferrasorb Iron",
   },
   {
     url: "https://www.thorne.com/products/dp/5-mthf",
     category: "methylation-snp",
     brandHint: "Thorne",
-    productHint: "5-MTHF",
+    productHint: "5-MTHF 1 mg",
   },
   // More Pure Encapsulations
   {
     url: "https://www.pureencapsulations.com/methylfolate.html",
     category: "methylation-snp",
     brandHint: "Pure Encapsulations",
-    productHint: "Methylfolate",
+    productHint: "Methylfolate 1000 mcg",
   },
   {
     url: "https://www.pureencapsulations.com/zinc-15.html",
     category: "base-formulations",
     brandHint: "Pure Encapsulations",
-    productHint: "Zinc 15",
+    productHint: "Zinc 15 mg",
   },
   {
     url: "https://www.pureencapsulations.com/vitamin-d3-5000-iu.html",
@@ -243,13 +283,13 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     url: "https://www.nowfoods.com/products/vitamins/vitamin-c-1000-mg-with-rose-hips-tablets",
     category: "base-formulations",
     brandHint: "NOW Foods",
-    productHint: "Vitamin C-1000",
+    productHint: "Vitamin C 1000 mg",
   },
   {
     url: "https://www.nowfoods.com/products/herbs/curcumin-turmeric-root-extract",
     category: "advanced-formulas",
     brandHint: "NOW Foods",
-    productHint: "Curcumin",
+    productHint: "Curcumin Turmeric Root Extract",
   },
   // More Life Extension
   {
@@ -262,13 +302,13 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     url: "https://www.lifeextension.com/vitamins-supplements/item01936/magnesium-caps",
     category: "base-formulations",
     brandHint: "Life Extension",
-    productHint: "Magnesium Caps",
+    productHint: "Magnesium Caps 500 mg",
   },
   {
     url: "https://www.lifeextension.com/vitamins-supplements/item01718/vitamin-d3",
     category: "base-formulations",
     brandHint: "Life Extension",
-    productHint: "Vitamin D3",
+    productHint: "Vitamin D3 5000 IU",
   },
   // Nordic more
   {
@@ -301,7 +341,7 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     url: "https://www.momentous.com/products/creatine",
     category: "advanced-formulas",
     brandHint: "Momentous",
-    productHint: "Creapure Creatine",
+    productHint: "Creapure Creatine 5000 mg",
   },
   {
     url: "https://www.momentous.com/products/omega-3",
@@ -320,14 +360,14 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     url: "https://www.jarrow.com/product/methyl-b-12",
     category: "methylation-snp",
     brandHint: "Jarrow Formulas",
-    productHint: "Methyl B-12",
+    productHint: "Methyl B-12 1000 mcg",
   },
   // Garden of Life
   {
     url: "https://www.gardenoflife.com/products/vitamin-code-raw-d3",
     category: "base-formulations",
     brandHint: "Garden of Life",
-    productHint: "Vitamin Code RAW D3",
+    productHint: "Vitamin Code RAW D3 2000 IU",
   },
   // Four Sigmatic
   {
@@ -341,7 +381,7 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     url: "https://www.designsforhealth.com/products/vitamin-d-supreme",
     category: "base-formulations",
     brandHint: "Designs for Health",
-    productHint: "Vitamin D Supreme",
+    productHint: "Vitamin D Supreme 5000 IU",
   },
   {
     url: "https://www.designsforhealth.com/products/omegavail-ultra",
@@ -361,7 +401,7 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     url: "https://www.livonlabs.com/products/lypo-spheric-vitamin-c",
     category: "advanced-formulas",
     brandHint: "LivOn Labs",
-    productHint: "Lypo-Spheric Vitamin C",
+    productHint: "Lypo-Spheric Vitamin C 1000 mg",
   },
   // High-yield Thorne catalog (facts often in HTML)
   {
@@ -380,19 +420,19 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     url: "https://www.thorne.com/products/dp/vitamin-d-5000",
     category: "base-formulations",
     brandHint: "Thorne",
-    productHint: "Vitamin D 5000",
+    productHint: "Vitamin D 5000 IU",
   },
   {
     url: "https://www.thorne.com/products/dp/zinc-picolinate-30",
     category: "base-formulations",
     brandHint: "Thorne",
-    productHint: "Zinc Picolinate 30",
+    productHint: "Zinc Picolinate 30 mg",
   },
   {
     url: "https://www.thorne.com/products/dp/iron-bisglycinate",
     category: "base-formulations",
     brandHint: "Thorne",
-    productHint: "Iron Bisglycinate",
+    productHint: "Iron Bisglycinate 25 mg",
   },
   {
     url: "https://www.thorne.com/products/dp/b-complex-12",
@@ -404,7 +444,7 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     url: "https://www.thorne.com/products/dp/curcumin-phytosome",
     category: "advanced-formulas",
     brandHint: "Thorne",
-    productHint: "Curcumin Phytosome",
+    productHint: "Curcumin Phytosome 500 mg",
   },
   {
     url: "https://www.thorne.com/products/dp/omega-3-w-coq10",
@@ -423,7 +463,7 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     url: "https://www.lifeextension.com/vitamins-supplements/item01718/vitamin-d3",
     category: "base-formulations",
     brandHint: "Life Extension",
-    productHint: "Vitamin D3",
+    productHint: "Vitamin D3 5000 IU",
   },
   {
     url: "https://www.lifeextension.com/vitamins-supplements/item01803/super-k",
@@ -435,7 +475,7 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     url: "https://www.lifeextension.com/vitamins-supplements/item01561/super-ubiquinol-coq10-with-enhanced-mitochondrial-support",
     category: "advanced-formulas",
     brandHint: "Life Extension",
-    productHint: "Super Ubiquinol CoQ10",
+    productHint: "Super Ubiquinol CoQ10 100 mg",
   },
   // NOW high-facts
   {
@@ -454,13 +494,13 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     url: "https://www.nowfoods.com/products/vitamins/vitamin-c-1000-mg-with-rose-hips-tablets",
     category: "base-formulations",
     brandHint: "NOW Foods",
-    productHint: "Vitamin C-1000",
+    productHint: "Vitamin C 1000 mg",
   },
   {
     url: "https://www.nowfoods.com/products/minerals/magnesium-citrate-softgels",
     category: "base-formulations",
     brandHint: "NOW Foods",
-    productHint: "Magnesium Citrate Softgels",
+    productHint: "Magnesium Citrate 400 mg",
   },
   // Pure Encapsulations
   {
@@ -479,26 +519,26 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     url: "https://www.pureencapsulations.com/zinc-30.html",
     category: "base-formulations",
     brandHint: "Pure Encapsulations",
-    productHint: "Zinc 30",
+    productHint: "Zinc 30 mg",
   },
   // High-yield single-ingredient / facts-forward PDPs (vision + title dose)
   {
     url: "https://www.thorne.com/products/dp/vitamin-d-k2",
     category: "base-formulations",
     brandHint: "Thorne",
-    productHint: "Vitamin D + K2",
+    productHint: "Vitamin D 1000 IU + K2",
   },
   {
     url: "https://www.thorne.com/products/dp/creatine",
     category: "base-formulations",
     brandHint: "Thorne",
-    productHint: "Creatine",
+    productHint: "Creatine 5000 mg",
   },
   {
     url: "https://www.seekinghealth.com/products/optimal-magnesium",
     category: "base-formulations",
     brandHint: "Seeking Health",
-    productHint: "Optimal Magnesium",
+    productHint: "Optimal Magnesium 150 mg",
   },
   {
     url: "https://www.seekinghealth.com/products/optimal-vitamin-d3-k2-drops",
@@ -516,7 +556,7 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     url: "https://www.lifeextension.com/vitamins-supplements/item01913/magnesium-caps",
     category: "base-formulations",
     brandHint: "Life Extension",
-    productHint: "Magnesium Caps",
+    productHint: "Magnesium Caps 500 mg",
   },
   {
     url: "https://www.nowfoods.com/products/supplements/magnesium-citrate-pure-powder",
@@ -540,7 +580,7 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     url: "https://www.nordicnaturals.com/consumers/vitamin-d3-1000",
     category: "base-formulations",
     brandHint: "Nordic Naturals",
-    productHint: "Vitamin D3 1000",
+    productHint: "Vitamin D3 1000 IU",
   },
 ] as const;
 

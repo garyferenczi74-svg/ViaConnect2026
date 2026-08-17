@@ -18,6 +18,7 @@ import {
   loadApprovedCompetitiveSources,
 } from "@/lib/kb/competitiveAllowlist";
 import {
+  augmentProductHintWithUrlDose,
   COMPETITIVE_SKU_SEEDS,
   looksLikeProductDetailUrl,
 } from "@/lib/kb/competitiveSkuSeeds";
@@ -178,8 +179,13 @@ export async function runCompetitiveIngest(opts?: {
 
     stats.discovered += 1;
 
+    // Prefer dose-bearing seed titles; pull dose from URL slug when encoded
+    // (zinc-15, vitamin-d-5000-iu) — never invent digits not present in URL/hint.
     const titleHint = stripMarketingNoise(
-      (input.titleHint || "Competitive product").slice(0, 240)
+      augmentProductHintWithUrlDose(
+        input.url,
+        input.titleHint || "Competitive product"
+      ).slice(0, 240)
     );
     // Seeds: full deep path (interact + vision). Search hits: interact only.
     const deep = await deepExtractCompetitiveLabel({
