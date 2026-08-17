@@ -18,7 +18,18 @@ import {
   loadApprovedCompetitiveDomains,
   loadApprovedCompetitiveSources,
 } from "@/lib/kb/competitiveAllowlist";
-import { parseCompetitiveLabelText } from "@/lib/kb/parseCompetitiveLabel";
+import {
+  COMPETITIVE_SKU_SEEDS,
+  looksLikeProductDetailUrl,
+} from "@/lib/kb/competitiveSkuSeeds";
+import {
+  geminiExtractCompetitiveLabel,
+  pageLooksLikeHasLabelFacts,
+} from "@/lib/kb/geminiLabelExtract";
+import {
+  hasUnknownOnlyIngredients,
+  parseCompetitiveLabelText,
+} from "@/lib/kb/parseCompetitiveLabel";
 
 export interface CompetitiveIngestStats {
   runId: string;
@@ -27,6 +38,10 @@ export interface CompetitiveIngestStats {
   discovered: number;
   staged: number;
   blockedOutsideAllowlist: number;
+  skippedNonProductUrl: number;
+  seedsAttempted: number;
+  seedsStaged: number;
+  geminiExtracts: number;
   gateApproved: number;
   gateBlocked: number;
   gateEscalated: number;
@@ -36,47 +51,47 @@ export interface CompetitiveIngestStats {
   sampleUrls: string[];
 }
 
-/** Category-scoped discovery queries (top-N intent; allowlist filters hosts). */
+/** Category-scoped discovery queries prefer product paths. */
 const COMPETITIVE_QUERIES: ReadonlyArray<{ category: string; q: string }> = [
   {
-    category: "advanced-formulas",
-    q: "site:thorne.com liposomal OR micellar supplement product",
+    category: "base-formulations",
+    q: "site:thorne.com/products magnesium OR vitamin C OR methyl",
   },
   {
     category: "advanced-formulas",
-    q: "site:quicksilverscientific.com liposomal product",
+    q: "site:quicksilverscientific.com/products liposomal",
   },
   {
     category: "advanced-formulas",
-    q: "site:bodybio.com PC OR phospholipid product",
+    q: "site:bodybio.com/products phosphatidylcholine OR PC",
   },
   {
     category: "methylation-snp",
-    q: "site:seekinghealth.com methylfolate OR MTHFR product",
+    q: "site:seekinghealth.com/products methylfolate OR folate OR B12",
   },
   {
     category: "methylation-snp",
-    q: "site:pureencapsulations.com methylated B vitamin product",
+    q: "site:pureencapsulations.com magnesium OR B-complex OR folate",
   },
   {
     category: "base-formulations",
-    q: "site:nordicnaturals.com omega-3 fish oil product",
+    q: "site:nordicnaturals.com/consumers ultimate omega",
   },
   {
     category: "base-formulations",
-    q: "site:nowfoods.com magnesium OR vitamin D product",
+    q: "site:nowfoods.com/products magnesium OR vitamin-d",
   },
   {
     category: "womens-health",
-    q: "site:ritual.com prenatal OR multivitamin product",
+    q: "site:ritual.com/products essential multivitamin",
   },
   {
     category: "functional-mushrooms",
-    q: "site:hostdefense.com mushroom extract product",
+    q: "site:hostdefense.com/products lions mane OR reishi",
   },
   {
     category: "advanced-formulas",
-    q: "site:lifeextension.com curcumin OR NMN product",
+    q: "site:lifeextension.com/vitamins-supplements omega OR curcumin",
   },
 ];
 
@@ -122,6 +137,10 @@ export async function runCompetitiveIngest(opts?: {
     discovered: 0,
     staged: 0,
     blockedOutsideAllowlist: 0,
+    skippedNonProductUrl: 0,
+    seedsAttempted: 0,
+    seedsStaged: 0,
+    geminiExtracts: 0,
     gateApproved: 0,
     gateBlocked: 0,
     gateEscalated: 0,
@@ -137,111 +156,156 @@ export async function runCompetitiveIngest(opts?: {
   }
 
   const supabase = createAdminClient();
-  const queries = COMPETITIVE_QUERIES.slice(0, maxQueries);
 
-  for (const { category, q } of queries) {
-    if (budget.hitBudget) break;
+  const stageOne = async (input: {
+    url: string;
+    category: string;
+    titleHint?: string;
+    brandHint?: string;
+    fromSeed?: boolean;
+  }): Promise<boolean> => {
+    if (budget.hitBudget) return false;
+    const scope = assertAllowlistScope(input.url, allow);
+    if (!scope.ok) {
+      stats.blockedOutsideAllowlist += 1;
+      return false;
+    }
+    if (!looksLikeProductDetailUrl(input.url) && !input.fromSeed) {
+      stats.skippedNonProductUrl += 1;
+      return false;
+    }
 
-    const search = await firecrawlSearch(q, budget, 4);
-    if (!search.ok || !search.results?.length) continue;
+    stats.discovered += 1;
+    let excerpt = "";
+    const scrape = await firecrawlScrape(input.url, budget);
+    if (scrape.ok && scrape.markdown) {
+      excerpt = scrape.markdown.slice(0, 8000);
+    } else {
+      excerpt = input.titleHint ?? "";
+    }
 
-    for (const hit of search.results) {
-      if (budget.hitBudget) break;
-      stats.discovered += 1;
-      const url = hit.url ?? "";
-      const scope = assertAllowlistScope(url, allow);
-      if (!scope.ok) {
-        stats.blockedOutsideAllowlist += 1;
-        continue;
+    const title = stripMarketingNoise(
+      (scrape.title || input.titleHint || "Competitive product").slice(0, 240)
+    );
+    const summary = stripMarketingNoise(excerpt).slice(0, 800) || "UNKNOWN";
+    const brand =
+      input.brandHint || brandFromHost(scope.host, labelByDomain);
+
+    let labelFacts = parseCompetitiveLabelText(excerpt, { title });
+    if (
+      hasUnknownOnlyIngredients(labelFacts.ingredient_rows) &&
+      pageLooksLikeHasLabelFacts(excerpt)
+    ) {
+      const gem = await geminiExtractCompetitiveLabel(excerpt, { title });
+      if (gem && !hasUnknownOnlyIngredients(gem.ingredient_rows)) {
+        labelFacts = gem;
+        stats.geminiExtracts += 1;
       }
+    }
 
-      let excerpt = hit.description ?? hit.title ?? "";
-      if (!budget.hitBudget) {
-        const scrape = await firecrawlScrape(url, budget);
-        if (scrape.ok && scrape.markdown) {
-          // Keep enough page body for Supplement Facts parsing
-          excerpt = scrape.markdown.slice(0, 6000);
-        }
-      }
+    const hash = contentHash([
+      "competitive",
+      input.url,
+      title,
+      summary.slice(0, 200),
+    ]);
 
-      const title = stripMarketingNoise(
-        (hit.title ?? "Competitive product").slice(0, 240)
-      );
-      const summary = stripMarketingNoise(excerpt).slice(0, 800) || "UNKNOWN";
-      const brand = brandFromHost(scope.host, labelByDomain);
-      const labelFacts = parseCompetitiveLabelText(excerpt, { title });
-      const hash = contentHash([
-        "competitive",
-        url,
-        title,
-        summary.slice(0, 200),
-      ]);
+    const gate = evaluateHoundDogGate({
+      title,
+      summary,
+      source_url: input.url,
+      source_type: "competitive_product",
+    });
 
-      const gate = evaluateHoundDogGate({
+    if (gate.verdict === "blocked") {
+      stats.gateBlocked += 1;
+      return false;
+    }
+    if (gate.verdict === "escalated") {
+      stats.gateEscalated += 1;
+    } else {
+      stats.gateApproved += 1;
+    }
+
+    const { error } = await supabase.from("hounddog_staging_items").upsert(
+      {
+        source_url: input.url,
+        source_type: "competitive_product",
         title,
         summary,
-        source_url: url,
-        source_type: "competitive_product",
-      });
-
-      if (gate.verdict === "blocked") {
-        stats.gateBlocked += 1;
-        continue;
-      }
-      if (gate.verdict === "escalated") {
-        stats.gateEscalated += 1;
-      } else {
-        stats.gateApproved += 1;
-      }
-
-      const { error } = await supabase.from("hounddog_staging_items").upsert(
-        {
-          source_url: url,
-          source_type: "competitive_product",
-          title,
-          summary,
-          retrieved_at: new Date().toISOString(),
-          raw_payload: {
-            brand,
-            category,
-            phase: 2,
-            collection: "competitive_supplements",
-            host: scope.host,
-            gate_notes: gate.notes,
-            ingredient_rows: labelFacts.ingredient_rows,
-            serving_size: labelFacts.serving_size,
-            servings_per_container: labelFacts.servings_per_container,
-            list_price: labelFacts.list_price,
-            currency: labelFacts.currency,
-            price_per_serving: labelFacts.price_per_serving,
-            label_claims: labelFacts.label_claims,
-            delivery_technology: labelFacts.delivery_technology,
-            availability_note: labelFacts.availability_note,
-            extraction_confidence: labelFacts.extraction_confidence,
-            parse_notes: labelFacts.parse_notes,
-            handler_version: "221.phase2.c1e.1",
-          },
-          is_aggregate_only: true,
-          robots_ok: true,
-          gate_status: gate.verdict === "escalated" ? "escalated" : "pending",
-          content_hash: hash,
-          external_id: `competitive:${hash.slice(0, 32)}`,
-          agent_slug: "hounddog",
-          topic_key: `competitive:${category}`,
-          relevance_score: 0.75,
-          full_text_excerpt: excerpt.slice(0, 4000),
+        retrieved_at: new Date().toISOString(),
+        raw_payload: {
+          brand,
+          category: input.category,
+          phase: 2,
+          collection: "competitive_supplements",
+          host: scope.host,
+          gate_notes: gate.notes,
+          from_seed: Boolean(input.fromSeed),
+          ingredient_rows: labelFacts.ingredient_rows,
+          serving_size: labelFacts.serving_size,
+          servings_per_container: labelFacts.servings_per_container,
+          list_price: labelFacts.list_price,
+          currency: labelFacts.currency,
+          price_per_serving: labelFacts.price_per_serving,
+          label_claims: labelFacts.label_claims,
+          delivery_technology: labelFacts.delivery_technology,
+          availability_note: labelFacts.availability_note,
+          extraction_confidence: labelFacts.extraction_confidence,
+          parse_notes: labelFacts.parse_notes,
+          handler_version: "221.phase2.c1r.1",
         },
-        { onConflict: "source_url" }
-      );
+        is_aggregate_only: true,
+        robots_ok: true,
+        gate_status: gate.verdict === "escalated" ? "escalated" : "pending",
+        content_hash: hash,
+        external_id: `competitive:${hash.slice(0, 32)}`,
+        agent_slug: "hounddog",
+        topic_key: `competitive:${input.category}`,
+        relevance_score: input.fromSeed ? 0.9 : 0.75,
+        full_text_excerpt: excerpt.slice(0, 4000),
+      },
+      { onConflict: "source_url" }
+    );
 
-      if (!error) {
-        stats.staged += 1;
-        if (stats.sampleUrls.length < 8) stats.sampleUrls.push(url);
-      } else {
-        safeLog.warn("competitive.ingest", "stage failed", {
-          error: error.message,
-        });
-      }
+    if (!error) {
+      stats.staged += 1;
+      if (input.fromSeed) stats.seedsStaged += 1;
+      if (stats.sampleUrls.length < 10) stats.sampleUrls.push(input.url);
+      return true;
+    }
+    safeLog.warn("competitive.ingest", "stage failed", {
+      error: error.message,
+    });
+    return false;
+  };
+
+  // 1) Curated SKU seeds first (highest yield for label facts)
+  for (const seed of COMPETITIVE_SKU_SEEDS) {
+    if (budget.hitBudget) break;
+    stats.seedsAttempted += 1;
+    await stageOne({
+      url: seed.url,
+      category: seed.category,
+      titleHint: seed.productHint,
+      brandHint: seed.brandHint,
+      fromSeed: true,
+    });
+  }
+
+  // 2) Open discovery (product-path preferred queries)
+  const queries = COMPETITIVE_QUERIES.slice(0, maxQueries);
+  for (const { category, q } of queries) {
+    if (budget.hitBudget) break;
+    const search = await firecrawlSearch(q, budget, 4);
+    if (!search.ok || !search.results?.length) continue;
+    for (const hit of search.results) {
+      if (budget.hitBudget) break;
+      await stageOne({
+        url: hit.url ?? "",
+        category,
+        titleHint: hit.title,
+      });
     }
   }
 
@@ -262,6 +326,8 @@ export async function runCompetitiveIngest(opts?: {
           discovered: stats.discovered,
           blockedOutsideAllowlist: stats.blockedOutsideAllowlist,
           allowlistSize: stats.allowlistSize,
+          seedsStaged: stats.seedsStaged,
+          geminiExtracts: stats.geminiExtracts,
         },
       },
       { onConflict: "source_key,topic_key" }

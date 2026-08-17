@@ -10,6 +10,10 @@ import {
   firecrawlScrape,
 } from "@/lib/hounddog/firecrawl/client";
 import {
+  geminiExtractCompetitiveLabel,
+  pageLooksLikeHasLabelFacts,
+} from "./geminiLabelExtract";
+import {
   hasUnknownOnlyIngredients,
   parseCompetitiveLabelText,
   type CompetitiveIngredientRow,
@@ -20,6 +24,7 @@ export interface EnrichCompetitiveResult {
   enriched: number;
   stillUnknown: number;
   scraped: number;
+  geminiUsed: number;
   skipped: number;
   errors: number;
   sample: Array<{
@@ -42,10 +47,12 @@ function isLowQualityRows(rows: unknown): boolean {
   const bad = list.filter((r) => {
     const n = String(r.ingredient_name ?? "");
     return (
-      /net\s*wt|fl\.?\s*oz|calories?|softgels?\s*per\s*serving|per serving|teaspoons?|tablespoons?|approx|providing approximately|professional groups|salmon is|level teaspoon/i.test(
+      /net\s*wt|fl\.?\s*oz|calories?|softgels?\s*per\s*serving|per serving|teaspoons?|tablespoons?|approx|providing approximately|professional groups|salmon is|level teaspoon|ultimate omega/i.test(
         n
       ) ||
       (r.dose_unit === "mL" && /oz|net|bottle|wt/i.test(n)) ||
+      // Serving-size lines mistaken for ingredients
+      /^\d/.test(n.trim()) ||
       // Product marketing titles used as the only "ingredient"
       (n.length > 40 && r.dose_amount != null && !/\b(vitamin|magnesium|calcium|omega|curcumin|folate|zinc|iron|epa|dha|methyl)\b/i.test(n))
     );
@@ -64,6 +71,7 @@ export async function enrichCompetitiveProducts(
     enriched: 0,
     stillUnknown: 0,
     scraped: 0,
+    geminiUsed: 0,
     skipped: 0,
     errors: 0,
     sample: [],
@@ -151,7 +159,8 @@ export async function enrichCompetitiveProducts(
         if (
           payload &&
           Array.isArray(payload.ingredient_rows) &&
-          !isUnknownRows(payload.ingredient_rows)
+          !isUnknownRows(payload.ingredient_rows) &&
+          !isLowQualityRows(payload.ingredient_rows)
         ) {
           const pre = parseCompetitiveLabelText(text, { title });
           const rows = payload.ingredient_rows as CompetitiveIngredientRow[];
@@ -176,11 +185,12 @@ export async function enrichCompetitiveProducts(
     // First pass on whatever text we have
     let facts = parseCompetitiveLabelText(text || title, { title });
 
-    // Re-scrape when still UNKNOWN (old staging was marketing-only, <400 was too strict)
+    // Re-scrape when still UNKNOWN / low quality
     if (
       allowScrape &&
       url &&
-      hasUnknownOnlyIngredients(facts.ingredient_rows) &&
+      (hasUnknownOnlyIngredients(facts.ingredient_rows) ||
+        isLowQualityRows(facts.ingredient_rows)) &&
       !budget.hitBudget &&
       stats.scraped < 10
     ) {
@@ -211,13 +221,33 @@ export async function enrichCompetitiveProducts(
                 list_price: facts.list_price,
                 extraction_confidence: facts.extraction_confidence,
                 parse_notes: facts.parse_notes,
-                handler_version: "221.phase2.c1e.2",
+                handler_version: "221.phase2.c1r.1",
               },
             })
             .eq("source_url", url);
         }
       } catch (err) {
         safeLog.warn("kb.enrichCompetitive", "scrape threw", {
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+
+    // Gemini structured fallback when page likely has facts but regex missed
+    if (
+      hasUnknownOnlyIngredients(facts.ingredient_rows) &&
+      text &&
+      pageLooksLikeHasLabelFacts(text) &&
+      stats.geminiUsed < 8
+    ) {
+      try {
+        const gem = await geminiExtractCompetitiveLabel(text, { title });
+        if (gem && !hasUnknownOnlyIngredients(gem.ingredient_rows)) {
+          facts = gem;
+          stats.geminiUsed += 1;
+        }
+      } catch (err) {
+        safeLog.warn("kb.enrichCompetitive", "gemini threw", {
           error: err instanceof Error ? err.message : String(err),
         });
       }

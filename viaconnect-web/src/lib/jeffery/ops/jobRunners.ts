@@ -224,7 +224,18 @@ export async function runCadenceJob(
             runId: `ops-competitive-${Date.now()}`,
             runDate: new Date().toISOString().slice(0, 10),
           });
-          detail = { ...r };
+          // Bridge seeds immediately so enrich sees new product rows
+          const { bridgeCompetitiveToKb } = await import(
+            "@/lib/kb/bridgeCompetitiveToKb"
+          );
+          const { enrichCompetitiveProducts } = await import(
+            "@/lib/kb/enrichCompetitiveProducts"
+          );
+          const bridge = await bridgeCompetitiveToKb(16);
+          const enrich = await enrichCompetitiveProducts(12, {
+            allowScrape: true,
+          });
+          detail = { ...r, bridge, enrich };
           if (r.hitBudget) {
             await enqueueBacklog({
               jobKey: job.job_key,
