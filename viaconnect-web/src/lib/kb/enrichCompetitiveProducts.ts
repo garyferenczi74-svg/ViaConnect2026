@@ -99,7 +99,7 @@ export async function enrichCompetitiveProducts(
     .in("gate_status", ["approved", "lex_approved"])
     .eq("jeffery_verdict", "approved")
     .order("updated_at", { ascending: false })
-    .limit(Math.max(limit * 4, 40));
+    .limit(Math.max(limit * 6, 100));
 
   if (error || !items?.length) {
     if (error) {
