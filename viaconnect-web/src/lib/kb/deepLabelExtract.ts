@@ -141,8 +141,11 @@ export async function deepExtractCompetitiveLabel(opts: {
     }
   }
 
-  // 3) Gemini text extract when page looks fact-like
-  if (markdown && pageLooksLikeHasLabelFacts(markdown)) {
+  // 3) Gemini text extract when page looks fact-like OR long product body
+  if (
+    markdown &&
+    (pageLooksLikeHasLabelFacts(markdown) || markdown.length > 1500)
+  ) {
     try {
       const gem = await geminiExtractCompetitiveLabel(markdown, { title });
       if (gem && !hasUnknownOnlyIngredients(gem.ingredient_rows)) {
@@ -163,7 +166,7 @@ export async function deepExtractCompetitiveLabel(opts: {
     }
   }
 
-  // 4) Vision OCR on screenshot
+  // 4) Vision OCR on screenshot (always attempt when present)
   if (opts.allowVision !== false && screenshotBase64) {
     try {
       visionUsed = true;

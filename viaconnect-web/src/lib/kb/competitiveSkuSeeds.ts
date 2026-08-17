@@ -363,6 +363,124 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     brandHint: "LivOn Labs",
     productHint: "Lypo-Spheric Vitamin C",
   },
+  // High-yield Thorne catalog (facts often in HTML)
+  {
+    url: "https://www.thorne.com/products/dp/basic-nutrients-2-day",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Basic Nutrients 2/Day",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/multi-vitamin-elite-am",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Multi-Vitamin Elite AM",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/vitamin-d-5000",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Vitamin D 5000",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/zinc-picolinate-30",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Zinc Picolinate 30",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/iron-bisglycinate",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Iron Bisglycinate",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/b-complex-12",
+    category: "methylation-snp",
+    brandHint: "Thorne",
+    productHint: "B-Complex #12",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/curcumin-phytosome",
+    category: "advanced-formulas",
+    brandHint: "Thorne",
+    productHint: "Curcumin Phytosome",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/omega-3-w-coq10",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Omega-3 w/ CoQ10",
+  },
+  // Life Extension high-facts
+  {
+    url: "https://www.lifeextension.com/vitamins-supplements/item01713/two-per-day-capsules",
+    category: "base-formulations",
+    brandHint: "Life Extension",
+    productHint: "Two-Per-Day Capsules",
+  },
+  {
+    url: "https://www.lifeextension.com/vitamins-supplements/item01718/vitamin-d3",
+    category: "base-formulations",
+    brandHint: "Life Extension",
+    productHint: "Vitamin D3",
+  },
+  {
+    url: "https://www.lifeextension.com/vitamins-supplements/item01803/super-k",
+    category: "base-formulations",
+    brandHint: "Life Extension",
+    productHint: "Super K",
+  },
+  {
+    url: "https://www.lifeextension.com/vitamins-supplements/item01561/super-ubiquinol-coq10-with-enhanced-mitochondrial-support",
+    category: "advanced-formulas",
+    brandHint: "Life Extension",
+    productHint: "Super Ubiquinol CoQ10",
+  },
+  // NOW high-facts
+  {
+    url: "https://www.nowfoods.com/products/vitamins/vitamin-d-3-softgels-5000-iu",
+    category: "base-formulations",
+    brandHint: "NOW Foods",
+    productHint: "Vitamin D-3 5000 IU",
+  },
+  {
+    url: "https://www.nowfoods.com/products/minerals/zinc-picolinate-50-mg-veg-capsules",
+    category: "base-formulations",
+    brandHint: "NOW Foods",
+    productHint: "Zinc Picolinate 50 mg",
+  },
+  {
+    url: "https://www.nowfoods.com/products/vitamins/vitamin-c-1000-mg-with-rose-hips-tablets",
+    category: "base-formulations",
+    brandHint: "NOW Foods",
+    productHint: "Vitamin C-1000",
+  },
+  {
+    url: "https://www.nowfoods.com/products/minerals/magnesium-citrate-softgels",
+    category: "base-formulations",
+    brandHint: "NOW Foods",
+    productHint: "Magnesium Citrate Softgels",
+  },
+  // Pure Encapsulations
+  {
+    url: "https://www.pureencapsulations.com/vitamin-d3-10000-iu.html",
+    category: "base-formulations",
+    brandHint: "Pure Encapsulations",
+    productHint: "Vitamin D3 10,000 IU",
+  },
+  {
+    url: "https://www.pureencapsulations.com/magnesium-glycinate.html",
+    category: "base-formulations",
+    brandHint: "Pure Encapsulations",
+    productHint: "Magnesium Glycinate",
+  },
+  {
+    url: "https://www.pureencapsulations.com/zinc-30.html",
+    category: "base-formulations",
+    brandHint: "Pure Encapsulations",
+    productHint: "Zinc 30",
+  },
 ] as const;
 
 /** True when URL looks like a product detail page (not blog/hub/cart). */

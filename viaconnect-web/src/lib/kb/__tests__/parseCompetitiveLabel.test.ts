@@ -112,4 +112,17 @@ Liposomal delivery enhanced absorption
     expect(f2.ingredient_rows.some((r) => r.dose_amount === 1000)).toBe(true);
     expect(f.ingredient_rows[0].ingredient_name).toBe("UNKNOWN");
   });
+
+  it("parses catalog titles with comma thousands", () => {
+    const f = parseCompetitiveLabelText("Brand product page content here.", {
+      title: "Vitamin D3, 7,000 IU, 60 softgels - Life Extension",
+    });
+    expect(
+      f.ingredient_rows.some(
+        (r) =>
+          /vitamin\s*d/i.test(r.ingredient_name) &&
+          (r.dose_amount === 7000 || r.dose_amount === 7)
+      )
+    ).toBe(true);
+  });
 });

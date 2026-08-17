@@ -309,8 +309,8 @@ export async function runCompetitiveIngest(opts?: {
     return false;
   };
 
-  // 1) Curated SKU seeds first (small window: deep interact+vision is slow)
-  const seedWindow = 4;
+  // 1) Curated SKU seeds first (5 per window; vision enabled on seeds)
+  const seedWindow = 5;
   const seedOffset =
     (opts?.seedOffset ?? Math.floor(Date.now() / 1000)) %
     Math.max(1, COMPETITIVE_SKU_SEEDS.length);

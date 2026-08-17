@@ -104,8 +104,12 @@ export async function firecrawlScrape(
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
-  const formats: string[] = ['markdown'];
-  if (opts?.includeScreenshot) formats.push('screenshot');
+  // Prefer full-page screenshot when OCR is requested (vision path)
+  const formats: unknown[] = ['markdown'];
+  if (opts?.includeScreenshot) {
+    formats.push('screenshot');
+    formats.push({ type: 'screenshot', fullPage: true });
+  }
 
   const body: Record<string, unknown> = {
     url,
@@ -150,13 +154,19 @@ export async function firecrawlScrape(
       data?: {
         markdown?: string;
         screenshot?: string;
+        // Newer Firecrawl shapes
+        actions?: { screenshots?: string[] };
         metadata?: { title?: string };
       };
     };
     const markdown = json.data?.markdown ?? '';
     const title = json.data?.metadata?.title;
-    let screenshotBase64 = json.data?.screenshot;
-    if (screenshotBase64?.startsWith('data:image')) {
+    let screenshotBase64 =
+      json.data?.screenshot ||
+      json.data?.actions?.screenshots?.[0] ||
+      '';
+    if (typeof screenshotBase64 !== 'string') screenshotBase64 = '';
+    if (screenshotBase64.startsWith('data:image')) {
       screenshotBase64 = screenshotBase64.replace(/^data:image\/\w+;base64,/, '');
     }
     return {

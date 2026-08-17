@@ -393,10 +393,33 @@ export function parseCompetitiveLabelText(
   if (ingredient_rows.length === 0) {
     notes.push("no_dose_lines");
     // Title-only heuristic: single ingredient product names with dose in title
-    const fromTitle = parseIngredientLine(title);
+    // Normalize common catalog titles: "Vitamin D3, 7,000 IU, 60 softgels"
+    const titleNorm = title
+      .replace(/(\d),(\d{3})\b/g, "$1$2") // 7,000 -> 7000 first
+      .replace(/,/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    const fromTitle =
+      parseIngredientLine(titleNorm) || parseIngredientLine(title);
     if (fromTitle) {
       ingredient_rows.push(fromTitle);
       notes.push("title_dose");
+    }
+    // Secondary: "Vitamin D3 5000 IU" embedded mid-title
+    if (ingredient_rows.length === 0 || ingredient_rows[0]?.ingredient_name === "UNKNOWN") {
+      const embedded = titleNorm.match(
+        /\b((?:vitamin|magnesium|calcium|zinc|curcumin|omega|folate|methyl)[A-Za-z0-9\s\-]{0,40}?)\s+(\d{1,5}(?:\.\d{1,3})?)\s*(mg|mcg|iu|IU|g)\b/i
+      );
+      if (embedded) {
+        const row = parseIngredientLine(
+          `${embedded[1].trim()} ${embedded[2]} ${embedded[3]}`
+        );
+        if (row) {
+          ingredient_rows.length = 0;
+          ingredient_rows.push(row);
+          notes.push("title_embedded_dose");
+        }
+      }
     }
   }
 
