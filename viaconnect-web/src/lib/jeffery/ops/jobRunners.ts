@@ -148,16 +148,29 @@ export async function runCadenceJob(
         break;
       }
       case "jeffery.kb_review": {
-        // 221/221A: bridge Marshall-gated research into KB + Jeffery fail-closed review
+        // 221/221A Phase 1: C8/C9 bridge, C5 peptide migrate, Jeffery review, embed backfill
         try {
           const { bridgeGatedItemsToKb } = await import("@/lib/kb/bridgeGatedToKb");
+          const { bridgePeptideEducationToKb } = await import(
+            "@/lib/kb/bridgePeptideEducation"
+          );
           const { processPendingJefferyKbReviews } = await import(
             "@/lib/kb/promotePipeline"
           );
+          const { backfillKbEmbeddings } = await import("@/lib/kb/embedItem");
           const bridge = await bridgeGatedItemsToKb(12);
+          const peptides = await bridgePeptideEducationToKb(20);
           const reviews = await processPendingJefferyKbReviews(20);
-          detail = { bridge, reviews };
-          if (bridge.errors > 0 || reviews.errors > 0) status = "partial";
+          const embeds = await backfillKbEmbeddings(25);
+          detail = { bridge, peptides, reviews, embeds };
+          if (
+            bridge.errors > 0 ||
+            peptides.errors > 0 ||
+            reviews.errors > 0 ||
+            embeds.failed > embeds.embedded
+          ) {
+            status = "partial";
+          }
         } catch (err) {
           status = "partial";
           detail = {

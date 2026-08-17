@@ -179,6 +179,17 @@ export async function promoteThenJefferyReview(opts: {
 
   reasonCodes.push(...review.outcome.reasonCodes);
 
+  // Phase 1: embed only after Jeffery approval so kb_search can hit
+  if (review.ok && review.outcome.verdict === "approved") {
+    try {
+      const { embedAndStoreKbItem } = await import("./embedItem");
+      const embedded = await embedAndStoreKbItem(opts.itemId);
+      if (!embedded) reasonCodes.push("embed_pending_or_failed");
+    } catch {
+      reasonCodes.push("embed_threw");
+    }
+  }
+
   const { data: after } = await sb
     .from("kb_items")
     .select("gate_status, jeffery_verdict")
@@ -315,8 +326,15 @@ export async function processPendingJefferyKbReviews(
 
       stats.reviewed += 1;
       if (!review.ok) stats.errors += 1;
-      else if (review.outcome.verdict === "approved") stats.approved += 1;
-      else if (review.outcome.verdict === "rejected") stats.rejected += 1;
+      else if (review.outcome.verdict === "approved") {
+        stats.approved += 1;
+        try {
+          const { embedAndStoreKbItem } = await import("./embedItem");
+          await embedAndStoreKbItem(id);
+        } catch {
+          /* fail-open: approved without embed until backfill */
+        }
+      } else if (review.outcome.verdict === "rejected") stats.rejected += 1;
       else stats.needsHuman += 1;
     } catch (err) {
       stats.errors += 1;

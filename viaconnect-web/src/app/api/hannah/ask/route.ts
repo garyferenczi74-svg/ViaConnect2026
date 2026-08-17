@@ -186,6 +186,7 @@ export async function generateGroundedAnswer(
   question: string,
   domain: ConversationalDomain,
   atoms: Array<{ claim: string }>,
+  kbContextBlock?: string,
 ): Promise<string> {
   const groundingContext =
     atoms.length > 0
@@ -195,10 +196,18 @@ export async function generateGroundedAnswer(
           .join('\n')
       : 'No published knowledge atoms are available for this domain yet.';
 
+  // Prompt 221: Jeffery-approved corpus hits (fail-open when empty / search fails)
+  const kbBlock =
+    kbContextBlock && kbContextBlock.trim().length > 0
+      ? '\n\nKB CORPUS CONTEXT (Jeffery-approved; cite grade; prefer A/B; never invent sources; grade E is not scientific evidence):\n' +
+        kbContextBlock
+      : '';
+
   const system =
     HANNAH_208_QA_DIRECTIVE +
     '\n\nGROUNDING CONTEXT (published knowledge atoms):\n' +
-    groundingContext;
+    groundingContext +
+    kbBlock;
 
   return callHannahQaModel(system, `[Domain: ${domain}]\n\n${question}`);
 }
@@ -291,12 +300,29 @@ export async function POST(request: Request): Promise<NextResponse> {
   const { coverage, tiersUsed } = scoreCoverage(atoms);
   const emerging = coverage !== 'well_covered';
 
+  // Prompt 221: hybrid KB search (Jeffery-approved only). Fail-open empty.
+  let kbContextBlock = '';
+  try {
+    const { formatHitsForHannahContext, kbSearch } = await import('@/lib/kb/search');
+    const hits = await withTimeout(
+      kbSearch(question.trim(), { limit: 6, consumerOnly: true }),
+      4000,
+      'api.hannah.ask.kbSearch',
+    );
+    kbContextBlock = formatHitsForHannahContext(hits);
+  } catch (err) {
+    safeLog.warn('api.hannah.ask', 'kbSearch fail-open empty', {
+      error: err instanceof Error ? err.message : String(err),
+    });
+    kbContextBlock = '';
+  }
+
   // Generate grounded answer. Fail-open: on error use fallback.
   let answer: string;
   let answerFailed = false;
 
   try {
-    answer = await generateGroundedAnswer(question, domain, atoms);
+    answer = await generateGroundedAnswer(question, domain, atoms, kbContextBlock);
   } catch (err) {
     safeLog.error('api.hannah.ask', 'generateGroundedAnswer failed, returning fallback', {
       userId: user.id,
