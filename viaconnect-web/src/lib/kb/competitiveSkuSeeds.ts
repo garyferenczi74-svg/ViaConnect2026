@@ -1054,6 +1054,134 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     brandHint: "Cymbiotika",
     productHint: "Liposomal Vitamin C",
   },
+
+  // Cymbiotika US (https://cymbiotika.com/pages/supplement-guide)
+  {
+    url: "https://cymbiotika.com/products/b12",
+    category: "advanced-formulas",
+    brandHint: "Cymbiotika",
+    productHint: "Liposomal Vitamin B12 + B6",
+  },
+  {
+    url: "https://cymbiotika.com/products/brain-complex",
+    category: "advanced-formulas",
+    brandHint: "Cymbiotika",
+    productHint: "Liposomal Brain Complex",
+  },
+  {
+    url: "https://cymbiotika.com/products/creatine",
+    category: "advanced-formulas",
+    brandHint: "Cymbiotika",
+    productHint: "Liposomal Advanced Creatine",
+  },
+  {
+    url: "https://cymbiotika.com/products/d3",
+    category: "advanced-formulas",
+    brandHint: "Cymbiotika",
+    productHint: "Liposomal Vitamin D3 + K2 + CoQ10",
+  },
+  {
+    url: "https://cymbiotika.com/products/glutathione",
+    category: "advanced-formulas",
+    brandHint: "Cymbiotika",
+    productHint: "Liposomal Glutathione",
+  },
+  {
+    url: "https://cymbiotika.com/products/inflammatory-health",
+    category: "advanced-formulas",
+    brandHint: "Cymbiotika",
+    productHint: "Inflammatory Health",
+  },
+  {
+    url: "https://cymbiotika.com/products/irish-sea-moss",
+    category: "advanced-formulas",
+    brandHint: "Cymbiotika",
+    productHint: "Irish Sea Moss",
+  },
+  {
+    url: "https://cymbiotika.com/products/liposomal-elderberry-defense",
+    category: "advanced-formulas",
+    brandHint: "Cymbiotika",
+    productHint: "Liposomal Elderberry",
+  },
+  {
+    url: "https://cymbiotika.com/products/liquid-colostrum",
+    category: "advanced-formulas",
+    brandHint: "Cymbiotika",
+    productHint: "Liquid Colostrum",
+  },
+  {
+    url: "https://cymbiotika.com/products/liver-health",
+    category: "advanced-formulas",
+    brandHint: "Cymbiotika",
+    productHint: "Liver Health+",
+  },
+  {
+    url: "https://cymbiotika.com/products/magnesium-complex",
+    category: "advanced-formulas",
+    brandHint: "Cymbiotika",
+    productHint: "Liposomal Magnesium Complex",
+  },
+  {
+    url: "https://cymbiotika.com/products/metabolic-health",
+    category: "advanced-formulas",
+    brandHint: "Cymbiotika",
+    productHint: "Metabolic Health",
+  },
+  {
+    url: "https://cymbiotika.com/products/molecular-hydrogen",
+    category: "advanced-formulas",
+    brandHint: "Cymbiotika",
+    productHint: "Molecular Hydrogen",
+  },
+  {
+    url: "https://cymbiotika.com/products/nad",
+    category: "advanced-formulas",
+    brandHint: "Cymbiotika",
+    productHint: "Liposomal NAD+",
+  },
+  {
+    url: "https://cymbiotika.com/products/parax",
+    category: "advanced-formulas",
+    brandHint: "Cymbiotika",
+    productHint: "ParaX",
+  },
+  {
+    url: "https://cymbiotika.com/products/shilajit-liquid-complex",
+    category: "advanced-formulas",
+    brandHint: "Cymbiotika",
+    productHint: "Shilajit Liquid Complex",
+  },
+  {
+    url: "https://cymbiotika.com/products/shilajit-normal-jar",
+    category: "advanced-formulas",
+    brandHint: "Cymbiotika",
+    productHint: "Mineral Shilajit",
+  },
+  {
+    url: "https://cymbiotika.com/products/sleep",
+    category: "advanced-formulas",
+    brandHint: "Cymbiotika",
+    productHint: "Liposomal Sleep",
+  },
+  {
+    url: "https://cymbiotika.com/products/supergreens",
+    category: "base-formulations",
+    brandHint: "Cymbiotika",
+    productHint: "Super Greens",
+  },
+  {
+    url: "https://cymbiotika.com/products/the-omega",
+    category: "base-formulations",
+    brandHint: "Cymbiotika",
+    productHint: "The Omega",
+  },
+  {
+    url: "https://cymbiotika.com/products/vitamin-c",
+    category: "advanced-formulas",
+    brandHint: "Cymbiotika",
+    productHint: "Liposomal Vitamin C",
+  },
 ] as const;
 
 /** True when URL looks like a product detail page (not blog/hub/cart). */
