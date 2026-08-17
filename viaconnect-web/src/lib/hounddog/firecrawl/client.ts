@@ -192,36 +192,19 @@ export async function firecrawlScrapeSupplementFacts(
   budget: FirecrawlBudget,
   opts?: { timeoutMs?: number; screenshot?: boolean },
 ): Promise<ScrapeResult> {
-  // Try interactive first: wait for JS, scroll to facts, click common tab hooks.
-  // Use portable CSS only (no Playwright :has-text).
-  const interactive = await firecrawlScrape(url, budget, {
-    timeoutMs: opts?.timeoutMs ?? 60_000,
+  // Lightweight interact: wait for JS hydration + scroll (no multi-click fan-out).
+  // Screenshot enables vision OCR when markdown still lacks dose lines.
+  return firecrawlScrape(url, budget, {
+    timeoutMs: opts?.timeoutMs ?? 50_000,
     includeScreenshot: opts?.screenshot ?? true,
     onlyMainContent: false,
     actions: [
-      { type: 'wait', milliseconds: 1500 },
+      { type: 'wait', milliseconds: 1800 },
       { type: 'scroll', direction: 'down' },
-      { type: 'wait', milliseconds: 600 },
-      { type: 'click', selector: '[role="tab"]' },
-      { type: 'wait', milliseconds: 500 },
-      { type: 'click', selector: 'button[aria-controls*="fact"], a[href*="supplement"], button[class*="ingredient"], [data-tab*="fact"], [id*="supplement-facts"], [class*="supplement-facts"]' },
-      { type: 'wait', milliseconds: 1200 },
+      { type: 'wait', milliseconds: 900 },
       { type: 'scroll', direction: 'down' },
-      { type: 'wait', milliseconds: 800 },
+      { type: 'wait', milliseconds: 700 },
     ],
-  });
-
-  if (interactive.ok && (interactive.markdown?.length ?? 0) > 200) {
-    return interactive;
-  }
-
-  // Fallback plain scrape (still counts if interactive failed without spend... interactive already spent)
-  if (!interactive.ok && interactive.reason === 'budget_exhausted') {
-    return interactive;
-  }
-  return firecrawlScrape(url, budget, {
-    timeoutMs: opts?.timeoutMs,
-    includeScreenshot: opts?.screenshot ?? false,
   });
 }
 

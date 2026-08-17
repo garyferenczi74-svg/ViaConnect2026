@@ -332,11 +332,11 @@ export async function runCompetitiveIngest(opts?: {
     });
   }
 
-  // 2) Open discovery only if budget remains (product-path queries)
-  const queries = COMPETITIVE_QUERIES.slice(0, Math.min(maxQueries, 4));
+  // 2) Open discovery only if budget remains (keep small; seeds are primary)
+  const queries = COMPETITIVE_QUERIES.slice(0, Math.min(maxQueries, 2));
   for (const { category, q } of queries) {
     if (budget.hitBudget) break;
-    const search = await firecrawlSearch(q, budget, 3);
+    const search = await firecrawlSearch(q, budget, 2);
     if (!search.ok || !search.results?.length) continue;
     for (const hit of search.results) {
       if (budget.hitBudget) break;

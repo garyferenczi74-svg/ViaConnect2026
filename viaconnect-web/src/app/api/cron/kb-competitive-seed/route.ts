@@ -27,9 +27,11 @@ export async function POST(request: Request): Promise<Response> {
     const ingest = await runCompetitiveIngest({
       runId: `cron-competitive-seed-${Date.now()}`,
       runDate: new Date().toISOString().slice(0, 10),
+      // Seeds-only budget: deep path is heavy; discovery optional
+      maxQueries: 0,
     });
-    const bridge = await bridgeCompetitiveToKb(20);
-    const enrich = await enrichCompetitiveProducts(15, { allowScrape: true });
+    const bridge = await bridgeCompetitiveToKb(12);
+    const enrich = await enrichCompetitiveProducts(8, { allowScrape: true });
 
     return Response.json({
       ok: ingest.staged > 0 || bridge.withIngredients > 0 || enrich.enriched > 0,
