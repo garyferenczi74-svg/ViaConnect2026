@@ -280,8 +280,20 @@ export async function runCompetitiveIngest(opts?: {
     return false;
   };
 
-  // 1) Curated SKU seeds first (highest yield for label facts)
-  for (const seed of COMPETITIVE_SKU_SEEDS) {
+  // 1) Curated SKU seeds first (rotate window so each run stays under timeout)
+  const seedWindow = 8;
+  const seedOffset =
+    Math.floor(Date.now() / (1000 * 60 * 60 * 6)) %
+    Math.max(1, COMPETITIVE_SKU_SEEDS.length);
+  const seeds = [
+    ...COMPETITIVE_SKU_SEEDS.slice(seedOffset, seedOffset + seedWindow),
+    ...COMPETITIVE_SKU_SEEDS.slice(
+      0,
+      Math.max(0, seedWindow - (COMPETITIVE_SKU_SEEDS.length - seedOffset))
+    ),
+  ].slice(0, seedWindow);
+
+  for (const seed of seeds) {
     if (budget.hitBudget) break;
     stats.seedsAttempted += 1;
     await stageOne({
@@ -293,11 +305,11 @@ export async function runCompetitiveIngest(opts?: {
     });
   }
 
-  // 2) Open discovery (product-path preferred queries)
-  const queries = COMPETITIVE_QUERIES.slice(0, maxQueries);
+  // 2) Open discovery only if budget remains (product-path queries)
+  const queries = COMPETITIVE_QUERIES.slice(0, Math.min(maxQueries, 4));
   for (const { category, q } of queries) {
     if (budget.hitBudget) break;
-    const search = await firecrawlSearch(q, budget, 4);
+    const search = await firecrawlSearch(q, budget, 3);
     if (!search.ok || !search.results?.length) continue;
     for (const hit of search.results) {
       if (budget.hitBudget) break;

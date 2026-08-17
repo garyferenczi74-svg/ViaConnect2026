@@ -132,7 +132,8 @@ export const DEFAULT_CADENCE_SEED: Omit<
     agent_id: "hounddog",
     label: "Phase 2 competitive allowlist crawl (C1)",
     interval_minutes: 720,
-    priority: 42,
+    // Run early in forceDue batches (after marshall/jeffery) so SKU seeds land
+    priority: 14,
     budget_class: "B",
     mechanism: "cron_tick",
     enabled: true,
@@ -145,7 +146,7 @@ export const DEFAULT_CADENCE_SEED: Omit<
     agent_id: "elysium",
     label: "Phase 2 genetic test provider crawl (C4)",
     interval_minutes: 720,
-    priority: 43,
+    priority: 16,
     budget_class: "B",
     mechanism: "cron_tick",
     enabled: true,
