@@ -48,7 +48,10 @@ const DOSE_TAIL = new RegExp(
 
 /** Common noise lines that are not ingredients. */
 const SKIP_LINE =
-  /^(supplement facts|amount per serving|daily value|% daily value|other ingredients|contains|directions|suggested use|warning|keep out|storage|manufactured|distributed|these statements|fda|serving size|servings per|calories|total fat|sodium|protein|carbohydrate|free shipping|add to cart|buy now|subscribe|reviews?|rating|sku:|item #)/i;
+  /^(supplement facts|amount per serving|daily value|% daily value|other ingredients|contains|directions|suggested use|warning|keep out|storage|manufactured|distributed|these statements|fda|serving size|servings per|calories|total fat|sodium|protein|carbohydrate|free shipping|add to cart|buy now|subscribe|reviews?|rating|sku:|item #|net wt|net weight|fl oz|shipping|promo|coupon|save \d)/i;
+
+const SKIP_NAME =
+  /^(net wt|net weight|fl oz|fluid ounce|calories?|total (fat|carb)|trans fat|cholesterol|dietary fiber|added sugars?|softgels? per serving|capsules? per serving|tablets? per serving)$/i;
 
 const FORM_FROM_TEXT: Array<{ re: RegExp; form: string }> = [
   { re: /\bliposomal\b/i, form: "liposomal" },
@@ -217,10 +220,21 @@ export function parseIngredientLine(line: string): CompetitiveIngredientRow | nu
   // Drop marketing superlatives from name only
   name = name
     .replace(/\b(best|miracle|cure|guaranteed|#1)\b/gi, "")
+    .replace(/^\[+|\]+$/g, "")
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 120);
   if (name.length < 2) return null;
+  if (SKIP_NAME.test(name)) return null;
+  // Packaging / nutrition facts noise with volume units
+  if (/net\s*wt|fl\.?\s*oz|fluid ounce/i.test(raw)) return null;
+  if (/calories?/i.test(name) && dose_unit === "g") return null;
+  // Reject if name is mostly non-letters
+  const letters = (name.match(/[A-Za-z]/g) || []).length;
+  if (letters < 3) return null;
+  // Prefer real nutrient/compound names over marketing product titles as "ingredients"
+  // when the name is very long and contains dose-like product branding only
+  if (name.length > 80) return null;
 
   // Confidence: parenthetical form or "as X" bumps score
   let dose_confidence = 70;
@@ -232,6 +246,10 @@ export function parseIngredientLine(line: string): CompetitiveIngredientRow | nu
   }
   // %DV alone is weaker signal for absolute dose
   if (dose_unit === "%DV") dose_confidence = Math.min(dose_confidence, 55);
+  // mL as "ingredient dose" is often package volume - downrank
+  if (dose_unit === "mL" && /oz|net|bottle/i.test(raw)) {
+    return null;
+  }
 
   return {
     ingredient_name: name,

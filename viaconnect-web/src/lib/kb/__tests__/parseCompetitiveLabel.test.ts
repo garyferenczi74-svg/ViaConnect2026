@@ -31,6 +31,11 @@ describe("parseIngredientLine", () => {
     expect(parseIngredientLine("Proprietary Blend")).toBeNull();
     expect(parseIngredientLine("Add to cart")).toBeNull();
   });
+
+  it("rejects packaging net weight lines", () => {
+    expect(parseIngredientLine("NET WT 1.7 FL OZ (50 mL)")).toBeNull();
+    expect(parseIngredientLine("NET WT 4.0 FL OZ (120 mL)")).toBeNull();
+  });
 });
 
 describe("parseCompetitiveLabelText", () => {
