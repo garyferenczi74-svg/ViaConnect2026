@@ -237,13 +237,30 @@ export function parseIngredientLine(line: string): CompetitiveIngredientRow | nu
   if (/\b(suggest|providing approximately|professional groups|recommended daily|daily intake|serv\.?\s*size|serving size)\b/i.test(name)) {
     return null;
   }
+  // Marketing / PDP prose mistaken for ingredients
+  if (/\b(also available|travel[- ]friendly|supercharged|brain function|by adding|free shipping|add to|shop now|learn more|double strength)\b/i.test(name + " " + raw)) {
+    return null;
+  }
   if (/^serv\.?\s*size/i.test(name)) return null;
   if (/^provides?\b/i.test(name)) return null;
   // Commerce / cross-sell chrome: "Add L-Arginine 500 mg"
   if (/^add\s+/i.test(name)) return null;
   if (/per serving/i.test(name) && name.split(/\s+/).length <= 4) return null;
   if (/^[a-z]\s/i.test(name) && name.length < 50) return null;
-  if (/\b(supplement|softgels?|capsules?|tablets?)\b/i.test(name) && name.split(/\s+/).length >= 4) {
+  // Fragment start after OCR/scrape glitch ("ve supercharged...")
+  if (/^[a-z]{1,3}\s/i.test(name) && !/^(epa|dha|coq|b\d|l-)/i.test(name)) {
+    return null;
+  }
+  if (/\b(supplement|softgels?|capsules?|tablets?)\b/i.test(name) && name.split(/\s+/).length >= 3) {
+    return null;
+  }
+  // Prefer nutrient-like names (at least one known token or short chemical form)
+  if (
+    !/\b(vitamin|vit\.?|magnesium|calcium|zinc|iron|copper|selenium|iodine|folate|folic|methyl|b\d{1,2}|epa|dha|omega|curcumin|turmeric|glutathione|ascorbate|bisglycinate|glycinate|citrate|picolinate|threonate|carnitine|arginine|bioflavonoid|choline|phosphatidyl|reishi|lion|mushroom|creatine|coenzyme|coq10|niacin|riboflavin|thiamin|cobalamin|biotin|pantothenic|potassium|sodium|chloride|fiber|protein|collagen|probiotic|lactobacillus)\b/i.test(
+      name
+    ) &&
+    name.split(/\s+/).length >= 4
+  ) {
     return null;
   }
   const letters = (name.match(/[A-Za-z]/g) || []).length;

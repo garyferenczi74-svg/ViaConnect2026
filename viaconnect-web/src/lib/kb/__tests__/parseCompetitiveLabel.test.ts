@@ -47,6 +47,12 @@ describe("parseIngredientLine", () => {
     expect(
       parseIngredientLine("s Recommended Daily Intake of 420 mg")
     ).toBeNull();
+    expect(
+      parseIngredientLine("Also available in travel-friendly 15 mL")
+    ).toBeNull();
+    expect(
+      parseIngredientLine("ve supercharged brain function by adding 450 mg")
+    ).toBeNull();
   });
 });
 
