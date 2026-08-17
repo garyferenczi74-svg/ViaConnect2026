@@ -15,6 +15,7 @@ import EvolutionTimeline from "@/components/admin/jeffery/EvolutionTimeline";
 import KnowledgeExplorer from "@/components/admin/jeffery/KnowledgeExplorer";
 import CapabilityUsagePanel from "@/components/admin/jeffery/CapabilityUsagePanel";
 import ContinuousOpsPanel from "@/components/admin/jeffery/ContinuousOpsPanel";
+import JefferyReviewDesk from "@/components/admin/jeffery/JefferyReviewDesk";
 import { AdminPanel } from "@/components/admin/AdminPanelErrorBoundary";
 import AgentsClient from "./agents/AgentsClient";
 import type {
@@ -29,6 +30,7 @@ const TABS = [
   { id: "agents", label: "Agents", icon: Users },
   { id: "caps", label: "Capabilities", icon: Zap },
   { id: "ops", label: "Ops 24/7", icon: Activity },
+  { id: "kb-review", label: "KB Review", icon: ClipboardCheck },
   { id: "review", label: "Review Queue", icon: ClipboardCheck },
   { id: "steer", label: "Steering", icon: Compass },
   { id: "evolution", label: "Evolution", icon: Brain },
@@ -122,7 +124,10 @@ export default function JefferyClient({
         role="tabpanel"
         aria-labelledby={`jeffery-tab-${activeTab}`}
         className={
-          activeTab === "agents" || activeTab === "caps" || activeTab === "ops"
+          activeTab === "agents" ||
+          activeTab === "caps" ||
+          activeTab === "ops" ||
+          activeTab === "kb-review"
             ? ""
             : "px-4 md:px-8 py-6"
         }
@@ -165,6 +170,11 @@ export default function JefferyClient({
               <ContinuousOpsPanel />
             </AdminPanel>
           </div>
+        )}
+        {activeTab === "kb-review" && (
+          <AdminPanel name="KB Review Desk">
+            <JefferyReviewDesk />
+          </AdminPanel>
         )}
         {activeTab === "agents" && (
           <AdminPanel name="Agents">
