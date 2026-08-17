@@ -54,29 +54,48 @@ function apiKey(): string | null {
   return k.length > 0 ? k : null;
 }
 
+export type FirecrawlAction =
+  | { type: 'wait'; milliseconds?: number; selector?: string }
+  | { type: 'click'; selector: string }
+  | { type: 'scroll'; direction?: 'up' | 'down'; }
+  | { type: 'screenshot'; fullPage?: boolean };
+
 export interface ScrapeResult {
   ok: boolean;
   url: string;
   markdown?: string;
   title?: string;
+  /** Base64 screenshot when formats include screenshot (no data-url prefix). */
+  screenshotBase64?: string;
   skipped?: boolean;
   reason?: string;
   status?: number;
+  usedActions?: boolean;
 }
 
 /**
  * Firecrawl scrape endpoint. Fail-open: returns skipped on missing key / budget / error.
+ * Optional actions drive JS tabs (Supplement Facts) before capture.
  */
 export async function firecrawlScrape(
   url: string,
   budget: FirecrawlBudget,
-  opts?: { timeoutMs?: number },
+  opts?: {
+    timeoutMs?: number;
+    actions?: FirecrawlAction[];
+    /** Include screenshot for vision OCR (costs more). */
+    includeScreenshot?: boolean;
+    onlyMainContent?: boolean;
+  },
 ): Promise<ScrapeResult> {
   const key = apiKey();
   if (!key) {
     return { ok: false, url, skipped: true, reason: 'FIRECRAWL_API_KEY unset' };
   }
-  if (!canSpend(budget, 1, 1)) {
+  // Interactive scrapes burn more credit; charge 2 when actions/screenshot used
+  const creditCost =
+    (opts?.actions?.length ?? 0) > 0 || opts?.includeScreenshot ? 2 : 1;
+  if (!canSpend(budget, 1, creditCost)) {
     budget.hitBudget = true;
     return { ok: false, url, skipped: true, reason: 'budget_exhausted' };
   }
@@ -85,6 +104,23 @@ export async function firecrawlScrape(
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
+  const formats: string[] = ['markdown'];
+  if (opts?.includeScreenshot) formats.push('screenshot');
+
+  const body: Record<string, unknown> = {
+    url,
+    formats,
+    onlyMainContent: opts?.onlyMainContent ?? true,
+  };
+  if (opts?.actions?.length) {
+    body.actions = opts.actions.map((a) => {
+      if (a.type === 'screenshot') {
+        return { type: 'screenshot', fullPage: a.fullPage ?? false };
+      }
+      return a;
+    });
+  }
+
   try {
     const res = await fetch(`${FIRECRAWL_BASE}/scrape`, {
       method: 'POST',
@@ -92,34 +128,45 @@ export async function firecrawlScrape(
         Authorization: `Bearer ${key}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        url,
-        formats: ['markdown'],
-        onlyMainContent: true,
-      }),
+      body: JSON.stringify(body),
       signal: controller.signal,
     });
 
-    recordSpend(budget, 1, 1);
+    recordSpend(budget, 1, creditCost);
 
     if (!res.ok) {
-      const body = await res.text().catch(() => '');
+      const errBody = await res.text().catch(() => '');
       safeLog.warn('firecrawl.scrape', 'non-ok', {
         url,
         status: res.status,
         // never log API key
-        bodyPreview: body.slice(0, 200),
+        bodyPreview: errBody.slice(0, 200),
       });
       return { ok: false, url, status: res.status, reason: `http_${res.status}` };
     }
 
     const json = (await res.json()) as {
       success?: boolean;
-      data?: { markdown?: string; metadata?: { title?: string } };
+      data?: {
+        markdown?: string;
+        screenshot?: string;
+        metadata?: { title?: string };
+      };
     };
     const markdown = json.data?.markdown ?? '';
     const title = json.data?.metadata?.title;
-    return { ok: true, url, markdown, title };
+    let screenshotBase64 = json.data?.screenshot;
+    if (screenshotBase64?.startsWith('data:image')) {
+      screenshotBase64 = screenshotBase64.replace(/^data:image\/\w+;base64,/, '');
+    }
+    return {
+      ok: true,
+      url,
+      markdown,
+      title,
+      screenshotBase64: screenshotBase64 || undefined,
+      usedActions: Boolean(opts?.actions?.length),
+    };
   } catch (err) {
     safeLog.warn('firecrawl.scrape', 'failed open', {
       url,
@@ -134,6 +181,48 @@ export async function firecrawlScrape(
   } finally {
     clearTimeout(timer);
   }
+}
+
+/**
+ * Click common Supplement Facts / Ingredients tabs then scrape.
+ * Best-effort selectors; fails open to plain markdown if actions error.
+ */
+export async function firecrawlScrapeSupplementFacts(
+  url: string,
+  budget: FirecrawlBudget,
+  opts?: { timeoutMs?: number; screenshot?: boolean },
+): Promise<ScrapeResult> {
+  // Try interactive first: wait for JS, scroll to facts, click common tab hooks.
+  // Use portable CSS only (no Playwright :has-text).
+  const interactive = await firecrawlScrape(url, budget, {
+    timeoutMs: opts?.timeoutMs ?? 60_000,
+    includeScreenshot: opts?.screenshot ?? true,
+    onlyMainContent: false,
+    actions: [
+      { type: 'wait', milliseconds: 1500 },
+      { type: 'scroll', direction: 'down' },
+      { type: 'wait', milliseconds: 600 },
+      { type: 'click', selector: '[role="tab"]' },
+      { type: 'wait', milliseconds: 500 },
+      { type: 'click', selector: 'button[aria-controls*="fact"], a[href*="supplement"], button[class*="ingredient"], [data-tab*="fact"], [id*="supplement-facts"], [class*="supplement-facts"]' },
+      { type: 'wait', milliseconds: 1200 },
+      { type: 'scroll', direction: 'down' },
+      { type: 'wait', milliseconds: 800 },
+    ],
+  });
+
+  if (interactive.ok && (interactive.markdown?.length ?? 0) > 200) {
+    return interactive;
+  }
+
+  // Fallback plain scrape (still counts if interactive failed without spend... interactive already spent)
+  if (!interactive.ok && interactive.reason === 'budget_exhausted') {
+    return interactive;
+  }
+  return firecrawlScrape(url, budget, {
+    timeoutMs: opts?.timeoutMs,
+    includeScreenshot: opts?.screenshot ?? false,
+  });
 }
 
 /**

@@ -8,7 +8,6 @@ import { safeLog } from "@/lib/utils/safe-log";
 import {
   defaultBudget,
   firecrawlSearch,
-  firecrawlScrape,
   type FirecrawlBudget,
 } from "@/lib/hounddog/firecrawl/client";
 import { contentHash } from "@/lib/hounddog/ingest/contentHash";
@@ -22,14 +21,8 @@ import {
   COMPETITIVE_SKU_SEEDS,
   looksLikeProductDetailUrl,
 } from "@/lib/kb/competitiveSkuSeeds";
-import {
-  geminiExtractCompetitiveLabel,
-  pageLooksLikeHasLabelFacts,
-} from "@/lib/kb/geminiLabelExtract";
-import {
-  hasUnknownOnlyIngredients,
-  parseCompetitiveLabelText,
-} from "@/lib/kb/parseCompetitiveLabel";
+import { deepExtractCompetitiveLabel } from "@/lib/kb/deepLabelExtract";
+import { hasUnknownOnlyIngredients } from "@/lib/kb/parseCompetitiveLabel";
 
 export interface CompetitiveIngestStats {
   runId: string;
@@ -42,6 +35,9 @@ export interface CompetitiveIngestStats {
   seedsAttempted: number;
   seedsStaged: number;
   geminiExtracts: number;
+  interactScrapes: number;
+  visionExtracts: number;
+  withIngredients: number;
   gateApproved: number;
   gateBlocked: number;
   gateEscalated: number;
@@ -141,6 +137,9 @@ export async function runCompetitiveIngest(opts?: {
     seedsAttempted: 0,
     seedsStaged: 0,
     geminiExtracts: 0,
+    interactScrapes: 0,
+    visionExtracts: 0,
+    withIngredients: 0,
     gateApproved: 0,
     gateBlocked: 0,
     gateEscalated: 0,
@@ -176,32 +175,58 @@ export async function runCompetitiveIngest(opts?: {
     }
 
     stats.discovered += 1;
-    let excerpt = "";
-    const scrape = await firecrawlScrape(input.url, budget);
-    if (scrape.ok && scrape.markdown) {
-      excerpt = scrape.markdown.slice(0, 8000);
-    } else {
-      excerpt = input.titleHint ?? "";
-    }
+
+    const titleHint = stripMarketingNoise(
+      (input.titleHint || "Competitive product").slice(0, 240)
+    );
+    // Seeds: full deep path (interact + vision). Search hits: interact only.
+    const deep = await deepExtractCompetitiveLabel({
+      url: input.url,
+      title: titleHint,
+      budget,
+      allowInteract: true,
+      allowVision: Boolean(input.fromSeed),
+    });
 
     const title = stripMarketingNoise(
-      (scrape.title || input.titleHint || "Competitive product").slice(0, 240)
+      (deep.pageTitle || titleHint || "Competitive product").slice(0, 240)
     );
-    const summary = stripMarketingNoise(excerpt).slice(0, 800) || "UNKNOWN";
+    const markdown = deep.markdown || "";
+    const labelFacts = deep.facts;
+    const knownLines = labelFacts.ingredient_rows
+      .filter((r) => r.ingredient_name !== "UNKNOWN")
+      .slice(0, 8)
+      .map(
+        (r) =>
+          `${r.ingredient_name}${r.dose_amount != null ? ` ${r.dose_amount}${r.dose_unit ?? ""}` : ""}`
+      );
+    const summary =
+      stripMarketingNoise(
+        [
+          title,
+          labelFacts.serving_size
+            ? `Serving size: ${labelFacts.serving_size}`
+            : "",
+          knownLines.join("; "),
+          markdown.slice(0, 400),
+        ]
+          .filter(Boolean)
+          .join(". ")
+      ).slice(0, 800) || "UNKNOWN";
     const brand =
       input.brandHint || brandFromHost(scope.host, labelByDomain);
 
-    let labelFacts = parseCompetitiveLabelText(excerpt, { title });
-    if (
-      hasUnknownOnlyIngredients(labelFacts.ingredient_rows) &&
-      pageLooksLikeHasLabelFacts(excerpt)
-    ) {
-      const gem = await geminiExtractCompetitiveLabel(excerpt, { title });
-      if (gem && !hasUnknownOnlyIngredients(gem.ingredient_rows)) {
-        labelFacts = gem;
-        stats.geminiExtracts += 1;
-      }
+    if (deep.interacted) stats.interactScrapes += 1;
+    if (deep.path.startsWith("vision")) stats.visionExtracts += 1;
+    if (deep.path === "gemini_text") stats.geminiExtracts += 1;
+    if (!hasUnknownOnlyIngredients(labelFacts.ingredient_rows)) {
+      stats.withIngredients += 1;
     }
+
+    const fullText =
+      markdown.slice(0, 4000) ||
+      knownLines.join("\n") ||
+      summary;
 
     const hash = contentHash([
       "competitive",
@@ -253,7 +278,9 @@ export async function runCompetitiveIngest(opts?: {
           availability_note: labelFacts.availability_note,
           extraction_confidence: labelFacts.extraction_confidence,
           parse_notes: labelFacts.parse_notes,
-          handler_version: "221.phase2.c1r.1",
+          deep_path: deep.path,
+          markdown_len: deep.markdownLen,
+          handler_version: "221.phase2.c1deep.1",
         },
         is_aggregate_only: true,
         robots_ok: true,
@@ -263,7 +290,7 @@ export async function runCompetitiveIngest(opts?: {
         agent_slug: "hounddog",
         topic_key: `competitive:${input.category}`,
         relevance_score: input.fromSeed ? 0.9 : 0.75,
-        full_text_excerpt: excerpt.slice(0, 4000),
+        full_text_excerpt: fullText.slice(0, 4000),
       },
       { onConflict: "source_url" }
     );

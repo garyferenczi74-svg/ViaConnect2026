@@ -5,14 +5,8 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { safeLog } from "@/lib/utils/safe-log";
-import {
-  defaultBudget,
-  firecrawlScrape,
-} from "@/lib/hounddog/firecrawl/client";
-import {
-  geminiExtractCompetitiveLabel,
-  pageLooksLikeHasLabelFacts,
-} from "./geminiLabelExtract";
+import { defaultBudget } from "@/lib/hounddog/firecrawl/client";
+import { deepExtractCompetitiveLabel } from "./deepLabelExtract";
 import {
   hasUnknownOnlyIngredients,
   parseCompetitiveLabelText,
@@ -25,6 +19,8 @@ export interface EnrichCompetitiveResult {
   stillUnknown: number;
   scraped: number;
   geminiUsed: number;
+  visionUsed: number;
+  interactUsed: number;
   skipped: number;
   errors: number;
   sample: Array<{
@@ -72,6 +68,8 @@ export async function enrichCompetitiveProducts(
     stillUnknown: 0,
     scraped: 0,
     geminiUsed: 0,
+    visionUsed: 0,
+    interactUsed: 0,
     skipped: 0,
     errors: 0,
     sample: [],
@@ -182,72 +180,59 @@ export async function enrichCompetitiveProducts(
       }
     }
 
-    // First pass on whatever text we have
+    // Deep path: interact tabs + Gemini text + vision OCR
     let facts = parseCompetitiveLabelText(text || title, { title });
-
-    // Re-scrape when still UNKNOWN / low quality
     if (
       allowScrape &&
       url &&
       (hasUnknownOnlyIngredients(facts.ingredient_rows) ||
         isLowQualityRows(facts.ingredient_rows)) &&
       !budget.hitBudget &&
-      stats.scraped < 10
+      stats.scraped < 8
     ) {
       try {
-        const scrape = await firecrawlScrape(url, budget);
-        if (scrape.ok && scrape.markdown) {
-          text = scrape.markdown.slice(0, 8000);
-          stats.scraped += 1;
-          facts = parseCompetitiveLabelText(text, { title });
-          const { data: prior } = await sb
-            .from("hounddog_staging_items")
-            .select("raw_payload")
-            .eq("source_url", url)
-            .maybeSingle();
-          const priorPayload =
-            prior?.raw_payload && typeof prior.raw_payload === "object"
-              ? (prior.raw_payload as Record<string, unknown>)
-              : {};
-          await sb
-            .from("hounddog_staging_items")
-            .update({
-              full_text_excerpt: text.slice(0, 4000),
-              raw_payload: {
-                ...priorPayload,
-                re_scraped_for_label: true,
-                ingredient_rows: facts.ingredient_rows,
-                serving_size: facts.serving_size,
-                list_price: facts.list_price,
-                extraction_confidence: facts.extraction_confidence,
-                parse_notes: facts.parse_notes,
-                handler_version: "221.phase2.c1r.1",
-              },
-            })
-            .eq("source_url", url);
-        }
-      } catch (err) {
-        safeLog.warn("kb.enrichCompetitive", "scrape threw", {
-          error: err instanceof Error ? err.message : String(err),
+        const deep = await deepExtractCompetitiveLabel({
+          url,
+          title,
+          existingMarkdown: text,
+          budget,
+          allowInteract: true,
+          allowVision: stats.visionUsed < 5,
         });
-      }
-    }
+        stats.scraped += deep.scraped ? 1 : 0;
+        if (deep.interacted) stats.interactUsed += 1;
+        if (deep.path === "gemini_text") stats.geminiUsed += 1;
+        if (deep.path.startsWith("vision")) stats.visionUsed += 1;
+        facts = deep.facts;
+        if (deep.markdown) text = deep.markdown;
 
-    // Gemini structured fallback when page likely has facts but regex missed
-    if (
-      hasUnknownOnlyIngredients(facts.ingredient_rows) &&
-      text &&
-      pageLooksLikeHasLabelFacts(text) &&
-      stats.geminiUsed < 8
-    ) {
-      try {
-        const gem = await geminiExtractCompetitiveLabel(text, { title });
-        if (gem && !hasUnknownOnlyIngredients(gem.ingredient_rows)) {
-          facts = gem;
-          stats.geminiUsed += 1;
-        }
+        const { data: prior } = await sb
+          .from("hounddog_staging_items")
+          .select("raw_payload")
+          .eq("source_url", url)
+          .maybeSingle();
+        const priorPayload =
+          prior?.raw_payload && typeof prior.raw_payload === "object"
+            ? (prior.raw_payload as Record<string, unknown>)
+            : {};
+        await sb
+          .from("hounddog_staging_items")
+          .update({
+            full_text_excerpt: (text || "").slice(0, 4000),
+            raw_payload: {
+              ...priorPayload,
+              deep_path: deep.path,
+              ingredient_rows: facts.ingredient_rows,
+              serving_size: facts.serving_size,
+              list_price: facts.list_price,
+              extraction_confidence: facts.extraction_confidence,
+              parse_notes: facts.parse_notes,
+              handler_version: "221.phase2.c1deep.1",
+            },
+          })
+          .eq("source_url", url);
       } catch (err) {
-        safeLog.warn("kb.enrichCompetitive", "gemini threw", {
+        safeLog.warn("kb.enrichCompetitive", "deep extract threw", {
           error: err instanceof Error ? err.message : String(err),
         });
       }

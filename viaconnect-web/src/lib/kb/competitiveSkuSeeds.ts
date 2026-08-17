@@ -145,6 +145,224 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     brandHint: "Host Defense",
     productHint: "Lion's Mane",
   },
+  {
+    url: "https://hostdefense.com/products/reishi",
+    category: "functional-mushrooms",
+    brandHint: "Host Defense",
+    productHint: "Reishi",
+  },
+  {
+    url: "https://hostdefense.com/products/turkey-tail",
+    category: "functional-mushrooms",
+    brandHint: "Host Defense",
+    productHint: "Turkey Tail",
+  },
+  // More Thorne
+  {
+    url: "https://www.thorne.com/products/dp/basic-b-complex",
+    category: "methylation-snp",
+    brandHint: "Thorne",
+    productHint: "Basic B Complex",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/omega-3-w-coqs",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Omega-3 with CoQ10",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/buffered-c-powder",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Buffered C Powder",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/ferrasorb",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Ferrasorb",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/5-mthf",
+    category: "methylation-snp",
+    brandHint: "Thorne",
+    productHint: "5-MTHF",
+  },
+  // More Pure Encapsulations
+  {
+    url: "https://www.pureencapsulations.com/methylfolate.html",
+    category: "methylation-snp",
+    brandHint: "Pure Encapsulations",
+    productHint: "Methylfolate",
+  },
+  {
+    url: "https://www.pureencapsulations.com/zinc-15.html",
+    category: "base-formulations",
+    brandHint: "Pure Encapsulations",
+    productHint: "Zinc 15",
+  },
+  {
+    url: "https://www.pureencapsulations.com/vitamin-d3-5000-iu.html",
+    category: "base-formulations",
+    brandHint: "Pure Encapsulations",
+    productHint: "Vitamin D3 5000 IU",
+  },
+  {
+    url: "https://www.pureencapsulations.com/omega-3.html",
+    category: "base-formulations",
+    brandHint: "Pure Encapsulations",
+    productHint: "O.N.E. Omega",
+  },
+  // More Seeking Health
+  {
+    url: "https://www.seekinghealth.com/products/histaminx",
+    category: "advanced-formulas",
+    brandHint: "Seeking Health",
+    productHint: "HistaminX",
+  },
+  {
+    url: "https://www.seekinghealth.com/products/optimal-multivitamin",
+    category: "base-formulations",
+    brandHint: "Seeking Health",
+    productHint: "Optimal Multivitamin",
+  },
+  {
+    url: "https://www.seekinghealth.com/products/homocysteex-plus",
+    category: "methylation-snp",
+    brandHint: "Seeking Health",
+    productHint: "HomocysteX Plus",
+  },
+  // More NOW
+  {
+    url: "https://www.nowfoods.com/products/minerals/zinc-picolinate-50-mg-veg-capsules",
+    category: "base-formulations",
+    brandHint: "NOW Foods",
+    productHint: "Zinc Picolinate 50 mg",
+  },
+  {
+    url: "https://www.nowfoods.com/products/vitamins/vitamin-c-1000-mg-with-rose-hips-tablets",
+    category: "base-formulations",
+    brandHint: "NOW Foods",
+    productHint: "Vitamin C-1000",
+  },
+  {
+    url: "https://www.nowfoods.com/products/herbs/curcumin-turmeric-root-extract",
+    category: "advanced-formulas",
+    brandHint: "NOW Foods",
+    productHint: "Curcumin",
+  },
+  // More Life Extension
+  {
+    url: "https://www.lifeextension.com/vitamins-supplements/item01713/two-per-day-capsules",
+    category: "base-formulations",
+    brandHint: "Life Extension",
+    productHint: "Two-Per-Day Capsules",
+  },
+  {
+    url: "https://www.lifeextension.com/vitamins-supplements/item01936/magnesium-caps",
+    category: "base-formulations",
+    brandHint: "Life Extension",
+    productHint: "Magnesium Caps",
+  },
+  {
+    url: "https://www.lifeextension.com/vitamins-supplements/item01718/vitamin-d3",
+    category: "base-formulations",
+    brandHint: "Life Extension",
+    productHint: "Vitamin D3",
+  },
+  // Nordic more
+  {
+    url: "https://www.nordicnaturals.com/consumers/algae-omega",
+    category: "base-formulations",
+    brandHint: "Nordic Naturals",
+    productHint: "Algae Omega",
+  },
+  {
+    url: "https://www.nordicnaturals.com/consumers/proomega-2000",
+    category: "base-formulations",
+    brandHint: "Nordic Naturals",
+    productHint: "ProOmega 2000",
+  },
+  // Quicksilver more
+  {
+    url: "https://www.quicksilverscientific.com/products/ultra-binder",
+    category: "advanced-formulas",
+    brandHint: "Quicksilver Scientific",
+    productHint: "Ultra Binder",
+  },
+  {
+    url: "https://www.quicksilverscientific.com/products/methyl-b-complex",
+    category: "methylation-snp",
+    brandHint: "Quicksilver Scientific",
+    productHint: "Methyl B Complex",
+  },
+  // Momentous
+  {
+    url: "https://www.momentous.com/products/creatine",
+    category: "advanced-formulas",
+    brandHint: "Momentous",
+    productHint: "Creapure Creatine",
+  },
+  {
+    url: "https://www.momentous.com/products/omega-3",
+    category: "base-formulations",
+    brandHint: "Momentous",
+    productHint: "Omega-3",
+  },
+  // Jarrow
+  {
+    url: "https://www.jarrow.com/product/b-right",
+    category: "methylation-snp",
+    brandHint: "Jarrow Formulas",
+    productHint: "B-Right",
+  },
+  {
+    url: "https://www.jarrow.com/product/methyl-b-12",
+    category: "methylation-snp",
+    brandHint: "Jarrow Formulas",
+    productHint: "Methyl B-12",
+  },
+  // Garden of Life
+  {
+    url: "https://www.gardenoflife.com/products/vitamin-code-raw-d3",
+    category: "base-formulations",
+    brandHint: "Garden of Life",
+    productHint: "Vitamin Code RAW D3",
+  },
+  // Four Sigmatic
+  {
+    url: "https://us.foursigmatic.com/products/mushroom-coffee-lions-mane-chaga",
+    category: "functional-mushrooms",
+    brandHint: "Four Sigmatic",
+    productHint: "Mushroom Coffee Lion's Mane Chaga",
+  },
+  // Designs for Health more
+  {
+    url: "https://www.designsforhealth.com/products/vitamin-d-supreme",
+    category: "base-formulations",
+    brandHint: "Designs for Health",
+    productHint: "Vitamin D Supreme",
+  },
+  {
+    url: "https://www.designsforhealth.com/products/omegavail-ultra",
+    category: "base-formulations",
+    brandHint: "Designs for Health",
+    productHint: "OmegAvail Ultra",
+  },
+  // Ritual more
+  {
+    url: "https://ritual.com/products/essential-prenatal",
+    category: "womens-health",
+    brandHint: "Ritual",
+    productHint: "Essential Prenatal",
+  },
+  // LivOn Labs
+  {
+    url: "https://www.livonlabs.com/products/lypo-spheric-vitamin-c",
+    category: "advanced-formulas",
+    brandHint: "LivOn Labs",
+    productHint: "Lypo-Spheric Vitamin C",
+  },
 ] as const;
 
 /** True when URL looks like a product detail page (not blog/hub/cart). */
