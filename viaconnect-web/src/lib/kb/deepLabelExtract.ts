@@ -57,6 +57,8 @@ export async function deepExtractCompetitiveLabel(opts: {
   let interacted = false;
   let visionUsed = false;
   let screenshotBase64: string | undefined;
+  /** If base64 materialize failed, still try vision via signed URL fetch. */
+  let screenshotRawUrl: string | undefined;
 
   // 1) Regex on existing text
   let facts = parseCompetitiveLabelText(markdown || title, { title });
@@ -90,6 +92,13 @@ export async function deepExtractCompetitiveLabel(opts: {
           // keep opts.title preferred
         }
         screenshotBase64 = scrape.screenshotBase64;
+        if (
+          !screenshotBase64 &&
+          scrape.screenshotRaw &&
+          /^https?:\/\//i.test(scrape.screenshotRaw)
+        ) {
+          screenshotRawUrl = scrape.screenshotRaw;
+        }
         facts = parseCompetitiveLabelText(markdown, {
           title: scrape.title || title,
         });
@@ -117,6 +126,13 @@ export async function deepExtractCompetitiveLabel(opts: {
         if (plain.ok && plain.markdown) {
           markdown = plain.markdown;
           screenshotBase64 = plain.screenshotBase64 ?? screenshotBase64;
+          if (
+            !screenshotBase64 &&
+            plain.screenshotRaw &&
+            /^https?:\/\//i.test(plain.screenshotRaw)
+          ) {
+            screenshotRawUrl = plain.screenshotRaw;
+          }
           facts = parseCompetitiveLabelText(markdown, {
             title: plain.title || title,
           });
@@ -166,14 +182,24 @@ export async function deepExtractCompetitiveLabel(opts: {
     }
   }
 
-  // 4) Vision OCR on screenshot (always attempt when present)
-  if (opts.allowVision !== false && screenshotBase64) {
+  // 4) Vision OCR on screenshot (base64 preferred; signed URL fallback)
+  if (opts.allowVision !== false && (screenshotBase64 || screenshotRawUrl)) {
     try {
       visionUsed = true;
-      const vis = await geminiVisionExtractLabel(screenshotBase64, {
-        mimeType: "image/png",
-        title,
-      });
+      let vis = screenshotBase64
+        ? await geminiVisionExtractLabel(screenshotBase64, {
+            mimeType: "image/png",
+            title,
+          })
+        : null;
+      if (
+        (!vis || hasUnknownOnlyIngredients(vis.ingredient_rows)) &&
+        screenshotRawUrl
+      ) {
+        vis = await geminiVisionExtractLabelFromUrl(screenshotRawUrl, {
+          title,
+        });
+      }
       if (vis && !hasUnknownOnlyIngredients(vis.ingredient_rows)) {
         return {
           facts: vis,

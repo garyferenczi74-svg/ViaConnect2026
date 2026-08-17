@@ -298,12 +298,14 @@ export async function enrichCompetitiveProducts(
           existingMarkdown: text,
           budget,
           allowInteract: true,
-          allowVision: stats.visionUsed < 5,
+          // Raise vision cap so UNKNOWN PDP rows can still hit OCR path
+          allowVision: stats.visionUsed < 8,
         });
         stats.scraped += deep.scraped ? 1 : 0;
         if (deep.interacted) stats.interactUsed += 1;
         if (deep.path === "gemini_text") stats.geminiUsed += 1;
-        if (deep.path.startsWith("vision")) stats.visionUsed += 1;
+        // Count vision attempts (budget + smoke), not only successful OCR
+        if (deep.visionUsed) stats.visionUsed += 1;
         facts = deep.facts;
         if (deep.markdown) text = deep.markdown;
 

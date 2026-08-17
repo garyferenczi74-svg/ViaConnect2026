@@ -54,6 +54,15 @@ describe("parseIngredientLine", () => {
       parseIngredientLine("ve supercharged brain function by adding 450 mg")
     ).toBeNull();
   });
+
+  it("accepts common advanced nutrients", () => {
+    const q = parseIngredientLine("Quercetin (as dihydrate) 500 mg");
+    expect(q?.dose_amount).toBe(500);
+    const a = parseIngredientLine("Ashwagandha Root Extract 300 mg");
+    expect(a?.dose_amount).toBe(300);
+    const n = parseIngredientLine("N-Acetyl-L-Cysteine (NAC) 600 mg");
+    expect(n?.dose_amount).toBe(600);
+  });
 });
 
 describe("parseCompetitiveLabelText", () => {

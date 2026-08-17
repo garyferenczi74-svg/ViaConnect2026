@@ -48,10 +48,10 @@ const DOSE_TAIL = new RegExp(
 
 /** Common noise lines that are not ingredients. */
 const SKIP_LINE =
-  /^(supplement facts|amount per serving|daily value|% daily value|other ingredients|contains|directions|suggested use|warning|keep out|storage|manufactured|distributed|these statements|fda|serving size|servings per|calories|total fat|sodium|protein|carbohydrate|free shipping|add to cart|buy now|subscribe|reviews?|rating|sku:|item #|net wt|net weight|fl oz|shipping|promo|coupon|save \d)/i;
+  /^(supplement facts|amount per serving|daily value|% daily value|other ingredients|contains|directions|suggested use|warning|keep out|storage|manufactured|distributed|these statements|fda|serving size|servings per|calories|total fat|sodium|protein|carbohydrate|free shipping|add to cart|buy now|subscribe|reviews?|rating|sku:|item #|net wt|net weight|fl oz|shipping|promo|coupon|save \d|you may also|customers also|frequently bought|related products|compare to|doctor.?s best|labdoor|consumerlab|nsf.org|click here|read more|view full|see all|in stock|out of stock|ships free|member price|auto[- ]?ship)/i;
 
 const SKIP_NAME =
-  /^(net wt|net weight|fl oz|fluid ounce|calories?|total (fat|carb)|trans fat|cholesterol|dietary fiber|added sugars?|softgels? per serving|capsules? per serving|tablets? per serving|level teaspoons?|approx\.?|serving|several professional|source of dha)$/i;
+  /^(net wt|net weight|fl oz|fluid ounce|calories?|total (fat|carb)|trans fat|cholesterol|dietary fiber|added sugars?|softgels? per serving|capsules? per serving|tablets? per serving|level teaspoons?|approx\.?|serving|several professional|source of dha|member price|auto[- ]?ship|related products|compare|labdoor|consumerlab)$/i;
 
 const FORM_FROM_TEXT: Array<{ re: RegExp; form: string }> = [
   { re: /\bliposomal\b/i, form: "liposomal" },
@@ -256,7 +256,7 @@ export function parseIngredientLine(line: string): CompetitiveIngredientRow | nu
   }
   // Prefer nutrient-like names (at least one known token or short chemical form)
   if (
-    !/\b(vitamin|vit\.?|magnesium|calcium|zinc|iron|copper|selenium|iodine|folate|folic|methyl|b\d{1,2}|epa|dha|omega|curcumin|turmeric|glutathione|ascorbate|bisglycinate|glycinate|citrate|picolinate|threonate|carnitine|arginine|bioflavonoid|choline|phosphatidyl|reishi|lion|mushroom|creatine|coenzyme|coq10|niacin|riboflavin|thiamin|cobalamin|biotin|pantothenic|potassium|sodium|chloride|fiber|protein|collagen|probiotic|lactobacillus)\b/i.test(
+    !/\b(vitamin|vit\.?|magnesium|calcium|zinc|iron|copper|selenium|iodine|folate|folic|methyl|b\d{1,2}|epa|dha|omega|curcumin|turmeric|glutathione|ascorbate|bisglycinate|glycinate|citrate|picolinate|threonate|carnitine|arginine|bioflavonoid|choline|phosphatidyl|reishi|lion|mushroom|creatine|coenzyme|coq10|niacin|riboflavin|thiamin|cobalamin|biotin|pantothenic|potassium|sodium|chloride|fiber|protein|collagen|probiotic|lactobacillus|ashwagandha|berberine|quercetin|resveratrol|taurine|glycine|theanine|melatonin|lutein|zeaxanthin|astaxanthin|nac\b|n-acetyl|nmn|nad\+|nadh|fish oil|algae|krill|phosphatidylserine|phosphatidylcholine|inostol|inositol|chromium|molybdenum|manganese|boron|vanadium|silica|hyaluronic|coq|ubiquinol|ubiquinone|spermidine|apigenin|fisetin|pterostilbene|sulforaphane|milk thistle|silymarin|bacopa|rhodiola|lion.?s mane|cordyceps|turkey tail|beta-glucan|psyllium|inulin|prebiotic|bifido|saccharomyces|strain|extract|complex|blend|powder|oil)\b/i.test(
       name
     ) &&
     name.split(/\s+/).length >= 4

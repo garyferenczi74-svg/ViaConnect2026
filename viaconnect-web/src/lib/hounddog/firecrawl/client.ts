@@ -67,10 +67,89 @@ export interface ScrapeResult {
   title?: string;
   /** Base64 screenshot when formats include screenshot (no data-url prefix). */
   screenshotBase64?: string;
+  /** Raw Firecrawl screenshot field before materialize (URL or data-url). */
+  screenshotRaw?: string;
   skipped?: boolean;
   reason?: string;
   status?: number;
   usedActions?: boolean;
+}
+
+/**
+ * Firecrawl returns screenshots as signed HTTPS URLs (expire ~24h), not
+ * base64. Gemini vision needs raw base64. Materialize any URL / data-url
+ * into bare base64; fail-open on fetch errors.
+ */
+export async function materializeScreenshotToBase64(
+  raw: string | undefined | null,
+  opts?: { timeoutMs?: number },
+): Promise<string | undefined> {
+  if (!raw || typeof raw !== 'string') return undefined;
+  let s = raw.trim();
+  if (!s) return undefined;
+
+  if (s.startsWith('data:image')) {
+    s = s.replace(/^data:image\/\w+;base64,/, '');
+    return s.length > 200 ? s : undefined;
+  }
+
+  if (/^https?:\/\//i.test(s)) {
+    const timeoutMs = opts?.timeoutMs ?? 15_000;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(s, {
+        signal: controller.signal,
+        headers: { Accept: 'image/*,*/*' },
+      });
+      if (!res.ok) {
+        safeLog.warn('firecrawl.screenshot', 'fetch non-ok', {
+          status: res.status,
+          // never log full signed URL (may contain tokens)
+          host: (() => {
+            try {
+              return new URL(s).host;
+            } catch {
+              return 'unknown';
+            }
+          })(),
+        });
+        return undefined;
+      }
+      const buf = Buffer.from(await res.arrayBuffer());
+      // Tiny payloads are placeholders; huge ones blow Gemini payload limits
+      if (buf.length < 500 || buf.length > 8_000_000) return undefined;
+      return buf.toString('base64');
+    } catch (err) {
+      safeLog.warn('firecrawl.screenshot', 'fetch failed', {
+        error: err instanceof Error ? err.message : String(err),
+      });
+      return undefined;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  // Already bare base64 (legacy / self-hosted)
+  if (s.length > 500 && !s.includes('://') && !/\s/.test(s)) {
+    return s;
+  }
+  return undefined;
+}
+
+function pickScreenshotCandidate(data: {
+  screenshot?: unknown;
+  actions?: { screenshots?: unknown };
+}): string {
+  const primary = data.screenshot;
+  if (typeof primary === 'string' && primary.trim()) return primary.trim();
+  const shots = data.actions?.screenshots;
+  if (Array.isArray(shots)) {
+    for (const s of shots) {
+      if (typeof s === 'string' && s.trim()) return s.trim();
+    }
+  }
+  return '';
 }
 
 /**
@@ -104,10 +183,10 @@ export async function firecrawlScrape(
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
-  // Prefer full-page screenshot when OCR is requested (vision path)
+  // Full-page screenshot for Supplement Facts panels below the fold.
+  // Prefer object form only (string + object can confuse older proxies).
   const formats: unknown[] = ['markdown'];
   if (opts?.includeScreenshot) {
-    formats.push('screenshot');
     formats.push({ type: 'screenshot', fullPage: true });
   }
 
@@ -119,7 +198,8 @@ export async function firecrawlScrape(
   if (opts?.actions?.length) {
     body.actions = opts.actions.map((a) => {
       if (a.type === 'screenshot') {
-        return { type: 'screenshot', fullPage: a.fullPage ?? false };
+        // Firecrawl docs accept fullPage / full_page depending on version
+        return { type: 'screenshot', fullPage: a.fullPage ?? true, full_page: a.fullPage ?? true };
       }
       return a;
     });
@@ -154,27 +234,35 @@ export async function firecrawlScrape(
       data?: {
         markdown?: string;
         screenshot?: string;
-        // Newer Firecrawl shapes
+        // Newer Firecrawl shapes — screenshots are signed HTTPS URLs
         actions?: { screenshots?: string[] };
         metadata?: { title?: string };
       };
     };
     const markdown = json.data?.markdown ?? '';
     const title = json.data?.metadata?.title;
-    let screenshotBase64 =
-      json.data?.screenshot ||
-      json.data?.actions?.screenshots?.[0] ||
-      '';
-    if (typeof screenshotBase64 !== 'string') screenshotBase64 = '';
-    if (screenshotBase64.startsWith('data:image')) {
-      screenshotBase64 = screenshotBase64.replace(/^data:image\/\w+;base64,/, '');
+    const screenshotRaw = pickScreenshotCandidate(json.data ?? {});
+    const screenshotBase64 = screenshotRaw
+      ? await materializeScreenshotToBase64(screenshotRaw)
+      : undefined;
+    if (screenshotRaw && !screenshotBase64) {
+      safeLog.warn('firecrawl.scrape', 'screenshot materialize empty', {
+        hasRaw: true,
+        rawKind: /^https?:\/\//i.test(screenshotRaw)
+          ? 'url'
+          : screenshotRaw.startsWith('data:')
+            ? 'data_url'
+            : 'other',
+        rawLen: screenshotRaw.length,
+      });
     }
     return {
       ok: true,
       url,
       markdown,
       title,
-      screenshotBase64: screenshotBase64 || undefined,
+      screenshotBase64,
+      screenshotRaw: screenshotRaw || undefined,
       usedActions: Boolean(opts?.actions?.length),
     };
   } catch (err) {
@@ -202,19 +290,24 @@ export async function firecrawlScrapeSupplementFacts(
   budget: FirecrawlBudget,
   opts?: { timeoutMs?: number; screenshot?: boolean },
 ): Promise<ScrapeResult> {
-  // Lightweight interact: wait for JS hydration + scroll (no multi-click fan-out).
-  // Screenshot enables vision OCR when markdown still lacks dose lines.
+  // Lightweight interact: wait for JS hydration + scroll + optional screenshot action.
+  // formats.screenshot is primary; action screenshot populates actions.screenshots.
+  const wantShot = opts?.screenshot ?? true;
+  const actions: FirecrawlAction[] = [
+    { type: 'wait', milliseconds: 1800 },
+    { type: 'scroll', direction: 'down' },
+    { type: 'wait', milliseconds: 900 },
+    { type: 'scroll', direction: 'down' },
+    { type: 'wait', milliseconds: 700 },
+  ];
+  if (wantShot) {
+    actions.push({ type: 'screenshot', fullPage: true });
+  }
   return firecrawlScrape(url, budget, {
     timeoutMs: opts?.timeoutMs ?? 50_000,
-    includeScreenshot: opts?.screenshot ?? true,
+    includeScreenshot: wantShot,
     onlyMainContent: false,
-    actions: [
-      { type: 'wait', milliseconds: 1800 },
-      { type: 'scroll', direction: 'down' },
-      { type: 'wait', milliseconds: 900 },
-      { type: 'scroll', direction: 'down' },
-      { type: 'wait', milliseconds: 700 },
-    ],
+    actions,
   });
 }
 

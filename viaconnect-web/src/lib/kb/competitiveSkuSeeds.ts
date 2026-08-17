@@ -481,6 +481,67 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     brandHint: "Pure Encapsulations",
     productHint: "Zinc 30",
   },
+  // High-yield single-ingredient / facts-forward PDPs (vision + title dose)
+  {
+    url: "https://www.thorne.com/products/dp/vitamin-d-k2",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Vitamin D + K2",
+  },
+  {
+    url: "https://www.thorne.com/products/dp/creatine",
+    category: "base-formulations",
+    brandHint: "Thorne",
+    productHint: "Creatine",
+  },
+  {
+    url: "https://www.seekinghealth.com/products/optimal-magnesium",
+    category: "base-formulations",
+    brandHint: "Seeking Health",
+    productHint: "Optimal Magnesium",
+  },
+  {
+    url: "https://www.seekinghealth.com/products/optimal-vitamin-d3-k2-drops",
+    category: "base-formulations",
+    brandHint: "Seeking Health",
+    productHint: "Optimal Vitamin D3 K2 Drops",
+  },
+  {
+    url: "https://www.lifeextension.com/vitamins-supplements/item02334/bioactive-complete-b-complex",
+    category: "methylation-snp",
+    brandHint: "Life Extension",
+    productHint: "BioActive Complete B-Complex",
+  },
+  {
+    url: "https://www.lifeextension.com/vitamins-supplements/item01913/magnesium-caps",
+    category: "base-formulations",
+    brandHint: "Life Extension",
+    productHint: "Magnesium Caps",
+  },
+  {
+    url: "https://www.nowfoods.com/products/supplements/magnesium-citrate-pure-powder",
+    category: "base-formulations",
+    brandHint: "NOW Foods",
+    productHint: "Magnesium Citrate Pure Powder",
+  },
+  {
+    url: "https://www.jarrow.com/product/b-right/",
+    category: "methylation-snp",
+    brandHint: "Jarrow Formulas",
+    productHint: "B-Right",
+  },
+  {
+    url: "https://www.quicksilverscientific.com/products/ultra-binder",
+    category: "advanced-formulas",
+    brandHint: "Quicksilver Scientific",
+    productHint: "Ultra Binder",
+  },
+  {
+    url: "https://www.nordicnaturals.com/consumers/vitamin-d3-1000",
+    category: "base-formulations",
+    brandHint: "Nordic Naturals",
+    productHint: "Vitamin D3 1000",
+  },
 ] as const;
 
 /** True when URL looks like a product detail page (not blog/hub/cart). */

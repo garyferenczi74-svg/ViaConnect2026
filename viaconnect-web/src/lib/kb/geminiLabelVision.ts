@@ -54,7 +54,12 @@ export async function geminiVisionExtractLabel(
 ): Promise<CompetitiveLabelFacts | null> {
   const key = geminiKey();
   if (!key) return null;
-  const clean = imageBase64.replace(/^data:image\/\w+;base64,/, "").trim();
+  // Guard: callers sometimes pass a Firecrawl signed URL by mistake
+  const trimmed = imageBase64.trim();
+  if (/^https?:\/\//i.test(trimmed)) {
+    return geminiVisionExtractLabelFromUrl(trimmed, { title: opts?.title });
+  }
+  const clean = trimmed.replace(/^data:image\/\w+;base64,/, "").trim();
   if (clean.length < 200) return null;
 
   const mime = opts?.mimeType ?? "image/png";
