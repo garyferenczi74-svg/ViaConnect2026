@@ -66,20 +66,36 @@ export async function GET(request: Request): Promise<Response> {
   }> = [];
 
   if (coll?.id) {
-    const { data: prods } = await admin
-      .from("kb_products")
-      .select("brand, product_name, ingredient_rows, list_price, serving_size")
-      .eq("is_via_cura", false)
-      .limit(80);
+    // Only C1 competitive_supplements items (not all kb_products)
+    const { data: items } = await admin
+      .from("kb_items")
+      .select("id, title")
+      .eq("primary_collection_id", coll.id)
+      .eq("payload_type", "product")
+      .in("gate_status", ["approved", "lex_approved"])
+      .eq("jeffery_verdict", "approved")
+      .limit(200);
 
-    for (const p of prods ?? []) {
+    for (const it of items ?? []) {
+      const { data: p } = await admin
+        .from("kb_products")
+        .select("brand, product_name, ingredient_rows, list_price, serving_size")
+        .eq("item_id", it.id)
+        .maybeSingle();
+      if (!p) continue;
       const rows = Array.isArray(p.ingredient_rows) ? p.ingredient_rows : [];
       if (hasUnknownOnlyIngredients(rows as never)) {
         productsUnknownOnly += 1;
       } else {
         productsWithIngredients += 1;
         if (sampleIngredients.length < 5) {
-          const names = (rows as Array<{ ingredient_name?: string; dose_amount?: number; dose_unit?: string }>)
+          const names = (
+            rows as Array<{
+              ingredient_name?: string;
+              dose_amount?: number;
+              dose_unit?: string;
+            }>
+          )
             .filter((r) => r.ingredient_name && r.ingredient_name !== "UNKNOWN")
             .slice(0, 4)
             .map(
