@@ -8,6 +8,7 @@ const files = [
   "20260820000013_prompt_221a_jeffery_reviews.sql",
   "20260820000014_prompt_221_phase2_competitive_allowlist.sql",
   "20260820000015_prompt_221_phase2_competitive_allowlist_expand.sql",
+  "20260820000016_prompt_221_cymbiotika_ca_allowlist.sql",
 ];
 const dir = path.join("supabase", "migrations");
 const outDir = path.join("src", "lib", "kb", "migrations");

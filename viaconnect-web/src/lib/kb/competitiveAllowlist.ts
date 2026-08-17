@@ -113,6 +113,7 @@ export const PHASE2_COMPETITIVE_SEED_DOMAINS: readonly string[] = [
   "integrativepro.com",
   "doctorsbest.com",
   "cymbiotika.com",
+  "cymbiotika.ca",
   "renuebyscience.com",
   "seed.com",
   "sisu.com",
