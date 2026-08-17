@@ -68,6 +68,35 @@ export async function POST(request: Request): Promise<Response> {
         }
       }
 
+      // 221 Phase 1: embedding write helper (idempotent)
+      try {
+        await sql.unsafe(`
+CREATE OR REPLACE FUNCTION public.set_kb_item_embedding(
+  p_item_id uuid,
+  p_embedding text
+) RETURNS void
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public, extensions
+AS $$
+  UPDATE public.kb_items
+  SET embedding = p_embedding::extensions.vector,
+      updated_at = now()
+  WHERE id = p_item_id;
+$$;
+REVOKE ALL ON FUNCTION public.set_kb_item_embedding(uuid, text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.set_kb_item_embedding(uuid, text) TO service_role;
+        `);
+        results.push({ file: "set_kb_item_embedding.sql", ok: true });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        results.push({
+          file: "set_kb_item_embedding.sql",
+          ok: false,
+          error: msg.slice(0, 500),
+        });
+      }
+
       let collections: Array<Record<string, unknown>> = [];
       let tables: string[] = [];
       let functions: string[] = [];
