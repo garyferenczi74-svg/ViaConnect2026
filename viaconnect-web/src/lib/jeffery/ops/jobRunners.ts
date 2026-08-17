@@ -174,6 +174,12 @@ export async function runCadenceJob(
           const peptides = await bridgePeptideEducationToKb(20);
           const competitive = await bridgeCompetitiveToKb(10);
           const geneticTests = await bridgeGeneticTestsToKb(10);
+          const { enrichCompetitiveProducts } = await import(
+            "@/lib/kb/enrichCompetitiveProducts"
+          );
+          const competitiveEnrich = await enrichCompetitiveProducts(12, {
+            allowScrape: true,
+          });
           const misbridgeRepair = await repairMisbridgedCompetitiveStudies(40);
           const reviews = await processPendingJefferyKbReviews(20);
           const embeds = await backfillKbEmbeddings(25);
@@ -183,6 +189,7 @@ export async function runCadenceJob(
             peptides,
             competitive,
             geneticTests,
+            competitiveEnrich,
             misbridgeRepair,
             reviews,
             embeds,
@@ -193,6 +200,7 @@ export async function runCadenceJob(
             peptides.errors > 0 ||
             competitive.errors > 0 ||
             geneticTests.errors > 0 ||
+            competitiveEnrich.errors > 0 ||
             misbridgeRepair.errors > 0 ||
             reviews.errors > 0 ||
             embeds.failed > embeds.embedded

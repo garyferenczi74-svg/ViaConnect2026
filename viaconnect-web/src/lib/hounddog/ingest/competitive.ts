@@ -18,6 +18,7 @@ import {
   loadApprovedCompetitiveDomains,
   loadApprovedCompetitiveSources,
 } from "@/lib/kb/competitiveAllowlist";
+import { parseCompetitiveLabelText } from "@/lib/kb/parseCompetitiveLabel";
 
 export interface CompetitiveIngestStats {
   runId: string;
@@ -158,7 +159,8 @@ export async function runCompetitiveIngest(opts?: {
       if (!budget.hitBudget) {
         const scrape = await firecrawlScrape(url, budget);
         if (scrape.ok && scrape.markdown) {
-          excerpt = scrape.markdown.slice(0, 1500);
+          // Keep enough page body for Supplement Facts parsing
+          excerpt = scrape.markdown.slice(0, 6000);
         }
       }
 
@@ -167,6 +169,7 @@ export async function runCompetitiveIngest(opts?: {
       );
       const summary = stripMarketingNoise(excerpt).slice(0, 800) || "UNKNOWN";
       const brand = brandFromHost(scope.host, labelByDomain);
+      const labelFacts = parseCompetitiveLabelText(excerpt, { title });
       const hash = contentHash([
         "competitive",
         url,
@@ -205,6 +208,18 @@ export async function runCompetitiveIngest(opts?: {
             collection: "competitive_supplements",
             host: scope.host,
             gate_notes: gate.notes,
+            ingredient_rows: labelFacts.ingredient_rows,
+            serving_size: labelFacts.serving_size,
+            servings_per_container: labelFacts.servings_per_container,
+            list_price: labelFacts.list_price,
+            currency: labelFacts.currency,
+            price_per_serving: labelFacts.price_per_serving,
+            label_claims: labelFacts.label_claims,
+            delivery_technology: labelFacts.delivery_technology,
+            availability_note: labelFacts.availability_note,
+            extraction_confidence: labelFacts.extraction_confidence,
+            parse_notes: labelFacts.parse_notes,
+            handler_version: "221.phase2.c1e.1",
           },
           is_aggregate_only: true,
           robots_ok: true,
@@ -214,7 +229,7 @@ export async function runCompetitiveIngest(opts?: {
           agent_slug: "hounddog",
           topic_key: `competitive:${category}`,
           relevance_score: 0.75,
-          full_text_excerpt: excerpt.slice(0, 2000),
+          full_text_excerpt: excerpt.slice(0, 4000),
         },
         { onConflict: "source_url" }
       );

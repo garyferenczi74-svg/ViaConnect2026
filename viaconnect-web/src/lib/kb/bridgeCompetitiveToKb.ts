@@ -1,11 +1,16 @@
 /**
  * Prompt 221 Phase 2 C1: bridge competitive staging/gated rows into kb_items + kb_products.
- * Grade E (competitive awareness). Facts-only product shell; ingredients UNKNOWN when not parsed.
+ * Grade E (competitive awareness). Facts-only product shell; label parser fills ingredients.
  */
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { safeLog } from "@/lib/utils/safe-log";
 import { contentHashFromParts } from "./contentHash";
+import {
+  hasUnknownOnlyIngredients,
+  parseCompetitiveLabelText,
+  type CompetitiveIngredientRow,
+} from "./parseCompetitiveLabel";
 import { promoteThenJefferyReview } from "./promotePipeline";
 
 export interface CompetitiveBridgeResult {
@@ -16,17 +21,8 @@ export interface CompetitiveBridgeResult {
   skipped: number;
   errors: number;
   sampleItemIds: string[];
-}
-
-function deliveryFromText(text: string): string | null {
-  const t = text.toLowerCase();
-  if (t.includes("liposomal")) return "liposomal";
-  if (t.includes("micellar")) return "micellar";
-  if (t.includes("softgel")) return "softgel";
-  if (t.includes("gummy")) return "gummy";
-  if (t.includes("sublingual")) return "sublingual";
-  if (t.includes("powder")) return "powder";
-  return null;
+  withIngredients: number;
+  unknownOnly: number;
 }
 
 export async function bridgeCompetitiveToKb(
@@ -40,6 +36,8 @@ export async function bridgeCompetitiveToKb(
     skipped: 0,
     errors: 0,
     sampleItemIds: [],
+    withIngredients: 0,
+    unknownOnly: 0,
   };
 
   const sb = createAdminClient();
@@ -71,13 +69,15 @@ export async function bridgeCompetitiveToKb(
     summary: string;
     brand?: string;
     category?: string;
+    full_text?: string;
+    payload?: Record<string, unknown>;
   }> = [];
 
   if (gated?.length) {
     for (const g of gated) {
       const { data: st } = await sb
         .from("hounddog_staging_items")
-        .select("raw_payload")
+        .select("raw_payload, full_text_excerpt, summary")
         .eq("id", (g as { staging_id?: string }).staging_id ?? "")
         .maybeSingle();
       const payload =
@@ -93,12 +93,21 @@ export async function bridgeCompetitiveToKb(
         brand: typeof payload.brand === "string" ? payload.brand : undefined,
         category:
           typeof payload.category === "string" ? payload.category : undefined,
+        full_text: String(
+          (st as { full_text_excerpt?: string } | null)?.full_text_excerpt ||
+            (st as { summary?: string } | null)?.summary ||
+            (g as { summary?: string }).summary ||
+            ""
+        ),
+        payload,
       });
     }
   } else {
     const { data: staged } = await sb
       .from("hounddog_staging_items")
-      .select("id, source_url, title, summary, raw_payload, gate_status")
+      .select(
+        "id, source_url, title, summary, raw_payload, gate_status, full_text_excerpt"
+      )
       .eq("source_type", "competitive_product")
       .in("gate_status", ["approved", "pending"])
       .order("retrieved_at", { ascending: false })
@@ -116,6 +125,12 @@ export async function bridgeCompetitiveToKb(
         brand: typeof payload.brand === "string" ? payload.brand : undefined,
         category:
           typeof payload.category === "string" ? payload.category : undefined,
+        full_text: String(
+          (s as { full_text_excerpt?: string }).full_text_excerpt ||
+            s.summary ||
+            ""
+        ),
+        payload,
       });
     }
   }
@@ -144,7 +159,55 @@ export async function bridgeCompetitiveToKb(
       .eq("content_hash", hash)
       .maybeSingle();
 
+    const labelText = row.full_text || summary;
+    const fromPayload =
+      row.payload && Array.isArray(row.payload.ingredient_rows)
+        ? (row.payload.ingredient_rows as CompetitiveIngredientRow[])
+        : null;
+    const parsed = parseCompetitiveLabelText(labelText, { title });
+    const ingredient_rows =
+      fromPayload && !hasUnknownOnlyIngredients(fromPayload)
+        ? fromPayload
+        : parsed.ingredient_rows;
+    const facts = {
+      ...parsed,
+      ingredient_rows,
+      extraction_confidence:
+        fromPayload && !hasUnknownOnlyIngredients(fromPayload)
+          ? Math.max(parsed.extraction_confidence, 78)
+          : parsed.extraction_confidence,
+    };
+    if (hasUnknownOnlyIngredients(ingredient_rows)) {
+      stats.unknownOnly += 1;
+    } else {
+      stats.withIngredients += 1;
+    }
+
     if (existing?.id) {
+      // Refresh product facts on already-bridged rows when we now have ingredients
+      if (!hasUnknownOnlyIngredients(ingredient_rows)) {
+        await sb
+          .from("kb_products")
+          .update({
+            ingredient_rows,
+            serving_size: facts.serving_size,
+            servings_per_container: facts.servings_per_container,
+            list_price: facts.list_price,
+            currency: facts.currency,
+            price_per_serving: facts.price_per_serving,
+            label_claims: facts.label_claims,
+            delivery_technology: facts.delivery_technology,
+            availability_note: facts.availability_note,
+          })
+          .eq("item_id", existing.id);
+        await sb
+          .from("kb_items")
+          .update({
+            extraction_confidence: facts.extraction_confidence,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", existing.id);
+      }
       if (
         (existing.gate_status === "approved" ||
           existing.gate_status === "lex_approved") &&
@@ -163,7 +226,6 @@ export async function bridgeCompetitiveToKb(
     }
 
     const brand = (row.brand || "UNKNOWN").slice(0, 120);
-    const delivery = deliveryFromText(`${title} ${summary}`);
 
     try {
       const { data: inserted, error: insErr } = await sb
@@ -176,15 +238,16 @@ export async function bridgeCompetitiveToKb(
           retrieval_timestamp: new Date().toISOString(),
           content_hash: hash,
           evidence_grade: "E",
-          extraction_confidence: 75,
+          extraction_confidence: facts.extraction_confidence,
           gate_status: "pending",
           jeffery_verdict: "pending",
           provenance: {
             bridge: "competitive_phase2",
             staging_or_gated_id: row.id,
-            handler_version: "221.phase2.1",
+            handler_version: "221.phase2.c1e.1",
             brand,
             category: row.category ?? "UNKNOWN",
+            parse_notes: facts.parse_notes,
           },
           payload_type: "product",
           practitioner_depth: false,
@@ -211,19 +274,16 @@ export async function bridgeCompetitiveToKb(
           brand,
           product_name: title.slice(0, 300),
           category: row.category ?? null,
-          ingredient_rows: [
-            {
-              ingredient_name: "UNKNOWN",
-              dose_amount: null,
-              dose_unit: null,
-              form: "UNKNOWN",
-              dose_confidence: 0,
-              note: "Label ingredients not extracted in Phase 2 pass 1",
-            },
-          ],
-          delivery_technology: delivery,
+          ingredient_rows,
+          serving_size: facts.serving_size,
+          servings_per_container: facts.servings_per_container,
+          list_price: facts.list_price,
+          currency: facts.currency,
+          price_per_serving: facts.price_per_serving,
+          label_claims: facts.label_claims,
+          delivery_technology: facts.delivery_technology,
           retailer_or_brand_page: url,
-          availability_note: "UNKNOWN",
+          availability_note: facts.availability_note ?? "UNKNOWN",
           is_via_cura: false,
         },
         { onConflict: "item_id" }
