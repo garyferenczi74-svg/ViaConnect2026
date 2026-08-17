@@ -233,10 +233,12 @@ export function parseIngredientLine(line: string): CompetitiveIngredientRow | nu
     return null;
   }
   // Reject prose sentences mistaken for ingredients
-  if (/\b(suggest|providing approximately|professional groups)\b/i.test(name)) {
+  if (/\b(suggest|providing approximately|professional groups|recommended daily|daily intake)\b/i.test(name)) {
     return null;
   }
   if (/per serving/i.test(name) && name.split(/\s+/).length <= 4) return null;
+  // Leading fragment after scrape artifacts ("s Recommended...")
+  if (/^[a-z]\s/i.test(name) && name.length < 50) return null;
   // Reject if name is mostly non-letters
   const letters = (name.match(/[A-Za-z]/g) || []).length;
   if (letters < 3) return null;
