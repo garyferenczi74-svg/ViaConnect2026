@@ -40,7 +40,8 @@ describe("Prompt 219G matrix and definitions", () => {
   it("core seven granted across all six capabilities in static matrix", () => {
     const matrix = listStaticMatrix();
     expect(CORE_SEVEN_AGENTS).toHaveLength(7);
-    expect(CAPABILITY_IDS).toHaveLength(6);
+    // 219G six + 221 kb_search + kb_read
+    expect(CAPABILITY_IDS).toHaveLength(8);
     for (const agent of CORE_SEVEN_AGENTS) {
       for (const cap of CAPABILITY_IDS) {
         expect(

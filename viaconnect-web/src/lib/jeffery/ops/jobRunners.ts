@@ -147,6 +147,25 @@ export async function runCadenceJob(
         detail = await processPendingStagingGate();
         break;
       }
+      case "jeffery.kb_review": {
+        // 221/221A: bridge Marshall-gated research into KB + Jeffery fail-closed review
+        try {
+          const { bridgeGatedItemsToKb } = await import("@/lib/kb/bridgeGatedToKb");
+          const { processPendingJefferyKbReviews } = await import(
+            "@/lib/kb/promotePipeline"
+          );
+          const bridge = await bridgeGatedItemsToKb(12);
+          const reviews = await processPendingJefferyKbReviews(20);
+          detail = { bridge, reviews };
+          if (bridge.errors > 0 || reviews.errors > 0) status = "partial";
+        } catch (err) {
+          status = "partial";
+          detail = {
+            error: err instanceof Error ? err.message : String(err),
+          };
+        }
+        break;
+      }
       case "sherlock.curate": {
         detail = await runSherlockCurateSweep({ fromEvent: false });
         break;
@@ -299,6 +318,21 @@ export async function processPendingStagingGate(): Promise<Record<string, unknow
         });
       } catch {
         /* fail-open */
+      }
+      // 221A: immediately bridge + Jeffery review so gated work is not stuck
+      try {
+        const { bridgeGatedItemsToKb } = await import("@/lib/kb/bridgeGatedToKb");
+        const { processPendingJefferyKbReviews } = await import(
+          "@/lib/kb/promotePipeline"
+        );
+        const bridge = await bridgeGatedItemsToKb(Math.min(12, counts.approved + 5));
+        const reviews = await processPendingJefferyKbReviews(20);
+        return { ...counts, kbBridge: bridge, jefferyReviews: reviews };
+      } catch (err) {
+        return {
+          ...counts,
+          kbBridgeError: err instanceof Error ? err.message : String(err),
+        };
       }
     }
     return { ...counts };

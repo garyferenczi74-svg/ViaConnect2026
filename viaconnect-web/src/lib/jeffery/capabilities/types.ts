@@ -23,6 +23,8 @@ export const CAPABILITY_IDS = [
   "health_platform",
   "science_authorities",
   "research_hub",
+  "kb_search",
+  "kb_read",
 ] as const;
 
 export type CapabilityId = (typeof CAPABILITY_IDS)[number];
@@ -75,6 +77,20 @@ export const CAPABILITY_DEFINITIONS: Readonly<Record<CapabilityId, CapabilityDef
     label: "Research Hub",
     description:
       "Gated curated research (Sherlock + Hound Dog gated). No ungated staging.",
+    requiresMarshallGate: false,
+  },
+  kb_search: {
+    id: "kb_search",
+    label: "KB hybrid search",
+    description:
+      "Prompt 221 hybrid search over Jeffery-approved corpus items with provenance.",
+    requiresMarshallGate: false,
+  },
+  kb_read: {
+    id: "kb_read",
+    label: "KB read",
+    description:
+      "Prompt 221 read of Jeffery-approved KB items (fail-closed on pending review).",
     requiresMarshallGate: false,
   },
 };

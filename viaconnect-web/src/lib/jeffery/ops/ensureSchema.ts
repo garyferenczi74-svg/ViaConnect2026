@@ -162,7 +162,8 @@ INSERT INTO public.agent_cadence_jobs (job_key, agent_id, label, interval_minute
   ('security.daily', 'security_advisor', 'Security Advisor daily', 1440, 60, 'none', 'hybrid', 30, '{}'::jsonb),
   ('performance.daily', 'performance_advisor', 'Performance Advisor daily', 1440, 60, 'none', 'hybrid', 30, '{}'::jsonb),
   ('product.freshness', 'jeffery', 'Product layer evidence freshness', 720, 55, 'C', 'hybrid', 30, '{"touches": ["ingredient_snp_relevance","product_content"]}'::jsonb),
-  ('watchdog.tick', 'jeffery', 'Jeffery watchdog', 15, 5, 'none', 'cron_tick', 10, '{}'::jsonb)
+  ('watchdog.tick', 'jeffery', 'Jeffery watchdog', 15, 5, 'none', 'cron_tick', 10, '{}'::jsonb),
+  ('jeffery.kb_review', 'jeffery', 'Jeffery KB bridge and fail-closed review (221A)', 15, 12, 'C', 'hybrid', 20, '{"bridge_limit": 12, "review_limit": 20}'::jsonb)
 ON CONFLICT (job_key) DO UPDATE SET interval_minutes = EXCLUDED.interval_minutes, priority = EXCLUDED.priority, budget_class = EXCLUDED.budget_class, mechanism = EXCLUDED.mechanism, label = EXCLUDED.label, updated_at = now();
 
 INSERT INTO public.freshness_targets (target_key, label, max_age_hours, domain) VALUES

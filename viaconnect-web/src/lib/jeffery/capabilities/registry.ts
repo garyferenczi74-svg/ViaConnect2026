@@ -20,7 +20,10 @@ import { capGrokResearch, markMarshallApproved, isGrokConfigured, GROK_MODEL } f
 import { capScienceAuthoritiesRead } from "./modules/authorities";
 import { capResearchHubRead } from "./modules/researchHub";
 import { capHealthPlatformRead, HEALTH_PLATFORM_SCOPES } from "./modules/healthPlatform";
+import { capKbSearch, capKbRead } from "./modules/kb";
 import { snapshotBudgets } from "./budgets";
+import type { KbCollectionSlug } from "@/lib/kb/collections";
+import type { EvidenceGrade } from "@/lib/kb/grades";
 
 export {
   CAPABILITY_DEFINITIONS,
@@ -54,7 +57,17 @@ export type CapabilityAction =
   | { capability: "grok_research"; action: "research"; query: string }
   | { capability: "science_authorities"; action: "read"; domainTag?: string; limit?: number }
   | { capability: "research_hub"; action: "read"; routeTag?: string; limit?: number }
-  | { capability: "health_platform"; action: "read"; userId: string };
+  | { capability: "health_platform"; action: "read"; userId: string }
+  | {
+      capability: "kb_search";
+      action: "search";
+      query: string;
+      collectionSlugs?: KbCollectionSlug[];
+      minGrade?: EvidenceGrade;
+      includePractitioner?: boolean;
+      limit?: number;
+    }
+  | { capability: "kb_read"; action: "read"; query: string; limit?: number };
 
 async function deny(
   agent: CapabilityAgentId,
@@ -119,6 +132,15 @@ export async function invokeCapability(
       });
     case "health_platform":
       return capHealthPlatformRead(agent, action.userId);
+    case "kb_search":
+      return capKbSearch(agent, action.query, {
+        collectionSlugs: action.collectionSlugs,
+        minGrade: action.minGrade,
+        includePractitioner: action.includePractitioner,
+        limit: action.limit,
+      });
+    case "kb_read":
+      return capKbRead(agent, action.query, action.limit);
     default: {
       const _exhaustive: never = action;
       return deny(agent, "research_hub", `unknown:${JSON.stringify(_exhaustive)}`);
