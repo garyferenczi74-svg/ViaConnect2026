@@ -1,12 +1,11 @@
 /**
  * Prompt 221/221A: one-shot migration apply (Bearer CRON_SECRET).
- * Runs append-only SQL on production Postgres. Idempotent IF NOT EXISTS.
+ * Uses embedded SQL (supabase/ is vercelignored). Idempotent IF NOT EXISTS.
  * Never returns secret values.
  */
 import { isCronAuthorized } from "@/lib/jeffery/ops/cronAuth";
+import { PROMPT_221_MIGRATIONS } from "@/lib/kb/migrations/embedded221";
 import { safeLog } from "@/lib/utils/safe-log";
-import { readFileSync, existsSync } from "node:fs";
-import { join } from "node:path";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -27,24 +26,6 @@ function buildConnectionString(): string | null {
   const database = process.env.POSTGRES_DATABASE?.trim() || "postgres";
   if (host && password) {
     return `postgresql://${user}:${encodeURIComponent(password)}@${host}:5432/${database}`;
-  }
-  return null;
-}
-
-const MIGRATION_FILES = [
-  "20260820000010_prompt_221_kb_schema.sql",
-  "20260820000011_prompt_221_kb_collections_seed.sql",
-  "20260820000012_prompt_221_kb_promote_search.sql",
-  "20260820000013_prompt_221a_jeffery_reviews.sql",
-] as const;
-
-function loadSql(name: string): string | null {
-  const candidates = [
-    join(process.cwd(), "supabase", "migrations", name),
-    join(process.cwd(), "viaconnect-web", "supabase", "migrations", name),
-  ];
-  for (const p of candidates) {
-    if (existsSync(p)) return readFileSync(p, "utf8");
   }
   return null;
 }
@@ -72,20 +53,17 @@ export async function POST(request: Request): Promise<Response> {
       connect_timeout: 30,
     });
     try {
-      for (const file of MIGRATION_FILES) {
-        const body = loadSql(file);
-        if (!body) {
-          results.push({ file, ok: false, error: "file_not_found_in_bundle" });
-          continue;
-        }
+      for (const mig of PROMPT_221_MIGRATIONS) {
         try {
-          await sql.unsafe(body);
-          results.push({ file, ok: true });
+          await sql.unsafe(mig.sql);
+          results.push({ file: mig.file, ok: true });
         } catch (e) {
           const msg = e instanceof Error ? e.message : String(e);
-          safeLog.error("cron.apply-221", "migration failed", { file, error: e });
-          results.push({ file, ok: false, error: msg.slice(0, 500) });
-          // Stop on first hard failure so partial state is visible
+          safeLog.error("cron.apply-221", "migration failed", {
+            file: mig.file,
+            error: e,
+          });
+          results.push({ file: mig.file, ok: false, error: msg.slice(0, 500) });
           break;
         }
       }
@@ -95,7 +73,10 @@ export async function POST(request: Request): Promise<Response> {
       let functions: string[] = [];
       let jefferyVerdictCol = false;
 
-      if (results.every((r) => r.ok)) {
+      if (
+        results.length === PROMPT_221_MIGRATIONS.length &&
+        results.every((r) => r.ok)
+      ) {
         collections = await sql`
           SELECT slug, status, seeding_phase, gate_profile, owning_agent
           FROM public.kb_collections
@@ -129,7 +110,9 @@ export async function POST(request: Request): Promise<Response> {
         jefferyVerdictCol = c.length > 0;
       }
 
-      const ok = results.length === MIGRATION_FILES.length && results.every((r) => r.ok);
+      const ok =
+        results.length === PROMPT_221_MIGRATIONS.length &&
+        results.every((r) => r.ok);
       return Response.json({
         ok,
         results,
