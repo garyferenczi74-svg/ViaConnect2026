@@ -32,8 +32,17 @@ const breaker = getCircuitBreaker('gemini-embeddings', {
  * Returns null on any timeout, network error, HTTP error, or missing API key.
  * Never throws.
  */
+function geminiApiKey(): string | null {
+  const k =
+    process.env.GEMINI_API_KEY?.trim() ||
+    process.env.Photo_AI_GEMINI_API_KEY?.trim() ||
+    process.env.GEMINI_API_KEY_3?.trim() ||
+    '';
+  return k.length > 0 ? k : null;
+}
+
 export async function embedText(text: string): Promise<number[] | null> {
-  const key = process.env.GEMINI_API_KEY;
+  const key = geminiApiKey();
   if (!key) {
     safeLog.error('kb.embedText', 'GEMINI_API_KEY not configured', {
       hint: 'Set GEMINI_API_KEY in environment to enable embeddings',

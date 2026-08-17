@@ -50,10 +50,12 @@ export async function embedAndStoreKbItem(itemId: string): Promise<boolean> {
     return false;
   }
 
+  // PostgREST pgvector: pass as literal string "[v1,v2,...]"
+  const vectorLiteral = `[${values.join(",")}]`;
   const { error: upErr } = await sb
     .from("kb_items")
     .update({
-      embedding: values,
+      embedding: vectorLiteral as unknown as number[],
       updated_at: new Date().toISOString(),
     })
     .eq("id", itemId);
