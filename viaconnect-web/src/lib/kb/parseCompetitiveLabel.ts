@@ -296,21 +296,33 @@ export function parseCompetitiveLabelText(
     .map((l) => l.trim())
     .filter(Boolean);
 
-  // Also try splitting on common markdown bullet / table separators
+  // Flatten markdown emphasis / table cells into plain lines
+  const flattened = full
+    .replace(/\*\*|__/g, "")
+    .replace(/<\/?[^>]+>/g, " ")
+    .replace(/\t/g, " ");
+
   const extraLines: string[] = [];
-  for (const l of lines) {
-    if (l.includes("  ") && DOSE_TAIL.test(l)) {
-      // keep as-is
-    }
-    // Split glued "Name 100 mg Name2 50 mg"
+  for (const l of [...lines, ...flattened.split(/\r?\n/)]) {
+    // Split glued "Name 100 mg Name2 50 mg" and "EPA 650 mg / DHA 450 mg"
     const multi = l.match(
       new RegExp(
         `([A-Za-z][A-Za-z0-9\\s\\-\\(\\),%/]{2,80}?\\s+\\d{1,5}(?:\\.\\d{1,3})?\\s*${UNIT_PATTERN})`,
         "gi"
       )
     );
-    if (multi && multi.length > 1) {
+    if (multi && multi.length >= 1) {
       extraLines.push(...multi);
+    }
+    // "Name .... 100 mg" leader dots from Supplement Facts PDFs
+    const dotted = l.match(
+      new RegExp(
+        `^(.+?)\\s*[\\.·•]{2,}\\s*(\\d{1,5}(?:\\.\\d{1,3})?)\\s*(${UNIT_PATTERN.replace(/%\\s*DV|%DV/g, "%\\s?DV")})\\s*$`,
+        "i"
+      )
+    );
+    if (dotted) {
+      extraLines.push(`${dotted[1]} ${dotted[2]} ${dotted[3]}`);
     }
   }
 

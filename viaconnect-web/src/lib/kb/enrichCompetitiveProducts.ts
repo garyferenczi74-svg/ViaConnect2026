@@ -131,16 +131,12 @@ export async function enrichCompetitiveProducts(
           Array.isArray(payload.ingredient_rows) &&
           !isUnknownRows(payload.ingredient_rows)
         ) {
-          // Use pre-parsed rows from ingest when present
           const pre = parseCompetitiveLabelText(text, { title });
           const rows = payload.ingredient_rows as CompetitiveIngredientRow[];
           const facts = {
             ...pre,
             ingredient_rows: rows,
-            extraction_confidence: Math.max(
-              pre.extraction_confidence,
-              78
-            ),
+            extraction_confidence: Math.max(pre.extraction_confidence, 78),
           };
           await applyProductFacts(sb, itemId, facts);
           stats.enriched += 1;
@@ -155,23 +151,46 @@ export async function enrichCompetitiveProducts(
       }
     }
 
-    // Re-scrape when still thin and budget allows
+    // First pass on whatever text we have
+    let facts = parseCompetitiveLabelText(text || title, { title });
+
+    // Re-scrape when still UNKNOWN (old staging was marketing-only, <400 was too strict)
     if (
       allowScrape &&
       url &&
-      text.length < 400 &&
-      !budget.hitBudget
+      hasUnknownOnlyIngredients(facts.ingredient_rows) &&
+      !budget.hitBudget &&
+      stats.scraped < 10
     ) {
       try {
         const scrape = await firecrawlScrape(url, budget);
         if (scrape.ok && scrape.markdown) {
-          text = scrape.markdown.slice(0, 6000);
+          text = scrape.markdown.slice(0, 8000);
           stats.scraped += 1;
-          // Refresh staging excerpt when possible
+          facts = parseCompetitiveLabelText(text, { title });
+          const { data: prior } = await sb
+            .from("hounddog_staging_items")
+            .select("raw_payload")
+            .eq("source_url", url)
+            .maybeSingle();
+          const priorPayload =
+            prior?.raw_payload && typeof prior.raw_payload === "object"
+              ? (prior.raw_payload as Record<string, unknown>)
+              : {};
           await sb
             .from("hounddog_staging_items")
             .update({
               full_text_excerpt: text.slice(0, 4000),
+              raw_payload: {
+                ...priorPayload,
+                re_scraped_for_label: true,
+                ingredient_rows: facts.ingredient_rows,
+                serving_size: facts.serving_size,
+                list_price: facts.list_price,
+                extraction_confidence: facts.extraction_confidence,
+                parse_notes: facts.parse_notes,
+                handler_version: "221.phase2.c1e.2",
+              },
             })
             .eq("source_url", url);
         }
@@ -182,24 +201,20 @@ export async function enrichCompetitiveProducts(
       }
     }
 
-    if (!text.trim()) {
+    if (!text.trim() && hasUnknownOnlyIngredients(facts.ingredient_rows)) {
       stats.stillUnknown += 1;
       continue;
     }
 
     try {
-      const facts = parseCompetitiveLabelText(text, { title });
       if (hasUnknownOnlyIngredients(facts.ingredient_rows) && alreadyKnown) {
         stats.skipped += 1;
         continue;
       }
       if (hasUnknownOnlyIngredients(facts.ingredient_rows)) {
         stats.stillUnknown += 1;
-        // Still update price/serving if we got those
         if (facts.list_price || facts.serving_size) {
-          await applyProductFacts(sb, itemId, facts, {
-            onlyShell: true,
-          });
+          await applyProductFacts(sb, itemId, facts, { onlyShell: true });
         }
         continue;
       }
