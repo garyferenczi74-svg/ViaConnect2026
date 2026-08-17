@@ -91,17 +91,15 @@ export async function enrichCompetitiveProducts(
     .maybeSingle();
   if (!coll?.id) return stats;
 
-  // Prefer low confidence / older rows so UNKNOWN and noise get fixed first
   const { data: items, error } = await sb
     .from("kb_items")
-    .select("id, title, source_urls, extraction_confidence")
+    .select("id, title, source_urls, extraction_confidence, updated_at")
     .eq("primary_collection_id", coll.id)
     .eq("payload_type", "product")
     .in("gate_status", ["approved", "lex_approved"])
     .eq("jeffery_verdict", "approved")
-    .order("extraction_confidence", { ascending: true })
-    .order("updated_at", { ascending: true })
-    .limit(limit * 3);
+    .order("updated_at", { ascending: false })
+    .limit(Math.max(limit * 4, 40));
 
   if (error || !items?.length) {
     if (error) {
@@ -112,10 +110,35 @@ export async function enrichCompetitiveProducts(
     return stats;
   }
 
+  // Load product rows and prioritize: low-quality noise first, then UNKNOWN
+  const ranked: Array<{
+    item: (typeof items)[0];
+    product: Record<string, unknown>;
+    priority: number;
+  }> = [];
+  for (const item of items) {
+    const itemId = String((item as { id: string }).id);
+    const { data: product } = await sb
+      .from("kb_products")
+      .select(
+        "item_id, ingredient_rows, serving_size, servings_per_container, list_price, label_claims, delivery_technology"
+      )
+      .eq("item_id", itemId)
+      .maybeSingle();
+    if (!product) continue;
+    const rows = product.ingredient_rows;
+    let priority = 3;
+    if (isLowQualityRows(rows) && !isUnknownRows(rows)) priority = 0; // noise first
+    else if (isUnknownRows(rows)) priority = 1;
+    else priority = 2; // already good
+    ranked.push({ item, product: product as Record<string, unknown>, priority });
+  }
+  ranked.sort((a, b) => a.priority - b.priority);
+
   const budget = defaultBudget();
   budget.maxPages = Math.min(budget.maxPages, 12);
 
-  for (const item of items) {
+  for (const { item, product } of ranked) {
     if (stats.enriched + stats.stillUnknown + stats.errors >= limit) break;
     stats.considered += 1;
     const itemId = String((item as { id: string }).id);
@@ -125,19 +148,6 @@ export async function enrichCompetitiveProducts(
       : [];
     const url = urls[0] ?? "";
 
-    const { data: product } = await sb
-      .from("kb_products")
-      .select(
-        "item_id, ingredient_rows, serving_size, servings_per_container, list_price, label_claims, delivery_technology"
-      )
-      .eq("item_id", itemId)
-      .maybeSingle();
-
-    if (!product) {
-      stats.skipped += 1;
-      continue;
-    }
-
     const alreadyKnown =
       !isUnknownRows(product.ingredient_rows) &&
       !isLowQualityRows(product.ingredient_rows);
@@ -146,6 +156,71 @@ export async function enrichCompetitiveProducts(
     if (alreadyKnown && hasPrice) {
       stats.skipped += 1;
       continue;
+    }
+
+    // Cheap path: re-filter existing rows through latest parser (no scrape)
+    if (
+      Array.isArray(product.ingredient_rows) &&
+      isLowQualityRows(product.ingredient_rows) &&
+      !isUnknownRows(product.ingredient_rows)
+    ) {
+      const rebuilt: CompetitiveIngredientRow[] = [];
+      for (const row of product.ingredient_rows as CompetitiveIngredientRow[]) {
+        const line = `${row.ingredient_name ?? ""} ${row.dose_amount ?? ""} ${row.dose_unit ?? ""}`.trim();
+        const parsed = parseCompetitiveLabelText(line, { title });
+        for (const r of parsed.ingredient_rows) {
+          if (r.ingredient_name !== "UNKNOWN" && r.dose_amount != null) {
+            rebuilt.push(r);
+          }
+        }
+      }
+      if (rebuilt.length > 0 && !isLowQualityRows(rebuilt)) {
+        const shell = parseCompetitiveLabelText("", { title });
+        await applyProductFacts(sb, itemId, {
+          ...shell,
+          ingredient_rows: rebuilt,
+          serving_size:
+            (product.serving_size as string | null) ?? shell.serving_size,
+          servings_per_container:
+            (product.servings_per_container as number | null) ??
+            shell.servings_per_container,
+          list_price: (product.list_price as number | null) ?? shell.list_price,
+          label_claims: Array.isArray(product.label_claims)
+            ? (product.label_claims as string[])
+            : shell.label_claims,
+          extraction_confidence: 80,
+          parse_notes: ["refilter_existing_rows"],
+        });
+        stats.enriched += 1;
+        stats.sample.push({
+          itemId,
+          ingredientCount: rebuilt.length,
+          confidence: 80,
+        });
+        continue;
+      }
+      // Pure noise only: clear to honest UNKNOWN without burning scrape budget
+      if (rebuilt.length === 0) {
+        const shell = parseCompetitiveLabelText("", { title });
+        await applyProductFacts(sb, itemId, {
+          ...shell,
+          ingredient_rows: [
+            {
+              ingredient_name: "UNKNOWN",
+              canonical_ingredient_id: null,
+              dose_amount: null,
+              dose_unit: null,
+              form: null,
+              dose_confidence: 0,
+              note: "Cleared packaging/serving-size noise",
+            },
+          ],
+          extraction_confidence: 45,
+          parse_notes: ["cleared_noise_rows"],
+        });
+        stats.stillUnknown += 1;
+        continue;
+      }
     }
 
     // Prefer staging full_text for this URL
