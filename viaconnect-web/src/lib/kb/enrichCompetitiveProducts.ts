@@ -43,14 +43,22 @@ function isLowQualityRows(rows: unknown): boolean {
   const bad = list.filter((r) => {
     const n = String(r.ingredient_name ?? "");
     return (
-      /net\s*wt|fl\.?\s*oz|calories?|softgels?\s*per\s*serving|per serving|teaspoons?|tablespoons?|approx|providing approximately|professional groups|salmon is|level teaspoon|ultimate omega/i.test(
+      /net\s*wt|fl\.?\s*oz|calories?|softgels?\s*per\s*serving|per serving|teaspoons?|tablespoons?|approx|providing approximately|professional groups|salmon is|level teaspoon|ultimate omega|recommended daily|daily intake|serv\.?\s*size|provides?\s|add\s+l-|!\[|\]\(/i.test(
         n
       ) ||
-      (r.dose_unit === "mL" && /oz|net|bottle|wt/i.test(n)) ||
+      (r.dose_unit === "mL" &&
+        (/oz|net|bottle|wt|serv/i.test(n) ||
+          /^serv/i.test(n.trim()) ||
+          n.split(/\s+/).length <= 3)) ||
       // Serving-size lines mistaken for ingredients
       /^\d/.test(n.trim()) ||
+      /^[a-z]\s/i.test(n.trim()) ||
       // Product marketing titles used as the only "ingredient"
-      (n.length > 40 && r.dose_amount != null && !/\b(vitamin|magnesium|calcium|omega|curcumin|folate|zinc|iron|epa|dha|methyl)\b/i.test(n))
+      (n.length > 40 &&
+        r.dose_amount != null &&
+        !/\b(vitamin|magnesium|calcium|omega|curcumin|folate|zinc|iron|epa|dha|methyl|arginine|bioflavonoid)\b/i.test(
+          n
+        ))
     );
   });
   // Re-enrich if any packaging/prose noise remains

@@ -181,6 +181,9 @@ function parseAvailability(text: string): string | null {
  */
 export function parseIngredientLine(line: string): CompetitiveIngredientRow | null {
   const raw = normalizeDashes(line)
+    // Strip markdown image / link wrappers: ![alt](url) -> alt
+    .replace(/!\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
     .replace(/\|/g, " ")
     .replace(/\.{2,}/g, " ")
     .replace(/\s+/g, " ")
@@ -188,6 +191,7 @@ export function parseIngredientLine(line: string): CompetitiveIngredientRow | nu
   if (raw.length < 4 || raw.length > 200) return null;
   if (SKIP_LINE.test(raw)) return null;
   if (/^https?:\/\//i.test(raw)) return null;
+  if (/\b(add to cart|buy now|subscribe|free shipping)\b/i.test(raw)) return null;
 
   // Require a dose somewhere on the line (facts-only; no bare names alone)
   const doseMatch = raw.match(DOSE_TAIL);
@@ -205,49 +209,47 @@ export function parseIngredientLine(line: string): CompetitiveIngredientRow | nu
   if (dose_unit === "cfu") dose_unit = "CFU";
 
   const before = raw.slice(0, doseMatch.index ?? 0).trim();
-  // Drop trailing "as Form" parentheticals stay in name as label fact
   let name = before
-    .replace(/^[-*•·]\s*/, "")
+    .replace(/^[-*•·!#]+\s*/, "")
+    .replace(/^\[+|\]+$/g, "")
     .replace(/\s*[:\-]\s*$/, "")
     .replace(/\s+/g, " ")
     .trim();
 
-  // Reject if name is empty or pure number / unit noise
   if (!name || name.length < 2) return null;
   if (/^\d+$/.test(name)) return null;
-  if (/^(amount|serving|daily|value|total)$/i.test(name)) return null;
+  if (/^(amount|serving|daily|value|total|provides?|add)$/i.test(name)) return null;
 
-  // Drop marketing superlatives from name only
   name = name
     .replace(/\b(best|miracle|cure|guaranteed|#1)\b/gi, "")
     .replace(/^\[+|\]+$/g, "")
+    .replace(/^!+/, "")
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 120);
   if (name.length < 2) return null;
   if (SKIP_NAME.test(name)) return null;
-  // Packaging / nutrition facts noise with volume units
   if (/net\s*wt|fl\.?\s*oz|fluid ounce/i.test(raw)) return null;
   if (/calories?/i.test(name) && dose_unit === "g") return null;
   if (/teaspoons?|tablespoons?|per serving|approx/i.test(name) && !/\b(vitamin|mineral|magnesium|calcium|omega|curcumin|folate|b\d|zinc|iron|epa|dha)\b/i.test(name)) {
     return null;
   }
-  // Reject prose sentences mistaken for ingredients
   if (/\b(suggest|providing approximately|professional groups|recommended daily|daily intake|serv\.?\s*size|serving size)\b/i.test(name)) {
     return null;
   }
   if (/^serv\.?\s*size/i.test(name)) return null;
+  if (/^provides?\b/i.test(name)) return null;
+  // Commerce / cross-sell chrome: "Add L-Arginine 500 mg"
+  if (/^add\s+/i.test(name)) return null;
   if (/per serving/i.test(name) && name.split(/\s+/).length <= 4) return null;
-  // Leading fragment after scrape artifacts ("s Recommended...")
   if (/^[a-z]\s/i.test(name) && name.length < 50) return null;
-  // Reject if name is mostly non-letters
+  if (/\b(supplement|softgels?|capsules?|tablets?)\b/i.test(name) && name.split(/\s+/).length >= 4) {
+    return null;
+  }
   const letters = (name.match(/[A-Za-z]/g) || []).length;
   if (letters < 3) return null;
-  // Prefer real nutrient/compound names over marketing product titles as "ingredients"
-  // when the name is very long and contains dose-like product branding only
   if (name.length > 80) return null;
 
-  // Confidence: parenthetical form or "as X" bumps score
   let dose_confidence = 70;
   if (/\bas\s+[A-Za-z]/.test(name) || /\([^)]+\)/.test(name)) {
     dose_confidence = 85;
@@ -255,10 +257,8 @@ export function parseIngredientLine(line: string): CompetitiveIngredientRow | nu
   if (/supplement facts/i.test(line)) {
     dose_confidence = Math.max(dose_confidence, 80);
   }
-  // %DV alone is weaker signal for absolute dose
   if (dose_unit === "%DV") dose_confidence = Math.min(dose_confidence, 55);
-  // mL as "ingredient dose" is often package volume - downrank
-  if (dose_unit === "mL" && /oz|net|bottle/i.test(raw)) {
+  if (dose_unit === "mL" && /oz|net|bottle|serv/i.test(raw)) {
     return null;
   }
 

@@ -36,6 +36,18 @@ describe("parseIngredientLine", () => {
     expect(parseIngredientLine("NET WT 1.7 FL OZ (50 mL)")).toBeNull();
     expect(parseIngredientLine("NET WT 4.0 FL OZ (120 mL)")).toBeNull();
   });
+
+  it("strips markdown image wrappers and rejects cart chrome", () => {
+    const r = parseIngredientLine("![Zinc Bisglycinate](https://x/z.png) 30 mg");
+    expect(r).not.toBeNull();
+    expect(r!.ingredient_name).toMatch(/Zinc Bisglycinate/i);
+    expect(r!.dose_amount).toBe(30);
+    expect(parseIngredientLine("Add L-Arginine 500 mg")).toBeNull();
+    expect(parseIngredientLine("Provides 75 mg")).toBeNull();
+    expect(
+      parseIngredientLine("s Recommended Daily Intake of 420 mg")
+    ).toBeNull();
+  });
 });
 
 describe("parseCompetitiveLabelText", () => {
