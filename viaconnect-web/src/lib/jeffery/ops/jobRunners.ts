@@ -148,31 +148,107 @@ export async function runCadenceJob(
         break;
       }
       case "jeffery.kb_review": {
-        // 221/221A Phase 1: C8/C9 bridge, C5 peptide migrate, Jeffery review, embed backfill
+        // 221/221A: Phase 1 bridges + Phase 2 competitive/genetic bridges, review, embed
         try {
           const { bridgeGatedItemsToKb } = await import("@/lib/kb/bridgeGatedToKb");
           const { bridgePeptideEducationToKb } = await import(
             "@/lib/kb/bridgePeptideEducation"
           );
+          const { bridgeCompetitiveToKb } = await import(
+            "@/lib/kb/bridgeCompetitiveToKb"
+          );
+          const { bridgeGeneticTestsToKb } = await import(
+            "@/lib/kb/bridgeGeneticTestsToKb"
+          );
           const { processPendingJefferyKbReviews } = await import(
             "@/lib/kb/promotePipeline"
           );
           const { backfillKbEmbeddings } = await import("@/lib/kb/embedItem");
-          const { syncPhase1CollectionStatus } = await import(
+          const { syncKbCollectionStatus } = await import(
             "@/lib/kb/syncCollectionStatus"
           );
           const bridge = await bridgeGatedItemsToKb(12);
           const peptides = await bridgePeptideEducationToKb(20);
+          const competitive = await bridgeCompetitiveToKb(10);
+          const geneticTests = await bridgeGeneticTestsToKb(10);
           const reviews = await processPendingJefferyKbReviews(20);
           const embeds = await backfillKbEmbeddings(25);
-          const collectionStatus = await syncPhase1CollectionStatus();
-          detail = { bridge, peptides, reviews, embeds, collectionStatus };
+          const collectionStatus = await syncKbCollectionStatus();
+          detail = {
+            bridge,
+            peptides,
+            competitive,
+            geneticTests,
+            reviews,
+            embeds,
+            collectionStatus,
+          };
           if (
             bridge.errors > 0 ||
             peptides.errors > 0 ||
+            competitive.errors > 0 ||
+            geneticTests.errors > 0 ||
             reviews.errors > 0 ||
             embeds.failed > embeds.embedded
           ) {
+            status = "partial";
+          }
+        } catch (err) {
+          status = "partial";
+          detail = {
+            error: err instanceof Error ? err.message : String(err),
+          };
+        }
+        break;
+      }
+      case "hounddog.competitive": {
+        try {
+          const { runCompetitiveIngest } = await import(
+            "@/lib/hounddog/ingest/competitive"
+          );
+          const r = await runCompetitiveIngest({
+            runId: `ops-competitive-${Date.now()}`,
+            runDate: new Date().toISOString().slice(0, 10),
+          });
+          detail = { ...r };
+          if (r.hitBudget) {
+            await enqueueBacklog({
+              jobKey: job.job_key,
+              agentId: job.agent_id,
+              budgetClass: job.budget_class,
+            });
+            status = "budget_queued";
+          } else if (r.allowlistSize === 0) {
+            status = "partial";
+          } else if (r.staged === 0 && r.discovered === 0) {
+            status = "partial";
+          }
+        } catch (err) {
+          status = "partial";
+          detail = {
+            error: err instanceof Error ? err.message : String(err),
+          };
+        }
+        break;
+      }
+      case "elysium.genetic_tests": {
+        try {
+          const { runGeneticTestsIngest } = await import(
+            "@/lib/elysium/geneticTestsIngest"
+          );
+          const r = await runGeneticTestsIngest({
+            runId: `ops-genetic-tests-${Date.now()}`,
+            runDate: new Date().toISOString().slice(0, 10),
+          });
+          detail = { ...r };
+          if (r.hitBudget) {
+            await enqueueBacklog({
+              jobKey: job.job_key,
+              agentId: job.agent_id,
+              budgetClass: job.budget_class,
+            });
+            status = "budget_queued";
+          } else if (r.allowlistSize === 0) {
             status = "partial";
           }
         } catch (err) {

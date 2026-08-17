@@ -1,5 +1,5 @@
 /**
- * Prompt 221: flip collection status to live when Phase 1 corpus is populated.
+ * Prompt 221: flip collection status to live when corpus is populated.
  * Fail-open; never demotes without explicit operator action.
  */
 
@@ -12,15 +12,16 @@ const PHASE1_SLUGS = [
   "peptide_education",
 ] as const;
 
-export async function syncPhase1CollectionStatus(): Promise<{
-  updated: string[];
-  skipped: string[];
-}> {
+const PHASE2_SLUGS = ["competitive_supplements", "genetic_tests"] as const;
+
+async function syncSlugs(
+  slugs: readonly string[]
+): Promise<{ updated: string[]; skipped: string[] }> {
   const updated: string[] = [];
   const skipped: string[] = [];
   const sb = createAdminClient();
 
-  for (const slug of PHASE1_SLUGS) {
+  for (const slug of slugs) {
     try {
       const { data: coll } = await sb
         .from("kb_collections")
@@ -41,7 +42,19 @@ export async function syncPhase1CollectionStatus(): Promise<{
 
       const n = count ?? 0;
       if (n <= 0) {
-        skipped.push(slug);
+        // Keep Phase 2 collections in seeding when allowlist is live but empty
+        if (
+          (PHASE2_SLUGS as readonly string[]).includes(slug) &&
+          coll.status === "planned"
+        ) {
+          await sb
+            .from("kb_collections")
+            .update({ status: "seeding" })
+            .eq("id", coll.id);
+          updated.push(`${slug}:seeding`);
+        } else {
+          skipped.push(slug);
+        }
         continue;
       }
 
@@ -74,4 +87,31 @@ export async function syncPhase1CollectionStatus(): Promise<{
   }
 
   return { updated, skipped };
+}
+
+export async function syncPhase1CollectionStatus(): Promise<{
+  updated: string[];
+  skipped: string[];
+}> {
+  return syncSlugs(PHASE1_SLUGS);
+}
+
+export async function syncPhase2CollectionStatus(): Promise<{
+  updated: string[];
+  skipped: string[];
+}> {
+  return syncSlugs(PHASE2_SLUGS);
+}
+
+/** Phase 1 + Phase 2 together (used by jeffery.kb_review after Phase 2 unblock). */
+export async function syncKbCollectionStatus(): Promise<{
+  updated: string[];
+  skipped: string[];
+}> {
+  const p1 = await syncPhase1CollectionStatus();
+  const p2 = await syncPhase2CollectionStatus();
+  return {
+    updated: [...p1.updated, ...p2.updated],
+    skipped: [...p1.skipped, ...p2.skipped],
+  };
 }

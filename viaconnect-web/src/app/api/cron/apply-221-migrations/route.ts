@@ -101,11 +101,15 @@ GRANT EXECUTE ON FUNCTION public.set_kb_item_embedding(uuid, text) TO service_ro
       let tables: string[] = [];
       let functions: string[] = [];
       let jefferyVerdictCol = false;
+      let competitiveSourcesCount = 0;
 
-      if (
-        results.length === PROMPT_221_MIGRATIONS.length &&
-        results.every((r) => r.ok)
-      ) {
+      const migrationsOk =
+        results.filter((r) => r.file.startsWith("20260820")).length >= 4 &&
+        results
+          .filter((r) => r.file.startsWith("20260820"))
+          .every((r) => r.ok);
+
+      if (migrationsOk) {
         collections = await sql`
           SELECT slug, status, seeding_phase, gate_profile, owning_agent
           FROM public.kb_collections
@@ -115,7 +119,11 @@ GRANT EXECUTE ON FUNCTION public.set_kb_item_embedding(uuid, text) TO service_ro
           SELECT table_name
           FROM information_schema.tables
           WHERE table_schema = 'public'
-            AND (table_name LIKE 'kb_%' OR table_name = 'jeffery_reviews')
+            AND (
+              table_name LIKE 'kb_%'
+              OR table_name = 'jeffery_reviews'
+              OR table_name = 'competitive_sources'
+            )
           ORDER BY table_name
         `;
         tables = t.map((r) => String(r.table_name));
@@ -137,11 +145,19 @@ GRANT EXECUTE ON FUNCTION public.set_kb_item_embedding(uuid, text) TO service_ro
           LIMIT 1
         `;
         jefferyVerdictCol = c.length > 0;
+        try {
+          const cs = await sql`
+            SELECT count(*)::int AS n
+            FROM public.competitive_sources
+            WHERE approval_status = 'approved' AND is_active = true
+          `;
+          competitiveSourcesCount = Number(cs[0]?.n ?? 0);
+        } catch {
+          competitiveSourcesCount = 0;
+        }
       }
 
-      const ok =
-        results.length === PROMPT_221_MIGRATIONS.length &&
-        results.every((r) => r.ok);
+      const ok = results.every((r) => r.ok);
       return Response.json({
         ok,
         results,
@@ -150,6 +166,7 @@ GRANT EXECUTE ON FUNCTION public.set_kb_item_embedding(uuid, text) TO service_ro
         tables,
         functions,
         jefferyVerdictCol,
+        competitiveSourcesCount,
       });
     } finally {
       await sql.end({ timeout: 5 });
