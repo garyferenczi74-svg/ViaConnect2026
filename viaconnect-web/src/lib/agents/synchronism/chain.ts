@@ -1,83 +1,54 @@
 /**
- * Prompt 214a: Jeffery daily synchronism chain.
- * Seven stages with explicit ordering, partial-failure rules, and idempotency.
- * Pure stage runners are unit-testable; persistence is optional (pipeline_runs).
+ * Prompt 214a: Jeffery daily synchronism chain (server runners).
+ * Client UI must import types/STAGE_ORDER from chainTypes.ts only so
+ * Turbopack does not pull server ingest / postgres into Client Components.
  */
 
 import { safeLog } from '@/lib/utils/safe-log';
-import type { AgentId } from '@/lib/agents/types';
+import {
+  STAGE_ORDER,
+  type ChainStageId,
+  type StageResult,
+  type ChainRunResult,
+  type ChainOptions,
+  type StageRunner,
+  type StageContext,
+  BASELINE_SECURITY_FINDINGS,
+  BASELINE_PERFORMANCE_FINDINGS,
+  classifySecurityFindings,
+  classifyPerformanceFindings,
+  chainRunIdForDate,
+} from './chainTypes';
 
-export type ChainStageId =
-  | 'ingest'
-  | 'gate'
-  | 'curate'
-  | 'domain_refresh'
-  | 'compose'
-  | 'surface'
-  | 'guard';
+export type {
+  ChainStageId,
+  StageStatus,
+  StageResult,
+  ChainRunResult,
+  ChainOptions,
+  StageRunner,
+  StageContext,
+  AdvisorFinding,
+} from './chainTypes';
 
-export type StageStatus = 'ok' | 'skipped' | 'failed' | 'partial';
-
-export interface StageResult {
-  stage: ChainStageId;
-  status: StageStatus;
-  producer: AgentId | AgentId[];
-  consumer?: AgentId | AgentId[];
-  recordsIn: number;
-  recordsOut: number;
-  durationMs: number;
-  detail: Record<string, unknown>;
-  error?: string;
-}
-
-export interface ChainRunResult {
-  runId: string;
-  runDate: string;
-  startedAt: string;
-  endedAt: string;
-  stages: StageResult[];
-  status: 'ok' | 'partial' | 'failed';
-}
-
-export interface ChainOptions {
-  /** ISO date YYYY-MM-DD; defaults to UTC today */
-  runDate?: string;
-  /** Injected stage implementations for tests */
-  runners?: Partial<Record<ChainStageId, StageRunner>>;
-  /** When true, Stage 1 fails as if Hound Dog is killed (partial-failure test) */
-  killHoundDog?: boolean;
-  /** Persist callback (DB); fail-open if omitted */
-  persist?: (run: ChainRunResult) => Promise<void>;
-  /** Clock for tests */
-  now?: () => Date;
-}
-
-export type StageRunner = (ctx: StageContext) => Promise<StageResult>;
-
-export interface StageContext {
-  runId: string;
-  runDate: string;
-  prior: StageResult[];
-  killHoundDog: boolean;
-  now: () => Date;
-}
-
-const STAGE_ORDER: ChainStageId[] = [
-  'ingest',
-  'gate',
-  'curate',
-  'domain_refresh',
-  'compose',
-  'surface',
-  'guard',
-];
+export {
+  STAGE_ORDER,
+  BASELINE_SECURITY_FINDINGS,
+  BASELINE_PERFORMANCE_FINDINGS,
+  classifySecurityFindings,
+  classifyPerformanceFindings,
+  assertAdvisorTierBoundary,
+  autoFixIdsOnly,
+  reportTierIds,
+  chainRunIdForDate,
+} from './chainTypes';
 
 function defaultRunDate(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
 function makeRunId(runDate: string): string {
-  return `sync-${runDate}`;
+  return chainRunIdForDate(runDate);
 }
 
 /**
@@ -411,86 +382,6 @@ async function runGuard(ctx: StageContext): Promise<StageResult> {
   };
 }
 
-export interface AdvisorFinding {
-  id: string;
-  title: string;
-  severity: 'info' | 'warn' | 'critical';
-  tier: 'auto' | 'report';
-  category: string;
-}
-
-// First-run baseline posture (static catalog until live Supabase advisor API is wired).
-// Report-tier items must never auto-apply (test-enforced).
-export const BASELINE_SECURITY_FINDINGS: AdvisorFinding[] = [
-  {
-    id: 'sec-rls-audit-batch',
-    title: 'Confirm RLS enabled on all public tables with policies',
-    severity: 'warn',
-    tier: 'report',
-    category: 'rls',
-  },
-  {
-    id: 'sec-function-search-path',
-    title: 'Set search_path on SECURITY DEFINER functions (mechanical)',
-    severity: 'info',
-    tier: 'auto',
-    category: 'function_search_path',
-  },
-  {
-    id: 'sec-auth-exposure',
-    title: 'Review auth flow and permissive policy tradeoffs',
-    severity: 'critical',
-    tier: 'report',
-    category: 'auth',
-  },
-];
-
-export const BASELINE_PERFORMANCE_FINDINGS: AdvisorFinding[] = [
-  {
-    id: 'perf-fk-index-scan',
-    title: 'Unindexed foreign keys candidate batch',
-    severity: 'info',
-    tier: 'auto',
-    category: 'missing_index',
-  },
-  {
-    id: 'perf-slow-query-rewrite',
-    title: 'Slow query requires application rewrite',
-    severity: 'warn',
-    tier: 'report',
-    category: 'slow_query',
-  },
-];
-
-export function classifySecurityFindings(findings: AdvisorFinding[]) {
-  const auto = findings.filter((f) => f.tier === 'auto');
-  const report = findings.filter((f) => f.tier === 'report');
-  return {
-    total: findings.length,
-    autoFixable: auto.length,
-    reportOnly: report.length,
-    auto_ids: auto.map((f) => f.id),
-    report_ids: report.map((f) => f.id),
-  };
-}
-
-export function classifyPerformanceFindings(findings: AdvisorFinding[]) {
-  return classifySecurityFindings(findings);
-}
-
-/** Report-tier findings must never be auto-applied. */
-export function assertAdvisorTierBoundary(findings: AdvisorFinding[]): boolean {
-  return findings.every((f) => f.tier === 'auto' || f.tier === 'report');
-}
-
-export function autoFixIdsOnly(findings: AdvisorFinding[]): string[] {
-  return findings.filter((f) => f.tier === 'auto').map((f) => f.id);
-}
-
-export function reportTierIds(findings: AdvisorFinding[]): string[] {
-  return findings.filter((f) => f.tier === 'report').map((f) => f.id);
-}
-
 const DEFAULT_RUNNERS: Record<ChainStageId, StageRunner> = {
   ingest: runIngest,
   gate: runGate,
@@ -578,9 +469,4 @@ export async function runSynchronismChain(opts: ChainOptions = {}): Promise<Chai
   return run;
 }
 
-/** Idempotency: same runDate must yield same runId. */
-export function chainRunIdForDate(runDate: string): string {
-  return makeRunId(runDate);
-}
 
-export { STAGE_ORDER };

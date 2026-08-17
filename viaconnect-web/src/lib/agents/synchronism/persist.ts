@@ -4,7 +4,7 @@
 
 import { createAdminClient } from '@/lib/supabase/admin';
 import { safeLog } from '@/lib/utils/safe-log';
-import type { ChainRunResult } from './chain';
+import type { ChainRunResult } from './chainTypes';
 
 export async function persistPipelineRun(run: ChainRunResult): Promise<void> {
   try {

@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { STAGE_ORDER, type ChainRunResult, type StageStatus } from '@/lib/agents/synchronism/chain';
+import { STAGE_ORDER, type ChainRunResult, type StageStatus } from '@/lib/agents/synchronism/chainTypes';
 
 const STATUS_COLOR: Record<StageStatus, string> = {
   ok: '#2DA5A0',

@@ -7,7 +7,7 @@ import type { AgentPanelProps } from "./index";
 import {
   BASELINE_SECURITY_FINDINGS,
   classifySecurityFindings,
-} from "@/lib/agents/synchronism/chain";
+} from "@/lib/agents/synchronism/chainTypes";
 
 /** Prompt 214a: Security Advisor panel. */
 export default function SecurityAdvisorPanel({ tasks, events }: AgentPanelProps) {

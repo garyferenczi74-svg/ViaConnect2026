@@ -7,7 +7,7 @@ import type { AgentPanelProps } from "./index";
 import {
   BASELINE_PERFORMANCE_FINDINGS,
   classifyPerformanceFindings,
-} from "@/lib/agents/synchronism/chain";
+} from "@/lib/agents/synchronism/chainTypes";
 
 /** Prompt 214a: Performance Advisor panel. */
 export default function PerformanceAdvisorPanel({ tasks, events }: AgentPanelProps) {
