@@ -34,6 +34,22 @@ function isUnknownRows(rows: unknown): boolean {
   return hasUnknownOnlyIngredients(rows as CompetitiveIngredientRow[]);
 }
 
+/** Prior pass may have accepted packaging noise; treat as not-yet-enriched. */
+function isLowQualityRows(rows: unknown): boolean {
+  if (!Array.isArray(rows) || rows.length === 0) return true;
+  const list = rows as CompetitiveIngredientRow[];
+  if (hasUnknownOnlyIngredients(list)) return true;
+  const bad = list.filter((r) => {
+    const n = String(r.ingredient_name ?? "");
+    return (
+      /net\s*wt|fl\.?\s*oz|calories?|softgels?\s+per\s+serving/i.test(n) ||
+      (r.dose_unit === "mL" && /oz|net|bottle|wt/i.test(n))
+    );
+  });
+  // All rows bad, or majority packaging noise
+  return bad.length > 0 && bad.length >= Math.ceil(list.length / 2);
+}
+
 export async function enrichCompetitiveProducts(
   limit = 15,
   opts?: { allowScrape?: boolean }
@@ -102,7 +118,9 @@ export async function enrichCompetitiveProducts(
       continue;
     }
 
-    const alreadyKnown = !isUnknownRows(product.ingredient_rows);
+    const alreadyKnown =
+      !isUnknownRows(product.ingredient_rows) &&
+      !isLowQualityRows(product.ingredient_rows);
     const hasPrice =
       typeof product.list_price === "number" && product.list_price > 0;
     if (alreadyKnown && hasPrice) {
