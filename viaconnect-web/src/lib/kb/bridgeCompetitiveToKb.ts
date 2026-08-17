@@ -153,11 +153,31 @@ export async function bridgeCompetitiveToKb(
       kind: "competitive_product",
     });
 
-    const { data: existing } = await sb
+    // Prefer hash match; also match by product URL so re-seeded facts update
+    // the same catalog row even when title/summary (and thus hash) drifted.
+    let existing: {
+      id: string;
+      gate_status?: string | null;
+      jeffery_verdict?: string | null;
+    } | null = null;
+    const { data: byHash } = await sb
       .from("kb_items")
       .select("id, gate_status, jeffery_verdict")
       .eq("content_hash", hash)
       .maybeSingle();
+    if (byHash?.id) {
+      existing = byHash;
+    } else {
+      const { data: byUrl } = await sb
+        .from("kb_items")
+        .select("id, gate_status, jeffery_verdict")
+        .eq("primary_collection_id", collectionId)
+        .eq("payload_type", "product")
+        .contains("source_urls", [url])
+        .limit(1)
+        .maybeSingle();
+      if (byUrl?.id) existing = byUrl;
+    }
 
     const labelText = row.full_text || summary;
     const fromPayload =
@@ -204,6 +224,8 @@ export async function bridgeCompetitiveToKb(
           .from("kb_items")
           .update({
             extraction_confidence: facts.extraction_confidence,
+            title: title.slice(0, 500),
+            summary: summary.slice(0, 2000),
             updated_at: new Date().toISOString(),
           })
           .eq("id", existing.id);

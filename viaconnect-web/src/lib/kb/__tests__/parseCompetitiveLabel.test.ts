@@ -63,6 +63,11 @@ describe("parseIngredientLine", () => {
     const n = parseIngredientLine("N-Acetyl-L-Cysteine (NAC) 600 mg");
     expect(n?.dose_amount).toBe(600);
   });
+
+  it("rejects LE cross-sell / OCR fragments", () => {
+    expect(parseIngredientLine("IU) to 200 mcg")).toBeNull();
+    expect(parseIngredientLine("Mega Vitamin K2 45000 mcg")).toBeNull();
+  });
 });
 
 describe("parseCompetitiveLabelText", () => {
@@ -81,6 +86,15 @@ Non-GMO | Gluten-Free | Third-party tested
 In stock
 Liposomal delivery enhanced absorption
 `;
+
+  it("parses dose embedded in productHint-style titles", () => {
+    const f = parseCompetitiveLabelText("", {
+      title: "Liposomal Vitamin C 1000 mg",
+    });
+    const known = f.ingredient_rows.filter((r) => r.ingredient_name !== "UNKNOWN");
+    expect(known.length).toBeGreaterThanOrEqual(1);
+    expect(known[0]!.dose_amount).toBe(1000);
+  });
 
   it("extracts multiple ingredient rows with doses", () => {
     const f = parseCompetitiveLabelText(SAMPLE, {
@@ -113,13 +127,13 @@ Liposomal delivery enhanced absorption
     const f = parseCompetitiveLabelText("", {
       title: "Vitamin C 1000 mg Capsules",
     });
-    // empty body still yields unknown unless title alone is parsed with empty text path
-    // title is passed but body empty triggers empty_text early - ensure non-empty body with title dose
+    // Empty body: productHint / catalog titles with embedded dose still win
+    expect(f.ingredient_rows.some((r) => r.dose_amount === 1000)).toBe(true);
+    expect(f.parse_notes).toContain("title_dose_empty_body");
     const f2 = parseCompetitiveLabelText("Product detail page", {
       title: "Vitamin C 1000 mg Capsules",
     });
     expect(f2.ingredient_rows.some((r) => r.dose_amount === 1000)).toBe(true);
-    expect(f.ingredient_rows[0].ingredient_name).toBe("UNKNOWN");
   });
 
   it("parses catalog titles with comma thousands", () => {

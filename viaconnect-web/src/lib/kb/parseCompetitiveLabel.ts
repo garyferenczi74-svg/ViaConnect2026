@@ -219,6 +219,13 @@ export function parseIngredientLine(line: string): CompetitiveIngredientRow | nu
   if (!name || name.length < 2) return null;
   if (/^\d+$/.test(name)) return null;
   if (/^(amount|serving|daily|value|total|provides?|add)$/i.test(name)) return null;
+  // OCR / table-glued fragments ("IU) to", ") of", "mg)")
+  if (/^[A-Za-z]{1,4}\)|\bto\s*$|^\W+$|^\([^)]*$|^[^A-Za-z]*$/i.test(name)) {
+    return null;
+  }
+  if (/\b(mega vitamin|also try|customers (also )?bought|you may (also )?like|frequently bought)\b/i.test(name)) {
+    return null;
+  }
 
   name = name
     .replace(/\b(best|miracle|cure|guaranteed|#1)\b/gi, "")
@@ -315,6 +322,30 @@ export function parseCompetitiveLabelText(
   const combined = `${title}\n${full}`;
 
   if (!full.trim()) {
+    // Title-only path: many seed productHints embed a primary dose
+    // ("Liposomal Vitamin C 1000 mg") when page markdown is empty.
+    const titleNormEmpty = title
+      .replace(/(\d),(\d{3})\b/g, "$1$2")
+      .replace(/,/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    const fromTitleOnly =
+      parseIngredientLine(titleNormEmpty) || parseIngredientLine(title);
+    if (fromTitleOnly) {
+      return {
+        ingredient_rows: [fromTitleOnly],
+        serving_size: null,
+        servings_per_container: null,
+        list_price: null,
+        currency: "USD",
+        price_per_serving: null,
+        label_claims: [],
+        delivery_technology: deliveryFromText(title) ?? null,
+        availability_note: null,
+        extraction_confidence: 68,
+        parse_notes: ["title_dose_empty_body"],
+      };
+    }
     return {
       ingredient_rows: [
         {

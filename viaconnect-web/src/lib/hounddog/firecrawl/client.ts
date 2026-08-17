@@ -5,7 +5,9 @@
 
 import { safeLog } from '@/lib/utils/safe-log';
 
-const FIRECRAWL_BASE = 'https://api.firecrawl.dev/v1';
+/** v2 supports object screenshot formats + fullPage; search still on v1. */
+const FIRECRAWL_SCRAPE_URL = 'https://api.firecrawl.dev/v2/scrape';
+const FIRECRAWL_SEARCH_URL = 'https://api.firecrawl.dev/v1/search';
 
 /** Scrape-appropriate timeout (ms); distinct from internal 3-5s budget. */
 export const FIRECRAWL_TIMEOUT_MS = 45_000;
@@ -183,30 +185,32 @@ export async function firecrawlScrape(
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
-  // Full-page screenshot for Supplement Facts panels below the fold.
-  // Prefer object form only (string + object can confuse older proxies).
-  const formats: unknown[] = ['markdown'];
+  // v2 formats: object form with fullPage for Supplement Facts below the fold.
+  // Also include string aliases for proxy compatibility.
+  const formats: unknown[] = [{ type: 'markdown' }, 'markdown'];
   if (opts?.includeScreenshot) {
     formats.push({ type: 'screenshot', fullPage: true });
+    formats.push('screenshot');
   }
 
   const body: Record<string, unknown> = {
     url,
     formats,
     onlyMainContent: opts?.onlyMainContent ?? true,
+    // Give SPA PDPs time to hydrate label tabs before capture
+    waitFor: opts?.actions?.length ? 1500 : 800,
   };
   if (opts?.actions?.length) {
     body.actions = opts.actions.map((a) => {
       if (a.type === 'screenshot') {
-        // Firecrawl docs accept fullPage / full_page depending on version
-        return { type: 'screenshot', fullPage: a.fullPage ?? true, full_page: a.fullPage ?? true };
+        return { type: 'screenshot', fullPage: a.fullPage ?? true };
       }
       return a;
     });
   }
 
   try {
-    const res = await fetch(`${FIRECRAWL_BASE}/scrape`, {
+    const res = await fetch(FIRECRAWL_SCRAPE_URL, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${key}`,
@@ -332,7 +336,7 @@ export async function firecrawlSearch(
   const timer = setTimeout(() => controller.abort(), FIRECRAWL_TIMEOUT_MS);
 
   try {
-    const res = await fetch(`${FIRECRAWL_BASE}/search`, {
+    const res = await fetch(FIRECRAWL_SEARCH_URL, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${key}`,

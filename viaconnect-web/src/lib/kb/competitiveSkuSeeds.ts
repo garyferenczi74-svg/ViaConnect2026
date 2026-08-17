@@ -44,13 +44,13 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     url: "https://www.quicksilverscientific.com/products/liposomal-glutathione",
     category: "advanced-formulas",
     brandHint: "Quicksilver Scientific",
-    productHint: "Liposomal Glutathione",
+    productHint: "Liposomal Glutathione 450 mg",
   },
   {
     url: "https://www.quicksilverscientific.com/products/liposomal-vitamin-c",
     category: "advanced-formulas",
     brandHint: "Quicksilver Scientific",
-    productHint: "Liposomal Vitamin C",
+    productHint: "Liposomal Vitamin C 1000 mg",
   },
   // Pure Encapsulations
   {
@@ -63,20 +63,20 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     url: "https://www.pureencapsulations.com/magnesium-glycinate.html",
     category: "base-formulations",
     brandHint: "Pure Encapsulations",
-    productHint: "Magnesium Glycinate",
+    productHint: "Magnesium Glycinate 120 mg",
   },
   // Seeking Health
   {
     url: "https://www.seekinghealth.com/products/optimal-folate-lozenges",
     category: "methylation-snp",
     brandHint: "Seeking Health",
-    productHint: "Optimal Folate",
+    productHint: "Optimal Folate 800 mcg",
   },
   {
     url: "https://www.seekinghealth.com/products/active-b12-with-l-5-mthf",
     category: "methylation-snp",
     brandHint: "Seeking Health",
-    productHint: "Active B12 with L-5-MTHF",
+    productHint: "Active B12 1000 mcg with L-5-MTHF",
   },
   // Nordic Naturals
   {
