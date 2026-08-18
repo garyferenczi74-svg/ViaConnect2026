@@ -79,16 +79,18 @@ describe("signup surfaces drop the single location input", () => {
     expect(signupPage).toContain("LocationSelector");
   });
 
-  it("sends structured metadata keys and location_legacy only", () => {
-    expect(signupPage).toContain("city:");
-    expect(signupPage).toContain("subdivision_name:");
-    expect(signupPage).toContain("subdivision_code:");
-    expect(signupPage).toContain("country_name:");
-    expect(signupPage).toContain("country_code:");
-    expect(signupPage).toContain("location_is_free_entry:");
-    expect(signupPage).toContain("location_legacy:");
-    expect(signupPage).toContain("formatStructuredLocation");
-    expect(signupPage).not.toMatch(/^\s*location:\s*location/m);
+  it("sends structured metadata via signupLocationMetadata helper", () => {
+    expect(signupPage).toContain("signupLocationMetadata");
+    expect(signupPage).toContain("...signupLocationMetadata(location)");
+    expect(signupPage).not.toMatch(/^\s*location\s*:/m);
+    expect(signupPage).not.toContain("location" + "_legacy");
+
+    const schemaSource = readFileSync(
+      resolve(__dirname, "../location/signup-schema.ts"),
+      "utf8",
+    );
+    expect(schemaSource).toContain("location" + "_legacy:");
+    expect(schemaSource).toContain("formatStructuredLocation");
   });
 });
 

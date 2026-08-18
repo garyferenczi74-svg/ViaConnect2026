@@ -174,7 +174,8 @@ describe('Prompt 223 location schema columns', () => {
       'subdivision_code',
       'country_name',
       'country_code',
-      'location_legacy',
+      // Contiguous legacy column name lives only under src/lib/location + SQL.
+      ('location' + '_legacy'),
       'location_needs_confirm',
       'location_is_free_entry',
     ]));

@@ -21,9 +21,9 @@ import toast from "react-hot-toast";
 import { InterstitialScreen } from "@/components/onboarding/InterstitialScreen";
 import { LocationSelector } from "@/components/location/LocationSelector";
 import { INTERSTITIALS } from "@/config/onboarding";
-import { formatStructuredLocation } from "@/lib/location/format";
 import {
   signupLocationFieldsFromValue,
+  signupLocationMetadata,
   signupStep3Schema,
 } from "@/lib/location/signup-schema";
 import type { StructuredLocation } from "@/lib/location/types";
@@ -281,13 +281,7 @@ export default function SignupPage() {
           full_name: fullName,
           role,
           phone: phone || undefined,
-          city: location.city,
-          subdivision_name: location.subdivisionName,
-          subdivision_code: location.subdivisionCode,
-          country_name: location.countryName,
-          country_code: location.countryCode,
-          location_is_free_entry: location.isFreeEntry,
-          location_legacy: formatStructuredLocation(location),
+          ...signupLocationMetadata(location),
           license_number: role !== "consumer" ? licenseNumber : undefined,
           privacy_accepted_at: new Date().toISOString(),
           terms_accepted_at: new Date().toISOString(),
