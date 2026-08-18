@@ -31,4 +31,32 @@ describe('hub SURFACES (210j consolidation)', () => {
     expect(hormones!.href).toBe('/body-tracker/hormones');
     expect(hormones!.title).toBe('Hormones');
   });
+
+  it('221C: Weight Milestones Metabolic Hormones share equal four-card row spans', () => {
+    const ids = ['weight', 'milestones', 'metabolic', 'hormones'] as const;
+    const order = SURFACES.map((s) => s.id);
+    expect(order.indexOf('weight')).toBeLessThan(order.indexOf('milestones'));
+    expect(order.indexOf('milestones')).toBeLessThan(order.indexOf('metabolic'));
+    expect(order.indexOf('metabolic')).toBeLessThan(order.indexOf('hormones'));
+    for (const id of ids) {
+      const card = SURFACES.find((s) => s.id === id);
+      expect(card?.gridClass).toMatch(/md:col-span-1/);
+      expect(card?.gridClass).toMatch(/lg:col-span-3/);
+    }
+    const hormones = SURFACES.find((s) => s.id === 'hormones');
+    expect(hormones?.media.kind).toBe('video');
+    expect(hormones?.media.src).toBeTruthy();
+  });
+
+  it('221C: featured stack uses 12-col spans (dashboard 8, side cards 4)', () => {
+    expect(SURFACES.find((s) => s.id === 'dashboard')?.gridClass).toMatch(
+      /lg:col-span-8/,
+    );
+    expect(SURFACES.find((s) => s.id === 'composition')?.gridClass).toMatch(
+      /lg:col-span-4/,
+    );
+    expect(SURFACES.find((s) => s.id === 'progress')?.gridClass).toMatch(
+      /lg:col-span-4/,
+    );
+  });
 });

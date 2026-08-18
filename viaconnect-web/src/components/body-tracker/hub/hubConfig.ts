@@ -75,7 +75,8 @@ export interface SurfaceCard {
 
 // Source order is preserved in the DOM so grid auto placement produces
 // the desktop layout without explicit row / column lines: Dashboard,
-// FormaVision Body Composition, Progress, Weight, Milestones, Metabolic.
+// FormaVision Body Composition, Progress, then Weight, Milestones,
+// Metabolic, Hormones as an equal four-card row (Prompt 221C; lg 12-col).
 // Prompt 210j: no standalone FormaVision hub card; tabs inside composition
 // reach the 3D surface.
 export const SURFACES: SurfaceCard[] = [
@@ -88,10 +89,10 @@ export const SURFACES: SurfaceCard[] = [
     accent: "teal",
     metricKey: "bio_optimization_score",
     metricLabel: "trending this week",
-    // Desktop: col span 4, row span 2 (top left, featured).
+    // Desktop (12-col): col span 8, row span 2 (top left, featured).
     // Tablet: col span 2, single row.
     // Mobile: full width, slightly taller via min-h on the card.
-    gridClass: "md:col-span-2 md:row-span-1 lg:col-span-4 lg:row-span-2",
+    gridClass: "md:col-span-2 md:row-span-1 lg:col-span-8 lg:row-span-2",
     media: {
       kind: "video",
       src: "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Videos/Burn_belly_fat_lose_weight_m.mp4",
@@ -110,8 +111,8 @@ export const SURFACES: SurfaceCard[] = [
     accent: "teal",
     metricKey: "body_fat_pct",
     metricLabel: "body fat",
-    // Desktop: right column top.
-    gridClass: "md:col-span-1 lg:col-span-2 lg:row-span-1",
+    // Desktop (12-col): right column top (col span 4).
+    gridClass: "md:col-span-1 lg:col-span-4 lg:row-span-1",
     media: {
       kind: "video",
       src: "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Videos/body%20comp%202.mp4",
@@ -130,8 +131,8 @@ export const SURFACES: SurfaceCard[] = [
     accent: "teal",
     metricKey: "pct_to_goal",
     metricLabel: "to your goal",
-    // Desktop: right column under Body Composition.
-    gridClass: "md:col-span-1 lg:col-span-2 lg:row-span-1",
+    // Desktop (12-col): right column under Body Composition (col span 4).
+    gridClass: "md:col-span-1 lg:col-span-4 lg:row-span-1",
     media: {
       kind: "video",
       src: "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Videos/an_atractive_fit_woman_in_the.mp4",
@@ -150,8 +151,8 @@ export const SURFACES: SurfaceCard[] = [
     accent: "orange",
     metricKey: "latest_weight_lbs",
     metricLabel: "change this week",
-    // Desktop: bottom triad, left.
-    gridClass: "md:col-span-1 lg:col-span-2 lg:row-span-1",
+    // Desktop (12-col): four-card row, equal col span 3 (Prompt 221C).
+    gridClass: "md:col-span-1 lg:col-span-3 lg:row-span-1",
     media: {
       kind: "video",
       src: "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Videos/Body_Weight_scale_Senior_woma.mp4",
@@ -170,8 +171,8 @@ export const SURFACES: SurfaceCard[] = [
     accent: "orange",
     metricKey: "milestones_done_this_week",
     metricLabel: "done this week",
-    // Desktop: bottom triad, center.
-    gridClass: "md:col-span-1 lg:col-span-2 lg:row-span-1",
+    // Desktop (12-col): four-card row, equal col span 3 (Prompt 221C).
+    gridClass: "md:col-span-1 lg:col-span-3 lg:row-span-1",
     media: {
       kind: "video",
       src: "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Videos/Mountain%20top.mp4",
@@ -190,9 +191,9 @@ export const SURFACES: SurfaceCard[] = [
     accent: "teal",
     metricKey: "resting_hr_bpm",
     metricLabel: "resting heart rate",
-    // Desktop: bottom triad, right.
-    // Tablet: spans both columns.
-    gridClass: "md:col-span-2 lg:col-span-2 lg:row-span-1",
+    // Desktop (12-col): four-card row, equal col span 3 (Prompt 221C).
+    // Tablet: one column of the 2x2 (was full-width span; that orphaned Hormones).
+    gridClass: "md:col-span-1 lg:col-span-3 lg:row-span-1",
     media: {
       kind: "video",
       src: "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Videos/Metobolic.mp4",
@@ -203,7 +204,7 @@ export const SURFACES: SurfaceCard[] = [
     },
   },
   {
-    // Prompt 221B: Hormone Education reports (Male/Female tracks).
+    // Prompt 221B/221C: Hormone Education; sibling anatomy in the four-card row.
     id: "hormones",
     title: "Hormones",
     description: "Educational Male or Female Hormone Report mapped to your labs.",
@@ -212,9 +213,15 @@ export const SURFACES: SurfaceCard[] = [
     accent: "teal",
     metricKey: "hormones_report",
     metricLabel: "report status",
-    gridClass: "md:col-span-2 lg:col-span-2 lg:row-span-1",
+    // Desktop (12-col): four-card row, equal col span 3. Stat chip absent until real data.
+    gridClass: "md:col-span-1 lg:col-span-3 lg:row-span-1",
     media: {
-      kind: "gradient",
+      // PLACEHOLDER FOR GARY: reuses Metabolic vitality video from Hero Videos
+      // bucket until a preferred endocrine/hormones asset is supplied.
+      kind: "video",
+      src: "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Videos/Metobolic.mp4",
+      poster: "",
+      objectPosition: "center",
       gradientClass:
         "bg-[radial-gradient(110%_110%_at_0%_50%,rgba(45,165,160,0.32)_0%,rgba(30,48,84,0.85)_55%,rgba(26,39,68,1)_100%)]",
     },
