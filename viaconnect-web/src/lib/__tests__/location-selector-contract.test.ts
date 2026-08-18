@@ -25,4 +25,15 @@ describe("location selector contract", () => {
     expect(selector).not.toMatch(/\u2014/);
     expect(combobox).not.toMatch(/\u2014/);
   });
+
+  it("commits typed free-entry on blur and starts with no highlight", () => {
+    expect(combobox).toContain("onBlur");
+    expect(combobox).toContain("useState(-1)");
+  });
+
+  it("resets local fields when the controlled value is null", () => {
+    expect(selector).toContain("if (!value)");
+    expect(selector).toContain('setCountryQuery("")');
+    expect(selector).toContain('setCityQuery("")');
+  });
 });

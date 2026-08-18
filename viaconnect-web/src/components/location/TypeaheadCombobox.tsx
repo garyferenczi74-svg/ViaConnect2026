@@ -51,7 +51,7 @@ export function TypeaheadCombobox({
   const listboxId = `${id}-listbox`;
   const rootRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(0);
+  const [activeIndex, setActiveIndex] = useState(-1);
 
   const options = useMemo<DisplayOption[]>(() => {
     const query = value.trim();
@@ -81,12 +81,9 @@ export function TypeaheadCombobox({
       setActiveIndex(-1);
       return;
     }
-    setActiveIndex((current) => {
-      if (current < 0 || current >= options.length) {
-        return 0;
-      }
-      return current;
-    });
+    setActiveIndex((current) =>
+      current >= options.length ? -1 : current,
+    );
   }, [options]);
 
   useEffect(() => {
@@ -106,6 +103,36 @@ export function TypeaheadCombobox({
       isFreeEntry: option.isFreeEntry,
     });
     setOpen(false);
+    setActiveIndex(-1);
+  }
+
+  function commitTypedOnBlur() {
+    const query = value.trim();
+    if (query.length === 0) {
+      setOpen(false);
+      setActiveIndex(-1);
+      return;
+    }
+
+    const exact = items.find(
+      (item) => item.label.toLowerCase() === query.toLowerCase(),
+    );
+    if (exact) {
+      onChange({
+        value: exact.value,
+        label: exact.label,
+        isFreeEntry: false,
+      });
+    } else if (allowFreeEntry) {
+      onChange({
+        value: query,
+        label: query,
+        isFreeEntry: true,
+      });
+    }
+
+    setOpen(false);
+    setActiveIndex(-1);
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLInputElement>) {
@@ -160,11 +187,8 @@ export function TypeaheadCombobox({
     }
 
     if (event.key === "Tab") {
-      if (open && activeIndex >= 0 && options[activeIndex]) {
-        selectOption(options[activeIndex]);
-      } else {
-        setOpen(false);
-      }
+      setOpen(false);
+      setActiveIndex(-1);
     }
   }
 
@@ -200,12 +224,15 @@ export function TypeaheadCombobox({
         onChange={(event) => {
           onQuery(event.target.value);
           setOpen(true);
+          setActiveIndex(-1);
         }}
         onFocus={() => {
           if (!disabled) {
             setOpen(true);
+            setActiveIndex(-1);
           }
         }}
+        onBlur={commitTypedOnBlur}
         onKeyDown={onKeyDown}
       />
       {showPanel ? (

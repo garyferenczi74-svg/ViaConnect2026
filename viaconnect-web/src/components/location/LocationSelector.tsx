@@ -221,6 +221,19 @@ export function LocationSelector({
     }
     lastSynced.current = key;
     if (!value) {
+      setCountry(null);
+      setCountryQuery("");
+      setCountryIsFree(false);
+      setCountryItems([]);
+      setSubdivision(null);
+      setSubdivisionQuery("");
+      setSubdivisionIsFree(false);
+      setSubdivisionItems([]);
+      setHideSubdivision(false);
+      setCity("");
+      setCityQuery("");
+      setCityIsFree(false);
+      setCityItems([]);
       return;
     }
     setCountry({ value: value.countryCode, label: value.countryName });
@@ -333,6 +346,14 @@ export function LocationSelector({
 
   function handleCountryChange(next: TypeaheadSelection) {
     const selected = { value: next.value, label: next.label };
+    if (
+      country &&
+      country.value === selected.value &&
+      country.label === selected.label
+    ) {
+      setCountryQuery(next.label);
+      return;
+    }
     setCountry(selected);
     setCountryQuery(next.label);
     setCountryIsFree(next.isFreeEntry);
@@ -372,6 +393,14 @@ export function LocationSelector({
 
   function handleSubdivisionChange(next: TypeaheadSelection) {
     const selected = { value: next.value, label: next.label };
+    if (
+      subdivision &&
+      subdivision.value === selected.value &&
+      subdivision.label === selected.label
+    ) {
+      setSubdivisionQuery(next.label);
+      return;
+    }
     setSubdivision(selected);
     setSubdivisionQuery(next.label);
     setSubdivisionIsFree(next.isFreeEntry);
