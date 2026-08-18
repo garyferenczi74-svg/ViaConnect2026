@@ -648,18 +648,6 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     productHint: "Magnesium Bisglycinate",
   },
   {
-    url: "https://canprev.ca/products/magnesium-bis-glycinate-200",
-    category: "base-formulations",
-    brandHint: "CanPrev",
-    productHint: "Magnesium Bis-Glycinate 200 mg",
-  },
-  {
-    url: "https://canprev.ca/products/iron-bis-glycinate-20",
-    category: "base-formulations",
-    brandHint: "CanPrev",
-    productHint: "Iron Bis-Glycinate 20 mg",
-  },
-  {
     url: "https://www.solgar.com/products/vitamin-d3-5000-iu",
     category: "base-formulations",
     brandHint: "Solgar",
@@ -3098,6 +3086,138 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     category: "base-formulations",
     brandHint: "AOR",
     productHint: "Zinc Copper Balance",
+  },
+
+  // CanPrev US catalog from https://canprev.com/all-products/ (+ products-sitemap)
+
+
+  // CanPrev US catalog from https://canprev.com/all-products/ (+ products-sitemap)
+
+  {
+    url: "https://canprev.com/products/calcium-malate-bis-glycinate-200",
+    category: "base-formulations",
+    brandHint: "CanPrev",
+    productHint: "Calcium Malate Bis-Glycinate 200",
+  },
+  {
+    url: "https://canprev.com/products/d3-k2",
+    category: "base-formulations",
+    brandHint: "CanPrev",
+    productHint: "D3 & K2",
+  },
+  {
+    url: "https://canprev.com/products/d3-k2-drops",
+    category: "base-formulations",
+    brandHint: "CanPrev",
+    productHint: "D3 & K2 Drops",
+  },
+  {
+    url: "https://canprev.com/products/d3-k2-softgels",
+    category: "base-formulations",
+    brandHint: "CanPrev",
+    productHint: "D3 & K2 Softgels",
+  },
+  {
+    url: "https://canprev.com/products/iron-bis-glycinate-25",
+    category: "womens-health",
+    brandHint: "CanPrev",
+    productHint: "Iron Bis-Glycinate 25",
+  },
+  {
+    url: "https://canprev.com/products/k2-drops",
+    category: "base-formulations",
+    brandHint: "CanPrev",
+    productHint: "K2 Drops",
+  },
+  {
+    url: "https://canprev.com/products/k2-softgels",
+    category: "base-formulations",
+    brandHint: "CanPrev",
+    productHint: "K2 Softgels",
+  },
+  {
+    url: "https://canprev.com/products/magnesium-bis-glycinate-140-extra-gentle",
+    category: "base-formulations",
+    brandHint: "CanPrev",
+    productHint: "Magnesium Bis-Glycinate 140 Extra Gentle",
+  },
+  {
+    url: "https://canprev.com/products/magnesium-bis-glycinate-200-gentle",
+    category: "base-formulations",
+    brandHint: "CanPrev",
+    productHint: "Magnesium Bis-Glycinate 200 Gentle",
+  },
+  {
+    url: "https://canprev.com/products/magnesium-bis-glycinate-200-gentle-2",
+    category: "base-formulations",
+    brandHint: "CanPrev",
+    productHint: "Magnesium Bis-Glycinate 200 Gentle 120",
+  },
+  {
+    url: "https://canprev.com/products/magnesium-bis-glycinate-200-gentle-3",
+    category: "base-formulations",
+    brandHint: "CanPrev",
+    productHint: "Magnesium Bis-Glycinate 200 Gentle 240",
+  },
+  {
+    url: "https://canprev.com/products/magnesium-bis-glycinate-400-ultra-gentle-powder",
+    category: "base-formulations",
+    brandHint: "CanPrev",
+    productHint: "Magnesium Bis-Glycinate 400 Ultra Gentle Powder",
+  },
+  {
+    url: "https://canprev.com/products/magnesium-bis-glycinate-80-ultra-gentle",
+    category: "base-formulations",
+    brandHint: "CanPrev",
+    productHint: "Magnesium Bis-Glycinate 80 Ultra Gentle",
+  },
+  {
+    url: "https://canprev.com/products/magnesium-full-spectrum",
+    category: "base-formulations",
+    brandHint: "CanPrev",
+    productHint: "Magnesium Full Spectrum",
+  },
+  {
+    url: "https://canprev.com/products/magnesium-malate",
+    category: "base-formulations",
+    brandHint: "CanPrev",
+    productHint: "Magnesium Malate",
+  },
+  {
+    url: "https://canprev.com/products/magnesium-sleep-gaba-melatonin",
+    category: "advanced-formulas",
+    brandHint: "CanPrev",
+    productHint: "Magnesium Sleep GABA Melatonin",
+  },
+  {
+    url: "https://canprev.com/products/magnesium-stress-release",
+    category: "advanced-formulas",
+    brandHint: "CanPrev",
+    productHint: "Magnesium Stress Release",
+  },
+  {
+    url: "https://canprev.com/products/magnesium-threonate",
+    category: "advanced-formulas",
+    brandHint: "CanPrev",
+    productHint: "Magnesium Threonate",
+  },
+  {
+    url: "https://canprev.com/products/selenium-glycinate-200",
+    category: "base-formulations",
+    brandHint: "CanPrev",
+    productHint: "Selenium Glycinate 200",
+  },
+  {
+    url: "https://canprev.com/products/zinc-bis-glycinate-25",
+    category: "base-formulations",
+    brandHint: "CanPrev",
+    productHint: "Zinc Bis-Glycinate 25",
+  },
+  {
+    url: "https://canprev.com/products/zinc-bis-glycinate-50-ultra-strength",
+    category: "base-formulations",
+    brandHint: "CanPrev",
+    productHint: "Zinc Bis-Glycinate 50 Ultra Strength",
   },
 ] as const;
 

@@ -23,6 +23,7 @@ describe("221 phase2 competitive allowlist", () => {
     expect(PHASE2_COMPETITIVE_SEED_DOMAINS).toContain("organika.com");
     expect(PHASE2_COMPETITIVE_SEED_DOMAINS).toContain("aor.ca");
     expect(PHASE2_COMPETITIVE_SEED_DOMAINS).toContain("cymbiotika.ca");
+    expect(PHASE2_COMPETITIVE_SEED_DOMAINS).toContain("canprev.com");
     expect(PHASE2_COMPETITIVE_SEED_DOMAINS.length).toBeGreaterThanOrEqual(40);
   });
 

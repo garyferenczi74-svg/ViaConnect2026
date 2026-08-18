@@ -108,6 +108,7 @@ export const PHASE2_COMPETITIVE_SEED_DOMAINS: readonly string[] = [
   "organika.com",
   "aor.ca",
   "canprev.ca",
+  "canprev.com",
   "solgar.com",
   "orthomolecularproducts.com",
   "integrativepro.com",
