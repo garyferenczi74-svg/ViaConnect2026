@@ -534,19 +534,70 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     brandHint: "Ritual",
     productHint: "DHA+",
   },
+
+
+  // AG1 catalog from https://drinkag1.com/shop (bundles excluded)
+
   {
-    url: "https://drinkag1.com/products/ag1",
+    url: "https://drinkag1.com/products/greens-powder-pouch",
     category: "base-formulations",
     brandHint: "AG1",
-    productHint: "AG1",
+    productHint: "AG1 Next Gen Pouch",
   },
   {
-    url: "https://drinkag1.com/products/ag1-travel-packs",
+    url: "https://drinkag1.com/products/greens-powder-travel-pack",
     category: "base-formulations",
     brandHint: "AG1",
     productHint: "AG1 Travel Packs",
   },
-
+  {
+    url: "https://drinkag1.com/products/greens-powder-7ct",
+    category: "base-formulations",
+    brandHint: "AG1",
+    productHint: "AG1 Travel Packs 7ct",
+  },
+  {
+    url: "https://drinkag1.com/products/ag1-pro-travel-packs",
+    category: "advanced-formulas",
+    brandHint: "AG1",
+    productHint: "AG1 Pro",
+  },
+  {
+    url: "https://drinkag1.com/products/ag1-essentials-gummies",
+    category: "base-formulations",
+    brandHint: "AG1",
+    productHint: "AG1 Essentials Gummies",
+  },
+  {
+    url: "https://drinkag1.com/products/omega-3-fish-oil-supplements",
+    category: "base-formulations",
+    brandHint: "AG1",
+    productHint: "AG Omega3",
+  },
+  {
+    url: "https://drinkag1.com/products/omega-coq10",
+    category: "advanced-formulas",
+    brandHint: "AG1",
+    productHint: "AG Omega3 + CoQ10",
+  },
+  {
+    url: "https://drinkag1.com/products/vitamin-d3-k2-liquid",
+    category: "base-formulations",
+    brandHint: "AG1",
+    productHint: "AG Vitamin D3+K2",
+  },
+  {
+    url: "https://drinkag1.com/products/sleep-supplement",
+    category: "advanced-formulas",
+    brandHint: "AG1",
+    productHint: "AGZ Nightly Sleep Support",
+  },
+  {
+    url: "https://drinkag1.com/products/sleep-supplement-7ct",
+    category: "advanced-formulas",
+    brandHint: "AG1",
+    productHint: "AGZ Nightly Sleep Support 7ct",
+  },
   // --- Allowlist expand 2026-08-17 (Gary-approved) ---
   {
     url: "https://www.codeage.com/products/liposomal-glutathione",
