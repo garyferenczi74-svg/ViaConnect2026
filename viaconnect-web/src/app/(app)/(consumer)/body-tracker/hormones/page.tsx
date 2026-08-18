@@ -236,6 +236,112 @@ function ReportView({
       </section>
 
       <section className="rounded-xl border border-white/15 bg-[rgba(30,48,84,0.92)] p-4">
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <h3 className="font-medium">HormoneIQ results</h3>
+          <Link
+            href={report.hormoneiq_crossref.genetics_href}
+            className="inline-flex min-h-[44px] items-center text-sm text-[#2DA5A0]"
+          >
+            Open My Genetics
+          </Link>
+        </div>
+        <p className="mt-1 text-xs text-white/55">
+          GeneX360 HormoneIQ panel cross-referenced with your labs. Educational
+          only.
+        </p>
+        <p className="mt-2 text-sm text-white/70">
+          SNPs {report.hormoneiq_crossref.summary.snp_count} of{" "}
+          {report.hormoneiq_crossref.summary.snp_total}
+          {" · "}
+          Lab analytes matched {report.hormoneiq_crossref.summary.lab_matched_count}{" "}
+          of {report.hormoneiq_crossref.summary.lab_total}
+        </p>
+
+        {!report.hormoneiq_crossref.summary.has_any_data ? (
+          <p className="mt-3 text-sm text-white/65">
+            No HormoneIQ results or matched hormone lab analytes yet. Upload a
+            HormoneIQ or DNA file in My Genetics, and hormone labs via Upload Labs.
+          </p>
+        ) : (
+          <>
+            {report.hormoneiq_crossref.snp_results.length > 0 && (
+              <ul className="mt-3 space-y-3">
+                {report.hormoneiq_crossref.snp_results.map((snp) => (
+                  <li
+                    key={`${snp.gene}-${snp.rsid}`}
+                    className="rounded-lg border border-white/10 p-3 text-sm"
+                  >
+                    <div className="font-medium">
+                      {snp.gene}{" "}
+                      <span className="text-white/55">{snp.rsid}</span>
+                      {snp.is_sample ? (
+                        <span className="ml-2 text-xs text-[#B75E18]">sample</span>
+                      ) : null}
+                    </div>
+                    <div className="mt-1 text-white/70">
+                      Genotype: {snp.genotype ?? "UNKNOWN"}
+                      {snp.genotype_label ? ` (${snp.genotype_label})` : ""}
+                      {snp.severity ? ` · severity ${snp.severity}` : ""}
+                    </div>
+                    {snp.pathway ? (
+                      <div className="mt-1 text-xs text-white/55">
+                        Pathway: {snp.pathway}
+                      </div>
+                    ) : null}
+                    {snp.genotype_interpretation ? (
+                      <p className="mt-2 text-white/70">{snp.genotype_interpretation}</p>
+                    ) : null}
+                    {snp.related_labs_found.length > 0 ? (
+                      <div className="mt-2 text-xs text-white/60">
+                        Related labs found:{" "}
+                        {snp.related_labs_found
+                          .map(
+                            (l) =>
+                              `${l.biomarker}${l.value != null ? ` ${l.value}${l.unit ? ` ${l.unit}` : ""}` : ""}`,
+                          )
+                          .join("; ")}
+                      </div>
+                    ) : (
+                      <div className="mt-2 text-xs text-white/50">
+                        Related HormoneIQ analytes not in your labs yet:{" "}
+                        {snp.related_lab_analytes.join(", ")}
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {report.hormoneiq_crossref.snps_missing.length > 0 && (
+              <p className="mt-3 text-xs text-white/50">
+                HormoneIQ SNPs not in your results yet:{" "}
+                {report.hormoneiq_crossref.snps_missing.join(", ")}
+              </p>
+            )}
+
+            {report.hormoneiq_crossref.summary.lab_matched_count > 0 && (
+              <div className="mt-4">
+                <p className="text-sm font-medium text-white/80">
+                  HormoneIQ lab analytes in your uploads
+                </p>
+                <ul className="mt-2 space-y-1 text-sm text-white/65">
+                  {report.hormoneiq_crossref.lab_analyte_coverage
+                    .filter((c) => c.status === "matched" && c.matched_lab)
+                    .slice(0, 12)
+                    .map((c) => (
+                      <li key={c.analyte}>
+                        {c.analyte}: {c.matched_lab!.value ?? "UNKNOWN"}{" "}
+                        {c.matched_lab!.unit ?? ""}
+                      </li>
+                    ))}
+                </ul>
+              </div>
+            )}
+          </>
+        )}
+      </section>
+
+      <section className="rounded-xl border border-white/15 bg-[rgba(30,48,84,0.92)] p-4">
         <h3 className="font-medium">Your genetics context</h3>
         {report.genetics_context.length === 0 ? (
           <p className="mt-2 text-sm text-white/65">

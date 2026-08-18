@@ -99,6 +99,43 @@ export interface HormoneReportPayload {
     summary: string;
     evidence_grade: string | null;
   }>;
+  /** HormoneIQ GeneX360 panel cross-ref (SNPs + related labs). */
+  hormoneiq_crossref: {
+    panel: "HormoneIQ";
+    panel_key: "hormone";
+    genetics_href: string;
+    snp_results: Array<{
+      gene: string;
+      rsid: string;
+      genotype: string | null;
+      severity: string | null;
+      is_sample: boolean;
+      pathway: string | null;
+      genotype_label: string | null;
+      genotype_interpretation: string | null;
+      related_lab_analytes: string[];
+      related_labs_found: Array<{
+        biomarker: string;
+        value: number | null;
+        unit: string | null;
+        measured_at: string | null;
+      }>;
+      related_c13_slugs: string[];
+    }>;
+    snps_missing: string[];
+    lab_analyte_coverage: Array<{
+      analyte: string;
+      matched_lab: LabMarkerSnapshot | null;
+      status: "matched" | "not_in_labs";
+    }>;
+    summary: {
+      snp_count: number;
+      snp_total: number;
+      lab_matched_count: number;
+      lab_total: number;
+      has_any_data: boolean;
+    };
+  };
   education_track: Array<{
     hormone_slug: string;
     display_name: string;

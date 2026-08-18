@@ -4,7 +4,9 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { severityFor } from "@/lib/genetics/variantSeverity";
 import { FLAGSHIP_HORMONE_DRAFTS } from "./flagshipDraft";
+import type { HormoneIqVariantRow } from "./hormoneIqCrossRef";
 import type { KbHormoneRow, LabMarkerSnapshot } from "./types";
 
 export async function loadProfileSexRaw(
@@ -87,4 +89,47 @@ export async function loadHormonesForReport(
     /* fall through to drafts */
   }
   return FLAGSHIP_HORMONE_DRAFTS.map((h) => ({ ...h }));
+}
+
+/**
+ * Load HormoneIQ GeneX360 variants (panel_key = hormone) for cross-ref.
+ * Fail-open to empty when table missing or user has no results.
+ */
+export async function loadHormoneIqVariants(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<HormoneIqVariantRow[]> {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase as any)
+      .from("user_variants")
+      .select(
+        "panel_key, rsid, gene, genotype, status, clinical_significance, is_sample"
+      )
+      .eq("user_id", userId)
+      .eq("panel_key", "hormone");
+    if (error || !data) return [];
+    return (
+      data as Array<{
+        rsid?: string | null;
+        gene?: string | null;
+        genotype?: string | null;
+        status?: string | null;
+        clinical_significance?: string | null;
+        is_sample?: boolean | null;
+      }>
+    ).map((row) => ({
+      rsid: String(row.rsid ?? ""),
+      gene: row.gene ?? null,
+      genotype: row.genotype ?? null,
+      status: row.status ?? null,
+      clinical_significance: row.clinical_significance ?? null,
+      is_sample: row.is_sample === true,
+      severity:
+        severityFor("hormone-iq", String(row.rsid ?? ""), row.genotype ?? null) ??
+        null,
+    }));
+  } catch {
+    return [];
+  }
 }

@@ -3,6 +3,10 @@
  * Strips practitioner_depth. Never fabricates labs, genetics, or ranges.
  */
 
+import {
+  buildHormoneIqCrossRef,
+  type HormoneIqVariantRow,
+} from "./hormoneIqCrossRef";
 import { matchLabMarkers } from "./matchLabMarkers";
 import { resolveReportSex } from "./resolveReportSex";
 import type {
@@ -39,6 +43,8 @@ export interface GenerateHormoneReportInput {
   hormones: KbHormoneRow[];
   genetics: GeneticHormoneHit[];
   influences: InfluenceSignal[];
+  /** HormoneIQ panel variants from user_variants (panel_key=hormone). */
+  hormoneIqVariants?: HormoneIqVariantRow[];
   /** Female track: whether cycle phase of the draw is known. */
   cyclePhaseKnown?: boolean;
   nowIso?: string;
@@ -73,6 +79,24 @@ export function generateHormoneReport(
       summary: g.summary,
       evidence_grade: g.evidence_grade,
     }));
+
+  const hormoneiq_crossref = buildHormoneIqCrossRef(
+    input.hormoneIqVariants ?? [],
+    input.labs
+  );
+
+  // Merge HormoneIQ SNP education into genetics_context when consumer-safe draft text exists
+  for (const snp of hormoneiq_crossref.snp_results) {
+    if (!snp.genotype_interpretation) continue;
+    if (genetics.some((g) => g.rsid.toLowerCase() === snp.rsid.toLowerCase())) {
+      continue;
+    }
+    genetics.push({
+      rsid: snp.rsid,
+      summary: `${snp.gene} (${snp.genotype ?? "genotype UNKNOWN"}): ${snp.genotype_label ?? "HormoneIQ result"}. ${snp.genotype_interpretation}`,
+      evidence_grade: null,
+    });
+  }
 
   const education = safeHormones
     .filter(
@@ -121,6 +145,7 @@ export function generateHormoneReport(
   const dataSources: string[] = [];
   if (input.labs.length > 0) dataSources.push("uploaded_labs");
   if (genetics.length > 0) dataSources.push("genetic_hormonal_c11");
+  if (hormoneiq_crossref.summary.has_any_data) dataSources.push("hormoneiq_genex360");
   dataSources.push("hormone_education_c13");
   if (input.influences.some((i) => i.personalized)) {
     dataSources.push("user_digests");
@@ -151,6 +176,7 @@ export function generateHormoneReport(
     your_labs_mapped: mappedForConsumer,
     labs_not_present: match.notInLabs,
     genetics_context: genetics,
+    hormoneiq_crossref,
     education_track: education,
     influences_you_control: influences,
     talk_to_your_practitioner: {

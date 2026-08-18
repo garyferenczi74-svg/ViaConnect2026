@@ -11,6 +11,7 @@ import {
   generateHormoneReport,
 } from "@/lib/kb/hormones/generateHormoneReport";
 import {
+  loadHormoneIqVariants,
   loadHormonesForReport,
   loadNormalizedLabs,
   loadProfileSexRaw,
@@ -24,10 +25,11 @@ async function buildReport(
   userId: string,
   explicitSex?: string | null
 ) {
-  const [profileSex, labs, hormones] = await Promise.all([
+  const [profileSex, labs, hormones, hormoneIqVariants] = await Promise.all([
     loadProfileSexRaw(supabase, userId),
     loadNormalizedLabs(supabase, userId),
     loadHormonesForReport(supabase),
+    loadHormoneIqVariants(supabase, userId),
   ]);
 
   const result = generateHormoneReport({
@@ -37,6 +39,7 @@ async function buildReport(
     hormones,
     genetics: [],
     influences: [],
+    hormoneIqVariants,
   });
 
   if (result.ok && !result.needsSex && result.report) {
