@@ -65,3 +65,7 @@ tmp/208c/
 hero-fix/
 .superpowers/
 viaconnect-web/.superpowers/
+.env*
+
+.env.vercel.prod
+.env.vercel*
