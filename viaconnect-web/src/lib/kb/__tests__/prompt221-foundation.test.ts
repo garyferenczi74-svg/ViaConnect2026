@@ -24,9 +24,9 @@ import { canPromoteKbItem, isLiveGateStatus } from "../promote";
 import { formatHitsForHannahContext, type KbSearchHit } from "../search";
 
 describe("prompt221 collections", () => {
-  it("registers exactly twelve collection slugs", () => {
-    expect(KB_COLLECTION_SLUGS).toHaveLength(12);
-    expect(KB_COLLECTION_CHARTERS).toHaveLength(12);
+  it("registers exactly thirteen collection slugs", () => {
+    expect(KB_COLLECTION_SLUGS).toHaveLength(13);
+    expect(KB_COLLECTION_CHARTERS).toHaveLength(13);
   });
 
   it("maps each slug to a charter with phase and gate profile", () => {

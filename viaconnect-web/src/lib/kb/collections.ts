@@ -1,5 +1,5 @@
 /**
- * Prompt 221: twelve collection registry (code mirror of kb_collections seed).
+ * Prompt 221/222: collection registry (code mirror of kb_collections seed).
  * No em/en dashes. Status planned until phase gates + 219N soak PASS.
  */
 
@@ -16,6 +16,7 @@ export const KB_COLLECTION_SLUGS = [
   "genetic_nutritional",
   "genetic_hormonal",
   "genetic_peptide",
+  "competitor_platforms",
 ] as const;
 
 export type KbCollectionSlug = (typeof KB_COLLECTION_SLUGS)[number];
@@ -187,6 +188,18 @@ export const KB_COLLECTION_CHARTERS: readonly KbCollectionCharter[] = [
     seedingPhase: 3,
     charterSummary:
       "Peptide-response genetics; educational and practitioner framing only.",
+  },
+  {
+    slug: "competitor_platforms",
+    displayName: "Competitive platform teardowns",
+    owningAgent: "hounddog",
+    coOwnerAgents: ["sherlock", "jeffery"],
+    sourceClasses: ["firecrawl_competitive", "public_http"],
+    cadenceClass: "weekly",
+    gateProfile: "standard",
+    seedingPhase: 2,
+    charterSummary:
+      "Internal strategy teardowns of competitor apps. consumer_safe false. Not for consumer surfaces.",
   },
 ] as const;
 

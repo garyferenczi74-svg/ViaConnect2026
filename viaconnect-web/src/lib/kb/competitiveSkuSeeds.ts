@@ -461,12 +461,6 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     brandHint: "Solgar",
     productHint: "Earth Source Multi-Nutrient",
   },
-  {
-    url: "https://www.sisu.com/products/ester-c",
-    category: "base-formulations",
-    brandHint: "SISU",
-    productHint: "Ester-C",
-  },
 
   // Cymbiotika Canada (https://cymbiotika.ca/pages/supplement-guide)
   {
@@ -13006,6 +13000,351 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     brandHint: "Seed Health",
     productHint: "VS-01 Vaginal Synbiotic",
   },
+
+  // SISU from https://www.sisu.com/products (live /our-products PDPs; Nestlé WP catalog)
+
+  {
+    url: "https://www.sisu.com/our-products/5-htp-serotonin-for-sleep",
+    category: "advanced-formulas",
+    brandHint: "SISU",
+    productHint: "5-HTP",
+  },
+  {
+    url: "https://www.sisu.com/our-products/ala-supplement",
+    category: "advanced-formulas",
+    brandHint: "SISU",
+    productHint: "ALA 300 mg",
+  },
+  {
+    url: "https://www.sisu.com/our-products/calm-vitamin-b-rhodiola",
+    category: "methylation-snp",
+    brandHint: "SISU",
+    productHint: "B Calm with Rhodiola",
+  },
+  {
+    url: "https://www.sisu.com/our-products/vegan-b-complex",
+    category: "methylation-snp",
+    brandHint: "SISU",
+    productHint: "B Complex 100",
+  },
+  {
+    url: "https://www.sisu.com/our-products/sublingual-b12-tablets",
+    category: "methylation-snp",
+    brandHint: "SISU",
+    productHint: "B12 5000 mcg",
+  },
+  {
+    url: "https://www.sisu.com/our-products/milk-thistle-supplement",
+    category: "advanced-formulas",
+    brandHint: "SISU",
+    productHint: "Broad Spectrum Milk Thistle",
+  },
+  {
+    url: "https://www.sisu.com/our-products/calcium-magnesium-11",
+    category: "base-formulations",
+    brandHint: "SISU",
+    productHint: "Calcium & Magnesium 1:1",
+  },
+  {
+    url: "https://www.sisu.com/our-products/calcium-magnesium-21",
+    category: "base-formulations",
+    brandHint: "SISU",
+    productHint: "Calcium & Magnesium 2:1",
+  },
+  {
+    url: "https://www.sisu.com/our-products/calcium-magnesium-citrates",
+    category: "base-formulations",
+    brandHint: "SISU",
+    productHint: "Calcium & Magnesium Citrates",
+  },
+  {
+    url: "https://www.sisu.com/our-products/chromium-picolinate",
+    category: "base-formulations",
+    brandHint: "SISU",
+    productHint: "Chromium Picolinate",
+  },
+  {
+    url: "https://www.sisu.com/our-products/coq10-softgel",
+    category: "advanced-formulas",
+    brandHint: "SISU",
+    productHint: "Co Q10 Soft Gel",
+  },
+  {
+    url: "https://www.sisu.com/our-products/vegan-coq10",
+    category: "advanced-formulas",
+    brandHint: "SISU",
+    productHint: "Co Q10 Vegetarian Capsules",
+  },
+  {
+    url: "https://www.sisu.com/our-products/cold-flu-rescue-with-ester-c",
+    category: "advanced-formulas",
+    brandHint: "SISU",
+    productHint: "Cold & Flu Rescue with Ester-C",
+  },
+  {
+    url: "https://www.sisu.com/our-products/b50-for-stress",
+    category: "methylation-snp",
+    brandHint: "SISU",
+    productHint: "Cool B50",
+  },
+  {
+    url: "https://www.sisu.com/our-products/cranberry-capsules",
+    category: "womens-health",
+    brandHint: "SISU",
+    productHint: "Cranberry Ultra",
+  },
+  {
+    url: "https://www.sisu.com/our-products/ester-c-1000mg",
+    category: "base-formulations",
+    brandHint: "SISU",
+    productHint: "Ester-C 1000 mg",
+  },
+  {
+    url: "https://www.sisu.com/our-products/ester-c-250mg-chewable",
+    category: "base-formulations",
+    brandHint: "SISU",
+    productHint: "Ester-C 250 mg Chewable",
+  },
+  {
+    url: "https://www.sisu.com/our-products/ester-c-500-mg-chewable",
+    category: "base-formulations",
+    brandHint: "SISU",
+    productHint: "Ester-C 500 mg Chewable",
+  },
+  {
+    url: "https://www.sisu.com/our-products/ester-c-600mg-vegetable",
+    category: "base-formulations",
+    brandHint: "SISU",
+    productHint: "Ester-C 600",
+  },
+  {
+    url: "https://www.sisu.com/our-products/ester-c-energy-boost",
+    category: "base-formulations",
+    brandHint: "SISU",
+    productHint: "Ester-C Energy Boost",
+  },
+  {
+    url: "https://www.sisu.com/our-products/ester-c-supreme-vegetable",
+    category: "base-formulations",
+    brandHint: "SISU",
+    productHint: "Ester-C Supreme",
+  },
+  {
+    url: "https://www.sisu.com/our-products/vegan-folic-acid",
+    category: "methylation-snp",
+    brandHint: "SISU",
+    productHint: "Folic Acid",
+  },
+  {
+    url: "https://www.sisu.com/our-products/curcumin-supplement",
+    category: "advanced-formulas",
+    brandHint: "SISU",
+    productHint: "Full Spectrum Curcumin",
+  },
+  {
+    url: "https://www.sisu.com/our-products/gentle-iron-capsules",
+    category: "womens-health",
+    brandHint: "SISU",
+    productHint: "Gentle Iron",
+  },
+  {
+    url: "https://www.sisu.com/our-products/ginkgo-biloba-supplement",
+    category: "advanced-formulas",
+    brandHint: "SISU",
+    productHint: "Ginkgo Memory Caps",
+  },
+  {
+    url: "https://www.sisu.com/our-products/kids-ester-c-250-mg-chewable",
+    category: "base-formulations",
+    brandHint: "SISU",
+    productHint: "Kids Ester-C 250 mg Chewable",
+  },
+  {
+    url: "https://www.sisu.com/our-products/kids-vitamin-d",
+    category: "base-formulations",
+    brandHint: "SISU",
+    productHint: "Kids Vitamin D",
+  },
+  {
+    url: "https://www.sisu.com/our-products/l-lysine-capsules",
+    category: "advanced-formulas",
+    brandHint: "SISU",
+    productHint: "L-Lysine",
+  },
+  {
+    url: "https://www.sisu.com/our-products/liquid-melatonin-10-mg",
+    category: "advanced-formulas",
+    brandHint: "SISU",
+    productHint: "Liquid Melatonin 10 mg",
+  },
+  {
+    url: "https://www.sisu.com/our-products/lutein-supplement",
+    category: "advanced-formulas",
+    brandHint: "SISU",
+    productHint: "Lutein 20 mg",
+  },
+  {
+    url: "https://www.sisu.com/our-products/vegan-magnesium-capsules",
+    category: "base-formulations",
+    brandHint: "SISU",
+    productHint: "Magnesium 250 mg",
+  },
+  {
+    url: "https://www.sisu.com/our-products/magnesium-relaxation-powder",
+    category: "advanced-formulas",
+    brandHint: "SISU",
+    productHint: "Magnesium 250 mg Relaxation Blend",
+  },
+  {
+    url: "https://www.sisu.com/our-products/vegan-melatonin-10mg",
+    category: "advanced-formulas",
+    brandHint: "SISU",
+    productHint: "Melatonin 10 mg",
+  },
+  {
+    url: "https://www.sisu.com/our-products/vegan-melatonin-5mg",
+    category: "advanced-formulas",
+    brandHint: "SISU",
+    productHint: "Melatonin 5 mg",
+  },
+  {
+    url: "https://www.sisu.com/our-products/menoease-capsules",
+    category: "womens-health",
+    brandHint: "SISU",
+    productHint: "MenoEase",
+  },
+  {
+    url: "https://www.sisu.com/our-products/chewable-kids-multivitamins",
+    category: "base-formulations",
+    brandHint: "SISU",
+    productHint: "Mini Vits",
+  },
+  {
+    url: "https://www.sisu.com/our-products/womens-multivitamin",
+    category: "womens-health",
+    brandHint: "SISU",
+    productHint: "Multi Active",
+  },
+  {
+    url: "https://www.sisu.com/our-products/prenatal-vitamin-capsules",
+    category: "womens-health",
+    brandHint: "SISU",
+    productHint: "Multi Expecting",
+  },
+  {
+    url: "https://www.sisu.com/our-products/nac-supplements",
+    category: "advanced-formulas",
+    brandHint: "SISU",
+    productHint: "NAC 600 mg",
+  },
+  {
+    url: "https://www.sisu.com/our-products/only-minerals",
+    category: "base-formulations",
+    brandHint: "SISU",
+    productHint: "Only Minerals",
+  },
+  {
+    url: "https://www.sisu.com/our-products/rhodiola-stress-caps",
+    category: "advanced-formulas",
+    brandHint: "SISU",
+    productHint: "Rhodiola Stress Caps",
+  },
+  {
+    url: "https://www.sisu.com/our-products/selenium-supplement",
+    category: "base-formulations",
+    brandHint: "SISU",
+    productHint: "Selenium Plus",
+  },
+  {
+    url: "https://www.sisu.com/our-products/skin-hair-nails",
+    category: "womens-health",
+    brandHint: "SISU",
+    productHint: "Skin, Hair & Nails",
+  },
+  {
+    url: "https://www.sisu.com/our-products/vegan-super-b-complex",
+    category: "methylation-snp",
+    brandHint: "SISU",
+    productHint: "Super B Complex",
+  },
+  {
+    url: "https://www.sisu.com/our-products/supreme-prenatal-vitamin-capsules",
+    category: "womens-health",
+    brandHint: "SISU",
+    productHint: "Supreme Multi Expecting",
+  },
+  {
+    url: "https://www.sisu.com/our-products/supreme-daily-multivitamin",
+    category: "base-formulations",
+    brandHint: "SISU",
+    productHint: "Supreme Multivitamin",
+  },
+  {
+    url: "https://www.sisu.com/our-products/supreme-daily-multivitamin-over-50s",
+    category: "base-formulations",
+    brandHint: "SISU",
+    productHint: "Supreme Multivitamin 50+",
+  },
+  {
+    url: "https://www.sisu.com/our-products/teens-chewable-multivitamins",
+    category: "base-formulations",
+    brandHint: "SISU",
+    productHint: "Teens Multi",
+  },
+  {
+    url: "https://www.sisu.com/our-products/kids-gummy-multivitamin",
+    category: "base-formulations",
+    brandHint: "SISU",
+    productHint: "U-Cubes Multi",
+  },
+  {
+    url: "https://www.sisu.com/our-products/ubiquinol-qh-100-mg",
+    category: "advanced-formulas",
+    brandHint: "SISU",
+    productHint: "Ubiquinol QH 100 mg",
+  },
+  {
+    url: "https://www.sisu.com/our-products/b12-methylcobalamin",
+    category: "methylation-snp",
+    brandHint: "SISU",
+    productHint: "Vitamin B12 1000 mcg Methylcobalamin",
+  },
+  {
+    url: "https://www.sisu.com/our-products/b12-cyanocobalamin",
+    category: "methylation-snp",
+    brandHint: "SISU",
+    productHint: "Vitamin B12 Cyanocobalamin",
+  },
+  {
+    url: "https://www.sisu.com/our-products/vegan-vitamin-b6",
+    category: "methylation-snp",
+    brandHint: "SISU",
+    productHint: "Vitamin B6",
+  },
+  {
+    url: "https://www.sisu.com/our-products/vitamin-d-tablets",
+    category: "base-formulations",
+    brandHint: "SISU",
+    productHint: "Vitamin D 1000 IU",
+  },
+  {
+    url: "https://www.sisu.com/our-products/vitamin-e-softgel",
+    category: "base-formulations",
+    brandHint: "SISU",
+    productHint: "Vitamin E",
+  },
+  {
+    url: "https://www.sisu.com/our-products/zinc-capsules",
+    category: "base-formulations",
+    brandHint: "SISU",
+    productHint: "Zinc Citrate",
+  },
+  {
+    url: "https://www.sisu.com/our-products/l-theanine-for-relaxation",
+    category: "advanced-formulas",
+    brandHint: "SISU",
+    productHint: "L-Theanine",
+  },
 ] as const;
 
 /** True when URL looks like a product detail page (not blog/hub/cart). */
@@ -13020,9 +13359,9 @@ export function looksLikeProductDetailUrl(url: string): boolean {
     ) {
       return false;
     }
-    // Strong product path signals
+    // Strong product path signals (incl. WP /our-products/ used by SISU)
     if (
-      /\/(products?|product|dp|p|item|vitamins-supplements|consumers)\//i.test(
+      /\/(our-products|products?|product|dp|p|item|vitamins-supplements|consumers)\//i.test(
         path
       )
     ) {
@@ -13030,6 +13369,16 @@ export function looksLikeProductDetailUrl(url: string): boolean {
     }
     // Brand pages ending in .html product files
     if (/\.html?$/i.test(path) && path.split("/").filter(Boolean).length >= 1) {
+      return true;
+    }
+    // Single-segment marketing PDPs (e.g. seed.com/daily-synbiotic)
+    const segs = path.split("/").filter(Boolean);
+    if (
+      segs.length === 1 &&
+      !/^(products?|collections?|pages?|shop|store|home|index|contact|privacy|terms|shipping|returns|careers|press)$/i.test(
+        segs[0]
+      )
+    ) {
       return true;
     }
     return false;
