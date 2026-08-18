@@ -87,6 +87,7 @@ export const PHASE2_COMPETITIVE_SEED_DOMAINS: readonly string[] = [
   "livonlabs.com",
   "thorne.com",
   "pureencapsulations.com",
+  "pureforyou.com",
   "designsforhealth.com",
   "seekinghealth.com",
   "lifeextension.com",
