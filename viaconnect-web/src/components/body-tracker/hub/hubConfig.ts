@@ -212,7 +212,7 @@ export const SURFACES: SurfaceCard[] = [
     icon: FlaskConical,
     accent: "teal",
     metricKey: "hormones_report",
-    metricLabel: "report status",
+    metricLabel: "last hormone lab",
     // Desktop (12-col): four-card row, equal col span 3. Stat chip absent until real data.
     gridClass: "md:col-span-1 lg:col-span-3 lg:row-span-1",
     media: {
