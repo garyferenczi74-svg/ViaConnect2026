@@ -334,9 +334,21 @@ Cited URLs used in this report:
 
 ## Appendix Jeffery review
 
-Artifact type `completion_report` (class d / hard-block). Verdict `needs_human` while live KB apply and ACC insert are pending production, and while Firecrawl did not run. produced_by_agent must not be `jeffery` if recording an approval.
+Artifact type `completion_report` (class d / hard-block). Verdict `needs_human` while live KB apply and ACC insert are pending production, and while Firecrawl did not run. producedByAgent is `hounddog` (must not be `jeffery` if recording an approval).
 
-This Task 2 report is the artifact_ref for the later Jeffery 221a package. Task 4 may fill this appendix body without renaming the heading. No live Jeffery POST in this task.
+artifactRef: `docs/superpowers/reports/2026-08-18-prompt-222-headsup-teardown.md`
+
+Builder: `buildPrompt222JefferyInput()` in `src/lib/jeffery/reviews/prompt222Review.ts`. Checks cover citations_present (pass), consumer_isolation (pass), facts_only (pass), crawl_fallback (warn), and live_kb_apply_pending (fail). The fail forces hard-block `needs_human` via `deriveJefferyVerdict`.
+
+ACC link copy: `docs/superpowers/reports/2026-08-18-prompt-222-jeffery-review.md`. After production apply, ACC surfaces this via `/admin/jeffery` Review Desk on `jeffery_reviews`. No live Jeffery POST in this task.
+
+needs_human P0/P1/P2 for Gary (full package in the Jeffery review doc):
+
+P0: (1) Named wearable OAuth breadth on the 201 registry. (2) Lab PDF extraction plus provider review queue. (3) Practitioner cohort outcomes report (Prompt 99 deepen).
+
+P1: (4) One-click records network. (5) White-label client app packaging. (6) Alerts on biomarker drift.
+
+P2: (7) Partner API / iframe embed. (8) Custom protocol-trained agents. (9) Public pricing calculator (do not publish competitor prices).
 
 ## Appendix remaining work
 
