@@ -1,6 +1,8 @@
 /**
- * Prompt 221/222: collection registry (code mirror of kb_collections seed).
+ * Prompt 221 / 221B / 222: collection registry (code mirror of kb_collections seed).
  * No em/en dashes. Status planned until phase gates + 219N soak PASS.
+ * hormone_education is distinct from C11 genetic_hormonal (SNP associations).
+ * competitor_platforms is the Heads Up competitive teardown lane (consumer_safe false).
  */
 
 export const KB_COLLECTION_SLUGS = [
@@ -17,6 +19,7 @@ export const KB_COLLECTION_SLUGS = [
   "genetic_hormonal",
   "genetic_peptide",
   "competitor_platforms",
+  "hormone_education",
 ] as const;
 
 export type KbCollectionSlug = (typeof KB_COLLECTION_SLUGS)[number];
@@ -200,6 +203,18 @@ export const KB_COLLECTION_CHARTERS: readonly KbCollectionCharter[] = [
     seedingPhase: 2,
     charterSummary:
       "Internal strategy teardowns of competitor apps. consumer_safe false. Not for consumer surfaces.",
+  },
+  {
+    slug: "hormone_education",
+    displayName: "Hormone education database",
+    owningAgent: "arnold",
+    coOwnerAgents: ["elysium", "gordon", "thanos", "hannah", "lex", "marshall"],
+    sourceClasses: ["pubmed", "firecrawl_allowlist", "internal_derivation"],
+    cadenceClass: "weekly",
+    gateProfile: "lex_lane",
+    seedingPhase: 3,
+    charterSummary:
+      "Hormone education with Male/Female reports; consumer_safe defaults false; Lex lane for therapy-adjacent language.",
   },
 ] as const;
 

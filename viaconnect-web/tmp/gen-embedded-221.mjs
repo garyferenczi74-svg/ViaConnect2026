@@ -11,6 +11,7 @@ const files = [
   "20260820000016_prompt_221_cymbiotika_ca_allowlist.sql",
   "20260820000017_prompt_221_canprev_com_allowlist.sql",
   "20260820000018_prompt_221_pureforyou_com_allowlist.sql",
+  "20260820000019_prompt_221b_hormone_education.sql",
 ];
 const dir = path.join("supabase", "migrations");
 const outDir = path.join("src", "lib", "kb", "migrations");

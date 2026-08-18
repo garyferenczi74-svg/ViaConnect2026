@@ -30,6 +30,7 @@ import {
   Activity,
   Plug,
   PlayCircle,
+  FlaskConical,
   type LucideIcon,
 } from "lucide-react";
 
@@ -199,6 +200,23 @@ export const SURFACES: SurfaceCard[] = [
       objectPosition: "center",
       gradientClass:
         "bg-[radial-gradient(110%_110%_at_100%_50%,rgba(45,165,160,0.30)_0%,rgba(30,48,84,0.85)_60%,rgba(26,39,68,1)_100%)]",
+    },
+  },
+  {
+    // Prompt 221B: Hormone Education reports (Male/Female tracks).
+    id: "hormones",
+    title: "Hormones",
+    description: "Educational Male or Female Hormone Report mapped to your labs.",
+    href: "/body-tracker/hormones",
+    icon: FlaskConical,
+    accent: "teal",
+    metricKey: "hormones_report",
+    metricLabel: "report status",
+    gridClass: "md:col-span-2 lg:col-span-2 lg:row-span-1",
+    media: {
+      kind: "gradient",
+      gradientClass:
+        "bg-[radial-gradient(110%_110%_at_0%_50%,rgba(45,165,160,0.32)_0%,rgba(30,48,84,0.85)_55%,rgba(26,39,68,1)_100%)]",
     },
   },
 ];

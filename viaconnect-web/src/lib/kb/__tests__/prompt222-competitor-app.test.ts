@@ -14,9 +14,10 @@ const MIGRATION = resolve(
 );
 
 describe("prompt222 competitor_app", () => {
-  it("registers competitor_platforms as the thirteenth collection", () => {
+  it("registers competitor_platforms alongside hormone_education", () => {
     expect(KB_COLLECTION_SLUGS).toContain("competitor_platforms");
-    expect(KB_COLLECTION_SLUGS).toHaveLength(13);
+    expect(KB_COLLECTION_SLUGS).toContain("hormone_education");
+    expect(KB_COLLECTION_SLUGS).toHaveLength(14);
     expect(isKbCollectionSlug("competitor_platforms")).toBe(true);
     const c = charterBySlug("competitor_platforms");
     expect(c?.owningAgent).toBe("hounddog");

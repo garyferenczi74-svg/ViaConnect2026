@@ -24,9 +24,9 @@ import { canPromoteKbItem, isLiveGateStatus } from "../promote";
 import { formatHitsForHannahContext, type KbSearchHit } from "../search";
 
 describe("prompt221 collections", () => {
-  it("registers exactly thirteen collection slugs", () => {
-    expect(KB_COLLECTION_SLUGS).toHaveLength(13);
-    expect(KB_COLLECTION_CHARTERS).toHaveLength(13);
+  it("registers fourteen collection slugs (221B hormone_education + 222 competitor_platforms)", () => {
+    expect(KB_COLLECTION_SLUGS).toHaveLength(14);
+    expect(KB_COLLECTION_CHARTERS).toHaveLength(14);
   });
 
   it("maps each slug to a charter with phase and gate profile", () => {
@@ -48,8 +48,18 @@ describe("prompt221 collections", () => {
     expect(c3?.coOwnerAgents).toContain("lex");
   });
 
+  it("marks C13 hormone_education as lex_lane phase 3", () => {
+    const c13 = charterBySlug("hormone_education");
+    expect(c13?.gateProfile).toBe("lex_lane");
+    expect(c13?.seedingPhase).toBe(3);
+    expect(c13?.owningAgent).toBe("arnold");
+    expect(c13?.coOwnerAgents).toContain("lex");
+    expect(c13?.coOwnerAgents).toContain("marshall");
+  });
+
   it("type-guards collection slugs", () => {
     expect(isKbCollectionSlug("clinical_studies")).toBe(true);
+    expect(isKbCollectionSlug("hormone_education")).toBe(true);
     expect(isKbCollectionSlug("not_a_collection")).toBe(false);
   });
 });

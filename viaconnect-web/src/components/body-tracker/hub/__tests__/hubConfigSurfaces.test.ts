@@ -24,4 +24,11 @@ describe('hub SURFACES (210j consolidation)', () => {
     expect(ids).toContain('metabolic');
     expect(ids).not.toContain('formavision');
   });
+
+  it('adds Hormones surface for 221B', () => {
+    const hormones = SURFACES.find((s) => s.id === 'hormones');
+    expect(hormones).toBeDefined();
+    expect(hormones!.href).toBe('/body-tracker/hormones');
+    expect(hormones!.title).toBe('Hormones');
+  });
 });
