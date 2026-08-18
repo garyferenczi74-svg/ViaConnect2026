@@ -43,29 +43,63 @@ export async function loadProfileSexRaw(
   return null;
 }
 
+/**
+ * Load labs for hormone report / HormoneIQ cross-ref.
+ * Merges lab_results_normalized (if populated) with lab_biomarkers (primary
+ * upload store). Never fabricates values.
+ */
 export async function loadNormalizedLabs(
   supabase: SupabaseClient,
   userId: string
 ): Promise<LabMarkerSnapshot[]> {
+  const rows: LabMarkerSnapshot[] = [];
+
   try {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("lab_results_normalized")
       .select("biomarker, value, unit_normalized, reference_low, reference_high, measured_at")
       .eq("user_id", userId)
       .order("measured_at", { ascending: false });
-    if (error || !data) return [];
-    return (data as Array<Record<string, unknown>>).map((row) => ({
-      biomarker: String(row.biomarker ?? ""),
-      value: row.value == null ? null : Number(row.value),
-      unit: row.unit_normalized == null ? null : String(row.unit_normalized),
-      reference_low: row.reference_low == null ? null : Number(row.reference_low),
-      reference_high:
-        row.reference_high == null ? null : Number(row.reference_high),
-      measured_at: row.measured_at == null ? null : String(row.measured_at),
-    }));
+    for (const row of (data ?? []) as Array<Record<string, unknown>>) {
+      rows.push({
+        biomarker: String(row.biomarker ?? ""),
+        value: row.value == null ? null : Number(row.value),
+        unit: row.unit_normalized == null ? null : String(row.unit_normalized),
+        reference_low: row.reference_low == null ? null : Number(row.reference_low),
+        reference_high:
+          row.reference_high == null ? null : Number(row.reference_high),
+        measured_at: row.measured_at == null ? null : String(row.measured_at),
+      });
+    }
   } catch {
-    return [];
+    /* optional table */
   }
+
+  // Primary consumer lab store (Prompt 204c uploads)
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data } = await (supabase as any)
+      .from("lab_biomarkers")
+      .select("name, value, unit, reference_low, reference_high, collection_date")
+      .eq("user_id", userId)
+      .order("collection_date", { ascending: false });
+    for (const row of (data ?? []) as Array<Record<string, unknown>>) {
+      rows.push({
+        biomarker: String(row.name ?? ""),
+        value: row.value == null ? null : Number(row.value),
+        unit: row.unit == null ? null : String(row.unit),
+        reference_low: row.reference_low == null ? null : Number(row.reference_low),
+        reference_high:
+          row.reference_high == null ? null : Number(row.reference_high),
+        measured_at:
+          row.collection_date == null ? null : String(row.collection_date),
+      });
+    }
+  } catch {
+    /* fail open */
+  }
+
+  return rows.filter((r) => r.biomarker.trim().length > 0);
 }
 
 /**

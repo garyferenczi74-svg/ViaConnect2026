@@ -177,26 +177,56 @@ export function useHubMetrics(): UseHubMetricsResult {
           });
         }
 
-        // Hormones chip: most recent hormone-like lab measured_at only.
+        // Hormones chip: most recent hormone-like lab date only.
+        // Prefer lab_biomarkers (upload store); also check lab_results_normalized.
         // No date → no chip (never fabricate).
         try {
-          const labsResult = (await withTimeout(
-            supabase
-              .from('lab_results_normalized')
-              .select('biomarker, measured_at')
-              .eq('user_id', user.id)
-              .not('measured_at', 'is', null)
-              .order('measured_at', { ascending: false })
-              .limit(80),
-            TIMEOUT_MS,
-          )) as {
-            data: Array<{ biomarker?: string | null; measured_at?: string | null }> | null;
-          };
-          const rows = (labsResult.data ?? []).map((r) => ({
-            biomarker: String(r.biomarker ?? ''),
-            measured_at: r.measured_at ?? null,
-          }));
-          const chip = resolveHormonesReportChip(rows);
+          const dateRows: Array<{ biomarker: string; measured_at: string | null }> = [];
+          try {
+            const bioResult = (await withTimeout(
+              supabase
+                .from('lab_biomarkers')
+                .select('name, collection_date')
+                .eq('user_id', user.id)
+                .not('collection_date', 'is', null)
+                .order('collection_date', { ascending: false })
+                .limit(80),
+              TIMEOUT_MS,
+            )) as {
+              data: Array<{ name?: string | null; collection_date?: string | null }> | null;
+            };
+            for (const r of bioResult.data ?? []) {
+              dateRows.push({
+                biomarker: String(r.name ?? ''),
+                measured_at: r.collection_date ?? null,
+              });
+            }
+          } catch {
+            /* optional */
+          }
+          try {
+            const normResult = (await withTimeout(
+              supabase
+                .from('lab_results_normalized')
+                .select('biomarker, measured_at')
+                .eq('user_id', user.id)
+                .not('measured_at', 'is', null)
+                .order('measured_at', { ascending: false })
+                .limit(80),
+              TIMEOUT_MS,
+            )) as {
+              data: Array<{ biomarker?: string | null; measured_at?: string | null }> | null;
+            };
+            for (const r of normResult.data ?? []) {
+              dateRows.push({
+                biomarker: String(r.biomarker ?? ''),
+                measured_at: r.measured_at ?? null,
+              });
+            }
+          } catch {
+            /* optional */
+          }
+          const chip = resolveHormonesReportChip(dateRows);
           if (chip) next.hormones_report = chip;
         } catch (err) {
           safeLog.warn('hub.metrics', 'hormones_report failed', {
