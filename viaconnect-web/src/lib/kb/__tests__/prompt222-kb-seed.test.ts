@@ -25,12 +25,17 @@ describe("prompt222 kb seed", () => {
     for (const title of HEADSUP_KB_TITLES) {
       expect(sql).toContain(title);
     }
-    expect(sql).toMatch(/competitor_app/);
-    expect(sql).toMatch(/consumer_safe\s*=\s*false/);
-    expect(sql).toMatch(/practitioner_depth\s*=\s*false/);
-    expect(sql).toMatch(/evidence_grade\s*=\s*'E'/);
-    expect(sql).toMatch(/jeffery_verdict\s*=\s*'needs_human'/);
     expect(sql).toMatch(/internal_strategy/);
     expect(sql).not.toMatch(/[\u2013\u2014]/);
+
+    // Assert INSERT/VALUES literals (not header comments alone).
+    const inserts = sql.match(/INSERT\s+INTO\s+public\.kb_items\b/gi) ?? [];
+    expect(inserts).toHaveLength(5);
+    const payloadFlags =
+      sql.match(/'competitor_app',\s*false,\s*false/g) ?? [];
+    expect(payloadFlags).toHaveLength(5);
+    const gradeVerdictGate =
+      sql.match(/'E',\s*'approved',\s*'needs_human'/g) ?? [];
+    expect(gradeVerdictGate).toHaveLength(5);
   });
 });
