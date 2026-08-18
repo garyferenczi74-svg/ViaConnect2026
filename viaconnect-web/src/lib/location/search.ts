@@ -54,13 +54,13 @@ type SearchRpcClient = {
 
 export function toSearchResponse(input: {
   timedOut: boolean;
-  error: unknown;
-  items: LocationOption[];
+  error?: unknown;
+  items?: LocationOption[];
 }): LocationSearchResponse {
   if (input.timedOut || input.error) {
     return { ok: true, items: [], failOpen: true };
   }
-  return { ok: true, items: input.items, failOpen: false };
+  return { ok: true, items: input.items ?? [], failOpen: false };
 }
 
 function capQuery(q: string | null | undefined): string {

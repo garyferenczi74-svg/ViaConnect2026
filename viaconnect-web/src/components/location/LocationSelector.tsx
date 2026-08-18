@@ -3,6 +3,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
 import { subdivisionLabelForCountry } from "@/lib/location/labels";
+import {
+  reduceLocationAction,
+  type LocationAction,
+} from "@/lib/location/reduce";
 import type { LocationOption, StructuredLocation } from "@/lib/location/types";
 import { getCircuitBreaker, isCircuitBreakerError } from "@/lib/utils/circuit-breaker";
 import { safeLog } from "@/lib/utils/safe-log";
@@ -192,6 +196,33 @@ export function LocationSelector({
     onSubdivisionOptionalChangeRef.current?.(subdivisionOptional);
   }, [subdivisionOptional]);
 
+  function localStructured(next: {
+    country: LocationOption | null;
+    subdivision: LocationOption | null;
+    city: string;
+    countryIsFree: boolean;
+    subdivisionIsFree: boolean;
+    cityIsFree: boolean;
+    hideSub: boolean;
+  }): StructuredLocation | null {
+    if (!next.country) {
+      return null;
+    }
+    const hidden = next.hideSub && !next.subdivisionIsFree && !failOpen;
+    return {
+      city: next.city,
+      subdivisionName: hidden ? null : next.subdivision?.label ?? null,
+      subdivisionCode:
+        hidden || next.subdivisionIsFree
+          ? null
+          : next.subdivision?.value ?? null,
+      countryName: next.country.label,
+      countryCode: next.countryIsFree ? next.country.label : next.country.value,
+      isFreeEntry:
+        next.countryIsFree || next.subdivisionIsFree || next.cityIsFree,
+    };
+  }
+
   function emit(next: {
     country: LocationOption | null;
     subdivision: LocationOption | null;
@@ -201,26 +232,24 @@ export function LocationSelector({
     cityIsFree: boolean;
     hideSub: boolean;
   }) {
-    if (!next.country) {
+    const payload = localStructured(next);
+    if (!payload) {
       lastSynced.current = "";
       onChange(null);
       return;
     }
-
-    const hidden = next.hideSub && !next.subdivisionIsFree && !failOpen;
-    const payload: StructuredLocation = {
-      city: next.city,
-      subdivisionName: hidden ? null : next.subdivision?.label ?? null,
-      subdivisionCode:
-        hidden || next.subdivisionIsFree
-          ? null
-          : next.subdivision?.value ?? null,
-      countryName: next.country.label,
-      countryCode: next.countryIsFree ? next.country.label : next.country.value,
-      isFreeEntry: next.countryIsFree || next.subdivisionIsFree || next.cityIsFree,
-    };
     lastSynced.current = valueKey(payload);
     onChange(payload);
+  }
+
+  function applyAction(
+    current: StructuredLocation | null,
+    action: LocationAction,
+  ): StructuredLocation {
+    const payload = reduceLocationAction(current, action);
+    lastSynced.current = valueKey(payload);
+    onChange(payload);
+    return payload;
   }
 
   useEffect(() => {
@@ -367,16 +396,22 @@ export function LocationSelector({
     setCountryQuery(next.label);
     setCountryIsFree(next.isFreeEntry);
     clearSubdivisionAndCity();
-    const payload: StructuredLocation = {
-      city: "",
-      subdivisionName: null,
-      subdivisionCode: null,
-      countryName: next.label,
-      countryCode: next.isFreeEntry ? next.label : next.value,
-      isFreeEntry: next.isFreeEntry,
-    };
-    lastSynced.current = valueKey(payload);
-    onChange(payload);
+    applyAction(localStructured({
+      country,
+      subdivision,
+      city,
+      countryIsFree,
+      subdivisionIsFree,
+      cityIsFree,
+      hideSub: hideSubdivision,
+    }), {
+      type: "setCountry",
+      country: {
+        value: next.value,
+        label: next.label,
+        isFreeEntry: next.isFreeEntry,
+      },
+    });
   }
 
   function handleSubdivisionQuery(q: string) {
@@ -417,15 +452,25 @@ export function LocationSelector({
     setCityQuery("");
     setCityItems([]);
     setCityIsFree(false);
-    emit({
-      country,
-      subdivision: selected,
-      city: "",
-      countryIsFree,
-      subdivisionIsFree: next.isFreeEntry,
-      cityIsFree: false,
-      hideSub: false,
-    });
+    applyAction(
+      localStructured({
+        country,
+        subdivision,
+        city,
+        countryIsFree,
+        subdivisionIsFree,
+        cityIsFree,
+        hideSub: hideSubdivision,
+      }),
+      {
+        type: "setSubdivision",
+        subdivision: {
+          value: next.value,
+          label: next.label,
+          isFreeEntry: next.isFreeEntry,
+        },
+      },
+    );
   }
 
   function handleCityQuery(q: string) {
@@ -449,15 +494,22 @@ export function LocationSelector({
     setCity(next.value);
     setCityQuery(next.label);
     setCityIsFree(next.isFreeEntry);
-    emit({
-      country,
-      subdivision,
-      city: next.value,
-      countryIsFree,
-      subdivisionIsFree,
-      cityIsFree: next.isFreeEntry,
-      hideSub: hideSubdivision,
-    });
+    applyAction(
+      localStructured({
+        country,
+        subdivision,
+        city,
+        countryIsFree,
+        subdivisionIsFree,
+        cityIsFree,
+        hideSub: hideSubdivision,
+      }),
+      {
+        type: "setCity",
+        city: next.value,
+        isFreeEntry: next.isFreeEntry,
+      },
+    );
   }
 
   const dependentsEnabled =

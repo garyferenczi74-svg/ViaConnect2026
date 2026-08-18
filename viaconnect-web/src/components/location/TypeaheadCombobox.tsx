@@ -18,6 +18,10 @@ const PANEL_CLASS =
 
 export type TypeaheadSelection = LocationOption & { isFreeEntry: boolean };
 
+export function freeEntryOptionLabel(query: string): string {
+  return `Use '${query}'`;
+}
+
 export type TypeaheadComboboxProps = {
   id: string;
   label: string;
@@ -68,7 +72,7 @@ export function TypeaheadCombobox({
     if (allowFreeEntry && query.length > 0 && !hasExact) {
       mapped.push({
         value: query,
-        label: freeEntryLabel ?? `Use '${query}'`,
+        label: freeEntryLabel ?? freeEntryOptionLabel(query),
         isFreeEntry: true,
         optionId: `${id}-opt-free-${reactId}`,
       });
