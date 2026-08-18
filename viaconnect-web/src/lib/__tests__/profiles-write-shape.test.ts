@@ -20,7 +20,8 @@
  *      src/lib/timezone.ts (the update inside syncTimezone).
  *
  * Invariant: every write payload key is a subset of the live profiles
- * columns UNION the columns the P0-6 migration adds ({phone, timezone}).
+ * columns UNION the columns the P0-6 migration adds ({phone, timezone})
+ * UNION the Prompt 223 structured location columns.
  *
  * Node-safe (no jsdom), node builtins only, zero any.
  * Rules: no em dashes, no en dashes, no emojis.
@@ -37,6 +38,7 @@ import { buildTimezoneSyncPayload } from '@/lib/timezone';
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const MIGRATIONS_DIR = join(REPO_ROOT, 'supabase', 'migrations');
 const MIGRATION_SUFFIX = '_prompt_210d_profiles_phone_timezone.sql';
+const SCHEMA_223_SUFFIX = '_prompt_223_location_schema.sql';
 const LIVE_TYPES_PATH = join(REPO_ROOT, 'docs', 'integrity', 'snapshot', 'live-types.ts');
 
 // ---------------------------------------------------------------------------
@@ -61,6 +63,16 @@ function parseAddedColumns(sql: string): string[] {
     columns.push(match[1].toLowerCase());
   }
   return columns;
+}
+
+function read223SchemaSql(): string {
+  const fileName = readdirSync(MIGRATIONS_DIR).find((f) => f.endsWith(SCHEMA_223_SUFFIX));
+  if (!fileName) {
+    throw new Error(
+      `No migration file ending with ${SCHEMA_223_SUFFIX} found under supabase/migrations`,
+    );
+  }
+  return readFileSync(join(MIGRATIONS_DIR, fileName), 'utf8');
 }
 
 /** The migration SQL with comment lines removed and whitespace normalized. */
@@ -116,9 +128,13 @@ function parseLiveProfilesRowKeys(): string[] {
   throw new Error('profiles Row block not terminated in live-types.ts');
 }
 
-/** Live profiles columns UNION the columns the P0-6 migration adds. */
+/** Live profiles columns UNION P0-6 columns UNION Prompt 223 location columns. */
 function liveUnionMigrated(): Set<string> {
-  return new Set([...parseLiveProfilesRowKeys(), ...parseAddedColumns(readMigrationSql())]);
+  return new Set([
+    ...parseLiveProfilesRowKeys(),
+    ...parseAddedColumns(readMigrationSql()),
+    ...parseAddedColumns(read223SchemaSql()),
+  ]);
 }
 
 // ---------------------------------------------------------------------------
@@ -148,6 +164,22 @@ describe('P0-6 profiles phone + timezone migration file', () => {
 // ---------------------------------------------------------------------------
 // 2. Live snapshot parsing sanity
 // ---------------------------------------------------------------------------
+
+describe('Prompt 223 location schema columns', () => {
+  it('adds the structured location columns via add column if not exists', () => {
+    const added = parseAddedColumns(read223SchemaSql());
+    expect(added).toEqual(expect.arrayContaining([
+      'city',
+      'subdivision_name',
+      'subdivision_code',
+      'country_name',
+      'country_code',
+      'location_legacy',
+      'location_needs_confirm',
+      'location_is_free_entry',
+    ]));
+  });
+});
 
 describe('live profiles Row keys (parsed from live-types.ts at runtime)', () => {
   it('parses a plausible non-empty key set without duplicates', () => {
@@ -209,6 +241,57 @@ describe('profile save payload (buildProfileSavePayload)', () => {
       phone: '',
     });
     expect(firstOnly.full_name).toBe('Ada');
+  });
+
+  it('adds structured 223 columns and clears confirm when location is complete', () => {
+    const withLocation = buildProfileSavePayload({
+      userId: 'user-1',
+      firstName: 'Ada',
+      lastName: 'Lovelace',
+      phone: '555 0100',
+      location: {
+        city: 'Buffalo',
+        subdivisionName: 'New York',
+        subdivisionCode: 'US-NY',
+        countryName: 'United States',
+        countryCode: 'US',
+        isFreeEntry: false,
+      },
+      subdivisionOptional: false,
+    });
+    const union = liveUnionMigrated();
+    for (const key of Object.keys(withLocation)) {
+      expect(
+        union.has(key),
+        `profile save payload key "${key}" is not a live or migrated profiles column`,
+      ).toBe(true);
+    }
+    expect(withLocation.city).toBe('Buffalo');
+    expect(withLocation.subdivision_name).toBe('New York');
+    expect(withLocation.subdivision_code).toBe('US-NY');
+    expect(withLocation.country_name).toBe('United States');
+    expect(withLocation.country_code).toBe('US');
+    expect(withLocation.location_is_free_entry).toBe(false);
+    expect(withLocation.location_needs_confirm).toBe(false);
+  });
+
+  it('omits 223 columns when the selector is incomplete', () => {
+    const incomplete = buildProfileSavePayload({
+      userId: 'user-1',
+      firstName: 'Ada',
+      lastName: 'Lovelace',
+      phone: '555 0100',
+      location: {
+        city: '',
+        subdivisionName: null,
+        subdivisionCode: null,
+        countryName: 'United States',
+        countryCode: 'US',
+        isFreeEntry: false,
+      },
+      subdivisionOptional: false,
+    });
+    expect(Object.keys(incomplete).sort()).toEqual(['full_name', 'id', 'phone', 'updated_at']);
   });
 });
 

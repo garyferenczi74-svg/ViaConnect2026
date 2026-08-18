@@ -8,16 +8,27 @@
  * columns ({phone, timezone}). It lives in a sibling module rather than as a
  * page.tsx export because Next.js validates the export fields of page files.
  *
- * Keys and value shaping are unchanged from the pre-210d inline literal:
- * full_name joins the trimmed name parts and falls back to null, phone trims
- * and falls back to null, updated_at is a fresh ISO timestamp.
+ * Prompt 223 adds structured location columns plus location_needs_confirm:
+ * false when the caller saves a complete selector.
  */
+
+import {
+  isCompleteStructuredLocation,
+} from "@/lib/location/signup-schema";
+import type { StructuredLocation } from "@/lib/location/types";
 
 export interface ProfileSavePayload {
   id: string;
   full_name: string | null;
   phone: string | null;
   updated_at: string;
+  city?: string | null;
+  subdivision_name?: string | null;
+  subdivision_code?: string | null;
+  country_name?: string | null;
+  country_code?: string | null;
+  location_is_free_entry?: boolean;
+  location_needs_confirm?: boolean;
 }
 
 export function buildProfileSavePayload(input: {
@@ -25,12 +36,28 @@ export function buildProfileSavePayload(input: {
   firstName: string;
   lastName: string;
   phone: string;
+  location?: StructuredLocation | null;
+  subdivisionOptional?: boolean;
 }): ProfileSavePayload {
   const fullName = `${input.firstName.trim()} ${input.lastName.trim()}`.trim();
-  return {
+  const payload: ProfileSavePayload = {
     id: input.userId,
     full_name: fullName || null,
     phone: input.phone.trim() || null,
     updated_at: new Date().toISOString(),
   };
+
+  const location = input.location ?? null;
+  const subdivisionOptional = input.subdivisionOptional === true;
+  if (isCompleteStructuredLocation(location, subdivisionOptional)) {
+    payload.city = location.city.trim();
+    payload.subdivision_name = location.subdivisionName?.trim() || null;
+    payload.subdivision_code = location.subdivisionCode?.trim() || null;
+    payload.country_name = location.countryName.trim();
+    payload.country_code = location.countryCode.trim();
+    payload.location_is_free_entry = location.isFreeEntry;
+    payload.location_needs_confirm = false;
+  }
+
+  return payload;
 }

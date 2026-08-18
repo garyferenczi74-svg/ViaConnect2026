@@ -19,7 +19,14 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { InterstitialScreen } from "@/components/onboarding/InterstitialScreen";
+import { LocationSelector } from "@/components/location/LocationSelector";
 import { INTERSTITIALS } from "@/config/onboarding";
+import { formatStructuredLocation } from "@/lib/location/format";
+import {
+  signupLocationFieldsFromValue,
+  signupStep3Schema,
+} from "@/lib/location/signup-schema";
+import type { StructuredLocation } from "@/lib/location/types";
 import { z } from "zod";
 
 // ─── Schemas ────────────────────────────────────────────────────────────────
@@ -31,12 +38,6 @@ const step1Schema = z.object({
 }).refine((d) => d.password === d.confirmPassword, {
   message: "Passwords do not match",
   path: ["confirmPassword"],
-});
-
-const step3Schema = z.object({
-  fullName: z.string().min(2, "Name is required"),
-  phone: z.string().min(10, "Valid phone number required"),
-  location: z.string().min(2, "Location is required"),
 });
 
 const step4Schema = z.object({
@@ -146,7 +147,8 @@ export default function SignupPage() {
   // Step 3
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
-  const [location, setLocation] = useState("");
+  const [location, setLocation] = useState<StructuredLocation | null>(null);
+  const [subdivisionOptional, setSubdivisionOptional] = useState(false);
 
   // Step 4
   const [licenseNumber, setLicenseNumber] = useState("");
@@ -192,7 +194,11 @@ export default function SignupPage() {
       }
     }
     if (step === 3) {
-      const result = step3Schema.safeParse({ fullName, phone: phone.replace(/\D/g, ""), location });
+      const result = signupStep3Schema.safeParse({
+        fullName,
+        phone: phone.replace(/\D/g, ""),
+        ...signupLocationFieldsFromValue(location, subdivisionOptional),
+      });
       if (!result.success) {
         const fieldErrors: Record<string, string> = {};
         result.error.issues.forEach((issue) => {
@@ -260,6 +266,11 @@ export default function SignupPage() {
   async function handleSignup() {
     setIsLoading(true);
     const supabase = createClient();
+    if (!location) {
+      toast.error("Location is required");
+      setIsLoading(false);
+      return;
+    }
 
     // Create the user account; Supabase sends the confirmation email automatically
     const { error } = await supabase.auth.signUp({
@@ -270,7 +281,13 @@ export default function SignupPage() {
           full_name: fullName,
           role,
           phone: phone || undefined,
-          location: location || undefined,
+          city: location.city,
+          subdivision_name: location.subdivisionName,
+          subdivision_code: location.subdivisionCode,
+          country_name: location.countryName,
+          country_code: location.countryCode,
+          location_is_free_entry: location.isFreeEntry,
+          location_legacy: formatStructuredLocation(location),
           license_number: role !== "consumer" ? licenseNumber : undefined,
           privacy_accepted_at: new Date().toISOString(),
           terms_accepted_at: new Date().toISOString(),
@@ -541,17 +558,14 @@ export default function SignupPage() {
               {errors.phone && <p className="text-xs text-red-400 mt-1">{errors.phone}</p>}
             </div>
             <div>
-              <label htmlFor="location" className="block text-sm font-medium text-white/70 mb-1.5">Location *</label>
-              <input
-                id="location"
-                type="text"
+              <LocationSelector
                 value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                className={`w-full px-4 py-3 rounded-xl bg-white/5 border ${errors.location ? "border-red-400/50 focus:ring-red-400/30" : "border-white/10 focus:border-teal-400/50 focus:ring-teal-400/30"} text-white placeholder:text-white/30 focus:ring-1 focus:outline-none transition-all`}
-                placeholder="Start typing your city..."
-                required
+                onChange={setLocation}
+                onSubdivisionOptionalChange={setSubdivisionOptional}
               />
-              {errors.location && <p className="text-xs text-red-400 mt-1">{errors.location}</p>}
+              {errors.countryCode && <p className="text-xs text-red-400 mt-1">{errors.countryCode}</p>}
+              {errors.subdivisionName && <p className="text-xs text-red-400 mt-1">{errors.subdivisionName}</p>}
+              {errors.city && <p className="text-xs text-red-400 mt-1">{errors.city}</p>}
             </div>
           </div>
         )}

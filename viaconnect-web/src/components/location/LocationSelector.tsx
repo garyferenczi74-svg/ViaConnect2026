@@ -29,6 +29,7 @@ type LocationSelectorProps = {
   onChange: (next: StructuredLocation | null) => void;
   disabled?: boolean;
   failOpen?: boolean;
+  onSubdivisionOptionalChange?: (optional: boolean) => void;
 };
 
 function valueKey(loc: StructuredLocation | null): string {
@@ -128,6 +129,7 @@ export function LocationSelector({
   onChange,
   disabled = false,
   failOpen = false,
+  onSubdivisionOptionalChange,
 }: LocationSelectorProps) {
   const [country, setCountry] = useState<LocationOption | null>(
     value
@@ -163,6 +165,8 @@ export function LocationSelector({
   const [cityIsFree, setCityIsFree] = useState(value?.isFreeEntry ?? false);
 
   const lastSynced = useRef(valueKey(value));
+  const onSubdivisionOptionalChangeRef = useRef(onSubdivisionOptionalChange);
+  onSubdivisionOptionalChangeRef.current = onSubdivisionOptionalChange;
   const debouncedCountryQ = useDebounce(countryQuery, QUERY_DEBOUNCE_MS);
   const debouncedSubdivisionQ = useDebounce(subdivisionQuery, QUERY_DEBOUNCE_MS);
   const debouncedCityQ = useDebounce(cityQuery, QUERY_DEBOUNCE_MS);
@@ -182,6 +186,11 @@ export function LocationSelector({
   const showSubdivision =
     (country !== null || forcedFailOpen) &&
     (forcedFailOpen || subdivisionFailOpen || !hideSubdivision);
+  const subdivisionOptional = hideSubdivision || forcedFailOpen;
+
+  useEffect(() => {
+    onSubdivisionOptionalChangeRef.current?.(subdivisionOptional);
+  }, [subdivisionOptional]);
 
   function emit(next: {
     country: LocationOption | null;
