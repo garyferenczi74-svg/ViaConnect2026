@@ -462,18 +462,6 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     productHint: "Earth Source Multi-Nutrient",
   },
   {
-    url: "https://seed.com/products/ds-01",
-    category: "advanced-formulas",
-    brandHint: "Seed Health",
-    productHint: "DS-01 Daily Synbiotic",
-  },
-  {
-    url: "https://seed.com/products/pds-08",
-    category: "advanced-formulas",
-    brandHint: "Seed Health",
-    productHint: "PDS-08 Pediatric Synbiotic",
-  },
-  {
     url: "https://www.sisu.com/products/ester-c",
     category: "base-formulations",
     brandHint: "SISU",
@@ -12978,6 +12966,45 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     category: "womens-health",
     brandHint: "Ritual",
     productHint: "Synbiotic+",
+  },
+
+  // Seed Health from https://seed.com/products (live marketing PDPs; bundles/refills excluded)
+
+  {
+    url: "https://seed.com/daily-multivitamin",
+    category: "base-formulations",
+    brandHint: "Seed Health",
+    productHint: "DM-02 Daily Multivitamin",
+  },
+  {
+    url: "https://seed.com/daily-synbiotic",
+    category: "advanced-formulas",
+    brandHint: "Seed Health",
+    productHint: "DS-01 Daily Synbiotic",
+  },
+  {
+    url: "https://seed.com/energy-focus",
+    category: "advanced-formulas",
+    brandHint: "Seed Health",
+    productHint: "AM-02 Focus + Energy",
+  },
+  {
+    url: "https://seed.com/pds08-daily-kids-probiotic",
+    category: "advanced-formulas",
+    brandHint: "Seed Health",
+    productHint: "PDS-08 Pediatric Synbiotic",
+  },
+  {
+    url: "https://seed.com/sleep-restore",
+    category: "advanced-formulas",
+    brandHint: "Seed Health",
+    productHint: "PM-02 Sleep + Restore",
+  },
+  {
+    url: "https://seed.com/vaginal-synbiotic",
+    category: "womens-health",
+    brandHint: "Seed Health",
+    productHint: "VS-01 Vaginal Synbiotic",
   },
 ] as const;
 
