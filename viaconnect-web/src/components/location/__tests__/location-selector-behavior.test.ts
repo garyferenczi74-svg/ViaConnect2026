@@ -57,10 +57,67 @@ describe("reduceLocationAction", () => {
       city: query,
       isFreeEntry: true,
     });
-    expect(next.city).toBe("Tiny Hamlet");
-    expect(next.isFreeEntry).toBe(true);
-    expect(next.countryCode).toBe("US");
-    expect(next.subdivisionCode).toBe("US-NY");
+    expect(next).not.toBeNull();
+    expect(next?.city).toBe("Tiny Hamlet");
+    expect(next?.isFreeEntry).toBe(true);
+    expect(next?.countryCode).toBe("US");
+    expect(next?.subdivisionCode).toBe("US-NY");
+  });
+
+  it("setCity with isFreeEntry false after a free city turns the flag off", () => {
+    const freeCity = reduceLocationAction(filled, {
+      type: "setCity",
+      city: "Tiny Hamlet",
+      isFreeEntry: true,
+    });
+    expect(freeCity?.isFreeEntry).toBe(true);
+    const listed = reduceLocationAction(freeCity, {
+      type: "setCity",
+      city: "Buffalo",
+      isFreeEntry: false,
+    });
+    expect(listed).not.toBeNull();
+    expect(listed?.city).toBe("Buffalo");
+    expect(listed?.isFreeEntry).toBe(false);
+    expect(listed?.countryCode).toBe("US");
+  });
+
+  it("setCity and setSubdivision refuse to invent an empty country", () => {
+    expect(
+      reduceLocationAction(null, {
+        type: "setCity",
+        city: "Tiny Hamlet",
+        isFreeEntry: true,
+      }),
+    ).toBeNull();
+    expect(
+      reduceLocationAction(null, {
+        type: "setSubdivision",
+        subdivision: { value: "US-NY", label: "New York" },
+      }),
+    ).toBeNull();
+    expect(
+      reduceLocationAction(
+        {
+          city: "",
+          subdivisionName: null,
+          subdivisionCode: null,
+          countryName: "",
+          countryCode: "",
+          isFreeEntry: false,
+        },
+        { type: "setCity", city: "Buffalo", isFreeEntry: false },
+      ),
+    ).toBeNull();
+  });
+
+  it("keeps isFreeEntry when a listed city follows a free country", () => {
+    const next = reduceLocationAction(
+      { ...filled, isFreeEntry: true, countryIsFree: true },
+      { type: "setCity", city: "Buffalo", isFreeEntry: false },
+    );
+    expect(next?.city).toBe("Buffalo");
+    expect(next?.isFreeEntry).toBe(true);
   });
 });
 
@@ -70,6 +127,9 @@ describe("LocationSelector uses reduce and keeps the a11y contract", () => {
     expect(selector).toContain('type: "setCountry"');
     expect(selector).toContain('type: "setSubdivision"');
     expect(selector).toContain('type: "setCity"');
+    expect(selector).toContain("if (!payload)");
+    expect(selector).toContain("countryIsFree:");
+    expect(selector).toContain("subdivisionIsFree:");
   });
 
   it("keeps combobox roles and Hannah free-entry copy", () => {

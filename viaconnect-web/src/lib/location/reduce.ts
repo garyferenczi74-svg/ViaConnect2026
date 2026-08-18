@@ -8,7 +8,12 @@ export type LocationAction =
     }
   | { type: "setCity"; city: string; isFreeEntry: boolean };
 
-const EMPTY: StructuredLocation = {
+export type LocationReduceCurrent = StructuredLocation & {
+  countryIsFree?: boolean;
+  subdivisionIsFree?: boolean;
+};
+
+const EMPTY: LocationReduceCurrent = {
   city: "",
   subdivisionName: null,
   subdivisionCode: null,
@@ -17,38 +22,77 @@ const EMPTY: StructuredLocation = {
   isFreeEntry: false,
 };
 
-export function reduceLocationAction(
-  current: StructuredLocation | null,
-  action: LocationAction,
-): StructuredLocation {
-  const base = current ?? EMPTY;
+function hasCountry(current: LocationReduceCurrent | null): boolean {
+  if (!current) {
+    return false;
+  }
+  return current.countryCode.trim() !== "" || current.countryName.trim() !== "";
+}
 
+function parentFree(current: LocationReduceCurrent): {
+  countryIsFree: boolean;
+  subdivisionIsFree: boolean;
+} {
+  return {
+    countryIsFree: current.countryIsFree === true,
+    subdivisionIsFree: current.subdivisionIsFree === true,
+  };
+}
+
+function toStructured(
+  loc: Omit<StructuredLocation, "isFreeEntry"> & { isFreeEntry: boolean },
+): StructuredLocation {
+  return {
+    city: loc.city,
+    subdivisionName: loc.subdivisionName,
+    subdivisionCode: loc.subdivisionCode,
+    countryName: loc.countryName,
+    countryCode: loc.countryCode,
+    isFreeEntry: loc.isFreeEntry,
+  };
+}
+
+export function reduceLocationAction(
+  current: LocationReduceCurrent | null,
+  action: LocationAction,
+): StructuredLocation | null {
   if (action.type === "setCountry") {
     const free = action.country.isFreeEntry === true;
-    return {
+    return toStructured({
       city: "",
       subdivisionName: null,
       subdivisionCode: null,
       countryName: action.country.label,
       countryCode: free ? action.country.label : action.country.value,
       isFreeEntry: free,
-    };
+    });
   }
+
+  const base = current ?? EMPTY;
+  if (!hasCountry(base)) {
+    return null;
+  }
+
+  const { countryIsFree, subdivisionIsFree } = parentFree(base);
 
   if (action.type === "setSubdivision") {
     const free = action.subdivision.isFreeEntry === true;
-    return {
-      ...base,
+    return toStructured({
       city: "",
       subdivisionName: action.subdivision.label,
       subdivisionCode: free ? null : action.subdivision.value,
-      isFreeEntry: base.isFreeEntry || free,
-    };
+      countryName: base.countryName,
+      countryCode: base.countryCode,
+      isFreeEntry: countryIsFree || free,
+    });
   }
 
-  return {
-    ...base,
+  return toStructured({
     city: action.city,
-    isFreeEntry: base.isFreeEntry || action.isFreeEntry,
-  };
+    subdivisionName: base.subdivisionName,
+    subdivisionCode: base.subdivisionCode,
+    countryName: base.countryName,
+    countryCode: base.countryCode,
+    isFreeEntry: countryIsFree || subdivisionIsFree || action.isFreeEntry,
+  });
 }

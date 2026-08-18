@@ -6,6 +6,7 @@ import { subdivisionLabelForCountry } from "@/lib/location/labels";
 import {
   reduceLocationAction,
   type LocationAction,
+  type LocationReduceCurrent,
 } from "@/lib/location/reduce";
 import type { LocationOption, StructuredLocation } from "@/lib/location/types";
 import { getCircuitBreaker, isCircuitBreakerError } from "@/lib/utils/circuit-breaker";
@@ -204,7 +205,7 @@ export function LocationSelector({
     subdivisionIsFree: boolean;
     cityIsFree: boolean;
     hideSub: boolean;
-  }): StructuredLocation | null {
+  }): LocationReduceCurrent | null {
     if (!next.country) {
       return null;
     }
@@ -220,6 +221,8 @@ export function LocationSelector({
       countryCode: next.countryIsFree ? next.country.label : next.country.value,
       isFreeEntry:
         next.countryIsFree || next.subdivisionIsFree || next.cityIsFree,
+      countryIsFree: next.countryIsFree,
+      subdivisionIsFree: next.subdivisionIsFree,
     };
   }
 
@@ -243,10 +246,15 @@ export function LocationSelector({
   }
 
   function applyAction(
-    current: StructuredLocation | null,
+    current: LocationReduceCurrent | null,
     action: LocationAction,
-  ): StructuredLocation {
+  ): StructuredLocation | null {
     const payload = reduceLocationAction(current, action);
+    if (!payload) {
+      lastSynced.current = "";
+      onChange(null);
+      return null;
+    }
     lastSynced.current = valueKey(payload);
     onChange(payload);
     return payload;
