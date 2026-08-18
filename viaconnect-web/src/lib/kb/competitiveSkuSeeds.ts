@@ -696,12 +696,6 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     productHint: "Ester-C",
   },
   {
-    url: "https://im8health.com/products/daily-ultimate-essentials",
-    category: "base-formulations",
-    brandHint: "IM8 Health",
-    productHint: "Daily Ultimate Essentials",
-  },
-  {
     url: "https://www.innosupps.com/products/glp-1",
     category: "advanced-formulas",
     brandHint: "Inno Supps",
@@ -5200,6 +5194,21 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     category: "womens-health",
     brandHint: "Doctor's Best",
     productHint: "Women's Multi-Vitamin, 120 Tablets",
+  },
+
+  // IM8 Health from https://im8health.com/ (core supplements; merch excluded)
+
+  {
+    url: "https://im8health.com/products/essentials-pro",
+    category: "base-formulations",
+    brandHint: "IM8",
+    productHint: "Daily Ultimate Essentials Pro",
+  },
+  {
+    url: "https://im8health.com/products/longevity",
+    category: "advanced-formulas",
+    brandHint: "IM8",
+    productHint: "Daily Ultimate Longevity",
   },
 ] as const;
 
