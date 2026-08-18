@@ -10,7 +10,7 @@ import {
 
 const MIGRATION = resolve(
   __dirname,
-  "../../../../supabase/migrations/20260818120000_prompt_222_competitor_app.sql"
+  "../../../../supabase/migrations/20260820121000_prompt_222_competitor_app.sql"
 );
 
 describe("prompt222 competitor_app", () => {
