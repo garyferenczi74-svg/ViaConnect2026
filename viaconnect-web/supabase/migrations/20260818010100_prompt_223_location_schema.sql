@@ -242,6 +242,12 @@ GRANT EXECUTE ON FUNCTION public.search_ref_cities(text, text, text, int) TO ano
 -- ---------------------------------------------------------------------------
 -- Copy structured signup metadata onto profiles after auth.users insert.
 -- SECURITY INVOKER (no SECURITY DEFINER). Runs as the inserting role.
+-- Assumed live profile-create trigger: on_auth_user_created (handle_new_user).
+-- This AFTER INSERT trigger is named trg_copy_signup_location so it sorts
+-- after on_auth_user_created and runs once the profiles row exists.
+-- Do not rename or modify handle_new_user. If the profile row is missing,
+-- UPDATE affects 0 rows and this function returns NEW without raising.
+-- Later backfill can recover a missed copy.
 -- ---------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION public.copy_signup_location_to_profile()
@@ -254,6 +260,7 @@ DECLARE
   v_meta jsonb;
   v_legacy text;
   v_free_entry boolean;
+  v_updated integer;
 BEGIN
   v_meta := NEW.raw_user_meta_data;
   IF v_meta IS NULL THEN
@@ -289,6 +296,13 @@ BEGIN
     location_is_free_entry = v_free_entry
   WHERE id = NEW.id;
 
+  -- 0 rows is not an error. Profile may not exist yet if trigger order
+  -- differed from on_auth_user_created. Do not raise; later backfill recovers.
+  GET DIAGNOSTICS v_updated = ROW_COUNT;
+  IF v_updated = 0 THEN
+    RETURN NEW;
+  END IF;
+
   RETURN NEW;
 END;
 $$;
@@ -304,9 +318,23 @@ GRANT EXECUTE ON FUNCTION public.copy_signup_location_to_profile() TO service_ro
 
 -- INVOKER trigger on auth.users runs as supabase_auth_admin. Column grants
 -- let it copy signup metadata onto the new profiles row.
+-- UPDATE also reads id (WHERE) and location_legacy (COALESCE), so SELECT
+-- is required on those columns. Grant column SELECT only; never the
+-- whole profiles table (PHI).
 DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'supabase_auth_admin') THEN
+    GRANT SELECT (
+      id,
+      city,
+      subdivision_name,
+      subdivision_code,
+      country_name,
+      country_code,
+      location_legacy,
+      location_is_free_entry
+    ) ON TABLE public.profiles TO supabase_auth_admin;
+
     GRANT UPDATE (
       city,
       subdivision_name,
