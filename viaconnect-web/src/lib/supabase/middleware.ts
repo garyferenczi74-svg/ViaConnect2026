@@ -135,6 +135,9 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/api/pricing/") ||
     // Anonymous public APIs (referral click, brand storefront, etc.)
     pathname.startsWith("/api/public/") ||
+    // Prompt 223: signup location typeahead. Auth is not required because
+    // signup is logged out. Do not move this under /api/public/.
+    pathname.startsWith("/api/location/") ||
     // Marshall compliance surfaces (Prompt #119): public DSAR form, trust
     // page, incident history, and the DSAR submit endpoint.
     pathname === "/trust-compliance" ||
