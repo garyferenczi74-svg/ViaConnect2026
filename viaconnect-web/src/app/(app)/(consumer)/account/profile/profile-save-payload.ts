@@ -14,6 +14,8 @@
 
 import {
   isCompleteStructuredLocation,
+  signupLocationFieldsFromValue,
+  signupLocationFieldsSchema,
 } from "@/lib/location/signup-schema";
 import type { StructuredLocation } from "@/lib/location/types";
 
@@ -60,4 +62,28 @@ export function buildProfileSavePayload(input: {
   }
 
   return payload;
+}
+
+/** Field error when the selector has a started, incomplete location. */
+export function profileLocationSaveError(
+  location: StructuredLocation | null,
+  subdivisionOptional: boolean,
+  needsConfirm: boolean,
+): string | null {
+  if (location === null) {
+    return null;
+  }
+  if (isCompleteStructuredLocation(location, subdivisionOptional)) {
+    return null;
+  }
+  if (needsConfirm) {
+    return "Please confirm your location";
+  }
+  const parsed = signupLocationFieldsSchema.safeParse(
+    signupLocationFieldsFromValue(location, subdivisionOptional),
+  );
+  if (!parsed.success) {
+    return parsed.error.issues[0]?.message ?? "Please complete your location";
+  }
+  return "Please complete your location";
 }

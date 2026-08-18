@@ -21,7 +21,10 @@ import { isCompleteStructuredLocation } from "@/lib/location/signup-schema";
 import type { StructuredLocation } from "@/lib/location/types";
 import { createClient } from "@/lib/supabase/client";
 import { reportSupabaseError } from "@/lib/utils/schema-drift";
-import { buildProfileSavePayload } from "./profile-save-payload";
+import {
+  buildProfileSavePayload,
+  profileLocationSaveError,
+} from "./profile-save-payload";
 
 interface ProfileForm {
   first_name: string;
@@ -122,11 +125,15 @@ export default function ProfilePage() {
     // shaping as the former inline literal) so the write-shape test can assert
     // its keys against the live profiles columns plus the P0-6 migration.
     // Prompt 223: complete selector writes structured columns and clears confirm.
-    if (
-      needsConfirm &&
-      !isCompleteStructuredLocation(location, subdivisionOptional)
-    ) {
-      setLocationError("Please confirm your location");
+    // Incomplete non-null location (typed query, uncommitted city) must not
+    // toast success while 223 columns stay unchanged.
+    const locationSaveError = profileLocationSaveError(
+      location,
+      subdivisionOptional,
+      needsConfirm,
+    );
+    if (locationSaveError) {
+      setLocationError(locationSaveError);
       setSavingProfile(false);
       return;
     }

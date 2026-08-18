@@ -32,7 +32,10 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { buildProfileSavePayload } from '@/app/(app)/(consumer)/account/profile/profile-save-payload';
+import {
+  buildProfileSavePayload,
+  profileLocationSaveError,
+} from '@/app/(app)/(consumer)/account/profile/profile-save-payload';
 import { buildTimezoneSyncPayload } from '@/lib/timezone';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
@@ -293,6 +296,54 @@ describe('profile save payload (buildProfileSavePayload)', () => {
       subdivisionOptional: false,
     });
     expect(Object.keys(incomplete).sort()).toEqual(['full_name', 'id', 'phone', 'updated_at']);
+  });
+});
+
+describe('profile location save gate (profileLocationSaveError)', () => {
+  const incomplete = {
+    city: '',
+    subdivisionName: 'New York',
+    subdivisionCode: 'US-NY',
+    countryName: 'United States',
+    countryCode: 'US',
+    isFreeEntry: false,
+  };
+
+  it('does not block when location is null (name/phone-only save)', () => {
+    expect(profileLocationSaveError(null, false, false)).toBeNull();
+    expect(profileLocationSaveError(null, false, true)).toBeNull();
+  });
+
+  it('does not block a complete structured location', () => {
+    expect(profileLocationSaveError({
+      ...incomplete,
+      city: 'Buffalo',
+    }, false, false)).toBeNull();
+  });
+
+  it('blocks a non-null incomplete location with a field error', () => {
+    expect(profileLocationSaveError(incomplete, false, false)).toBe('City is required');
+  });
+
+  it('uses confirm copy when needsConfirm and location is incomplete', () => {
+    expect(profileLocationSaveError(incomplete, false, true)).toBe(
+      'Please confirm your location',
+    );
+  });
+
+  it('account profile page consults the gate before upsert and toast', () => {
+    const page = readFileSync(
+      join(REPO_ROOT, 'src', 'app', '(app)', '(consumer)', 'account', 'profile', 'page.tsx'),
+      'utf8',
+    );
+    const saveFn = page.slice(page.indexOf('async function handleProfileSave'));
+    const toastAt = saveFn.indexOf('toast.success("Profile updated")');
+    const gateAt = saveFn.indexOf('profileLocationSaveError');
+    const upsertAt = saveFn.indexOf('.upsert(');
+    expect(gateAt).toBeGreaterThan(-1);
+    expect(gateAt).toBeLessThan(upsertAt);
+    expect(upsertAt).toBeLessThan(toastAt);
+    expect(saveFn).toContain('setLocationError(locationSaveError)');
   });
 });
 
