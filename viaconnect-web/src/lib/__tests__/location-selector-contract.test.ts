@@ -31,6 +31,15 @@ describe("location selector contract", () => {
     expect(combobox).toContain("useState(-1)");
   });
 
+  it("selects the highlighted option on Tab instead of blur-committing the typed query", () => {
+    const tabAt = combobox.indexOf('event.key === "Tab"');
+    expect(tabAt).toBeGreaterThan(-1);
+    const tabHandler = combobox.slice(tabAt, tabAt + 280);
+    expect(tabHandler).toContain("activeIndex >= 0");
+    expect(tabHandler).toContain("selectOption(options[activeIndex])");
+    expect(combobox).toContain("skipBlurCommitRef");
+  });
+
   it("resets local fields when the controlled value is null", () => {
     expect(selector).toContain("if (!value)");
     expect(selector).toContain('setCountryQuery("")');

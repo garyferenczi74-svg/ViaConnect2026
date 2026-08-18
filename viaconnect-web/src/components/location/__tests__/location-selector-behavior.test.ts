@@ -143,4 +143,13 @@ describe("LocationSelector uses reduce and keeps the a11y contract", () => {
     expect(selector).not.toMatch(/\u2014|\u2013/);
     expect(combobox).not.toMatch(/\u2014|\u2013/);
   });
+
+  it("selects the highlighted option on Tab, then skips typed blur commit", () => {
+    const tabAt = combobox.indexOf('event.key === "Tab"');
+    expect(tabAt).toBeGreaterThan(-1);
+    const tabHandler = combobox.slice(tabAt, tabAt + 280);
+    expect(tabHandler).toContain("selectOption(options[activeIndex])");
+    expect(tabHandler).toContain("skipBlurCommitRef.current = true");
+    expect(combobox).toContain("if (skipBlurCommitRef.current)");
+  });
 });

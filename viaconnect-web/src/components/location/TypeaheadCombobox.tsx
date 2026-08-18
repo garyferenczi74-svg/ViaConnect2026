@@ -54,6 +54,7 @@ export function TypeaheadCombobox({
   const reactId = useId();
   const listboxId = `${id}-listbox`;
   const rootRef = useRef<HTMLDivElement>(null);
+  const skipBlurCommitRef = useRef(false);
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
 
@@ -111,6 +112,13 @@ export function TypeaheadCombobox({
   }
 
   function commitTypedOnBlur() {
+    if (skipBlurCommitRef.current) {
+      skipBlurCommitRef.current = false;
+      setOpen(false);
+      setActiveIndex(-1);
+      return;
+    }
+
     const query = value.trim();
     if (query.length === 0) {
       setOpen(false);
@@ -191,6 +199,11 @@ export function TypeaheadCombobox({
     }
 
     if (event.key === "Tab") {
+      if (open && activeIndex >= 0 && options[activeIndex]) {
+        skipBlurCommitRef.current = true;
+        selectOption(options[activeIndex]);
+        return;
+      }
       setOpen(false);
       setActiveIndex(-1);
     }
