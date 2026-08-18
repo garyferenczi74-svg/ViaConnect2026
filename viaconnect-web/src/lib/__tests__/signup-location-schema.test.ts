@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
-import { signupStep3Schema } from "../location/signup-schema";
+import { readdirSync, readFileSync } from "node:fs";
+import { join, resolve } from "node:path";
+import { signupLocationMetadata, signupStep3Schema } from "../location/signup-schema";
 
 const complete = {
   fullName: "Ada Lovelace",
@@ -91,6 +91,35 @@ describe("signup surfaces drop the single location input", () => {
     );
     expect(schemaSource).toContain("location" + "_legacy:");
     expect(schemaSource).toContain("formatStructuredLocation");
+  });
+});
+
+describe("backfill recovers missed signup location copy", () => {
+  const recoverSuffix = "_prompt_223_location_backfill_recover.sql";
+  const migrationsDir = resolve(__dirname, "../../../supabase/migrations");
+  const recoverFile = readdirSync(migrationsDir).find((name) =>
+    name.endsWith(recoverSuffix),
+  );
+
+  it("is an append-only recover migration that copies signup metadata keys", () => {
+    expect(recoverFile).toBeTruthy();
+    const sql = readFileSync(join(migrationsDir, recoverFile!), "utf8");
+    const meta = signupLocationMetadata({
+      city: "Buffalo",
+      subdivisionName: "New York",
+      subdivisionCode: "US-NY",
+      countryName: "United States",
+      countryCode: "US",
+      isFreeEntry: false,
+    });
+    for (const key of Object.keys(meta)) {
+      expect(sql).toContain(`->> '${key}'`);
+    }
+    expect(sql).toContain("->> 'location'");
+    expect(sql).toContain("CREATE OR REPLACE FUNCTION public.backfill_profile_locations()");
+    expect(sql).not.toMatch(/\bUNKNOWN\b/);
+    expect(sql).not.toMatch(/latitude|longitude|lat\b|lon\b|lng\b/i);
+    expect(sql).not.toMatch(/CREATE OR REPLACE FUNCTION public\.handle_new_user/i);
   });
 });
 
