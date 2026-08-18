@@ -127,12 +127,6 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     productHint: "MagneGel Magnesium",
   },
   {
-    url: "https://ritual.com/products/essential-for-women-18",
-    category: "womens-health",
-    brandHint: "Ritual",
-    productHint: "Essential for Women 18+",
-  },
-  {
     url: "https://hostdefense.com/products/lions-mane",
     category: "functional-mushrooms",
     brandHint: "Host Defense",
@@ -289,12 +283,6 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     productHint: "OmegAvail Ultra",
   },
   {
-    url: "https://ritual.com/products/essential-prenatal",
-    category: "womens-health",
-    brandHint: "Ritual",
-    productHint: "Essential Prenatal",
-  },
-  {
     url: "https://www.livonlabs.com/products/lypo-spheric-vitamin-c",
     category: "advanced-formulas",
     brandHint: "LivOn Labs",
@@ -395,48 +383,6 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     category: "advanced-formulas",
     brandHint: "Pure Encapsulations",
     productHint: "Liposomal Glutathione",
-  },
-  {
-    url: "https://ritual.com/products/essential-for-women-50",
-    category: "womens-health",
-    brandHint: "Ritual",
-    productHint: "Essential for Women 50+",
-  },
-  {
-    url: "https://ritual.com/products/essential-for-men-18",
-    category: "base-formulations",
-    brandHint: "Ritual",
-    productHint: "Essential for Men 18+",
-  },
-  {
-    url: "https://ritual.com/products/essential-for-men-50",
-    category: "base-formulations",
-    brandHint: "Ritual",
-    productHint: "Essential for Men 50+",
-  },
-  {
-    url: "https://ritual.com/products/synbiotic-plus",
-    category: "advanced-formulas",
-    brandHint: "Ritual",
-    productHint: "Synbiotic+",
-  },
-  {
-    url: "https://ritual.com/products/essential-postnatal",
-    category: "womens-health",
-    brandHint: "Ritual",
-    productHint: "Essential Postnatal",
-  },
-  {
-    url: "https://ritual.com/products/natal-duo",
-    category: "womens-health",
-    brandHint: "Ritual",
-    productHint: "Natal Duo",
-  },
-  {
-    url: "https://ritual.com/products/dha",
-    category: "base-formulations",
-    brandHint: "Ritual",
-    productHint: "DHA+",
   },
 
 
@@ -12921,6 +12867,117 @@ export const COMPETITIVE_SKU_SEEDS: readonly CompetitiveSkuSeed[] = [
     category: "advanced-formulas",
     brandHint: "Renue by Science",
     productHint: "Vitamin C",
+  },
+
+  // Ritual from https://ritual.com/collections/all (single SKUs; Support Ritual stacks/merch excluded)
+
+  {
+    url: "https://ritual.com/products/essential-for-women-multivitamin",
+    category: "womens-health",
+    brandHint: "Ritual",
+    productHint: "Women’s Multivitamin 18+",
+  },
+  {
+    url: "https://ritual.com/products/essential-multivitamin-for-men",
+    category: "base-formulations",
+    brandHint: "Ritual",
+    productHint: "Men’s Multivitamin 18+",
+  },
+  {
+    url: "https://ritual.com/products/essential-multivitamin-for-men-over-50",
+    category: "base-formulations",
+    brandHint: "Ritual",
+    productHint: "Men’s Multivitamin 50+",
+  },
+  {
+    url: "https://ritual.com/products/essential-multivitamin-for-women-over-50",
+    category: "womens-health",
+    brandHint: "Ritual",
+    productHint: "Women’s Multivitamin 50+",
+  },
+  {
+    url: "https://ritual.com/products/essential-postnatal-multivitamin",
+    category: "womens-health",
+    brandHint: "Ritual",
+    productHint: "Postnatal Multivitamin",
+  },
+  {
+    url: "https://ritual.com/products/essential-prenatal-multivitamin",
+    category: "womens-health",
+    brandHint: "Ritual",
+    productHint: "Prenatal Multivitamin",
+  },
+  {
+    url: "https://ritual.com/products/essential-protein-daily-shake-18",
+    category: "womens-health",
+    brandHint: "Ritual",
+    productHint: "Daily Shake",
+  },
+  {
+    url: "https://ritual.com/products/essential-protein-pregnancy-postpartum",
+    category: "womens-health",
+    brandHint: "Ritual",
+    productHint: "Daily Shake Pregnancy & Postpartum",
+  },
+  {
+    url: "https://ritual.com/products/fertility-support",
+    category: "womens-health",
+    brandHint: "Ritual",
+    productHint: "Fertility Support",
+  },
+  {
+    url: "https://ritual.com/products/hyacera-for-skin-hydration",
+    category: "womens-health",
+    brandHint: "Ritual",
+    productHint: "HyaCera",
+  },
+  {
+    url: "https://ritual.com/products/iron-bioseries",
+    category: "womens-health",
+    brandHint: "Ritual",
+    productHint: "Iron",
+  },
+  {
+    url: "https://ritual.com/products/magnesium",
+    category: "womens-health",
+    brandHint: "Ritual",
+    productHint: "Magnesium+",
+  },
+  {
+    url: "https://ritual.com/products/natal-choline",
+    category: "womens-health",
+    brandHint: "Ritual",
+    productHint: "Natal Choline",
+  },
+  {
+    url: "https://ritual.com/products/natalbiotic",
+    category: "womens-health",
+    brandHint: "Ritual",
+    productHint: "Natalbiotic",
+  },
+  {
+    url: "https://ritual.com/products/omega-3-dha-epa",
+    category: "womens-health",
+    brandHint: "Ritual",
+    productHint: "Omega-3 DHA & EPA",
+  },
+  {
+    url: "https://ritual.com/products/sleep-bioseries-melatonin",
+    category: "womens-health",
+    brandHint: "Ritual",
+    productHint: "Sleep",
+  },
+  {
+    url: "https://ritual.com/products/stress-relief-bioseries",
+    category: "womens-health",
+    brandHint: "Ritual",
+    productHint: "Stress Relief",
+  },
+  {
+    url: "https://ritual.com/products/synbiotic-plus-for-gut-health",
+    category: "womens-health",
+    brandHint: "Ritual",
+    productHint: "Synbiotic+",
   },
 ] as const;
 
