@@ -50,8 +50,8 @@ export function ConnectionsStrip({ availability, tier }: ConnectionsStripProps) 
 
   return (
     <BentoTile
-      className="min-h-[140px] h-full rounded-[20px]"
-      contentClassName="gap-3"
+      className="flex h-full min-h-[160px] flex-col rounded-[20px]"
+      contentClassName="gap-3 flex-1"
       scrim={false}
     >
       <div className="flex flex-col gap-1">
@@ -64,7 +64,7 @@ export function ConnectionsStrip({ availability, tier }: ConnectionsStripProps) 
           <span className="text-white/50">{unlock}</span>
         </span>
       </div>
-      <div className="flex flex-wrap gap-2">
+      <div className="mt-auto flex flex-wrap gap-2">
         {ORDER.map((id) => {
           const connected = Boolean(availability[availabilityKey(id)]);
           return (

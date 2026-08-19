@@ -400,61 +400,84 @@ export function DashboardBento({ userId }: DashboardBentoProps) {
         </SnapshotTile>
       </motion.div>
 
-      <motion.div className="h-full lg:col-span-6" {...fade(8)}>
-        <QuickLogCompactTile onSaved={() => setRefreshKey((k) => k + 1)} />
-      </motion.div>
+      <motion.div
+        className="col-span-1 grid grid-cols-1 gap-4 sm:grid-cols-2 sm:grid-rows-2 sm:auto-rows-fr md:col-span-2 lg:col-span-12"
+        {...fade(8)}
+      >
+        <div className="h-full min-h-[160px]">
+          <QuickLogCompactTile
+            className="h-full"
+            onSaved={() => setRefreshKey((k) => k + 1)}
+          />
+        </div>
 
-      {!crossLoading ? (
-        <motion.div className="h-full lg:col-span-6" {...fade(9)}>
-          <ConnectionsStrip availability={crossRef.availability} tier={tier} />
-        </motion.div>
-      ) : null}
+        <div className="h-full min-h-[160px]">
+          {crossLoading ? (
+            <BentoTile
+              className="h-full min-h-[160px] rounded-[20px]"
+              scrim={false}
+              contentClassName="gap-3"
+            >
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-white/50">
+                Cross-Reference Sources
+              </span>
+              <p className="text-sm text-white/50">Loading connections...</p>
+            </BentoTile>
+          ) : (
+            <ConnectionsStrip availability={crossRef.availability} tier={tier} />
+          )}
+        </div>
 
-      <motion.div className="h-full lg:col-span-6" {...fade(10)}>
-        <BentoTile className="h-full min-h-[120px] rounded-[20px]" scrim={false} contentClassName="gap-3">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-[#2DA5A0]" strokeWidth={1.5} />
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-white/50">
-              Arnold&apos;s Recommendation
-            </span>
-          </div>
-          <p className="text-sm text-white/75">
-            {arnoldRec?.text ??
-              (recError ?? 'Generate a personalized note from your connected sources.')}
-          </p>
-          <button
-            type="button"
-            disabled={recLoading || recGenerating}
-            onClick={() => void recGenerate()}
-            className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-[#2DA5A0]/30 bg-[#2DA5A0]/10 px-4 text-sm font-medium text-[#2DA5A0] disabled:opacity-50"
-          >
-            {recGenerating ? 'Generating...' : 'Generate'}
-          </button>
-        </BentoTile>
-      </motion.div>
-
-      <motion.div className="h-full lg:col-span-6" {...fade(11)}>
-        <Link href="/body-tracker" className="block h-full">
+        <div className="h-full min-h-[160px]">
           <BentoTile
-            interactive
-            className="h-full min-h-[120px] rounded-[20px]"
+            className="flex h-full min-h-[160px] flex-col rounded-[20px]"
             scrim={false}
-            contentClassName="gap-2"
+            contentClassName="gap-3 flex-1"
           >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <FileText className="h-4 w-4 text-[#2DA5A0]" strokeWidth={1.5} />
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-white/50">
-                  Weekly Report
-                </span>
-              </div>
-              <ArrowRight className="h-4 w-4 text-[#2DA5A0]" strokeWidth={1.5} />
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-[#2DA5A0]" strokeWidth={1.5} />
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-white/50">
+                Arnold&apos;s Recommendation
+              </span>
             </div>
             <p className="text-sm text-white/75">
-              Want deeper insights? Generate a weekly report from My Biology.
+              {arnoldRec?.text ??
+                (recError ?? 'Generate a personalized note from your connected sources.')}
             </p>
+            <button
+              type="button"
+              disabled={recLoading || recGenerating}
+              onClick={() => void recGenerate()}
+              className="mt-auto inline-flex min-h-[44px] items-center justify-center rounded-xl border border-[#2DA5A0]/30 bg-[#2DA5A0]/10 px-4 text-sm font-medium text-[#2DA5A0] disabled:opacity-50"
+            >
+              {recGenerating ? 'Generating...' : 'Generate'}
+            </button>
           </BentoTile>
-        </Link>
+        </div>
+
+        <div className="h-full min-h-[160px]">
+          <Link href="/body-tracker" className="block h-full">
+            <BentoTile
+              interactive
+              className="flex h-full min-h-[160px] flex-col rounded-[20px]"
+              scrim={false}
+              contentClassName="gap-2 flex-1"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-[#2DA5A0]" strokeWidth={1.5} />
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-white/50">
+                    Weekly Report
+                  </span>
+                </div>
+                <ArrowRight className="h-4 w-4 text-[#2DA5A0]" strokeWidth={1.5} />
+              </div>
+              <p className="mt-auto text-sm text-white/75">
+                Want deeper insights? Generate a weekly report from My Biology.
+              </p>
+            </BentoTile>
+          </Link>
+        </div>
       </motion.div>
     </div>
   );

@@ -42,7 +42,7 @@ export function QuickLogCompactTile({ onSaved, className }: QuickLogCompactTileP
   return (
     <>
       <BentoTile
-        className={`min-h-[120px] rounded-[20px] ${className ?? ''}`}
+        className={`h-full min-h-[160px] rounded-[20px] ${className ?? ''}`}
         contentClassName="gap-3"
         scrim={false}
       >
