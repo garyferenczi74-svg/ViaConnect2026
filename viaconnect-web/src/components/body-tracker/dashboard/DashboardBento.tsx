@@ -400,18 +400,18 @@ export function DashboardBento({ userId }: DashboardBentoProps) {
         </SnapshotTile>
       </motion.div>
 
-      <motion.div className="lg:col-span-6" {...fade(8)}>
+      <motion.div className="h-full lg:col-span-6" {...fade(8)}>
         <QuickLogCompactTile onSaved={() => setRefreshKey((k) => k + 1)} />
       </motion.div>
 
       {!crossLoading ? (
-        <motion.div className="lg:col-span-12" {...fade(9)}>
+        <motion.div className="h-full lg:col-span-6" {...fade(9)}>
           <ConnectionsStrip availability={crossRef.availability} tier={tier} />
         </motion.div>
       ) : null}
 
-      <motion.div className="lg:col-span-6" {...fade(10)}>
-        <BentoTile className="min-h-[120px] rounded-[20px]" scrim={false} contentClassName="gap-3">
+      <motion.div className="h-full lg:col-span-6" {...fade(10)}>
+        <BentoTile className="h-full min-h-[120px] rounded-[20px]" scrim={false} contentClassName="gap-3">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-[#2DA5A0]" strokeWidth={1.5} />
             <span className="text-[10px] font-semibold uppercase tracking-wider text-white/50">
@@ -433,11 +433,11 @@ export function DashboardBento({ userId }: DashboardBentoProps) {
         </BentoTile>
       </motion.div>
 
-      <motion.div className="lg:col-span-6" {...fade(11)}>
+      <motion.div className="h-full lg:col-span-6" {...fade(11)}>
         <Link href="/body-tracker" className="block h-full">
           <BentoTile
             interactive
-            className="min-h-[120px] rounded-[20px]"
+            className="h-full min-h-[120px] rounded-[20px]"
             scrim={false}
             contentClassName="gap-2"
           >

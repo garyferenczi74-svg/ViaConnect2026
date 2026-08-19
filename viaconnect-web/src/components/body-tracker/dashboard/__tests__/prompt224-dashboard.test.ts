@@ -34,4 +34,13 @@ describe('prompt 224 dashboard redesign', () => {
       expect(src).not.toMatch(/hubConfig/);
     }
   });
+
+  it('bottom four tiles use equal lg:col-span-6 cells in a 2x2', () => {
+    const bento = fs.readFileSync(path.join(ROOT, 'DashboardBento.tsx'), 'utf8');
+    const strip = fs.readFileSync(path.join(ROOT, 'ConnectionsStrip.tsx'), 'utf8');
+
+    expect(strip).not.toMatch(/lg:col-span-12/);
+    expect(bento).toMatch(/className="h-full lg:col-span-6"[\s\S]*?<ConnectionsStrip/);
+    expect(bento).not.toMatch(/lg:col-span-12[\s\S]*?<ConnectionsStrip/);
+  });
 });

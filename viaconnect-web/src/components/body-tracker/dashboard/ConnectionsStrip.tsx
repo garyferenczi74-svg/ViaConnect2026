@@ -50,11 +50,11 @@ export function ConnectionsStrip({ availability, tier }: ConnectionsStripProps) 
 
   return (
     <BentoTile
-      className="min-h-[88px] rounded-[20px] lg:col-span-12"
+      className="min-h-[140px] h-full rounded-[20px]"
       contentClassName="gap-3"
       scrim={false}
     >
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-col gap-1">
         <span className="text-[10px] font-semibold uppercase tracking-wider text-white/50">
           Cross-Reference Sources
         </span>
