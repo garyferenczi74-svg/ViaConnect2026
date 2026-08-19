@@ -1,0 +1,29 @@
+[
+  {
+    "viewport": "phone-414",
+    "shot": "docs/formavision/210m-shots/phone-414.png",
+    "overlaps": [],
+    "selectBelow": true,
+    "centered": true,
+    "homeOk": true,
+    "pass": true
+  },
+  {
+    "viewport": "tablet-768",
+    "shot": "docs/formavision/210m-shots/tablet-768.png",
+    "overlaps": [],
+    "selectBelow": true,
+    "centered": true,
+    "homeOk": true,
+    "pass": true
+  },
+  {
+    "viewport": "desktop-1440",
+    "shot": "docs/formavision/210m-shots/desktop-1440.png",
+    "overlaps": [],
+    "selectBelow": true,
+    "centered": true,
+    "homeOk": true,
+    "pass": true
+  }
+]

@@ -20,6 +20,10 @@ import type { Page } from '@playwright/test';
 // real /body-tracker/composition avatar surface (composition/page.tsx).
 export const COMPOSITION_PATH = '/body-tracker/composition';
 
+// Prompt 210m: dedicated FormaVision tab (formavision/page.tsx) owns the
+// control-cluster layout under test in control-cluster-layout.spec.ts.
+export const FORMAVISION_PATH = '/body-tracker/formavision';
+
 // ---------------------------------------------------------------------------
 // Capability probe forcing (the honest fallback lever)
 // ---------------------------------------------------------------------------

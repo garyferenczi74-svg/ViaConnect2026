@@ -17,6 +17,12 @@ aligned with the avatar container's left padding. Position only. The control kee
 exact styling, size, behavior, and keyboard order. The picker is a native select, so
 its option list is browser-rendered and cannot clip regardless of position.
 
+Supersession (Prompt 210m, FormaVision surface only): the top-left placement ruling is
+superseded on `/body-tracker/formavision`. Select Body Part now sits centered below the
+avatar feet. The Neck-unblocked and no-callout-overlap goals from this Defect 1 remain
+requirements and are re-verified under the new placement. See
+`docs/formavision/210m-layout-proof.md`.
+
 ## Defect 2: Segmental Body Fat Analysis legend spacing
 
 Before: the heading and the three legend rows in the desktop KPI column used mixed

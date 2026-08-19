@@ -247,7 +247,13 @@ function FormaVisionSurface() {
         </div>
       )}
 
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      {/* Prompt 210m: top control row. Male/Female + units stay above the avatar.
+          Comparison Overlay joins this row at md+ (right of units); on phone it
+          lives in comparison-overlay-home-phone below Select Body Part. */}
+      <div
+        data-testid="formavision-top-controls"
+        className="flex flex-wrap items-center justify-between gap-2"
+      >
         <div className="flex min-w-0 flex-1 items-center gap-2">
           <button
             type="button"
@@ -282,36 +288,37 @@ function FormaVisionSurface() {
             Female
           </button>
         </div>
-        <UnitToggle value={unit} onChange={setUnit} layoutId="formavision-page-unit" />
+        <div className="flex shrink-0 items-center gap-2">
+          <UnitToggle value={unit} onChange={setUnit} layoutId="formavision-page-unit" />
+          <div
+            data-testid="comparison-overlay-home-top"
+            className="hidden max-w-[12rem] flex-col items-end gap-1 md:flex"
+          >
+            <button
+              type="button"
+              data-testid="comparison-overlay-toggle"
+              aria-pressed={comparisonOverlayOn}
+              disabled={!firstScanVector}
+              onClick={onComparisonToggle}
+              className="rounded-lg border border-white/15 bg-[#0D1520]/85 px-2.5 py-1.5 text-[11px] font-medium text-white/80 disabled:opacity-40"
+            >
+              {comparisonOverlayOn ? 'Hide Comparison Overlay' : 'Show Comparison Overlay'}
+            </button>
+            {!firstScanVector && (
+              <p className="text-right text-[10px] leading-snug text-white/45">
+                Comparison needs a prior scan. Complete a second scan to overlay your first body.
+              </p>
+            )}
+          </div>
+        </div>
       </div>
 
+      {/* Prompt 210m: avatar canvas is controls-free. Absolute overlays removed so
+          nothing covers Neck or any region callout (210f goal, new placement). */}
       <div
         data-testid="formavision-canvas-grid"
         className="relative min-h-[480px] rounded-2xl border border-white/[0.08] bg-transparent p-4 lg:min-h-[560px]"
       >
-        <div className="pointer-events-none absolute left-2 top-2 z-10">
-          <div className="pointer-events-auto">
-            <SelectBodyPartControl value={selectedBodyPart} onChange={setSelectedBodyPart} />
-          </div>
-        </div>
-        <div className="pointer-events-auto absolute right-2 top-2 z-10 flex max-w-[12rem] flex-col items-end gap-1">
-          <button
-            type="button"
-            data-testid="comparison-overlay-toggle"
-            aria-pressed={comparisonOverlayOn}
-            disabled={!firstScanVector}
-            onClick={onComparisonToggle}
-            className="rounded-lg border border-white/15 bg-[#0D1520]/85 px-2.5 py-1.5 text-[11px] font-medium text-white/80 disabled:opacity-40"
-          >
-            {comparisonOverlayOn ? 'Hide Comparison Overlay' : 'Show Comparison Overlay'}
-          </button>
-          {!firstScanVector && (
-            <p className="text-right text-[10px] leading-snug text-white/45">
-              Comparison needs a prior scan. Complete a second scan to overlay your first body.
-            </p>
-          )}
-        </div>
-
         <BodyCompositionAvatar
           sex={gender}
           scan={snapshot}
@@ -331,6 +338,37 @@ function FormaVisionSurface() {
             <SegmentalHeatMap sex={gender} segmentStatuses={{}} />
           </div>
         </BodyCompositionAvatar>
+      </div>
+
+      {/* Prompt 210m: Select Body Part centered below the avatar feet, above Journey.
+          Supersedes 210f top-left placement; Neck and all callouts stay unblocked. */}
+      <div
+        data-testid="formavision-select-body-part-slot"
+        className="flex justify-center px-2 pt-1"
+      >
+        <SelectBodyPartControl value={selectedBodyPart} onChange={setSelectedBodyPart} />
+      </div>
+
+      {/* Prompt 210m: phone home for Comparison Overlay (above Your Journey bar). */}
+      <div
+        data-testid="comparison-overlay-home-phone"
+        className="flex flex-col items-center gap-1 md:hidden"
+      >
+        <button
+          type="button"
+          data-testid="comparison-overlay-toggle"
+          aria-pressed={comparisonOverlayOn}
+          disabled={!firstScanVector}
+          onClick={onComparisonToggle}
+          className="rounded-lg border border-white/15 bg-[#0D1520]/85 px-2.5 py-1.5 text-[11px] font-medium text-white/80 disabled:opacity-40"
+        >
+          {comparisonOverlayOn ? 'Hide Comparison Overlay' : 'Show Comparison Overlay'}
+        </button>
+        {!firstScanVector && (
+          <p className="max-w-xs text-center text-[10px] leading-snug text-white/45">
+            Comparison needs a prior scan. Complete a second scan to overlay your first body.
+          </p>
+        )}
       </div>
 
       {journeyVectors.length > 1 && (
