@@ -4,6 +4,11 @@ Date: 2026-08-12 (spec) / 2026-08-19 (implementation). Surface: FormaVision
 (`/body-tracker/formavision`), `src/app/(app)/(consumer)/body-tracker/formavision/page.tsx`.
 Layout and positioning only. No renderer, data, or behavior changes.
 
+Commit: `4d1dc81c` on `main` (plus follow-up deploy commit). First CLI production
+attempt was Vercel `BLOCKED` (commit author email `gary@farmceutica.com` not
+matched to the team collaborator email); redeploy uses the verified GitHub
+author email.
+
 ## Defect (before)
 
 Gary's mobile screenshot of 2026-08-12, 4:36: on the FormaVision surface, the
