@@ -92,21 +92,22 @@ CREATE TABLE IF NOT EXISTS public.kb_peptides (
       'animal', 'ex_vivo', 'in_vitro', 'anecdotal_only'
     )),
   evidence_summary text NOT NULL DEFAULT '',
-  fda_status text NOT NULL DEFAULT 'not_approved'
+  fda_status text NOT NULL DEFAULT 'unknown'
     CHECK (fda_status IN (
       'approved', 'approved_other_indication', 'investigational',
-      'not_approved', 'withdrawn', 'unapproved_marketed'
+      'not_approved', 'withdrawn', 'unapproved_marketed', 'unknown'
     )),
-  fda_503a_category text NOT NULL DEFAULT 'not_applicable'
+  fda_503a_category text NOT NULL DEFAULT 'unknown'
     CHECK (fda_503a_category IN (
-      'category_1', 'category_2', 'category_3', 'not_nominated', 'not_applicable'
+      'category_1', 'category_2', 'category_3', 'not_nominated',
+      'not_applicable', 'unknown'
     )),
   regulatory_status jsonb NOT NULL DEFAULT '{}'::jsonb,
   controlled_substance boolean NOT NULL DEFAULT false,
-  wada_status text NOT NULL DEFAULT 'not_prohibited'
+  wada_status text NOT NULL DEFAULT 'unknown'
     CHECK (wada_status IN (
       'prohibited_all_times', 'prohibited_in_competition',
-      'monitoring_program', 'not_prohibited', 'captured_by_s0'
+      'monitoring_program', 'not_prohibited', 'captured_by_s0', 'unknown'
     )),
   wada_class text,
   half_life_class text NOT NULL DEFAULT 'not_applicable'
