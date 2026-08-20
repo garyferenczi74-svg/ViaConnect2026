@@ -164,17 +164,25 @@ export async function POST(request: Request): Promise<Response> {
 
     const after = await dumpThanosEvidence();
 
-    const ok =
+    const searchFailed = Number(ingest?.searchFailed ?? 0);
+    const searchFailReasons = Array.isArray(ingest?.searchFailReasons)
+      ? (ingest?.searchFailReasons as string[])
+      : [];
+    const firecrawlBillingBlocked = searchFailReasons.some((r) =>
+      String(r).includes("402"),
+    );
+    const pipelineHealthy =
       !runError &&
       after.kbPeptideCount > 0 &&
       after.collection != null &&
-      (shouldRun
-        ? Boolean(ingest) &&
-          (Number(ingest?.discovered ?? 0) >= 0 ||
-            Number(ingest?.staged ?? 0) >= 0)
-        : after.pipelineRuns.length > 0 ||
-          after.firecrawlLedger.length > 0 ||
-          after.stagingCount > 0);
+      (Boolean(pipelineRunId) || after.pipelineRuns.length > 0);
+    const stagingHealthy = after.stagingCount > 0 || Number(ingest?.staged ?? 0) > 0;
+    const ingestHealthy =
+      pipelineHealthy &&
+      stagingHealthy &&
+      !firecrawlBillingBlocked &&
+      searchFailed === 0;
+    const ok = pipelineHealthy;
 
     return Response.json(
       {
@@ -184,6 +192,10 @@ export async function POST(request: Request): Promise<Response> {
         ranIngest: shouldRun,
         runError,
         pipelineRunId,
+        pipelineHealthy,
+        stagingHealthy,
+        ingestHealthy,
+        firecrawlBillingBlocked,
         ingest,
         before: {
           at: before.at,
@@ -208,6 +220,7 @@ export async function POST(request: Request): Promise<Response> {
           "Live dump of pipeline_runs / firecrawl_run_ledger / hounddog_staging_items / peptide_education_entries.",
           "Dashboard state alone is not evidence; this cron is the Phase 0 1.7 required dump.",
           "Thanos stages to hounddog_staging_items; Marshall gate still required before consumer promotion.",
+          "pipelineHealthy means ops path + ledger write works. ingestHealthy also requires staged rows and no Firecrawl 402.",
         ],
       },
       { status: 200 },
