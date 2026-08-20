@@ -130,7 +130,13 @@ export async function runThanosDailyIngest(opts?: {
           agent_slug: 'thanos',
           topic_key: 'peptide-education',
           relevance_score: 0.8,
-          status: gate.verdict === 'escalated' ? 'escalated' : 'pending',
+          gate_status: gate.verdict === 'escalated' ? 'escalated' : 'pending',
+          gate_checked_at: new Date().toISOString(),
+          gate_agent: 'hounddog',
+          gate_notes:
+            gate.verdict === 'escalated'
+              ? 'Thanos peptide staging escalated for Lex/Marshall visibility'
+              : 'Thanos peptide staging pending Marshall promotion',
           full_text_excerpt: excerpt.slice(0, 2000),
         },
         { onConflict: 'content_hash' },
