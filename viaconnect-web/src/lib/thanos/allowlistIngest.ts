@@ -34,10 +34,10 @@ export interface ThanosIngestStats {
 }
 
 const PEPTIDE_QUERIES = [
-  'BPC-157 peptide clinical review',
-  'Epitalon bioregulator research',
-  'elamipretide SS-31 mitochondrial peptide',
-  'Thymosin alpha-1 immune peptide',
+  'BPC-157 peptide site:pubmed.ncbi.nlm.nih.gov',
+  'Epitalon OR Epithalon site:pubmed.ncbi.nlm.nih.gov',
+  'elamipretide OR SS-31 site:nih.gov',
+  'Thymosin alpha-1 site:fda.gov OR site:clinicaltrials.gov',
 ];
 
 export async function runThanosDailyIngest(opts?: {
@@ -51,7 +51,11 @@ export async function runThanosDailyIngest(opts?: {
   const allow = await loadApprovedAllowlistDomains();
   const supabase = createAdminClient();
 
-  const stats: ThanosIngestStats = {
+  const stats: ThanosIngestStats & {
+    searchEmpty: number;
+    searchFailed: number;
+    searchFailReasons: string[];
+  } = {
     runId,
     runDate,
     discovered: 0,
@@ -64,13 +68,26 @@ export async function runThanosDailyIngest(opts?: {
     hitBudget: false,
     creditsUsed: 0,
     pagesUsed: 0,
+    searchEmpty: 0,
+    searchFailed: 0,
+    searchFailReasons: [],
   };
 
   for (const q of PEPTIDE_QUERIES) {
     if (budget.hitBudget) break;
 
     const search = await firecrawlSearch(q, budget, 3);
-    if (!search.ok || !search.results?.length) continue;
+    if (!search.ok) {
+      stats.searchFailed += 1;
+      if (search.reason) {
+        stats.searchFailReasons.push(search.reason.slice(0, 80));
+      }
+      continue;
+    }
+    if (!search.results?.length) {
+      stats.searchEmpty += 1;
+      continue;
+    }
 
     for (const hit of search.results) {
       if (budget.hitBudget) break;

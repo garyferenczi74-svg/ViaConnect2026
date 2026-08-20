@@ -383,9 +383,23 @@ export async function firecrawlSearch(
     }
 
     const json = (await res.json()) as {
-      data?: Array<{ url?: string; title?: string; description?: string }>;
+      data?:
+        | Array<{ url?: string; title?: string; description?: string }>
+        // Firecrawl 2026 search groups by source type: data.web / data.news / ...
+        | {
+            web?: Array<{ url?: string; title?: string; description?: string }>;
+            news?: Array<{ url?: string; title?: string; description?: string }>;
+          };
     };
-    const results = (json.data ?? [])
+    const rawList = Array.isArray(json.data)
+      ? json.data
+      : [
+          ...((json.data && 'web' in json.data ? json.data.web : undefined) ??
+            []),
+          ...((json.data && 'news' in json.data ? json.data.news : undefined) ??
+            []),
+        ];
+    const results = rawList
       .filter((r) => typeof r.url === 'string')
       .map((r) => ({
         url: r.url as string,
