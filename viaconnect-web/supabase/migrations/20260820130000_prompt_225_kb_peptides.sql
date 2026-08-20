@@ -12,7 +12,8 @@ ALTER TABLE public.kb_items
   ADD CONSTRAINT kb_items_payload_type_check
   CHECK (payload_type IN (
     'product', 'study', 'association', 'delivery_tech',
-    'genetic_test', 'synthesis', 'education_entry', 'hormone', 'peptide'
+    'genetic_test', 'synthesis', 'education_entry',
+    'hormone', 'competitor_app', 'peptide'
   ));
 
 -- ---------------------------------------------------------------------------
