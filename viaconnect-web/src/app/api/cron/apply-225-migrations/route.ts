@@ -132,6 +132,8 @@ export async function POST(request: Request): Promise<Response> {
       let peptideCount = 0;
       let consumerSafeCount = 0;
       let snpLinkCount = 0;
+      let viaCuraAdjacencyCount = 0;
+      let regulatoryEventCount = 0;
       try {
         const cnt = await sql`SELECT count(*)::int AS n FROM public.kb_peptides`;
         peptideCount = Number(cnt[0]?.n ?? 0);
@@ -142,10 +144,21 @@ export async function POST(request: Request): Promise<Response> {
         consumerSafeCount = Number(cs[0]?.n ?? 0);
         const sn = await sql`SELECT count(*)::int AS n FROM public.kb_peptide_snp_links`;
         snpLinkCount = Number(sn[0]?.n ?? 0);
+        const va = await sql`
+          SELECT count(*)::int AS n FROM public.kb_peptides
+          WHERE via_cura_adjacency IS NOT NULL
+        `;
+        viaCuraAdjacencyCount = Number(va[0]?.n ?? 0);
+        const re = await sql`
+          SELECT count(*)::int AS n FROM public.kb_peptide_regulatory_events
+        `;
+        regulatoryEventCount = Number(re[0]?.n ?? 0);
       } catch {
         peptideCount = 0;
         consumerSafeCount = 0;
         snpLinkCount = 0;
+        viaCuraAdjacencyCount = 0;
+        regulatoryEventCount = 0;
       }
 
       const ok =
@@ -165,6 +178,8 @@ export async function POST(request: Request): Promise<Response> {
           peptideCount,
           consumerSafeCount,
           snpLinkCount,
+          viaCuraAdjacencyCount,
+          regulatoryEventCount,
         },
         { status: 200 },
       );

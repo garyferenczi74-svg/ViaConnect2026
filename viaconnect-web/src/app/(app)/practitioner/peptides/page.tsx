@@ -106,6 +106,20 @@ export default async function PractitionerPeptideDepthPage() {
                 <p className="text-[10px] text-white/35 mt-2">
                   Marshall: {e.marshallStatus} · Lex: {e.lexStatus} · WADA field: {e.wadaStatus}
                 </p>
+                {e.viaCuraAdjacency && Array.isArray(e.viaCuraAdjacency.supports) ? (
+                  <div
+                    data-testid={`via-cura-adjacency-${e.slug}`}
+                    className="mt-3 rounded-lg border border-[rgba(45,165,160,0.25)] bg-[rgba(45,165,160,0.08)] p-2.5"
+                  >
+                    <p className="text-[10px] font-semibold text-[#2DA5A0] uppercase tracking-wide">
+                      Related nutritional support
+                    </p>
+                    <p className="text-[11px] text-white/60 mt-1 leading-relaxed">
+                      {(e.viaCuraAdjacency.supports as string[]).join(', ')}. Not an equivalent,
+                      substitute, or alternative to any peptide.
+                    </p>
+                  </div>
+                ) : null}
               </article>
             ))}
           </div>

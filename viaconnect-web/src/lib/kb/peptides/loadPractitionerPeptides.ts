@@ -16,6 +16,7 @@ export interface PractitionerPeptideEntry extends EducationPeptide {
   marshallStatus: string;
   lexStatus: string;
   isExcludedDecline: boolean;
+  viaCuraAdjacency: Record<string, unknown> | null;
 }
 
 function mapRow(row: Record<string, unknown>): PractitionerPeptideEntry {
@@ -43,6 +44,10 @@ function mapRow(row: Record<string, unknown>): PractitionerPeptideEntry {
     marshallStatus: String(row.marshall_status ?? 'pending'),
     lexStatus: String(row.lex_status ?? 'not_required'),
     isExcludedDecline: isExcluded,
+    viaCuraAdjacency:
+      row.via_cura_adjacency && typeof row.via_cura_adjacency === 'object'
+        ? (row.via_cura_adjacency as Record<string, unknown>)
+        : null,
   };
 }
 
@@ -56,7 +61,7 @@ export async function loadPractitionerPeptideCatalog(limit = 200): Promise<{
     const { data, error } = await admin
       .from('kb_peptides')
       .select(
-        'slug, display_name, canonical_name, molecular_class, is_peptide, category, mechanism_summary, mechanism_detail, evidence_summary, evidence_grade_overall, exclusion_tier, exclusion_reason, misconception_notes, sourcing_risk_notes, wada_status, human_data_exists, marshall_status, lex_status',
+        'slug, display_name, canonical_name, molecular_class, is_peptide, category, mechanism_summary, mechanism_detail, evidence_summary, evidence_grade_overall, exclusion_tier, exclusion_reason, misconception_notes, sourcing_risk_notes, wada_status, human_data_exists, marshall_status, lex_status, via_cura_adjacency',
       )
       .order('display_name', { ascending: true })
       .limit(limit);
