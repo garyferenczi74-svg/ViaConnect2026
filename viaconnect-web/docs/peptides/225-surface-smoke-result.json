@@ -1,0 +1,107 @@
+{
+  "at": "2026-08-20T19:13:18.047Z",
+  "base": "https://www.viaconnectapp.com",
+  "checks": [
+    {
+      "path": "/peptide-protocol",
+      "status": 200,
+      "finalUrl": "https://www.viaconnectapp.com/login?redirectTo=%2Fpeptide-protocol",
+      "title": "Sign In | ViaConnect GeneX360",
+      "isLoginGate": true,
+      "redirectedFromShop": false,
+      "bodyLen": 277,
+      "hasWada": false,
+      "hasEducational": false,
+      "hasViaCura": false,
+      "doseHits": [],
+      "commerceHrefs": [],
+      "sampleText": "ViaConnect Sign in to your account Email Password Forgot password? Remember me Sign In Or continue with Google Apple Don't have an account? Sign up ViaConnect Farmceutica Wellness LLC. All rights reserved 2026. info@farmceuticawellness.com Privacy Policy Terms of Service"
+    },
+    {
+      "path": "/shop/peptides",
+      "status": 200,
+      "finalUrl": "https://www.viaconnectapp.com/login?redirectTo=%2Fpeptide-protocol",
+      "title": "Sign In | ViaConnect GeneX360",
+      "isLoginGate": true,
+      "redirectedFromShop": true,
+      "bodyLen": 277,
+      "hasWada": false,
+      "hasEducational": false,
+      "hasViaCura": false,
+      "doseHits": [],
+      "commerceHrefs": [],
+      "sampleText": "ViaConnect Sign in to your account Email Password Forgot password? Remember me Sign In Or continue with Google Apple Don't have an account? Sign up ViaConnect Farmceutica Wellness LLC. All rights reserved 2026. info@farmceuticawellness.com Privacy Policy Terms of Service"
+    },
+    {
+      "path": "/shop/peptides/epitalon",
+      "status": 200,
+      "finalUrl": "https://www.viaconnectapp.com/login?redirectTo=%2Fpeptide-protocol",
+      "title": "Sign In | ViaConnect GeneX360",
+      "isLoginGate": true,
+      "redirectedFromShop": true,
+      "bodyLen": 277,
+      "hasWada": false,
+      "hasEducational": false,
+      "hasViaCura": false,
+      "doseHits": [],
+      "commerceHrefs": [],
+      "sampleText": "ViaConnect Sign in to your account Email Password Forgot password? Remember me Sign In Or continue with Google Apple Don't have an account? Sign up ViaConnect Farmceutica Wellness LLC. All rights reserved 2026. info@farmceuticawellness.com Privacy Policy Terms of Service"
+    },
+    {
+      "path": "/practitioner/peptides",
+      "status": 200,
+      "finalUrl": "https://www.viaconnectapp.com/login?redirectTo=%2Fpractitioner%2Fpeptides",
+      "title": "Sign In | ViaConnect GeneX360",
+      "isLoginGate": true,
+      "redirectedFromShop": false,
+      "bodyLen": 277,
+      "hasWada": false,
+      "hasEducational": false,
+      "hasViaCura": false,
+      "doseHits": [],
+      "commerceHrefs": [],
+      "sampleText": "ViaConnect Sign in to your account Email Password Forgot password? Remember me Sign In Or continue with Google Apple Don't have an account? Sign up ViaConnect Farmceutica Wellness LLC. All rights reserved 2026. info@farmceuticawellness.com Privacy Policy Terms of Service"
+    },
+    {
+      "path": "/peptide-protocol",
+      "status": 200,
+      "finalUrl": "https://www.viaconnectapp.com/login?redirectTo=%2Fpeptide-protocol",
+      "title": "Sign In | ViaConnect GeneX360",
+      "isLoginGate": true,
+      "redirectedFromShop": false,
+      "bodyLen": 277,
+      "hasWada": false,
+      "hasEducational": false,
+      "hasViaCura": false,
+      "doseHits": [],
+      "commerceHrefs": [],
+      "sampleText": "ViaConnect Sign in to your account Email Password Forgot password? Remember me Sign In Or continue with Google Apple Don't have an account? Sign up ViaConnect Farmceutica Wellness LLC. All rights reserved 2026. info@farmceuticawellness.com Privacy Policy Terms of Service",
+      "viewport": "mobile"
+    }
+  ],
+  "screenshots": [
+    {
+      "name": "peptide-protocol-desktop-1280",
+      "path": "docs/peptides/225-surface-evidence/peptide-protocol-desktop-1280.png"
+    },
+    {
+      "name": "peptide-protocol-mobile-390",
+      "path": "docs/peptides/225-surface-evidence/peptide-protocol-mobile-390.png"
+    },
+    {
+      "name": "practitioner-peptides-auth-gate",
+      "path": "docs/peptides/225-surface-evidence/practitioner-peptides-auth-gate.png"
+    }
+  ],
+  "ok": true,
+  "assertions": {
+    "shopRedirectOk": true,
+    "shopSlugRedirectOk": true,
+    "protocolAuthGated": true,
+    "noDoseLeak": true,
+    "noCommerceLeak": true,
+    "practitionerGated": true,
+    "screenshotsCaptured": true
+  },
+  "note": "Authenticated catalog/WADA chip render requires a logged-in session; see prove-225-surfaces cron for DB chip candidates."
+}
