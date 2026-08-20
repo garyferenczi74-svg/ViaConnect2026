@@ -31,6 +31,10 @@ export interface ThanosIngestStats {
   hitBudget: boolean;
   creditsUsed: number;
   pagesUsed: number;
+  searchEmpty?: number;
+  searchFailed?: number;
+  searchFailReasons?: string[];
+  stageErrors?: string[];
 }
 
 const PEPTIDE_QUERIES = [
@@ -51,11 +55,7 @@ export async function runThanosDailyIngest(opts?: {
   const allow = await loadApprovedAllowlistDomains();
   const supabase = createAdminClient();
 
-  const stats: ThanosIngestStats & {
-    searchEmpty: number;
-    searchFailed: number;
-    searchFailReasons: string[];
-  } = {
+  const stats: ThanosIngestStats = {
     runId,
     runDate,
     discovered: 0,
@@ -71,6 +71,7 @@ export async function runThanosDailyIngest(opts?: {
     searchEmpty: 0,
     searchFailed: 0,
     searchFailReasons: [],
+    stageErrors: [],
   };
 
   for (const q of PEPTIDE_QUERIES) {
@@ -136,6 +137,8 @@ export async function runThanosDailyIngest(opts?: {
         stats.gateApproved += 1;
       }
 
+      // Match competitive ingest: conflict target is source_url (table unique).
+      // content_hash upsert fails against the source_url unique when hashes drift.
       const { error } = await supabase.from('hounddog_staging_items').upsert(
         {
           external_id: `thanos:${hash.slice(0, 32)}`,
@@ -149,14 +152,12 @@ export async function runThanosDailyIngest(opts?: {
           relevance_score: 0.8,
           gate_status: gate.verdict === 'escalated' ? 'escalated' : 'pending',
           gate_checked_at: new Date().toISOString(),
-          gate_agent: 'hounddog',
-          gate_notes:
-            gate.verdict === 'escalated'
-              ? 'Thanos peptide staging escalated for Lex/Marshall visibility'
-              : 'Thanos peptide staging pending Marshall promotion',
+          gate_agent: gate.agent,
+          gate_notes: gate.notes.slice(0, 500),
           full_text_excerpt: excerpt.slice(0, 2000),
+          retrieved_at: new Date().toISOString(),
         },
-        { onConflict: 'content_hash' },
+        { onConflict: 'source_url' },
       );
 
       if (!error) {
@@ -180,6 +181,17 @@ export async function runThanosDailyIngest(opts?: {
             .eq('entry_key', entryKey);
           if (!upErr) stats.refreshed += 1;
         }
+      } else {
+        stats.stageErrors = stats.stageErrors ?? [];
+        if (stats.stageErrors.length < 8) {
+          stats.stageErrors.push(
+            `${error.code ?? 'err'}:${error.message.slice(0, 160)}`,
+          );
+        }
+        safeLog.warn('thanos.ingest', 'stage upsert failed', {
+          code: error.code,
+          message: error.message.slice(0, 200),
+        });
       }
     }
   }

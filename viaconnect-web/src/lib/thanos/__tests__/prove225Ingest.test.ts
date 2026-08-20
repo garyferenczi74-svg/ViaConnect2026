@@ -27,6 +27,7 @@ describe('Prompt 225 Thanos live ingest proof cron', () => {
     );
     expect(src).toContain("from('hounddog_staging_items')");
     expect(src).toContain('gate_status');
+    expect(src).toContain("onConflict: 'source_url'");
     expect(src).not.toMatch(/\bstatus:\s*gate\.verdict/);
     expect(src).not.toMatch(/consumer_safe\s*:\s*true/);
     expect(src).not.toMatch(/marshall_status\s*:\s*'approved'/);
