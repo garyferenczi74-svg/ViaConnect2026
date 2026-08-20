@@ -112,3 +112,21 @@ Committed snapshot path:
 `data/snapshots/peptides-225-2026-08-20T06-22-31-433Z.json`
 
 Every prior compound carried forward must map to this snapshot in the Phase 9 parity log.
+
+## Wave 1 and Wave 2 apply proof (production)
+
+Applied via `POST /api/cron/apply-225-migrations` on 2026-08-20 against production Postgres.
+
+Artifact: `tmp/apply-225-result.json`
+
+| Check | Result |
+| --- | --- |
+| Schema migration | ok |
+| KEEP seed migration | ok |
+| Tables present | kb_peptides, kb_peptide_synonyms, kb_peptide_stacks, kb_peptide_snp_links, kb_peptide_regulatory_events |
+| Dose CHECK rejects `{"dose":"1mg"}` | true (`kb_peptides_practitioner_depth_no_dose`) |
+| `kb_peptides` row count | 55 (49 unique static KEEP + 6 education seeds) |
+| Collection | peptide_education / thanos / lex_lane / planned |
+| consumer_safe | all false until Marshall |
+
+Parity log: `docs/peptides/225-parity-log-wave2.json`
