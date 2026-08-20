@@ -1,0 +1,499 @@
+{
+  "prompt": "225",
+  "wave": 2,
+  "snapshot": "peptides-225-2026-08-20T06-22-31-433Z.json",
+  "generated_at": "2026-08-20T06:35:39.046Z",
+  "keep_static_count": 49,
+  "edu_seed_count": 6,
+  "mappings": [
+    {
+      "source": "static_registry",
+      "source_id": "epitalon",
+      "target_slug": "epitalon",
+      "display_name": "Epitalon™",
+      "molecular_class": "peptide",
+      "is_peptide": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "vesugen",
+      "target_slug": "vesugen",
+      "display_name": "Vesugen™",
+      "molecular_class": "peptide",
+      "is_peptide": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "bronchogen",
+      "target_slug": "bronchogen",
+      "display_name": "Bronchogen™",
+      "molecular_class": "peptide",
+      "is_peptide": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "adrenopeptide",
+      "target_slug": "adrenopeptide",
+      "display_name": "AdrenoPeptide™",
+      "molecular_class": "peptide",
+      "is_peptide": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "hpa-balance",
+      "target_slug": "hpa-balance",
+      "display_name": "HPA-Balance™",
+      "molecular_class": "peptide",
+      "is_peptide": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "stressshield",
+      "target_slug": "stressshield",
+      "display_name": "StressShield™",
+      "molecular_class": "peptide",
+      "is_peptide": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "recoverypulse",
+      "target_slug": "recoverypulse",
+      "display_name": "RecoveryPulse™",
+      "molecular_class": "peptide",
+      "is_peptide": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "mitopeptide",
+      "target_slug": "mitopeptide",
+      "display_name": "MitoPeptide™",
+      "molecular_class": "peptide",
+      "is_peptide": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "energycore",
+      "target_slug": "energycore",
+      "display_name": "EnergyCore™",
+      "molecular_class": "peptide_analog",
+      "is_peptide": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "coq10-peptide",
+      "target_slug": "coq10-peptide",
+      "display_name": "CoQ10-Peptide™",
+      "molecular_class": "cofactor",
+      "is_peptide": false,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "atp-regen",
+      "target_slug": "atp-regen",
+      "display_name": "ATP-Regen™",
+      "molecular_class": "peptide",
+      "is_peptide": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "slu-pp-332",
+      "target_slug": "slu-pp-332",
+      "display_name": "SLU-PP-332",
+      "molecular_class": "small_molecule",
+      "is_peptide": false,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "immuneguard",
+      "target_slug": "immuneguard",
+      "display_name": "ImmuneGuard™",
+      "molecular_class": "peptide",
+      "is_peptide": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "regenbpc",
+      "target_slug": "regenbpc",
+      "display_name": "RegenBPC™",
+      "molecular_class": "peptide",
+      "is_peptide": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "tb500-oral",
+      "target_slug": "tb500-oral",
+      "display_name": "TB-500 Oral™",
+      "molecular_class": "peptide_fragment",
+      "is_peptide": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "antiinflam",
+      "target_slug": "antiinflam",
+      "display_name": "AntiInflam™",
+      "molecular_class": "peptide",
+      "is_peptide": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "vilon",
+      "target_slug": "vilon",
+      "display_name": "Vilon™",
+      "molecular_class": "peptide",
+      "is_peptide": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "pinealon",
+      "target_slug": "pinealon",
+      "display_name": "Pinealon™",
+      "molecular_class": "peptide",
+      "is_peptide": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "neuroshield",
+      "target_slug": "neuroshield",
+      "display_name": "NeuroShield™",
+      "molecular_class": "peptide",
+      "is_peptide": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "cerebropeptide",
+      "target_slug": "cerebropeptide",
+      "display_name": "CerebroPeptide™",
+      "molecular_class": "peptide",
+      "is_peptide": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "moodlift",
+      "target_slug": "moodlift",
+      "display_name": "MoodLift™",
+      "molecular_class": "peptide_analog",
+      "is_peptide": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "ovapeptide",
+      "target_slug": "ovapeptide",
+      "display_name": "OvaPeptide™",
+      "molecular_class": "peptide",
+      "is_peptide": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "thyroreg",
+      "target_slug": "thyroreg",
+      "display_name": "ThyroReg™",
+      "molecular_class": "peptide",
+      "is_peptide": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "progestobalance",
+      "target_slug": "progestobalance",
+      "display_name": "ProgestoBalance™",
+      "molecular_class": "peptide",
+      "is_peptide": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "endoharmonize",
+      "target_slug": "endoharmonize",
+      "display_name": "EndoHarmonize™",
+      "molecular_class": "peptide",
+      "is_peptide": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "gutrepair",
+      "target_slug": "gutrepair",
+      "display_name": "GutRepair™",
+      "molecular_class": "peptide",
+      "is_peptide": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "detoxpeptide",
+      "target_slug": "detoxpeptide",
+      "display_name": "DetoxPeptide™",
+      "molecular_class": "peptide",
+      "is_peptide": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "histaminebalance",
+      "target_slug": "histaminebalance",
+      "display_name": "HistamineBalance™",
+      "molecular_class": "peptide",
+      "is_peptide": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "retatrutide",
+      "target_slug": "retatrutide",
+      "display_name": "Retatrutide",
+      "molecular_class": "peptide",
+      "is_peptide": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "sermorelin",
+      "target_slug": "sermorelin",
+      "display_name": "Sermorelin",
+      "molecular_class": "peptide_analog",
+      "is_peptide": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "ppw-pro-pro-trp",
+      "target_slug": "ppw-pro-pro-trp",
+      "display_name": "PPW (Pro-Pro-Trp)",
+      "molecular_class": "peptide_fragment",
+      "is_peptide": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "chonluten",
+      "target_slug": "chonluten",
+      "display_name": "Chonluten",
+      "molecular_class": "peptide",
+      "is_peptide": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "aod-9604",
+      "target_slug": "aod-9604",
+      "display_name": "AOD-9604",
+      "molecular_class": "peptide_fragment",
+      "is_peptide": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "semax",
+      "target_slug": "semax",
+      "display_name": "Semax",
+      "molecular_class": "peptide_analog",
+      "is_peptide": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "selank",
+      "target_slug": "selank",
+      "display_name": "Selank",
+      "molecular_class": "peptide_analog",
+      "is_peptide": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "ghk-cu-injectable",
+      "target_slug": "ghk-cu-injectable",
+      "display_name": "GHK-Cu (Injectable)",
+      "molecular_class": "peptide",
+      "is_peptide": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "ipamorelin-standalone",
+      "target_slug": "ipamorelin-standalone",
+      "display_name": "Ipamorelin",
+      "molecular_class": "peptide",
+      "is_peptide": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "cjc-1295-no-dac",
+      "target_slug": "cjc-1295-no-dac",
+      "display_name": "CJC-1295 (No DAC)",
+      "molecular_class": "peptide_analog",
+      "is_peptide": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "pt-141-bremelanotide",
+      "target_slug": "pt-141-bremelanotide",
+      "display_name": "PT-141 (Bremelanotide)",
+      "molecular_class": "peptide",
+      "is_peptide": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "tesofensine",
+      "target_slug": "tesofensine",
+      "display_name": "Tesofensine",
+      "molecular_class": "small_molecule",
+      "is_peptide": false,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "cerebrolysin",
+      "target_slug": "cerebrolysin",
+      "display_name": "Cerebrolysin",
+      "molecular_class": "biological_mixture",
+      "is_peptide": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "kpv-tripeptide",
+      "target_slug": "kpv-tripeptide",
+      "display_name": "KPV (Tripeptide)",
+      "molecular_class": "peptide_fragment",
+      "is_peptide": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "thymosin-alpha-1",
+      "target_slug": "thymosin-alpha-1",
+      "display_name": "Thymosin Alpha-1 (Tα1)",
+      "molecular_class": "peptide",
+      "is_peptide": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "fr-alpha-binding-peptides",
+      "target_slug": "fr-alpha-binding-peptides",
+      "display_name": "FR-Alpha Binding Peptides",
+      "molecular_class": "peptide",
+      "is_peptide": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "cdk5-blocking-peptides",
+      "target_slug": "cdk5-blocking-peptides",
+      "display_name": "CDK5-Blocking Peptides",
+      "molecular_class": "peptide",
+      "is_peptide": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "dihexa",
+      "target_slug": "dihexa",
+      "display_name": "Dihexa (PNB-0408)",
+      "molecular_class": "peptide_analog",
+      "is_peptide": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "melanotan-2",
+      "target_slug": "melanotan-2",
+      "display_name": "Melanotan-2",
+      "molecular_class": "peptide",
+      "is_peptide": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "5-amino-1mq",
+      "target_slug": "5-amino-1mq",
+      "display_name": "5-Amino-1MQ",
+      "molecular_class": "small_molecule",
+      "is_peptide": false,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "static_registry",
+      "source_id": "mots-c",
+      "target_slug": "mots-c",
+      "display_name": "MOTS-c",
+      "molecular_class": "peptide",
+      "is_peptide": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "peptide_education_entries_seed",
+      "source_id": "edu-bpc157",
+      "target_slug": "edu-bpc157",
+      "display_name": "BPC-157 educational overview",
+      "is_practitioner_depth": false,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "peptide_education_entries_seed",
+      "source_id": "edu-epitalon",
+      "target_slug": "edu-epitalon",
+      "display_name": "Epitalon educational overview",
+      "is_practitioner_depth": false,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "peptide_education_entries_seed",
+      "source_id": "edu-ss31",
+      "target_slug": "edu-ss31",
+      "display_name": "SS-31 / elamipretide educational overview",
+      "is_practitioner_depth": false,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "peptide_education_entries_seed",
+      "source_id": "edu-tesofensine-pause",
+      "target_slug": "edu-tesofensine-pause",
+      "display_name": "Tesofensine regulatory timing note",
+      "is_practitioner_depth": false,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "peptide_education_entries_seed",
+      "source_id": "depth-bpc157-framework",
+      "target_slug": "depth-bpc157-framework",
+      "display_name": "BPC-157 practitioner protocol framework (educational)",
+      "is_practitioner_depth": true,
+      "dose_fields_omitted": true
+    },
+    {
+      "source": "peptide_education_entries_seed",
+      "source_id": "depth-ss31-framework",
+      "target_slug": "depth-ss31-framework",
+      "display_name": "SS-31 / elamipretide practitioner framework (educational)",
+      "is_practitioner_depth": true,
+      "dose_fields_omitted": true
+    }
+  ]
+}
