@@ -1,0 +1,41 @@
+﻿{
+    "ok":  true,
+    "results":  [
+                    {
+                        "file":  "20260820130000_prompt_225_kb_peptides.sql",
+                        "ok":  true
+                    },
+                    {
+                        "file":  "20260820131000_prompt_225_keep_seed.sql",
+                        "ok":  true
+                    },
+                    {
+                        "file":  "20260820132000_prompt_225_new_seed.sql",
+                        "ok":  true
+                    },
+                    {
+                        "file":  "20260820133000_prompt_225_marshall_flagship_consumer_safe.sql",
+                        "ok":  true
+                    },
+                    {
+                        "file":  "20260820134000_prompt_225_snp_link_stubs.sql",
+                        "ok":  true
+                    }
+                ],
+    "tables":  [
+                   "kb_peptide_regulatory_events",
+                   "kb_peptide_snp_links",
+                   "kb_peptide_stacks",
+                   "kb_peptide_synonyms",
+                   "kb_peptides"
+               ],
+    "collection":  {
+                       "slug":  "peptide_education",
+                       "status":  "planned",
+                       "gate_profile":  "lex_lane",
+                       "owning_agent":  "thanos"
+                   },
+    "doseCheckRejectedInsert":  true,
+    "doseCheckErrorSample":  "new row for relation \"kb_peptides\" violates check constraint \"kb_peptides_practitioner_depth_no_dose\"",
+    "peptideCount":  157
+}

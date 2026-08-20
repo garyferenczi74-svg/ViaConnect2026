@@ -130,11 +130,22 @@ export async function POST(request: Request): Promise<Response> {
       await sql`DELETE FROM public.kb_items WHERE title = '225-dose-check-probe'`;
 
       let peptideCount = 0;
+      let consumerSafeCount = 0;
+      let snpLinkCount = 0;
       try {
         const cnt = await sql`SELECT count(*)::int AS n FROM public.kb_peptides`;
         peptideCount = Number(cnt[0]?.n ?? 0);
+        const cs = await sql`
+          SELECT count(*)::int AS n FROM public.kb_peptides
+          WHERE consumer_safe = true AND exclusion_tier = 'educational'
+        `;
+        consumerSafeCount = Number(cs[0]?.n ?? 0);
+        const sn = await sql`SELECT count(*)::int AS n FROM public.kb_peptide_snp_links`;
+        snpLinkCount = Number(sn[0]?.n ?? 0);
       } catch {
         peptideCount = 0;
+        consumerSafeCount = 0;
+        snpLinkCount = 0;
       }
 
       const ok =
@@ -152,6 +163,8 @@ export async function POST(request: Request): Promise<Response> {
           doseCheckRejectedInsert,
           doseCheckErrorSample,
           peptideCount,
+          consumerSafeCount,
+          snpLinkCount,
         },
         { status: 200 },
       );
