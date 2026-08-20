@@ -276,6 +276,35 @@ export async function POST(request: Request): Promise<NextResponse> {
     );
   }
 
+  // Prompt 225: peptide refusal matrix (pre-model, code-enforced).
+  try {
+    const { detectPeptideRefusal } = await import('@/lib/hannah/peptideRefusals');
+    const refusal = detectPeptideRefusal(question.trim());
+    if (refusal) {
+      void captureQuery({
+        userId: user.id,
+        domain: domain,
+        questionText: question.trim(),
+        answerSummary: refusal.answer.slice(0, 500),
+        citedAtomIds: [],
+        coverage: 'partial',
+        tiersUsed: [],
+        gapTopic: 'peptide_education_refusal',
+      }).catch(() => undefined);
+      return NextResponse.json({
+        answer: refusal.answer,
+        coverage: 'partial',
+        emerging: true,
+        refusalCode: refusal.code,
+        educationalOnly: true,
+      });
+    }
+  } catch (err) {
+    safeLog.warn('api.hannah.ask', 'peptide refusal check fail-open', {
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+
   // Retrieve published atoms for the mapped scientific domain.
   // Timeout fails OPEN: on timeout or error, proceed with an empty atom list
   // so the fallback answer is still returned rather than blocking the user.
