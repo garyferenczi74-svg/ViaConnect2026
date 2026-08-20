@@ -4,10 +4,11 @@ Date: 2026-08-12 (spec) / 2026-08-19 (implementation). Surface: FormaVision
 (`/body-tracker/formavision`), `src/app/(app)/(consumer)/body-tracker/formavision/page.tsx`.
 Layout and positioning only. No renderer, data, or behavior changes.
 
-Commit: `4d1dc81c` on `main` (plus follow-up deploy commit). First CLI production
+Commits: `4d1dc81c` (layout) + `a490ac27` (docs) on `main`. First CLI production
 attempt was Vercel `BLOCKED` (commit author email `gary@farmceutica.com` not
-matched to the team collaborator email); redeploy uses the verified GitHub
-author email.
+matched to the team collaborator email); redeploy with verified GitHub author
+email is **Ready** and aliased to `https://www.viaconnectapp.com`
+(deployment `via-connect2026-pewgqw8g7-via-connect.vercel.app`).
 
 ## Defect (before)
 
