@@ -1,30 +1,15 @@
 /**
- * Prompt 214d Gap 5: practitioner-only peptide depth UI.
- * Full protocol frameworks, evidence grading, provenance, last-verified.
- * Consumer sessions must never receive this depth (route + RLS).
+ * Prompt 225: practitioner Collection 14 depth UI.
+ * Server role gate. No dose, reconstitution, or sourcing instruction fields.
  */
 
 import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
-import { FlaskConical, ShieldCheck, ExternalLink, Clock } from 'lucide-react';
 import Link from 'next/link';
+import { FlaskConical, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { createClient } from '@/lib/supabase/server';
+import { loadPractitionerPeptideCatalog } from '@/lib/kb/peptides/loadPractitionerPeptides';
 
 export const dynamic = 'force-dynamic';
-
-interface DepthEntry {
-  entry_key: string;
-  title: string;
-  summary: string;
-  mechanism: string | null;
-  evidence_grade: string;
-  regulatory_status: string | null;
-  safety_context: string | null;
-  provenance: unknown;
-  source_url: string | null;
-  last_verified_at: string;
-  is_practitioner_depth: boolean;
-  is_active: boolean;
-}
 
 export default async function PractitionerPeptideDepthPage() {
   const supabase = await createClient();
@@ -33,7 +18,6 @@ export default async function PractitionerPeptideDepthPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  // Practitioner role gate (fail-closed to dashboard if not practitioner)
   const { data: profile } = await supabase
     .from('profiles')
     .select('role, user_type, is_practitioner')
@@ -55,27 +39,10 @@ export default async function PractitionerPeptideDepthPage() {
     redirect('/peptide-protocol');
   }
 
-  // Prefer practitioner-depth entries; fall back to all active educational rows
-  // (depth flag rows require service role; admin client not required for approved edu)
-  let entries: DepthEntry[] = [];
-  try {
-    const { createAdminClient } = await import('@/lib/supabase/admin');
-    const admin = createAdminClient();
-    const { data } = await admin
-      .from('peptide_education_entries')
-      .select(
-        'entry_key, title, summary, mechanism, evidence_grade, regulatory_status, safety_context, provenance, source_url, last_verified_at, is_practitioner_depth, is_active',
-      )
-      .eq('is_active', true)
-      .order('last_verified_at', { ascending: false })
-      .limit(40);
-    entries = (Array.isArray(data) ? data : []) as DepthEntry[];
-  } catch {
-    entries = [];
-  }
-
-  const depth = entries.filter((e) => e.is_practitioner_depth);
-  const educational = entries.filter((e) => !e.is_practitioner_depth);
+  const catalog = await loadPractitionerPeptideCatalog(250);
+  const educational = catalog.entries.filter((e) => e.exclusionTier === 'educational');
+  const restricted = catalog.entries.filter((e) => e.exclusionTier === 'restricted');
+  const excluded = catalog.entries.filter((e) => e.isExcludedDecline);
 
   return (
     <div className="min-h-screen bg-[#1A2744] text-white p-4 md:p-8">
@@ -90,122 +57,112 @@ export default async function PractitionerPeptideDepthPage() {
                 Peptide Protocol Depth
               </h1>
               <p className="text-xs text-white/45">
-                Practitioner educational frameworks only. Not a consumer product catalog.
+                Collection 14 practitioner educational frameworks. Not a product catalog. No dosing.
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2 text-[11px] text-white/50">
             <ShieldCheck className="w-3.5 h-3.5 text-[#2DA5A0]" strokeWidth={1.5} />
-            Marshall-gated content
+            Marshall-gated · Lex lane
           </div>
         </header>
 
-        <section className="rounded-2xl border border-[#B75E18]/25 bg-[#1E3054]/60 p-4 text-xs text-white/60 leading-relaxed">
-          Prescriptive protocol depth is confined to practitioner contexts. Discuss with
-          patients as educational material. Tesofensine remains a regulatory-timing pause.
-          No purchase paths.
-        </section>
+        {!catalog.ok ? (
+          <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
+            Catalog unavailable. Fail-closed. Retry shortly.
+          </div>
+        ) : null}
 
-        {depth.length === 0 && educational.length === 0 && (
-          <p className="text-sm text-white/50">
-            No peptide education entries loaded yet. Apply 214c migration and run Thanos
-            ingest.
-          </p>
-        )}
-
-        {depth.length > 0 && (
-          <section className="space-y-3">
-            <h2 className="text-sm font-semibold text-[#2DA5A0]">Practitioner depth</h2>
-            {depth.map((e) => (
-              <DepthCard key={e.entry_key} entry={e} gateLabel="depth" />
-            ))}
-          </section>
-        )}
+        <p className="text-xs text-white/55 leading-relaxed rounded-xl border border-white/10 bg-[#1E3054]/40 p-3">
+          Practitioner depth means clinical context, monitoring considerations, contraindication
+          classes, interaction classes, evidence appraisal, and regulatory posture. It does not
+          include dose, route instruction, reconstitution, injection technique, cycle length, or
+          sourcing information.
+        </p>
 
         <section className="space-y-3">
-          <h2 className="text-sm font-semibold text-white/70">
-            Educational catalog (shared with consumer layer)
+          <h2 className="text-sm font-semibold text-white">
+            Educational monographs ({educational.length})
           </h2>
-          {educational.map((e) => (
-            <DepthCard key={e.entry_key} entry={e} gateLabel="reviewed" />
-          ))}
+          <div className="space-y-2">
+            {educational.slice(0, 80).map((e) => (
+              <article
+                key={e.slug}
+                data-testid={`practitioner-peptide-${e.slug}`}
+                className="rounded-xl border border-white/10 bg-[#1E3054]/50 p-4"
+              >
+                <div className="flex flex-wrap items-center gap-2 justify-between">
+                  <h3 className="text-sm font-medium text-white">{e.displayName}</h3>
+                  <span className="text-[10px] text-[#2DA5A0]">Grade {e.evidenceGrade}</span>
+                </div>
+                <p className="text-[11px] text-white/45 mt-0.5">
+                  {e.category} · {e.molecularClass.replace(/_/g, ' ')}
+                  {!e.isPeptide ? ' · not a peptide' : ''}
+                </p>
+                <p className="text-xs text-white/65 mt-2 leading-relaxed">{e.mechanismSummary}</p>
+                {e.evidenceSummary ? (
+                  <p className="text-[11px] text-white/45 mt-2 leading-relaxed">{e.evidenceSummary}</p>
+                ) : null}
+                <p className="text-[10px] text-white/35 mt-2">
+                  Marshall: {e.marshallStatus} · Lex: {e.lexStatus} · WADA field: {e.wadaStatus}
+                </p>
+              </article>
+            ))}
+          </div>
         </section>
 
-        <p className="text-[11px] text-white/35">
-          Consumer patients see educational summaries only at{' '}
-          <Link href="/peptide-protocol" className="text-[#2DA5A0] underline">
-            Peptide Education
-          </Link>
-          .
-        </p>
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold text-white">
+            Restricted (practitioner only) ({restricted.length})
+          </h2>
+          <div className="space-y-2">
+            {restricted.map((e) => (
+              <article
+                key={e.slug}
+                className="rounded-xl border border-[rgba(217,119,6,0.35)] bg-[rgba(217,119,6,0.08)] p-4"
+              >
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-[#F59E0B] mt-0.5 shrink-0" strokeWidth={1.5} />
+                  <div>
+                    <h3 className="text-sm font-medium text-white">{e.displayName}</h3>
+                    <p className="text-xs text-white/65 mt-1 leading-relaxed">{e.mechanismSummary}</p>
+                    {e.exclusionReason ? (
+                      <p className="text-[11px] text-[#FBBF24] mt-2">{e.exclusionReason}</p>
+                    ) : null}
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold text-white">
+            Excluded adverse references ({excluded.length})
+          </h2>
+          <div className="space-y-2">
+            {excluded.map((e) => (
+              <article
+                key={e.slug}
+                className="rounded-xl border border-red-500/30 bg-red-500/10 p-4"
+              >
+                <h3 className="text-sm font-medium text-white">{e.displayName}</h3>
+                <p className="text-xs text-red-200/80 mt-1 leading-relaxed">
+                  {e.exclusionReason ||
+                    'Excluded adverse reference. No monograph body. Redirect patients to licensed clinical care.'}
+                </p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <Link
+          href="/peptide-protocol"
+          className="inline-flex text-xs text-[#2DA5A0] hover:underline"
+        >
+          Back to consumer Peptide Education
+        </Link>
       </div>
     </div>
-  );
-}
-
-function DepthCard({
-  entry,
-  gateLabel,
-}: {
-  entry: DepthEntry;
-  gateLabel: string;
-}) {
-  const verified = entry.last_verified_at
-    ? new Date(entry.last_verified_at).toLocaleString()
-    : 'UNKNOWN';
-
-  return (
-    <article className="rounded-2xl border border-white/[0.08] bg-[#1E3054] p-4 md:p-5 space-y-3">
-      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-2">
-        <div className="min-w-0">
-          <h3 className="text-sm font-semibold text-white">{entry.title}</h3>
-          <p className="text-[11px] text-white/40 font-mono mt-0.5">{entry.entry_key}</p>
-        </div>
-        <div className="flex flex-wrap gap-2 text-[10px]">
-          <span className="rounded-full border border-[#2DA5A0]/30 px-2 py-1 text-[#2DA5A0]">
-            grade: {entry.evidence_grade}
-          </span>
-          <span className="rounded-full border border-white/15 px-2 py-1 text-white/50">
-            gate: {gateLabel}
-          </span>
-        </div>
-      </div>
-      <p className="text-xs text-white/65 leading-relaxed">{entry.summary}</p>
-      {entry.mechanism && (
-        <div>
-          <p className="text-[10px] uppercase tracking-wide text-white/35 mb-1">Mechanism</p>
-          <p className="text-xs text-white/55">{entry.mechanism}</p>
-        </div>
-      )}
-      {entry.safety_context && (
-        <div>
-          <p className="text-[10px] uppercase tracking-wide text-white/35 mb-1">Safety context</p>
-          <p className="text-xs text-white/55">{entry.safety_context}</p>
-        </div>
-      )}
-      {entry.regulatory_status && (
-        <div>
-          <p className="text-[10px] uppercase tracking-wide text-white/35 mb-1">Regulatory</p>
-          <p className="text-xs text-white/55">{entry.regulatory_status}</p>
-        </div>
-      )}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-[11px] text-white/40 pt-1 border-t border-white/[0.06]">
-        <span className="inline-flex items-center gap-1">
-          <Clock className="w-3.5 h-3.5" strokeWidth={1.5} />
-          Last verified: {verified}
-        </span>
-        {entry.source_url && (
-          <a
-            href={entry.source_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-[#2DA5A0] min-h-[36px]"
-          >
-            <ExternalLink className="w-3.5 h-3.5" strokeWidth={1.5} />
-            Provenance source
-          </a>
-        )}
-      </div>
-    </article>
   );
 }

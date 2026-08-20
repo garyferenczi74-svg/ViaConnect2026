@@ -1,107 +1,38 @@
-"use client";
+import { PeptideDisclaimerBanner } from '@/components/peptide-protocol/PeptideDisclaimerBanner';
+import { PersonalizedPeptideStack } from '@/components/peptide-protocol/PersonalizedPeptideStack';
+import { KbPeptideCatalogSection } from '@/components/peptide-protocol/KbPeptideCatalogSection';
+import { PeptidePractitionerAccess } from '@/components/peptide-protocol/PeptidePractitionerAccess';
+import { PeptideProtocolHeroShell } from '@/components/peptide-protocol/PeptideProtocolHeroShell';
+import { loadConsumerPeptideCatalog } from '@/lib/kb/peptides/loadConsumerPeptides';
 
-import { useEffect, useState } from "react";
-import { FlaskConical } from "lucide-react";
-import { PeptideDisclaimerBanner } from "@/components/peptide-protocol/PeptideDisclaimerBanner";
-import { PersonalizedPeptideStack } from "@/components/peptide-protocol/PersonalizedPeptideStack";
-import { PeptideCatalogSection } from "@/components/peptide-protocol/PeptideCatalogSection";
-import { PeptidePractitionerAccess } from "@/components/peptide-protocol/PeptidePractitionerAccess";
-import { ShareProtocolButton } from "@/components/consumer/ShareProtocolButton";
+export const dynamic = 'force-dynamic';
 
-const PEPTIDE_HERO_DESKTOP =
-  "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Athlete%2032.png";
-const PEPTIDE_HERO_MOBILE =
-  "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Mobile%20Hero/Athlete%2011%20mobile.png";
-
-export default function PeptideProtocolRoute() {
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const update = () => setIsMobile(window.innerWidth < 768);
-    update();
-    window.addEventListener('resize', update);
-    return () => window.removeEventListener('resize', update);
-  }, []);
-
-  const heroSrc = isMobile ? PEPTIDE_HERO_MOBILE : PEPTIDE_HERO_DESKTOP;
+export default async function PeptideProtocolRoute() {
+  const catalog = await loadConsumerPeptideCatalog();
 
   return (
-    <>
-      {/* HERO - fixed behind the content. Uses z-0 (not -z-10) so it
-          paints above the body's navy background but below the
-          content wrapper (z-10). */}
+    <PeptideProtocolHeroShell>
+      <PeptideDisclaimerBanner />
+      <PersonalizedPeptideStack />
+      <KbPeptideCatalogSection
+        categories={catalog.categories}
+        total={catalog.total}
+        marshallPending={catalog.marshallPending}
+      />
+      <PeptidePractitionerAccess />
+
       <div
-        className="fixed inset-0 z-0 overflow-hidden pointer-events-none"
-        style={{ width: '100vw', height: '100vh', top: 0, left: 0 }}
+        data-testid="discuss-with-practitioner-pathway"
+        className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/50 p-4"
       >
-        <img
-          src={heroSrc}
-          alt="Peptide Protocol background"
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            objectPosition: 'center 20%',
-            filter: 'blur(2px)',
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.40)',
-          }}
-        />
+        <p className="text-sm font-medium text-white">Discuss with your practitioner</p>
+        <p className="text-xs text-white/50 mt-1 leading-relaxed">
+          Educational peptide material only. Clinical context, monitoring considerations, and
+          contraindication classes are available to authenticated practitioners. Ask your
+          qualified practitioner to review frameworks with you. No dosing, reconstitution, or
+          sourcing guidance is provided on ViaConnect.
+        </p>
       </div>
-
-      {/* CONTENT - scrolls over hero */}
-      <div className="relative z-10 text-white">
-        {/* Mobile only: 80px hero peek above the content panel.
-            Desktop: content flush below the nav bar (Prompt #81). */}
-        <div className="h-[80px] md:hidden" />
-
-        {/* Content sits on top of the fixed hero - no solid panel so the
-            translucent glass containers let the hero show through. */}
-        <div className="min-h-screen rounded-t-3xl py-8">
-          <div className="mx-auto max-w-7xl space-y-5 px-4 md:px-6">
-
-            {/* Page header */}
-            <div className="flex items-center justify-between gap-3 pb-2">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#1A2744] to-[#2DA5A0] border border-[rgba(255,255,255,0.12)] flex items-center justify-center shrink-0">
-                  <FlaskConical className="w-[18px] h-[18px] text-white" strokeWidth={1.5} />
-                </div>
-                <div className="min-w-0">
-                  <h1 className="text-lg font-semibold text-white truncate">Peptide Education</h1>
-                  <p className="text-xs text-[rgba(255,255,255,0.45)] truncate">
-                    Personalized peptide stack · Powered by Hannah
-                  </p>
-                </div>
-              </div>
-              <ShareProtocolButton compact label="Share" className="shrink-0" />
-            </div>
-
-            <PeptideDisclaimerBanner />
-            <PersonalizedPeptideStack />
-            <PeptideCatalogSection />
-            <PeptidePractitionerAccess />
-
-            {/* Prompt 214d Gap 5: pathway only (no depth content leakage) */}
-            <div
-              data-testid="discuss-with-practitioner-pathway"
-              className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/50 p-4"
-            >
-              <p className="text-sm font-medium text-white">Discuss with your practitioner</p>
-              <p className="text-xs text-white/50 mt-1 leading-relaxed">
-                Educational peptide material only. Protocol depth and dosing research context
-                are available to authenticated practitioners. Ask your qualified practitioner
-                to review frameworks with you.
-              </p>
-            </div>
-
-          </div>
-        </div>
-      </div>
-    </>
+    </PeptideProtocolHeroShell>
   );
 }
