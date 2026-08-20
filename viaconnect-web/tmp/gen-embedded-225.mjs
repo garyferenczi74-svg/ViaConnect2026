@@ -17,6 +17,7 @@ const files = [
   "supabase/migrations/20260820137000_prompt_225_jeffery_apply_regulatory_event.sql",
   "supabase/migrations/20260820138000_prompt_225_marshall_consumer_safe_expand.sql",
   "supabase/migrations/20260820139000_prompt_225_flagship_depth_enrichment.sql",
+  "supabase/migrations/20260820140000_prompt_225_hounddog_wada_verify_batch.sql",
 ];
 
 const migrations = files.map((rel) => {

@@ -161,6 +161,33 @@ export async function POST(request: Request): Promise<Response> {
         regulatoryEventCount = 0;
       }
 
+      let wadaProhibitedCount = 0;
+      let jefferyApplyFnCount = 0;
+      let stagedUnappliedCount = 0;
+      try {
+        const wp = await sql`
+          SELECT count(*)::int AS n FROM public.kb_peptides
+          WHERE wada_status = 'prohibited_all_times'
+        `;
+        wadaProhibitedCount = Number(wp[0]?.n ?? 0);
+        const fn = await sql`
+          SELECT count(*)::int AS n FROM pg_proc p
+          JOIN pg_namespace n ON n.oid = p.pronamespace
+          WHERE n.nspname = 'public'
+            AND p.proname = 'apply_kb_peptide_regulatory_event'
+        `;
+        jefferyApplyFnCount = Number(fn[0]?.n ?? 0);
+        const st = await sql`
+          SELECT count(*)::int AS n FROM public.kb_peptide_regulatory_events
+          WHERE applied_at IS NULL
+        `;
+        stagedUnappliedCount = Number(st[0]?.n ?? 0);
+      } catch {
+        wadaProhibitedCount = 0;
+        jefferyApplyFnCount = 0;
+        stagedUnappliedCount = 0;
+      }
+
       const ok =
         results.every((r) => r.ok) &&
         tables.includes("kb_peptides") &&
@@ -180,6 +207,9 @@ export async function POST(request: Request): Promise<Response> {
           snpLinkCount,
           viaCuraAdjacencyCount,
           regulatoryEventCount,
+          wadaProhibitedCount,
+          jefferyApplyFnCount,
+          stagedUnappliedCount,
         },
         { status: 200 },
       );
