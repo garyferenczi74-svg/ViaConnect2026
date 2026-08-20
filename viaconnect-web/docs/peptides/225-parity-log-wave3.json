@@ -1,0 +1,731 @@
+{
+  "prompt": "225",
+  "wave": 3,
+  "generated_at": "2026-08-20T06:48:41.992Z",
+  "new_count": 103,
+  "stack_count": 9,
+  "synonym_count": 17,
+  "mappings": [
+    {
+      "source": "225_new_catalog",
+      "target_slug": "bpc-157-arginate",
+      "display_name": "BPC-157 Arginate",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "thymosin-beta-4",
+      "display_name": "Thymosin Beta-4",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "ac-sdkp",
+      "display_name": "Ac-SDKP",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "ghk-copper-free",
+      "display_name": "GHK (copper-free)",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "zinc-thymulin",
+      "display_name": "Zinc Thymulin",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "ptd-dbm",
+      "display_name": "PTD-DBM",
+      "exclusion_tier": "educational",
+      "is_peptide": false
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "angiotensin-1-7",
+      "display_name": "Angiotensin (1-7)",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "vip",
+      "display_name": "VIP",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "khavinson-bioregulator-family",
+      "display_name": "Khavinson bioregulator family",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "somatropin",
+      "display_name": "Somatropin (rhGH)",
+      "exclusion_tier": "restricted",
+      "is_peptide": false
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "somapacitan",
+      "display_name": "Somapacitan",
+      "exclusion_tier": "restricted",
+      "is_peptide": false
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "lonapegsomatropin",
+      "display_name": "Lonapegsomatropin",
+      "exclusion_tier": "restricted",
+      "is_peptide": false
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "pegvisomant",
+      "display_name": "Pegvisomant",
+      "exclusion_tier": "educational",
+      "is_peptide": false
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "ghrp-1",
+      "display_name": "GHRP-1",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "mk-677",
+      "display_name": "MK-677 (Ibutamoren)",
+      "exclusion_tier": "educational",
+      "is_peptide": false
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "anamorelin",
+      "display_name": "Anamorelin",
+      "exclusion_tier": "educational",
+      "is_peptide": false
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "macimorelin",
+      "display_name": "Macimorelin",
+      "exclusion_tier": "educational",
+      "is_peptide": false
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "tabimorelin",
+      "display_name": "Tabimorelin",
+      "exclusion_tier": "educational",
+      "is_peptide": false
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "igf-1-des",
+      "display_name": "IGF-1 DES(1-3)",
+      "exclusion_tier": "restricted",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "follistatin-315",
+      "display_name": "Follistatin-315",
+      "exclusion_tier": "restricted",
+      "is_peptide": false
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "ace-031",
+      "display_name": "ACE-031 (Ramatercept)",
+      "exclusion_tier": "educational",
+      "is_peptide": false
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "ace-083",
+      "display_name": "ACE-083",
+      "exclusion_tier": "educational",
+      "is_peptide": false
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "apitegromab",
+      "display_name": "Apitegromab",
+      "exclusion_tier": "educational",
+      "is_peptide": false
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "bimagrumab",
+      "display_name": "Bimagrumab",
+      "exclusion_tier": "educational",
+      "is_peptide": false
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "gdf-11",
+      "display_name": "GDF-11",
+      "exclusion_tier": "educational",
+      "is_peptide": false
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "retatrutide",
+      "display_name": "Retatrutide",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "orforglipron",
+      "display_name": "Orforglipron",
+      "exclusion_tier": "educational",
+      "is_peptide": false
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "danuglipron",
+      "display_name": "Danuglipron",
+      "exclusion_tier": "educational",
+      "is_peptide": false
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "liraglutide",
+      "display_name": "Liraglutide",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "dulaglutide",
+      "display_name": "Dulaglutide",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "exenatide",
+      "display_name": "Exenatide",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "lixisenatide",
+      "display_name": "Lixisenatide",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "albiglutide",
+      "display_name": "Albiglutide",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "petrelintide",
+      "display_name": "Petrelintide",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "amycretin",
+      "display_name": "Amycretin",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "pramlintide",
+      "display_name": "Pramlintide",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "efinopegdutide",
+      "display_name": "Efinopegdutide",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "maritide",
+      "display_name": "Maridebart cafraglutide (MariTide)",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "ecnoglutide",
+      "display_name": "Ecnoglutide",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "pegozafermin",
+      "display_name": "Pegozafermin",
+      "exclusion_tier": "educational",
+      "is_peptide": false
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "efruxifermin",
+      "display_name": "Efruxifermin",
+      "exclusion_tier": "educational",
+      "is_peptide": false
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "glucagon",
+      "display_name": "Glucagon",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "humanin",
+      "display_name": "Humanin",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "shlp-2",
+      "display_name": "SHLP-2",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "shlp-6",
+      "display_name": "SHLP-6",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "nmn",
+      "display_name": "NMN",
+      "exclusion_tier": "educational",
+      "is_peptide": false
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "nr",
+      "display_name": "NR",
+      "exclusion_tier": "educational",
+      "is_peptide": false
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "urolithin-a",
+      "display_name": "Urolithin A",
+      "exclusion_tier": "educational",
+      "is_peptide": false
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "epithalamin",
+      "display_name": "Epithalamin",
+      "exclusion_tier": "educational",
+      "is_peptide": false
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "thymalin",
+      "display_name": "Thymalin",
+      "exclusion_tier": "educational",
+      "is_peptide": false
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "klotho",
+      "display_name": "Klotho",
+      "exclusion_tier": "educational",
+      "is_peptide": false
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "carnosine",
+      "display_name": "Carnosine",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "anserine",
+      "display_name": "Anserine",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "rapamycin",
+      "display_name": "Rapamycin (Sirolimus)",
+      "exclusion_tier": "restricted",
+      "is_peptide": false
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "dasatinib",
+      "display_name": "Dasatinib",
+      "exclusion_tier": "educational",
+      "is_peptide": false
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "quercetin",
+      "display_name": "Quercetin",
+      "exclusion_tier": "educational",
+      "is_peptide": false
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "fisetin",
+      "display_name": "Fisetin",
+      "exclusion_tier": "educational",
+      "is_peptide": false
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "spermidine",
+      "display_name": "Spermidine",
+      "exclusion_tier": "educational",
+      "is_peptide": false
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "cycloastragenol",
+      "display_name": "Cycloastragenol",
+      "exclusion_tier": "educational",
+      "is_peptide": false
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "n-acetyl-semax-amidate",
+      "display_name": "N-Acetyl Semax Amidate",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "n-acetyl-selank-amidate",
+      "display_name": "N-Acetyl Selank Amidate",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "cortexin",
+      "display_name": "Cortexin",
+      "exclusion_tier": "educational",
+      "is_peptide": false
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "davunetide",
+      "display_name": "Davunetide (NAP)",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "p21-peptide",
+      "display_name": "P21",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "fgl",
+      "display_name": "FGL / FGLL",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "noopept",
+      "display_name": "Noopept",
+      "exclusion_tier": "educational",
+      "is_peptide": false
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "desmopressin",
+      "display_name": "Desmopressin",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "thymopentin",
+      "display_name": "Thymopentin (TP-5)",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "thymulin",
+      "display_name": "Thymulin",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "thymogen",
+      "display_name": "Thymogen (Glu-Trp)",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "hbd-2",
+      "display_name": "Human beta-defensin 2",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "hbd-3",
+      "display_name": "Human beta-defensin 3",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "melittin",
+      "display_name": "Melittin",
+      "exclusion_tier": "restricted",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "pexiganan",
+      "display_name": "Pexiganan",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "omiganan",
+      "display_name": "Omiganan",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "larazotide",
+      "display_name": "Larazotide Acetate (AT-1001)",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "teduglutide",
+      "display_name": "Teduglutide",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "linaclotide",
+      "display_name": "Linaclotide",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "plecanatide",
+      "display_name": "Plecanatide",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "l-glutamine",
+      "display_name": "L-Glutamine",
+      "exclusion_tier": "educational",
+      "is_peptide": false
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "triptorelin",
+      "display_name": "Triptorelin",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "leuprolide",
+      "display_name": "Leuprolide",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "goserelin",
+      "display_name": "Goserelin",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "cetrorelix",
+      "display_name": "Cetrorelix",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "ganirelix",
+      "display_name": "Ganirelix",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "follitropin",
+      "display_name": "Recombinant FSH (follitropin)",
+      "exclusion_tier": "educational",
+      "is_peptide": false
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "enclomiphene",
+      "display_name": "Enclomiphene",
+      "exclusion_tier": "educational",
+      "is_peptide": false
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "serelaxin",
+      "display_name": "Serelaxin / Relaxin-2",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "aas-sarms-out-of-scope",
+      "display_name": "AAS and SARMs (out of scope)",
+      "exclusion_tier": "excluded_adverse_reference",
+      "is_peptide": false
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "alpha-msh",
+      "display_name": "Alpha-MSH",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "afamelanotide",
+      "display_name": "Melanotan I / Afamelanotide",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "setmelanotide",
+      "display_name": "Setmelanotide",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "argireline",
+      "display_name": "Argireline",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "matrixyl",
+      "display_name": "Matrixyl",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "matrixyl-3000",
+      "display_name": "Matrixyl 3000",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "palmitoyl-tripeptide-5",
+      "display_name": "Palmitoyl Tripeptide-5",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "leuphasyl",
+      "display_name": "Leuphasyl",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "syn-ake",
+      "display_name": "Syn-Ake",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "melitane",
+      "display_name": "Melitane",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "ghk-cu-topical",
+      "display_name": "Copper Tripeptide-1 (topical)",
+      "exclusion_tier": "educational",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "dermorphin",
+      "display_name": "Dermorphin",
+      "exclusion_tier": "excluded_adverse_reference",
+      "is_peptide": true
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "exogenous-insulin-nonclinical",
+      "display_name": "Exogenous insulin (non-clinical use)",
+      "exclusion_tier": "excluded_adverse_reference",
+      "is_peptide": false
+    },
+    {
+      "source": "225_new_catalog",
+      "target_slug": "epo-darbepoetin",
+      "display_name": "EPO and darbepoetin",
+      "exclusion_tier": "excluded_adverse_reference",
+      "is_peptide": false
+    }
+  ]
+}
