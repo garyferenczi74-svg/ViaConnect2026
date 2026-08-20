@@ -26,7 +26,23 @@ export interface PubMedRecord {
 }
 
 function ncbiKey(): string | undefined {
-  return process.env.NCBI_API_KEY?.trim() || undefined;
+  // Vercel historically used NCBI_API_Key; Linux env is case-sensitive.
+  return (
+    process.env.NCBI_API_KEY?.trim() ||
+    process.env.NCBI_API_Key?.trim() ||
+    undefined
+  );
+}
+
+/** NCBI requires tool + email on every E-utilities request. */
+function ncbiCommonParams(): Record<string, string> {
+  const params: Record<string, string> = {
+    tool: process.env.NCBI_TOOL?.trim() || 'viaconnect',
+    email: process.env.NCBI_EMAIL?.trim() || 'garyferenczi74@gmail.com',
+  };
+  const key = ncbiKey();
+  if (key) params.api_key = key;
+  return params;
 }
 
 function throttleMs(): number {
@@ -44,6 +60,7 @@ export async function pubmedEsearch(
   retmax = 10,
 ): Promise<string[]> {
   const params = new URLSearchParams({
+    ...ncbiCommonParams(),
     db: 'pubmed',
     term,
     retmode: 'json',
@@ -53,8 +70,6 @@ export async function pubmedEsearch(
     maxdate: '3000',
     sort: 'pub+date',
   });
-  const key = ncbiKey();
-  if (key) params.set('api_key', key);
 
   const res = await fetch(`${EUTILS}/esearch.fcgi?${params.toString()}`);
   if (!res.ok) {
@@ -70,12 +85,11 @@ export async function pubmedEsummary(pmids: string[]): Promise<
 > {
   if (pmids.length === 0) return [];
   const params = new URLSearchParams({
+    ...ncbiCommonParams(),
     db: 'pubmed',
     id: pmids.join(','),
     retmode: 'json',
   });
-  const key = ncbiKey();
-  if (key) params.set('api_key', key);
 
   await sleep(throttleMs());
   const res = await fetch(`${EUTILS}/esummary.fcgi?${params.toString()}`);
@@ -99,13 +113,12 @@ export async function pubmedEfetchAbstracts(pmids: string[]): Promise<Map<string
   const map = new Map<string, string>();
   if (pmids.length === 0) return map;
   const params = new URLSearchParams({
+    ...ncbiCommonParams(),
     db: 'pubmed',
     id: pmids.join(','),
     retmode: 'xml',
     rettype: 'abstract',
   });
-  const key = ncbiKey();
-  if (key) params.set('api_key', key);
 
   await sleep(throttleMs());
   const res = await fetch(`${EUTILS}/efetch.fcgi?${params.toString()}`);

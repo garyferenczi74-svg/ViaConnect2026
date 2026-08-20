@@ -31,6 +31,14 @@ function normalizeDomain(domain: string): string {
 }
 
 /**
+ * Prompt 225a: hosts that must never be crawled even if a parent domain
+ * (e.g. who.int) is allowlisted. ICTRP Search Portal requires WHO credentials.
+ */
+export const CRAWL_DENY_HOSTS: readonly string[] = [
+  'trialsearch.who.int',
+];
+
+/**
  * True when host is exactly allowlisted or a subdomain of an allowlisted domain.
  */
 export function isHostAllowlisted(host: string, allowDomains: string[]): boolean {
@@ -44,12 +52,29 @@ export function isHostAllowlisted(host: string, allowDomains: string[]): boolean
   return false;
 }
 
+export function isHostDenied(host: string): boolean {
+  const h = normalizeDomain(host);
+  if (!h) return false;
+  for (const d of CRAWL_DENY_HOSTS) {
+    const ad = normalizeDomain(d);
+    if (h === ad || h.endsWith(`.${ad}`)) return true;
+  }
+  return false;
+}
+
 export function assertAllowlistScope(
   url: string,
   allowDomains: string[],
 ): { ok: boolean; host: string; reason?: string } {
   const host = hostFromUrl(url);
   if (!host) return { ok: false, host: '', reason: 'unparseable_url' };
+  if (isHostDenied(host)) {
+    return {
+      ok: false,
+      host,
+      reason: 'deny_list_225a_ictrp_pending_credentials',
+    };
+  }
   if (!isHostAllowlisted(host, allowDomains)) {
     return { ok: false, host, reason: 'outside_allowlist' };
   }
