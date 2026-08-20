@@ -434,8 +434,19 @@ export async function ingestCtgovWave1(opts?: {
     doseLexiconClean,
   });
 
+  const proofOk =
+    Boolean(semaglutideProof.nctId) &&
+    semaglutideProof.afterPassesLexicon === true &&
+    Boolean(semaglutideProof.beforeSample) &&
+    Boolean(semaglutideProof.afterSample) &&
+    semaglutideProof.beforeSample !== semaglutideProof.afterSample;
+
   return {
-    ok: trialsUpserted > 0 && doseLexiconClean && errors.length < 20,
+    // Skipped dose_lexicon_survived rows are fail-closed rejects, not failed writes.
+    ok:
+      trialsUpserted > 0 &&
+      proofOk &&
+      !errors.some((e) => !e.includes('dose_lexicon_survived')),
     compoundsAttempted: WAVE1_COMPOUNDS.length,
     compoundsMatched,
     trialsUpserted,
