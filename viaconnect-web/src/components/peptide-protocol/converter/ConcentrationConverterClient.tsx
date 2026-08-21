@@ -377,21 +377,24 @@ export function ConcentrationConverterClient() {
         ) : null}
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <PeptideCatalogPicker
-          items={compounds}
-          value={peptideId}
-          onChange={setPeptideId}
-          placeholder="Type to search peptides..."
-          testId="converter-compound"
-          glass
-        />
-
-        <div className="text-xs text-white/50 self-end">
-          You enter the dose from your prescription. ViaConnect converts units only.
+      {/*
+        Prompt 226c Reading A: 2x2 field grid.
+        Dose = column 1 row 4 (beneath Vial). Reserved cell empty.
+        Reading B: swap .field--dose / .cell--reserved grid-column in 226c CSS.
+      */}
+      <div className="converter-fields" data-testid="converter-fields">
+        <div className="field--compound">
+          <PeptideCatalogPicker
+            items={compounds}
+            value={peptideId}
+            onChange={setPeptideId}
+            placeholder="Type to search peptides..."
+            testId="converter-compound"
+            glass
+          />
         </div>
 
-        <label className="space-y-1 text-xs text-white/60">
+        <label className="field--vial space-y-1 text-xs text-white/60">
           Vial amount
           <div className="flex gap-2">
             <input
@@ -407,6 +410,7 @@ export function ConcentrationConverterClient() {
               className="pep-glass-input rounded-xl px-2 py-2 text-sm"
               value={vialUnit}
               onChange={(e) => setVialUnit(e.target.value as 'mg' | 'mcg' | 'IU')}
+              data-testid="converter-vial-unit"
             >
               <option value="mg">mg</option>
               <option value="mcg">mcg</option>
@@ -417,7 +421,7 @@ export function ConcentrationConverterClient() {
           </div>
         </label>
 
-        <label className="space-y-1 text-xs text-white/60">
+        <label className="field--diluent space-y-1 text-xs text-white/60">
           Diluent volume (mL)
           <input
             type="number"
@@ -428,32 +432,42 @@ export function ConcentrationConverterClient() {
             placeholder=""
             data-testid="converter-diluent"
           />
-          <span className="pep-functional-text block text-[10px] mt-1">
-            {CONVERTER_COPY.bacShortcutsLabel}
-          </span>
-          <div
-            className="flex gap-2 mt-1"
-            data-testid="converter-diluent-chips"
-          >
-            {(['1', '2', '3'] as const).map((n) => (
-              <button
-                key={n}
-                type="button"
-                aria-pressed={diluentMl === n}
-                className="pep-segment px-2 py-1 text-[11px] rounded-lg"
-                data-checked={diluentMl === n ? 'true' : 'false'}
-                onClick={() => setDiluentMl(n)}
-              >
-                {n} mL
-              </button>
-            ))}
-          </div>
         </label>
 
-        <label className="space-y-1 text-xs text-white/60 md:col-span-2">
+        <div className="helper-strip" data-testid="converter-helper-strip">
+          <div className="helper-strip__volumes">
+            <span className="helper-strip__volumes-label">
+              {CONVERTER_COPY.bacShortcutsLabel}
+            </span>
+            <div className="flex gap-2" data-testid="converter-diluent-chips">
+              {(['1', '2', '3'] as const).map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  aria-pressed={diluentMl === n}
+                  className="pep-segment px-2 py-1 text-[11px] rounded-lg"
+                  data-checked={diluentMl === n ? 'true' : 'false'}
+                  onClick={() => setDiluentMl(n)}
+                >
+                  {n} mL
+                </button>
+              ))}
+            </div>
+          </div>
+          <p
+            id="dose-note"
+            className="helper-strip__note"
+            data-testid="converter-dose-note"
+          >
+            You enter the dose from your prescription. ViaConnect converts units only.
+          </p>
+        </div>
+
+        <label className="field--dose space-y-1 text-xs text-white/60">
           Dose (your number)
           <div className="flex gap-2">
             <input
+              id="dose-input"
               type="number"
               inputMode="decimal"
               className="pep-glass-input flex-1 rounded-xl px-3 py-2 text-sm"
@@ -462,11 +476,13 @@ export function ConcentrationConverterClient() {
               placeholder=""
               data-testid="converter-dose"
               autoComplete="off"
+              aria-describedby="dose-note dose-helper"
             />
             <select
               className="pep-glass-input rounded-xl px-2 py-2 text-sm"
               value={doseUnit}
               onChange={(e) => setDoseUnit(e.target.value as 'mg' | 'mcg' | 'IU')}
+              data-testid="converter-dose-unit"
             >
               <option value="mg">mg</option>
               <option value="mcg">mcg</option>
@@ -475,11 +491,24 @@ export function ConcentrationConverterClient() {
               </option>
             </select>
           </div>
-          <span className="pep-functional-text block text-[10px] mt-1">
+          <span
+            id="dose-helper"
+            className="pep-functional-text block text-[10px] mt-1"
+            data-testid="converter-dose-helper"
+          >
             Empty until you type. No presets. No suggestions.
           </span>
         </label>
 
+        {/* Empty reserved cell (desktop only). No tips, presets, or generated content. */}
+        <div
+          className="cell--reserved"
+          data-testid="converter-reserved-cell"
+          aria-hidden="true"
+        />
+      </div>
+
+      <div className="converter-segments mt-6" data-testid="converter-segments">
         <div className="space-y-2">
           <GlassSegmentedControl
             label="Syringe standard"

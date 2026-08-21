@@ -1,0 +1,107 @@
+/**
+ * Prompt 226c: converter input 2x2 field grid and helper strip.
+ * Layout only. Tokens from globals.css. No copy changes.
+ * Reading A: Dose in column 1 row 4 (beneath Vial). Reserved cell empty.
+ * Reading B switch: .field--dose { grid-column: 2 } and .cell--reserved { grid-column: 1 }.
+ */
+
+.converter-fields {
+  display: grid;
+  grid-template-columns: 1fr;
+  row-gap: var(--space-6);
+  column-gap: var(--space-8);
+  align-items: start;
+}
+
+.field--compound,
+.field--vial,
+.field--diluent,
+.helper-strip,
+.field--dose {
+  min-width: 0;
+}
+
+.cell--reserved {
+  display: none;
+}
+
+.helper-strip {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.helper-strip__volumes {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.helper-strip__volumes-label {
+  font-size: 0.8125rem; /* 13px floor */
+  color: var(--text-primary);
+  opacity: 1;
+}
+
+.helper-strip__note {
+  margin-left: auto;
+  text-align: right;
+  max-width: 42ch;
+  font-size: 0.8125rem; /* 13px floor; never shrink below */
+  line-height: 1.4;
+  color: var(--text-primary);
+  opacity: 1;
+}
+
+.converter-segments {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-6);
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .converter-fields {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .field--compound {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+
+  .field--vial {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .field--diluent {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .helper-strip {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
+
+  .field--dose {
+    grid-column: 1; /* Reading A. For Reading B set to 2. */
+    grid-row: 4;
+  }
+
+  .cell--reserved {
+    display: block;
+    grid-column: 2; /* Reading A. For Reading B set to 1. */
+    grid-row: 4;
+    min-height: 0;
+    pointer-events: none;
+  }
+
+  .converter-segments {
+    grid-template-columns: 1fr 1fr;
+    column-gap: var(--space-8);
+  }
+}

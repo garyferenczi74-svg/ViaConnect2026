@@ -231,8 +231,9 @@ export function SyringeUnitScale({
       </div>
 
       <p className="text-[10px] text-white/40">
-        Scale shows 1-unit ticks like a syringe barrel. Use the numeric result above. Indicator is
-        not draggable.
+        {
+          'Scale shows 1-unit ticks like a syringe barrel. Use the numeric result above. Indicator is not draggable.'
+        }
       </p>
     </div>
   );
