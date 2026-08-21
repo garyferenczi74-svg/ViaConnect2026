@@ -7,6 +7,9 @@
  *
  * Mobile: single column, same DOM order (Compound, Diluent, Vial, Dose).
  * Layout only. No copy changes.
+ *
+ * Important: do NOT set display:block on field stacks that use flex+gap,
+ * or labels collapse into the inputs (bleed/overlap).
  */
 
 .converter-fields {
@@ -22,38 +25,38 @@
 .field--diluent,
 .field--dose {
   min-width: 0;
+  position: relative;
 }
 
-/* Keep labels fully above inputs (no overlap with glass fill / focus ring) */
-.field--compound label,
+/* Enforce label-above-control stacking with real gap (never override to block) */
 .field--vial,
 .field--diluent > label,
-.field--dose > label {
-  display: block;
+.field--dose > label,
+.field--compound [data-testid='converter-compound'] {
+  display: flex !important;
+  flex-direction: column;
+  gap: var(--space-3); /* 12px clear air under every heading */
+  align-items: stretch;
+}
+
+.field--diluent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.pep-field-label {
   position: relative;
   z-index: 2;
-}
-
-.field--vial,
-.field--diluent > label,
-.field--dose > label {
-  margin-bottom: 0;
-}
-
-.converter-fields label.space-y-1,
-.converter-fields .space-y-1 {
-  row-gap: var(--space-3);
-}
-
-.converter-fields .space-y-1 > :not([hidden]) ~ :not([hidden]) {
-  margin-top: var(--space-3);
+  flex: 0 0 auto;
+  padding-bottom: 2px;
 }
 
 .field--diluent-extras {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  margin-top: var(--space-3);
+  margin-top: 0;
 }
 
 .field--diluent-extras-label {
@@ -63,7 +66,7 @@
 }
 
 .field--dose-note {
-  margin-top: var(--space-3);
+  margin-top: 0;
   font-size: 0.8125rem; /* 13px floor; never shrink below */
   line-height: 1.4;
   color: var(--text-primary);
@@ -75,6 +78,7 @@
   grid-template-columns: 1fr;
   gap: var(--space-6);
   align-items: start;
+  margin-top: var(--space-6);
 }
 
 @media (min-width: 900px) {

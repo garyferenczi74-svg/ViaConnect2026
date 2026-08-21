@@ -55,6 +55,15 @@ describe('Prompt 226c true 2x2 layout', () => {
     expect(css).not.toContain('cell--reserved');
   });
 
+  it('does not force display:block on flex field stacks (label bleed regression)', () => {
+    expect(css).not.toMatch(
+      /\.field--vial,\s*\n\.field--diluent > label[\s\S]*?display:\s*block/,
+    );
+    expect(css).toContain('flex-direction: column');
+    expect(css).toContain('gap: var(--space-3)');
+    expect(css).toContain('do NOT set display:block');
+  });
+
   it('keeps common volumes under Diluent and prescription note under Dose', () => {
     expect(converter).toContain('field--diluent-extras');
     expect(converter).toContain('converter-diluent-chips');

@@ -393,7 +393,7 @@ export function ConcentrationConverterClient() {
           />
         </div>
 
-        <div className="field--diluent space-y-3 text-xs text-white/60">
+        <div className="field--diluent text-xs text-white/60">
           <label className="flex flex-col gap-3">
             <span className="pep-field-label">Diluent volume (mL)</span>
             <input
@@ -494,8 +494,8 @@ export function ConcentrationConverterClient() {
         </div>
       </div>
 
-      <div className="converter-segments mt-6" data-testid="converter-segments">
-        <div className="space-y-2">
+      <div className="converter-segments" data-testid="converter-segments">
+        <div className="flex flex-col gap-3">
           <GlassSegmentedControl
             label="Syringe standard"
             value={syringeStandard}
