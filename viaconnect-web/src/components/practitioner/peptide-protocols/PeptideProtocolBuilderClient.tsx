@@ -5,9 +5,10 @@
  * Requires verified practitioner (AB/NY). Opaque patient_ref only.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { AlertTriangle, FileText, ShieldCheck } from 'lucide-react';
+import { PeptideCatalogPicker } from '@/components/peptide-protocol/PeptideCatalogPicker';
 
 type Compound = {
   id: string;
@@ -57,6 +58,18 @@ export function PeptideProtocolBuilderClient() {
   const [barrelSize, setBarrelSize] = useState<100 | 50 | 30>(100);
   const [msg, setMsg] = useState('');
   const [sheet, setSheet] = useState<Record<string, unknown> | null>(null);
+
+  const pickerItems = useMemo(
+    () =>
+      compounds.map((c) => ({
+        id: c.id,
+        slug: c.slug,
+        displayName: c.converterEligible
+          ? c.displayName
+          : `${c.displayName} (compounded / educational)`,
+      })),
+    [compounds],
+  );
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -256,22 +269,15 @@ export function PeptideProtocolBuilderClient() {
             data-testid="module-b-patient-ref"
           />
         </label>
-        <label className="space-y-1 md:col-span-2">
-          Compound
-          <select
-            className="w-full rounded-xl bg-[#1A2744] border border-white/15 px-3 py-2 text-sm text-white"
+        <div className="md:col-span-2">
+          <PeptideCatalogPicker
+            items={pickerItems}
             value={peptideId}
-            onChange={(e) => setPeptideId(e.target.value)}
-          >
-            <option value="">Select...</option>
-            {compounds.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.displayName}
-                {c.converterEligible ? '' : ' (compounded / educational)'}
-              </option>
-            ))}
-          </select>
-        </label>
+            onChange={setPeptideId}
+            placeholder="Type to search peptides..."
+            testId="module-b-compound"
+          />
+        </div>
         <label className="space-y-1">
           Prescriber dose amount
           <div className="flex gap-2">

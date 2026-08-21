@@ -11,6 +11,7 @@ import { useSearchParams } from 'next/navigation';
 import { AlertTriangle, FlaskConical, Save, ShieldAlert } from 'lucide-react';
 import { SyringeUnitScale, type ScaleState } from './SyringeUnitScale';
 import { CONVERTER_COPY, u100ToU40Factor } from '@/lib/peptides/converterMath';
+import { PeptideCatalogPicker } from '@/components/peptide-protocol/PeptideCatalogPicker';
 
 type Compound = {
   id: string;
@@ -380,22 +381,13 @@ export function ConcentrationConverterClient() {
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <label className="space-y-1 text-xs text-white/60">
-          Compound
-          <select
-            className="w-full rounded-xl bg-[#1A2744] border border-white/15 px-3 py-2 text-sm text-white"
-            value={peptideId}
-            onChange={(e) => setPeptideId(e.target.value)}
-            data-testid="converter-compound"
-          >
-            <option value="">Select...</option>
-            {compounds.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.displayName}
-              </option>
-            ))}
-          </select>
-        </label>
+        <PeptideCatalogPicker
+          items={compounds}
+          value={peptideId}
+          onChange={setPeptideId}
+          placeholder="Type to search peptides..."
+          testId="converter-compound"
+        />
 
         <div className="text-xs text-white/50 self-end">
           You enter the dose from your prescription. ViaConnect converts units only.

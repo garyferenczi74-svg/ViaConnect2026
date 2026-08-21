@@ -8,6 +8,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Plus, Trash2, Calculator } from 'lucide-react';
+import { PeptideCatalogPicker } from '@/components/peptide-protocol/PeptideCatalogPicker';
 
 type AllowItem = { id: string; slug: string; displayName: string; iuEnabled: boolean };
 type RxItem = {
@@ -146,22 +147,15 @@ export function MyPrescribedPeptidesClient() {
         </p>
       ) : (
         <div className="rounded-2xl border border-white/10 bg-[#1E3054] p-4 grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-white/70">
-          <label className="space-y-1 md:col-span-2">
-            Compound
-            <select
-              className="w-full rounded-xl bg-[#1A2744] border border-white/15 px-3 py-2 text-sm text-white"
+          <div className="md:col-span-2">
+            <PeptideCatalogPicker
+              items={allowlist}
               value={peptideId}
-              onChange={(e) => setPeptideId(e.target.value)}
-              data-testid="rx-peptide"
-            >
-              <option value="">Select...</option>
-              {allowlist.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.displayName}
-                </option>
-              ))}
-            </select>
-          </label>
+              onChange={setPeptideId}
+              placeholder="Type to search peptides..."
+              testId="rx-peptide"
+            />
+          </div>
           <label className="space-y-1">
             Prescribed dose (from your Rx)
             <div className="flex gap-2">
