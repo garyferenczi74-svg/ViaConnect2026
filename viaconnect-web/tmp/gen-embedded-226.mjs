@@ -10,6 +10,7 @@ const files = [
   "supabase/migrations/20260820160000_prompt_226_converter_schema.sql",
   "supabase/migrations/20260820161000_prompt_226_marshall_converter_allowlist_seed.sql",
   "supabase/migrations/20260820162000_prompt_226_lex_clear_disclaimer_v1.sql",
+  "supabase/migrations/20260820170000_prompt_226_module_b_deidentified.sql",
 ];
 
 const migrations = files.map((rel) => {

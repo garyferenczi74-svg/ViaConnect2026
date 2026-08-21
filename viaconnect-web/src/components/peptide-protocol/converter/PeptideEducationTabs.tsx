@@ -11,6 +11,11 @@ const TABS = [
     label: 'Protocol Literacy',
     exact: false,
   },
+  {
+    href: '/peptide-protocol/my-protocols',
+    label: 'My Protocols',
+    exact: false,
+  },
 ] as const;
 
 export function PeptideEducationTabs() {
