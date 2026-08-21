@@ -7,6 +7,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { AlertTriangle, FlaskConical, Save, ShieldAlert } from 'lucide-react';
 import { SyringeUnitScale, type ScaleState } from './SyringeUnitScale';
 import { CONVERTER_COPY, u100ToU40Factor } from '@/lib/peptides/converterMath';
@@ -34,6 +35,7 @@ type ComputeOk = {
 type ComputeFail = { ok: false; code: string; message: string };
 
 export function ConcentrationConverterClient() {
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [available, setAvailable] = useState(false);
   const [acknowledged, setAcknowledged] = useState(false);
@@ -43,12 +45,13 @@ export function ConcentrationConverterClient() {
   const [ackStandard, setAckStandard] = useState<'U-100' | 'U-40'>('U-100');
   const [compounds, setCompounds] = useState<Compound[]>([]);
   const [unavailableReason, setUnavailableReason] = useState('');
+  const [fromRxBanner, setFromRxBanner] = useState(false);
 
   const [peptideId, setPeptideId] = useState('');
   const [vialAmount, setVialAmount] = useState(''); // empty by default
   const [vialUnit, setVialUnit] = useState<'mg' | 'mcg' | 'IU'>('mg');
   const [diluentMl, setDiluentMl] = useState(''); // empty by default
-  const [doseAmount, setDoseAmount] = useState(''); // MUST stay empty until user types
+  const [doseAmount, setDoseAmount] = useState(''); // MUST stay empty until user types (or loads their own Rx)
   const [doseUnit, setDoseUnit] = useState<'mg' | 'mcg' | 'IU'>('mg');
   const [syringeStandard, setSyringeStandard] = useState<'U-100' | 'U-40'>('U-100');
   const [barrelSize, setBarrelSize] = useState<100 | 50 | 30>(100);
@@ -111,6 +114,29 @@ export function ConcentrationConverterClient() {
       }
       setCompounds(allow.compounds ?? []);
 
+      // Prefill only from the user's own prescribed-peptide link (fromRx=1).
+      // Still user-originated numbers; platform never invents them.
+      if (searchParams.get('fromRx') === '1') {
+        const pid = searchParams.get('peptideId') || '';
+        const inAllow = (allow.compounds ?? []).some(
+          (c: Compound) => c.id === pid,
+        );
+        if (inAllow && pid) {
+          setPeptideId(pid);
+          const d = searchParams.get('dose');
+          const du = searchParams.get('doseUnit');
+          const v = searchParams.get('vial');
+          const vu = searchParams.get('vialUnit');
+          const dil = searchParams.get('diluent');
+          if (d) setDoseAmount(d);
+          if (du === 'mg' || du === 'mcg' || du === 'IU') setDoseUnit(du);
+          if (v) setVialAmount(v);
+          if (vu === 'mg' || vu === 'mcg' || vu === 'IU') setVialUnit(vu);
+          if (dil) setDiluentMl(dil);
+          setFromRxBanner(true);
+        }
+      }
+
       if (status.acknowledged) {
         const histRes = await fetch('/api/peptides/converter/sessions');
         const hist = await histRes.json();
@@ -122,7 +148,7 @@ export function ConcentrationConverterClient() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [searchParams]);
 
   useEffect(() => {
     void bootstrap();
@@ -347,6 +373,12 @@ export function ConcentrationConverterClient() {
         <p className="text-[11px] text-white/45 leading-relaxed border border-white/10 rounded-xl p-3 bg-black/20">
           {layer2}
         </p>
+        {fromRxBanner ? (
+          <p className="text-[11px] text-[#2DA5A0]/90 leading-relaxed">
+            Prefilling from your saved prescribed peptide. Those numbers came from you (your Rx),
+            not from ViaConnect. Edit anything that does not match your prescription.
+          </p>
+        ) : null}
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

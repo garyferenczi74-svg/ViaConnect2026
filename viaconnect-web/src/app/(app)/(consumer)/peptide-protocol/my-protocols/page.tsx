@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { PeptideProtocolHeroShell } from '@/components/peptide-protocol/PeptideProtocolHeroShell';
 import { PeptideEducationTabs } from '@/components/peptide-protocol/converter/PeptideEducationTabs';
+import { MyPrescribedPeptidesClient } from '@/components/peptide-protocol/MyPrescribedPeptidesClient';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 
@@ -39,38 +40,43 @@ export default async function MyPeptideProtocolsPage() {
   return (
     <PeptideProtocolHeroShell>
       <PeptideEducationTabs />
-      <div className="space-y-3" data-testid="my-peptide-protocols">
-        <h2 className="text-base font-semibold text-white">My protocols</h2>
-        <p className="text-xs text-white/50 leading-relaxed">
-          Protocols appear here only when a verified practitioner issues one to your account.
-          De-identified references never show your legal name on this surface.
-        </p>
-        {!data?.length ? (
-          <p className="text-sm text-white/45 rounded-xl border border-white/10 bg-[#1E3054]/50 p-4">
-            No issued peptide protocols linked to your account yet.
+      <div className="space-y-6" data-testid="my-peptide-protocols">
+        <MyPrescribedPeptidesClient />
+
+        <section className="space-y-3">
+          <h2 className="text-base font-semibold text-white">
+            Issued by a verified practitioner
+          </h2>
+          <p className="text-xs text-white/50 leading-relaxed">
+            These appear only when a verified practitioner issues a protocol to your account.
           </p>
-        ) : (
-          <ul className="space-y-2">
-            {data.map((row) => (
-              <li
-                key={row.id}
-                className="rounded-xl border border-white/10 bg-[#1E3054]/70 p-3 text-xs text-white/70"
-              >
-                <div className="text-sm text-white">
-                  {nameById.get(String(row.peptide_id)) ?? 'Peptide'}
-                </div>
-                <div>
-                  Prescriber dose: {row.dose_amount} {row.dose_unit} ·{' '}
-                  {Number(row.computed_units).toFixed(2)} u ({row.syringe_standard})
-                </div>
-                <div>{row.frequency_text || 'Frequency on sheet from your clinician'}</div>
-                <div className="text-white/40 mt-1">
-                  Issued {row.issued_at ? new Date(row.issued_at).toLocaleString() : ''}
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
+          {!data?.length ? (
+            <p className="text-sm text-white/45 rounded-xl border border-white/10 bg-[#1E3054]/50 p-4">
+              No practitioner-issued peptide protocols linked to your account yet.
+            </p>
+          ) : (
+            <ul className="space-y-2">
+              {data.map((row) => (
+                <li
+                  key={row.id}
+                  className="rounded-xl border border-white/10 bg-[#1E3054]/70 p-3 text-xs text-white/70"
+                >
+                  <div className="text-sm text-white">
+                    {nameById.get(String(row.peptide_id)) ?? 'Peptide'}
+                  </div>
+                  <div>
+                    Prescriber dose: {row.dose_amount} {row.dose_unit} ·{' '}
+                    {Number(row.computed_units).toFixed(2)} u ({row.syringe_standard})
+                  </div>
+                  <div>{row.frequency_text || 'Frequency on sheet from your clinician'}</div>
+                  <div className="text-white/40 mt-1">
+                    Issued {row.issued_at ? new Date(row.issued_at).toLocaleString() : ''}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       </div>
     </PeptideProtocolHeroShell>
   );

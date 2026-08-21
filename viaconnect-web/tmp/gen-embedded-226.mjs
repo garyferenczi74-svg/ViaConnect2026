@@ -11,6 +11,7 @@ const files = [
   "supabase/migrations/20260820161000_prompt_226_marshall_converter_allowlist_seed.sql",
   "supabase/migrations/20260820162000_prompt_226_lex_clear_disclaimer_v1.sql",
   "supabase/migrations/20260820170000_prompt_226_module_b_deidentified.sql",
+  "supabase/migrations/20260820171000_prompt_226_user_prescribed_peptides.sql",
 ];
 
 const migrations = files.map((rel) => {
