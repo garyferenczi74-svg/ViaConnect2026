@@ -97,9 +97,8 @@ export async function POST(request: Request): Promise<NextResponse> {
     return NextResponse.json(
       {
         ok: false,
-        error: 'not_allowlisted',
-        message:
-          'Only approved converter-eligible peptides can be added. Research compounds are not listed.',
+        error: 'peptide_not_found',
+        message: 'Choose a peptide from the catalog list.',
       },
       { status: 403 },
     );

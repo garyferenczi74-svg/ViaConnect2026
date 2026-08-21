@@ -14,18 +14,16 @@ export default function ConverterNotListedPage() {
         data-testid="converter-not-listed"
       >
         <h2 className="text-base font-semibold text-white">
-          {CONVERTER_COPY.nonAllowlistedHeading}
+          About the peptide catalog
         </h2>
         <p className="text-sm text-white/65 leading-relaxed">
-          The converter only includes peptide drugs with verified FDA or Health Canada
-          approval for injectable use, and an explicit Marshall eligibility flag. Research
-          chemical and investigational compounds are not offered for conversion because there
-          is no established dose for the platform to convert.
+          The converter and My Protocols lists include Collection 14 educational and restricted
+          monographs. You enter any dose from your licensed clinician. ViaConnect converts
+          units only and never recommends a dose.
         </p>
         <p className="text-sm text-white/55 leading-relaxed">
-          You can still open the educational monograph, review honesty-layer evidence counts,
-          and discuss concentration principles with a licensed clinician. There is no
-          free-text fallback that converts an arbitrary compound name.
+          Adverse-reference exclusions (for example Dermorphin) stay out of the picker. Open
+          monographs for education and honesty-layer evidence counts.
         </p>
         <div className="flex flex-wrap gap-3 text-xs">
           <Link

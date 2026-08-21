@@ -1,7 +1,9 @@
 /**
- * Prompt 226 Module A allowlist loader.
- * Dual gate: converter_eligible AND (FDA or HC approved) AND educational AND SC/IM.
- * UNKNOWN status is not a pass. Degraded fetch returns unavailable, never unfiltered.
+ * Prompt 226: peptide picker catalog for converter + prescribed peptides.
+ * Returns Collection 14 educational (and restricted) monographs.
+ * Gary request: no FDA/converter_eligible allowlist gate on the picker.
+ * Dose values still originate only from the user / prescriber.
+ * Degraded DB fetch returns unavailable (empty), never invents compounds.
  */
 
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -17,30 +19,16 @@ export interface ConverterAllowlistCompound {
   iuMgFactor: number | null;
   iuMgFactorVerified: boolean;
   routesStudied: string[];
+  exclusionTier: string;
 }
 
 export type AllowlistResult =
   | { ok: true; compounds: ConverterAllowlistCompound[] }
   | { ok: false; unavailable: true; reason: string };
 
-function hasInjectableRoute(routes: string[] | null | undefined): boolean {
-  const r = (routes ?? []).map((x) => x.toLowerCase());
-  return r.some(
-    (x) =>
-      x === 'subcutaneous' ||
-      x === 'intramuscular' ||
-      x.includes('subcutaneous') ||
-      x.includes('intramuscular'),
-  );
-}
-
-function isApprovedStatus(fda: string, hc: string): boolean {
-  const ok = new Set(['approved', 'approved_other_indication']);
-  return ok.has(fda) || ok.has(hc);
-}
-
 /**
- * Fail-closed allowlist. Never returns the full Collection 14 corpus.
+ * Full educational catalog for picker surfaces.
+ * Excludes excluded_adverse_reference (e.g. Dermorphin) only.
  */
 export async function loadConverterAllowlist(): Promise<AllowlistResult> {
   try {
@@ -50,53 +38,42 @@ export async function loadConverterAllowlist(): Promise<AllowlistResult> {
       .select(
         'id, slug, display_name, fda_status, health_canada_status, converter_eligible, iu_mg_factor, iu_mg_factor_verified, routes_studied, exclusion_tier',
       )
-      .eq('converter_eligible', true)
-      .eq('exclusion_tier', 'educational')
+      .in('exclusion_tier', ['educational', 'restricted'])
       .order('display_name', { ascending: true })
-      .limit(100);
+      .limit(500);
 
     if (error) {
-      safeLog.warn('peptides.allowlist', 'query failed unavailable', {
+      safeLog.warn('peptides.catalog', 'query failed unavailable', {
         error: error.message,
       });
       return { ok: false, unavailable: true, reason: 'collection14_query_failed' };
     }
 
-    const compounds: ConverterAllowlistCompound[] = [];
-    for (const row of data ?? []) {
-      const fda = String(row.fda_status ?? 'unknown');
-      const hc = String(row.health_canada_status ?? 'unknown');
-      if (fda === 'unknown' && hc === 'unknown') continue;
-      if (!isApprovedStatus(fda, hc)) continue;
-      if (!hasInjectableRoute(row.routes_studied as string[] | null)) continue;
-      if (row.converter_eligible !== true) continue;
-
-      compounds.push({
-        id: String(row.id),
-        slug: String(row.slug),
-        displayName: String(row.display_name ?? row.slug),
-        fdaStatus: fda,
-        healthCanadaStatus: hc,
-        converterEligible: true,
-        iuMgFactor:
-          row.iu_mg_factor == null ? null : Number(row.iu_mg_factor),
-        iuMgFactorVerified: row.iu_mg_factor_verified === true,
-        routesStudied: Array.isArray(row.routes_studied)
-          ? (row.routes_studied as string[])
-          : [],
-      });
-    }
+    const compounds: ConverterAllowlistCompound[] = (data ?? []).map((row) => ({
+      id: String(row.id),
+      slug: String(row.slug),
+      displayName: String(row.display_name ?? row.slug),
+      fdaStatus: String(row.fda_status ?? 'unknown'),
+      healthCanadaStatus: String(row.health_canada_status ?? 'unknown'),
+      converterEligible: row.converter_eligible === true,
+      iuMgFactor: row.iu_mg_factor == null ? null : Number(row.iu_mg_factor),
+      iuMgFactorVerified: row.iu_mg_factor_verified === true,
+      routesStudied: Array.isArray(row.routes_studied)
+        ? (row.routes_studied as string[])
+        : [],
+      exclusionTier: String(row.exclusion_tier ?? 'educational'),
+    }));
 
     return { ok: true, compounds };
   } catch (err) {
-    safeLog.warn('peptides.allowlist', 'threw unavailable', {
+    safeLog.warn('peptides.catalog', 'threw unavailable', {
       error: err instanceof Error ? err.message : String(err),
     });
-    return { ok: false, unavailable: true, reason: 'allowlist_exception' };
+    return { ok: false, unavailable: true, reason: 'catalog_exception' };
   }
 }
 
-/** Educational redirect check: compound exists but is not converter-eligible. */
+/** Lookup any educational/restricted peptide by slug. */
 export async function lookupNonAllowlistedPeptide(slug: string): Promise<{
   found: boolean;
   slug: string;
@@ -109,7 +86,7 @@ export async function lookupNonAllowlistedPeptide(slug: string): Promise<{
     const admin = createAdminClient();
     const { data } = await admin
       .from('kb_peptides')
-      .select('slug, display_name, fda_status, converter_eligible, honesty_layer')
+      .select('slug, display_name, fda_status, converter_eligible, honesty_layer, exclusion_tier')
       .eq('slug', slug)
       .maybeSingle();
     if (!data) return { found: false, slug };

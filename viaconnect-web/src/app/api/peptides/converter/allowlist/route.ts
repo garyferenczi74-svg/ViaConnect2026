@@ -1,5 +1,5 @@
 /**
- * Prompt 226: Module A allowlist. Fail-closed unavailable, never unfiltered corpus.
+ * Prompt 226: peptide catalog for converter picker (full educational/restricted list).
  */
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
@@ -46,6 +46,7 @@ export async function GET(): Promise<NextResponse> {
       displayName: c.displayName,
       fdaStatus: c.fdaStatus,
       healthCanadaStatus: c.healthCanadaStatus,
+      exclusionTier: c.exclusionTier,
       iuEnabled: c.iuMgFactorVerified && c.iuMgFactor != null && c.iuMgFactor > 0,
     })),
   });

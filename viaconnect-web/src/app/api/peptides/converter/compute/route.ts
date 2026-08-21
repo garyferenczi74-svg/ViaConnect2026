@@ -68,8 +68,8 @@ export async function POST(request: Request): Promise<NextResponse> {
     return NextResponse.json(
       {
         ok: false,
-        error: 'not_allowlisted',
-        redirect: '/peptide-protocol/converter/not-listed',
+        error: 'peptide_not_found',
+        message: 'Choose a peptide from the catalog list.',
       },
       { status: 403 },
     );

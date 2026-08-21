@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * Prompt 226: consumer adds their prescribed peptides (allowlist only).
+ * Prompt 226: consumer adds their prescribed peptides from the full catalog.
  * Dose values come from the user's Rx, not the platform.
  */
 
@@ -135,18 +135,19 @@ export function MyPrescribedPeptidesClient() {
         <h2 className="text-base font-semibold text-white">My prescribed peptides</h2>
         <p className="text-xs text-white/50 leading-relaxed">
           Add peptides your licensed clinician prescribed. You enter the dose from your Rx.
-          ViaConnect does not recommend doses. Only approved converter-eligible compounds are listed.
+          ViaConnect does not recommend doses. The list includes Collection 14 educational and
+          restricted monographs (adverse-reference exclusions stay out).
         </p>
       </div>
 
       {unavailable ? (
         <p className="text-xs text-amber-200/80">
-          Allowlist unavailable. A degraded state never shows an unfiltered compound list.
+          Peptide catalog unavailable. Retry shortly.
         </p>
       ) : (
         <div className="rounded-2xl border border-white/10 bg-[#1E3054] p-4 grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-white/70">
           <label className="space-y-1 md:col-span-2">
-            Compound (allowlist)
+            Compound
             <select
               className="w-full rounded-xl bg-[#1A2744] border border-white/15 px-3 py-2 text-sm text-white"
               value={peptideId}

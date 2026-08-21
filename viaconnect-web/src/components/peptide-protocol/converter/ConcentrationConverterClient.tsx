@@ -106,9 +106,7 @@ export function ConcentrationConverterClient() {
       const allow = await allowRes.json();
       if (!allow.ok || allow.unavailable) {
         setAvailable(false);
-        setUnavailableReason(
-          'Allowlist unavailable. A degraded state never shows an unfiltered list.',
-        );
+        setUnavailableReason('Peptide catalog unavailable. Retry shortly.');
         setLoading(false);
         return;
       }
@@ -383,7 +381,7 @@ export function ConcentrationConverterClient() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <label className="space-y-1 text-xs text-white/60">
-          Compound (allowlist only)
+          Compound
           <select
             className="w-full rounded-xl bg-[#1A2744] border border-white/15 px-3 py-2 text-sm text-white"
             value={peptideId}
@@ -400,13 +398,7 @@ export function ConcentrationConverterClient() {
         </label>
 
         <div className="text-xs text-white/50 self-end">
-          Compound not listed?{' '}
-          <Link
-            href="/peptide-protocol/converter/not-listed"
-            className="text-[#2DA5A0] underline"
-          >
-            Why conversion is not offered
-          </Link>
+          You enter the dose from your prescription. ViaConnect converts units only.
         </div>
 
         <label className="space-y-1 text-xs text-white/60">

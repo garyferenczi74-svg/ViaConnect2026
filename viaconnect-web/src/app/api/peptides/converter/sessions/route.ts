@@ -81,7 +81,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
   const compound = allowlist.compounds.find((c) => c.id === peptideId);
   if (!compound) {
-    return NextResponse.json({ ok: false, error: 'not_allowlisted' }, { status: 403 });
+    return NextResponse.json({ ok: false, error: 'peptide_not_found' }, { status: 403 });
   }
 
   const computed = computeSyringeUnits({
