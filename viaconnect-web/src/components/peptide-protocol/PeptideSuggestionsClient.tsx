@@ -18,6 +18,54 @@ import {
 
 type Chip = (typeof SUGGESTION_GOAL_CHIPS)[number];
 
+/** Screening Yes/No pills: label is a real block so it never collides with the control. */
+function ScreenYesNo({
+  label,
+  value,
+  onChange,
+  testId,
+}: {
+  label: string;
+  value: boolean | null;
+  onChange: (next: boolean | null) => void;
+  testId: string;
+}) {
+  const options: { key: 'no' | 'yes'; text: string; next: boolean }[] = [
+    { key: 'no', text: 'No', next: false },
+    { key: 'yes', text: 'Yes', next: true },
+  ];
+
+  return (
+    <div className="flex flex-col gap-2.5" data-testid={testId}>
+      <p className="block text-xs leading-relaxed text-white/70 pr-1">{label}</p>
+      <div
+        className="inline-flex w-fit items-center gap-2"
+        role="group"
+        aria-label={label}
+      >
+        {options.map((opt) => {
+          const on = value === opt.next;
+          return (
+            <button
+              key={opt.key}
+              type="button"
+              aria-pressed={on}
+              onClick={() => onChange(opt.next)}
+              className={`min-w-[3.25rem] rounded-full px-3.5 py-1.5 text-xs border transition-colors ${
+                on
+                  ? 'border-[var(--teal)] bg-[var(--teal)]/20 text-white font-semibold'
+                  : 'border-white/15 bg-[var(--card)]/60 text-white/60 hover:text-white hover:border-white/25'
+              }`}
+            >
+              {opt.text}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function IndicationNote({ match }: { match: MatchedCompound['indicationMatch'] }) {
   if (match === 'studied_for_this_goal') return null;
   if (match === 'studied_adjacent_indication') {
@@ -231,39 +279,19 @@ export function PeptideSuggestionsClient() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-white/70">
-        <label className="space-y-1">
-          Pregnant, breastfeeding, or trying to conceive?
-          <select
-            className="pep-glass-input w-full rounded-xl px-3 py-2 text-sm"
-            value={pregnant === null ? '' : pregnant ? 'yes' : 'no'}
-            onChange={(e) => {
-              const v = e.target.value;
-              setPregnant(v === '' ? null : v === 'yes');
-            }}
-            data-testid="suggestion-screen-pregnant"
-          >
-            <option value="">Select...</option>
-            <option value="no">No</option>
-            <option value="yes">Yes</option>
-          </select>
-        </label>
-        <label className="space-y-1">
-          Under 18?
-          <select
-            className="pep-glass-input w-full rounded-xl px-3 py-2 text-sm"
-            value={under18 === null ? '' : under18 ? 'yes' : 'no'}
-            onChange={(e) => {
-              const v = e.target.value;
-              setUnder18(v === '' ? null : v === 'yes');
-            }}
-            data-testid="suggestion-screen-under18"
-          >
-            <option value="">Select...</option>
-            <option value="no">No</option>
-            <option value="yes">Yes</option>
-          </select>
-        </label>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 text-xs text-white/70">
+        <ScreenYesNo
+          label="Pregnant, breastfeeding, or trying to conceive?"
+          value={pregnant}
+          onChange={setPregnant}
+          testId="suggestion-screen-pregnant"
+        />
+        <ScreenYesNo
+          label="Under 18?"
+          value={under18}
+          onChange={setUnder18}
+          testId="suggestion-screen-under18"
+        />
       </div>
 
       {error ? (
