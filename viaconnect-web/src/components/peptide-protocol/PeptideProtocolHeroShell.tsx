@@ -38,16 +38,8 @@ export function PeptideProtocolHeroShell({ children }: { children: ReactNode }) 
             filter: 'blur(2px)',
           }}
         />
-        <div
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.40)',
-          }}
-        />
+        {/* Prompt 226b: Deep Navy scrim compresses photo tonal range for glass contrast */}
+        <div className="pep-scrim" data-testid="peptide-hero-scrim" aria-hidden />
       </div>
 
       <div className="relative z-10 text-white">
@@ -56,12 +48,12 @@ export function PeptideProtocolHeroShell({ children }: { children: ReactNode }) 
           <div className="mx-auto max-w-7xl space-y-5 px-4 md:px-6">
             <div className="flex items-center justify-between gap-3 pb-2">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#1A2744] to-[#2DA5A0] border border-[rgba(255,255,255,0.12)] flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[var(--deep-navy)] to-[var(--teal)] border border-[var(--glass-border-226)] flex items-center justify-center shrink-0">
                   <FlaskConical className="w-[18px] h-[18px] text-white" strokeWidth={1.5} />
                 </div>
                 <div className="min-w-0">
                   <h1 className="text-lg font-semibold text-white truncate">Peptide Education</h1>
-                  <p className="text-xs text-[rgba(255,255,255,0.45)] truncate">
+                  <p className="text-xs text-white/45 truncate">
                     Collection 14 · Educational reference only
                   </p>
                 </div>

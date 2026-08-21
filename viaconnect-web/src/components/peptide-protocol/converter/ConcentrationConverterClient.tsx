@@ -12,6 +12,7 @@ import { AlertTriangle, FlaskConical, Save, ShieldAlert } from 'lucide-react';
 import { SyringeUnitScale, type ScaleState } from './SyringeUnitScale';
 import { CONVERTER_COPY, u100ToU40Factor } from '@/lib/peptides/converterMath';
 import { PeptideCatalogPicker } from '@/components/peptide-protocol/PeptideCatalogPicker';
+import { GlassSegmentedControl } from '@/components/peptide-protocol/converter/GlassSegmentedControl';
 
 type Compound = {
   id: string;
@@ -308,7 +309,7 @@ export function ConcentrationConverterClient() {
   if (!acknowledged) {
     return (
       <div
-        className="rounded-2xl border border-[#B75E18]/40 bg-[#1E3054] p-5 md:p-6 space-y-4"
+        className="rounded-2xl border border-[var(--orange)]/40 bg-[var(--card)] p-5 md:p-6 space-y-4"
         data-testid="converter-first-use"
       >
         <h2 className="text-base font-semibold text-white">
@@ -318,26 +319,17 @@ export function ConcentrationConverterClient() {
           {layer1}
         </div>
         <div className="space-y-2">
-          <p className="text-xs text-white/55">
-            Confirm which syringe you are physically holding:
-          </p>
-          <div className="flex gap-2">
-            {(['U-100', 'U-40'] as const).map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => setAckStandard(s)}
-                className={`rounded-xl px-3 py-2 text-xs border ${
-                  ackStandard === s
-                    ? 'border-[#2DA5A0] bg-[#2DA5A0]/20 text-white'
-                    : 'border-white/15 text-white/60'
-                }`}
-              >
-                {s} ({s === 'U-100' ? '100 units/mL' : '40 units/mL'})
-              </button>
-            ))}
-          </div>
-          <p className="text-[11px] text-amber-200/80">
+          <GlassSegmentedControl
+            label="Confirm which syringe you are physically holding:"
+            value={ackStandard}
+            options={[
+              { value: 'U-100', label: 'U-100 (100 units/mL)' },
+              { value: 'U-40', label: 'U-40 (40 units/mL)' },
+            ]}
+            onChange={setAckStandard}
+            testId="converter-ack-standard"
+          />
+          <p className="text-[11px] text-amber-200">
             Using a U-100 calculation on a U-40 syringe delivers {u100ToU40Factor()}x the
             intended amount.
           </p>
@@ -346,7 +338,7 @@ export function ConcentrationConverterClient() {
           type="button"
           disabled={busy}
           onClick={() => void handleAcknowledge()}
-          className="rounded-xl px-4 py-2 text-sm font-semibold text-white bg-[#2DA5A0] disabled:opacity-50"
+          className="rounded-xl px-4 py-2 text-sm font-semibold text-white bg-[var(--teal)] disabled:opacity-50"
         >
           I understand. Continue
         </button>
@@ -362,18 +354,23 @@ export function ConcentrationConverterClient() {
       : 'No result yet. Enter vial, diluent, and dose.';
 
   return (
-    <div className="space-y-4" data-testid="concentration-converter">
+    <div
+      className="space-y-4"
+      data-testid="concentration-converter"
+      data-peptide-converter="true"
+    >
       <header className="space-y-1">
         <div className="flex items-center gap-2">
-          <FlaskConical className="w-4 h-4 text-[#2DA5A0]" strokeWidth={1.5} />
+          <FlaskConical className="w-4 h-4 text-[var(--teal)]" strokeWidth={1.5} />
           <h2 className="text-base font-semibold text-white">Concentration converter</h2>
         </div>
         <p className="text-xs text-white/50">{CONVERTER_COPY.subtitle}</p>
-        <p className="text-[11px] text-white/45 leading-relaxed border border-white/10 rounded-xl p-3 bg-black/20">
+        {/* Layer 2: solid disclaimer panel (226b Section 3). Not glass. */}
+        <p className="pep-disclaimer-panel pep-disclaimer-text text-[11px] leading-relaxed rounded-xl p-3">
           {layer2}
         </p>
         {fromRxBanner ? (
-          <p className="text-[11px] text-[#2DA5A0]/90 leading-relaxed">
+          <p className="text-[11px] text-[var(--teal)] leading-relaxed">
             Prefilling from your saved prescribed peptide. Those numbers came from you (your Rx),
             not from ViaConnect. Edit anything that does not match your prescription.
           </p>
@@ -387,6 +384,7 @@ export function ConcentrationConverterClient() {
           onChange={setPeptideId}
           placeholder="Type to search peptides..."
           testId="converter-compound"
+          glass
         />
 
         <div className="text-xs text-white/50 self-end">
@@ -399,14 +397,14 @@ export function ConcentrationConverterClient() {
             <input
               type="number"
               inputMode="decimal"
-              className="flex-1 rounded-xl bg-[#1A2744] border border-white/15 px-3 py-2 text-sm text-white"
+              className="pep-glass-input flex-1 rounded-xl px-3 py-2 text-sm"
               value={vialAmount}
               onChange={(e) => setVialAmount(e.target.value)}
               placeholder=""
               data-testid="converter-vial"
             />
             <select
-              className="rounded-xl bg-[#1A2744] border border-white/15 px-2 py-2 text-sm text-white"
+              className="pep-glass-input rounded-xl px-2 py-2 text-sm"
               value={vialUnit}
               onChange={(e) => setVialUnit(e.target.value as 'mg' | 'mcg' | 'IU')}
             >
@@ -424,22 +422,27 @@ export function ConcentrationConverterClient() {
           <input
             type="number"
             inputMode="decimal"
-            className="w-full rounded-xl bg-[#1A2744] border border-white/15 px-3 py-2 text-sm text-white"
+            className="pep-glass-input w-full rounded-xl px-3 py-2 text-sm"
             value={diluentMl}
             onChange={(e) => setDiluentMl(e.target.value)}
             placeholder=""
             data-testid="converter-diluent"
           />
-          <span className="block text-[10px] text-white/40 mt-1">
+          <span className="pep-functional-text block text-[10px] mt-1">
             {CONVERTER_COPY.bacShortcutsLabel}
           </span>
-          <div className="flex gap-2 mt-1">
-            {[1, 2, 3].map((n) => (
+          <div
+            className="flex gap-2 mt-1"
+            data-testid="converter-diluent-chips"
+          >
+            {(['1', '2', '3'] as const).map((n) => (
               <button
                 key={n}
                 type="button"
-                className="rounded-lg border border-white/15 px-2 py-1 text-[11px] text-white/70 hover:border-[#2DA5A0]/50"
-                onClick={() => setDiluentMl(String(n))}
+                aria-pressed={diluentMl === n}
+                className="pep-segment px-2 py-1 text-[11px] rounded-lg"
+                data-checked={diluentMl === n ? 'true' : 'false'}
+                onClick={() => setDiluentMl(n)}
               >
                 {n} mL
               </button>
@@ -453,7 +456,7 @@ export function ConcentrationConverterClient() {
             <input
               type="number"
               inputMode="decimal"
-              className="flex-1 rounded-xl bg-[#1A2744] border border-white/15 px-3 py-2 text-sm text-white"
+              className="pep-glass-input flex-1 rounded-xl px-3 py-2 text-sm"
               value={doseAmount}
               onChange={(e) => setDoseAmount(e.target.value)}
               placeholder=""
@@ -461,7 +464,7 @@ export function ConcentrationConverterClient() {
               autoComplete="off"
             />
             <select
-              className="rounded-xl bg-[#1A2744] border border-white/15 px-2 py-2 text-sm text-white"
+              className="pep-glass-input rounded-xl px-2 py-2 text-sm"
               value={doseUnit}
               onChange={(e) => setDoseUnit(e.target.value as 'mg' | 'mcg' | 'IU')}
             >
@@ -472,31 +475,24 @@ export function ConcentrationConverterClient() {
               </option>
             </select>
           </div>
-          <span className="block text-[10px] text-white/40 mt-1">
+          <span className="pep-functional-text block text-[10px] mt-1">
             Empty until you type. No presets. No suggestions.
           </span>
         </label>
 
-        <div className="space-y-2 text-xs text-white/60">
-          Syringe standard
-          <div className="flex gap-2">
-            {(['U-100', 'U-40'] as const).map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => changeStandard(s)}
-                className={`rounded-xl px-3 py-2 text-xs border ${
-                  syringeStandard === s
-                    ? 'border-[#2DA5A0] bg-[#2DA5A0]/20 text-white'
-                    : 'border-white/15 text-white/60'
-                }`}
-              >
-                {s}
-              </button>
-            ))}
-          </div>
+        <div className="space-y-2">
+          <GlassSegmentedControl
+            label="Syringe standard"
+            value={syringeStandard}
+            options={[
+              { value: 'U-100', label: 'U-100' },
+              { value: 'U-40', label: 'U-40' },
+            ]}
+            onChange={(next) => changeStandard(next)}
+            testId="converter-syringe-standard"
+          />
           {standardChangeNote ? (
-            <p className="text-[11px] text-amber-200/90 flex gap-1.5 items-start">
+            <p className="text-[11px] text-amber-200 flex gap-1.5 items-start">
               <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" strokeWidth={1.5} />
               <span>{standardChangeNote}</span>
             </p>
@@ -508,25 +504,17 @@ export function ConcentrationConverterClient() {
           ) : null}
         </div>
 
-        <div className="space-y-2 text-xs text-white/60">
-          Barrel size
-          <div className="flex gap-2">
-            {([100, 50, 30] as const).map((b) => (
-              <button
-                key={b}
-                type="button"
-                onClick={() => setBarrelSize(b)}
-                className={`rounded-xl px-3 py-2 text-xs border ${
-                  barrelSize === b
-                    ? 'border-[#2DA5A0] bg-[#2DA5A0]/20 text-white'
-                    : 'border-white/15 text-white/60'
-                }`}
-              >
-                {b}u
-              </button>
-            ))}
-          </div>
-        </div>
+        <GlassSegmentedControl
+          label="Barrel size"
+          value={String(barrelSize) as '100' | '50' | '30'}
+          options={[
+            { value: '100', label: '100u' },
+            { value: '50', label: '50u' },
+            { value: '30', label: '30u' },
+          ]}
+          onChange={(next) => setBarrelSize(Number(next) as 100 | 50 | 30)}
+          testId="converter-barrel-size"
+        />
       </div>
 
       <SyringeUnitScale
@@ -537,7 +525,7 @@ export function ConcentrationConverterClient() {
       />
 
       {!allInputsPresent ? (
-        <p className="text-xs text-white/45" data-testid="converter-waiting-inputs">
+        <p className="pep-functional-text text-xs" data-testid="converter-waiting-inputs">
           No result until compound, vial amount, diluent, and dose are all entered.
         </p>
       ) : null}
@@ -553,7 +541,7 @@ export function ConcentrationConverterClient() {
 
       {result && result.ok ? (
         <div
-          className="rounded-2xl border border-white/10 bg-[#1E3054] p-4 space-y-2"
+          className="rounded-2xl border border-[var(--glass-border-226)] bg-[var(--card)] p-4 space-y-2"
           data-testid="converter-result"
         >
           <p className="text-sm font-semibold text-white">
@@ -563,20 +551,21 @@ export function ConcentrationConverterClient() {
             Concentration {result.concentrationDisplay} mg/mL · Volume{' '}
             {result.volumeMlDisplay} mL
           </p>
-          <p className="text-xs text-[#2DA5A0]">{result.resultStandardLabel}</p>
+          <p className="text-xs text-[var(--teal)]">{result.resultStandardLabel}</p>
           {result.warnings.map((w) => (
-            <p key={w.code} className="text-[11px] text-amber-200/90">
+            <p key={w.code} className="text-[11px] text-amber-200">
               {w.message}
             </p>
           ))}
-          <p className="text-[11px] text-white/45 border-t border-white/10 pt-2">
+          {/* Layer 3: solid disclaimer, not glass */}
+          <p className="pep-disclaimer-text text-[11px] border-t border-[var(--glass-border-226)] pt-2">
             {layer3}
           </p>
           <button
             type="button"
             disabled={busy}
             onClick={() => void handleSave()}
-            className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs border border-white/15 text-white/80 hover:border-[#2DA5A0]/50"
+            className="pep-segment inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs"
           >
             <Save className="w-3.5 h-3.5" strokeWidth={1.5} />
             Save to history
@@ -592,7 +581,7 @@ export function ConcentrationConverterClient() {
             {history.slice(0, 10).map((h) => (
               <li
                 key={h.id}
-                className="rounded-xl border border-white/10 bg-black/20 p-3 text-xs text-white/65"
+                className="pep-glass--subtle rounded-xl p-3 text-xs text-white/65"
               >
                 <div>
                   Dose you entered: {h.dose_amount} {h.dose_unit} → {Number(h.computed_units).toFixed(2)}{' '}

@@ -42,6 +42,8 @@ type PeptideCatalogPickerProps = {
   placeholder?: string;
   disabled?: boolean;
   testId?: string;
+  /** Prompt 226b: glass input treatment on converter only. */
+  glass?: boolean;
 };
 
 export function PeptideCatalogPicker({
@@ -52,6 +54,7 @@ export function PeptideCatalogPicker({
   placeholder = 'Search peptides by name...',
   disabled = false,
   testId = 'peptide-catalog-picker',
+  glass = false,
 }: PeptideCatalogPickerProps) {
   const reactId = useId();
   const inputId = `${testId}-input-${reactId}`;
@@ -195,7 +198,11 @@ export function PeptideCatalogPicker({
           placeholder={placeholder}
           autoComplete="off"
           spellCheck={false}
-          className="w-full rounded-xl border border-white/15 bg-[#1A2744] py-2 pl-9 pr-9 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-[#2DA5A0]/50"
+          className={
+            glass
+              ? 'pep-glass-input w-full rounded-xl py-2 pl-9 pr-9 text-sm'
+              : 'w-full rounded-xl border border-white/15 bg-[var(--deep-navy)] py-2 pl-9 pr-9 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-[var(--teal)]/50'
+          }
           data-testid={`${testId}-input`}
           onChange={(event) => {
             const next = event.target.value;
@@ -231,7 +238,11 @@ export function PeptideCatalogPicker({
         <ul
           id={listboxId}
           role="listbox"
-          className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-xl border border-white/10 bg-[#1A2744] text-white shadow-lg"
+          className={
+            glass
+              ? 'pep-glass absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-xl text-white'
+              : 'absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-xl border border-white/10 bg-[var(--deep-navy)] text-white shadow-lg'
+          }
           data-testid={`${testId}-list`}
         >
           {filtered.length === 0 ? (

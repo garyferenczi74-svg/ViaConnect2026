@@ -103,7 +103,7 @@ export function SyringeUnitScale({
       </p>
 
       <div
-        className={`relative w-full rounded-2xl border bg-[#15243f] p-3 ${token.matchedBorder}`}
+        className={`pep-glass--subtle relative w-full rounded-2xl p-3 ${token.matchedBorder}`}
         role="img"
         aria-label={numericLabel}
         onPointerDown={(e) => e.preventDefault()}
@@ -129,7 +129,8 @@ export function SyringeUnitScale({
         </div>
 
         {/* Tick band only (no text inside SVG) */}
-        <div className="relative w-full overflow-hidden rounded-xl border border-white/10 bg-[#1A2744]/80">
+        {/* Tick band stays opaque; glass is only the outer card (226b 4.5) */}
+        <div className="relative w-full overflow-hidden rounded-xl border border-[var(--glass-border-226)] bg-[var(--deep-navy)]">
           <svg
             viewBox={`0 0 ${width} ${height}`}
             width="100%"

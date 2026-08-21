@@ -1,0 +1,150 @@
+/**
+ * Prompt 226b: glass surface utilities for Peptide Education converter.
+ * Presentation only. Tokens live in globals.css :root.
+ * Scope via [data-peptide-converter] so platform-wide .glass is untouched.
+ */
+
+/* Scrim between hero photograph and content */
+.pep-scrim {
+  position: absolute;
+  inset: 0;
+  background: var(--scrim-base);
+  pointer-events: none;
+}
+
+@media (max-width: 767px) {
+  .pep-scrim {
+    background: var(--scrim-base-mobile);
+  }
+}
+
+/* Base glass pane */
+.pep-glass {
+  background: var(--glass-surface);
+  backdrop-filter: blur(var(--glass-blur-226));
+  -webkit-backdrop-filter: blur(var(--glass-blur-226));
+  border: 1px solid var(--glass-border-226);
+  box-shadow: var(--glass-shadow), var(--glass-inset);
+}
+
+.pep-glass--subtle {
+  background: var(--glass-subtle);
+  backdrop-filter: blur(var(--glass-blur-226));
+  -webkit-backdrop-filter: blur(var(--glass-blur-226));
+  border: 1px solid var(--glass-border-226);
+  box-shadow: var(--glass-inset);
+}
+
+.pep-glass--strong {
+  background: var(--glass-strong);
+  backdrop-filter: blur(var(--glass-blur-strong));
+  -webkit-backdrop-filter: blur(var(--glass-blur-strong));
+  border: 1px solid var(--glass-border-226);
+  box-shadow: var(--glass-shadow), var(--glass-inset);
+}
+
+/* Recessed inputs and compound search */
+.pep-glass-input {
+  background: var(--glass-subtle);
+  backdrop-filter: blur(var(--glass-blur-226));
+  -webkit-backdrop-filter: blur(var(--glass-blur-226));
+  border: 1px solid var(--glass-border-226);
+  color: var(--text-primary);
+  box-shadow: var(--glass-inset);
+}
+
+.pep-glass-input::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.85;
+}
+
+.pep-glass-input:focus,
+.pep-glass-input:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+  border-color: var(--glass-border-selected);
+}
+
+/* Segmented controls and diluent chips */
+.pep-segment {
+  background: var(--glass-subtle);
+  border: 1px solid var(--glass-border-226);
+  color: var(--text-secondary);
+  backdrop-filter: blur(var(--glass-blur-226));
+  -webkit-backdrop-filter: blur(var(--glass-blur-226));
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+  will-change: backdrop-filter;
+}
+
+.pep-segment:hover {
+  border-color: var(--glass-border-hover);
+}
+
+.pep-segment[aria-checked='true'],
+.pep-segment[aria-pressed='true'],
+.pep-segment[data-checked='true'] {
+  background: var(--glass-selected);
+  border: 1.5px solid var(--glass-border-selected);
+  color: var(--text-primary);
+  font-weight: 600;
+  box-shadow: var(--glass-inset), 0 0 0 1px var(--glass-border-selected);
+}
+
+.pep-segment:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+
+/*
+ * Disclaimer panels (Layer 2 / Layer 3): solid card, not translucent glass.
+ * Lex / Marshall: legibility is a compliance requirement.
+ */
+.pep-disclaimer-panel {
+  background: var(--card);
+  border: 1px solid var(--glass-border-226);
+  color: var(--disclaimer-text);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.pep-disclaimer-text {
+  color: var(--disclaimer-text);
+  opacity: 1;
+}
+
+/* Functional helper / empty-state copy stays full contrast */
+.pep-functional-text {
+  color: var(--text-primary);
+  opacity: 0.85;
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .pep-glass {
+    background: var(--glass-strong);
+  }
+  .pep-glass--subtle,
+  .pep-glass-input,
+  .pep-segment {
+    background: var(--glass-surface);
+  }
+  .pep-glass--strong {
+    background: var(--card);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .pep-glass,
+  .pep-glass--subtle,
+  .pep-glass--strong,
+  .pep-glass-input,
+  .pep-segment {
+    background: var(--card);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .pep-segment[aria-checked='true'] {
+    background: var(--glass-selected-strong);
+    border-color: var(--glass-border-selected);
+  }
+}
