@@ -95,7 +95,7 @@ export function SyringeUnitScale({
       </p>
 
       <div
-        className={`relative overflow-hidden rounded-2xl border bg-[#15243f] ${token.matchedBorder}`}
+        className={`relative w-full overflow-hidden rounded-2xl border bg-[#15243f] ${token.matchedBorder}`}
         role="img"
         aria-label={numericLabel}
         onPointerDown={(e) => e.preventDefault()}
@@ -105,7 +105,8 @@ export function SyringeUnitScale({
       >
         <svg
           viewBox={`0 0 ${width} ${height}`}
-          className="relative block h-[4.5rem] w-full"
+          preserveAspectRatio="xMidYMid meet"
+          className="relative block h-auto w-full"
           aria-hidden
           data-testid="syringe-tick-svg"
         >
