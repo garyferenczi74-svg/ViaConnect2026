@@ -85,4 +85,10 @@ describe('Prompt 225 Hannah peptide refusal matrix', () => {
       detectPeptideRefusal('What is the status of NCT05891496?')?.code,
     ).not.toBe('trial_protocol_dosing');
   });
+
+  it('226 refuses validating a specific dose value', () => {
+    const r = detectPeptideRefusal('is 0.5 mg of BPC-157 right for me?');
+    expect(r?.code).toBe('dose_request');
+    expect(r?.answer.toLowerCase()).toContain('cannot confirm');
+  });
 });

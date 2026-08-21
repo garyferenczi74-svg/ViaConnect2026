@@ -86,12 +86,28 @@ export function detectPeptideRefusal(question: string): PeptideRefusal | null {
   if (
     any(q, 'how much should i take', 'what dose', 'what dosage', 'dosing protocol', 'titration schedule') ||
     (any(q, 'mcg', 'mg/kg', 'iu ') && any(q, 'take', 'inject', 'dose', 'dosage')) ||
-    any(q, 'how do i reconstitute', 'bacteriostatic water', 'bac water', 'injection site', 'how to inject')
+    any(q, 'how do i reconstitute', 'bacteriostatic water', 'bac water', 'injection site', 'how to inject') ||
+    // Prompt 226: never validate / confirm appropriateness of a specific dose value
+    (/\b\d+(?:[.,]\d+)?\s*(?:mg|mcg|iu)\b/i.test(question) &&
+      any(
+        q,
+        'right for me',
+        'ok for me',
+        'okay for me',
+        'appropriate',
+        'is that enough',
+        'too much',
+        'too little',
+        'should i take',
+        'can i take',
+        'safe to take',
+      ))
   ) {
     return {
       code: 'dose_request',
       answer:
         'I cannot provide dosing, reconstitution, injection technique, cycle length, or titration schedules for peptides at any access tier. ' +
+        'I also cannot confirm, validate, or comment on whether a specific dose value is appropriate for you. ' +
         PRACTITIONER,
     };
   }
