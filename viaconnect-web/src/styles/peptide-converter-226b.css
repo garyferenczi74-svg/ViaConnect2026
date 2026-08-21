@@ -43,14 +43,19 @@
   box-shadow: var(--glass-shadow), var(--glass-inset);
 }
 
-/* Recessed inputs and compound search */
+/* Recessed inputs and compound search.
+ * No backdrop-filter: blur bleeds upward and covers field labels
+ * (Compound, Vial amount, Diluent, Dose). */
 .pep-glass-input {
-  background: var(--glass-subtle);
-  backdrop-filter: blur(var(--glass-blur-226));
-  -webkit-backdrop-filter: blur(var(--glass-blur-226));
+  position: relative;
+  z-index: 0;
+  background: var(--glass-surface);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   border: 1px solid var(--glass-border-226);
   color: var(--text-primary);
   box-shadow: var(--glass-inset);
+  isolation: isolate;
 }
 
 .pep-glass-input::placeholder {
@@ -63,6 +68,17 @@
   outline: 2px solid var(--teal);
   outline-offset: 2px;
   border-color: var(--glass-border-selected);
+  z-index: 1;
+}
+
+/* Field label above glass controls: keep clear of input chrome */
+.pep-field-label {
+  position: relative;
+  z-index: 2;
+  display: block;
+  margin-bottom: 0;
+  line-height: 1.25;
+  color: var(--text-secondary);
 }
 
 /* Segmented controls and diluent chips */

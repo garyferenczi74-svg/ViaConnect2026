@@ -393,9 +393,9 @@ export function ConcentrationConverterClient() {
           />
         </div>
 
-        <div className="field--diluent space-y-1 text-xs text-white/60">
-          <label className="block space-y-1">
-            Diluent volume (mL)
+        <div className="field--diluent space-y-3 text-xs text-white/60">
+          <label className="flex flex-col gap-3">
+            <span className="pep-field-label">Diluent volume (mL)</span>
             <input
               type="number"
               inputMode="decimal"
@@ -427,8 +427,8 @@ export function ConcentrationConverterClient() {
           </div>
         </div>
 
-        <label className="field--vial space-y-1 text-xs text-white/60">
-          Vial amount
+        <label className="field--vial flex flex-col gap-3 text-xs text-white/60">
+          <span className="pep-field-label">Vial amount</span>
           <div className="flex gap-2">
             <input
               type="number"
@@ -454,9 +454,9 @@ export function ConcentrationConverterClient() {
           </div>
         </label>
 
-        <div className="field--dose space-y-1 text-xs text-white/60">
-          <label className="block space-y-1" htmlFor="dose-input">
-            Dose (your number)
+        <div className="field--dose flex flex-col gap-3 text-xs text-white/60">
+          <label className="flex flex-col gap-3" htmlFor="dose-input">
+            <span className="pep-field-label">Dose (your number)</span>
             <div className="flex gap-2">
               <input
                 id="dose-input"

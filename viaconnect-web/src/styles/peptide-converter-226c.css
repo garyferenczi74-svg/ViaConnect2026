@@ -24,6 +24,31 @@
   min-width: 0;
 }
 
+/* Keep labels fully above inputs (no overlap with glass fill / focus ring) */
+.field--compound label,
+.field--vial,
+.field--diluent > label,
+.field--dose > label {
+  display: block;
+  position: relative;
+  z-index: 2;
+}
+
+.field--vial,
+.field--diluent > label,
+.field--dose > label {
+  margin-bottom: 0;
+}
+
+.converter-fields label.space-y-1,
+.converter-fields .space-y-1 {
+  row-gap: var(--space-3);
+}
+
+.converter-fields .space-y-1 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: var(--space-3);
+}
+
 .field--diluent-extras {
   display: flex;
   flex-direction: column;

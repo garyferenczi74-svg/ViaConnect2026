@@ -172,11 +172,11 @@ export function PeptideCatalogPicker({
     showPanel && activeIndex >= 0 ? filtered[activeIndex] : null;
 
   return (
-    <div ref={rootRef} className="relative w-full space-y-1" data-testid={testId}>
-      <label htmlFor={inputId} className="block text-xs text-white/60">
+    <div ref={rootRef} className="relative z-0 flex w-full flex-col gap-3" data-testid={testId}>
+      <label htmlFor={inputId} className="pep-field-label text-xs">
         {label}
       </label>
-      <div className="relative">
+      <div className="relative z-0">
         <Search
           className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/35"
           strokeWidth={1.5}
