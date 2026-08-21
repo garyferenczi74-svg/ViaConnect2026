@@ -69,4 +69,20 @@ describe('Prompt 225 Hannah peptide refusal matrix', () => {
   it('returns null for ordinary educational questions', () => {
     expect(detectPeptideRefusal('What is known about BPC-157 research?')).toBeNull();
   });
+
+  it('225a Section 10.3 refuses NCT protocol dosing and cites ClinicalTrials.gov only', () => {
+    const r = detectPeptideRefusal(
+      'Summarize the dosing used in NCT05891496 for semaglutide',
+    );
+    expect(r?.code).toBe('trial_protocol_dosing');
+    expect(r?.answer.toLowerCase()).toContain('cannot restate protocol dosing');
+    expect(r?.answer).toContain('https://clinicaltrials.gov/study/NCT05891496');
+    expect(r?.answer.toLowerCase()).not.toMatch(/\b0\.\d+\s*mg\b/);
+  });
+
+  it('does not treat NCT-only educational questions as dosing refusals', () => {
+    expect(
+      detectPeptideRefusal('What is the status of NCT05891496?')?.code,
+    ).not.toBe('trial_protocol_dosing');
+  });
 });

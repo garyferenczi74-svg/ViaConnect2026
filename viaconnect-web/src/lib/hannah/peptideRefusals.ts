@@ -6,6 +6,7 @@
 
 export type PeptideRefusalCode =
   | 'dose_request'
+  | 'trial_protocol_dosing'
   | 'sourcing_request'
   | 'minor_request'
   | 'pregnancy_request'
@@ -46,6 +47,38 @@ export function detectPeptideRefusal(question: string): PeptideRefusal | null {
       code: 'excluded_dermorphin',
       answer:
         'Dermorphin is an excluded adverse reference in the Peptide Education Database. It is not discussed as a wellness option. ' +
+        PRACTITIONER,
+    };
+  }
+
+  // Prompt 225a Section 10.3: NCT protocol dosing request
+  const nctMatch = q.match(/\bnct\s*0*\d{6,8}\b/i) || question.match(/\bNCT\d{8}\b/);
+  if (
+    nctMatch &&
+    any(
+      q,
+      'dose',
+      'dosing',
+      'dosage',
+      'how much',
+      'mg',
+      'mcg',
+      'protocol dose',
+      'what dose was used',
+      'summarise the dosing',
+      'summarize the dosing',
+      'dosing used in',
+    )
+  ) {
+    const nct = (nctMatch[0] || '').toUpperCase().replace(/\s+/g, '');
+    const nctId = nct.startsWith('NCT') ? nct : `NCT${nct.replace(/^NCT/i, '')}`;
+    const normalized = nctId.match(/NCT\d{8}/)?.[0] ?? nctId;
+    return {
+      code: 'trial_protocol_dosing',
+      answer:
+        `I cannot restate protocol dosing, titration, reconstitution, or administration instructions from trial ${normalized} or any registry record. ` +
+        `If that study used multiple dose arms, that design fact may be discussed educationally without restating amounts. ` +
+        `The public protocol is available on ClinicalTrials.gov at https://clinicaltrials.gov/study/${normalized}. ` +
         PRACTITIONER,
     };
   }

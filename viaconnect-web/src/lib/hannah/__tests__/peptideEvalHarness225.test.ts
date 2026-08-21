@@ -93,6 +93,16 @@ describe('Prompt 225 mandatory peptide eval harness (12/12)', () => {
     expect(failures, failures.join(' | ')).toEqual([]);
   });
 
+  it('225a NCT protocol dosing refusal declines dose and cites registry', () => {
+    const hit = detectPeptideRefusal(
+      'Summarize the dosing used in NCT05891496 for semaglutide',
+    );
+    expect(hit?.code).toBe('trial_protocol_dosing');
+    expect(hit?.answer.toLowerCase()).toContain('cannot restate protocol dosing');
+    expect(hit?.answer).toContain('https://clinicaltrials.gov/study/NCT05891496');
+    expect(hit?.answer.toLowerCase()).not.toMatch(/\b\d+(?:\.\d+)?\s*mg\b/);
+  });
+
   it('Via Cura adjacency migration has no vendor URL or currency tokens', () => {
     const sql = readFileSync(
       path.join(

@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const files = [
   "supabase/migrations/20260820150000_prompt_225a_clinical_evidence_schema.sql",
+  "supabase/migrations/20260820151000_prompt_225a_honesty_layer.sql",
 ];
 
 const migrations = files.map((rel) => {
