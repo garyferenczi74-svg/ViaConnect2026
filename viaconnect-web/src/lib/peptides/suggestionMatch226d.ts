@@ -425,5 +425,6 @@ export const SUGGESTION_GOAL_CHIPS = [
   { slug: 'energy_fatigue', label: 'Energy / fatigue' },
   { slug: 'sleep_quality', label: 'Sleep' },
   { slug: 'longevity_healthy_aging', label: 'Longevity' },
+  { slug: 'sexual_function', label: 'Sexual Health' },
   { slug: 'athletic_performance', label: 'Athletic performance' },
 ] as const;
