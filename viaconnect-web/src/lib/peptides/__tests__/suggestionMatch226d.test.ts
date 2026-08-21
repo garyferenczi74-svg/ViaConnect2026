@@ -167,7 +167,16 @@ describe('G28 lexicon on suggestion surfaces', () => {
       expect(lower).not.toMatch(/\bregimen\b/);
       expect(lower).not.toMatch(/(?<!issues?\s)(?<!not\s)(?<!no\s)\bprescribe\b/);
     }
-    expect(page).toContain('PeptideSuggestionsClient');
+    // 226e moved suggestions to /peptide-protocol/suggestions; index is bento hub.
+    expect(page).toContain('PeptideEducationBento');
     expect(page).not.toContain('PersonalizedPeptideStack');
+    const suggestionsPage = readFileSync(
+      path.join(
+        process.cwd(),
+        'src/app/(app)/(consumer)/peptide-protocol/suggestions/page.tsx',
+      ),
+      'utf8',
+    );
+    expect(suggestionsPage).toContain('PeptideSuggestionsClient');
   });
 });
