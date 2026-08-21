@@ -1,4 +1,4 @@
-﻿-- Prompt 226f: popularity-aware goal-peptide education links.
+-- Prompt 226f: popularity-aware goal-peptide education links.
 -- Append-only. Models never select compounds. Missing educational rows are skipped.
 -- Standing GLP-1 brand exclusions remain. Tesamorelin and Kisspeptin deferred (no monograph yet).
 
