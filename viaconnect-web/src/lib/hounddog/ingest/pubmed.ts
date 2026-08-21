@@ -8,6 +8,7 @@ import {
   firecrawlScrape,
   canSpend,
 } from '@/lib/hounddog/firecrawl/client';
+import { acquireNcbiToken } from '@/lib/thanos/ncbiTokenBucket';
 import { contentHash } from './contentHash';
 
 const EUTILS = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils';
@@ -45,20 +46,12 @@ function ncbiCommonParams(): Record<string, string> {
   return params;
 }
 
-function throttleMs(): number {
-  // With API key NCBI allows ~10 req/s; without ~3/s. Be conservative.
-  return ncbiKey() ? 120 : 350;
-}
-
-async function sleep(ms: number): Promise<void> {
-  await new Promise((r) => setTimeout(r, ms));
-}
-
 export async function pubmedEsearch(
   term: string,
   mindate: string,
   retmax = 10,
 ): Promise<string[]> {
+  await acquireNcbiToken();
   const params = new URLSearchParams({
     ...ncbiCommonParams(),
     db: 'pubmed',
@@ -84,6 +77,7 @@ export async function pubmedEsummary(pmids: string[]): Promise<
   Array<{ pmid: string; title: string; pubDate?: string; source?: string }>
 > {
   if (pmids.length === 0) return [];
+  await acquireNcbiToken();
   const params = new URLSearchParams({
     ...ncbiCommonParams(),
     db: 'pubmed',
@@ -91,7 +85,6 @@ export async function pubmedEsummary(pmids: string[]): Promise<
     retmode: 'json',
   });
 
-  await sleep(throttleMs());
   const res = await fetch(`${EUTILS}/esummary.fcgi?${params.toString()}`);
   if (!res.ok) return [];
   const json = (await res.json()) as {
@@ -112,6 +105,7 @@ export async function pubmedEsummary(pmids: string[]): Promise<
 export async function pubmedEfetchAbstracts(pmids: string[]): Promise<Map<string, string>> {
   const map = new Map<string, string>();
   if (pmids.length === 0) return map;
+  await acquireNcbiToken();
   const params = new URLSearchParams({
     ...ncbiCommonParams(),
     db: 'pubmed',
@@ -120,7 +114,6 @@ export async function pubmedEfetchAbstracts(pmids: string[]): Promise<Map<string
     rettype: 'abstract',
   });
 
-  await sleep(throttleMs());
   const res = await fetch(`${EUTILS}/efetch.fcgi?${params.toString()}`);
   if (!res.ok) return map;
   const xml = await res.text();
@@ -133,6 +126,47 @@ export async function pubmedEfetchAbstracts(pmids: string[]): Promise<Map<string
       m[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(),
     );
     if (texts.length) map.set(pmidMatch[1], texts.join(' '));
+  }
+  return map;
+}
+
+/** Fetch abstracts plus PublicationType list for Wave 1 facts extraction. */
+export async function pubmedEfetchDetails(pmids: string[]): Promise<
+  Map<string, { abstract: string; publicationTypes: string[]; year?: number }>
+> {
+  const map = new Map<
+    string,
+    { abstract: string; publicationTypes: string[]; year?: number }
+  >();
+  if (pmids.length === 0) return map;
+  await acquireNcbiToken();
+  const params = new URLSearchParams({
+    ...ncbiCommonParams(),
+    db: 'pubmed',
+    id: pmids.join(','),
+    retmode: 'xml',
+    rettype: 'abstract',
+  });
+  const res = await fetch(`${EUTILS}/efetch.fcgi?${params.toString()}`);
+  if (!res.ok) return map;
+  const xml = await res.text();
+  for (const chunk of xml.split('<PubmedArticle>')) {
+    const pmidMatch = chunk.match(/<PMID[^>]*>(\d+)<\/PMID>/);
+    if (!pmidMatch) continue;
+    const texts = [
+      ...chunk.matchAll(/<AbstractText[^>]*>([\s\S]*?)<\/AbstractText>/g),
+    ].map((m) => m[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim());
+    const types = [
+      ...chunk.matchAll(/<PublicationType(?:\s[^>]*)?>([\s\S]*?)<\/PublicationType>/g),
+    ]
+      .map((m) => m[1].replace(/<[^>]+>/g, '').trim())
+      .filter(Boolean);
+    const yearMatch = chunk.match(/<PubDate>[\s\S]*?<Year>(\d{4})<\/Year>/);
+    map.set(pmidMatch[1], {
+      abstract: texts.join(' '),
+      publicationTypes: types,
+      year: yearMatch ? Number(yearMatch[1]) : undefined,
+    });
   }
   return map;
 }
@@ -180,7 +214,6 @@ export async function runPubMedTopicDiscovery(opts: {
     return { discovered: 0, staged, skipped: 0, budget: opts.budget };
   }
 
-  await sleep(throttleMs());
   const summaries = await pubmedEsummary(pmids);
   const abstracts = await pubmedEfetchAbstracts(pmids);
 
