@@ -49,12 +49,14 @@ export function GlassSegmentedControl<T extends string>({
   }
 
   return (
-    <div className="space-y-2 text-xs text-white/60">
-      <div id={groupId}>{label}</div>
+    <div className="flex flex-col gap-3 text-xs text-white/60">
+      <div id={groupId} className="relative z-10 leading-5">
+        {label}
+      </div>
       <div
         role="radiogroup"
         aria-labelledby={groupId}
-        className="flex flex-wrap gap-2"
+        className="relative z-0 flex flex-wrap gap-2 pt-0.5"
         onKeyDown={onKeyDown}
         data-testid={testId}
       >

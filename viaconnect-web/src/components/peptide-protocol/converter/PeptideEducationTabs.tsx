@@ -23,7 +23,7 @@ export function PeptideEducationTabs() {
 
   return (
     <nav
-      className="flex flex-wrap gap-2"
+      className="mb-5 flex flex-wrap gap-2"
       aria-label="Peptide Education sections"
       data-testid="peptide-education-tabs"
     >

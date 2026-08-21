@@ -67,12 +67,16 @@
 
 /* Segmented controls and diluent chips */
 .pep-segment {
+  position: relative;
+  z-index: 0;
   background: var(--glass-subtle);
   border: 1px solid var(--glass-border-226);
   color: var(--text-secondary);
-  backdrop-filter: blur(var(--glass-blur-226));
-  -webkit-backdrop-filter: blur(var(--glass-blur-226));
+  /* No backdrop-filter here: blur bleeds into adjacent labels/headings */
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+  isolation: isolate;
 }
 
 .pep-segment:hover {
@@ -82,16 +86,18 @@
 .pep-segment[aria-checked='true'],
 .pep-segment[aria-pressed='true'],
 .pep-segment[data-checked='true'] {
-  background: var(--glass-selected);
-  border: 1.5px solid var(--glass-border-selected);
+  background: var(--glass-selected-strong);
+  border: 1px solid var(--glass-border-selected);
   color: var(--text-primary);
   font-weight: 600;
-  box-shadow: var(--glass-inset), 0 0 0 1px var(--glass-border-selected);
+  /* Keep 1px border so selected state does not grow into the heading above */
+  box-shadow: var(--glass-inset), inset 0 0 0 1px var(--glass-border-selected);
 }
 
 .pep-segment:focus-visible {
   outline: 2px solid var(--teal);
   outline-offset: 2px;
+  z-index: 1;
 }
 
 /*
