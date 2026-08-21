@@ -104,5 +104,6 @@ describe('PeptideCatalogPicker wiring', () => {
     expect(css).toContain('.pep-catalog-dropdown');
     expect(css).toContain('background: var(--card)');
     expect(css).toContain('backdrop-filter: none');
+    expect(css).toContain('grid-template-columns: 1fr 1fr');
   });
 });

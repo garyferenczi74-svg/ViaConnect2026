@@ -49,6 +49,9 @@
  * Anchored with top:100% under the search field (see PeptideCatalogPicker).
  */
 .pep-catalog-dropdown {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 0;
   background: var(--card); /* solid #1E3054, no alpha */
   border: 1px solid var(--glass-border-226);
   box-shadow: var(--glass-shadow);
@@ -57,8 +60,24 @@
   opacity: 1;
 }
 
+.pep-catalog-dropdown__status,
+.pep-catalog-dropdown__empty {
+  grid-column: 1 / -1;
+}
+
+.pep-catalog-dropdown__option {
+  min-width: 0;
+  border-bottom: 1px solid var(--glass-border-226);
+}
+
 .pep-catalog-dropdown__active {
   background: var(--glass-selected-strong);
+}
+
+@media (max-width: 419px) {
+  .pep-catalog-dropdown {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Recessed inputs and compound search.

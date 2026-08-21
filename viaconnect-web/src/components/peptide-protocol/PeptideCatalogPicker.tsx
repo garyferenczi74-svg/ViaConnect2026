@@ -258,11 +258,11 @@ export function PeptideCatalogPicker({
           <ul
             id={listboxId}
             role="listbox"
-            className="pep-catalog-dropdown absolute left-0 right-0 top-full z-20 mt-1 max-h-60 w-full overflow-auto rounded-xl text-white"
+            className="pep-catalog-dropdown absolute left-0 right-0 top-full z-20 mt-1 max-h-72 w-full overflow-auto rounded-xl text-white"
             data-testid={`${testId}-list`}
           >
             <li
-              className="sticky top-0 z-[1] border-b border-white/10 bg-[var(--card)] px-3 py-1.5 text-[10px] text-white/55"
+              className="pep-catalog-dropdown__status sticky top-0 z-[1] border-b border-white/10 bg-[var(--card)] px-3 py-1.5 text-[10px] text-white/55"
               aria-hidden
             >
               {searching
@@ -270,7 +270,7 @@ export function PeptideCatalogPicker({
                 : `${items.length} peptides · type to filter`}
             </li>
             {filtered.length === 0 ? (
-              <li className="px-3 py-3 text-sm text-white/70">
+              <li className="pep-catalog-dropdown__empty px-3 py-3 text-sm text-white/70">
                 No peptides match &ldquo;{query.trim()}&rdquo;
               </li>
             ) : (
@@ -283,7 +283,7 @@ export function PeptideCatalogPicker({
                     id={`${listboxId}-opt-${item.id}`}
                     role="option"
                     aria-selected={isSelected || active}
-                    className={`cursor-pointer px-3 py-2.5 text-sm ${
+                    className={`pep-catalog-dropdown__option cursor-pointer px-2.5 py-2 text-sm ${
                       active ? 'pep-catalog-dropdown__active' : ''
                     } ${isSelected ? 'text-[var(--teal)]' : 'text-white'}`}
                     onMouseDown={(event) => {
@@ -292,8 +292,8 @@ export function PeptideCatalogPicker({
                     }}
                     onMouseEnter={() => setActiveIndex(index)}
                   >
-                    <div>{item.displayName}</div>
-                    <div className="text-[10px] text-white/50">{item.slug}</div>
+                    <div className="truncate">{item.displayName}</div>
+                    <div className="truncate text-[10px] text-white/50">{item.slug}</div>
                   </li>
                 );
               })
