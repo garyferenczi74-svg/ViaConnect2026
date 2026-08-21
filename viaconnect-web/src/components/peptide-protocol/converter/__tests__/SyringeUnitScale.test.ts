@@ -16,6 +16,9 @@ describe('Prompt 226 SyringeUnitScale boundary', () => {
     expect(src).not.toMatch(/onDrag/);
     expect(src).not.toMatch(/setDose|doseAmount/);
     expect(src).toContain('pointer-events-none');
+    expect(src).toContain("data-tick={kind}");
+    expect(src).toContain('1u / 5u / 10u');
+    expect(src).toContain('syringe-tick-svg');
   });
 
   it('converter client keeps dose empty by default with no presets', () => {
