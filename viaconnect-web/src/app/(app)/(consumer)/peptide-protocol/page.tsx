@@ -3,6 +3,7 @@ import { PersonalizedPeptideStack } from '@/components/peptide-protocol/Personal
 import { KbPeptideCatalogSection } from '@/components/peptide-protocol/KbPeptideCatalogSection';
 import { PeptidePractitionerAccess } from '@/components/peptide-protocol/PeptidePractitionerAccess';
 import { PeptideProtocolHeroShell } from '@/components/peptide-protocol/PeptideProtocolHeroShell';
+import { PeptideEducationTabs } from '@/components/peptide-protocol/converter/PeptideEducationTabs';
 import { loadConsumerPeptideCatalog } from '@/lib/kb/peptides/loadConsumerPeptides';
 
 export const dynamic = 'force-dynamic';
@@ -12,6 +13,7 @@ export default async function PeptideProtocolRoute() {
 
   return (
     <PeptideProtocolHeroShell>
+      <PeptideEducationTabs />
       <PeptideDisclaimerBanner />
       <PersonalizedPeptideStack />
       <KbPeptideCatalogSection

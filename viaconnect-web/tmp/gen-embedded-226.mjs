@@ -9,6 +9,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const files = [
   "supabase/migrations/20260820160000_prompt_226_converter_schema.sql",
   "supabase/migrations/20260820161000_prompt_226_marshall_converter_allowlist_seed.sql",
+  "supabase/migrations/20260820162000_prompt_226_lex_clear_disclaimer_v1.sql",
 ];
 
 const migrations = files.map((rel) => {
