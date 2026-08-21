@@ -468,7 +468,7 @@ export function ConcentrationConverterClient() {
                 placeholder=""
                 data-testid="converter-dose"
                 autoComplete="off"
-                aria-describedby="dose-note dose-helper"
+                aria-describedby="dose-note"
               />
               <select
                 className="pep-glass-input rounded-xl px-2 py-2 text-sm"
@@ -484,13 +484,6 @@ export function ConcentrationConverterClient() {
               </select>
             </div>
           </label>
-          <span
-            id="dose-helper"
-            className="pep-functional-text block text-[10px]"
-            data-testid="converter-dose-helper"
-          >
-            Empty until you type. No presets. No suggestions.
-          </span>
           <p
             id="dose-note"
             className="field--dose-note"

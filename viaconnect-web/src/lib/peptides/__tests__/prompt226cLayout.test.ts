@@ -14,7 +14,6 @@ function read(rel: string): string {
 const APPENDIX_A_STRINGS = [
   'You enter the dose from your prescription. ViaConnect converts units only.',
   'Common volumes, choose one.',
-  'Empty until you type. No presets. No suggestions.',
   'Dose (your number)',
   'This is where your entered dose lands on the barrel.',
   'Scale shows 1-unit ticks like a syringe barrel. Use the numeric result above. Indicator is not draggable.',
@@ -61,7 +60,8 @@ describe('Prompt 226c true 2x2 layout', () => {
     expect(converter).toContain('converter-diluent-chips');
     expect(converter).toContain('field--dose-note');
     expect(converter).toContain('id="dose-note"');
-    expect(converter).toContain('aria-describedby="dose-note dose-helper"');
+    expect(converter).toContain('aria-describedby="dose-note"');
+    expect(converter).not.toContain('Empty until you type. No presets. No suggestions.');
   });
 });
 

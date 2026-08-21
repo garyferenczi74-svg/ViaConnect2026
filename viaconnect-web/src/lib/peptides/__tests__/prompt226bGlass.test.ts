@@ -147,7 +147,6 @@ describe('Prompt 226b does not regress 226 behaviour wiring', () => {
     );
     expect(converter).toContain("setDoseAmount] = useState('')");
     expect(converter).toContain('MUST stay empty until user types');
-    expect(converter).toContain('Empty until you type. No presets. No suggestions.');
     expect(scale).not.toMatch(/onDrag/);
     expect(scale).not.toMatch(/setDose|doseAmount/);
   });

@@ -37,7 +37,6 @@ describe('Prompt 226 SyringeUnitScale boundary', () => {
     );
     expect(src).toContain("setDoseAmount] = useState('')");
     expect(src).toContain('MUST stay empty until user types');
-    expect(src).toContain('No presets. No suggestions.');
     expect(src).toContain('CONVERTER_COPY.bacShortcutsLabel');
     expect(src.toLowerCase()).not.toContain('recommended dose');
     expect(src.toLowerCase()).not.toContain('typical volume');
