@@ -2,7 +2,7 @@
 
 /**
  * Prompt 226: reactive search picker for Collection 14 peptide catalogs.
- * Filters locally as the user types (display name + slug).
+ * Filters locally on every keystroke (display name + slug).
  */
 
 import {
@@ -34,13 +34,12 @@ export function filterPeptideCatalog(
   if (!q) return items;
   const qNorm = normalizeSearch(query);
   return items.filter((item) => {
-    const name = item.displayName.toLowerCase();
-    const slug = item.slug.toLowerCase();
+    const name = String(item.displayName ?? '').toLowerCase();
+    const slug = String(item.slug ?? '').toLowerCase();
     if (name.includes(q) || slug.includes(q)) return true;
-    // Also match "bpc157" to "BPC-157"
     return (
-      normalizeSearch(item.displayName).includes(qNorm) ||
-      normalizeSearch(item.slug).includes(qNorm)
+      normalizeSearch(name).includes(qNorm) ||
+      normalizeSearch(slug).includes(qNorm)
     );
   });
 }
@@ -71,28 +70,32 @@ export function PeptideCatalogPicker({
   const inputId = `${testId}-input-${reactId}`;
   const listboxId = `${testId}-listbox-${reactId}`;
   const rootRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  /** Last peptide id we synced into the text box (fromRx / pick). */
+  const syncedValueRef = useRef<string>('');
 
   const selected = useMemo(
     () => items.find((item) => item.id === value) ?? null,
     [items, value],
   );
 
-  const [query, setQuery] = useState(selected?.displayName ?? '');
+  const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
-  /** True while the user is typing a search; blocks selection sync from wiping the query. */
-  const typingRef = useRef(false);
 
-  // Sync input from committed selection only when not actively searching.
-  // Bug fix: clearing peptideId on keystroke used to run setQuery('') and kill filtering.
+  // Only push an external/committed selection into the input when value changes
+  // to a new id (pick or fromRx). Never reset query while the user is typing.
   useEffect(() => {
-    if (open || typingRef.current) return;
-    if (selected) {
-      setQuery(selected.displayName);
-    } else if (!value) {
-      setQuery('');
+    if (!value) {
+      syncedValueRef.current = '';
+      return;
     }
-  }, [selected, value, open]);
+    if (value === syncedValueRef.current) return;
+    const match = items.find((item) => item.id === value);
+    if (!match) return;
+    syncedValueRef.current = value;
+    setQuery(match.displayName);
+  }, [value, items]);
 
   const filtered = useMemo(
     () => filterPeptideCatalog(items, query),
@@ -100,43 +103,42 @@ export function PeptideCatalogPicker({
   );
 
   useEffect(() => {
+    if (!open) return;
     if (filtered.length === 0) {
       setActiveIndex(-1);
       return;
     }
     setActiveIndex((current) =>
-      current >= filtered.length ? filtered.length - 1 : current,
+      current < 0 ? 0 : Math.min(current, filtered.length - 1),
     );
-  }, [filtered]);
+  }, [filtered, open]);
 
   useEffect(() => {
     function onPointerDown(event: MouseEvent) {
       if (!rootRef.current?.contains(event.target as Node)) {
-        typingRef.current = false;
         setOpen(false);
         setActiveIndex(-1);
-        if (selected) setQuery(selected.displayName);
-        else if (!value) setQuery('');
       }
     }
     document.addEventListener('mousedown', onPointerDown);
     return () => document.removeEventListener('mousedown', onPointerDown);
-  }, [selected, value]);
+  }, []);
 
   function pick(item: PeptideCatalogItem) {
-    typingRef.current = false;
+    syncedValueRef.current = item.id;
     onChange(item.id);
     setQuery(item.displayName);
     setOpen(false);
     setActiveIndex(-1);
   }
 
-  function clearSelection() {
-    typingRef.current = true;
-    onChange('');
+  function clearSearch() {
+    syncedValueRef.current = '';
     setQuery('');
+    if (value) onChange('');
     setOpen(true);
     setActiveIndex(0);
+    inputRef.current?.focus();
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLInputElement>) {
@@ -181,32 +183,33 @@ export function PeptideCatalogPicker({
     if (event.key === 'Escape') {
       event.preventDefault();
       setOpen(false);
-      if (selected) setQuery(selected.displayName);
-      return;
     }
   }
 
   const showPanel = open && !disabled;
   const activeItem =
     showPanel && activeIndex >= 0 ? filtered[activeIndex] : null;
+  const searching = query.trim().length > 0;
 
   return (
     <div
       ref={rootRef}
-      className={`relative flex w-full flex-col gap-3 ${open ? 'z-30' : 'z-0'}`}
+      className={`relative flex w-full flex-col gap-3 overflow-visible ${
+        open ? 'z-30' : 'z-0'
+      }`}
       data-testid={testId}
     >
       <label htmlFor={inputId} className="pep-field-label text-xs">
         {label}
       </label>
-      {/* Anchor: list is positioned under the search field, never over it */}
-      <div className="relative z-10">
+      <div className="relative z-10 overflow-visible">
         <Search
           className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-white/35"
           strokeWidth={1.5}
           aria-hidden
         />
         <input
+          ref={inputRef}
           id={inputId}
           type="text"
           role="combobox"
@@ -230,13 +233,12 @@ export function PeptideCatalogPicker({
           data-testid={`${testId}-input`}
           onChange={(event) => {
             const next = event.target.value;
-            typingRef.current = true;
             setQuery(next);
             setOpen(true);
             setActiveIndex(0);
-            // Clear committed selection when the user edits the search text,
-            // but do NOT reset query (that previously broke reactive filtering).
+            // Detach committed selection as soon as the text diverges.
             if (value && selected && next !== selected.displayName) {
+              syncedValueRef.current = '';
               onChange('');
             }
           }}
@@ -246,12 +248,6 @@ export function PeptideCatalogPicker({
               setActiveIndex(filtered.length > 0 ? 0 : -1);
             }
           }}
-          onBlur={() => {
-            // Allow selection sync again after focus leaves (mousedown on option uses preventDefault).
-            window.setTimeout(() => {
-              typingRef.current = false;
-            }, 0);
-          }}
           onKeyDown={onKeyDown}
         />
         {query ? (
@@ -259,7 +255,7 @@ export function PeptideCatalogPicker({
             type="button"
             className="absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded-md p-1 text-white/40 hover:text-white/80"
             aria-label="Clear peptide search"
-            onClick={clearSelection}
+            onClick={clearSearch}
             data-testid={`${testId}-clear`}
           >
             <X className="h-3.5 w-3.5" strokeWidth={1.5} />
@@ -273,6 +269,14 @@ export function PeptideCatalogPicker({
             className="pep-catalog-dropdown absolute left-0 right-0 top-full z-20 mt-1 max-h-60 w-full overflow-auto rounded-xl text-white"
             data-testid={`${testId}-list`}
           >
+            <li
+              className="sticky top-0 z-[1] border-b border-white/10 bg-[var(--card)] px-3 py-1.5 text-[10px] text-white/55"
+              aria-hidden
+            >
+              {searching
+                ? `${filtered.length} match${filtered.length === 1 ? '' : 'es'} for "${query.trim()}"`
+                : `${items.length} peptides · type to filter`}
+            </li>
             {filtered.length === 0 ? (
               <li className="px-3 py-3 text-sm text-white/70">
                 No peptides match &ldquo;{query.trim()}&rdquo;

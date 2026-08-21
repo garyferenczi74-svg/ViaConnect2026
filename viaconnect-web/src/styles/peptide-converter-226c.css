@@ -18,6 +18,7 @@
   row-gap: var(--space-6);
   column-gap: var(--space-8);
   align-items: start;
+  overflow: visible;
 }
 
 .field--compound,
@@ -26,11 +27,13 @@
 .field--dose {
   min-width: 0;
   position: relative;
+  overflow: visible;
 }
 
 /* Raised stacking while Compound dropdown is open (picker sets z-30 on itself) */
 .field--compound {
   z-index: 20;
+  overflow: visible;
 }
 
 .field--diluent,

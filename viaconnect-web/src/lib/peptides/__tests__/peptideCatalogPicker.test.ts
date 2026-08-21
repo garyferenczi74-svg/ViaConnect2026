@@ -44,7 +44,7 @@ describe('filterPeptideCatalog', () => {
 });
 
 describe('PeptideCatalogPicker reactive typing guard', () => {
-  it('does not wipe query when selection clears during typing', () => {
+  it('keeps query owned by keystrokes and filters the open list', () => {
     const picker = readFileSync(
       path.join(
         process.cwd(),
@@ -52,10 +52,11 @@ describe('PeptideCatalogPicker reactive typing guard', () => {
       ),
       'utf8',
     );
-    expect(picker).toContain('typingRef');
-    expect(picker).toContain('if (open || typingRef.current) return');
-    expect(picker).toContain('do NOT reset query');
+    expect(picker).toContain('syncedValueRef');
     expect(picker).toContain('filterPeptideCatalog(items, query)');
+    expect(picker).toContain('setQuery(next)');
+    expect(picker).toContain('match${filtered.length === 1 ? \'\' : \'es\'}');
+    expect(picker).not.toContain('typingRef');
   });
 });
 
