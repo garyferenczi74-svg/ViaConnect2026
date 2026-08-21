@@ -73,7 +73,6 @@
   backdrop-filter: blur(var(--glass-blur-226));
   -webkit-backdrop-filter: blur(var(--glass-blur-226));
   transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
-  will-change: backdrop-filter;
 }
 
 .pep-segment:hover {

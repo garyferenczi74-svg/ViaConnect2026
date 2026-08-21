@@ -581,14 +581,14 @@ export function ConcentrationConverterClient() {
             {history.slice(0, 10).map((h) => (
               <li
                 key={h.id}
-                className="pep-glass--subtle rounded-xl p-3 text-xs text-white/65"
+                className="rounded-xl border border-[var(--glass-border-226)] bg-[var(--card)] p-3 text-xs text-white/65"
               >
                 <div>
                   Dose you entered: {h.dose_amount} {h.dose_unit} → {Number(h.computed_units).toFixed(2)}{' '}
                   units ({h.syringe_standard})
                 </div>
-                <div className="text-white/40 mt-1">{new Date(h.created_at).toLocaleString()}</div>
-                <div className="text-white/40 mt-1">{layer3}</div>
+                <div className="text-white/45 mt-1">{new Date(h.created_at).toLocaleString()}</div>
+                <div className="pep-disclaimer-text mt-1">{layer3}</div>
               </li>
             ))}
           </ul>
