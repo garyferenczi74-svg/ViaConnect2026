@@ -10,7 +10,6 @@ const TABS = [
     href: '/peptide-protocol/literacy',
     label: 'Protocol Literacy',
     exact: false,
-    soon: true,
   },
 ] as const;
 
@@ -27,17 +26,6 @@ export function PeptideEducationTabs() {
         const active = tab.exact
           ? pathname === tab.href
           : pathname.startsWith(tab.href);
-        if ('soon' in tab && tab.soon) {
-          return (
-            <span
-              key={tab.href}
-              className="rounded-xl px-3 py-1.5 text-xs border border-white/10 text-white/35"
-              title="Module C ships next"
-            >
-              {tab.label}
-            </span>
-          );
-        }
         return (
           <Link
             key={tab.href}
