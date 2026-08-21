@@ -4,6 +4,7 @@
  * Prompt 226: read-only syringe unit scale.
  * NOT draggable. NOT tap-to-set. Numeric result always in text.
  * Barrel markings mimic a real insulin syringe (1u / 5u / 10u ticks).
+ * Barrel SVG stretches to the full card width.
  */
 
 import { useMemo } from 'react';
@@ -34,15 +35,15 @@ function tickKind(unit: number): TickKind {
   return 'minor';
 }
 
-/** Tick geometry in SVG viewBox units (barrel band is y=12..48). */
+/** Tick geometry in SVG viewBox units (barrel band is y=10..50). */
 function tickGeom(kind: TickKind): { y1: number; y2: number; stroke: string; width: number } {
   if (kind === 'major') {
-    return { y1: 12, y2: 48, stroke: 'rgba(255,255,255,0.62)', width: 1.35 };
+    return { y1: 10, y2: 50, stroke: 'rgba(255,255,255,0.62)', width: 1.35 };
   }
   if (kind === 'mid') {
-    return { y1: 18, y2: 44, stroke: 'rgba(255,255,255,0.42)', width: 1.05 };
+    return { y1: 16, y2: 46, stroke: 'rgba(255,255,255,0.42)', width: 1.05 };
   }
-  return { y1: 24, y2: 40, stroke: 'rgba(255,255,255,0.24)', width: 0.8 };
+  return { y1: 22, y2: 42, stroke: 'rgba(255,255,255,0.24)', width: 0.8 };
 }
 
 export function SyringeUnitScale({
@@ -69,19 +70,23 @@ export function SyringeUnitScale({
     [barrelSize],
   );
 
-  const pad = 14;
-  const width = 420;
-  const height = 72;
-  const barrelY = 12;
-  const barrelH = 36;
-  const innerW = width - pad * 2;
-  const xFor = (unit: number) => pad + (unit / barrelSize) * innerW;
+  // Logical viewBox; preserveAspectRatio=none stretches X to the card width.
+  const width = 1000;
+  const height = 76;
+  const edge = 2;
+  const labelPad = 10;
+  const barrelY = 10;
+  const barrelH = 40;
+  const innerLeft = labelPad;
+  const innerRight = width - labelPad;
+  const innerW = innerRight - innerLeft;
+  const xFor = (unit: number) => innerLeft + (unit / barrelSize) * innerW;
   const fillW = (clamped / barrelSize) * innerW;
-  const markerLeftPct = ((pad + fillW) / width) * 100;
+  const markerLeftPct = (xFor(clamped) / width) * 100;
 
   return (
     <div
-      className="space-y-2"
+      className="w-full space-y-2"
       data-testid="syringe-unit-scale"
       data-interactive="false"
     >
@@ -105,32 +110,34 @@ export function SyringeUnitScale({
       >
         <svg
           viewBox={`0 0 ${width} ${height}`}
-          preserveAspectRatio="xMidYMid meet"
-          className="relative block h-auto w-full"
+          width="100%"
+          height="76"
+          preserveAspectRatio="none"
+          className="relative block h-[76px] w-full max-w-none"
           aria-hidden
           data-testid="syringe-tick-svg"
         >
-          {/* Barrel tube */}
+          {/* Barrel tube spans nearly the full card */}
           <rect
-            x={pad - 5}
+            x={edge}
             y={barrelY}
-            width={innerW + 10}
+            width={width - edge * 2}
             height={barrelH}
-            rx={10}
-            ry={10}
+            rx={12}
+            ry={12}
             fill="rgba(26,39,68,0.75)"
             stroke="rgba(255,255,255,0.2)"
-            strokeWidth={1}
+            strokeWidth={1.25}
           />
 
           {/* Dose fill (left to marker) */}
           <rect
-            x={pad}
-            y={barrelY + 2}
+            x={innerLeft}
+            y={barrelY + 3}
             width={Math.max(0, fillW)}
-            height={barrelH - 4}
-            rx={6}
-            ry={6}
+            height={barrelH - 6}
+            rx={8}
+            ry={8}
             fill={
               state === 'error'
                 ? 'rgba(248,113,113,0.35)'
@@ -167,10 +174,10 @@ export function SyringeUnitScale({
             <text
               key={`label-${m}`}
               x={xFor(m)}
-              y={68}
+              y={72}
               textAnchor="middle"
               fill="rgba(255,255,255,0.42)"
-              fontSize={9}
+              fontSize={11}
               fontFamily="system-ui, sans-serif"
             >
               {m}
@@ -186,13 +193,13 @@ export function SyringeUnitScale({
                 x2={xFor(clamped)}
                 y2={barrelY + barrelH + 2}
                 stroke="rgba(45,165,160,0.95)"
-                strokeWidth={2.25}
+                strokeWidth={2.5}
                 strokeLinecap="round"
               />
               <circle
                 cx={xFor(clamped)}
                 cy={barrelY + barrelH / 2}
-                r={4.5}
+                r={5}
                 fill="#2DA5A0"
                 stroke="rgba(255,255,255,0.9)"
                 strokeWidth={1.25}
