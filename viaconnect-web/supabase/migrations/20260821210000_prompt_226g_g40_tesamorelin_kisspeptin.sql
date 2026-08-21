@@ -141,7 +141,7 @@ END $$;
 
 -- Synonyms for search
 INSERT INTO public.kb_peptide_synonyms (peptide_id, synonym, synonym_type, is_primary_search_term)
-SELECT p.id, v.synonym, v.synonym_type, v.primary
+SELECT p.id, v.synonym, v.synonym_type, v.is_primary
 FROM (
   VALUES
     ('tesamorelin', 'Egrifta', 'trade_name', true),
@@ -150,7 +150,7 @@ FROM (
     ('kisspeptin', 'KP-10', 'community_name', true),
     ('kisspeptin', 'Kisspeptin-54', 'community_name', true),
     ('kisspeptin', 'Metastin', 'deprecated', false)
-) AS v(slug, synonym, synonym_type, primary)
+) AS v(slug, synonym, synonym_type, is_primary)
 JOIN public.kb_peptides p ON p.slug = v.slug
 ON CONFLICT (peptide_id, synonym, synonym_type) DO NOTHING;
 
