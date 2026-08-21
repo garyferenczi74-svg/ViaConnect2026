@@ -95,12 +95,16 @@ export function SyringeUnitScale({
     >
       <p className="text-xs text-white/55">{CONVERTER_COPY.scaleInstruction}</p>
       <p className="sr-only">{numericLabel}</p>
-      <p
-        className={`text-sm font-semibold ${token.badge} inline-flex px-2 py-0.5 rounded-full`}
-        aria-live="polite"
-      >
-        {numericLabel}
-      </p>
+      {/* Visible result pill only when a dose has been converted (avoids doubling empty-state copy). */}
+      {hasMarker ? (
+        <p
+          className={`text-sm font-semibold ${token.badge} inline-flex px-2 py-0.5 rounded-full`}
+          aria-live="polite"
+          data-testid="syringe-result-pill"
+        >
+          {numericLabel}
+        </p>
+      ) : null}
 
       <div
         className={`pep-glass--subtle relative w-full rounded-2xl p-3 ${token.matchedBorder}`}
