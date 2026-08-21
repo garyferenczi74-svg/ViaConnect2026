@@ -127,4 +127,14 @@ describe('Prompt 225 mandatory peptide eval harness (12/12)', () => {
     expect(route).toContain('detectPeptideRefusal');
     expect(route).toContain('refusalCode');
   });
+
+  it('ask route wires peptide honesty context after kbSearch', () => {
+    const route = readFileSync(
+      path.join(process.cwd(), 'src/app/api/hannah/ask/route.ts'),
+      'utf8',
+    );
+    expect(route).toContain('buildPeptideHonestyContext');
+    expect(route).toContain('PEPTIDE_HONESTY_MODEL_RULES');
+    expect(route).toContain('peptideHonesty');
+  });
 });

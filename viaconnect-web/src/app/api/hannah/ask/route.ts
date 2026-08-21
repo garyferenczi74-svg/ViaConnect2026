@@ -203,8 +203,22 @@ export async function generateGroundedAnswer(
         kbContextBlock
       : '';
 
+  // Prompt 225a: honesty-layer rules only when honesty block is present
+  let honestyRules = '';
+  try {
+    const { PEPTIDE_HONESTY_MARKER, PEPTIDE_HONESTY_MODEL_RULES } = await import(
+      '@/lib/hannah/peptideHonestyContext'
+    );
+    if (kbContextBlock?.includes(PEPTIDE_HONESTY_MARKER)) {
+      honestyRules = '\n\n' + PEPTIDE_HONESTY_MODEL_RULES;
+    }
+  } catch {
+    honestyRules = '';
+  }
+
   const system =
     HANNAH_208_QA_DIRECTIVE +
+    honestyRules +
     '\n\nGROUNDING CONTEXT (published knowledge atoms):\n' +
     groundingContext +
     kbBlock;
@@ -344,6 +358,25 @@ export async function POST(request: Request): Promise<NextResponse> {
       error: err instanceof Error ? err.message : String(err),
     });
     kbContextBlock = '';
+  }
+
+  // Prompt 225a: peptide honesty layer + ICTRP coverage disclosure. Fail-open empty.
+  try {
+    const { buildPeptideHonestyContext } = await import(
+      '@/lib/hannah/peptideHonestyContext'
+    );
+    const honestyBlock = await withTimeout(
+      buildPeptideHonestyContext(question.trim()),
+      3000,
+      'api.hannah.ask.peptideHonesty',
+    );
+    if (honestyBlock && honestyBlock.trim().length > 0) {
+      kbContextBlock = [kbContextBlock, honestyBlock].filter(Boolean).join('\n\n');
+    }
+  } catch (err) {
+    safeLog.warn('api.hannah.ask', 'peptideHonesty fail-open empty', {
+      error: err instanceof Error ? err.message : String(err),
+    });
   }
 
   // Generate grounded answer. Fail-open: on error use fallback.
