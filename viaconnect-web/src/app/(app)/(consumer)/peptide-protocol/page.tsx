@@ -1,5 +1,5 @@
 import { PeptideDisclaimerBanner } from '@/components/peptide-protocol/PeptideDisclaimerBanner';
-import { PersonalizedPeptideStack } from '@/components/peptide-protocol/PersonalizedPeptideStack';
+import { PeptideSuggestionsClient } from '@/components/peptide-protocol/PeptideSuggestionsClient';
 import { KbPeptideCatalogSection } from '@/components/peptide-protocol/KbPeptideCatalogSection';
 import { PeptidePractitionerAccess } from '@/components/peptide-protocol/PeptidePractitionerAccess';
 import { PeptideProtocolHeroShell } from '@/components/peptide-protocol/PeptideProtocolHeroShell';
@@ -15,7 +15,8 @@ export default async function PeptideProtocolRoute() {
     <PeptideProtocolHeroShell>
       <PeptideEducationTabs />
       <PeptideDisclaimerBanner />
-      <PersonalizedPeptideStack />
+      {/* Prompt 226d Wave B: evidence-matched suggestions (replaces Ultrathink stack UI). */}
+      <PeptideSuggestionsClient />
       <KbPeptideCatalogSection
         categories={catalog.categories}
         total={catalog.total}
