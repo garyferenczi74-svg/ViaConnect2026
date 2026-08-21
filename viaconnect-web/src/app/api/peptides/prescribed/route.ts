@@ -1,6 +1,7 @@
 /**
  * Prompt 226: consumer CRUD for user-entered prescribed peptides.
- * Allowlist only (converter_eligible). Values originate from the user Rx.
+ * Catalog = educational + restricted Collection 14 (no FDA allowlist gate).
+ * Values originate from the user Rx.
  */
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
