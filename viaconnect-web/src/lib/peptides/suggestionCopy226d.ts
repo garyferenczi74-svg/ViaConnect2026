@@ -11,7 +11,10 @@ export const SUGGESTION_COPY_226D = {
   ctaGenerate: 'Build evidence briefing',
   ctaRegenerate: 'Refresh evidence briefing',
   emptyPrompt:
-    'Select one or more goals. Hannah will show what our database and the literature actually show for compounds linked to those goals, ranked by evidence strength.',
+    'Select one or more goals. Hannah will show what our database and the literature actually show for compounds linked to those goals, grouped by evidence grade.',
+  mostDiscussedTitle: 'Most discussed for this goal',
+  mostDiscussedBody:
+    'Familiar community compounds for the selected goal. Grade badges still reflect evidence strength. This is not a treatment plan.',
   thinResultTitle: 'The honest result is thin',
   thinResultBody:
     'After exclusions and goal-specific grading, few or no compounds have strong human evidence for this goal in our corpus. That is a useful finding. Bring this briefing to a licensed clinician.',

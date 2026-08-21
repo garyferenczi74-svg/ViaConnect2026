@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 import {
   bandByGrade,
   evaluateScreening,
+  mostDiscussedCompounds,
   sortMatchedCompounds,
   type MatchedCompound,
 } from '@/lib/peptides/suggestionMatch226d';
@@ -28,6 +29,7 @@ function compound(
     evidenceGradeForGoal: partial.evidenceGradeForGoal,
     indicationMatch: partial.indicationMatch,
     mechanismRationale: partial.mechanismRationale ?? 'test',
+    familiarityRank: partial.familiarityRank ?? 100,
     exclusionTier: partial.exclusionTier ?? 'educational',
     honesty: partial.honesty ?? { trials_registered: 2 },
     routes: partial.routes ?? [],
@@ -71,7 +73,7 @@ describe('evaluateScreening', () => {
 });
 
 describe('sort and band', () => {
-  it('sorts by goal grade then indication then trial count', () => {
+  it('sorts by grade then familiarity then indication then trial count', () => {
     const rows = [
       compound({
         slug: 'd',
@@ -84,25 +86,79 @@ describe('sort and band', () => {
         evidenceGradeForGoal: 'A',
         indicationMatch: 'studied_adjacent_indication',
         honesty: { trials_registered: 1 },
+        familiarityRank: 10,
       }),
       compound({
         slug: 'a-direct',
         evidenceGradeForGoal: 'A',
         indicationMatch: 'studied_for_this_goal',
         honesty: { trials_registered: 1 },
+        familiarityRank: 40,
       }),
       compound({
         slug: 'a-direct-more',
         evidenceGradeForGoal: 'A',
         indicationMatch: 'studied_for_this_goal',
         honesty: { trials_registered: 5 },
+        familiarityRank: 40,
+      }),
+      compound({
+        slug: 'retatrutide',
+        evidenceGradeForGoal: 'B',
+        indicationMatch: 'studied_for_this_goal',
+        familiarityRank: 10,
+      }),
+      compound({
+        slug: 'aod-9604',
+        evidenceGradeForGoal: 'D',
+        indicationMatch: 'mechanistic_only',
+        familiarityRank: 15,
       }),
     ];
     expect(sortMatchedCompounds(rows).map((r) => r.slug)).toEqual([
+      'a-adj',
       'a-direct-more',
       'a-direct',
-      'a-adj',
+      'retatrutide',
+      'aod-9604',
       'd',
+    ]);
+  });
+
+  it('most discussed pin sorts by familiarity across grades', () => {
+    const pin = mostDiscussedCompounds(
+      [
+        compound({
+          slug: 'liraglutide',
+          evidenceGradeForGoal: 'A',
+          indicationMatch: 'studied_for_this_goal',
+          familiarityRank: 40,
+        }),
+        compound({
+          slug: 'retatrutide',
+          evidenceGradeForGoal: 'B',
+          indicationMatch: 'studied_for_this_goal',
+          familiarityRank: 10,
+        }),
+        compound({
+          slug: 'aod-9604',
+          evidenceGradeForGoal: 'D',
+          indicationMatch: 'mechanistic_only',
+          familiarityRank: 15,
+        }),
+        compound({
+          slug: 'mk-677',
+          evidenceGradeForGoal: 'D',
+          indicationMatch: 'studied_adjacent_indication',
+          familiarityRank: 25,
+        }),
+      ],
+      3,
+    );
+    expect(pin.map((r) => r.slug)).toEqual([
+      'retatrutide',
+      'aod-9604',
+      'mk-677',
     ]);
   });
 

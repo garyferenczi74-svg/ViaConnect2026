@@ -12,6 +12,7 @@ import {
 } from '@/lib/peptides/suggestionCopy226d';
 import {
   SUGGESTION_GOAL_CHIPS,
+  mostDiscussedCompounds,
   type GradeBand,
   type MatchedCompound,
 } from '@/lib/peptides/suggestionMatch226d';
@@ -144,6 +145,70 @@ function CompoundCard({ compound }: { compound: MatchedCompound }) {
         </p>
       )}
     </article>
+  );
+}
+
+function SuggestionResults({
+  bands,
+  goals,
+}: {
+  bands: GradeBand[];
+  goals: Array<{ slug: string; displayName: string }>;
+}) {
+  const flat = bands.flatMap((b) => b.compounds);
+  const discussed = mostDiscussedCompounds(flat, 3);
+
+  return (
+    <div className="space-y-4" data-testid="suggestion-bands">
+      {goals.length > 0 ? (
+        <p className="text-xs text-white/55">
+          Goals reflected: {goals.map((g) => g.displayName).join(', ')}
+        </p>
+      ) : null}
+
+      {discussed.length > 0 ? (
+        <section
+          className="space-y-2 rounded-xl border border-[var(--teal)]/25 bg-[var(--teal)]/5 p-3"
+          data-testid="suggestion-most-discussed"
+        >
+          <div>
+            <h3 className="text-sm font-semibold text-white">
+              {SUGGESTION_COPY_226D.mostDiscussedTitle}
+            </h3>
+            <p className="mt-1 text-[11px] leading-relaxed text-white/55">
+              {SUGGESTION_COPY_226D.mostDiscussedBody}
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+            {discussed.map((c) => (
+              <CompoundCard
+                key={`discussed-${c.goalSlug}-${c.peptideId}`}
+                compound={c}
+              />
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {bands.map((band) => (
+        <section key={band.grade} className="space-y-2">
+          <h3 className="text-sm font-semibold text-white border-b border-white/10 pb-1">
+            {band.header}
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+            {band.compounds.map((c) => (
+              <CompoundCard key={`${c.goalSlug}-${c.peptideId}`} compound={c} />
+            ))}
+          </div>
+        </section>
+      ))}
+      <p className="text-[11px] text-white/50 leading-relaxed">
+        {SUGGESTION_COPY_226D.disclaimerLayer}
+      </p>
+      <p className="text-[11px] text-white/50">
+        {SUGGESTION_COPY_226D.clinicianPathway}
+      </p>
+    </div>
   );
 }
 
@@ -344,31 +409,7 @@ export function PeptideSuggestionsClient() {
       ) : null}
 
       {hasResult && !screeningBlocked && bands.length > 0 ? (
-        <div className="space-y-4" data-testid="suggestion-bands">
-          {goals.length > 0 ? (
-            <p className="text-xs text-white/55">
-              Goals reflected: {goals.map((g) => g.displayName).join(', ')}
-            </p>
-          ) : null}
-          {bands.map((band) => (
-            <section key={band.grade} className="space-y-2">
-              <h3 className="text-sm font-semibold text-white border-b border-white/10 pb-1">
-                {band.header}
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-                {band.compounds.map((c) => (
-                  <CompoundCard key={`${c.goalSlug}-${c.peptideId}`} compound={c} />
-                ))}
-              </div>
-            </section>
-          ))}
-          <p className="text-[11px] text-white/50 leading-relaxed">
-            {SUGGESTION_COPY_226D.disclaimerLayer}
-          </p>
-          <p className="text-[11px] text-white/50">
-            {SUGGESTION_COPY_226D.clinicianPathway}
-          </p>
-        </div>
+        <SuggestionResults bands={bands} goals={goals} />
       ) : null}
     </div>
   );

@@ -49,6 +49,8 @@ export type MatchedCompound = {
   evidenceGradeForGoal: EvidenceGrade;
   indicationMatch: IndicationMatch;
   mechanismRationale: string;
+  /** Lower = more discussed for this goal. Sort key after evidence grade. */
+  familiarityRank: number;
   exclusionTier: string;
   honesty: HonestyLayerShape;
   routes: RouteAttachment[];
@@ -140,6 +142,8 @@ export function sortMatchedCompounds(rows: MatchedCompound[]): MatchedCompound[]
       GRADE_ORDER.indexOf(a.evidenceGradeForGoal) -
       GRADE_ORDER.indexOf(b.evidenceGradeForGoal);
     if (g !== 0) return g;
+    const fam = (a.familiarityRank ?? 100) - (b.familiarityRank ?? 100);
+    if (fam !== 0) return fam;
     const i =
       INDICATION_RANK[a.indicationMatch] - INDICATION_RANK[b.indicationMatch];
     if (i !== 0) return i;
@@ -147,6 +151,30 @@ export function sortMatchedCompounds(rows: MatchedCompound[]): MatchedCompound[]
     const bTrials = Number(b.honesty.trials_registered ?? 0);
     return bTrials - aTrials;
   });
+}
+
+/** Most discussed pin: familiarity across grades (not grade-first). */
+export function mostDiscussedCompounds(
+  rows: MatchedCompound[],
+  limit = 3,
+): MatchedCompound[] {
+  const byPep = new Map<string, MatchedCompound>();
+  for (const row of rows) {
+    const prev = byPep.get(row.peptideId);
+    if (!prev || (row.familiarityRank ?? 100) < (prev.familiarityRank ?? 100)) {
+      byPep.set(row.peptideId, row);
+    }
+  }
+  return [...byPep.values()]
+    .sort((a, b) => {
+      const fam = (a.familiarityRank ?? 100) - (b.familiarityRank ?? 100);
+      if (fam !== 0) return fam;
+      return (
+        GRADE_ORDER.indexOf(a.evidenceGradeForGoal) -
+        GRADE_ORDER.indexOf(b.evidenceGradeForGoal)
+      );
+    })
+    .slice(0, Math.max(0, limit));
 }
 
 export function bandByGrade(rows: MatchedCompound[]): GradeBand[] {
@@ -233,7 +261,7 @@ export async function runSuggestionMatch(
     const { data: links, error: linkErr } = await admin
       .from('kb_goal_peptide_links')
       .select(
-        'goal_domain_id, peptide_id, mechanism_rationale, evidence_grade_for_this_goal, indication_match',
+        'goal_domain_id, peptide_id, mechanism_rationale, evidence_grade_for_this_goal, indication_match, familiarity_rank',
       )
       .in('goal_domain_id', domainIds);
 
@@ -344,6 +372,8 @@ export async function runSuggestionMatch(
         evidenceGradeForGoal: grade,
         indicationMatch: indication,
         mechanismRationale: String(link.mechanism_rationale ?? ''),
+        familiarityRank:
+          link.familiarity_rank == null ? 100 : Number(link.familiarity_rank),
         exclusionTier,
         honesty,
         routes: routesByPep.get(String(pep.id)) ?? [],
