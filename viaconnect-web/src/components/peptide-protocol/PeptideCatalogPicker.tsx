@@ -14,6 +14,7 @@ import {
   type KeyboardEvent,
 } from 'react';
 import { Search, X } from 'lucide-react';
+import { matchesSearchPrefix } from '@/lib/peptides/peptideSearchMatch';
 
 export type PeptideCatalogItem = {
   id: string;
@@ -21,27 +22,18 @@ export type PeptideCatalogItem = {
   displayName: string;
 };
 
-/** Normalize for reactive match: lowercase, strip spaces/hyphens. */
-function normalizeSearch(value: string): string {
-  return value.trim().toLowerCase().replace(/[\s_-]+/g, '');
-}
-
+/** Prefix / word-start filter (no mid-word hits like reta inside Secretagogues). */
 export function filterPeptideCatalog(
   items: PeptideCatalogItem[],
   query: string,
 ): PeptideCatalogItem[] {
-  const q = query.trim().toLowerCase();
+  const q = query.trim();
   if (!q) return items;
-  const qNorm = normalizeSearch(query);
-  return items.filter((item) => {
-    const name = String(item.displayName ?? '').toLowerCase();
-    const slug = String(item.slug ?? '').toLowerCase();
-    if (name.includes(q) || slug.includes(q)) return true;
-    return (
-      normalizeSearch(name).includes(qNorm) ||
-      normalizeSearch(slug).includes(qNorm)
-    );
-  });
+  return items.filter(
+    (item) =>
+      matchesSearchPrefix(item.displayName, q) ||
+      matchesSearchPrefix(item.slug, q),
+  );
 }
 
 type PeptideCatalogPickerProps = {

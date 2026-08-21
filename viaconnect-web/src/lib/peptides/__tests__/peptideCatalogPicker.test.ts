@@ -19,12 +19,12 @@ describe('filterPeptideCatalog', () => {
     expect(filterPeptideCatalog(items, '   ')).toHaveLength(4);
   });
 
-  it('filters by display name as the user types', () => {
+  it('filters by display name prefix as the user types', () => {
     const hits = filterPeptideCatalog(items, 'sema');
     expect(hits.map((h) => h.slug)).toEqual(['semaglutide']);
   });
 
-  it('filters by slug and is case-insensitive', () => {
+  it('filters by slug prefix and is case-insensitive', () => {
     const hits = filterPeptideCatalog(items, 'BPC');
     expect(hits.map((h) => h.id)).toEqual(['1']);
   });
@@ -36,6 +36,10 @@ describe('filterPeptideCatalog', () => {
     expect(filterPeptideCatalog(items, 'tb500').map((h) => h.slug)).toEqual([
       'tb-500',
     ]);
+  });
+
+  it('does not match mid-word letters', () => {
+    expect(filterPeptideCatalog(items, 'glut').map((h) => h.slug)).toEqual([]);
   });
 
   it('returns empty when nothing matches', () => {

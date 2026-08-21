@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import type { EducationPeptide, EducationPeptideCategory } from '@/lib/kb/peptides/types';
 import { gradeToBadge } from '@/lib/kb/peptides/types';
+import { matchesSearchPrefix } from '@/lib/peptides/peptideSearchMatch';
 
 const EVIDENCE_STYLE = {
   strong:
@@ -78,17 +79,17 @@ export function KbPeptideCatalogSection({
   const [openCatId, setOpenCatId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = query.trim();
     if (!q) return categories;
     return categories
       .map((cat) => ({
         ...cat,
         peptides: cat.peptides.filter(
           (p) =>
-            p.displayName.toLowerCase().includes(q) ||
-            p.canonicalName.toLowerCase().includes(q) ||
-            p.mechanismSummary.toLowerCase().includes(q) ||
-            p.category.toLowerCase().includes(q),
+            matchesSearchPrefix(p.displayName, q) ||
+            matchesSearchPrefix(p.canonicalName, q) ||
+            matchesSearchPrefix(p.category, q),
+          // mechanismSummary omitted: mid-word hits inside prose were false positives
         ),
       }))
       .filter((cat) => cat.peptides.length > 0);
