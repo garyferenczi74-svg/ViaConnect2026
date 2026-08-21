@@ -1,8 +1,12 @@
 /**
- * Prompt 226c: converter input 2x2 field grid and helper strip.
- * Layout only. Tokens from globals.css. No copy changes.
- * Reading A: Dose in column 1 row 4 (beneath Vial). Reserved cell empty.
- * Reading B switch: .field--dose { grid-column: 2 } and .cell--reserved { grid-column: 1 }.
+ * Prompt 226c (Gary correction): true 2x2 field tabs.
+ *
+ * Desktop:
+ *   [ Compound              ] [ Diluent + common volumes ]
+ *   [ Vial amount           ] [ Dose + prescription note ]
+ *
+ * Mobile: single column, same DOM order (Compound, Diluent, Vial, Dose).
+ * Layout only. No copy changes.
  */
 
 .converter-fields {
@@ -16,39 +20,25 @@
 .field--compound,
 .field--vial,
 .field--diluent,
-.helper-strip,
 .field--dose {
   min-width: 0;
 }
 
-.cell--reserved {
-  display: none;
-}
-
-.helper-strip {
+.field--diluent-extras {
   display: flex;
-  align-items: baseline;
-  gap: var(--space-4);
-  flex-wrap: wrap;
-}
-
-.helper-strip__volumes {
-  display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: var(--space-3);
-  flex-wrap: wrap;
+  margin-top: var(--space-3);
 }
 
-.helper-strip__volumes-label {
+.field--diluent-extras-label {
   font-size: 0.8125rem; /* 13px floor */
   color: var(--text-primary);
   opacity: 1;
 }
 
-.helper-strip__note {
-  margin-left: auto;
-  text-align: right;
-  max-width: 42ch;
+.field--dose-note {
+  margin-top: var(--space-3);
   font-size: 0.8125rem; /* 13px floor; never shrink below */
   line-height: 1.4;
   color: var(--text-primary);
@@ -68,7 +58,12 @@
   }
 
   .field--compound {
-    grid-column: 1 / -1;
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .field--diluent {
+    grid-column: 2;
     grid-row: 1;
   }
 
@@ -77,27 +72,9 @@
     grid-row: 2;
   }
 
-  .field--diluent {
+  .field--dose {
     grid-column: 2;
     grid-row: 2;
-  }
-
-  .helper-strip {
-    grid-column: 1 / -1;
-    grid-row: 3;
-  }
-
-  .field--dose {
-    grid-column: 1; /* Reading A. For Reading B set to 2. */
-    grid-row: 4;
-  }
-
-  .cell--reserved {
-    display: block;
-    grid-column: 2; /* Reading A. For Reading B set to 1. */
-    grid-row: 4;
-    min-height: 0;
-    pointer-events: none;
   }
 
   .converter-segments {
