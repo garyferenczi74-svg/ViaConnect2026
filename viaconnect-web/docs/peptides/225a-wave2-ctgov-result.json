@@ -1,0 +1,124 @@
+﻿{
+    "ok":  true,
+    "prompt":  "225a",
+    "phase":  "wave2-ctgov",
+    "batch":  {
+                  "offset":  0,
+                  "limit":  10,
+                  "totalEligible":  102,
+                  "nextOffset":  10,
+                  "slugs":  [
+                                "5-amino-1mq",
+                                "ac-sdkp",
+                                "ace-031",
+                                "albiglutide",
+                                "alpha-msh",
+                                "amycretin",
+                                "anamorelin",
+                                "angiotensin-1-7",
+                                "anserine",
+                                "aod-9604"
+                            ]
+              },
+    "ingest":  {
+                   "ok":  true,
+                   "compoundsAttempted":  10,
+                   "compoundsMatched":  10,
+                   "trialsUpserted":  15,
+                   "linksUpserted":  15,
+                   "queryTermsSeeded":  38,
+                   "redactionEvents":  55,
+                   "doseLexiconClean":  false,
+                   "byCompound":  [
+                                      {
+                                          "slug":  "5-amino-1mq",
+                                          "found":  true,
+                                          "fetched":  0,
+                                          "upserted":  0,
+                                          "redactions":  0
+                                      },
+                                      {
+                                          "slug":  "ac-sdkp",
+                                          "found":  true,
+                                          "fetched":  1,
+                                          "upserted":  1,
+                                          "redactions":  8
+                                      },
+                                      {
+                                          "slug":  "ace-031",
+                                          "found":  true,
+                                          "fetched":  0,
+                                          "upserted":  0,
+                                          "redactions":  0
+                                      },
+                                      {
+                                          "slug":  "albiglutide",
+                                          "found":  true,
+                                          "fetched":  3,
+                                          "upserted":  3,
+                                          "redactions":  3
+                                      },
+                                      {
+                                          "slug":  "alpha-msh",
+                                          "found":  true,
+                                          "fetched":  3,
+                                          "upserted":  3,
+                                          "redactions":  11
+                                      },
+                                      {
+                                          "slug":  "amycretin",
+                                          "found":  true,
+                                          "fetched":  1,
+                                          "upserted":  0,
+                                          "redactions":  4
+                                      },
+                                      {
+                                          "slug":  "anamorelin",
+                                          "found":  true,
+                                          "fetched":  3,
+                                          "upserted":  3,
+                                          "redactions":  4
+                                      },
+                                      {
+                                          "slug":  "angiotensin-1-7",
+                                          "found":  true,
+                                          "fetched":  3,
+                                          "upserted":  2,
+                                          "redactions":  11
+                                      },
+                                      {
+                                          "slug":  "anserine",
+                                          "found":  true,
+                                          "fetched":  3,
+                                          "upserted":  3,
+                                          "redactions":  14
+                                      },
+                                      {
+                                          "slug":  "aod-9604",
+                                          "found":  true,
+                                          "fetched":  0,
+                                          "upserted":  0,
+                                          "redactions":  0
+                                      }
+                                  ],
+                   "semaglutideRedactionProof":  {
+                                                     "nctId":  null,
+                                                     "beforeSample":  null,
+                                                     "afterSample":  null,
+                                                     "afterPassesLexicon":  null
+                                                 },
+                   "errors":  [
+                                  "NCT06049329:dose_lexicon_survived",
+                                  "NCT05457283:dose_lexicon_survived"
+                              ]
+               },
+    "counts":  {
+                   "kbTrials":  44,
+                   "doseRedactedTrials":  44
+               },
+    "proofNotes":  [
+                       "Wave 2 excludes Wave 1 flagship slugs.",
+                       "Dose redaction + fail-closed lexicon skips remain mandatory.",
+                       "Paginate with ?offset=\u0026limit= under 120s cron budget."
+                   ]
+}
