@@ -4,7 +4,7 @@
  * Prompt 226: read-only syringe unit scale.
  * NOT draggable. NOT tap-to-set. Numeric result always in text.
  * Barrel markings mimic a real insulin syringe (1u / 5u / 10u ticks).
- * Barrel SVG stretches to the full card width.
+ * Full card width; marker and labels sit outside the tick band (no overlap).
  */
 
 import { useMemo } from 'react';
@@ -35,15 +35,15 @@ function tickKind(unit: number): TickKind {
   return 'minor';
 }
 
-/** Tick geometry in SVG viewBox units (barrel band is y=10..50). */
+/** Tick geometry in a square-ish viewBox so none-stretch keeps vertical proportions. */
 function tickGeom(kind: TickKind): { y1: number; y2: number; stroke: string; width: number } {
   if (kind === 'major') {
-    return { y1: 10, y2: 50, stroke: 'rgba(255,255,255,0.62)', width: 1.35 };
+    return { y1: 4, y2: 44, stroke: 'rgba(255,255,255,0.65)', width: 1.4 };
   }
   if (kind === 'mid') {
-    return { y1: 16, y2: 46, stroke: 'rgba(255,255,255,0.42)', width: 1.05 };
+    return { y1: 10, y2: 38, stroke: 'rgba(255,255,255,0.42)', width: 1.05 };
   }
-  return { y1: 22, y2: 42, stroke: 'rgba(255,255,255,0.24)', width: 0.8 };
+  return { y1: 16, y2: 32, stroke: 'rgba(255,255,255,0.24)', width: 0.8 };
 }
 
 export function SyringeUnitScale({
@@ -53,6 +53,8 @@ export function SyringeUnitScale({
   numericLabel,
 }: Props) {
   const token = severityToken(tierFor(state));
+  const hasMarker =
+    units != null && Number.isFinite(units) && units >= 0 && units <= barrelSize;
   const clamped =
     units == null || !Number.isFinite(units)
       ? 0
@@ -70,19 +72,20 @@ export function SyringeUnitScale({
     [barrelSize],
   );
 
-  // Logical viewBox; preserveAspectRatio=none stretches X to the card width.
+  // Wide viewBox: X stretches to card; ticks only (no SVG text).
   const width = 1000;
-  const height = 76;
-  const edge = 2;
-  const labelPad = 10;
-  const barrelY = 10;
-  const barrelH = 40;
-  const innerLeft = labelPad;
-  const innerRight = width - labelPad;
-  const innerW = innerRight - innerLeft;
+  const height = 48;
+  const edge = 0;
+  const inset = 8;
+  const barrelY = 2;
+  const barrelH = 44;
+  const innerLeft = inset;
+  const innerW = width - inset * 2;
   const xFor = (unit: number) => innerLeft + (unit / barrelSize) * innerW;
   const fillW = (clamped / barrelSize) * innerW;
+  // Percent across the SVG so the pill lines up with the plunger.
   const markerLeftPct = (xFor(clamped) / width) * 100;
+  const markerLeftClamped = Math.min(92, Math.max(8, markerLeftPct));
 
   return (
     <div
@@ -100,7 +103,7 @@ export function SyringeUnitScale({
       </p>
 
       <div
-        className={`relative w-full overflow-hidden rounded-2xl border bg-[#15243f] ${token.matchedBorder}`}
+        className={`relative w-full rounded-2xl border bg-[#15243f] p-3 ${token.matchedBorder}`}
         role="img"
         aria-label={numericLabel}
         onPointerDown={(e) => e.preventDefault()}
@@ -108,119 +111,124 @@ export function SyringeUnitScale({
         style={{ touchAction: 'none', userSelect: 'none' }}
         data-testid="syringe-barrel"
       >
-        <svg
-          viewBox={`0 0 ${width} ${height}`}
-          width="100%"
-          height="76"
-          preserveAspectRatio="none"
-          className="relative block h-[76px] w-full max-w-none"
+        {/* Marker pill ABOVE the tube so it never covers ticks */}
+        <div className="relative mb-1 h-6 w-full">
+          {hasMarker ? (
+            <div
+              className="pointer-events-none absolute top-0 z-[2] -translate-x-1/2"
+              style={{ left: `${markerLeftClamped}%` }}
+              data-testid="syringe-marker-label"
+            >
+              <div
+                className={`rounded-full px-2 py-0.5 text-[10px] font-semibold whitespace-nowrap shadow-sm ${token.pillActive}`}
+              >
+                {clamped.toFixed(1)} u
+              </div>
+            </div>
+          ) : null}
+        </div>
+
+        {/* Tick band only (no text inside SVG) */}
+        <div className="relative w-full overflow-hidden rounded-xl border border-white/10 bg-[#1A2744]/80">
+          <svg
+            viewBox={`0 0 ${width} ${height}`}
+            width="100%"
+            height="48"
+            preserveAspectRatio="none"
+            className="relative block h-12 w-full max-w-none"
+            aria-hidden
+            data-testid="syringe-tick-svg"
+          >
+            <rect
+              x={edge}
+              y={barrelY}
+              width={width - edge * 2}
+              height={barrelH}
+              rx={10}
+              ry={10}
+              fill="rgba(15, 28, 52, 0.55)"
+              stroke="rgba(255,255,255,0.12)"
+              strokeWidth={1}
+            />
+
+            <rect
+              x={innerLeft}
+              y={barrelY + 3}
+              width={Math.max(0, fillW)}
+              height={barrelH - 6}
+              rx={7}
+              ry={7}
+              fill={
+                state === 'error'
+                  ? 'rgba(248,113,113,0.35)'
+                  : state === 'precision'
+                    ? 'rgba(251,191,36,0.32)'
+                    : 'rgba(45,165,160,0.38)'
+              }
+              data-testid="syringe-fill"
+              style={{ pointerEvents: 'none' }}
+            />
+
+            {ticks.map(({ unit, kind }) => {
+              const g = tickGeom(kind);
+              const x = xFor(unit);
+              return (
+                <line
+                  key={unit}
+                  x1={x}
+                  y1={g.y1}
+                  x2={x}
+                  y2={g.y2}
+                  stroke={g.stroke}
+                  strokeWidth={g.width}
+                  strokeLinecap="round"
+                  data-tick={kind}
+                  data-unit={unit}
+                />
+              );
+            })}
+
+            {hasMarker ? (
+              <g data-testid="syringe-indicator" style={{ pointerEvents: 'none' }}>
+                <line
+                  x1={xFor(clamped)}
+                  y1={2}
+                  x2={xFor(clamped)}
+                  y2={46}
+                  stroke="rgba(45,165,160,0.95)"
+                  strokeWidth={2.5}
+                  strokeLinecap="round"
+                />
+                <circle
+                  cx={xFor(clamped)}
+                  cy={24}
+                  r={5}
+                  fill="#2DA5A0"
+                  stroke="rgba(255,255,255,0.9)"
+                  strokeWidth={1.25}
+                />
+              </g>
+            ) : null}
+          </svg>
+        </div>
+
+        {/* HTML labels under the tube: no SVG stretch distortion, no overlap with ticks */}
+        <div
+          className="mt-1.5 flex w-full justify-between px-0.5"
+          data-testid="syringe-major-labels"
           aria-hidden
-          data-testid="syringe-tick-svg"
         >
-          {/* Barrel tube spans nearly the full card */}
-          <rect
-            x={edge}
-            y={barrelY}
-            width={width - edge * 2}
-            height={barrelH}
-            rx={12}
-            ry={12}
-            fill="rgba(26,39,68,0.75)"
-            stroke="rgba(255,255,255,0.2)"
-            strokeWidth={1.25}
-          />
-
-          {/* Dose fill (left to marker) */}
-          <rect
-            x={innerLeft}
-            y={barrelY + 3}
-            width={Math.max(0, fillW)}
-            height={barrelH - 6}
-            rx={8}
-            ry={8}
-            fill={
-              state === 'error'
-                ? 'rgba(248,113,113,0.35)'
-                : state === 'precision'
-                  ? 'rgba(251,191,36,0.32)'
-                  : 'rgba(45,165,160,0.38)'
-            }
-            data-testid="syringe-fill"
-            style={{ pointerEvents: 'none' }}
-          />
-
-          {/* Graduation lines: every 1u, taller at 5u / 10u like a real syringe */}
-          {ticks.map(({ unit, kind }) => {
-            const g = tickGeom(kind);
-            const x = xFor(unit);
-            return (
-              <line
-                key={unit}
-                x1={x}
-                y1={g.y1}
-                x2={x}
-                y2={g.y2}
-                stroke={g.stroke}
-                strokeWidth={g.width}
-                strokeLinecap="round"
-                data-tick={kind}
-                data-unit={unit}
-              />
-            );
-          })}
-
-          {/* Major labels under the barrel */}
           {majors.map((m) => (
-            <text
-              key={`label-${m}`}
-              x={xFor(m)}
-              y={72}
-              textAnchor="middle"
-              fill="rgba(255,255,255,0.42)"
-              fontSize={11}
-              fontFamily="system-ui, sans-serif"
+            <span
+              key={m}
+              className="min-w-0 flex-1 text-center text-[10px] leading-none text-white/45"
             >
               {m}
-            </text>
+            </span>
           ))}
-
-          {/* Plunger / dose marker */}
-          {units != null && Number.isFinite(units) && units <= barrelSize ? (
-            <g data-testid="syringe-indicator" style={{ pointerEvents: 'none' }}>
-              <line
-                x1={xFor(clamped)}
-                y1={barrelY - 2}
-                x2={xFor(clamped)}
-                y2={barrelY + barrelH + 2}
-                stroke="rgba(45,165,160,0.95)"
-                strokeWidth={2.5}
-                strokeLinecap="round"
-              />
-              <circle
-                cx={xFor(clamped)}
-                cy={barrelY + barrelH / 2}
-                r={5}
-                fill="#2DA5A0"
-                stroke="rgba(255,255,255,0.9)"
-                strokeWidth={1.25}
-              />
-            </g>
-          ) : null}
-        </svg>
-
-        {units != null && Number.isFinite(units) && units <= barrelSize ? (
-          <div
-            className="pointer-events-none absolute top-0.5 z-[2] -translate-x-1/2"
-            style={{ left: `${markerLeftPct}%` }}
-          >
-            <div
-              className={`rounded-full px-2 py-0.5 text-[10px] font-semibold whitespace-nowrap ${token.pillActive}`}
-            >
-              {clamped.toFixed(1)} u
-            </div>
-          </div>
-        ) : null}
+        </div>
       </div>
+
       <p className="text-[10px] text-white/40">
         Scale shows 1-unit ticks like a syringe barrel. Use the numeric result above. Indicator is
         not draggable.

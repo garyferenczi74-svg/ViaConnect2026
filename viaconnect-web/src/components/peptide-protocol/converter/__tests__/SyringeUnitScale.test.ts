@@ -21,7 +21,9 @@ describe('Prompt 226 SyringeUnitScale boundary', () => {
     expect(src).toContain('syringe-tick-svg');
     expect(src).toContain('preserveAspectRatio="none"');
     expect(src).toContain('w-full max-w-none');
-    expect(src).toContain('full card width');
+    expect(src).toContain('syringe-major-labels');
+    expect(src).toContain('syringe-marker-label');
+    expect(src).toContain('no overlap');
     expect(src).not.toContain('h-[4.5rem]');
   });
 
