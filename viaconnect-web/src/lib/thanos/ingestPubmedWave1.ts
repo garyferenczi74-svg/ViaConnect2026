@@ -239,48 +239,32 @@ export async function ingestPubmedWave1(opts?: {
           updated_at: new Date().toISOString(),
         };
 
-        const { data: pub, error: pubErr } = await admin
-          .from('kb_publications')
-          .upsert(pubRow, { onConflict: 'pmid' })
-          .select('id')
-          .maybeSingle();
-
-        // pmid unique is partial index; fallback select/insert if needed
-        let publicationId = pub?.id as string | undefined;
-        if (pubErr || !publicationId) {
-          const { data: again } = await admin
+        // pmid unique is a partial index; avoid ON CONFLICT and use select/update/insert.
+        let publicationId = existing?.id as string | undefined;
+        if (publicationId) {
+          const { error: updErr } = await admin
             .from('kb_publications')
-            .select('id')
-            .eq('pmid', s.pmid)
-            .maybeSingle();
-          if (again?.id) {
-            await admin
-              .from('kb_publications')
-              .update(pubRow)
-              .eq('id', again.id);
-            publicationId = again.id;
-          } else if (!pubErr) {
-            const { data: inserted, error: insErr } = await admin
-              .from('kb_publications')
-              .insert(pubRow)
-              .select('id')
-              .maybeSingle();
-            if (insErr || !inserted?.id) {
-              errors.push(
-                `pmid_${s.pmid}:pub_${insErr?.message ?? pubErr?.message ?? 'fail'}`.slice(
-                  0,
-                  160,
-                ),
-              );
-              continue;
-            }
-            publicationId = inserted.id;
-          } else {
+            .update(pubRow)
+            .eq('id', publicationId);
+          if (updErr) {
             errors.push(
-              `pmid_${s.pmid}:pub_${pubErr.message}`.slice(0, 160),
+              `pmid_${s.pmid}:upd_${updErr.message}`.slice(0, 160),
             );
             continue;
           }
+        } else {
+          const { data: inserted, error: insErr } = await admin
+            .from('kb_publications')
+            .insert(pubRow)
+            .select('id')
+            .maybeSingle();
+          if (insErr || !inserted?.id) {
+            errors.push(
+              `pmid_${s.pmid}:ins_${insErr?.message ?? 'fail'}`.slice(0, 160),
+            );
+            continue;
+          }
+          publicationId = inserted.id;
         }
 
         upserted += 1;
