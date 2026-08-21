@@ -172,13 +172,18 @@ export function PeptideCatalogPicker({
     showPanel && activeIndex >= 0 ? filtered[activeIndex] : null;
 
   return (
-    <div ref={rootRef} className="relative z-0 flex w-full flex-col gap-3" data-testid={testId}>
+    <div
+      ref={rootRef}
+      className={`relative flex w-full flex-col gap-3 ${open ? 'z-30' : 'z-0'}`}
+      data-testid={testId}
+    >
       <label htmlFor={inputId} className="pep-field-label text-xs">
         {label}
       </label>
-      <div className="relative z-0">
+      {/* Anchor: list is positioned under the search field, never over it */}
+      <div className="relative z-10">
         <Search
-          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/35"
+          className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-white/35"
           strokeWidth={1.5}
           aria-hidden
         />
@@ -200,8 +205,8 @@ export function PeptideCatalogPicker({
           spellCheck={false}
           className={
             glass
-              ? 'pep-glass-input w-full rounded-xl py-2 pl-9 pr-9 text-sm'
-              : 'w-full rounded-xl border border-white/15 bg-[var(--deep-navy)] py-2 pl-9 pr-9 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-[var(--teal)]/50'
+              ? 'pep-glass-input relative z-10 w-full rounded-xl py-2 pl-9 pr-9 text-sm'
+              : 'relative z-10 w-full rounded-xl border border-white/15 bg-[var(--deep-navy)] py-2 pl-9 pr-9 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-[var(--teal)]/50'
           }
           data-testid={`${testId}-input`}
           onChange={(event) => {
@@ -224,7 +229,7 @@ export function PeptideCatalogPicker({
         {query ? (
           <button
             type="button"
-            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-white/40 hover:text-white/80"
+            className="absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded-md p-1 text-white/40 hover:text-white/80"
             aria-label="Clear peptide search"
             onClick={clearSelection}
             data-testid={`${testId}-clear`}
@@ -232,50 +237,46 @@ export function PeptideCatalogPicker({
             <X className="h-3.5 w-3.5" strokeWidth={1.5} />
           </button>
         ) : null}
-      </div>
 
-      {showPanel ? (
-        <ul
-          id={listboxId}
-          role="listbox"
-          className={
-            glass
-              ? 'pep-glass absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-xl text-white'
-              : 'absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-xl border border-white/10 bg-[var(--deep-navy)] text-white shadow-lg'
-          }
-          data-testid={`${testId}-list`}
-        >
-          {filtered.length === 0 ? (
-            <li className="px-3 py-3 text-sm text-white/45">
-              No peptides match &ldquo;{query.trim()}&rdquo;
-            </li>
-          ) : (
-            filtered.map((item, index) => {
-              const active = index === activeIndex;
-              const isSelected = item.id === value;
-              return (
-                <li
-                  key={item.id}
-                  id={`${listboxId}-opt-${item.id}`}
-                  role="option"
-                  aria-selected={isSelected || active}
-                  className={`cursor-pointer px-3 py-2.5 text-sm ${
-                    active ? 'bg-[#2DA5A0]/20' : ''
-                  } ${isSelected ? 'text-[#2DA5A0]' : 'text-white/85'}`}
-                  onMouseDown={(event) => {
-                    event.preventDefault();
-                    pick(item);
-                  }}
-                  onMouseEnter={() => setActiveIndex(index)}
-                >
-                  <div>{item.displayName}</div>
-                  <div className="text-[10px] text-white/35">{item.slug}</div>
-                </li>
-              );
-            })
-          )}
-        </ul>
-      ) : null}
+        {showPanel ? (
+          <ul
+            id={listboxId}
+            role="listbox"
+            className="pep-catalog-dropdown absolute left-0 right-0 top-full z-20 mt-1 max-h-60 w-full overflow-auto rounded-xl text-white"
+            data-testid={`${testId}-list`}
+          >
+            {filtered.length === 0 ? (
+              <li className="px-3 py-3 text-sm text-white/70">
+                No peptides match &ldquo;{query.trim()}&rdquo;
+              </li>
+            ) : (
+              filtered.map((item, index) => {
+                const active = index === activeIndex;
+                const isSelected = item.id === value;
+                return (
+                  <li
+                    key={item.id}
+                    id={`${listboxId}-opt-${item.id}`}
+                    role="option"
+                    aria-selected={isSelected || active}
+                    className={`cursor-pointer px-3 py-2.5 text-sm ${
+                      active ? 'pep-catalog-dropdown__active' : ''
+                    } ${isSelected ? 'text-[var(--teal)]' : 'text-white'}`}
+                    onMouseDown={(event) => {
+                      event.preventDefault();
+                      pick(item);
+                    }}
+                    onMouseEnter={() => setActiveIndex(index)}
+                  >
+                    <div>{item.displayName}</div>
+                    <div className="text-[10px] text-white/50">{item.slug}</div>
+                  </li>
+                );
+              })
+            )}
+          </ul>
+        ) : null}
+      </div>
     </div>
   );
 }

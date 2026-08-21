@@ -55,4 +55,24 @@ describe('PeptideCatalogPicker wiring', () => {
     expect(converter).toContain('PeptideCatalogPicker');
     expect(converter).toContain('testId="converter-compound"');
   });
+
+  it('dropdown anchors under the search field with solid catalog panel class', () => {
+    const picker = readFileSync(
+      path.join(
+        process.cwd(),
+        'src/components/peptide-protocol/PeptideCatalogPicker.tsx',
+      ),
+      'utf8',
+    );
+    const css = readFileSync(
+      path.join(process.cwd(), 'src/styles/peptide-converter-226b.css'),
+      'utf8',
+    );
+    expect(picker).toContain('pep-catalog-dropdown');
+    expect(picker).toContain('top-full');
+    expect(picker).toContain("open ? 'z-30'");
+    expect(css).toContain('.pep-catalog-dropdown');
+    expect(css).toContain('background: var(--card)');
+    expect(css).toContain('backdrop-filter: none');
+  });
 });

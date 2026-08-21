@@ -44,12 +44,21 @@
   box-shadow: var(--glass-shadow), var(--glass-inset);
 }
 
-/* Dropdown lists under Compound: solid panel, no blur bleed into the Compound label */
-.pep-glass.absolute,
-[data-testid='converter-compound-list'].pep-glass {
+/*
+ * Compound catalog dropdown: solid Card navy so Diluent/other tabs never show through.
+ * Anchored with top:100% under the search field (see PeptideCatalogPicker).
+ */
+.pep-catalog-dropdown {
+  background: var(--card); /* solid #1E3054, no alpha */
+  border: 1px solid var(--glass-border-226);
+  box-shadow: var(--glass-shadow);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
-  background: var(--glass-strong);
+  opacity: 1;
+}
+
+.pep-catalog-dropdown__active {
+  background: var(--glass-selected-strong);
 }
 
 /* Recessed inputs and compound search.

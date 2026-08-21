@@ -28,6 +28,17 @@
   position: relative;
 }
 
+/* Raised stacking while Compound dropdown is open (picker sets z-30 on itself) */
+.field--compound {
+  z-index: 20;
+}
+
+.field--diluent,
+.field--vial,
+.field--dose {
+  z-index: 1;
+}
+
 /* Enforce label-above-control stacking with real gap (never override to block) */
 .field--vial,
 .field--diluent > label,
