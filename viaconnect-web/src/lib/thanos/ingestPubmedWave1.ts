@@ -16,7 +16,10 @@ import {
   factsTooSimilarToAbstract,
 } from '@/lib/thanos/factsFromAbstract';
 import { assertNoDoseLexicon } from '@/lib/thanos/doseRedaction';
-import { WAVE1_COMPOUNDS } from '@/lib/thanos/wave1Compounds';
+import {
+  WAVE1_COMPOUNDS,
+  type Wave1Compound,
+} from '@/lib/thanos/wave1Compounds';
 import { ncbiBucketSnapshot } from '@/lib/thanos/ncbiTokenBucket';
 import { safeLog } from '@/lib/utils/safe-log';
 
@@ -45,10 +48,14 @@ export interface Wave1PubmedResult {
 export async function ingestPubmedWave1(opts?: {
   maxPerCompound?: number;
   mindate?: string;
+  /** Override compound list (Wave 2 chunk). Defaults to Wave 1 flagships. */
+  compounds?: readonly Wave1Compound[];
 }): Promise<Wave1PubmedResult> {
   const admin = createAdminClient();
   const maxPerCompound = opts?.maxPerCompound ?? 4;
   const mindate = opts?.mindate ?? '2018/01/01';
+  const compounds = opts?.compounds ?? WAVE1_COMPOUNDS;
+  const isCustomBatch = Boolean(opts?.compounds);
   const errors: string[] = [];
   const byCompound: Wave1PubmedResult['byCompound'] = [];
   let publicationsUpserted = 0;
@@ -80,7 +87,7 @@ export async function ingestPubmedWave1(opts?: {
     };
   }
 
-  for (const compound of WAVE1_COMPOUNDS) {
+  for (const compound of compounds) {
     const { data: peptide } = await admin
       .from('kb_peptides')
       .select('id, slug')
@@ -331,7 +338,10 @@ export async function ingestPubmedWave1(opts?: {
   });
 
   return {
-    ok: publicationsUpserted > 0 && skippedSimilar >= 0,
+    // Wave 2 custom batches may yield zero pubs for thin compounds; still ok if matched.
+    ok: isCustomBatch
+      ? compoundsMatched > 0
+      : publicationsUpserted > 0 && skippedSimilar >= 0,
     compoundsMatched,
     publicationsUpserted,
     linksUpserted,

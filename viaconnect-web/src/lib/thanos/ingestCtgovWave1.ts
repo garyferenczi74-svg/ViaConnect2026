@@ -6,7 +6,10 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { contentHash } from '@/lib/hounddog/ingest/contentHash';
 import { fetchCtgovStudies } from '@/lib/thanos/ctgovClient';
 import { normalizeCtgovStudy } from '@/lib/thanos/normalizeCtgov';
-import { WAVE1_COMPOUNDS } from '@/lib/thanos/wave1Compounds';
+import {
+  WAVE1_COMPOUNDS,
+  type Wave1Compound,
+} from '@/lib/thanos/wave1Compounds';
 import { assertNoDoseLexicon } from '@/lib/thanos/doseRedaction';
 import { safeLog } from '@/lib/utils/safe-log';
 
@@ -37,9 +40,10 @@ export interface Wave1CtgovResult {
 
 async function seedQueryTerms(
   admin: ReturnType<typeof createAdminClient>,
+  compounds: readonly Wave1Compound[],
 ): Promise<number> {
   let seeded = 0;
-  for (const compound of WAVE1_COMPOUNDS) {
+  for (const compound of compounds) {
     const { data: peptide } = await admin
       .from('kb_peptides')
       .select('id')
@@ -70,10 +74,16 @@ async function seedQueryTerms(
 export async function ingestCtgovWave1(opts?: {
   pageSize?: number;
   maxPerCompound?: number;
+  /** Override compound list (Wave 2 chunk). Defaults to Wave 1 flagships. */
+  compounds?: readonly Wave1Compound[];
+  /** Skip semaglutide redaction proof when not in batch (Wave 2). */
+  skipSemaglutideProof?: boolean;
 }): Promise<Wave1CtgovResult> {
   const admin = createAdminClient();
   const pageSize = opts?.pageSize ?? 25;
   const maxPerCompound = opts?.maxPerCompound ?? 5;
+  const compounds = opts?.compounds ?? WAVE1_COMPOUNDS;
+  const skipSemaglutideProof = opts?.skipSemaglutideProof === true;
   const errors: string[] = [];
   const byCompound: Wave1CtgovResult['byCompound'] = [];
   let trialsUpserted = 0;
@@ -111,7 +121,7 @@ export async function ingestCtgovWave1(opts?: {
 
   let queryTermsSeeded = 0;
   try {
-    queryTermsSeeded = await seedQueryTerms(admin);
+    queryTermsSeeded = await seedQueryTerms(admin, compounds);
   } catch (e) {
     errors.push(
       `query_terms:${e instanceof Error ? e.message : String(e)}`.slice(0, 200),
@@ -119,38 +129,40 @@ export async function ingestCtgovWave1(opts?: {
   }
 
   // Dedicated semaglutide redaction proof (NCT record with dose language)
-  try {
-    const proofList = await fetchCtgovStudies({
-      queryIntr: 'semaglutide',
-      pageSize: 5,
-      filterOverallStatus: 'COMPLETED',
-    });
-    if (proofList.ok) {
-      for (const study of proofList.studies) {
-        const norm = normalizeCtgovStudy(study);
-        if (norm?.redactionProof) {
-          semaglutideProof = {
-            nctId: norm.nctId,
-            beforeSample: norm.redactionProof.beforeSample,
-            afterSample: norm.redactionProof.afterSample,
-            afterPassesLexicon: assertNoDoseLexicon(
-              norm.redactionProof.afterSample,
-            ),
-          };
-          break;
+  if (!skipSemaglutideProof) {
+    try {
+      const proofList = await fetchCtgovStudies({
+        queryIntr: 'semaglutide',
+        pageSize: 5,
+        filterOverallStatus: 'COMPLETED',
+      });
+      if (proofList.ok) {
+        for (const study of proofList.studies) {
+          const norm = normalizeCtgovStudy(study);
+          if (norm?.redactionProof) {
+            semaglutideProof = {
+              nctId: norm.nctId,
+              beforeSample: norm.redactionProof.beforeSample,
+              afterSample: norm.redactionProof.afterSample,
+              afterPassesLexicon: assertNoDoseLexicon(
+                norm.redactionProof.afterSample,
+              ),
+            };
+            break;
+          }
         }
       }
+    } catch (e) {
+      errors.push(
+        `semaglutide_proof:${e instanceof Error ? e.message : String(e)}`.slice(
+          0,
+          160,
+        ),
+      );
     }
-  } catch (e) {
-    errors.push(
-      `semaglutide_proof:${e instanceof Error ? e.message : String(e)}`.slice(
-        0,
-        160,
-      ),
-    );
   }
 
-  for (const compound of WAVE1_COMPOUNDS) {
+  for (const compound of compounds) {
     const { data: peptide } = await admin
       .from('kb_peptides')
       .select('id, slug')
@@ -435,19 +447,22 @@ export async function ingestCtgovWave1(opts?: {
   });
 
   const proofOk =
-    Boolean(semaglutideProof.nctId) &&
-    semaglutideProof.afterPassesLexicon === true &&
-    Boolean(semaglutideProof.beforeSample) &&
-    Boolean(semaglutideProof.afterSample) &&
-    semaglutideProof.beforeSample !== semaglutideProof.afterSample;
+    skipSemaglutideProof ||
+    (Boolean(semaglutideProof.nctId) &&
+      semaglutideProof.afterPassesLexicon === true &&
+      Boolean(semaglutideProof.beforeSample) &&
+      Boolean(semaglutideProof.afterSample) &&
+      semaglutideProof.beforeSample !== semaglutideProof.afterSample);
+
+  const hardErrors = errors.some((e) => !e.includes('dose_lexicon_survived'));
 
   return {
     // Skipped dose_lexicon_survived rows are fail-closed rejects, not failed writes.
-    ok:
-      trialsUpserted > 0 &&
-      proofOk &&
-      !errors.some((e) => !e.includes('dose_lexicon_survived')),
-    compoundsAttempted: WAVE1_COMPOUNDS.length,
+    // Wave 2 (skipSemaglutideProof): success if batch ran without hard errors.
+    ok: skipSemaglutideProof
+      ? compounds.length > 0 && !hardErrors
+      : trialsUpserted > 0 && proofOk && !hardErrors,
+    compoundsAttempted: compounds.length,
     compoundsMatched,
     trialsUpserted,
     linksUpserted,
