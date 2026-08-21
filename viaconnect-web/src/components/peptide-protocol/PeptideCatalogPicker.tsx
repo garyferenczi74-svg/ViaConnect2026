@@ -21,17 +21,28 @@ export type PeptideCatalogItem = {
   displayName: string;
 };
 
+/** Normalize for reactive match: lowercase, strip spaces/hyphens. */
+function normalizeSearch(value: string): string {
+  return value.trim().toLowerCase().replace(/[\s_-]+/g, '');
+}
+
 export function filterPeptideCatalog(
   items: PeptideCatalogItem[],
   query: string,
 ): PeptideCatalogItem[] {
   const q = query.trim().toLowerCase();
   if (!q) return items;
-  return items.filter(
-    (item) =>
-      item.displayName.toLowerCase().includes(q) ||
-      item.slug.toLowerCase().includes(q),
-  );
+  const qNorm = normalizeSearch(query);
+  return items.filter((item) => {
+    const name = item.displayName.toLowerCase();
+    const slug = item.slug.toLowerCase();
+    if (name.includes(q) || slug.includes(q)) return true;
+    // Also match "bpc157" to "BPC-157"
+    return (
+      normalizeSearch(item.displayName).includes(qNorm) ||
+      normalizeSearch(item.slug).includes(qNorm)
+    );
+  });
 }
 
 type PeptideCatalogPickerProps = {
@@ -69,14 +80,19 @@ export function PeptideCatalogPicker({
   const [query, setQuery] = useState(selected?.displayName ?? '');
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
+  /** True while the user is typing a search; blocks selection sync from wiping the query. */
+  const typingRef = useRef(false);
 
+  // Sync input from committed selection only when not actively searching.
+  // Bug fix: clearing peptideId on keystroke used to run setQuery('') and kill filtering.
   useEffect(() => {
+    if (open || typingRef.current) return;
     if (selected) {
       setQuery(selected.displayName);
     } else if (!value) {
       setQuery('');
     }
-  }, [selected, value]);
+  }, [selected, value, open]);
 
   const filtered = useMemo(
     () => filterPeptideCatalog(items, query),
@@ -96,6 +112,7 @@ export function PeptideCatalogPicker({
   useEffect(() => {
     function onPointerDown(event: MouseEvent) {
       if (!rootRef.current?.contains(event.target as Node)) {
+        typingRef.current = false;
         setOpen(false);
         setActiveIndex(-1);
         if (selected) setQuery(selected.displayName);
@@ -107,6 +124,7 @@ export function PeptideCatalogPicker({
   }, [selected, value]);
 
   function pick(item: PeptideCatalogItem) {
+    typingRef.current = false;
     onChange(item.id);
     setQuery(item.displayName);
     setOpen(false);
@@ -114,10 +132,11 @@ export function PeptideCatalogPicker({
   }
 
   function clearSelection() {
+    typingRef.current = true;
     onChange('');
     setQuery('');
     setOpen(true);
-    setActiveIndex(-1);
+    setActiveIndex(0);
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLInputElement>) {
@@ -211,10 +230,13 @@ export function PeptideCatalogPicker({
           data-testid={`${testId}-input`}
           onChange={(event) => {
             const next = event.target.value;
+            typingRef.current = true;
             setQuery(next);
             setOpen(true);
             setActiveIndex(0);
-            if (selected && next !== selected.displayName) {
+            // Clear committed selection when the user edits the search text,
+            // but do NOT reset query (that previously broke reactive filtering).
+            if (value && selected && next !== selected.displayName) {
               onChange('');
             }
           }}
@@ -223,6 +245,12 @@ export function PeptideCatalogPicker({
               setOpen(true);
               setActiveIndex(filtered.length > 0 ? 0 : -1);
             }
+          }}
+          onBlur={() => {
+            // Allow selection sync again after focus leaves (mousedown on option uses preventDefault).
+            window.setTimeout(() => {
+              typingRef.current = false;
+            }, 0);
           }}
           onKeyDown={onKeyDown}
         />

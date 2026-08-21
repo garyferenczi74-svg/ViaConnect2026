@@ -29,8 +29,33 @@ describe('filterPeptideCatalog', () => {
     expect(hits.map((h) => h.id)).toEqual(['1']);
   });
 
+  it('matches hyphenless typing to hyphenated slugs', () => {
+    expect(filterPeptideCatalog(items, 'bpc157').map((h) => h.slug)).toEqual([
+      'bpc-157',
+    ]);
+    expect(filterPeptideCatalog(items, 'tb500').map((h) => h.slug)).toEqual([
+      'tb-500',
+    ]);
+  });
+
   it('returns empty when nothing matches', () => {
     expect(filterPeptideCatalog(items, 'zzzz')).toHaveLength(0);
+  });
+});
+
+describe('PeptideCatalogPicker reactive typing guard', () => {
+  it('does not wipe query when selection clears during typing', () => {
+    const picker = readFileSync(
+      path.join(
+        process.cwd(),
+        'src/components/peptide-protocol/PeptideCatalogPicker.tsx',
+      ),
+      'utf8',
+    );
+    expect(picker).toContain('typingRef');
+    expect(picker).toContain('if (open || typingRef.current) return');
+    expect(picker).toContain('do NOT reset query');
+    expect(picker).toContain('filterPeptideCatalog(items, query)');
   });
 });
 
