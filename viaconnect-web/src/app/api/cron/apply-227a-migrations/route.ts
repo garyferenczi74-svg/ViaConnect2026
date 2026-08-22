@@ -67,6 +67,12 @@ export async function POST(request: Request): Promise<Response> {
           results.push({ file: migration.file, ok: false, error: message });
         }
       }
+      // Reload PostgREST schema cache so new tables are visible immediately.
+      try {
+        await sql.unsafe(`NOTIFY pgrst, 'reload schema'`);
+      } catch {
+        // Non-fatal: cycle may need one retry if cache is stale.
+      }
     } finally {
       await sql.end({ timeout: 5 });
     }

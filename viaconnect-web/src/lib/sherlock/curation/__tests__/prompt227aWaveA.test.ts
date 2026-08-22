@@ -137,5 +137,8 @@ describe('227a isolation and schema', () => {
     expect(
       read('src/app/api/cron/run-227a-curation-cycle/route.ts'),
     ).toContain('runCurationCycle227a');
+    expect(
+      read('src/app/api/cron/prove-227a-artifacts/route.ts'),
+    ).toContain('wave_a_artifacts');
   });
 });
