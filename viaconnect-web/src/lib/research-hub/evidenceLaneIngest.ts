@@ -16,7 +16,19 @@ import { PHASE1_JOURNAL } from '@/lib/research-hub/phase1JournalIngest';
 
 const DEFAULT_MINDATE = '2026/06/01';
 const DEFAULT_EUTILS_BATCH = 2;
-const MAX_SOURCES_PER_RUN = 12;
+const MAX_SOURCES_PER_RUN = 20;
+
+function isPlausibleArticleUrl(url: string): boolean {
+  const u = url.toLowerCase();
+  if (!u.startsWith('http')) return false;
+  if (u.includes('tap-en-') || u.includes('/settings') || u.includes('/ads')) {
+    return false;
+  }
+  if (u.includes('login') || u.includes('signup') || u.includes('cookie')) {
+    return false;
+  }
+  return true;
+}
 
 function sanitizeText(input: string): string {
   const red = redactDoseInstructionText(input);
@@ -358,7 +370,7 @@ async function ingestRssSource(opts: {
   const items = parseRssItems(xml);
   out.discovered = items.length;
   const batch = items
-    .filter((it) => !cursor.seenUrls.has(it.link))
+    .filter((it) => isPlausibleArticleUrl(it.link) && !cursor.seenUrls.has(it.link))
     .slice(0, opts.batchSize);
 
   if (batch.length === 0) {
