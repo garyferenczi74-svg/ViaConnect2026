@@ -6,6 +6,10 @@
 
 import type { FirecrawlBudget } from "@/lib/hounddog/firecrawl/client";
 import { defaultBudget, canSpend, recordSpend } from "@/lib/hounddog/firecrawl/client";
+import {
+  createDayAwareBudget,
+  type DayCapAdmin,
+} from "@/lib/hounddog/firecrawl/dayCap";
 import { safeLog } from "@/lib/utils/safe-log";
 import type { CapabilityAgentId, CapabilityId } from "./types";
 
@@ -26,6 +30,8 @@ interface SharedDayState {
   grokByAgent: Map<string, number>;
   pubmedCalls: number;
   pubmedByAgent: Map<string, number>;
+  /** True once firecrawl creditsUsed was seeded from firecrawl_run_ledger. */
+  firecrawlSeededFromLedger: boolean;
 }
 
 function utcDayKey(d = new Date()): string {
@@ -54,6 +60,7 @@ function ensureDay(): SharedDayState {
       grokByAgent: new Map(),
       pubmedCalls: 0,
       pubmedByAgent: new Map(),
+      firecrawlSeededFromLedger: false,
     };
   }
   return state;
@@ -75,6 +82,8 @@ export function firecrawlAgentSpend(agent: CapabilityAgentId): number {
 /**
  * Check and reserve firecrawl spend under shared + soft per-agent caps.
  * Returns false when shared or agent soft-cap is exhausted.
+ * Prefer tryReserveFirecrawlAsync in production so the day ceiling is
+ * seeded from firecrawl_run_ledger across Vercel instances.
  */
 export function tryReserveFirecrawl(
   agent: CapabilityAgentId,
@@ -92,7 +101,12 @@ export function tryReserveFirecrawl(
     });
     return { allowed: false, reason: "budget_exhausted", budget };
   }
-  const softMax = Math.max(1, Math.floor(budget.maxCredits * PER_AGENT_SOFT_FRACTION));
+  // Soft cap uses the env daily ceiling (not remaining), so one agent cannot
+  // take more than half of the intended shared pool even after day seeding.
+  const softMax = Math.max(
+    1,
+    Math.floor(firecrawlDailySoftBase() * PER_AGENT_SOFT_FRACTION)
+  );
   const used = s.firecrawlByAgent.get(String(agent)) ?? 0;
   if (used + credits > softMax) {
     safeLog.warn("capability.budget", "firecrawl agent soft-cap", {
@@ -105,6 +119,39 @@ export function tryReserveFirecrawl(
   recordSpend(budget, pages, credits);
   s.firecrawlByAgent.set(String(agent), used + credits);
   return { allowed: true, budget };
+}
+
+function firecrawlDailySoftBase(): number {
+  const n = Number(process.env.FIRECRAWL_MAX_CREDITS_PER_DAY ?? "200");
+  return Number.isFinite(n) && n > 0 ? n : 200;
+}
+
+/**
+ * Seed in-memory shared Firecrawl state from ledger day totals, then reserve.
+ * Durable across serverless instances for the day-credit ceiling.
+ */
+export async function tryReserveFirecrawlAsync(
+  admin: DayCapAdmin,
+  agent: CapabilityAgentId,
+  pages = 1,
+  credits = 1
+): Promise<{ allowed: boolean; reason?: string; budget: FirecrawlBudget }> {
+  const s = ensureDay();
+  if (!s.firecrawlSeededFromLedger) {
+    const dayBudget = await createDayAwareBudget(admin);
+    // creditsUsed = already spent today; maxCredits = full ceiling so canSpend
+    // checks used+request <= ceiling. remaining is encoded as
+    // maxCredits - creditsUsed after seeding.
+    const ceiling = firecrawlDailySoftBase();
+    const alreadyUsed = Math.max(0, ceiling - dayBudget.maxCredits);
+    s.firecrawl.creditsUsed = alreadyUsed;
+    s.firecrawl.maxCredits = ceiling;
+    s.firecrawl.maxPages = dayBudget.maxPages;
+    s.firecrawl.pagesUsed = 0;
+    s.firecrawl.hitBudget = dayBudget.hitBudget || alreadyUsed >= ceiling;
+    s.firecrawlSeededFromLedger = true;
+  }
+  return tryReserveFirecrawl(agent, pages, credits);
 }
 
 export function tryReserveGrokTokens(

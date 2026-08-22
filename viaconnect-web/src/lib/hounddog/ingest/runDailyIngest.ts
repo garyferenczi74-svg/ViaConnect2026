@@ -4,7 +4,8 @@
 
 import { createAdminClient } from '@/lib/supabase/admin';
 import { safeLog } from '@/lib/utils/safe-log';
-import { defaultBudget, type FirecrawlBudget } from '@/lib/hounddog/firecrawl/client';
+import { type FirecrawlBudget } from '@/lib/hounddog/firecrawl/client';
+import { createDayAwareBudget } from '@/lib/hounddog/firecrawl/dayCap';
 import { runPubMedTopicDiscovery } from './pubmed';
 import { runSocialDiscovery } from './social';
 import { watchIgsrRelease, panelAlleleFreqSeed } from './genomes';
@@ -36,8 +37,9 @@ export async function runHoundDogDailyIngest(opts?: {
 }): Promise<IngestRunStats> {
   const runDate = opts?.runDate ?? new Date().toISOString().slice(0, 10);
   const runId = opts?.runId ?? `ingest-${runDate}`;
-  const budget = defaultBudget();
   const supabase = createAdminClient();
+  // 219g: shared daily ceiling from firecrawl_run_ledger (not a fresh 200 each run)
+  const budget = await createDayAwareBudget(supabase);
 
   const stats: IngestRunStats = {
     runId,

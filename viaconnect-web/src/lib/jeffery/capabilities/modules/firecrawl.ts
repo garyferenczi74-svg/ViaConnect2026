@@ -9,7 +9,8 @@ import {
   isFirecrawlConfigured,
   type ScrapeResult,
 } from "@/lib/hounddog/firecrawl/client";
-import { tryReserveFirecrawl, budgetEventMeta } from "../budgets";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { tryReserveFirecrawlAsync, budgetEventMeta } from "../budgets";
 import type { CapabilityAgentId, CapabilityResult } from "../types";
 import { CAPABILITY_DEFINITIONS } from "../types";
 import { logCapabilityUsage } from "../logUsage";
@@ -20,7 +21,7 @@ export async function capFirecrawlScrape(
 ): Promise<CapabilityResult<ScrapeResult>> {
   const t0 = Date.now();
   const queryShape = `scrape:${url.slice(0, 120)}`;
-  const reserve = tryReserveFirecrawl(agent, 1, 1);
+  const reserve = await tryReserveFirecrawlAsync(createAdminClient(), agent, 1, 1);
   if (!reserve.allowed) {
     const usage = {
       agent: String(agent),
@@ -89,7 +90,7 @@ export async function capFirecrawlSearch(
 > {
   const t0 = Date.now();
   const queryShape = `search:${query.slice(0, 120)}`;
-  const reserve = tryReserveFirecrawl(agent, 1, 1);
+  const reserve = await tryReserveFirecrawlAsync(createAdminClient(), agent, 1, 1);
   if (!reserve.allowed) {
     const usage = {
       agent: String(agent),

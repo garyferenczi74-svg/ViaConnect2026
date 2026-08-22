@@ -5,10 +5,10 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { safeLog } from '@/lib/utils/safe-log';
 import {
-  defaultBudget,
   firecrawlSearch,
   type FirecrawlBudget,
 } from '@/lib/hounddog/firecrawl/client';
+import { createDayAwareBudget } from '@/lib/hounddog/firecrawl/dayCap';
 import { contentHash } from '@/lib/hounddog/ingest/contentHash';
 import { evaluateHoundDogGate } from '@/lib/hounddog/contentGate';
 import {
@@ -49,9 +49,9 @@ export async function runElysiumDailyIngest(opts?: {
 }): Promise<ElysiumIngestStats> {
   const runDate = opts?.runDate ?? new Date().toISOString().slice(0, 10);
   const runId = opts?.runId ?? `elysium-${runDate}`;
-  const budget = opts?.budget ?? defaultBudget();
   const allow = await loadApprovedAllowlistDomains();
   const supabase = createAdminClient();
+  const budget = opts?.budget ?? (await createDayAwareBudget(supabase));
 
   const stats: ElysiumIngestStats = {
     runId,

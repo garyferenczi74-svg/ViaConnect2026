@@ -5,7 +5,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { safeLog } from "@/lib/utils/safe-log";
-import { defaultBudget } from "@/lib/hounddog/firecrawl/client";
+import { createDayAwareBudget } from "@/lib/hounddog/firecrawl/dayCap";
 import {
   augmentProductHintWithUrlDose,
   COMPETITIVE_SKU_SEEDS,
@@ -234,7 +234,7 @@ export async function enrichCompetitiveProducts(
   }
   ranked.sort((a, b) => a.priority - b.priority);
 
-  const budget = defaultBudget();
+  const budget = await createDayAwareBudget(sb);
   // Seed force-rescrape burns more pages; allow a bit more headroom
   budget.maxPages = Math.min(budget.maxPages, preferSeedUnknown ? 16 : 12);
 

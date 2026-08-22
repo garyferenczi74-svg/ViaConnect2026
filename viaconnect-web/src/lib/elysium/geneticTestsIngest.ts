@@ -6,11 +6,11 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { safeLog } from "@/lib/utils/safe-log";
 import {
-  defaultBudget,
   firecrawlSearch,
   firecrawlScrape,
   type FirecrawlBudget,
 } from "@/lib/hounddog/firecrawl/client";
+import { createDayAwareBudget } from "@/lib/hounddog/firecrawl/dayCap";
 import { contentHash } from "@/lib/hounddog/ingest/contentHash";
 import { evaluateHoundDogGate } from "@/lib/hounddog/contentGate";
 import {
@@ -64,8 +64,9 @@ export async function runGeneticTestsIngest(opts?: {
 }): Promise<GeneticTestsIngestStats> {
   const runDate = opts?.runDate ?? new Date().toISOString().slice(0, 10);
   const runId = opts?.runId ?? `genetic-tests-${runDate}`;
-  const budget = opts?.budget ?? defaultBudget();
   const maxQueries = opts?.maxQueries ?? GENETIC_QUERIES.length;
+  const supabase = createAdminClient();
+  const budget = opts?.budget ?? (await createDayAwareBudget(supabase));
 
   const allow = await loadApprovedCompetitiveDomains({
     kinds: ["genetic_test_provider"],
@@ -95,8 +96,6 @@ export async function runGeneticTestsIngest(opts?: {
     safeLog.warn("geneticTests.ingest", "allowlist empty; skip crawl");
     return stats;
   }
-
-  const supabase = createAdminClient();
 
   for (const q of GENETIC_QUERIES.slice(0, maxQueries)) {
     if (budget.hitBudget) break;

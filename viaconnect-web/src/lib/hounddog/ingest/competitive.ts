@@ -6,10 +6,10 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { safeLog } from "@/lib/utils/safe-log";
 import {
-  defaultBudget,
   firecrawlSearch,
   type FirecrawlBudget,
 } from "@/lib/hounddog/firecrawl/client";
+import { createDayAwareBudget } from "@/lib/hounddog/firecrawl/dayCap";
 import { contentHash } from "@/lib/hounddog/ingest/contentHash";
 import { evaluateHoundDogGate } from "@/lib/hounddog/contentGate";
 import {
@@ -118,8 +118,9 @@ export async function runCompetitiveIngest(opts?: {
 }): Promise<CompetitiveIngestStats> {
   const runDate = opts?.runDate ?? new Date().toISOString().slice(0, 10);
   const runId = opts?.runId ?? `competitive-${runDate}`;
-  const budget = opts?.budget ?? defaultBudget();
   const maxQueries = opts?.maxQueries ?? COMPETITIVE_QUERIES.length;
+  const supabase = createAdminClient();
+  const budget = opts?.budget ?? (await createDayAwareBudget(supabase));
 
   const allow = await loadApprovedCompetitiveDomains({
     kinds: ["brand", "retailer"],
@@ -156,8 +157,6 @@ export async function runCompetitiveIngest(opts?: {
     safeLog.warn("competitive.ingest", "allowlist empty; skip crawl");
     return stats;
   }
-
-  const supabase = createAdminClient();
 
   const stageOne = async (input: {
     url: string;

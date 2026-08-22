@@ -42,13 +42,15 @@
 
 ## Ledger semantics
 
-Day-sum of `firecrawl_run_ledger.credits_used` can exceed 200 because many pipelines call `defaultBudget()` per run. Shared day-state in `budgets.ts` only applies to callers of `tryReserveFirecrawl`.
+**Before 2026-08-22 day-cap:** day-sum of `firecrawl_run_ledger.credits_used` could exceed 200 because pipelines called `defaultBudget()` per run (fresh 200 each invocation). Observed peak: 701 credits across 89 runs on 2026-08-17.
 
-| Metric (14d) | Value |
+**After day-cap ship:** production ingest entrypoints use `createDayAwareBudget` (reads UTC-day ledger sum; sets `maxCredits` to remaining). Jeffery `capFirecrawl*` uses `tryReserveFirecrawlAsync` (seeds in-memory state from the same ledger). Soft concurrent races may still slightly overshoot; atomic reserve RPC is optional later hardening.
+
+| Metric (14d pre-gate sample) | Value |
 | --- | --- |
 | Max single-run credits | 17 |
 | Avg single-run credits | 7.11 |
 | P95 single-run credits | 11 |
 | Highest ledger day-sum | 701 (89 runs on 2026-08-17) |
 
-Optional hardening: route all Firecrawl spend through `tryReserveFirecrawl` so day-sum matches the enforced shared ceiling.
+Code: `src/lib/hounddog/firecrawl/dayCap.ts`.
