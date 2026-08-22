@@ -55,9 +55,13 @@ describe('227a G60 field class map', () => {
   });
 
   it('map is non-empty and matches migration seed keys', () => {
-    const sql = read(
-      'supabase/migrations/20260821230000_prompt_227a_sherlock_curation_schema.sql',
-    );
+    const sql =
+      read(
+        'supabase/migrations/20260821230000_prompt_227a_sherlock_curation_schema.sql',
+      ) +
+      read(
+        'supabase/migrations/20260821260000_prompt_227e_retraction_watch.sql',
+      );
     expect(CURATION_FIELD_CLASS_MAP_227A.length).toBeGreaterThan(10);
     for (const row of CURATION_FIELD_CLASS_MAP_227A) {
       expect(sql).toContain(`'${row.targetTable}'`);

@@ -278,11 +278,13 @@ export async function loadPeptideEvidenceBundle(opts: {
     const { data: pubs } = await admin
       .from('kb_publications')
       .select(
-        'id, title, source_url, source_tier, translation_method, translation_reviewed_by, author_network_id, dose_redaction_applied',
+        'id, title, source_url, source_tier, translation_method, translation_reviewed_by, author_network_id, dose_redaction_applied, is_retracted',
       )
       .in('id', pubIds);
     for (const p of pubs ?? []) {
       if (p.dose_redaction_applied !== true) continue;
+      // 227e: never present retracted / EoC publications as consumer support.
+      if (p.is_retracted === true) continue;
       if (
         !isConsumerRetrievablePublication({
           translationMethod: p.translation_method as

@@ -130,14 +130,19 @@ export async function pubmedEfetchAbstracts(pmids: string[]): Promise<Map<string
   return map;
 }
 
+export type PubmedEfetchDetail = {
+  abstract: string;
+  publicationTypes: string[];
+  year?: number;
+  /** CommentsCorrections RefType values (RetractionIn, RetractionOf, ExpressionOfConcernIn, ...). */
+  commentCorrectionRefs: Array<{ refType: string; pmid?: string }>;
+};
+
 /** Fetch abstracts plus PublicationType list for Wave 1 facts extraction. */
 export async function pubmedEfetchDetails(pmids: string[]): Promise<
-  Map<string, { abstract: string; publicationTypes: string[]; year?: number }>
+  Map<string, PubmedEfetchDetail>
 > {
-  const map = new Map<
-    string,
-    { abstract: string; publicationTypes: string[]; year?: number }
-  >();
+  const map = new Map<string, PubmedEfetchDetail>();
   if (pmids.length === 0) return map;
   await acquireNcbiToken();
   const params = new URLSearchParams({
@@ -162,10 +167,20 @@ export async function pubmedEfetchDetails(pmids: string[]): Promise<
       .map((m) => m[1].replace(/<[^>]+>/g, '').trim())
       .filter(Boolean);
     const yearMatch = chunk.match(/<PubDate>[\s\S]*?<Year>(\d{4})<\/Year>/);
+    const commentCorrectionRefs: Array<{ refType: string; pmid?: string }> = [];
+    for (const m of chunk.matchAll(
+      /<CommentsCorrections\s+RefType="([^"]+)"[^>]*>[\s\S]*?(?:<PMID[^>]*>(\d+)<\/PMID>)?[\s\S]*?<\/CommentsCorrections>/g,
+    )) {
+      commentCorrectionRefs.push({
+        refType: m[1],
+        pmid: m[2] || undefined,
+      });
+    }
     map.set(pmidMatch[1], {
       abstract: texts.join(' '),
       publicationTypes: types,
       year: yearMatch ? Number(yearMatch[1]) : undefined,
+      commentCorrectionRefs,
     });
   }
   return map;

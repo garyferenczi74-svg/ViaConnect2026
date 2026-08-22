@@ -69,7 +69,11 @@ export async function computeHonestyLayerForPeptide(
     trials_registered = trials?.length ?? 0;
     for (const t of trials ?? []) {
       if (t.status === 'completed') trials_completed += 1;
-      if (t.status === 'terminated' || t.status === 'withdrawn') {
+      if (
+        t.status === 'terminated' ||
+        t.status === 'withdrawn' ||
+        t.status === 'suspended'
+      ) {
         trials_terminated_or_withdrawn += 1;
         const reason = String(t.status_reason ?? '').trim();
         if (reason) termination_reasons.push(reason.slice(0, 200));
@@ -87,9 +91,13 @@ export async function computeHonestyLayerForPeptide(
   if (pubIds.length > 0) {
     const { data: pubs } = await admin
       .from('kb_publications')
-      .select('is_human, is_animal, publication_types, study_design')
+      .select(
+        'is_human, is_animal, publication_types, study_design, is_retracted',
+      )
       .in('id', pubIds);
     for (const p of pubs ?? []) {
+      // 227e: retracted / EoC pubs never count as supporting evidence.
+      if (p.is_retracted === true) continue;
       if (p.is_human) publications_human += 1;
       if (p.is_animal) publications_animal += 1;
       const types = Array.isArray(p.publication_types)

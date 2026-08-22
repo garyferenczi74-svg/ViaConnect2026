@@ -49,6 +49,8 @@ export const CURATION_FIELD_CLASS_MAP_227A: ReadonlyArray<{
   { targetTable: 'kb_peptides', targetField: 'consumer_safe', changeClass: 4 },
   { targetTable: 'kb_goal_domains', targetField: 'row_insert', changeClass: 5 },
   { targetTable: 'authorities_sources', targetField: 'source_tier', changeClass: 5 },
+  { targetTable: 'kb_publications', targetField: 'is_retracted', changeClass: 1 },
+  { targetTable: 'kb_trials', targetField: 'status', changeClass: 1 },
 ] as const;
 
 export function lookupChangeClass(
