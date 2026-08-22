@@ -291,11 +291,11 @@ async function ingestOneJournal(opts: {
       base.pmidsInserted.push(row.pmid);
     }
 
-    // Advance mindate conservatively to today (edat window); seen_pmids carries pagination.
-    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '/');
-    base.cursorAfter = today;
+    // Keep a wide edat window; pagination is via seen_pmids so later runs
+    // can still yield new items without duplicates.
+    base.cursorAfter = mindate;
     await saveCursor(admin, opts.topicKey, {
-      mindate: today,
+      mindate,
       seen: cursor.seen,
       status: base.inserted > 0 ? 'ok' : 'empty',
       newItems: base.inserted,
