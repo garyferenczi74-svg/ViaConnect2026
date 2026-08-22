@@ -15,7 +15,8 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   try {
-    const result = await runCurationCycle227a({ maxClass3Proposals: 5 });
+    // Omit opts so G64 curation_budget_ceiling governs per-cycle caps.
+    const result = await runCurationCycle227a();
     return Response.json({ ok: result.ok, prompt: '227a', result });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

@@ -80,6 +80,13 @@ type OpsPayload = {
     change_class: number;
     applied_at: string | null;
   }>;
+  budgetCeiling?: {
+    maxClass3PerCycle: number;
+    maxClass0FreshnessPerCycle: number;
+    maxNegativeSamplesPerCycle: number;
+    measuredCycleCount: number;
+    notes: string;
+  };
 };
 
 export default function CurationOpsPanel() {
@@ -317,9 +324,21 @@ export default function CurationOpsPanel() {
           ) : null}
         </div>
         <p className="text-[10px] text-white/35">
-          Budget: {JSON.stringify(data.budget)} · G64 ceiling unset until
-          measured steady state
+          Last cycle budget: {JSON.stringify(data.budget)}
         </p>
+        {data.budgetCeiling ? (
+          <p className="text-[10px] text-[#2DA5A0]/80">
+            G64 ceiling: Class3≤{data.budgetCeiling.maxClass3PerCycle}, Class0≤
+            {data.budgetCeiling.maxClass0FreshnessPerCycle}, negatives≤
+            {data.budgetCeiling.maxNegativeSamplesPerCycle} (from{' '}
+            {data.budgetCeiling.measuredCycleCount} cycles) ·{' '}
+            {data.budgetCeiling.notes}
+          </p>
+        ) : (
+          <p className="text-[10px] text-white/35">
+            G64 ceiling UNKNOWN until measured
+          </p>
+        )}
       </section>
 
       {/* Proposal queue */}

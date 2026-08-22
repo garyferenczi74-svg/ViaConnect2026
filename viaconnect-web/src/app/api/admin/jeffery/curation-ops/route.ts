@@ -10,6 +10,7 @@ import {
   proposalFingerprint,
   recordCurationRejection,
 } from '@/lib/sherlock/curation/rejectionLedger227ah';
+import { loadBudgetCeiling } from '@/lib/sherlock/curation/budgetCeiling227d';
 import { safeLog } from '@/lib/utils/safe-log';
 
 export const runtime = 'nodejs';
@@ -164,6 +165,7 @@ export async function GET() {
       pendingCorrections: pendingCorrections.data ?? [],
       class3ApproveNote:
         'Class 3 approve records Jeffery clearance only. It does not write FDA, WADA, or 503A fields. Lex fill is separate.',
+      budgetCeiling: await loadBudgetCeiling(),
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

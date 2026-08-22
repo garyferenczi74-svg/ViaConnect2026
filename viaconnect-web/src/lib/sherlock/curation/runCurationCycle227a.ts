@@ -20,6 +20,7 @@ import {
   isRejectedWithoutNewEvidence,
   proposalFingerprint,
 } from '@/lib/sherlock/curation/rejectionLedger227ah';
+import { loadBudgetCeiling } from '@/lib/sherlock/curation/budgetCeiling227d';
 
 export type CurationCycleResult = {
   ok: boolean;
@@ -29,6 +30,11 @@ export type CurationCycleResult = {
   proposalsRaised: Record<string, number>;
   proposalsSkippedRejected: number;
   negativeResults: number;
+  budgetApplied?: {
+    maxClass3: number;
+    maxClass0: number;
+    maxNegatives: number;
+  };
   error?: string;
 };
 
@@ -45,10 +51,31 @@ async function isKillSwitchHalted(): Promise<boolean> {
 export async function runCurationCycle227a(opts?: {
   maxClass3Proposals?: number;
   maxClass0Freshness?: number;
+  maxNegativeSamples?: number;
 }): Promise<CurationCycleResult> {
   const admin = createAdminClient();
-  const maxClass3 = Math.min(20, Math.max(1, opts?.maxClass3Proposals ?? 5));
-  const maxClass0 = Math.min(10, Math.max(0, opts?.maxClass0Freshness ?? 3));
+  const ceiling = await loadBudgetCeiling();
+  const maxClass3 = Math.min(
+    20,
+    Math.max(
+      1,
+      opts?.maxClass3Proposals ?? ceiling.maxClass3PerCycle ?? 5,
+    ),
+  );
+  const maxClass0 = Math.min(
+    10,
+    Math.max(
+      0,
+      opts?.maxClass0Freshness ?? ceiling.maxClass0FreshnessPerCycle ?? 3,
+    ),
+  );
+  const maxNegatives = Math.min(
+    20,
+    Math.max(
+      0,
+      opts?.maxNegativeSamples ?? ceiling.maxNegativeSamplesPerCycle ?? 5,
+    ),
+  );
   const proposalsRaised: Record<string, number> = {
     '0': 0,
     '1': 0,
@@ -208,6 +235,7 @@ export async function runCurationCycle227a(opts?: {
       .or(
         'fda_status.eq.unknown,wada_status.eq.unknown,fda_503a_category.eq.unknown',
       )
+      .order('id', { ascending: true })
       .limit(maxClass3);
 
     for (const p of unknowns ?? []) {
@@ -261,7 +289,7 @@ export async function runCurationCycle227a(opts?: {
       (p) => !linked.has(String(p.id)),
     );
 
-    for (const p of zeroLink.slice(0, 5)) {
+    for (const p of zeroLink.slice(0, maxNegatives)) {
       const { error } = await admin.from('curation_negative_results').insert({
         cycle_id: cycleId,
         gap_type: 'zero_evidence_links',
@@ -290,8 +318,10 @@ export async function runCurationCycle227a(opts?: {
         budget: {
           maxClass3,
           maxClass0,
+          maxNegatives,
           proposalsSkippedRejected,
-          note: 'wave_a_hardening_cycle',
+          ceilingNotes: ceiling.notes,
+          note: 'g64_ceiling_applied',
         },
         yield_by_source_tier: { '1': proposalsRaised['3'] ?? 0 },
       })
@@ -305,6 +335,7 @@ export async function runCurationCycle227a(opts?: {
       proposalsRaised,
       proposalsSkippedRejected,
       negativeResults,
+      budgetApplied: { maxClass3, maxClass0, maxNegatives },
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
