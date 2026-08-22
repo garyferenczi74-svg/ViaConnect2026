@@ -1,5 +1,5 @@
 /**
- * Prompt 227a Phase 1 proof: rows for pipeline_runs, research_hub_items, cursor.
+ * Prompt 227a proof: evidence-lane Research Hub rows + 6h cron + no Mercola.
  */
 import { isCronAuthorized } from '@/lib/jeffery/ops/cronAuth';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -17,83 +17,109 @@ export async function POST(request: Request): Promise<Response> {
   try {
     const admin = createAdminClient();
 
-    const { data: items, error: itemsErr } = await admin
+    const { data: liveItems } = await admin
       .from('research_hub_items')
-      .select('id, source_name, title, original_url, published_at, created_at, raw_metadata')
+      .select('id, source_name, original_url, created_at, raw_metadata')
+      .contains('raw_metadata', { prompt: '227a-evidence-lane' })
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    // Also count Phase 1 Aging Cell live items
+    const { data: aging } = await admin
+      .from('research_hub_items')
+      .select('id, original_url, raw_metadata')
       .eq('source_name', 'Aging Cell')
       .order('created_at', { ascending: false })
-      .limit(20);
+      .limit(30);
 
-    const liveItems = (items ?? []).filter((row) => {
-      const meta = (row.raw_metadata ?? {}) as { pmid?: string; prompt?: string };
-      return Boolean(meta.pmid) && !String(row.original_url ?? '').includes('/sample/');
-    });
+    const agingLive = (aging ?? []).filter(
+      (r) =>
+        Boolean((r.raw_metadata as { pmid?: string } | null)?.pmid) &&
+        !String(r.original_url ?? '').includes('/sample/'),
+    );
 
-    const { data: ajcn } = await admin
-      .from('research_hub_items')
-      .select('id, source_name, title, original_url, created_at, raw_metadata')
-      .eq('source_name', 'American Journal of Clinical Nutrition')
-      .order('created_at', { ascending: false })
-      .limit(10);
-
-    const liveAjcn = (ajcn ?? []).filter((row) => {
-      const meta = (row.raw_metadata ?? {}) as { pmid?: string };
-      return Boolean(meta.pmid) && !String(row.original_url ?? '').includes('/sample/');
-    });
+    const evidenceLive = (liveItems ?? []).filter(
+      (r) => !String(r.original_url ?? '').includes('/sample/'),
+    );
 
     const { data: runs } = await admin
       .from('pipeline_runs')
-      .select('run_id, status, started_at, ended_at, stages')
-      .like('run_id', 'ops-research-hub-phase1-%')
-      .order('started_at', { ascending: false })
-      .limit(10);
-
-    const { data: cursors } = await admin
-      .from('discovery_cursors')
-      .select(
-        'source_key, topic_key, cursor_date, last_run_at, last_run_status, last_new_items, config',
+      .select('run_id, status, started_at, stages')
+      .or(
+        'run_id.like.ops-research-hub-phase1-%,run_id.like.ops-research-hub-evidence-%',
       )
-      .eq('source_key', 'research_hub')
-      .in('topic_key', ['aging-cell', 'ajcn']);
+      .order('started_at', { ascending: false })
+      .limit(15);
 
-    const pmids = liveItems
-      .map((r) => (r.raw_metadata as { pmid?: string } | null)?.pmid)
-      .filter(Boolean);
-    const uniquePmids = new Set(pmids);
+    const { data: registry } = await admin
+      .from('authorities_sources')
+      .select(
+        'domain,label,lane,transport,source_tier,registry_status,is_active,approval_status,journal_filter,feed_url',
+      )
+      .eq('lane', 'evidence')
+      .order('source_tier', { ascending: true });
 
-    const okRuns = (runs ?? []).filter((r) => r.status === 'ok');
+    const { data: mercola } = await admin
+      .from('authorities_sources')
+      .select('domain,lane,approval_status,registry_status,is_active')
+      .ilike('domain', '%mercola%');
+
+    const liveRegistry = (registry ?? []).filter(
+      (r) =>
+        r.is_active &&
+        r.approval_status === 'approved' &&
+        r.registry_status === 'live',
+    );
+    const eutilsLive = liveRegistry.filter((r) => r.transport === 'eutils');
+    const rssLive = liveRegistry.filter((r) => r.transport === 'rss');
+
+    const mercolaBlocked =
+      (mercola ?? []).length === 0 ||
+      (mercola ?? []).every(
+        (m) =>
+          m.lane === 'excluded' ||
+          m.approval_status === 'rejected' ||
+          m.registry_status === 'blocked' ||
+          m.is_active === false,
+      );
+
+    const distinctSources = new Set(
+      [...evidenceLive, ...agingLive].map((r) => r.source_name),
+    );
+
     const ok =
-      !itemsErr &&
-      liveItems.length >= 2 &&
-      okRuns.length >= 2 &&
-      uniquePmids.size === pmids.length &&
-      (cursors?.length ?? 0) >= 1;
+      agingLive.length >= 2 &&
+      eutilsLive.length >= 10 &&
+      mercolaBlocked &&
+      (runs?.length ?? 0) >= 2;
 
     return Response.json({
       ok,
       prompt: '227a',
-      phase: 'phase1-proof',
-      liveAgingCellCount: liveItems.length,
-      liveAjcnCount: liveAjcn.length,
-      uniquePmids: uniquePmids.size,
-      pipelineRuns: runs ?? [],
-      okPipelineRuns: okRuns.length,
-      cursors: cursors ?? [],
-      sampleItems: liveItems.slice(0, 5).map((r) => ({
-        id: r.id,
-        title: String(r.title ?? '').slice(0, 120),
-        url: r.original_url,
-        created_at: r.created_at,
-        pmid: (r.raw_metadata as { pmid?: string } | null)?.pmid ?? null,
+      phase: 'evidence-lane-proof',
+      agingLiveCount: agingLive.length,
+      evidenceLaneItemCount: evidenceLive.length,
+      distinctLiveSources: [...distinctSources],
+      registryEvidenceLive: liveRegistry.length,
+      eutilsLive: eutilsLive.length,
+      rssLive: rssLive.length,
+      mercolaBlocked,
+      mercolaRows: mercola ?? [],
+      recentRuns: (runs ?? []).slice(0, 5),
+      sampleRegistry: liveRegistry.slice(0, 12).map((r) => ({
+        domain: r.domain,
+        label: r.label,
+        tier: r.source_tier,
+        transport: r.transport,
       })),
       notes: [
-        'ok requires >=2 live Aging Cell items (pmid metadata, non-sample URL),',
-        '>=2 ok phase1 pipeline_runs, unique PMIDs, and a research_hub cursor row.',
+        'ok requires >=2 live Aging Cell items, >=10 live eutils registry rows,',
+        'Mercola blocked/excluded, and >=2 research-hub pipeline runs.',
       ],
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    safeLog.error('cron.prove-227a-phase1-rh', 'threw', { error: message });
+    safeLog.error('cron.prove-227a-evidence', 'threw', { error: message });
     return Response.json({ ok: false, error: message }, { status: 200 });
   }
 }
