@@ -6,8 +6,8 @@
  * failure cannot crash the Command Center shell.
  */
 
-import { useState } from "react";
-import { Cpu, Radio, ClipboardCheck, Compass, Brain, Database, Users, Zap, Activity } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Cpu, Radio, ClipboardCheck, Compass, Brain, Database, Users, Zap, Activity, FlaskConical } from "lucide-react";
 import LiveFeed from "@/components/admin/jeffery/LiveFeed";
 import ReviewQueue from "@/components/admin/jeffery/ReviewQueue";
 import SteeringConsole from "@/components/admin/jeffery/SteeringConsole";
@@ -16,6 +16,7 @@ import KnowledgeExplorer from "@/components/admin/jeffery/KnowledgeExplorer";
 import CapabilityUsagePanel from "@/components/admin/jeffery/CapabilityUsagePanel";
 import ContinuousOpsPanel from "@/components/admin/jeffery/ContinuousOpsPanel";
 import JefferyReviewDesk from "@/components/admin/jeffery/JefferyReviewDesk";
+import CurationOpsPanel from "@/components/admin/jeffery/CurationOpsPanel";
 import { AdminPanel } from "@/components/admin/AdminPanelErrorBoundary";
 import AgentsClient from "./agents/AgentsClient";
 import type {
@@ -31,6 +32,7 @@ const TABS = [
   { id: "caps", label: "Capabilities", icon: Zap },
   { id: "ops", label: "Ops 24/7", icon: Activity },
   { id: "kb-review", label: "KB Review", icon: ClipboardCheck },
+  { id: "curation", label: "Curation", icon: FlaskConical },
   { id: "review", label: "Review Queue", icon: ClipboardCheck },
   { id: "steer", label: "Steering", icon: Compass },
   { id: "evolution", label: "Evolution", icon: Brain },
@@ -54,6 +56,28 @@ export default function JefferyClient({
 }: JefferyClientProps) {
   const [activeTab, setActiveTab] = useState<TabId>("feed");
   const [pendingCount, setPendingCount] = useState(0);
+  const [curationQueueDepth, setCurationQueueDepth] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/jeffery/curation-ops", {
+          credentials: "same-origin",
+        });
+        if (!res.ok || cancelled) return;
+        const json = await res.json();
+        if (!cancelled && json?.ok && typeof json.queueDepth === "number") {
+          setCurationQueueDepth(json.queueDepth);
+        }
+      } catch {
+        // Badge is best-effort; panel loads its own data.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#1A2744]">
@@ -108,6 +132,11 @@ export default function JefferyClient({
                     {pendingCount}
                   </span>
                 )}
+                {tab.id === "curation" && curationQueueDepth > 0 && (
+                  <span className="ml-1 px-1.5 py-0.5 rounded-full bg-[#2DA5A0] text-white text-[10px] font-bold">
+                    {curationQueueDepth}
+                  </span>
+                )}
                 {tab.id === "agents" && (
                   <span className="ml-1 px-1.5 py-0.5 rounded-full bg-white/10 text-white/70 text-[10px] font-semibold">
                     {agentRegistry.length}
@@ -127,7 +156,8 @@ export default function JefferyClient({
           activeTab === "agents" ||
           activeTab === "caps" ||
           activeTab === "ops" ||
-          activeTab === "kb-review"
+          activeTab === "kb-review" ||
+          activeTab === "curation"
             ? ""
             : "px-4 md:px-8 py-6"
         }
@@ -174,6 +204,11 @@ export default function JefferyClient({
         {activeTab === "kb-review" && (
           <AdminPanel name="KB Review Desk">
             <JefferyReviewDesk />
+          </AdminPanel>
+        )}
+        {activeTab === "curation" && (
+          <AdminPanel name="Curation Ops">
+            <CurationOpsPanel />
           </AdminPanel>
         )}
         {activeTab === "agents" && (
