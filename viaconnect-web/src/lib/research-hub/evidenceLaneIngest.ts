@@ -484,14 +484,22 @@ export async function runEvidenceLaneIngest(options?: {
       .in('transport', ['eutils', 'rss'])
       .not('domain', 'ilike', '%mercola%')
       .order('source_tier', { ascending: true })
-      .limit(maxSources);
+      .limit(80);
 
     if (srcErr) {
       result.error = srcErr.message;
       return result;
     }
 
-    const list = (sources ?? []) as RegistrySource[];
+    const list = ((sources ?? []) as RegistrySource[]).filter((s) => {
+      if (s.transport === 'eutils') {
+        return Boolean(s.journal_filter && s.domain.startsWith('journal.'));
+      }
+      if (s.transport === 'rss') {
+        return Boolean(s.feed_url);
+      }
+      return false;
+    });
     // Prefer journal.* eutils first, then rss
     const ordered = [
       ...list.filter((s) => s.transport === 'eutils'),
