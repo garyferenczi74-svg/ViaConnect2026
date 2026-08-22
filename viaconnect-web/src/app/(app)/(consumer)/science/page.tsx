@@ -5,6 +5,7 @@ import { ALL_EXPERTS, DOMAIN_CONFIG } from "@/config/expert-authorities";
 import { ShieldCheck, BookOpen, ExternalLink } from "lucide-react";
 import type { ExpertAuthority } from "@/config/expert-authorities";
 import { SourceRegistryPanel } from "@/components/science/SourceRegistryPanel";
+import { CurationTransparencyPanel } from "@/components/science/CurationTransparencyPanel";
 
 const DOMAINS = Object.entries(DOMAIN_CONFIG);
 
@@ -111,6 +112,9 @@ export default function SciencePage() {
 
       {/* Prompt 226h Wave B: live typed source registry */}
       <SourceRegistryPanel />
+
+      {/* Prompt 227b: curation transparency (queue, additions, corrections, negatives) */}
+      <CurationTransparencyPanel />
 
       {/* Trust badge */}
       <div className="rounded-xl bg-teal-400/[0.03] border border-teal-400/10 p-4">

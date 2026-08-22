@@ -310,7 +310,7 @@ async function applyOne(
     const nextGrade = asGrade(pv.next_grade);
     const { data: prior } = await admin
       .from('kb_peptides')
-      .select('id, evidence_grade_overall')
+      .select('id, slug, evidence_grade_overall')
       .eq('id', p.target_row_id)
       .maybeSingle();
     if (!prior?.id) return 'unsupported';
@@ -333,6 +333,18 @@ async function applyOne(
         updated_at: now,
       })
       .eq('id', p.id);
+
+    // 227b: pending correction for Marshall; public log shows approved only.
+    await admin.from('curation_corrections').insert({
+      compound_slug: prior.slug ? String(prior.slug) : null,
+      what_changed: `evidence_grade_overall ${prior.evidence_grade_overall} -> ${nextGrade}`,
+      why: 'Class 1 auto-applied downgrade via Thanos curation apply',
+      direction: 'correction',
+      proposal_id: p.id,
+      public_summary: `We lowered the published evidence grade for ${prior.slug ?? 'this compound'} from ${prior.evidence_grade_overall} to ${nextGrade} after reassessing linked evidence.`,
+      marshall_status: 'pending',
+    });
+
     return 'applied';
   }
 
