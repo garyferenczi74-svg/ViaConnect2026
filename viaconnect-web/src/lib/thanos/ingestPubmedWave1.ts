@@ -284,6 +284,66 @@ export async function ingestPubmedWave1(opts?: {
           .eq('publication_id', publicationId)
           .maybeSingle();
         if (!existingLink) {
+          // Prompt 226h G55: refuse extract<->synthetic cross-links before write.
+          const { data: pepClassRow } = await admin
+            .from('kb_peptides')
+            .select('preparation_class')
+            .eq('id', peptide.id)
+            .maybeSingle();
+          const { data: pubClassRow } = await admin
+            .from('kb_publications')
+            .select('studied_preparation_class, studied_peptide_id')
+            .eq('id', publicationId)
+            .maybeSingle();
+          let studiedClass = pubClassRow?.studied_preparation_class as
+            | string
+            | null
+            | undefined;
+          if (!studiedClass && pubClassRow?.studied_peptide_id) {
+            const { data: studiedPep } = await admin
+              .from('kb_peptides')
+              .select('preparation_class')
+              .eq('id', pubClassRow.studied_peptide_id)
+              .maybeSingle();
+            studiedClass = studiedPep?.preparation_class as string | undefined;
+          }
+          const { mayLinkEvidence } = await import(
+            '@/lib/peptides/preparationClass226h'
+          );
+          const targetClass =
+            (pepClassRow?.preparation_class as
+              | 'tissue_extract'
+              | 'synthetic_defined'
+              | 'not_applicable'
+              | null) ?? 'not_applicable';
+          if (
+            !mayLinkEvidence({
+              studiedClass: studiedClass as
+                | 'tissue_extract'
+                | 'synthetic_defined'
+                | 'not_applicable'
+                | null,
+              targetClass,
+            })
+          ) {
+            await admin.from('kb_evidence_link_rejections').insert({
+              peptide_id: peptide.id,
+              publication_id: publicationId,
+              trial_id: null,
+              reason: 'preparation_class_cross_link',
+              details: {
+                pmid: s.pmid,
+                studied_class: studiedClass ?? null,
+                target_class: targetClass,
+                source: 'ingestPubmedWave1_precheck',
+              },
+            });
+            errors.push(
+              `pmid_${s.pmid}:preparation_class_cross_link`.slice(0, 140),
+            );
+            continue;
+          }
+
           const { error: linkErr } = await admin
             .from('kb_peptide_evidence_links')
             .insert({
@@ -295,10 +355,26 @@ export async function ingestPubmedWave1(opts?: {
               curated_by: 'thanos',
             });
           if (!linkErr) linksUpserted += 1;
-          else
+          else {
+            if (/preparation_class_cross_link/i.test(linkErr.message)) {
+              await admin.from('kb_evidence_link_rejections').insert({
+                peptide_id: peptide.id,
+                publication_id: publicationId,
+                trial_id: null,
+                reason: 'preparation_class_cross_link',
+                details: {
+                  pmid: s.pmid,
+                  studied_class: studiedClass ?? null,
+                  target_class: targetClass,
+                  source: 'ingestPubmedWave1_trigger',
+                  db_error: linkErr.message.slice(0, 200),
+                },
+              });
+            }
             errors.push(
               `pmid_${s.pmid}:link_${linkErr.message}`.slice(0, 140),
             );
+          }
         } else {
           linksUpserted += 1;
         }
