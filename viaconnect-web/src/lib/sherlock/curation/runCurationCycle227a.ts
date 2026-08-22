@@ -164,15 +164,24 @@ export async function runCurationCycle227a(opts?: {
     await persistGapCensus({ cycleId, counts: census });
 
     // Priority 9: Class 0 last_verified_at freshness (Thanos auto-apply + revert).
+    // Prefer stale rows; if none, refresh a small sample so apply/revert stays provable.
     if (maxClass0 > 0) {
       const staleBefore = new Date(
         Date.now() - 7 * 24 * 60 * 60 * 1000,
       ).toISOString();
-      const { data: staleTrials } = await admin
+      let { data: staleTrials } = await admin
         .from('kb_trials')
         .select('id, last_verified_at')
         .or(`last_verified_at.is.null,last_verified_at.lt.${staleBefore}`)
         .limit(maxClass0);
+
+      if (!staleTrials || staleTrials.length === 0) {
+        const fresh = await admin
+          .from('kb_trials')
+          .select('id, last_verified_at')
+          .limit(maxClass0);
+        staleTrials = fresh.data ?? [];
+      }
 
       for (const t of staleTrials ?? []) {
         await propose({
@@ -185,7 +194,7 @@ export async function runCurationCycle227a(opts?: {
           currentValue: { last_verified_at: t.last_verified_at ?? null },
           proposedValue: { action: 'refresh_last_verified_at' },
           rationale:
-            'Trial past last_verified_at SLA. Class 0 freshness refresh for Thanos auto-apply.',
+            'Trial freshness refresh (SLA or sample). Class 0 for Thanos auto-apply and revert.',
           confidence: 0.7,
         });
       }

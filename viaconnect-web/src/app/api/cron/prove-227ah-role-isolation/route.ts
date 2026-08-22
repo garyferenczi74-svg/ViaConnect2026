@@ -52,12 +52,75 @@ export async function POST(request: Request): Promise<Response> {
       ssl: 'require',
     });
 
+    // Prefer session-level SET ROLE: SECURITY DEFINER cannot SET ROLE on this host.
     let roleProve: Record<string, unknown> = {};
     try {
-      const rows = await sql`
-        SELECT public.prove_sherlock_curation_cannot_write_kb_peptides() AS result
-      `;
-      roleProve = (rows[0]?.result as Record<string, unknown>) ?? {};
+      try {
+        await sql.unsafe(`SET ROLE sherlock_curation`);
+        try {
+          await sql.unsafe(
+            `UPDATE public.kb_peptides SET fda_status = fda_status WHERE false`,
+          );
+          roleProve = {
+            ok: false,
+            rejected: false,
+            error: 'write_was_allowed',
+            path: 'session_set_role',
+          };
+        } catch (updErr) {
+          const message =
+            updErr instanceof Error ? updErr.message : String(updErr);
+          const sqlstate =
+            typeof updErr === 'object' &&
+            updErr &&
+            'code' in updErr &&
+            typeof (updErr as { code?: string }).code === 'string'
+              ? (updErr as { code: string }).code
+              : null;
+          const rejected =
+            sqlstate === '42501' ||
+            /permission|privilege|denied/i.test(message);
+          roleProve = {
+            ok: rejected,
+            rejected,
+            sqlstate,
+            message: message.slice(0, 200),
+            path: 'session_set_role',
+          };
+        }
+      } catch (setErr) {
+        const message =
+          setErr instanceof Error ? setErr.message : String(setErr);
+        // Fallback to SQL function (may fail SET ROLE inside SECURITY DEFINER).
+        try {
+          const rows = await sql`
+            SELECT public.prove_sherlock_curation_cannot_write_kb_peptides() AS result
+          `;
+          roleProve = {
+            ...((rows[0]?.result as Record<string, unknown>) ?? {}),
+            setRoleError: message.slice(0, 200),
+            path: 'function_fallback',
+          };
+        } catch (fnErr) {
+          roleProve = {
+            ok: false,
+            rejected: false,
+            error: 'set_role_and_function_failed',
+            setRoleError: message.slice(0, 200),
+            functionError:
+              fnErr instanceof Error
+                ? fnErr.message.slice(0, 200)
+                : String(fnErr).slice(0, 200),
+            path: 'both_failed',
+          };
+        }
+      } finally {
+        try {
+          await sql.unsafe(`RESET ROLE`);
+        } catch {
+          // ignore
+        }
+      }
     } finally {
       await sql.end({ timeout: 5 });
     }
