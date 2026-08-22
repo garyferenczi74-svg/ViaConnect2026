@@ -71,6 +71,24 @@ export function SourceRegistryPanel() {
         <p className="mt-1 text-xs leading-relaxed text-white/45">
           Sources Hannah and Collection 14 evidence surfaces can read, with tier,
           status, and freshness. Pending or blocked sources are shown honestly.
+          Freshness uses last item yielded, not only run success.
+        </p>
+      </div>
+
+      <div
+        className="rounded-xl border border-white/10 bg-[#1A2744]/60 p-3"
+        data-testid="science-exclusions-note"
+      >
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-[#B75E18]">
+          What we do not use and why
+        </p>
+        <p className="mt-1.5 text-[11px] leading-relaxed text-white/55">
+          Mercola is excluded from both evidence and signal lanes (credibility and
+          FDA warning history). GenScript Peptide News, Life Extension Foundation,
+          and mindbodygreen are excluded from the evidence lane as vendor or
+          supplement-seller sources; they may appear only as labelled commentary
+          signals when Lex-cleared. Social platforms other than YouTube remain
+          Lex-pending and are not live.
         </p>
       </div>
 
@@ -125,6 +143,19 @@ export function SourceRegistryPanel() {
                 <p className="text-[11px] text-white/40">{src.domain}</p>
               </div>
               <div className="flex flex-wrap gap-1.5">
+                {src.lane ? (
+                  <span
+                    className={`rounded-full border px-2 py-0.5 text-[10px] ${
+                      src.lane === 'signal'
+                        ? 'border-[#B75E18]/40 text-[#B75E18] bg-[#B75E18]/10'
+                        : src.lane === 'excluded'
+                          ? 'border-red-400/40 text-red-200 bg-red-500/10'
+                          : 'border-[#2DA5A0]/40 text-[#2DA5A0] bg-[#2DA5A0]/10'
+                    }`}
+                  >
+                    {src.lane}
+                  </span>
+                ) : null}
                 <span className="rounded-full border border-white/15 px-2 py-0.5 text-[10px] text-white/60">
                   Tier {src.sourceTier ?? 'UNKNOWN'}
                 </span>
@@ -135,6 +166,20 @@ export function SourceRegistryPanel() {
                 >
                   {src.registryStatus ?? src.approvalStatus}
                 </span>
+                {src.stalenessState ? (
+                  <span
+                    className={`rounded-full border px-2 py-0.5 text-[10px] ${
+                      src.stalenessState === 'breached'
+                        ? 'border-red-400/40 text-red-200'
+                        : src.stalenessState === 'fresh'
+                          ? 'border-[#2DA5A0]/40 text-[#2DA5A0]'
+                          : 'border-white/20 text-white/50'
+                    }`}
+                    data-testid={`staleness-${src.domain.replace(/\./g, '-')}`}
+                  >
+                    {src.stalenessState}
+                  </span>
+                ) : null}
               </div>
             </div>
             {src.coverageNote ? (
@@ -149,11 +194,17 @@ export function SourceRegistryPanel() {
               </p>
             ) : null}
             <p className="mt-2 text-[10px] text-white/35">
-              Last success:{' '}
+              Last item yielded:{' '}
+              {src.lastItemYieldedAt
+                ? new Date(src.lastItemYieldedAt).toISOString()
+                : 'UNKNOWN'}
+              {' · '}
+              Last run success:{' '}
               {src.lastSuccessfulRun
                 ? new Date(src.lastSuccessfulRun).toISOString()
                 : 'UNKNOWN'}
               {src.transport ? ` · Transport: ${src.transport}` : ''}
+              {src.expectedCadence ? ` · Cadence: ${src.expectedCadence}` : ''}
             </p>
           </li>
         ))}

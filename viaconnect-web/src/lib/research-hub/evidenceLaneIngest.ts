@@ -531,8 +531,17 @@ export async function runEvidenceLaneIngest(options?: {
       if (!one.error && (one.inserted > 0 || one.discovered >= 0)) {
         result.sourcesOk += 1;
       }
-      // Touch last_successful_run when yield > 0
+      // Yield vs run success: update both when items actually arrive
       if (one.inserted > 0) {
+        await admin
+          .from('authorities_sources')
+          .update({
+            last_successful_run: new Date().toISOString(),
+            last_item_yielded_at: new Date().toISOString(),
+            staleness_state: 'fresh',
+          })
+          .eq('domain', source.domain);
+      } else if (!one.error) {
         await admin
           .from('authorities_sources')
           .update({ last_successful_run: new Date().toISOString() })

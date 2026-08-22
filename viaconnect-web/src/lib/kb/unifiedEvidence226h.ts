@@ -23,9 +23,13 @@ export type SourceRegistryRow = {
   blockedReason: string | null;
   coverageNote: string;
   lastSuccessfulRun: string | null;
+  lastItemYieldedAt: string | null;
+  stalenessState: string | null;
+  lane: string | null;
   isActive: boolean;
   approvalStatus: string;
   cadence: string | null;
+  expectedCadence: string | null;
 };
 
 export type IngestSourceStatusRow = {
@@ -86,11 +90,11 @@ export async function loadSourceRegistry(): Promise<{
     admin
       .from('authorities_sources')
       .select(
-        'id, domain, label, source_kind, source_tier, transport, registry_status, blocked_reason, coverage_note, last_successful_run, is_active, approval_status, cadence, notes',
+        'id, domain, label, source_kind, source_tier, transport, registry_status, blocked_reason, coverage_note, last_successful_run, last_item_yielded_at, staleness_state, lane, is_active, approval_status, cadence, expected_cadence, notes',
       )
       .order('source_tier', { ascending: true, nullsFirst: false })
       .order('label', { ascending: true })
-      .limit(200),
+      .limit(300),
     admin
       .from('kb_ingest_source_status')
       .select('source_system, status, reason, coverage_note, last_successful_run')
@@ -118,9 +122,16 @@ export async function loadSourceRegistry(): Promise<{
     lastSuccessfulRun: r.last_successful_run
       ? String(r.last_successful_run)
       : null,
+    lastItemYieldedAt: r.last_item_yielded_at
+      ? String(r.last_item_yielded_at)
+      : null,
+    stalenessState: r.staleness_state == null ? null : String(r.staleness_state),
+    lane: r.lane == null ? null : String(r.lane),
     isActive: r.is_active === true,
     approvalStatus: String(r.approval_status ?? ''),
     cadence: r.cadence == null ? null : String(r.cadence),
+    expectedCadence:
+      r.expected_cadence == null ? null : String(r.expected_cadence),
   }));
 
   const ingestStatus: IngestSourceStatusRow[] = (statusRes.data ?? []).map(
