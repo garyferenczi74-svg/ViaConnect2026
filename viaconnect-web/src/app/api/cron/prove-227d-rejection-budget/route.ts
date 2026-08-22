@@ -154,7 +154,8 @@ export async function POST(request: Request): Promise<Response> {
       })),
     );
 
-    const setResult = await setBudgetCeiling({
+    // Prefer direct Postgres upsert so PostgREST schema cache cannot block G64.
+    let setResult = await setBudgetCeiling({
       maxClass3: derived.maxClass3,
       maxClass0: derived.maxClass0,
       maxNegatives: derived.maxNegatives,
@@ -162,21 +163,82 @@ export async function POST(request: Request): Promise<Response> {
       setBy: 'prove_227d',
       notes: derived.note,
     });
+    let setPath = 'supabase_js';
+    if (!setResult.ok) {
+      const conn =
+        process.env.POSTGRES_URL_NON_POOLING ||
+        process.env.POSTGRES_URL ||
+        process.env.DATABASE_URL ||
+        process.env.POSTGRES_PRISMA_URL;
+      if (conn) {
+        try {
+          const postgres = (await import('postgres')).default;
+          const sql = postgres(conn.trim().replace(/^["']|["']$/g, ''), {
+            max: 1,
+            idle_timeout: 10,
+            connect_timeout: 20,
+            prepare: false,
+            ssl: 'require',
+          });
+          try {
+            await sql`
+              INSERT INTO public.curation_budget_ceiling (
+                id,
+                max_class3_per_cycle,
+                max_class0_freshness_per_cycle,
+                max_negative_samples_per_cycle,
+                measured_cycle_count,
+                measured_at,
+                set_by,
+                notes,
+                updated_at
+              ) VALUES (
+                1,
+                ${derived.maxClass3},
+                ${derived.maxClass0},
+                ${derived.maxNegatives},
+                ${derived.measured},
+                now(),
+                ${'prove_227d'},
+                ${derived.note},
+                now()
+              )
+              ON CONFLICT (id) DO UPDATE SET
+                max_class3_per_cycle = EXCLUDED.max_class3_per_cycle,
+                max_class0_freshness_per_cycle = EXCLUDED.max_class0_freshness_per_cycle,
+                max_negative_samples_per_cycle = EXCLUDED.max_negative_samples_per_cycle,
+                measured_cycle_count = EXCLUDED.measured_cycle_count,
+                measured_at = EXCLUDED.measured_at,
+                set_by = EXCLUDED.set_by,
+                notes = EXCLUDED.notes,
+                updated_at = EXCLUDED.updated_at
+            `;
+            await sql.unsafe(`NOTIFY pgrst, 'reload schema'`);
+            setResult = { ok: true };
+            setPath = 'postgres_direct';
+          } finally {
+            await sql.end({ timeout: 5 });
+          }
+        } catch (pgErr) {
+          setResult = {
+            ok: false,
+            error:
+              pgErr instanceof Error ? pgErr.message : String(pgErr),
+          };
+          setPath = 'postgres_direct_failed';
+        }
+      }
+    }
 
     const ceiling = await loadBudgetCeiling();
 
-    const skipped =
-      cycle.proposalsSkippedRejected > 0 ||
-      blockedCheck.blocked === true;
+    // Ledger block is proven by direct check + no resurrected identical propose.
+    // Cycle skip count may be 0 if the rejected row sorts outside this batch.
     const noResurrect = (resurrected ?? []).length === 0;
+    const rejectionOk =
+      ledger.ok && blockedCheck.blocked === true && noResurrect;
 
-    const ok =
-      ledger.ok &&
-      blockedCheck.blocked === true &&
-      skipped &&
-      noResurrect &&
-      cycle.ok &&
-      setResult.ok;
+    const ok = rejectionOk && cycle.ok === true && setResult.ok === true;
 
     return Response.json({
       ok,
@@ -191,6 +253,8 @@ export async function POST(request: Request): Promise<Response> {
       budgetApplied: cycle.budgetApplied ?? null,
       g64: {
         setOk: setResult.ok,
+        setPath,
+        setError: setResult.error ?? null,
         derived,
         ceiling,
       },

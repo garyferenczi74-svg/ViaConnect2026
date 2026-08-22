@@ -135,6 +135,11 @@ export async function setBudgetCeiling(args: {
     notes: args.notes.slice(0, 1000),
     updated_at: new Date().toISOString(),
   });
-  if (error) return { ok: false, error: error.message };
+  if (error) {
+    return {
+      ok: false,
+      error: error.message || error.code || 'ceiling_upsert_failed',
+    };
+  }
   return { ok: true };
 }
