@@ -34,6 +34,9 @@ export interface PeptideHonestyRow {
   slug: string;
   displayName: string;
   honesty: HonestyLayerShape;
+  /** Prompt 226h: tissue_extract | synthetic_defined | not_applicable */
+  preparationClass?: string;
+  provenanceDisclosure?: string;
 }
 
 export interface IctrpCoverage {
@@ -123,6 +126,9 @@ export function formatPeptideHonestyForHannahContext(opts: {
 
     const label = p.displayName || p.slug;
     lines.push(`${label} (${p.slug}):`);
+    if (p.preparationClass && p.preparationClass !== 'not_applicable') {
+      lines.push(`  preparation_class=${p.preparationClass}`);
+    }
     if (typeof h.trials_registered === 'number') {
       lines.push(
         `  trials_registered=${h.trials_registered}; completed=${h.trials_completed ?? 0}; ` +
@@ -144,6 +150,9 @@ export function formatPeptideHonestyForHannahContext(opts: {
     }
     if (h.coverage_note?.trim()) {
       lines.push(`  coverage_note: ${h.coverage_note.trim()}`);
+    }
+    if (p.provenanceDisclosure?.trim()) {
+      lines.push(`  provenance_disclosure: ${p.provenanceDisclosure.trim()}`);
     }
   }
 
@@ -196,7 +205,9 @@ export async function buildPeptideHonestyContext(
     if (wave1Slugs.length > 0) {
       const { data, error } = await admin
         .from('kb_peptides')
-        .select('slug, display_name, honesty_layer, consumer_safe, exclusion_tier')
+        .select(
+          'slug, display_name, honesty_layer, consumer_safe, exclusion_tier, preparation_class, provenance_disclosure',
+        )
         .in('slug', wave1Slugs)
         .eq('consumer_safe', true)
         .eq('exclusion_tier', 'educational');
@@ -209,6 +220,8 @@ export async function buildPeptideHonestyContext(
           slug: String(r.slug),
           displayName: String(r.display_name ?? r.slug),
           honesty: asHonesty(r.honesty_layer),
+          preparationClass: String(r.preparation_class ?? 'not_applicable'),
+          provenanceDisclosure: String(r.provenance_disclosure ?? ''),
         }));
       }
     }
@@ -217,7 +230,9 @@ export async function buildPeptideHonestyContext(
     if (peptides.length === 0) {
       const { data, error } = await admin
         .from('kb_peptides')
-        .select('slug, display_name, canonical_name, honesty_layer')
+        .select(
+          'slug, display_name, canonical_name, honesty_layer, preparation_class, provenance_disclosure',
+        )
         .eq('consumer_safe', true)
         .eq('exclusion_tier', 'educational')
         .limit(200);
@@ -238,6 +253,8 @@ export async function buildPeptideHonestyContext(
               slug: String(r.slug),
               displayName: String(r.display_name ?? r.slug),
               honesty: asHonesty(r.honesty_layer),
+              preparationClass: String(r.preparation_class ?? 'not_applicable'),
+              provenanceDisclosure: String(r.provenance_disclosure ?? ''),
             });
           }
           if (peptides.length >= 5) break;

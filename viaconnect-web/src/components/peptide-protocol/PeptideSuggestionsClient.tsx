@@ -113,9 +113,20 @@ function CompoundCard({ compound }: { compound: MatchedCompound }) {
         </span>
       </div>
       <p className="text-[10px] text-[var(--teal)]">{compound.goalDisplayName}</p>
+      {compound.preparationClass &&
+      compound.preparationClass !== 'not_applicable' ? (
+        <p className="text-[10px] text-white/45">
+          Preparation class: {compound.preparationClass}
+        </p>
+      ) : null}
       <p className="text-xs text-white/70 leading-relaxed">
         {compound.mechanismRationale}
       </p>
+      {compound.provenanceDisclosure ? (
+        <p className="text-[11px] leading-relaxed text-amber-100/80">
+          {compound.provenanceDisclosure}
+        </p>
+      ) : null}
       <IndicationNote match={compound.indicationMatch} />
       <div className="flex flex-wrap gap-1.5 text-[10px] text-white/55">
         <span className="rounded-full border border-white/10 px-2 py-0.5">

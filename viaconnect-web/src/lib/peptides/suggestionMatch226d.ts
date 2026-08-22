@@ -54,6 +54,9 @@ export type MatchedCompound = {
   exclusionTier: string;
   honesty: HonestyLayerShape;
   routes: RouteAttachment[];
+  /** Prompt 226h */
+  preparationClass?: string;
+  provenanceDisclosure?: string;
 };
 
 export type GradeBand = {
@@ -299,7 +302,9 @@ export async function runSuggestionMatch(
 
     const { data: peptides, error: pepErr } = await admin
       .from('kb_peptides')
-      .select('id, slug, display_name, exclusion_tier, honesty_layer')
+      .select(
+        'id, slug, display_name, exclusion_tier, honesty_layer, preparation_class, provenance_disclosure',
+      )
       .in('id', peptideIds);
 
     if (pepErr) {
@@ -377,6 +382,8 @@ export async function runSuggestionMatch(
         exclusionTier,
         honesty,
         routes: routesByPep.get(String(pep.id)) ?? [],
+        preparationClass: String(pep.preparation_class ?? 'not_applicable'),
+        provenanceDisclosure: String(pep.provenance_disclosure ?? ''),
       });
     }
 

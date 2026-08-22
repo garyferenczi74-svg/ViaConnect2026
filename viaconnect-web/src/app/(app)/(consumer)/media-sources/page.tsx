@@ -44,6 +44,7 @@ import { AddSourceModal } from '@/components/research-hub/AddSourceModal';
 import { ContentFeed } from '@/components/research-hub/ContentFeed';
 import { SherlockStatusIndicator } from '@/components/research-hub/SherlockStatusIndicator';
 import { SherlockActivityFeed } from '@/components/research-hub/SherlockActivityFeed';
+import { PeptideEvidencePanel } from '@/components/research-hub/PeptideEvidencePanel';
 import type { RelevanceContext } from '@/lib/research-hub/relevance';
 import { emitResearchHubEvent } from '@/lib/research-hub/events';
 
@@ -137,6 +138,8 @@ export default function ResearchHubPage() {
 
   const [showManager, setShowManager] = useState(false);
   const [showAddSource, setShowAddSource] = useState(false);
+  /** Prompt 226h Wave B: Media (Sherlock) vs Collection 14 Evidence */
+  const [hubMode, setHubMode] = useState<'media' | 'evidence'>('media');
 
   // Filters
   const [minRelevance, setMinRelevance] = useState(0);
@@ -456,6 +459,46 @@ export default function ResearchHubPage() {
           </div>
         </header>
 
+        {/* Prompt 226h: Media vs Evidence */}
+        <div
+          className="flex flex-wrap gap-2"
+          role="tablist"
+          aria-label="Research Hub modes"
+          data-testid="research-hub-mode-tabs"
+        >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={hubMode === 'media'}
+            onClick={() => setHubMode('media')}
+            className={`rounded-xl px-3 py-1.5 text-xs border transition-colors ${
+              hubMode === 'media'
+                ? 'border-[#2DA5A0]/50 bg-[#2DA5A0]/15 text-white'
+                : 'border-white/10 bg-[#1E3054]/50 text-white/60'
+            }`}
+          >
+            Media
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={hubMode === 'evidence'}
+            onClick={() => setHubMode('evidence')}
+            className={`rounded-xl px-3 py-1.5 text-xs border transition-colors ${
+              hubMode === 'evidence'
+                ? 'border-[#2DA5A0]/50 bg-[#2DA5A0]/15 text-white'
+                : 'border-white/10 bg-[#1E3054]/50 text-white/60'
+            }`}
+            data-testid="research-hub-evidence-tab"
+          >
+            Evidence
+          </button>
+        </div>
+
+        {hubMode === 'evidence' ? <PeptideEvidencePanel /> : null}
+
+        {hubMode === 'media' ? (
+          <>
         {/* Sherlock activity feed (additive — new section above the rest) */}
         <SherlockActivityFeed />
 
@@ -532,6 +575,8 @@ export default function ResearchHubPage() {
             />
           </>
         )}
+          </>
+        ) : null}
       </div>
 
       {/* Modals */}
