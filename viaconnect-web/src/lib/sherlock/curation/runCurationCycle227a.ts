@@ -16,6 +16,10 @@ import {
   effectiveChangeClass,
   type ChangeClass,
 } from '@/lib/sherlock/curation/fieldClassMap227a';
+import {
+  isRejectedWithoutNewEvidence,
+  proposalFingerprint,
+} from '@/lib/sherlock/curation/rejectionLedger227ah';
 
 export type CurationCycleResult = {
   ok: boolean;
@@ -23,6 +27,7 @@ export type CurationCycleResult = {
   halted: boolean;
   census: Awaited<ReturnType<typeof computeGapCensus>> | null;
   proposalsRaised: Record<string, number>;
+  proposalsSkippedRejected: number;
   negativeResults: number;
   error?: string;
 };
@@ -39,9 +44,11 @@ async function isKillSwitchHalted(): Promise<boolean> {
 
 export async function runCurationCycle227a(opts?: {
   maxClass3Proposals?: number;
+  maxClass0Freshness?: number;
 }): Promise<CurationCycleResult> {
   const admin = createAdminClient();
   const maxClass3 = Math.min(20, Math.max(1, opts?.maxClass3Proposals ?? 5));
+  const maxClass0 = Math.min(10, Math.max(0, opts?.maxClass0Freshness ?? 3));
   const proposalsRaised: Record<string, number> = {
     '0': 0,
     '1': 0,
@@ -50,6 +57,7 @@ export async function runCurationCycle227a(opts?: {
     '4': 0,
     '5': 0,
   };
+  let proposalsSkippedRejected = 0;
   let negativeResults = 0;
 
   if (await isKillSwitchHalted()) {
@@ -59,6 +67,7 @@ export async function runCurationCycle227a(opts?: {
       halted: true,
       census: null,
       proposalsRaised,
+      proposalsSkippedRejected: 0,
       negativeResults: 0,
       error: 'kill_switch_halted',
     };
@@ -69,7 +78,10 @@ export async function runCurationCycle227a(opts?: {
     .insert({
       agent_id: 'sherlock_curation',
       status: 'running',
-      gaps_selected: [{ priority: 2, gap: 'unknown_regulatory' }],
+      gaps_selected: [
+        { priority: 2, gap: 'unknown_regulatory' },
+        { priority: 9, gap: 'last_verified_sla' },
+      ],
     })
     .select('id')
     .maybeSingle();
@@ -81,6 +93,7 @@ export async function runCurationCycle227a(opts?: {
       halted: false,
       census: null,
       proposalsRaised,
+      proposalsSkippedRejected: 0,
       negativeResults: 0,
       error: cycleErr?.message ?? 'cycle_insert_failed',
     };
@@ -88,9 +101,95 @@ export async function runCurationCycle227a(opts?: {
 
   const cycleId = String(cycle.id);
 
+  async function propose(args: {
+    gapType: string;
+    targetTable: string;
+    targetRowId: string | null;
+    targetField: string;
+    changeClass: ChangeClass;
+    direction: 'addition' | 'correction' | 'subtraction' | 'negative_result';
+    currentValue: unknown;
+    proposedValue: unknown;
+    rationale: string;
+    supportingRecordIds?: string[];
+    sourceTier?: number;
+    confidence?: number;
+  }): Promise<boolean> {
+    const supporting = args.supportingRecordIds ?? [];
+    const fingerprint = proposalFingerprint({
+      targetTable: args.targetTable,
+      targetRowId: args.targetRowId,
+      targetField: args.targetField,
+      proposedValue: args.proposedValue,
+    });
+    const rejected = await isRejectedWithoutNewEvidence(
+      admin,
+      fingerprint,
+      supporting,
+    );
+    if (rejected.blocked) {
+      proposalsSkippedRejected += 1;
+      return false;
+    }
+
+    const { error } = await admin.from('curation_proposals').insert({
+      cycle_id: cycleId,
+      gap_type: args.gapType,
+      target_table: args.targetTable,
+      target_row_id: args.targetRowId,
+      target_field: args.targetField,
+      change_class: args.changeClass,
+      direction: args.direction,
+      current_value: args.currentValue,
+      proposed_value: args.proposedValue,
+      rationale: args.rationale,
+      supporting_record_ids: supporting,
+      source_tier: args.sourceTier ?? 1,
+      confidence: args.confidence ?? 0.5,
+      status: 'proposed',
+    });
+    if (error) {
+      safeLog.warn('sherlock.curation.cycle', 'proposal insert failed', {
+        error: error.message,
+      });
+      return false;
+    }
+    proposalsRaised[String(args.changeClass)] =
+      (proposalsRaised[String(args.changeClass)] ?? 0) + 1;
+    return true;
+  }
+
   try {
     const census = await computeGapCensus();
     await persistGapCensus({ cycleId, counts: census });
+
+    // Priority 9: Class 0 last_verified_at freshness (Thanos auto-apply + revert).
+    if (maxClass0 > 0) {
+      const staleBefore = new Date(
+        Date.now() - 7 * 24 * 60 * 60 * 1000,
+      ).toISOString();
+      const { data: staleTrials } = await admin
+        .from('kb_trials')
+        .select('id, last_verified_at')
+        .or(`last_verified_at.is.null,last_verified_at.lt.${staleBefore}`)
+        .limit(maxClass0);
+
+      for (const t of staleTrials ?? []) {
+        await propose({
+          gapType: 'last_verified_sla',
+          targetTable: 'kb_trials',
+          targetRowId: String(t.id),
+          targetField: 'last_verified_at',
+          changeClass: 0,
+          direction: 'addition',
+          currentValue: { last_verified_at: t.last_verified_at ?? null },
+          proposedValue: { action: 'refresh_last_verified_at' },
+          rationale:
+            'Trial past last_verified_at SLA. Class 0 freshness refresh for Thanos auto-apply.',
+          confidence: 0.7,
+        });
+      }
+    }
 
     // Priority 2: UNKNOWN regulatory fields -> Class 3 proposals (Lex+Jeffery), capped.
     const { data: unknowns } = await admin
@@ -119,28 +218,22 @@ export async function runCurationCycle227a(opts?: {
           targetField: f.field,
           direction: 'correction',
         });
-        const { error } = await admin.from('curation_proposals').insert({
-          cycle_id: cycleId,
-          gap_type: 'unknown_regulatory',
-          target_table: 'kb_peptides',
-          target_row_id: p.id,
-          target_field: f.field,
-          change_class: changeClass,
+        const proposedValue = {
+          action: 'investigate_and_fill',
+          note: 'Sherlock proposes review; does not invent regulatory values.',
+        };
+        await propose({
+          gapType: 'unknown_regulatory',
+          targetTable: 'kb_peptides',
+          targetRowId: String(p.id),
+          targetField: f.field,
+          changeClass,
           direction: 'correction',
-          current_value: { value: f.current },
-          proposed_value: {
-            action: 'investigate_and_fill',
-            note: 'Sherlock proposes review; does not invent regulatory values.',
-          },
+          currentValue: { value: f.current },
+          proposedValue,
           rationale: `Educational peptide ${p.slug} has UNKNOWN ${f.field}. Priority 2 gap. Class ${changeClass} requires Jeffery and Lex. No auto-fill.`,
-          source_tier: 1,
           confidence: 0.4,
-          status: 'proposed',
         });
-        if (!error) {
-          proposalsRaised[String(changeClass)] =
-            (proposalsRaised[String(changeClass)] ?? 0) + 1;
-        }
       }
     }
 
@@ -155,7 +248,9 @@ export async function runCurationCycle227a(opts?: {
       .select('peptide_id')
       .limit(5000);
     const linked = new Set((links ?? []).map((l) => String(l.peptide_id)));
-    const zeroLink = (educational ?? []).filter((p) => !linked.has(String(p.id)));
+    const zeroLink = (educational ?? []).filter(
+      (p) => !linked.has(String(p.id)),
+    );
 
     for (const p of zeroLink.slice(0, 5)) {
       const { error } = await admin.from('curation_negative_results').insert({
@@ -183,7 +278,12 @@ export async function runCurationCycle227a(opts?: {
         gaps_closed: gapsClosed,
         proposals_raised: proposalsRaised,
         negative_results_count: negativeResults,
-        budget: { maxClass3, note: 'wave_a_minimal_cycle' },
+        budget: {
+          maxClass3,
+          maxClass0,
+          proposalsSkippedRejected,
+          note: 'wave_a_hardening_cycle',
+        },
         yield_by_source_tier: { '1': proposalsRaised['3'] ?? 0 },
       })
       .eq('id', cycleId);
@@ -194,6 +294,7 @@ export async function runCurationCycle227a(opts?: {
       halted: false,
       census,
       proposalsRaised,
+      proposalsSkippedRejected,
       negativeResults,
     };
   } catch (err) {
@@ -213,6 +314,7 @@ export async function runCurationCycle227a(opts?: {
       halted: false,
       census: null,
       proposalsRaised,
+      proposalsSkippedRejected,
       negativeResults,
       error: message,
     };
