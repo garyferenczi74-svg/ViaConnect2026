@@ -60,12 +60,30 @@ export async function POST(request: Request): Promise<Response> {
         'linkedin.com',
       ]);
 
-    const onlyYoutubeNonPendingPlatform =
-      youtube?.registry_status === 'pending_access' ||
-      youtube?.registry_status === 'live';
+    const youtubeLive =
+      youtube?.registry_status === 'live' &&
+      youtube?.transport === 'rest_api' &&
+      youtube?.lane === 'signal';
     const othersPending = (platforms ?? []).every(
       (p) => p.registry_status === 'pending_access' && p.is_active === false,
     );
+
+    const { count: ytClaims } = await admin
+      .from('observed_claims')
+      .select('id', { count: 'exact', head: true })
+      .eq('source_domain', 'youtube.com');
+
+    const { data: ytSample } = await admin
+      .from('observed_claims')
+      .select('claim_text, stores_person_id, stores_dose, original_url')
+      .eq('source_domain', 'youtube.com')
+      .limit(5);
+
+    const ytNoPerson =
+      (ytSample ?? []).every((c) => c.stores_person_id === false) &&
+      !(ytSample ?? []).some((c) =>
+        /channel|@\w+|handle/i.test(String(c.claim_text ?? '')),
+      );
 
     // Synthetic breach drill on a live signal source if present
     const drillDomain =
@@ -112,8 +130,10 @@ export async function POST(request: Request): Promise<Response> {
       !dosing.containsDoseToken &&
       !doseLeak &&
       mercolaOk &&
-      onlyYoutubeNonPendingPlatform &&
+      youtubeLive &&
       othersPending &&
+      ytNoPerson &&
+      (ytClaims ?? 0) >= 1 &&
       freshness.ok &&
       breachAlert &&
       (claimCount ?? 0) >= 0;
@@ -127,8 +147,12 @@ export async function POST(request: Request): Promise<Response> {
       sampleClaims: claims ?? [],
       doseLeak,
       youtube,
+      youtubeLive,
+      youtubeClaims: ytClaims ?? 0,
+      youtubeSample: ytSample ?? [],
+      ytNoPerson,
       platforms,
-      onlyYoutubeWave1Ready: onlyYoutubeNonPendingPlatform && othersPending,
+      onlyYoutubeWave1Ready: youtubeLive && othersPending,
       freshness,
       alerts: alerts ?? [],
       breachAlert,

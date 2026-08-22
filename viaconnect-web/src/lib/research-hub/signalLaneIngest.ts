@@ -13,6 +13,7 @@ import {
   extractTopicHint,
   headlineHash,
 } from '@/lib/research-hub/claimsObservatory227a';
+import { ingestYoutubeWave1 } from '@/lib/research-hub/youtubeSignalIngest';
 
 type SignalSource = {
   id: string;
@@ -72,6 +73,13 @@ export type SignalLaneResult = {
   sourcesAttempted: number;
   claimsUpserted: number;
   hubItemsInserted: number;
+  youtube?: {
+    ok: boolean;
+    claimsUpserted: number;
+    hubItemsInserted: number;
+    error?: string;
+    skippedNoKey?: boolean;
+  };
   bySource: Array<{
     domain: string;
     insertedClaims: number;
@@ -246,6 +254,25 @@ export async function runSignalLaneIngest(options?: {
       result.bySource.push(row);
     }
 
+    // Wave 1 YouTube via official Data API (after RSS signal sources)
+    const yt = await ingestYoutubeWave1({ maxPerQuery: 2 });
+    result.youtube = {
+      ok: yt.ok,
+      claimsUpserted: yt.claimsUpserted,
+      hubItemsInserted: yt.hubItemsInserted,
+      error: yt.error,
+      skippedNoKey: yt.skippedNoKey,
+    };
+    result.claimsUpserted += yt.claimsUpserted;
+    result.hubItemsInserted += yt.hubItemsInserted;
+    if (!yt.skippedNoKey) result.sourcesAttempted += 1;
+    result.bySource.push({
+      domain: 'youtube.com',
+      insertedClaims: yt.claimsUpserted,
+      insertedHub: yt.hubItemsInserted,
+      error: yt.error,
+    });
+
     result.ok = true;
     await admin.from('pipeline_runs').upsert(
       {
@@ -258,6 +285,7 @@ export async function runSignalLaneIngest(options?: {
           phase: '227a-signal-lane',
           claimsUpserted: result.claimsUpserted,
           hubItemsInserted: result.hubItemsInserted,
+          youtube: result.youtube,
           bySource: result.bySource,
         },
       },
