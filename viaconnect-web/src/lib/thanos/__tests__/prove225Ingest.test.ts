@@ -20,11 +20,14 @@ describe('Prompt 225 Thanos live ingest proof cron', () => {
     expect(src).toContain('logOpsJobRun');
   });
 
-  it('allowlist ingest still stages without auto Marshall promote', () => {
+  it('peptide scout uses deny-list scope and stages without inline Marshall promote', () => {
     const src = readFileSync(
       path.join(process.cwd(), 'src/lib/thanos/allowlistIngest.ts'),
       'utf8',
     );
+    expect(src).toContain('assertPeptideScoutScope');
+    expect(src).toContain('loadPeptideCatalogForScout');
+    expect(src).not.toContain('assertAllowlistScope');
     expect(src).toContain("from('hounddog_staging_items')");
     expect(src).toContain('gate_status');
     expect(src).toContain("onConflict: 'source_url'");
@@ -33,3 +36,4 @@ describe('Prompt 225 Thanos live ingest proof cron', () => {
     expect(src).not.toMatch(/marshall_status\s*:\s*'approved'/);
   });
 });
+

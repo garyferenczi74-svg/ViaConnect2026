@@ -14,12 +14,13 @@ Allowlist-only internet scout for peptide research, regulatory updates, and upco
 
 ## Hard constraints
 
-1. Allowlist domains only (Science and Authorities / peptide allowlist).
+1. Deny-list mode (not Science and Authorities allowlist). Hard-deny Mercola / G56 peers and ICTRP pending hosts; Thanos/Hermes may use broader educational sources.
 2. No purchase paths.
 3. No consumer dosing.
 4. No product framing.
 5. Educational / practitioner guidance framing only.
 6. Marshall gate before any consumer-visible promotion (via Thanos path).
+7. Full `kb_peptides` catalog is in scope for education coverage (chunked under Firecrawl day-cap).
 
 ## Jeffery authorization
 

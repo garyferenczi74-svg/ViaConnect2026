@@ -1,6 +1,7 @@
 /**
  * Prompt 225a Wave 2: chunked educational peptides beyond Wave 1 flagships.
- * Loads from Collection 14 (consumer_safe + educational), excludes Wave 1 slugs.
+ * Gary 2026-08-22: ingest eligibility no longer requires consumer_safe
+ * (education first; Marshall gates consumer visibility separately).
  */
 
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -44,8 +45,7 @@ export async function loadWave2Compounds(
 
   const { data, error, count } = await admin
     .from('kb_peptides')
-    .select('slug, display_name, canonical_name', { count: 'exact' })
-    .eq('consumer_safe', true)
+    .select('slug, display_name, canonical_name, exclusion_tier', { count: 'exact' })
     .eq('exclusion_tier', 'educational')
     .order('slug', { ascending: true });
 
