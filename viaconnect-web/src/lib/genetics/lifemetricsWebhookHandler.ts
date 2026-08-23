@@ -197,7 +197,7 @@ export async function handleLifemetricsWebhook(
       };
     }
 
-    const applied = await persistLifemetricsImport(admin, userId, planned.mapped);
+    const applied = await persistLifemetricsImport(admin, userId, planned.mapped, workHints);
     await finalizeEvent(admin, eventId, 'processed', null, userId);
     await writeAudit(admin, userId, eventId, eventType, applied);
     safeLog.info(SCOPE, 'event processed', {

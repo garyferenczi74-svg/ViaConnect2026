@@ -17,6 +17,8 @@ export interface LifemetricsIdentityHints {
   email?: string | null;
   kitBarcode?: string | null;
   clientId?: string | null;
+  displayName?: string | null;
+  accountLabel?: string | null;
 }
 
 export type LifemetricsIdentityLookups = {
@@ -95,6 +97,25 @@ function readNumericId(value: unknown): string | null {
   return readString(value);
 }
 
+function readAccountLabel(record: Record<string, unknown>): string | null {
+  return readNested(record, [
+    'account_label',
+    'accountLabel',
+    'client_name',
+    'clientName',
+  ]);
+}
+
+function readDisplayName(record: Record<string, unknown>): string | null {
+  return readNested(record, [
+    'display_name',
+    'displayName',
+    'full_name',
+    'fullName',
+    'name',
+  ]);
+}
+
 function readClientId(record: Record<string, unknown>): string | null {
   const labeled = readNested(record, [
     'client_id',
@@ -138,10 +159,28 @@ export function extractLifemetricsIdentityHints(
     }
   }
 
+  const identityRecords: Record<string, unknown>[] = [root];
+  const identityKeys = ['data', 'payload', 'patient', 'member', 'user', 'subject', 'client', 'account'];
+  const identityQueue: unknown[] = [root];
+  while (identityQueue.length > 0) {
+    const current = identityQueue.shift();
+    if (!current || typeof current !== 'object' || Array.isArray(current)) continue;
+    const record = current as Record<string, unknown>;
+    for (const key of identityKeys) {
+      const value = record[key];
+      if (value && typeof value === 'object' && !Array.isArray(value)) {
+        identityRecords.push(value as Record<string, unknown>);
+        identityQueue.push(value);
+      }
+    }
+  }
+
   let userId: string | null = null;
   let email: string | null = null;
   let kitBarcode: string | null = null;
   let clientId: string | null = null;
+  let displayName: string | null = null;
+  let accountLabel: string | null = null;
   for (const record of nested) {
     userId =
       userId ??
@@ -158,5 +197,9 @@ export function extractLifemetricsIdentityHints(
       readNested(record, ['kit_barcode', 'barcode', 'kit_id', 'kitBarcode']);
     clientId = clientId ?? readClientId(record);
   }
-  return { userId, email, kitBarcode, clientId };
+  for (const record of identityRecords) {
+    displayName = displayName ?? readDisplayName(record);
+    accountLabel = accountLabel ?? readAccountLabel(record);
+  }
+  return { userId, email, kitBarcode, clientId, displayName, accountLabel };
 }
