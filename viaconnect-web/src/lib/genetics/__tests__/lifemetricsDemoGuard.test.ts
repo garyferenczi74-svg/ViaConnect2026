@@ -103,7 +103,7 @@ describe('planLifemetricsPersist demo client block', () => {
       },
       ARBITRARY_USER,
     );
-    const planned = planLifemetricsPersist({
+    const byDisplayName = planLifemetricsPersist({
       source: {
         clientId: '355',
         email: 'member@example.test',
@@ -112,10 +112,23 @@ describe('planLifemetricsPersist demo client block', () => {
       targetUserId: ARBITRARY_USER,
       mapped,
     });
-    expect(planned.blocked).toBe(true);
-    expect(planned.reason).toBe('demo_client_blocked');
-    expect(planned.mapped.variants).toEqual([]);
-    expect(planned.mapped.unknownReason).toBe('demo_client_blocked');
+    const byAccountLabel = planLifemetricsPersist({
+      source: {
+        clientId: '355',
+        email: 'member@example.test',
+        accountLabel: 'FarmCeutica Support',
+      },
+      targetUserId: ARBITRARY_USER,
+      mapped,
+    });
+    expect(byDisplayName.blocked).toBe(true);
+    expect(byDisplayName.reason).toBe('demo_client_blocked');
+    expect(byDisplayName.mapped.variants).toEqual([]);
+    expect(byDisplayName.mapped.unknownReason).toBe('demo_client_blocked');
+    expect(byAccountLabel.blocked).toBe(true);
+    expect(byAccountLabel.reason).toBe('demo_client_blocked');
+    expect(byAccountLabel.mapped.variants).toEqual([]);
+    expect(byAccountLabel.mapped.unknownReason).toBe('demo_client_blocked');
   });
 
   it('allows a non-demo source through to the mapped rows', () => {

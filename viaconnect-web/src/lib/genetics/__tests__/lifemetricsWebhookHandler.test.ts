@@ -241,4 +241,25 @@ describe('handleLifemetricsWebhook', () => {
     expect(result.body.reason).toBe('demo_client_blocked');
     expect(persistMock).not.toHaveBeenCalled();
   });
+
+  it('does not persist when only the account label is FarmCeutica Support', async () => {
+    const body = JSON.stringify({
+      event_id: 'evt_support_account_label',
+      event: 'genetics_result.uploaded',
+      client_id: 355,
+      client: { account_label: 'FarmCeutica Support' },
+      patient: { email: 'member@example.test' },
+      variants: [{ panel: 'GENEX-M', rsid: 'rsTEST4638', gene: 'COMT', genotype: 'GG' }],
+    });
+    const result = await handleLifemetricsWebhook(
+      body,
+      new Headers({ 'X-LifeMetrics-Signature': sign(body) }),
+      SECRET,
+      makeAdmin(),
+    );
+    expect(result.status).toBe(200);
+    expect(result.body.blocked).toBe(true);
+    expect(result.body.reason).toBe('demo_client_blocked');
+    expect(persistMock).not.toHaveBeenCalled();
+  });
 });

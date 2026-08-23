@@ -44,15 +44,23 @@ describe('persistLifemetricsImport demo refusal', () => {
     );
     expect(mapped.variants.length).toBeGreaterThan(0);
 
-    const counts = await persistLifemetricsImport(makeSupabase(), MEMBER, mapped, {
+    const byDisplayName = await persistLifemetricsImport(makeSupabase(), MEMBER, mapped, {
       clientId: '355',
       email: 'member@example.test',
       displayName: 'FarmCeutica Support',
     });
+    const byAccountLabel = await persistLifemetricsImport(makeSupabase(), MEMBER, mapped, {
+      clientId: '355',
+      email: 'member@example.test',
+      accountLabel: 'FarmCeutica Support',
+    });
 
-    expect(counts.variants).toBeNull();
-    expect(counts.hormoneMarkers).toBeNull();
-    expect(counts.epigeneticMarkers).toBeNull();
+    expect(byDisplayName.variants).toBeNull();
+    expect(byDisplayName.hormoneMarkers).toBeNull();
+    expect(byDisplayName.epigeneticMarkers).toBeNull();
+    expect(byAccountLabel.variants).toBeNull();
+    expect(byAccountLabel.hormoneMarkers).toBeNull();
+    expect(byAccountLabel.epigeneticMarkers).toBeNull();
     expect(upsertMock).not.toHaveBeenCalled();
   });
 
