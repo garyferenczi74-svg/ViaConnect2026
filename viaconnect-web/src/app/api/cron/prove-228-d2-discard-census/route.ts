@@ -43,10 +43,10 @@ export async function POST(req: Request) {
       .map(String)
       .sort();
 
-    const { count: pendingCount } = await admin
+    const { count: pendingReviewCount } = await admin
       .from("nutrition_logs")
       .select("id", { count: "exact", head: true })
-      .eq("status", "pending");
+      .eq("status", "pending_review");
     const { count: confirmedCount } = await admin
       .from("nutrition_logs")
       .select("id", { count: "exact", head: true })
@@ -76,7 +76,7 @@ export async function POST(req: Request) {
       },
       statusCounts: {
         discarded: discardedCount ?? null,
-        pending: pendingCount ?? null,
+        pending_review: pendingReviewCount ?? null,
         confirmed: confirmedCount ?? null,
       },
       byMonth: Object.entries(byMonth)
@@ -91,11 +91,32 @@ export async function POST(req: Request) {
       note: "READ ONLY. Cleanup not performed. Gary decides user notification before historical hard-delete.",
     });
   } catch (err) {
-    safeLog.error("cron.228.d2-census", "failed", { error: err });
+    const message =
+      err instanceof Error
+        ? err.message || err.name
+        : typeof err === "object" && err && "message" in err
+          ? String((err as { message?: unknown }).message ?? "")
+          : String(err);
+    const details =
+      typeof err === "object" && err
+        ? {
+            name: (err as { name?: string }).name ?? null,
+            code: (err as { code?: string }).code ?? null,
+            details: (err as { details?: string }).details ?? null,
+            hint: (err as { hint?: string }).hint ?? null,
+          }
+        : null;
+    safeLog.error("cron.228.d2-census", "failed", {
+      error: message,
+      details,
+    });
     return Response.json(
       {
         ok: false,
-        error: err instanceof Error ? err.message : String(err),
+        error: message || "[unserializable error]",
+        details,
+        blockerHint:
+          "If error is empty or HTML/522, Supabase Postgres path is likely down. Retry census before cleanup.",
       },
       { status: 200 },
     );
