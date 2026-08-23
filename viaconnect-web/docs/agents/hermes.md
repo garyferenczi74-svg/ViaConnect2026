@@ -6,11 +6,12 @@
 **Reports to:** Thanos  
 **Cadence:** weekdays 08:00 America/Edmonton (`0 14 * * 1-5` UTC while on MDT)  
 **Runtime:** `/api/cron/run-hermes-scout`  
-**Authorized first run:** `hermes-scout-2026-08-22` (status ok)
+**Authorized first run:** `hermes-scout-2026-08-22` (status ok)  
+**Pair:** Hermes → Thanos ; Elizabeth → Hannah
 
 ## Mission
 
-Deny-list internet scout for peptide research, regulatory updates, and upcoming educational topics across the full peptide catalog. Findings hand off to Thanos for peptide education curation.
+Deny-list internet scout for peptide research, regulatory updates, and upcoming educational topics across the full peptide catalog. Findings hand off to Thanos for peptide education curation. Elizabeth is the peer assistant under Hannah.
 
 ## Hard constraints
 
