@@ -7,7 +7,7 @@
 // matches the test. Aliases (GENEX-M, genex_m, genex-m, and peers) group onto
 // the matching pill. HormoneIQ and EpigenHQ read marker / clock tables, never
 // user_variants SNP length. 401 / error render as Unavailable (n/a), never 0.
-// Marketing catalog sizes from panels.ts / HERO_BENTO_META are not used here.
+// Marketing catalog sizes from the shop panel catalog are not used here.
 //
 // Standing rules honored: tokens only (Navy #1A2744, Card #1E3054, Teal
 // #2DA5A0, Orange #B75E18, white opacity neutrals), Lucide strokeWidth 1.5,

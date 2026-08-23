@@ -68,7 +68,8 @@ describe('YourVariantsCard source', () => {
     expect(source).toContain('formatObservedBadge');
     expect(source).toContain('observedByPanel');
     expect(source).not.toContain('markerCount');
-    expect(source).not.toContain('HERO_BENTO_META');
+    expect(source).not.toContain("from './blueprintBentoData'");
+    expect(source).not.toContain("from '@/data/genex360/panels'");
     expect(source).toContain('n/a instead of 0');
   });
 
