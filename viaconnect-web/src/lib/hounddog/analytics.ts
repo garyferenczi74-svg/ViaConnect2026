@@ -81,3 +81,52 @@ export async function saveScript(script: {
     created_by: user?.id,
   })
 }
+
+function insertClient() {
+  const supabase = createClient()
+  return supabase as unknown as {
+    from: (table: string) => {
+      insert: (row: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>
+    }
+  }
+}
+
+export async function saveHook(hook: {
+  hook_text: string
+  angle?: string
+  platform?: string
+  score?: number
+  source?: string
+  niche?: string
+}) {
+  return insertClient().from('hounddog_hooks').insert(hook)
+}
+
+export async function recordPerformance(row: {
+  platform: string
+  post_url?: string | null
+  pipeline_id?: string | null
+  views?: number
+  likes?: number
+  comments?: number
+  shares?: number
+  saves?: number
+  reach?: number
+  eng_rate?: number | null
+}) {
+  return insertClient().from('hounddog_performance').insert(row)
+}
+
+export async function saveAnalyticsRollup(row: {
+  period_start: string
+  period_end: string
+  total_scripts?: number
+  total_published?: number
+  total_reach?: number
+  avg_eng_rate?: number | null
+  top_platform?: string
+  top_hook_angle?: string
+  pipeline_health?: number
+}) {
+  return insertClient().from('hounddog_analytics_rollup').insert(row)
+}
