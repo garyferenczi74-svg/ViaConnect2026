@@ -8,32 +8,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { safeLog } from '@/lib/utils/safe-log';
 import { createClient } from '@/lib/supabase/server';
 import { tryCreateAdminClient } from '@/lib/supabase/admin-optional';
+import {
+  NUTRITION_PHOTO_BUCKET,
+  ownedNutritionPhotoPath,
+  storagePathFromPhotoUrl,
+} from '@/lib/nutrition/nutritionPhotoPath';
 
 export const dynamic = 'force-dynamic';
-
-const PHOTO_BUCKET = 'nutrition-photos';
-
-function storagePathFromPhotoUrl(photoUrl: string): string | null {
-  const raw = photoUrl.trim();
-  if (!raw) return null;
-  // Stored as relative path userId/ym/file.ext in analyze-photo
-  if (!raw.includes('://')) return raw.replace(/^\//, '');
-  try {
-    const u = new URL(raw);
-    const marker = `/${PHOTO_BUCKET}/`;
-    const idx = u.pathname.indexOf(marker);
-    if (idx >= 0) return decodeURIComponent(u.pathname.slice(idx + marker.length));
-    // Signed URL path variants
-    const parts = u.pathname.split('/').filter(Boolean);
-    const bi = parts.findIndex((p) => p === PHOTO_BUCKET);
-    if (bi >= 0 && bi < parts.length - 1) {
-      return decodeURIComponent(parts.slice(bi + 1).join('/'));
-    }
-  } catch {
-    return null;
-  }
-  return null;
-}
 
 export async function POST(req: NextRequest) {
   try {
@@ -73,7 +54,14 @@ export async function POST(req: NextRequest) {
 
     const photoUrl =
       typeof existing.photo_url === 'string' ? existing.photo_url : null;
-    const storagePath = photoUrl ? storagePathFromPhotoUrl(photoUrl) : null;
+    const resolvedPath = photoUrl ? storagePathFromPhotoUrl(photoUrl) : null;
+    const storagePath = ownedNutritionPhotoPath(user.id, resolvedPath);
+    if (resolvedPath && !storagePath) {
+      safeLog.warn('api.nutrition.discard', 'photo_url rejected: not owner prefix', {
+        userId: user.id,
+        logId,
+      });
+    }
 
     // Hard delete the row. .select() confirms a row was removed.
     const { data: deletedRows, error: delErr } = await supabase
@@ -101,7 +89,7 @@ export async function POST(req: NextRequest) {
       const admin = tryCreateAdminClient();
       const storageClient = admin ?? supabase;
       const { error: rmErr } = await storageClient.storage
-        .from(PHOTO_BUCKET)
+        .from(NUTRITION_PHOTO_BUCKET)
         .remove([storagePath]);
       if (rmErr) {
         storageError = rmErr.message;

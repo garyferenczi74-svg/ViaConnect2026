@@ -33,6 +33,11 @@ import { createClient } from '@/lib/supabase/server';
 import { tryCreateAdminClient } from '@/lib/supabase/admin-optional';
 import { safeLog } from '@/lib/utils/safe-log';
 import { recomputeNutritionDimension } from '@/lib/nutrition/bos-bridge';
+import {
+  NUTRITION_PHOTO_BUCKET,
+  ownedNutritionPhotoPath,
+  storagePathFromPhotoUrl,
+} from '@/lib/nutrition/nutritionPhotoPath';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -292,26 +297,21 @@ export async function DELETE(_req: NextRequest, ctx: RouteContext): Promise<Next
     }
 
     // Prompt 228 D2: remove associated nutrition-photos object when present.
+    // Owner-folder prefix required before any service-role storage.remove.
     if (legacyMeal?.photo_url && typeof legacyMeal.photo_url === 'string') {
-      const raw = legacyMeal.photo_url.trim();
-      const storagePath = raw.includes('://')
-        ? (() => {
-            try {
-              const u = new URL(raw);
-              const marker = '/nutrition-photos/';
-              const idx = u.pathname.indexOf(marker);
-              return idx >= 0
-                ? decodeURIComponent(u.pathname.slice(idx + marker.length))
-                : null;
-            } catch {
-              return null;
-            }
-          })()
-        : raw.replace(/^\//, '');
+      const resolved = storagePathFromPhotoUrl(legacyMeal.photo_url);
+      const storagePath = ownedNutritionPhotoPath(user.id, resolved);
+      if (resolved && !storagePath) {
+        safeLog.warn('api.nutrition.meals.delete', 'photo_url rejected: not owner prefix', {
+          request_id: requestId,
+          meal_id: mealId,
+          user_id: user.id,
+        });
+      }
       if (storagePath) {
         const storageClient = admin ?? userScoped;
         const { error: rmErr } = await storageClient.storage
-          .from('nutrition-photos')
+          .from(NUTRITION_PHOTO_BUCKET)
           .remove([storagePath]);
         if (rmErr) {
           safeLog.warn('api.nutrition.meals.delete', 'storage remove failed', {

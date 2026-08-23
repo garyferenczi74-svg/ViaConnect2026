@@ -68,7 +68,8 @@ describe('Prompt 228 state contract', () => {
       'utf8',
     );
     expect(src).toContain('.delete()');
-    expect(src).toContain('nutrition-photos');
+    expect(src).toContain('ownedNutritionPhotoPath');
+    expect(src).toContain('NUTRITION_PHOTO_BUCKET');
     expect(src).not.toMatch(/status:\s*'discarded'/);
   });
 });
