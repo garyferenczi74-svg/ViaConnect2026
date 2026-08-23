@@ -16,6 +16,9 @@ export type PanelKey =
   | 'peptide'
   | 'cannabis';
 
+/** Live badge unit. Marketing markerCount in panels.ts is never this noun. */
+export type PanelCountUnit = 'SNPs' | 'markers' | 'clocks' | 'genes';
+
 export interface PanelLabelEntry {
   panel_key: PanelKey;
   /** Slug in src/data/genex360/panels.ts (PANEL_BY_SLUG). */
@@ -26,6 +29,12 @@ export interface PanelLabelEntry {
   branded_label: string;
   /** Shown for competitor uploads or panels with no branded test. */
   generic_label: string;
+  /** Observed-count unit for the Your Variants pill. Not a catalog size. */
+  count_unit: PanelCountUnit;
+  /** Noun used in the empty state so every tab is not called SNPs. */
+  empty_noun: string;
+  /** One educational line: what this test measures. Hannah voice. */
+  measures_line: string;
 }
 
 export const PANEL_LABELS: Record<PanelKey, PanelLabelEntry> = {
@@ -35,41 +44,65 @@ export const PANEL_LABELS: Record<PanelKey, PanelLabelEntry> = {
     branded_product_code: 'GENEXM',
     branded_label: 'GeneXM',
     generic_label: 'Genetic Methylation',
+    count_unit: 'SNPs',
+    empty_noun: 'SNPs',
+    measures_line:
+      'GeneXM reads methylation and pharmacogenomic SNPs that shape folate, detox, and nutrient pathways.',
   },
   nutrition: {
     panel_key: 'nutrition',
     slug: 'nutrigen-dx',
     branded_product_code: 'NUTRIGENDX',
     branded_label: 'NutrigenDX',
-    generic_label: 'Nutrition Genetics',
+    generic_label: 'Genetic Nutrition',
+    count_unit: 'markers',
+    empty_noun: 'nutrition markers',
+    measures_line:
+      'NutrigenDX reads genetic nutrition markers that influence how you handle vitamins, fats, and food responses.',
   },
   hormone: {
     panel_key: 'hormone',
     slug: 'hormone-iq',
     branded_product_code: 'HORMONEIQ',
     branded_label: 'HormoneIQ',
-    generic_label: 'Hormone Testing',
+    generic_label: 'Hormone Mapping',
+    count_unit: 'markers',
+    empty_noun: 'hormone and metabolite markers',
+    measures_line:
+      'HormoneIQ maps DUTCH hormone and metabolite markers from a hormone panel, not SNP pills.',
   },
   epigenetic: {
     panel_key: 'epigenetic',
     slug: 'epigen-hq',
     branded_product_code: 'EPIGENHQ',
     branded_label: 'EpigenHQ',
-    generic_label: 'Epigenetics',
+    generic_label: 'Epigenetic Age',
+    count_unit: 'clocks',
+    empty_noun: 'epigenetic clocks',
+    measures_line:
+      'EpigenHQ reads epigenetic age and CpG clocks from methylation array results, not SNP pills.',
   },
   peptide: {
     panel_key: 'peptide',
     slug: 'peptide-iq',
     branded_product_code: 'PEPTIDEIQ',
     branded_label: 'PeptideIQ',
-    generic_label: 'Peptide Genetics',
+    generic_label: 'Peptide Response',
+    count_unit: 'genes',
+    empty_noun: 'response genes',
+    measures_line:
+      'PeptideIQ reads genes and SNPs tied to peptide response and tissue repair pathways.',
   },
   cannabis: {
     panel_key: 'cannabis',
     slug: 'cannabis-iq',
     branded_product_code: 'CANNABISIQ',
     branded_label: 'CannabisIQ',
-    generic_label: 'Cannabis Genetics',
+    generic_label: 'Cannabis Response',
+    count_unit: 'genes',
+    empty_noun: 'response genes',
+    measures_line:
+      'CannabisIQ reads genes and SNPs that influence cannabinoid response and clearance.',
   },
 };
 

@@ -302,9 +302,8 @@ export function GeneX360PanelSection() {
   const activePanel = PANEL_BY_SLUG[activeSlug];
 
   // Prompt 204g: the member's severity by rsID for the Full Report cross
-  // reference. useGeneticsVariants is fail-open (empty on any failure), so the
-  // map is simply empty when there is no upload, no auth, or no validated tier
-  // yet, never an error. SnpDeepReport shows a pill only for an rsID present here.
+  // reference. useGeneticsVariants now keeps 401 / error distinct from empty
+  // for hub pills. This map still only lists scored rsIDs when the read is ok.
   const { data: variantsData } = useGeneticsVariants();
   const severityByRsid = useMemo(() => {
     const map = new Map<string, SeverityTier | null>();

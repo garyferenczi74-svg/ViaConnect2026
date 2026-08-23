@@ -16,6 +16,7 @@ import { createClient } from '@/lib/supabase/server';
 import { safeLog } from '@/lib/utils/safe-log';
 import { withTimeout } from '@/lib/utils/with-timeout';
 import type { SupabaseLike } from '@/lib/nutrition/genetics/recommendations';
+import { panelKeyAliasesFor } from '@/lib/genetics/panelKeyAliases';
 import { BackToNutritionLink } from '@/components/nutrition/hub/BackToNutritionLink';
 import { NutritionGeneticsTabs } from '@/components/nutrition/genetics/NutritionGeneticsTabs';
 import { NutritionByGeneticsPanel } from '@/components/protocol/NutritionByGeneticsPanel';
@@ -63,7 +64,9 @@ async function hasActiveFindings(
   }
 }
 
-// GeneX360 NutrigenDX variants already on the account (panel_key=nutrition).
+// GeneX360 NutrigenDX variants already on the account. Accept remapped
+// spellings (nutrition, nutrigen-dx, nutrigen_dx) so a remapped row still
+// registers. Read-only presence check; meal calc is unchanged.
 async function hasNutrigenDxVariants(db: SupabaseLike, userId: string): Promise<boolean> {
   try {
     const result = (await withTimeout(
@@ -71,7 +74,7 @@ async function hasNutrigenDxVariants(db: SupabaseLike, userId: string): Promise<
         .from('user_variants')
         .select('id', { count: 'exact', head: true })
         .eq('user_id', userId)
-        .eq('panel_key', 'nutrition'),
+        .in('panel_key', panelKeyAliasesFor('nutrition')),
       TIMEOUT_MS,
       'nutrition.genetics.page.variants',
     )) as { count: number | null; error: { message?: string } | null };

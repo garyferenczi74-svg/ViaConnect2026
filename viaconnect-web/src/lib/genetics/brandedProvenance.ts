@@ -18,20 +18,18 @@ import { safeLog } from '@/lib/utils/safe-log';
 import {
   panelKeyForProductCode,
   panelKeyForSlug,
-  PANEL_LABELS,
-  PANEL_KEYS,
   type PanelKey,
 } from './panelLabels';
+import { normalizeObservedPanelKey } from './panelKeyAliases';
 
 /** Best-effort map of an unknown identifier to a panel_key. */
 function matchPanelKey(raw: string | null | undefined): PanelKey | null {
   if (!raw) return null;
   const value = raw.trim();
   return (
+    normalizeObservedPanelKey(value) ??
     panelKeyForProductCode(value) ??
-    panelKeyForSlug(value) ??
-    (PANEL_KEYS.find((k) => k === value.toLowerCase()) ?? null) ??
-    (PANEL_KEYS.find((k) => PANEL_LABELS[k].branded_label.toLowerCase() === value.toLowerCase()) ?? null)
+    panelKeyForSlug(value)
   );
 }
 

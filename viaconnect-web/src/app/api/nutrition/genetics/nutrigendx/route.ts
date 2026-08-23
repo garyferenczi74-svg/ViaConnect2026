@@ -13,6 +13,7 @@ import {
   type NutrigenDxVariantRow,
 } from "@/lib/nutrition/genetics/nutrigenDxCrossRef";
 import { safeLog } from "@/lib/utils/safe-log";
+import { panelKeyAliasesFor } from "@/lib/genetics/panelKeyAliases";
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +36,7 @@ export async function GET(): Promise<NextResponse> {
           "panel_key, rsid, gene, genotype, status, clinical_significance, is_sample"
         )
         .eq("user_id", user.id)
-        .eq("panel_key", "nutrition"),
+        .in("panel_key", panelKeyAliasesFor("nutrition")),
       fetchActiveFindings(db, user.id),
     ]);
 

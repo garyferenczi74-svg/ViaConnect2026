@@ -53,6 +53,8 @@ describe('nutrition/genetics/page.tsx', () => {
     expect(source).toContain(".is('superseded_at', null)");
     // Pending NutrigenDX: undelivered purchase in a paid-ish state, read
     // defensively over the payment_status values.
+    expect(source).toContain("from('user_variants')");
+    expect(source).toContain("panelKeyAliasesFor('nutrition')");
     expect(source).toContain("from('genex360_purchases')");
     expect(source).toContain(".is('test_results_delivered_at', null)");
     expect(source).toContain("['paid', 'succeeded', 'completed']");
