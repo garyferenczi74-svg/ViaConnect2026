@@ -29,6 +29,7 @@ import {
   pullLifemetricsResult,
 } from './lifemetricsClient';
 import { persistLifemetricsImport } from './lifemetricsPersist';
+import { isLifemetricsDemoHints, planLifemetricsPersist } from './lifemetricsDemoGuard';
 
 const SCOPE = 'api.genetics.lifemetrics.webhook';
 
@@ -103,6 +104,21 @@ export async function handleLifemetricsWebhook(
 
   try {
     const hints = extractLifemetricsIdentityHints(payload);
+    if (isLifemetricsDemoHints(hints)) {
+      await finalizeEvent(admin, eventId, 'ignored', 'demo_client_blocked', null);
+      safeLog.info(SCOPE, 'demo client blocked, no write', { event_id: eventId });
+      return {
+        status: 200,
+        body: {
+          ok: true,
+          blocked: true,
+          reason: 'demo_client_blocked',
+          event_id: eventId,
+          applied: unknownCounts(),
+        },
+      };
+    }
+
     let userId = await resolveLifemetricsUserId(hints, createLifemetricsIdentityLookups(admin));
 
     let workPayload = payload;
@@ -138,8 +154,42 @@ export async function handleLifemetricsWebhook(
       };
     }
 
+    const workHints = extractLifemetricsIdentityHints(workPayload);
+    if (isLifemetricsDemoHints(hints) || isLifemetricsDemoHints(workHints)) {
+      await finalizeEvent(admin, eventId, 'ignored', 'demo_client_blocked', null);
+      safeLog.info(SCOPE, 'demo client blocked, no write', { event_id: eventId });
+      return {
+        status: 200,
+        body: {
+          ok: true,
+          blocked: true,
+          reason: 'demo_client_blocked',
+          event_id: eventId,
+          applied: unknownCounts(),
+        },
+      };
+    }
+
     const mapped = mapLifemetricsImport(workPayload, userId);
-    if (mapped.metadataOnly) {
+    const planned = planLifemetricsPersist({
+      source: workHints,
+      targetUserId: userId,
+      mapped,
+    });
+    if (planned.blocked) {
+      await finalizeEvent(admin, eventId, 'ignored', planned.reason, null);
+      return {
+        status: 200,
+        body: {
+          ok: true,
+          blocked: true,
+          reason: planned.reason,
+          event_id: eventId,
+          applied: unknownCounts(),
+        },
+      };
+    }
+    if (planned.mapped.metadataOnly) {
       await finalizeEvent(admin, eventId, 'processed', 'metadata_only', userId);
       return {
         status: 200,
@@ -147,7 +197,7 @@ export async function handleLifemetricsWebhook(
       };
     }
 
-    const applied = await persistLifemetricsImport(admin, userId, mapped);
+    const applied = await persistLifemetricsImport(admin, userId, planned.mapped);
     await finalizeEvent(admin, eventId, 'processed', null, userId);
     await writeAudit(admin, userId, eventId, eventType, applied);
     safeLog.info(SCOPE, 'event processed', {

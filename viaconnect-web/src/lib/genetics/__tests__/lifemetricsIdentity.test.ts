@@ -84,5 +84,15 @@ describe('extractLifemetricsIdentityHints', () => {
     expect(hints.email).toBe('member@example.test');
     expect(hints.kitBarcode).toBe('KIT-TEST-1');
     expect(hints.userId).toBeNull();
+    expect(hints.clientId).toBeNull();
+  });
+
+  it('reads a numeric LifeMetrics client id from a nested client object', () => {
+    const hints = extractLifemetricsIdentityHints({
+      event_id: 'evt_client',
+      data: { client: { id: 4634 }, patient: { email: 'demo@genemetrics.com' } },
+    });
+    expect(hints.clientId).toBe('4634');
+    expect(hints.email).toBe('demo@genemetrics.com');
   });
 });

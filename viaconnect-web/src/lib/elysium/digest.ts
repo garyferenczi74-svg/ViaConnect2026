@@ -8,6 +8,7 @@ import { withTimeout } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 import type { DigestItem, SupplierDigest } from '@/lib/hannah/compilation/types';
 import { displayMetricValue } from './coverage';
+import { buildLifeMetricsDigestItems } from './lifemetricsDigest';
 
 const TIMEOUT_MS = 4000;
 
@@ -117,6 +118,10 @@ async function loadItems(userId: string, sinceIso: string): Promise<DigestItem[]
       refs: ['elysium_upload_coverage'],
     });
   }
+
+  // LifeMetrics report families Hannah can name. Coverage UNKNOWN until a
+  // member-owned report is mapped. Demo Client 4634 is never coverage.
+  items.push(...buildLifeMetricsDigestItems({ mappedSourceIds: null }));
 
   return items;
 }

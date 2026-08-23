@@ -16,8 +16,10 @@ import {
   pullLifemetricsResult,
   readLifemetricsApiKey,
 } from '@/lib/genetics/lifemetricsClient';
+import { extractLifemetricsIdentityHints } from '@/lib/genetics/lifemetricsIdentity';
 import { mapLifemetricsImport } from '@/lib/genetics/lifemetricsImport';
 import { persistLifemetricsImport } from '@/lib/genetics/lifemetricsPersist';
+import { planLifemetricsPersist } from '@/lib/genetics/lifemetricsDemoGuard';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -63,7 +65,22 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       });
     }
     const mapped = mapLifemetricsImport(pulled, user.id);
-    const applied = await persistLifemetricsImport(supabase, user.id, mapped);
+    const planned = planLifemetricsPersist({
+      source: extractLifemetricsIdentityHints(pulled),
+      targetUserId: user.id,
+      mapped,
+    });
+    if (planned.blocked) {
+      safeLog.info(SCOPE, 'demo client blocked, no write', { user_id: user.id });
+      return NextResponse.json({
+        ok: true,
+        pulled: true,
+        blocked: true,
+        reason: planned.reason,
+        applied: { variants: null, hormoneMarkers: null, epigeneticMarkers: null },
+      });
+    }
+    const applied = await persistLifemetricsImport(supabase, user.id, planned.mapped);
     safeLog.info(SCOPE, 'pull applied', {
       user_id: user.id,
       variants: applied.variants,

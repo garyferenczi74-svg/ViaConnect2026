@@ -16,6 +16,7 @@ export interface LifemetricsIdentityHints {
   userId?: string | null;
   email?: string | null;
   kitBarcode?: string | null;
+  clientId?: string | null;
 }
 
 export type LifemetricsIdentityLookups = {
@@ -89,6 +90,29 @@ function readNested(
   return null;
 }
 
+function readNumericId(value: unknown): string | null {
+  if (typeof value === 'number' && Number.isFinite(value)) return String(Math.trunc(value));
+  return readString(value);
+}
+
+function readClientId(record: Record<string, unknown>): string | null {
+  const labeled = readNested(record, [
+    'client_id',
+    'clientId',
+    'lifemetrics_client_id',
+    'lm_client_id',
+  ]);
+  if (labeled) return labeled;
+  const numeric = readNumericId(record.client_id ?? record.clientId);
+  if (numeric) return numeric;
+  const client = record.client;
+  if (client && typeof client === 'object' && !Array.isArray(client)) {
+    const nested = client as Record<string, unknown>;
+    return readNested(nested, ['id', 'client_id', 'clientId']) ?? readNumericId(nested.id);
+  }
+  return null;
+}
+
 /**
  * Pull identity hints from a LifeMetrics action envelope or webhook body.
  * Does not default a user. Unknown shapes yield empty hints.
@@ -100,7 +124,7 @@ export function extractLifemetricsIdentityHints(
   const root = payload as Record<string, unknown>;
   const nested: Record<string, unknown>[] = [root];
   const queue: unknown[] = [root];
-  const nestKeys = ['data', 'payload', 'result', 'patient', 'member', 'user', 'subject'];
+  const nestKeys = ['data', 'payload', 'result', 'patient', 'member', 'user', 'subject', 'client'];
   while (queue.length > 0) {
     const current = queue.shift();
     if (!current || typeof current !== 'object' || Array.isArray(current)) continue;
@@ -117,6 +141,7 @@ export function extractLifemetricsIdentityHints(
   let userId: string | null = null;
   let email: string | null = null;
   let kitBarcode: string | null = null;
+  let clientId: string | null = null;
   for (const record of nested) {
     userId =
       userId ??
@@ -131,6 +156,7 @@ export function extractLifemetricsIdentityHints(
     kitBarcode =
       kitBarcode ??
       readNested(record, ['kit_barcode', 'barcode', 'kit_id', 'kitBarcode']);
+    clientId = clientId ?? readClientId(record);
   }
-  return { userId, email, kitBarcode };
+  return { userId, email, kitBarcode, clientId };
 }

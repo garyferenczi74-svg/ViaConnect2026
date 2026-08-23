@@ -199,4 +199,25 @@ describe('handleLifemetricsWebhook', () => {
     expect((result.body.applied as { variants: number | null }).variants).toBeNull();
     expect(persistMock).not.toHaveBeenCalled();
   });
+
+  it('does not persist Demo Client 4634 genotypes onto a resolved member', async () => {
+    const body = JSON.stringify({
+      event_id: 'evt_demo_block',
+      event: 'genetics_result.uploaded',
+      client_id: 4634,
+      patient: { email: 'demo@genemetrics.com' },
+      variants: [{ panel: 'GENEX-M', rsid: 'rsTEST4634', gene: 'MTHFR', genotype: 'TT' }],
+    });
+    const result = await handleLifemetricsWebhook(
+      body,
+      new Headers({ 'X-LifeMetrics-Signature': sign(body) }),
+      SECRET,
+      makeAdmin(),
+    );
+    expect(result.status).toBe(200);
+    expect(result.body.blocked).toBe(true);
+    expect(result.body.reason).toBe('demo_client_blocked');
+    expect((result.body.applied as { variants: number | null }).variants).toBeNull();
+    expect(persistMock).not.toHaveBeenCalled();
+  });
 });

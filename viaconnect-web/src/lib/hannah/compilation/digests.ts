@@ -512,3 +512,5 @@ export const ALL_DIGEST_FNS: DigestFn[] = [
   getThanosDailyDigest,
   getElysiumDailyDigest,
 ];
+
+export { LIFEMETRICS_DIGEST_KEYS, buildLifeMetricsDigestItems } from '@/lib/elysium/lifemetricsDigest';
