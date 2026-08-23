@@ -271,7 +271,7 @@ export default function SignupScreen() {
   }, [data.email, resendCooldown]);
 
   // Cooldown timer
-  const cooldownRef = useRef<ReturnType<typeof setInterval>>();
+  const cooldownRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
   useEffect(() => {
     if (resendCooldown > 0) {
       cooldownRef.current = setInterval(() => {

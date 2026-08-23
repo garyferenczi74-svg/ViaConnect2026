@@ -167,7 +167,7 @@ export function CAQWizard({ userId, onComplete }: CAQWizardProps) {
     setAnswers((prev) => {
       const current = (prev[key] as string[]) ?? [];
       if (option === 'None of the Above') {
-        // Toggle "None" — clears all others when selected
+        // Toggle "None" - clears all others when selected
         const next = current.includes(option) ? [] : [option];
         return { ...prev, [key]: next };
       }
