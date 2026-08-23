@@ -6,6 +6,7 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+  isLifemetricsDemoAccountLabel,
   isLifemetricsDemoSource,
   planLifemetricsPersist,
   LIFEMETRICS_DEMO_CLIENT_ID,
@@ -33,6 +34,32 @@ describe('isLifemetricsDemoSource', () => {
     expect(isLifemetricsDemoSource({ email: 'Demo@GeneMetrics.com' })).toBe(true);
     expect(isLifemetricsDemoSource({ email: 'member@example.test' })).toBe(false);
     expect(isLifemetricsDemoSource({ clientId: '355' })).toBe(false);
+  });
+
+  it('detects FarmCeutica Support even when client id and email are not demo', () => {
+    expect(isLifemetricsDemoAccountLabel('FarmCeutica Support')).toBe(true);
+    expect(isLifemetricsDemoAccountLabel('  farmceutica   support  ')).toBe(true);
+    expect(
+      isLifemetricsDemoSource({
+        clientId: '355',
+        email: 'member@example.test',
+        displayName: 'FarmCeutica Support',
+      }),
+    ).toBe(true);
+    expect(
+      isLifemetricsDemoSource({
+        clientId: '355',
+        email: 'member@example.test',
+        accountLabel: 'FarmCeutica Support',
+      }),
+    ).toBe(true);
+    expect(
+      isLifemetricsDemoSource({
+        clientId: '355',
+        email: 'member@example.test',
+        displayName: 'Member Name',
+      }),
+    ).toBe(false);
   });
 });
 
@@ -65,6 +92,30 @@ describe('planLifemetricsPersist demo client block', () => {
     });
     expect(planned.blocked).toBe(true);
     expect(planned.mapped.variants).toHaveLength(0);
+  });
+
+  it('does not write FarmCeutica Support genotypes onto an arbitrary user_id', () => {
+    const mapped = mapLifemetricsImport(
+      {
+        event_id: 'evt_support_label',
+        event: 'genetics_result.uploaded',
+        variants: [{ panel: 'GENEX-M', rsid: 'rsTEST4636', gene: 'MTHFR', genotype: 'TT' }],
+      },
+      ARBITRARY_USER,
+    );
+    const planned = planLifemetricsPersist({
+      source: {
+        clientId: '355',
+        email: 'member@example.test',
+        displayName: 'FarmCeutica Support',
+      },
+      targetUserId: ARBITRARY_USER,
+      mapped,
+    });
+    expect(planned.blocked).toBe(true);
+    expect(planned.reason).toBe('demo_client_blocked');
+    expect(planned.mapped.variants).toEqual([]);
+    expect(planned.mapped.unknownReason).toBe('demo_client_blocked');
   });
 
   it('allows a non-demo source through to the mapped rows', () => {

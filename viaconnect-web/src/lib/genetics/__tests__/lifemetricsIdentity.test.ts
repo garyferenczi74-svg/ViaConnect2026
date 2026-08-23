@@ -95,4 +95,25 @@ describe('extractLifemetricsIdentityHints', () => {
     expect(hints.clientId).toBe('4634');
     expect(hints.email).toBe('demo@genemetrics.com');
   });
+
+  it('reads FarmCeutica Support as a display name without needing client 4634', () => {
+    const hints = extractLifemetricsIdentityHints({
+      event_id: 'evt_support',
+      data: {
+        client: { id: 355, name: 'FarmCeutica Support' },
+        patient: { email: 'member@example.test' },
+      },
+    });
+    expect(hints.clientId).toBe('355');
+    expect(hints.displayName).toBe('FarmCeutica Support');
+    expect(hints.email).toBe('member@example.test');
+  });
+
+  it('reads an account_label on the client object', () => {
+    const hints = extractLifemetricsIdentityHints({
+      event_id: 'evt_account_label',
+      client: { account_label: 'FarmCeutica Support' },
+    });
+    expect(hints.accountLabel).toBe('FarmCeutica Support');
+  });
 });

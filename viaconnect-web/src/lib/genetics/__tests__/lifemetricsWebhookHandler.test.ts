@@ -220,4 +220,25 @@ describe('handleLifemetricsWebhook', () => {
     expect((result.body.applied as { variants: number | null }).variants).toBeNull();
     expect(persistMock).not.toHaveBeenCalled();
   });
+
+  it('does not persist FarmCeutica Support genotypes when client id is not 4634', async () => {
+    const body = JSON.stringify({
+      event_id: 'evt_support_block',
+      event: 'genetics_result.uploaded',
+      client_id: 355,
+      client: { name: 'FarmCeutica Support' },
+      patient: { email: 'member@example.test' },
+      variants: [{ panel: 'GENEX-M', rsid: 'rsTEST4637', gene: 'MTHFR', genotype: 'TT' }],
+    });
+    const result = await handleLifemetricsWebhook(
+      body,
+      new Headers({ 'X-LifeMetrics-Signature': sign(body) }),
+      SECRET,
+      makeAdmin(),
+    );
+    expect(result.status).toBe(200);
+    expect(result.body.blocked).toBe(true);
+    expect(result.body.reason).toBe('demo_client_blocked');
+    expect(persistMock).not.toHaveBeenCalled();
+  });
 });

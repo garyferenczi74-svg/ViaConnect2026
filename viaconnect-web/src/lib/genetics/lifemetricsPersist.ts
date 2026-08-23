@@ -5,6 +5,7 @@
  * Variants -> user_variants. DUTCH HormoneIQ -> lab_biomarkers.
  * TruDiagnostics / Age Rate clocks -> user_epigenetic_markers.
  * Does not log genetics. Does not write when userId is missing.
+ * Refuses Demo Client 4634, demo@genemetrics.com, and FarmCeutica Support.
  *
  * Standing rules: no em or en dashes, TypeScript strict (no any).
  */
@@ -20,6 +21,10 @@ import {
   toGenemetricsVariantInput,
   type LifemetricsMappedImport,
 } from './lifemetricsImport';
+import {
+  isLifemetricsDemoSource,
+  type LifemetricsDemoSource,
+} from './lifemetricsDemoGuard';
 import { safeLog } from '@/lib/utils/safe-log';
 import { withTimeout } from '@/lib/utils/with-timeout';
 
@@ -46,8 +51,13 @@ export async function persistLifemetricsImport(
   supabase: SupabaseLike,
   userId: string,
   mapped: LifemetricsMappedImport,
+  source: LifemetricsDemoSource = {},
 ): Promise<LifemetricsPersistCounts> {
-  if (!userId || mapped.unknownReason === 'demo_client_blocked') {
+  if (
+    !userId ||
+    mapped.unknownReason === 'demo_client_blocked' ||
+    isLifemetricsDemoSource(source)
+  ) {
     return { variants: null, hormoneMarkers: null, epigeneticMarkers: null };
   }
 

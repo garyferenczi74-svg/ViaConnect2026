@@ -65,8 +65,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       });
     }
     const mapped = mapLifemetricsImport(pulled, user.id);
+    const source = extractLifemetricsIdentityHints(pulled);
     const planned = planLifemetricsPersist({
-      source: extractLifemetricsIdentityHints(pulled),
+      source,
       targetUserId: user.id,
       mapped,
     });
@@ -80,7 +81,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         applied: { variants: null, hormoneMarkers: null, epigeneticMarkers: null },
       });
     }
-    const applied = await persistLifemetricsImport(supabase, user.id, planned.mapped);
+    const applied = await persistLifemetricsImport(supabase, user.id, planned.mapped, source);
     safeLog.info(SCOPE, 'pull applied', {
       user_id: user.id,
       variants: applied.variants,
