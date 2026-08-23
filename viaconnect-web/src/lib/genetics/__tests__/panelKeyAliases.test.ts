@@ -11,6 +11,7 @@ describe('normalizeObservedPanelKey', () => {
     expect(normalizeObservedPanelKey('genex-m')).toBe('methylation');
     expect(normalizeObservedPanelKey('methylation')).toBe('methylation');
     expect(normalizeObservedPanelKey('GeneXM')).toBe('methylation');
+    expect(normalizeObservedPanelKey('reference')).toBe('methylation');
   });
 
   it('maps peer product spellings onto the matching hub pill', () => {
@@ -37,5 +38,9 @@ describe('panelKeyAliasesFor', () => {
     expect(aliases).toContain('nutrition');
     expect(aliases).toContain('nutrigen-dx');
     expect(aliases).toContain('nutrigen_dx');
+  });
+
+  it('includes leftover reference as a methylation alias', () => {
+    expect(panelKeyAliasesFor('methylation')).toContain('reference');
   });
 });

@@ -14,7 +14,7 @@ import { PANEL_KEYS, PANEL_LABELS, type PanelKey } from './panelLabels';
 
 /** Extra stored spellings that are not the slug, product code, or PanelKey. */
 const EXTRA_ALIASES: Record<PanelKey, readonly string[]> = {
-  methylation: ['genex_m', 'genexm', 'genex-m', 'genex_m', 'METH', 'GENEX-M'],
+  methylation: ['genex_m', 'genexm', 'genex-m', 'METH', 'GENEX-M', 'reference'],
   nutrition: ['nutrigen_dx', 'nutrigendx', 'nutrigen-dx'],
   hormone: ['hormone_iq', 'hormoneiq', 'hormone-iq', 'HORMONE', 'GENEX-H'],
   epigenetic: ['epigen_hq', 'epigenhq', 'epigen-hq', 'epigen'],

@@ -11,6 +11,7 @@ describe('loadHubVariants source', () => {
     expect(source).toContain(".from('user_variants')");
     expect(source).toContain(".from('user_epigenetic_markers')");
     expect(source).toContain(".from('lab_biomarkers')");
+    expect(source).not.toContain(".from('lab_results_normalized')");
     expect(source).not.toContain('.upsert(');
     expect(source).not.toContain('.insert(');
     expect(source).not.toContain('.update(');

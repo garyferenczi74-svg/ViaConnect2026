@@ -36,13 +36,6 @@ interface LabUploadRow {
   source_filename?: string | null;
 }
 
-interface NormalizedLabRow {
-  biomarker?: string | null;
-  value?: number | null;
-  unit_normalized?: string | null;
-  measured_at?: string | null;
-}
-
 interface EpigenRow {
   marker_key?: string | null;
   value_num?: number | null;
@@ -149,35 +142,9 @@ async function readHormoneMarkerRows(
     failed = true;
   }
 
-  try {
-    const normalized = (await withTimeout(
-      supabase
-        .from('lab_results_normalized')
-        .select('biomarker, value, unit_normalized, measured_at')
-        .eq('user_id', userId)
-        .order('measured_at', { ascending: false }),
-      TIMEOUT_MS,
-      'genetics.hub.lab_results_normalized',
-    )) as { data: NormalizedLabRow[] | null; error: { message?: string } | null };
-    if (normalized.error) {
-      safeLog.warn('genetics.hub', 'lab_results_normalized read failed', {
-        user_id: userId,
-        error: normalized.error.message ?? 'supabase error',
-      });
-      // Optional table: do not fail the whole hormone count if biomarkers succeeded.
-    } else {
-      for (const row of normalized.data ?? []) {
-        rows.push({
-          name: String(row.biomarker ?? ''),
-          value: row.value == null ? null : Number(row.value),
-          unit: row.unit_normalized == null ? null : String(row.unit_normalized),
-          measured_at: row.measured_at == null ? null : String(row.measured_at),
-        });
-      }
-    }
-  } catch {
-    // Optional table in some environments.
-  }
+  // lab_results_normalized has no DUTCH / hormone_iq provenance. Gary: generic
+  // hormone-like names from other labs must not increment HormoneIQ. Untagged
+  // normalized rows stay out of this count.
 
   if (failed && rows.length === 0) return { rows: [], failed: true };
   return { rows, failed: false };

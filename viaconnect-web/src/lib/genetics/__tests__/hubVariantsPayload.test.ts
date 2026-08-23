@@ -20,6 +20,14 @@ describe('groupVariantsByObservedPanel', () => {
     expect(grouped.methylation?.every((row) => row.panel_key === 'methylation')).toBe(true);
   });
 
+  it('groups leftover reference panel_key onto Genetic Methylation', () => {
+    const grouped = groupVariantsByObservedPanel([
+      { panel_key: 'reference', rsid: 'rs7412' },
+      { panel_key: 'GENEX-M', rsid: 'rs1801133' },
+    ]);
+    expect(grouped.methylation).toHaveLength(2);
+  });
+
   it('leaves unknown keys ungrouped instead of inventing a pill', () => {
     const grouped = groupVariantsByObservedPanel([
       { panel_key: 'GENEX-N', rsid: 'rs999' },
@@ -51,6 +59,24 @@ describe('buildHubVariantsPayload', () => {
     expect(payload.observedByPanel.hormone.source).toBe('hormone_markers');
     expect(payload.observedByPanel.hormone.unit).toBe('markers');
     expect(payload.variantsByPanel.hormone).toHaveLength(9);
+  });
+
+  it('does not increment HormoneIQ from generic hormone-like lab names', () => {
+    const payload = buildHubVariantsPayload({
+      variantRows: [],
+      variantsReadFailed: false,
+      hormoneRows: [
+        { name: 'Estradiol', lab_name: 'Quest' },
+        { name: 'Cortisol', source_type: 'serum' },
+      ],
+      hormoneReadFailed: false,
+      epigeneticRows: [],
+      epigeneticReadFailed: false,
+      brandedPanels: [],
+    });
+    expect(payload.observedByPanel.hormone.count).toBe(0);
+    expect(payload.observedByPanel.hormone.status).toBe('ok');
+    expect(payload.hormoneMarkers).toHaveLength(0);
   });
 
   it('counts EpigenHQ from epigenetic marker keys, not SNP pills', () => {
