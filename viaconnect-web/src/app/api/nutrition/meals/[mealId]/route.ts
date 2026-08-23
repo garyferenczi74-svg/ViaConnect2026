@@ -184,11 +184,16 @@ export async function DELETE(_req: NextRequest, ctx: RouteContext): Promise<Next
     // is not in meals we look it up in nutrition_logs and delete it there.
     // nutrition_logs has a per user DELETE RLS policy (auth.uid() = user_id),
     // so the user scoped client can remove it.
-    let legacyMeal: { id: string; logged_at: string | null; meal_type: string | null } | null = null;
+    let legacyMeal: {
+      id: string;
+      logged_at: string | null;
+      meal_type: string | null;
+      photo_url: string | null;
+    } | null = null;
     if (!meal) {
       const { data: legacyRow, error: legacyReadErr } = await userScoped
         .from('nutrition_logs')
-        .select('id, logged_at, meal_type')
+        .select('id, logged_at, meal_type, photo_url')
         .eq('id', mealId)
         .maybeSingle();
       if (legacyReadErr) {
@@ -284,6 +289,39 @@ export async function DELETE(_req: NextRequest, ctx: RouteContext): Promise<Next
         table: targetTable,
       });
       return NextResponse.json({ error: 'Could not remove meal' }, { status: 500 });
+    }
+
+    // Prompt 228 D2: remove associated nutrition-photos object when present.
+    if (legacyMeal?.photo_url && typeof legacyMeal.photo_url === 'string') {
+      const raw = legacyMeal.photo_url.trim();
+      const storagePath = raw.includes('://')
+        ? (() => {
+            try {
+              const u = new URL(raw);
+              const marker = '/nutrition-photos/';
+              const idx = u.pathname.indexOf(marker);
+              return idx >= 0
+                ? decodeURIComponent(u.pathname.slice(idx + marker.length))
+                : null;
+            } catch {
+              return null;
+            }
+          })()
+        : raw.replace(/^\//, '');
+      if (storagePath) {
+        const storageClient = admin ?? userScoped;
+        const { error: rmErr } = await storageClient.storage
+          .from('nutrition-photos')
+          .remove([storagePath]);
+        if (rmErr) {
+          safeLog.warn('api.nutrition.meals.delete', 'storage remove failed', {
+            request_id: requestId,
+            meal_id: mealId,
+            storagePath,
+            error: rmErr.message,
+          });
+        }
+      }
     }
 
     // BOS recompute hook. Best effort; failures are logged and never

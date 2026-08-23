@@ -54,14 +54,25 @@ export function ReviewForm({ logId, initial }: ReviewFormProps) {
     setSubmitting('discard');
     setError(null);
     try {
-      await fetch('/api/nutrition/discard', {
+      const res = await fetch('/api/nutrition/discard', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ logId }),
       });
+      // Prompt 228 D2: only leave after the server confirms the delete.
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setError(
+          typeof body?.error === 'string'
+            ? body.error
+            : 'Could not discard. Your meal is still here.',
+        );
+        setSubmitting(null);
+        return;
+      }
       router.push('/nutrition/log-meal');
     } catch {
-      setError('Network error. Try again.');
+      setError('Network error. Try again. Your meal is still here.');
       setSubmitting(null);
     }
   }

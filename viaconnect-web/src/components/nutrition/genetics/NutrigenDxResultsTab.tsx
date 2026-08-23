@@ -164,7 +164,7 @@ export function NutrigenDxResultsTab({ nutrigenDxPending }: NutrigenDxResultsTab
                 See NutrigenDX panels
               </Link>
               <Link
-                href="/nutrition/guide"
+                href="/nutrition/genetics?tab=recommendations"
                 className="text-white/55 underline-offset-2 transition-colors hover:text-white hover:underline"
               >
                 Review Nutrition Results

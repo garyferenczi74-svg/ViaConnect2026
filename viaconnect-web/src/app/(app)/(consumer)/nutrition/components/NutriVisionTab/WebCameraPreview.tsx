@@ -46,7 +46,17 @@ export interface WebCameraPreviewProps {
   onNativeFallback?: () => void;
 }
 
-type PreviewState = 'initializing' | 'streaming' | 'captured' | 'permission_denied' | 'unsupported' | 'capture_error';
+// Prompt 228 D1: every transitional state must be timed and exitable.
+type PreviewState =
+  | 'initializing'
+  | 'streaming'
+  | 'captured'
+  | 'permission_denied'
+  | 'unsupported'
+  | 'capture_error'
+  | 'timed_out';
+
+const START_STREAM_TIMEOUT_MS = 8000;
 
 interface MediaStreamLike {
   getTracks(): Array<{ stop(): void }>;
@@ -92,13 +102,44 @@ export function WebCameraPreview({
     setError(null);
     setCapturedResult(null);
 
+    const timeoutId = window.setTimeout(() => {
+      if (cancelled) return;
+      cancelled = true;
+      teardownStream();
+      setState('timed_out');
+      setError(
+        'Camera is taking too long to start. Grant permission in browser settings, or choose a photo instead.',
+      );
+    }, START_STREAM_TIMEOUT_MS);
+
     (async () => {
       try {
+        // Prefer permission state when available so prior denial fails fast.
+        if (typeof navigator !== 'undefined' && navigator.permissions?.query) {
+          try {
+            const perm = await navigator.permissions.query({
+              name: 'camera' as PermissionName,
+            });
+            if (perm.state === 'denied') {
+              if (cancelled) return;
+              window.clearTimeout(timeoutId);
+              setState('permission_denied');
+              setError(
+                'Camera permission was denied. Enable it in browser settings, or choose a photo instead.',
+              );
+              return;
+            }
+          } catch {
+            // Permissions API not supported for camera in this browser; continue.
+          }
+        }
+
         const stream = await acquireWebCameraStream({ facingMode: 'environment' });
         if (cancelled) {
           stopWebCameraStream(stream);
           return;
         }
+        window.clearTimeout(timeoutId);
         streamRef.current = stream;
         if (videoRef.current) {
           videoRef.current.srcObject = stream as unknown as MediaStream;
@@ -110,22 +151,26 @@ export function WebCameraPreview({
         }
         setState('streaming');
       } catch (err) {
+        window.clearTimeout(timeoutId);
         if (cancelled) return;
         if (err instanceof CaptureCancelledError) {
           setState('permission_denied');
-          setError('Camera permission was not granted.');
+          setError(
+            'Camera permission was not granted. Enable it in browser settings, or choose a photo instead.',
+          );
         } else if (err instanceof CaptureUnsupportedError) {
           setState('unsupported');
           setError(err.message);
         } else {
           setState('unsupported');
-          setError(err instanceof Error ? err.message : 'Camera unavailable.');
+          setError(err instanceof Error ? err.message : 'Camera unavailable. Choose a photo instead.');
         }
       }
     })();
 
     return () => {
       cancelled = true;
+      window.clearTimeout(timeoutId);
       teardownStream();
     };
   }, [open, teardownStream]);
@@ -263,14 +308,21 @@ export function WebCameraPreview({
         </div>
       )}
 
-      {(state === 'permission_denied' || state === 'unsupported' || state === 'capture_error') && (
+      {(state === 'permission_denied' ||
+        state === 'unsupported' ||
+        state === 'capture_error' ||
+        state === 'timed_out') && (
         <div
           role="alert"
           className="absolute inset-x-4 top-24 z-20 mx-auto max-w-md rounded-2xl p-4"
           style={{ backgroundColor: CARD, color: '#FFFFFF' }}
         >
           <p className="font-medium" style={{ fontSize: 14, color: ORANGE }}>
-            {state === 'permission_denied' ? 'Camera permission needed' : 'Camera unavailable'}
+            {state === 'permission_denied'
+              ? 'Camera permission needed'
+              : state === 'timed_out'
+                ? 'Camera timed out'
+                : 'Camera unavailable'}
           </p>
           <p className="mt-2" style={{ fontSize: 13, lineHeight: 1.5 }}>
             {error

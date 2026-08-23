@@ -1,34 +1,17 @@
 'use client';
 
-// Prompt 183 Task 3 (2026-06-10): My Nutrition Getting Started strip.
-//
-// Models the My Biology GuidanceStrip: reserved Gordon avatar slot on
-// the left, the label, the description, and the coming soon
-// presentational action on the right. Differences from the Biology
-// strip, per spec:
-//   - The label is hardcoded to "Getting Started". The guide is coming
-//     soon, so the first run vs returning distinction is moot; we read
-//     no profile flag and add no DB column.
-//   - The coming soon pill text is WHITE (not teal).
-//   - The guide name flows through getDisplayName('gordon').
-//
-// The action is non interactive while the guide is coming soon:
-// aria-disabled, removed from the tab order, role note. When the
-// walkthrough later ships this becomes the real trigger.
-//
-// Mobile (under 560px): avatar + text stack at the top, the action goes
-// full width below. Desktop and tablet keep the horizontal layout.
+// Prompt 183 Task 3 + Prompt 228 D4: My Nutrition Getting Started strip.
+// Wires the action to /nutrition/guide (Gordon-owned genetics nutritional guide).
 
+import Link from 'next/link';
 import { getDisplayName } from '@/lib/getDisplayName';
 import '@/components/body-tracker/hub/hub-card-frame.css';
 
-// Reserved Gordon avatar slot. Leave empty to render the teal ring
-// placeholder; set to a /public path when the real avatar lands.
 const avatarSrc = '';
 
 const LABEL = 'Getting Started';
-const DESCRIPTION = `${getDisplayName('gordon')} walks you through My Nutrition. Guide coming soon.`;
-const COMING_SOON_TEXT = 'My Nutrition Guide coming soon';
+const DESCRIPTION = `${getDisplayName('gordon')} walks you through My Nutrition with your genetics nutritional guide.`;
+const ACTION_TEXT = `Open ${getDisplayName('gordon')} guide`;
 
 export function NutritionGettingStartedStrip() {
   return (
@@ -38,9 +21,6 @@ export function NutritionGettingStartedStrip() {
       data-nutrition-hub-guidance
     >
       <div className="flex items-center gap-3 md:gap-4">
-        {/* Reserved Gordon avatar slot. When avatarSrc is empty we render
-            the teal ring placeholder so the slot stays visibly reserved;
-            when the real avatar lands it drops in here. */}
         <div className="flex-shrink-0">
           {avatarSrc ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -51,7 +31,7 @@ export function NutritionGettingStartedStrip() {
             />
           ) : (
             <div
-              aria-label={`${getDisplayName('gordon')} avatar slot reserved for the upcoming guided walkthrough`}
+              aria-label={`${getDisplayName('gordon')} avatar`}
               role="img"
               className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-[#2DA5A0]/60 bg-[#1E3054]/60 backdrop-blur-sm md:h-14 md:w-14"
             >
@@ -75,22 +55,15 @@ export function NutritionGettingStartedStrip() {
         </div>
       </div>
 
-      {/* Coming soon presentational action. aria-disabled and removed from
-          the tab order while the guide is not ready. The pill text is
-          white per spec. Mobile: full width below text.
-          Desktop: right aligned chip. */}
-      <div className="flex md:ml-auto md:flex-shrink-0">
-        <span
-          aria-disabled="true"
-          tabIndex={-1}
-          role="note"
-          className="inline-flex w-full items-center justify-center rounded-xl border border-white/20 bg-white/[0.05] px-3 py-2 text-[12px] font-medium text-white md:w-auto"
+      <div className="w-full md:ml-auto md:w-auto md:flex-shrink-0">
+        <Link
+          href="/nutrition/guide"
+          className="inline-flex min-h-[44px] w-full items-center justify-center rounded-full border border-[#2DA5A0]/50 bg-[#2DA5A0]/15 px-4 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-[#2DA5A0]/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0] md:w-auto"
+          data-nutrition-guide-cta
         >
-          {COMING_SOON_TEXT}
-        </span>
+          {ACTION_TEXT}
+        </Link>
       </div>
     </section>
   );
 }
-
-export default NutritionGettingStartedStrip;

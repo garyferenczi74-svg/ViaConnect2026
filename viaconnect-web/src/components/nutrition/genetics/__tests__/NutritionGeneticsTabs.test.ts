@@ -111,7 +111,7 @@ describe('NutrigenDxResultsTab wired source', () => {
     expect(source).toContain('Have results from another company? Upload them here.');
     expect(source).toContain('href="/genetics"');
     expect(source).toContain('See NutrigenDX panels');
-    expect(source).toContain('href="/nutrition/guide"');
+    expect(source).toContain('href="/nutrition/genetics?tab=recommendations"');
     expect(source).toContain('Review Nutrition Results');
   });
 

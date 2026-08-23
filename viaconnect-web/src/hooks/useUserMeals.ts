@@ -234,11 +234,14 @@ async function fetchUserMeals(
     .gte('logged_at', sinceIso)
     .order('logged_at', { ascending: false });
 
+  // Prompt 228 D2: never surface soft-discarded drafts in Today lists / kcal.
+  // Confirmed legacy rows only (pending drafts stay on the review flow).
   const legacyPromise = includeLegacy
     ? supabase
         .from('nutrition_logs')
         .select('*')
         .eq('user_id', userId)
+        .eq('status', 'confirmed')
         .gte('logged_at', sinceIso)
         .order('logged_at', { ascending: false })
     : Promise.resolve({ data: [], error: null });

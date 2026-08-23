@@ -340,12 +340,19 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     .from('meal_items')
     .insert(mealItemInsert);
 
+  // Prompt 228 D3: never return success if the intake row failed. Today
+  // aggregates from meal_items; a parent meal alone looks like a vanished log.
   if (itemErr) {
-    safeLog.warn('api.hydration.quick_log', 'meal_item insert failed (meal already saved)', {
+    safeLog.error('api.hydration.quick_log', 'meal_item insert failed; rolling back meal', {
       error: itemErr,
       userId: user.id,
       mealId,
     });
+    await admin.from('meals').delete().eq('meal_id', mealId).eq('user_id', user.id);
+    return NextResponse.json(
+      { error: 'Could not save hydration log. Nothing was recorded.' },
+      { status: 500 },
+    );
   }
 
   // Phase F: compute the three coarse signal columns. These ride on the
