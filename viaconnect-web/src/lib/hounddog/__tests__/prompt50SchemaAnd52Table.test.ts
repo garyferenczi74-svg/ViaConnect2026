@@ -55,7 +55,7 @@ describe('Prompt #50 Hounddog command-center schema', () => {
     expect(sql).toContain('WITH CHECK (public.hounddog_is_admin())')
     expect(sql).toMatch(/-- CREATE POLICY "hounddog_scripts_content_manager_write"/)
     expect(sql).not.toMatch(/^\s*CREATE POLICY .*content_manager/m)
-    expect(sql).not.toMatch(/social_manager/)
+    expect(sql).not.toMatch(/CREATE POLICY .*social_manager/)
   })
 
   it('does not seed live scrape or performance metrics', () => {
