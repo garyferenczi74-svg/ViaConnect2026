@@ -16,6 +16,8 @@
  *   EpigenHQ: TruDiagnostics / Age Rate / epigenetic clocks
  *     -> user_epigenetic_markers. Not SNPs.
  *   insight_report.generation_succeeded is metadata only.
+ *   Family-to-surface routing lives in lifemetricsReportMap.ts.
+ *   Demo Client 4634 / demo@genemetrics.com is never written (demo guard).
  *   UNKNOWN is not 0. Unclassified units stay unknown and are not written.
  *
  * Standing rules: no em or en dashes, TypeScript strict (no any).
@@ -401,7 +403,7 @@ function mapEpigenRow(
   };
 }
 
-function emptyMapped(partial: Partial<LifemetricsMappedImport>): LifemetricsMappedImport {
+export function emptyMappedImport(partial: Partial<LifemetricsMappedImport> = {}): LifemetricsMappedImport {
   return {
     eventId: partial.eventId ?? null,
     eventType: partial.eventType ?? null,
@@ -432,7 +434,7 @@ export function mapLifemetricsImport(
   const eventId = extractLifemetricsEventId(payload);
   const eventType = extractLifemetricsEventType(payload);
   const tenantId = extractLifemetricsTenantId(payload);
-  const base = emptyMapped({ eventId, eventType, tenantId });
+  const base = emptyMappedImport({ eventId, eventType, tenantId });
 
   if (!userId.trim()) {
     return { ...base, unknownReason: 'unresolved_user' };

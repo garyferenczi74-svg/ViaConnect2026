@@ -47,7 +47,7 @@ export async function persistLifemetricsImport(
   userId: string,
   mapped: LifemetricsMappedImport,
 ): Promise<LifemetricsPersistCounts> {
-  if (!userId) {
+  if (!userId || mapped.unknownReason === 'demo_client_blocked') {
     return { variants: null, hormoneMarkers: null, epigeneticMarkers: null };
   }
 
