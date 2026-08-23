@@ -129,9 +129,13 @@ export async function POST(req: Request): Promise<NextResponse> {
 
     const { circ, hips } = buildCircumferenceWrite({ userId, entryId, scanId, measurements });
 
-    // Write circumferences to body_tracker_circumference (12 girths + confidence + calibration)
+    // Write circumferences to body_tracker_circumference (12 girths + confidence + calibration).
+    // The route contract is fail-open (never throw) but honest: a failed insert
+    // must return ok:false. Swallowing { error } used to report success after a
+    // silent miss, so FormaVision thought girths landed on the Body Tracker spine
+    // when they did not.
     try {
-      await withTimeout(
+      const circInsert = await withTimeout(
         (supabase as unknown as {
           from: (t: string) => {
             insert: (row: Record<string, unknown>) => Promise<{ error: { message: string; code?: string } | null }>;
@@ -142,11 +146,19 @@ export async function POST(req: Request): Promise<NextResponse> {
         TIMEOUT_MS,
         `${SCOPE}.insert_circ`
       );
+      if (circInsert?.error) {
+        safeLog.warn(SCOPE, 'circumference insert returned error', {
+          entryId,
+          error: circInsert.error.message,
+        });
+        return NextResponse.json({ ok: false, reason: 'circ_insert_failed', entryId });
+      }
     } catch (err) {
       safeLog.warn(SCOPE, 'circumference insert failed (fail-open)', {
         entryId,
         error: err instanceof Error ? err.message : String(err),
       });
+      return NextResponse.json({ ok: false, reason: 'circ_insert_failed', entryId });
     }
 
     // Write hip to body_tracker_weight.hips_in + hips_confidence.
