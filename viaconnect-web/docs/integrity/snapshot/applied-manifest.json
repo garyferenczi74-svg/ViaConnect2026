@@ -72,6 +72,10 @@
       "version": "pending-verification",
       "name": "20260712000500_prompt_211a_scan_cadence_nudge_cron_fix",
       "note": "Prompt 219k: migration file present; baseline comment states 211a scan_cadence tables applied to prod 2026-07-12; version stamp not captured at apply time (apply-procedure pending-verification)."
+    },
+    {
+      "version": "20260823225944",
+      "name": "20260823224716_prompt_50_hounddog_command_center_schema"
     }
   ]
 }

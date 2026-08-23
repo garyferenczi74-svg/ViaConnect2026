@@ -44,3 +44,5 @@ Code-fix-only units (P0-5, P0-7, P0-9) reach prod through the normal main deploy
 
 | 219k CI schema gate honesty | Migration parity 211a + drift baseline 36 tables + await createClient (114 files) | code + docs/integrity/snapshot/applied-manifest.json + scripts/schema/drift-baseline.json | BUILT | | | |
 
+| Prompt #50 Hounddog command-center schema | live missing scripts/pipeline/performance/hooks/analytics_rollup + hounddog_is_admin (phantom 20260413000010) | migration 20260823224716_prompt_50_hounddog_command_center_schema.sql (PR 25 / f9eccaa) | APPLIED | Gary 2026-08-23 | 2026-08-23 | applied v20260823225944; revert: drop 5 command-center tables + 2 functions (keep collector/gated/staging) |
+
