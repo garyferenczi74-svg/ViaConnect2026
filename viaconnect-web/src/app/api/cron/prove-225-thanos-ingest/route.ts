@@ -45,12 +45,17 @@ async function dumpThanosEvidence(): Promise<Dump> {
     .limit(20);
 
   const thanosOps = (opsRuns ?? []).filter((row) => {
-    const stages = (row.stages as Array<Record<string, unknown>>) ?? [];
+    if (String(row.run_id ?? "").includes("thanos")) return true;
+    const raw = row.stages as unknown;
+    const stages = Array.isArray(raw)
+      ? (raw as Array<Record<string, unknown>>)
+      : raw && typeof raw === "object"
+        ? [raw as Record<string, unknown>]
+        : [];
     return stages.some(
       (s) =>
         String(s.job_key ?? "") === "thanos.allowlist" ||
-        String(s.agent ?? "") === "thanos" ||
-        String(row.run_id).includes("thanos"),
+        String(s.agent ?? "") === "thanos",
     );
   });
 
