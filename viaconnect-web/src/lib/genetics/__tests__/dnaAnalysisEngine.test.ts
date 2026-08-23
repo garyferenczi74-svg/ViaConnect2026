@@ -87,8 +87,8 @@ describe('groupVariantsByPanel', () => {
 describe('resolvePanelLabel', () => {
   it('returns the generic label by default (competitor upload, no branded test)', () => {
     expect(resolvePanelLabel('methylation', false)).toBe('Genetic Methylation');
-    expect(resolvePanelLabel('nutrition', false)).toBe('Nutrition Genetics');
-    expect(resolvePanelLabel('cannabis', false)).toBe('Cannabis Genetics');
+    expect(resolvePanelLabel('nutrition', false)).toBe('Genetic Nutrition');
+    expect(resolvePanelLabel('cannabis', false)).toBe('Cannabis Response');
   });
 
   it('returns the branded label when a branded test backs the panel', () => {

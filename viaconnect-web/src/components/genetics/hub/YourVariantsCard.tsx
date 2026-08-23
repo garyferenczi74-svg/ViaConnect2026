@@ -3,36 +3,16 @@
 // Prompt 204b (2026-06-17): the Your Variants centerpiece card, now driven by
 // REAL member data instead of the retired static sample set.
 //
-// On mount the card fetches GET /api/genetics/variants (via useGeneticsVariants)
-// and renders the member's interpreted variants grouped by GENEX360 panel. The
-// six pills come from PANEL_ORDER and their labels are resolved dynamically:
-// every panel shows its GENERIC capability label by default, and only flips to
-// the BRANDED product label when the member owns a Farmceutica branded test for
-// that panel (brandedPanels). Labels are NEVER hardcoded in markup.
-//
-// The fetch is fail-open: any failure resolves to empty data, so the card never
-// throws and never shows an error panel. A panel with no rows shows an honest
-// empty / locked state (its generic label plus an Add this test CTA), not
-// fabricated sample rows.
-//
-// State slices:
-//   activePanel - the active PanelKey, deep linked from ?test= on mount
-//                 (accepts a panel_key, a panel slug, or a legacy sample id);
-//                 an unknown or absent value defaults to PANEL_ORDER[0]
-//                 (methylation).
-//   data        - the fetched payload (variantsByPanel, brandedPanels,
-//                 totalVariants) plus the first-load flag, owned by the hook.
-//
-// The pill tablist is built inline here (it cannot reuse VariantPillTabs, which
-// is bound to the retired sample GeneticTest type) but mirrors that component's
-// styling and WAI-ARIA tabs behavior exactly: roving tabindex, arrow / Home /
-// End navigation with automatic activation, blue glass active pill, white
-// outline inactive pills, mobile scroll-snap with edge fade masks.
+// Gary 2026-08-23: pills show observed GENEX360 counts with the unit that
+// matches the test. Aliases (GENEX-M, genex_m, genex-m, and peers) group onto
+// the matching pill. HormoneIQ and EpigenHQ read marker / clock tables, never
+// user_variants SNP length. 401 / error render as Unavailable (n/a), never 0.
+// Marketing catalog sizes from panels.ts / HERO_BENTO_META are not used here.
 //
 // Standing rules honored: tokens only (Navy #1A2744, Card #1E3054, Teal
 // #2DA5A0, Orange #B75E18, white opacity neutrals), Lucide strokeWidth 1.5,
 // Instrument Sans inherited, no emojis, no em or en dashes, TypeScript strict
-// (no any).
+// (no any). Desktop and mobile share this card.
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
@@ -57,13 +37,17 @@ import {
   panelKeyForSlug,
   type PanelKey,
 } from '@/lib/genetics/panelLabels';
+import { normalizeObservedPanelKey } from '@/lib/genetics/panelKeyAliases';
+import {
+  formatObservedBadge,
+  type ObservedPanelCount,
+} from '@/lib/genetics/observedPanelCounts';
+import { epigenMarkerByKey } from '@/lib/genetics/epigenMarkerMap';
 
 const PANEL_ID = 'your-variants-panel';
-const SUBTITLE = 'Browse your interpreted variants across the six GENEX360 panels.';
+const SUBTITLE =
+  'Each GENEX360 test measures something different: methylation SNPs, nutrition markers, hormone metabolites, or epigenetic clocks.';
 
-// Legacy sample ids the deep link (?test=) used to accept, mapped to PanelKey so
-// old links keep working. The canonical panel_key and panel slug are resolved
-// directly (panelKeyForSlug) without a hardcoded table.
 const LEGACY_TEST_ID_TO_PANEL: Record<string, PanelKey> = {
   genexm: 'methylation',
   nutrigendx: 'nutrition',
@@ -73,26 +57,17 @@ const LEGACY_TEST_ID_TO_PANEL: Record<string, PanelKey> = {
   cannabisiq: 'cannabis',
 };
 
-// Resolve a raw ?test= value to a PanelKey. Accepts a panel_key, a panel slug,
-// or a legacy sample id; anything unknown or absent yields null (the caller then
-// falls back to PANEL_ORDER[0]).
 function panelKeyForTestParam(raw: string | null): PanelKey | null {
   if (!raw) return null;
   const normalized = raw.trim().toLowerCase();
   if ((PANEL_ORDER as string[]).includes(normalized)) return normalized as PanelKey;
+  const byAlias = normalizeObservedPanelKey(raw);
+  if (byAlias) return byAlias;
   const bySlug = panelKeyForSlug(normalized);
   if (bySlug) return bySlug;
   return LEGACY_TEST_ID_TO_PANEL[normalized] ?? null;
 }
 
-// Map a row's status string to a normalized genotype zygosity token. The API
-// stores status as a notation string; we accept the canonical +/+ , +/- , -/-
-// forms (and the order-insensitive -/+ ) and otherwise treat it as the neutral
-// -/- styling so an unexpected value never throws or shows raw text.
-//
-// Prompt 204g: zygosity is NO LONGER the score. It stays as a small neutral
-// genotype chip; the score is the severity tier (SeverityPill). The old colored
-// status badge (which borrowed brand tokens) is therefore retired.
 type Zygosity = '+/+' | '+/-' | '-/-';
 function zygosityFromStatus(status: string | null): Zygosity {
   const s = (status ?? '').trim();
@@ -101,18 +76,26 @@ function zygosityFromStatus(status: string | null): Zygosity {
   return '-/-';
 }
 
+function isSnpPanel(panelKey: PanelKey): boolean {
+  return panelKey !== 'hormone' && panelKey !== 'epigenetic';
+}
+
 interface YourVariantsCardProps {
   className?: string;
 }
 
 export function YourVariantsCard({ className }: YourVariantsCardProps) {
   const { data, isLoading } = useGeneticsVariants();
-  const { variantsByPanel, brandedPanels, totalVariants } = data;
+  const {
+    variantsByPanel,
+    brandedPanels,
+    totalVariants,
+    observedByPanel,
+    loadStatus,
+    hormoneMarkers,
+    epigeneticMarkers,
+  } = data;
 
-  // Deep link: read ?test= once. useSearchParams is stable for the lifetime of
-  // the entry, so resolving the initial active panel from it on first render
-  // gives the Section 6 behavior without a post-mount effect that would flash
-  // the default first.
   const searchParams = useSearchParams();
   const initialPanel = useMemo<PanelKey>(() => {
     return panelKeyForTestParam(searchParams.get('test')) ?? PANEL_ORDER[0];
@@ -120,15 +103,11 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
 
   const [activePanel, setActivePanel] = useState<PanelKey>(initialPanel);
 
-  // Prompt 204g: the All / High / Moderate / Low severity filter. Reset to All
-  // when the panel changes so the selection and counts match the visible list.
   const [impactFilter, setImpactFilter] = useState<ImpactFilterValue>('All');
   useEffect(() => {
     setImpactFilter('All');
   }, [activePanel]);
 
-  // One ref per pill so arrow navigation can move DOM focus (roving focus),
-  // indexed by position in PANEL_ORDER.
   const buttonRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   const activeIndex = PANEL_ORDER.indexOf(activePanel);
@@ -173,10 +152,9 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
   };
 
   const activeRows: VariantRecord[] = variantsByPanel[activePanel] ?? [];
+  const activeObserved: ObservedPanelCount = observedByPanel[activePanel];
+  const resultsUnavailable = loadStatus === 'error' || loadStatus === 'unauthorized';
 
-  // Prompt 204g: live severity counts over the active panel's list, and the list
-  // filtered by the selected tier. Counts are computed in place; unscored
-  // variants (severity null) appear only under All, never under a tier.
   const counts = useMemo(() => {
     const c = { all: activeRows.length, high: 0, moderate: 0, low: 0 };
     for (const row of activeRows) {
@@ -194,13 +172,23 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
   }, [activeRows, impactFilter]);
 
   const activeGenericLabel = PANEL_LABELS[activePanel].generic_label;
-  // Prompt 204e (2026-06-19): the canonical Blueprint panel slug for the active
-  // panel (methylation to genex-m). This is the panelSlug the 193c resolver and
-  // Report pill join on, and the slug the approved PanelDisclaimer keys off;
-  // PANEL_LABELS is the single source so it is never hardcoded here. The six
-  // PANEL_LABELS slugs are exactly the PanelSlug union.
+  const activeEmptyNoun = PANEL_LABELS[activePanel].empty_noun;
+  const activeMeasuresLine = PANEL_LABELS[activePanel].measures_line;
   const activePanelSlug = PANEL_LABELS[activePanel].slug as PanelSlug;
   const activeTabId = `${PANEL_ID}-tab-${activePanel}`;
+
+  const headerBadge = isLoading
+    ? 'Loading'
+    : resultsUnavailable || totalVariants === null
+      ? 'Unavailable'
+      : `${totalVariants} results`;
+
+  const hasHormoneMarkers = hormoneMarkers.length > 0;
+  const hasEpigeneticMarkers = epigeneticMarkers.length > 0;
+  const hasSnpRows = activeRows.length > 0;
+  const showSnpList = isSnpPanel(activePanel) && hasSnpRows;
+  const showHormoneList = activePanel === 'hormone' && hasHormoneMarkers;
+  const showEpigenList = activePanel === 'epigenetic' && hasEpigeneticMarkers;
 
   return (
     <GeneticsHubTile
@@ -208,14 +196,12 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
       mediaLogKey="yourVariants"
       className={className}
     >
-      {/* Header row: title, total real-variant count badge, one line subtitle, and
-          a persistent CTA to upgrade the bundle or add a new GeneX360 test. */}
       <div className="flex flex-col gap-1">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-lg font-semibold leading-tight text-white md:text-xl">Your Variants</h2>
             <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-0.5 text-[11px] font-medium tabular-nums text-white/75">
-              {totalVariants} variants
+              {headerBadge}
             </span>
           </div>
           <Link
@@ -229,9 +215,7 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
         <p className="text-[12px] leading-relaxed text-white/60 md:text-[13px]">{SUBTITLE}</p>
       </div>
 
-      {/* Panel switcher pills: a WAI-ARIA tablist mirroring VariantPillTabs. */}
       <div className="relative mt-4">
-        {/* Left + right edge fade masks (mobile only), hinting at overflow. */}
         <span
           aria-hidden="true"
           className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-6 bg-gradient-to-r from-[#1A2744] to-transparent md:hidden"
@@ -251,7 +235,8 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
           {PANEL_ORDER.map((panelKey, index) => {
             const active = panelKey === activePanel;
             const label = resolvePanelLabel(panelKey, brandedPanels.includes(panelKey));
-            const count = (variantsByPanel[panelKey] ?? []).length;
+            const observed = observedByPanel[panelKey];
+            const badge = isLoading ? '...' : formatObservedBadge(observed);
             return (
               <button
                 key={panelKey}
@@ -272,13 +257,19 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
                 }`}
               >
                 <span>{label}</span>
-                {/* Trailing count badge: this panel's real variant count. */}
                 <span
+                  aria-label={
+                    isLoading
+                      ? `${label} count loading`
+                      : observed.status === 'unknown' || observed.count === null
+                        ? `${label} count unavailable`
+                        : `${observed.count} ${observed.unit}`
+                  }
                   className={`inline-flex min-w-[1.25rem] items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-medium tabular-nums ${
                     active ? 'bg-[#1A2744]/40 text-white' : 'bg-white/10 text-white/70'
                   }`}
                 >
-                  {count}
+                  {badge}
                 </span>
               </button>
             );
@@ -286,9 +277,6 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
         </div>
       </div>
 
-      {/* The active panel: either the member's real variant rows or an honest
-          empty / locked state. Gary 2026-06-12: the list grows to full height
-          with no inner scroll, so the card grows and page content flows down. */}
       <div
         id={PANEL_ID}
         role="tabpanel"
@@ -297,24 +285,30 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
         className="mt-4 flex flex-1 flex-col focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744]"
       >
         {isLoading ? (
-          // Quiet first-load affordance. Never an error, never a spinner.
           <p className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-6 text-center text-sm text-white/45">
-            Loading your variants...
+            Loading your results...
           </p>
-        ) : activeRows.length > 0 ? (
+        ) : resultsUnavailable || activeObserved.status === 'unknown' ? (
+          <div className="flex flex-col items-start gap-3 rounded-xl border border-white/15 bg-white/[0.04] px-4 py-5">
+            <p className="text-sm font-semibold text-white/85">
+              {loadStatus === 'unauthorized'
+                ? 'Sign in to view your results.'
+                : `${activeGenericLabel} results are unavailable.`}
+            </p>
+            <p className="text-[13px] leading-relaxed text-white/60">
+              This is not an empty panel. We could not confirm a count, so the badge
+              shows n/a instead of 0.
+            </p>
+          </div>
+        ) : showSnpList ? (
           <div className="flex flex-col gap-3">
-            {/* Prompt 204g: the All / High / Moderate / Low severity filter with
-                live counts over this panel's list. */}
+            <p className="text-[12px] leading-relaxed text-white/55">{activeMeasuresLine}</p>
             <VariantImpactFilter counts={counts} value={impactFilter} onChange={setImpactFilter} />
             {filteredRows.length > 0 ? (
               <div className="space-y-2">
                 {filteredRows.map((row, index) => {
                   const z = zygosityFromStatus(row.status);
                   const rowKey = `${activePanel}-${row.rsid}-${index}`;
-                  // Prompt 204e: reconnect the tap-to-description deep link.
-                  // Resolve this variant against the 193c registry by rsID. When
-                  // a full report exists on the Your Genetic Blueprint page, the
-                  // row shows the Report pill; otherwise no pill is rendered.
                   const report = row.rsid
                     ? resolveVariantReport(row.rsid, activePanelSlug, row.gene ?? undefined)
                     : null;
@@ -323,9 +317,6 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
                       key={rowKey}
                       className="rounded-xl border border-white/[0.06] bg-[#1E3054]/45 px-4 py-3"
                     >
-                      {/* Top line: gene + rsid, the genotype chip and the zygosity
-                          chip (both genotype info), then the severity score pinned
-                          right. Wraps on narrow mobile so nothing overflows. */}
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="font-mono text-sm font-semibold text-white">
                           {row.gene ?? 'Unknown'}
@@ -338,33 +329,19 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
                             {row.genotype}
                           </span>
                         ) : null}
-                        {/* Prompt 204g: zygosity is a neutral genotype chip now,
-                            no longer the score and no longer brand colored. */}
                         <span className="rounded bg-white/5 px-2 py-0.5 font-mono text-[11px] tabular-nums text-white/45">
                           {z}
                         </span>
-                        {/* Prompt 204 (2026-06-21): mark a seeded SAMPLE variant so
-                            it never reads as the member's real result. */}
                         {row.is_sample ? <SampleBadge /> : null}
-                        {/* Prompt 204g: the severity tier IS the score, pinned
-                            right. SeverityPill reads color only from
-                            severityToken() and shows Unscored until the validated
-                            per-genotype source is populated. */}
                         <span className="ml-auto">
                           <SeverityPill tier={row.severity} />
                         </span>
                       </div>
-                      {/* Clinical significance line, when present. */}
                       {row.clinical_significance ? (
                         <p className="mt-2 text-[13px] leading-relaxed text-white/60">
                           {row.clinical_significance}
                         </p>
                       ) : null}
-                      {/* Prompt 204e: the Report deep link. Tapping it navigates to
-                          this variant's full description on the Your Genetic
-                          Blueprint page (VariantReportPill builds the href via
-                          resolveVariantReport, so the route is never hardcoded).
-                          Rendered only when a matching report exists. */}
                       {report?.exists && row.rsid ? (
                         <div className="mt-3 flex justify-end">
                           <VariantReportPill
@@ -381,16 +358,62 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
                 })}
               </div>
             ) : (
-              // The panel has variants but none match the active severity filter.
               <p className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-6 text-center text-sm text-white/45">
                 No {impactFilter} severity variants in this panel.
               </p>
             )}
           </div>
+        ) : showHormoneList ? (
+          <div className="flex flex-col gap-3">
+            <p className="text-[12px] leading-relaxed text-white/55">{activeMeasuresLine}</p>
+            <div className="space-y-2">
+              {hormoneMarkers.map((marker) => (
+                <div
+                  key={marker.name}
+                  className="rounded-xl border border-white/[0.06] bg-[#1E3054]/45 px-4 py-3"
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-semibold text-white">{marker.name}</span>
+                    <span className="ml-auto font-mono text-xs tabular-nums text-white/70">
+                      {marker.value === null ? 'UNKNOWN' : marker.value}
+                      {marker.unit ? ` ${marker.unit}` : ''}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : showEpigenList ? (
+          <div className="flex flex-col gap-3">
+            <p className="text-[12px] leading-relaxed text-white/55">{activeMeasuresLine}</p>
+            <div className="space-y-2">
+              {epigeneticMarkers.map((marker) => {
+                const meta = epigenMarkerByKey(marker.markerKey);
+                const display = meta?.displayName ?? marker.markerKey;
+                const value =
+                  marker.valueNum !== null
+                    ? marker.valueNum
+                    : marker.valueText
+                      ? marker.valueText
+                      : 'UNKNOWN';
+                return (
+                  <div
+                    key={marker.markerKey}
+                    className="rounded-xl border border-white/[0.06] bg-[#1E3054]/45 px-4 py-3"
+                  >
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-sm font-semibold text-white">{display}</span>
+                      <span className="ml-auto font-mono text-xs tabular-nums text-white/70">
+                        {value}
+                        {marker.unit ? ` ${marker.unit}` : ''}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         ) : (
-          // Empty / locked state: this panel has no interpreted variants yet.
-          // Honest and short, with a single CTA to order the panel. Never a
-          // fabricated sample row, never an error.
           <div className="flex flex-col items-start gap-3 rounded-xl border border-[#2DA5A0]/25 bg-[#2DA5A0]/[0.08] px-4 py-5">
             <div className="flex items-start gap-2">
               <Dna
@@ -400,10 +423,10 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
               />
               <div className="flex flex-col gap-1">
                 <p className="text-sm font-semibold text-white/85">
-                  No {activeGenericLabel} variants yet.
+                  No {activeGenericLabel} {activeEmptyNoun} yet.
                 </p>
                 <p className="text-[13px] leading-relaxed text-white/60">
-                  Upload a DNA test or add this panel to see your interpreted variants here.
+                  {activeMeasuresLine}
                 </p>
               </div>
             </div>
@@ -417,14 +440,6 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
         )}
       </div>
 
-      {/* Consult-your-practitioner warning on all SNP data (Gary 2026-06-19). My
-          204b rewrite dropped the consult note the retired VariantRow carried;
-          this restores it as a single persistent card footer, so the member
-          never sees their interpreted variants without it, on every panel.
-          Reuses the approved PanelDisclaimer verbatim (the same fuller
-          not-a-diagnosis / tendencies-not-certainties / consult-a-licensed-
-          practitioner language shown on the GENEX360 surfaces), keyed to the
-          active panel so PeptideIQ and CannabisIQ get their extra caveats too. */}
       <div className="mt-4">
         <PanelDisclaimer slug={activePanelSlug} />
       </div>

@@ -14,17 +14,14 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { computeGeneticsPresence, GeneticsOverlayPanel } from '../GeneticsOverlay';
 import type { GeneticsVariantsData, VariantRecord } from '@/components/genetics/hub/useGeneticsVariants';
+import { EMPTY_OK_DATA } from '@/components/genetics/hub/useGeneticsVariants';
 import type { PanelKey } from '@/lib/genetics/panelLabels';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-const EMPTY_DATA: GeneticsVariantsData = {
-  variantsByPanel: {},
-  brandedPanels: [],
-  totalVariants: 0,
-};
+const EMPTY_DATA: GeneticsVariantsData = EMPTY_OK_DATA;
 
 function makeVariant(is_sample: boolean, panel: PanelKey = 'methylation'): VariantRecord {
   return {
@@ -41,8 +38,8 @@ function makeVariant(is_sample: boolean, panel: PanelKey = 'methylation'): Varia
 
 function dataWith(variants: VariantRecord[], panel: PanelKey = 'methylation'): GeneticsVariantsData {
   return {
+    ...EMPTY_OK_DATA,
     variantsByPanel: { [panel]: variants },
-    brandedPanels: [],
     totalVariants: variants.length,
   };
 }
@@ -73,11 +70,11 @@ describe('computeGeneticsPresence: presence gate', () => {
 
   it('multiple panels: real variant in any panel -> present', () => {
     const data: GeneticsVariantsData = {
+      ...EMPTY_OK_DATA,
       variantsByPanel: {
         methylation: [makeVariant(true)],   // sample panel
         nutrition: [makeVariant(false)],    // real panel
       },
-      brandedPanels: [],
       totalVariants: 2,
     };
     expect(computeGeneticsPresence(data)).toBe('present');
@@ -85,11 +82,11 @@ describe('computeGeneticsPresence: presence gate', () => {
 
   it('all sample across multiple panels -> absent', () => {
     const data: GeneticsVariantsData = {
+      ...EMPTY_OK_DATA,
       variantsByPanel: {
         methylation: [makeVariant(true)],
         hormone: [makeVariant(true)],
       },
-      brandedPanels: [],
       totalVariants: 2,
     };
     expect(computeGeneticsPresence(data)).toBe('absent');
@@ -102,8 +99,8 @@ describe('computeGeneticsPresence: presence gate', () => {
 
   it('panel array present but empty -> absent', () => {
     const data: GeneticsVariantsData = {
+      ...EMPTY_OK_DATA,
       variantsByPanel: { methylation: [] },
-      brandedPanels: [],
       totalVariants: 0,
     };
     expect(computeGeneticsPresence(data)).toBe('absent');
