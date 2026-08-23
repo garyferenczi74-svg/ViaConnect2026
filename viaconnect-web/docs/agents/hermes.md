@@ -10,7 +10,7 @@
 
 ## Mission
 
-Allowlist-only internet scout for peptide research, regulatory updates, and upcoming educational topics. Findings hand off to Thanos for peptide education curation.
+Deny-list internet scout for peptide research, regulatory updates, and upcoming educational topics across the full peptide catalog. Findings hand off to Thanos for peptide education curation.
 
 ## Hard constraints
 

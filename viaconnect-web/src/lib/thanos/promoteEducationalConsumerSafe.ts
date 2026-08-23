@@ -66,6 +66,26 @@ export async function promoteEducationalConsumerSafe(opts?: {
     }
 
     // Prefer an active education entry for this peptide
+    // Require Marshall queue approval on staging (gate_status=approved), not only
+    // the synchronous contentGate lexicon verdict used at ingest time.
+    const nameHint = String(row.display_name ?? slug).slice(0, 40);
+    const { data: gated } = await admin
+      .from('hounddog_staging_items')
+      .select('id, title, summary, gate_status, source_url')
+      .eq('agent_slug', 'thanos')
+      .eq('gate_status', 'approved')
+      .ilike('title', `%${nameHint}%`)
+      .limit(1);
+    if (!gated?.length) {
+      bump('no_marshall_approved_stage');
+      continue;
+    }
+    const gSummary = String(gated[0].summary ?? '');
+    if (gSummary && !assertNoDoseLexicon(gSummary)) {
+      bump('dose_lexicon_staging');
+      continue;
+    }
+
     const entryKey = `edu-${slug.replace(/^edu-/, '')}`;
     const { data: edu } = await admin
       .from('peptide_education_entries')
@@ -73,27 +93,8 @@ export async function promoteEducationalConsumerSafe(opts?: {
       .eq('is_active', true)
       .eq('entry_key', entryKey)
       .limit(3);
-
     const eduRows = edu ?? [];
-    if (eduRows.length === 0) {
-      // Fall back: Marshall-approved staging/gated item mentioning the peptide
-      const { data: gated } = await admin
-        .from('hounddog_staging_items')
-        .select('id, title, summary, gate_status, source_url')
-        .eq('agent_slug', 'thanos')
-        .eq('gate_status', 'approved')
-        .ilike('title', `%${String(row.display_name ?? slug).slice(0, 40)}%`)
-        .limit(1);
-      if (!gated?.length) {
-        bump('no_education_or_approved_stage');
-        continue;
-      }
-      const gSummary = String(gated[0].summary ?? '');
-      if (gSummary && !assertNoDoseLexicon(gSummary)) {
-        bump('dose_lexicon_staging');
-        continue;
-      }
-    } else {
+    if (eduRows.length > 0) {
       let eduDoseBlocked = false;
       for (const e of eduRows) {
         if (e.summary && !assertNoDoseLexicon(String(e.summary))) {

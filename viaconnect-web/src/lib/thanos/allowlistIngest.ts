@@ -234,6 +234,13 @@ export async function runThanosDailyIngest(opts?: {
         });
         continue;
       }
+      if (!assertNoPeptidePurchasePath([url])) {
+        stats.blockedOutsideAllowlist += 1;
+        safeLog.info('thanos.ingest', 'skip purchase path url', {
+          host: scope.host,
+        });
+        continue;
+      }
 
       let excerpt = hit.description ?? hit.title ?? '';
       if (budget.hitBudget === false) {
