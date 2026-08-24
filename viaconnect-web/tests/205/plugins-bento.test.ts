@@ -92,7 +92,10 @@ describe("Plugins Picasso IA honesty", () => {
     expect(mark).toContain("peloton");
     expect(mark).toContain("headspace");
     expect(mark).toContain("calm");
-    expect(mark).not.toMatch(/whoop|oura|hume|apple_health/i);
+    expect(mark).not.toContain("whoop");
+    expect(mark).not.toContain("oura");
+    expect(mark).not.toContain("hume");
+    expect(mark).not.toContain("apple_health");
     expect(mark).toContain("strokeWidth={1.5}");
   });
 

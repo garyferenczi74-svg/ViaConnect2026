@@ -3,7 +3,7 @@
 /**
  * 390 tile anatomy lock: vendor mark left, name, status badge,
  * last-sync or No action yet. Connected: Manage in Wearables Data + Disconnect.
- * Coming soon: badge + No action yet. No Coming soon button.
+ * Coming soon: badge + No action yet. No coming-soon action control.
  * Tile states from last-sync-state via the join. No second state machine.
  */
 
