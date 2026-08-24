@@ -2,23 +2,16 @@
 
 // Prompt 201: Apple Health web import flow.
 //
-// The user drops their Health export zip (or picks it). We:
-//   1. resolve userId via supabase.auth.getUser()
-//   2. insert an apple_health_imports staging row, returning its id
-//   3. upload the zip to the private apple-health-imports bucket at
-//      {userId}/{importId}.zip
-//   4. POST the parse request to the server route, which streams the zip,
-//      normalizes records, and posts them through the ingestion funnel
-//   5. render the results summary, including the Hume Body Pod attribution count
+// The user drops their Health export zip (or picks it). The import engine
+// (auth resolution, staging insert, storage upload, server parse) lives in
+// useHealthXmlImport (Prompt 230, Task 5) so the same flow can run inline in
+// the connected-source detail panel. This component is the dialog shell:
+// dropzone, progress, and results summary, including the Hume Body Pod
+// attribution count.
 //
-// Hume Health (the Body Pod, operated by FitTrack Inc) has no public API; it
-// reaches us only as an attribution origin tagged on Apple Health records. The
-// summary surfaces that attribution count with a small badge.
-//
-// Resilience: every async step is wrapped; failures surface a graceful message
-// and never crash the modal. Design tokens: Card #1E3054 on Deep Navy #1A2744,
-// Teal #2DA5A0, Orange #B75E18. Lucide at strokeWidth 1.5. No emojis. No em or
-// en dashes anywhere.
+// Design tokens: Card #1E3054 on Deep Navy #1A2744, Teal #2DA5A0,
+// Orange #B75E18. Lucide at strokeWidth 1.5. No emojis. No em or en dashes
+// anywhere.
 
 import { useCallback, useRef, useState } from 'react';
 import {
@@ -32,37 +25,13 @@ import {
   ListChecks,
   CopyMinus,
 } from 'lucide-react';
-import toast from 'react-hot-toast';
-import { createClient } from '@/lib/supabase/client';
-import { parseImportSummary, isImportComplete, type ImportSummary } from '@/lib/body-tracker/connected-sources/import-summary';
-import { withAbortTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
+import {
+  useHealthXmlImport,
+  HEALTH_XML_IMPORT_COPY,
+  type HealthXmlImportIntent,
+} from './useHealthXmlImport';
 
-const BUCKET = 'apple-health-imports';
-const PARSE_ENDPOINT = '/api/body-tracker/connected-sources/apple-health/parse';
-const MAX_BYTES = 200 * 1024 * 1024; // mirrors the bucket file_size_limit (200 MB)
-
-type Phase = 'idle' | 'uploading' | 'parsing' | 'done' | 'error';
-
-export type HealthXmlImportIntent = 'apple' | 'hume';
-
-export const HEALTH_XML_IMPORT_COPY = {
-  apple: {
-    title: 'Import from Apple Health',
-    lead: 'On your iPhone open Health, tap your profile picture, then Export All Health Data. Upload the .xml or .zip here.',
-    dropTitle: 'Drop your Health export XML',
-    fileError:
-      'Choose an Apple Health export .xml or .zip. On iPhone open Health, tap your profile, then Export All Health Data.',
-    toast: 'Apple Health import complete',
-  },
-  hume: {
-    title: 'Import Hume Body Pod',
-    lead: 'Hume has no public developer API. Upload an Apple Health export so Hume-tagged body and weight rows can ingest.',
-    dropTitle: 'Drop your Hume-tagged Health export XML',
-    fileError:
-      'Choose an Apple Health export .xml or .zip so Hume-tagged body and weight rows can ingest.',
-    toast: 'Hume Body Pod import complete',
-  },
-} as const;
+export { HEALTH_XML_IMPORT_COPY, type HealthXmlImportIntent };
 
 interface AppleHealthImportModalProps {
   open: boolean;
@@ -86,139 +55,19 @@ export function AppleHealthImportModal({
 }: AppleHealthImportModalProps) {
   const copy = HEALTH_XML_IMPORT_COPY[intent];
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const [phase, setPhase] = useState<Phase>('idle');
   const [dragActive, setDragActive] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [result, setResult] = useState<ImportSummary | null>(null);
+  const { phase, errorMsg, result, runImport, reset } = useHealthXmlImport(intent, onImported);
 
-  const reset = useCallback(() => {
-    setPhase('idle');
-    setErrorMsg(null);
-    setResult(null);
+  const resetAll = useCallback(() => {
+    reset();
     setDragActive(false);
     if (inputRef.current) inputRef.current.value = '';
-  }, []);
+  }, [reset]);
 
   const handleClose = useCallback(() => {
-    reset();
+    resetAll();
     onClose();
-  }, [reset, onClose]);
-
-  const runImport = useCallback(
-    async (file: File) => {
-      setErrorMsg(null);
-      setResult(null);
-
-      // Light client-side guards. The bucket enforces type and size server side.
-      const name = (file.name || '').toLowerCase();
-      const isXml = name.endsWith('.xml');
-      const isZip = name.endsWith('.zip');
-      if (!isXml && !isZip) {
-        setPhase('error');
-        setErrorMsg(copy.fileError);
-        return;
-      }
-      if (file.size > MAX_BYTES) {
-        setPhase('error');
-        setErrorMsg('That export is larger than 200 MB. Try exporting a shorter date range from the Health app.');
-        return;
-      }
-
-      const supabase = createClient();
-
-      // Step 1: resolve the signed-in user.
-      let userId: string;
-      try {
-        const { data, error } = await supabase.auth.getUser();
-        if (error || !data.user) {
-          setPhase('error');
-          setErrorMsg('Please sign in again to import your Health data.');
-          return;
-        }
-        userId = data.user.id;
-      } catch {
-        setPhase('error');
-        setErrorMsg('We could not confirm your session. Please sign in again.');
-        return;
-      }
-
-      // Step 2: create the staging row.
-      let importId: string;
-      try {
-        const { data, error } = await supabase
-          .from('apple_health_imports')
-          .insert({ user_id: userId, file_name: file.name })
-          .select('id')
-          .single();
-        if (error || !data?.id) {
-          setPhase('error');
-          setErrorMsg('We could not start the import. Please try again in a moment.');
-          return;
-        }
-        importId = data.id as string;
-      } catch {
-        setPhase('error');
-        setErrorMsg('We could not start the import. Please try again in a moment.');
-        return;
-      }
-
-      // Step 3: upload the zip.
-      setPhase('uploading');
-      const ext = isXml ? 'xml' : 'zip';
-      const storagePath = `${BUCKET}/${userId}/${importId}.${ext}`;
-      try {
-        const { error } = await supabase.storage
-          .from(BUCKET)
-          .upload(`${userId}/${importId}.${ext}`, file, {
-            upsert: true,
-            contentType: isXml ? 'application/xml' : 'application/zip',
-          });
-        if (error) {
-          setPhase('error');
-          setErrorMsg('The upload did not complete. Check your connection and try again.');
-          return;
-        }
-      } catch {
-        setPhase('error');
-        setErrorMsg('The upload did not complete. Check your connection and try again.');
-        return;
-      }
-
-      // Step 4: parse on the server.
-      setPhase('parsing');
-      try {
-        const res = await withAbortTimeout(
-          (signal) => fetch(PARSE_ENDPOINT, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ importId, storagePath, fileKind: ext }),
-            signal,
-          }),
-          // 300000ms (300s) matches the parse route's maxDuration = 300; keep the two in sync.
-          300000,
-          'apple-health-parse',
-        );
-        const json = res.ok ? await res.json().catch(() => null) : null;
-        if (!res.ok || !isImportComplete(json)) {
-          setPhase('error');
-          setErrorMsg('We uploaded your file but could not finish reading it. Please try again.');
-          return;
-        }
-        setResult(parseImportSummary(json));
-        setPhase('done');
-        toast.success(copy.toast);
-        onImported?.();
-      } catch (err) {
-        setPhase('error');
-        setErrorMsg(
-          isTimeoutError(err)
-            ? 'Reading your Health data is taking longer than expected. Please try again.'
-            : 'We uploaded your file but could not finish reading it. Please try again.',
-        );
-      }
-    },
-    [copy.fileError, copy.toast, onImported],
-  );
+  }, [resetAll, onClose]);
 
   const onDrop = useCallback(
     (e: React.DragEvent<HTMLDivElement>) => {
@@ -381,7 +230,7 @@ export function AppleHealthImportModal({
             <div className="flex gap-2">
               <button
                 type="button"
-                onClick={reset}
+                onClick={resetAll}
                 className="flex min-h-[44px] flex-1 items-center justify-center rounded-xl border border-white/[0.1] bg-white/[0.04] px-4 text-sm font-medium text-white/75 transition-colors hover:bg-white/[0.08] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/50"
               >
                 Import another
