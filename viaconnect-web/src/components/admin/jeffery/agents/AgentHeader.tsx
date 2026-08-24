@@ -11,9 +11,18 @@ import type { AgentHeartbeat, AgentRegistryRow } from "@/lib/agents/types";
 export interface AgentHeaderProps {
   registry: AgentRegistryRow;
   heartbeat: AgentHeartbeat | null;
+  /** Owns a cadence job that Run now can enqueue. */
+  hasOwnedCadenceJob?: boolean;
+  /** Has any real trigger (cadence, chain, OBRA). Grok-only seats are false. */
+  hasRunner?: boolean;
 }
 
-export default function AgentHeader({ registry, heartbeat }: AgentHeaderProps) {
+export default function AgentHeader({
+  registry,
+  heartbeat,
+  hasOwnedCadenceJob = false,
+  hasRunner = false,
+}: AgentHeaderProps) {
   const status = deriveStatus(heartbeat);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const Icon = ((Icons as unknown) as Record<string, IconType>)[registry.icon_name] ?? Icons.Circle;
@@ -23,6 +32,8 @@ export default function AgentHeader({ registry, heartbeat }: AgentHeaderProps) {
   const [runMsg, setRunMsg] = useState<string | null>(null);
 
   const isPaused = status === "paused";
+  const runDisabled = runBusy || isPaused || !hasOwnedCadenceJob;
+  const pauseDisabled = !hasRunner;
 
   const toggle = async () => {
     setBusy(true);
@@ -86,9 +97,16 @@ export default function AgentHeader({ registry, heartbeat }: AgentHeaderProps) {
           <button
             type="button"
             onClick={runNow}
-            disabled={runBusy || isPaused}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#2DA5A0]/15 text-[#2DA5A0] hover:bg-[#2DA5A0]/25 disabled:opacity-30"
-            title={isPaused ? "Resume agent before Run now" : "Enqueue primary task now"}
+            disabled={runDisabled}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#2DA5A0]/15 text-[#2DA5A0] hover:bg-[#2DA5A0]/25 disabled:opacity-30 min-h-[44px]"
+            title={
+              !hasOwnedCadenceJob
+                ? "No runner for this seat"
+                : isPaused
+                  ? "Resume agent before Run now"
+                  : "Enqueue primary task now"
+            }
+            aria-disabled={runDisabled}
           >
             {runBusy ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={1.5} />
@@ -100,11 +118,14 @@ export default function AgentHeader({ registry, heartbeat }: AgentHeaderProps) {
         {!confirmOpen ? (
           <button
             onClick={() => setConfirmOpen(true)}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium ${
+            disabled={pauseDisabled}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium min-h-[44px] disabled:opacity-30 ${
               isPaused
                 ? "bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25"
                 : "bg-white/5 text-white/70 hover:bg-white/10"
             }`}
+            title={pauseDisabled ? "No runner to pause" : isPaused ? "Resume this seat" : "Pause this seat"}
+            aria-disabled={pauseDisabled}
           >
             {isPaused ? (
               <>

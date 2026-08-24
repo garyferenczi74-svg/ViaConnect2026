@@ -3,14 +3,21 @@ import AgentCurrentTaskCard from "../AgentCurrentTaskCard";
 import AgentTaskQueueList from "../AgentTaskQueueList";
 import AgentActivityFeed from "../AgentActivityFeed";
 import AgentMetricsTiles from "../AgentMetricsTiles";
+import { resolveLastSyncState } from "@/lib/body-tracker/last-sync-state";
 import type { AgentPanelProps } from "./index";
 
 /**
- * Honest empty panel for Grok roster seats that have no ops row yet.
+ * Grok roster seats with an ACC ops row and no current work.
  * Metrics come only from live tasks. No invented heartbeats, tokens, or jobs.
  */
-export default function IdleRosterPanel({ tasks, events, registry }: AgentPanelProps) {
-  const primary = tasks.find((t) => t.task_status === "running") ?? tasks[0] ?? null;
+export default function IdleRosterPanel({ tasks, events, registry, heartbeat }: AgentPanelProps) {
+  const primary =
+    tasks.find((t) => t.task_status === "running" || t.task_status === "queued" || t.task_status === "blocked") ??
+    null;
+  const sync = resolveLastSyncState({
+    linked: true,
+    lastSyncAt: heartbeat?.last_heartbeat || null,
+  });
 
   return (
     <>
@@ -29,7 +36,10 @@ export default function IdleRosterPanel({ tasks, events, registry }: AgentPanelP
             <span className="text-[10px] uppercase tracking-wide text-white/50">Ops row</span>
           </div>
           <p className="text-sm text-white/70 mt-1" data-testid={`idle-ops-${registry.agent_id}`}>
-            No Command Center ops row. Idle until a real heartbeat or task exists.
+            Ops row present. Idle — no current work.
+          </p>
+          <p className="text-[10px] text-white/40 mt-1" data-testid={`idle-sync-${registry.agent_id}`}>
+            {sync.label}
           </p>
         </div>
       </div>

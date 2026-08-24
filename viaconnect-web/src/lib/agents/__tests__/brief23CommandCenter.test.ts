@@ -84,7 +84,7 @@ describe("Brief 23 Jeffery Command Center roster", () => {
 
   it("idle panel copy is honest and does not invent metrics", () => {
     const idle = read("src/components/admin/jeffery/agents/panels/IdleRosterPanel.tsx");
-    expect(idle).toContain("No Command Center ops row");
+    expect(idle).toContain("Ops row present. Idle — no current work.");
     expect(idle).toContain("AgentMetricsTiles");
     expect(idle).not.toMatch(/tokens24h\s*=\s*[1-9]/);
     expect(idle).not.toMatch(/value=\{?["']10["']\}?/);
@@ -98,8 +98,10 @@ describe("Brief 23 Jeffery Command Center roster", () => {
     expect(panel).toContain("no merge");
   });
 
-  it("ops ensure does not insert invented ultrathink seats", () => {
+  it("ops ensure inserts ACC seats only via Brief 27 ensureAccOpsRow", () => {
     const src = read("src/lib/jeffery/ops/heartbeats.ts");
-    expect(src).not.toMatch(/from\("ultrathink_agent_registry"\)\.insert/);
+    expect(src).toMatch(/ensureAccOpsRow/);
+    expect(src).not.toMatch(/security_advisor/);
+    expect(src).not.toMatch(/gordon/);
   });
 });

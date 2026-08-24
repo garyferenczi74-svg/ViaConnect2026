@@ -20,6 +20,16 @@ export default async function AgentsPage() {
   if (!profile || profile.role !== "admin") redirect("/");
 
   const registry = orderedRegistry();
+
+  try {
+    const { ensureAllAccOpsRowsPersisted } = await import(
+      "@/lib/agents/command-center-ingest"
+    );
+    await ensureAllAccOpsRowsPersisted();
+  } catch {
+    /* open */
+  }
+
   const [heartbeats, tasks] = await Promise.all([
     fetchHeartbeats(supabase),
     fetchCurrentTasks(supabase),

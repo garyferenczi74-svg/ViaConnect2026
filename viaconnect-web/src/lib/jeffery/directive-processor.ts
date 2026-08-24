@@ -138,7 +138,7 @@ export async function processDirective(directiveId: string): Promise<{ ok: boole
     title: `Directive Acknowledged: ${d.title}`,
     summary: `Jeffery received your directive and created a ${steps.length}-step plan.`,
     detail: { directiveId: d.id, steps, acknowledgment, scope: d.scope, priority: d.priority },
-    sourceAgent: "jeffery_directive_processor",
+    sourceAgent: "jeffery",
   }, client);
 
   // Also write a learning_log entry — directives are first-class teaching events
@@ -180,6 +180,24 @@ export async function processCommentDirective(
       directive_acknowledged: true,
       directive_acknowledged_at: new Date().toISOString(),
     });
+
+  try {
+    const { persistCommandCenterIngest } = await import(
+      "@/lib/agents/command-center-ingest"
+    );
+    await persistCommandCenterIngest({
+      agentRaw: "jeffery",
+      kind: "turn",
+      phase: "complete",
+      message: `Inline directive on message ${messageId}`,
+      title: "Jeffery comment directive",
+      correlationKey: commentId
+        ? `jeffery-comment:${commentId}`
+        : `jeffery-comment-msg:${messageId}`,
+    });
+  } catch {
+    /* open */
+  }
 
   if (commentId) {
     await update.eq("id", commentId);
