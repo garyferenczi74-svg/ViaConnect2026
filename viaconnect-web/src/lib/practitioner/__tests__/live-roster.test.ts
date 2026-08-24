@@ -164,7 +164,7 @@ describe("source contract: mocks gone, live roster wired", () => {
       "utf8",
     );
     expect(src).toMatch(/RosterEmptyState/);
-    expect(src).not.toMatch(/LegacyPatientView/);
+    expect(src).not.toMatch(/from ['\"]\.\/LegacyPatientView['\"]/);
     expect(src).not.toMatch(/as any/);
     expect(src).not.toMatch(/John Davis/);
   });

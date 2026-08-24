@@ -9,7 +9,7 @@
 // for credential types that support naturopathic view (nd, dc, lac).
 //
 // Missing practitioner or relationship rows render an honest empty state.
-// LegacyPatientView is not used as a staged-PHI fallback.
+// The retired staged chart is not used as a fallback.
 
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
