@@ -82,7 +82,8 @@ describe('Brief 24 BOS contributor honesty', () => {
     const route = read('src/app/api/bos/current/route.ts');
     expect(display).toContain('isRealWearableContributor');
     expect(display).toContain('Linked-only is not enough');
-    expect(`${display}\n${route}`).not.toMatch(/invent Connected/);
+    expect(display).not.toMatch(/label:\s*['"]Connected['"]/);
+    expect(route).not.toMatch(/status:\s*['"]connected['"]/);
     expect(read('src/components/body-tracker/connections/ScoreDetailPanel.tsx')).toContain(
       'UNKNOWN',
     );
