@@ -42,8 +42,8 @@ interface ChallengeCardProps {
   description: string;
   helix: number;
   active: boolean;
-  progress: number;
-  participants: number;
+  progress: number | null;
+  participants: number | null;
   index?: number;
 }
 
@@ -57,12 +57,13 @@ export function ChallengeCard({
   participants,
   index = 0,
 }: ChallengeCardProps) {
-  // Generate participant avatars
-  const avatarColors = ['#2DA5A0', '#B75E18', '#FFD700', '#C0C0C0', '#8B5CF6', '#F472B6'];
-  const showAvatars = Math.min(participants, 4);
-  const overflow = participants - showAvatars;
-
   const ChIcon = CHALLENGE_ICONS[type] || Footprints;
+  const progressLabel =
+    typeof progress === 'number' && Number.isFinite(progress) ? `${progress}%` : 'Not enough data';
+  const joinedLabel =
+    typeof participants === 'number' && Number.isFinite(participants)
+      ? `${participants} joined`
+      : 'Not enough data';
 
   return (
     <motion.div
@@ -92,7 +93,7 @@ export function ChallengeCard({
         >
           {active ? (
             <>
-              <Activity size={10} strokeWidth={2} className="text-[#2DA5A0]" />
+              <Activity size={10} strokeWidth={1.5} className="text-[#2DA5A0]" />
               LIVE
             </>
           ) : (
@@ -108,41 +109,27 @@ export function ChallengeCard({
       <h3 className="text-[16px] font-extrabold text-white mb-1">{title}</h3>
       <p className="text-xs text-white/50 mb-4 line-clamp-2">{description}</p>
 
-      {/* Progress bar */}
+      {/* Progress bar: only a percent from a real participant row */}
       <div className="mb-4">
         <div className="flex justify-between text-[10px] mb-1.5">
           <span className="text-white/40 font-semibold uppercase tracking-wider">Progress</span>
-          <span className="text-[#2DA5A0] font-bold">{progress}%</span>
+          <span className="text-[#2DA5A0] font-bold">{progressLabel}</span>
         </div>
         <div className="w-full h-2 rounded-full bg-white/[0.06] overflow-hidden">
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
-            transition={{ delay: index * 0.1 + 0.4, duration: 1.2, ease: 'easeOut' }}
-            className="h-full rounded-full bg-gradient-to-r from-[#2DA5A0] to-[#35bdb7]"
-          />
+          {typeof progress === 'number' ? (
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${progress}%` }}
+              transition={{ delay: index * 0.1 + 0.4, duration: 1.2, ease: 'easeOut' }}
+              className="h-full rounded-full bg-gradient-to-r from-[#2DA5A0] to-[#35bdb7]"
+            />
+          ) : null}
         </div>
       </div>
 
-      {/* Bottom: avatars + reward */}
+      {/* Bottom: real joined count, never invented avatars */}
       <div className="flex items-center justify-between">
-        {/* Stacked avatars */}
-        <div className="flex -space-x-2">
-          {Array.from({ length: showAvatars }, (_, i) => (
-            <div
-              key={i}
-              className="w-7 h-7 rounded-full border-2 border-[rgba(26,39,68,0.55)] flex items-center justify-center text-[9px] font-bold text-white"
-              style={{ background: avatarColors[i % avatarColors.length] }}
-            >
-              {String.fromCharCode(65 + i)}
-            </div>
-          ))}
-          {overflow > 0 && (
-            <div className="w-7 h-7 rounded-full border-2 border-[rgba(26,39,68,0.55)] bg-white/10 flex items-center justify-center text-[9px] font-bold text-white/50">
-              +{overflow}
-            </div>
-          )}
-        </div>
+        <span className="text-[11px] font-semibold text-white/40">{joinedLabel}</span>
 
         {/* Reward */}
         <div className="flex items-center gap-1">

@@ -1,147 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import type { IconType } from '@/types/icon';
 import Link from 'next/link';
-import {
-  ArrowLeft,
-  Settings,
-  Trash2,
-  Eye,
-  Unplug,
-  RotateCcw,
-  Plus,
-  Leaf,
-  Bike,
-  Dna,
-  CheckCircle,
-  AlertTriangle,
-} from 'lucide-react';
-
-/* ------------------------------------------------------------------ */
-/*  Mock data                                                         */
-/* ------------------------------------------------------------------ */
-
-interface AppConnection {
-  id: string;
-  name: string;
-  icon: IconType;
-  status: 'connected' | 'error';
-  lastSync: string;
-  dataTypes: string[];
-}
-
-const apps: AppConnection[] = [
-  {
-    id: 'myfitnesspal',
-    name: 'MyFitnessPal',
-    icon: Leaf,
-    status: 'connected',
-    lastSync: '1 hr ago',
-    dataTypes: ['nutrition', 'calories', 'macros'],
-  },
-  {
-    id: 'strava',
-    name: 'Strava',
-    icon: Bike,
-    status: 'connected',
-    lastSync: 'today',
-    dataTypes: ['workouts', 'activities'],
-  },
-];
-
-/* ------------------------------------------------------------------ */
-/*  Sub-components                                                    */
-/* ------------------------------------------------------------------ */
-
-function StatusDot({ status }: { status: 'connected' | 'error' }) {
-  return (
-    <span
-      className={`inline-block h-2 w-2 rounded-full ${
-        status === 'connected' ? 'bg-emerald-400' : 'bg-amber-400'
-      }`}
-    />
-  );
-}
-
-function DataPill({ label }: { label: string }) {
-  return (
-    <span className="inline-block rounded-full px-2 py-0.5 text-[11px] font-medium text-white/90 bg-[#2DA5A0]/30 border border-[#2DA5A0]/40">
-      {label}
-    </span>
-  );
-}
-
-function DeviceCard({
-  icon: Icon,
-  name,
-  status,
-  lastSync,
-  dataTypes,
-  onDisconnect,
-  onRetry,
-}: {
-  icon: IconType;
-  name: string;
-  status: 'connected' | 'error';
-  lastSync: string;
-  dataTypes: string[];
-  onDisconnect: () => void;
-  onRetry?: () => void;
-}) {
-  return (
-    <div className="glass-v2 flex items-start gap-4 p-4 rounded-2xl">
-      {/* Icon */}
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10">
-        <Icon className="w-5 h-5 text-white/70" strokeWidth={1.5} />
-      </div>
-
-      {/* Center info */}
-      <div className="flex-1 min-w-0 space-y-1.5">
-        <p className="font-semibold text-white">{name}</p>
-
-        <p className="flex items-center gap-1.5 text-sm">
-          <StatusDot status={status} />
-          {status === 'connected' ? (
-            <span className="text-white/60">Connected · Synced {lastSync}</span>
-          ) : (
-            <span className="text-amber-300 inline-flex items-center gap-1"><AlertTriangle className="w-3 h-3" strokeWidth={1.5} /> Sync error; Last: {lastSync}</span>
-          )}
-        </p>
-
-        <div className="flex flex-wrap gap-1.5">
-          {dataTypes.map((dt) => (
-            <DataPill key={dt} label={dt} />
-          ))}
-        </div>
-      </div>
-
-      {/* Actions */}
-      <div className="flex shrink-0 items-center gap-2">
-        {status === 'error' && onRetry && (
-          <button
-            onClick={onRetry}
-            className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-amber-300 hover:bg-amber-400/10 transition-colors"
-          >
-            <RotateCcw size={14} />
-            Retry
-          </button>
-        )}
-        <button className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-white/60 hover:bg-white/5 transition-colors">
-          <Settings size={14} />
-          Settings
-        </button>
-        <button
-          onClick={onDisconnect}
-          className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-red-400 hover:bg-red-400/10 transition-colors"
-        >
-          <Unplug size={14} />
-          Disconnect
-        </button>
-      </div>
-    </div>
-  );
-}
+import { ArrowLeft, Plus } from 'lucide-react';
 
 function SectionLink({ href, label }: { href: string; label: string }) {
   return (
@@ -149,34 +9,21 @@ function SectionLink({ href, label }: { href: string; label: string }) {
       href={href}
       className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-[#2DA5A0] hover:text-[#2DA5A0]/80 transition-colors"
     >
-      <Plus size={16} />
+      <Plus size={16} strokeWidth={1.5} />
       {label}
     </Link>
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  Page                                                              */
-/* ------------------------------------------------------------------ */
-
 export default function ManageConnectionsPage() {
-  const [appList, setAppList] = useState(apps);
-
-  function handleDisconnect(id: string, label: string) {
-    if (window.confirm(`Disconnect ${label}? You can reconnect later.`)) {
-      setAppList((prev) => prev.filter((item) => item.id !== id));
-    }
-  }
-
   return (
     <div className="space-y-8">
-      {/* Header */}
       <div>
         <Link
           href="/plugins"
           className="inline-flex items-center gap-1.5 text-sm text-white/50 hover:text-white/70 transition-colors mb-4"
         >
-          <ArrowLeft size={16} />
+          <ArrowLeft size={16} strokeWidth={1.5} />
           Back to Plugin Hub
         </Link>
         <h1 className="text-2xl font-bold" style={{ color: '#B75E18' }}>
@@ -184,7 +31,6 @@ export default function ManageConnectionsPage() {
         </h1>
       </div>
 
-      {/* Wearables live on Connections. This page must not invent last-sync. */}
       <section className="space-y-3">
         <p className="text-overline">WEARABLES</p>
         <Link
@@ -195,75 +41,29 @@ export default function ManageConnectionsPage() {
         </Link>
       </section>
 
-      {/* -------- APPS -------- */}
       <section className="space-y-3">
         <p className="text-overline">APPS</p>
-
-        {appList.map((a) => (
-          <DeviceCard
-            key={a.id}
-            icon={a.icon}
-            name={a.name}
-            status={a.status}
-            lastSync={a.lastSync}
-            dataTypes={a.dataTypes}
-            onDisconnect={() => handleDisconnect(a.id, a.name)}
-          />
-        ))}
-
-        <SectionLink href="/plugins" label="Connect Another App" />
+        <div className="glass-v2 rounded-2xl p-4 text-sm text-white/70">
+          Not connected. App status comes from last sync only. This page does not invent app rows.
+        </div>
+        <SectionLink href="/plugins/apps" label="Open Apps" />
       </section>
 
-      {/* -------- LABS -------- */}
       <section className="space-y-3">
         <p className="text-overline">LABS</p>
-
-        <div className="glass-v2 flex items-start gap-4 p-4 rounded-2xl">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10">
-            <Dna className="w-5 h-5 text-white/70" strokeWidth={1.5} />
-          </div>
-          <div className="flex-1 min-w-0 space-y-1">
-            <p className="font-semibold text-white">Lab Report, March 15, 2026</p>
-            <p className="text-sm text-emerald-400 inline-flex items-center gap-1"><CheckCircle className="w-3.5 h-3.5" strokeWidth={1.5} /> 23 biomarkers extracted</p>
-            <p className="text-sm text-white/50">Source: Quest Diagnostics</p>
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <button className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-[#2DA5A0] hover:bg-[#2DA5A0]/10 transition-colors">
-              <Eye size={14} />
-              View
-            </button>
-            <button className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-red-400 hover:bg-red-400/10 transition-colors">
-              <Trash2 size={14} />
-              Delete
-            </button>
-          </div>
+        <div className="glass-v2 rounded-2xl p-4 text-sm text-white/70">
+          Not enough data. Lab reports appear after a real upload. This page does not invent lab rows.
         </div>
-
-        <SectionLink href="/plugins" label="Upload New Lab Report" />
+        <SectionLink href="/plugins/labs" label="Upload New Lab Report" />
       </section>
 
-      {/* -------- GENETIC DATA IMPORTS -------- */}
       <section className="space-y-3">
         <p className="text-overline">GENETIC DATA IMPORTS</p>
-
-        <div className="glass-v2 flex items-start gap-4 p-4 rounded-2xl">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10">
-            <Dna className="w-5 h-5 text-white/70" strokeWidth={1.5} />
-          </div>
-          <div className="flex-1 min-w-0 space-y-1">
-            <p className="font-semibold text-white">23andMe Raw Data Import</p>
-            <p className="text-sm text-emerald-400 inline-flex items-center gap-1"><CheckCircle className="w-3.5 h-3.5" strokeWidth={1.5} /> Processed; 612,000 SNPs</p>
-            <p className="text-sm text-white/50">Imported: February 20, 2026</p>
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <button className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-red-400 hover:bg-red-400/10 transition-colors">
-              <Trash2 size={14} />
-              Delete
-            </button>
-          </div>
+        <div className="glass-v2 rounded-2xl p-4 text-sm text-white/70">
+          Not analyzed. Imports appear after a real file is processed. This page does not invent SNP counts.
         </div>
+        <SectionLink href="/genetics/upload" label="Upload genetic data" />
       </section>
-
     </div>
   );
 }

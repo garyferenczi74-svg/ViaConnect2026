@@ -103,9 +103,10 @@ import type {
 } from '@/components/body-tracker/HoverSystem/types';
 import { CHANGE_THRESHOLD } from '@/lib/body-tracker/heatmap-colors';
 import {
-  getOvalColorFromChange,
+  ovalStatusesFromExistingChange,
   type OvalColor,
 } from '@/lib/body-tracker/heatmap-colors';
+import { isJourneyCompositionPoint } from '@/lib/body-tracker/composition/journeyPoints';
 import {
   CompositionSectionToggle,
   type CompositionSection,
@@ -435,8 +436,15 @@ function CompositionPageInner() {
   // engine. Honest-disabled when no first scan exists. Comparison takes priority
   // over Future Self ghost when enabled so both do not fight for the seam.
   const [comparisonOverlayOn, setComparisonOverlayOn] = useState(false);
+  // Prompt 210l: Time Machine / clip / first-scan ghost exclude weight-only dates
+  // (e.g. May 8/12/21). Body Fat / Muscle Mass cards stay on useLatestComposition.
+  const journeySnapshots = useMemo(
+    () => composHistory.snapshots.filter(isJourneyCompositionPoint),
+    [composHistory.snapshots],
+  );
+
   const firstScanVector = useMemo<BodyParamVector | null>(() => {
-    const first = composHistory.first;
+    const first = journeySnapshots[0] ?? null;
     if (!first) return null;
     return scanToParamVector({
       snapshot: first,
@@ -444,7 +452,7 @@ function CompositionPageInner() {
       sex: gender,
       unit,
     });
-  }, [composHistory.first, circHistory.first, gender, unit]);
+  }, [journeySnapshots, circHistory.first, gender, unit]);
   const effectiveGhostVector =
     comparisonOverlayOn && firstScanVector ? firstScanVector : ghostVector;
   const effectiveShowGhost =
@@ -468,7 +476,7 @@ function CompositionPageInner() {
 
   const journeyVectors = useMemo<BodyParamVector[]>(
     () =>
-      composHistory.snapshots.map((snap, i) => {
+      journeySnapshots.map((snap, i) => {
         const circ =
           circByDate.get(snap.recordedAt)?.measurements ??
           circHistory.entries[i]?.measurements ??
@@ -480,12 +488,12 @@ function CompositionPageInner() {
           unit,
         });
       }),
-    [composHistory.snapshots, circByDate, circHistory.entries, gender, unit],
+    [journeySnapshots, circByDate, circHistory.entries, gender, unit],
   );
 
   const journeyReadouts = useMemo<JourneyScanReadout[]>(
     () =>
-      composHistory.snapshots.map((snap, i) => {
+      journeySnapshots.map((snap, i) => {
         const circ =
           circByDate.get(snap.recordedAt)?.measurements ??
           circHistory.entries[i]?.measurements ??
@@ -496,7 +504,7 @@ function CompositionPageInner() {
           waist: circ?.waist ?? null,
         };
       }),
-    [composHistory.snapshots, circByDate, circHistory.entries],
+    [journeySnapshots, circByDate, circHistory.entries],
   );
   // === PROMPT 210b P3-T2b (Time Machine) END ===
 
@@ -507,8 +515,8 @@ function CompositionPageInner() {
   // which carries no confidence), so it is passed as null (honest UNKNOWN): the
   // low-confidence warning treats UNKNOWN as not-low and never fabricates a tier.
   const clipScans = useMemo<ClipScanRef[]>(
-    () => composHistory.snapshots.map((snap) => ({ recordedAt: snap.recordedAt, confidence: null })),
-    [composHistory.snapshots],
+    () => journeySnapshots.map((snap) => ({ recordedAt: snap.recordedAt, confidence: null })),
+    [journeySnapshots],
   );
 
   // Reads the live avatar canvas from the container by its canonical data-testid.
@@ -713,23 +721,11 @@ function CompositionPageInner() {
   // yellow (the change hooks already return that for a null change), so the
   // oval matches the change-based trend on the callout card.
   const fatRegionStatuses: Record<string, OvalColor> = useMemo(
-    () =>
-      Object.fromEntries(
-        BODY_PARTS.map((p) => [
-          p.key,
-          getOvalColorFromChange(fatChange.data[p.key]?.change ?? null, 'fat'),
-        ]),
-      ),
+    () => ovalStatusesFromExistingChange(fatChange.data, 'fat'),
     [fatChange.data],
   );
   const muscleRegionStatuses: Record<string, OvalColor> = useMemo(
-    () =>
-      Object.fromEntries(
-        BODY_PARTS.map((p) => [
-          p.key,
-          getOvalColorFromChange(muscleChange.data[p.key]?.change ?? null, 'muscle'),
-        ]),
-      ),
+    () => ovalStatusesFromExistingChange(muscleChange.data, 'muscle'),
     [muscleChange.data],
   );
 
@@ -1109,9 +1105,15 @@ function CompositionPageInner() {
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <BodyFatReadout
             latestBodyFatPct={composHistory.latest?.totalBodyFatPct ?? null}
+            estimatedBodyFatMin={composHistory.latest?.estimatedBodyFatMin ?? null}
+            estimatedBodyFatMax={composHistory.latest?.estimatedBodyFatMax ?? null}
             bodyFat={vrDeltas.bodyFat}
-            firstScanDate={composHistory.first?.recordedAt ?? null}
-            latestScanDate={composHistory.latest?.recordedAt ?? null}
+            firstScanDate={journeySnapshots[0]?.recordedAt ?? null}
+            latestScanDate={
+              journeySnapshots[journeySnapshots.length - 1]?.recordedAt ??
+              composHistory.latest?.recordedAt ??
+              null
+            }
           />
           <NotableChanges deltas={vrDeltas} />
         </div>

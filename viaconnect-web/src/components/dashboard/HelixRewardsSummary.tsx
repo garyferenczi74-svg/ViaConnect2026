@@ -9,6 +9,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Flame, Hexagon, Sparkles } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { reportSupabaseError } from '@/lib/utils/schema-drift';
+import { helixTierFromPoints, type HelixDisplayTier } from '@/lib/helix/tier-display';
 
 interface HelixRewardsSummaryProps {
   totalPoints: number;
@@ -16,7 +17,7 @@ interface HelixRewardsSummaryProps {
   longestStreak?: number;
 }
 
-type TierName = 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | 'Diamond';
+type TierName = HelixDisplayTier;
 
 interface TierStyle {
   bg: string;
@@ -31,33 +32,6 @@ const TIER_STYLES: Record<TierName, TierStyle> = {
   Gold:     { bg: 'bg-yellow-500/15', border: 'border-yellow-500/30', text: 'text-yellow-400', multiplier: 2 },
   Platinum: { bg: 'bg-cyan-400/10',   border: 'border-cyan-400/30',   text: 'text-cyan-300',   multiplier: 5 },
   Diamond:  { bg: 'bg-purple-400/10', border: 'border-purple-400/30', text: 'text-purple-300', multiplier: 5 },
-};
-
-const TIER_THRESHOLDS: { name: TierName; min: number }[] = [
-  { name: 'Bronze',   min: 0 },
-  { name: 'Silver',   min: 500 },
-  { name: 'Gold',     min: 2000 },
-  { name: 'Platinum', min: 5000 },
-  { name: 'Diamond',  min: 10000 },
-];
-
-const tierForPoints = (points: number): { current: TierName; next: TierName | null; toNext: number; progressPct: number } => {
-  let current: TierName = 'Bronze';
-  let next: TierName | null = 'Silver';
-  let nextMin = 500;
-  let currentMin = 0;
-  for (let i = 0; i < TIER_THRESHOLDS.length; i++) {
-    if (points >= TIER_THRESHOLDS[i].min) {
-      current = TIER_THRESHOLDS[i].name;
-      currentMin = TIER_THRESHOLDS[i].min;
-      next = TIER_THRESHOLDS[i + 1]?.name ?? null;
-      nextMin = TIER_THRESHOLDS[i + 1]?.min ?? TIER_THRESHOLDS[i].min;
-    }
-  }
-  const span = Math.max(1, nextMin - currentMin);
-  const progressPct = next ? Math.min(100, Math.round(((points - currentMin) / span) * 100)) : 100;
-  const toNext = next ? Math.max(0, nextMin - points) : 0;
-  return { current, next, toNext, progressPct };
 };
 
 interface RecentActivity {
@@ -79,7 +53,7 @@ const formatActivityDate = (iso: string): string => {
 
 export function HelixRewardsSummary({ totalPoints, currentStreak, longestStreak = 0 }: HelixRewardsSummaryProps) {
   const [activity, setActivity] = useState<RecentActivity[]>([]);
-  const tierInfo = tierForPoints(totalPoints);
+  const tierInfo = helixTierFromPoints(totalPoints);
   const style = TIER_STYLES[tierInfo.current];
 
   useEffect(() => {
@@ -92,7 +66,7 @@ export function HelixRewardsSummary({ totalPoints, currentStreak, longestStreak 
         } = await supabase.auth.getUser();
         if (!user || cancelled) return;
 
-        const { data, error: readError } = await (supabase as any)
+        const { data, error: readError } = await supabase
           .from('helix_transactions')
           .select('id, description, amount, created_at, type')
           .eq('user_id', user.id)
@@ -106,12 +80,17 @@ export function HelixRewardsSummary({ totalPoints, currentStreak, longestStreak 
         }
         if (cancelled || !Array.isArray(data)) return;
         setActivity(
-          data.map((row: { id: string; description: string; amount: number; created_at: string }) => ({
-            id: row.id,
-            description: row.description || 'Activity',
-            points: row.amount || 0,
-            createdAt: row.created_at,
-          })),
+          data.flatMap((row) => {
+            if (typeof row.created_at !== 'string' || row.created_at.length === 0) return [];
+            return [
+              {
+                id: row.id,
+                description: row.description || 'Activity',
+                points: row.amount || 0,
+                createdAt: row.created_at,
+              },
+            ];
+          }),
         );
       } catch (err) {
         reportSupabaseError('helix.rewardsSummary.read', err, { table: 'helix_transactions' });

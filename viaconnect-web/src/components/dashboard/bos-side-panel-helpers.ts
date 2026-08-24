@@ -27,10 +27,8 @@ export function buildSidePanelHeadline(score: number): SidePanelHeadline {
 
 // -- Weekly delta chip -----------------------------------------------------
 //
-// Read-API gap acknowledged: BOSCurrentResponse does not currently carry
-// a weekly_delta field. When null is passed we render a placeholder
-// chip with flat polarity. When the read API adds weekly_delta this
-// helper consumes it directly.
+// weekly_delta is on BOSCurrentResponse. When null or non-finite, hide
+// the chip. Never print "-- pts" as if it were a real delta.
 
 export interface WeeklyDeltaChip {
   value: string;
@@ -40,9 +38,9 @@ export interface WeeklyDeltaChip {
 
 const FLAT_COLOR = '#A1A1AA';
 
-export function buildWeeklyDeltaChip(delta: number | null): WeeklyDeltaChip {
-  if (delta === null) {
-    return { value: '-- pts', polarity: 'flat', color: FLAT_COLOR };
+export function buildWeeklyDeltaChip(delta: number | null): WeeklyDeltaChip | null {
+  if (delta === null || !Number.isFinite(delta)) {
+    return null;
   }
   if (delta > 0) {
     return { value: `+${delta} pts`, polarity: 'up', color: '#22C55E' };
