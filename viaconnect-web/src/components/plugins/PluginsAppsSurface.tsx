@@ -82,7 +82,7 @@ export function PluginsAppsSurface() {
     <div className="w-full space-y-6 pb-16 pt-4">
       <header className="space-y-2">
         <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">Plugins</h1>
-        <p className="text-sm text-white/60" data-testid="plugins-subtitle">
+        <p className="text-sm text-[#2DA5A0]" data-testid="plugins-subtitle">
           {PLUGIN_PAGE_SUBTITLE}
         </p>
         <p className="text-xs text-white/40" data-testid="plugins-scope-line">
@@ -130,10 +130,10 @@ export function PluginsAppsSurface() {
       ) : (
         groups.map(({ category, cards: groupCards }) => (
           <section key={category} data-testid={`plugin-category-${category}`} className="space-y-3">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-white/50">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-[#2DA5A0]">
               {category}
             </h2>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 min-[1280px]:grid-cols-3">
+            <div className="flex flex-col gap-3">
               {groupCards.map((card) => (
                 <PluginAppCard
                   key={card.slug}

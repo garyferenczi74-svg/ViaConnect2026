@@ -222,8 +222,9 @@ export const PLUGIN_STATE_COPY = {
     return `Connected since ${new Date(iso).toLocaleDateString()}`;
   },
   lastSync: (relative: string) => `Last sync ${relative}`,
-  manage: 'Manage',
+  manage: 'Manage in Wearables Data',
   disconnect: 'Disconnect',
   connect: 'Connect',
   retry: 'Retry',
+  noActionYet: 'No action yet.',
 } as const;
