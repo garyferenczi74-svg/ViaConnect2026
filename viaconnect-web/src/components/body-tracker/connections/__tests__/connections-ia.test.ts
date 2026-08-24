@@ -52,6 +52,25 @@ describe('Connections IA contracts', () => {
     expect(plugins).toContain('redirect');
   });
 
+  it('ships XML ingest and keeps OAuth tiles honest without secrets', () => {
+    const model = src('src/lib/body-tracker/wearable-tiles.ts');
+    const whoop = src('src/lib/wearables/whoop/config.ts');
+    const oura = src('src/lib/wearables/oura/config.ts');
+    const env = src('.env.example');
+    const envLocal = src('.env.local.example');
+    expect(model).toContain("action: 'xml_upload'");
+    expect(model).toContain('isOAuthConnected');
+    expect(whoop + oura).not.toMatch(/YOUR_|changeme|dummy.?id|placeholder.?id/i);
+    expect(whoop).not.toMatch(/WHOOP_CLIENT_ID\s*=\s*['"][^'"]+['"]/);
+    expect(oura).not.toMatch(/OURA_CLIENT_ID\s*=\s*['"][^'"]+['"]/);
+    expect(env).toMatch(/^WHOOP_CLIENT_ID=\s*$/m);
+    expect(env).toMatch(/^OURA_CLIENT_ID=\s*$/m);
+    expect(envLocal).toMatch(/^WHOOP_CLIENT_ID=\s*$/m);
+    expect(envLocal).toMatch(/^OURA_CLIENT_ID=\s*$/m);
+    expect(env + envLocal).not.toMatch(/WHOOP_CLIENT_ID=.+/);
+    expect(env + envLocal).not.toMatch(/OURA_CLIENT_ID=.+/);
+  });
+
   it('keeps Hume action as xml_upload in the tile model', () => {
     const model = src('src/lib/body-tracker/wearable-tiles.ts');
     expect(model).toContain("id: 'hume'");
