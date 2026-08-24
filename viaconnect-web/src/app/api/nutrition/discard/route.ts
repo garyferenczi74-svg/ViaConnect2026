@@ -63,6 +63,25 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Brief 3: pending analyze-text dual-writes meals. Delete those first so
+    // Discard cannot leave a visible meal on Today's Meals.
+    const { error: mealsDelErr } = await supabase
+      .from('meals')
+      .delete()
+      .eq('legacy_nutrition_log_id', logId)
+      .eq('user_id', user.id);
+    if (mealsDelErr) {
+      safeLog.error('api.nutrition.discard', 'linked meals delete failed', {
+        error: mealsDelErr.message,
+        userId: user.id,
+        logId,
+      });
+      return NextResponse.json(
+        { error: 'Could not discard. Your meal is still here.' },
+        { status: 500 },
+      );
+    }
+
     // Hard delete the row. .select() confirms a row was removed.
     const { data: deletedRows, error: delErr } = await supabase
       .from('nutrition_logs')

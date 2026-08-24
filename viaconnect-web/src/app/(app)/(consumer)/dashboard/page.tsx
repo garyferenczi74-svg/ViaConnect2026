@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import { useUserDashboardData } from '@/hooks/useUserDashboardData';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
-import { BOSCard } from '@/components/dashboard/bos-card';
+import { MorningCard } from '@/components/dashboard/morning-card/MorningCard';
 import { TodaysProtocol } from '@/components/dashboard/TodaysProtocol';
 import { DailyScoresPanel } from '@/components/dashboard/DailyScoresPanel';
 import { EngagementNudge } from '@/components/dashboard/EngagementNudge';
@@ -121,9 +121,9 @@ export default function ConsumerDashboard() {
           <DashboardHeader />
         </div>
 
-        {/* ── Bio Optimization Score Card (Prompt #162) ── */}
+        {/* ── Score-first morning card (Brief 1) ── */}
         <div className="mx-auto w-full max-w-7xl px-4 mb-8 md:px-6">
-          <BOSCard />
+          <MorningCard />
         </div>
 
         {/* All remaining content, image fades as overlay darkens */}

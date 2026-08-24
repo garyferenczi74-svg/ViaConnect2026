@@ -27,10 +27,19 @@ describe('lintInsightCopy', () => {
     expect(result.failures.some((f) => f.includes('15x'))).toBe(true);
   });
 
-  it('passes the verbatim 10x to 28x string', () => {
+  it('drops retired house fold ranges including 10x to 28x', () => {
     const result = lintInsightCopy(
       'Iron intake this week',
       'Foods rich in iron include lentils and spinach. Published comparisons cite 10x to 28x for the referenced delivery format.',
+      mkFact({ type: 'micronutrient_gap', horizon: 'weekly' }),
+    );
+    expect(result.ok).toBe(false);
+  });
+
+  it('passes Maximum Bioavailability', () => {
+    const result = lintInsightCopy(
+      'Iron intake this week',
+      'Foods rich in iron include lentils and spinach. Delivery uses Maximum Bioavailability.',
       mkFact({ type: 'micronutrient_gap', horizon: 'weekly' }),
     );
     expect(result.ok).toBe(true);

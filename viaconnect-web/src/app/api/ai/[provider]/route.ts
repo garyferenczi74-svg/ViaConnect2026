@@ -89,7 +89,7 @@ async function callClaude(
   const systemPrompt = [
     "You are a precision health AI assistant for ViaConnect GeneX360 by ViaConnect.",
     "Provide evidence-based clinical reasoning. Never diagnose; only suggest.",
-    "Bioavailability figure is 10x to 28x. Peptide strategy: retatrutide + tirzepatide only (no semaglutide).",
+    "Bioavailability is stated as Maximum Bioavailability. Do not use fold-number ranges. Peptide strategy: retatrutide + tirzepatide only (no semaglutide).",
     context ? `Context: ${JSON.stringify(context)}` : "",
   ]
     .filter(Boolean)
@@ -315,7 +315,7 @@ async function streamClaude(
   const systemPrompt = [
     "You are a precision health AI assistant for ViaConnect GeneX360 by ViaConnect.",
     "Provide evidence-based clinical reasoning. Never diagnose; only suggest.",
-    "Bioavailability figure is 10x to 28x. Peptide strategy: retatrutide + tirzepatide only (no semaglutide).",
+    "Bioavailability is stated as Maximum Bioavailability. Do not use fold-number ranges. Peptide strategy: retatrutide + tirzepatide only (no semaglutide).",
     context ? `Context: ${JSON.stringify(context)}` : "",
   ]
     .filter(Boolean)

@@ -44,7 +44,7 @@ const STANDING_RULES: StandingRuleCheck[] = [
   { rule: 'Lucide icons only (strokeWidth 1.5)', violated: false },
   { rule: 'Semaglutide excluded from all recommendations', violated: false },
   { rule: 'Retatrutide injectable-only, never stacked', violated: false },
-  { rule: 'Bioavailability stated as 10-27x only', violated: false },
+  { rule: 'Bioavailability stated as Maximum Bioavailability', violated: false },
   { rule: 'Mobile + Desktop developed simultaneously', violated: false },
   { rule: 'Bio Optimization score name (not Vitality)', violated: false },
   { rule: 'Helix Rewards isolated to Consumer portal only', violated: false },

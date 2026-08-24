@@ -33,6 +33,9 @@ function makeVariant(is_sample: boolean, panel: PanelKey = 'methylation'): Varia
     clinical_significance: null,
     severity: null,
     is_sample,
+    stored_panel_key: panel,
+    chip: is_sample ? 'demo' : 'result',
+    provenance: null,
   };
 }
 

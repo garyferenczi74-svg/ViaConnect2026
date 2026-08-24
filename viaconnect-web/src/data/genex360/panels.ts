@@ -4,7 +4,7 @@
 //
 // Standing rules honored: no em or en dashes anywhere; Via Cura is the only
 // consumer brand here and the legal manufacturing entity is never named on
-// this surface; bioavailability copy is locked at "10x to 28x"; the score is
+// this surface; bioavailability copy is locked at "Maximum Bioavailability"; the score is
 // named "Bio Optimization"; peptides are educational and practitioner facing only.
 //
 // markerCount on each panel is the real number of marker entries in its groups
@@ -191,7 +191,7 @@ export const GENEX360_PANELS: Panel[] = [
       "Direct integration with your Via Cura custom protocol.",
     ],
     protocolTieIn:
-      "GeneXM results feed directly into your Via Cura protocol. Where your variants slow a pathway, the protocol selects active, methylated nutrient forms delivered through the proprietary micellar and liposomal dual delivery system for 10x to 28x absorption, so the right cofactors actually reach the cells that need them. These genetic insights are also a foundational input to your Bio Optimization framework.",
+      "GeneXM results feed directly into your Via Cura protocol. Where your variants slow a pathway, the protocol selects active, methylated nutrient forms delivered through the proprietary micellar and liposomal dual delivery system for Maximum Bioavailability, so the right cofactors actually reach the cells that need them. These genetic insights are also a foundational input to your Bio Optimization framework.",
   },
   {
     slug: "nutrigen-dx",
@@ -407,7 +407,7 @@ export const GENEX360_PANELS: Panel[] = [
       "Seamless integration with your custom vitamin formulations.",
     ],
     protocolTieIn:
-      "NutrigenDX turns your nutrition genetics into a concrete plan. Your Via Cura protocol adjusts nutrient forms, doses, and food guidance to your absorption and metabolism profile, and routes priority nutrients through the dual delivery system for 10x to 28x absorption. Your nutrition genetics feed the Bio Optimization framework so progress is measurable over time.",
+      "NutrigenDX turns your nutrition genetics into a concrete plan. Your Via Cura protocol adjusts nutrient forms, doses, and food guidance to your absorption and metabolism profile, and routes priority nutrients through the dual delivery system for Maximum Bioavailability. Your nutrition genetics feed the Bio Optimization framework so progress is measurable over time.",
   },
   {
     slug: "hormone-iq",
@@ -645,7 +645,7 @@ export const GENEX360_PANELS: Panel[] = [
       "Available with a practitioner consult or a digital summary interpretation.",
     ],
     protocolTieIn:
-      "HormoneIQ pairs functional hormone data with the genes that explain it, then feeds both into your Via Cura protocol. Where clearance pathways need support, the protocol supplies the methyl donors, magnesium, and targeted nutrients that COMT and the estrogen pathways depend on, delivered for 10x to 28x absorption. The combined picture strengthens your Bio Optimization framework and your personalized strategy over time.",
+      "HormoneIQ pairs functional hormone data with the genes that explain it, then feeds both into your Via Cura protocol. Where clearance pathways need support, the protocol supplies the methyl donors, magnesium, and targeted nutrients that COMT and the estrogen pathways depend on, delivered for Maximum Bioavailability. The combined picture strengthens your Bio Optimization framework and your personalized strategy over time.",
   },
   {
     slug: "epigen-hq",
@@ -771,7 +771,7 @@ export const GENEX360_PANELS: Panel[] = [
       "Optional consultation with a Via Cura wellness advisor.",
     ],
     protocolTieIn:
-      "EpigenHQ is the panel your Via Cura protocol is built to move. Methyl donors, polyphenols, sleep and stress support, and metabolic nutrition are selected to nudge these markers in a favorable direction, delivered for 10x to 28x absorption. Because these markers respond to lifestyle, they become a living input to your Bio Optimization framework, giving you a before and after you can actually see.",
+      "EpigenHQ is the panel your Via Cura protocol is built to move. Methyl donors, polyphenols, sleep and stress support, and metabolic nutrition are selected to nudge these markers in a favorable direction, delivered for Maximum Bioavailability. Because these markers respond to lifestyle, they become a living input to your Bio Optimization framework, giving you a before and after you can actually see.",
   },
   {
     slug: "peptide-iq",
@@ -904,7 +904,7 @@ export const GENEX360_PANELS: Panel[] = [
       "Not associated with any peptide product for sale.",
     ],
     protocolTieIn:
-      "PeptideIQ is educational and practitioner facing. Where appropriate, your Via Cura protocol can emphasize repair supportive nutrition, collagen building cofactors, and recovery focused micronutrients delivered for 10x to 28x absorption, always within a foundation of nutrition, sleep, and training rather than any commercial peptide. The insights add depth to your Bio Optimization framework and recovery strategy.",
+      "PeptideIQ is educational and practitioner facing. Where appropriate, your Via Cura protocol can emphasize repair supportive nutrition, collagen building cofactors, and recovery focused micronutrients delivered for Maximum Bioavailability, always within a foundation of nutrition, sleep, and training rather than any commercial peptide. The insights add depth to your Bio Optimization framework and recovery strategy.",
   },
   {
     slug: "cannabis-iq",
@@ -1013,7 +1013,7 @@ export const GENEX360_PANELS: Panel[] = [
       "Informational only, not medical advice.",
     ],
     protocolTieIn:
-      "CannabisIQ is educational. Where relevant to general wellness, your Via Cura protocol can support healthy endocannabinoid tone through nutrition, omega-3 fats, stress recovery, and sleep, delivered for 10x to 28x absorption, independent of any cannabinoid use. The insights round out your Bio Optimization framework with a fuller picture of your individual chemistry.",
+      "CannabisIQ is educational. Where relevant to general wellness, your Via Cura protocol can support healthy endocannabinoid tone through nutrition, omega-3 fats, stress recovery, and sleep, delivered for Maximum Bioavailability, independent of any cannabinoid use. The insights round out your Bio Optimization framework with a fuller picture of your individual chemistry.",
   },
 ];
 

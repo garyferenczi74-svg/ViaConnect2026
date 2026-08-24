@@ -54,6 +54,11 @@ export interface BodyWireframeMaterial {
   setSegmentTints(colors: (THREE.Color | null)[]): void;
   // Cross-fade the overlay in (1) or out (0). At 0 the wireframe is pure teal.
   setOverlayMix(mix: number): void;
+  // Screen-space A/B wipe (Brief 2). mode 0 is off (byte-identical to today).
+  // mode 1 keeps fragments left of t (baseline); mode 2 keeps fragments right
+  // of t (current). viewportWidth is drawing-buffer pixels so gl_FragCoord.x
+  // lines up on retina. t is 0..1 from the left edge.
+  setWipe(mode: 0 | 1 | 2, t: number, viewportWidth: number): void;
   dispose(): void;
 }
 
@@ -140,6 +145,9 @@ const FRAGMENT_SHADER = /* glsl */ `
   uniform float uHighlightIntensity;
   uniform vec3 uSegmentTint[5];
   uniform float uOverlayMix;
+  uniform float uWipeMode;
+  uniform float uWipeT;
+  uniform float uViewportWidth;
 
   // Pick this fragment's segment tint from the 5-entry array by its rounded segment
   // index. GLSL ES 1 forbids dynamic array indexing, so select with a small chain.
@@ -161,6 +169,19 @@ const FRAGMENT_SHADER = /* glsl */ `
   }
 
   void main() {
+    // Screen-space A/B wipe. Off when uWipeMode is 0 so the current-body path
+    // is unchanged. Baseline (mode 1) keeps the left; current (mode 2) keeps
+    // the right. Discard is honest: no blend across the split, no fabricated
+    // in-between body.
+    if (uWipeMode > 0.5) {
+      float nx = gl_FragCoord.x / max(uViewportWidth, 1.0);
+      if (uWipeMode < 1.5) {
+        if (nx > uWipeT) discard;
+      } else {
+        if (nx < uWipeT) discard;
+      }
+    }
+
     // View direction for fresnel. In view space the eye sits at the origin, so
     // the direction from the surface to the eye is the negated position.
     vec3 viewDir = normalize(-vViewPos);
@@ -268,6 +289,10 @@ export function makeBodyWireframeMaterial(
     },
     // Overlay cross-fade, 0 by default (no tint, pure teal wireframe).
     uOverlayMix: { value: 0 },
+    // A/B wipe, off by default (mode 0). t 0.5 is a centered split when enabled.
+    uWipeMode: { value: 0 },
+    uWipeT: { value: 0.5 },
+    uViewportWidth: { value: 1 },
     // Model-space bounds, filled by the scene once the geometry is known so the
     // height normalization and scan band line up with the real mesh extent.
     uBoundsMin: { value: new THREE.Vector3(0, -1, 0) },
@@ -322,6 +347,15 @@ export function makeBodyWireframeMaterial(
     uniforms.uOverlayMix.value = Math.min(Math.max(mix, 0), 1);
   }
 
+  function setWipe(mode: 0 | 1 | 2, t: number, viewportWidth: number): void {
+    uniforms.uWipeMode.value = mode;
+    const clampedT = Number.isFinite(t) ? Math.min(Math.max(t, 0), 1) : 0.5;
+    uniforms.uWipeT.value = clampedT;
+    uniforms.uViewportWidth.value = Number.isFinite(viewportWidth)
+      ? Math.max(viewportWidth, 1)
+      : 1;
+  }
+
   function dispose(): void {
     material.dispose();
     if (ownsTexture) {
@@ -337,6 +371,7 @@ export function makeBodyWireframeMaterial(
     setHighlight,
     setSegmentTints,
     setOverlayMix,
+    setWipe,
     dispose,
   };
 }

@@ -3,8 +3,8 @@
 // Reuses the shared clinical claim linter (prescriptive, diagnostic,
 // curative, FDA phrasing, DSHEA window) and layers the 192 rules on top:
 //   1. Causal claim phrases on correlational insight types.
-//   2. Any bioavailability figure other than the locked verbatim
-//      "10x to 28x" (any digits plus x token outside that exact string).
+//   2. Any bioavailability fold-number. Locked phrase is
+//      "Maximum Bioavailability" (any digits plus x token is dropped).
 //   3. Product mention outside micronutrient_gap (the only type allowed a
 //      productSuggestion).
 //   4. Urgency and discount language.
@@ -25,7 +25,7 @@ const CORRELATIONAL_TYPES: ReadonlyArray<InsightFact['type']> = ['hydration_corr
 
 const CAUSAL_PHRASES = ['causes', 'because you drank', 'led to', 'resulted in'];
 
-const APPROVED_BIOAVAILABILITY = '10x to 28x';
+const APPROVED_BIOAVAILABILITY = 'Maximum Bioavailability';
 
 const URGENCY_RULES: Array<{ label: string; pattern: RegExp }> = [
   { label: 'act now', pattern: /\bact now\b/i },

@@ -222,7 +222,7 @@ describe('claudeComposer', () => {
     };
     await claudeComposer(client).compose(fact);
     expect(captured.max_tokens).toBeLessThanOrEqual(400);
-    expect(captured.system).toContain('10x to 28x');
+    expect(captured.system).toContain('Maximum Bioavailability');
     expect(captured.system).toContain('Never invent');
   });
 });

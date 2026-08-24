@@ -106,8 +106,11 @@ describe("MARSHALL.PRECHECK.BIOAVAILABILITY_COACHING", () => {
     const hits = await BIOAVAILABILITY_COACHING.evaluate("5-27x more bioavailable formulation");
     expect(hits.length).toBe(1);
   });
-  it("passes canonical 10-28x", async () => {
-    expect((await BIOAVAILABILITY_COACHING.evaluate("10-28x bioavailability")).length).toBe(0);
+  it("flags retired 10-28x house claim", async () => {
+    expect((await BIOAVAILABILITY_COACHING.evaluate("10-28x bioavailability")).length).toBe(1);
+  });
+  it("passes Maximum Bioavailability", async () => {
+    expect((await BIOAVAILABILITY_COACHING.evaluate("Maximum Bioavailability")).length).toBe(0);
   });
 });
 

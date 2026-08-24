@@ -29,6 +29,7 @@ export default function LogMealPage() {
   const [error, setError] = useState<string | null>(null);
   const [dictating, setDictating] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const usedDictationRef = useRef(false);
   const [speechSupported, setSpeechSupported] = useState(false);
 
   useEffect(() => {
@@ -47,6 +48,7 @@ export default function LogMealPage() {
       const transcript = Array.from(e.results)
         .map((r) => r[0].transcript)
         .join(' ');
+      usedDictationRef.current = true;
       setDescription((prev) => (prev ? `${prev} ${transcript}` : transcript));
     };
     recog.onend = () => setDictating(false);
@@ -84,6 +86,7 @@ export default function LogMealPage() {
           description: description.trim().slice(0, 2000),
           mealType,
           loggedAt: new Date(loggedAt).toISOString(),
+          mealCardSource: usedDictationRef.current ? 'dictation' : 'text',
         }),
       });
       if (!res.ok) {

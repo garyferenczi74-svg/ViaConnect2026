@@ -129,7 +129,7 @@ describe('Prompt 213a Hound Dog gate', () => {
   it('approves educational structure/function study', () => {
     const ok = evaluateHoundDogGate({
       title: 'NAD+ pathway nutrition education',
-      summary: 'Structure and function discussion of cellular energy. Bioavailability 10x to 28x when stated.',
+      summary: 'Structure and function discussion of cellular energy. Maximum Bioavailability when stated.',
       source_url: 'https://pubmed.ncbi.nlm.nih.gov/demo',
       source_type: 'clinical_study',
     });

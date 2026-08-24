@@ -6,8 +6,17 @@ const TIERS = {
   3: { label: "Precision Optimized", description: "Precision-tuned with your genetics, labs, and assessment", color: "bg-teal-400/15 border-teal-400/30 text-teal-400", score: 96, missing: [] },
 } as const;
 
-export function ProtocolConfidenceBadge({ tier }: { tier: 1 | 2 | 3 }) {
+export function ProtocolConfidenceBadge({
+  tier,
+  geneticsUploaded = false,
+}: {
+  tier: 1 | 2 | 3;
+  geneticsUploaded?: boolean;
+}) {
   const config = TIERS[tier];
+  const missing = geneticsUploaded
+    ? config.missing.filter((item) => !/genex360|genetic/i.test(item))
+    : config.missing;
   return (
     <div className={`rounded-xl p-4 md:p-5 border ${config.color}`}>
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -24,10 +33,10 @@ export function ProtocolConfidenceBadge({ tier }: { tier: 1 | 2 | 3 }) {
           <div className={`w-2.5 h-2.5 rounded-full ${tier >= 3 ? "bg-teal-400" : "bg-white/10"}`} />
         </div>
       </div>
-      {config.missing.length > 0 && (
+      {missing.length > 0 && (
         <div className="mt-3 pt-3 border-t border-white/5">
           <p className="text-[11px] text-white/25 mb-1.5">Improve your protocol:</p>
-          {config.missing.map((item, i) => (
+          {missing.map((item, i) => (
             <p key={i} className="text-xs text-white/30 flex items-center gap-1.5 mt-1">
               <span className="w-1 h-1 rounded-full bg-white/20 flex-shrink-0" />
               {item}

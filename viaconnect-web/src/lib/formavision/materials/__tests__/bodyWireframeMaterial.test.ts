@@ -132,6 +132,38 @@ describe('makeBodyWireframeMaterial', () => {
     m.dispose();
   });
 
+  it('A/B wipe uniforms default off so the current-body path is unchanged', () => {
+    const m = makeBodyWireframeMaterial();
+    expect(m.uniforms.uWipeMode.value).toBe(0);
+    expect(m.uniforms.uWipeT.value).toBe(0.5);
+    expect(m.uniforms.uViewportWidth.value).toBe(1);
+    m.dispose();
+  });
+
+  it('setWipe writes mode, clamped t, and a minimum viewport width of 1', () => {
+    const m = makeBodyWireframeMaterial();
+    m.setWipe(1, 0.25, 390);
+    expect(m.uniforms.uWipeMode.value).toBe(1);
+    expect(m.uniforms.uWipeT.value).toBe(0.25);
+    expect(m.uniforms.uViewportWidth.value).toBe(390);
+    m.setWipe(2, 4, 0);
+    expect(m.uniforms.uWipeMode.value).toBe(2);
+    expect(m.uniforms.uWipeT.value).toBe(1);
+    expect(m.uniforms.uViewportWidth.value).toBe(1);
+    m.setWipe(0, Number.NaN, Number.NaN);
+    expect(m.uniforms.uWipeMode.value).toBe(0);
+    expect(m.uniforms.uWipeT.value).toBe(0.5);
+    expect(m.uniforms.uViewportWidth.value).toBe(1);
+    m.dispose();
+  });
+
+  it('fragment shader discards on the wipe split when mode is on', () => {
+    const m = makeBodyWireframeMaterial();
+    expect(m.material.fragmentShader).toContain('uWipeMode');
+    expect(m.material.fragmentShader).toContain('discard');
+    m.dispose();
+  });
+
   it('is configured for additive transparent emissive rendering', () => {
     const m = makeBodyWireframeMaterial();
     expect(m.material.transparent).toBe(true);
