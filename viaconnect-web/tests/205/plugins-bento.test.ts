@@ -49,7 +49,9 @@ describe("Plugins Picasso IA honesty", () => {
     expect(join + card + registry).not.toContain("Last sync unknown");
     expect(registry).not.toMatch(/^\s*available:/m);
     expect(registry).not.toContain("Available");
-    expect(card).toContain("strokeWidth={1.5}");
+    expect(card + src("components/plugins/PluginVendorMark.tsx") + src("components/plugins/PluginsAppsSurface.tsx")).toContain(
+      "strokeWidth={1.5}",
+    );
     expect(join + card + registry).not.toMatch(/Semaglutide/i);
     expect(join).not.toMatch(/\bas any\b/);
     expect(card).not.toMatch(/\bas any\b/);
@@ -61,10 +63,37 @@ describe("Plugins Picasso IA honesty", () => {
     expect(registry).toContain(
       "No action yet. We enable Connect when the flow ships.",
     );
+    expect(registry).toContain("Manage in Wearables Data");
+    expect(registry).toContain("noActionYet: 'No action yet.'");
     expect(card).toContain("PLUGIN_COMING_SOON_ACTION");
     expect(card).toContain("isPluginConnectWired");
     expect(card).toContain("PLUGIN_STATE_COPY.manage");
     expect(card).toContain("PLUGIN_STATE_COPY.disconnect");
+    expect(card).toContain("PLUGIN_STATE_COPY.noActionYet");
+    expect(card).not.toMatch(/Coming soon<\/button/i);
+    expect(card).not.toMatch(/type="button"[^>]*>[\s\S]*PLUGIN_STATE_COPY.comingSoon/);
+  });
+
+  it("locks 390 vendor-mark anatomy and 1280 list layout", () => {
+    const card = src("components/plugins/PluginAppCard.tsx");
+    const surface = src("components/plugins/PluginsAppsSurface.tsx");
+    const mark = src("components/plugins/PluginVendorMark.tsx");
+    expect(card).toContain("PluginVendorMark");
+    expect(card).toContain("formatSyncedRelative");
+    expect(card).not.toContain("HeartPulse");
+    expect(card).not.toContain("grid-cols-");
+    expect(surface).toContain("flex flex-col gap-3");
+    expect(surface).not.toContain("sm:grid-cols-2");
+    expect(surface).not.toContain("min-[1280px]:grid-cols-3");
+    expect(mark).toContain("google_health");
+    expect(mark).toContain("myfitnesspal");
+    expect(mark).toContain("cronometer");
+    expect(mark).toContain("strava");
+    expect(mark).toContain("peloton");
+    expect(mark).toContain("headspace");
+    expect(mark).toContain("calm");
+    expect(mark).not.toMatch(/whoop|oura|hume|apple_health/i);
+    expect(mark).toContain("strokeWidth={1.5}");
   });
 
   it("contains no em-dash or en-dash characters on the plugins surface", () => {
