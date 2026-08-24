@@ -9,6 +9,7 @@ import {
   lockScoreDetailRows,
   ScoreDetailPanel,
 } from '@/components/body-tracker/connections/ScoreDetailPanel';
+import { METRIC_LABELS } from '@/lib/body-tracker/contributor-rows';
 import {
   APPLE_HEALTH_DROPZONE_COPY,
   BOS_UNKNOWN_NEVER_ZERO_COPY,
@@ -195,8 +196,13 @@ describe('Brief 26 Wearable Data 1280 lock', () => {
     expect(humeTile).not.toContain('data-apple-dropzone');
   });
 
-  it('BOS card is four dims UNKNOWN never 0 and keeps Helix Vitality Stability Symmetry off', () => {
-    expect(SCORE_DETAIL_DIMENSIONS).toEqual(['sleep', 'recovery', 'strain', 'metabolic']);
+  it('BOS ring is UNKNOWN never 0 and keeps Helix Vitality Stability Symmetry off', () => {
+    // The ring block still pins the honest empty-state composite. The old
+    // 4-dim SCORE_DETAIL_DIMENSIONS model still gates the ring's "named
+    // contributor" count internally (lockScoreDetailRows is unchanged), but
+    // it is no longer what renders per row -- Task 7 replaced the
+    // per-dimension row render with the 7-MetricKey ContributorColumn, so
+    // those row-level assertions below now describe the new model.
     expect(connectionsBosCompositeDisplay()).toEqual(CONNECTIONS_BOS_COMPOSITE);
     expect(CONNECTIONS_BOS_COMPOSITE.value).toBe('--');
     expect(CONNECTIONS_BOS_COMPOSITE.band).toBe('UNKNOWN');
@@ -205,7 +211,7 @@ describe('Brief 26 Wearable Data 1280 lock', () => {
     expect(CONNECTIONS_FOOTER).toBe('Bio Optimization Score uses these sources.');
 
     const locked = lockScoreDetailRows([]);
-    expect(locked.map((r) => r.dimension)).toEqual(['sleep', 'recovery', 'strain', 'metabolic']);
+    expect(locked.map((r) => r.dimension)).toEqual(SCORE_DETAIL_DIMENSIONS);
     expect(locked.every((r) => r.displayValue === 'UNKNOWN')).toBe(true);
     expect(locked.every((r) => r.value === null)).toBe(true);
 
@@ -213,17 +219,22 @@ describe('Brief 26 Wearable Data 1280 lock', () => {
       createElement(ScoreDetailPanel, { rows: [], lastUpdatedAt: null }),
     );
     expect(markup).toContain('Bio Optimization Score');
-    expect(markup).toContain('Sleep');
-    expect(markup).toContain('Recovery');
-    expect(markup).toContain('Strain');
-    expect(markup).toContain('Metabolic');
-    expect(markup).toContain('UNKNOWN');
     expect(markup).toContain('--');
     expect(markup).toContain(BOS_UNKNOWN_NEVER_ZERO_COPY);
     expect(markup).toContain(CONNECTIONS_FOOTER);
     expect(markup).not.toMatch(/Stability|Symmetry|Helix|Vitality/);
     expect(markup).not.toContain('>0<');
-    expect((markup.match(/UNKNOWN/g) ?? []).length).toBeGreaterThanOrEqual(5);
+
+    // Contributor column: all 7 MetricKeys render, cold, as "Connect your
+    // device" -- never a per-row UNKNOWN placeholder standing in for a
+    // value that was never measured.
+    for (const label of Object.values(METRIC_LABELS)) {
+      expect(markup).toContain(label);
+    }
+    expect((markup.match(/Connect your device/g) ?? []).length).toBe(7);
+    // The ring band + BOS_UNKNOWN_NEVER_ZERO_COPY still legitimately say
+    // UNKNOWN; the contributor rows no longer do.
+    expect(markup).toContain('UNKNOWN');
 
     const panel = src('src/components/body-tracker/connections/ScoreDetailPanel.tsx');
     expect(panel).not.toMatch(/Stability|Symmetry|Helix|Vitality/);

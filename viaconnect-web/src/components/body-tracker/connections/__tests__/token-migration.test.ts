@@ -9,6 +9,9 @@ describe('Prompt 230 token migration', () => {
     const files = [
       src('src/components/body-tracker/connections/WearableTileCard.tsx'),
       src('src/components/body-tracker/connections/ScoreDetailPanel.tsx'),
+      // Task 7 split the DISAGREE/Manual badge chrome (text-copper) out of
+      // ScoreDetailPanel.tsx and into ContributorColumn.tsx.
+      src('src/components/body-tracker/connections/ContributorColumn.tsx'),
     ].join('\n');
     for (const hex of ['#2DA5A0', '#B75E18', '#1A2744', '#1E3054']) {
       expect(files).not.toContain(hex);

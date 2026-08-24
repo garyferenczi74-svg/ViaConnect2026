@@ -73,6 +73,8 @@ export function ConnectionsSurface() {
   const [selectedId, setSelectedId] = useState<WearableTileView['id']>('apple_health');
   const [scoreDetail, setScoreDetail] = useState<DimensionSourceRow[]>([]);
   const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
+  // Task 8 attaches the dimension detail sheet to this without re-threading.
+  const [openMetric, setOpenMetric] = useState<string | null>(null);
   const [importIntent, setImportIntent] = useState<HealthXmlImportIntent | null>(null);
   const [consent, setConsent] = useState<'whoop' | 'oura' | null>(null);
   const [platform] = useState<'web' | 'ios' | 'android'>(() => {
@@ -177,7 +179,11 @@ export function ConnectionsSurface() {
             />
           ))}
         </div>
-        <ScoreDetailPanel rows={scoreDetail} lastUpdatedAt={lastUpdatedAt} />
+        <ScoreDetailPanel
+          rows={scoreDetail}
+          lastUpdatedAt={lastUpdatedAt}
+          onOpenDimension={setOpenMetric}
+        />
       </div>
 
       {/* Center column: Task 10 finalizes the 3-column grid. Mounted here for

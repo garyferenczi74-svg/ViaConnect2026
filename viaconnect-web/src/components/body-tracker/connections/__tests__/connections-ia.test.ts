@@ -30,7 +30,13 @@ describe('Connections IA contracts', () => {
   it('ships four tiles, XML Hume action, and BOS footer', () => {
     const surface = src('src/components/body-tracker/connections/ConnectionsSurface.tsx');
     const tile = src('src/components/body-tracker/connections/WearableTileCard.tsx');
-    const detail = src('src/components/body-tracker/connections/ScoreDetailPanel.tsx');
+    // Prompt 230 Task 7 split the per-dimension row render out of
+    // ScoreDetailPanel.tsx into ContributorColumn.tsx (the panel now just
+    // mounts it). DISAGREE / data-ring / strokeWidth chrome moved with it,
+    // so this honesty scan follows the code to its new file.
+    const detail =
+      src('src/components/body-tracker/connections/ScoreDetailPanel.tsx') +
+      src('src/components/body-tracker/connections/ContributorColumn.tsx');
     expect(surface).toContain('CONNECTIONS_FOOTER');
     expect(surface).toContain('min-[1280px]:grid-cols-2');
     expect(surface).not.toContain('Hume authorize');
@@ -55,10 +61,14 @@ describe('Connections IA contracts', () => {
     expect(detail).not.toMatch(/Vitality/);
     expect(detail).not.toMatch(/Stability|Symmetry|Helix/);
     expect(detail).toContain('DISAGREE');
-    expect(detail).toContain('Active');
     expect(detail).toContain('data-ring');
     expect(detail).toContain('strokeWidth={1.5}');
     expect(detail).toContain('Missing stays UNKNOWN, never 0.');
+    // The per-source "Active" badge (which source won a disagreement) moved
+    // to the Task 8 dimension detail sheet along with the rest of the
+    // per-source breakdown; is_active itself still drives it honestly.
+    const disagreement = src('src/lib/body-tracker/source-disagreement.ts');
+    expect(disagreement).toContain('is_active');
     expect(tile).toContain('Upload Apple Health XML');
     expect(surface).toContain("tile.id === 'hume' ? 'hume' : 'apple'");
     const disagree = src('src/lib/body-tracker/source-disagreement.ts');
