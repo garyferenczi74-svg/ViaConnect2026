@@ -6,7 +6,8 @@
 // Gary 2026-08-23: pills show observed GENEX360 counts with the unit that
 // matches the test. Aliases (GENEX-M, genex_m, genex-m, and peers) group onto
 // the matching pill. HormoneIQ and EpigenHQ read marker / clock tables, never
-// user_variants SNP length. 401 / error render as Unavailable (n/a), never 0.
+// user_variants SNP length. Fail / null / remap miss render as Unanalyzed,
+// never 0, never dishonest n/a as a number. MTHFR folate copy only via genex_m.
 // Marketing catalog sizes from the shop panel catalog are not used here.
 //
 // Standing rules honored: tokens only (Navy #1A2744, Card #1E3054, Teal
@@ -43,6 +44,8 @@ import {
   type ObservedPanelCount,
 } from '@/lib/genetics/observedPanelCounts';
 import { epigenMarkerByKey } from '@/lib/genetics/epigenMarkerMap';
+import { isMthfrFolateTarget, mayShowMthfrFolate } from '@/lib/genetics/mthfrFolate';
+import { protocolChangeLine } from '@/lib/genetics/protocolChangeLine';
 
 const PANEL_ID = 'your-variants-panel';
 const SUBTITLE =
@@ -180,8 +183,9 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
   const headerBadge = isLoading
     ? 'Loading'
     : resultsUnavailable || totalVariants === null
-      ? 'Unavailable'
+      ? 'Unanalyzed'
       : `${totalVariants} results`;
+  const protocolLine = protocolChangeLine(null);
 
   const hasHormoneMarkers = hormoneMarkers.length > 0;
   const hasEpigeneticMarkers = epigeneticMarkers.length > 0;
@@ -262,7 +266,7 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
                     isLoading
                       ? `${label} count loading`
                       : observed.status === 'unknown' || observed.count === null
-                        ? `${label} count unavailable`
+                        ? `${label} Unanalyzed`
                         : `${observed.count} ${observed.unit}`
                   }
                   className={`inline-flex min-w-[1.25rem] items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-medium tabular-nums ${
@@ -297,7 +301,7 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
             </p>
             <p className="text-[13px] leading-relaxed text-white/60">
               This is not an empty panel. We could not confirm a count, so the badge
-              shows n/a instead of 0.
+              shows Unanalyzed instead of 0.
             </p>
           </div>
         ) : showSnpList ? (
@@ -337,7 +341,11 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
                           <SeverityPill tier={row.severity} />
                         </span>
                       </div>
-                      {row.clinical_significance ? (
+                      {row.clinical_significance &&
+                      !(
+                        isMthfrFolateTarget(row.rsid, row.gene) &&
+                        !mayShowMthfrFolate(activePanel)
+                      ) ? (
                         <p className="mt-2 text-[13px] leading-relaxed text-white/60">
                           {row.clinical_significance}
                         </p>
@@ -439,6 +447,10 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
           </div>
         )}
       </div>
+
+      {protocolLine ? (
+        <p className="mt-3 text-[13px] leading-relaxed text-white/55">{protocolLine}</p>
+      ) : null}
 
       <div className="mt-4">
         <PanelDisclaimer slug={activePanelSlug} />

@@ -58,6 +58,17 @@ export function groupVariantsByObservedPanel<TVariant extends { panel_key: strin
   return grouped;
 }
 
+/** Rows whose panel_key did not remap. Those are Unanalyzed, never 0. */
+export function countUnmappedVariantRows<TVariant extends { panel_key: string }>(
+  rows: TVariant[],
+): number {
+  let count = 0;
+  for (const row of rows) {
+    if (!normalizeObservedPanelKey(row.panel_key)) count += 1;
+  }
+  return count;
+}
+
 export function countDistinctEpigeneticMarkers(
   markerKeys: Array<string | null | undefined>,
 ): number {
@@ -140,11 +151,27 @@ export function buildHubVariantsPayload<TVariant extends { panel_key: string }>(
     : (args.epigeneticRows ?? []).filter((row) => row.markerKey.trim().length > 0);
 
   const snpCounts: Partial<Record<PanelKey, number | null>> = {};
+  const unmappedCount = args.variantsReadFailed
+    ? 0
+    : countUnmappedVariantRows(args.variantRows ?? []);
+  let anyMappedSnp = false;
   for (const key of PANEL_KEYS) {
     if (!SNP_COUNT_PANELS.has(key)) continue;
-    snpCounts[key] = args.variantsReadFailed
-      ? null
-      : (variantsByPanel[key] ?? []).length;
+    if ((variantsByPanel[key] ?? []).length > 0) anyMappedSnp = true;
+  }
+  const allRemapMiss =
+    !args.variantsReadFailed &&
+    unmappedCount > 0 &&
+    !anyMappedSnp &&
+    (args.variantRows ?? []).length > 0;
+
+  for (const key of PANEL_KEYS) {
+    if (!SNP_COUNT_PANELS.has(key)) continue;
+    if (args.variantsReadFailed || allRemapMiss) {
+      snpCounts[key] = null;
+      continue;
+    }
+    snpCounts[key] = (variantsByPanel[key] ?? []).length;
   }
 
   const observedByPanel = mergeObservedByPanel({
