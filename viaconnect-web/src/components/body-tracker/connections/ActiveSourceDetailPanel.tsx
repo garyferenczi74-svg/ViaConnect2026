@@ -59,9 +59,10 @@ function feedsBlock(tile: WearableTileView) {
 
 interface ActiveSourceDetailPanelProps {
   tile: WearableTileView | null;
+  onImported?: () => void;
 }
 
-export function ActiveSourceDetailPanel({ tile }: ActiveSourceDetailPanelProps) {
+export function ActiveSourceDetailPanel({ tile, onImported }: ActiveSourceDetailPanelProps) {
   // Rules-of-hooks: useHealthXmlImport (and the dropzone's local state) must
   // be called unconditionally, every render, regardless of which branch of
   // the tile ends up rendering below. Only the file-source branch uses the
@@ -72,7 +73,7 @@ export function ActiveSourceDetailPanel({ tile }: ActiveSourceDetailPanelProps) 
   const copy = HEALTH_XML_IMPORT_COPY[intent];
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [dragActive, setDragActive] = useState(false);
-  const { phase, errorMsg, result, runImport, reset } = useHealthXmlImport(intent);
+  const { phase, errorMsg, result, runImport, reset } = useHealthXmlImport(intent, onImported);
 
   const onDrop = useCallback(
     (e: React.DragEvent<HTMLDivElement>) => {

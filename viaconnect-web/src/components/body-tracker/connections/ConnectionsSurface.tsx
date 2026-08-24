@@ -181,8 +181,12 @@ export function ConnectionsSurface() {
       </div>
 
       {/* Center column: Task 10 finalizes the 3-column grid. Mounted here for
-          now so the selected-tile detail is live and tested. */}
-      <ActiveSourceDetailPanel tile={selectedTile} />
+          now so the selected-tile detail is live and tested. key= forces a
+          remount on source switch so useHealthXmlImport's phase/result never
+          leaks from one source's completed import onto another source's
+          panel. onImported=load refreshes the left-column tiles after an
+          inline import completes, matching the modal's onImported path. */}
+      <ActiveSourceDetailPanel key={selectedTile?.id ?? 'none'} tile={selectedTile} onImported={load} />
 
       <p className="text-center text-xs text-white/40">{CONNECTIONS_FOOTER}</p>
 

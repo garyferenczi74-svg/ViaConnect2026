@@ -1,5 +1,7 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { describe, expect, it, vi } from 'vitest';
 vi.mock('react-hot-toast', () => ({ default: { success: () => undefined, error: () => undefined } }));
 vi.mock('@/lib/supabase/client', () => ({ createClient: () => ({}) }));
@@ -24,5 +26,19 @@ describe('ActiveSourceDetailPanel', () => {
   it('prompts to pick a source when nothing is selected', () => {
     const m = renderToStaticMarkup(createElement(ActiveSourceDetailPanel, { tile: null }));
     expect(m).toContain('data-detail-source="none"');
+  });
+  it('ConnectionsSurface keys the panel per source and refreshes tiles after an inline import', () => {
+    // renderToStaticMarkup (node env, no jsdom) cannot exercise a real
+    // remount or the tile-refresh network effect, so this is a source guard:
+    // the mount must carry a per-source React key (so switching the
+    // selected tile remounts the panel and drops stale useHealthXmlImport
+    // phase/result/errorMsg state) and must forward the same `load` used to
+    // refresh tiles after AppleHealthImportModal's onImported.
+    const surface = readFileSync(
+      join(process.cwd(), 'src/components/body-tracker/connections/ConnectionsSurface.tsx'),
+      'utf8',
+    );
+    expect(surface).toMatch(/<ActiveSourceDetailPanel[^>]*key=\{selectedTile\?\.id \?\? 'none'\}/);
+    expect(surface).toContain('onImported={load}');
   });
 });
