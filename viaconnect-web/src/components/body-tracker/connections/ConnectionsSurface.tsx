@@ -26,6 +26,7 @@ import {
 import type { DimensionSourceRow } from '@/lib/body-tracker/source-disagreement';
 import { WearableTileCard } from './WearableTileCard';
 import { ScoreDetailPanel } from './ScoreDetailPanel';
+import { ActiveSourceDetailPanel } from './ActiveSourceDetailPanel';
 
 function emptyTiles(platform: 'web' | 'ios' | 'android'): WearableTileView[] {
   return buildWearableTiles({
@@ -151,6 +152,8 @@ export function ConnectionsSurface() {
     if (next === 'oura') window.location.href = '/api/integrations/oura/authorize';
   }, [consent, persistPhiConsent]);
 
+  const selectedTile = tiles.find((t) => t.id === selectedId) ?? null;
+
   return (
     <div className="mx-auto w-full max-w-7xl font-instrument space-y-6">
       <BackToHubLink />
@@ -176,6 +179,10 @@ export function ConnectionsSurface() {
         </div>
         <ScoreDetailPanel rows={scoreDetail} lastUpdatedAt={lastUpdatedAt} />
       </div>
+
+      {/* Center column: Task 10 finalizes the 3-column grid. Mounted here for
+          now so the selected-tile detail is live and tested. */}
+      <ActiveSourceDetailPanel tile={selectedTile} />
 
       <p className="text-center text-xs text-white/40">{CONNECTIONS_FOOTER}</p>
 
