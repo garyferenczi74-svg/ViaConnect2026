@@ -99,6 +99,28 @@ describe("Plugins Picasso IA honesty", () => {
     expect(mark).toContain("strokeWidth={1.5}");
   });
 
+  it("matches Connections WearableTileCard chrome without wearable dropzone", () => {
+    const card = src("components/plugins/PluginAppCard.tsx");
+    const tile = src("components/body-tracker/connections/WearableTileCard.tsx");
+    expect(tile).toContain("rounded-2xl border border-white/[0.08] bg-[#1E3054] p-4");
+    expect(card).toContain("rounded-2xl border border-white/[0.08] bg-[#1E3054] p-4");
+    expect(card).toContain("resolveLastSyncState");
+    expect(card).toContain("@/lib/body-tracker/last-sync-state");
+    expect(card).toContain("PLUGIN_STATE_COPY.comingSoon");
+    expect(card).toContain("isPluginConnectWired");
+    expect(card).toContain("data-last-sync-state");
+    expect(card).not.toContain("onDragOver");
+    expect(card).not.toContain("onDropXml");
+    expect(card).not.toContain("Upload XML");
+    expect(card).not.toContain("UNKNOWN");
+    expect(card).not.toContain("whoop");
+    expect(card).not.toContain("oura");
+    expect(card).not.toContain("hume");
+    expect(card).not.toContain("apple_health");
+    expect(card).not.toMatch(/type="button"[^>]*>\s*\{PLUGIN_STATE_COPY.comingSoon\}/);
+    expect(card).not.toMatch(/Coming soon<\/button/i);
+  });
+
   it("contains no em-dash or en-dash characters on the plugins surface", () => {
     const page = src("app/(app)/(consumer)/plugins/page.tsx");
     const surface = src("components/plugins/PluginsAppsSurface.tsx");
