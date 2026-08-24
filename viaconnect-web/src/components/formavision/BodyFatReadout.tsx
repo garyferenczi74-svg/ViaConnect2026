@@ -21,6 +21,9 @@ export interface BodyFatReadoutProps {
   // The latest total body fat percent, or null when UNKNOWN. This is the raw
   // latest value from the composition snapshot, shown even when no delta exists.
   latestBodyFatPct: number | null;
+  /** Photo-scan range. When present, the figure shows est. min–max instead of a single midpoint. */
+  estimatedBodyFatMin?: number | null;
+  estimatedBodyFatMax?: number | null;
   // The body-fat delta vs the first scan, or null when either side is UNKNOWN.
   bodyFat: MetricDelta | null;
   // ISO timestamps of the first and latest scans for the date line.
@@ -67,12 +70,20 @@ function deltaPresentation(direction: MetricDelta['direction']): {
 
 export function BodyFatReadout({
   latestBodyFatPct,
+  estimatedBodyFatMin,
+  estimatedBodyFatMax,
   bodyFat,
   firstScanDate,
   latestScanDate,
   className,
 }: BodyFatReadoutProps) {
-  const hasLatest = typeof latestBodyFatPct === 'number' && Number.isFinite(latestBodyFatPct);
+  const hasRange =
+    typeof estimatedBodyFatMin === 'number' &&
+    typeof estimatedBodyFatMax === 'number' &&
+    Number.isFinite(estimatedBodyFatMin) &&
+    Number.isFinite(estimatedBodyFatMax);
+  const hasLatest =
+    hasRange || (typeof latestBodyFatPct === 'number' && Number.isFinite(latestBodyFatPct));
 
   // Honest empty state: no latest body fat at all.
   if (!hasLatest) {
@@ -100,8 +111,15 @@ export function BodyFatReadout({
         <div className="text-center sm:text-left">
           <p className="text-xs uppercase tracking-wider text-white/40">Total Body Fat</p>
           <p data-testid="body-fat-figure" className="mt-1 text-5xl font-bold leading-none text-white">
-            {formatPct(latestBodyFatPct as number)}
+            {hasRange
+              ? `${formatPct(estimatedBodyFatMin as number).replace('%', '')}–${formatPct(estimatedBodyFatMax as number)}`
+              : formatPct(latestBodyFatPct as number)}
           </p>
+          {hasRange && (
+            <p data-testid="body-fat-estimated" className="mt-1 text-[11px] text-white/50">
+              Estimated range
+            </p>
+          )}
         </div>
 
         {present && bodyFat ? (
