@@ -90,9 +90,11 @@ export function AppleHealthImportModal({ open, onClose, onImported }: AppleHealt
 
       // Light client-side guards. The bucket enforces type and size server side.
       const name = (file.name || '').toLowerCase();
-      if (!name.endsWith('.zip')) {
+      const isXml = name.endsWith('.xml');
+      const isZip = name.endsWith('.zip');
+      if (!isXml && !isZip) {
         setPhase('error');
-        setErrorMsg('Choose the Health export .zip file. Open Health on your iPhone, tap your profile, then Export All Health Data.');
+        setErrorMsg('Choose an Apple Health export .xml or .zip. On iPhone open Health, tap your profile, then Export All Health Data.');
         return;
       }
       if (file.size > MAX_BYTES) {
@@ -141,13 +143,14 @@ export function AppleHealthImportModal({ open, onClose, onImported }: AppleHealt
 
       // Step 3: upload the zip.
       setPhase('uploading');
-      const storagePath = `${BUCKET}/${userId}/${importId}.zip`;
+      const ext = isXml ? 'xml' : 'zip';
+      const storagePath = `${BUCKET}/${userId}/${importId}.${ext}`;
       try {
         const { error } = await supabase.storage
           .from(BUCKET)
-          .upload(`${userId}/${importId}.zip`, file, {
+          .upload(`${userId}/${importId}.${ext}`, file, {
             upsert: true,
-            contentType: 'application/zip',
+            contentType: isXml ? 'application/xml' : 'application/zip',
           });
         if (error) {
           setPhase('error');
@@ -166,7 +169,7 @@ export function AppleHealthImportModal({ open, onClose, onImported }: AppleHealt
         const res = await fetch(PARSE_ENDPOINT, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ importId, storagePath }),
+          body: JSON.stringify({ importId, storagePath, fileKind: ext }),
         });
         if (!res.ok) {
           setPhase('error');
@@ -225,7 +228,7 @@ export function AppleHealthImportModal({ open, onClose, onImported }: AppleHealt
           <div>
             <h2 className="text-base font-semibold text-white">Import from Apple Health</h2>
             <p className="mt-1 text-[12px] leading-relaxed text-white/55">
-              On your iPhone open Health, tap your profile picture, then Export All Health Data. Upload the .zip here.
+              On your iPhone open Health, tap your profile picture, then Export All Health Data. Upload the .xml or .zip here.
             </p>
           </div>
           <button
@@ -258,8 +261,8 @@ export function AppleHealthImportModal({ open, onClose, onImported }: AppleHealt
               <UploadCloud className="h-6 w-6 text-[#2DA5A0]" strokeWidth={1.5} />
             </div>
             <div>
-              <p className="text-sm font-medium text-white">Drop your Health export .zip</p>
-              <p className="mt-1 text-[12px] text-white/45">or pick it from your device</p>
+              <p className="text-sm font-medium text-white">Drop your Health export XML</p>
+              <p className="mt-1 text-[12px] text-white/45">Drag and drop the file here or click to browse</p>
             </div>
             <button
               type="button"
@@ -272,7 +275,7 @@ export function AppleHealthImportModal({ open, onClose, onImported }: AppleHealt
             <input
               ref={inputRef}
               type="file"
-              accept=".zip,application/zip,application/x-zip-compressed"
+              accept=".xml,.zip,application/xml,text/xml,application/zip,application/x-zip-compressed"
               className="hidden"
               onChange={(e) => {
                 const f = e.target.files?.[0];

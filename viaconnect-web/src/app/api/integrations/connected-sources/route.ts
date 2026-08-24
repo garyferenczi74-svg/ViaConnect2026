@@ -58,6 +58,9 @@ export async function GET() {
       whoopConfigured: Boolean(
         process.env.WHOOP_CLIENT_ID && process.env.WHOOP_CLIENT_SECRET && process.env.WEARABLE_TOKEN_KEY,
       ),
+      ouraConfigured: Boolean(
+        process.env.OURA_CLIENT_ID && process.env.OURA_CLIENT_SECRET && process.env.WEARABLE_TOKEN_KEY,
+      ),
       healthConnectEnabled: process.env.HEALTH_CONNECT_ENABLED === "1",
     });
   } catch (err) {
@@ -77,7 +80,7 @@ export async function PATCH(req: NextRequest) {
     if (!metricKey || !preferred) {
       return NextResponse.json({ error: "metric_key and preferred_provider required" }, { status: 400 });
     }
-    if (!["whoop", "health_kit", "health_connect"].includes(preferred)) {
+    if (!["whoop", "health_kit", "health_connect", "oura"].includes(preferred)) {
       return NextResponse.json({ error: "invalid provider" }, { status: 400 });
     }
 

@@ -14,9 +14,18 @@
 import { NextResponse } from "next/server";
 import { Unzip, UnzipInflate } from "fflate";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { withTimeout } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
 import { matchesHume, HUME_DEVICE_ORIGIN } from "@/lib/body-tracker/connected-sources/registry";
+import {
+  filterIngestibleRecords,
+  funnelSampleToParsed,
+  parseAppleHealthXml,
+  type ParsedHealthRecord,
+} from "@/lib/body-tracker/connected-sources/apple-health-xml";
+import { persistRecordsAndBosContributor } from "@/lib/body-tracker/connected-sources/persist-and-bos";
+import { hasWearablePhiConsent } from "@/lib/hipaa/wearable-phi";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -117,9 +126,12 @@ export async function POST(request: Request): Promise<Response> {
     const body = await request.json();
     importId = String(body?.importId ?? "");
     const storagePath = String(body?.storagePath ?? "");
+    const fileKind = String(body?.fileKind ?? "").toLowerCase() === "xml" ? "xml" : "zip";
     if (!importId || !storagePath) {
       return NextResponse.json({ error: "missing importId or storagePath" }, { status: 400 });
     }
+    const admin = createAdminClient();
+    const phiConsent = await hasWearablePhiConsent(admin, user.id);
 
     // Verify the import row belongs to the caller (RLS scoped) and mark it parsing.
     const verifyResult = (await withTimeout(
@@ -137,7 +149,7 @@ export async function POST(request: Request): Promise<Response> {
     // Derive the storage path server-side from the authenticated user and import
     // id; the client-supplied storagePath is ignored to prevent any cross-tenant
     // read. Own-folder storage RLS is the second layer.
-    const pathInBucket = `${user.id}/${importId}.zip`;
+    const pathInBucket = `${user.id}/${importId}.${fileKind}`;
     const { data: blob, error: dlErr } = await withTimeout(
       supabase.storage.from("apple-health-imports").download(pathInBucket),
       30000,
@@ -148,14 +160,39 @@ export async function POST(request: Request): Promise<Response> {
       return NextResponse.json({ status: "error", error: "could not download export" });
     }
 
-    // Stream-unzip and extract records.
     const hume: NormalizedSample[] = [];
     const other: NormalizedSample[] = [];
+    const wearableRecords: ParsedHealthRecord[] = [];
     let seen = 0;
     let humeCount = 0;
     let minDate: string | null = null;
     let maxDate: string | null = null;
 
+    if (fileKind === "xml") {
+      const xml = await blob.text();
+      const parsed = parseAppleHealthXml(xml, { includePhi: phiConsent });
+      const ingestible = filterIngestibleRecords(parsed, phiConsent);
+      wearableRecords.push(...ingestible);
+      seen = parsed.recordsSeen;
+      minDate = parsed.dateRangeStart;
+      maxDate = parsed.dateRangeEnd;
+      for (const rec of ingestible) {
+        if (rec.value === null) continue;
+        const sample: NormalizedSample = {
+          metricKey: rec.metricKey,
+          value: rec.value,
+          unit: rec.unit,
+          measuredAt: rec.measuredAt,
+          externalId: rec.externalId,
+        };
+        if (rec.isHume) {
+          hume.push(sample);
+          humeCount += 1;
+        } else if (!rec.requiresPhiConsent) {
+          other.push(sample);
+        }
+      }
+    } else {
     const decoder = new TextDecoder("utf-8");
     let buffer = "";
     const TAG_RE = /<Record\b[^>]*>/g;
@@ -179,8 +216,10 @@ export async function POST(request: Request): Promise<Response> {
         if (!minDate || measuredAt < minDate) minDate = measuredAt;
         if (!maxDate || measuredAt > maxDate) maxDate = measuredAt;
         const isHume = matchesHume(attrs.sourceName);
-        const externalId = `${attrs.sourceName || "unknown"}|${startDate}|${attrs.value}`;
+        const sourceName = attrs.sourceName || "unknown";
+        const externalId = `${sourceName}|${startDate}|${attrs.value}`;
         const sample: NormalizedSample = { metricKey: map.metricKey, value, unit: map.unit, measuredAt, externalId };
+        wearableRecords.push(funnelSampleToParsed(sample, sourceName, isHume));
         if (isHume) {
           hume.push(sample);
           humeCount += 1;
@@ -235,6 +274,7 @@ export async function POST(request: Request): Promise<Response> {
         }
       })();
     });
+    }
 
     // Resolve the access token for the authenticated funnel call.
     const { data: sessionData } = await supabase.auth.getSession();
@@ -242,8 +282,10 @@ export async function POST(request: Request): Promise<Response> {
 
     const humeResult = await postBatch(accessToken, "apple_health", HUME_DEVICE_ORIGIN, hume);
     const otherResult = await postBatch(accessToken, "apple_health", null, other);
-    const ingested = humeResult.ingested + otherResult.ingested;
+    const wearablePersist = await persistRecordsAndBosContributor(admin, user.id, wearableRecords);
+    const ingested = humeResult.ingested + otherResult.ingested + wearablePersist.stored;
     const deduped = humeResult.deduped + otherResult.deduped;
+    humeCount = Math.max(humeCount, wearablePersist.humeStored);
 
     const summary = {
       status: "complete",
