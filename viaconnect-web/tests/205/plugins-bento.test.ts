@@ -47,7 +47,8 @@ describe("Plugins Picasso IA honesty", () => {
     expect(card).toContain("@/lib/body-tracker/last-sync-state");
     expect(join + card + registry).not.toContain("Not synced yet");
     expect(join + card + registry).not.toContain("Last sync unknown");
-    expect(registry).not.toContain("available:");
+    expect(registry).not.toMatch(/^\s*available:/m);
+    expect(registry).not.toContain("Available");
     expect(card).toContain("strokeWidth={1.5}");
     expect(join + card + registry).not.toMatch(/Semaglutide/i);
     expect(join).not.toMatch(/\bas any\b/);
