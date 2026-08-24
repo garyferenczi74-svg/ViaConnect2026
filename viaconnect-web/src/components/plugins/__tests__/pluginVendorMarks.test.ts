@@ -44,6 +44,6 @@ describe('Picasso 21b vendor marks', () => {
     const card = src('components/plugins/PluginAppCard.tsx');
     expect(card).toContain('PLUGIN_STATE_COPY.noActionYet');
     expect(card).not.toMatch(/type="button"[^>]*>\s*\{PLUGIN_STATE_COPY.comingSoon\}/);
-    expect(card).not.toContain('Coming soon button');
+    expect(card).not.toContain('data-testid={`plugin-coming-soon-');
   });
 });

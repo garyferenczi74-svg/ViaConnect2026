@@ -48,6 +48,8 @@ export default defineConfig({
       'src/components/pricing/__tests__/PricingCatalogBody.bare.test.tsx',
       // Brief 16: Your Variants honesty chips
       'src/components/genetics/__tests__/VariantRowChip.bare.test.tsx',
+      // Picasso 21b: /plugins vendor-mark tiles
+      'src/components/plugins/__tests__/PluginAppCard.bare.test.tsx',
     ],
     exclude: ['node_modules', '.next', 'supabase'],
     globals: true,
