@@ -188,7 +188,9 @@ describe("check-migration-parity CLI", () => {
     const result = runChecker(dir);
     expect(result.status).toBe(0);
     expect(result.stdout).toContain("check-migration-parity: OK.");
-    expect(result.stdout).toContain("post-baseline files: 3 (matched 3, in grace 0)");
+    expect(result.stdout).toContain(
+      "post-baseline files: 3 (matched 3, in grace 0, reviewed-unapplied 0)",
+    );
     expect(result.stdout).toContain("post-baseline manifest entries: 4");
   });
 
