@@ -130,6 +130,9 @@ jobs:
         # --grep @fallback runs the guaranteed 2D floor + information parity +
         # keyboard + reduced-motion specs. @cinematic self-skips off-GL and is
         # not selected here. Visual-regression stays behind FORMAVISION_VR (unset).
+        # Placeholder Supabase + no session: surface specs skip; the
+        # @fallback login-redirect spec asserts middleware sends
+        # /body-tracker/composition to /login.
         run: npx playwright test --grep @fallback
 
       - name: Upload Playwright report
