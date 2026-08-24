@@ -41,13 +41,21 @@ interface ManifestEntry {
   note?: string;
 }
 
+interface FixtureOptions {
+  unappliedStems?: string[];
+}
+
 interface FixtureFile {
   fileName: string;
 }
 
 const fixtureDirs: string[] = [];
 
-function createFixture(entries: ManifestEntry[], files: FixtureFile[]): string {
+function createFixture(
+  entries: ManifestEntry[],
+  files: FixtureFile[],
+  options: FixtureOptions = {},
+): string {
   const dir = mkdtempSync(join(tmpdir(), "migration-parity-"));
   fixtureDirs.push(dir);
   mkdirSync(join(dir, "migrations"), { recursive: true });
@@ -58,6 +66,9 @@ function createFixture(entries: ManifestEntry[], files: FixtureFile[]): string {
         baseline_stamp: BASELINE_STAMP,
         baseline_note: "fixture baseline",
         entries,
+        ...(options.unappliedStems
+          ? { unapplied_stems: options.unappliedStems }
+          : {}),
       },
       null,
       2,
@@ -177,7 +188,9 @@ describe("check-migration-parity CLI", () => {
     const result = runChecker(dir);
     expect(result.status).toBe(0);
     expect(result.stdout).toContain("check-migration-parity: OK.");
-    expect(result.stdout).toContain("post-baseline files: 3 (matched 3, in grace 0)");
+    expect(result.stdout).toContain(
+      "post-baseline files: 3 (matched 3, in grace 0, reviewed-unapplied 0)",
+    );
     expect(result.stdout).toContain("post-baseline manifest entries: 4");
   });
 
@@ -204,6 +217,33 @@ describe("check-migration-parity CLI", () => {
     expect(result.status).toBe(1);
     expect(result.stdout).toContain(
       "[missing-from-manifest] 20260708090000_prompt_fixture_core.sql",
+    );
+  });
+
+  it("exits 0 for a post-grace stem listed in unapplied_stems (not an apply record)", () => {
+    const dir = createFixture(
+      [],
+      [{ fileName: "20260708090000_prompt_fixture_unsigned.sql" }],
+      { unappliedStems: ["20260708090000_prompt_fixture_unsigned"] },
+    );
+    const result = runChecker(dir);
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("check-migration-parity: OK.");
+    expect(result.stdout).toContain(
+      "[unapplied] 20260708090000_prompt_fixture_unsigned.sql",
+    );
+  });
+
+  it("exits 1 for a stale unapplied_stems entry with no repo file", () => {
+    const dir = createFixture(
+      [],
+      [],
+      { unappliedStems: ["20260708090000_prompt_fixture_missing"] },
+    );
+    const result = runChecker(dir);
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain(
+      "[stale-unapplied-stem] 20260708090000_prompt_fixture_missing",
     );
   });
 });

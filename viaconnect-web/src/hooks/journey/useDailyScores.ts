@@ -30,9 +30,7 @@
  * the same todayLocal() / localDateString(detectTimezone()) function. The
  * meal-score override logic (meal_logs.meal_score -> avg nutrition) mirrors
  * DailyScoresPanel exactly. The only addition is the bioOptimization pillar
- * which reads profiles.bio_optimization_score (per 208j spec; the dashboard
- * shows bio_optimization_score as a separate card, not as part of the 5-gauge
- * composite).
+ * which reads GET /api/bos/current (same SSOT as the dashboard BOS card).
  *
  * Return shape (all 0..100 or null):
  *   sleepQuality, energyLevel, moodStress, nutrition, physicalActivity,
@@ -62,6 +60,7 @@ import { useHydrationToday } from '@/components/hydration/useHydrationToday';
 import { detectTimezone, localDateString } from '@/lib/timezone';
 import { withTimeout } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
+import { toDisplayBosScore } from '@/lib/scoring/bos-display';
 
 // ---------------------------------------------------------------------------
 // Local date helper (mirrors DailyScoresPanel.todayLocal)
@@ -323,10 +322,6 @@ interface MealRow {
   meal_score: number | null;
 }
 
-interface ProfileRow {
-  bio_optimization_score: number | null;
-}
-
 // ---------------------------------------------------------------------------
 // useDailyScores
 // ---------------------------------------------------------------------------
@@ -429,27 +424,20 @@ export function useDailyScores(userId: string | null): DailyPillarScores {
         const mergedMeals = mergeLocalMeals(dbMeals, getCachedMeals());
         const mealLog: MealLogData = mergedMeals.length > 0 ? { meals: mergedMeals } : { meals: [] };
 
-        // ---- Step 3: profiles.bio_optimization_score ----
+        // ---- Step 3: Bio Optimization Score from GET /api/bos/current ----
         let bioOptimizationScore: number | null = null;
         try {
-          const profileQuery = supabase
-            .from('profiles')
-            .select('bio_optimization_score')
-            .eq('id', userId)
-            .maybeSingle();
-          const { data: profileRow } = await withTimeout(
-            profileQuery as unknown as Promise<{ data: ProfileRow | null; error: unknown }>,
+          const bosRes = await withTimeout(
+            fetch('/api/bos/current', { credentials: 'include' }),
             4000,
-            'useDailyScores.profiles',
+            'useDailyScores.bosCurrent',
           );
-          if (profileRow?.bio_optimization_score != null) {
-            const raw = Number(profileRow.bio_optimization_score);
-            if (isFinite(raw)) {
-              bioOptimizationScore = Math.max(0, Math.min(100, Math.round(raw)));
-            }
+          if (bosRes.ok) {
+            const bosBody = (await bosRes.json()) as { score?: unknown };
+            bioOptimizationScore = toDisplayBosScore(bosBody.score);
           }
         } catch (err) {
-          safeLog.warn('useDailyScores', 'profiles read failed, failing open', { error: err });
+          safeLog.warn('useDailyScores', 'BOS current read failed, failing open', { error: err });
         }
 
         if (!active) return;

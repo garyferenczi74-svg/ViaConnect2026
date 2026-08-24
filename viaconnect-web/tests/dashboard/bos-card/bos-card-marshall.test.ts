@@ -55,6 +55,15 @@ describe('BOS card Marshall scan', () => {
   }
 });
 
+describe('BOS card Helix rewards stay off the card', () => {
+  it('bos-side-panel.tsx does not print a Helix multiplier or -- pts', () => {
+    const src = readFileSync(path.join(ROOT, 'bos-side-panel.tsx'), 'utf-8');
+    expect(src).not.toMatch(/1\.5x|2x|5x/);
+    expect(src).not.toMatch(/-- pts/);
+    expect(src).toContain('Last updated');
+  });
+});
+
 describe('BOS card uses Bio Optimization Score not Vitality', () => {
   for (const file of BOS_FILES) {
     const p = path.join(ROOT, file);

@@ -176,11 +176,11 @@ describe('dual-path Body Tracker spine persist', () => {
   });
 
   it('FormaVision scan write lands on the same parent entry plus fat, girths, and hip', () => {
-    const { entry, segFat } = buildScanWrite({
+    const { entry, segFat, weight } = buildScanWrite({
       userId: 'user-1',
       scanId: 'scan-1',
       scanDate: '2026-08-23',
-      derived: { totalBodyFatPct: 21.4, confidence: 0.65 },
+      derived: { totalBodyFatPct: 21.4, estimatedBodyFatMin: 19, estimatedBodyFatMax: 24, confidence: 0.65 },
     });
     expect(entry.source).toBe('scan');
     expect(entry.device_name).toBe('FormaVision');
@@ -188,6 +188,8 @@ describe('dual-path Body Tracker spine persist', () => {
     expect(entry.user_id).toBe('user-1');
     expect(segFat.total_body_fat_pct).toBe(21.4);
     expect(segFat.user_id).toBe('user-1');
+    expect(weight.weight_lbs).toBeNull();
+    expect(weight.body_fat_pct).toBeNull();
 
     const { circ, hips } = buildCircumferenceWrite({
       userId: 'user-1',
@@ -244,6 +246,7 @@ describe('dual-path Body Tracker spine persist', () => {
 
     expect(persistRoute).toMatch(/body_tracker_entries/);
     expect(persistRoute).toMatch(/body_tracker_segmental_fat/);
+    expect(persistRoute).toMatch(/body_tracker_weight/);
     expect(scanWrite).toMatch(/source:\s*'scan'/);
     expect(scanWrite).toMatch(/device_name:\s*'FormaVision'/);
 
@@ -257,10 +260,9 @@ describe('dual-path Body Tracker spine persist', () => {
     for (const table of SPINE_TABLES) {
       const inManual = manualForm.includes(table) || logDataForm.includes(table);
       const inScan = persistRoute.includes(table) || circRoute.includes(table);
-      // Weight is scan-written via the circumference route (hip), not persist.
       if (table === 'body_tracker_weight') {
         expect(inManual).toBe(true);
-        expect(circRoute.includes(table)).toBe(true);
+        expect(persistRoute.includes(table) || circRoute.includes(table)).toBe(true);
         continue;
       }
       if (table === 'body_tracker_segmental_fat') {

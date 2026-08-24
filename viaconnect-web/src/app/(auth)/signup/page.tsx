@@ -27,6 +27,12 @@ import {
   signupStep3Schema,
 } from "@/lib/location/signup-schema";
 import type { StructuredLocation } from "@/lib/location/types";
+import {
+  VIA_CURA_LAUNCH_WINDOW,
+  isClinicianSignupRole,
+  clinicianWaitlistHref,
+  PRACTITIONER_WAITLIST_PATH,
+} from "@/lib/practitioner/waitlist-honesty";
 import { z } from "zod";
 
 // ─── Schemas ────────────────────────────────────────────────────────────────
@@ -46,7 +52,15 @@ const step4Schema = z.object({
 
 // ─── Role cards ─────────────────────────────────────────────────────────────
 
-const ROLES: { value: UserRole; label: string; icon: React.ElementType; color: string; description: string; features: string[] }[] = [
+const ROLES: {
+  value: UserRole;
+  label: string;
+  icon: React.ElementType;
+  color: string;
+  description: string;
+  features: string[];
+  waitlist: boolean;
+}[] = [
   {
     value: "consumer",
     label: "Personal Wellness",
@@ -54,22 +68,25 @@ const ROLES: { value: UserRole; label: string; icon: React.ElementType; color: s
     color: "border-teal text-teal",
     description: "Explore your genetics and get personalized supplement formulations",
     features: ["GeneX360 genetic analysis", "Personalized supplement protocols", "ViaTokens rewards", "AI wellness advisor"],
+    waitlist: false,
   },
   {
     value: "practitioner",
     label: "Practitioner",
     icon: Stethoscope,
     color: "border-portal-green text-portal-green",
-    description: "Manage patients and access clinical genomic tools",
-    features: ["Patient management portal", "Clinical genomics dashboard", "Drug-gene interaction checker", "EHR integration hub"],
+    description: `Join the ViaCura waitlist. Portal launch ${VIA_CURA_LAUNCH_WINDOW}.`,
+    features: ["Founding cohort waitlist", "Concierge onboarding at launch", "Wholesale pricing at launch"],
+    waitlist: true,
   },
   {
     value: "naturopath",
     label: "Naturopath",
     icon: Leaf,
     color: "border-sage text-sage",
-    description: "Integrative protocols with genomic-guided botanical wellness",
-    features: ["Botanical formula builder", "Constitutional typing", "Compliance tracking", "Appointment scheduler"],
+    description: `Join the ViaCura waitlist. Portal launch ${VIA_CURA_LAUNCH_WINDOW}.`,
+    features: ["Founding cohort waitlist", "Botanical tools at launch", "Concierge onboarding at launch"],
+    waitlist: true,
   },
 ];
 
@@ -221,6 +238,13 @@ export default function SignupPage() {
   async function handleNext() {
     if (!validate()) return;
 
+    // Clinician roles join the Q1 2027 waitlist. Do not continue into
+    // license verification or grant immediate portal access.
+    if (step === 2 && isClinicianSignupRole(role)) {
+      router.push(clinicianWaitlistHref(email));
+      return;
+    }
+
     // Skip license step for consumers: show privacy interstitial first
     if (step === 3 && role === "consumer") {
       setActiveInterstitial(2); // Privacy interstitial
@@ -344,10 +368,12 @@ export default function SignupPage() {
     }
 
     toast.success("Account verified!");
-    if (role === "consumer") {
+    if (isClinicianSignupRole(role)) {
+      router.push(PRACTITIONER_WAITLIST_PATH);
+    } else if (role === "consumer") {
       router.push("/onboarding/i-caq-intro");
     } else {
-      router.push(role === "practitioner" ? "/practitioner/dashboard" : "/naturopath/dashboard");
+      router.push("/dashboard");
     }
     router.refresh();
   }
@@ -472,7 +498,7 @@ export default function SignupPage() {
         {/* ── Step 2: Role Selection ── */}
         {step === 2 && (
           <div className="space-y-4">
-            <p className="text-sm text-gray-400 mb-2">Choose your portal experience</p>
+            <p className="text-sm text-gray-400 mb-2">Choose how you want to join</p>
             {ROLES.map((r) => {
               const isSelected = role === r.value;
               return (
@@ -493,6 +519,11 @@ export default function SignupPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-semibold text-white">{r.label}</span>
+                        {r.waitlist && (
+                          <span className="text-[10px] uppercase tracking-wider text-portal-green bg-portal-green/10 px-2 py-0.5 rounded-full">
+                            Waitlist {VIA_CURA_LAUNCH_WINDOW}
+                          </span>
+                        )}
                         {isSelected && <Check className="w-4 h-4 text-copper" />}
                       </div>
                       <p className="text-xs text-gray-400 mt-0.5">{r.description}</p>
@@ -588,7 +619,7 @@ export default function SignupPage() {
               {errors.licenseNumber && <p className="text-xs text-rose mt-1">{errors.licenseNumber}</p>}
             </div>
             <p className="text-xs text-gray-500">
-              Your license will be verified within 24 hours. You&apos;ll have access to the portal immediately.
+              Your license is recorded for the founding waitlist. ViaCura portal access opens {VIA_CURA_LAUNCH_WINDOW}.
             </p>
           </div>
         )}
@@ -672,6 +703,8 @@ export default function SignupPage() {
                   <Loader2 className="w-4 h-4 animate-spin" />
                   Creating...
                 </>
+              ) : step === 2 && isClinicianSignupRole(role) ? (
+                "Join the waitlist"
               ) : step === 3 && role === "consumer" ? (
                 "Create Account"
               ) : step === 4 ? (

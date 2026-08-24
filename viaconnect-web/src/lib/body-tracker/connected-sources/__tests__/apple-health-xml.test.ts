@@ -32,6 +32,15 @@ describe('Apple Health XML parse', () => {
     expect(filterIngestibleRecords(withConsent, true).length).toBe(withConsent.records.length);
   });
 
+  it('tags sourceName hume_body_pod as Hume Body Pod origin', () => {
+    const xml = `<Record type="HKQuantityTypeIdentifierBodyMass" sourceName="hume_body_pod" unit="kg" value="71.2" startDate="2026-08-20 07:00:00 +0000"/>`;
+    const parsed = parseAppleHealthXml(xml);
+    expect(parsed.humeRecords).toHaveLength(1);
+    expect(parsed.humeRecords[0]?.deviceOrigin).toBe('hume_body_pod');
+    expect(parsed.humeRecords[0]?.isHume).toBe(true);
+    expect(parsed.humeRecords[0]?.value).toBe(71.2);
+  });
+
   it('leaves missing numeric values as null, never 0', () => {
     const xml = `<Record type="HKQuantityTypeIdentifierBodyMass" sourceName="Health" unit="kg" value="not-a-number" startDate="2026-08-20 07:00:00 +0000"/>`;
     const parsed = parseAppleHealthXml(xml);

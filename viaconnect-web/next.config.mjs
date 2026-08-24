@@ -103,6 +103,13 @@ const nextConfig = {
         destination: "/peptide-protocol",
         permanent: true,
       },
+      // Brief 13: retire the emoji 10-category grid as consumer analytics IA.
+      // Hydration stays at /wellness-analytics/hydration (exact match only).
+      {
+        source: "/wellness-analytics",
+        destination: "/analytics",
+        permanent: false,
+      },
     ];
   },
 };

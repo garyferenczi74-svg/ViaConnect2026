@@ -55,7 +55,12 @@ import {
   forceWebGLUnavailable,
   cinematicCanvasIsUp,
   AVATAR_CANVAS_TESTID,
+  skipFallbackSurfaceIfPlaceholder,
 } from './fixtures';
+
+test.beforeEach(() => {
+  skipFallbackSurfaceIfPlaceholder();
+});
 
 const AVATAR_CANVAS = `[data-testid="${AVATAR_CANVAS_TESTID}"]`;
 

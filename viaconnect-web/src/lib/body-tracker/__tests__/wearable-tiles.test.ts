@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   CONNECTIONS_FOOTER,
   FIRST_CLASS_TILE_IDS,
+  FORBIDDEN_FIRST_CLASS_TILE_IDS,
   WEARABLE_TILE_SPECS,
   WATCH_FORBIDDEN_LABELS,
   appleHealthDisplayName,
@@ -34,12 +35,21 @@ function baseInput(over: Partial<WearableTileInput> = {}): WearableTileInput {
 }
 
 describe('wearable tile model', () => {
-  it('exposes Whoop, Hume, Apple Health, Oura and no Watch tile', () => {
+  it('exposes Whoop, Hume Body Pod, Apple Health, Oura and no Watch tile', () => {
     expect(FIRST_CLASS_TILE_IDS).toEqual(['whoop', 'hume', 'apple_health', 'oura']);
     expect(WEARABLE_TILE_SPECS.map((s) => s.id)).toEqual([...FIRST_CLASS_TILE_IDS]);
+    expect(WEARABLE_TILE_SPECS.map((s) => s.name)).toEqual([
+      'Whoop',
+      'Hume Body Pod',
+      'Apple Health',
+      'Oura',
+    ]);
     expect(WEARABLE_TILE_SPECS.some((s) => /watch/i.test(s.name))).toBe(false);
     expect(appleHealthDisplayName()).toBe('Apple Health');
     expect(CONNECTIONS_FOOTER).toBe('Bio Optimization Score uses these sources.');
+    for (const id of FORBIDDEN_FIRST_CLASS_TILE_IDS) {
+      expect((FIRST_CLASS_TILE_IDS as readonly string[]).includes(id)).toBe(false);
+    }
   });
 
   it('maps advertised dimensions per Picasso ingest map', () => {
@@ -117,10 +127,12 @@ describe('wearable tile model', () => {
     const oura = tiles.find((t) => t.id === 'oura');
     const apple = tiles.find((t) => t.id === 'apple_health');
     expect(whoop?.status).toBe('disconnected');
+    expect(whoop?.lastSyncState).toBe('not_connected');
     expect(whoop?.statusLabel).toBe('Not connected');
     expect(whoop?.lastSyncAt).toBeNull();
     expect(whoop?.action).toEqual({ kind: 'oauth', configured: false });
     expect(oura?.status).toBe('disconnected');
+    expect(oura?.lastSyncState).toBe('not_connected');
     expect(oura?.statusLabel).toBe('Not connected');
     expect(oura?.lastSyncAt).toBeNull();
     expect(oura?.action).toEqual({ kind: 'oauth', configured: false });
@@ -153,6 +165,43 @@ describe('wearable tile model', () => {
     expect(whoop?.action).toEqual({ kind: 'oauth', configured: true });
   });
 
+  it('shows Connected never synced when OAuth persist has no last_sync_at', () => {
+    const tiles = buildWearableTiles(
+      baseInput({
+        oauth: [{ provider: 'whoop', status: 'connected', last_sync_at: null, has_tokens: true }],
+        whoopConfigured: true,
+      }),
+    );
+    const whoop = tiles.find((t) => t.id === 'whoop');
+    expect(whoop?.lastSyncState).toBe('connected_never_synced');
+    expect(whoop?.statusLabel).toBe('Connected never synced');
+    expect(whoop?.lastSyncAt).toBeNull();
+    expect(JSON.stringify(whoop)).not.toContain('5 min ago');
+  });
+
+  it('flags Needs reconnect when tokens are gone after secrets are provisioned', () => {
+    const tiles = buildWearableTiles(
+      baseInput({
+        oauth: [
+          {
+            provider: 'oura',
+            status: 'connected',
+            last_sync_at: '2026-08-24T11:55:00.000Z',
+            has_tokens: false,
+          },
+        ],
+        ouraConfigured: true,
+      }),
+    );
+    const oura = tiles.find((t) => t.id === 'oura');
+    expect(oura?.lastSyncState).toBe('needs_reconnect');
+    expect(oura?.status).toBe('disconnected');
+    expect(oura?.statusLabel).toBe('Needs reconnect');
+    expect(oura?.lastSyncAt).toBeNull();
+    expect(oura?.statusLabel).not.toContain('Active');
+    expect(JSON.stringify(oura)).not.toContain('5 min ago');
+  });
+
   it('does not copy HealthKit / phone_health onto Hume', () => {
     expect(isHumeConnected(0)).toBe(false);
     const tiles = buildWearableTiles(
@@ -176,6 +225,7 @@ describe('wearable tile model', () => {
       }),
     );
     const hume = tiles.find((t) => t.id === 'hume');
+    expect(hume?.name).toBe('Hume Body Pod');
     expect(hume?.status).toBe('connected');
     expect(hume?.statusLabel).toBe('Synced 22h ago');
     expect(hume?.lastSyncState).toBe('synced');
@@ -195,6 +245,7 @@ describe('wearable tile model', () => {
     );
     const apple = tiles.find((t) => t.id === 'apple_health');
     expect(apple?.name).toBe('Apple Health');
+    expect(apple?.lastSyncState).toBe('synced');
     expect(apple?.statusLabel).toBe('Synced 2d ago');
     expect(apple?.lastSyncAt).toBe('2026-08-22T08:00:00.000Z');
     expect(apple?.lastSyncKind).toBe('xml_upload');
@@ -224,8 +275,11 @@ describe('wearable tile model', () => {
     const tiles = buildWearableTiles(baseInput());
     for (const tile of tiles) {
       expect(tile.status).toBe('disconnected');
+      expect(tile.lastSyncState).toBe('not_connected');
       expect(tile.statusLabel).toBe('Not connected');
       expect(tile.lastSyncAt).toBeNull();
+      expect(tile.statusLabel).not.toContain('Active');
+      expect(JSON.stringify(tile)).not.toContain('5 min ago');
       expect(tile.dimensionsFed).toEqual([]);
     }
   });

@@ -13,7 +13,7 @@
  * card does NOT build the editor.
  *
  * Every read is best-effort and fail-open: a missing avatar falls back to the
- * initial circle, a missing name reads "there", a missing goal hides the chip.
+ * initial circle, a missing name uses an empty greeting, a missing goal hides the chip.
  * The component never throws.
  *
  * Style: glass surface over Deep Navy, Teal #2DA5A0 accent, DM Sans / DM Mono,
@@ -42,7 +42,7 @@ const DM_MONO = 'var(--font-dm-mono), monospace';
 const PROFILE_EDIT_ROUTE = '/profile';
 
 export function ProfileCard({ userId }: { userId: string | null }) {
-  // First name (fail-open to "there"), resolved the same way the spine does.
+  // First name (fail-open to empty), resolved the same way the spine does.
   const [displayName, setDisplayName] = useState<string>('');
   // Avatar URL, best-effort from profiles.avatar_url. Null = honest initial.
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -60,7 +60,7 @@ export function ProfileCard({ userId }: { userId: string | null }) {
         if (active) setDisplayName(n);
       })
       .catch(() => {
-        /* keep empty default; render falls back to "there" */
+        /* keep empty default; greeting omits the name */
       });
     return () => {
       active = false;
@@ -97,7 +97,7 @@ export function ProfileCard({ userId }: { userId: string | null }) {
     };
   }, [userId]);
 
-  const who = displayName && displayName.trim().length > 0 ? displayName : 'there';
+  const who = displayName.trim();
   const initial = who.charAt(0).toUpperCase() || 'V';
   const showAvatar = !!avatarUrl && !avatarErrored;
   const goalPhrase = state.goalPhrase;

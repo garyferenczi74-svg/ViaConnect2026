@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Bell, ShoppingBag, User } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { formatPersonalGreeting } from '@/lib/user/get-display-name';
 
 interface DashboardHeaderProps {
   /** Optional override; otherwise resolved via getDisplayName. */
@@ -31,7 +32,7 @@ const formatToday = (): string =>
   });
 
 export function DashboardHeader({ initialName }: DashboardHeaderProps) {
-  const [name, setName] = useState(initialName || 'there');
+  const [name, setName] = useState(initialName || '');
   const [unread, setUnread] = useState(0);
   const [initial, setInitial] = useState('?');
 
@@ -80,7 +81,7 @@ export function DashboardHeader({ initialName }: DashboardHeaderProps) {
       {/* Greeting + date */}
       <div className="min-w-0 flex-1">
         <h1 className="truncate text-xl font-bold text-white sm:text-2xl">
-          {getGreeting()}, {name}
+          {formatPersonalGreeting(getGreeting(), name)}
         </h1>
         <p className="mt-0.5 text-xs text-white/90 sm:text-sm">{formatToday()}</p>
       </div>
