@@ -68,19 +68,8 @@ type RelationshipRow = {
   tags: string[] | null;
 };
 
-type ShareRow = {
-  id: string;
-  patient_id: string;
-  status: string;
-  invite_email: string | null;
-  accepted_at: string | null;
-  updated_at: string;
-};
-
-type ProfileNameRow = {
-  id: string;
-  full_name: string | null;
-};
+type PractitionerRosterRpcRow = Database["public"]["Functions"]["practitioner_list_live_roster"]["Returns"][number];
+type SharedPatientRpcRow = Database["public"]["Functions"]["provider_list_shared_patients"]["Returns"][number];
 
 type PanelOrderRow = {
   id: string;
@@ -179,41 +168,20 @@ export function formatVisitDate(iso: string | null): string {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
-async function loadProfileNames(
-  supabase: SupabaseClient<Database>,
-  patientIds: readonly string[],
-  scope: string,
-): Promise<Map<string, string>> {
-  const names = new Map<string, string>();
-  if (patientIds.length === 0) return names;
-  try {
-    const rows = await withTimeout(
-      (async () => {
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("id, full_name")
-          .in("id", [...patientIds]);
-        if (error) {
-          safeLog.warn(scope, "profiles name lookup failed", { error });
-          return [] as ProfileNameRow[];
-        }
-        return (data ?? []) as ProfileNameRow[];
-      })(),
-      2500,
-      `${scope}.profiles`,
-    );
-    for (const row of rows) {
-      const name = row.full_name?.trim();
-      if (name) names.set(row.id, name);
-    }
-  } catch (error) {
-    if (isTimeoutError(error)) {
-      safeLog.warn(scope, "profiles name lookup timed out", { error });
-    } else {
-      safeLog.warn(scope, "profiles name lookup error", { error });
-    }
-  }
-  return names;
+function rpcRowToRelationship(row: PractitionerRosterRpcRow): RelationshipRow {
+  return {
+    id: row.relationship_id,
+    patient_id: row.patient_id || null,
+    status: row.status,
+    invited_email: row.invited_email || null,
+    invited_first_name: row.invited_first_name || null,
+    invited_last_name: row.invited_last_name || null,
+    first_visit_date: row.first_visit_date || null,
+    invited_at: row.invited_at || null,
+    updated_at: row.updated_at,
+    chief_complaint: row.chief_complaint || null,
+    tags: row.tags ?? [],
+  };
 }
 
 async function loadPanelOrdersForPatients(
@@ -270,39 +238,24 @@ export async function loadPractitionerLiveRoster(
   args: { userId: string; role: SessionRole | undefined },
   scope = "practitioner.live-roster",
 ): Promise<PractitionerRosterSnapshot> {
-  if (args.role !== "practitioner" && args.role !== "admin") {
+  if (!args.userId || (args.role !== "practitioner" && args.role !== "admin")) {
     return emptyPractitionerSnapshot();
   }
 
   try {
     const rows = await withTimeout(
       (async () => {
-        const { data, error } = await supabase
-          .from("practitioner_patients")
-          .select(
-            "id, patient_id, status, invited_email, invited_first_name, invited_last_name, first_visit_date, invited_at, updated_at, chief_complaint, tags",
-          )
-          .eq("practitioner_id", args.userId)
-          .in("status", ["active", "invited"])
-          .order("updated_at", { ascending: false });
+        const { data, error } = await supabase.rpc("practitioner_list_live_roster");
         if (error) throw error;
-        return (data ?? []) as RelationshipRow[];
+        return data ?? [];
       })(),
       4000,
-      `${scope}.relationships`,
+      `${scope}.practitioner_patients_join_profiles`,
     );
-
-    const patientIds = rows
-      .map((row) => row.patient_id)
-      .filter((id): id is string => Boolean(id));
-    const profileNames = await loadProfileNames(supabase, patientIds, scope);
 
     const patients = rows
       .map((row) =>
-        mapRelationshipToRosterRow(
-          row,
-          row.patient_id ? profileNames.get(row.patient_id) : undefined,
-        ),
+        mapRelationshipToRosterRow(rpcRowToRelationship(row), row.full_name),
       )
       .filter((row): row is LiveRosterPatient => row !== null);
 
@@ -347,41 +300,33 @@ export async function loadNaturopathLivePartners(
   args: { userId: string; role: SessionRole | undefined },
   scope = "naturopath.live-partners",
 ): Promise<NaturopathPartnerSnapshot> {
-  if (args.role !== "naturopath" && args.role !== "admin") {
+  if (!args.userId || (args.role !== "naturopath" && args.role !== "admin")) {
     return emptyNaturopathSnapshot();
   }
 
   try {
     const rows = await withTimeout(
       (async () => {
-        const { data, error } = await supabase
-          .from("protocol_shares")
-          .select("id, patient_id, status, invite_email, accepted_at, updated_at")
-          .eq("provider_id", args.userId)
-          .eq("status", "active")
-          .order("updated_at", { ascending: false });
+        const { data, error } = await supabase.rpc("provider_list_shared_patients");
         if (error) throw error;
-        return (data ?? []) as ShareRow[];
+        return data ?? [];
       })(),
       4000,
-      `${scope}.shares`,
+      `${scope}.protocol_shares_join_profiles`,
     );
 
-    const patientIds = rows.map((row) => row.patient_id);
-    const profileNames = await loadProfileNames(supabase, patientIds, scope);
-
-    const partners: LiveRosterPatient[] = rows.map((row) => ({
-      relationshipId: row.id,
+    const partners: LiveRosterPatient[] = rows.map((row: SharedPatientRpcRow) => ({
+      relationshipId: row.share_id,
       patientId: row.patient_id,
       displayName: displayNameFromInviteFields({
-        fullName: profileNames.get(row.patient_id),
-        email: row.invite_email,
+        fullName: row.full_name,
+        email: row.email,
       }),
-      email: row.invite_email,
+      email: row.email || null,
       status: "active",
       firstVisitDate: row.accepted_at,
       invitedAt: null,
-      updatedAt: row.updated_at,
+      updatedAt: row.accepted_at ?? new Date(0).toISOString(),
       chiefComplaint: null,
       tags: [],
     }));

@@ -133,7 +133,8 @@ export function isClinicianOrAdminPath(pathname: string): boolean {
 
 /**
  * Logged-out /practitioner and /naturopath must not look like a live portal.
- * Send them to the existing public waitlist. Do not invent a clinician product.
+ * Same destination as Brief 7 / PR #31 (`/practitioners`). Do not build a
+ * clinician product early and do not add waitlist marketing copy here.
  */
 export function unauthenticatedClinicianPortalRedirect(
   pathname: string,

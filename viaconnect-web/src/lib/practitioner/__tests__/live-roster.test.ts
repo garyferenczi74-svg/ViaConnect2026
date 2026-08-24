@@ -143,19 +143,33 @@ describe("helpers", () => {
 });
 
 describe("source contract: mocks gone, live roster wired", () => {
-  it("live-roster module has no any and no staged census constants", () => {
+  it("live-roster module joins via RPCs and has no staged census constants", () => {
     const src = readFileSync(
       path.join(REPO, "src/lib/practitioner/live-roster.ts"),
       "utf8",
     );
-    expect(src).toMatch(/from\("practitioner_patients"\)/);
-    expect(src).toMatch(/from\("protocol_shares"\)/);
+    expect(src).toMatch(/practitioner_list_live_roster/);
+    expect(src).toMatch(/provider_list_shared_patients/);
     expect(src).not.toMatch(/: any\b/);
     expect(src).not.toMatch(/as any\b/);
     expect(src).not.toMatch(/John D/);
     expect(src).not.toMatch(/Precision Wellness/);
     expect(src).not.toMatch(/value: "42"/);
     expect(src).not.toMatch(/value: '28'/);
+    expect(src).not.toMatch(/89%/);
+    expect(src).not.toMatch(/92%/);
+  });
+
+  it("migration is practitioner_patients LEFT JOIN profiles", () => {
+    const src = readFileSync(
+      path.join(REPO, "supabase/migrations/20260824034500_brief15_practitioner_live_roster.sql"),
+      "utf8",
+    );
+    expect(src).toMatch(/FROM practitioner_patients pp/);
+    expect(src).toMatch(/LEFT JOIN profiles p ON p\.id = pp\.patient_id/);
+    expect(src).toMatch(/pp\.practitioner_id = v_user_id/);
+    expect(src).not.toMatch(/John D/);
+    expect(src).not.toMatch(/42/);
   });
 
   it("patient detail does not fall back to LegacyPatientView staged PHI", () => {

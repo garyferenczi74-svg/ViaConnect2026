@@ -54,17 +54,24 @@ describe("unauthorized roles fail closed", () => {
 });
 
 describe("no staged census on the three portal homes", () => {
-  it("practitioner dashboard has no staged names or 42", () => {
+  it("practitioner dashboard has no staged names, 42, compliance %, or scripted alerts", () => {
     const src = read("src/app/(app)/practitioner/dashboard/page.tsx");
     expect(src).toMatch(/loadPractitionerLiveRoster/);
     expect(src).not.toMatch(/42 Active Patients|value: "42"|John D\.|Maria S\.|Precision Wellness Medical Group/);
     expect(src).not.toMatch(/ViaCura/);
+    expect(src).not.toMatch(/89%/);
+    expect(src).not.toMatch(/Avg Compliance/);
+    expect(src).not.toMatch(/HRV dropped 28%/);
+    expect(src).not.toMatch(/Missed 5 consecutive/);
   });
 
-  it("naturopath dashboard has no 28/92% mocks", () => {
+  it("naturopath dashboard has no 28/92% mocks or scripted alerts", () => {
     const src = read("src/app/(app)/naturopath/dashboard/page.tsx");
     expect(src).toMatch(/loadNaturopathLivePartners/);
     expect(src).not.toMatch(/value: '28'|value: '92%'|Emma W\.|David L\.|Sophie R\./);
+    expect(src).not.toMatch(/Protocol Adherence/);
+    expect(src).not.toMatch(/Methylation pathway bottleneck/);
+    expect(src).not.toMatch(/Dr\. Patel/);
   });
 
   it("admin home does not invent 62 SKUs or Q1 2026", () => {

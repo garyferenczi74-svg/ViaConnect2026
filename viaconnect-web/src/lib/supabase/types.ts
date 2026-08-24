@@ -41118,6 +41118,23 @@ export type Database = {
           supplement_name: string
         }[]
       }
+      practitioner_list_live_roster: {
+        Args: never
+        Returns: {
+          chief_complaint: string
+          first_visit_date: string
+          full_name: string
+          invited_at: string
+          invited_email: string
+          invited_first_name: string
+          invited_last_name: string
+          patient_id: string
+          relationship_id: string
+          status: string
+          tags: string[]
+          updated_at: string
+        }[]
+      }
       provider_get_patient_wellness_analytics: {
         Args: { p_patient_id: string }
         Returns: {

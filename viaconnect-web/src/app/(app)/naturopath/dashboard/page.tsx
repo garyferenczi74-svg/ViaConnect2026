@@ -63,7 +63,7 @@ export default async function NaturopathDashboardPage() {
             <p className="text-sm text-white">No health partners have shared a protocol with you yet</p>
             <p className="text-sm text-secondary mt-1">
               When a patient sends you an invite code and you accept it, they appear here.
-              This page does not show a staged 28-partner census or a 92% adherence figure.
+              This page does not show a staged partner census or a fake adherence figure.
             </p>
           </div>
         ) : (
