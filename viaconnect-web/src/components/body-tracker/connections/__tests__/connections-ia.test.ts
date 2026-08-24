@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'fs';
+import { existsSync, readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { describe, it, expect } from 'vitest';
 
@@ -132,5 +132,36 @@ describe('Connections IA contracts', () => {
     expect(tiles).toContain('linked');
     expect(tiles).not.toContain('reconnectRequired');
     expect(tiles).not.toContain('LAST_SYNC_STATES');
+  });
+
+  it('/wearables is ConnectionsSurface + last-sync SM only — no WearableDashboardPage', () => {
+    const wearables = src('src/app/(app)/(consumer)/wearables/page.tsx');
+    const connections = src('src/app/(app)/(consumer)/body-tracker/connections/page.tsx');
+    expect(wearables).toContain('ConnectionsSurface');
+    expect(wearables).toMatch(/return <ConnectionsSurface \/>/);
+    expect(wearables).not.toMatch(/WearableDashboardPage|Wearable Dashboard|ScoreRing/);
+    expect(wearables).not.toMatch(/Last sync:\s*5 min ago|["'`]5 min ago["'`]/);
+    expect(wearables).not.toMatch(/px-4 py-6/);
+    expect(connections).toMatch(/return <ConnectionsSurface \/>/);
+
+    const srcRoot = join(root, 'src');
+    const hits: string[] = [];
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        const full = join(dir, entry.name);
+        if (entry.isDirectory()) {
+          if (entry.name === '__tests__' || entry.name === 'node_modules') continue;
+          walk(full);
+          continue;
+        }
+        if (!/\.(tsx?|jsx?)$/.test(entry.name)) continue;
+        const text = readFileSync(full, 'utf8');
+        if (text.includes('WearableDashboardPage') || /function WearableDashboard\b/.test(text)) {
+          hits.push(full.replace(`${srcRoot}/`, 'src/'));
+        }
+      }
+    };
+    walk(srcRoot);
+    expect(hits).toEqual([]);
   });
 });
