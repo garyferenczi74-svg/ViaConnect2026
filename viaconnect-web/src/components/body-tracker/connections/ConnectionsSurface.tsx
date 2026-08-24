@@ -69,6 +69,7 @@ interface TilesResponse {
 
 export function ConnectionsSurface() {
   const [tiles, setTiles] = useState<WearableTileView[]>(() => emptyTiles('web'));
+  const [selectedId, setSelectedId] = useState<WearableTileView['id']>('apple_health');
   const [scoreDetail, setScoreDetail] = useState<DimensionSourceRow[]>([]);
   const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
   const [importIntent, setImportIntent] = useState<HealthXmlImportIntent | null>(null);
@@ -168,6 +169,8 @@ export function ConnectionsSurface() {
               tile={tile}
               onPrimary={onPrimary}
               onDropXml={tile.id === 'apple_health' ? () => setImportIntent('apple') : undefined}
+              selected={tile.id === selectedId}
+              onSelect={(t) => setSelectedId(t.id)}
             />
           ))}
         </div>

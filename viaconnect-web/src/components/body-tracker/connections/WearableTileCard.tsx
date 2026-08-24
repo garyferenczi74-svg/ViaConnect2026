@@ -24,9 +24,17 @@ interface WearableTileCardProps {
   tile: WearableTileView;
   onPrimary: (tile: WearableTileView) => void;
   onDropXml?: (file: File) => void;
+  selected?: boolean;
+  onSelect?: (tile: WearableTileView) => void;
 }
 
-export function WearableTileCard({ tile, onPrimary, onDropXml }: WearableTileCardProps) {
+export function WearableTileCard({
+  tile,
+  onPrimary,
+  onDropXml,
+  selected,
+  onSelect,
+}: WearableTileCardProps) {
   const connected = tile.lastSyncState === 'synced' || tile.lastSyncState === 'connected_never_synced';
   const needsReconnect = tile.lastSyncState === 'needs_reconnect';
   const feeds = connected ? feedsLabel(tile) : null;
@@ -37,14 +45,37 @@ export function WearableTileCard({ tile, onPrimary, onDropXml }: WearableTileCar
     !tile.action.configured &&
     tile.lastSyncState === 'not_connected';
   const liveDot = connected ? 'bg-teal' : needsReconnect ? 'bg-copper' : 'bg-white/30';
+  const cardClassName = selected
+    ? 'relative overflow-hidden rounded-[24px] border border-teal bg-teal/5 p-4 pl-6 ring-1 ring-teal backdrop-blur-md'
+    : 'relative overflow-hidden rounded-[24px] border border-white/[0.08] bg-card p-4 backdrop-blur-md';
+  const titleClassName = selected
+    ? 'text-sm font-bold leading-snug text-teal whitespace-normal break-words'
+    : 'text-sm font-semibold leading-snug text-white whitespace-normal break-words';
 
   return (
     <article
       data-tile-id={tile.id}
       data-last-sync-state={tile.lastSyncState}
       data-coming-soon={comingSoon ? 'true' : 'false'}
-      className="rounded-[24px] border border-white/[0.08] bg-card p-4 backdrop-blur-md"
+      data-selected={selected ? 'true' : 'false'}
+      aria-selected={selected ? 'true' : undefined}
+      role="button"
+      tabIndex={0}
+      onClick={() => onSelect?.(tile)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onSelect?.(tile);
+        }
+      }}
+      className={cardClassName}
     >
+      {selected ? (
+        <span
+          aria-hidden="true"
+          className="absolute inset-y-3 left-0 w-1 rounded-full bg-teal"
+        />
+      ) : null}
       <div className="flex items-start gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-navy-700">
           <TileIcon id={tile.id} />
@@ -52,7 +83,7 @@ export function WearableTileCard({ tile, onPrimary, onDropXml }: WearableTileCar
         <div className="min-w-0 flex-1 overflow-visible">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
-              <h3 className="text-sm font-semibold leading-snug text-white whitespace-normal break-words">
+              <h3 className={titleClassName}>
                 {tile.name}
               </h3>
               <p className="mt-0.5 flex items-center gap-1.5 text-xs text-white/60">
@@ -63,7 +94,10 @@ export function WearableTileCard({ tile, onPrimary, onDropXml }: WearableTileCar
             {connected && !xmlAction ? (
               <button
                 type="button"
-                onClick={() => onPrimary(tile)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onPrimary(tile);
+                }}
                 aria-label={`${tile.name} details`}
                 className="shrink-0 rounded-lg p-1 text-white/50 hover:bg-white/5 hover:text-white"
               >
@@ -73,7 +107,10 @@ export function WearableTileCard({ tile, onPrimary, onDropXml }: WearableTileCar
             {tile.lastSyncState === 'not_connected' && xmlAction ? (
               <button
                 type="button"
-                onClick={() => onPrimary(tile)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onPrimary(tile);
+                }}
                 className={outlineBtn}
               >
                 Upload XML
@@ -82,7 +119,10 @@ export function WearableTileCard({ tile, onPrimary, onDropXml }: WearableTileCar
             {tile.lastSyncState === 'not_connected' && oauthReady ? (
               <button
                 type="button"
-                onClick={() => onPrimary(tile)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onPrimary(tile);
+                }}
                 className={outlineBtn}
               >
                 Connect
@@ -91,7 +131,10 @@ export function WearableTileCard({ tile, onPrimary, onDropXml }: WearableTileCar
             {needsReconnect && oauthReady ? (
               <button
                 type="button"
-                onClick={() => onPrimary(tile)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onPrimary(tile);
+                }}
                 className={outlineBtn}
               >
                 Reconnect
@@ -102,7 +145,10 @@ export function WearableTileCard({ tile, onPrimary, onDropXml }: WearableTileCar
           {connected && xmlAction ? (
             <button
               type="button"
-              onClick={() => onPrimary(tile)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onPrimary(tile);
+              }}
               className="mt-2 text-xs font-medium text-teal hover:underline"
             >
               Upload XML
@@ -115,9 +161,13 @@ export function WearableTileCard({ tile, onPrimary, onDropXml }: WearableTileCar
         <div
           data-apple-dropzone="true"
           onDragOver={(e) => e.preventDefault()}
-          onClick={() => onPrimary(tile)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onPrimary(tile);
+          }}
           onDrop={(e) => {
             e.preventDefault();
+            e.stopPropagation();
             const file = e.dataTransfer.files?.[0];
             if (file) onDropXml(file);
           }}
