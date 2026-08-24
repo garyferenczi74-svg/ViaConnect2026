@@ -59,6 +59,7 @@ describe('KbPeptideCatalogSection card mechanism', () => {
     expect(html).toContain('Open entry');
     expect(html).not.toContain('Not a peptide');
     expect(html).not.toContain('mechanismSummary');
+    expect(html).not.toMatch(/gastric-derived peptide|purpose-rewritten/i);
     const mechanism = readMechanism(html, 'edu-bpc157');
     expect(mechanism).toBe(
       'Live educational purpose from peptide_education_entries.mechanism.',
