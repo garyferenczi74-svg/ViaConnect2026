@@ -74,9 +74,13 @@ describe("no staged census on the three portal homes", () => {
     expect(src).not.toMatch(/Dr\. Patel/);
   });
 
-  it("admin home does not invent 62 SKUs or Q1 2026", () => {
+  it("admin home does not invent 62 SKUs, Q1 2026, or toolchain KPIs", () => {
     const src = read("src/app/(app)/admin/page.tsx");
     expect(src).not.toMatch(/skuCount \?\? 62|Q1 2026|62 Master SKUs/);
+    expect(src).not.toMatch(/board_metrics|sku_rationalization|inventory_reorder|alert_snapshots/);
+    expect(src).not.toMatch(/farmceutica\.ps1|Star SKUs|13\.7M|8500/);
+    expect(src).toMatch(/ADMIN_BOARD_EMPTY_COPY/);
+    expect(src).toMatch(/loadAdminLiveCatalog/);
   });
 });
 
