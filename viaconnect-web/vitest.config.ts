@@ -50,6 +50,8 @@ export default defineConfig({
       'src/components/genetics/__tests__/VariantRowChip.bare.test.tsx',
       // Picasso 21b: /plugins vendor-mark tiles
       'src/components/plugins/__tests__/PluginAppCard.bare.test.tsx',
+      // Consumer peptide cards bind live mechanism
+      'src/components/peptide-protocol/__tests__/KbPeptideCatalogSection.bare.test.tsx',
     ],
     exclude: ['node_modules', '.next', 'supabase'],
     globals: true,

@@ -6,7 +6,9 @@ import { readFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  displayEducationField,
   dropsEducationCompound,
+  EDUCATION_FIELD_UNAVAILABLE,
   extractPmids,
   formatProvenance,
   isAllowlistedNonPeptide,
@@ -169,8 +171,13 @@ describe('Brief 18 live count and copy guards', () => {
     expect(loader).not.toContain('summary');
     expect(fields).not.toContain('summary');
     expect(catalog).toContain('Open entry');
+    expect(catalog).toContain('displayEducationField(entry.mechanism)');
+    expect(catalog).toContain('kb-peptide-card-mechanism');
+    expect(catalog).toContain('Used for');
+    expect(detail).toContain('displayEducationField(value)');
     expect(detail).toContain('Not available');
     expect(detail).toContain('entry-mechanism');
+    expect(detail).toContain('Used for');
     expect(detail).toContain('entry-safety');
     expect(detail).toContain('entry-regulatory');
     expect(detail).toContain('entry-pmids');
@@ -421,5 +428,115 @@ describe('Brief 18 education entry helpers', () => {
     expect(
       formatProvenance([{ source: 'system-seed', note: 'Catalog seed' }]),
     ).toBe('system-seed · Catalog seed');
+  });
+});
+
+describe('Brief 18 browse cards bind live mechanism', () => {
+  const catalog = read('src/components/peptide-protocol/KbPeptideCatalogSection.tsx');
+  const detail = read('src/components/peptide-protocol/PeptideEducationEntryDetail.tsx');
+  const loader = read('src/lib/peptides/educationEntries.ts');
+  const fields = read('src/lib/peptides/educationEntryFields.ts');
+
+  it('selects and maps peptide_education_entries.mechanism for list and detail', () => {
+    expect(loader).toContain(
+      'entry_key, title, mechanism, evidence_grade, regulatory_status, safety_context, provenance, source_url',
+    );
+    expect(fields).toContain('mechanism: asTrimmed(row.mechanism)');
+    expect(catalog).toContain('displayEducationField(entry.mechanism)');
+    expect(catalog).toContain('Used for');
+    expect(detail).toContain('displayEducationField(value)');
+    expect(detail).toContain('entry-mechanism');
+    expect(detail).toContain('Used for');
+  });
+
+  it('trims populated mechanism and shows Not available for empty, null, or whitespace', () => {
+    expect(displayEducationField('Angiogenic research signals.')).toBe(
+      'Angiogenic research signals.',
+    );
+    expect(displayEducationField('  Angiogenic research signals.  ')).toBe(
+      'Angiogenic research signals.',
+    );
+    expect(displayEducationField(null)).toBe(EDUCATION_FIELD_UNAVAILABLE);
+    expect(displayEducationField(undefined)).toBe(EDUCATION_FIELD_UNAVAILABLE);
+    expect(displayEducationField('')).toBe(EDUCATION_FIELD_UNAVAILABLE);
+    expect(displayEducationField('   ')).toBe(EDUCATION_FIELD_UNAVAILABLE);
+    expect(EDUCATION_FIELD_UNAVAILABLE).toBe('Not available');
+    expect(
+      mapEducationRow({
+        entry_key: 'edu-bpc157',
+        title: 'BPC-157 educational overview',
+        mechanism: '  Angiogenic research signals.  ',
+      })?.mechanism,
+    ).toBe('Angiogenic research signals.');
+    expect(
+      mapEducationRow({
+        entry_key: 'edu-tesofensine-pause',
+        title: 'Tesofensine regulatory timing note',
+        mechanism: '   ',
+      })?.mechanism,
+    ).toBeNull();
+    expect(
+      displayEducationField(
+        mapEducationRow({
+          entry_key: 'edu-tesofensine-pause',
+          title: 'Tesofensine regulatory timing note',
+          mechanism: null,
+        })?.mechanism,
+      ),
+    ).toBe('Not available');
+    expect(
+      mapEducationRow({
+        entry_key: 'edu-bpc157',
+        title: 'BPC-157 educational overview',
+        mechanism:
+          'BPC-157 is a gastric-derived peptide studied for tissue-repair and gut-barrier pathways.',
+      })?.mechanism,
+    ).toBe(
+      'BPC-157 is a gastric-derived peptide studied for tissue-repair and gut-barrier pathways.',
+    );
+    expect(
+      mapEducationRow({
+        entry_key: 'edu-tesofensine-pause',
+        title: 'Tesofensine is not a peptide (terminology and regulatory timing)',
+        mechanism:
+          'Tesofensine is a small-molecule weight-research compound, not a peptide; this note is terminology and regulatory timing only.',
+      })?.isPeptide,
+    ).toBe(false);
+  });
+
+  it('does not add shop, dose, SKU, or reconstitution strings to cards', () => {
+    const card = catalog.slice(
+      catalog.indexOf('function EducationCard'),
+      catalog.indexOf('export function KbPeptideCatalogSection'),
+    );
+    expect(card).toContain('displayEducationField(entry.mechanism)');
+    expect(card).not.toMatch(PURCHASE);
+    expect(card).not.toMatch(NUMERIC_DOSE_LEXICON);
+    expect(card).not.toMatch(/\bSKU\b/i);
+    expect(card.toLowerCase()).not.toContain('reconstitution');
+    expect(card.toLowerCase()).not.toContain('how to reconstitute');
+    expect(card).not.toContain('/shop/product');
+    expect(detail).not.toMatch(PURCHASE);
+    expect(detail).not.toMatch(NUMERIC_DOSE_LEXICON);
+    expect(detail).not.toMatch(/\bSKU\b/i);
+  });
+
+  it('does not restore Collection 14 leftovers or flatten depth keys', () => {
+    expect(catalog).not.toMatch(/Collection 14/i);
+    expect(catalog).not.toContain('ConsumerPeptideMonograph');
+    expect(catalog).not.toContain('kb_peptides');
+    expect(catalog).not.toContain('topic_keys');
+    expect(catalog).not.toContain('depth-');
+    expect(loader).not.toContain('topic_keys');
+    expect(loader).not.toContain('topicKeys');
+    expect(fields).not.toContain('topic_keys');
+    expect(fields).not.toContain('topicKeys');
+    expect(THANOS_CONSUMER_ENTRY_KEYS.some((key) => key.startsWith('depth-'))).toBe(
+      false,
+    );
+    expect(THANOS_CONSUMER_ENTRY_KEYS).toHaveLength(33);
+    expect(THANOS_CONSUMER_ENTRY_KEYS).toContain('edu-bpc157');
+    expect(THANOS_CONSUMER_ENTRY_KEYS).toContain('edu-tesofensine-pause');
+    expect(THANOS_CONSUMER_ENTRY_KEYS).not.toContain('edu-bpc157-arginate');
   });
 });

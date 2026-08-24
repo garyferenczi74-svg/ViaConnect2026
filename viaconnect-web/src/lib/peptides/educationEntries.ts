@@ -17,6 +17,8 @@ import {
 
 export type { EducationEntry } from '@/lib/peptides/educationEntryFields';
 export {
+  displayEducationField,
+  EDUCATION_FIELD_UNAVAILABLE,
   extractPmids,
   formatProvenance,
   isSafeEntryKey,

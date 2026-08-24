@@ -1,6 +1,9 @@
 import Link from 'next/link';
 import { ArrowLeft, FlaskConical, Info } from 'lucide-react';
-import type { EducationEntry } from '@/lib/peptides/educationEntries';
+import {
+  displayEducationField,
+  type EducationEntry,
+} from '@/lib/peptides/educationEntries';
 
 function Field({
   label,
@@ -14,7 +17,9 @@ function Field({
   return (
     <section className="space-y-2" data-testid={testId}>
       <h3 className="text-sm font-semibold text-white">{label}</h3>
-      <p className="text-sm leading-relaxed text-white/65">{value ?? 'Not available'}</p>
+      <p className="text-sm leading-relaxed text-white/65">
+        {displayEducationField(value)}
+      </p>
     </section>
   );
 }
@@ -60,7 +65,7 @@ export function PeptideEducationEntryDetail({ entry }: { entry: EducationEntry }
       </p>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label="Mechanism" value={entry.mechanism} testId="entry-mechanism" />
+        <Field label="Used for" value={entry.mechanism} testId="entry-mechanism" />
         <Field label="Safety" value={entry.safetyContext} testId="entry-safety" />
         <Field
           label="Regulatory"
