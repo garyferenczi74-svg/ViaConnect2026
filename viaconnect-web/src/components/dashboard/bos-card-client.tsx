@@ -26,6 +26,7 @@
 // tier's hue (legacy treatment).
 
 import { useBOSCurrent } from '@/hooks/use-bos-current';
+import { toDisplayBosScore } from '@/lib/scoring/bos-display';
 import { BOSCardSkeleton } from './bos-card-skeleton';
 import { BOSCardError } from './bos-card-error';
 import { BOSCardEmptyState } from './bos-card-empty-state';
@@ -44,12 +45,12 @@ export function BOSCardClient() {
   }
   if (!data) return <BOSCardSkeleton />;
 
-  // Pre-compute branch
-  if (data.score === null) {
+  const score = toDisplayBosScore(data.score);
+  if (score === null) {
     return <BOSCardEmptyState data={data} />;
   }
 
-  const bandColor = colorForScore(data.score);
+  const bandColor = colorForScore(score);
 
   return (
     <section
@@ -69,7 +70,7 @@ export function BOSCardClient() {
           <div className="mx-auto md:mx-0">
             <BOSScoreGauge data={data} />
           </div>
-          <BOSSidePanel data={data} />
+          <BOSSidePanel data={data} weeklyDelta={data.weekly_delta} />
         </div>
 
         {/* 2. Accuracy row */}

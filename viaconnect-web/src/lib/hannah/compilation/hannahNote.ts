@@ -20,7 +20,7 @@ export interface ComposedHannahNote {
 
 /**
  * Marshall-approved welcome set (generic only; no fabricated personal observations).
- * Placeholders: {name} replaced with first name or "there".
+ * Placeholders: {name} replaced with first name, or dropped when empty.
  */
 export const HANNAH_NOTE_WELCOME_TEMPLATES = [
   '{name}, welcome. This note will start reflecting your own signals once you log a meal, connect a hub, or finish your CAQ.',
@@ -78,13 +78,23 @@ export function isNoteDistinctFromReadToday(note: string, readToday: string): bo
   return true;
 }
 
+export function applyNamePlaceholder(template: string, name: string): string {
+  const n = name.trim();
+  if (!n) {
+    const dropped = template
+      .replaceAll('{name}, ', '')
+      .replaceAll(', {name}', '')
+      .replaceAll(' {name}', '')
+      .replaceAll('{name}', '');
+    return dropped.replace(/^([a-z])/, (ch) => ch.toUpperCase());
+  }
+  return template.replaceAll('{name}', n);
+}
+
 export function pickWelcomeNote(displayName: string, seed = 0): ComposedHannahNote {
-  const name =
-    displayName && displayName.trim().length > 0 && displayName !== 'there'
-      ? displayName.trim().split(/\s+/)[0]
-      : 'there';
+  const name = firstName(displayName);
   const idx = Math.abs(seed) % HANNAH_NOTE_WELCOME_TEMPLATES.length;
-  const raw = HANNAH_NOTE_WELCOME_TEMPLATES[idx].replaceAll('{name}', name);
+  const raw = applyNamePlaceholder(HANNAH_NOTE_WELCOME_TEMPLATES[idx], name);
   const noteText = applyHannahNoteLexicon(raw);
   return {
     noteText,
@@ -96,8 +106,8 @@ export function pickWelcomeNote(displayName: string, seed = 0): ComposedHannahNo
 }
 
 function firstName(displayName: string): string {
-  if (!displayName || !displayName.trim() || displayName === 'there') return 'there';
-  return displayName.trim().split(/\s+/)[0];
+  if (!displayName || !displayName.trim() || displayName.trim().toLowerCase() === 'there') return '';
+  return displayName.trim().split(/\s+/)[0] ?? '';
 }
 
 function buildReadTodaySnapshot(
@@ -151,24 +161,24 @@ export function composeHannahNote(
 
   if (sparse && !top) {
     draft =
-      name === 'there'
+      !name
         ? 'I am watching for your first honest signals. Once Nutrition, Biology, or CAQ land, this note will speak to what is on file rather than a generic start.'
         : `${name}, I am still in early-days mode with you. Log a meal or a composition entry and I will write to what actually shows up, not a placeholder.`;
   } else if (sparse && top) {
     draft =
-      name === 'there'
+      !name
         ? `A quiet start is fine. The clearest next lever on file is around ${top.sourceHub.toLowerCase()}: ${shorten(top.description, 120)}. Small consistent inputs sharpen this note quickly.`
         : `${name}, signals are still light, which is honest. The most useful next lever on file sits in ${top.sourceHub}: ${shorten(top.description, 110)}. I will keep this note tied to what you actually log.`;
   } else if (top) {
     const hub = top.sourceHub;
     const lever = shorten(top.description, 100);
     draft =
-      name === 'there'
+      !name
         ? `Something worth noticing sits in ${hub}: ${lever}. If you pick one focus today, let it be that lever rather than spreading thin.`
         : `${name}, I want you to notice ${hub.toLowerCase()} today. ${lever.charAt(0).toUpperCase()}${lever.slice(1)}. Treat that as your personal lever, not a score chase.`;
   } else {
     draft =
-      name === 'there'
+      !name
         ? 'Your hubs are quiet today. Keep one steady habit so the next compile has something real to speak to.'
         : `${name}, your hubs are quiet today. Keep one steady habit so my next note can point at a real change rather than a blank window.`;
   }
@@ -178,7 +188,7 @@ export function composeHannahNote(
   // Ensure distinctness; if collision, rewrite with a fixed personal framing.
   if (!isNoteDistinctFromReadToday(noteText, readTodaySnapshot)) {
     const fallback =
-      name === 'there'
+      !name
         ? 'This note is personal, not a status summary. Pick one lever from your accelerators and give it a clean day of attention.'
         : `${name}, this note is personal, not a status summary. Pick one lever from your accelerators and give it a clean day of attention.`;
     noteText = applyHannahNoteLexicon(fallback);
@@ -187,7 +197,7 @@ export function composeHannahNote(
   // Hard guarantee after fallback
   if (!isNoteDistinctFromReadToday(noteText, readTodaySnapshot) && readTodaySnapshot) {
     noteText = applyHannahNoteLexicon(
-      `${name === 'there' ? 'Friend' : name}, I am keeping this note short and personal. Check your accelerators for the working lever; this line stays separate from the status read above.`,
+      `${name ? `${name}, I am` : 'I am'} keeping this note short and personal. Check your accelerators for the working lever; this line stays separate from the status read above.`,
     );
   }
 

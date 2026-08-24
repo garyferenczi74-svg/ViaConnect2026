@@ -20,7 +20,7 @@ type Params = {
   displayName: string;
   range: TimeRange;
   points: ScorePoint[];
-  current: number;
+  current: number | null;
   weeksActive: number;
 };
 
@@ -32,33 +32,37 @@ function buildTemplate({
   weeksActive,
 }: Omit<Params, "userId">): HannahInsight {
   const direction = trendDirection(points);
-  const tier = tierFor(current);
-  const name = displayName || "there";
+  const score = typeof current === "number" && Number.isFinite(current) ? current : null;
+  const tier = score === null ? { name: "unscored" } : tierFor(score);
+  const name = displayName.trim();
+  const named = (withName: string, withoutName: string) => (name ? withName : withoutName);
 
   const greetings: Record<TimeRange, string> = {
-    "7D": `Hey ${name}, here is this week's read.`,
-    "4W": `${name}, your four week pattern is emerging.`,
-    "3M": `${name}, let's look at the last three months together.`,
-    "1Y": `${name}, a full year of data tells a story.`,
+    "7D": named(`Hey ${name}, here is this week's read.`, "Here is this week's read."),
+    "4W": named(`${name}, your four week pattern is emerging.`, "Your four week pattern is emerging."),
+    "3M": named(`${name}, let's look at the last three months together.`, "Let's look at the last three months together."),
+    "1Y": named(`${name}, a full year of data tells a story.`, "A full year of data tells a story."),
   };
 
   let analysis = "";
-  if (weeksActive < 2) {
-    analysis = `You are building the first data points of your Bio Optimization journey. Early readings suggest a ${tier.name.toLowerCase()} baseline at ${current}. The next ten days of consistent check ins will unlock pattern detection.`;
+  if (score === null) {
+    analysis = "Not enough data yet for a Bio Optimization Score. Keep logging and this read will use the same score as your dashboard.";
+  } else if (weeksActive < 2) {
+    analysis = `You are building the first data points of your Bio Optimization journey. Early readings suggest a ${tier.name.toLowerCase()} baseline at ${score}. The next ten days of consistent check ins will unlock pattern detection.`;
   } else if (weeksActive < 8) {
     analysis =
       direction === "up"
-        ? `Your score is trending upward, currently ${tier.name.toLowerCase()} at ${current}. Sleep and adherence look like the levers carrying the lift.`
+        ? `Your score is trending upward, currently ${tier.name.toLowerCase()} at ${score}. Sleep and adherence look like the levers carrying the lift.`
         : direction === "down"
-          ? `Your score has softened to ${current}, currently ${tier.name.toLowerCase()}. A dip in one category usually explains most of it; let's isolate it.`
-          : `Your score is holding steady at ${current}, a ${tier.name.toLowerCase()} plateau. Plateaus are normal; the next step is a targeted push.`;
+          ? `Your score has softened to ${score}, currently ${tier.name.toLowerCase()}. A dip in one category usually explains most of it; let's isolate it.`
+          : `Your score is holding steady at ${score}, a ${tier.name.toLowerCase()} plateau. Plateaus are normal; the next step is a targeted push.`;
   } else if (weeksActive < 16) {
     analysis =
       direction === "up"
         ? `Two months of correlated gains. Sleep consistency and supplement adherence are the strongest predictors in your data right now, and they are compounding.`
-        : `Two months of data lets us separate signal from noise. The underlying drivers for your ${current} score cluster around sleep quality and recovery load.`;
+        : `Two months of data lets us separate signal from noise. The underlying drivers for your ${score} score cluster around sleep quality and recovery load.`;
   } else {
-    analysis = `Longitudinal view: your Bio Optimization trajectory has settled into a ${tier.name.toLowerCase()} band centered near ${current}. Seasonal and training cycles are now visible in the data.`;
+    analysis = `Longitudinal view: your Bio Optimization trajectory has settled into a ${tier.name.toLowerCase()} band centered near ${score}. Seasonal and training cycles are now visible in the data.`;
   }
 
   let recommendation = "";
