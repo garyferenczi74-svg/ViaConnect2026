@@ -16,6 +16,7 @@ describe('genetics catch-all panel route', () => {
     expect(source).toContain('blueprintHrefForPanelPath');
     expect(source).toContain('redirect(href)');
     expect(source).toContain('notFound()');
+    expect(source).toContain('Allowlist only');
   });
 
   it('does not fabricate a panel from an unknown slug', () => {

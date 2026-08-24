@@ -19,9 +19,11 @@ describe('emptyMarkerCountLabel', () => {
     expect(isEmptyMarkerCount(0)).toBe(true);
   });
 
-  it('does not rename the Unanalyzed fail chip', () => {
+  it('does not rename the Unanalyzed or Demo chips from PR 32 / Brief 16', () => {
     expect(NOT_ANALYZED_LABEL).toBe('Not analyzed');
     expect(NOT_ANALYZED_LABEL).not.toBe('Unanalyzed');
     expect(NOT_ANALYZED_LABEL).not.toBe('Demo');
+    expect(emptyMarkerCountLabel(0)).not.toBe('Unanalyzed');
+    expect(emptyMarkerCountLabel(0)).not.toBe('0');
   });
 });

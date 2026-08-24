@@ -1,5 +1,5 @@
 // Brief 17: kill fabricated /genetics/{slug} panels.
-// Known catalog slugs (genex-m, nutrigen-dx, and aliases) redirect to
+// Allowlist only (PANEL_ROUTE_ALLOWLIST). Known catalog slugs redirect to
 // BLUEPRINT_ROUTE hashes. Unknown slugs call notFound() so the genetics
 // app-shell 404 renders instead of a fake panel page.
 

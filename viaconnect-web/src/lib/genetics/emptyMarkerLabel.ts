@@ -1,6 +1,6 @@
 // Brief 17: empty observed marker counts are "Not analyzed", never the
-// number 0. Fail / remap chips on Your Variants stay Unanalyzed (PR 32 /
-// Brief 16). This helper is only for empty catalog counts.
+// number 0. Do not rename PR 32 / Brief 16 Demo or Unanalyzed chips.
+// This helper is only for empty catalog counts on Brief 17 surfaces.
 //
 // Standing rules: no em or en dashes, TypeScript strict (no any).
 
