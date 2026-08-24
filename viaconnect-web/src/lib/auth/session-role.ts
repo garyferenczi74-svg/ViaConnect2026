@@ -170,9 +170,37 @@ const CONSUMER_ONLY_PREFIXES = [
   "/helix",
 ] as const;
 
+/** Wellness routes that should light the Personal Wellness tab. */
+const CONSUMER_PORTAL_PREFIXES = [
+  "/dashboard",
+  "/analytics",
+  "/genetics",
+  "/nutrition",
+  "/supplements",
+  "/tokens",
+  "/messages",
+  "/ai",
+  "/helix",
+  "/body-tracker",
+  "/wearables",
+  "/peptide-protocol",
+  "/wellness",
+  "/plugins",
+  "/media-sources",
+  "/science",
+  "/shop",
+] as const;
+
 export function isConsumerOnlyPath(pathname: string): boolean {
   if (isHelixPath(pathname) || isHelixApiPath(pathname)) return true;
   return CONSUMER_ONLY_PREFIXES.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`),
+  );
+}
+
+export function isConsumerPortalPath(pathname: string): boolean {
+  if (isHelixPath(pathname)) return true;
+  return CONSUMER_PORTAL_PREFIXES.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`),
   );
 }
@@ -198,8 +226,11 @@ export function canAccessPortalPath(
   role: SessionRole | undefined,
   pathname: string,
 ): boolean {
-  if (isHelixPath(pathname) || isHelixApiPath(pathname)) {
+  if (isHelixApiPath(pathname)) {
     return role === "consumer";
+  }
+  if (isHelixPath(pathname)) {
+    return role === "consumer" || role === "admin";
   }
   if (isHounddogPath(pathname)) {
     return role === "admin";
@@ -269,25 +300,31 @@ export function portalKeyFromPath(pathname: string): PortalKey | null {
   if (isPractitionerPortalPath(pathname)) return "practitioner";
   if (isNaturopathPortalPath(pathname)) return "naturopath";
   if (isAdminPortalPath(pathname)) return "admin";
-  if (isHelixPath(pathname) || pathname.startsWith("/dashboard")) return "consumer";
+  if (isConsumerPortalPath(pathname)) return "consumer";
   return null;
 }
 
 /**
- * AppShell / sidebar role. Admin viewing an in-role portal keeps admin
- * as the session chip; nav chrome may follow the allowed portal.
+ * Sidebar / mobile nav follow the portal the admin is actually in.
+ * Session role stays admin for authorization; chrome does not stay
+ * stuck on the Admin nav when Personal Wellness is open.
  */
+export function shellRoleForActivePortal(
+  role: SessionRole,
+  active: PortalKey,
+): SessionRole {
+  if (role !== "admin") return role;
+  if (active === "consumer") return "consumer";
+  if (active === "practitioner") return "practitioner";
+  if (active === "naturopath") return "naturopath";
+  return "admin";
+}
+
 export function shellRoleForSession(
   role: SessionRole,
   pathname: string,
 ): SessionRole {
-  if (role !== "admin") return role;
-  const active = activePortalForSession(role, pathname);
-  if (active === "hounddog") return "admin";
-  if (active === "consumer") return "admin";
-  return active === "practitioner" || active === "naturopath" || active === "admin"
-    ? active
-    : "admin";
+  return shellRoleForActivePortal(role, activePortalForSession(role, pathname));
 }
 
 export type ClinicianPatientRow = {

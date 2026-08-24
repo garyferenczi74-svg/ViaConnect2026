@@ -10,6 +10,7 @@ import {
   failClosedOnAuthTimeout,
   unauthenticatedClinicianPortalRedirect,
   isClinicianOrAdminPath,
+  isConsumerPortalPath,
   isHelixPath,
   isPractitionerPortalPath,
   outOfRoleRedirect,
@@ -17,6 +18,8 @@ import {
   roleChipLabel,
   roleFromProfilesColumn,
   roleHomePath,
+  shellRoleForActivePortal,
+  shellRoleForSession,
   OUT_OF_ROLE_REDIRECT,
 } from "@/lib/auth/session-role";
 
@@ -92,7 +95,8 @@ describe("path access", () => {
     expect(canAccessPortalPath("consumer", "/helix/earn")).toBe(true);
     expect(canAccessPortalPath("practitioner", "/helix")).toBe(false);
     expect(canAccessPortalPath("naturopath", "/helix")).toBe(false);
-    expect(canAccessPortalPath("admin", "/helix")).toBe(false);
+    expect(canAccessPortalPath("admin", "/helix")).toBe(true);
+    expect(canAccessPortalPath("admin", "/api/helix/redeem")).toBe(false);
     expect(canAccessPortalPath("admin", "/admin/hounddog")).toBe(true);
     expect(canAccessPortalPath("practitioner", "/admin/hounddog")).toBe(false);
     expect(canAccessPortalPath("practitioner", "/dashboard")).toBe(false);
@@ -114,6 +118,7 @@ describe("path access", () => {
     expect(outOfRoleRedirect("practitioner", "/helix")).toBe(
       roleHomePath("practitioner"),
     );
+    expect(outOfRoleRedirect("admin", "/helix")).toBeNull();
   });
 
   it("active tab follows session-allowed portals, not a spoofed URL", () => {
@@ -127,6 +132,43 @@ describe("path access", () => {
     expect(activePortalForSession("practitioner", "/dashboard")).toBe(
       "practitioner",
     );
+  });
+});
+
+describe("admin portal chrome follows the selected portal", () => {
+  it("treats wellness routes as Personal Wellness, not only /dashboard", () => {
+    expect(isConsumerPortalPath("/dashboard")).toBe(true);
+    expect(isConsumerPortalPath("/nutrition")).toBe(true);
+    expect(isConsumerPortalPath("/genetics/upload")).toBe(true);
+    expect(isConsumerPortalPath("/shop/peptides")).toBe(true);
+    expect(isConsumerPortalPath("/admin")).toBe(false);
+    expect(isConsumerPortalPath("/practitioner/dashboard")).toBe(false);
+  });
+
+  it("admin on wellness routes keeps Personal Wellness chrome", () => {
+    expect(activePortalForSession("admin", "/dashboard")).toBe("consumer");
+    expect(activePortalForSession("admin", "/nutrition")).toBe("consumer");
+    expect(activePortalForSession("admin", "/genetics")).toBe("consumer");
+    expect(shellRoleForSession("admin", "/dashboard")).toBe("consumer");
+    expect(shellRoleForSession("admin", "/nutrition")).toBe("consumer");
+    expect(shellRoleForSession("admin", "/admin")).toBe("admin");
+    expect(shellRoleForSession("admin", "/admin/hounddog")).toBe("admin");
+    expect(shellRoleForSession("admin", "/practitioner/dashboard")).toBe(
+      "practitioner",
+    );
+  });
+
+  it("admin portal list has a single Admin tab", () => {
+    const labels = portalsForRole("admin").map((p) => p.label);
+    expect(labels.filter((label) => label === "Admin")).toHaveLength(1);
+    expect(labels[0]).toBe("Personal Wellness");
+  });
+
+  it("sidebar role follows the active portal, not the session chip", () => {
+    expect(shellRoleForActivePortal("admin", "consumer")).toBe("consumer");
+    expect(shellRoleForActivePortal("admin", "admin")).toBe("admin");
+    expect(shellRoleForActivePortal("admin", "hounddog")).toBe("admin");
+    expect(shellRoleForActivePortal("consumer", "consumer")).toBe("consumer");
   });
 });
 
@@ -229,6 +271,8 @@ describe("source contract: chrome + middleware use session role", () => {
     expect(src).toMatch(/sessionRole/);
     expect(src).toMatch(/portalsForRole/);
     expect(src).toMatch(/roleChipLabel/);
+    expect(src).toMatch(/shellRoleForActivePortal/);
+    expect(src).not.toMatch(/session-role-chip/);
     expect(src).not.toMatch(/gary@farmceuticawellness\.com/);
     expect(src).not.toMatch(/BASE_PORTALS/);
   });
