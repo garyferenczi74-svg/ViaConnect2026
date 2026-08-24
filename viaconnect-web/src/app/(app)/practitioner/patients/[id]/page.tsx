@@ -8,16 +8,15 @@
 // Renders Standard or Naturopathic view; the segmented control only appears
 // for credential types that support naturopathic view (nd, dc, lac).
 //
-// The pre-revision client implementation is preserved at LegacyPatientView.tsx
-// and rendered as the Standard view body so existing UX is unchanged for
-// non-naturopath credentials.
+// Missing practitioner or relationship rows render an honest empty state.
+// The retired staged chart is not used as a fallback.
 
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { PatientViewModeSelector } from '@/components/practitioner/PatientViewModeSelector';
 import { StandardPatientView } from '@/components/practitioner/StandardPatientView';
 import { NaturopathicPatientView } from '@/components/practitioner/NaturopathicPatientView';
-import LegacyPatientDetailView from './LegacyPatientView';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,7 +52,7 @@ export default async function PractitionerPatientDetailPage(props: PageProps) {
   } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  const { data: pRow } = await (supabase as any)
+  const { data: pRow } = await supabase
     .from('practitioners')
     .select('id, credential_type, default_patient_view_mode')
     .eq('user_id', user.id)
@@ -61,13 +60,16 @@ export default async function PractitionerPatientDetailPage(props: PageProps) {
     .maybeSingle();
   const practitioner = (pRow ?? null) as PractitionerSlim | null;
 
-  // If no practitioner record yet, fall back to the legacy view to avoid a
-  // hard redirect for accounts mid-onboarding.
   if (!practitioner) {
-    return <LegacyPatientDetailView />;
+    return (
+      <RosterEmptyState
+        title="This account is not an active practitioner"
+        body="Patient charts open only for an active practitioner record. No staged chart is shown."
+      />
+    );
   }
 
-  const { data: relRow } = await (supabase as any)
+  const { data: relRow } = await supabase
     .from('practitioner_patients')
     .select(
       'id, consent_share_caq, consent_share_protocols, consent_share_engagement_score, consent_share_nutrition, can_view_genetics, patient_view_mode_override',
@@ -78,10 +80,13 @@ export default async function PractitionerPatientDetailPage(props: PageProps) {
     .maybeSingle();
   const relationship = (relRow ?? null) as RelationshipSlim | null;
 
-  // No active relationship: render the legacy view so demo / mock-data routes
-  // still work; the new RLS-gated views require a real relationship row.
   if (!relationship) {
-    return <LegacyPatientDetailView />;
+    return (
+      <RosterEmptyState
+        title="This patient is not on your roster"
+        body="Charts open only for an active practitioner_patients relationship. No staged chart is shown."
+      />
+    );
   }
 
   const canShowNaturopathic = NATUROPATH_LIKE.has(practitioner.credential_type);
@@ -114,11 +119,25 @@ export default async function PractitionerPatientDetailPage(props: PageProps) {
       {renderNaturopathic ? (
         <NaturopathicPatientView patientId={params.id} relationship={relationship} />
       ) : (
-        // Standard view: spec-aligned consent-gated component. The legacy
-        // client UI remains as the no-relationship fallback above so demo
-        // / mock-data routes still work.
         <StandardPatientView patientId={params.id} relationship={relationship} />
       )}
+    </div>
+  );
+}
+
+function RosterEmptyState({ title, body }: { title: string; body: string }) {
+  return (
+    <div className="min-h-screen bg-[#0E1A30] text-white px-4 py-6 md:px-8 md:py-10">
+      <div className="max-w-xl">
+        <h1 className="text-heading-2 text-[#B75E18]">{title}</h1>
+        <p className="text-sm text-secondary mt-2">{body}</p>
+        <Link
+          href="/practitioner/patients"
+          className="inline-flex items-center mt-6 px-4 py-2 min-h-[44px] rounded-lg text-sm font-medium text-[#4A90D9] border border-[#4A90D9]/30 hover:bg-[#4A90D9]/10"
+        >
+          Back to roster
+        </Link>
+      </div>
     </div>
   );
 }
