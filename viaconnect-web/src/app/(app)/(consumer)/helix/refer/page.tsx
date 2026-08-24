@@ -6,17 +6,8 @@ import { Megaphone, Send, CircleCheckBig, Dna, Clock, Star, Gem, Trophy, Crown }
 import { GlassCard } from '@/components/helix/GlassCard';
 import { HelixIcon } from '@/components/helix/HelixIcon';
 import { ReferralCode } from '@/components/helix/ReferralCode';
-
-/* ------------------------------------------------------------------ */
-/*  Data                                                               */
-/* ------------------------------------------------------------------ */
-
-const REFERRAL_STATS = [
-  { label: 'Invites Sent',  value: 12, icon: Send },
-  { label: 'Friends Joined', value: 6, icon: CircleCheckBig },
-  { label: 'Helix Earned',  value: 4500, icon: Dna, isTeal: true },
-  { label: 'Pending',       value: 3, icon: Clock },
-];
+import { useHelixConsumerSnapshot } from '@/hooks/useHelixConsumerSnapshot';
+import { REFERRAL_CODE_EMPTY } from '@/lib/helix/consumer-honesty';
 
 const MILESTONES = [
   { count: 5,  label: '5 Referrals',  icon: Star },
@@ -25,25 +16,30 @@ const MILESTONES = [
   { count: 50, label: '50 Referrals', icon: Crown },
 ];
 
-const FRIENDS_JOINED = 6;
-
-/* ------------------------------------------------------------------ */
-/*  Page                                                               */
-/* ------------------------------------------------------------------ */
-
 export default function ReferPage() {
   const [copied, setCopied] = useState(false);
+  const { referralCode, referralStats } = useHelixConsumerSnapshot();
+  const shareUrl = referralCode
+    ? `https://viaconnectapp.com/ref/${encodeURIComponent(referralCode)}`
+    : null;
 
   const handleCopyLink = () => {
-    navigator.clipboard.writeText('https://viaconnectapp.com/ref/GARY-VIA-2026');
+    if (!shareUrl) return;
+    void navigator.clipboard.writeText(shareUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const stats = [
+    { label: 'Invites Sent',  value: referralStats.invitesSent, icon: Send, isTeal: false },
+    { label: 'Friends Joined', value: referralStats.friendsJoined, icon: CircleCheckBig, isTeal: false },
+    { label: 'Helix Earned',  value: referralStats.helixEarned, icon: Dna, isTeal: true },
+    { label: 'Pending',       value: referralStats.pending, icon: Clock, isTeal: false },
+  ];
+
   return (
     <div className="flex flex-col gap-4 md:gap-6 p-4 md:p-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-        {/* Left Card — Invite & Earn */}
         <GlassCard glow>
           <h2 className="flex items-center gap-2 text-[20px] font-extrabold text-[#B75E18] mb-2">
             <Megaphone size={20} strokeWidth={1.5} className="text-[#B75E18]" />
@@ -54,12 +50,14 @@ export default function ReferPage() {
             you both earn Helix rewards. The more friends you invite, the more you earn.
           </p>
 
-          {/* Referral code with breathing animation */}
           <div className="mb-6">
-            <ReferralCode code="GARY-VIA-2026" />
+            {referralCode ? (
+              <ReferralCode code={referralCode} />
+            ) : (
+              <p className="text-sm text-white/45 text-center py-6">{REFERRAL_CODE_EMPTY}</p>
+            )}
           </div>
 
-          {/* Reward tiers */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
             <div className="text-center p-3 rounded-xl bg-white/[0.03] border border-white/[0.04]">
               <div className="flex items-center justify-center gap-1 mb-1">
@@ -84,27 +82,22 @@ export default function ReferPage() {
             </div>
           </div>
 
-          {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={handleCopyLink}
-              className="flex-1 py-3 min-h-[44px] rounded-xl bg-gradient-to-r from-[#B75E18] to-[#d4751f] text-white text-sm font-bold hover:opacity-90 transition-opacity"
+              disabled={!shareUrl}
+              className="flex-1 py-3 min-h-[44px] rounded-xl bg-gradient-to-r from-[#B75E18] to-[#d4751f] text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-40"
             >
               {copied ? 'Copied!' : 'Copy Link'}
-            </button>
-            <button className="flex-1 py-3 min-h-[44px] rounded-xl bg-gradient-to-r from-[#2DA5A0] to-[#35bdb7] text-white text-sm font-bold hover:opacity-90 transition-opacity">
-              Share via Text
             </button>
           </div>
         </GlassCard>
 
-        {/* Right Card — Stats & Milestones */}
         <div className="flex flex-col gap-6">
-          {/* Referral stats */}
           <GlassCard>
             <h3 className="text-[16px] font-extrabold text-white mb-4">Referral Stats</h3>
             <div className="flex flex-col gap-3">
-              {REFERRAL_STATS.map((stat) => (
+              {stats.map((stat) => (
                 <div key={stat.label} className="flex items-center justify-between py-2 min-h-[44px] border-b border-white/[0.04] last:border-0">
                   <div className="flex items-center gap-2">
                     <stat.icon size={14} strokeWidth={1.5} className="text-white/30" />
@@ -121,7 +114,6 @@ export default function ReferPage() {
             </div>
           </GlassCard>
 
-          {/* Milestones */}
           <GlassCard>
             <h3 className="flex items-center gap-2 text-[16px] font-extrabold text-white mb-4">
               <Trophy size={18} strokeWidth={1.5} className="text-[#2DA5A0]" />
@@ -129,7 +121,7 @@ export default function ReferPage() {
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {MILESTONES.map((m) => {
-                const achieved = FRIENDS_JOINED >= m.count;
+                const achieved = referralStats.friendsJoined >= m.count;
                 return (
                   <motion.div
                     key={m.count}

@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Pill, Footprints, Salad, CircleCheckBig, Trophy, Megaphone, Microscope, BarChart3, Circle } from 'lucide-react';
+import { Pill, Footprints, Salad, CircleCheckBig, Trophy, Megaphone, Microscope, BarChart3 } from 'lucide-react';
 import { HelixIconWrapper, StreakFlameIcon } from '@/components/helix/HelixIcons';
 import { GlassCard } from '@/components/helix/GlassCard';
 import { HelixIcon } from '@/components/helix/HelixIcon';
@@ -21,23 +21,11 @@ const EARN_CATEGORIES = [
   { icon: Microscope, label: 'Share for Science', helix: '+200/month', description: 'Contribute anonymous data to research', glow: 'teal' as const },
 ];
 
-const DAILY_ACTIONS = [
-  { icon: Pill, label: 'Morning Supplements', helix: 25, completed: true },
-  { icon: Footprints, label: '10K Steps', helix: 50, completed: true },
-  { icon: Salad, label: 'Meal Logging', helix: 15, completed: true },
-  { icon: Pill, label: 'Afternoon Supplements', helix: 25, completed: true },
-  { icon: CircleCheckBig, label: 'Wellness Check-in', helix: 10, completed: false },
-  { icon: Pill, label: 'Evening Supplements', helix: 25, completed: false },
-];
-
 /* ------------------------------------------------------------------ */
 /*  Page                                                               */
 /* ------------------------------------------------------------------ */
 
 export default function EarnPage() {
-  const earned = DAILY_ACTIONS.filter((a) => a.completed).reduce((s, a) => s + a.helix, 0);
-  const possible = DAILY_ACTIONS.reduce((s, a) => s + a.helix, 0);
-
   return (
     <div className="flex flex-col gap-6 md:gap-8 p-4 md:p-6">
       {/* Header */}
@@ -92,56 +80,7 @@ export default function EarnPage() {
           <BarChart3 size={20} strokeWidth={1.5} className="text-[#B75E18] inline" />{' '}
           Today&apos;s Helix Activity
         </h3>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-2.5">
-          {DAILY_ACTIONS.map((action, i) => (
-            <motion.div
-              key={action.label}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.08, duration: 0.4, ease: 'easeOut' }}
-              className={`flex items-center gap-3 px-4 py-3 min-h-[44px] rounded-xl transition-colors ${
-                action.completed
-                  ? 'bg-[#2DA5A0]/10 border border-[#2DA5A0]/15'
-                  : 'bg-white/[0.02] border border-white/[0.04]'
-              }`}
-            >
-              <action.icon size={16} strokeWidth={1.5} className="text-white/50" />
-              {action.completed ? (
-                <CircleCheckBig size={14} strokeWidth={2} className="text-[#2DA5A0]" />
-              ) : (
-                <Circle size={14} strokeWidth={1.5} className="text-white/20" />
-              )}
-              <span
-                className={`flex-1 text-[13px] font-medium ${
-                  action.completed ? 'text-white' : 'text-white/35'
-                }`}
-              >
-                {action.label}
-              </span>
-              <div className="flex items-center gap-1">
-                <HelixIcon size={12} />
-                <span
-                  className={`text-[13px] font-bold ${
-                    action.completed ? 'text-[#2DA5A0]' : 'text-white/25'
-                  }`}
-                >
-                  +{action.helix}
-                </span>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Summary */}
-        <div className="mt-5 pt-4 border-t border-white/[0.06] text-center">
-          <p className="text-[14px] text-white/55">
-            Today&apos;s earnings:{' '}
-            <span className="font-extrabold text-[#2DA5A0]">+{earned} Helix</span>
-            {' / '}
-            <span className="text-white/35">{possible} possible</span>
-          </p>
-        </div>
+        <p className="text-sm text-white/45">Not enough data</p>
       </GlassCard>
     </div>
   );
