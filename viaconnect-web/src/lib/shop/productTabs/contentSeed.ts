@@ -62,7 +62,7 @@ function whoBenefitsBody(
   const body = normalizeProductCopy(
     `## Who Benefits & What Makes This Different?\n\n` +
       `**Who benefits:** People seeking targeted support aligned with the ${p.category.toLowerCase()} category and the mechanisms described for ${p.name}.\n\n` +
-      `**What makes this different:** Via Cura formulates with bioactive nutrient forms and delivery technologies (including liposomal and micellar systems where listed) designed for higher bioavailability. The locked phrase is **Maximum Bioavailability**. Built For Your Biology.\n\n` +
+      `**What makes this different:** Via Cura formulates with bioactive nutrient forms and delivery technologies (including liposomal and micellar systems where listed) designed for Maximum Bioavailability. Built For Your Biology.\n\n` +
       `This section is being finalized with Marshall-gated copy.`,
   );
   return { body, gate: 'pending' };
