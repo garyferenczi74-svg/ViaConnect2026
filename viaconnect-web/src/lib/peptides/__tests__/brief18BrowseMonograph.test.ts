@@ -171,6 +171,9 @@ describe('Brief 18 live count and copy guards', () => {
     expect(loader).not.toContain('summary');
     expect(fields).not.toContain('summary');
     expect(catalog).toContain('Open entry');
+    expect(catalog).toContain("from '@/lib/peptides/educationEntryFields'");
+    expect(catalog).not.toContain("from '@/lib/peptides/educationEntries'");
+    expect(catalog).not.toContain('@/lib/supabase/server');
     expect(catalog).toContain('displayEducationField(entry.mechanism)');
     expect(catalog).toContain('kb-peptide-card-mechanism');
     expect(catalog).toContain('Used for');
@@ -443,8 +446,13 @@ describe('Brief 18 browse cards bind live mechanism', () => {
     );
     expect(fields).toContain('mechanism: asTrimmed(row.mechanism)');
     expect(catalog).toContain('displayEducationField(entry.mechanism)');
+    expect(catalog).toContain("from '@/lib/peptides/educationEntryFields'");
+    expect(catalog).not.toContain("from '@/lib/peptides/educationEntries'");
+    expect(catalog).not.toContain('@/lib/supabase/server');
+    expect(fields).not.toContain('@/lib/supabase/server');
     expect(catalog).toContain('Used for');
     expect(detail).toContain('displayEducationField(value)');
+    expect(detail).toContain("from '@/lib/peptides/educationEntryFields'");
     expect(detail).toContain('entry-mechanism');
     expect(detail).toContain('Used for');
   });

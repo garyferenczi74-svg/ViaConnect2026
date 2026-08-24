@@ -3,7 +3,7 @@ import { ArrowLeft, FlaskConical, Info } from 'lucide-react';
 import {
   displayEducationField,
   type EducationEntry,
-} from '@/lib/peptides/educationEntries';
+} from '@/lib/peptides/educationEntryFields';
 
 function Field({
   label,

@@ -18,7 +18,7 @@ vi.mock('next/link', () => ({
 
 import { KbPeptideCatalogSection } from '../KbPeptideCatalogSection';
 import { PeptideEducationEntryDetail } from '../PeptideEducationEntryDetail';
-import type { EducationEntry } from '@/lib/peptides/educationEntries';
+import type { EducationEntry } from '@/lib/peptides/educationEntryFields';
 
 function entry(over: Partial<EducationEntry> & Pick<EducationEntry, 'entryKey' | 'title'>): EducationEntry {
   return {
