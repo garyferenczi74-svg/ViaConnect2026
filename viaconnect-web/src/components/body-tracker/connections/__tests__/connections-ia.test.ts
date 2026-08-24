@@ -57,7 +57,6 @@ describe('Connections IA contracts', () => {
     expect(detail).toContain('data-ring');
     expect(detail).toContain('strokeWidth={1.5}');
     expect(detail).toContain('Missing stays UNKNOWN, never 0.');
-    expect(tile).toContain('APPLE_HEALTH_DROPZONE_COPY');
     expect(tile).toContain('Upload Apple Health XML');
     expect(surface).toContain("tile.id === 'hume' ? 'hume' : 'apple'");
     const disagree = src('src/lib/body-tracker/source-disagreement.ts');

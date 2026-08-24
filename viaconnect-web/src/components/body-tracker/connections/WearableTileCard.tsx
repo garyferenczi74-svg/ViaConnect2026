@@ -1,11 +1,7 @@
 'use client';
 
 import { ChevronRight, Circle, CloudUpload, Heart, Scan, Watch } from 'lucide-react';
-import {
-  APPLE_HEALTH_DROPZONE_COPY,
-  OAUTH_COMING_SOON_LABEL,
-  type WearableTileView,
-} from '@/lib/body-tracker/wearable-tiles';
+import type { WearableTileView } from '@/lib/body-tracker/wearable-tiles';
 
 function TileIcon({ id }: { id: WearableTileView['id'] }) {
   if (id === 'whoop') return <Watch className="h-5 w-5 text-white/80" strokeWidth={1.5} />;
@@ -65,7 +61,7 @@ export function WearableTileCard({ tile, onPrimary, onDropXml }: WearableTileCar
               </p>
             </div>
             {comingSoon ? (
-              <span className="sr-only">{OAUTH_COMING_SOON_LABEL}</span>
+              <span className="sr-only">Coming soon</span>
             ) : null}
             {connected && !xmlAction ? (
               <button
@@ -131,7 +127,9 @@ export function WearableTileCard({ tile, onPrimary, onDropXml }: WearableTileCar
           className="mt-3 cursor-pointer rounded-xl border border-dashed border-white/20 bg-[#1A2744]/60 p-4 text-center"
         >
           <CloudUpload className="mx-auto h-5 w-5 text-[#2DA5A0]" strokeWidth={1.5} />
-          <p className="mt-2 text-[11px] text-white/50">{APPLE_HEALTH_DROPZONE_COPY}</p>
+          <p className="mt-2 text-[11px] text-white/50">
+            Upload Apple Health XML. Drag and drop your XML file here, or click to browse.
+          </p>
         </div>
       ) : null}
     </article>

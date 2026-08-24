@@ -3,7 +3,6 @@
 import { Activity, Circle, Droplet, Heart, Info, Moon, PencilLine, Scan, Watch } from 'lucide-react';
 import type { DimensionSourceRow } from '@/lib/body-tracker/source-disagreement';
 import {
-  BOS_UNKNOWN_NEVER_ZERO_COPY,
   CONNECTIONS_BOS_COMPOSITE,
   CONNECTIONS_FOOTER,
   SCORE_DETAIL_DIMENSIONS,
@@ -185,7 +184,7 @@ export function ScoreDetailPanel({ rows }: ScoreDetailPanelProps) {
         })}
       </div>
 
-      <p className="mt-4 text-center text-[11px] text-white/40">{BOS_UNKNOWN_NEVER_ZERO_COPY}</p>
+      <p className="mt-4 text-center text-[11px] text-white/40">Missing stays UNKNOWN, never 0.</p>
       <p className="mt-2 text-center text-[11px] text-[#2DA5A0]">{CONNECTIONS_FOOTER}</p>
     </section>
   );
