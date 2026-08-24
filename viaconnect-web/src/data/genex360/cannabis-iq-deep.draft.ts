@@ -26,7 +26,7 @@
 //
 // Standing rules honored: no em or en dashes anywhere including comments; consumer
 // brand is Via Cura (the legal manufacturing entity is never named here);
-// bioavailability is locked at "10x to 28x"; the score is named "Bio
+// bioavailability is locked at "Maximum Bioavailability"; the score is named "Bio
 // Optimization"; numbers are written as words; tone is associative and
 // educational, never diagnostic and never promotional; TypeScript strict (no any).
 
@@ -75,7 +75,7 @@ export const CANNABIS_IQ_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "CNR1 sits alongside CNR2 in receptor signaling and is shaped by the endocannabinoid levels FAAH and MGLL set, so it reads most clearly alongside them, since reception and tone together describe the system far more than any single gene.",
     ],
     protocolTieIn:
-      "Via Cura frames CNR1 as educational context within a foundation of sleep, stress recovery, movement, and omega three forward nutrition that supports healthy endocannabinoid tone independent of any cannabinoid use. Supporting nutrients are delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption. Track mood, sleep, and stress trends as part of your Bio Optimization picture.",
+      "Via Cura frames CNR1 as educational context within a foundation of sleep, stress recovery, movement, and omega three forward nutrition that supports healthy endocannabinoid tone independent of any cannabinoid use. Supporting nutrients are delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability. Track mood, sleep, and stress trends as part of your Bio Optimization picture.",
     laySummary: [
       "CNR1 makes the main brain receptor your body uses to read endocannabinoid signals, which touch mood, appetite, pain, and stress, and it is also the receptor the main psychoactive cannabinoid acts on. A common version of this gene is studied for small differences in your baseline tone and in how strongly that receptor responds.",
       "Because this is educational and not a test or a recommendation, the honest framing is that sleep, stress, movement, and good nutrition shape your endocannabinoid tone far more than this reading. So treat it as neutral background about how your body may respond, not a verdict, not a diagnosis, and not advice to use cannabis.",
@@ -124,7 +124,7 @@ export const CANNABIS_IQ_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "CNR2 works alongside CNR1 as the two arms of cannabinoid receptor signaling and is shaped by the endocannabinoid levels FAAH and MGLL set, so it reads most clearly alongside them as part of one system.",
     ],
     protocolTieIn:
-      "Via Cura treats CNR2 as educational context within an anti inflammatory leaning, omega three forward foundation that supports healthy immune balance independent of any cannabinoid use, with supporting nutrients delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption. Track recovery and how you feel as part of your Bio Optimization picture.",
+      "Via Cura treats CNR2 as educational context within an anti inflammatory leaning, omega three forward foundation that supports healthy immune balance independent of any cannabinoid use, with supporting nutrients delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability. Track recovery and how you feel as part of your Bio Optimization picture.",
     laySummary: [
       "CNR2 makes the CB2 receptor, which sits mostly in your immune tissue and helps the endocannabinoid system tune inflammation. A common version called Gln63Arg is studied for small differences in this quieter, immune side of cannabinoid signaling.",
       "Since this is educational rather than a test or a recommendation, the simple message is that an anti inflammatory leaning diet, activity, and good recovery shape your immune balance far more than this reading. So treat it as neutral background about how your body may respond, not a verdict, not a diagnosis, and not advice to use cannabis.",
@@ -173,7 +173,7 @@ export const CANNABIS_IQ_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "FAAH sets anandamide tone while MGLL sets the tone of the other main endocannabinoid, and together they feed the CNR1 and CNR2 receptors, so the four read most clearly as one connected system.",
     ],
     protocolTieIn:
-      "Via Cura frames FAAH as educational context within a foundation of sleep, stress recovery, movement, and omega three forward nutrition that supports healthy endocannabinoid tone independent of any cannabinoid use. Supporting nutrients are delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption. Track mood, stress, and sleep trends as part of your Bio Optimization picture.",
+      "Via Cura frames FAAH as educational context within a foundation of sleep, stress recovery, movement, and omega three forward nutrition that supports healthy endocannabinoid tone independent of any cannabinoid use. Supporting nutrients are delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability. Track mood, stress, and sleep trends as part of your Bio Optimization picture.",
     laySummary: [
       "FAAH is the enzyme that clears anandamide, one of your body's own calming endocannabinoids. A common version called C385A is studied for small differences in how fast that clearing happens, where slower clearing is linked at a group level with a calmer baseline and altered sensitivity to cannabinoids.",
       "Because this is educational and not a test or a recommendation, the useful framing is that sleep, stress management, and movement shape your own endocannabinoid tone far more than this reading. So treat it as neutral background about how your body regulates these signals, not a verdict, not a diagnosis, and not advice to use cannabis.",
@@ -222,7 +222,7 @@ export const CANNABIS_IQ_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "MGLL sets 2-AG tone while FAAH sets anandamide tone, and together they feed the CNR1 and CNR2 receptors, so the four read most clearly as one connected system rather than in isolation.",
     ],
     protocolTieIn:
-      "Via Cura treats MGLL as educational context within a foundation of sleep, stress recovery, movement, and omega three forward nutrition that supports healthy endocannabinoid tone independent of any cannabinoid use, with supporting nutrients delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption. Track mood, appetite, and stress trends as part of your Bio Optimization picture.",
+      "Via Cura treats MGLL as educational context within a foundation of sleep, stress recovery, movement, and omega three forward nutrition that supports healthy endocannabinoid tone independent of any cannabinoid use, with supporting nutrients delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability. Track mood, appetite, and stress trends as part of your Bio Optimization picture.",
     laySummary: [
       "MGLL is the enzyme that clears 2-AG, the most plentiful of your body's own endocannabinoids. A common version of this gene is studied for small differences in how fast that clearing runs, which can gently shape your tone around mood, appetite, and stress.",
       "Since this is educational and not a test or a recommendation, the honest message is that sleep, stress management, and movement shape your own endocannabinoid tone far more than this reading. So treat it as neutral background about how your body regulates these signals, not a verdict, not a diagnosis, and not advice to use cannabis.",
@@ -271,7 +271,7 @@ export const CANNABIS_IQ_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "CYP2C9 works alongside CYP3A4 in cannabinoid metabolism and alongside the ABCB1 transporter that moves compounds across barriers, so the three read most clearly together as the clearance picture rather than any single gene.",
     ],
     protocolTieIn:
-      "Via Cura frames CYP2C9 as educational context within a liver supportive, whole food foundation independent of any cannabinoid use, with supporting nutrients delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption. Track energy and how you feel as part of your Bio Optimization picture.",
+      "Via Cura frames CYP2C9 as educational context within a liver supportive, whole food foundation independent of any cannabinoid use, with supporting nutrients delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability. Track energy and how you feel as part of your Bio Optimization picture.",
     laySummary: [
       "CYP2C9 is a liver enzyme that helps break down the main psychoactive cannabinoid, so it influences how quickly your body clears it. A common version called star three is studied for slower clearance, which at a group level can make a given exposure feel stronger and last longer.",
       "Because this is educational and not a test or a recommendation, the useful framing is that this is background about how your body may process cannabinoids, and that since the same enzyme handles many medications, any interaction questions belong with your own clinician. So treat it as neutral context, not a verdict, not a diagnosis, and not advice to use cannabis.",
@@ -320,7 +320,7 @@ export const CANNABIS_IQ_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "CYP3A4 works alongside CYP2C9 in cannabinoid metabolism and alongside the ABCB1 transporter, so the three read most clearly together as the clearance and interaction picture rather than any single gene.",
     ],
     protocolTieIn:
-      "Via Cura frames CYP3A4 as educational context within a liver supportive, whole food foundation independent of any cannabinoid use, with supporting nutrients delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption. Track energy and how you feel as part of your Bio Optimization picture.",
+      "Via Cura frames CYP3A4 as educational context within a liver supportive, whole food foundation independent of any cannabinoid use, with supporting nutrients delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability. Track energy and how you feel as part of your Bio Optimization picture.",
     laySummary: [
       "CYP3A4 is a major liver enzyme that helps break down CBD, other cannabinoids, and a big share of everyday medications. A common version called star twenty two is studied for slower clearance, which mainly matters as an awareness point about interactions.",
       "Since this is educational and not a test or a recommendation, the honest framing is that this is background about how your body may process cannabinoids, and because the same enzyme handles many medications, interaction questions belong with your own clinician or pharmacist. So treat it as neutral context, not a verdict, not a diagnosis, and not advice to use cannabis.",
@@ -369,7 +369,7 @@ export const CANNABIS_IQ_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "ABCB1 transport works alongside the CYP2C9 and CYP3A4 metabolism enzymes, so the three read most clearly together, since how much of a compound is carried, processed, and cleared shapes exposure as a set.",
     ],
     protocolTieIn:
-      "Via Cura frames ABCB1 as educational context within a whole food, liver and barrier supportive foundation independent of any cannabinoid use, with supporting nutrients delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption. Track energy and how you feel as part of your Bio Optimization picture.",
+      "Via Cura frames ABCB1 as educational context within a whole food, liver and barrier supportive foundation independent of any cannabinoid use, with supporting nutrients delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability. Track energy and how you feel as part of your Bio Optimization picture.",
     laySummary: [
       "ABCB1 makes a transporter that moves many compounds across your cell barriers, including the gateway into your brain. A common version called C3435T is studied for small differences in how active that transporter is, which can gently shape how much of something reaches the brain.",
       "Because this is educational and not a test or a recommendation, the simple message is that this is background about how your body may distribute cannabinoids and other compounds, and since it handles many medications, specific questions belong with your own clinician. So treat it as neutral context, not a verdict, not a diagnosis, and not advice to use cannabis.",
@@ -418,7 +418,7 @@ export const CANNABIS_IQ_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "In the cannabis context COMT sits alongside AKT1 and DRD2 in dopamine and psychoactive response signaling, so the three read most clearly together, since dopamine handling, downstream signaling, and receptor sensitivity describe the response as a set.",
     ],
     protocolTieIn:
-      "Via Cura frames COMT as educational context within a foundation of sleep, stress recovery, movement, and steady whole food nutrition that supports balanced dopamine handling independent of any cannabinoid use, with supporting nutrients delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption. Track mood, focus, and stress trends as part of your Bio Optimization picture.",
+      "Via Cura frames COMT as educational context within a foundation of sleep, stress recovery, movement, and steady whole food nutrition that supports balanced dopamine handling independent of any cannabinoid use, with supporting nutrients delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability. Track mood, focus, and stress trends as part of your Bio Optimization picture.",
     laySummary: [
       "COMT sets how quickly your brain clears dopamine, which touches focus, mood, and stress handling. In the cannabis setting, the common Val158Met version is studied for small differences in how sensitive the dopamine system may be to the cognitive and mood effects of cannabinoids.",
       "Because this is educational and not a test or a recommendation, the honest framing is that sleep, stress management, and movement shape your dopamine handling far more than this reading. So treat it as neutral background about psychoactive response, not a verdict, not a diagnosis, and not advice to use cannabis.",
@@ -467,7 +467,7 @@ export const CANNABIS_IQ_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "AKT1 sits alongside COMT and DRD2 in dopamine and psychoactive response signaling, so in the cannabis context the three read most clearly together as one risk awareness picture rather than any single gene.",
     ],
     protocolTieIn:
-      "Via Cura frames AKT1 as educational risk awareness within a foundation of sleep, stress recovery, movement, and steady whole food nutrition that supports balanced mood independent of any cannabinoid use, with supporting nutrients delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption. Track mood and stress trends as part of your Bio Optimization picture.",
+      "Via Cura frames AKT1 as educational risk awareness within a foundation of sleep, stress recovery, movement, and steady whole food nutrition that supports balanced mood independent of any cannabinoid use, with supporting nutrients delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability. Track mood and stress trends as part of your Bio Optimization picture.",
     laySummary: [
       "AKT1 is part of your brain's dopamine signaling, and certain versions are studied in research for a higher reported chance of difficult psychological effects from heavy cannabis use. That is why it is included here as an educational risk awareness marker.",
       "Because this is educational and group level rather than a test or a prediction for you, the honest framing is informed, cautious awareness, and any personal mental health questions belong with your own clinician. So treat it as neutral background, not a verdict, not a diagnosis, and not advice to use cannabis.",
@@ -516,7 +516,7 @@ export const CANNABIS_IQ_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "DRD2 sits alongside COMT and AKT1 in dopamine and psychoactive response signaling, so in the cannabis context the three read most clearly together, since receptor sensitivity, dopamine handling, and downstream signaling describe the response as a set.",
     ],
     protocolTieIn:
-      "Via Cura frames DRD2 as educational context within a foundation of sleep, stress recovery, movement, and steady whole food nutrition that supports balanced mood and motivation independent of any cannabinoid use, with supporting nutrients delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption. Track mood and motivation trends as part of your Bio Optimization picture.",
+      "Via Cura frames DRD2 as educational context within a foundation of sleep, stress recovery, movement, and steady whole food nutrition that supports balanced mood and motivation independent of any cannabinoid use, with supporting nutrients delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability. Track mood and motivation trends as part of your Bio Optimization picture.",
     laySummary: [
       "DRD2 shapes dopamine signaling tied to reward, motivation, and mood. The commonly studied Taq1A marker, which actually sits in the neighboring ANKK1 gene and is linked with receptor density, adds context to how cannabinoids may interact with reward and mood for you.",
       "Because this is educational and not a test or a recommendation, the simple framing is that sleep, stress management, movement, and rewarding everyday routines shape your dopamine signaling far more than this reading. So treat it as neutral background about how your body may respond, not a verdict, not a diagnosis, and not advice to use cannabis.",

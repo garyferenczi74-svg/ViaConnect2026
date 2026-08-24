@@ -130,7 +130,7 @@ export const KB_COLLECTION_CHARTERS: readonly KbCollectionCharter[] = [
     gateProfile: "standard",
     seedingPhase: 3,
     charterSummary:
-      "Liposomal delivery evidence supporting locked 10x to 28x positioning.",
+      "Liposomal delivery evidence supporting Maximum Bioavailability positioning.",
   },
   {
     slug: "clinical_studies",

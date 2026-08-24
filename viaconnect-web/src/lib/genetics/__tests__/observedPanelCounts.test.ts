@@ -5,6 +5,7 @@ import {
   isHonestEmptyObserved,
   isUnknownObserved,
   mergeObservedByPanel,
+  observedBadgeForRawPanelKey,
   sumObservedCounts,
   unknownObservedByPanel,
 } from '../observedPanelCounts';
@@ -25,9 +26,17 @@ describe('observedPanelCounts fail-open vs empty', () => {
     expect(isUnknownObserved(unknown)).toBe(true);
     expect(isHonestEmptyObserved(unknown)).toBe(false);
     expect(unknown.count).toBeNull();
-    expect(formatObservedBadge(unknown)).toBe('n/a');
+    expect(formatObservedBadge(unknown)).toBe('Unanalyzed');
     expect(formatObservedBadge(unknown)).not.toBe('0');
+    expect(formatObservedBadge(unknown)).not.toBe('n/a');
     expect(formatObservedBadge(unknown)).not.toContain('0');
+  });
+
+  it('treats a remap miss as Unanalyzed, never 0 or n/a', () => {
+    const observed = mergeObservedByPanel({ methylation: 2 });
+    expect(observedBadgeForRawPanelKey('GENEX-N', observed)).toBe('Unanalyzed');
+    expect(observedBadgeForRawPanelKey(null, observed)).toBe('Unanalyzed');
+    expect(observedBadgeForRawPanelKey('genex_m', observed)).toBe('2 SNPs');
   });
 
   it('does not let a marketing catalog size become an observed badge', () => {

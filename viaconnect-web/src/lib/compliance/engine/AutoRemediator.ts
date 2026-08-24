@@ -7,7 +7,7 @@
  * ENGINE'S fallback remediations only. A rule that ships its own
  * autoRemediate function with remediation.kind "auto" is an explicit
  * author declaration and always applies (the bioavailability rule is P0
- * and its canonical 10-28 normalization is mandated by Standing Rule
+ * and its Maximum Bioavailability normalization is mandated by Standing Rule
  * 0.2). P0/P1 findings without a rule-provided remediator still go to
  * the manual queue.
  */

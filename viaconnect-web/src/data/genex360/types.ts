@@ -2,7 +2,7 @@
 // cards on the /shop/genex360 Your DNA section.
 //
 // Standing rules honored: no em or en dashes anywhere; consumer brand is Via
-// Cura; bioavailability copy is locked at "10x to 28x"; the score is named
+// Cura; bioavailability copy is locked at "Maximum Bioavailability"; the score is named
 // "Bio Optimization". These types only describe shape; the copy lives in
 // panels.ts, transcribed verbatim from the prompt Section 7.
 
@@ -48,7 +48,7 @@ export interface EpigeneticInterpretation {
 // GeneXM individual SNP reports. The rsid and genotype fields are DEFAULTS to
 // reconcile with the live GENEX-M assay (see the genex-m-deep.ts header); the
 // biology, health associations, and strategy copy is authoritative. No em or en
-// dashes anywhere; bioavailability stays "10x to 28x"; score is "Bio Optimization".
+// dashes anywhere; bioavailability stays "Maximum Bioavailability"; score is "Bio Optimization".
 
 export interface SnpGenotype {
   genotype: string; // for example "CC", "CT", "TT", "GG", or "Reference" / "Variant" for representative variants

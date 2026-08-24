@@ -37,16 +37,21 @@ describe('validateRecommendationText', () => {
     expect(r.violations.some((v) => v.code === 'non_farmceutica')).toBe(true);
   });
 
-  it('blocks the wrong bioavailability range (5 to 27x)', () => {
+  it('blocks fold-number bioavailability ranges', () => {
     const r1 = validateRecommendationText('Bioavailability is 5 to 27x baseline.');
     const r2 = validateRecommendationText('Bioavailability is 5x to 27x baseline.');
+    const r3 = validateRecommendationText('Bioavailability is 10 to 28x baseline.');
+    const r4 = validateRecommendationText('Bioavailability is 10x to 28x baseline.');
     expect(r1.ok).toBe(false);
     expect(r2.ok).toBe(false);
+    expect(r3.ok).toBe(false);
+    expect(r4.ok).toBe(false);
     expect(r1.violations.some((v) => v.code === 'bioavailability_range')).toBe(true);
+    expect(r3.violations.some((v) => v.code === 'bioavailability_range')).toBe(true);
   });
 
-  it('accepts the canonical 10 to 27x bioavailability range', () => {
-    const r = validateRecommendationText('Bioavailability is 10 to 27x baseline.');
+  it('accepts Maximum Bioavailability', () => {
+    const r = validateRecommendationText('This formula is designed for Maximum Bioavailability.');
     expect(r.ok).toBe(true);
   });
 });

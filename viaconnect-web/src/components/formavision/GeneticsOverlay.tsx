@@ -28,6 +28,7 @@ import { Info, ArrowRight } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { useGeneticsVariants } from '@/components/genetics/hub/useGeneticsVariants';
 import type { GeneticsVariantsData } from '@/components/genetics/hub/useGeneticsVariants';
+import { resolveGeneticsUploadState } from '@/lib/genetics/geneticsUploadState';
 
 // ---------------------------------------------------------------------------
 // Presence gate (pure, exported for direct testing).
@@ -37,10 +38,13 @@ import type { GeneticsVariantsData } from '@/components/genetics/hub/useGenetics
 // Empty data or sample-only data both return 'absent' - fail-open at the gate.
 // ---------------------------------------------------------------------------
 export function computeGeneticsPresence(data: GeneticsVariantsData): 'present' | 'absent' {
-  for (const variants of Object.values(data.variantsByPanel)) {
-    if (variants?.some((v) => !v.is_sample)) return 'present';
+  if (data.geneticsUploaded === true || data.geneticsUploadState === 'uploaded') {
+    return 'present';
   }
-  return 'absent';
+  const rows = Object.values(data.variantsByPanel).flatMap((variants) => variants ?? []);
+  return resolveGeneticsUploadState({ variantRows: rows }) === 'uploaded'
+    ? 'present'
+    : 'absent';
 }
 
 // ---------------------------------------------------------------------------

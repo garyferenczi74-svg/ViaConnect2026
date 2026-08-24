@@ -91,12 +91,14 @@ function Section({ icon, iconColor, title, subtitle, children }: { icon: LucideI
 export interface SupplementsPageContentProps {
   recommendedItems: RecommendedItem[];
   supplementFlags: SupplementFlag[];
+  geneticsUploaded?: boolean;
 }
 
 /* ═══ MAIN CONTENT ═══ */
 export function SupplementsPageContent({
   recommendedItems,
   supplementFlags,
+  geneticsUploaded = false,
 }: SupplementsPageContentProps) {
   const { loading } = useUserDashboardData();
 
@@ -127,7 +129,7 @@ export function SupplementsPageContent({
             <p className="text-sm text-white/40 mt-0.5">Your personalized daily regimen</p>
           </div>
         </div>
-        <ProtocolConfidenceBadge tier={1} />
+        <ProtocolConfidenceBadge tier={1} geneticsUploaded={geneticsUploaded} />
       </div>
 
       {/* ═══ 1. DAILY SCHEDULE ═══ */}
@@ -158,7 +160,7 @@ export function SupplementsPageContent({
           Empty state renders until then -- that is expected and correct. */}
       <Section icon={Dna} iconColor="#2DA5A0" title="Recommended Protocol" subtitle="Your Genetics | Your Protocol">
         <div className="p-5 md:p-6">
-          <RecommendedProtocolPanel items={recommendedItems} />
+          <RecommendedProtocolPanel items={recommendedItems} geneticsUploaded={geneticsUploaded} />
         </div>
       </Section>
 

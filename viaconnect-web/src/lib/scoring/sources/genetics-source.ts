@@ -6,13 +6,20 @@
  * Never reads genetic_profiles or genex360_purchases for score math.
  *
  * Honest-state:
- *  - present = user has at least one Elysium-mapped interpreted variant
+ *  - present = Brief 16 SSOT uploaded (non-sample user_variants or real kit ingest)
+ *  - contribution = Elysium mapped interpretations only (no new SNP math)
  *  - pending = coverage exists but mapped_count is 0 (no score delta)
  *  - absent  = no Elysium coverage row (no score delta; UI messaging elsewhere)
  * UNKNOWN is never coerced to 0.
+ * 12 hub SNP calls cannot coexist with present=false.
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { loadGeneticsUploadFacts } from '@/lib/genetics/loadGeneticsUploadFacts';
+import {
+  isGeneticsUploaded,
+  resolveGeneticsUploadState,
+} from '@/lib/genetics/geneticsUploadState';
 
 export interface GeneticsSource {
   present: boolean;
@@ -46,7 +53,12 @@ export async function getGeneticsSource(
   };
 
   try {
-    // User-specific Elysium coverage (finished pipeline output)
+    const uploadFacts = await loadGeneticsUploadFacts(supabase, userId);
+    const uploadState = resolveGeneticsUploadState(uploadFacts);
+    const uploaded = isGeneticsUploaded(uploadState);
+
+    // User-specific Elysium coverage (finished pipeline output). Score
+    // contribution only. Presence / 96% rung uses the hub SSOT above.
     const coverageResult = await supabase
       .from('elysium_upload_coverage')
       .select('mapped_count, unknown_count, pending_count, coverage_pct, created_at')
@@ -77,12 +89,14 @@ export async function getGeneticsSource(
     const catalogInterpreted = catalog.length;
 
     if (!coverage) {
-      // No user coverage: score contributes nothing (honest absent).
-      // Purchase messaging is Jeffery platform digest, not score math.
+      // No Elysium coverage: score contributes nothing. Presence still
+      // follows hub SNPs / real kit ingest so 12 calls are uploaded.
       return {
-        ...empty,
+        present: uploaded,
+        processed_at: null,
+        panel: uploaded ? 'genex360_v1' : null,
         source_specific: {
-          lifecycle_status: 'genex360_purchase',
+          lifecycle_status: uploaded ? 'complete' : 'genex360_purchase',
           contribution: 'none',
           interpreted_count: 0,
           pending_count: 0,
@@ -108,11 +122,11 @@ export async function getGeneticsSource(
     // AND the platform catalog has interpreted entries (Elysium finished).
     if (mapped > 0 && catalogInterpreted > 0) {
       return {
-        present: true,
+        present: uploaded,
         processed_at: coverage.created_at ?? null,
-        panel: 'genex360_v1',
+        panel: uploaded ? 'genex360_v1' : null,
         source_specific: {
-          lifecycle_status: 'complete',
+          lifecycle_status: uploaded ? 'complete' : 'pending_interpretation',
           contribution: 'active',
           interpreted_count: mapped,
           pending_count: pending,
@@ -125,11 +139,11 @@ export async function getGeneticsSource(
 
     // User has genetics pipeline contact but interpretations not ready
     return {
-      present: false,
+      present: uploaded,
       processed_at: coverage.created_at ?? null,
-      panel: null,
+      panel: uploaded ? 'genex360_v1' : null,
       source_specific: {
-        lifecycle_status: 'pending_interpretation',
+        lifecycle_status: uploaded ? 'complete' : 'pending_interpretation',
         contribution: 'pending',
         interpreted_count: mapped,
         pending_count: pending,

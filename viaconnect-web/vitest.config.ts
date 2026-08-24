@@ -46,6 +46,8 @@ export default defineConfig({
       // Prompt 211a W1: consumer-only Helix first-share moment (celebrate-only)
       'src/components/formavision/__tests__/ClipShareMoment.bare.test.tsx',
       'src/components/pricing/__tests__/PricingCatalogBody.bare.test.tsx',
+      // Brief 16: Your Variants honesty chips
+      'src/components/genetics/__tests__/VariantRowChip.bare.test.tsx',
     ],
     exclude: ['node_modules', '.next', 'supabase'],
     globals: true,

@@ -3,6 +3,14 @@ import { NextResponse, type NextRequest } from "next/server";
 import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
 import { unauthenticatedClinicianPortalRedirect } from "@/lib/practitioner/waitlist-honesty";
+import {
+  canAccessPortalPath,
+  isConfirmedAdmin,
+  outOfRoleRedirect,
+  roleFromProfilesColumn,
+  roleHomePath,
+  type SessionRole,
+} from "@/lib/auth/session-role";
 
 // Prompt #140a Layer 1 hardening. Every Supabase auth + data call is wrapped
 // with withTimeout. On timeout: treat as unauthenticated and let the public-
@@ -219,13 +227,10 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // If authenticated, enforce role-based routing
+  // If authenticated, enforce role-based routing from profiles.role only.
   if (claims) {
-    // Source of truth for role is profiles.role (same as every /api/admin route).
-    // user_metadata.role is kept as a fallback ONLY for non-admin routing
-    // decisions; admin gating strictly requires a profiles.role='admin' row so
-    // the middleware and the API layer cannot drift apart.
     let profileRole: string | undefined;
+    let roleLookupFailed = false;
     try {
       // Wrapped in async IIFE because PostgrestBuilder is thenable but not
       // strictly typed as Promise<T>; withTimeout's signature requires Promise.
@@ -236,14 +241,16 @@ export async function updateSession(request: NextRequest) {
             .select("role")
             .eq("id", claims.sub)
             .maybeSingle();
-          return profileRow?.role as string | undefined;
+          const row = profileRow as { role: string | null } | null;
+          return row?.role ?? undefined;
         })(),
         1500,
         "middleware.profiles.role"
       );
     } catch (error) {
+      roleLookupFailed = true;
       if (isTimeoutError(error)) {
-        safeLog.warn("middleware.role", "profiles role lookup timed out, falling back to user_metadata.role", {
+        safeLog.warn("middleware.role", "profiles role lookup timed out, failing closed to consumer", {
           path: pathname,
           userId: claims.sub,
           error,
@@ -258,8 +265,8 @@ export async function updateSession(request: NextRequest) {
       profileRole = undefined;
     }
 
-    const rawRole = profileRole ?? (claims.user_metadata?.role as string | undefined);
-    const role = normalizeRole(rawRole);
+    const role: SessionRole = roleFromProfilesColumn(profileRole);
+    const isAdmin = isConfirmedAdmin(profileRole);
 
     // Redirect authenticated users away from auth pages
     if (
@@ -268,73 +275,23 @@ export async function updateSession(request: NextRequest) {
       pathname === "/forgot-password"
     ) {
       const url = request.nextUrl.clone();
-      url.pathname = getRoleHomePath(role);
+      url.pathname = roleHomePath(isAdmin ? "admin" : role);
       return NextResponse.redirect(url);
     }
 
-    // Admin role has access to ALL portals. Must match /api/admin/** gating
-    // exactly: profiles.role='admin' is the only path to isAdmin=true.
-    // Note: when the role lookup timed out, profileRole is undefined here, so
-    // isAdmin becomes false. Admin routes will then redirect (fail-CLOSED for
-    // admin gating, which is the safe default).
-    const isAdmin = profileRole === "admin";
-
-    // Admin-only routes
-    if (pathname.startsWith("/admin") && !isAdmin) {
+    if (!canAccessPortalPath(isAdmin ? "admin" : role, pathname)) {
       const url = request.nextUrl.clone();
-      url.pathname = getRoleHomePath(role);
+      url.pathname = outOfRoleRedirect(isAdmin ? "admin" : role, pathname) ?? roleHomePath(role);
       url.searchParams.set("portal_switch", "1");
-      return NextResponse.redirect(url);
-    }
-
-    // Enforce portal access based on role, block cross-portal access.
-    // Trailing slash matters: /practitioner/ is the practitioner portal,
-    // /practitioners is the public marketing/waitlist page.
-    if (pathname.startsWith("/practitioner/") && role !== "practitioner" && !isAdmin) {
-      const url = request.nextUrl.clone();
-      url.pathname = getRoleHomePath(role);
-      url.searchParams.set("portal_switch", "1");
-      return NextResponse.redirect(url);
-    }
-
-    if (pathname.startsWith("/naturopath/") && role !== "naturopath" && !isAdmin) {
-      const url = request.nextUrl.clone();
-      url.pathname = getRoleHomePath(role);
-      url.searchParams.set("portal_switch", "1");
-      return NextResponse.redirect(url);
-    }
-
-    // Consumer routes (non-prefixed app routes) are only for consumers (and admins)
-    const consumerRoutes = ["/dashboard", "/genetics", "/supplements", "/tokens", "/profile", "/messages", "/ai"];
-    const isConsumerRoute = consumerRoutes.some(
-      (route) => pathname === route || pathname.startsWith(route + "/")
-    );
-    if (isConsumerRoute && role !== "consumer" && !isAdmin && role !== undefined) {
-      const url = request.nextUrl.clone();
-      url.pathname = getRoleHomePath(role);
-      url.searchParams.set("portal_switch", "1");
+      if (roleLookupFailed) {
+        safeLog.warn("middleware.role", "denying portal path after role lookup failure", {
+          path: pathname,
+          userId: claims.sub,
+        });
+      }
       return NextResponse.redirect(url);
     }
   }
 
   return response;
-}
-
-/** Normalize DB roles (patient/admin) to app roles (consumer/practitioner/naturopath) */
-function normalizeRole(raw: string | undefined): string | undefined {
-  if (!raw) return undefined;
-  if (raw === "patient") return "consumer";
-  if (raw === "admin") return "consumer"; // Admin defaults to consumer portal; has access to all
-  return raw; // consumer, practitioner, naturopath pass through
-}
-
-function getRoleHomePath(role: string | undefined): string {
-  switch (role) {
-    case "practitioner":
-      return "/practitioner/dashboard";
-    case "naturopath":
-      return "/naturopath/dashboard";
-    default:
-      return "/dashboard";
-  }
 }

@@ -33,7 +33,7 @@
 //
 // Standing rules honored: no em or en dashes anywhere; consumer brand is Via
 // Cura (the legal manufacturing entity is never named here); bioavailability is
-// locked at "10x to 28x"; the score is named "Bio Optimization"; tone is
+// locked at "Maximum Bioavailability"; the score is named "Bio Optimization"; tone is
 // associative and educational, never diagnostic; TypeScript strict (no any).
 
 import type { SnpDeepReport } from "./types";
@@ -96,7 +96,7 @@ export const NUTRIGEN_DX_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "FTO sits near MC4R in the same appetite regulating network, so the two are often considered together when appetite runs high. Its effect also layers onto lifestyle inputs like sleep, stress, and activity, which can amplify or soften the appetite tendency far more than the genotype alone.",
     ],
     protocolTieIn:
-      "Via Cura leans into the levers FTO responds to, pairing protein forward nutrition guidance with fiber and an activity rhythm so appetite feels manageable rather than fixed. Supporting nutrients are delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption. Track appetite, intake, and body composition trends as part of your Bio Optimization picture.",
+      "Via Cura leans into the levers FTO responds to, pairing protein forward nutrition guidance with fiber and an activity rhythm so appetite feels manageable rather than fixed. Supporting nutrients are delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability. Track appetite, intake, and body composition trends as part of your Bio Optimization picture.",
     laySummary: [
       "FTO is sometimes called the appetite gene. It does not decide your weight, but one common spot in it can gently turn up hunger and make fullness arrive a little later, so it is easier to eat a bit more without noticing. The version that does this is the A version on the standard reading direction we use here, and the more A copies you carry, the stronger the nudge tends to be.",
       "The good news is that this is one of the most responsive traits we look at. Building meals around protein and fiber, moving regularly, and protecting your sleep all tend to quiet the extra hunger. So think of an A result as a helpful heads up about what your body responds to, not a verdict about your weight or your health.",
@@ -160,7 +160,7 @@ export const NUTRIGEN_DX_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "MTHFR works hand in hand with the B12 dependent recycling enzymes and raises the methyl donor demand felt elsewhere, so a slow result here is best read alongside your wider B vitamin picture. Riboflavin status modulates how well the enzyme performs.",
     ],
     protocolTieIn:
-      "Via Cura prioritizes active 5-MTHF with its B12 and riboflavin partners, delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption, so active folate reaches the cells that need it. Track energy and, where relevant, homocysteine as part of your Bio Optimization picture.",
+      "Via Cura prioritizes active 5-MTHF with its B12 and riboflavin partners, delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability, so active folate reaches the cells that need it. Track energy and, where relevant, homocysteine as part of your Bio Optimization picture.",
     laySummary: [
       "MTHFR is the gene that switches the folate in your food into the form your body can actually use. One common spot in it, called 677, can slow that switch down. The slower version is the T version on the standard reading direction we use here, and carrying two copies slows it more than carrying one.",
       "The good news is that the fix is usually about the form of the nutrient rather than taking more of it. Choosing an already active folate, getting steady B vitamins, and eating plenty of leafy greens tend to cover the gap nicely. So read a T result as a helpful pointer toward the right kind of folate, not a problem with your health.",
@@ -224,7 +224,7 @@ export const NUTRIGEN_DX_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "FADS1 sits beside FADS2 in the same fat desaturation cluster, so the two are often read together when long chain omega-3 status runs low. Its effect also layers onto overall diet quality and the omega-6 to omega-3 balance of the foods you choose.",
     ],
     protocolTieIn:
-      "Via Cura can prioritize a direct long chain omega-3 source for carriers, delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption, so the active fats arrive without depending on conversion. Track how you feel and, where relevant, an omega-3 index as part of your Bio Optimization picture.",
+      "Via Cura can prioritize a direct long chain omega-3 source for carriers, delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability, so the active fats arrive without depending on conversion. Track how you feel and, where relevant, an omega-3 index as part of your Bio Optimization picture.",
     laySummary: [
       "FADS1 helps your body upgrade the omega-3 in plant foods like flax into the stronger long chain form found in fish. One common version of this gene slows that upgrade. That slower version is the T version on the standard reading direction we use here, and two copies slow it more than one.",
       "If you carry it, the easy answer is to get some omega-3 from fish or an algae supplement, which is already in the form your body wants. So read a T result as a nudge toward a fish or algae source rather than a sign that anything is wrong.",
@@ -287,7 +287,7 @@ export const NUTRIGEN_DX_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "TCN2 feeds the B12 dependent recycling steps, so a delivery limitation here is best read alongside MTHFR and your wider folate and B12 picture, which together set your methylation capacity.",
     ],
     protocolTieIn:
-      "Via Cura uses active B12 forms delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption, so slower transport is less of a bottleneck. Track functional B12 and, where relevant, homocysteine as part of your Bio Optimization picture.",
+      "Via Cura uses active B12 forms delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability, so slower transport is less of a bottleneck. Track functional B12 and, where relevant, homocysteine as part of your Bio Optimization picture.",
     laySummary: [
       "TCN2 builds the little courier that carries vitamin B12 from your blood into your cells, which is where it actually does its work. One common version of this gene makes the courier a bit less efficient. The slower version is the G version on the standard reading direction we use here, and two copies have a stronger effect than one.",
       "The quirk here is that a normal blood B12 test can hide a cellular shortfall, so the helpful move is choosing an active form of B12 and watching how you feel. Read a G result as a reason to favor active B12, not as a deficiency you already have.",
@@ -350,7 +350,7 @@ export const NUTRIGEN_DX_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "VDR connects to calcium and bone pathways and supports immune and methylation related regulation, so it is best read alongside your overall mineral and vitamin status rather than alone.",
     ],
     protocolTieIn:
-      "Via Cura matches vitamin D and its partners to your sensitivity and blood level, delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption. Track vitamin D status as part of your Bio Optimization picture.",
+      "Via Cura matches vitamin D and its partners to your sensitivity and blood level, delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability. Track vitamin D status as part of your Bio Optimization picture.",
     laySummary: [
       "VDR is the docking point that lets the vitamin D in your body actually do its job. One common version of this gene, called Fok1, makes that docking a little less responsive. The lower sensitivity version is labeled f, which most labs print as the C reading on the direction we use here.",
       "If you carry it, you may simply need to aim for the higher end of a healthy vitamin D level to feel the full benefit, which is easy to confirm with a blood test. So read an f result as a reason to check and target your vitamin D level, not as a deficiency in itself.",
@@ -413,7 +413,7 @@ export const NUTRIGEN_DX_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "Vitamin C supports the broader antioxidant network and collagen formation, so a lower absorption tendency here is best read alongside your overall antioxidant and protein intake rather than alone.",
     ],
     protocolTieIn:
-      "Via Cura can support steady vitamin C intake in well absorbed forms delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption, so a lower transport tendency is less limiting. Track resilience and recovery as part of your Bio Optimization picture.",
+      "Via Cura can support steady vitamin C intake in well absorbed forms delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability, so a lower transport tendency is less limiting. Track resilience and recovery as part of your Bio Optimization picture.",
     laySummary: [
       "SLC23A1 is the doorway that lets vitamin C from your food into your bloodstream. One version of this gene makes that doorway a little narrower. The lower absorption version is the A version on the standard reading direction we use here, and two copies have a stronger effect than one.",
       "If you carry it, the simple answer is to get vitamin C steadily through the day from colorful fruits and vegetables rather than in one big hit, since the body absorbs it best in smaller amounts. So read an A result as a reason to keep your vitamin C topped up regularly, not as a deficiency.",
@@ -479,7 +479,7 @@ export const NUTRIGEN_DX_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "This locus is best read alongside your wider glucose and metabolic picture, since diet quality, activity, and body composition shape glucose balance far more than any single variant.",
     ],
     protocolTieIn:
-      "Via Cura supports balanced zinc status and glucose friendly nutrition, delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption. Track glucose related trends as part of your Bio Optimization picture.",
+      "Via Cura supports balanced zinc status and glucose friendly nutrition, delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability. Track glucose related trends as part of your Bio Optimization picture.",
     laySummary: [
       "SLC30A8 builds a transporter that moves zinc into the cells that store and release insulin, which helps keep blood sugar steady. Different versions of this gene are tied to very small differences in how smoothly that early insulin release happens.",
       "The honest framing here is that the effect is small and easily outweighed by everyday habits. Eating enough zinc, choosing fiber rich meals, and staying active matter far more. So read your result as a gentle nudge toward glucose friendly habits, not as a verdict about your blood sugar.",
@@ -543,7 +543,7 @@ export const NUTRIGEN_DX_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "Secretor status shapes the microbiome backdrop that other nutrition genes act within, so it is best read as context alongside your gut and B12 picture rather than as a standalone score.",
     ],
     protocolTieIn:
-      "Via Cura tailors microbiome supportive nutrition and, where helpful, targeted probiotic guidance to your secretor type, with supporting nutrients delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption. Track digestive comfort as part of your Bio Optimization picture.",
+      "Via Cura tailors microbiome supportive nutrition and, where helpful, targeted probiotic guidance to your secretor type, with supporting nutrients delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability. Track digestive comfort as part of your Bio Optimization picture.",
     laySummary: [
       "FUT2 sets your secretor status, which is simply whether your body releases certain sugars onto your gut lining. About one in five people are non secretors, and it shapes which friendly microbes live in your gut. The non secretor version is the A version on the reading direction we use here, and you are a non secretor only with two copies.",
       "This is a type, not a grade, so there is no good or bad result. It is most useful as background for the kinds of fiber and probiotics that may suit you, and it explains why a non secretor blood B12 can read a little high. So treat your result as helpful context about your gut, not a score.",
@@ -607,7 +607,7 @@ export const NUTRIGEN_DX_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "GC works alongside the vitamin D receptor, so transport here and sensitivity at the receptor together shape how well vitamin D serves you. Read the two as a pair when planning your vitamin D approach.",
     ],
     protocolTieIn:
-      "Via Cura matches vitamin D dosing to your transport pattern and blood level, delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption. Track vitamin D status as part of your Bio Optimization picture.",
+      "Via Cura matches vitamin D dosing to your transport pattern and blood level, delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability. Track vitamin D status as part of your Bio Optimization picture.",
     laySummary: [
       "GC makes the carrier protein that ferries vitamin D around your bloodstream and helps decide what your vitamin D blood test reads. One common version of this gene makes a little less of that carrier. The lower transport version is the A version on the reading direction we use here, and two copies have a stronger effect than one.",
       "If you carry it, you may need to aim a bit higher to reach a healthy vitamin D level, which a simple blood test confirms. This gene is often read together with the vitamin D receptor gene. So read an A result as a reason to check and adjust your vitamin D level, not as a deficiency on its own.",
@@ -671,7 +671,7 @@ export const NUTRIGEN_DX_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "PEMT shares methylation duties with the folate and betaine routes, so a higher choline need here is best read alongside your folate, B12, and betaine picture, which can partly cover for one another.",
     ],
     protocolTieIn:
-      "Via Cura can add choline and its partners where a carrier's intake runs low, delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption. Track liver related markers and energy as part of your Bio Optimization picture.",
+      "Via Cura can add choline and its partners where a carrier's intake runs low, delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability. Track liver related markers and energy as part of your Bio Optimization picture.",
     laySummary: [
       "PEMT lets your liver make its own version of choline, a nutrient that supports your cell membranes and helps keep fat from building up in the liver. One common version of this gene makes less of it, so you rely more on choline from food. The higher need version is the A version on the reading direction we use here, and two copies have a stronger effect than one.",
       "Estrogen helps this pathway along, so the effect tends to show up more in men and in women after menopause. If you carry it, regularly eating choline rich foods like eggs usually covers it nicely. So read an A result as a reason to keep food choline on your plate, not as a problem with your liver.",
@@ -738,7 +738,7 @@ export const NUTRIGEN_DX_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "APOA2 sits within the broader lipid and appetite picture, so its saturated fat signal is best read alongside FTO and your overall diet quality, which together shape body weight far more than any single variant.",
     ],
     protocolTieIn:
-      "Via Cura leans into the saturated fat moderation this locus responds to, pairing a Mediterranean leaning fat profile with fiber forward nutrition, and supporting nutrients are delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption. Track body composition and dietary fat quality as part of your Bio Optimization picture.",
+      "Via Cura leans into the saturated fat moderation this locus responds to, pairing a Mediterranean leaning fat profile with fiber forward nutrition, and supporting nutrients are delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability. Track body composition and dietary fat quality as part of your Bio Optimization picture.",
     laySummary: [
       "APOA2 helps decide how your body reacts to saturated fat, the kind found in fatty meat, butter, and rich dairy. One version of this gene is tied to gaining weight more easily when saturated fat runs high. That version is the C version on the standard reading direction we use here, and the effect really shows up only when you carry two copies.",
       "The encouraging part is that this is all about the food. People with this version tend to do well simply by keeping saturated fat moderate and leaning on olive oil, nuts, and fish instead. So read a C result as a nudge toward the kind of fats that suit you, not a verdict about your weight.",
@@ -803,7 +803,7 @@ export const NUTRIGEN_DX_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "AMY1 starch digestion capacity is best read alongside your wider glucose picture, including TCF7L2 and SLC30A8, since diet quality, activity, and body composition shape blood sugar far more than any single marker.",
     ],
     protocolTieIn:
-      "Via Cura supports carbohydrate quality and portioning suited to your starch digestion capacity, with supporting nutrients delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption. Track blood sugar related trends as part of your Bio Optimization picture.",
+      "Via Cura supports carbohydrate quality and portioning suited to your starch digestion capacity, with supporting nutrients delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability. Track blood sugar related trends as part of your Bio Optimization picture.",
     laySummary: [
       "AMY1 makes the enzyme in your saliva that starts breaking down starch the moment you take a bite. Unlike most genes here, what matters is not a single spelling change but how many copies of the gene you carry. More copies mean more of the enzyme, and fewer copies mean a little less.",
       "If you carry a lower number of copies, starchy foods may raise your blood sugar a touch more, so leaning on slower, higher fiber carbohydrates like beans, oats, and vegetables tends to help. This is simply a type, not a grade, so there is no good or bad result, just a helpful pointer about the kind of carbohydrates that suit you.",
@@ -869,7 +869,7 @@ export const NUTRIGEN_DX_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "LIPC sits within the wider lipid network, so its HDL signal is best read alongside APOA2 and your overall dietary fat pattern, which together shape lipids far more than any single variant.",
     ],
     protocolTieIn:
-      "Via Cura supports a favorable dietary fat balance and fiber forward nutrition suited to your lipid pattern, with supporting nutrients delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption. Track your lipid panel as part of your Bio Optimization picture.",
+      "Via Cura supports a favorable dietary fat balance and fiber forward nutrition suited to your lipid pattern, with supporting nutrients delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability. Track your lipid panel as part of your Bio Optimization picture.",
     laySummary: [
       "LIPC makes an enzyme in your liver that helps shape your cholesterol, especially your HDL, the kind people often call the helpful one. One common version of this gene slows that enzyme down a little. The slower version is the T version on the standard reading direction we use here, and two copies have a stronger effect than one.",
       "If you carry it, your HDL tends to sit a bit higher, and your lipids may respond more to the kind of fats you eat, which makes choosing olive oil, nuts, and fish especially worthwhile. So read a T result as a reason to mind the quality of your dietary fat and to keep an eye on your lipid panel, not as a problem on its own.",
@@ -935,7 +935,7 @@ export const NUTRIGEN_DX_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "TCF7L2 is best read alongside the wider glucose picture, including SLC30A8 and AMY1, since diet quality, activity, and body composition shape blood sugar far more than any single variant.",
     ],
     protocolTieIn:
-      "Via Cura leans into the glucose friendly nutrition this variant responds to, pairing a lower glycemic load pattern with fiber and an activity rhythm, and supporting nutrients are delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption. Track glucose related trends as part of your Bio Optimization picture.",
+      "Via Cura leans into the glucose friendly nutrition this variant responds to, pairing a lower glycemic load pattern with fiber and an activity rhythm, and supporting nutrients are delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability. Track glucose related trends as part of your Bio Optimization picture.",
     laySummary: [
       "TCF7L2 helps set how much insulin your body releases after you eat. It carries the single most studied common gene change tied to type two diabetes, working by softening that early insulin release. The version that does this is the T version on the standard reading direction we use here, and two copies have a stronger effect than one.",
       "The reassuring part is that this is one of the most responsive traits to lifestyle. Choosing slower, higher fiber carbohydrates, staying active, and keeping a healthy body composition all tend to outweigh the genetic nudge. So read a T result as a strong, helpful reason to build glucose friendly habits, not a verdict about your future.",
@@ -1004,7 +1004,7 @@ export const NUTRIGEN_DX_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "SOD2 works directly with GPX1 and catalase to complete antioxidant defense and is supported by the glutathione system, so a Val reading here is best read alongside GPX1, CAT, and your overall antioxidant intake rather than alone.",
     ],
     protocolTieIn:
-      "Via Cura supports the full antioxidant chain, including balanced manganese and selenium and a broad antioxidant intake, delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption. Track recovery and resilience as part of your Bio Optimization picture.",
+      "Via Cura supports the full antioxidant chain, including balanced manganese and selenium and a broad antioxidant intake, delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability. Track recovery and resilience as part of your Bio Optimization picture.",
     laySummary: [
       "SOD2 makes your cells first line of defense against the wear and tear of producing energy, mopping up reactive molecules inside the mitochondria. One common version of this gene, called Val, may get the enzyme into place a little less efficiently. That version is the T version on the standard reading direction we use here, and two copies have a stronger effect than one.",
       "If you carry it, the helpful move is to support the whole antioxidant team rather than just one part, since this enzyme hands its work off to others. A broad, colorful diet with enough selenium and balanced manganese covers it well. So read a Val result as a reason to eat the rainbow and support recovery, not as a sign of damage.",
@@ -1070,7 +1070,7 @@ export const NUTRIGEN_DX_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "GPX1 completes the antioxidant chain that SOD2 and catalase begin, so a lower activity reading here is best read alongside SOD2, CAT, and your selenium status rather than alone.",
     ],
     protocolTieIn:
-      "Via Cura supports the full antioxidant chain, including adequate selenium and a broad antioxidant intake, delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption. Track recovery and resilience as part of your Bio Optimization picture.",
+      "Via Cura supports the full antioxidant chain, including adequate selenium and a broad antioxidant intake, delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability. Track recovery and resilience as part of your Bio Optimization picture.",
     laySummary: [
       "GPX1 makes a selenium powered enzyme that clears away the reactive leftovers of everyday metabolism, finishing the cleanup that other antioxidant enzymes start. One common version of this gene, called Leu, works a little more slowly. That version is the T version on the standard reading direction we use here, and two copies have a stronger effect than one.",
       "If you carry it, the simplest help is making sure you get enough selenium, since this enzyme depends on it, alongside a colorful antioxidant rich diet. A little goes a long way, so it is about adequacy rather than loading up. Read a Leu result as a reason to keep your selenium steady, not as a sign of harm.",
@@ -1137,7 +1137,7 @@ export const NUTRIGEN_DX_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "IL6 sits within the wider inflammatory network and is best read alongside TNF and your overall diet quality, since lifestyle inputs shape inflammatory tone far more than any single variant.",
     ],
     protocolTieIn:
-      "Via Cura leans into anti inflammatory nutrition, pairing omega-3 with a polyphenol rich pattern, and supporting nutrients are delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption. Track how you feel and, where relevant, inflammatory markers as part of your Bio Optimization picture.",
+      "Via Cura leans into anti inflammatory nutrition, pairing omega-3 with a polyphenol rich pattern, and supporting nutrients are delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability. Track how you feel and, where relevant, inflammatory markers as part of your Bio Optimization picture.",
     laySummary: [
       "IL6 makes a messenger that helps set your body's background level of inflammation, the low simmer that influences recovery and long term wellbeing. One common version of this gene is tied to small differences in that simmer. The version we track is the C version on the standard reading direction we use here.",
       "The honest framing is that this link is modest and varies between groups of people, so it is a gentle nudge rather than a loud signal. Either way, leaning into an anti inflammatory pattern with fish, colorful plants, and olive oil tends to help everyone. So read a C result as encouragement toward those foods, not a verdict about inflammation.",
@@ -1204,7 +1204,7 @@ export const NUTRIGEN_DX_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "TNF sits within the wider inflammatory network and is best read alongside IL6 and your overall diet quality, since lifestyle inputs shape inflammatory tone far more than any single variant.",
     ],
     protocolTieIn:
-      "Via Cura leans into anti inflammatory nutrition, pairing omega-3 with a polyphenol rich pattern, and supporting nutrients are delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption. Track how you feel and, where relevant, inflammatory markers as part of your Bio Optimization picture.",
+      "Via Cura leans into anti inflammatory nutrition, pairing omega-3 with a polyphenol rich pattern, and supporting nutrients are delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability. Track how you feel and, where relevant, inflammatory markers as part of your Bio Optimization picture.",
     laySummary: [
       "TNF makes one of the body's central inflammation messengers, important for normal immune defense but also tied to the low grade inflammation that can build up over time. One common version of this gene is linked to slightly stronger signaling. That version is the A version on the standard reading direction we use here.",
       "As with IL6, the honest framing is that this link is modest and varies between groups, so it is a gentle nudge rather than a loud one. Leaning into an anti inflammatory pattern with fish, colorful plants, and olive oil helps everyone regardless. So read an A result as encouragement toward those foods, not a verdict about inflammation.",
@@ -1270,7 +1270,7 @@ export const NUTRIGEN_DX_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "CAT completes the antioxidant chain that SOD2 begins and that glutathione peroxidase shares, so a lower expression reading here is best read alongside SOD2, GPX1, and your overall antioxidant intake rather than alone.",
     ],
     protocolTieIn:
-      "Via Cura supports the full antioxidant chain with a broad antioxidant intake and the minerals its partner enzymes depend on, delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption. Track recovery and resilience as part of your Bio Optimization picture.",
+      "Via Cura supports the full antioxidant chain with a broad antioxidant intake and the minerals its partner enzymes depend on, delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability. Track recovery and resilience as part of your Bio Optimization picture.",
     laySummary: [
       "CAT makes a lightning fast enzyme that breaks down hydrogen peroxide, a reactive byproduct of everyday metabolism, into harmless water and oxygen. One common version of this gene makes a little less of it. The lower activity version is the T version on the standard reading direction we use here, and two copies have a stronger effect than one.",
       "If you carry it, the rest of your antioxidant team picks up more of the load, so the helpful move is a broad, colorful diet that supports the whole network rather than any one nutrient. So read a T result as a reason to eat the rainbow and support recovery, not as a sign of damage.",
@@ -1330,7 +1330,7 @@ export const NUTRIGEN_DX_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "GSTM1 works alongside GSTT1, GSTP1, and the wider glutathione system, so a Null result here is best read alongside your other detox genes and your overall antioxidant intake rather than alone.",
     ],
     protocolTieIn:
-      "Via Cura supports the wider glutathione and antioxidant network with cruciferous forward nutrition and supporting nutrients delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption. Track resilience and recovery as part of your Bio Optimization picture.",
+      "Via Cura supports the wider glutathione and antioxidant network with cruciferous forward nutrition and supporting nutrients delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability. Track resilience and recovery as part of your Bio Optimization picture.",
     laySummary: [
       "GSTM1 is one of your body's detox helpers, attaching a cleanup tag to certain pollutants and byproducts so they can be cleared. Unlike most genes here, it is not about a single spelling change. Instead, a very common quirk means some people are simply missing this gene, which shows up as a Null result.",
       "If yours reads Null, do not worry, it is common and your other detox enzymes pick up the slack. The helpful move is supporting the whole team with cruciferous vegetables like broccoli and a colorful antioxidant rich diet. This is a type, not a grade, so there is no good or bad result here, just a nudge toward detox friendly foods.",
@@ -1390,7 +1390,7 @@ export const NUTRIGEN_DX_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "GSTT1 works alongside GSTM1, GSTP1, and the wider glutathione system, so a Null result here is best read alongside your other detox genes and your overall antioxidant intake rather than alone.",
     ],
     protocolTieIn:
-      "Via Cura supports the wider glutathione and antioxidant network with cruciferous forward nutrition and supporting nutrients delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption. Track resilience and recovery as part of your Bio Optimization picture.",
+      "Via Cura supports the wider glutathione and antioxidant network with cruciferous forward nutrition and supporting nutrients delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability. Track resilience and recovery as part of your Bio Optimization picture.",
     laySummary: [
       "GSTT1 is a close partner of GSTM1, another detox helper that tags certain environmental compounds for cleanup. As with GSTM1, the common quirk here is not a spelling change but whether you carry the gene at all, so the result reads as Present or Null.",
       "A Null result is common and nothing to worry about, since your other detox enzymes share the work. The same simple support helps, leaning on cruciferous vegetables and a colorful antioxidant rich diet. This is a type, not a grade, so read it as background that nudges you toward detox friendly foods, not as a score.",
@@ -1459,7 +1459,7 @@ export const NUTRIGEN_DX_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "Dairy tolerance shapes how easily you reach calcium and vitamin D from milk, so a non persistence result is best read alongside your vitamin D genes and overall mineral intake rather than alone.",
     ],
     protocolTieIn:
-      "Via Cura tailors calcium and vitamin D guidance to your dairy tolerance and can route those nutrients through the micellar and liposomal dual delivery system for 10x to 28x absorption where dairy is limited. Track digestive comfort and bone support nutrients as part of your Bio Optimization picture.",
+      "Via Cura tailors calcium and vitamin D guidance to your dairy tolerance and can route those nutrients through the micellar and liposomal dual delivery system for Maximum Bioavailability where dairy is limited. Track digestive comfort and bone support nutrients as part of your Bio Optimization picture.",
     laySummary: [
       "MCM6 is the switch that decides whether you keep making lactase, the enzyme that digests the sugar in milk, once you are grown. The tolerant version is the T version on the standard reading direction we use here, and even one copy is usually enough to keep dairy comfortable.",
       "If you have two C copies, your lactase naturally winds down, which is the most common pattern in the world and is normal, not a disorder. The easy answer is smaller portions, lower lactose dairy like hard cheese and yogurt, or lactase drops, while keeping calcium and vitamin D coming from a range of foods. So read your result as a simple guide to how dairy suits you, not a grade.",
@@ -1522,7 +1522,7 @@ export const NUTRIGEN_DX_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "This haplotype context sits alongside the DAO histamine and wider gut picture, so any gluten related symptoms are best read with a clinician rather than attributed to this result alone.",
     ],
     protocolTieIn:
-      "Via Cura treats this as descriptive context, never a diagnosis, and where celiac is clinically confirmed it can support a gluten free diet with the nutrients that pattern can run low in, delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption. Track digestive comfort as part of your Bio Optimization picture, always alongside clinical guidance.",
+      "Via Cura treats this as descriptive context, never a diagnosis, and where celiac is clinically confirmed it can support a gluten free diet with the nutrients that pattern can run low in, delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability. Track digestive comfort as part of your Bio Optimization picture, always alongside clinical guidance.",
     laySummary: [
       "HLA-DQ2 and HLA-DQ8 are immune system types that set whether celiac disease is even possible for you. Almost everyone with celiac carries one, but here is the key point, these types are common and the large majority of people who carry them never develop celiac at all.",
       "So a present result is not a diagnosis and not a reason to drop gluten. Its most useful side is reassurance, because if you carry neither type, celiac is very unlikely. If you do carry one and have ongoing gut symptoms, the right step is proper celiac testing with a clinician while you are still eating gluten, since cutting it out first can hide the answer. Read this as background, never a verdict.",
@@ -1590,7 +1590,7 @@ export const NUTRIGEN_DX_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "AHR helps switch on the main caffeine metabolizing enzyme, so a result here is best read alongside that enzyme and your real world caffeine response rather than alone.",
     ],
     protocolTieIn:
-      "Via Cura pairs sensible caffeine guidance with cruciferous forward nutrition and a broad antioxidant intake, delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption. Track sleep, energy, and caffeine response as part of your Bio Optimization picture.",
+      "Via Cura pairs sensible caffeine guidance with cruciferous forward nutrition and a broad antioxidant intake, delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability. Track sleep, energy, and caffeine response as part of your Bio Optimization picture.",
     laySummary: [
       "AHR is a kind of sensor that notices certain compounds in your food and environment, including caffeine and the natural compounds in broccoli, and helps switch on the enzymes that process them. A common version near this gene is tied to how much coffee people tend to drink. That version is the C version on the standard reading direction we use here.",
       "The honest framing is that this is more about habits and signaling than a precise caffeine speed, so your own experience matters most. If coffee disrupts your sleep or makes you jittery, that is your best guide. Cruciferous vegetables and a sensible afternoon cutoff help everyone. So read a C result as gentle context about caffeine, not a rule about how much you can handle.",
@@ -1657,7 +1657,7 @@ export const NUTRIGEN_DX_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "DAO handles dietary histamine while the methylation route through HNMT clears it inside cells, so a lower DAO tendency is best read alongside your methylation and overall gut picture rather than alone.",
     ],
     protocolTieIn:
-      "Via Cura can support DAO cofactors and a personalized lower histamine strategy, with supporting nutrients delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption. Track symptom patterns and food triggers as part of your Bio Optimization picture.",
+      "Via Cura can support DAO cofactors and a personalized lower histamine strategy, with supporting nutrients delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability. Track symptom patterns and food triggers as part of your Bio Optimization picture.",
     laySummary: [
       "DAO makes the enzyme that breaks down histamine from food right at your gut lining. Histamine is the same compound behind allergy type symptoms, and it is naturally high in aged, fermented, and leftover foods. One common version of this gene slows that breakdown. The slower version is the T version on the standard reading direction we use here, and two copies slow it more than one.",
       "If you carry it and clearance cannot keep up, histamine rich foods may bring flushing, headaches, or a stuffy nose. The good news is it responds well to eating fresher foods, watching portions of the highest histamine foods, and finding your own triggers rather than cutting out whole groups. So read a T result as a helpful pointer about which foods to watch, not a permanent restriction.",
@@ -1725,7 +1725,7 @@ export const NUTRIGEN_DX_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "NAT2 works within the broader Phase two detox network alongside the GST enzymes and benefits from glutathione support, so a slow result is best read alongside your other detox genes and overall antioxidant intake rather than alone.",
     ],
     protocolTieIn:
-      "Via Cura supports the wider detox network and a practical approach to high heat cooking, with supporting nutrients delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption. Track exposures and resilience as part of your Bio Optimization picture.",
+      "Via Cura supports the wider detox network and a practical approach to high heat cooking, with supporting nutrients delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability. Track exposures and resilience as part of your Bio Optimization picture.",
     laySummary: [
       "NAT2 makes an enzyme that helps clear certain compounds from your food, including the ones that form when meat is cooked at high heat or charred. People fall into rapid, intermediate, or slow groups depending on their genetics, and slow acetylators clear these compounds a bit less quickly.",
       "If you are a slow acetylator, the easy and tasty fix is mostly about cooking, leaning toward gentler methods, marinating before grilling, and piling on the vegetables. None of this means giving up meat. So read a slow result as a friendly nudge toward how you cook and round out your plate, not a verdict about your diet.",
@@ -1792,7 +1792,7 @@ export const NUTRIGEN_DX_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "ABCG2 is one of several urate handling routes, so a result here is best read alongside your measured uric acid and overall diet pattern, which shape uric acid far more than any single variant.",
     ],
     protocolTieIn:
-      "Via Cura supports hydration, a lower purine pattern, and the nutrients that aid healthy urate handling, delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption. Track uric acid related trends as part of your Bio Optimization picture.",
+      "Via Cura supports hydration, a lower purine pattern, and the nutrients that aid healthy urate handling, delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability. Track uric acid related trends as part of your Bio Optimization picture.",
     laySummary: [
       "ABCG2 builds a pump that clears uric acid and many other compounds out of your body, mostly through the kidneys and gut. One common version of this gene, called Q141K, makes that pump less efficient, so uric acid can build up a little more. The reduced version is the T version on the standard reading direction we use here, and two copies have a stronger effect than one.",
       "If you carry it, uric acid may run higher, which over time can raise the tendency toward gout. The encouraging part is how responsive this is, since staying well hydrated, leaning on a plant forward plate, and easing up on alcohol and sugary drinks all help. So read a T result as a practical nudge toward those habits, not a verdict that you will get gout.",

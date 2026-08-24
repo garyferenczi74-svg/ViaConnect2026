@@ -10,6 +10,8 @@
  */
 
 export const NUTRIVISION_START_STREAM_TIMEOUT_MS = 8000;
+/** Native / plugin camera capture safety timeout. Gallery picks are not timed. */
+export const NUTRIVISION_CAMERA_CAPTURE_TIMEOUT_MS = 15000;
 
 export type NutriVisionCapturePhase =
   | 'idle'

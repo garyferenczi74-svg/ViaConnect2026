@@ -22,6 +22,8 @@ import {
   unauthorizedHubPayload,
   type HubVariantsPayload,
 } from '@/lib/genetics/hubVariantsPayload';
+import { variantRowChip, type VariantRowChipKind } from '@/lib/genetics/variantRowChip';
+import type { VariantProvenance } from '@/lib/genetics/variantProvenance';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,6 +35,9 @@ interface DbVariantRow {
   status: string | null;
   clinical_significance: string | null;
   is_sample: boolean;
+  stored_panel_key?: string | null;
+  chip?: VariantRowChipKind;
+  provenance?: VariantProvenance | null;
 }
 
 interface VariantRow extends DbVariantRow {
@@ -40,9 +45,20 @@ interface VariantRow extends DbVariantRow {
 }
 
 function scoreVariant(row: DbVariantRow): VariantRow {
+  const chip =
+    row.chip ??
+    variantRowChip({
+      is_sample: row.is_sample,
+      genotype: row.genotype,
+      status: row.status,
+      stored_panel_key: row.stored_panel_key ?? row.panel_key,
+    });
   return {
     ...row,
     is_sample: row.is_sample === true,
+    stored_panel_key: row.stored_panel_key ?? row.panel_key,
+    chip,
+    provenance: row.provenance ?? null,
     severity:
       severityFor(PANEL_LABELS[row.panel_key]?.slug ?? null, row.rsid, row.genotype) ??
       methylationSeverityFor(row.rsid, row.status),
@@ -65,6 +81,19 @@ function scorePayload(
         clinical_significance:
           typeof row.clinical_significance === 'string' ? row.clinical_significance : null,
         is_sample: row.is_sample === true,
+        stored_panel_key:
+          typeof row.stored_panel_key === 'string' ? row.stored_panel_key : panelKey,
+        chip:
+          row.chip === 'demo' ||
+          row.chip === 'result' ||
+          row.chip === 'unanalyzed' ||
+          row.chip === 'reference'
+            ? row.chip
+            : undefined,
+        provenance:
+          typeof row.provenance === 'object' && row.provenance !== null
+            ? (row.provenance as VariantProvenance)
+            : null,
       }),
     );
   }

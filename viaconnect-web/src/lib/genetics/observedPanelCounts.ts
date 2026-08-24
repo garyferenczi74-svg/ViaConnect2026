@@ -14,6 +14,10 @@
 
 import { PANEL_KEYS, PANEL_LABELS, type PanelKey } from './panelLabels';
 import type { PanelCountUnit } from './panelLabels';
+import { normalizeObservedPanelKey } from './panelKeyAliases';
+
+/** Fail / null / remap miss badge. Never a number. Never dishonest "n/a". */
+export const UNANALYZED_LABEL = 'Unanalyzed';
 
 export type ObservedLoadStatus = 'ok' | 'error' | 'unauthorized';
 
@@ -120,15 +124,26 @@ export function sumObservedCounts(observed: ObservedByPanel): number | null {
 }
 
 /**
- * Format a pill badge. UNKNOWN stays distinct from honest empty (PR 32
- * owns the Unanalyzed fail chip; this function does not rename it).
- * Brief 19: honest empty is "Not analyzed", never "0 SNPs" as you have
- * nothing. Catalog / upload rows can exist while observed count is 0.
+ * Format a pill badge. Fail / null render as Unanalyzed (PR 32), never "0"
+ * and never dishonest "n/a". Brief 19: honest empty is "Not analyzed",
+ * never "0 SNPs" as you have nothing.
  */
 export function formatObservedBadge(row: ObservedPanelCount): string {
-  if (row.status === 'unknown' || row.count === null) return 'n/a';
+  if (row.status === 'unknown' || row.count === null) return UNANALYZED_LABEL;
   if (row.count === 0) return 'Not analyzed';
   return `${row.count} ${row.unit}`;
+}
+
+/**
+ * Badge for a stored panel_key. A remap miss is Unanalyzed, not 0.
+ */
+export function observedBadgeForRawPanelKey(
+  raw: string | null | undefined,
+  observed: ObservedByPanel,
+): string {
+  const key = normalizeObservedPanelKey(raw);
+  if (!key) return UNANALYZED_LABEL;
+  return formatObservedBadge(observed[key]);
 }
 
 /** Prove fail-open-as-0 is not the same as honest empty. */
