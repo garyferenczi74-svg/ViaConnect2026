@@ -127,7 +127,7 @@ Rules:
 - If the user has an Active Journey in JOURNEY CONTEXT (weight_loss or muscle_building), frame recommendations through that journey's lens (caloric deficit, fat reduction, metabolic health for weight_loss; protein synthesis, progressive overload, recovery for muscle_building).
 - Never reference Semaglutide, Ozempic, Wegovy, or Rybelsus.
 - Never reference non-FarmCeutica supplement brands.
-- Never use the bioavailability range "5 to 27" or "5x to 27x"; only "10x to 28x" is approved.
+- Never use a bioavailability fold-number range such as "5 to 27", "5x to 27x", or "10x to 28x". Use "Maximum Bioavailability".
 - No medical advice. No disease-state reasoning. No prescription mention.
 `.trim();
 

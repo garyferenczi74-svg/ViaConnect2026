@@ -120,7 +120,7 @@ function normalizePhaseData(phases: Array<{ phase: number; data: any }>): CAQRes
  */
 const SUPPLEMENT_REPLACEMENT_MAP: Record<string, { sku: string; name: string; reason: string }> = {
   // Vitamin D / D3
-  'vitamin d': { sku: 'FC-VDR-001', name: 'VDR+', reason: 'VDR+ provides D3 5000IU with K2 MK-7, Magnesium & Boron for 10-28x better absorption than standard Vitamin D' },
+  'vitamin d': { sku: 'FC-VDR-001', name: 'VDR+', reason: 'VDR+ provides D3 5000IU with K2 MK-7, Magnesium & Boron for Maximum Bioavailability versus standard Vitamin D' },
   'vitamin d3': { sku: 'FC-VDR-001', name: 'VDR+', reason: 'VDR+ optimizes Vitamin D receptor pathways with cofactors standard D3 lacks' },
   'd3': { sku: 'FC-VDR-001', name: 'VDR+', reason: 'VDR+ combines D3 with K2 MK-7 and Magnesium for complete absorption' },
   // B vitamins / methylation
