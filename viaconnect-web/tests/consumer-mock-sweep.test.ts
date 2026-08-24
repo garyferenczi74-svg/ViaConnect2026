@@ -15,6 +15,7 @@ function mobile(rel: string): string {
 
 const CONSUMER_SURFACES = [
   'src/app/(app)/(consumer)/helix/layout.tsx',
+  'src/app/(app)/(consumer)/helix/HelixChrome.tsx',
   'src/app/(app)/(consumer)/helix/arena/page.tsx',
   'src/app/(app)/(consumer)/helix/challenges/page.tsx',
   'src/app/(app)/(consumer)/helix/earn/page.tsx',
@@ -67,10 +68,11 @@ describe('Brief 15b consumer mock sweep', () => {
     for (const token of FORBIDDEN) {
       expect(joined).not.toContain(token);
     }
-    expect(src('src/app/(app)/(consumer)/helix/layout.tsx')).toContain('helixTierFromPoints');
-    expect(src('src/app/(app)/(consumer)/helix/layout.tsx')).toContain('formatHelixRank');
+    expect(src('src/app/(app)/(consumer)/helix/HelixChrome.tsx')).toContain('helixTierFromPoints');
+    expect(src('src/app/(app)/(consumer)/helix/HelixChrome.tsx')).toContain('formatHelixRank');
     expect(src('src/app/(app)/(consumer)/helix/arena/page.tsx')).toContain('SQUAD_CHAT_EMPTY');
     expect(src('src/app/(app)/(consumer)/helix/layout.tsx')).not.toContain('4350');
+    expect(src('src/app/(app)/(consumer)/helix/HelixChrome.tsx')).not.toContain('4350');
     expect(src('src/app/(app)/(consumer)/helix/earn/page.tsx')).toContain('useHelixEarnCatalog');
     expect(src('src/hooks/useHelixEarnCatalog.ts')).toContain('helix_earning_event_types');
     expect(src('src/hooks/useHelixEarnCatalog.ts')).toContain('helix_transactions');
