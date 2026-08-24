@@ -37,11 +37,12 @@ describe('wearable snapshot', () => {
         appleImports: [{ records_ingested: 8, created_at: '2026-08-22T08:00:00.000Z' }],
         whoopConfigured: false,
         ouraConfigured: false,
+        now: Date.parse('2026-08-24T10:00:00.000Z'),
       }),
     );
     expect(snap.tiles.find((t) => t.id === 'whoop')?.statusLabel).toBe('Not connected');
     expect(snap.tiles.find((t) => t.id === 'oura')?.statusLabel).toBe('Not connected');
-    expect(snap.tiles.find((t) => t.id === 'apple_health')?.statusLabel).toBe('Connected via XML');
+    expect(snap.tiles.find((t) => t.id === 'apple_health')?.statusLabel).toBe('Synced 2d ago');
     expect(snap.tiles.every((t) => t.appleWatchConnected === false)).toBe(true);
   });
 
@@ -66,10 +67,11 @@ describe('wearable snapshot', () => {
           },
         ],
         appleImports: [{ records_ingested: 12, created_at: '2026-08-20T09:00:00.000Z' }],
+        now: Date.parse('2026-08-24T10:00:00.000Z'),
       }),
     );
-    expect(snap.tiles.find((t) => t.id === 'hume')?.statusLabel).toBe('Connected via XML');
-    expect(snap.tiles.find((t) => t.id === 'apple_health')?.statusLabel).toBe('Connected via XML');
+    expect(snap.tiles.find((t) => t.id === 'hume')?.statusLabel).toBe('Synced 4d ago');
+    expect(snap.tiles.find((t) => t.id === 'apple_health')?.statusLabel).toBe('Synced 4d ago');
     expect(snap.tiles.find((t) => t.id === 'hume')?.action.kind).toBe('xml_upload');
   });
 

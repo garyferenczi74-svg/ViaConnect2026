@@ -179,7 +179,7 @@ export default function ConsumerDashboard() {
               longestStreak={longestStreak}
             />
             {/* Connect device / app cards, full-width matching tab design */}
-            <ConnectCard type="wearable" href="/plugins/wearables" />
+            <ConnectCard type="wearable" href="/body-tracker/connections" />
             <ConnectCard type="app" href="/plugins/apps" />
           </div>
         </div>

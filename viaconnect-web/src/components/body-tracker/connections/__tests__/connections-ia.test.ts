@@ -17,6 +17,9 @@ describe('Connections IA contracts', () => {
     expect(wearables).not.toContain('5 min ago');
     expect(wearables).not.toContain('Apple Watch');
     expect(wearables).not.toContain('Vitality');
+    expect(wearables).not.toContain('WearableDashboardPage');
+    expect(wearables).not.toContain('dailyScores');
+    expect(wearables).not.toContain('COMT');
   });
 
   it('ships four tiles, XML Hume action, and BOS footer', () => {

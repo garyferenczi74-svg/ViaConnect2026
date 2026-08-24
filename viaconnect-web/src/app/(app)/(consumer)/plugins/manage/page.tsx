@@ -6,15 +6,11 @@ import Link from 'next/link';
 import {
   ArrowLeft,
   Settings,
-  RefreshCw,
   Trash2,
   Eye,
   Unplug,
   RotateCcw,
   Plus,
-  Gem,
-  Watch,
-  Activity,
   Leaf,
   Bike,
   Dna,
@@ -26,15 +22,6 @@ import {
 /*  Mock data                                                         */
 /* ------------------------------------------------------------------ */
 
-interface Wearable {
-  id: string;
-  name: string;
-  icon: IconType;
-  status: 'connected' | 'error';
-  lastSync: string;
-  dataTypes: string[];
-}
-
 interface AppConnection {
   id: string;
   name: string;
@@ -43,33 +30,6 @@ interface AppConnection {
   lastSync: string;
   dataTypes: string[];
 }
-
-const wearables: Wearable[] = [
-  {
-    id: 'oura',
-    name: 'Oura Ring Gen 3',
-    icon: Gem,
-    status: 'connected',
-    lastSync: '2 minutes ago',
-    dataTypes: ['sleep', 'hrv', 'temperature'],
-  },
-  {
-    id: 'apple-watch',
-    name: 'Apple Watch S9',
-    icon: Watch,
-    status: 'connected',
-    lastSync: '5 minutes ago',
-    dataTypes: ['heart_rate', 'activity', 'ecg'],
-  },
-  {
-    id: 'garmin',
-    name: 'Garmin Venu 3',
-    icon: Activity,
-    status: 'error',
-    lastSync: '2 hours ago',
-    dataTypes: ['activity', 'sleep', 'stress'],
-  },
-];
 
 const apps: AppConnection[] = [
   {
@@ -200,18 +160,11 @@ function SectionLink({ href, label }: { href: string; label: string }) {
 /* ------------------------------------------------------------------ */
 
 export default function ManageConnectionsPage() {
-  const [wearableList, setWearableList] = useState(wearables);
   const [appList, setAppList] = useState(apps);
 
-  function handleDisconnect(
-    id: string,
-    listSetter: React.Dispatch<React.SetStateAction<typeof wearables>> | React.Dispatch<React.SetStateAction<typeof apps>>,
-    label: string,
-  ) {
+  function handleDisconnect(id: string, label: string) {
     if (window.confirm(`Disconnect ${label}? You can reconnect later.`)) {
-      (listSetter as unknown as (fn: (prev: { id: string }[]) => { id: string }[]) => void)((prev) =>
-        prev.filter((item: { id: string }) => item.id !== id),
-      );
+      setAppList((prev) => prev.filter((item) => item.id !== id));
     }
   }
 
@@ -231,24 +184,15 @@ export default function ManageConnectionsPage() {
         </h1>
       </div>
 
-      {/* -------- WEARABLES -------- */}
+      {/* Wearables live on Connections. This page must not invent last-sync. */}
       <section className="space-y-3">
         <p className="text-overline">WEARABLES</p>
-
-        {wearableList.map((w) => (
-          <DeviceCard
-            key={w.id}
-            icon={w.icon}
-            name={w.name}
-            status={w.status}
-            lastSync={w.lastSync}
-            dataTypes={w.dataTypes}
-            onDisconnect={() => handleDisconnect(w.id, setWearableList, w.name)}
-            onRetry={w.status === 'error' ? () => alert('Retrying sync...') : undefined}
-          />
-        ))}
-
-        <SectionLink href="/plugins" label="Connect Another Wearable" />
+        <Link
+          href="/body-tracker/connections"
+          className="glass-v2 block rounded-2xl p-4 text-sm text-white/70 hover:text-white"
+        >
+          Manage Whoop, Oura, Hume Body Pod, and Apple Health on Connections. Status comes from last sync only.
+        </Link>
       </section>
 
       {/* -------- APPS -------- */}
@@ -263,7 +207,7 @@ export default function ManageConnectionsPage() {
             status={a.status}
             lastSync={a.lastSync}
             dataTypes={a.dataTypes}
-            onDisconnect={() => handleDisconnect(a.id, setAppList, a.name)}
+            onDisconnect={() => handleDisconnect(a.id, a.name)}
           />
         ))}
 
@@ -320,21 +264,6 @@ export default function ManageConnectionsPage() {
         </div>
       </section>
 
-      {/* -------- DATA SYNC STATUS -------- */}
-      <section className="space-y-3">
-        <p className="text-overline">DATA SYNC STATUS</p>
-
-        <div className="glass-v2 flex items-center justify-between p-4 rounded-2xl">
-          <div className="space-y-0.5">
-            <p className="text-body-sm text-secondary">Last full sync: 2 minutes ago</p>
-            <p className="text-body-sm text-tertiary">Next scheduled: in 13 minutes</p>
-          </div>
-          <button className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-white hover:bg-white/10 transition-colors">
-            <RefreshCw size={16} />
-            Force Sync Now
-          </button>
-        </div>
-      </section>
     </div>
   );
 }
