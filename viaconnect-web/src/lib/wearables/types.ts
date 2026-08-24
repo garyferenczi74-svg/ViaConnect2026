@@ -1,6 +1,6 @@
 // Prompt 212: shared wearable types. Null/UNKNOWN for missing metrics, never 0 fabrication.
 
-export type WearableProvider = "whoop" | "health_kit" | "health_connect";
+export type WearableProvider = "whoop" | "health_kit" | "health_connect" | "oura";
 
 export type ConnectedSourceStatus = "connected" | "revoked" | "error" | "pending";
 

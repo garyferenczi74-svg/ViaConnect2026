@@ -16,6 +16,9 @@ import {
   groupDailyVitals,
   type HealthBatch,
 } from "./normalize-health";
+import { getOuraAccessToken } from "./oura/tokens";
+import { ouraGet } from "./oura/client";
+import { normalizeOuraRecovery, normalizeOuraSleep } from "./oura/normalize";
 
 const SCOPE = "lib.wearables.processor";
 
@@ -70,15 +73,84 @@ async function mark(admin: Admin, id: string, status: "processed" | "failed" | "
   );
 }
 
+interface WearableEventRow {
+  id: string;
+  user_id: string;
+  provider: string;
+  event_type: string;
+  external_id: string;
+  payload: Record<string, unknown> | null;
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function processOne(admin: Admin, ev: any): Promise<void> {
   if (ev.provider === "whoop") {
     await processWhoop(admin, ev);
     return;
   }
+  if (ev.provider === "oura") {
+    await processOura(admin, ev as WearableEventRow);
+    return;
+  }
   if (ev.provider === "health_kit" || ev.provider === "health_connect") {
     await processHealthBatch(admin, ev);
     return;
+  }
+}
+
+async function processOura(admin: Admin, ev: WearableEventRow): Promise<void> {
+  const type = String(ev.event_type || "");
+  const isDelete = type.endsWith(".deleted") || type === "delete";
+  const isReadiness = type.includes("readiness") || type.includes("recovery");
+  const isSleep = type.includes("sleep");
+
+  if (isDelete) {
+    const table = isReadiness ? "wearable_recovery" : isSleep ? "wearable_sleep_sessions" : null;
+    if (table) {
+      await withTimeout(
+        admin
+          .from(table)
+          .update({ deleted_at: new Date().toISOString() })
+          .eq("source_provider", "oura")
+          .eq("external_id", ev.external_id),
+        4000,
+        `${SCOPE}.ouraSoftDelete`,
+      );
+    }
+    return;
+  }
+
+  let payload: Record<string, unknown> | null = ev.payload;
+  const access = await getOuraAccessToken(admin, ev.user_id);
+  if (access && (!payload || !payload.id)) {
+    const path = isReadiness
+      ? `/usercollection/daily_readiness/${ev.external_id}`
+      : `/usercollection/${type.includes("daily_sleep") ? "daily_sleep" : "sleep"}/${ev.external_id}`;
+    const fetched = await ouraGet<Record<string, unknown>>(path, access);
+    if (fetched) payload = fetched;
+  }
+  if (!payload) {
+    throw new Error("missing oura payload");
+  }
+
+  if (isReadiness) {
+    const row = normalizeOuraRecovery(ev.user_id, payload);
+    await withTimeout(
+      admin.from("wearable_recovery").upsert(row, { onConflict: "source_provider,external_id" }),
+      4000,
+      `${SCOPE}.ouraRecovery`,
+    );
+    return;
+  }
+
+  if (isSleep) {
+    const row = normalizeOuraSleep(ev.user_id, payload);
+    if (!row.external_id || !row.start_at) throw new Error("invalid oura sleep");
+    await withTimeout(
+      admin.from("wearable_sleep_sessions").upsert(row, { onConflict: "source_provider,external_id" }),
+      4000,
+      `${SCOPE}.ouraSleep`,
+    );
   }
 }
 

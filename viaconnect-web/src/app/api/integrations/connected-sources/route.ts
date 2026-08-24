@@ -6,6 +6,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
 import { DEFAULT_PRECEDENCE, type MetricKey } from "@/lib/wearables/types";
+import { isWhoopConfigured } from "@/lib/wearables/whoop/config";
+import { isOuraConfigured } from "@/lib/wearables/oura/config";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -55,9 +57,8 @@ export async function GET() {
     return NextResponse.json({
       sources: sources ?? [],
       precedence: precedenceMap,
-      whoopConfigured: Boolean(
-        process.env.WHOOP_CLIENT_ID && process.env.WHOOP_CLIENT_SECRET && process.env.WEARABLE_TOKEN_KEY,
-      ),
+      whoopConfigured: isWhoopConfigured(),
+      ouraConfigured: isOuraConfigured(),
       healthConnectEnabled: process.env.HEALTH_CONNECT_ENABLED === "1",
     });
   } catch (err) {
@@ -77,7 +78,7 @@ export async function PATCH(req: NextRequest) {
     if (!metricKey || !preferred) {
       return NextResponse.json({ error: "metric_key and preferred_provider required" }, { status: 400 });
     }
-    if (!["whoop", "health_kit", "health_connect"].includes(preferred)) {
+    if (!["whoop", "health_kit", "health_connect", "oura"].includes(preferred)) {
       return NextResponse.json({ error: "invalid provider" }, { status: 400 });
     }
 

@@ -55,7 +55,8 @@ interface ArnoldUserProfile {
 // Default trust scores
 // ---------------------------------------------------------------------------
 
-const DEFAULT_TRUST_SCORES: Record<string, number> = {
+/** Live default trust table. DISPLAY reads this; engine rules stay here. */
+export const ARNOLD_DEFAULT_TRUST_SCORES: Record<string, number> = {
   'manual':                   1.00,
   'wearable:apple_watch':     0.85,
   'wearable:whoop':           0.85,
@@ -70,6 +71,8 @@ const DEFAULT_TRUST_SCORES: Record<string, number> = {
   'plugin:cronometer':        0.65,
   'plugin:strava':            0.65,
 };
+
+const DEFAULT_TRUST_SCORES = ARNOLD_DEFAULT_TRUST_SCORES;
 
 // ---------------------------------------------------------------------------
 // ArnoldReconciler
