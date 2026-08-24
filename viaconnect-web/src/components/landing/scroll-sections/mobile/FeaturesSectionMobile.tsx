@@ -5,6 +5,7 @@ import { ChevronDown } from 'lucide-react'
 import { SectionAnchor } from '../shared/SectionAnchor'
 import { SECTION_IDS } from '../shared/sectionConstants'
 import { featureCards, type FeatureCard } from '../shared/featureCards'
+import { FEATURES_INTRO_COPY } from '@/lib/practitioner/waitlist-honesty'
 
 export function FeaturesSectionMobile() {
     const [openId, setOpenId] = useState<string | null>(null)
@@ -41,7 +42,7 @@ export function FeaturesSectionMobile() {
                         Features built for your biology
                     </h2>
                     <p className="text-white/70 text-base leading-relaxed">
-                        One platform. Genomic testing, AI protocols, peptide therapeutics, and a three-portal ecosystem.
+                        {FEATURES_INTRO_COPY.mobile}
                     </p>
                 </motion.div>
 

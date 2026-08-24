@@ -30,6 +30,7 @@ describe('fetchBOSCurrent', () => {
       confidence: 0.72,
       confidence_display: '72%',
       computed_at: null,
+      weekly_delta: null,
       compute_version: '2.0.0',
       accuracy_pills: [
         { key: 'caq', label: 'CAQ', state: 'incomplete', destination_key: 'caq_resume', confidence_unlocked_pct: 72 },

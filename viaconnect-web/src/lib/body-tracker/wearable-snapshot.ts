@@ -17,6 +17,7 @@ import {
   type DimensionSourceRow,
   type SourceValue,
 } from './source-disagreement';
+import { formatSyncedRelative } from '@/lib/body-tracker/last-sync-state';
 
 export interface ConnectedSourceRow {
   provider: string;
@@ -382,21 +383,11 @@ export function assembleWearableSnapshot(input: WearableSnapshotInput): Wearable
 
 export function formatTileLastSync(
   lastSyncAt: string | null,
-  kind: 'oauth_sync' | 'xml_upload' | null,
+  _kind: 'oauth_sync' | 'xml_upload' | null,
   now = Date.now(),
 ): string | null {
   if (!lastSyncAt) return null;
-  const then = new Date(lastSyncAt).getTime();
-  if (!Number.isFinite(then)) return null;
-  const deltaMs = Math.max(0, now - then);
-  const minutes = Math.floor(deltaMs / 60000);
-  const prefix = kind === 'xml_upload' ? 'Last upload' : 'Last sync';
-  if (minutes < 60) return `${prefix} ${Math.max(1, minutes)}m ago`;
-  const day = new Date(lastSyncAt);
-  const sameDay = new Date(now).toDateString() === day.toDateString();
-  const time = day.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).toLowerCase().replace(' ', '');
-  if (sameDay) return `${prefix} today ${time}`;
-  return `${prefix} ${day.toLocaleDateString()} ${time}`;
+  return formatSyncedRelative(lastSyncAt, now);
 }
 
 export function formatScoreDetailFooter(lastUpdatedAt: string | null, now = Date.now()): string {

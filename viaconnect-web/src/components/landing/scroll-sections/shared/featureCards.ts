@@ -9,6 +9,7 @@ import {
     Stethoscope,
     Trophy,
 } from 'lucide-react'
+import { THREE_PORTAL_COPY } from '@/lib/practitioner/waitlist-honesty'
 
 export interface FeatureCard {
     id: string
@@ -57,9 +58,9 @@ export const featureCards: FeatureCard[] = [
     {
         id: 'three-portal',
         icon: Users,
-        headline: 'Three-Portal Ecosystem',
-        teaser: 'Share your data with your clinician, your way.',
-        body: 'Your data, on your terms. Consumer, Practitioner, and Naturopath portals on one unified model. Share your protocol with your clinician in one tap and message them without leaving the app. Privacy stays role-locked, the conversation stays yours.',
+        headline: THREE_PORTAL_COPY.headline,
+        teaser: THREE_PORTAL_COPY.teaser,
+        body: THREE_PORTAL_COPY.body,
     },
     {
         id: 'interaction-engine',

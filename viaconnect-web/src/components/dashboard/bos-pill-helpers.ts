@@ -64,6 +64,11 @@ export function accuracyGradientForKey(key: AccuracyPill['key']): string {
 }
 
 export function buildAccuracyAriaLabel(pill: AccuracyPill): string {
+  if (pill.key === 'genetics' && pill.state !== 'complete') {
+    return pill.state === 'awaiting_results'
+      ? 'Genetics awaiting results, Not analyzed until mapped_count is real'
+      : 'Genetics Not analyzed';
+  }
   if (pill.state === 'complete') {
     return `${pill.label} complete, confidence unlocked at ${pill.confidence_unlocked_pct} percent`;
   }
@@ -71,6 +76,23 @@ export function buildAccuracyAriaLabel(pill: AccuracyPill): string {
     return `${pill.label} awaiting results, confidence ${pill.confidence_unlocked_pct} percent once complete`;
   }
   return `${pill.label} unlock, complete to reach ${pill.confidence_unlocked_pct} percent confidence`;
+}
+
+/**
+ * Visible pill label. Genetics 96% is only honest after mapped_count SSOT
+ * (Brief 16 / genetics-source present). Incomplete genetics is Not analyzed,
+ * never a live 96%.
+ */
+export function accuracyPillDisplayLabel(pill: AccuracyPill): string {
+  if (pill.key === 'genetics' && pill.state !== 'complete') {
+    return pill.state === 'awaiting_results'
+      ? 'Genetics · pending'
+      : 'Genetics · Not analyzed';
+  }
+  const baseLabel = `${pill.label}: ${pill.confidence_unlocked_pct}%`;
+  if (pill.state === 'complete') return baseLabel;
+  if (pill.state === 'awaiting_results') return `${baseLabel} · pending`;
+  return `${baseLabel} · unlock`;
 }
 
 // -- Engagement -------------------------------------------------------------

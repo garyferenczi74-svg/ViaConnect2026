@@ -1,6 +1,7 @@
 // Prompt 209 (2026-06-22): Canonical scan persistence route.
 // POST { scanId } -> reads the photo scan audit row, derives composition, writes
-// body_tracker_entries + body_tracker_segmental_fat (idempotent by scan_id).
+// body_tracker_entries + body_tracker_segmental_fat + body_tracker_weight
+// (idempotent by scan_id). Prompt 210l: same spine as body-scan-analyze.
 // Fail-open: any thrown error returns { ok:false, reason } - never 500-crashes.
 // Auth is fail-closed: missing or timed-out session returns 401.
 // All Supabase calls wrapped with withTimeout + correlation id.
@@ -116,7 +117,7 @@ export async function POST(req: Request): Promise<NextResponse> {
 
     // Derive composition from the scan's AI estimate
     const derived = deriveScanComposition(scanRow.full_response);
-    const { entry, segFat } = buildScanWrite({
+    const { entry, segFat, weight } = buildScanWrite({
       userId,
       scanId,
       scanDate: scanRow.scan_date,
@@ -189,6 +190,29 @@ export async function POST(req: Request): Promise<NextResponse> {
         scanId,
         entryId,
         error: segInsertResult.error.message,
+      });
+    }
+
+    // Prompt 210l: same spine as the edge function — weight row with UNKNOWN lbs.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const weightInsertResult = await withTimeout(
+      Promise.resolve(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (supabase as any)
+          .from('body_tracker_weight')
+          .insert({ ...weight, entry_id: entryId })
+      ),
+      5000,
+      'scan.persist.insert_weight'
+    );
+
+    if (weightInsertResult.error) {
+      safeLog.warn('scan.persist', 'weight insert failed', {
+        correlationId,
+        userId,
+        scanId,
+        entryId,
+        error: weightInsertResult.error.message,
       });
     }
 

@@ -6,6 +6,11 @@ import { createClient } from '@/lib/supabase/client';
 import { runInMemoryMeasurement } from '@/lib/arnold/scanning/runScanAnalysis';
 import type { ViewQualityResult } from '@/lib/arnold/scanning/runScanAnalysis';
 import { persistScan } from '@/lib/body-tracker/composition/persistScanClient';
+import {
+  ANALYZE_CLIENT_TIMEOUT_MS,
+  buildAnalyzeRequestMediaFields,
+  resolveAllPhotoMediaTypes,
+} from '@/lib/body-tracker/composition/scanMediaTypes';
 import { safeLog } from '@/lib/utils/safe-log';
 import type { ExtractedMeasurements } from '@/lib/arnold/scanning/types';
 import type { PoseId } from '@/lib/arnold/types';
@@ -132,6 +137,7 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
   };
   const [slots, setSlots] = useState<Record<PhotoPosition, SlotState>>(initialSlots);
   const [submitting, setSubmitting] = useState(false);
+  const [analyzeElapsedSec, setAnalyzeElapsedSec] = useState(0);
   const [error, setError] = useState<string | null>(null);
   // Task 13b: per-view quality results, populated by the geometric pipeline as it runs.
   // Map from PhotoPosition to the quality result for that view.
@@ -154,6 +160,18 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
 
   const allFilled = POSITIONS.every((p) => slots[p.key].base64 !== null);
 
+  useEffect(() => {
+    if (!submitting) {
+      setAnalyzeElapsedSec(0);
+      return;
+    }
+    const started = Date.now();
+    const timer = window.setInterval(() => {
+      setAnalyzeElapsedSec(Math.floor((Date.now() - started) / 1000));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [submitting]);
+
   function clearSlot(key: PhotoPosition) {
     setSlots((s) => ({ ...s, [key]: { file: null, base64: null } }));
     setViewQuality((q) => { const next = { ...q }; delete next[key]; return next; });
@@ -164,6 +182,11 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
     setError(null);
     if (file.size > MAX_PHOTO_BYTES) {
       setError(`Photo too large (max 5 MB). Try compressing or retaking.`);
+      return;
+    }
+    const declared = (file.type || '').toLowerCase();
+    if (declared === 'image/heic' || declared === 'image/heif') {
+      setError('HEIC photos are not supported. Use JPEG or PNG.');
       return;
     }
     try {
@@ -289,23 +312,47 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
         }
       })();
 
-      const url = `${SUPABASE_URL.replace(/\/$/, '')}/functions/v1/body-scan-analyze`;
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          photos: {
-            front:      slots.front.base64,
-            back:       slots.back.base64,
-            left_side:  slots.left_side.base64,
-            right_side: slots.right_side.base64,
-          },
-          media_type: slots.front.file?.type?.startsWith('image/png') ? 'image/png' : 'image/jpeg',
-        }),
+      const mediaResolved = resolveAllPhotoMediaTypes({
+        front:      { fileType: slots.front.file?.type,      base64: slots.front.base64 },
+        back:       { fileType: slots.back.file?.type,       base64: slots.back.base64 },
+        left_side:  { fileType: slots.left_side.file?.type,  base64: slots.left_side.base64 },
+        right_side: { fileType: slots.right_side.file?.type, base64: slots.right_side.base64 },
       });
+      if (!mediaResolved.ok) {
+        throw new Error(mediaResolved.error);
+      }
+      const mediaFields = buildAnalyzeRequestMediaFields(mediaResolved.mediaTypes);
+
+      const url = `${SUPABASE_URL.replace(/\/$/, '')}/functions/v1/body-scan-analyze`;
+      const analyzeController = new AbortController();
+      const analyzeTimer = window.setTimeout(() => analyzeController.abort(), ANALYZE_CLIENT_TIMEOUT_MS);
+      let res: Response;
+      try {
+        res = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          signal: analyzeController.signal,
+          body: JSON.stringify({
+            photos: {
+              front:      slots.front.base64,
+              back:       slots.back.base64,
+              left_side:  slots.left_side.base64,
+              right_side: slots.right_side.base64,
+            },
+            ...mediaFields,
+          }),
+        });
+      } catch (fetchErr) {
+        if (fetchErr instanceof Error && fetchErr.name === 'AbortError') {
+          throw new Error('vision timed out');
+        }
+        throw fetchErr;
+      } finally {
+        window.clearTimeout(analyzeTimer);
+      }
 
       if (!res.ok) {
         const errBody = await res.json().catch(() => ({}));
@@ -428,7 +475,7 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
                   ref={(el) => { inputRefs.current[pos.key] = el; }}
                   id={`scan-${pos.key}`}
                   type="file"
-                  accept="image/jpeg,image/png,image/heic,image/heif"
+                  accept="image/jpeg,image/png,image/webp"
                   capture="environment"
                   className="absolute inset-0 cursor-pointer opacity-0"
                   onChange={(e) => {
@@ -503,7 +550,17 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
         </p>
       </div>
 
-      {error && <p className="text-xs text-[#FCA5A5]">{error}</p>}
+      {error && (
+        <p data-testid="body-scan-error" className="text-xs text-[#FCA5A5]">
+          {error}
+        </p>
+      )}
+      {submitting && (
+        <p data-testid="body-scan-progress" className="text-xs text-white/55">
+          Analyzing photos… this can take up to 60 seconds
+          {analyzeElapsedSec > 0 ? ` (${analyzeElapsedSec}s)` : ''}. Keep this screen open.
+        </p>
+      )}
 
       <div className="flex items-center justify-end gap-3">
         <button
@@ -521,7 +578,11 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
           className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-[#2DA5A0] px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-[#2DA5A0]/90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {submitting && <Loader2 size={14} strokeWidth={1.5} className="animate-spin" />}
-          {submitting ? 'Analyzing' : 'Analyze My Composition'}
+          {submitting
+            ? analyzeElapsedSec >= 45
+              ? 'Still analyzing'
+              : 'Analyzing'
+            : 'Analyze My Composition'}
         </button>
       </div>
     </div>

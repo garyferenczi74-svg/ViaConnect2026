@@ -3,11 +3,14 @@
 // null === UNKNOWN - never silently coerce to 0.
 
 import type { CompositionSnapshot, RegionMap } from './types';
+import { parseFormaVisionEstimateNote } from './estimateNote';
 
 type EntryRow = {
   id: string;
   source: 'scan' | 'manual';
   created_at: string;
+  scan_id?: string | null;
+  notes?: string | null;
 } | null;
 
 type FatRow = Record<string, unknown> | null;
@@ -55,6 +58,9 @@ export function mapRows(args: {
   const { entry, fat, muscle } = args;
   if (!entry) return null;
 
+  const range = parseFormaVisionEstimateNote(entry.notes);
+  const isScan = entry.source === 'scan' || Boolean(entry.scan_id);
+
   return {
     entryId: entry.id,
     source: entry.source,
@@ -66,5 +72,9 @@ export function mapRows(args: {
     regionMuscleLbs: muscle ? muscleRegionMap(muscle) : { ...EMPTY_REGION },
     totalMuscleMassLbs: muscle ? toNum(muscle['total_muscle_mass_lbs']) : null,
     skeletalMuscleMassLbs: muscle ? toNum(muscle['skeletal_muscle_mass_lbs']) : null,
+    scanId: entry.scan_id ?? null,
+    estimatedBodyFatMin: range?.min ?? null,
+    estimatedBodyFatMax: range?.max ?? null,
+    isEstimated: isScan,
   };
 }

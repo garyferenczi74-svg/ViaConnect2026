@@ -241,9 +241,9 @@ export const CONNECTIONS = {
   description: "Sync the apps and wearables that feed every surface above.",
   sources: [
     { id: "whoop", label: "Whoop", connected: false },
-    { id: "oura", label: "Oura", connected: false },
     { id: "hume", label: "Hume Body Pod", connected: false },
     { id: "apple_health", label: "Apple Health", connected: false },
+    { id: "oura", label: "Oura", connected: false },
   ] as ConnectionSource[],
 };
 

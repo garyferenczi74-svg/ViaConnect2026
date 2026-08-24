@@ -113,20 +113,32 @@ function makeHistoryRow(overrides: Record<string, unknown> = {}) {
     confidence: 0.720,
     compute_version: '2.0.0',
     computed_at: '2026-05-11T12:00:03Z',
+    date: '2026-05-11',
     breakdown: makeBreakdown(),
     ...overrides,
   };
 }
 
-function installAuthedClient(historyRow: unknown | null) {
-  mockMaybeSingle = vi.fn().mockResolvedValue({ data: historyRow, error: null });
-  const order2 = vi.fn().mockReturnValue({
-    limit: vi.fn().mockReturnValue({ maybeSingle: mockMaybeSingle }),
-  });
+function chainForRow(row: unknown | null) {
+  const maybeSingle = vi.fn().mockResolvedValue({ data: row, error: null });
+  const limit = vi.fn().mockReturnValue({ maybeSingle });
+  const order2 = vi.fn().mockReturnValue({ limit });
   const order1 = vi.fn().mockReturnValue({ order: order2 });
-  const eq = vi.fn().mockReturnValue({ order: order1 });
+  const lte = vi.fn().mockReturnValue({ order: order1 });
+  const eq = vi.fn().mockReturnValue({ order: order1, lte });
   const select = vi.fn().mockReturnValue({ eq });
-  const from = vi.fn().mockReturnValue({ select });
+  return { select, maybeSingle };
+}
+
+function installAuthedClient(historyRow: unknown | null, weekAgoRow: unknown | null = null) {
+  const latest = chainForRow(historyRow);
+  const prior = chainForRow(weekAgoRow);
+  mockMaybeSingle = latest.maybeSingle;
+  let calls = 0;
+  const from = vi.fn().mockImplementation(() => {
+    calls += 1;
+    return calls === 1 ? latest : prior;
+  });
   mockClient = {
     from,
     auth: { getUser: mockGetUser },
@@ -177,6 +189,7 @@ describe('current pre-compute shape', () => {
     expect(body.confidence).toBe(0.720);
     expect(body.confidence_display).toBe('72%');
     expect(body.computed_at).toBeNull();
+    expect(body.weekly_delta).toBeNull();
     expect(body.compute_version).toBe('2.0.0');
   });
 
@@ -255,7 +268,28 @@ describe('current full shape with valid history row', () => {
     expect(body.confidence).toBe(0.720);
     expect(body.confidence_display).toBe('72%');
     expect(body.computed_at).toBe('2026-05-11T12:00:03Z');
+    expect(body.weekly_delta).toBeNull();
     expect(body.compute_version).toBe('2.0.0');
+  });
+
+  it('returns score=null (never NaN) when the history score is uncomputable', async () => {
+    installAuthedClient(makeHistoryRow({ score: Number.NaN }));
+    const res = await GET(new Request('https://example.com/api/bos/current'));
+    const body = await res.json();
+    expect(body.score).toBeNull();
+    expect(body.score).not.toBe(0);
+    expect(String(body.score)).not.toBe('NaN');
+  });
+
+  it('returns weekly_delta from a persisted week-ago score without rewriting math', async () => {
+    installAuthedClient(
+      makeHistoryRow({ score: 80, date: '2026-08-24' }),
+      { score: 74, date: '2026-08-17' },
+    );
+    const res = await GET(new Request('https://example.com/api/bos/current'));
+    const body = await res.json();
+    expect(body.score).toBe(80);
+    expect(body.weekly_delta).toBe(6);
   });
 
   it('coerces a PostgREST numeric string score and confidence to numbers (Prompt 196a)', async () => {

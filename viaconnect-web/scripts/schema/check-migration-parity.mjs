@@ -24,6 +24,12 @@
  *      "pending-verification") are treated as post-baseline.
  *   4. Anything older than baseline_stamp is accepted history (the
  *      documented historical version-name disjunction) and never fails.
+ *   5. Optional manifest.unapplied_stems is a reviewed inventory of
+ *      filename stems that exist in the repo but were confirmed absent
+ *      from supabase_migrations.schema_migrations. Those stems do not
+ *      count as applied. They silence missing-from-manifest after grace
+ *      so CI does not invent an apply record. A listed stem with no
+ *      matching repo file is a stale-unapplied-stem offender.
  *
  * Zero dependencies (node built-ins only). Output ordering is
  * deterministic. The only current-time dependence is the grace
@@ -111,6 +117,19 @@ function loadManifest(path) {
       fail(`manifest at ${path} has a malformed entry (need version and name strings)`);
     }
   }
+  if (raw.unapplied_stems === undefined) {
+    raw.unapplied_stems = [];
+  }
+  if (!Array.isArray(raw.unapplied_stems)) {
+    fail(`manifest at ${path} unapplied_stems must be an array of filename stems`);
+  }
+  for (const stem of raw.unapplied_stems) {
+    if (typeof stem !== "string" || !STEM_STAMP_RE.test(stem)) {
+      fail(
+        `manifest at ${path} has a malformed unapplied_stems entry (need a 14-digit filename stem)`,
+      );
+    }
+  }
   return raw;
 }
 
@@ -186,7 +205,9 @@ function isWithinGrace(stampMs, graceDays, nowMs) {
 function checkParity(manifest, files, graceDays, nowMs) {
   const offenders = [];
   const graced = [];
+  const reviewedUnapplied = [];
   let matchedFileCount = 0;
+  const unappliedStems = new Set(manifest.unapplied_stems || []);
 
   const postBaselineFiles = files.filter(
     (file) => file.stamp >= manifest.baseline_stamp,
@@ -196,12 +217,24 @@ function checkParity(manifest, files, graceDays, nowMs) {
       matchedFileCount += 1;
       continue;
     }
+    if (unappliedStems.has(file.stem)) {
+      reviewedUnapplied.push(file.fileName);
+      continue;
+    }
     const stampMs = stampToMs(file.stamp);
     if (isWithinGrace(stampMs, graceDays, nowMs)) {
       graced.push(file.fileName);
     } else {
       offenders.push(
         `[missing-from-manifest] ${file.fileName} (post-baseline, no manifest entry, filename stamp older than ${graceDays} day grace)`,
+      );
+    }
+  }
+
+  for (const stem of unappliedStems) {
+    if (!files.some((file) => file.stem === stem)) {
+      offenders.push(
+        `[stale-unapplied-stem] ${stem} (no matching repo migration file)`,
       );
     }
   }
@@ -219,9 +252,11 @@ function checkParity(manifest, files, graceDays, nowMs) {
 
   offenders.sort();
   graced.sort();
+  reviewedUnapplied.sort();
   return {
     offenders,
     graced,
+    reviewedUnapplied,
     matchedFileCount,
     postBaselineFileCount: postBaselineFiles.length,
     postBaselineEntryCount: postBaselineEntries.length,
@@ -243,7 +278,8 @@ function main() {
   const summary =
     `baseline ${manifest.baseline_stamp}; ` +
     `post-baseline files: ${result.postBaselineFileCount} ` +
-    `(matched ${result.matchedFileCount}, in grace ${result.graced.length}); ` +
+    `(matched ${result.matchedFileCount}, in grace ${result.graced.length}, ` +
+    `reviewed-unapplied ${result.reviewedUnapplied.length}); ` +
     `post-baseline manifest entries: ${result.postBaselineEntryCount}`;
 
   if (result.offenders.length > 0) {
@@ -259,6 +295,9 @@ function main() {
   console.log(`check-migration-parity: OK. ${summary}.`);
   for (const fileName of result.graced) {
     console.log(`  [grace] ${fileName}`);
+  }
+  for (const fileName of result.reviewedUnapplied) {
+    console.log(`  [unapplied] ${fileName}`);
   }
   process.exit(0);
 }

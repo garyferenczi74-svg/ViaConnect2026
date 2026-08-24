@@ -160,6 +160,8 @@ export function useLatestComposition(userId: string | null): UseLatestCompositio
           id: string;
           source: 'scan' | 'manual';
           created_at: string;
+          scan_id?: string | null;
+          notes?: string | null;
         };
 
         let entryRow: EntryRowRaw | null = null;
@@ -176,7 +178,7 @@ export function useLatestComposition(userId: string | null): UseLatestCompositio
                 };
               })
                 .from('body_tracker_entries')
-                .select('id,source,created_at')
+                .select('id,source,created_at,scan_id,notes')
                 .eq('id', entryId)
                 .maybeSingle(),
               TIMEOUT_MS,
@@ -209,7 +211,7 @@ export function useLatestComposition(userId: string | null): UseLatestCompositio
                 };
               })
                 .from('body_tracker_entries')
-                .select('id,source,created_at')
+                .select('id,source,created_at,scan_id,notes')
                 .eq('user_id', userId)
                 .order('created_at', { ascending: false })
                 .limit(1)

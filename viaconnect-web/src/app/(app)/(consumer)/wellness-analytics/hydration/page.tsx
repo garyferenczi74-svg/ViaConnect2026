@@ -19,8 +19,8 @@ export default function HydrationDetailPage(): JSX.Element {
       <div className="mx-auto max-w-3xl px-4 py-6 md:py-8">
         <header className="mb-6 flex items-center gap-3">
           <Link
-            href="/wellness-analytics"
-            aria-label="Back to Wellness Analytics"
+            href="/dashboard"
+            aria-label="Back to dashboard"
             className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.08] bg-white/5 text-white/80 transition-colors hover:bg-white/10"
           >
             <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />

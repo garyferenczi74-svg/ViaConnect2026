@@ -7,6 +7,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   applyHannahNoteLexicon,
+  applyNamePlaceholder,
   composeHannahNote,
   isNoteDistinctFromReadToday,
   pickWelcomeNote,
@@ -52,6 +53,14 @@ describe('Prompt 216d welcome templates (Marshall-gated set)', () => {
     expect(w.noteKind).toBe('welcome');
     expect(w.noteText).toContain('Gary');
     expect(w.noteText).toMatch(/welcome|meet you|opening/i);
+  });
+
+  it('pickWelcomeNote never inserts the word there for an empty name', () => {
+    const w = pickWelcomeNote('', 0);
+    expect(w.noteText.toLowerCase()).not.toMatch(/\bthere\b/);
+    expect(w.noteText).not.toMatch(/^,/);
+    expect(applyNamePlaceholder('{name}, welcome.', '')).toBe('Welcome.');
+    expect(applyNamePlaceholder('Good to meet you, {name}.', '')).toBe('Good to meet you.');
   });
 });
 
