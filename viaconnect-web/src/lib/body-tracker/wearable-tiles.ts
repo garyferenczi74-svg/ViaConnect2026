@@ -1,11 +1,15 @@
 // First-class wearable tiles for /body-tracker/connections (/wearables redirects).
-// Brief 26 lock: Whoop, Hume Body Pod, Apple Health, Oura. Same IA at 390 and 1280.
+// Prompt 230 Task 1: Whoop, Hume Body Pod, Apple Health, Oura, Google Health, Garmin.
+// Same IA at 390 and 1280.
 //
 // OAuth Connected-state requires provisioned Vercel secrets (WHOOP_*, OURA_*,
 // WEARABLE_TOKEN_KEY, and optional *_REDIRECT_URI). Leftover connected_sources
 // or token rows do not count until that path is real. Client IDs are never
 // hardcoded. last_sync_at alone never marks a tile Connected. Whoop and Oura
-// stay Coming soon (label, not Connect) until those secrets exist.
+// stay Coming soon (label, not Connect) until those secrets exist. Google
+// Health and Garmin are honest Coming soon tiles: never connectable here,
+// their *Configured flags never set true (Garmin connector is out of scope,
+// spec section 12).
 //
 // Web Apple is XML only. Hume is XML sourceName hume_body_pod, never copied
 // from phone_health, and has no OAuth. This tile is Apple Health, never Watch.
@@ -18,7 +22,7 @@ import {
   type LastSyncState,
 } from '@/lib/body-tracker/last-sync-state';
 
-export const FIRST_CLASS_TILE_IDS = ['whoop', 'hume', 'apple_health', 'oura'] as const;
+export const FIRST_CLASS_TILE_IDS = ['whoop', 'hume', 'apple_health', 'oura', 'google_health', 'garmin'] as const;
 
 export type FirstClassTileId = (typeof FIRST_CLASS_TILE_IDS)[number];
 
@@ -36,8 +40,6 @@ export type TileStatus = 'connected' | 'disconnected';
 
 export const FORBIDDEN_FIRST_CLASS_TILE_IDS = [
   'fitbit',
-  'garmin',
-  'google_health',
   'google_health_connect',
   'phone_health',
   'manual_entry',
@@ -91,6 +93,22 @@ export const WEARABLE_TILE_SPECS: WearableTileSpec[] = [
     action: 'oauth',
     notes: 'Connect through the Oura Cloud API. Sleep and recovery feed Bio Optimization Score when ingested.',
   },
+  {
+    id: 'google_health',
+    name: 'Google Health',
+    icon: 'HeartPulse',
+    advertisedDimensions: ['sleep', 'recovery'],
+    action: 'oauth',
+    notes: 'Android aggregator for Fitbit and Pixel. Coming soon.',
+  },
+  {
+    id: 'garmin',
+    name: 'Garmin',
+    icon: 'Watch',
+    advertisedDimensions: ['recovery', 'sleep', 'strain'],
+    action: 'oauth',
+    notes: 'Recovery, sleep, and workouts. Coming soon.',
+  },
 ];
 
 export const SCORE_DETAIL_DIMENSIONS: WearableDimension[] = [
@@ -125,6 +143,8 @@ export interface WearableTileInput {
   dimensionsFed: Partial<Record<FirstClassTileId, WearableDimension[]>>;
   whoopConfigured: boolean;
   ouraConfigured: boolean;
+  googleHealthConfigured: boolean;
+  garminConfigured: boolean;
   platform: 'web' | 'ios' | 'android';
   now?: number;
 }
@@ -213,6 +233,10 @@ export function buildWearableTiles(input: WearableTileInput): WearableTileView[]
       lastSyncAt = linked ? input.humeLastPersistAt : null;
       lastSyncKind = lastSyncAt ? 'xml_upload' : null;
       action = { kind: 'xml_upload' };
+    } else if (spec.id === 'google_health') {
+      action = { kind: 'oauth', configured: input.googleHealthConfigured };
+    } else if (spec.id === 'garmin') {
+      action = { kind: 'oauth', configured: input.garminConfigured };
     } else {
       linked = isAppleHealthConnected({
         appleXmlIngested: input.appleXmlIngested,
@@ -238,11 +262,11 @@ export function buildWearableTiles(input: WearableTileInput): WearableTileView[]
     const status: TileStatus =
       sm.kind === 'synced' || sm.kind === 'connected_never_synced' ? 'connected' : 'disconnected';
     const configured =
-      spec.id === 'whoop'
-        ? input.whoopConfigured
-        : spec.id === 'oura'
-          ? input.ouraConfigured
-          : true;
+      spec.id === 'whoop' ? input.whoopConfigured
+      : spec.id === 'oura' ? input.ouraConfigured
+      : spec.id === 'google_health' ? input.googleHealthConfigured
+      : spec.id === 'garmin' ? input.garminConfigured
+      : true;
     const statusLabel =
       spec.action === 'oauth' ? oauthDisplayLabel(configured, sm) : sm.label;
 

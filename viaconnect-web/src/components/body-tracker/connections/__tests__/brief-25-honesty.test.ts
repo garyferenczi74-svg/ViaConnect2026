@@ -86,8 +86,15 @@ describe('Brief 25 connections honesty', () => {
     expect(apple).not.toContain('Import Hume Body Pod');
   });
 
-  it('keeps four Connections tiles and no Google tile', () => {
-    expect(FIRST_CLASS_TILE_IDS).toEqual(['whoop', 'hume', 'apple_health', 'oura']);
+  it('keeps six Connections tiles including Google Health and Garmin as Coming soon', () => {
+    expect(FIRST_CLASS_TILE_IDS).toEqual([
+      'whoop',
+      'hume',
+      'apple_health',
+      'oura',
+      'google_health',
+      'garmin',
+    ]);
     const tiles = src('src/lib/body-tracker/wearable-tiles.ts');
     expect(tiles).toContain("'google_health'");
     expect(tiles).toContain('FORBIDDEN_FIRST_CLASS_TILE_IDS');

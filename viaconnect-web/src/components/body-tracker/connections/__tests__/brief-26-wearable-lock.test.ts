@@ -46,6 +46,8 @@ function baseInput(over: Partial<WearableTileInput> = {}): WearableTileInput {
     dimensionsFed: {},
     whoopConfigured: false,
     ouraConfigured: false,
+    googleHealthConfigured: false,
+    garminConfigured: false,
     platform: 'web',
     now: Date.parse('2026-08-24T10:00:00.000Z'),
     ...over,
@@ -59,12 +61,35 @@ function tileById(id: WearableTileView['id']): WearableTileView {
 }
 
 describe('Brief 26 Wearable Data 1280 lock', () => {
-  it('ships four tiles only in lock order and same IA at 390 and 1280', () => {
-    expect(FIRST_CLASS_TILE_IDS).toEqual(['whoop', 'hume', 'apple_health', 'oura']);
+  it('ships six tiles only in lock order and same IA at 390 and 1280', () => {
+    expect(FIRST_CLASS_TILE_IDS).toEqual([
+      'whoop',
+      'hume',
+      'apple_health',
+      'oura',
+      'google_health',
+      'garmin',
+    ]);
     const tiles = buildWearableTiles(baseInput());
-    expect(tiles.map((t) => t.id)).toEqual(['whoop', 'hume', 'apple_health', 'oura']);
-    expect(tiles.map((t) => t.name)).toEqual(['Whoop', 'Hume Body Pod', 'Apple Health', 'Oura']);
-    expect(tiles.some((t) => /google|watch/i.test(t.name))).toBe(false);
+    expect(tiles.map((t) => t.id)).toEqual([
+      'whoop',
+      'hume',
+      'apple_health',
+      'oura',
+      'google_health',
+      'garmin',
+    ]);
+    expect(tiles.map((t) => t.name)).toEqual([
+      'Whoop',
+      'Hume Body Pod',
+      'Apple Health',
+      'Oura',
+      'Google Health',
+      'Garmin',
+    ]);
+    expect(tiles.find((t) => t.id === 'google_health')?.statusLabel).toBe('Coming soon');
+    expect(tiles.find((t) => t.id === 'garmin')?.statusLabel).toBe('Coming soon');
+    expect(tiles.some((t) => /watch/i.test(t.name))).toBe(false);
 
     const surface = src('src/components/body-tracker/connections/ConnectionsSurface.tsx');
     const tile = src('src/components/body-tracker/connections/WearableTileCard.tsx');

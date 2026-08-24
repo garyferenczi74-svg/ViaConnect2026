@@ -1,9 +1,11 @@
 'use client';
 
 // Shared 390 + 1280 Connections IA. Canonical path: /body-tracker/connections.
-// /wearables redirects here. Four tiles only. Hume and Apple are XML.
-// Watch tile is out of scope. Whoop/Oura stay Coming soon until OAuth
-// secrets are provisioned. Hume stays tagged ingest, not OAuth.
+// /wearables redirects here. Six tiles: Whoop, Hume, Apple Health, Oura,
+// Google Health, Garmin. Hume and Apple are XML. Watch tile is out of scope.
+// Whoop/Oura stay Coming soon until OAuth secrets are provisioned. Google
+// Health and Garmin are honest Coming soon tiles, never connectable here.
+// Hume stays tagged ingest, not OAuth.
 
 import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -37,6 +39,8 @@ function emptyTiles(platform: 'web' | 'ios' | 'android'): WearableTileView[] {
     dimensionsFed: {},
     whoopConfigured: false,
     ouraConfigured: false,
+    googleHealthConfigured: false,
+    garminConfigured: false,
     platform,
   });
 }

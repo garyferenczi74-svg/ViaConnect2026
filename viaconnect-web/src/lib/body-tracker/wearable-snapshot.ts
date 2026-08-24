@@ -158,6 +158,8 @@ export function tileInputFromSnapshot(input: WearableSnapshotInput): WearableTil
     dimensionsFed,
     whoopConfigured: input.whoopConfigured,
     ouraConfigured: input.ouraConfigured,
+    googleHealthConfigured: false,
+    garminConfigured: false,
     platform: input.platform,
     now: input.now,
   };

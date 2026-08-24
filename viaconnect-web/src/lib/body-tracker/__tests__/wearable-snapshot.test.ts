@@ -51,7 +51,14 @@ describe('wearable snapshot', () => {
 
   it('does not invent last sync and never marks Watch connected', () => {
     const snap = assembleWearableSnapshot(base());
-    expect(snap.tiles.map((t) => t.id)).toEqual(['whoop', 'hume', 'apple_health', 'oura']);
+    expect(snap.tiles.map((t) => t.id)).toEqual([
+      'whoop',
+      'hume',
+      'apple_health',
+      'oura',
+      'google_health',
+      'garmin',
+    ]);
     expect(snap.tiles.every((t) => t.lastSyncAt === null)).toBe(true);
     expect(snap.tiles.every((t) => t.appleWatchConnected === false)).toBe(true);
     expect(formatTileLastSync(null, 'oauth_sync')).toBeNull();

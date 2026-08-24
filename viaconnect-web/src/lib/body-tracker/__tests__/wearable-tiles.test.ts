@@ -34,6 +34,8 @@ function baseInput(over: Partial<WearableTileInput> = {}): WearableTileInput {
     dimensionsFed: {},
     whoopConfigured: false,
     ouraConfigured: false,
+    googleHealthConfigured: false,
+    garminConfigured: false,
     platform: 'web',
     now: NOW,
     ...over,
@@ -41,14 +43,23 @@ function baseInput(over: Partial<WearableTileInput> = {}): WearableTileInput {
 }
 
 describe('wearable tile model', () => {
-  it('exposes Whoop, Hume Body Pod, Apple Health, Oura and no Watch tile', () => {
-    expect(FIRST_CLASS_TILE_IDS).toEqual(['whoop', 'hume', 'apple_health', 'oura']);
+  it('exposes Whoop, Hume Body Pod, Apple Health, Oura, Google Health, Garmin and no Watch tile', () => {
+    expect(FIRST_CLASS_TILE_IDS).toEqual([
+      'whoop',
+      'hume',
+      'apple_health',
+      'oura',
+      'google_health',
+      'garmin',
+    ]);
     expect(WEARABLE_TILE_SPECS.map((s) => s.id)).toEqual([...FIRST_CLASS_TILE_IDS]);
     expect(WEARABLE_TILE_SPECS.map((s) => s.name)).toEqual([
       'Whoop',
       'Hume Body Pod',
       'Apple Health',
       'Oura',
+      'Google Health',
+      'Garmin',
     ]);
     expect(WEARABLE_TILE_SPECS.some((s) => /watch/i.test(s.name))).toBe(false);
     expect(appleHealthDisplayName()).toBe('Apple Health');
@@ -364,5 +375,22 @@ describe('wearable tile model', () => {
     expect(oura?.statusLabel).toBe('Needs reconnect');
     expect(oura?.lastSyncState).toBe('needs_reconnect');
     expect(oura?.lastSyncAt).toBeNull();
+  });
+
+  it('renders Google Health and Garmin as non-interactive Coming soon tiles', () => {
+    const tiles = buildWearableTiles(baseInput());
+    expect(tiles.map((t) => t.id)).toEqual(['whoop', 'hume', 'apple_health', 'oura', 'google_health', 'garmin']);
+    const google = tiles.find((t) => t.id === 'google_health');
+    const garmin = tiles.find((t) => t.id === 'garmin');
+    expect(google?.statusLabel).toBe('Coming soon');
+    expect(garmin?.statusLabel).toBe('Coming soon');
+    expect(google?.action).toEqual({ kind: 'oauth', configured: false });
+    expect(garmin?.action).toEqual({ kind: 'oauth', configured: false });
+    expect(google?.status).toBe('disconnected');
+  });
+  it('keeps google_health and garmin out of the FORBIDDEN device-tile set now that they are Coming soon tiles', () => {
+    expect(FORBIDDEN_FIRST_CLASS_TILE_IDS).not.toContain('google_health');
+    expect(FORBIDDEN_FIRST_CLASS_TILE_IDS).not.toContain('garmin');
+    expect(FORBIDDEN_FIRST_CLASS_TILE_IDS).toContain('apple_watch');
   });
 });

@@ -115,10 +115,11 @@ describe('Connections IA contracts', () => {
     expect(hub).toContain('Hume Body Pod');
     expect(hub).toContain('Apple Health');
     const model = src('src/lib/body-tracker/wearable-tiles.ts');
-    expect(model).toContain("FIRST_CLASS_TILE_IDS = ['whoop', 'hume', 'apple_health', 'oura']");
+    expect(model).toContain(
+      "FIRST_CLASS_TILE_IDS = ['whoop', 'hume', 'apple_health', 'oura', 'google_health', 'garmin']",
+    );
     expect(model).toContain('FORBIDDEN_FIRST_CLASS_TILE_IDS');
     expect(model).toContain("'fitbit'");
-    expect(model).toContain("'garmin'");
     expect(model).toContain("'apple_watch'");
   });
 
