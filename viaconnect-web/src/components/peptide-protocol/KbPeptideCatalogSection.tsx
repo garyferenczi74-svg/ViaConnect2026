@@ -1,10 +1,12 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
 import {
   Search,
   X,
   ChevronDown,
+  ChevronRight,
   FlaskConical,
   Info,
   ShieldAlert,
@@ -25,9 +27,11 @@ const EVIDENCE_STYLE = {
 function EducationCard({ peptide }: { peptide: EducationPeptide }) {
   const badge = gradeToBadge(peptide.evidenceGrade);
   return (
-    <div
+    <Link
+      href={`/peptide-protocol/browse/${encodeURIComponent(peptide.slug)}`}
       data-testid={`kb-peptide-card-${peptide.slug}`}
-      className="flex h-full flex-col rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[#1E3054]/45 backdrop-blur-md p-4"
+      aria-label={`Open ${peptide.displayName} educational monograph`}
+      className="flex h-full min-h-[44px] flex-col rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[#1E3054]/45 backdrop-blur-md p-4 transition-colors hover:border-[#2DA5A0]/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]"
     >
       <div className="mb-2 flex items-start justify-between gap-2">
         <div className="min-w-0">
@@ -40,7 +44,7 @@ function EducationCard({ peptide }: { peptide: EducationPeptide }) {
       </div>
       <p className="text-[11px] text-[#2DA5A0] mb-2">{peptide.category}</p>
       <p className="text-xs text-white/65 leading-relaxed line-clamp-4 flex-1">
-        {peptide.mechanismSummary || 'Educational monograph pending Marshall review.'}
+        {peptide.mechanismSummary || 'Educational summary is not available yet.'}
       </p>
       <div className="mt-3 flex flex-wrap gap-1.5">
         {!peptide.isPeptide && (
@@ -62,7 +66,11 @@ function EducationCard({ peptide }: { peptide: EducationPeptide }) {
           {peptide.misconceptionNotes}
         </p>
       ) : null}
-    </div>
+      <span className="mt-3 inline-flex min-h-[44px] items-center gap-1 text-[11px] text-[#2DA5A0]">
+        Open monograph
+        <ChevronRight className="h-3.5 w-3.5" strokeWidth={1.5} />
+      </span>
+    </Link>
   );
 }
 
@@ -111,15 +119,14 @@ export function KbPeptideCatalogSection({
           </div>
           <div>
             <h2 className="text-sm font-semibold text-white">Peptide Education Database</h2>
-            <p className="text-[11px] text-white/45">Collection 14 · Marshall-gated</p>
+            <p className="text-[11px] text-white/45">Educational reference</p>
           </div>
         </div>
         <div className="flex items-start gap-2 rounded-xl border border-[rgba(183,94,24,0.25)] bg-[rgba(183,94,24,0.10)] p-3">
           <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-[#B75E18]" strokeWidth={1.5} />
           <p className="text-xs text-white/70 leading-relaxed">
-            Consumer-safe monographs are pending Marshall review. The corpus is seeded and
-            fail-closed: nothing is shown as approved until compliance flips consumer_safe.
-            Discuss peptide education with a licensed practitioner in the meantime.
+            Educational peptide summaries are not available yet. Discuss peptide education
+            with a licensed practitioner in the meantime.
           </p>
         </div>
       </section>
@@ -153,7 +160,12 @@ export function KbPeptideCatalogSection({
           className="flex-1 text-sm text-white placeholder:text-white/30 outline-none bg-transparent"
         />
         {query ? (
-          <button type="button" onClick={() => setQuery('')} aria-label="Clear search">
+          <button
+            type="button"
+            onClick={() => setQuery('')}
+            aria-label="Clear search"
+            className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center"
+          >
             <X className="w-4 h-4 text-white/35" strokeWidth={1.5} />
           </button>
         ) : null}
@@ -178,7 +190,7 @@ export function KbPeptideCatalogSection({
                   type="button"
                   onClick={() => toggleCategory(cat.id)}
                   aria-expanded={open}
-                  className="flex w-full items-center gap-2.5 rounded-xl border border-white/10 bg-[#1E3054]/40 p-2.5 text-left"
+                  className="flex min-h-[44px] w-full items-center gap-2.5 rounded-xl border border-white/10 bg-[#1E3054]/40 p-2.5 text-left"
                 >
                   <FlaskConical className="h-4 w-4 text-[#2DA5A0]" strokeWidth={1.5} />
                   <div className="min-w-0 flex-1">
@@ -208,8 +220,8 @@ export function KbPeptideCatalogSection({
       <div className="flex items-start gap-2 text-[10px] text-white/40">
         <Info className="mt-0.5 h-3 w-3 shrink-0" strokeWidth={1.5} />
         <p>
-          Collection 14 rows are Marshall-gated. Unverified WADA and regulatory fields remain
-          unknown and are not rendered as cleared.
+          Unverified sport-status and regulatory fields stay unknown and are not shown as
+          cleared.
         </p>
       </div>
     </section>

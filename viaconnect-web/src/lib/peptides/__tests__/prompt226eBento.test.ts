@@ -55,9 +55,11 @@ describe('Prompt 226e index wiring', () => {
     expect(banner).toContain('Important: Peptide Wellness Disclaimer');
   });
 
-  it('does not hardcode monograph counts 112 or 21', () => {
+  it('does not hardcode monograph counts 114, 112, or 21', () => {
+    expect(config).not.toMatch(/\b114\b/);
     expect(config).not.toMatch(/\b112\b/);
     expect(config).not.toMatch(/\b21\b/);
+    expect(bento).not.toMatch(/\b114\b/);
     expect(bento).not.toMatch(/\b112\b/);
     expect(bento).toContain('countsOk');
     expect(page).toContain('countsOk');

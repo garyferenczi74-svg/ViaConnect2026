@@ -15,19 +15,20 @@ const NUMERIC_DOSE_LEXICON =
   /\b\d+(\.\d+)?\s*(mcg|mg\/kg|IU|ml BAC|BAC water)\b/i;
 
 describe('Prompt 225 education surface guards', () => {
-  it('consumer peptide-protocol page uses Collection 14 catalog, not static registry', () => {
-    const page = read('src/app/(app)/(consumer)/peptide-protocol/page.tsx');
+  it('consumer browse uses live kb_peptides catalog, not static registry', () => {
+    const page = read('src/app/(app)/(consumer)/peptide-protocol/browse/page.tsx');
     expect(page).toContain('KbPeptideCatalogSection');
     expect(page).toContain('loadConsumerPeptideCatalog');
     expect(page).not.toContain("from '@/components/peptide-protocol/PeptideCatalogSection'");
     expect(page).not.toContain('@/config/peptide-database');
   });
 
-  it('Kb catalog and loaders omit dose field names and numeric dose instructions', () => {
+  it('Kb catalog, monograph, and loaders omit dose field names and numeric dose instructions', () => {
     const catalog = read('src/components/peptide-protocol/KbPeptideCatalogSection.tsx');
+    const monograph = read('src/components/peptide-protocol/KbPeptideMonograph.tsx');
     const consumerLoader = read('src/lib/kb/peptides/loadConsumerPeptides.ts');
     const practitionerLoader = read('src/lib/kb/peptides/loadPractitionerPeptides.ts');
-    for (const src of [catalog, consumerLoader, practitionerLoader]) {
+    for (const src of [catalog, monograph, consumerLoader, practitionerLoader]) {
       expect(src).not.toMatch(/\bdosingForms\b/);
       expect(src).not.toMatch(/\bcycleProtocol\b/);
       expect(src).not.toMatch(/\bpriceRange\b/);

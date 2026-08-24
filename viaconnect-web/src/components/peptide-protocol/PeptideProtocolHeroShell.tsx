@@ -54,7 +54,7 @@ export function PeptideProtocolHeroShell({ children }: { children: ReactNode }) 
                 <div className="min-w-0">
                   <h1 className="text-lg font-semibold text-white truncate">Peptide Education</h1>
                   <p className="text-xs text-white/45 truncate">
-                    Collection 14 · Educational reference only
+                    Educational reference only
                   </p>
                 </div>
               </div>
