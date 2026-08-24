@@ -46,7 +46,8 @@ describe('Connections IA contracts', () => {
     expect(surface + tile + detail).not.toContain('#4ADE80');
     expect(surface).not.toMatch(/ViaConnect/);
     expect(surface + tile + detail).not.toMatch(/Arnold|Thanos/i);
-    expect(tile).toContain('Coming soon');
+    expect(tile).toContain('{tile.statusLabel}');
+    expect(tile).not.toMatch(/sr-only[^>]*>Coming soon/);
     expect(tile).not.toContain('Not configured');
     expect(tile).not.toMatch(/waiting on/i);
     expect(detail).toContain('Bio Optimization Score');

@@ -60,9 +60,6 @@ export function WearableTileCard({ tile, onPrimary, onDropXml }: WearableTileCar
                 {tile.statusLabel}
               </p>
             </div>
-            {comingSoon ? (
-              <span className="sr-only">Coming soon</span>
-            ) : null}
             {connected && !xmlAction ? (
               <button
                 type="button"

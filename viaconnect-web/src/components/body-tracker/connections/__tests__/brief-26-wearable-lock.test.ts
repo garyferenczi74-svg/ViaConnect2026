@@ -99,8 +99,10 @@ describe('Brief 26 Wearable Data 1280 lock', () => {
     const ouraMarkup = renderToStaticMarkup(
       createElement(WearableTileCard, { tile: oura, onPrimary: () => undefined }),
     );
-    expect(whoopMarkup).toContain('Coming soon');
-    expect(ouraMarkup).toContain('Coming soon');
+    expect((whoopMarkup.match(/Coming soon/g) ?? []).length).toBe(1);
+    expect((ouraMarkup.match(/Coming soon/g) ?? []).length).toBe(1);
+    expect(whoopMarkup).not.toContain('sr-only');
+    expect(ouraMarkup).not.toContain('sr-only');
     expect(whoopMarkup).not.toContain('Connect');
     expect(ouraMarkup).not.toContain('Connect');
     expect(whoopMarkup).not.toContain('Not configured');
@@ -108,6 +110,9 @@ describe('Brief 26 Wearable Data 1280 lock', () => {
     expect(whoopMarkup).not.toContain('Connected');
     expect(ouraMarkup).not.toContain('Last synced');
     expect(whoopMarkup + ouraMarkup).not.toContain('Upload XML');
+    const tileSrc = src('src/components/body-tracker/connections/WearableTileCard.tsx');
+    expect(tileSrc).toContain('{tile.statusLabel}');
+    expect((tileSrc.match(/Coming soon/g) ?? []).length).toBe(0);
   });
 
   it('Hume modal title is Hume and Apple dropzone stays Apple-only', () => {
