@@ -190,9 +190,7 @@ export default function ConsumerDashboard() {
         {/* Daily Insights (Prompt #61, replaces DailyUltrathinkTip) */}
         <DailyInsightsCard profile={profile} supplements={supplements} />
 
-        <PatternCirclePreview
-          userPatterns={['HPA Axis Dysregulation', 'Methylation Pathway']}
-        />
+        <PatternCirclePreview userPatterns={[]} />
         </div>
       </div>
     </div>

@@ -1,33 +1,62 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Dna, Pill, Gift, ShoppingBag, Star } from 'lucide-react';
 import { RewardCard } from '@/components/helix/RewardCard';
 import { ConsultIcon } from '@/components/helix/HelixIcons';
+import { useUserDashboardData } from '@/hooks/useUserDashboardData';
+import { formatHelixBalance, NOT_ENOUGH_DATA } from '@/lib/helix/consumer-honesty';
+import type { IconType } from '@/types/icon';
 
-/* ------------------------------------------------------------------ */
-/*  Data                                                               */
-/* ------------------------------------------------------------------ */
+interface CatalogItem {
+  id: string;
+  display_name: string;
+  description: string | null;
+  points_cost: number;
+  redemption_type: string;
+}
 
-const USER_BALANCE = 4350;
-
-const REWARDS = [
-  { icon: Dna,         glow: 'teal' as const,   name: 'GeneX360 Retest',    description: 'Full genetic health panel retest with updated insights and recommendations', cost: 5000 },
-  { icon: Pill,        glow: 'teal' as const,   name: 'Free Month Supply',   description: 'One month of your personalized supplement protocol, completely free', cost: 3500 },
-  { icon: Gift,        glow: 'orange' as const, name: 'Product Upgrade',     description: 'Upgrade to premium-tier supplements with enhanced bioavailability', cost: 2000 },
-  { icon: ConsultIcon, glow: 'teal' as const,   name: '1:1 Consult',         description: '30-minute private session with a certified health practitioner', cost: 4000 },
-  { icon: ShoppingBag, glow: 'orange' as const, name: 'Merch Drop',          description: 'Exclusive ViaConnect branded wellness gear and accessories', cost: 1500 },
-  { icon: Star,        glow: 'orange' as const, name: 'VIP Early Access',    description: 'Be first to try new products, features, and health programs', cost: 2500 },
-];
-
-/* ------------------------------------------------------------------ */
-/*  Page                                                               */
-/* ------------------------------------------------------------------ */
+function iconForItem(item: CatalogItem): { icon: IconType; glow: 'teal' | 'orange' } {
+  const type = `${item.redemption_type} ${item.display_name}`.toLowerCase();
+  if (type.includes('consult')) return { icon: ConsultIcon, glow: 'teal' };
+  if (type.includes('gene') || type.includes('test')) return { icon: Dna, glow: 'teal' };
+  if (type.includes('supply') || type.includes('supplement')) return { icon: Pill, glow: 'teal' };
+  if (type.includes('merch') || type.includes('shop')) return { icon: ShoppingBag, glow: 'orange' };
+  if (type.includes('vip') || type.includes('access')) return { icon: Star, glow: 'orange' };
+  return { icon: Gift, glow: 'orange' };
+}
 
 export default function RedeemPage() {
+  const { helixBalance } = useUserDashboardData();
+  const balance = formatHelixBalance(helixBalance?.current_balance);
+  const [items, setItems] = useState<CatalogItem[]>([]);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/helix/redemption-catalog', { credentials: 'include' });
+        if (!res.ok) {
+          if (!cancelled) setLoaded(true);
+          return;
+        }
+        const body = (await res.json()) as { items?: CatalogItem[] };
+        if (!cancelled) setItems(Array.isArray(body.items) ? body.items : []);
+      } catch {
+        if (!cancelled) setItems([]);
+      } finally {
+        if (!cancelled) setLoaded(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <div className="flex flex-col gap-4 md:gap-6 p-4 md:p-6">
-      {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -39,21 +68,28 @@ export default function RedeemPage() {
         </p>
       </motion.div>
 
-      {/* Rewards grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-        {REWARDS.map((rw, i) => (
-          <RewardCard
-            key={rw.name}
-            icon={rw.icon}
-            glow={rw.glow}
-            name={rw.name}
-            description={rw.description}
-            cost={rw.cost}
-            userBalance={USER_BALANCE}
-            index={i}
-          />
-        ))}
-      </div>
+      {loaded && items.length === 0 ? (
+        <p className="text-sm text-white/45">{NOT_ENOUGH_DATA}</p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+          {items.map((item, i) => {
+            const { icon, glow } = iconForItem(item);
+            const cost = Number.isFinite(item.points_cost) ? item.points_cost : 0;
+            return (
+              <RewardCard
+                key={item.id}
+                icon={icon}
+                glow={glow}
+                name={item.display_name}
+                description={item.description ?? ''}
+                cost={cost}
+                userBalance={balance}
+                index={i}
+              />
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

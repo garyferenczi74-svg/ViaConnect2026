@@ -12,6 +12,7 @@ import {
   accuracyPillClassesForState,
   accuracyGradientForKey,
   buildAccuracyAriaLabel,
+  accuracyPillDisplayLabel,
 } from '@/components/dashboard/bos-pill-helpers';
 import type { AccuracyPill } from '@/lib/scoring/types';
 
@@ -120,5 +121,30 @@ describe('AccuracyPill / aria-label composition per state', () => {
     expect(buildAccuracyAriaLabel(pillFixture('awaiting_results'))).toBe(
       'CAQ awaiting results, confidence 72 percent once complete',
     );
+  });
+
+  it('genetics incomplete is Not analyzed, never a live 96%', () => {
+    const pill: AccuracyPill = {
+      key: 'genetics',
+      label: 'Genetics',
+      state: 'incomplete',
+      destination_key: 'genex360_purchase',
+      confidence_unlocked_pct: 96,
+    };
+    expect(accuracyPillDisplayLabel(pill)).toBe('Genetics · Not analyzed');
+    expect(accuracyPillDisplayLabel(pill)).not.toContain('96');
+    expect(buildAccuracyAriaLabel(pill)).toBe('Genetics Not analyzed');
+    expect(buildAccuracyAriaLabel(pill)).not.toContain('96');
+  });
+
+  it('genetics complete may show 96% after mapped_count SSOT', () => {
+    const pill: AccuracyPill = {
+      key: 'genetics',
+      label: 'Genetics',
+      state: 'complete',
+      destination_key: null,
+      confidence_unlocked_pct: 96,
+    };
+    expect(accuracyPillDisplayLabel(pill)).toBe('Genetics: 96%');
   });
 });
