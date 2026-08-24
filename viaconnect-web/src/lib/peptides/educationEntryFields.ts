@@ -2,6 +2,7 @@
  * Pure field helpers for peptide_education_entries.
  * Browse/detail bind only to the Thanos consumer 33 entry_keys. No invented rows.
  * Semaglutide keys/titles and BPC Arginate seeds are dropped, not catalogued.
+ * mechanism comes from the live column. Do not hardcode Marshall-pending drafts.
  */
 
 export interface EducationEntry {

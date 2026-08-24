@@ -1,6 +1,8 @@
 /**
  * Consumer peptide education rows from peptide_education_entries.
  * Thanos allowlist only. Active rows. No invented copy.
+ * Browse/detail bind the live mechanism column only. Marshall may later
+ * rewrite that same column; do not ingest or paste staged Thanos drafts.
  */
 
 import { createClient } from '@/lib/supabase/server';
