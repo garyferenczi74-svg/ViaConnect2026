@@ -14,11 +14,28 @@
 // avatar. The running app reads its own canonical composition; these constants are
 // test-authoring scaffolding, not a data source the UI consumes.
 
-import type { Page } from '@playwright/test';
+import { test, type Page } from '@playwright/test';
 
 // The consumer surface under test. The My Biology hub links here; this is the
 // real /body-tracker/composition avatar surface (composition/page.tsx).
 export const COMPOSITION_PATH = '/body-tracker/composition';
+
+// CI FormaVision Playwright @fallback uses NEXT_PUBLIC_SUPABASE_URL=
+// https://placeholder.supabase.co and has no seeded session. The
+// composition surface is auth-gated (middleware 307 to /login?redirectTo=).
+// Surface assertions cannot pass on that env; skip them and assert the
+// login redirect instead.
+export function isPlaceholderSupabaseEnv(): boolean {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
+  return /placeholder\.supabase\.co/i.test(url);
+}
+
+export function skipFallbackSurfaceIfPlaceholder(): void {
+  test.skip(
+    isPlaceholderSupabaseEnv(),
+    'placeholder Supabase: /body-tracker/composition is auth-gated and this runner has no session',
+  );
+}
 
 // Prompt 210m: dedicated FormaVision tab (formavision/page.tsx) owns the
 // control-cluster layout under test in control-cluster-layout.spec.ts.

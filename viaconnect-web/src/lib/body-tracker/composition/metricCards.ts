@@ -47,10 +47,23 @@ export function buildMetricCards(
   const totalFatPct = snap?.totalBodyFatPct ?? null;
   const visceralFatRating = snap?.visceralFatRating ?? null;
   const bodyWaterPct = snap?.bodyWaterPct ?? null;
+  const estMin = snap?.estimatedBodyFatMin ?? null;
+  const estMax = snap?.estimatedBodyFatMax ?? null;
+  const showRange =
+    estMin !== null && estMax !== null && Number.isFinite(estMin) && Number.isFinite(estMax);
 
-  const fatCard: MetricCardData =
-    totalFatPct !== null
-      ? { label: 'Total Body Fat', value: `${totalFatPct}%`, status: bodyFatStatus(totalFatPct) }
+  const fatCard: MetricCardData = showRange
+    ? {
+        label: 'Total Body Fat',
+        value: `est. ${estMin.toFixed(1)}–${estMax.toFixed(1)}%`,
+        status: bodyFatStatus((estMin + estMax) / 2),
+      }
+    : totalFatPct !== null
+      ? {
+          label: 'Total Body Fat',
+          value: snap?.isEstimated ? `est. ${totalFatPct}%` : `${totalFatPct}%`,
+          status: bodyFatStatus(totalFatPct),
+        }
       : { label: 'Total Body Fat', value: NO_DATA, status: 'Unknown' };
 
   const bmiCard: MetricCardData =

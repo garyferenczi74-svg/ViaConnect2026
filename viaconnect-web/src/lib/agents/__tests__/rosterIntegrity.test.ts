@@ -15,7 +15,8 @@ export const AGENT_TRIGGER_CATALOG: Record<
 > = {
   jeffery: [
     { kind: 'cron', path: '/api/cron/synchronism-daily' },
-    { kind: 'pg_cron', path: 'ultrathink_orchestrator_cron' },
+    { kind: 'cron', path: '/api/cron/ultrathink-feeds' },
+    { kind: 'pg_cron', path: 'ultrathink_phase1_feeds_cron' },
   ],
   hannah: [
     { kind: 'chain', path: 'synchronism stage compose/surface' },

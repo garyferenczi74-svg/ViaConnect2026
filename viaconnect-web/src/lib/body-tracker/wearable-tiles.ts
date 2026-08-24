@@ -1,13 +1,20 @@
 // First-class wearable tiles for /body-tracker/connections (alias /wearables).
-// Picasso IA: Whoop, Hume, Apple Health, Oura. Same surface at 390 and 1280.
+// Picasso IA: Whoop, Hume Body Pod, Apple Health, Oura. Same surface at 390 and 1280.
 //
 // OAuth Connected-state requires provisioned Vercel secrets (WHOOP_*, OURA_*,
 // WEARABLE_TOKEN_KEY, and optional *_REDIRECT_URI). Leftover connected_sources
 // or token rows do not count until that path is real. Client IDs are never
 // hardcoded. last_sync_at alone never marks a tile Connected.
 //
-// Web Apple is XML only (Connected via XML). Hume is never copied from
-// phone_health and has no OAuth. This tile is Apple Health, never Watch.
+// Web Apple is XML only. Hume is XML sourceName hume_body_pod, never copied
+// from phone_health, and has no OAuth. This tile is Apple Health, never Watch.
+// Last-sync display is the shared SM in @/lib/body-tracker/last-sync-state (PR #40).
+
+import {
+  oauthNeedsReconnect,
+  resolveLastSyncState,
+  type LastSyncKind,
+} from '@/lib/body-tracker/last-sync-state';
 
 export const FIRST_CLASS_TILE_IDS = ['whoop', 'hume', 'apple_health', 'oura'] as const;
 
@@ -24,6 +31,17 @@ export type WearableDimension =
   | 'regimen';
 
 export type TileStatus = 'connected' | 'disconnected';
+
+export const FORBIDDEN_FIRST_CLASS_TILE_IDS = [
+  'fitbit',
+  'garmin',
+  'google_health',
+  'google_health_connect',
+  'phone_health',
+  'manual_entry',
+  'apple_watch',
+  'watch',
+] as const;
 
 export type TileAction =
   | { kind: 'oauth'; configured: boolean }
@@ -49,7 +67,7 @@ export const WEARABLE_TILE_SPECS: WearableTileSpec[] = [
   },
   {
     id: 'hume',
-    name: 'Hume',
+    name: 'Hume Body Pod',
     icon: 'Scan',
     advertisedDimensions: ['metabolic'],
     action: 'xml_upload',
@@ -106,6 +124,7 @@ export interface WearableTileInput {
   whoopConfigured: boolean;
   ouraConfigured: boolean;
   platform: 'web' | 'ios' | 'android';
+  now?: number;
 }
 
 export interface WearableTileView {
@@ -114,6 +133,7 @@ export interface WearableTileView {
   icon: string;
   status: TileStatus;
   statusLabel: string;
+  lastSyncState: LastSyncKind;
   lastSyncAt: string | null;
   lastSyncKind: 'oauth_sync' | 'xml_upload' | null;
   advertisedDimensions: WearableDimension[];
@@ -166,60 +186,64 @@ export function appleStatusLabel(input: {
 
 export function buildWearableTiles(input: WearableTileInput): WearableTileView[] {
   return WEARABLE_TILE_SPECS.map((spec) => {
-    let status: TileStatus = 'disconnected';
+    let linked = false;
     let lastSyncAt: string | null = null;
     let lastSyncKind: WearableTileView['lastSyncKind'] = null;
     let action: TileAction;
-    let statusLabel = 'Not connected';
+    let needsReconnect = false;
 
     if (spec.id === 'whoop') {
       const row = oauthRow(input.oauth, 'whoop');
-      status = isOAuthConnected(row, input.whoopConfigured) ? 'connected' : 'disconnected';
-      lastSyncAt = status === 'connected' ? row?.last_sync_at ?? null : null;
+      linked = isOAuthConnected(row, input.whoopConfigured);
+      needsReconnect = oauthNeedsReconnect(row, input.whoopConfigured);
+      lastSyncAt = linked ? row?.last_sync_at ?? null : null;
       lastSyncKind = lastSyncAt ? 'oauth_sync' : null;
-      statusLabel = status === 'connected' ? 'Connected' : 'Not connected';
       action = { kind: 'oauth', configured: input.whoopConfigured };
     } else if (spec.id === 'oura') {
       const row = oauthRow(input.oauth, 'oura');
-      status = isOAuthConnected(row, input.ouraConfigured) ? 'connected' : 'disconnected';
-      lastSyncAt = status === 'connected' ? row?.last_sync_at ?? null : null;
+      linked = isOAuthConnected(row, input.ouraConfigured);
+      needsReconnect = oauthNeedsReconnect(row, input.ouraConfigured);
+      lastSyncAt = linked ? row?.last_sync_at ?? null : null;
       lastSyncKind = lastSyncAt ? 'oauth_sync' : null;
-      statusLabel = status === 'connected' ? 'Connected' : 'Not connected';
       action = { kind: 'oauth', configured: input.ouraConfigured };
     } else if (spec.id === 'hume') {
-      status = isHumeConnected(input.humeIngestCount) ? 'connected' : 'disconnected';
-      lastSyncAt = status === 'connected' ? input.humeLastPersistAt : null;
+      linked = isHumeConnected(input.humeIngestCount);
+      lastSyncAt = linked ? input.humeLastPersistAt : null;
       lastSyncKind = lastSyncAt ? 'xml_upload' : null;
-      statusLabel = status === 'connected' ? 'Connected via XML' : 'Not connected';
       action = { kind: 'xml_upload' };
     } else {
-      const connected = isAppleHealthConnected({
+      linked = isAppleHealthConnected({
         appleXmlIngested: input.appleXmlIngested,
         healthKitPersisted: input.healthKitPersisted,
         platform: input.platform,
       });
-      status = connected ? 'connected' : 'disconnected';
-      if (status === 'connected' && input.appleXmlIngested > 0) {
+      if (linked && input.appleXmlIngested > 0) {
         lastSyncAt = input.appleXmlLastPersistAt;
         lastSyncKind = 'xml_upload';
-      } else if (status === 'connected') {
+      } else if (linked) {
         lastSyncAt = input.healthKitLastPersistAt;
         lastSyncKind = 'oauth_sync';
       }
-      statusLabel = appleStatusLabel({
-        connected,
-        xmlIngested: input.appleXmlIngested,
-      });
       action = { kind: 'xml_upload' };
     }
+
+    const sm = resolveLastSyncState({
+      linked,
+      lastSyncAt,
+      needsReconnect,
+      now: input.now,
+    });
+    const status: TileStatus =
+      sm.kind === 'synced' || sm.kind === 'connected_never_synced' ? 'connected' : 'disconnected';
 
     return {
       id: spec.id,
       name: spec.name,
       icon: spec.icon,
       status,
-      statusLabel,
-      lastSyncAt,
+      statusLabel: sm.label,
+      lastSyncState: sm.kind,
+      lastSyncAt: sm.lastSyncAt,
       lastSyncKind,
       advertisedDimensions: spec.advertisedDimensions,
       dimensionsFed: status === 'connected' ? (input.dimensionsFed[spec.id] ?? []) : [],

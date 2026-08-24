@@ -5,7 +5,6 @@ import { useUserDashboardData } from '@/hooks/useUserDashboardData';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { BOSCard } from '@/components/dashboard/bos-card';
 import { TodaysProtocol } from '@/components/dashboard/TodaysProtocol';
-import { WellnessSnapshot } from '@/components/dashboard/WellnessSnapshot';
 import { DailyScoresPanel } from '@/components/dashboard/DailyScoresPanel';
 import { EngagementNudge } from '@/components/dashboard/EngagementNudge';
 import type { EngagementNudge as Nudge } from '@/lib/scoring/engagementNudges';
@@ -20,7 +19,7 @@ import { DashboardLinkCard } from '@/components/dashboard/DashboardLinkCard';
 import { DailyCheckIn } from '@/components/dashboard/DailyCheckIn';
 import { DashboardLogYourMealSection } from '@/components/dashboard/DashboardLogYourMealSection';
 import { MobileHeroVideoBackground } from '@/components/ui/MobileHeroVideoBackground';
-import { RefreshCw, FileQuestion } from 'lucide-react';
+import { Compass, RefreshCw, FileQuestion } from 'lucide-react';
 
 // Dashboard hero video: 16x9 master for landscape frame fill. PNG poster for first paint.
 const DASHBOARD_HERO_VIDEO =
@@ -59,7 +58,6 @@ export default function ConsumerDashboard() {
     adherence,
     helixBalance,
     streak,
-    assessmentCompleted,
   } = useUserDashboardData();
 
   // Prompt 180g (2026-06-08): nudge surfaced by DailyScoresPanel.
@@ -169,17 +167,23 @@ export default function ConsumerDashboard() {
               href="/onboarding/i-caq-intro"
               cta="Update Assessment"
             />
-            {/* Wellness Snapshot is desktop-only per spec */}
-            <div className="hidden lg:block">
-              <WellnessSnapshot autoFetch={assessmentCompleted} />
-            </div>
+            <DashboardLinkCard
+              eyebrow="Your Journey"
+              eyebrowIcon={Compass}
+              title="Open analytics"
+              description="Your Journey is the consumer analytics view. Bio Optimization Score on this dashboard and on /analytics read the same source."
+              icon={Compass}
+              accent="#2DA5A0"
+              href="/analytics"
+              cta="Open Your Journey"
+            />
             <HelixRewardsSummary
               totalPoints={helixPoints}
               currentStreak={currentStreak}
               longestStreak={longestStreak}
             />
             {/* Connect device / app cards, full-width matching tab design */}
-            <ConnectCard type="wearable" href="/plugins/wearables" />
+            <ConnectCard type="wearable" href="/body-tracker/connections" />
             <ConnectCard type="app" href="/plugins/apps" />
           </div>
         </div>
@@ -190,9 +194,7 @@ export default function ConsumerDashboard() {
         {/* Daily Insights (Prompt #61, replaces DailyUltrathinkTip) */}
         <DailyInsightsCard profile={profile} supplements={supplements} />
 
-        <PatternCirclePreview
-          userPatterns={['HPA Axis Dysregulation', 'Methylation Pathway']}
-        />
+        <PatternCirclePreview userPatterns={[]} />
         </div>
       </div>
     </div>

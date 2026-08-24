@@ -385,6 +385,8 @@ export interface BOSCurrentResponse {
   confidence: number;
   confidence_display: '72%' | '86%' | '96%';
   computed_at: string | null;
+  /** Difference vs a persisted score from ~7 days earlier. Null when missing. */
+  weekly_delta: number | null;
   compute_version: string;
   accuracy_pills: AccuracyPill[];
   engagement_pills: EngagementPill[];

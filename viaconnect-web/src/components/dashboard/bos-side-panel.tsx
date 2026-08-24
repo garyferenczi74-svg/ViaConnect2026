@@ -2,30 +2,28 @@
 
 // BOSSidePanel: right-column companion to BOSScoreGauge.
 //
-// Composition per the canonical legacy BioOptimizationGauge.tsx:
+// Composition:
 //   1. Eyebrow + headline ("Your score is {Status}" with the status
 //      word colored by band)
-//   2. Three info chips in a sm:grid-cols-3 row:
-//        a. Weekly delta    TrendingUp / TrendingDown / Minus icon
-//        b. Tier            ShieldCheck icon
-//        c. Confidence      no icon, value derived from confidence_display
-//   3. Five-dot data-completeness indicator (sleep, activity, stress,
-//      recovery, hrv)
+//   2. Info chips:
+//        a. Weekly delta (hidden when weekly_delta is missing)
+//        b. Last updated (stale dates are labeled, never silent)
+//        c. Accuracy from confidence_display
+//   3. Five-dot data-completeness indicator
 //
-// Read-API gaps: weekly_delta and tracked_dimensions are not on the
-// current BOSCurrentResponse. Both render as placeholders via the
-// helper builders; the surrounding wiring is ready for the read API
-// to add those fields without touching this file.
+// Helix rewards stay off this card (Brief 1 / Brief 13). helix_challenges
+// may still compute on engagement pills; this panel does not show a
+// Helix tier or earn multiplier.
 
-import { TrendingDown, TrendingUp, Minus, ShieldCheck, Target } from 'lucide-react';
+import { TrendingDown, TrendingUp, Minus, Clock, Target } from 'lucide-react';
 import type { BOSCurrentResponse } from '@/lib/scoring/types';
+import { formatBosLastUpdated, toDisplayBosScore } from '@/lib/scoring/bos-display';
 import { colorForScore } from './bos-gauge-helpers';
 import { BOSStaticExplanation } from './bos-static-explanation';
 import { BOS_PILL_GRADIENT } from './bos-pill-helpers';
 import {
   buildSidePanelHeadline,
   buildWeeklyDeltaChip,
-  buildTierChipValue,
   buildTrackedDimensionsSummary,
   TRACKED_DIMENSION_ORDER,
   type TrackedDimensions,
@@ -33,26 +31,29 @@ import {
 
 export interface BOSSidePanelProps {
   data: BOSCurrentResponse;
-  /** Read-API gap: not yet on BOSCurrentResponse. Pass null. */
   weeklyDelta?: number | null;
-  /** Read-API gap: not yet on BOSCurrentResponse. Pass null. */
   trackedDimensions?: TrackedDimensions | null;
 }
 
 export function BOSSidePanel({
   data,
-  weeklyDelta = null,
+  weeklyDelta,
   trackedDimensions = null,
 }: BOSSidePanelProps) {
-  const headline = buildSidePanelHeadline(data.score ?? 0);
-  const delta = buildWeeklyDeltaChip(weeklyDelta);
-  const tier = buildTierChipValue(data.tier);
+  const score = toDisplayBosScore(data.score);
+  const resolvedDelta = weeklyDelta !== undefined ? weeklyDelta : data.weekly_delta;
+  const delta = buildWeeklyDeltaChip(resolvedDelta ?? null);
   const completeness = buildTrackedDimensionsSummary(trackedDimensions);
-  const bandColor = colorForScore(data.score ?? 0);
+  const lastUpdated = formatBosLastUpdated(data.computed_at);
+  const bandColor = score === null ? '#2DA5A0' : colorForScore(score);
+  const headline = score === null
+    ? { prefix: 'Your score is ', status: 'not ready', color: '#A1A1AA' }
+    : buildSidePanelHeadline(score);
+
+  const chipCount = (delta ? 1 : 0) + 2;
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Eyebrow + headline */}
       <div>
         <p className="text-[10px] font-semibold uppercase tracking-wider text-white/40">
           Bio Optimization Score
@@ -63,66 +64,67 @@ export function BOSSidePanel({
         </h2>
       </div>
 
-      {/* Teaching paragraph (pill-less, aligned with the headline above) */}
       <BOSStaticExplanation />
 
-      {/* Three info chips */}
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-        {/* Weekly delta */}
-        <div className={`flex items-center gap-2 rounded-xl border border-white/10 ${BOS_PILL_GRADIENT} px-3 py-2.5`}>
-          {delta.polarity === 'up' ? (
-            <TrendingUp
-              className="h-4 w-4 flex-shrink-0"
-              style={{ color: delta.color }}
-              strokeWidth={1.5}
-              aria-hidden="true"
-            />
-          ) : delta.polarity === 'down' ? (
-            <TrendingDown
-              className="h-4 w-4 flex-shrink-0"
-              style={{ color: delta.color }}
-              strokeWidth={1.5}
-              aria-hidden="true"
-            />
-          ) : (
-            <Minus
-              className="h-4 w-4 flex-shrink-0"
-              style={{ color: delta.color }}
-              strokeWidth={1.5}
-              aria-hidden="true"
-            />
-          )}
+      <div
+        className={`grid grid-cols-1 gap-2 ${
+          chipCount >= 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2'
+        }`}
+      >
+        {delta && (
+          <div className={`flex items-center gap-2 rounded-xl border border-white/10 ${BOS_PILL_GRADIENT} px-3 py-2.5`}>
+            {delta.polarity === 'up' ? (
+              <TrendingUp
+                className="h-4 w-4 flex-shrink-0"
+                style={{ color: delta.color }}
+                strokeWidth={1.5}
+                aria-hidden="true"
+              />
+            ) : delta.polarity === 'down' ? (
+              <TrendingDown
+                className="h-4 w-4 flex-shrink-0"
+                style={{ color: delta.color }}
+                strokeWidth={1.5}
+                aria-hidden="true"
+              />
+            ) : (
+              <Minus
+                className="h-4 w-4 flex-shrink-0"
+                style={{ color: delta.color }}
+                strokeWidth={1.5}
+                aria-hidden="true"
+              />
+            )}
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase tracking-wider text-white/40">
+                vs last week
+              </p>
+              <p className="text-sm font-semibold text-white">{delta.value}</p>
+            </div>
+          </div>
+        )}
+
+        <div
+          className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 ${
+            lastUpdated.freshness === 'stale'
+              ? 'border-[#F59E0B]/40 bg-[#F59E0B]/10'
+              : `border-white/10 ${BOS_PILL_GRADIENT}`
+          }`}
+        >
+          <Clock
+            className="h-4 w-4 flex-shrink-0"
+            strokeWidth={1.5}
+            style={{ color: lastUpdated.freshness === 'stale' ? '#F59E0B' : bandColor }}
+            aria-hidden="true"
+          />
           <div className="min-w-0">
             <p className="text-[10px] uppercase tracking-wider text-white/40">
-              vs last week
+              Last updated
             </p>
-            <p className="text-sm font-semibold text-white">{delta.value}</p>
+            <p className="truncate text-sm font-semibold text-white">{lastUpdated.label}</p>
           </div>
         </div>
 
-        {/* Tier */}
-        <div className={`flex items-center gap-2 rounded-xl border border-white/10 ${BOS_PILL_GRADIENT} px-3 py-2.5`}>
-          <div
-            className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg"
-            style={{
-              background: `${bandColor}22`,
-              border: `1px solid ${bandColor}40`,
-            }}
-            aria-hidden="true"
-          >
-            <ShieldCheck
-              className="h-3.5 w-3.5"
-              strokeWidth={1.5}
-              style={{ color: bandColor }}
-            />
-          </div>
-          <div className="min-w-0">
-            <p className="text-[10px] uppercase tracking-wider text-white/40">Tier</p>
-            <p className="truncate text-sm font-semibold text-white">{tier}</p>
-          </div>
-        </div>
-
-        {/* Accuracy */}
         <div className={`flex items-center gap-2 rounded-xl border border-white/10 ${BOS_PILL_GRADIENT} px-3 py-2.5`}>
           <div
             className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg"
@@ -149,7 +151,6 @@ export function BOSSidePanel({
         </div>
       </div>
 
-      {/* 5-dot data-completeness indicator */}
       <div
         className="flex items-center gap-1.5"
         aria-label={`Daily score dimensions: ${completeness.label}`}

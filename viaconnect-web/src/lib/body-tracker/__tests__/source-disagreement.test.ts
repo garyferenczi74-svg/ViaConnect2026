@@ -99,6 +99,7 @@ describe('source disagreement DISPLAY', () => {
     expect(rows[0].disagreement?.showWinnerBadge).toBe(false);
     expect(rows[0].disagreement?.kind).toBe('single');
     expect(rows[0].sources[0]?.is_active).toBe(true);
+    expect(rows[0].showRing).toBe(true);
   });
 
   it('pending never renders a fake 0', () => {
@@ -112,10 +113,11 @@ describe('source disagreement DISPLAY', () => {
       ],
     );
     expect(rows[0].status).toBe('pending');
-    expect(rows[0].displayValue).toBe('Pending');
+    expect(rows[0].displayValue).toBe('UNKNOWN');
+    expect(rows[0].showRing).toBe(false);
     expect(rows[0].value).toBeNull();
     expect(rows[0].manual).toBe(false);
-    expect(formatUnknownOrPending(null)).toBe('Pending');
+    expect(formatUnknownOrPending(null)).toBe('UNKNOWN');
     expect(formatUnknownOrPending(0)).toBe('0');
   });
 
@@ -123,7 +125,8 @@ describe('source disagreement DISPLAY', () => {
     const rows = buildDimensionSourceRows(['regimen', 'nutrients', 'symptoms', 'immune'], []);
     for (const row of rows) {
       expect(row.disagreement?.showDisagreeChrome).toBe(false);
-      expect(row.displayValue).toBe('Pending');
+      expect(row.displayValue).toBe('UNKNOWN');
+      expect(row.showRing).toBe(false);
     }
   });
 });

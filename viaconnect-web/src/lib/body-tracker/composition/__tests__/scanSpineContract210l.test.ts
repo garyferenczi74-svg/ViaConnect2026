@@ -143,5 +143,6 @@ describe('Prompt 210l scan spine contract', () => {
     expect(src).toMatch(/persistScan/);
     expect(src).toMatch(/persistRes/);
     expect(src).toMatch(/flushCirc/);
+    expect(src).toMatch(/ANALYZE_CLIENT_TIMEOUT_MS/);
   });
 });

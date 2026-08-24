@@ -56,6 +56,19 @@ describe('buildMetricCards', () => {
     }
   });
 
+  it('shows an estimated range for FormaVision scans without replacing a measured card value shape', () => {
+    const estimated: CompositionSnapshot = {
+      ...partialSnap,
+      estimatedBodyFatMin: 18,
+      estimatedBodyFatMax: 22,
+      isEstimated: true,
+    };
+    const cards = buildMetricCards(estimated, null);
+    expect(cards[0].value).toBe('est. 18.0–22.0%');
+    const measured = buildMetricCards({ ...partialSnap, source: 'manual', isEstimated: false }, null);
+    expect(measured[0].value).toBe('21.3%');
+  });
+
   it('renders BMI as Unknown when null', () => {
     const cards = buildMetricCards(partialSnap, null);
     expect(cards[1].status).toBe('Unknown');
