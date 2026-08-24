@@ -9,7 +9,7 @@ import {
   lockScoreDetailRows,
   ScoreDetailPanel,
 } from '@/components/body-tracker/connections/ScoreDetailPanel';
-import { METRIC_LABELS } from '@/lib/body-tracker/contributor-rows';
+import { METRIC_DIMENSION_ALIAS, METRIC_LABELS } from '@/lib/body-tracker/contributor-rows';
 import {
   APPLE_HEALTH_DROPZONE_COPY,
   BOS_UNKNOWN_NEVER_ZERO_COPY,
@@ -209,6 +209,18 @@ describe('Brief 26 Wearable Data 1280 lock', () => {
     expect(CONNECTIONS_BOS_COMPOSITE.value).not.toBe('0');
     expect(BOS_UNKNOWN_NEVER_ZERO_COPY).toBe('Missing stays UNKNOWN, never 0.');
     expect(CONNECTIONS_FOOTER).toBe('Bio Optimization Score uses these sources.');
+
+    // Real literal pin (not a tautology): SCORE_DETAIL_DIMENSIONS is the
+    // live constant the workouts<-strain / body_composition<-metabolic
+    // contributor aliases (contributor-rows.ts METRIC_DIMENSION_ALIAS)
+    // depend on to keep populating. If this literal drifts, the aliases
+    // silently stop matching and every "populated" contributor row would
+    // regress to "Connect your device" -- this pin catches that before it
+    // ships.
+    expect(SCORE_DETAIL_DIMENSIONS).toEqual(['sleep', 'recovery', 'strain', 'metabolic']);
+    for (const target of Object.values(METRIC_DIMENSION_ALIAS)) {
+      expect(SCORE_DETAIL_DIMENSIONS).toContain(target);
+    }
 
     const locked = lockScoreDetailRows([]);
     expect(locked.map((r) => r.dimension)).toEqual(SCORE_DETAIL_DIMENSIONS);

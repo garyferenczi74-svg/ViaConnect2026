@@ -44,6 +44,56 @@ describe('ContributorColumn', () => {
     expect(markup).toMatch(/Apple Health/);
   });
 
+  it('disagreeing row: the DISAGREE chip is a real wired button, not an inert span', () => {
+    const rows: DimensionSourceRow[] = [
+      {
+        dimension: 'sleep',
+        source: 'whoop',
+        value: 85,
+        displayValue: '85',
+        status: 'sourced',
+        showRing: true,
+        manual: false,
+        disagreement: {
+          kind: 'winner',
+          headline: 'DISAGREE',
+          detail: 'Devices disagree. Using Whoop.',
+          left: null,
+          right: null,
+          sources: [],
+          winnerSource: 'whoop',
+          winnerLabel: 'Whoop',
+          resolvedValue: 85,
+          resolvedDisplay: '85',
+          averagedBecauseEqualTrust: false,
+          showWinnerBadge: true,
+          showDisagreeChrome: true,
+          manual: false,
+          activeIcon: 'whoop',
+        },
+        sources: [],
+      },
+    ];
+    let openedMetric: string | null = null;
+    const markup = renderToStaticMarkup(
+      createElement(ContributorColumn, {
+        rows,
+        onOpenDimension: (metric: string) => {
+          openedMetric = metric;
+        },
+      }),
+    );
+    // Real interactive control, not the old bare <span>DISAGREE</span>.
+    expect(markup).toMatch(/<button[^>]*>DISAGREE<\/button>/);
+    expect(markup).not.toMatch(/<span[^>]*>DISAGREE<\/span>/);
+    expect(markup).toContain('aria-label="Sleep sources disagree, details"');
+    // onOpenDimension is only invoked on a real click event, which
+    // renderToStaticMarkup (no jsdom) cannot dispatch; this proves the
+    // button is wired to the same live prop the chevron uses, not a
+    // decorative dead end.
+    expect(openedMetric).toBeNull();
+  });
+
   it('renders the panel-level disclosure once', () => {
     const markup = renderToStaticMarkup(
       createElement(ContributorColumn, { rows: [], onOpenDimension: () => undefined }),

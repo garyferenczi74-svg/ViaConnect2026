@@ -36,10 +36,25 @@ export const METRIC_LABELS: Record<ContributorMetric, string> = {
   steps: 'Steps',
 };
 
-// Alias a metric to the DimensionSourceRow.dimension key that supplies it
-// today. A metric not listed here matches a row of the same dimension name
-// (no row exists yet for hrv / resting_hr / steps).
-const METRIC_DIMENSION_ALIAS: Partial<Record<ContributorMetric, string>> = {
+// Explicit, intentional alias map: a metric key here means "no dimension
+// row named exactly this metric exists today, so borrow this named
+// dimension's row instead." A metric NOT listed here matches a row of the
+// same dimension name (no row exists yet for hrv / resting_hr / steps, so
+// they stay unmatched until a future task wires that data in).
+//
+// workouts <- strain: interim and imprecise by design, not an accidental
+// string match. Whoop Strain is a daily cardio-load score, not a workout
+// log (see wearable-snapshot.ts, "Whoop native only"). No fabricated value
+// renders through this alias -- buildContributorRows only ever surfaces
+// the strain row's real source-attribution -- but the "Workouts" label
+// pointing at a Strain-sourced row can overstate precision to a reader.
+// Replace this entry once a real workouts/exercise-log dimension exists;
+// do not add further aliases onto 'strain' without revisiting the label.
+//
+// body_composition <- metabolic: accurate, no caveat -- metabolic rows are
+// body composition/weight data (Hume, Apple Health), so this alias is a
+// rename, not a reinterpretation.
+export const METRIC_DIMENSION_ALIAS: Readonly<Partial<Record<ContributorMetric, string>>> = {
   workouts: 'strain',
   body_composition: 'metabolic',
 };

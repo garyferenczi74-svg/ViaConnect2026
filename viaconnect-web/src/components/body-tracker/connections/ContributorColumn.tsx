@@ -7,8 +7,12 @@
 // connected pill or a fabricated value. A populated row shows the real
 // source glyph and name. Every row ends with a chevron to the Task 8
 // dimension detail sheet, which owns the full per-source disagreement
-// breakdown; this column only shows a compact DISAGREE flag so the honest
-// "these devices disagree" signal is not lost while it waits on Task 8.
+// breakdown. When two sources disagree, the compact DISAGREE chip is a
+// real button wired to the same onOpenDimension(metric) call as the
+// chevron -- not a static, unexplained alarm with no escape hatch. Both
+// controls are no-ops until Task 8 mounts the sheet that consumes
+// onOpenDimension; that deferral is intentional and documented at the
+// ScoreDetailPanel/ConnectionsSurface call sites.
 
 import {
   Activity,
@@ -126,9 +130,14 @@ export function ContributorColumn({ rows, onOpenDimension }: ContributorColumnPr
                       {sourceLabel(row.connectedSource)}
                     </span>
                     {disagree ? (
-                      <span className="rounded-full bg-copper/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-copper ring-1 ring-inset ring-copper/30">
+                      <button
+                        type="button"
+                        onClick={() => onOpenDimension(row.metric)}
+                        aria-label={`${row.label} sources disagree, details`}
+                        className="flex min-h-[44px] items-center justify-center rounded-full bg-copper/15 px-3 text-[10px] font-semibold uppercase tracking-wide text-copper ring-1 ring-inset ring-copper/30 transition-colors hover:bg-copper/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-copper/50"
+                      >
                         DISAGREE
-                      </span>
+                      </button>
                     ) : null}
                   </span>
                 ) : (
