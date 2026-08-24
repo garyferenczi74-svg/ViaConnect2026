@@ -5,9 +5,12 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { SessionRole } from "@/lib/auth/session-role";
+import type { Database } from "@/lib/supabase/types";
 import { catalogForAdminRole, liveCountForAdminRole } from "@/lib/admin/erp-honesty";
 import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
+
+type AdminSupabase = SupabaseClient<Database>;
 
 export type LiveCatalogSku = {
   sku: string;
@@ -61,7 +64,7 @@ export function toLiveCatalogSku(row: CatalogRow): LiveCatalogSku {
 }
 
 export async function loadAdminLiveCatalog(
-  supabase: SupabaseClient,
+  supabase: AdminSupabase,
   role: SessionRole | undefined,
   scope = "admin.catalog",
 ): Promise<LiveCatalogSnapshot> {
@@ -99,8 +102,7 @@ export async function loadAdminLiveCatalog(
       });
     }
 
-    const rows = (skuResult.data ?? []) as CatalogRow[];
-    const skus = rows.map(toLiveCatalogSku);
+    const skus = (skuResult.data ?? []).map(toLiveCatalogSku);
     return snapshotForAdminRole(role, {
       skus,
       skuCount: skus.length,

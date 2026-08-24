@@ -17,6 +17,7 @@ import {
   toLiveCatalogSku,
 } from "@/lib/admin/live-catalog";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/lib/supabase/types";
 
 describe("staged toolchain tables are not live sources", () => {
   it("names the board / inventory / sku / alert fixture tables", () => {
@@ -102,7 +103,7 @@ describe("catalog helpers do not invent scores", () => {
       from: () => {
         throw new Error("toolchain or catalog must not be read for non-admin");
       },
-    } as unknown as SupabaseClient;
+    } as unknown as SupabaseClient<Database>;
     await expect(loadAdminLiveCatalog(supabase, "consumer")).resolves.toEqual(
       emptyLiveCatalogSnapshot(),
     );
