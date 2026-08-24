@@ -7,18 +7,18 @@ import type {
   AgentRegistryRow,
 } from "@/lib/agents/types";
 import JefferyPanel from "./JefferyPanel";
-import HannahPanel from "./HannahPanel";
+import IdleRosterPanel from "./IdleRosterPanel";
 import MichelangeloPanel from "./MichelangeloPanel";
+import HermesPanel from "./HermesPanel";
+import ElysiumPanel from "./ElysiumPanel";
+import MarshallPanel from "./MarshallPanel";
+import HannahPanel from "./HannahPanel";
+import ThanosPanel from "./ThanosPanel";
+import ElizabethPanel from "./ElizabethPanel";
+import LexPanel from "./LexPanel";
 import SherlockPanel from "./SherlockPanel";
 import ArnoldPanel from "./ArnoldPanel";
-import GordonPanel from "./GordonPanel";
 import HounddogPanel from "./HounddogPanel";
-import MarshallPanel from "./MarshallPanel";
-import LexPanel from "./LexPanel";
-import SecurityAdvisorPanel from "./SecurityAdvisorPanel";
-import PerformanceAdvisorPanel from "./PerformanceAdvisorPanel";
-import ThanosPanel from "./ThanosPanel";
-import ElysiumPanel from "./ElysiumPanel";
 
 export interface AgentPanelProps {
   registry: AgentRegistryRow;
@@ -29,16 +29,20 @@ export interface AgentPanelProps {
 
 export const AGENT_PANELS: Record<AgentId, ComponentType<AgentPanelProps>> = {
   jeffery: JefferyPanel,
-  hannah: HannahPanel,
-  gordon: GordonPanel,
-  arnold: ArnoldPanel,
+  picasso: IdleRosterPanel,
   michelangelo: MichelangeloPanel,
-  hounddog: HounddogPanel,
-  sherlock: SherlockPanel,
-  marshall: MarshallPanel,
-  lex: LexPanel,
-  security_advisor: SecurityAdvisorPanel,
-  performance_advisor: PerformanceAdvisorPanel,
-  thanos: ThanosPanel,
+  conan: IdleRosterPanel,
+  hermes: HermesPanel,
+  gene: IdleRosterPanel,
   elysium: ElysiumPanel,
+  marshall: MarshallPanel,
+  martha: IdleRosterPanel,
+  hannah: HannahPanel,
+  thanos: ThanosPanel,
+  elizabeth: ElizabethPanel,
+  lex: LexPanel,
+  sherlock: SherlockPanel,
+  watson: IdleRosterPanel,
+  arnold: ArnoldPanel,
+  hounddog: HounddogPanel,
 };

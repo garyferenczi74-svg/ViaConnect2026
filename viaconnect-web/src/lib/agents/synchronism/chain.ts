@@ -369,7 +369,7 @@ async function runGuard(ctx: StageContext): Promise<StageResult> {
   return {
     stage: 'guard',
     status: registryDrift.flagged ? 'partial' : 'ok',
-    producer: ['security_advisor', 'performance_advisor', 'jeffery'],
+    producer: ['jeffery'],
     recordsIn: security.total + performance.total,
     recordsOut: security.autoFixable + performance.autoFixable,
     durationMs: ctx.now().getTime() - t0,

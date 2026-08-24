@@ -53,9 +53,8 @@ export function resolveHeartbeatRunId(runId?: string | null): {
 export function resolveOpsAgentId(raw: string): AgentId | null {
   const key = raw.trim().toLowerCase();
   if ((AGENT_IDS as readonly string[]).includes(key)) return key as AgentId;
-  if (key === "security") return "security_advisor";
-  if (key === "performance") return "performance_advisor";
   if (key === "hound_dog") return "hounddog";
+  if (key === "hannahai" || key === "hannah_ai") return "hannah";
   return null;
 }
 
@@ -124,8 +123,9 @@ export async function writeAgentJobHeartbeat(args: {
 }
 
 /**
- * Ensure all ACC seats exist in ultrathink_agent_registry with expected periods
- * derived from the cadence matrix (min interval per agent).
+ * Refresh expected periods on existing ultrathink rows only.
+ * Brief 23: never insert invented seats or fake heartbeats for ACC roster
+ * members that do not already have an ops row.
  */
 export async function ensureAgentRegistrySeats(
   periodByAgent: Record<string, number>
@@ -145,34 +145,19 @@ export async function ensureAgentRegistrySeats(
         .eq("agent_name", id)
         .maybeSingle();
 
-      if (existing?.id) {
-        await supabase
-          .from("ultrathink_agent_registry")
-          .update({
-            display_name: reg.display_name,
-            expected_period_minutes: period,
-            runtime_kind: "request_time",
-            runtime_handle: "/api/cron/ops-tick",
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", existing.id);
-      } else {
-        await supabase.from("ultrathink_agent_registry").insert({
-          agent_name: id,
+      if (!existing?.id) {
+        continue;
+      }
+      await supabase
+        .from("ultrathink_agent_registry")
+        .update({
           display_name: reg.display_name,
-          origin_prompt: "219j",
-          agent_type: "control",
-          tier: 1,
-          description: reg.description,
-          reports: "jeffery",
+          expected_period_minutes: period,
           runtime_kind: "request_time",
           runtime_handle: "/api/cron/ops-tick",
-          expected_period_minutes: period,
-          is_critical: id === "jeffery" || id === "hounddog" || id === "marshall",
-          is_active: true,
-          health_status: "unknown",
-        });
-      }
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", existing.id);
       ensured += 1;
     } catch (err) {
       safeLog.warn("ops.heartbeat", "ensure seat failed", {
