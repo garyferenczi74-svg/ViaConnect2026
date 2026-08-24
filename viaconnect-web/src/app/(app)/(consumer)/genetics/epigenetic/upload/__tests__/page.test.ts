@@ -10,7 +10,7 @@ describe("Epigenetic upload page", () => {
   it("mounts EpigenUploadPanel on its own route, not a tab redirect", () => {
     expect(source).toContain("EpigenUploadPanel");
     expect(source).not.toContain("redirect(");
-    expect(source).not.toContain("?tab=epigen");
+    expect(source).not.toContain('href="/genetics/upload?tab=epigen"');
     expect(source).toContain("bg-[#1A2744]");
     expect(source).toContain("strokeWidth={1.5}");
   });

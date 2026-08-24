@@ -1,6 +1,6 @@
 // Brief 17: EpigenHQ measured-report upload is its own page again.
 // The seven-tab Upload Genetic Data surface collapsed to one DNA upload,
-// so this route no longer redirects to ?tab=epigen.
+// so this route no longer redirects to a tab on the DNA page.
 
 import Link from "next/link";
 import { ArrowLeft, Hourglass } from "lucide-react";
