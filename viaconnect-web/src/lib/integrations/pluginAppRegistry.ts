@@ -1,7 +1,7 @@
 /**
- * Prompt 218: apps-only plugin registry contracts.
- * Wearable devices are NOT listed here (Wearables Data / body-tracker connections).
- * No em/en dashes.
+ * Apps-only plugin registry contracts (Picasso /plugins IA).
+ * Wearable devices are not listed here. They live under Wearables Data
+ * at /body-tracker/connections. No em/en dashes.
  */
 
 export type PluginAppCategory =
@@ -11,6 +11,8 @@ export type PluginAppCategory =
   | 'Mindfulness'
   | 'Data Import'
   | 'Other';
+
+export type PluginSectionId = 'Health platforms' | 'Nutrition' | 'Fitness' | 'other';
 
 export type PluginAppStatus = 'live' | 'coming_soon';
 export type PluginConnectionType = 'oauth2' | 'file_import' | 'polling' | 'none';
@@ -34,14 +36,34 @@ export interface PluginAppRegistryRow {
   sortOrder: number;
 }
 
+/** Device wearables and non-app surfaces stay off /plugins. */
+export const PLUGIN_PAGE_EXCLUDED_SLUGS = [
+  'whoop',
+  'oura',
+  'hume',
+  'hume_body_pod',
+  'apple_health',
+  'apple_watch',
+  'apple',
+  'viacura',
+  'helix',
+  'genetics_file_import',
+] as const;
+
+export const PLUGIN_SECTION_ORDER: readonly PluginSectionId[] = [
+  'Health platforms',
+  'Nutrition',
+  'Fitness',
+  'other',
+];
+
 /** Fallback seed if DB registry is empty or unavailable (matches migration seed). */
 export const PLUGIN_APP_REGISTRY_FALLBACK: PluginAppRegistryRow[] = [
   {
     slug: 'google_health',
     displayName: 'Google Health',
     category: 'Health Platforms',
-    description:
-      'Connect Fitbit, Pixel Watch, and other devices through Google. Weight, sleep, and activity feed Bio Optimization.',
+    description: 'Weight, sleep, and activity feed Bio Optimization.',
     iconKey: 'HeartPulse',
     status: 'live',
     connectionType: 'oauth2',
@@ -55,7 +77,7 @@ export const PLUGIN_APP_REGISTRY_FALLBACK: PluginAppRegistryRow[] = [
     slug: 'myfitnesspal',
     displayName: 'MyFitnessPal',
     category: 'Nutrition',
-    description: 'Import meals, macros, and water when OAuth credentials are configured.',
+    description: 'Meals, macros, and water.',
     iconKey: 'Apple',
     status: 'coming_soon',
     connectionType: 'oauth2',
@@ -69,7 +91,7 @@ export const PLUGIN_APP_REGISTRY_FALLBACK: PluginAppRegistryRow[] = [
     slug: 'cronometer',
     displayName: 'Cronometer',
     category: 'Nutrition',
-    description: 'Micronutrient-dense food diary import (coming soon).',
+    description: 'Food diary and micronutrients.',
     iconKey: 'Apple',
     status: 'coming_soon',
     connectionType: 'oauth2',
@@ -83,7 +105,7 @@ export const PLUGIN_APP_REGISTRY_FALLBACK: PluginAppRegistryRow[] = [
     slug: 'strava',
     displayName: 'Strava',
     category: 'Fitness',
-    description: 'Workouts and activity history (coming soon).',
+    description: 'Workouts and activity history.',
     iconKey: 'Activity',
     status: 'coming_soon',
     connectionType: 'oauth2',
@@ -97,7 +119,7 @@ export const PLUGIN_APP_REGISTRY_FALLBACK: PluginAppRegistryRow[] = [
     slug: 'peloton',
     displayName: 'Peloton',
     category: 'Fitness',
-    description: 'Indoor cycling and class history (coming soon).',
+    description: 'Indoor cycling and class history.',
     iconKey: 'Activity',
     status: 'coming_soon',
     connectionType: 'oauth2',
@@ -111,7 +133,7 @@ export const PLUGIN_APP_REGISTRY_FALLBACK: PluginAppRegistryRow[] = [
     slug: 'headspace',
     displayName: 'Headspace',
     category: 'Mindfulness',
-    description: 'Meditation session minutes (coming soon).',
+    description: 'Meditation session minutes.',
     iconKey: 'Brain',
     status: 'coming_soon',
     connectionType: 'oauth2',
@@ -125,7 +147,7 @@ export const PLUGIN_APP_REGISTRY_FALLBACK: PluginAppRegistryRow[] = [
     slug: 'calm',
     displayName: 'Calm',
     category: 'Mindfulness',
-    description: 'Meditation and sleep stories (coming soon).',
+    description: 'Meditation and sleep stories.',
     iconKey: 'Brain',
     status: 'coming_soon',
     connectionType: 'oauth2',
@@ -139,7 +161,7 @@ export const PLUGIN_APP_REGISTRY_FALLBACK: PluginAppRegistryRow[] = [
     slug: 'genetics_file_import',
     displayName: 'Genetics file import',
     category: 'Data Import',
-    description: 'Upload raw DNA or methylation reports in Genetics.',
+    description: 'Raw DNA or methylation reports.',
     iconKey: 'Dna',
     status: 'live',
     connectionType: 'file_import',
@@ -153,29 +175,55 @@ export const PLUGIN_APP_REGISTRY_FALLBACK: PluginAppRegistryRow[] = [
 
 export const PLUGIN_PAGE_SUBTITLE = 'Connect your apps';
 
+export const PLUGIN_PAGE_SCOPE_LINE =
+  'App integrations only. Device wearables under Wearables Data (/body-tracker/connections).';
+
+export const PLUGIN_COMING_SOON_ACTION =
+  'No action yet. We enable Connect when the flow ships.';
+
+export function pluginSectionFor(category: PluginAppCategory): PluginSectionId {
+  if (category === 'Health Platforms') return 'Health platforms';
+  if (category === 'Nutrition') return 'Nutrition';
+  if (category === 'Fitness') return 'Fitness';
+  return 'other';
+}
+
+export function isExcludedPluginSlug(slug: string): boolean {
+  return (PLUGIN_PAGE_EXCLUDED_SLUGS as readonly string[]).includes(slug);
+}
+
+/** Connect only when a real OAuth or ingest path is already wired. */
+export function isPluginConnectWired(app: PluginAppRegistryRow): boolean {
+  if (app.status !== 'live') return false;
+  if (!app.connectPath) return false;
+  if (isExcludedPluginSlug(app.slug)) return false;
+  return (
+    app.connectionType === 'oauth2' ||
+    app.connectionType === 'polling' ||
+    app.connectionType === 'file_import'
+  );
+}
+
+export function isPluginPageApp(app: PluginAppRegistryRow): boolean {
+  if (isExcludedPluginSlug(app.slug)) return false;
+  if (app.connectionType === 'file_import') return false;
+  return true;
+}
+
 export const PLUGIN_STATE_COPY = {
+  notConnected: 'Not connected',
   connected: 'Connected',
-  available: 'Available',
   comingSoon: 'Coming soon',
-  unavailable: 'State unavailable. Retry.',
+  needsReconnect: 'Needs reconnect',
+  stateUnavailable: 'State unavailable. Retry.',
   connectedSince: (iso: string) => {
-    try {
-      return `Connected since ${new Date(iso).toLocaleDateString()}`;
-    } catch {
-      return 'Connected';
-    }
+    const ms = new Date(iso).getTime();
+    if (!Number.isFinite(ms)) return 'Connected';
+    return `Connected since ${new Date(iso).toLocaleDateString()}`;
   },
-  lastSync: (iso: string | null) => {
-    if (!iso) return 'Not synced yet';
-    try {
-      return `Last sync ${new Date(iso).toLocaleString()}`;
-    } catch {
-      return 'Last sync unknown';
-    }
-  },
-  wearablesLink: 'Manage devices in Wearables Data',
+  lastSync: (relative: string) => `Last sync ${relative}`,
+  manage: 'Manage',
   disconnect: 'Disconnect',
   connect: 'Connect',
-  open: 'Open',
   retry: 'Retry',
 } as const;

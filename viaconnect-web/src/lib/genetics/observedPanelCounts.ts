@@ -4,8 +4,8 @@
 // never a fabricated 0 after an error.
 //
 // Units follow the test type:
-//   GeneXM / genex_m     SNPs (methylation + PGx)
-//   NutrigenDX           genetic nutrition markers
+//   GeneXM / genex_m     SNPs (methylation and detox)
+//   NutrigenDX           nutrient-metabolism SNPs
 //   HormoneIQ            DUTCH hormone / metabolite markers (never SNP length)
 //   EpigenHQ             clocks / CpG from user_epigenetic_markers
 //   PeptideIQ/CannabisIQ genes
@@ -124,11 +124,13 @@ export function sumObservedCounts(observed: ObservedByPanel): number | null {
 }
 
 /**
- * Format a pill badge. Fail / null render as Unanalyzed, never "0" and never
- * dishonest "n/a" in a numeric slot. Honest empty renders as "0 SNPs".
+ * Format a pill badge. Fail / null render as Unanalyzed (PR 32), never "0"
+ * and never dishonest "n/a". Brief 19: honest empty is "Not analyzed",
+ * never "0 SNPs" as you have nothing.
  */
 export function formatObservedBadge(row: ObservedPanelCount): string {
   if (row.status === 'unknown' || row.count === null) return UNANALYZED_LABEL;
+  if (row.count === 0) return 'Not analyzed';
   return `${row.count} ${row.unit}`;
 }
 

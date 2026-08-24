@@ -13,13 +13,17 @@ describe('panel education labels', () => {
 
   it('gives each test a matching unit and empty noun', () => {
     expect(PANEL_LABELS.methylation.count_unit).toBe('SNPs');
-    expect(PANEL_LABELS.nutrition.count_unit).toBe('markers');
+    expect(PANEL_LABELS.nutrition.count_unit).toBe('SNPs');
     expect(PANEL_LABELS.hormone.count_unit).toBe('markers');
     expect(PANEL_LABELS.epigenetic.count_unit).toBe('clocks');
     expect(PANEL_LABELS.peptide.count_unit).toBe('genes');
     expect(PANEL_LABELS.cannabis.count_unit).toBe('genes');
     expect(PANEL_LABELS.hormone.empty_noun).not.toBe('SNPs');
     expect(PANEL_LABELS.epigenetic.empty_noun).not.toBe('SNPs');
+    expect(PANEL_LABELS.methylation.measures_line).toContain('methylation and detox SNPs');
+    expect(PANEL_LABELS.nutrition.measures_line).toContain('nutrient-metabolism SNPs');
+    expect(PANEL_LABELS.hormone.measures_line).toContain('DUTCH');
+    expect(PANEL_LABELS.epigenetic.measures_line).toContain('clocks');
   });
 
   it('keeps Hannah voice: no university name-drops and no dashes', () => {

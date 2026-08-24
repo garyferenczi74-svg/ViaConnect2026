@@ -7,7 +7,7 @@
 // than a second full hub tile. Each is still a navigable entry point: the whole
 // inner card is a Next.js <Link>. BlueprintPanelCard renders one of the six panel
 // cards; BlueprintHeroCard renders the dominant GeneX360 Complete card with the
-// Most Popular badge, the 500+ variants stat, and the primary call to action.
+// Most Popular badge, the catalog size line, and the primary call to action.
 //
 // Prompt 193f (2026-06-13): below md BlueprintPanelCard rendered a COMPACT variant
 // for the two column mobile grid that gated the per card media to md and up and
@@ -126,7 +126,7 @@ export function BlueprintHeroCard({ className }: BlueprintHeroCardProps) {
   return (
     <Link
       href={meta.href}
-      aria-label="GeneX360 Complete, the full suite of six genetic panels, 500+ variants. Explore GeneX360 Complete."
+      aria-label={`GeneX360 Complete, the full suite of six genetic panels, catalog ${meta.primaryStat}. Explore GeneX360 Complete.`}
       className={`${CARD_LINK} ${className ?? ''}`}
     >
       <div className="relative isolate flex h-full flex-col justify-between gap-4 overflow-hidden rounded-xl border border-[#2DA5A0]/30 p-4 transition-colors duration-300 group-hover:border-[#2DA5A0]/60">

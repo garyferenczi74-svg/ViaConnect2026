@@ -28,9 +28,9 @@ describe('blueprintBentoData', () => {
   it('uses the panel marker scope unit nouns from the spec reference table', () => {
     const bySlug = Object.fromEntries(PANEL_BENTO_META.map((m) => [m.slug, m.unit]));
     expect(bySlug['genex-m']).toBe('SNPs');
-    expect(bySlug['nutrigen-dx']).toBe('markers');
+    expect(bySlug['nutrigen-dx']).toBe('SNPs');
     expect(bySlug['hormone-iq']).toBe('markers');
-    expect(bySlug['epigen-hq']).toBe('markers');
+    expect(bySlug['epigen-hq']).toBe('clocks');
     expect(bySlug['peptide-iq']).toBe('genes');
     expect(bySlug['cannabis-iq']).toBe('genes');
   });
@@ -50,7 +50,8 @@ describe('blueprintBentoData', () => {
 
   it('points the hero at the Blueprint explorer root with the suite stats and tagline', () => {
     expect(HERO_BENTO_META.href).toBe('/genetics/blueprint');
-    expect(HERO_BENTO_META.primaryStat).toBe('500+ variants');
+    expect(HERO_BENTO_META.primaryStat).toBe('20 / 27 / 29 / 12 / 14 / 10');
+    expect(HERO_BENTO_META.primaryStat).not.toContain('500');
     expect(HERO_BENTO_META.secondaryStat).toBe('6 panels');
     expect(HERO_BENTO_META.badge).toBe('Most Popular');
     expect(HERO_BENTO_META.tagline).toBe('Built For Your Biology');

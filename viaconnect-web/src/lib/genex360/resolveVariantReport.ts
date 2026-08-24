@@ -117,7 +117,7 @@ export function resolveVariantReport(
 
   if (!rsid) return notFound;
 
-  // Brief 6: MTHFR folate reports resolve only through GeneXM / genex_m.
+  // Brief 6 / Brief 17: MTHFR folate reports resolve only through GeneXM / genex_m.
   if (isMthfrFolateTarget(rsid, gene)) {
     const hit = findInPanel(registry, MTHFR_FOLATE_PANEL, rsid);
     if (hit) {

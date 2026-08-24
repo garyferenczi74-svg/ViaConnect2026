@@ -6,8 +6,11 @@ import {
   authTimeoutAction,
   canAccessPortalPath,
   clinicianPatientsForRole,
+  naturopathPartnersForRole,
   failClosedOnAuthTimeout,
+  unauthenticatedClinicianPortalRedirect,
   isClinicianOrAdminPath,
+  isConsumerPortalPath,
   isHelixPath,
   isPractitionerPortalPath,
   outOfRoleRedirect,
@@ -15,6 +18,8 @@ import {
   roleChipLabel,
   roleFromProfilesColumn,
   roleHomePath,
+  shellRoleForActivePortal,
+  shellRoleForSession,
   OUT_OF_ROLE_REDIRECT,
 } from "@/lib/auth/session-role";
 
@@ -90,7 +95,8 @@ describe("path access", () => {
     expect(canAccessPortalPath("consumer", "/helix/earn")).toBe(true);
     expect(canAccessPortalPath("practitioner", "/helix")).toBe(false);
     expect(canAccessPortalPath("naturopath", "/helix")).toBe(false);
-    expect(canAccessPortalPath("admin", "/helix")).toBe(false);
+    expect(canAccessPortalPath("admin", "/helix")).toBe(true);
+    expect(canAccessPortalPath("admin", "/api/helix/redeem")).toBe(false);
     expect(canAccessPortalPath("admin", "/admin/hounddog")).toBe(true);
     expect(canAccessPortalPath("practitioner", "/admin/hounddog")).toBe(false);
     expect(canAccessPortalPath("practitioner", "/dashboard")).toBe(false);
@@ -112,6 +118,7 @@ describe("path access", () => {
     expect(outOfRoleRedirect("practitioner", "/helix")).toBe(
       roleHomePath("practitioner"),
     );
+    expect(outOfRoleRedirect("admin", "/helix")).toBeNull();
   });
 
   it("active tab follows session-allowed portals, not a spoofed URL", () => {
@@ -125,6 +132,43 @@ describe("path access", () => {
     expect(activePortalForSession("practitioner", "/dashboard")).toBe(
       "practitioner",
     );
+  });
+});
+
+describe("admin portal chrome follows the selected portal", () => {
+  it("treats wellness routes as Personal Wellness, not only /dashboard", () => {
+    expect(isConsumerPortalPath("/dashboard")).toBe(true);
+    expect(isConsumerPortalPath("/nutrition")).toBe(true);
+    expect(isConsumerPortalPath("/genetics/upload")).toBe(true);
+    expect(isConsumerPortalPath("/shop/peptides")).toBe(true);
+    expect(isConsumerPortalPath("/admin")).toBe(false);
+    expect(isConsumerPortalPath("/practitioner/dashboard")).toBe(false);
+  });
+
+  it("admin on wellness routes keeps Personal Wellness chrome", () => {
+    expect(activePortalForSession("admin", "/dashboard")).toBe("consumer");
+    expect(activePortalForSession("admin", "/nutrition")).toBe("consumer");
+    expect(activePortalForSession("admin", "/genetics")).toBe("consumer");
+    expect(shellRoleForSession("admin", "/dashboard")).toBe("consumer");
+    expect(shellRoleForSession("admin", "/nutrition")).toBe("consumer");
+    expect(shellRoleForSession("admin", "/admin")).toBe("admin");
+    expect(shellRoleForSession("admin", "/admin/hounddog")).toBe("admin");
+    expect(shellRoleForSession("admin", "/practitioner/dashboard")).toBe(
+      "practitioner",
+    );
+  });
+
+  it("admin portal list has a single Admin tab", () => {
+    const labels = portalsForRole("admin").map((p) => p.label);
+    expect(labels.filter((label) => label === "Admin")).toHaveLength(1);
+    expect(labels[0]).toBe("Personal Wellness");
+  });
+
+  it("sidebar role follows the active portal, not the session chip", () => {
+    expect(shellRoleForActivePortal("admin", "consumer")).toBe("consumer");
+    expect(shellRoleForActivePortal("admin", "admin")).toBe("admin");
+    expect(shellRoleForActivePortal("admin", "hounddog")).toBe("admin");
+    expect(shellRoleForActivePortal("consumer", "consumer")).toBe("consumer");
   });
 });
 
@@ -172,6 +216,44 @@ describe("clinician patient roster", () => {
   });
 });
 
+describe("naturopath partner roster", () => {
+  const mock28 = Array.from({ length: 28 }, (_, i) => ({
+    id: String(i),
+    displayName: `Partner ${i}`,
+  }));
+
+  it("consumer and practitioner tokens never receive ND partners", () => {
+    expect(naturopathPartnersForRole("consumer", mock28)).toEqual([]);
+    expect(naturopathPartnersForRole("practitioner", mock28)).toEqual([]);
+    expect(naturopathPartnersForRole(undefined, mock28)).toEqual([]);
+  });
+
+  it("naturopath/admin may receive only the live list, never an implied 28", () => {
+    expect(naturopathPartnersForRole("naturopath", [])).toEqual([]);
+    expect(naturopathPartnersForRole("admin", mock28)).toHaveLength(28);
+  });
+});
+
+describe("unauthenticated clinician portal redirect", () => {
+  it("sends logged-out clinician portals to the public waitlist", () => {
+    expect(unauthenticatedClinicianPortalRedirect("/practitioner")).toBe(
+      OUT_OF_ROLE_REDIRECT,
+    );
+    expect(unauthenticatedClinicianPortalRedirect("/practitioner/dashboard")).toBe(
+      OUT_OF_ROLE_REDIRECT,
+    );
+    expect(unauthenticatedClinicianPortalRedirect("/naturopath/dashboard")).toBe(
+      OUT_OF_ROLE_REDIRECT,
+    );
+  });
+
+  it("does not treat admin or the waitlist as a clinician portal CTA", () => {
+    expect(unauthenticatedClinicianPortalRedirect("/admin")).toBeNull();
+    expect(unauthenticatedClinicianPortalRedirect("/practitioners")).toBeNull();
+    expect(unauthenticatedClinicianPortalRedirect("/login")).toBeNull();
+  });
+});
+
 describe("helix path helper", () => {
   it("identifies helix surfaces", () => {
     expect(isHelixPath("/helix")).toBe(true);
@@ -189,6 +271,8 @@ describe("source contract: chrome + middleware use session role", () => {
     expect(src).toMatch(/sessionRole/);
     expect(src).toMatch(/portalsForRole/);
     expect(src).toMatch(/roleChipLabel/);
+    expect(src).toMatch(/shellRoleForActivePortal/);
+    expect(src).not.toMatch(/session-role-chip/);
     expect(src).not.toMatch(/gary@farmceuticawellness\.com/);
     expect(src).not.toMatch(/BASE_PORTALS/);
   });
@@ -223,24 +307,53 @@ describe("source contract: chrome + middleware use session role", () => {
     expect(src).not.toMatch(/user_metadata\?\.role as string\) \?\? "consumer"/);
   });
 
-  it("practitioner dashboard does not ship mock 42 as live patients", () => {
+  it("practitioner dashboard wires live practitioner_patients and does not ship mock 42", () => {
     const src = readFileSync(
       path.join(REPO, "src/app/(app)/practitioner/dashboard/page.tsx"),
       "utf8",
     );
     expect(src).toMatch(/clinicianPatientsForRole/);
+    expect(src).toMatch(/loadPractitionerLiveRoster/);
     expect(src).not.toMatch(/value: "42"/);
     expect(src).not.toMatch(/John D\./);
     expect(src).not.toMatch(/Maria S\./);
+    expect(src).not.toMatch(/Precision Wellness Medical Group/);
+    expect(src).not.toMatch(/ViaCura/);
   });
 
-  it("practitioner patients page does not claim a live 42-patient census", () => {
+  it("practitioner patients page wires live roster and does not claim a 42-patient census", () => {
     const src = readFileSync(
       path.join(REPO, "src/app/(app)/practitioner/patients/page.tsx"),
       "utf8",
     );
     expect(src).not.toMatch(/of 42 patients/);
-    expect(src).toMatch(/PATIENTS: Patient\[\] = \[\]/);
+    expect(src).not.toMatch(/PATIENTS: Patient\[\] = \[\]/);
+    expect(src).toMatch(/loadPractitionerLiveRoster/);
+  });
+
+  it("naturopath dashboard kills 28/92% mocks and wires live partners", () => {
+    const src = readFileSync(
+      path.join(REPO, "src/app/(app)/naturopath/dashboard/page.tsx"),
+      "utf8",
+    );
+    expect(src).toMatch(/loadNaturopathLivePartners/);
+    expect(src).toMatch(/naturopathPartnersForRole/);
+    expect(src).not.toMatch(/value: '28'/);
+    expect(src).not.toMatch(/value: '92%'/);
+    expect(src).not.toMatch(/Emma W\./);
+    expect(src).not.toMatch(/Dr\. Patel/);
+  });
+
+  it("supabase middleware sends unauth clinician portals to /practitioners", () => {
+    const src = readFileSync(
+      path.join(REPO, "src/lib/supabase/middleware.ts"),
+      "utf8",
+    );
+    expect(src).toMatch(/unauthenticatedClinicianPortalRedirect/);
+    const waitlistIdx = src.indexOf("unauthenticatedClinicianPortalRedirect(pathname)");
+    const loginIdx = src.indexOf("redirecting unauthenticated request to login");
+    expect(waitlistIdx).toBeGreaterThan(0);
+    expect(loginIdx).toBeGreaterThan(waitlistIdx);
   });
 
   it("helix layout is consumer-gated from profiles.role", () => {

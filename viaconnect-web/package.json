@@ -8,7 +8,7 @@
     "build:webpack": "next build --webpack",
     "start": "next start",
     "lint": "eslint .",
-    "prepare": "husky",
+    "prepare": "node -e \"process.exit(process.env.VERCEL||process.env.CI?0:1)\" || husky",
     "photos:audit": "npx tsx scripts/audit/current-image-state.ts && npx tsx scripts/audit/list-bucket-objects.ts && npx tsx scripts/audit/match-products-to-files.ts",
     "photos:sync": "npx tsx scripts/sync-supplement-photos.ts",
     "photos:report": "npx tsx scripts/audit/generate-reconciliation-report.ts",

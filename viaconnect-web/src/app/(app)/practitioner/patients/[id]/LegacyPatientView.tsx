@@ -1,5 +1,8 @@
 'use client';
 
+// Retired from live routes. /practitioner/patients/[id] no longer falls
+// back to this staged chart when a practitioner_patients row is missing.
+
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import Link from 'next/link';

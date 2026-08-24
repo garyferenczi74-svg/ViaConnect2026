@@ -1,8 +1,7 @@
 'use client';
 
 /**
- * Prompt 218: Plugins page wired to real app connection state.
- * Ruling: apps only; wearables stay under Wearables Data; Connect untouched.
+ * /plugins: app integrations only. Wearables live at /body-tracker/connections.
  */
 
 import { Suspense } from 'react';

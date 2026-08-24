@@ -1,4 +1,4 @@
-// Brief 6 honesty: MTHFR folate copy is GeneXM / genex_m only.
+// Brief 6 / Brief 17 honesty: MTHFR folate copy is GeneXM / genex_m only.
 // NutrigenDX and other panels may mention MTHFR as a neighbor gene, but they
 // do not own the folate implication. No new SNP math lives here.
 

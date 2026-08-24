@@ -8,7 +8,8 @@
 // the matching pill. HormoneIQ and EpigenHQ read marker / clock tables, never
 // user_variants SNP length. Fail / null / remap miss render as Unanalyzed,
 // never 0, never dishonest n/a as a number. MTHFR folate copy only via genex_m.
-// Marketing catalog sizes from the shop panel catalog are not used here.
+// Brief 19: honest empty is Not analyzed, never a zero count as you have nothing.
+// Marketing catalog sizes are not live badges; empty copy names the catalog.
 //
 // Standing rules honored: tokens only (Navy #1A2744, Card #1E3054, Teal
 // #2DA5A0, Orange #B75E18, white opacity neutrals), Lucide strokeWidth 1.5,
@@ -44,6 +45,9 @@ import {
   type ObservedPanelCount,
 } from '@/lib/genetics/observedPanelCounts';
 import { epigenMarkerByKey } from '@/lib/genetics/epigenMarkerMap';
+import {
+  catalogOnFileLine,
+} from '@/lib/genetics/catalogSizes';
 import { isMthfrFolateTarget, mayShowMthfrFolate } from '@/lib/genetics/mthfrFolate';
 import { protocolChangeLine } from '@/lib/genetics/protocolChangeLine';
 import { hubHeaderBadge } from '@/lib/genetics/geneticsUploadState';
@@ -52,7 +56,7 @@ import { formatVariantProvenance } from '@/lib/genetics/variantProvenance';
 
 const PANEL_ID = 'your-variants-panel';
 const SUBTITLE =
-  'Each GENEX360 test measures something different: methylation SNPs, nutrition markers, hormone metabolites, or epigenetic clocks.';
+  'Each GENEX360 test measures something different: GeneXM methylation and detox SNPs, NutrigenDX nutrient-metabolism SNPs, HormoneIQ DUTCH markers, or EpigenHQ clocks.';
 
 const LEGACY_TEST_ID_TO_PANEL: Record<string, PanelKey> = {
   genexm: 'methylation',
@@ -179,8 +183,8 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
   }, [activeRows, impactFilter]);
 
   const activeGenericLabel = PANEL_LABELS[activePanel].generic_label;
-  const activeEmptyNoun = PANEL_LABELS[activePanel].empty_noun;
   const activeMeasuresLine = PANEL_LABELS[activePanel].measures_line;
+  const activeCatalogLine = catalogOnFileLine(activePanel);
   const activePanelSlug = PANEL_LABELS[activePanel].slug as PanelSlug;
   const activeTabId = `${PANEL_ID}-tab-${activePanel}`;
 
@@ -236,7 +240,7 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
 
         <div
           role="tablist"
-          aria-label="Genetic panels"
+          aria-label="GENEX360 tests"
           aria-orientation="horizontal"
           onKeyDown={onKeyDown}
           className="scrollbar-hide flex snap-x snap-mandatory flex-nowrap gap-2 overflow-x-auto pb-1 md:flex-wrap md:overflow-visible"
@@ -272,7 +276,9 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
                       ? `${label} count loading`
                       : observed.status === 'unknown' || observed.count === null
                         ? `${label} Unanalyzed`
-                        : `${observed.count} ${observed.unit}`
+                        : observed.count === 0
+                          ? `${label} Not analyzed`
+                          : `${observed.count} ${observed.unit}`
                   }
                   className={`inline-flex min-w-[1.25rem] items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-medium tabular-nums ${
                     active ? 'bg-[#1A2744]/40 text-white' : 'bg-white/10 text-white/70'
@@ -452,10 +458,13 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
               />
               <div className="flex flex-col gap-1">
                 <p className="text-sm font-semibold text-white/85">
-                  No {activeGenericLabel} {activeEmptyNoun} yet.
+                  Not analyzed
                 </p>
                 <p className="text-[13px] leading-relaxed text-white/60">
                   {activeMeasuresLine}
+                </p>
+                <p className="text-[13px] leading-relaxed text-white/60">
+                  {activeCatalogLine}
                 </p>
               </div>
             </div>

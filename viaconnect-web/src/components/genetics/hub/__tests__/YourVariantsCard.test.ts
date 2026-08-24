@@ -49,6 +49,7 @@ describe('YourVariantsCard source', () => {
 
   it('builds the pill tablist with roving tabindex and arrow key navigation', () => {
     expect(source).toContain('role="tablist"');
+    expect(source).toContain('aria-label="GENEX360 tests"');
     expect(source).toContain('tabIndex={active ? 0 : -1}');
     expect(source).toContain("case 'ArrowRight'");
   });
@@ -59,13 +60,16 @@ describe('YourVariantsCard source', () => {
     expect(source).toContain("'-/-'");
   });
 
-  it('shows an honest empty / locked state using the generic label, not an error', () => {
-    expect(source).toContain('No {activeGenericLabel} {activeEmptyNoun} yet.');
+  it('shows an honest empty / locked state as Not analyzed, not no catalog', () => {
+    expect(source).toContain('Not analyzed');
+    expect(source).toContain('catalogOnFileLine');
+    expect(source).not.toContain('No {activeGenericLabel} {activeEmptyNoun} yet.');
     expect(source).not.toContain('overflow-y-auto');
   });
 
   it('renders observed badges with units and never uses marketing markerCount', () => {
     expect(source).toContain('formatObservedBadge');
+    expect(source).toContain('honestEmptyHeaderBadge');
     expect(source).toContain('observedByPanel');
     expect(source).not.toContain('markerCount');
     expect(source).not.toContain("from './blueprintBentoData'");

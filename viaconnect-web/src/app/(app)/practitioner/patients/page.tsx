@@ -1,215 +1,31 @@
-"use client";
+import { createClient } from "@/lib/supabase/server";
+import { resolveSessionRole } from "@/lib/auth/resolve-session-role";
+import { loadPractitionerLiveRoster } from "@/lib/practitioner/live-roster";
+import { PractitionerPatientsRoster } from "./PractitionerPatientsRoster";
 
-import { useState, useMemo } from "react";
-import { Search, UserPlus, ChevronLeft, ChevronRight } from "lucide-react";
+export const dynamic = "force-dynamic";
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+export default async function PatientsPage() {
+  const supabase = await createClient();
+  const session = await resolveSessionRole("app.practitioner.patients");
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-type PatientStatus = "alert" | "warning" | "good";
-
-type Patient = {
-  id: string;
-  name: string;
-  age: number;
-  variants: string[];
-  compliance: number;
-  panels: string;
-  lastVisit: string;
-  status: PatientStatus;
-};
-
-// ─── Mock Data ───────────────────────────────────────────────────────────────
-
-// Live roster only. Never seed a mock census (the old "42 patients") as if live.
-const PATIENTS: Patient[] = [];
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-const statusConfig: Record<PatientStatus, { dot: string; label: string }> = {
-  alert: { dot: "bg-red-400", label: "Alert" },
-  warning: { dot: "bg-amber-400", label: "Warning" },
-  good: { dot: "bg-emerald-400", label: "Good" },
-};
-
-function complianceColor(pct: number): string {
-  if (pct >= 80) return "text-emerald-400";
-  if (pct >= 60) return "text-amber-400";
-  return "text-red-400";
-}
-
-type FilterKey = "all" | "high-alert" | "low-compliance" | "pending-results" | "GENEX-M" | "GeneX360" | "PeptideIQ";
-
-const FILTERS: { key: FilterKey; label: string }[] = [
-  { key: "all", label: "All" },
-  { key: "high-alert", label: "High Alert" },
-  { key: "low-compliance", label: "Low Compliance" },
-  { key: "pending-results", label: "Pending Results" },
-  { key: "GENEX-M", label: "GENEX-M" },
-  { key: "GeneX360", label: "GeneX360" },
-  { key: "PeptideIQ", label: "PeptideIQ" },
-];
-
-// ─── Component ───────────────────────────────────────────────────────────────
-
-export default function PatientsPage() {
-  const [search, setSearch] = useState("");
-  const [activeFilter, setActiveFilter] = useState<FilterKey>("all");
-
-  const filtered = useMemo(() => {
-    let list = PATIENTS;
-
-    // Text search
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      list = list.filter((p) => p.name.toLowerCase().includes(q));
-    }
-
-    // Filter pills
-    switch (activeFilter) {
-      case "high-alert":
-        list = list.filter((p) => p.status === "alert");
-        break;
-      case "low-compliance":
-        list = list.filter((p) => p.compliance < 70);
-        break;
-      case "pending-results":
-        // Mock: show patients with fewer completed panels
-        list = list.filter((p) => parseInt(p.panels) < 3);
-        break;
-      case "GENEX-M":
-      case "GeneX360":
-      case "PeptideIQ":
-        // Mock: show all for panel filters
-        break;
-      default:
-        break;
-    }
-
-    return list;
-  }, [search, activeFilter]);
+  const snapshot = user
+    ? await loadPractitionerLiveRoster(supabase, {
+        userId: user.id,
+        role: session?.role,
+      })
+    : await loadPractitionerLiveRoster(supabase, {
+        userId: "",
+        role: undefined,
+      });
 
   return (
-    <div className="min-h-screen bg-dark-bg p-4 md:p-8">
-      <div className="max-w-7xl mx-auto space-y-5">
-        {/* ── Header ───────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-heading-2 text-[#B75E18]">Patients</h1>
-          <button
-            type="button"
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-[#4A90D9] to-[#3A7BC8] hover:opacity-90 transition-opacity"
-          >
-            <UserPlus className="w-4 h-4" />
-            + Add Patient
-          </button>
-        </div>
-
-        {/* ── Search Bar ───────────────────────────────────────────── */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search patients..."
-            className="w-full h-10 pl-9 pr-3 rounded-lg text-sm text-white placeholder:text-gray-600 outline-none transition-colors
-              bg-white/[0.04] border border-white/[0.08] backdrop-blur-sm focus:border-[#4A90D9]/50 focus:ring-1 focus:ring-[#4A90D9]/20"
-          />
-        </div>
-
-        {/* ── Filter Pills ─────────────────────────────────────────── */}
-        <div className="flex flex-wrap gap-2">
-          {FILTERS.map((filter) => (
-            <button
-              key={filter.key}
-              onClick={() => setActiveFilter(filter.key)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                activeFilter === filter.key
-                  ? "bg-[#4A90D9]/15 text-[#4A90D9]"
-                  : "bg-white/[0.04] text-gray-400 hover:bg-white/[0.06] hover:text-gray-300"
-              }`}
-            >
-              {filter.label}
-            </button>
-          ))}
-        </div>
-
-        {/* ── Patient Table ────────────────────────────────────────── */}
-        <div className="glass-v2 p-0 overflow-x-auto">
-          <table className="w-full text-left min-w-[700px]">
-            <thead>
-              <tr className="border-b border-white/[0.06]">
-                <th className="text-xs text-secondary uppercase font-medium py-2 px-3">Name</th>
-                <th className="text-xs text-secondary uppercase font-medium py-2 px-3">Age</th>
-                <th className="text-xs text-secondary uppercase font-medium py-2 px-3">Key Variants</th>
-                <th className="text-xs text-secondary uppercase font-medium py-2 px-3">Compliance</th>
-                <th className="text-xs text-secondary uppercase font-medium py-2 px-3">Panels</th>
-                <th className="text-xs text-secondary uppercase font-medium py-2 px-3">Last Visit</th>
-                <th className="text-xs text-secondary uppercase font-medium py-2 px-3">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((patient, i) => {
-                const status = statusConfig[patient.status];
-                return (
-                  <tr
-                    key={patient.id}
-                    className={`hover:bg-white/[0.03] cursor-pointer transition-colors ${
-                      i % 2 === 1 ? "bg-white/[0.02]" : ""
-                    }`}
-                  >
-                    <td className="text-xs font-medium text-white py-2 px-3">{patient.name}</td>
-                    <td className="text-xs text-gray-300 py-2 px-3">{patient.age}</td>
-                    <td className="text-xs py-2 px-3">
-                      <div className="flex flex-wrap gap-1">
-                        {patient.variants.map((v) => (
-                          <span
-                            key={v}
-                            className="inline-block rounded-full bg-blue-500/10 text-[#4A90D9] text-[10px] font-mono px-2 py-0.5"
-                          >
-                            {v}
-                          </span>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="text-xs py-2 px-3">
-                      <span className={`font-medium ${complianceColor(patient.compliance)}`}>
-                        {patient.compliance}%
-                      </span>
-                    </td>
-                    <td className="text-xs text-gray-300 py-2 px-3">{patient.panels}</td>
-                    <td className="text-xs text-gray-400 py-2 px-3">{patient.lastVisit}</td>
-                    <td className="text-xs py-2 px-3">
-                      <div className="flex items-center gap-1.5">
-                        <span className={`w-2 h-2 rounded-full ${status.dot}`} />
-                        <span className="text-gray-300">{status.label}</span>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-
-        {/* ── Pagination ───────────────────────────────────────────── */}
-        <div className="flex items-center justify-between">
-          <p className="text-xs text-secondary">
-            {filtered.length === 0
-              ? "No patients on this roster yet"
-              : `Showing ${filtered.length} of ${PATIENTS.length} patients`}
-          </p>
-          <div className="flex gap-2">
-            <button className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs text-gray-400 bg-white/[0.04] border border-white/[0.06] hover:bg-white/[0.06] transition-colors">
-              <ChevronLeft className="w-3 h-3" />
-              Previous
-            </button>
-            <button className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs text-gray-400 bg-white/[0.04] border border-white/[0.06] hover:bg-white/[0.06] transition-colors">
-              Next
-              <ChevronRight className="w-3 h-3" />
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <PractitionerPatientsRoster
+      patients={snapshot.patients}
+      lookupFailed={snapshot.lookupFailed}
+    />
   );
 }

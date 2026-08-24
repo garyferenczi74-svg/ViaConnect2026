@@ -47,7 +47,7 @@ export const PANEL_LABELS: Record<PanelKey, PanelLabelEntry> = {
     count_unit: 'SNPs',
     empty_noun: 'SNPs',
     measures_line:
-      'GeneXM reads methylation and pharmacogenomic SNPs that shape folate, detox, and nutrient pathways.',
+      'GeneXM reads methylation and detox SNPs that shape folate, detox, and nutrient pathways.',
   },
   nutrition: {
     panel_key: 'nutrition',
@@ -55,10 +55,10 @@ export const PANEL_LABELS: Record<PanelKey, PanelLabelEntry> = {
     branded_product_code: 'NUTRIGENDX',
     branded_label: 'NutrigenDX',
     generic_label: 'Genetic Nutrition',
-    count_unit: 'markers',
-    empty_noun: 'nutrition markers',
+    count_unit: 'SNPs',
+    empty_noun: 'nutrient-metabolism SNPs',
     measures_line:
-      'NutrigenDX reads genetic nutrition markers that influence how you handle vitamins, fats, and food responses.',
+      'NutrigenDX reads nutrient-metabolism SNPs that influence how you handle vitamins, fats, and food responses.',
   },
   hormone: {
     panel_key: 'hormone',
@@ -67,7 +67,7 @@ export const PANEL_LABELS: Record<PanelKey, PanelLabelEntry> = {
     branded_label: 'HormoneIQ',
     generic_label: 'Hormone Mapping',
     count_unit: 'markers',
-    empty_noun: 'hormone and metabolite markers',
+    empty_noun: 'DUTCH hormone markers',
     measures_line:
       'HormoneIQ maps DUTCH hormone and metabolite markers from a hormone panel, not SNP pills.',
   },
