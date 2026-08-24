@@ -12,6 +12,8 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 const ISO_ADMIN_ROLES = new Set(['compliance_officer', 'compliance_admin', 'admin', 'superadmin']);
@@ -19,7 +21,7 @@ const MAX_BYTES = 100 * 1024 * 1024;
 
 export async function POST(req: NextRequest) {
   try {
-    const session = createServerClient();
+    const session = await createServerClient();
     const { data: { user } } = await withTimeout(session.auth.getUser(), 5000, 'api.iso.isms-scope.auth');
     if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     const { data: profile } = await withTimeout(

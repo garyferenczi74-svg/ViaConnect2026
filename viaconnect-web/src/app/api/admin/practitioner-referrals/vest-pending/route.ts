@@ -10,11 +10,13 @@ import { processPendingVesting } from '@/lib/practitioner-referral/vesting-orche
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 export async function POST(): Promise<NextResponse> {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user } } = await withTimeout(
       supabase.auth.getUser(),
       5000,

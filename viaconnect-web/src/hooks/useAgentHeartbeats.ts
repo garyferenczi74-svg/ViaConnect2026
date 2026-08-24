@@ -22,7 +22,9 @@ export function useAgentHeartbeats(
     const load = async () => {
       const { data } = await supabase
         .from("ultrathink_agent_registry")
-        .select("agent_name, display_name, health_status, last_heartbeat_at, consecutive_misses, is_active")
+        .select(
+          "agent_name, display_name, health_status, last_heartbeat_at, consecutive_misses, is_active, expected_period_minutes",
+        )
         .in("agent_name", AGENT_IDS);
       if (cancelled) return;
       const mapped = ((data ?? []) as UltrathinkRegistryRow[])

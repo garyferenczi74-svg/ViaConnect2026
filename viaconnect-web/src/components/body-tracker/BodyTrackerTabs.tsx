@@ -2,13 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, Scale, Dumbbell, Trophy, TrendingUp, HeartPulse, Link2 } from 'lucide-react';
+import { LayoutDashboard, Users, Scale, Dumbbell, Trophy, TrendingUp, HeartPulse, Link2, Box } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { BODY_TRACKER_TABS } from '@/lib/body-tracker/constants';
 
 const ICONS: Record<string, LucideIcon> = {
   dashboard: LayoutDashboard,
   composition: Users,
+  formavision: Box,
   weight: Scale,
   muscle: Dumbbell,
   milestones: Trophy,

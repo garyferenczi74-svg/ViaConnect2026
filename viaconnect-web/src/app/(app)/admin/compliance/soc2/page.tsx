@@ -27,7 +27,7 @@ const TILES = [
 
 export default async function Soc2OverviewPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
 
   const [packetsRes, manualRes, collectorsRes, distRes, keysRes] = await Promise.all([
     supabase.from('soc2_packets').select('id', { count: 'exact', head: true }),

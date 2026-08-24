@@ -19,7 +19,7 @@ function serviceClient() {
 export async function POST(req: Request) {
   const requestId = req.headers.get('x-request-id') ?? crypto.randomUUID();
   try {
-    const userClient = createServerClient();
+    const userClient = await createServerClient();
     let user;
     try {
       const authResult = await withTimeout(

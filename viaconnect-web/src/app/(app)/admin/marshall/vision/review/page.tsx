@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function MarshallVisionReviewQueuePage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
 
   const { data, error } = await supabase
     .from('counterfeit_determinations')

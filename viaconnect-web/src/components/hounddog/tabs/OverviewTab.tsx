@@ -35,6 +35,12 @@ import PBar from '../shared/PBar';
 import LiveBadge from '../shared/LiveBadge';
 import Spark from '../shared/Spark';
 
+// Prompt #52: fixed tracks total 660px so Platform cannot collapse under
+// overflow:hidden. Scroll the inner wrapper instead of clipping the name.
+const SOCIAL_PERF_COLUMNS = '160px 88px 58px 64px 64px 64px 90px 72px';
+const SOCIAL_PERF_MIN_WIDTH = 660;
+const SOCIAL_PERF_MAX_WIDTH = 1280;
+
 const AGENT_ICONS: Record<string, IconType> = {
   PenTool,
   Edit3,
@@ -267,15 +273,16 @@ export default function OverviewTab({ tick }: OverviewTabProps) {
             border: `1px solid ${C.border}`,
             borderRadius: 12,
             overflow: 'hidden',
+            maxWidth: SOCIAL_PERF_MAX_WIDTH,
           }}
         >
-          <div style={{ overflowX: 'auto' }}>
-            <div style={{ minWidth: 700 }}>
+          <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            <div style={{ minWidth: SOCIAL_PERF_MIN_WIDTH + 28 }}>
               {/* Header Row */}
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '1fr 90px 60px 65px 65px 65px 80px 80px',
+                  gridTemplateColumns: SOCIAL_PERF_COLUMNS,
                   padding: '8px 14px',
                   fontSize: 8,
                   textTransform: 'uppercase',
@@ -300,7 +307,7 @@ export default function OverviewTab({ tick }: OverviewTabProps) {
                   onClick={() => setSelectedPlatform(plat.name)}
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: '1fr 90px 60px 65px 65px 65px 80px 80px',
+                    gridTemplateColumns: SOCIAL_PERF_COLUMNS,
                     padding: '10px 14px',
                     alignItems: 'center',
                     cursor: 'pointer',
@@ -325,7 +332,7 @@ export default function OverviewTab({ tick }: OverviewTabProps) {
                         flexShrink: 0,
                       }}
                     />
-                    <span style={{ fontSize: 12, fontWeight: 700, color: C.text }}>{plat.name}</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: C.text, whiteSpace: 'nowrap' }}>{plat.name}</span>
                     <span
                       style={{
                         width: 5,

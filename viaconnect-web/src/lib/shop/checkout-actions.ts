@@ -176,7 +176,7 @@ export async function validateCheckout(
     }
 
     try {
-        const supabase = createClient()
+        const supabase = await createClient()
         const sb = supabase as unknown as {
             from: (t: string) => any
         }
@@ -263,7 +263,7 @@ export async function createCheckoutSession(args: {
 
     try {
         const stripe = new Stripe(stripeKey)
-        const supabase = createClient()
+        const supabase = await createClient()
         const userResult = await withTimeout(
             supabase.auth.getUser(),
             2000,
@@ -307,7 +307,7 @@ export async function createCheckoutSession(args: {
             customer = await stripe.customers.create(customerPayload)
         }
 
-        const headersList = headers()
+        const headersList = await headers()
         const origin = headersList.get('origin') ?? 'https://viaconnectapp.com'
 
         const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = cart.map(
@@ -458,6 +458,6 @@ export async function finalizeShopOrder(
     // with a service-role client. This route uses the auth-scoped client so
     // RLS on shop_orders applies (Users create own orders policy enforces
     // user_id = auth.uid() WITH CHECK).
-    const supabase = createClient()
+    const supabase = await createClient()
     return finalizeOrderForSession(supabase, sessionId)
 }

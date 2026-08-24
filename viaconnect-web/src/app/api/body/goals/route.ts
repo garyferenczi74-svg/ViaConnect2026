@@ -14,6 +14,8 @@ import { getLatestWeight } from '@/lib/body-goals/goalsData';
 import { createBodyGoal } from '@/lib/body-goals/createGoal';
 import type { GoalActivityLevel, GoalDriver, GoalOrigin, PacePreset } from '@/lib/body-goals/types';
 
+export const dynamic = 'force-dynamic';
+
 interface CreateGoalBody {
   driver: GoalDriver;
   goalWeightLb: number;
@@ -32,7 +34,7 @@ function todayISO(): string {
 
 export async function POST(request: Request) {
   try {
-    const sb = createClient();
+    const sb = await createClient();
     const { data: { user } } = await withTimeout(sb.auth.getUser(), 5000, 'api.body.goals.create.auth');
     if (!user) return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 });
 

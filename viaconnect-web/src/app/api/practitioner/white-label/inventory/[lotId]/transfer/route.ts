@@ -15,19 +15,19 @@ import { STORAGE_LOCATIONS } from '@/lib/white-label/schema-types';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 const schema = z.object({
   to: z.enum(STORAGE_LOCATIONS),
 });
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { lotId: string } },
-): Promise<NextResponse> {
+export async function POST(request: NextRequest, props: { params: Promise<{ lotId: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     let user;
     try {

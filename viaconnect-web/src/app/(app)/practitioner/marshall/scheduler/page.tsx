@@ -43,12 +43,13 @@ interface ConnectionRow {
   active: boolean;
 }
 
-export default async function SchedulerPortalPage({
-  searchParams,
-}: {
-  searchParams: { connected?: string; oauth_error?: string; platform?: string };
-}) {
-  const supabase = createServerClient();
+export default async function SchedulerPortalPage(
+  props: {
+    searchParams: Promise<{ connected?: string; oauth_error?: string; platform?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 

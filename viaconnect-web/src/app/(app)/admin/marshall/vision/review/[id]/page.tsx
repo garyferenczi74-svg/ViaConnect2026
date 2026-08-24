@@ -9,12 +9,13 @@ import DispositionActions from '@/components/marshall-vision/DispositionActions'
 export const dynamic = 'force-dynamic';
 
 interface PageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
-export default async function DeterminationDetailPage({ params }: PageProps) {
+export default async function DeterminationDetailPage(props: PageProps) {
+  const params = await props.params;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
 
   const { data: det } = await supabase
     .from('counterfeit_determinations')

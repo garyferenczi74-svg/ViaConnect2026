@@ -34,7 +34,7 @@ const DB_TIMEOUT_MS = 5000;
 
 export async function POST(): Promise<NextResponse> {
   const startedAt = Date.now();
-  const supabase = createClient();
+  const supabase = await createClient();
 
   let userId: string | null = null;
   try {

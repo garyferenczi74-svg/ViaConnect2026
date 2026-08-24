@@ -15,15 +15,15 @@ import { logVariantEvent } from '@/lib/marketing/variants/logging';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export const dynamic = 'force-dynamic';
+
+export async function GET(_request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const auth = await requireMarketingAdmin();
     if (auth.kind === 'error') return auth.response;
 
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: variant, error } = await withTimeout(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (async () => (supabase as any)
@@ -60,10 +60,8 @@ export async function GET(
   }
 }
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function PATCH(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const auth = await requireMarketingAdmin();
     if (auth.kind === 'error') return auth.response;
@@ -78,7 +76,7 @@ export async function PATCH(
     } | null;
     if (!body) return NextResponse.json({ error: 'Empty body' }, { status: 400 });
 
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: existing } = await withTimeout(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (async () => (supabase as any)
@@ -145,10 +143,8 @@ export async function PATCH(
   }
 }
 
-export async function DELETE(
-  _request: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function DELETE(_request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   // Per #138a §6.5 + activation invariant: variants are archived, never deleted.
   // Returning 405 surfaces the policy to misuse rather than silently allowing it.
   return NextResponse.json(

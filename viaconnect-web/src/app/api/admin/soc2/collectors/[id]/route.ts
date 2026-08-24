@@ -6,13 +6,16 @@ import { createClient as createServerClient } from '@/lib/supabase/server';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 const ADMIN_ROLES = new Set(['admin', 'superadmin']);
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
-    const supabase = createServerClient();
+    const supabase = await createServerClient();
     const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.soc2.collectors.toggle.auth');
     if (!user) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });

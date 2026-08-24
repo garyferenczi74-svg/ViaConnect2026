@@ -1,29 +1,65 @@
 'use client';
 
+// Prompt 210i: four-tab row (Body Fat, Muscle Mass, Measurements, FormaVision).
+// Prompt 217: mobile single-line horizontal snap scroll (no orphan wrap);
+// 44px touch targets; FormaVision two-tone wordmark preserved.
+
 import { motion } from 'framer-motion';
-import { PieChart, Dumbbell, Ruler } from 'lucide-react';
+import { PieChart, Dumbbell, Ruler, Box } from 'lucide-react';
 
 export type CompositionSection = 'fat' | 'muscle' | 'measurements';
+export type CompositionNavTab = CompositionSection | 'formavision';
 
 interface CompositionSectionToggleProps {
-  active: CompositionSection;
-  onChange: (section: CompositionSection) => void;
+  active: CompositionNavTab;
+  onChange: (section: CompositionNavTab) => void;
+  // BodyCompositionForm only needs the three content sections (no FormaVision).
+  includeFormaVision?: boolean;
 }
 
-const SECTIONS = [
-  { id: 'fat',          label: 'Body Fat',     icon: PieChart },
-  { id: 'muscle',       label: 'Muscle Mass',  icon: Dumbbell },
-  { id: 'measurements', label: 'Measurements', icon: Ruler },
-] as const;
+const CONTENT_SECTIONS = [
+  { id: 'fat' as const, label: 'Body Fat', icon: PieChart },
+  { id: 'muscle' as const, label: 'Muscle Mass', icon: Dumbbell },
+  { id: 'measurements' as const, label: 'Measurements', icon: Ruler },
+];
 
-export function CompositionSectionToggle({ active, onChange }: CompositionSectionToggleProps) {
+const FORMAVISION_TAB = {
+  id: 'formavision' as const,
+  label: 'FormaVision',
+  icon: Box,
+};
+
+function TabLabel({ id, label, isActive }: { id: string; label: string; isActive: boolean }) {
+  if (id === 'formavision') {
+    // Two-tone wordmark: Forma Orange #B75E18, Vision white (210i / 217).
+    return (
+      <span className="relative z-10">
+        <span style={{ color: isActive ? '#B75E18' : 'rgba(183,94,24,0.65)' }}>Forma</span>
+        <span style={{ color: isActive ? '#ffffff' : 'rgba(255,255,255,0.5)' }}>Vision</span>
+      </span>
+    );
+  }
+  return <span className="relative z-10">{label}</span>;
+}
+
+export function CompositionSectionToggle({
+  active,
+  onChange,
+  includeFormaVision = true,
+}: CompositionSectionToggleProps) {
+  const sections = includeFormaVision
+    ? [...CONTENT_SECTIONS, FORMAVISION_TAB]
+    : CONTENT_SECTIONS;
+
   return (
     <div
       role="radiogroup"
       aria-label="Body composition section"
-      className="relative inline-flex gap-1 rounded-full bg-white/[0.03] p-1"
+      data-testid="composition-section-toggle"
+      className="relative flex w-full max-w-full min-w-0 gap-1 overflow-x-auto overscroll-x-contain scroll-smooth snap-x snap-mandatory rounded-full bg-white/[0.03] p-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:inline-flex md:w-auto md:max-w-none md:overflow-visible md:snap-none"
+      style={{ WebkitOverflowScrolling: 'touch' }}
     >
-      {SECTIONS.map((s) => {
+      {sections.map((s) => {
         const Icon = s.icon;
         const isActive = active === s.id;
         return (
@@ -32,8 +68,10 @@ export function CompositionSectionToggle({ active, onChange }: CompositionSectio
             type="button"
             role="radio"
             aria-checked={isActive}
+            data-testid={`composition-tab-${s.id}`}
+            data-active={isActive ? 'true' : 'false'}
             onClick={() => onChange(s.id)}
-            className="relative z-10 inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-medium transition-colors min-h-[36px]"
+            className="relative z-10 inline-flex h-11 min-h-[44px] shrink-0 snap-start items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-2 text-xs font-medium transition-colors sm:px-4"
             style={{ color: isActive ? '#ffffff' : 'rgba(255,255,255,0.5)' }}
           >
             {isActive && (
@@ -43,8 +81,8 @@ export function CompositionSectionToggle({ active, onChange }: CompositionSectio
                 transition={{ type: 'spring', stiffness: 400, damping: 30 }}
               />
             )}
-            <Icon className="relative z-10" size={14} strokeWidth={1.5} />
-            <span className="relative z-10">{s.label}</span>
+            <Icon className="relative z-10 shrink-0" size={14} strokeWidth={1.5} />
+            <TabLabel id={s.id} label={s.label} isActive={isActive} />
           </button>
         );
       })}

@@ -8,6 +8,8 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 export const maxDuration = 60;
 
@@ -16,7 +18,7 @@ const BUCKET = 'hipaa-evidence';
 
 export async function POST(req: NextRequest) {
   try {
-    const session = createServerClient();
+    const session = await createServerClient();
     const { data: { user } } = await withTimeout(session.auth.getUser(), 5000, 'api.hipaa.risk-analysis.auth');
     if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     const { data: profile } = await withTimeout(

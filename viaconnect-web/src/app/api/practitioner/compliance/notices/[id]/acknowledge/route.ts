@@ -18,7 +18,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const requestId = req.headers.get('x-request-id') ?? crypto.randomUUID();
   try {
     const { id } = await params;
-    const userClient = createServerClient();
+    const userClient = await createServerClient();
     let user;
     try {
       const authResult = await withTimeout(

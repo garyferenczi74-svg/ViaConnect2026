@@ -17,6 +17,8 @@ import { normalizeQuery } from '@/lib/nutrition/normalize-query';
 import { EXTRACTION_VERSION } from '@/lib/nutrition/usda-client';
 import type { CuisineTag } from '@/lib/nutrition/vision/types';
 
+export const dynamic = 'force-dynamic';
+
 const ROUTE = '/api/nutrition/foods/search';
 const DEFAULT_LIMIT = 10;
 const MAX_LIMIT = 25;
@@ -73,7 +75,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   let userId: string | null = null;
 
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       throw new AIRouteError(

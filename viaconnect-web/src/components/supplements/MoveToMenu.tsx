@@ -40,7 +40,7 @@ export function MoveToMenu({ current, onMove }: { current: TimeOfDay; onMove: (t
         aria-expanded={open}
         aria-label="Move to a different time of day"
         onClick={() => setOpen((o) => !o)}
-        className="flex h-7 w-7 items-center justify-center rounded-md text-white/40 transition-colors hover:text-[#2DA5A0] focus-visible:text-[#2DA5A0] focus-visible:outline-none"
+        className="flex h-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-md text-white/40 transition-colors hover:text-[#2DA5A0] focus-visible:text-[#2DA5A0] focus-visible:outline-none"
       >
         <MoveVertical className="h-4 w-4" strokeWidth={1.5} />
       </button>

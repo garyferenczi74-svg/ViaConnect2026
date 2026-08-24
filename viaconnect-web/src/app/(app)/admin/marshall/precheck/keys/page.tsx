@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 export default async function SigningKeysPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const { data } = await supabase
     .from("precheck_signing_keys")
     .select("id, alg, active, rotation_of, created_at, retired_at")

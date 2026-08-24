@@ -19,7 +19,7 @@ function d(cents: number) {
 }
 
 export default async function Page() {
-  const sb = createClient();
+  const sb = await createClient();
   const { data } = await sb
     .from("international_fx_drift_findings")
     .select("*")

@@ -23,7 +23,8 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   // ── auth ──────────────────────────────────────────────────────────────
-  const supabase = createServerClient();
+  // createClient from @/lib/supabase/server is async (await cookies()).
+  const supabase = await createServerClient();
 
   let user;
   try {

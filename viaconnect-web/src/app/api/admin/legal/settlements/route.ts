@@ -10,13 +10,15 @@ import { createClient } from '@/lib/supabase/server';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 const READ_ROLES = new Set(['admin', 'compliance_officer', 'legal_ops', 'cfo', 'ceo']);
 
 interface ProfileLite { role: string }
 
-async function requireRole(supabase: ReturnType<typeof createClient>) {
+async function requireRole(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.admin.legal.settlements.auth');
   if (!user) return { ok: false as const, response: NextResponse.json({ error: 'Authentication required' }, { status: 401 }) };
   const sb = supabase as unknown as { from: (t: string) => { select: (s: string) => { eq: (k: string, v: string) => { maybeSingle: () => Promise<{ data: ProfileLite | null }> } } } };
@@ -44,7 +46,7 @@ interface SettlementListRow {
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const ctx = await requireRole(supabase);
     if (!ctx.ok) return ctx.response;
 

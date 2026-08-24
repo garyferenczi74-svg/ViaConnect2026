@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Activity, Beaker, BookMarked, BellRing, ScrollText, Globe2, MessageSquare } from "lucide-react";
 
 export default async function Layout({ children }: { children: React.ReactNode }) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();

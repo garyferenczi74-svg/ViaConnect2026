@@ -17,7 +17,7 @@ const SCOPE = "api.integrations.health-sync";
 
 export async function POST(req: NextRequest) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     let userId: string | null = null;
     try {
       const { data } = await withTimeout(supabase.auth.getUser(), 5000, `${SCOPE}.auth`);

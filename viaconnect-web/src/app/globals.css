@@ -1,3 +1,8 @@
+/* Font imports must precede all other rules (Turbopack / Lightning CSS). */
+@import url("https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap");
+@import "../styles/peptide-converter-226b.css";
+@import "../styles/peptide-converter-226c.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -144,6 +149,27 @@ html, body {
   --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   --gradient-card: linear-gradient(135deg, rgba(45, 165, 160, 0.15) 0%, rgba(183, 94, 24, 0.10) 100%);
   --gradient-hero: linear-gradient(180deg, #0D1520 0%, #1A2744 50%, #131D2E 100%);
+
+  /* === Prompt 226b: Peptide converter glass (presentation only) === */
+  --deep-navy: #1A2744;
+  --card: #1E3054;
+  --teal: #2DA5A0;
+  --orange: #B75E18;
+  --scrim-base: rgba(26, 39, 68, 0.62);
+  --scrim-base-mobile: rgba(26, 39, 68, 0.72);
+  --glass-subtle: rgba(30, 48, 84, 0.42);
+  --glass-surface: rgba(30, 48, 84, 0.58);
+  --glass-strong: rgba(30, 48, 84, 0.76);
+  --glass-selected: rgba(45, 165, 160, 0.22);
+  --glass-selected-strong: rgba(45, 165, 160, 0.32);
+  --glass-border-226: rgba(255, 255, 255, 0.14);
+  --glass-border-hover: rgba(255, 255, 255, 0.22);
+  --glass-border-selected: rgba(45, 165, 160, 0.65);
+  --glass-blur-226: 14px;
+  --glass-blur-strong: 20px;
+  --glass-shadow: 0 2px 12px rgba(0, 0, 0, 0.24);
+  --glass-inset: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --disclaimer-text: #FFFFFF;
 
   /* === SPACING (8px base) === */
   --space-1: 4px;
@@ -400,11 +426,9 @@ body {
   font-size: 1.1rem;
 }
 
-/* Instrument Sans for Helix Rewards */
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap');
-
+/* Instrument Sans for Helix Rewards (loaded via @import at top of file) */
 .font-instrument {
-  font-family: 'Instrument Sans', sans-serif;
+  font-family: "Instrument Sans", sans-serif;
 }
 
 /* --- No scrollbar ----------------------------------------------------------- */

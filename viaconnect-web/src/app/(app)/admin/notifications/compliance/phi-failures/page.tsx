@@ -13,7 +13,7 @@ interface Row {
 }
 
 export default async function Page() {
-  const sb = createClient();
+  const sb = await createClient();
   const { data } = await sb.from("notification_phi_redaction_failures")
     .select("failure_id, occurred_at, event_code, channel, body_attempted, violations_json, resolved_at")
     .order("occurred_at", { ascending: false }).limit(200);

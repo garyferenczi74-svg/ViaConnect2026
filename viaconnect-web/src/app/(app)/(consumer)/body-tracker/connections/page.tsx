@@ -1,169 +1,226 @@
 'use client';
 
-/**
- * Prompt 212: Connected Sources surface with WHOOP + Hume / Phone Health.
- * Extends existing body-tracker connections UI. Design tokens only.
- */
+// Prompt 201 + 212: Connected Sources registry page.
+// Prompt 201: Apple Health import, manual entry, Google Health OAuth.
+// Prompt 212: WHOOP OAuth, Hume Band guided setup, Phone Health Data bridge.
 
-import { Suspense, useEffect, useState, useCallback, useMemo } from 'react';
-import { motion } from 'framer-motion';
-import { Link2, ShieldCheck, ScrollText, ArrowRight } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 import { BackToHubLink } from '@/components/body-tracker/hub/BackToHubLink';
 import {
-  ConnectionCard,
-  type ConnectionSource,
-  type ConnectionStatus,
-} from '@/components/body-tracker/ConnectionCard';
+  CONNECTED_SOURCES,
+  type ConnectedSource,
+} from '@/lib/body-tracker/connected-sources/registry';
+import { detectPlatform } from '@/lib/capacitor/camera-capture';
+import { isFeatureEnabled } from '@/lib/config/feature-flags';
+import {
+  ConnectedSourceCard,
+  type SourceAction,
+} from '@/components/body-tracker/connected-sources/ConnectedSourceCard';
+import { AppleHealthImportModal } from '@/components/body-tracker/connected-sources/AppleHealthImportModal';
+import { ManualEntryModal } from '@/components/body-tracker/connected-sources/ManualEntryModal';
 import { WearableConsentModal } from '@/components/body-tracker/WearableConsentModal';
 import { HumeSetupFlow } from '@/components/body-tracker/HumeSetupFlow';
-import { DEFAULT_PRECEDENCE, type MetricKey } from '@/lib/wearables/types';
 
-const FEATURED: ConnectionSource[] = [
-  {
-    id: 'whoop',
-    name: 'WHOOP',
-    sourceType: 'wearable',
-    icon: 'Activity',
-    description: 'Recovery, strain, sleep, HRV via WHOOP cloud',
-    dataProvided: ['recovery', 'sleep', 'hrv', 'workouts'],
-  },
-  {
-    id: 'hume_band',
-    name: 'Hume Band',
-    sourceType: 'wearable',
-    icon: 'Scan',
-    description: 'Guided setup through Apple Health / Health Connect',
-    dataProvided: ['hrv', 'sleep', 'composition', 'steps'],
-  },
-  {
-    id: 'phone_health',
-    name: 'Phone Health Data',
-    sourceType: 'plugin',
-    icon: 'Heart',
-    description: 'Apple Health or Health Connect (Hume, Apple Watch, Oura, and more)',
-    dataProvided: ['weight', 'hr', 'activity', 'sleep'],
-  },
-];
+function resolveAction(
+  source: ConnectedSource,
+  platform: ReturnType<typeof detectPlatform>,
+  nativeBridgeEnabled: boolean,
+  connectorEnabled: boolean,
+  isConnected: boolean,
+): SourceAction {
+  if (source.id === 'apple_health') {
+    // On the native shell, with the bridge enabled, offer the native connect.
+    if (platform !== 'web' && nativeBridgeEnabled) {
+      return { kind: 'native_connect' };
+    }
+    // Web (and native with the flag off) gets the file import flow.
+    return { kind: 'import' };
+  }
 
-const OTHER_WEARABLES: ConnectionSource[] = [
-  { id: 'apple_watch', name: 'Apple Watch', sourceType: 'wearable', icon: 'Watch', description: 'Via Phone Health Data', dataProvided: ['hr', 'hrv', 'activity', 'sleep'] },
-  { id: 'oura', name: 'Oura Ring', sourceType: 'wearable', icon: 'CircleDot', description: 'Via Phone Health Data when synced', dataProvided: ['sleep', 'hrv'] },
-  { id: 'garmin', name: 'Garmin', sourceType: 'wearable', icon: 'Watch', description: 'Via Phone Health Data when synced', dataProvided: ['weight', 'hr', 'activity'] },
-];
+  if (source.id === 'manual_entry') {
+    return { kind: 'add_reading' };
+  }
 
-interface ConnState {
-  status: ConnectionStatus;
-  lastSyncAt?: string;
-  errorDetail?: string;
+  // Google Health OAuth connector, gated by its feature flag. Until the flag is
+  // on (post-staging) it presents as coming soon rather than a dead Connect.
+  if (source.id === 'google_health') {
+    if (!connectorEnabled) return { kind: 'disabled', reason: 'Coming soon' };
+    return { kind: 'oauth_connect', connected: isConnected };
+  }
+
+  // Prompt 212: WHOOP cloud OAuth
+  if (source.id === 'whoop') {
+    return { kind: 'oauth_connect', connected: isConnected };
+  }
+
+  // Prompt 212: Hume Band + Phone Health (HealthKit / Health Connect)
+  if (source.id === 'hume_band' || source.id === 'phone_health') {
+    return { kind: 'native_connect' };
+  }
+
+  // Deprecated source absorbed by another (Fitbit -> Google Health). Point users
+  // to the replacement when it is available; otherwise an honest note.
+  if (source.status === 'deprecated' && source.supersededBy) {
+    const repl = CONNECTED_SOURCES.find((s) => s.id === source.supersededBy);
+    if (repl && connectorEnabled) {
+      return { kind: 'superseded', via: repl.displayName, viaId: repl.id };
+    }
+    return { kind: 'disabled', reason: 'Now part of Google Health' };
+  }
+
+  // Scaffold and coming-soon sources: honest disabled control, no dead flow.
+  if (source.status !== 'active') {
+    const reason =
+      source.authMethod === 'native_bridge' ? 'Available in the app' : 'Coming soon';
+    return { kind: 'disabled', reason };
+  }
+
+  return { kind: 'disabled', reason: 'Coming soon' };
 }
 
-type ProviderKey = 'whoop' | 'health_kit' | 'health_connect';
+// Friendly copy for the ?error= codes the OAuth routes redirect back with.
+const OAUTH_ERROR_COPY: Record<string, string> = {
+  not_enabled: 'Google Health is not enabled yet.',
+  not_configured: 'Google Health is not configured yet.',
+  bad_state: 'That connection attempt expired. Please try again.',
+  no_code: 'Google did not return an authorization. Please try again.',
+  token_failed: 'Could not complete the Google Health connection.',
+  token_timeout: 'Google Health timed out. Please try again.',
+  auth_timeout: 'The session check timed out. Please try again.',
+  db_error: 'Could not save the Google Health connection.',
+  internal: 'Something went wrong connecting Google Health.',
+  // Prompt 212 WHOOP
+  whoop_not_configured: 'WHOOP is not configured yet.',
+  whoop_denied: 'WHOOP authorization was cancelled.',
+  whoop_invalid_state: 'That WHOOP link expired. Please try again.',
+  whoop_state_expired: 'That WHOOP link expired. Please try again.',
+  whoop_callback_failed: 'Could not finish WHOOP connect. Please try again.',
+  whoop_authorize_failed: 'Could not start WHOOP connect. Please try again.',
+};
 
-export default function ConnectionsPage() {
-  return (
-    <Suspense fallback={<div className="min-h-screen bg-[#1A2744]" />}>
-      <ConnectionsPageInner />
-    </Suspense>
-  );
-}
-
-function ConnectionsPageInner() {
-  const searchParams = useSearchParams();
-  const [connMap, setConnMap] = useState<Record<string, ConnState>>({});
-  const [loading, setLoading] = useState(true);
-  const [whoopConfigured, setWhoopConfigured] = useState(false);
-  const [precedence, setPrecedence] = useState<Record<string, string>>({ ...DEFAULT_PRECEDENCE });
+export default function ConnectedSourcesPage() {
+  const [lastSync, setLastSync] = useState<Record<string, string | undefined>>({});
+  const [connected, setConnected] = useState<Record<string, boolean>>({});
+  const [importOpen, setImportOpen] = useState(false);
+  const [manualOpen, setManualOpen] = useState(false);
   const [consent, setConsent] = useState<'whoop' | 'health' | null>(null);
   const [humeOpen, setHumeOpen] = useState(false);
-  const [disconnectTarget, setDisconnectTarget] = useState<'whoop' | null>(null);
-  const [deleteData, setDeleteData] = useState(false);
 
-  const refresh = useCallback(async () => {
+  // detectPlatform and isFeatureEnabled both read runtime state; resolve once on
+  // mount so the cards stay stable. The native bridge flag is off in this ship.
+  const [platform] = useState(() => detectPlatform());
+  const nativeBridgeEnabled = useMemo(() => isFeatureEnabled('native_health_bridge'), []);
+  // Server routes gate on GOOGLE_HEALTH_CONNECTOR; the card needs a client-readable
+  // signal, so it also honors NEXT_PUBLIC_GOOGLE_HEALTH_CONNECTOR. Set both to true
+  // to activate (server gating + the visible Connect card).
+  const connectorEnabled = useMemo(
+    () =>
+      isFeatureEnabled('google_health_connector') ||
+      process.env.NEXT_PUBLIC_GOOGLE_HEALTH_CONNECTOR === 'true',
+    [],
+  );
+
+  const loadSyncTimes = useCallback(async () => {
     try {
-      const res = await fetch('/api/integrations/connected-sources');
-      if (!res.ok) return;
-      const json = await res.json();
-      setWhoopConfigured(Boolean(json.whoopConfigured));
-      if (json.precedence) setPrecedence(json.precedence);
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+      const syncMap: Record<string, string | undefined> = {};
+      const connMap: Record<string, boolean> = {};
 
-      const map: Record<string, ConnState> = {};
-      for (const row of json.sources ?? []) {
-        const provider = row.provider as ProviderKey;
-        const uiId =
-          provider === 'whoop'
-            ? 'whoop'
-            : provider === 'health_kit' || provider === 'health_connect'
-              ? 'phone_health'
-              : provider;
-        const status: ConnectionStatus =
-          row.status === 'connected'
-            ? 'connected'
-            : row.status === 'error'
-              ? 'error'
-              : row.status === 'pending'
-                ? 'syncing'
-                : 'disconnected';
-        map[uiId] = {
-          status,
-          lastSyncAt: row.last_sync_at ?? undefined,
-          errorDetail: row.error_detail?.code,
-        };
-        if (provider === 'health_kit' || provider === 'health_connect') {
-          map['hume_band'] = map[uiId];
+      const { data } = await (supabase as any)
+        .from('body_tracker_connections')
+        .select('source_id, last_sync_at, status')
+        .eq('user_id', user.id);
+      if (Array.isArray(data)) {
+        for (const row of data) {
+          syncMap[row.source_id] = row.last_sync_at ?? undefined;
+          connMap[row.source_id] = row.status === 'connected' || Boolean(row.last_sync_at);
         }
       }
-      setConnMap(map);
+
+      // Prompt 212 wearable providers
+      try {
+        const res = await fetch('/api/integrations/connected-sources');
+        if (res.ok) {
+          const json = await res.json();
+          for (const row of json.sources ?? []) {
+            const provider = String(row.provider);
+            const uiId =
+              provider === 'whoop'
+                ? 'whoop'
+                : provider === 'health_kit' || provider === 'health_connect'
+                  ? 'phone_health'
+                  : provider;
+            const isOn = row.status === 'connected';
+            connMap[uiId] = isOn || connMap[uiId];
+            if (row.last_sync_at) syncMap[uiId] = row.last_sync_at;
+            if (uiId === 'phone_health') {
+              connMap['hume_band'] = isOn || connMap['hume_band'];
+              if (row.last_sync_at) syncMap['hume_band'] = row.last_sync_at;
+            }
+          }
+        }
+      } catch {
+        /* wearable tables may not exist yet */
+      }
+
+      setLastSync(syncMap);
+      setConnected(connMap);
     } catch {
-      /* fail open */
-    } finally {
-      setLoading(false);
+      // Table may be unavailable; cards fall back to Never synced.
     }
   }, []);
 
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    void loadSyncTimes();
+  }, [loadSyncTimes]);
 
+  // Surface the result of an OAuth round-trip (the routes redirect back here
+  // with ?connected= or ?error= or wearable_*), then clean the query string.
   useEffect(() => {
-    const success = searchParams.get('wearable_success');
-    const error = searchParams.get('wearable_error');
-    if (success === 'whoop_connected') {
-      toast.success('WHOOP connected. Syncing your last 90 days.');
-      void refresh();
-    } else if (error) {
-      const friendly: Record<string, string> = {
-        whoop_not_configured: 'WHOOP is not configured yet. Contact support.',
-        whoop_denied: 'WHOOP authorization was cancelled.',
-        whoop_invalid_state: 'That connection link expired. Please try again.',
-        whoop_state_expired: 'That connection link expired. Please try again.',
-        whoop_callback_failed: 'Could not finish WHOOP connect. Please try again.',
-        whoop_authorize_failed: 'Could not start WHOOP connect. Please try again.',
-        auth_timeout: 'Sign-in timed out. Please try again.',
-      };
-      toast.error(friendly[error] || 'Connection could not complete.');
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const ok = params.get('connected');
+    const err = params.get('error');
+    const wOk = params.get('wearable_success');
+    const wErr = params.get('wearable_error');
+    if (ok) toast.success('Google Health connected.');
+    else if (err) toast.error(OAUTH_ERROR_COPY[err] ?? 'Could not connect Google Health.');
+    if (wOk === 'whoop_connected') toast.success('WHOOP connected. Syncing your last 90 days.');
+    else if (wErr) toast.error(OAUTH_ERROR_COPY[wErr] ?? 'Wearable connection could not complete.');
+    if (ok || err || wOk || wErr) {
+      window.history.replaceState({}, '', window.location.pathname);
     }
-  }, [searchParams, refresh]);
+  }, []);
+
+  const handleNativeConnect = useCallback((sourceId?: string) => {
+    if (sourceId === 'hume_band' || sourceId === 'phone_health') {
+      setConsent('health');
+      return;
+    }
+    // Legacy native bridge path (flag off): honest message.
+    toast('The native health connection ships with the upcoming app.');
+  }, []);
 
   const handleConnect = useCallback((sourceId: string) => {
+    if (sourceId === 'google_health') {
+      window.location.href = '/api/integrations/google-health/start';
+      return;
+    }
     if (sourceId === 'whoop') {
-      if (!whoopConfigured) {
-        toast.error('WHOOP is not configured in this environment yet.');
-        return;
-      }
       setConsent('whoop');
       return;
     }
     if (sourceId === 'hume_band' || sourceId === 'phone_health') {
       setConsent('health');
-      return;
     }
-    toast('Use Phone Health Data to connect devices that sync to Apple Health.', {
-      icon: 'ℹ️',
-    });
-  }, [whoopConfigured]);
+  }, []);
 
   const acceptConsent = useCallback(() => {
     if (consent === 'whoop') {
@@ -177,183 +234,61 @@ function ConnectionsPageInner() {
     }
   }, [consent]);
 
-  const handleDisconnect = useCallback((sourceId: string) => {
-    if (sourceId === 'whoop') {
-      setDeleteData(false);
-      setDisconnectTarget('whoop');
-      return;
-    }
-    toast('Open Phone Health permissions in system Settings to revoke health access.');
-  }, []);
-
-  const confirmDisconnect = useCallback(async () => {
-    if (disconnectTarget !== 'whoop') return;
-    try {
-      const res = await fetch('/api/integrations/whoop/disconnect', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ deleteData }),
-      });
-      if (!res.ok) throw new Error('fail');
-      toast.success(deleteData ? 'WHOOP disconnected and data deleted.' : 'WHOOP disconnected.');
-      setDisconnectTarget(null);
-      void refresh();
-    } catch {
-      toast.error('Could not disconnect. Please try again.');
-    }
-  }, [disconnectTarget, deleteData, refresh]);
-
-  const handleSyncNow = useCallback(async (sourceId: string) => {
-    if (sourceId === 'whoop') {
-      toast('WHOOP updates arrive automatically via secure webhooks.');
-      return;
-    }
-    setHumeOpen(true);
-  }, []);
-
-  const metricLabels: { key: MetricKey; label: string }[] = useMemo(
-    () => [
-      { key: 'hrv', label: 'HRV' },
-      { key: 'sleep', label: 'Sleep' },
-      { key: 'resting_hr', label: 'Resting HR' },
-      { key: 'recovery', label: 'Recovery' },
-      { key: 'workouts', label: 'Workouts' },
-      { key: 'steps', label: 'Steps' },
-      { key: 'body_composition', label: 'Body composition' },
-    ],
-    [],
-  );
-
-  async function savePrecedence(metric_key: MetricKey, preferred_provider: string) {
-    setPrecedence((p) => ({ ...p, [metric_key]: preferred_provider }));
-    try {
-      await fetch('/api/integrations/connected-sources', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ metric_key, preferred_provider }),
-      });
-    } catch {
-      toast.error('Could not save preference');
-    }
-  }
-
-  const bothConnected =
-    connMap.whoop?.status === 'connected' &&
-    (connMap.phone_health?.status === 'connected' || connMap.hume_band?.status === 'connected');
-
   return (
-    <div className="min-h-screen bg-[#1A2744] text-white">
-      <div className="mx-auto max-w-5xl px-4 py-6 md:px-6 md:py-10 space-y-8">
-        <BackToHubLink />
+    <div className="font-instrument space-y-6">
+      <BackToHubLink />
 
-        <motion.header
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-2"
-        >
-          <div className="flex items-center gap-2 text-[#2DA5A0]">
-            <Link2 className="w-5 h-5" strokeWidth={1.5} />
-            <span className="text-xs uppercase tracking-[0.2em] font-medium">Connected Sources</span>
-          </div>
-          <h1 className="text-2xl md:text-3xl font-semibold">Wearables and health data</h1>
-          <p className="text-sm text-white/65 max-w-2xl leading-relaxed">
-            Connect WHOOP directly, or bring Hume Band and other devices through phone health data.
-            Readings feed your Bio Optimization Score. Missing values stay UNKNOWN until data arrives.
-          </p>
-        </motion.header>
+      <header>
+        <div className="flex items-center gap-2">
+          <Link2 className="h-5 w-5 text-[#2DA5A0]" strokeWidth={1.5} />
+          <h1 className="text-lg font-bold text-white">Connected Sources</h1>
+        </div>
+        <p className="mt-1 text-sm text-white/50">
+          Bring body composition into My Biology. Hume Body Pod readings that reach Apple Health are tagged automatically.
+        </p>
+      </header>
 
-        <section>
-          <h2 className="text-sm font-medium text-white/50 mb-3">Featured</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-            {FEATURED.map((source) => {
-              const st = connMap[source.id] ?? { status: 'disconnected' as ConnectionStatus };
-              return (
-                <ConnectionCard
-                  key={source.id}
-                  source={source}
-                  status={loading ? 'syncing' : st.status}
-                  lastSyncAt={st.lastSyncAt}
-                  onConnect={() => handleConnect(source.id)}
-                  onDisconnect={() => handleDisconnect(source.id)}
-                  onSyncNow={() => void handleSyncNow(source.id)}
-                />
-              );
-            })}
-          </div>
-          {connMap.whoop?.status === 'error' && (
-            <p className="mt-3 text-sm text-[#B75E18]">
-              WHOOP needs reconnection ({connMap.whoop.errorDetail || 'error'}). Tap Connect to authorize again.
-            </p>
-          )}
-          {(connMap.hume_band?.status === 'connected' || connMap.phone_health?.status === 'connected') &&
-            !connMap.hume_band?.lastSyncAt && (
-              <p className="mt-3 text-sm text-white/55">
-                Health permissions are on. Awaiting samples from Hume or other phone sources (UNKNOWN until data arrives).
-              </p>
-            )}
-        </section>
-
-        <section>
-          <h2 className="text-sm font-medium text-white/50 mb-3">Also available via Phone Health</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {OTHER_WEARABLES.map((source) => (
-              <ConnectionCard
-                key={source.id}
-                source={source}
-                status="disconnected"
-                onConnect={() => handleConnect('phone_health')}
-                onDisconnect={() => undefined}
-                onSyncNow={() => undefined}
-              />
-            ))}
-          </div>
-        </section>
-
-        {bothConnected && (
-          <section className="rounded-2xl border border-white/10 bg-[#1E3054] p-5">
-            <h2 className="text-base font-semibold mb-1">Primary source per metric</h2>
-            <p className="text-xs text-white/50 mb-4">
-              When both WHOOP and phone health provide the same metric, we use only your preferred
-              source. We never average across sources.
-            </p>
-            <div className="space-y-2">
-              {metricLabels.map(({ key, label }) => (
-                <div
-                  key={key}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-xl bg-black/20 px-3 py-2"
-                >
-                  <span className="text-sm text-white/80">{label}</span>
-                  <select
-                    className="bg-[#1A2744] border border-white/15 rounded-lg text-sm px-3 py-2 min-h-[40px]"
-                    value={precedence[key] ?? DEFAULT_PRECEDENCE[key]}
-                    onChange={(e) => void savePrecedence(key, e.target.value)}
-                  >
-                    <option value="whoop">WHOOP</option>
-                    <option value="health_kit">Apple Health</option>
-                    <option value="health_connect">Health Connect</option>
-                  </select>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        <section className="rounded-2xl border border-white/10 bg-[#1E3054]/80 p-5 flex flex-col sm:flex-row gap-4 items-start">
-          <ShieldCheck className="w-6 h-6 text-[#2DA5A0] shrink-0" strokeWidth={1.5} />
-          <div className="space-y-2 text-sm text-white/70">
-            <p className="font-medium text-white">Privacy</p>
-            <p>
-              Health data is never used for advertising. You can disconnect anytime and optionally
-              delete stored wearable rows for that provider.
-            </p>
-            <Link href="/privacy" className="inline-flex items-center gap-1 text-[#2DA5A0] hover:underline">
-              <ScrollText className="w-4 h-4" strokeWidth={1.5} />
-              Privacy policy
-              <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.5} />
-            </Link>
-          </div>
-        </section>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {CONNECTED_SOURCES.map((source, index) => {
+          const action = resolveAction(
+            source,
+            platform,
+            nativeBridgeEnabled,
+            connectorEnabled,
+            connected[source.id] ?? false,
+          );
+          // With the connector flag off, present Google Health as coming soon so
+          // the pill and the action agree, instead of active-but-disabled.
+          const displaySource =
+            source.id === 'google_health' && !connectorEnabled
+              ? { ...source, status: 'coming_soon' as const }
+              : source;
+          return (
+            <ConnectedSourceCard
+              key={source.id}
+              source={displaySource}
+              index={index}
+              lastSyncAt={lastSync[source.id]}
+              action={action}
+              onImport={() => setImportOpen(true)}
+              onAddReading={() => setManualOpen(true)}
+              onNativeConnect={() => handleNativeConnect(source.id)}
+              onConnect={handleConnect}
+            />
+          );
+        })}
       </div>
+
+      <AppleHealthImportModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onImported={loadSyncTimes}
+      />
+      <ManualEntryModal
+        open={manualOpen}
+        onClose={() => setManualOpen(false)}
+        onSaved={loadSyncTimes}
+      />
 
       <WearableConsentModal
         provider={consent === 'whoop' ? 'whoop' : 'health'}
@@ -361,53 +296,15 @@ function ConnectionsPageInner() {
         onAccept={acceptConsent}
         onClose={() => setConsent(null)}
       />
-
       {humeOpen && (
         <HumeSetupFlow
           onClose={() => setHumeOpen(false)}
           onComplete={() => {
             setHumeOpen(false);
-            void refresh();
+            void loadSyncTimes();
             toast.success('Phone health connection updated.');
           }}
         />
-      )}
-
-      {disconnectTarget === 'whoop' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
-          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#1E3054] p-6 text-white space-y-4">
-            <h3 className="text-lg font-semibold">Disconnect WHOOP?</h3>
-            <p className="text-sm text-white/70">
-              This revokes ViaCura access at WHOOP and removes stored tokens. Historical normalized
-              rows remain unless you choose delete below.
-            </p>
-            <label className="flex items-start gap-2 text-sm text-white/80">
-              <input
-                type="checkbox"
-                checked={deleteData}
-                onChange={(e) => setDeleteData(e.target.checked)}
-                className="mt-1"
-              />
-              Also permanently delete my WHOOP wearable data from ViaCura
-            </label>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setDisconnectTarget(null)}
-                className="flex-1 min-h-[44px] rounded-xl border border-white/15 text-sm"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => void confirmDisconnect()}
-                className="flex-1 min-h-[44px] rounded-xl bg-[#B75E18] text-white text-sm font-semibold"
-              >
-                Disconnect
-              </button>
-            </div>
-          </div>
-        </div>
       )}
     </div>
   );

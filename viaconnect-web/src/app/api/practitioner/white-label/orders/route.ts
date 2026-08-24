@@ -21,6 +21,8 @@ import { loadGovernedWhiteLabelParameters } from '@/lib/white-label/governed-par
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 const createSchema = z.object({
@@ -31,7 +33,7 @@ const createSchema = z.object({
   timeline: z.enum(['standard', 'expedited']),
 });
 
-async function loadPractitioner(supabase: ReturnType<typeof createClient>) {
+async function loadPractitioner(supabase: Awaited<ReturnType<typeof createClient>>) {
   const authResult = await withTimeout(
     supabase.auth.getUser(),
     5000,
@@ -62,7 +64,7 @@ function handleOuterError(err: unknown, requestId: string): NextResponse {
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const ctx = await loadPractitioner(supabase);
     if (!ctx.ok) return ctx.response;
 
@@ -101,7 +103,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const ctx = await loadPractitioner(supabase);
     if (!ctx.ok) return ctx.response;
 

@@ -9,9 +9,11 @@ import { createClient } from '@/lib/supabase/server';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
-async function getPractitionerId(supabase: ReturnType<typeof createClient>): Promise<{ ok: true; practitioner_id: string; user_id: string } | { ok: false; response: NextResponse }> {
+async function getPractitionerId(supabase: Awaited<ReturnType<typeof createClient>>): Promise<{ ok: true; practitioner_id: string; user_id: string } | { ok: false; response: NextResponse }> {
   const authResult = await withTimeout(
     supabase.auth.getUser(),
     5000,
@@ -43,7 +45,7 @@ function handleOuterError(err: unknown, requestId: string): NextResponse {
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const ctx = await getPractitionerId(supabase);
     if (!ctx.ok) return ctx.response;
 
@@ -94,7 +96,7 @@ interface DesiredOptIn {
 export async function PUT(request: NextRequest): Promise<NextResponse> {
   const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const ctx = await getPractitionerId(supabase);
     if (!ctx.ok) return ctx.response;
 

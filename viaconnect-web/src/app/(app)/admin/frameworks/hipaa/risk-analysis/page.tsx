@@ -19,7 +19,7 @@ interface Row {
 
 export default async function RiskAnalysisPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const { data } = await supabase
     .from('hipaa_risk_analyses')
     .select('id, version, storage_key, sha256, valid_from, valid_until, scope_summary, approved_at, created_at')

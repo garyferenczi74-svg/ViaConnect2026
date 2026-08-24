@@ -48,7 +48,7 @@ export async function serverValidatePromoCode(
         return { ok: false, error: 'Code is empty.' }
     }
     try {
-        const supabase = createClient()
+        const supabase = await createClient()
         const sb = supabase as unknown as {
             rpc: (
                 fn: string,

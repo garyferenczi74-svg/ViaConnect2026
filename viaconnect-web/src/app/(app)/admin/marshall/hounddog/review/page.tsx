@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ReviewQueuePage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const { data } = await supabase
     .from("social_review_queue")
     .select("id, signal_id, suggested_rule_ids, confidence, reason, status, created_at")

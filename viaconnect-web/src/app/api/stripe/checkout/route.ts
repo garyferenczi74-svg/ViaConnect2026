@@ -3,7 +3,10 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
+import { reportSupabaseError } from "@/lib/utils/schema-drift";
 import { getCircuitBreaker, isCircuitBreakerError } from "@/lib/utils/circuit-breaker";
+
+export const dynamic = 'force-dynamic';
 
 const stripeBreaker = getCircuitBreaker("stripe-api");
 
@@ -30,7 +33,7 @@ export async function POST(request: Request) {
 
   try {
     const stripe = getStripe();
-    const supabase = createClient();
+    const supabase = await createClient();
 
     let user;
     try {
@@ -125,7 +128,7 @@ export async function POST(request: Request) {
     }
 
     try {
-      await withTimeout(
+      const auditInsertResult: { error: unknown } = await withTimeout(
         (async () => (supabase as any).from("audit_logs").insert({
           user_id: user.id,
           action: "checkout_initiated",
@@ -141,6 +144,9 @@ export async function POST(request: Request) {
         5000,
         "api.stripe.checkout.audit-log"
       );
+      if (auditInsertResult.error) {
+        reportSupabaseError("audit.insert", auditInsertResult.error, { table: "audit_logs" });
+      }
     } catch (auditError) {
       safeLog.warn("api.stripe.checkout", "audit log failed (non-blocking)", {
         requestId, userId: user.id, sessionId: session.id, error: auditError,

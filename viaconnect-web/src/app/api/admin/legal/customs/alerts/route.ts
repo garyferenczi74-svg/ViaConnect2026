@@ -15,6 +15,8 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 const LEGAL_OPS_ROLES = new Set(['admin', 'compliance_officer', 'legal_ops']);
@@ -24,7 +26,7 @@ interface ProfileLite {
   role: string;
 }
 
-async function requireLegalOrExec(supabase: ReturnType<typeof createClient>) {
+async function requireLegalOrExec(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.admin.legal.customs.alerts.auth');
   if (!user) {
     return {
@@ -90,7 +92,7 @@ interface RecordationLite {
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const ctx = await requireLegalOrExec(supabase);
     if (!ctx.ok) return ctx.response;
 

@@ -1,0 +1,220 @@
+-- Prompt 226f: popularity-aware goal-peptide education links.
+-- Append-only. Models never select compounds. Missing educational rows are skipped.
+-- Standing GLP-1 brand exclusions remain. Tesamorelin and Kisspeptin deferred (no monograph yet).
+
+ALTER TABLE public.kb_goal_peptide_links
+  ADD COLUMN IF NOT EXISTS familiarity_rank integer NOT NULL DEFAULT 100;
+
+COMMENT ON COLUMN public.kb_goal_peptide_links.familiarity_rank IS
+  'Consumer familiarity within a goal. Lower = more discussed. Sort key after evidence grade.';
+
+CREATE INDEX IF NOT EXISTS kb_goal_peptide_links_goal_familiarity_idx
+  ON public.kb_goal_peptide_links (goal_domain_id, familiarity_rank);
+
+INSERT INTO public.kb_goal_peptide_links (
+  goal_domain_id, peptide_id, mechanism_rationale,
+  evidence_grade_for_this_goal, indication_match,
+  familiarity_rank, curated_by, jeffery_review_id
+)
+SELECT d.id, p.id, v.rationale, v.grade, v.match, v.rank, 'jeffery', '226f-goal-link-popularity'
+FROM (
+  VALUES
+    -- Weight / body composition
+    ('weight_body_composition', 'retatrutide',
+     'Triple agonist investigational compound with emerging human body-composition trial data. Educational reference only.',
+     'B', 'studied_for_this_goal', 10),
+    ('weight_body_composition', 'aod-9604',
+     'Fragment related to growth-hormone lipolytic research. Human weight evidence remains limited.',
+     'D', 'mechanistic_only', 15),
+    ('weight_body_composition', '5-amino-1mq',
+     'NNMT-pathway education compound discussed in metabolic research communities. Human evidence is early.',
+     'D', 'mechanistic_only', 20),
+    ('weight_body_composition', 'mk-677',
+     'Oral ghrelin-mimetic secretagogue studied for GH axis and body-composition endpoints. Not a treatment plan.',
+     'D', 'studied_adjacent_indication', 25),
+    ('weight_body_composition', 'slu-pp-332',
+     'ERR agonist research tool discussed for metabolic education. Human clinical evidence is thin.',
+     'D', 'mechanistic_only', 30),
+    ('weight_body_composition', 'pramlintide',
+     'Amylin analogue with human metabolic and satiety trial literature for educational comparison.',
+     'B', 'studied_for_this_goal', 35),
+    ('weight_body_composition', 'liraglutide',
+     'GLP-1 receptor agonist with human obesity and cardiometabolic trial evidence for weight endpoints.',
+     'A', 'studied_for_this_goal', 40),
+    ('weight_body_composition', 'tesofensine',
+     'Triple monoamine reuptake inhibitor researched for weight endpoints. Educational monograph only.',
+     'D', 'studied_adjacent_indication', 45),
+    ('weight_body_composition', 'setmelanotide',
+     'MC4R agonist with human indication data in rare genetic obesity syndromes. Narrow educational context.',
+     'A', 'studied_for_this_goal', 50),
+
+    -- Sexual Health
+    ('sexual_function', 'pt-141-bremelanotide',
+     'Melanocortin agonist with human sexual-function indication literature (bremelanotide class). Educational reference only.',
+     'A', 'studied_for_this_goal', 10),
+    ('sexual_function', 'melanotan-2',
+     'Melanocortin analogue discussed in community sexual and pigmentation contexts. Human safety and indication evidence are limited.',
+     'D', 'mechanistic_only', 20),
+    ('sexual_function', 'enclomiphene',
+     'Selective estrogen-receptor modulator studied in male hypogonadism-adjacent endocrine education. Not a sexual therapy plan.',
+     'D', 'studied_adjacent_indication', 25),
+    ('sexual_function', 'afamelanotide',
+     'Alpha-MSH analogue with human photoprotection indication literature; sexual endpoints are adjacent only.',
+     'D', 'studied_adjacent_indication', 30),
+    ('sexual_function', 'alpha-msh',
+     'Endogenous melanocortin pathway education relevant to sexual-function research. Direct consumer evidence is thin.',
+     'D', 'mechanistic_only', 40),
+
+    -- Tissue repair
+    ('tissue_repair_recovery', 'edu-bpc157',
+     'BPC-157 class education: extensive preclinical repair literature; human controlled evidence remains limited.',
+     'D', 'mechanistic_only', 10),
+    ('tissue_repair_recovery', 'regenbpc',
+     'BPC-157 related educational product monograph for connective tissue research contexts.',
+     'D', 'mechanistic_only', 12),
+    ('tissue_repair_recovery', 'thymosin-beta-4',
+     'Actin-sequestering peptide researched in tissue repair models. Human evidence for consumer goals is limited.',
+     'D', 'mechanistic_only', 20),
+    ('tissue_repair_recovery', 'tb500-oral',
+     'TB-500 class education discussed for recovery contexts. Human controlled evidence remains thin.',
+     'D', 'mechanistic_only', 25),
+    ('tissue_repair_recovery', 'bpc-157-arginate',
+     'Stabilised BPC-157 salt form used in educational monographs; human repair evidence is thin.',
+     'D', 'mechanistic_only', 30),
+    ('tissue_repair_recovery', 'ghk-cu-injectable',
+     'Copper tripeptide researched in dermal and repair-adjacent education. Not an injury treatment plan.',
+     'D', 'studied_adjacent_indication', 40),
+
+    -- Cognitive
+    ('cognitive_mental_clarity', 'semax',
+     'Semax educational monograph: CNS-oriented research; human evidence grade remains limited for consumer goals.',
+     'D', 'studied_adjacent_indication', 10),
+    ('cognitive_mental_clarity', 'selank',
+     'Selank educational monograph: CNS-oriented research; human evidence grade remains limited for consumer goals.',
+     'D', 'studied_adjacent_indication', 15),
+    ('cognitive_mental_clarity', 'n-acetyl-semax-amidate',
+     'Semax-class education: intranasal CNS research exists; human cognitive evidence is limited.',
+     'D', 'studied_adjacent_indication', 20),
+    ('cognitive_mental_clarity', 'n-acetyl-selank-amidate',
+     'Selank-class education: studied in anxiety-adjacent CNS contexts; not a substitute for clinician-directed care.',
+     'D', 'studied_adjacent_indication', 25),
+    ('cognitive_mental_clarity', 'pinealon',
+     'Khavinson bioregulator discussed in cognitive aging education. Human evidence is limited.',
+     'D', 'mechanistic_only', 30),
+    ('cognitive_mental_clarity', 'dihexa',
+     'Angiotensin IV analogue researched in cognitive models. Human evidence is thin.',
+     'D', 'mechanistic_only', 40),
+    ('cognitive_mental_clarity', 'cerebrolysin',
+     'Peptide mixture with human neurologic trial literature in selected settings. Educational comparison only.',
+     'D', 'studied_adjacent_indication', 45),
+    ('cognitive_mental_clarity', 'noopept',
+     'Dipeptide nootropic discussed in cognitive education communities. Human evidence remains limited.',
+     'D', 'mechanistic_only', 50),
+
+    -- Gut
+    ('gut_digestive_comfort', 'regenbpc',
+     'Local GI targeting is the pharmacologic rationale for oral mucosal exposure in gut-focused education.',
+     'D', 'mechanistic_only', 10),
+    ('gut_digestive_comfort', 'bpc-157-arginate',
+     'Oral salt forms are discussed for GI-localized education; human data remain limited.',
+     'D', 'mechanistic_only', 20),
+    ('gut_digestive_comfort', 'kpv-tripeptide',
+     'Tripeptide discussed in mucosal inflammation education. Human evidence is early.',
+     'D', 'mechanistic_only', 25),
+    ('gut_digestive_comfort', 'teduglutide',
+     'GLP-2 analogue with human short-bowel indication literature. Educational reference for gut endpoints.',
+     'A', 'studied_for_this_goal', 30),
+    ('gut_digestive_comfort', 'linaclotide',
+     'Guanylate cyclase-C agonist with human IBS-C and CIC indication literature.',
+     'A', 'studied_for_this_goal', 35),
+    ('gut_digestive_comfort', 'larazotide',
+     'Tight-junction modulator researched in celiac-adjacent gut education. Human evidence is mixed.',
+     'D', 'studied_adjacent_indication', 40),
+
+    -- Energy / fatigue (separate chip)
+    ('energy_fatigue', 'mots-c',
+     'Mitochondrial-encoded peptide researched in metabolic and fatigue-adjacent models. Human evidence is limited.',
+     'D', 'mechanistic_only', 10),
+    ('energy_fatigue', '5-amino-1mq',
+     'NNMT-pathway education compound discussed for energy and metabolic contexts. Human evidence is early.',
+     'D', 'mechanistic_only', 20),
+    ('energy_fatigue', 'mk-677',
+     'Ghrelin-mimetic secretagogue with body-composition and energy-adjacent research. Not a fatigue treatment.',
+     'D', 'studied_adjacent_indication', 30),
+    ('energy_fatigue', 'humanin',
+     'Mitochondrial peptide researched in cellular stress education. Human fatigue evidence is thin.',
+     'D', 'mechanistic_only', 40),
+    ('energy_fatigue', 'edu-ss31',
+     'Mitochondria-targeted peptide education compound. Human energy endpoints remain limited.',
+     'D', 'mechanistic_only', 50),
+
+    -- Sleep (separate chip)
+    ('sleep_quality', 'pinealon',
+     'Khavinson bioregulator discussed in sleep and circadian education. Human evidence is limited.',
+     'D', 'mechanistic_only', 10),
+    ('sleep_quality', 'epitalon',
+     'Telomerase-adjacent peptide researched in aging and sleep-rhythm education. Human evidence is limited.',
+     'D', 'mechanistic_only', 20),
+    ('sleep_quality', 'selank',
+     'Selank educational monograph: anxiety-adjacent CNS research sometimes discussed with sleep quality.',
+     'D', 'studied_adjacent_indication', 30),
+    ('sleep_quality', 'n-acetyl-selank-amidate',
+     'Selank-class education in CNS comfort contexts adjacent to sleep quality discussions.',
+     'D', 'studied_adjacent_indication', 40),
+
+    -- Longevity (separate chip)
+    ('longevity_healthy_aging', 'epitalon',
+     'Epitalon educational monograph: aging-related research contexts. Human longevity claims remain thin.',
+     'D', 'mechanistic_only', 10),
+    ('longevity_healthy_aging', 'mots-c',
+     'Mitochondrial peptide researched in metabolic aging models. Human longevity evidence is limited.',
+     'D', 'mechanistic_only', 20),
+    ('longevity_healthy_aging', 'edu-ss31',
+     'Mitochondria-targeted peptide education for cellular aging contexts. Human evidence is limited.',
+     'D', 'mechanistic_only', 30),
+    ('longevity_healthy_aging', 'humanin',
+     'Mitochondrial peptide researched in stress-resistance and aging education.',
+     'D', 'mechanistic_only', 40),
+    ('longevity_healthy_aging', 'nmn',
+     'NAD precursor discussed in longevity education. Not a peptide therapy plan.',
+     'D', 'studied_adjacent_indication', 50),
+    ('longevity_healthy_aging', 'nr',
+     'NAD precursor discussed in longevity education. Complementary nutrient framing only.',
+     'D', 'studied_adjacent_indication', 55),
+    ('longevity_healthy_aging', 'urolithin-a',
+     'Mitophagy-related metabolite researched in aging muscle education. Human evidence is emerging.',
+     'D', 'studied_adjacent_indication', 60),
+
+    -- Athletic performance (separate chip)
+    ('athletic_performance', 'ipamorelin-standalone',
+     'Selective GHRP education compound discussed in performance communities. WADA caution applies.',
+     'D', 'mechanistic_only', 10),
+    ('athletic_performance', 'cjc-1295-no-dac',
+     'GHRH analogue education compound discussed in performance contexts. WADA caution applies.',
+     'D', 'mechanistic_only', 15),
+    ('athletic_performance', 'mk-677',
+     'Oral ghrelin-mimetic secretagogue discussed for body composition and performance education. WADA caution applies.',
+     'D', 'studied_adjacent_indication', 20),
+    ('athletic_performance', 'sermorelin',
+     'GHRH fragment education compound. Performance use is educational discussion only; WADA caution applies.',
+     'D', 'mechanistic_only', 25),
+    ('athletic_performance', 'regenbpc',
+     'BPC-157 class education often discussed alongside recovery and training load. Not a sports medicine plan.',
+     'D', 'mechanistic_only', 35),
+    ('athletic_performance', 'tb500-oral',
+     'TB-500 class education discussed for recovery contexts. WADA and human-evidence limits apply.',
+     'D', 'mechanistic_only', 40),
+    ('athletic_performance', 'thymosin-beta-4',
+     'Tissue repair peptide researched in recovery models. Athletic application remains educational only.',
+     'D', 'mechanistic_only', 45)
+) AS v(goal_slug, peptide_slug, rationale, grade, match, rank)
+JOIN public.kb_goal_domains d ON d.slug = v.goal_slug
+JOIN public.kb_peptides p ON p.slug = v.peptide_slug
+WHERE p.exclusion_tier = 'educational'
+ON CONFLICT (goal_domain_id, peptide_id) DO UPDATE SET
+  mechanism_rationale = EXCLUDED.mechanism_rationale,
+  evidence_grade_for_this_goal = EXCLUDED.evidence_grade_for_this_goal,
+  indication_match = EXCLUDED.indication_match,
+  familiarity_rank = EXCLUDED.familiarity_rank,
+  jeffery_review_id = EXCLUDED.jeffery_review_id,
+  updated_at = now();

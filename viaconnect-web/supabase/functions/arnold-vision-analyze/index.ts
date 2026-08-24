@@ -16,6 +16,7 @@ import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-
 import { withTimeout, withAbortTimeout, isTimeoutError } from '../_shared/with-timeout.ts';
 import { safeLog } from '../_shared/safe-log.ts';
 import { getCircuitBreaker, isCircuitBreakerError } from '../_shared/circuit-breaker.ts';
+import { reportSupabaseError } from '../_shared/schema-drift.ts';
 
 const visionBreaker = getCircuitBreaker('claude-vision');
 
@@ -286,51 +287,66 @@ function crossValidate(visual: any, manual: ManualMetricsSnapshot | null): any {
 // ---------- context gathering -------------------------------------------------
 
 async function loadContext(db: SupabaseClient, userId: string, sessionId: string) {
-  const { data: profile } = await db
+  const { data: profile, error: profileError } = await db
     .from('profiles')
     .select('date_of_birth, sex, height_cm, weight_kg')
     .eq('id', userId)
     .maybeSingle();
+  if (profileError) {
+    reportSupabaseError('arnold-vision-analyze.profile-select', profileError, { table: 'profiles' });
+  }
 
-  const { data: latestFat } = await db
+  const { data: latestFat, error: fatError } = await db
     .from('body_tracker_segmental_fat')
     .select('total_body_fat_pct, visceral_fat_rating, body_water_pct, created_at, entry_id')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
+  if (fatError) {
+    reportSupabaseError('arnold-vision-analyze.segmental-fat-select', fatError, { table: 'body_tracker_segmental_fat' });
+  }
 
   let manualSource: string | null = null;
   let manualConfidence: number | null = null;
   if (latestFat?.entry_id) {
-    const { data: entry } = await db
+    const { data: entry, error: entryError } = await db
       .from('body_tracker_entries')
       .select('manual_source_id, confidence, source')
       .eq('id', latestFat.entry_id)
       .maybeSingle();
+    if (entryError) {
+      reportSupabaseError('arnold-vision-analyze.entry-select', entryError, { table: 'body_tracker_entries' });
+    }
     if (entry) {
       manualSource = entry.manual_source_id ?? entry.source;
       manualConfidence = entry.confidence ?? null;
     }
   }
 
-  const { data: latestWeight } = await db
+  const { data: latestWeight, error: weightError } = await db
     .from('body_tracker_weight')
     .select('weight_lbs, waist_in, hips_in, body_fat_pct')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
+  if (weightError) {
+    reportSupabaseError('arnold-vision-analyze.weight-select', weightError, { table: 'body_tracker_weight' });
+  }
 
-  const { data: latestMuscle } = await db
+  const { data: latestMuscle, error: muscleError } = await db
     .from('body_tracker_segmental_muscle')
     .select('total_muscle_mass_lbs, skeletal_muscle_mass_lbs')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
+  if (muscleError) {
+    reportSupabaseError('arnold-vision-analyze.segmental-muscle-select', muscleError, { table: 'body_tracker_segmental_muscle' });
+  }
 
-  const { data: previousSession } = await db
+  const { data: previousSession, error: prevSessionError } = await db
     .from('body_photo_sessions')
     .select('id, session_date, front_full_path, back_full_path, left_full_path, right_full_path')
     .eq('user_id', userId)
@@ -339,13 +355,19 @@ async function loadContext(db: SupabaseClient, userId: string, sessionId: string
     .order('session_date', { ascending: false })
     .limit(1)
     .maybeSingle();
+  if (prevSessionError) {
+    reportSupabaseError('arnold-vision-analyze.previous-session-select', prevSessionError, { table: 'body_photo_sessions' });
+  }
 
-  const { data: goals } = await db
+  const { data: goals, error: goalsError } = await db
     .from('body_tracker_milestones')
     .select('title, target_value, target_unit')
     .eq('user_id', userId)
     .eq('status', 'active')
     .limit(3);
+  if (goalsError) {
+    reportSupabaseError('arnold-vision-analyze.milestones-select', goalsError, { table: 'body_tracker_milestones' });
+  }
 
   let age: number | null = null;
   if (profile?.date_of_birth) {
@@ -418,6 +440,9 @@ function buildUserPrompt(
 
 async function downloadPhoto(db: SupabaseClient, path: string): Promise<{ base64: string; media: string } | null> {
   const { data, error } = await db.storage.from(BUCKET).download(path);
+  if (error) {
+    reportSupabaseError('arnold-vision-analyze.photo-download', error, { bucket: BUCKET });
+  }
   if (error || !data) return null;
   const media = path.toLowerCase().endsWith('.png')
     ? 'image/png'
@@ -455,6 +480,9 @@ serve(async (req) => {
       .select('*')
       .eq('id', sessionId)
       .maybeSingle();
+    if (sessErr) {
+      reportSupabaseError('arnold-vision-analyze.session-select', sessErr, { table: 'body_photo_sessions' });
+    }
     if (sessErr || !session) return json({ error: 'Session not found or not accessible' }, 404);
     if (session.user_id !== userId) return json({ error: 'Forbidden' }, 403);
 
@@ -462,10 +490,13 @@ serve(async (req) => {
     const db = admin();
 
     // Mark as analyzing
-    await db
+    const { error: markAnalyzingError } = await db
       .from('body_photo_sessions')
       .update({ arnold_status: 'analyzing', arnold_error: null })
       .eq('id', sessionId);
+    if (markAnalyzingError) {
+      reportSupabaseError('arnold-vision-analyze.mark-analyzing', markAnalyzingError, { table: 'body_photo_sessions' });
+    }
 
     const ctx = await loadContext(db, userId, sessionId);
     const userPrompt = buildUserPrompt(session.session_date, ctx);
@@ -479,10 +510,13 @@ serve(async (req) => {
       if (ph) currentImages.push({ ...ph, label: `current_${pose}` });
     }
     if (currentImages.length === 0) {
-      await db
+      const { error: markNoPhotosError } = await db
         .from('body_photo_sessions')
         .update({ arnold_status: 'failed', arnold_error: 'No readable photos in session' })
         .eq('id', sessionId);
+      if (markNoPhotosError) {
+        reportSupabaseError('arnold-vision-analyze.mark-no-photos-failed', markNoPhotosError, { table: 'body_photo_sessions' });
+      }
       return json({ status: 'failed', error: 'No photos to analyze' }, 400);
     }
 
@@ -553,20 +587,26 @@ serve(async (req) => {
       } else {
         safeLog.error('arnold.vision-analyze', 'vision fetch failed', { sessionId, error: apiErr });
       }
-      await db
+      const { error: markVisionFailedError } = await db
         .from('body_photo_sessions')
         .update({ arnold_status: 'failed', arnold_error: errMsg })
         .eq('id', sessionId);
+      if (markVisionFailedError) {
+        reportSupabaseError('arnold-vision-analyze.mark-vision-failed', markVisionFailedError, { table: 'body_photo_sessions' });
+      }
       return json({ status: 'failed', error: errMsg }, isCircuitBreakerError(apiErr) ? 503 : isTimeoutError(apiErr) ? 504 : 502);
     }
 
     if (!apiResponse.ok) {
       const errTxt = await apiResponse.text();
       safeLog.error('arnold.vision-analyze', 'vision non-2xx', { sessionId, status: apiResponse.status, errTxt: errTxt.slice(0, 200) });
-      await db
+      const { error: markNon2xxError } = await db
         .from('body_photo_sessions')
         .update({ arnold_status: 'failed', arnold_error: `Vision API ${apiResponse.status}: ${errTxt.slice(0, 500)}` })
         .eq('id', sessionId);
+      if (markNon2xxError) {
+        reportSupabaseError('arnold-vision-analyze.mark-vision-non-2xx', markNon2xxError, { table: 'body_photo_sessions' });
+      }
       return json({ status: 'failed', error: `Vision API failure: ${apiResponse.status}` }, 502);
     }
 
@@ -578,10 +618,13 @@ serve(async (req) => {
       analysis = extractJson(text);
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'parse error';
-      await db
+      const { error: markParseFailedError } = await db
         .from('body_photo_sessions')
         .update({ arnold_status: 'failed', arnold_error: `JSON parse failed: ${msg}` })
         .eq('id', sessionId);
+      if (markParseFailedError) {
+        reportSupabaseError('arnold-vision-analyze.mark-parse-failed', markParseFailedError, { table: 'body_photo_sessions' });
+      }
       return json({ status: 'failed', error: `Parse failure: ${msg}` }, 500);
     }
 
@@ -594,7 +637,7 @@ serve(async (req) => {
     const guardrailViolations = jefferyValidateAnalysisText(strings.join('\n'));
     if (guardrailViolations.length > 0) {
       // Log to agent_messages so Jeffery's admin center can review.
-      await db.from('agent_messages').insert({
+      const { error: guardrailMessageError } = await db.from('agent_messages').insert({
         from_agent: 'arnold',
         to_agent: 'jeffery',
         message_type: 'guardrail_block_vision',
@@ -606,13 +649,19 @@ serve(async (req) => {
         },
         status: 'pending',
       });
-      await db
+      if (guardrailMessageError) {
+        reportSupabaseError('arnold-vision-analyze.guardrail-message-insert', guardrailMessageError, { table: 'agent_messages' });
+      }
+      const { error: markGuardrailError } = await db
         .from('body_photo_sessions')
         .update({
           arnold_status: 'failed',
           arnold_error: `Guardrail block: ${guardrailViolations.join(', ')}`,
         })
         .eq('id', sessionId);
+      if (markGuardrailError) {
+        reportSupabaseError('arnold-vision-analyze.mark-guardrail-block', markGuardrailError, { table: 'body_photo_sessions' });
+      }
       return json({
         status: 'failed',
         error: 'Guardrail violation; analysis blocked.',
@@ -625,7 +674,7 @@ serve(async (req) => {
       analysis.overallConfidence ??
       0.7;
 
-    await db
+    const { error: analysisWriteError } = await db
       .from('body_photo_sessions')
       .update({
         arnold_analysis: calibrated,
@@ -635,10 +684,13 @@ serve(async (req) => {
         arnold_error: null,
       })
       .eq('id', sessionId);
+    if (analysisWriteError) {
+      reportSupabaseError('arnold-vision-analyze.analysis-update', analysisWriteError, { table: 'body_photo_sessions' });
+    }
 
     // Notify Jeffery on flagForReview so the supervisor sees disagreements.
     if (calibrated.flagForReview) {
-      await db.from('agent_messages').insert({
+      const { error: reviewMessageError } = await db.from('agent_messages').insert({
         from_agent: 'arnold',
         to_agent: 'jeffery',
         message_type: 'cross_validation_disagreement',
@@ -651,6 +703,9 @@ serve(async (req) => {
         },
         status: 'pending',
       });
+      if (reviewMessageError) {
+        reportSupabaseError('arnold-vision-analyze.review-message-insert', reviewMessageError, { table: 'agent_messages' });
+      }
     }
 
     return json({ status: 'complete', analysis: calibrated });

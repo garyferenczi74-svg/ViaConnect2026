@@ -48,6 +48,8 @@ import { reconcileMealKcal } from '@/lib/nutrition/compute-meal-kcal';
 // to ONE shared constant. The 3 kcal kcalRecon guard below is telemetry only.
 import { MATCH_CONFIDENCE_LOW_BAND, macroCaloriesReconciled } from '@/lib/nutrition/match-confidence';
 
+export const dynamic = 'force-dynamic';
+
 const ROUTE = '/api/nutrition/analyze-text';
 const MIN_LEN = 5;
 const MAX_LEN = 2000;
@@ -58,7 +60,7 @@ export async function POST(req: NextRequest) {
   let userId: string | null = null;
 
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new AIRouteError('UNAUTHENTICATED', 'no session', 401, 'Please sign in to log meals.');
     userId = user.id;

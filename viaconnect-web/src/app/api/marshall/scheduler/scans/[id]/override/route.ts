@@ -14,6 +14,8 @@ import { signOverride } from '@/lib/marshall/scheduler/overrideSigner';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 interface OverrideBody {
@@ -21,12 +23,13 @@ interface OverrideBody {
   justification?: string;
 }
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const scanId = (params.id ?? '').trim();
     if (!scanId) return NextResponse.json({ error: 'missing_scan_id' }, { status: 400 });
 
-    const supabase = createServerClient();
+    const supabase = await createServerClient();
     const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.marshall.scheduler.scans.override.auth');
     if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
 

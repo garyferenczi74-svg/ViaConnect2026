@@ -119,7 +119,7 @@ async function loadActiveContent(): Promise<ActiveContent | null> {
 
 async function loadActiveContentInner(): Promise<ActiveContent | null> {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: variantSet } = await (supabase as any)
       .from('outcome_timeline_variant_sets')

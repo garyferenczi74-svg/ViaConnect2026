@@ -63,7 +63,7 @@ async function attachImageUrls(
 
 export async function GET() {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'Unauthorized', protocol: null }, { status: 401 });
 
@@ -95,7 +95,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const startTime = Date.now();
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -148,18 +148,31 @@ export async function POST(request: Request) {
 
     if (saveErr || !protocol) return NextResponse.json({ error: saveErr?.message ?? 'Save failed' }, { status: 500 });
 
-    // Save recommendations
-    const recsToInsert = recs.map((r, i) => ({
-      protocol_id: protocol.id, user_id: user.id,
-      rank: i + 1, priority: r.priority,
-      farmceutica_product: r.product_name, product_category: r.product_category,
-      delivery_form: r.delivery_form, dosage: r.dosage, frequency: r.frequency,
-      timing: r.timing, duration_weeks: 12, rationale: r.rationale,
-      health_signals: r.health_signals, bioavailability_note: r.bioavailability_note,
-      contraindications: r.contraindications ?? [], interaction_check: 'safe',
-      synergy_with: r.synergy_with ?? [], replaces_current: null,
-      evidence_level: r.evidence_level, is_accepted: false, is_dismissed: false,
-    }));
+    // Save recommendations (Prompt 213: distinct by product insight_key, no clone pad).
+    const seenKeys = new Set<string>();
+    const recsToInsert = recs
+      .map((r, i) => ({
+        protocol_id: protocol.id, user_id: user.id,
+        rank: i + 1, priority: r.priority,
+        farmceutica_product: r.product_name, product_category: r.product_category,
+        delivery_form: r.delivery_form, dosage: r.dosage, frequency: r.frequency,
+        timing: r.timing, duration_weeks: 12, rationale: r.rationale,
+        health_signals: r.health_signals, bioavailability_note: r.bioavailability_note,
+        contraindications: r.contraindications ?? [], interaction_check: 'safe',
+        synergy_with: r.synergy_with ?? [], replaces_current: null,
+        evidence_level: r.evidence_level, is_accepted: false, is_dismissed: false,
+        _key: String(r.product_name || '')
+          .toLowerCase()
+          .trim()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, ''),
+      }))
+      .filter((row) => {
+        if (!row._key || seenKeys.has(row._key)) return false;
+        seenKeys.add(row._key);
+        return true;
+      })
+      .map(({ _key, ...row }) => row);
 
     await supabase.from('ultrathink_recommendations').insert(recsToInsert);
 

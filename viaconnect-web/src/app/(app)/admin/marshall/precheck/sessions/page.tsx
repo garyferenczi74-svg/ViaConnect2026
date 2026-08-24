@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminPrecheckSessionsPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const { data } = await supabase
     .from("precheck_sessions")
     .select("id, session_id, practitioner_id, status, target_platform, created_at, cleared_at, final_findings_summary")

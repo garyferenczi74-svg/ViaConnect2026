@@ -11,8 +11,14 @@ import HannahPanel from "./HannahPanel";
 import MichelangeloPanel from "./MichelangeloPanel";
 import SherlockPanel from "./SherlockPanel";
 import ArnoldPanel from "./ArnoldPanel";
+import GordonPanel from "./GordonPanel";
+import HounddogPanel from "./HounddogPanel";
 import MarshallPanel from "./MarshallPanel";
 import LexPanel from "./LexPanel";
+import SecurityAdvisorPanel from "./SecurityAdvisorPanel";
+import PerformanceAdvisorPanel from "./PerformanceAdvisorPanel";
+import ThanosPanel from "./ThanosPanel";
+import ElysiumPanel from "./ElysiumPanel";
 
 export interface AgentPanelProps {
   registry: AgentRegistryRow;
@@ -22,11 +28,17 @@ export interface AgentPanelProps {
 }
 
 export const AGENT_PANELS: Record<AgentId, ComponentType<AgentPanelProps>> = {
-  jeffery:      JefferyPanel,
-  hannah:       HannahPanel,
+  jeffery: JefferyPanel,
+  hannah: HannahPanel,
+  gordon: GordonPanel,
+  arnold: ArnoldPanel,
   michelangelo: MichelangeloPanel,
-  sherlock:     SherlockPanel,
-  arnold:       ArnoldPanel,
-  marshall:     MarshallPanel,
-  lex:          LexPanel,
+  hounddog: HounddogPanel,
+  sherlock: SherlockPanel,
+  marshall: MarshallPanel,
+  lex: LexPanel,
+  security_advisor: SecurityAdvisorPanel,
+  performance_advisor: PerformanceAdvisorPanel,
+  thanos: ThanosPanel,
+  elysium: ElysiumPanel,
 };

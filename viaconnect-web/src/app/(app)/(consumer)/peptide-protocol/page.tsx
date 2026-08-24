@@ -1,94 +1,28 @@
-"use client";
+import { PeptideDisclaimerBanner } from '@/components/peptide-protocol/PeptideDisclaimerBanner';
+import { PeptideEducationBento } from '@/components/peptide-protocol/PeptideEducationBento';
+import { PeptideProtocolHeroShell } from '@/components/peptide-protocol/PeptideProtocolHeroShell';
+import { PeptideEducationTabs } from '@/components/peptide-protocol/converter/PeptideEducationTabs';
+import { loadConsumerPeptideCatalog } from '@/lib/kb/peptides/loadConsumerPeptides';
 
-import { useEffect, useState } from "react";
-import { FlaskConical } from "lucide-react";
-import { PeptideDisclaimerBanner } from "@/components/peptide-protocol/PeptideDisclaimerBanner";
-import { PersonalizedPeptideStack } from "@/components/peptide-protocol/PersonalizedPeptideStack";
-import { PeptideCatalogSection } from "@/components/peptide-protocol/PeptideCatalogSection";
-import { PeptidePractitionerAccess } from "@/components/peptide-protocol/PeptidePractitionerAccess";
-import { ShareProtocolButton } from "@/components/consumer/ShareProtocolButton";
+export const dynamic = 'force-dynamic';
 
-const PEPTIDE_HERO_DESKTOP =
-  "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Athlete%2032.png";
-const PEPTIDE_HERO_MOBILE =
-  "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Mobile%20Hero/Athlete%2011%20mobile.png";
-
-export default function PeptideProtocolRoute() {
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const update = () => setIsMobile(window.innerWidth < 768);
-    update();
-    window.addEventListener('resize', update);
-    return () => window.removeEventListener('resize', update);
-  }, []);
-
-  const heroSrc = isMobile ? PEPTIDE_HERO_MOBILE : PEPTIDE_HERO_DESKTOP;
+/**
+ * Prompt 226e: Peptide Education index (bento hub).
+ * Destination pages are linked, not embedded.
+ */
+export default async function PeptideProtocolRoute() {
+  const catalog = await loadConsumerPeptideCatalog();
+  const countsOk = catalog.ok && !catalog.marshallPending && catalog.total > 0;
 
   return (
-    <>
-      {/* HERO - fixed behind the content. Uses z-0 (not -z-10) so it
-          paints above the body's navy background but below the
-          content wrapper (z-10). */}
-      <div
-        className="fixed inset-0 z-0 overflow-hidden pointer-events-none"
-        style={{ width: '100vw', height: '100vh', top: 0, left: 0 }}
-      >
-        <img
-          src={heroSrc}
-          alt="Peptide Protocol background"
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            objectPosition: 'center 20%',
-            filter: 'blur(2px)',
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.40)',
-          }}
-        />
-      </div>
-
-      {/* CONTENT - scrolls over hero */}
-      <div className="relative z-10 text-white">
-        {/* Mobile only: 80px hero peek above the content panel.
-            Desktop: content flush below the nav bar (Prompt #81). */}
-        <div className="h-[80px] md:hidden" />
-
-        {/* Content sits on top of the fixed hero - no solid panel so the
-            translucent glass containers let the hero show through. */}
-        <div className="min-h-screen rounded-t-3xl py-8">
-          <div className="mx-auto max-w-7xl space-y-5 px-4 md:px-6">
-
-            {/* Page header */}
-            <div className="flex items-center justify-between gap-3 pb-2">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#1A2744] to-[#2DA5A0] border border-[rgba(255,255,255,0.12)] flex items-center justify-center shrink-0">
-                  <FlaskConical className="w-[18px] h-[18px] text-white" strokeWidth={1.5} />
-                </div>
-                <div className="min-w-0">
-                  <h1 className="text-lg font-semibold text-white truncate">Peptide Education</h1>
-                  <p className="text-xs text-[rgba(255,255,255,0.45)] truncate">
-                    Personalized peptide stack · Powered by Hannah
-                  </p>
-                </div>
-              </div>
-              <ShareProtocolButton compact label="Share" className="shrink-0" />
-            </div>
-
-            <PeptideDisclaimerBanner />
-            <PersonalizedPeptideStack />
-            <PeptideCatalogSection />
-            <PeptidePractitionerAccess />
-
-          </div>
-        </div>
-      </div>
-    </>
+    <PeptideProtocolHeroShell>
+      <PeptideEducationTabs />
+      <PeptideDisclaimerBanner />
+      <PeptideEducationBento
+        monographCount={countsOk ? catalog.total : 0}
+        categoryCount={countsOk ? catalog.categories.length : 0}
+        countsOk={countsOk}
+      />
+    </PeptideProtocolHeroShell>
   );
 }

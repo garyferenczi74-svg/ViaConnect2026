@@ -16,7 +16,7 @@ function serviceClient() {
 
 export async function POST(req: Request) {
   try {
-    const userClient = createServerClient();
+    const userClient = await createServerClient();
     const { data: { user } } = await withTimeout(userClient.auth.getUser(), 5000, 'api.marshall.rules.toggle.auth');
     if (!user) return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
     const { data: profile } = await userClient.from("profiles").select("role").eq("id", user.id).maybeSingle();

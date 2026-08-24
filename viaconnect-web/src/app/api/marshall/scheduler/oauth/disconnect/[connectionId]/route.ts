@@ -20,6 +20,8 @@ import type { SchedulerAdapter } from '@/lib/marshall/scheduler/adapters/types';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 const VALID_REASONS = new Set<DisconnectReason>([
@@ -41,12 +43,13 @@ interface DisconnectBody {
   reason?: DisconnectReason;
 }
 
-export async function POST(req: NextRequest, { params }: { params: { connectionId: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ connectionId: string }> }) {
+  const params = await props.params;
   try {
     const connectionId = (params.connectionId ?? '').trim();
     if (!connectionId) return NextResponse.json({ error: 'missing_connection_id' }, { status: 400 });
 
-    const session = createServerClient();
+    const session = await createServerClient();
     const { data: { user } } = await withTimeout(session.auth.getUser(), 5000, 'api.marshall.scheduler.oauth.disconnect.auth');
     if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
 

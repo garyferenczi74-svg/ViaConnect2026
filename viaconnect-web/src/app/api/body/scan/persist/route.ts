@@ -13,6 +13,9 @@ import { deriveScanComposition } from '@/lib/body-tracker/composition/deriveScan
 import { buildScanWrite } from '@/lib/body-tracker/composition/buildScanWrite';
 import { newCorrelationId, logScanEvent } from '@/lib/body-tracker/composition/correlation';
 import type { BodyScanEstimate } from '@/components/body-tracker/BodyScanUploader';
+import { compileViaChain } from '@/lib/hannah/compilation/chainEntry';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request): Promise<NextResponse> {
   let correlationId = 'scan_unresolved';
@@ -34,7 +37,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     correlationId = newCorrelationId(scanId);
 
     // Auth - fail closed: timeout or missing user both return 401
-    const supabase = createClient();
+    const supabase = await createClient();
     let user: { id: string } | null = null;
     try {
       const authResult = await withTimeout(
@@ -195,6 +198,31 @@ export async function POST(req: Request): Promise<NextResponse> {
       entryId,
       totalBodyFatPct: derived.totalBodyFatPct,
     });
+
+    // Prompt 213a: off-cycle recompile after FormaVision/scan landing (fail-open).
+    void compileViaChain({ userId, reason: 'event_scan' }).catch((e) => {
+      safeLog.warn('scan.persist', 'hannah recompile skipped', {
+        correlationId,
+        error: e instanceof Error ? e.message : String(e),
+      });
+    });
+
+    // Prompt 219H: platform event bus (coalesced digest refresh path).
+    void import('@/lib/jeffery/ops/eventBus')
+      .then(({ emitPlatformEvent }) =>
+        emitPlatformEvent({
+          eventType: 'scan_landed',
+          userId,
+          payload: { scanId, entryId },
+          coalesceKey: `scan_landed:${userId}`,
+        }),
+      )
+      .catch((e) => {
+        safeLog.warn('scan.persist', 'platform event failed open', {
+          correlationId,
+          error: e instanceof Error ? e.message : String(e),
+        });
+      });
 
     return NextResponse.json({ ok: true, entryId });
 

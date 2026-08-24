@@ -1,7 +1,7 @@
 // Prompt #170 Phase 1n: /admin/corpus telemetry dashboard.
 //
 // Server shell. Mirrors the auth-gate pattern used by /admin/jeffery:
-//   1. createClient() server side.
+//   1. await createClient() server side.
 //   2. supabase.auth.getUser() and redirect to login if none.
 //   3. profiles.role check; redirect home if not admin.
 // Per spec the initial allow-list is gary@farmceuticawellness.com; the
@@ -29,7 +29,7 @@ const INITIAL_ALLOWLIST = new Set<string>([
 ]);
 
 export default async function CorpusTelemetryPage(): Promise<JSX.Element> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login?redirectTo=/admin/corpus');
 

@@ -1,22 +1,16 @@
-// Genetics source for the Bio Optimization Score compute bundle.
-//
-// Reads two tables that work together:
-//   genex360_purchases : kit lifecycle (purchase -> ship -> sample ->
-//                       processing -> delivered).
-//   genetic_profiles   : the final SNP report payload.
-//
-// Derivation:
-//   present = TRUE if a genetic_profiles row has any non-null SNP status
-//             OR genex360_purchases.test_results_delivered_at is set.
-//   processed_at = MAX of profile.report_date (cast iso) and
-//                  purchase.test_results_delivered_at.
-//   panel = 'genex360_v1' when a purchase row exists; null otherwise.
-//
-// Lifecycle status used by the Phase D read API to resolve the
-// destination_key for the Genetics pill:
-//   no purchase + no profile -> 'genex360_purchase'
-//   purchase, no results yet -> 'genex360_status'
-//   profile exists           -> 'complete'
+/**
+ * Genetics source for the Bio Optimization Score (Prompt 214d Gap 2).
+ *
+ * SINGLE INTERPRETIVE READER: only Elysium finished outputs
+ * (`elysium_variant_interpretations` + user `elysium_upload_coverage`).
+ * Never reads genetic_profiles or genex360_purchases for score math.
+ *
+ * Honest-state:
+ *  - present = user has at least one Elysium-mapped interpreted variant
+ *  - pending = coverage exists but mapped_count is 0 (no score delta)
+ *  - absent  = no Elysium coverage row (no score delta; UI messaging elsewhere)
+ * UNKNOWN is never coerced to 0.
+ */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 
@@ -25,25 +19,13 @@ export interface GeneticsSource {
   processed_at: string | null;
   panel: 'genex360_v1' | null;
   source_specific?: {
-    lifecycle_status: 'genex360_purchase' | 'genex360_status' | 'complete';
+    lifecycle_status: 'genex360_purchase' | 'genex360_status' | 'complete' | 'pending_interpretation';
     purchase_lifecycle?: string | null;
+    interpreted_count?: number;
+    pending_count?: number;
+    unknown_count?: number;
+    contribution: 'none' | 'pending' | 'active';
   };
-}
-
-function toIsoFromReportDate(value: unknown): string | null {
-  if (typeof value !== 'string') return null;
-  // genetic_profiles.report_date is a DATE column ('YYYY-MM-DD'); pad to
-  // midnight UTC iso so we can compare against the purchase timestamptz.
-  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    return `${value}T00:00:00Z`;
-  }
-  return value;
-}
-
-function pickLatest(a: string | null, b: string | null): string | null {
-  if (!a) return b;
-  if (!b) return a;
-  return new Date(a).getTime() >= new Date(b).getTime() ? a : b;
 }
 
 export async function getGeneticsSource(
@@ -54,74 +36,122 @@ export async function getGeneticsSource(
     present: false,
     processed_at: null,
     panel: null,
-    source_specific: { lifecycle_status: 'genex360_purchase' },
+    source_specific: {
+      lifecycle_status: 'genex360_purchase',
+      contribution: 'none',
+      interpreted_count: 0,
+      pending_count: 0,
+      unknown_count: 0,
+    },
   };
 
   try {
-    const purchaseResult = await supabase
-      .from('genex360_purchases')
-      .select('product_id, test_results_delivered_at, lifecycle_status')
+    // User-specific Elysium coverage (finished pipeline output)
+    const coverageResult = await supabase
+      .from('elysium_upload_coverage')
+      .select('mapped_count, unknown_count, pending_count, coverage_pct, created_at')
       .eq('user_id', userId)
-      .order('test_results_delivered_at', { ascending: false })
+      .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
 
-    const profileResult = await supabase
-      .from('genetic_profiles')
-      .select('mthfr_status, comt_status, cyp2d6_status, report_date')
-      .eq('user_id', userId)
-      .order('report_date', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    const purchase = (purchaseResult.error ? null : purchaseResult.data) as
+    const coverage = (coverageResult.error ? null : coverageResult.data) as
       | {
-          product_id?: string | null;
-          test_results_delivered_at?: string | null;
-          lifecycle_status?: string | null;
-        }
-      | null;
-    const profile = (profileResult.error ? null : profileResult.data) as
-      | {
-          mthfr_status?: string | null;
-          comt_status?: string | null;
-          cyp2d6_status?: string | null;
-          report_date?: string | null;
+          mapped_count?: number | null;
+          unknown_count?: number | null;
+          pending_count?: number | null;
+          coverage_pct?: number | null;
+          created_at?: string | null;
         }
       | null;
 
-    const profilePresent = Boolean(
-      profile && (profile.mthfr_status || profile.comt_status || profile.cyp2d6_status),
-    );
-    const purchaseDelivered = Boolean(purchase?.test_results_delivered_at);
+    // Catalog freshness (Elysium interpretations exist platform-wide)
+    const catalogResult = await supabase
+      .from('elysium_variant_interpretations')
+      .select('rsid, interpretation_status, last_verified_at')
+      .eq('interpretation_status', 'interpreted')
+      .order('last_verified_at', { ascending: false })
+      .limit(5);
 
-    const present = profilePresent || purchaseDelivered;
-    const processed_at = pickLatest(
-      purchase?.test_results_delivered_at ?? null,
-      toIsoFromReportDate(profile?.report_date ?? null),
-    );
+    const catalog = Array.isArray(catalogResult.data) ? catalogResult.data : [];
+    const catalogInterpreted = catalog.length;
 
-    let lifecycle_status: 'genex360_purchase' | 'genex360_status' | 'complete';
-    if (profilePresent) {
-      lifecycle_status = 'complete';
-    } else if (purchase && !purchaseDelivered) {
-      lifecycle_status = 'genex360_status';
-    } else if (purchaseDelivered) {
-      lifecycle_status = 'complete';
-    } else {
-      lifecycle_status = 'genex360_purchase';
+    if (!coverage) {
+      // No user coverage: score contributes nothing (honest absent).
+      // Purchase messaging is Jeffery platform digest, not score math.
+      return {
+        ...empty,
+        source_specific: {
+          lifecycle_status: 'genex360_purchase',
+          contribution: 'none',
+          interpreted_count: 0,
+          pending_count: 0,
+          unknown_count: 0,
+        },
+      };
     }
 
+    const mapped =
+      typeof coverage.mapped_count === 'number' && Number.isFinite(coverage.mapped_count)
+        ? coverage.mapped_count
+        : 0;
+    const pending =
+      typeof coverage.pending_count === 'number' && Number.isFinite(coverage.pending_count)
+        ? coverage.pending_count
+        : 0;
+    const unknown =
+      typeof coverage.unknown_count === 'number' && Number.isFinite(coverage.unknown_count)
+        ? coverage.unknown_count
+        : 0;
+
+    // Score contribution only when mapped interpretations exist for this user
+    // AND the platform catalog has interpreted entries (Elysium finished).
+    if (mapped > 0 && catalogInterpreted > 0) {
+      return {
+        present: true,
+        processed_at: coverage.created_at ?? null,
+        panel: 'genex360_v1',
+        source_specific: {
+          lifecycle_status: 'complete',
+          contribution: 'active',
+          interpreted_count: mapped,
+          pending_count: pending,
+          unknown_count: unknown,
+          // coverage_pct may be null = UNKNOWN; never invent 0 for missing
+          purchase_lifecycle: null,
+        },
+      };
+    }
+
+    // User has genetics pipeline contact but interpretations not ready
     return {
-      present,
-      processed_at,
-      panel: purchase?.product_id ? 'genex360_v1' : null,
+      present: false,
+      processed_at: coverage.created_at ?? null,
+      panel: null,
       source_specific: {
-        lifecycle_status,
-        purchase_lifecycle: purchase?.lifecycle_status ?? null,
+        lifecycle_status: 'pending_interpretation',
+        contribution: 'pending',
+        interpreted_count: mapped,
+        pending_count: pending,
+        unknown_count: unknown,
+        purchase_lifecycle: null,
       },
     };
   } catch {
     return empty;
   }
 }
+
+/**
+ * Test helper: assert this module's source text never imports raw genetics tables.
+ * Used by Michelangelo suite (static scan of this file's public contract).
+ */
+export const GENETICS_SCORE_TABLES = [
+  'elysium_variant_interpretations',
+  'elysium_upload_coverage',
+] as const;
+
+export const FORBIDDEN_SCORE_GENETICS_TABLES = [
+  'genetic_profiles',
+  'genex360_purchases',
+] as const;

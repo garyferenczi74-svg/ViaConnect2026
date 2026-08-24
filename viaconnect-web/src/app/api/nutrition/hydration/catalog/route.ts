@@ -34,7 +34,7 @@ export async function GET(): Promise<NextResponse> {
     return NextResponse.json({ error: 'beverage catalog disabled' }, { status: 503 });
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

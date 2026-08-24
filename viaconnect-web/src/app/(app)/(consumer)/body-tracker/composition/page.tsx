@@ -2,29 +2,42 @@
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BackToHubLink } from '@/components/body-tracker/hub/BackToHubLink';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Plus, Camera, Check, RotateCcw } from 'lucide-react';
+import { Check, RotateCcw } from 'lucide-react';
 import { SegmentalHeatMap } from '@/components/body-tracker/SegmentalHeatMap';
 import { HeatmapLegend } from '@/components/body-tracker/HeatmapLegend';
 import { HoverSystem } from '@/components/body-tracker/HoverSystem';
 // === PROMPT 210b EXTENSION START ===
-import {
-  BodyCompositionAvatar,
-  SelectBodyPartControl,
-  RenderTierProvider,
-} from '@/components/formavision';
+// Prompt 210h / 210k: 3D BodyCompositionAvatar + SelectBodyPart live only on
+// /body-tracker/formavision. This surface keeps the 2D HoverSystem floor.
+import { RenderTierProvider } from '@/components/formavision';
 import { useReducedMotion } from '@/components/body-tracker/HoverSystem/useReducedMotion';
 import {
   buildSegmentTints,
   buildSegmentTintsFromChange,
 } from '@/lib/formavision/geometry/composSegmentTints';
 // === PROMPT 210b EXTENSION END ===
+// Prompt 210k: tab URL sync, scan deep link, post-scan FormaVision landing.
+import {
+  compositionSectionHref,
+  formavisionAfterScanHref,
+  parseCompositionSection,
+  shouldOpenScanFromQuery,
+} from '@/lib/body-tracker/compositionNav';
 // === PROMPT 210b VR (Section 8) START ===
 // Direct-path imports (not the avatar barrel) so this Visual Results surface
 // stays disjoint from the avatar component files.
 import { BodyFatReadout } from '@/components/formavision/BodyFatReadout';
 import { NotableChanges } from '@/components/formavision/NotableChanges';
+// Prompt 217: uniform My Biology action row (FormaVision / Log Data / Doctor's Report).
+import { BiologyActionRow } from '@/components/body-tracker/BiologyActionRow';
+// Prompt 211a W1: shareable transformation clip (the growth engine). Imported
+// directly (NOT via the barrel) so the consumer-only structural discipline holds:
+// no practitioner route pulls the clip surface into its import graph.
+import { ClipCreatorSurface, type ClipScanRef } from '@/components/formavision/ClipCreatorSurface';
+import { lerpParamVector } from '@/lib/formavision/geometry/lerpParamVector';
+import { useRenderTier } from '@/components/formavision/RenderTierProvider';
 import { useCompositionHistory } from '@/hooks/body-tracker/useCompositionHistory';
 import { useCircumferenceHistory } from '@/hooks/body-tracker/useCircumferenceHistory';
 import { computeCompositionDeltas } from '@/lib/formavision/deltas/compositionDeltas';
@@ -49,6 +62,19 @@ import { BOSMovementReadout } from '@/components/formavision/BOSMovementReadout'
 // === PROMPT 210b P6-T4 (MilestoneMoment) START ===
 import { MilestoneMoment } from '@/components/formavision/MilestoneMoment';
 // === PROMPT 210b P6-T4 (MilestoneMoment) END ===
+// === PROMPT 211a W4-2 (Cadence + Streak surfaces) START ===
+// ScanStreakDisplay is imported DIRECTLY (not via the formavision barrel) so the
+// consumer-only import graph stays explicit: only this (consumer) route pulls it
+// in, which the invariants 4.6 structural test relies on. The other three
+// surfaces come from the barrel (presentational, safe to reuse).
+import { ScanStreakDisplay } from '@/components/formavision/ScanStreakDisplay';
+import {
+  CadenceReminderOptIn,
+  FingerprintFlag,
+  ConsistencyTip,
+} from '@/components/formavision';
+import { useScanFingerprints } from '@/hooks/body-tracker/useScanFingerprints';
+// === PROMPT 211a W4-2 (Cadence + Streak surfaces) END ===
 // === PROMPT 210b P8-T1b (Avatar Telemetry) START ===
 import {
   useAvatarTelemetry,
@@ -83,6 +109,7 @@ import {
 import {
   CompositionSectionToggle,
   type CompositionSection,
+  type CompositionNavTab,
 } from '@/components/body-tracker/CompositionSectionToggle';
 import { UnitToggle } from '@/components/body-tracker/UnitToggle';
 import { MeasurementsGrid } from '@/components/body-tracker/MeasurementsGrid';
@@ -243,15 +270,29 @@ type ScanPersistState =
 
 function CompositionPageInner() {
   const params = useSearchParams();
+  const router = useRouter();
   const sectionParam = params?.get('section');
+  const scanParam = params?.get('scan');
   const initialSection: CompositionSection =
-    sectionParam === 'muscle' || sectionParam === 'measurements' || sectionParam === 'fat'
-      ? (sectionParam as CompositionSection)
-      : 'fat';
+    parseCompositionSection(sectionParam) ?? 'fat';
 
   const [section, setSection] = useState<CompositionSection>(initialSection);
+
+  // Prompt 210i + 210k: FormaVision is a nav tab; content tabs keep ?section= in the URL.
+  const onSectionNav = useCallback(
+    (tab: CompositionNavTab) => {
+      if (tab === 'formavision') {
+        router.push(formavisionAfterScanHref());
+        return;
+      }
+      setSection(tab);
+      router.replace(compositionSectionHref(tab), { scroll: false });
+    },
+    [router],
+  );
   const [open, setOpen] = useState(false);
-  const [scanOpen, setScanOpen] = useState(false);
+  // Prompt 210k: ?scan=1 opens Scan My Body (FormaVision empty-state CTA deep link).
+  const [scanOpen, setScanOpen] = useState(() => shouldOpenScanFromQuery(scanParam));
   const [scanResult, setScanResult] = useState<BodyScanResult | null>(null);
   const [scanPersist, setScanPersist] = useState<ScanPersistState>({ phase: 'idle' });
   const [prefillBodyFat, setPrefillBodyFat] = useState<number | null>(null);
@@ -345,6 +386,12 @@ function CompositionPageInner() {
   // function; the surfaces render that result without recomputing anything.
   const composHistory = useCompositionHistory(userId ?? null);
   const circHistory = useCircumferenceHistory(userId ?? null, unit);
+  // === PROMPT 211a W4-2 (Cadence + Streak) START ===
+  // Own-row read of the user's scan fingerprints. Drives the opt-in default time
+  // (scanHistory -> recommendCadence), the outlier flag for the latest scan, and
+  // the consistency tip. Fail-open: empty history -> surfaces render nothing.
+  const scanFp = useScanFingerprints(userId ?? null);
+  // === PROMPT 211a W4-2 (Cadence + Streak) END ===
   const vrDeltas = useMemo(
     () =>
       computeCompositionDeltas({
@@ -362,6 +409,20 @@ function CompositionPageInner() {
   // The scrub shape driven by the JourneyTimeline. null rests the avatar at its
   // last shape (normal morph resumes per P3-T2a). Only set while scrubbing.
   const [scrubVector, setScrubVector] = useState<BodyParamVector | null>(null);
+  // === PROMPT 211a W1 (shareable clip) START ===
+  // The r3f frameloop mode, forwarded to BodyCompositionAvatar. Default demand
+  // (undefined); the clip recorder flips it to 'always' while recording so
+  // canvas.captureStream() emits every painted morph frame, then back to demand.
+  const [clipFrameloopMode, setClipFrameloopMode] = useState<'always' | 'demand' | undefined>(undefined);
+  // Ref to the avatar container; the clip recorder reads the live WebGL canvas from
+  // it by the canonical data-testid. Only used on the WebM path (capable devices).
+  const avatarContainerRef = useRef<HTMLDivElement>(null);
+  // The active render tier, read from the ambient provider so the clip surface can
+  // branch to the static-card fallback on the 2D floor (baseline item 1+2).
+  const clipRenderTier = useRenderTier();
+  // The clip morph raf handle, so a new recording cancels a stale one.
+  const clipMorphRafRef = useRef<number | null>(null);
+  // === PROMPT 211a W1 (shareable clip) END ===
   // === PROMPT 210b P5-T1c (FutureSelfPanel) START ===
   // Ghost state: lifted up from FutureSelfPanel via onGhostChange and wired into
   // the BodyCompositionAvatar prop seam (ghostVector + showGhost). Default OFF
@@ -369,6 +430,30 @@ function CompositionPageInner() {
   const [ghostVector, setGhostVector] = useState<BodyParamVector | null>(null);
   const [showGhost, setShowGhost] = useState(false);
   // === PROMPT 210b P5-T1c (FutureSelfPanel) END ===
+  // === PROMPT 210g (first-scan comparison ghost) START ===
+  // Show Comparison Overlay: ghost is the first scan through the same parametric
+  // engine. Honest-disabled when no first scan exists. Comparison takes priority
+  // over Future Self ghost when enabled so both do not fight for the seam.
+  const [comparisonOverlayOn, setComparisonOverlayOn] = useState(false);
+  const firstScanVector = useMemo<BodyParamVector | null>(() => {
+    const first = composHistory.first;
+    if (!first) return null;
+    return scanToParamVector({
+      snapshot: first,
+      circumferences: circHistory.first?.measurements ?? null,
+      sex: gender,
+      unit,
+    });
+  }, [composHistory.first, circHistory.first, gender, unit]);
+  const effectiveGhostVector =
+    comparisonOverlayOn && firstScanVector ? firstScanVector : ghostVector;
+  const effectiveShowGhost =
+    comparisonOverlayOn && firstScanVector
+      ? true
+      : comparisonOverlayOn
+        ? false
+        : showGhost;
+  // === PROMPT 210g (first-scan comparison ghost) END ===
 
   // One BodyParamVector + one honest readout per REAL composition scan, oldest
   // first. Circumferences are aligned to each scan by recordedAt, falling back to
@@ -415,6 +500,59 @@ function CompositionPageInner() {
   );
   // === PROMPT 210b P3-T2b (Time Machine) END ===
 
+  // === PROMPT 211a W1 (shareable clip) START ===
+  // The choose-able scan history for the clip range picker, oldest first. Dates come
+  // from the SAME composition history the Time Machine uses. Per-scan confidence is
+  // not exposed on this read path (useCompositionHistory returns CompositionSnapshot,
+  // which carries no confidence), so it is passed as null (honest UNKNOWN): the
+  // low-confidence warning treats UNKNOWN as not-low and never fabricates a tier.
+  const clipScans = useMemo<ClipScanRef[]>(
+    () => composHistory.snapshots.map((snap) => ({ recordedAt: snap.recordedAt, confidence: null })),
+    [composHistory.snapshots],
+  );
+
+  // Reads the live avatar canvas from the container by its canonical data-testid.
+  // Returns null when the 2D floor is shown (no canvas) so the clip surface serves
+  // the static-card fallback honestly.
+  const getClipCanvas = useCallback((): HTMLCanvasElement | null => {
+    const root = avatarContainerRef.current;
+    if (!root) return null;
+    return root.querySelector<HTMLCanvasElement>('[data-testid="formavision-avatar-canvas"]');
+  }, []);
+
+  // Flip the frameloop for the clip recorder (always while recording, demand after).
+  const setClipFrameloopAlways = useCallback((always: boolean) => {
+    setClipFrameloopMode(always ? 'always' : 'demand');
+  }, []);
+
+  // Drive the morph play for the clip over the chosen range. Reuses the EXACT PLAY
+  // math the JourneyTimeline uses: lerpParamVector between the two real scan vectors
+  // across PLAY_DURATION_MS. Numbers are never fabricated; only the shape interpolates
+  // between real scans. The clip surface passes the chosen range via a closure below.
+  const playClipMorph = useCallback(
+    (startIndex: number, endIndex: number) => {
+      const a = journeyVectors[startIndex];
+      const b = journeyVectors[endIndex];
+      if (!a || !b) return;
+      if (clipMorphRafRef.current !== null) cancelAnimationFrame(clipMorphRafRef.current);
+      const PLAY_MS = 4000; // mirrors JourneyTimeline.PLAY_DURATION_MS
+      let start: number | null = null;
+      const tick = (now: number) => {
+        if (start === null) start = now;
+        const t = Math.min(1, (now - start) / PLAY_MS);
+        setScrubVector(lerpParamVector(a, b, t));
+        if (t < 1) {
+          clipMorphRafRef.current = requestAnimationFrame(tick);
+        } else {
+          clipMorphRafRef.current = null;
+        }
+      };
+      clipMorphRafRef.current = requestAnimationFrame(tick);
+    },
+    [journeyVectors],
+  );
+  // === PROMPT 211a W1 (shareable clip) END ===
+
   useEffect(() => {
     try { window.localStorage.setItem(UNIT_STORAGE_KEY, unit); } catch { /* ignore */ }
   }, [unit]);
@@ -425,10 +563,19 @@ function CompositionPageInner() {
   }, [caqSex, genderManuallySet]);
 
   useEffect(() => {
-    if (sectionParam === 'muscle' || sectionParam === 'measurements' || sectionParam === 'fat') {
-      setSection(sectionParam as CompositionSection);
-    }
+    const parsed = parseCompositionSection(sectionParam);
+    if (parsed) setSection(parsed);
   }, [sectionParam]);
+
+  // Prompt 210k: honor ?scan=1 after client navigation (empty-state CTA from FormaVision).
+  useEffect(() => {
+    if (shouldOpenScanFromQuery(scanParam)) {
+      setOpen(false);
+      setScanOpen(true);
+      setScanResult(null);
+      setScanPersist({ phase: 'idle' });
+    }
+  }, [scanParam]);
 
   // Prompt #209: repaint on update. A Log Data save and a scan persist both
   // bump refreshKey; this effect re-reads the canonical composition snapshot
@@ -519,19 +666,21 @@ function CompositionPageInner() {
     setRefreshKey((k) => k + 1);
   };
 
-  // Prompt #209: persist a completed scan through the canonical path, then
-  // repaint. Fail-open: any failure surfaces an inline retry, never throws
-  // into the render path and never blocks the avatar / cards.
+  // Prompt #209 + 210k: persist a completed scan through the canonical path,
+  // then land on FormaVision (210h Rev C) so the 3D surface shows the new scan.
+  // Fail-open: any failure surfaces an inline retry, never throws into render.
   const runScanPersist = useCallback(async (scanId: string) => {
     setScanPersist({ phase: 'saving' });
     const res = await persistScan(scanId);
     if (res.ok) {
       setScanPersist({ phase: 'saved' });
       setRefreshKey((k) => k + 1);
+      // 210h Rev C / 210k seed 8: completed scan lands on FormaVision with results.
+      router.push(formavisionAfterScanHref());
     } else {
       setScanPersist({ phase: 'error', scanId, reason: res.reason });
     }
-  }, []);
+  }, [router]);
 
   const historyCategory = section === 'muscle' ? 'muscle' : 'composition';
 
@@ -672,38 +821,28 @@ function CompositionPageInner() {
 
   return (
     <div className="space-y-6 lg:space-y-3" key={refreshKey}>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <CompositionSectionToggle active={section} onChange={setSection} />
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              setOpen(false);
-              setScanOpen((o) => !o);
-              if (!scanOpen) { setScanResult(null); setScanPersist({ phase: 'idle' }); }
-            }}
-            className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium min-h-[44px] backdrop-blur-sm transition-all ${
-              scanOpen
-                ? 'border-[#5B8DEF]/50 bg-[#2A4C9E]/25 text-white'
-                : 'border-[#5B8DEF]/25 bg-[#2A4C9E]/10 text-white hover:bg-[#2A4C9E]/20'
-            }`}
-          >
-            <Camera className="h-3.5 w-3.5" strokeWidth={1.5} />
-            Scan My Body
-          </button>
-          <button
-            type="button"
-            onClick={() => { setScanOpen(false); setOpen((o) => !o); }}
-            className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium min-h-[44px] backdrop-blur-sm transition-all ${
-              open
-                ? 'border-[#5B8DEF]/60 bg-[#2A4C9E]/35 text-white'
-                : 'border-[#5B8DEF]/30 bg-[#2A4C9E]/15 text-white hover:bg-[#2A4C9E]/25'
-            }`}
-          >
-            <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
-            Log Data
-          </button>
-        </div>
+      {/* Prompt 217: stacked on mobile so pill row + action row each scroll
+          internally (no page-level overflow, no orphan wrap). Desktop keeps
+          a single header row when space allows. */}
+      <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between">
+        <CompositionSectionToggle active={section} onChange={onSectionNav} />
+        <BiologyActionRow
+          userId={userId ?? null}
+          scanOpen={scanOpen}
+          logOpen={open}
+          onToggleScan={() => {
+            setOpen(false);
+            setScanOpen((o) => !o);
+            if (!scanOpen) {
+              setScanResult(null);
+              setScanPersist({ phase: 'idle' });
+            }
+          }}
+          onToggleLog={() => {
+            setScanOpen(false);
+            setOpen((o) => !o);
+          }}
+        />
       </div>
 
       <InlineEntryPanel
@@ -804,12 +943,22 @@ function CompositionPageInner() {
         return (
           <>
             {section === 'fat' && (
-              <>
-                <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 backdrop-blur-md p-4 sm:p-5 lg:p-3">
-                  <h2 className="text-lg font-bold text-white">Body Composition</h2>
-                  <p className="text-xs text-white/60">Segmental body fat analysis</p>
-                </div>
+              <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 backdrop-blur-md p-4 sm:p-5 lg:p-3">
+                <h2 className="text-lg font-bold text-white">Body Composition</h2>
+                <p className="text-xs text-white/60">Segmental body fat analysis</p>
+              </div>
+            )}
 
+            {isMuscle && (
+              <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 backdrop-blur-md p-4 sm:p-5 lg:p-3">
+                <h2 className="text-lg font-bold text-white">Muscle Analysis</h2>
+                <p className="text-xs text-white/60">Segmental muscle mass breakdown</p>
+              </div>
+            )}
+
+            {/* Prompt 210k: gender drives fat and muscle 2D floors; show on both (not measurements). */}
+            {(section === 'fat' || isMuscle) && (
+              <>
                 {caqSource === 'caq_other' && !genderManuallySet && (
                   <div className="rounded-xl border border-[#2DA5A0]/30 bg-[#2DA5A0]/10 p-3 text-xs text-white/75">
                     We don&apos;t have your gender on file. Pick a visualization below; you can change it anytime.
@@ -847,13 +996,6 @@ function CompositionPageInner() {
               </>
             )}
 
-            {isMuscle && (
-              <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 backdrop-blur-md p-4 sm:p-5 lg:p-3">
-                <h2 className="text-lg font-bold text-white">Muscle Analysis</h2>
-                <p className="text-xs text-white/60">Segmental muscle mass breakdown</p>
-              </div>
-            )}
-
             {/* The persistent grid. Hidden (display:none) on measurements so the
                 avatar identity survives the toggle without consuming layout. */}
             <div
@@ -868,63 +1010,22 @@ function CompositionPageInner() {
               <HeatmapLegend metric={isMuscle ? 'muscle' : 'fat'} className="mb-4 shrink-0 lg:hidden" />
               <div className="flex flex-col lg:flex-1 lg:flex-row lg:items-stretch lg:gap-6 lg:min-h-0">
                 <div
+                  ref={avatarContainerRef}
                   data-testid="avatar-container"
                   className="relative flex items-center justify-center px-2 py-2 lg:min-h-0 lg:flex-1"
                   style={{ filter: 'drop-shadow(0 0 20px rgba(45, 165, 160, 0.15))' }}
                 >
-                  {/* P2-T4a: the Select Body Part picker overlays the top of the
-                      avatar surface. It lives in the persistent avatar-container
-                      (a sibling of the avatar, outside the avatar wrapper's
-                      fallback branch), so the selection survives section toggles
-                      and the control is real, keyboard-operable DOM, never baked
-                      into the canvas. Selecting a region drives selectedBodyPart
-                      (and so the P2-T3 camera framing); All clears to null. */}
-                  <div className="pointer-events-none absolute left-1/2 top-2 z-10 flex -translate-x-1/2 justify-center">
-                    <SelectBodyPartControl
-                      value={selectedBodyPart}
-                      onChange={setSelectedBodyPart}
-                    />
-                  </div>
-                  {/* ONE persistent avatar. activeTab follows the section; the
-                      2D floor children swap per section but the BodyComposition
-                      Avatar node keeps the same position + identity, so no
-                      remount and no intro replay on toggle. */}
-                  <BodyCompositionAvatar
-                    sex={gender}
-                    scan={snapshot}
-                    firstScan={null}
-                    circumferences={circumferenceData.latest}
-                    unit={unit}
-                    activeTab={avatarActiveTab}
-                    selectedBodyPart={selectedBodyPart}
-                    onSelectBodyPart={setSelectedBodyPart}
-                    reducedMotion={avatarReducedMotion}
-                    segmentTints={avatarSegmentTints}
-                    scrubVector={scrubVector}
-                    ghostVector={ghostVector}
-                    showGhost={showGhost}
-                    onOrbitEnd={() => telEmit('formavision.avatar_rotated')}
-                    onTierStepDown={(tier, signals: AvatarQualitySignals) => {
-                      const props: AvatarEventProperties = { tier };
-                      if (signals.tierServed !== undefined) props['tierServed'] = signals.tierServed;
-                      if (signals.stepDownCount !== undefined) props['stepDownCount'] = signals.stepDownCount;
-                      if (signals.errorCount !== undefined) props['errorCount'] = signals.errorCount;
-                      if (signals.timeToFirstInteractiveMs !== undefined) {
-                        props['timeToFirstInteractiveMs'] = signals.timeToFirstInteractiveMs;
-                      }
-                      telEmitOnce('formavision.fallback_tier_served', props);
-                    }}
-                  >
-                    {isMuscle ? (
-                      <HoverSystem view="muscle" sex={gender} regions={muscleRegions} className="lg:h-full">
-                        <SegmentalHeatMap sex={gender} segmentStatuses={muscleRegionStatuses} />
-                      </HoverSystem>
-                    ) : (
-                      <HoverSystem view="composition" sex={gender} regions={fatRegions} className="lg:h-full">
-                        <SegmentalHeatMap sex={gender} segmentStatuses={fatRegionStatuses} />
-                      </HoverSystem>
-                    )}
-                  </BodyCompositionAvatar>
+                  {/* Prompt 210h Rev C: 3D mounts live only on /body-tracker/formavision.
+                      This surface keeps the 2D segmental avatars for numbers and Log Data. */}
+                  {isMuscle ? (
+                    <HoverSystem view="muscle" sex={gender} regions={muscleRegions} className="lg:h-full">
+                      <SegmentalHeatMap sex={gender} segmentStatuses={muscleRegionStatuses} />
+                    </HoverSystem>
+                  ) : (
+                    <HoverSystem view="composition" sex={gender} regions={fatRegions} className="lg:h-full">
+                      <SegmentalHeatMap sex={gender} segmentStatuses={fatRegionStatuses} />
+                    </HoverSystem>
+                  )}
                   <LegendBar
                     pinnedIds={pinnedIds}
                     hoveredId={hoveredId}
@@ -938,11 +1039,15 @@ function CompositionPageInner() {
                   aria-label="Body composition summary"
                   className="hidden lg:flex lg:w-[200px] lg:shrink-0 lg:flex-col lg:gap-3"
                 >
-                  <div data-testid="kpi-stack-header" className="flex flex-col items-center gap-2 lg:mb-4">
+                  {/* Prompt 210f: uniform 1.5 gap between the heading, the legend
+                      rows, and each dot-to-label so the block reads as evenly
+                      spaced. Dot and label are already middle-aligned (items-center).
+                      Spacing only; block position and every card are unchanged. */}
+                  <div data-testid="kpi-stack-header" className="flex flex-col items-center gap-1.5 lg:mb-4">
                     <h3 className="text-center text-xs font-semibold uppercase tracking-wider text-white/40">
                       {isMuscle ? 'Segmental Muscle Analysis' : 'Segmental Body Fat Analysis'}
                     </h3>
-                    <ul className="flex flex-col gap-1 text-[10px] lg:w-fit lg:mx-auto">
+                    <ul className="flex flex-col gap-1.5 text-[10px] lg:w-fit lg:mx-auto">
                       <li className="flex items-center gap-1.5">
                         <span className="h-2.5 w-2.5 rounded-full bg-green-400" aria-hidden="true" />
                         <span className="text-white/40">{isMuscle ? 'Muscle Gain' : 'Fat Loss'}</span>
@@ -1035,6 +1140,28 @@ function CompositionPageInner() {
       )}
       {/* === PROMPT 210b P3-T2b (Time Machine) END === */}
 
+      {/* === PROMPT 211a W1 (shareable transformation clip) START === */}
+      {/* The growth engine: turn the real transformation into a shareable clip.
+          One-source numbers (vrDeltas, same as the cards). Explicit consent gate
+          before anything leaves the device. No-dependency WebM on desktop / modern
+          Android via MediaRecorder(canvas.captureStream()); honest static-card
+          fallback on iOS / the 2D floor (never a fake video, never a raw photo).
+          Consumer-only (imported directly, not barreled). Fewer than two scans
+          shows an honest invite. */}
+      {section !== 'measurements' && (
+        <ClipCreatorSurface
+          userId={userId ?? null}
+          tier={clipRenderTier}
+          deltas={vrDeltas}
+          scans={clipScans}
+          getCanvas={getClipCanvas}
+          playMorph={playClipMorph}
+          setFrameloopAlways={setClipFrameloopAlways}
+          surface="/body-tracker/composition"
+        />
+      )}
+      {/* === PROMPT 211a W1 (shareable transformation clip) END === */}
+
       {/* === PROMPT 210b P4-T1 (GeneticsOverlay) START === */}
       {/* Honest-disabled genetics layer. Two states: real variants present ->
           body-positive invitation (tendency-not-destiny, no region band/tint);
@@ -1123,6 +1250,24 @@ function CompositionPageInner() {
       )}
       {/* === PROMPT 210b P6-T4 (MilestoneMoment) END === */}
 
+      {/* === PROMPT 211a W4-2 (Cadence + Streak surfaces) START === */}
+      {/* Four consumer-only surfaces. The outlier fingerprint FLAG appears BEFORE
+          the trend so a lighting/time change is not misread as a body change. The
+          consistency TIP names the user's own best conditions (null on thin
+          history, never generic). The scan STREAK is read-only from scan_streak
+          (own-row). The reminder OPT-IN is off by default and revocable, and its
+          default time is the user's own historical scan time. Streak credit stays
+          in the server award lane, never written from these visual surfaces. */}
+      {section !== 'measurements' && (
+        <div className="space-y-3">
+          {scanFp.flagDecision && <FingerprintFlag decision={scanFp.flagDecision} />}
+          <ScanStreakDisplay />
+          <ConsistencyTip tip={scanFp.consistencyTip} />
+          <CadenceReminderOptIn scanHistory={scanFp.scanHistory} />
+        </div>
+      )}
+      {/* === PROMPT 211a W4-2 (Cadence + Streak surfaces) END === */}
+
       {section === 'measurements' && (
         <>
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -1138,6 +1283,7 @@ function CompositionPageInner() {
               data={circumferenceData.latest}
               previous={circumferenceData.previous}
               unit={unit}
+              confidence={circumferenceData.latestConfidence ?? null}
             />
           </div>
           <MeasurementsPanel unit={unit} onChanged={refreshCirc} />

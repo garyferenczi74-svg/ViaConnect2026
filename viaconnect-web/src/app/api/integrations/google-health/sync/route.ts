@@ -38,7 +38,7 @@ async function run(req: NextRequest) {
   let scopedUserId: string | null = null;
   if (!isCron) {
     try {
-      const supabase = createClient();
+      const supabase = await createClient();
       const { data } = await withTimeout(supabase.auth.getUser(), 5000, `${SCOPE}.auth`);
       scopedUserId = data?.user?.id ?? null;
     } catch {

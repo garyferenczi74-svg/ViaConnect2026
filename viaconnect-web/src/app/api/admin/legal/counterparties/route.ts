@@ -17,13 +17,15 @@ import { scoreCounterpartyIdentity } from '@/lib/legal/counterparties/identitySc
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 const LEGAL_OPS_ROLES = new Set(['admin', 'compliance_officer', 'legal_ops']);
 
 interface ProfileLite { role: string }
 
-async function requireLegalOps(supabase: ReturnType<typeof createClient>) {
+async function requireLegalOps(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.admin.legal.counterparties.auth');
   if (!user) return { ok: false as const, response: NextResponse.json({ error: 'Authentication required' }, { status: 401 }) };
   const sb = supabase as unknown as { from: (t: string) => { select: (s: string) => { eq: (k: string, v: string) => { maybeSingle: () => Promise<{ data: ProfileLite | null }> } } } };
@@ -36,7 +38,7 @@ async function requireLegalOps(supabase: ReturnType<typeof createClient>) {
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const ctx = await requireLegalOps(supabase);
     if (!ctx.ok) return ctx.response;
 
@@ -77,7 +79,7 @@ interface MarketplaceHandle {
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const ctx = await requireLegalOps(supabase);
     if (!ctx.ok) return ctx.response;
 

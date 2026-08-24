@@ -1,0 +1,185 @@
+/**
+ * Prompt 221/221A: one-shot migration apply (Bearer CRON_SECRET).
+ * Uses embedded SQL (supabase/ is vercelignored). Idempotent IF NOT EXISTS.
+ * Never returns secret values.
+ */
+import { isCronAuthorized } from "@/lib/jeffery/ops/cronAuth";
+import { PROMPT_221_MIGRATIONS } from "@/lib/kb/migrations/embedded221";
+import { safeLog } from "@/lib/utils/safe-log";
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+export const maxDuration = 120;
+
+function buildConnectionString(): string | null {
+  const direct =
+    process.env.POSTGRES_URL_NON_POOLING ||
+    process.env.POSTGRES_URL ||
+    process.env.DATABASE_URL ||
+    process.env.POSTGRES_PRISMA_URL;
+  if (direct && direct.trim().length > 0) {
+    return direct.trim().replace(/^["']|["']$/g, "");
+  }
+  const host = process.env.POSTGRES_HOST?.trim();
+  const user = process.env.POSTGRES_USER?.trim() || "postgres";
+  const password = process.env.POSTGRES_PASSWORD?.trim();
+  const database = process.env.POSTGRES_DATABASE?.trim() || "postgres";
+  if (host && password) {
+    return `postgresql://${user}:${encodeURIComponent(password)}@${host}:5432/${database}`;
+  }
+  return null;
+}
+
+export async function POST(request: Request): Promise<Response> {
+  if (!isCronAuthorized(request.headers.get("authorization"))) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
+  const conn = buildConnectionString();
+  if (!conn) {
+    return Response.json(
+      { ok: false, error: "no_postgres_connection" },
+      { status: 200 }
+    );
+  }
+
+  const results: Array<{ file: string; ok: boolean; error?: string }> = [];
+
+  try {
+    const postgres = (await import("postgres")).default;
+    const sql = postgres(conn, {
+      max: 1,
+      idle_timeout: 5,
+      connect_timeout: 30,
+    });
+    try {
+      for (const mig of PROMPT_221_MIGRATIONS) {
+        try {
+          await sql.unsafe(mig.sql);
+          results.push({ file: mig.file, ok: true });
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          safeLog.error("cron.apply-221", "migration failed", {
+            file: mig.file,
+            error: e,
+          });
+          results.push({ file: mig.file, ok: false, error: msg.slice(0, 500) });
+          break;
+        }
+      }
+
+      // 221 Phase 1: embedding write helper (idempotent)
+      try {
+        await sql.unsafe(`
+CREATE OR REPLACE FUNCTION public.set_kb_item_embedding(
+  p_item_id uuid,
+  p_embedding text
+) RETURNS void
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public, extensions
+AS $$
+  UPDATE public.kb_items
+  SET embedding = p_embedding::extensions.vector,
+      updated_at = now()
+  WHERE id = p_item_id;
+$$;
+REVOKE ALL ON FUNCTION public.set_kb_item_embedding(uuid, text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.set_kb_item_embedding(uuid, text) TO service_role;
+        `);
+        results.push({ file: "set_kb_item_embedding.sql", ok: true });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        results.push({
+          file: "set_kb_item_embedding.sql",
+          ok: false,
+          error: msg.slice(0, 500),
+        });
+      }
+
+      let collections: Array<Record<string, unknown>> = [];
+      let tables: string[] = [];
+      let functions: string[] = [];
+      let jefferyVerdictCol = false;
+      let competitiveSourcesCount = 0;
+
+      const migrationsOk =
+        results.filter((r) => r.file.startsWith("20260820")).length >= 4 &&
+        results
+          .filter((r) => r.file.startsWith("20260820"))
+          .every((r) => r.ok);
+
+      if (migrationsOk) {
+        collections = await sql`
+          SELECT slug, status, seeding_phase, gate_profile, owning_agent
+          FROM public.kb_collections
+          ORDER BY seeding_phase, slug
+        `;
+        const t = await sql`
+          SELECT table_name
+          FROM information_schema.tables
+          WHERE table_schema = 'public'
+            AND (
+              table_name LIKE 'kb_%'
+              OR table_name = 'jeffery_reviews'
+              OR table_name = 'competitive_sources'
+            )
+          ORDER BY table_name
+        `;
+        tables = t.map((r) => String(r.table_name));
+        const f = await sql`
+          SELECT p.proname
+          FROM pg_proc p
+          JOIN pg_namespace n ON n.oid = p.pronamespace
+          WHERE n.nspname = 'public'
+            AND p.proname IN ('promote_kb_item', 'kb_search', 'record_jeffery_review')
+          ORDER BY 1
+        `;
+        functions = f.map((r) => String(r.proname));
+        const c = await sql`
+          SELECT 1 AS n
+          FROM information_schema.columns
+          WHERE table_schema = 'public'
+            AND table_name = 'kb_items'
+            AND column_name = 'jeffery_verdict'
+          LIMIT 1
+        `;
+        jefferyVerdictCol = c.length > 0;
+        try {
+          const cs = await sql`
+            SELECT count(*)::int AS n
+            FROM public.competitive_sources
+            WHERE approval_status = 'approved' AND is_active = true
+          `;
+          competitiveSourcesCount = Number(cs[0]?.n ?? 0);
+        } catch {
+          competitiveSourcesCount = 0;
+        }
+      }
+
+      const ok = results.every((r) => r.ok);
+      return Response.json({
+        ok,
+        results,
+        collectionsCount: collections.length,
+        collections,
+        tables,
+        functions,
+        jefferyVerdictCol,
+        competitiveSourcesCount,
+      });
+    } finally {
+      await sql.end({ timeout: 5 });
+    }
+  } catch (err) {
+    safeLog.error("cron.apply-221", "threw", { error: err });
+    return Response.json(
+      {
+        ok: false,
+        error: err instanceof Error ? err.message : String(err),
+        results,
+      },
+      { status: 200 }
+    );
+  }
+}

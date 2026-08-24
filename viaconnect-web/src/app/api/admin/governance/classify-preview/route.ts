@@ -16,6 +16,8 @@ import type {
   PricingDomainCategory,
 } from '@/types/governance';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     const auth = await requireGovernanceAdmin();

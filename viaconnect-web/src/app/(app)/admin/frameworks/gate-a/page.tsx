@@ -57,12 +57,13 @@ const FRAMEWORK_TO_ROLE: Record<FrameworkId, 'compliance_officer' | 'security_of
 };
 
 interface PageProps {
-  searchParams: { framework?: string };
+  searchParams: Promise<{ framework?: string }>;
 }
 
-export default async function GateAPage({ searchParams }: PageProps) {
+export default async function GateAPage(props: PageProps) {
+  const searchParams = await props.searchParams;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const { data } = await supabase
     .from('compliance_gate_a_signoffs')
     .select('id, framework_id, subject_id, signoff_status, signed_by, signed_at, note, metadata')

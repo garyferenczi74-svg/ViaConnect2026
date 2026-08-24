@@ -4,8 +4,10 @@
 // Public endpoint. Accepts a practitioner waitlist submission, validates with
 // the canonical Zod schema, optionally claims an invitation token, persists to
 // practitioner_waitlist, and enqueues the welcome email through the
-// Supabase-only mailer queue. Returns 201 + waitlistId on success, 409 on
-// duplicate email, 400 on validation error.
+// Supabase-only mailer queue. Returns 201 on success, 409 on duplicate
+// email, 400 on validation error. No RETURNING clause is used on the
+// anon insert: Postgres enforces SELECT policies on INSERT...RETURNING
+// and the anon role has no SELECT policy on practitioner_waitlist.
 // =============================================================================
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -18,6 +20,9 @@ import {
 import { validateInvitationToken } from '@/lib/practitioner/invitations';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
+import { reportSupabaseError } from '@/lib/utils/schema-drift';
+
+export const dynamic = 'force-dynamic';
 
 export const runtime = 'nodejs';
 
@@ -42,7 +47,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'Invalid submission' }, { status: 400 });
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const userAgent = request.headers.get('user-agent') ?? null;
   const ipAddress = request.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? null;
   const referrer = request.headers.get('referer') ?? null;
@@ -60,7 +65,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
   }
 
-  let data, error;
+  let error: unknown;
   try {
     const result = await withTimeout(
       (async () => (supabase as any)
@@ -104,13 +109,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       utm_source: validated.utmSource ?? null,
       utm_medium: validated.utmMedium ?? null,
       utm_campaign: validated.utmCampaign ?? null,
-    })
-    .select('id')
-    .single())(),
+    }))(),
       10000,
       'api.waitlist.practitioner.insert',
     );
-    data = result.data;
     error = result.error;
   } catch (err) {
     if (isTimeoutError(err)) {
@@ -128,7 +130,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         { status: 409 },
       );
     }
-    safeLog.error('api.waitlist.practitioner', 'insert failed', { error });
+    reportSupabaseError('waitlist.practitioner.insert', error, { table: 'practitioner_waitlist' });
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 
@@ -148,7 +150,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       message_type: 'waitlist_submission_received',
       user_id: null,
       payload: {
-        waitlistId: data.id,
+        waitlistId: null,
         credentialType: validated.credentialType,
         primaryClinicalFocus: validated.primaryClinicalFocus,
         submissionType,
@@ -159,5 +161,5 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     console.warn('[waitlist] agent_messages emit failed (non-fatal)', e);
   }
 
-  return NextResponse.json({ success: true, waitlistId: data.id }, { status: 201 });
+  return NextResponse.json({ success: true }, { status: 201 });
 }

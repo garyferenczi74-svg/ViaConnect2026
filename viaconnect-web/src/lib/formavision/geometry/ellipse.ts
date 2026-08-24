@@ -1,9 +1,17 @@
-// Pure ellipse-perimeter solver for the FormaVision parametric body (Prompt 210b).
+// Pure ellipse-perimeter solver for the FormaVision parametric body (Prompt 210b)
+// plus 210e-2 Revision C anatomical rings (Prompt 210g).
 //
 // Given a target circumference (perimeter) and an aspect ratio b / a, this module
 // solves the ellipse semi-axes whose perimeter matches the target, then samples the
-// ellipse into a closed ring of (x, z) points. Everything here is pure and
-// deterministic: the same inputs always yield byte-identical output.
+// ellipse into a closed ring of (x, z) points. Anatomical rings apply angular
+// shape-correction and re-normalize so circumference still matches.
+
+import type { Sex } from './types';
+import {
+  regionForLevelId,
+  shapeCorrectionFactor,
+  type ShapeRegion,
+} from './shapeCorrection';
 
 export interface Point2 {
   x: number;
@@ -50,6 +58,7 @@ export function polygonPerimeter(points: Point2[]): number {
 
 // Sample a perimeter-matched ellipse into `segments` evenly-angled points on the
 // x and z axes. x spans the width (major axis a), z spans the depth (minor axis b).
+// Pure ellipse (no angular shape-correction). Prefer anatomicalRingPoints for body.
 export function ellipsePointsForPerimeter(
   perimeterM: number,
   aspectRatio: number,
@@ -66,4 +75,91 @@ export function ellipsePointsForPerimeter(
     };
   }
   return points;
+}
+
+export interface AnatomicalRingOptions {
+  levelId?: string;
+  region?: ShapeRegion;
+  sex?: Sex;
+  // When true, skip angular correction (tests / deliberate degradation gate).
+  disableShapeCorrection?: boolean;
+  // Prompt 210h: measured semi-axes in meters (side-to-side half-width / depth).
+  // When both present, they define the base ellipse before shape-correction.
+  aM?: number | null;
+  bM?: number | null;
+}
+
+/**
+ * 210e-2 Rev C ring: perimeter-matched ellipse modulated by angular shape
+ * correction, then uniformly scaled so the closed polygon perimeter still equals
+ * perimeterM (measured circumference preserved).
+ */
+export function anatomicalRingPoints(
+  perimeterM: number,
+  aspectRatio: number,
+  segments: number,
+  opts?: AnatomicalRingOptions,
+): Point2[] {
+  const count = Math.max(3, Math.floor(segments));
+  // Prefer measured semi-axes when both are present (user scan contours).
+  let base: Point2[];
+  const aM = opts?.aM;
+  const bM = opts?.bM;
+  if (
+    aM !== null &&
+    aM !== undefined &&
+    aM > 0 &&
+    bM !== null &&
+    bM !== undefined &&
+    bM > 0
+  ) {
+    base = new Array(count);
+    for (let i = 0; i < count; i += 1) {
+      const theta = (i / count) * Math.PI * 2;
+      base[i] = { x: aM * Math.cos(theta), z: bM * Math.sin(theta) };
+    }
+  } else {
+    base = ellipsePointsForPerimeter(perimeterM, aspectRatio, segments);
+  }
+  if (opts?.disableShapeCorrection) {
+    return base;
+  }
+  const sex = opts?.sex ?? 'male';
+  const region =
+    opts?.region ??
+    (opts?.levelId ? regionForLevelId(opts.levelId) : 'default');
+  const corrected: Point2[] = new Array(count);
+  for (let i = 0; i < count; i += 1) {
+    const theta = (i / count) * Math.PI * 2;
+    const factor = shapeCorrectionFactor(theta, region, sex);
+    corrected[i] = {
+      x: base[i].x * factor,
+      z: base[i].z * factor,
+    };
+  }
+  // When semi-axes drove the base, preserve their perimeter (shape of the user).
+  // When only circumference is known, re-normalize to that circumference.
+  const targetPerimeter =
+    aM !== null &&
+    aM !== undefined &&
+    aM > 0 &&
+    bM !== null &&
+    bM !== undefined &&
+    bM > 0
+      ? polygonPerimeter(base)
+      : perimeterM > 0
+        ? perimeterM
+        : 1e-3;
+  const poly = polygonPerimeter(corrected);
+  if (!(poly > 0)) {
+    return corrected;
+  }
+  const scale = targetPerimeter / poly;
+  for (let i = 0; i < count; i += 1) {
+    corrected[i] = {
+      x: corrected[i].x * scale,
+      z: corrected[i].z * scale,
+    };
+  }
+  return corrected;
 }

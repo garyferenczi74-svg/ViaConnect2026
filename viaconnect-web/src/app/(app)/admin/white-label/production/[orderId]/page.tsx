@@ -7,7 +7,7 @@
 // numbers + expiration + QC pass entered inline before flipping to
 // quality_control.
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, use } from 'react';
 import Link from 'next/link';
 import {
   ArrowLeft,
@@ -74,7 +74,8 @@ const STATUS_ICON: Partial<Record<ProductionStatus, typeof Truck>> = {
 
 const fmtUsd = (c: number) => `$${(c / 100).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 
-export default function ProductionAdminPage({ params }: { params: { orderId: string } }) {
+export default function ProductionAdminPage(props: { params: Promise<{ orderId: string }> }) {
+  const params = use(props.params);
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [items, setItems] = useState<LineItem[]>([]);
   const [loading, setLoading] = useState(true);

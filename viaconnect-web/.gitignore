@@ -63,3 +63,9 @@ tmp/208c/
 
 # Local working dir for scripts/compress-hero-videos.sh (downloaded + re-encoded videos)
 hero-fix/
+.superpowers/
+viaconnect-web/.superpowers/
+.env*
+
+.env.vercel.prod
+.env.vercel*

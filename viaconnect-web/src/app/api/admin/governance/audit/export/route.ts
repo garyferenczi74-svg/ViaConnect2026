@@ -13,6 +13,8 @@ import {
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const auth = await requireGovernanceAdmin();
@@ -24,7 +26,7 @@ export async function GET(request: NextRequest) {
   const domain = searchParams.get('domain');
   const eventType = searchParams.get('event_type');
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const events: AuditEventRow[] = [];
 
   // Proposal lifecycle events (initiated / submitted / activated / rolled_back / withdrawn / expired)

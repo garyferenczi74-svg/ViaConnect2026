@@ -1,0 +1,80 @@
+{
+  "prompt": "225",
+  "phase": "9",
+  "verifiedAt": "2026-08-20",
+  "primarySource": {
+    "name": "WADA 2026 Prohibited List",
+    "url": "https://www.wada-ama.org/en/prohibited-list",
+    "inForceFrom": "2026-01-01",
+    "announced": "2025-09-24"
+  },
+  "policy": {
+    "neverWriteNotProhibitedWithoutReview": true,
+    "jefferyRequiredForRegulatoryEdits": true,
+    "onlyExplicitNamedExamplesPromoted": true
+  },
+  "findings": [
+    {
+      "slug": "ipamorelin-standalone",
+      "wada": "prohibited_all_times",
+      "class": "S2.2.4",
+      "basis": "Explicit GHS example"
+    },
+    {
+      "slug": "mk-677",
+      "wada": "prohibited_all_times",
+      "class": "S2.2.4",
+      "basis": "Explicit ibutamoren (MK-677) GHS example"
+    },
+    {
+      "slug": "sermorelin",
+      "wada": "prohibited_all_times",
+      "class": "S2.2.4",
+      "basis": "Explicit GHRH analogue example"
+    },
+    {
+      "slug": "cjc-1295-no-dac",
+      "wada": "prohibited_all_times",
+      "class": "S2.2.4",
+      "basis": "Explicit CJC-1295 GHRH analogue example"
+    },
+    {
+      "slug": "aod-9604",
+      "wada": "prohibited_all_times",
+      "class": "S2.2.3",
+      "basis": "Explicit GH fragment example"
+    },
+    {
+      "slug": "anamorelin",
+      "wada": "prohibited_all_times",
+      "class": "S2.2.4",
+      "basis": "Explicit GHS example"
+    },
+    {
+      "slug": "macimorelin",
+      "wada": "prohibited_all_times",
+      "class": "S2.2.4",
+      "basis": "Explicit GHS example"
+    },
+    {
+      "slug": "tabimorelin",
+      "wada": "prohibited_all_times",
+      "class": "S2.2.4",
+      "basis": "Explicit GHS example"
+    },
+    {
+      "slug": "ghrp-1",
+      "wada": "prohibited_all_times",
+      "class": "S2.2.4",
+      "basis": "Explicit GHRP example"
+    }
+  ],
+  "deferred": [
+    {
+      "slug": "edu-bpc157",
+      "topic": "fda_503a_category",
+      "reason": "FDA PCAC 2026-07-23 agenda discusses BPC-157 for 503A bulks list; no final category write until outcome published",
+      "sourceUrl": "https://www.fda.gov/advisory-committees/advisory-committee-calendar/july-23-24-2026-meeting-pharmacy-compounding-advisory-committee-07232026"
+    }
+  ]
+}

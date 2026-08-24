@@ -40,15 +40,13 @@ export const SUGGESTED_SOURCES: Record<CategorySlug, SuggestedSource[]> = {
     { source_name: 'Examine.com',                          source_url: 'https://examine.com/',                      source_type: 'platform' },
     { source_name: 'NIH Office of Dietary Supplements',    source_url: 'https://ods.od.nih.gov/',                   source_type: 'organization' },
     { source_name: 'Precision Nutrition',                  source_url: 'https://www.precisionnutrition.com/',       source_type: 'platform' },
-    { source_name: 'The Conversation – Nutrigenomics',     source_url: 'https://theconversation.com/topics/nutrigenomics', source_type: 'website' },
+    { source_name: 'The Conversation Nutrigenomics',       source_url: 'https://theconversation.com/topics/nutrigenomics', source_type: 'website' },
     { source_name: 'Longevity.Technology',                 source_url: 'https://longevity.technology/',             source_type: 'platform' },
-    { source_name: 'Life Extension Foundation',            source_url: 'https://www.lifeextension.com/',            source_type: 'organization' },
     { source_name: 'Project CBD',                          source_url: 'https://www.projectcbd.org/',               source_type: 'platform' },
     { source_name: 'Leafly Science',                       source_url: 'https://www.leafly.com/news/science-tech',  source_type: 'platform' },
     { source_name: 'Healthline Nutrition',                 source_url: 'https://www.healthline.com/nutrition',      source_type: 'website' },
-    { source_name: 'mindbodygreen',                        source_url: 'https://www.mindbodygreen.com/',            source_type: 'platform' },
-    { source_name: 'Mercola',                              source_url: 'https://www.mercola.com/',                  source_type: 'platform' },
     { source_name: 'Biohackers Magazine',                  source_url: 'https://biohackersmagazine.com/',           source_type: 'platform' },
+    // G56: Mercola, Life Extension, mindbodygreen excluded from suggested add list
   ],
   social_media: [
     { source_name: 'FoundMyFitness',                       source_url: 'https://www.foundmyfitness.com/',           source_type: 'influencer' },

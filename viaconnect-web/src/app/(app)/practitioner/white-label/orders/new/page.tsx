@@ -8,7 +8,7 @@ import { Hourglass } from 'lucide-react';
 export const dynamic = 'force-dynamic';
 
 export default async function NewOrderPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const active = await isLaunchPhaseActive('white_label_products_2028', supabase);
 
   if (!active) {

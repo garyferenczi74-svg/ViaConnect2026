@@ -22,6 +22,8 @@ import { loadActiveManualEvidence } from '@/lib/soc2/manualEvidence/loader';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 export const maxDuration = 300;
 
@@ -51,7 +53,7 @@ async function authenticate(req: NextRequest): Promise<
   }
 
   // Path 2: admin user session.
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.soc2.packets.generate.auth');
   if (!user) {
     return {

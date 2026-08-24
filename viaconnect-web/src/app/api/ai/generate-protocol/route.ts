@@ -5,10 +5,12 @@ import { safeLog } from "@/lib/utils/safe-log";
 import { runProtocolGate, toPersistedGateSummary, type ProtocolGateReport } from "@/lib/interactions/protocol-gate";
 import type { Json } from "@/lib/supabase/types";
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: Request) {
   try {
     await request.json().catch(() => ({}));
-    const supabase = createClient();
+    const supabase = await createClient();
 
     let user;
     try {

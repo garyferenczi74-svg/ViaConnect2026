@@ -16,9 +16,11 @@ import { getEffectiveTierForUser } from '@/lib/pricing/membership-manager';
 import { isPlatinum } from '@/lib/body-measurements/ingestScanMeasurements';
 import type { TierId } from '@/types/pricing';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
-    const sb = createClient();
+    const sb = await createClient();
     const {
       data: { user },
     } = await withTimeout(sb.auth.getUser(), 5000, 'api.body.measurements.auth');

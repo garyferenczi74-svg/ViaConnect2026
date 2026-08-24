@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 export default async function GoodFaithEventsPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const { data } = await supabase
     .from("precheck_good_faith_events")
     .select("id, finding_id, receipt_id, practitioner_id, match_kind, outcome, severity_before, severity_after, created_at")

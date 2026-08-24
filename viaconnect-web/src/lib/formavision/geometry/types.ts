@@ -24,7 +24,14 @@ export interface BodyRing {
   circumferenceM: number | null;
   // Depth over width of the cross-section ellipse at this region (b / a). A value
   // of 1 is a circle; values below 1 are wider than deep (typical for a torso).
+  // When aM and bM are both set, they take priority for the cross-section shape.
   aspectRatio: number;
+  // Prompt 210h Rev C: measured side-to-side half-width (meters). From scan
+  // semi-axes (front width / 2). null/undefined means use circumference + aspect.
+  aM?: number | null;
+  // Prompt 210h Rev C: measured front-to-back half-depth (meters). From scan
+  // semi-axes (side depth / 2). null/undefined means use circumference + aspect.
+  bM?: number | null;
   // True when circumferenceM was filled from the template rather than measured.
   estimated: boolean;
 }

@@ -7,6 +7,8 @@ import { safeLog } from '@/lib/utils/safe-log';
 import { withAbortTimeout } from '@/lib/utils/with-timeout';
 import { GEMINI_MODEL } from '@/lib/nutrition/gemini-prompts';
 
+export const dynamic = 'force-dynamic';
+
 const TIMEOUT = 5000;
 
 export async function GET(req: NextRequest) {

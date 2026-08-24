@@ -19,6 +19,8 @@ import { AIRouteError } from '@/lib/errors/classify-ai';
 import { newRequestId } from '@/lib/observability/audit-recorder';
 import { awardOffContributionClicked } from '@/lib/nutrition/helix-bridge';
 
+export const dynamic = 'force-dynamic';
+
 const ROUTE = '/api/nutrition/barcode/contribution';
 
 const RequestSchema = z.object({
@@ -30,7 +32,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   let userId: string | null = null;
 
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       throw new AIRouteError(

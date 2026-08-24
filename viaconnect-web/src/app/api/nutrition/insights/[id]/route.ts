@@ -27,12 +27,12 @@ const DB_TIMEOUT_MS = 5000;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 interface RouteContext {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export async function PATCH(request: NextRequest, context: RouteContext): Promise<NextResponse> {
   const startedAt = Date.now();
-  const supabase = createClient();
+  const supabase = await createClient();
 
   let userId: string | null = null;
   try {
@@ -45,7 +45,7 @@ export async function PATCH(request: NextRequest, context: RouteContext): Promis
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
 
-  const insightId = context.params.id;
+  const insightId = (await context.params).id;
   // A malformed id can never match a row; 404 without leaking validity.
   if (!UUID_RE.test(insightId)) {
     return NextResponse.json({ error: 'not_found' }, { status: 404 });

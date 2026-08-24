@@ -5,7 +5,10 @@ import { withTimeout, withAbortTimeout, isTimeoutError } from '@/lib/utils/with-
 import { safeLog } from '@/lib/utils/safe-log';
 import { getCircuitBreaker, isCircuitBreakerError } from '@/lib/utils/circuit-breaker';
 
-export async function GET(req: NextRequest, { params }: { params: { appId: string } }) {
+export const dynamic = 'force-dynamic';
+
+export async function GET(req: NextRequest, props: { params: Promise<{ appId: string }> }) {
+  const params = await props.params;
   const { appId } = params;
   const url = new URL(req.url);
   const code = url.searchParams.get('code');
@@ -26,7 +29,7 @@ export async function GET(req: NextRequest, { params }: { params: { appId: strin
   }
 
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     let user;
     try {

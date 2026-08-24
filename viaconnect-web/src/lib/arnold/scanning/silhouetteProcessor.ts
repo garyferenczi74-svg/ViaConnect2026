@@ -8,23 +8,27 @@
 
 import type { Point2D, PoseSilhouette, LandmarkMap, PoseId } from './types';
 
-// Lazy-load tf and body-segmentation so the SSR bundle stays lean.
-let modelPromise: Promise<{
-  tf: typeof import('@tensorflow/tfjs');
-  bodySeg: typeof import('@tensorflow-models/body-segmentation');
-  segmenter: import('@tensorflow-models/body-segmentation').BodySegmenter;
-}> | null = null;
+// Lazy-load tf and body-segmentation so the SSR / Turbopack graph stays lean.
+// Avoid type-import() of TF packages (they re-enter the module graph under Turbopack).
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let modelPromise: Promise<{ tf: any; bodySeg: any; segmenter: any }> | null = null;
 
 async function getSegmenter() {
   if (!modelPromise) {
     modelPromise = (async () => {
-      const tf = await import('@tensorflow/tfjs');
-      await import('@tensorflow/tfjs-backend-webgl').catch(() => {});
+      // turbopackIgnore: keep ML deps out of the production graph analysis
+      // (MediaPipe packages have no ESM exports under Turbopack).
+      const tf = await import(/* turbopackIgnore: true */ "@tensorflow/tfjs");
+      await import(/* turbopackIgnore: true */ "@tensorflow/tfjs-backend-webgl").catch(
+        () => {}
+      );
       await tf.ready();
-      const bodySeg = await import('@tensorflow-models/body-segmentation');
+      const bodySeg = await import(
+        /* turbopackIgnore: true */ "@tensorflow-models/body-segmentation"
+      );
       const segmenter = await bodySeg.createSegmenter(
         bodySeg.SupportedModels.MediaPipeSelfieSegmentation,
-        { runtime: 'tfjs', modelType: 'general' } as never,
+        { runtime: "tfjs", modelType: "general" } as never
       );
       return { tf, bodySeg, segmenter };
     })();

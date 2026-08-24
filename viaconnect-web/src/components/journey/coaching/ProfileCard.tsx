@@ -29,7 +29,9 @@ import { createClient } from '@/lib/supabase/client';
 import { withTimeout } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 import { getDisplayName } from '@/lib/user/get-display-name';
+import { getDisplayName as getAgentDisplayName } from '@/lib/getDisplayName';
 import { useJourneyState } from '@/hooks/journey/useJourneyState';
+import { useHannahDailyNote } from '@/hooks/journey/useHannahDailyNote';
 
 const TEAL = '#2DA5A0';
 const DM_SANS = 'var(--font-dm-sans), sans-serif';
@@ -99,6 +101,9 @@ export function ProfileCard({ userId }: { userId: string | null }) {
   const initial = who.charAt(0).toUpperCase() || 'V';
   const showAvatar = !!avatarUrl && !avatarErrored;
   const goalPhrase = state.goalPhrase;
+  // Prompt 216d: compiled note (welcome fail-open). Same source as main /analytics card.
+  const { noteText: hannahNote } = useHannahDailyNote(userId, who);
+  const hannahLabel = getAgentDisplayName('hannah');
 
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-white/[0.06] bg-[rgba(22,36,64,0.40)] p-4">
@@ -189,7 +194,7 @@ export function ProfileCard({ userId }: { userId: string | null }) {
         </span>
       </div>
 
-      {/* One short Hannah note: a calm, honest, name-aware line. */}
+      {/* Prompt 216d: compiled Hannah note (or Marshall-approved welcome). */}
       <div className="flex items-start gap-2">
         <span
           className="mt-0.5 shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide"
@@ -200,15 +205,14 @@ export function ProfileCard({ userId }: { userId: string | null }) {
             border: '1px solid rgba(45,165,160,0.24)',
           }}
         >
-          Hannah
+          {hannahLabel}
         </span>
         <p
           className="min-w-0 text-[12.5px] leading-relaxed text-white/70"
           style={{ fontFamily: DM_SANS }}
+          data-testid="hannah-daily-note"
         >
-          {who === 'there'
-            ? 'Welcome. As you log and connect your data, your read sharpens here.'
-            : `Good to see you, ${who}. Your read below sharpens as you log and connect more data.`}
+          {hannahNote}
         </p>
       </div>
     </div>

@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function AuditorGrantsPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const { data } = await supabase
     .from('soc2_auditor_grants')
     .select('id, auditor_email, auditor_firm, packet_ids, granted_at, expires_at, revoked, revoked_at, access_count')

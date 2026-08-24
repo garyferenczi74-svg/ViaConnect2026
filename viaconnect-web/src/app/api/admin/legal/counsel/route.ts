@@ -14,11 +14,13 @@ import { writeLegalAudit } from '@/lib/legalAudit/operationsAuditLog';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 interface ProfileLite { role: string }
 
-async function requireAdmin(supabase: ReturnType<typeof createClient>) {
+async function requireAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.admin.legal.counsel.auth');
   if (!user) return { ok: false as const, response: NextResponse.json({ error: 'Authentication required' }, { status: 401 }) };
   const sb = supabase as unknown as { from: (t: string) => { select: (s: string) => { eq: (k: string, v: string) => { maybeSingle: () => Promise<{ data: ProfileLite | null }> } } } };
@@ -31,7 +33,7 @@ async function requireAdmin(supabase: ReturnType<typeof createClient>) {
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const ctx = await requireAdmin(supabase);
     if (!ctx.ok) return ctx.response;
 
@@ -60,7 +62,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const ctx = await requireAdmin(supabase);
     if (!ctx.ok) return ctx.response;
 

@@ -18,7 +18,7 @@ interface IncidentRow { id: string; incident_id: string; title: string }
 
 export default async function SanctionsPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
 
   const [sanctionRes, incidentRes] = await Promise.all([
     supabase

@@ -12,13 +12,15 @@ import { createClient } from '@/lib/supabase/server';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 const VALID_STATUSES = ['pending_review', 'confirmed_fraud', 'cleared_benign', 'admin_override'];
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user } } = await withTimeout(
       supabase.auth.getUser(),
       5000,

@@ -16,13 +16,15 @@ import { approversForEngagementBudget } from '@/lib/legal/counsel/budgetApproval
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 const READ_ROLES = new Set(['admin', 'compliance_officer', 'legal_ops', 'cfo', 'ceo']);
 
 interface ProfileLite { role: string }
 
-async function requireRole(supabase: ReturnType<typeof createClient>, allowed: ReadonlySet<string>) {
+async function requireRole(supabase: Awaited<ReturnType<typeof createClient>>, allowed: ReadonlySet<string>) {
   const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.admin.legal.engagements.auth');
   if (!user) return { ok: false as const, response: NextResponse.json({ error: 'Authentication required' }, { status: 401 }) };
   const sb = supabase as unknown as { from: (t: string) => { select: (s: string) => { eq: (k: string, v: string) => { maybeSingle: () => Promise<{ data: ProfileLite | null }> } } } };
@@ -44,12 +46,10 @@ interface EngagementRow {
   ceo_approved_at: string | null;
 }
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { engagementId: string } },
-): Promise<NextResponse> {
+export async function PATCH(request: NextRequest, props: { params: Promise<{ engagementId: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     // Require any of the read-eligible roles to even hit this endpoint;
     // each branch then checks the role required for the specific action.
     const ctx = await requireRole(supabase, READ_ROLES);

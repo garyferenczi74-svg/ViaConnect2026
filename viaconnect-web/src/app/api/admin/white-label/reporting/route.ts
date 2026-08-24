@@ -11,11 +11,13 @@ import { toCsv } from '@/lib/white-label/csv-export';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 type Section = 'program' | 'practitioner' | 'compliance' | 'operations' | 'financial';
 
-async function requireAdmin(supabase: ReturnType<typeof createClient>) {
+async function requireAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.white-label.reporting.auth');
   if (!user) return { ok: false as const, response: NextResponse.json({ error: 'Authentication required' }, { status: 401 }) };
   const sb = supabase as any;
@@ -33,7 +35,7 @@ async function requireAdmin(supabase: ReturnType<typeof createClient>) {
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const auth = await requireAdmin(supabase);
     if (!auth.ok) return auth.response;
 

@@ -33,6 +33,8 @@ import {
   type OFFProduct,
 } from '@/lib/nutrition/databases/open-food-facts';
 
+export const dynamic = 'force-dynamic';
+
 const ROUTE = '/api/nutrition/barcode/lookup';
 
 const RequestSchema = z.object({
@@ -54,7 +56,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       );
     }
 
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       throw new AIRouteError(

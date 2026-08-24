@@ -9,6 +9,8 @@ import { requireGovernanceAdmin } from '@/lib/governance/admin-guard';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   const auth = await requireGovernanceAdmin();
   if (auth.kind === 'error') return auth.response;
@@ -29,7 +31,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
 
   try {
     const insertRes = await withTimeout(

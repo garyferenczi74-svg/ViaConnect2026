@@ -19,7 +19,7 @@ const TONE_CLASS: Record<"green" | "amber" | "orange" | "red", string> = {
 
 export default async function StrikesStandingPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const now = new Date().toISOString();
   const { data } = await supabase
     .from("practitioner_strikes")

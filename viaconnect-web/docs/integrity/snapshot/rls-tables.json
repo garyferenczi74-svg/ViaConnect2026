@@ -1,0 +1,2306 @@
+[
+ {
+  "tablename": "active_compound_load",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "adverse_events",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "advisor_agent_config",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "advisor_fix_log",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "advisor_issues",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "advisor_peptide_shares",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "advisor_snapshots",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "agent_conflict_log",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "agent_heartbeats",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "aggregation_snapshots",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "ai_insights",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "ai_route_audit",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "alert_snapshots",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "analytics_category_history",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "analytics_events",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "ancestry_context",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "appeal_agreement_rollups",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "appeal_analyses",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "appeal_decisions",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "appeal_drafts",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "appeal_patterns",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "apple_health_imports",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "approver_assignments",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "assessment_results",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "atom_archive",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "atom_conflicts",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "atom_study_metadata",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "audit_logs",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "backfill_audit",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "barcode_capture_corpus",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "barcode_scan_sessions",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "beverage_catalog",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "bio_optimization_history",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "biomarker_trends",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "biometric_consents",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "board_meetings",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "board_members",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "board_metrics",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "board_pack_ai_prompts",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "board_pack_artifacts",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "board_pack_distributions",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "board_pack_download_events",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "board_pack_kpi_snapshots",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "board_pack_sections",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "board_pack_templates",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "board_packs",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "body_composition_readings",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "body_goal_recalibrations",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "body_goal_targets",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "body_goals",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "body_graphic_interactions",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "body_graphics_preferences",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "body_photo_sessions",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "body_regions",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "body_scan_composition",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "body_scan_inclusivity_waitlist",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "body_scan_measurements",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "body_scan_personal_baselines",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "body_scan_practitioner_notes",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "body_scan_quality",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "body_scan_tier_log",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "body_tracker_activity",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "body_tracker_chronic_risk",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "body_tracker_circumference",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "body_tracker_connections",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "body_tracker_entries",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "body_tracker_journey_events",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "body_tracker_journeys",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "body_tracker_metabolic",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "body_tracker_milestones",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "body_tracker_photo_scans",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "body_tracker_recommendations",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "body_tracker_scores",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "body_tracker_segmental_fat",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "body_tracker_segmental_muscle",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "body_tracker_user_state",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "body_tracker_weight",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "bos_compute_queue",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "bos_write_telemetry",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "botanical_formula_items",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "botanical_formulas",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "brand_agent_config",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "brand_agent_log",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "brand_enrichment_state",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "bundle_components",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "bundles",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "caq_assessment_versions",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "caq_demographics_updates",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "caq_paths",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "caq_supplement_extraction_log",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "cashflow_monthly",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "cashflow_summary",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "categories",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "channel_mix_scenarios",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "channel_verification_attempts",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "channel_volume_checks",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "clinical_assessments",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "cogs_delta_reports",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "cohort_retention",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "cohort_signals",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "commission_accruals",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "commission_payouts",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "commission_reconciliation_lines",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "commission_reconciliation_runs",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "competitor_pricing",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "compliance_audit_log",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "compliance_evidence",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "compliance_evidence_artifacts",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "compliance_findings",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "compliance_frameworks",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "compliance_gate_a_signoffs",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "compliance_incidents",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "compliance_rules",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "compliance_waivers",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "consent_ledger",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "consumer_counterfeit_reports",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "corpus_snapshots",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "cost_ledger",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "counterfeit_determinations",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "counterfeit_dispositions",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "counterfeit_evaluations",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "counterfeit_exemplars",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "counterfeit_reference_corpus",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "counterfeit_test_buys",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "custom_formulation_development_fees",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "custom_formulation_ingredients",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "custom_formulation_medical_reviews",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "custom_formulation_regulatory_reviews",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "custom_formulation_stability_tests",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "custom_formulations",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "customer_price_bindings",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "customs_authentication_guides",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "customs_counsel_reviews",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "customs_counsel_sessions",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "customs_detention_images",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "customs_detentions",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "customs_e_allegations",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "customs_fee_ledger",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "customs_fines_imposed",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "customs_guide_sections",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "customs_iprs_scan_results",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "customs_moiety_claims",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "customs_recordation_classes",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "customs_recordation_products",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "customs_recordations",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "customs_seizures",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "customs_trainings",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "daily_checkins",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "daily_scores",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "daily_tasks",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "data_events",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "decision_rights_rules",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "diplotype_calls",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "dna_uploads",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "drug_nutrient_depletions",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "dsar_requests",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "email_otps",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "embedding_versions",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "energy_balance_signals",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "engagement_score_snapshots",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "epigenetic_uploads",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "eval_gold_set",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "eval_runs",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "executive_dashboard",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "executive_recommendations",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "executive_reporting_audit_log",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "executive_risks",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "family_members",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "farma_tokens",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "farmceutica_curated_foods",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "farmceutica_ingredients",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "fat_sources",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "feature_flag_audit",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "features",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "food_recognition_cache",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "forecast_milestones",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "forecast_monthly",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "framework_consistency_flags",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "framework_packets",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "framework_registry_flags",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "genetic_profiles",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "genex360_products",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "genex360_purchase_currency_details",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "genex360_purchases",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "genotype_phenotype_concordance",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "genotype_uploads",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "governance_configuration_log",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "governance_notifications_queue",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "health_metrics",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "health_scores",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "helix_achievement_unlocks",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "helix_achievements",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "helix_balances",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "helix_challenge_participants",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "helix_challenges",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "helix_earning_event_types",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "helix_family_pool_config",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "helix_leaderboard",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "helix_redemption_catalog",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "helix_redemptions",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "helix_referral_codes",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "helix_referrals",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "helix_streaks",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "helix_tiers",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "helix_transactions",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "herbs",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "hipaa_breach_determinations",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "hipaa_contingency_plan_tests",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "hipaa_device_media_events",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "hipaa_emergency_access_invocations",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "hipaa_risk_analyses",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "hipaa_sanction_actions",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "hipaa_sanction_policies",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "hipaa_workforce_training",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "hounddog_collector_state",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "hydration_log_sessions",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "hydration_reconciliation",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "ingredient_library",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "ingredient_library_interactions",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "ingredients",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "integrity_checks",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "interaction_notifications",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "interaction_overrides",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "interaction_rules",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "international_audit_log",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "international_country_to_market",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "international_fx_drift_findings",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "international_fx_rate_history",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "international_market_config",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "international_refunds",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "international_settlement_daily_reports",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "international_tax_registrations",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "international_vat_invoice_sequences",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "international_vat_invoices",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "international_vat_number_validations",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "inventory_reorder",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "iprs_scan_config",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "iso_internal_audits",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "iso_isms_scope_documents",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "iso_management_reviews",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "iso_nonconformities",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "iso_risk_register",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "iso_risk_treatments",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "iso_statements_of_applicability",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "jeffery_directives",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "jeffery_knowledge_entries",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "jeffery_learning_log",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "jeffery_message_comments",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "jeffery_messages",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "kit_registrations",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "knowledge_atoms",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "knowledge_bus",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "knowledge_chunks",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "knowledge_queries",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "kpi_library",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "lab_biomarkers",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "lab_report_uploads",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "lab_results_normalized",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "launch_phases",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "legal_case_settlements",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "legal_case_timeline",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "legal_counsel_engagements",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "legal_counterparties",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "legal_counterparty_merge_history",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "legal_dmca_counter_notices",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "legal_dmca_filings",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "legal_enforcement_actions",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "legal_investigation_cases",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "legal_investigation_evidence",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "legal_marketplace_complaints",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "legal_marketplace_integrations",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "legal_operations_audit_log",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "legal_outside_counsel",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "legal_privilege_grants",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "legal_privileged_communications",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "legal_templates_library",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "level_4_enrollments",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "level_4_parameters",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "manual_customers",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "map_compliance_scores",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "map_policies",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "map_policy_change_log",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "map_price_observations",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "map_remediation_evidence",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "map_violations",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "map_vip_exemption_sensitive_notes",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "map_vip_exemptions",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "map_waiver_evidence",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "map_waiver_skus",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "map_waivers",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "margin_waterfall",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "marketing_copy_conversions",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "marketing_copy_impressions",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "marketing_copy_test_rounds",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "marketing_copy_variant_events",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "marketing_copy_variants",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "marshall_vision_config",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "master_skus",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "master_skus_market_pricing",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "meal_items",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "meal_items_hydration_backup_172e",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "meal_logs",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "meals",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "medication_interactions",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "membership_tiers",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "memberships",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "migration_sync_log",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "naturopath_profiles",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "notification_batch_queue",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "notification_channel_credentials",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "notification_event_registry",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "notification_events_inbox",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "notification_legal_ops_preferences",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "notification_legal_ops_recipients",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "notification_phi_redaction_failures",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "notification_preferences",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "notification_quiet_hours",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "notification_sms_opt_in_log",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "notifications",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "notifications_dispatched",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "nutrient_intake_ledger",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "nutrient_interactions",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "nutrition_genetic_findings",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "nutrition_insight_feedback",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "nutrition_insight_runs",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "nutrition_insights",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "nutrition_logs",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "nutrition_targets",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "nutrition_test_uploads",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "off_product_cache",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "order_currency_details",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "order_items",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "orders",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "outcome_events",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "outcome_stack_components",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "outcome_stacks",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "outcome_timeline_cta",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "outcome_timeline_events",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "outcome_timeline_phases",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "outcome_timeline_qualifier",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "outcome_timeline_section_blocks",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "outcome_timeline_variant_sets",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "pathway_scores",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "patient_practitioner_relationships",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "payout_batch_lines",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "payout_batches",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "payout_disputes",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "payout_transactions",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "peptide_delivery_options",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "peptide_detected_patterns",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "peptide_protocol_rules",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "peptide_registry",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "peptide_rules",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "peptide_stack_protocols",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "peptide_stack_recommendations",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "peptide_stack_templates",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "photo_meal_blobs",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "photo_share_permissions",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "portfolio_trends",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "practitioner_feedback",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "practitioner_notice_appeals",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "practitioner_notices",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "practitioner_operations_audit_log",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "practitioner_payout_methods",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "practitioner_social_handles",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "practitioner_statements",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "practitioner_strikes",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "practitioner_tax_documents",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "practitioner_verified_channels",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "practitioners",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "precheck_clearance_receipts",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "precheck_extension_grants",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "precheck_findings",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "precheck_good_faith_events",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "precheck_sessions",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "precheck_signing_keys",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "prescription_consume_failures",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "prescription_tokens",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "price_change_history",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "pricing_domains",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "pricing_proposals",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "pricing_tiers",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "product_catalog",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "product_lookup_cache",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "products",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "products_dropped_backup_142e",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "products_dropped_backup_152w",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "products_image_audit",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "products_image_urls_backup_142d",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "products_methylation_backup_142c",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "profiles",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "promo_codes",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "promotion_roi",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "prompt_177d_full_manual_repair_log",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "proposal_approvals",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "proposal_comments",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "protocol_adherence_log",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "protocol_ingredients",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "protocol_rules",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "protocol_share_activity",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "protocol_shares",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "protocol_templates",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "protocols",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "quick_log_sessions",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "rebuttal_templates",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "recipe_ingredients",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "recipe_public_templates",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "recipe_steps",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "recipe_suggestion_events",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "recipes",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "recommendation_audit",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "recommendations",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "regulatory_alerts",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "regulatory_audit_log",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "regulatory_claim_library",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "regulatory_disclaimer_events",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "regulatory_disease_dictionary",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "regulatory_ingredients",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "regulatory_jurisdictions",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "regulatory_kelsey_reviews",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "regulatory_peptide_classifications",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "regulatory_sku_jurisdiction_status",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "regulatory_substantiation",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "report_history",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "research_hub_alerts",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "research_hub_categories",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "research_hub_items",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "research_hub_user_items",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "research_hub_user_sources",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "research_hub_user_tabs",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "research_run_log",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "retest_schedule",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "retraction_log",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "reward_redemptions",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "rewards",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "rollout_cohorts",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "rule_killswitch",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "safety_alerts",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "scan_calibration_nudges",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "scenario_categories",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "scenario_copy_blocks",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "scenario_disclosures",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "scenario_events",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "scenario_personas",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "scheduled_flag_activations",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "scheduler_connections",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "scheduler_events",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "scheduler_interceptions",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "scheduler_overrides",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "scheduler_platform_state_changes",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "scheduler_platform_states",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "scheduler_poll_state",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "scheduler_scans",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "scoring_audit_log",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "secondary_findings_exclusions",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "security_agent_config",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "security_audit_log",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "security_pending_repairs",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "security_repair_log",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "sherlock_activity_log",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "sherlock_agent_state",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "sherlock_escalations",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "sherlock_insights_cache",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "sherlock_task_queue",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "sherlock_trends",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "shop_cart_items",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "shop_order_items",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "shop_order_status_history",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "shop_orders",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "shop_refresh_audit_log",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "shop_refresh_reconciliation_findings",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "sku_rationalization",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "snp_protocol_rules",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "soc2_auditor_access_log",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "soc2_auditor_grants",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "soc2_collector_config",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "soc2_collector_runs",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "soc2_distribution_attempts",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "soc2_distribution_targets",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "soc2_manual_evidence",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "soc2_packet_files",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "soc2_packets",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "soc2_pseudonym_keys",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "soc2_signing_keys",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "social_review_queue",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "social_signals",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "social_signals_below_threshold",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "social_signals_unmatched",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "subscription_mrr_snapshot",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "subscription_sku_economics",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "supplement_adherence",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "supplement_brand_aliases",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "supplement_brand_registry",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "supplement_brand_top_products",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "supplement_discount_rules",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "supplement_photo_bindings",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "supplement_photo_inventory",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "supplement_reference_canonical",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "supplement_search_index",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "supplement_timing_rules",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "supplier_scorecard",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "system_health_checks",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "takedown_requests",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "takedown_templates",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "token_transactions",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "toolchain_runs",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "toolchain_step_results",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "trust_band_chips",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "trust_band_clinician_cards",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "trust_band_events",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "trust_band_regulatory_paragraphs",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "trust_band_scale_measurements",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "trust_band_testimonials",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "ultrathink_advisor_conversations",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "ultrathink_advisor_evolution_reports",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "ultrathink_advisor_prompts",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "ultrathink_advisor_query_log",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "ultrathink_advisor_ratings",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "ultrathink_agent_events",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "ultrathink_agent_log",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "ultrathink_agent_registry",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "ultrathink_agent_tasks",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "ultrathink_clinical_rules",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "ultrathink_data_feeds",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "ultrathink_interaction_rules",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "ultrathink_jeffery_advisor_config",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "ultrathink_jeffery_decisions",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "ultrathink_jeffery_evolution",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "ultrathink_knowledge_base",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "ultrathink_knowledge_graph_edges",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "ultrathink_nutrient_rda",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "ultrathink_outcome_tracker",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "ultrathink_pattern_cache",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "ultrathink_product_efficacy",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "ultrathink_protocols",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "ultrathink_recommendations",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "ultrathink_research_feed",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "ultrathink_sync_log",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "unit_economics",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "usda_food_cache",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "user_addresses",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "user_beverages",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "user_consents",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "user_context_canonical",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "user_current_supplements",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "user_epigenetic_markers",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "user_feature_opt_ins",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "user_health_context",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "user_interaction_cache",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "user_interactions",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "user_meal_corpus",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "user_notification_preferences",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "user_notifications",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "user_nutrivision_settings",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "user_off_lookups",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "user_peptide_prescriptions",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "user_protocol_synthesis",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "user_protocols",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "user_safety_preferences",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "user_streaks",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "user_supplement_schedule",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "user_supplements",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "user_tiers",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "user_variants",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "user_weight_goals",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "variant_calls",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "vendor_baas",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "verification_codes",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "voice_edit_operations_log",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "voice_edit_sessions",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "voice_native_sessions",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "waitlist_signups",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "wearable_integrations",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "wellness_analytics",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "wellness_scoring_config",
+  "rowsecurity": true
+ },
+ {
+  "tablename": "whatif_scenarios",
+  "rowsecurity": true
+ }
+]

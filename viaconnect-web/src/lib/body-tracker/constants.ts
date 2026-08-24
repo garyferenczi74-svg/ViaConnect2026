@@ -63,6 +63,8 @@ export const GAUGE_GRADIENT_STOPS = [
 export const BODY_TRACKER_TABS = [
   { id: 'dashboard',   label: 'Dashboard',        href: '/body-tracker/dashboard' },
   { id: 'composition', label: 'Body Composition', href: '/body-tracker/composition' },
+  // Prompt 210h Rev C: dedicated 3D scan surface (isolated from composition numbers).
+  { id: 'formavision', label: 'FormaVision',      href: '/body-tracker/formavision' },
   { id: 'weight',      label: 'Weight',           href: '/body-tracker/weight' },
   { id: 'milestones',  label: 'Milestones',       href: '/body-tracker/milestones' },
   // Prompt 179 + 179b: the weight-trajectory tab. User-facing label is

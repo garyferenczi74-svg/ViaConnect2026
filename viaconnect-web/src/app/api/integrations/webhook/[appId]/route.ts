@@ -3,12 +3,15 @@ import { createClient } from '@/lib/supabase/server';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
-export async function POST(req: NextRequest, { params }: { params: { appId: string } }) {
+export const dynamic = 'force-dynamic';
+
+export async function POST(req: NextRequest, props: { params: Promise<{ appId: string }> }) {
+  const params = await props.params;
   const { appId } = params;
 
   try {
     const payload = await req.json();
-    const supabase = createClient();
+    const supabase = await createClient();
 
     const externalUserId = payload.user_id ?? payload.userId ?? payload.owner_id;
     if (!externalUserId) {

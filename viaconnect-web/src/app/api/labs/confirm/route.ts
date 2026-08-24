@@ -8,6 +8,8 @@ import { createClient } from '@/lib/supabase/server';
 import { safeLog } from '@/lib/utils/safe-log';
 import { persistLabBiomarkers, type ConfirmedBiomarker } from '@/lib/labs/labUploadStore';
 
+export const dynamic = 'force-dynamic';
+
 const MAX_ROWS = 2000;
 
 interface ConfirmBody {
@@ -34,7 +36,7 @@ function confidenceForSource(sourceType: string): string {
 }
 
 export async function POST(request: Request): Promise<NextResponse> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: 'Please sign in to save.' }, { status: 401 });

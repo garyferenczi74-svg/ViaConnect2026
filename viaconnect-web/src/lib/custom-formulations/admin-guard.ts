@@ -10,7 +10,7 @@ export type AdminCheck =
   | { kind: 'error'; response: NextResponse };
 
 export async function requireCustomFormulationsAdmin(): Promise<AdminCheck> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: userData } = await supabase.auth.getUser();
   const user = userData.user;
   if (!user) {
@@ -40,7 +40,7 @@ export async function requirePractitioner(): Promise<
   | { kind: 'ok'; userId: string; practitionerId: string }
   | { kind: 'error'; response: NextResponse }
 > {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: userData } = await supabase.auth.getUser();
   const user = userData.user;
   if (!user) {

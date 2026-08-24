@@ -7,9 +7,12 @@ import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 import { getPriorTarget, insertGoalTarget } from '@/lib/body-goals/goalsData';
 
-export async function POST(_request: Request, { params }: { params: { id: string } }) {
+export const dynamic = 'force-dynamic';
+
+export async function POST(_request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
-    const sb = createClient();
+    const sb = await createClient();
     const { data: { user } } = await withTimeout(sb.auth.getUser(), 5000, 'api.body.goals.revert.auth');
     if (!user) return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 });
 

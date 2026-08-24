@@ -13,7 +13,7 @@ import { BackToNutritionLink } from '@/components/nutrition/hub/BackToNutritionL
 import { InsightsPageClient } from '@/components/nutrition/insights/InsightsPageClient';
 
 export default async function NutritionInsightsPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

@@ -60,8 +60,17 @@ describe('YourVariantsCard source', () => {
   });
 
   it('shows an honest empty / locked state using the generic label, not an error', () => {
-    expect(source).toContain('No {activeGenericLabel} variants yet.');
+    expect(source).toContain('No {activeGenericLabel} {activeEmptyNoun} yet.');
     expect(source).not.toContain('overflow-y-auto');
+  });
+
+  it('renders observed badges with units and never uses marketing markerCount', () => {
+    expect(source).toContain('formatObservedBadge');
+    expect(source).toContain('observedByPanel');
+    expect(source).not.toContain('markerCount');
+    expect(source).not.toContain("from './blueprintBentoData'");
+    expect(source).not.toContain("from '@/data/genex360/panels'");
+    expect(source).toContain('n/a instead of 0');
   });
 
   it('imports GENEX360_SHOP_HREF and links to it with a Next Link', () => {

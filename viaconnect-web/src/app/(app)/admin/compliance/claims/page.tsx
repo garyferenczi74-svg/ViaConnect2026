@@ -22,7 +22,7 @@ const VERDICT_COLOR: Record<string, string> = {
 };
 
 export default async function Page() {
-  const sb = createClient();
+  const sb = await createClient();
   const { data } = await sb
     .from("regulatory_claim_library")
     .select("id, claim_text, claim_type, status, kelsey_verdict, substantiation_tier, jurisdiction_id, approved_at, created_at")

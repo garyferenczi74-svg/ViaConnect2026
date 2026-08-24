@@ -21,10 +21,12 @@ import { getOrComputeUserProtocolSynthesis } from '@/lib/protocol/readSynthesis'
 import { safeLog } from '@/lib/utils/safe-log';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(): Promise<NextResponse> {
   // Resolve the authenticated user from the server session.
   // Auth timeout fails CLOSED: a timeout is treated as unauthenticated (401).
-  const supabase = createClient();
+  const supabase = await createClient();
   let user: { id: string } | null = null;
   try {
     const { data } = await withTimeout(

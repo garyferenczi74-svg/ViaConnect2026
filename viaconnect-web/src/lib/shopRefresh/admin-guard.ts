@@ -8,7 +8,7 @@ export type ShopAdminCheck =
   | { kind: 'error'; response: NextResponse };
 
 export async function requireShopAdmin(): Promise<ShopAdminCheck> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return { kind: 'error', response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };

@@ -41,7 +41,7 @@ export function DraggableScheduleCard({
       dragSnapToOrigin
       dragElastic={0.12}
       dragMomentum={false}
-      whileDrag={{ scale: 1.03, zIndex: 50, cursor: 'grabbing' }}
+      whileDrag={{ scale: 1.02, zIndex: 50, cursor: 'grabbing' }}
       onDragEnd={(_e, info) => onCardDragEnd(card, info.point)}
     >
       <ScheduleSupplementCard

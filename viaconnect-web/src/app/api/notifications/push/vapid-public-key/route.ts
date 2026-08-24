@@ -5,6 +5,8 @@ import { NextResponse } from "next/server";
 import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
 
+export const dynamic = 'force-dynamic';
+
 void withTimeout;
 void isTimeoutError;
 

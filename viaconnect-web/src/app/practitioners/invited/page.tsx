@@ -11,10 +11,11 @@ export const metadata: Metadata = {
 };
 
 interface PageProps {
-  searchParams: { token?: string };
+  searchParams: Promise<{ token?: string }>;
 }
 
-export default async function InvitedLanding({ searchParams }: PageProps) {
+export default async function InvitedLanding(props: PageProps) {
+  const searchParams = await props.searchParams;
   const token = (searchParams.token ?? '').trim();
   const validation = token
     ? await validateInvitationToken(token, { claim: false })

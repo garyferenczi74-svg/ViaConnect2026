@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
+import { reportSupabaseError } from '@/lib/utils/schema-drift';
 import {
   calculateDailyScores,
   mapCheckInToScoringInput,
@@ -12,6 +13,49 @@ import {
 // Prompt #140b Layer 3 hardening: every Supabase call is wrapped with
 // withTimeout, and unexpected errors are logged via safeLog before being
 // re-thrown so existing callers retain their throw-on-error contract.
+
+// ---------------------------------------------------------------------------
+// Prompt 210d P0-4: gauge upsert payload builder.
+//
+// The exact daily_scores payload updateGaugeScores upserts, extracted so the
+// shape test (src/app/actions/__tests__/daily-scores-shape.test.ts) can assert
+// every key exists in the live schema union the P0-4 additive migration
+// (*_prompt_210d_daily_scores_pillar_columns.sql). Keys and values are
+// IDENTICAL to the previous inline construction. Async because 'use server'
+// modules may only export async functions; it performs no I/O.
+// ---------------------------------------------------------------------------
+
+interface MergedGaugeScores {
+  sleep_score: number | null;
+  energy_score: number | null;
+  mood_stress_score: number | null;
+  nutrition_score: number | null;
+  activity_score: number | null;
+}
+
+interface DailyScoresGaugeUpsertPayload extends MergedGaugeScores {
+  user_id: string;
+  score_date: string;
+  overall_score: number;
+  data_mode: 'manual';
+  calculated_at: string;
+}
+
+export async function buildDailyScoresUpsertPayload(
+  userId: string,
+  date: string,
+  merged: MergedGaugeScores,
+  overallScore: number,
+): Promise<DailyScoresGaugeUpsertPayload> {
+  return {
+    user_id: userId,
+    score_date: date,
+    ...merged,
+    overall_score: overallScore,
+    data_mode: 'manual',
+    calculated_at: new Date().toISOString(),
+  };
+}
 
 export async function updateGaugeScores(
   userId: string,
@@ -24,7 +68,7 @@ export async function updateGaugeScores(
     activity_score: number | null;
   }>,
 ): Promise<void> {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   try {
     const { data: existing } = await withTimeout(
@@ -59,19 +103,29 @@ export async function updateGaugeScores(
       ? Math.round(values.reduce((a, b) => a + b, 0) / values.length)
       : 0;
 
-    await withTimeout(
-      (async () => (supabase as any).from('daily_scores').upsert({
-        user_id: userId,
-        score_date: date,
-        ...merged,
-        overall_score,
-        data_mode: 'manual',
-        calculated_at: new Date().toISOString(),
-      }, { onConflict: 'user_id,score_date' }))(),
+    const payload = await buildDailyScoresUpsertPayload(userId, date, merged, overall_score);
+
+    const { error: upsertError } = await withTimeout<{ error: unknown }>(
+      (async () => (supabase as any).from('daily_scores').upsert(
+        payload,
+        { onConflict: 'user_id,score_date' },
+      ))(),
       8000,
       'actions.dailyScores.updateGaugeScores.write',
     );
+
+    // Prompt 210d P0-4: the upsert response error was previously discarded, so
+    // schema drift (missing pillar columns) failed silently. Report it via the
+    // P0-1 classifier: production stays fail-open (log only, the function still
+    // resolves exactly as before) while strict mode (dev/preview/test) rethrows
+    // the original error to make drift loud. Context carries object names only.
+    if (upsertError) {
+      reportSupabaseError('dailyScores.upsert', upsertError, { table: 'daily_scores' });
+    }
   } catch (error) {
+    // Prompt 210d P0-4: classify and surface schema drift (P0-1) before the
+    // existing logging; the original error object still propagates unchanged.
+    reportSupabaseError('dailyScores.upsert', error, { table: 'daily_scores' });
     if (isTimeoutError(error)) {
       safeLog.error('actions.daily-scores.update-gauge-scores', 'database timeout', {
         userId, date, error,
@@ -89,7 +143,7 @@ export async function recalculateNutritionOnly(
   userId: string,
   date: string,
 ): Promise<number> {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   try {
     const { data: meals } = await withTimeout(
@@ -142,7 +196,7 @@ export async function recalculateCheckInOnly(
   userId: string,
   date: string,
 ): Promise<void> {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   try {
     const { data: checkinRaw } = await withTimeout(
@@ -186,7 +240,7 @@ export async function recalculateDailyScores(
   userId: string,
   date: string,
 ): Promise<DailyScoreResult> {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   try {
     const [checkinRes, mealsRes] = await withTimeout(

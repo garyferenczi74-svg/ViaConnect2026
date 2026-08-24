@@ -15,6 +15,8 @@ import { resolveFraudFlag } from '@/lib/practitioner-referral/fraud-resolution-o
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 const schema = z.object({
@@ -22,12 +24,10 @@ const schema = z.object({
   reason: z.string().min(20).max(2000),
 });
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { flagId: string } },
-): Promise<NextResponse> {
+export async function POST(request: NextRequest, props: { params: Promise<{ flagId: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user } } = await withTimeout(
       supabase.auth.getUser(),
       5000,

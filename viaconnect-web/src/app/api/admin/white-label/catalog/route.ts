@@ -13,6 +13,8 @@ import { createClient } from '@/lib/supabase/server';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 const patchSchema = z.object({
@@ -26,7 +28,7 @@ const patchSchema = z.object({
   is_active: z.boolean().optional(),
 });
 
-async function requireAdmin(supabase: ReturnType<typeof createClient>) {
+async function requireAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.white-label.catalog.auth');
   if (!user) return { ok: false as const, response: NextResponse.json({ error: 'Authentication required' }, { status: 401 }) };
   const profileRes = await withTimeout(
@@ -43,7 +45,7 @@ async function requireAdmin(supabase: ReturnType<typeof createClient>) {
 
 export async function GET(): Promise<NextResponse> {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const auth = await requireAdmin(supabase);
     if (!auth.ok) return auth.response;
 
@@ -79,7 +81,7 @@ export async function GET(): Promise<NextResponse> {
 
 export async function PATCH(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const auth = await requireAdmin(supabase);
     if (!auth.ok) return auth.response;
 

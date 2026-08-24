@@ -39,7 +39,7 @@ const MECHANISM_LABELS: Record<string, string> = {
 
 export default async function TakedownTemplatesPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const { data } = await supabase
     .from('takedown_templates')
     .select('id, template_code, mechanism, version, jurisdiction, language, required_slots, active, approved_at, created_at')

@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export default async function TakedownsPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const { data } = await supabase
     .from("takedown_requests")
     .select("id, platform, mechanism, listing_url, status, created_at, submitted_at")

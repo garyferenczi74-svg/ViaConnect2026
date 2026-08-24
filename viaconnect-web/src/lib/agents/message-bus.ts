@@ -15,7 +15,18 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 // Types
 // ---------------------------------------------------------------------------
 
-type AgentName = 'arnold' | 'hannah' | 'jeffery' | 'michelangelo' | 'sherlock' | 'kelsey';
+// Prompt 214a: kelsey retained as historical bus name; maps to lex at ACC layer.
+type AgentName =
+  | 'arnold'
+  | 'hannah'
+  | 'jeffery'
+  | 'michelangelo'
+  | 'sherlock'
+  | 'kelsey'
+  | 'marshall'
+  | 'lex'
+  | 'gordon'
+  | 'hounddog';
 type AgentTarget = AgentName | 'all';
 type MessageStatus = 'pending' | 'acknowledged' | 'in_progress' | 'resolved' | 'rejected';
 

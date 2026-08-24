@@ -33,12 +33,17 @@ import { createClient } from '@/lib/supabase/server';
 import { tryCreateAdminClient } from '@/lib/supabase/admin-optional';
 import { safeLog } from '@/lib/utils/safe-log';
 import { recomputeNutritionDimension } from '@/lib/nutrition/bos-bridge';
+import {
+  NUTRITION_PHOTO_BUCKET,
+  ownedNutritionPhotoPath,
+  storagePathFromPhotoUrl,
+} from '@/lib/nutrition/nutritionPhotoPath';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 interface RouteContext {
-  params: { mealId: string };
+  params: Promise<{ mealId: string }>;
 }
 
 const HANDLER_TIMEOUT_MS = 10_000;
@@ -142,13 +147,13 @@ export async function DELETE(_req: NextRequest, ctx: RouteContext): Promise<Next
   const timeoutId = setTimeout(() => controller.abort(), HANDLER_TIMEOUT_MS);
 
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const mealId = ctx.params.mealId;
+    const mealId = (await ctx.params).mealId;
     if (!mealId || typeof mealId !== 'string') {
       return NextResponse.json({ error: 'Missing mealId' }, { status: 400 });
     }
@@ -184,11 +189,16 @@ export async function DELETE(_req: NextRequest, ctx: RouteContext): Promise<Next
     // is not in meals we look it up in nutrition_logs and delete it there.
     // nutrition_logs has a per user DELETE RLS policy (auth.uid() = user_id),
     // so the user scoped client can remove it.
-    let legacyMeal: { id: string; logged_at: string | null; meal_type: string | null } | null = null;
+    let legacyMeal: {
+      id: string;
+      logged_at: string | null;
+      meal_type: string | null;
+      photo_url: string | null;
+    } | null = null;
     if (!meal) {
       const { data: legacyRow, error: legacyReadErr } = await userScoped
         .from('nutrition_logs')
-        .select('id, logged_at, meal_type')
+        .select('id, logged_at, meal_type, photo_url')
         .eq('id', mealId)
         .maybeSingle();
       if (legacyReadErr) {
@@ -284,6 +294,34 @@ export async function DELETE(_req: NextRequest, ctx: RouteContext): Promise<Next
         table: targetTable,
       });
       return NextResponse.json({ error: 'Could not remove meal' }, { status: 500 });
+    }
+
+    // Prompt 228 D2: remove associated nutrition-photos object when present.
+    // Owner-folder prefix required before any service-role storage.remove.
+    if (legacyMeal?.photo_url && typeof legacyMeal.photo_url === 'string') {
+      const resolved = storagePathFromPhotoUrl(legacyMeal.photo_url);
+      const storagePath = ownedNutritionPhotoPath(user.id, resolved);
+      if (resolved && !storagePath) {
+        safeLog.warn('api.nutrition.meals.delete', 'photo_url rejected: not owner prefix', {
+          request_id: requestId,
+          meal_id: mealId,
+          user_id: user.id,
+        });
+      }
+      if (storagePath) {
+        const storageClient = admin ?? userScoped;
+        const { error: rmErr } = await storageClient.storage
+          .from(NUTRITION_PHOTO_BUCKET)
+          .remove([storagePath]);
+        if (rmErr) {
+          safeLog.warn('api.nutrition.meals.delete', 'storage remove failed', {
+            request_id: requestId,
+            meal_id: mealId,
+            storagePath,
+            error: rmErr.message,
+          });
+        }
+      }
     }
 
     // BOS recompute hook. Best effort; failures are logged and never

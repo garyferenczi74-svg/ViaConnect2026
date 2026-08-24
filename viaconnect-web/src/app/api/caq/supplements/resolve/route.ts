@@ -115,7 +115,7 @@ export async function POST(request: Request) {
   // Auth context. Lookups themselves do not require auth (the user is
   // already inside the CAQ or Protocol surface), but we still capture
   // user_id for telemetry.
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: userData } = await supabase.auth.getUser();
   const userId = userData?.user?.id ?? null;
   void userId;

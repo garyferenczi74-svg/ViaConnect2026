@@ -20,12 +20,16 @@ import { PdpRightRail } from '@/components/shop/PdpRightRail'
 import { getShopCategoryBySlug } from '@/lib/shop/categories'
 import { getProductBySlug } from '@/lib/shop/queries'
 import { getCurrentShopSession, isConsumerSession } from '@/lib/shop/role'
+import { buildFiveSections } from '@/lib/shop/productTabs/buildFromProduct'
+import { loadProductCompatibility } from '@/lib/shop/productTabs/loadCompatibility'
 
 interface PageProps {
-    params: { slug: string }
+    params: Promise<{ slug: string }>
+    searchParams?: Promise<{ tab?: string }>
 }
 
-export async function generateMetadata({ params }: PageProps) {
+export async function generateMetadata(props: PageProps) {
+    const params = await props.params;
     const product = await getProductBySlug(params.slug)
     if (!product) {
         return { title: 'Product not found | Via Cura' }
@@ -36,7 +40,9 @@ export async function generateMetadata({ params }: PageProps) {
     }
 }
 
-export default async function ProductDetailPage({ params }: PageProps) {
+export default async function ProductDetailPage(props: PageProps) {
+    const params = await props.params;
+    const searchParams = props.searchParams ? await props.searchParams : {};
     const [product, session] = await Promise.all([
         getProductBySlug(params.slug),
         getCurrentShopSession(),
@@ -44,6 +50,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
     if (!product) notFound()
     const consumerSession = isConsumerSession(session.role)
 
+    const slug = product.slug ?? params.slug
     const category = product.category_slug ? getShopCategoryBySlug(product.category_slug) : null
     const variant = category?.cardVariant ?? 'supplement'
     const images =
@@ -54,6 +61,12 @@ export default async function ProductDetailPage({ params }: PageProps) {
               : []) ?? []
     const primaryImage = images[0] ?? null
     const thumbs = images.slice(0, 4)
+
+    // Prompt 215a: always five accordion sections + genetic compatibility
+    const accordionSections = buildFiveSections(product, slug)
+    const compatibility = await loadProductCompatibility(slug)
+    const initialHash =
+        searchParams.tab?.replace(/_/g, '-') ?? null
 
     return (
         <div className="min-h-screen bg-[#0F1A2E] text-white">
@@ -67,7 +80,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
                         }
                         items.push({
                             label: product.name,
-                            href: `/shop/product/${product.slug ?? params.slug}`,
+                            href: `/shop/product/${slug}`,
                         })
                         return items
                     })()}
@@ -109,7 +122,17 @@ export default async function ProductDetailPage({ params }: PageProps) {
                         )}
                     </div>
 
-                    <PdpRightRail product={product} variant={variant} />
+                    <PdpRightRail
+                        product={product}
+                        variant={variant}
+                        accordionSections={
+                            variant === 'supplement' ? accordionSections : undefined
+                        }
+                        compatibility={
+                            variant === 'supplement' ? compatibility : undefined
+                        }
+                        initialSectionHash={initialHash}
+                    />
                 </div>
             </div>
             <CartChrome consumerSession={consumerSession} userId={session.userId} />

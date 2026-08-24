@@ -19,6 +19,8 @@ import { createHash } from 'node:crypto';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 const LEGAL_OPS_ROLES = new Set(['admin', 'compliance_officer', 'legal_ops']);
@@ -27,7 +29,7 @@ interface ProfileLite {
   role: string;
 }
 
-async function requireLegalOps(supabase: ReturnType<typeof createClient>) {
+async function requireLegalOps(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.admin.legal.customs.iprs.test-insert.auth');
   if (!user) {
     return {
@@ -71,7 +73,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    const supabase = createClient();
+    const supabase = await createClient();
     const ctx = await requireLegalOps(supabase);
     if (!ctx.ok) return ctx.response;
 

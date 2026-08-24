@@ -14,6 +14,8 @@ import type { ConversionKind } from '@/lib/marketing/variants/types';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 const VALID_KINDS: ConversionKind[] = ['caq_start', 'signup_complete', 'bounce'];
 
 export async function POST(request: NextRequest) {
@@ -32,7 +34,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const result = await withTimeout(
       recordConversion(supabase, {
         visitorId: body.visitor_id,

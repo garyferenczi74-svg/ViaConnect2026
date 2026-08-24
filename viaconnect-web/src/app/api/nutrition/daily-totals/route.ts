@@ -7,6 +7,8 @@ import { safeLog } from '@/lib/utils/safe-log';
 import { createClient } from '@/lib/supabase/server';
 import { computeFallbackTargets, type NutritionTargets } from '@/lib/nutrition/target-fallback';
 
+export const dynamic = 'force-dynamic';
+
 const MAX_BACKDATE_DAYS = 90;
 
 interface ChartTotals {
@@ -44,7 +46,7 @@ function parseDate(input: string | null): Date {
 
 export async function GET(req: NextRequest) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

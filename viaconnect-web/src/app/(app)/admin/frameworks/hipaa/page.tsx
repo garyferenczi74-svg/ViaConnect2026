@@ -24,7 +24,7 @@ const TILES = [
 
 export default async function HipaaOverviewPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
 
   const [riskRes, sanctionRes, breachRes, contingencyRes, emergencyRes, deviceRes, breachConfirmedRes] = await Promise.all([
     supabase.from('hipaa_risk_analyses').select('id', { count: 'exact', head: true }),

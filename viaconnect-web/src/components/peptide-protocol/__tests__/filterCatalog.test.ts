@@ -41,17 +41,37 @@ describe('filterCatalogCategories', () => {
     expect(out.reduce((n, c) => n + c.products.length, 0)).toBe(3);
   });
 
-  it('filters products by a case-insensitive query and drops empty categories', () => {
-    const out = filterCatalogCategories(fixture, 'TELOMERASE');
+  it('filters products by name prefix and drops empty categories', () => {
+    const out = filterCatalogCategories(fixture, 'epit');
     expect(out).toHaveLength(1);
     expect(out[0].id).toBe('longevity');
     expect(out[0].products.map((p) => p.id)).toEqual(['epitalon']);
   });
 
-  it('matches on mechanism in another category', () => {
-    const out = filterCatalogCategories(fixture, 'cortisol');
+  it('matches another category by peptide name prefix', () => {
+    const out = filterCatalogCategories(fixture, 'adreno');
     expect(out).toHaveLength(1);
     expect(out[0].id).toBe('adrenal');
+  });
+
+  it('does not mid-word match category labels (reta vs Secretagogues)', () => {
+    const withSecretagogue: TestCategory[] = [
+      {
+        id: 'gh',
+        label: 'GH Axis and Secretagogues',
+        products: [
+          {
+            id: 'cjc',
+            name: 'CJC-1295 without DAC',
+            type: 'Peptide',
+            mechanism: 'GHRH analogue',
+            category: 'GH Axis and Secretagogues',
+            targetVariants: [],
+          },
+        ],
+      },
+    ];
+    expect(filterCatalogCategories(withSecretagogue, 'reta')).toHaveLength(0);
   });
 
   it('returns no categories when nothing matches', () => {

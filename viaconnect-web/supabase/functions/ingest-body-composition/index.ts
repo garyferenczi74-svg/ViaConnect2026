@@ -17,6 +17,7 @@
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { reportSupabaseError } from "../_shared/schema-drift.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -126,7 +127,7 @@ async function projectToWeight(
     try {
       const start = `${day}T00:00:00.000Z`;
       const end = `${day}T23:59:59.999Z`;
-      const { data: winners } = await withTimeout(
+      const { data: winners, error: winnersError } = await withTimeout(
         admin
           .from("body_composition_readings")
           .select("metric_key, value, device_origin")
@@ -138,6 +139,9 @@ async function projectToWeight(
         4000,
         "project-fetch",
       );
+      if (winnersError) {
+        reportSupabaseError("ingest-body-composition.project-fetch", winnersError, { table: "body_composition_readings" });
+      }
       if (!winners || winners.length === 0) continue;
 
       const cols: Record<string, number> = {};
@@ -150,7 +154,7 @@ async function projectToWeight(
       if (Object.keys(cols).length === 0) continue;
 
       // Find-or-create the single connected_sources entry for this day.
-      const { data: existingEntry } = await withTimeout(
+      const { data: existingEntry, error: entryFindError } = await withTimeout(
         admin
           .from("body_tracker_entries")
           .select("id")
@@ -162,10 +166,13 @@ async function projectToWeight(
         3000,
         "project-entry-find",
       );
+      if (entryFindError) {
+        reportSupabaseError("ingest-body-composition.entry-find", entryFindError, { table: "body_tracker_entries" });
+      }
 
       let entryId = (existingEntry as { id: string } | null)?.id ?? null;
       if (!entryId) {
-        const { data: inserted } = await withTimeout(
+        const { data: inserted, error: entryInsertError } = await withTimeout(
           admin
             .from("body_tracker_entries")
             .insert({ user_id: userId, entry_date: day, source: "connected_sources", device_name: deviceOrigin })
@@ -174,32 +181,44 @@ async function projectToWeight(
           3000,
           "project-entry-insert",
         );
+        if (entryInsertError) {
+          reportSupabaseError("ingest-body-composition.entry-insert", entryInsertError, { table: "body_tracker_entries" });
+        }
         entryId = (inserted as { id: string } | null)?.id ?? null;
       }
       if (!entryId) continue;
 
-      const { data: existingWeight } = await withTimeout(
+      const { data: existingWeight, error: weightFindError } = await withTimeout(
         admin.from("body_tracker_weight").select("id").eq("entry_id", entryId).limit(1).maybeSingle(),
         3000,
         "project-weight-find",
       );
+      if (weightFindError) {
+        reportSupabaseError("ingest-body-composition.weight-find", weightFindError, { table: "body_tracker_weight" });
+      }
 
       // Stamp created_at to the measurement day (not insert time). The hub and
       // weight surfaces read body_tracker_weight ORDER BY created_at DESC, so a
       // back-dated import must not become the displayed current weight.
       const dayTs = `${day}T12:00:00.000Z`;
       if ((existingWeight as { id: string } | null)?.id) {
-        await withTimeout(
+        const { error: weightUpdateError } = await withTimeout(
           admin.from("body_tracker_weight").update({ ...cols, created_at: dayTs }).eq("id", (existingWeight as { id: string }).id),
           3000,
           "project-weight-update",
         );
+        if (weightUpdateError) {
+          reportSupabaseError("ingest-body-composition.weight-update", weightUpdateError, { table: "body_tracker_weight" });
+        }
       } else {
-        await withTimeout(
+        const { error: weightInsertError } = await withTimeout(
           admin.from("body_tracker_weight").insert({ user_id: userId, entry_id: entryId, created_at: dayTs, ...cols }),
           3000,
           "project-weight-insert",
         );
+        if (weightInsertError) {
+          reportSupabaseError("ingest-body-composition.weight-insert", weightInsertError, { table: "body_tracker_weight" });
+        }
       }
       projected += 1;
     } catch (err) {
@@ -296,6 +315,7 @@ serve(async (req) => {
           "upsert",
         );
         if (error) {
+          reportSupabaseError("ingest-body-composition.readings-upsert", error, { table: "body_composition_readings" });
           log("error", { event: "upsert_error", user_id: userId, source_id: sourceId, error: error.message });
         } else {
           ingested = data?.length ?? 0;
@@ -312,11 +332,14 @@ serve(async (req) => {
     const dayList = [...days];
     if (dayList.length > 0) {
       try {
-        const { data: rc } = await withTimeout(
+        const { data: rc, error: reconcileError } = await withTimeout(
           admin.rpc("reconcile_body_composition", { p_user_id: userId, p_days: dayList }),
           5000,
           "reconcile",
         );
+        if (reconcileError) {
+          reportSupabaseError("ingest-body-composition.reconcile-rpc", reconcileError, { function: "reconcile_body_composition" });
+        }
         reconciled = typeof rc === "number" ? rc : 0;
       } catch (err) {
         log("error", { event: "reconcile_failed", user_id: userId, source_id: sourceId, error: String(err) });

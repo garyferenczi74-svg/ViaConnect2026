@@ -23,7 +23,7 @@ export default async function PrescriptionsAreaLayout({
 }: {
     children: React.ReactNode
 }) {
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data: userResult } = await supabase.auth.getUser()
     const userId = userResult?.user?.id
     if (!userId) {

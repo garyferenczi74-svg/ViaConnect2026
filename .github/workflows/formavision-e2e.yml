@@ -1,0 +1,141 @@
+name: FormaVision E2E Verification
+
+# Prompt 210e, Task E4. CI wiring for the FormaVision (Section 7) avatar suite.
+#
+# TIER HONESTY (which tier runs where):
+#   - formavision-vitest  (HARD GATE): the node-safe Vitest suites that CAN run
+#     headless with no browser, no GL, and no live DB. Runs under strict mode
+#     (SCHEMA_STRICT_MODE=on, Prompt 210d) so any missing-object schema-drift
+#     error fails the run instead of being swallowed by the fail-open pattern.
+#   - formavision-fallback-playwright (OPT-IN, non-blocking): the Playwright
+#     @fallback tests that force the 2D floor (forceWebGLUnavailable) and run
+#     headless. This job installs Chromium and runs ONLY the @fallback tag. It is
+#     continue-on-error because the specs navigate to the auth-gated
+#     /body-tracker/composition surface, which needs a running Next.js server
+#     plus a seeded/authenticated session and Supabase env this runner does not
+#     assume. It is wired so it CAN run on demand, and it never blocks merge.
+#   - @cinematic + visual-regression (FORMAVISION_VR=1): NOT run here. Those are
+#     the GL-environment tier: they require a GL-capable browser and a live 3D
+#     canvas. journey.spec.ts self-skips @cinematic off-GL and gates the VR
+#     baselines behind FORMAVISION_VR=1, so no floor-only baselines are captured
+#     by an unattended run. Capture VR baselines only in the GL CI environment.
+#
+# This file is additive and stands alone. It does NOT modify ci.yml or
+# schema-drift.yml (the 210d drift + migration-parity gates live there). Style
+# mirrors schema-drift.yml: working-directory viaconnect-web, node 20,
+# checkout@v4 + setup-node@v4.
+
+on:
+  push:
+    branches: [main, master, 'claude/**']
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  # --------------------------------------------------
+  # HARD GATE: node-safe Vitest suites under strict mode.
+  #   - E1 seam tests: telemetry sink/catalog/PII + region-tap whole-protocol.
+  #   - E2 invariants: avatar == card == vector, no-fabrication, sign, persona,
+  #     copy-locks.
+  # These need no browser, no GL, no live DB. Vitest already sets NODE_ENV=test
+  # (which isSchemaStrict() honours), and we ALSO set SCHEMA_STRICT_MODE=on to
+  # make strict mode explicit and environment-independent per 210d: a
+  # missing-table / missing-column / missing-function drift error rethrows and
+  # fails the run rather than being swallowed.
+  # --------------------------------------------------
+  formavision-vitest:
+    name: FormaVision Vitest (strict mode)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: viaconnect-web
+    env:
+      SCHEMA_STRICT_MODE: 'on'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: viaconnect-web/package-lock.json
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Run FormaVision node-safe suites (SCHEMA_STRICT_MODE=on)
+        # The three deterministic, headless-runnable FormaVision suites. If any
+        # of them triggers a schema-drift missing-object error, strict mode
+        # rethrows and this step fails (that is the point of the gate).
+        run: >-
+          npx vitest run
+          src/lib/formavision/telemetry/__tests__/seam-telemetry.test.ts
+          src/components/formavision/__tests__/seam-region-protocol.test.ts
+          src/lib/formavision/__tests__/invariants.test.ts
+          src/lib/formavision/__tests__/resilience.test.ts
+
+  # --------------------------------------------------
+  # OPT-IN, NON-BLOCKING: Playwright @fallback (forced 2D floor) headless.
+  # continue-on-error: this job starts a dev server and runs ONLY the @fallback
+  # tag, but /body-tracker/composition is auth-gated and needs a seeded session
+  # plus Supabase env that a bare runner does not have. It is wired so it CAN run
+  # (chromium installed, @fallback grep) and documents the tier honestly; it does
+  # not gate merge. @cinematic + visual-regression are the GL tier, NOT run here.
+  # --------------------------------------------------
+  formavision-fallback-playwright:
+    name: FormaVision Playwright @fallback (2D floor, opt-in)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    defaults:
+      run:
+        working-directory: viaconnect-web
+    env:
+      CI: 'true'
+      PLAYWRIGHT_BASE_URL: 'http://localhost:3000'
+      NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: viaconnect-web/package-lock.json
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Install Chromium for Playwright
+        # Only Chromium is needed; the @fallback tier is headless 2D floor.
+        run: npx playwright install --with-deps chromium
+
+      - name: Build the app
+        run: npm run build
+
+      - name: Start the app and wait for it to listen
+        # playwright.config.ts expects a server already listening at
+        # PLAYWRIGHT_BASE_URL (it deliberately does not spawn one). Start it in
+        # the background and poll until it responds before running the specs.
+        run: |
+          npm run start &
+          for i in $(seq 1 30); do
+            if curl -sSf http://localhost:3000 >/dev/null 2>&1; then
+              echo "app is listening"; break
+            fi
+            echo "waiting for app ($i)"; sleep 2
+          done
+
+      - name: Run ONLY the @fallback tag (forced 2D floor, headless)
+        # --grep @fallback runs the guaranteed 2D floor + information parity +
+        # keyboard + reduced-motion specs. @cinematic self-skips off-GL and is
+        # not selected here. Visual-regression stays behind FORMAVISION_VR (unset).
+        run: npx playwright test --grep @fallback
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: formavision-fallback-playwright-report
+          path: viaconnect-web/playwright-report
+          retention-days: 7

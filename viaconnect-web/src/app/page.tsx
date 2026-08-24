@@ -8,6 +8,9 @@ import { StickyHeroWrapper } from "@/components/landing/StickyHeroWrapper";
 import { LandingHeroCarousel } from "@/components/landing/LandingHeroCarousel";
 import { LandingScrollSections } from "@/components/landing/scroll-sections/LandingScrollSections";
 
+// TrustBand reads cookies for A/B; keep home dynamic to avoid static-gen thrash.
+export const dynamic = "force-dynamic";
+
 // Prompt #139: landing scroll consolidation.
 // Hero is sticky; subsequent sections scroll over it with semi-transparent
 // backgrounds so the hero video stays visible throughout.

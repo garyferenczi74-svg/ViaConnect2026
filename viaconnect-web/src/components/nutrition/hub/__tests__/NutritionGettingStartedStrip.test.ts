@@ -1,12 +1,4 @@
-// Contract tests for NutritionGettingStartedStrip.
-//
-// Source as text assertions per the repo convention (see
-// BackToNutritionLink.test.ts); full visual sign off happens at Vercel
-// preview. These lock the hardcoded Getting Started label, the
-// description wired through getDisplayName, the coming soon pill text,
-// the white pill text with no icon (icon removal, Gary 2026-06-11), the
-// non interactive state, the reserved avatar seam, the absence of any
-// DB read, and the no dash rule.
+// Contract tests for NutritionGettingStartedStrip (Prompt 228 D4: wired CTA).
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -27,25 +19,18 @@ describe('NutritionGettingStartedStrip source', () => {
 
   it('builds the description through getDisplayName with the gordon slug', () => {
     expect(source).toContain("import { getDisplayName } from '@/lib/getDisplayName'");
-    expect(source).toContain(
-      "`${getDisplayName('gordon')} walks you through My Nutrition. Guide coming soon.`",
-    );
+    expect(source).toContain("getDisplayName('gordon')");
   });
 
-  it('sets the coming soon pill text', () => {
-    expect(source).toContain("const COMING_SOON_TEXT = 'My Nutrition Guide coming soon'");
+  it('Prompt 228: wires an interactive CTA to /nutrition/guide', () => {
+    expect(source).toContain('href="/nutrition/guide"');
+    expect(source).toContain('data-nutrition-guide-cta');
+    expect(source).not.toContain('aria-disabled="true"');
+    expect(source).not.toContain("const COMING_SOON_TEXT");
   });
 
-  it('icon removal (Gary 2026-06-11): the pill keeps its white text and carries no icon', () => {
-    expect(source).toContain('text-white');
+  it('icon removal (Gary 2026-06-11): no PlayCircle icon', () => {
     expect(source).not.toContain('PlayCircle');
-    expect(source).not.toContain("from 'lucide-react'");
-  });
-
-  it('keeps the action non interactive and presentational', () => {
-    expect(source).toContain('aria-disabled="true"');
-    expect(source).toContain('tabIndex={-1}');
-    expect(source).toContain('role="note"');
   });
 
   it('leaves an empty avatarSrc seam for a future Gordon avatar', () => {
@@ -56,10 +41,9 @@ describe('NutritionGettingStartedStrip source', () => {
     expect(source).not.toContain('supabase');
     expect(source).not.toContain('createClient');
     expect(source).not.toContain('has_seen');
-    expect(source).not.toContain('useGuideLabel');
   });
 
-  it('Prompt 183f: the root carries the hub-card-frame luminous edge ring and AccentLine is gone', () => {
+  it('Prompt 183f: the root carries the hub-card-frame luminous edge ring', () => {
     expect(source).toContain("import '@/components/body-tracker/hub/hub-card-frame.css'");
     expect(source).toContain('hub-card-frame relative flex');
     expect(source).not.toContain('AccentLine');

@@ -24,20 +24,15 @@ const TIER_BADGE: Record<string, { bg: string; text: string; border: string; lab
 interface CyclingItem {
   peptide_name: string;
   delivery_form: string;
-  dosage: string;
-  frequency: string;
+  // Prompt 225: dosage / frequency / cycle schedules are not rendered.
+  // Fields may still arrive from legacy stack payloads; they are ignored.
+  dosage?: string;
+  frequency?: string;
   cycle_on_weeks: number | null;
   cycle_off_weeks: number | null;
   timing: string[];
   requires_supervision: boolean;
   evidence_level: string;
-}
-
-function getCycleLabel(on: number | null, off: number | null): string {
-  if (!on) return 'Continuous';
-  if (off && off >= 60) return `${on} days on · ${Math.round(off / 30)} months off (2x/year)`;
-  if (off && off >= 30) return `${on}w on · ${Math.round(off / 4)}mo off`;
-  return `${on}w on · ${off ?? 4}w off`;
 }
 
 function getTierKey(requires_supervision: boolean, evidence_level: string): string {
@@ -56,8 +51,11 @@ export function CyclingProtocolCard({ items }: { items: CyclingItem[] }) {
       {/* Header */}
       <div className="flex items-center gap-2">
         <RotateCcw className="w-4 h-4 text-[#2DA5A0]" strokeWidth={1.5} />
-        <h3 className="text-sm font-bold" style={{ color: DT.textPrimary }}>Cycling Protocol</h3>
+        <h3 className="text-sm font-bold" style={{ color: DT.textPrimary }}>Educational stack context</h3>
       </div>
+      <p className="text-xs" style={{ color: DT.textMuted }}>
+        Educational framing only. Timing, dose, reconstitution, and cycle length are clinician judgment and are not provided here.
+      </p>
 
       {/* Supervision notice */}
       {hasSupervision && (
@@ -102,20 +100,10 @@ export function CyclingProtocolCard({ items }: { items: CyclingItem[] }) {
                     <FlaskConical className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#F87171' }} strokeWidth={1.5} />
                   )}
                 </div>
-                <p className="text-xs" style={{ color: DT.textSecondary }}>{item.delivery_form} · {item.dosage} · {item.frequency}</p>
+                <p className="text-xs" style={{ color: DT.textSecondary }}>{item.delivery_form}</p>
               </div>
 
-              {/* Cycling schedule */}
               <div className="flex items-center gap-2 flex-shrink-0">
-                <div
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg"
-                  style={{ background: DT.barTrack }}
-                >
-                  <RotateCcw className="w-3 h-3 text-[#2DA5A0]" strokeWidth={1.5} />
-                  <span className="text-xs font-medium" style={{ color: DT.textPrimary }}>
-                    {getCycleLabel(item.cycle_on_weeks, item.cycle_off_weeks)}
-                  </span>
-                </div>
                 <span
                   className="text-xs px-2 py-0.5 rounded-full font-medium"
                   style={{ background: tier.bg, color: tier.text, border: `1px solid ${tier.border}` }}
@@ -124,20 +112,6 @@ export function CyclingProtocolCard({ items }: { items: CyclingItem[] }) {
                 </span>
               </div>
 
-              {/* Timing */}
-              {item.timing?.length > 0 && (
-                <div className="flex gap-1 flex-wrap sm:flex-shrink-0">
-                  {item.timing.map(t => (
-                    <span
-                      key={t}
-                      className="text-xs px-2 py-0.5 rounded-full capitalize"
-                      style={{ background: 'rgba(255,255,255,0.1)', color: DT.textSecondary }}
-                    >
-                      {t.replace(/_/g, ' ')}
-                    </span>
-                  ))}
-                </div>
-              )}
             </div>
           );
         })}

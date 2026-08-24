@@ -1,23 +1,25 @@
 /**
- * /admin/jeffery — Jeffery™ Command Center (Prompt #60c)
+ * /admin/jeffery — Jeffery Command Center (Prompt #60c; Prompt 219I harden)
  *
- * Server shell: pre-fetches per-agent registry + heartbeats + tasks + first
- * agent's recent events, then hands off to the client tab container so the
- * "Agents" tab renders inline instead of requiring a separate page visit.
+ * Server shell: pre-fetches registry + heartbeats + tasks + first agent events.
+ * Fail-open: empty operational data never crashes the shell.
  */
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { fetchCurrentTasks, fetchHeartbeats, fetchRecentEvents } from "@/lib/agents/activity-tracker";
 import { orderedRegistry } from "@/lib/agents/registry";
-import type { AgentActivityEvent } from "@/lib/agents/types";
+import type { AgentActivityEvent, AgentCurrentTask, AgentHeartbeat } from "@/lib/agents/types";
+import { safeLog } from "@/lib/utils/safe-log";
 import JefferyClient from "./JefferyClient";
 
 export const dynamic = "force-dynamic";
 
 export default async function JefferyCommandCenter() {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) redirect(`/login?redirectTo=/admin/jeffery`);
 
   const { data: profile } = await supabase
@@ -28,15 +30,35 @@ export default async function JefferyCommandCenter() {
   if (!profile || profile.role !== "admin") redirect("/");
 
   const registry = orderedRegistry();
-  const [heartbeats, tasks] = await Promise.all([
-    fetchHeartbeats(supabase),
-    fetchCurrentTasks(supabase),
-  ]);
+
+  let heartbeats: AgentHeartbeat[] = [];
+  let tasks: AgentCurrentTask[] = [];
+  let initialEvents: AgentActivityEvent[] = [];
+
+  try {
+    const [hb, tk] = await Promise.all([
+      fetchHeartbeats(supabase),
+      fetchCurrentTasks(supabase),
+    ]);
+    heartbeats = hb;
+    tasks = tk;
+  } catch (err) {
+    safeLog.error("admin.jeffery.page", "activity prefetch failed open", {
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
 
   const firstAgentId = registry[0]?.agent_id;
-  const initialEvents: AgentActivityEvent[] = firstAgentId
-    ? await fetchRecentEvents(supabase, firstAgentId, 100)
-    : [];
+  if (firstAgentId) {
+    try {
+      initialEvents = await fetchRecentEvents(supabase, firstAgentId, 100);
+    } catch (err) {
+      safeLog.warn("admin.jeffery.page", "events prefetch failed open", {
+        error: err instanceof Error ? err.message : String(err),
+      });
+      initialEvents = [];
+    }
+  }
 
   return (
     <JefferyClient

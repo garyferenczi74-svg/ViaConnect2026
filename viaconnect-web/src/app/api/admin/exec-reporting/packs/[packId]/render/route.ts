@@ -29,6 +29,8 @@ import { sha256Hex } from '@/lib/legal/evidence/hashing';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 const BUCKET = 'board-pack-artifacts';
@@ -47,10 +49,8 @@ interface RenderBody {
   distributionId?: string;
 }
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { packId: string } },
-): Promise<NextResponse> {
+export async function POST(request: NextRequest, props: { params: Promise<{ packId: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   try {
     const auth = await requireExecReportingAdmin();
     if (auth.kind === 'error') return auth.response;

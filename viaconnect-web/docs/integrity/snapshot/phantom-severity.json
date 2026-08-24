@@ -1,0 +1,3097 @@
+[
+  {
+    "kind": "table",
+    "name": "agent_activity_log",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/api/ai/nutrition/route.ts:88",
+        "op": "WRITE-insert",
+        "reach": "entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "agent_messages",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/api/practitioner/invite-patient/route.ts:150",
+        "op": "WRITE-insert",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/patient-view-preference/route.ts:100",
+        "op": "WRITE-insert",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/waitlist/practitioner/route.ts:145",
+        "op": "WRITE-insert",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/lib/agents/message-bus.ts:64",
+        "op": "WRITE-insert",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/agents/message-bus.ts:229",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/agents/message-bus.ts:253",
+        "op": "WRITE-update",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/agents/message-bus.ts:273",
+        "op": "WRITE-update",
+        "reach": "imported"
+      },
+      {
+        "site": "supabase/functions/arnold-tick/index.ts:94",
+        "op": "WRITE-insert",
+        "reach": "edge-entrypoint"
+      },
+      {
+        "site": "supabase/functions/arnold-tick/index.ts:125",
+        "op": "WRITE-insert",
+        "reach": "edge-entrypoint"
+      },
+      {
+        "site": "supabase/functions/arnold-vision-analyze/index.ts:597",
+        "op": "WRITE-insert",
+        "reach": "edge-entrypoint"
+      },
+      {
+        "site": "supabase/functions/arnold-vision-analyze/index.ts:641",
+        "op": "WRITE-insert",
+        "reach": "edge-entrypoint"
+      },
+      {
+        "site": "supabase/functions/cert-reminder-tick/index.ts:116",
+        "op": "read",
+        "reach": "edge-entrypoint"
+      },
+      {
+        "site": "supabase/functions/cert-reminder-tick/index.ts:126",
+        "op": "WRITE-insert",
+        "reach": "edge-entrypoint"
+      },
+      {
+        "site": "supabase/functions/practitioner-waitlist-mailer/index.ts:243",
+        "op": "WRITE-insert",
+        "reach": "edge-entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "brand_compliance_reviews",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/api/admin/brand-compliance/route.ts:36",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/admin/brand-compliance/[reviewId]/route.ts:42",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/admin/brand-compliance/[reviewId]/route.ts:95",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/admin/brand-compliance/[reviewId]/route.ts:110",
+        "op": "WRITE-update",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "supabase/functions/brand_compliance_validator/index.ts:283",
+        "op": "WRITE-insert",
+        "reach": "edge-entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "conversations",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/(app)/(consumer)/messages/page.tsx:48",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/(app)/(consumer)/messages/page.tsx:151",
+        "op": "WRITE-update",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/(app)/(consumer)/profile/page.tsx:103",
+        "op": "read",
+        "reach": "entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "customer_acquisition_attribution",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/lib/analytics/acquisition-attribution.ts:159",
+        "op": "WRITE-insert",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/analytics/cac-engine.ts:215",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/analytics/cac-engine.ts:244",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "supabase/functions/unit-economics-snapshot-tick/index.ts:160",
+        "op": "read",
+        "reach": "edge-entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "customer_archetypes",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/(app)/admin/analytics/archetypes/page.tsx:53",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/(app)/admin/analytics/board-pack/page.tsx:97",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/admin/analytics/archetype-override/route.ts:53",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "supabase/functions/archetype-refinement-tick/index.ts:307",
+        "op": "WRITE-update",
+        "reach": "edge-entrypoint"
+      },
+      {
+        "site": "supabase/functions/archetype-refinement-tick/index.ts:323",
+        "op": "WRITE-insert",
+        "reach": "edge-entrypoint"
+      },
+      {
+        "site": "supabase/functions/archetype-refinement-tick/index.ts:326",
+        "op": "WRITE-insert",
+        "reach": "edge-entrypoint"
+      },
+      {
+        "site": "supabase/functions/archetype-refinement-tick/index.ts:340",
+        "op": "read",
+        "reach": "edge-entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "data_source_connections",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/(app)/(consumer)/settings/integrations/page.tsx:32",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/(app)/(consumer)/settings/integrations/page.tsx:64",
+        "op": "WRITE-update",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/integrations/oauth/[appId]/callback/route.ts:107",
+        "op": "WRITE-insert",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/integrations/webhook/[appId]/route.ts:20",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/integrations/webhook/[appId]/route.ts:50",
+        "op": "WRITE-update",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/components/nutrition/ConnectedAppMealDropdown.tsx:43",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/integrations/tokenManager.ts:15",
+        "op": "read",
+        "reach": "NO-IMPORTS(dormant?)"
+      },
+      {
+        "site": "src/lib/integrations/tokenManager.ts:37",
+        "op": "WRITE-update",
+        "reach": "NO-IMPORTS(dormant?)"
+      },
+      {
+        "site": "src/lib/integrations/tokenManager.ts:58",
+        "op": "WRITE-update",
+        "reach": "NO-IMPORTS(dormant?)"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "genetic_variants",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/(app)/(consumer)/genetics/[panelId]/page.tsx:71",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/(app)/(consumer)/profile/assessment/page.tsx:282",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/ai/generate-wellness-analytics/route.ts:50",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/genex/genemetrics/route.ts:235",
+        "op": "WRITE-insert",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/genex/upload/route.ts:474",
+        "op": "WRITE-insert",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/genex/upload/route.ts:479",
+        "op": "WRITE-insert",
+        "reach": "entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "hannah_avatar_sessions",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/(app)/admin/hannah/ultrathink/page.tsx:119",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/hannah/avatar/end/route.ts:27",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/hannah/avatar/end/route.ts:61",
+        "op": "WRITE-update",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/hannah/avatar/session/route.ts:64",
+        "op": "WRITE-insert",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/hannah/avatar/transcript/route.ts:26",
+        "op": "read",
+        "reach": "entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "hannah_avatar_transcripts",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/api/hannah/avatar/transcript/route.ts:44",
+        "op": "WRITE-insert",
+        "reach": "entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "hannah_evidence_citations",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/(app)/admin/hannah/ultrathink/page.tsx:100",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/hannah/ultrathink/route.ts:107",
+        "op": "WRITE-insert",
+        "reach": "entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "hannah_trend_insights",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/(app)/(consumer)/analytics/actions/hannah.ts:58",
+        "op": "WRITE-insert",
+        "reach": "imported"
+      },
+      {
+        "site": "src/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/hooks/useHannahInsights.ts:113",
+        "op": "read",
+        "reach": "imported"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "hannah_ultrathink_sessions",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/(app)/admin/hannah/ultrathink/page.tsx:51",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/(app)/admin/hannah/ultrathink/page.tsx:91",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/hannah/ultrathink/route.ts:78",
+        "op": "WRITE-insert",
+        "reach": "entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "hannah_ultrathink_traces",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/(app)/admin/hannah/ultrathink/page.tsx:80",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/hannah/ultrathink/route.ts:96",
+        "op": "WRITE-insert",
+        "reach": "entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "hounddog_pipeline",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/lib/hounddog/analytics.ts:52",
+        "op": "WRITE-insert",
+        "reach": "imported"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "hounddog_scripts",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/lib/hounddog/analytics.ts:78",
+        "op": "WRITE-insert",
+        "reach": "imported"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "integration_sync_log",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/api/integrations/webhook/[appId]/route.ts:35",
+        "op": "WRITE-insert",
+        "reach": "entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "jeffery_agent_panel_tasks",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/lib/agents/activity-tracker.ts:146",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/agents/activity-tracker.ts:191",
+        "op": "WRITE-insert",
+        "reach": "imported"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "jeffery_hannah_routing_log",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/api/hannah/ultrathink/route.ts:44",
+        "op": "WRITE-insert",
+        "reach": "entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "journey_recommendations",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/(app)/(consumer)/analytics/actions/hannah.ts:134",
+        "op": "WRITE-delete",
+        "reach": "imported"
+      },
+      {
+        "site": "src/app/(app)/(consumer)/analytics/actions/hannah.ts:156",
+        "op": "WRITE-insert",
+        "reach": "imported"
+      },
+      {
+        "site": "src/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/hooks/useJourneyRecommendations.ts:92",
+        "op": "read",
+        "reach": "imported"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "marketing_spend",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/(app)/admin/analytics/marketing-spend/page.tsx:74",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/(app)/admin/analytics/marketing-spend/page.tsx:119",
+        "op": "WRITE-insert",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/(app)/admin/analytics/marketing-spend/page.tsx:143",
+        "op": "WRITE-delete",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/lib/analytics/cac-engine.ts:211",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/analytics/cac-engine.ts:239",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "supabase/functions/unit-economics-snapshot-tick/index.ts:157",
+        "op": "read",
+        "reach": "edge-entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "messages",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/(app)/(consumer)/messages/page.tsx:84",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/(app)/(consumer)/messages/page.tsx:131",
+        "op": "WRITE-update",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/(app)/(consumer)/messages/page.tsx:142",
+        "op": "WRITE-insert",
+        "reach": "entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "plugin_requests",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/(app)/(consumer)/plugins/page.tsx:135",
+        "op": "WRITE-insert",
+        "reach": "entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "practitioner_brand_configurations",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/api/practitioner/white-label/brand/route.ts:98",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/white-label/brand/route.ts:141",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/white-label/brand/route.ts:152",
+        "op": "WRITE-insert",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/white-label/brand/route.ts:195",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/white-label/brand/route.ts:229",
+        "op": "WRITE-update",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/white-label/labels/route.ts:36",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/white-label/labels/[designId]/route.ts:90",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/white-label/labels/[designId]/submit/route.ts:90",
+        "op": "read",
+        "reach": "entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "practitioner_category_opt_ins",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/api/practitioner/category-opt-ins/route.ts:53",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/category-opt-ins/route.ts:109",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/category-opt-ins/route.ts:129",
+        "op": "WRITE-insert",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/category-opt-ins/route.ts:141",
+        "op": "WRITE-update",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/category-opt-ins/route.ts:154",
+        "op": "WRITE-update",
+        "reach": "entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "practitioner_certifications",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/(app)/practitioner/certification/page.tsx:81",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/webhooks/lms/route.ts:71",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/lib/certification/enrollment.ts:82",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/certification/enrollment.ts:100",
+        "op": "WRITE-insert",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/certification/enrollment.ts:137",
+        "op": "WRITE-update",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/certification/enrollment.ts:145",
+        "op": "WRITE-update",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/certification/enrollment.ts:197",
+        "op": "WRITE-update",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/custom-formulations/eligibility.ts:159",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/practitioner-referral/milestone-orchestrator.ts:167",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/pricing/wholesale-engine.ts:131",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/white-label/eligibility.ts:148",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "supabase/functions/cert-reminder-tick/index.ts:77",
+        "op": "read",
+        "reach": "edge-entrypoint"
+      },
+      {
+        "site": "supabase/functions/cert-reminder-tick/index.ts:85",
+        "op": "WRITE-update",
+        "reach": "edge-entrypoint"
+      },
+      {
+        "site": "supabase/functions/cert-reminder-tick/index.ts:97",
+        "op": "read",
+        "reach": "edge-entrypoint"
+      },
+      {
+        "site": "supabase/functions/vest-referral-rewards/index.ts:148",
+        "op": "read",
+        "reach": "edge-entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "practitioner_cohorts",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/(app)/admin/cohorts/page.tsx:60",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/(app)/admin/cohorts/page.tsx:100",
+        "op": "WRITE-update",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/(app)/admin/waitlist/page.tsx:96",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/practitioners/onboard/page.tsx:102",
+        "op": "read",
+        "reach": "entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "practitioner_email_queue",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "supabase/functions/practitioner-waitlist-mailer/index.ts:161",
+        "op": "read",
+        "reach": "edge-entrypoint"
+      },
+      {
+        "site": "supabase/functions/practitioner-waitlist-mailer/index.ts:177",
+        "op": "WRITE-update",
+        "reach": "edge-entrypoint"
+      },
+      {
+        "site": "supabase/functions/practitioner-waitlist-mailer/index.ts:189",
+        "op": "WRITE-update",
+        "reach": "edge-entrypoint"
+      },
+      {
+        "site": "supabase/functions/practitioner-waitlist-mailer/index.ts:197",
+        "op": "WRITE-update",
+        "reach": "edge-entrypoint"
+      },
+      {
+        "site": "supabase/functions/practitioner-waitlist-mailer/index.ts:218",
+        "op": "WRITE-update",
+        "reach": "edge-entrypoint"
+      },
+      {
+        "site": "supabase/functions/practitioner-waitlist-mailer/index.ts:231",
+        "op": "WRITE-update",
+        "reach": "edge-entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "practitioner_invitations",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/lib/practitioner/invitations.ts:52",
+        "op": "WRITE-insert",
+        "reach": "imported"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "practitioner_patients",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/(app)/practitioner/patients/[id]/page.tsx:72",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/invite-patient/route.ts:106",
+        "op": "WRITE-insert",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/patient-view-preference/route.ts:68",
+        "op": "WRITE-update",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/patients/[patientId]/engagement-score/route.ts:67",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/components/co-branding/PatientPractitionerBadge.tsx:44",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/analytics/acquisition-attribution.ts:124",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/analytics/archetype-engine.ts:329",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "supabase/functions/archetype-refinement-tick/index.ts:261",
+        "op": "read",
+        "reach": "edge-entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "practitioner_referral_attributions",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/api/admin/practitioner-referrals/fraud-flags/[flagId]/route.ts:51",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/admin/practitioner-referrals/reporting/route.ts:49",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/referrals/attribution-info/route.ts:53",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/referrals/redeem-cert-discount/route.ts:60",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/referrals/redeem-cert-discount/route.ts:88",
+        "op": "WRITE-update",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/referrals/redeem-subscription-discount/route.ts:64",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/referrals/redeem-subscription-discount/route.ts:93",
+        "op": "WRITE-update",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/referrals/resolve-attribution/route.ts:91",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/referrals/resolve-attribution/route.ts:152",
+        "op": "WRITE-insert",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/lib/practitioner-referral/fraud-detection-orchestrator.ts:75",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/practitioner-referral/fraud-detection-orchestrator.ts:105",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/practitioner-referral/fraud-detection-orchestrator.ts:154",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/practitioner-referral/fraud-resolution-orchestrator.ts:167",
+        "op": "WRITE-update",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/practitioner-referral/milestone-orchestrator.ts:54",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/practitioner-referral/milestone-orchestrator.ts:102",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/practitioner-referral/vesting-orchestrator.ts:214",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "supabase/functions/vest-referral-rewards/index.ts:83",
+        "op": "read",
+        "reach": "edge-entrypoint"
+      },
+      {
+        "site": "supabase/functions/vest-referral-rewards/index.ts:337",
+        "op": "read",
+        "reach": "edge-entrypoint"
+      },
+      {
+        "site": "supabase/functions/vest-referral-rewards/index.ts:382",
+        "op": "read",
+        "reach": "edge-entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "practitioner_referral_codes",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/api/admin/practitioner-referrals/fraud-flags/[flagId]/route.ts:61",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/admin/practitioner-referrals/reporting/route.ts:48",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/lib/practitioner-referral/code-generation.ts:52",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/practitioner-referral/code-generation.ts:72",
+        "op": "WRITE-insert",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/practitioner-referral/fraud-resolution-orchestrator.ts:180",
+        "op": "WRITE-update",
+        "reach": "imported"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "practitioner_referral_credit_balances",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/api/admin/practitioner-referrals/adjustment/route.ts:67",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/admin/practitioner-referrals/reporting/route.ts:52",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/referrals/apply-credit/route.ts:75",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/referrals/credits/route.ts:49",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/lib/practitioner-referral/fraud-resolution-orchestrator.ts:144",
+        "op": "WRITE-insert",
+        "reach": "imported"
+      },
+      {
+        "site": "supabase/functions/expire-referral-credits/index.ts:161",
+        "op": "read",
+        "reach": "edge-entrypoint"
+      },
+      {
+        "site": "supabase/functions/expire-referral-credits/index.ts:197",
+        "op": "read",
+        "reach": "edge-entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "practitioner_referral_credit_ledger",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/api/admin/practitioner-referrals/adjustment/route.ts:79",
+        "op": "WRITE-insert",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/admin/practitioner-referrals/reporting/route.ts:119",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/referrals/apply-credit/route.ts:101",
+        "op": "WRITE-insert",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/referrals/credits/route.ts:52",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/lib/practitioner-referral/fraud-resolution-orchestrator.ts:150",
+        "op": "WRITE-insert",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/practitioner-referral/vesting-orchestrator.ts:149",
+        "op": "WRITE-insert",
+        "reach": "imported"
+      },
+      {
+        "site": "supabase/functions/expire-referral-credits/index.ts:131",
+        "op": "read",
+        "reach": "edge-entrypoint"
+      },
+      {
+        "site": "supabase/functions/expire-referral-credits/index.ts:152",
+        "op": "read",
+        "reach": "edge-entrypoint"
+      },
+      {
+        "site": "supabase/functions/expire-referral-credits/index.ts:168",
+        "op": "WRITE-insert",
+        "reach": "edge-entrypoint"
+      },
+      {
+        "site": "supabase/functions/vest-referral-rewards/index.ts:290",
+        "op": "WRITE-insert",
+        "reach": "edge-entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "practitioner_referral_fraud_flags",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/api/admin/practitioner-referrals/fraud-flags/route.ts:44",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/admin/practitioner-referrals/fraud-flags/[flagId]/route.ts:38",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/admin/practitioner-referrals/fraud-flags/[flagId]/route.ts:71",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/admin/practitioner-referrals/reporting/route.ts:51",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/referrals/resolve-attribution/route.ts:194",
+        "op": "WRITE-insert",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/lib/practitioner-referral/fraud-detection-orchestrator.ts:48",
+        "op": "WRITE-insert",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/practitioner-referral/fraud-resolution-orchestrator.ts:48",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/practitioner-referral/fraud-resolution-orchestrator.ts:83",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/practitioner-referral/fraud-resolution-orchestrator.ts:107",
+        "op": "WRITE-update",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/practitioner-referral/vesting-orchestrator.ts:97",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "supabase/functions/vest-referral-rewards/index.ts:254",
+        "op": "read",
+        "reach": "edge-entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "practitioner_referral_link_clicks",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/api/practitioner/referrals/resolve-attribution/route.ts:102",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/referrals/resolve-attribution/route.ts:178",
+        "op": "WRITE-insert",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/lib/practitioner-referral/fraud-detection-orchestrator.ts:192",
+        "op": "read",
+        "reach": "imported"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "practitioner_referral_milestone_events",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/api/admin/practitioner-referrals/fraud-flags/[flagId]/route.ts:56",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/admin/practitioner-referrals/reporting/route.ts:50",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/admin/practitioner-referrals/reporting/route.ts:112",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/referrals/credits/route.ts:57",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/lib/practitioner-referral/fraud-detection-orchestrator.ts:82",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/practitioner-referral/fraud-resolution-orchestrator.ts:62",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/practitioner-referral/fraud-resolution-orchestrator.ts:120",
+        "op": "WRITE-update",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/practitioner-referral/fraud-resolution-orchestrator.ts:136",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/practitioner-referral/milestone-orchestrator.ts:61",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/practitioner-referral/milestone-orchestrator.ts:82",
+        "op": "WRITE-insert",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/practitioner-referral/vesting-orchestrator.ts:74",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/practitioner-referral/vesting-orchestrator.ts:122",
+        "op": "WRITE-update",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/practitioner-referral/vesting-orchestrator.ts:131",
+        "op": "WRITE-update",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/practitioner-referral/vesting-orchestrator.ts:169",
+        "op": "WRITE-update",
+        "reach": "imported"
+      },
+      {
+        "site": "supabase/functions/vest-referral-rewards/index.ts:92",
+        "op": "read",
+        "reach": "edge-entrypoint"
+      },
+      {
+        "site": "supabase/functions/vest-referral-rewards/index.ts:103",
+        "op": "WRITE-insert",
+        "reach": "edge-entrypoint"
+      },
+      {
+        "site": "supabase/functions/vest-referral-rewards/index.ts:219",
+        "op": "read",
+        "reach": "edge-entrypoint"
+      },
+      {
+        "site": "supabase/functions/vest-referral-rewards/index.ts:262",
+        "op": "WRITE-update",
+        "reach": "edge-entrypoint"
+      },
+      {
+        "site": "supabase/functions/vest-referral-rewards/index.ts:276",
+        "op": "WRITE-update",
+        "reach": "edge-entrypoint"
+      },
+      {
+        "site": "supabase/functions/vest-referral-rewards/index.ts:308",
+        "op": "WRITE-update",
+        "reach": "edge-entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "practitioner_referral_notification_preferences",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/api/practitioner/referrals/attribution-info/route.ts:75",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/referrals/notification-preferences/route.ts:61",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/referrals/notification-preferences/route.ts:79",
+        "op": "WRITE-update",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/referrals/resolve-attribution/route.ts:185",
+        "op": "WRITE-insert",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/lib/practitioner-referral/vesting-orchestrator.ts:250",
+        "op": "read",
+        "reach": "imported"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "practitioner_referral_status_tiers",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/api/admin/practitioner-referrals/reporting/route.ts:92",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/lib/practitioner-referral/vesting-orchestrator.ts:222",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/practitioner-referral/vesting-orchestrator.ts:241",
+        "op": "WRITE-insert",
+        "reach": "imported"
+      },
+      {
+        "site": "supabase/functions/vest-referral-rewards/index.ts:344",
+        "op": "read",
+        "reach": "edge-entrypoint"
+      },
+      {
+        "site": "supabase/functions/vest-referral-rewards/index.ts:357",
+        "op": "WRITE-insert",
+        "reach": "edge-entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "practitioner_referral_tax_earnings",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/api/admin/practitioner-referrals/reporting/route.ts:126",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/admin/practitioner-referrals/tax/route.ts:40",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/admin/practitioner-referrals/tax/[practitionerId]/[taxYear]/route.ts:86",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/admin/practitioner-referrals/tax/[practitionerId]/[taxYear]/route.ts:98",
+        "op": "WRITE-insert",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/admin/practitioner-referrals/tax/[practitionerId]/[taxYear]/route.ts:113",
+        "op": "WRITE-update",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/lib/practitioner-referral/vesting-orchestrator.ts:183",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/practitioner-referral/vesting-orchestrator.ts:197",
+        "op": "WRITE-insert",
+        "reach": "imported"
+      },
+      {
+        "site": "supabase/functions/vest-referral-rewards/index.ts:318",
+        "op": "WRITE-insert",
+        "reach": "edge-entrypoint"
+      },
+      {
+        "site": "supabase/functions/vest-referral-rewards/index.ts:325",
+        "op": "WRITE-insert",
+        "reach": "edge-entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "practitioner_waitlist",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/(app)/admin/cohorts/page.tsx:64",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/(app)/admin/waitlist/page.tsx:88",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/(app)/admin/waitlist/page.tsx:124",
+        "op": "WRITE-update",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/waitlist/practitioner/route.ts:67",
+        "op": "WRITE-insert",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/practitioners/onboard/page.tsx:78",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "supabase/functions/practitioner-waitlist-mailer/index.ts:182",
+        "op": "read",
+        "reach": "edge-entrypoint"
+      },
+      {
+        "site": "supabase/functions/practitioner-waitlist-mailer/index.ts:221",
+        "op": "WRITE-update",
+        "reach": "edge-entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "reward_store_items",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/lib/gamification/token-engine.ts:423",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/gamification/token-engine.ts:493",
+        "op": "WRITE-update",
+        "reach": "imported"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "saved_meals",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/components/nutrition/hub/useNutritionHubMetrics.ts:455",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/components/nutrition/MyMeals.tsx:26",
+        "op": "read",
+        "reach": "NO-IMPORTS(dormant?)"
+      },
+      {
+        "site": "src/components/nutrition/MyMeals.tsx:56",
+        "op": "WRITE-update",
+        "reach": "NO-IMPORTS(dormant?)"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "subscriptions",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/api/stripe/webhook/route.ts:97",
+        "op": "WRITE-insert",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/stripe/webhook/route.ts:149",
+        "op": "WRITE-update",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/stripe/webhook/route.ts:178",
+        "op": "WRITE-update",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/stripe/webhook/route.ts:212",
+        "op": "WRITE-update",
+        "reach": "entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "supplement_product_cache",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/lib/supplements/cacheManager.ts:14",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/supplements/cacheManager.ts:45",
+        "op": "WRITE-insert",
+        "reach": "imported"
+      },
+      {
+        "site": "src/plugins/core/farmceuticaCache.ts:24",
+        "op": "read",
+        "reach": "imported"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "unit_economics_alerts",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/(app)/admin/analytics/alerts/page.tsx:61",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/(app)/admin/analytics/alerts/page.tsx:80",
+        "op": "WRITE-update",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/(app)/admin/analytics/board-pack/page.tsx:100",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "supabase/functions/unit-economics-snapshot-tick/index.ts:378",
+        "op": "WRITE-insert",
+        "reach": "edge-entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "unit_economics_snapshots",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/(app)/admin/analytics/board-pack/page.tsx:87",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/(app)/admin/analytics/overview/page.tsx:76",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/(app)/admin/analytics/snapshots/page.tsx:78",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "supabase/functions/unit-economics-snapshot-tick/index.ts:294",
+        "op": "WRITE-insert",
+        "reach": "edge-entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "viatokens_balance",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/lib/gamification/token-engine.ts:359",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/gamification/token-engine.ts:368",
+        "op": "WRITE-insert",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/gamification/token-engine.ts:377",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/gamification/token-engine.ts:442",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/gamification/token-engine.ts:482",
+        "op": "WRITE-update",
+        "reach": "imported"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "viatokens_ledger",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/lib/gamification/achievement-engine.ts:450",
+        "op": "read",
+        "reach": "NO-IMPORTS(dormant?)"
+      },
+      {
+        "site": "src/lib/gamification/achievement-engine.ts:456",
+        "op": "read",
+        "reach": "NO-IMPORTS(dormant?)"
+      },
+      {
+        "site": "src/lib/gamification/achievement-engine.ts:462",
+        "op": "read",
+        "reach": "NO-IMPORTS(dormant?)"
+      },
+      {
+        "site": "src/lib/gamification/achievement-engine.ts:468",
+        "op": "read",
+        "reach": "NO-IMPORTS(dormant?)"
+      },
+      {
+        "site": "src/lib/gamification/achievement-engine.ts:479",
+        "op": "read",
+        "reach": "NO-IMPORTS(dormant?)"
+      },
+      {
+        "site": "src/lib/gamification/achievement-engine.ts:490",
+        "op": "read",
+        "reach": "NO-IMPORTS(dormant?)"
+      },
+      {
+        "site": "src/lib/gamification/achievement-engine.ts:496",
+        "op": "read",
+        "reach": "NO-IMPORTS(dormant?)"
+      },
+      {
+        "site": "src/lib/gamification/achievement-engine.ts:502",
+        "op": "read",
+        "reach": "NO-IMPORTS(dormant?)"
+      },
+      {
+        "site": "src/lib/gamification/achievement-engine.ts:508",
+        "op": "read",
+        "reach": "NO-IMPORTS(dormant?)"
+      },
+      {
+        "site": "src/lib/gamification/achievement-engine.ts:531",
+        "op": "read",
+        "reach": "NO-IMPORTS(dormant?)"
+      },
+      {
+        "site": "src/lib/gamification/achievement-engine.ts:537",
+        "op": "read",
+        "reach": "NO-IMPORTS(dormant?)"
+      },
+      {
+        "site": "src/lib/gamification/achievement-engine.ts:592",
+        "op": "WRITE-insert",
+        "reach": "NO-IMPORTS(dormant?)"
+      },
+      {
+        "site": "src/lib/gamification/token-engine.ts:213",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/gamification/token-engine.ts:232",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/gamification/token-engine.ts:337",
+        "op": "WRITE-insert",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/gamification/token-engine.ts:464",
+        "op": "WRITE-insert",
+        "reach": "imported"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "white_label_catalog_config",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/(app)/admin/white-label/page.tsx:70",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/admin/white-label/catalog/route.ts:53",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/admin/white-label/catalog/route.ts:123",
+        "op": "WRITE-update",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/white-label/labels/route.ts:118",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/white-label/orders/route.ts:166",
+        "op": "read",
+        "reach": "entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "white_label_compliance_reviews",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/(app)/admin/white-label/page.tsx:68",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/admin/white-label/compliance/decide/[designId]/route.ts:97",
+        "op": "WRITE-insert",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/admin/white-label/compliance/reviews/route.ts:34",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/admin/white-label/reporting/route.ts:104",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/lib/white-label/compliance-orchestrator.ts:69",
+        "op": "WRITE-insert",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/white-label/compliance-orchestrator.ts:163",
+        "op": "read",
+        "reach": "imported"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "white_label_dispensary_settings",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/api/practitioner/white-label/dispensary/route.ts:160",
+        "op": "WRITE-insert",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/dispensary/[slug]/page.tsx:59",
+        "op": "read",
+        "reach": "entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "white_label_enrollments",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/(app)/admin/white-label/page.tsx:65",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/(app)/admin/white-label/page.tsx:66",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/admin/white-label/reporting/route.ts:50",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/white-label/brand/route.ts:61",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/white-label/brand/route.ts:169",
+        "op": "WRITE-update",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/white-label/enroll/route.ts:68",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/white-label/enroll/route.ts:83",
+        "op": "WRITE-insert",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/white-label/orders/route.ts:117",
+        "op": "read",
+        "reach": "entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "white_label_inventory_lots",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/api/admin/white-label/inventory/route.ts:34",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/white-label/inventory/route.ts:50",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/white-label/inventory/[lotId]/transfer/route.ts:66",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/white-label/inventory/[lotId]/transfer/route.ts:97",
+        "op": "WRITE-update",
+        "reach": "entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "white_label_label_designs",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/api/admin/white-label/compliance/decide/[designId]/route.ts:78",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/admin/white-label/compliance/decide/[designId]/route.ts:147",
+        "op": "WRITE-update",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/white-label/dispensary/route.ts:75",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/white-label/dispensary/route.ts:92",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/white-label/dispensary/route.ts:132",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/white-label/labels/route.ts:63",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/white-label/labels/route.ts:133",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/white-label/labels/route.ts:173",
+        "op": "WRITE-insert",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/white-label/labels/[designId]/revise/route.ts:57",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/white-label/labels/[designId]/route.ts:49",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/white-label/labels/[designId]/route.ts:165",
+        "op": "WRITE-update",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/white-label/labels/[designId]/submit/route.ts:69",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/white-label/labels/[designId]/submit/route.ts:125",
+        "op": "WRITE-update",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/white-label/labels/[designId]/submit/route.ts:150",
+        "op": "WRITE-update",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/white-label/orders/route.ts:130",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/lib/white-label/compliance-orchestrator.ts:37",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/white-label/compliance-orchestrator.ts:109",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/white-label/compliance-orchestrator.ts:116",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/white-label/compliance-orchestrator.ts:154",
+        "op": "read",
+        "reach": "imported"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "white_label_production_order_items",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/api/admin/white-label/production/[orderId]/route.ts:46",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/admin/white-label/production/[orderId]/transition/route.ts:110",
+        "op": "WRITE-update",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/white-label/orders/route.ts:266",
+        "op": "WRITE-insert",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/white-label/orders/[orderId]/route.ts:69",
+        "op": "read",
+        "reach": "entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "white_label_production_orders",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/(app)/admin/white-label/page.tsx:67",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/admin/white-label/production/[orderId]/route.ts:34",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/admin/white-label/production/[orderId]/transition/route.ts:71",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/admin/white-label/production/[orderId]/transition/route.ts:98",
+        "op": "WRITE-update",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/admin/white-label/reporting/route.ts:58",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/admin/white-label/reporting/route.ts:115",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/admin/white-label/reporting/route.ts:126",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/white-label/orders/route.ts:72",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/white-label/orders/route.ts:225",
+        "op": "WRITE-insert",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/white-label/orders/[orderId]/cancel/route.ts:76",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/white-label/orders/[orderId]/cancel/route.ts:127",
+        "op": "WRITE-update",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/white-label/orders/[orderId]/cancel/route.ts:169",
+        "op": "WRITE-update",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/white-label/orders/[orderId]/checkout-deposit/route.ts:61",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/white-label/orders/[orderId]/checkout-final/route.ts:61",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/practitioner/white-label/orders/[orderId]/route.ts:49",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/lib/custom-formulations/eligibility.ts:206",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/practitioner-referral/milestone-orchestrator.ts:185",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/white-label/stripe-production-payment.ts:41",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/white-label/stripe-production-payment.ts:115",
+        "op": "WRITE-update",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/white-label/stripe-production-payment.ts:141",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/white-label/stripe-production-payment.ts:189",
+        "op": "WRITE-update",
+        "reach": "imported"
+      },
+      {
+        "site": "supabase/functions/vest-referral-rewards/index.ts:163",
+        "op": "read",
+        "reach": "edge-entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "white_label_reviewer_assignments",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/api/admin/white-label/compliance/decide/[designId]/route.ts:120",
+        "op": "WRITE-update",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/lib/white-label/compliance-orchestrator.ts:124",
+        "op": "WRITE-delete",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/white-label/compliance-orchestrator.ts:138",
+        "op": "WRITE-insert",
+        "reach": "imported"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "white_label_sku_mappings",
+    "severity": "CRITICAL",
+    "sites": [
+      {
+        "site": "src/app/api/admin/white-label/compliance/decide/[designId]/route.ts:158",
+        "op": "WRITE-insert",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/lib/white-label/supplement-resolution.ts:53",
+        "op": "read",
+        "reach": "NO-IMPORTS(dormant?)"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "ai_conversations",
+    "severity": "HIGH",
+    "sites": [
+      {
+        "site": "src/lib/ai/context-loader.ts:349",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/gamification/achievement-engine.ts:485",
+        "op": "read",
+        "reach": "NO-IMPORTS(dormant?)"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "archetype_definitions",
+    "severity": "HIGH",
+    "sites": [
+      {
+        "site": "src/app/(app)/admin/analytics/archetypes/page.tsx:48",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/(app)/admin/analytics/board-pack/page.tsx:93",
+        "op": "read",
+        "reach": "entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "brands",
+    "severity": "HIGH",
+    "sites": [
+      {
+        "site": "src/app/api/public/brand-storefront/[brandSlug]/route.ts:26",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "supabase/functions/brand_compliance_validator/index.ts:179",
+        "op": "read",
+        "reach": "edge-entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "caq_phase_responses",
+    "severity": "HIGH",
+    "sites": [
+      {
+        "site": "supabase/functions/gordon-generate-targets/index.ts:152",
+        "op": "read",
+        "reach": "edge-entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "certification_levels",
+    "severity": "HIGH",
+    "sites": [
+      {
+        "site": "src/app/(app)/practitioner/certification/page.tsx:75",
+        "op": "read",
+        "reach": "entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "cohort_customer_monthly",
+    "severity": "HIGH",
+    "sites": [
+      {
+        "site": "src/lib/analytics/cohort-bucket-loader.ts:34",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/analytics/ltv-engine.ts:194",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "supabase/functions/unit-economics-snapshot-tick/index.ts:164",
+        "op": "read",
+        "reach": "edge-entrypoint"
+      },
+      {
+        "site": "supabase/functions/unit-economics-snapshot-tick/index.ts:224",
+        "op": "read",
+        "reach": "edge-entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "compliance_streaks",
+    "severity": "HIGH",
+    "sites": [
+      {
+        "site": "src/lib/gamification/achievement-engine.ts:444",
+        "op": "read",
+        "reach": "NO-IMPORTS(dormant?)"
+      },
+      {
+        "site": "src/lib/gamification/token-engine.ts:251",
+        "op": "read",
+        "reach": "imported"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "constitutional_assessments",
+    "severity": "HIGH",
+    "sites": [
+      {
+        "site": "src/components/practitioner/NaturopathicPatientView.tsx:93",
+        "op": "read",
+        "reach": "imported"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "daily_actions",
+    "severity": "HIGH",
+    "sites": [
+      {
+        "site": "src/lib/ai/context-loader.ts:341",
+        "op": "read",
+        "reach": "imported"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "daily_score_inputs",
+    "severity": "HIGH",
+    "sites": [
+      {
+        "site": "src/lib/integrations/deduplicator.ts:26",
+        "op": "read",
+        "reach": "imported"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "genetics_nutritional_guides",
+    "severity": "HIGH",
+    "sites": [
+      {
+        "site": "src/lib/agents/gordon/generateNutritionalGuide.ts:107",
+        "op": "read",
+        "reach": "imported"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "hounddog_analytics_rollup",
+    "severity": "HIGH",
+    "sites": [
+      {
+        "site": "src/lib/hounddog/analytics.ts:22",
+        "op": "read",
+        "reach": "imported"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "practitioner_referral_parameters",
+    "severity": "HIGH",
+    "sites": [
+      {
+        "site": "src/lib/practitioner-referral/governed-params.ts:104",
+        "op": "read",
+        "reach": "imported"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "practitioner_subscriptions",
+    "severity": "HIGH",
+    "sites": [
+      {
+        "site": "src/app/(app)/practitioner/billing/page.tsx:79",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/lib/practitioner-referral/milestone-orchestrator.ts:132",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/pricing/wholesale-engine.ts:123",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/white-label/eligibility.ts:156",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/white-label/stripe-production-payment.ts:84",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "supabase/functions/vest-referral-rewards/index.ts:117",
+        "op": "read",
+        "reach": "edge-entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "practitioner_tiers",
+    "severity": "HIGH",
+    "sites": [
+      {
+        "site": "src/app/(app)/practitioner/billing/page.tsx:93",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/lib/pricing/wholesale-engine.ts:138",
+        "op": "read",
+        "reach": "imported"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "predictive_alerts",
+    "severity": "HIGH",
+    "sites": [
+      {
+        "site": "src/lib/ai/context-loader.ts:358",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/ai/daily-plan-generator.ts:90",
+        "op": "read",
+        "reach": "NO-IMPORTS(dormant?)"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "product_categories",
+    "severity": "HIGH",
+    "sites": [
+      {
+        "site": "src/app/api/public/brand-storefront/[brandSlug]/route.ts:38",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "supabase/functions/brand_compliance_validator/index.ts:182",
+        "op": "read",
+        "reach": "edge-entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "product_certification_assignments",
+    "severity": "HIGH",
+    "sites": [
+      {
+        "site": "supabase/functions/brand_compliance_validator/index.ts:186",
+        "op": "read",
+        "reach": "edge-entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "supplement_compliance",
+    "severity": "HIGH",
+    "sites": [
+      {
+        "site": "src/lib/ai/context-loader.ts:326",
+        "op": "read",
+        "reach": "imported"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "supplement_logs",
+    "severity": "HIGH",
+    "sites": [
+      {
+        "site": "src/app/(app)/(consumer)/profile/assessment/page.tsx:262",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/ai/generate-wellness-analytics/route.ts:49",
+        "op": "read",
+        "reach": "entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "supplement_protocols",
+    "severity": "HIGH",
+    "sites": [
+      {
+        "site": "src/components/practitioner/NaturopathicPatientView.tsx:109",
+        "op": "read",
+        "reach": "imported"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "user_health_profile",
+    "severity": "HIGH",
+    "sites": [
+      {
+        "site": "src/lib/ai/context-loader.ts:366",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "supabase/functions/arnold-chronic-risk-compute/index.ts:228",
+        "op": "read",
+        "reach": "edge-entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "user_medications",
+    "severity": "HIGH",
+    "sites": [
+      {
+        "site": "src/lib/ai/context-loader.ts:334",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/ai/daily-plan-generator.ts:65",
+        "op": "read",
+        "reach": "NO-IMPORTS(dormant?)"
+      },
+      {
+        "site": "src/lib/ai/interaction-engine.ts:314",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/protocol/healthContext.ts:298",
+        "op": "read",
+        "reach": "imported"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "wearable_summaries",
+    "severity": "HIGH",
+    "sites": [
+      {
+        "site": "src/lib/ai/context-loader.ts:303",
+        "op": "read",
+        "reach": "imported"
+      },
+      {
+        "site": "src/lib/ai/context-loader.ts:311",
+        "op": "read",
+        "reach": "imported"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "white_label_compliance_reviewer_roles",
+    "severity": "HIGH",
+    "sites": [
+      {
+        "site": "src/app/api/admin/white-label/compliance/decide/[designId]/route.ts:66",
+        "op": "read",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/admin/white-label/compliance/inbox/route.ts:47",
+        "op": "read",
+        "reach": "entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "white_label_discount_tiers",
+    "severity": "HIGH",
+    "sites": [
+      {
+        "site": "src/lib/white-label/governed-params.ts:30",
+        "op": "read",
+        "reach": "imported"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "white_label_economics",
+    "severity": "HIGH",
+    "sites": [
+      {
+        "site": "src/app/api/admin/white-label/reporting/route.ts:95",
+        "op": "read",
+        "reach": "entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "white_label_parameters",
+    "severity": "HIGH",
+    "sites": [
+      {
+        "site": "src/lib/white-label/governed-params.ts:29",
+        "op": "read",
+        "reach": "imported"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "white_label_recalls",
+    "severity": "HIGH",
+    "sites": [
+      {
+        "site": "src/app/(app)/admin/white-label/page.tsx:69",
+        "op": "read",
+        "reach": "entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "wl_pending_reviews_with_sla",
+    "severity": "HIGH",
+    "sites": [
+      {
+        "site": "src/app/api/admin/white-label/compliance/inbox/route.ts:60",
+        "op": "read",
+        "reach": "entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "rpc",
+    "name": "accept_practitioner_invitation",
+    "severity": "MEDIUM",
+    "sites": [
+      {
+        "site": "src/app/patients/invited/page.tsx:133",
+        "op": "rpc",
+        "reach": "entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "rpc",
+    "name": "assign_primary_archetype",
+    "severity": "MEDIUM",
+    "sites": [
+      {
+        "site": "src/app/api/admin/analytics/archetype-classify/route.ts:61",
+        "op": "rpc",
+        "reach": "entrypoint"
+      },
+      {
+        "site": "src/app/api/admin/analytics/archetype-override/route.ts:72",
+        "op": "rpc",
+        "reach": "entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "rpc",
+    "name": "clone_label_design_revision",
+    "severity": "MEDIUM",
+    "sites": [
+      {
+        "site": "src/app/api/practitioner/white-label/labels/[designId]/revise/route.ts:81",
+        "op": "rpc",
+        "reach": "entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "bucket",
+    "name": "genex-uploads",
+    "severity": "MEDIUM",
+    "sites": [
+      {
+        "site": "src/app/api/genex/upload/route.ts:454",
+        "op": "storage",
+        "reach": "entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "rpc",
+    "name": "increment_token_balance",
+    "severity": "MEDIUM",
+    "sites": [
+      {
+        "site": "src/lib/gamification/achievement-engine.ts:603",
+        "op": "rpc",
+        "reach": "NO-IMPORTS(dormant?)"
+      },
+      {
+        "site": "src/lib/gamification/token-engine.ts:351",
+        "op": "rpc",
+        "reach": "imported"
+      }
+    ]
+  },
+  {
+    "kind": "rpc",
+    "name": "lapse_due_channels",
+    "severity": "MEDIUM",
+    "sites": [
+      {
+        "site": "supabase/functions/channel_re_verify_cron/index.ts:11",
+        "op": "rpc",
+        "reach": "edge-entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "rpc",
+    "name": "lookup_practitioner_invitation",
+    "severity": "MEDIUM",
+    "sites": [
+      {
+        "site": "src/app/patients/invited/page.tsx:87",
+        "op": "rpc",
+        "reach": "entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "rpc",
+    "name": "lookup_referral_code_for_attribution",
+    "severity": "MEDIUM",
+    "sites": [
+      {
+        "site": "src/app/practitioner/join/page.tsx:31",
+        "op": "rpc",
+        "reach": "entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "rpc",
+    "name": "next_white_label_order_number",
+    "severity": "MEDIUM",
+    "sites": [
+      {
+        "site": "src/app/api/practitioner/white-label/orders/route.ts:214",
+        "op": "rpc",
+        "reach": "entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "bucket",
+    "name": "practitioner-statements",
+    "severity": "MEDIUM",
+    "sites": [
+      {
+        "site": "supabase/functions/payout_statement_generator/index.ts:91",
+        "op": "storage",
+        "reach": "edge-entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "rpc",
+    "name": "read_secret",
+    "severity": "MEDIUM",
+    "sites": [
+      {
+        "site": "src/lib/soc2/distribute/helpers.ts:70",
+        "op": "rpc",
+        "reach": "imported"
+      }
+    ]
+  },
+  {
+    "kind": "rpc",
+    "name": "record_referral_link_click",
+    "severity": "MEDIUM",
+    "sites": [
+      {
+        "site": "src/app/api/public/referral-click/route.ts:63",
+        "op": "rpc",
+        "reach": "entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "rpc",
+    "name": "send_transactional_email",
+    "severity": "MEDIUM",
+    "sites": [
+      {
+        "site": "supabase/functions/map_notify_practitioner/index.ts:73",
+        "op": "rpc",
+        "reach": "edge-entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "rpc",
+    "name": "sum_practitioner_wholesale_volume",
+    "severity": "MEDIUM",
+    "sites": [
+      {
+        "site": "src/lib/white-label/eligibility.ts:170",
+        "op": "rpc",
+        "reach": "imported"
+      }
+    ]
+  },
+  {
+    "kind": "bucket",
+    "name": "tax-documents",
+    "severity": "MEDIUM",
+    "sites": [
+      {
+        "site": "supabase/functions/tax_form_year_end_generator/index.ts:69",
+        "op": "storage",
+        "reach": "edge-entrypoint"
+      }
+    ]
+  },
+  {
+    "kind": "rpc",
+    "name": "validate_practitioner_invitation",
+    "severity": "MEDIUM",
+    "sites": [
+      {
+        "site": "src/lib/practitioner/invitations.ts:92",
+        "op": "rpc",
+        "reach": "imported"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "a",
+    "severity": "LOW-dormant",
+    "sites": [
+      {
+        "site": "src/lib/nutrition/cache/__tests__/recognition-cache.test.ts:149",
+        "op": "read",
+        "reach": "NO-IMPORTS(dormant?)"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "abc",
+    "severity": "LOW-dormant",
+    "sites": [
+      {
+        "site": "src/lib/nutrition/cache/__tests__/recognition-cache.test.ts:143",
+        "op": "read",
+        "reach": "NO-IMPORTS(dormant?)"
+      },
+      {
+        "site": "src/lib/nutrition/cache/__tests__/recognition-cache.test.ts:144",
+        "op": "read",
+        "reach": "NO-IMPORTS(dormant?)"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "arnold_recommendations",
+    "severity": "LOW-dormant",
+    "sites": [
+      {
+        "site": "src/lib/body-tracker/arnold-recommender.ts:102",
+        "op": "read",
+        "reach": "NO-IMPORTS(dormant?)"
+      },
+      {
+        "site": "src/lib/body-tracker/arnold-recommender.ts:371",
+        "op": "WRITE-insert",
+        "reach": "NO-IMPORTS(dormant?)"
+      },
+      {
+        "site": "src/lib/body-tracker/arnold-recommender.ts:395",
+        "op": "read",
+        "reach": "NO-IMPORTS(dormant?)"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "arnold_user_profiles",
+    "severity": "LOW-dormant",
+    "sites": [
+      {
+        "site": "src/lib/body-tracker/arnold-reconciler.ts:242",
+        "op": "read",
+        "reach": "NO-IMPORTS(dormant?)"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "b",
+    "severity": "LOW-dormant",
+    "sites": [
+      {
+        "site": "src/lib/nutrition/cache/__tests__/recognition-cache.test.ts:149",
+        "op": "read",
+        "reach": "NO-IMPORTS(dormant?)"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "biometrics",
+    "severity": "LOW-dormant",
+    "sites": [
+      {
+        "site": "src/lib/ai/daily-plan-generator.ts:74",
+        "op": "read",
+        "reach": "NO-IMPORTS(dormant?)"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "body_tracker_reconciliation_log",
+    "severity": "LOW-dormant",
+    "sites": [
+      {
+        "site": "src/lib/body-tracker/arnold-reconciler.ts:371",
+        "op": "WRITE-insert",
+        "reach": "NO-IMPORTS(dormant?)"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "compliance_logs",
+    "severity": "LOW-dormant",
+    "sites": [
+      {
+        "site": "src/lib/api/notification-service.ts:215",
+        "op": "read",
+        "reach": "NO-IMPORTS(dormant?)"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "daily_compliance",
+    "severity": "LOW-dormant",
+    "sites": [
+      {
+        "site": "src/lib/ai/daily-plan-generator.ts:129",
+        "op": "read",
+        "reach": "NO-IMPORTS(dormant?)"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "hello",
+    "severity": "LOW-dormant",
+    "sites": [
+      {
+        "site": "src/lib/nutrition/cache/__tests__/recognition-cache.test.ts:138",
+        "op": "read",
+        "reach": "NO-IMPORTS(dormant?)"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "img",
+    "severity": "LOW-dormant",
+    "sites": [
+      {
+        "site": "src/lib/nutrition/vision/__tests__/detect.test.ts:115",
+        "op": "read",
+        "reach": "NO-IMPORTS(dormant?)"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "lab_orders",
+    "severity": "LOW-dormant",
+    "sites": [
+      {
+        "site": "src/lib/ai/daily-plan-generator.ts:80",
+        "op": "read",
+        "reach": "NO-IMPORTS(dormant?)"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "lab_results",
+    "severity": "LOW-dormant",
+    "sites": [
+      {
+        "site": "src/lib/ai/daily-plan-generator.ts:85",
+        "op": "read",
+        "reach": "NO-IMPORTS(dormant?)"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "push_tokens",
+    "severity": "LOW-dormant",
+    "sites": [
+      {
+        "site": "src/lib/api/notification-service.ts:50",
+        "op": "read",
+        "reach": "NO-IMPORTS(dormant?)"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "streaks",
+    "severity": "LOW-dormant",
+    "sites": [
+      {
+        "site": "src/lib/api/notification-service.ts:222",
+        "op": "read",
+        "reach": "NO-IMPORTS(dormant?)"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "token_balances",
+    "severity": "LOW-dormant",
+    "sites": [
+      {
+        "site": "src/lib/api/notification-service.ts:227",
+        "op": "read",
+        "reach": "NO-IMPORTS(dormant?)"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "user_achievements",
+    "severity": "LOW-dormant",
+    "sites": [
+      {
+        "site": "src/lib/gamification/achievement-engine.ts:412",
+        "op": "read",
+        "reach": "NO-IMPORTS(dormant?)"
+      },
+      {
+        "site": "src/lib/gamification/achievement-engine.ts:576",
+        "op": "WRITE-insert",
+        "reach": "NO-IMPORTS(dormant?)"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "user_connections",
+    "severity": "LOW-dormant",
+    "sites": [
+      {
+        "site": "src/lib/gamification/achievement-engine.ts:514",
+        "op": "read",
+        "reach": "NO-IMPORTS(dormant?)"
+      },
+      {
+        "site": "src/lib/gamification/achievement-engine.ts:520",
+        "op": "read",
+        "reach": "NO-IMPORTS(dormant?)"
+      },
+      {
+        "site": "src/lib/gamification/achievement-engine.ts:526",
+        "op": "read",
+        "reach": "NO-IMPORTS(dormant?)"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "user_health_levels",
+    "severity": "LOW-dormant",
+    "sites": [
+      {
+        "site": "src/lib/gamification/achievement-engine.ts:631",
+        "op": "read",
+        "reach": "NO-IMPORTS(dormant?)"
+      },
+      {
+        "site": "src/lib/gamification/achievement-engine.ts:647",
+        "op": "WRITE-insert",
+        "reach": "NO-IMPORTS(dormant?)"
+      }
+    ]
+  },
+  {
+    "kind": "table",
+    "name": "widget_cache",
+    "severity": "LOW-dormant",
+    "sites": [
+      {
+        "site": "src/lib/api/notification-service.ts:243",
+        "op": "WRITE-insert",
+        "reach": "NO-IMPORTS(dormant?)"
+      }
+    ]
+  }
+]

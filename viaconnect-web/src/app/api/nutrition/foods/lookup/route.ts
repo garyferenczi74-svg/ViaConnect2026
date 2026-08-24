@@ -17,6 +17,8 @@ import { lookupByBarcode } from '@/lib/nutrition/databases/open-food-facts';
 import { lookupFood, EXTRACTION_VERSION } from '@/lib/nutrition/usda-client';
 import type { ResolvedNutrients } from '@/lib/nutrition/databases/resolver';
 
+export const dynamic = 'force-dynamic';
+
 const ROUTE = '/api/nutrition/foods/lookup';
 const UUID_RX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -41,7 +43,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   let userId: string | null = null;
 
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       throw new AIRouteError(

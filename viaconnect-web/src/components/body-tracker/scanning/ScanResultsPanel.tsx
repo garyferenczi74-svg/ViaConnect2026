@@ -13,6 +13,7 @@ import { BestPracticesCard } from './BestPracticesCard';
 import { CalibrationNudgeCard } from './CalibrationNudgeCard';
 import { ScanQualityIndicator } from './ScanQualityIndicator';
 import { FutureMeGenerator } from './FutureMeGenerator';
+import { ScanAccuracyClaim } from './ScanAccuracyClaim';
 import type { BodyModelParameters, CompositionEstimate, ExtractedMeasurements, AsymmetryReport } from '@/lib/arnold/scanning/types';
 
 interface ScanResultsPanelProps {
@@ -130,6 +131,8 @@ export function ScanResultsPanel({ sessionId, refreshKey }: ScanResultsPanelProp
           <FutureMeGenerator currentParams={loaded.avatarParameters} currentWeightKg={loaded.weightKg} />
         </div>
       </details>
+
+      <ScanAccuracyClaim />
 
       <BestPracticesCard />
     </section>

@@ -5,9 +5,11 @@ import Image from 'next/image';
 import { Video } from 'lucide-react';
 import { HannahAvatar } from './HannahAvatar';
 import { useFeatureFlag } from '@/lib/config/feature-flags/hooks';
+import { getDisplayName } from '@/lib/getDisplayName';
 
 const HANNAH_IMG =
   'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Mobile%20Hero/Hannah%204.png';
+const HANNAH_NAME = getDisplayName('hannah');
 
 export function AvatarLauncher() {
   const [open, setOpen] = useState(false);
@@ -32,19 +34,19 @@ export function AvatarLauncher() {
       <button
         onClick={() => setOpen(true)}
         className="inline-flex min-h-[44px] items-center gap-2 px-3 py-2 text-sm text-white/80 hover:text-white rounded-lg hover:bg-white/5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744]"
-        aria-label="Talk to Hannah as avatar"
+        aria-label={`Talk to ${HANNAH_NAME} as avatar`}
       >
         <div className="relative h-6 w-6 overflow-hidden rounded-full border border-[#2DA5A0]/40">
           <Image
             src={HANNAH_IMG}
-            alt="Hannah"
+            alt={HANNAH_NAME}
             fill
             className="object-cover object-top"
             sizes="24px"
           />
         </div>
         <Video strokeWidth={1.5} className="w-4 h-4 text-[#2DA5A0]" />
-        <span className="hidden sm:inline">Talk to Hannah</span>
+        <span className="hidden sm:inline">Talk to {HANNAH_NAME}</span>
       </button>
 
       {open && (
@@ -52,7 +54,7 @@ export function AvatarLauncher() {
           className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
           role="dialog"
           aria-modal="true"
-          aria-label="Hannah avatar conversation"
+          aria-label={`${HANNAH_NAME} avatar conversation`}
           onClick={(e) => { if (e.target === e.currentTarget) close(); }}
         >
           <HannahAvatar onClose={close} />

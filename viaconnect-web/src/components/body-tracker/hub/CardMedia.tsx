@@ -75,6 +75,10 @@ function ImageMedia({
   logKey?: string;
 }) {
   const [errored, setErrored] = useState(false);
+  // Prompt 219c: honor objectFit + objectPosition (previously ignored for
+  // images, so cover always hard-cropped subjects out of frame).
+  const objectFit = media.objectFit === 'contain' ? 'contain' : 'cover';
+  const objectPosition = media.objectPosition ?? 'center';
   return (
     <>
       <div aria-hidden="true" className={`absolute inset-0 z-0 rounded-[inherit] ${gradientClass}`} />
@@ -90,7 +94,8 @@ function ImageMedia({
             setErrored(true);
             logMediaFailure(logKey, 'image', media.src);
           }}
-          className="absolute inset-0 z-0 h-full w-full rounded-[inherit] object-cover"
+          style={{ objectFit, objectPosition }}
+          className="absolute inset-0 z-0 h-full w-full rounded-[inherit]"
         />
       ) : null}
     </>
@@ -166,7 +171,11 @@ function VideoMedia({
             setPosterErrored(true);
             logMediaFailure(logKey, 'poster', media.poster);
           }}
-          className="absolute inset-0 h-full w-full object-cover"
+          style={{
+            objectFit: media.objectFit === 'contain' ? 'contain' : 'cover',
+            objectPosition: media.objectPosition ?? 'top',
+          }}
+          className="absolute inset-0 h-full w-full"
         />
       ) : null}
       {showVideo ? (
@@ -195,8 +204,11 @@ function VideoMedia({
             }
             logMediaFailure(logKey, 'video-stalled', media.src);
           }}
-          style={{ objectPosition: media.objectPosition ?? 'top' }}
-          className="absolute inset-0 h-full w-full object-cover"
+          style={{
+            objectFit: media.objectFit === 'contain' ? 'contain' : 'cover',
+            objectPosition: media.objectPosition ?? 'top',
+          }}
+          className="absolute inset-0 h-full w-full"
         />
       ) : null}
     </div>

@@ -16,10 +16,10 @@ import { logVariantEvent } from '@/lib/marketing/variants/logging';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export const dynamic = 'force-dynamic';
+
+export async function POST(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const auth = await requireMarketingAdmin();
     if (auth.kind === 'error') return auth.response;
@@ -30,7 +30,7 @@ export async function POST(
       scientificSubstantiationOnFile?: boolean;
     } | null;
 
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: variant, error: readErr } = await withTimeout(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (async () => (supabase as any)

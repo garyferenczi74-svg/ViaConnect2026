@@ -34,8 +34,9 @@ interface ScanRow {
   connection: { platform: SchedulerPlatform } | null;
 }
 
-export default async function AdminScansPage({ searchParams }: { searchParams: { decision?: string; platform?: string } }) {
-  const supabase = createServerClient();
+export default async function AdminScansPage(props: { searchParams: Promise<{ decision?: string; platform?: string }> }) {
+  const searchParams = await props.searchParams;
+  const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -38,7 +38,7 @@ const SELECT_COLUMNS =
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const startedAt = Date.now();
-  const supabase = createClient();
+  const supabase = await createClient();
 
   let userId: string | null = null;
   try {

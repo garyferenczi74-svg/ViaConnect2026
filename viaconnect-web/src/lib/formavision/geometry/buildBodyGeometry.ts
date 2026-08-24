@@ -1,11 +1,10 @@
-// Parametric body-mesh builder for FormaVision (Prompt 210b, task P1-T1).
+// Parametric body-mesh builder for FormaVision (Prompt 210b P1-T1 + 210e-2 Rev C
+// anatomy restored by Prompt 210g).
 //
 // buildBodyGeometry turns a normalized BodyParamVector into a single indexed
-// THREE.BufferGeometry: a smooth torso-and-legs skin, two tapered arm tubes, an
-// ovoid head, and mitten hand caps. Sparse measured rings are interpolated along
-// each radial column with a Catmull-Rom curve so the surface is smooth rather than
-// faceted between measurements. The function is pure and deterministic: the same
-// vector always yields byte-identical position, normal and uv buffers.
+// THREE.BufferGeometry: shape-corrected torso/legs (64-vertex rings), continuous
+// head from the neck ring, 25 degree arm hang, Catmull-Rom loft, mitten hands.
+// Pure and deterministic: same vector always yields byte-identical buffers.
 
 import {
   BufferGeometry,
@@ -13,7 +12,7 @@ import {
   CatmullRomCurve3,
   Vector3,
 } from 'three';
-import { ellipsePointsForPerimeter } from './ellipse';
+import { anatomicalRingPoints } from './ellipse';
 import { templateForSex } from './types';
 import type {
   ArmLevel,
@@ -21,6 +20,7 @@ import type {
   BodyParamVector,
   BodyRing,
   BodyTemplate,
+  Sex,
   TrunkLevel,
 } from './types';
 
@@ -29,6 +29,8 @@ export interface BuildOptions {
   radialSegments?: number;
   // Interpolated rows produced between the sparse measured rings along the body.
   verticalSegments?: number;
+  // Prompt 210g anti-regression: force pure-ellipse rings (barrel). Tests only.
+  disableShapeCorrection?: boolean;
 }
 
 // The five body segments the composition data and the 2D heat map use, with their
@@ -54,9 +56,11 @@ export interface BodyGeometryResult {
   dispose(): void;
 }
 
-// 40 radial points per ring per Prompt 210a Section 2.1.
-const DEFAULT_RADIAL_SEGMENTS = 40;
+// 64 radial points per ring per Prompt 210e-2 Revision C (was 40 in 210a/210b).
+const DEFAULT_RADIAL_SEGMENTS = 64;
 const DEFAULT_VERTICAL_SEGMENTS = 48;
+// Arm hang from vertical (degrees). Rev C articulation.
+const ARM_ABDUCTION_DEG = 25;
 
 // A ring resolved to concrete numbers, with its estimated flag carried through.
 interface ResolvedRing {
@@ -64,6 +68,8 @@ interface ResolvedRing {
   levelN: number;
   circumferenceM: number;
   aspectRatio: number;
+  aM: number | null;
+  bM: number | null;
   estimated: boolean;
 }
 
@@ -82,11 +88,18 @@ function resolveRings(
     if (isEstimated) {
       estimatedIds.push(ring.id);
     }
+    const aM =
+      ring.aM !== null && ring.aM !== undefined && ring.aM > 0 ? ring.aM : null;
+    const bM =
+      ring.bM !== null && ring.bM !== undefined && ring.bM > 0 ? ring.bM : null;
     return {
       id: ring.id,
       levelN: ring.levelN,
       circumferenceM: measured === null || measured === undefined ? fallback : measured,
-      aspectRatio: ring.aspectRatio,
+      aspectRatio:
+        aM !== null && bM !== null && aM > 0 ? bM / aM : ring.aspectRatio,
+      aM,
+      bM,
       estimated: isEstimated,
     };
   });
@@ -143,18 +156,31 @@ function buildTrunk(
   heightM: number,
   radialSegments: number,
   verticalSegments: number,
+  sex: Sex,
+  disableShapeCorrection: boolean,
 ): { positions: number[]; uvs: number[]; indices: number[]; vertexCount: number } {
   const levels = TRUNK_LEVEL_IDS.map((id) => template.trunkLevels.find((l) => l.id === id)).filter(
     (l): l is TrunkLevel => l !== undefined,
   );
   // Top (neck base) to bottom (glute) so buildLimb runs head to foot like the arms.
   levels.sort((a, b) => b.levelN - a.levelN);
-  const controls: LimbControl[] = levels.map((level) => ({
-    center: new Vector3(0, level.levelN * heightM, 0),
-    circumferenceM: resolveTrunkLevelCircumference(level, rings),
-    aspectRatio: level.aspectRatio,
-  }));
-  return buildLimb(controls, verticalSegments, radialSegments);
+  const controls: LimbControl[] = levels.map((level) => {
+    const anchor = level.anchorRingId
+      ? rings.find((r) => r.id === level.anchorRingId)
+      : undefined;
+    return {
+      center: new Vector3(0, level.levelN * heightM, 0),
+      circumferenceM: resolveTrunkLevelCircumference(level, rings),
+      aspectRatio:
+        anchor?.aM && anchor?.bM && anchor.aM > 0
+          ? anchor.bM / anchor.aM
+          : level.aspectRatio,
+      levelId: level.id,
+      aM: anchor?.aM ?? null,
+      bM: anchor?.bM ?? null,
+    };
+  });
+  return buildLimb(controls, verticalSegments, radialSegments, sex, disableShapeCorrection);
 }
 
 interface LimbControl {
@@ -164,6 +190,10 @@ interface LimbControl {
   circumferenceM: number;
   // Region-specific front-to-side aspect ratio (depth / width) at this control.
   aspectRatio: number;
+  // Anatomical level id for angular shape-correction.
+  levelId: string;
+  aM?: number | null;
+  bM?: number | null;
 }
 
 // Loft a tapered limb or trunk tube through an ordered list of control rings (top to
@@ -176,15 +206,23 @@ function buildLimb(
   controls: LimbControl[],
   rows: number,
   radialSegments: number,
+  sex: Sex,
+  disableShapeCorrection: boolean,
 ): { positions: number[]; uvs: number[]; indices: number[]; vertexCount: number } {
   const rowCount = Math.max(2, Math.floor(rows));
   const segments = Math.max(1, controls.length - 1);
   const positions: number[] = [];
   const uvs: number[] = [];
 
-  // Per-control ellipse ring points (each with its own circumference and aspect).
+  // Per-control anatomical rings (shape-corrected, perimeter-matched).
   const controlRings = controls.map((c) =>
-    ellipsePointsForPerimeter(c.circumferenceM, c.aspectRatio, radialSegments),
+    anatomicalRingPoints(c.circumferenceM, c.aspectRatio, radialSegments, {
+      levelId: c.levelId,
+      sex,
+      disableShapeCorrection,
+      aM: c.aM,
+      bM: c.bM,
+    }),
   );
 
   // One Catmull-Rom curve per radial column through the control centers plus that
@@ -242,6 +280,8 @@ function buildArm(
   wrist: Vector3,
   radialSegments: number,
   verticalSegments: number,
+  sex: Sex,
+  disableShapeCorrection: boolean,
 ): { positions: number[]; uvs: number[]; indices: number[]; vertexCount: number; estimated: boolean } {
   const estimated =
     arm.bicepM === null ||
@@ -265,11 +305,12 @@ function buildArm(
       center: new Vector3().copy(shoulder).addScaledVector(axis, level.t),
       circumferenceM: circumference,
       aspectRatio: level.aspectRatio,
+      levelId: level.id,
     };
   });
 
   const rows = Math.max(template.armLevels.length, Math.floor(verticalSegments / 3));
-  const limb = buildLimb(controls, rows, radialSegments);
+  const limb = buildLimb(controls, rows, radialSegments, sex, disableShapeCorrection);
   return { ...limb, estimated };
 }
 
@@ -303,6 +344,8 @@ function buildLeg(
   heightM: number,
   radialSegments: number,
   verticalSegments: number,
+  sex: Sex,
+  disableShapeCorrection: boolean,
 ): {
   positions: number[];
   uvs: number[];
@@ -337,11 +380,12 @@ function buildLeg(
       center: new Vector3(hipAnchor.x, y, 0),
       circumferenceM: resolveLegLevelCircumference(level, side, rings),
       aspectRatio: level.aspectRatio,
+      levelId: level.id,
     };
   });
 
   const rows = Math.max(levels.length, Math.floor(verticalSegments / 2));
-  const limb = buildLimb(controls, rows, radialSegments);
+  const limb = buildLimb(controls, rows, radialSegments, sex, disableShapeCorrection);
 
   // Foot cap at the ankle (bottom control).
   const ankleControl = controls[controls.length - 1];
@@ -414,37 +458,51 @@ function buildFoot(
   return { positions, uvs, indices, vertexCount: (stacks + 1) * radialSegments };
 }
 
-// Build an ovoid head above the neck ring, sized from the neck circumference and the
-// template head ratios.
+// Integrated head: continuous loft from the neck ring (matched circumference) up
+// through the head equator to a crown, with shape-correction on every ring so the
+// head is never a detached sphere on a point contact.
 function buildHead(
   rings: ResolvedRing[],
   template: BodyTemplate,
   heightM: number,
   radialSegments: number,
+  sex: Sex,
+  disableShapeCorrection: boolean,
 ): { positions: number[]; uvs: number[]; indices: number[]; vertexCount: number } {
   const neck = rings.find((r) => r.id === 'neck');
   const neckCircumference = neck ? neck.circumferenceM : template.rings[0].circumferenceM;
+  const neckAspect = neck ? neck.aspectRatio : template.rings[0].aspectRatio;
   const headCircumference = neckCircumference * template.head.circumferenceFromNeck;
   const neckY = (neck ? neck.levelN : 0.87) * heightM;
 
-  // Equatorial radius from the head circumference treated as a circle.
-  const radius = headCircumference / (2 * Math.PI);
-  // Vertical half-height from the head aspect ratio (taller than wide).
-  const halfHeight = radius / template.head.aspectRatio;
-  const centerY = neckY + halfHeight;
-
-  const stacks = Math.max(4, Math.floor(radialSegments / 2));
+  // Height of the head stack from neck base to crown.
+  const headHeight = (headCircumference / (2 * Math.PI) / template.head.aspectRatio) * 2.05;
+  const stacks = Math.max(8, Math.floor(radialSegments / 2));
   const positions: number[] = [];
   const uvs: number[] = [];
 
   for (let stack = 0; stack <= stacks; stack += 1) {
-    const phi = (stack / stacks) * Math.PI;
-    const ringRadius = radius * Math.sin(phi);
-    const y = centerY + halfHeight * Math.cos(phi);
+    const t = stack / stacks; // 0 at neck, 1 at crown
+    // Smooth open-to-equator-to-closed profile (sin curve keeps continuous taper).
+    const profile = Math.sin(t * Math.PI); // 0 at ends, 1 at mid
+    // Blend neck circ at base, full head at mid, near-zero at crown.
+    const circ =
+      t < 0.5
+        ? neckCircumference + (headCircumference - neckCircumference) * (t * 2)
+        : headCircumference * Math.max(0.08, profile);
+    const aspect =
+      t < 0.35
+        ? neckAspect + (template.head.aspectRatio - neckAspect) * (t / 0.35)
+        : template.head.aspectRatio;
+    const y = neckY + headHeight * t;
+    const ring = anatomicalRingPoints(circ, aspect, radialSegments, {
+      region: t < 0.2 ? 'neck' : 'head',
+      sex,
+      disableShapeCorrection,
+    });
     for (let col = 0; col < radialSegments; col += 1) {
-      const theta = (col / radialSegments) * Math.PI * 2;
-      positions.push(ringRadius * Math.cos(theta), y, ringRadius * Math.sin(theta));
-      uvs.push(col / radialSegments, stack / stacks);
+      positions.push(ring[col].x, y, ring[col].z);
+      uvs.push(col / radialSegments, t);
     }
   }
 
@@ -544,6 +602,7 @@ export function buildBodyGeometry(
     4,
     Math.floor(opts?.verticalSegments ?? DEFAULT_VERTICAL_SEGMENTS),
   );
+  const disableShapeCorrection = opts?.disableShapeCorrection === true;
   const template = templateForSex(param.sex);
   const { rings, estimatedIds } = resolveRings(param, template);
   const estimatedRingIds = [...estimatedIds];
@@ -558,32 +617,66 @@ export function buildBodyGeometry(
 
   // Trunk: the central column from the glute up to the neck base, lofted through the
   // full anatomical level set with measured anchors.
-  const trunk = buildTrunk(rings, template, param.heightM, radialSegments, verticalSegments);
+  const trunk = buildTrunk(
+    rings,
+    template,
+    param.heightM,
+    radialSegments,
+    verticalSegments,
+    param.sex,
+    disableShapeCorrection,
+  );
   appendPart(merged, trunk, SEGMENT_INDEX.trunk);
 
-  // Head follows the trunk segment.
-  const head = buildHead(rings, template, param.heightM, radialSegments);
+  // Head follows the trunk segment (continuous from neck ring).
+  const head = buildHead(
+    rings,
+    template,
+    param.heightM,
+    radialSegments,
+    param.sex,
+    disableShapeCorrection,
+  );
   appendPart(merged, head, SEGMENT_INDEX.trunk);
 
-  // Arms and hands. Shoulder anchors sit just below the chest ring, offset left and
-  // right by roughly half the chest width; wrists hang near the hip level.
+  // Arms and hands. Shoulder anchors sit at the shoulder level; wrists hang near the
+  // hip level with Rev C 25 degree abduction so arms are not vertical tubes.
   const chest = rings.find((r) => r.id === 'chest');
   const hip = rings.find((r) => r.id === 'hip');
   const chestY = (chest ? chest.levelN : 0.72) * param.heightM;
+  const shoulderY =
+    (template.trunkLevels.find((l) => l.id === 'shoulder')?.levelN ?? 0.81) * param.heightM;
   const wristY = (hip ? hip.levelN : 0.52) * param.heightM;
-  const chestPoints = ellipsePointsForPerimeter(
+  const chestPoints = anatomicalRingPoints(
     chest ? chest.circumferenceM : template.rings[1].circumferenceM,
     chest ? chest.aspectRatio : template.rings[1].aspectRatio,
     radialSegments,
+    { levelId: 'chest', sex: param.sex, disableShapeCorrection },
   );
-  const shoulderHalfWidth = Math.max(...chestPoints.map((p) => Math.abs(p.x))) * 1.15;
+  const shoulderHalfWidth = Math.max(...chestPoints.map((p) => Math.abs(p.x))) * 1.05;
+  const drop = Math.max(0.05, shoulderY - wristY);
+  const outward = Math.tan((ARM_ABDUCTION_DEG * Math.PI) / 180) * drop;
 
   for (const arm of param.arms) {
     const sign = arm.side === 'r' ? 1 : -1;
     const armSegment = arm.side === 'r' ? SEGMENT_INDEX.right_arm : SEGMENT_INDEX.left_arm;
-    const shoulder = new Vector3(sign * shoulderHalfWidth, chestY, 0);
-    const wrist = new Vector3(sign * shoulderHalfWidth, wristY, 0);
-    const built = buildArm(arm, template, shoulder, wrist, radialSegments, verticalSegments);
+    const shoulder = new Vector3(sign * shoulderHalfWidth, shoulderY, 0);
+    // 25 degree hang + slight forward so the join reads continuous from the shoulder.
+    const wrist = new Vector3(
+      sign * (shoulderHalfWidth + outward),
+      wristY,
+      drop * 0.04,
+    );
+    const built = buildArm(
+      arm,
+      template,
+      shoulder,
+      wrist,
+      radialSegments,
+      verticalSegments,
+      param.sex,
+      disableShapeCorrection,
+    );
     if (built.estimated) {
       estimatedRingIds.push(arm.side === 'r' ? 'rArm' : 'lArm');
     }
@@ -603,7 +696,11 @@ export function buildBodyGeometry(
     ? resolveTrunkLevelCircumference(gluteLevel, rings)
     : (hip ? hip.circumferenceM : template.rings[3].circumferenceM);
   const gluteAspect = gluteLevel ? gluteLevel.aspectRatio : 0.74;
-  const glutePoints = ellipsePointsForPerimeter(gluteCircumference, gluteAspect, radialSegments);
+  const glutePoints = anatomicalRingPoints(gluteCircumference, gluteAspect, radialSegments, {
+    levelId: 'glute',
+    sex: param.sex,
+    disableShapeCorrection,
+  });
   const gluteHalfWidth = Math.max(...glutePoints.map((p) => Math.abs(p.x)));
   const legOffsetX = gluteHalfWidth * 0.5;
 
@@ -611,7 +708,17 @@ export function buildBodyGeometry(
     const sign = side === 'r' ? 1 : -1;
     const legSegment = side === 'r' ? SEGMENT_INDEX.right_leg : SEGMENT_INDEX.left_leg;
     const hipAnchor = new Vector3(sign * legOffsetX, 0, 0);
-    const leg = buildLeg(side, rings, template, hipAnchor, param.heightM, radialSegments, verticalSegments);
+    const leg = buildLeg(
+      side,
+      rings,
+      template,
+      hipAnchor,
+      param.heightM,
+      radialSegments,
+      verticalSegments,
+      param.sex,
+      disableShapeCorrection,
+    );
     for (const id of leg.estimatedIds) {
       estimatedRingIds.push(id);
     }

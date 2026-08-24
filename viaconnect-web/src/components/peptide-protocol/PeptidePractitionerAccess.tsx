@@ -32,7 +32,7 @@ export function PeptidePractitionerAccess() {
               'Review and co-sign your Hannah protocol',
               'Verify medication interactions and contraindications',
               'Order baseline and follow-up labs',
-              'Monitor progress and adjust dosing',
+              'Monitor progress with appropriate clinical follow-up',
             ].map((item, i) => (
               <li key={i} className="flex items-start gap-2 text-sm text-[rgba(255,255,255,0.60)]">
                 <div className="w-1.5 h-1.5 rounded-full bg-[#2DA5A0] mt-1.5 shrink-0" />

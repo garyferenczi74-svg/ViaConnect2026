@@ -91,23 +91,19 @@ describe('NutritionTabs paramKey generalization', () => {
   });
 });
 
-describe('NutrigenDxResultsTab scaffold source', () => {
+describe('NutrigenDxResultsTab wired source', () => {
   const source = readFileSync(TAB1, 'utf-8');
 
-  it('has exactly two states gated on nutrigenDxPending and renders no marker data', () => {
+  it('keeps pending and empty states and loads live NutrigenDX cross-ref', () => {
     expect(source).toContain('nutrigenDxPending');
     expect(source).toContain('Your NutrigenDX results are processing');
     expect(source).toContain('No NutrigenDX results yet');
-    // NO real or mock marker data, ever: no marker fields, no seeded arrays.
-    expect(source).not.toContain('rsid');
-    expect(source).not.toContain('genotype');
-    expect(source).not.toContain('markers: [');
-    expect(source).not.toContain('findings: [');
+    expect(source).toContain('/api/nutrition/genetics/nutrigendx');
+    expect(source).toContain('resultSet.markers');
   });
 
-  it('references the Prompt 188 NutrigenDxResultSet contract in a comment', () => {
+  it('references the Prompt 188 NutrigenDxResultSet contract', () => {
     expect(source).toContain('NutrigenDxResultSet');
-    expect(source).toContain('Prompt 188');
   });
 
   it('hands off to the Upload tab and keeps the two quiet legacy links', () => {
@@ -115,7 +111,7 @@ describe('NutrigenDxResultsTab scaffold source', () => {
     expect(source).toContain('Have results from another company? Upload them here.');
     expect(source).toContain('href="/genetics"');
     expect(source).toContain('See NutrigenDX panels');
-    expect(source).toContain('href="/nutrition/guide"');
+    expect(source).toContain('href="/nutrition/genetics?tab=recommendations"');
     expect(source).toContain('Review Nutrition Results');
   });
 

@@ -13,13 +13,16 @@ import { logAuditorAccess, extractRequestMetadata } from '@/lib/soc2/auditor/acc
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 const SIGNED_URL_TTL_SECONDS = 5 * 60;
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
-    const session = createServerClient();
+    const session = await createServerClient();
     const { data: { user } } = await withTimeout(session.auth.getUser(), 5000, 'api.auditor.download.auth');
     if (!user || !user.email) {
       return NextResponse.redirect(new URL('/auditor', req.url));

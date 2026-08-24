@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export default async function SignalsPage({ searchParams }: { searchParams: Promise<{ status?: string; collector?: string }> }) {
   const params = await searchParams;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const query = supabase
     .from("social_signals")
     .select("id, collector_id, url, author_handle, captured_at, overall_confidence, status, matched_practitioner_id")

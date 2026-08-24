@@ -9,9 +9,12 @@ import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 import { ingestMeasurementsFromScan, type IngestClient } from '@/lib/body-measurements/ingestScanMeasurements';
 
-export async function POST(_req: Request, { params }: { params: { scanId: string } }) {
+export const dynamic = 'force-dynamic';
+
+export async function POST(_req: Request, props: { params: Promise<{ scanId: string }> }) {
+  const params = await props.params;
   try {
-    const sb = createClient();
+    const sb = await createClient();
     const {
       data: { user },
     } = await withTimeout(sb.auth.getUser(), 5000, 'api.body.measurements.fromScan.auth');

@@ -2,6 +2,9 @@ import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
+import { reportSupabaseError } from "@/lib/utils/schema-drift";
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -14,7 +17,7 @@ export async function GET(request: Request) {
     );
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
 
   try {
     const { error } = await withTimeout(
@@ -70,7 +73,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    await withTimeout(
+    const auditInsertResult: { error: unknown } = await withTimeout(
       // @ts-expect-error -- audit_logs table not in generated Database type
       (async () => supabase.from("audit_logs").insert({
         user_id: user.id,
@@ -85,6 +88,9 @@ export async function GET(request: Request) {
       5000,
       "api.auth.callback.audit-log"
     );
+    if (auditInsertResult.error) {
+      reportSupabaseError("audit.insert", auditInsertResult.error, { table: "audit_logs" });
+    }
   } catch (auditError) {
     safeLog.warn("api.auth.callback", "audit log failed (non-blocking)", { error: auditError });
   }

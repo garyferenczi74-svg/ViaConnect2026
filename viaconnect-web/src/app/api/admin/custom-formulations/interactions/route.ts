@@ -10,6 +10,8 @@ import { requireCustomFormulationsAdmin } from '@/lib/custom-formulations/admin-
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 const VALID_SEVERITIES = new Set(['minor', 'moderate', 'major', 'contraindicated']);
 
 export async function POST(request: NextRequest) {
@@ -51,7 +53,7 @@ export async function POST(request: NextRequest) {
         ? [body.ingredient_a_id, body.ingredient_b_id]
         : [body.ingredient_b_id, body.ingredient_a_id];
 
-    const supabase = createClient();
+    const supabase = await createClient();
     const insertRes = await withTimeout(
       (async () => supabase
         .from('ingredient_library_interactions')

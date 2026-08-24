@@ -29,7 +29,7 @@ export async function POST(req: Request) {
     if (!email) return NextResponse.json({ error: "email required" }, { status: 400 });
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return NextResponse.json({ error: "invalid email" }, { status: 400 });
 
-    const userClient = createServerClient();
+    const userClient = await createServerClient();
     const { data: { user } } = await withTimeout(userClient.auth.getUser(), 5000, 'api.marshall.dsar.auth');
 
     const slaDays = SLA_DAYS[jurisdiction] ?? 45;

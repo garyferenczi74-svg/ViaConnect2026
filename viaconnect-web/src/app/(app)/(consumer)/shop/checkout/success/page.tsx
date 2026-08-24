@@ -20,7 +20,7 @@ import { ClientCartReset } from '@/components/shop/ClientCartReset'
 import { finalizeShopOrder } from '@/lib/shop/checkout-actions'
 
 interface PageProps {
-    searchParams: { session_id?: string }
+    searchParams: Promise<{ session_id?: string }>
 }
 
 export const metadata = {
@@ -28,7 +28,8 @@ export const metadata = {
     description: 'Your Via Cura order has been confirmed.',
 }
 
-export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
+export default async function CheckoutSuccessPage(props: PageProps) {
+    const searchParams = await props.searchParams;
     const sessionId = searchParams.session_id
     const result = sessionId
         ? await finalizeShopOrder(sessionId)

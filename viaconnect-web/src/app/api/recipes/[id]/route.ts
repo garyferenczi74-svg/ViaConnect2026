@@ -27,7 +27,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 interface RouteContext {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 function flagDisabled(): boolean {
@@ -49,14 +49,14 @@ export async function GET(_req: NextRequest, ctx: RouteContext): Promise<NextRes
     return NextResponse.json({ error: 'Recipe library is temporarily unavailable.' }, { status: 503 });
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const admin = createAdminClient();
-  const recipe = await loadOwnedRecipe(admin, ctx.params.id, user.id);
+  const recipe = await loadOwnedRecipe(admin, (await ctx.params).id, user.id);
   if (!recipe) {
     return NextResponse.json({ error: 'Recipe not found' }, { status: 404 });
   }
@@ -74,7 +74,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext): Promise<NextRe
     return NextResponse.json({ error: 'Recipe library is temporarily unavailable.' }, { status: 503 });
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -91,7 +91,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext): Promise<NextRe
   }
 
   const admin = createAdminClient();
-  const recipe = await loadOwnedRecipe(admin, ctx.params.id, user.id);
+  const recipe = await loadOwnedRecipe(admin, (await ctx.params).id, user.id);
   if (!recipe) {
     return NextResponse.json({ error: 'Recipe not found' }, { status: 404 });
   }
@@ -193,14 +193,14 @@ export async function DELETE(_req: NextRequest, ctx: RouteContext): Promise<Next
     return NextResponse.json({ error: 'Recipe library is temporarily unavailable.' }, { status: 503 });
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const admin = createAdminClient();
-  const recipe = await loadOwnedRecipe(admin, ctx.params.id, user.id);
+  const recipe = await loadOwnedRecipe(admin, (await ctx.params).id, user.id);
   if (!recipe) {
     return NextResponse.json({ error: 'Recipe not found' }, { status: 404 });
   }

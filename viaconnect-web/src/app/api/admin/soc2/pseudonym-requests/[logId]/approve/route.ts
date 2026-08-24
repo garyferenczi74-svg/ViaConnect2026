@@ -20,6 +20,8 @@ import { CONTEXT_TO_TABLE, resolvePseudonym } from '@/lib/soc2/auditor/resolvePs
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 type ApprovalSlot = 'steve' | 'thomas';
@@ -30,14 +32,15 @@ interface Body {
   context?: string;
 }
 
-export async function POST(req: NextRequest, { params }: { params: { logId: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ logId: string }> }) {
+  const params = await props.params;
   const logId = Number.parseInt(params.logId, 10);
   try {
   if (!Number.isFinite(logId)) {
     return NextResponse.json({ error: 'invalid_log_id' }, { status: 400 });
   }
 
-  const session = createServerClient();
+  const session = await createServerClient();
   const { data: { user } } = await withTimeout(session.auth.getUser(), 5000, 'api.soc2.pseudonym-requests.approve.auth');
   if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
 

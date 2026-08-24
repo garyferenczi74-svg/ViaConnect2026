@@ -11,6 +11,8 @@ import { parseIngredientCsv } from '@/lib/custom-formulations/ingredient-csv';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     const auth = await requireCustomFormulationsAdmin();
@@ -52,7 +54,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = createClient();
+    const supabase = await createClient();
     const rows = parsed.valid.map((r) => ({
       ...r,
       added_by: auth.userId,

@@ -15,9 +15,11 @@ import type { KelseyReviewRequest, KelseyVerdict } from "@/lib/compliance/types"
 import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: Request) {
   try {
-    const sb = createClient();
+    const sb = await createClient();
     const { data: { user } } = await withTimeout(sb.auth.getUser(), 5000, 'api.compliance.kelsey.auth');
     if (!user) return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
 

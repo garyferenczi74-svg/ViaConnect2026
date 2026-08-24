@@ -154,7 +154,7 @@ async function loadActiveContent(): Promise<ActiveContent | null> {
 
 async function loadActiveContentInner(): Promise<ActiveContent | null> {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: persona } = await (supabase as any)
       .from('scenario_personas')

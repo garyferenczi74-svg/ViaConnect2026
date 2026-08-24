@@ -10,6 +10,8 @@ import { getGoalById, getLatestWeight, insertGoalTarget } from '@/lib/body-goals
 import { projectGoalToWeightGoals } from '@/lib/body-goals/projectWeightGoal';
 import type { GoalActivityLevel, GoalDriver } from '@/lib/body-goals/types';
 
+export const dynamic = 'force-dynamic';
+
 interface PatchBody {
   driver?: GoalDriver;
   goalWeightLb?: number;
@@ -21,9 +23,10 @@ interface PatchBody {
   activityLevel?: GoalActivityLevel | null;
 }
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
-    const sb = createClient();
+    const sb = await createClient();
     const { data: { user } } = await withTimeout(sb.auth.getUser(), 5000, 'api.body.goals.edit.auth');
     if (!user) return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 });
 

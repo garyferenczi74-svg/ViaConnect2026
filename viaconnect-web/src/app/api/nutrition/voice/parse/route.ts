@@ -11,6 +11,7 @@
 
 import { NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
+import { createClient } from '@/lib/supabase/server';
 import { withTimeout } from '@/lib/nutrition/resilience/timeout';
 import { nluParseResultSchema } from '@/lib/nutrition/voice/nlu/operation-schema';
 import {
@@ -43,6 +44,17 @@ interface ParseRequest {
 
 export async function POST(request: Request): Promise<NextResponse> {
   const start = Date.now();
+
+  // Auth gate: require a server-confirmed user. getUser validates the session
+  // against the auth server (detects a revoked/logged-out session that the
+  // getClaims middleware would not catch until token expiry), and gives this
+  // AI-cost endpoint a real user to enforce the per-user rate limit (Sec 18.2).
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
+  }
+
   let body: ParseRequest;
 
   try {

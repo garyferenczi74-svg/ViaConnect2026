@@ -11,16 +11,16 @@ import { createClient } from '@/lib/supabase/server';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export const dynamic = 'force-dynamic';
+
+export async function GET(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
   try {
     const auth = await requirePractitioner();
     if (auth.kind === 'error') return auth.response;
 
-    const supabase = createClient();
+    const supabase = await createClient();
     const res = await withTimeout(
       (async () => supabase
         .from('custom_formulations')

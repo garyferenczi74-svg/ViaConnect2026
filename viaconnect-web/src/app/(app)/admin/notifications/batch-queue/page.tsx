@@ -13,7 +13,7 @@ interface Row {
 }
 
 export default async function Page() {
-  const sb = createClient();
+  const sb = await createClient();
   const { data } = await sb.from("notification_batch_queue")
     .select("queue_id, practitioner_id, event_code, priority, defer_reason, queued_at, dispatched_at")
     .is("dispatched_at", null).order("queued_at", { ascending: true }).limit(300);

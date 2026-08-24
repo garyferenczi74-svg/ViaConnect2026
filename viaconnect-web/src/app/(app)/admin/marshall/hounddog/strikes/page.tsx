@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 export default async function StrikesPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const now = new Date().toISOString();
   const { data } = await supabase
     .from("practitioner_strikes")

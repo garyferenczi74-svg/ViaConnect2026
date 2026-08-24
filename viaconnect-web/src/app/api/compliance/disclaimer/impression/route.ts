@@ -8,6 +8,8 @@ import { getJurisdictionId } from "@/lib/compliance/jurisdiction";
 import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
 
+export const dynamic = 'force-dynamic';
+
 interface Body {
   surface: string;
   surface_id?: string;
@@ -18,7 +20,7 @@ interface Body {
 
 export async function POST(request: Request) {
   try {
-    const sb = createClient();
+    const sb = await createClient();
     const { data: { user } } = await withTimeout(sb.auth.getUser(), 5000, 'api.compliance.disclaimer.auth');
     const body = (await request.json().catch(() => null)) as Body | null;
     if (!body || typeof body.surface !== "string" || typeof body.displayed !== "boolean") {

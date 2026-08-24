@@ -21,7 +21,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const { id, action } = await params;
     if (!ACTIONS.has(action)) return NextResponse.json({ error: "Unknown action" }, { status: 400 });
 
-    const userClient = createServerClient();
+    const userClient = await createServerClient();
     const { data: { user } } = await withTimeout(userClient.auth.getUser(), 5000, 'api.marshall.hounddog.review.auth');
     if (!user) return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
     const { data: profile } = await userClient.from("profiles").select("role").eq("id", user.id).maybeSingle();

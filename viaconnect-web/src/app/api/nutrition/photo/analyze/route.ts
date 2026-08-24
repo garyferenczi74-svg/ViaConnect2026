@@ -8,7 +8,7 @@
 // inside any outbound provider construction.
 //
 // Pipeline:
-//   1. Auth via createClient().auth.getUser().
+//   1. Auth via await createClient().auth.getUser().
 //   2. Parse multipart form (image, captured_at, client_id, device_class,
 //      month_spend_usd_so_far).
 //   3. Upload image to nutrivision-meals/<user_id>/<YYYY-MM>/<fileId>.jpg
@@ -42,6 +42,8 @@ import type {
   RecognitionProvider,
   VisionItem,
 } from '@/lib/nutrition/vision/types';
+
+export const dynamic = 'force-dynamic';
 
 const ROUTE = '/api/nutrition/photo/analyze';
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
@@ -143,7 +145,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   let userId: string | null = null;
 
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       throw new AIRouteError(

@@ -13,6 +13,7 @@
  */
 
 import { NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
 import { withTimeout } from '@/lib/nutrition/resilience/timeout';
 
 export const runtime = 'nodejs';
@@ -32,6 +33,19 @@ export async function POST(request: Request): Promise<NextResponse> {
   const start = Date.now();
 
   try {
+    // Auth gate: require a server-confirmed user. getUser validates the session
+    // against the auth server (detects a revoked/logged-out session that the
+    // getClaims middleware would not catch until token expiry), and gives this
+    // AI-cost endpoint a real user to enforce the per-user rate limit (Sec 18.2).
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json(
+        { error: 'unauthenticated', audio_retained: false },
+        { status: 401 }
+      );
+    }
+
     const formData = await request.formData();
     const audio = formData.get('audio');
     const language = (formData.get('language') as string | null) ?? 'en-US';

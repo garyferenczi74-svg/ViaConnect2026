@@ -27,7 +27,7 @@ function badgeFor(status: string, days: number | null) {
 }
 
 export default async function Page() {
-  const sb = createClient();
+  const sb = await createClient();
   const { data } = await sb.from("international_tax_registrations").select("*").order("jurisdiction_code");
   const regs = (data ?? []) as Registration[];
   return (

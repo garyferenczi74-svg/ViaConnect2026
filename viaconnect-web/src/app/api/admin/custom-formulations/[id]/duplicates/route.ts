@@ -14,15 +14,15 @@ import {
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export const dynamic = 'force-dynamic';
+
+export async function GET(_request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const auth = await requireCustomFormulationsAdmin();
     if (auth.kind === 'error') return auth.response;
 
-    const supabase = createClient();
+    const supabase = await createClient();
 
     const [targetResp, othersResp] = await Promise.all([
       withTimeout(

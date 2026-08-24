@@ -1,8 +1,11 @@
-import { createClient } from "@/lib/supabase/server";
+﻿import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { withTimeout, withAbortTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
+import { reportSupabaseError } from "@/lib/utils/schema-drift";
 import { getCircuitBreaker, isCircuitBreakerError } from "@/lib/utils/circuit-breaker";
+
+export const dynamic = 'force-dynamic';
 
 const claudeBreaker = getCircuitBreaker("claude-api");
 const grokBreaker = getCircuitBreaker("grok-api");
@@ -57,15 +60,18 @@ async function writeAuditLog(
   ip?: string | null
 ) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     // @ts-expect-error -- audit_logs table not in generated Database type
-    await supabase.from("audit_logs").insert({
+    const auditInsertResult: { error: unknown } = await supabase.from("audit_logs").insert({
       user_id: userId,
       action,
       resource_type: resourceType,
       metadata: (metadata ?? null) as import("@/lib/supabase/types").Json,
       ip_address: ip ?? null,
     });
+    if (auditInsertResult.error) {
+      reportSupabaseError("audit.insert", auditInsertResult.error, { table: "audit_logs" });
+    }
   } catch {
     // Audit log failure should not break the request
   }
@@ -82,8 +88,8 @@ async function callClaude(
 
   const systemPrompt = [
     "You are a precision health AI assistant for ViaConnect GeneX360 by ViaConnect.",
-    "Provide evidence-based clinical reasoning. Never diagnose — only suggest.",
-    "Bioavailability figure is 10–27x. Peptide strategy: retatrutide + tirzepatide only (no semaglutide).",
+    "Provide evidence-based clinical reasoning. Never diagnose; only suggest.",
+    "Bioavailability figure is 10x to 28x. Peptide strategy: retatrutide + tirzepatide only (no semaglutide).",
     context ? `Context: ${JSON.stringify(context)}` : "",
   ]
     .filter(Boolean)
@@ -308,8 +314,8 @@ async function streamClaude(
 
   const systemPrompt = [
     "You are a precision health AI assistant for ViaConnect GeneX360 by ViaConnect.",
-    "Provide evidence-based clinical reasoning. Never diagnose — only suggest.",
-    "Bioavailability figure is 10–27x. Peptide strategy: retatrutide + tirzepatide only (no semaglutide).",
+    "Provide evidence-based clinical reasoning. Never diagnose; only suggest.",
+    "Bioavailability figure is 10x to 28x. Peptide strategy: retatrutide + tirzepatide only (no semaglutide).",
     context ? `Context: ${JSON.stringify(context)}` : "",
   ]
     .filter(Boolean)
@@ -366,7 +372,7 @@ export async function POST(
   }
 
   // Auth check
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

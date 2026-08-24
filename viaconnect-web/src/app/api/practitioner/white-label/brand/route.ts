@@ -14,6 +14,8 @@ import { validateBrandConfiguration, type BrandConfigInput } from '@/lib/white-l
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 const FIELD_KEYS = [
@@ -36,7 +38,7 @@ const VALIDATABLE_FIELDS = new Set([
   'product_naming_scheme', 'practice_prefix',
 ]);
 
-async function loadPractitionerAndEnrollment(supabase: ReturnType<typeof createClient>) {
+async function loadPractitionerAndEnrollment(supabase: Awaited<ReturnType<typeof createClient>>) {
   const authResult = await withTimeout(
     supabase.auth.getUser(),
     5000,
@@ -88,7 +90,7 @@ function handleOuterError(err: unknown, requestId: string, scope: string): NextR
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const ctx = await loadPractitionerAndEnrollment(supabase);
     if (!ctx.ok) return ctx.response;
 
@@ -118,7 +120,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const ctx = await loadPractitionerAndEnrollment(supabase);
     if (!ctx.ok) return ctx.response;
 
@@ -183,7 +185,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 export async function PATCH(request: NextRequest): Promise<NextResponse> {
   const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const ctx = await loadPractitionerAndEnrollment(supabase);
     if (!ctx.ok) return ctx.response;
 

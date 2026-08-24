@@ -9,6 +9,8 @@ import { requirePractitioner } from '@/lib/custom-formulations/admin-guard';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 const ALLOWED_FIELDS = new Set([
   'internal_name',
   'internal_description',
@@ -24,10 +26,8 @@ const ALLOWED_FIELDS = new Set([
   'proposed_structure_function_claims',
 ]);
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function PATCH(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
   try {
     const auth = await requirePractitioner();
@@ -44,7 +44,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'No allowed fields in patch' }, { status: 400 });
     }
 
-    const supabase = createClient();
+    const supabase = await createClient();
 
     const existingRes = await withTimeout(
       (async () => supabase

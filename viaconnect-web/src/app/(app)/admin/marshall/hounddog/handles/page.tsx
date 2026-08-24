@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 export default async function HandlesAdminPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const { data } = await supabase
     .from("practitioner_social_handles")
     .select("id, practitioner_id, platform, handle, verification_method, verified_at, active")

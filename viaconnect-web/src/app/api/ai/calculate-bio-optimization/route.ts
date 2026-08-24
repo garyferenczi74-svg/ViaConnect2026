@@ -40,9 +40,11 @@ import { enqueueBOSCompute } from "@/lib/scoring/queue";
 import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
 
+export const dynamic = 'force-dynamic';
+
 export async function POST() {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     let user;
     try {

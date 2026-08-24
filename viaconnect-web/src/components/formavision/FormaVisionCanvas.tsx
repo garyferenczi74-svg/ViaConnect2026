@@ -109,13 +109,21 @@ export interface FormaVisionCanvasProps {
   // can measure timeToFirstInteractiveMs. Absent means the metric is omitted.
   // Fire-and-forget; does not affect rendering.
   onFirstInteractive?: () => void;
+  // Prompt 211a W1 (shareable clip): the r3f frameloop mode. The canvas is
+  // "demand" by default (frames only on interaction / invalidate). The clip
+  // recorder sets this to "always" for the duration of a recording so
+  // canvas.captureStream() emits every painted morph frame, then restores it to
+  // undefined (demand) when done. ADDITIVE + minimal: when absent the canvas is
+  // byte-identical to before this prop (demand). No other behavior changes.
+  frameloopMode?: 'always' | 'demand';
 }
 
 // Vertical / radial density per render tier. Lite keeps the silhouette readable
 // while roughly halving the row count for low-power GPUs.
+// Prompt 210g / 210e-2 Rev C: cinematic uses 64 radial samples (was 40 ellipse stack).
 const TIER_BUILD = {
-  cinematic: { radialSegments: 40, verticalSegments: 48 },
-  lite: { radialSegments: 28, verticalSegments: 28 },
+  cinematic: { radialSegments: 64, verticalSegments: 48 },
+  lite: { radialSegments: 40, verticalSegments: 32 },
 } as const;
 
 // The body geometry is authored in meters with the floor at y = 0; this lifts the
@@ -658,9 +666,18 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
   return (
     <div ref={containerRef} className="absolute inset-0 h-full w-full">
       <Canvas
+        // E3b: exact cinematic discriminator seam. react-three-fiber forwards
+        // unknown DOM props onto the real <canvas> element it renders, so this
+        // testid lands on the 3D canvas specifically. Playwright selects it to
+        // prove the cinematic (WebGL) path mounted, instead of the brittle
+        // "any canvas is present" proxy. Attribute-only; no behavior change.
+        data-testid="formavision-avatar-canvas"
         // Demand loop: frames are produced only on interaction, mount, or an
         // explicit invalidate. No continuous render, no idle spin.
-        frameloop="demand"
+        // Prompt 211a W1: the clip recorder can flip this to "always" via
+        // frameloopMode so captureStream() emits every morph frame during a
+        // recording; absent / "demand" keeps the byte-identical demand loop.
+        frameloop={props.frameloopMode ?? 'demand'}
         // P7-T2: dpr scaled by tier. Cinematic stays [1, 2] (byte-identical to
         // before this phase). Lite caps at [1, 1.5] to reduce fill-rate on
         // low-power GPUs. The tier is already resolved outside the Canvas

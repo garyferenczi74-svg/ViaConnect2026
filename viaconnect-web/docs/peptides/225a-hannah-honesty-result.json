@@ -1,0 +1,20 @@
+﻿{
+    "ok":  true,
+    "prompt":  "225a",
+    "phase":  "hannah-honesty-retrieval",
+    "probe":  "What is known about BPC-157 research and human clinical evidence?",
+    "matchedSlugs":  [
+                         "edu-bpc157"
+                     ],
+    "blockLength":  974,
+    "hasMarker":  true,
+    "hasIctrpPending":  true,
+    "hasEvidenceGapStatement":  true,
+    "doseLeakBlocked":  true,
+    "sample":  "PEPTIDE EVIDENCE HONESTY (stored counts only; do not invent):\nBPC-157 educational overview (edu-bpc157):\n  trials_registered=0; completed=0; results_posted=0; terminated_or_withdrawn=0\n  publications_human=1; animal=3; systematic_reviews=0\n  evidence_gap_statement: Registration is not completion. Completion is not publication. Publication is not a positive result. For this compound, 0 trials are registered, 0 completed, 0 have posted results, and 1 have published human outcomes in linked evidence. Global registry coverage may be incomplete while ICTRP access is pending.\n  coverage_note: ICTRP global registry coverage may be incomplete (pending_access).\nICTRP source_status=pending_access. Global registry coverage is incomplete until ICTRP credentials land. Trials registered only outside ClinicalTrials.gov (e.g. ChiCTR, CTRI, JPRN, some EU-only) may be missing.\nGlobal registry coverage may be incomplete until ICTRP credentials land. Do not present ICTRP as live.",
+    "proofNotes":  [
+                       "Honesty block is built from kb_peptides.honesty_layer + kb_ingest_source_status.",
+                       "No model call. No trial dose amounts.",
+                       "Ask route appends this block into kbContextBlock after kbSearch."
+                   ]
+}

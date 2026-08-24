@@ -33,7 +33,7 @@ export async function activateProposal(
   proposalId: string,
   activatedBy: string,
 ): Promise<ActivateResult> {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: proposalData } = await supabase
     .from('pricing_proposals')
@@ -164,7 +164,7 @@ export async function activateProposal(
 }
 
 interface SnapshotArgs {
-  supabase: ReturnType<typeof createClient>;
+  supabase: Awaited<ReturnType<typeof createClient>>;
   proposalId: string;
   pricingDomainId: string;
   domainCategory: string;

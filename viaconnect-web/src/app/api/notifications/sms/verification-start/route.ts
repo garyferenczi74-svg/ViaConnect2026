@@ -12,11 +12,13 @@ import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
 import { getCircuitBreaker, isCircuitBreakerError } from "@/lib/utils/circuit-breaker";
 
+export const dynamic = 'force-dynamic';
+
 const smsBreaker = getCircuitBreaker("sms-provider");
 
 export async function POST(request: Request) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, "api.notifications.sms.verification-start.auth");
     if (!user) return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
 

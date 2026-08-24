@@ -1,0 +1,465 @@
+{
+  "comment": "Baseline as of 2026-07-08 (210d P3-1c pre-merge regen): 210f-applied objects (practitioner core, cert/waitlist, invitations, white label tables/views) now exist in the refreshed live-types.ts snapshot and have left this baseline. Remaining entries are residual audit-known findings pending P1 decisions, plus applied RPCs still listed because db-functions.json was not part of this regen. 2026-07-12 (Prompt 211a): scan_cadence_reminders and scan_streak were applied to prod (migrations 20260710120000 / 20260712000500) and are baselined here pending the next live-types.ts snapshot regen, which moves them into the snapshot and out of this baseline (same lifecycle the 210f tables followed). 2026-08-16 (Prompt 219k): baselined 36 post-213/219 table refs used in app code (continuous ops, wearables, hannah/elysium/hounddog) pending next live-types.ts snapshot regen per apply-procedure. 2026-08-23 (Prompt #50 apply record): live-types.ts regen after v20260823225944; removed hounddog_scripts, hounddog_pipeline, and hounddog_analytics_rollup from this baseline because they are now in the snapshot. Kept hounddog_gated_items and hounddog_staging_items (pre-existing; not created by this apply).",
+  "entries": [
+    {
+      "kind": "bucket",
+      "name": "genex-uploads"
+    },
+    {
+      "kind": "bucket",
+      "name": "practitioner-statements"
+    },
+    {
+      "kind": "bucket",
+      "name": "tax-documents"
+    },
+    {
+      "kind": "rpc",
+      "name": "accept_practitioner_invitation"
+    },
+    {
+      "kind": "rpc",
+      "name": "assign_primary_archetype"
+    },
+    {
+      "kind": "rpc",
+      "name": "clone_label_design_revision"
+    },
+    {
+      "kind": "rpc",
+      "name": "lapse_due_channels"
+    },
+    {
+      "kind": "rpc",
+      "name": "lookup_practitioner_invitation"
+    },
+    {
+      "kind": "rpc",
+      "name": "lookup_referral_code_for_attribution"
+    },
+    {
+      "kind": "rpc",
+      "name": "next_white_label_order_number"
+    },
+    {
+      "kind": "rpc",
+      "name": "read_secret"
+    },
+    {
+      "kind": "rpc",
+      "name": "record_referral_link_click"
+    },
+    {
+      "kind": "rpc",
+      "name": "send_transactional_email"
+    },
+    {
+      "kind": "rpc",
+      "name": "sum_practitioner_wholesale_volume"
+    },
+    {
+      "kind": "rpc",
+      "name": "validate_practitioner_invitation"
+    },
+    {
+      "kind": "table",
+      "name": "agent_activity_log"
+    },
+    {
+      "kind": "table",
+      "name": "agent_cadence_jobs"
+    },
+    {
+      "kind": "table",
+      "name": "agent_capabilities"
+    },
+    {
+      "kind": "table",
+      "name": "agent_job_backlog"
+    },
+    {
+      "kind": "table",
+      "name": "agent_job_dead_letters"
+    },
+    {
+      "kind": "table",
+      "name": "agent_messages"
+    },
+    {
+      "kind": "table",
+      "name": "ai_conversations"
+    },
+    {
+      "kind": "table",
+      "name": "archetype_definitions"
+    },
+    {
+      "kind": "table",
+      "name": "arnold_recommendations"
+    },
+    {
+      "kind": "table",
+      "name": "arnold_user_profiles"
+    },
+    {
+      "kind": "table",
+      "name": "authorities_sources"
+    },
+    {
+      "kind": "table",
+      "name": "biometrics"
+    },
+    {
+      "kind": "table",
+      "name": "body_tracker_composition"
+    },
+    {
+      "kind": "table",
+      "name": "body_tracker_reconciliation_log"
+    },
+    {
+      "kind": "table",
+      "name": "brand_compliance_reviews"
+    },
+    {
+      "kind": "table",
+      "name": "brands"
+    },
+    {
+      "kind": "table",
+      "name": "caq_phase_responses"
+    },
+    {
+      "kind": "table",
+      "name": "cohort_customer_monthly"
+    },
+    {
+      "kind": "table",
+      "name": "connected_sources"
+    },
+    {
+      "kind": "table",
+      "name": "conversations"
+    },
+    {
+      "kind": "table",
+      "name": "customer_acquisition_attribution"
+    },
+    {
+      "kind": "table",
+      "name": "customer_archetypes"
+    },
+    {
+      "kind": "table",
+      "name": "daily_actions"
+    },
+    {
+      "kind": "table",
+      "name": "daily_compliance"
+    },
+    {
+      "kind": "table",
+      "name": "daily_score_inputs"
+    },
+    {
+      "kind": "table",
+      "name": "data_source_connections"
+    },
+    {
+      "kind": "table",
+      "name": "elysium_upload_coverage"
+    },
+    {
+      "kind": "table",
+      "name": "elysium_variant_interpretations"
+    },
+    {
+      "kind": "table",
+      "name": "firecrawl_run_ledger"
+    },
+    {
+      "kind": "table",
+      "name": "freshness_targets"
+    },
+    {
+      "kind": "table",
+      "name": "genetic_variants"
+    },
+    {
+      "kind": "table",
+      "name": "genetics_nutritional_guides"
+    },
+    {
+      "kind": "table",
+      "name": "genomics_panel_allele_freq"
+    },
+    {
+      "kind": "table",
+      "name": "genomics_reference_releases"
+    },
+    {
+      "kind": "table",
+      "name": "hannah_accelerator_insights"
+    },
+    {
+      "kind": "table",
+      "name": "hannah_avatar_sessions"
+    },
+    {
+      "kind": "table",
+      "name": "hannah_avatar_transcripts"
+    },
+    {
+      "kind": "table",
+      "name": "hannah_compile_runs"
+    },
+    {
+      "kind": "table",
+      "name": "hannah_daily_notes"
+    },
+    {
+      "kind": "table",
+      "name": "hannah_evidence_citations"
+    },
+    {
+      "kind": "table",
+      "name": "hannah_trend_insights"
+    },
+    {
+      "kind": "table",
+      "name": "hannah_ultrathink_sessions"
+    },
+    {
+      "kind": "table",
+      "name": "hannah_ultrathink_traces"
+    },
+    {
+      "kind": "table",
+      "name": "hounddog_gated_items"
+    },
+    {
+      "kind": "table",
+      "name": "hounddog_staging_items"
+    },
+    {
+      "kind": "table",
+      "name": "ingest_topic_registry"
+    },
+    {
+      "kind": "table",
+      "name": "ingredient_snp_relevance"
+    },
+    {
+      "kind": "table",
+      "name": "integration_sync_log"
+    },
+    {
+      "kind": "table",
+      "name": "jeffery_agent_panel_tasks"
+    },
+    {
+      "kind": "table",
+      "name": "jeffery_hannah_routing_log"
+    },
+    {
+      "kind": "table",
+      "name": "journey_recommendations"
+    },
+    {
+      "kind": "table",
+      "name": "lab_orders"
+    },
+    {
+      "kind": "table",
+      "name": "lab_results"
+    },
+    {
+      "kind": "table",
+      "name": "marketing_spend"
+    },
+    {
+      "kind": "table",
+      "name": "messages"
+    },
+    {
+      "kind": "table",
+      "name": "peptide_education_entries"
+    },
+    {
+      "kind": "table",
+      "name": "pg_policies"
+    },
+    {
+      "kind": "table",
+      "name": "pipeline_runs"
+    },
+    {
+      "kind": "table",
+      "name": "platform_events"
+    },
+    {
+      "kind": "table",
+      "name": "plugin_app_registry"
+    },
+    {
+      "kind": "table",
+      "name": "plugin_requests"
+    },
+    {
+      "kind": "table",
+      "name": "practitioner_category_opt_ins"
+    },
+    {
+      "kind": "table",
+      "name": "practitioner_referral_attributions"
+    },
+    {
+      "kind": "table",
+      "name": "practitioner_referral_codes"
+    },
+    {
+      "kind": "table",
+      "name": "practitioner_referral_credit_balances"
+    },
+    {
+      "kind": "table",
+      "name": "practitioner_referral_credit_ledger"
+    },
+    {
+      "kind": "table",
+      "name": "practitioner_referral_fraud_flags"
+    },
+    {
+      "kind": "table",
+      "name": "practitioner_referral_link_clicks"
+    },
+    {
+      "kind": "table",
+      "name": "practitioner_referral_milestone_events"
+    },
+    {
+      "kind": "table",
+      "name": "practitioner_referral_notification_preferences"
+    },
+    {
+      "kind": "table",
+      "name": "practitioner_referral_parameters"
+    },
+    {
+      "kind": "table",
+      "name": "practitioner_referral_status_tiers"
+    },
+    {
+      "kind": "table",
+      "name": "practitioner_referral_tax_earnings"
+    },
+    {
+      "kind": "table",
+      "name": "predictive_alerts"
+    },
+    {
+      "kind": "table",
+      "name": "product_categories"
+    },
+    {
+      "kind": "table",
+      "name": "product_certification_assignments"
+    },
+    {
+      "kind": "table",
+      "name": "product_content"
+    },
+    {
+      "kind": "table",
+      "name": "saved_meals"
+    },
+    {
+      "kind": "table",
+      "name": "scan_cadence_reminders"
+    },
+    {
+      "kind": "table",
+      "name": "scan_streak"
+    },
+    {
+      "kind": "table",
+      "name": "sherlock_curation_items"
+    },
+    {
+      "kind": "table",
+      "name": "supplement_compliance"
+    },
+    {
+      "kind": "table",
+      "name": "supplement_logs"
+    },
+    {
+      "kind": "table",
+      "name": "supplement_product_cache"
+    },
+    {
+      "kind": "table",
+      "name": "table"
+    },
+    {
+      "kind": "table",
+      "name": "unit_economics_alerts"
+    },
+    {
+      "kind": "table",
+      "name": "unit_economics_snapshots"
+    },
+    {
+      "kind": "table",
+      "name": "user_health_profile"
+    },
+    {
+      "kind": "table",
+      "name": "user_medications"
+    },
+    {
+      "kind": "table",
+      "name": "wearable_audit_log"
+    },
+    {
+      "kind": "table",
+      "name": "wearable_body_composition"
+    },
+    {
+      "kind": "table",
+      "name": "wearable_daily_vitals"
+    },
+    {
+      "kind": "table",
+      "name": "wearable_events"
+    },
+    {
+      "kind": "table",
+      "name": "wearable_metric_precedence"
+    },
+    {
+      "kind": "table",
+      "name": "wearable_oauth_states"
+    },
+    {
+      "kind": "table",
+      "name": "wearable_oauth_tokens"
+    },
+    {
+      "kind": "table",
+      "name": "wearable_recovery"
+    },
+    {
+      "kind": "table",
+      "name": "wearable_sleep_sessions"
+    },
+    {
+      "kind": "table",
+      "name": "wearable_summaries"
+    },
+    {
+      "kind": "table",
+      "name": "wearable_workouts"
+    }
+  ]
+}

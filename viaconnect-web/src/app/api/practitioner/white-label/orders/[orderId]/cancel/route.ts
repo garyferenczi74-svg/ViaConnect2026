@@ -17,6 +17,8 @@ import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 import { getCircuitBreaker, isCircuitBreakerError } from '@/lib/utils/circuit-breaker';
 
+export const dynamic = 'force-dynamic';
+
 const stripeBreaker = getCircuitBreaker('stripe-api');
 
 export const runtime = 'nodejs';
@@ -26,13 +28,11 @@ const schema = z.object({
   admin_override: z.boolean().optional(),
 });
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { orderId: string } },
-): Promise<NextResponse> {
+export async function POST(request: NextRequest, props: { params: Promise<{ orderId: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     let user;
     try {

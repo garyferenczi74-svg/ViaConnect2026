@@ -613,16 +613,87 @@ export async function setSupplementCurrent(
   isCurrent: boolean,
 ): Promise<{ ok: boolean; error?: string }> {
   try {
+    // Prompt 219b: when soft-removing, best-effort delete the private label
+    // photo object and clear path columns. Undo restores the regimen row
+    // without the photo (path cleared). Structured log has path prefix only.
+    if (!isCurrent) {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: row } = await (supabase as any)
+          .from('user_current_supplements')
+          .select('label_photo_path, label_photo_bucket')
+          .eq('id', userSupplementId)
+          .eq('user_id', userId)
+          .maybeSingle();
+        const photoPath =
+          row && typeof row.label_photo_path === 'string' ? row.label_photo_path : null;
+        const photoBucket =
+          row && typeof row.label_photo_bucket === 'string'
+            ? row.label_photo_bucket
+            : 'user-supplement-label-photos';
+        if (photoPath) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const storage = (supabase as any).storage?.from?.(photoBucket);
+          if (storage?.remove) {
+            const removed = await storage.remove([photoPath]);
+            if (removed?.error) {
+              safeLog.warn(SCOPE, 'label photo remove failed (continuing soft-remove)', {
+                userId,
+                userSupplementId,
+                error: String(removed.error.message ?? removed.error).slice(0, 120),
+              });
+            } else {
+              safeLog.info(SCOPE, 'label photo removed on regimen soft-remove', {
+                userId,
+                userSupplementId,
+                // first path segments only (user_id / yyyy-mm), not full object key noise
+                pathPrefix: photoPath.split('/').slice(0, 2).join('/'),
+              });
+            }
+          }
+        }
+      } catch (photoErr) {
+        safeLog.warn(SCOPE, 'label photo cleanup threw (continuing soft-remove)', {
+          userId,
+          userSupplementId,
+          error: photoErr instanceof Error ? photoErr.message : String(photoErr),
+        });
+      }
+    }
+
+    // Clear photo pointers when removing; restore only flips is_current.
+    const patch = !isCurrent
+      ? {
+          is_current: false,
+          label_photo_path: null,
+          label_photo_bucket: null,
+        }
+      : { is_current: true };
+
     const { error } = await withTimeout(
-      supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (supabase as any)
         .from('user_current_supplements')
-        .update({ is_current: isCurrent })
+        .update(patch)
         .eq('id', userSupplementId)
         .eq('user_id', userId),
       DB_TIMEOUT_MS,
       `${SCOPE}.supplement.setCurrent`,
     );
     if (error) {
+      // Fail-open: if label_photo columns missing (migration lag), retry is_current only.
+      if (!isCurrent && /label_photo/i.test(String(error.message ?? ''))) {
+        const retry = await withTimeout(
+          supabase
+            .from('user_current_supplements')
+            .update({ is_current: false })
+            .eq('id', userSupplementId)
+            .eq('user_id', userId),
+          DB_TIMEOUT_MS,
+          `${SCOPE}.supplement.setCurrent.retry`,
+        );
+        if (!retry.error) return { ok: true };
+      }
       safeLog.warn(SCOPE, 'setSupplementCurrent failed', { userId, userSupplementId, isCurrent, error: error.message });
       return { ok: false, error: 'Could not update the supplement; please try again.' };
     }

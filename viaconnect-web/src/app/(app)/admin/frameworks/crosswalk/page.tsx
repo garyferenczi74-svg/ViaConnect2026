@@ -7,10 +7,11 @@ import { collectorsForControl } from '@/lib/compliance/frameworks/crosswalk';
 export const dynamic = 'force-dynamic';
 
 interface PageProps {
-  searchParams: { framework?: string; control?: string };
+  searchParams: Promise<{ framework?: string; control?: string }>;
 }
 
-export default async function CrosswalkViewerPage({ searchParams }: PageProps) {
+export default async function CrosswalkViewerPage(props: PageProps) {
+  const searchParams = await props.searchParams;
   const registry = loadRegistry();
   const frameworkIds = Object.keys(registry.frameworks) as FrameworkId[];
 

@@ -15,6 +15,8 @@ import { buildCohortLTV } from '@/lib/analytics/ltv-engine';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 const segmentSchema = z.enum([
@@ -30,7 +32,7 @@ const querySchema = z.object({
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.analytics.ltv.auth');
     if (!user) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });

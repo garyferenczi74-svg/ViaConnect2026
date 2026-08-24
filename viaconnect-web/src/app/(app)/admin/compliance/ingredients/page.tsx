@@ -26,7 +26,7 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 export default async function Page() {
-  const sb = createClient();
+  const sb = await createClient();
   const { data } = await sb
     .from("regulatory_ingredients")
     .select("id, ingredient_id, jurisdiction_id, status, ndi_number, monograph_ref, dose_min_mg_day, dose_max_mg_day, last_verified_at")

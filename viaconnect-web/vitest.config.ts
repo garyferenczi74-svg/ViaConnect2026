@@ -28,13 +28,23 @@ export default defineConfig({
     include: [
       'tests/**/*.test.ts',
       'src/**/__tests__/**/*.test.ts',
-      // This single .tsx test is included by exact name intentionally. A broad *.test.tsx
+      // .tsx tests are included by exact name intentionally. A broad *.test.tsx
       // glob would also pick up four agent-panel render tests (AgentStatusBadge /
       // AgentActivityFeed / MichelangeloPanel / ArnoldPanel) which require
       // @testing-library/dom, but that dependency is not installed (package.json is
-      // locked). This test uses react-dom/server renderToStaticMarkup so it needs no DOM.
-      // Add further .tsx files here by exact name as more node-safe render tests are written.
+      // locked). All tests below use react-dom/server renderToStaticMarkup so they
+      // need no DOM. Add further .tsx files here by exact name as more node-safe
+      // render tests are written.
       'src/**/__tests__/JourneyAccelerators.bare.test.tsx',
+      // Task 12 (Prompt 210c): per-measurement confidence chip + gated accuracy claim
+      'src/components/body-tracker/scanning/__tests__/ScanAccuracyClaim.bare.test.tsx',
+      'src/components/body-tracker/scanning/__tests__/ConfidenceChip.bare.test.tsx',
+      // Prompt 211a W4-2: cadence UI surfaces (streak / fingerprint flag / tip / opt-in).
+      'src/components/formavision/__tests__/CadenceSurfaces.bare.test.tsx',
+      // Prompt 211a W1: clip creator surface (consent gate + one-source + no photo)
+      'src/components/formavision/__tests__/ClipCreatorSurface.bare.test.tsx',
+      // Prompt 211a W1: consumer-only Helix first-share moment (celebrate-only)
+      'src/components/formavision/__tests__/ClipShareMoment.bare.test.tsx',
     ],
     exclude: ['node_modules', '.next', 'supabase'],
     globals: true,

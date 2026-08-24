@@ -26,16 +26,16 @@ import { determineRequiredReviewers } from '@/lib/white-label/compliance';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { designId: string } },
-): Promise<NextResponse> {
+export async function POST(request: NextRequest, props: { params: Promise<{ designId: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
 
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     let user;
     try {

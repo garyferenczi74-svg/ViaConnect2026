@@ -57,7 +57,7 @@ export async function loadActiveAssignmentsForClassification(
   );
   if (roles.length === 0) return [];
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from('approver_assignments')
     .select('approver_role, user_id')

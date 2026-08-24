@@ -280,7 +280,7 @@ export function PersonalizedPeptideStack({ userId }: { userId?: string } = {}) {
                         <div className="flex flex-wrap gap-2 text-xs text-[rgba(255,255,255,0.45)]">
                           <span>{item.form}</span><span>·</span>
                           <span>{item.category}</span><span>·</span>
-                          <span className="text-[#2DA5A0]">{item.cycleOn} on / {item.cycleOff === 'None' ? 'continuous' : item.cycleOff + ' off'}</span>
+                          <span className="text-[#2DA5A0]">Educational stack context only</span>
                         </div>
                       </div>
                       <div className="shrink-0 mt-1">
@@ -304,12 +304,12 @@ export function PersonalizedPeptideStack({ userId }: { userId?: string } = {}) {
                               <p className="text-xs font-semibold text-[rgba(255,255,255,0.40)] uppercase tracking-wide mb-1">Mechanism / Indication</p>
                               <p className="text-sm text-[rgba(255,255,255,0.65)] leading-relaxed">{item.indication}</p>
                             </div>
-                            {item.cycleNote && (
-                              <div className="flex items-start gap-2 rounded-lg bg-[#172542]/60 backdrop-blur-sm p-3">
-                                <RotateCcw className="w-3.5 h-3.5 text-[rgba(45,165,160,0.70)] mt-0.5 shrink-0" strokeWidth={1.5} />
-                                <p className="text-xs text-[rgba(255,255,255,0.50)]">{item.cycleNote}</p>
-                              </div>
-                            )}
+                            <div className="flex items-start gap-2 rounded-lg bg-[#172542]/60 backdrop-blur-sm p-3">
+                              <RotateCcw className="w-3.5 h-3.5 text-[rgba(45,165,160,0.70)] mt-0.5 shrink-0" strokeWidth={1.5} />
+                              <p className="text-xs text-[rgba(255,255,255,0.50)]">
+                                Timing and cycle decisions belong with a licensed clinician. ViaConnect does not provide dose, reconstitution, or cycle schedules.
+                              </p>
+                            </div>
                             {item.matchedPatterns?.length > 0 && (
                               <div>
                                 <p className="text-xs font-semibold text-[rgba(255,255,255,0.40)] uppercase tracking-wide mb-1">Matched Patterns</p>

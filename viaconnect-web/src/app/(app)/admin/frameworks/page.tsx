@@ -16,7 +16,7 @@ export default async function FrameworksDashboardPage() {
   const registry = loadRegistry();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
 
   const [
     soc2PacketsRes,

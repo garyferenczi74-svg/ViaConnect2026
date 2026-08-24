@@ -14,13 +14,15 @@ import { writeLegalAudit } from '@/lib/legalAudit/operationsAuditLog';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 interface ProfileLite {
   role: string;
 }
 
-async function requireAuthed(supabase: ReturnType<typeof createClient>) {
+async function requireAuthed(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.admin.legal.customs.recordations.ceo-approve.auth');
   if (!user) {
     return {
@@ -45,12 +47,10 @@ async function requireAuthed(supabase: ReturnType<typeof createClient>) {
   };
 }
 
-export async function POST(
-  _request: NextRequest,
-  { params }: { params: { id: string } },
-): Promise<NextResponse> {
+export async function POST(_request: NextRequest, props: { params: Promise<{ id: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const ctx = await requireAuthed(supabase);
     if (!ctx.ok) return ctx.response;
 

@@ -18,7 +18,7 @@ interface CorpusRow {
 
 export default async function CorpusPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
 
   const { data, error } = await supabase
     .from('counterfeit_reference_corpus')

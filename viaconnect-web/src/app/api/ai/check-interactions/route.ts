@@ -5,6 +5,8 @@ import { safeLog } from "@/lib/utils/safe-log";
 import { getCircuitBreaker, isCircuitBreakerError } from "@/lib/utils/circuit-breaker";
 import { checkProductInteractions } from "@/lib/ai/interaction-engine";
 
+export const dynamic = 'force-dynamic';
+
 const claudeBreaker = getCircuitBreaker("claude-api");
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || "";
@@ -230,7 +232,7 @@ export async function POST(request: Request) {
     let cypStatusMap: Record<string, string> = {};
     if (userId) {
       try {
-        const supabase = createClient();
+        const supabase = await createClient();
         const { data: gpRow } = await supabase
           .from("genetic_profiles")
           .select("cyp2d6_status, additional_genes")
@@ -270,7 +272,7 @@ export async function POST(request: Request) {
 
     // Save to database if userId provided
     if (userId) {
-      const supabase = createClient();
+      const supabase = await createClient();
       for (const i of interactions) {
         await supabase.from("medication_interactions").upsert({
           user_id: userId,

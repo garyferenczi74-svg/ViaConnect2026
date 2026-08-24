@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export default async function SessionsHistoryPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const { data } = await supabase
     .from("precheck_sessions")
     .select("id, session_id, status, target_platform, cleared_at, created_at, final_findings_summary")

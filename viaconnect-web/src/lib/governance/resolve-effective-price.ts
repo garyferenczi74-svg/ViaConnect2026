@@ -41,7 +41,7 @@ export async function resolveEffectivePrice(
     throw new Error('userId or practitionerId is required');
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
 
   let query = supabase
     .from('customer_price_bindings')

@@ -16,6 +16,8 @@ import { recordAudit, newRequestId } from '@/lib/observability/audit-recorder';
 
 import { detectMeal } from '@/lib/nutrition/vision/detect';
 
+export const dynamic = 'force-dynamic';
+
 const ROUTE = '/api/nutrition/photo/recognize';
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
 const HANDLER_TIMEOUT_MS = 30_000;
@@ -37,7 +39,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   let userId: string | null = null;
 
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       throw new AIRouteError(

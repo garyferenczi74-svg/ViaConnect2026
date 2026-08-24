@@ -56,7 +56,7 @@ export async function POST(request: Request) {
 
   // Auth: the corpus row is keyed by salted user hash so the route MUST
   // know which user is scanning. Anonymous calls are dropped.
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: userData } = await supabase.auth.getUser();
   const userId = userData?.user?.id;
   if (!userId) {

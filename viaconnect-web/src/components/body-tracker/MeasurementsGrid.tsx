@@ -4,6 +4,7 @@ import { MeasurementCard } from './MeasurementCard';
 import {
   BODY_REGIONS,
   MEASUREMENT_LABELS,
+  type CircumferenceConfidence,
   type CircumferenceMeasurements,
   type MeasurementUnit,
 } from '@/lib/body-tracker/circumference';
@@ -12,9 +13,15 @@ interface MeasurementsGridProps {
   data: CircumferenceMeasurements | null;
   previous: CircumferenceMeasurements | null;
   unit: MeasurementUnit;
+  /**
+   * Per-measurement confidence scores (0-1) from the latest scan entry.
+   * Passed through to each MeasurementCard to render a ConfidenceChip.
+   * null or omitted = no confidence indicators (manual entries, pre-Task-10 scans).
+   */
+  confidence?: CircumferenceConfidence | null;
 }
 
-export function MeasurementsGrid({ data, previous, unit }: MeasurementsGridProps) {
+export function MeasurementsGrid({ data, previous, unit, confidence }: MeasurementsGridProps) {
   return (
     <div>
       {BODY_REGIONS.map((region, regionIdx) => (
@@ -30,6 +37,7 @@ export function MeasurementsGrid({ data, previous, unit }: MeasurementsGridProps
                 value={data?.[key] ?? null}
                 previousValue={previous?.[key] ?? null}
                 unit={unit}
+                confidence={confidence?.[key] ?? null}
               />
             ))}
           </div>

@@ -1,5 +1,49 @@
-viaconnect-mobile/
-node_modules/
+# Mobile / non-web (repo root only)
+/viaconnect-mobile/
+/android/
+/ios/
+
+# Dependencies and VCS
+/node_modules/
 .git/
-__tests__/
-e2e/
+
+# Tests and local automation
+/__tests__/
+/e2e/
+**/__tests__/
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+/playwright/
+/playwright-report/
+/test-results/
+/coverage/
+vitest.config.*
+playwright.config.*
+
+# Tooling / ops bulk at monorepo ROOT only (do not match src/lib/supabase etc.)
+/exports/
+/*.ps1
+/*.sql
+/*.csv
+/tmp/
+/docs/
+/scripts/
+/supabase/
+/extension/
+
+# Local env / caches
+.env*.local
+.env.vercel*
+.turbo/
+.next/
+*.log
+.DS_Store
+
+# Large app-local artifacts under web package only
+/viaconnect-web/tmp/
+/viaconnect-web/scripts/
+/viaconnect-web/supabase/
+/viaconnect-web/android/
+/viaconnect-web/ios/

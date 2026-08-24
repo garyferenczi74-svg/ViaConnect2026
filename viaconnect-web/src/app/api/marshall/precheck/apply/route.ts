@@ -19,7 +19,7 @@ function serviceClient() {
 // rewrites. Increments the recursion count; gateway caps at 2.
 export async function POST(req: Request) {
   try {
-    const userClient = createServerClient();
+    const userClient = await createServerClient();
     const { data: { user } } = await withTimeout(userClient.auth.getUser(), 5000, 'api.marshall.precheck.apply.auth');
     if (!user) return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
 

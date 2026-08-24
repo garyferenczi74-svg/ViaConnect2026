@@ -72,7 +72,9 @@ function hasAnyValue(state: Record<string, number | null>): boolean {
 }
 
 function circumferenceRowFromState(state: CircumferenceFormState): Record<string, unknown> {
-  const row: Record<string, unknown> = { entry_unit: state.unit };
+  // source defaults to 'manual' in the table, but write it explicitly so Log Data
+  // matches WeightMeasurementsForm and the scan path (source: 'scan').
+  const row: Record<string, unknown> = { entry_unit: state.unit, source: 'manual' };
   for (const key of MEASUREMENT_KEYS) {
     if (MEASUREMENT_EXTERNAL_KEYS[key]) continue;
     row[MEASUREMENT_DB_COLUMN[key]] = state.values[key];
@@ -200,7 +202,14 @@ export function BodyCompositionForm({
       {sourceId && (
         <>
           <div className="flex">
-            <CompositionSectionToggle active={section} onChange={setSection} />
+            <CompositionSectionToggle
+              active={section}
+              onChange={(tab) => {
+                if (tab === 'formavision') return;
+                setSection(tab);
+              }}
+              includeFormaVision={false}
+            />
           </div>
 
           {section === 'fat' && (

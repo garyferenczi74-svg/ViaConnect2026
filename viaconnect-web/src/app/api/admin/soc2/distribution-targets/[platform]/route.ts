@@ -6,6 +6,8 @@ import { createClient as createServerClient } from '@/lib/supabase/server';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 const ADMIN_ROLES = new Set(['admin', 'superadmin']);
@@ -18,12 +20,13 @@ interface Body {
   notes?: string | null;
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { platform: string } }) {
+export async function PATCH(req: NextRequest, props: { params: Promise<{ platform: string }> }) {
+  const params = await props.params;
   try {
     if (!VALID_PLATFORMS.has(params.platform)) {
       return NextResponse.json({ error: 'invalid_platform' }, { status: 400 });
     }
-    const supabase = createServerClient();
+    const supabase = await createServerClient();
     const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.soc2.distribution-targets.auth');
     if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     const profileRes = await withTimeout(

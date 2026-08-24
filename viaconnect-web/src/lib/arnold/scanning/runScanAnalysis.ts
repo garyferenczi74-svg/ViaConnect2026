@@ -15,6 +15,9 @@ import { cunbaeBodyFat } from './cunbaeBodyFat';
 import { blendComposition } from './compositionBlender';
 import { applyCalibration } from './calibrationManager';
 import { ingestMeasurementsFromScan, type IngestClient } from '@/lib/body-measurements/ingestScanMeasurements';
+import { safeLog } from '@/lib/utils/safe-log';
+import { assessCaptureQuality } from './accuracy/captureQuality';
+import { silhouetteToQualityInput, retakePromptForIssues, type ViewQualityResult } from './accuracy/silhouetteToQualityInput';
 import type {
   BiologicalSex,
   CompositionEstimate,
@@ -25,6 +28,8 @@ import type {
   BodyModelParameters,
   AsymmetryReport,
 } from './types';
+
+export type { ViewQualityResult };
 
 export interface ScanProgress {
   phase:
@@ -55,6 +60,147 @@ export interface ScanAnalysisOutput {
 export interface ScanAnalysisInputs {
   sessionId: string;
   onProgress?: (p: ScanProgress) => void;
+}
+
+// ---------------------------------------------------------------------------
+// In-memory measurement pipeline (Task 9 - Prompt 210c)
+// Runs client-side on the four in-memory capture Blobs.
+// Pixels NEVER leave the device for this path; no bucket download occurs.
+// Each per-view CV inference is wrapped in Promise.race with a 4-second timeout
+// and a try/catch fail-open: a slow or failing view contributes UNKNOWN to
+// extractMeasurements, and the run always completes (never hangs).
+// ---------------------------------------------------------------------------
+
+/** Per-view CV inference timeout in milliseconds. Set to 4 s (Section 13). */
+const VIEW_INFERENCE_TIMEOUT_MS = 4000;
+
+/** Input for the in-memory client-side measurement pipeline. */
+export interface InMemoryPhotoInput {
+  /** The four capture Blobs keyed by PoseId. Absent poses are skipped. */
+  photos: Partial<Record<PoseId, Blob>>;
+  /** User's height in cm (required for pixel-to-cm scale). */
+  heightCm: number;
+  /** Biological sex, used by extractMeasurements. */
+  sex: BiologicalSex;
+  /** Optional progress callback (mirrors ScanProgress phases). */
+  onProgress?: (p: ScanProgress) => void;
+  /**
+   * Optional per-view quality callback (Task 13b).
+   * Called immediately after each silhouette's quality is assessed.
+   * Fires even for views that fail (pass: false) - the caller can use the
+   * result to display retake prompts or log the failure.
+   * RULE 9: a failed quality result does NOT silently become a good measurement;
+   * the silhouette.qualityScore is set from the assessment so that downstream
+   * confidence scoring reflects the actual capture quality.
+   */
+  onViewQuality?: (result: ViewQualityResult) => void;
+}
+
+/**
+ * Run the full client-side geometric measurement pipeline on in-memory Blobs.
+ * This is the 209 capture path: pixels never leave the device.
+ * Produces ExtractedMeasurements with per-field confidence + UNKNOWN (null)
+ * for any measurement that could not be determined (RULE 9: never cm:0).
+ */
+export async function runInMemoryMeasurement(
+  input: InMemoryPhotoInput,
+): Promise<ExtractedMeasurements> {
+  const { photos, heightCm, sex, onProgress, onViewQuality } = input;
+  const report = (phase: ScanProgress['phase'], percent: number, message: string) =>
+    onProgress?.({ phase, percent, message });
+
+  const poses: PoseId[] = ['front', 'back', 'left', 'right'];
+  const progressSteps: Record<PoseId, ScanProgress['phase']> = {
+    front: 'processing_front',
+    back:  'processing_back',
+    left:  'processing_left',
+    right: 'processing_right',
+  };
+
+  const silhouettes: PoseSilhouette[] = [];
+
+  for (let i = 0; i < poses.length; i++) {
+    const pose = poses[i];
+    const blob = photos[pose];
+    if (!blob) continue;
+
+    report(progressSteps[pose], 10 + i * 18, `Processing ${pose} view`);
+
+    try {
+      const silhouette = await Promise.race([
+        (async (): Promise<PoseSilhouette> => {
+          const landmarks = await detectLandmarks(blob);
+          return processSilhouette({ blob, poseId: pose, userHeightCm: heightCm, landmarks });
+        })(),
+        new Promise<never>((_, rej) =>
+          setTimeout(
+            () => rej(new Error(`[T9] ${pose} view CV timeout after ${VIEW_INFERENCE_TIMEOUT_MS}ms`)),
+            VIEW_INFERENCE_TIMEOUT_MS,
+          ),
+        ),
+      ]);
+
+      // Task 13b: per-view quality assessment (additive, never alters T9/T10 path).
+      // Maps the silhouette to a CaptureQualityInput and runs assessCaptureQuality.
+      // The result populates silhouette.qualityScore + silhouette.qualityIssues so
+      // downstream confidence scoring (confidenceModel.ts) reflects actual capture
+      // quality. RULE 9: a failed view is flagged low-confidence, never silently
+      // treated as good.
+      try {
+        const qualityInput = silhouetteToQualityInput(silhouette, pose);
+        const qualityResult = assessCaptureQuality(qualityInput);
+        // Populate the stubbed fields on the silhouette (Section 5.4)
+        silhouette.qualityScore = qualityResult.score;
+        silhouette.qualityIssues = qualityResult.issues;
+        const viewResult: ViewQualityResult = {
+          poseId: pose,
+          score: qualityResult.score,
+          issues: qualityResult.issues,
+          pass: qualityResult.pass,
+          retakePrompt: qualityResult.pass ? '' : retakePromptForIssues(qualityResult.issues),
+        };
+        onViewQuality?.(viewResult);
+        if (!qualityResult.pass) {
+          safeLog.warn(
+            'arnold.scanning.inmemory',
+            `[T13b] ${pose} view failed quality check - measurements will be low-confidence`,
+            { pose, score: qualityResult.score, issues: qualityResult.issues },
+          );
+        }
+      } catch (qErr) {
+        // Quality assessment is non-fatal: the pipeline continues even if the
+        // quality check itself errors (fail-open, graceful degradation).
+        safeLog.warn(
+          'arnold.scanning.inmemory',
+          `[T13b] ${pose} view quality assessment failed (non-fatal, continuing)`,
+          { pose, error: qErr instanceof Error ? qErr.message : String(qErr) },
+        );
+      }
+
+      silhouettes.push(silhouette);
+    } catch (err) {
+      // Fail-open: log the failure and skip this view.
+      // Its measurements will be UNKNOWN (null), never fabricated (RULE 9).
+      safeLog.warn(
+        'arnold.scanning.inmemory',
+        `${pose} view failed or timed out - treated as UNKNOWN (fail-open)`,
+        { pose, error: err instanceof Error ? err.message : String(err) },
+      );
+    }
+  }
+
+  report('measuring', 82, 'Extracting measurements from silhouettes');
+
+  const measurements = extractMeasurements({ silhouettes, sex, heightCm });
+
+  report('complete', 100, 'Client-side measurement complete');
+  safeLog.info(
+    'arnold.scanning.inmemory',
+    'In-memory scan measurement complete',
+    { viewsProcessed: silhouettes.length, totalViews: poses.filter((p) => p in photos).length },
+  );
+
+  return measurements;
 }
 
 interface SessionRow {
@@ -204,12 +350,15 @@ export async function runScanAnalysis({ sessionId, onProgress }: ScanAnalysisInp
   }
 
   report('estimating_composition', 85, 'Estimating body composition');
+  // null (UNKNOWN) circumferences are coerced to 0 for the Navy formula;
+  // navyBodyFat treats 0 as an invalid input and returns valid:false, so
+  // composition.navyBodyFatPct will be null rather than a fabricated estimate.
   const navy = navyBodyFat({
     sex,
     heightCm,
-    neckCm: measurements.neckCirc.cm,
-    waistCm: measurements.waistNaturalCirc.cm,
-    hipCm: sex === 'female' ? measurements.hipCirc.cm : undefined,
+    neckCm:  measurements.neckCirc.cm          ?? 0,
+    waistCm: measurements.waistNaturalCirc.cm  ?? 0,
+    hipCm:   sex === 'female' ? (measurements.hipCirc.cm ?? 0) : undefined,
   });
   const cunbae = cunbaeBodyFat({ weightKg, heightCm, age, sex });
 
@@ -231,21 +380,12 @@ export async function runScanAnalysis({ sessionId, onProgress }: ScanAnalysisInp
 
   const asymmetry = analyzeAsymmetry(measurements);
 
-  const avatarParameters: BodyModelParameters = {
-    heightCm,
-    shoulderCircCm: measurements.shoulderCirc.cm,
-    chestCircCm:    measurements.chestCirc.cm,
-    waistCircCm:    measurements.waistNaturalCirc.cm,
-    hipCircCm:      measurements.hipCirc.cm,
-    neckCircCm:     measurements.neckCirc.cm,
-    bicepCircCm:    avgOrZero(measurements.rightBicepCirc.cm, measurements.leftBicepCirc.cm),
-    thighCircCm:    avgOrZero(measurements.rightThighCirc.cm, measurements.leftThighCirc.cm),
-    calfCircCm:     avgOrZero(measurements.rightCalfCirc.cm,  measurements.leftCalfCirc.cm),
-    inseamCm:       measurements.inseamCm,
-    torsoLengthCm:  measurements.torsoLengthCm,
+  const avatarParameters = buildAvatarParameters({
+    measurements,
     sex,
-    bodyFatPct:     composition.bodyFatPct.mid,
-  };
+    heightCm,
+    bodyFatPct: composition.bodyFatPct.mid,
+  });
 
   report('saving', 95, 'Saving results');
   await persistScan({
@@ -315,7 +455,9 @@ async function persistScan(args: {
     } as never)
     .eq('id', session.id);
 
-  const cm = (v: { cm: number }): number => round1(v.cm);
+  // cm() maps a MeasuredValue to a nullable DB value; null is stored honestly
+  // rather than fabricating 0 for unknown measurements.
+  const cm = (v: { cm: number | null }): number | null => v.cm !== null ? round1(v.cm) : null;
   const scanMeasurementsRow = {
     user_id: session.user_id,
     session_id: session.id,
@@ -412,7 +554,67 @@ async function loadManualSnapshot(supabase: ReturnType<typeof createClient>, use
   };
 }
 
-function avgOrZero(a: number, b: number): number {
+// avgOrZero: used only for avatar BodyModelParameters which require number.
+// null (UNKNOWN) is treated as "not available for this side"; if both sides
+// are null the result is 0 (the avatar-only unset sentinel).
+/**
+ * Template-default circumferences (cm) for an UNKNOWN region, per sex.
+ * Section 9.2: an undeterminable circumference must render the anatomically
+ * plausible TEMPLATE DEFAULT, never 0 (a zero radius collapses the avatar
+ * segment in generateAvatarMesh, since rFromCirc(0)=0).  These are approximate
+ * adult population averages drawn from published anthropometric references
+ * (ANSUR II U.S. Army survey and CDC NHANES adult body-measurement tables);
+ * they are a neutral visual placeholder, NOT a measured value, and never reach
+ * the honest health rows in body_scan_measurements (those stay null).
+ * Follow-up: a later pass can mark these avatar regions as "estimated"
+ * downstream so the UI can visually distinguish template-filled segments.
+ */
+const AVATAR_TEMPLATE_CM: Record<
+  BiologicalSex,
+  { neck: number; shoulder: number; chest: number; waist: number; hip: number; bicep: number; thigh: number; calf: number }
+> = {
+  male:   { neck: 40, shoulder: 115, chest: 102, waist: 90, hip: 100, bicep: 34, thigh: 56, calf: 38 },
+  female: { neck: 33, shoulder: 98,  chest: 90,  waist: 78, hip: 103, bicep: 29, thigh: 57, calf: 35 },
+};
+
+/**
+ * Build the avatar BodyModelParameters from extracted measurements.
+ * Any UNKNOWN (null) or non-positive circumference is replaced by the per-sex
+ * template default (Section 9.2) so the rendered mesh always has a plausible,
+ * non-zero girth.  `|| template` also defends the invalid_input cm:0 case.
+ * The health rows persisted separately keep their honest null values.
+ */
+export function buildAvatarParameters(args: {
+  measurements: ExtractedMeasurements;
+  sex: BiologicalSex;
+  heightCm: number;
+  bodyFatPct: number;
+}): BodyModelParameters {
+  const { measurements: m, sex, heightCm, bodyFatPct } = args;
+  const t = AVATAR_TEMPLATE_CM[sex];
+  return {
+    heightCm,
+    shoulderCircCm: m.shoulderCirc.cm     || t.shoulder,
+    chestCircCm:    m.chestCirc.cm         || t.chest,
+    waistCircCm:    m.waistNaturalCirc.cm  || t.waist,
+    hipCircCm:      m.hipCirc.cm           || t.hip,
+    neckCircCm:     m.neckCirc.cm          || t.neck,
+    bicepCircCm:    avgOrZero(m.rightBicepCirc.cm, m.leftBicepCirc.cm) || t.bicep,
+    thighCircCm:    avgOrZero(m.rightThighCirc.cm, m.leftThighCirc.cm) || t.thigh,
+    calfCircCm:     avgOrZero(m.rightCalfCirc.cm,  m.leftCalfCirc.cm)  || t.calf,
+    inseamCm:       m.inseamCm,
+    torsoLengthCm:  m.torsoLengthCm,
+    sex,
+    bodyFatPct,
+  };
+}
+
+export { AVATAR_TEMPLATE_CM };
+
+function avgOrZero(a: number | null, b: number | null): number {
+  if (a === null && b === null) return 0;
+  if (a === null) return b! > 0 ? b! : 0;
+  if (b === null) return a  > 0 ? a  : 0;
   if (!Number.isFinite(a) || !Number.isFinite(b)) return 0;
   if (a <= 0 && b <= 0) return 0;
   if (a <= 0) return b;

@@ -12,6 +12,8 @@ import { createClient } from "@/lib/supabase/server";
 import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
 
+export const dynamic = 'force-dynamic';
+
 interface AddBrandPayload {
   brand_name: string;
   tier: number;          // 1-5
@@ -52,7 +54,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "tier required (1-5)" }, { status: 400 });
     }
 
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // auth: must be a signed-in user; admin gating happens in RLS or via
     // a separate role check the project may already enforce

@@ -13,13 +13,15 @@ import { settlementApprovalTierForAmount } from '@/lib/legal/settlement/approval
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 const READ_ROLES = new Set(['admin', 'compliance_officer', 'legal_ops', 'cfo', 'ceo']);
 
 interface ProfileLite { role: string }
 
-async function requireRole(supabase: ReturnType<typeof createClient>, allowed: ReadonlySet<string>) {
+async function requireRole(supabase: Awaited<ReturnType<typeof createClient>>, allowed: ReadonlySet<string>) {
   const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.admin.legal.settlements.detail.auth');
   if (!user) return { ok: false as const, response: NextResponse.json({ error: 'Authentication required' }, { status: 401 }) };
   const sb = supabase as unknown as { from: (t: string) => { select: (s: string) => { eq: (k: string, v: string) => { maybeSingle: () => Promise<{ data: ProfileLite | null }> } } } };
@@ -45,12 +47,10 @@ interface SettlementRow {
   payment_received_at: string | null;
 }
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { settlementId: string } },
-): Promise<NextResponse> {
+export async function PATCH(request: NextRequest, props: { params: Promise<{ settlementId: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const ctx = await requireRole(supabase, READ_ROLES);
     if (!ctx.ok) return ctx.response;
 

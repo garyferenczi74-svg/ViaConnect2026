@@ -1,0 +1,22 @@
+[
+  {
+    "file": "src/app/(app)/admin/page.tsx",
+    "code": "TS2322",
+    "note": "legacy, frozen 2026-07-07"
+  },
+  {
+    "file": "src/app/(app)/naturopath/ai/page.tsx",
+    "code": "TS2322",
+    "note": "legacy, frozen 2026-07-07"
+  },
+  {
+    "file": "src/app/(app)/practitioner/ai/page.tsx",
+    "code": "TS2322",
+    "note": "legacy, frozen 2026-07-07"
+  },
+  {
+    "file": "src/app/(auth)/signup/page.tsx",
+    "code": "TS2322",
+    "note": "legacy, frozen 2026-07-07"
+  }
+]

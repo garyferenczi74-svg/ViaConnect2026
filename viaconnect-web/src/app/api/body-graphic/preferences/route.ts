@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const sb = createClient();
+    const sb = await createClient();
     const { data: { user } } = await withTimeout(sb.auth.getUser(), 5000, 'api.body-graphic.preferences.auth');
     if (!user) return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
     const { data } = await withTimeout(
@@ -37,7 +37,7 @@ export async function GET() {
 
 export async function PATCH(request: Request) {
   try {
-    const sb = createClient();
+    const sb = await createClient();
     const { data: { user } } = await withTimeout(sb.auth.getUser(), 5000, 'api.body-graphic.preferences.patch.auth');
     if (!user) return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
     const body = await request.json().catch(() => null) as Partial<BodyGraphicPreferencesRow> | null;

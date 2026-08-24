@@ -1,26 +1,26 @@
 /**
- * Jeffery Advisor Streamer (Prompt #60b — Section 3B)
+ * Jeffery Advisor Streamer (Prompt #60b — Section 3B; Prompt 219F)
  *
- * Streams a Claude completion to the browser as Server-Sent Events.
- * Uses claude-sonnet-4-6 (1M context) for advisor responses — fast, cheap,
- * and excellent at structured guardrail-aware chat.
- *
- * Returns a ReadableStream that the Next.js route handler passes to the
- * browser as text/event-stream. Each chunk is plain UTF-8 text (not JSON-
- * wrapped) so the AdvisorChat client component can append it directly.
+ * Streams a Claude completion. Plain UTF-8 chunks for AdvisorChat.
+ * Generation-path enforcement: em/en dash strip + medical disclaimer.
  */
 
 import type { AdvisorContext } from "./advisor-context-builder";
-// Prompt #60d — guardrails: product enrichment + peptide detection
 import { mapToFarmceuticaProducts, formatProductsForPrompt, detectPeptideMention } from "./product-mapper";
+import { stripEmEnDashes } from "./hannah-persona";
+import { formatMsgIdMarker } from "./advisor-msg-marker";
+
+export { extractMsgIdMarker, formatMsgIdMarker } from "./advisor-msg-marker";
 
 const ANTHROPIC_MODEL = "claude-sonnet-4-6";
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 const MAX_TOKENS = 2000;
+/** Generation timeout for the upstream Anthropic call (wall clock). */
+const UPSTREAM_TIMEOUT_MS = 55_000;
 
-// Prompt #60d — mandatory medical disclaimer hard-appended to every response
-// (NEVER trust the model to remember it)
-const DISCLAIMER = "\n\n⚕️ This information is for educational purposes only and is not a substitute for professional medical advice. Please consult with your physician, naturopath, or licensed healthcare provider before making any changes to your health regimen.";
+// ⚕️ marker is parsed by MessageBubble for italic footer styling
+const DISCLAIMER =
+  "\n\n⚕️ This information is for educational purposes only and is not a substitute for professional medical advice. Please consult with your physician, naturopath, or licensed healthcare provider before making any changes to your health regimen.";
 
 export interface StreamResult {
   stream: ReadableStream<Uint8Array>;
@@ -33,19 +33,28 @@ export interface StreamResult {
   }>;
 }
 
-/**
- * Stream a Claude completion. Returns the live ReadableStream + a meta promise
- * that resolves once the stream finishes (used by the route handler to write
- * the final telemetry row to the DB after the response is sent).
- */
+export interface StreamOptions {
+  /** Optional: after full text is ready, return an assistant message id to append as marker. */
+  onComplete?: (fullText: string, meta: {
+    duration_ms: number;
+    input_tokens: number;
+    output_tokens: number;
+    error?: string;
+  }) => Promise<string | null | undefined>;
+}
+
 export function streamAdvisorResponse(
   ctx: AdvisorContext,
-  userMessage: string
+  userMessage: string,
+  options?: StreamOptions
 ): StreamResult {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey =
+    process.env.ANTHROPIC_API_KEY ||
+    process.env.PHOTO_AI_ANTHROPIC_API_KEY ||
+    process.env.Anthropic_API_Key ||
+    "";
   const t0 = Date.now();
 
-  // Build the messages array: history + new user turn
   const messages: Array<{ role: "user" | "assistant"; content: string }> = [];
   for (const m of ctx.conversationHistory) {
     if (m.message_role === "user" || m.message_role === "assistant") {
@@ -54,41 +63,74 @@ export function streamAdvisorResponse(
   }
   messages.push({ role: "user", content: userMessage });
 
-  // Add Jeffery's behavioral nudges as a final system note (appended to system prompt)
   let fullSystemPrompt = ctx.systemPrompt;
   if (ctx.jefferyInstructions.length > 0) {
-    fullSystemPrompt += "\n\n── Jeffery™ active behavioral nudges ──\n" +
-      ctx.jefferyInstructions.map(i => `- ${i}`).join("\n");
+    fullSystemPrompt +=
+      "\n\n-- Jeffery active behavioral nudges --\n" +
+      ctx.jefferyInstructions.map((i) => `- ${i}`).join("\n");
   }
 
-  // Resolve meta promise once streaming completes
   let resolveMeta: (m: Awaited<StreamResult["meta"]>) => void = () => {};
-  const meta = new Promise<Awaited<StreamResult["meta"]>>(r => { resolveMeta = r; });
+  const meta = new Promise<Awaited<StreamResult["meta"]>>((r) => {
+    resolveMeta = r;
+  });
 
-  // Graceful early-fail when ANTHROPIC_API_KEY is missing — emit a single
-  // friendly chunk and resolve meta with an error. Disclaimer is still
-  // hard-appended so the guardrail holds even in the fallback path.
+  const encoder = new TextEncoder();
+
+  async function finishWith(
+    controller: ReadableStreamDefaultController<Uint8Array>,
+    fullText: string,
+    inputTokens: number,
+    outputTokens: number,
+    error?: string
+  ) {
+    let text = stripEmEnDashes(fullText);
+    if (!text.includes("educational purposes only")) {
+      text += DISCLAIMER;
+      controller.enqueue(encoder.encode(DISCLAIMER));
+    }
+
+    const duration_ms = Date.now() - t0;
+    let msgId: string | null | undefined;
+    if (options?.onComplete) {
+      try {
+        msgId = await options.onComplete(text, {
+          duration_ms,
+          input_tokens: inputTokens,
+          output_tokens: outputTokens,
+          error,
+        });
+      } catch {
+        msgId = null;
+      }
+    }
+    if (msgId) {
+      const marker = formatMsgIdMarker(msgId);
+      controller.enqueue(encoder.encode(marker));
+    }
+
+    controller.close();
+    resolveMeta({
+      full_text: text,
+      input_tokens: inputTokens,
+      output_tokens: outputTokens,
+      duration_ms,
+      error,
+    });
+  }
+
   if (!apiKey) {
     const stream = new ReadableStream<Uint8Array>({
-      start(controller) {
-        const fallback = "I'm not configured yet — the ANTHROPIC_API_KEY secret hasn't been set on this Supabase project. Ask an admin to run `supabase secrets set ANTHROPIC_API_KEY=sk-ant-...` to enable me.";
-        const fallbackWithDisclaimer = fallback + DISCLAIMER;
-        controller.enqueue(new TextEncoder().encode(fallbackWithDisclaimer));
-        controller.close();
-        resolveMeta({
-          full_text: fallbackWithDisclaimer,
-          input_tokens: 0,
-          output_tokens: 0,
-          duration_ms: Date.now() - t0,
-          error: "ANTHROPIC_API_KEY not set",
-        });
+      async start(controller) {
+        const fallback =
+          "I am temporarily unable to reach the AI provider. Please try again in a moment. If this keeps happening, ask support to confirm the ANTHROPIC_API_KEY is set for this environment.";
+        controller.enqueue(encoder.encode(stripEmEnDashes(fallback)));
+        await finishWith(controller, fallback, 0, 0, "ANTHROPIC_API_KEY not set");
       },
     });
     return { stream, meta };
   }
 
-  // Real Anthropic streaming
-  const encoder = new TextEncoder();
   let fullText = "";
   let inputTokens = 0;
   let outputTokens = 0;
@@ -96,45 +138,49 @@ export function streamAdvisorResponse(
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       try {
-        // Prompt #60d — Guardrail 1: enrich the system prompt with the
-        // FarmCeutica catalog matches for THIS user query so the model is
-        // constrained to recommend only from the supplied list. Failure here
-        // must NEVER block the response — fall through silently.
         let enrichedSystemPrompt = fullSystemPrompt;
         try {
           const productMatches = await mapToFarmceuticaProducts(userMessage, { limit: 6 });
           enrichedSystemPrompt += formatProductsForPrompt(productMatches);
         } catch (productErr) {
-          console.warn(`[advisor-stream] product mapper failed: ${(productErr as Error).message}`);
+          console.warn(
+            `[advisor-stream] product mapper failed: ${(productErr as Error).message}`
+          );
         }
 
-        const upstream = await fetch(ANTHROPIC_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-api-key": apiKey,
-            "anthropic-version": "2023-06-01",
-          },
-          body: JSON.stringify({
-            model: ANTHROPIC_MODEL,
-            max_tokens: MAX_TOKENS,
-            system: enrichedSystemPrompt,
-            messages,
-            stream: true,
-          }),
-        });
+        const ac = new AbortController();
+        const timer = setTimeout(() => ac.abort(), UPSTREAM_TIMEOUT_MS);
+
+        let upstream: Response;
+        try {
+          upstream = await fetch(ANTHROPIC_URL, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-key": apiKey,
+              "anthropic-version": "2023-06-01",
+            },
+            body: JSON.stringify({
+              model: ANTHROPIC_MODEL,
+              max_tokens: MAX_TOKENS,
+              system: enrichedSystemPrompt,
+              messages,
+              stream: true,
+            }),
+            signal: ac.signal,
+          });
+        } finally {
+          clearTimeout(timer);
+        }
 
         if (!upstream.ok || !upstream.body) {
           const errText = await upstream.text().catch(() => "unknown");
           const fallback = `I hit an upstream error (HTTP ${upstream.status}). Please try again in a moment.`;
-          const fallbackWithDisclaimer = fallback + DISCLAIMER;
-          controller.enqueue(encoder.encode(fallbackWithDisclaimer));
-          controller.close();
-          resolveMeta({ full_text: fallbackWithDisclaimer, input_tokens: 0, output_tokens: 0, duration_ms: Date.now() - t0, error: errText.slice(0, 200) });
+          controller.enqueue(encoder.encode(stripEmEnDashes(fallback)));
+          await finishWith(controller, fallback, 0, 0, errText.slice(0, 200));
           return;
         }
 
-        // Parse Anthropic SSE stream — events are line-delimited "data: {json}"
         const reader = upstream.body.getReader();
         const decoder = new TextDecoder();
         let buffer = "";
@@ -152,34 +198,27 @@ export function streamAdvisorResponse(
               const evt = JSON.parse(payload) as Record<string, unknown>;
               const evtType = evt.type as string;
               if (evtType === "content_block_delta") {
-                const delta = (evt.delta as { text?: string } | undefined);
+                const delta = evt.delta as { text?: string } | undefined;
                 if (delta?.text) {
-                  fullText += delta.text;
-                  controller.enqueue(encoder.encode(delta.text));
+                  const cleaned = stripEmEnDashes(delta.text);
+                  fullText += cleaned;
+                  controller.enqueue(encoder.encode(cleaned));
                 }
               } else if (evtType === "message_start") {
-                const usage = (evt.message as { usage?: { input_tokens?: number } } | undefined)?.usage;
+                const usage = (evt.message as { usage?: { input_tokens?: number } } | undefined)
+                  ?.usage;
                 if (usage?.input_tokens) inputTokens = usage.input_tokens;
               } else if (evtType === "message_delta") {
-                const usage = (evt.usage as { output_tokens?: number } | undefined);
+                const usage = evt.usage as { output_tokens?: number } | undefined;
                 if (usage?.output_tokens) outputTokens = usage.output_tokens;
               }
             } catch {
-              // ignore individual parse errors — keep streaming
+              // keep streaming
             }
           }
         }
 
-        // Prompt #60d — Guardrail 3: hard-append the medical disclaimer.
-        // We do NOT trust the model to remember it.
-        controller.enqueue(encoder.encode(DISCLAIMER));
-        fullText += DISCLAIMER;
-
-        // Prompt #60d — Guardrail 2: peptide sharing protocol.
-        // For consumer role only, scan the response for any peptide name from
-        // the registry. If found, append a [SHARE_PEPTIDE_BUTTON:NAME] marker
-        // token. The MessageBubble component parses this token and renders
-        // a "Share with Practitioner" button.
+        // Peptide marker for consumer role
         if (ctx.role === "consumer") {
           try {
             const peptide = await detectPeptideMention(fullText);
@@ -189,18 +228,30 @@ export function streamAdvisorResponse(
               fullText += marker;
             }
           } catch (peptideErr) {
-            console.warn(`[advisor-stream] peptide detect failed: ${(peptideErr as Error).message}`);
+            console.warn(
+              `[advisor-stream] peptide detect failed: ${(peptideErr as Error).message}`
+            );
           }
         }
 
-        controller.close();
-        resolveMeta({ full_text: fullText, input_tokens: inputTokens, output_tokens: outputTokens, duration_ms: Date.now() - t0 });
+        await finishWith(controller, fullText, inputTokens, outputTokens);
       } catch (e) {
-        const msg = (e as Error).message;
-        const errMsg = `I encountered an error: ${msg}` + DISCLAIMER;
-        controller.enqueue(encoder.encode(errMsg));
-        controller.close();
-        resolveMeta({ full_text: fullText + errMsg, input_tokens: inputTokens, output_tokens: outputTokens, duration_ms: Date.now() - t0, error: msg });
+        const msg = (e as Error).name === "AbortError"
+          ? "The AI provider timed out. Please try again."
+          : (e as Error).message;
+        const errMsg = `I encountered an error: ${msg}`;
+        try {
+          controller.enqueue(encoder.encode(stripEmEnDashes(errMsg)));
+          await finishWith(controller, fullText + errMsg, inputTokens, outputTokens, msg);
+        } catch {
+          resolveMeta({
+            full_text: fullText + errMsg,
+            input_tokens: inputTokens,
+            output_tokens: outputTokens,
+            duration_ms: Date.now() - t0,
+            error: msg,
+          });
+        }
       }
     },
   });

@@ -11,6 +11,8 @@ import { requireAdmin } from '@/lib/flags/admin-guard';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 const ALLOWED_ACTIONS = new Set([
   'activate', 'deactivate',
   'kill_switch_engage', 'kill_switch_release',
@@ -44,7 +46,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'scheduled_for must be a future ISO timestamp' }, { status: 400 });
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
 
   let data, error;
   try {

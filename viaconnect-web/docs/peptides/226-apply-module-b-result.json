@@ -1,0 +1,34 @@
+﻿{
+    "ok":  true,
+    "prompt":  "226",
+    "phase":  "wave0-schema",
+    "results":  [
+                    {
+                        "file":  "20260820160000_prompt_226_converter_schema.sql",
+                        "ok":  true
+                    },
+                    {
+                        "file":  "20260820161000_prompt_226_marshall_converter_allowlist_seed.sql",
+                        "ok":  true
+                    },
+                    {
+                        "file":  "20260820162000_prompt_226_lex_clear_disclaimer_v1.sql",
+                        "ok":  true
+                    },
+                    {
+                        "file":  "20260820170000_prompt_226_module_b_deidentified.sql",
+                        "ok":  true
+                    }
+                ],
+    "converterEligibleCount":  8,
+    "bpc157Blocked":  true,
+    "disclaimer226v1":  {
+                            "version":  "226-v1",
+                            "lex_status":  "cleared",
+                            "marshall_status":  "approved"
+                        },
+    "productionGate":  {
+                           "g20Lex":  true,
+                           "note":  "Module A UI must not ship until Lex clears 226-v1 (G20)."
+                       }
+}

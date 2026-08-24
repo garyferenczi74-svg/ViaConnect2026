@@ -33,7 +33,7 @@ export async function serverFindPatientByEmail(
         return { ok: false, error: 'Please enter a valid email address.' }
     }
     try {
-        const supabase = createClient()
+        const supabase = await createClient()
         const sb = supabase as unknown as {
             rpc: (
                 fn: string,

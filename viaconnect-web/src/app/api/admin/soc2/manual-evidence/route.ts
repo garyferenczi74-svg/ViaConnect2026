@@ -16,6 +16,8 @@ import type { ManualEvidenceRow } from '@/lib/soc2/manualEvidence/types';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 export const maxDuration = 60;
 
@@ -24,7 +26,7 @@ const COMPLIANCE_ROLES = new Set(['compliance_officer', 'compliance_admin', 'adm
 async function requireCompliance(): Promise<
   { ok: true; userId: string } | { ok: false; response: NextResponse }
 > {
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.soc2.manual-evidence.auth');
   if (!user) {
     return { ok: false, response: NextResponse.json({ error: 'Authentication required' }, { status: 401 }) };
@@ -50,7 +52,7 @@ export async function GET(_req: NextRequest) {
     const auth = await requireCompliance();
     if (!auth.ok) return auth.response;
 
-    const supabase = createServerClient();
+    const supabase = await createServerClient();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sb = supabase as any;
     const { data, error } = await withTimeout(

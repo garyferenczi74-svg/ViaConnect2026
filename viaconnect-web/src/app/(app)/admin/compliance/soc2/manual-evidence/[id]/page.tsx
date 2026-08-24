@@ -8,9 +8,10 @@ import type { ManualEvidenceRow } from '@/lib/soc2/manualEvidence/types';
 
 export const dynamic = 'force-dynamic';
 
-export default async function ManualEvidenceDetailPage({ params }: { params: { id: string } }) {
+export default async function ManualEvidenceDetailPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const { data } = await supabase
     .from('soc2_manual_evidence')
     .select('id, title, storage_key, sha256, size_bytes, content_type, controls, valid_from, valid_until, source_description, uploaded_by, uploaded_at, signoff_by, signoff_at, superseded_by, archived, archived_at')

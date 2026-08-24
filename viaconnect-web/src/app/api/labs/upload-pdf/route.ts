@@ -10,11 +10,13 @@ import { extractPdfText } from '@/lib/pdf/extractPdfText';
 import { parseLabReportText } from '@/lib/labs/parseLabReportText';
 import { inMemoryRateLimit } from '@/lib/utils/inMemoryRateLimit';
 
+export const dynamic = 'force-dynamic';
+
 const MAX_PDF_BYTES = 10 * 1024 * 1024; // 10 MB
 export const maxDuration = 60;
 
 export async function POST(request: Request): Promise<NextResponse> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: 'Please sign in to upload.' }, { status: 401 });

@@ -22,7 +22,7 @@ const PLATFORM_LABELS: Record<string, string> = {
 
 export default async function DistributionTargetsPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const { data } = await supabase
     .from('soc2_distribution_targets')
     .select('platform, enabled, api_url, api_key_ref, notes, updated_at')

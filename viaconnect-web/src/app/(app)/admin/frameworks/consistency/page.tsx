@@ -24,7 +24,7 @@ interface Row {
 
 export default async function ConsistencyPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const [openRes, resolvedRes] = await Promise.all([
     supabase
       .from('framework_registry_flags')

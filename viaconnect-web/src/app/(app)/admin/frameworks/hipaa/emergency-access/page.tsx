@@ -25,7 +25,7 @@ const FIELDS: QuickFieldSpec[] = [
 
 export default async function EmergencyAccessPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const { data } = await supabase
     .from('hipaa_emergency_access_invocations')
     .select('id, invoked_at, invoked_by, justification, scope_of_access, reviewed_at, closed_at')

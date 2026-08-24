@@ -40,8 +40,9 @@ async function lookupCode(supabase: ReturnType<typeof createClient>, codeSlug: s
   return { is_valid: true, practice_name: pract?.practice_name ?? null };
 }
 
-export default async function PractitionerJoinPage({ searchParams }: { searchParams: { ref?: string } }) {
-  const supabase = createClient();
+export default async function PractitionerJoinPage(props: { searchParams: Promise<{ ref?: string }> }) {
+  const searchParams = await props.searchParams;
+  const supabase = await createClient();
   const refCodeSlug = searchParams.ref ?? null;
   const [active, codeMeta] = await Promise.all([
     isLaunchPhaseActive('practitioner_referral_2027', supabase),

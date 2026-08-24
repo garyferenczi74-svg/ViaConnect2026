@@ -2,6 +2,7 @@
 // Supports 23andMe, AncestryDNA, Nebula, and other common formats
 
 import { SupabaseClient } from '@supabase/supabase-js';
+import { reportSupabaseError } from '@/lib/utils/schema-drift';
 
 interface ParsedSNP {
   rsId: string;
@@ -254,13 +255,19 @@ export async function processGeneticImport(
     variants.push(record);
   }
 
-  // Upsert matched variants into genetic_profiles
+  // Prompt 210d P0-7b: DEAD CODE pending decision. This variant-shaped write to
+  // genetic_profiles is misdirected (none of these keys are live genetic_profiles
+  // columns) and has zero importers; removal needs its own approval, so it is left
+  // in place and only drift-tagged here. See .superpowers/sdd/task-210d-P0-7-report.md.
   if (variants.length > 0) {
     const { error } = await supabase
       .from('genetic_profiles')
       .upsert(variants, { onConflict: 'user_id,rs_id' });
 
     if (error) {
+      // Fail-closed preserved (this path throws). Drift-tag before the throw so the
+      // misdirected write is visible in the integrity ledger if ever wired up.
+      reportSupabaseError('genex.legacyImport', error, { table: 'genetic_profiles' });
       throw new Error(`Failed to upsert genetic profiles: ${error.message}`);
     }
   }

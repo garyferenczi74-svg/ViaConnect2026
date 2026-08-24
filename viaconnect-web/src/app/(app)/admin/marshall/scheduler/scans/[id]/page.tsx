@@ -48,8 +48,9 @@ interface OverrideRow {
   pattern_flag_triggered: boolean;
 }
 
-export default async function AdminScanDetailPage({ params }: { params: { id: string } }) {
-  const supabase = createServerClient();
+export default async function AdminScanDetailPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

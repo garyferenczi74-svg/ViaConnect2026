@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>210m FormaVision control cluster layout shell</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, sans-serif;
+      background: #0B1220;
+      color: #fff;
+      padding: 16px;
+    }
+    .meta { font-size: 12px; color: rgba(255,255,255,0.55); margin-bottom: 12px; max-width: 42rem; }
+    .cluster {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      max-width: 80rem;
+      margin: 0 auto;
+    }
+    .top {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .gender {
+      display: flex;
+      flex: 1;
+      min-width: 0;
+      gap: 8px;
+    }
+    .pill {
+      min-height: 44px;
+      flex: 1;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.04);
+      color: rgba(255,255,255,0.6);
+      font-size: 14px;
+      font-weight: 500;
+      padding: 10px 16px;
+    }
+    .pill.active-male {
+      border-color: rgba(45,165,160,0.6);
+      background: rgba(45,165,160,0.15);
+      color: #2DA5A0;
+    }
+    .right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .units {
+      display: inline-flex;
+      gap: 4px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.05);
+      padding: 2px;
+    }
+    .units span {
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 12px;
+      min-height: 32px;
+      display: inline-flex;
+      align-items: center;
+    }
+    .units .on { background: #1E3054; color: #fff; }
+    .units .off { color: rgba(255,255,255,0.4); }
+    .cmp {
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(13,21,32,0.85);
+      color: rgba(255,255,255,0.8);
+      font-size: 11px;
+      font-weight: 500;
+      padding: 6px 10px;
+    }
+    .cmp-top { display: none; max-width: 12rem; }
+    .canvas {
+      position: relative;
+      min-height: 480px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: transparent;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .avatar {
+      width: 160px;
+      height: 360px;
+      border-radius: 80px 80px 40px 40px;
+      background: linear-gradient(180deg, rgba(45,165,160,0.35), rgba(183,94,24,0.25));
+      border: 1px dashed rgba(255,255,255,0.25);
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding-bottom: 12px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.55);
+    }
+    .select-slot {
+      display: flex;
+      justify-content: center;
+      padding: 4px 8px 0;
+    }
+    .select-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 12px;
+      border: 1px solid rgba(45,165,160,0.3);
+      background: rgba(26,39,68,0.8);
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .select-pill .label { color: rgba(255,255,255,0.6); }
+    .select-pill .value {
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: #1A2744;
+      padding: 6px 28px 6px 12px;
+      min-height: 36px;
+    }
+    .cmp-phone {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .journey {
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(30,48,84,0.35);
+      padding: 14px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.7);
+      text-align: center;
+    }
+    @media (min-width: 768px) {
+      .cmp-top { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+      .cmp-phone { display: none; }
+      .canvas { min-height: 560px; }
+    }
+  </style>
+</head>
+<body>
+  <p class="meta">
+    Prompt 210m layout shell (not the live 3D avatar). Positions only: Select Body Part
+    centered below the avatar feet; Comparison Overlay on the top row at md+ and above
+    Your Journey on phone. Use for breakpoint screenshots when the live surface is auth-gated.
+  </p>
+  <div class="cluster" data-testid="formavision-layout-shell">
+    <div class="top" data-testid="formavision-top-controls">
+      <div class="gender">
+        <button type="button" class="pill active-male" data-testid="formavision-gender-male">Male</button>
+        <button type="button" class="pill" data-testid="formavision-gender-female">Female</button>
+      </div>
+      <div class="right">
+        <div class="units" role="radiogroup" aria-label="Measurement unit">
+          <span class="on">in</span>
+          <span class="off">cm</span>
+        </div>
+        <div class="cmp-top" data-testid="comparison-overlay-home-top">
+          <button type="button" class="cmp" data-testid="comparison-overlay-toggle">Show Comparison Overlay</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="canvas" data-testid="formavision-canvas-grid">
+      <div class="avatar">avatar feet</div>
+    </div>
+
+    <div class="select-slot" data-testid="formavision-select-body-part-slot">
+      <div class="select-pill">
+        <span class="label">Select Body Part</span>
+        <span class="value">All (full body)</span>
+      </div>
+    </div>
+
+    <div class="cmp-phone" data-testid="comparison-overlay-home-phone">
+      <button type="button" class="cmp" data-testid="comparison-overlay-toggle">Show Comparison Overlay</button>
+    </div>
+
+    <div class="journey" data-testid="journey-timeline">Your Journey</div>
+  </div>
+</body>
+</html>

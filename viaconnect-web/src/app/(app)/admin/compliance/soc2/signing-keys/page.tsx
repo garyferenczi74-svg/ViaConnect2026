@@ -17,7 +17,7 @@ interface KeyRow {
 
 export default async function SigningKeysPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const { data } = await supabase
     .from('soc2_signing_keys')
     .select('id, alg, public_key_pem, private_key_ref, active, rotation_of, created_at, retired_at')

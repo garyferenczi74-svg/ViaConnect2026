@@ -30,7 +30,7 @@ export async function GET(): Promise<NextResponse> {
     return NextResponse.json({ enabled: false });
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const {
     data: { user },

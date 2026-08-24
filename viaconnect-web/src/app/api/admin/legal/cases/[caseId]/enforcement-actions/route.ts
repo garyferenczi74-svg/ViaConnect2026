@@ -33,6 +33,8 @@ import {
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 const LEGAL_OPS_ROLES = new Set(['admin', 'compliance_officer', 'legal_ops']);
@@ -42,7 +44,7 @@ const DMCA_TEMPLATE_FAMILIES = new Set<string>(['dmca_takedown_amazon', 'dmca_ta
 
 interface ProfileLite { role: string }
 
-async function requireLegalOps(supabase: ReturnType<typeof createClient>) {
+async function requireLegalOps(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.admin.legal.cases.enforcement-actions.auth');
   if (!user) return { ok: false as const, response: NextResponse.json({ error: 'Authentication required' }, { status: 401 }) };
   const sb = supabase as unknown as { from: (t: string) => { select: (s: string) => { eq: (k: string, v: string) => { maybeSingle: () => Promise<{ data: ProfileLite | null }> } } } };
@@ -74,12 +76,10 @@ interface TemplateRow {
 
 interface EvidenceTypeRow { artifact_type: string }
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { caseId: string } },
-): Promise<NextResponse> {
+export async function POST(request: NextRequest, props: { params: Promise<{ caseId: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const ctx = await requireLegalOps(supabase);
     if (!ctx.ok) return ctx.response;
 

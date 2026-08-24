@@ -8,15 +8,14 @@
 //   3. The six surface bento grid mapped from SURFACES.
 //   4. ConnectionsStrip (apps and wearables data layer).
 //
-// Grid layout per Section 5:
-//   Mobile (under 560px): single column, source order.
-//   Tablet (560 to 1024px): two columns, Dashboard and Metabolic each
-//     span both, the rest take one.
-//   Desktop (1024px+): six columns, auto rows ~180px, Dashboard
-//     featured at col span 4 / row span 2; Body Composition + Progress
-//     stack on the right; Weight + Milestones + Metabolic form the
-//     bottom triad. Source order preserved so grid auto placement
-//     produces this without explicit lines.
+// Grid layout (Prompt 221C):
+//   Mobile: single column, source order.
+//   Tablet (md): two columns; Dashboard spans both; remaining cards
+//     take one (Weight / Milestones / Metabolic / Hormones = 2x2).
+//   Desktop (lg): twelve columns, auto rows ~180px. Dashboard featured
+//     at col span 8 / row span 2; Body Composition + Progress stack on
+//     the right at col span 4; Weight + Milestones + Metabolic + Hormones
+//     form an equal four-card row at col span 3 each.
 
 import Link from 'next/link';
 import { Sparkles, FlaskConical, ArrowRight } from 'lucide-react';
@@ -46,7 +45,7 @@ export function BodyTrackerHub() {
             Your biology at a glance
           </h1>
           <p className="mt-1 text-[13px] leading-relaxed text-white/[0.62] md:text-[14px]">
-            Six surfaces, one hub. Tap any tile to dive in.
+            Your biology surfaces in one hub. Tap any tile to dive in.
           </p>
         </div>
         <span
@@ -61,9 +60,9 @@ export function BodyTrackerHub() {
       {/* Getting Started strip (placeholder per Section 11). */}
       <GuidanceStrip />
 
-      {/* The six surface bento grid. */}
+      {/* Surface bento grid (221C: four-card bottom row on 12-col desktop). */}
       <div
-        className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-3.5 lg:grid-cols-6 lg:auto-rows-[180px] lg:gap-[14px]"
+        className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-3.5 lg:grid-cols-12 lg:auto-rows-[180px] lg:gap-[14px]"
         aria-label="Body Tracker surfaces"
       >
         {SURFACES.map((surface) => (

@@ -13,7 +13,7 @@ export type GovernanceAdminCheck =
   | { kind: 'error'; response: NextResponse };
 
 export async function requireGovernanceAdmin(): Promise<GovernanceAdminCheck> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: userData } = await supabase.auth.getUser();
   const user = userData.user;
   if (!user) {

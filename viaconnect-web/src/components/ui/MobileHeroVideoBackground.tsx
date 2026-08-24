@@ -8,6 +8,13 @@ interface MobileHeroVideoBackgroundProps {
   overlayOpacity?: number;
   overlayGradient?: boolean;
   objectPosition?: string;
+  /**
+   * cover (default): fill viewport, may crop.
+   * contain: show the full frame (letterbox on mismatched aspect).
+   */
+  objectFit?: 'cover' | 'contain';
+  /** Fill behind letterboxing when objectFit is contain (Deep Navy default). */
+  letterboxColor?: string;
   zIndex?: number;
   flipX?: boolean;
   playbackRate?: number;
@@ -24,6 +31,8 @@ export function MobileHeroVideoBackground({
   overlayOpacity = 0.55,
   overlayGradient = true,
   objectPosition = 'center 45%',
+  objectFit = 'cover',
+  letterboxColor = '#0D1520',
   zIndex = 0,
   flipX = false,
   playbackRate = 1,
@@ -131,6 +140,7 @@ export function MobileHeroVideoBackground({
         height: viewportHeight,
         width: '100vw',
         overflow: 'hidden',
+        backgroundColor: letterboxColor,
         willChange: 'transform',
         transform: 'translateZ(0)',
         WebkitTransform: 'translateZ(0)',
@@ -150,10 +160,11 @@ export function MobileHeroVideoBackground({
         disablePictureInPicture
         controlsList="nodownload noplaybackrate nofullscreen"
         onLoadedData={() => setIsReady(true)}
-        className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ease-out ${
+        className={`absolute inset-0 h-full w-full transition-opacity duration-700 ease-out ${
           isReady ? 'opacity-100' : 'opacity-0'
         }`}
         style={{
+          objectFit,
           objectPosition,
           backfaceVisibility: 'hidden',
           WebkitBackfaceVisibility: 'hidden',

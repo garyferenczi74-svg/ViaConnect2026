@@ -2,7 +2,10 @@ import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { withTimeout, withAbortTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
+import { reportSupabaseError } from "@/lib/utils/schema-drift";
 import { getCircuitBreaker, isCircuitBreakerError } from "@/lib/utils/circuit-breaker";
+
+export const dynamic = 'force-dynamic';
 
 const sendgridBreaker = getCircuitBreaker('sendgrid-api');
 
@@ -62,7 +65,7 @@ const NOTIFICATION_TEMPLATES: Record<
 export async function POST(request: Request) {
   const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     let user;
     try {
       const authResult = await withTimeout(
@@ -275,7 +278,7 @@ export async function POST(request: Request) {
       }
 
       // Audit log, typegen rejects jsonb metadata payload, cast supabase
-      await withTimeout(
+      const auditInsertResult: { error: unknown } = await withTimeout(
         (async () => (supabase as any).from("audit_logs").insert({
           user_id: user.id,
           action: "notification_sent",
@@ -291,6 +294,9 @@ export async function POST(request: Request) {
         5000,
         'api.notifications.audit-log',
       );
+      if (auditInsertResult.error) {
+        reportSupabaseError("audit.insert", auditInsertResult.error, { table: "audit_logs" });
+      }
 
       return NextResponse.json(
         apiEnvelope(true, {

@@ -29,9 +29,11 @@ import { useNutritionTargets } from "@/hooks/useNutritionTargets";
 import { useLatestComposition } from "@/hooks/body-tracker/useLatestComposition";
 import { useRecentBodySeries } from "@/components/journey/progress/useRecentBodySeries";
 import { getDisplayName } from "@/lib/user/get-display-name";
+import { getDisplayName as getAgentDisplayName } from "@/lib/getDisplayName";
 import { createClient } from "@/lib/supabase/client";
 import { withTimeout } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
+import { useHannahDailyNote } from "@/hooks/journey/useHannahDailyNote";
 import { heroGaugeScore } from "@/components/journey/coaching/heroHelpers";
 import { formatMacroLabel, kcalRemaining, flatSparkline, goalProgressPct } from "@/components/journey/coaching/lowerHelpers";
 import { useJourneyGraphSeries, type PillarKey } from "@/components/journey/coaching/useJourneyGraphSeries";
@@ -46,6 +48,13 @@ import { useTodayMealLogs } from "@/hooks/journey/useTodayMealLogs";
 import { useEngineAccelerators } from "@/hooks/journey/useEngineAccelerators";
 import type { EngineAccItem } from "@/hooks/journey/useEngineAccelerators";
 import { shouldShowSkeleton } from "@/hooks/journey/skeletonHelpers";
+import { JourneyGraphHeroVideo } from "@/components/journey/JourneyGraphHeroVideo";
+import { HeroVideoBackground } from "@/components/journey/HeroVideoBackground";
+import {
+  chartPalette,
+  nutritionChartColors,
+  sleepChartColors,
+} from "@/lib/design-tokens";
 
 const C = {
   navy: "#1A2744", card: "#1E3054", inset: "#16203A", raised: "#243a63",
@@ -118,7 +127,23 @@ function PlasmaRing({ value, color, size = 40 }: { value: number; color: string;
 }
 function GaugeCard({ value, label, color, hero, loading }: { value: number; label: string; color: string; hero?: boolean; loading?: boolean }) {
   return (
-    <div style={{ flex: "1 1 0", minWidth: 64, background: C.inset, border: `1px solid ${hero ? color + "66" : C.line}`, borderRadius: 12, padding: "10px 6px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, boxShadow: hero ? `inset 0 0 0 1px ${color}33` : "none" }}>
+    <div
+      className="vc-gauge-tile"
+      style={{
+        flex: "1 1 0",
+        minWidth: 64,
+        background: C.inset,
+        border: `1px solid ${hero ? color + "66" : C.line}`,
+        borderRadius: 12,
+        padding: "10px 6px",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 6,
+        boxShadow: hero ? `inset 0 0 0 1px ${color}33` : "none",
+      }}
+    >
       {loading ? (
         <Shimmer w={hero ? 52 : 48} h={hero ? 52 : 48} radius={999} />
       ) : (
@@ -152,16 +177,31 @@ type PillarValues = Record<string, number>;
 //   A "(no daily history yet)" note is appended to the Hydration legend swatch
 //   when the series has at most one non-null point so the near-empty line is not
 //   mistaken for a bug. (Hannah handoff - flag for Gary eyeball.)
+function useIsMobileJourney(): boolean {
+  const [mobile, setMobile] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(max-width: 767px)");
+    const apply = () => setMobile(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
+  return mobile;
+}
+
 function Journey({ userId }: { userId: string | null }) {
   const [range, setRange] = useState<JourneyRange>("1W");
   const [offset, setOffset] = useState<number>(0);
   const { buckets, series, periodLabel, canGoNext, loading, error } = useJourneyGraphSeries(userId, range, offset);
+  const isMobile = useIsMobileJourney();
 
-  // SVG coordinate system.
-  const W = 840, H = 248;
+  // SVG coordinate system. Desktop H=248 unchanged; mobile taller for readability (plot >= 260).
+  const W = 840;
+  const H = isMobile ? 320 : 248;
   // padL: left gutter for Y-axis labels (right-aligned muted text).
   // padR: right margin. padT: top margin. padB: bottom strip for X-axis labels.
-  const padL = 52, padR = 10, padT = 10, padB = 30;
+  const padL = isMobile ? 40 : 52, padR = 10, padT = 10, padB = isMobile ? 34 : 30;
   const plotW = W - padL - padR;
   const plotH = H - padT - padB;
 
@@ -170,8 +210,10 @@ function Journey({ userId }: { userId: string | null }) {
     n <= 1 ? padL + plotW / 2 : padL + (i / (n - 1)) * plotW;
   const yOf = (v: number): number => padT + (1 - v / 100) * plotH;
 
-  // Y axis: gridline and label at every 10 from 0 to 100.
-  const Y_TICKS = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+  // Y axis: every 10 on desktop; every 20 on mobile (Prompt 216a).
+  const Y_TICKS = isMobile
+    ? [0, 20, 40, 60, 80, 100]
+    : [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
 
   // Draw hero (overall) line last so it sits on top of all other lines.
   const ordered = [...PILLARS].sort((a, b) => (a.hero ? 1 : 0) - (b.hero ? 1 : 0));
@@ -222,14 +264,36 @@ function Journey({ userId }: { userId: string | null }) {
 
   const showLines = !loading && !error;
 
+  // Prompt 216 follow-up: all copy over the hero video is pure white for legibility.
+  const onVideoText = "#FFFFFF";
+  const onVideoLine = "rgba(255,255,255,0.28)";
+
   return (
-    <div>
+    <div style={{ position: "relative", zIndex: 1, color: onVideoText }}>
       {/* Header: eyebrow label + 1W / 1M / 1Y range buttons */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
-        <div style={eyebrow}>Journey</div>
+        <div style={{ ...eyebrow, color: onVideoText }}>Journey</div>
         <div style={{ display: "flex", gap: 6 }}>
           {(["1W", "1M", "1Y"] as JourneyRange[]).map((r) => (
-            <button key={r} onClick={() => { setRange(r); setOffset(0); }} className="vc-focus" style={{ cursor: "pointer", padding: "5px 13px", borderRadius: 999, fontSize: 11.5, fontWeight: 700, border: `1px solid ${range === r ? C.teal : C.line}`, background: range === r ? C.teal : "transparent", color: range === r ? C.navy : C.muted }}>{r}</button>
+            <button
+              key={r}
+              onClick={() => { setRange(r); setOffset(0); }}
+              className="vc-focus vc-journey-range-btn"
+              style={{
+                cursor: "pointer",
+                padding: "5px 13px",
+                borderRadius: 999,
+                fontSize: 11.5,
+                fontWeight: 700,
+                border: `1px solid ${range === r ? C.teal : onVideoLine}`,
+                background: range === r ? C.teal : "rgba(26,39,68,0.55)",
+                color: onVideoText,
+                minHeight: isMobile ? 44 : undefined,
+                minWidth: isMobile ? 44 : undefined,
+              }}
+            >
+              {r}
+            </button>
           ))}
         </div>
       </div>
@@ -237,35 +301,60 @@ function Journey({ userId }: { userId: string | null }) {
       {/* Period navigator: prev / period label / next */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 10, flexWrap: "wrap" }}>
         <button
-          className="vc-focus"
+          className="vc-focus vc-journey-nav-btn"
           onClick={() => setOffset((o) => o + 1)}
           aria-label="Previous period"
-          style={{ cursor: "pointer", background: "transparent", border: `1px solid ${C.line}`, borderRadius: 8, padding: "4px 8px", color: C.muted, display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+          style={{
+            cursor: "pointer",
+            background: "transparent",
+            border: `1px solid ${onVideoLine}`,
+            borderRadius: 8,
+            padding: "4px 8px",
+            color: onVideoText,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: isMobile ? 44 : undefined,
+            minWidth: isMobile ? 44 : undefined,
+          }}
         >
           <ChevronLeft size={16} strokeWidth={SW} />
         </button>
-        <span style={{ fontSize: 12, fontWeight: 600, color: C.text, minWidth: 130, textAlign: "center" }}>{periodLabel}</span>
+        <span style={{ fontSize: 12, fontWeight: 600, color: onVideoText, minWidth: 130, textAlign: "center" }}>{periodLabel}</span>
         <button
-          className="vc-focus"
+          className="vc-focus vc-journey-nav-btn"
           onClick={() => setOffset((o) => Math.max(0, o - 1))}
           disabled={!canGoNext}
           aria-label="Next period"
-          style={{ cursor: canGoNext ? "pointer" : "default", background: "transparent", border: `1px solid ${C.line}`, borderRadius: 8, padding: "4px 8px", color: C.muted, display: "inline-flex", alignItems: "center", justifyContent: "center", opacity: canGoNext ? 1 : 0.35 }}
+          style={{
+            cursor: canGoNext ? "pointer" : "default",
+            background: "transparent",
+            border: `1px solid ${onVideoLine}`,
+            borderRadius: 8,
+            padding: "4px 8px",
+            color: onVideoText,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            opacity: canGoNext ? 1 : 0.35,
+            minHeight: isMobile ? 44 : undefined,
+            minWidth: isMobile ? 44 : undefined,
+          }}
         >
           <ChevronRight size={16} strokeWidth={SW} />
         </button>
       </div>
 
       {/* Chart: SVG always renders axis and X labels; plot content varies by state */}
-      <div style={{ position: "relative" }}>
-        <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block" }}>
-          {/* Y axis: horizontal gridlines and right-aligned muted labels at every 10 */}
+      <div style={{ position: "relative" }} className="vc-journey-chart-plot">
+        <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block", minHeight: isMobile ? 260 : undefined }}>
+          {/* Y axis: gridlines + labels (every 10 desktop, every 20 mobile) */}
           {Y_TICKS.map((tick) => {
             const cy = yOf(tick);
             return (
               <g key={tick}>
-                <line x1={padL} x2={W - padR} y1={cy} y2={cy} stroke={C.line} strokeWidth={0.8} />
-                <text x={padL - 4} y={cy} textAnchor="end" dominantBaseline="middle" fontSize={12} fill={C.muted}>{tick}</text>
+                <line x1={padL} x2={W - padR} y1={cy} y2={cy} stroke={onVideoLine} strokeWidth={0.8} />
+                <text x={padL - 4} y={cy} textAnchor="end" dominantBaseline="middle" fontSize={isMobile ? 11 : 12} fill={onVideoText}>{tick}</text>
               </g>
             );
           })}
@@ -273,7 +362,7 @@ function Journey({ userId }: { userId: string | null }) {
           {/* X axis: bucket label text, centered under each labeled bucket */}
           {buckets.map((b, i) =>
             b.label ? (
-              <text key={b.date} x={xOf(i)} y={H - 6} textAnchor="middle" fontSize={11} fill={C.muted}>{b.label}</text>
+              <text key={b.date} x={xOf(i)} y={H - 6} textAnchor="middle" fontSize={11} fill={onVideoText}>{b.label}</text>
             ) : null,
           )}
 
@@ -296,28 +385,30 @@ function Journey({ userId }: { userId: string | null }) {
 
       {/* Error state: quiet retry affordance below the axis (axis still visible above) */}
       {error && !loading && (
-        <div style={{ textAlign: "center", fontSize: 11, color: C.muted, marginTop: 4 }}>
+        <div style={{ textAlign: "center", fontSize: 11, color: onVideoText, marginTop: 4 }}>
           Chart data could not load.{" "}
-          <button className="vc-focus" onClick={handleRetry} style={{ cursor: "pointer", background: "transparent", border: "none", color: C.teal, fontSize: 11, fontWeight: 600, padding: 0 }}>
+          <button className="vc-focus" onClick={handleRetry} style={{ cursor: "pointer", background: "transparent", border: "none", color: onVideoText, fontSize: 11, fontWeight: 600, padding: 0, textDecoration: "underline" }}>
             Retry
           </button>
         </div>
       )}
 
-      {/* Legend: seven pillar swatches + labels; hydration note when today-only */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "7px 14px", marginTop: 12 }}>
+      {/* Legend: desktop wrap; mobile two-column grid (Prompt 216a) */}
+      <div className="vc-journey-legend" style={{ display: "flex", flexWrap: "wrap", gap: "7px 14px", marginTop: 12 }}>
         {PILLARS.map((p) => (
-          <span key={p.key} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11, color: C.muted }}>
-            <span style={{ width: 12, height: 3, borderRadius: 2, background: p.color, display: "inline-block" }} />
-            {p.label}
-            {p.key === "hydration" && hydrationTodayOnly && (
-              <span style={{ fontSize: 10, opacity: 0.72 }}>(no daily history yet)</span>
-            )}
+          <span key={p.key} className="vc-journey-legend-item" style={{ display: "inline-flex", alignItems: "flex-start", gap: 6, fontSize: 11, color: onVideoText }}>
+            <span style={{ width: 12, height: 3, borderRadius: 2, background: p.color, display: "inline-block", marginTop: 5, flexShrink: 0 }} />
+            <span style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
+              <span>{p.label}</span>
+              {p.key === "hydration" && hydrationTodayOnly && (
+                <span style={{ fontSize: 10, opacity: 0.9 }}>(no daily history yet)</span>
+              )}
+            </span>
           </span>
         ))}
       </div>
       {(range === "1W" || range === "1M") && (
-        <p style={{ margin: "8px 0 0", fontSize: 10.5, color: C.muted, opacity: 0.85, lineHeight: 1.4 }}>
+        <p className="vc-journey-footnote" style={{ margin: "8px 0 0", fontSize: 10.5, color: onVideoText, opacity: 0.95, lineHeight: 1.4, width: "100%" }}>
           A line reaching 0 on a past day means no check-in was logged, not a wellness score of zero. Log a check-in to fill in any gap.
         </p>
       )}
@@ -330,74 +421,91 @@ function Journey({ userId }: { userId: string | null }) {
 // Name: from getDisplayName(); Goal chip: from useActiveBodyGoal.goalLabel.
 // Last sync line: from wearable detection (getWearableSource). "Not synced yet" when no
 // active integration has synced. "No wearable connected" when no active integration.
-// Hannah note: state-appropriate, calm, name-aware copy. No fabricated numbers.
+// Hannah note (216d): compiled daily note from runHannahCompilation, never stateWord stub.
 function ProfileCard({
+  userId,
   displayName,
   initial,
   avatarUrl,
   goalPhrase,
-  stateWord,
   lastSyncLabel,
+  readTodaySubtext,
 }: {
+  userId: string | null;
   displayName: string;
   initial: string;
   avatarUrl: string | null;
   goalPhrase: string;
-  stateWord: string;
   lastSyncLabel: string;
+  readTodaySubtext: string;
 }) {
   const [avatarErrored, setAvatarErrored] = useState(false);
   const showAvatar = !!avatarUrl && !avatarErrored;
 
-  // Hannah note: state-appropriate and calm. One sentence, no em-dashes,
-  // no medical claims, no fabricated numbers. Uses stateWord for tone.
-  const hannahNote = (() => {
-    if (!displayName || displayName === "there") {
-      return "Welcome. As you log and connect your data, your read sharpens here.";
-    }
-    if (stateWord === "getting started") {
-      return `Good to see you, ${displayName}. Your read below sharpens as you log and connect more data.`;
-    }
-    if (stateWord === "recovering") {
-      return `${displayName}, this is a rebuilding stretch. Small, consistent steps restore momentum fastest.`;
-    }
-    if (stateWord === "steady") {
-      return `${displayName}, you are holding a solid baseline. One focused area is usually the next lever.`;
-    }
-    if (stateWord === "building") {
-      return `${displayName}, your trend is moving in the right direction. Consistency carries it higher.`;
-    }
-    return `${displayName}, your signals are clustering near your best. Keep the routine steady.`;
-  })();
+  // Prompt 216d: latest compiled note (welcome fail-open). Distinct from read-today.
+  const { noteText: hannahNote } = useHannahDailyNote(
+    userId,
+    displayName || "there",
+    readTodaySubtext,
+  );
+  const hannahLabel = getAgentDisplayName("hannah");
+
+  // Prompt 216c: copy over profile hero video is white for legibility (Hannah note included).
+  const onVideoText = "#FFFFFF";
+  const goalInsetBg = "rgba(26,39,68,0.72)";
 
   return (
-    <div style={{ background: C.inset, border: `1px solid ${C.line}`, borderRadius: 14, padding: 15, display: "flex", flexDirection: "column", gap: 13, height: "100%" }}>
-      <div style={{ position: "relative", width: 92, height: 92 }}>
-        {showAvatar ? (
-          <img
-            src={avatarUrl!}
-            alt={displayName || "Profile"}
-            onError={() => setAvatarErrored(true)}
-            style={{ width: 92, height: 92, borderRadius: 16, objectFit: "cover", border: `1.5px solid ${C.teal}` }}
-          />
-        ) : (
-          <div style={{ width: 92, height: 92, borderRadius: 16, background: `radial-gradient(circle at 35% 28%, #34618a, ${C.navy})`, border: `1.5px solid ${C.teal}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, fontWeight: 800 }}>{initial}</div>
-        )}
-        <span style={{ position: "absolute", right: -5, top: -5, width: 22, height: 22, borderRadius: 999, background: C.card, border: `1px solid ${C.line}`, display: "flex", alignItems: "center", justifyContent: "center", color: C.muted }}><Edit2 size={11} strokeWidth={SW} /></span>
-      </div>
-      <div>
-        <div style={{ fontSize: 18, fontWeight: 800 }}>{displayName || "there"}</div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 5, marginTop: 9, fontSize: 11.5, color: C.muted }}>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><RefreshCw size={13} strokeWidth={SW} /> {lastSyncLabel}</span>
+    <div
+      className="vc-profile-card"
+      data-testid="journey-profile-card"
+      style={{
+        position: "relative",
+        background: C.inset,
+        border: `1px solid ${C.line}`,
+        borderRadius: 14,
+        padding: 15,
+        display: "flex",
+        flexDirection: "column",
+        gap: 13,
+        height: "100%",
+        overflow: "hidden",
+      }}
+    >
+      {/* Shared HeroVideoBackground: 9x16 at all breakpoints (Prompt 216c) */}
+      <HeroVideoBackground
+        sourceMode="portrait"
+        scrimPreset="profile"
+        testId="profile-hero-video"
+        logScope="journey.profileVideo"
+      />
+      <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", gap: 13, color: onVideoText }}>
+        <div style={{ position: "relative", width: 92, height: 92 }}>
+          {showAvatar ? (
+            <img
+              src={avatarUrl!}
+              alt={displayName || "Profile"}
+              onError={() => setAvatarErrored(true)}
+              style={{ width: 92, height: 92, borderRadius: 16, objectFit: "cover", border: `1.5px solid ${C.teal}` }}
+            />
+          ) : (
+            <div style={{ width: 92, height: 92, borderRadius: 16, background: `radial-gradient(circle at 35% 28%, #34618a, ${C.navy})`, border: `1.5px solid ${C.teal}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, fontWeight: 800, color: onVideoText }}>{initial}</div>
+          )}
+          <span style={{ position: "absolute", right: -5, top: -5, width: 22, height: 22, borderRadius: 999, background: "rgba(26,39,68,0.9)", border: `1px solid rgba(255,255,255,0.25)`, display: "flex", alignItems: "center", justifyContent: "center", color: onVideoText }}><Edit2 size={11} strokeWidth={SW} /></span>
         </div>
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 4, padding: "8px 10px", borderRadius: 10, background: C.card, border: `1px solid ${C.line}` }}>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 12, color: C.muted }}><Target size={14} strokeWidth={SW} color={C.teal} /> Goal</span>
-        <span style={{ fontSize: 12, fontWeight: 700, color: C.teal, overflowWrap: "anywhere" }}>{goalPhrase || "supporting your wellness"}</span>
-      </div>
-      <div>
-        <div style={{ ...eyebrow, marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}><Sparkles size={12} strokeWidth={SW} color={C.teal} /> Hannah's note</div>
-        <p style={{ margin: 0, fontSize: 12, color: C.muted, lineHeight: 1.5 }}>{hannahNote}</p>
+        <div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: onVideoText }}>{displayName || "there"}</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 5, marginTop: 9, fontSize: 11.5, color: onVideoText }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><RefreshCw size={13} strokeWidth={SW} /> {lastSyncLabel}</span>
+          </div>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4, padding: "8px 10px", borderRadius: 10, background: goalInsetBg, border: `1px solid rgba(255,255,255,0.18)` }}>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 12, color: onVideoText }}><Target size={14} strokeWidth={SW} color={C.teal} /> Goal</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: onVideoText, overflowWrap: "anywhere" }}>{goalPhrase || "supporting your wellness"}</span>
+        </div>
+        <div>
+          <div style={{ ...eyebrow, marginBottom: 6, display: "flex", alignItems: "center", gap: 6, color: onVideoText }}><Sparkles size={12} strokeWidth={SW} color={C.teal} /> {hannahLabel}&apos;s note</div>
+          <p style={{ margin: 0, fontSize: 12, color: onVideoText, lineHeight: 1.5 }} data-testid="hannah-daily-note">{hannahNote}</p>
+        </div>
       </div>
     </div>
   );
@@ -457,27 +565,61 @@ function Hero({
   }));
 
   return (
-    <div style={{ position: "relative", borderRadius: 22, padding: 20, marginBottom: 16, border: `1px solid ${C.line}`, background: `linear-gradient(160deg, #223a66 0%, ${C.card} 55%, #1b2c4e 100%)`, boxShadow: "0 24px 60px rgba(0,0,0,0.34)", overflow: "hidden" }}>
+    <div
+      className="vc-hero-shell"
+      style={{
+        position: "relative",
+        borderRadius: 22,
+        padding: 20,
+        marginBottom: 16,
+        border: `1px solid ${C.line}`,
+        background: `linear-gradient(160deg, #223a66 0%, ${C.card} 55%, #1b2c4e 100%)`,
+        boxShadow: "0 24px 60px rgba(0,0,0,0.34)",
+        overflow: "hidden",
+      }}
+    >
       <Edge active />
       <div className="vc-hero">
         <ProfileCard
+          userId={userId}
           displayName={displayName}
           initial={initial}
           avatarUrl={avatarUrl}
           goalPhrase={goalPhrase}
-          stateWord={stateWord}
           lastSyncLabel={lastSyncLabel}
+          readTodaySubtext={narrativeRead}
         />
-        <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 16 }}>
+        <div className="vc-hero-main" style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 16 }}>
           <div className="vc-herotop">
-            <div style={{ flex: "1 1 280px" }}>
+            <div className="vc-hero-copy" style={{ flex: "1 1 280px" }}>
               <div style={eyebrow}>Your read today</div>
-              <h1 style={{ margin: "8px 0 0", fontSize: 27, fontWeight: 800, letterSpacing: -0.6, lineHeight: 1.12 }}>You are in a <span style={{ color: C.teal }}>{stateWord}</span> state today</h1>
-              <p style={{ margin: "10px 0 0", fontSize: 13, color: C.muted, lineHeight: 1.55, maxWidth: 460 }}>{narrativeRead}</p>
+              <h1 className="vc-hero-heading" style={{ margin: "8px 0 0", fontSize: 27, fontWeight: 800, letterSpacing: -0.6, lineHeight: 1.12 }}>
+                You are in a <span style={{ color: C.teal }}>{stateWord}</span> state today
+              </h1>
+              <p className="vc-hero-body" style={{ margin: "10px 0 0", fontSize: 13, color: C.muted, lineHeight: 1.55, maxWidth: 460 }} data-testid="journey-read-today-body">
+                {narrativeRead}
+              </p>
             </div>
-            <div className="vc-gaugecluster">{livePillars.map((p) => <GaugeCard key={p.key} value={p.value} label={p.label} color={p.color} hero={p.hero} loading={gaugesLoading} />)}</div>
+            <div className="vc-gaugecluster">
+              {livePillars.map((p) => (
+                <GaugeCard key={p.key} value={p.value} label={p.label} color={p.color} hero={p.hero} loading={gaugesLoading} />
+              ))}
+            </div>
           </div>
-          <div style={{ background: `linear-gradient(180deg, ${C.inset}, ${C.card})`, border: `1px solid ${C.line}`, borderRadius: 16, padding: "16px 16px 14px" }}>
+          {/* Prompt 216: Journey graph card with full-bleed hero video background */}
+          <div
+            data-testid="journey-graph-card"
+            className="vc-journey-graph-card"
+            style={{
+              position: "relative",
+              border: `1px solid ${C.line}`,
+              borderRadius: 16,
+              padding: "16px 16px 14px",
+              overflow: "hidden",
+              background: `linear-gradient(180deg, ${C.inset}, ${C.card})`,
+            }}
+          >
+            <JourneyGraphHeroVideo />
             <Journey userId={userId} />
           </div>
         </div>
@@ -567,7 +709,7 @@ function Legend({ items }: { items: { name: string; label: string; color: string
 }
 
 type AccDot = { hub: string; label: string; icon: LucideIcon; missing?: boolean };
-type AccItem = { headline: string; body: string; tag: string; pts: number; icon: LucideIcon; conf: string; dots: AccDot[] };
+type AccItem = { id: string; headline: string; body: string; tag: string; pts: number; icon: LucideIcon; conf: string; dots: AccDot[]; placeholder?: boolean };
 
 // Appendix A seeded provenance dots, indexed by the canonical rec id.
 // Engine-sourced: the useJourneyRecommendations hook seeds these into the DB
@@ -638,6 +780,7 @@ function engineItemToAccItem(item: EngineAccItem): AccItem {
     missing: d.missing,
   }));
   return {
+    id: item.id,
     headline: item.headline,
     body: item.body,
     tag: item.tag,
@@ -645,6 +788,21 @@ function engineItemToAccItem(item: EngineAccItem): AccItem {
     icon: tagToLucide(item.tag),
     conf: item.conf,
     dots,
+  };
+}
+
+/** Honest empty-slot card when fewer than 4 distinct insights exist (Prompt 213). */
+function moreInsightsPlaceholder(slot: number): AccItem {
+  return {
+    id: `placeholder-more-${slot}`,
+    headline: 'More insights as your data grows',
+    body: 'Connect Genetics, Labs, Nutrition, and Biology so Hannah can open new accelerators.',
+    tag: 'GROWING',
+    pts: 0,
+    icon: Sparkles,
+    conf: 'medium',
+    dots: [],
+    placeholder: true,
   };
 }
 
@@ -656,6 +814,7 @@ function recToAccItem(rec: { id: string; title: string; description: string; cat
   const dots = SEEDED_DOTS[rec.id] ?? [];
   const isHigh = rec.estimatedImpact >= 8;
   return {
+    id: rec.id,
     headline: rec.title,
     body: rec.description,
     tag: rec.category.toUpperCase(),
@@ -668,8 +827,19 @@ function recToAccItem(rec: { id: string; title: string; description: string; cat
 function AccCard({ c }: { c: AccItem }) {
   const [open, setOpen] = useState(false);
   const Ic = c.icon, col = c.conf === "high" ? C.teal : C.orange, Conf = c.conf === "high" ? ShieldCheck : CircleAlert;
+  if (c.placeholder) {
+    return (
+      <div style={{ ...panel(false), opacity: 0.85 }} data-testid="accelerator-placeholder">
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <span style={{ width: 38, height: 38, borderRadius: 999, background: C.inset, border: `1px solid ${C.teal}`, color: C.teal, display: "inline-flex", alignItems: "center", justifyContent: "center" }}><Ic size={17} strokeWidth={SW} /></span>
+        </div>
+        <h3 style={{ margin: "12px 0 6px", fontSize: 16, fontWeight: 700 }}>{c.headline}</h3>
+        <p style={{ margin: 0, fontSize: 12.5, color: C.muted, lineHeight: 1.5 }}>{c.body}</p>
+      </div>
+    );
+  }
   return (
-    <div style={panel(false)}>
+    <div style={panel(false)} data-testid={`accelerator-card-${c.id}`}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <span style={{ width: 38, height: 38, borderRadius: 999, background: C.inset, border: `1px solid ${C.orange}`, color: C.orange, display: "inline-flex", alignItems: "center", justifyContent: "center" }}><Ic size={17} strokeWidth={SW} /></span>
         <span style={{ padding: "4px 9px", borderRadius: 999, background: C.greenSoft, color: C.green, fontSize: 11.5, fontWeight: 700 }}>+{c.pts} pts</span>
@@ -915,12 +1085,16 @@ function NutritionCard({
   fatLabel: string;
   loading?: boolean;
 }) {
-  // When all macros are zero, render a neutral unit-value donut so the arcs
-  // remain visible (using 1/1/1 so each segment draws equally).
+  // Prompt 216b: chartPalette tokens only. No-data = full chart-empty ring (not fake proportions).
   const totalMacros = carbsG + proteinG + fatG;
-  const segments = totalMacros > 0
-    ? [{ value: carbsG, color: C.green }, { value: proteinG, color: C.orange }, { value: fatG, color: C.blue }]
-    : [{ value: 1, color: C.green }, { value: 1, color: C.orange }, { value: 1, color: C.blue }];
+  const segments =
+    totalMacros > 0
+      ? [
+          { value: carbsG, color: nutritionChartColors.carbs },
+          { value: proteinG, color: nutritionChartColors.protein },
+          { value: fatG, color: nutritionChartColors.fat },
+        ]
+      : [{ value: 1, color: chartPalette.empty }];
   return (
     <div style={panel(false)}>
       <div style={{ ...eyebrow, marginBottom: 10 }}>Nutrition</div>
@@ -934,7 +1108,16 @@ function NutritionCard({
           </div>
         </div>
       ) : (
-        <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}><Donut size={86} segments={segments} top={kcalTop} bot={kcalBot} /><Legend items={[{ name: "Carbs", label: carbsLabel, color: C.green }, { name: "Protein", label: proteinLabel, color: C.orange }, { name: "Fat", label: fatLabel, color: C.blue }]} /></div>
+        <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+          <Donut size={86} segments={segments} top={kcalTop} bot={kcalBot} />
+          <Legend
+            items={[
+              { name: "Carbs", label: carbsLabel, color: nutritionChartColors.carbs },
+              { name: "Protein", label: proteinLabel, color: nutritionChartColors.protein },
+              { name: "Fat", label: fatLabel, color: nutritionChartColors.fat },
+            ]}
+          />
+        </div>
       )}
     </div>
   );
@@ -942,9 +1125,9 @@ function NutritionCard({
 function SleepCard({ sleepHoursTotal, loading }: { sleepHoursTotal: number | null; loading?: boolean }) {
   // Sleep stages are wearable-OFF. The total from daily_scores/daily_checkins is
   // real; stage breakdown remains connect state (no wearable source).
-  // (migration 20260412000010 for daily_checkins.sleep_hours;
-  //  types.ts line 8276 for daily_scores.sleep_hours)
+  // Prompt 216b: no-data ring uses chartPalette.empty (not colorful fake stages).
   const centerTop = sleepHoursTotal !== null ? `${sleepHoursTotal.toFixed(1)} h` : "--";
+  const noDataSegments = [{ value: 1, color: chartPalette.empty }];
   return (
     <div style={panel(false)}>
       <div style={{ ...eyebrow, marginBottom: 10 }}>Sleep breakdown</div>
@@ -958,12 +1141,29 @@ function SleepCard({ sleepHoursTotal, loading }: { sleepHoursTotal: number | nul
           </div>
         </div>
       ) : (
-        <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}><Donut size={86} segments={[{ value: 1, color: C.teal }, { value: 1, color: C.blue }, { value: 1, color: C.purple }, { value: 1, color: C.orange }]} top={centerTop} bot="total" /><Legend items={[{ name: "Deep", label: "--", color: C.teal }, { name: "Light", label: "--", color: C.blue }, { name: "REM", label: "--", color: C.purple }, { name: "Awake", label: "--", color: C.orange }]} /></div>
+        <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+          <Donut size={86} segments={noDataSegments} top={centerTop} bot="total" />
+          <Legend
+            items={[
+              { name: "Deep", label: "--", color: sleepChartColors.deep },
+              { name: "Light", label: "--", color: sleepChartColors.light },
+              { name: "REM", label: "--", color: sleepChartColors.rem },
+              { name: "Awake", label: "--", color: sleepChartColors.awake },
+            ]}
+          />
+        </div>
       )}
     </div>
   );
 }
 function AcceleratorsTab({ accel, activeHubs, narrativeLine, loading }: { accel: AccItem[]; activeHubs: string[]; narrativeLine: string; loading?: boolean }) {
+  // Prompt 213: fill empty slots with honest placeholders, never clone a real insight.
+  const real = accel.filter((c) => !c.placeholder);
+  const slots: AccItem[] = [...real];
+  let p = 0;
+  while (slots.length < 4) {
+    slots.push(moreInsightsPlaceholder(p++));
+  }
   return (
     <div className="vc-split" style={{ alignItems: "stretch" }}>
       <div>
@@ -984,7 +1184,7 @@ function AcceleratorsTab({ accel, activeHubs, narrativeLine, loading }: { accel:
             ))}
           </div>
         ) : (
-          <div className="vc-two">{accel.map((c, i) => <AccCard key={i} c={c} />)}</div>
+          <div className="vc-two">{slots.map((c) => <AccCard key={c.id} c={c} />)}</div>
         )}
       </div>
       <div style={{ display: "flex", flexDirection: "column", height: "100%" }}><div style={{ fontSize: 15, fontWeight: 800, marginBottom: 12 }}>Your connection map</div><ConnectionMap activeHubs={activeHubs} narrativeLine={narrativeLine} /></div>
@@ -1344,11 +1544,9 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
   const engineAccel = useEngineAccelerators(userId);
   const accelItems: AccItem[] = engineAccel.items.map(engineItemToAccItem);
 
-  // ConnectionMap active hubs: from the top engine accelerator's real provenance hubs.
-  // The narrative line uses the real hub count (spoken word), not a hardcoded number.
+  // Prompt 213: hubs and caption come from the full distinct insight set.
   const activeHubs = engineAccel.activeHubs;
-  const topItemName = engineAccel.items.length > 0 ? engineAccel.items[0].headline : "this insight";
-  const narrativeLine = `The ${topItemName} insight is drawn from ${engineAccel.activeHubCountWord} of your hubs.`;
+  const narrativeLine = engineAccel.narrativeLine;
 
   // Hydration stat bar (LIVE).
   const hydrationTotalL = hydrationData?.total_ml != null ? hydrationData.total_ml / 1000 : null;
@@ -1513,7 +1711,20 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
     : 0;
 
   return (
-    <div style={{ fontFamily: "'Instrument Sans', system-ui, sans-serif", background: `radial-gradient(1200px 600px at 70% -12%, #21345c 0%, ${C.navy} 58%)`, minHeight: "100vh", color: C.text, padding: "18px 28px 46px" }}>
+    <div
+      className="vc-page"
+      data-testid="your-journey-page"
+      style={{
+        fontFamily: "'Instrument Sans', system-ui, sans-serif",
+        background: `radial-gradient(1200px 600px at 70% -12%, #21345c 0%, ${C.navy} 58%)`,
+        minHeight: "100vh",
+        color: C.text,
+        padding: "18px 28px 46px",
+        boxSizing: "border-box",
+        maxWidth: "100%",
+        overflowX: "hidden",
+      }}
+    >
       <style>{`
         .vc-focus:focus-visible { outline: 2px solid ${C.teal}; outline-offset: 2px; }
         .vc-edge-active { animation: vcPulse 2.8s ease-in-out infinite; }
@@ -1526,12 +1737,94 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
         .vc-two { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
         .vc-tri { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
         .vc-goalrow { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 14px; align-items: stretch; }
+        .vc-page-sections { display: flex; flex-direction: column; gap: 22px; }
+        .vc-section-label { margin-bottom: 12px; }
         @media (max-width: 1100px){ .vc-split { grid-template-columns: 1fr; } }
         @media (max-width: 960px){ .vc-hero { grid-template-columns: 1fr; } .vc-tri { grid-template-columns: 1fr; } .vc-two { grid-template-columns: 1fr; } .vc-goalrow { grid-template-columns: 1fr; } }
+        /* Prompt 216a: mobile layout only (max-width 767px). Desktop rules above unchanged. */
+        @media (max-width: 767px) {
+          .vc-page {
+            padding: 16px 16px calc(40px + env(safe-area-inset-bottom, 0px)) !important;
+            padding-left: max(16px, env(safe-area-inset-left, 0px)) !important;
+            padding-right: max(16px, env(safe-area-inset-right, 0px)) !important;
+            overflow-x: hidden !important;
+            max-width: 100vw !important;
+          }
+          .vc-page-header { display: none !important; }
+          .vc-page-sections { gap: 16px !important; }
+          .vc-section-label { margin-bottom: 10px !important; }
+          .vc-hero-shell {
+            padding: 16px !important;
+            margin-bottom: 16px !important;
+            border-radius: 16px !important;
+          }
+          /* Profile card keeps radius/overflow for hero video; drop double shell border feel */
+          .vc-profile-card {
+            height: auto !important;
+            min-height: 0 !important;
+          }
+          .vc-hero-heading {
+            font-size: 30px !important;
+            letter-spacing: -0.4px !important;
+            line-height: 1.15 !important;
+          }
+          .vc-hero-body {
+            font-size: 14px !important;
+            max-width: none !important;
+          }
+          .vc-herotop {
+            flex-direction: column !important;
+            gap: 14px !important;
+            width: 100% !important;
+          }
+          .vc-hero-copy { flex: none !important; width: 100% !important; }
+          /* Metric tiles: horizontal snap carousel (~3.5 tiles visible) */
+          .vc-gaugecluster {
+            flex: none !important;
+            display: flex !important;
+            flex-wrap: nowrap !important;
+            gap: 10px !important;
+            align-items: stretch !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+            scroll-snap-type: x mandatory !important;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            padding-bottom: 2px;
+          }
+          .vc-gaugecluster::-webkit-scrollbar { display: none; }
+          .vc-gauge-tile {
+            flex: 0 0 calc((100% - 20px) / 3.5) !important;
+            min-width: 96px !important;
+            max-width: 120px !important;
+            scroll-snap-align: start !important;
+          }
+          .vc-journey-graph-card {
+            border-radius: 14px !important;
+          }
+          .vc-journey-legend {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            column-gap: 12px !important;
+            row-gap: 10px !important;
+            align-items: start !important;
+          }
+          .vc-journey-legend-item {
+            display: flex !important;
+            min-height: 22px;
+          }
+          .vc-journey-range-btn,
+          .vc-journey-nav-btn {
+            min-height: 44px !important;
+            min-width: 44px !important;
+          }
+        }
         @media (prefers-reduced-motion: reduce){ .vc-edge-active{animation:none;opacity:1} .vc-shimmer{animation:none !important} * {transition:none !important} }
       `}</style>
-      <div style={{ width: "100%", margin: "0 auto" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+      <div style={{ width: "100%", margin: "0 auto", maxWidth: "100%", boxSizing: "border-box" }}>
+        <div className="vc-page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
           <div style={{ fontWeight: 800, fontSize: 17 }}><span style={{ color: C.orange }}>Via</span><span style={{ color: C.text }}>Connect</span><span style={{ ...eyebrow, marginLeft: 12 }}>Your Journey</span></div>
           <div style={{ display: "flex", gap: 12, color: C.muted }}><Search size={18} strokeWidth={SW} /><Bell size={18} strokeWidth={SW} /></div>
         </div>
@@ -1549,9 +1842,9 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
           gaugesLoading={shouldShowSkeleton(bos7DLoading || dailyScores.loading, dailyScores.bioOptimization ?? bos7D?.current ?? null)}
         />
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
+        <div className="vc-page-sections" style={{ display: "flex", flexDirection: "column", gap: 22 }}>
           <section>
-            <div style={{ ...eyebrow, marginBottom: 12 }}>Goals, nutrition and sleep</div>
+            <div className="vc-section-label" style={{ ...eyebrow, marginBottom: 12 }}>Goals, nutrition and sleep</div>
             <div className="vc-goalrow">
               <GoalCard
                 goalLabel={goalLabel}
@@ -1589,7 +1882,7 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
             </div>
           </section>
           <section>
-            <div style={{ ...eyebrow, marginBottom: 12 }}>Today and this week</div>
+            <div className="vc-section-label" style={{ ...eyebrow, marginBottom: 12 }}>Today and this week</div>
             <TodayTab
               hydrationValue={hydrationValue}
               hydrationSub={hydrationSub}

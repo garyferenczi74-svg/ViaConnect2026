@@ -13,6 +13,8 @@ import { buildAuditEntries } from '@/lib/flags/audit-builder';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 const ALLOWED_FIELDS = new Set([
   'is_active',
   'launch_phase_id',
@@ -24,10 +26,8 @@ const ALLOWED_FIELDS = new Set([
   'gate_behavior',
 ]);
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { featureId: string } },
-) {
+export async function POST(request: NextRequest, props: { params: Promise<{ featureId: string }> }) {
+  const params = await props.params;
   try {
     const auth = await requireAdmin();
     if (auth.kind === 'error') return auth.response;
@@ -47,7 +47,7 @@ export async function POST(
       return NextResponse.json({ error: 'No allowed fields in patch' }, { status: 400 });
     }
 
-    const supabase = createClient();
+    const supabase = await createClient();
 
     const prevRes = await withTimeout(
       (async () => supabase

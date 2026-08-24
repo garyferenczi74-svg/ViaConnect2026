@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 export default async function WaiversPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const { data } = await supabase
     .from("compliance_waivers")
     .select("id, rule_id, reason, effective_from, expires_at, revoked, approved_by")

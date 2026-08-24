@@ -21,7 +21,7 @@ interface Row {
 
 export default async function SoaPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const { data } = await supabase
     .from('iso_statements_of_applicability')
     .select('id, control_ref, version, applicability, implementation_status, justification, effective_from, effective_until, approved_at, recorded_at')

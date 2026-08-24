@@ -4,7 +4,14 @@ import { createClient as createServiceClient } from "@supabase/supabase-js";
 import type { Json } from "@/lib/supabase/types";
 import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
+import { reportSupabaseError } from "@/lib/utils/schema-drift";
 import { getCircuitBreaker, isCircuitBreakerError } from "@/lib/utils/circuit-breaker";
+import {
+  buildOrderInsertPayload,
+  buildSubscriptionUpsertPayload,
+} from "./payload-shapes";
+
+export const dynamic = 'force-dynamic';
 
 const stripeBreaker = getCircuitBreaker("stripe-api");
 
@@ -42,12 +49,15 @@ async function writeAuditLog(
   metadata?: Record<string, unknown>
 ) {
   try {
-    await supabase.from("audit_logs").insert({
+    const auditInsertResult: { error: unknown } = await supabase.from("audit_logs").insert({
       user_id: userId,
       action,
       resource_type: "stripe_webhook",
       metadata: (metadata ?? null) as Json,
     });
+    if (auditInsertResult.error) {
+      reportSupabaseError("audit.insert", auditInsertResult.error, { table: "audit_logs" });
+    }
   } catch {
     // Non-blocking
   }
@@ -84,50 +94,62 @@ async function handleCheckoutCompleted(
     const subData = subscription as unknown as Record<string, unknown>;
     const period = getSubscriptionPeriod(subData);
 
-    // Determine plan from price amount
     const items = subscription.items?.data ?? [];
-    const amount = items[0]?.price?.unit_amount ?? 0;
-    const plan =
-      amount <= 888
-        ? "gold"
-        : amount <= 2888
-          ? "platinum"
-          : "practitioner";
 
-    await supabase.from("subscriptions").upsert(
-      {
-        user_id: userId,
-        stripe_customer_id: (typeof session.customer === "string"
-          ? session.customer
-          : (session.customer as unknown as Record<string, unknown>)?.id as string) ?? "",
-        stripe_subscription_id: subscription.id,
-        plan_id: items[0]?.price?.id ?? plan,
-        plan: plan as "gold" | "platinum" | "practitioner",
-        status: subscription.status as
-          | "active"
-          | "canceled"
-          | "past_due"
-          | "trialing"
-          | "incomplete",
-        current_period_start: period.start,
-        current_period_end: period.end,
-        cancel_at_period_end: subscription.cancel_at_period_end,
-      },
-      { onConflict: "stripe_subscription_id" }
-    );
+    const subscriptionUpsertResult: { error: unknown } = await supabase
+      .from("subscriptions")
+      .upsert(
+        buildSubscriptionUpsertPayload({
+          userId,
+          customer: session.customer,
+          subscriptionId: subscription.id,
+          status: subscription.status,
+          cancelAtPeriodEnd: subscription.cancel_at_period_end,
+          unitAmount: items[0]?.price?.unit_amount,
+          priceId: items[0]?.price?.id,
+          periodStart: period.start,
+          periodEnd: period.end,
+        }),
+        { onConflict: "stripe_subscription_id" }
+      );
+    if (subscriptionUpsertResult.error) {
+      try {
+        reportSupabaseError(
+          "stripe.webhook.subscriptions",
+          subscriptionUpsertResult.error,
+          { table: "subscriptions" }
+        );
+      } catch {
+        // Strict-mode rethrow contained: an escaping throw would flip the
+        // webhook's dev/preview response for this event from the current 200
+        // envelope to a 500 and skip the audit log below. Drift is already
+        // logged by reportSupabaseError before it rethrows.
+      }
+    }
   }
 
   if (session.mode === "payment") {
-    await supabase.from("orders").insert({
-      user_id: userId,
-      status: "pending",
-      total: (session.amount_total ?? 0) / 100,
-      items: {
-        type: "genex_kit",
-        session_id: session.id,
-        product_type: session.metadata?.product_type ?? "genex_kit",
-      } as unknown as Json,
-    });
+    const orderInsertResult: { error: unknown } = await supabase
+      .from("orders")
+      .insert(
+        buildOrderInsertPayload({
+          userId,
+          sessionId: session.id,
+          amountTotal: session.amount_total,
+          productType: session.metadata?.product_type,
+        })
+      );
+    if (orderInsertResult.error) {
+      try {
+        reportSupabaseError("stripe.webhook.orders", orderInsertResult.error, {
+          table: "orders",
+        });
+      } catch {
+        // Strict-mode rethrow contained: same reasoning as the subscription
+        // branch; the payment branch must still fall through to the audit
+        // log and the 200 envelope.
+      }
+    }
   }
 
   await writeAuditLog(supabase, userId, "checkout_completed", {

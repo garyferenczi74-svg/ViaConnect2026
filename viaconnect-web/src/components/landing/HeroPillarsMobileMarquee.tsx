@@ -1,42 +1,29 @@
 'use client'
 
 /**
- * Prompt 138k v2 Mobile Carousel: Continuous Marquee.
+ * Prompt 220 (revised): mobile journey cards auto-rotating scroll-snap carousel.
  *
- * Replaces the 138k Pattern C discrete slideshow on mobile only. Cards
- * scroll right-to-left at constant velocity, no waiting, no gap, no
- * dot indicators. The DOM contains 3 sets of 3 cards (9 slots total)
- * so that translating the track by exactly one set width
- * (calc(-3 * --slide-unit)) produces a seamless wrap that the user
- * never sees: at the loop boundary, set 2's first card occupies the
- * same viewport slot that set 1's first card had at translate(0).
+ * Root cause (pre-220): continuous CSS marquee with overflow:hidden; touch only
+ * paused animation; cards 02/03 unreachable by swipe or rotation.
+ * 220 first pass: snap + swipe + dots, no auto-advance.
+ * 220 revised: auto-rotate (primary), swipe/dots as supplements that reset the timer.
  *
- * Speed: T_hero = T_footer / 1.6 (hero is 1.6x faster than the footer
- * "Backed by Science" marquee). Footer is 40s, so hero = 25s.
- *
- * Implementation matches the footer's CSS @keyframes pattern per spec
- * §5.3 decision rule. No Framer Motion animation cost; only useState
- * for pause-on-touch and useEffect for Page Visibility API.
- *
- * Card-internal layout is unchanged from 138k: 30px headline, 15px
- * body, 11px eyebrow, 96px ghosted numeral, justify-center vertical,
- * left-aligned horizontal, gradient bottom-shine div (never a text
- * character). Card 3 numeral stroke held at 0.40 alpha (Bug 4
- * mitigation from 138k for iOS WebKit text-stroke artifact at 96px).
+ * Desktop: HeroPillars grid (sm+) is static; no rotation there.
+ * No carousel library. No package.json changes.
  */
 
-import { useEffect, useState, type TouchEvent as ReactTouchEvent } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type TouchEvent as ReactTouchEvent,
+} from 'react'
 import type { PillarData } from './HeroPillars'
 
-const FOOTER_DURATION_S = 40
-// T_hero = T_footer / 1.6 (hero scrolls 1.6x faster than the footer
-// "Backed by Science" marquee). Bumped from /1.3 on 2026-04-27.
-const HERO_DURATION_S = Math.round(FOOTER_DURATION_S / 1.6) // 25s
-
-// Prompt #139h: -15% reduction on card size + text. SLIDE_UNIT_PX auto-updates.
-const CARD_WIDTH_PX = 238
-const CARD_GUTTER_PX = 14
-const SLIDE_UNIT_PX = CARD_WIDTH_PX + CARD_GUTTER_PX // 252
+/** Dwell per card before auto-advance (Gary-tunable). */
+export const HERO_PILLAR_DWELL_MS = 6000
 
 interface MobileOverride {
   surfaceOverlay: string
@@ -44,12 +31,6 @@ interface MobileOverride {
   shineRgba: string
 }
 
-// Per-card mobile overrides. Surface overlays per spec §4.2 (boosted
-// from desktop's 0.05-0.06 alpha so the colour reads through on a
-// single full-width card). Numerals are rendered as outlined ghosts via
-// -webkit-text-stroke with a transparent fill, matching the original
-// design language. Stroke alphas boosted above the spec literal so the
-// outline reads on the navy gradient at 96px.
 function getMobileOverride(realIndex: number): MobileOverride {
   if (realIndex === 0) {
     return {
@@ -79,116 +60,287 @@ interface Props {
   pillars: PillarData[]
 }
 
-export function HeroPillarsMobileMarquee({ pillars }: Props) {
-  const [isTouched, setIsTouched] = useState(false)
-  const [isTabHidden, setIsTabHidden] = useState(false)
-
+function usePrefersReducedMotion(): boolean {
+  const [reduced, setReduced] = useState(false)
   useEffect(() => {
-    function handleVisibility() {
-      setIsTabHidden(document.visibilityState === 'hidden')
-    }
-    handleVisibility()
-    document.addEventListener('visibilitychange', handleVisibility)
-    return () => document.removeEventListener('visibilitychange', handleVisibility)
+    if (typeof window === 'undefined' || !window.matchMedia) return
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const apply = () => setReduced(mq.matches)
+    apply()
+    mq.addEventListener('change', apply)
+    return () => mq.removeEventListener('change', apply)
+  }, [])
+  return reduced
+}
+
+export function HeroPillarsMobileMarquee({ pillars }: Props) {
+  const rootRef = useRef<HTMLDivElement>(null)
+  const trackRef = useRef<HTMLDivElement>(null)
+  const [active, setActive] = useState(0)
+  const activeRef = useRef(0)
+  const reducedMotion = usePrefersReducedMotion()
+
+  const [inView, setInView] = useState(true)
+  const [tabVisible, setTabVisible] = useState(true)
+  const [userTouching, setUserTouching] = useState(false)
+  const [userScrolling, setUserScrolling] = useState(false)
+  /** Bumps to restart the dwell timer after manual input. */
+  const [timerEpoch, setTimerEpoch] = useState(0)
+
+  const programmaticScrollRef = useRef(false)
+  const scrollEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const n = pillars.length
+
+  const syncActiveFromScroll = useCallback(() => {
+    const track = trackRef.current
+    if (!track) return
+    const slides = track.querySelectorAll<HTMLElement>('[data-pillar-slide]')
+    if (slides.length === 0) return
+
+    const trackCenter = track.scrollLeft + track.clientWidth / 2
+    let bestIdx = 0
+    let bestDist = Number.POSITIVE_INFINITY
+    slides.forEach((slide, i) => {
+      const center = slide.offsetLeft + slide.offsetWidth / 2
+      const dist = Math.abs(center - trackCenter)
+      if (dist < bestDist) {
+        bestDist = dist
+        bestIdx = i
+      }
+    })
+    activeRef.current = bestIdx
+    setActive((prev) => (prev === bestIdx ? prev : bestIdx))
   }, [])
 
-  function handleTouchStart(_e: ReactTouchEvent<HTMLDivElement>) {
-    setIsTouched(true)
+  const goTo = useCallback(
+    (index: number, opts?: { fromUser?: boolean; smooth?: boolean }) => {
+      const track = trackRef.current
+      if (!track || n === 0) return
+      const target = ((index % n) + n) % n
+      const slide = track.querySelector<HTMLElement>(
+        `[data-pillar-slide="${target}"]`,
+      )
+      if (!slide) return
+
+      if (opts?.fromUser) {
+        setTimerEpoch((e) => e + 1)
+      }
+
+      programmaticScrollRef.current = true
+      const left =
+        slide.offsetLeft - (track.clientWidth - slide.offsetWidth) / 2
+      const smooth = opts?.smooth ?? !reducedMotion
+      track.scrollTo({
+        left: Math.max(0, left),
+        behavior: smooth ? 'smooth' : 'auto',
+      })
+      activeRef.current = target
+      setActive(target)
+
+      // Clear programmatic flag after scroll settles so user swipes are detected.
+      window.setTimeout(
+        () => {
+          programmaticScrollRef.current = false
+          syncActiveFromScroll()
+        },
+        smooth ? 450 : 50,
+      )
+    },
+    [n, reducedMotion, syncActiveFromScroll],
+  )
+
+  // Scroll listener: sync dots; user pan resets timer.
+  useEffect(() => {
+    const track = trackRef.current
+    if (!track) return
+
+    const onScroll = () => {
+      syncActiveFromScroll()
+      if (programmaticScrollRef.current) return
+
+      setUserScrolling(true)
+      setTimerEpoch((e) => e + 1)
+      if (scrollEndTimerRef.current) clearTimeout(scrollEndTimerRef.current)
+      scrollEndTimerRef.current = setTimeout(() => {
+        setUserScrolling(false)
+        setTimerEpoch((e) => e + 1)
+      }, 180)
+    }
+
+    track.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', syncActiveFromScroll)
+    syncActiveFromScroll()
+    return () => {
+      track.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', syncActiveFromScroll)
+      if (scrollEndTimerRef.current) clearTimeout(scrollEndTimerRef.current)
+    }
+  }, [syncActiveFromScroll, n])
+
+  // IntersectionObserver: pause when carousel leaves viewport.
+  useEffect(() => {
+    const root = rootRef.current
+    if (!root || typeof IntersectionObserver === 'undefined') return
+    const io = new IntersectionObserver(
+      (entries) => {
+        const hit = entries[0]
+        setInView(Boolean(hit?.isIntersecting))
+      },
+      { threshold: 0.25 },
+    )
+    io.observe(root)
+    return () => io.disconnect()
+  }, [])
+
+  // Page Visibility API: pause when tab hidden.
+  useEffect(() => {
+    const onVis = () => setTabVisible(document.visibilityState === 'visible')
+    onVis()
+    document.addEventListener('visibilitychange', onVis)
+    return () => document.removeEventListener('visibilitychange', onVis)
+  }, [])
+
+  // Auto-rotate: only when not reduced-motion and not paused.
+  const rotationPaused =
+    reducedMotion ||
+    !inView ||
+    !tabVisible ||
+    userTouching ||
+    userScrolling ||
+    n < 2
+
+  useEffect(() => {
+    if (rotationPaused) return
+    const id = window.setInterval(() => {
+      const next = (activeRef.current + 1) % n
+      goTo(next, { fromUser: false, smooth: true })
+    }, HERO_PILLAR_DWELL_MS)
+    return () => window.clearInterval(id)
+  }, [rotationPaused, n, goTo, timerEpoch])
+
+  const onTouchStart = (_e: ReactTouchEvent) => {
+    setUserTouching(true)
+    setTimerEpoch((e) => e + 1)
   }
-  function handleTouchEnd(_e: ReactTouchEvent<HTMLDivElement>) {
-    setIsTouched(false)
+  const onTouchEnd = () => {
+    setUserTouching(false)
+    setTimerEpoch((e) => e + 1)
   }
 
-  const isPaused = isTouched || isTabHidden
+  const onDotClick = (i: number) => {
+    goTo(i, { fromUser: true, smooth: !reducedMotion })
+  }
 
   return (
     <div
-      className="hero-pillar-marquee mt-6 w-full sm:hidden"
-      data-paused={isPaused ? 'true' : 'false'}
+      ref={rootRef}
+      className="hero-pillar-snap mt-6 w-full sm:hidden"
       role="region"
       aria-roledescription="carousel"
-      aria-label="ViaConnect three step process marquee"
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-      onTouchCancel={handleTouchEnd}
+      aria-label="ViaConnect three step process"
+      data-testid="hero-pillars-mobile-carousel"
+      data-auto-rotate={rotationPaused ? 'paused' : 'on'}
+      data-dwell-ms={HERO_PILLAR_DWELL_MS}
     >
       <style jsx>{`
-        @keyframes hero-pillar-marquee-rtl {
-          from {
-            transform: translate3d(0, 0, 0);
-          }
-          to {
-            transform: translate3d(calc(-3 * ${SLIDE_UNIT_PX}px), 0, 0);
-          }
-        }
-        .hero-pillar-marquee {
-          --hero-marquee-edge-mask: linear-gradient(
-            to right,
-            transparent 0%,
-            #000 8%,
-            #000 92%,
-            transparent 100%
-          );
-          mask-image: var(--hero-marquee-edge-mask);
-          -webkit-mask-image: var(--hero-marquee-edge-mask);
-          overflow: hidden;
-        }
-        .hero-pillar-marquee-track {
+        .hero-pillar-snap-track {
           display: flex;
-          gap: ${CARD_GUTTER_PX}px;
-          width: max-content;
-          padding-left: calc((100vw - ${CARD_WIDTH_PX}px) / 2);
-          padding-right: calc((100vw - ${CARD_WIDTH_PX}px) / 2);
-          animation: hero-pillar-marquee-rtl ${HERO_DURATION_S}s linear infinite;
-          will-change: transform;
+          gap: 12px;
+          width: 100%;
+          max-width: 100vw;
+          overflow-x: auto;
+          overflow-y: hidden;
+          scroll-snap-type: x mandatory;
+          scroll-padding-inline: 7.5vw;
+          -webkit-overflow-scrolling: touch;
+          overscroll-behavior-x: contain;
+          touch-action: pan-x pan-y;
+          scrollbar-width: none;
+          padding-left: 7.5vw;
+          padding-right: 7.5vw;
         }
-        .hero-pillar-marquee:hover .hero-pillar-marquee-track,
-        .hero-pillar-marquee[data-paused='true'] .hero-pillar-marquee-track {
-          animation-play-state: paused;
+        .hero-pillar-snap-track::-webkit-scrollbar {
+          display: none;
         }
-        @media (prefers-reduced-motion: reduce) {
-          .hero-pillar-marquee-track {
-            animation: none !important;
-            transform: translate3d(0, 0, 0);
-          }
+        .hero-pillar-snap-slide {
+          flex: 0 0 85vw;
+          max-width: 85vw;
+          scroll-snap-align: center;
+          scroll-snap-stop: always;
         }
       `}</style>
-      <div className="hero-pillar-marquee-track">
-        {[0, 1, 2].map((setIdx) =>
-          pillars.map((pillar, cardIdx) => {
-            const isClone = setIdx > 0
-            return (
-              <MarqueePillarCard
-                key={`set${setIdx}-card${cardIdx}`}
-                pillar={pillar}
-                realIndex={cardIdx}
-                isClone={isClone}
+
+      <div
+        ref={trackRef}
+        className="hero-pillar-snap-track"
+        data-testid="hero-pillars-mobile-track"
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+        onTouchCancel={onTouchEnd}
+      >
+        {pillars.map((pillar, cardIdx) => (
+          <div
+            key={pillar.numeral}
+            className="hero-pillar-snap-slide"
+            data-pillar-slide={cardIdx}
+          >
+            <SnapPillarCard pillar={pillar} realIndex={cardIdx} />
+          </div>
+        ))}
+      </div>
+
+      <div
+        className="mt-4 flex items-center justify-center gap-2"
+        role="tablist"
+        aria-label="Journey steps"
+        data-testid="hero-pillars-mobile-dots"
+      >
+        {pillars.map((pillar, i) => {
+          const isActive = i === active
+          return (
+            <button
+              key={pillar.numeral}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              aria-label={`Go to step ${i + 1}`}
+              data-testid={`hero-pillars-dot-${i}`}
+              data-active={isActive ? 'true' : 'false'}
+              onClick={() => onDotClick(i)}
+              className="flex h-11 min-h-[44px] min-w-[44px] items-center justify-center"
+            >
+              <span
+                className="block h-2 w-2 rounded-full transition-colors"
+                style={{
+                  background: isActive
+                    ? '#2DA5A0'
+                    : 'rgba(255,255,255,0.28)',
+                }}
               />
-            )
-          })
-        )}
+            </button>
+          )
+        })}
       </div>
     </div>
   )
 }
 
-
-function MarqueePillarCard({
+function SnapPillarCard({
   pillar,
   realIndex,
-  isClone,
 }: {
   pillar: PillarData
   realIndex: number
-  isClone: boolean
 }) {
   const override = getMobileOverride(realIndex)
   return (
     <article
-      role={isClone ? 'presentation' : 'group'}
-      aria-roledescription={isClone ? undefined : 'slide'}
-      aria-hidden={isClone || undefined}
-      style={{ width: CARD_WIDTH_PX, flexShrink: 0 }}
+      role="group"
+      aria-roledescription="slide"
+      aria-label={`${pillar.eyebrow}: ${pillar.headline}`}
+      tabIndex={0}
+      data-testid={`hero-pillar-slide-${realIndex}`}
     >
       <div
         className="relative flex h-full flex-col justify-center overflow-hidden rounded-[18px] border border-white/[0.06]"
@@ -203,31 +355,27 @@ function MarqueePillarCard({
         <span
           aria-hidden="true"
           className="pointer-events-none absolute right-[-2px] top-[-8px] z-[1] select-none font-bold leading-none"
-          style={{
-            fontSize: 82,
-            letterSpacing: '-0.06em',
-            color: 'transparent',
-            WebkitTextStroke: `1px ${override.numeralStroke}`,
-            paintOrder: 'stroke fill',
-            textRendering: 'geometricPrecision',
-            WebkitFontSmoothing: 'antialiased',
-            MozOsxFontSmoothing: 'grayscale',
-            // Defensive iOS hints: forcing the numeral into its own
-            // compositing layer with isolation + translateZ stops the
-            // backdrop-filter blur of the parent card from interfering
-            // with the transparent-fill text rasterization. Sometimes
-            // resolves the "star" artifact at the bottom-right of "2"
-            // without changing visual appearance at all.
-            isolation: 'isolate',
-            transform: 'translateZ(0)',
-          }}
+          style={
+            {
+              fontSize: 82,
+              letterSpacing: '-0.06em',
+              color: 'transparent',
+              WebkitTextStroke: `1px ${override.numeralStroke}`,
+              paintOrder: 'stroke fill',
+              textRendering: 'geometricPrecision',
+              WebkitFontSmoothing: 'antialiased',
+              MozOsxFontSmoothing: 'grayscale',
+              isolation: 'isolate',
+              transform: 'translateZ(0)',
+            } as CSSProperties
+          }
         >
           {pillar.numeral}
         </span>
 
         <div className="relative z-[2] flex flex-col text-left">
           <span
-            aria-label={isClone ? undefined : pillar.ariaChapter}
+            aria-label={pillar.ariaChapter}
             className="font-semibold uppercase"
             style={{
               fontSize: 9,

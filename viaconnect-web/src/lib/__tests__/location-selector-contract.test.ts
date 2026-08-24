@@ -1,0 +1,48 @@
+import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+const selector = readFileSync(
+  resolve(__dirname, "../../components/location/LocationSelector.tsx"),
+  "utf8",
+);
+const combobox = readFileSync(
+  resolve(__dirname, "../../components/location/TypeaheadCombobox.tsx"),
+  "utf8",
+);
+const source = `${selector}\n${combobox}`;
+
+describe("location selector contract", () => {
+  it("uses accessible combobox roles, Hannah free-entry copy, and mobile input tokens", () => {
+    expect(source).toContain('role="combobox"');
+    expect(source).toContain('role="listbox"');
+    expect(source).toContain("Use '");
+    expect(source).toContain("min-h-[44px]");
+    expect(source).toContain("text-base");
+  });
+
+  it("does not contain a literal em dash", () => {
+    expect(selector).not.toMatch(/\u2014/);
+    expect(combobox).not.toMatch(/\u2014/);
+  });
+
+  it("commits typed free-entry on blur and starts with no highlight", () => {
+    expect(combobox).toContain("onBlur");
+    expect(combobox).toContain("useState(-1)");
+  });
+
+  it("selects the highlighted option on Tab instead of blur-committing the typed query", () => {
+    const tabAt = combobox.indexOf('event.key === "Tab"');
+    expect(tabAt).toBeGreaterThan(-1);
+    const tabHandler = combobox.slice(tabAt, tabAt + 280);
+    expect(tabHandler).toContain("activeIndex >= 0");
+    expect(tabHandler).toContain("selectOption(options[activeIndex])");
+    expect(combobox).toContain("skipBlurCommitRef");
+  });
+
+  it("resets local fields when the controlled value is null", () => {
+    expect(selector).toContain("if (!value)");
+    expect(selector).toContain('setCountryQuery("")');
+    expect(selector).toContain('setCityQuery("")');
+  });
+});

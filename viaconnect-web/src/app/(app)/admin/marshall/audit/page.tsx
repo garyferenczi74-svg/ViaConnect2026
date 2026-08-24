@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AuditPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const [recent, verify] = await Promise.all([
     supabase.from("compliance_audit_log").select("id, event_type, actor_type, actor_id, created_at").order("id", { ascending: false }).limit(100),
     supabase.rpc("compliance_verify_audit_chain", { p_limit: 10000 }),

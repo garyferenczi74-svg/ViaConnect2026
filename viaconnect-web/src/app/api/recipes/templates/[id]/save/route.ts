@@ -22,7 +22,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 interface RouteContext {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 interface TemplateIngredient {
@@ -46,7 +46,7 @@ export async function POST(_req: NextRequest, ctx: RouteContext): Promise<NextRe
     return NextResponse.json({ error: 'Recipe library is temporarily unavailable.' }, { status: 503 });
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -57,7 +57,7 @@ export async function POST(_req: NextRequest, ctx: RouteContext): Promise<NextRe
   const { data: template } = await admin
     .from('recipe_public_templates')
     .select('*')
-    .eq('id', ctx.params.id)
+    .eq('id', (await ctx.params).id)
     .eq('is_published', true)
     .maybeSingle();
 

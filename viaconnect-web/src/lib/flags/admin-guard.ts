@@ -37,7 +37,7 @@ export const MARKETING_WRITE_ROLES: ReadonlySet<string> = new Set([
 ]);
 
 export async function requireAdmin(): Promise<AdminCheckResult> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: userData } = await supabase.auth.getUser();
   const user = userData.user;
   if (!user) {

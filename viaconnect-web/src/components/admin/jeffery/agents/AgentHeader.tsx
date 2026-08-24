@@ -3,7 +3,7 @@
 import type { IconType } from '@/types/icon';
 import { useState } from "react";
 import * as Icons from "lucide-react";
-import { Loader2, Pause, Play } from "lucide-react";
+import { Loader2, Pause, Play, Zap } from "lucide-react";
 import AgentStatusBadge from "./AgentStatusBadge";
 import { deriveStatus } from "@/lib/agents/status";
 import type { AgentHeartbeat, AgentRegistryRow } from "@/lib/agents/types";
@@ -19,6 +19,8 @@ export default function AgentHeader({ registry, heartbeat }: AgentHeaderProps) {
   const Icon = ((Icons as unknown) as Record<string, IconType>)[registry.icon_name] ?? Icons.Circle;
   const [busy, setBusy] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [runBusy, setRunBusy] = useState(false);
+  const [runMsg, setRunMsg] = useState<string | null>(null);
 
   const isPaused = status === "paused";
 
@@ -33,6 +35,33 @@ export default function AgentHeader({ registry, heartbeat }: AgentHeaderProps) {
     } finally {
       setBusy(false);
       setConfirmOpen(false);
+    }
+  };
+
+  const runNow = async () => {
+    setRunBusy(true);
+    setRunMsg(null);
+    try {
+      const res = await fetch(`/api/admin/agents/${registry.agent_id}/run-now`, {
+        method: "POST",
+      });
+      const json = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        jobKey?: string;
+        result?: { status?: string };
+        error?: string;
+      };
+      if (!res.ok || !json.ok) {
+        setRunMsg(json.error ?? `Run failed (${res.status})`);
+      } else {
+        setRunMsg(
+          `Ran ${json.jobKey ?? "job"}: ${json.result?.status ?? "ok"}`
+        );
+      }
+    } catch {
+      setRunMsg("Run now request failed");
+    } finally {
+      setRunBusy(false);
     }
   };
 
@@ -52,7 +81,22 @@ export default function AgentHeader({ registry, heartbeat }: AgentHeaderProps) {
         <p className="text-xs text-white/50 mt-1">{registry.role_label}</p>
         <p className="text-xs text-white/40 mt-1 max-w-3xl">{registry.description}</p>
       </div>
-      <div className="ml-auto">
+      <div className="ml-auto flex flex-col items-end gap-2">
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+          <button
+            type="button"
+            onClick={runNow}
+            disabled={runBusy || isPaused}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#2DA5A0]/15 text-[#2DA5A0] hover:bg-[#2DA5A0]/25 disabled:opacity-30"
+            title={isPaused ? "Resume agent before Run now" : "Enqueue primary task now"}
+          >
+            {runBusy ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={1.5} />
+            ) : (
+              <Zap className="w-3.5 h-3.5" strokeWidth={1.5} />
+            )}
+            Run now
+          </button>
         {!confirmOpen ? (
           <button
             onClick={() => setConfirmOpen(true)}
@@ -89,6 +133,12 @@ export default function AgentHeader({ registry, heartbeat }: AgentHeaderProps) {
               Confirm {isPaused ? "resume" : "pause"}
             </button>
           </div>
+        )}
+        </div>
+        {runMsg && (
+          <p className="text-[10px] text-white/50 max-w-xs text-right" role="status">
+            {runMsg}
+          </p>
         )}
       </div>
     </div>

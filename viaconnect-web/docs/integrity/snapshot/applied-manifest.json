@@ -1,0 +1,81 @@
+{
+  "baseline_stamp": "20260707000000",
+  "baseline_note": "Historical version-name disjunction per the drift report (175 unapplied repo files / 180 unmatched applied entries) is accepted history; parity is enforced for entries after this stamp.",
+  "entry_convention": "version is the stamp the database recorded for the apply (MCP applies stamp apply time, not the filename stamp); name records the migration FILENAME STEM per docs/integrity/apply-procedure.md and is the durable join key back to supabase/migrations/.",
+  "entries": [
+    {
+      "version": "20260707225210",
+      "name": "20260707081200_prompt_210d_audit_logs_new_shape_columns"
+    },
+    {
+      "version": "20260707225426",
+      "name": "20260707083321_prompt_210d_daily_scores_pillar_columns"
+    },
+    {
+      "version": "20260707225436",
+      "name": "20260707090000_prompt_210d_daily_scores_upsert_unique_index"
+    },
+    {
+      "version": "20260707225228",
+      "name": "20260707101532_prompt_210d_profiles_phone_timezone"
+    },
+    {
+      "version": "20260707225443",
+      "name": "20260707141023_prompt_210d_orders_items_column"
+    },
+    {
+      "version": "20260707225453",
+      "name": "20260707141124_prompt_210d_subscriptions_table"
+    },
+    {
+      "version": "20260708003638",
+      "name": "20260707150000_prompt_210f_practitioner_core_additive"
+    },
+    {
+      "version": "20260708004716",
+      "name": "20260707150000_prompt_210f_practitioner_core_additive",
+      "note": "Second apply of the same file (idempotent-safe double-apply per remediation-log F1 row); kept as its own entry because the database recorded two versions."
+    },
+    {
+      "version": "20260708003037",
+      "name": "20260707160000_prompt_210d_user_variants_risk_category",
+      "note": "P0-7/7b apply executed 2026-07-07 per docs/integrity/remediation-log.md, but the version stamp was not recorded at apply time; the controller corrects it at the next snapshot regen."
+    },
+    {
+      "version": "20260708011939",
+      "name": "20260707170000_prompt_210f_certification_waitlist_additive"
+    },
+    {
+      "version": "20260708032837",
+      "name": "20260707172000_prompt_210f_practitioner_invitations_additive",
+      "note": "F3b apply executed 2026-07-07, version stamp not captured; the controller corrects it at the next snapshot regen."
+    },
+    {
+      "version": "20260709012307",
+      "name": "20260708090000_prompt_210f_white_label_additive"
+    },
+    {
+      "version": "20260709154004",
+      "name": "20260709000000_prompt_210f_label_design_one_current_unique"
+    },
+    {
+      "version": "pending-verification",
+      "name": "20260710120000_prompt_211a_scan_cadence",
+      "note": "Prompt 219k: migration file present; baseline comment states 211a scan_cadence tables applied to prod 2026-07-12; version stamp not captured at apply time (apply-procedure pending-verification)."
+    },
+    {
+      "version": "pending-verification",
+      "name": "20260710120500_prompt_211a_scan_cadence_nudge_cron",
+      "note": "Prompt 219k: migration file present; baseline comment states 211a scan_cadence tables applied to prod 2026-07-12; version stamp not captured at apply time (apply-procedure pending-verification)."
+    },
+    {
+      "version": "pending-verification",
+      "name": "20260712000500_prompt_211a_scan_cadence_nudge_cron_fix",
+      "note": "Prompt 219k: migration file present; baseline comment states 211a scan_cadence tables applied to prod 2026-07-12; version stamp not captured at apply time (apply-procedure pending-verification)."
+    },
+    {
+      "version": "20260823225944",
+      "name": "20260823224716_prompt_50_hounddog_command_center_schema"
+    }
+  ]
+}

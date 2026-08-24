@@ -15,6 +15,8 @@ import { ARCHETYPE_IDS } from '@/lib/analytics/archetype-engine';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 const bodySchema = z.object({
@@ -25,7 +27,7 @@ const bodySchema = z.object({
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.analytics.archetype-override.auth');
     if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
 

@@ -26,6 +26,8 @@ import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { reviewServerText } from '@/lib/compliance/review-server-text';
 import { getUserJurisdictionCode } from '@/lib/compliance/jurisdiction';
 
+export const dynamic = 'force-dynamic';
+
 // ---------------------------------------------------------------------------
 // Per-user in-memory rate limiter (mirrors /api/ai/[provider] pattern).
 // 15 requests per 60 s per user. No external dependency.
@@ -184,6 +186,7 @@ export async function generateGroundedAnswer(
   question: string,
   domain: ConversationalDomain,
   atoms: Array<{ claim: string }>,
+  kbContextBlock?: string,
 ): Promise<string> {
   const groundingContext =
     atoms.length > 0
@@ -193,10 +196,32 @@ export async function generateGroundedAnswer(
           .join('\n')
       : 'No published knowledge atoms are available for this domain yet.';
 
+  // Prompt 221: Jeffery-approved corpus hits (fail-open when empty / search fails)
+  const kbBlock =
+    kbContextBlock && kbContextBlock.trim().length > 0
+      ? '\n\nKB CORPUS CONTEXT (Jeffery-approved; cite grade; prefer A/B; never invent sources; grade E is not scientific evidence):\n' +
+        kbContextBlock
+      : '';
+
+  // Prompt 225a: honesty-layer rules only when honesty block is present
+  let honestyRules = '';
+  try {
+    const { PEPTIDE_HONESTY_MARKER, PEPTIDE_HONESTY_MODEL_RULES } = await import(
+      '@/lib/hannah/peptideHonestyContext'
+    );
+    if (kbContextBlock?.includes(PEPTIDE_HONESTY_MARKER)) {
+      honestyRules = '\n\n' + PEPTIDE_HONESTY_MODEL_RULES;
+    }
+  } catch {
+    honestyRules = '';
+  }
+
   const system =
     HANNAH_208_QA_DIRECTIVE +
+    honestyRules +
     '\n\nGROUNDING CONTEXT (published knowledge atoms):\n' +
-    groundingContext;
+    groundingContext +
+    kbBlock;
 
   return callHannahQaModel(system, `[Domain: ${domain}]\n\n${question}`);
 }
@@ -208,7 +233,7 @@ export async function generateGroundedAnswer(
 export async function POST(request: Request): Promise<NextResponse> {
   // Auth: resolve the user from the server session.
   // Auth timeout fails CLOSED: a timeout is treated as unauthenticated (401).
-  const supabase = createClient();
+  const supabase = await createClient();
   let user: { id: string } | null = null;
   try {
     const { data } = await withTimeout(
@@ -265,6 +290,35 @@ export async function POST(request: Request): Promise<NextResponse> {
     );
   }
 
+  // Prompt 225: peptide refusal matrix (pre-model, code-enforced).
+  try {
+    const { detectPeptideRefusal } = await import('@/lib/hannah/peptideRefusals');
+    const refusal = detectPeptideRefusal(question.trim());
+    if (refusal) {
+      void captureQuery({
+        userId: user.id,
+        domain: domain,
+        questionText: question.trim(),
+        answerSummary: refusal.answer.slice(0, 500),
+        citedAtomIds: [],
+        coverage: 'partial',
+        tiersUsed: [],
+        gapTopic: 'peptide_education_refusal',
+      }).catch(() => undefined);
+      return NextResponse.json({
+        answer: refusal.answer,
+        coverage: 'partial',
+        emerging: true,
+        refusalCode: refusal.code,
+        educationalOnly: true,
+      });
+    }
+  } catch (err) {
+    safeLog.warn('api.hannah.ask', 'peptide refusal check fail-open', {
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+
   // Retrieve published atoms for the mapped scientific domain.
   // Timeout fails OPEN: on timeout or error, proceed with an empty atom list
   // so the fallback answer is still returned rather than blocking the user.
@@ -289,12 +343,48 @@ export async function POST(request: Request): Promise<NextResponse> {
   const { coverage, tiersUsed } = scoreCoverage(atoms);
   const emerging = coverage !== 'well_covered';
 
+  // Prompt 221: hybrid KB search (Jeffery-approved only). Fail-open empty.
+  let kbContextBlock = '';
+  try {
+    const { formatHitsForHannahContext, kbSearch } = await import('@/lib/kb/search');
+    const hits = await withTimeout(
+      kbSearch(question.trim(), { limit: 6, consumerOnly: true }),
+      4000,
+      'api.hannah.ask.kbSearch',
+    );
+    kbContextBlock = formatHitsForHannahContext(hits);
+  } catch (err) {
+    safeLog.warn('api.hannah.ask', 'kbSearch fail-open empty', {
+      error: err instanceof Error ? err.message : String(err),
+    });
+    kbContextBlock = '';
+  }
+
+  // Prompt 225a: peptide honesty layer + ICTRP coverage disclosure. Fail-open empty.
+  try {
+    const { buildPeptideHonestyContext } = await import(
+      '@/lib/hannah/peptideHonestyContext'
+    );
+    const honestyBlock = await withTimeout(
+      buildPeptideHonestyContext(question.trim()),
+      3000,
+      'api.hannah.ask.peptideHonesty',
+    );
+    if (honestyBlock && honestyBlock.trim().length > 0) {
+      kbContextBlock = [kbContextBlock, honestyBlock].filter(Boolean).join('\n\n');
+    }
+  } catch (err) {
+    safeLog.warn('api.hannah.ask', 'peptideHonesty fail-open empty', {
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+
   // Generate grounded answer. Fail-open: on error use fallback.
   let answer: string;
   let answerFailed = false;
 
   try {
-    answer = await generateGroundedAnswer(question, domain, atoms);
+    answer = await generateGroundedAnswer(question, domain, atoms, kbContextBlock);
   } catch (err) {
     safeLog.error('api.hannah.ask', 'generateGroundedAnswer failed, returning fallback', {
       userId: user.id,

@@ -31,8 +31,9 @@ interface ScanRow {
   connection: { platform: SchedulerPlatform } | null;
 }
 
-export default async function OverridePage({ params }: { params: { id: string } }) {
-  const supabase = createServerClient();
+export default async function OverridePage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 

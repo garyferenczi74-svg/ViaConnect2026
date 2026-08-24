@@ -17,7 +17,7 @@ interface DbRow {
 
 export default async function ManualEvidencePage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const { data } = await supabase
     .from('soc2_manual_evidence')
     .select('id, title, storage_key, sha256, size_bytes, content_type, controls, valid_from, valid_until, source_description, uploaded_by, uploaded_at, signoff_by, signoff_at, superseded_by, archived, archived_at')

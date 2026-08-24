@@ -2,6 +2,8 @@
 // Peptides module (Prompts 195a, 195b). Kept separate from the component so
 // the filter logic and the chip-to-category mapping can be unit tested.
 
+import { matchesSearchPrefix } from '@/lib/peptides/peptideSearchMatch';
+
 export interface CategoryChip {
   catId: string;
   label: string;
@@ -44,17 +46,17 @@ export function filterCatalogCategories<
   P extends FilterablePeptide,
   C extends FilterableCategory<P>,
 >(categories: C[], query: string): C[] {
-  const q = query.trim().toLowerCase();
+  const q = query.trim();
   if (q === '') return categories;
   return categories
     .map((cat) => {
       const products = cat.products.filter(
         (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.type.toLowerCase().includes(q) ||
-          p.mechanism.toLowerCase().includes(q) ||
-          p.category.toLowerCase().includes(q) ||
-          p.targetVariants.some((v) => v.toLowerCase().includes(q)),
+          matchesSearchPrefix(p.name, q) ||
+          matchesSearchPrefix(p.type, q) ||
+          matchesSearchPrefix(p.category, q) ||
+          p.targetVariants.some((v) => matchesSearchPrefix(v, q)),
+        // mechanism is not prefix-searched: long prose caused mid-word false hits
       );
       return { ...cat, products } as C;
     })

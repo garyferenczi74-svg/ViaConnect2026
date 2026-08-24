@@ -11,6 +11,8 @@ import type { VariantSurface } from '@/lib/marketing/variants/types';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 const VALID_SURFACES: VariantSurface[] = ['hero'];
 
 export async function GET(request: NextRequest) {
@@ -22,7 +24,7 @@ export async function GET(request: NextRequest) {
     const surface = url.searchParams.get('surface');
     const includeEnded = url.searchParams.get('includeEnded') === 'true';
 
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data, error } = await withTimeout(
       (async () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -68,7 +70,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify every cited slot is currently active_in_test.
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: variants } = await withTimeout(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (async () => (supabase as any)

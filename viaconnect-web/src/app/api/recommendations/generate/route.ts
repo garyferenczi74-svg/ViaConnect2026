@@ -4,6 +4,8 @@ import { runPostCAQPipeline, type CAQResponses } from '@/lib/recommendation-engi
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Normalize raw assessment_results phase data into the CAQResponses shape
  * the recommendation engine expects. The onboarding form saves each phase

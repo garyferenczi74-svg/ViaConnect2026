@@ -75,7 +75,7 @@ export async function TrustBandSection() {
 
 async function loadActiveContent(): Promise<ActiveContent | null> {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     // Prompt #140a Pattern C (fail-soft): wrap the parallel fetch with an
     // 8000ms timeout. On timeout or error, return null and let the parent
     // section render null gracefully (component already handles this case).

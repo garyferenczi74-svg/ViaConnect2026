@@ -11,6 +11,8 @@ import { createClient } from '@/lib/supabase/server';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 const bodySchema = z.object({
@@ -37,7 +39,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     let user;
     try {

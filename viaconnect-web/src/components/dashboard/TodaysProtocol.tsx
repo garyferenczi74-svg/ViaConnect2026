@@ -1,45 +1,44 @@
 'use client';
 
-// TodaysProtocol — daily supplement schedule grouped by time-of-day with
-// per-item check-off, animated adherence bar, and a 100% confetti burst.
+// TodaysProtocol — Daily Schedule on the Dashboard.
+// Prompt 219d: renders EXCLUSIVELY from the shared schedule read
+// (useDailyScheduleView → GET /api/supplements/schedule). No client-side
+// frequency heuristics for slots; slots and taken state match My Supplements.
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Pill, Sunrise, Sun, Moon, Clock, type LucideIcon } from 'lucide-react';
-import type { DashboardSupplement } from '@/hooks/useUserDashboardData';
-import { useTodaysAdherence } from '@/hooks/useTodaysAdherence';
-import { useTodaysMealsLogged } from '@/hooks/useTodaysMealsLogged';
 import {
-  supplementToSlot,
-  supplementSlug,
-  adherenceKey,
-  type ProtocolSlot,
-} from '@/lib/protocolSlot';
+  ArrowRight,
+  Pill,
+  Sunrise,
+  Sun,
+  Moon,
+  Loader2,
+  type LucideIcon,
+} from 'lucide-react';
+import { useDailyScheduleView } from '@/hooks/useDailyScheduleView';
+import { useTodaysMealsLogged } from '@/hooks/useTodaysMealsLogged';
+import { currentLocalScheduleBucket } from '@/lib/supplements/dailyScheduleShared';
+import type { TimeOfDay } from '@/lib/caq/supplements/timing/types';
 import { ProtocolCheckItem, type ProtocolCheckItemData } from './ProtocolCheckItem';
 import { ProtocolProgressGauge } from './ProtocolProgressGauge';
 
-interface TodaysProtocolProps {
-  supplements: DashboardSupplement[];
-}
-
-interface ScheduleBlock {
-  id: ProtocolSlot;
+interface SlotHeader {
+  id: TimeOfDay;
   label: string;
   icon: LucideIcon;
+  time: string;
   color: string;
-  items: ProtocolCheckItemData[];
 }
 
-const TIME_BLOCKS: { id: ProtocolSlot; label: string; icon: LucideIcon; time: string; color: string }[] = [
+const TIME_BLOCKS: SlotHeader[] = [
   { id: 'morning', label: 'Morning', icon: Sunrise, time: '12 AM to 12 PM', color: '#FBBF24' },
   { id: 'afternoon', label: 'Afternoon', icon: Sun, time: '12 PM to 6 PM', color: '#B75E18' },
-  { id: 'evening', label: 'Night', icon: Moon, time: '6 PM to 12 AM', color: '#60A5FA' },
-  { id: 'asNeeded', label: 'As Needed', icon: Clock, time: 'Flexible', color: '#9CA3AF' },
+  { id: 'evening', label: 'Evening', icon: Moon, time: '6 PM to 12 AM', color: '#60A5FA' },
 ];
 
 function ConfettiBurst() {
-  // 18 small particles bursting outward
   const pieces = Array.from({ length: 18 });
   const colors = ['#2DA5A0', '#22C55E', '#FFB347', '#B75E18', '#A855F7'];
   return (
@@ -67,49 +66,19 @@ function ConfettiBurst() {
   );
 }
 
-export function TodaysProtocol({ supplements }: TodaysProtocolProps) {
-  const { entries, toggle } = useTodaysAdherence();
+/**
+ * Prompt 219d: no longer accepts a separate supplements prop.
+ * Both surfaces share useDailyScheduleView so counts cannot drift.
+ */
+export function TodaysProtocol(_props?: { supplements?: unknown }) {
+  const { view, counts, status, errorMessage, refresh, toggleTaken } =
+    useDailyScheduleView();
   const { loggedCount: mealsDone, mealsTotal } = useTodaysMealsLogged();
   const [showConfetti, setShowConfetti] = useState(false);
 
-  // Build schedule blocks from supplements + adherence state
-  const blocks: ScheduleBlock[] = useMemo(() => {
-    const grouped: Record<ProtocolSlot, ProtocolCheckItemData[]> = {
-      morning: [],
-      afternoon: [],
-      evening: [],
-      asNeeded: [],
-    };
-    supplements.forEach((s) => {
-      const slot = supplementToSlot(s);
-      const slug = supplementSlug(s);
-      const item: ProtocolCheckItemData = {
-        id: s.id,
-        productName: s.product_name || s.supplement_name || 'Supplement',
-        productSlug: slug,
-        deliveryForm: s.dosage_form,
-        dosage: s.dosage,
-        isCompleted: !!entries[adherenceKey(slug, slot)],
-      };
-      grouped[slot].push(item);
-    });
-    return TIME_BLOCKS.filter((b) => grouped[b.id].length > 0).map((b) => ({
-      id: b.id,
-      label: b.label,
-      icon: b.icon,
-      color: b.color,
-      items: grouped[b.id],
-    }));
-  }, [supplements, entries]);
+  const { total: totalCount, completed: completedCount, adherencePercent } =
+    counts;
 
-  const totalCount = blocks.reduce((sum, b) => sum + b.items.length, 0);
-  const completedCount = blocks.reduce(
-    (sum, b) => sum + b.items.filter((i) => i.isCompleted).length,
-    0,
-  );
-  const adherencePercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
-
-  // Trigger confetti once when reaching 100%
   useEffect(() => {
     if (totalCount > 0 && completedCount === totalCount) {
       setShowConfetti(true);
@@ -118,7 +87,6 @@ export function TodaysProtocol({ supplements }: TodaysProtocolProps) {
     }
   }, [completedCount, totalCount]);
 
-  // Adherence bar color
   const barColor =
     adherencePercent === 100
       ? '#22C55E'
@@ -128,7 +96,33 @@ export function TodaysProtocol({ supplements }: TodaysProtocolProps) {
           ? '#F59E0B'
           : '#EF4444';
 
-  if (supplements.length === 0) {
+  if (status === 'loading') {
+    return (
+      <section className="flex min-h-[200px] items-center justify-center rounded-2xl border border-white/10 bg-[#1E3054]/60 p-6">
+        <Loader2 className="h-5 w-5 animate-spin text-[#2DA5A0]" strokeWidth={1.5} />
+        <span className="ml-2 text-sm text-white/40">Loading today&apos;s schedule...</span>
+      </section>
+    );
+  }
+
+  if (status === 'unavailable') {
+    return (
+      <section className="rounded-2xl border border-white/10 bg-[#1E3054]/60 p-6 text-center">
+        <p className="text-sm text-white/60">
+          {errorMessage ?? 'Schedule unavailable. Retry when ready.'}
+        </p>
+        <button
+          type="button"
+          onClick={refresh}
+          className="mt-3 min-h-[44px] rounded-xl border border-[#2DA5A0]/40 px-4 py-2 text-sm text-[#2DA5A0]"
+        >
+          Retry
+        </button>
+      </section>
+    );
+  }
+
+  if (totalCount === 0) {
     return (
       <section className="rounded-2xl border border-white/10 bg-[#1E3054]/60 backdrop-blur-md p-6 text-center">
         <Pill className="mx-auto mb-3 h-8 w-8 text-[#2DA5A0]/60" strokeWidth={1.5} />
@@ -147,11 +141,30 @@ export function TodaysProtocol({ supplements }: TodaysProtocolProps) {
     );
   }
 
+  const currentSlotId = currentLocalScheduleBucket();
+  const headerConfig = TIME_BLOCKS.find((b) => b.id === currentSlotId)!;
+  const slotCards = view[currentSlotId] ?? [];
+  const items: ProtocolCheckItemData[] = slotCards.map((c) => ({
+    id: c.slot_id,
+    productName: c.name,
+    productSlug: c.user_supplement_id,
+    deliveryForm: null,
+    dosage: c.dose,
+    isCompleted: c.taken,
+  }));
+  const blockDone = items.filter((i) => i.isCompleted).length;
+  const Icon = headerConfig.icon;
+
   return (
-    <section className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#1E3054]/60 backdrop-blur-md">
+    <section
+      className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#1E3054]/60 backdrop-blur-md"
+      data-testid="dashboard-daily-schedule"
+      data-schedule-total={totalCount}
+      data-schedule-completed={completedCount}
+      data-schedule-adherence={adherencePercent}
+    >
       <AnimatePresence>{showConfetti && <ConfettiBurst />}</AnimatePresence>
 
-      {/* Header */}
       <div className="flex items-center justify-between border-b border-white/5 px-4 py-3 sm:px-5 sm:py-4">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#2DA5A0]/30 bg-gradient-to-br from-[#1A2744] to-[#2DA5A0]">
@@ -170,7 +183,6 @@ export function TodaysProtocol({ supplements }: TodaysProtocolProps) {
         />
       </div>
 
-      {/* Adherence bar */}
       <div className="border-b border-white/5 px-4 py-3 sm:px-5">
         <div className="mb-1.5 flex items-center justify-between text-[11px]">
           <span className="text-white/50">Today&apos;s adherence</span>
@@ -187,67 +199,75 @@ export function TodaysProtocol({ supplements }: TodaysProtocolProps) {
             style={{ backgroundColor: barColor }}
           />
         </div>
+        <p className="mt-1.5 text-[10px] text-white/35">
+          {completedCount} of {totalCount} total today
+          {' · '}
+          Morning {counts.perSlot.morning.completed}/{counts.perSlot.morning.total}
+          {' · '}
+          Afternoon {counts.perSlot.afternoon.completed}/{counts.perSlot.afternoon.total}
+          {' · '}
+          Evening {counts.perSlot.evening.completed}/{counts.perSlot.evening.total}
+        </p>
       </div>
 
-      {/* Blocks — single container for the current time slot only; items
-          are the ones classified for that slot (no cross slot fallback) */}
       <div className="flex-1 space-y-3 p-4 sm:p-5">
-        {(() => {
-          // 00:00-11:59 → morning, 12:00-17:59 → afternoon, 18:00-23:59 → night
-          const hour = new Date().getHours();
-          const currentSlotId: ProtocolSlot =
-            hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
-          const headerConfig = TIME_BLOCKS.find((b) => b.id === currentSlotId)!;
-          const currentBlock = blocks.find((b) => b.id === currentSlotId);
-          const items = currentBlock?.items ?? [];
-          const Icon = headerConfig.icon;
-          const blockDone = items.filter((i) => i.isCompleted).length;
-
-          return (
-            <div className="overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.02]">
-              <div className="flex items-center gap-2.5 border-b border-white/5 px-3 py-2.5 sm:px-4">
-                <div
-                  className="flex h-7 w-7 items-center justify-center rounded-lg"
-                  style={{
-                    background: `${headerConfig.color}22`,
-                    border: `1px solid ${headerConfig.color}44`,
-                  }}
-                >
-                  <Icon className="h-3.5 w-3.5" strokeWidth={1.5} style={{ color: headerConfig.color }} />
-                </div>
-                <div className="flex-1">
-                  <h4 className="text-xs font-semibold" style={{ color: headerConfig.color }}>
-                    {headerConfig.label}
-                    <span className="ml-1.5 text-[10px] font-normal" style={{ color: headerConfig.color, opacity: 0.7 }}>· now</span>
-                  </h4>
-                  <p className="text-[10px]" style={{ color: headerConfig.color, opacity: 0.7 }}>
-                    {blockDone} of {items.length} done
-                  </p>
-                </div>
-              </div>
-              {items.length > 0 ? (
-                <div className="divide-y divide-white/[0.04]">
-                  {items.map((item) => (
-                    <ProtocolCheckItem
-                      key={item.id}
-                      item={item}
-                      onToggle={(slug) => toggle(slug, currentSlotId, totalCount)}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="flex items-center justify-center py-8 px-4">
-                  <p className="text-xs text-white/30 text-center">
-                    No supplements scheduled for {headerConfig.label.toLowerCase()}
-                  </p>
-                </div>
-              )}
+        <div className="overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.02]">
+          <div className="flex items-center gap-2.5 border-b border-white/5 px-3 py-2.5 sm:px-4">
+            <div
+              className="flex h-7 w-7 items-center justify-center rounded-lg"
+              style={{
+                background: `${headerConfig.color}22`,
+                border: `1px solid ${headerConfig.color}44`,
+              }}
+            >
+              <Icon className="h-3.5 w-3.5" strokeWidth={1.5} style={{ color: headerConfig.color }} />
             </div>
-          );
-        })()}
+            <div className="flex-1">
+              <h4 className="text-xs font-semibold" style={{ color: headerConfig.color }}>
+                {headerConfig.label}
+                <span
+                  className="ml-1.5 text-[10px] font-normal"
+                  style={{ color: headerConfig.color, opacity: 0.7 }}
+                >
+                  · now
+                </span>
+              </h4>
+              <p className="text-[10px]" style={{ color: headerConfig.color, opacity: 0.7 }}>
+                {blockDone} of {items.length} done
+              </p>
+            </div>
+          </div>
+          {items.length > 0 ? (
+            <div className="divide-y divide-white/[0.04]">
+              {items.map((item) => {
+                const card = slotCards.find((c) => c.slot_id === item.id);
+                return (
+                  <ProtocolCheckItem
+                    key={item.id}
+                    item={item}
+                    onToggle={() => {
+                      if (!card) return;
+                      void toggleTaken({
+                        slotId: card.slot_id,
+                        userSupplementId: card.user_supplement_id,
+                        timeOfDay: card.time_of_day,
+                        nextTaken: !card.taken,
+                      });
+                    }}
+                  />
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex items-center justify-center px-4 py-8">
+              <p className="text-center text-xs text-white/30">
+                No supplements scheduled for {headerConfig.label.toLowerCase()}
+              </p>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Footer link */}
       <div className="border-t border-white/5 p-4 sm:p-5">
         <Link
           href="/supplements"

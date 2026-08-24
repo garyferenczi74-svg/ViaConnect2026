@@ -202,7 +202,7 @@ export async function POST(request: Request) {
       return jsonError('config_missing', USER_MESSAGE_FOR_MANUAL_FALLBACK, 503);
     }
 
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: userData } = await supabase.auth.getUser();
     const userId: string | null = userData?.user?.id ?? null;
 

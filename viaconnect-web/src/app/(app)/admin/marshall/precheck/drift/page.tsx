@@ -8,7 +8,7 @@ const THRESHOLD = 3;
 
 export default async function DriftPatternPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const since = new Date(Date.now() - WINDOW_DAYS * 86_400_000).toISOString();
   const { data } = await supabase
     .from("precheck_good_faith_events")

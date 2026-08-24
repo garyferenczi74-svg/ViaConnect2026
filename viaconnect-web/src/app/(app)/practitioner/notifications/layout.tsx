@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Bell, MessageSquare, Smartphone, Moon, Send } from "lucide-react";
 
 export default async function PractitionerNotificationLayout({ children }: { children: React.ReactNode }) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 

@@ -1,45 +1,41 @@
 "use client";
 
 /**
- * AdvisorChat (Prompt #60b — main shared chat surface)
+ * AdvisorChat (Prompt #60b — main shared chat surface; Prompt 219F)
  *
- * Shared component used by all 3 portals (consumer / practitioner / naturopath).
- * Each portal wraps it with role-specific accentColor / icon / suggested prompts.
- *
- * Mobile: full-width, sticky composer at bottom, 12px gutters.
- * Desktop: max-w-3xl centered, accent-colored send button.
- *
- * Streams responses from /api/advisor/chat as plain UTF-8 chunks (not SSE
- * events) — the API route uses ReadableStream and we read it the same way.
+ * Streams responses from /api/advisor/chat. Fail-open UX: preserves the
+ * user's message in the input on error, shows an honest error bubble with
+ * Retry. Loads persisted history on mount. Chips send real messages.
  */
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Send, Sparkles, Loader2 } from "lucide-react";
+import { Send, Sparkles, Loader2, RotateCcw } from "lucide-react";
 import MessageBubble from "./MessageBubble";
 import SuggestedPrompts from "./SuggestedPrompts";
 import RatingButtons from "./RatingButtons";
+import { extractMsgIdMarker } from "@/lib/jeffery/advisor-msg-marker";
 
 type AdvisorRole = "consumer" | "practitioner" | "naturopath";
 
 interface AdvisorChatProps {
   role: AdvisorRole;
   patientId?: string;
-  accentColor: string;        // Teal / Blue / Green
+  accentColor: string;
   title: string;
   subtitle: string;
   icon: React.ReactNode;
   suggestedPrompts: string[];
-  /**
-   * Optional message to auto-send once on mount. Used by entry points like
-   * "View Full Report with Hannah" to pre-populate a personalized report.
-   */
   initialPrompt?: string;
 }
 
 interface ChatMessage {
   role: "user" | "assistant";
   content: string;
+  id?: string | null;
+  isError?: boolean;
+  /** When set, Retry re-sends this user text. */
+  retryText?: string;
 }
 
 export default function AdvisorChat({
@@ -55,70 +51,176 @@ export default function AdvisorChat({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const didAutoSendRef = useRef(false);
+  const historyLoadedRef = useRef(false);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
 
+  // Load persisted history once
   useEffect(() => {
-    if (!initialPrompt || didAutoSendRef.current) return;
-    didAutoSendRef.current = true;
-    void sendMessage(initialPrompt);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialPrompt]);
-
-  const sendMessage = async (override?: string) => {
-    const userMsg = (override ?? input).trim();
-    if (!userMsg || isStreaming) return;
-    setInput("");
-    setMessages(prev => [...prev, { role: "user", content: userMsg }]);
-    setIsStreaming(true);
-
-    try {
-      const res = await fetch("/api/advisor/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userMsg, role, patientId }),
-      });
-
-      if (!res.ok) {
-        const errPayload = await res.json().catch(() => ({ error: "Request failed" }));
-        setMessages(prev => [...prev, { role: "assistant", content: errPayload.error ?? "Something went wrong." }]);
-        setIsStreaming(false);
-        return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/advisor/history?role=${encodeURIComponent(role)}&limit=40`, {
+          credentials: "same-origin",
+        });
+        if (!res.ok) return;
+        const data = (await res.json()) as {
+          messages?: Array<{ id: string; role: string; content: string }>;
+        };
+        if (cancelled || !data.messages?.length) return;
+        setMessages(
+          data.messages
+            .filter((m) => m.role === "user" || m.role === "assistant")
+            .map((m) => ({
+              role: m.role as "user" | "assistant",
+              content: m.content,
+              id: m.id,
+            }))
+        );
+      } catch {
+        /* fail-open empty */
+      } finally {
+        if (!cancelled) {
+          historyLoadedRef.current = true;
+          setHistoryLoading(false);
+        }
       }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [role]);
 
-      const reader = res.body?.getReader();
-      const decoder = new TextDecoder();
-      let assistantMsg = "";
+  const sendMessage = useCallback(
+    async (override?: string) => {
+      const userMsg = (override ?? input).trim();
+      if (!userMsg || isStreaming) return;
 
-      // Add an empty assistant bubble we'll progressively fill
-      setMessages(prev => [...prev, { role: "assistant", content: "" }]);
+      // Clear input only after we accept the send
+      setInput("");
+      setMessages((prev) => [...prev, { role: "user", content: userMsg }]);
+      setIsStreaming(true);
 
-      while (reader) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        assistantMsg += chunk;
-        setMessages(prev => {
+      try {
+        const res = await fetch("/api/advisor/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({ message: userMsg, role, patientId }),
+        });
+
+        if (!res.ok) {
+          const errPayload = await res.json().catch(() => ({ error: null as string | null }));
+          const errText =
+            (errPayload && typeof errPayload.error === "string" && errPayload.error) ||
+            (res.status === 429
+              ? "You are sending messages a bit quickly. Please wait a moment and try again."
+              : res.status === 401
+                ? "Please sign in again to chat with Hannah."
+                : "Something went wrong sending your message. Your text is ready to retry.");
+
+          // Preserve user text in input for retry
+          setInput(userMsg);
+          setMessages((prev) => [
+            ...prev,
+            {
+              role: "assistant",
+              content: errText,
+              isError: true,
+              retryText: userMsg,
+            },
+          ]);
+          setIsStreaming(false);
+          // Focus input so keyboard stays usable on mobile
+          requestAnimationFrame(() => inputRef.current?.focus());
+          return;
+        }
+
+        const reader = res.body?.getReader();
+        const decoder = new TextDecoder();
+        let assistantMsg = "";
+
+        setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+
+        while (reader) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const chunk = decoder.decode(value, { stream: true });
+          assistantMsg += chunk;
+          const { clean, messageId } = extractMsgIdMarker(assistantMsg);
+          setMessages((prev) => {
+            const updated = [...prev];
+            updated[updated.length - 1] = {
+              role: "assistant",
+              content: clean,
+              id: messageId ?? updated[updated.length - 1]?.id,
+            };
+            return updated;
+          });
+        }
+
+        // Final strip of marker if it arrived in last chunk
+        const final = extractMsgIdMarker(assistantMsg);
+        setMessages((prev) => {
           const updated = [...prev];
-          updated[updated.length - 1] = { role: "assistant", content: assistantMsg };
+          if (updated.length && updated[updated.length - 1].role === "assistant") {
+            updated[updated.length - 1] = {
+              role: "assistant",
+              content: final.clean,
+              id: final.messageId ?? updated[updated.length - 1].id,
+            };
+          }
           return updated;
         });
+      } catch {
+        setInput(userMsg);
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: "I could not reach the server. Your message is ready to retry.",
+            isError: true,
+            retryText: userMsg,
+          },
+        ]);
+        requestAnimationFrame(() => inputRef.current?.focus());
+      } finally {
+        setIsStreaming(false);
       }
-    } catch {
-      setMessages(prev => [...prev, { role: "assistant", content: "I encountered an issue. Please try again or contact support." }]);
-    } finally {
-      setIsStreaming(false);
-    }
+    },
+    [input, isStreaming, role, patientId]
+  );
+
+  useEffect(() => {
+    if (!initialPrompt || didAutoSendRef.current || historyLoading) return;
+    didAutoSendRef.current = true;
+    void sendMessage(initialPrompt);
+  }, [initialPrompt, historyLoading, sendMessage]);
+
+  const handleRetry = (text: string) => {
+    // Remove the error bubble and the preceding user bubble so we do not duplicate
+    setMessages((prev) => {
+      const next = [...prev];
+      // Drop trailing error assistant + matching user if present
+      if (next.length && next[next.length - 1]?.isError) next.pop();
+      if (next.length && next[next.length - 1]?.role === "user" && next[next.length - 1].content === text) {
+        next.pop();
+      }
+      return next;
+    });
+    void sendMessage(text);
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)] md:h-[calc(100vh-80px)] bg-[#1A2744]">
+    <div className="flex flex-col h-[calc(100vh-64px)] md:h-[calc(100vh-80px)] bg-[#1A2744] max-w-full overflow-x-hidden">
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 md:px-6 py-4 border-b border-white/[0.08]">
+      <div className="flex items-center gap-3 px-4 md:px-6 py-4 border-b border-white/[0.08] min-w-0">
         <div
           className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
           style={{ background: `${accentColor}20`, border: `1px solid ${accentColor}33` }}
@@ -132,12 +234,17 @@ export default function AdvisorChat({
       </div>
 
       {/* Messages area */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 md:px-6 py-4 space-y-4">
-        {messages.length === 0 && !isStreaming ? (
+      <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden px-4 md:px-6 py-4 space-y-4">
+        {historyLoading ? (
+          <div className="flex items-center justify-center h-full text-white/40 text-sm gap-2">
+            <Loader2 className="w-4 h-4 animate-spin" strokeWidth={1.5} />
+            <span>Loading conversation...</span>
+          </div>
+        ) : messages.length === 0 && !isStreaming ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col items-center justify-center h-full gap-6"
+            className="flex flex-col items-center justify-center h-full gap-6 px-1"
           >
             <div
               className="w-16 h-16 rounded-2xl flex items-center justify-center"
@@ -147,20 +254,40 @@ export default function AdvisorChat({
             </div>
             <div className="text-center">
               <p className="text-white/80 text-base md:text-lg font-medium">How can I help today?</p>
-              <p className="text-white/40 text-xs md:text-sm mt-1">Powered by Hannah™</p>
+              <p className="text-white/40 text-xs md:text-sm mt-1">Powered by Hannah</p>
             </div>
-            <SuggestedPrompts prompts={suggestedPrompts} onPick={(p) => sendMessage(p)} accentColor={accentColor} />
+            <SuggestedPrompts
+              prompts={suggestedPrompts}
+              onPick={(p) => sendMessage(p)}
+              accentColor={accentColor}
+            />
           </motion.div>
         ) : (
           <>
             {messages.map((m, i) => (
-              <div key={i}>
+              <div key={m.id ?? `m-${i}`} className="min-w-0">
                 <MessageBubble role={m.role} content={m.content} accentColor={accentColor} />
-                {m.role === "assistant" && i === messages.length - 1 && !isStreaming && m.content && (
-                  <div className="flex justify-start mt-1 ml-1">
-                    <RatingButtons conversationId={null} />
+                {m.isError && m.retryText && !isStreaming && (
+                  <div className="flex justify-start mt-2 ml-1">
+                    <button
+                      type="button"
+                      onClick={() => handleRetry(m.retryText!)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-white/80 border border-white/15 hover:bg-white/10 transition-colors"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" strokeWidth={1.5} />
+                      Retry
+                    </button>
                   </div>
                 )}
+                {m.role === "assistant" &&
+                  !m.isError &&
+                  i === messages.length - 1 &&
+                  !isStreaming &&
+                  m.content && (
+                    <div className="flex justify-start mt-1 ml-1">
+                      <RatingButtons conversationId={m.id ?? null} />
+                    </div>
+                  )}
               </div>
             ))}
             {isStreaming && messages[messages.length - 1]?.role === "user" && (
@@ -169,34 +296,46 @@ export default function AdvisorChat({
                 <span>Thinking...</span>
               </div>
             )}
-            {!isStreaming && messages[messages.length - 1]?.role === "assistant" && (
+            {!isStreaming && messages[messages.length - 1]?.role === "assistant" && !messages[messages.length - 1]?.isError && (
               <div className="pt-2">
-                <SuggestedPrompts prompts={suggestedPrompts} onPick={(p) => sendMessage(p)} accentColor={accentColor} />
+                <SuggestedPrompts
+                  prompts={suggestedPrompts}
+                  onPick={(p) => sendMessage(p)}
+                  accentColor={accentColor}
+                />
               </div>
             )}
           </>
         )}
       </div>
 
-      {/* Composer */}
-      <div className="px-4 md:px-6 py-3 md:py-4 border-t border-white/[0.08]">
-        <div
-          className="flex items-center gap-2 bg-[#1E3054] rounded-xl border border-white/[0.08] focus-within:border-white/20 transition-colors px-3 py-2 md:px-4 md:py-3"
-        >
+      {/* Composer — sticky; safe-area for mobile keyboard */}
+      <div className="px-4 md:px-6 py-3 md:py-4 border-t border-white/[0.08] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div className="flex items-center gap-2 bg-[#1E3054] rounded-xl border border-white/[0.08] focus-within:border-white/20 transition-colors px-3 py-2 md:px-4 md:py-3 min-w-0">
           <input
+            ref={inputRef}
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                void sendMessage();
+              }
+            }}
             placeholder="Ask your advisor..."
             disabled={isStreaming}
-            className="flex-1 bg-transparent text-white text-sm placeholder:text-white/30 outline-none disabled:opacity-50"
+            enterKeyHint="send"
+            className="flex-1 min-w-0 bg-transparent text-white text-sm placeholder:text-white/30 outline-none disabled:opacity-50"
           />
           <button
-            onClick={() => sendMessage()}
+            type="button"
+            onClick={() => void sendMessage()}
             disabled={!input.trim() || isStreaming}
-            className="p-2 rounded-lg transition-all disabled:opacity-30"
-            style={{ background: input.trim() && !isStreaming ? `${accentColor}33` : "transparent" }}
+            className="p-2 rounded-lg transition-all disabled:opacity-30 flex-shrink-0"
+            style={{
+              background: input.trim() && !isStreaming ? `${accentColor}33` : "transparent",
+            }}
             aria-label="Send"
           >
             <Send className="w-4 h-4" style={{ color: accentColor }} strokeWidth={1.5} />

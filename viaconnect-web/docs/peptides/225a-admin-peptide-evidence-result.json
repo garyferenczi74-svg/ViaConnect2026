@@ -1,0 +1,63 @@
+﻿{
+    "ok":  true,
+    "prompt":  "225a",
+    "phase":  "admin-peptide-evidence",
+    "totals":  {
+                   "peptidesWithHonesty":  19,
+                   "kbTrials":  44,
+                   "kbPublications":  56,
+                   "evidenceLinks":  62
+               },
+    "sourceStatus":  [
+                         {
+                             "sourceSystem":  "ctgov",
+                             "status":  "live"
+                         },
+                         {
+                             "sourceSystem":  "firecrawl_oa",
+                             "status":  "live"
+                         },
+                         {
+                             "sourceSystem":  "ictrp",
+                             "status":  "pending_access"
+                         },
+                         {
+                             "sourceSystem":  "pubmed",
+                             "status":  "live"
+                         },
+                         {
+                             "sourceSystem":  "regulatory_watch",
+                             "status":  "live"
+                         }
+                     ],
+    "tileCount":  12,
+    "sample":  [
+                   {
+                       "slug":  "afamelanotide",
+                       "trialsLinked":  0,
+                       "publicationsLinked":  4,
+                       "trialsRegistered":  0,
+                       "publicationsHuman":  2,
+                       "hasGap":  true
+                   },
+                   {
+                       "slug":  "cjc-1295-no-dac",
+                       "trialsLinked":  0,
+                       "publicationsLinked":  4,
+                       "trialsRegistered":  0,
+                       "publicationsHuman":  3,
+                       "hasGap":  true
+                   },
+                   {
+                       "slug":  "edu-bpc157",
+                       "trialsLinked":  0,
+                       "publicationsLinked":  4,
+                       "trialsRegistered":  0,
+                       "publicationsHuman":  1,
+                       "hasGap":  true
+                   }
+               ],
+    "doseLeakBlocked":  true,
+    "canonicalFraming":  "Registration is not completion. Completion is not publication. Publication is not a positive result.",
+    "uiPath":  "/admin/peptide-evidence"
+}

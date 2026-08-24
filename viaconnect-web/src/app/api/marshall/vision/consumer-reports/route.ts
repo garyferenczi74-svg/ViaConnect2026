@@ -25,6 +25,8 @@ import { submitConsumerReport, ConsumerIntakeError } from '@/lib/marshall/vision
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 export const maxDuration = 60;
 
@@ -91,7 +93,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Optional user context (if the consumer is logged in).
-    const sessionClient = createServerClient();
+    const sessionClient = await createServerClient();
     const { data: { user } } = await withTimeout(sessionClient.auth.getUser(), 5000, 'api.marshall.vision.consumer-reports.auth');
 
     const supabaseWriter = createAdminClient();

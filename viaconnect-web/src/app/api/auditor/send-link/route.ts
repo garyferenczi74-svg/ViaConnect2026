@@ -19,6 +19,8 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 interface Body {
@@ -74,7 +76,7 @@ export async function POST(req: NextRequest) {
     // Uses Supabase's already-configured email path. This does NOT modify any
     // auth template or SMTP wiring; those are explicitly locked per Gary's
     // memo. signInWithOtp triggers Supabase to email the user the link.
-    const session = createServerClient();
+    const session = await createServerClient();
     const { error } = await withTimeout(
       session.auth.signInWithOtp({
         email,

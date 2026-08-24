@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 export default async function CollectorsPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const { data } = await supabase
     .from("hounddog_collector_state")
     .select("id, enabled, last_tick_at, last_cursor, rate_limit_requests, rate_limit_per_seconds, tos_version_pinned, provider_kind, notes")

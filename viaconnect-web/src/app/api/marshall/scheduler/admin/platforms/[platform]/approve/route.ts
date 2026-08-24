@@ -17,6 +17,8 @@ import { SCHEDULER_PLATFORMS, type SchedulerPlatform } from '@/lib/marshall/sche
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 const ADMIN_ROLES = new Set(['admin', 'superadmin', 'compliance_admin']);
@@ -27,14 +29,15 @@ interface Body {
   rejectionReason?: string;
 }
 
-export async function POST(req: NextRequest, { params }: { params: { platform: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ platform: string }> }) {
+  const params = await props.params;
   try {
     const platform = (params.platform ?? '').trim();
     if (!SCHEDULER_PLATFORMS.includes(platform as SchedulerPlatform)) {
       return NextResponse.json({ error: 'invalid_platform' }, { status: 400 });
     }
 
-    const supabase = createServerClient();
+    const supabase = await createServerClient();
     const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.marshall.scheduler.admin.approve.auth');
     if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

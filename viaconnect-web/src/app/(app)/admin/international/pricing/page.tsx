@@ -19,7 +19,7 @@ function fmt(cents: number, currency: string) {
 }
 
 export default async function Page() {
-  const sb = createClient();
+  const sb = await createClient();
   const { data } = await sb
     .from("master_skus_market_pricing")
     .select("sku, market_code, currency_code, msrp_cents, is_available_in_market, status, tax_code")

@@ -17,6 +17,8 @@ import { analyzeVariants, type ParsedSnpRow, type InterpretedVariant } from '@/l
 import { interpretMethylationByRsid } from '@/lib/genetics/extractMethylationReport';
 import { PANEL_ORDER, type PanelKey } from '@/lib/genetics/panelLabels';
 
+export const dynamic = 'force-dynamic';
+
 const MAX_ROWS = 5000;
 const GENOTYPE_RE = /^[ACGT]{2}$/i;
 
@@ -30,7 +32,7 @@ interface ConfirmBody {
 }
 
 export async function POST(request: Request): Promise<NextResponse> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: 'Please sign in to save.' }, { status: 401 });
@@ -83,6 +85,25 @@ export async function POST(request: Request): Promise<NextResponse> {
       brandedProductCode: null,
       sourceFilename,
     });
+    // Prompt 214d: genetics landing recompile via chain entry only (fail-open).
+    try {
+      const { compileViaChain } = await import('@/lib/hannah/compilation/chainEntry');
+      void compileViaChain({ userId: user.id, reason: 'event_genetics' });
+    } catch {
+      /* fail-open */
+    }
+    // Prompt 219H: platform event for continuous digests / coalescing.
+    try {
+      const { emitPlatformEvent } = await import('@/lib/jeffery/ops/eventBus');
+      void emitPlatformEvent({
+        eventType: 'genetics_confirmed',
+        userId: user.id,
+        payload: { saved: result.variantCount, uploadId: result.uploadId },
+        coalesceKey: `genetics_confirmed:${user.id}`,
+      });
+    } catch {
+      /* fail-open */
+    }
     return NextResponse.json({
       saved: result.variantCount,
       panelCounts: result.panelCounts,

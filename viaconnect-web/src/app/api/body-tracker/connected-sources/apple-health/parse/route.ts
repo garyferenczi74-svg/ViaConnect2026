@@ -105,7 +105,7 @@ async function postBatch(
 }
 
 export async function POST(request: Request): Promise<Response> {
-  const supabase = createClient();
+  const supabase = await createClient();
   let importId = "";
   try {
     const authResult = (await withTimeout(supabase.auth.getUser(), 5000, "auth")) as {

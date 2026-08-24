@@ -11,14 +11,17 @@ import { scanAndRecordMilestonesForPractitioner } from '@/lib/practitioner-refer
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 export async function POST(
   _request: NextRequest,
-  { params }: { params: { practitionerId: string } },
+  props: { params: Promise<{ practitionerId: string }> }
 ): Promise<NextResponse> {
+  const params = await props.params;
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user } } = await withTimeout(
       supabase.auth.getUser(),
       5000,

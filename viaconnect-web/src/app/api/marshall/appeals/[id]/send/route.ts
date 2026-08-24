@@ -20,12 +20,10 @@ export const dynamic = 'force-dynamic';
 
 const COMPLIANCE_ROLES = new Set(['admin', 'superadmin', 'compliance_officer', 'compliance_admin']);
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { id: string } },
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
-    const sb = createClient();
+    const sb = await createClient();
     const { data: { user } } = await withTimeout(sb.auth.getUser(), 5000, 'api.marshall.appeals.send.auth');
     if (!user) return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

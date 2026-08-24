@@ -21,6 +21,8 @@ import crypto from 'node:crypto';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 const schema = z.object({
@@ -54,7 +56,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const ip_hash = dnt ? null : hash(ipRaw);
   const ua_hash = dnt ? null : hash(uaRaw);
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const sb = supabase as any;
 
   let clickId, error;

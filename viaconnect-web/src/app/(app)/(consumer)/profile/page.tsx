@@ -26,6 +26,36 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { PageTransition, StaggerChild, MotionCard } from "@/lib/motion";
+import { formatStructuredLocation } from "@/lib/location/format";
+import type { StructuredLocation } from "@/lib/location/types";
+
+function locationFromProfile(profile: Profile | null): StructuredLocation | null {
+  if (!profile) {
+    return null;
+  }
+  const row = profile as {
+    city?: string | null;
+    subdivision_name?: string | null;
+    subdivision_code?: string | null;
+    country_name?: string | null;
+    country_code?: string | null;
+    location_is_free_entry?: boolean | null;
+  };
+  const city = row.city?.trim() ?? "";
+  const countryName = row.country_name?.trim() ?? "";
+  const countryCode = row.country_code?.trim() ?? "";
+  if (!city && !countryName && !countryCode) {
+    return null;
+  }
+  return {
+    city,
+    subdivisionName: row.subdivision_name ?? null,
+    subdivisionCode: row.subdivision_code ?? null,
+    countryName,
+    countryCode,
+    isFreeEntry: row.location_is_free_entry === true,
+  };
+}
 
 const supabase = createClient();
 
@@ -213,6 +243,12 @@ export default function ProfilePage() {
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 />
+                <div className="space-y-1.5">
+                  <label className="block text-sm font-medium text-gray-400">Location</label>
+                  <div className="min-h-[44px] px-3 flex items-center rounded-lg text-base text-gray-500 bg-white/[0.02] border border-white/[0.06]">
+                    {formatStructuredLocation(locationFromProfile(profile)) || "Not provided"}
+                  </div>
+                </div>
                 <Button
                   size="sm"
                   variant="ghost"
@@ -229,6 +265,11 @@ export default function ProfilePage() {
                   { icon: Phone, label: "Phone", value: formData.phone || "Not provided" },
                   { icon: Calendar, label: "Date of Birth", value: formData.date_of_birth || "Not provided" },
                   { icon: MapPin, label: "Address", value: formData.address || "Not provided" },
+                  {
+                    icon: MapPin,
+                    label: "Location",
+                    value: formatStructuredLocation(locationFromProfile(profile)) || "Not provided",
+                  },
                 ].map((field) => (
                   <div key={field.label} className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-lg bg-white/[0.04] flex items-center justify-center flex-shrink-0">

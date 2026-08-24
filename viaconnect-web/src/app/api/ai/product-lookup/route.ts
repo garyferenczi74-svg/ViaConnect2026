@@ -4,6 +4,8 @@ import { withAbortTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
 import { getCircuitBreaker, isCircuitBreakerError } from "@/lib/utils/circuit-breaker";
 
+export const dynamic = 'force-dynamic';
+
 const claudeBreaker = getCircuitBreaker("claude-api");
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || "";
@@ -63,7 +65,7 @@ export async function POST(request: Request) {
   }
 
   // Check cache first
-  const supabase = createClient();
+  const supabase = await createClient();
   const normalized = query.toLowerCase().trim();
   const { data: cached } = await supabase
     .from("product_lookup_cache")

@@ -15,7 +15,7 @@ const TILES = [
 
 export default async function PrecheckOverviewPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
   const [sessionsRes, receiptsRes, goodFaithRes, badFaithRes, disputesRes] = await Promise.all([
     supabase.from("precheck_sessions").select("id", { count: "exact", head: true }).gte("created_at", since),

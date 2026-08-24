@@ -1,4 +1,4 @@
-// Bilateral asymmetry analysis — QuadraScan-style but derived from
+// Bilateral asymmetry analysis (QuadraScan-style) but derived from
 // pairs of measurements rather than full gait analysis.
 
 import type { AsymmetryCheck, AsymmetryReport, ExtractedMeasurements } from './types';
@@ -30,10 +30,11 @@ export function analyzeAsymmetry(m: ExtractedMeasurements): AsymmetryReport {
   };
 }
 
-function check(name: string, left: number, right: number, unit: string): AsymmetryCheck {
-  if (!Number.isFinite(left) || !Number.isFinite(right) || left <= 0 || right <= 0) {
+function check(name: string, left: number | null, right: number | null, unit: string): AsymmetryCheck {
+  // Guard: null (UNKNOWN) or non-positive -> not measured, skip asymmetry comparison
+  if (left === null || right === null || !Number.isFinite(left) || !Number.isFinite(right) || left <= 0 || right <= 0) {
     return {
-      name, leftValue: left, rightValue: right, unit,
+      name, leftValue: left ?? 0, rightValue: right ?? 0, unit,
       balanceRatioPct: 0,
       status: 'balanced',
       recommendation: 'Not measured',

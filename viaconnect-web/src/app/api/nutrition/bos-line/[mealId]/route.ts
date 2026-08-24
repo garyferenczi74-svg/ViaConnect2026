@@ -36,7 +36,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 interface RouteContext {
-  params: { mealId: string };
+  params: Promise<{ mealId: string }>;
 }
 
 const CACHE_HEADER = 'private, max-age=300';
@@ -52,13 +52,13 @@ export async function GET(_req: NextRequest, ctx: RouteContext): Promise<NextRes
     });
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const mealId = ctx.params.mealId;
+  const mealId = (await ctx.params).mealId;
   if (typeof mealId !== 'string' || mealId.length === 0) {
     return NextResponse.json({ error: 'Meal not found' }, { status: 404 });
   }

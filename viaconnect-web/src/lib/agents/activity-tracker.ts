@@ -14,8 +14,9 @@ import type {
   AgentHeartbeat,
   AgentId,
 } from "./types";
-import { AGENT_IDS } from "./types";
+import { AGENT_IDS, resolveAgentId } from "./types";
 import { AGENT_REGISTRY } from "./registry";
+import { safeLog } from "@/lib/utils/safe-log";
 
 // ── Event-type mapping ──────────────────────────────────────────────────────
 // ultrathink_agent_events.event_type enum:
@@ -64,20 +65,22 @@ export interface UltrathinkRegistryRow {
   last_heartbeat_at: string | null;
   consecutive_misses: number;
   is_active: boolean;
+  expected_period_minutes?: number | null;
 }
 
 export function mapUltrathinkEvent(row: UltrathinkEventRow): AgentActivityEvent | null {
-  if (!AGENT_IDS.includes(row.agent_name as AgentId)) return null;
+  const agentId = resolveAgentId(row.agent_name);
+  if (!agentId) return null;
   const message = typeof row.payload?.message === "string"
     ? (row.payload.message as string)
-    : humanizeEvent(row.event_type, row.agent_name);
+    : humanizeEvent(row.event_type, agentId);
   return {
     id: row.id,
-    agent_id: row.agent_name as AgentId,
+    agent_id: agentId,
     event_type: EVENT_TYPE_MAP[row.event_type] ?? "info",
     severity: SEVERITY_MAP[row.severity] ?? "info",
     message,
-    metadata: row.payload ?? {},
+    metadata: { ...row.payload, source_agent_name: row.agent_name },
     correlation_id: row.run_id,
     user_id: null,
     created_at: row.created_at,
@@ -85,14 +88,36 @@ export function mapUltrathinkEvent(row: UltrathinkEventRow): AgentActivityEvent 
 }
 
 export function mapUltrathinkRegistry(row: UltrathinkRegistryRow): AgentHeartbeat | null {
-  if (!AGENT_IDS.includes(row.agent_name as AgentId)) return null;
+  const agentId = resolveAgentId(row.agent_name);
+  if (!agentId) return null;
+  // Disabled registry rows are paused (ACC Pause control).
+  const status =
+    row.is_active === false
+      ? "paused"
+      : (HEALTH_STATUS_MAP[row.health_status] ?? "idle");
+  // Never invent epoch timestamps: missing heartbeat stays empty so deriveStatus
+  // returns idle, not permanent Stale (219J).
+  const last =
+    row.last_heartbeat_at && row.last_heartbeat_at.length > 0
+      ? row.last_heartbeat_at
+      : "";
+  const period =
+    typeof row.expected_period_minutes === "number" &&
+    Number.isFinite(row.expected_period_minutes) &&
+    row.expected_period_minutes > 0
+      ? row.expected_period_minutes
+      : undefined;
   return {
-    agent_id: row.agent_name as AgentId,
-    status: HEALTH_STATUS_MAP[row.health_status] ?? "idle",
-    last_heartbeat: row.last_heartbeat_at ?? new Date(0).toISOString(),
-    health_score: row.health_status === "healthy" ? 100 : row.health_status === "degraded" ? 60 : 0,
+    agent_id: agentId,
+    status: status as AgentHeartbeat["status"],
+    last_heartbeat: last,
+    health_score:
+      status === "healthy" ? 100 : status === "degraded" ? 60 : status === "paused" ? 0 : 0,
     error_count_24h: row.consecutive_misses ?? 0,
-    metadata: {},
+    metadata: {
+      source_agent_name: row.agent_name,
+      expected_period_minutes: period,
+    },
   };
 }
 
@@ -114,41 +139,99 @@ export async function fetchRecentEvents(
   agentId: AgentId,
   limit: number = 100,
 ): Promise<AgentActivityEvent[]> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const client = db as any;
-  const { data } = await client
-    .from("ultrathink_agent_events")
-    .select("id, agent_name, event_type, run_id, payload, severity, created_at")
-    .eq("agent_name", agentId)
-    .order("created_at", { ascending: false })
-    .limit(limit);
-  return ((data ?? []) as UltrathinkEventRow[])
-    .map(mapUltrathinkEvent)
-    .filter((e): e is AgentActivityEvent => e !== null);
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const client = db as any;
+    const { data, error } = await client
+      .from("ultrathink_agent_events")
+      .select("id, agent_name, event_type, run_id, payload, severity, created_at")
+      .eq("agent_name", agentId)
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    if (error) {
+      safeLog.warn("agents.activity", "fetchRecentEvents query failed open", {
+        agentId,
+        code: error.code,
+      });
+      return [];
+    }
+    return ((data ?? []) as UltrathinkEventRow[])
+      .map(mapUltrathinkEvent)
+      .filter((e): e is AgentActivityEvent => e !== null);
+  } catch (err) {
+    safeLog.warn("agents.activity", "fetchRecentEvents threw fail-open", {
+      agentId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return [];
+  }
 }
 
 export async function fetchHeartbeats(db: SupabaseClient): Promise<AgentHeartbeat[]> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const client = db as any;
-  const { data } = await client
-    .from("ultrathink_agent_registry")
-    .select("agent_name, display_name, health_status, last_heartbeat_at, consecutive_misses, is_active")
-    .in("agent_name", AGENT_IDS);
-  return ((data ?? []) as UltrathinkRegistryRow[])
-    .map(mapUltrathinkRegistry)
-    .filter((h): h is AgentHeartbeat => h !== null);
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const client = db as any;
+    const { data, error } = await client
+      .from("ultrathink_agent_registry")
+      .select(
+        "agent_name, display_name, health_status, last_heartbeat_at, consecutive_misses, is_active, expected_period_minutes"
+      )
+      .in("agent_name", [...AGENT_IDS]);
+    if (error) {
+      safeLog.warn("agents.activity", "fetchHeartbeats query failed open", {
+        code: error.code,
+      });
+      return [];
+    }
+    return ((data ?? []) as Array<UltrathinkRegistryRow & { expected_period_minutes?: number | null }>)
+      .map((row) => {
+        const hb = mapUltrathinkRegistry(row);
+        if (!hb) return null;
+        if (row.expected_period_minutes != null) {
+          hb.metadata = {
+            ...hb.metadata,
+            expected_period_minutes: row.expected_period_minutes,
+          };
+        }
+        return hb;
+      })
+      .filter((h): h is AgentHeartbeat => h !== null);
+  } catch (err) {
+    safeLog.warn("agents.activity", "fetchHeartbeats threw fail-open", {
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return [];
+  }
 }
 
 export async function fetchCurrentTasks(db: SupabaseClient): Promise<AgentCurrentTask[]> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const client = db as any;
-  const { data } = await client
-    .from("jeffery_agent_panel_tasks")
-    .select("*")
-    .in("agent_id", AGENT_IDS)
-    .in("task_status", ["queued", "running", "blocked"])
-    .order("updated_at", { ascending: false });
-  return (data ?? []) as AgentCurrentTask[];
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const client = db as any;
+    const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    // Active queue + completed last 24h so ACC "Tasks done (24h)" is real
+    const { data, error } = await client
+      .from("jeffery_agent_panel_tasks")
+      .select("*")
+      .in("agent_id", [...AGENT_IDS])
+      .or(
+        `task_status.in.(queued,running,blocked),and(task_status.eq.completed,completed_at.gte.${since24h})`
+      )
+      .order("updated_at", { ascending: false })
+      .limit(200);
+    if (error) {
+      safeLog.warn("agents.activity", "fetchCurrentTasks query failed open", {
+        code: error.code,
+      });
+      return [];
+    }
+    return (data ?? []) as AgentCurrentTask[];
+  } catch (err) {
+    safeLog.warn("agents.activity", "fetchCurrentTasks threw fail-open", {
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return [];
+  }
 }
 
 // ── Server-side write helpers (used by Jeffery/Arnold edge functions) ──────

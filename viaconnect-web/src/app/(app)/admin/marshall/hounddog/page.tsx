@@ -16,7 +16,7 @@ const TILES = [
 
 export default async function HounddogBridgeLanding() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
   const [signalsRes, reviewRes, takedownRes, handlesRes, strikesRes] = await Promise.all([
     supabase.from("social_signals").select("id", { count: "exact", head: true }).gte("captured_at", since),

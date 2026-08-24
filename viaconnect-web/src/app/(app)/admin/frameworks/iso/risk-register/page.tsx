@@ -24,7 +24,7 @@ interface Row {
 
 export default async function RiskRegisterPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const { data } = await supabase
     .from('iso_risk_register')
     .select('id, risk_ref, threat, vulnerability, likelihood, impact, inherent_risk, treatment_option, residual_likelihood, residual_impact, residual_risk, status, identified_at, next_review_date')

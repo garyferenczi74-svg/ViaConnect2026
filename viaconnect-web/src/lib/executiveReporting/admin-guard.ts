@@ -21,7 +21,7 @@ export type ExecReportingAdminCheck =
 const ADMIT: ReadonlySet<ExecAdminRole> = new Set(['admin', 'exec_reporting_admin', 'cfo', 'ceo']);
 
 export async function requireExecReportingAdmin(): Promise<ExecReportingAdminCheck> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: userData } = await supabase.auth.getUser();
   const user = userData.user;
   if (!user) {

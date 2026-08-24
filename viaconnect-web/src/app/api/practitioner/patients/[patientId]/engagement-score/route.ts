@@ -11,14 +11,14 @@ import { createClient } from '@/lib/supabase/server';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
-export async function GET(
-  request: Request,
-  { params }: { params: { patientId: string } },
-) {
+export const dynamic = 'force-dynamic';
+
+export async function GET(request: Request, props: { params: Promise<{ patientId: string }> }) {
+  const params = await props.params;
   const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
 
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     let user;
     try {

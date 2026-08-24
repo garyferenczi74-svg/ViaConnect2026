@@ -102,6 +102,10 @@ export interface FormaVision3DAvatarProps {
   // Called once from Canvas onCreated (GL context ready). Absent means the
   // metric is omitted from the quality snapshot. Fire-and-forget.
   onFirstInteractive?: () => void;
+  // Prompt 211a W1: forwarded into FormaVisionCanvas so the clip recorder can flip
+  // the r3f frameloop to "always" during a recording (captureStream needs painted
+  // frames). Absent / "demand" keeps the byte-identical demand loop.
+  frameloopMode?: 'always' | 'demand';
 }
 
 export function FormaVision3DAvatar({
@@ -123,6 +127,7 @@ export function FormaVision3DAvatar({
   onRenderError,
   onOrbitEnd,
   onFirstInteractive,
+  frameloopMode,
 }: FormaVision3DAvatarProps) {
   // Probe WebGL once per mount. When it is unavailable the component renders
   // nothing and signals the parent to fall back to 2D; the three bundle is never
@@ -172,6 +177,7 @@ export function FormaVision3DAvatar({
           onBudgetMissed={onBudgetMissed}
           onOrbitEnd={onOrbitEnd}
           onFirstInteractive={onFirstInteractive}
+          frameloopMode={frameloopMode}
         />
       </AvatarErrorBoundary>
     </div>

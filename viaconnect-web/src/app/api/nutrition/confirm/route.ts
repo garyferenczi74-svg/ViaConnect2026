@@ -13,6 +13,8 @@ import { resolveMealFatBreakdown, loadFatSourceById } from '@/lib/nutrition/fat-
 import { scoreMealForServerInsert } from '@/lib/gordon/scoreMealForServerInsert';
 import { computeMealKcal, isMacroBearing } from '@/lib/nutrition/compute-meal-kcal';
 
+export const dynamic = 'force-dynamic';
+
 interface MaybeEdits {
   serving_description?: string;
   calories?: number;
@@ -36,7 +38,7 @@ const NUMERIC_FIELDS = [
 
 export async function POST(req: NextRequest) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -202,6 +204,22 @@ export async function POST(req: NextRequest) {
       await recomputeNutritionDimension({ userId: user.id, date: row.logged_at });
     } catch (bosErr) {
       safeLog.warn('api.nutrition.confirm', 'bos recompute failed', { error: bosErr, userId: user.id });
+    }
+
+    // Prompt 219H: platform event bus (idempotent coalesce) for continuous digests.
+    try {
+      const { emitPlatformEvent } = await import('@/lib/jeffery/ops/eventBus');
+      await emitPlatformEvent({
+        eventType: 'meal_logged',
+        userId: user.id,
+        payload: { logId, logged_at: row.logged_at },
+        coalesceKey: `meal_logged:${user.id}`,
+      });
+    } catch (evtErr) {
+      safeLog.warn('api.nutrition.confirm', 'platform event failed open', {
+        error: evtErr,
+        userId: user.id,
+      });
     }
 
     return NextResponse.json({ ok: true });

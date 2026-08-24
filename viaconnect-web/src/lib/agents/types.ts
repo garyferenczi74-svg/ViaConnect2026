@@ -1,23 +1,82 @@
 /**
- * Agent activity panel types (Prompt #126).
+ * Agent activity panel types (Prompt #126 + #214 + #214a).
  * Source-of-truth heartbeat/registry data comes from ultrathink_agent_registry
  * and ultrathink_agent_events; these types present the spec's canonical shape
  * to the UI via the mapper in activity-tracker.ts.
  */
 
-// 2026-06-12: marshall (compliance, Prompt #119/#129a) and lex (litigation,
-// Prompt #116/#129a) join the fleet per Gary's directive.
-export type AgentId = "jeffery" | "hannah" | "michelangelo" | "sherlock" | "arnold" | "marshall" | "lex";
+/**
+ * Prompt 214c thirteen-agent roster (canonical).
+ * Kelsey is retired as a live AgentId; historical slug maps via aliases to lex.
+ * Thanos = Peptide Education; Elysium = My Genetics (genetics handoff from Arnold).
+ */
+export type AgentId =
+  | "jeffery"
+  | "hannah"
+  | "gordon"
+  | "arnold"
+  | "michelangelo"
+  | "hounddog"
+  | "sherlock"
+  | "marshall"
+  | "lex"
+  | "security_advisor"
+  | "performance_advisor"
+  | "thanos"
+  | "elysium";
 
 export const AGENT_IDS: readonly AgentId[] = [
   "jeffery",
   "hannah",
-  "michelangelo",
-  "sherlock",
+  "gordon",
   "arnold",
+  "michelangelo",
+  "hounddog",
+  "sherlock",
   "marshall",
   "lex",
+  "security_advisor",
+  "performance_advisor",
+  "thanos",
+  "elysium",
 ] as const;
+
+/**
+ * Maps registry / event agent_name values onto panel AgentIds.
+ * Includes legacy Kelsey → Lex and name-mismatch aliases from Prompt 214.
+ */
+export const AGENT_NAME_ALIASES: Readonly<Record<string, AgentId>> = {
+  jeffery: "jeffery",
+  jeffery_master: "jeffery",
+  hannah: "hannah",
+  gordon: "gordon",
+  gordan: "gordon",
+  arnold: "arnold",
+  michelangelo: "michelangelo",
+  hounddog: "hounddog",
+  hound_dog: "hounddog",
+  marshall_hounddog: "hounddog",
+  sherlock: "sherlock",
+  sherlock_research_hub: "sherlock",
+  marshall: "marshall",
+  lex: "lex",
+  // Prompt 214a: Kelsey retired; historical events still resolve for ACC.
+  kelsey: "lex",
+  security_advisor: "security_advisor",
+  performance_advisor: "performance_advisor",
+  security: "security_advisor",
+  performance: "performance_advisor",
+  // Prompt 214c
+  thanos: "thanos",
+  elysium: "elysium",
+  my_genetics: "elysium",
+  peptide_education: "thanos",
+};
+
+export function resolveAgentId(raw: string): AgentId | null {
+  const key = raw.trim().toLowerCase();
+  return AGENT_NAME_ALIASES[key] ?? null;
+}
 
 export type AgentStatus = "healthy" | "degraded" | "error" | "idle" | "paused" | "stale";
 

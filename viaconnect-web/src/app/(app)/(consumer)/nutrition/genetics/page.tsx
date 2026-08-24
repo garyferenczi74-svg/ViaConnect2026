@@ -16,6 +16,7 @@ import { createClient } from '@/lib/supabase/server';
 import { safeLog } from '@/lib/utils/safe-log';
 import { withTimeout } from '@/lib/utils/with-timeout';
 import type { SupabaseLike } from '@/lib/nutrition/genetics/recommendations';
+import { panelKeyAliasesFor } from '@/lib/genetics/panelKeyAliases';
 import { BackToNutritionLink } from '@/components/nutrition/hub/BackToNutritionLink';
 import { NutritionGeneticsTabs } from '@/components/nutrition/genetics/NutritionGeneticsTabs';
 import { NutritionByGeneticsPanel } from '@/components/protocol/NutritionByGeneticsPanel';
@@ -63,6 +64,37 @@ async function hasActiveFindings(
   }
 }
 
+// GeneX360 NutrigenDX variants already on the account. Accept remapped
+// spellings (nutrition, nutrigen-dx, nutrigen_dx) so a remapped row still
+// registers. Read-only presence check; meal calc is unchanged.
+async function hasNutrigenDxVariants(db: SupabaseLike, userId: string): Promise<boolean> {
+  try {
+    const result = (await withTimeout(
+      db
+        .from('user_variants')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .in('panel_key', panelKeyAliasesFor('nutrition')),
+      TIMEOUT_MS,
+      'nutrition.genetics.page.variants',
+    )) as { count: number | null; error: { message?: string } | null };
+    if (result.error) {
+      safeLog.warn('nutrition.genetics.page', 'variants count failed', {
+        userId,
+        error: result.error.message ?? 'supabase error response',
+      });
+      return false;
+    }
+    return (result.count ?? 0) > 0;
+  } catch (err) {
+    safeLog.warn('nutrition.genetics.page', 'variants count failed', {
+      userId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return false;
+  }
+}
+
 // Any undelivered genex360 purchase in a paid-ish state means NutrigenDX
 // results are pending. Fail open to false.
 async function hasPendingNutrigenDx(db: SupabaseLike, userId: string): Promise<boolean> {
@@ -95,19 +127,22 @@ async function hasPendingNutrigenDx(db: SupabaseLike, userId: string): Promise<b
 }
 
 export default async function NutritionGeneticsPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
   const db = supabase as unknown as SupabaseLike;
-  const [hasNutrigenDx, hasUploaded, nutrigenDxPending] = await Promise.all([
-    hasActiveFindings(db, user.id, 'nutrigendx'),
-    hasActiveFindings(db, user.id, 'uploaded_test'),
-    hasPendingNutrigenDx(db, user.id),
-  ]);
+  const [hasNutrigenDxFindings, hasNutrigenDxVars, hasUploaded, nutrigenDxPending] =
+    await Promise.all([
+      hasActiveFindings(db, user.id, 'nutrigendx'),
+      hasNutrigenDxVariants(db, user.id),
+      hasActiveFindings(db, user.id, 'uploaded_test'),
+      hasPendingNutrigenDx(db, user.id),
+    ]);
 
+  const hasNutrigenDx = hasNutrigenDxFindings || hasNutrigenDxVars;
   const hasResults = hasNutrigenDx || hasUploaded;
   const sourceLabel = hasNutrigenDx ? 'NutrigenDX' : hasUploaded ? 'Uploaded Test' : 'No Results Yet';
 

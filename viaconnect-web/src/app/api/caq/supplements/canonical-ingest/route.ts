@@ -58,7 +58,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, reason: 'invalid_body' }, { status: 200 });
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: userData } = await supabase.auth.getUser();
   if (!userData?.user?.id) {
     return NextResponse.json({ ok: false, reason: 'unauthorized' }, { status: 200 });

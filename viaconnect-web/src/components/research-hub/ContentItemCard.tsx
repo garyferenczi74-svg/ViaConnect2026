@@ -35,6 +35,14 @@ export function ContentItemCard({ item, onBookmark, onDismiss, onRead }: Content
     if (onRead) onRead(item);
   };
 
+  const meta = item.raw_metadata ?? {};
+  const isSignal =
+    meta.lane === 'signal' ||
+    item.tags.includes('signal-lane') ||
+    item.tags.includes('commentary');
+  const tier =
+    typeof meta.source_tier === 'number' ? meta.source_tier : null;
+
   return (
     <motion.article
       layout
@@ -42,13 +50,22 @@ export function ContentItemCard({ item, onBookmark, onDismiss, onRead }: Content
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -4, scale: 0.98 }}
       transition={{ duration: 0.2 }}
-      className={`group flex flex-col gap-3 rounded-2xl border border-white/10 bg-[#1E3054] p-4 transition-all hover:border-white/20 sm:p-5 ${
-        item.is_read ? 'opacity-70' : ''
-      }`}
+      data-lane={isSignal ? 'signal' : 'evidence'}
+      className={`group flex flex-col gap-3 rounded-2xl border p-4 transition-all sm:p-5 ${
+        isSignal
+          ? 'border-[#B75E18]/35 bg-[#1E3054] hover:border-[#B75E18]/55'
+          : 'border-white/10 bg-[#1E3054] hover:border-white/20'
+      } ${item.is_read ? 'opacity-70' : ''}`}
     >
       {/* Header: relevance + meta */}
       <div className="flex items-start justify-between gap-3">
-        <RelevanceBadge score={item.relevance_score} />
+        {isSignal ? (
+          <span className="rounded-full border border-[#B75E18]/40 bg-[#B75E18]/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#B75E18]">
+            Commentary signal
+          </span>
+        ) : (
+          <RelevanceBadge score={item.relevance_score} />
+        )}
         <div className="flex flex-shrink-0 items-center gap-1 text-[10px] text-white/35">
           <Clock className="h-3 w-3" strokeWidth={1.5} />
           {formatRelative(item.published_at)}
@@ -72,6 +89,11 @@ export function ContentItemCard({ item, onBookmark, onDismiss, onRead }: Content
         <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 font-semibold text-white/60">
           {item.source_name}
         </span>
+        {tier != null ? (
+          <span className="rounded-full border border-white/15 px-2 py-0.5 text-white/50">
+            Tier {tier}
+          </span>
+        ) : null}
         {item.matched_domains.slice(0, 3).map((d) => (
           <span
             key={d}

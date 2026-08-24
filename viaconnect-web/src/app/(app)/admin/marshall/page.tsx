@@ -23,7 +23,7 @@ const TILES = [
 
 export default async function MarshallLandingPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
   const [p0Res, p1Res, openRes, escapesRes] = await Promise.all([

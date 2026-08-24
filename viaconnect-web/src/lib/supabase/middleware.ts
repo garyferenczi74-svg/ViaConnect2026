@@ -50,30 +50,46 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // Auth check. Timeout 2000ms; on timeout/error treat as unauthenticated.
-  let user: Awaited<ReturnType<typeof supabase.auth.getUser>>["data"]["user"] | null = null;
+  // Auth check. Prompt 208 incident (2026-06-26): getUser() makes a network
+  // round-trip to the Auth server on EVERY request, so a brief Supabase Auth
+  // latency spike pushed it past the 2000ms timeout and the fail-open treated
+  // signed-in users as unauthenticated, 307-redirecting every authenticated
+  // request (including POST /api/nutrition/analyze-text) to /login. getClaims()
+  // verifies the JWT signature LOCALLY against the project's asymmetric ES256
+  // signing keys via the WebCrypto API, with no per-request network call, so a
+  // transient Auth latency spike can no longer log everyone out. It still
+  // refreshes an expired token through the configured cookie handlers above (the
+  // documented Next.js SSR pattern; removing it would randomly log users out).
+  // Tradeoff: getClaims does not detect a server-side logout/revocation until
+  // the access token expires; admin gating below still reads profiles and
+  // sensitive API routes re-check with getUser. The timeout is kept only as a
+  // safety net for the rare token-refresh path; on timeout/error treat as
+  // unauthenticated and let the public-route allowlist decide.
+  let claims:
+    | NonNullable<Awaited<ReturnType<typeof supabase.auth.getClaims>>["data"]>["claims"]
+    | null = null;
   try {
     const { data, error } = await withTimeout(
-      supabase.auth.getUser(),
+      supabase.auth.getClaims(),
       2000,
-      "middleware.auth.getUser"
+      "middleware.auth.getClaims"
     );
     if (error) {
-      safeLog.warn("middleware.auth", "getUser returned error", {
+      safeLog.warn("middleware.auth", "getClaims returned error", {
         path: request.nextUrl.pathname,
         error,
       });
     } else {
-      user = data.user;
+      claims = data?.claims ?? null;
     }
   } catch (error) {
     if (isTimeoutError(error)) {
-      safeLog.warn("middleware.auth", "getUser timed out, treating as unauthenticated", {
+      safeLog.warn("middleware.auth", "getClaims timed out, treating as unauthenticated", {
         path: request.nextUrl.pathname,
         error,
       });
     } else {
-      safeLog.error("middleware.auth", "getUser failed unexpectedly", {
+      safeLog.error("middleware.auth", "getClaims failed unexpectedly", {
         path: request.nextUrl.pathname,
         error,
       });
@@ -119,6 +135,9 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/api/pricing/") ||
     // Anonymous public APIs (referral click, brand storefront, etc.)
     pathname.startsWith("/api/public/") ||
+    // Prompt 223: signup location typeahead. Auth is not required because
+    // signup is logged out. Do not move this under /api/public/.
+    pathname.startsWith("/api/location/") ||
     // Marshall compliance surfaces (Prompt #119): public DSAR form, trust
     // page, incident history, and the DSAR submit endpoint.
     pathname === "/trust-compliance" ||
@@ -162,7 +181,8 @@ export async function updateSession(request: NextRequest) {
   // If not authenticated and trying to access protected route:
   // - API routes return JSON 401 (Capacitor/fetch/webhooks must not get HTML /login)
   // - Page routes redirect to /login with redirectTo
-  if (!user && !isPublicRoute) {
+  // Main uses getClaims(); claims is null when unauthenticated.
+  if (!claims && !isPublicRoute) {
     if (pathname.startsWith("/api/")) {
       safeLog.info("middleware.auth", "unauthenticated API request", {
         path: pathname,
@@ -187,7 +207,7 @@ export async function updateSession(request: NextRequest) {
   }
 
   // If authenticated, enforce role-based routing
-  if (user) {
+  if (claims) {
     // Source of truth for role is profiles.role (same as every /api/admin route).
     // user_metadata.role is kept as a fallback ONLY for non-admin routing
     // decisions; admin gating strictly requires a profiles.role='admin' row so
@@ -201,7 +221,7 @@ export async function updateSession(request: NextRequest) {
           const { data: profileRow } = await supabase
             .from("profiles")
             .select("role")
-            .eq("id", user.id)
+            .eq("id", claims.sub)
             .maybeSingle();
           return profileRow?.role as string | undefined;
         })(),
@@ -212,20 +232,20 @@ export async function updateSession(request: NextRequest) {
       if (isTimeoutError(error)) {
         safeLog.warn("middleware.role", "profiles role lookup timed out, falling back to user_metadata.role", {
           path: pathname,
-          userId: user.id,
+          userId: claims.sub,
           error,
         });
       } else {
         safeLog.error("middleware.role", "profiles role lookup failed", {
           path: pathname,
-          userId: user.id,
+          userId: claims.sub,
           error,
         });
       }
       profileRole = undefined;
     }
 
-    const rawRole = profileRole ?? (user.user_metadata?.role as string | undefined);
+    const rawRole = profileRole ?? (claims.user_metadata?.role as string | undefined);
     const role = normalizeRole(rawRole);
 
     // Redirect authenticated users away from auth pages

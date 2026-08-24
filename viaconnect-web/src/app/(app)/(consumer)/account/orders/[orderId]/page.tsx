@@ -267,7 +267,7 @@ export default function OrderDetailPage() {
                           : "—"}
                       </p>
                       <Link
-                        href={`/shop/peptides/${it.productSlug}`}
+                        href={`/peptide-protocol`}
                         className="text-[10px] text-[#2DA5A0] hover:underline mt-1 inline-block"
                       >
                         View in Shop →

@@ -13,7 +13,7 @@ interface Row {
 }
 
 export default async function Page() {
-  const sb = createClient();
+  const sb = await createClient();
   const { data } = await sb.from("notification_sms_opt_in_log")
     .select("log_id, occurred_at, practitioner_id, action, phone_number, message_sid, reply_body")
     .order("occurred_at", { ascending: false }).limit(500);

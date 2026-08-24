@@ -21,7 +21,7 @@ interface IncidentRow { id: string; incident_id: string; title: string }
 
 export default async function BreachesPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
 
   const [breachRes, incidentRes] = await Promise.all([
     supabase

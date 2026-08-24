@@ -21,7 +21,7 @@ interface FullDescriptionLinkProps {
 
 export function FullDescriptionLink({ slug, categorySlug }: FullDescriptionLinkProps) {
     const isTestingKit = categorySlug === 'genex360'
-    const label = isTestingKit ? 'Full Panel Details' : 'Full Description'
+    const label = isTestingKit ? 'Full Panel Details' : 'Description'
 
     return (
         <Link

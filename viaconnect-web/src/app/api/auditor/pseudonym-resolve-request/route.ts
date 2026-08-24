@@ -21,6 +21,8 @@ import { extractRequestMetadata } from '@/lib/soc2/auditor/accessLog';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 const PSEUDONYM_RE = /^[A-Z2-7]{26}$/;
@@ -34,7 +36,7 @@ interface Body {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = createServerClient();
+    const session = await createServerClient();
     const { data: { user } } = await withTimeout(session.auth.getUser(), 5000, 'api.auditor.pseudonym.auth');
     if (!user || !user.email) {
       return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });

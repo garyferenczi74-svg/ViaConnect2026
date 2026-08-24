@@ -47,7 +47,7 @@ export async function generatePractitionerInvitation(
     input.expiresAt ??
     new Date(Date.now() + DEFAULT_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { error } = await (supabase as any)
     .from('practitioner_invitations')
     .insert({
@@ -88,7 +88,7 @@ export async function validateInvitationToken(
     return { valid: false, error: 'Malformed token.' };
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await (supabase as any).rpc(
     'validate_practitioner_invitation',
     { p_token: token, p_claim: options.claim ?? false },

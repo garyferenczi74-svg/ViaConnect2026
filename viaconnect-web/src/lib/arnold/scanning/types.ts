@@ -6,6 +6,12 @@ import type { PoseId } from '../types';
 
 export type { BiologicalSex, PoseId };
 
+/** Body region identifiers used for circumference prediction and calibration. */
+export type Region =
+  | 'neck' | 'shoulder' | 'chest' | 'under_bust'
+  | 'waist_natural' | 'waist_navel' | 'hip'
+  | 'bicep' | 'forearm' | 'thigh' | 'calf';
+
 export interface Point2D {
   x: number;
   y: number;
@@ -52,12 +58,56 @@ export interface PoseSilhouette {
 export type ConfidenceLevel = 'high' | 'moderate' | 'low';
 
 export interface MeasuredValue {
-  cm: number;
+  /** Circumference in cm, or null when the measurement cannot be determined (UNKNOWN).
+   *  null is the honest signal; 0 is NEVER a valid absent-measurement value (RULE 9). */
+  cm: number | null;
   /** +/- symmetric uncertainty in cm. */
   uncertaintyCm: number;
   confidence: ConfidenceLevel;
-  /** Named source, e.g., "ellipse_frontSide" | "geometric_front" | "tape_calibrated". */
+  /** Named source, e.g., "ellipse_frontSide" | "geometric_front" | "tape_calibrated" | "missing". */
   source: string;
+}
+
+/**
+ * Per-level ellipse semi-axes produced alongside each circumference (Task 8).
+ * One-model guarantee: aCm and bCm are the exact inputs fed to predictCircumference,
+ * so the same geometry drives both the circumference and the mesh cross-section.
+ *
+ * aCm = front view width divided by 2 (side-to-side half-width, cm).
+ * bCm = averaged side-view depth divided by 2 (front-to-back half-depth, cm).
+ * aspectRatio = bCm divided by aCm (depth-to-width ratio).
+ *
+ * RULE 9: null means UNKNOWN. aspectRatio is null whenever aCm or bCm is null.
+ * Never fabricate: do not substitute 0 for an absent depth.
+ */
+export interface LevelSemiAxes {
+  /** Side-to-side half-width (front view width divided by 2), cm.
+   * null when front width cannot be measured (RULE 9). */
+  aCm: number | null;
+  /** Front-to-back half-depth (averaged side-view depth divided by 2), cm.
+   * null when no side view is available at this level (RULE 9). */
+  bCm: number | null;
+  /** Depth-to-width ratio (bCm divided by aCm). null when aCm or bCm is null (RULE 9). */
+  aspectRatio: number | null;
+}
+
+/**
+ * Aggregated corroboration signals produced by Task 6 (back-view + L/R depth
+ * averaging). These map directly to ConfidenceInputs.lrCorroboration and
+ * ConfidenceInputs.fbCorroboration in confidenceModel.ts (higher = better).
+ * Populated by extractMeasurements when multi-view silhouettes are provided.
+ */
+export interface CorroborationSignals {
+  /** Mean L/R depth agreement across all measured levels. [0, 1] */
+  lrCorroboration: number;
+  /** Mean front-back width agreement across key torso levels. [0, 1] */
+  fbCorroboration: number;
+  /**
+   * Mean L/R depth asymmetry ratio across levels where both sides are present.
+   * 0 = perfectly symmetric; 1 = maximum asymmetry.
+   * null when every level is single-source (no bilateral data).
+   */
+  lrAsymmetry: number | null;
 }
 
 /** 18+ measurements, all stored in cm. */
@@ -86,6 +136,42 @@ export interface ExtractedMeasurements {
   /** Lengths in cm. */
   inseamCm: number;
   torsoLengthCm: number;
+
+  /**
+   * Corroboration signals from back-view and L/R depth comparison (Task 6).
+   * Always present in extractMeasurements() output.
+   * When only a front silhouette is used, lrCorroboration is 0 and
+   * fbCorroboration is SINGLE_SOURCE_CREDIT (0.5) per level.
+   * Manually constructed fixtures that predate Task 6 must supply this field.
+   * A future task threads these into scoreMeasurementConfidence per field.
+   */
+  corroborationSignals: CorroborationSignals;
+
+  /**
+   * Per-level ellipse semi-axes produced alongside each circumference (Task 8).
+   * Always present in extractMeasurements() output.
+   * Individual axis values may be null per RULE 9 when front width or side depth
+   * is unavailable. Manually constructed fixtures that predate Task 8 must supply
+   * this field (use null axes for missing levels).
+   * One-model guarantee: the same aCm and bCm that feed predictCircumference
+   * also feed the mesh cross-section renderer (Section 8.4 / 11.4).
+   */
+  semiAxes: {
+    neck: LevelSemiAxes;
+    shoulder: LevelSemiAxes;
+    chest: LevelSemiAxes;
+    waistNatural: LevelSemiAxes;
+    waistNavel: LevelSemiAxes;
+    hip: LevelSemiAxes;
+    bicepR: LevelSemiAxes;
+    bicepL: LevelSemiAxes;
+    forearmR: LevelSemiAxes;
+    forearmL: LevelSemiAxes;
+    thighR: LevelSemiAxes;
+    thighL: LevelSemiAxes;
+    calfR: LevelSemiAxes;
+    calfL: LevelSemiAxes;
+  };
 }
 
 export type EstimationMethod = 'navy_primary' | 'visual_primary' | 'calibrated' | 'bmi_fallback';

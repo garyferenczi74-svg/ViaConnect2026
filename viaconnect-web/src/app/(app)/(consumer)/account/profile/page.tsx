@@ -15,12 +15,45 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { ConfirmLocationBanner } from "@/components/location/ConfirmLocationBanner";
+import { LocationSelector } from "@/components/location/LocationSelector";
+import { isCompleteStructuredLocation } from "@/lib/location/signup-schema";
+import type { StructuredLocation } from "@/lib/location/types";
 import { createClient } from "@/lib/supabase/client";
+import { reportSupabaseError } from "@/lib/utils/schema-drift";
+import {
+  buildProfileSavePayload,
+  profileLocationSaveError,
+} from "./profile-save-payload";
 
 interface ProfileForm {
   first_name: string;
   last_name: string;
   phone: string;
+}
+
+function locationFromRow(row: {
+  city?: string | null;
+  subdivision_name?: string | null;
+  subdivision_code?: string | null;
+  country_name?: string | null;
+  country_code?: string | null;
+  location_is_free_entry?: boolean | null;
+}): StructuredLocation | null {
+  const city = row.city?.trim() ?? "";
+  const countryName = row.country_name?.trim() ?? "";
+  const countryCode = row.country_code?.trim() ?? "";
+  if (!city && !countryName && !countryCode) {
+    return null;
+  }
+  return {
+    city,
+    subdivisionName: row.subdivision_name ?? null,
+    subdivisionCode: row.subdivision_code ?? null,
+    countryName,
+    countryCode,
+    isFreeEntry: row.location_is_free_entry === true,
+  };
 }
 
 const EMPTY_PROFILE: ProfileForm = {
@@ -36,6 +69,10 @@ export default function ProfilePage() {
   const [email, setEmail] = useState("");
   const [emailVerified, setEmailVerified] = useState(false);
   const [profile, setProfile] = useState<ProfileForm>(EMPTY_PROFILE);
+  const [location, setLocation] = useState<StructuredLocation | null>(null);
+  const [subdivisionOptional, setSubdivisionOptional] = useState(false);
+  const [needsConfirm, setNeedsConfirm] = useState(false);
+  const [locationError, setLocationError] = useState("");
   const [pwCurrent, setPwCurrent] = useState("");
   const [pwNew, setPwNew] = useState("");
   const [pwConfirm, setPwConfirm] = useState("");
@@ -53,7 +90,9 @@ export default function ProfilePage() {
       setEmailVerified(Boolean(user.email_confirmed_at));
       const { data: profileRow } = await (supabase as any)
         .from("profiles")
-        .select("full_name, phone")
+        .select(
+          "full_name, phone, city, subdivision_name, subdivision_code, country_name, country_code, location_is_free_entry, location_needs_confirm",
+        )
         .eq("id", user.id)
         .maybeSingle();
       if (profileRow) {
@@ -66,6 +105,8 @@ export default function ProfilePage() {
           last_name: lastName,
           phone: (profileRow.phone as string | null) ?? "",
         });
+        setLocation(locationFromRow(profileRow));
+        setNeedsConfirm(profileRow.location_needs_confirm === true);
       }
       setLoading(false);
     })();
@@ -80,22 +121,50 @@ export default function ProfilePage() {
       setSavingProfile(false);
       return;
     }
-    const fullName = `${profile.first_name.trim()} ${profile.last_name.trim()}`.trim();
+    // Prompt 210d P0-6: payload built by the pure helper (same keys and value
+    // shaping as the former inline literal) so the write-shape test can assert
+    // its keys against the live profiles columns plus the P0-6 migration.
+    // Prompt 223: complete selector writes structured columns and clears confirm.
+    // Incomplete non-null location (typed query, uncommitted city) must not
+    // toast success while 223 columns stay unchanged.
+    const locationSaveError = profileLocationSaveError(
+      location,
+      subdivisionOptional,
+      needsConfirm,
+    );
+    if (locationSaveError) {
+      setLocationError(locationSaveError);
+      setSavingProfile(false);
+      return;
+    }
+    setLocationError("");
     const { error } = await (supabase as any)
       .from("profiles")
       .upsert(
-        {
-          id: user.id,
-          full_name: fullName || null,
-          phone: profile.phone.trim() || null,
-          updated_at: new Date().toISOString(),
-        },
+        buildProfileSavePayload({
+          userId: user.id,
+          firstName: profile.first_name,
+          lastName: profile.last_name,
+          phone: profile.phone,
+          location,
+          subdivisionOptional,
+        }),
         { onConflict: "id" },
       );
     setSavingProfile(false);
     if (error) {
       toast.error(error.message ?? "Could not save profile");
+      // Prompt 210d P0-6: the save error was only ever a toast, so schema
+      // drift (profiles.phone absent live) stayed invisible in logs. Report
+      // it via the P0-1 classifier after the toast, preserving the existing
+      // user-facing flow; production stays fail-open and the strict-mode
+      // rethrow cannot engage in the browser bundle. Context carries object
+      // names only, never the payload.
+      reportSupabaseError("profiles.save", error, { table: "profiles" });
     } else {
+      if (isCompleteStructuredLocation(location, subdivisionOptional)) {
+        setNeedsConfirm(false);
+      }
       toast.success("Profile updated");
     }
   }
@@ -164,6 +233,7 @@ export default function ProfilePage() {
         <h3 className="text-sm font-semibold text-white mb-1">
           Personal Information
         </h3>
+        {needsConfirm ? <ConfirmLocationBanner /> : null}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="First Name">
             <input
@@ -210,6 +280,17 @@ export default function ProfilePage() {
             className="w-full bg-[#1A2744] border border-white/[0.10] rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#2DA5A0]/50 min-h-[40px]"
           />
         </Field>
+        <LocationSelector
+          value={location}
+          onChange={(next) => {
+            setLocation(next);
+            setLocationError("");
+          }}
+          onSubdivisionOptionalChange={setSubdivisionOptional}
+        />
+        {locationError ? (
+          <p className="text-xs text-red-400">{locationError}</p>
+        ) : null}
         <div className="flex justify-end pt-1">
           <button
             type="submit"

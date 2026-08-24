@@ -7,6 +7,8 @@ import { createClient } from '@/lib/supabase/server';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 type Action = 'approve' | 'reject' | 'request_remediation';
@@ -17,12 +19,10 @@ const ACTION_TO_STATUS: Record<Action, 'approved' | 'rejected' | 'remediation_re
   request_remediation:'remediation_required',
 };
 
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: { reviewId: string } },
-): Promise<NextResponse> {
+export async function GET(_request: NextRequest, props: { params: Promise<{ reviewId: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.brand-compliance.detail.auth');
     if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
 
@@ -59,12 +59,10 @@ export async function GET(
   }
 }
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { reviewId: string } },
-): Promise<NextResponse> {
+export async function PATCH(request: NextRequest, props: { params: Promise<{ reviewId: string }> }): Promise<NextResponse> {
+  const params = await props.params;
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.brand-compliance.action.auth');
     if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
 

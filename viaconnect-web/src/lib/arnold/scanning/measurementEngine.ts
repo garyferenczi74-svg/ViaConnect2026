@@ -4,9 +4,22 @@
 
 import { widthAtY } from './silhouetteProcessor';
 import { predictCircumference, wrapAsMeasured, type Region } from './circumferencePredictor';
+import {
+  averageDepths,
+  lrAsymmetryScore,
+  lrCorroborationScore,
+  fbCorroborationScore,
+  aggregateLrCorroboration,
+  aggregateFbCorroboration,
+  aggregateLrAsymmetry,
+} from './accuracy/corroboration';
+import type { DepthFrame } from './accuracy/depthScale';
+import { findDepthSample, depthDerivedDepthCm } from './accuracy/depthScale';
 import type {
   BiologicalSex,
+  CorroborationSignals,
   ExtractedMeasurements,
+  LevelSemiAxes,
   MeasuredValue,
   PoseSilhouette,
 } from './types';
@@ -15,20 +28,31 @@ export interface ExtractionInputs {
   silhouettes: PoseSilhouette[];
   sex: BiologicalSex;
   heightCm: number;
+  /**
+   * Task 14: optional ARKit/ARCore depth frame from the FormaVisionDepth plugin.
+   * When present, depth-derived front-to-back breadth is PREFERRED over the
+   * silhouette-derived side depth at each body level. When absent (undefined or
+   * null), the existing two-view silhouette breadth path is used unchanged
+   * (byte-identical to pre-Task-14 behavior). RULE 9: absent = graceful fallback,
+   * never an error.
+   */
+  depthFrame?: DepthFrame | null;
 }
 
-export function extractMeasurements({ silhouettes, sex, heightCm }: ExtractionInputs): ExtractedMeasurements {
+export function extractMeasurements({ silhouettes, sex, heightCm, depthFrame }: ExtractionInputs): ExtractedMeasurements {
   const front = silhouettes.find((s) => s.poseId === 'front') ?? null;
   const back  = silhouettes.find((s) => s.poseId === 'back')  ?? null;
   const left  = silhouettes.find((s) => s.poseId === 'left')  ?? null;
   const right = silhouettes.find((s) => s.poseId === 'right') ?? null;
-  const side = left ?? right;
+  // Task 6: `side = left ?? right` removed - depths are now averaged per level
+  // (see leftDepths / rightDepths / sideDepths below).
 
   if (!front) {
     throw new Error('Front silhouette required for measurement extraction');
   }
 
-  const scale = front.scaleCmPerPx ?? (side?.scaleCmPerPx ?? null);
+  // Scale guard: front is required; side views are optional boosters.
+  const scale = front.scaleCmPerPx ?? (left?.scaleCmPerPx ?? (right?.scaleCmPerPx ?? null));
   if (!scale) {
     throw new Error('Unable to compute pixel-to-cm scale. Verify user height and landmark detection.');
   }
@@ -76,19 +100,115 @@ export function extractMeasurements({ silhouettes, sex, heightCm }: ExtractionIn
     calfR: w(front, yCalfR),
   };
 
-  // Side depths at same Y levels (scale from the side silhouette, which uses its own scale)
-  const sideDepths = side
+  // Task 6: Per-level depths from each side silhouette (cm, using that view's own scale).
+  // Assumption: Y-coordinates from front landmarks are transferable to left/right views
+  // because the 4-photo session uses consistent camera height and framing.
+  const leftDepths = left
     ? {
-        neck: w(side, yNeck),
-        chest: w(side, yChest),
-        waistNatural: w(side, yWaistNatural),
-        waistNavel: w(side, yWaistNavel),
-        hip: w(side, yHip),
-        bicep: w(side, yBicepL ?? yBicepR),
-        thigh: w(side, yThighL ?? yThighR),
-        calf: w(side, yCalfL ?? yCalfR),
+        neck:         w(left, yNeck),
+        chest:        w(left, yChest),
+        waistNatural: w(left, yWaistNatural),
+        waistNavel:   w(left, yWaistNavel),
+        hip:          w(left, yHip),
+        bicep:        w(left, yBicepL ?? yBicepR),
+        thigh:        w(left, yThighL ?? yThighR),
+        calf:         w(left, yCalfL ?? yCalfR),
       }
     : null;
+
+  const rightDepths = right
+    ? {
+        neck:         w(right, yNeck),
+        chest:        w(right, yChest),
+        waistNatural: w(right, yWaistNatural),
+        waistNavel:   w(right, yWaistNavel),
+        hip:          w(right, yHip),
+        bicep:        w(right, yBicepL ?? yBicepR),
+        thigh:        w(right, yThighL ?? yThighR),
+        calf:         w(right, yCalfL ?? yCalfR),
+      }
+    : null;
+
+  // Task 6: L/R averaged depths (replaces single `side = left ?? right`).
+  // averageDepths is null-safe: if one side is absent the other is used;
+  // if both are absent the depth is null (UNKNOWN - RULE 9, never 0).
+  const ld = leftDepths;
+  const rd = rightDepths;
+  const sideDepths = (left !== null || right !== null)
+    ? {
+        neck:         averageDepths(ld?.neck         ?? null, rd?.neck         ?? null),
+        chest:        averageDepths(ld?.chest        ?? null, rd?.chest        ?? null),
+        waistNatural: averageDepths(ld?.waistNatural ?? null, rd?.waistNatural ?? null),
+        waistNavel:   averageDepths(ld?.waistNavel   ?? null, rd?.waistNavel   ?? null),
+        hip:          averageDepths(ld?.hip          ?? null, rd?.hip          ?? null),
+        bicep:        averageDepths(ld?.bicep        ?? null, rd?.bicep        ?? null),
+        thigh:        averageDepths(ld?.thigh        ?? null, rd?.thigh        ?? null),
+        calf:         averageDepths(ld?.calf         ?? null, rd?.calf         ?? null),
+      }
+    : null;
+
+  // Task 6: Back-view widths at key torso levels for front-back corroboration
+  // and glute/hip contour refinement. Same Y-coordinate assumption applies.
+  const backWidths = back !== null
+    ? {
+        chest:        w(back, yChest),
+        waistNatural: w(back, yWaistNatural),
+        waistNavel:   w(back, yWaistNavel),
+        hip:          w(back, yHip),
+      }
+    : null;
+
+  // Task 6: Glute/hip contour refinement using the back view.
+  // The back silhouette often captures the posterior hip contour (glutes) that
+  // can differ from the front silhouette reading. When both views are present,
+  // the max of the two provides a less-biased hip width estimate (front-only
+  // tends to underestimate when the subject tilts slightly forward).
+  // RULE 9: if front hip is null, falls through to null (no fabrication).
+  const backHipWidth: number | null = backWidths?.hip ?? null;
+  const refinedHipWidth: number | null =
+    frontWidths.hip !== null && backHipWidth !== null
+      ? Math.max(frontWidths.hip, backHipWidth)
+      : frontWidths.hip;
+
+  // Task 14: depth-derived front-to-back breadth lookup.
+  // Returns the metric depth (cm) from the native depth frame at a given
+  // image Y position, or null when the depth frame is absent/missing/invalid.
+  // When depthFrame is null/undefined, this ALWAYS returns null, so the
+  // effectiveDepths fallback path below is byte-identical to sideDepths.
+  const depthAtLevel = (yPx: number | null): number | null => {
+    if (depthFrame == null || yPx === null || front.imageHeight <= 0) return null;
+    const levelNorm = yPx / front.imageHeight;
+    const sample = findDepthSample(depthFrame, levelNorm);
+    return depthDerivedDepthCm(sample);
+  };
+
+  // Task 14: depth-boosted effective depths.
+  // At each body level, prefer the depth-derived breadth (more accurate) when
+  // available; fall back to the silhouette-derived side depth otherwise.
+  //
+  // BYTE-IDENTICAL GUARANTEE: when depthFrame is absent (null/undefined),
+  // depthAtLevel() returns null for every level. null ?? sideDepths.xxx
+  // equals sideDepths.xxx exactly. effectiveDepths is structurally and
+  // numerically identical to sideDepths, so ALL downstream circ() and axes()
+  // calls receive the same arguments as in the pre-Task-14 code.
+  //
+  // The null case (no side views, no depth) is preserved: effectiveDepths
+  // stays null so effectiveDepths?.xxx returns undefined, matching the
+  // pre-Task-14 sideDepths?.xxx === undefined behavior.
+  const effectiveDepths: typeof sideDepths = (() => {
+    // No side views and no depth frame: preserve the null/undefined path.
+    if (sideDepths === null && depthFrame == null) return null;
+    return {
+      neck:         depthAtLevel(yNeck)              ?? (sideDepths?.neck         ?? null),
+      chest:        depthAtLevel(yChest)             ?? (sideDepths?.chest        ?? null),
+      waistNatural: depthAtLevel(yWaistNatural)      ?? (sideDepths?.waistNatural ?? null),
+      waistNavel:   depthAtLevel(yWaistNavel)        ?? (sideDepths?.waistNavel   ?? null),
+      hip:          depthAtLevel(yHip)               ?? (sideDepths?.hip          ?? null),
+      bicep:        depthAtLevel(yBicepL ?? yBicepR) ?? (sideDepths?.bicep        ?? null),
+      thigh:        depthAtLevel(yThighL ?? yThighR) ?? (sideDepths?.thigh        ?? null),
+      calf:         depthAtLevel(yCalfL ?? yCalfR)   ?? (sideDepths?.calf         ?? null),
+    };
+  })();
 
   // Build circumferences
   const circ = (frontWidth: number | null, sideDepth: number | undefined | null, region: Region): MeasuredValue => {
@@ -102,35 +222,94 @@ export function extractMeasurements({ silhouettes, sex, heightCm }: ExtractionIn
     return wrapAsMeasured(pred);
   };
 
-  const neck          = circ(frontWidths.neck,         sideDepths?.neck,         'neck');
-  const shoulder      = circ(frontWidths.shoulder,     undefined,                 'shoulder');
-  const chest         = circ(frontWidths.chest,        sideDepths?.chest,         'chest');
-  const waistNatural  = circ(frontWidths.waistNatural, sideDepths?.waistNatural,  'waist_natural');
-  const waistNavel    = circ(frontWidths.waistNavel,   sideDepths?.waistNavel,    'waist_navel');
-  const hip           = circ(frontWidths.hip,          sideDepths?.hip,           'hip');
-  const bicepR        = circ(frontWidths.bicepR,       sideDepths?.bicep,         'bicep');
-  const bicepL        = circ(frontWidths.bicepL,       sideDepths?.bicep,         'bicep');
-  const forearmR      = circ(frontWidths.forearmR,     undefined,                 'forearm');
-  const forearmL      = circ(frontWidths.forearmL,     undefined,                 'forearm');
-  const thighR        = circ(frontWidths.thighR,       sideDepths?.thigh,         'thigh');
-  const thighL        = circ(frontWidths.thighL,       sideDepths?.thigh,         'thigh');
-  const calfR         = circ(frontWidths.calfR,        sideDepths?.calf,          'calf');
-  const calfL         = circ(frontWidths.calfL,        sideDepths?.calf,          'calf');
+  // Task 8: per-level semi-axes emitted alongside each circumference.
+  // One-model guarantee: axes() receives the SAME frontWidth and sideDepth
+  // arguments as circ(), so aCm and bCm are exactly the inputs used by
+  // predictCircumference internally (no second computation).
+  // RULE 9: bCm is null (UNKNOWN) when side depth is absent; aspectRatio is
+  // null whenever aCm or bCm is null. Never substitute 0 for a missing depth.
+  const axes = (frontWidth: number | null, sideDepth: number | undefined | null): LevelSemiAxes => {
+    if (frontWidth === null) return { aCm: null, bCm: null, aspectRatio: null };
+    const aCm = frontWidth / 2;
+    const bCm = (sideDepth != null && sideDepth > 0) ? sideDepth / 2 : null;
+    const aspectRatio = bCm !== null ? bCm / aCm : null;
+    return { aCm, bCm, aspectRatio };
+  };
+
+  const neck          = circ(frontWidths.neck,         effectiveDepths?.neck,         'neck');
+  const shoulder      = circ(frontWidths.shoulder,     undefined,                     'shoulder');
+  const chest         = circ(frontWidths.chest,        effectiveDepths?.chest,         'chest');
+  const waistNatural  = circ(frontWidths.waistNatural, effectiveDepths?.waistNatural,  'waist_natural');
+  const waistNavel    = circ(frontWidths.waistNavel,   effectiveDepths?.waistNavel,    'waist_navel');
+  // Hip uses refinedHipWidth (back-view adjusted) when the back silhouette is available.
+  const hip           = circ(refinedHipWidth,          effectiveDepths?.hip,           'hip');
+  const bicepR        = circ(frontWidths.bicepR,       effectiveDepths?.bicep,         'bicep');
+  const bicepL        = circ(frontWidths.bicepL,       effectiveDepths?.bicep,         'bicep');
+  const forearmR      = circ(frontWidths.forearmR,     undefined,                     'forearm');
+  const forearmL      = circ(frontWidths.forearmL,     undefined,                     'forearm');
+  const thighR        = circ(frontWidths.thighR,       effectiveDepths?.thigh,         'thigh');
+  const thighL        = circ(frontWidths.thighL,       effectiveDepths?.thigh,         'thigh');
+  const calfR         = circ(frontWidths.calfR,        effectiveDepths?.calf,          'calf');
+  const calfL         = circ(frontWidths.calfL,        effectiveDepths?.calf,          'calf');
+
+  // Task 8: compute semi-axes using the same inputs as the corresponding circ() call.
+  const semiAxes = {
+    neck:         axes(frontWidths.neck,         effectiveDepths?.neck),
+    shoulder:     axes(frontWidths.shoulder,     undefined),
+    chest:        axes(frontWidths.chest,        effectiveDepths?.chest),
+    waistNatural: axes(frontWidths.waistNatural, effectiveDepths?.waistNatural),
+    waistNavel:   axes(frontWidths.waistNavel,   effectiveDepths?.waistNavel),
+    // Hip uses refinedHipWidth matching the circ() call above.
+    hip:          axes(refinedHipWidth,          effectiveDepths?.hip),
+    bicepR:       axes(frontWidths.bicepR,       effectiveDepths?.bicep),
+    bicepL:       axes(frontWidths.bicepL,       effectiveDepths?.bicep),
+    forearmR:     axes(frontWidths.forearmR,     undefined),
+    forearmL:     axes(frontWidths.forearmL,     undefined),
+    thighR:       axes(frontWidths.thighR,       effectiveDepths?.thigh),
+    thighL:       axes(frontWidths.thighL,       effectiveDepths?.thigh),
+    calfR:        axes(frontWidths.calfR,        effectiveDepths?.calf),
+    calfL:        axes(frontWidths.calfL,        effectiveDepths?.calf),
+  };
 
   // Lengths
   const inseamCm = inseamLengthCm(front);
   const torsoLengthCm = torsoCm(front);
 
-  // Derived ratios (only when both values exist)
-  const ratio = (a: number, b: number): number =>
-    (a > 0 && b > 0) ? Math.round((a / b) * 100) / 100 : 0;
+  // Derived ratios (only when both values are known positive numbers).
+  // When either input is null (UNKNOWN), the ratio is unavailable -> sentinel 0.
+  const ratio = (a: number | null, b: number | null): number =>
+    (a !== null && b !== null && a > 0 && b > 0) ? Math.round((a / b) * 100) / 100 : 0;
 
   const waistToHipRatio    = ratio(waistNatural.cm, hip.cm);
   const waistToHeightRatio = ratio(waistNatural.cm, heightCm);
   const shoulderToWaistRatio = ratio(shoulder.cm, waistNatural.cm);
 
-  void sideDepths;
-  void back;
+  // Task 6: Compute per-level corroboration signals for future confidence wiring.
+  // These map to ConfidenceInputs.lrCorroboration and .fbCorroboration in
+  // confidenceModel.ts. Full per-field confidence threading is a later task.
+  const lrLevelKeys = [
+    'neck', 'chest', 'waistNatural', 'waistNavel', 'hip', 'bicep', 'thigh', 'calf',
+  ] as const;
+  type LrKey = (typeof lrLevelKeys)[number];
+
+  const lrCorScores = lrLevelKeys.map((k: LrKey) =>
+    lrCorroborationScore(ld?.[k] ?? null, rd?.[k] ?? null)
+  );
+  const asymScores = lrLevelKeys.map((k: LrKey) =>
+    lrAsymmetryScore(ld?.[k] ?? null, rd?.[k] ?? null)
+  );
+  const fbCorScores = [
+    fbCorroborationScore(frontWidths.chest,        backWidths?.chest        ?? null),
+    fbCorroborationScore(frontWidths.waistNatural, backWidths?.waistNatural ?? null),
+    fbCorroborationScore(frontWidths.waistNavel,   backWidths?.waistNavel   ?? null),
+    fbCorroborationScore(frontWidths.hip,          backWidths?.hip          ?? null),
+  ];
+
+  const corroborationSignals: CorroborationSignals = {
+    lrCorroboration: aggregateLrCorroboration(lrCorScores),
+    fbCorroboration: aggregateFbCorroboration(fbCorScores),
+    lrAsymmetry:     aggregateLrAsymmetry(asymScores),
+  };
 
   return {
     neckCirc: neck,
@@ -152,11 +331,15 @@ export function extractMeasurements({ silhouettes, sex, heightCm }: ExtractionIn
     shoulderToWaistRatio,
     inseamCm: round1(inseamCm),
     torsoLengthCm: round1(torsoLengthCm),
+    corroborationSignals,
+    semiAxes,
   };
 }
 
 function missing(): MeasuredValue {
-  return { cm: 0, uncertaintyCm: 0, confidence: 'low', source: 'missing' };
+  // RULE 9 / Section 17.1: a measurement that cannot be determined is UNKNOWN.
+  // cm:null is the honest signal; cm:0 is FORBIDDEN (0 is a fabricated value).
+  return { cm: null, uncertaintyCm: 0, confidence: 'low', source: 'missing' };
 }
 
 function midY(a: number | undefined, b: number | undefined): number | null {

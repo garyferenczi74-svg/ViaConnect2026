@@ -15,7 +15,7 @@ export async function POST(req: Request) {
   const requestId = req.headers.get("x-request-id") ?? crypto.randomUUID();
 
   try {
-    const supabase = createServerClient();
+    const supabase = await createServerClient();
 
     let user;
     try {

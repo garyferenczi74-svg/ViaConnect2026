@@ -16,6 +16,8 @@ import {
   type EpigenConfidence,
 } from "@/lib/genetics/epigenResultStore";
 
+export const dynamic = 'force-dynamic';
+
 const MAX_ROWS = 200;
 
 interface ConfirmBody {
@@ -51,7 +53,7 @@ function todayIso(): string {
 }
 
 export async function POST(request: Request): Promise<NextResponse> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

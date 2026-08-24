@@ -309,28 +309,51 @@ function AddYourSupplementsSection() {
           : rec.source === "search"
             ? "user_search"
             : "barcode";
-      const { error } = await supabase
-        .from("user_current_supplements")
-        .upsert({
-          user_id: user.id,
-          supplement_name: rec.name,
-          brand: rec.brand,
-          product_name: rec.name,
-          formulation: "",
-          dosage: dosageString,
-          dosage_form: rec.deliveryMethod || "capsule",
-          frequency: rec.frequency || "daily",
-          category: rec.deliveryMethod || "general",
-          key_ingredients: keyIngredients,
-          source: sourceColumn,
-          is_current: true,
-          is_ai_recommended: false,
-          added_at: new Date().toISOString(),
-          time_of_day: rec.time_of_day && rec.time_of_day.length > 0 ? rec.time_of_day : null,
-          with_food: rec.with_food,
-          timing_reason: rec.timing_reason,
-          timing_source: rec.timing_source,
-        }, { onConflict: "user_id,supplement_name" });
+      // Prompt 219b: optional private label photo pointer (path, not public URL).
+      // Columns added in 20260815120000; if migration not applied yet the
+      // upsert may reject unknown columns, so we try with photo then without.
+      const baseRow = {
+        user_id: user.id,
+        supplement_name: rec.name,
+        brand: rec.brand,
+        product_name: rec.name,
+        formulation: "",
+        dosage: dosageString,
+        dosage_form: rec.deliveryMethod || "capsule",
+        frequency: rec.frequency || "daily",
+        category: rec.deliveryMethod || "general",
+        key_ingredients: keyIngredients,
+        source: sourceColumn,
+        is_current: true,
+        is_ai_recommended: false,
+        added_at: new Date().toISOString(),
+        time_of_day: rec.time_of_day && rec.time_of_day.length > 0 ? rec.time_of_day : null,
+        with_food: rec.with_food,
+        timing_reason: rec.timing_reason,
+        timing_source: rec.timing_source,
+      };
+      const withPhoto =
+        rec.label_photo_path
+          ? {
+              ...baseRow,
+              label_photo_bucket: rec.label_photo_bucket ?? "user-supplement-label-photos",
+              label_photo_path: rec.label_photo_path,
+            }
+          : baseRow;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let { error } = await (supabase.from("user_current_supplements") as any).upsert(
+        withPhoto,
+        { onConflict: "user_id,supplement_name" },
+      );
+      if (error && rec.label_photo_path) {
+        // Fail-open: save regimen without photo columns if schema lag.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const retry = await (supabase.from("user_current_supplements") as any).upsert(
+          baseRow,
+          { onConflict: "user_id,supplement_name" },
+        );
+        error = retry.error;
+      }
       if (error) {
         setErrorMessage("We could not save that. Please try again.");
         return;

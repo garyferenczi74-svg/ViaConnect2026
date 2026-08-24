@@ -24,7 +24,7 @@ const FIELDS: QuickFieldSpec[] = [
 
 export default async function ManagementReviewsPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const supabase = await createClient() as any;
   const { data } = await supabase
     .from('iso_management_reviews')
     .select('id, review_date, attendees, inputs_summary, signed_off_at, storage_key')

@@ -8,13 +8,15 @@ import { classifyFromRows, type LogRow } from '@/lib/soc2/auditor/pseudonymAppro
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = 'nodejs';
 
 const COMPLIANCE_ROLES = new Set(['compliance_officer', 'compliance_admin', 'admin', 'superadmin', 'legal_counsel']);
 
 export async function GET(_req: NextRequest) {
   try {
-    const supabase = createServerClient();
+    const supabase = await createServerClient();
     const { data: { user } } = await withTimeout(supabase.auth.getUser(), 5000, 'api.soc2.pseudonym-requests.list.auth');
     if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     const profileRes = await withTimeout(
