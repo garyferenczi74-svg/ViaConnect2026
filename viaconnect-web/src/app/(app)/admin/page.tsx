@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Skeleton } from "@/components/ui/Skeleton";
 import {
   BarChart3, Package, DollarSign, TrendingUp, AlertTriangle,
-  Users, ShoppingCart, Layers, Target, Activity, Shield,
+  Users, Layers, Target, Shield,
   ArrowUpRight, Minus,
 } from "lucide-react";
 import { PageTransition, StaggerChild, MotionCard } from "@/lib/motion";
@@ -121,7 +121,11 @@ export default function AdminDashboardPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-white">ViaConnect Admin Portal</h1>
-            <p className="text-gray-400 text-sm mt-1">Financial Toolchain &middot; {skuCount ?? 62} SKUs &middot; {board?.report_quarter ?? "Q1 2026"}</p>
+            <p className="text-gray-400 text-sm mt-1">
+              Financial Toolchain
+              {skuCount != null ? ` · ${skuCount} SKUs` : ""}
+              {board?.report_quarter ? ` · ${board.report_quarter}` : ""}
+            </p>
           </div>
           <Badge variant="active" className="bg-copper/20 text-copper">ADMIN</Badge>
         </div>
@@ -218,22 +222,14 @@ export default function AdminDashboardPage() {
       <StaggerChild>
         <Card className="p-5">
           <h2 className="text-sm font-semibold text-white mb-4">Toolchain Data</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {[
-              { label: "62 Master SKUs", icon: Package },
-              { label: "15 Bundles", icon: ShoppingCart },
-              { label: "3-Tier Pricing", icon: DollarSign },
-              { label: "5 Channel Scenarios", icon: Layers },
-              { label: "12mo Forecast", icon: TrendingUp },
-              { label: "12 What-If Models", icon: Activity },
-              { label: "10 Suppliers", icon: Users },
-              { label: "12 Promotions", icon: Target },
-            ].map((item) => (
-              <div key={item.label} className="flex items-center gap-2 p-3 rounded-lg border border-white/[0.06] bg-white/[0.02] text-sm text-gray-300">
-                <item.icon className="w-4 h-4 text-copper" />{item.label}
-              </div>
-            ))}
-          </div>
+          {skuCount && skuCount > 0 ? (
+            <div className="flex items-center gap-2 p-3 rounded-lg border border-white/[0.06] bg-white/[0.02] text-sm text-gray-300">
+              <Package className="w-4 h-4 text-copper" />
+              {skuCount} Master SKUs
+            </div>
+          ) : (
+            <p className="text-xs text-gray-500">No catalog snapshot yet. Counts appear after live toolchain rows land.</p>
+          )}
         </Card>
       </StaggerChild>
     </PageTransition>

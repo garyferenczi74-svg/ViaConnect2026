@@ -6,7 +6,9 @@ import {
   authTimeoutAction,
   canAccessPortalPath,
   clinicianPatientsForRole,
+  naturopathPartnersForRole,
   failClosedOnAuthTimeout,
+  unauthenticatedClinicianPortalRedirect,
   isClinicianOrAdminPath,
   isHelixPath,
   isPractitionerPortalPath,
@@ -172,6 +174,44 @@ describe("clinician patient roster", () => {
   });
 });
 
+describe("naturopath partner roster", () => {
+  const mock28 = Array.from({ length: 28 }, (_, i) => ({
+    id: String(i),
+    displayName: `Partner ${i}`,
+  }));
+
+  it("consumer and practitioner tokens never receive ND partners", () => {
+    expect(naturopathPartnersForRole("consumer", mock28)).toEqual([]);
+    expect(naturopathPartnersForRole("practitioner", mock28)).toEqual([]);
+    expect(naturopathPartnersForRole(undefined, mock28)).toEqual([]);
+  });
+
+  it("naturopath/admin may receive only the live list, never an implied 28", () => {
+    expect(naturopathPartnersForRole("naturopath", [])).toEqual([]);
+    expect(naturopathPartnersForRole("admin", mock28)).toHaveLength(28);
+  });
+});
+
+describe("unauthenticated clinician portal redirect", () => {
+  it("sends logged-out clinician portals to the public waitlist", () => {
+    expect(unauthenticatedClinicianPortalRedirect("/practitioner")).toBe(
+      OUT_OF_ROLE_REDIRECT,
+    );
+    expect(unauthenticatedClinicianPortalRedirect("/practitioner/dashboard")).toBe(
+      OUT_OF_ROLE_REDIRECT,
+    );
+    expect(unauthenticatedClinicianPortalRedirect("/naturopath/dashboard")).toBe(
+      OUT_OF_ROLE_REDIRECT,
+    );
+  });
+
+  it("does not treat admin or the waitlist as a clinician portal CTA", () => {
+    expect(unauthenticatedClinicianPortalRedirect("/admin")).toBeNull();
+    expect(unauthenticatedClinicianPortalRedirect("/practitioners")).toBeNull();
+    expect(unauthenticatedClinicianPortalRedirect("/login")).toBeNull();
+  });
+});
+
 describe("helix path helper", () => {
   it("identifies helix surfaces", () => {
     expect(isHelixPath("/helix")).toBe(true);
@@ -223,24 +263,53 @@ describe("source contract: chrome + middleware use session role", () => {
     expect(src).not.toMatch(/user_metadata\?\.role as string\) \?\? "consumer"/);
   });
 
-  it("practitioner dashboard does not ship mock 42 as live patients", () => {
+  it("practitioner dashboard wires live practitioner_patients and does not ship mock 42", () => {
     const src = readFileSync(
       path.join(REPO, "src/app/(app)/practitioner/dashboard/page.tsx"),
       "utf8",
     );
     expect(src).toMatch(/clinicianPatientsForRole/);
+    expect(src).toMatch(/loadPractitionerLiveRoster/);
     expect(src).not.toMatch(/value: "42"/);
     expect(src).not.toMatch(/John D\./);
     expect(src).not.toMatch(/Maria S\./);
+    expect(src).not.toMatch(/Precision Wellness Medical Group/);
+    expect(src).not.toMatch(/ViaCura/);
   });
 
-  it("practitioner patients page does not claim a live 42-patient census", () => {
+  it("practitioner patients page wires live roster and does not claim a 42-patient census", () => {
     const src = readFileSync(
       path.join(REPO, "src/app/(app)/practitioner/patients/page.tsx"),
       "utf8",
     );
     expect(src).not.toMatch(/of 42 patients/);
-    expect(src).toMatch(/PATIENTS: Patient\[\] = \[\]/);
+    expect(src).not.toMatch(/PATIENTS: Patient\[\] = \[\]/);
+    expect(src).toMatch(/loadPractitionerLiveRoster/);
+  });
+
+  it("naturopath dashboard kills 28/92% mocks and wires live partners", () => {
+    const src = readFileSync(
+      path.join(REPO, "src/app/(app)/naturopath/dashboard/page.tsx"),
+      "utf8",
+    );
+    expect(src).toMatch(/loadNaturopathLivePartners/);
+    expect(src).toMatch(/naturopathPartnersForRole/);
+    expect(src).not.toMatch(/value: '28'/);
+    expect(src).not.toMatch(/value: '92%'/);
+    expect(src).not.toMatch(/Emma W\./);
+    expect(src).not.toMatch(/Dr\. Patel/);
+  });
+
+  it("supabase middleware sends unauth clinician portals to /practitioners", () => {
+    const src = readFileSync(
+      path.join(REPO, "src/lib/supabase/middleware.ts"),
+      "utf8",
+    );
+    expect(src).toMatch(/unauthenticatedClinicianPortalRedirect/);
+    const waitlistIdx = src.indexOf("unauthenticatedClinicianPortalRedirect(pathname)");
+    const loginIdx = src.indexOf("redirecting unauthenticated request to login");
+    expect(waitlistIdx).toBeGreaterThan(0);
+    expect(loginIdx).toBeGreaterThan(waitlistIdx);
   });
 
   it("helix layout is consumer-gated from profiles.role", () => {

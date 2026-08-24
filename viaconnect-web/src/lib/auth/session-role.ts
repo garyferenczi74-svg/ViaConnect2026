@@ -131,6 +131,19 @@ export function isClinicianOrAdminPath(pathname: string): boolean {
   );
 }
 
+/**
+ * Logged-out /practitioner and /naturopath must not look like a live portal.
+ * Send them to the existing public waitlist. Do not invent a clinician product.
+ */
+export function unauthenticatedClinicianPortalRedirect(
+  pathname: string,
+): typeof OUT_OF_ROLE_REDIRECT | null {
+  if (isPractitionerPortalPath(pathname) || isNaturopathPortalPath(pathname)) {
+    return OUT_OF_ROLE_REDIRECT;
+  }
+  return null;
+}
+
 export function isClinicianOrAdminApiPath(pathname: string): boolean {
   return (
     pathname.startsWith("/api/practitioner") ||
@@ -293,5 +306,19 @@ export function clinicianPatientsForRole(
     return [];
   }
   return livePatients;
+}
+
+/**
+ * Naturopath health-partner roster. Consumer tokens always get [].
+ * Never return a mock census (the old 28 / 92%) as if live.
+ */
+export function naturopathPartnersForRole(
+  role: SessionRole | undefined,
+  livePartners: readonly ClinicianPatientRow[] = [],
+): readonly ClinicianPatientRow[] {
+  if (role !== "naturopath" && role !== "admin") {
+    return [];
+  }
+  return livePartners;
 }
 

@@ -8,6 +8,7 @@ import {
   outOfRoleRedirect,
   roleFromProfilesColumn,
   roleHomePath,
+  unauthenticatedClinicianPortalRedirect,
   type SessionRole,
 } from "@/lib/auth/session-role";
 
@@ -204,6 +205,16 @@ export async function updateSession(request: NextRequest) {
         },
         { status: 401, headers: { "Content-Type": "application/json" } },
       );
+    }
+    const waitlistPath = unauthenticatedClinicianPortalRedirect(pathname);
+    if (waitlistPath) {
+      safeLog.info("middleware.auth", "redirecting unauthenticated clinician portal to waitlist", {
+        path: pathname,
+      });
+      const url = request.nextUrl.clone();
+      url.pathname = waitlistPath;
+      url.search = "";
+      return NextResponse.redirect(url);
     }
     safeLog.info("middleware.auth", "redirecting unauthenticated request to login", {
       path: pathname,
