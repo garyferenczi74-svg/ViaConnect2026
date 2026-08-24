@@ -97,7 +97,9 @@ describe('NutrigenDxResultsTab wired source', () => {
   it('keeps pending and empty states and loads live NutrigenDX cross-ref', () => {
     expect(source).toContain('nutrigenDxPending');
     expect(source).toContain('Your NutrigenDX results are processing');
-    expect(source).toContain('No NutrigenDX results yet');
+    expect(source).toContain('Not analyzed');
+    expect(source).not.toContain('No NutrigenDX results yet');
+    expect(source).not.toContain('Markers {summary.marker_count} of {summary.marker_total}');
     expect(source).toContain('/api/nutrition/genetics/nutrigendx');
     expect(source).toContain('resultSet.markers');
   });

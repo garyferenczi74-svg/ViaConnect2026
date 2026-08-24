@@ -140,7 +140,7 @@ export function NutrigenDxResultsTab({ nutrigenDxPending }: NutrigenDxResultsTab
           </span>
           <div className="min-w-0">
             <h2 className="text-[15px] font-semibold leading-tight text-white md:text-base">
-              No NutrigenDX results yet
+              Not analyzed
             </h2>
             <p className="mt-1 text-[13px] leading-relaxed text-white/[0.62]">
               Your NutrigenDX results will appear here once your GeneX360 nutrition panel
@@ -199,7 +199,9 @@ export function NutrigenDxResultsTab({ nutrigenDxPending }: NutrigenDxResultsTab
           </Link>
         </div>
         <p className="mt-3 text-sm text-white/70">
-          Markers {summary.marker_count} of {summary.marker_total}
+          {summary.marker_count > 0
+            ? `Markers ${summary.marker_count} of ${summary.marker_total}`
+            : "Not analyzed"}
           {" · "}
           Findings {summary.finding_count}
         </p>

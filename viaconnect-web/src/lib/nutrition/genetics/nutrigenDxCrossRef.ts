@@ -136,7 +136,7 @@ export function buildNutrigenDxResultSet(
   const seen = new Set<string>();
 
   for (const v of variants) {
-    // Brief 6: MTHFR folate implications are GeneXM / genex_m only.
+    // Brief 6 / Brief 17: MTHFR folate implications are GeneXM / genex_m only.
     if (isMthfrFolateTarget(v.rsid, v.gene)) continue;
     const key = geneKey(v.gene, v.rsid);
     if (!key || seen.has(key)) continue;
@@ -218,7 +218,7 @@ export function buildNutrigenDxCrossRefPayload(
 ): NutrigenDxCrossRefPayload {
   const resultSet = buildNutrigenDxResultSet(variants, findings);
   const allGenes = Object.keys(NUTRIGEN_DX_DEEP_DRAFTS)
-    .filter((g) => g !== 'mthfr')
+    .filter((g) => g !== "mthfr")
     .map((g) => g.toUpperCase());
   const present = new Set(resultSet.markers.map((m) => m.gene.toUpperCase()));
   const missing_genes = allGenes.filter((g) => !present.has(g));

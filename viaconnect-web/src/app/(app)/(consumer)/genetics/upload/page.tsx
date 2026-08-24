@@ -1,86 +1,20 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import {
   Upload, FileText, CheckCircle2, AlertTriangle, Dna, ArrowLeft,
-  Loader2, Shield, Zap, Cloud, ExternalLink, RefreshCw, Hourglass,
-  Apple, Activity, HeartPulse, Leaf, Atom,
+  Loader2, Shield, Zap, Cloud, RefreshCw,
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { PageTransition, StaggerChild, MotionCard } from "@/lib/motion";
+import { PageTransition, StaggerChild } from "@/lib/motion";
 import { withAbortTimeout } from "@/lib/utils/with-timeout";
-import { EpigenUploadPanel } from "@/components/genetics/upload/EpigenUploadPanel";
-
-// A short intro shown above the shared DNA dropzone on a genotype panel tab, so a
-// member knows what the panel covers and that it is read from their DNA file.
-interface PanelIntro {
-  title: string;
-  covers: string;
-  dataSourceNote: string;
-  blueprintHref: string;
-}
-
-// The Upload Genetic Data tabs. DNA Test is the comprehensive raw genotype upload
-// (every panel at once). Epigenetic is its own measured-report upload. Methylation,
-// Nutrition, Hormone, Peptide, and Cannabis are the genotype panels read from the
-// DNA file: their tabs show the SAME DNA dropzone with a short per-panel intro and
-// scope the upload to that one panel.
-type UploadTab = "dna" | "methylation" | "nutrition" | "hormone" | "epigen" | "peptide" | "cannabis";
-
-const TABS: ReadonlyArray<{ id: UploadTab; label: string; icon: LucideIcon }> = [
-  { id: "dna", label: "DNA Test", icon: Dna },
-  { id: "methylation", label: "Methylation", icon: Atom },
-  { id: "nutrition", label: "Nutrition", icon: Apple },
-  { id: "hormone", label: "Hormone", icon: Activity },
-  { id: "epigen", label: "Epigenetic", icon: Hourglass },
-  { id: "peptide", label: "Peptide", icon: HeartPulse },
-  { id: "cannabis", label: "Cannabis", icon: Leaf },
-];
-
-const VALID_TABS = new Set<string>(TABS.map((t) => t.id));
-
-// The explainer copy for the genotype panels read from the DNA file. `covers` is
-// a plain description of the panel; `dataSourceNote` states where the data comes
-// from. No clinical claim about the member is made here.
-const EXPLAINERS: Partial<Record<UploadTab, PanelIntro>> = {
-  methylation: {
-    title: "Methylation (GeneXM)",
-    covers: "Methylation and detox pathways: folate, B12, homocysteine, and detoxification capacity.",
-    dataSourceNote: "These markers are read from your DNA, so there is no separate upload. Upload your DNA test once and your Methylation panel is scored from it.",
-    blueprintHref: "/shop/genex360#genex-m",
-  },
-  nutrition: {
-    title: "Nutrition (NutrigenDX)",
-    covers: "Functional nutrition and absorption markers: how you metabolize folate, fats, vitamins, and more.",
-    dataSourceNote: "These markers are read from your DNA, so there is no separate upload. Upload your DNA test once and your Nutrition panel is scored from it.",
-    blueprintHref: "/shop/genex360#nutrigen-dx",
-  },
-  hormone: {
-    title: "Hormone (HormoneIQ)",
-    covers: "Hormone and adrenal mapping: estrogen, androgen, and stress hormone pathways.",
-    dataSourceNote: "The genetic markers are read from your DNA, and as our panel coverage expands they appear here. The measured hormone and metabolite levels come from your GeneX360 lab sample.",
-    blueprintHref: "/shop/genex360#hormone-iq",
-  },
-  peptide: {
-    title: "Peptide (PeptideIQ)",
-    covers: "Peptide response and tissue repair genetics: growth factor and recovery pathways.",
-    dataSourceNote: "These markers are read from your DNA. As our panel coverage expands, your results appear here.",
-    blueprintHref: "/shop/genex360#peptide-iq",
-  },
-  cannabis: {
-    title: "Cannabis (CannabisIQ)",
-    covers: "Cannabinoid response and sensitivity genetics: how you respond to and clear cannabinoids.",
-    dataSourceNote: "These markers are read from your DNA. As our panel coverage expands, your results appear here.",
-    blueprintHref: "/shop/genex360#cannabis-iq",
-  },
-};
+import { emptyMarkerCountLabel, isEmptyMarkerCount } from "@/lib/genetics/emptyMarkerLabel";
 
 const supabase = createClient();
 
@@ -142,13 +76,8 @@ function pdfStatusBadgeClass(status: string): string {
   return "border-[#2DA5A0]/40 bg-[#2DA5A0]/[0.12] text-[#2DA5A0]";
 }
 
-function GeneticUploadInner() {
+export default function GeneticUploadPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState<UploadTab>(() => {
-    const t = searchParams.get("tab");
-    return t && VALID_TABS.has(t) ? (t as UploadTab) : "dna";
-  });
   const [userId, setUserId] = useState<string | null>(null);
   const [provider, setProvider] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -167,11 +96,10 @@ function GeneticUploadInner() {
     });
   }, []);
 
-  // Upload a chosen file immediately (one step, matching the Epigenetic tab). A raw
-  // 23andMe / Ancestry data file (.txt/.csv) goes through the direct genotype parse;
-  // a report PDF or a photo goes through the verify-before-save vision flow. Both
-  // carry the per-tab panel scope (a genotype tab captures only its panel; the DNA
-  // Test tab passes no scope and captures every panel).
+  // Brief 17: one DNA upload. A raw 23andMe / Ancestry data file (.txt/.csv)
+  // goes through the direct genotype parse; a report PDF or a photo goes
+  // through the verify-before-save vision flow. Every panel is scored from
+  // this one file (no per-panel tabs).
   const handleUpload = useCallback(async (selectedFile: File) => {
     if (!userId) return;
     setIsUploading(true);
@@ -179,13 +107,10 @@ function GeneticUploadInner() {
       const name = selectedFile.name.toLowerCase();
       const isPdf = name.endsWith(".pdf") || selectedFile.type === "application/pdf";
       const isImage = selectedFile.type.startsWith("image/");
-      const panelScope = activeTab === "dna" ? null : activeTab;
 
       if (isPdf || isImage) {
         const formData = new FormData();
         formData.append("file", selectedFile);
-        if (panelScope) formData.append("panel", panelScope);
-        // Abort the request if the server stalls, so the spinner can never hang.
         const res = await withAbortTimeout(
           (signal) => fetch("/api/genex/upload-pdf", { method: "POST", body: formData, signal }),
           45_000,
@@ -208,13 +133,17 @@ function GeneticUploadInner() {
       formData.append("kitId", `upload-${Date.now()}`);
       const detected = providerFromName(name) ?? provider;
       if (detected) formData.append("provider", detected);
-      if (panelScope) formData.append("panel", panelScope);
 
       const res = await fetch("/api/genex/upload", { method: "POST", body: formData });
       const data = await res.json();
       if (data.success) {
         setResult(data.data);
-        toast.success(`${data.data.summary.panel_variants_found} genetic variants analyzed!`);
+        const found = data.data.summary.panel_variants_found as number;
+        if (isEmptyMarkerCount(found)) {
+          toast(emptyMarkerCountLabel(found), { icon: "i" });
+        } else {
+          toast.success(`${found} genetic variants analyzed!`);
+        }
       } else {
         toast.error(data.error || "Upload failed");
       }
@@ -223,9 +152,8 @@ function GeneticUploadInner() {
     } finally {
       setIsUploading(false);
     }
-  }, [userId, provider, activeTab]);
+  }, [userId, provider]);
 
-  // Validate a chosen or dropped file, then upload it immediately.
   const validateAndUpload = useCallback((f: File) => {
     const name = f.name.toLowerCase();
     const ok =
@@ -250,9 +178,6 @@ function GeneticUploadInner() {
     e.target.value = "";
   }, [validateAndUpload]);
 
-  // Prompt 204c: save the PDF-extracted variants the member just verified. The
-  // server re-runs the deterministic engine from the rows, so the saved status
-  // never depends on what the client displayed.
   const handleConfirmPdf = useCallback(async () => {
     if (!pdfPreview || pdfPreview.rows.length === 0) return;
     setPdfSaving(true);
@@ -263,8 +188,6 @@ function GeneticUploadInner() {
         body: JSON.stringify({
           rows: pdfPreview.rows,
           sourceFilename: pdfPreview.sourceFilename,
-          // Re-send the per-tab scope so the confirmed save stays within this panel.
-          panel: activeTab === "dna" ? undefined : activeTab,
         }),
       });
       const data = await res.json();
@@ -279,7 +202,7 @@ function GeneticUploadInner() {
     } finally {
       setPdfSaving(false);
     }
-  }, [pdfPreview, activeTab]);
+  }, [pdfPreview]);
 
   const handleCancelPdf = useCallback(() => {
     setPdfPreview(null);
@@ -287,7 +210,6 @@ function GeneticUploadInner() {
     setProvider(null);
   }, []);
 
-  // Check for GENEX360 results via Genemetrics API
   const checkGenemetrics = useCallback(async () => {
     if (!userId) return;
     setGenexStatus("checking");
@@ -336,56 +258,18 @@ function GeneticUploadInner() {
 
   return (
     <PageTransition className="max-w-4xl mx-auto px-4 py-8">
-      {/* Header */}
       <StaggerChild className="flex items-center gap-3 mb-8">
         <button onClick={() => router.push("/genetics")} className="p-2 rounded-lg hover:bg-white/5 transition-colors">
-          <ArrowLeft className="w-5 h-5 text-slate-400" />
+          <ArrowLeft className="w-5 h-5 text-slate-400" strokeWidth={1.5} />
         </button>
-        <Dna className="w-6 h-6 text-teal" />
+        <Dna className="w-6 h-6 text-teal" strokeWidth={1.5} />
         <div>
           <h1 className="text-2xl font-bold text-white">Upload Genetic Data</h1>
-          <p className="text-sm text-gray-400">Import your DNA test or your EpigenHQ results, all in one place</p>
+          <p className="text-sm text-gray-400">Import your DNA test once. Every GeneX360 panel is scored from this file.</p>
         </div>
       </StaggerChild>
 
-      {/* Prompt 204 (2026-06-21): one tabbed page for every GeneX360 test. DNA Test
-          (raw files + GENEX360 sync, covering the methylation panel) and Epigenetic
-          (measured report) each have their own upload; Nutrition, Hormone, Peptide,
-          and Cannabis are read from the DNA file and explain that. ?tab= deep links
-          to any tab. The tab bar scrolls on narrow widths. */}
-      <StaggerChild className="mb-6">
-        <div className="scrollbar-hide flex gap-1 overflow-x-auto rounded-xl border border-white/[0.08] bg-white/[0.03] p-1">
-          {TABS.map((t) => {
-            const TabIcon = t.icon;
-            const isActive = activeTab === t.id;
-            return (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setActiveTab(t.id)}
-                aria-pressed={isActive}
-                className={`inline-flex min-h-[44px] flex-none items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 ${
-                  isActive ? "bg-teal/15 text-teal" : "text-gray-400 hover:bg-white/[0.04] hover:text-white"
-                }`}
-              >
-                <TabIcon className="h-4 w-4" strokeWidth={1.5} />
-                {t.label}
-              </button>
-            );
-          })}
-        </div>
-      </StaggerChild>
-
-      {/* The Epigenetic tab owns its measured-report upload. Every other tab
-          (DNA plus the four genotype panels) shares the SAME raw-DNA upload flow
-          below: the verify-before-save and saved screens take precedence, then the
-          upload form. The genotype panels are read from the one DNA file, so each
-          of their tabs shows the same dropzone with a short per-panel intro. */}
-      {activeTab === "epigen" ? (
-        <StaggerChild>
-          <EpigenUploadPanel />
-        </StaggerChild>
-      ) : pdfSavedCount !== null ? (
+      {pdfSavedCount !== null ? (
         <StaggerChild className="space-y-6">
           <Card className="p-6 border-portal-green/30 bg-portal-green/5">
             <div className="flex items-center gap-3 mb-4">
@@ -393,7 +277,9 @@ function GeneticUploadInner() {
               <div>
                 <h2 className="text-lg font-semibold text-white">Variants saved</h2>
                 <p className="text-sm text-gray-400">
-                  {pdfSavedCount} interpreted {pdfSavedCount === 1 ? "variant" : "variants"} saved to your record.
+                  {isEmptyMarkerCount(pdfSavedCount)
+                    ? emptyMarkerCountLabel(pdfSavedCount)
+                    : `${pdfSavedCount} interpreted ${pdfSavedCount === 1 ? "variant" : "variants"} saved to your record.`}
                 </p>
               </div>
             </div>
@@ -428,8 +314,8 @@ function GeneticUploadInner() {
                 <AlertTriangle className="mt-0.5 h-4 w-4 flex-none" strokeWidth={1.5} />
                 <span>
                   {pdfPreview.readable === false
-                    ? 'We could not read this document. It may be unreadable, or our reader is temporarily unavailable. Try a clearer file or enter your results manually.'
-                    : 'We could not find any known genetic markers in this report. It may be a summary rather than raw genotype data, or it covers markers outside our current panel. Try a different file or enter manually.'}
+                    ? "We could not read this document. It may be unreadable, or our reader is temporarily unavailable. Try a clearer file or enter your results manually."
+                    : "We could not find any known genetic markers in this report. It may be a summary rather than raw genotype data, or it covers markers outside our current panel. Try a different file or enter manually."}
                 </span>
               </div>
             ) : (
@@ -456,8 +342,6 @@ function GeneticUploadInner() {
                         {v.status}
                       </span>
                     </div>
-                    {/* The verbatim source snippet, so a misread (for example a
-                        genotype grabbed from the wrong column) is catchable. */}
                     {v.context ? (
                       <p className="mt-1.5 font-mono text-[11px] leading-relaxed text-white/40">
                         Read from: &quot;{v.context}&quot;
@@ -499,26 +383,36 @@ function GeneticUploadInner() {
         <StaggerChild className="space-y-6">
           <Card className="p-6 border-portal-green/30 bg-portal-green/5">
             <div className="flex items-center gap-3 mb-4">
-              <CheckCircle2 className="w-8 h-8 text-portal-green" />
+              <CheckCircle2 className="w-8 h-8 text-portal-green" strokeWidth={1.5} />
               <div>
-                <h2 className="text-lg font-semibold text-white">Analysis Complete</h2>
-                <p className="text-sm text-gray-400">{result.summary.total_snps_parsed.toLocaleString()} SNPs parsed, {result.summary.panel_variants_found} panel variants scored</p>
+                <h2 className="text-lg font-semibold text-white">
+                  {isEmptyMarkerCount(result.summary.panel_variants_found)
+                    ? emptyMarkerCountLabel(result.summary.panel_variants_found)
+                    : "Analysis Complete"}
+                </h2>
+                <p className="text-sm text-gray-400">
+                  {isEmptyMarkerCount(result.summary.panel_variants_found)
+                    ? "No panel markers were scored from this file."
+                    : `${result.summary.total_snps_parsed.toLocaleString()} SNPs parsed, ${result.summary.panel_variants_found} panel variants scored`}
+                </p>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-4 mb-4">
-              <div className="rounded-lg bg-red-500/10 border border-red-500/20 p-3 text-center">
-                <p className="text-2xl font-bold text-red-400">{result.summary.risk_summary.high}</p>
-                <p className="text-xs text-gray-400">High Risk</p>
+            {!isEmptyMarkerCount(result.summary.panel_variants_found) ? (
+              <div className="grid grid-cols-3 gap-4 mb-4">
+                <div className="rounded-lg bg-red-500/10 border border-red-500/20 p-3 text-center">
+                  <p className="text-2xl font-bold text-red-400">{result.summary.risk_summary.high}</p>
+                  <p className="text-xs text-gray-400">High Risk</p>
+                </div>
+                <div className="rounded-lg bg-yellow-500/10 border border-yellow-500/20 p-3 text-center">
+                  <p className="text-2xl font-bold text-yellow-400">{result.summary.risk_summary.moderate}</p>
+                  <p className="text-xs text-gray-400">Moderate</p>
+                </div>
+                <div className="rounded-lg bg-green-500/10 border border-green-500/20 p-3 text-center">
+                  <p className="text-2xl font-bold text-green-400">{result.summary.risk_summary.low}</p>
+                  <p className="text-xs text-gray-400">Low Risk</p>
+                </div>
               </div>
-              <div className="rounded-lg bg-yellow-500/10 border border-yellow-500/20 p-3 text-center">
-                <p className="text-2xl font-bold text-yellow-400">{result.summary.risk_summary.moderate}</p>
-                <p className="text-xs text-gray-400">Moderate</p>
-              </div>
-              <div className="rounded-lg bg-green-500/10 border border-green-500/20 p-3 text-center">
-                <p className="text-2xl font-bold text-green-400">{result.summary.risk_summary.low}</p>
-                <p className="text-xs text-gray-400">Low Risk</p>
-              </div>
-            </div>
+            ) : null}
             {result.recommendations.length > 0 && (
               <div className="border-t border-white/[0.08] pt-4">
                 <p className="text-sm font-medium text-white mb-2">Recommended Supplements</p>
@@ -543,15 +437,12 @@ function GeneticUploadInner() {
         </StaggerChild>
       ) : (
         <div className="space-y-6">
-          {activeTab === "dna" ? (
-          <>
-          {/* GENEX360 Auto-Import (DNA tab only) */}
           <StaggerChild>
             <Card className="p-6 border-copper/20 bg-gradient-to-br from-copper/5 to-transparent">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-xl bg-copper/10 flex items-center justify-center">
-                    <Zap className="w-6 h-6 text-copper" />
+                    <Zap className="w-6 h-6 text-copper" strokeWidth={1.5} />
                   </div>
                   <div>
                     <h2 className="text-lg font-semibold text-white">ViaConnect GENEX360</h2>
@@ -563,11 +454,11 @@ function GeneticUploadInner() {
               <div className="flex items-center gap-3">
                 {genexStatus === "found" ? (
                   <Button onClick={importGenemetrics} disabled={isUploading} className="bg-copper hover:bg-copper/80 text-white">
-                    {isUploading ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Importing...</> : <><Cloud className="w-4 h-4 mr-2" />Import GENEX360 Results</>}
+                    {isUploading ? <><Loader2 className="w-4 h-4 animate-spin mr-2" strokeWidth={1.5} />Importing...</> : <><Cloud className="w-4 h-4 mr-2" strokeWidth={1.5} />Import GENEX360 Results</>}
                   </Button>
                 ) : (
                   <Button onClick={checkGenemetrics} disabled={genexStatus === "checking"} variant="secondary">
-                    {genexStatus === "checking" ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Checking...</> : <><RefreshCw className="w-4 h-4 mr-2" />Check for Results</>}
+                    {genexStatus === "checking" ? <><Loader2 className="w-4 h-4 animate-spin mr-2" strokeWidth={1.5} />Checking...</> : <><RefreshCw className="w-4 h-4 mr-2" strokeWidth={1.5} />Check for Results</>}
                   </Button>
                 )}
                 {genexStatus === "none" && (
@@ -575,9 +466,9 @@ function GeneticUploadInner() {
                 )}
               </div>
               <div className="mt-4 flex items-center gap-4 text-xs text-gray-500">
-                <div className="flex items-center gap-1"><Shield className="w-3.5 h-3.5" /> HIPAA-aware</div>
-                <div className="flex items-center gap-1"><Zap className="w-3.5 h-3.5" /> Instant Analysis</div>
-                <div className="flex items-center gap-1"><Dna className="w-3.5 h-3.5" /> 6-Panel Complete</div>
+                <div className="flex items-center gap-1"><Shield className="w-3.5 h-3.5" strokeWidth={1.5} /> HIPAA-aware</div>
+                <div className="flex items-center gap-1"><Zap className="w-3.5 h-3.5" strokeWidth={1.5} /> Instant Analysis</div>
+                <div className="flex items-center gap-1"><Dna className="w-3.5 h-3.5" strokeWidth={1.5} /> 6-Panel Complete</div>
               </div>
             </Card>
           </StaggerChild>
@@ -588,7 +479,6 @@ function GeneticUploadInner() {
             <div className="flex-1 h-px bg-white/[0.08]" />
           </div>
 
-          {/* Supported Providers */}
           <StaggerChild>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {SUPPORTED_PROVIDERS.map((p) => (
@@ -608,28 +498,7 @@ function GeneticUploadInner() {
               ))}
             </div>
           </StaggerChild>
-          </>
-          ) : (
-            // A genotype panel tab: the same dropzone, with a short intro telling
-            // the member what the panel covers and that it is read from their DNA.
-            <StaggerChild>
-              <Card className="p-6">
-                <h2 className="text-lg font-semibold text-white">{EXPLAINERS[activeTab]?.title}</h2>
-                <p className="text-sm text-gray-400 mt-1">{EXPLAINERS[activeTab]?.covers}</p>
-                <p className="text-sm text-gray-400 mt-2">{EXPLAINERS[activeTab]?.dataSourceNote}</p>
-                <Link
-                  href={EXPLAINERS[activeTab]?.blueprintHref ?? "/shop/genex360"}
-                  className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-teal hover:text-teal/80"
-                >
-                  View on your blueprint
-                </Link>
-              </Card>
-            </StaggerChild>
-          )}
 
-          {/* Upload Zone (shared by the DNA tab and every genotype panel tab). One
-              card matching the Epigenetic tab: a raw DNA data file, a report PDF, or
-              a photo. The file uploads as soon as it is chosen. */}
           <StaggerChild>
             <input
               ref={fileInputRef}
@@ -668,10 +537,9 @@ function GeneticUploadInner() {
             </div>
           </StaggerChild>
 
-          {/* Security Note */}
           <StaggerChild>
             <div className="flex items-start gap-3 rounded-xl bg-white/[0.02] border border-white/[0.06] p-4">
-              <Shield className="w-5 h-5 text-teal flex-shrink-0 mt-0.5" />
+              <Shield className="w-5 h-5 text-teal flex-shrink-0 mt-0.5" strokeWidth={1.5} />
               <div>
                 <p className="text-sm font-medium text-white">Your data is secure</p>
                 <p className="text-xs text-gray-400 mt-1">
@@ -685,15 +553,5 @@ function GeneticUploadInner() {
         </div>
       )}
     </PageTransition>
-  );
-}
-
-export default function GeneticUploadPage() {
-  // useSearchParams (for the ?tab deep link) requires a Suspense boundary in the
-  // App Router; the inner component holds all of the upload state.
-  return (
-    <Suspense fallback={null}>
-      <GeneticUploadInner />
-    </Suspense>
   );
 }

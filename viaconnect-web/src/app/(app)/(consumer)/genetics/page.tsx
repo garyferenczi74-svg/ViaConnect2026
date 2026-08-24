@@ -5,8 +5,9 @@
 // Complete hero, the six standalone panel cards, and the order CTA) is
 // superseded here: the hub assembles the Task A to D pieces into the banded
 // bento, and the six per panel cards are absorbed into the Your Variants card's
-// six test pill tabs. The sibling /genetics/upload and /genetics/[panelId]
-// routes are untouched and still reachable.
+// six test pill tabs. /genetics/upload is the one DNA upload. Unknown
+// /genetics/{slug} values 404 in this app shell; known catalog slugs
+// redirect to /genetics/blueprint#slug.
 //
 // This is a SERVER component (no client directive), so exporting metadata is
 // safe. The hub body sits on plain Deep Navy (#1A2744). A Suspense boundary

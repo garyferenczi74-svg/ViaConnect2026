@@ -54,6 +54,8 @@ describe("EpigeneticInterpretationCard source", () => {
     expect(source).toContain("Lower than expected");
     expect(source).toContain("Within the expected range");
     expect(source).toContain("Connect your EpigenHQ test");
+    expect(source).toContain('href="/genetics/epigenetic/upload"');
+    expect(source).not.toContain("?tab=epigen");
     // The matching higher / lower block is emphasized (teal), never an alarm color.
     expect(source).toContain("higherEmphasis");
     expect(source).toContain("lowerEmphasis");
