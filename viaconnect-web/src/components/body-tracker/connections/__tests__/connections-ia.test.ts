@@ -9,11 +9,12 @@ function src(rel: string): string {
 }
 
 describe('Connections IA contracts', () => {
-  it('uses the same surface for 390 connections and 1280 wearables alias', () => {
+  it('uses ConnectionsSurface on the canonical path and redirects /wearables there', () => {
     const connections = src('src/app/(app)/(consumer)/body-tracker/connections/page.tsx');
     const wearables = src('src/app/(app)/(consumer)/wearables/page.tsx');
     expect(connections).toContain('ConnectionsSurface');
-    expect(wearables).toContain('ConnectionsSurface');
+    expect(wearables).toContain("redirect('/body-tracker/connections')");
+    expect(wearables).not.toContain('ConnectionsSurface');
     expect(wearables).not.toContain('5 min ago');
     expect(wearables).not.toContain('Apple Watch');
     expect(wearables).not.toContain('Vitality');
@@ -140,11 +141,11 @@ describe('Connections IA contracts', () => {
     expect(tiles).not.toContain('LAST_SYNC_STATES');
   });
 
-  it('/wearables is ConnectionsSurface + last-sync SM only — no WearableDashboardPage', () => {
+  it('/wearables redirects to Connections and last-sync SM stays on the canonical page', () => {
     const wearables = src('src/app/(app)/(consumer)/wearables/page.tsx');
     const connections = src('src/app/(app)/(consumer)/body-tracker/connections/page.tsx');
-    expect(wearables).toContain('ConnectionsSurface');
-    expect(wearables).toMatch(/return <ConnectionsSurface \/>/);
+    expect(wearables).toContain("redirect('/body-tracker/connections')");
+    expect(wearables).not.toContain('ConnectionsSurface');
     expect(wearables).not.toMatch(/WearableDashboardPage|Wearable Dashboard|ScoreRing/);
     expect(wearables).not.toMatch(/Last sync:\s*5 min ago|["'`]5 min ago["'`]/);
     expect(wearables).not.toMatch(/px-4 py-6/);

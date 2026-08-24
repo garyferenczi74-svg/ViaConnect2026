@@ -23,7 +23,8 @@ describe('leftover WearableDashboard cannot invent variants', () => {
     const wearables = src('src/app/(app)/(consumer)/wearables/page.tsx');
     const connections = src('src/app/(app)/(consumer)/body-tracker/connections/page.tsx');
     const manage = src('src/app/(app)/(consumer)/plugins/manage/page.tsx');
-    expect(wearables).toContain('ConnectionsSurface');
+    expect(wearables).toContain("redirect('/body-tracker/connections')");
+    expect(wearables).not.toContain('ConnectionsSurface');
     expect(connections).toContain('ConnectionsSurface');
     expect(wearables).not.toContain('function WearableDashboardPage');
     expect(wearables).not.toContain('Last sync: 5 min ago');

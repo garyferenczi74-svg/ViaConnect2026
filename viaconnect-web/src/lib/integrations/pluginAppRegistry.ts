@@ -65,12 +65,12 @@ export const PLUGIN_APP_REGISTRY_FALLBACK: PluginAppRegistryRow[] = [
     category: 'Health Platforms',
     description: 'Weight, sleep, and activity feed Bio Optimization.',
     iconKey: 'HeartPulse',
-    status: 'live',
+    status: 'coming_soon',
     connectionType: 'oauth2',
     stateSource: 'body_tracker_connections',
-    connectPath: '/api/integrations/google-health/start?return_to=/plugins',
-    disconnectPath: '/api/integrations/google-health/disconnect',
-    wearablesCrossLink: '/body-tracker/connections',
+    connectPath: null,
+    disconnectPath: null,
+    wearablesCrossLink: null,
     sortOrder: 10,
   },
   {
@@ -207,6 +207,29 @@ export function isPluginConnectWired(app: PluginAppRegistryRow): boolean {
 export function isPluginPageApp(app: PluginAppRegistryRow): boolean {
   if (isExcludedPluginSlug(app.slug)) return false;
   if (app.connectionType === 'file_import') return false;
+  return true;
+}
+
+/**
+ * Connections lists Whoop, Hume Body Pod, Apple Health, Oura only.
+ * Google has no tile there. Coming soon is the honest CTA.
+ */
+export function honestPluginAppRow(app: PluginAppRegistryRow): PluginAppRegistryRow {
+  if (app.slug !== 'google_health') return app;
+  return {
+    ...app,
+    status: 'coming_soon',
+    wearablesCrossLink: null,
+  };
+}
+
+/** Manage must not claim Connections will show Google. */
+export function isTruthfulWearablesManage(app: {
+  slug: string;
+  wearablesCrossLink: string | null;
+}): boolean {
+  if (!app.wearablesCrossLink) return false;
+  if (app.slug === 'google_health') return false;
   return true;
 }
 

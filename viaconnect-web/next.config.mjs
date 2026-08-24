@@ -89,6 +89,11 @@ const nextConfig = {
         destination: "/body-tracker/composition",
         permanent: false,
       },
+      {
+        source: "/wearables",
+        destination: "/body-tracker/connections",
+        permanent: false,
+      },
       { source: "/privacy-policy", destination: "/privacy", permanent: true },
       { source: "/terms-of-service", destination: "/terms", permanent: true },
       { source: "/tos", destination: "/terms", permanent: true },

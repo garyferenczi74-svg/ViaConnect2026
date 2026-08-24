@@ -24,7 +24,7 @@
 //                                                         NutriVision hub)
 //   supplements_protocol /supplements                    (consumer)
 //   body_tracker        /body-tracker                    (consumer)
-//   wearable_dashboard  /wearables                       (consumer; plural)
+//   wearable_dashboard  /body-tracker/connections        (consumer; /wearables redirects)
 //   plug_ins_directory  /plugins                         (consumer; no hyphen)
 //   helix_challenges    /helix                           (consumer)
 
@@ -48,7 +48,7 @@ export const PILL_ROUTES: Record<PillDestinationKey, string> = {
   nutrition_log: '/nutrition/photo-ai',
   supplements_protocol: '/supplements',
   body_tracker: '/body-tracker',
-  wearable_dashboard: '/wearables',
+  wearable_dashboard: '/body-tracker/connections',
   plug_ins_directory: '/plugins',
   helix_challenges: '/helix',
 };

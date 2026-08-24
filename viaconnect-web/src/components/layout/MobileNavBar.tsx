@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useRef } from 'react';
 import type { IconType } from '@/types/icon';
+import { isNavHrefActive } from '@/components/layout/navActive';
 
 type NavItem = { href: string; label: string; icon: IconType };
 
@@ -22,7 +23,7 @@ const PORTAL_NAV: Record<string, NavItem[]> = {
     { href: '/nutrition', label: 'My Nutrition', icon: Apple },
     { href: '/supplements', label: 'My Supplements', icon: Pill },
     { href: '/body-tracker', label: 'My Biology', icon: Activity },
-    { href: '/wearables', label: 'Wearables Data', icon: Activity },
+    { href: '/body-tracker/connections', label: 'Wearables Data', icon: Activity },
     { href: '/helix', label: 'Helix Rewards', icon: Dna },
     { href: '/peptide-protocol', label: 'Peptide Education', icon: FlaskConical },
     { href: '/wellness/advisor', label: 'Hannah AI', icon: MessageCircleHeart },
@@ -107,11 +108,12 @@ export function MobileNavBar({ role }: { role: string }) {
           className="flex items-center gap-1 overflow-x-auto no-scrollbar px-7 py-2"
         >
           {nav.map((item) => {
-            const isActive =
-              pathname === item.href ||
-              (item.href !== '/dashboard' &&
-               item.href !== '/admin' &&
-               pathname.startsWith(item.href + '/'));
+            const isActive = isNavHrefActive(
+              pathname ?? '',
+              item.href,
+              nav.map((n) => n.href),
+              ['/dashboard', '/admin'],
+            );
             const Icon = item.icon;
 
             return (

@@ -9,6 +9,7 @@ import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { ViaConnectLogo, DNAHelixIcon } from "@/components/ui/ViaConnectLogo";
 import { isNaturopathLikeCredential } from "@/lib/practitioner/taxonomy";
+import { isNavHrefActive } from "@/components/layout/navActive";
 import type { LucideIcon } from "lucide-react";
 import {
   LayoutDashboard,
@@ -87,7 +88,7 @@ const CONSUMER: PortalConfig = {
     { href: "/nutrition", label: "My Nutrition", icon: Apple },
     { href: "/supplements", label: "My Supplements", icon: Pill },
     { href: "/body-tracker", label: "My Biology", icon: Activity },
-    { href: "/wearables", label: "Wearables Data", icon: Activity },
+    { href: "/body-tracker/connections", label: "Wearables Data", icon: Activity },
     { href: "/helix", label: "Helix Rewards", icon: Dna },
     { href: "/peptide-protocol", label: "Peptide Education", icon: FlaskConical },
     { href: "/wellness/advisor", label: "Hannah AI Wellness Assistant", icon: MessageCircleHeart },
@@ -329,9 +330,12 @@ export function Sidebar({
       {/* ── Navigation ── */}
       <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
         {portal.nav.map((item) => {
-          const isActive =
-            pathname === item.href ||
-            (item.href !== portal.homeHref && pathname.startsWith(item.href + "/"));
+          const isActive = isNavHrefActive(
+            pathname ?? '',
+            item.href,
+            portal.nav.map((n) => n.href),
+            [portal.homeHref],
+          );
 
           return (
             <Link

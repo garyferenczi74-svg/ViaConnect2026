@@ -14,6 +14,7 @@ import { safeLog } from '@/lib/utils/safe-log';
 import {
   PLUGIN_APP_REGISTRY_FALLBACK,
   PLUGIN_SECTION_ORDER,
+  honestPluginAppRow,
   isPluginConnectWired,
   isPluginPageApp,
   pluginSectionFor,
@@ -104,14 +105,17 @@ export async function loadPluginAppRegistry(
     );
     if (error || !Array.isArray(data) || data.length === 0) {
       if (error) safeLog.warn(SCOPE, 'registry read failed open to fallback', { error });
-      return PLUGIN_APP_REGISTRY_FALLBACK.filter(isPluginPageApp);
+      return PLUGIN_APP_REGISTRY_FALLBACK.map(honestPluginAppRow).filter(isPluginPageApp);
     }
-    return (data as Record<string, unknown>[]).map(mapRegistryRow).filter(isPluginPageApp);
+    return (data as Record<string, unknown>[])
+      .map(mapRegistryRow)
+      .map(honestPluginAppRow)
+      .filter(isPluginPageApp);
   } catch (err) {
     safeLog.warn(SCOPE, 'registry timeout/error fail-open', {
       error: err instanceof Error ? err.message : String(err),
     });
-    return PLUGIN_APP_REGISTRY_FALLBACK.filter(isPluginPageApp);
+    return PLUGIN_APP_REGISTRY_FALLBACK.map(honestPluginAppRow).filter(isPluginPageApp);
   }
 }
 
@@ -219,6 +223,7 @@ export function joinRegistryWithState(
   const bySlug = new Map(snapshots.map((s) => [s.slug, s]));
   return registry
     .filter(isPluginPageApp)
+    .map(honestPluginAppRow)
     .slice()
     .sort((a, b) => a.sortOrder - b.sortOrder || a.displayName.localeCompare(b.displayName))
     .map((app) => {

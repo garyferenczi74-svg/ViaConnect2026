@@ -14,8 +14,11 @@ import {
   PLUGIN_COMING_SOON_ACTION,
   PLUGIN_PAGE_SCOPE_LINE,
   PLUGIN_PAGE_SUBTITLE,
+  honestPluginAppRow,
   isPluginConnectWired,
   isPluginPageApp,
+  isTruthfulWearablesManage,
+  type PluginAppRegistryRow,
 } from '../pluginAppRegistry';
 
 const root = process.cwd();
@@ -46,13 +49,22 @@ describe('Plugin app registry (apps only)', () => {
     expect(slugs).not.toContain('genetics_file_import');
   });
 
-  it('google_health is live with wearables Manage target and wired Connect', () => {
+  it('google_health is coming soon and does not claim Connections will show Google', () => {
     const gh = PLUGIN_APP_REGISTRY_FALLBACK.find((r) => r.slug === 'google_health');
-    expect(gh?.status).toBe('live');
-    expect(gh?.wearablesCrossLink).toBe('/body-tracker/connections');
-    expect(gh?.connectPath).toMatch(/google-health\/start/);
-    expect(gh?.disconnectPath).toMatch(/google-health\/disconnect/);
-    expect(gh && isPluginConnectWired(gh)).toBe(true);
+    expect(gh?.status).toBe('coming_soon');
+    expect(gh?.wearablesCrossLink).toBeNull();
+    expect(gh?.connectPath).toBeNull();
+    expect(gh && isPluginConnectWired(gh)).toBe(false);
+    expect(gh && isTruthfulWearablesManage(gh)).toBe(false);
+    expect(gh && isTruthfulWearablesManage({
+      slug: gh.slug,
+      wearablesCrossLink: '/body-tracker/connections',
+    })).toBe(false);
+    expect(honestPluginAppRow({
+      ...(gh as PluginAppRegistryRow),
+      status: 'live',
+      wearablesCrossLink: '/body-tracker/connections',
+    }).wearablesCrossLink).toBeNull();
   });
 
   it('MFP and Cronometer stay coming soon until OAuth exists', () => {
@@ -82,9 +94,9 @@ describe('joinRegistryWithState uses last-sync-state only', () => {
     expect(mfp?.lastSyncAt).toBeNull();
   });
 
-  it('marks google_health connected only when last-sync is real', () => {
+  it('never invents Google Connected on Connections and keeps coming soon', () => {
     const offline = joinRegistryWithState(PLUGIN_APP_REGISTRY_FALLBACK, []);
-    expect(offline.find((c) => c.slug === 'google_health')?.cardState).toBe('not_connected');
+    expect(offline.find((c) => c.slug === 'google_health')?.cardState).toBe('coming_soon');
 
     const persistNoSync = joinRegistryWithState(PLUGIN_APP_REGISTRY_FALLBACK, [
       {
@@ -97,7 +109,7 @@ describe('joinRegistryWithState uses last-sync-state only', () => {
       },
     ]);
     expect(persistNoSync.find((c) => c.slug === 'google_health')?.cardState).toBe(
-      'not_connected',
+      'coming_soon',
     );
     expect(persistNoSync.find((c) => c.slug === 'google_health')?.lastSyncAt).toBeNull();
 
@@ -112,14 +124,74 @@ describe('joinRegistryWithState uses last-sync-state only', () => {
       },
     ]);
     const gh = online.find((c) => c.slug === 'google_health');
-    expect(gh?.cardState).toBe('connected');
-    expect(gh?.lastSyncAt).toBe('2026-08-12T00:00:00.000Z');
+    expect(gh?.cardState).toBe('coming_soon');
+    expect(gh?.lastSyncAt).toBeNull();
+    expect(gh?.wearablesCrossLink).toBeNull();
   });
 
-  it('maps token/status failure to Needs reconnect', () => {
-    const cards = joinRegistryWithState(PLUGIN_APP_REGISTRY_FALLBACK, [
+  it('marks a wired live app connected only when last-sync is real', () => {
+    const live: PluginAppRegistryRow = {
+      slug: 'wired_live_app',
+      displayName: 'Wired live app',
+      category: 'Health Platforms',
+      description: 'Test live join.',
+      iconKey: 'HeartPulse',
+      status: 'live',
+      connectionType: 'oauth2',
+      stateSource: 'body_tracker_connections',
+      connectPath: '/api/integrations/wired-live/start',
+      disconnectPath: '/api/integrations/wired-live/disconnect',
+      wearablesCrossLink: null,
+      sortOrder: 1,
+    };
+
+    const persistNoSync = joinRegistryWithState([live], [
       {
-        slug: 'google_health',
+        slug: 'wired_live_app',
+        connected: true,
+        status: 'connected',
+        connectedAt: '2026-08-01T00:00:00.000Z',
+        lastSyncAt: null,
+        source: 'body_tracker_connections',
+      },
+    ]);
+    expect(persistNoSync.find((c) => c.slug === 'wired_live_app')?.cardState).toBe(
+      'not_connected',
+    );
+
+    const online = joinRegistryWithState([live], [
+      {
+        slug: 'wired_live_app',
+        connected: true,
+        status: 'connected',
+        connectedAt: '2026-08-01T00:00:00.000Z',
+        lastSyncAt: '2026-08-12T00:00:00.000Z',
+        source: 'body_tracker_connections',
+      },
+    ]);
+    const row = online.find((c) => c.slug === 'wired_live_app');
+    expect(row?.cardState).toBe('connected');
+    expect(row?.lastSyncAt).toBe('2026-08-12T00:00:00.000Z');
+  });
+
+  it('maps token/status failure to Needs reconnect for a wired live app', () => {
+    const live: PluginAppRegistryRow = {
+      slug: 'wired_live_app',
+      displayName: 'Wired live app',
+      category: 'Health Platforms',
+      description: 'Test live join.',
+      iconKey: 'HeartPulse',
+      status: 'live',
+      connectionType: 'oauth2',
+      stateSource: 'body_tracker_connections',
+      connectPath: '/api/integrations/wired-live/start',
+      disconnectPath: '/api/integrations/wired-live/disconnect',
+      wearablesCrossLink: null,
+      sortOrder: 1,
+    };
+    const cards = joinRegistryWithState([live], [
+      {
+        slug: 'wired_live_app',
         connected: false,
         status: 'needs_reconnect',
         connectedAt: '2026-08-01T00:00:00.000Z',
@@ -127,13 +199,13 @@ describe('joinRegistryWithState uses last-sync-state only', () => {
         source: 'body_tracker_connections',
       },
     ]);
-    expect(cards.find((c) => c.slug === 'google_health')?.cardState).toBe('needs_reconnect');
+    expect(cards.find((c) => c.slug === 'wired_live_app')?.cardState).toBe('needs_reconnect');
   });
 
   it('fail-open never fabricates connected', () => {
     const cards = joinRegistryWithState(PLUGIN_APP_REGISTRY_FALLBACK, []);
     expect(cards.some((c) => c.cardState === 'connected')).toBe(false);
-    expect(cards.find((c) => c.slug === 'google_health')?.cardState).toBe('not_connected');
+    expect(cards.find((c) => c.slug === 'google_health')?.cardState).toBe('coming_soon');
   });
 
   it('groups only IA sections that have a row', () => {
