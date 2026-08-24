@@ -23,7 +23,7 @@ gary_approval_required: true
 
 Phytosterols compete with cholesterol for absorption in general nutrition education. Genes such as ABCG5 and ABCG8 help the body move plant sterols. Common variants may relate to small differences in blood sterols in research. That is not the rare condition called sitosterolemia, which needs special blood tests and a genetics-aware clinician.
 
-This card covers the confirmed extract list (8 unique rs IDs), which matches the partner header.
+This card covers the confirmed extract list (8 unique rs IDs), which matches the report header.
 
 Confirmed variants: ABCG8 rs41360247; ABCG8 rs4245791; ABCG5 rs6720173; ABCG8 rs11887534; ABCG8 rs4299376; ABCG8 rs4148217; CETP rs5882; CYP7A1 rs3808607.
 
@@ -37,15 +37,15 @@ Plant sterols are fats from plants. Most people absorb only a small fraction. Ch
 
 MedlinePlus and GeneReviews describe sitosterolemia as a rare recessive condition from biallelic pathogenic variants in ABCG5 or ABCG8. Diagnosis uses greatly increased plasma plant sterols and/or those pathogenic variants. Common GWAS SNPs on this card are not that pathway.
 
-If Elysium later returns biallelic pathogenic ABCG5 or ABCG8 variants, stop lifestyle copy and escalate. This education card does not manage that.
+If a clinician identifies biallelic pathogenic ABCG5 or ABCG8 variants, that is a specialist path. This education card does not manage that.
 
 ## Production vs absorption: lab balance scores
 
-Some lab methods try to describe cholesterol production versus absorption. Those are different ideas. A partner summary may use one word while a score band uses another. Do not pick a side in user copy. A clinician reads the sterol or lipid method that was actually run.
+Some lab methods try to describe cholesterol production versus absorption. Those are different ideas. A report summary may use one word while a score band uses another. This page does not pick one label over the other. A clinician reads the sterol or lipid method that was actually run.
 
 ## Fortified sterol foods
 
-Foods fortified with plant sterols are sometimes discussed for general LDL education in people without sitosterolemia. Opposite food advice exists for true sitosterolemia. Do not add or avoid sterol-fortified products from this page alone. Do not push sterol-fortified margarines as treatment when this theme is highlighted. Nuts and seeds are not dangerous from this card.
+Foods fortified with plant sterols are sometimes discussed for general LDL education in people without sitosterolemia. Opposite food advice exists for true sitosterolemia. Do not add or avoid sterol-fortified products from this page alone. This page does not push sterol-fortified margarines as treatment. Nuts and seeds are not dangerous from this card.
 
 ## APOE does not personalize plant sterol response
 
@@ -57,8 +57,8 @@ APOE is not on this confirmed plant-cholesterol list. APOE type does not tell a 
 - A standard lipid panel is not a sitosterol test.
 - Opposite food advice exists for true sitosterolemia.
 - Nuts and seeds are not dangerous from this card.
-- This card's 8 confirmed rs IDs match the partner header.
-- Production and absorption are different ideas. Do not force one partner label.
+- This card's 8 confirmed rs IDs match the report header.
+- Production and absorption are different ideas. This page does not force one report label.
 
 ## What to do next
 
@@ -79,4 +79,4 @@ Review lipid labs with a clinician. If xanthomas or a rare sterol disorder is in
 
 ## FDA disclaimer
 
-These statements have not been evaluated by the Food and Drug Administration. This product is not intended to diagnose, treat, cure, or prevent any disease. This card is educational, not medical advice. Talk with a licensed clinician before changing diet or supplements, especially if you are pregnant, breastfeeding, have a medical condition, or take medicines.
+These statements have not been evaluated by the Food and Drug Administration. This information is not intended to diagnose, treat, cure, or prevent any disease. This card is educational, not medical advice. Talk with a licensed clinician before changing diet or supplements, especially if you are pregnant, breastfeeding, have a medical condition, or take medicines.

@@ -24,7 +24,7 @@ gary_approval_required: true
 
 Protein supports muscle repair, immune function, hormone production, and tissue structure. This page does not set a target from genotype. Uric acid, if already on file, is lab context, not a genetics proof.
 
-This card covers the confirmed extract list (4 unique rs IDs). The partner page header said 5 variants. Header count vs extract is partner noise; do not invent SNPs.
+This card covers the confirmed extract list (4 unique rs IDs). Your genetics report header may list 5 variants. This extract includes only the confirmed variants named below.
 
 Confirmed variants on this card: LPIN1 rs4315495; TFAP2B rs987237; FTO rs1558902; FTO rs9939609.
 
@@ -38,13 +38,13 @@ Many people feel fuller longer when a meal includes a protein source. That is po
 
 FTO rs9939609 and FTO rs1558902 are listed extract SNPs. They are studied for appetite and adiposity associations. That is education only.
 
-LPIN1 and TFAP2B appear on this confirmed protein list. Writer copy should stay at "these loci appear in protein or adiposity-diet research" and should not invent a mechanism the extract does not state.
+LPIN1 and TFAP2B appear on this confirmed protein list. These loci appear in protein or adiposity-diet research. This page does not invent a mechanism the extract does not state.
 
-Neutral or improved genetics language on a partner score is not a training plan. The meal plan, not this gene list, sets protein amounts.
+Neutral or improved language on a genetics score is not a training plan. The meal plan, not this gene list, sets protein amounts.
 
 ## Uric acid as a clinician lab, not a gene score
 
-If a uric acid result is already on file, a clinician reads it in context (gout history, kidney function, medicines). It does not prove that protein genes are working. This card does not reprint demo lab numbers.
+If a uric acid result is already on file, a clinician reads it in context (gout history, kidney function, medicines). It does not prove that protein genes are working. This card does not reprint example lab numbers as yours.
 
 ## Kidney disease and other conditions: clinician owns targets
 
@@ -54,8 +54,8 @@ If you have kidney disease, reduced eGFR, pregnancy, gout, or an eating-disorder
 
 - The meal plan, not this gene list, sets protein amounts.
 - Neutral or improved genetics language is not a bodybuilding protocol.
-- Do not copy partner gram-per-pound lines onto this education card.
-- This card covers 4 confirmed rs IDs. Header count vs extract is partner noise; do not invent SNPs.
+- This education card does not set grams per pound.
+- This card covers 4 confirmed rs IDs. Extra header slots are not on this extract.
 - Uric acid is lab context, not gene proof.
 
 ## What to do next
@@ -77,4 +77,4 @@ Use the protein amounts already on the meal plan. If you have kidney disease, pr
 
 ## FDA disclaimer
 
-These statements have not been evaluated by the Food and Drug Administration. This product is not intended to diagnose, treat, cure, or prevent any disease. This card is educational, not medical advice. Talk with a licensed clinician before changing diet or supplements, especially if you are pregnant, breastfeeding, have a medical condition, or take medicines.
+These statements have not been evaluated by the Food and Drug Administration. This information is not intended to diagnose, treat, cure, or prevent any disease. This card is educational, not medical advice. Talk with a licensed clinician before changing diet or supplements, especially if you are pregnant, breastfeeding, have a medical condition, or take medicines.

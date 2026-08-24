@@ -26,11 +26,11 @@ gary_approval_required: true
 
 Insulin helps the body use carbohydrate from meals. In research language, insulin resistance means tissues respond less efficiently. This panel mixes common metabolic variants with glucose labs when those labs exist. CDC diabetes-prevention education focuses on food pattern, activity, sleep, and weight if appropriate. Genes are not part of that public program.
 
-This card covers the confirmed extract list (12 unique rs IDs). The partner page header said 18 variants. Remaining variants are pending Elysium.
+This card covers the confirmed extract list (12 unique rs IDs). Your genetics report header may list 18 variants. This extract includes only the confirmed variants named below.
 
 Confirmed variants: PPM1K rs1440581; DIO2 rs225014; IGF1 rs35767; NAT2 rs1208; MTNR1B rs10830963; IRS1 rs2943641; ABCC8 rs757110; IL6 / IL6-AS1 rs1800795; ADIPOQ rs17300539; GCK rs1799884; GCKR rs780094; PPARG rs1801282.
 
-TCF7L2 rs7903146 is confirmed on the saturated-fat extract list, not on this insulin list. Do not add it here.
+TCF7L2 rs7903146 is confirmed on the saturated-fat extract list. It is not on this extract list.
 
 ## Insulin as a hormone (plain language)
 
@@ -38,7 +38,7 @@ Insulin is a hormone that helps move glucose from meals into cells. A gene score
 
 ## Why labs beat genes for this theme
 
-Fasting glucose, HbA1c, and clinician-ordered insulin or C-peptide, if already on file, beat SNPs for this conversation. This card does not reprint demo lab numbers. If labs are already in a diabetes range, a clinician owns diagnosis and treatment.
+Fasting glucose, HbA1c, and clinician-ordered insulin or C-peptide, if already on file, beat SNPs for this conversation. This card does not reprint example lab numbers as yours. If labs are already in a diabetes range, a clinician owns diagnosis and treatment.
 
 ## Research loci, not a script
 
@@ -54,10 +54,10 @@ Known type 1 diabetes, type 2 diabetes on insulin or a secretagogue, pregnancy o
 
 ## Key takeaways
 
-- Do not display reverse diabetes or hack insulin.
+- This page does not use reverse-diabetes or hack-insulin language.
 - Do not declare insulin resistance from SNPs alone.
-- No weight-loss optimization framing on this card.
-- This card covers 12 confirmed rs IDs. Six header slots are pending Elysium.
+- This card is not a weight-loss optimization pitch.
+- This card covers 12 confirmed rs IDs. Extra header slots are not on this extract.
 - TCF7L2 is not on this confirmed insulin list.
 
 ## What to do next
@@ -79,4 +79,4 @@ If labs are already in a diabetes range, a clinician owns diagnosis and treatmen
 
 ## FDA disclaimer
 
-These statements have not been evaluated by the Food and Drug Administration. This product is not intended to diagnose, treat, cure, or prevent any disease. This card is educational, not medical advice. Talk with a licensed clinician before changing diet or supplements, especially if you are pregnant, breastfeeding, have a medical condition, or take medicines.
+These statements have not been evaluated by the Food and Drug Administration. This information is not intended to diagnose, treat, cure, or prevent any disease. This card is educational, not medical advice. Talk with a licensed clinician before changing diet or supplements, especially if you are pregnant, breastfeeding, have a medical condition, or take medicines.

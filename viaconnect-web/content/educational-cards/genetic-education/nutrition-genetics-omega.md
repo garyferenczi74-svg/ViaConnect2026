@@ -24,7 +24,7 @@ gary_approval_required: true
 
 The body can make some longer-chain omega-3 fats from plant ALA, but conversion is limited for many people. Fatty fish and algal oils provide EPA and DHA directly. Variants in FADS1 and ELOVL2 are among the genetic correlates of blood polyunsaturated fatty acid levels in research. They do not diagnose a deficiency.
 
-This card covers the confirmed extract list (7 unique rs IDs). The partner page header said 8 variants. Remaining variants are pending Elysium.
+This card covers the confirmed extract list (7 unique rs IDs). Your genetics report header may list 8 variants. This extract includes only the confirmed variants named below.
 
 Confirmed variants: BDNF rs6265; ELOVL2 rs2236212; ELOVL2 rs3734398; ELOVL2 rs953413; FADS1 rs174548; NOS3 rs1799983; TNF rs1800629.
 
@@ -34,9 +34,9 @@ NIH ODS explains that ALA is found mainly in plant oils such as flaxseed, soybea
 
 ## FADS and ELOVL conversion research
 
-The only FADS1 ID on this extract is rs174548. Do not use rs174537 as an alias. Reviews (including PMC4070521) describe FADS cluster variants as correlates of circulating long-chain PUFA levels. ELOVL2 variants appear in the same conversion pathway in research. Effects are modest as a personal script. A FADS1 rs174548 or ELOVL2 result does not require high-dose EPA.
+The only FADS1 ID on this extract is rs174548. rs174537 is not on this list. Reviews (including PMC4070521) describe FADS cluster variants as correlates of circulating long-chain PUFA levels. ELOVL2 variants appear in the same conversion pathway in research. Effects are modest as a personal script. A FADS1 rs174548 or ELOVL2 result does not require high-dose EPA.
 
-BDNF rs6265, NOS3 rs1799983, and TNF rs1800629 are on this confirmed omega list. Keep them as listed research tags. Do not turn them into brain, vessel, or inflammation-cure claims.
+BDNF rs6265, NOS3 rs1799983, and TNF rs1800629 are on this confirmed omega list. They stay as listed research tags. They are not brain, vessel, or inflammation-cure claims.
 
 ## Food sources
 
@@ -44,17 +44,17 @@ Fatty fish (such as salmon, sardines, herring, mackerel) and algal oils provide 
 
 ## Omega-3 index and ratios as labs, when they exist
 
-If an omega-3 index is already on file, review it with a clinician. If a partner engine returns no result for an omega-6 to omega-3 ratio, do not invent a replacement ratio and do not treat a zero as a clinical finding.
+If an omega-3 index is already on file, review it with a clinician. If a report returns no result for an omega-6 to omega-3 ratio, do not invent a replacement ratio and do not treat a zero as a clinical finding.
 
-Gut scores on a partner omega page are not proof of leaky gut treatment.
+Gut scores on an omega theme are not proof of leaky gut treatment.
 
 ## Key takeaways
 
 - This page does not set a supplement dose.
 - Fish-oil drug claims are out of scope.
 - Gut scores are not leaky gut treatment.
-- This card covers 7 confirmed rs IDs. One header slot is pending Elysium.
-- Do not import Via Cura bioavailability multipliers onto this genetics card.
+- This card covers 7 confirmed rs IDs. Extra header slots are not on this extract.
+- This genetics card does not import Via Cura bioavailability multipliers.
 
 ## What to do next
 
@@ -77,4 +77,4 @@ Discuss food sources of omega-3s. If an omega-3 index is already on file, review
 
 ## FDA disclaimer
 
-These statements have not been evaluated by the Food and Drug Administration. This product is not intended to diagnose, treat, cure, or prevent any disease. This card is educational, not medical advice. Talk with a licensed clinician before changing diet or supplements, especially if you are pregnant, breastfeeding, have a medical condition, or take medicines.
+These statements have not been evaluated by the Food and Drug Administration. This information is not intended to diagnose, treat, cure, or prevent any disease. This card is educational, not medical advice. Talk with a licensed clinician before changing diet or supplements, especially if you are pregnant, breastfeeding, have a medical condition, or take medicines.
