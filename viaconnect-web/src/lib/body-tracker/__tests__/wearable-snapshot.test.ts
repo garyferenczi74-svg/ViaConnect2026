@@ -21,6 +21,7 @@ function base(over: Partial<WearableSnapshotInput> = {}): WearableSnapshotInput 
     ouraConfigured: false,
     platform: 'web',
     metabolicManual: true,
+    now: Date.parse('2026-08-24T12:00:00.000Z'),
     ...over,
   };
 }
@@ -42,7 +43,9 @@ describe('wearable snapshot', () => {
     );
     expect(snap.tiles.find((t) => t.id === 'whoop')?.statusLabel).toBe('Not connected');
     expect(snap.tiles.find((t) => t.id === 'oura')?.statusLabel).toBe('Not connected');
+    expect(snap.tiles.find((t) => t.id === 'apple_health')?.lastSyncState).toBe('synced');
     expect(snap.tiles.find((t) => t.id === 'apple_health')?.statusLabel).toBe('Synced 2d ago');
+    expect(snap.tiles.find((t) => t.id === 'apple_health')?.lastSyncAt).toBe('2026-08-22T08:00:00.000Z');
     expect(snap.tiles.every((t) => t.appleWatchConnected === false)).toBe(true);
   });
 
@@ -70,6 +73,8 @@ describe('wearable snapshot', () => {
         now: Date.parse('2026-08-24T10:00:00.000Z'),
       }),
     );
+    expect(snap.tiles.find((t) => t.id === 'hume')?.lastSyncState).toBe('synced');
+    expect(snap.tiles.find((t) => t.id === 'apple_health')?.lastSyncState).toBe('synced');
     expect(snap.tiles.find((t) => t.id === 'hume')?.statusLabel).toBe('Synced 4d ago');
     expect(snap.tiles.find((t) => t.id === 'apple_health')?.statusLabel).toBe('Synced 4d ago');
     expect(snap.tiles.find((t) => t.id === 'hume')?.action.kind).toBe('xml_upload');
@@ -124,7 +129,8 @@ describe('wearable snapshot', () => {
     expect(strain?.displayValue).toBe('8.4');
     expect(strain?.sources.every((s) => s.source === 'whoop')).toBe(true);
     const metabolic = rows.find((r) => r.dimension === 'metabolic');
-    expect(metabolic?.displayValue).toBe('Pending');
+    expect(metabolic?.displayValue).toBe('UNKNOWN');
+    expect(metabolic?.showRing).toBe(false);
     expect(metabolic?.value).toBeNull();
     expect(metabolic?.manual).toBe(false);
   });
@@ -145,6 +151,7 @@ describe('wearable snapshot', () => {
       }),
     );
     expect(rows.find((r) => r.dimension === 'sleep')?.sources).toEqual([]);
-    expect(rows.find((r) => r.dimension === 'strain')?.displayValue).toBe('Pending');
+    expect(rows.find((r) => r.dimension === 'strain')?.displayValue).toBe('UNKNOWN');
+    expect(rows.find((r) => r.dimension === 'strain')?.showRing).toBe(false);
   });
 });

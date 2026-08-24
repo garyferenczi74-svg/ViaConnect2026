@@ -21,6 +21,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { sanitizeExplanation } from '@/lib/scoring/sanitize-explanation';
+import { computeWeeklyDelta, toDisplayBosScore, weekAgoDate } from '@/lib/scoring/bos-display';
 import type {
   AccuracyPill,
   BOSCurrentResponse,
@@ -76,7 +77,7 @@ export async function GET(_request: Request): Promise<Response> {
   const sb = supabase as any;
   const { data: latest } = await sb
     .from('bio_optimization_history')
-    .select('id, score, tier, confidence, compute_version, computed_at, breakdown')
+    .select('id, score, tier, confidence, compute_version, computed_at, date, breakdown')
     .eq('user_id', user.id)
     .order('date', { ascending: false })
     .order('compute_seq', { ascending: false })
@@ -87,7 +88,8 @@ export async function GET(_request: Request): Promise<Response> {
     return Response.json(buildPreComputeResponse());
   }
 
-  return Response.json(buildCurrentResponse(latest));
+  const weeklyDelta = await readWeeklyDelta(sb, user.id, latest);
+  return Response.json(buildCurrentResponse(latest, weeklyDelta));
 }
 
 // ---------------------------------------------------------------------------
@@ -102,6 +104,7 @@ function buildPreComputeResponse(): BOSCurrentResponse {
     confidence: 0.720,
     confidence_display: '72%',
     computed_at: null,
+    weekly_delta: null,
     compute_version: COMPUTE_VERSION,
     accuracy_pills: [
       { key: 'caq', label: 'CAQ', state: 'incomplete', destination_key: 'caq_resume', confidence_unlocked_pct: 72 },
@@ -136,6 +139,7 @@ interface HistoryRowLike {
   confidence: number | string;
   compute_version: string | null;
   computed_at: string | null;
+  date?: string | null;
   breakdown: Record<string, unknown>;
 }
 
@@ -144,9 +148,7 @@ interface HistoryRowLike {
 // the string "60.00", and the onboarding poll's typeof === "number" gate never
 // passed, hanging the post-CAQ analysis screen on the reassessment path.
 function toNum(v: number | string | null | undefined): number | null {
-  if (v === null || v === undefined) return null;
-  const n = typeof v === 'string' ? Number(v) : v;
-  return Number.isFinite(n) ? n : null;
+  return toDisplayBosScore(v);
 }
 
 interface DiagnosticFoundationShape {
@@ -175,7 +177,38 @@ interface HannahOutputShape {
   >;
 }
 
-function buildCurrentResponse(row: HistoryRowLike): BOSCurrentResponse {
+async function readWeeklyDelta(
+  // Same cookie-aware client used for the latest-row read above.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  sb: any,
+  userId: string,
+  latest: HistoryRowLike,
+): Promise<number | null> {
+  const latestDate = typeof latest.date === 'string' ? latest.date : null;
+  const cutoff = latestDate ? weekAgoDate(latestDate) : null;
+  if (!cutoff) return null;
+
+  try {
+    const { data: prior } = await sb
+      .from('bio_optimization_history')
+      .select('score, date')
+      .eq('user_id', userId)
+      .lte('date', cutoff)
+      .order('date', { ascending: false })
+      .order('compute_seq', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    return computeWeeklyDelta(latest.score, prior?.score ?? null, latestDate, prior?.date ?? null);
+  } catch {
+    return null;
+  }
+}
+
+function buildCurrentResponse(
+  row: HistoryRowLike,
+  weeklyDelta: number | null,
+): BOSCurrentResponse {
   const breakdown = row.breakdown ?? {};
   const diag = (breakdown.diagnostic_foundation ?? {}) as DiagnosticFoundationShape;
   const engagementState = (breakdown.engagement_state ?? {}) as EngagementStateShape;
@@ -186,11 +219,12 @@ function buildCurrentResponse(row: HistoryRowLike): BOSCurrentResponse {
 
   return {
     score: toNum(row.score),
-    baseline: diag.caq?.baseline_score ?? null,
+    baseline: toDisplayBosScore(diag.caq?.baseline_score) ?? null,
     tier,
     confidence,
     confidence_display: confidenceDisplay(confidence),
     computed_at: row.computed_at,
+    weekly_delta: weeklyDelta,
     compute_version: row.compute_version ?? COMPUTE_VERSION,
     accuracy_pills: buildAccuracyPills(diag),
     engagement_pills: buildEngagementPills(hannah, engagementState),

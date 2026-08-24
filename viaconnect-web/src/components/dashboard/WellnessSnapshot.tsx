@@ -1,9 +1,10 @@
 'use client';
 
-// WellnessSnapshot — compact AI Wellness Analytics preview with a recharts
-// radar chart of all 10 categories. Loads from `wellness_analytics` if a row
-// exists; otherwise calls /api/ai/generate-wellness-analytics to generate one.
-// Hidden on mobile per Prompt #56 layout — render this in a desktop-only slot.
+// WellnessSnapshot — retired from consumer analytics IA (Brief 13).
+// The emoji 10-category grid is no longer mounted on /dashboard or
+// /wellness-analytics. /analytics (Your Journey) is the consumer analytics
+// view. This file is kept so existing generate-wellness-analytics callers
+// compile; do not remount it as the analytics destination.
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';

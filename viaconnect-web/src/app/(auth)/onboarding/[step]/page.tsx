@@ -2709,7 +2709,7 @@ const FALLBACK_TIERS: PlanTierRow[] = [
 
 function OnboardingComplete() {
   const router = useRouter();
-  const [displayName, setDisplayName] = useState("there");
+  const [displayName, setDisplayName] = useState("");
   const [bioScore, setBioScore] = useState(0);
   const [animatedScore, setAnimatedScore] = useState(0);
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
@@ -2723,7 +2723,7 @@ function OnboardingComplete() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const name = user.user_metadata?.full_name ?? user.email?.split("@")[0] ?? "there";
+      const name = user.user_metadata?.full_name ?? user.email?.split("@")[0] ?? "";
       setDisplayName(name.split(" ")[0]);
 
       // Load bio optimization score from profiles

@@ -4,8 +4,10 @@ import { deriveScanComposition } from '../deriveScanComposition';
 const base = { body_type: 'meso', fat_distribution: 'balanced', estimated_whr_min: 0.8, estimated_whr_max: 0.9, muscle_development: {}, ai_confidence: 'medium' as const };
 
 describe('deriveScanComposition', () => {
-  it('takes the midpoint of the body-fat range', () => {
+  it('keeps the range and stores midpoint only as metadata', () => {
     const r = deriveScanComposition({ ...base, estimated_body_fat_min: 18, estimated_body_fat_max: 22 });
+    expect(r.estimatedBodyFatMin).toBe(18);
+    expect(r.estimatedBodyFatMax).toBe(22);
     expect(r.totalBodyFatPct).toBe(20);
   });
   it('returns null (UNKNOWN) not 0 when the range is unusable', () => {

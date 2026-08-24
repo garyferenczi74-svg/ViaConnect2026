@@ -39,7 +39,7 @@ async function resolveDisplayName(
   } catch {
     /* fail-open */
   }
-  return 'there';
+  return '';
 }
 
 export interface RunCompilationOpts {

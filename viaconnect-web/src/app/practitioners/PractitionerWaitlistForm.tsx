@@ -15,6 +15,7 @@ import {
   type PrimaryClinicalFocus,
   type ReferralSource,
 } from '@/lib/practitioner/waitlistSchema';
+import { waitlistEmailFromSearchParam } from '@/lib/practitioner/waitlist-honesty';
 
 interface FormState extends Partial<WaitlistSubmission> {}
 
@@ -85,7 +86,7 @@ export function PractitionerWaitlistForm() {
       utmMedium: params.get('utm_medium') ?? undefined,
       utmCampaign: params.get('utm_campaign') ?? undefined,
       invitationToken: invitationToken ?? prev.invitationToken,
-      email: prefillEmail ?? prev.email,
+      email: waitlistEmailFromSearchParam(params.get('email')) ?? prefillEmail ?? prev.email,
       credentialType: prefillCredential ?? prev.credentialType,
     }));
   }, [params]);
@@ -299,7 +300,7 @@ export function PractitionerWaitlistForm() {
       <button
         type="submit"
         disabled={submitting}
-        className="group inline-flex items-center justify-center gap-2 self-start rounded-xl bg-[#2DA5A0] px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-[#26948F] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/60 disabled:cursor-not-allowed disabled:opacity-60"
+        className="group inline-flex min-h-[44px] w-full sm:w-auto items-center justify-center gap-2 self-start rounded-xl bg-[#2DA5A0] px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-[#26948F] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/60 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {submitting ? (
           <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.5} />
@@ -372,7 +373,7 @@ function Input({
       placeholder={placeholder}
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full rounded-lg border border-white/10 bg-[#0E1A30] px-3 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-[#2DA5A0]/60 focus:outline-none focus:ring-2 focus:ring-[#2DA5A0]/30"
+      className="w-full min-h-[44px] rounded-lg border border-white/10 bg-[#0E1A30] px-3 py-2.5 text-base text-white placeholder:text-white/30 focus:border-[#2DA5A0]/60 focus:outline-none focus:ring-2 focus:ring-[#2DA5A0]/30"
     />
   );
 }
@@ -394,7 +395,7 @@ function Textarea({
       rows={rows}
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full rounded-lg border border-white/10 bg-[#0E1A30] px-3 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-[#2DA5A0]/60 focus:outline-none focus:ring-2 focus:ring-[#2DA5A0]/30"
+      className="w-full min-h-[44px] rounded-lg border border-white/10 bg-[#0E1A30] px-3 py-2.5 text-base text-white placeholder:text-white/30 focus:border-[#2DA5A0]/60 focus:outline-none focus:ring-2 focus:ring-[#2DA5A0]/30"
     />
   );
 }
@@ -417,7 +418,7 @@ function Select<T extends string>({
       required={required}
       value={value}
       onChange={(e) => onChange(e.target.value as T)}
-      className="w-full rounded-lg border border-white/10 bg-[#0E1A30] px-3 py-2.5 text-sm text-white focus:border-[#2DA5A0]/60 focus:outline-none focus:ring-2 focus:ring-[#2DA5A0]/30"
+      className="w-full min-h-[44px] rounded-lg border border-white/10 bg-[#0E1A30] px-3 py-2.5 text-base text-white focus:border-[#2DA5A0]/60 focus:outline-none focus:ring-2 focus:ring-[#2DA5A0]/30"
     >
       <option value="" disabled>{placeholder ?? 'Select'}</option>
       {options.map((o) => (

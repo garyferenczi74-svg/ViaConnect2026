@@ -39,6 +39,8 @@ import {
 } from '@/components/gauges/PlasmaGauge';
 import { useBioOptimizationTrend } from '@/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/hooks/useBioOptimizationTrend';
 import { useHydrationToday } from '@/components/hydration/useHydrationToday';
+import { useBOSCurrent } from '@/hooks/use-bos-current';
+import { BOS_INSUFFICIENT_DATA_COPY, toDisplayBosScore } from '@/lib/scoring/bos-display';
 
 // ---------------------------------------------------------------------------
 // Tokens (mirror PillarGaugeRow)
@@ -133,9 +135,11 @@ export function GaugeCluster({ userId }: { userId: string | null }) {
   // Fail-open: missing data -> value 0 -> computing state. Never throws.
   const { data: bosData } = useBioOptimizationTrend(userId, '7D');
   const { data: hydrationData } = useHydrationToday();
+  const { data: bosCurrent } = useBOSCurrent();
+  const bosScore = toDisplayBosScore(bosCurrent?.score);
 
   const specs = buildGaugeData({
-    current: bosData?.current,
+    current: bosScore ?? undefined,
     averages: bosData?.categoryAverages ?? null,
     hydrationPct: hydrationData?.percentage_of_target ?? null,
   });
@@ -146,14 +150,23 @@ export function GaugeCluster({ userId }: { userId: string | null }) {
     <div className="overflow-x-auto pb-1 lg:overflow-x-visible">
       <div className="flex gap-2.5 lg:grid lg:grid-cols-7" style={{ minWidth: 'max-content' }} aria-label="Pillar score gauges">
         {specs.map((spec) => {
-          const has = spec.value > 0;
+          const isBos = spec.label === 'Bio Optimization';
+          const has = isBos ? bosScore !== null : spec.value > 0;
           return (
             <div
               key={spec.label}
               className="flex shrink-0 flex-col items-center gap-1.5 rounded-xl border border-white/[0.08] bg-[#16203A] px-2 py-3 lg:shrink"
             >
+              {isBos && bosScore === null ? (
+                <div
+                  className="flex h-[92px] w-[92px] items-center justify-center px-1 text-center text-[9px] leading-tight text-white/50"
+                  aria-label={`Bio Optimization Score: ${BOS_INSUFFICIENT_DATA_COPY}`}
+                >
+                  {BOS_INSUFFICIENT_DATA_COPY}
+                </div>
+              ) : (
               <PlasmaGauge
-                value={spec.value}
+                value={isBos && bosScore !== null ? bosScore : spec.value}
                 metric={spec.metric}
                 variant="standard"
                 size={92}
@@ -161,10 +174,11 @@ export function GaugeCluster({ userId }: { userId: string | null }) {
                 caption={has ? spec.label.toUpperCase() : 'COMPUTING'}
                 ariaLabel={
                   has
-                    ? `${spec.label} ${spec.value} of 100`
+                    ? `${spec.label} ${isBos ? bosScore : spec.value} of 100`
                     : `${spec.label} score is computing`
                 }
               />
+              )}
               <span
                 className="text-center text-[10px] font-medium leading-tight text-white/60"
                 style={{ fontFamily: DM_SANS }}

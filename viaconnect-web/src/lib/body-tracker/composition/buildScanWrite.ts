@@ -12,6 +12,7 @@
 import type { ScanDerived } from './types';
 import type { ExtractedMeasurements, MeasuredValue, ConfidenceLevel } from '@/lib/arnold/scanning/types';
 import { CALIBRATION_VERSION } from '@/lib/arnold/scanning/accuracy/calibrationConfig';
+import { formatFormaVisionEstimateNote } from './estimateNote';
 
 // ---- confidenceToNumeric ----------------------------------------------------
 
@@ -143,8 +144,19 @@ export function buildScanWrite(args: {
   scanId: string;
   scanDate: string;
   derived: ScanDerived;
-}): { entry: Record<string, unknown>; segFat: Record<string, unknown> } {
+}): {
+  entry: Record<string, unknown>;
+  segFat: Record<string, unknown>;
+  weight: Record<string, unknown>;
+} {
   const { userId, scanId, scanDate, derived } = args;
+
+  const min = derived.estimatedBodyFatMin ?? null;
+  const max = derived.estimatedBodyFatMax ?? null;
+  const notes =
+    min !== null && max !== null && Number.isFinite(min) && Number.isFinite(max)
+      ? formatFormaVisionEstimateNote(min, max)
+      : 'FormaVision photo-scan estimate';
 
   const entry: Record<string, unknown> = {
     user_id: userId,
@@ -153,14 +165,23 @@ export function buildScanWrite(args: {
     device_name: 'FormaVision',
     entry_date: scanDate,
     confidence: derived.confidence,
+    notes,
   };
 
   // entry_id is filled by the route after the entry insert returns its id.
-  // Only write total_body_fat_pct - all other segmental fields are UNKNOWN from a photo scan.
+  // Only write total_body_fat_pct (midpoint metadata) - regional fields stay UNKNOWN.
   const segFat: Record<string, unknown> = {
     user_id: userId,
     total_body_fat_pct: derived.totalBodyFatPct,
   };
 
-  return { entry, segFat };
+  // Photo scans do not measure scale weight. Insert the spine row with UNKNOWN weight
+  // so BMI continues to read the latest non-null body_tracker_weight.weight_lbs.
+  const weight: Record<string, unknown> = {
+    user_id: userId,
+    weight_lbs: null,
+    body_fat_pct: null,
+  };
+
+  return { entry, segFat, weight };
 }
