@@ -24,7 +24,7 @@
 // strokeDasharray from 0 to fillLength over the same duration.
 
 import type { BOSCurrentResponse } from '@/lib/scoring/types';
-import { BOS_INSUFFICIENT_DATA_COPY, toDisplayBosScore } from '@/lib/scoring/bos-display';
+import { BOS_INSUFFICIENT_DATA_COPY, resolveHonestBosDisplay } from '@/lib/scoring/bos-display';
 import {
   colorForScore,
   labelForScore,
@@ -38,7 +38,7 @@ export interface BOSScoreGaugeProps {
 }
 
 export function BOSScoreGauge({ data }: BOSScoreGaugeProps) {
-  const target = toDisplayBosScore(data.score);
+  const target = resolveHonestBosDisplay(data).score;
   const isPlaceholder = target === null;
   const color = isPlaceholder ? '#2DA5A0' : colorForScore(target);
   const label = isPlaceholder ? 'READY' : labelForScore(target);

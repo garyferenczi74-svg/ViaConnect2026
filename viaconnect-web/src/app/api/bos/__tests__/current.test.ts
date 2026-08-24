@@ -41,7 +41,9 @@ function makeBreakdown(opts: {
   genetics_purchase_with_no_results?: boolean;
   hannah_explanation?: string;
   nutrition_last?: string | null;
+  empty_engagement?: boolean;
 } = {}) {
+  const engagementAt = opts.empty_engagement === true ? null : undefined;
   return {
     diagnostic_foundation: {
       caq: {
@@ -67,15 +69,23 @@ function makeBreakdown(opts: {
     },
     engagement_state: {
       nutrition: {
-        last_engaged_at: opts.nutrition_last ?? '2026-05-10T20:30:00Z',
-        recent_events_7d: 4,
-        recent_events_30d: 12,
+        last_engaged_at: opts.nutrition_last ?? (engagementAt === null ? null : '2026-05-10T20:30:00Z'),
+        recent_events_7d: opts.empty_engagement ? 0 : 4,
+        recent_events_30d: opts.empty_engagement ? 0 : 12,
       },
       supplements: { last_engaged_at: null, recent_events_7d: 0, recent_events_30d: 0 },
-      body_tracker: { last_engaged_at: '2026-05-09T07:00:00Z', recent_events_7d: 2, recent_events_30d: 8 },
+      body_tracker: {
+        last_engaged_at: engagementAt === null ? null : '2026-05-09T07:00:00Z',
+        recent_events_7d: opts.empty_engagement ? 0 : 2,
+        recent_events_30d: opts.empty_engagement ? 0 : 8,
+      },
       wearable: { last_engaged_at: null, recent_events_7d: 0, recent_events_30d: 0 },
       plug_ins: { last_engaged_at: null, recent_events_7d: 0, recent_events_30d: 0 },
-      helix_challenges: { last_engaged_at: '2026-05-08T14:00:00Z', recent_events_7d: 1, recent_events_30d: 3 },
+      helix_challenges: {
+        last_engaged_at: engagementAt === null ? null : '2026-05-08T14:00:00Z',
+        recent_events_7d: opts.empty_engagement ? 0 : 1,
+        recent_events_30d: opts.empty_engagement ? 0 : 3,
+      },
     },
     hannah_output: {
       score: 75,
@@ -250,6 +260,7 @@ describe('current pre-compute shape', () => {
     expect(body.hannah_explanation).toBe(
       'Complete your CAQ to see your Bio Optimization Score.',
     );
+    expect(body.contributors).toEqual([]);
   });
 });
 
@@ -311,6 +322,64 @@ describe('current full shape with valid history row', () => {
     const res = await GET(new Request('https://example.com/api/bos/current'));
     const body = await res.json();
     expect(body.baseline).toBe(65);
+  });
+
+  it('suppresses a persisted 62 when wearables and CAQ / labs contributors are missing', async () => {
+    installAuthedClient(makeHistoryRow({
+      score: 62,
+      breakdown: makeBreakdown({
+        caq_completed: false,
+        caq_baseline: null,
+        labs_present: false,
+        genetics_present: false,
+        nutrition_last: null,
+        empty_engagement: true,
+      }),
+    }));
+    const res = await GET(new Request('https://example.com/api/bos/current'));
+    const body = await res.json();
+    expect(body.score).toBeNull();
+    expect(body.score).not.toBe(62);
+    expect(body.score).not.toBe(0);
+    expect(body.weekly_delta).toBeNull();
+    expect(body.contributors).toEqual([]);
+    expect(body.accuracy_pills.map((p: { state: string }) => p.state)).toEqual([
+      'incomplete',
+      'incomplete',
+      'incomplete',
+    ]);
+  });
+
+  it('keeps a persisted 62 and names CAQ when CAQ produced the score', async () => {
+    installAuthedClient(makeHistoryRow({
+      score: 62,
+      breakdown: makeBreakdown({
+        caq_completed: true,
+        caq_baseline: 62,
+        labs_present: false,
+        nutrition_last: null,
+      }),
+    }));
+    const res = await GET(new Request('https://example.com/api/bos/current'));
+    const body = await res.json();
+    expect(body.score).toBe(62);
+    expect(body.contributors).toEqual(
+      expect.arrayContaining([{ key: 'caq', label: 'CAQ' }]),
+    );
+    expect(body.contributors.some((c: { key: string }) => c.key === 'caq')).toBe(true);
+  });
+
+  it('passes a real persisted 0 when CAQ is a named contributor', async () => {
+    installAuthedClient(makeHistoryRow({
+      score: 0,
+      breakdown: makeBreakdown({ caq_completed: true, nutrition_last: null }),
+    }));
+    const res = await GET(new Request('https://example.com/api/bos/current'));
+    const body = await res.json();
+    expect(body.score).toBe(0);
+    expect(body.contributors).toEqual(
+      expect.arrayContaining([{ key: 'caq', label: 'CAQ' }]),
+    );
   });
 
   it('passes hannah_explanation through from breakdown.hannah_output.explanation', async () => {

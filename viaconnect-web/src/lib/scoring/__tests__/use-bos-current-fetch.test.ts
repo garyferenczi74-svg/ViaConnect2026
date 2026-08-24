@@ -38,6 +38,7 @@ describe('fetchBOSCurrent', () => {
         { key: 'genetics', label: 'Genetics', state: 'incomplete', destination_key: 'genex360_purchase', confidence_unlocked_pct: 96 },
       ],
       engagement_pills: [],
+      contributors: [],
       hannah_explanation: 'Complete your CAQ to see your Bio Optimization Score.',
     };
   }

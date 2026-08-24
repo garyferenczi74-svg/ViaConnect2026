@@ -21,7 +21,13 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { sanitizeExplanation } from '@/lib/scoring/sanitize-explanation';
-import { computeWeeklyDelta, toDisplayBosScore, weekAgoDate } from '@/lib/scoring/bos-display';
+import {
+  collectNamedBosContributors,
+  computeWeeklyDelta,
+  toDisplayBosScore,
+  toHonestDisplayBosScore,
+  weekAgoDate,
+} from '@/lib/scoring/bos-display';
 import type {
   AccuracyPill,
   BOSCurrentResponse,
@@ -121,6 +127,7 @@ function buildPreComputeResponse(): BOSCurrentResponse {
       last_engaged_at: null,
       destination_key: ENGAGEMENT_DESTINATIONS[key],
     })),
+    contributors: [],
     hannah_explanation: PRECOMPUTE_EXPLANATION,
   };
 }
@@ -216,18 +223,37 @@ function buildCurrentResponse(
 
   const tier = normalizeTier(row.tier);
   const confidence = toNum(row.confidence) ?? 0.720;
+  const contributors = collectNamedBosContributors({
+    caqCompleted: diag.caq?.completed === true,
+    labsPresent: diag.labs?.present === true,
+    geneticsPresent: diag.genetics?.present === true,
+    wearable: isRecord(breakdown.contributors)
+      ? (breakdown.contributors as Record<string, unknown>).wearable
+      : null,
+    engagement: {
+      nutrition: engagementState.nutrition,
+      supplements: engagementState.supplements,
+      body_tracker: engagementState.body_tracker,
+      wearable: engagementState.wearable,
+      plug_ins: engagementState.plug_ins,
+      helix_challenges: engagementState.helix_challenges,
+    },
+  });
+  const persistedScore = toNum(row.score);
+  const score = toHonestDisplayBosScore(persistedScore, contributors);
 
   return {
-    score: toNum(row.score),
+    score,
     baseline: toDisplayBosScore(diag.caq?.baseline_score) ?? null,
     tier,
     confidence,
     confidence_display: confidenceDisplay(confidence),
     computed_at: row.computed_at,
-    weekly_delta: weeklyDelta,
+    weekly_delta: score === null ? null : weeklyDelta,
     compute_version: row.compute_version ?? COMPUTE_VERSION,
     accuracy_pills: buildAccuracyPills(diag),
     engagement_pills: buildEngagementPills(hannah, engagementState),
+    contributors: score === null ? [] : contributors,
     // Defense in depth XSS strip at the API boundary (#161a Item 5).
     // Operator is || rather than ??: sanitizeExplanation returns the
     // empty string for pure markup input, and we want that falsy case
@@ -235,6 +261,10 @@ function buildCurrentResponse(
     // empty copy.
     hannah_explanation: sanitizeExplanation(hannah.explanation) || PRECOMPUTE_EXPLANATION,
   };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function normalizeTier(t: number | null | undefined): BOSTier {

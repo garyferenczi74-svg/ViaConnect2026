@@ -17,7 +17,7 @@
 
 import { TrendingDown, TrendingUp, Minus, Clock, Target } from 'lucide-react';
 import type { BOSCurrentResponse } from '@/lib/scoring/types';
-import { formatBosLastUpdated, toDisplayBosScore } from '@/lib/scoring/bos-display';
+import { formatBosLastUpdated, resolveHonestBosDisplay } from '@/lib/scoring/bos-display';
 import { colorForScore } from './bos-gauge-helpers';
 import { BOSStaticExplanation } from './bos-static-explanation';
 import { BOS_PILL_GRADIENT } from './bos-pill-helpers';
@@ -40,9 +40,10 @@ export function BOSSidePanel({
   weeklyDelta,
   trackedDimensions = null,
 }: BOSSidePanelProps) {
-  const score = toDisplayBosScore(data.score);
+  const honest = resolveHonestBosDisplay(data);
+  const score = honest.score;
   const resolvedDelta = weeklyDelta !== undefined ? weeklyDelta : data.weekly_delta;
-  const delta = buildWeeklyDeltaChip(resolvedDelta ?? null);
+  const delta = buildWeeklyDeltaChip(score === null ? null : (resolvedDelta ?? null));
   const completeness = buildTrackedDimensionsSummary(trackedDimensions);
   const lastUpdated = formatBosLastUpdated(data.computed_at);
   const bandColor = score === null ? '#2DA5A0' : colorForScore(score);
@@ -62,6 +63,9 @@ export function BOSSidePanel({
           {headline.prefix}
           <span style={{ color: headline.color }}>{headline.status}</span>
         </h2>
+        {honest.contributorLine ? (
+          <p className="mt-1 text-sm text-white/60">{honest.contributorLine}</p>
+        ) : null}
       </div>
 
       <BOSStaticExplanation />

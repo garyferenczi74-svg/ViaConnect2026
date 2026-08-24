@@ -373,6 +373,27 @@ export interface EngagementPill {
 }
 
 /**
+ * A named source that actually contributed to the displayed Bio
+ * Optimization Score. Empty means the score is not honest to show,
+ * even if a finite number was persisted (Brief 24).
+ */
+export type BosNamedContributorKey =
+  | 'caq'
+  | 'labs'
+  | 'genetics'
+  | 'nutrition'
+  | 'supplements'
+  | 'body_tracker'
+  | 'wearable'
+  | 'plug_ins'
+  | 'helix_challenges';
+
+export interface BosNamedContributor {
+  key: BosNamedContributorKey;
+  label: string;
+}
+
+/**
  * Response payload for GET /api/bos/current. The pre-compute shape
  * returns score = null, baseline = null, tier = 1, confidence = 0.720
  * and the default Hannah explanation, with every accuracy pill in
@@ -390,5 +411,7 @@ export interface BOSCurrentResponse {
   compute_version: string;
   accuracy_pills: AccuracyPill[];
   engagement_pills: EngagementPill[];
+  /** Named sources that produced the score. Empty when the score must stay empty. */
+  contributors: BosNamedContributor[];
   hannah_explanation: string;
 }
