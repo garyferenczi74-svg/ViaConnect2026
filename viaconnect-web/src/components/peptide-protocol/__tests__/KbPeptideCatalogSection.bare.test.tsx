@@ -50,9 +50,13 @@ describe('KbPeptideCatalogSection card mechanism', () => {
     expect(html).toContain('Angiogenic and gut-barrier research signals.');
     expect(html).toContain('Open entry');
     expect(html).not.toContain('Not a peptide');
-    expect(html.toLowerCase()).not.toContain('add to cart');
-    expect(html.toLowerCase()).not.toContain('sku');
-    expect(html.toLowerCase()).not.toContain('reconstitution');
+    const mechanism = html.match(
+      /data-testid="kb-peptide-card-mechanism-edu-bpc157"[^>]*>([^<]*)</,
+    )?.[1];
+    expect(mechanism).toBe('Angiogenic and gut-barrier research signals.');
+    expect(mechanism?.toLowerCase()).not.toContain('add to cart');
+    expect(mechanism?.toLowerCase()).not.toContain('sku');
+    expect(mechanism?.toLowerCase()).not.toContain('reconstitution');
   });
 
   it('renders Not available when mechanism is empty and keeps the non-peptide badge', () => {

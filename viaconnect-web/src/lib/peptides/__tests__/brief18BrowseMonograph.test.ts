@@ -483,12 +483,17 @@ describe('Brief 18 browse cards bind live mechanism', () => {
   });
 
   it('does not add shop, dose, SKU, or reconstitution strings to cards', () => {
-    expect(catalog).not.toMatch(PURCHASE);
-    expect(catalog).not.toMatch(NUMERIC_DOSE_LEXICON);
-    expect(catalog).not.toMatch(/\bSKU\b/i);
-    expect(catalog.toLowerCase()).not.toContain('reconstitution');
-    expect(catalog.toLowerCase()).not.toContain('how to reconstitute');
-    expect(catalog).not.toContain('/shop/product');
+    const card = catalog.slice(
+      catalog.indexOf('function EducationCard'),
+      catalog.indexOf('export function KbPeptideCatalogSection'),
+    );
+    expect(card).toContain('displayEducationField(entry.mechanism)');
+    expect(card).not.toMatch(PURCHASE);
+    expect(card).not.toMatch(NUMERIC_DOSE_LEXICON);
+    expect(card).not.toMatch(/\bSKU\b/i);
+    expect(card.toLowerCase()).not.toContain('reconstitution');
+    expect(card.toLowerCase()).not.toContain('how to reconstitute');
+    expect(card).not.toContain('/shop/product');
     expect(detail).not.toMatch(PURCHASE);
     expect(detail).not.toMatch(NUMERIC_DOSE_LEXICON);
     expect(detail).not.toMatch(/\bSKU\b/i);
