@@ -6,15 +6,10 @@
 // Gary 2026-08-23: pills show observed GENEX360 counts with the unit that
 // matches the test. Aliases (GENEX-M, genex_m, genex-m, and peers) group onto
 // the matching pill. HormoneIQ and EpigenHQ read marker / clock tables, never
-<<<<<<< HEAD
-// user_variants SNP length. 401 / error render as Unavailable (n/a), never 0.
-// Brief 19: honest empty is Not analyzed, never a zero count as you have nothing.
-// Marketing catalog sizes are not live badges; empty copy names the catalog.
-=======
 // user_variants SNP length. Fail / null / remap miss render as Unanalyzed,
 // never 0, never dishonest n/a as a number. MTHFR folate copy only via genex_m.
-// Marketing catalog sizes from the shop panel catalog are not used here.
->>>>>>> origin/main
+// Brief 19: honest empty is Not analyzed, never a zero count as you have nothing.
+// Marketing catalog sizes are not live badges; empty copy names the catalog.
 //
 // Standing rules honored: tokens only (Navy #1A2744, Card #1E3054, Teal
 // #2DA5A0, Orange #B75E18, white opacity neutrals), Lucide strokeWidth 1.5,
@@ -50,18 +45,14 @@ import {
   type ObservedPanelCount,
 } from '@/lib/genetics/observedPanelCounts';
 import { epigenMarkerByKey } from '@/lib/genetics/epigenMarkerMap';
-<<<<<<< HEAD
 import {
   catalogOnFileLine,
-  honestEmptyHeaderBadge,
 } from '@/lib/genetics/catalogSizes';
-=======
 import { isMthfrFolateTarget, mayShowMthfrFolate } from '@/lib/genetics/mthfrFolate';
 import { protocolChangeLine } from '@/lib/genetics/protocolChangeLine';
 import { hubHeaderBadge } from '@/lib/genetics/geneticsUploadState';
 import { variantRowChip } from '@/lib/genetics/variantRowChip';
 import { formatVariantProvenance } from '@/lib/genetics/variantProvenance';
->>>>>>> origin/main
 
 const PANEL_ID = 'your-variants-panel';
 const SUBTITLE =
@@ -197,13 +188,6 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
   const activePanelSlug = PANEL_LABELS[activePanel].slug as PanelSlug;
   const activeTabId = `${PANEL_ID}-tab-${activePanel}`;
 
-<<<<<<< HEAD
-  const headerBadge = isLoading
-    ? 'Loading'
-    : resultsUnavailable || totalVariants === null
-      ? 'Unavailable'
-      : honestEmptyHeaderBadge(totalVariants) ?? `${totalVariants} results`;
-=======
   const headerBadge = hubHeaderBadge({
     isLoading,
     loadFailed: resultsUnavailable,
@@ -211,7 +195,6 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
     totalVariants,
   });
   const protocolLine = protocolChangeLine(null);
->>>>>>> origin/main
 
   const hasHormoneMarkers = hormoneMarkers.length > 0;
   const hasEpigeneticMarkers = epigeneticMarkers.length > 0;
@@ -292,15 +275,10 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
                     isLoading
                       ? `${label} count loading`
                       : observed.status === 'unknown' || observed.count === null
-<<<<<<< HEAD
-                        ? `${label} count unavailable`
+                        ? `${label} Unanalyzed`
                         : observed.count === 0
                           ? `${label} Not analyzed`
                           : `${observed.count} ${observed.unit}`
-=======
-                        ? `${label} Unanalyzed`
-                        : `${observed.count} ${observed.unit}`
->>>>>>> origin/main
                   }
                   className={`inline-flex min-w-[1.25rem] items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-medium tabular-nums ${
                     active ? 'bg-[#1A2744]/40 text-white' : 'bg-white/10 text-white/70'
