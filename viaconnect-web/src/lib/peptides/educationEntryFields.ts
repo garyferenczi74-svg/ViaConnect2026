@@ -1,6 +1,6 @@
 /**
  * Pure field helpers for peptide_education_entries.
- * Browse/detail bind only to the Thanos 35 entry_keys. No invented rows.
+ * Browse/detail bind only to the Thanos consumer 33 entry_keys. No invented rows.
  * Semaglutide keys/titles and BPC Arginate seeds are dropped, not catalogued.
  */
 
@@ -51,8 +51,6 @@ export const THANOS_CONSUMER_ENTRY_KEYS = [
   'edu-vilon-ke',
   'edu-5-amino-1mq-nonpeptide',
   'edu-slu-pp-332-nonpeptide',
-  'depth-bpc157-framework',
-  'depth-ss31-framework',
 ] as const;
 
 export type ThanosConsumerEntryKey = (typeof THANOS_CONSUMER_ENTRY_KEYS)[number];
@@ -73,8 +71,12 @@ export function isSafeEntryKey(key: string): boolean {
   return /^[a-z0-9][a-z0-9_-]{0,80}$/i.test(key);
 }
 
+export function isPractitionerDepthEntryKey(key: string): boolean {
+  return key.startsWith('depth-');
+}
+
 export function isThanosAllowlistedEntryKey(key: string): boolean {
-  return THANOS_CONSUMER_ENTRY_KEY_SET.has(key);
+  return THANOS_CONSUMER_ENTRY_KEY_SET.has(key) && !isPractitionerDepthEntryKey(key);
 }
 
 export function isAllowlistedNonPeptide(key: string): boolean {
@@ -153,6 +155,7 @@ export function mapEducationRow(row: Record<string, unknown>): EducationEntry | 
   const entryKey = String(row.entry_key ?? '');
   const title = String(row.title ?? '').trim();
   if (!isSafeEntryKey(entryKey) || !title) return null;
+  if (isPractitionerDepthEntryKey(entryKey)) return null;
   if (!isThanosAllowlistedEntryKey(entryKey)) return null;
   if (dropsEducationCompound(entryKey, title)) return null;
   return {

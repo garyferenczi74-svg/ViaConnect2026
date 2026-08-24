@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/server';
 import { safeLog } from '@/lib/utils/safe-log';
 import {
   dropsEducationCompound,
+  isPractitionerDepthEntryKey,
   isSafeEntryKey,
   isThanosAllowlistedEntryKey,
   mapEducationRow,
@@ -41,6 +42,7 @@ export async function loadConsumerEducationEntries(): Promise<EducationEntryCata
       .select(ENTRY_SELECT)
       .in('entry_key', [...THANOS_CONSUMER_ENTRY_KEYS])
       .eq('is_active', true)
+      .eq('is_practitioner_depth', false)
       .order('title', { ascending: true })
       .limit(THANOS_CONSUMER_ENTRY_KEYS.length);
 
@@ -67,6 +69,7 @@ export async function loadConsumerEducationEntryByKey(
 ): Promise<EducationEntry | null> {
   if (
     !isSafeEntryKey(entryKey) ||
+    isPractitionerDepthEntryKey(entryKey) ||
     !isThanosAllowlistedEntryKey(entryKey) ||
     dropsEducationCompound(entryKey)
   ) {
@@ -79,6 +82,7 @@ export async function loadConsumerEducationEntryByKey(
       .select(ENTRY_SELECT)
       .eq('entry_key', entryKey)
       .eq('is_active', true)
+      .eq('is_practitioner_depth', false)
       .maybeSingle();
 
     if (error) {

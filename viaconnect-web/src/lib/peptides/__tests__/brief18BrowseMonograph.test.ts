@@ -10,6 +10,7 @@ import {
   extractPmids,
   formatProvenance,
   isAllowlistedNonPeptide,
+  isPractitionerDepthEntryKey,
   isSafeEntryKey,
   isThanosAllowlistedEntryKey,
   mapEducationRow,
@@ -78,7 +79,9 @@ describe('Brief 18 cards bind to peptide_education_entries.entry_key', () => {
     expect(loader).toContain(".from('peptide_education_entries')");
     expect(loader).toContain(".eq('is_active', true)");
     expect(loader).toContain(".in('entry_key', [...THANOS_CONSUMER_ENTRY_KEYS])");
+    expect(loader).toContain(".eq('is_practitioner_depth', false)");
     expect(loader).toContain('isThanosAllowlistedEntryKey');
+    expect(loader).toContain('isPractitionerDepthEntryKey');
   });
 
   it('does not keep the kb_peptides slug monograph route', () => {
@@ -229,7 +232,7 @@ describe('Brief 18 practitioner waitlist and marketing nav', () => {
 });
 
 describe('Brief 18 Thanos allowlist', () => {
-  it('binds only the 35 Thanos entry_keys and no extras', () => {
+  it('binds only the 33 consumer entry_keys and no extras', () => {
     const expected = [
       'edu-aod-9604',
       'edu-bpc157',
@@ -264,12 +267,10 @@ describe('Brief 18 Thanos allowlist', () => {
       'edu-vilon-ke',
       'edu-5-amino-1mq-nonpeptide',
       'edu-slu-pp-332-nonpeptide',
-      'depth-bpc157-framework',
-      'depth-ss31-framework',
     ];
     expect([...THANOS_CONSUMER_ENTRY_KEYS].sort()).toEqual([...expected].sort());
-    expect(THANOS_CONSUMER_ENTRY_KEYS).toHaveLength(35);
-    expect(new Set(THANOS_CONSUMER_ENTRY_KEYS).size).toBe(35);
+    expect(THANOS_CONSUMER_ENTRY_KEYS).toHaveLength(33);
+    expect(new Set(THANOS_CONSUMER_ENTRY_KEYS).size).toBe(33);
     expect(THANOS_CONSUMER_ENTRY_KEYS).not.toContain('bpc-157-arginate');
     expect(THANOS_CONSUMER_ENTRY_KEYS).not.toContain('edu-bpc157-arginate');
     expect(THANOS_CONSUMER_ENTRY_KEYS.some((key) => /semaglutide/i.test(key))).toBe(
@@ -277,8 +278,45 @@ describe('Brief 18 Thanos allowlist', () => {
     );
     expect(isThanosAllowlistedEntryKey('edu-bpc157')).toBe(true);
     expect(isThanosAllowlistedEntryKey('edu-peptideiq-topic-map')).toBe(true);
+    expect(isThanosAllowlistedEntryKey('edu-tesofensine-pause')).toBe(true);
     expect(isThanosAllowlistedEntryKey('bpc-157-arginate')).toBe(false);
     expect(isThanosAllowlistedEntryKey('edu-semaglutide')).toBe(false);
+  });
+
+  it('does not make practitioner-depth keys browsable', () => {
+    expect(THANOS_CONSUMER_ENTRY_KEYS).not.toContain('depth-bpc157-framework');
+    expect(THANOS_CONSUMER_ENTRY_KEYS).not.toContain('depth-ss31-framework');
+    expect(THANOS_CONSUMER_ENTRY_KEYS.some((key) => key.startsWith('depth-'))).toBe(
+      false,
+    );
+    expect(isPractitionerDepthEntryKey('depth-bpc157-framework')).toBe(true);
+    expect(isPractitionerDepthEntryKey('depth-ss31-framework')).toBe(true);
+    expect(isThanosAllowlistedEntryKey('depth-bpc157-framework')).toBe(false);
+    expect(isThanosAllowlistedEntryKey('depth-ss31-framework')).toBe(false);
+    expect(
+      mapEducationRow({
+        entry_key: 'depth-bpc157-framework',
+        title: 'BPC-157 practitioner protocol framework (educational)',
+      }),
+    ).toBeNull();
+    expect(
+      mapEducationRow({
+        entry_key: 'depth-ss31-framework',
+        title: 'SS-31 / elamipretide practitioner framework (educational)',
+      }),
+    ).toBeNull();
+    const catalog = read('src/components/peptide-protocol/KbPeptideCatalogSection.tsx');
+    const detail = read('src/components/peptide-protocol/PeptideEducationEntryDetail.tsx');
+    const browse = read('src/app/(app)/(consumer)/peptide-protocol/browse/page.tsx');
+    const detailPage = read(
+      'src/app/(app)/(consumer)/peptide-protocol/peptide/[entryKey]/page.tsx',
+    );
+    const loader = read('src/lib/peptides/educationEntries.ts');
+    for (const src of [catalog, detail, browse, detailPage, loader]) {
+      expect(src).not.toContain('depth-bpc157-framework');
+      expect(src).not.toContain('depth-ss31-framework');
+    }
+    expect(loader).toContain(".eq('is_practitioner_depth', false)");
   });
 
   it('labels only the two non-peptide keys', () => {
@@ -286,6 +324,12 @@ describe('Brief 18 Thanos allowlist', () => {
     expect(isAllowlistedNonPeptide('edu-slu-pp-332-nonpeptide')).toBe(true);
     expect(isAllowlistedNonPeptide('edu-bpc157')).toBe(false);
     expect(isAllowlistedNonPeptide('edu-tesofensine-pause')).toBe(false);
+    expect(
+      mapEducationRow({
+        entry_key: 'edu-tesofensine-pause',
+        title: 'Tesofensine regulatory timing note',
+      })?.isPeptide,
+    ).toBe(true);
     const catalog = read('src/components/peptide-protocol/KbPeptideCatalogSection.tsx');
     const detail = read('src/components/peptide-protocol/PeptideEducationEntryDetail.tsx');
     expect(catalog).toContain('Not a peptide');
@@ -343,6 +387,12 @@ describe('Brief 18 education entry helpers', () => {
       mapEducationRow({
         entry_key: 'edu-5-amino-1mq-nonpeptide',
         title: '5-Amino-1MQ educational overview',
+      })?.isPeptide,
+    ).toBe(false);
+    expect(
+      mapEducationRow({
+        entry_key: 'edu-slu-pp-332-nonpeptide',
+        title: 'SLU-PP-332 educational overview',
       })?.isPeptide,
     ).toBe(false);
   });
