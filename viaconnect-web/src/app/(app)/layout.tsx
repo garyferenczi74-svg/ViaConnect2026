@@ -1,9 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { mapDatabaseRoleToUserRole } from "@/lib/supabase/types";
-import type { UserRole } from "@/lib/supabase/types";
 import { AdminPortalDetector } from "@/components/AdminPortalDetector";
 import { PortalShellRouter } from "@/components/practitioner/PortalShellRouter";
+import { resolveSessionRoleForUser } from "@/lib/auth/resolve-session-role";
+import { isConfirmedAdmin } from "@/lib/auth/session-role";
 
 // All (app) routes require authentication — never statically generate them
 export const dynamic = "force-dynamic";
@@ -24,23 +24,15 @@ export default async function AppLayout({
     redirect("/login");
   }
 
-  // Normalize role: handle both app-level (consumer/practitioner/naturopath)
-  // and DB-level (patient/admin) role values from user_metadata
-  const rawRole = (user.user_metadata?.role as string) ?? "consumer";
-  const isAdmin = rawRole === "admin";
-  const appRoles: UserRole[] = ["consumer", "practitioner", "naturopath"];
-  const role = appRoles.includes(rawRole as UserRole)
-    ? rawRole
-    : mapDatabaseRoleToUserRole(rawRole);
+  const session = await resolveSessionRoleForUser(supabase, user, "app.layout");
+  const role = session.role;
+  const isAdmin = isConfirmedAdmin(session.profileRole);
 
-  // For admin users, we wrap in a client component that detects the current
-  // portal from the URL and overrides the role prop accordingly. Admin
-  // visiting practitioner routes is handled by AdminPortalDetector swapping
-  // role to 'practitioner' before AppShell renders; the practitioner-shell
-  // path through PortalShellRouter handles tab+sidebar at the leaf.
+  // Portal chrome follows profiles.role. Admin keeps the switcher; everyone
+  // else gets only in-role tabs (or no switcher).
   if (isAdmin) {
     return (
-      <AdminPortalDetector user={user}>
+      <AdminPortalDetector user={user} sessionRole="admin">
         {children}
       </AdminPortalDetector>
     );
