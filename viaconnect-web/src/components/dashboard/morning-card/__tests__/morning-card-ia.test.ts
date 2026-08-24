@@ -29,6 +29,8 @@ describe('Brief 1 morning card IA', () => {
     const hook = src(BOS);
     expect(card).toContain('useBOSCurrent');
     expect(hook).toContain("/api/bos/current");
+    expect(card).toContain('resolveHonestBosDisplay');
+    expect(card).toContain('BOS_INSUFFICIENT_DATA_COPY');
     expect(card).not.toMatch(/compute_bio_optimization_score/);
     expect(card).not.toMatch(/baseline_from_caq/);
   });

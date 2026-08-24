@@ -26,7 +26,7 @@
 // tier's hue (legacy treatment).
 
 import { useBOSCurrent } from '@/hooks/use-bos-current';
-import { toDisplayBosScore } from '@/lib/scoring/bos-display';
+import { resolveHonestBosDisplay } from '@/lib/scoring/bos-display';
 import { BOSCardSkeleton } from './bos-card-skeleton';
 import { BOSCardError } from './bos-card-error';
 import { BOSCardEmptyState } from './bos-card-empty-state';
@@ -45,11 +45,17 @@ export function BOSCardClient() {
   }
   if (!data) return <BOSCardSkeleton />;
 
-  const score = toDisplayBosScore(data.score);
+  const honest = resolveHonestBosDisplay(data);
+  const score = honest.score;
   if (score === null) {
-    return <BOSCardEmptyState data={data} />;
+    return <BOSCardEmptyState data={{ ...data, score: null, contributors: [] }} />;
   }
 
+  const honestData = {
+    ...data,
+    score,
+    contributors: honest.contributors,
+  };
   const bandColor = colorForScore(score);
 
   return (
@@ -68,9 +74,9 @@ export function BOSCardClient() {
         {/* 1. Two-column gauge + side panel */}
         <div className="grid gap-6 md:grid-cols-[auto_1fr] md:items-center md:gap-10">
           <div className="mx-auto md:mx-0">
-            <BOSScoreGauge data={data} />
+            <BOSScoreGauge data={honestData} />
           </div>
-          <BOSSidePanel data={data} weeklyDelta={data.weekly_delta} />
+          <BOSSidePanel data={honestData} weeklyDelta={honestData.weekly_delta} />
         </div>
 
         {/* 2. Accuracy row */}

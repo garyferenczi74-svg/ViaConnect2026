@@ -7,6 +7,7 @@
 import { useMemo, useState } from 'react';
 import { useBOSCurrent } from '@/hooks/use-bos-current';
 import { useDailyScheduleView } from '@/hooks/useDailyScheduleView';
+import { BOS_INSUFFICIENT_DATA_COPY, resolveHonestBosDisplay } from '@/lib/scoring/bos-display';
 import {
   MORNING_CARD_ARIA_LABEL,
   MORNING_CARD_PENDING_SCORE,
@@ -57,7 +58,8 @@ export function MorningCard() {
     { status: schedule.status },
   );
   const selectedChip = selectedKey ? chipByKey(chips, selectedKey) : null;
-  const score = data?.score ?? null;
+  const honest = resolveHonestBosDisplay(data ?? { score: null, contributors: [] });
+  const score = honest.score;
   const bandColor = score === null ? '#2DA5A0' : colorForScore(score);
   const bandLabel = score === null ? null : sentenceCase(labelForScore(score));
 
@@ -143,8 +145,11 @@ export function MorningCard() {
                 {bandLabel}
               </p>
             ) : (
-              <p className="mt-1 text-sm text-white/50">Complete your CAQ to unlock your score</p>
+              <p className="mt-1 text-sm text-white/50">{BOS_INSUFFICIENT_DATA_COPY}</p>
             )}
+            {honest.contributorLine ? (
+              <p className="mt-1 text-sm text-white/60">{honest.contributorLine}</p>
+            ) : null}
           </div>
           <div>
             <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-white/40">
