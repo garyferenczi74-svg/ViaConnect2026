@@ -6,7 +6,7 @@
  */
 
 /**
- * Brief 23 Grok Command Center roster (17 seats).
+ * Brief 23 Grok Command Center roster (17 seats). Jeffery-approved lock.
  * Kelsey is retired as a live AgentId; historical slug maps via aliases to lex.
  * Gordon remains a nutrition product owner, not a Command Center seat.
  * security_advisor / performance_advisor are not Grok agents.

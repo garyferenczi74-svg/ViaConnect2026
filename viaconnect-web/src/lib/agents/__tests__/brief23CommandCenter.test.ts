@@ -1,6 +1,7 @@
 /**
  * Brief 23: Command Center uses the real Grok roster only.
- * Idle/empty when a seat has no ops row. No invented advisor seats.
+ * Jeffery-approved lock. Idle/empty when a seat has no ops row.
+ * No invented advisor seats. ACC and ultrathink counts stay separate.
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -41,6 +42,10 @@ describe("Brief 23 Jeffery Command Center roster", () => {
     expect(AGENT_IDS).toEqual([...GROK_17]);
     expect(orderedRegistry().map((r) => r.agent_id)).toEqual([...GROK_17]);
     expect(AGENT_REGISTRY.hannah.display_name).toBe("HannahAI");
+    const types = read("src/lib/agents/types.ts");
+    expect(types).toContain("Jeffery-approved lock");
+    expect(types).not.toMatch(/export type AgentId[\s\S]*gordon/);
+    expect(types).not.toMatch(/export const AGENT_IDS[\s\S]*security_advisor/);
   });
 
   it("does not invent advisor or Gordon Command Center seats", () => {
