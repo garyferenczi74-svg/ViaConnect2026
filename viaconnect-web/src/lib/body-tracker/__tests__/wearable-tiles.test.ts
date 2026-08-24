@@ -49,29 +49,103 @@ describe('wearable tile model', () => {
 
   it('never connects OAuth from last_sync_at alone', () => {
     expect(
-      isOAuthConnected({
-        provider: 'whoop',
-        status: 'pending',
-        last_sync_at: '2026-08-24T00:00:00.000Z',
-        has_tokens: false,
-      }),
+      isOAuthConnected(
+        {
+          provider: 'whoop',
+          status: 'pending',
+          last_sync_at: '2026-08-24T00:00:00.000Z',
+          has_tokens: false,
+        },
+        true,
+      ),
     ).toBe(false);
     expect(
-      isOAuthConnected({
-        provider: 'oura',
-        status: 'connected',
-        last_sync_at: null,
-        has_tokens: true,
-      }),
+      isOAuthConnected(
+        {
+          provider: 'oura',
+          status: 'connected',
+          last_sync_at: null,
+          has_tokens: true,
+        },
+        true,
+      ),
     ).toBe(true);
     expect(
-      isOAuthConnected({
-        provider: 'oura',
-        status: 'connected',
-        last_sync_at: '2026-08-24T00:00:00.000Z',
-        has_tokens: false,
-      }),
+      isOAuthConnected(
+        {
+          provider: 'oura',
+          status: 'connected',
+          last_sync_at: '2026-08-24T00:00:00.000Z',
+          has_tokens: false,
+        },
+        true,
+      ),
     ).toBe(false);
+  });
+
+  it('keeps OAuth tiles Not connected until secrets are provisioned', () => {
+    const leftover = {
+      provider: 'whoop',
+      status: 'connected',
+      last_sync_at: '2026-08-24T00:00:00.000Z',
+      has_tokens: true,
+    };
+    expect(isOAuthConnected(leftover, false)).toBe(false);
+    expect(isOAuthConnected(leftover, true)).toBe(true);
+
+    const tiles = buildWearableTiles(
+      baseInput({
+        oauth: [
+          leftover,
+          {
+            provider: 'oura',
+            status: 'connected',
+            last_sync_at: '2026-08-24T00:00:00.000Z',
+            has_tokens: true,
+          },
+        ],
+        whoopConfigured: false,
+        ouraConfigured: false,
+        appleXmlIngested: 4,
+        appleXmlLastPersistAt: '2026-08-22T08:00:00.000Z',
+      }),
+    );
+    const whoop = tiles.find((t) => t.id === 'whoop');
+    const oura = tiles.find((t) => t.id === 'oura');
+    const apple = tiles.find((t) => t.id === 'apple_health');
+    expect(whoop?.status).toBe('disconnected');
+    expect(whoop?.statusLabel).toBe('Not connected');
+    expect(whoop?.lastSyncAt).toBeNull();
+    expect(whoop?.action).toEqual({ kind: 'oauth', configured: false });
+    expect(oura?.status).toBe('disconnected');
+    expect(oura?.statusLabel).toBe('Not connected');
+    expect(oura?.lastSyncAt).toBeNull();
+    expect(oura?.action).toEqual({ kind: 'oauth', configured: false });
+    expect(apple?.statusLabel).toBe('Connected via XML');
+    expect(apple?.lastSyncAt).toBe('2026-08-22T08:00:00.000Z');
+    expect(apple?.appleWatchConnected).toBe(false);
+    expect(tiles.every((t) => t.appleWatchConnected === false)).toBe(true);
+  });
+
+  it('connects OAuth only after provisioned secrets plus tokens', () => {
+    const tiles = buildWearableTiles(
+      baseInput({
+        oauth: [
+          {
+            provider: 'whoop',
+            status: 'connected',
+            last_sync_at: '2026-08-24T00:00:00.000Z',
+            has_tokens: true,
+          },
+        ],
+        whoopConfigured: true,
+      }),
+    );
+    const whoop = tiles.find((t) => t.id === 'whoop');
+    expect(whoop?.status).toBe('connected');
+    expect(whoop?.statusLabel).toBe('Connected');
+    expect(whoop?.lastSyncAt).toBe('2026-08-24T00:00:00.000Z');
+    expect(whoop?.action).toEqual({ kind: 'oauth', configured: true });
   });
 
   it('does not copy HealthKit / phone_health onto Hume', () => {

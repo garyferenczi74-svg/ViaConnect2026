@@ -2,6 +2,7 @@
 
 // Shared 390 + 1280 Connections IA. Alias: /wearables.
 // Four tiles only. Hume and Apple are XML. Watch tile is out of scope.
+// Whoop/Oura stay Not connected until OAuth secrets are provisioned.
 
 import { useCallback, useEffect, useState } from 'react';
 import { Link2 } from 'lucide-react';

@@ -37,5 +37,6 @@ describe('Oura config', () => {
     const src = readFileSync(join(process.cwd(), 'src/lib/wearables/oura/config.ts'), 'utf8');
     expect(src).not.toMatch(/placeholder/i);
     expect(src).not.toMatch(/OURA_CLIENT_ID\s*=\s*['"][^'"]+['"]/);
+    expect(src).not.toMatch(/clientId:\s*['"][^'"]+['"]/);
   });
 });

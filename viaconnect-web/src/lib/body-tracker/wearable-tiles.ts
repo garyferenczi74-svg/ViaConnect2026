@@ -1,9 +1,13 @@
 // First-class wearable tiles for /body-tracker/connections (alias /wearables).
 // Picasso IA: Whoop, Hume, Apple Health, Oura. Same surface at 390 and 1280.
 //
-// Connected is earned by a real OAuth session or a successful persist.
-// last_sync_at alone never marks a tile Connected. Web Apple is XML only
-// (Connected via XML). Hume is never copied from phone_health and has no OAuth.
+// OAuth Connected-state requires provisioned Vercel secrets (WHOOP_*, OURA_*,
+// WEARABLE_TOKEN_KEY, and optional *_REDIRECT_URI). Leftover connected_sources
+// or token rows do not count until that path is real. Client IDs are never
+// hardcoded. last_sync_at alone never marks a tile Connected.
+//
+// Web Apple is XML only (Connected via XML). Hume is never copied from
+// phone_health and has no OAuth. This tile is Apple Health, never Watch.
 
 export const FIRST_CLASS_TILE_IDS = ['whoop', 'hume', 'apple_health', 'oura'] as const;
 
@@ -123,8 +127,15 @@ function oauthRow(oauth: OAuthConnectionRow[], provider: string): OAuthConnectio
   return oauth.find((r) => r.provider === provider);
 }
 
-/** OAuth tiles connect only after callback upserts status=connected WITH tokens. */
-export function isOAuthConnected(row: OAuthConnectionRow | undefined): boolean {
+/**
+ * OAuth tiles stay Not connected until secrets are provisioned AND the
+ * callback upserts status=connected WITH tokens. A leftover row is ignored.
+ */
+export function isOAuthConnected(
+  row: OAuthConnectionRow | undefined,
+  configured: boolean,
+): boolean {
+  if (!configured) return false;
   if (!row) return false;
   return row.status === 'connected' && row.has_tokens === true;
 }
@@ -163,14 +174,14 @@ export function buildWearableTiles(input: WearableTileInput): WearableTileView[]
 
     if (spec.id === 'whoop') {
       const row = oauthRow(input.oauth, 'whoop');
-      status = isOAuthConnected(row) ? 'connected' : 'disconnected';
+      status = isOAuthConnected(row, input.whoopConfigured) ? 'connected' : 'disconnected';
       lastSyncAt = status === 'connected' ? row?.last_sync_at ?? null : null;
       lastSyncKind = lastSyncAt ? 'oauth_sync' : null;
       statusLabel = status === 'connected' ? 'Connected' : 'Not connected';
       action = { kind: 'oauth', configured: input.whoopConfigured };
     } else if (spec.id === 'oura') {
       const row = oauthRow(input.oauth, 'oura');
-      status = isOAuthConnected(row) ? 'connected' : 'disconnected';
+      status = isOAuthConnected(row, input.ouraConfigured) ? 'connected' : 'disconnected';
       lastSyncAt = status === 'connected' ? row?.last_sync_at ?? null : null;
       lastSyncKind = lastSyncAt ? 'oauth_sync' : null;
       statusLabel = status === 'connected' ? 'Connected' : 'Not connected';

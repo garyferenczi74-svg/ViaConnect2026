@@ -6,6 +6,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
 import { DEFAULT_PRECEDENCE, type MetricKey } from "@/lib/wearables/types";
+import { isWhoopConfigured } from "@/lib/wearables/whoop/config";
+import { isOuraConfigured } from "@/lib/wearables/oura/config";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -55,12 +57,8 @@ export async function GET() {
     return NextResponse.json({
       sources: sources ?? [],
       precedence: precedenceMap,
-      whoopConfigured: Boolean(
-        process.env.WHOOP_CLIENT_ID && process.env.WHOOP_CLIENT_SECRET && process.env.WEARABLE_TOKEN_KEY,
-      ),
-      ouraConfigured: Boolean(
-        process.env.OURA_CLIENT_ID && process.env.OURA_CLIENT_SECRET && process.env.WEARABLE_TOKEN_KEY,
-      ),
+      whoopConfigured: isWhoopConfigured(),
+      ouraConfigured: isOuraConfigured(),
       healthConnectEnabled: process.env.HEALTH_CONNECT_ENABLED === "1",
     });
   } catch (err) {

@@ -26,6 +26,25 @@ function base(over: Partial<WearableSnapshotInput> = {}): WearableSnapshotInput 
 }
 
 describe('wearable snapshot', () => {
+  it('ignores leftover OAuth rows until secrets are provisioned', () => {
+    const snap = assembleWearableSnapshot(
+      base({
+        connected: [
+          { provider: 'whoop', status: 'connected', last_sync_at: '2026-08-24T00:00:00.000Z' },
+          { provider: 'oura', status: 'connected', last_sync_at: '2026-08-24T00:00:00.000Z' },
+        ],
+        tokenProviders: ['whoop', 'oura'],
+        appleImports: [{ records_ingested: 8, created_at: '2026-08-22T08:00:00.000Z' }],
+        whoopConfigured: false,
+        ouraConfigured: false,
+      }),
+    );
+    expect(snap.tiles.find((t) => t.id === 'whoop')?.statusLabel).toBe('Not connected');
+    expect(snap.tiles.find((t) => t.id === 'oura')?.statusLabel).toBe('Not connected');
+    expect(snap.tiles.find((t) => t.id === 'apple_health')?.statusLabel).toBe('Connected via XML');
+    expect(snap.tiles.every((t) => t.appleWatchConnected === false)).toBe(true);
+  });
+
   it('does not invent last sync and never marks Watch connected', () => {
     const snap = assembleWearableSnapshot(base());
     expect(snap.tiles.map((t) => t.id)).toEqual(['whoop', 'hume', 'apple_health', 'oura']);

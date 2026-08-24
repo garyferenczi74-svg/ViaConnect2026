@@ -34,6 +34,9 @@ describe('Connections IA contracts', () => {
     expect(surface + tile + detail).not.toContain('#224852');
     expect(surface + tile + detail).not.toContain('#4ADE80');
     expect(surface).not.toMatch(/ViaConnect/);
+    expect(surface + tile + detail).not.toMatch(/Arnold|Thanos/i);
+    expect(tile).toContain('Not configured');
+    expect(tile).not.toMatch(/waiting on/i);
   });
 
   it('redirects plugins wearables catalog to connections', () => {
