@@ -5,6 +5,7 @@
  */
 
 import { NUTRIGEN_DX_DEEP_DRAFTS } from "@/data/genex360/nutrigen-dx-deep.draft";
+import { isMthfrFolateTarget } from "@/lib/genetics/mthfrFolate";
 import type {
   FindingCategory,
   FindingConfidence,
@@ -135,6 +136,8 @@ export function buildNutrigenDxResultSet(
   const seen = new Set<string>();
 
   for (const v of variants) {
+    // Brief 6 / Brief 17: MTHFR folate implications are GeneXM / genex_m only.
+    if (isMthfrFolateTarget(v.rsid, v.gene)) continue;
     const key = geneKey(v.gene, v.rsid);
     if (!key || seen.has(key)) continue;
     seen.add(key);
@@ -214,7 +217,9 @@ export function buildNutrigenDxCrossRefPayload(
   findings: NutritionGeneticFinding[]
 ): NutrigenDxCrossRefPayload {
   const resultSet = buildNutrigenDxResultSet(variants, findings);
-  const allGenes = Object.keys(NUTRIGEN_DX_DEEP_DRAFTS).map((g) => g.toUpperCase());
+  const allGenes = Object.keys(NUTRIGEN_DX_DEEP_DRAFTS)
+    .filter((g) => g !== "mthfr")
+    .map((g) => g.toUpperCase());
   const present = new Set(resultSet.markers.map((m) => m.gene.toUpperCase()));
   const missing_genes = allGenes.filter((g) => !present.has(g));
 

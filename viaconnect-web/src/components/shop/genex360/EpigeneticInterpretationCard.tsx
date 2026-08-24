@@ -79,7 +79,7 @@ export function EpigeneticInterpretationCard({
             below is educational background.
           </p>
           <Link
-            href="/genetics/upload?tab=epigen"
+            href="/genetics/epigenetic/upload"
             className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-[#2DA5A0]/40 bg-[#2DA5A0]/10 px-4 py-2 text-[13px] font-semibold text-[#2DA5A0] transition-colors hover:bg-[#2DA5A0]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744]"
           >
             <Upload aria-hidden="true" className="h-4 w-4 shrink-0" strokeWidth={1.5} />

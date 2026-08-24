@@ -24,6 +24,9 @@ import {
   panelSlugForLabel,
 } from "./variantReport.config";
 import type { DeepReportRegistry, VariantReportTarget } from "./types";
+import { isMthfrFolateTarget } from "@/lib/genetics/mthfrFolate";
+
+const MTHFR_FOLATE_PANEL = "genex-m";
 
 // Kebab case of a variant name, for example "C677T (Ala222Val)" to
 // "c677t-ala222val". Used only when ANCHOR_SCHEME is "variantSlug".
@@ -113,6 +116,34 @@ export function resolveVariantReport(
   };
 
   if (!rsid) return notFound;
+
+  // Brief 6 / Brief 17: MTHFR folate reports resolve only through GeneXM / genex_m.
+  if (isMthfrFolateTarget(rsid, gene)) {
+    const hit = findInPanel(registry, MTHFR_FOLATE_PANEL, rsid);
+    if (hit) {
+      return {
+        href: buildHref(MTHFR_FOLATE_PANEL, hit.geneSlug, rsid, hit.variantName),
+        exists: true,
+        panelSlug: MTHFR_FOLATE_PANEL,
+        geneSlug: hit.geneSlug,
+        rsid,
+        level: "variant",
+      };
+    }
+    const geneSlug = (gene ?? "mthfr").trim().toLowerCase() || "mthfr";
+    const genePanel = findGenePanel(registry, MTHFR_FOLATE_PANEL, geneSlug);
+    if (genePanel === MTHFR_FOLATE_PANEL) {
+      return {
+        href: buildHref(MTHFR_FOLATE_PANEL, geneSlug, rsid, ""),
+        exists: true,
+        panelSlug: MTHFR_FOLATE_PANEL,
+        geneSlug,
+        rsid,
+        level: "gene",
+      };
+    }
+    return { ...notFound, panelSlug: MTHFR_FOLATE_PANEL };
+  }
 
   // 1 and 2: the card's own panel first (normalized to the canonical slug).
   const ownPanelSlug = panelSlugForLabel(panelSlugFromTab);
