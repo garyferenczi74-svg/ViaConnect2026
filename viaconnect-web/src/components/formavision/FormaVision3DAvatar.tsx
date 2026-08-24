@@ -83,6 +83,10 @@ export interface FormaVision3DAvatarProps {
   // toggle + goal resolution that drive these land in P5-T1c.
   ghostVector?: BodyParamVector | null;
   showGhost?: boolean;
+  // Brief 2: A/B wipe against a baseline parametric vector. Forwarded verbatim.
+  wipeActive?: boolean;
+  wipeT?: number;
+  wipeVector?: BodyParamVector | null;
   reducedMotion?: boolean;
   // Defaults to cinematic. The tier is selected by the RenderTierProvider (P7-T1);
   // lite trims geometry density.
@@ -122,6 +126,9 @@ export function FormaVision3DAvatar({
   scrubVector,
   ghostVector,
   showGhost,
+  wipeActive,
+  wipeT,
+  wipeVector,
   renderTier = 'cinematic',
   onBudgetMissed,
   onRenderError,
@@ -173,6 +180,9 @@ export function FormaVision3DAvatar({
           scrubVector={scrubVector}
           ghostVector={ghostVector}
           showGhost={showGhost}
+          wipeActive={wipeActive}
+          wipeT={wipeT}
+          wipeVector={wipeVector}
           renderTier={renderTier}
           onBudgetMissed={onBudgetMissed}
           onOrbitEnd={onOrbitEnd}

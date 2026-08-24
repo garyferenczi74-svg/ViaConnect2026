@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { Dna, Apple, Activity, Layers, FlaskConical, Leaf, ArrowRight } from 'lucide-react'
 import { SectionAnchor } from '../shared/SectionAnchor'
 import { SECTION_IDS, TAGLINES } from '../shared/sectionConstants'
+import { VariantsExplorerPreview } from '../shared/VariantsExplorerPreview'
 
 const PANELS = [
     { icon: Dna, name: 'GeneXM', accent: '#2DA5A0', description: 'Methylation, detoxification, and core metabolic pathways. The foundational panel.' },
@@ -13,39 +14,6 @@ const PANELS = [
     { icon: FlaskConical, name: 'PeptideIQ', accent: '#06B6D4', description: 'Peptide receptor sensitivity across metabolic, recovery, and longevity peptide families.' },
     { icon: Leaf, name: 'CannabisIQ', accent: '#22C55E', description: 'CB1 and CB2 receptor variants, endocannabinoid metabolism.' },
 ]
-
-const SAMPLE_VARIANTS = [
-    {
-        gene: 'MTHFR',
-        variant: 'C677T',
-        implication: 'People with this variant may process folate via alternative pathways, which can shift how the body uses certain B vitamins.',
-        state: 'teal' as const,
-    },
-    {
-        gene: 'COMT',
-        variant: 'V158M',
-        implication: 'Carriers metabolize catecholamines at differing rates, which may influence how the body responds to stress signaling.',
-        state: 'grey' as const,
-    },
-    {
-        gene: 'VDR',
-        variant: 'FokI',
-        implication: 'This variant is associated with differences in how cells respond to vitamin D, which can affect baseline calcium and bone signaling.',
-        state: 'orange' as const,
-    },
-]
-
-const STATE_STYLES: Record<'teal' | 'grey' | 'orange', string> = {
-    teal: 'border-[#2DA5A0]/40 bg-[#2DA5A0]/5',
-    grey: 'border-white/10 bg-white/5',
-    orange: 'border-[#B75E18]/40 bg-[#B75E18]/5',
-}
-
-const STATE_LABEL: Record<'teal' | 'grey' | 'orange', string> = {
-    teal: 'Your variant',
-    grey: 'Unanalyzed',
-    orange: 'Reference',
-}
 
 export function GenomicsSectionMobile() {
     return (
@@ -98,21 +66,7 @@ export function GenomicsSectionMobile() {
                 </div>
 
                 <div className="mb-10">
-                    <p className="text-white/50 uppercase tracking-[0.2em] text-xs mb-4 font-medium">
-                        Variants Explorer Preview
-                    </p>
-                    <div className="space-y-3">
-                        {SAMPLE_VARIANTS.map((v) => (
-                            <div key={v.gene} className={`rounded-xl border p-5 ${STATE_STYLES[v.state]}`}>
-                                <div className="flex items-baseline justify-between mb-2">
-                                    <p className="text-white text-base font-medium">{v.gene}</p>
-                                    <p className="text-white/50 text-[10px] uppercase tracking-wider">{STATE_LABEL[v.state]}</p>
-                                </div>
-                                <p className="text-white/60 text-xs mb-2 font-mono">{v.variant}</p>
-                                <p className="text-white/70 text-sm leading-relaxed">{v.implication}</p>
-                            </div>
-                        ))}
-                    </div>
+                    <VariantsExplorerPreview density="compact" />
                 </div>
 
                 <div className="flex flex-col gap-4">

@@ -20,14 +20,8 @@ type Patient = {
 
 // ─── Mock Data ───────────────────────────────────────────────────────────────
 
-const PATIENTS: Patient[] = [
-  { id: "1", name: "John Davis", age: 45, variants: ["MTHFR CT", "COMT AG"], compliance: 78, panels: "3/6", lastVisit: "Mar 24", status: "alert" },
-  { id: "2", name: "Sarah Kim", age: 32, variants: ["VDR TT", "CYP1A2 AA"], compliance: 94, panels: "4/6", lastVisit: "Mar 22", status: "good" },
-  { id: "3", name: "Maria Santos", age: 58, variants: ["MTHFR TT", "APOE E4"], compliance: 45, panels: "2/6", lastVisit: "Mar 20", status: "warning" },
-  { id: "4", name: "Alex Thompson", age: 29, variants: ["COMT GG", "MAOA TT"], compliance: 88, panels: "6/6", lastVisit: "Mar 18", status: "good" },
-  { id: "5", name: "Lisa Chen", age: 41, variants: ["FTO AA", "BDNF Val66Met"], compliance: 91, panels: "5/6", lastVisit: "Mar 15", status: "good" },
-  { id: "6", name: "Mike Rodriguez", age: 53, variants: ["CYP2D6 PM", "MTHFR CT"], compliance: 62, panels: "1/6", lastVisit: "Mar 10", status: "warning" },
-];
+// Live roster only. Never seed a mock census (the old "42 patients") as if live.
+const PATIENTS: Patient[] = [];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -200,7 +194,9 @@ export default function PatientsPage() {
         {/* ── Pagination ───────────────────────────────────────────── */}
         <div className="flex items-center justify-between">
           <p className="text-xs text-secondary">
-            Showing 1-{filtered.length} of 42 patients
+            {filtered.length === 0
+              ? "No patients on this roster yet"
+              : `Showing ${filtered.length} of ${PATIENTS.length} patients`}
           </p>
           <div className="flex gap-2">
             <button className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs text-gray-400 bg-white/[0.04] border border-white/[0.06] hover:bg-white/[0.06] transition-colors">

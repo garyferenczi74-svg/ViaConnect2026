@@ -6,7 +6,8 @@
 // Gary 2026-08-23: pills show observed GENEX360 counts with the unit that
 // matches the test. Aliases (GENEX-M, genex_m, genex-m, and peers) group onto
 // the matching pill. HormoneIQ and EpigenHQ read marker / clock tables, never
-// user_variants SNP length. 401 / error render as Unavailable (n/a), never 0.
+// user_variants SNP length. Fail / null / remap miss render as Unanalyzed,
+// never 0, never dishonest n/a as a number. MTHFR folate copy only via genex_m.
 // Marketing catalog sizes from the shop panel catalog are not used here.
 //
 // Standing rules honored: tokens only (Navy #1A2744, Card #1E3054, Teal
@@ -25,7 +26,7 @@ import { useGeneticsVariants, type VariantRecord } from './useGeneticsVariants';
 import { VariantReportPill } from './VariantReportPill';
 import { VariantImpactFilter, type ImpactFilterValue } from './VariantImpactFilter';
 import { SeverityPill } from '@/components/genetics/SeverityPill';
-import { SampleBadge } from '@/components/genetics/SampleBadge';
+import { VariantRowChip } from '@/components/genetics/VariantRowChip';
 import { resolveVariantReport } from '@/lib/genex360/resolveVariantReport';
 import { PanelDisclaimer } from '@/components/shop/genex360/PanelDisclaimer';
 import type { PanelSlug } from '@/data/genex360/types';
@@ -43,6 +44,11 @@ import {
   type ObservedPanelCount,
 } from '@/lib/genetics/observedPanelCounts';
 import { epigenMarkerByKey } from '@/lib/genetics/epigenMarkerMap';
+import { isMthfrFolateTarget, mayShowMthfrFolate } from '@/lib/genetics/mthfrFolate';
+import { protocolChangeLine } from '@/lib/genetics/protocolChangeLine';
+import { hubHeaderBadge } from '@/lib/genetics/geneticsUploadState';
+import { variantRowChip } from '@/lib/genetics/variantRowChip';
+import { formatVariantProvenance } from '@/lib/genetics/variantProvenance';
 
 const PANEL_ID = 'your-variants-panel';
 const SUBTITLE =
@@ -94,6 +100,7 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
     loadStatus,
     hormoneMarkers,
     epigeneticMarkers,
+    geneticsUploadState,
   } = data;
 
   const searchParams = useSearchParams();
@@ -177,11 +184,13 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
   const activePanelSlug = PANEL_LABELS[activePanel].slug as PanelSlug;
   const activeTabId = `${PANEL_ID}-tab-${activePanel}`;
 
-  const headerBadge = isLoading
-    ? 'Loading'
-    : resultsUnavailable || totalVariants === null
-      ? 'Unavailable'
-      : `${totalVariants} results`;
+  const headerBadge = hubHeaderBadge({
+    isLoading,
+    loadFailed: resultsUnavailable,
+    uploadState: geneticsUploadState,
+    totalVariants,
+  });
+  const protocolLine = protocolChangeLine(null);
 
   const hasHormoneMarkers = hormoneMarkers.length > 0;
   const hasEpigeneticMarkers = epigeneticMarkers.length > 0;
@@ -262,7 +271,7 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
                     isLoading
                       ? `${label} count loading`
                       : observed.status === 'unknown' || observed.count === null
-                        ? `${label} count unavailable`
+                        ? `${label} Unanalyzed`
                         : `${observed.count} ${observed.unit}`
                   }
                   className={`inline-flex min-w-[1.25rem] items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-medium tabular-nums ${
@@ -297,7 +306,7 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
             </p>
             <p className="text-[13px] leading-relaxed text-white/60">
               This is not an empty panel. We could not confirm a count, so the badge
-              shows n/a instead of 0.
+              shows Unanalyzed instead of 0.
             </p>
           </div>
         ) : showSnpList ? (
@@ -312,6 +321,7 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
                   const report = row.rsid
                     ? resolveVariantReport(row.rsid, activePanelSlug, row.gene ?? undefined)
                     : null;
+                  const provenanceLine = formatVariantProvenance(row.provenance);
                   return (
                     <div
                       key={rowKey}
@@ -332,12 +342,31 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
                         <span className="rounded bg-white/5 px-2 py-0.5 font-mono text-[11px] tabular-nums text-white/45">
                           {z}
                         </span>
-                        {row.is_sample ? <SampleBadge /> : null}
+                        <VariantRowChip
+                          kind={
+                            row.chip ??
+                            variantRowChip({
+                              is_sample: row.is_sample,
+                              genotype: row.genotype,
+                              status: row.status,
+                              stored_panel_key: row.stored_panel_key,
+                            })
+                          }
+                        />
                         <span className="ml-auto">
                           <SeverityPill tier={row.severity} />
                         </span>
                       </div>
-                      {row.clinical_significance ? (
+                      {provenanceLine ? (
+                        <p className="mt-1 font-mono text-[11px] leading-relaxed text-white/40">
+                          {provenanceLine}
+                        </p>
+                      ) : null}
+                      {row.clinical_significance &&
+                      !(
+                        isMthfrFolateTarget(row.rsid, row.gene) &&
+                        !mayShowMthfrFolate(activePanel)
+                      ) ? (
                         <p className="mt-2 text-[13px] leading-relaxed text-white/60">
                           {row.clinical_significance}
                         </p>
@@ -439,6 +468,10 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
           </div>
         )}
       </div>
+
+      {protocolLine ? (
+        <p className="mt-3 text-[13px] leading-relaxed text-white/55">{protocolLine}</p>
+      ) : null}
 
       <div className="mt-4">
         <PanelDisclaimer slug={activePanelSlug} />

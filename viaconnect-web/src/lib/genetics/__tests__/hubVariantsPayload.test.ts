@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest';
 import {
   buildHubVariantsPayload,
   countDistinctEpigeneticMarkers,
+  countUnmappedVariantRows,
   emptyOkHubPayload,
   errorHubPayload,
   groupVariantsByObservedPanel,
   unauthorizedHubPayload,
 } from '../hubVariantsPayload';
+import { formatObservedBadge } from '../observedPanelCounts';
 import { isHonestEmptyObserved, isUnknownObserved } from '../observedPanelCounts';
 
 describe('groupVariantsByObservedPanel', () => {
@@ -34,6 +36,7 @@ describe('groupVariantsByObservedPanel', () => {
     ]);
     expect(grouped.methylation).toBeUndefined();
     expect(Object.keys(grouped)).toHaveLength(0);
+    expect(countUnmappedVariantRows([{ panel_key: 'GENEX-N', rsid: 'rs999' }])).toBe(1);
   });
 });
 
@@ -117,6 +120,22 @@ describe('buildHubVariantsPayload', () => {
     expect(errored.observedByPanel.methylation.count).not.toBe(0);
   });
 
+  it('marks SNP panels Unanalyzed when every row is a remap miss', () => {
+    const payload = buildHubVariantsPayload({
+      variantRows: [{ panel_key: 'GENEX-N', rsid: 'rs999' }],
+      variantsReadFailed: false,
+      hormoneRows: [],
+      hormoneReadFailed: false,
+      epigeneticRows: [],
+      epigeneticReadFailed: false,
+      brandedPanels: [],
+    });
+    expect(payload.observedByPanel.methylation.count).toBeNull();
+    expect(formatObservedBadge(payload.observedByPanel.methylation)).toBe('Unanalyzed');
+    expect(formatObservedBadge(payload.observedByPanel.methylation)).not.toBe('0');
+    expect(formatObservedBadge(payload.observedByPanel.methylation)).not.toBe('n/a');
+  });
+
   it('marks only the failed source UNKNOWN when other sources succeed', () => {
     const payload = buildHubVariantsPayload({
       variantRows: [{ panel_key: 'GENEX-M', rsid: 'rs1801133' }],
@@ -131,6 +150,48 @@ describe('buildHubVariantsPayload', () => {
     expect(payload.observedByPanel.methylation.count).toBe(1);
     expect(payload.observedByPanel.hormone.count).toBeNull();
     expect(payload.observedByPanel.epigenetic.count).toBe(1);
+  });
+});
+
+describe('genetics upload SSOT on hub payload', () => {
+  it('marks 12 non-sample SNPs uploaded', () => {
+    const payload = buildHubVariantsPayload({
+      variantRows: Array.from({ length: 12 }, (_, i) => ({
+        panel_key: 'GENEX-M',
+        rsid: `rs${i}`,
+        is_sample: false,
+        genotype: 'CT',
+      })),
+      variantsReadFailed: false,
+      hormoneRows: [],
+      hormoneReadFailed: false,
+      epigeneticRows: [],
+      epigeneticReadFailed: false,
+      brandedPanels: [],
+    });
+    expect(payload.geneticsUploadState).toBe('uploaded');
+    expect(payload.geneticsUploaded).toBe(true);
+    expect(payload.observedByPanel.methylation.count).toBe(12);
+  });
+
+  it('marks 12 sample SNPs as Demo, not uploaded', () => {
+    const payload = buildHubVariantsPayload({
+      variantRows: Array.from({ length: 12 }, (_, i) => ({
+        panel_key: 'GENEX-M',
+        rsid: `rs${i}`,
+        is_sample: true,
+        genotype: 'CT',
+      })),
+      variantsReadFailed: false,
+      hormoneRows: [],
+      hormoneReadFailed: false,
+      epigeneticRows: [],
+      epigeneticReadFailed: false,
+      brandedPanels: [],
+    });
+    expect(payload.geneticsUploadState).toBe('sample_only');
+    expect(payload.geneticsUploaded).toBe(false);
+    expect(payload.variantsByPanel.methylation?.every((row) => row.chip === 'demo')).toBe(true);
   });
 });
 

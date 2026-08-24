@@ -35,10 +35,12 @@ describe("SampleBadge source", () => {
 });
 
 describe("SampleBadge is mounted gated on the sample flag", () => {
-  it("Your Variants renders the badge only when a variant is_sample", () => {
+  it("Your Variants uses VariantRowChip instead of a lone Sample badge", () => {
     const source = readFileSync(VARIANTS, "utf-8");
-    expect(source).toContain("import { SampleBadge }");
-    expect(source).toContain("row.is_sample ? <SampleBadge /> : null");
+    expect(source).toContain("import { VariantRowChip }");
+    expect(source).toContain("<VariantRowChip");
+    expect(source).not.toContain("import { SampleBadge }");
+    expect(source).not.toContain("Your variant");
   });
 
   it("EpigenHQ Your reading renders the badge only when the result isSample", () => {

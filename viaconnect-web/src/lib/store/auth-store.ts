@@ -4,7 +4,6 @@ import type { User } from "@supabase/supabase-js";
 // Re-export UserRole from shared types for backwards compatibility
 export type { UserRole } from "@/lib/supabase/types";
 import type { UserRole } from "@/lib/supabase/types";
-import { mapDatabaseRoleToUserRole } from "@/lib/supabase/types";
 
 interface AuthState {
   user: User | null;
@@ -21,16 +20,9 @@ export const useAuthStore = create<AuthState>((set) => ({
   role: "consumer",
   isLoading: true,
   setUser: (user) => {
-    // user_metadata.role may be the app-level role (consumer/practitioner/naturopath)
-    // or the DB-level role (patient/practitioner/admin) — handle both
-    const rawRole = user?.user_metadata?.role as string | undefined;
-    let role: UserRole = "consumer";
-    if (rawRole === "consumer" || rawRole === "practitioner" || rawRole === "naturopath" || rawRole === "admin") {
-      role = rawRole;
-    } else if (rawRole) {
-      role = mapDatabaseRoleToUserRole(rawRole);
-    }
-    set({ user, role });
+    // Privileged roles must come from profiles.role via setRole, never
+    // from user_metadata (user-editable in Supabase Auth).
+    set({ user, role: "consumer" });
   },
   setRole: (role) => set({ role }),
   setLoading: (isLoading) => set({ isLoading }),

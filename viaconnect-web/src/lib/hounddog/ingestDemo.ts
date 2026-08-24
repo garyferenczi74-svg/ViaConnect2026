@@ -17,7 +17,7 @@ export async function ingestDemoClinicalStudy(supabase: AdminClient): Promise<{
   const title = 'NAD+ precursor nutrition research summary (educational)';
   const summary =
     'Peer-reviewed literature discusses NAD+ metabolism and cellular energy pathways. ' +
-    'This is structure and function education only. Bioavailability framing uses 10x to 28x when stated. ' +
+    'This is structure and function education only. Bioavailability framing uses Maximum Bioavailability when stated. ' +
     'Not a disease treatment claim.';
 
   const pre = evaluateHoundDogGate({

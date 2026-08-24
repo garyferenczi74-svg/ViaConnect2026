@@ -1,12 +1,14 @@
 'use client';
 
 // Prompt 210h Revision C: dedicated FormaVision tab.
-// Hosts the full 3D anatomical body (210g engine) and ghost comparison.
+// Prompt 210l: four-photo scan panel on this tab.
+// Prompt Brief 2: 3D A/B wipe compare (parametric BodyParamVector only).
 // Body Composition remains the numbers / manual / 2D surface.
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { Camera } from 'lucide-react';
 import { BackToHubLink } from '@/components/body-tracker/hub/BackToHubLink';
 import {
   CompositionSectionToggle,
@@ -20,6 +22,10 @@ import {
 import { JourneyTimeline, type JourneyScanReadout } from '@/components/formavision/JourneyTimeline';
 import { FutureSelfPanel } from '@/components/formavision/FutureSelfPanel';
 import { RegionProtocolPanel } from '@/components/formavision/RegionProtocolPanel';
+import {
+  AbComparePanelContent,
+  AbWipeSplitOverlay,
+} from '@/components/formavision/AbComparePanel';
 import { useReducedMotion } from '@/components/body-tracker/HoverSystem/useReducedMotion';
 import { SegmentalHeatMap } from '@/components/body-tracker/SegmentalHeatMap';
 import { UnitToggle } from '@/components/body-tracker/UnitToggle';
@@ -27,16 +33,27 @@ import { useCompositionHistory } from '@/hooks/body-tracker/useCompositionHistor
 import { useCircumferenceHistory } from '@/hooks/body-tracker/useCircumferenceHistory';
 import { useCircumferenceData } from '@/hooks/body-tracker/useCircumferenceData';
 import { useUserBiologicalSex } from '@/hooks/body-tracker/useUserBiologicalSex';
+import { useUserJourney } from '@/hooks/body-tracker/useUserJourney';
 import { useCurrentUser } from '@/components/body-tracker/manual-input';
+import { BodyScanUploader, type BodyScanResult } from '@/components/body-tracker/BodyScanUploader';
+import { BodyScanResults } from '@/components/body-tracker/BodyScanResults';
+import { persistScan } from '@/lib/body-tracker/composition/persistScanClient';
+import { isJourneyCompositionPoint } from '@/lib/body-tracker/composition/journeyPoints';
 import type { MeasurementUnit } from '@/lib/body-tracker/circumference';
 import {
-  compositionScanHref,
   compositionSectionHref,
 } from '@/lib/body-tracker/compositionNav';
 import { scanToParamVector } from '@/lib/formavision/geometry/scanToParamVector';
 import { buildSegmentTintsFromChange } from '@/lib/formavision/geometry/composSegmentTints';
 import type { BodyParamVector } from '@/lib/formavision/geometry/types';
 import { useAvatarTelemetry } from '@/lib/formavision/telemetry/useAvatarTelemetry';
+import {
+  pairScanPoints,
+  resolveAbBaseline,
+  type AbBaselineMode,
+} from '@/lib/formavision/compare/resolveAbBaseline';
+import { computeAbMeasurementDeltas } from '@/lib/formavision/compare/abMeasurementDeltas';
+import { emitCompareEvent } from '@/lib/formavision/compare/compareTelemetry';
 
 const UNIT_STORAGE_KEY = 'vc.body-tracker.measurement-unit';
 
@@ -66,6 +83,7 @@ function FormaVisionSurface() {
     sex: caqSex,
     setOverride: setGenderOverride,
   } = useUserBiologicalSex(userId ?? null);
+  const journey = useUserJourney(userId ?? null);
 
   const onSectionNav = useCallback(
     (tab: CompositionNavTab) => {
@@ -80,7 +98,12 @@ function FormaVisionSurface() {
   const [scrubVector, setScrubVector] = useState<BodyParamVector | null>(null);
   const [ghostVector, setGhostVector] = useState<BodyParamVector | null>(null);
   const [showGhost, setShowGhost] = useState(false);
-  const [comparisonOverlayOn, setComparisonOverlayOn] = useState(false);
+  const [abCompareOn, setAbCompareOn] = useState(false);
+  const [baselineMode, setBaselineMode] = useState<AbBaselineMode>('last_scan');
+  const [wipeT, setWipeT] = useState(0.5);
+  // Prompt 210l: wire the FormaVision tab to the four-photo scan panel.
+  const [scanOpen, setScanOpen] = useState(false);
+  const [scanResult, setScanResult] = useState<BodyScanResult | null>(null);
   // Prompt 210k: same unit spine as composition (localStorage key shared).
   const [unit, setUnit] = useState<MeasurementUnit>(() => readStoredUnit());
 
@@ -122,23 +145,62 @@ function FormaVisionSurface() {
     displayUnit: unit,
   });
   const snapshot = composHistory.latest;
+  const journeySnapshots = useMemo(
+    () => composHistory.snapshots.filter(isJourneyCompositionPoint),
+    [composHistory.snapshots],
+  );
 
-  const firstScanVector = useMemo<BodyParamVector | null>(() => {
-    const first = composHistory.first;
-    if (!first) return null;
+  const scanPoints = useMemo(
+    () => pairScanPoints(composHistory.snapshots, circHistory.entries),
+    [composHistory.snapshots, circHistory.entries],
+  );
+
+  const lastScanBaseline = useMemo(
+    () => resolveAbBaseline({ scans: scanPoints, mode: 'last_scan' }),
+    [scanPoints],
+  );
+
+  const protocolBaseline = useMemo(
+    () =>
+      resolveAbBaseline({
+        scans: scanPoints,
+        mode: 'protocol_start',
+        protocolStartedAt: journey.startedAt,
+      }),
+    [scanPoints, journey.startedAt],
+  );
+
+  const selectedBaseline =
+    baselineMode === 'last_scan' ? lastScanBaseline : protocolBaseline;
+  const activeBaseline = selectedBaseline.comparable ? selectedBaseline : lastScanBaseline;
+  const canCompare = lastScanBaseline.comparable;
+
+  const wipeVector = useMemo<BodyParamVector | null>(() => {
+    if (!abCompareOn || !activeBaseline.baseline) return null;
     return scanToParamVector({
-      snapshot: first,
-      circumferences: circHistory.first?.measurements ?? null,
+      snapshot: activeBaseline.baseline.composition,
+      circumferences: activeBaseline.baseline.circumferences,
       sex: gender,
       unit,
     });
-  }, [composHistory.first, circHistory.first, gender, unit]);
+  }, [abCompareOn, activeBaseline.baseline, gender, unit]);
+
+  const abDeltas = useMemo(() => {
+    if (!abCompareOn || !activeBaseline.baseline || !activeBaseline.latest) return [];
+    return computeAbMeasurementDeltas({
+      baselineComposition: activeBaseline.baseline.composition,
+      latestComposition: activeBaseline.latest.composition,
+      baselineCircumferences: activeBaseline.baseline.circumferences,
+      latestCircumferences: activeBaseline.latest.circumferences,
+      unit,
+    });
+  }, [abCompareOn, activeBaseline.baseline, activeBaseline.latest, unit]);
 
   const hasScanData = Boolean(snapshot || circumferenceData.latest);
 
   const journeyVectors = useMemo(
     () =>
-      composHistory.snapshots.map((snap, i) => {
+      journeySnapshots.map((snap, i) => {
         const circ =
           circHistory.entries.find((e) => e.recordedAt === snap.recordedAt)?.measurements ??
           circHistory.entries[i]?.measurements ??
@@ -150,12 +212,12 @@ function FormaVisionSurface() {
           unit,
         });
       }),
-    [composHistory.snapshots, circHistory.entries, gender, unit],
+    [journeySnapshots, circHistory.entries, gender, unit],
   );
 
   const journeyReadouts = useMemo<JourneyScanReadout[]>(
     () =>
-      composHistory.snapshots.map((snap, i) => {
+      journeySnapshots.map((snap, i) => {
         const circ =
           circHistory.entries.find((e) => e.recordedAt === snap.recordedAt)?.measurements ??
           circHistory.entries[i]?.measurements ??
@@ -166,7 +228,7 @@ function FormaVisionSurface() {
           waist: circ?.waist ?? null,
         };
       }),
-    [composHistory.snapshots, circHistory.entries],
+    [journeySnapshots, circHistory.entries],
   );
 
   const improvementTints = useMemo(() => {
@@ -178,22 +240,21 @@ function FormaVisionSurface() {
     );
   }, [composHistory.first, composHistory.latest]);
 
-  const effectiveGhost =
-    comparisonOverlayOn && firstScanVector ? firstScanVector : ghostVector;
-  const effectiveShowGhost =
-    comparisonOverlayOn && firstScanVector
-      ? true
-      : comparisonOverlayOn
-        ? false
-        : showGhost;
+  const effectiveShowGhost = abCompareOn ? false : showGhost;
 
-  const onComparisonToggle = useCallback(() => {
-    setComparisonOverlayOn((v) => {
+  const onCompareToggle = useCallback(() => {
+    setAbCompareOn((v) => {
       const next = !v;
-      if (next) telEmit('formavision.ghost_compared', { baseline: 'first_scan' });
+      if (next) {
+        void emitCompareEvent(userId, 'formavision.ab_compared', {
+          surface: '/body-tracker/formavision',
+          baseline: activeBaseline.kind ?? 'last_scan',
+          ok: true,
+        });
+      }
       return next;
     });
-  }, [telEmit]);
+  }, [userId, activeBaseline.kind]);
 
   useEffect(() => {
     if (effectiveShowGhost && improvementTints && Object.keys(improvementTints).length > 0) {
@@ -201,13 +262,71 @@ function FormaVisionSurface() {
     }
   }, [effectiveShowGhost, improvementTints, telEmitOnce]);
 
+  const comparePanelProps = {
+    comparable: canCompare,
+    compareOn: abCompareOn,
+    onToggle: onCompareToggle,
+    baselineMode,
+    onBaselineModeChange: setBaselineMode,
+    baselineKind: selectedBaseline.kind,
+    wipeT,
+    onWipeTChange: setWipeT,
+    deltas: abDeltas,
+    reducedMotion,
+  };
+
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 pb-16 pt-4 md:px-6">
       <BackToHubLink />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <CompositionSectionToggle active="formavision" onChange={onSectionNav} />
+        <button
+          type="button"
+          data-testid="formavision-open-scan"
+          onClick={() => {
+            setScanOpen((o) => !o);
+            if (scanOpen) setScanResult(null);
+          }}
+          className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-[#B75E18]/50 bg-[#B75E18]/15 px-4 py-2.5 text-sm font-medium text-[#B75E18]"
+        >
+          <Camera size={16} strokeWidth={1.5} />
+          {scanOpen ? 'Close scan' : 'Scan My Body'}
+        </button>
       </div>
+
+      {scanOpen && (
+        <div
+          data-testid="formavision-scan-panel"
+          className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-4 backdrop-blur-md sm:p-5"
+        >
+          <h2 className="text-base font-semibold text-white">FormaVision four-photo scan</h2>
+          <p className="mb-4 text-xs text-white/55">
+            JPEG and PNG keep their real types. Analysis can take up to 60 seconds.
+          </p>
+          {scanResult ? (
+            <BodyScanResults
+              result={scanResult}
+              onRetake={() => setScanResult(null)}
+              onClose={() => {
+                setScanOpen(false);
+                setScanResult(null);
+              }}
+            />
+          ) : (
+            <BodyScanUploader
+              onComplete={(r) => {
+                setScanResult(r);
+                void persistScan(r.scanId).then(() => {
+                  composHistory.refresh();
+                  circHistory.refresh();
+                });
+              }}
+              onCancel={() => setScanOpen(false)}
+            />
+          )}
+        </div>
+      )}
 
       <header className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-4 backdrop-blur-md sm:p-5">
         <h1 className="text-2xl font-bold tracking-tight">
@@ -216,7 +335,7 @@ function FormaVisionSurface() {
         </h1>
         <p className="mt-1 max-w-2xl text-sm text-white/65">
           {hasScanData
-            ? 'Your body, built from your scan and measurements. A ghost overlay shows where you started.'
+            ? 'Your body, built from your scan and measurements. Compare against your last scan with an A/B wipe.'
             : 'Scan your body or log measurements to build your 3D form. No photographic surface reconstruction.'}
         </p>
       </header>
@@ -231,12 +350,16 @@ function FormaVisionSurface() {
             body.
           </p>
           <div className="mt-4 flex flex-wrap justify-center gap-3">
-            <Link
-              href={compositionScanHref()}
+            <button
+              type="button"
+              onClick={() => {
+                setScanOpen(true);
+                setScanResult(null);
+              }}
               className="min-h-[44px] rounded-xl border border-[#B75E18]/50 bg-[#B75E18]/15 px-4 py-2.5 text-sm font-medium text-[#B75E18]"
             >
               Scan My Body
-            </Link>
+            </button>
             <Link
               href={compositionSectionHref('measurements')}
               className="min-h-[44px] rounded-xl border border-white/20 bg-white/[0.06] px-4 py-2.5 text-sm font-medium text-white/80"
@@ -248,8 +371,8 @@ function FormaVisionSurface() {
       )}
 
       {/* Prompt 210m: top control row. Male/Female + units stay above the avatar.
-          Comparison Overlay joins this row at md+ (right of units); on phone it
-          lives in comparison-overlay-home-phone below Select Body Part. */}
+          A/B compare toggle joins this row at md+; on phone it lives below
+          Select Body Part. */}
       <div
         data-testid="formavision-top-controls"
         className="flex flex-wrap items-center justify-between gap-2"
@@ -290,35 +413,17 @@ function FormaVisionSurface() {
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <UnitToggle value={unit} onChange={setUnit} layoutId="formavision-page-unit" />
-          <div
-            data-testid="comparison-overlay-home-top"
-            className="hidden max-w-[12rem] flex-col items-end gap-1 md:flex"
-          >
-            <button
-              type="button"
-              data-testid="comparison-overlay-toggle"
-              aria-pressed={comparisonOverlayOn}
-              disabled={!firstScanVector}
-              onClick={onComparisonToggle}
-              className="rounded-lg border border-white/15 bg-[#0D1520]/85 px-2.5 py-1.5 text-[11px] font-medium text-white/80 disabled:opacity-40"
-            >
-              {comparisonOverlayOn ? 'Hide Comparison Overlay' : 'Show Comparison Overlay'}
-            </button>
-            {!firstScanVector && (
-              <p className="text-right text-[10px] leading-snug text-white/45">
-                Comparison needs a prior scan. Complete a second scan to overlay your first body.
-              </p>
-            )}
-          </div>
+          <AbComparePanelContent {...comparePanelProps} placement="top" />
         </div>
       </div>
 
-      {/* Prompt 210m: avatar canvas is controls-free. Absolute overlays removed so
-          nothing covers Neck or any region callout (210f goal, new placement). */}
+      {/* Prompt 210m: avatar canvas is controls-free aside from the wipe split
+          line (pointer-events none so orbit and Neck callouts stay usable). */}
       <div
         data-testid="formavision-canvas-grid"
         className="relative min-h-[480px] rounded-2xl border border-white/[0.08] bg-transparent p-4 lg:min-h-[560px]"
       >
+        <AbWipeSplitOverlay wipeT={wipeT} visible={abCompareOn && Boolean(wipeVector)} />
         <BodyCompositionAvatar
           sex={gender}
           scan={snapshot}
@@ -331,8 +436,11 @@ function FormaVisionSurface() {
           reducedMotion={reducedMotion}
           segmentTints={effectiveShowGhost ? improvementTints : null}
           scrubVector={scrubVector}
-          ghostVector={effectiveGhost}
+          ghostVector={ghostVector}
           showGhost={effectiveShowGhost}
+          wipeActive={abCompareOn}
+          wipeT={wipeT}
+          wipeVector={wipeVector}
         >
           <div className="flex h-full min-h-[400px] items-center justify-center">
             <SegmentalHeatMap sex={gender} segmentStatuses={{}} />
@@ -349,27 +457,8 @@ function FormaVisionSurface() {
         <SelectBodyPartControl value={selectedBodyPart} onChange={setSelectedBodyPart} />
       </div>
 
-      {/* Prompt 210m: phone home for Comparison Overlay (above Your Journey bar). */}
-      <div
-        data-testid="comparison-overlay-home-phone"
-        className="flex flex-col items-center gap-1 md:hidden"
-      >
-        <button
-          type="button"
-          data-testid="comparison-overlay-toggle"
-          aria-pressed={comparisonOverlayOn}
-          disabled={!firstScanVector}
-          onClick={onComparisonToggle}
-          className="rounded-lg border border-white/15 bg-[#0D1520]/85 px-2.5 py-1.5 text-[11px] font-medium text-white/80 disabled:opacity-40"
-        >
-          {comparisonOverlayOn ? 'Hide Comparison Overlay' : 'Show Comparison Overlay'}
-        </button>
-        {!firstScanVector && (
-          <p className="max-w-xs text-center text-[10px] leading-snug text-white/45">
-            Comparison needs a prior scan. Complete a second scan to overlay your first body.
-          </p>
-        )}
-      </div>
+      <AbComparePanelContent {...comparePanelProps} placement="phone" />
+      <AbComparePanelContent {...comparePanelProps} placement="controls" />
 
       {journeyVectors.length > 1 && (
         <JourneyTimeline
@@ -390,7 +479,7 @@ function FormaVisionSurface() {
         userId={userId ?? null}
         reducedMotion={reducedMotion}
         onGhostChange={(v, s) => {
-          if (!comparisonOverlayOn) {
+          if (!abCompareOn) {
             setGhostVector(v);
             setShowGhost(s);
           }

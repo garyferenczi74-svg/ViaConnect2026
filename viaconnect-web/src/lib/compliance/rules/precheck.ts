@@ -277,7 +277,7 @@ export const BIOAVAILABILITY_COACHING: Rule<PrecheckDraft | string> = {
   severity: "P3",
   surfaces: ["precheck_draft"],
   citation: "ViaConnect Standing Rule Section 0.2",
-  description: "Coaching: bioavailability range 10 to 28 times is canonical.",
+  description: "Coaching: bioavailability copy is Maximum Bioavailability. Fold-number ranges are retired.",
   evaluate: (input, ctx = defaultCtx()) => {
     const text = typeof input === "string" ? input : (input?.text ?? "");
     const re = /(\d{1,3})\s*(?:to|[-–—])\s*(\d{1,3})\s*[×x]?\s*(?:more\s+)?(?:bioavailab(?:le|ility))/gi;
@@ -286,19 +286,17 @@ export const BIOAVAILABILITY_COACHING: Rule<PrecheckDraft | string> = {
     while ((m = re.exec(text)) !== null) {
       const low = Number(m[1]);
       const high = Number(m[2]);
-      if (!(low === 10 && high === 28)) {
-        hits.push(
-          f(
-            "MARSHALL.PRECHECK.BIOAVAILABILITY_COACHING",
-            "P3",
-            `Coaching: bioavailability range "${low} to ${high}" is not canonical. Use 10 to 28 times before publishing.`,
-            "ViaConnect Standing Rule Section 0.2",
-            redactExcerpt(text, m.index, 80),
-            { kind: "auto", summary: "Normalize to 10 to 28 times bioavailability.", action: "REPLACE_RANGE:10-28" },
-            ctx,
-          ),
-        );
-      }
+      hits.push(
+        f(
+          "MARSHALL.PRECHECK.BIOAVAILABILITY_COACHING",
+          "P3",
+          `Coaching: bioavailability fold range "${low} to ${high}" is retired. Use Maximum Bioavailability before publishing.`,
+          "ViaConnect Standing Rule Section 0.2",
+          redactExcerpt(text, m.index, 80),
+          { kind: "auto", summary: "Replace fold-number claims with Maximum Bioavailability.", action: "REPLACE_RANGE:Maximum Bioavailability" },
+          ctx,
+        ),
+      );
     }
     return hits;
   },

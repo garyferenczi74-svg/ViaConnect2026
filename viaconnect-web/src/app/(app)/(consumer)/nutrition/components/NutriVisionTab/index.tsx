@@ -9,11 +9,11 @@
 //
 // Hard rules honored: no em or en dashes, no emojis, no any.
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { Camera, ChevronLeft, HelpCircle, ImageUp, Mic, Settings, X } from 'lucide-react';
+import { Camera, ChevronLeft, HelpCircle, ImageUp, Loader2, Mic, Settings, X } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import type { CaptureResult, CaptureSource } from '@/lib/capacitor/camera-capture';
@@ -27,7 +27,6 @@ import { WebCameraPreview } from './WebCameraPreview';
 import { mapAIErrorToClass } from '@/lib/nutrition/vision/error-class-mapper';
 import { writeNutrivisionManualLogHandoff } from '@/hooks/useNutrivisionManualLogHandoff';
 import { MobileHeroBackground } from '@/components/ui/MobileHeroBackground';
-import { CameraCapture } from './CameraCapture';
 import { AnalysisProgress } from './AnalysisProgress';
 import { AnalysisResult } from './AnalysisResult';
 import { ErrorStateCard } from './ErrorStateCard';
@@ -39,6 +38,8 @@ import { useCameraCapture } from './hooks/useCameraCapture';
 import { useNutriVisionAnalysis } from './hooks/useNutriVisionAnalysis';
 import { useMealItemEdits } from './hooks/useMealItemEdits';
 import { detectMealTypeForNow } from './types';
+import { contractFromDraft } from '@/lib/nutrition/meal-card-contract/toContract';
+import type { MealCardEntrySource } from '@/lib/nutrition/meal-card-contract/types';
 // Prompt 175m (2026-06-05): the 170l Phase 1c-2 barcode entry path
 // (BarcodeScannerOverlay + ProductConfirmation + NotFoundFallback +
 // ManualBarcodeEntry + MacroEditPanel + OFF lookup machinery) was
@@ -177,6 +178,8 @@ export default function NutriVisionTab() {
   // #170a supplement §20.A: cache the latest capture so Try Again can reuse it
   // without forcing the user back to the capture screen.
   const [lastCaptureForRetry, setLastCaptureForRetry] = useState<CaptureResult | null>(null);
+  const [lastEntrySource, setLastEntrySource] = useState<MealCardEntrySource>('photo');
+  const persistInFlight = useRef(false);
 
   // Prompt 175m (2026-06-05): barcode entry path state removed.
   // Prompt 171a: web-only camera preview overlay state. Mobile native opens
@@ -204,6 +207,61 @@ export default function NutriVisionTab() {
 
   const capture = useCameraCapture();
   const analysis = useNutriVisionAnalysis();
+
+  const persistDraftToReview = useCallback(
+    async (nextDraft: MealDraft, source: MealCardEntrySource) => {
+      const contract = contractFromDraft(nextDraft, source);
+      try {
+        const res = await fetch('/api/nutrition/pending-review', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            source,
+            mealType: detectMealTypeForNow(),
+            serving_description: contract.servingDescription,
+            protein_g: contract.analysis.protein_g,
+            carbs_g: contract.analysis.carbs_g,
+            total_fat_g: contract.analysis.total_fat_g,
+            saturated_fat_g: contract.analysis.saturated_fat_g,
+            sugar_g: contract.analysis.sugar_g,
+            fiber_g: contract.analysis.fiber_g,
+            confidence: contract.analysis.confidence,
+            ai_notes: contract.analysis.ai_notes,
+            food_names: contract.foodNames,
+            micronutrients: contract.micronutrients,
+          }),
+        });
+        if (!res.ok) {
+          const body = (await res.json().catch(() => null)) as { error?: unknown } | null;
+          const msg = typeof body?.error === 'string' ? body.error : 'Could not open review.';
+          setAnalysisError(msg);
+          setPhase('error');
+          persistInFlight.current = false;
+          return;
+        }
+        const json = (await res.json().catch(() => null)) as { logId?: unknown } | null;
+        if (typeof json?.logId !== 'string') {
+          setAnalysisError('Could not open review.');
+          setPhase('error');
+          persistInFlight.current = false;
+          return;
+        }
+        router.push(`/nutrition/log-meal/review?logId=${json.logId}`);
+      } catch {
+        setAnalysisError('Network error. Try again.');
+        setPhase('error');
+        persistInFlight.current = false;
+      }
+    },
+    [router],
+  );
+
+  const handleCancelCapture = useCallback(() => {
+    capture.reset();
+    persistInFlight.current = false;
+    setAnalysisError(null);
+    setPhase('idle');
+  }, [capture]);
 
   // Load the user id + recent meals + corpus opt-in status on mount.
   useEffect(() => {
@@ -288,13 +346,14 @@ export default function NutriVisionTab() {
     };
   }, [userId]);
 
-  // When analysis returns a draft, advance to the reviewing phase.
+  // Brief 3: photo and upload share /nutrition/log-meal/review.
   useEffect(() => {
-    if (analysis.mealDraft && phase === 'analyzing') {
-      setDraft(analysis.mealDraft);
-      setPhase('reviewing');
-    }
-  }, [analysis.mealDraft, phase]);
+    if (!analysis.mealDraft || phase !== 'analyzing') return;
+    if (persistInFlight.current) return;
+    persistInFlight.current = true;
+    setDraft(analysis.mealDraft);
+    void persistDraftToReview(analysis.mealDraft, lastEntrySource);
+  }, [analysis.mealDraft, phase, lastEntrySource, persistDraftToReview]);
 
   // #170a supplement §20.1: analysis failures land on the structured error
   // card (phase 'error') instead of being toasted from idle. The error card
@@ -309,9 +368,11 @@ export default function NutriVisionTab() {
 
   const onCapture = useCallback(async (source: CaptureSource) => {
     setAnalysisError(null);
+    persistInFlight.current = false;
     // Prompt 171a: on web, the camera path opens a preview overlay so the
     // user can frame before capture. Gallery and native paths are unchanged.
     if (source === 'camera' && detectPlatform() === 'web') {
+      setLastEntrySource('photo');
       safeLog.info('nutrivision.capture', 'nutrivision_camera_opened', {
         component: 'NutriVisionTab',
         action: 'web_overlay',
@@ -320,6 +381,19 @@ export default function NutriVisionTab() {
       setShowWebCameraPreview(true);
       return;
     }
+    if (source === 'gallery') {
+      setLastEntrySource('upload');
+      const result = await capture.capture(source);
+      if (!result) {
+        setPhase('idle');
+        return;
+      }
+      setLastCaptureForRetry(result);
+      setPhase('analyzing');
+      await analysis.analyze(result);
+      return;
+    }
+    setLastEntrySource('photo');
     setPhase('capturing');
     const result = await capture.capture(source);
     if (!result) {
@@ -342,6 +416,8 @@ export default function NutriVisionTab() {
     async (result: CaptureResult) => {
       setShowWebCameraPreview(false);
       setAnalysisError(null);
+      persistInFlight.current = false;
+      setLastEntrySource('photo');
       setLastCaptureForRetry(result);
       setPhase('analyzing');
       await analysis.analyze(result);
@@ -361,6 +437,8 @@ export default function NutriVisionTab() {
   const handleWebCameraNativeFallback = useCallback(async () => {
     setShowWebCameraPreview(false);
     setAnalysisError(null);
+    persistInFlight.current = false;
+    setLastEntrySource('photo');
     setPhase('capturing');
     try {
       const result = await captureCameraFallbackPhoto();
@@ -403,6 +481,7 @@ export default function NutriVisionTab() {
   }, [analysis.mealDraft, router]);
 
   const handleDiscardError = useCallback(() => {
+    persistInFlight.current = false;
     setAnalysisError(null);
     setDraft(null);
     analysis.reset();
@@ -412,6 +491,7 @@ export default function NutriVisionTab() {
   }, [analysis, capture]);
 
   const cancelAnalysis = useCallback(() => {
+    persistInFlight.current = false;
     analysis.cancel();
     setPhase('idle');
   }, [analysis]);
@@ -462,9 +542,11 @@ export default function NutriVisionTab() {
       });
       setDraft(newDraft);
       setVoiceNativeOpen(false);
-      setPhase('reviewing');
+      persistInFlight.current = true;
+      setPhase('analyzing');
+      void persistDraftToReview(newDraft, 'voice');
     },
-    [],
+    [persistDraftToReview],
   );
 
   // Prompt 175m (2026-06-05): manual barcode entry handlers removed.
@@ -524,11 +606,20 @@ export default function NutriVisionTab() {
           )}
 
           {phase === 'capturing' && (
-            <CameraCapture
-              onCapture={onCapture}
-              isCapturing={true}
-              error={capture.error}
-            />
+            <div className="flex flex-col items-center gap-3 rounded-2xl border border-white/[0.08] bg-[#1E3054]/45 p-5 backdrop-blur-md">
+              <Loader2 className="h-6 w-6 animate-spin text-[#2DA5A0]" strokeWidth={1.5} />
+              <p className="text-sm font-semibold text-white">Opening camera...</p>
+              <p className="text-[11px] text-white/55">
+                If this hangs, cancel and try Upload photo instead.
+              </p>
+              <button
+                type="button"
+                onClick={handleCancelCapture}
+                className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-white/[0.08] bg-white/5 px-4 py-2 text-sm text-white/80"
+              >
+                Cancel
+              </button>
+            </div>
           )}
 
           {phase === 'analyzing' && (

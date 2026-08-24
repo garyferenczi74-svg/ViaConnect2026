@@ -73,14 +73,12 @@ export function lintEducationalCard(card: ParsedCard): CardLintResult {
 
   const rangeHits = scanText.match(/\b\d+x\s+to\s+\d+x\b/gi) ?? [];
   for (const hit of rangeHits) {
-    if (hit.toLowerCase() !== '10x to 28x') {
-      findings.push({
-        code: 'bioavailability_range',
-        message: `bioavailability range must be "10x to 28x" (found ${hit})`,
-        index: scanText.toLowerCase().indexOf(hit.toLowerCase()),
-        excerpt: hit,
-      });
-    }
+    findings.push({
+      code: 'bioavailability_range',
+      message: `bioavailability fold range is retired; use "Maximum Bioavailability" (found ${hit})`,
+      index: scanText.toLowerCase().indexOf(hit.toLowerCase()),
+      excerpt: hit,
+    });
   }
 
   findings.push(...lintDiagnoseTreatCure(card.body));

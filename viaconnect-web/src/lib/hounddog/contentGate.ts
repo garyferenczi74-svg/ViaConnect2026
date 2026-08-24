@@ -61,14 +61,12 @@ export function evaluateHoundDogGate(item: StagingCandidate): {
     }
   }
 
-  if (/\b\d+\s*[-to]+\s*\d+\s*x\b/i.test(text) && !/10x to 28x/i.test(text) && !/10-28x/i.test(text)) {
-    if (/bioavail/i.test(text)) {
-      return {
-        verdict: 'escalated',
-        notes: 'Lex review: bioavailability phrasing must use locked 10x to 28x form',
-        agent: 'lex',
-      };
-    }
+  if (/\b\d+\s*[-to]+\s*\d+\s*x\b/i.test(text) && /bioavail/i.test(text)) {
+    return {
+      verdict: 'escalated',
+      notes: 'Lex review: bioavailability phrasing must use Maximum Bioavailability',
+      agent: 'lex',
+    };
   }
 
   if (/\b(disease|disorder|syndrome)\b/i.test(text) && /\b(treat|therapy|drug)\b/i.test(text)) {

@@ -53,7 +53,7 @@ describe("AutoRemediator applies to auto-fix rules only", () => {
 });
 
 describe("Bioavailability normalization", () => {
-  it("auto-remediates 5-27x to 10-28x", async () => {
+  it("auto-remediates 5-27x to Maximum Bioavailability", async () => {
     const engine = RuleEngine.fromRules(allRules);
     const input = "5-27x more bioavailable formulation";
     const scan = await engine.evaluate({
@@ -63,6 +63,7 @@ describe("Bioavailability normalization", () => {
     });
     const remediator = new AutoRemediator((id) => engine.getRule(id));
     const result = await remediator.apply(input, scan.findings);
-    expect(result.remediated).toMatch(/10-28/);
+    expect(result.remediated).toContain("Maximum Bioavailability");
+    expect(result.remediated).not.toMatch(/10-28/);
   });
 });

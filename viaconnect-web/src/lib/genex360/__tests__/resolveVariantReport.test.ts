@@ -87,4 +87,12 @@ describe("resolveVariantReport", () => {
     expect(target.geneSlug).toBe("mthfr");
     expect(target.level).toBe("variant");
   });
+
+  it("resolves MTHFR folate only through genex-m, never nutrigen-dx", () => {
+    const fromNutrition = resolveVariantReport("rs1801133", "nutrigendx", "MTHFR");
+    expect(fromNutrition.exists).toBe(true);
+    expect(fromNutrition.panelSlug).toBe("genex-m");
+    expect(fromNutrition.geneSlug).toBe("mthfr");
+    expect(fromNutrition.href).toBe("/genetics/blueprint#genex-m/mthfr/rs1801133");
+  });
 });

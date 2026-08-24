@@ -27,7 +27,7 @@
 //
 // Standing rules honored: no em or en dashes anywhere; consumer brand is Via
 // Cura (the legal manufacturing entity is never named here); bioavailability is
-// locked at "10x to 28x"; the score is named "Bio Optimization"; tone is
+// locked at "Maximum Bioavailability"; the score is named "Bio Optimization"; tone is
 // associative and educational, never diagnostic.
 
 import type { SnpDeepReport } from "./types";
@@ -106,7 +106,7 @@ export const GENEX_M_DEEP_REPORTS: Record<string, SnpDeepReport> = {
       "Works hand in hand with MTR and MTRR for B12 driven remethylation, raises the methyl donor demand felt by COMT, and shares homocysteine with the CBS transsulfuration route. Riboflavin status modulates its activity.",
     ],
     protocolTieIn:
-      "Via Cura prioritizes 5-MTHF with its B12 and riboflavin partners, delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption, so active folate reaches the cells that need it. Track homocysteine and energy as part of your Bio Optimization picture.",
+      "Via Cura prioritizes 5-MTHF with its B12 and riboflavin partners, delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability, so active folate reaches the cells that need it. Track homocysteine and energy as part of your Bio Optimization picture.",
   },
 
   mtr: {
