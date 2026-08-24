@@ -90,6 +90,18 @@ describe('nutrition/genetics/page.tsx', () => {
     expect(source).toContain('mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-8');
   });
 
+  it('renders the 11 education cards from markdown without writing variants', () => {
+    expect(source).toContain(
+      "import { NutritionGeneticsEducationCatalog } from '@/components/nutrition/genetics/NutritionGeneticsEducationCatalog'",
+    );
+    expect(source).toContain(
+      "import { loadNutritionGeneticsEducationCards } from '@/lib/nutrition/genetics/educationCards'",
+    );
+    expect(source).toContain('<NutritionGeneticsEducationCatalog cards={educationCards} />');
+    expect(source).not.toMatch(/\.insert\(/);
+    expect(source).not.toContain('4634');
+  });
+
   it('contains no em or en dashes', () => {
     expect(source.includes(String.fromCharCode(0x2014))).toBe(false);
     expect(source.includes(String.fromCharCode(0x2013))).toBe(false);
