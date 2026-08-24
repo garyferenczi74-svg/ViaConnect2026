@@ -1,4 +1,5 @@
 // Prompt 212: WHOOP Developer API v2 endpoints and scopes.
+// Secrets and redirects are read from Vercel env only. Client IDs are never hardcoded.
 
 export const WHOOP_AUTH_URL = "https://api.prod.whoop.com/oauth/oauth2/auth";
 export const WHOOP_TOKEN_URL = "https://api.prod.whoop.com/oauth/oauth2/token";

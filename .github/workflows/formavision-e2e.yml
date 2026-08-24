@@ -130,7 +130,13 @@ jobs:
         # --grep @fallback runs the guaranteed 2D floor + information parity +
         # keyboard + reduced-motion specs. @cinematic self-skips off-GL and is
         # not selected here. Visual-regression stays behind FORMAVISION_VR (unset).
-        run: npx playwright test --grep @fallback
+        # Placeholder Supabase + no session: surface specs skip; the
+        # @fallback login-redirect spec asserts middleware sends
+        # /body-tracker/composition to /login.
+        # Chromium projects only: this job installs Chromium, not WebKit.
+        # iPhone/iPad device projects in playwright.config.ts default to
+        # WebKit and would fail browserType.launch on a chromium-only runner.
+        run: npx playwright test --grep @fallback --project=laptop-1024 --project=desktop-1440
 
       - name: Upload Playwright report
         if: always()

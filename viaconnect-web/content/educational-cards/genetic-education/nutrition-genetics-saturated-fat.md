@@ -16,6 +16,7 @@ safety_mode_filter: medium_nutrition_lipids_only
 bioavailability_bridge_card: false
 gary_approved_at: 2026-08-23
 gary_approval_required: true
+kelsey_compliance_review_id: 170r-nutrition-genetics-saturated-fat-2026-08-23
 ---
 
 # Saturated fat, lipids, and APOE context
@@ -24,7 +25,7 @@ gary_approval_required: true
 
 Saturated fat appears in higher amounts in some meats, dairy fats, coconut, and many baked or fried packaged foods. Dietary Guidelines discuss replacing some saturated fat with unsaturated fat as a pattern. APOA2 is a classic nutrigenetic saturated-fat research example. APOE coding variants are sometimes shown for lipid education. They are not a dementia diagnosis on this page.
 
-This card covers the confirmed extract list (16 unique rs IDs). The partner page header said 19 variants. Remaining variants are pending Elysium.
+This card covers the confirmed extract list (16 unique rs IDs). Your genetics report header may list 19 variants. This extract includes only the confirmed variants named below.
 
 Confirmed variants: ABCA1 rs2230806; ACE rs4343; AGT rs699; APOA1 rs670; APOA2 rs5082; ApoB rs693; ApoC3 rs5128; APOE rs429358; APOE rs7412; APOE rs405509; IL6 / IL6-AS1 rs1800795; LIPC rs1800588; PPARG rs1801282; PPARG2 rs10865710; TCF7L2 rs7903146; TNF rs1800629.
 
@@ -38,7 +39,7 @@ APOA2 rs5082 is a well-known research example. Corella, Ordovas, and colleagues 
 
 ## APOE on a nutrition page: lipids only
 
-APOE epsilon status is a haplotype of rs429358 and rs7412. In general education, the common alleles are called e2, e3, and e4. e3 is the most common. MedlinePlus describes e2, e3, and e4 as versions of a protein that helps carry cholesterol. This page does not compute or announce a personal haplotype. If Gene later surfaces a live APOE band, use Gene's approved display rules.
+APOE epsilon status is a haplotype of rs429358 and rs7412. In general education, the common alleles are called e2, e3, and e4. e3 is the most common. MedlinePlus describes e2, e3, and e4 as versions of a protein that helps carry cholesterol. This page does not compute or announce a personal haplotype. If your genetics report later shows an APOE band, treat that display as report context, not as a diagnosis on this page.
 
 rs405509 is a promoter SNP and is not the epsilon pair. Do not treat it as e4/e4.
 
@@ -46,25 +47,25 @@ This nutrition page stays in lipids. Cognitive-disease claims, including Alzheim
 
 ## Inflammation-adjacent SNPs stay in metabolic context
 
-IL6 rs1800795 and TNF rs1800629 appear on this confirmed list. Keep them in metabolic and lipid research context. They do not diagnose an inflammatory disease.
+IL6 rs1800795 and TNF rs1800629 appear on this confirmed list. They stay in metabolic and lipid research context. They do not diagnose an inflammatory disease.
 
 TCF7L2 rs7903146 is a widely studied type 2 diabetes research locus. On this extract it is confirmed on saturated fat, not on the insulin-resistance confirmed list. Carrying a studied variant is not a diabetes diagnosis.
 
 ## Labs guide medical decisions; genes do not start a statin
 
-Lipid and ApoB results, if on file, guide medical decisions. Genes do not start or stop a statin. Do not hard-code HDL ranges. Partner pages disagree.
+Lipid and ApoB results, if on file, guide medical decisions. Genes do not start or stop a statin. This page does not set an HDL target. If HDL ranges differ, use the range on your lab report or omit the number.
 
 ## Key takeaways
 
 - Extreme saturated-fat restriction is not implied.
-- Do not use a demo APOE haplotype as anyone's status.
-- HDL range: do not hard-code partner numbers that disagree.
-- This card covers 16 confirmed rs IDs. Three header slots are pending Elysium.
+- This page does not announce a personal APOE haplotype.
+- This page does not set an HDL target from conflicting report ranges.
+- This card covers 16 confirmed rs IDs. Extra header slots are not on this extract.
 - APOE education here is lipids only.
 
 ## What to do next
 
-If the meal plan already shifts fat quality, that is the educational idea. Bring lipid and ApoB results to a clinician. Do not quit smoking-cessation or alcohol questions onto a gene card as treatment.
+If the meal plan already shifts fat quality, that is the educational idea. Bring lipid and ApoB results to a clinician. This card is not smoking-cessation or alcohol treatment.
 
 ## Related content
 
@@ -82,4 +83,4 @@ If the meal plan already shifts fat quality, that is the educational idea. Bring
 
 ## FDA disclaimer
 
-These statements have not been evaluated by the Food and Drug Administration. This product is not intended to diagnose, treat, cure, or prevent any disease. This card is educational, not medical advice. Talk with a licensed clinician before changing diet or supplements, especially if you are pregnant, breastfeeding, have a medical condition, or take medicines.
+These statements have not been evaluated by the Food and Drug Administration. This information is not intended to diagnose, treat, cure, or prevent any disease. This card is educational, not medical advice. Talk with a licensed clinician before changing diet or supplements, especially if you are pregnant, breastfeeding, have a medical condition, or take medicines.

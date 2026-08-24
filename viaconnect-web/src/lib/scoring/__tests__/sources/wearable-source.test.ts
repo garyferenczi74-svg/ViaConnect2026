@@ -1,6 +1,4 @@
 // Tests for src/lib/scoring/sources/wearable-source.ts.
-//
-// Reads wearable_integrations + daily_scores (filtered to wearable / mixed).
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { getWearableSource } from '../../sources/wearable-source';
@@ -8,28 +6,53 @@ import { getWearableSource } from '../../sources/wearable-source';
 interface MockSetup {
   integrations: Record<string, unknown>[];
   dailyScores: Record<string, unknown>[];
+  connected?: Record<string, unknown>[];
+  recovery?: Record<string, unknown> | null;
+  sleep?: Record<string, unknown> | null;
+  body?: Record<string, unknown>[];
   integrationsError?: unknown;
   dailyError?: unknown;
+}
+
+function emptyChain(data: unknown, error: unknown = null) {
+  const resolved = { data, error };
+  const maybeSingle = vi.fn().mockResolvedValue(resolved);
+  const limit = vi.fn().mockReturnValue({ maybeSingle, ...resolved, then: (fn: (v: unknown) => unknown) => Promise.resolve(resolved).then(fn) });
+  const order = vi.fn().mockReturnValue({ limit, maybeSingle });
+  const isDeleted = vi.fn().mockReturnValue({ order, then: (fn: (v: unknown) => unknown) => Promise.resolve(resolved).then(fn) });
+  const eqStatus = vi.fn().mockResolvedValue(resolved);
+  const eq = vi.fn((col: string) => {
+    if (col === 'status') return eqStatus;
+    return {
+      is: isDeleted,
+      in: vi.fn().mockResolvedValue(resolved),
+      eq: eqStatus,
+      then: (fn: (v: unknown) => unknown) => Promise.resolve(resolved).then(fn),
+    };
+  });
+  const select = vi.fn().mockReturnValue({ eq });
+  return { select };
 }
 
 function makeClient(setup: MockSetup) {
   const from = vi.fn((table: string) => {
     if (table === 'wearable_integrations') {
-      const eq = vi.fn().mockResolvedValue({
-        data: setup.integrations,
-        error: setup.integrationsError ?? null,
-      });
-      const select = vi.fn().mockReturnValue({ eq });
-      return { select };
+      return emptyChain(setup.integrations, setup.integrationsError ?? null);
     }
     if (table === 'daily_scores') {
-      const inMethod = vi.fn().mockResolvedValue({
-        data: setup.dailyScores,
-        error: setup.dailyError ?? null,
-      });
-      const eq = vi.fn().mockReturnValue({ in: inMethod });
-      const select = vi.fn().mockReturnValue({ eq });
-      return { select };
+      return emptyChain(setup.dailyScores, setup.dailyError ?? null);
+    }
+    if (table === 'connected_sources') {
+      return emptyChain(setup.connected ?? []);
+    }
+    if (table === 'wearable_recovery') {
+      return emptyChain(setup.recovery ?? null);
+    }
+    if (table === 'wearable_sleep_sessions') {
+      return emptyChain(setup.sleep ?? null);
+    }
+    if (table === 'wearable_body_composition') {
+      return emptyChain(setup.body ?? []);
     }
     throw new Error(`Unexpected table ${table}`);
   });
@@ -97,5 +120,28 @@ describe('wearable-source', () => {
     });
     const result = await getWearableSource('u-1', client as never);
     expect(result.last_engaged_at).toBeNull();
+  });
+
+  it('sees ingested XML / Hume wearable_body_composition rows', async () => {
+    const measured = new Date().toISOString();
+    const client = makeClient({
+      integrations: [],
+      dailyScores: [],
+      body: [
+        {
+          measured_at: measured,
+          updated_at: measured,
+          source_app: 'Hume Health',
+        },
+      ],
+      recovery: { hrv_ms: 41, cycle_date: measured.slice(0, 10), updated_at: measured },
+      sleep: { total_sleep_min: 450, end_at: measured },
+    });
+    const result = await getWearableSource('u-1', client as never);
+    expect(result.last_engaged_at).toBe(measured);
+    expect(result.source_specific?.latest_hrv).toBe(41);
+    expect(result.source_specific?.latest_sleep_hours).toBe(7.5);
+    expect(result.source_specific?.device_types).toContain('hume');
+    expect(result.recent_events_7d).toBeGreaterThan(0);
   });
 });

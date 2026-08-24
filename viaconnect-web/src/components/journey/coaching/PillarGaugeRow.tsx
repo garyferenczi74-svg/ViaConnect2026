@@ -35,6 +35,8 @@ import {
   type GaugeMetric,
 } from '@/components/gauges/PlasmaGauge';
 import { useBioOptimizationTrend } from '@/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/hooks/useBioOptimizationTrend';
+import { useBOSCurrent } from '@/hooks/use-bos-current';
+import { BOS_INSUFFICIENT_DATA_COPY, toDisplayBosScore } from '@/lib/scoring/bos-display';
 
 const DM_SANS = 'var(--font-dm-sans), sans-serif';
 const DM_MONO = 'var(--font-dm-mono), monospace';
@@ -131,32 +133,39 @@ export function PillarGaugeRow({ userId }: { userId: string | null }) {
   // Fail-open: gated on userId; returns current 0 and zeroed averages when
   // there is no data. "7D" matches the trend panel default.
   const { data, isLoading } = useBioOptimizationTrend(userId, '7D');
+  const { data: bosCurrent, isLoading: bosCurrentLoading } = useBOSCurrent();
 
-  const bos = gaugeScore(data?.current);
-  const hasBos = bos > 0;
+  const bos = toDisplayBosScore(bosCurrent?.score);
+  const hasBos = bos !== null;
   const averages = data?.categoryAverages;
 
   return (
     <div className="flex flex-col items-center gap-4 rounded-xl border border-white/[0.06] bg-[rgba(22,36,64,0.40)] p-4">
       {/* BOS hero (moved here from the page placeholder). */}
       <div className="flex flex-col items-center">
-        <PlasmaGauge
-          value={bos}
-          metric="bioscore"
-          variant="hero"
-          size={188}
-          max={100}
-          ariaLabel={
-            hasBos
-              ? `Bio Optimization Score ${bos} of 100`
-              : 'Bio Optimization Score is computing'
-          }
-        />
+        {hasBos ? (
+          <PlasmaGauge
+            value={bos}
+            metric="bioscore"
+            variant="hero"
+            size={188}
+            max={100}
+            ariaLabel={`Bio Optimization Score ${bos} of 100`}
+          />
+        ) : (
+          <div
+            className="flex h-[188px] w-[188px] items-center justify-center text-center text-[13px] text-white/50"
+            style={{ fontFamily: DM_SANS }}
+            aria-label={`Bio Optimization Score: ${BOS_INSUFFICIENT_DATA_COPY}`}
+          >
+            {BOS_INSUFFICIENT_DATA_COPY}
+          </div>
+        )}
         <span
           className="mt-1 text-[11px] font-semibold uppercase tracking-wider text-white/70"
           style={{ fontFamily: DM_MONO }}
         >
-          Bio Optimization
+          Bio Optimization Score
         </span>
         <span
           className="mt-0.5 text-[11px] text-white/45"
@@ -164,9 +173,9 @@ export function PillarGaugeRow({ userId }: { userId: string | null }) {
         >
           {hasBos
             ? 'Your current Bio Optimization Score'
-            : isLoading
+            : bosCurrentLoading || isLoading
               ? 'Reading your score'
-              : 'Score is computing'}
+              : BOS_INSUFFICIENT_DATA_COPY}
         </span>
       </div>
 

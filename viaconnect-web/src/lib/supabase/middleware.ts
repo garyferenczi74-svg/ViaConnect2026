@@ -2,6 +2,7 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
+import { unauthenticatedClinicianPortalRedirect } from "@/lib/practitioner/waitlist-honesty";
 
 // Prompt #140a Layer 1 hardening. Every Supabase auth + data call is wrapped
 // with withTimeout. On timeout: treat as unauthenticated and let the public-
@@ -196,6 +197,18 @@ export async function updateSession(request: NextRequest) {
         },
         { status: 401, headers: { "Content-Type": "application/json" } },
       );
+    }
+    // Unauth /practitioner and /naturopath must not look like a live portal.
+    // Send visitors to the honest Q1 2027 waitlist instead of /login.
+    const waitlistPath = unauthenticatedClinicianPortalRedirect(pathname);
+    if (waitlistPath) {
+      safeLog.info("middleware.auth", "redirecting unauthenticated clinician portal to waitlist", {
+        path: pathname,
+      });
+      const url = request.nextUrl.clone();
+      url.pathname = waitlistPath;
+      url.search = "";
+      return NextResponse.redirect(url);
     }
     safeLog.info("middleware.auth", "redirecting unauthenticated request to login", {
       path: pathname,

@@ -1,12 +1,14 @@
 'use client';
 
 // Prompt 210h Revision C: dedicated FormaVision tab.
+// Prompt 210l: four-photo scan panel on this tab.
 // Prompt Brief 2: 3D A/B wipe compare (parametric BodyParamVector only).
-// Body Composition remains the numbers / manual / 2D surface (dual path).
+// Body Composition remains the numbers / manual / 2D surface.
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { Camera } from 'lucide-react';
 import { BackToHubLink } from '@/components/body-tracker/hub/BackToHubLink';
 import {
   CompositionSectionToggle,
@@ -33,9 +35,12 @@ import { useCircumferenceData } from '@/hooks/body-tracker/useCircumferenceData'
 import { useUserBiologicalSex } from '@/hooks/body-tracker/useUserBiologicalSex';
 import { useUserJourney } from '@/hooks/body-tracker/useUserJourney';
 import { useCurrentUser } from '@/components/body-tracker/manual-input';
+import { BodyScanUploader, type BodyScanResult } from '@/components/body-tracker/BodyScanUploader';
+import { BodyScanResults } from '@/components/body-tracker/BodyScanResults';
+import { persistScan } from '@/lib/body-tracker/composition/persistScanClient';
+import { isJourneyCompositionPoint } from '@/lib/body-tracker/composition/journeyPoints';
 import type { MeasurementUnit } from '@/lib/body-tracker/circumference';
 import {
-  compositionScanHref,
   compositionSectionHref,
 } from '@/lib/body-tracker/compositionNav';
 import { scanToParamVector } from '@/lib/formavision/geometry/scanToParamVector';
@@ -96,6 +101,9 @@ function FormaVisionSurface() {
   const [abCompareOn, setAbCompareOn] = useState(false);
   const [baselineMode, setBaselineMode] = useState<AbBaselineMode>('last_scan');
   const [wipeT, setWipeT] = useState(0.5);
+  // Prompt 210l: wire the FormaVision tab to the four-photo scan panel.
+  const [scanOpen, setScanOpen] = useState(false);
+  const [scanResult, setScanResult] = useState<BodyScanResult | null>(null);
   // Prompt 210k: same unit spine as composition (localStorage key shared).
   const [unit, setUnit] = useState<MeasurementUnit>(() => readStoredUnit());
 
@@ -137,6 +145,10 @@ function FormaVisionSurface() {
     displayUnit: unit,
   });
   const snapshot = composHistory.latest;
+  const journeySnapshots = useMemo(
+    () => composHistory.snapshots.filter(isJourneyCompositionPoint),
+    [composHistory.snapshots],
+  );
 
   const scanPoints = useMemo(
     () => pairScanPoints(composHistory.snapshots, circHistory.entries),
@@ -188,7 +200,7 @@ function FormaVisionSurface() {
 
   const journeyVectors = useMemo(
     () =>
-      composHistory.snapshots.map((snap, i) => {
+      journeySnapshots.map((snap, i) => {
         const circ =
           circHistory.entries.find((e) => e.recordedAt === snap.recordedAt)?.measurements ??
           circHistory.entries[i]?.measurements ??
@@ -200,12 +212,12 @@ function FormaVisionSurface() {
           unit,
         });
       }),
-    [composHistory.snapshots, circHistory.entries, gender, unit],
+    [journeySnapshots, circHistory.entries, gender, unit],
   );
 
   const journeyReadouts = useMemo<JourneyScanReadout[]>(
     () =>
-      composHistory.snapshots.map((snap, i) => {
+      journeySnapshots.map((snap, i) => {
         const circ =
           circHistory.entries.find((e) => e.recordedAt === snap.recordedAt)?.measurements ??
           circHistory.entries[i]?.measurements ??
@@ -216,7 +228,7 @@ function FormaVisionSurface() {
           waist: circ?.waist ?? null,
         };
       }),
-    [composHistory.snapshots, circHistory.entries],
+    [journeySnapshots, circHistory.entries],
   );
 
   const improvementTints = useMemo(() => {
@@ -269,7 +281,52 @@ function FormaVisionSurface() {
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <CompositionSectionToggle active="formavision" onChange={onSectionNav} />
+        <button
+          type="button"
+          data-testid="formavision-open-scan"
+          onClick={() => {
+            setScanOpen((o) => !o);
+            if (scanOpen) setScanResult(null);
+          }}
+          className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-[#B75E18]/50 bg-[#B75E18]/15 px-4 py-2.5 text-sm font-medium text-[#B75E18]"
+        >
+          <Camera size={16} strokeWidth={1.5} />
+          {scanOpen ? 'Close scan' : 'Scan My Body'}
+        </button>
       </div>
+
+      {scanOpen && (
+        <div
+          data-testid="formavision-scan-panel"
+          className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-4 backdrop-blur-md sm:p-5"
+        >
+          <h2 className="text-base font-semibold text-white">FormaVision four-photo scan</h2>
+          <p className="mb-4 text-xs text-white/55">
+            JPEG and PNG keep their real types. Analysis can take up to 60 seconds.
+          </p>
+          {scanResult ? (
+            <BodyScanResults
+              result={scanResult}
+              onRetake={() => setScanResult(null)}
+              onClose={() => {
+                setScanOpen(false);
+                setScanResult(null);
+              }}
+            />
+          ) : (
+            <BodyScanUploader
+              onComplete={(r) => {
+                setScanResult(r);
+                void persistScan(r.scanId).then(() => {
+                  composHistory.refresh();
+                  circHistory.refresh();
+                });
+              }}
+              onCancel={() => setScanOpen(false)}
+            />
+          )}
+        </div>
+      )}
 
       <header className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-4 backdrop-blur-md sm:p-5">
         <h1 className="text-2xl font-bold tracking-tight">
@@ -293,12 +350,16 @@ function FormaVisionSurface() {
             body.
           </p>
           <div className="mt-4 flex flex-wrap justify-center gap-3">
-            <Link
-              href={compositionScanHref()}
+            <button
+              type="button"
+              onClick={() => {
+                setScanOpen(true);
+                setScanResult(null);
+              }}
               className="min-h-[44px] rounded-xl border border-[#B75E18]/50 bg-[#B75E18]/15 px-4 py-2.5 text-sm font-medium text-[#B75E18]"
             >
               Scan My Body
-            </Link>
+            </button>
             <Link
               href={compositionSectionHref('measurements')}
               className="min-h-[44px] rounded-xl border border-white/20 bg-white/[0.06] px-4 py-2.5 text-sm font-medium text-white/80"

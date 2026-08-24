@@ -158,7 +158,7 @@ export function PluginsAppsSurface() {
       <aside className="flex items-start gap-3 rounded-2xl border border-white/10 bg-[rgba(30,48,84,0.6)] p-4">
         <Watch className="mt-0.5 h-5 w-5 shrink-0 text-[#2DA5A0]" strokeWidth={1.5} />
         <div className="min-w-0 text-xs text-white/60">
-          <p className="font-semibold text-white/80">Looking for WHOOP, Apple Watch, or Oura?</p>
+          <p className="font-semibold text-white/80">Looking for Whoop, Oura, Hume Body Pod, or Apple Health?</p>
           <p className="mt-1">
             Those are wearable devices. Connect them in{' '}
             <Link href="/wearables" className="text-[#2DA5A0] hover:underline">

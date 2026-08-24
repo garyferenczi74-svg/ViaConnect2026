@@ -16,6 +16,7 @@ safety_mode_filter: medium_lipids_only
 bioavailability_bridge_card: false
 gary_approved_at: 2026-08-23
 gary_approval_required: true
+kelsey_compliance_review_id: 170r-nutrition-genetics-fats-2026-08-23
 ---
 
 # Dietary fat response in context
@@ -24,7 +25,7 @@ gary_approval_required: true
 
 People differ in how blood lipids relate to dietary fat pattern. Variants in genes such as PPARG, CETP, apolipoproteins, and hepatic lipase have been studied for gene-diet fat interactions. Effects are modest. Blood lipids, if on file, help a clinician more than genes alone.
 
-This card covers the confirmed extract list (8 unique rs IDs). The partner page header said 12 variants. Remaining variants are pending Elysium.
+This card covers the confirmed extract list (8 unique rs IDs). Your genetics report header may list 12 variants. This extract includes only the confirmed variants named below.
 
 Confirmed variants on this card: CETP rs5882; PPARG rs1801282; ApoB rs693; ApoC3 rs5128; APOE promoter rs405509; PPARG2 rs10865710; AGT rs699; LIPC rs1800588.
 
@@ -38,13 +39,13 @@ Dietary fats are not one thing. Oils, nuts, seeds, avocado, and fish differ from
 
 PPARG rs1801282 (often discussed as Pro12Ala) and PPARG2 rs10865710 appear in macronutrient-interaction research. CETP rs5882 and LIPC rs1800588 appear in HDL and hepatic-lipase research. ApoB rs693 and ApoC3 rs5128 appear in apolipoprotein and triglyceride research. AGT rs699 is a blood-pressure pathway variant that sits on this confirmed fats list. Associations are modest.
 
-Ordovas and Corella reviews describe gene-diet fat interactions as small and hard to turn into a personal rule. This page stays in that tone.
+Ordovas and Corella reviews describe gene-diet fat interactions as small and hard to turn into a personal rule. This page does not turn those small associations into a personal rule.
 
 ## Lipids as context
 
 Total cholesterol, LDL-C, HDL-C, triglycerides, ApoB, and Lp(a), if present on a lab report, are clinician tools. Genes on this page do not interpret Lp(a). If Lp(a) is elevated on a lab report, that is a clinician topic.
 
-Do not hard-code an HDL optimal range. Partner pages disagree. If you mention HDL at all, use your lab report's reference range or omit the number.
+This page does not set an HDL target. If HDL ranges differ, use the range on your lab report or omit the number.
 
 ## Why this is not a keto or low-fat prescription
 
@@ -54,8 +55,8 @@ This theme does not tell you to start or stop keto, low-fat, or Mediterranean ea
 
 - This theme does not tell you to start or stop a named diet pattern.
 - Lp(a), if elevated on a lab report, is a clinician topic. Genes on this page do not interpret Lp(a).
-- Do not reprint partner HDL range clashes.
-- This card covers 8 confirmed rs IDs. Four header slots are pending Elysium.
+- This page does not set an HDL target from conflicting report ranges.
+- This card covers 8 confirmed rs IDs. Extra header slots are not on this extract.
 - APOE rs405509 is a promoter SNP, not an epsilon haplotype.
 
 ## What to do next
@@ -74,8 +75,8 @@ Review existing lipid labs with a clinician. Use meal-plan fat quality guidance 
 
 - U.S. Department of Agriculture and U.S. Department of Health and Human Services. Dietary Guidelines for Americans, 2020-2025. https://www.dietaryguidelines.gov/sites/default/files/2020-12/Dietary_Guidelines_for_Americans_2020-2025.pdf
 - National Heart, Lung, and Blood Institute. Blood cholesterol. https://www.nhlbi.nih.gov/health/blood-cholesterol
-- Corella D, Ordovas JM, et al. APOA2, dietary fat, and body mass index (writer background on gene-diet fat methods). Arch Intern Med. 2009. https://pmc.ncbi.nlm.nih.gov/articles/PMC2874956/
+- Corella D, Peloso G, Arnett DK, et al. APOA2, dietary fat, and body mass index: replication of a gene-diet interaction in 3 independent populations. Arch Intern Med. 2009;169:1897-1906. https://pmc.ncbi.nlm.nih.gov/articles/PMC2874956/
 
 ## FDA disclaimer
 
-These statements have not been evaluated by the Food and Drug Administration. This product is not intended to diagnose, treat, cure, or prevent any disease. This card is educational, not medical advice. Talk with a licensed clinician before changing diet or supplements, especially if you are pregnant, breastfeeding, have a medical condition, or take medicines.
+These statements have not been evaluated by the Food and Drug Administration. This information is not intended to diagnose, treat, cure, or prevent any disease. This card is educational, not medical advice. Talk with a licensed clinician before changing diet or supplements, especially if you are pregnant, breastfeeding, have a medical condition, or take medicines.

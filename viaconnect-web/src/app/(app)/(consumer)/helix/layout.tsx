@@ -9,10 +9,10 @@ import { ParticleBG } from '@/components/helix/ParticleBG';
 import { GlassCard } from '@/components/helix/GlassCard';
 import { HelixIcon } from '@/components/helix/HelixIcon';
 import { AnimatedNumber } from '@/components/helix/AnimatedNumber';
-
-/* ------------------------------------------------------------------ */
-/*  Constants                                                          */
-/* ------------------------------------------------------------------ */
+import { useUserDashboardData } from '@/hooks/useUserDashboardData';
+import { useHelixConsumerSnapshot } from '@/hooks/useHelixConsumerSnapshot';
+import { formatHelixBalance, formatHelixRank } from '@/lib/helix/consumer-honesty';
+import { helixTierFromPoints } from '@/lib/helix/tier-display';
 
 const NAV_ITEMS = [
   { label: 'Arena',      icon: Swords,     href: '/helix/arena' },
@@ -23,20 +23,9 @@ const NAV_ITEMS = [
   { label: 'Research',   icon: Microscope, href: '/helix/research' },
 ];
 
-const USER_BALANCE = 4350;
-const USER_STREAK = 14;
-const USER_RANK = 2;
-const USER_CHALLENGES = 5;
-const USER_LEVEL = 5;
-const USER_LEVEL_NAME = 'Champion';
-const HELIX_TO_NEXT = 3150;
-
-/* ------------------------------------------------------------------ */
-/*  Level Progress Ring                                                */
-/* ------------------------------------------------------------------ */
-
-function LevelRing() {
-  const progress = 0.58; // 58% to next level
+function LevelRing({ points }: { points: number }) {
+  const tier = helixTierFromPoints(points);
+  const progress = tier.progressPct / 100;
   const size = 100;
   const strokeWidth = 6;
   const radius = (size - strokeWidth) / 2;
@@ -46,7 +35,6 @@ function LevelRing() {
     <div className="relative flex flex-col items-center">
       <div className="relative" style={{ width: size, height: size }}>
         <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-          {/* Background circle */}
           <circle
             cx={size / 2}
             cy={size / 2}
@@ -55,7 +43,6 @@ function LevelRing() {
             stroke="rgba(255,255,255,0.06)"
             strokeWidth={strokeWidth}
           />
-          {/* Progress arc */}
           <circle
             cx={size / 2}
             cy={size / 2}
@@ -75,40 +62,35 @@ function LevelRing() {
             </linearGradient>
           </defs>
         </svg>
-        {/* Center level number */}
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-2xl font-extrabold text-white">{USER_LEVEL}</span>
+          <HelixIcon size={22} />
         </div>
       </div>
-      <span className="text-[11px] font-bold text-white/55 mt-2">{USER_LEVEL_NAME}</span>
+      <span className="text-[11px] font-bold text-white/55 mt-2">{tier.current}</span>
       <span className="text-[9px] text-white/25 font-semibold uppercase tracking-wider">
-        {HELIX_TO_NEXT.toLocaleString()} Helix to next level
+        {tier.next
+          ? `${tier.toNext.toLocaleString()} Helix to ${tier.next}`
+          : 'Top tier'}
       </span>
     </div>
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  Layout                                                             */
-/* ------------------------------------------------------------------ */
-
 export default function HelixLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { helixBalance, streak } = useUserDashboardData();
+  const { myRank, activeChallenges } = useHelixConsumerSnapshot();
+  const balance = formatHelixBalance(helixBalance?.current_balance);
+  const dayStreak = streak?.current_count ?? 0;
+  const rankLabel = formatHelixRank(myRank);
 
   return (
     <div className="min-h-screen relative font-instrument">
-      {/* Particle background */}
       <ParticleBG />
 
-      {/* Content layer */}
       <div className="relative z-10 px-4 lg:px-8 py-8">
         <div className="max-w-6xl mx-auto flex flex-col gap-8">
-
-          {/* ═══ HERO SECTION ═══ */}
-
-          {/* Hero content */}
           <div className="flex flex-col sm:flex-row flex-wrap gap-6 sm:gap-12 items-center">
-            {/* Left side - Title & tagline */}
             <div className="flex-1 min-w-0 sm:min-w-[300px]">
               <h1
                 className="font-extrabold tracking-[-1.5px]"
@@ -130,9 +112,7 @@ export default function HelixLayout({ children }: { children: React.ReactNode })
               </p>
             </div>
 
-            {/* Right side - Balance Card */}
             <GlassCard glow className="w-full sm:w-auto sm:min-w-[340px]">
-              {/* Balance header */}
               <div className="flex items-center gap-2 mb-5">
                 <HelixIcon size={18} />
                 <span className="text-[10px] font-bold uppercase tracking-[2px] text-white/35">
@@ -140,10 +120,9 @@ export default function HelixLayout({ children }: { children: React.ReactNode })
                 </span>
               </div>
 
-              {/* Large animated balance */}
               <div className="text-center mb-6">
                 <AnimatedNumber
-                  value={USER_BALANCE}
+                  value={balance}
                   className="text-[56px] font-extrabold bg-gradient-to-r from-[#B75E18] to-[#FFD700] bg-clip-text text-transparent leading-none"
                 />
                 <p className="text-[11px] font-bold uppercase tracking-[2px] text-white/25 mt-1">
@@ -151,41 +130,35 @@ export default function HelixLayout({ children }: { children: React.ReactNode })
                 </p>
               </div>
 
-              {/* Three stat columns */}
               <div className="flex items-center justify-center gap-0 mb-6">
-                {/* Day Streak */}
                 <div className="flex-1 text-center">
-                  <p className="text-[22px] font-extrabold text-[#2DA5A0]">{USER_STREAK}</p>
+                  <p className="text-[22px] font-extrabold text-[#2DA5A0]">{dayStreak}</p>
                   <p className="text-[9px] font-bold uppercase tracking-[1.5px] text-white/25">
                     Day Streak
                   </p>
                 </div>
                 <div className="w-px h-10 bg-white/[0.08]" />
-                {/* Leaderboard Rank */}
                 <div className="flex-1 text-center">
-                  <p className="text-[22px] font-extrabold text-white">#{USER_RANK}</p>
+                  <p className="text-[16px] font-extrabold text-white leading-tight">{rankLabel}</p>
                   <p className="text-[9px] font-bold uppercase tracking-[1.5px] text-white/25">
                     Leaderboard
                   </p>
                 </div>
                 <div className="w-px h-10 bg-white/[0.08]" />
-                {/* Active Challenges */}
                 <div className="flex-1 text-center">
-                  <p className="text-[22px] font-extrabold text-[#B75E18]">{USER_CHALLENGES}</p>
+                  <p className="text-[22px] font-extrabold text-[#B75E18]">{activeChallenges}</p>
                   <p className="text-[9px] font-bold uppercase tracking-[1.5px] text-white/25">
                     Challenges
                   </p>
                 </div>
               </div>
 
-              {/* Level ring */}
               <div className="flex justify-center">
-                <LevelRing />
+                <LevelRing points={balance} />
               </div>
             </GlassCard>
           </div>
 
-          {/* ═══ TAB NAVIGATION ═══ */}
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0" style={{ WebkitOverflowScrolling: 'touch' }}>
             {NAV_ITEMS.map((item) => {
               const isActive = pathname === item.href;
@@ -206,10 +179,8 @@ export default function HelixLayout({ children }: { children: React.ReactNode })
             })}
           </div>
 
-          {/* ═══ TAB CONTENT ═══ */}
           {children}
 
-          {/* ═══ FOOTER ═══ */}
           <div className="border-t border-white/[0.04] pt-10 pb-6 text-center">
             <p className="text-[12px] text-white/20">
               Helix Rewards&trade; by ViaConnect&trade; &bull; ViaConnect &bull; &copy; 2026 All Rights Reserved

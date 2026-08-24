@@ -8,7 +8,7 @@
 import { ShieldCheck, X } from 'lucide-react';
 
 interface WearableConsentModalProps {
-  provider: 'whoop' | 'health';
+  provider: 'whoop' | 'oura' | 'health';
   open: boolean;
   onAccept: () => void;
   onClose: () => void;
@@ -25,7 +25,9 @@ export function WearableConsentModal({
   const title =
     provider === 'whoop'
       ? 'Connect WHOOP'
-      : 'Connect phone health data';
+      : provider === 'oura'
+        ? 'Connect Oura'
+        : 'Connect phone health data';
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/60">
