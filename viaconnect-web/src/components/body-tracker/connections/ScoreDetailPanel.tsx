@@ -9,6 +9,11 @@ import {
   connectionsBosCompositeDisplay,
   type WearableDimension,
 } from '@/lib/body-tracker/wearable-tiles';
+import {
+  EMPTY_BEDTIME_STRIP,
+  type BedtimeStripView,
+} from '@/lib/body-tracker/sleep-bedtime-strip';
+import { SleepBedtimeStrip } from './SleepBedtimeStrip';
 
 const DIM_META: Record<
   string,
@@ -38,8 +43,29 @@ function DimIcon({ dimension, activeIcon }: { dimension: string; activeIcon: str
   return <Icon className="h-4 w-4 text-white/70" strokeWidth={1.5} />;
 }
 
-export function lockScoreDetailRows(rows: DimensionSourceRow[]): DimensionSourceRow[] {
+function unknownSleepRow(): DimensionSourceRow {
+  return {
+    dimension: 'sleep',
+    source: null,
+    value: null,
+    displayValue: 'UNKNOWN',
+    status: 'pending',
+    showRing: false,
+    manual: false,
+    disagreement: null,
+    sources: [],
+  };
+}
+
+export function lockScoreDetailRows(
+  rows: DimensionSourceRow[],
+  options?: { lastSyncSynced?: boolean },
+): DimensionSourceRow[] {
+  const lastSyncSynced = options?.lastSyncSynced === true;
   return SCORE_DETAIL_DIMENSIONS.map((dimension) => {
+    if (dimension === 'sleep' && !lastSyncSynced) {
+      return unknownSleepRow();
+    }
     const found = rows.find((r) => r.dimension === dimension);
     if (found) return found;
     return {
@@ -63,10 +89,15 @@ function namedWearableContributorCount(rows: DimensionSourceRow[]): number {
 interface ScoreDetailPanelProps {
   rows: DimensionSourceRow[];
   lastUpdatedAt: string | null;
+  bedtimeStrip?: BedtimeStripView;
 }
 
-export function ScoreDetailPanel({ rows }: ScoreDetailPanelProps) {
-  const locked = lockScoreDetailRows(rows);
+export function ScoreDetailPanel({
+  rows,
+  bedtimeStrip = EMPTY_BEDTIME_STRIP,
+}: ScoreDetailPanelProps) {
+  const lastSyncSynced = bedtimeStrip.sleepTileSynced === true;
+  const locked = lockScoreDetailRows(rows, { lastSyncSynced });
   const named = namedWearableContributorCount(locked);
   const composite =
     named > 0 ? connectionsBosCompositeDisplay() : CONNECTIONS_BOS_COMPOSITE;
@@ -116,12 +147,15 @@ export function ScoreDetailPanel({ rows }: ScoreDetailPanelProps) {
           const disagree = row.disagreement?.showDisagreeChrome === true;
           const ingest = row.showRing === true;
           const display = ingest ? row.displayValue : 'UNKNOWN';
+          const isSleep = row.dimension === 'sleep';
+          const stripKind = isSleep ? bedtimeStrip.kind : undefined;
           return (
             <article
               key={row.dimension}
               data-dimension={row.dimension as WearableDimension}
               data-ingest={ingest ? 'sourced' : 'none'}
               data-ring={ingest ? 'visible' : 'hidden'}
+              data-bedtime-strip={stripKind}
               className="rounded-xl border border-white/[0.08] bg-[#1A2744]/80 p-3"
             >
               <div className="flex items-center justify-between gap-2">
@@ -179,6 +213,8 @@ export function ScoreDetailPanel({ rows }: ScoreDetailPanelProps) {
                   {row.disagreement.detail}
                 </p>
               ) : null}
+
+              {isSleep ? <SleepBedtimeStrip strip={bedtimeStrip} /> : null}
             </article>
           );
         })}

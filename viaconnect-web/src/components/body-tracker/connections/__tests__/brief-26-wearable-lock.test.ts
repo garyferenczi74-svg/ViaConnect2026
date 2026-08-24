@@ -210,13 +210,17 @@ describe('Brief 26 Wearable Data 1280 lock', () => {
     const surface = src('src/components/body-tracker/connections/ConnectionsSurface.tsx');
     const card = src('src/components/body-tracker/connections/WearableTileCard.tsx');
     const panel = src('src/components/body-tracker/connections/ScoreDetailPanel.tsx');
+    const strip = src('src/lib/body-tracker/sleep-bedtime-strip.ts');
     const sm = src('src/lib/body-tracker/last-sync-state.ts');
     expect(sm).toContain('export function resolveLastSyncState');
     expect(tiles).toContain("@/lib/body-tracker/last-sync-state");
     expect(tiles).toContain('resolveLastSyncState');
     expect(tiles).not.toContain('last-sync-state-fork');
+    expect(strip).toContain("@/lib/body-tracker/last-sync-state");
+    expect(strip).toContain('resolveLastSyncState');
+    expect(strip).not.toContain('last-sync-state-fork');
     expect(surface + card + panel).not.toMatch(/from ['"][^'"]*last-sync-state['"]/);
     expect(surface + card + panel).not.toContain('LAST_SYNC_STATES');
-    expect(tiles).not.toContain('LAST_SYNC_STATES');
+    expect(tiles + strip).not.toContain('LAST_SYNC_STATES');
   });
 });
