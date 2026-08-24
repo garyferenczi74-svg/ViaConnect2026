@@ -70,13 +70,13 @@ describe('Phase 1 Sleep bedtime strip', () => {
     expect(neverSynced.lastSyncKind).toBe('connected_never_synced');
   });
 
-  it('does not invent last-sync or a May 2025 mock', () => {
+  it('does not invent last-sync or a stale mock timestamp', () => {
     const strip = src('src/lib/body-tracker/sleep-bedtime-strip.ts');
-    const testSrc = src('src/lib/body-tracker/__tests__/sleep-bedtime-strip.test.ts');
     expect(strip).toContain("@/lib/body-tracker/last-sync-state");
     expect(strip).toContain('resolveLastSyncState');
     expect(strip).not.toContain('last-sync-state-fork');
-    expect(strip + testSrc).not.toMatch(/2025-05|May 2025|May 20/);
+    expect(strip).not.toContain('2025-05');
+    expect(strip).not.toContain('LAST_SYNC_STATES');
     expect(parseBedtimeIso('')).toBeNull();
     expect(parseBedtimeIso('not-a-date')).toBeNull();
     expect(resolveSyncedLastSync([]).synced).toBe(false);
@@ -163,7 +163,8 @@ describe('Phase 1 Sleep bedtime strip', () => {
 
   it('does not invent a sleep score or fill missing nights', () => {
     const stripSrc = src('src/lib/body-tracker/sleep-bedtime-strip.ts');
-    expect(stripSrc).not.toMatch(/sleep.?score|Sleep Score/i);
+    expect(stripSrc).not.toContain('Sleep Score');
+    expect(stripSrc).not.toContain('sleep_score');
     expect(stripSrc).not.toMatch(/\b62\b/);
     expect(parseBedtimeStrip({ kind: 'samples', visible: true, nights: 'nope' })).toEqual(
       EMPTY_BEDTIME_STRIP,

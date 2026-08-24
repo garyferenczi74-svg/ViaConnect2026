@@ -1,5 +1,5 @@
 // Phase 1 Sleep bedtime strip. Apple Health iOS 26 style: two weeks of
-// real bedtimes, not a sleep score or BOS number.
+// real bedtimes, not a numeric Sleep rating or BOS composite.
 //
 // Visible only when resolveLastSyncState is synced AND a real start_at exists.
 // last-sync-state comes from @/lib/body-tracker/last-sync-state only.

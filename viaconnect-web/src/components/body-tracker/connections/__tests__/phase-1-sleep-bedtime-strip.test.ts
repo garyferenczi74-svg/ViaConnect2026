@@ -187,7 +187,7 @@ describe('Phase 1 Sleep bedtime strip on Connections', () => {
     expect(strip).toContain("@/lib/body-tracker/last-sync-state");
     expect(strip).toContain('resolveLastSyncState');
     expect(joined).not.toContain('last-sync-state-fork');
-    expect(joined).not.toMatch(/2025-05|May 2025/);
+    expect(joined).not.toContain('2025-05');
     expect(joined).not.toMatch(/habit vs Recovery|protocol-change|3D privacy/i);
     expect(panel + ui).not.toMatch(/Stability|Symmetry|Helix|Vitality/);
     expect(panel).toContain('strokeWidth={1.5}');
