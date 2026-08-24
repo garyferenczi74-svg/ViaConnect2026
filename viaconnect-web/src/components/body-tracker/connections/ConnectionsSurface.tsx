@@ -1,9 +1,10 @@
 'use client';
 
 // Shared 390 + 1280 Connections IA. Alias: /wearables.
-// Four tiles only. Hume and Apple are XML. No Watch. No Helix. No Vitality.
+// Four tiles only. Hume and Apple are XML. Watch tile is out of scope.
 
 import { useCallback, useEffect, useState } from 'react';
+import { Link2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { BackToHubLink } from '@/components/body-tracker/hub/BackToHubLink';
 import { AppleHealthImportModal } from '@/components/body-tracker/connected-sources/AppleHealthImportModal';
@@ -145,12 +146,12 @@ export function ConnectionsSurface() {
       <BackToHubLink />
 
       <header>
-        <p className="text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-white/40">
-          ViaConnect
-        </p>
-        <h1 className="mt-2 font-serif text-3xl text-white">Connections</h1>
+        <div className="flex items-center gap-2">
+          <Link2 className="h-5 w-5 text-[#2DA5A0]" strokeWidth={1.5} />
+          <h1 className="text-lg font-bold text-white">Connections</h1>
+        </div>
         <p className="mt-1 text-sm text-white/50">Wearables</p>
-        <p className="mt-2 hidden text-sm text-white/45 lg:block">
+        <p className="mt-1 hidden text-sm text-white/50 lg:block">
           Connect your devices and health data to unlock deeper insights.
         </p>
       </header>

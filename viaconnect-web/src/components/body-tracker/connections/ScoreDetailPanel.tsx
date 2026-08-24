@@ -29,7 +29,7 @@ export function ScoreDetailPanel({ rows, lastUpdatedAt }: ScoreDetailPanelProps)
       aria-labelledby="bos-detail-title"
       className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/70 p-4 sm:p-5"
     >
-      <h2 id="bos-detail-title" className="font-serif text-xl text-white sm:text-2xl">
+      <h2 id="bos-detail-title" className="text-lg font-bold text-white">
         Bio Optimization Score detail
       </h2>
 
@@ -47,7 +47,7 @@ export function ScoreDetailPanel({ rows, lastUpdatedAt }: ScoreDetailPanelProps)
                   <h3 className="text-sm font-semibold text-white">{titleFor(row.dimension)}</h3>
                 </div>
                 {row.manual ? (
-                  <span className="rounded-full bg-[#B75E18]/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#E8B48A]">
+                  <span className="rounded-full bg-[#B75E18]/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#B75E18] ring-1 ring-inset ring-[#B75E18]/30">
                     Manual
                   </span>
                 ) : null}
@@ -67,7 +67,7 @@ export function ScoreDetailPanel({ rows, lastUpdatedAt }: ScoreDetailPanelProps)
                         <span className="flex items-center gap-2">
                           <span className="font-mono text-sm text-white">{display}</span>
                           {isWinner ? (
-                            <span className="rounded-full bg-[#2DA5A0]/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#7EE0DC]">
+                            <span className="rounded-full bg-[#2DA5A0]/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#2DA5A0] ring-1 ring-inset ring-[#2DA5A0]/30">
                               Winner / {row.disagreement?.winnerLabel}
                             </span>
                           ) : null}

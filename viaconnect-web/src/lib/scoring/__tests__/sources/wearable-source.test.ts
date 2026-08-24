@@ -23,7 +23,12 @@ function emptyChain(data: unknown, error: unknown = null) {
   const eqStatus = vi.fn().mockResolvedValue(resolved);
   const eq = vi.fn((col: string) => {
     if (col === 'status') return eqStatus;
-    return { is: isDeleted, in: vi.fn().mockResolvedValue(resolved), eq: eqStatus };
+    return {
+      is: isDeleted,
+      in: vi.fn().mockResolvedValue(resolved),
+      eq: eqStatus,
+      then: (fn: (v: unknown) => unknown) => Promise.resolve(resolved).then(fn),
+    };
   });
   const select = vi.fn().mockReturnValue({ eq });
   return { select };

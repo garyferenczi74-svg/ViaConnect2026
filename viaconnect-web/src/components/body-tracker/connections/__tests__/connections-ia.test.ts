@@ -22,14 +22,18 @@ describe('Connections IA contracts', () => {
   it('ships four tiles, XML Hume action, and BOS footer', () => {
     const surface = src('src/components/body-tracker/connections/ConnectionsSurface.tsx');
     const tile = src('src/components/body-tracker/connections/WearableTileCard.tsx');
+    const detail = src('src/components/body-tracker/connections/ScoreDetailPanel.tsx');
     expect(surface).toContain('CONNECTIONS_FOOTER');
-    expect(surface).toContain('Upload XML');
     expect(surface).not.toContain('Hume authorize');
-    expect(surface).not.toContain('Vitality');
-    expect(surface).not.toContain('Helix');
+    expect(surface).not.toMatch(/Vitality Score/);
+    expect(surface).not.toMatch(/helix.?reward/i);
     expect(tile).toContain('Upload XML');
     expect(tile).toContain('Watch');
     expect(tile).not.toContain('Connected Watch');
+    expect(surface + tile + detail).not.toContain('font-serif');
+    expect(surface + tile + detail).not.toContain('#224852');
+    expect(surface + tile + detail).not.toContain('#4ADE80');
+    expect(surface).not.toMatch(/ViaConnect/);
   });
 
   it('redirects plugins wearables catalog to connections', () => {

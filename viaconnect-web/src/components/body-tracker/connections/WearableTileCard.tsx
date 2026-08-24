@@ -47,7 +47,7 @@ export function WearableTileCard({ tile, onPrimary, onDropXml }: WearableTileCar
               <h3 className="text-sm font-semibold text-white">{tile.name}</h3>
               <p className="mt-0.5 flex items-center gap-1.5 text-xs text-white/60">
                 <span
-                  className={`inline-block h-1.5 w-1.5 rounded-full ${connected ? 'bg-[#4ADE80]' : 'bg-white/30'}`}
+                  className={`inline-block h-1.5 w-1.5 rounded-full ${connected ? 'bg-[#2DA5A0]' : 'bg-white/30'}`}
                 />
                 {tile.statusLabel}
               </p>
@@ -66,7 +66,7 @@ export function WearableTileCard({ tile, onPrimary, onDropXml }: WearableTileCar
               <button
                 type="button"
                 onClick={() => onPrimary(tile)}
-                className="min-h-[36px] rounded-lg bg-[#224852] px-3 text-xs font-semibold text-white hover:bg-[#2A5A66]"
+                className="min-h-[36px] rounded-lg bg-[#2DA5A0] px-3 text-xs font-semibold text-white hover:bg-[#2DA5A0]/85"
               >
                 Upload XML
               </button>
@@ -75,7 +75,7 @@ export function WearableTileCard({ tile, onPrimary, onDropXml }: WearableTileCar
               <button
                 type="button"
                 onClick={() => onPrimary(tile)}
-                className="min-h-[36px] rounded-lg bg-[#224852] px-3 text-xs font-semibold text-white hover:bg-[#2A5A66]"
+                className="min-h-[36px] rounded-lg bg-[#2DA5A0] px-3 text-xs font-semibold text-white hover:bg-[#2DA5A0]/85"
               >
                 Connect
               </button>

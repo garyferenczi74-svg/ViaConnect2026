@@ -1,5 +1,5 @@
 // Oura Cloud API endpoints and scopes. Secrets are read from Vercel env only.
-// No client IDs or placeholders live in this file.
+// Client IDs are never hardcoded here.
 
 export const OURA_AUTH_URL = 'https://cloud.ouraring.com/oauth/authorize';
 export const OURA_TOKEN_URL = 'https://api.ouraring.com/oauth/token';

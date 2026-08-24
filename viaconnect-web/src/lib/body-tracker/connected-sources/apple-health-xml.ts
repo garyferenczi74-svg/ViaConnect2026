@@ -69,7 +69,11 @@ function normalizeValue(metricKey: string, rawValue: number, rawUnit: string): n
 
 function toIso(raw: string | undefined): string | null {
   if (!raw) return null;
-  const d = new Date(raw.replace(' ', 'T'));
+  const compact = raw
+    .trim()
+    .replace(/^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2})/, '$1T$2')
+    .replace(/ ([+-]\d{2}):?(\d{2})$/, '$1$2');
+  const d = new Date(compact);
   if (Number.isNaN(d.getTime())) return null;
   return d.toISOString();
 }
