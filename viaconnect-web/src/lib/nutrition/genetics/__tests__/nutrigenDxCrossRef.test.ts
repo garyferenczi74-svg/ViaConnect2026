@@ -35,9 +35,10 @@ describe("nutrigenDxCrossRef", () => {
       [],
     );
 
-    expect(payload.summary.marker_count).toBe(2);
+    expect(payload.summary.marker_count).toBe(1);
     expect(payload.summary.has_any_data).toBe(true);
     expect(payload.resultSet.markers.some((m) => m.gene === "FTO")).toBe(true);
+    expect(payload.resultSet.markers.some((m) => m.gene === "MTHFR")).toBe(false);
     const fto = payload.resultSet.markers.find((m) => m.gene === "FTO");
     expect(fto?.impactSummary.toLowerCase()).toMatch(/appetite|allele/);
     expect(payload.summary.missing_genes.length).toBeGreaterThan(0);
@@ -77,6 +78,7 @@ describe("nutrigenDxCrossRef", () => {
       findings,
     );
     expect(payload.summary.finding_count).toBe(1);
+    expect(payload.resultSet.markers.some((m) => m.gene === "MTHFR")).toBe(false);
     const related = relatedFindingsForGene("MTHFR", payload.resultSet.findings);
     expect(related).toHaveLength(1);
   });

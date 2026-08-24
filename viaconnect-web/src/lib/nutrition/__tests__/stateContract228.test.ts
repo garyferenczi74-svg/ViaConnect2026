@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import {
   NUTRIVISION_START_STREAM_TIMEOUT_MS,
+  NUTRIVISION_CAMERA_CAPTURE_TIMEOUT_MS,
   isTransitionalCapturePhase,
   assertWriteConfirmed,
 } from '@/lib/nutrition/stateContract228';
@@ -11,6 +12,9 @@ describe('Prompt 228 state contract', () => {
   it('defines a finite start-stream timeout', () => {
     expect(NUTRIVISION_START_STREAM_TIMEOUT_MS).toBeGreaterThan(0);
     expect(NUTRIVISION_START_STREAM_TIMEOUT_MS).toBeLessThanOrEqual(15000);
+    expect(NUTRIVISION_CAMERA_CAPTURE_TIMEOUT_MS).toBeGreaterThanOrEqual(
+      NUTRIVISION_START_STREAM_TIMEOUT_MS,
+    );
   });
 
   it('marks starting_stream as transitional', () => {
@@ -70,6 +74,7 @@ describe('Prompt 228 state contract', () => {
     expect(src).toContain('.delete()');
     expect(src).toContain('ownedNutritionPhotoPath');
     expect(src).toContain('NUTRITION_PHOTO_BUCKET');
+    expect(src).toContain('legacy_nutrition_log_id');
     expect(src).not.toMatch(/status:\s*'discarded'/);
   });
 });

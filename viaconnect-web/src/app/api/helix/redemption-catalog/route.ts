@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { loadCatalog } from '@/lib/helix/redemption-engine';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
+import { requireConsumerHelixRole } from '@/lib/auth/require-consumer-helix';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,6 +28,8 @@ export async function GET(request: Request) {
     if (!userData.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    const helixGate = await requireConsumerHelixRole(supabase, userData.user, 'api.helix.redemption-catalog');
+    if (!helixGate.ok) return helixGate.response;
     try {
       const items = await withTimeout(
         loadCatalog(supabase),

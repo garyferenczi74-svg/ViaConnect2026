@@ -20,12 +20,25 @@ import {
 } from './observedPanelCounts';
 import type { HubHormoneMarker } from './hormoneObservedCount';
 import { uniqueHormoneMarkers, type HormoneMarkerSourceRow } from './hormoneObservedCount';
+import {
+  resolveGeneticsUploadState,
+  type GeneticsUploadState,
+} from './geneticsUploadState';
+import { variantRowChip, type VariantRowChipKind } from './variantRowChip';
+import type { VariantProvenance } from './variantProvenance';
 
 export interface HubEpigeneticMarker {
   markerKey: string;
   valueNum: number | null;
   valueText: string | null;
   unit: string | null;
+}
+
+export interface HubVariantHonestyFields {
+  stored_panel_key?: string | null;
+  chip?: VariantRowChipKind;
+  provenance?: VariantProvenance | null;
+  is_sample?: boolean | null;
 }
 
 export interface HubVariantsPayload<TVariant extends { panel_key: string }> {
@@ -36,6 +49,8 @@ export interface HubVariantsPayload<TVariant extends { panel_key: string }> {
   loadStatus: ObservedLoadStatus;
   hormoneMarkers: HubHormoneMarker[];
   epigeneticMarkers: HubEpigeneticMarker[];
+  geneticsUploadState: GeneticsUploadState;
+  geneticsUploaded: boolean;
 }
 
 const SNP_COUNT_PANELS: ReadonlySet<PanelKey> = new Set([
@@ -47,15 +62,46 @@ const SNP_COUNT_PANELS: ReadonlySet<PanelKey> = new Set([
 
 export function groupVariantsByObservedPanel<TVariant extends { panel_key: string }>(
   rows: TVariant[],
-): Partial<Record<PanelKey, Array<TVariant & { panel_key: PanelKey }>>> {
-  const grouped: Partial<Record<PanelKey, Array<TVariant & { panel_key: PanelKey }>>> = {};
+): Partial<Record<PanelKey, Array<TVariant & { panel_key: PanelKey } & HubVariantHonestyFields>>> {
+  const grouped: Partial<
+    Record<PanelKey, Array<TVariant & { panel_key: PanelKey } & HubVariantHonestyFields>>
+  > = {};
   for (const row of rows) {
     const key = normalizeObservedPanelKey(row.panel_key);
+    const stored =
+      'stored_panel_key' in row && typeof row.stored_panel_key === 'string'
+        ? row.stored_panel_key
+        : row.panel_key;
+    const honestyRow = row as TVariant & HubVariantHonestyFields;
+    const chip = variantRowChip({
+      is_sample: honestyRow.is_sample,
+      genotype:
+        'genotype' in row && typeof row.genotype === 'string' ? row.genotype : null,
+      status: 'status' in row && typeof row.status === 'string' ? row.status : null,
+      stored_panel_key: stored,
+      remapMiss: !key,
+    });
     if (!key) continue;
-    const next = { ...row, panel_key: key };
+    const next = {
+      ...row,
+      panel_key: key,
+      stored_panel_key: stored,
+      chip,
+    };
     (grouped[key] ??= []).push(next);
   }
   return grouped;
+}
+
+/** Rows whose panel_key did not remap. Those are Unanalyzed, never 0. */
+export function countUnmappedVariantRows<TVariant extends { panel_key: string }>(
+  rows: TVariant[],
+): number {
+  let count = 0;
+  for (const row of rows) {
+    if (!normalizeObservedPanelKey(row.panel_key)) count += 1;
+  }
+  return count;
 }
 
 export function countDistinctEpigeneticMarkers(
@@ -78,6 +124,8 @@ export function unauthorizedHubPayload<TVariant extends { panel_key: string }>()
     loadStatus: 'unauthorized',
     hormoneMarkers: [],
     epigeneticMarkers: [],
+    geneticsUploadState: 'none',
+    geneticsUploaded: false,
   };
 }
 
@@ -90,6 +138,8 @@ export function errorHubPayload<TVariant extends { panel_key: string }>(): HubVa
     loadStatus: 'error',
     hormoneMarkers: [],
     epigeneticMarkers: [],
+    geneticsUploadState: 'none',
+    geneticsUploaded: false,
   };
 }
 
@@ -102,6 +152,8 @@ export function emptyOkHubPayload<TVariant extends { panel_key: string }>(): Hub
     loadStatus: 'ok',
     hormoneMarkers: [],
     epigeneticMarkers: [],
+    geneticsUploadState: 'none',
+    geneticsUploaded: false,
   };
 }
 
@@ -113,6 +165,7 @@ export interface BuildHubVariantsArgs<TVariant extends { panel_key: string }> {
   epigeneticRows: HubEpigeneticMarker[] | null;
   epigeneticReadFailed: boolean;
   brandedPanels: PanelKey[];
+  realKitIngest?: boolean;
 }
 
 /**
@@ -140,11 +193,27 @@ export function buildHubVariantsPayload<TVariant extends { panel_key: string }>(
     : (args.epigeneticRows ?? []).filter((row) => row.markerKey.trim().length > 0);
 
   const snpCounts: Partial<Record<PanelKey, number | null>> = {};
+  const unmappedCount = args.variantsReadFailed
+    ? 0
+    : countUnmappedVariantRows(args.variantRows ?? []);
+  let anyMappedSnp = false;
   for (const key of PANEL_KEYS) {
     if (!SNP_COUNT_PANELS.has(key)) continue;
-    snpCounts[key] = args.variantsReadFailed
-      ? null
-      : (variantsByPanel[key] ?? []).length;
+    if ((variantsByPanel[key] ?? []).length > 0) anyMappedSnp = true;
+  }
+  const allRemapMiss =
+    !args.variantsReadFailed &&
+    unmappedCount > 0 &&
+    !anyMappedSnp &&
+    (args.variantRows ?? []).length > 0;
+
+  for (const key of PANEL_KEYS) {
+    if (!SNP_COUNT_PANELS.has(key)) continue;
+    if (args.variantsReadFailed || allRemapMiss) {
+      snpCounts[key] = null;
+      continue;
+    }
+    snpCounts[key] = (variantsByPanel[key] ?? []).length;
   }
 
   const observedByPanel = mergeObservedByPanel({
@@ -155,6 +224,16 @@ export function buildHubVariantsPayload<TVariant extends { panel_key: string }>(
       : countDistinctEpigeneticMarkers(epigeneticMarkers.map((row) => row.markerKey)),
   });
 
+  const geneticsUploadState = args.variantsReadFailed
+    ? resolveGeneticsUploadState({
+        variantRows: [],
+        realKitIngest: args.realKitIngest === true,
+      })
+    : resolveGeneticsUploadState({
+        variantRows: (args.variantRows ?? []) as Array<{ is_sample?: boolean | null }>,
+        realKitIngest: args.realKitIngest === true,
+      });
+
   return {
     variantsByPanel,
     brandedPanels: args.brandedPanels,
@@ -163,5 +242,7 @@ export function buildHubVariantsPayload<TVariant extends { panel_key: string }>(
     loadStatus: 'ok',
     hormoneMarkers,
     epigeneticMarkers,
+    geneticsUploadState,
+    geneticsUploaded: geneticsUploadState === 'uploaded',
   };
 }

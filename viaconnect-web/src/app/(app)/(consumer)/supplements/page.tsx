@@ -22,17 +22,27 @@
 import { createClient } from '@/lib/supabase/server';
 import { getOrComputeUserProtocolSynthesis } from '@/lib/protocol/readSynthesis';
 import { SupplementsPageContent } from './SupplementsPageContent';
+import { loadGeneticsUploadFacts } from '@/lib/genetics/loadGeneticsUploadFacts';
+import {
+  isGeneticsUploaded,
+  resolveGeneticsUploadState,
+} from '@/lib/genetics/geneticsUploadState';
 
 export default async function SupplementsPage() {
   // Resolve the authenticated user (server-side, session cookie).
   // Fail gracefully: if no session, pass empty arrays so panels show empty states.
   let userId: string | null = null;
+  let geneticsUploaded = false;
   try {
     const supabase = await createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
     userId = user?.id ?? null;
+    if (userId) {
+      const facts = await loadGeneticsUploadFacts(supabase, userId);
+      geneticsUploaded = isGeneticsUploaded(resolveGeneticsUploadState(facts));
+    }
   } catch {
     // No session or client error -- continue with empty synthesis.
   }
@@ -45,6 +55,7 @@ export default async function SupplementsPage() {
     <SupplementsPageContent
       recommendedItems={synthesis?.recommended_vitamins_minerals ?? []}
       supplementFlags={synthesis?.supplement_flags ?? []}
+      geneticsUploaded={geneticsUploaded}
     />
   );
 }

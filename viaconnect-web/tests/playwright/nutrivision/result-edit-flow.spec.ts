@@ -16,6 +16,7 @@ import { promises as fs } from 'node:fs';
 
 const PHOTO_AI_PATH = '/nutrition/photo-ai';
 const ANALYZE_ROUTE_GLOB = '**/api/nutrition/photo/analyze*';
+const PENDING_ROUTE_GLOB = '**/api/nutrition/pending-review*';
 
 const ONE_PX_PNG_BASE64 =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=';
@@ -122,6 +123,13 @@ async function gotoReviewing(page: import('@playwright/test').Page): Promise<voi
       body: JSON.stringify(threeItemDraft()),
     });
   });
+  await page.route(PENDING_ROUTE_GLOB, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ logId: 'log-review-1' }),
+    });
+  });
   await page.goto(PHOTO_AI_PATH, { waitUntil: 'domcontentloaded' });
   const uploadButton = page.getByRole('button', { name: /Upload photo/i });
   await expect(uploadButton).toBeVisible({ timeout: 15_000 });
@@ -138,6 +146,7 @@ async function gotoReviewing(page: import('@playwright/test').Page): Promise<voi
       test.skip(true, 'capture path is native-only in this build');
     }
   }
+  await page.waitForURL('**/nutrition/log-meal/review**', { timeout: 20_000 });
 }
 
 test.describe('NutriVision result + edit flow', () => {

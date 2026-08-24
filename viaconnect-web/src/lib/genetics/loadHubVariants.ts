@@ -14,6 +14,8 @@ import {
   type HubVariantsPayload,
 } from './hubVariantsPayload';
 import type { HormoneMarkerSourceRow } from './hormoneObservedCount';
+import { isRealKitUploadFilename } from './geneticsUploadState';
+import { buildVariantProvenance, type VariantProvenance } from './variantProvenance';
 
 const TIMEOUT_MS = 4_000;
 
@@ -51,7 +53,9 @@ async function readUserVariants(
     const result = (await withTimeout(
       supabase
         .from('user_variants')
-        .select('panel_key, rsid, gene, genotype, status, clinical_significance, is_sample')
+        .select(
+          'panel_key, rsid, gene, genotype, status, clinical_significance, is_sample, created_at, upload_id',
+        )
         .eq('user_id', userId)
         .order('panel_key', { ascending: true }),
       TIMEOUT_MS,
@@ -194,6 +198,89 @@ async function readEpigeneticMarkers(
   }
 }
 
+interface DnaUploadProvenanceRow {
+  id?: string | null;
+  provider?: string | null;
+  created_at?: string | null;
+  branded_product_code?: string | null;
+  source_filename?: string | null;
+}
+
+async function readDnaUploadProvenance(
+  supabase: SupabaseLike,
+  userId: string,
+  uploadIds: string[],
+): Promise<{ byId: Map<string, DnaUploadProvenanceRow>; realKitIngest: boolean }> {
+  const byId = new Map<string, DnaUploadProvenanceRow>();
+  let realKitIngest = false;
+  try {
+    const result = (await withTimeout(
+      supabase
+        .from('dna_uploads')
+        .select('id, provider, created_at, branded_product_code, source_filename')
+        .eq('user_id', userId),
+      TIMEOUT_MS,
+      'genetics.hub.dna_uploads',
+    )) as { data: DnaUploadProvenanceRow[] | null; error: { message?: string } | null };
+    if (result.error) {
+      safeLog.warn('genetics.hub', 'dna_uploads read failed', {
+        user_id: userId,
+        error: result.error.message ?? 'supabase error',
+      });
+      return { byId, realKitIngest: false };
+    }
+    for (const row of result.data ?? []) {
+      if (row.id) byId.set(String(row.id), row);
+      if (isRealKitUploadFilename(row.source_filename)) realKitIngest = true;
+    }
+    if (uploadIds.length === 0) {
+      return { byId, realKitIngest };
+    }
+    return { byId, realKitIngest };
+  } catch (err) {
+    safeLog.warn('genetics.hub', 'dna_uploads read failed', {
+      user_id: userId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return { byId, realKitIngest: false };
+  }
+}
+
+async function readCompletedKitIngest(
+  supabase: SupabaseLike,
+  userId: string,
+): Promise<boolean> {
+  try {
+    const result = (await withTimeout(
+      supabase
+        .from('kit_registrations')
+        .select('status')
+        .eq('user_id', userId)
+        .eq('status', 'completed'),
+      TIMEOUT_MS,
+      'genetics.hub.kit_registrations',
+    )) as { data: Array<{ status?: string | null }> | null; error: { message?: string } | null };
+    if (result.error) return false;
+    return (result.data ?? []).some((row) => row.status === 'completed');
+  } catch {
+    return false;
+  }
+}
+
+function attachProvenance(
+  row: Record<string, unknown>,
+  uploadsById: Map<string, DnaUploadProvenanceRow>,
+): VariantProvenance {
+  const uploadId = typeof row.upload_id === 'string' ? row.upload_id : null;
+  const upload = uploadId ? uploadsById.get(uploadId) : undefined;
+  return buildVariantProvenance({
+    provider: upload?.provider ?? null,
+    uploadCreatedAt: upload?.created_at ?? null,
+    variantCreatedAt: typeof row.created_at === 'string' ? row.created_at : null,
+    brandedProductCode: upload?.branded_product_code ?? null,
+  });
+}
+
 export async function loadHubVariants(
   supabase: SupabaseLike,
   userId: string,
@@ -205,10 +292,21 @@ export async function loadHubVariants(
     getBrandedPanelKeys(supabase, userId),
   ]);
 
+  const uploadIds = variants.rows
+    .map((row) => (typeof row.upload_id === 'string' ? row.upload_id : null))
+    .filter((id): id is string => id !== null);
+
+  const [uploadProvenance, completedKit] = await Promise.all([
+    readDnaUploadProvenance(supabase, userId, uploadIds),
+    readCompletedKitIngest(supabase, userId),
+  ]);
+
   return buildHubVariantsPayload({
     variantRows: variants.rows.map((row) => ({
       ...row,
       panel_key: typeof row.panel_key === 'string' ? row.panel_key : '',
+      stored_panel_key: typeof row.panel_key === 'string' ? row.panel_key : '',
+      provenance: attachProvenance(row, uploadProvenance.byId),
     })),
     variantsReadFailed: variants.failed,
     hormoneRows: hormone.rows,
@@ -216,5 +314,6 @@ export async function loadHubVariants(
     epigeneticRows: epigenetic.rows,
     epigeneticReadFailed: epigenetic.failed,
     brandedPanels,
+    realKitIngest: uploadProvenance.realKitIngest || completedKit,
   });
 }
