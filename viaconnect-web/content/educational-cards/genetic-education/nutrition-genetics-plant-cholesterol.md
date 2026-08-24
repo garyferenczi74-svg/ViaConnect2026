@@ -49,7 +49,7 @@ Foods fortified with plant sterols are sometimes discussed for general LDL educa
 
 ## APOE does not personalize plant sterol response
 
-APOE is not on this confirmed plant-cholesterol list. APOE type does not tell a user to take or avoid plant sterols. A trial of plant sterols in people with different APOE types (NCT02765516) is not a consumer personalization rule. Do not use APOE from the saturated-fat card to script sterol foods here.
+APOE is not on this confirmed plant-cholesterol list. APOE type does not tell a user to take or avoid plant sterols. A trial of plant sterols in people with different APOE types (NCT02765516) is not a consumer personalization rule. This page does not use APOE to choose plant-sterol foods.
 
 ## Key takeaways
 
