@@ -173,9 +173,11 @@ describe('Brief 18 live count and copy guards', () => {
     expect(catalog).toContain('Open entry');
     expect(catalog).toContain('displayEducationField(entry.mechanism)');
     expect(catalog).toContain('kb-peptide-card-mechanism');
+    expect(catalog).toContain('Used for');
     expect(detail).toContain('displayEducationField(value)');
     expect(detail).toContain('Not available');
     expect(detail).toContain('entry-mechanism');
+    expect(detail).toContain('Used for');
     expect(detail).toContain('entry-safety');
     expect(detail).toContain('entry-regulatory');
     expect(detail).toContain('entry-pmids');
@@ -441,8 +443,10 @@ describe('Brief 18 browse cards bind live mechanism', () => {
     );
     expect(fields).toContain('mechanism: asTrimmed(row.mechanism)');
     expect(catalog).toContain('displayEducationField(entry.mechanism)');
+    expect(catalog).toContain('Used for');
     expect(detail).toContain('displayEducationField(value)');
     expect(detail).toContain('entry-mechanism');
+    expect(detail).toContain('Used for');
   });
 
   it('trims populated mechanism and shows Not available for empty, null, or whitespace', () => {

@@ -17,11 +17,13 @@ import {
 import { matchesSearchPrefix } from '@/lib/peptides/peptideSearchMatch';
 
 function EducationCard({ entry }: { entry: EducationEntry }) {
+  const usedFor = displayEducationField(entry.mechanism);
+
   return (
     <Link
       href={`/peptide-protocol/peptide/${encodeURIComponent(entry.entryKey)}`}
       data-testid={`kb-peptide-card-${entry.entryKey}`}
-      aria-label={`Open ${entry.title} educational entry`}
+      aria-label={`Open ${entry.title} educational entry. Used for: ${usedFor}`}
       className="flex h-full min-h-[44px] flex-col rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[#1E3054]/45 backdrop-blur-md p-4 transition-colors hover:border-[#2DA5A0]/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]"
     >
       <div className="flex items-start justify-between gap-2">
@@ -35,12 +37,17 @@ function EducationCard({ entry }: { entry: EducationEntry }) {
           Not a peptide
         </span>
       ) : null}
-      <p
-        data-testid={`kb-peptide-card-mechanism-${entry.entryKey}`}
-        className="mt-2 flex-1 text-[11px] leading-relaxed text-white/65"
-      >
-        {displayEducationField(entry.mechanism)}
-      </p>
+      <div className="mt-2 flex min-h-0 flex-1 flex-col gap-1">
+        <p className="text-[10px] font-medium uppercase tracking-wide text-white/40">
+          Used for
+        </p>
+        <p
+          data-testid={`kb-peptide-card-mechanism-${entry.entryKey}`}
+          className="line-clamp-3 text-[11px] leading-relaxed text-white/65"
+        >
+          {usedFor}
+        </p>
+      </div>
       <span className="mt-3 inline-flex min-h-[44px] items-center gap-1 text-[11px] text-[#2DA5A0]">
         Open entry
         <ChevronRight className="h-3.5 w-3.5" strokeWidth={1.5} />

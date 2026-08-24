@@ -65,7 +65,7 @@ export function PeptideEducationEntryDetail({ entry }: { entry: EducationEntry }
       </p>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label="Mechanism" value={entry.mechanism} testId="entry-mechanism" />
+        <Field label="Used for" value={entry.mechanism} testId="entry-mechanism" />
         <Field label="Safety" value={entry.safetyContext} testId="entry-safety" />
         <Field
           label="Regulatory"
