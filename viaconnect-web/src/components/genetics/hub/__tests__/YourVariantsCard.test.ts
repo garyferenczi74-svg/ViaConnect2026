@@ -75,6 +75,11 @@ describe('YourVariantsCard source', () => {
     expect(source).toContain('isMthfrFolateTarget');
     expect(source).toContain('mayShowMthfrFolate');
     expect(source).toContain('protocolChangeLine');
+    expect(source).toContain('hubHeaderBadge');
+    expect(source).toContain('VariantRowChip');
+    expect(source).toContain('formatVariantProvenance');
+    expect(source).not.toContain('Your variant');
+    expect(source).not.toContain('SampleBadge');
   });
 
   it('imports GENEX360_SHOP_HREF and links to it with a Next Link', () => {

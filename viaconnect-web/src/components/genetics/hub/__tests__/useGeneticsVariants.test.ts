@@ -73,6 +73,34 @@ describe('useGeneticsVariants normalize', () => {
     });
     expect(data.variantsByPanel.methylation).toHaveLength(1);
     expect(data.variantsByPanel.methylation?.[0].panel_key).toBe('methylation');
+    expect(data.geneticsUploaded).toBe(true);
+    expect(data.variantsByPanel.methylation?.[0].chip).toBe('result');
+  });
+
+  it('does not mark 12 sample rows as uploaded', () => {
+    const data = normalizeGeneticsVariantsPayload({
+      loadStatus: 'ok',
+      variantsByPanel: {
+        methylation: Array.from({ length: 12 }, (_, i) => ({
+          panel_key: 'methylation',
+          rsid: `rs${i}`,
+          gene: 'MTHFR',
+          genotype: 'CT',
+          status: '+/-',
+          clinical_significance: null,
+          severity: null,
+          is_sample: true,
+        })),
+      },
+      brandedPanels: [],
+      observedByPanel: EMPTY_OK_DATA.observedByPanel,
+      totalVariants: 12,
+      hormoneMarkers: [],
+      epigeneticMarkers: [],
+    });
+    expect(data.geneticsUploadState).toBe('sample_only');
+    expect(data.geneticsUploaded).toBe(false);
+    expect(data.variantsByPanel.methylation?.every((row) => row.chip === 'demo')).toBe(true);
   });
 });
 

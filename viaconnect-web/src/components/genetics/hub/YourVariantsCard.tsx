@@ -26,7 +26,7 @@ import { useGeneticsVariants, type VariantRecord } from './useGeneticsVariants';
 import { VariantReportPill } from './VariantReportPill';
 import { VariantImpactFilter, type ImpactFilterValue } from './VariantImpactFilter';
 import { SeverityPill } from '@/components/genetics/SeverityPill';
-import { SampleBadge } from '@/components/genetics/SampleBadge';
+import { VariantRowChip } from '@/components/genetics/VariantRowChip';
 import { resolveVariantReport } from '@/lib/genex360/resolveVariantReport';
 import { PanelDisclaimer } from '@/components/shop/genex360/PanelDisclaimer';
 import type { PanelSlug } from '@/data/genex360/types';
@@ -46,6 +46,9 @@ import {
 import { epigenMarkerByKey } from '@/lib/genetics/epigenMarkerMap';
 import { isMthfrFolateTarget, mayShowMthfrFolate } from '@/lib/genetics/mthfrFolate';
 import { protocolChangeLine } from '@/lib/genetics/protocolChangeLine';
+import { hubHeaderBadge } from '@/lib/genetics/geneticsUploadState';
+import { variantRowChip } from '@/lib/genetics/variantRowChip';
+import { formatVariantProvenance } from '@/lib/genetics/variantProvenance';
 
 const PANEL_ID = 'your-variants-panel';
 const SUBTITLE =
@@ -97,6 +100,7 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
     loadStatus,
     hormoneMarkers,
     epigeneticMarkers,
+    geneticsUploadState,
   } = data;
 
   const searchParams = useSearchParams();
@@ -180,11 +184,12 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
   const activePanelSlug = PANEL_LABELS[activePanel].slug as PanelSlug;
   const activeTabId = `${PANEL_ID}-tab-${activePanel}`;
 
-  const headerBadge = isLoading
-    ? 'Loading'
-    : resultsUnavailable || totalVariants === null
-      ? 'Unanalyzed'
-      : `${totalVariants} results`;
+  const headerBadge = hubHeaderBadge({
+    isLoading,
+    loadFailed: resultsUnavailable,
+    uploadState: geneticsUploadState,
+    totalVariants,
+  });
   const protocolLine = protocolChangeLine(null);
 
   const hasHormoneMarkers = hormoneMarkers.length > 0;
@@ -316,6 +321,7 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
                   const report = row.rsid
                     ? resolveVariantReport(row.rsid, activePanelSlug, row.gene ?? undefined)
                     : null;
+                  const provenanceLine = formatVariantProvenance(row.provenance);
                   return (
                     <div
                       key={rowKey}
@@ -336,11 +342,26 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
                         <span className="rounded bg-white/5 px-2 py-0.5 font-mono text-[11px] tabular-nums text-white/45">
                           {z}
                         </span>
-                        {row.is_sample ? <SampleBadge /> : null}
+                        <VariantRowChip
+                          kind={
+                            row.chip ??
+                            variantRowChip({
+                              is_sample: row.is_sample,
+                              genotype: row.genotype,
+                              status: row.status,
+                              stored_panel_key: row.stored_panel_key,
+                            })
+                          }
+                        />
                         <span className="ml-auto">
                           <SeverityPill tier={row.severity} />
                         </span>
                       </div>
+                      {provenanceLine ? (
+                        <p className="mt-1 font-mono text-[11px] leading-relaxed text-white/40">
+                          {provenanceLine}
+                        </p>
+                      ) : null}
                       {row.clinical_significance &&
                       !(
                         isMthfrFolateTarget(row.rsid, row.gene) &&
