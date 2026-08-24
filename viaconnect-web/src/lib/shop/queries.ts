@@ -18,8 +18,21 @@
 import { createClient } from '@/lib/supabase/server'
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout'
 import { safeLog } from '@/lib/utils/safe-log'
+import { annotateShopIngredientJson } from '@/lib/supplements/confirmedBioavailability'
 
 const QUERY_TIMEOUT_MS = 5000
+
+function hydrateShopProduct(product: ShopProduct): ShopProduct {
+    if (!product.ingredients?.length) return product
+    return {
+        ...product,
+        ingredients: annotateShopIngredientJson(
+            product.slug ?? product.sku,
+            product.name,
+            product.ingredients,
+        ),
+    }
+}
 
 export interface ShopCategoryRow {
     slug: string
@@ -58,7 +71,15 @@ export interface ShopProduct {
     bioavailability_pct: number | null
     product_type: string | null
     ingredients:
-        | { name: string; dose: number | null; unit: string | null; role?: string | null }[]
+        | {
+              name: string
+              dose: number | null
+              unit: string | null
+              role?: string | null
+              bioavailability_note?: string | null
+              evidence_type?: 'this_sku' | 'class_not_this_sku' | 'not_stated' | null
+              pmid?: string | null
+          }[]
         | null
     gene_match_score: number | null
     requires_practitioner_order: boolean | null
@@ -124,7 +145,7 @@ export async function getProductsByCategory(slug: string): Promise<ShopProduct[]
             safeLog.warn('shop.queries', 'getProductsByCategory supabase error', { slug, error })
             return []
         }
-        return data ?? []
+        return (data ?? []).map(hydrateShopProduct)
     } catch (error) {
         if (isTimeoutError(error)) {
             safeLog.warn('shop.queries', 'getProductsByCategory timed out', { slug, error })
@@ -158,7 +179,7 @@ export async function getProductBySlug(productSlug: string): Promise<ShopProduct
             safeLog.warn('shop.queries', 'getProductBySlug supabase error', { productSlug, error })
             return null
         }
-        return data
+        return data ? hydrateShopProduct(data) : null
     } catch (error) {
         if (isTimeoutError(error)) {
             safeLog.warn('shop.queries', 'getProductBySlug timed out', { productSlug, error })
@@ -196,7 +217,7 @@ export async function searchProducts(searchQuery: string): Promise<ShopProduct[]
             safeLog.warn('shop.queries', 'searchProducts supabase error', { searchQuery: trimmed, error })
             return []
         }
-        return data ?? []
+        return (data ?? []).map(hydrateShopProduct)
     } catch (error) {
         if (isTimeoutError(error)) {
             safeLog.warn('shop.queries', 'searchProducts timed out', { searchQuery: trimmed, error })

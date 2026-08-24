@@ -15,6 +15,9 @@ export interface IngredientBreakdownEntry {
   perFormBreakdown: Record<string, number> | "undisclosed" | null;
   effectiveDose: number | null;
   effectiveDoseUnit: string | null;
+  bioavailability_note: string | null;
+  evidence_type: 'this_sku' | 'class_not_this_sku' | 'not_stated';
+  pmid: string | null;
   interactionCheckRequired: boolean;
   interactionSeverity: "none" | "minor" | "moderate" | "major" | "synergistic" | null;
   interactionDetails: string | null;
@@ -56,18 +59,8 @@ export type DeliveryMethod =
   | "amino_acids_peptides"
   | "gummy";
 
-export const BIOAVAILABILITY_MAP: Record<DeliveryMethod, number> = {
-  standard_capsule: 0.20,
-  standard_tablet: 0.15,
-  softgel: 0.30,
-  liquid: 0.50,
-  powder: 0.40,
-  sublingual: 0.70,
-  liposomal: 0.90,
-  topical: 0.10,
-  amino_acids_peptides: 0.85,
-  gummy: 0.25,
-};
+// Invented delivery-form absorption fractions (liposomal 0.90, capsule 0.20, etc.)
+// were removed 24 Aug 2026. this_sku human PK is 0. Do not reintroduce a map.
 
 export interface OCRExtractedData {
   brand: string | null;

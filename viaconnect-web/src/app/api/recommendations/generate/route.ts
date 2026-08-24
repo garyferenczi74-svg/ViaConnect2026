@@ -145,10 +145,10 @@ const SUPPLEMENT_REPLACEMENT_MAP: Record<string, { sku: string; name: string; re
   'probiotic': { sku: 'FC-BALANCE-001', name: 'BALANCE+', reason: 'BALANCE+ uses Spore Probiotics (survives stomach acid) with Prebiotic GOS, L-Glutamine & Zinc Carnosine' },
   'probiotics': { sku: 'FC-BALANCE-001', name: 'BALANCE+', reason: 'BALANCE+ combines spore-based probiotics with gut-healing L-Glutamine for microbiome restoration' },
   // Turmeric / Curcumin
-  'turmeric': { sku: 'FC-FLEX-001', name: 'FLEX+', reason: 'FLEX+ uses Curcumin Phytosome (29x absorption vs standard turmeric) with Boswellia and UC-II Collagen' },
+  'turmeric': { sku: 'FC-FLEX-001', name: 'FLEX+', reason: 'FLEX+ includes liposomal curcumin with Boswellia and UC-II Collagen. Class literature only. Not this SKU human PK.' },
   'curcumin': { sku: 'FC-FLEX-001', name: 'FLEX+', reason: 'FLEX+ delivers Curcumin Phytosome with joint-specific cofactors for complete mobility support' },
   // Iron
-  'iron': { sku: 'FC-IRON-001', name: 'IRON+', reason: 'IRON+ uses Iron Bisglycinate with Vitamin C and Lactoferrin — non-constipating with enhanced absorption' },
+  'iron': { sku: 'FC-IRON-001', name: 'IRON+', reason: 'IRON+ lists liposomal vitamin C and red-blood-cell cofactors on the formulation. Iron salt is not on this SKU list.' },
   // Ashwagandha
   'ashwagandha': { sku: 'FC-CALM-001', name: 'CALM+', reason: 'CALM+ combines KSM-66 Ashwagandha with Rhodiola, L-Theanine & Holy Basil for comprehensive stress adaptation' },
   // Creatine

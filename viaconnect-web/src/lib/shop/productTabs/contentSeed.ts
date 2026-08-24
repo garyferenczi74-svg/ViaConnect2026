@@ -39,11 +39,12 @@ function ingredientBreakdownBody(p: ProductFormulation, override?: string | null
     ]
       .filter(Boolean)
       .join(', ');
-    return `- **${i.name}** (${i.mgPerServing} mg)${tech ? ` - ${tech} delivery technology` : ''}`;
+    const note = i.bioavailability_note ? ` ${i.bioavailability_note}` : '';
+    return `- **${i.name}** (${i.mgPerServing} mg)${tech ? ` - ${tech} delivery technology` : ''}.${note}`;
   });
+  const preface = 'Each ingredient is listed at the per-serving amount from the formulation record.';
   return normalizeProductCopy(
-    `## Ingredient Breakdown\n\nEach ingredient is listed at the per-serving amount from the formulation record.\n\n` +
-      lines.join('\n'),
+    `## Ingredient Breakdown\n\n${preface}\n\n` + lines.join('\n'),
   );
 }
 

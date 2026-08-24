@@ -15,6 +15,8 @@
 // • 5 mushroom products carry the official 2-ingredient spec from the prompt;
 //   marketing copy is minimal and awaits the prior catalog deliverable.
 
+import { applyConfirmedBioavailability } from '@/lib/supplements/confirmedBioavailability';
+
 export interface Ingredient {
   /** Full ingredient label as printed on the supplement facts panel */
   name: string;
@@ -24,6 +26,10 @@ export interface Ingredient {
   isLiposomal: boolean;
   /** True only when name starts with the literal token "Micellar" */
   isMicellar: boolean;
+  /** Confirmed Maximum Bioavailability note for listed Via Cura SKUs */
+  bioavailability_note?: string | null;
+  evidence_type?: 'this_sku' | 'class_not_this_sku' | 'not_stated' | null;
+  pmid?: string | null;
 }
 
 export interface ProductFormulation {
@@ -61,7 +67,7 @@ function ing(name: string, mgPerServing: string): Ingredient {
   };
 }
 
-export const MASTER_FORMULATIONS: ProductFormulation[] = [
+const RAW_MASTER_FORMULATIONS: ProductFormulation[] = [
   // ════════════════════════════════════════════════════════════════════════
   // CATEGORY 1 — PROPRIETARY BASES (8 products)
   // ════════════════════════════════════════════════════════════════════════
@@ -1335,6 +1341,9 @@ export const MASTER_FORMULATIONS: ProductFormulation[] = [
     marketingDescription: `A liquid tincture formulation delivering FarmCeutica's MethylB Complete+™ B Complex with liposomal vitamins A, D3, E, K1, and C, ferrous bisglycinate iron, iodine, zinc carnosine, and a 10-billion CFU probiotic blend in an organic MCT oil carrier base. Sproutables Infant Tincture is age-appropriate for the youngest in the family, flavored with organic fruit extract and free from artificial sweeteners, dyes, or unnecessary additives.`,
   },
 ];
+
+export const MASTER_FORMULATIONS: ProductFormulation[] =
+  applyConfirmedBioavailability(RAW_MASTER_FORMULATIONS);
 
 // ════════════════════════════════════════════════════════════════════════
 // HELPER UTILITIES

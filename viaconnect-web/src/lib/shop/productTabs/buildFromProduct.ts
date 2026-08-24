@@ -4,6 +4,7 @@
  */
 
 import type { ShopProduct } from '@/lib/shop/queries';
+import { annotateShopIngredientJson } from '@/lib/supplements/confirmedBioavailability';
 import { normalizeProductCopy } from './lexicon';
 import { buildTabsForProduct } from './contentSeed';
 import { resolveFormulationBySlug } from './resolveSlug';
@@ -20,14 +21,19 @@ function fromShopProduct(product: ShopProduct): ProductTabContent[] {
   const rawDesc =
     product.description || product.summary || `${product.name} details are being finalized.`;
   const split = splitLongScrollDescription(rawDesc);
-  const ingredients = product.ingredients ?? [];
+  const ingredients = annotateShopIngredientJson(
+    slug,
+    product.name,
+    product.ingredients ?? [],
+  );
   const ingListFromRecord =
     ingredients.length > 0
       ? ingredients
           .map((i) => {
             const dose =
               i.dose != null ? `${i.dose}${i.unit ?? 'mg'}` : 'amount on label';
-            return `- **${i.name}:** ${dose}${i.role ? ` (${i.role})` : ''}`;
+            const note = i.bioavailability_note ? ` ${i.bioavailability_note}` : '';
+            return `- **${i.name}:** ${dose}${i.role ? ` (${i.role})` : ''}.${note}`;
           })
           .join('\n')
       : null;
