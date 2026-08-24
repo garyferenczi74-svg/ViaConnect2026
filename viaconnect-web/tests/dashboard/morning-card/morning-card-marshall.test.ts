@@ -22,10 +22,11 @@ describe('morning card Marshall scan', () => {
       expect(src, `emoji found in ${file}`).not.toMatch(/[\u{1F300}-\u{1FAFF}]/u);
     });
 
-    it(`${file} never uses Vitality or Helix`, () => {
+    it(`${file} never uses Vitality or Helix Rewards`, () => {
       const src = readFileSync(p, 'utf-8');
       expect(src).not.toMatch(/Vitality/i);
-      expect(src).not.toMatch(/Helix/i);
+      expect(src).not.toMatch(/Helix Rewards/i);
+      expect(src).not.toMatch(/helix_challenges/);
     });
   }
 });

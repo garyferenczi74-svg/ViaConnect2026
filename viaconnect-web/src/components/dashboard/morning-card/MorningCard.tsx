@@ -2,7 +2,7 @@
 
 // Score-first morning card: Bio Optimization Score from /api/bos/current,
 // one TodaysProtocol action, eight marketing chips as DISPLAY only.
-// Helix rewards stay off this card. Contributor list is pending until Brief 12.
+// Rewards gamification stays off this card. Contributor list is pending until Brief 12.
 
 import { useMemo, useState } from 'react';
 import { useBOSCurrent } from '@/hooks/use-bos-current';

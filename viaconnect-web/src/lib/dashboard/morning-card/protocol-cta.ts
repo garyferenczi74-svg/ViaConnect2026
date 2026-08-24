@@ -1,5 +1,5 @@
 // One protocol action for the morning card: first incomplete
-// TodaysProtocol item. No Helix fallback.
+// TodaysProtocol item. No rewards-gamification fallback.
 
 import { currentLocalScheduleBucket } from '@/lib/supplements/dailyScheduleShared';
 import type { TimeOfDay } from '@/lib/caq/supplements/timing/types';

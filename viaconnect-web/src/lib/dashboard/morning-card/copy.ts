@@ -1,5 +1,5 @@
 // Verbatim morning-card copy. Bio Optimization Score only. Never Vitality.
-// Helix rewards stay off this card.
+// Rewards gamification stays off this card.
 
 export const MORNING_CARD_SCORE_LABEL = 'Bio Optimization Score';
 

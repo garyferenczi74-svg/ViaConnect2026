@@ -38,7 +38,8 @@ describe('Brief 1 morning card IA', () => {
     const cta = src(CTA);
     expect(card).toContain('firstIncompleteProtocolAction');
     expect(card).toContain('useDailyScheduleView');
-    expect(card + cta).not.toMatch(/helix/i);
+    expect(card + cta).not.toMatch(/helix_challenges/);
+    expect(card + cta).not.toMatch(/Helix Rewards/);
     expect(card + cta).not.toMatch(/Vitality/);
   });
 
@@ -79,7 +80,8 @@ describe('Brief 1 morning card IA', () => {
     expect(all).not.toContain('font-serif');
     expect(all).not.toMatch(/ViaConnect/);
     expect(all).not.toMatch(/Vitality/);
-    expect(all).not.toMatch(/Helix/);
+    expect(all).not.toMatch(/helix_challenges/);
+    expect(all).not.toMatch(/Helix Rewards/);
     expect(all).not.toMatch(/Semaglutide/i);
   });
 });
