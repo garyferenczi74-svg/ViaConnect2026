@@ -12,7 +12,7 @@ import {
   ArrowUpRight, Minus,
 } from "lucide-react";
 import { PageTransition, StaggerChild, MotionCard } from "@/lib/motion";
-import type { Tables, Json } from "@/lib/supabase/types";
+import type { Tables } from "@/lib/supabase/types";
 
 type BoardMetricsRow = Tables<"board_metrics">;
 type SkuRow = Pick<Tables<"sku_rationalization">, "sku" | "name" | "category" | "tier" | "composite_score" | "dtc_margin">;
