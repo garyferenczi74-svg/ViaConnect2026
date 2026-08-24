@@ -1,7 +1,11 @@
 'use client';
 
-import { ChevronRight, Circle, Heart, Scan, Watch } from 'lucide-react';
-import type { WearableTileView } from '@/lib/body-tracker/wearable-tiles';
+import { ChevronRight, Circle, CloudUpload, Heart, Scan, Watch } from 'lucide-react';
+import {
+  APPLE_HEALTH_DROPZONE_COPY,
+  OAUTH_COMING_SOON_LABEL,
+  type WearableTileView,
+} from '@/lib/body-tracker/wearable-tiles';
 
 function TileIcon({ id }: { id: WearableTileView['id'] }) {
   if (id === 'whoop') return <Watch className="h-5 w-5 text-white/80" strokeWidth={1.5} />;
@@ -17,6 +21,9 @@ function feedsLabel(tile: WearableTileView): string | null {
   return `Feeds ${names.join(', ')}`;
 }
 
+const outlineBtn =
+  'min-h-[36px] shrink-0 rounded-lg border border-[#2DA5A0] bg-transparent px-3 text-xs font-semibold text-[#2DA5A0] hover:bg-[#2DA5A0]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/50';
+
 interface WearableTileCardProps {
   tile: WearableTileView;
   onPrimary: (tile: WearableTileView) => void;
@@ -29,14 +36,18 @@ export function WearableTileCard({ tile, onPrimary, onDropXml }: WearableTileCar
   const feeds = connected ? feedsLabel(tile) : null;
   const xmlAction = tile.action.kind === 'xml_upload';
   const oauthReady = tile.action.kind === 'oauth' && tile.action.configured;
-  const oauthBlocked = tile.action.kind === 'oauth' && !tile.action.configured && tile.lastSyncState === 'not_connected';
+  const comingSoon =
+    tile.action.kind === 'oauth' &&
+    !tile.action.configured &&
+    tile.lastSyncState === 'not_connected';
   const liveDot = connected ? 'bg-[#2DA5A0]' : needsReconnect ? 'bg-[#B75E18]' : 'bg-white/30';
 
   return (
     <article
       data-tile-id={tile.id}
       data-last-sync-state={tile.lastSyncState}
-      className="rounded-2xl border border-white/[0.08] bg-[#1E3054] p-4"
+      data-coming-soon={comingSoon ? 'true' : 'false'}
+      className="rounded-[24px] border border-white/[0.08] bg-[#1E3054] p-4 backdrop-blur-md"
     >
       <div className="flex items-start gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-[#1A2744]">
@@ -53,6 +64,9 @@ export function WearableTileCard({ tile, onPrimary, onDropXml }: WearableTileCar
                 {tile.statusLabel}
               </p>
             </div>
+            {comingSoon ? (
+              <span className="sr-only">{OAUTH_COMING_SOON_LABEL}</span>
+            ) : null}
             {connected && !xmlAction ? (
               <button
                 type="button"
@@ -67,7 +81,7 @@ export function WearableTileCard({ tile, onPrimary, onDropXml }: WearableTileCar
               <button
                 type="button"
                 onClick={() => onPrimary(tile)}
-                className="min-h-[36px] shrink-0 rounded-lg bg-[#2DA5A0] px-3 text-xs font-semibold text-white hover:bg-[#2DA5A0]/85"
+                className={outlineBtn}
               >
                 Upload XML
               </button>
@@ -76,7 +90,7 @@ export function WearableTileCard({ tile, onPrimary, onDropXml }: WearableTileCar
               <button
                 type="button"
                 onClick={() => onPrimary(tile)}
-                className="min-h-[36px] shrink-0 rounded-lg bg-[#2DA5A0] px-3 text-xs font-semibold text-white hover:bg-[#2DA5A0]/85"
+                className={outlineBtn}
               >
                 Connect
               </button>
@@ -85,13 +99,10 @@ export function WearableTileCard({ tile, onPrimary, onDropXml }: WearableTileCar
               <button
                 type="button"
                 onClick={() => onPrimary(tile)}
-                className="min-h-[36px] shrink-0 rounded-lg bg-[#2DA5A0] px-3 text-xs font-semibold text-white hover:bg-[#2DA5A0]/85"
+                className={outlineBtn}
               >
                 Reconnect
               </button>
-            ) : null}
-            {oauthBlocked ? (
-              <span className="shrink-0 text-[11px] text-white/40">Not configured</span>
             ) : null}
           </div>
           {connected && feeds ? <p className="mt-1 text-xs text-white/45">{feeds}</p> : null}
@@ -109,24 +120,18 @@ export function WearableTileCard({ tile, onPrimary, onDropXml }: WearableTileCar
 
       {tile.id === 'apple_health' && onDropXml ? (
         <div
+          data-apple-dropzone="true"
           onDragOver={(e) => e.preventDefault()}
+          onClick={() => onPrimary(tile)}
           onDrop={(e) => {
             e.preventDefault();
             const file = e.dataTransfer.files?.[0];
             if (file) onDropXml(file);
           }}
-          className="mt-3 hidden rounded-xl border border-dashed border-white/20 bg-[#1A2744]/60 p-3 text-center min-[1280px]:block"
+          className="mt-3 cursor-pointer rounded-xl border border-dashed border-white/20 bg-[#1A2744]/60 p-4 text-center"
         >
-          <p className="text-[11px] text-white/50">
-            Upload Apple Health XML. Drag and drop file here or click to browse.
-          </p>
-          <button
-            type="button"
-            onClick={() => onPrimary(tile)}
-            className="mt-2 text-xs font-semibold text-[#2DA5A0]"
-          >
-            Upload XML
-          </button>
+          <CloudUpload className="mx-auto h-5 w-5 text-[#2DA5A0]" strokeWidth={1.5} />
+          <p className="mt-2 text-[11px] text-white/50">{APPLE_HEALTH_DROPZONE_COPY}</p>
         </div>
       ) : null}
     </article>

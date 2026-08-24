@@ -1,16 +1,22 @@
 import { describe, it, expect } from 'vitest';
 import {
+  APPLE_HEALTH_DROPZONE_COPY,
+  BOS_UNKNOWN_NEVER_ZERO_COPY,
+  CONNECTIONS_BOS_COMPOSITE,
   CONNECTIONS_FOOTER,
   FIRST_CLASS_TILE_IDS,
   FORBIDDEN_FIRST_CLASS_TILE_IDS,
+  OAUTH_COMING_SOON_LABEL,
   WEARABLE_TILE_SPECS,
   WATCH_FORBIDDEN_LABELS,
   appleHealthDisplayName,
   appleStatusLabel,
   buildWearableTiles,
+  connectionsBosCompositeDisplay,
   isAppleHealthConnected,
   isHumeConnected,
   isOAuthConnected,
+  oauthDisplayLabel,
   type WearableTileInput,
 } from '../wearable-tiles';
 
@@ -128,12 +134,12 @@ describe('wearable tile model', () => {
     const apple = tiles.find((t) => t.id === 'apple_health');
     expect(whoop?.status).toBe('disconnected');
     expect(whoop?.lastSyncState).toBe('not_connected');
-    expect(whoop?.statusLabel).toBe('Not connected');
+    expect(whoop?.statusLabel).toBe('Coming soon');
     expect(whoop?.lastSyncAt).toBeNull();
     expect(whoop?.action).toEqual({ kind: 'oauth', configured: false });
     expect(oura?.status).toBe('disconnected');
     expect(oura?.lastSyncState).toBe('not_connected');
-    expect(oura?.statusLabel).toBe('Not connected');
+    expect(oura?.statusLabel).toBe('Coming soon');
     expect(oura?.lastSyncAt).toBeNull();
     expect(oura?.action).toEqual({ kind: 'oauth', configured: false });
     expect(apple?.statusLabel).toBe('Synced 2d ago');
@@ -276,12 +282,16 @@ describe('wearable tile model', () => {
     for (const tile of tiles) {
       expect(tile.status).toBe('disconnected');
       expect(tile.lastSyncState).toBe('not_connected');
-      expect(tile.statusLabel).toBe('Not connected');
       expect(tile.lastSyncAt).toBeNull();
       expect(tile.statusLabel).not.toContain('Active');
+      expect(tile.statusLabel).not.toContain('Connected');
       expect(JSON.stringify(tile)).not.toContain('5 min ago');
       expect(tile.dimensionsFed).toEqual([]);
     }
+    expect(tiles.find((t) => t.id === 'whoop')?.statusLabel).toBe('Coming soon');
+    expect(tiles.find((t) => t.id === 'oura')?.statusLabel).toBe('Coming soon');
+    expect(tiles.find((t) => t.id === 'hume')?.statusLabel).toBe('Not connected');
+    expect(tiles.find((t) => t.id === 'apple_health')?.statusLabel).toBe('Not connected');
   });
 
   it('labels Apple XML vs not connected', () => {
@@ -310,6 +320,29 @@ describe('wearable tile model', () => {
     expect(whoop?.lastSyncAt).toBeNull();
     expect(whoop?.statusLabel).not.toMatch(/Active/);
     expect(whoop?.statusLabel).not.toMatch(/5 min ago/);
+  });
+
+  it('labels unconfigured OAuth Coming soon and never invents Connected', () => {
+    expect(OAUTH_COMING_SOON_LABEL).toBe('Coming soon');
+    expect(
+      oauthDisplayLabel(false, {
+        kind: 'not_connected',
+        label: 'Not connected',
+        lastSyncAt: null,
+      }),
+    ).toBe('Coming soon');
+    expect(
+      oauthDisplayLabel(true, {
+        kind: 'not_connected',
+        label: 'Not connected',
+        lastSyncAt: null,
+      }),
+    ).toBe('Not connected');
+    expect(connectionsBosCompositeDisplay()).toEqual({ value: '--', band: 'UNKNOWN' });
+    expect(CONNECTIONS_BOS_COMPOSITE.value).not.toBe('0');
+    expect(BOS_UNKNOWN_NEVER_ZERO_COPY).toBe('Missing stays UNKNOWN, never 0.');
+    expect(APPLE_HEALTH_DROPZONE_COPY).toMatch(/Apple Health XML/);
+    expect(APPLE_HEALTH_DROPZONE_COPY).not.toMatch(/Hume/);
   });
 
   it('uses Needs reconnect when configured tokens are missing', () => {

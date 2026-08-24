@@ -1,18 +1,22 @@
 'use client';
 
-// Shared 390 + 1280 Connections IA. Alias: /wearables.
-// Four tiles only. Hume and Apple are XML. Watch tile is out of scope.
-// Whoop/Oura stay Not connected until OAuth secrets are provisioned.
+// Shared 390 + 1280 Connections IA. Canonical path: /body-tracker/connections.
+// /wearables remains an alias. Four tiles only. Hume and Apple are XML.
+// Watch tile is out of scope. Whoop/Oura stay Coming soon until OAuth
+// secrets are provisioned. Hume stays tagged ingest, not OAuth.
 
 import { useCallback, useEffect, useState } from 'react';
-import { Link2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { BackToHubLink } from '@/components/body-tracker/hub/BackToHubLink';
-import { AppleHealthImportModal } from '@/components/body-tracker/connected-sources/AppleHealthImportModal';
+import {
+  AppleHealthImportModal,
+  type HealthXmlImportIntent,
+} from '@/components/body-tracker/connected-sources/AppleHealthImportModal';
 import { WearableConsentModal } from '@/components/body-tracker/WearableConsentModal';
 import { detectPlatform } from '@/lib/capacitor/camera-capture';
 import {
   CONNECTIONS_FOOTER,
+  CONNECTIONS_LEAD,
   FIRST_CLASS_TILE_IDS,
   buildWearableTiles,
   type WearableTileView,
@@ -63,7 +67,7 @@ export function ConnectionsSurface() {
   const [tiles, setTiles] = useState<WearableTileView[]>(() => emptyTiles('web'));
   const [scoreDetail, setScoreDetail] = useState<DimensionSourceRow[]>([]);
   const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
-  const [importOpen, setImportOpen] = useState(false);
+  const [importIntent, setImportIntent] = useState<HealthXmlImportIntent | null>(null);
   const [consent, setConsent] = useState<'whoop' | 'oura' | null>(null);
   const [platform] = useState<'web' | 'ios' | 'android'>(() => {
     const p = detectPlatform();
@@ -114,7 +118,7 @@ export function ConnectionsSurface() {
 
   const onPrimary = useCallback((tile: WearableTileView) => {
     if (tile.action.kind === 'xml_upload') {
-      setImportOpen(true);
+      setImportIntent(tile.id === 'hume' ? 'hume' : 'apple');
       return;
     }
     if (tile.id === 'whoop') {
@@ -147,14 +151,9 @@ export function ConnectionsSurface() {
       <BackToHubLink />
 
       <header>
-        <div className="flex items-center gap-2">
-          <Link2 className="h-5 w-5 text-[#2DA5A0]" strokeWidth={1.5} />
-          <h1 className="text-lg font-bold text-white">Connections</h1>
-        </div>
+        <h1 className="text-3xl font-bold text-white sm:text-4xl">Connections</h1>
         <p className="mt-1 text-sm text-white/50">Wearables</p>
-        <p className="mt-1 hidden text-sm text-white/50 min-[1280px]:block">
-          Connect your devices and health data to unlock deeper insights.
-        </p>
+        <p className="mt-2 text-sm text-white/60">{CONNECTIONS_LEAD}</p>
       </header>
 
       <div className="grid grid-cols-1 gap-6 min-[1280px]:grid-cols-2">
@@ -164,7 +163,7 @@ export function ConnectionsSurface() {
               key={tile.id}
               tile={tile}
               onPrimary={onPrimary}
-              onDropXml={tile.id === 'apple_health' ? () => setImportOpen(true) : undefined}
+              onDropXml={tile.id === 'apple_health' ? () => setImportIntent('apple') : undefined}
             />
           ))}
         </div>
@@ -174,8 +173,9 @@ export function ConnectionsSurface() {
       <p className="text-center text-xs text-white/40">{CONNECTIONS_FOOTER}</p>
 
       <AppleHealthImportModal
-        open={importOpen}
-        onClose={() => setImportOpen(false)}
+        open={importIntent !== null}
+        intent={importIntent ?? 'apple'}
+        onClose={() => setImportIntent(null)}
         onImported={load}
       />
       <WearableConsentModal

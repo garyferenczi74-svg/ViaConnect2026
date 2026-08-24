@@ -1,10 +1,11 @@
 // First-class wearable tiles for /body-tracker/connections (alias /wearables).
-// Picasso IA: Whoop, Hume Body Pod, Apple Health, Oura. Same surface at 390 and 1280.
+// Brief 26 lock: Whoop, Hume Body Pod, Apple Health, Oura. Same IA at 390 and 1280.
 //
 // OAuth Connected-state requires provisioned Vercel secrets (WHOOP_*, OURA_*,
 // WEARABLE_TOKEN_KEY, and optional *_REDIRECT_URI). Leftover connected_sources
 // or token rows do not count until that path is real. Client IDs are never
-// hardcoded. last_sync_at alone never marks a tile Connected.
+// hardcoded. last_sync_at alone never marks a tile Connected. Whoop and Oura
+// stay Coming soon (label, not Connect) until those secrets exist.
 //
 // Web Apple is XML only. Hume is XML sourceName hume_body_pod, never copied
 // from phone_health, and has no OAuth. This tile is Apple Health, never Watch.
@@ -14,6 +15,7 @@ import {
   oauthNeedsReconnect,
   resolveLastSyncState,
   type LastSyncKind,
+  type LastSyncState,
 } from '@/lib/body-tracker/last-sync-state';
 
 export const FIRST_CLASS_TILE_IDS = ['whoop', 'hume', 'apple_health', 'oura'] as const;
@@ -235,13 +237,21 @@ export function buildWearableTiles(input: WearableTileInput): WearableTileView[]
     });
     const status: TileStatus =
       sm.kind === 'synced' || sm.kind === 'connected_never_synced' ? 'connected' : 'disconnected';
+    const configured =
+      spec.id === 'whoop'
+        ? input.whoopConfigured
+        : spec.id === 'oura'
+          ? input.ouraConfigured
+          : true;
+    const statusLabel =
+      spec.action === 'oauth' ? oauthDisplayLabel(configured, sm) : sm.label;
 
     return {
       id: spec.id,
       name: spec.name,
       icon: spec.icon,
       status,
-      statusLabel: sm.label,
+      statusLabel,
       lastSyncState: sm.kind,
       lastSyncAt: sm.lastSyncAt,
       lastSyncKind,
@@ -266,3 +276,36 @@ export const WATCH_FORBIDDEN_LABELS = [
 ] as const;
 
 export const CONNECTIONS_FOOTER = 'Bio Optimization Score uses these sources.';
+
+export const CONNECTIONS_LEAD = 'Connect your devices.';
+
+export const OAUTH_COMING_SOON_LABEL = 'Coming soon';
+
+export const BOS_UNKNOWN_NEVER_ZERO_COPY = 'Missing stays UNKNOWN, never 0.';
+
+export const APPLE_HEALTH_DROPZONE_COPY =
+  'Upload Apple Health XML. Drag and drop your XML file here, or click to browse.';
+
+export const CONNECTIONS_BOS_COMPOSITE = {
+  value: '--',
+  band: 'UNKNOWN',
+} as const;
+
+/**
+ * Whoop / Oura stay Coming soon until Vercel OAuth secrets exist.
+ * last-sync-state is unchanged: Coming soon is display only, not a new SM kind.
+ */
+export function oauthDisplayLabel(
+  configured: boolean,
+  lastSync: LastSyncState,
+): string {
+  if (!configured && lastSync.kind === 'not_connected') {
+    return OAUTH_COMING_SOON_LABEL;
+  }
+  return lastSync.label;
+}
+
+/** Connections BOS card never invents a composite number. Missing stays UNKNOWN, never 0. */
+export function connectionsBosCompositeDisplay(): typeof CONNECTIONS_BOS_COMPOSITE {
+  return CONNECTIONS_BOS_COMPOSITE;
+}
