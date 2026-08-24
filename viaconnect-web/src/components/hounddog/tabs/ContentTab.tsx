@@ -44,7 +44,7 @@ const SCRIPTS = [
     ],
   },
   {
-    title: '10 to 28x Bioavailability Explained',
+    title: 'Maximum Bioavailability Explained',
     summary: 'Hook: Liposomal is not a gimmick ... Body: Absorption science simplified ... CTA: Link in bio ... Est. 45s',
     pills: [
       { label: 'AI 94', color: C.green },

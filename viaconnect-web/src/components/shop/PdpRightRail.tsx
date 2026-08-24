@@ -70,7 +70,7 @@ function formatPrice(price: number | null | undefined): string {
 export const PDP_EMPHASIZED_TERMS: Record<string, readonly string[]> = {
     'achy-plus-acetylcholine-support': [
         'precision liposomal acetylcholine support formula',
-        '10x to 28x higher bioavailability',
+        'Maximum Bioavailability',
         'Built For Your Biology',
         'Bio Optimization',
     ],

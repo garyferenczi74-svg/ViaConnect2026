@@ -51,7 +51,7 @@ export function LandingHeroCarousel() {
                                 <span className="text-xs lg:text-sm font-semibold tracking-wider uppercase whitespace-nowrap">Dual Liposomal-Micellar Delivery</span>
                             </div>
                             <div className="flex items-center gap-[6px] lg:gap-2 text-slate-400">
-                                <span className="text-xs lg:text-sm font-semibold tracking-wider uppercase whitespace-nowrap">10-28X Bioavailability</span>
+                                <span className="text-xs lg:text-sm font-semibold tracking-wider uppercase whitespace-nowrap">Maximum Bioavailability</span>
                             </div>
                             <div className="flex items-center gap-[6px] lg:gap-2 text-slate-400">
                                 <span className="text-xs lg:text-sm font-semibold tracking-wider uppercase whitespace-nowrap">28-Peptide Product Data</span>

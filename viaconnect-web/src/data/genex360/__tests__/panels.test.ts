@@ -119,8 +119,8 @@ describe("GENEX360 panel data", () => {
         }
       });
 
-      it("protocolTieIn uses the locked 10x to 28x absorption copy", () => {
-        expect(panel.protocolTieIn).toContain("10x to 28x");
+      it("protocolTieIn uses Maximum Bioavailability", () => {
+        expect(panel.protocolTieIn).toContain("Maximum Bioavailability");
       });
 
       it("contains no banned bioavailability phrasings", () => {

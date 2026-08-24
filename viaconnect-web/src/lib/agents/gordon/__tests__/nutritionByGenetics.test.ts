@@ -266,8 +266,9 @@ describe('existing Gordon exports unchanged', () => {
     expect(GORDON_TASKS.DIETARY_ADJUSTMENT).toBe('dietary_adjustment');
   });
 
-  it('GORDON_SYSTEM_PROMPT still contains "10 to 28x" phrase', () => {
-    expect(GORDON_SYSTEM_PROMPT).toContain('10 to 28x');
+  it('GORDON_SYSTEM_PROMPT uses Maximum Bioavailability', () => {
+    expect(GORDON_SYSTEM_PROMPT).toContain('Maximum Bioavailability');
+    expect(GORDON_SYSTEM_PROMPT).not.toContain('10 to 28x');
   });
 
   it('GORDON_SYSTEM_PROMPT still contains "NEVER recommend Semaglutide" phrase', () => {

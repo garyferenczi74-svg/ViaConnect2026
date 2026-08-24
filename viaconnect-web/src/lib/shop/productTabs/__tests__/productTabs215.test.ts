@@ -46,7 +46,8 @@ describe('215 lexicon', () => {
   it('normalizes bioavailability and dashes', () => {
     const raw = 'FarmCeutica delivery with 10–28× greater absorption — best in class';
     const n = normalizeProductCopy(raw);
-    expect(n).toContain('10x to 28x');
+    expect(n).toContain('Maximum Bioavailability');
+    expect(n).not.toMatch(/10\s*[x×]\s*to\s*28/i);
     expect(n).toContain('Via Cura');
     expect(n).not.toMatch(/[\u2013\u2014]/);
     expect(hasLexiconViolation(n)).toHaveLength(0);
@@ -177,7 +178,7 @@ describe('215 framing lock', () => {
     expect(APPROVED_FRAMING.yellow).toBe('moderate or partial relevance');
     expect(APPROVED_FRAMING.red).toBe('lower relevance for your genetics');
     expect(APPROVED_FRAMING.disclaimer).toMatch(/not medical advice/i);
-    expect(APPROVED_FRAMING.bioavailability).toBe('10x to 28x');
+    expect(APPROVED_FRAMING.bioavailability).toBe('Maximum Bioavailability');
   });
 });
 

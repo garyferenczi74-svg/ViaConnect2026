@@ -186,10 +186,10 @@ async function checkConstraintCompliance(code: string): Promise<ReviewCheck[]> {
   // Check: Correct bioavailability
   results.push({
     category: 'constraint_compliance',
-    name: 'Bioavailability 10-28x',
+    name: 'Maximum Bioavailability',
     passed: !/5[-–]27/.test(code),
     severity: 'blocker',
-    message: 'Bioavailability must be stated as 10-28x (never 5-27x)',
+    message: 'Bioavailability must be stated as Maximum Bioavailability',
   });
 
   return results;
@@ -273,7 +273,7 @@ function checkDesignTokens(code: string): ReviewCheck {
 function checkForbiddenPatterns(code: string): ReviewCheck {
   const forbidden = [
     { pattern: /Vitality Score/i, msg: 'Use "Bio Optimization" not "Vitality Score"' },
-    { pattern: /5[-–]27x/i, msg: 'Bioavailability is 10-28x' },
+    { pattern: /5[-–]27x/i, msg: 'Bioavailability is Maximum Bioavailability' },
   ];
   const violations = forbidden.filter(f => f.pattern.test(code));
   return {
