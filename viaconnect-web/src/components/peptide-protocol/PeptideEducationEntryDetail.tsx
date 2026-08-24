@@ -46,6 +46,11 @@ export function PeptideEducationEntryDetail({ entry }: { entry: EducationEntry }
               {entry.evidenceGrade}
             </span>
           </div>
+          {!entry.isPeptide ? (
+            <span className="mt-2 inline-flex rounded-full border border-[rgba(183,94,24,0.35)] bg-[rgba(183,94,24,0.12)] px-2 py-0.5 text-[10px] text-[#B75E18]">
+              Not a peptide
+            </span>
+          ) : null}
         </div>
       </header>
 

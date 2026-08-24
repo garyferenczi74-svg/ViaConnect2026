@@ -9,8 +9,11 @@ import {
   dropsEducationCompound,
   extractPmids,
   formatProvenance,
+  isAllowlistedNonPeptide,
   isSafeEntryKey,
+  isThanosAllowlistedEntryKey,
   mapEducationRow,
+  THANOS_CONSUMER_ENTRY_KEYS,
 } from '@/lib/peptides/educationEntryFields';
 
 const ROOT = process.cwd();
@@ -74,7 +77,8 @@ describe('Brief 18 cards bind to peptide_education_entries.entry_key', () => {
     expect(detailPage).toContain('notFound');
     expect(loader).toContain(".from('peptide_education_entries')");
     expect(loader).toContain(".eq('is_active', true)");
-    expect(loader).toContain(".eq('is_practitioner_depth', false)");
+    expect(loader).toContain(".in('entry_key', [...THANOS_CONSUMER_ENTRY_KEYS])");
+    expect(loader).toContain('isThanosAllowlistedEntryKey');
   });
 
   it('does not keep the kb_peptides slug monograph route', () => {
@@ -213,6 +217,82 @@ describe('Brief 18 practitioner waitlist and marketing nav', () => {
   });
 });
 
+describe('Brief 18 Thanos allowlist', () => {
+  it('binds only the 35 Thanos entry_keys and no extras', () => {
+    const expected = [
+      'edu-aod-9604',
+      'edu-bpc157',
+      'edu-bronchogen-aedl',
+      'edu-cdk5-inhibitory-peptides',
+      'edu-cerebrolysin',
+      'edu-cjc1295-no-dac',
+      'edu-dihexa',
+      'edu-epitalon',
+      'edu-fr-alpha-binding',
+      'edu-generative-ai-peptide-design',
+      'edu-ghk-cu',
+      'edu-ipamorelin',
+      'edu-kpv',
+      'edu-melanotan-2',
+      'edu-mots-c',
+      'edu-peptide-drug-conjugates',
+      'edu-peptideiq-topic-map',
+      'edu-pinealon',
+      'edu-pt141-bremelanotide',
+      'edu-retatrutide',
+      'edu-selank',
+      'edu-semax',
+      'edu-sermorelin',
+      'edu-ss31',
+      'edu-tb500-thymosin-beta4',
+      'edu-tesamorelin',
+      'edu-tesofensine-pause',
+      'edu-therapeutic-peptide-chem-strategies',
+      'edu-thymosin-alpha1',
+      'edu-uacd-acps',
+      'edu-vilon-ke',
+      'edu-5-amino-1mq-nonpeptide',
+      'edu-slu-pp-332-nonpeptide',
+      'depth-bpc157-framework',
+      'depth-ss31-framework',
+    ];
+    expect([...THANOS_CONSUMER_ENTRY_KEYS].sort()).toEqual([...expected].sort());
+    expect(THANOS_CONSUMER_ENTRY_KEYS).toHaveLength(35);
+    expect(new Set(THANOS_CONSUMER_ENTRY_KEYS).size).toBe(35);
+    expect(THANOS_CONSUMER_ENTRY_KEYS).not.toContain('bpc-157-arginate');
+    expect(THANOS_CONSUMER_ENTRY_KEYS).not.toContain('edu-bpc157-arginate');
+    expect(THANOS_CONSUMER_ENTRY_KEYS.some((key) => /semaglutide/i.test(key))).toBe(
+      false,
+    );
+    expect(isThanosAllowlistedEntryKey('edu-bpc157')).toBe(true);
+    expect(isThanosAllowlistedEntryKey('edu-peptideiq-topic-map')).toBe(true);
+    expect(isThanosAllowlistedEntryKey('bpc-157-arginate')).toBe(false);
+    expect(isThanosAllowlistedEntryKey('edu-semaglutide')).toBe(false);
+  });
+
+  it('labels only the two non-peptide keys', () => {
+    expect(isAllowlistedNonPeptide('edu-5-amino-1mq-nonpeptide')).toBe(true);
+    expect(isAllowlistedNonPeptide('edu-slu-pp-332-nonpeptide')).toBe(true);
+    expect(isAllowlistedNonPeptide('edu-bpc157')).toBe(false);
+    expect(isAllowlistedNonPeptide('edu-tesofensine-pause')).toBe(false);
+    const catalog = read('src/components/peptide-protocol/KbPeptideCatalogSection.tsx');
+    const detail = read('src/components/peptide-protocol/PeptideEducationEntryDetail.tsx');
+    expect(catalog).toContain('Not a peptide');
+    expect(catalog).toContain('!entry.isPeptide');
+    expect(detail).toContain('Not a peptide');
+    expect(detail).toContain('!entry.isPeptide');
+  });
+
+  it('does not invent retatrutide oral or Semaglutide catalog copy', () => {
+    const catalog = read('src/components/peptide-protocol/KbPeptideCatalogSection.tsx');
+    const detail = read('src/components/peptide-protocol/PeptideEducationEntryDetail.tsx');
+    for (const src of [catalog, detail]) {
+      expect(src.toLowerCase()).not.toContain('oral retatrutide');
+      expect(src.toLowerCase()).not.toContain('semaglutide');
+    }
+  });
+});
+
 describe('Brief 18 education entry helpers', () => {
   it('accepts live entry_keys and rejects unsafe paths', () => {
     expect(isSafeEntryKey('edu-bpc157')).toBe(true);
@@ -221,10 +301,23 @@ describe('Brief 18 education entry helpers', () => {
     expect(isSafeEntryKey('semaglutide?buy=1')).toBe(false);
     expect(isSafeEntryKey('')).toBe(false);
     expect(dropsEducationCompound('edu-semaglutide')).toBe(true);
+    expect(dropsEducationCompound('bpc-157-arginate')).toBe(true);
     expect(
       mapEducationRow({
         entry_key: 'edu-semaglutide',
         title: 'Semaglutide educational overview',
+      }),
+    ).toBeNull();
+    expect(
+      mapEducationRow({
+        entry_key: 'bpc-157-arginate',
+        title: 'BPC-157 Arginate',
+      }),
+    ).toBeNull();
+    expect(
+      mapEducationRow({
+        entry_key: 'edu-extra-invented',
+        title: 'Invented extra key',
       }),
     ).toBeNull();
     expect(
@@ -235,6 +328,12 @@ describe('Brief 18 education entry helpers', () => {
         evidence_grade: 'moderate',
       })?.entryKey,
     ).toBe('edu-bpc157');
+    expect(
+      mapEducationRow({
+        entry_key: 'edu-5-amino-1mq-nonpeptide',
+        title: '5-Amino-1MQ educational overview',
+      })?.isPeptide,
+    ).toBe(false);
   });
 
   it('extracts PMIDs from live fields and omits search URLs', () => {

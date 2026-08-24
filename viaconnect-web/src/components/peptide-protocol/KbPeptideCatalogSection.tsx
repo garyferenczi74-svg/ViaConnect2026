@@ -27,6 +27,11 @@ function EducationCard({ entry }: { entry: EducationEntry }) {
           {entry.evidenceGrade}
         </span>
       </div>
+      {!entry.isPeptide ? (
+        <span className="mt-2 self-start rounded-full border border-[rgba(183,94,24,0.35)] bg-[rgba(183,94,24,0.12)] px-2 py-0.5 text-[10px] text-[#B75E18]">
+          Not a peptide
+        </span>
+      ) : null}
       <span className="mt-3 inline-flex min-h-[44px] items-center gap-1 text-[11px] text-[#2DA5A0]">
         Open entry
         <ChevronRight className="h-3.5 w-3.5" strokeWidth={1.5} />

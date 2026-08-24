@@ -1,6 +1,6 @@
 /**
  * Consumer peptide education rows from peptide_education_entries.
- * Active + non-practitioner-depth only. No invented copy.
+ * Thanos allowlist only. Active rows. No invented copy.
  */
 
 import { createClient } from '@/lib/supabase/server';
@@ -8,7 +8,9 @@ import { safeLog } from '@/lib/utils/safe-log';
 import {
   dropsEducationCompound,
   isSafeEntryKey,
+  isThanosAllowlistedEntryKey,
   mapEducationRow,
+  THANOS_CONSUMER_ENTRY_KEYS,
   type EducationEntry,
 } from '@/lib/peptides/educationEntryFields';
 
@@ -17,6 +19,8 @@ export {
   extractPmids,
   formatProvenance,
   isSafeEntryKey,
+  isThanosAllowlistedEntryKey,
+  THANOS_CONSUMER_ENTRY_KEYS,
 } from '@/lib/peptides/educationEntryFields';
 
 export interface EducationEntryCatalogResult {
@@ -35,10 +39,10 @@ export async function loadConsumerEducationEntries(): Promise<EducationEntryCata
     const { data, error } = await supabase
       .from('peptide_education_entries')
       .select(ENTRY_SELECT)
+      .in('entry_key', [...THANOS_CONSUMER_ENTRY_KEYS])
       .eq('is_active', true)
-      .eq('is_practitioner_depth', false)
       .order('title', { ascending: true })
-      .limit(500);
+      .limit(THANOS_CONSUMER_ENTRY_KEYS.length);
 
     if (error) {
       safeLog.warn('peptide.education.entries', 'query failed', {
@@ -61,7 +65,13 @@ export async function loadConsumerEducationEntries(): Promise<EducationEntryCata
 export async function loadConsumerEducationEntryByKey(
   entryKey: string,
 ): Promise<EducationEntry | null> {
-  if (!isSafeEntryKey(entryKey) || dropsEducationCompound(entryKey)) return null;
+  if (
+    !isSafeEntryKey(entryKey) ||
+    !isThanosAllowlistedEntryKey(entryKey) ||
+    dropsEducationCompound(entryKey)
+  ) {
+    return null;
+  }
   try {
     const supabase = await createClient();
     const { data, error } = await supabase
@@ -69,7 +79,6 @@ export async function loadConsumerEducationEntryByKey(
       .select(ENTRY_SELECT)
       .eq('entry_key', entryKey)
       .eq('is_active', true)
-      .eq('is_practitioner_depth', false)
       .maybeSingle();
 
     if (error) {
