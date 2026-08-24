@@ -45,8 +45,6 @@ export interface ProductFormulation {
    * Currently set on the 18 GENEX360 SNP products lacking source ingredient lists.
    */
   isDraft?: boolean;
-  /** Product-level Ingredient Breakdown preface (Iron+ food-fraction education). */
-  ingredientBreakdownPreface?: string | null;
 }
 
 export type ProductCategory =

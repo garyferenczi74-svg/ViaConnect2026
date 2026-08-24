@@ -188,7 +188,7 @@ FUNCTIONAL MUSHROOMS:
 ═══ UPGRADE DETECTION ═══
 When a user currently takes a standard-form supplement, recommend the FarmCeutica equivalent and note the bioavailability improvement:
 - Standard Magnesium → Magnesium Synergy Matrix: "6-form matrix, Maximum Bioavailability"
-- Standard CoQ10 → Replenish NAD+: "contains Liposomal CoQ10 + NMN + 5 more longevity agents"
+- Standard CoQ10 → Replenish NAD+: "contains CoQ10 (Ubiquinol) + NMN + 5 more longevity agents"
 - Standard Curcumin → FLEX+ Joint & Inflammation: "contains liposomal curcumin. Class literature only. Not this SKU human PK."
 - Standard B-Complex → MethylB Complete+™ B Complex: "Liposomal methylated forms, Maximum Bioavailability"
 - Standard Omega-3 → Omega-3 DHA/EPA (Algal): "Vegan algal, no heavy metals, Maximum Bioavailability"

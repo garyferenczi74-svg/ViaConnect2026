@@ -1,7 +1,7 @@
 /**
- * Gary lock 23 Aug 2026: Ingredient Breakdown uses confirmed data only.
- * this_sku human PK = 0. Class literature only where listed. Else not stated.
- * Do not invent PMIDs, folds, or delivery-form absorption fractions.
+ * Gary lock 23-24 Aug 2026: Ingredient Breakdown uses confirmed data only.
+ * Annotate existing formulation rows only. Never add marketing-bullet actives.
+ * this_sku human PK = 0. Class literature only where the active is on the SKU list.
  */
 
 export type BioavailabilityEvidenceType =
@@ -44,33 +44,32 @@ export const CLASS_LIPOSOMAL_CURCUMIN =
 export const NOT_STATED_NOTE =
   'Maximum Bioavailability for this ingredient is not stated. No this-SKU human PK.';
 
-/** Iron+ food-fraction education only. High caution. No dose, treat, or anemia claim. */
-export const IRON_FOOD_FRACTION_NOTE =
-  'Maximum Bioavailability for Iron+ is not this SKU human PK. Food-fraction education only: ODS mixed diet about 14-18 percent. Vegetarian diet about 5-12 percent. Not a dose, treatment, or anemia claim.';
-
+/** Class notes attach only when that active is already on the formulation. */
 const VITAMIN_C_CLASS_SLUGS = new Set<string>([
-  'radiance-plus',
   'iron-red-blood-cell-support',
   'grow-pre-natal-formula',
 ]);
 
 const COQ10_CLASS_SLUGS = new Set<string>([
   'radiance-plus',
-  'menobalance-plus',
   'replenish-nad',
+  'focus-nootropic-formula',
 ]);
 
 const CURCUMIN_CLASS_SLUGS = new Set<string>([
   'balance-gut-repair',
   'flex-joint-inflammation',
-  'menobalance-plus',
-  'replenish-nad',
 ]);
 
-const COQ10_FORCE_NOT_STATED = new Set<string>([
-  'creatine-hcl-plus',
-  'focus-nootropic-formula',
-]);
+/** Marketing-bullet actives that must never be inserted on these SKUs. */
+export const FORBIDDEN_GHOST_ACTIVES: Record<string, RegExp> = {
+  'iron-red-blood-cell-support': /\b(iron salt|ferrous|ferric|iron bisglycinate|iron \(as)\b/i,
+  'menobalance-plus': /curcumin|coq10|ubiquinol|coenzyme q10/i,
+  'replenish-nad': /curcumin/i,
+  'creatine-hcl-plus': /coq10|ubiquinol|coenzyme q10/i,
+  'grow-pre-natal-formula': /algal|dha|epa|omega-3/i,
+  'radiance-plus': /liposomal\s+(vitamin\s*c|ascorbic)/i,
+};
 
 function norm(s: string): string {
   return s.toLowerCase().replace(/[™®]/g, '').replace(/\s+/g, ' ').trim();
@@ -112,8 +111,9 @@ function isCurcumin(ingredientName: string): boolean {
   return /curcumin/.test(norm(ingredientName));
 }
 
-function isIronIngredient(ingredientName: string): boolean {
-  return /\biron\b|ferrous|ferric/.test(norm(ingredientName));
+export function isForbiddenGhostActive(slug: string, ingredientName: string): boolean {
+  const re = FORBIDDEN_GHOST_ACTIVES[slug];
+  return Boolean(re && re.test(ingredientName));
 }
 
 export function resolveIngredientBioavailability(
@@ -130,18 +130,15 @@ export function resolveIngredientBioavailability(
     };
   }
 
-  if (slug === 'iron-red-blood-cell-support' && isIronIngredient(ingredientName)) {
+  if (isForbiddenGhostActive(slug, ingredientName)) {
     return {
-      bioavailability_note: IRON_FOOD_FRACTION_NOTE,
-      evidence_type: 'class_not_this_sku',
+      bioavailability_note: NOT_STATED_NOTE,
+      evidence_type: 'not_stated',
       pmid: null,
     };
   }
 
-  if (
-    VITAMIN_C_CLASS_SLUGS.has(slug) &&
-    isLiposomalVitaminC(ingredientName)
-  ) {
+  if (VITAMIN_C_CLASS_SLUGS.has(slug) && isLiposomalVitaminC(ingredientName)) {
     return {
       bioavailability_note: CLASS_LIPOSOMAL_VITAMIN_C,
       evidence_type: 'class_not_this_sku',
@@ -149,11 +146,7 @@ export function resolveIngredientBioavailability(
     };
   }
 
-  if (
-    COQ10_CLASS_SLUGS.has(slug) &&
-    !COQ10_FORCE_NOT_STATED.has(slug) &&
-    isCoq10Ubiquinol(ingredientName)
-  ) {
+  if (COQ10_CLASS_SLUGS.has(slug) && isCoq10Ubiquinol(ingredientName)) {
     return {
       bioavailability_note: CLASS_LIPOSOMAL_COQ10,
       evidence_type: 'class_not_this_sku',
@@ -176,26 +169,19 @@ export function resolveIngredientBioavailability(
   };
 }
 
-export function productBreakdownPreface(slug: string): string | null {
-  if (slug === 'iron-red-blood-cell-support') return IRON_FOOD_FRACTION_NOTE;
-  return null;
-}
-
 export function applyConfirmedBioavailability<
   T extends {
     slug: string;
     name: string;
     ingredients: Array<{ name: string }>;
-    ingredientBreakdownPreface?: string | null;
   },
 >(products: T[]): T[] {
   return products.map((p) => {
     if (!isListedViaCuraSku(p.slug, p.name)) return p;
-    const preface = productBreakdownPreface(p.slug);
+    const kept = p.ingredients.filter((ing) => !isForbiddenGhostActive(p.slug, ing.name));
     return {
       ...p,
-      ...(preface ? { ingredientBreakdownPreface: preface } : {}),
-      ingredients: p.ingredients.map((ing) => ({
+      ingredients: kept.map((ing) => ({
         ...ing,
         ...resolveIngredientBioavailability(p.slug, ing.name, p.name),
       })),
@@ -207,8 +193,10 @@ export function annotateShopIngredientJson<
   T extends { name: string },
 >(slug: string, productName: string, ingredients: T[]): Array<T & ConfirmedBioavailability> {
   if (!isListedViaCuraSku(slug, productName)) return ingredients as Array<T & ConfirmedBioavailability>;
-  return ingredients.map((ing) => ({
-    ...ing,
-    ...resolveIngredientBioavailability(slug, ing.name, productName),
-  }));
+  return ingredients
+    .filter((ing) => !isForbiddenGhostActive(slug, ing.name))
+    .map((ing) => ({
+      ...ing,
+      ...resolveIngredientBioavailability(slug, ing.name, productName),
+    }));
 }
