@@ -1,4 +1,4 @@
-// Brief 12 last-sync honesty. Shared by Connections tiles (/wearables alias).
+// Brief 12 last-sync honesty. Shared by Connections tiles (/body-tracker/connections).
 // Status comes from last-sync only. Never invent "5 min ago".
 // Never pair Active with Never synced. Missing timestamps stay null.
 

@@ -1,4 +1,4 @@
-// First-class wearable tiles for /body-tracker/connections (alias /wearables).
+// First-class wearable tiles for /body-tracker/connections (/wearables redirects).
 // Brief 26 lock: Whoop, Hume Body Pod, Apple Health, Oura. Same IA at 390 and 1280.
 //
 // OAuth Connected-state requires provisioned Vercel secrets (WHOOP_*, OURA_*,

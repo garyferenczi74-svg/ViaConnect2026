@@ -5,7 +5,8 @@
  * Verified SSOT: dark navy card, large radius, left mark, title,
  * status + last-sync from last-sync-state, right action.
  * Vendor marks stay in the icon slot. Apps-only registry.
- * Coming soon right action is Coming soon (not Connect).
+ * Coming soon right action is Coming soon (not Connect). One line. No
+ * duplicate No action yet under the badge.
  * Dropzone only if that plugin actually uploads a file (none on this page).
  * No second last-sync state machine. No invented last-sync.
  */
@@ -21,6 +22,7 @@ import {
   PLUGIN_COMING_SOON_ACTION,
   PLUGIN_STATE_COPY,
   isPluginConnectWired,
+  isTruthfulWearablesManage,
 } from '@/lib/integrations/pluginAppRegistry';
 import { PluginVendorMark } from '@/components/plugins/PluginVendorMark';
 
@@ -104,11 +106,6 @@ export function PluginAppCard({
                 </span>
               </p>
               {state === 'coming_soon' && (
-                <p className="mt-1 text-xs text-white/45" data-testid={`plugin-no-action-${card.slug}`}>
-                  {PLUGIN_STATE_COPY.noActionYet}
-                </p>
-              )}
-              {state === 'coming_soon' && (
                 <span className="sr-only">{PLUGIN_COMING_SOON_ACTION}</span>
               )}
               {state === 'connected' && card.disconnectPath ? (
@@ -124,7 +121,7 @@ export function PluginAppCard({
               ) : null}
             </div>
 
-            {state === 'connected' && card.wearablesCrossLink ? (
+            {state === 'connected' && isTruthfulWearablesManage(card) && card.wearablesCrossLink ? (
               <Link
                 href={card.wearablesCrossLink}
                 data-testid={`plugin-manage-${card.slug}`}

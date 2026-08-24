@@ -44,7 +44,7 @@ describe('PILL_ROUTES table', () => {
     expect(PILL_ROUTES.nutrition_log).toBe('/nutrition/photo-ai');
     expect(PILL_ROUTES.supplements_protocol).toBe('/supplements');
     expect(PILL_ROUTES.body_tracker).toBe('/body-tracker');
-    expect(PILL_ROUTES.wearable_dashboard).toBe('/wearables');
+    expect(PILL_ROUTES.wearable_dashboard).toBe('/body-tracker/connections');
     expect(PILL_ROUTES.plug_ins_directory).toBe('/plugins');
     expect(PILL_ROUTES.helix_challenges).toBe('/helix');
   });

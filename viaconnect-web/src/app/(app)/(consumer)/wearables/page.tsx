@@ -1,9 +1,7 @@
-'use client';
+import { redirect } from 'next/navigation';
 
-// /wearables is an alias of /body-tracker/connections. Same IA. Not a fifth page.
-
-import { ConnectionsSurface } from '@/components/body-tracker/connections/ConnectionsSurface';
+// Canonical Connections path is /body-tracker/connections. Same page. Not a fifth destination.
 
 export default function WearablesAliasPage() {
-  return <ConnectionsSurface />;
+  redirect('/body-tracker/connections');
 }

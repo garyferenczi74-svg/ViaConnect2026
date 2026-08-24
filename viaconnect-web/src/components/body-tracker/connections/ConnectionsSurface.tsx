@@ -1,7 +1,7 @@
 'use client';
 
 // Shared 390 + 1280 Connections IA. Canonical path: /body-tracker/connections.
-// /wearables remains an alias. Four tiles only. Hume and Apple are XML.
+// /wearables redirects here. Four tiles only. Hume and Apple are XML.
 // Watch tile is out of scope. Whoop/Oura stay Coming soon until OAuth
 // secrets are provisioned. Hume stays tagged ingest, not OAuth.
 

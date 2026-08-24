@@ -42,7 +42,8 @@ describe('Picasso 21b vendor marks', () => {
     expect(PLUGIN_STATE_COPY.manage).toBe('Manage in Wearables Data');
     expect(PLUGIN_STATE_COPY.noActionYet).toBe('No action yet.');
     const card = src('components/plugins/PluginAppCard.tsx');
-    expect(card).toContain('PLUGIN_STATE_COPY.noActionYet');
+    expect(card).not.toContain('PLUGIN_STATE_COPY.noActionYet');
+    expect(card).toContain('PLUGIN_STATE_COPY.comingSoon');
     expect(card).not.toMatch(/type="button"[^>]*>\s*\{PLUGIN_STATE_COPY.comingSoon\}/);
     expect(card).not.toContain('data-testid={`plugin-coming-soon-');
   });
