@@ -173,4 +173,12 @@ describe('Brief 25 connections honesty', () => {
       false,
     );
   });
+
+  it('the XML import fails closed on a non-complete server status and reads real counts', () => {
+    const modal = src('src/components/body-tracker/connected-sources/AppleHealthImportModal.tsx');
+    expect(modal).toContain('isImportComplete');
+    expect(modal).toContain('parseImportSummary');
+    expect(modal).toContain('withAbortTimeout');
+    expect(modal).toMatch(/!res\.ok \|\| !isImportComplete/);
+  });
 });

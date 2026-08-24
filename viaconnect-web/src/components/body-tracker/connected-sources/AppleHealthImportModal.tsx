@@ -34,21 +34,14 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { createClient } from '@/lib/supabase/client';
+import { parseImportSummary, isImportComplete, type ImportSummary } from '@/lib/body-tracker/connected-sources/import-summary';
+import { withAbortTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 
 const BUCKET = 'apple-health-imports';
 const PARSE_ENDPOINT = '/api/body-tracker/connected-sources/apple-health/parse';
 const MAX_BYTES = 200 * 1024 * 1024; // mirrors the bucket file_size_limit (200 MB)
 
 type Phase = 'idle' | 'uploading' | 'parsing' | 'done' | 'error';
-
-interface ImportResult {
-  recordsSeen: number;
-  recordsIngested: number;
-  recordsDeduped: number;
-  recordsAttributedHume: number;
-  dateRangeStart: string | null;
-  dateRangeEnd: string | null;
-}
 
 export type HealthXmlImportIntent = 'apple' | 'hume';
 
@@ -96,7 +89,7 @@ export function AppleHealthImportModal({
   const [phase, setPhase] = useState<Phase>('idle');
   const [dragActive, setDragActive] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [result, setResult] = useState<ImportResult | null>(null);
+  const [result, setResult] = useState<ImportSummary | null>(null);
 
   const reset = useCallback(() => {
     setPhase('idle');
@@ -194,32 +187,33 @@ export function AppleHealthImportModal({
       // Step 4: parse on the server.
       setPhase('parsing');
       try {
-        const res = await fetch(PARSE_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ importId, storagePath, fileKind: ext }),
-        });
-        if (!res.ok) {
+        const res = await withAbortTimeout(
+          (signal) => fetch(PARSE_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ importId, storagePath, fileKind: ext }),
+            signal,
+          }),
+          60000,
+          'apple-health-parse',
+        );
+        const json = res.ok ? await res.json().catch(() => null) : null;
+        if (!res.ok || !isImportComplete(json)) {
           setPhase('error');
           setErrorMsg('We uploaded your file but could not finish reading it. Please try again.');
           return;
         }
-        const json = await res.json();
-        const parsed: ImportResult = {
-          recordsSeen: Number(json?.recordsSeen ?? json?.seen ?? 0),
-          recordsIngested: Number(json?.recordsIngested ?? json?.ingested ?? 0),
-          recordsDeduped: Number(json?.recordsDeduped ?? json?.deduped ?? 0),
-          recordsAttributedHume: Number(json?.recordsAttributedHume ?? json?.attributedHume ?? 0),
-          dateRangeStart: json?.dateRangeStart ?? json?.date_range_start ?? null,
-          dateRangeEnd: json?.dateRangeEnd ?? json?.date_range_end ?? null,
-        };
-        setResult(parsed);
+        setResult(parseImportSummary(json));
         setPhase('done');
         toast.success(copy.toast);
         onImported?.();
-      } catch {
+      } catch (err) {
         setPhase('error');
-        setErrorMsg('We uploaded your file but could not finish reading it. Please try again.');
+        setErrorMsg(
+          isTimeoutError(err)
+            ? 'Reading your Health data is taking longer than expected. Please try again.'
+            : 'We uploaded your file but could not finish reading it. Please try again.',
+        );
       }
     },
     [copy.fileError, copy.toast, onImported],
