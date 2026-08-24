@@ -16,6 +16,15 @@ export const CHALLENGES_EMPTY =
 
 export const REFERRAL_CODE_EMPTY = 'Not enough data';
 
+export const RESEARCH_EMPTY =
+  'Not enough data. Research consent is not live.';
+
+export const CIRCLES_EMPTY =
+  'Not enough data. Pattern Circles are not live. Notify Me does not join a circle.';
+
+export const EARN_EVENTS_EMPTY =
+  'Not enough data. Ways to earn appear from helix_earning_event_types.';
+
 const HELIX_ACCENT = ['#2DA5A0', '#B75E18', '#FFD700', '#8B5CF6', '#F472B6', '#C0C0C0'] as const;
 
 export interface HelixLeaderboardRow {
@@ -197,4 +206,82 @@ export function mapReferralStats(
 
 export function activeChallengeCount(views: HelixChallengeView[]): number {
   return views.filter((view) => view.active).length;
+}
+
+export interface HelixEarningEventRow {
+  id: string;
+  display_name: string;
+  description: string | null;
+  base_points: number;
+  category: string;
+  is_active: boolean | null;
+}
+
+export interface HelixEarningEventView {
+  id: string;
+  title: string;
+  description: string;
+  points: number;
+  category: string;
+}
+
+export interface HelixTransactionRow {
+  id: string;
+  description: string | null;
+  amount: number | null;
+  created_at: string | null;
+}
+
+export interface HelixActivityView {
+  id: string;
+  description: string;
+  points: number;
+  createdAt: string;
+}
+
+export function mapEarningEvents(
+  rows: HelixEarningEventRow[] | null | undefined,
+): HelixEarningEventView[] {
+  if (!rows || rows.length === 0) return [];
+  const views: HelixEarningEventView[] = [];
+  for (const row of rows) {
+    if (row.is_active === false) continue;
+    const title = (row.display_name ?? '').trim();
+    if (!title) continue;
+    if (typeof row.base_points !== 'number' || !Number.isFinite(row.base_points) || row.base_points < 0) {
+      continue;
+    }
+    views.push({
+      id: row.id,
+      title,
+      description: (row.description ?? '').trim(),
+      points: Math.floor(row.base_points),
+      category: row.category || 'engagement',
+    });
+  }
+  return views;
+}
+
+export function referralEarningEvents(
+  views: HelixEarningEventView[],
+): HelixEarningEventView[] {
+  return views.filter((view) => view.category === 'referral');
+}
+
+export function mapActivityRows(
+  rows: HelixTransactionRow[] | null | undefined,
+): HelixActivityView[] {
+  if (!rows || rows.length === 0) return [];
+  const views: HelixActivityView[] = [];
+  for (const row of rows) {
+    if (typeof row.created_at !== 'string' || row.created_at.length === 0) continue;
+    if (typeof row.amount !== 'number' || !Number.isFinite(row.amount)) continue;
+    views.push({
+      id: row.id,
+      description: (row.description ?? '').trim() || 'Activity',
+      points: Math.floor(row.amount),
+      createdAt: row.created_at,
+    });
+  }
+  return views;
 }

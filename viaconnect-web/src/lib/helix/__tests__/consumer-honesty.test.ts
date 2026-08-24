@@ -13,7 +13,10 @@ import {
   mapChallengeViews,
   mapLeaderboardRows,
   mapReferralStats,
+  mapEarningEvents,
+  mapActivityRows,
   progressPercent,
+  referralEarningEvents,
   viewerLeaderboardRank,
 } from '../consumer-honesty';
 
@@ -135,6 +138,40 @@ describe('Brief 15b Helix honesty mappers', () => {
       helixEarned: 100,
       pending: 1,
     });
+  });
+
+  it('maps earning events and activity from live rows only', () => {
+    expect(mapEarningEvents(null)).toEqual([]);
+    expect(mapActivityRows([])).toEqual([]);
+    const events = mapEarningEvents([
+      {
+        id: 'referral_signup',
+        display_name: 'Referral Signed Up',
+        description: null,
+        base_points: 100,
+        category: 'referral',
+        is_active: true,
+      },
+      {
+        id: 'dead',
+        display_name: 'Hidden',
+        description: null,
+        base_points: 25,
+        category: 'tracking',
+        is_active: false,
+      },
+    ]);
+    expect(events).toHaveLength(1);
+    expect(events[0].points).toBe(100);
+    expect(referralEarningEvents(events)).toHaveLength(1);
+    expect(
+      mapActivityRows([
+        { id: 't1', description: 'Logged dose', amount: 10, created_at: '2026-08-24T00:00:00Z' },
+        { id: 'skip', description: 'No time', amount: 4, created_at: null },
+      ]),
+    ).toEqual([
+      { id: 't1', description: 'Logged dose', points: 10, createdAt: '2026-08-24T00:00:00Z' },
+    ]);
   });
 
   it('keeps empty copy honest', () => {

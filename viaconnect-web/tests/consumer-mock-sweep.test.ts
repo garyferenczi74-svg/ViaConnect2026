@@ -20,6 +20,7 @@ const CONSUMER_SURFACES = [
   'src/app/(app)/(consumer)/helix/earn/page.tsx',
   'src/app/(app)/(consumer)/helix/redeem/page.tsx',
   'src/app/(app)/(consumer)/helix/refer/page.tsx',
+  'src/app/(app)/(consumer)/helix/research/page.tsx',
   'src/app/(app)/(consumer)/alerts/page.tsx',
   'src/app/(app)/(consumer)/plugins/manage/page.tsx',
   'src/components/dashboard/HealthSnapshot.tsx',
@@ -69,6 +70,14 @@ describe('Brief 15b consumer mock sweep', () => {
     expect(src('src/app/(app)/(consumer)/helix/layout.tsx')).toContain('helixTierFromPoints');
     expect(src('src/app/(app)/(consumer)/helix/layout.tsx')).toContain('formatHelixRank');
     expect(src('src/app/(app)/(consumer)/helix/arena/page.tsx')).toContain('SQUAD_CHAT_EMPTY');
+    expect(src('src/app/(app)/(consumer)/helix/layout.tsx')).not.toContain('4350');
+    expect(src('src/app/(app)/(consumer)/helix/earn/page.tsx')).toContain('useHelixEarnCatalog');
+    expect(src('src/hooks/useHelixEarnCatalog.ts')).toContain('helix_earning_event_types');
+    expect(src('src/hooks/useHelixEarnCatalog.ts')).toContain('helix_transactions');
+    expect(src('src/app/(app)/(consumer)/helix/earn/page.tsx')).not.toContain('+25/day');
+    expect(src('src/app/(app)/(consumer)/helix/redeem/page.tsx')).toContain('/api/helix/redemption-catalog');
+    expect(src('src/app/(app)/(consumer)/helix/research/page.tsx')).toContain('RESEARCH_EMPTY');
+    expect(src('src/app/(app)/(consumer)/helix/research/page.tsx')).not.toContain('Enroll Now');
   });
 
   it('alerts is empty / Not analyzed without a genotype+biometric script', () => {
@@ -106,8 +115,10 @@ describe('Brief 15b consumer mock sweep', () => {
     const circles = src('src/components/community/PatternCirclePreview.tsx');
     expect(circles).toContain('Notify Me');
     expect(circles).toContain('Coming soon. Notify Me does not join a live circle.');
+    expect(circles).toContain('CIRCLES_EMPTY');
     expect(circles).not.toContain('memberCount');
     expect(circles).not.toContain('247');
+    expect(circles).not.toContain('Adrenal Support Circle');
     expect(src('src/app/(app)/(consumer)/dashboard/page.tsx')).toContain('userPatterns={[]}');
   });
 
@@ -138,6 +149,7 @@ describe('Brief 15b consumer mock sweep', () => {
       mobile('src/components/consumer/helix/HelixEarn.tsx'),
       mobile('src/components/consumer/helix/HelixRedeem.tsx'),
       mobile('src/components/consumer/helix/HelixRefer.tsx'),
+      mobile('src/components/consumer/helix/HelixResearch.tsx'),
     ].join('\n');
     expect(joined).not.toContain('4350');
     expect(joined).not.toContain('Sarah K.');
