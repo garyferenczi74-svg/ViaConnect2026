@@ -50,8 +50,30 @@ interface ImportResult {
   dateRangeEnd: string | null;
 }
 
+export type HealthXmlImportIntent = 'apple' | 'hume';
+
+export const HEALTH_XML_IMPORT_COPY = {
+  apple: {
+    title: 'Import from Apple Health',
+    lead: 'On your iPhone open Health, tap your profile picture, then Export All Health Data. Upload the .xml or .zip here.',
+    dropTitle: 'Drop your Health export XML',
+    fileError:
+      'Choose an Apple Health export .xml or .zip. On iPhone open Health, tap your profile, then Export All Health Data.',
+    toast: 'Apple Health import complete',
+  },
+  hume: {
+    title: 'Import Hume Body Pod',
+    lead: 'Hume has no public developer API. Upload an Apple Health export so Hume-tagged body and weight rows can ingest.',
+    dropTitle: 'Drop your Hume-tagged Health export XML',
+    fileError:
+      'Choose an Apple Health export .xml or .zip so Hume-tagged body and weight rows can ingest.',
+    toast: 'Hume Body Pod import complete',
+  },
+} as const;
+
 interface AppleHealthImportModalProps {
   open: boolean;
+  intent?: HealthXmlImportIntent;
   onClose: () => void;
   onImported?: () => void;
 }
@@ -63,7 +85,13 @@ function formatDate(iso: string | null): string {
   return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
-export function AppleHealthImportModal({ open, onClose, onImported }: AppleHealthImportModalProps) {
+export function AppleHealthImportModal({
+  open,
+  intent = 'apple',
+  onClose,
+  onImported,
+}: AppleHealthImportModalProps) {
+  const copy = HEALTH_XML_IMPORT_COPY[intent];
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [phase, setPhase] = useState<Phase>('idle');
   const [dragActive, setDragActive] = useState(false);
@@ -94,7 +122,7 @@ export function AppleHealthImportModal({ open, onClose, onImported }: AppleHealt
       const isZip = name.endsWith('.zip');
       if (!isXml && !isZip) {
         setPhase('error');
-        setErrorMsg('Choose an Apple Health export .xml or .zip. On iPhone open Health, tap your profile, then Export All Health Data.');
+        setErrorMsg(copy.fileError);
         return;
       }
       if (file.size > MAX_BYTES) {
@@ -124,7 +152,7 @@ export function AppleHealthImportModal({ open, onClose, onImported }: AppleHealt
       // Step 2: create the staging row.
       let importId: string;
       try {
-        const { data, error } = await (supabase as any)
+        const { data, error } = await supabase
           .from('apple_health_imports')
           .insert({ user_id: userId, file_name: file.name })
           .select('id')
@@ -187,14 +215,14 @@ export function AppleHealthImportModal({ open, onClose, onImported }: AppleHealt
         };
         setResult(parsed);
         setPhase('done');
-        toast.success('Apple Health import complete');
+        toast.success(copy.toast);
         onImported?.();
       } catch {
         setPhase('error');
         setErrorMsg('We uploaded your file but could not finish reading it. Please try again.');
       }
     },
-    [onImported],
+    [copy.fileError, copy.toast, onImported],
   );
 
   const onDrop = useCallback(
@@ -216,7 +244,8 @@ export function AppleHealthImportModal({ open, onClose, onImported }: AppleHealt
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 backdrop-blur-sm sm:items-center sm:p-4"
       role="dialog"
       aria-modal="true"
-      aria-label="Import from Apple Health"
+      aria-label={copy.title}
+      data-import-intent={intent}
       onClick={busy ? undefined : handleClose}
     >
       <div
@@ -226,9 +255,9 @@ export function AppleHealthImportModal({ open, onClose, onImported }: AppleHealt
         {/* Header */}
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
-            <h2 className="text-base font-semibold text-white">Import from Apple Health</h2>
+            <h2 className="text-base font-semibold text-white">{copy.title}</h2>
             <p className="mt-1 text-[12px] leading-relaxed text-white/55">
-              On your iPhone open Health, tap your profile picture, then Export All Health Data. Upload the .xml or .zip here.
+              {copy.lead}
             </p>
           </div>
           <button
@@ -261,7 +290,7 @@ export function AppleHealthImportModal({ open, onClose, onImported }: AppleHealt
               <UploadCloud className="h-6 w-6 text-[#2DA5A0]" strokeWidth={1.5} />
             </div>
             <div>
-              <p className="text-sm font-medium text-white">Drop your Health export XML</p>
+              <p className="text-sm font-medium text-white">{copy.dropTitle}</p>
               <p className="mt-1 text-[12px] text-white/45">Drag and drop the file here or click to browse</p>
             </div>
             <button

@@ -41,8 +41,8 @@ describe('wearable snapshot', () => {
         now: Date.parse('2026-08-24T10:00:00.000Z'),
       }),
     );
-    expect(snap.tiles.find((t) => t.id === 'whoop')?.statusLabel).toBe('Not connected');
-    expect(snap.tiles.find((t) => t.id === 'oura')?.statusLabel).toBe('Not connected');
+    expect(snap.tiles.find((t) => t.id === 'whoop')?.statusLabel).toBe('Coming soon');
+    expect(snap.tiles.find((t) => t.id === 'oura')?.statusLabel).toBe('Coming soon');
     expect(snap.tiles.find((t) => t.id === 'apple_health')?.lastSyncState).toBe('synced');
     expect(snap.tiles.find((t) => t.id === 'apple_health')?.statusLabel).toBe('Synced 2d ago');
     expect(snap.tiles.find((t) => t.id === 'apple_health')?.lastSyncAt).toBe('2026-08-22T08:00:00.000Z');
