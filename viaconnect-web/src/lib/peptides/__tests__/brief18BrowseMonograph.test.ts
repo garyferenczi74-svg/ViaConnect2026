@@ -1,14 +1,15 @@
 /**
- * Brief 18: browse cards open live educational monographs.
- * Count is consumer_safe + educational only. No ops jargon on browse chrome.
+ * Brief 18 (Gary/Hermes correction): browse cards open live
+ * peptide_education_entries by entry_key. User chrome is not monographs.
  */
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
-  isSafePeptideSlug,
-  parseHonestyLayer,
-} from '@/lib/kb/peptides/types';
+  extractPmids,
+  formatProvenance,
+  isSafeEntryKey,
+} from '@/lib/peptides/educationEntries';
 
 const ROOT = process.cwd();
 
@@ -16,12 +17,16 @@ function read(rel: string): string {
   return readFileSync(path.join(ROOT, rel), 'utf8');
 }
 
-const BROWSE_CHROME = [
+const USER_CHROME = [
   'src/components/peptide-protocol/KbPeptideCatalogSection.tsx',
+  'src/components/peptide-protocol/PeptideEducationEntryDetail.tsx',
+  'src/components/peptide-protocol/PeptideEducationBento.tsx',
+  'src/components/peptide-protocol/peptideEducationBentoConfig.ts',
   'src/components/peptide-protocol/PeptideProtocolHeroShell.tsx',
-  'src/components/peptide-protocol/KbPeptideMonograph.tsx',
   'src/app/(app)/(consumer)/peptide-protocol/browse/page.tsx',
-  'src/app/(app)/(consumer)/peptide-protocol/browse/[slug]/page.tsx',
+  'src/app/(app)/(consumer)/peptide-protocol/page.tsx',
+  'src/app/(app)/(consumer)/peptide-protocol/peptide/[entryKey]/page.tsx',
+  'src/components/landing/LandingNav.tsx',
 ] as const;
 
 const OPS_JARGON =
@@ -33,21 +38,23 @@ const NUMERIC_DOSE_LEXICON =
 const PURCHASE =
   /\/shop\/product|add to cart|checkout|buy now|priceRange|Add to bag/i;
 
-describe('Brief 18 browse cards open monographs', () => {
+describe('Brief 18 cards bind to peptide_education_entries.entry_key', () => {
   const catalog = read('src/components/peptide-protocol/KbPeptideCatalogSection.tsx');
-  const monographPage = read(
-    'src/app/(app)/(consumer)/peptide-protocol/browse/[slug]/page.tsx',
+  const browse = read('src/app/(app)/(consumer)/peptide-protocol/browse/page.tsx');
+  const detailPage = read(
+    'src/app/(app)/(consumer)/peptide-protocol/peptide/[entryKey]/page.tsx',
   );
-  const monograph = read('src/components/peptide-protocol/KbPeptideMonograph.tsx');
-  const loader = read('src/lib/kb/peptides/loadConsumerPeptides.ts');
+  const detail = read('src/components/peptide-protocol/PeptideEducationEntryDetail.tsx');
+  const loader = read('src/lib/peptides/educationEntries.ts');
 
-  it('catalog cards are links to /peptide-protocol/browse/[slug]', () => {
+  it('catalog cards are links to /peptide-protocol/peptide/:entry_key', () => {
     expect(catalog).toContain("from 'next/link'");
     expect(catalog).toContain(
-      'href={`/peptide-protocol/browse/${encodeURIComponent(peptide.slug)}`}',
+      'href={`/peptide-protocol/peptide/${encodeURIComponent(entry.entryKey)}`}',
     );
-    expect(catalog).toContain('data-testid={`kb-peptide-card-${peptide.slug}`}');
+    expect(catalog).toContain('data-testid={`kb-peptide-card-${entry.entryKey}`}');
     expect(catalog).toMatch(/<Link[\s\S]*kb-peptide-card-/);
+    expect(catalog).not.toContain('/peptide-protocol/browse/${');
   });
 
   it('does not leave EducationCard as a static unclickable div', () => {
@@ -56,20 +63,39 @@ describe('Brief 18 browse cards open monographs', () => {
     );
   });
 
-  it('monograph route loads consumer_safe educational rows only', () => {
-    expect(monographPage).toContain('loadConsumerPeptideBySlug');
-    expect(monographPage).toContain('KbPeptideMonograph');
-    expect(monographPage).toContain('notFound');
-    expect(loader).toContain('export async function loadConsumerPeptideBySlug');
-    expect(loader).toContain(".eq('consumer_safe', true)");
-    expect(loader).toContain(".eq('exclusion_tier', 'educational')");
+  it('browse and detail load active consumer education rows only', () => {
+    expect(browse).toContain('loadConsumerEducationEntries');
+    expect(browse).not.toContain('loadConsumerPeptideCatalog');
+    expect(browse).not.toContain('loadConsumerPeptideBySlug');
+    expect(detailPage).toContain('loadConsumerEducationEntryByKey');
+    expect(detailPage).toContain('PeptideEducationEntryDetail');
+    expect(detailPage).toContain('notFound');
+    expect(loader).toContain(".from('peptide_education_entries')");
+    expect(loader).toContain(".eq('is_active', true)");
+    expect(loader).toContain(".eq('is_practitioner_depth', false)");
+  });
+
+  it('does not keep the kb_peptides slug monograph route', () => {
+    expect(
+      existsSync(
+        path.join(
+          ROOT,
+          'src/app/(app)/(consumer)/peptide-protocol/browse/[slug]/page.tsx',
+        ),
+      ),
+    ).toBe(false);
+    expect(
+      existsSync(
+        path.join(ROOT, 'src/components/peptide-protocol/KbPeptideMonograph.tsx'),
+      ),
+    ).toBe(false);
   });
 
   it('keeps existing chrome and Lucide 1.5', () => {
-    expect(monographPage).toContain('PeptideProtocolHeroShell');
-    expect(monographPage).toContain('PeptideEducationTabs');
-    expect(monograph).toContain('strokeWidth={1.5}');
-    expect(monograph).not.toMatch(/strokeWidth=\{(?:1|2|2\.5|3)\}/);
+    expect(detailPage).toContain('PeptideProtocolHeroShell');
+    expect(detailPage).toContain('PeptideEducationTabs');
+    expect(detail).toContain('strokeWidth={1.5}');
+    expect(detail).not.toMatch(/strokeWidth=\{(?:1|2|2\.5|3)\}/);
     expect(catalog).toContain('strokeWidth={1.5}');
   });
 
@@ -77,38 +103,61 @@ describe('Brief 18 browse cards open monographs', () => {
     expect(catalog).toContain('grid-cols-1');
     expect(catalog).toContain('sm:grid-cols-2');
     expect(catalog).toContain('min-h-[44px]');
-    expect(monograph).toContain('grid-cols-1');
-    expect(monograph).toContain('sm:grid-cols-2');
-    expect(monograph).toContain('sm:flex-row');
-    expect(monograph).toContain('min-h-[44px]');
+    expect(detail).toContain('grid-cols-1');
+    expect(detail).toContain('sm:grid-cols-2');
+    expect(detail).toContain('sm:flex-row');
+    expect(detail).toContain('min-h-[44px]');
   });
 });
 
 describe('Brief 18 live count and copy guards', () => {
-  it('does not hardcode monograph counts 114, 112, or 21 on browse chrome', () => {
-    for (const rel of BROWSE_CHROME) {
+  it('does not hardcode counts 114, 112, or 21 on user chrome', () => {
+    for (const rel of USER_CHROME) {
       const src = read(rel);
       expect(src, rel).not.toMatch(/\b114\b/);
       expect(src, rel).not.toMatch(/\b112\b/);
       expect(src, rel).not.toMatch(/\b21\b/);
     }
+  });
+
+  it('search chrome uses live educational-entry count, not monograph/category copy', () => {
+    const catalog = read('src/components/peptide-protocol/KbPeptideCatalogSection.tsx');
     const bento = read('src/components/peptide-protocol/PeptideEducationBento.tsx');
-    const config = read('src/components/peptide-protocol/peptideEducationBentoConfig.ts');
-    expect(bento).not.toMatch(/\b114\b/);
-    expect(config).not.toMatch(/\b114\b/);
-    expect(bento).toContain('countsOk');
+    const index = read('src/app/(app)/(consumer)/peptide-protocol/page.tsx');
+    expect(catalog).toContain('educational entries');
+    expect(bento).toContain('educational entries');
+    expect(bento).toContain('entryCount');
+    expect(index).toContain('entryCount');
+    expect(catalog.toLowerCase()).not.toContain('monograph');
+    expect(bento.toLowerCase()).not.toContain('monograph');
+    expect(bento.toLowerCase()).not.toContain('categories');
   });
 
   it('strips ops jargon from browse chrome and hero', () => {
-    for (const rel of BROWSE_CHROME) {
+    for (const rel of USER_CHROME) {
       expect(read(rel), rel).not.toMatch(OPS_JARGON);
     }
   });
 
-  it('browse and monograph stay educational: no catalog doses, purchase, or Semaglutide', () => {
+  it('does not invent Hannah blurbs from summary', () => {
+    const catalog = read('src/components/peptide-protocol/KbPeptideCatalogSection.tsx');
+    const detail = read('src/components/peptide-protocol/PeptideEducationEntryDetail.tsx');
+    const loader = read('src/lib/peptides/educationEntries.ts');
+    expect(catalog).not.toMatch(/entry\.summary|mechanismSummary/);
+    expect(detail).not.toMatch(/entry\.summary|mechanismSummary/);
+    expect(loader).not.toContain('summary');
+    expect(catalog).toContain('Open entry');
+    expect(detail).toContain('Not available');
+    expect(detail).toContain('entry-mechanism');
+    expect(detail).toContain('entry-safety');
+    expect(detail).toContain('entry-regulatory');
+    expect(detail).toContain('entry-pmids');
+    expect(detail).toContain('entry-provenance');
+  });
+
+  it('browse and entry detail stay educational: no catalog doses, purchase, or Semaglutide copy', () => {
     const files = [
-      ...BROWSE_CHROME,
-      'src/lib/kb/peptides/loadConsumerPeptides.ts',
+      ...USER_CHROME,
       'src/components/peptide-protocol/PeptideSuggestionsClient.tsx',
       'src/lib/peptides/protocolLiteracy.ts',
     ];
@@ -120,50 +169,70 @@ describe('Brief 18 live count and copy guards', () => {
     }
   });
 
-  it('does not expand converter syringe math onto browse or monograph', () => {
+  it('does not expand converter syringe math onto browse or entry detail', () => {
     const catalog = read('src/components/peptide-protocol/KbPeptideCatalogSection.tsx');
-    const monograph = read('src/components/peptide-protocol/KbPeptideMonograph.tsx');
+    const detail = read('src/components/peptide-protocol/PeptideEducationEntryDetail.tsx');
     const page = read('src/app/(app)/(consumer)/peptide-protocol/browse/page.tsx');
-    const slugPage = read(
-      'src/app/(app)/(consumer)/peptide-protocol/browse/[slug]/page.tsx',
+    const detailPage = read(
+      'src/app/(app)/(consumer)/peptide-protocol/peptide/[entryKey]/page.tsx',
     );
-    for (const src of [catalog, monograph, page, slugPage]) {
+    for (const src of [catalog, detail, page, detailPage]) {
       expect(src).not.toContain('ConcentrationConverterClient');
       expect(src).not.toContain('converterMath');
       expect(src).not.toContain('SyringeUnitScale');
     }
-    expect(monograph.toLowerCase()).not.toContain('how to reconstitute');
+    expect(detail.toLowerCase()).not.toContain('how to reconstitute');
   });
 });
 
-describe('Brief 18 monograph helpers', () => {
-  it('accepts live slugs and rejects unsafe paths', () => {
-    expect(isSafePeptideSlug('bpc-157-arginate')).toBe(true);
-    expect(isSafePeptideSlug('epitalon')).toBe(true);
-    expect(isSafePeptideSlug('../secret')).toBe(false);
-    expect(isSafePeptideSlug('semaglutide?buy=1')).toBe(false);
-    expect(isSafePeptideSlug('')).toBe(false);
+describe('Brief 18 practitioner waitlist and marketing nav', () => {
+  it('Find a Practitioner points at /practitioners, not /find-practitioner', () => {
+    const config = read('src/components/peptide-protocol/peptideEducationBentoConfig.ts');
+    expect(config).toContain("href: '/practitioners'");
+    expect(config).not.toContain('/find-practitioner');
+    const practitioner = config.slice(config.indexOf("id: 'practitioner'"));
+    expect(practitioner).toContain('pending: false');
   });
 
-  it('parses honesty counts without inventing numbers', () => {
-    expect(parseHonestyLayer(null)).toEqual({
-      trialsRegistered: null,
-      trialsCompleted: null,
-      trialsWithResultsPosted: null,
-      publicationsHuman: null,
-    });
+  it('public marketing nav links Peptide Education to /peptide-protocol/browse', () => {
+    const nav = read('src/components/landing/LandingNav.tsx');
+    expect(nav).toContain('href="/peptide-protocol/browse"');
+    expect(nav).toContain('Peptide Education');
+    expect(nav).not.toContain("id: 'peptide-education'");
+  });
+
+  it('Search tab stays active on the entry_key detail route', () => {
+    const tabs = read(
+      'src/components/peptide-protocol/converter/PeptideEducationTabs.tsx',
+    );
+    expect(tabs).toContain("pathname.startsWith('/peptide-protocol/peptide')");
+  });
+});
+
+describe('Brief 18 education entry helpers', () => {
+  it('accepts live entry_keys and rejects unsafe paths', () => {
+    expect(isSafeEntryKey('edu-bpc157')).toBe(true);
+    expect(isSafeEntryKey('edu-ss31')).toBe(true);
+    expect(isSafeEntryKey('../secret')).toBe(false);
+    expect(isSafeEntryKey('semaglutide?buy=1')).toBe(false);
+    expect(isSafeEntryKey('')).toBe(false);
+  });
+
+  it('extracts PMIDs from live fields and omits search URLs', () => {
+    expect(extractPmids([], null)).toEqual([]);
+    expect(extractPmids('PMID: 12345678', null)).toEqual(['12345678']);
+    expect(extractPmids([], 'https://pubmed.ncbi.nlm.nih.gov/12345678')).toEqual([
+      '12345678',
+    ]);
+    expect(extractPmids([], 'https://pubmed.ncbi.nlm.nih.gov/?term=BPC-157')).toEqual(
+      [],
+    );
+  });
+
+  it('formats provenance from the live row or returns null', () => {
+    expect(formatProvenance(null)).toBeNull();
     expect(
-      parseHonestyLayer({
-        trials_registered: 3,
-        trials_completed: 1,
-        trials_with_results_posted: 'UNKNOWN',
-        publications_human: 0,
-      }),
-    ).toEqual({
-      trialsRegistered: 3,
-      trialsCompleted: 1,
-      trialsWithResultsPosted: 'UNKNOWN',
-      publicationsHuman: 0,
-    });
+      formatProvenance([{ source: 'system-seed', note: 'Catalog seed' }]),
+    ).toBe('system-seed · Catalog seed');
   });
 });
