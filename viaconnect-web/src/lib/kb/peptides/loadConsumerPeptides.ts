@@ -1,5 +1,5 @@
 /**
- * Prompt 225: consumer-tier Collection 14 loader.
+ * Prompt 225: consumer-tier educational peptide catalog loader.
  * Relies on RLS: only consumer_safe educational rows with approved gates.
  * Three-layer resilience: try/catch + empty fallback + no fabricated rows.
  */
