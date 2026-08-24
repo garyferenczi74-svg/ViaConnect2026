@@ -18,6 +18,13 @@ import {
   type SourceValue,
 } from './source-disagreement';
 import { formatSyncedRelative } from '@/lib/body-tracker/last-sync-state';
+import {
+  buildBedtimeStrip,
+  lastSyncInputsFromTiles,
+  syncedSleepTileIds,
+  type BedtimeStripView,
+  type SleepBedtimeSample,
+} from '@/lib/body-tracker/sleep-bedtime-strip';
 
 export interface ConnectedSourceRow {
   provider: string;
@@ -47,6 +54,7 @@ export interface SleepIngestRow {
   source_provider: string;
   sleep_efficiency_pct: number | string | null;
   total_sleep_min: number | string | null;
+  start_at?: string | null;
   end_at: string | null;
   source_app?: string | null;
 }
@@ -86,6 +94,7 @@ export interface WearableSnapshot {
   tiles: WearableTileView[];
   scoreDetail: DimensionSourceRow[];
   lastUpdatedAt: string | null;
+  bedtimeStrip: BedtimeStripView;
 }
 
 function finiteOrNull(v: number | string | null | undefined): number | null {
@@ -367,6 +376,15 @@ export function scoreDetailFromSnapshot(input: WearableSnapshotInput): Dimension
   ]);
 }
 
+function bedtimeSamplesFromSleepRows(rows: SleepIngestRow[]): SleepBedtimeSample[] {
+  return rows.map((row) => ({
+    sourceProvider: row.source_provider,
+    startAt: row.start_at ?? '',
+    endAt: row.end_at,
+    sourceApp: row.source_app,
+  }));
+}
+
 export function assembleWearableSnapshot(input: WearableSnapshotInput): WearableSnapshot {
   const tiles = buildWearableTiles(tileInputFromSnapshot(input));
   const scoreDetail = scoreDetailFromSnapshot(input);
@@ -378,7 +396,13 @@ export function assembleWearableSnapshot(input: WearableSnapshotInput): Wearable
     ...input.appleImports.map((r) => r.updated_at ?? r.created_at),
     ...input.connected.map((r) => r.last_sync_at),
   ]);
-  return { tiles, scoreDetail, lastUpdatedAt };
+  const bedtimeStrip = buildBedtimeStrip({
+    lastSyncInputs: lastSyncInputsFromTiles(tiles, input.now),
+    samples: bedtimeSamplesFromSleepRows(input.sleepRows),
+    syncedTileIds: syncedSleepTileIds(tiles),
+    now: input.now,
+  });
+  return { tiles, scoreDetail, lastUpdatedAt, bedtimeStrip };
 }
 
 export function formatTileLastSync(

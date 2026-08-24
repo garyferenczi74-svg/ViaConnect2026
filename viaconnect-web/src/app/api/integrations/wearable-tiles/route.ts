@@ -86,11 +86,11 @@ export async function GET(req: NextRequest) {
         withTimeout(
           admin
             .from('wearable_sleep_sessions')
-            .select('source_provider, sleep_efficiency_pct, total_sleep_min, end_at, source_app')
+            .select('source_provider, sleep_efficiency_pct, total_sleep_min, start_at, end_at, source_app')
             .eq('user_id', userId)
             .is('deleted_at', null)
             .order('end_at', { ascending: false })
-            .limit(10),
+            .limit(40),
           4000,
           `${SCOPE}.sleep`,
         ),
@@ -174,6 +174,7 @@ export async function GET(req: NextRequest) {
       tiles: snapshot.tiles,
       scoreDetail: snapshot.scoreDetail,
       lastUpdatedAt: snapshot.lastUpdatedAt,
+      bedtimeStrip: snapshot.bedtimeStrip,
       whoopConfigured: isWhoopConfigured(),
       ouraConfigured: isOuraConfigured(),
     });

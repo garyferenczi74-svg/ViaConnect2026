@@ -22,6 +22,11 @@ import {
   type WearableTileView,
 } from '@/lib/body-tracker/wearable-tiles';
 import type { DimensionSourceRow } from '@/lib/body-tracker/source-disagreement';
+import {
+  EMPTY_BEDTIME_STRIP,
+  parseBedtimeStrip,
+  type BedtimeStripView,
+} from '@/lib/body-tracker/sleep-bedtime-strip';
 import { WearableTileCard } from './WearableTileCard';
 import { ScoreDetailPanel } from './ScoreDetailPanel';
 
@@ -61,12 +66,14 @@ interface TilesResponse {
   tiles: WearableTileView[];
   scoreDetail: DimensionSourceRow[];
   lastUpdatedAt: string | null;
+  bedtimeStrip?: BedtimeStripView;
 }
 
 export function ConnectionsSurface() {
   const [tiles, setTiles] = useState<WearableTileView[]>(() => emptyTiles('web'));
   const [scoreDetail, setScoreDetail] = useState<DimensionSourceRow[]>([]);
   const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
+  const [bedtimeStrip, setBedtimeStrip] = useState<BedtimeStripView>(EMPTY_BEDTIME_STRIP);
   const [importIntent, setImportIntent] = useState<HealthXmlImportIntent | null>(null);
   const [consent, setConsent] = useState<'whoop' | 'oura' | null>(null);
   const [platform] = useState<'web' | 'ios' | 'android'>(() => {
@@ -86,8 +93,10 @@ export function ConnectionsSurface() {
       setTiles(filtered.length ? filtered : emptyTiles(platform));
       setScoreDetail(Array.isArray(json.scoreDetail) ? json.scoreDetail : []);
       setLastUpdatedAt(typeof json.lastUpdatedAt === 'string' ? json.lastUpdatedAt : null);
+      setBedtimeStrip(parseBedtimeStrip(json.bedtimeStrip));
     } catch {
       setTiles(emptyTiles(platform));
+      setBedtimeStrip(EMPTY_BEDTIME_STRIP);
     }
   }, [platform]);
 
@@ -167,7 +176,11 @@ export function ConnectionsSurface() {
             />
           ))}
         </div>
-        <ScoreDetailPanel rows={scoreDetail} lastUpdatedAt={lastUpdatedAt} />
+        <ScoreDetailPanel
+          rows={scoreDetail}
+          lastUpdatedAt={lastUpdatedAt}
+          bedtimeStrip={bedtimeStrip}
+        />
       </div>
 
       <p className="text-center text-xs text-white/40">{CONNECTIONS_FOOTER}</p>
