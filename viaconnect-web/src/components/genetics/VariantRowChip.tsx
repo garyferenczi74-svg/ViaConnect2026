@@ -1,6 +1,6 @@
 // Brief 16: per-row Demo | Result | Unanalyzed | Reference chips.
 // Demo reuses the existing SampleBadge chrome (neutral flask, Lucide 1.5).
-// Never labels a row "Your variant". Existing palette only.
+// Never claims the visitor genotype. Existing palette only.
 
 import { BookOpen, Check, FlaskConical, HelpCircle } from 'lucide-react';
 import {
