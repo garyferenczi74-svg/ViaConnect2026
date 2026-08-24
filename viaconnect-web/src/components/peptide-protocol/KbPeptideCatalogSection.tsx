@@ -13,7 +13,7 @@ import {
 import {
   displayEducationField,
   type EducationEntry,
-} from '@/lib/peptides/educationEntries';
+} from '@/lib/peptides/educationEntryFields';
 import { matchesSearchPrefix } from '@/lib/peptides/peptideSearchMatch';
 
 function EducationCard({ entry }: { entry: EducationEntry }) {

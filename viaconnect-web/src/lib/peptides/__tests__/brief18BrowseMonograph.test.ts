@@ -171,6 +171,9 @@ describe('Brief 18 live count and copy guards', () => {
     expect(loader).not.toContain('summary');
     expect(fields).not.toContain('summary');
     expect(catalog).toContain('Open entry');
+    expect(catalog).toContain("from '@/lib/peptides/educationEntryFields'");
+    expect(catalog).not.toContain("from '@/lib/peptides/educationEntries'");
+    expect(catalog).not.toContain('@/lib/supabase/server');
     expect(catalog).toContain('displayEducationField(entry.mechanism)');
     expect(catalog).toContain('kb-peptide-card-mechanism');
     expect(catalog).toContain('Used for');
@@ -443,8 +446,13 @@ describe('Brief 18 browse cards bind live mechanism', () => {
     );
     expect(fields).toContain('mechanism: asTrimmed(row.mechanism)');
     expect(catalog).toContain('displayEducationField(entry.mechanism)');
+    expect(catalog).toContain("from '@/lib/peptides/educationEntryFields'");
+    expect(catalog).not.toContain("from '@/lib/peptides/educationEntries'");
+    expect(catalog).not.toContain('@/lib/supabase/server');
+    expect(fields).not.toContain('@/lib/supabase/server');
     expect(catalog).toContain('Used for');
     expect(detail).toContain('displayEducationField(value)');
+    expect(detail).toContain("from '@/lib/peptides/educationEntryFields'");
     expect(detail).toContain('entry-mechanism');
     expect(detail).toContain('Used for');
   });
@@ -488,18 +496,14 @@ describe('Brief 18 browse cards bind live mechanism', () => {
       mapEducationRow({
         entry_key: 'edu-bpc157',
         title: 'BPC-157 educational overview',
-        mechanism:
-          'BPC-157 is a gastric-derived peptide studied for tissue-repair and gut-barrier pathways.',
+        mechanism: 'Fixture live mechanism for edu-bpc157.',
       })?.mechanism,
-    ).toBe(
-      'BPC-157 is a gastric-derived peptide studied for tissue-repair and gut-barrier pathways.',
-    );
+    ).toBe('Fixture live mechanism for edu-bpc157.');
     expect(
       mapEducationRow({
         entry_key: 'edu-tesofensine-pause',
         title: 'Tesofensine is not a peptide (terminology and regulatory timing)',
-        mechanism:
-          'Tesofensine is a small-molecule weight-research compound, not a peptide; this note is terminology and regulatory timing only.',
+        mechanism: 'Fixture live mechanism for edu-tesofensine-pause.',
       })?.isPeptide,
     ).toBe(false);
   });
@@ -519,6 +523,18 @@ describe('Brief 18 browse cards bind live mechanism', () => {
     expect(detail).not.toMatch(PURCHASE);
     expect(detail).not.toMatch(NUMERIC_DOSE_LEXICON);
     expect(detail).not.toMatch(/\bSKU\b/i);
+  });
+
+  it('does not ingest or paste staged Thanos/Marshall purpose drafts', () => {
+    expect(loader).not.toMatch(/\.insert\(|\.update\(|\.upsert\(/);
+    expect(loader).toContain(".from('peptide_education_entries')");
+    expect(loader).toContain('mechanism');
+    expect(loader).not.toMatch(/hounddog_staging|purpose-rewritten|staged purpose/i);
+    expect(catalog).not.toMatch(/hounddog_staging|purpose-rewritten|gastric-derived peptide/i);
+    expect(detail).not.toMatch(/hounddog_staging|purpose-rewritten|gastric-derived peptide/i);
+    expect(fields).not.toMatch(/gastric-derived peptide|small-molecule weight-research/i);
+    expect(catalog).not.toMatch(/entry\.summary|mechanismSummary/);
+    expect(detail).not.toMatch(/entry\.summary|mechanismSummary/);
   });
 
   it('does not restore Collection 14 leftovers or flatten depth keys', () => {
