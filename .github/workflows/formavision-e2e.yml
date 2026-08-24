@@ -133,7 +133,10 @@ jobs:
         # Placeholder Supabase + no session: surface specs skip; the
         # @fallback login-redirect spec asserts middleware sends
         # /body-tracker/composition to /login.
-        run: npx playwright test --grep @fallback
+        # Chromium projects only: this job installs Chromium, not WebKit.
+        # iPhone/iPad device projects in playwright.config.ts default to
+        # WebKit and would fail browserType.launch on a chromium-only runner.
+        run: npx playwright test --grep @fallback --project=laptop-1024 --project=desktop-1440
 
       - name: Upload Playwright report
         if: always()
