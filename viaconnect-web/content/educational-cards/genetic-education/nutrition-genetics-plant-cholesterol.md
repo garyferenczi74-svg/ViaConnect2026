@@ -15,6 +15,7 @@ safety_mode_filter: common_snp_education_only
 bioavailability_bridge_card: false
 gary_approved_at: 2026-08-23
 gary_approval_required: true
+kelsey_compliance_review_id: 170r-nutrition-genetics-plant-cholesterol-2026-08-23
 ---
 
 # Plant sterols and cholesterol traffic

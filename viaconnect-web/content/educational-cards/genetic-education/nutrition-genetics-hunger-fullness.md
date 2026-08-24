@@ -17,6 +17,7 @@ safety_mode_filter: do_not_surface_safety_mode
 bioavailability_bridge_card: false
 gary_approved_at: 2026-08-23
 gary_approval_required: true
+kelsey_compliance_review_id: 170r-nutrition-genetics-hunger-fullness-2026-08-23
 ---
 
 # Hunger and fullness sensing
