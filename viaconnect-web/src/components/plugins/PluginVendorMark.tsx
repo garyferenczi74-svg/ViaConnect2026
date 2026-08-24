@@ -3,7 +3,7 @@
 /**
  * Official identification marks for /plugins registry rows only.
  * Original SVG drawings for nominative identification. Lucide 1.5 fallback
- * for unknown slugs. No Whoop / Oura / Hume / Apple marks.
+ * for unknown slugs. Device wearable brands stay off this surface.
  */
 
 import { useId } from 'react';
