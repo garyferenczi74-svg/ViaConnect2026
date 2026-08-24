@@ -29,7 +29,7 @@ const CONFIGS: Record<ConnectType, CardConfig> = {
     title: 'Connect Your Device',
     eyebrow: 'Wearables & Sensors',
     description:
-      'Sync Oura, Apple Watch, Whoop, Garmin, Fitbit and more to power real-time recovery, sleep, and strain tracking.',
+      'Connect Whoop, Oura, Hume Body Pod, and Apple Health. Status comes from last sync only.',
     cta: 'Connect a wearable',
     icon: Watch,
     accent: '#2DA5A0',
@@ -104,7 +104,7 @@ export function ConnectCard({ type, href, connectedCount = 0 }: ConnectCardProps
       >
         <span className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
         <span className="relative">{cfg.cta}</span>
-        <ArrowRight className="relative h-4 w-4" strokeWidth={2} />
+        <ArrowRight className="relative h-4 w-4" strokeWidth={1.5} />
       </Link>
     </section>
   );

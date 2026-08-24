@@ -2,7 +2,6 @@
 
 import { ChevronRight, Circle, Heart, Scan, Watch } from 'lucide-react';
 import type { WearableTileView } from '@/lib/body-tracker/wearable-tiles';
-import { formatTileLastSync } from '@/lib/body-tracker/wearable-snapshot';
 
 function TileIcon({ id }: { id: WearableTileView['id'] }) {
   if (id === 'whoop') return <Watch className="h-5 w-5 text-white/80" strokeWidth={1.5} />;
@@ -26,7 +25,6 @@ interface WearableTileCardProps {
 
 export function WearableTileCard({ tile, onPrimary, onDropXml }: WearableTileCardProps) {
   const connected = tile.status === 'connected';
-  const sync = formatTileLastSync(tile.lastSyncAt, tile.lastSyncKind);
   const feeds = feedsLabel(tile);
   const xmlAction = tile.action.kind === 'xml_upload';
   const oauthReady = tile.action.kind === 'oauth' && tile.action.configured;
@@ -77,14 +75,13 @@ export function WearableTileCard({ tile, onPrimary, onDropXml }: WearableTileCar
                 onClick={() => onPrimary(tile)}
                 className="min-h-[36px] rounded-lg bg-[#2DA5A0] px-3 text-xs font-semibold text-white hover:bg-[#2DA5A0]/85"
               >
-                Connect
+                {tile.lastSyncState === 'needs_reconnect' ? 'Reconnect' : 'Connect'}
               </button>
             ) : null}
             {!connected && oauthBlocked ? (
               <span className="text-[11px] text-white/40">Not configured</span>
             ) : null}
           </div>
-          {connected && sync ? <p className="mt-1 text-xs text-white/45">{sync}</p> : null}
           {connected && feeds ? <p className="mt-1 text-xs text-white/45">{feeds}</p> : null}
           {connected && xmlAction ? (
             <button

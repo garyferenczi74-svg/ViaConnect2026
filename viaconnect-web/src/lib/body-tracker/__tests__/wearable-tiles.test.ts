@@ -13,6 +13,8 @@ import {
   type WearableTileInput,
 } from '../wearable-tiles';
 
+const NOW = Date.parse('2026-08-24T10:00:00.000Z');
+
 function baseInput(over: Partial<WearableTileInput> = {}): WearableTileInput {
   return {
     oauth: [],
@@ -26,6 +28,7 @@ function baseInput(over: Partial<WearableTileInput> = {}): WearableTileInput {
     whoopConfigured: false,
     ouraConfigured: false,
     platform: 'web',
+    now: NOW,
     ...over,
   };
 }
@@ -121,7 +124,8 @@ describe('wearable tile model', () => {
     expect(oura?.statusLabel).toBe('Not connected');
     expect(oura?.lastSyncAt).toBeNull();
     expect(oura?.action).toEqual({ kind: 'oauth', configured: false });
-    expect(apple?.statusLabel).toBe('Connected via XML');
+    expect(apple?.statusLabel).toBe('Synced 2d ago');
+    expect(apple?.lastSyncState).toBe('synced');
     expect(apple?.lastSyncAt).toBe('2026-08-22T08:00:00.000Z');
     expect(apple?.appleWatchConnected).toBe(false);
     expect(tiles.every((t) => t.appleWatchConnected === false)).toBe(true);
@@ -143,7 +147,8 @@ describe('wearable tile model', () => {
     );
     const whoop = tiles.find((t) => t.id === 'whoop');
     expect(whoop?.status).toBe('connected');
-    expect(whoop?.statusLabel).toBe('Connected');
+    expect(whoop?.statusLabel).toBe('Synced 10h ago');
+    expect(whoop?.lastSyncState).toBe('synced');
     expect(whoop?.lastSyncAt).toBe('2026-08-24T00:00:00.000Z');
     expect(whoop?.action).toEqual({ kind: 'oauth', configured: true });
   });
@@ -172,7 +177,8 @@ describe('wearable tile model', () => {
     );
     const hume = tiles.find((t) => t.id === 'hume');
     expect(hume?.status).toBe('connected');
-    expect(hume?.statusLabel).toBe('Connected via XML');
+    expect(hume?.statusLabel).toBe('Synced 22h ago');
+    expect(hume?.lastSyncState).toBe('synced');
     expect(hume?.lastSyncAt).toBe('2026-08-23T12:00:00.000Z');
     expect(hume?.action.kind).toBe('xml_upload');
   });
@@ -189,7 +195,7 @@ describe('wearable tile model', () => {
     );
     const apple = tiles.find((t) => t.id === 'apple_health');
     expect(apple?.name).toBe('Apple Health');
-    expect(apple?.statusLabel).toBe('Connected via XML');
+    expect(apple?.statusLabel).toBe('Synced 2d ago');
     expect(apple?.lastSyncAt).toBe('2026-08-22T08:00:00.000Z');
     expect(apple?.lastSyncKind).toBe('xml_upload');
     expect(apple?.appleWatchConnected).toBe(false);
@@ -227,5 +233,49 @@ describe('wearable tile model', () => {
   it('labels Apple XML vs not connected', () => {
     expect(appleStatusLabel({ connected: false, xmlIngested: 0 })).toBe('Not connected');
     expect(appleStatusLabel({ connected: true, xmlIngested: 2 })).toBe('Connected via XML');
+  });
+
+  it('uses Connected never synced when linked with no last_sync_at', () => {
+    const tiles = buildWearableTiles(
+      baseInput({
+        oauth: [
+          {
+            provider: 'whoop',
+            status: 'connected',
+            last_sync_at: null,
+            has_tokens: true,
+          },
+        ],
+        whoopConfigured: true,
+      }),
+    );
+    const whoop = tiles.find((t) => t.id === 'whoop');
+    expect(whoop?.status).toBe('connected');
+    expect(whoop?.statusLabel).toBe('Connected never synced');
+    expect(whoop?.lastSyncState).toBe('connected_never_synced');
+    expect(whoop?.lastSyncAt).toBeNull();
+    expect(whoop?.statusLabel).not.toMatch(/Active/);
+    expect(whoop?.statusLabel).not.toMatch(/5 min ago/);
+  });
+
+  it('uses Needs reconnect when configured tokens are missing', () => {
+    const tiles = buildWearableTiles(
+      baseInput({
+        oauth: [
+          {
+            provider: 'oura',
+            status: 'connected',
+            last_sync_at: '2026-08-24T00:00:00.000Z',
+            has_tokens: false,
+          },
+        ],
+        ouraConfigured: true,
+      }),
+    );
+    const oura = tiles.find((t) => t.id === 'oura');
+    expect(oura?.status).toBe('disconnected');
+    expect(oura?.statusLabel).toBe('Needs reconnect');
+    expect(oura?.lastSyncState).toBe('needs_reconnect');
+    expect(oura?.lastSyncAt).toBeNull();
   });
 });

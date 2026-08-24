@@ -78,6 +78,7 @@ export interface WearableSnapshotInput {
   metabolicManual: boolean;
   manualMetabolicValue?: number | null;
   trustOverrides?: Record<string, number> | null;
+  now?: number;
 }
 
 export interface WearableSnapshot {
@@ -157,6 +158,7 @@ export function tileInputFromSnapshot(input: WearableSnapshotInput): WearableTil
     whoopConfigured: input.whoopConfigured,
     ouraConfigured: input.ouraConfigured,
     platform: input.platform,
+    now: input.now,
   };
 }
 

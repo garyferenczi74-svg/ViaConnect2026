@@ -16,7 +16,7 @@
 import { motion } from 'framer-motion';
 import { Upload, Plus, Lock, CheckCircle2, Link2, ArrowRight } from 'lucide-react';
 import type { ConnectedSource } from '@/lib/body-tracker/connected-sources/registry';
-import type { DeviceClass } from '@/lib/capacitor/camera-capture';
+import { resolveLastSyncState } from '@/lib/body-tracker/last-sync-state';
 import { resolveSourceIcon } from './iconMap';
 
 export type SourceAction =
@@ -39,22 +39,21 @@ interface ConnectedSourceCardProps {
 }
 
 function formatLastSync(iso: string | undefined): string {
-  if (!iso) return 'Never synced';
-  const then = new Date(iso).getTime();
-  if (Number.isNaN(then)) return 'Never synced';
-  const diff = Date.now() - then;
-  const min = diff / (1000 * 60);
-  if (min < 1) return 'Synced just now';
-  if (min < 60) return `Synced ${Math.round(min)} min ago`;
-  const hours = min / 60;
-  if (hours < 24) return `Synced ${Math.round(hours)}h ago`;
-  const days = hours / 24;
-  if (days < 30) return `Synced ${Math.round(days)}d ago`;
-  return `Synced ${new Date(iso).toLocaleDateString()}`;
+  return resolveLastSyncState({
+    linked: Boolean(iso),
+    lastSyncAt: iso ?? null,
+  }).label;
 }
 
-function StatusPill({ status }: { status: ConnectedSource['status'] }) {
+function StatusPill({
+  status,
+  lastSyncAt,
+}: {
+  status: ConnectedSource['status'];
+  lastSyncAt?: string;
+}) {
   if (status === 'active') {
+    if (!lastSyncAt) return null;
     return (
       <span className="inline-flex items-center gap-1 rounded-full bg-[#2DA5A0]/15 px-2.5 py-1 text-[11px] font-medium text-[#2DA5A0] ring-1 ring-inset ring-[#2DA5A0]/30">
         <CheckCircle2 className="h-3 w-3" strokeWidth={1.5} />
@@ -106,7 +105,7 @@ export function ConnectedSourceCard({
             <p className="text-[11px] text-white/45">{formatLastSync(lastSyncAt)}</p>
           </div>
         </div>
-        <StatusPill status={source.status} />
+        <StatusPill status={source.status} lastSyncAt={lastSyncAt} />
       </div>
 
       {/* Capability note */}
