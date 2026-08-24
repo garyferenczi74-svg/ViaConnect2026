@@ -123,13 +123,16 @@ export async function writeAgentJobHeartbeat(args: {
 }
 
 /**
- * Refresh expected periods on existing ultrathink rows only.
- * Brief 23: never insert invented seats or fake heartbeats for ACC roster
- * members that do not already have an ops row.
+ * Brief 27: ensure every ACC seat has an ops row. Missing seats are inserted
+ * idle (unknown, no heartbeat). Never invent advisors/Gordon. Never stamp
+ * Healthy or last_heartbeat_at on insert. Existing rows only refresh period.
  */
 export async function ensureAgentRegistrySeats(
   periodByAgent: Record<string, number>
 ): Promise<{ ensured: number }> {
+  const { ensureAccOpsRow, isGrokOnlyIdleSeat } = await import(
+    "@/lib/agents/command-center-ingest"
+  );
   const supabase = createAdminClientOrNull();
   if (!supabase) return { ensured: 0 };
 
@@ -137,26 +140,50 @@ export async function ensureAgentRegistrySeats(
   for (const id of AGENT_IDS) {
     const reg = AGENT_REGISTRY[id];
     if (!reg) continue;
-    const period = periodByAgent[id] ?? 60;
     try {
+      const present = await ensureAccOpsRow(id);
+      if (!present) continue;
+
       const { data: existing } = await supabase
         .from("ultrathink_agent_registry")
         .select("id, is_active")
         .eq("agent_name", id)
         .maybeSingle();
 
-      if (!existing?.id) {
+      if (!existing?.id) continue;
+
+      // Grok-only seats stay on-demand: do not invent a 15m stale clock.
+      if (isGrokOnlyIdleSeat(id)) {
+        await supabase
+          .from("ultrathink_agent_registry")
+          .update({
+            display_name: reg.display_name,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", existing.id);
+        ensured += 1;
         continue;
+      }
+
+      const period = periodByAgent[id];
+      const patch: {
+        display_name: string;
+        updated_at: string;
+        expected_period_minutes?: number;
+        runtime_kind?: string;
+        runtime_handle?: string;
+      } = {
+        display_name: reg.display_name,
+        updated_at: new Date().toISOString(),
+      };
+      if (typeof period === "number" && period > 0) {
+        patch.expected_period_minutes = period;
+        patch.runtime_kind = "request_time";
+        patch.runtime_handle = "/api/cron/ops-tick";
       }
       await supabase
         .from("ultrathink_agent_registry")
-        .update({
-          display_name: reg.display_name,
-          expected_period_minutes: period,
-          runtime_kind: "request_time",
-          runtime_handle: "/api/cron/ops-tick",
-          updated_at: new Date().toISOString(),
-        })
+        .update(patch)
         .eq("id", existing.id);
       ensured += 1;
     } catch (err) {

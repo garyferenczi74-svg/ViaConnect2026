@@ -24,7 +24,7 @@ export const AGENT_REGISTRY: Readonly<Record<AgentId, AgentRegistryRow>> = {
     display_name: "Picasso",
     role_label: "Grok roster",
     description:
-      "Grok roster seat. No Command Center ops row yet. Idle until a real heartbeat or task exists.",
+      "Grok roster seat. Ops row is present. Idle until a real turn, brief, or PR is ingested.",
     icon_name: "Palette",
     accent_color: "#B75E18",
     sort_order: 2,
@@ -46,7 +46,7 @@ export const AGENT_REGISTRY: Readonly<Record<AgentId, AgentRegistryRow>> = {
     display_name: "Conan",
     role_label: "Grok roster",
     description:
-      "Grok roster seat. No Command Center ops row yet. Idle until a real heartbeat or task exists.",
+      "Grok roster seat. Ops row is present. Idle until a real turn, brief, or PR is ingested.",
     icon_name: "ScrollText",
     accent_color: "#B75E18",
     sort_order: 4,
@@ -68,7 +68,7 @@ export const AGENT_REGISTRY: Readonly<Record<AgentId, AgentRegistryRow>> = {
     display_name: "Gene",
     role_label: "Grok roster",
     description:
-      "Grok roster seat. No Command Center ops row yet. Idle until a real heartbeat or task exists.",
+      "Grok roster seat. Ops row is present. Idle until a real turn, brief, or PR is ingested.",
     icon_name: "CircleDot",
     accent_color: "#B75E18",
     sort_order: 6,
@@ -101,7 +101,7 @@ export const AGENT_REGISTRY: Readonly<Record<AgentId, AgentRegistryRow>> = {
     display_name: "Martha",
     role_label: "Grok roster",
     description:
-      "Grok roster seat. No Command Center ops row yet. Idle until a real heartbeat or task exists.",
+      "Grok roster seat. Ops row is present. Idle until a real turn, brief, or PR is ingested.",
     icon_name: "Heart",
     accent_color: "#2DA5A0",
     sort_order: 9,
@@ -167,7 +167,7 @@ export const AGENT_REGISTRY: Readonly<Record<AgentId, AgentRegistryRow>> = {
     display_name: "Watson",
     role_label: "Grok roster",
     description:
-      "Grok roster seat. No Command Center ops row yet. Idle until a real heartbeat or task exists.",
+      "Grok roster seat. Ops row is present. Idle until a real turn, brief, or PR is ingested.",
     icon_name: "FileText",
     accent_color: "#2DA5A0",
     sort_order: 15,

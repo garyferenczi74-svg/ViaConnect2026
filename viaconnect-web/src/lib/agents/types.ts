@@ -85,6 +85,9 @@ export const AGENT_NAME_ALIASES: Readonly<Record<string, AgentId>> = {
   hounddog: "hounddog",
   hound_dog: "hounddog",
   marshall_hounddog: "hounddog",
+  // Brief 27 ingest aliases for in-app turns (not extra seats).
+  jeffery_directive_processor: "jeffery",
+  michelangelo_pipeline: "michelangelo",
 };
 
 export function resolveAgentId(raw: string): AgentId | null {
