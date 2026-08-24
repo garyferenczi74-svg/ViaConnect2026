@@ -48,6 +48,7 @@ export default defineConfig({
       'src/components/pricing/__tests__/PricingCatalogBody.bare.test.tsx',
       // Brief 16: Your Variants honesty chips
       'src/components/genetics/__tests__/VariantRowChip.bare.test.tsx',
+      'src/components/nutrition/genetics/__tests__/NutritionGeneticsEducation.bare.test.tsx',
     ],
     exclude: ['node_modules', '.next', 'supabase'],
     globals: true,

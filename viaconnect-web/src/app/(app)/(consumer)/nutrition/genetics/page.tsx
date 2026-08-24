@@ -19,7 +19,9 @@ import type { SupabaseLike } from '@/lib/nutrition/genetics/recommendations';
 import { panelKeyAliasesFor } from '@/lib/genetics/panelKeyAliases';
 import { BackToNutritionLink } from '@/components/nutrition/hub/BackToNutritionLink';
 import { NutritionGeneticsTabs } from '@/components/nutrition/genetics/NutritionGeneticsTabs';
+import { NutritionGeneticsEducationCatalog } from '@/components/nutrition/genetics/NutritionGeneticsEducationCatalog';
 import { NutritionByGeneticsPanel } from '@/components/protocol/NutritionByGeneticsPanel';
+import { loadNutritionGeneticsEducationCards } from '@/lib/nutrition/genetics/educationCards';
 
 const TIMEOUT_MS = 4_000;
 
@@ -145,6 +147,7 @@ export default async function NutritionGeneticsPage() {
   const hasNutrigenDx = hasNutrigenDxFindings || hasNutrigenDxVars;
   const hasResults = hasNutrigenDx || hasUploaded;
   const sourceLabel = hasNutrigenDx ? 'NutrigenDX' : hasUploaded ? 'Uploaded Test' : 'No Results Yet';
+  const educationCards = loadNutritionGeneticsEducationCards();
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-8">
@@ -177,6 +180,11 @@ export default async function NutritionGeneticsPage() {
           {sourceLabel}
         </span>
       </header>
+
+      {/* Education catalog: 11 markdown theme cards. Not genotypes. */}
+      <div className="mt-6">
+        <NutritionGeneticsEducationCatalog cards={educationCards} />
+      </div>
 
       {/* The tabs container reads ?tab= / &sub= via useSearchParams, so it
           needs a Suspense boundary under this server shell. */}
