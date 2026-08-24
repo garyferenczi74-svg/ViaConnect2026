@@ -7,7 +7,7 @@
 // matches the test. Aliases (GENEX-M, genex_m, genex-m, and peers) group onto
 // the matching pill. HormoneIQ and EpigenHQ read marker / clock tables, never
 // user_variants SNP length. 401 / error render as Unavailable (n/a), never 0.
-// Brief 19: honest empty is Not analyzed, never 0 SNPs as you have nothing.
+// Brief 19: honest empty is Not analyzed, never a zero count as you have nothing.
 // Marketing catalog sizes are not live badges; empty copy names the catalog.
 //
 // Standing rules honored: tokens only (Navy #1A2744, Card #1E3054, Teal

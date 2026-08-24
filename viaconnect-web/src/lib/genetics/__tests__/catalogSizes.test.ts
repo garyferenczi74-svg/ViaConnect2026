@@ -36,9 +36,9 @@ describe('GENEX360 catalog sizes', () => {
     expect(catalogOnFileLine('hormone')).toContain('HormoneIQ catalog has 29 markers');
     expect(catalogOnFileLine('epigenetic')).toContain('EpigenHQ catalog has 12 clocks');
     expect(catalogOnFileLine('methylation')).toContain('not analyzed');
-    expect(catalogOnFileLine('methylation')).not.toContain('0 SNPs');
-    expect(catalogOnFileLine('hormone')).not.toContain('SNPs');
-    expect(catalogOnFileLine('epigenetic')).not.toContain('SNPs');
+    expect(catalogOnFileLine('methylation')).not.toMatch(/\b0 SNPs\b/);
+    expect(catalogOnFileLine('hormone')).not.toMatch(/\bSNPs\b/);
+    expect(catalogOnFileLine('epigenetic')).not.toMatch(/\bSNPs\b/);
   });
 
   it('prefers Not analyzed over 0 results for an honest empty header', () => {

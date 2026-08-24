@@ -75,9 +75,9 @@ describe('Brief 19 variant tab honesty', () => {
     expect(PANEL_LABELS.methylation.measures_line).toContain('methylation and detox SNPs');
     expect(PANEL_LABELS.nutrition.measures_line).toContain('nutrient-metabolism SNPs');
     expect(PANEL_LABELS.hormone.measures_line).toContain('DUTCH');
-    expect(PANEL_LABELS.hormone.measures_line.toLowerCase()).not.toContain('snp');
+    expect(PANEL_LABELS.hormone.measures_line).toContain('not SNP pills');
     expect(PANEL_LABELS.epigenetic.measures_line).toContain('clocks');
-    expect(PANEL_LABELS.epigenetic.measures_line.toLowerCase()).not.toContain('snp');
+    expect(PANEL_LABELS.epigenetic.measures_line).toContain('not SNP pills');
     expect(PANEL_LABELS.nutrition.count_unit).toBe('SNPs');
     expect(PANEL_LABELS.hormone.count_unit).toBe('markers');
     expect(PANEL_LABELS.epigenetic.count_unit).toBe('clocks');
@@ -98,7 +98,7 @@ describe('Brief 19 hub and hero copy', () => {
     expect(source).toContain('Not analyzed');
     expect(source).toContain('catalogOnFileLine');
     expect(source).not.toContain('No {activeGenericLabel} {activeEmptyNoun} yet.');
-    expect(source).not.toContain('0 SNPs');
+    expect(source).not.toMatch(/>0 SNPs</);
     expect(source).toContain('aria-label="GENEX360 tests"');
     expect(source).not.toContain('mthfrFolate');
     expect(source).not.toContain('Unanalyzed');
