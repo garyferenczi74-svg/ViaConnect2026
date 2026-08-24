@@ -27,6 +27,7 @@ import type { DimensionSourceRow } from '@/lib/body-tracker/source-disagreement'
 import { WearableTileCard } from './WearableTileCard';
 import { ScoreDetailPanel } from './ScoreDetailPanel';
 import { ActiveSourceDetailPanel } from './ActiveSourceDetailPanel';
+import { DimensionDetailSheet } from './DimensionDetailSheet';
 
 function emptyTiles(platform: 'web' | 'ios' | 'android'): WearableTileView[] {
   return buildWearableTiles({
@@ -73,7 +74,9 @@ export function ConnectionsSurface() {
   const [selectedId, setSelectedId] = useState<WearableTileView['id']>('apple_health');
   const [scoreDetail, setScoreDetail] = useState<DimensionSourceRow[]>([]);
   const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
-  // Task 8 attaches the dimension detail sheet to this without re-threading.
+  // Consumed below by DimensionDetailSheet, which the chevron / DISAGREE
+  // button in ContributorColumn opens via ScoreDetailPanel's
+  // onOpenDimension prop.
   const [openMetric, setOpenMetric] = useState<string | null>(null);
   const [importIntent, setImportIntent] = useState<HealthXmlImportIntent | null>(null);
   const [consent, setConsent] = useState<'whoop' | 'oura' | null>(null);
@@ -210,6 +213,7 @@ export function ConnectionsSurface() {
         }}
         onClose={() => setConsent(null)}
       />
+      <DimensionDetailSheet metric={openMetric} rows={scoreDetail} onClose={() => setOpenMetric(null)} />
     </div>
   );
 }

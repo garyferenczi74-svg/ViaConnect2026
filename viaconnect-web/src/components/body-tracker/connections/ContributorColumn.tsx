@@ -6,13 +6,11 @@
 // connected source) shows a "Connect your device" CTA, never a fake
 // connected pill or a fabricated value. A populated row shows the real
 // source glyph and name. Every row ends with a chevron to the Task 8
-// dimension detail sheet, which owns the full per-source disagreement
-// breakdown. When two sources disagree, the compact DISAGREE chip is a
-// real button wired to the same onOpenDimension(metric) call as the
-// chevron -- not a static, unexplained alarm with no escape hatch. Both
-// controls are no-ops until Task 8 mounts the sheet that consumes
-// onOpenDimension; that deferral is intentional and documented at the
-// ScoreDetailPanel/ConnectionsSurface call sites.
+// DimensionDetailSheet (mounted in ConnectionsSurface), which owns the
+// full per-source disagreement breakdown. When two sources disagree, the
+// compact DISAGREE chip is a real button wired to the same
+// onOpenDimension(metric) call as the chevron -- not a static, unexplained
+// alarm with no escape hatch.
 
 import {
   Activity,
