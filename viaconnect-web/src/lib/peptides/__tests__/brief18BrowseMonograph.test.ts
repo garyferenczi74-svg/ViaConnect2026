@@ -6,10 +6,12 @@ import { readFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  dropsEducationCompound,
   extractPmids,
   formatProvenance,
   isSafeEntryKey,
-} from '@/lib/peptides/educationEntries';
+  mapEducationRow,
+} from '@/lib/peptides/educationEntryFields';
 
 const ROOT = process.cwd();
 
@@ -143,9 +145,11 @@ describe('Brief 18 live count and copy guards', () => {
     const catalog = read('src/components/peptide-protocol/KbPeptideCatalogSection.tsx');
     const detail = read('src/components/peptide-protocol/PeptideEducationEntryDetail.tsx');
     const loader = read('src/lib/peptides/educationEntries.ts');
+    const fields = read('src/lib/peptides/educationEntryFields.ts');
     expect(catalog).not.toMatch(/entry\.summary|mechanismSummary/);
     expect(detail).not.toMatch(/entry\.summary|mechanismSummary/);
     expect(loader).not.toContain('summary');
+    expect(fields).not.toContain('summary');
     expect(catalog).toContain('Open entry');
     expect(detail).toContain('Not available');
     expect(detail).toContain('entry-mechanism');
@@ -216,6 +220,21 @@ describe('Brief 18 education entry helpers', () => {
     expect(isSafeEntryKey('../secret')).toBe(false);
     expect(isSafeEntryKey('semaglutide?buy=1')).toBe(false);
     expect(isSafeEntryKey('')).toBe(false);
+    expect(dropsEducationCompound('edu-semaglutide')).toBe(true);
+    expect(
+      mapEducationRow({
+        entry_key: 'edu-semaglutide',
+        title: 'Semaglutide educational overview',
+      }),
+    ).toBeNull();
+    expect(
+      mapEducationRow({
+        entry_key: 'edu-bpc157',
+        title: 'BPC-157 educational overview',
+        mechanism: 'Angiogenic research signals.',
+        evidence_grade: 'moderate',
+      })?.entryKey,
+    ).toBe('edu-bpc157');
   });
 
   it('extracts PMIDs from live fields and omits search URLs', () => {

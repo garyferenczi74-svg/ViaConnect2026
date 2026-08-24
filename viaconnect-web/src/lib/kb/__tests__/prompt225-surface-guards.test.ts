@@ -28,9 +28,10 @@ describe('Prompt 225 education surface guards', () => {
     const catalog = read('src/components/peptide-protocol/KbPeptideCatalogSection.tsx');
     const detail = read('src/components/peptide-protocol/PeptideEducationEntryDetail.tsx');
     const educationLoader = read('src/lib/peptides/educationEntries.ts');
+    const educationFields = read('src/lib/peptides/educationEntryFields.ts');
     const consumerLoader = read('src/lib/kb/peptides/loadConsumerPeptides.ts');
     const practitionerLoader = read('src/lib/kb/peptides/loadPractitionerPeptides.ts');
-    for (const src of [catalog, detail, educationLoader, consumerLoader, practitionerLoader]) {
+    for (const src of [catalog, detail, educationLoader, educationFields, consumerLoader, practitionerLoader]) {
       expect(src).not.toMatch(/\bdosingForms\b/);
       expect(src).not.toMatch(/\bcycleProtocol\b/);
       expect(src).not.toMatch(/\bpriceRange\b/);
