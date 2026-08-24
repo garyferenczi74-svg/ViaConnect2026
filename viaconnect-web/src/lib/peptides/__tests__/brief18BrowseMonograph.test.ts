@@ -319,23 +319,31 @@ describe('Brief 18 Thanos allowlist', () => {
     expect(loader).toContain(".eq('is_practitioner_depth', false)");
   });
 
-  it('labels only the two non-peptide keys', () => {
+  it('labels only the three non-peptide keys and reads live titles', () => {
     expect(isAllowlistedNonPeptide('edu-5-amino-1mq-nonpeptide')).toBe(true);
     expect(isAllowlistedNonPeptide('edu-slu-pp-332-nonpeptide')).toBe(true);
+    expect(isAllowlistedNonPeptide('edu-tesofensine-pause')).toBe(true);
     expect(isAllowlistedNonPeptide('edu-bpc157')).toBe(false);
-    expect(isAllowlistedNonPeptide('edu-tesofensine-pause')).toBe(false);
     expect(
       mapEducationRow({
         entry_key: 'edu-tesofensine-pause',
-        title: 'Tesofensine regulatory timing note',
+        title: 'Tesofensine is not a peptide (terminology and regulatory timing)',
       })?.isPeptide,
-    ).toBe(true);
+    ).toBe(false);
     const catalog = read('src/components/peptide-protocol/KbPeptideCatalogSection.tsx');
     const detail = read('src/components/peptide-protocol/PeptideEducationEntryDetail.tsx');
     expect(catalog).toContain('Not a peptide');
     expect(catalog).toContain('!entry.isPeptide');
+    expect(catalog).toContain('{entry.title}');
     expect(detail).toContain('Not a peptide');
     expect(detail).toContain('!entry.isPeptide');
+    expect(detail).toContain('{entry.title}');
+    expect(catalog).not.toContain(
+      'Tesofensine is not a peptide (terminology and regulatory timing)',
+    );
+    expect(detail).not.toContain(
+      'Tesofensine is not a peptide (terminology and regulatory timing)',
+    );
   });
 
   it('does not invent retatrutide oral or Semaglutide catalog copy', () => {

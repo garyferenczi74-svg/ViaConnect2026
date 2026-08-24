@@ -62,6 +62,7 @@ const THANOS_CONSUMER_ENTRY_KEY_SET: ReadonlySet<string> = new Set(
 const NONPEPTIDE_ENTRY_KEYS: ReadonlySet<string> = new Set([
   'edu-5-amino-1mq-nonpeptide',
   'edu-slu-pp-332-nonpeptide',
+  'edu-tesofensine-pause',
 ]);
 
 const EXCLUDED_COMPOUND = /semaglutide/i;
