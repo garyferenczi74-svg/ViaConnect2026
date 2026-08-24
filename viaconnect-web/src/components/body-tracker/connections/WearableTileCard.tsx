@@ -47,7 +47,7 @@ export function WearableTileCard({
   const liveDot = connected ? 'bg-teal' : needsReconnect ? 'bg-copper' : 'bg-white/30';
   const cardClassName = selected
     ? 'relative overflow-hidden rounded-[24px] border border-teal bg-teal/5 p-4 pl-6 ring-1 ring-teal backdrop-blur-md'
-    : 'relative overflow-hidden rounded-[24px] border border-white/[0.08] bg-card p-4 backdrop-blur-md';
+    : 'relative rounded-[24px] border border-white/[0.08] bg-card p-4 backdrop-blur-md';
   const titleClassName = selected
     ? 'text-sm font-bold leading-snug text-teal whitespace-normal break-words'
     : 'text-sm font-semibold leading-snug text-white whitespace-normal break-words';
@@ -63,6 +63,7 @@ export function WearableTileCard({
       tabIndex={0}
       onClick={() => onSelect?.(tile)}
       onKeyDown={(e) => {
+        if (e.target !== e.currentTarget) return;
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           onSelect?.(tile);
