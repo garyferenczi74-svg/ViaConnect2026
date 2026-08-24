@@ -55,6 +55,12 @@ import { MeasurementRing } from './MeasurementRing';
 import { EmphasisParticles } from './EmphasisParticles';
 import { MeasurementCallouts } from './MeasurementCallouts';
 import { GhostMesh } from './GhostMesh';
+import { AbWipeMesh } from './AbWipeMesh';
+import {
+  clampWipeT,
+  shouldRenderAbWipe,
+  wipeModeForRole,
+} from '@/lib/formavision/compare/abWipe';
 
 export interface FormaVisionCanvasProps {
   sex: Sex;
@@ -94,6 +100,11 @@ export interface FormaVisionCanvasProps {
   // Master gate for the projected ghost. Defaults to off, so the avatar looks exactly
   // as today until P5-T1c wires the toggle.
   showGhost?: boolean;
+  // Brief 2: screen-space A/B wipe against a baseline BodyParamVector. Off by
+  // default (current body unchanged). wipeT is 0..1 from the left edge.
+  wipeActive?: boolean;
+  wipeT?: number;
+  wipeVector?: BodyParamVector | null;
   // Lite tier trims geometry density for low-power devices; cinematic is full.
   renderTier?: 'cinematic' | 'lite';
   // P7-T1: called (at most once per sustained over-budget window) when the demand-loop
@@ -144,6 +155,8 @@ function BodyMesh(
 ) {
   const meshRef = useRef<Mesh>(null);
   const invalidate = useThree((state) => state.invalidate);
+  const size = useThree((state) => state.size);
+  const gl = useThree((state) => state.gl);
   const scheduler = useDemandScheduler();
 
   const buildOptions = useMemo(
@@ -391,6 +404,28 @@ function BodyMesh(
     // reducedMotion is read at apply time; tints and tab drive the show/hide.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mounted, props.activeTab, props.segmentTints, scheduler, invalidate]);
+
+  // Brief 2: screen-space wipe on the current body. Mode 0 when compare is off
+  // so the shader path is byte-identical. Viewport width is drawing-buffer
+  // pixels so retina gl_FragCoord.x matches the CSS wipe overlay.
+  useEffect(() => {
+    const enabled = shouldRenderAbWipe(props.wipeActive, props.wipeVector);
+    const width = size.width * gl.getPixelRatio();
+    mounted.materialHandle.setWipe(
+      wipeModeForRole('current', enabled),
+      clampWipeT(props.wipeT ?? 0.5),
+      width,
+    );
+    invalidate();
+  }, [
+    mounted,
+    props.wipeActive,
+    props.wipeVector,
+    props.wipeT,
+    size.width,
+    gl,
+    invalidate,
+  ]);
 
   // Play the materialize intro once per mounted body. Reduced motion lands the
   // body fully lit with no animation scheduled (full parity). The intro drives its
@@ -707,6 +742,13 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
         <GhostMesh
           ghostVector={props.ghostVector}
           showGhost={props.showGhost}
+          buildOptions={TIER_BUILD[props.renderTier ?? 'cinematic']}
+        />
+
+        <AbWipeMesh
+          wipeVector={props.wipeVector}
+          wipeActive={props.wipeActive}
+          wipeT={props.wipeT}
           buildOptions={TIER_BUILD[props.renderTier ?? 'cinematic']}
         />
 
