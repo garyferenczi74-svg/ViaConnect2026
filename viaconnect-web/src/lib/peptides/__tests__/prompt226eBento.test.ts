@@ -55,12 +55,18 @@ describe('Prompt 226e index wiring', () => {
     expect(banner).toContain('Important: Peptide Wellness Disclaimer');
   });
 
-  it('does not hardcode monograph counts 112 or 21', () => {
+  it('does not hardcode monograph counts 114, 112, or 21', () => {
+    expect(config).not.toMatch(/\b114\b/);
     expect(config).not.toMatch(/\b112\b/);
     expect(config).not.toMatch(/\b21\b/);
+    expect(bento).not.toMatch(/\b114\b/);
     expect(bento).not.toMatch(/\b112\b/);
+    expect(bento).not.toMatch(/\b21\b/);
     expect(bento).toContain('countsOk');
+    expect(bento).toContain('entryCount');
+    expect(bento.toLowerCase()).not.toContain('monograph');
     expect(page).toContain('countsOk');
+    expect(page).toContain('entryCount');
   });
 
   it('My Protocols title remains allowlisted as a person-authored regimen surface', () => {
@@ -83,9 +89,11 @@ describe('Prompt 226e index wiring', () => {
   it('defines eight tiles with pending directories', () => {
     expect(PEPTIDE_EDUCATION_BENTO_TILES).toHaveLength(8);
     expect(PEPTIDE_EDUCATION_BENTO_TILES.filter((t) => t.pending).map((t) => t.id)).toEqual([
-      'practitioner',
       'naturopath',
     ]);
+    const practitioner = PEPTIDE_EDUCATION_BENTO_TILES.find((t) => t.id === 'practitioner');
+    expect(practitioner?.href).toBe('/practitioners');
+    expect(practitioner?.pending).toBe(false);
   });
 });
 

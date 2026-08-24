@@ -63,7 +63,7 @@ function fromShopProduct(product: ShopProduct): ProductTabContent[] {
     : normalizeProductCopy(
         `## Who Benefits & What Makes This Different?\n\n` +
           `**Who benefits:** People seeking targeted support with ${product.name}.\n\n` +
-          `**What makes this different:** Via Cura formulates with bioactive nutrient forms and delivery technologies designed for higher bioavailability. Where bioavailability multipliers appear, the locked phrase is **10x to 28x**. Built For Your Biology.\n\n` +
+          `**What makes this different:** Via Cura formulates with bioactive nutrient forms and delivery technologies designed for Maximum Bioavailability. Built For Your Biology.\n\n` +
           `This section is being finalized with Marshall-gated copy.`,
       );
 

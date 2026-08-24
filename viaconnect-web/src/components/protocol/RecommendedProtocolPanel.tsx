@@ -21,6 +21,7 @@ import { Dna, ChevronDown, ChevronUp, Info } from 'lucide-react';
 import { EvidenceTierBadge } from '@/components/protocol/EvidenceTierBadge';
 import type { EvidenceTier } from '@/components/protocol/EvidenceTierBadge';
 import type { RecommendedItem } from '@/lib/protocol/readSynthesis';
+import { supplementsGeneticsEmptyCopy } from '@/lib/genetics/geneticsUploadState';
 
 // ---------------------------------------------------------------------------
 // ViewSources disclosure
@@ -67,9 +68,13 @@ function ViewSources({ ruleRsid }: { ruleRsid: string }) {
 
 export interface RecommendedProtocolPanelProps {
   items: RecommendedItem[];
+  geneticsUploaded?: boolean;
 }
 
-export function RecommendedProtocolPanel({ items }: RecommendedProtocolPanelProps) {
+export function RecommendedProtocolPanel({
+  items,
+  geneticsUploaded = false,
+}: RecommendedProtocolPanelProps) {
   return (
     <div className="space-y-4">
       {/* Panel header with SNP sub-line -- EXACT text required */}
@@ -104,8 +109,7 @@ export function RecommendedProtocolPanel({ items }: RecommendedProtocolPanelProp
             <Info className="w-4 h-4 text-white/25 flex-shrink-0 mt-0.5" strokeWidth={1.5} />
             <div className="space-y-1.5">
               <p className="text-sm text-white/50 leading-relaxed">
-                Your personalized genetics-based protocol will appear here once genetic or lab data
-                is uploaded and clinically-published guidance is available for your variants.
+                {supplementsGeneticsEmptyCopy(geneticsUploaded)}
               </p>
               <p className="text-xs text-white/30 leading-relaxed">
                 Your CAQ AI protocol is already active and applies in the meantime. This panel adds

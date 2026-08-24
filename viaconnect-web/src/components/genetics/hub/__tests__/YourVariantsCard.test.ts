@@ -70,7 +70,16 @@ describe('YourVariantsCard source', () => {
     expect(source).not.toContain('markerCount');
     expect(source).not.toContain("from './blueprintBentoData'");
     expect(source).not.toContain("from '@/data/genex360/panels'");
-    expect(source).toContain('n/a instead of 0');
+    expect(source).toContain('Unanalyzed instead of 0');
+    expect(source).not.toContain('n/a instead of 0');
+    expect(source).toContain('isMthfrFolateTarget');
+    expect(source).toContain('mayShowMthfrFolate');
+    expect(source).toContain('protocolChangeLine');
+    expect(source).toContain('hubHeaderBadge');
+    expect(source).toContain('VariantRowChip');
+    expect(source).toContain('formatVariantProvenance');
+    expect(source).not.toContain('Your variant');
+    expect(source).not.toContain('SampleBadge');
   });
 
   it('imports GENEX360_SHOP_HREF and links to it with a Next Link', () => {

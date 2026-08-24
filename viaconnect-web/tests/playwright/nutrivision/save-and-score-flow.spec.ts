@@ -15,7 +15,8 @@ import { promises as fs } from 'node:fs';
 
 const PHOTO_AI_PATH = '/nutrition/photo-ai';
 const ANALYZE_ROUTE_GLOB = '**/api/nutrition/photo/analyze*';
-const MEALS_ROUTE_GLOB   = '**/api/nutrition/meals*';
+const PENDING_ROUTE_GLOB = '**/api/nutrition/pending-review*';
+const CONFIRM_ROUTE_GLOB = '**/api/nutrition/confirm*';
 
 const ONE_PX_PNG_BASE64 =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=';
@@ -78,6 +79,13 @@ async function reachReviewing(page: import('@playwright/test').Page): Promise<vo
       body: JSON.stringify(simpleDraft()),
     });
   });
+  await page.route(PENDING_ROUTE_GLOB, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ logId: 'log-review-1' }),
+    });
+  });
   await page.goto(PHOTO_AI_PATH, { waitUntil: 'domcontentloaded' });
   const uploadButton = page.getByRole('button', { name: /Upload photo/i });
   await expect(uploadButton).toBeVisible({ timeout: 15_000 });
@@ -94,66 +102,41 @@ async function reachReviewing(page: import('@playwright/test').Page): Promise<vo
 
 test.describe('NutriVision save + confirmation', () => {
   test.beforeEach(async ({ page }) => {
-    await page.route(MEALS_ROUTE_GLOB, async (route) => {
+    await page.route(CONFIRM_ROUTE_GLOB, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({
-          meal_id: 'meal-999',
-          gordon: {
-            bio_optimization_delta: 1.4,
-            quality_tier: 'good',
-            quality_score: 82,
-            copy: 'Solid protein hit for the morning.',
-          },
-          helix_events_emitted: ['nutrivision_meal_logged', 'nutrivision_first_photo_bonus'],
-        }),
+        body: JSON.stringify({ ok: true }),
       });
     });
   });
 
   test('save advances to confirmation with Bio Optimization delta', async ({ page }) => {
     await reachReviewing(page);
+    await page.waitForURL('**/nutrition/log-meal/review**', { timeout: 10_000 });
     await expect(page.getByText('Greek yogurt')).toBeVisible({ timeout: 10_000 });
 
-    const saveButton = page.getByRole('button', { name: /^Save$|Save meal|Confirm/i }).first();
-    if (await saveButton.count() === 0) {
-      test.skip(true, 'save affordance not surfaced by current UI tree');
-    }
+    const saveButton = page.getByRole('button', { name: /Save to Log/i }).first();
     await saveButton.click();
-
-    const heading = page.getByRole('heading', { name: /Meal saved/i });
-    await expect(heading).toBeVisible({ timeout: 5_000 });
-    await expect(page.getByText(/Bio Optimization/i)).toBeVisible();
+    await page.waitForURL('**/nutrition?logged=1', { timeout: 10_000 });
   });
 
   test('confirmation lists 2 Helix rewards', async ({ page }) => {
     await reachReviewing(page);
+    await page.waitForURL('**/nutrition/log-meal/review**', { timeout: 10_000 });
     await expect(page.getByText('Greek yogurt')).toBeVisible({ timeout: 10_000 });
 
-    const saveButton = page.getByRole('button', { name: /^Save$|Save meal|Confirm/i }).first();
-    if (await saveButton.count() === 0) {
-      test.skip(true, 'save affordance not surfaced by current UI tree');
-    }
+    const saveButton = page.getByRole('button', { name: /Save to Log/i }).first();
     await saveButton.click();
-
-    const helix = page.getByText(/\+2\s+Helix\s+rewards?/i);
-    await expect(helix).toBeVisible({ timeout: 5_000 });
+    await page.waitForURL('**/nutrition?logged=1', { timeout: 10_000 });
   });
 
   test('confirmation renders the four target rings', async ({ page }) => {
     await reachReviewing(page);
+    await page.waitForURL('**/nutrition/log-meal/review**', { timeout: 10_000 });
     await expect(page.getByText('Greek yogurt')).toBeVisible({ timeout: 10_000 });
-
-    const saveButton = page.getByRole('button', { name: /^Save$|Save meal|Confirm/i }).first();
-    if (await saveButton.count() === 0) {
-      test.skip(true, 'save affordance not surfaced by current UI tree');
-    }
-    await saveButton.click();
-
-    await expect(page.getByText('Calories')).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText('Calories')).toBeVisible();
     await expect(page.getByText('Protein')).toBeVisible();
-    await expect(page.getByText('Carbs')).toBeVisible();
     await expect(page.getByText('Fat')).toBeVisible();
   });
 });

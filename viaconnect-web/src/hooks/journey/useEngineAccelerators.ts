@@ -134,7 +134,7 @@ export const APPENDIX_A_SEEDS: EngineAccItem[] = [
     id: 'seed-omega-3',
     insightKey: 'add-omega-3-elite',
     headline: 'Add Omega 3 Elite',
-    body: 'Bioavailable EPA/DHA at 10x to 28x absorption, paired with breakfast.',
+    body: 'Bioavailable EPA/DHA with Maximum Bioavailability, paired with breakfast.',
     tag: 'SUPPLEMENT',
     pts: 6,
     derivedPts: 'derived',

@@ -32,7 +32,10 @@ export function PeptideEducationTabs() {
       {TABS.map((tab) => {
         const active = tab.exact
           ? pathname === tab.href
-          : pathname.startsWith(tab.href);
+          : tab.href === '/peptide-protocol/browse'
+            ? pathname.startsWith(tab.href) ||
+              pathname.startsWith('/peptide-protocol/peptide')
+            : pathname.startsWith(tab.href);
         return (
           <Link
             key={tab.href}

@@ -15,7 +15,7 @@
 //
 // Standing rules honored: no em or en dashes anywhere including comments; consumer
 // brand is Via Cura (the legal manufacturing entity is never named here);
-// bioavailability is locked at "10x to 28x"; the score is named "Bio
+// bioavailability is locked at "Maximum Bioavailability"; the score is named "Bio
 // Optimization"; numbers are written as words; tone is associative and
 // educational, never diagnostic; TypeScript strict (no any).
 
@@ -64,7 +64,7 @@ export const PEPTIDE_IQ_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "GHR sits upstream of IGF1 and IGFBP3 in the same axis, so it is best read alongside them, since how the signal is received, produced, and made available together shape the repair picture far more than any single gene.",
     ],
     protocolTieIn:
-      "Via Cura frames GHR as educational context within a foundation of sleep, training, and protein forward recovery nutrition, never as a reason for any commercial peptide. Supporting nutrients are delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption. Track recovery and body composition trends as part of your Bio Optimization picture.",
+      "Via Cura frames GHR as educational context within a foundation of sleep, training, and protein forward recovery nutrition, never as a reason for any commercial peptide. Supporting nutrients are delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability. Track recovery and body composition trends as part of your Bio Optimization picture.",
     laySummary: [
       "GHR is the antenna your tissues use to pick up growth hormone, the signal that helps your body repair and rebuild. Common differences in this antenna are studied for small changes in how clearly that signal comes through, which can gently shape how quickly you recover.",
       "Because this is educational rather than a test of your hormone levels, the honest takeaway is that sleep, training, and good protein do far more for recovery than this reading. So treat it as helpful background about the pathway, not a verdict and not a reason for any peptide.",
@@ -113,7 +113,7 @@ export const PEPTIDE_IQ_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "GHRHR sits at the release step just upstream of GHR and the IGF signals, so it is best read alongside them, since release, reception, and downstream signaling together shape the recovery picture.",
     ],
     protocolTieIn:
-      "Via Cura treats GHRHR as educational context inside a foundation of sleep, recovery, and balanced nutrition, with supporting nutrients delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption. Track sleep quality and recovery as part of your Bio Optimization picture.",
+      "Via Cura treats GHRHR as educational context inside a foundation of sleep, recovery, and balanced nutrition, with supporting nutrients delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability. Track sleep quality and recovery as part of your Bio Optimization picture.",
     laySummary: [
       "GHRHR is the switch on your pituitary that, when flipped by the right signal, releases a natural pulse of growth hormone, mostly while you sleep deeply. Common differences in this switch are studied for small changes in how readily that pulse fires.",
       "Since this is educational and not a hormone test, the practical message is simple: protecting your deep sleep and managing stress do far more for that natural pulse than this reading. So read it as background about your recovery pathway, not a diagnosis and not a reason for any peptide.",
@@ -162,7 +162,7 @@ export const PEPTIDE_IQ_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "IGF1 sits downstream of GHR and is held in balance by IGFBP3, so the three are best read together, since production, availability, and reception shape the repair picture as a set.",
     ],
     protocolTieIn:
-      "Via Cura frames IGF1 as educational context within protein forward, well fueled recovery nutrition rather than any commercial peptide, with supporting nutrients delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption. Track recovery and body composition as part of your Bio Optimization picture.",
+      "Via Cura frames IGF1 as educational context within protein forward, well fueled recovery nutrition rather than any commercial peptide, with supporting nutrients delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability. Track recovery and body composition as part of your Bio Optimization picture.",
     laySummary: [
       "IGF1 is the messenger that carries out much of growth hormone's repair work, helping maintain muscle, bone, and connective tissue. A common variant near this gene is studied for small differences in how much of that messenger circulates.",
       "Because this is educational and not a blood test of your IGF1, the honest framing is that protein, enough total food, and good training shape this signal far more than the reading does. So treat it as background about your repair pathway, not a verdict and not a reason for any peptide.",
@@ -211,7 +211,7 @@ export const PEPTIDE_IQ_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "IGFBP3 meters the IGF1 produced under GHR signaling, so the three read most clearly as a set: reception at GHR, production of IGF1, and availability set by IGFBP3.",
     ],
     protocolTieIn:
-      "Via Cura treats IGFBP3 as educational context within a balanced, protein forward recovery foundation, with supporting nutrients delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption. Track recovery trends as part of your Bio Optimization picture.",
+      "Via Cura treats IGFBP3 as educational context within a balanced, protein forward recovery foundation, with supporting nutrients delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability. Track recovery trends as part of your Bio Optimization picture.",
     laySummary: [
       "IGFBP3 is the carrier that holds the repair messenger IGF1 in your blood and decides how much is free to work at any time. A common version of this gene is studied for small differences in how much carrier you make.",
       "Since this is educational rather than a blood test, the simple takeaway is that it is best read together with IGF1, and that steady protein, energy, and training shape the whole system more than this one reading. So treat it as background about your repair balance, not a verdict and not a reason for any peptide.",
@@ -260,7 +260,7 @@ export const PEPTIDE_IQ_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "Ghrelin acts through the GHSR receptor and sits near MC4R in appetite regulation, so it is best read alongside both, since hunger signaling is a network rather than a single gene.",
     ],
     protocolTieIn:
-      "Via Cura leans into the meal structure ghrelin responds to, pairing protein forward guidance with fiber and sleep support, and supporting nutrients are delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption. Track appetite and intake as part of your Bio Optimization picture.",
+      "Via Cura leans into the meal structure ghrelin responds to, pairing protein forward guidance with fiber and sleep support, and supporting nutrients are delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability. Track appetite and intake as part of your Bio Optimization picture.",
     laySummary: [
       "GHRL makes ghrelin, the hunger hormone that rises before meals and also helps trigger a natural release of growth hormone. A common version called Leu72Met is studied for small differences in appetite and a pull toward sweeter or starchier foods.",
       "Because this is educational and about appetite rather than hormone levels, the helpful framing is that protein, fiber, and good sleep quiet hunger far more than this reading. So treat it as a pointer about your appetite habits, not a verdict and not a reason for any peptide.",
@@ -309,7 +309,7 @@ export const PEPTIDE_IQ_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "GHSR is the receptor for ghrelin and works near MC4R in appetite control, so it is best read alongside GHRL and MC4R as part of one signaling network.",
     ],
     protocolTieIn:
-      "Via Cura treats GHSR as educational context within protein forward, fiber rich nutrition and good sleep, with supporting nutrients delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption. Track appetite and energy as part of your Bio Optimization picture.",
+      "Via Cura treats GHSR as educational context within protein forward, fiber rich nutrition and good sleep, with supporting nutrients delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability. Track appetite and energy as part of your Bio Optimization picture.",
     laySummary: [
       "GHSR is the receptor that picks up ghrelin's hunger signal and helps prompt a natural growth hormone pulse. Common differences in it are studied for small changes in how strongly that signal lands.",
       "Since this is educational and not a test of your appetite or hormones, the simple message is that meal structure and sleep shape hunger far more than this reading. So treat it as background about your appetite pathway, not a verdict and not a reason for any peptide.",
@@ -358,7 +358,7 @@ export const PEPTIDE_IQ_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "MC4R sits in the same appetite network as ghrelin and its receptor, so it is best read alongside GHRL and GHSR, and it layers onto sleep, stress, and activity that can amplify or soften the appetite tendency far more than the variant alone.",
     ],
     protocolTieIn:
-      "Via Cura leans into the appetite levers MC4R responds to, pairing protein forward nutrition with fiber and an activity rhythm, and supporting nutrients are delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption. Track appetite, intake, and body composition as part of your Bio Optimization picture.",
+      "Via Cura leans into the appetite levers MC4R responds to, pairing protein forward nutrition with fiber and an activity rhythm, and supporting nutrients are delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability. Track appetite, intake, and body composition as part of your Bio Optimization picture.",
     laySummary: [
       "MC4R is one of the brain's main appetite dials, helping set how hungry or full you feel. A common variant near it is studied for small differences in hunger, snacking, and weight tendency, which is useful context for recovery and body composition.",
       "Because this is educational and not a weight verdict, the encouraging part is that protein, fiber, sleep, and movement quiet the extra hunger well. So treat it as a helpful heads up about your appetite, not a verdict and not a reason for any peptide.",
@@ -407,7 +407,7 @@ export const PEPTIDE_IQ_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "COL1A1 works alongside COL5A1 and the matrix remodeling done by MMP3, so it is best read with them, since structure and remodeling together shape connective tissue resilience.",
     ],
     protocolTieIn:
-      "Via Cura supports collagen building nutrition with protein, vitamin C, and trace mineral cofactors, delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption, alongside sensible loading rather than any commercial peptide. Track joint comfort and recovery as part of your Bio Optimization picture.",
+      "Via Cura supports collagen building nutrition with protein, vitamin C, and trace mineral cofactors, delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability, alongside sensible loading rather than any commercial peptide. Track joint comfort and recovery as part of your Bio Optimization picture.",
     laySummary: [
       "COL1A1 makes the main collagen in your tendons, bones, and skin, so it is central to how strong and resilient your connective tissue is. A common version called the Sp1 variant is studied for small differences in collagen and injury tendency.",
       "Since this is educational rather than a strength test, the useful takeaway is that protein, vitamin C, and steady, progressive loading support your connective tissue well. So treat it as a pointer about caring for tendons and ligaments, not a verdict and not a reason for any peptide.",
@@ -456,7 +456,7 @@ export const PEPTIDE_IQ_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "COL5A1 works with COL1A1 to set connective tissue structure and is studied alongside MMP3 in remodeling, so the three are best read together for the soft tissue picture.",
     ],
     protocolTieIn:
-      "Via Cura supports connective tissue with collagen building nutrition delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption, paired with sensible warm up and loading rather than any commercial peptide. Track joint comfort and recovery as part of your Bio Optimization picture.",
+      "Via Cura supports connective tissue with collagen building nutrition delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability, paired with sensible warm up and loading rather than any commercial peptide. Track joint comfort and recovery as part of your Bio Optimization picture.",
     laySummary: [
       "COL5A1 helps arrange how your collagen fibers are built, which shapes the feel and resilience of your tendons and ligaments. A common version of this gene is studied for small differences in soft tissue properties and flexibility, though results vary between groups.",
       "Because this is educational and not a flexibility test, the practical message is that warming up, loading gradually, and supporting collagen with protein and vitamin C do the most for your soft tissue. So treat it as background for tissue care, not a verdict and not a reason for any peptide.",
@@ -505,7 +505,7 @@ export const PEPTIDE_IQ_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "MMP3 remodeling acts on the structures COL1A1 and COL5A1 build, so the three are best read together, since breakdown and rebuild and structure shape connective tissue recovery as a set.",
     ],
     protocolTieIn:
-      "Via Cura supports orderly repair with protein, collagen cofactors, and an anti inflammatory leaning pattern delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption, paired with sensible loading rather than any commercial peptide. Track recovery and joint comfort as part of your Bio Optimization picture.",
+      "Via Cura supports orderly repair with protein, collagen cofactors, and an anti inflammatory leaning pattern delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability, paired with sensible loading rather than any commercial peptide. Track recovery and joint comfort as part of your Bio Optimization picture.",
     laySummary: [
       "MMP3 is part of the cleanup and rebuild crew that remodels tissue when you recover from injury or hard training, clearing damaged material so new tissue can form. A common version of this gene is studied for small differences in how that remodeling runs.",
       "Since this is educational and not a repair test, the helpful framing is that protein, key cofactors like vitamin C, and gradual loading support your recovery well, and this gene reads best alongside your collagen genes. So treat it as background about repair, not a verdict and not a reason for any peptide.",
@@ -554,7 +554,7 @@ export const PEPTIDE_IQ_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "VEGFA supplies the blood flow that repair tissue depends on, so it is best read alongside NOS3, which governs the nitric oxide tone of that flow, and the connective tissue genes it serves.",
     ],
     protocolTieIn:
-      "Via Cura supports healthy circulation with nitrate rich and omega three rich nutrition delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption, paired with regular activity rather than any commercial peptide. Track recovery and cardiovascular trends as part of your Bio Optimization picture.",
+      "Via Cura supports healthy circulation with nitrate rich and omega three rich nutrition delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability, paired with regular activity rather than any commercial peptide. Track recovery and cardiovascular trends as part of your Bio Optimization picture.",
     laySummary: [
       "VEGFA is the signal that grows new blood vessels to feed healing tissue, so it is the supply line side of recovery. A common version near this gene is studied for small differences in how strongly that signal is expressed.",
       "Because this is educational and not a vascular test, the honest framing is that staying active and eating plenty of vegetables, including leafy greens, support your circulation far more than this reading. So treat it as background about blood flow and repair, not a verdict and not a reason for any peptide.",
@@ -603,7 +603,7 @@ export const PEPTIDE_IQ_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "In recovery, IL6 works alongside TNF in setting inflammatory tone and is supported by the circulation NOS3 and VEGFA provide, so it is best read with them as part of the repair response.",
     ],
     protocolTieIn:
-      "Via Cura supports a balanced inflammatory tone in recovery with omega three and polyphenol rich nutrition delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption, paired with smart training balance rather than any commercial peptide. Track recovery and how you feel as part of your Bio Optimization picture.",
+      "Via Cura supports a balanced inflammatory tone in recovery with omega three and polyphenol rich nutrition delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability, paired with smart training balance rather than any commercial peptide. Track recovery and how you feel as part of your Bio Optimization picture.",
     laySummary: [
       "In the repair setting, IL6 is a two sided messenger: it helps start the inflammation that begins recovery and then helps signal its end. A common version of this gene is studied for small differences in how strongly that response runs and clears.",
       "Since this is educational and specific to recovery rather than a blood test, the useful framing is that an anti inflammatory leaning diet, good sleep, and balanced training shape your inflammatory tone far more than this reading. So treat it as background about recovery, not a verdict and not a reason for any peptide.",
@@ -652,7 +652,7 @@ export const PEPTIDE_IQ_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "TNF works alongside IL6 in setting inflammatory tone during recovery, so the two are best read together as part of the repair response rather than in isolation.",
     ],
     protocolTieIn:
-      "Via Cura supports a balanced inflammatory tone with omega three and polyphenol rich nutrition delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption, paired with smart training balance rather than any commercial peptide. Track recovery and how you feel as part of your Bio Optimization picture.",
+      "Via Cura supports a balanced inflammatory tone with omega three and polyphenol rich nutrition delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability, paired with smart training balance rather than any commercial peptide. Track recovery and how you feel as part of your Bio Optimization picture.",
     laySummary: [
       "TNF is a core inflammation signal that rises when tissue is stressed or healing, helping set how much inflammatory load you carry during recovery. A common version of this gene is studied for small differences in how strongly it is expressed.",
       "Because this is educational and specific to recovery rather than a blood test, the honest message is that an anti inflammatory leaning diet, good sleep, and balanced training shape your inflammatory load far more than this reading, and it reads best alongside IL6. So treat it as background about recovery, not a verdict and not a reason for any peptide.",
@@ -701,7 +701,7 @@ export const PEPTIDE_IQ_DEEP_DRAFTS: Record<string, SnpDeepReport> = {
       "NOS3 sets the nitric oxide tone of the blood flow that VEGFA helps supply, so the two are best read together for the vascular side of recovery, alongside the inflammatory tone IL6 and TNF shape.",
     ],
     protocolTieIn:
-      "Via Cura supports healthy blood flow with nitrate rich and polyphenol rich nutrition delivered through the micellar and liposomal dual delivery system for 10x to 28x absorption, paired with regular activity rather than any commercial peptide. Track recovery and cardiovascular trends as part of your Bio Optimization picture.",
+      "Via Cura supports healthy blood flow with nitrate rich and polyphenol rich nutrition delivered through the micellar and liposomal dual delivery system for Maximum Bioavailability, paired with regular activity rather than any commercial peptide. Track recovery and cardiovascular trends as part of your Bio Optimization picture.",
     laySummary: [
       "NOS3 makes nitric oxide in the lining of your blood vessels, the signal that relaxes them and keeps blood flowing to healing tissue. The common Glu298Asp version is studied for small differences in how much of that signal you make at rest.",
       "Since this is educational and specific to circulation rather than a vascular test, the helpful framing is that staying active and eating nitrate rich greens support your blood flow far more than this reading, and it reads best alongside VEGFA. So treat it as background about perfusion and recovery, not a verdict and not a reason for any peptide.",

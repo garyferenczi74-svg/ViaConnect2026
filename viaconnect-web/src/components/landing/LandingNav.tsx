@@ -80,6 +80,14 @@ export function LandingNav() {
                                             </Link>
                                         </li>
                                     ))}
+                                    <li>
+                                        <Link
+                                            href="/peptide-protocol/browse"
+                                            onClick={() => setMenuState(false)}
+                                            className="text-slate-300 block duration-150 hover:text-white md:px-4 lg:text-sm text-left w-full lg:w-auto">
+                                            <span>Peptide Education</span>
+                                        </Link>
+                                    </li>
                                 </ul>
                             </div>
 

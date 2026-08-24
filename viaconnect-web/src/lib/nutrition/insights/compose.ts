@@ -13,7 +13,7 @@
 // Copy discipline: no dashes of any kind in user facing strings (commas,
 // colons, semicolons only), no emojis, never the word Vitality, and the
 // only bioavailability figure ever permitted is the verbatim string
-// "10x to 28x".
+// "Maximum Bioavailability".
 
 import type { ComposedCopy, InsightComposer, InsightFact } from './types';
 
@@ -212,7 +212,7 @@ const COMPOSER_SYSTEM_PROMPT = [
   'Hard rules:',
   'Never invent numbers. Use only the numbers present in the facts, verbatim.',
   'Never diagnose, never name diseases, never claim anything treats, prevents, or fixes a condition.',
-  'Never state any bioavailability figure except the exact string "10x to 28x", and only when the facts reference a product.',
+  'Never state a bioavailability fold-number. Use the exact string "Maximum Bioavailability", and only when the facts reference a product.',
   'Never mention products unless the facts include a productSuggestion, and then only in educational framing alongside food sources.',
   'No urgency or sales language. No discounts. No emojis. No dashes of any kind; use commas, colons, or semicolons.',
   'If the facts are correlational, describe patterns that appear together; never claim one caused the other.',

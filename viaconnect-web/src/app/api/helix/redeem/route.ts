@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { redeemCatalogItem } from '@/lib/helix/redemption-engine';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
+import { requireConsumerHelixRole } from '@/lib/auth/require-consumer-helix';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,6 +45,9 @@ export async function POST(request: NextRequest) {
     }
 
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const helixGate = await requireConsumerHelixRole(supabase, user, 'api.helix.redeem');
+    if (!helixGate.ok) return helixGate.response;
 
     let result;
     try {

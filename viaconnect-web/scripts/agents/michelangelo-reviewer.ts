@@ -58,7 +58,7 @@ const REVIEW_PATTERNS: Array<{ pattern: RegExp; rule: string; severity: ReviewIs
     pattern: /5[–-]27[×x]/gi,
     rule: 'bioavailability-range',
     severity: 'ERROR',
-    message: 'Bioavailability must be stated as 10-27x not 5-27x'
+    message: 'Bioavailability must be stated as Maximum Bioavailability, not a fold-number range'
   },
   {
     pattern: /strokeWidth(?!\s*=\s*\{1\.5\})/g,

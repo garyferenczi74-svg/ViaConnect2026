@@ -43,7 +43,7 @@ describe("Prompt 219F Hannah persona (Marshall-gated)", () => {
   it("persona enforces hard rules and locked strings", () => {
     const p = HANNAH_CONSUMER_SYSTEM_PROMPT;
     expect(p).toContain("Bio Optimization");
-    expect(p).toContain("10x to 28x");
+    expect(p).toContain("Maximum Bioavailability");
     expect(p.toLowerCase()).toContain("no diagnosis");
     expect(p.toLowerCase()).toContain("educational layer only");
     expect(p.toLowerCase()).toContain("em dashes");

@@ -57,6 +57,10 @@ export interface BodyCompositionAvatarProps {
   // default off so the avatar is unchanged. P5-T1c wires the toggle + goal resolution.
   ghostVector?: BodyParamVector | null;
   showGhost?: boolean;
+  // Brief 2: A/B wipe against a baseline parametric vector. Forwarded verbatim.
+  wipeActive?: boolean;
+  wipeT?: number;
+  wipeVector?: BodyParamVector | null;
   // P8-T1b: telemetry seam forwarded to FormaVisionCanvas. Called once at the end
   // of each orbit gesture (formavision.avatar_rotated). Absent means no telemetry.
   onOrbitEnd?: () => void;
@@ -97,6 +101,9 @@ function BodyCompositionAvatarInner({
   scrubVector = null,
   ghostVector = null,
   showGhost = false,
+  wipeActive = false,
+  wipeT = 0.5,
+  wipeVector = null,
   onOrbitEnd,
   onTierStepDown,
   frameloopMode,
@@ -204,6 +211,9 @@ function BodyCompositionAvatarInner({
         scrubVector={scrubVector}
         ghostVector={ghostVector}
         showGhost={showGhost}
+        wipeActive={wipeActive}
+        wipeT={wipeT}
+        wipeVector={wipeVector}
         renderTier={renderTier}
         onBudgetMissed={reportBudgetMiss}
         onRenderError={() => {

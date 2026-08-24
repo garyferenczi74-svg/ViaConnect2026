@@ -51,7 +51,7 @@ export const APPROVED_FRAMING = {
     'Educational information based on genetic relevance research, not medical advice. Consult a healthcare provider before making supplement decisions.',
   subline: 'Your Genetics | Your Protocol',
   brandTagline: 'Built For Your Biology',
-  bioavailability: '10x to 28x',
+  bioavailability: 'Maximum Bioavailability',
 } as const;
 
 export interface CompatibilityResult {
