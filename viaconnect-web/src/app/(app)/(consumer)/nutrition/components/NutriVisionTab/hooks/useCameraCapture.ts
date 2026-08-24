@@ -16,6 +16,7 @@ import {
   type CaptureResult,
   type CaptureSource,
 } from '@/lib/capacitor/camera-capture';
+import { NUTRIVISION_CAMERA_CAPTURE_TIMEOUT_MS } from '@/lib/nutrition/stateContract228';
 
 export interface UseCameraCaptureReturn {
   capture: (source: CaptureSource) => Promise<CaptureResult | null>;
@@ -51,7 +52,25 @@ export function useCameraCapture(): UseCameraCaptureReturn {
     setIsCapturing(true);
     setError(null);
     try {
-      const result = await captureMealPhoto({ source });
+      const pending = captureMealPhoto({ source });
+      let result: CaptureResult;
+      if (source === 'camera') {
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        try {
+          result = await Promise.race([
+            pending,
+            new Promise<never>((_, reject) => {
+              timer = setTimeout(() => {
+                reject(new Error('Camera is taking too long. Close and try again, or upload a photo.'));
+              }, NUTRIVISION_CAMERA_CAPTURE_TIMEOUT_MS);
+            }),
+          ]);
+        } finally {
+          if (timer !== undefined) clearTimeout(timer);
+        }
+      } else {
+        result = await pending;
+      }
       setLastCapture(result);
       return result;
     } catch (err) {

@@ -8,14 +8,20 @@ import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { CheckCircle2, RotateCcw, Trash2 } from 'lucide-react';
 import { MealResultCard } from '@/components/nutrition/MealResultCard';
+import { ProtocolMatchChips } from '@/components/nutrition/meal-card/ProtocolMatchChips';
+import { ProtocolMicroRings } from '@/components/nutrition/meal-card/ProtocolMicroRings';
+import { FdaDisclaimer } from '@/components/compliance/FdaDisclaimer';
 import type { NutritionAnalysis } from '@/lib/nutrition/schema';
+import type { ProtocolMatchResult } from '@/lib/nutrition/meal-card-contract/types';
+import { EDUCATIONAL_PROTOCOL_NOTE } from '@/lib/nutrition/meal-card-contract/types';
 
 interface ReviewFormProps {
   readonly logId: string;
   readonly initial: NutritionAnalysis;
+  readonly protocolMatch?: ProtocolMatchResult;
 }
 
-export function ReviewForm({ logId, initial }: ReviewFormProps) {
+export function ReviewForm({ logId, initial, protocolMatch }: ReviewFormProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [analysis, setAnalysis] = useState<NutritionAnalysis>(initial);
@@ -89,6 +95,17 @@ export function ReviewForm({ logId, initial }: ReviewFormProps) {
         fatSourceId={fatSourceId}
         onFatSourceChange={setFatSourceId}
       />
+
+      {protocolMatch && protocolMatch.chips.length > 0 && (
+        <ProtocolMatchChips chips={protocolMatch.chips} />
+      )}
+      {protocolMatch && protocolMatch.rings.length > 0 && (
+        <ProtocolMicroRings rings={protocolMatch.rings} />
+      )}
+      <p className="text-[11px] leading-relaxed text-white/40">
+        {protocolMatch?.educationalNote ?? EDUCATIONAL_PROTOCOL_NOTE}
+      </p>
+      <FdaDisclaimer slot="card-footer" />
 
       {error && (
         <p className="text-xs text-[#FCA5A5]">{error}</p>

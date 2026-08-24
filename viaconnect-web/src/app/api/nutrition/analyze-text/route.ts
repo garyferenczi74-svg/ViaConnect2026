@@ -47,6 +47,12 @@ import { reconcileMealKcal } from '@/lib/nutrition/compute-meal-kcal';
 // calories reconciliation band (restored from the pre-194 177d behavior), tied
 // to ONE shared constant. The 3 kcal kcalRecon guard below is telemetry only.
 import { MATCH_CONFIDENCE_LOW_BAND, macroCaloriesReconciled } from '@/lib/nutrition/match-confidence';
+import {
+  contractFromAnalysis,
+  encodePendingRawInput,
+  isMealCardEntrySource,
+} from '@/lib/nutrition/meal-card-contract/toContract';
+import type { MealCardEntrySource } from '@/lib/nutrition/meal-card-contract/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -76,6 +82,9 @@ export async function POST(req: NextRequest) {
     const mealTypeP = MealTypeSchema.safeParse(body.mealType);
     if (!mealTypeP.success) throw new AIRouteError('INVALID_INPUT', 'mealType', 400, 'Pick a meal type.');
     const mealType = mealTypeP.data;
+    const mealCardSource: MealCardEntrySource = isMealCardEntrySource(body.mealCardSource)
+      ? body.mealCardSource
+      : 'text';
     const loggedAt = typeof body.loggedAt === 'string' && !Number.isNaN(Date.parse(body.loggedAt))
       ? body.loggedAt : new Date().toISOString();
 
@@ -369,11 +378,16 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    const foodNames = parsed.items
+      .map((item) => item.name)
+      .filter((name) => typeof name === 'string' && name.trim().length > 0);
+    const mealCard = contractFromAnalysis(analysis, mealCardSource, { foodNames });
+
     const { data: inserted, error: insErr } = await supabase
       .from('nutrition_logs')
       .insert({
         user_id: user.id, logged_at: loggedAt, meal_type: mealType,
-        source: 'manual_text', raw_input: description,
+        source: 'manual_text', raw_input: encodePendingRawInput(mealCard),
         serving_description: analysis.serving_description,
         calories: derivedKcal, protein_g: analysis.protein_g, carbs_g: analysis.carbs_g,
         total_fat_g: analysis.total_fat_g, good_fat_g: null,
