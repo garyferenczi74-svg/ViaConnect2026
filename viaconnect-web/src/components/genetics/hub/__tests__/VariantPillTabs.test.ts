@@ -17,7 +17,7 @@ describe('VariantPillTabs source', () => {
 
   it('declares the tablist role with an accessible label and orientation', () => {
     expect(source).toContain('role="tablist"');
-    expect(source).toContain('aria-label="Genetic tests"');
+    expect(source).toContain('aria-label="GENEX360 tests"');
     expect(source).toContain('aria-orientation="horizontal"');
   });
 

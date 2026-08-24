@@ -18,6 +18,7 @@
 import { Dna, Apple, Activity, Hourglass, HeartPulse, Leaf } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { PanelSlug } from '@/data/genex360/types';
+import { CATALOG_SIZE_LABEL } from '@/lib/genetics/catalogSizes';
 import { GENEX360_BLUEPRINT_HREF } from './geneticsHubLinks';
 import { MEDIA_TEAL_BR, MEDIA_TEAL_BL, MEDIA_ORANGE_BR } from './geneticsHubMedia';
 import type { SurfaceMedia } from '@/components/body-tracker/hub/hubConfig';
@@ -70,7 +71,7 @@ export const PANEL_BENTO_META: PanelBentoMeta[] = [
   {
     slug: 'epigen-hq',
     icon: Hourglass,
-    unit: 'markers',
+    unit: 'clocks',
     accent: 'teal',
     // Prompt 193d (2026-06-12): EpigenHQ carries its background hero video from the
     // Hero Videos bucket. CardMedia plays it muted, looped, playsInline, and
@@ -131,7 +132,7 @@ export const PANEL_BENTO_META: PanelBentoMeta[] = [
   {
     slug: 'nutrigen-dx',
     icon: Apple,
-    unit: 'markers',
+    unit: 'SNPs',
     accent: 'teal',
     // Prompt 193d (2026-06-13): NutrigenDX carries a background hero image from the
     // Hero Images bucket. CardMedia fails open to the MEDIA_TEAL_BR gradient.
@@ -158,7 +159,7 @@ export interface HeroBentoMeta {
 export const HERO_BENTO_META: HeroBentoMeta = {
   href: GENEX360_BLUEPRINT_HREF,
   badge: 'Most Popular',
-  primaryStat: '500+ variants',
+  primaryStat: CATALOG_SIZE_LABEL,
   secondaryStat: '6 panels',
   tagline: 'Built For Your Biology',
 };

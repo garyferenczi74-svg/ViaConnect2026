@@ -103,7 +103,7 @@ export function VariantPillTabs({ tests, activeId, onActivate, panelId }: Varian
 
       <div
         role="tablist"
-        aria-label="Genetic tests"
+        aria-label="GENEX360 tests"
         aria-orientation="horizontal"
         onKeyDown={onKeyDown}
         className="scrollbar-hide flex snap-x snap-mandatory flex-nowrap gap-2 overflow-x-auto pb-1 md:flex-wrap md:overflow-visible"

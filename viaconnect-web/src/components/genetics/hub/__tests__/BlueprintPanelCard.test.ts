@@ -87,6 +87,7 @@ describe('BlueprintPanelCard source', () => {
     expect(source).toContain('{meta.primaryStat}');
     expect(source).toContain('{meta.tagline}');
     expect(source).toContain('Explore GeneX360');
+    expect(source).not.toContain('500+ variants');
   });
 
   it('plays the GeneX360 Complete background media behind the hero card, over a scrim', () => {

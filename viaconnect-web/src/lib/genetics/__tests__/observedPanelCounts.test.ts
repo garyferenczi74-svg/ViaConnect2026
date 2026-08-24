@@ -17,7 +17,10 @@ describe('observedPanelCounts fail-open vs empty', () => {
     expect(isHonestEmptyObserved(empty)).toBe(true);
     expect(isUnknownObserved(empty)).toBe(false);
     expect(empty.count).toBe(0);
-    expect(formatObservedBadge(empty)).toBe('0 SNPs');
+    expect(formatObservedBadge(empty)).toBe('Not analyzed');
+    expect(formatObservedBadge(empty)).not.toBe('0 SNPs');
+    expect(formatObservedBadge(empty)).not.toBe('Unanalyzed');
+    expect(formatObservedBadge(empty)).not.toBe('Demo');
 
     expect(isUnknownObserved(unknown)).toBe(true);
     expect(isHonestEmptyObserved(unknown)).toBe(false);
