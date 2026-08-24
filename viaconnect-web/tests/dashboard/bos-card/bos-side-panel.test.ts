@@ -79,12 +79,9 @@ describe('BOSSidePanel / weekly delta chip', () => {
     });
   });
 
-  it('falls back to placeholder when delta is null (read API gap)', () => {
-    expect(buildWeeklyDeltaChip(null)).toEqual({
-      value: '-- pts',
-      polarity: 'flat',
-      color: '#A1A1AA',
-    });
+  it('hides the chip when weekly_delta is missing (never prints -- pts)', () => {
+    expect(buildWeeklyDeltaChip(null)).toBeNull();
+    expect(buildWeeklyDeltaChip(Number.NaN)).toBeNull();
   });
 });
 

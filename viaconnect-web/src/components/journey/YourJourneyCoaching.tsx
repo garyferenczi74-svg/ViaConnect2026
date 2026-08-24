@@ -35,6 +35,8 @@ import { withTimeout } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
 import { useHannahDailyNote } from "@/hooks/journey/useHannahDailyNote";
 import { heroGaugeScore } from "@/components/journey/coaching/heroHelpers";
+import { useBOSCurrent } from "@/hooks/use-bos-current";
+import { toDisplayBosScore } from "@/lib/scoring/bos-display";
 import { formatMacroLabel, kcalRemaining, flatSparkline, goalProgressPct } from "@/components/journey/coaching/lowerHelpers";
 import { useJourneyGraphSeries, type PillarKey } from "@/components/journey/coaching/useJourneyGraphSeries";
 import { type JourneyRange } from "@/components/journey/coaching/journeyGraphWindow";
@@ -109,23 +111,25 @@ function Edge({ active, color }: { active: boolean; color?: string }) {
 function bandLabel(v: number): string { return v >= 75 ? "Strong" : v >= 60 ? "Solid" : v >= 40 ? "Fair" : "Low"; }
 function Delta({ v, unit }: { v: number; unit?: string }) { const up = v >= 0; return <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 11, fontWeight: 600, color: up ? C.teal : C.orange }}>{up ? <TrendingUp size={11} strokeWidth={SW} /> : <TrendingDown size={11} strokeWidth={SW} />}{up ? "+" : ""}{v}{unit || ""}</span>; }
 
-function PlasmaRing({ value, color, size = 40 }: { value: number; color: string; size?: number }) {
+function PlasmaRing({ value, color, size = 40 }: { value: number | null; color: string; size?: number }) {
   const sw = Math.max(3, size * 0.085);
   const r = size / 2 - sw / 2 - 1, CIRC = 2 * Math.PI * r;
-  const ang = (-90 + (value / 100) * 360) * Math.PI / 180;
+  const ringValue = value === null ? 0 : value;
+  const ang = (-90 + (ringValue / 100) * 360) * Math.PI / 180;
   const capX = size / 2 + r * Math.cos(ang), capY = size / 2 + r * Math.sin(ang);
+  const label = value === null ? "--" : String(value);
   return (
     <div style={{ width: size, height: size }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={C.inset} strokeWidth={sw} />
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeDasharray={CIRC} strokeDashoffset={CIRC * (1 - value / 100)} transform={`rotate(-90 ${size / 2} ${size / 2})`} style={{ filter: `drop-shadow(0 0 4px ${color}cc)` }} />
-        <circle cx={capX} cy={capY} r={Math.max(1.8, size * 0.06)} fill="#fff" style={{ filter: `drop-shadow(0 0 3px ${color})` }} />
-        <text x="50%" y="50%" textAnchor="middle" dy="0.35em" fontSize={(size * 0.34).toFixed(1)} fontWeight="800" fill={C.text}>{value}</text>
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeDasharray={CIRC} strokeDashoffset={CIRC * (1 - ringValue / 100)} transform={`rotate(-90 ${size / 2} ${size / 2})`} style={{ filter: `drop-shadow(0 0 4px ${color}cc)` }} />
+        {value !== null && <circle cx={capX} cy={capY} r={Math.max(1.8, size * 0.06)} fill="#fff" style={{ filter: `drop-shadow(0 0 3px ${color})` }} />}
+        <text x="50%" y="50%" textAnchor="middle" dy="0.35em" fontSize={(size * 0.34).toFixed(1)} fontWeight="800" fill={C.text}>{label}</text>
       </svg>
     </div>
   );
 }
-function GaugeCard({ value, label, color, hero, loading }: { value: number; label: string; color: string; hero?: boolean; loading?: boolean }) {
+function GaugeCard({ value, label, color, hero, loading }: { value: number | null; label: string; color: string; hero?: boolean; loading?: boolean }) {
   return (
     <div
       className="vc-gauge-tile"
@@ -162,7 +166,7 @@ function GaugeCard({ value, label, color, hero, loading }: { value: number; labe
 // nutrition -> categoryAverages.nutrition
 // activity -> categoryAverages.movement
 // hydration -> useHydrationToday.percentage_of_target
-type PillarValues = Record<string, number>;
+type PillarValues = Record<string, number | null>;
 
 // Journey: self-contained hero graph component wired to useJourneyGraphSeries.
 // Takes only { userId }; holds range and offset state (T4 period navigator wires offset).
@@ -445,7 +449,7 @@ function ProfileCard({
   // Prompt 216d: latest compiled note (welcome fail-open). Distinct from read-today.
   const { noteText: hannahNote } = useHannahDailyNote(
     userId,
-    displayName || "there",
+    displayName,
     readTodaySubtext,
   );
   const hannahLabel = getAgentDisplayName("hannah");
@@ -493,7 +497,7 @@ function ProfileCard({
           <span style={{ position: "absolute", right: -5, top: -5, width: 22, height: 22, borderRadius: 999, background: "rgba(26,39,68,0.9)", border: `1px solid rgba(255,255,255,0.25)`, display: "flex", alignItems: "center", justifyContent: "center", color: onVideoText }}><Edit2 size={11} strokeWidth={SW} /></span>
         </div>
         <div>
-          <div style={{ fontSize: 18, fontWeight: 800, color: onVideoText }}>{displayName || "there"}</div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: onVideoText }}>{displayName || ""}</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 5, marginTop: 9, fontSize: 11.5, color: onVideoText }}>
             <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><RefreshCw size={13} strokeWidth={SW} /> {lastSyncLabel}</span>
           </div>
@@ -559,10 +563,14 @@ function Hero({
   })();
 
   // Build the real pillar values array from pillarValues map, matching PILLARS order.
-  const livePillars = PILLARS.map((p) => ({
-    ...p,
-    value: heroGaugeScore(pillarValues[p.key] ?? 0),
-  }));
+  // Bio Optimization uses the shared BOS guard: never NaN, never a fake 0.
+  const livePillars = PILLARS.map((p) => {
+    const raw = pillarValues[p.key];
+    if (p.key === "overall") {
+      return { ...p, value: toDisplayBosScore(raw) };
+    }
+    return { ...p, value: heroGaugeScore(raw ?? 0) };
+  });
 
   return (
     <div
@@ -1220,10 +1228,12 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
   }, []);
 
   // Real data hooks (fail-open: all return safe defaults on error/loading).
-  // bos7D: drives gaugesLoading, Hannah insights, overallCurrent.
+  // bosCurrent: GET /api/bos/current SSOT for the Bio Optimization Score.
+  // bos7D: Hannah insights trend points only.
   // bos4W and bos1Y are removed: the Journey graph (T3) reads its own history
   // via useJourneyGraphSeries inside the Journey component.
   const { data: bos7D, isLoading: bos7DLoading } = useBioOptimizationTrend(userId, "7D");
+  const { data: bosCurrent, isLoading: bosCurrentLoading } = useBOSCurrent();
   const { data: hydrationData } = useHydrationToday();
   // J-T1: useDailyScores reuses calculateDailyScores + the same daily_checkins /
   // meal_logs / useHydrationToday reads as DailyScoresPanel so pillar values here
@@ -1233,11 +1243,10 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
   const { snapshot: compositionSnapshot } = useLatestComposition(userId);
   const bodySeries = useRecentBodySeries(userId);
 
-  // J-T2: dashboard hook for bio_optimization_tier + bio_optimization_score.
-  // Drives the hero narrative state word (canonical, RLS-scoped via dashboard hook).
-  // NEVER reads profiles.vitality_score.
+  // J-T2: Bio Optimization Score SSOT is GET /api/bos/current.
+  // NEVER reads profiles.vitality_score. Never fakes 0 for an uncomputable score.
   const { profile: dashProfile } = useUserDashboardData();
-  const bioDashScore: number | null = dashProfile?.bio_optimization_score ?? null;
+  const bioDashScore: number | null = toDisplayBosScore(bosCurrent?.score);
   const bioDashTier: string | null = dashProfile?.bio_optimization_tier ?? null;
 
   // J-T2: active body_goals row -> goal chip label.
@@ -1310,7 +1319,7 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
     let active = true;
     getDisplayName()
       .then((n) => { if (active) setDisplayName(n); })
-      .catch(() => { /* keep empty; renders as "there" */ });
+      .catch(() => { /* keep empty greeting */ });
     return () => { active = false; };
   }, [userId]);
 
@@ -1421,8 +1430,8 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
   // J-T1: pillar values from useDailyScores (TODAY's dashboard values via
   // calculateDailyScores + same reads as DailyScoresPanel). Null -> 0 so the
   // GaugeCard renders in its existing computing/0 state (same I-T2a behaviour).
-  // "overall" key maps to Bio Optimization (profiles.bio_optimization_score).
-  const overallCurrent = bos7D?.current ?? 0;
+  // "overall" key maps to GET /api/bos/current (same SSOT as the dashboard card).
+  const overallCurrent = toDisplayBosScore(bosCurrent?.score);
   const hydrationPct = hydrationData?.percentage_of_target ?? null;
 
   const pillarValues: PillarValues = {
@@ -1431,7 +1440,7 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
     mood: dailyScores.moodStress ?? 0,
     nutrition: dailyScores.nutrition ?? 0,
     activity: dailyScores.physicalActivity ?? 0,
-    overall: dailyScores.bioOptimization ?? 0,
+    overall: overallCurrent,
     hydration: dailyScores.hydration ?? hydrationPct ?? 0,
   };
 
@@ -1439,7 +1448,7 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
   // Note: rangeData (T3-removed), buildRangeData (T3-removed), bos4W (T3-removed),
   // bos1Y (T3-removed) are all gone. The Journey component now manages its own
   // series via useJourneyGraphSeries internally.
-  const displayNameSafe = displayName && displayName.trim().length > 0 ? displayName : "there";
+  const displayNameSafe = displayName.trim();
   const initial = displayNameSafe.charAt(0).toUpperCase() || "V";
   // J-T2: goal chip now driven by the active body_goals row via useActiveBodyGoal.
   // When no active goal is set, activeGoalLabel is "Set a goal".
@@ -1540,7 +1549,7 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
   // Falls back to the seeded Appendix A items when the engine tables return nothing.
   // The useJourneyRecommendations hook below is kept for the Hannah-insight current score
   // computation but no longer drives the accelerator cards.
-  const journeyRecs = useJourneyRecommendations(userId, overallCurrent);
+  const journeyRecs = useJourneyRecommendations(userId, overallCurrent ?? 0);
   const engineAccel = useEngineAccelerators(userId);
   const accelItems: AccItem[] = engineAccel.items.map(engineItemToAccItem);
 
@@ -1839,7 +1848,7 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
           avatarUrl={avatarUrl}
           goalPhrase={goalPhrase}
           lastSyncLabel={lastSyncLabel}
-          gaugesLoading={shouldShowSkeleton(bos7DLoading || dailyScores.loading, dailyScores.bioOptimization ?? bos7D?.current ?? null)}
+          gaugesLoading={shouldShowSkeleton(bosCurrentLoading || bos7DLoading || dailyScores.loading, overallCurrent)}
         />
 
         <div className="vc-page-sections" style={{ display: "flex", flexDirection: "column", gap: 22 }}>

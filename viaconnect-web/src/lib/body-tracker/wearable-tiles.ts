@@ -1,20 +1,20 @@
 // First-class wearable tiles for /body-tracker/connections (alias /wearables).
-// Picasso IA: Whoop, Hume, Apple Health, Oura. Same surface at 390 and 1280.
+// Picasso IA: Whoop, Hume Body Pod, Apple Health, Oura. Same surface at 390 and 1280.
 //
 // OAuth Connected-state requires provisioned Vercel secrets (WHOOP_*, OURA_*,
 // WEARABLE_TOKEN_KEY, and optional *_REDIRECT_URI). Leftover connected_sources
 // or token rows do not count until that path is real. Client IDs are never
 // hardcoded. last_sync_at alone never marks a tile Connected.
 //
-// Web Apple is XML only. Hume is never copied from phone_health and has no
-// OAuth. This tile is Apple Health, never Watch.
-// Tile statusLabel is Brief 12 last-sync SM only.
+// Web Apple is XML only. Hume is XML sourceName hume_body_pod, never copied
+// from phone_health, and has no OAuth. This tile is Apple Health, never Watch.
+// Last-sync display is the shared SM in @/lib/body-tracker/last-sync-state (PR #40).
 
 import {
   oauthNeedsReconnect,
   resolveLastSyncState,
   type LastSyncKind,
-} from './last-sync-state';
+} from '@/lib/body-tracker/last-sync-state';
 
 export const FIRST_CLASS_TILE_IDS = ['whoop', 'hume', 'apple_health', 'oura'] as const;
 
@@ -31,6 +31,17 @@ export type WearableDimension =
   | 'regimen';
 
 export type TileStatus = 'connected' | 'disconnected';
+
+export const FORBIDDEN_FIRST_CLASS_TILE_IDS = [
+  'fitbit',
+  'garmin',
+  'google_health',
+  'google_health_connect',
+  'phone_health',
+  'manual_entry',
+  'apple_watch',
+  'watch',
+] as const;
 
 export type TileAction =
   | { kind: 'oauth'; configured: boolean }

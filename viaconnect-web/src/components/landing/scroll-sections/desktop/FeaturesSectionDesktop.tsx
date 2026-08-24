@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { SectionAnchor } from '../shared/SectionAnchor'
 import { SECTION_IDS } from '../shared/sectionConstants'
 import { featureCards } from '../shared/featureCards'
+import { FEATURES_INTRO_COPY } from '@/lib/practitioner/waitlist-honesty'
 
 export function FeaturesSectionDesktop() {
     return (
@@ -26,7 +27,7 @@ export function FeaturesSectionDesktop() {
                         Features built for your biology
                     </h2>
                     <p className="text-white/70 text-xl max-w-3xl leading-relaxed">
-                        One platform. Genomic testing, AI protocols, peptide therapeutics, real-time analytics, and a three-portal ecosystem connecting you to clinical expertise.
+                        {FEATURES_INTRO_COPY.desktop}
                     </p>
                 </motion.div>
 

@@ -20,9 +20,18 @@ export interface CompositionSnapshot {
   regionMuscleLbs: RegionMap;
   totalMuscleMassLbs: number | null;
   skeletalMuscleMassLbs: number | null;
+  /** Present when this entry is linked to body_tracker_photo_scans. */
+  scanId?: string | null;
+  /** Photo-scan body fat is a RANGE. Display these; do not treat midpoint as measured. */
+  estimatedBodyFatMin?: number | null;
+  estimatedBodyFatMax?: number | null;
+  isEstimated?: boolean;
 }
 
 export interface ScanDerived {
+  /** Midpoint of the estimate range. Metadata / delta math only — not a measured value. */
   totalBodyFatPct: number | null;
+  estimatedBodyFatMin?: number | null;
+  estimatedBodyFatMax?: number | null;
   confidence: number;
 }

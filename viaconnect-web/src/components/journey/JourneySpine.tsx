@@ -69,20 +69,33 @@ const PHASE_STEPS: { phase: JourneyPhase; id: string; icon: LucideIcon }[] = [
 // ---------------------------------------------------------------------------
 
 function hannahRead(name: string, state: JourneyState): string {
-  const who = name && name.trim().length > 0 ? name : 'there';
+  const who = name.trim();
+  const lead = (named: string, unnamed: string) => (who ? named : unnamed);
   switch (state.phase) {
     case 'Baseline':
-      return `${who}, this is your starting point. ${state.nextAction} so we can build from real data.`;
+      return lead(
+        `${who}, this is your starting point. ${state.nextAction} so we can build from real data.`,
+        `This is your starting point. ${state.nextAction} so we can build from real data.`,
+      );
     case 'Protocol':
-      return `${who}, your protocol is set. ${state.nextAction} to begin.`;
+      return lead(
+        `${who}, your protocol is set. ${state.nextAction} to begin.`,
+        `Your protocol is set. ${state.nextAction} to begin.`,
+      );
     case 'Tracking':
-      return `Nice momentum, ${who}. ${state.nextAction}.`;
+      return lead(`Nice momentum, ${who}. ${state.nextAction}.`, `Nice momentum. ${state.nextAction}.`);
     case 'Re-test':
-      return `${who}, you have given this enough time to show a signal. ${state.nextAction}.`;
+      return lead(
+        `${who}, you have given this enough time to show a signal. ${state.nextAction}.`,
+        `You have given this enough time to show a signal. ${state.nextAction}.`,
+      );
     case 'Adjust':
-      return `${who}, your re-test is in. ${state.nextAction} to refine your next cycle.`;
+      return lead(
+        `${who}, your re-test is in. ${state.nextAction} to refine your next cycle.`,
+        `Your re-test is in. ${state.nextAction} to refine your next cycle.`,
+      );
     default:
-      return `${who}, ${state.nextAction}.`;
+      return lead(`${who}, ${state.nextAction}.`, state.nextAction);
   }
 }
 
@@ -214,13 +227,13 @@ export function JourneySpine({ userId }: { userId: string | null }) {
 
   useEffect(() => {
     let active = true;
-    // getDisplayName fails open to "there"; guard for a late resolution.
+    // getDisplayName fails open to empty; guard for a late resolution.
     getDisplayName()
       .then((n) => {
         if (active) setDisplayName(n);
       })
       .catch(() => {
-        /* keep the empty default; hannahRead falls back to "there" */
+        /* keep the empty default; hannahRead uses an unnamed greeting */
       });
     return () => {
       active = false;

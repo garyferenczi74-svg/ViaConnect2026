@@ -143,7 +143,7 @@ export function ConnectionsSurface() {
   }, [consent, persistPhiConsent]);
 
   return (
-    <div className="font-instrument space-y-6">
+    <div className="mx-auto w-full max-w-7xl font-instrument space-y-6">
       <BackToHubLink />
 
       <header>
@@ -152,12 +152,12 @@ export function ConnectionsSurface() {
           <h1 className="text-lg font-bold text-white">Connections</h1>
         </div>
         <p className="mt-1 text-sm text-white/50">Wearables</p>
-        <p className="mt-1 hidden text-sm text-white/50 lg:block">
+        <p className="mt-1 hidden text-sm text-white/50 min-[1280px]:block">
           Connect your devices and health data to unlock deeper insights.
         </p>
       </header>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 min-[1280px]:grid-cols-2">
         <div className="space-y-3">
           {tiles.map((tile) => (
             <WearableTileCard

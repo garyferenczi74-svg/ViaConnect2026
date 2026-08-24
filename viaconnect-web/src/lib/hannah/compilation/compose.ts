@@ -105,7 +105,7 @@ export function composeAcceleratorInsights(
 export function composePersonalizedRead(
   digests: SupplierDigest[],
   insights: ComposedInsight[],
-  displayName = 'there',
+  displayName = '',
 ): {
   greeting: string;
   analysis: string;
@@ -117,7 +117,9 @@ export function composePersonalizedRead(
   const hubs = [...new Set(insights.map((i) => i.sourceHub))];
   const top = insights[0];
 
-  const greeting = `Hi ${displayName}, here is your weekly Bio Optimization read.`;
+  const greeting = displayName.trim()
+    ? `Hi ${displayName.trim()}, here is your weekly Bio Optimization read.`
+    : 'Here is your weekly Bio Optimization read.';
   const analysis =
     hubs.length === 0
       ? 'Sources are still sparse. Connect Nutrition, Biology, or finish your CAQ so accelerators can deepen.'

@@ -78,7 +78,7 @@ function pending(sources: SourceValue[], manual = false): DisagreementExplanatio
     winnerSource: null,
     winnerLabel: null,
     resolvedValue: null,
-    resolvedDisplay: 'Pending',
+        resolvedDisplay: 'UNKNOWN',
     averagedBecauseEqualTrust: false,
     showWinnerBadge: false,
     showDisagreeChrome: false,
@@ -244,6 +244,7 @@ export interface DimensionSourceRow {
   value: number | null;
   displayValue: string;
   status: 'sourced' | 'pending';
+  showRing: boolean;
   manual: boolean;
   disagreement: DisagreementExplanation | null;
   sources: SourceValue[];
@@ -268,20 +269,25 @@ export function buildDimensionSourceRows(
         dimension,
         source: null,
         value: null,
-        displayValue: 'Pending',
+        displayValue: 'UNKNOWN',
         status: 'pending',
+        showRing: false,
         manual,
         disagreement,
         sources: disagreement.sources,
       };
     }
 
+    const value = disagreement.resolvedValue;
+    const showRing = value !== null && Number.isFinite(value);
+
     return {
       dimension,
       source: disagreement.winnerSource ?? (disagreement.averagedBecauseEqualTrust ? 'average' : null),
-      value: disagreement.resolvedValue,
+      value,
       displayValue: disagreement.resolvedDisplay,
       status: 'sourced',
+      showRing,
       manual,
       disagreement,
       sources: disagreement.sources,
@@ -290,7 +296,7 @@ export function buildDimensionSourceRows(
 }
 
 export function formatUnknownOrPending(value: number | null | undefined): string {
-  if (value === null || value === undefined || !Number.isFinite(value)) return 'Pending';
+  if (value === null || value === undefined || !Number.isFinite(value)) return 'UNKNOWN';
   return fmt(value);
 }
 

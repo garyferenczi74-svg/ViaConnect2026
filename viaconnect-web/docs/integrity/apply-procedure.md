@@ -65,3 +65,10 @@ Practical consequence: a migration that merges without being applied and
 manifested within the grace window turns CI red with the file named.
 Either apply it per the rule above or get its removal signed off; editing
 the manifest is a reviewed PR diff either way.
+
+Optional `unapplied_stems` on the same manifest is a reviewed inventory of
+filename stems that exist in the repo and were confirmed absent from
+`supabase_migrations.schema_migrations`. Those stems are not apply records
+and must not be given invented versions. The parity gate accepts them so
+post-grace CI stays honest; a listed stem with no repo file fails as
+`stale-unapplied-stem`.

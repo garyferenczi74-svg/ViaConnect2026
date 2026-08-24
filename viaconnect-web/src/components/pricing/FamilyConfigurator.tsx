@@ -9,11 +9,50 @@ import type { FamilyPricingBreakdown } from '@/types/pricing';
 interface FamilyConfiguratorProps {
   billingCycle: 'monthly' | 'annual';
   onPricingChange?: (breakdown: FamilyPricingBreakdown) => void;
+  additionalAdultPriceCents?: number | null;
+  additionalChildrenChunkPriceCents?: number | null;
+  childrenChunkSize?: number | null;
+  maxAdultsAllowed?: number;
+  baseAdultsIncluded?: number;
+  baseChildrenIncluded?: number;
+  familyDisplayName?: string;
 }
 
-export function FamilyConfigurator({ billingCycle, onPricingChange }: FamilyConfiguratorProps) {
-  const [adults, setAdults] = useState(2);
-  const [children, setChildren] = useState(2);
+function adultHint(maxAdults: number, additionalAdultPriceCents: number | null): string {
+  const bounds = `Minimum 1, maximum ${maxAdults}.`;
+  if (additionalAdultPriceCents === null) {
+    return `${bounds} Additional adult pricing comes from the live family plan.`;
+  }
+  return `${bounds} Each additional adult adds ${formatPriceFromCents(additionalAdultPriceCents)} per month.`;
+}
+
+function childrenHint(
+  baseChildrenIncluded: number,
+  childrenChunkSize: number | null,
+  additionalChildrenChunkPriceCents: number | null,
+): string {
+  const included = `${baseChildrenIncluded} included.`;
+  if (additionalChildrenChunkPriceCents === null) {
+    return `${included} Additional children pricing comes from the live family plan.`;
+  }
+  const chunk =
+    childrenChunkSize !== null ? ` group of ${childrenChunkSize}` : '';
+  return `${included} Each additional${chunk} children adds ${formatPriceFromCents(additionalChildrenChunkPriceCents)} per month.`;
+}
+
+export function FamilyConfigurator({
+  billingCycle,
+  onPricingChange,
+  additionalAdultPriceCents = null,
+  additionalChildrenChunkPriceCents = null,
+  childrenChunkSize = null,
+  maxAdultsAllowed = 4,
+  baseAdultsIncluded = 2,
+  baseChildrenIncluded = 2,
+  familyDisplayName = 'Family',
+}: FamilyConfiguratorProps) {
+  const [adults, setAdults] = useState(baseAdultsIncluded);
+  const [children, setChildren] = useState(baseChildrenIncluded);
   const [breakdown, setBreakdown] = useState<FamilyPricingBreakdown | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -26,16 +65,22 @@ export function FamilyConfigurator({ billingCycle, onPricingChange }: FamilyConf
       signal: controller.signal,
     })
       .then(async (r) => {
-        const body = await r.json();
-        if (!r.ok) throw new Error(body?.error ?? 'Failed to load pricing');
+        const body: unknown = await r.json().catch(() => null);
+        if (!r.ok) {
+          const message =
+            body && typeof body === 'object' && 'error' in body && typeof body.error === 'string'
+              ? body.error
+              : 'Failed to load pricing';
+          throw new Error(message);
+        }
         return body as FamilyPricingBreakdown;
       })
       .then((data) => {
         setBreakdown(data);
         onPricingChange?.(data);
       })
-      .catch((e: Error) => {
-        if (e.name !== 'AbortError') setError(e.message);
+      .catch((e: unknown) => {
+        if (e instanceof Error && e.name !== 'AbortError') setError(e.message);
       })
       .finally(() => setLoading(false));
     return () => controller.abort();
@@ -51,16 +96,16 @@ export function FamilyConfigurator({ billingCycle, onPricingChange }: FamilyConf
       <div className="grid sm:grid-cols-2 gap-6">
         <Counter
           label="Adults (18+)"
-          hint={`Minimum 1, maximum 4. Each additional adult adds ${formatPriceFromCents(888)} per month.`}
+          hint={adultHint(maxAdultsAllowed, additionalAdultPriceCents)}
           value={adults}
           min={1}
-          max={4}
+          max={maxAdultsAllowed}
           onChange={setAdults}
           icon={Users}
         />
         <Counter
           label="Children (0 to 17)"
-          hint={`2 included. Each additional 1 or 2 children adds ${formatPriceFromCents(888)} per month.`}
+          hint={childrenHint(baseChildrenIncluded, childrenChunkSize, additionalChildrenChunkPriceCents)}
           value={children}
           min={0}
           max={10}
@@ -78,7 +123,7 @@ export function FamilyConfigurator({ billingCycle, onPricingChange }: FamilyConf
           <p className="text-sm text-[#FCA5A5]">{error}</p>
         ) : breakdown ? (
           <>
-            <Row label="Base Platinum+ Family" value={formatPriceFromCents(breakdown.basePriceCents)} />
+            <Row label={`Base ${familyDisplayName}`} value={formatPriceFromCents(breakdown.basePriceCents)} />
             {breakdown.additionalAdultCount > 0 && (
               <Row
                 label={`${breakdown.additionalAdultCount} additional adult${breakdown.additionalAdultCount > 1 ? 's' : ''}`}
