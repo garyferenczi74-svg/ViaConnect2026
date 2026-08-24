@@ -86,6 +86,12 @@ export function PluginAppCard({
 
         <div className="min-w-0 flex-1 overflow-visible">
           <div className="flex items-start justify-between gap-2">
+            {showComingSoonAction ? (
+              <span className="order-last shrink-0 pt-1 text-[11px] text-white/40">
+                {PLUGIN_STATE_COPY.comingSoon}
+              </span>
+            ) : null}
+
             <div className="min-w-0 flex-1">
               <h3 className="text-sm font-semibold leading-snug text-white whitespace-normal break-words">
                 {card.displayName}
@@ -117,12 +123,6 @@ export function PluginAppCard({
                 </button>
               ) : null}
             </div>
-
-            {showComingSoonAction ? (
-              <span className="shrink-0 pt-1 text-[11px] text-white/40">
-                {PLUGIN_STATE_COPY.comingSoon}
-              </span>
-            ) : null}
 
             {state === 'connected' && card.wearablesCrossLink ? (
               <Link

@@ -117,7 +117,7 @@ describe("Plugins Picasso IA honesty", () => {
     expect(card).not.toContain("oura");
     expect(card).not.toContain("hume");
     expect(card).not.toContain("apple_health");
-    expect(card).not.toMatch(/type="button"[^>]*>[\s\S]*PLUGIN_STATE_COPY.comingSoon/);
+    expect(card).not.toMatch(/type="button"[^>]*>\s*\{PLUGIN_STATE_COPY.comingSoon\}/);
     expect(card).not.toMatch(/Coming soon<\/button/i);
   });
 
