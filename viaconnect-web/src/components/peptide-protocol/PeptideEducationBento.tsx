@@ -15,9 +15,9 @@ import {
   type PeptideBentoTileId,
 } from '@/components/peptide-protocol/peptideEducationBentoConfig';
 
-function searchSubtext(total: number, categories: number, countsOk: boolean): string {
+function searchSubtext(total: number, countsOk: boolean): string {
   if (!countsOk) return 'educational reference';
-  return `${total} monographs · ${categories} categories · educational reference`;
+  return `${total} educational entries`;
 }
 
 function TileContent({
@@ -62,19 +62,17 @@ function TileContent({
 }
 
 export function PeptideEducationBento({
-  monographCount,
-  categoryCount,
+  entryCount,
   countsOk,
 }: {
-  monographCount: number;
-  categoryCount: number;
+  entryCount: number;
   countsOk: boolean;
 }) {
   const byId = new Map(PEPTIDE_EDUCATION_BENTO_TILES.map((t) => [t.id, t]));
 
   function subtextFor(tile: PeptideBentoTile): string {
     if (tile.id === 'search') {
-      return searchSubtext(monographCount, categoryCount, countsOk);
+      return searchSubtext(entryCount, countsOk);
     }
     return tile.subtext;
   }

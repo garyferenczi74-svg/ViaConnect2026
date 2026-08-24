@@ -2,7 +2,7 @@ import { PeptideDisclaimerBanner } from '@/components/peptide-protocol/PeptideDi
 import { PeptideEducationBento } from '@/components/peptide-protocol/PeptideEducationBento';
 import { PeptideProtocolHeroShell } from '@/components/peptide-protocol/PeptideProtocolHeroShell';
 import { PeptideEducationTabs } from '@/components/peptide-protocol/converter/PeptideEducationTabs';
-import { loadConsumerPeptideCatalog } from '@/lib/kb/peptides/loadConsumerPeptides';
+import { loadConsumerEducationEntries } from '@/lib/peptides/educationEntries';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,16 +11,15 @@ export const dynamic = 'force-dynamic';
  * Destination pages are linked, not embedded.
  */
 export default async function PeptideProtocolRoute() {
-  const catalog = await loadConsumerPeptideCatalog();
-  const countsOk = catalog.ok && !catalog.marshallPending && catalog.total > 0;
+  const catalog = await loadConsumerEducationEntries();
+  const countsOk = catalog.ok && catalog.total > 0;
 
   return (
     <PeptideProtocolHeroShell>
       <PeptideEducationTabs />
       <PeptideDisclaimerBanner />
       <PeptideEducationBento
-        monographCount={countsOk ? catalog.total : 0}
-        categoryCount={countsOk ? catalog.categories.length : 0}
+        entryCount={countsOk ? catalog.total : 0}
         countsOk={countsOk}
       />
     </PeptideProtocolHeroShell>
