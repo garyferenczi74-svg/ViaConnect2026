@@ -31,7 +31,7 @@ export interface EducationEntryCatalogResult {
 }
 
 const ENTRY_SELECT =
-  'entry_key, title, mechanism, evidence_grade, regulatory_status, safety_context, provenance, source_url, topic_keys';
+  'entry_key, title, mechanism, evidence_grade, regulatory_status, safety_context, provenance, source_url';
 
 export async function loadConsumerEducationEntries(): Promise<EducationEntryCatalogResult> {
   try {

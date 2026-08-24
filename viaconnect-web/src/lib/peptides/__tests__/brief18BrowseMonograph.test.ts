@@ -95,6 +95,17 @@ describe('Brief 18 cards bind to peptide_education_entries.entry_key', () => {
         path.join(ROOT, 'src/components/peptide-protocol/KbPeptideMonograph.tsx'),
       ),
     ).toBe(false);
+    const consumerLoader = read('src/lib/kb/peptides/loadConsumerPeptides.ts');
+    const types = read('src/lib/kb/peptides/types.ts');
+    expect(consumerLoader).not.toContain('loadConsumerPeptideBySlug');
+    expect(consumerLoader).not.toContain('ConsumerPeptideMonograph');
+    expect(consumerLoader).not.toMatch(/Collection 14/i);
+    expect(types).not.toContain('ConsumerPeptideMonograph');
+    expect(loader).not.toContain('topic_keys');
+    expect(loader).not.toContain('topicKeys');
+    const fields = read('src/lib/peptides/educationEntryFields.ts');
+    expect(fields).not.toContain('topic_keys');
+    expect(fields).not.toContain('topicKeys');
   });
 
   it('keeps existing chrome and Lucide 1.5', () => {

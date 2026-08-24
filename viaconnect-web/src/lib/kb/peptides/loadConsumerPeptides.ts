@@ -1,18 +1,12 @@
 /**
- * Prompt 225: consumer-tier Collection 14 loader.
+ * Prompt 225: consumer-tier educational peptide catalog loader.
  * Relies on RLS: only consumer_safe educational rows with approved gates.
  * Three-layer resilience: try/catch + empty fallback + no fabricated rows.
  */
 
 import { createClient } from '@/lib/supabase/server';
 import { safeLog } from '@/lib/utils/safe-log';
-import {
-  isSafePeptideSlug,
-  parseHonestyLayer,
-  type ConsumerPeptideMonograph,
-  type EducationPeptide,
-  type EducationPeptideCategory,
-} from './types';
+import type { EducationPeptide, EducationPeptideCategory } from './types';
 
 function mapRow(row: Record<string, unknown>): EducationPeptide {
   return {
@@ -98,48 +92,5 @@ export async function loadConsumerPeptideCatalog(): Promise<ConsumerPeptideCatal
       marshallPending: true,
       error: 'catalog_error',
     };
-  }
-}
-
-const MONOGRAPH_SELECT =
-  'slug, display_name, canonical_name, molecular_class, is_peptide, category, mechanism_summary, mechanism_detail, evidence_summary, evidence_grade_overall, exclusion_tier, misconception_notes, wada_status, human_data_exists, honesty_layer, preparation_class, provenance_disclosure, half_life_class';
-
-function mapMonographRow(row: Record<string, unknown>): ConsumerPeptideMonograph {
-  return {
-    ...mapRow(row),
-    mechanismDetail: String(row.mechanism_detail ?? ''),
-    evidenceSummary: String(row.evidence_summary ?? ''),
-    provenanceDisclosure: String(row.provenance_disclosure ?? ''),
-    preparationClass: String(row.preparation_class ?? 'not_applicable'),
-    halfLifeClass: String(row.half_life_class ?? 'unknown'),
-    honesty: parseHonestyLayer(row.honesty_layer),
-  };
-}
-
-export async function loadConsumerPeptideBySlug(
-  slug: string,
-): Promise<ConsumerPeptideMonograph | null> {
-  if (!isSafePeptideSlug(slug)) return null;
-  try {
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from('kb_peptides')
-      .select(MONOGRAPH_SELECT)
-      .eq('slug', slug)
-      .eq('consumer_safe', true)
-      .eq('exclusion_tier', 'educational')
-      .maybeSingle();
-
-    if (error) {
-      safeLog.warn('kb.peptides.consumer', 'monograph query failed', {
-        error: error.message,
-      });
-      return null;
-    }
-    if (!data) return null;
-    return mapMonographRow(data as Record<string, unknown>);
-  } catch (e) {
-    safeLog.error('kb.peptides.consumer', 'monograph threw', { error: e });
-    return null;
   }
 }

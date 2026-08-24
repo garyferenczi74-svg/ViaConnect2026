@@ -14,7 +14,6 @@ export interface EducationEntry {
   safetyContext: string | null;
   provenanceText: string | null;
   pmids: string[];
-  topicKeys: string[];
 }
 
 /** Thanos consumer education keys. Do not add extras. */
@@ -166,8 +165,5 @@ export function mapEducationRow(row: Record<string, unknown>): EducationEntry | 
     safetyContext: asTrimmed(row.safety_context),
     provenanceText: formatProvenance(row.provenance),
     pmids: extractPmids(row.provenance, asTrimmed(row.source_url)),
-    topicKeys: Array.isArray(row.topic_keys)
-      ? row.topic_keys.filter((k): k is string => typeof k === 'string' && k.length > 0)
-      : [],
   };
 }
