@@ -96,6 +96,13 @@ function asTrimmed(value: unknown): string | null {
   return trimmed.length > 0 ? trimmed : null;
 }
 
+/** Empty honesty for live education fields. Never invent copy. */
+export const EDUCATION_FIELD_UNAVAILABLE = 'Not available';
+
+export function displayEducationField(value: unknown): string {
+  return asTrimmed(value) ?? EDUCATION_FIELD_UNAVAILABLE;
+}
+
 function collectPmids(value: unknown, into: Set<string>): void {
   if (typeof value === 'number' && Number.isInteger(value) && value > 0) {
     into.add(String(value));

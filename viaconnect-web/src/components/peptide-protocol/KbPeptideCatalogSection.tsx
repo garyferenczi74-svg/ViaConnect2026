@@ -10,7 +10,10 @@ import {
   Info,
   ShieldAlert,
 } from 'lucide-react';
-import type { EducationEntry } from '@/lib/peptides/educationEntries';
+import {
+  displayEducationField,
+  type EducationEntry,
+} from '@/lib/peptides/educationEntries';
 import { matchesSearchPrefix } from '@/lib/peptides/peptideSearchMatch';
 
 function EducationCard({ entry }: { entry: EducationEntry }) {
@@ -32,6 +35,12 @@ function EducationCard({ entry }: { entry: EducationEntry }) {
           Not a peptide
         </span>
       ) : null}
+      <p
+        data-testid={`kb-peptide-card-mechanism-${entry.entryKey}`}
+        className="mt-2 flex-1 text-[11px] leading-relaxed text-white/65"
+      >
+        {displayEducationField(entry.mechanism)}
+      </p>
       <span className="mt-3 inline-flex min-h-[44px] items-center gap-1 text-[11px] text-[#2DA5A0]">
         Open entry
         <ChevronRight className="h-3.5 w-3.5" strokeWidth={1.5} />

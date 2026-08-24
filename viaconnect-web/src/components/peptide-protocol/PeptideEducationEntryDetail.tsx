@@ -1,6 +1,9 @@
 import Link from 'next/link';
 import { ArrowLeft, FlaskConical, Info } from 'lucide-react';
-import type { EducationEntry } from '@/lib/peptides/educationEntries';
+import {
+  displayEducationField,
+  type EducationEntry,
+} from '@/lib/peptides/educationEntries';
 
 function Field({
   label,
@@ -14,7 +17,9 @@ function Field({
   return (
     <section className="space-y-2" data-testid={testId}>
       <h3 className="text-sm font-semibold text-white">{label}</h3>
-      <p className="text-sm leading-relaxed text-white/65">{value ?? 'Not available'}</p>
+      <p className="text-sm leading-relaxed text-white/65">
+        {displayEducationField(value)}
+      </p>
     </section>
   );
 }
