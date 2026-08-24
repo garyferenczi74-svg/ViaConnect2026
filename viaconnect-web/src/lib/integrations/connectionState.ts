@@ -1,27 +1,37 @@
 /**
- * Prompt 218: shared connection-state read interface.
- * Single source of truth for Plugins (and agreement with analytics / wearables readers).
- * Never fabricates Connected/Available; fail-open to unavailable.
+ * Plugin card join: registry + persisted connection rows.
+ * Tile states come from last-sync-state.ts only. No second state machine.
+ * Missing timestamps stay null. Never invent Connected or last-sync.
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
+import {
+  oauthNeedsReconnect,
+  resolveLastSyncState,
+} from '@/lib/body-tracker/last-sync-state';
 import { withTimeout } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 import {
   PLUGIN_APP_REGISTRY_FALLBACK,
+  PLUGIN_SECTION_ORDER,
+  isPluginConnectWired,
+  isPluginPageApp,
+  pluginSectionFor,
   type PluginAppRegistryRow,
   type PluginAppCategory,
+  type PluginSectionId,
 } from './pluginAppRegistry';
 
 export type ConnectionCardState =
-  | 'connected'
-  | 'available'
+  | 'not_connected'
   | 'coming_soon'
-  | 'unavailable';
+  | 'connected'
+  | 'needs_reconnect';
 
 export interface UserConnectionSnapshot {
   slug: string;
   connected: boolean;
+  status: string;
   connectedAt: string | null;
   lastSyncAt: string | null;
   source: 'body_tracker_connections' | 'data_source_connections' | 'none';
@@ -31,6 +41,28 @@ export interface PluginAppCardModel extends PluginAppRegistryRow {
   cardState: ConnectionCardState;
   connectedAt: string | null;
   lastSyncAt: string | null;
+}
+
+type QueryResult = { data: unknown; error: unknown };
+
+interface QueryBuilder {
+  select: (columns: string) => QueryBuilder;
+  eq: (column: string, value: string | boolean) => QueryBuilder;
+  order: (column: string, options: { ascending: boolean }) => QueryBuilder;
+  then: Promise<QueryResult>['then'];
+}
+
+function fromTable(supabase: SupabaseClient, table: string): QueryBuilder {
+  return (supabase as unknown as { from: (name: string) => QueryBuilder }).from(table);
+}
+
+function asQuery(builder: QueryBuilder): Promise<QueryResult> {
+  return Promise.resolve(builder);
+}
+
+function asIso(value: unknown): string | null {
+  if (typeof value !== 'string' || value.trim().length === 0) return null;
+  return Number.isFinite(new Date(value).getTime()) ? value : null;
 }
 
 const SCOPE = 'integrations.connectionState';
@@ -43,7 +75,7 @@ function mapRegistryRow(raw: Record<string, unknown>): PluginAppRegistryRow {
     category: String(raw.category) as PluginAppCategory,
     description: String(raw.description ?? ''),
     iconKey: String(raw.icon_key ?? raw.iconKey ?? 'Plug'),
-    status: (raw.status === 'live' ? 'live' : 'coming_soon') as PluginAppRegistryRow['status'],
+    status: raw.status === 'live' ? 'live' : 'coming_soon',
     connectionType: (raw.connection_type ?? raw.connectionType ?? 'none') as PluginAppRegistryRow['connectionType'],
     stateSource: (raw.state_source ?? raw.stateSource ?? 'none') as PluginAppRegistryRow['stateSource'],
     connectPath: (raw.connect_path ?? raw.connectPath ?? null) as string | null,
@@ -59,26 +91,27 @@ export async function loadPluginAppRegistry(
 ): Promise<PluginAppRegistryRow[]> {
   try {
     const { data, error } = await withTimeout(
-      (supabase as any)
-        .from('plugin_app_registry')
-        .select(
-          'slug, display_name, category, description, icon_key, status, connection_type, state_source, connect_path, disconnect_path, wearables_cross_link, sort_order',
-        )
-        .eq('is_active', true)
-        .order('sort_order', { ascending: true }) as Promise<{ data: unknown; error: unknown }>,
+      asQuery(
+        fromTable(supabase, 'plugin_app_registry')
+          .select(
+            'slug, display_name, category, description, icon_key, status, connection_type, state_source, connect_path, disconnect_path, wearables_cross_link, sort_order',
+          )
+          .eq('is_active', true)
+          .order('sort_order', { ascending: true }),
+      ),
       TIMEOUT_MS,
       `${SCOPE}.registry`,
     );
     if (error || !Array.isArray(data) || data.length === 0) {
       if (error) safeLog.warn(SCOPE, 'registry read failed open to fallback', { error });
-      return PLUGIN_APP_REGISTRY_FALLBACK;
+      return PLUGIN_APP_REGISTRY_FALLBACK.filter(isPluginPageApp);
     }
-    return (data as Record<string, unknown>[]).map(mapRegistryRow);
+    return (data as Record<string, unknown>[]).map(mapRegistryRow).filter(isPluginPageApp);
   } catch (err) {
     safeLog.warn(SCOPE, 'registry timeout/error fail-open', {
       error: err instanceof Error ? err.message : String(err),
     });
-    return PLUGIN_APP_REGISTRY_FALLBACK;
+    return PLUGIN_APP_REGISTRY_FALLBACK.filter(isPluginPageApp);
   }
 }
 
@@ -95,10 +128,11 @@ export async function loadUserConnectionSnapshots(
 
   try {
     const btc = await withTimeout(
-      (supabase as any)
-        .from('body_tracker_connections')
-        .select('source_id, status, last_sync_at, updated_at, created_at')
-        .eq('user_id', userId) as Promise<{ data: unknown; error: unknown }>,
+      asQuery(
+        fromTable(supabase, 'body_tracker_connections')
+          .select('source_id, status, last_sync_at, updated_at, created_at')
+          .eq('user_id', userId),
+      ),
       TIMEOUT_MS,
       `${SCOPE}.btc`,
     );
@@ -114,8 +148,9 @@ export async function loadUserConnectionSnapshots(
         rows.push({
           slug,
           connected,
-          connectedAt: (r.updated_at as string) ?? (r.created_at as string) ?? null,
-          lastSyncAt: (r.last_sync_at as string) ?? null,
+          status,
+          connectedAt: asIso(r.updated_at) ?? asIso(r.created_at),
+          lastSyncAt: asIso(r.last_sync_at),
           source: 'body_tracker_connections',
         });
       }
@@ -129,27 +164,28 @@ export async function loadUserConnectionSnapshots(
 
   try {
     const dsc = await withTimeout(
-      (supabase as any)
-        .from('data_source_connections')
-        .select('source_id, is_active, last_sync_at, created_at, updated_at')
-        .eq('user_id', userId) as Promise<{ data: unknown; error: unknown }>,
+      asQuery(
+        fromTable(supabase, 'data_source_connections')
+          .select('source_id, is_active, last_sync_at, created_at, updated_at')
+          .eq('user_id', userId),
+      ),
       TIMEOUT_MS,
       `${SCOPE}.dsc`,
     );
     if (dsc.error) {
-      // Table may be missing on some envs; do not hard-fail if btc worked.
       safeLog.warn(SCOPE, 'data_source_connections read soft-fail', { error: dsc.error });
     } else if (Array.isArray(dsc.data)) {
       for (const r of dsc.data as Array<Record<string, unknown>>) {
         const slug = String(r.source_id ?? '');
         if (!slug) continue;
-        // Prefer body_tracker row if already present for same slug.
         if (rows.some((x) => x.slug === slug)) continue;
+        const connected = Boolean(r.is_active);
         rows.push({
           slug,
-          connected: Boolean(r.is_active),
-          connectedAt: (r.created_at as string) ?? null,
-          lastSyncAt: (r.last_sync_at as string) ?? null,
+          connected,
+          status: connected ? 'connected' : 'disconnected',
+          connectedAt: asIso(r.created_at),
+          lastSyncAt: asIso(r.last_sync_at),
           source: 'data_source_connections',
         });
       }
@@ -163,57 +199,59 @@ export async function loadUserConnectionSnapshots(
   return { ok, rows };
 }
 
+function emptyCard(
+  app: PluginAppRegistryRow,
+  cardState: ConnectionCardState,
+): PluginAppCardModel {
+  return {
+    ...app,
+    cardState,
+    connectedAt: null,
+    lastSyncAt: null,
+  };
+}
+
 /** Join registry + user state into card models. Never invents connected. */
 export function joinRegistryWithState(
   registry: PluginAppRegistryRow[],
   snapshots: UserConnectionSnapshot[],
-  opts?: { forceUnavailable?: boolean },
 ): PluginAppCardModel[] {
   const bySlug = new Map(snapshots.map((s) => [s.slug, s]));
   return registry
+    .filter(isPluginPageApp)
     .slice()
     .sort((a, b) => a.sortOrder - b.sortOrder || a.displayName.localeCompare(b.displayName))
     .map((app) => {
-      if (opts?.forceUnavailable) {
-        return {
-          ...app,
-          cardState: 'unavailable' as const,
-          connectedAt: null,
-          lastSyncAt: null,
-        };
+      if (app.status === 'coming_soon' || !isPluginConnectWired(app)) {
+        return emptyCard(app, 'coming_soon');
       }
-      if (app.status === 'coming_soon') {
-        return {
-          ...app,
-          cardState: 'coming_soon' as const,
-          connectedAt: null,
-          lastSyncAt: null,
-        };
-      }
-      // File import live apps: always Available (navigate to upload), not connection-state.
-      if (app.connectionType === 'file_import' || app.stateSource === 'none') {
-        return {
-          ...app,
-          cardState: 'available' as const,
-          connectedAt: null,
-          lastSyncAt: null,
-        };
-      }
+
       const snap = bySlug.get(app.slug);
-      if (snap?.connected) {
+      const needsReconnect = oauthNeedsReconnect(
+        snap ? { status: snap.status, has_tokens: snap.connected } : undefined,
+        true,
+      );
+      const sm = resolveLastSyncState({
+        linked: snap?.connected === true,
+        lastSyncAt: snap?.lastSyncAt ?? null,
+        needsReconnect,
+      });
+
+      if (sm.kind === 'needs_reconnect') {
+        return emptyCard(app, 'needs_reconnect');
+      }
+
+      // Connected only when last-sync-state reports a real persist timestamp.
+      if (sm.kind === 'synced' && sm.lastSyncAt) {
         return {
           ...app,
-          cardState: 'connected' as const,
-          connectedAt: snap.connectedAt,
-          lastSyncAt: snap.lastSyncAt,
+          cardState: 'connected',
+          connectedAt: snap?.connectedAt ?? null,
+          lastSyncAt: sm.lastSyncAt,
         };
       }
-      return {
-        ...app,
-        cardState: 'available' as const,
-        connectedAt: null,
-        lastSyncAt: snap?.lastSyncAt ?? null,
-      };
+
+      return emptyCard(app, 'not_connected');
     });
 }
 
@@ -229,37 +267,23 @@ export async function loadPluginAppCards(
     };
   }
   const { ok, rows } = await loadUserConnectionSnapshots(supabase, userId);
-  if (!ok && rows.length === 0) {
-    // Total failure: show unavailable rather than fake Available for live apps.
-    return {
-      cards: joinRegistryWithState(registry, [], { forceUnavailable: true }),
-      stateOk: false,
-    };
-  }
   return {
     cards: joinRegistryWithState(registry, rows),
-    stateOk: ok,
+    stateOk: ok || rows.length > 0,
   };
 }
 
 export function groupCardsByCategory(
   cards: PluginAppCardModel[],
-): Array<{ category: PluginAppCategory; cards: PluginAppCardModel[] }> {
-  const order: PluginAppCategory[] = [
-    'Health Platforms',
-    'Nutrition',
-    'Fitness',
-    'Mindfulness',
-    'Data Import',
-    'Other',
-  ];
-  const map = new Map<PluginAppCategory, PluginAppCardModel[]>();
-  for (const c of cards) {
-    const list = map.get(c.category) ?? [];
-    list.push(c);
-    map.set(c.category, list);
+): Array<{ category: PluginSectionId; cards: PluginAppCardModel[] }> {
+  const map = new Map<PluginSectionId, PluginAppCardModel[]>();
+  for (const card of cards) {
+    const section = pluginSectionFor(card.category);
+    const list = map.get(section) ?? [];
+    list.push(card);
+    map.set(section, list);
   }
-  return order
-    .filter((cat) => (map.get(cat)?.length ?? 0) > 0)
-    .map((category) => ({ category, cards: map.get(category)! }));
+  return PLUGIN_SECTION_ORDER
+    .filter((section) => (map.get(section)?.length ?? 0) > 0)
+    .map((category) => ({ category, cards: map.get(category) ?? [] }));
 }
