@@ -484,6 +484,24 @@ describe('Brief 18 browse cards bind live mechanism', () => {
         })?.mechanism,
       ),
     ).toBe('Not available');
+    expect(
+      mapEducationRow({
+        entry_key: 'edu-bpc157',
+        title: 'BPC-157 educational overview',
+        mechanism:
+          'BPC-157 is a gastric-derived peptide studied for tissue-repair and gut-barrier pathways.',
+      })?.mechanism,
+    ).toBe(
+      'BPC-157 is a gastric-derived peptide studied for tissue-repair and gut-barrier pathways.',
+    );
+    expect(
+      mapEducationRow({
+        entry_key: 'edu-tesofensine-pause',
+        title: 'Tesofensine is not a peptide (terminology and regulatory timing)',
+        mechanism:
+          'Tesofensine is a small-molecule weight-research compound, not a peptide; this note is terminology and regulatory timing only.',
+      })?.isPeptide,
+    ).toBe(false);
   });
 
   it('does not add shop, dose, SKU, or reconstitution strings to cards', () => {
