@@ -18,7 +18,7 @@ function feedsLabel(tile: WearableTileView): string | null {
 }
 
 const outlineBtn =
-  'min-h-[36px] shrink-0 rounded-lg border border-[#2DA5A0] bg-transparent px-3 text-xs font-semibold text-[#2DA5A0] hover:bg-[#2DA5A0]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/50';
+  'min-h-[36px] shrink-0 rounded-lg border border-teal bg-transparent px-3 text-xs font-semibold text-teal hover:bg-teal/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal/50';
 
 interface WearableTileCardProps {
   tile: WearableTileView;
@@ -36,17 +36,17 @@ export function WearableTileCard({ tile, onPrimary, onDropXml }: WearableTileCar
     tile.action.kind === 'oauth' &&
     !tile.action.configured &&
     tile.lastSyncState === 'not_connected';
-  const liveDot = connected ? 'bg-[#2DA5A0]' : needsReconnect ? 'bg-[#B75E18]' : 'bg-white/30';
+  const liveDot = connected ? 'bg-teal' : needsReconnect ? 'bg-copper' : 'bg-white/30';
 
   return (
     <article
       data-tile-id={tile.id}
       data-last-sync-state={tile.lastSyncState}
       data-coming-soon={comingSoon ? 'true' : 'false'}
-      className="rounded-[24px] border border-white/[0.08] bg-[#1E3054] p-4 backdrop-blur-md"
+      className="rounded-[24px] border border-white/[0.08] bg-card p-4 backdrop-blur-md"
     >
       <div className="flex items-start gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-[#1A2744]">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-navy-700">
           <TileIcon id={tile.id} />
         </div>
         <div className="min-w-0 flex-1 overflow-visible">
@@ -103,7 +103,7 @@ export function WearableTileCard({ tile, onPrimary, onDropXml }: WearableTileCar
             <button
               type="button"
               onClick={() => onPrimary(tile)}
-              className="mt-2 text-xs font-medium text-[#2DA5A0] hover:underline"
+              className="mt-2 text-xs font-medium text-teal hover:underline"
             >
               Upload XML
             </button>
@@ -121,9 +121,9 @@ export function WearableTileCard({ tile, onPrimary, onDropXml }: WearableTileCar
             const file = e.dataTransfer.files?.[0];
             if (file) onDropXml(file);
           }}
-          className="mt-3 cursor-pointer rounded-xl border border-dashed border-white/20 bg-[#1A2744]/60 p-4 text-center"
+          className="mt-3 cursor-pointer rounded-xl border border-dashed border-white/20 bg-navy-700/60 p-4 text-center"
         >
-          <CloudUpload className="mx-auto h-5 w-5 text-[#2DA5A0]" strokeWidth={1.5} />
+          <CloudUpload className="mx-auto h-5 w-5 text-teal" strokeWidth={1.5} />
           <p className="mt-2 text-[11px] text-white/50">
             Upload Apple Health XML. Drag and drop your XML file here, or click to browse.
           </p>

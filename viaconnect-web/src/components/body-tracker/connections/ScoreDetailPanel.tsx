@@ -75,7 +75,7 @@ export function ScoreDetailPanel({ rows }: ScoreDetailPanelProps) {
     <section
       aria-labelledby="bos-detail-title"
       data-bos-card="connections"
-      className="rounded-[24px] border border-white/[0.08] bg-[#1E3054] p-4 backdrop-blur-md sm:p-5"
+      className="rounded-[24px] border border-white/[0.08] bg-card p-4 backdrop-blur-md sm:p-5"
     >
       <div className="flex items-center gap-2">
         <h2 id="bos-detail-title" className="text-lg font-bold text-white">
@@ -122,7 +122,7 @@ export function ScoreDetailPanel({ rows }: ScoreDetailPanelProps) {
               data-dimension={row.dimension as WearableDimension}
               data-ingest={ingest ? 'sourced' : 'none'}
               data-ring={ingest ? 'visible' : 'hidden'}
-              className="rounded-xl border border-white/[0.08] bg-[#1A2744]/80 p-3"
+              className="rounded-xl border border-white/[0.08] bg-navy-700/80 p-3"
             >
               <div className="flex items-center justify-between gap-2">
                 <div className="flex min-w-0 items-center gap-2">
@@ -134,12 +134,12 @@ export function ScoreDetailPanel({ rows }: ScoreDetailPanelProps) {
                 <div className="flex items-center gap-1.5">
                   <span className="font-mono text-sm text-white/55">{display}</span>
                   {ingest && disagree ? (
-                    <span className="rounded-full bg-[#B75E18]/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#B75E18] ring-1 ring-inset ring-[#B75E18]/30">
+                    <span className="rounded-full bg-copper/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-copper ring-1 ring-inset ring-copper/30">
                       DISAGREE
                     </span>
                   ) : null}
                   {ingest && row.manual ? (
-                    <span className="rounded-full bg-[#B75E18]/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#B75E18] ring-1 ring-inset ring-[#B75E18]/30">
+                    <span className="rounded-full bg-copper/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-copper ring-1 ring-inset ring-copper/30">
                       Manual
                     </span>
                   ) : null}
@@ -162,7 +162,7 @@ export function ScoreDetailPanel({ rows }: ScoreDetailPanelProps) {
                         <span className="flex items-center gap-2">
                           <span className="font-mono text-sm text-white">{srcDisplay}</span>
                           {src.is_active ? (
-                            <span className="rounded-full bg-[#2DA5A0]/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#2DA5A0] ring-1 ring-inset ring-[#2DA5A0]/30">
+                            <span className="rounded-full bg-teal/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-teal ring-1 ring-inset ring-teal/30">
                               Active
                             </span>
                           ) : null}
@@ -185,7 +185,7 @@ export function ScoreDetailPanel({ rows }: ScoreDetailPanelProps) {
       </div>
 
       <p className="mt-4 text-center text-[11px] text-white/40">Missing stays UNKNOWN, never 0.</p>
-      <p className="mt-2 text-center text-[11px] text-[#2DA5A0]">{CONNECTIONS_FOOTER}</p>
+      <p className="mt-2 text-center text-[11px] text-teal">{CONNECTIONS_FOOTER}</p>
     </section>
   );
 }
