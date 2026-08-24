@@ -37,6 +37,13 @@ describe('Connections IA contracts', () => {
     expect(surface + tile + detail).not.toMatch(/Arnold|Thanos/i);
     expect(tile).toContain('Not configured');
     expect(tile).not.toMatch(/waiting on/i);
+    expect(detail).toContain('Bio Optimization Score');
+    expect(detail).not.toMatch(/Vitality/);
+    expect(detail).toContain('DISAGREE');
+    expect(detail).toContain('Active');
+    expect(detail).toContain('strokeWidth={1.5}');
+    const disagree = src('src/lib/body-tracker/source-disagreement.ts');
+    expect(disagree).toContain('averaged because equal trust.');
   });
 
   it('redirects plugins wearables catalog to connections', () => {

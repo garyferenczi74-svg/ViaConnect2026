@@ -17,7 +17,7 @@ import {
   type TokenPresenceRow,
   type WorkoutIngestRow,
 } from '@/lib/body-tracker/wearable-snapshot';
-import { matchesHume } from '@/lib/body-tracker/connected-sources/registry';
+import { parseTrustOverrides } from '@/lib/body-tracker/arnold-trust';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -139,6 +139,20 @@ export async function GET(req: NextRequest) {
     const workoutRows = (workoutRes.data ?? []) as WorkoutIngestRow[];
     const hk = (healthKitRes.data ?? []) as Array<{ recorded_at: string | null }>;
 
+    let trustOverrides: Record<string, number> = {};
+    try {
+      const profileRes = await withTimeout(
+        admin.from('arnold_user_profiles').select('trust_overrides').eq('user_id', userId).maybeSingle(),
+        3000,
+        `${SCOPE}.trust`,
+      );
+      trustOverrides = parseTrustOverrides(
+        (profileRes.data as { trust_overrides?: unknown } | null)?.trust_overrides,
+      );
+    } catch {
+      trustOverrides = {};
+    }
+
     const snapshot = assembleWearableSnapshot({
       connected,
       tokenProviders,
@@ -152,7 +166,8 @@ export async function GET(req: NextRequest) {
       whoopConfigured: isWhoopConfigured(),
       ouraConfigured: isOuraConfigured(),
       platform: platformOf(req),
-      metabolicManual: !bodyRows.some((r) => matchesHume(r.source_app) || r.weight_kg != null),
+      metabolicManual: false,
+      trustOverrides,
     });
 
     return NextResponse.json({
