@@ -1,8 +1,7 @@
 'use client';
 
 /**
- * Prompt 218: /plugins/apps uses the same apps surface as /plugins.
- * Hardcoded mock app list removed.
+ * /plugins/apps uses the same apps surface as /plugins.
  */
 
 import { Suspense } from 'react';

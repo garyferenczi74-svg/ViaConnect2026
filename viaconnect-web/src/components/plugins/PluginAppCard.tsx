@@ -1,7 +1,8 @@
 'use client';
 
 /**
- * Prompt 218: single app plugin card (Connected / Available / Coming soon / Unavailable).
+ * Single app plugin tile. States from last-sync-state via the join:
+ * Not connected | Coming soon | Connected {since} + Last sync {real} | Needs reconnect.
  */
 
 import Link from 'next/link';
@@ -9,20 +10,23 @@ import {
   Activity,
   Apple,
   Brain,
-  Dna,
   HeartPulse,
   Plug,
   type LucideIcon,
 } from 'lucide-react';
+import { formatSyncedRelative } from '@/lib/body-tracker/last-sync-state';
 import type { PluginAppCardModel } from '@/lib/integrations/connectionState';
-import { PLUGIN_STATE_COPY } from '@/lib/integrations/pluginAppRegistry';
+import {
+  PLUGIN_COMING_SOON_ACTION,
+  PLUGIN_STATE_COPY,
+  isPluginConnectWired,
+} from '@/lib/integrations/pluginAppRegistry';
 
 const ICONS: Record<string, LucideIcon> = {
   HeartPulse,
   Apple,
   Activity,
   Brain,
-  Dna,
   Plug,
 };
 
@@ -34,7 +38,6 @@ export interface PluginAppCardProps {
   busy?: boolean;
   onConnect?: (slug: string) => void;
   onDisconnect?: (slug: string) => void;
-  onRetry?: () => void;
 }
 
 export function PluginAppCard({
@@ -42,10 +45,11 @@ export function PluginAppCard({
   busy,
   onConnect,
   onDisconnect,
-  onRetry,
 }: PluginAppCardProps) {
   const Icon = ICONS[card.iconKey] ?? Plug;
   const state = card.cardState;
+  const connectWired = isPluginConnectWired(card);
+  const lastSyncRelative = card.lastSyncAt ? formatSyncedRelative(card.lastSyncAt) : null;
 
   return (
     <article
@@ -69,7 +73,14 @@ export function PluginAppCard({
                   background: 'rgba(45,165,160,0.12)',
                 }}
               >
-                {PLUGIN_STATE_COPY.connected}
+                {card.connectedAt
+                  ? PLUGIN_STATE_COPY.connectedSince(card.connectedAt)
+                  : PLUGIN_STATE_COPY.connected}
+              </span>
+            )}
+            {state === 'not_connected' && (
+              <span className="rounded-full border border-white/15 bg-white/[0.04] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/50">
+                {PLUGIN_STATE_COPY.notConnected}
               </span>
             )}
             {state === 'coming_soon' && (
@@ -77,9 +88,9 @@ export function PluginAppCard({
                 {PLUGIN_STATE_COPY.comingSoon}
               </span>
             )}
-            {state === 'unavailable' && (
-              <span className="rounded-full border border-white/15 bg-white/[0.04] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/50">
-                Unavailable
+            {state === 'needs_reconnect' && (
+              <span className="rounded-full border border-[#B75E18]/35 bg-[#B75E18]/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#B75E18]">
+                {PLUGIN_STATE_COPY.needsReconnect}
               </span>
             )}
           </div>
@@ -87,23 +98,21 @@ export function PluginAppCard({
         </div>
       </div>
 
-      {state === 'connected' && (
-        <div className="space-y-1 text-[11px] text-white/45">
-          {card.connectedAt && <p>{PLUGIN_STATE_COPY.connectedSince(card.connectedAt)}</p>}
-          <p>{PLUGIN_STATE_COPY.lastSync(card.lastSyncAt)}</p>
-        </div>
-      )}
-
-      {card.wearablesCrossLink && (
-        <Link
-          href={card.wearablesCrossLink}
-          className="text-[11px] font-medium text-[#2DA5A0] hover:underline"
-        >
-          {PLUGIN_STATE_COPY.wearablesLink}
-        </Link>
+      {state === 'connected' && lastSyncRelative && (
+        <p className="text-[11px] text-white/45">{PLUGIN_STATE_COPY.lastSync(lastSyncRelative)}</p>
       )}
 
       <div className="mt-auto flex flex-wrap gap-2 pt-1">
+        {state === 'connected' && card.wearablesCrossLink && (
+          <Link
+            href={card.wearablesCrossLink}
+            data-testid={`plugin-manage-${card.slug}`}
+            className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-[#2DA5A0]/45 bg-[#2DA5A0]/15 px-4 text-xs font-semibold text-[#2DA5A0] transition-colors hover:bg-[#2DA5A0]/25"
+          >
+            {PLUGIN_STATE_COPY.manage}
+          </Link>
+        )}
+
         {state === 'connected' && card.disconnectPath && (
           <button
             type="button"
@@ -116,17 +125,17 @@ export function PluginAppCard({
           </button>
         )}
 
-        {state === 'available' && card.connectPath && card.connectionType === 'file_import' && (
+        {state === 'needs_reconnect' && card.wearablesCrossLink && (
           <Link
-            href={card.connectPath}
-            data-testid={`plugin-open-${card.slug}`}
+            href={card.wearablesCrossLink}
+            data-testid={`plugin-manage-${card.slug}`}
             className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-[#2DA5A0]/45 bg-[#2DA5A0]/15 px-4 text-xs font-semibold text-[#2DA5A0] transition-colors hover:bg-[#2DA5A0]/25"
           >
-            {PLUGIN_STATE_COPY.open}
+            {PLUGIN_STATE_COPY.manage}
           </Link>
         )}
 
-        {state === 'available' && card.connectPath && card.connectionType !== 'file_import' && (
+        {(state === 'not_connected' || state === 'needs_reconnect') && connectWired && (
           <button
             type="button"
             data-testid={`plugin-connect-${card.slug}`}
@@ -140,19 +149,8 @@ export function PluginAppCard({
 
         {state === 'coming_soon' && (
           <span className="inline-flex min-h-[44px] items-center text-xs text-white/40">
-            No action yet. We will enable Connect when the flow ships.
+            {PLUGIN_COMING_SOON_ACTION}
           </span>
-        )}
-
-        {state === 'unavailable' && (
-          <button
-            type="button"
-            data-testid={`plugin-retry-${card.slug}`}
-            onClick={() => onRetry?.()}
-            className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-white/15 bg-white/[0.04] px-4 text-xs font-semibold text-white/70 hover:bg-white/[0.08]"
-          >
-            {PLUGIN_STATE_COPY.retry}
-          </button>
         )}
       </div>
     </article>
