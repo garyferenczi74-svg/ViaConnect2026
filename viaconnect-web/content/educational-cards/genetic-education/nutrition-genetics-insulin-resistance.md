@@ -34,7 +34,7 @@ TCF7L2 rs7903146 is confirmed on the saturated-fat extract list. It is not on th
 
 ## Insulin as a hormone (plain language)
 
-Insulin is a hormone that helps move glucose from meals into cells. A gene score is not the same as a medical diagnosis of insulin resistance or diabetes. Do not display reverse diabetes or hack insulin language.
+Insulin is a hormone that helps move glucose from meals into cells. A gene score is not the same as a medical diagnosis of insulin resistance or diabetes. This page does not reverse diabetes and is not an insulin hack.
 
 ## Why labs beat genes for this theme
 

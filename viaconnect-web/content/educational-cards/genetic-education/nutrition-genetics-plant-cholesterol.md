@@ -53,7 +53,7 @@ APOE is not on this confirmed plant-cholesterol list. APOE type does not tell a 
 
 ## Key takeaways
 
-- APOE does not personalize plant sterol response (NCT02765516). Do not tell users their APOE type means take or avoid sterols.
+- APOE does not personalize plant sterol response (NCT02765516). APOE type on this page is not a reason to take or avoid plant sterols.
 - A standard lipid panel is not a sitosterol test.
 - Opposite food advice exists for true sitosterolemia.
 - Nuts and seeds are not dangerous from this card.

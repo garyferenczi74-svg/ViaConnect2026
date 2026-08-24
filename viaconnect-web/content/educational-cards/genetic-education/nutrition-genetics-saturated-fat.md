@@ -64,7 +64,7 @@ Lipid and ApoB results, if on file, guide medical decisions. Genes do not start 
 
 ## What to do next
 
-If the meal plan already shifts fat quality, that is the educational idea. Bring lipid and ApoB results to a clinician. Do not quit smoking-cessation or alcohol questions onto a gene card as treatment.
+If the meal plan already shifts fat quality, that is the educational idea. Bring lipid and ApoB results to a clinician. This card is not smoking-cessation or alcohol treatment.
 
 ## Related content
 
