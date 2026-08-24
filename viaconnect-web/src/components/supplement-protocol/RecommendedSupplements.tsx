@@ -48,8 +48,8 @@ const PRI = {
 };
 
 const DEL: Record<string, { color: string; note: string }> = {
-  'Liposomal': { color: 'bg-[#2DA5A0] text-white', note: '90% bioavailability' },
-  'Micellar': { color: 'bg-[rgba(45,165,160,0.15)] text-[#2DA5A0] border border-[rgba(45,165,160,0.35)]', note: '85% bioavailability' },
+  'Liposomal': { color: 'bg-[#2DA5A0] text-white', note: 'Maximum Bioavailability' },
+  'Micellar': { color: 'bg-[rgba(45,165,160,0.15)] text-[#2DA5A0] border border-[rgba(45,165,160,0.35)]', note: 'Maximum Bioavailability' },
 };
 
 export default function RecommendedSupplements() {

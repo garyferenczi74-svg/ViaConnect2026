@@ -37,6 +37,11 @@ export function PdpFormulationTable({ ingredients }: PdpFormulationTableProps) {
                                 {ing.role && (
                                     <span className="ml-2 text-xs text-white/50">{ing.role}</span>
                                 )}
+                                {ing.bioavailability_note && (
+                                    <p className="mt-1 text-xs leading-relaxed text-white/50">
+                                        {ing.bioavailability_note}
+                                    </p>
+                                )}
                             </td>
                             <td className="whitespace-nowrap py-2.5 pl-3 text-right tabular-nums text-white/60">
                                 {ing.dose != null ? `${ing.dose} ${ing.unit ?? 'mg'}` : ''}

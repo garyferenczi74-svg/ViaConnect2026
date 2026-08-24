@@ -242,7 +242,7 @@ export function PdpRightRail({
                 </p>
                 {product.bioavailability_pct != null && (
                     <p className="mt-1 text-xs text-white/55">
-                        Bioavailability {product.bioavailability_pct}%
+                        Maximum Bioavailability
                     </p>
                 )}
             </div>
