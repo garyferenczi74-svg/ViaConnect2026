@@ -41,7 +41,7 @@ describe("Prompt 219I root cause fix", () => {
   it("activity-tracker imports AGENT_IDS as a value", () => {
     const src = read("src/lib/agents/activity-tracker.ts");
     expect(src).toMatch(/import\s*\{[^}]*AGENT_IDS[^}]*\}\s*from\s*["']\.\/types["']/);
-    expect(AGENT_IDS.length).toBe(13);
+    expect(AGENT_IDS.length).toBe(17);
   });
 
   it("fetchHeartbeats fail-opens to empty array on thrown client", async () => {

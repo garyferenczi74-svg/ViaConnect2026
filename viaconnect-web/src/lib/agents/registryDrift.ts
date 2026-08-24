@@ -1,6 +1,6 @@
 /**
  * Prompt 214d Gap 4: dual-registry reconciliation WITHOUT merge.
- * ACC (AGENT_REGISTRY / 13 seats) vs ultrathink_agent_registry (edge workers).
+ * ACC (AGENT_REGISTRY / 17 Grok seats) vs ultrathink_agent_registry (edge workers).
  * Drift is flagged only; never auto-corrected.
  */
 
@@ -188,7 +188,7 @@ export async function runRegistryDriftGuard(): Promise<DriftGuardResult & { flag
  * brand enricher) into ACC seats without a new product prompt.
  */
 export const REGISTRY_END_STATE_RECOMMENDATION = {
-  authoritative_seats: 'AGENT_REGISTRY (ACC thirteen-agent roster)',
+  authoritative_seats: 'AGENT_REGISTRY (ACC seventeen-agent Grok roster)',
   operational_heartbeats: 'ultrathink_agent_registry',
   mapping: 'resolveAgentId / AGENT_NAME_ALIASES',
   merge: 'not authorized without Gary ruling',

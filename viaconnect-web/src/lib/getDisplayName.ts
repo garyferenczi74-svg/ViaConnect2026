@@ -34,6 +34,16 @@ const NAME_MAP: Readonly<Record<string, string>> = {
   elysium: "Elysium",
   my_genetics: "Elysium",
   peptide_education: "Thanos",
+  // Brief 23 Grok roster slugs (Command Center)
+  picasso: "Picasso",
+  conan: "Conan",
+  hermes: "Hermes",
+  gene: "Gene",
+  martha: "Martha",
+  hannahai: "HannahAI",
+  hannah_ai: "HannahAI",
+  elizabeth: "Elizabeth",
+  watson: "Watson",
   // Humans
   gary: "Gary",
   steve_rica: "Steve Rica",

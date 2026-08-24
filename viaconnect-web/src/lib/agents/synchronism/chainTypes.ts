@@ -4,8 +4,6 @@
  * UI panels import from here; runSynchronismChain stays in chain.ts.
  */
 
-import type { AgentId } from "@/lib/agents/types";
-
 export type ChainStageId =
   | "ingest"
   | "gate"
@@ -20,8 +18,9 @@ export type StageStatus = "ok" | "skipped" | "failed" | "partial";
 export interface StageResult {
   stage: ChainStageId;
   status: StageStatus;
-  producer: AgentId | AgentId[];
-  consumer?: AgentId | AgentId[];
+  /** Product writer(s). May name owners that are not Command Center seats. */
+  producer: string | string[];
+  consumer?: string | string[];
   recordsIn: number;
   recordsOut: number;
   durationMs: number;

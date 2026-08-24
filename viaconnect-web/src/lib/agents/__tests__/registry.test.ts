@@ -2,28 +2,32 @@ import { describe, it, expect } from "vitest";
 import { AGENT_REGISTRY, orderedRegistry, isKnownAgentId } from "../registry";
 import { AGENT_IDS } from "../types";
 
-describe("AGENT_REGISTRY (Prompt 214c thirteen agents)", () => {
-  it("contains exactly the canonical 13 agents", () => {
+describe("AGENT_REGISTRY (Brief 23 Grok roster)", () => {
+  it("contains exactly the canonical 17 Grok agents", () => {
     expect(Object.keys(AGENT_REGISTRY).sort()).toEqual([...AGENT_IDS].sort());
-    expect(AGENT_IDS).toHaveLength(13);
+    expect(AGENT_IDS).toHaveLength(17);
   });
 
-  it("produces a stable sort order matching Section 1", () => {
+  it("produces a stable sort order matching the Grok roster", () => {
     const ids = orderedRegistry().map((r) => r.agent_id);
     expect(ids).toEqual([
       "jeffery",
-      "hannah",
-      "gordon",
-      "arnold",
+      "picasso",
       "michelangelo",
-      "hounddog",
-      "sherlock",
-      "marshall",
-      "lex",
-      "security_advisor",
-      "performance_advisor",
-      "thanos",
+      "conan",
+      "hermes",
+      "gene",
       "elysium",
+      "marshall",
+      "martha",
+      "hannah",
+      "thanos",
+      "elizabeth",
+      "lex",
+      "sherlock",
+      "watson",
+      "arnold",
+      "hounddog",
     ]);
   });
 
@@ -40,12 +44,16 @@ describe("AGENT_REGISTRY (Prompt 214c thirteen agents)", () => {
     }
   });
 
-  it("rejects kelsey as live agent; accepts advisors and 214c agents", () => {
+  it("rejects invented advisors and gordon; accepts real Grok seats", () => {
     expect(isKnownAgentId("kelsey")).toBe(false);
-    expect(isKnownAgentId("gordon")).toBe(true);
-    expect(isKnownAgentId("security_advisor")).toBe(true);
-    expect(isKnownAgentId("performance_advisor")).toBe(true);
+    expect(isKnownAgentId("gordon")).toBe(false);
+    expect(isKnownAgentId("security_advisor")).toBe(false);
+    expect(isKnownAgentId("performance_advisor")).toBe(false);
     expect(isKnownAgentId("thanos")).toBe(true);
     expect(isKnownAgentId("elysium")).toBe(true);
+    expect(isKnownAgentId("picasso")).toBe(true);
+    expect(isKnownAgentId("hermes")).toBe(true);
+    expect(isKnownAgentId("elizabeth")).toBe(true);
+    expect(isKnownAgentId("watson")).toBe(true);
   });
 });

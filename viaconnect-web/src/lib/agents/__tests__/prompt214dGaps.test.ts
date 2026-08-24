@@ -117,8 +117,8 @@ describe('214d Gap 4: registry drift guard', () => {
   });
 
   it('flags inactive ultrathink row for live ACC seat', () => {
-    const findings = diffRegistries(['gordon'], [
-      { agent_name: 'gordon', display_name: 'Gordon', is_active: false },
+    const findings = diffRegistries(['hermes'], [
+      { agent_name: 'hermes', display_name: 'Hermes', is_active: false },
     ]);
     expect(findings.some((f) => f.kind === 'inactive_divergence')).toBe(true);
   });

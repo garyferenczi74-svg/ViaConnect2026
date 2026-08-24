@@ -1,76 +1,90 @@
 /**
- * Agent activity panel types (Prompt #126 + #214 + #214a).
+ * Agent activity panel types (Prompt #126 + #214 + Brief 23).
  * Source-of-truth heartbeat/registry data comes from ultrathink_agent_registry
  * and ultrathink_agent_events; these types present the spec's canonical shape
  * to the UI via the mapper in activity-tracker.ts.
  */
 
 /**
- * Prompt 214c thirteen-agent roster (canonical).
+ * Brief 23 Grok Command Center roster (17 seats).
  * Kelsey is retired as a live AgentId; historical slug maps via aliases to lex.
+ * Gordon remains a nutrition product owner, not a Command Center seat.
+ * security_advisor / performance_advisor are not Grok agents.
  * Thanos = Peptide Education; Elysium = My Genetics (genetics handoff from Arnold).
+ * HannahAI uses the existing `hannah` slug.
  */
 export type AgentId =
   | "jeffery"
-  | "hannah"
-  | "gordon"
-  | "arnold"
+  | "picasso"
   | "michelangelo"
-  | "hounddog"
-  | "sherlock"
+  | "conan"
+  | "hermes"
+  | "gene"
+  | "elysium"
   | "marshall"
-  | "lex"
-  | "security_advisor"
-  | "performance_advisor"
+  | "martha"
+  | "hannah"
   | "thanos"
-  | "elysium";
+  | "elizabeth"
+  | "lex"
+  | "sherlock"
+  | "watson"
+  | "arnold"
+  | "hounddog";
 
 export const AGENT_IDS: readonly AgentId[] = [
   "jeffery",
-  "hannah",
-  "gordon",
-  "arnold",
+  "picasso",
   "michelangelo",
-  "hounddog",
-  "sherlock",
-  "marshall",
-  "lex",
-  "security_advisor",
-  "performance_advisor",
-  "thanos",
+  "conan",
+  "hermes",
+  "gene",
   "elysium",
+  "marshall",
+  "martha",
+  "hannah",
+  "thanos",
+  "elizabeth",
+  "lex",
+  "sherlock",
+  "watson",
+  "arnold",
+  "hounddog",
 ] as const;
 
 /**
  * Maps registry / event agent_name values onto panel AgentIds.
  * Includes legacy Kelsey → Lex and name-mismatch aliases from Prompt 214.
+ * Advisor / Gordon names do not resolve to Command Center seats.
  */
 export const AGENT_NAME_ALIASES: Readonly<Record<string, AgentId>> = {
   jeffery: "jeffery",
   jeffery_master: "jeffery",
-  hannah: "hannah",
-  gordon: "gordon",
-  gordan: "gordon",
-  arnold: "arnold",
+  picasso: "picasso",
   michelangelo: "michelangelo",
-  hounddog: "hounddog",
-  hound_dog: "hounddog",
-  marshall_hounddog: "hounddog",
-  sherlock: "sherlock",
-  sherlock_research_hub: "sherlock",
+  conan: "conan",
+  hermes: "hermes",
+  gene: "gene",
+  elysium: "elysium",
+  my_genetics: "elysium",
   marshall: "marshall",
+  martha: "martha",
+  hannah: "hannah",
+  hannahai: "hannah",
+  hannah_ai: "hannah",
+  thanos: "thanos",
+  peptide_education: "thanos",
+  elizabeth: "elizabeth",
   lex: "lex",
   // Prompt 214a: Kelsey retired; historical events still resolve for ACC.
   kelsey: "lex",
-  security_advisor: "security_advisor",
-  performance_advisor: "performance_advisor",
-  security: "security_advisor",
-  performance: "performance_advisor",
-  // Prompt 214c
-  thanos: "thanos",
-  elysium: "elysium",
-  my_genetics: "elysium",
-  peptide_education: "thanos",
+  sherlock: "sherlock",
+  sherlock_research_hub: "sherlock",
+  watson: "watson",
+  arnold: "arnold",
+  hounddog: "hounddog",
+  hound_dog: "hounddog",
+  marshall_hounddog: "hounddog",
 };
 
 export function resolveAgentId(raw: string): AgentId | null {
