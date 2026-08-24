@@ -2,13 +2,13 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
+import { unauthenticatedClinicianPortalRedirect } from "@/lib/practitioner/waitlist-honesty";
 import {
   canAccessPortalPath,
   isConfirmedAdmin,
   outOfRoleRedirect,
   roleFromProfilesColumn,
   roleHomePath,
-  unauthenticatedClinicianPortalRedirect,
   type SessionRole,
 } from "@/lib/auth/session-role";
 
@@ -16,7 +16,7 @@ import {
 // with withTimeout. On timeout: treat as unauthenticated and let the public-
 // route allowlist decide whether to allow or redirect. On unexpected error:
 // log via safeLog and same fallback behavior. Role lookup uses fallback chain
-// missing. Portal access never falls back to user_metadata.role.
+// (user_metadata.role) when the profiles query fails.
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({
     request: {
@@ -206,6 +206,8 @@ export async function updateSession(request: NextRequest) {
         { status: 401, headers: { "Content-Type": "application/json" } },
       );
     }
+    // Unauth /practitioner and /naturopath must not look like a live portal.
+    // Send visitors to the honest Q1 2027 waitlist instead of /login.
     const waitlistPath = unauthenticatedClinicianPortalRedirect(pathname);
     if (waitlistPath) {
       safeLog.info("middleware.auth", "redirecting unauthenticated clinician portal to waitlist", {

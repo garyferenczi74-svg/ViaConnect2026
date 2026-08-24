@@ -16,6 +16,7 @@ safety_mode_filter: medium_lipids_only
 bioavailability_bridge_card: false
 gary_approved_at: 2026-08-23
 gary_approval_required: true
+kelsey_compliance_review_id: 170r-nutrition-genetics-fats-2026-08-23
 ---
 
 # Dietary fat response in context

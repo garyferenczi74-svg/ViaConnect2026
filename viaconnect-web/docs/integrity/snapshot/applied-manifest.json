@@ -59,23 +59,82 @@
       "name": "20260709000000_prompt_210f_label_design_one_current_unique"
     },
     {
-      "version": "pending-verification",
+      "version": "20260710120000",
       "name": "20260710120000_prompt_211a_scan_cadence",
-      "note": "Prompt 219k: migration file present; baseline comment states 211a scan_cadence tables applied to prod 2026-07-12; version stamp not captured at apply time (apply-procedure pending-verification)."
+      "note": "Confirmed in supabase_migrations.schema_migrations 2026-08-24 (CLI-style version=filename stamp, name null). Replaces prior pending-verification placeholder."
     },
     {
-      "version": "pending-verification",
+      "version": "20260710120500",
       "name": "20260710120500_prompt_211a_scan_cadence_nudge_cron",
-      "note": "Prompt 219k: migration file present; baseline comment states 211a scan_cadence tables applied to prod 2026-07-12; version stamp not captured at apply time (apply-procedure pending-verification)."
+      "note": "Confirmed in supabase_migrations.schema_migrations 2026-08-24 (CLI-style version=filename stamp, name null). Replaces prior pending-verification placeholder."
     },
     {
-      "version": "pending-verification",
+      "version": "20260712000500",
       "name": "20260712000500_prompt_211a_scan_cadence_nudge_cron_fix",
-      "note": "Prompt 219k: migration file present; baseline comment states 211a scan_cadence tables applied to prod 2026-07-12; version stamp not captured at apply time (apply-procedure pending-verification)."
+      "note": "Confirmed in supabase_migrations.schema_migrations 2026-08-24 (CLI-style version=filename stamp, name null). Replaces prior pending-verification placeholder."
+    },
+    {
+      "version": "20260812000000",
+      "name": "20260812000000_prompt_212_wearable_connected_sources",
+      "note": "Confirmed in supabase_migrations.schema_migrations 2026-08-24. DB name column was prompt_212_wearable_connected_sources."
+    },
+    {
+      "version": "20260812010000",
+      "name": "20260812010000_prompt_213_accelerator_insight_unique",
+      "note": "Confirmed in supabase_migrations.schema_migrations 2026-08-24 (CLI-style version=filename stamp, name null)."
+    },
+    {
+      "version": "20260812020000",
+      "name": "20260812020000_prompt_214a_pipeline_runs",
+      "note": "Confirmed in supabase_migrations.schema_migrations 2026-08-24 (CLI-style version=filename stamp, name null)."
+    },
+    {
+      "version": "20260812030000",
+      "name": "20260812030000_prompt_213a_hannah_daily_compilation",
+      "note": "Confirmed in supabase_migrations.schema_migrations 2026-08-24 (CLI-style version=filename stamp, name null)."
+    },
+    {
+      "version": "20260812040000",
+      "name": "20260812040000_prompt_214b_firecrawl_ingestion",
+      "note": "Confirmed in supabase_migrations.schema_migrations 2026-08-24 (CLI-style version=filename stamp, name null)."
+    },
+    {
+      "version": "20260812050000",
+      "name": "20260812050000_prompt_214c_thanos_elysium",
+      "note": "Confirmed in supabase_migrations.schema_migrations 2026-08-24 (CLI-style version=filename stamp, name null)."
+    },
+    {
+      "version": "20260812060000",
+      "name": "20260812060000_prompt_214d_practitioner_depth_seed",
+      "note": "Confirmed in supabase_migrations.schema_migrations 2026-08-24 (CLI-style version=filename stamp, name null)."
+    },
+    {
+      "version": "20260812070000",
+      "name": "20260812070000_prompt_215_product_tabs",
+      "note": "Confirmed in supabase_migrations.schema_migrations 2026-08-24 (CLI-style version=filename stamp, name null)."
+    },
+    {
+      "version": "20260813010000",
+      "name": "20260813010000_prompt_216d_hannah_daily_notes",
+      "note": "Confirmed in supabase_migrations.schema_migrations 2026-08-24 (CLI-style version=filename stamp, name null)."
     },
     {
       "version": "20260823225944",
       "name": "20260823224716_prompt_50_hounddog_command_center_schema"
+    },
+    {
+      "version": "20260824030817",
+      "name": "20260824001000_prompt_170r_content_cards",
+      "note": "Confirmed in supabase_migrations.schema_migrations 2026-08-24. DB name column was prompt_170r_content_cards."
     }
+  ],
+  "unapplied_note": "Repo stems confirmed ABSENT from supabase_migrations.schema_migrations on 2026-08-24. These are not apply records. Do not invent versions. They remain awaiting apply sign-off per apply-procedure.md.",
+  "unapplied_stems": [
+    "20260813020000_prompt_218_plugin_app_registry",
+    "20260815120000_prompt_219b_user_supplement_label_photos",
+    "20260815140000_prompt_219f_hannah_advisor_persona",
+    "20260815200000_prompt_219g_agent_capabilities",
+    "20260816010000_prompt_219h_continuous_ops",
+    "20260816120000_prompt_219m_perpetual_discovery"
   ]
 }

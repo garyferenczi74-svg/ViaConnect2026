@@ -16,6 +16,7 @@ safety_mode_filter: medium_no_dose
 bioavailability_bridge_card: false
 gary_approved_at: 2026-08-23
 gary_approval_required: true
+kelsey_compliance_review_id: 170r-nutrition-genetics-omega-2026-08-23
 ---
 
 # Omega-3 and omega-6 in food and conversion

@@ -8,6 +8,7 @@ import {
   getCalloutToneClass,
   getChangeDirection,
   getRegionFill,
+  ovalStatusesFromExistingChange,
   type RegionChangeData,
 } from '@/lib/body-tracker/heatmap-colors';
 
@@ -107,5 +108,17 @@ describe('getCalloutToneClass', () => {
   it('maps neutral direction to muted yellow regardless of metric', () => {
     expect(getCalloutToneClass('neutral', 'fat')).toBe('text-yellow-400/80');
     expect(getCalloutToneClass('neutral', 'muscle')).toBe('text-yellow-400/80');
+  });
+});
+
+describe('ovalStatusesFromExistingChange (210l UNKNOWN)', () => {
+  it('omits segments whose current value is missing', () => {
+    const data: RegionChangeData = {
+      chest: { current: 22, previous: 24, change: -2, direction: 'loss' },
+      waist: { current: null, previous: null, change: null, direction: 'neutral' },
+    };
+    const statuses = ovalStatusesFromExistingChange(data, 'fat');
+    expect(statuses.chest).toBe('green');
+    expect(statuses.waist).toBeUndefined();
   });
 });

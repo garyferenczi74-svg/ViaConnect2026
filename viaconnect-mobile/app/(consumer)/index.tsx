@@ -1,41 +1,26 @@
 import { View, Text, ScrollView } from 'react-native';
 import { useBreakpoint } from '../../src/components/shared/ResponsiveLayout';
 
-function VitalityScoreCard() {
+function ScoreCard() {
   return (
     <View className="bg-dark-card rounded-2xl p-5 border border-dark-border">
-      <Text className="text-sage text-sm mb-2">Vitality Score</Text>
-      <Text className="text-5xl font-bold text-copper">87</Text>
-      <Text className="text-sage text-xs mt-1">+3 from last week</Text>
-      <View className="mt-4 h-2 bg-dark-border rounded-full overflow-hidden">
-        <View className="h-full w-[87%] bg-copper rounded-full" />
-      </View>
+      <Text className="text-sage text-sm mb-2">Bio Optimization Score</Text>
+      <Text className="text-white text-lg font-semibold">Not enough data</Text>
+      <Text className="text-sage text-xs mt-2">
+        Score appears after a real Bio Optimization row. This card does not invent a number.
+      </Text>
     </View>
   );
 }
 
 function SupplementTrackerCard() {
-  const supplements = [
-    { name: 'MTHFR+', taken: true },
-    { name: 'COMT+', taken: true },
-    { name: 'NAD+', taken: false },
-    { name: 'FOCUS+', taken: false },
-  ];
-
   return (
     <View className="bg-dark-card rounded-2xl p-5 border border-dark-border">
-      <Text className="text-sage text-sm mb-3">Today's Supplements</Text>
-      {supplements.map((s) => (
-        <View
-          key={s.name}
-          className="flex-row items-center justify-between py-2 border-b border-dark-border"
-        >
-          <Text className="text-white font-mono text-sm">{s.name}</Text>
-          <Text className={s.taken ? 'text-portal-green' : 'text-sage'}>
-            {s.taken ? '✓ Taken' : '○ Pending'}
-          </Text>
-        </View>
-      ))}
+      <Text className="text-sage text-sm mb-3">Today&apos;s Supplements</Text>
+      <Text className="text-white text-sm">Not enough data</Text>
+      <Text className="text-sage text-xs mt-2">
+        Protocol SKUs appear from a real row. This list does not invent supplement names.
+      </Text>
     </View>
   );
 }
@@ -44,17 +29,10 @@ function InsightsCard() {
   return (
     <View className="bg-dark-card rounded-2xl p-5 border border-dark-border">
       <Text className="text-sage text-sm mb-3">AI Insights</Text>
-      <View className="bg-teal/10 rounded-xl p-4 mb-3">
-        <Text className="text-white text-sm">
-          Your COMT gene variant suggests you metabolize catecholamines slowly.
-          COMT+ is optimized for your genotype.
-        </Text>
-      </View>
-      <View className="bg-copper/10 rounded-xl p-4">
-        <Text className="text-white text-sm">
-          Sleep quality improved 12% since starting NAD+ — keep it up!
-        </Text>
-      </View>
+      <Text className="text-white text-sm">Not analyzed</Text>
+      <Text className="text-sage text-xs mt-2">
+        Insights appear from a real genotype or biometric row. This card does not invent variant copy or percents.
+      </Text>
     </View>
   );
 }
@@ -73,10 +51,9 @@ export default function ConsumerDashboard() {
       </Text>
 
       {isDesktop ? (
-        // Desktop: 3-column layout
         <View className="flex-row gap-4">
           <View className="flex-1">
-            <VitalityScoreCard />
+            <ScoreCard />
           </View>
           <View className="flex-1">
             <SupplementTrackerCard />
@@ -86,9 +63,8 @@ export default function ConsumerDashboard() {
           </View>
         </View>
       ) : (
-        // Mobile: stacked cards
         <View className="gap-4">
-          <VitalityScoreCard />
+          <ScoreCard />
           <SupplementTrackerCard />
           <InsightsCard />
         </View>

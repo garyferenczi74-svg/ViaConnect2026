@@ -1,35 +1,32 @@
 'use client';
 
-import { useEffect, useId, useState } from 'react';
-import Link from 'next/link';
-import { Loader2 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { TierCard } from '@/components/pricing/TierCard';
-import { FamilyConfigurator } from '@/components/pricing/FamilyConfigurator';
-import { PractitionerToggleButton } from '@/components/landing/scroll-sections/shared/PractitionerToggleButton';
-import type { MembershipTier, TierId } from '@/types/pricing';
-import { createClient } from '@/lib/supabase/client';
+import { useCallback, useEffect, useId, useState } from 'react';
+import { PricingCatalogBody } from '@/components/pricing/PricingCatalogBody';
+import {
+  PRICING_CATALOG_TIMEOUT_MS,
+  parsePricingCatalog,
+  readCatalogErrorMessage,
+  isPricingCatalogError,
+  buildPricingPlanCards,
+  type PricingCatalogLoadState,
+  type PricingPlanCardModel,
+} from '@/lib/pricing/catalog';
+import { withAbortTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { trackPractitionerPricingExpanded } from '@/lib/analytics';
-import { TIER_FEATURES } from '@/lib/pricing/tier-features';
 
-// Shared pricing body. Used both by /pricing standalone route and by the
-// landing PricingSection scroll wrapper. Owns the billing-cycle toggle, the
-// Supabase tier fetch, the current-tier highlight, and the family configurator
-// modal. Consumers wrap it in their own layout (full-page <main> for the
-// standalone route, SectionAnchor for the landing scroll narrative).
 interface PricingTierGridProps {
   className?: string;
 }
 
 export function PricingTierGrid({ className = '' }: PricingTierGridProps) {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('annual');
-  const [tiers, setTiers] = useState<MembershipTier[] | null>(null);
-  const [currentTier, setCurrentTier] = useState<TierId>('free');
+  const [loadState, setLoadState] = useState<PricingCatalogLoadState>({ status: 'loading' });
+  const [retryToken, setRetryToken] = useState(0);
+  const [currentTierId, setCurrentTierId] = useState<string | null>(null);
   const [showFamilyConfig, setShowFamilyConfig] = useState(false);
+  const [selectedFamilyPlan, setSelectedFamilyPlan] = useState<PricingPlanCardModel | null>(null);
   const [isPractitionerOpen, setIsPractitionerOpen] = useState(false);
 
-  // useId guarantees unique aria-controls/aria-labelledby pairing even when
-  // PricingTierGrid renders inside both desktop + mobile scroll trees.
   const toggleId = useId();
   const regionId = `${toggleId}-region`;
 
@@ -38,9 +35,6 @@ export function PricingTierGrid({ className = '' }: PricingTierGridProps) {
     setIsPractitionerOpen(next);
     if (next) {
       trackPractitionerPricingExpanded();
-      // Mobile: scroll the expanded region into view so users on small
-      // screens see the new content without manual scrolling. Respects
-      // prefers-reduced-motion (auto behavior when set).
       requestAnimationFrame(() => {
         const region = document.getElementById(regionId);
         if (region) {
@@ -56,154 +50,120 @@ export function PricingTierGrid({ className = '' }: PricingTierGridProps) {
 
   useEffect(() => {
     let mounted = true;
-    (async () => {
-      const supabase = createClient();
-      const { data } = await supabase
-        .from('membership_tiers')
-        .select('*')
-        .eq('is_active', true)
-        .order('sort_order');
-      if (mounted) setTiers((data ?? []) as MembershipTier[]);
+    setLoadState({ status: 'loading' });
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const tierResult = await fetch('/api/pricing/tier').then((r) => r.json()).catch(() => null);
-        if (mounted && tierResult?.tierId) setCurrentTier(tierResult.tierId);
+    (async () => {
+      try {
+        const catalog = await withAbortTimeout(
+          async (signal) => {
+            const response = await fetch('/api/pricing/catalog', {
+              signal,
+              headers: { Accept: 'application/json' },
+              cache: 'no-store',
+            });
+            const body: unknown = await response.json().catch(() => null);
+            if (!response.ok) {
+              throw new Error(
+                readCatalogErrorMessage(
+                  body,
+                  'We could not load live membership prices. Please try again.',
+                ),
+              );
+            }
+            return parsePricingCatalog(body);
+          },
+          PRICING_CATALOG_TIMEOUT_MS,
+          'pricing.catalog.client',
+        );
+        if (!mounted) return;
+        if (catalog.tiers.length === 0) {
+          setLoadState({ status: 'empty' });
+          return;
+        }
+        setLoadState({ status: 'ready', catalog });
+      } catch (error) {
+        if (!mounted) return;
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          setLoadState({
+            status: 'error',
+            message: 'Live membership prices took too long to load. Please try again.',
+          });
+          return;
+        }
+        const message = isTimeoutError(error)
+          ? 'Live membership prices took too long to load. Please try again.'
+          : isPricingCatalogError(error)
+            ? error.message
+            : error instanceof Error
+              ? error.message
+              : 'We could not load live membership prices. Please try again.';
+        setLoadState({ status: 'error', message });
       }
     })();
-    return () => { mounted = false; };
+
+    return () => {
+      mounted = false;
+    };
+  }, [retryToken]);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const result = await withAbortTimeout(
+          async (signal) => {
+            const response = await fetch('/api/pricing/tier', { signal, cache: 'no-store' });
+            const body: unknown = await response.json().catch(() => null);
+            return body;
+          },
+          PRICING_CATALOG_TIMEOUT_MS,
+          'pricing.catalog.current-tier',
+        );
+        if (!mounted || result === null || typeof result !== 'object') return;
+        const tierId = 'tierId' in result ? result.tierId : null;
+        if (typeof tierId === 'string' && tierId.length > 0) {
+          setCurrentTierId(tierId);
+        }
+      } catch {
+        // Current-tier highlight is optional. Plan cards still render from the catalog.
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
-  function handleSelect(tierId: TierId) {
-    if (tierId === 'platinum_family') {
+  const handleSelect = useCallback((plan: PricingPlanCardModel) => {
+    if (plan.isFamilyTier) {
+      setSelectedFamilyPlan(plan);
       setShowFamilyConfig(true);
       return;
     }
-    window.location.href = `/checkout?tier=${tierId}&cycle=${billingCycle}`;
-  }
+    window.location.href = `/checkout?tier=${encodeURIComponent(plan.id)}&cycle=${billingCycle}`;
+  }, [billingCycle]);
+
+  const familyPlan =
+    selectedFamilyPlan ??
+    (loadState.status === 'ready'
+      ? (buildPricingPlanCards(loadState.catalog).find((plan) => plan.isFamilyTier) ?? null)
+      : null);
 
   return (
     <div className={className}>
-      <div className="text-center mb-10 sm:mb-14">
-        <div className="inline-flex rounded-xl border border-white/[0.08] bg-white/[0.03] p-1 text-sm">
-          <button
-            type="button"
-            onClick={() => setBillingCycle('monthly')}
-            className={`px-5 py-2 rounded-lg font-medium min-h-[40px] transition-all ${
-              billingCycle === 'monthly'
-                ? 'bg-[#2DA5A0]/30 backdrop-blur-xl border border-[#2DA5A0]/40 text-white shadow-[0_0_15px_rgba(45,165,160,0.3)]'
-                : 'text-white/65'
-            }`}
-          >
-            Monthly
-          </button>
-          <button
-            type="button"
-            onClick={() => setBillingCycle('annual')}
-            className={`px-5 py-2 rounded-lg font-medium min-h-[40px] transition-all ${
-              billingCycle === 'annual'
-                ? 'bg-[#2DA5A0]/30 backdrop-blur-xl border border-[#2DA5A0]/40 text-white shadow-[0_0_15px_rgba(45,165,160,0.3)]'
-                : 'text-white/65'
-            }`}
-          >
-            Annual
-            <span className="ml-2 text-[10px] rounded-full bg-[#E8803A]/20 text-[#E8803A] px-1.5 py-0.5">
-              Save more
-            </span>
-          </button>
-        </div>
-      </div>
-
-      {!tiers ? (
-        <div className="flex items-center justify-center py-20 text-white/50">
-          <Loader2 className="h-6 w-6 animate-spin" strokeWidth={1.5} />
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
-          {tiers.map((tier) => (
-            <TierCard
-              key={tier.id}
-              tier={tier}
-              billingCycle={billingCycle}
-              isCurrentTier={tier.id === currentTier}
-              isRecommended={tier.id === 'platinum'}
-              includedFeatures={TIER_FEATURES[tier.id as TierId] ?? []}
-              onSelect={handleSelect}
-            />
-          ))}
-        </div>
-      )}
-
-      {showFamilyConfig && (
-        <section className="mt-12">
-          <h2 className="text-xl sm:text-2xl font-semibold text-white text-center mb-6">
-            Build your Platinum+ Family plan
-          </h2>
-          <div className="max-w-3xl mx-auto">
-            <FamilyConfigurator billingCycle={billingCycle} />
-            <div className="mt-6 text-center">
-              <Link
-                href={`/checkout?tier=platinum_family&cycle=${billingCycle}`}
-                className="inline-flex items-center justify-center rounded-xl bg-[#2DA5A0] text-[#0B1520] px-6 py-3 text-sm font-semibold min-h-[48px] hover:bg-[#2DA5A0]/90"
-              >
-                Continue to checkout
-              </Link>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Practitioner & Naturopath pricing toggle scaffold (#139e Path C3).
-          Toggle UX is live; the practitioner tier cards themselves are held
-          pending Hannah validation + Steve Rica clearance on public-surface
-          copy and prices. Once cleared, swap the "Coming soon" panel for
-          actual TierCard renders against the practitioner_tiers table. */}
-      <div className="mt-12 flex justify-center">
-        <PractitionerToggleButton
-          id={toggleId}
-          ariaControls={regionId}
-          isOpen={isPractitionerOpen}
-          onToggle={handlePractitionerToggle}
-        />
-      </div>
-
-      <AnimatePresence initial={false}>
-        {isPractitionerOpen && (
-          <motion.div
-            key="practitioner-tier-region"
-            id={regionId}
-            role="region"
-            aria-labelledby={toggleId}
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{
-              height: { duration: 0.4, ease: [0.16, 1, 0.3, 1] },
-              opacity: { duration: 0.3, ease: 'easeInOut' },
-            }}
-            className="overflow-hidden"
-          >
-            <div className="pt-8 max-w-2xl mx-auto">
-              <div className="bg-black/30 backdrop-blur-sm border border-[#2DA5A0]/40 rounded-2xl p-8 text-center">
-                <p className="text-[#2DA5A0] uppercase tracking-[0.2em] text-xs mb-3 font-medium">
-                  Coming Soon
-                </p>
-                <h3 className="text-white text-2xl font-light mb-3">
-                  Practitioner &amp; Naturopath pricing
-                </h3>
-                <p className="text-white/70 text-sm leading-relaxed">
-                  Tier details for practitioners and naturopaths are in final review. Public pricing announcement coming shortly.
-                </p>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <p className="mt-8 text-center text-[11px] text-white/50 leading-relaxed max-w-2xl mx-auto">
-        Supplement recommendations are informational only and do not replace medical advice. Speak
-        with a qualified healthcare provider before starting new supplements.
-      </p>
+      <PricingCatalogBody
+        loadState={loadState}
+        billingCycle={billingCycle}
+        onBillingCycleChange={setBillingCycle}
+        currentTierId={currentTierId}
+        onSelectPlan={handleSelect}
+        onRetry={() => setRetryToken((value) => value + 1)}
+        showFamilyConfig={showFamilyConfig}
+        familyPlan={familyPlan}
+        practitionerToggleId={toggleId}
+        practitionerRegionId={regionId}
+        isPractitionerOpen={isPractitionerOpen}
+        onPractitionerToggle={handlePractitionerToggle}
+      />
     </div>
   );
 }

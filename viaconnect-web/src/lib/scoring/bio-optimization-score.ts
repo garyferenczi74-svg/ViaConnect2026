@@ -208,9 +208,9 @@ async function fetchDisplayName(supabase: SupabaseClient, userId: string): Promi
     const row = (data ?? null) as { full_name?: string | null; username?: string | null } | null;
     if (row?.full_name) return row.full_name.split(' ')[0];
     if (row?.username) return row.username;
-    return 'there';
+    return '';
   } catch {
-    return 'there';
+    return '';
   }
 }
 

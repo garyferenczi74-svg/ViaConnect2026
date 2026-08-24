@@ -15,6 +15,7 @@ safety_mode_filter: medium_no_carb_cutting
 bioavailability_bridge_card: false
 gary_approved_at: 2026-08-23
 gary_approval_required: true
+kelsey_compliance_review_id: 170r-nutrition-genetics-carbohydrates-2026-08-23
 ---
 
 # Carbohydrate quality and glucose context

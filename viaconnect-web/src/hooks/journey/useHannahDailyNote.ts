@@ -46,7 +46,7 @@ export function useHannahDailyNote(
   readTodaySubtext?: string,
 ): HannahDailyNoteState {
   const [state, setState] = useState<HannahDailyNoteState>({
-    noteText: pickWelcomeNote(displayName || 'there').noteText,
+    noteText: pickWelcomeNote(displayName).noteText,
     noteKind: 'welcome',
     generatedAt: null,
     compileEndedAt: null,
@@ -56,7 +56,7 @@ export function useHannahDailyNote(
 
   useEffect(() => {
     let active = true;
-    const welcome = pickWelcomeNote(displayName || 'there');
+    const welcome = pickWelcomeNote(displayName);
 
     if (!userId) {
       setState({
