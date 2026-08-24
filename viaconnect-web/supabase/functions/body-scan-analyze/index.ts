@@ -2,16 +2,18 @@
 // body-scan-analyze Edge Function (Prompt #85c Phase B)
 // =============================================================================
 // Ephemeral 4-photo body composition analyzer. Photos arrive as base64 in the
-// request body, are streamed to Claude Vision, and DISCARDED. Only the parsed
-// body composition estimates are persisted to body_tracker_photo_scans.
+// request body, are streamed to Claude Vision, and DISCARDED. Estimates persist
+// to body_tracker_photo_scans plus a linked body_tracker_entries spine
+// (segmental fat + weight rows). Photos themselves are never stored.
 //
 // Distinct from arnold-vision-analyze (#86B) which works on stored photo
 // sessions in the body-progress-photos bucket. This function intentionally
 // does not touch storage.
 //
-// Request:  POST { photos: { front, back, left_side, right_side }, media_type? }
-//           Bearer JWT required.
-// Response: { status: 'complete', scan_id, scan_date, estimates }
+// Request:  POST { photos: { front, back, left_side, right_side }, media_type? , media_types? }
+//           Bearer JWT required. One media_type only when all four match; else per-photo media_types.
+//           GET  { vision_key_configured, vision_model_configured } — no secrets.
+// Response: { status: 'complete', scan_id, scan_date, estimates, entry_id? }
 // =============================================================================
 
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
@@ -20,6 +22,7 @@ import { withAbortTimeout, isTimeoutError } from '../_shared/with-timeout.ts';
 import { safeLog } from '../_shared/safe-log.ts';
 import { getCircuitBreaker, isCircuitBreakerError } from '../_shared/circuit-breaker.ts';
 import { reportSupabaseError } from '../_shared/schema-drift.ts';
+import { resolveServerMediaTypes, isBadVisionModel } from '../_shared/scan-media-types.ts';
 
 const visionBreaker = getCircuitBreaker('claude-vision');
 
@@ -37,14 +40,12 @@ const VISION_TIMEOUT_MS = 60_000;
 // We allow the three common photographic formats and reject anything else
 // at the boundary so an attacker cannot smuggle a non image media_type into
 // the upstream call.
-const ALLOWED_MEDIA_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
-
 function corsHeaders(): Record<string, string> {
   return {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   };
 }
 
@@ -110,6 +111,12 @@ interface BodyScanRequest {
     right_side: string;
   };
   media_type?: string;
+  media_types?: {
+    front?: string;
+    back?: string;
+    left_side?: string;
+    right_side?: string;
+  };
 }
 
 interface BodyScanEstimate {
@@ -200,7 +207,29 @@ function validateEstimate(parsed: unknown): BodyScanEstimate {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders() });
+
+  const keyPresent = ANTHROPIC_KEY.length > 0;
+  const modelConfigured = Boolean(Deno.env.get('ARNOLD_VISION_MODEL'));
+
+  if (req.method === 'GET') {
+    safeLog.info('body-scan-analyze', 'health', {
+      anthropic_key_present: keyPresent,
+      vision_model_configured: modelConfigured,
+    });
+    return json({
+      ok: true,
+      vision_key_configured: keyPresent,
+      vision_model_configured: modelConfigured,
+    });
+  }
+
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405);
+
+  safeLog.info('body-scan-analyze', 'vision_config', {
+    anthropic_key_present: keyPresent,
+    vision_model_configured: modelConfigured,
+    vision_model: VISION_MODEL,
+  });
 
   if (!ANTHROPIC_KEY) return json({ error: 'vision unavailable' }, 503);
 
@@ -229,10 +258,14 @@ serve(async (req) => {
       return json({ error: `photo ${pos} too large` }, 413);
     }
   }
-  const mediaType = body.media_type ?? 'image/jpeg';
-  if (!ALLOWED_MEDIA_TYPES.has(mediaType)) {
-    return json({ error: 'unsupported media_type; allowed: image/jpeg, image/png, image/webp' }, 400);
+  const mediaResolved = resolveServerMediaTypes({
+    media_type: body.media_type,
+    media_types: body.media_types,
+  });
+  if (!mediaResolved.ok) {
+    return json({ error: mediaResolved.error }, 400);
   }
+  const mediaTypes = mediaResolved.mediaTypes;
 
   // Cost monitoring: log the base64 payload size pre Anthropic call.
   // Vision pricing is dominated by image bytes, so this lets ops correlate
@@ -240,7 +273,7 @@ serve(async (req) => {
   const totalBase64Bytes = p.front.length + p.back.length + p.left_side.length + p.right_side.length;
   safeLog.info('body-scan-analyze', 'egress', {
     user_id: user.id,
-    media_type: mediaType,
+    media_types: mediaTypes,
     total_base64_bytes: totalBase64Bytes,
     per_photo_bytes: {
       front: p.front.length,
@@ -278,10 +311,10 @@ serve(async (req) => {
             messages: [{
               role: 'user',
               content: [
-                { type: 'image', source: { type: 'base64', media_type: mediaType, data: p.front } },
-                { type: 'image', source: { type: 'base64', media_type: mediaType, data: p.back } },
-                { type: 'image', source: { type: 'base64', media_type: mediaType, data: p.left_side } },
-                { type: 'image', source: { type: 'base64', media_type: mediaType, data: p.right_side } },
+                { type: 'image', source: { type: 'base64', media_type: mediaTypes.front, data: p.front } },
+                { type: 'image', source: { type: 'base64', media_type: mediaTypes.back, data: p.back } },
+                { type: 'image', source: { type: 'base64', media_type: mediaTypes.left_side, data: p.left_side } },
+                { type: 'image', source: { type: 'base64', media_type: mediaTypes.right_side, data: p.right_side } },
                 { type: 'text', text: 'Analyze these 4 photos per the system instructions and respond ONLY in the specified JSON format.' },
               ],
             }],
@@ -295,13 +328,42 @@ serve(async (req) => {
 
     if (!apiResponse.ok) {
       const errText = await apiResponse.text().catch(() => '');
-      throw new Error(`anthropic ${apiResponse.status}: ${errText.slice(0, 200)}`);
+      const preview = errText.slice(0, 200);
+      safeLog.warn('body-scan-analyze', 'anthropic_error', {
+        user_id: user.id,
+        anthropic_status: apiResponse.status,
+        anthropic_preview: preview,
+        vision_model: VISION_MODEL,
+      });
+      if (isBadVisionModel(apiResponse.status, errText)) {
+        return json({ error: `invalid vision model: ${VISION_MODEL}` }, 502);
+      }
+      throw new Error(`anthropic ${apiResponse.status}: ${preview}`);
     }
     const visionJson = await apiResponse.json() as { content?: Array<{ type: string; text?: string }> };
     const text = visionJson.content?.find((c) => c.type === 'text')?.text ?? '';
-    if (!text) throw new Error('empty vision response');
+    if (!text) {
+      safeLog.warn('body-scan-analyze', 'anthropic_empty_text', {
+        user_id: user.id,
+        anthropic_status: apiResponse.status,
+        anthropic_preview: '',
+        vision_model: VISION_MODEL,
+      });
+      throw new Error('empty vision response');
+    }
 
-    parsed = validateEstimate(extractJson(text));
+    try {
+      parsed = validateEstimate(extractJson(text));
+    } catch (parseErr) {
+      safeLog.warn('body-scan-analyze', 'anthropic_json_invalid', {
+        user_id: user.id,
+        anthropic_status: apiResponse.status,
+        anthropic_preview: text.slice(0, 200),
+        vision_model: VISION_MODEL,
+        error: String(parseErr),
+      });
+      throw parseErr;
+    }
 
     // Guardrail: scan ALL parsed string values for compliance violations
     const collected: string[] = [];
@@ -355,10 +417,106 @@ serve(async (req) => {
   }
 
   const row = insertResult.data as { id: string; scan_date: string };
+
+  // Prompt 210l: same spine as persist route. Photo scans alone are not enough
+  // for Body Fat / FormaVision. Fail-open: vision 200 stays 200 if spine insert
+  // races; client persist is idempotent by scan_id.
+  const mid =
+    Number.isFinite(parsed.estimated_body_fat_min) && Number.isFinite(parsed.estimated_body_fat_max)
+      ? Math.round(((parsed.estimated_body_fat_min + parsed.estimated_body_fat_max) / 2) * 10) / 10
+      : null;
+  const notes = `FormaVision estimate: ${parsed.estimated_body_fat_min.toFixed(1)}–${parsed.estimated_body_fat_max.toFixed(1)}% body fat`;
+
+  let entryId: string | null = null;
+  try {
+    const existing = await sa
+      .from('body_tracker_entries')
+      .select('id')
+      .eq('scan_id', row.id)
+      .eq('user_id', user.id)
+      .maybeSingle();
+    if (existing.data && (existing.data as { id: string }).id) {
+      entryId = (existing.data as { id: string }).id;
+    } else {
+      const entryInsert = await sa
+        .from('body_tracker_entries')
+        .insert({
+          user_id: user.id,
+          scan_id: row.id,
+          source: 'scan',
+          device_name: 'FormaVision',
+          entry_date: row.scan_date,
+          notes,
+        } as never)
+        .select('id')
+        .single();
+      if (entryInsert.error) {
+        if (entryInsert.error.code === '23505') {
+          const race = await sa
+            .from('body_tracker_entries')
+            .select('id')
+            .eq('scan_id', row.id)
+            .eq('user_id', user.id)
+            .maybeSingle();
+          entryId = (race.data as { id: string } | null)?.id ?? null;
+        } else {
+          reportSupabaseError('body-scan-analyze.entry-insert', entryInsert.error, {
+            table: 'body_tracker_entries',
+          });
+          safeLog.error('body-scan-analyze', 'entry insert failed', {
+            user_id: user.id,
+            scan_id: row.id,
+            error: entryInsert.error.message,
+          });
+        }
+      } else {
+        entryId = (entryInsert.data as { id: string }).id;
+      }
+    }
+
+    if (entryId) {
+      const segInsert = await sa.from('body_tracker_segmental_fat').insert({
+        user_id: user.id,
+        entry_id: entryId,
+        total_body_fat_pct: mid,
+      } as never);
+      if (segInsert.error) {
+        safeLog.warn('body-scan-analyze', 'segmental fat insert failed', {
+          user_id: user.id,
+          scan_id: row.id,
+          entry_id: entryId,
+          error: segInsert.error.message,
+        });
+      }
+
+      const weightInsert = await sa.from('body_tracker_weight').insert({
+        user_id: user.id,
+        entry_id: entryId,
+        weight_lbs: null,
+        body_fat_pct: null,
+      } as never);
+      if (weightInsert.error) {
+        safeLog.warn('body-scan-analyze', 'weight insert failed', {
+          user_id: user.id,
+          scan_id: row.id,
+          entry_id: entryId,
+          error: weightInsert.error.message,
+        });
+      }
+    }
+  } catch (spineErr) {
+    safeLog.error('body-scan-analyze', 'spine persist failed', {
+      user_id: user.id,
+      scan_id: row.id,
+      error: String(spineErr),
+    });
+  }
+
   return json({
     status: 'complete',
     scan_id: row.id,
     scan_date: row.scan_date,
     estimates: parsed,
+    entry_id: entryId,
   });
 });

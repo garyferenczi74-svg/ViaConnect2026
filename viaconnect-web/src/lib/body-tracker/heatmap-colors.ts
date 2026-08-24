@@ -90,6 +90,22 @@ export function getOvalColorFromChange(
   return 'yellow';
 }
 
+/**
+ * Prompt 210l: only color segments that have a current measured value.
+ * Missing / UNKNOWN segments are omitted (heatmap renders no tint), never yellow "No Change".
+ */
+export function ovalStatusesFromExistingChange(
+  changeData: RegionChangeData,
+  metric: Metric,
+): Record<string, OvalColor> {
+  const out: Record<string, OvalColor> = {};
+  for (const [regionId, row] of Object.entries(changeData)) {
+    if (row.current === null || row.current === undefined) continue;
+    out[regionId] = getOvalColorFromChange(row.change, metric);
+  }
+  return out;
+}
+
 // Prompt #85n v3: convert the body-fat callout's static SegmentStatus
 // label (Very Low / Low / Standard / High / Very High) into the same
 // green / yellow / red bucket. Used for body-fat section ovals + fat

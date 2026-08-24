@@ -53,25 +53,32 @@ export function ScoreDetailPanel({ rows, lastUpdatedAt }: ScoreDetailPanelProps)
       <div className="mt-4 space-y-3">
         {rows.map((row) => {
           const disagree = row.disagreement?.showDisagreeChrome === true;
+          const ingest = row.showRing === true;
           return (
             <article
               key={row.dimension}
               data-dimension={row.dimension}
+              data-ingest={ingest ? 'sourced' : 'none'}
+              data-ring={ingest ? 'visible' : 'hidden'}
               className="rounded-xl border border-white/[0.08] bg-[#1A2744]/80 p-3"
             >
               <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <DimIcon dimension={row.dimension} activeIcon={row.disagreement?.activeIcon} />
-                  <h3 className="text-sm font-semibold text-white">{titleFor(row.dimension)}</h3>
-                  <span className="font-mono text-sm text-white">{row.displayValue}</span>
+                <div className="flex min-w-0 items-center gap-2">
+                  <DimIcon dimension={row.dimension} activeIcon={ingest ? row.disagreement?.activeIcon : null} />
+                  <h3 className="text-sm font-semibold text-white whitespace-normal break-words">
+                    {titleFor(row.dimension)}
+                  </h3>
+                  <span className="font-mono text-sm text-white">
+                    {ingest ? row.displayValue : 'UNKNOWN'}
+                  </span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  {disagree ? (
+                  {ingest && disagree ? (
                     <span className="rounded-full bg-[#B75E18]/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#B75E18] ring-1 ring-inset ring-[#B75E18]/30">
                       DISAGREE
                     </span>
                   ) : null}
-                  {row.manual ? (
+                  {ingest && row.manual ? (
                     <span className="rounded-full bg-[#B75E18]/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#B75E18] ring-1 ring-inset ring-[#B75E18]/30">
                       Manual
                     </span>
@@ -79,38 +86,39 @@ export function ScoreDetailPanel({ rows, lastUpdatedAt }: ScoreDetailPanelProps)
                 </div>
               </div>
 
-              <ul className="mt-3 space-y-2">
-                {(row.sources.length
-                  ? row.sources
-                  : [{ source: 'none', label: 'Pending', value: null, trust: 0 }]
-                ).map((src) => {
-                  const display =
-                    src.value === null || !Number.isFinite(src.value) ? 'Pending' : String(src.value);
-                  return (
-                    <li
-                      key={`${row.dimension}-${src.source}-${src.label ?? ''}`}
-                      className="flex items-center justify-between gap-2"
-                    >
-                      <span className="text-sm text-white/80">{src.label ?? src.source}</span>
-                      <span className="flex items-center gap-2">
-                        <span className="font-mono text-sm text-white">{display}</span>
-                        {src.is_active ? (
-                          <span className="rounded-full bg-[#2DA5A0]/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#2DA5A0] ring-1 ring-inset ring-[#2DA5A0]/30">
-                            Active
-                          </span>
-                        ) : null}
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
-
-              {row.status === 'pending' || row.disagreement?.kind === 'pending' ? (
+              {ingest ? (
+                <ul className="mt-3 space-y-2">
+                  {row.sources.map((src) => {
+                    const display =
+                      src.value === null || !Number.isFinite(src.value) ? 'UNKNOWN' : String(src.value);
+                    return (
+                      <li
+                        key={`${row.dimension}-${src.source}-${src.label ?? ''}`}
+                        className="flex items-center justify-between gap-2"
+                      >
+                        <span className="text-sm text-white/80 whitespace-normal break-words">
+                          {src.label ?? src.source}
+                        </span>
+                        <span className="flex items-center gap-2">
+                          <span className="font-mono text-sm text-white">{display}</span>
+                          {src.is_active ? (
+                            <span className="rounded-full bg-[#2DA5A0]/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#2DA5A0] ring-1 ring-inset ring-[#2DA5A0]/30">
+                              Active
+                            </span>
+                          ) : null}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
                 <p className="mt-2 flex items-start gap-1.5 text-xs text-white/50">
                   <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
-                  One or more sources pending or unavailable.
+                  Hidden until a real ingest lands. Missing stays UNKNOWN, never 0.
                 </p>
-              ) : row.disagreement?.detail ? (
+              )}
+
+              {ingest && row.disagreement?.detail ? (
                 <p className="mt-2 flex items-start gap-1.5 text-xs text-white/50">
                   <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
                   {row.disagreement.detail}

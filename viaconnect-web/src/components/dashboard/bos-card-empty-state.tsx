@@ -6,7 +6,7 @@
 // completed the CAQ). The empty state preserves the populated card's
 // container styling (gradient + glow) so the user sees the shape of
 // what unlocks, with these differences:
-//   - Headline reads "Start with your CAQ to unlock your score"
+//   - Headline reads "Not enough data yet"
 //     (replaces the side panel's "Your score is..." headline)
 //   - Gauge renders in placeholder mode (no fill ring, "--" centered)
 //   - Side panel is omitted (info chips and 5-dot indicator have
@@ -44,8 +44,11 @@ export function BOSCardEmptyState({ data }: BOSCardEmptyStateProps) {
             Bio Optimization Score
           </p>
           <h2 className="mt-1 text-xl font-bold text-white sm:text-2xl">
-            Start with your CAQ to unlock your score
+            Not enough data yet
           </h2>
+          <p className="mt-2 text-sm text-white/60">
+            Start with your CAQ to unlock your Bio Optimization Score.
+          </p>
         </header>
 
         {/* Teaching paragraph (pill-less, aligned with the header above) */}

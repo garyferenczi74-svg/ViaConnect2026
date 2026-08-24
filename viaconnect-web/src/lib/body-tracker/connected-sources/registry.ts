@@ -1,6 +1,6 @@
-// Prompt 201: connected-sources registry. The single source of truth for body
-// composition ingestion sources. Adding a future source is a registry entry
-// here, not new UI plumbing.
+// First-class Connections UI lives in wearable-tiles.ts (Whoop, Hume Body Pod,
+// Apple Health, Oura). CONNECTED_SOURCES is an ingest-capability catalog only
+// and must not be mapped as tiles.
 //
 // Hume Health (the Body Pod, operated by FitTrack Inc) has NO public developer
 // API, OAuth program, or cloud endpoint. It reaches ViaConnect only as a
@@ -159,7 +159,7 @@ export function sourceSupports(sourceId: string, metric: BodyMetricKey): boolean
 // values (case-insensitive, substring) is tagged device_origin = HUME_DEVICE_ORIGIN.
 // Kept as a configurable list, not hardcoded inline at the call site.
 export const HUME_DEVICE_ORIGIN = "hume_body_pod";
-export const HUME_SOURCE_NAME_MATCHES = ["hume health", "hume", "fittrack"];
+export const HUME_SOURCE_NAME_MATCHES = ["hume_body_pod", "hume health", "hume", "fittrack"];
 
 export function matchesHume(sourceName: string | null | undefined): boolean {
   if (!sourceName) return false;

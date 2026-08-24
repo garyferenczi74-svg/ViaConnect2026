@@ -15,6 +15,7 @@ safety_mode_filter: medium_no_carb_cutting
 bioavailability_bridge_card: false
 gary_approved_at: 2026-08-23
 gary_approval_required: true
+kelsey_compliance_review_id: 170r-nutrition-genetics-carbohydrates-2026-08-23
 ---
 
 # Carbohydrate quality and glucose context
@@ -23,11 +24,11 @@ gary_approval_required: true
 
 Carbohydrate foods range widely. Fiber and food structure change how a meal feels. Some loci on this panel appear in glucose and diet-pattern research. Carrying a studied variant is not a diagnosis of diabetes or carb intolerance.
 
-This card covers the confirmed extract list (8 unique rs IDs). The partner page header said 15 variants. Remaining variants are pending Elysium.
+This card covers the confirmed extract list (8 unique rs IDs). Your genetics report header may list 15 variants. This extract includes only the confirmed variants named below.
 
 Confirmed variants: BDNF rs6265; CETP rs5883; FTO rs9939609; GCK rs1799884; GCKR rs780094; IRS1 rs2943641; PLIN1 rs894160; PPARG rs1801282.
 
-Note: CETP rs5883 here is not the same SNP as CETP rs5882 on the fats and plant-cholesterol cards. Do not collapse them.
+Note: CETP rs5883 here is not the same SNP as CETP rs5882 on the fats and plant-cholesterol cards. They are different variants.
 
 ## Carb quality
 
@@ -35,7 +36,7 @@ CDC and Dietary Guidelines language emphasizes vegetables, fruit, whole grains, 
 
 ## Complex carb utilization as an educational theme
 
-Partner scores may speak about complex carb utilization. That is an educational heading. GCK, GCKR, IRS1, and PPARG appear in glucose and insulin-signaling research. FTO rs9939609 is studied for appetite and adiposity associations, not as a reason diets fail. FTO does not change weight-loss response (PMID 27650503 if FTO and weight loss are named together). BDNF appears across appetite and macronutrient papers. PLIN1 appears in lipid-droplet and diet-interaction research. None of these is a carb-intolerance diagnosis.
+Some scores may speak about complex carb utilization. That is an educational heading. GCK, GCKR, IRS1, and PPARG appear in glucose and insulin-signaling research. FTO rs9939609 is studied for appetite and adiposity associations, not as a reason diets fail. FTO does not change weight-loss response (PMID 27650503 if FTO and weight loss are named together). BDNF appears across appetite and macronutrient papers. PLIN1 appears in lipid-droplet and diet-interaction research. None of these is a carb-intolerance diagnosis.
 
 ## Caffeine and post-meal glucose
 
@@ -43,7 +44,7 @@ Some reports discuss caffeine timing near meals and post-meal glucose. That is a
 
 ## Why weight loss from low-carb is a research heading, not a program
 
-A partner heading about weight change on a lower-carb pattern is research-style copy. It is not a ViaConnect program. Low-carb as treatment is out of scope. No weight-loss optimization pitch belongs on this card.
+A heading about weight change on a lower-carb pattern is research-style copy. It is not a ViaConnect program. Low-carb as treatment is out of scope. This card is not a weight-loss optimization pitch.
 
 ## Overlap with the insulin resistance card
 
@@ -53,8 +54,8 @@ Do not double-diagnose. The insulin resistance card has its own confirmed list. 
 
 - Genes do not replace CDC-style pattern education.
 - Low-carb as treatment is out of scope.
-- Demo glucose, insulin, or HbA1c numbers are not the user's labs.
-- This card covers 8 confirmed rs IDs. Seven header slots are pending Elysium.
+- Example glucose, insulin, or HbA1c numbers are not your labs.
+- This card covers 8 confirmed rs IDs. Extra header slots are not on this extract.
 - If you use insulin or a secretagogue, do not cut carbohydrate from this page.
 
 ## What to do next
@@ -77,4 +78,4 @@ Follow carb quality already in the meal plan. If caffeine near meals is a questi
 
 ## FDA disclaimer
 
-These statements have not been evaluated by the Food and Drug Administration. This product is not intended to diagnose, treat, cure, or prevent any disease. This card is educational, not medical advice. Talk with a licensed clinician before changing diet or supplements, especially if you are pregnant, breastfeeding, have a medical condition, or take medicines.
+These statements have not been evaluated by the Food and Drug Administration. This information is not intended to diagnose, treat, cure, or prevent any disease. This card is educational, not medical advice. Talk with a licensed clinician before changing diet or supplements, especially if you are pregnant, breastfeeding, have a medical condition, or take medicines.

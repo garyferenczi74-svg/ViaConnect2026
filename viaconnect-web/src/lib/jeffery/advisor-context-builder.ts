@@ -120,7 +120,7 @@ async function fetchDisplayName(db: SupabaseClient, userId: string): Promise<str
     .maybeSingle();
   if (data?.full_name) return data.full_name.split(" ")[0];
   if (data?.username) return data.username;
-  return "there";
+  return "";
 }
 
 /** Fail-open supplier digests + adherence + latest note. Never throws. */

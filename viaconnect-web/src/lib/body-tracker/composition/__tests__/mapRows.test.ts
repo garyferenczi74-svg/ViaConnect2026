@@ -67,6 +67,25 @@ describe('mapRows', () => {
     expect(snapshot).toBeNull();
   });
 
+  it('parses FormaVision estimate notes into a range and marks the row estimated', () => {
+    const snapshot = mapRows({
+      entry: {
+        id: 'e-scan',
+        source: 'scan',
+        created_at: '2026-08-24T00:00:00Z',
+        scan_id: 'scan-1',
+        notes: 'FormaVision estimate: 18.0–22.0% body fat',
+      },
+      fat: { total_body_fat_pct: 20 },
+      muscle: null,
+    });
+    expect(snapshot!.scanId).toBe('scan-1');
+    expect(snapshot!.isEstimated).toBe(true);
+    expect(snapshot!.estimatedBodyFatMin).toBe(18);
+    expect(snapshot!.estimatedBodyFatMax).toBe(22);
+    expect(snapshot!.totalBodyFatPct).toBe(20);
+  });
+
   it('maps muscle row fields to snapshot', () => {
     const snapshot = mapRows({
       entry: { id: 'e4', source: 'manual', created_at: '2026-06-22T00:00:00Z' },

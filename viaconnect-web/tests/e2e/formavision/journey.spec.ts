@@ -48,7 +48,12 @@ import {
   cinematicCanvasIsUp,
   AVATAR_CANVAS_TESTID,
   SYNTHETIC_JOURNEY_CAPTURES,
+  skipFallbackSurfaceIfPlaceholder,
 } from './fixtures';
+
+test.beforeEach(() => {
+  skipFallbackSurfaceIfPlaceholder();
+});
 
 // The exact 3D-canvas locator (the react-three-fiber <Canvas> element), used as
 // the cinematic discriminator instead of the old canvas-presence proxy.

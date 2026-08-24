@@ -4,11 +4,9 @@
 //
 // Sits directly below the bento grid. Links to the existing
 // /body-tracker/connections route which already lists the supported
-// sources. The strip presents the five highest priority sources from
-// CONNECTIONS as pills with a teal dot when connected and a dim dot
-// when not. While the ingestion series is still in flight every
-// source ships as connected = false; the real status hook will land
-// later.
+// sources. The strip presents the locked four tiles from CONNECTIONS
+// as pills with a teal dot when connected and a dim dot when not.
+// Status is last-sync only; pills stay disconnected until ingest.
 
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
