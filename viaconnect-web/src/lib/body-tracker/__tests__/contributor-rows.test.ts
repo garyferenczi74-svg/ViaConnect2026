@@ -28,4 +28,10 @@ describe('buildContributorRows', () => {
     ]);
     expect(rows.find((r) => r.metric === 'recovery')?.connectedSource).toBeNull();
   });
+  it('passes through a real hrv row via the direct dimension-name match (Task 7b)', () => {
+    const rows = buildContributorRows([
+      { dimension: 'hrv', source: 'whoop', value: 55, displayValue: '55', status: 'sourced', showRing: true, manual: false, disagreement: null, sources: [] },
+    ]);
+    expect(rows.find((r) => r.metric === 'hrv')?.connectedSource).toBe('whoop');
+  });
 });
