@@ -37,7 +37,7 @@ test.describe('homepage Three-Portal waitlist copy', () => {
 
   test('features intro does not claim a live clinician portal', async ({ page }) => {
     await page.goto('/#features', { waitUntil: 'domcontentloaded' });
-    const features = page.locator('#features');
+    const features = page.getByRole('region', { name: 'ViaConnect Features' }).locator('visible=true');
     await expect(features).toContainText(/Q1 2027/);
     await expect(features).not.toContainText(/in one tap/);
   });
