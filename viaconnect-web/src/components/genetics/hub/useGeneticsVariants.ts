@@ -29,6 +29,12 @@ import {
 import { normalizeObservedPanelKey } from '@/lib/genetics/panelKeyAliases';
 import type { HubHormoneMarker } from '@/lib/genetics/hormoneObservedCount';
 import type { HubEpigeneticMarker } from '@/lib/genetics/hubVariantsPayload';
+import {
+  resolveGeneticsUploadState,
+  type GeneticsUploadState,
+} from '@/lib/genetics/geneticsUploadState';
+import { variantRowChip, type VariantRowChipKind } from '@/lib/genetics/variantRowChip';
+import type { VariantProvenance } from '@/lib/genetics/variantProvenance';
 
 export interface VariantRecord {
   panel_key: PanelKey;
@@ -39,6 +45,9 @@ export interface VariantRecord {
   clinical_significance: string | null;
   severity: SeverityTier | null;
   is_sample: boolean;
+  stored_panel_key: string | null;
+  chip: VariantRowChipKind;
+  provenance: VariantProvenance | null;
 }
 
 export interface GeneticsVariantsData {
@@ -50,6 +59,8 @@ export interface GeneticsVariantsData {
   loadStatus: ObservedLoadStatus;
   hormoneMarkers: HubHormoneMarker[];
   epigeneticMarkers: HubEpigeneticMarker[];
+  geneticsUploadState: GeneticsUploadState;
+  geneticsUploaded: boolean;
 }
 
 export const EMPTY_OK_DATA: GeneticsVariantsData = {
@@ -60,6 +71,8 @@ export const EMPTY_OK_DATA: GeneticsVariantsData = {
   loadStatus: 'ok',
   hormoneMarkers: [],
   epigeneticMarkers: [],
+  geneticsUploadState: 'none',
+  geneticsUploaded: false,
 };
 
 export const ERROR_DATA: GeneticsVariantsData = {
@@ -70,6 +83,8 @@ export const ERROR_DATA: GeneticsVariantsData = {
   loadStatus: 'error',
   hormoneMarkers: [],
   epigeneticMarkers: [],
+  geneticsUploadState: 'none',
+  geneticsUploaded: false,
 };
 
 export const UNAUTHORIZED_DATA: GeneticsVariantsData = {
@@ -153,6 +168,21 @@ function asObservedRow(key: PanelKey, raw: unknown): ObservedPanelCount {
   return { panel_key: key, count, unit, status, source };
 }
 
+function parseProvenance(raw: unknown): VariantProvenance | null {
+  if (typeof raw !== 'object' || raw === null) return null;
+  const row = raw as Record<string, unknown>;
+  const source = typeof row.source === 'string' && row.source.trim() ? row.source : null;
+  const date = typeof row.date === 'string' && row.date.trim() ? row.date : null;
+  const kit = typeof row.kit === 'string' && row.kit.trim() ? row.kit : null;
+  if (!source && !date && !kit) return null;
+  return { source, date, kit };
+}
+
+function parseUploadState(raw: unknown): GeneticsUploadState {
+  if (raw === 'uploaded' || raw === 'sample_only' || raw === 'none') return raw;
+  return 'none';
+}
+
 export function normalizeGeneticsVariantsPayload(json: unknown): GeneticsVariantsData {
   return normalize(json);
 }
@@ -191,6 +221,22 @@ function normalize(json: unknown): GeneticsVariantsData {
               ? row.severity
               : null,
           is_sample: row.is_sample === true,
+          stored_panel_key:
+            typeof row.stored_panel_key === 'string' ? row.stored_panel_key : rowKey,
+          chip:
+            row.chip === 'demo' ||
+            row.chip === 'result' ||
+            row.chip === 'unanalyzed' ||
+            row.chip === 'reference'
+              ? row.chip
+              : variantRowChip({
+                  is_sample: row.is_sample === true,
+                  genotype: typeof row.genotype === 'string' ? row.genotype : null,
+                  status: typeof row.status === 'string' ? row.status : null,
+                  stored_panel_key:
+                    typeof row.stored_panel_key === 'string' ? row.stored_panel_key : rowKey,
+                }),
+          provenance: parseProvenance(row.provenance),
         });
       }
       variantsByPanel[panelKey] = [...(variantsByPanel[panelKey] ?? []), ...rows];
@@ -263,6 +309,16 @@ function normalize(json: unknown): GeneticsVariantsData {
         ? null
         : null;
 
+  const allRows = Object.values(variantsByPanel).flatMap((rows) => rows ?? []);
+  const geneticsUploadState =
+    obj.geneticsUploadState === 'uploaded' ||
+    obj.geneticsUploadState === 'sample_only' ||
+    obj.geneticsUploadState === 'none'
+      ? parseUploadState(obj.geneticsUploadState)
+      : resolveGeneticsUploadState({ variantRows: allRows });
+  const geneticsUploaded =
+    obj.geneticsUploaded === true || geneticsUploadState === 'uploaded';
+
   return {
     variantsByPanel,
     brandedPanels,
@@ -271,5 +327,7 @@ function normalize(json: unknown): GeneticsVariantsData {
     loadStatus: 'ok',
     hormoneMarkers,
     epigeneticMarkers,
+    geneticsUploadState,
+    geneticsUploaded,
   };
 }
