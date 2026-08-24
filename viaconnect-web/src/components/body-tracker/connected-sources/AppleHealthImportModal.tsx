@@ -194,7 +194,8 @@ export function AppleHealthImportModal({
             body: JSON.stringify({ importId, storagePath, fileKind: ext }),
             signal,
           }),
-          60000,
+          // 300000ms (300s) matches the parse route's maxDuration = 300; keep the two in sync.
+          300000,
           'apple-health-parse',
         );
         const json = res.ok ? await res.json().catch(() => null) : null;
