@@ -195,7 +195,8 @@ describe("source contract: chrome + middleware use session role", () => {
 
   it("edge middleware fail-closes clinician/admin on auth timeout", () => {
     const src = readFileSync(path.join(REPO, "src/middleware.ts"), "utf8");
-    expect(src).toMatch(/failClosedOnAuthTimeout/);
+    expect(src).toMatch(/authTimeoutAction/);
+    expect(src).toMatch(/denyClinicianAdminOnAuthTimeout/);
     expect(src).not.toMatch(/session check timed out, passing request through/);
   });
 
@@ -206,8 +207,9 @@ describe("source contract: chrome + middleware use session role", () => {
     );
     expect(src).toMatch(/roleFromProfilesColumn/);
     expect(src).toMatch(/outOfRoleRedirect/);
+    expect(src).toMatch(/canAccessPortalPath/);
     expect(src).not.toMatch(/falling back to user_metadata\.role/);
-    expect(src).toMatch(/\/helix/);
+    expect(src).not.toMatch(/claims\.user_metadata\?\.role/);
   });
 
   it("app layout reads profiles.role, not user_metadata.role, for isAdmin", () => {
@@ -215,8 +217,9 @@ describe("source contract: chrome + middleware use session role", () => {
       path.join(REPO, "src/app/(app)/layout.tsx"),
       "utf8",
     );
-    expect(src).toMatch(/from\("profiles"\)/);
-    expect(src).toMatch(/roleFromProfilesColumn/);
+    expect(src).toMatch(/resolveSessionRoleForUser/);
+    expect(src).toMatch(/isConfirmedAdmin/);
+    expect(src).toMatch(/sessionRole="admin"/);
     expect(src).not.toMatch(/user_metadata\?\.role as string\) \?\? "consumer"/);
   });
 
