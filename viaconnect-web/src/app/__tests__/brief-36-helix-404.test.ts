@@ -11,6 +11,7 @@ function src(rel: string): string {
 const NEXT_CONFIG = src('next.config.mjs');
 const ROOT_NOT_FOUND = src('src/app/not-found.tsx');
 const APP_NOT_FOUND = src('src/app/(app)/not-found.tsx');
+const APP_CATCH_ALL = src('src/app/(app)/[...notFound]/page.tsx');
 const APP_LAYOUT = src('src/app/(app)/layout.tsx');
 const MARKETING_404 = src('src/components/not-found/MarketingNotFoundView.tsx');
 const APP_404_VIEW = src('src/components/not-found/AppNotFoundView.tsx');
@@ -50,6 +51,9 @@ describe('Brief 36 Helix 404 chrome and aliases', () => {
     expect(APP_NOT_FOUND).not.toContain('Go to Dashboard');
     expect(APP_NOT_FOUND).not.toContain('min-h-screen');
     expect(APP_NOT_FOUND).not.toContain("'use client'");
+    expect(APP_CATCH_ALL).toContain("from \"next/navigation\"");
+    expect(APP_CATCH_ALL).toContain('notFound()');
+    expect(APP_CATCH_ALL).not.toContain("'use client'");
 
     expect(ROOT_NOT_FOUND).toContain('PortalShellRouter');
     expect(ROOT_NOT_FOUND).toContain('AppNotFoundView');
