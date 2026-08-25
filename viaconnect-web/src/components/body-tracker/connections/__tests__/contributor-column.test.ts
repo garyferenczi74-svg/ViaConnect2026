@@ -1,7 +1,10 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { ContributorColumn } from '@/components/body-tracker/connections/ContributorColumn';
+import {
+  CONTRIBUTOR_ROW_CLASS,
+  ContributorColumn,
+} from '@/components/body-tracker/connections/ContributorColumn';
 import { CONTRIBUTOR_METRICS, METRIC_LABELS } from '@/lib/body-tracker/contributor-rows';
 import type { DimensionSourceRow } from '@/lib/body-tracker/source-disagreement';
 import { CONNECTIONS_DISCLOSURE } from '@/lib/body-tracker/wearable-tiles';
@@ -20,6 +23,15 @@ describe('ContributorColumn', () => {
     }
     expect((markup.match(/ details"/g) ?? []).length).toBe(7);
     expect(markup).toContain('data-connect-cta');
+    expect(markup).toContain(CONTRIBUTOR_ROW_CLASS);
+    expect(CONTRIBUTOR_ROW_CLASS).toBe('flex min-h-9 items-center gap-2 rounded-lg px-2 py-1.5');
+    expect(markup).not.toContain('bg-navy-700/80');
+    expect(markup).not.toContain('bg-navy-700');
+    expect(markup).not.toContain('>Metric<');
+    expect(markup).not.toContain('>Source<');
+    expect(markup).not.toMatch(/mt-5 space-y-3/);
+    expect((markup.match(/rounded-xl/g) ?? []).length).toBe(0);
+    expect(markup).not.toMatch(/class="[^"]*\bp-3\b/);
   });
 
   it('populated: the matching row shows its real source, not the CTA', () => {
@@ -43,6 +55,11 @@ describe('ContributorColumn', () => {
     expect(markup).toContain('data-metric="sleep"');
     expect(markup).toContain('data-ring="visible"');
     expect(markup).toMatch(/Apple Health/);
+    expect(markup).toContain(CONTRIBUTOR_ROW_CLASS);
+    expect(markup).not.toContain('bg-navy-700/80');
+    expect(markup).not.toMatch(/class="[^"]*\bp-3\b/);
+    expect(markup).not.toContain('>Metric<');
+    expect(markup).not.toContain('>Source<');
   });
 
   it('disagreeing row: the DISAGREE chip is a real wired button, not an inert span', () => {
@@ -88,6 +105,9 @@ describe('ContributorColumn', () => {
     expect(markup).toMatch(/<button[^>]*>DISAGREE<\/button>/);
     expect(markup).not.toMatch(/<span[^>]*>DISAGREE<\/span>/);
     expect(markup).toContain('aria-label="Sleep sources disagree, details"');
+    expect(markup).toContain(CONTRIBUTOR_ROW_CLASS);
+    expect(markup).not.toContain('bg-navy-700/80');
+    expect(markup).not.toMatch(/class="[^"]*\bp-3\b/);
     // onOpenDimension is only invoked on a real click event, which
     // renderToStaticMarkup (no jsdom) cannot dispatch; this proves the
     // button is wired to the same live prop the chevron uses, not a
@@ -106,5 +126,9 @@ describe('ContributorColumn', () => {
     expect(markup).toContain(CONNECTIONS_DISCLOSURE);
     const matches = markup.split(CONNECTIONS_DISCLOSURE).length - 1;
     expect(matches).toBe(1);
+    expect(markup).toContain('mt-3 text-[11px] leading-snug text-white/45');
+    expect(markup).not.toContain('text-xs leading-relaxed');
+    expect(markup).not.toContain('>Metric<');
+    expect(markup).not.toContain('>Source<');
   });
 });
