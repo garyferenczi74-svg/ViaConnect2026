@@ -26,6 +26,13 @@ import {
   type WearableTileView,
 } from '@/lib/body-tracker/wearable-tiles';
 import type { DimensionSourceRow } from '@/lib/body-tracker/source-disagreement';
+import {
+  EMPTY_BEDTIME_STRIP,
+  parseBedtimeStrip,
+  type BedtimeStripView,
+} from '@/lib/body-tracker/sleep-bedtime-strip';
+import { resolveHabitSleepPair } from '@/lib/body-tracker/habit-sleep-pair';
+import { useDailyScheduleView } from '@/hooks/useDailyScheduleView';
 import { WearableTileCard } from './WearableTileCard';
 import { ScoreDetailPanel } from './ScoreDetailPanel';
 import { ActiveSourceDetailPanel } from './ActiveSourceDetailPanel';
@@ -69,6 +76,7 @@ interface TilesResponse {
   tiles: WearableTileView[];
   scoreDetail: DimensionSourceRow[];
   lastUpdatedAt: string | null;
+  bedtimeStrip?: BedtimeStripView;
 }
 
 export function ConnectionsSurface() {
@@ -85,8 +93,10 @@ export function ConnectionsSurface() {
   // button in ContributorColumn opens via ScoreDetailPanel's
   // onOpenDimension prop.
   const [openMetric, setOpenMetric] = useState<string | null>(null);
+  const [bedtimeStrip, setBedtimeStrip] = useState<BedtimeStripView>(EMPTY_BEDTIME_STRIP);
   const [importIntent, setImportIntent] = useState<HealthXmlImportIntent | null>(null);
   const [consent, setConsent] = useState<'whoop' | 'oura' | null>(null);
+  const schedule = useDailyScheduleView();
   const [platform] = useState<'web' | 'ios' | 'android'>(() => {
     const p = detectPlatform();
     if (p.startsWith('ios')) return 'ios';
@@ -114,6 +124,7 @@ export function ConnectionsSurface() {
       setTiles(filtered.length ? filtered : emptyTiles(platform));
       setScoreDetail(Array.isArray(json.scoreDetail) ? json.scoreDetail : []);
       setLastUpdatedAt(typeof json.lastUpdatedAt === 'string' ? json.lastUpdatedAt : null);
+      setBedtimeStrip(parseBedtimeStrip(json.bedtimeStrip));
       setLoadStatus('ready');
     } catch {
       // Timeout or network failure: same honesty rule as the !res.ok branch
@@ -286,6 +297,12 @@ export function ConnectionsSurface() {
               rows={scoreDetail}
               lastUpdatedAt={lastUpdatedAt}
               onOpenDimension={setOpenMetric}
+              bedtimeStrip={bedtimeStrip}
+              habitSleepPair={resolveHabitSleepPair({
+                tiles,
+                sleepTileSynced: bedtimeStrip.sleepTileSynced,
+                schedule: schedule.status === 'ready' ? schedule.view : null,
+              })}
             />
           </div>
         </AdminPanel>

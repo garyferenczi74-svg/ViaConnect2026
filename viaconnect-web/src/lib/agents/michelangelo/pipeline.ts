@@ -141,4 +141,24 @@ async function notifyJeffery(result: PipelineResult): Promise<void> {
     `[Michelangelo] Notifying Jeffery: Pipeline ${result.status}. ` +
     `Score: ${result.overallScore}/100.`
   );
+  try {
+    const { persistCommandCenterIngest } = await import(
+      "@/lib/agents/command-center-ingest"
+    );
+    await persistCommandCenterIngest({
+      agentRaw: "michelangelo",
+      kind: "turn",
+      phase: result.status === "failed" ? "error" : "complete",
+      message: `OBRA pipeline ${result.status} (${result.microTasksCompleted} micro-tasks)`,
+      title: `OBRA ${result.status}`,
+      correlationKey: `michelangelo-pipeline:${result.taskId}`,
+      metadata: {
+        overallScore: result.overallScore,
+        microTasksCompleted: result.microTasksCompleted,
+        microTasksFailed: result.microTasksFailed,
+      },
+    });
+  } catch {
+    /* open */
+  }
 }

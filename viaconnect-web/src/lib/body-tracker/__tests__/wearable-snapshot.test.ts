@@ -63,6 +63,8 @@ describe('wearable snapshot', () => {
     expect(snap.tiles.every((t) => t.lastSyncAt === null)).toBe(true);
     expect(snap.tiles.every((t) => t.appleWatchConnected === false)).toBe(true);
     expect(formatTileLastSync(null, 'oauth_sync')).toBeNull();
+    expect(snap.bedtimeStrip.visible).toBe(false);
+    expect(snap.bedtimeStrip.kind).toBe('hidden');
   });
 
   it('connects Hume only after Hume-tagged persist and Apple via XML', () => {
@@ -276,5 +278,49 @@ describe('wearable snapshot', () => {
     const restingHr = rows.find((r) => r.dimension === 'resting_hr');
     expect(restingHr?.sources.map((s) => s.source)).toEqual(['whoop']);
     expect(restingHr?.displayValue).toBe('50');
+  });
+
+  it('builds a bedtime strip only from a real last-sync plus real start_at samples', () => {
+    const leftover = assembleWearableSnapshot(
+      base({
+        sleepRows: [
+          {
+            source_provider: 'whoop',
+            sleep_efficiency_pct: 72,
+            total_sleep_min: 420,
+            start_at: '2026-08-20T02:10:00.000Z',
+            end_at: '2026-08-20T10:00:00.000Z',
+          },
+        ],
+      }),
+    );
+    expect(leftover.bedtimeStrip.visible).toBe(false);
+    expect(leftover.bedtimeStrip.kind).toBe('hidden');
+    expect(leftover.tiles.find((t) => t.id === 'whoop')?.statusLabel).toBe('Coming soon');
+
+    const apple = assembleWearableSnapshot(
+      base({
+        appleImports: [{ records_ingested: 8, created_at: '2026-08-22T08:00:00.000Z' }],
+        sleepRows: [
+          {
+            source_provider: 'health_kit',
+            sleep_efficiency_pct: null,
+            total_sleep_min: 470,
+            start_at: '2026-08-20T02:10:00.000Z',
+            end_at: '2026-08-20T10:00:00.000Z',
+            source_app: 'Health',
+          },
+        ],
+      }),
+    );
+    expect(apple.tiles.find((t) => t.id === 'apple_health')?.lastSyncState).toBe('synced');
+    expect(apple.bedtimeStrip.visible).toBe(true);
+    expect(apple.bedtimeStrip.kind).toBe('samples');
+    expect(apple.bedtimeStrip.nights.some((n) => n.bedtimeAt === '2026-08-20T02:10:00.000Z')).toBe(
+      true,
+    );
+    expect(apple.bedtimeStrip.nights.every((n) => n.bedtimeAt !== '2025-05-20T00:00:00.000Z')).toBe(
+      true,
+    );
   });
 });

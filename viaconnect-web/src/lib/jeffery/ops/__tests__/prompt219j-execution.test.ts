@@ -100,11 +100,16 @@ describe("Prompt 219J execution wiring (source shape)", () => {
     expect(src).toMatch(/ops-tick/);
   });
 
-  it("ensureAgentRegistrySeats never inserts invented seats", () => {
+  it("ensureAgentRegistrySeats inserts ACC seats only and never invents Healthy", () => {
     const src = read("src/lib/jeffery/ops/heartbeats.ts");
-    expect(src).not.toMatch(/ultrathink_agent_registry"\)\.insert/);
-    expect(src).toMatch(/if \(!existing\?\.id\)/);
-    expect(src).toMatch(/continue/);
+    expect(src).toMatch(/ensureAccOpsRow/);
+    expect(src).toMatch(/isGrokOnlyIdleSeat/);
+    expect(src).not.toMatch(/security_advisor/);
+    expect(src).not.toMatch(/gordon/);
+    const ingest = read("src/lib/agents/command-center-ingest.ts");
+    expect(ingest).toMatch(/health_status: "unknown"/);
+    expect(ingest).toMatch(/last_heartbeat_at: null/);
+    expect(ingest).not.toMatch(/AGENT_IDS[\s\S]*gordon/);
   });
 
   it("vercel.json registers ops-tick every 15 minutes", () => {

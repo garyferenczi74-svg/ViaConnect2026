@@ -9,27 +9,14 @@ import { safeLog } from "@/lib/utils/safe-log";
 import { loadCadenceJobs } from "@/lib/jeffery/ops/cadence";
 import { runCadenceJob } from "@/lib/jeffery/ops/jobRunners";
 import { loadPausedAgentIds } from "@/lib/jeffery/ops/heartbeats";
+import { ACC_OWNED_CADENCE_JOB } from "@/lib/agents/runners";
 import type { AgentId } from "@/lib/agents/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
-/** Primary job_key preference per ACC agent for Run now. */
-const PRIMARY_JOB: Partial<Record<AgentId, string>> = {
-  hounddog: "hounddog.pubmed",
-  marshall: "marshall.gate",
-  sherlock: "sherlock.curate",
-  hannah: "hannah.light_freshness",
-  jeffery: "digest.rollup",
-  elysium: "elysium.allowlist",
-  thanos: "thanos.allowlist",
-  hermes: "hermes.scout",
-  elizabeth: "elizabeth.research",
-  arnold: "digest.rollup",
-  michelangelo: "product.freshness",
-  lex: "marshall.gate",
-};
+/** Primary job_key preference per ACC agent for Run now. Seat-owned only. */
 
 export async function POST(
   _req: Request,
@@ -77,14 +64,14 @@ export async function POST(
     }
 
     const jobs = await loadCadenceJobs();
-    const preferred = PRIMARY_JOB[id as AgentId];
-    const job =
-      (preferred ? jobs.find((j) => j.job_key === preferred) : undefined) ??
-      jobs.find((j) => j.agent_id === id && j.enabled);
+    const preferred = ACC_OWNED_CADENCE_JOB[id as AgentId];
+    const job = preferred
+      ? jobs.find((j) => j.job_key === preferred && j.agent_id === id)
+      : undefined;
 
     if (!job) {
       return NextResponse.json(
-        { ok: false, error: "no_cadence_job", agentId: id },
+        { ok: false, error: "no_runner", agentId: id },
         { status: 404 }
       );
     }

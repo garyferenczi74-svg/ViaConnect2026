@@ -84,7 +84,30 @@ export async function emitJefferyMessage(msg: JefferyMessageInput, db?: Supabase
     }
   }
 
-  return data as string;
+  const messageId = data as string;
+
+  // Brief 27: real Jeffery/agent turn → ACC ingest (fail-open).
+  try {
+    const { persistCommandCenterIngest } = await import(
+      "@/lib/agents/command-center-ingest"
+    );
+    await persistCommandCenterIngest({
+      agentRaw: msg.sourceAgent ?? "jeffery",
+      kind: "turn",
+      phase: "complete",
+      message: msg.title,
+      title: msg.title,
+      correlationKey: messageId ? `jeffery-msg:${messageId}` : undefined,
+      metadata: {
+        category: msg.category,
+        severity: msg.severity,
+      },
+    });
+  } catch {
+    /* open */
+  }
+
+  return messageId;
 }
 
 /**

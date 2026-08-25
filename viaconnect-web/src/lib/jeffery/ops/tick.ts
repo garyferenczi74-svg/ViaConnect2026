@@ -205,17 +205,15 @@ export async function runOpsTick(opts?: {
     },
   });
 
-  // 6b) On-demand agents (no dedicated cadence job): presence pulse so ACC
-  // shows Idle→Healthy while they remain available, not permanently Stale.
-  for (const id of ["michelangelo", "lex"] as const) {
-    if (paused.has(id)) continue;
-    await writeAgentJobHeartbeat({
-      agentId: id,
-      eventType: "heartbeat",
-      jobKey: "ops.roster_presence",
-      status: "ok",
-      detail: { mode: "on_demand", note: "no dedicated cadence; presence via ops-tick" },
-    });
+  // 6b) Brief 27: ingest real GitHub PR events onto ACC seats (fail-open).
+  // Do not pulse fake Healthy for Michelangelo/Lex — Idle is honest.
+  try {
+    const { pollGithubPrsForCommandCenter } = await import(
+      "@/lib/agents/command-center-ingest"
+    );
+    await pollGithubPrsForCommandCenter();
+  } catch (err) {
+    safeLog.warn("ops.tick", "acc pr ingest failed open", { error: err });
   }
 
   const endedAt = new Date().toISOString();

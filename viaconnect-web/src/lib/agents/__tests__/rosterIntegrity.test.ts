@@ -10,57 +10,7 @@ import { isKnownSlug, getDisplayName } from '@/lib/getDisplayName';
 import { KELSEY_DUTY_MAP } from '../kelseyReassignment';
 import { deriveStatus } from '../status';
 import { mapUltrathinkRegistry } from '../activity-tracker';
-
-export const AGENT_TRIGGER_CATALOG: Record<
-  AgentId,
-  { kind: 'cron' | 'pg_cron' | 'request' | 'dev' | 'chain'; path: string }[]
-> = {
-  jeffery: [
-    { kind: 'cron', path: '/api/cron/synchronism-daily' },
-    { kind: 'cron', path: '/api/cron/ultrathink-feeds' },
-    { kind: 'pg_cron', path: 'ultrathink_phase1_feeds_cron' },
-  ],
-  picasso: [],
-  michelangelo: [{ kind: 'dev', path: 'CI / OBRA pipeline' }],
-  conan: [],
-  hermes: [{ kind: 'cron', path: '/api/cron/run-hermes-scout' }],
-  gene: [],
-  elysium: [
-    { kind: 'chain', path: 'synchronism stage ingest + domain_refresh' },
-    { kind: 'request', path: 'genetics interpretation + IGSR watch' },
-  ],
-  marshall: [
-    { kind: 'chain', path: 'synchronism stage gate' },
-    { kind: 'request', path: 'compliance rules + precheck' },
-  ],
-  martha: [],
-  hannah: [
-    { kind: 'chain', path: 'synchronism stage compose/surface' },
-    { kind: 'cron', path: '/api/cron/hannah-research' },
-  ],
-  thanos: [
-    { kind: 'chain', path: 'synchronism stage ingest + domain_refresh' },
-    { kind: 'request', path: 'peptide education allowlist ingest' },
-  ],
-  elizabeth: [{ kind: 'cron', path: '/api/cron/run-elizabeth-research' }],
-  lex: [
-    { kind: 'chain', path: 'synchronism stage gate (escalation)' },
-    { kind: 'request', path: '/api/admin/legal/* + Stage 2 review' },
-  ],
-  sherlock: [
-    { kind: 'chain', path: 'synchronism stage curate' },
-    { kind: 'pg_cron', path: 'sherlock_research_hub_cron' },
-  ],
-  watson: [],
-  arnold: [
-    { kind: 'chain', path: 'synchronism stage domain_refresh' },
-    { kind: 'pg_cron', path: 'arnold_tick_cron' },
-  ],
-  hounddog: [
-    { kind: 'chain', path: 'synchronism stage ingest' },
-    { kind: 'request', path: '/api/hounddog/collectors/tick' },
-  ],
-};
+import { AGENT_TRIGGER_CATALOG, GROK_ONLY_IDLE_SEATS } from '../runners';
 
 const REAL_GROK_ROSTER: readonly AgentId[] = [
   'jeffery',
@@ -82,13 +32,7 @@ const REAL_GROK_ROSTER: readonly AgentId[] = [
   'hounddog',
 ];
 
-const IDLE_WITHOUT_OPS_ROW: readonly AgentId[] = [
-  'picasso',
-  'conan',
-  'gene',
-  'martha',
-  'watson',
-];
+const IDLE_WITHOUT_OPS_ROW = GROK_ONLY_IDLE_SEATS;
 
 describe('Brief 23 Command Center roster integrity', () => {
   it('registers exactly the 17 Grok roster seats', () => {

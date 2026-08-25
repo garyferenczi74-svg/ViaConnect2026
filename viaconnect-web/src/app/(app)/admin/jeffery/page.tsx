@@ -31,6 +31,17 @@ export default async function JefferyCommandCenter() {
 
   const registry = orderedRegistry();
 
+  try {
+    const { ensureAllAccOpsRowsPersisted } = await import(
+      "@/lib/agents/command-center-ingest"
+    );
+    await ensureAllAccOpsRowsPersisted();
+  } catch (err) {
+    safeLog.warn("admin.jeffery.page", "acc ops ensure failed open", {
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+
   let heartbeats: AgentHeartbeat[] = [];
   let tasks: AgentCurrentTask[] = [];
   let initialEvents: AgentActivityEvent[] = [];
