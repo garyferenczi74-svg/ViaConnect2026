@@ -432,7 +432,7 @@ function Journey({ userId }: { userId: string | null }) {
 // Avatar: real photo from profiles.avatar_url when present; else initial tile (honest).
 // Name: from getDisplayName(); Goal chip: from useActiveBodyGoal.goalLabel.
 // Last sync line: first-class tiles + last-sync-state only. Not connected
-// until a real last-sync. Never invents sync from getWearableSource.
+// until a real last-sync. Never invents a wearable scoring-source sync.
 // Hannah note (216d): compiled daily note from runHannahCompilation, never stateWord stub.
 function ProfileCard({
   userId,
