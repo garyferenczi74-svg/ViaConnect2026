@@ -1,0 +1,78 @@
+'use client';
+
+// Prompt 230, Task 11: vendor identity mark for the six first-class
+// wearable tiles (Whoop, Oura, Apple Health, Hume Body Pod, Google Health,
+// Garmin). LEX gate is hard: an entry only renders its real local asset
+// once WEARABLE_MARK_ASSETS[id].lexCleared === true. Every entry ships
+// lexCleared: false today, so production renders the Lucide fallback for
+// all six -- no real vendor logo image file is committed in this task. See
+// public/logos/wearables/README-provenance.md for the source + clearance
+// status recorded per vendor. This keeps the branch shippable with zero
+// legal exposure; the actual official marks land only after Lex signs off
+// (a later, separate change that flips lexCleared -> true per vendor and
+// adds the asset file).
+
+import { Activity, Circle, Heart, HeartPulse, Scan, Watch, type LucideIcon } from 'lucide-react';
+
+export interface WearableMarkAsset {
+  /** Local, stored-not-hotlinked path under /public/logos/wearables/. */
+  src: string;
+  /** Hard gate: only true once LEX has cleared this vendor's mark for use. */
+  lexCleared: boolean;
+}
+
+// Ship every entry lexCleared: false until LEX signs off per vendor. Do not
+// flip any of these to true, and do not add a real image file at any of
+// these src paths, without a recorded LEX clearance in
+// public/logos/wearables/README-provenance.md.
+export const WEARABLE_MARK_ASSETS: Record<string, WearableMarkAsset | undefined> = {
+  whoop: { src: '/logos/wearables/whoop.svg', lexCleared: false },
+  oura: { src: '/logos/wearables/oura.svg', lexCleared: false },
+  apple_health: { src: '/logos/wearables/apple-health.svg', lexCleared: false },
+  hume: { src: '/logos/wearables/hume.svg', lexCleared: false },
+  google_health: { src: '/logos/wearables/google-health.svg', lexCleared: false },
+  garmin: { src: '/logos/wearables/garmin.svg', lexCleared: false },
+};
+
+// Keyed by tile id. Matches WEARABLE_TILE_SPECS.icon in wearable-tiles.ts
+// for whoop/oura/apple_health/hume/google_health; garmin deliberately
+// diverges (Watch there, Activity here) per the Task 11 brief, which names
+// Watch/Activity as both acceptable for garmin -- Activity keeps garmin
+// visually distinct from whoop rather than sharing whoop's icon. Any id
+// outside this map -- including an unrecognized vendor id -- renders the
+// safe default (Circle) rather than throwing or rendering nothing.
+const FALLBACK_ICON: Record<string, LucideIcon> = {
+  whoop: Watch,
+  oura: Circle,
+  apple_health: Heart,
+  hume: Scan,
+  google_health: HeartPulse,
+  garmin: Activity,
+};
+
+const SAFE_DEFAULT_ICON: LucideIcon = Circle;
+
+export interface WearableBrandMarkProps {
+  id: string;
+  className?: string;
+}
+
+export function WearableBrandMark({ id, className }: WearableBrandMarkProps) {
+  const asset = WEARABLE_MARK_ASSETS[id];
+  if (asset && asset.lexCleared) {
+    return <img src={asset.src} alt="" data-vendor-mark={id} className={className} />;
+  }
+
+  const Icon = FALLBACK_ICON[id] ?? SAFE_DEFAULT_ICON;
+  const classes = ['text-white/80', className].filter(Boolean).join(' ');
+  return (
+    <Icon
+      className={classes}
+      strokeWidth={1.5}
+      aria-hidden="true"
+      data-vendor-mark="fallback"
+    />
+  );
+}
+
+export default WearableBrandMark;

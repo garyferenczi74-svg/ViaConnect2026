@@ -43,16 +43,26 @@ describe('Connections IA contracts', () => {
     expect(surface).not.toMatch(/Vitality Score/);
     expect(surface).not.toMatch(/helix.?reward/i);
     expect(tile).toContain('Upload XML');
-    expect(tile).toContain('Watch');
+    // Task 11 moved the tile icon out of WearableTileCard.tsx into the
+    // Lex-gated WearableBrandMark component (tile now renders
+    // <WearableBrandMark id={tile.id} .../> instead of a local switch on
+    // lucide-react icons), so the vendor-icon honesty check follows it
+    // there: the shipped fallback set must still cover the whoop/garmin
+    // Watch icon.
+    expect(tile).toContain('WearableBrandMark');
+    const brandMark = src('src/components/body-tracker/connections/WearableBrandMark.tsx');
+    expect(brandMark).toContain('Watch');
     expect(tile).not.toContain('Connected Watch');
     expect(tile).not.toMatch(/className="[^"]*\btruncate\b/);
     expect(tile).toContain('whitespace-normal break-words');
     expect(tile).toContain('Reconnect');
-    expect(surface + tile + detail).not.toContain('font-serif');
-    expect(surface + tile + detail).not.toContain('#224852');
-    expect(surface + tile + detail).not.toContain('#4ADE80');
+    // Task 11: the forbidden-string scan now also covers the new
+    // WearableBrandMark.tsx (strengthened, not weakened, per the brief).
+    expect(surface + tile + detail + brandMark).not.toContain('font-serif');
+    expect(surface + tile + detail + brandMark).not.toContain('#224852');
+    expect(surface + tile + detail + brandMark).not.toContain('#4ADE80');
     expect(surface).not.toMatch(/ViaConnect/);
-    expect(surface + tile + detail).not.toMatch(/Arnold|Thanos/i);
+    expect(surface + tile + detail + brandMark).not.toMatch(/Arnold|Thanos/i);
     expect(tile).toContain('{tile.statusLabel}');
     expect(tile).not.toMatch(/sr-only[^>]*>Coming soon/);
     expect(tile).not.toContain('Not configured');

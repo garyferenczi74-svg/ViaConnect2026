@@ -1,14 +1,8 @@
 'use client';
 
-import { ChevronRight, Circle, CloudUpload, Heart, Scan, Watch } from 'lucide-react';
+import { ChevronRight, CloudUpload } from 'lucide-react';
 import type { WearableTileView } from '@/lib/body-tracker/wearable-tiles';
-
-function TileIcon({ id }: { id: WearableTileView['id'] }) {
-  if (id === 'whoop') return <Watch className="h-5 w-5 text-white/80" strokeWidth={1.5} />;
-  if (id === 'hume') return <Scan className="h-5 w-5 text-white/80" strokeWidth={1.5} />;
-  if (id === 'apple_health') return <Heart className="h-5 w-5 text-white/80" strokeWidth={1.5} />;
-  return <Circle className="h-5 w-5 text-white/80" strokeWidth={1.5} />;
-}
+import { WearableBrandMark } from '@/components/body-tracker/connections/WearableBrandMark';
 
 function feedsLabel(tile: WearableTileView): string | null {
   const dims = tile.status === 'connected' ? tile.dimensionsFed : tile.advertisedDimensions;
@@ -18,7 +12,7 @@ function feedsLabel(tile: WearableTileView): string | null {
 }
 
 const outlineBtn =
-  'min-h-[36px] shrink-0 rounded-lg border border-teal bg-transparent px-3 text-xs font-semibold text-teal hover:bg-teal/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal/50';
+  'flex min-h-[44px] shrink-0 items-center justify-center rounded-lg border border-teal bg-transparent px-3 text-xs font-semibold text-teal hover:bg-teal/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal/50';
 
 interface WearableTileCardProps {
   tile: WearableTileView;
@@ -89,7 +83,7 @@ export function WearableTileCard({
       ) : null}
       <div className="flex items-start gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-navy-700">
-          <TileIcon id={tile.id} />
+          <WearableBrandMark id={tile.id} className="h-5 w-5" />
         </div>
         <div className="min-w-0 flex-1 overflow-visible">
           <div className="flex items-start justify-between gap-2">
@@ -110,7 +104,7 @@ export function WearableTileCard({
                   onPrimary(tile);
                 }}
                 aria-label={`${tile.name} details`}
-                className="shrink-0 rounded-lg p-1 text-white/50 hover:bg-white/5 hover:text-white"
+                className="flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-lg text-white/50 hover:bg-white/5 hover:text-white"
               >
                 <ChevronRight className="h-4 w-4" strokeWidth={1.5} />
               </button>
@@ -160,7 +154,7 @@ export function WearableTileCard({
                 e.stopPropagation();
                 onPrimary(tile);
               }}
-              className="mt-2 text-xs font-medium text-teal hover:underline"
+              className="mt-2 flex min-h-[44px] items-center text-xs font-medium text-teal hover:underline"
             >
               Upload XML
             </button>

@@ -15,16 +15,13 @@
 import {
   Activity,
   ChevronRight,
-  Circle,
   Droplet,
   Dumbbell,
   Footprints,
   Gauge,
-  Heart,
   HeartPulse,
   Moon,
   PencilLine,
-  Scan,
   Watch,
 } from 'lucide-react';
 import type { DimensionSourceRow } from '@/lib/body-tracker/source-disagreement';
@@ -35,6 +32,7 @@ import {
   type ContributorRow,
 } from '@/lib/body-tracker/contributor-rows';
 import { CONNECTIONS_DISCLOSURE } from '@/lib/body-tracker/wearable-tiles';
+import { WearableBrandMark } from '@/components/body-tracker/connections/WearableBrandMark';
 
 export const CONNECT_YOUR_DEVICE_COPY = 'Connect your device';
 
@@ -74,11 +72,23 @@ function sourceLabel(id: string): string {
   );
 }
 
+// Vendor tile ids (whoop, oura, hume, apple_health, google_health, garmin)
+// render through the Lex-gated WearableBrandMark, same as the wearable tile
+// card and detail panel. apple_watch (a per-metric source distinct from the
+// apple_health file-import tile), manual, and average are not wearable
+// vendor marks needing Lex clearance, so they keep their existing
+// dedicated Lucide glyphs unchanged.
 export function SourceGlyph({ id }: { id: string | null | undefined }) {
-  if (id === 'whoop') return <Watch className="h-4 w-4 text-white/70" strokeWidth={1.5} />;
-  if (id === 'oura') return <Circle className="h-4 w-4 text-white/70" strokeWidth={1.5} />;
-  if (id === 'hume') return <Scan className="h-4 w-4 text-white/70" strokeWidth={1.5} />;
-  if (id === 'apple_health') return <Heart className="h-4 w-4 text-white/70" strokeWidth={1.5} />;
+  if (
+    id === 'whoop' ||
+    id === 'oura' ||
+    id === 'hume' ||
+    id === 'apple_health' ||
+    id === 'google_health' ||
+    id === 'garmin'
+  ) {
+    return <WearableBrandMark id={id} className="h-4 w-4" />;
+  }
   if (id === 'apple_watch') return <Watch className="h-4 w-4 text-white/70" strokeWidth={1.5} />;
   if (id === 'manual') return <PencilLine className="h-4 w-4 text-white/70" strokeWidth={1.5} />;
   return <Droplet className="h-4 w-4 text-white/70" strokeWidth={1.5} />;

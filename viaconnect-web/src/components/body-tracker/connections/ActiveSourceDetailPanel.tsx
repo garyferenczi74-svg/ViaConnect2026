@@ -33,6 +33,7 @@ import {
   type HealthXmlImportIntent,
 } from '@/components/body-tracker/connected-sources/useHealthXmlImport';
 import type { WearableTileView } from '@/lib/body-tracker/wearable-tiles';
+import { WearableBrandMark } from '@/components/body-tracker/connections/WearableBrandMark';
 
 function dimensionLabel(d: string): string {
   return d.charAt(0).toUpperCase() + d.slice(1);
@@ -104,7 +105,10 @@ export function ActiveSourceDetailPanel({ tile, onImported }: ActiveSourceDetail
       ) : isFileSource ? (
         <div className="space-y-4">
           <div>
-            <h2 className="text-base font-semibold text-white">{copy.title}</h2>
+            <div className="flex items-center gap-2">
+              <WearableBrandMark id={tile.id} className="h-5 w-5" />
+              <h2 className="text-base font-semibold text-white">{copy.title}</h2>
+            </div>
             {feedsBlock(tile)}
           </div>
 
@@ -218,7 +222,10 @@ export function ActiveSourceDetailPanel({ tile, onImported }: ActiveSourceDetail
       ) : (
         <div className="space-y-4">
           <div>
-            <h2 className="text-base font-semibold text-white">{tile.name}</h2>
+            <div className="flex items-center gap-2">
+              <WearableBrandMark id={tile.id} className="h-5 w-5" />
+              <h2 className="text-base font-semibold text-white">{tile.name}</h2>
+            </div>
             {feedsBlock(tile)}
           </div>
           <div className="rounded-xl border border-white/[0.08] bg-navy-700/60 p-3">
