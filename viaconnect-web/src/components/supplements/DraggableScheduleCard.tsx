@@ -34,6 +34,8 @@ export function DraggableScheduleCard({
   return (
     <motion.div
       data-slot-id={card.slot_id}
+      data-testid="schedule-drag-wrapper"
+      className="w-full min-w-0"
       layout={reduced ? false : 'position'}
       drag
       dragListener={false}
