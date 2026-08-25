@@ -17,6 +17,8 @@ import type { CompositionSnapshot } from '@/lib/body-tracker/composition/types';
 export interface UseLatestCompositionResult {
   snapshot: CompositionSnapshot | null;
   bmi: number | null;
+  /** Latest clinical_assessments.weight_kg converted to lbs (CAQ fact). */
+  caqWeightLbs: number | null;
   loading: boolean;
   error: boolean;
   refresh: () => void;
@@ -28,6 +30,7 @@ const SCOPE = 'hook.useLatestComposition';
 export function useLatestComposition(userId: string | null): UseLatestCompositionResult {
   const [snapshot, setSnapshot] = useState<CompositionSnapshot | null>(null);
   const [bmi, setBmi] = useState<number | null>(null);
+  const [caqWeightLbs, setCaqWeightLbs] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
@@ -38,6 +41,7 @@ export function useLatestComposition(userId: string | null): UseLatestCompositio
     if (!userId) {
       setSnapshot(null);
       setBmi(null);
+      setCaqWeightLbs(null);
       setLoading(false);
       setError(false);
       return;
@@ -327,8 +331,15 @@ export function useLatestComposition(userId: string | null): UseLatestCompositio
         // Build the snapshot. mapRows returns null when entry is null.
         const built = mapRows({ entry: entryRow, fat: fatRow, muscle: muscleRow });
 
+        const caqKg = clinicalRow?.weight_kg ?? null;
+        const caqLbs =
+          typeof caqKg === 'number' && Number.isFinite(caqKg) && caqKg > 0
+            ? caqKg * 2.20462262
+            : null;
+
         setSnapshot(built);
         setBmi(bmiValue);
+        setCaqWeightLbs(caqLbs);
         setLoading(false);
         setError(false);
       } catch (e) {
@@ -336,6 +347,7 @@ export function useLatestComposition(userId: string | null): UseLatestCompositio
         safeLog.error(SCOPE, 'top-level composition load failed', { error: e, userId });
         setSnapshot(null);
         setBmi(null);
+        setCaqWeightLbs(null);
         setLoading(false);
         setError(true);
       }
@@ -346,5 +358,5 @@ export function useLatestComposition(userId: string | null): UseLatestCompositio
     };
   }, [userId, reloadKey]);
 
-  return { snapshot, bmi, loading, error, refresh };
+  return { snapshot, bmi, caqWeightLbs, loading, error, refresh };
 }

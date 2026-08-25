@@ -41,7 +41,23 @@ import {
   namedWearableContributorCount,
   resolveConnectionsBosDisplay,
 } from "@/lib/body-tracker/wearable-tiles";
-import { formatMacroLabel, kcalRemaining, flatSparkline, goalProgressPct } from "@/components/journey/coaching/lowerHelpers";
+import { formatMacroLabel, kcalRemaining, goalProgressPct } from "@/components/journey/coaching/lowerHelpers";
+import { ProvenanceChip } from "@/components/journey/coaching/ProvenanceChip";
+import {
+  bodyFatDisplay,
+  chipForGoalOrigin,
+  entryToSourceName,
+  goalProgressDisplay,
+  hannahLiftDisplay,
+  hydrationVitalDisplay,
+  leanMassDisplay,
+  redactUnsourcedHannahNumbers,
+  sameSourceTrend,
+  unwrapRelatedEntry,
+  vitalValueDisplay,
+  weightBoundDisplay,
+  type AnalyticsProvenanceChip,
+} from "@/lib/analytics/provenance";
 import { useJourneyGraphSeries, type PillarKey } from "@/components/journey/coaching/useJourneyGraphSeries";
 import { type JourneyRange } from "@/components/journey/coaching/journeyGraphWindow";
 import { buildLinePath } from "@/components/journey/coaching/journeyPathBuilder";
@@ -452,6 +468,7 @@ function ProfileCard({
   goalPhrase,
   lastSyncLabel,
   readTodaySubtext,
+  sourcedNumbers,
 }: {
   userId: string | null;
   displayName: string;
@@ -460,6 +477,7 @@ function ProfileCard({
   goalPhrase: string;
   lastSyncLabel: string;
   readTodaySubtext: string;
+  sourcedNumbers: number[];
 }) {
   const [avatarErrored, setAvatarErrored] = useState(false);
   const showAvatar = !!avatarUrl && !avatarErrored;
@@ -526,7 +544,7 @@ function ProfileCard({
         </div>
         <div>
           <div style={{ ...eyebrow, marginBottom: 6, display: "flex", alignItems: "center", gap: 6, color: onVideoText }}><Sparkles size={12} strokeWidth={SW} color={C.teal} /> {hannahLabel}&apos;s note</div>
-          <p style={{ margin: 0, fontSize: 12, color: onVideoText, lineHeight: 1.5 }} data-testid="hannah-daily-note">{hannahNote}</p>
+          <p style={{ margin: 0, fontSize: 12, color: onVideoText, lineHeight: 1.5 }} data-testid="hannah-daily-note">{redactUnsourcedHannahNumbers(hannahNote, sourcedNumbers)}</p>
         </div>
       </div>
     </div>
@@ -547,6 +565,7 @@ function Hero({
   goalPhrase,
   lastSyncLabel,
   gaugesLoading,
+  sourcedNumbers,
 }: {
   pillarValues: PillarValues;
   userId: string | null;
@@ -558,6 +577,7 @@ function Hero({
   goalPhrase: string;
   lastSyncLabel: string;
   gaugesLoading?: boolean;
+  sourcedNumbers: number[];
 }) {
   // J-T2: hero narrative state word driven from canonical dashboard tier +
   // score. Baseline/computing users read as "getting started", not "steady".
@@ -614,6 +634,7 @@ function Hero({
           goalPhrase={goalPhrase}
           lastSyncLabel={lastSyncLabel}
           readTodaySubtext={narrativeRead}
+          sourcedNumbers={sourcedNumbers}
         />
         <div className="vc-hero-main" style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 16 }}>
           <div className="vc-herotop">
@@ -659,31 +680,37 @@ function HannahRead({
   analysis,
   recommendation,
   focusArea,
-  estimatedImpact,
+  liftText,
+  liftChip,
 }: {
   greeting: string;
   analysis: string;
   recommendation: string;
   focusArea: string;
-  estimatedImpact: number;
+  liftText: string;
+  liftChip: AnalyticsProvenanceChip | null;
 }) {
   const router = useRouter();
   return (
-    <div style={{ ...panel(true), display: "flex", flexDirection: "column" }}>
+    <div style={{ ...panel(true), display: "flex", flexDirection: "column" }} data-testid="analytics-hannah-read">
       <Edge active />
       <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 10 }}>
         <span style={{ width: 30, height: 30, borderRadius: 999, background: C.tealSoft, color: C.teal, display: "inline-flex", alignItems: "center", justifyContent: "center" }}><Sparkles size={15} strokeWidth={SW} /></span>
         <div><div style={{ ...eyebrow, color: C.teal }}>Hannah AI</div><div style={{ fontSize: 10.5, color: C.muted }}>Personalized read</div></div>
       </div>
       <h3 style={{ margin: "0 0 8px", fontSize: 17, fontWeight: 700 }}>{greeting}</h3>
-      <p style={{ margin: 0, fontSize: 12.5, color: C.muted, lineHeight: 1.55 }}>{analysis}</p>
+      <p style={{ margin: 0, fontSize: 12.5, color: C.muted, lineHeight: 1.55 }} data-testid="analytics-hannah-analysis">{analysis}</p>
       <div style={{ marginTop: 12, padding: 12, borderRadius: 12, background: C.inset, border: `1px solid ${C.orangeSoft}` }}>
         <div style={{ ...eyebrow, color: C.orange, marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}><Target size={12} strokeWidth={SW} /> Focus, {focusArea.toLowerCase()}</div>
         <p style={{ margin: 0, fontSize: 12.5, color: C.text, lineHeight: 1.5 }}>{recommendation}</p>
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "auto", paddingTop: 12 }}>
         <span style={{ fontSize: 11.5, color: C.muted }}>Estimated lift</span>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 700, color: C.green }}><ArrowUpRight size={13} strokeWidth={SW} /> +{estimatedImpact} pts</span>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 700, color: liftChip ? C.green : C.muted }} data-testid="analytics-hannah-lift">
+          {liftChip ? <ArrowUpRight size={13} strokeWidth={SW} /> : null}
+          {liftText}
+          {liftChip ? <ProvenanceChip chip={liftChip} /> : null}
+        </span>
       </div>
       <button className="vc-focus" onClick={() => router.push("/wellness/advisor?report=bio-optimization")} style={{ marginTop: 10, width: "100%", cursor: "pointer", background: "transparent", border: `1px solid ${C.teal}`, color: C.teal, borderRadius: 10, padding: "10px 12px", fontSize: 12.5, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "space-between" }}>View Full Report with Hannah <ArrowRight size={15} strokeWidth={SW} /></button>
     </div>
@@ -713,10 +740,14 @@ function Sparkline({ data, color = C.teal, w = 92, h = 26 }: { data: number[]; c
   const pts = data.map((v, i) => [(i / (data.length - 1)) * w, h - ((v - min) / span) * (h - 4) - 2]);
   return <svg width={w} height={h} style={{ display: "block" }}><path d={pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ")} fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /><circle cx={pts[pts.length - 1][0]} cy={pts[pts.length - 1][1]} r="2.2" fill={color} /></svg>;
 }
-// VitalRow: [name, value, delta, sparklineData, color]
-// Wearable-OFF rows use "--" for value and delta, flat sparkline at 1.
-// Hydration row is LIVE when hydrationData is available.
-type VitalRow = [string, string, string, number[], string];
+type VitalRow = {
+  name: string;
+  value: string;
+  chip: AnalyticsProvenanceChip | null;
+  series: number[];
+  color: string;
+  testId: string;
+};
 function Donut({ segments, top, bot, size = 118 }: { segments: { value: number; color: string }[]; top: string; bot: string; size?: number }) {
   const strokeW = Math.max(9, Math.round(size * 0.11));
   const r = size / 2 - strokeW, CIRC = 2 * Math.PI * r; let off = 0; const total = segments.reduce((s, x) => s + x.value, 0);
@@ -908,7 +939,8 @@ function TodayTab({
   hannahAnalysis,
   hannahRecommendation,
   hannahFocusArea,
-  hannahEstimatedImpact,
+  hannahLiftText,
+  hannahLiftChip,
   stepsValue,
   stepsSub,
   stepsBarPct,
@@ -930,7 +962,8 @@ function TodayTab({
   hannahAnalysis: string;
   hannahRecommendation: string;
   hannahFocusArea: string;
-  hannahEstimatedImpact: number;
+  hannahLiftText: string;
+  hannahLiftChip: AnalyticsProvenanceChip | null;
   stepsValue: string;
   stepsSub: string;
   stepsBarPct: number;
@@ -971,7 +1004,16 @@ function TodayTab({
                 ))}
               </>
             ) : (
-              vitals.map(([n, val, d, data, col]) => <div key={n} style={{ display: "flex", alignItems: "center", gap: 10 }}><span style={{ flex: 1, fontSize: 12, color: C.muted }}>{n}</span><span style={{ fontSize: 12, fontWeight: 600, width: 54, textAlign: "right" }}>{val}</span><span style={{ fontSize: 11, color: C.teal, width: 28 }}>{d}</span><Sparkline data={data} color={col} /></div>)
+              vitals.map((row) => (
+                <div key={row.name} data-testid={row.testId} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={{ flex: 1, fontSize: 12, color: C.muted }}>{row.name}</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, minWidth: 54, textAlign: "right", display: "inline-flex", alignItems: "center", justifyContent: "flex-end" }}>
+                    {row.value}
+                    {row.chip ? <ProvenanceChip chip={row.chip} /> : null}
+                  </span>
+                  {row.series.length >= 2 ? <Sparkline data={row.series} color={row.color} /> : null}
+                </div>
+              ))
             )}
           </div>
         </div>
@@ -997,7 +1039,8 @@ function TodayTab({
           analysis={hannahAnalysis}
           recommendation={hannahRecommendation}
           focusArea={hannahFocusArea}
-          estimatedImpact={hannahEstimatedImpact}
+          liftText={hannahLiftText}
+          liftChip={hannahLiftChip}
         />
       )}
     </div>
@@ -1006,22 +1049,32 @@ function TodayTab({
 function GoalCard({
   goalLabel,
   narrative,
-  progressPct,
+  progressText,
+  progressChip,
+  progressBarPct,
   baselineLabel,
+  baselineChip,
   nowLabel,
+  nowChip,
   targetLabel,
+  targetChip,
   loading,
 }: {
   goalLabel: string;
   narrative: string;
-  progressPct: number;
+  progressText: string;
+  progressChip: AnalyticsProvenanceChip | null;
+  progressBarPct: number;
   baselineLabel: string;
+  baselineChip: AnalyticsProvenanceChip | null;
   nowLabel: string;
+  nowChip: AnalyticsProvenanceChip | null;
   targetLabel: string;
+  targetChip: AnalyticsProvenanceChip | null;
   loading?: boolean;
 }) {
   return (
-    <div style={panel(true)}>
+    <div style={panel(true)} data-testid="analytics-goal-card">
       <Edge active />
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 10 }}>
         <div><h2 style={{ margin: 0, fontSize: 20, fontWeight: 800 }}>{goalLabel}</h2><p style={{ margin: "6px 0 0", fontSize: 12, color: C.muted, maxWidth: 340 }}>{narrative}</p></div>
@@ -1029,7 +1082,10 @@ function GoalCard({
           {loading ? (
             <Shimmer w={54} h={30} radius={6} />
           ) : (
-            <div style={{ fontSize: 26, fontWeight: 800, color: C.teal }}>{progressPct}%</div>
+            <div style={{ fontSize: 26, fontWeight: 800, color: C.teal }} data-testid="analytics-goal-progress">
+              {progressText}
+              {progressChip ? <ProvenanceChip chip={progressChip} /> : null}
+            </div>
           )}
           <div style={{ fontSize: 11, color: C.muted }}>to your target</div>
         </div>
@@ -1037,26 +1093,34 @@ function GoalCard({
       {loading ? (
         <Shimmer w="100%" h={8} radius={8} />
       ) : (
-        <div style={{ height: 8, borderRadius: 8, background: C.inset, marginTop: 14, overflow: "hidden" }}><div style={{ height: "100%", width: `${progressPct}%`, background: `linear-gradient(90deg, ${C.teal}, #3fd0c8)`, borderRadius: 8 }} /></div>
+        <div style={{ height: 8, borderRadius: 8, background: C.inset, marginTop: 14, overflow: "hidden" }}><div style={{ height: "100%", width: `${progressBarPct}%`, background: `linear-gradient(90deg, ${C.teal}, #3fd0c8)`, borderRadius: 8 }} /></div>
       )}
-      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, fontSize: 11, color: C.muted }}><span>{baselineLabel}</span><span>{nowLabel}</span><span>{targetLabel}</span></div>
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, fontSize: 11, color: C.muted }}>
+        <span data-testid="analytics-goal-start">{baselineLabel}{baselineChip ? <ProvenanceChip chip={baselineChip} /> : null}</span>
+        <span data-testid="analytics-goal-now">{nowLabel}{nowChip ? <ProvenanceChip chip={nowChip} /> : null}</span>
+        <span data-testid="analytics-goal-target">{targetLabel}{targetChip ? <ProvenanceChip chip={targetChip} /> : null}</span>
+      </div>
     </div>
   );
 }
 function BodyCompTrio({
   leanMassLabel,
+  leanMassChip,
   leanMassDelta,
   leanMassSeries,
   bodyFatLabel,
+  bodyFatChip,
   bodyFatDelta,
   bodyFatSeries,
   energyBalanceRead,
   loading,
 }: {
   leanMassLabel: string;
+  leanMassChip: AnalyticsProvenanceChip | null;
   leanMassDelta: number | null;
   leanMassSeries: number[];
   bodyFatLabel: string;
+  bodyFatChip: AnalyticsProvenanceChip | null;
   bodyFatDelta: number | null;
   bodyFatSeries: number[];
   energyBalanceRead: string;
@@ -1064,25 +1128,33 @@ function BodyCompTrio({
 }) {
   return (
     <div className="vc-tri">
-      <div style={panel(false)}>
+      <div style={panel(false)} data-testid="analytics-lean-mass">
         <div style={{ ...eyebrow, marginBottom: 10 }}>Lean mass</div>
         {loading ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}><Shimmer w={80} h={26} radius={4} /><Shimmer w={180} h={36} radius={4} /></div>
         ) : (
           <>
-            <div style={{ fontSize: 22, fontWeight: 800 }}>{leanMassLabel} {leanMassDelta !== null && <span style={{ fontSize: 12 }}><Delta v={leanMassDelta} unit=" lb" /></span>}</div>
-            <div style={{ marginTop: 10 }}><Sparkline data={leanMassSeries} w={180} h={36} /></div>
+            <div style={{ fontSize: 22, fontWeight: 800 }}>
+              {leanMassLabel}
+              {leanMassChip ? <ProvenanceChip chip={leanMassChip} /> : null}
+              {leanMassDelta !== null && <span style={{ fontSize: 12 }}><Delta v={leanMassDelta} unit=" lb" /></span>}
+            </div>
+            {leanMassSeries.length >= 2 ? <div style={{ marginTop: 10 }}><Sparkline data={leanMassSeries} w={180} h={36} /></div> : null}
           </>
         )}
       </div>
-      <div style={panel(false)}>
+      <div style={panel(false)} data-testid="analytics-body-fat">
         <div style={{ ...eyebrow, marginBottom: 10 }}>Body fat</div>
         {loading ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}><Shimmer w={80} h={26} radius={4} /><Shimmer w={180} h={36} radius={4} /></div>
         ) : (
           <>
-            <div style={{ fontSize: 22, fontWeight: 800 }}>{bodyFatLabel} {bodyFatDelta !== null && <span style={{ fontSize: 12 }}><Delta v={bodyFatDelta} unit=" pt" /></span>}</div>
-            <div style={{ marginTop: 10 }}><Sparkline data={bodyFatSeries} w={180} h={36} color={C.orange} /></div>
+            <div style={{ fontSize: 22, fontWeight: 800 }}>
+              {bodyFatLabel}
+              {bodyFatChip ? <ProvenanceChip chip={bodyFatChip} /> : null}
+              {bodyFatDelta !== null && <span style={{ fontSize: 12 }}><Delta v={bodyFatDelta} unit=" pt" /></span>}
+            </div>
+            {bodyFatSeries.length >= 2 ? <div style={{ marginTop: 10 }}><Sparkline data={bodyFatSeries} w={180} h={36} color={C.orange} /></div> : null}
           </>
         )}
       </div>
@@ -1257,7 +1329,7 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
   // equal the dashboard "Your pillars" values for the same user.
   const dailyScores = useDailyScores(userId);
   const { targets: nutritionTargets } = useNutritionTargets(userId);
-  const { snapshot: compositionSnapshot } = useLatestComposition(userId);
+  const { snapshot: compositionSnapshot, caqWeightLbs } = useLatestComposition(userId);
   const bodySeries = useRecentBodySeries(userId);
 
   // Wearable last-sync from first-class tiles + last-sync-state only.
@@ -1336,18 +1408,19 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
   // J-T3: lean_body_mass_lbs from body_tracker_weight (migration 20260416000080).
   // Used as the preferred lean mass label when available, over totalMuscleMassLbs.
   const [leanBodyMassLbs, setLeanBodyMassLbs] = useState<number | null>(null);
+  const [leanBodyMassSourceName, setLeanBodyMassSourceName] = useState<string | null>(null);
   useEffect(() => {
-    if (!userId) { setLeanBodyMassLbs(null); return; }
+    if (!userId) { setLeanBodyMassLbs(null); setLeanBodyMassSourceName(null); return; }
     let active = true;
     (async () => {
       try {
         const supabase = createClient();
-        type LbmRow = { lean_body_mass_lbs: number | null };
+        type LbmRow = { lean_body_mass_lbs: number | null; body_tracker_entries?: unknown };
         type LbmResult = { data: LbmRow | null; error: unknown };
         const { data } = await withTimeout(
           supabase
             .from("body_tracker_weight")
-            .select("lean_body_mass_lbs")
+            .select("lean_body_mass_lbs, body_tracker_entries(source, device_name, manual_source_id)")
             .eq("user_id", userId)
             .order("created_at", { ascending: false })
             .limit(1)
@@ -1357,7 +1430,8 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
         );
         if (!active) return;
         const val = data?.lean_body_mass_lbs ?? null;
-        setLeanBodyMassLbs(typeof val === "number" && isFinite(val) ? val : null);
+        setLeanBodyMassLbs(typeof val === "number" && isFinite(val) && val > 0 ? val : null);
+        setLeanBodyMassSourceName(entryToSourceName(unwrapRelatedEntry(data?.body_tracker_entries)));
       } catch (err) {
         if (!active) return;
         safeLog.warn("YourJourneyCoaching", "lean_body_mass_lbs read failed, failing open", { error: err });
@@ -1515,6 +1589,7 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
     current: overallCurrent,
     weeksActive,
   });
+  const hannahLift = hannahLiftDisplay(hannahInsight.estimatedImpact);
 
   // J-T4: Journey accelerators from the REAL engine tables.
   // useEngineAccelerators reads recommendations + ultrathink_recommendations,
@@ -1532,34 +1607,28 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
   const activeHubs = engineAccel.activeHubs;
   const narrativeLine = engineAccel.narrativeLine;
 
-  // Hydration stat bar (LIVE).
-  const hydrationTotalL = hydrationData?.total_ml != null ? hydrationData.total_ml / 1000 : null;
+  // Hydration stat bar (LIVE). Unsourced 0 is "--", never "0.0 L".
+  const hydrationVital = hydrationVitalDisplay({
+    totalMl: hydrationData?.total_ml,
+    logCount: hydrationData?.log_count,
+    eventCount: hydrationData?.events_today?.length,
+  });
   const hydrationTargetL = hydrationData?.target_ml != null ? hydrationData.target_ml / 1000 : null;
-  const hydrationValue = hydrationTotalL !== null ? hydrationTotalL.toFixed(1) : "--";
-  const hydrationSub = hydrationTargetL !== null ? `/ ${hydrationTargetL.toFixed(1)} L` : "";
-  const hydrationBarPct = hydrationPct !== null ? Math.min(100, Math.round(hydrationPct)) : 0;
+  const hydrationValue = hydrationVital.text === "--" ? "--" : hydrationVital.text.replace(" L", "");
+  const hydrationSub = hydrationVital.chip && hydrationTargetL !== null ? `/ ${hydrationTargetL.toFixed(1)} L` : "";
+  const hydrationBarPct = hydrationVital.chip && hydrationPct !== null ? Math.min(100, Math.round(hydrationPct)) : 0;
 
-  // Vitals rows: body_tracker_metabolic for HRV/RestingHR/Respiratory/BloodOxygen
-  // (migration 20260414000020; hrv_ms, resting_hr_bpm, respiratory_rate,
-  // blood_oxygen_pct all exist in types.ts).
-  // Wearable-OFF rows with null values show "--" plus flat sparkline (honest state).
-  const FLAT = flatSparkline();
-  const vitHrvStr = metabolicVitals.hrv !== null ? `${Math.round(metabolicVitals.hrv)} ms` : "--";
-  const vitRestHrStr = metabolicVitals.restingHr !== null ? `${Math.round(metabolicVitals.restingHr)} bpm` : "--";
-  const vitRespStr = metabolicVitals.respiratory !== null ? `${metabolicVitals.respiratory.toFixed(1)} brpm` : "--";
-  const vitO2Str = metabolicVitals.bloodOxygen !== null ? `${metabolicVitals.bloodOxygen.toFixed(1)}%` : "--";
+  // Vitals: print a number only with a chip from the exact vocabulary.
+  const vitHrv = vitalValueDisplay({ value: metabolicVitals.hrv, unit: "ms", sourceName: metabolicVitals.sourceName, round: true });
+  const vitRestHr = vitalValueDisplay({ value: metabolicVitals.restingHr, unit: "bpm", sourceName: metabolicVitals.sourceName, round: true });
+  const vitResp = vitalValueDisplay({ value: metabolicVitals.respiratory, unit: "brpm", sourceName: metabolicVitals.sourceName });
+  const vitO2 = vitalValueDisplay({ value: metabolicVitals.bloodOxygen, unit: "%", sourceName: metabolicVitals.sourceName });
   const vitals: VitalRow[] = [
-    ["HRV", vitHrvStr, "", FLAT, C.teal],
-    ["Resting HR", vitRestHrStr, "", FLAT, C.teal],
-    ["Respiratory", vitRespStr, "", FLAT, C.teal],
-    ["Blood Oxygen", vitO2Str, "", FLAT, C.teal],
-    [
-      "Hydration",
-      hydrationValue !== "--" ? `${hydrationValue} L` : "--",
-      "",
-      FLAT,
-      "#38BDD8",
-    ],
+    { name: "HRV", value: vitHrv.text, chip: vitHrv.chip, series: [], color: C.teal, testId: "analytics-vital-hrv" },
+    { name: "Resting HR", value: vitRestHr.text, chip: vitRestHr.chip, series: [], color: C.teal, testId: "analytics-vital-resting-hr" },
+    { name: "Respiratory", value: vitResp.text, chip: vitResp.chip, series: [], color: C.teal, testId: "analytics-vital-respiratory" },
+    { name: "Blood Oxygen", value: vitO2.text, chip: vitO2.chip, series: [], color: C.teal, testId: "analytics-vital-spo2" },
+    { name: "Hydration", value: hydrationVital.text, chip: hydrationVital.chip, series: [], color: "#38BDD8", testId: "analytics-vital-hydration" },
   ];
 
   // Combined macros: nutrition_logs (confirmed only) + meal_logs for today.
@@ -1593,21 +1662,50 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
   const latestWeightLbs = bodySeries.weightLbs.length > 0
     ? bodySeries.weightLbs[bodySeries.weightLbs.length - 1]
     : null;
-  const firstWeightLbs = bodySeries.weightLbs.length > 0 ? bodySeries.weightLbs[0] : null;
+  const latestWeightSource = bodySeries.weightSourced.length > 0
+    ? bodySeries.weightSourced[bodySeries.weightSourced.length - 1]?.sourceName ?? null
+    : null;
+  const firstWeightSourced = bodySeries.weightSourced.length > 0 ? bodySeries.weightSourced[0] : null;
 
-  // goalProgressPct from lowerHelpers (migration 20260607020000 covers start/goal bounds).
-  const computedProgressPct = goalProgressPct(goalStartLb, latestWeightLbs, goalTargetLb) ?? 0;
-  const progressPct = computedProgressPct;
+  const goalOriginChip = chipForGoalOrigin(activeGoal?.origin ?? null);
+  const startWeight = weightBoundDisplay({
+    kind: "Start",
+    pounds: goalStartLb,
+    sourceName: activeGoal?.origin ?? null,
+    caqWeightLbs,
+  });
+  const baselineWeight = startWeight.chip
+    ? startWeight
+    : weightBoundDisplay({
+        kind: "Baseline",
+        pounds: firstWeightSourced?.value ?? null,
+        sourceName: firstWeightSourced?.sourceName ?? null,
+        caqWeightLbs,
+      });
+  const nowWeight = weightBoundDisplay({
+    kind: "Now",
+    pounds: latestWeightLbs,
+    sourceName: latestWeightSource,
+    caqWeightLbs,
+  });
+  const targetWeight = weightBoundDisplay({
+    kind: "Target",
+    pounds: goalTargetLb,
+    sourceName: activeGoal?.origin ?? null,
+  });
 
-  const baselineLabel = goalStartLb !== null
-    ? `Start ${Math.round(goalStartLb)} lb`
-    : firstWeightLbs !== null
-      ? `Baseline ${Math.round(firstWeightLbs)} lb`
-      : "Baseline --";
-  const nowLabel = latestWeightLbs !== null ? `Now ${Math.round(latestWeightLbs)} lb` : "Now --";
-  const targetLabelStr = goalTargetLb !== null
-    ? `Target ${Math.round(goalTargetLb)} lb`
-    : "Target --";
+  const computedProgressPct = goalProgressPct(goalStartLb, latestWeightLbs, goalTargetLb);
+  const progressDisplay = goalProgressDisplay({
+    percent: computedProgressPct,
+    startChip: startWeight.chip ?? goalOriginChip,
+    nowChip: nowWeight.chip,
+    targetChip: targetWeight.chip ?? goalOriginChip,
+  });
+  const progressBarPct = progressDisplay.chip && computedProgressPct !== null ? computedProgressPct : 0;
+
+  const baselineLabel = baselineWeight.text;
+  const nowLabel = nowWeight.text;
+  const targetLabelStr = targetWeight.text;
 
   const goalNarrative = activeGoal === null
     ? "Set a body goal to see your progress chart here. No rush, build at your own pace."
@@ -1621,30 +1719,36 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
   // muscle, then "--". Body weight is NOT a lean-mass proxy and must not fall back
   // to latestWeightLbs here -- that would show a body-weight number under the
   // "Lean mass" heading, which is misleading.
-  const latestMuscleLbs = leanBodyMassLbs ?? compositionSnapshot?.totalMuscleMassLbs ?? null;
-  const latestBodyFatPct = compositionSnapshot?.totalBodyFatPct ?? null;
-  // Lean-mass delta: only show when headline and delta come from the SAME series.
-  // The headline is totalMuscleMassLbs (muscle-mass series); the weight series is a
-  // different metric. Passing a weight-series delta for a muscle-mass headline is
-  // misleading. Pass null so no delta renders unless a real muscle-series delta exists.
-  const muscleDelta: number | null = null;
-  const bodyFatDelta = bodySeries.bodyFatPct.length >= 2
-    ? Math.round((bodySeries.bodyFatPct[bodySeries.bodyFatPct.length - 1] - bodySeries.bodyFatPct[bodySeries.bodyFatPct.length - 2]) * 10) / 10
+  const latestLeanSourced = bodySeries.leanMassSourced.length > 0
+    ? bodySeries.leanMassSourced[bodySeries.leanMassSourced.length - 1]
     : null;
-  const leanMassLabel = latestMuscleLbs !== null
-    ? `${latestMuscleLbs.toFixed(1)} lb`
-    : "--";
-  const bodyFatLabel = latestBodyFatPct !== null
-    ? `${latestBodyFatPct.toFixed(1)} %`
-    : bodySeries.bodyFatPct.length > 0
-      ? `${bodySeries.bodyFatPct[bodySeries.bodyFatPct.length - 1].toFixed(1)} %`
-      : "--";
-  const leanMassSeries = bodySeries.weightLbs.length >= 2
-    ? bodySeries.weightLbs
-    : flatSparkline(latestWeightLbs ?? 1);
-  const bodyFatSeries = bodySeries.bodyFatPct.length >= 2
-    ? bodySeries.bodyFatPct
-    : flatSparkline(latestBodyFatPct ?? 1);
+  const latestBfSourced = bodySeries.bodyFatSourced.length > 0
+    ? bodySeries.bodyFatSourced[bodySeries.bodyFatSourced.length - 1]
+    : null;
+  const snapshotFatSource = compositionSnapshot?.source === "manual" ? "manual" : null;
+  const latestMuscleLbs = leanBodyMassLbs ?? latestLeanSourced?.value ?? compositionSnapshot?.totalMuscleMassLbs ?? null;
+  const latestMuscleSource = leanBodyMassSourceName ?? latestLeanSourced?.sourceName ?? snapshotFatSource;
+  const latestBodyFatPct = latestBfSourced?.value ?? compositionSnapshot?.totalBodyFatPct ?? null;
+  const latestBodyFatSource = latestBfSourced?.sourceName ?? snapshotFatSource;
+
+  const leanMassShown = leanMassDisplay({
+    measuredLbs: latestMuscleLbs,
+    measuredSourceName: latestMuscleSource,
+    weightLbs: latestWeightLbs,
+    bodyFatPct: latestBodyFatPct,
+  });
+  const bodyFatShown = bodyFatDisplay({
+    bodyFatPct: latestBodyFatPct,
+    sourceName: latestBodyFatSource,
+  });
+  const leanTrend = sameSourceTrend(bodySeries.leanMassSourced);
+  const bodyFatTrend = sameSourceTrend(bodySeries.bodyFatSourced);
+  const muscleDelta = leanTrend.delta;
+  const bodyFatDelta = bodyFatTrend.delta;
+  const leanMassLabel = leanMassShown.text;
+  const bodyFatLabel = bodyFatShown.text;
+  const leanMassSeries = leanTrend.series;
+  const bodyFatSeries = bodyFatTrend.series;
   // Energy balance: prefer energy_balance_signals.balance_state when available
   // (migration 20260622171000). Falls back to combined macros vs target estimate.
   const energyBalanceRead = (() => {
@@ -1693,6 +1797,22 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
   const sleepBarPct = todayStats.sleepHours !== null
     ? Math.min(100, Math.round((todayStats.sleepHours / SLEEP_TARGET_H) * 100))
     : 0;
+
+  const sourcedNumbers: number[] = [];
+  const pushSourced = (n: number | null | undefined) => {
+    if (typeof n === "number" && Number.isFinite(n)) sourcedNumbers.push(n);
+  };
+  if (vitRestHr.chip) pushSourced(metabolicVitals.restingHr);
+  if (vitHrv.chip) pushSourced(metabolicVitals.hrv);
+  if (leanMassShown.chip && latestMuscleLbs !== null) pushSourced(Number(latestMuscleLbs.toFixed(1)));
+  if (bodyFatShown.chip && latestBodyFatPct !== null) pushSourced(Number(latestBodyFatPct.toFixed(1)));
+  if (nowWeight.chip && latestWeightLbs !== null) pushSourced(Math.round(latestWeightLbs));
+  if (startWeight.chip && goalStartLb !== null) pushSourced(Math.round(goalStartLb));
+  if (targetWeight.chip && goalTargetLb !== null) pushSourced(Math.round(goalTargetLb));
+  if (progressDisplay.chip && computedProgressPct !== null) pushSourced(computedProgressPct);
+  if (hannahLift.chip) pushSourced(hannahInsight.estimatedImpact);
+
+  const hannahAnalysis = redactUnsourcedHannahNumbers(hannahInsight.analysis, sourcedNumbers);
 
   return (
     <div
@@ -1824,6 +1944,7 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
           goalPhrase={goalPhrase}
           lastSyncLabel={lastSyncLabel}
           gaugesLoading={shouldShowSkeleton(bos7DLoading || dailyScores.loading, dailyScores.sleepQuality ?? dailyScores.energyLevel ?? dailyScores.nutrition)}
+          sourcedNumbers={sourcedNumbers}
         />
 
         <div className="vc-page-sections" style={{ display: "flex", flexDirection: "column", gap: 22 }}>
@@ -1833,10 +1954,15 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
               <GoalCard
                 goalLabel={goalLabel}
                 narrative={goalNarrative}
-                progressPct={progressPct}
+                progressText={progressDisplay.text}
+                progressChip={progressDisplay.chip}
+                progressBarPct={progressBarPct}
                 baselineLabel={baselineLabel}
+                baselineChip={baselineWeight.chip}
                 nowLabel={nowLabel}
+                nowChip={nowWeight.chip}
                 targetLabel={targetLabelStr}
+                targetChip={targetWeight.chip}
                 loading={shouldShowSkeleton(activeBodyGoalLoading, activeGoal)}
               />
               <NutritionCard
@@ -1855,9 +1981,11 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
             <div style={{ marginTop: 14 }}>
               <BodyCompTrio
                 leanMassLabel={leanMassLabel}
+                leanMassChip={leanMassShown.chip}
                 leanMassDelta={muscleDelta}
                 leanMassSeries={leanMassSeries}
                 bodyFatLabel={bodyFatLabel}
+                bodyFatChip={bodyFatShown.chip}
                 bodyFatDelta={bodyFatDelta}
                 bodyFatSeries={bodyFatSeries}
                 energyBalanceRead={energyBalanceRead}
@@ -1873,10 +2001,11 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
               hydrationPct={hydrationBarPct}
               vitals={vitals}
               hannahGreeting={hannahInsight.greeting}
-              hannahAnalysis={hannahInsight.analysis}
+              hannahAnalysis={hannahAnalysis}
               hannahRecommendation={hannahInsight.recommendation}
               hannahFocusArea={hannahInsight.focusArea}
-              hannahEstimatedImpact={hannahInsight.estimatedImpact}
+              hannahLiftText={hannahLift.text}
+              hannahLiftChip={hannahLift.chip}
               stepsValue={stepsValue}
               stepsSub={stepsSub}
               stepsBarPct={stepsBarPct}
