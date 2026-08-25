@@ -1,21 +1,47 @@
-import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
+import { resolveSessionRoleForUser } from "@/lib/auth/resolve-session-role";
+import { PortalShellRouter } from "@/components/practitioner/PortalShellRouter";
+import { AppNotFoundView } from "@/components/not-found/AppNotFoundView";
+import { MarketingNotFoundView } from "@/components/not-found/MarketingNotFoundView";
+import { safeLog } from "@/lib/utils/safe-log";
 
-export default function NotFound() {
-  return (
-    <div className="flex items-center justify-center min-h-screen bg-dark-bg px-4">
-      <div className="text-center">
-        <h1 className="text-6xl font-bold text-cyan-400 mb-4">404</h1>
-        <h2 className="text-xl font-semibold text-white mb-2">Page not found</h2>
-        <p className="text-slate-400 mb-8 text-sm max-w-sm mx-auto">
-          The page you are looking for does not exist or has been moved.
-        </p>
-        <Link
-          href="/dashboard"
-          className="px-6 py-3 bg-cyan-500 text-white rounded-lg hover:bg-cyan-400 transition-colors text-sm font-medium"
+export const dynamic = "force-dynamic";
+
+/**
+ * Root 404. Unmatched URLs skip route-group layouts, so signed-in visitors
+ * would otherwise get a chrome-less page. Re-mount PortalShellRouter here
+ * (same shell (app)/layout uses). Unsigned visitors get marketing chrome
+ * with the ViaConnect logo, never a blank unbranded page.
+ */
+export default async function NotFound() {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (user) {
+      const session = await resolveSessionRoleForUser(
+        supabase,
+        user,
+        "app.not-found",
+      );
+      return (
+        <PortalShellRouter
+          user={user}
+          role={session.role}
+          practitionerProfile={null}
+          showNaturopathTab={false}
         >
-          Go to Dashboard
-        </Link>
-      </div>
-    </div>
-  );
+          <AppNotFoundView />
+        </PortalShellRouter>
+      );
+    }
+  } catch (error) {
+    safeLog.warn("app.not-found", "session lookup failed, using marketing chrome", {
+      error,
+    });
+  }
+
+  return <MarketingNotFoundView />;
 }
