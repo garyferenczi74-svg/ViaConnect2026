@@ -115,6 +115,17 @@ const nextConfig = {
         destination: "/analytics",
         permanent: false,
       },
+      // Brief 36: retired Helix aliases. /helix already redirects to /helix/arena.
+      {
+        source: "/helix-rewards",
+        destination: "/helix",
+        permanent: false,
+      },
+      {
+        source: "/rewards",
+        destination: "/helix",
+        permanent: false,
+      },
     ];
   },
 };
