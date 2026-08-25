@@ -4,7 +4,6 @@ import { Info } from 'lucide-react';
 import type { DimensionSourceRow } from '@/lib/body-tracker/source-disagreement';
 import {
   CONNECTIONS_BOS_COMPOSITE,
-  CONNECTIONS_FOOTER,
   SCORE_DETAIL_DIMENSIONS,
   connectionsBosCompositeDisplay,
 } from '@/lib/body-tracker/wearable-tiles';
@@ -86,7 +85,6 @@ export function ScoreDetailPanel({ rows, onOpenDimension }: ScoreDetailPanelProp
       <ContributorColumn rows={rows} onOpenDimension={onOpenDimension ?? (() => undefined)} />
 
       <p className="mt-4 text-center text-[11px] text-white/40">Missing stays UNKNOWN, never 0.</p>
-      <p className="mt-2 text-center text-[11px] text-teal">{CONNECTIONS_FOOTER}</p>
     </section>
   );
 }

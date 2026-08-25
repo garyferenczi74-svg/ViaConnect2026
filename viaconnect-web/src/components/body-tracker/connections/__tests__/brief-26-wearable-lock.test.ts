@@ -233,7 +233,10 @@ describe('Brief 26 Wearable Data 1280 lock', () => {
     expect(markup).toContain('Bio Optimization Score');
     expect(markup).toContain('--');
     expect(markup).toContain(BOS_UNKNOWN_NEVER_ZERO_COPY);
-    expect(markup).toContain(CONNECTIONS_FOOTER);
+    // Prompt 230 Task 9 de-duped CONNECTIONS_FOOTER to render exactly once,
+    // in ConnectionsSurface (the parent), not here in the standalone panel --
+    // so it no longer appears in ScoreDetailPanel's own markup.
+    expect(markup).not.toContain(CONNECTIONS_FOOTER);
     expect(markup).not.toMatch(/Stability|Symmetry|Helix|Vitality/);
     expect(markup).not.toContain('>0<');
 

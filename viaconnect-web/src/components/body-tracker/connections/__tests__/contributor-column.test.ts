@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { ContributorColumn } from '@/components/body-tracker/connections/ContributorColumn';
 import { CONTRIBUTOR_METRICS, METRIC_LABELS } from '@/lib/body-tracker/contributor-rows';
 import type { DimensionSourceRow } from '@/lib/body-tracker/source-disagreement';
+import { CONNECTIONS_DISCLOSURE } from '@/lib/body-tracker/wearable-tiles';
 
 describe('ContributorColumn', () => {
   it('cold: renders all 7 metric labels, each with a Connect your device CTA and a details chevron', () => {
@@ -95,10 +96,15 @@ describe('ContributorColumn', () => {
   });
 
   it('renders the panel-level disclosure once', () => {
+    // Prompt 230 Task 9: the disclosure is now the centralized
+    // CONNECTIONS_DISCLOSURE constant (moved to wearable-tiles.ts, renamed
+    // from the local CONTRIBUTOR_DISCLOSURE), so this asserts the real
+    // canonical copy renders exactly once rather than an invented substring.
     const markup = renderToStaticMarkup(
       createElement(ContributorColumn, { rows: [], onOpenDimension: () => undefined }),
     );
-    const matches = markup.match(/connected device/gi) ?? [];
-    expect(matches.length).toBe(1);
+    expect(markup).toContain(CONNECTIONS_DISCLOSURE);
+    const matches = markup.split(CONNECTIONS_DISCLOSURE).length - 1;
+    expect(matches).toBe(1);
   });
 });

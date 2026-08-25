@@ -34,9 +34,7 @@ import {
   type ContributorMetric,
   type ContributorRow,
 } from '@/lib/body-tracker/contributor-rows';
-
-export const CONTRIBUTOR_DISCLOSURE =
-  'Each row shows the connected device data feeding that metric. Nothing here is estimated until a source is linked.';
+import { CONNECTIONS_DISCLOSURE } from '@/lib/body-tracker/wearable-tiles';
 
 export const CONNECT_YOUR_DEVICE_COPY = 'Connect your device';
 
@@ -96,7 +94,7 @@ export function ContributorColumn({ rows, onOpenDimension }: ContributorColumnPr
 
   return (
     <div className="mt-5 space-y-3">
-      <p className="text-xs leading-relaxed text-white/50">{CONTRIBUTOR_DISCLOSURE}</p>
+      <p className="text-xs leading-relaxed text-white/50">{CONNECTIONS_DISCLOSURE}</p>
 
       <div className="flex items-center justify-between px-1 text-[11px] font-medium uppercase tracking-wider text-white/40">
         <span>Metric</span>

@@ -75,6 +75,32 @@ describe('Connections IA contracts', () => {
     expect(disagree).toContain('averaged because equal trust.');
   });
 
+  it('says the UNKNOWN disclosure once and softens the not-configured toast', () => {
+    const surface = src('src/components/body-tracker/connections/ConnectionsSurface.tsx');
+    const panel = src('src/components/body-tracker/connections/ScoreDetailPanel.tsx');
+    const col = src('src/components/body-tracker/connections/ContributorColumn.tsx');
+    const tiles = src('src/lib/body-tracker/wearable-tiles.ts');
+    // CONNECTIONS_FOOTER rendered exactly once across surface + panel + column.
+    // Matched as an actual JSX render site (curly-brace expression), not the
+    // import specifier, since a legitimately-imported constant always names
+    // itself once at the import site in addition to its single render.
+    const footerRenders = (surface + panel + col).match(/\{CONNECTIONS_FOOTER\}/g) ?? [];
+    expect(footerRenders.length).toBe(1);
+    expect(surface).not.toContain('is not configured yet');
+    expect(surface).toContain('is not available yet');
+
+    // Say-once disclosure: centralized in wearable-tiles.ts (Task 9 moved it
+    // off ContributorColumn's local CONTRIBUTOR_DISCLOSURE), imported and
+    // rendered exactly once, only in the contributor column.
+    expect(tiles).toContain('export const CONNECTIONS_DISCLOSURE');
+    expect(col).toContain('CONNECTIONS_DISCLOSURE');
+    expect(col).not.toContain('CONTRIBUTOR_DISCLOSURE');
+    expect(surface).not.toContain('CONNECTIONS_DISCLOSURE');
+    expect(panel).not.toContain('CONNECTIONS_DISCLOSURE');
+    const disclosureRenders = (surface + panel + col).match(/\{CONNECTIONS_DISCLOSURE\}/g) ?? [];
+    expect(disclosureRenders.length).toBe(1);
+  });
+
   it('redirects plugins wearables catalog to connections', () => {
     const plugins = src('src/app/(app)/(consumer)/plugins/wearables/page.tsx');
     expect(plugins).toContain("/body-tracker/connections");

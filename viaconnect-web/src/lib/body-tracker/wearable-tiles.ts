@@ -303,6 +303,13 @@ export const CONNECTIONS_FOOTER = 'Bio Optimization Score uses these sources.';
 
 export const CONNECTIONS_LEAD = 'Connect your devices.';
 
+// Prompt 230 Task 9: the contributor column's say-once UNKNOWN disclosure.
+// Centralized here alongside CONNECTIONS_FOOTER / CONNECTIONS_LEAD /
+// BOS_UNKNOWN_NEVER_ZERO_COPY so every Connections copy string lives in one
+// place. Renders exactly once, in ContributorColumn -- never repeated per row.
+export const CONNECTIONS_DISCLOSURE =
+  'Your Bio Optimization Score is built from the devices you connect. Dimensions without a source stay blank rather than being estimated.';
+
 export const OAUTH_COMING_SOON_LABEL = 'Coming soon';
 
 export const BOS_UNKNOWN_NEVER_ZERO_COPY = 'Missing stays UNKNOWN, never 0.';

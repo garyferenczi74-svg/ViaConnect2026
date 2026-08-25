@@ -48,13 +48,13 @@ function emptyTiles(platform: 'web' | 'ios' | 'android'): WearableTileView[] {
 }
 
 const OAUTH_ERROR_COPY: Record<string, string> = {
-  whoop_not_configured: 'WHOOP is not configured yet.',
+  whoop_not_configured: 'WHOOP is not available yet.',
   whoop_denied: 'WHOOP authorization was cancelled.',
   whoop_invalid_state: 'That WHOOP link expired. Please try again.',
   whoop_state_expired: 'That WHOOP link expired. Please try again.',
   whoop_callback_failed: 'Could not finish WHOOP connect. Please try again.',
   whoop_authorize_failed: 'Could not start WHOOP connect. Please try again.',
-  oura_not_configured: 'Oura is not configured yet.',
+  oura_not_configured: 'Oura is not available yet.',
   oura_denied: 'Oura authorization was cancelled.',
   oura_invalid_state: 'That Oura link expired. Please try again.',
   oura_state_expired: 'That Oura link expired. Please try again.',
