@@ -202,6 +202,8 @@ describe('Brief 28 blue glass on activated wearable cards', () => {
     expect(tile).not.toContain('border-teal bg-teal/5');
     expect(tile).not.toContain('ring-1 ring-teal');
     expect(tile).not.toContain('bg-[rgba(255,255,255,0.20)]');
-    expect(tile).not.toContain('overflow-hidden');
+    expect(WEARABLE_TILE_ACTIVATED_CHROME).not.toContain('overflow-hidden');
+    expect(WEARABLE_TILE_ACTIVATED_CHROME).not.toContain('bg-white');
+    expect(WEARABLE_TILE_ACTIVATED_CHROME).not.toContain('bg-card');
   });
 });
