@@ -1,6 +1,8 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { describe, it, expect } from 'vitest';
+import { METRIC_LABELS, CONTRIBUTOR_METRICS } from '@/lib/body-tracker/contributor-rows';
+import { buildMorningChips } from '@/lib/dashboard/morning-card/contributors';
 
 const root = process.cwd();
 
@@ -16,7 +18,7 @@ const DASH = 'src/app/(app)/(consumer)/dashboard/page.tsx';
 const KEYS = 'src/lib/dashboard/morning-card/keys.ts';
 const BOS = 'src/hooks/use-bos-current.ts';
 
-describe('Brief 1 morning card IA', () => {
+describe('Brief 29 morning card IA', () => {
   it('mounts MorningCard on /dashboard instead of the BOS engagement hero', () => {
     const dash = src(DASH);
     expect(dash).toContain('MorningCard');
@@ -45,31 +47,37 @@ describe('Brief 1 morning card IA', () => {
     expect(card + cta).not.toMatch(/Vitality/);
   });
 
-  it('renders eight marketing chips at 390 and 1280 together', () => {
+  it('renders the 7 METRIC_LABELS chips at 390 and 1280 together', () => {
     const chips = src(CHIPS);
     const keys = src(KEYS);
-    expect(keys).toContain("'recovery'");
-    expect(keys).toContain("'sleep'");
-    expect(keys).toContain("'strain'");
-    expect(keys).toContain("'regimen'");
-    expect(keys).toContain("'nutrients'");
-    expect(keys).toContain("'symptoms'");
-    expect(keys).toContain("'metabolic'");
-    expect(keys).toContain("'immune'");
+    expect(buildMorningChips().map((c) => c.label)).toEqual(
+      CONTRIBUTOR_METRICS.map((k) => METRIC_LABELS[k]),
+    );
+    expect(keys).toContain('CONTRIBUTOR_METRICS');
+    expect(keys).toContain('METRIC_LABELS');
+    expect(keys).not.toContain("'regimen'");
+    expect(keys).not.toContain("'immune'");
     expect(chips).toContain('grid-cols-4');
-    expect(chips).toContain('md:grid-cols-8');
+    expect(chips).toContain('md:grid-cols-7');
+    expect(chips).not.toContain('md:grid-cols-8');
     expect(chips).toContain('min-h-[44px]');
     expect(chips).toContain('strokeWidth={1.5}');
+    expect(chips).toContain('href={chip.href}');
   });
 
-  it('keeps contributor sources pending until Brief 12', () => {
+  it('drives chip/detail from wearable-tiles last-sync and deep-links to connections', () => {
     const list = src(LIST);
     const card = src(CARD);
     expect(card).toContain('buildMorningChips');
+    expect(card).toContain('useWearableTilesSnapshot');
+    expect(card).toContain('useSleepTileSynced');
     expect(list).toContain('MORNING_CONTRIBUTOR_PENDING_NOTE');
     expect(list).toContain('data-source-status');
     expect(list).toContain('strokeWidth={1.5}');
+    expect(list).toContain('href={row.href}');
     expect(list).not.toMatch(/last_sync/);
+    expect(card + list).not.toContain('native_health_bridge');
+    expect(card + list).not.toContain('getWearableSource');
   });
 
   it('keeps the existing ViaConnect palette and does not swap the wordmark', () => {

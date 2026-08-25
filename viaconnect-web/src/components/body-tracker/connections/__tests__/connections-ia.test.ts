@@ -184,11 +184,10 @@ describe('Connections IA contracts', () => {
     expect(joined).not.toContain('CONNECTED_SOURCES');
     expect(joined).not.toContain('ConnectedSourceCard');
     expect(joined).not.toContain('5 min ago');
-    expect(hub).not.toMatch(/garmin/i);
     expect(hub).not.toMatch(/dexcom/i);
     expect(hub).not.toMatch(/fitbit/i);
-    expect(hub).toContain('Hume Body Pod');
-    expect(hub).toContain('Apple Health');
+    expect(hub).toContain('/body-tracker/connections');
+    expect(hub).not.toMatch(/connected:\s*true/);
     const model = src('src/lib/body-tracker/wearable-tiles.ts');
     expect(model).toContain(
       "FIRST_CLASS_TILE_IDS = ['whoop', 'hume', 'apple_health', 'oura', 'google_health', 'garmin']",

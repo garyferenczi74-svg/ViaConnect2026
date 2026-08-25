@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { Info } from 'lucide-react';
 import type { MorningChipView } from '@/lib/dashboard/morning-card/contributors';
 import {
@@ -26,9 +27,15 @@ export function MorningContributorList({ chip }: MorningContributorListProps) {
             key={row.id}
             data-contributor-id={row.id}
             data-source-status={row.sourceStatus}
+            data-display-value={row.displayValue}
             className="flex min-h-[44px] items-center justify-between gap-2"
           >
-            <span className="text-sm text-white/80">{row.name}</span>
+            <Link
+              href={row.href}
+              className="text-sm text-[#2DA5A0] hover:underline"
+            >
+              {row.name}
+            </Link>
             <span className="flex items-center gap-2">
               <span className="font-mono text-sm text-white">{row.displayValue}</span>
               {row.sourceStatus === 'disagree' ? (

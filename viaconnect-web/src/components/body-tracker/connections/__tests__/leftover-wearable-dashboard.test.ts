@@ -58,8 +58,8 @@ describe('leftover WearableDashboard cannot invent variants', () => {
     expect(tiles).toContain("id: 'apple_health'");
     expect(tiles).toContain('Hume Body Pod');
     expect(tiles).toContain('resolveLastSyncState');
-    expect(hub).toContain('Hume Body Pod');
-    expect(hub).not.toContain('Garmin');
+    expect(hub).toContain('/body-tracker/connections');
     expect(hub).not.toContain('Dexcom');
+    expect(hub).not.toMatch(/connected:\s*true/);
   });
 });

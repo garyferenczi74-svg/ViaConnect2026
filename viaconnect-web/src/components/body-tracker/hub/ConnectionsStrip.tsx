@@ -4,19 +4,24 @@
 //
 // Sits directly below the bento grid. Links to the existing
 // /body-tracker/connections route which already lists the supported
-// sources. The strip presents the locked four tiles from CONNECTIONS
-// as pills with a teal dot when connected and a dim dot when not.
-// Status is last-sync only; pills stay disconnected until ingest.
+// sources. The strip presents FIRST_CLASS_TILE_IDS as pills. Status is
+// last-sync-state only; pills stay disconnected until a real last-sync.
 
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { CONNECTIONS } from './hubConfig';
+import { useWearableTilesSnapshot } from '@/hooks/useWearableTilesSnapshot';
+import { buildConnectionsStripSources } from '@/lib/body-tracker/connections-strip-sources';
+import { FIRST_CLASS_TILE_IDS } from '@/lib/body-tracker/wearable-tiles';
 import './hub-card-frame.css';
 
 const ACCENT_HEX = '#2DA5A0';
 
 export function ConnectionsStrip() {
   const Icon = CONNECTIONS.icon;
+  const snapshot = useWearableTilesSnapshot();
+  const sources = buildConnectionsStripSources(snapshot.tiles);
+
   return (
     <Link
       href={CONNECTIONS.href}
@@ -45,10 +50,14 @@ export function ConnectionsStrip() {
       {/* Source pills + go affordance. Mobile: pills wrap, affordance
           sits on its own row. Desktop: everything sits to the right. */}
       <div className="flex flex-wrap items-center gap-2 md:ml-auto md:flex-nowrap md:gap-3">
-        <ul className="flex flex-wrap items-center gap-1.5">
-          {CONNECTIONS.sources.map((source) => (
+        <ul className="flex flex-wrap items-center gap-1.5" data-first-class-tiles={FIRST_CLASS_TILE_IDS.join(',')}>
+          {sources.map((source) => (
             <li key={source.id}>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[11px] text-white/75 backdrop-blur-sm">
+              <span
+                data-tile-id={source.id}
+                data-last-sync-connected={source.connected ? 'true' : 'false'}
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[11px] text-white/75 backdrop-blur-sm"
+              >
                 <span
                   aria-hidden="true"
                   className={`h-1.5 w-1.5 rounded-full ${
@@ -57,7 +66,7 @@ export function ConnectionsStrip() {
                 />
                 {source.label}
                 <span className="sr-only">
-                  {source.connected ? 'connected' : 'not connected'}
+                  {source.connected ? 'connected' : source.statusLabel}
                 </span>
               </span>
             </li>

@@ -285,7 +285,7 @@ describe('Phase 2 habit next to Sleep', () => {
     expect(morning).toContain('useSleepTileSynced');
     expect(surface).toContain('useDailyScheduleView');
     expect(chips).toContain('grid-cols-4');
-    expect(chips).toContain('md:grid-cols-8');
+    expect(chips).toContain('md:grid-cols-7');
     expect(chips).not.toContain('HabitSleepPair');
     expect(panel).toContain('strokeWidth={1.5}');
     expect(ui).toContain('strokeWidth={1.5}');

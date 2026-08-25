@@ -18,7 +18,11 @@ export const MORNING_CTA_UNAVAILABLE = 'Protocol unavailable';
 export const MORNING_CONTRIBUTOR_PENDING_NOTE =
   'Sources pending until wearable sync is confirmed.';
 
-export const MORNING_CONTRIBUTOR_PENDING_VALUE = 'Pending';
+export const MORNING_CONTRIBUTOR_PENDING_VALUE = 'UNKNOWN';
+
+export const MORNING_CONNECT_YOUR_DEVICE = 'Connect your device';
+
+export { CONNECTIONS_PATH as MORNING_CONNECTIONS_HREF } from '@/lib/body-tracker/wearable-tiles';
 
 export const MORNING_CONTRIBUTOR_DISAGREE = 'DISAGREE';
 
