@@ -18,7 +18,7 @@ const outlineBtn =
 // the live Apple Health dark glass. Activated BODY is real white translucent
 // glass so the page hero shows through (16px blur, white 0.16-0.28 fill,
 // white 0.45 stroke). Never teal/blue fill, border, ring, title, or left
-// rail. Do not use overflow-hidden on the activated body — it clips
+// rail. Do not use overflow-hidden on the activated body: it clips
 // backdrop-filter and leaves an opaque navy plate with a white edge.
 const WEARABLE_TILE_FOCUS_RING =
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal/60';
