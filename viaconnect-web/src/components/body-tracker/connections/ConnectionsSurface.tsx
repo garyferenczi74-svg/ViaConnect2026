@@ -27,6 +27,8 @@ import {
   parseBedtimeStrip,
   type BedtimeStripView,
 } from '@/lib/body-tracker/sleep-bedtime-strip';
+import { resolveHabitSleepPair } from '@/lib/body-tracker/habit-sleep-pair';
+import { useDailyScheduleView } from '@/hooks/useDailyScheduleView';
 import { WearableTileCard } from './WearableTileCard';
 import { ScoreDetailPanel } from './ScoreDetailPanel';
 
@@ -76,6 +78,7 @@ export function ConnectionsSurface() {
   const [bedtimeStrip, setBedtimeStrip] = useState<BedtimeStripView>(EMPTY_BEDTIME_STRIP);
   const [importIntent, setImportIntent] = useState<HealthXmlImportIntent | null>(null);
   const [consent, setConsent] = useState<'whoop' | 'oura' | null>(null);
+  const schedule = useDailyScheduleView();
   const [platform] = useState<'web' | 'ios' | 'android'>(() => {
     const p = detectPlatform();
     if (p.startsWith('ios')) return 'ios';
@@ -180,6 +183,11 @@ export function ConnectionsSurface() {
           rows={scoreDetail}
           lastUpdatedAt={lastUpdatedAt}
           bedtimeStrip={bedtimeStrip}
+          habitSleepPair={resolveHabitSleepPair({
+            tiles,
+            sleepTileSynced: bedtimeStrip.sleepTileSynced,
+            schedule: schedule.status === 'ready' ? schedule.view : null,
+          })}
         />
       </div>
 
