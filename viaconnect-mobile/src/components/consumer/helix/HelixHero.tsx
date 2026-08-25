@@ -31,12 +31,11 @@ export function HelixHero() {
         <Text className="text-white">Rewards</Text>
       </Text>
       <Text className="text-xs font-bold uppercase tracking-[3px] text-white/30 mt-1">
-        Earn <Text className="text-teal">·</Text> Compete{' '}
-        <Text className="text-copper">·</Text> Redeem
+        Earn <Text className="text-teal">·</Text> Redeem
       </Text>
       <Text className="text-[13px] text-white/45 leading-5 mt-3 mb-5">
-        Turn healthy habits into real rewards. Complete challenges, climb the
-        leaderboard, and redeem Helix for premium products and perks.
+        Turn healthy habits into real rewards. Show up. Streaks count rest days.
+        Redeem Helix for premium products and perks.
       </Text>
 
       <GlassCard className="p-6">

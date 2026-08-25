@@ -12,7 +12,7 @@ export function HelixArena() {
           <Text className="text-lg font-extrabold text-copper ml-2">Weekly Arena</Text>
         </View>
         <Text className="text-[13px] text-white/45 leading-5">
-          Not enough data. Ranks appear when helix_leaderboard has a real row.
+          Ranks appear once enough members are active this week.
         </Text>
       </GlassCard>
 
@@ -31,7 +31,7 @@ export function HelixArena() {
         <Text className="text-lg font-extrabold text-copper ml-2">Active Challenges</Text>
       </View>
       <Text className="text-[13px] text-white/45">
-        Not enough data. Challenges appear when helix_challenges has a real row.
+        Challenges appear when one is published.
       </Text>
     </View>
   );

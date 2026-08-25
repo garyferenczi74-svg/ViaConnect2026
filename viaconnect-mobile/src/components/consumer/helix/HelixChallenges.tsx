@@ -12,7 +12,7 @@ export function HelixChallenges() {
         </Text>
       </Animated.View>
       <Text className="text-[13px] text-white/45">
-        Not enough data. Challenges appear when helix_challenges has a real row.
+        Challenges appear when one is published.
       </Text>
     </View>
   );
