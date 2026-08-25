@@ -102,7 +102,7 @@ export function ScoreDetailPanel({
     <section
       aria-labelledby="bos-detail-title"
       data-bos-card="connections"
-      className="relative rounded-[24px] border border-[rgba(255,255,255,0.14)] bg-[rgba(255,255,255,0.07)] p-4 backdrop-blur-md sm:p-5"
+      className="relative rounded-[24px] border border-[rgba(255,255,255,0.14)] bg-[rgba(255,255,255,0.07)] p-4 backdrop-blur-md sm:p-5 h-full flex flex-col"
     >
       <div className="flex items-center gap-2">
         <h2 id="bos-detail-title" className="text-lg font-bold text-white">
@@ -148,7 +148,7 @@ export function ScoreDetailPanel({
         <HabitSleepPair pair={habitSleepPair} />
       </article>
 
-      <p className="mt-2 text-center text-[10px] text-white/40">Missing stays UNKNOWN, never 0.</p>
+      <p className="mt-auto pt-2 text-center text-[10px] text-white/40">Missing stays UNKNOWN, never 0.</p>
     </section>
   );
 }

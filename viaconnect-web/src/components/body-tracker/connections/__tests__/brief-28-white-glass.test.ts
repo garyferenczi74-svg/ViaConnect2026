@@ -257,4 +257,46 @@ describe('Brief 28 grey rest + portal blue body glass', () => {
     expect(importPanel).not.toContain('bg-navy-700');
     expect(bosPanel).not.toContain('bg-navy-700');
   });
+
+  it('1280 row stretches Import and BOS glass to the Garmin tile bottom', () => {
+    const PANEL_REST_GLASS =
+      'relative rounded-[24px] border border-[rgba(255,255,255,0.14)] bg-[rgba(255,255,255,0.07)] p-4 backdrop-blur-md sm:p-5';
+    const surface = src('src/components/body-tracker/connections/ConnectionsSurface.tsx');
+    const importPanel = src('src/components/body-tracker/connections/ActiveSourceDetailPanel.tsx');
+    const bosPanel = src('src/components/body-tracker/connections/ScoreDetailPanel.tsx');
+
+    const importClass = importPanel.match(/<section[\s\S]*?className="([^"]+)"/)?.[1];
+    const bosClass = bosPanel.match(/<section[\s\S]*?className="([^"]+)"/)?.[1];
+    expect(importClass).toBeTruthy();
+    expect(bosClass).toBeTruthy();
+    expect(importClass).toContain(PANEL_REST_GLASS);
+    expect(bosClass).toContain(PANEL_REST_GLASS);
+    expect(importClass).toContain('h-full');
+    expect(bosClass).toContain('h-full');
+    expect(importClass).not.toContain('bg-card');
+    expect(bosClass).not.toContain('bg-card');
+    expect(importClass).not.toContain('overflow-hidden');
+    expect(bosClass).not.toContain('overflow-hidden');
+
+    expect(surface).toContain('min-[1280px]:grid-cols-[1fr_1.2fr_1fr]');
+    expect(surface).toContain('min-[1280px]:items-stretch');
+    expect(surface).toContain('min-[1280px]:h-full');
+    expect((surface.match(/min-\[1280px\]:h-full/g) ?? []).length).toBe(2);
+    expect(surface).toContain("anyConnected ? 'order-2' : 'order-3'} min-[900px]:order-none min-[1280px]:h-full");
+    expect(surface).toContain("anyConnected ? 'order-3' : 'order-1'} min-[900px]:order-none min-[1280px]:h-full");
+    expect(surface).toContain(
+      "className={`space-y-3 ${anyConnected ? 'order-1' : 'order-2'} min-[900px]:order-none`}",
+    );
+
+    expect(FIRST_CLASS_TILE_IDS[FIRST_CLASS_TILE_IDS.length - 1]).toBe('garmin');
+    expect(FIRST_CLASS_TILE_IDS).toEqual([
+      'whoop',
+      'hume',
+      'apple_health',
+      'oura',
+      'google_health',
+      'garmin',
+    ]);
+    expect(bosPanel).toContain('Missing stays UNKNOWN, never 0.');
+  });
 });
