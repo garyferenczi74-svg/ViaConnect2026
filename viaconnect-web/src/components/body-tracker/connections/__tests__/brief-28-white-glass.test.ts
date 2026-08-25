@@ -64,20 +64,23 @@ describe('Brief 28 grey rest + portal blue body glass', () => {
     const resting = wearableTileCardChrome(false);
     expect(resting).toBe(WEARABLE_TILE_RESTING_CHROME);
     expect(resting).toBe(
-      'relative rounded-[24px] border border-[rgba(255,255,255,0.28)] bg-[rgba(255,255,255,0.14)] p-4 backdrop-blur-md',
+      'relative rounded-[24px] border border-[rgba(255,255,255,0.14)] bg-[rgba(255,255,255,0.07)] p-4 backdrop-blur-md',
     );
     expect(resting).toContain('rounded-[24px]');
+    expect(resting).toContain('rgba(255,255,255,0.07)');
     expect(resting).toContain('rgba(255,255,255,0.14)');
-    expect(resting).toContain('rgba(255,255,255,0.28)');
-    expect(resting).toContain('bg-[rgba(255,255,255,0.14)]');
+    expect(resting).toContain('bg-[rgba(255,255,255,0.07)]');
     expect(resting).toContain('backdrop-blur-md');
     expect(WEARABLE_TILE_RESTING_CHROME).not.toContain('bg-card');
     expect(WEARABLE_TILE_RESTING_CHROME).not.toContain('overflow-hidden');
     expect(WEARABLE_TILE_RESTING_CHROME).not.toContain('#1E3054');
     expect(WEARABLE_TILE_RESTING_CHROME).not.toContain('bg-navy');
+    expect(WEARABLE_TILE_RESTING_CHROME).not.toContain('bg-teal/20');
     expect(resting).not.toContain('bg-card');
     expect(resting).not.toContain('bg-teal');
     expect(resting).not.toContain('border-teal');
+    expect(resting).not.toContain('bg-[rgba(255,255,255,0.14)]');
+    expect(resting).not.toContain('border-[rgba(255,255,255,0.28)]');
 
     for (const id of FIRST_CLASS_TILE_IDS) {
       const markup = renderToStaticMarkup(
@@ -88,11 +91,13 @@ describe('Brief 28 grey rest + portal blue body glass', () => {
         }),
       );
       expect(markup).toContain('rounded-[24px]');
-      expect(markup).toContain('bg-[rgba(255,255,255,0.14)]');
-      expect(markup).toContain('border-[rgba(255,255,255,0.28)]');
+      expect(markup).toContain('bg-[rgba(255,255,255,0.07)]');
+      expect(markup).toContain('border-[rgba(255,255,255,0.14)]');
       expect(markup).toContain('backdrop-blur-md');
       expect(markup).not.toContain('border-[rgba(255,255,255,0.45)]');
       expect(markup).not.toContain('bg-[rgba(255,255,255,0.20)]');
+      expect(markup).not.toContain('bg-[rgba(255,255,255,0.14)]');
+      expect(markup).not.toContain('border-[rgba(255,255,255,0.28)]');
       expect(markup).not.toContain('bg-white/[0.08]');
       expect(markup).not.toContain('bg-teal/20');
       expect(markup).not.toContain('backdrop-blur-[16px]');
@@ -103,12 +108,14 @@ describe('Brief 28 grey rest + portal blue body glass', () => {
     const activated = wearableTileCardChrome(true);
     expect(activated).toBe(WEARABLE_TILE_ACTIVATED_CHROME);
     expect(activated).toBe(
-      'relative rounded-[24px] border border-[rgba(74,144,217,0.50)] bg-[rgba(74,144,217,0.20)] p-4 pl-6 backdrop-blur-[16px]',
+      'relative rounded-[24px] border border-[rgba(74,144,217,0.25)] bg-[rgba(74,144,217,0.10)] p-4 pl-6 backdrop-blur-[16px]',
     );
     expect(activated).toContain('rounded-[24px]');
-    expect(activated).toContain('rgba(74,144,217,0.20)');
-    expect(activated).toContain('rgba(74,144,217,0.50)');
+    expect(activated).toContain('rgba(74,144,217,0.10)');
+    expect(activated).toContain('rgba(74,144,217,0.25)');
     expect(activated).toContain('backdrop-blur-[16px]');
+    expect(activated).not.toContain('bg-[rgba(74,144,217,0.20)]');
+    expect(activated).not.toContain('border-[rgba(74,144,217,0.50)]');
 
     // Body must be portal blue glass, not teal fill/stroke or an opaque navy plate.
     // Assert overflow-hidden / bg-card on the chrome constants, not the file
@@ -211,20 +218,43 @@ describe('Brief 28 grey rest + portal blue body glass', () => {
     expect(tile).toContain('tabIndex={selected ? 0 : -1}');
     expect(tile).toContain("aria-selected={selected ? 'true' : undefined}");
     expect(tile).toContain("if (e.target !== e.currentTarget) return;");
-    expect(WEARABLE_TILE_ACTIVATED_CHROME).toContain('rgba(74,144,217,0.20)');
-    expect(WEARABLE_TILE_ACTIVATED_CHROME).toContain('rgba(74,144,217,0.50)');
+    expect(WEARABLE_TILE_ACTIVATED_CHROME).toContain('rgba(74,144,217,0.10)');
+    expect(WEARABLE_TILE_ACTIVATED_CHROME).toContain('rgba(74,144,217,0.25)');
     expect(WEARABLE_TILE_ACTIVATED_CHROME).toContain('backdrop-blur-[16px]');
     expect(WEARABLE_TILE_ACTIVATED_CHROME).not.toContain('bg-teal/20');
     expect(WEARABLE_TILE_ACTIVATED_CHROME).not.toContain('border-teal/50');
     expect(WEARABLE_TILE_ACTIVATED_CHROME).not.toContain('bg-card');
     expect(WEARABLE_TILE_ACTIVATED_CHROME).not.toContain('overflow-hidden');
     expect(WEARABLE_TILE_ACTIVATED_CHROME).not.toContain('bg-white');
-    expect(WEARABLE_TILE_RESTING_CHROME).toContain('rgba(255,255,255,0.14)');
+    expect(WEARABLE_TILE_ACTIVATED_CHROME).not.toContain('bg-[rgba(74,144,217,0.20)]');
+    expect(WEARABLE_TILE_ACTIVATED_CHROME).not.toContain('border-[rgba(74,144,217,0.50)]');
+    expect(WEARABLE_TILE_RESTING_CHROME).toContain('rgba(255,255,255,0.07)');
+    expect(WEARABLE_TILE_RESTING_CHROME).toContain('border-[rgba(255,255,255,0.14)]');
+    expect(WEARABLE_TILE_RESTING_CHROME).not.toContain('bg-[rgba(255,255,255,0.14)]');
     expect(WEARABLE_TILE_RESTING_CHROME).not.toContain('bg-card');
     expect(WEARABLE_TILE_RESTING_CHROME).not.toContain('overflow-hidden');
+    expect(WEARABLE_TILE_RESTING_CHROME).not.toContain('bg-teal/20');
     expect(tile).not.toContain('bg-teal/5');
     expect(tile).not.toContain('border-teal bg-teal/5');
     expect(tile).not.toContain('ring-1 ring-teal');
     expect(tile).not.toContain('bg-[rgba(255,255,255,0.20)]');
+  });
+
+  it('Import and BOS outer sections use the same thinner grey rest glass', () => {
+    const PANEL_REST_GLASS =
+      'relative rounded-[24px] border border-[rgba(255,255,255,0.14)] bg-[rgba(255,255,255,0.07)] p-4 backdrop-blur-md sm:p-5';
+    const importPanel = src('src/components/body-tracker/connections/ActiveSourceDetailPanel.tsx');
+    const bosPanel = src('src/components/body-tracker/connections/ScoreDetailPanel.tsx');
+    expect(importPanel).toContain(PANEL_REST_GLASS);
+    expect(bosPanel).toContain(PANEL_REST_GLASS);
+    for (const panel of [importPanel, bosPanel]) {
+      expect(panel).not.toContain('bg-card');
+      expect(panel).not.toContain('overflow-hidden');
+      expect(panel).not.toContain('bg-teal/20');
+      expect(panel).not.toContain('#1E3054');
+      expect(panel).not.toContain('border-white/[0.08] bg-card');
+    }
+    expect(importPanel).not.toContain('bg-navy-700');
+    expect(bosPanel).not.toContain('bg-navy-700');
   });
 });

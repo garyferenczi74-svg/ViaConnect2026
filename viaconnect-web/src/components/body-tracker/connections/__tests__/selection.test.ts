@@ -1,5 +1,7 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { describe, expect, it, vi } from 'vitest';
 vi.mock('react-hot-toast', () => ({ default: { success: () => undefined, error: () => undefined } }));
 vi.mock('@/lib/supabase/client', () => ({ createClient: () => ({}) }));
@@ -12,6 +14,7 @@ import { buildWearableTiles, type WearableTileInput } from '@/lib/body-tracker/w
 const NOW = Date.parse('2026-08-24T10:00:00.000Z');
 const base = (o: Partial<WearableTileInput> = {}): WearableTileInput => ({ oauth: [], humeIngestCount: 0, humeLastPersistAt: null, appleXmlIngested: 0, appleXmlLastPersistAt: null, healthKitPersisted: false, healthKitLastPersistAt: null, dimensionsFed: {}, whoopConfigured: false, ouraConfigured: false, googleHealthConfigured: false, garminConfigured: false, platform: 'web', now: NOW, ...o });
 const apple = () => buildWearableTiles(base()).find((t) => t.id === 'apple_health')!;
+const src = (rel: string) => readFileSync(join(process.cwd(), rel), 'utf8');
 
 describe('tile selection state', () => {
   it('marks the selected tile with data-selected and aria-selected and a non-opacity signal', () => {
@@ -19,13 +22,18 @@ describe('tile selection state', () => {
     const unsel = renderToStaticMarkup(createElement(WearableTileCard, { tile: apple(), onPrimary: () => undefined, onSelect: () => undefined, selected: false }));
     expect(sel).toContain('data-selected="true"');
     expect(sel).toContain('aria-selected="true"');
-    // Brief 28 Gary re-lock: activated BODY is portal blue #4A90D9 glass, not teal-on-navy.
+    // Brief 28 Gary re-lock: activated BODY is thinner portal blue #4A90D9 glass, not teal-on-navy.
     expect(sel).toContain('backdrop-blur-[16px]');
-    expect(sel).toContain('rgba(74,144,217,0.20)');
-    expect(sel).toContain('rgba(74,144,217,0.50)');
+    expect(sel).toContain('rgba(74,144,217,0.10)');
+    expect(sel).toContain('rgba(74,144,217,0.25)');
+    expect(sel).not.toContain('bg-[rgba(74,144,217,0.20)]');
+    expect(sel).not.toContain('border-[rgba(74,144,217,0.50)]');
     expect(sel).not.toContain('bg-teal/20');
     expect(sel).not.toContain('border-teal/50');
     expect(sel).not.toContain('bg-[rgba(255,255,255,0.20)]');
+    expect(wearableTileCardChrome(true)).toBe(
+      'relative rounded-[24px] border border-[rgba(74,144,217,0.25)] bg-[rgba(74,144,217,0.10)] p-4 pl-6 backdrop-blur-[16px]',
+    );
     expect(wearableTileCardChrome(true)).not.toContain('overflow-hidden');
     expect(wearableTileCardChrome(true)).not.toContain('bg-white');
     expect(wearableTileCardChrome(true)).not.toContain('bg-white/[0.08]');
@@ -34,15 +42,35 @@ describe('tile selection state', () => {
     expect(wearableTileCardChrome(true)).not.toContain('bg-teal/20');
     expect(wearableTileCardChrome(true)).not.toContain('border-teal/50');
     expect(wearableTileCardChrome(true)).not.toContain('rgba(45,165,160');
-    expect(wearableTileCardChrome(false)).toContain('rgba(255,255,255,0.14)');
+    expect(wearableTileCardChrome(false)).toBe(
+      'relative rounded-[24px] border border-[rgba(255,255,255,0.14)] bg-[rgba(255,255,255,0.07)] p-4 backdrop-blur-md',
+    );
+    expect(wearableTileCardChrome(false)).toContain('rgba(255,255,255,0.07)');
+    expect(wearableTileCardChrome(false)).not.toContain('bg-[rgba(255,255,255,0.14)]');
     expect(wearableTileCardChrome(false)).not.toContain('bg-card');
     expect(wearableTileCardChrome(false)).not.toContain('overflow-hidden');
+    expect(wearableTileCardChrome(false)).not.toContain('bg-teal/20');
     expect(wearableTileTitleClassName(true)).toContain('text-teal');
     expect(unsel).toContain('data-selected="false"');
     expect(unsel).not.toContain('aria-selected="true"');
-    expect(unsel).toContain('rgba(255,255,255,0.14)');
-    expect(unsel).toContain('rgba(255,255,255,0.28)');
+    expect(unsel).toContain('rgba(255,255,255,0.07)');
+    expect(unsel).toContain('border-[rgba(255,255,255,0.14)]');
+    expect(unsel).not.toContain('rgba(255,255,255,0.28)');
     expect(unsel).not.toContain('bg-card');
+  });
+
+  it('Import and BOS outer sections lock the same thinner grey rest glass', () => {
+    const PANEL_REST_GLASS =
+      'relative rounded-[24px] border border-[rgba(255,255,255,0.14)] bg-[rgba(255,255,255,0.07)] p-4 backdrop-blur-md sm:p-5';
+    const importPanel = src('src/components/body-tracker/connections/ActiveSourceDetailPanel.tsx');
+    const bosPanel = src('src/components/body-tracker/connections/ScoreDetailPanel.tsx');
+    expect(importPanel).toContain(PANEL_REST_GLASS);
+    expect(bosPanel).toContain(PANEL_REST_GLASS);
+    for (const panel of [importPanel, bosPanel]) {
+      expect(panel).not.toContain('bg-card');
+      expect(panel).not.toContain('overflow-hidden');
+      expect(panel).not.toContain('bg-teal/20');
+    }
   });
 
   // Task 10 addendum: role="button" with aria-selected is invalid ARIA

@@ -16,7 +16,6 @@ describe('Prompt 230 token migration', () => {
     for (const hex of ['#2DA5A0', '#B75E18', '#1A2744', '#1E3054']) {
       expect(files).not.toContain(hex);
     }
-    expect(files).toContain('bg-card');
     expect(files).toContain('text-teal');
     expect(files).toContain('text-copper');
   });
