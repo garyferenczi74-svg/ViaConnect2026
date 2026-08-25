@@ -3,10 +3,11 @@
 import { Info } from 'lucide-react';
 import type { DimensionSourceRow } from '@/lib/body-tracker/source-disagreement';
 import {
-  CONNECTIONS_BOS_COMPOSITE,
   SCORE_DETAIL_DIMENSIONS,
-  connectionsBosCompositeDisplay,
+  namedWearableContributorCount,
+  resolveConnectionsBosDisplay,
 } from '@/lib/body-tracker/wearable-tiles';
+import { ConnectionsBosDial } from './ConnectionsBosDial';
 import { ContributorColumn } from './ContributorColumn';
 import {
   EMPTY_BEDTIME_STRIP,
@@ -73,10 +74,6 @@ export function gateSleepContributorRows(
   return rows.map((row) => (row.dimension === 'sleep' ? unknownSleepRow() : row));
 }
 
-function namedWearableContributorCount(rows: DimensionSourceRow[]): number {
-  return rows.filter((row) => row.showRing === true && typeof row.source === 'string' && row.source.length > 0).length;
-}
-
 interface ScoreDetailPanelProps {
   rows: DimensionSourceRow[];
   lastUpdatedAt: string | null;
@@ -95,8 +92,7 @@ export function ScoreDetailPanel({
   const locked = lockScoreDetailRows(rows, { lastSyncSynced });
   const contributorRows = gateSleepContributorRows(rows, { lastSyncSynced });
   const named = namedWearableContributorCount(locked);
-  const composite =
-    named > 0 ? connectionsBosCompositeDisplay() : CONNECTIONS_BOS_COMPOSITE;
+  const composite = resolveConnectionsBosDisplay(named);
 
   return (
     <section
@@ -111,31 +107,7 @@ export function ScoreDetailPanel({
         <Info className="h-3.5 w-3.5 text-white/40" strokeWidth={1.5} aria-hidden />
       </div>
 
-      <div
-        className="mt-5 flex flex-col items-center"
-        data-bos-composite={composite.band.toLowerCase()}
-      >
-        <div className="relative h-36 w-36">
-          <svg viewBox="0 0 120 120" className="h-full w-full -rotate-90" aria-hidden>
-            <circle
-              cx="60"
-              cy="60"
-              r="48"
-              fill="none"
-              stroke="rgba(255,255,255,0.12)"
-              strokeWidth="8"
-            />
-          </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-3xl font-bold text-white/40" aria-label="No score yet">
-              {composite.value}
-            </span>
-            <span className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">
-              {composite.band}
-            </span>
-          </div>
-        </div>
-      </div>
+      <ConnectionsBosDial composite={composite} />
 
       <ContributorColumn rows={contributorRows} onOpenDimension={onOpenDimension ?? (() => undefined)} />
 

@@ -13,6 +13,9 @@ import {
   appleStatusLabel,
   buildWearableTiles,
   connectionsBosCompositeDisplay,
+  connectionsBosNumericScore,
+  namedWearableContributorCount,
+  resolveConnectionsBosDisplay,
   isAppleHealthConnected,
   isHumeConnected,
   isOAuthConnected,
@@ -350,6 +353,10 @@ describe('wearable tile model', () => {
       }),
     ).toBe('Not connected');
     expect(connectionsBosCompositeDisplay()).toEqual({ value: '--', band: 'UNKNOWN' });
+    expect(resolveConnectionsBosDisplay(0)).toEqual({ value: '--', band: 'UNKNOWN' });
+    expect(resolveConnectionsBosDisplay(3)).toEqual({ value: '--', band: 'UNKNOWN' });
+    expect(connectionsBosNumericScore(resolveConnectionsBosDisplay(0))).toBeNull();
+    expect(namedWearableContributorCount([])).toBe(0);
     expect(CONNECTIONS_BOS_COMPOSITE.value).not.toBe('0');
     expect(BOS_UNKNOWN_NEVER_ZERO_COPY).toBe('Missing stays UNKNOWN, never 0.');
     expect(APPLE_HEALTH_DROPZONE_COPY).toMatch(/Apple Health XML/);

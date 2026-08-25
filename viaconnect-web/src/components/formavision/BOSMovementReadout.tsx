@@ -6,11 +6,11 @@
  * Prompt 210b P6-T3: Bio Optimization Score movement readout.
  *
  * A compact, read-only readout mounted on the Body Composition surface.
- * Shows the canonical Bio Optimization Score (from useBOSCurrent) and its
+ * Shows the canonical Bio Optimization Score (Connections BOS SSOT) and its
  * movement since the user's baseline, framed honestly as "since baseline".
  *
- * Data source: useBOSCurrent (TanStack Query, /api/bos/current SSOT only).
- * No second data path, no new endpoint, no bio_optimization_history reads.
+ * Data source: resolveConnectionsBosDisplay (same function as Connections /
+ * Dashboard / Analytics). No CAQ composite in this slot.
  *
  * HONESTY CONTRACT:
  *   score null     -> calm "will appear once computed" state (never 0, never
@@ -33,12 +33,17 @@
  */
 
 import { Activity, TrendingUp, TrendingDown, Minus, Info } from 'lucide-react';
-import { useBOSCurrent } from '@/hooks/use-bos-current';
 import {
   colorForScore,
   labelForScore,
   sentenceCase,
 } from '@/components/dashboard/bos-gauge-helpers';
+import { useWearableTilesSnapshot } from '@/hooks/useWearableTilesSnapshot';
+import {
+  connectionsBosNumericScore,
+  namedWearableContributorCount,
+  resolveConnectionsBosDisplay,
+} from '@/lib/body-tracker/wearable-tiles';
 import {
   computeBOSMovement,
   movementLabel,
@@ -255,18 +260,21 @@ function ReadyState({
 
 // ---------------------------------------------------------------------------
 // Client wrapper (surface mount point)
-// Calls useBOSCurrent once. Fail-open:
-//   isLoading    -> loading skeleton
-//   error/null   -> no-score (honest-disabled)
-//   data present -> computeBOSMovement determines the correct state
+// Connections BOS SSOT only. Fail-open:
+//   loading snapshot -> loading skeleton
+//   UNKNOWN / null   -> no-score (honest-disabled)
+//   numeric display  -> computeBOSMovement (no CAQ composite in this slot)
 // ---------------------------------------------------------------------------
 
 export function BOSMovementReadout({ reducedMotion }: BOSMovementReadoutProps) {
-  const { data, isLoading } = useBOSCurrent();
-
-  const bosState: BOSMovementState | 'loading' = isLoading
-    ? 'loading'
-    : computeBOSMovement(data?.score ?? null, data?.baseline ?? null);
+  const snapshot = useWearableTilesSnapshot();
+  const score = connectionsBosNumericScore(
+    resolveConnectionsBosDisplay(namedWearableContributorCount(snapshot.scoreDetail)),
+  );
+  const bosState: BOSMovementState | 'loading' =
+    snapshot.status === 'loading'
+      ? 'loading'
+      : computeBOSMovement(score, null);
 
   return <BOSMovementReadoutContent state={bosState} reducedMotion={reducedMotion} />;
 }

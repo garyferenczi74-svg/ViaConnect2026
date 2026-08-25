@@ -325,6 +325,13 @@ export const CONNECTIONS_BOS_COMPOSITE = {
   band: 'UNKNOWN',
 } as const;
 
+export type ConnectionsBosDisplay = typeof CONNECTIONS_BOS_COMPOSITE;
+
+export type NamedWearableContributorRow = {
+  showRing?: boolean;
+  source?: string | null;
+};
+
 /**
  * Whoop / Oura stay Coming soon until Vercel OAuth secrets exist.
  * last-sync-state is unchanged: Coming soon is display only, not a new SM kind.
@@ -340,6 +347,34 @@ export function oauthDisplayLabel(
 }
 
 /** Connections BOS card never invents a composite number. Missing stays UNKNOWN, never 0. */
-export function connectionsBosCompositeDisplay(): typeof CONNECTIONS_BOS_COMPOSITE {
+export function connectionsBosCompositeDisplay(): ConnectionsBosDisplay {
   return CONNECTIONS_BOS_COMPOSITE;
+}
+
+/** Named wearable rows that can count toward the Connections BOS ring. */
+export function namedWearableContributorCount(
+  rows: readonly NamedWearableContributorRow[],
+): number {
+  return rows.filter(
+    (row) => row.showRing === true && typeof row.source === 'string' && row.source.length > 0,
+  ).length;
+}
+
+/**
+ * One Bio Optimization Score function. Zero named wearable contributors
+ * stays -- / UNKNOWN. Connections never invents a CAQ composite into this slot.
+ */
+export function resolveConnectionsBosDisplay(
+  namedCount: number,
+): ConnectionsBosDisplay {
+  return namedCount > 0 ? connectionsBosCompositeDisplay() : CONNECTIONS_BOS_COMPOSITE;
+}
+
+/** Numeric BOS for gauges / Hannah. UNKNOWN is null, never 0 and never 62. */
+export function connectionsBosNumericScore(
+  display: ConnectionsBosDisplay = CONNECTIONS_BOS_COMPOSITE,
+): number | null {
+  if (display.band === 'UNKNOWN' || display.value === '--') return null;
+  const n = Number(display.value);
+  return Number.isFinite(n) ? n : null;
 }
