@@ -102,7 +102,7 @@ export function ScoreDetailPanel({
     <section
       aria-labelledby="bos-detail-title"
       data-bos-card="connections"
-      className="rounded-[24px] border border-white/[0.08] bg-card p-4 backdrop-blur-md sm:p-5"
+      className="relative rounded-[24px] border border-[rgba(255,255,255,0.14)] bg-[rgba(255,255,255,0.07)] p-4 backdrop-blur-md sm:p-5"
     >
       <div className="flex items-center gap-2">
         <h2 id="bos-detail-title" className="text-lg font-bold text-white">

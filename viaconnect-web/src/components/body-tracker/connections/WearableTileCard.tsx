@@ -15,18 +15,17 @@ const outlineBtn =
   'flex min-h-[44px] shrink-0 items-center justify-center rounded-lg border border-teal bg-transparent px-3 text-xs font-semibold text-teal hover:bg-teal/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal/50';
 
 // Brief 28 Gary re-lock: one chrome function for all six first-class tiles.
-// Resting is real grey Apple glass (translucent white/grey rgba, never
-// bg-card or the opaque Card navy). Activated BODY is portal blue glass
-// rgb(74,144,217) so the Athlete 9F hero shows through the fill. Title
-// and left rail may stay teal. Do not use overflow-hidden on the body: it
-// clips backdrop-filter and leaves an opaque navy plate. Overrides the
-// prior teal-on-navy tint (bg-card + bg-teal/20).
+// Resting is real grey Apple glass at HALF the prior fill/border alpha so
+// more of the Athlete 9F hero shows through. Never bg-card or the opaque
+// Card navy. Activated BODY is portal blue glass rgb(74,144,217), thinner.
+// Title and left rail may stay teal. Do not use overflow-hidden on the
+// body: it clips backdrop-filter and leaves an opaque navy plate.
 const WEARABLE_TILE_FOCUS_RING =
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal/60';
 export const WEARABLE_TILE_RESTING_CHROME =
-  'relative rounded-[24px] border border-[rgba(255,255,255,0.28)] bg-[rgba(255,255,255,0.14)] p-4 backdrop-blur-md';
+  'relative rounded-[24px] border border-[rgba(255,255,255,0.14)] bg-[rgba(255,255,255,0.07)] p-4 backdrop-blur-md';
 export const WEARABLE_TILE_ACTIVATED_CHROME =
-  'relative rounded-[24px] border border-[rgba(74,144,217,0.50)] bg-[rgba(74,144,217,0.20)] p-4 pl-6 backdrop-blur-[16px]';
+  'relative rounded-[24px] border border-[rgba(74,144,217,0.25)] bg-[rgba(74,144,217,0.10)] p-4 pl-6 backdrop-blur-[16px]';
 export const WEARABLE_TILE_ACTIVATED_RAIL =
   'absolute inset-y-3 left-0 w-1 rounded-full bg-teal/60';
 
@@ -196,7 +195,7 @@ export function WearableTileCard({
             const file = e.dataTransfer.files?.[0];
             if (file) onDropXml(file);
           }}
-          className="mt-3 cursor-pointer rounded-xl border border-dashed border-white/20 bg-navy-700/60 p-4 text-center"
+          className="mt-3 cursor-pointer rounded-xl border border-dashed border-white/20 bg-[rgba(255,255,255,0.06)] p-4 text-center"
         >
           <CloudUpload className="mx-auto h-5 w-5 text-teal" strokeWidth={1.5} />
           <p className="mt-2 text-[11px] text-white/50">

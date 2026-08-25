@@ -12,7 +12,8 @@
 //     left column.
 //   - nothing selected: a designed prompt to pick a source.
 //
-// Design tokens only (bg-card, text-teal, text-copper, navy-700). Lucide at
+// Outer section is the same grey rest glass as wearable tiles. Inner
+// wrappers use translucent white rgba, not opaque navy plates. Lucide at
 // strokeWidth 1.5. No emojis. No em or en dashes anywhere.
 
 import { useCallback, useRef, useState } from 'react';
@@ -92,11 +93,11 @@ export function ActiveSourceDetailPanel({ tile, onImported }: ActiveSourceDetail
   return (
     <section
       data-detail-source={tile?.id ?? 'none'}
-      className="rounded-[24px] border border-white/[0.08] bg-card p-4 backdrop-blur-md sm:p-5"
+      className="relative rounded-[24px] border border-[rgba(255,255,255,0.14)] bg-[rgba(255,255,255,0.07)] p-4 backdrop-blur-md sm:p-5"
     >
       {tile === null ? (
-        <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-white/[0.14] bg-navy-700/40 p-10 text-center">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-navy-700">
+        <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-white/[0.14] bg-[rgba(255,255,255,0.04)] p-10 text-center">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[rgba(255,255,255,0.06)]">
             <MousePointerClick className="h-5 w-5 text-teal" strokeWidth={1.5} />
           </div>
           <h2 className="text-base font-semibold text-white">Pick a source</h2>
@@ -112,7 +113,7 @@ export function ActiveSourceDetailPanel({ tile, onImported }: ActiveSourceDetail
             {feedsBlock(tile)}
           </div>
 
-          <div className="rounded-xl border border-white/[0.08] bg-navy-700/60 p-3">
+          <div className="rounded-xl border border-white/[0.08] bg-[rgba(255,255,255,0.06)] p-3">
             <p className="text-[11px] font-medium uppercase tracking-wider text-white/45">
               How to export from iPhone
             </p>
@@ -129,10 +130,10 @@ export function ActiveSourceDetailPanel({ tile, onImported }: ActiveSourceDetail
               onDragLeave={() => setDragActive(false)}
               onDrop={onDrop}
               className={`flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed p-6 text-center transition-colors ${
-                dragActive ? 'border-teal bg-teal/[0.08]' : 'border-white/[0.14] bg-navy-700/40'
+                dragActive ? 'border-teal bg-teal/[0.08]' : 'border-white/[0.14] bg-[rgba(255,255,255,0.04)]'
               }`}
             >
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-navy-700">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[rgba(255,255,255,0.06)]">
                 <UploadCloud className="h-5 w-5 text-teal" strokeWidth={1.5} />
               </div>
               <div>
@@ -170,7 +171,7 @@ export function ActiveSourceDetailPanel({ tile, onImported }: ActiveSourceDetail
           )}
 
           {busy && (
-            <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-white/[0.08] bg-navy-700/50 p-6 text-center">
+            <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-white/[0.08] bg-[rgba(255,255,255,0.06)] p-6 text-center">
               <CloudUpload className="h-6 w-6 animate-pulse text-teal" strokeWidth={1.5} />
               <p className="text-sm font-medium text-white">
                 {phase === 'uploading' ? 'Uploading your export' : 'Reading your Health data'}
@@ -185,21 +186,21 @@ export function ActiveSourceDetailPanel({ tile, onImported }: ActiveSourceDetail
                 <p className="text-sm font-medium text-white">Import complete</p>
               </div>
               <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div className="rounded-xl border border-white/[0.06] bg-navy-700 p-3">
+                <div className="rounded-xl border border-white/[0.06] bg-[rgba(255,255,255,0.06)] p-3">
                   <dt className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-white/45">
                     <ListChecks className="h-3.5 w-3.5" strokeWidth={1.5} />
                     Records imported
                   </dt>
                   <dd className="mt-1 text-xl font-semibold text-white">{result.recordsIngested}</dd>
                 </div>
-                <div className="rounded-xl border border-white/[0.06] bg-navy-700 p-3">
+                <div className="rounded-xl border border-white/[0.06] bg-[rgba(255,255,255,0.06)] p-3">
                   <dt className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-white/45">
                     <CopyMinus className="h-3.5 w-3.5" strokeWidth={1.5} />
                     Duplicates skipped
                   </dt>
                   <dd className="mt-1 text-xl font-semibold text-white">{result.recordsDeduped}</dd>
                 </div>
-                <div className="rounded-xl border border-white/[0.06] bg-navy-700 p-3 sm:col-span-2">
+                <div className="rounded-xl border border-white/[0.06] bg-[rgba(255,255,255,0.06)] p-3 sm:col-span-2">
                   <dt className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-white/45">
                     <CalendarRange className="h-3.5 w-3.5" strokeWidth={1.5} />
                     Date range
@@ -228,7 +229,7 @@ export function ActiveSourceDetailPanel({ tile, onImported }: ActiveSourceDetail
             </div>
             {feedsBlock(tile)}
           </div>
-          <div className="rounded-xl border border-white/[0.08] bg-navy-700/60 p-3">
+          <div className="rounded-xl border border-white/[0.08] bg-[rgba(255,255,255,0.06)] p-3">
             <p className="text-sm leading-relaxed text-white/70">{tile.notes}</p>
           </div>
           {tile.statusLabel === 'Coming soon' ? (
