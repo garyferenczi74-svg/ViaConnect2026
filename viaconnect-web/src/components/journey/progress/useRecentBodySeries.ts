@@ -20,6 +20,11 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { withTimeout } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
+import {
+  entryToSourceName,
+  unwrapRelatedEntry,
+  type DatedSourcedPoint,
+} from '@/lib/analytics/provenance';
 
 export interface RecentBodySeries {
   /** Recent weight in lbs, oldest first. */
@@ -28,6 +33,10 @@ export interface RecentBodySeries {
   bodyFatPct: number[];
   /** Dated weight points (oldest first) for trend math. */
   weightPoints: Array<{ date: string; value: number }>;
+  /** Dated sourced points for Brief 32 trend/chip gates. */
+  weightSourced: DatedSourcedPoint[];
+  bodyFatSourced: DatedSourcedPoint[];
+  leanMassSourced: DatedSourcedPoint[];
   loading: boolean;
 }
 
@@ -35,16 +44,21 @@ export interface RecentBodySeries {
 const RECENT_LIMIT = 30;
 
 export function useRecentBodySeries(userId: string | null): RecentBodySeries {
-  const [series, setSeries] = useState<RecentBodySeries>({
+  const emptySeries = (): RecentBodySeries => ({
     weightLbs: [],
     bodyFatPct: [],
     weightPoints: [],
+    weightSourced: [],
+    bodyFatSourced: [],
+    leanMassSourced: [],
     loading: false,
   });
 
+  const [series, setSeries] = useState<RecentBodySeries>(emptySeries);
+
   useEffect(() => {
     if (!userId) {
-      setSeries({ weightLbs: [], bodyFatPct: [], weightPoints: [], loading: false });
+      setSeries(emptySeries());
       return;
     }
 
@@ -52,22 +66,23 @@ export function useRecentBodySeries(userId: string | null): RecentBodySeries {
     setSeries((s) => ({ ...s, loading: true }));
 
     (async () => {
-      const empty: RecentBodySeries = {
-        weightLbs: [],
-        bodyFatPct: [],
-        weightPoints: [],
-        loading: false,
-      };
+      const empty = emptySeries();
       try {
         const supabase = createClient();
 
         // Newest first from the DB (so LIMIT keeps the most recent), then we
         // reverse to oldest-first for a left-to-right sparkline.
-        type BodyRow = { weight_lbs: number | null; body_fat_pct: number | null; created_at: string | null };
+        type BodyRow = {
+          weight_lbs: number | null;
+          body_fat_pct: number | null;
+          lean_body_mass_lbs: number | null;
+          created_at: string | null;
+          body_tracker_entries?: unknown;
+        };
         const { data } = await withTimeout(
           supabase
             .from('body_tracker_weight')
-            .select('weight_lbs, body_fat_pct, created_at')
+            .select('weight_lbs, body_fat_pct, lean_body_mass_lbs, created_at, body_tracker_entries(source, device_name, manual_source_id)')
             .eq('user_id', userId)
             .order('created_at', { ascending: false })
             .limit(RECENT_LIMIT) as unknown as Promise<{ data: BodyRow[] | null; error: unknown }>,
@@ -77,31 +92,49 @@ export function useRecentBodySeries(userId: string | null): RecentBodySeries {
 
         if (!active) return;
 
-        const rows = (Array.isArray(data) ? data : []) as Array<{
-          weight_lbs: number | null;
-          body_fat_pct: number | null;
-          created_at: string | null;
-        }>;
+        const rows = (Array.isArray(data) ? data : []) as BodyRow[];
         const ordered = [...rows].reverse();
 
         const weightPoints: Array<{ date: string; value: number }> = [];
         const weightLbs: number[] = [];
         const bodyFatPct: number[] = [];
+        const weightSourced: DatedSourcedPoint[] = [];
+        const bodyFatSourced: DatedSourcedPoint[] = [];
+        const leanMassSourced: DatedSourcedPoint[] = [];
 
         for (const r of ordered) {
+          const sourceName = entryToSourceName(unwrapRelatedEntry(r.body_tracker_entries));
+          const dated = typeof r.created_at === 'string' ? r.created_at : '';
           const w = typeof r.weight_lbs === 'number' ? r.weight_lbs : Number(r.weight_lbs);
-          if (Number.isFinite(w) && typeof r.created_at === 'string') {
+          if (Number.isFinite(w) && w > 0 && dated) {
             weightLbs.push(w);
-            weightPoints.push({ date: r.created_at, value: w });
+            weightPoints.push({ date: dated, value: w });
+            weightSourced.push({ value: w, date: dated, sourceName });
           }
           const bf =
             typeof r.body_fat_pct === 'number' ? r.body_fat_pct : Number(r.body_fat_pct);
-          if (Number.isFinite(bf)) {
+          if (Number.isFinite(bf) && bf > 0) {
             bodyFatPct.push(bf);
+            if (dated) bodyFatSourced.push({ value: bf, date: dated, sourceName });
+          }
+          const lean =
+            typeof r.lean_body_mass_lbs === 'number'
+              ? r.lean_body_mass_lbs
+              : Number(r.lean_body_mass_lbs);
+          if (Number.isFinite(lean) && lean > 0 && dated) {
+            leanMassSourced.push({ value: lean, date: dated, sourceName });
           }
         }
 
-        setSeries({ weightLbs, bodyFatPct, weightPoints, loading: false });
+        setSeries({
+          weightLbs,
+          bodyFatPct,
+          weightPoints,
+          weightSourced,
+          bodyFatSourced,
+          leanMassSourced,
+          loading: false,
+        });
       } catch (error) {
         if (!active) return;
         safeLog.warn('useRecentBodySeries', 'read failed, failing open', { error });

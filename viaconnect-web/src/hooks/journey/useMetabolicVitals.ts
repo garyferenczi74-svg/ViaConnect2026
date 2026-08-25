@@ -10,7 +10,9 @@
  * hrv_ms and resting_hr_bpm are from migration 20260414000020_prompt_140_bio_tracker.sql
  * (types.ts line 3566). respiratory_rate and blood_oxygen_pct are from migration
  * 20260416000080_body_tracker_manual_input.sql.
- * Columns used: hrv_ms, resting_hr_bpm, respiratory_rate, blood_oxygen_pct, created_at.
+ * Columns used: hrv_ms, resting_hr_bpm, respiratory_rate, blood_oxygen_pct,
+ * created_at, plus the parent entry source fields for Brief 32 chips.
+ * Does not read wearable_daily_vitals. native_health_bridge stays off.
  *
  * Resilience: withTimeout(4000) + try/catch fail-open + safeLog.
  * Auth scoped: filter by user_id = userId via RLS.
@@ -22,6 +24,7 @@ import { useEffect, useState, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { withTimeout } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
+import { entryToSourceName, unwrapRelatedEntry } from '@/lib/analytics/provenance';
 
 // ---------------------------------------------------------------------------
 // Pure helper (exported for TDD)
@@ -48,6 +51,7 @@ interface MetabolicRow {
   respiratory_rate: number | null;
   blood_oxygen_pct: number | null;
   created_at: string | null;
+  body_tracker_entries?: unknown;
 }
 
 // ---------------------------------------------------------------------------
@@ -60,6 +64,7 @@ export interface MetabolicVitalsResult {
   respiratory: number | null;
   bloodOxygen: number | null;
   readingAt: string | null;
+  sourceName: string | null;
   loading: boolean;
 }
 
@@ -69,6 +74,7 @@ const INITIAL: MetabolicVitalsResult = {
   respiratory: null,
   bloodOxygen: null,
   readingAt: null,
+  sourceName: null,
   loading: true,
 };
 
@@ -105,7 +111,15 @@ export function useMetabolicVitals(userId: string | null): MetabolicVitalsResult
 
   useEffect(() => {
     if (!userId) {
-      setResult({ hrv: null, restingHr: null, respiratory: null, bloodOxygen: null, readingAt: null, loading: false });
+      setResult({
+        hrv: null,
+        restingHr: null,
+        respiratory: null,
+        bloodOxygen: null,
+        readingAt: null,
+        sourceName: null,
+        loading: false,
+      });
       return;
     }
 
@@ -118,7 +132,7 @@ export function useMetabolicVitals(userId: string | null): MetabolicVitalsResult
         const { data } = await withTimeout(
           supabase
             .from('body_tracker_metabolic')
-            .select('hrv_ms, resting_hr_bpm, respiratory_rate, blood_oxygen_pct, created_at')
+            .select('hrv_ms, resting_hr_bpm, respiratory_rate, blood_oxygen_pct, created_at, body_tracker_entries(source, device_name, manual_source_id)')
             .eq('user_id', userId)
             .order('created_at', { ascending: false })
             .limit(1)
@@ -127,8 +141,9 @@ export function useMetabolicVitals(userId: string | null): MetabolicVitalsResult
           'useMetabolicVitals.body_tracker_metabolic',
         );
         if (!active) return;
+        // Missing vitals are "--", never 0.
         const toNum = (v: number | null): number | null =>
-          typeof v === 'number' && isFinite(v) ? v : null;
+          typeof v === 'number' && isFinite(v) && v > 0 ? v : null;
         if (data) {
           setResult({
             hrv: toNum(data.hrv_ms),
@@ -136,15 +151,32 @@ export function useMetabolicVitals(userId: string | null): MetabolicVitalsResult
             respiratory: toNum(data.respiratory_rate),
             bloodOxygen: toNum(data.blood_oxygen_pct),
             readingAt: typeof data.created_at === 'string' ? data.created_at : null,
+            sourceName: entryToSourceName(unwrapRelatedEntry(data.body_tracker_entries)),
             loading: false,
           });
         } else {
-          setResult({ hrv: null, restingHr: null, respiratory: null, bloodOxygen: null, readingAt: null, loading: false });
+          setResult({
+            hrv: null,
+            restingHr: null,
+            respiratory: null,
+            bloodOxygen: null,
+            readingAt: null,
+            sourceName: null,
+            loading: false,
+          });
         }
       } catch (err) {
         if (!active) return;
         safeLog.warn('useMetabolicVitals', 'body_tracker_metabolic read failed, failing open', { error: err });
-        setResult({ hrv: null, restingHr: null, respiratory: null, bloodOxygen: null, readingAt: null, loading: false });
+        setResult({
+          hrv: null,
+          restingHr: null,
+          respiratory: null,
+          bloodOxygen: null,
+          readingAt: null,
+          sourceName: null,
+          loading: false,
+        });
       }
     })();
 
