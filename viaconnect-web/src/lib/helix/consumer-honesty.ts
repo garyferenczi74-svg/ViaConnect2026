@@ -9,10 +9,10 @@ export const SQUAD_CHAT_EMPTY =
   'Squad Chat is not live. There are no messages until a real thread exists.';
 
 export const LEADERBOARD_EMPTY =
-  'Not enough data. Ranks appear when helix_leaderboard has a real row.';
+  'Ranks appear once enough members are active this week.';
 
 export const CHALLENGES_EMPTY =
-  'Not enough data. Challenges appear when helix_challenges has a real row.';
+  'Challenges appear when one is published.';
 
 export const REFERRAL_CODE_EMPTY = 'Not enough data';
 

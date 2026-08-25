@@ -103,12 +103,11 @@ export function HelixChrome({ children }: { children: React.ReactNode }) {
                 className="font-bold uppercase tracking-[4px] text-white/35 mt-3"
                 style={{ fontSize: 'clamp(14px, 2vw, 18px)' }}
               >
-                Earn <span className="text-[#2DA5A0]">&middot;</span> Compete{' '}
-                <span className="text-[#B75E18]">&middot;</span> Redeem
+                Earn <span className="text-[#2DA5A0]">&middot;</span> Redeem
               </p>
               <p className="text-white/55 text-[15px] leading-relaxed mt-5 max-w-lg">
-                Turn healthy habits into real rewards. Complete challenges, climb the leaderboard,
-                and redeem Helix for premium products, consultations, and exclusive perks.
+                Turn healthy habits into real rewards. Show up. Streaks count rest days.
+                Redeem Helix for premium products, consultations, and exclusive perks.
               </p>
             </div>
 

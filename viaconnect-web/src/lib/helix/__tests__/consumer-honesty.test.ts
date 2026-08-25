@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { helixTierFromPoints } from '../tier-display';
 import {
@@ -112,6 +114,7 @@ describe('Brief 15b Helix honesty mappers', () => {
   });
 
   it('keeps 0 Helix as honest empty, never 4350', () => {
+    expect(formatHelixBalance(0)).toBe(0);
     expect(formatHelixBalance(null)).toBe(0);
     expect(formatHelixBalance(undefined)).toBe(0);
     expect(formatHelixBalance(-4)).toBe(0);
@@ -176,8 +179,40 @@ describe('Brief 15b Helix honesty mappers', () => {
 
   it('keeps empty copy honest', () => {
     expect(NOT_ANALYZED).toBe('Not analyzed');
-    expect(LEADERBOARD_EMPTY).toContain('Not enough data');
-    expect(CHALLENGES_EMPTY).toContain('Not enough data');
+    expect(LEADERBOARD_EMPTY).toBe(
+      'Ranks appear once enough members are active this week.',
+    );
+    expect(CHALLENGES_EMPTY).toBe('Challenges appear when one is published.');
+    expect(LEADERBOARD_EMPTY).not.toContain('helix_leaderboard');
+    expect(CHALLENGES_EMPTY).not.toContain('helix_challenges');
     expect(SQUAD_CHAT_EMPTY).toContain('not live');
+    expect(formatHelixBalance(0)).toBe(0);
+  });
+
+  it('keeps HelixChrome consumer copy free of compete theater', () => {
+    const chrome = readFileSync(
+      path.join(process.cwd(), 'src/app/(app)/(consumer)/helix/HelixChrome.tsx'),
+      'utf8',
+    );
+    expect(chrome).not.toMatch(/compete/i);
+    expect(chrome).not.toMatch(/climb the leaderboard/i);
+    expect(chrome).toContain('Show up. Streaks count rest days.');
+  });
+
+  it('does not print helix table names on consumer Helix pages', () => {
+    const pages = [
+      'src/lib/helix/consumer-honesty.ts',
+      'src/app/(app)/(consumer)/helix/HelixChrome.tsx',
+      'src/app/(app)/(consumer)/helix/arena/page.tsx',
+      'src/app/(app)/(consumer)/helix/challenges/page.tsx',
+      'src/app/(app)/(consumer)/helix/earn/page.tsx',
+      'src/app/(app)/(consumer)/helix/refer/page.tsx',
+      'src/app/(app)/(consumer)/helix/research/page.tsx',
+    ];
+    for (const rel of pages) {
+      const src = readFileSync(path.join(process.cwd(), rel), 'utf8');
+      expect(src.includes('helix_leaderboard')).toBe(false);
+      expect(src.includes('helix_challenges')).toBe(false);
+    }
   });
 });
