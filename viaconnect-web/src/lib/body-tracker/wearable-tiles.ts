@@ -303,6 +303,9 @@ export const CONNECTIONS_FOOTER = 'Bio Optimization Score uses these sources.';
 
 export const CONNECTIONS_LEAD = 'Connect your devices.';
 
+/** Canonical wearables path. /wearables redirects here. */
+export const CONNECTIONS_PATH = '/body-tracker/connections';
+
 // Prompt 230 Task 9: the contributor column's say-once UNKNOWN disclosure.
 // Centralized here alongside CONNECTIONS_FOOTER / CONNECTIONS_LEAD /
 // BOS_UNKNOWN_NEVER_ZERO_COPY so every Connections copy string lives in one

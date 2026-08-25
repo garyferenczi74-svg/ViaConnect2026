@@ -3,6 +3,9 @@ import {
   MORNING_CARD_SCORE_LABEL,
   MORNING_CARD_PENDING_SCORE,
   MORNING_CONTRIBUTOR_PENDING_NOTE,
+  MORNING_CONTRIBUTOR_PENDING_VALUE,
+  MORNING_CONNECT_YOUR_DEVICE,
+  MORNING_CONNECTIONS_HREF,
   morningScoreAria,
 } from '../copy';
 
@@ -23,5 +26,8 @@ describe('morning-card copy', () => {
     expect(MORNING_CONTRIBUTOR_PENDING_NOTE).not.toMatch(/Helix/i);
     expect(MORNING_CONTRIBUTOR_PENDING_NOTE).not.toMatch(/Vitality/i);
     expect(MORNING_CONTRIBUTOR_PENDING_NOTE).not.toMatch(/[—–]/);
+    expect(MORNING_CONTRIBUTOR_PENDING_VALUE).toBe('UNKNOWN');
+    expect(MORNING_CONNECT_YOUR_DEVICE).toBe('Connect your device');
+    expect(MORNING_CONNECTIONS_HREF).toBe('/body-tracker/connections');
   });
 });

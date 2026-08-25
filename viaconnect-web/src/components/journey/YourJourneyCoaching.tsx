@@ -36,14 +36,16 @@ import { safeLog } from "@/lib/utils/safe-log";
 import { useHannahDailyNote } from "@/hooks/journey/useHannahDailyNote";
 import { heroGaugeScore } from "@/components/journey/coaching/heroHelpers";
 import { useBOSCurrent } from "@/hooks/use-bos-current";
-import { toDisplayBosScore } from "@/lib/scoring/bos-display";
+import { resolveHonestBosDisplay, toDisplayBosScore } from "@/lib/scoring/bos-display";
 import { formatMacroLabel, kcalRemaining, flatSparkline, goalProgressPct } from "@/components/journey/coaching/lowerHelpers";
 import { useJourneyGraphSeries, type PillarKey } from "@/components/journey/coaching/useJourneyGraphSeries";
 import { type JourneyRange } from "@/components/journey/coaching/journeyGraphWindow";
 import { buildLinePath } from "@/components/journey/coaching/journeyPathBuilder";
 import { useUserDashboardData } from "@/hooks/useUserDashboardData";
 import { useActiveBodyGoal, tierToStateWord } from "@/hooks/journey/useActiveBodyGoal";
-import { getWearableSource } from "@/lib/scoring/sources/wearable-source";
+import { useWearableTilesSnapshot } from "@/hooks/useWearableTilesSnapshot";
+import { wearableSyncLineFromTiles } from "@/lib/body-tracker/wearable-sync-line";
+import { LAST_SYNC_LABELS } from "@/lib/body-tracker/last-sync-state";
 import { useTodayStats } from "@/hooks/journey/useTodayStats";
 import { useMetabolicVitals } from "@/hooks/journey/useMetabolicVitals";
 import { useTodayMealLogs } from "@/hooks/journey/useTodayMealLogs";
@@ -92,13 +94,13 @@ function Shimmer({ w, h, radius = 6 }: { w: number | string; h: number | string;
 // Daily Scores coloring uses getScoreColor (score-VALUE-based), NOT a fixed per-pillar
 // palette. There is no conflicting canonical per-pillar source, so the mockup hex stand.
 // If a per-pillar canonical palette is established later, update this array.
-const PILLARS: { key: string; label: string; value: number; delta: number; color: string; icon: LucideIcon; hero?: boolean }[] = [
+const PILLARS: { key: string; label: string; value: number | null; delta: number | null; color: string; icon: LucideIcon; hero?: boolean }[] = [
   { key: "sleep", label: "Sleep Quality", value: 42, delta: -2, color: "#7B6FB0", icon: Moon },
   { key: "energy", label: "Energy Level", value: 58, delta: 3, color: "#D9A441", icon: Zap },
   { key: "mood", label: "Mood and Stress", value: 51, delta: 4, color: "#B75E18", icon: Smile },
   { key: "nutrition", label: "Nutrition", value: 72, delta: 5, color: "#46C18E", icon: Salad },
   { key: "activity", label: "Physical Activity", value: 60, delta: 3, color: "#4F7FB5", icon: Activity },
-  { key: "overall", label: "Bio Optimization", value: 62, delta: 4, color: "#2DA5A0", icon: HeartPulse, hero: true },
+  { key: "overall", label: "Bio Optimization", value: null, delta: null, color: "#2DA5A0", icon: HeartPulse, hero: true },
   { key: "hydration", label: "Hydration", value: 64, delta: 6, color: "#38BDD8", icon: Droplet },
 ];
 
@@ -109,7 +111,13 @@ function Edge({ active, color }: { active: boolean; color?: string }) {
   return <div aria-hidden style={{ position: "absolute", top: 0, left: 18, right: 18, height: 2, borderRadius: 2, background: `linear-gradient(90deg, transparent, ${color || (active ? C.teal : C.line)}, transparent)` }} className={active ? "vc-edge-active" : ""} />;
 }
 function bandLabel(v: number): string { return v >= 75 ? "Strong" : v >= 60 ? "Solid" : v >= 40 ? "Fair" : "Low"; }
-function Delta({ v, unit }: { v: number; unit?: string }) { const up = v >= 0; return <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 11, fontWeight: 600, color: up ? C.teal : C.orange }}>{up ? <TrendingUp size={11} strokeWidth={SW} /> : <TrendingDown size={11} strokeWidth={SW} />}{up ? "+" : ""}{v}{unit || ""}</span>; }
+function Delta({ v, unit }: { v: number | null; unit?: string }) {
+  if (v === null || !Number.isFinite(v)) {
+    return <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 11, fontWeight: 600, color: C.muted }}>--</span>;
+  }
+  const up = v >= 0;
+  return <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 11, fontWeight: 600, color: up ? C.teal : C.orange }}>{up ? <TrendingUp size={11} strokeWidth={SW} /> : <TrendingDown size={11} strokeWidth={SW} />}{up ? "+" : ""}{v}{unit || ""}</span>;
+}
 
 function PlasmaRing({ value, color, size = 40 }: { value: number | null; color: string; size?: number }) {
   const sw = Math.max(3, size * 0.085);
@@ -423,8 +431,8 @@ function Journey({ userId }: { userId: string | null }) {
 // ProfileCard now accepts real data props. Markup/styles unchanged from verbatim port.
 // Avatar: real photo from profiles.avatar_url when present; else initial tile (honest).
 // Name: from getDisplayName(); Goal chip: from useActiveBodyGoal.goalLabel.
-// Last sync line: from wearable detection (getWearableSource). "Not synced yet" when no
-// active integration has synced. "No wearable connected" when no active integration.
+// Last sync line: first-class tiles + last-sync-state only. Not connected
+// until a real last-sync. Never invents a wearable scoring-source sync.
 // Hannah note (216d): compiled daily note from runHannahCompilation, never stateWord stub.
 function ProfileCard({
   userId,
@@ -567,7 +575,7 @@ function Hero({
   const livePillars = PILLARS.map((p) => {
     const raw = pillarValues[p.key];
     if (p.key === "overall") {
-      return { ...p, value: toDisplayBosScore(raw) };
+      return { ...p, value: toDisplayBosScore(raw), delta: null };
     }
     return { ...p, value: heroGaugeScore(raw ?? 0) };
   });
@@ -1207,8 +1215,8 @@ function AcceleratorsTab({ accel, activeHubs, narrativeLine, loading }: { accel:
 export function YourJourneyCoaching({ userId: _userId }: { userId: string | null }) {
   const userId = _userId;
 
-  // Component-level refreshTick: shared counter for the 5 inline useEffect hooks.
-  // Window focus refetch (500ms debounced) re-runs wearable, avatar, leanBodyMass,
+  // Component-level refreshTick: shared counter for the inline useEffect hooks.
+  // Window focus refetch (500ms debounced) re-runs avatar, leanBodyMass,
   // energyBalance, and nutritionLogs reads when the user returns to the tab.
   const [refreshTick, setRefreshTick] = useState(0);
   const refreshDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1245,8 +1253,10 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
 
   // J-T2: Bio Optimization Score SSOT is GET /api/bos/current.
   // NEVER reads profiles.vitality_score. Never fakes 0 for an uncomputable score.
+  // Empty named contributors stay null / UNKNOWN / --, never a silent 62.
   const { profile: dashProfile } = useUserDashboardData();
-  const bioDashScore: number | null = toDisplayBosScore(bosCurrent?.score);
+  const honestBos = resolveHonestBosDisplay(bosCurrent ?? { score: null, contributors: [] });
+  const bioDashScore: number | null = honestBos.score;
   const bioDashTier: string | null = dashProfile?.bio_optimization_tier ?? null;
 
   // J-T2: active body_goals row -> goal chip label.
@@ -1262,56 +1272,10 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
   // J-T3: today's meal_logs macros (separate from nutrition_logs already read below).
   const todayMealLogs = useTodayMealLogs(userId);
 
-  // J-T2: wearable status from getWearableSource.
-  // Drives "No wearable connected" / last-sync label in ProfileCard.
-  // Fail-open: error -> { connected: false, lastSyncLabel: "Not synced yet" }.
-  const [wearableConnected, setWearableConnected] = useState<boolean>(false);
-  const [lastSyncLabel, setLastSyncLabel] = useState<string>("Not synced yet");
-  useEffect(() => {
-    if (!userId) {
-      setWearableConnected(false);
-      setLastSyncLabel("Not synced yet");
-      return;
-    }
-    let active = true;
-    (async () => {
-      try {
-        const supabase = createClient();
-        const ws = await withTimeout(
-          getWearableSource(userId, supabase),
-          4000,
-          "YourJourneyCoaching.wearableSource",
-        );
-        if (!active) return;
-        const count = ws.source_specific?.active_integration_count ?? 0;
-        const connected = count > 0;
-        setWearableConnected(connected);
-        if (!connected) {
-          setLastSyncLabel("No wearable connected");
-          return;
-        }
-        if (!ws.last_engaged_at) {
-          setLastSyncLabel("Not synced yet");
-          return;
-        }
-        const syncMs = Date.now() - new Date(ws.last_engaged_at).getTime();
-        const syncDays = Math.floor(syncMs / (24 * 60 * 60 * 1000));
-        if (syncDays === 0) {
-          setLastSyncLabel("Synced today");
-        } else if (syncDays === 1) {
-          setLastSyncLabel("Synced yesterday");
-        } else {
-          setLastSyncLabel(`Synced ${syncDays} days ago`);
-        }
-      } catch (err) {
-        if (!active) return;
-        safeLog.warn("YourJourneyCoaching", "wearableSource read failed, failing open", { error: err });
-        setWearableConnected(false);
-        setLastSyncLabel("Not synced yet");
-      }
-    })();
-    return () => { active = false; };
-  }, [userId, refreshTick]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Wearable last-sync from first-class tiles + last-sync-state only.
+  const wearableSnapshot = useWearableTilesSnapshot();
+  const wearableSyncLine = wearableSyncLineFromTiles(wearableSnapshot.tiles);
+  const lastSyncLabel = userId ? wearableSyncLine.lastSyncLabel : LAST_SYNC_LABELS.not_connected;
 
   // Display name: resolved async via getDisplayName (mirrors ProfileCard.tsx approach).
   const [displayName, setDisplayName] = useState<string>("");
@@ -1431,7 +1395,7 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
   // calculateDailyScores + same reads as DailyScoresPanel). Null -> 0 so the
   // GaugeCard renders in its existing computing/0 state (same I-T2a behaviour).
   // "overall" key maps to GET /api/bos/current (same SSOT as the dashboard card).
-  const overallCurrent = toDisplayBosScore(bosCurrent?.score);
+  const overallCurrent = honestBos.score;
   const hydrationPct = hydrationData?.percentage_of_target ?? null;
 
   const pillarValues: PillarValues = {

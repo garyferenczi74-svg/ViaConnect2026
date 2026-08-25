@@ -226,25 +226,11 @@ export const SURFACES: SurfaceCard[] = [
   },
 ];
 
-export interface ConnectionSource {
-  id: string;
-  label: string;
-  // Always false in this prompt; the ingestion series wires real status
-  // in a later release.
-  connected: boolean;
-}
-
 export const CONNECTIONS = {
   href: "/body-tracker/connections",
   icon: Plug,
   title: "Connections",
   description: "Sync the apps and wearables that feed every surface above.",
-  sources: [
-    { id: "whoop", label: "Whoop", connected: false },
-    { id: "hume", label: "Hume Body Pod", connected: false },
-    { id: "apple_health", label: "Apple Health", connected: false },
-    { id: "oura", label: "Oura", connected: false },
-  ] as ConnectionSource[],
 };
 
 export const GUIDE = {

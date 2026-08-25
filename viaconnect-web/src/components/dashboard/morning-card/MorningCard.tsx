@@ -1,8 +1,8 @@
 'use client';
 
 // Score-first morning card: Bio Optimization Score from /api/bos/current,
-// one TodaysProtocol action, eight marketing chips as DISPLAY only.
-// Rewards gamification stays off this card. Contributor list is pending until Brief 12.
+// one TodaysProtocol action, seven Connections contributor chips as DISPLAY only.
+// Rewards gamification stays off this card. Chip/detail use last-sync SSOT.
 
 import { useMemo, useState } from 'react';
 import { useBOSCurrent } from '@/hooks/use-bos-current';
@@ -17,8 +17,9 @@ import {
   MORNING_CARD_SCORE_LABEL,
   morningScoreAria,
 } from '@/lib/dashboard/morning-card/copy';
+import { useWearableTilesSnapshot } from '@/hooks/useWearableTilesSnapshot';
 import { buildMorningChips, chipByKey } from '@/lib/dashboard/morning-card/contributors';
-import { MARKETING_CHIP_KEYS, type MarketingChipKey } from '@/lib/dashboard/morning-card/keys';
+import { MORNING_CHIP_KEYS, type MorningChipKey } from '@/lib/dashboard/morning-card/keys';
 import {
   firstIncompleteProtocolAction,
   type MorningProtocolBuckets,
@@ -53,12 +54,20 @@ export function MorningCard() {
   const { data, error, isLoading, refetch } = useBOSCurrent();
   const schedule = useDailyScheduleView();
   const sleepTileSynced = useSleepTileSynced();
+  const wearableSnapshot = useWearableTilesSnapshot();
   const habitSleepPair = resolveHabitSleepPair({
     sleepTileSynced,
     schedule: schedule.status === 'ready' ? schedule.view : null,
   });
-  const chips = useMemo(() => buildMorningChips(), []);
-  const [selectedKey, setSelectedKey] = useState<MarketingChipKey | null>(null);
+  const chips = useMemo(
+    () =>
+      buildMorningChips({
+        scoreDetail: wearableSnapshot.scoreDetail,
+        lastSyncSynced: sleepTileSynced,
+      }),
+    [wearableSnapshot.scoreDetail, sleepTileSynced],
+  );
+  const [selectedKey, setSelectedKey] = useState<MorningChipKey | null>(null);
   const [taking, setTaking] = useState(false);
 
   const cta = firstIncompleteProtocolAction(
@@ -96,8 +105,8 @@ export function MorningCard() {
         <div className="h-3 w-40 animate-pulse rounded-full bg-white/10" />
         <div className="mt-4 h-16 w-28 animate-pulse rounded-xl bg-white/10" />
         <div className="mt-4 h-11 w-48 animate-pulse rounded-xl bg-white/10" />
-        <div className="mt-4 grid grid-cols-4 gap-2 md:grid-cols-8">
-          {MARKETING_CHIP_KEYS.map((key) => (
+        <div className="mt-4 grid grid-cols-4 gap-2 md:grid-cols-7">
+          {MORNING_CHIP_KEYS.map((key) => (
             <div key={key} className="h-11 animate-pulse rounded-xl bg-white/10" />
           ))}
         </div>

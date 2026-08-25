@@ -1,56 +1,66 @@
 import { describe, it, expect } from 'vitest';
 import {
-  MARKETING_CHIP_KEYS,
-  MARKETING_CHIP_LABELS,
-  MARKETING_CHIP_ICONS,
-  isMarketingChipKey,
+  CONTRIBUTOR_METRICS,
+  METRIC_LABELS,
+} from '@/lib/body-tracker/contributor-rows';
+import {
+  MORNING_CHIP_KEYS,
+  MORNING_CHIP_LABELS,
+  MORNING_CHIP_ICONS,
+  isMorningChipKey,
 } from '../keys';
 
-describe('morning-card marketing keys', () => {
-  it('exports exactly the eight marketing chips in display order', () => {
-    expect([...MARKETING_CHIP_KEYS]).toEqual([
-      'recovery',
-      'sleep',
-      'strain',
-      'regimen',
-      'nutrients',
-      'symptoms',
-      'metabolic',
-      'immune',
+describe('morning-card contributor keys', () => {
+  it('exports exactly the 7 METRIC_LABELS in Connections order', () => {
+    expect([...MORNING_CHIP_KEYS]).toEqual([...CONTRIBUTOR_METRICS]);
+    expect(MORNING_CHIP_KEYS).toHaveLength(7);
+    expect(MORNING_CHIP_KEYS.map((key) => MORNING_CHIP_LABELS[key])).toEqual([
+      'HRV',
+      'Sleep',
+      'Resting HR',
+      'Recovery',
+      'Workouts',
+      'Body comp.',
+      'Steps',
     ]);
-    expect(MARKETING_CHIP_KEYS).toHaveLength(8);
+    expect(MORNING_CHIP_LABELS).toEqual(METRIC_LABELS);
   });
 
-  it('does not include Helix or engagement-lever keys', () => {
-    const keys: readonly string[] = MARKETING_CHIP_KEYS;
+  it('does not include the eight marketing keys or Helix', () => {
+    const keys: readonly string[] = MORNING_CHIP_KEYS;
+    expect(keys).not.toContain('strain');
+    expect(keys).not.toContain('regimen');
+    expect(keys).not.toContain('nutrients');
+    expect(keys).not.toContain('symptoms');
+    expect(keys).not.toContain('metabolic');
+    expect(keys).not.toContain('immune');
     expect(keys).not.toContain('helix_challenges');
     expect(keys).not.toContain('helix');
-    expect(keys).not.toContain('plug_ins');
-    expect(keys).not.toContain('body_tracker');
   });
 
-  it('labels every key in title case without Vitality', () => {
-    for (const key of MARKETING_CHIP_KEYS) {
-      expect(MARKETING_CHIP_LABELS[key].length).toBeGreaterThan(0);
-      expect(MARKETING_CHIP_LABELS[key]).not.toMatch(/Vitality/i);
-      expect(MARKETING_CHIP_LABELS[key]).not.toMatch(/Helix/i);
+  it('labels every key without Vitality or Helix', () => {
+    for (const key of MORNING_CHIP_KEYS) {
+      expect(MORNING_CHIP_LABELS[key].length).toBeGreaterThan(0);
+      expect(MORNING_CHIP_LABELS[key]).not.toMatch(/Vitality/i);
+      expect(MORNING_CHIP_LABELS[key]).not.toMatch(/Helix/i);
     }
   });
 
   it('maps each key to a Lucide icon name', () => {
-    expect(MARKETING_CHIP_ICONS.recovery).toBe('Heart');
-    expect(MARKETING_CHIP_ICONS.sleep).toBe('Moon');
-    expect(MARKETING_CHIP_ICONS.strain).toBe('Activity');
-    expect(MARKETING_CHIP_ICONS.regimen).toBe('Pill');
-    expect(MARKETING_CHIP_ICONS.nutrients).toBe('Apple');
-    expect(MARKETING_CHIP_ICONS.symptoms).toBe('ClipboardList');
-    expect(MARKETING_CHIP_ICONS.metabolic).toBe('Leaf');
-    expect(MARKETING_CHIP_ICONS.immune).toBe('Shield');
+    expect(MORNING_CHIP_ICONS.hrv).toBe('HeartPulse');
+    expect(MORNING_CHIP_ICONS.sleep).toBe('Moon');
+    expect(MORNING_CHIP_ICONS.resting_hr).toBe('Gauge');
+    expect(MORNING_CHIP_ICONS.recovery).toBe('Activity');
+    expect(MORNING_CHIP_ICONS.workouts).toBe('Dumbbell');
+    expect(MORNING_CHIP_ICONS.body_composition).toBe('Droplet');
+    expect(MORNING_CHIP_ICONS.steps).toBe('Footprints');
   });
 
   it('narrows known keys and rejects unknown strings', () => {
-    expect(isMarketingChipKey('sleep')).toBe(true);
-    expect(isMarketingChipKey('helix_challenges')).toBe(false);
-    expect(isMarketingChipKey('Vitality')).toBe(false);
+    expect(isMorningChipKey('sleep')).toBe(true);
+    expect(isMorningChipKey('hrv')).toBe(true);
+    expect(isMorningChipKey('helix_challenges')).toBe(false);
+    expect(isMorningChipKey('Vitality')).toBe(false);
+    expect(isMorningChipKey('strain')).toBe(false);
   });
 });

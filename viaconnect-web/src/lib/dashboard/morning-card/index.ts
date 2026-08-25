@@ -1,9 +1,9 @@
 export {
-  MARKETING_CHIP_KEYS,
-  MARKETING_CHIP_LABELS,
-  MARKETING_CHIP_ICONS,
-  isMarketingChipKey,
-  type MarketingChipKey,
+  MORNING_CHIP_KEYS,
+  MORNING_CHIP_LABELS,
+  MORNING_CHIP_ICONS,
+  isMorningChipKey,
+  type MorningChipKey,
 } from './keys';
 
 export {
@@ -17,6 +17,8 @@ export {
   MORNING_CONTRIBUTOR_PENDING_NOTE,
   MORNING_CONTRIBUTOR_PENDING_VALUE,
   MORNING_CONTRIBUTOR_DISAGREE,
+  MORNING_CONNECT_YOUR_DEVICE,
+  MORNING_CONNECTIONS_HREF,
   morningCtaTakeLabel,
   morningScoreAria,
 } from './copy';
@@ -31,11 +33,11 @@ export {
 } from './source-status';
 
 export {
-  MARKETING_CHIP_CONTRIBUTORS,
   buildMorningChips,
   chipByKey,
   type MorningContributor,
   type MorningChipView,
+  type BuildMorningChipsInput,
 } from './contributors';
 
 export {

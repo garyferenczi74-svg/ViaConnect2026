@@ -1,15 +1,27 @@
-// Contributor catalog for the eight marketing chips.
-// DISPLAY only. Live rows stay pending until Brief 12 honest sync.
-// Does not read last_sync_at. Does not rewrite score math.
+// Contributor chips for the morning card. Same 7 CONTRIBUTOR_METRICS
+// and last-sync gate as Connections (wearable-tiles / scoreDetail /
+// buildContributorRows). Coming soon or not connected stays UNKNOWN
+// or Connect your device. Never invents HRV/RHR or last-sync.
 
+import type { DimensionSourceRow } from '@/lib/body-tracker/source-disagreement';
 import {
-  MARKETING_CHIP_KEYS,
-  MARKETING_CHIP_LABELS,
-  type MarketingChipKey,
+  buildContributorRows,
+  matchRowForMetric,
+  type ContributorMetric,
+} from '@/lib/body-tracker/contributor-rows';
+import { WEARABLE_TILE_SPECS } from '@/lib/body-tracker/wearable-tiles';
+import {
+  MORNING_CHIP_KEYS,
+  MORNING_CHIP_LABELS,
+  type MorningChipKey,
 } from './keys';
-import { MORNING_CONTRIBUTOR_PENDING_VALUE } from './copy';
 import {
-  sourceStatusUntilBrief12,
+  MORNING_CONNECTIONS_HREF,
+  MORNING_CONNECT_YOUR_DEVICE,
+  MORNING_CONTRIBUTOR_PENDING_VALUE,
+} from './copy';
+import {
+  classifySourceStatus,
   type MorningSourceStatus,
 } from './source-status';
 
@@ -18,58 +30,99 @@ export interface MorningContributor {
   name: string;
   sourceStatus: MorningSourceStatus;
   displayValue: string;
+  href: string;
 }
 
 export interface MorningChipView {
-  key: MarketingChipKey;
+  key: MorningChipKey;
   label: string;
   sourceStatus: MorningSourceStatus;
+  displayValue: string;
+  href: string;
   contributors: MorningContributor[];
 }
 
-export const MARKETING_CHIP_CONTRIBUTORS: Record<
-  MarketingChipKey,
-  readonly { id: string; name: string }[]
-> = {
-  recovery: [
-    { id: 'whoop', name: 'Whoop' },
-    { id: 'oura', name: 'Oura' },
-  ],
-  sleep: [
-    { id: 'whoop', name: 'Whoop' },
-    { id: 'oura', name: 'Oura' },
-    { id: 'apple_health', name: 'Apple Health' },
-  ],
-  strain: [{ id: 'whoop', name: 'Whoop' }],
-  regimen: [{ id: 'protocol', name: 'Protocol' }],
-  nutrients: [{ id: 'nutrition_log', name: 'Nutrition log' }],
-  symptoms: [{ id: 'daily_checkin', name: 'Daily check-in' }],
-  metabolic: [
-    { id: 'hume', name: 'Hume' },
-    { id: 'apple_health', name: 'Apple Health' },
-  ],
-  immune: [{ id: 'labs', name: 'Labs' }],
-};
+export interface BuildMorningChipsInput {
+  scoreDetail?: DimensionSourceRow[];
+  lastSyncSynced?: boolean;
+}
 
-function pendingContributor(id: string, name: string): MorningContributor {
+function unknownSleepRow(): DimensionSourceRow {
   return {
-    id,
-    name,
-    sourceStatus: sourceStatusUntilBrief12(),
+    dimension: 'sleep',
+    source: null,
+    value: null,
     displayValue: MORNING_CONTRIBUTOR_PENDING_VALUE,
+    status: 'pending',
+    showRing: false,
+    manual: false,
+    disagreement: null,
+    sources: [],
   };
 }
 
-/** Live morning-card chips. Every source is pending until Brief 12. */
-export function buildMorningChips(): MorningChipView[] {
-  return MARKETING_CHIP_KEYS.map((key) => {
-    const contributors = MARKETING_CHIP_CONTRIBUTORS[key].map((c) =>
-      pendingContributor(c.id, c.name),
-    );
+function gateSleepContributorRows(
+  rows: DimensionSourceRow[],
+  lastSyncSynced: boolean,
+): DimensionSourceRow[] {
+  if (lastSyncSynced) return rows;
+  return rows.map((row) => (row.dimension === 'sleep' ? unknownSleepRow() : row));
+}
+
+function sourceName(id: string): string {
+  const spec = WEARABLE_TILE_SPECS.find((row) => row.id === id);
+  return spec?.name ?? id;
+}
+
+function honestDisplayValue(value: string | null | undefined): string {
+  if (typeof value !== 'string') return MORNING_CONTRIBUTOR_PENDING_VALUE;
+  const trimmed = value.trim();
+  if (trimmed.length === 0) return MORNING_CONTRIBUTOR_PENDING_VALUE;
+  return trimmed;
+}
+
+export function buildMorningChips(input: BuildMorningChipsInput = {}): MorningChipView[] {
+  const gated = gateSleepContributorRows(input.scoreDetail ?? [], input.lastSyncSynced === true);
+  const rows = buildContributorRows(gated);
+
+  return rows.map((row) => {
+    const key = row.metric as MorningChipKey;
+    const matched = matchRowForMetric(row.metric as ContributorMetric, gated);
+    const connected = row.connectedSource !== null;
+    const disagree = connected && matched?.disagreement?.showDisagreeChrome === true;
+    const sourceStatus = classifySourceStatus({
+      hasNamedSource: connected,
+      devicesDisagree: disagree,
+    });
+    const displayValue = connected
+      ? honestDisplayValue(matched?.displayValue)
+      : MORNING_CONTRIBUTOR_PENDING_VALUE;
+    const contributors: MorningContributor[] = connected && row.connectedSource
+      ? [
+          {
+            id: row.connectedSource,
+            name: sourceName(row.connectedSource),
+            sourceStatus,
+            displayValue,
+            href: MORNING_CONNECTIONS_HREF,
+          },
+        ]
+      : [
+          {
+            id: 'connect',
+            name: MORNING_CONNECT_YOUR_DEVICE,
+            sourceStatus: 'pending',
+            displayValue: MORNING_CONTRIBUTOR_PENDING_VALUE,
+            href: MORNING_CONNECTIONS_HREF,
+          },
+        ];
+
     return {
       key,
-      label: MARKETING_CHIP_LABELS[key],
-      sourceStatus: sourceStatusUntilBrief12(),
+      label: MORNING_CHIP_LABELS[key] ?? row.label,
+      sourceStatus,
+      displayValue,
+      href: MORNING_CONNECTIONS_HREF,
       contributors,
     };
   });
@@ -77,7 +130,9 @@ export function buildMorningChips(): MorningChipView[] {
 
 export function chipByKey(
   chips: readonly MorningChipView[],
-  key: MarketingChipKey,
+  key: MorningChipKey,
 ): MorningChipView | null {
   return chips.find((c) => c.key === key) ?? null;
 }
+
+export const MORNING_CHIP_ORDER = MORNING_CHIP_KEYS;
