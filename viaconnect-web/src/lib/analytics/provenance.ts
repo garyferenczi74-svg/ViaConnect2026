@@ -188,6 +188,10 @@ export function leanMassDisplay(input: {
   if (measured !== null && measuredChip) {
     return { text: `${measured.toFixed(1)} lb`, chip: measuredChip };
   }
+  // Unsourced measured lean that is not the weight x (1 - bf) identity stays "--".
+  if (measured !== null) {
+    return { text: ANALYTICS_PROVENANCE_EMPTY, chip: null };
+  }
   const derived = derivedLeanLbs(input.weightLbs, input.bodyFatPct);
   if (derived !== null) {
     return { text: `${derived.toFixed(1)} lb`, chip: 'estimated' };

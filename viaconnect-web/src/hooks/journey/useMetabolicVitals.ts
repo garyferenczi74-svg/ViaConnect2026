@@ -12,7 +12,8 @@
  * 20260416000080_body_tracker_manual_input.sql.
  * Columns used: hrv_ms, resting_hr_bpm, respiratory_rate, blood_oxygen_pct,
  * created_at, plus the parent entry source fields for Brief 32 chips.
- * Does not read wearable_daily_vitals. native_health_bridge stays off.
+ * Parent entry source fields are joined for Brief 32 chips. Metabolic
+ * values come only from body_tracker_metabolic.
  *
  * Resilience: withTimeout(4000) + try/catch fail-open + safeLog.
  * Auth scoped: filter by user_id = userId via RLS.

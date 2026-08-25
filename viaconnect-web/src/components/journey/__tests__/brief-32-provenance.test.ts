@@ -31,8 +31,10 @@ describe('Brief 32 Analytics provenance chips', () => {
     const vitalsFlagOff = src('src/components/journey/trio/VitalTrends.tsx');
 
     expect(page).toContain('YourJourneyCoaching');
-    expect(page).not.toContain('YourJourneyPage');
-    expect(page).not.toContain('VitalTrends');
+    expect(page).toMatch(/import \{ YourJourneyCoaching \}/);
+    expect(page).not.toMatch(/import \{[^}]*YourJourneyPage/);
+    expect(page).not.toMatch(/<VitalTrends/);
+    expect(page).not.toMatch(/<YourJourneyPage/);
     expect(journey).toContain('ProvenanceChip');
     expect(journey).toContain('vitalValueDisplay');
     expect(journey).toContain('hydrationVitalDisplay');

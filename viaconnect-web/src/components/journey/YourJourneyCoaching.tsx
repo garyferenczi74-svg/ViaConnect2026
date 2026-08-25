@@ -1619,7 +1619,6 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
   const hydrationBarPct = hydrationVital.chip && hydrationPct !== null ? Math.min(100, Math.round(hydrationPct)) : 0;
 
   // Vitals: print a number only with a chip from the exact vocabulary.
-  // native_health_bridge stays off — do not mint HRV/RHR from wearable_daily_vitals.
   const vitHrv = vitalValueDisplay({ value: metabolicVitals.hrv, unit: "ms", sourceName: metabolicVitals.sourceName, round: true });
   const vitRestHr = vitalValueDisplay({ value: metabolicVitals.restingHr, unit: "bpm", sourceName: metabolicVitals.sourceName, round: true });
   const vitResp = vitalValueDisplay({ value: metabolicVitals.respiratory, unit: "brpm", sourceName: metabolicVitals.sourceName });
