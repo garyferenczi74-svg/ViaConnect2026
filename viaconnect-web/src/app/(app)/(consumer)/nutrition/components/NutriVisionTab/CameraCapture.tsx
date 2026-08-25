@@ -19,6 +19,7 @@
 // Hard rules honored: no em or en dashes, no emojis, no any.
 
 import { useCallback, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Camera, CreditCard, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { detectPlatform, type CaptureResult, type CaptureSource } from '@/lib/capacitor/camera-capture';
 import { WebCameraPreview } from './WebCameraPreview';
@@ -34,6 +35,7 @@ interface CameraCaptureProps {
 }
 
 export function CameraCapture({ onCapture, isCapturing, error, onWebCaptureResult }: CameraCaptureProps) {
+  const router = useRouter();
   const [showWebPreview, setShowWebPreview] = useState(false);
 
   const handleTakePhoto = useCallback(() => {
@@ -59,6 +61,16 @@ export function CameraCapture({ onCapture, isCapturing, error, onWebCaptureResul
   const handleWebCancel = useCallback(() => {
     setShowWebPreview(false);
   }, []);
+
+  const handleWebUploadPhoto = useCallback(() => {
+    setShowWebPreview(false);
+    onCapture('gallery');
+  }, [onCapture]);
+
+  const handleWebLogManually = useCallback(() => {
+    setShowWebPreview(false);
+    router.push('/nutrition/log-meal');
+  }, [router]);
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-[#1E3054]/45 p-5 backdrop-blur-md">
@@ -119,6 +131,8 @@ export function CameraCapture({ onCapture, isCapturing, error, onWebCaptureResul
         open={showWebPreview}
         onCancel={handleWebCancel}
         onConfirm={handleWebConfirm}
+        onUploadPhoto={handleWebUploadPhoto}
+        onLogManually={handleWebLogManually}
       />
     </div>
   );

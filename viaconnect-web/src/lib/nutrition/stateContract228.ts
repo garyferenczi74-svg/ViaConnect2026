@@ -9,7 +9,7 @@
  * Rule 6: permission-dependent features check permission first
  */
 
-export const NUTRIVISION_START_STREAM_TIMEOUT_MS = 8000;
+export const NUTRIVISION_START_STREAM_TIMEOUT_MS = 3000;
 /** Native / plugin camera capture safety timeout. Gallery picks are not timed. */
 export const NUTRIVISION_CAMERA_CAPTURE_TIMEOUT_MS = 15000;
 

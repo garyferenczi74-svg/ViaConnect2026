@@ -429,11 +429,25 @@ export default function NutriVisionTab() {
     setShowWebCameraPreview(false);
   }, []);
 
-  // Prompt 190: Photo-path fallback when getUserMedia is denied or
-  // unavailable. Closes the overlay and opens a native file input WITH
-  // capture="environment" (the device camera). The Upload tile never takes
-  // this path; its picker carries no capture attribute. Fail-open: a cancel
-  // returns to idle silently, anything else surfaces inline.
+  // Brief 33: fail-path Upload uses the existing gallery picker (no capture
+  // attribute). Overlay closes back to idle while the library picker opens.
+  const handleWebCameraUploadPhoto = useCallback(() => {
+    setShowWebCameraPreview(false);
+    void onCapture('gallery');
+  }, [onCapture]);
+
+  // Brief 33: fail-path Log manually opens Log a Full Meal / MealCard.
+  // No photo blob is required before capture.
+  const handleWebCameraLogManually = useCallback(() => {
+    setShowWebCameraPreview(false);
+    router.push('/nutrition/log-meal');
+  }, [router]);
+
+  // Prompt 190 / Brief 33: tertiary retry only. Native file input WITH
+  // capture="environment" (the device camera). Never the only fail path.
+  // The Upload tile never takes this path; its picker carries no capture
+  // attribute. Fail-open: a cancel returns to idle silently, anything else
+  // surfaces inline.
   const handleWebCameraNativeFallback = useCallback(async () => {
     setShowWebCameraPreview(false);
     setAnalysisError(null);
@@ -448,7 +462,7 @@ export default function NutriVisionTab() {
     } catch (err) {
       setPhase('idle');
       if (!(err instanceof CaptureCancelledError)) {
-        setAnalysisError(err instanceof Error ? err.message : 'Could not capture a photo. Try again.');
+        setAnalysisError('Could not capture a photo. Upload a photo or log the meal manually.');
       }
     }
   }, [analysis]);
@@ -732,6 +746,8 @@ export default function NutriVisionTab() {
         open={showWebCameraPreview}
         onCancel={handleWebCameraCancel}
         onConfirm={handleWebCameraConfirm}
+        onUploadPhoto={handleWebCameraUploadPhoto}
+        onLogManually={handleWebCameraLogManually}
         onNativeFallback={handleWebCameraNativeFallback}
       />
 
