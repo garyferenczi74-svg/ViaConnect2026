@@ -45,22 +45,32 @@ export function WearableTileCard({
     !tile.action.configured &&
     tile.lastSyncState === 'not_connected';
   const liveDot = connected ? 'bg-teal' : needsReconnect ? 'bg-copper' : 'bg-white/30';
+  const focusRing =
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal/60';
   const cardClassName = selected
-    ? 'relative overflow-hidden rounded-[24px] border border-teal bg-teal/5 p-4 pl-6 ring-1 ring-teal backdrop-blur-md'
-    : 'relative rounded-[24px] border border-white/[0.08] bg-card p-4 backdrop-blur-md';
+    ? `relative overflow-hidden rounded-[24px] border border-teal bg-teal/5 p-4 pl-6 ring-1 ring-teal backdrop-blur-md ${focusRing}`
+    : `relative rounded-[24px] border border-white/[0.08] bg-card p-4 backdrop-blur-md ${focusRing}`;
   const titleClassName = selected
     ? 'text-sm font-bold leading-snug text-teal whitespace-normal break-words'
     : 'text-sm font-semibold leading-snug text-white whitespace-normal break-words';
 
   return (
+    // Task 10 a11y: role="option" inside ConnectionsSurface's
+    // role="listbox" (aria-selected is not a valid attribute on the plain
+    // button role Task 4 used here). Roving tabindex: only the selected
+    // card is tabbable; ConnectionsSurface's arrow-key handler moves both
+    // selection and focus across cards. Known tradeoff: an option
+    // containing action buttons (Upload/Connect/Reconnect) is imperfect
+    // ARIA -- the inner buttons stop propagation so they stay
+    // independently operable.
     <article
       data-tile-id={tile.id}
       data-last-sync-state={tile.lastSyncState}
       data-coming-soon={comingSoon ? 'true' : 'false'}
       data-selected={selected ? 'true' : 'false'}
       aria-selected={selected ? 'true' : undefined}
-      role="button"
-      tabIndex={0}
+      role="option"
+      tabIndex={selected ? 0 : -1}
       onClick={() => onSelect?.(tile)}
       onKeyDown={(e) => {
         if (e.target !== e.currentTarget) return;

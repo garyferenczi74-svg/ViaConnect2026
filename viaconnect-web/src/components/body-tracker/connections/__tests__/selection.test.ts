@@ -19,4 +19,19 @@ describe('tile selection state', () => {
     expect(unsel).toContain('data-selected="false"');
     expect(unsel).not.toContain('aria-selected="true"');
   });
+
+  // Task 10 addendum: role="button" with aria-selected is invalid ARIA
+  // (aria-selected is not allowed on role=button). The card is now a
+  // role="option" inside ConnectionsSurface's role="listbox", which makes
+  // aria-selected valid, plus roving tabindex (selected tile tabbable,
+  // others removed from tab order).
+  it('uses role=option (not role=button) with roving tabindex, valid for aria-selected', () => {
+    const sel = renderToStaticMarkup(createElement(WearableTileCard, { tile: apple(), onPrimary: () => undefined, onSelect: () => undefined, selected: true }));
+    const unsel = renderToStaticMarkup(createElement(WearableTileCard, { tile: apple(), onPrimary: () => undefined, onSelect: () => undefined, selected: false }));
+    expect(sel).toContain('role="option"');
+    expect(unsel).toContain('role="option"');
+    expect(sel).not.toContain('role="button"');
+    expect(sel).toContain('tabindex="0"');
+    expect(unsel).toContain('tabindex="-1"');
+  });
 });

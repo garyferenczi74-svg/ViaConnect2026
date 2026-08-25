@@ -94,7 +94,7 @@ describe('Brief 26 Wearable Data 1280 lock', () => {
 
     const surface = src('src/components/body-tracker/connections/ConnectionsSurface.tsx');
     const tile = src('src/components/body-tracker/connections/WearableTileCard.tsx');
-    expect(surface).toContain('min-[1280px]:grid-cols-2');
+    expect(surface).toContain('min-[1280px]:grid-cols-[1fr_1.2fr_1fr]');
     expect(surface).toContain('CONNECTIONS_LEAD');
     expect(CONNECTIONS_LEAD).toBe('Connect your devices.');
     expect(tile).not.toContain('min-[1280px]:block');

@@ -38,7 +38,7 @@ describe('Connections IA contracts', () => {
       src('src/components/body-tracker/connections/ScoreDetailPanel.tsx') +
       src('src/components/body-tracker/connections/ContributorColumn.tsx');
     expect(surface).toContain('CONNECTIONS_FOOTER');
-    expect(surface).toContain('min-[1280px]:grid-cols-2');
+    expect(surface).toContain('min-[1280px]:grid-cols-[1fr_1.2fr_1fr]');
     expect(surface).not.toContain('Hume authorize');
     expect(surface).not.toMatch(/Vitality Score/);
     expect(surface).not.toMatch(/helix.?reward/i);

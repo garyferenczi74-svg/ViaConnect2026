@@ -7,8 +7,9 @@
 // Health and Garmin are honest Coming soon tiles, never connectable here.
 // Hume stays tagged ingest, not OAuth.
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type KeyboardEvent } from 'react';
 import toast from 'react-hot-toast';
+import { AdminPanel } from '@/components/admin/AdminPanelErrorBoundary';
 import { BackToHubLink } from '@/components/body-tracker/hub/BackToHubLink';
 import {
   AppleHealthImportModal,
@@ -159,6 +160,34 @@ export function ConnectionsSurface() {
 
   const selectedTile = tiles.find((t) => t.id === selectedId) ?? null;
 
+  // G76 mobile order (below min-[900px]): cold (nothing connected) leads
+  // with contributors so a first-time user sees why to connect a source;
+  // once anything is connected, sources lead so the user can act on what
+  // they already have. Resets to source order at >= 900px.
+  const anyConnected = tiles.some((t) => t.lastSyncState === 'synced' || t.lastSyncState === 'connected_never_synced');
+
+  // Task 10 a11y: single-select listbox arrow navigation. Attached to the
+  // listbox container so it also catches events bubbling up from an
+  // option's inner action buttons; only ArrowUp/ArrowDown are handled.
+  // Moves both the selection (via setSelectedId) and DOM focus (roving
+  // tabindex means only the newly selected option is tabbable next).
+  const handleSourceListKeyDown = useCallback(
+    (e: KeyboardEvent<HTMLDivElement>) => {
+      if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+      if (tiles.length === 0) return;
+      e.preventDefault();
+      const currentIndex = tiles.findIndex((t) => t.id === selectedId);
+      const delta = e.key === 'ArrowDown' ? 1 : -1;
+      const nextIndex =
+        currentIndex === -1 ? 0 : (currentIndex + delta + tiles.length) % tiles.length;
+      const next = tiles[nextIndex];
+      setSelectedId(next.id);
+      const nextEl = e.currentTarget.querySelector<HTMLElement>(`[data-tile-id="${next.id}"]`);
+      nextEl?.focus();
+    },
+    [tiles, selectedId],
+  );
+
   return (
     <div className="mx-auto w-full max-w-7xl font-instrument space-y-6">
       <BackToHubLink />
@@ -169,33 +198,52 @@ export function ConnectionsSurface() {
         <p className="mt-2 text-sm text-white/60">{CONNECTIONS_LEAD}</p>
       </header>
 
-      <div className="grid grid-cols-1 gap-6 min-[1280px]:grid-cols-2">
-        <div className="space-y-3">
-          {tiles.map((tile) => (
-            <WearableTileCard
-              key={tile.id}
-              tile={tile}
-              onPrimary={onPrimary}
-              onDropXml={tile.id === 'apple_health' ? () => setImportIntent('apple') : undefined}
-              selected={tile.id === selectedId}
-              onSelect={(t) => setSelectedId(t.id)}
-            />
-          ))}
-        </div>
-        <ScoreDetailPanel
-          rows={scoreDetail}
-          lastUpdatedAt={lastUpdatedAt}
-          onOpenDimension={setOpenMetric}
-        />
-      </div>
+      <div className="grid grid-cols-1 gap-6 min-[900px]:grid-cols-2 min-[1280px]:grid-cols-[1fr_1.2fr_1fr]">
+        <AdminPanel name="Sources">
+          <div
+            role="listbox"
+            aria-label="Wearable sources"
+            onKeyDown={handleSourceListKeyDown}
+            className={`space-y-3 ${anyConnected ? 'order-1' : 'order-2'} min-[900px]:order-none`}
+          >
+            {tiles.map((tile) => (
+              <WearableTileCard
+                key={tile.id}
+                tile={tile}
+                onPrimary={onPrimary}
+                onDropXml={tile.id === 'apple_health' ? () => setImportIntent('apple') : undefined}
+                selected={tile.id === selectedId}
+                onSelect={(t) => setSelectedId(t.id)}
+              />
+            ))}
+          </div>
+        </AdminPanel>
 
-      {/* Center column: Task 10 finalizes the 3-column grid. Mounted here for
-          now so the selected-tile detail is live and tested. key= forces a
-          remount on source switch so useHealthXmlImport's phase/result never
-          leaks from one source's completed import onto another source's
-          panel. onImported=load refreshes the left-column tiles after an
-          inline import completes, matching the modal's onImported path. */}
-      <ActiveSourceDetailPanel key={selectedTile?.id ?? 'none'} tile={selectedTile} onImported={load} />
+        {/* Center column: the selected-tile detail. key= forces a remount on
+            source switch so useHealthXmlImport's phase/result never leaks
+            from one source's completed import onto another source's panel.
+            onImported=load refreshes the sources column after an inline
+            import completes, matching the modal's onImported path. */}
+        <AdminPanel name="Active source">
+          <div className={`${anyConnected ? 'order-2' : 'order-3'} min-[900px]:order-none`}>
+            <ActiveSourceDetailPanel
+              key={selectedTile?.id ?? 'none'}
+              tile={selectedTile}
+              onImported={load}
+            />
+          </div>
+        </AdminPanel>
+
+        <AdminPanel name="Score contributors">
+          <div className={`${anyConnected ? 'order-3' : 'order-1'} min-[900px]:order-none`}>
+            <ScoreDetailPanel
+              rows={scoreDetail}
+              lastUpdatedAt={lastUpdatedAt}
+              onOpenDimension={setOpenMetric}
+            />
+          </div>
+        </AdminPanel>
+      </div>
 
       <p className="text-center text-xs text-white/40">{CONNECTIONS_FOOTER}</p>
 
