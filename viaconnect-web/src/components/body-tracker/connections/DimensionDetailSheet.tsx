@@ -18,7 +18,10 @@
 
 import { useEffect, useRef } from 'react';
 import { Info, X } from 'lucide-react';
-import type { DimensionSourceRow } from '@/lib/body-tracker/source-disagreement';
+import {
+  formatUnknownOrPending,
+  type DimensionSourceRow,
+} from '@/lib/body-tracker/source-disagreement';
 import {
   CONTRIBUTOR_METRICS,
   METRIC_LABELS,
@@ -27,26 +30,39 @@ import {
 } from '@/lib/body-tracker/contributor-rows';
 import { SourceGlyph } from './ContributorColumn';
 
-// Placeholder copy pending Marshall's regulatory/claims review -- flagged,
-// not final. Each sentence states what the metric measures and how it is
-// derived, without overstating precision beyond what the source data
-// supports.
+// Placeholder copy pending HANNAH + MARSHALL final regulatory/claims
+// sign-off -- flagged, not final. Each sentence states what the metric
+// measures and, where relevant, that the value is calculated by the
+// connected device's own algorithm rather than a raw physiological read.
+// Fix round 1 (Hannah CRITICAL, Marshall/Arnold concur): the prior copy
+// asserted "read directly ... not estimated" for hrv/sleep/resting_hr,
+// which is affirmatively false -- consumer wearables derive HRV, sleep
+// stage, and resting HR algorithmically (PPG/accelerometer + proprietary
+// processing), never a direct raw read. Do not reintroduce "read
+// directly", "not estimated", "raw", or any other precision/accuracy
+// claim the underlying device data does not support. No clinical or
+// diagnostic accuracy claim belongs here.
 export const METRIC_EXPLAINER: Record<ContributorMetric, string> = {
-  hrv: 'Heart rate variability (HRV) measures the variation in time between consecutive heartbeats. It is read directly from the connected wearable overnight sensor reading, not estimated.',
-  sleep: 'Sleep reflects total sleep duration and sleep stage quality for the prior night. It is read directly from the connected wearable sleep tracking, not estimated.',
-  resting_hr: 'Resting heart rate is the lowest sustained heart rate during sleep or rest. It is read directly from the connected wearable sensor data, not estimated.',
-  recovery: 'Recovery combines HRV, resting heart rate, and sleep quality into one readiness signal, calculated by the algorithm built into the connected wearable, using raw readings from that device.',
+  hrv: 'Heart rate variability (HRV) measures the variation in time between consecutive heartbeats, calculated by the connected wearable using its own sensor algorithm.',
+  sleep: 'Sleep reflects total sleep duration and sleep stage quality for the prior night, calculated by the connected wearable using its own sleep-tracking algorithm.',
+  resting_hr: 'Resting heart rate is the lowest sustained heart rate during sleep or rest, calculated by the connected wearable using its own sensor algorithm.',
+  recovery: 'Recovery combines HRV, resting heart rate, and sleep quality into one readiness signal, calculated by the connected wearable using its own algorithm and sensor data.',
   workouts: 'Workouts shows daily cardiovascular strain, a Whoop-native metric. It is not a logged exercise history.',
-  body_composition: 'Body composition covers weight and body-fat percentage, read from a connected scale, body scan, or health record.',
-  steps: 'Steps counts daily step volume, read directly from the activity sensor on the connected wearable or phone.',
+  body_composition: 'Body composition covers weight and body-fat percentage, reported by a connected scale, body scan, or health record.',
+  steps: 'Steps counts daily step volume, reported by the connected wearable or phone activity sensor.',
+};
+
+// Arnold: the workouts explainer honestly discloses the strain alias in
+// prose, but a screen-reader user navigating by heading (or anyone who
+// does not linger on the paragraph) reads the bare dialog title first,
+// with no signal it is a cardio-strain score rather than a logged workout.
+// This qualifier surfaces that at the title level, not just in prose.
+const METRIC_TITLE_QUALIFIER: Partial<Record<ContributorMetric, string>> = {
+  workouts: 'Strain',
 };
 
 function isContributorMetric(metric: string): metric is ContributorMetric {
   return (CONTRIBUTOR_METRICS as readonly string[]).includes(metric);
-}
-
-function sourceValueDisplay(value: number | null): string {
-  return value === null || !Number.isFinite(value) ? 'UNKNOWN' : String(value);
 }
 
 interface DimensionDetailSheetProps {
@@ -81,6 +97,7 @@ export function DimensionDetailSheet({ metric, rows, onClose }: DimensionDetailS
 
   const known = isContributorMetric(metric);
   const label = known ? METRIC_LABELS[metric] : metric;
+  const titleQualifier = known ? (METRIC_TITLE_QUALIFIER[metric] ?? null) : null;
   const explainer = known ? METRIC_EXPLAINER[metric] : null;
   const row = known ? matchRowForMetric(metric, rows) : null;
   const sourced = row !== null && row.showRing === true;
@@ -97,6 +114,9 @@ export function DimensionDetailSheet({ metric, rows, onClose }: DimensionDetailS
         <div className="flex items-start justify-between gap-3">
           <h2 id="dimension-detail-title" className="text-lg font-semibold text-white">
             {label}
+            {titleQualifier ? (
+              <span className="ml-1.5 text-sm font-normal text-white/50">({titleQualifier})</span>
+            ) : null}
           </h2>
           <button
             ref={closeRef}
@@ -125,7 +145,7 @@ export function DimensionDetailSheet({ metric, rows, onClose }: DimensionDetailS
                       {src.label ?? src.source}
                     </span>
                     <span className="flex items-center gap-2">
-                      <span className="font-mono text-sm text-white">{sourceValueDisplay(src.value)}</span>
+                      <span className="font-mono text-sm text-white">{formatUnknownOrPending(src.value)}</span>
                       {src.is_active === true ? (
                         <span className="rounded-full bg-teal/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-teal ring-1 ring-inset ring-teal/30">
                           Active
