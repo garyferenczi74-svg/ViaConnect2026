@@ -1,12 +1,15 @@
 'use client';
 
 // Shared 390 + 1280 Connections IA. Canonical path: /body-tracker/connections.
-// /wearables redirects here. Four tiles only. Hume and Apple are XML.
-// Watch tile is out of scope. Whoop/Oura stay Coming soon until OAuth
-// secrets are provisioned. Hume stays tagged ingest, not OAuth.
+// /wearables redirects here. Six tiles: Whoop, Hume, Apple Health, Oura,
+// Google Health, Garmin. Hume and Apple are XML. Watch tile is out of scope.
+// Whoop/Oura stay Coming soon until OAuth secrets are provisioned. Google
+// Health and Garmin are honest Coming soon tiles, never connectable here.
+// Hume stays tagged ingest, not OAuth.
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type KeyboardEvent } from 'react';
 import toast from 'react-hot-toast';
+import { AdminPanel } from '@/components/admin/AdminPanelErrorBoundary';
 import { BackToHubLink } from '@/components/body-tracker/hub/BackToHubLink';
 import {
   AppleHealthImportModal,
@@ -14,6 +17,7 @@ import {
 } from '@/components/body-tracker/connected-sources/AppleHealthImportModal';
 import { WearableConsentModal } from '@/components/body-tracker/WearableConsentModal';
 import { detectPlatform } from '@/lib/capacitor/camera-capture';
+import { withAbortTimeout } from '@/lib/utils/with-timeout';
 import {
   CONNECTIONS_FOOTER,
   CONNECTIONS_LEAD,
@@ -31,6 +35,8 @@ import { resolveHabitSleepPair } from '@/lib/body-tracker/habit-sleep-pair';
 import { useDailyScheduleView } from '@/hooks/useDailyScheduleView';
 import { WearableTileCard } from './WearableTileCard';
 import { ScoreDetailPanel } from './ScoreDetailPanel';
+import { ActiveSourceDetailPanel } from './ActiveSourceDetailPanel';
+import { DimensionDetailSheet } from './DimensionDetailSheet';
 
 function emptyTiles(platform: 'web' | 'ios' | 'android'): WearableTileView[] {
   return buildWearableTiles({
@@ -44,18 +50,20 @@ function emptyTiles(platform: 'web' | 'ios' | 'android'): WearableTileView[] {
     dimensionsFed: {},
     whoopConfigured: false,
     ouraConfigured: false,
+    googleHealthConfigured: false,
+    garminConfigured: false,
     platform,
   });
 }
 
 const OAUTH_ERROR_COPY: Record<string, string> = {
-  whoop_not_configured: 'WHOOP is not configured yet.',
+  whoop_not_configured: 'WHOOP is not available yet.',
   whoop_denied: 'WHOOP authorization was cancelled.',
   whoop_invalid_state: 'That WHOOP link expired. Please try again.',
   whoop_state_expired: 'That WHOOP link expired. Please try again.',
   whoop_callback_failed: 'Could not finish WHOOP connect. Please try again.',
   whoop_authorize_failed: 'Could not start WHOOP connect. Please try again.',
-  oura_not_configured: 'Oura is not configured yet.',
+  oura_not_configured: 'Oura is not available yet.',
   oura_denied: 'Oura authorization was cancelled.',
   oura_invalid_state: 'That Oura link expired. Please try again.',
   oura_state_expired: 'That Oura link expired. Please try again.',
@@ -73,8 +81,18 @@ interface TilesResponse {
 
 export function ConnectionsSurface() {
   const [tiles, setTiles] = useState<WearableTileView[]>(() => emptyTiles('web'));
+  // 228 state contract: 'loading' is the honest nothing-loaded-yet state (the
+  // empty tiles above render fine for it). 'error' is a DISTINCT, actionable
+  // state -- a failed load must never render as if emptyTiles were a real
+  // "not connected" answer. See the load() callback below.
+  const [loadStatus, setLoadStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [selectedId, setSelectedId] = useState<WearableTileView['id']>('apple_health');
   const [scoreDetail, setScoreDetail] = useState<DimensionSourceRow[]>([]);
   const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
+  // Consumed below by DimensionDetailSheet, which the chevron / DISAGREE
+  // button in ContributorColumn opens via ScoreDetailPanel's
+  // onOpenDimension prop.
+  const [openMetric, setOpenMetric] = useState<string | null>(null);
   const [bedtimeStrip, setBedtimeStrip] = useState<BedtimeStripView>(EMPTY_BEDTIME_STRIP);
   const [importIntent, setImportIntent] = useState<HealthXmlImportIntent | null>(null);
   const [consent, setConsent] = useState<'whoop' | 'oura' | null>(null);
@@ -88,8 +106,18 @@ export function ConnectionsSurface() {
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch(`/api/integrations/wearable-tiles?platform=${platform}`);
-      if (!res.ok) return;
+      const res = await withAbortTimeout(
+        (signal) => fetch(`/api/integrations/wearable-tiles?platform=${platform}`, { signal }),
+        15000,
+        'connections.wearable-tiles',
+      );
+      if (!res.ok) {
+        // Honesty: a failed read must not overwrite whatever tiles are on
+        // screen with a fake "not connected" answer. Surface the error state
+        // instead so the user sees a distinct, actionable notice.
+        setLoadStatus('error');
+        return;
+      }
       const json = (await res.json()) as TilesResponse;
       const next = Array.isArray(json.tiles) ? json.tiles : [];
       const filtered = next.filter((t) => (FIRST_CLASS_TILE_IDS as readonly string[]).includes(t.id));
@@ -97,9 +125,11 @@ export function ConnectionsSurface() {
       setScoreDetail(Array.isArray(json.scoreDetail) ? json.scoreDetail : []);
       setLastUpdatedAt(typeof json.lastUpdatedAt === 'string' ? json.lastUpdatedAt : null);
       setBedtimeStrip(parseBedtimeStrip(json.bedtimeStrip));
+      setLoadStatus('ready');
     } catch {
-      setTiles(emptyTiles(platform));
-      setBedtimeStrip(EMPTY_BEDTIME_STRIP);
+      // Timeout or network failure: same honesty rule as the !res.ok branch
+      // above, no emptyTiles overwrite standing in for a real answer.
+      setLoadStatus('error');
     }
   }, [platform]);
 
@@ -158,6 +188,42 @@ export function ConnectionsSurface() {
     if (next === 'oura') window.location.href = '/api/integrations/oura/authorize';
   }, [consent, persistPhiConsent]);
 
+  const selectedTile = tiles.find((t) => t.id === selectedId) ?? null;
+
+  // G76 mobile order (below min-[900px]): cold (nothing connected) leads
+  // with contributors so a first-time user sees why to connect a source;
+  // once anything is connected, sources lead so the user can act on what
+  // they already have. Resets to source order at >= 900px.
+  const anyConnected = tiles.some((t) => t.lastSyncState === 'synced' || t.lastSyncState === 'connected_never_synced');
+
+  // Task 10 a11y: single-select listbox arrow navigation. Attached to the
+  // listbox container, which also receives events bubbling up from an
+  // option's inner action buttons; only ArrowUp/ArrowDown are handled, and
+  // only when the key originated on the option itself (fix round 1: a
+  // bubbled Arrow keydown from a Tab-focused inner button, e.g. Upload
+  // XML / Connect / Reconnect / the chevron, must NOT steal focus off that
+  // button back onto a card). Moves both the selection (via setSelectedId)
+  // and DOM focus (roving tabindex means only the newly selected option is
+  // tabbable next).
+  const handleSourceListKeyDown = useCallback(
+    (e: KeyboardEvent<HTMLDivElement>) => {
+      if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+      const target = e.target as HTMLElement;
+      if (!target || target.getAttribute('role') !== 'option') return;
+      if (tiles.length === 0) return;
+      e.preventDefault();
+      const currentIndex = tiles.findIndex((t) => t.id === selectedId);
+      const delta = e.key === 'ArrowDown' ? 1 : -1;
+      const nextIndex =
+        currentIndex === -1 ? 0 : (currentIndex + delta + tiles.length) % tiles.length;
+      const next = tiles[nextIndex];
+      setSelectedId(next.id);
+      const nextEl = e.currentTarget.querySelector<HTMLElement>(`[data-tile-id="${next.id}"]`);
+      nextEl?.focus();
+    },
+    [tiles, selectedId],
+  );
+
   return (
     <div className="mx-auto w-full max-w-7xl font-instrument space-y-6">
       <BackToHubLink />
@@ -168,27 +234,78 @@ export function ConnectionsSurface() {
         <p className="mt-2 text-sm text-white/60">{CONNECTIONS_LEAD}</p>
       </header>
 
-      <div className="grid grid-cols-1 gap-6 min-[1280px]:grid-cols-2">
-        <div className="space-y-3">
-          {tiles.map((tile) => (
-            <WearableTileCard
-              key={tile.id}
-              tile={tile}
-              onPrimary={onPrimary}
-              onDropXml={tile.id === 'apple_health' ? () => setImportIntent('apple') : undefined}
-            />
-          ))}
+      {loadStatus === 'error' ? (
+        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.04] p-6 text-center">
+          <p className="text-sm font-semibold text-white/85">
+            We could not load your connected devices.
+          </p>
+          <p className="mt-1 text-sm text-white/60">
+            Check your connection and try again.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setLoadStatus('loading');
+              void load();
+            }}
+            className="mt-4 inline-flex min-h-[44px] items-center justify-center rounded-lg border border-teal bg-transparent px-4 text-sm font-semibold text-teal hover:bg-teal/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal/50"
+          >
+            Retry
+          </button>
         </div>
-        <ScoreDetailPanel
-          rows={scoreDetail}
-          lastUpdatedAt={lastUpdatedAt}
-          bedtimeStrip={bedtimeStrip}
-          habitSleepPair={resolveHabitSleepPair({
-            tiles,
-            sleepTileSynced: bedtimeStrip.sleepTileSynced,
-            schedule: schedule.status === 'ready' ? schedule.view : null,
-          })}
-        />
+      ) : null}
+
+      <div className="grid grid-cols-1 gap-6 min-[900px]:grid-cols-2 min-[1280px]:grid-cols-[1fr_1.2fr_1fr]">
+        <AdminPanel name="Sources">
+          <div
+            role="listbox"
+            aria-label="Wearable sources"
+            onKeyDown={handleSourceListKeyDown}
+            className={`space-y-3 ${anyConnected ? 'order-1' : 'order-2'} min-[900px]:order-none`}
+          >
+            {tiles.map((tile) => (
+              <WearableTileCard
+                key={tile.id}
+                tile={tile}
+                onPrimary={onPrimary}
+                onDropXml={tile.id === 'apple_health' ? () => setImportIntent('apple') : undefined}
+                selected={tile.id === selectedId}
+                onSelect={(t) => setSelectedId(t.id)}
+              />
+            ))}
+          </div>
+        </AdminPanel>
+
+        {/* Center column: the selected-tile detail. key= forces a remount on
+            source switch so useHealthXmlImport's phase/result never leaks
+            from one source's completed import onto another source's panel.
+            onImported=load refreshes the sources column after an inline
+            import completes, matching the modal's onImported path. */}
+        <AdminPanel name="Active source">
+          <div className={`${anyConnected ? 'order-2' : 'order-3'} min-[900px]:order-none`}>
+            <ActiveSourceDetailPanel
+              key={selectedTile?.id ?? 'none'}
+              tile={selectedTile}
+              onImported={load}
+            />
+          </div>
+        </AdminPanel>
+
+        <AdminPanel name="Score contributors">
+          <div className={`${anyConnected ? 'order-3' : 'order-1'} min-[900px]:order-none`}>
+            <ScoreDetailPanel
+              rows={scoreDetail}
+              lastUpdatedAt={lastUpdatedAt}
+              onOpenDimension={setOpenMetric}
+              bedtimeStrip={bedtimeStrip}
+              habitSleepPair={resolveHabitSleepPair({
+                tiles,
+                sleepTileSynced: bedtimeStrip.sleepTileSynced,
+                schedule: schedule.status === 'ready' ? schedule.view : null,
+              })}
+            />
+          </div>
+        </AdminPanel>
       </div>
 
       <p className="text-center text-xs text-white/40">{CONNECTIONS_FOOTER}</p>
@@ -207,6 +324,7 @@ export function ConnectionsSurface() {
         }}
         onClose={() => setConsent(null)}
       />
+      <DimensionDetailSheet metric={openMetric} rows={scoreDetail} onClose={() => setOpenMetric(null)} />
     </div>
   );
 }

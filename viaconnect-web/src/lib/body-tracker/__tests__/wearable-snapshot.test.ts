@@ -15,6 +15,7 @@ function base(over: Partial<WearableSnapshotInput> = {}): WearableSnapshotInput 
     sleepRows: [],
     recoveryRows: [],
     workoutRows: [],
+    dailyVitalsRows: [],
     healthKitPersisted: false,
     healthKitLastPersistAt: null,
     whoopConfigured: false,
@@ -51,7 +52,14 @@ describe('wearable snapshot', () => {
 
   it('does not invent last sync and never marks Watch connected', () => {
     const snap = assembleWearableSnapshot(base());
-    expect(snap.tiles.map((t) => t.id)).toEqual(['whoop', 'hume', 'apple_health', 'oura']);
+    expect(snap.tiles.map((t) => t.id)).toEqual([
+      'whoop',
+      'hume',
+      'apple_health',
+      'oura',
+      'google_health',
+      'garmin',
+    ]);
     expect(snap.tiles.every((t) => t.lastSyncAt === null)).toBe(true);
     expect(snap.tiles.every((t) => t.appleWatchConnected === false)).toBe(true);
     expect(formatTileLastSync(null, 'oauth_sync')).toBeNull();
@@ -155,6 +163,121 @@ describe('wearable snapshot', () => {
     expect(rows.find((r) => r.dimension === 'sleep')?.sources).toEqual([]);
     expect(rows.find((r) => r.dimension === 'strain')?.displayValue).toBe('UNKNOWN');
     expect(rows.find((r) => r.dimension === 'strain')?.showRing).toBe(false);
+  });
+
+  it('sources hrv, resting_hr, and steps honestly when real data exists (Task 7b)', () => {
+    const rows = scoreDetailFromSnapshot(
+      base({
+        recoveryRows: [
+          {
+            source_provider: 'whoop',
+            recovery_score: 70,
+            cycle_date: '2026-08-20',
+            hrv_ms: 55,
+            resting_hr_bpm: 52,
+          },
+        ],
+        dailyVitalsRows: [
+          {
+            source_provider: 'health_kit',
+            steps: 8452,
+            metric_date: '2026-08-20',
+            source_app: 'Health',
+          },
+        ],
+      }),
+    );
+    const hrv = rows.find((r) => r.dimension === 'hrv');
+    expect(hrv?.showRing).toBe(true);
+    expect(hrv?.displayValue).toBe('55');
+    expect(hrv?.sources.map((s) => s.source)).toEqual(['whoop']);
+
+    const restingHr = rows.find((r) => r.dimension === 'resting_hr');
+    expect(restingHr?.showRing).toBe(true);
+    expect(restingHr?.displayValue).toBe('52');
+    expect(restingHr?.sources.map((s) => s.source)).toEqual(['whoop']);
+
+    const steps = rows.find((r) => r.dimension === 'steps');
+    expect(steps?.showRing).toBe(true);
+    expect(steps?.displayValue).toBe('8452');
+    expect(steps?.source).toBe('apple_health');
+  });
+
+  it('leaves hrv, resting_hr, and steps absent (Connect your device) with no real data', () => {
+    const rows = scoreDetailFromSnapshot(base());
+    const hrv = rows.find((r) => r.dimension === 'hrv');
+    expect(hrv?.showRing).toBe(false);
+    expect(hrv?.displayValue).toBe('UNKNOWN');
+    expect(hrv?.value).toBeNull();
+    const restingHr = rows.find((r) => r.dimension === 'resting_hr');
+    expect(restingHr?.showRing).toBe(false);
+    expect(restingHr?.value).toBeNull();
+    const steps = rows.find((r) => r.dimension === 'steps');
+    expect(steps?.showRing).toBe(false);
+    expect(steps?.value).toBeNull();
+  });
+
+  it('excludes Oura contributor-score rows from hrv and resting_hr (unit mismatch honesty gate)', () => {
+    const rows = scoreDetailFromSnapshot(
+      base({
+        recoveryRows: [
+          {
+            source_provider: 'oura',
+            recovery_score: 65,
+            cycle_date: '2026-08-20',
+            hrv_ms: 78,
+            resting_hr_bpm: 82,
+          },
+        ],
+      }),
+    );
+    const hrv = rows.find((r) => r.dimension === 'hrv');
+    expect(hrv?.sources).toEqual([]);
+    expect(hrv?.showRing).toBe(false);
+    expect(hrv?.displayValue).toBe('UNKNOWN');
+
+    const restingHr = rows.find((r) => r.dimension === 'resting_hr');
+    expect(restingHr?.sources).toEqual([]);
+    expect(restingHr?.showRing).toBe(false);
+
+    // Recovery (Oura's actual 0-100 readiness score) is a different dimension
+    // and stays legitimate -- only hrv/resting_hr are unit-mismatched.
+    const recovery = rows.find((r) => r.dimension === 'recovery');
+    expect(recovery?.showRing).toBe(true);
+  });
+
+  it('resolves hrv/resting_hr independently per metric and prefers Whoop over Apple Health on disagreement', () => {
+    const rows = scoreDetailFromSnapshot(
+      base({
+        recoveryRows: [
+          {
+            source_provider: 'whoop',
+            recovery_score: 70,
+            cycle_date: '2026-08-20',
+            hrv_ms: 60,
+            resting_hr_bpm: 50,
+          },
+          {
+            // Apple Health XML writes one wearable_recovery row per metricKey,
+            // so a health_kit row can carry hrv_ms without resting_hr_bpm.
+            source_provider: 'health_kit',
+            recovery_score: null,
+            cycle_date: '2026-08-20',
+            hrv_ms: 45,
+            resting_hr_bpm: null,
+            source_app: 'Health',
+          },
+        ],
+      }),
+    );
+    const hrv = rows.find((r) => r.dimension === 'hrv');
+    expect(hrv?.sources.map((s) => s.source).sort()).toEqual(['apple_health', 'whoop']);
+    expect(hrv?.source).toBe('whoop');
+    expect(hrv?.disagreement?.showDisagreeChrome).toBe(true);
+
+    const restingHr = rows.find((r) => r.dimension === 'resting_hr');
+    expect(restingHr?.sources.map((s) => s.source)).toEqual(['whoop']);
+    expect(restingHr?.displayValue).toBe('50');
   });
 
   it('builds a bedtime strip only from a real last-sync plus real start_at samples', () => {

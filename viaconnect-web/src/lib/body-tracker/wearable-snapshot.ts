@@ -63,12 +63,27 @@ export interface RecoveryIngestRow {
   source_provider: string;
   recovery_score: number | string | null;
   cycle_date: string | null;
+  // hrv_ms / resting_hr_bpm: true ms/bpm for whoop and health_kit rows, but
+  // for oura rows these columns hold normalizeOuraRecovery's 0-100 readiness
+  // *contributor scores* (contributors.hrv_balance / contributors.resting_
+  // heart_rate), not real units. Oura is filtered out wherever hrv/resting_hr
+  // are read below -- see scoreDetailFromSnapshot.
+  hrv_ms?: number | string | null;
+  resting_hr_bpm?: number | string | null;
+  source_app?: string | null;
 }
 
 export interface WorkoutIngestRow {
   source_provider: string;
   strain: number | string | null;
   start_at: string | null;
+}
+
+export interface DailyVitalsIngestRow {
+  source_provider: string;
+  steps: number | string | null;
+  metric_date: string | null;
+  source_app?: string | null;
 }
 
 export interface WearableSnapshotInput {
@@ -79,6 +94,7 @@ export interface WearableSnapshotInput {
   sleepRows: SleepIngestRow[];
   recoveryRows: RecoveryIngestRow[];
   workoutRows: WorkoutIngestRow[];
+  dailyVitalsRows: DailyVitalsIngestRow[];
   healthKitPersisted: boolean;
   healthKitLastPersistAt: string | null;
   whoopConfigured: boolean;
@@ -167,6 +183,8 @@ export function tileInputFromSnapshot(input: WearableSnapshotInput): WearableTil
     dimensionsFed,
     whoopConfigured: input.whoopConfigured,
     ouraConfigured: input.ouraConfigured,
+    googleHealthConfigured: false,
+    garminConfigured: false,
     platform: input.platform,
     now: input.now,
   };
@@ -210,6 +228,81 @@ function sleepLabel(vendor: string): string {
 function recoveryLabel(vendor: string): string {
   if (vendor === 'whoop') return 'Whoop Recovery';
   return 'Oura Readiness';
+}
+
+function hrvLabel(vendor: string): string {
+  if (vendor === 'whoop') return 'Whoop HRV';
+  if (vendor === 'apple_watch') return 'Apple Watch HRV';
+  return 'Apple Health HRV';
+}
+
+function restingHrLabel(vendor: string): string {
+  if (vendor === 'whoop') return 'Whoop Resting HR';
+  if (vendor === 'apple_watch') return 'Apple Watch Resting HR';
+  return 'Apple Health Resting HR';
+}
+
+function stepsLabel(vendor: string): string {
+  if (vendor === 'apple_watch') return 'Apple Watch Steps';
+  return 'Apple Health Steps';
+}
+
+// hrv / resting_hr: only whoop and health_kit (apple_health/apple_watch) rows
+// carry true ms/bpm. Oura's wearable_recovery.hrv_ms / resting_hr_bpm store
+// normalizeOuraRecovery's 0-100 readiness *contributor scores* instead (see
+// RecoveryIngestRow above) -- averaging or DISAGREE-ing those against real
+// ms/bpm at equal trust would surface an incoherent value, so oura rows are
+// excluded here. A proper Oura hrv/resting_hr unit fix is a separate
+// follow-up, out of scope for this task.
+const HRV_RESTING_HR_PROVIDERS = new Set(['whoop', 'health_kit']);
+
+function recoveryMetricSources(
+  rows: RecoveryIngestRow[],
+  valueOf: (row: RecoveryIngestRow) => number | string | null | undefined,
+  label: (vendor: string) => string,
+  overrides?: Record<string, number> | null,
+): SourceValue[] {
+  const usableRows = rows.filter(
+    (row) => HRV_RESTING_HR_PROVIDERS.has(row.source_provider) && finiteOrNull(valueOf(row)) !== null,
+  );
+  const latest = latestByVendor(
+    usableRows,
+    (row) => vendorFromIngest({ provider: row.source_provider, sourceApp: row.source_app }).vendor,
+    (row) => row.cycle_date,
+  );
+  return latest.map((row) => {
+    const meta = sourceForIngest(row.source_provider, row.source_app, false, overrides);
+    return {
+      source: meta.vendor,
+      label: label(meta.vendor),
+      shortLabel: meta.shortLabel,
+      value: finiteOrNull(valueOf(row)),
+      trust: meta.trust,
+    };
+  });
+}
+
+function stepsSourcesFrom(
+  rows: DailyVitalsIngestRow[],
+  overrides?: Record<string, number> | null,
+): SourceValue[] {
+  // Steps has no Oura source, so no provider filter is needed here.
+  const usableRows = rows.filter((row) => finiteOrNull(row.steps) !== null);
+  const latest = latestByVendor(
+    usableRows,
+    (row) => vendorFromIngest({ provider: row.source_provider, sourceApp: row.source_app }).vendor,
+    (row) => row.metric_date,
+  );
+  return latest.map((row) => {
+    const meta = sourceForIngest(row.source_provider, row.source_app, false, overrides);
+    return {
+      source: meta.vendor,
+      label: stepsLabel(meta.vendor),
+      shortLabel: meta.shortLabel,
+      value: finiteOrNull(row.steps),
+      trust: meta.trust,
+    };
+  });
 }
 
 function metabolicPair(input: WearableSnapshotInput): SourceValue[] {
@@ -368,12 +461,32 @@ export function scoreDetailFromSnapshot(input: WearableSnapshotInput): Dimension
     });
   }
 
-  return buildDimensionSourceRows(SCORE_DETAIL_DIMENSIONS, [
+  const wearableRows = buildDimensionSourceRows(SCORE_DETAIL_DIMENSIONS, [
     { dimension: 'sleep', sources: sleepSources },
     { dimension: 'recovery', sources: recoverySources },
     { dimension: 'strain', sources: strainSources },
     { dimension: 'metabolic', sources: metabolicPair(input), manual: input.metabolicManual },
   ]);
+
+  // Task 7b: hrv / resting_hr / steps built as a SEPARATE call so
+  // SCORE_DETAIL_DIMENSIONS (the BOS-ring named-contributor gate,
+  // lockScoreDetailRows, and brief-26 lock semantics) stay untouched.
+  const hrvSources = recoveryMetricSources(input.recoveryRows, (row) => row.hrv_ms, hrvLabel, overrides);
+  const restingHrSources = recoveryMetricSources(
+    input.recoveryRows,
+    (row) => row.resting_hr_bpm,
+    restingHrLabel,
+    overrides,
+  );
+  const stepsSources = stepsSourcesFrom(input.dailyVitalsRows, overrides);
+
+  const contributorRows = buildDimensionSourceRows(['hrv', 'resting_hr', 'steps'], [
+    { dimension: 'hrv', sources: hrvSources },
+    { dimension: 'resting_hr', sources: restingHrSources },
+    { dimension: 'steps', sources: stepsSources },
+  ]);
+
+  return [...wearableRows, ...contributorRows];
 }
 
 function bedtimeSamplesFromSleepRows(rows: SleepIngestRow[]): SleepBedtimeSample[] {
@@ -393,6 +506,7 @@ export function assembleWearableSnapshot(input: WearableSnapshotInput): Wearable
     ...input.sleepRows.map((r) => r.end_at),
     ...input.recoveryRows.map((r) => (r.cycle_date ? `${r.cycle_date}T00:00:00.000Z` : null)),
     ...input.workoutRows.map((r) => r.start_at),
+    ...input.dailyVitalsRows.map((r) => (r.metric_date ? `${r.metric_date}T00:00:00.000Z` : null)),
     ...input.appleImports.map((r) => r.updated_at ?? r.created_at),
     ...input.connected.map((r) => r.last_sync_at),
   ]);

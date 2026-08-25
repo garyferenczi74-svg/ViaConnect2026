@@ -1,14 +1,13 @@
 'use client';
 
-import { Activity, Circle, Droplet, Heart, Info, Moon, PencilLine, Scan, Watch } from 'lucide-react';
+import { Info } from 'lucide-react';
 import type { DimensionSourceRow } from '@/lib/body-tracker/source-disagreement';
 import {
   CONNECTIONS_BOS_COMPOSITE,
-  CONNECTIONS_FOOTER,
   SCORE_DETAIL_DIMENSIONS,
   connectionsBosCompositeDisplay,
-  type WearableDimension,
 } from '@/lib/body-tracker/wearable-tiles';
+import { ContributorColumn } from './ContributorColumn';
 import {
   EMPTY_BEDTIME_STRIP,
   type BedtimeStripView,
@@ -19,34 +18,6 @@ import {
 } from '@/lib/body-tracker/habit-sleep-pair';
 import { SleepBedtimeStrip } from './SleepBedtimeStrip';
 import { HabitSleepPair } from './HabitSleepPair';
-
-const DIM_META: Record<
-  string,
-  { title: string; Icon: typeof Moon }
-> = {
-  sleep: { title: 'Sleep', Icon: Moon },
-  recovery: { title: 'Recovery', Icon: Heart },
-  strain: { title: 'Strain', Icon: Activity },
-  metabolic: { title: 'Metabolic', Icon: Droplet },
-};
-
-function SourceGlyph({ id }: { id: string | null | undefined }) {
-  if (id === 'whoop') return <Watch className="h-4 w-4 text-white/70" strokeWidth={1.5} />;
-  if (id === 'oura') return <Circle className="h-4 w-4 text-white/70" strokeWidth={1.5} />;
-  if (id === 'hume') return <Scan className="h-4 w-4 text-white/70" strokeWidth={1.5} />;
-  if (id === 'apple_health') return <Heart className="h-4 w-4 text-white/70" strokeWidth={1.5} />;
-  if (id === 'apple_watch') return <Watch className="h-4 w-4 text-white/70" strokeWidth={1.5} />;
-  if (id === 'manual') return <PencilLine className="h-4 w-4 text-white/70" strokeWidth={1.5} />;
-  const Dim = DIM_META.metabolic.Icon;
-  return <Dim className="h-4 w-4 text-white/70" strokeWidth={1.5} />;
-}
-
-function DimIcon({ dimension, activeIcon }: { dimension: string; activeIcon: string | null | undefined }) {
-  if (activeIcon) return <SourceGlyph id={activeIcon} />;
-  const meta = DIM_META[dimension] ?? DIM_META.metabolic;
-  const Icon = meta.Icon;
-  return <Icon className="h-4 w-4 text-white/70" strokeWidth={1.5} />;
-}
 
 function unknownSleepRow(): DimensionSourceRow {
   return {
@@ -94,12 +65,14 @@ function namedWearableContributorCount(rows: DimensionSourceRow[]): number {
 interface ScoreDetailPanelProps {
   rows: DimensionSourceRow[];
   lastUpdatedAt: string | null;
+  onOpenDimension?: (metric: string) => void;
   bedtimeStrip?: BedtimeStripView;
   habitSleepPair?: HabitSleepPairView;
 }
 
 export function ScoreDetailPanel({
   rows,
+  onOpenDimension,
   bedtimeStrip = EMPTY_BEDTIME_STRIP,
   habitSleepPair = EMPTY_HABIT_SLEEP_PAIR,
 }: ScoreDetailPanelProps) {
@@ -113,7 +86,7 @@ export function ScoreDetailPanel({
     <section
       aria-labelledby="bos-detail-title"
       data-bos-card="connections"
-      className="rounded-[24px] border border-white/[0.08] bg-[#1E3054] p-4 backdrop-blur-md sm:p-5"
+      className="rounded-[24px] border border-white/[0.08] bg-card p-4 backdrop-blur-md sm:p-5"
     >
       <div className="flex items-center gap-2">
         <h2 id="bos-detail-title" className="text-lg font-bold text-white">
@@ -148,90 +121,19 @@ export function ScoreDetailPanel({
         </div>
       </div>
 
-      <div className="mt-5 space-y-3">
-        {locked.map((row) => {
-          const meta = DIM_META[row.dimension] ?? { title: row.dimension, Icon: Droplet };
-          const disagree = row.disagreement?.showDisagreeChrome === true;
-          const ingest = row.showRing === true;
-          const display = ingest ? row.displayValue : 'UNKNOWN';
-          const isSleep = row.dimension === 'sleep';
-          const stripKind = isSleep ? bedtimeStrip.kind : undefined;
-          const pairKind = isSleep ? habitSleepPair.kind : undefined;
-          return (
-            <article
-              key={row.dimension}
-              data-dimension={row.dimension as WearableDimension}
-              data-ingest={ingest ? 'sourced' : 'none'}
-              data-ring={ingest ? 'visible' : 'hidden'}
-              data-bedtime-strip={stripKind}
-              data-habit-sleep-pair={pairKind}
-              className="rounded-xl border border-white/[0.08] bg-[#1A2744]/80 p-3"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex min-w-0 items-center gap-2">
-                  <DimIcon dimension={row.dimension} activeIcon={ingest ? row.disagreement?.activeIcon : null} />
-                  <h3 className="text-sm font-semibold text-white whitespace-normal break-words">
-                    {meta.title}
-                  </h3>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="font-mono text-sm text-white/55">{display}</span>
-                  {ingest && disagree ? (
-                    <span className="rounded-full bg-[#B75E18]/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#B75E18] ring-1 ring-inset ring-[#B75E18]/30">
-                      DISAGREE
-                    </span>
-                  ) : null}
-                  {ingest && row.manual ? (
-                    <span className="rounded-full bg-[#B75E18]/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#B75E18] ring-1 ring-inset ring-[#B75E18]/30">
-                      Manual
-                    </span>
-                  ) : null}
-                </div>
-              </div>
+      <ContributorColumn rows={locked} onOpenDimension={onOpenDimension ?? (() => undefined)} />
 
-              {ingest ? (
-                <ul className="mt-3 space-y-2">
-                  {row.sources.map((src) => {
-                    const srcDisplay =
-                      src.value === null || !Number.isFinite(src.value) ? 'UNKNOWN' : String(src.value);
-                    return (
-                      <li
-                        key={`${row.dimension}-${src.source}-${src.label ?? ''}`}
-                        className="flex items-center justify-between gap-2"
-                      >
-                        <span className="text-sm text-white/80 whitespace-normal break-words">
-                          {src.label ?? src.source}
-                        </span>
-                        <span className="flex items-center gap-2">
-                          <span className="font-mono text-sm text-white">{srcDisplay}</span>
-                          {src.is_active ? (
-                            <span className="rounded-full bg-[#2DA5A0]/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#2DA5A0] ring-1 ring-inset ring-[#2DA5A0]/30">
-                              Active
-                            </span>
-                          ) : null}
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              ) : null}
-
-              {ingest && row.disagreement?.detail ? (
-                <p className="mt-2 flex items-start gap-1.5 text-xs text-white/50">
-                  <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
-                  {row.disagreement.detail}
-                </p>
-              ) : null}
-
-              {isSleep ? <SleepBedtimeStrip strip={bedtimeStrip} /> : null}
-              {isSleep ? <HabitSleepPair pair={habitSleepPair} /> : null}
-            </article>
-          );
-        })}
-      </div>
+      <article
+        data-dimension="sleep"
+        data-bedtime-strip={bedtimeStrip.kind}
+        data-habit-sleep-pair={habitSleepPair.kind}
+        className="mt-3"
+      >
+        <SleepBedtimeStrip strip={bedtimeStrip} />
+        <HabitSleepPair pair={habitSleepPair} />
+      </article>
 
       <p className="mt-4 text-center text-[11px] text-white/40">Missing stays UNKNOWN, never 0.</p>
-      <p className="mt-2 text-center text-[11px] text-[#2DA5A0]">{CONNECTIONS_FOOTER}</p>
     </section>
   );
 }

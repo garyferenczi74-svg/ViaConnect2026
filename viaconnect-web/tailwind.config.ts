@@ -95,10 +95,14 @@ const config: Config = {
 
         /* Legacy compat */
         cyan: "#22D3EE",
+
+        /* Prompt 230: Connections card surface */
+        card: "#1E3054",
       },
       fontFamily: {
         sans: ["Inter", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
         mono: ["JetBrains Mono", "Fira Code", "SF Mono", "monospace"],
+        instrument: ["Instrument Sans", "Inter", "sans-serif"],
       },
       borderRadius: {
         xl: "1rem",

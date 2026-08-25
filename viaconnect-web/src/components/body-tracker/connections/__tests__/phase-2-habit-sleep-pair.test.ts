@@ -177,8 +177,15 @@ describe('Phase 2 habit next to Sleep', () => {
     expect(pairOnly).not.toContain('Helix');
   });
 
-  it('keeps four tiles, Coming soon Whoop/Oura, Brief 24 BOS honesty, and Phase 1 strip hidden without samples', () => {
-    expect(FIRST_CLASS_TILE_IDS).toEqual(['whoop', 'hume', 'apple_health', 'oura']);
+  it('keeps six tiles, Coming soon Whoop/Oura, Brief 24 BOS honesty, and Phase 1 strip hidden without samples', () => {
+    expect(FIRST_CLASS_TILE_IDS).toEqual([
+      'whoop',
+      'hume',
+      'apple_health',
+      'oura',
+      'google_health',
+      'garmin',
+    ]);
     expect(SCORE_DETAIL_DIMENSIONS).toEqual(['sleep', 'recovery', 'strain', 'metabolic']);
     expect(connectionsBosCompositeDisplay()).toEqual(CONNECTIONS_BOS_COMPOSITE);
     expect(CONNECTIONS_BOS_COMPOSITE.value).toBe('--');
@@ -191,7 +198,14 @@ describe('Phase 2 habit next to Sleep', () => {
     expect(locked.find((r) => r.dimension === 'sleep')?.displayValue).not.toBe('62');
 
     const tiles = buildWearableTiles(baseInput());
-    expect(tiles.map((t) => t.id)).toEqual(['whoop', 'hume', 'apple_health', 'oura']);
+    expect(tiles.map((t) => t.id)).toEqual([
+      'whoop',
+      'hume',
+      'apple_health',
+      'oura',
+      'google_health',
+      'garmin',
+    ]);
     expect(tiles.find((t) => t.id === 'whoop')?.statusLabel).toBe(OAUTH_COMING_SOON_LABEL);
     expect(tiles.find((t) => t.id === 'oura')?.statusLabel).toBe(OAUTH_COMING_SOON_LABEL);
     expect(tiles.find((t) => t.id === 'whoop')?.statusLabel).not.toBe('Connect');

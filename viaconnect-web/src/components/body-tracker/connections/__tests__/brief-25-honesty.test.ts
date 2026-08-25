@@ -86,8 +86,15 @@ describe('Brief 25 connections honesty', () => {
     expect(apple).not.toContain('Import Hume Body Pod');
   });
 
-  it('keeps four Connections tiles and no Google tile', () => {
-    expect(FIRST_CLASS_TILE_IDS).toEqual(['whoop', 'hume', 'apple_health', 'oura']);
+  it('keeps six Connections tiles including Google Health and Garmin as Coming soon', () => {
+    expect(FIRST_CLASS_TILE_IDS).toEqual([
+      'whoop',
+      'hume',
+      'apple_health',
+      'oura',
+      'google_health',
+      'garmin',
+    ]);
     const tiles = src('src/lib/body-tracker/wearable-tiles.ts');
     expect(tiles).toContain("'google_health'");
     expect(tiles).toContain('FORBIDDEN_FIRST_CLASS_TILE_IDS');
@@ -165,5 +172,15 @@ describe('Brief 25 connections honesty', () => {
     expect(isNavHrefActive('/body-tracker/composition', '/body-tracker/connections', hrefs)).toBe(
       false,
     );
+  });
+
+  it('the XML import fails closed on a non-complete server status and reads real counts', () => {
+    // Prompt 230, Task 5: the fail-closed gate and parse timeout moved from
+    // the modal into the useHealthXmlImport hook it now delegates to.
+    const hook = src('src/components/body-tracker/connected-sources/useHealthXmlImport.ts');
+    expect(hook).toContain('isImportComplete');
+    expect(hook).toContain('parseImportSummary');
+    expect(hook).toContain('withAbortTimeout');
+    expect(hook).toMatch(/!res\.ok \|\| !isImportComplete/);
   });
 });

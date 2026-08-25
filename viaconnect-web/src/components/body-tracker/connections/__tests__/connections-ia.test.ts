@@ -30,23 +30,40 @@ describe('Connections IA contracts', () => {
   it('ships four tiles, XML Hume action, and BOS footer', () => {
     const surface = src('src/components/body-tracker/connections/ConnectionsSurface.tsx');
     const tile = src('src/components/body-tracker/connections/WearableTileCard.tsx');
-    const detail = src('src/components/body-tracker/connections/ScoreDetailPanel.tsx');
+    // Prompt 230 Task 7 split the per-dimension row render out of
+    // ScoreDetailPanel.tsx into ContributorColumn.tsx (the panel now just
+    // mounts it). DISAGREE / data-ring / strokeWidth chrome moved with it,
+    // so this honesty scan follows the code to its new file.
+    const detail =
+      src('src/components/body-tracker/connections/ScoreDetailPanel.tsx') +
+      src('src/components/body-tracker/connections/ContributorColumn.tsx');
     expect(surface).toContain('CONNECTIONS_FOOTER');
-    expect(surface).toContain('min-[1280px]:grid-cols-2');
+    expect(surface).toContain('min-[1280px]:grid-cols-[1fr_1.2fr_1fr]');
     expect(surface).not.toContain('Hume authorize');
     expect(surface).not.toMatch(/Vitality Score/);
     expect(surface).not.toMatch(/helix.?reward/i);
     expect(tile).toContain('Upload XML');
-    expect(tile).toContain('Watch');
+    // Task 11 moved the tile icon out of WearableTileCard.tsx into the
+    // Lex-gated WearableBrandMark component (tile now renders
+    // <WearableBrandMark id={tile.id} .../> instead of a local switch on
+    // lucide-react icons), so the vendor-icon honesty check follows it
+    // there: the shipped fallback set must still cover the Watch icon for
+    // both whoop and garmin -- task-11-brief.md pins garmin to Watch (not
+    // Activity), matching WEARABLE_TILE_SPECS.icon in wearable-tiles.ts.
+    expect(tile).toContain('WearableBrandMark');
+    const brandMark = src('src/components/body-tracker/connections/WearableBrandMark.tsx');
+    expect(brandMark).toContain('Watch');
     expect(tile).not.toContain('Connected Watch');
     expect(tile).not.toMatch(/className="[^"]*\btruncate\b/);
     expect(tile).toContain('whitespace-normal break-words');
     expect(tile).toContain('Reconnect');
-    expect(surface + tile + detail).not.toContain('font-serif');
-    expect(surface + tile + detail).not.toContain('#224852');
-    expect(surface + tile + detail).not.toContain('#4ADE80');
+    // Task 11: the forbidden-string scan now also covers the new
+    // WearableBrandMark.tsx (strengthened, not weakened, per the brief).
+    expect(surface + tile + detail + brandMark).not.toContain('font-serif');
+    expect(surface + tile + detail + brandMark).not.toContain('#224852');
+    expect(surface + tile + detail + brandMark).not.toContain('#4ADE80');
     expect(surface).not.toMatch(/ViaConnect/);
-    expect(surface + tile + detail).not.toMatch(/Arnold|Thanos/i);
+    expect(surface + tile + detail + brandMark).not.toMatch(/Arnold|Thanos/i);
     expect(tile).toContain('{tile.statusLabel}');
     expect(tile).not.toMatch(/sr-only[^>]*>Coming soon/);
     expect(tile).not.toContain('Not configured');
@@ -55,14 +72,72 @@ describe('Connections IA contracts', () => {
     expect(detail).not.toMatch(/Vitality/);
     expect(detail).not.toMatch(/Stability|Symmetry|Helix/);
     expect(detail).toContain('DISAGREE');
-    expect(detail).toContain('Active');
     expect(detail).toContain('data-ring');
     expect(detail).toContain('strokeWidth={1.5}');
     expect(detail).toContain('Missing stays UNKNOWN, never 0.');
+    // The per-source "Active" badge (which source won a disagreement) moved
+    // to the Task 8 dimension detail sheet along with the rest of the
+    // per-source breakdown; is_active itself still drives it honestly.
+    const disagreement = src('src/lib/body-tracker/source-disagreement.ts');
+    expect(disagreement).toContain('is_active');
     expect(tile).toContain('Upload Apple Health XML');
     expect(surface).toContain("tile.id === 'hume' ? 'hume' : 'apple'");
     const disagree = src('src/lib/body-tracker/source-disagreement.ts');
     expect(disagree).toContain('averaged because equal trust.');
+  });
+
+  it('says the UNKNOWN disclosure once and softens the not-configured toast', () => {
+    const surface = src('src/components/body-tracker/connections/ConnectionsSurface.tsx');
+    const panel = src('src/components/body-tracker/connections/ScoreDetailPanel.tsx');
+    const col = src('src/components/body-tracker/connections/ContributorColumn.tsx');
+    const tiles = src('src/lib/body-tracker/wearable-tiles.ts');
+    // CONNECTIONS_FOOTER rendered exactly once across surface + panel + column.
+    // Matched as an actual JSX render site (curly-brace expression), not the
+    // import specifier, since a legitimately-imported constant always names
+    // itself once at the import site in addition to its single render.
+    const footerRenders = (surface + panel + col).match(/\{CONNECTIONS_FOOTER\}/g) ?? [];
+    expect(footerRenders.length).toBe(1);
+    expect(surface).not.toContain('is not configured yet');
+    expect(surface).toContain('is not available yet');
+
+    // Say-once disclosure: centralized in wearable-tiles.ts (Task 9 moved it
+    // off ContributorColumn's local CONTRIBUTOR_DISCLOSURE), imported and
+    // rendered exactly once, only in the contributor column.
+    expect(tiles).toContain('export const CONNECTIONS_DISCLOSURE');
+    expect(col).toContain('CONNECTIONS_DISCLOSURE');
+    expect(col).not.toContain('CONTRIBUTOR_DISCLOSURE');
+    expect(surface).not.toContain('CONNECTIONS_DISCLOSURE');
+    expect(panel).not.toContain('CONNECTIONS_DISCLOSURE');
+    const disclosureRenders = (surface + panel + col).match(/\{CONNECTIONS_DISCLOSURE\}/g) ?? [];
+    expect(disclosureRenders.length).toBe(1);
+  });
+
+  it('wires the 228 state contract into load(): timeout, distinct error state, named retry', () => {
+    const surface = src('src/components/body-tracker/connections/ConnectionsSurface.tsx');
+    // The tiles fetch is wrapped in the resilience timeout util, not a bare fetch.
+    expect(surface).toContain("import { withAbortTimeout } from '@/lib/utils/with-timeout';");
+    expect(surface).toMatch(
+      /withAbortTimeout\(\s*\(signal\) => fetch\(`\/api\/integrations\/wearable-tiles\?platform=\$\{platform\}`, \{ signal \}\)/,
+    );
+    // A dedicated load-status state distinct from the tiles data itself.
+    expect(surface).toContain("useState<'loading' | 'ready' | 'error'>('loading')");
+    expect(surface).toContain("setLoadStatus('ready')");
+    // Both the !res.ok branch and the catch branch (inside load() itself,
+    // not the unrelated persistPhiConsent catch below it) land on 'error',
+    // and neither overwrites tiles with emptyTiles -- a failed load must
+    // never be presented as a truthful "Not connected" answer.
+    const loadFnStart = surface.indexOf('const load = useCallback');
+    const loadFnEnd = surface.indexOf('}, [platform]);', loadFnStart);
+    expect(loadFnStart).toBeGreaterThan(-1);
+    expect(loadFnEnd).toBeGreaterThan(loadFnStart);
+    const loadFn = surface.slice(loadFnStart, loadFnEnd);
+    expect((loadFn.match(/setLoadStatus\('error'\)/g) ?? []).length).toBe(2);
+    expect(loadFn).not.toContain('setTiles(emptyTiles');
+    // The error branch renders a distinct, actionable notice: an honest
+    // message plus a real touch-target Retry control that calls load() again.
+    expect(surface).toContain("loadStatus === 'error'");
+    expect(surface).toMatch(/setLoadStatus\('loading'\);\s*void load\(\);/);
+    expect(surface).toContain('min-h-[44px]');
   });
 
   it('redirects plugins wearables catalog to connections', () => {
@@ -115,10 +190,11 @@ describe('Connections IA contracts', () => {
     expect(hub).toContain('Hume Body Pod');
     expect(hub).toContain('Apple Health');
     const model = src('src/lib/body-tracker/wearable-tiles.ts');
-    expect(model).toContain("FIRST_CLASS_TILE_IDS = ['whoop', 'hume', 'apple_health', 'oura']");
+    expect(model).toContain(
+      "FIRST_CLASS_TILE_IDS = ['whoop', 'hume', 'apple_health', 'oura', 'google_health', 'garmin']",
+    );
     expect(model).toContain('FORBIDDEN_FIRST_CLASS_TILE_IDS');
     expect(model).toContain("'fitbit'");
-    expect(model).toContain("'garmin'");
     expect(model).toContain("'apple_watch'");
   });
 

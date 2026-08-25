@@ -103,7 +103,7 @@ describe("Plugins Picasso IA honesty", () => {
   it("matches Connections WearableTileCard chrome without wearable dropzone", () => {
     const card = src("components/plugins/PluginAppCard.tsx");
     const tile = src("components/body-tracker/connections/WearableTileCard.tsx");
-    expect(tile).toContain("border-white/[0.08] bg-[#1E3054] p-4");
+    expect(tile).toContain("border-white/[0.08] bg-card p-4");
     expect(card).toContain("rounded-2xl border border-white/[0.08] bg-[#1E3054] p-4");
     expect(card).toContain("resolveLastSyncState");
     expect(card).toContain("@/lib/body-tracker/last-sync-state");

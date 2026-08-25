@@ -9,6 +9,7 @@ import {
   lockScoreDetailRows,
   ScoreDetailPanel,
 } from '@/components/body-tracker/connections/ScoreDetailPanel';
+import { METRIC_DIMENSION_ALIAS, METRIC_LABELS } from '@/lib/body-tracker/contributor-rows';
 import {
   APPLE_HEALTH_DROPZONE_COPY,
   BOS_UNKNOWN_NEVER_ZERO_COPY,
@@ -46,6 +47,8 @@ function baseInput(over: Partial<WearableTileInput> = {}): WearableTileInput {
     dimensionsFed: {},
     whoopConfigured: false,
     ouraConfigured: false,
+    googleHealthConfigured: false,
+    garminConfigured: false,
     platform: 'web',
     now: Date.parse('2026-08-24T10:00:00.000Z'),
     ...over,
@@ -59,16 +62,39 @@ function tileById(id: WearableTileView['id']): WearableTileView {
 }
 
 describe('Brief 26 Wearable Data 1280 lock', () => {
-  it('ships four tiles only in lock order and same IA at 390 and 1280', () => {
-    expect(FIRST_CLASS_TILE_IDS).toEqual(['whoop', 'hume', 'apple_health', 'oura']);
+  it('ships six tiles only in lock order and same IA at 390 and 1280', () => {
+    expect(FIRST_CLASS_TILE_IDS).toEqual([
+      'whoop',
+      'hume',
+      'apple_health',
+      'oura',
+      'google_health',
+      'garmin',
+    ]);
     const tiles = buildWearableTiles(baseInput());
-    expect(tiles.map((t) => t.id)).toEqual(['whoop', 'hume', 'apple_health', 'oura']);
-    expect(tiles.map((t) => t.name)).toEqual(['Whoop', 'Hume Body Pod', 'Apple Health', 'Oura']);
-    expect(tiles.some((t) => /google|watch/i.test(t.name))).toBe(false);
+    expect(tiles.map((t) => t.id)).toEqual([
+      'whoop',
+      'hume',
+      'apple_health',
+      'oura',
+      'google_health',
+      'garmin',
+    ]);
+    expect(tiles.map((t) => t.name)).toEqual([
+      'Whoop',
+      'Hume Body Pod',
+      'Apple Health',
+      'Oura',
+      'Google Health',
+      'Garmin',
+    ]);
+    expect(tiles.find((t) => t.id === 'google_health')?.statusLabel).toBe('Coming soon');
+    expect(tiles.find((t) => t.id === 'garmin')?.statusLabel).toBe('Coming soon');
+    expect(tiles.some((t) => /watch/i.test(t.name))).toBe(false);
 
     const surface = src('src/components/body-tracker/connections/ConnectionsSurface.tsx');
     const tile = src('src/components/body-tracker/connections/WearableTileCard.tsx');
-    expect(surface).toContain('min-[1280px]:grid-cols-2');
+    expect(surface).toContain('min-[1280px]:grid-cols-[1fr_1.2fr_1fr]');
     expect(surface).toContain('CONNECTIONS_LEAD');
     expect(CONNECTIONS_LEAD).toBe('Connect your devices.');
     expect(tile).not.toContain('min-[1280px]:block');
@@ -170,8 +196,13 @@ describe('Brief 26 Wearable Data 1280 lock', () => {
     expect(humeTile).not.toContain('data-apple-dropzone');
   });
 
-  it('BOS card is four dims UNKNOWN never 0 and keeps Helix Vitality Stability Symmetry off', () => {
-    expect(SCORE_DETAIL_DIMENSIONS).toEqual(['sleep', 'recovery', 'strain', 'metabolic']);
+  it('BOS ring is UNKNOWN never 0 and keeps Helix Vitality Stability Symmetry off', () => {
+    // The ring block still pins the honest empty-state composite. The old
+    // 4-dim SCORE_DETAIL_DIMENSIONS model still gates the ring's "named
+    // contributor" count internally (lockScoreDetailRows is unchanged), but
+    // it is no longer what renders per row -- Task 7 replaced the
+    // per-dimension row render with the 7-MetricKey ContributorColumn, so
+    // those row-level assertions below now describe the new model.
     expect(connectionsBosCompositeDisplay()).toEqual(CONNECTIONS_BOS_COMPOSITE);
     expect(CONNECTIONS_BOS_COMPOSITE.value).toBe('--');
     expect(CONNECTIONS_BOS_COMPOSITE.band).toBe('UNKNOWN');
@@ -179,8 +210,20 @@ describe('Brief 26 Wearable Data 1280 lock', () => {
     expect(BOS_UNKNOWN_NEVER_ZERO_COPY).toBe('Missing stays UNKNOWN, never 0.');
     expect(CONNECTIONS_FOOTER).toBe('Bio Optimization Score uses these sources.');
 
+    // Real literal pin (not a tautology): SCORE_DETAIL_DIMENSIONS is the
+    // live constant the workouts<-strain / body_composition<-metabolic
+    // contributor aliases (contributor-rows.ts METRIC_DIMENSION_ALIAS)
+    // depend on to keep populating. If this literal drifts, the aliases
+    // silently stop matching and every "populated" contributor row would
+    // regress to "Connect your device" -- this pin catches that before it
+    // ships.
+    expect(SCORE_DETAIL_DIMENSIONS).toEqual(['sleep', 'recovery', 'strain', 'metabolic']);
+    for (const target of Object.values(METRIC_DIMENSION_ALIAS)) {
+      expect(SCORE_DETAIL_DIMENSIONS).toContain(target);
+    }
+
     const locked = lockScoreDetailRows([]);
-    expect(locked.map((r) => r.dimension)).toEqual(['sleep', 'recovery', 'strain', 'metabolic']);
+    expect(locked.map((r) => r.dimension)).toEqual(SCORE_DETAIL_DIMENSIONS);
     expect(locked.every((r) => r.displayValue === 'UNKNOWN')).toBe(true);
     expect(locked.every((r) => r.value === null)).toBe(true);
 
@@ -188,17 +231,25 @@ describe('Brief 26 Wearable Data 1280 lock', () => {
       createElement(ScoreDetailPanel, { rows: [], lastUpdatedAt: null }),
     );
     expect(markup).toContain('Bio Optimization Score');
-    expect(markup).toContain('Sleep');
-    expect(markup).toContain('Recovery');
-    expect(markup).toContain('Strain');
-    expect(markup).toContain('Metabolic');
-    expect(markup).toContain('UNKNOWN');
     expect(markup).toContain('--');
     expect(markup).toContain(BOS_UNKNOWN_NEVER_ZERO_COPY);
-    expect(markup).toContain(CONNECTIONS_FOOTER);
+    // Prompt 230 Task 9 de-duped CONNECTIONS_FOOTER to render exactly once,
+    // in ConnectionsSurface (the parent), not here in the standalone panel --
+    // so it no longer appears in ScoreDetailPanel's own markup.
+    expect(markup).not.toContain(CONNECTIONS_FOOTER);
     expect(markup).not.toMatch(/Stability|Symmetry|Helix|Vitality/);
     expect(markup).not.toContain('>0<');
-    expect((markup.match(/UNKNOWN/g) ?? []).length).toBeGreaterThanOrEqual(5);
+
+    // Contributor column: all 7 MetricKeys render, cold, as "Connect your
+    // device" -- never a per-row UNKNOWN placeholder standing in for a
+    // value that was never measured.
+    for (const label of Object.values(METRIC_LABELS)) {
+      expect(markup).toContain(label);
+    }
+    expect((markup.match(/Connect your device/g) ?? []).length).toBe(7);
+    // The ring band + BOS_UNKNOWN_NEVER_ZERO_COPY still legitimately say
+    // UNKNOWN; the contributor rows no longer do.
+    expect(markup).toContain('UNKNOWN');
 
     const panel = src('src/components/body-tracker/connections/ScoreDetailPanel.tsx');
     expect(panel).not.toMatch(/Stability|Symmetry|Helix|Vitality/);

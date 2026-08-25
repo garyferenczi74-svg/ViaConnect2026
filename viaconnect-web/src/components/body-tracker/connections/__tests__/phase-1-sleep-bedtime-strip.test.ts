@@ -134,8 +134,15 @@ describe('Phase 1 Sleep bedtime strip on Connections', () => {
     expect(hiddenStrip).toBe('');
   });
 
-  it('leaves the four tiles, Coming soon Whoop/Oura, and BOS honesty unchanged', () => {
-    expect(FIRST_CLASS_TILE_IDS).toEqual(['whoop', 'hume', 'apple_health', 'oura']);
+  it('leaves the six tiles, Coming soon Whoop/Oura, and BOS honesty unchanged', () => {
+    expect(FIRST_CLASS_TILE_IDS).toEqual([
+      'whoop',
+      'hume',
+      'apple_health',
+      'oura',
+      'google_health',
+      'garmin',
+    ]);
     expect(SCORE_DETAIL_DIMENSIONS).toEqual(['sleep', 'recovery', 'strain', 'metabolic']);
     expect(connectionsBosCompositeDisplay()).toEqual(CONNECTIONS_BOS_COMPOSITE);
     expect(CONNECTIONS_BOS_COMPOSITE.value).toBe('--');
@@ -143,7 +150,14 @@ describe('Phase 1 Sleep bedtime strip on Connections', () => {
     expect(BOS_UNKNOWN_NEVER_ZERO_COPY).toBe('Missing stays UNKNOWN, never 0.');
 
     const tiles = buildWearableTiles(baseInput());
-    expect(tiles.map((t) => t.id)).toEqual(['whoop', 'hume', 'apple_health', 'oura']);
+    expect(tiles.map((t) => t.id)).toEqual([
+      'whoop',
+      'hume',
+      'apple_health',
+      'oura',
+      'google_health',
+      'garmin',
+    ]);
     expect(tiles.find((t) => t.id === 'whoop')?.statusLabel).toBe(OAUTH_COMING_SOON_LABEL);
     expect(tiles.find((t) => t.id === 'oura')?.statusLabel).toBe(OAUTH_COMING_SOON_LABEL);
     expect(tiles.find((t) => t.id === 'whoop')?.statusLabel).not.toBe('Connect');
