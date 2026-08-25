@@ -143,13 +143,12 @@ export function ScoreDetailPanel({
         data-dimension="sleep"
         data-bedtime-strip={bedtimeStrip.kind}
         data-habit-sleep-pair={habitSleepPair.kind}
-        className="mt-3"
       >
         <SleepBedtimeStrip strip={bedtimeStrip} />
         <HabitSleepPair pair={habitSleepPair} />
       </article>
 
-      <p className="mt-4 text-center text-[11px] text-white/40">Missing stays UNKNOWN, never 0.</p>
+      <p className="mt-2 text-center text-[10px] text-white/40">Missing stays UNKNOWN, never 0.</p>
     </section>
   );
 }
