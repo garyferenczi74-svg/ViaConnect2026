@@ -3,11 +3,13 @@
 // src/lib/wearables/types.ts DEFAULT_PRECEDENCE) to the DimensionSourceRow
 // that currently supplies it.
 //
-// scoreDetailFromSnapshot still keys rows by the OLD 4 display dims
-// (sleep, recovery, strain, metabolic), so this module accepts aliases:
-// workouts <- strain, body_composition <- metabolic. hrv, resting_hr, and
-// steps have no matching row today and stay connectedSource: null, which
-// renders as "Connect your device" rather than a fabricated value.
+// scoreDetailFromSnapshot keys its 4 display dims (sleep, recovery, strain,
+// metabolic) plus the 3 Task 7b dims (hrv, resting_hr, steps), so this module
+// aliases only the two display-dim names that differ: workouts <- strain,
+// body_composition <- metabolic. hrv, resting_hr, and steps match by their own
+// dimension name, showing a real source when Task 7b data exists and staying
+// connectedSource: null ("Connect your device") only when it does not, never a
+// fabricated value.
 //
 // A metric only counts as connected when the matched row's
 // showRing === true. That is the "has real data" gate, not value alone.
@@ -39,8 +41,8 @@ export const METRIC_LABELS: Record<ContributorMetric, string> = {
 // Explicit, intentional alias map: a metric key here means "no dimension
 // row named exactly this metric exists today, so borrow this named
 // dimension's row instead." A metric NOT listed here matches a row of the
-// same dimension name (no row exists yet for hrv / resting_hr / steps, so
-// they stay unmatched until a future task wires that data in).
+// same dimension name (hrv / resting_hr / steps are wired by Task 7b and
+// match their own dimension rows when real data exists).
 //
 // workouts <- strain: interim and imprecise by design, not an accidental
 // string match. Whoop Strain is a daily cardio-load score, not a workout
