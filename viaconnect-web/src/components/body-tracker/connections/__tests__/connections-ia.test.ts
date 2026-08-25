@@ -112,6 +112,34 @@ describe('Connections IA contracts', () => {
     expect(disclosureRenders.length).toBe(1);
   });
 
+  it('wires the 228 state contract into load(): timeout, distinct error state, named retry', () => {
+    const surface = src('src/components/body-tracker/connections/ConnectionsSurface.tsx');
+    // The tiles fetch is wrapped in the resilience timeout util, not a bare fetch.
+    expect(surface).toContain("import { withAbortTimeout } from '@/lib/utils/with-timeout';");
+    expect(surface).toMatch(
+      /withAbortTimeout\(\s*\(signal\) => fetch\(`\/api\/integrations\/wearable-tiles\?platform=\$\{platform\}`, \{ signal \}\)/,
+    );
+    // A dedicated load-status state distinct from the tiles data itself.
+    expect(surface).toContain("useState<'loading' | 'ready' | 'error'>('loading')");
+    expect(surface).toContain("setLoadStatus('ready')");
+    // Both the !res.ok branch and the catch branch (inside load() itself,
+    // not the unrelated persistPhiConsent catch below it) land on 'error',
+    // and neither overwrites tiles with emptyTiles -- a failed load must
+    // never be presented as a truthful "Not connected" answer.
+    const loadFnStart = surface.indexOf('const load = useCallback');
+    const loadFnEnd = surface.indexOf('}, [platform]);', loadFnStart);
+    expect(loadFnStart).toBeGreaterThan(-1);
+    expect(loadFnEnd).toBeGreaterThan(loadFnStart);
+    const loadFn = surface.slice(loadFnStart, loadFnEnd);
+    expect((loadFn.match(/setLoadStatus\('error'\)/g) ?? []).length).toBe(2);
+    expect(loadFn).not.toContain('setTiles(emptyTiles');
+    // The error branch renders a distinct, actionable notice: an honest
+    // message plus a real touch-target Retry control that calls load() again.
+    expect(surface).toContain("loadStatus === 'error'");
+    expect(surface).toMatch(/setLoadStatus\('loading'\);\s*void load\(\);/);
+    expect(surface).toContain('min-h-[44px]');
+  });
+
   it('redirects plugins wearables catalog to connections', () => {
     const plugins = src('src/app/(app)/(consumer)/plugins/wearables/page.tsx');
     expect(plugins).toContain("/body-tracker/connections");

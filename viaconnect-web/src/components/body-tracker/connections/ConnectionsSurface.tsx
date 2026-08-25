@@ -17,6 +17,7 @@ import {
 } from '@/components/body-tracker/connected-sources/AppleHealthImportModal';
 import { WearableConsentModal } from '@/components/body-tracker/WearableConsentModal';
 import { detectPlatform } from '@/lib/capacitor/camera-capture';
+import { withAbortTimeout } from '@/lib/utils/with-timeout';
 import {
   CONNECTIONS_FOOTER,
   CONNECTIONS_LEAD,
@@ -72,6 +73,11 @@ interface TilesResponse {
 
 export function ConnectionsSurface() {
   const [tiles, setTiles] = useState<WearableTileView[]>(() => emptyTiles('web'));
+  // 228 state contract: 'loading' is the honest nothing-loaded-yet state (the
+  // empty tiles above render fine for it). 'error' is a DISTINCT, actionable
+  // state -- a failed load must never render as if emptyTiles were a real
+  // "not connected" answer. See the load() callback below.
+  const [loadStatus, setLoadStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [selectedId, setSelectedId] = useState<WearableTileView['id']>('apple_health');
   const [scoreDetail, setScoreDetail] = useState<DimensionSourceRow[]>([]);
   const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
@@ -90,16 +96,29 @@ export function ConnectionsSurface() {
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch(`/api/integrations/wearable-tiles?platform=${platform}`);
-      if (!res.ok) return;
+      const res = await withAbortTimeout(
+        (signal) => fetch(`/api/integrations/wearable-tiles?platform=${platform}`, { signal }),
+        15000,
+        'connections.wearable-tiles',
+      );
+      if (!res.ok) {
+        // Honesty: a failed read must not overwrite whatever tiles are on
+        // screen with a fake "not connected" answer. Surface the error state
+        // instead so the user sees a distinct, actionable notice.
+        setLoadStatus('error');
+        return;
+      }
       const json = (await res.json()) as TilesResponse;
       const next = Array.isArray(json.tiles) ? json.tiles : [];
       const filtered = next.filter((t) => (FIRST_CLASS_TILE_IDS as readonly string[]).includes(t.id));
       setTiles(filtered.length ? filtered : emptyTiles(platform));
       setScoreDetail(Array.isArray(json.scoreDetail) ? json.scoreDetail : []);
       setLastUpdatedAt(typeof json.lastUpdatedAt === 'string' ? json.lastUpdatedAt : null);
+      setLoadStatus('ready');
     } catch {
-      setTiles(emptyTiles(platform));
+      // Timeout or network failure: same honesty rule as the !res.ok branch
+      // above, no emptyTiles overwrite standing in for a real answer.
+      setLoadStatus('error');
     }
   }, [platform]);
 
@@ -203,6 +222,27 @@ export function ConnectionsSurface() {
         <p className="mt-1 text-sm text-white/50">Wearables</p>
         <p className="mt-2 text-sm text-white/60">{CONNECTIONS_LEAD}</p>
       </header>
+
+      {loadStatus === 'error' ? (
+        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.04] p-6 text-center">
+          <p className="text-sm font-semibold text-white/85">
+            We could not load your connected devices.
+          </p>
+          <p className="mt-1 text-sm text-white/60">
+            Check your connection and try again.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setLoadStatus('loading');
+              void load();
+            }}
+            className="mt-4 inline-flex min-h-[44px] items-center justify-center rounded-lg border border-teal bg-transparent px-4 text-sm font-semibold text-teal hover:bg-teal/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal/50"
+          >
+            Retry
+          </button>
+        </div>
+      ) : null}
 
       <div className="grid grid-cols-1 gap-6 min-[900px]:grid-cols-2 min-[1280px]:grid-cols-[1fr_1.2fr_1fr]">
         <AdminPanel name="Sources">
