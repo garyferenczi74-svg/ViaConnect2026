@@ -80,6 +80,8 @@ describe('Brief 34 word wrap (source presence)', () => {
     for (const banned of LETTER_LADDER) {
       expect(nameClass).not.toMatch(banned);
     }
+    expect(nameClass).not.toMatch(/writing-mode/);
+    expect(nameClass).not.toMatch(/1ch/);
     expect(cardSrc()).not.toMatch(/writing-mode\s*:\s*vertical/);
     expect(cardSrc()).not.toMatch(/w-\[1ch\]|width:\s*1ch/);
   });

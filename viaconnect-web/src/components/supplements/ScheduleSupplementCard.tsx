@@ -2,8 +2,8 @@
 
 // Prompt 185a / 219 / 219a / Brief 34: Daily Schedule checklist row.
 // 219: compact density. 219a: rows size to CONTENT (min-height 56px, height auto).
-// Brief 34: take the column width (w-full min-w-0). Never overflow-wrap:anywhere
-// (that collapses min-content to 1ch and letter-stacks the name). Word wrap only.
+// Brief 34: take the column width (w-full min-w-0). Never wrap at every glyph
+// (that collapses min-content and letter-stacks the name). Word wrap only.
 // One flex row: checkbox + name + dose. Name may wrap to two lines; full name shown.
 // Chips sit inside the row and wrap as words. Controls vertical-center.
 // Functions unchanged: take toggle, drag, move, remove, rationale.

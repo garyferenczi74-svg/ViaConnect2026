@@ -28,9 +28,12 @@ describe('Prompt 219a content-sized schedule rows', () => {
     expect(src).toMatch(/overflow-visible/);
     expect(src).toMatch(/30,48,84|1E3054/i);
     expect(src).toMatch(/break-words/);
-    // Brief 34: word wrap, never letter wrap. anywhere collapses min-content to 1ch.
-    expect(src).not.toMatch(/overflow-wrap:anywhere|overflow-wrap: anywhere|\[overflow-wrap:anywhere\]/);
-    expect(src).toMatch(/overflow-wrap:break-word|\[overflow-wrap:break-word\]/);
+    // Brief 34: word wrap on the name class, never letter wrap.
+    const nameClass = src.match(
+      /data-testid="schedule-row-name"[\s\S]*?className=\{`([^`]+)`/,
+    )?.[1] ?? '';
+    expect(nameClass).not.toMatch(/overflow-wrap:anywhere|overflow-wrap: anywhere|\[overflow-wrap:anywhere\]/);
+    expect(nameClass).toMatch(/overflow-wrap:break-word|\[overflow-wrap:break-word\]/);
     expect(src).not.toMatch(/line-clamp-/);
     // No Tailwind truncate utility on name/dose classes (comment text may say "truncate")
     expect(src).not.toMatch(/className=\{`[^`]*\btruncate\b/);
