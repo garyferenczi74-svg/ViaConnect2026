@@ -58,6 +58,21 @@ export function lockScoreDetailRows(
   });
 }
 
+// Prompt 230 follow-up (contributor 7-dim gate): the contributor column and
+// the DimensionDetailSheet must surface ALL 7 MetricKey rows -- Task 7b added
+// hrv / resting_hr / steps -- with only the Sleep row gated to UNKNOWN until a
+// real last-sync. lockScoreDetailRows above collapses to the 4 BOS display
+// dims and exists only for the composite-ring count; feeding it to the column
+// silently hid the 3 Task-7b rows even when real data existed. This keeps every
+// row and gates Sleep alone, exactly as lockScoreDetailRows gates it.
+export function gateSleepContributorRows(
+  rows: DimensionSourceRow[],
+  options?: { lastSyncSynced?: boolean },
+): DimensionSourceRow[] {
+  if (options?.lastSyncSynced === true) return rows;
+  return rows.map((row) => (row.dimension === 'sleep' ? unknownSleepRow() : row));
+}
+
 function namedWearableContributorCount(rows: DimensionSourceRow[]): number {
   return rows.filter((row) => row.showRing === true && typeof row.source === 'string' && row.source.length > 0).length;
 }
@@ -78,6 +93,7 @@ export function ScoreDetailPanel({
 }: ScoreDetailPanelProps) {
   const lastSyncSynced = bedtimeStrip.sleepTileSynced === true;
   const locked = lockScoreDetailRows(rows, { lastSyncSynced });
+  const contributorRows = gateSleepContributorRows(rows, { lastSyncSynced });
   const named = namedWearableContributorCount(locked);
   const composite =
     named > 0 ? connectionsBosCompositeDisplay() : CONNECTIONS_BOS_COMPOSITE;
@@ -121,7 +137,7 @@ export function ScoreDetailPanel({
         </div>
       </div>
 
-      <ContributorColumn rows={locked} onOpenDimension={onOpenDimension ?? (() => undefined)} />
+      <ContributorColumn rows={contributorRows} onOpenDimension={onOpenDimension ?? (() => undefined)} />
 
       <article
         data-dimension="sleep"

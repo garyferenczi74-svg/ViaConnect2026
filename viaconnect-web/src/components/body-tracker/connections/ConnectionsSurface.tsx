@@ -34,7 +34,7 @@ import {
 import { resolveHabitSleepPair } from '@/lib/body-tracker/habit-sleep-pair';
 import { useDailyScheduleView } from '@/hooks/useDailyScheduleView';
 import { WearableTileCard } from './WearableTileCard';
-import { ScoreDetailPanel } from './ScoreDetailPanel';
+import { ScoreDetailPanel, gateSleepContributorRows } from './ScoreDetailPanel';
 import { ActiveSourceDetailPanel } from './ActiveSourceDetailPanel';
 import { DimensionDetailSheet } from './DimensionDetailSheet';
 
@@ -324,7 +324,16 @@ export function ConnectionsSurface() {
         }}
         onClose={() => setConsent(null)}
       />
-      <DimensionDetailSheet metric={openMetric} rows={scoreDetail} onClose={() => setOpenMetric(null)} />
+      {/* Prompt 230 follow-up: gate the sheet's Sleep row the same way the
+          contributor column does, so a row shown "Connect your device" never
+          opens a drill-down that presents a stale sleep value as current. */}
+      <DimensionDetailSheet
+        metric={openMetric}
+        rows={gateSleepContributorRows(scoreDetail, {
+          lastSyncSynced: bedtimeStrip.sleepTileSynced === true,
+        })}
+        onClose={() => setOpenMetric(null)}
+      />
     </div>
   );
 }
