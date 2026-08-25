@@ -14,20 +14,21 @@ function feedsLabel(tile: WearableTileView): string | null {
 const outlineBtn =
   'flex min-h-[44px] shrink-0 items-center justify-center rounded-lg border border-teal bg-transparent px-3 text-xs font-semibold text-teal hover:bg-teal/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal/50';
 
-// Brief 28: one chrome function for all six first-class tiles. Resting is
-// the live Apple Health dark glass. Activated BODY is real white translucent
-// glass so the page hero shows through (16px blur, white 0.16-0.28 fill,
-// white 0.45 stroke). Never teal/blue fill, border, ring, title, or left
-// rail. Do not use overflow-hidden on the activated body: it clips
-// backdrop-filter and leaves an opaque navy plate with a white edge.
+// Brief 28 Gary re-lock: one chrome function for all six first-class tiles.
+// Resting is the live Apple Health grey glass. Activated BODY is real teal
+// (blue) translucent glass so the page hero shows through (16px blur, teal
+// 0.16-0.28 fill, teal 0.45-0.6 stroke). Title and left rail follow the
+// teal glass. Do not use overflow-hidden on the activated body: it clips
+// backdrop-filter and leaves an opaque navy plate. Overrides the earlier
+// Brief 28 NOT-blue / white-glass lock.
 const WEARABLE_TILE_FOCUS_RING =
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal/60';
 export const WEARABLE_TILE_RESTING_CHROME =
   'relative rounded-[24px] border border-white/[0.08] bg-card p-4 backdrop-blur-md';
 export const WEARABLE_TILE_ACTIVATED_CHROME =
-  'relative rounded-[24px] border border-[rgba(255,255,255,0.45)] bg-[rgba(255,255,255,0.20)] p-4 pl-6 backdrop-blur-[16px]';
+  'relative rounded-[24px] border border-teal/50 bg-teal/20 p-4 pl-6 backdrop-blur-[16px]';
 export const WEARABLE_TILE_ACTIVATED_RAIL =
-  'absolute inset-y-3 left-0 w-1 rounded-full bg-white/60';
+  'absolute inset-y-3 left-0 w-1 rounded-full bg-teal/60';
 
 export function wearableTileCardChrome(selected: boolean): string {
   return selected ? WEARABLE_TILE_ACTIVATED_CHROME : WEARABLE_TILE_RESTING_CHROME;
@@ -35,7 +36,7 @@ export function wearableTileCardChrome(selected: boolean): string {
 
 export function wearableTileTitleClassName(selected: boolean): string {
   return selected
-    ? 'text-sm font-bold leading-snug text-white whitespace-normal break-words'
+    ? 'text-sm font-bold leading-snug text-teal whitespace-normal break-words'
     : 'text-sm font-semibold leading-snug text-white whitespace-normal break-words';
 }
 
