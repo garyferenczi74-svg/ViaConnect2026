@@ -86,6 +86,26 @@ describe('Task 10: three-column layout, G76 mobile order, 219i boundaries, sourc
     expect(surface).toContain('onKeyDown={handleSourceListKeyDown}');
   });
 
+  // Fix round 1: the listbox container's arrow handler also receives Arrow
+  // keydowns that bubble up from an inner action button (Upload XML /
+  // Connect / Reconnect / the chevron) once a keyboard user has Tabbed to
+  // it. Without an origin check, pressing an arrow key while focused on
+  // that button would move selection AND steal DOM focus off the button
+  // back onto a card. The handler must bail unless the event originated on
+  // the option itself.
+  it('arrow handler only acts when the key originated on an option, not a bubbled inner control', () => {
+    const surface = src('src/components/body-tracker/connections/ConnectionsSurface.tsx');
+    expect(surface).toMatch(/target\.getAttribute\('role'\) !== 'option'/);
+    // The origin check must run before the selection/focus-moving logic,
+    // i.e. before the first setSelectedId call inside the handler.
+    const handlerStart = surface.indexOf('const handleSourceListKeyDown');
+    const guardIndex = surface.indexOf("target.getAttribute('role') !== 'option'", handlerStart);
+    const setSelectedIndex = surface.indexOf('setSelectedId(next.id)', handlerStart);
+    expect(handlerStart).toBeGreaterThan(-1);
+    expect(guardIndex).toBeGreaterThan(handlerStart);
+    expect(setSelectedIndex).toBeGreaterThan(guardIndex);
+  });
+
   it('WearableTileCard swaps the invalid role=button + aria-selected for role=option with roving tabindex', () => {
     const tile = src('src/components/body-tracker/connections/WearableTileCard.tsx');
     expect(tile).toContain('role="option"');

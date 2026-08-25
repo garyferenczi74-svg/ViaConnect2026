@@ -167,13 +167,19 @@ export function ConnectionsSurface() {
   const anyConnected = tiles.some((t) => t.lastSyncState === 'synced' || t.lastSyncState === 'connected_never_synced');
 
   // Task 10 a11y: single-select listbox arrow navigation. Attached to the
-  // listbox container so it also catches events bubbling up from an
-  // option's inner action buttons; only ArrowUp/ArrowDown are handled.
-  // Moves both the selection (via setSelectedId) and DOM focus (roving
-  // tabindex means only the newly selected option is tabbable next).
+  // listbox container, which also receives events bubbling up from an
+  // option's inner action buttons; only ArrowUp/ArrowDown are handled, and
+  // only when the key originated on the option itself (fix round 1: a
+  // bubbled Arrow keydown from a Tab-focused inner button, e.g. Upload
+  // XML / Connect / Reconnect / the chevron, must NOT steal focus off that
+  // button back onto a card). Moves both the selection (via setSelectedId)
+  // and DOM focus (roving tabindex means only the newly selected option is
+  // tabbable next).
   const handleSourceListKeyDown = useCallback(
     (e: KeyboardEvent<HTMLDivElement>) => {
       if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+      const target = e.target as HTMLElement;
+      if (!target || target.getAttribute('role') !== 'option') return;
       if (tiles.length === 0) return;
       e.preventDefault();
       const currentIndex = tiles.findIndex((t) => t.id === selectedId);
