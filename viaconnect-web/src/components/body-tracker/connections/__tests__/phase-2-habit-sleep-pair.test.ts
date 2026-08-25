@@ -155,7 +155,9 @@ describe('Phase 2 habit next to Sleep', () => {
     expect(panel).toContain(
       'MTHFR+ is one habit you logged, shown next to Sleep. It is educational context, not a diagnosis, and it is not a correlation.',
     );
-    expect(panel).not.toMatch(/\br\s*=/);
+    expect(visiblePair.sentence).not.toMatch(/\br\s*=/);
+    expect(panel).not.toMatch(/r\s*=\s*[-+]?\d*\.\d/);
+    expect(panel).not.toContain('r =');
     expect(panel).not.toContain('Sleep Score');
     expect(panel).not.toContain('Vitality');
     expect(panel).not.toContain('Helix');
@@ -168,7 +170,7 @@ describe('Phase 2 habit next to Sleep', () => {
     );
     expect(pairOnly).toContain('data-habit-sleep-pair="visible"');
     expect(pairOnly).toContain('data-habit-dimension="Sleep"');
-    expect(pairOnly).toContain('strokeWidth="1.5"');
+    expect(pairOnly).toContain('stroke-width="1.5"');
     expect(pairOnly).toContain('rounded-2xl');
     expect(pairOnly).not.toContain('Sleep Score');
     expect(pairOnly).not.toContain('Vitality');

@@ -110,7 +110,8 @@ describe('Phase 2 habit-sleep pair resolver', () => {
     expect(firstLoggedHabitName({ morning: [], afternoon: [], evening: [] })).toBeNull();
     expect(none.visible).toBe(false);
     expect(none.habitName).toBeNull();
-    expect(none.sentence).not.toContain('MTHFR+');
+    expect(none.sentence).toBeNull();
+    expect(String(none.sentence ?? '')).not.toContain('MTHFR+');
     expect(resolveHabitSleepPair({ tiles: appleSynced, habitName: '', now: NOW }).visible).toBe(
       false,
     );
