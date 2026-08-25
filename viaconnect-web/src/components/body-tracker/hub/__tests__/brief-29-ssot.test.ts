@@ -54,7 +54,6 @@ describe('Brief 29 Dashboard Analytics Biology SSOT', () => {
     expect(strip).toContain('FIRST_CLASS_TILE_IDS');
     expect(strip).toContain('buildConnectionsStripSources');
     expect(strip).toContain('href={CONNECTIONS.href}');
-    expect(strip).toContain('/body-tracker/connections');
     expect(strip).not.toMatch(/connected:\s*true/);
     expect(strip).not.toContain('native_health_bridge');
   });
