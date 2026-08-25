@@ -14,15 +14,17 @@
 // Hard rules honored: no em or en dashes, no emojis, no any.
 
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
-import { Camera, Check, RefreshCw, X } from 'lucide-react';
+import { Camera, Check, ImageUp, PenLine, RefreshCw, X } from 'lucide-react';
 import {
   acquireWebCameraStream,
   webCameraStreamToJpeg,
   stopWebCameraStream,
   CaptureCancelledError,
-  CaptureUnsupportedError,
+  CAMERA_PERMISSION_USER_COPY,
+  CAMERA_UNAVAILABLE_USER_COPY,
   type CaptureResult,
 } from '@/lib/capacitor/camera-capture';
+import { NUTRIVISION_START_STREAM_TIMEOUT_MS as START_STREAM_TIMEOUT_MS } from '@/lib/nutrition/stateContract228';
 
 const NAVY = '#1A2744';
 const CARD = '#1E3054';
@@ -38,10 +40,16 @@ export interface WebCameraPreviewProps {
   /** JPEG quality 0-100 (defaults to camera-capture.ts default). */
   jpegQuality?: number;
   /**
-   * Prompt 190: when getUserMedia is denied or unavailable, the Photo path
-   * falls back to a native file input WITH capture="environment" (forces
-   * the device camera). The parent owns the input flow; this button only
-   * hands control back inside the user gesture.
+   * Brief 33: gallery picker with no capture attribute. Primary fail exit.
+   */
+  onUploadPhoto: () => void;
+  /**
+   * Brief 33: Log a Full Meal / MealCard. No blob required pre-capture.
+   */
+  onLogManually: () => void;
+  /**
+   * Prompt 190 / Brief 33: tertiary retry only. Native file input WITH
+   * capture="environment". Never the only fail-path action.
    */
   onNativeFallback?: () => void;
 }
@@ -56,7 +64,10 @@ type PreviewState =
   | 'capture_error'
   | 'timed_out';
 
-const START_STREAM_TIMEOUT_MS = 8000;
+const CAMERA_TIMEOUT_USER_COPY =
+  'Camera is taking too long to start. Upload a photo or log the meal manually.';
+const CAMERA_CAPTURE_FAIL_COPY =
+  'Could not capture a photo. Upload a photo or log the meal manually.';
 
 interface MediaStreamLike {
   getTracks(): Array<{ stop(): void }>;
@@ -68,6 +79,8 @@ export function WebCameraPreview({
   onConfirm,
   maxEdgePx,
   jpegQuality,
+  onUploadPhoto,
+  onLogManually,
   onNativeFallback,
 }: WebCameraPreviewProps): JSX.Element | null {
   const titleId = useId();
@@ -107,9 +120,7 @@ export function WebCameraPreview({
       cancelled = true;
       teardownStream();
       setState('timed_out');
-      setError(
-        'Camera is taking too long to start. Grant permission in browser settings, or choose a photo instead.',
-      );
+      setError(CAMERA_TIMEOUT_USER_COPY);
     }, START_STREAM_TIMEOUT_MS);
 
     (async () => {
@@ -124,9 +135,7 @@ export function WebCameraPreview({
               if (cancelled) return;
               window.clearTimeout(timeoutId);
               setState('permission_denied');
-              setError(
-                'Camera permission was denied. Enable it in browser settings, or choose a photo instead.',
-              );
+              setError(CAMERA_PERMISSION_USER_COPY);
               return;
             }
           } catch {
@@ -155,15 +164,10 @@ export function WebCameraPreview({
         if (cancelled) return;
         if (err instanceof CaptureCancelledError) {
           setState('permission_denied');
-          setError(
-            'Camera permission was not granted. Enable it in browser settings, or choose a photo instead.',
-          );
-        } else if (err instanceof CaptureUnsupportedError) {
-          setState('unsupported');
-          setError(err.message);
+          setError(CAMERA_PERMISSION_USER_COPY);
         } else {
           setState('unsupported');
-          setError(err instanceof Error ? err.message : 'Camera unavailable. Choose a photo instead.');
+          setError(CAMERA_UNAVAILABLE_USER_COPY);
         }
       }
     })();
@@ -186,9 +190,9 @@ export function WebCameraPreview({
       });
       setCapturedResult(result);
       setState('captured');
-    } catch (err) {
+    } catch {
       setState('capture_error');
-      setError(err instanceof Error ? err.message : 'Could not capture from video stream.');
+      setError(CAMERA_CAPTURE_FAIL_COPY);
     } finally {
       setIsCapturing(false);
     }
@@ -303,7 +307,15 @@ export function WebCameraPreview({
             className="rounded-2xl px-6 py-4 text-center"
             style={{ backgroundColor: CARD, color: '#FFFFFF', fontSize: 14 }}
           >
-            Starting camera...
+            <p>Starting camera...</p>
+            <button
+              type="button"
+              onClick={handleCancel}
+              className="mt-3 inline-flex min-h-[44px] items-center justify-center underline"
+              style={{ color: TEAL, fontSize: 13 }}
+            >
+              Close
+            </button>
           </div>
         </div>
       )}
@@ -314,6 +326,7 @@ export function WebCameraPreview({
         state === 'timed_out') && (
         <div
           role="alert"
+          data-camera-fail-actions="true"
           className="absolute inset-x-4 top-24 z-20 mx-auto max-w-md rounded-2xl p-4"
           style={{ backgroundColor: CARD, color: '#FFFFFF' }}
         >
@@ -327,25 +340,47 @@ export function WebCameraPreview({
           <p className="mt-2" style={{ fontSize: 13, lineHeight: 1.5 }}>
             {error
               ?? (state === 'permission_denied'
-                ? 'Allow camera access in your browser settings to take a meal photo.'
-                : 'Try Upload photo from your library instead.')}
+                ? CAMERA_PERMISSION_USER_COPY
+                : CAMERA_UNAVAILABLE_USER_COPY)}
           </p>
-          <div className="mt-3 flex flex-wrap items-center gap-3">
+          <div className="mt-3 flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={onUploadPhoto}
+              className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl px-4 py-2 font-semibold"
+              style={{ backgroundColor: TEAL, color: '#FFFFFF', fontSize: 14 }}
+            >
+              <ImageUp size={16} strokeWidth={1.5} aria-hidden="true" />
+              Upload a photo
+            </button>
+            <button
+              type="button"
+              onClick={onLogManually}
+              className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl px-4 py-2 font-semibold"
+              style={{
+                backgroundColor: 'transparent',
+                border: `1.5px solid ${TEAL}`,
+                color: TEAL,
+                fontSize: 14,
+              }}
+            >
+              <PenLine size={16} strokeWidth={1.5} aria-hidden="true" />
+              Log manually
+            </button>
             {onNativeFallback && (
               <button
                 type="button"
                 onClick={onNativeFallback}
-                className="inline-flex items-center gap-2 rounded-full px-4 py-2 font-medium"
-                style={{ backgroundColor: TEAL, color: '#FFFFFF', fontSize: 13 }}
+                className="inline-flex min-h-[44px] items-center justify-center gap-2 px-2 text-sm font-medium"
+                style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: 13 }}
               >
-                <Camera size={14} strokeWidth={1.5} aria-hidden="true" />
                 Use device camera
               </button>
             )}
             <button
               type="button"
               onClick={handleCancel}
-              className="underline"
+              className="inline-flex min-h-[44px] items-center justify-center underline"
               style={{ color: TEAL, fontSize: 13 }}
             >
               Close

@@ -10,8 +10,9 @@ import {
 
 describe('Prompt 228 state contract', () => {
   it('defines a finite start-stream timeout', () => {
-    expect(NUTRIVISION_START_STREAM_TIMEOUT_MS).toBeGreaterThan(0);
-    expect(NUTRIVISION_START_STREAM_TIMEOUT_MS).toBeLessThanOrEqual(15000);
+    expect(NUTRIVISION_START_STREAM_TIMEOUT_MS).toBeGreaterThanOrEqual(2500);
+    expect(NUTRIVISION_START_STREAM_TIMEOUT_MS).toBeLessThanOrEqual(3500);
+    expect(NUTRIVISION_START_STREAM_TIMEOUT_MS).toBe(3000);
     expect(NUTRIVISION_CAMERA_CAPTURE_TIMEOUT_MS).toBeGreaterThanOrEqual(
       NUTRIVISION_START_STREAM_TIMEOUT_MS,
     );
@@ -38,8 +39,10 @@ describe('Prompt 228 state contract', () => {
       'utf8',
     );
     expect(src).toContain('START_STREAM_TIMEOUT_MS');
+    expect(src).toContain('NUTRIVISION_START_STREAM_TIMEOUT_MS');
     expect(src).toContain('timed_out');
     expect(src).toContain('permissions?.query');
+    expect(src).not.toContain('= 8000');
   });
 
   it('ReviewForm discard checks res.ok before navigating', () => {

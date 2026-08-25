@@ -72,4 +72,11 @@ describe('NutriVisionTab index source', () => {
     // The old underlined "Upload photo from gallery" link stays gone.
     expect(source).not.toContain('Upload photo from gallery');
   });
+
+  it('camera fail path wires Upload a photo and Log manually', () => {
+    expect(source).toContain('onUploadPhoto={handleWebCameraUploadPhoto}');
+    expect(source).toContain('onLogManually={handleWebCameraLogManually}');
+    expect(source).toContain("void onCapture('gallery')");
+    expect(source).toContain("router.push('/nutrition/log-meal')");
+  });
 });

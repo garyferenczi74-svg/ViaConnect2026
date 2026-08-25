@@ -237,8 +237,68 @@ interface MediaStreamLike {
   getTracks(): Array<{ stop(): void }>;
 }
 
+type WebCameraVideoConstraints =
+  | { video: true }
+  | { video: { facingMode: string } };
+
 interface MediaDevicesLike {
-  getUserMedia?: (constraints: { video: { facingMode: string } }) => Promise<MediaStreamLike>;
+  getUserMedia?: (constraints: WebCameraVideoConstraints) => Promise<MediaStreamLike>;
+}
+
+/** Honest user copy. Never a raw DOMException.message. */
+export const CAMERA_UNAVAILABLE_USER_COPY =
+  'Camera is not available on this device. Upload a photo or log the meal manually.';
+
+export const CAMERA_PERMISSION_USER_COPY =
+  'Camera permission was not granted. Enable it in browser settings, or upload a photo or log the meal manually.';
+
+function getUserMediaErrorName(err: unknown): string {
+  if (err && typeof err === 'object' && 'name' in err) {
+    const name = (err as { name?: unknown }).name;
+    if (typeof name === 'string') return name;
+  }
+  return '';
+}
+
+export function isCameraPermissionFailure(err: unknown): boolean {
+  const name = getUserMediaErrorName(err);
+  if (name === 'NotAllowedError' || name === 'SecurityError') return true;
+  return err instanceof Error && /denied|permission/i.test(err.message);
+}
+
+/**
+ * Map getUserMedia failures to honest copy. NotFoundError,
+ * OverconstrainedError, NotAllowedError, and never-granted permission
+ * never leak the raw DOMException.message.
+ */
+export function userFacingCameraFailure(
+  err: unknown,
+): CaptureCancelledError | CaptureUnsupportedError {
+  if (isCameraPermissionFailure(err)) {
+    return new CaptureCancelledError(CAMERA_PERMISSION_USER_COPY);
+  }
+  return new CaptureUnsupportedError(CAMERA_UNAVAILABLE_USER_COPY);
+}
+
+async function requestWebCameraStream(
+  md: MediaDevicesLike,
+  facingMode: 'environment' | 'user',
+): Promise<MediaStreamLike> {
+  if (typeof md.getUserMedia !== 'function') {
+    throw new CaptureUnsupportedError(CAMERA_UNAVAILABLE_USER_COPY);
+  }
+  try {
+    return await md.getUserMedia({ video: { facingMode } });
+  } catch (firstErr) {
+    if (isCameraPermissionFailure(firstErr)) {
+      throw userFacingCameraFailure(firstErr);
+    }
+    try {
+      return await md.getUserMedia({ video: true });
+    } catch (secondErr) {
+      throw userFacingCameraFailure(secondErr);
+    }
+  }
 }
 
 interface NavigatorWithMedia {
@@ -416,25 +476,14 @@ export async function acquireWebCameraStream(
   opts: AcquireWebCameraOpts = {},
 ): Promise<MediaStreamLike> {
   if (typeof navigator === 'undefined') {
-    throw new CaptureUnsupportedError('navigator is not available');
+    throw new CaptureUnsupportedError(CAMERA_UNAVAILABLE_USER_COPY);
   }
   const nav = navigator as unknown as NavigatorWithMedia;
   const md = nav.mediaDevices;
   if (!md || typeof md.getUserMedia !== 'function') {
-    throw new CaptureUnsupportedError('getUserMedia is not available');
+    throw new CaptureUnsupportedError(CAMERA_UNAVAILABLE_USER_COPY);
   }
-  try {
-    return await md.getUserMedia({
-      video: { facingMode: opts.facingMode ?? 'environment' },
-    });
-  } catch (err) {
-    if (err instanceof Error && /denied|permission/i.test(err.message)) {
-      throw new CaptureCancelledError('Camera permission denied');
-    }
-    throw new CaptureUnsupportedError(
-      err instanceof Error ? err.message : 'getUserMedia rejected',
-    );
-  }
+  return requestWebCameraStream(md, opts.facingMode ?? 'environment');
 }
 
 export async function webCameraStreamToJpeg(
@@ -471,12 +520,12 @@ export function stopWebCameraStream(stream: MediaStreamLike): void {
 
 async function captureWebCamera(opts: NormalizedOpts): Promise<CaptureResult> {
   if (typeof navigator === 'undefined') {
-    throw new CaptureUnsupportedError('navigator is not available');
+    throw new CaptureUnsupportedError(CAMERA_UNAVAILABLE_USER_COPY);
   }
   const nav = navigator as unknown as NavigatorWithMedia;
   const md = nav.mediaDevices;
   if (!md || typeof md.getUserMedia !== 'function') {
-    throw new CaptureUnsupportedError('getUserMedia is not available');
+    throw new CaptureUnsupportedError(CAMERA_UNAVAILABLE_USER_COPY);
   }
 
   safeLog.info(LOG_SCOPE, 'nutrivision_camera_opened', {
@@ -485,17 +534,7 @@ async function captureWebCamera(opts: NormalizedOpts): Promise<CaptureResult> {
     platform: 'web',
   });
 
-  let stream: MediaStreamLike;
-  try {
-    stream = await md.getUserMedia({ video: { facingMode: 'environment' } });
-  } catch (err) {
-    if (err instanceof Error && /denied|permission/i.test(err.message)) {
-      throw new CaptureCancelledError('Camera permission denied');
-    }
-    throw new CaptureUnsupportedError(
-      err instanceof Error ? err.message : 'getUserMedia rejected',
-    );
-  }
+  const stream = await requestWebCameraStream(md, 'environment');
 
   try {
     const { base64, width, height } = await drawStreamToJpeg(stream, opts.jpegQuality);

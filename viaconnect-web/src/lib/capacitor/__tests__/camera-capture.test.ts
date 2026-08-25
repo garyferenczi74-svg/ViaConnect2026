@@ -9,10 +9,15 @@ import {
   detectPlatform,
   captureMealPhoto,
   captureCameraFallbackPhoto,
+  acquireWebCameraStream,
+  userFacingCameraFailure,
+  isCameraPermissionFailure,
   CaptureCancelledError,
   CaptureUnsupportedError,
   CaptureFileTooLargeError,
   CaptureUnsupportedTypeError,
+  CAMERA_UNAVAILABLE_USER_COPY,
+  CAMERA_PERMISSION_USER_COPY,
 } from '../camera-capture';
 
 // 1x1 white JPEG (raw base64, no data URL prefix).
@@ -313,5 +318,97 @@ describe('captureMealPhoto (web)', () => {
     await expect(captureMealPhoto({ source: 'gallery' })).rejects.toBeInstanceOf(
       CaptureCancelledError,
     );
+  });
+
+  it('source="camera" + NotFoundError does not leak Requested device not found', async () => {
+    const notFound = new Error('Requested device not found');
+    notFound.name = 'NotFoundError';
+    stubBrowserGlobals({
+      onCreateInput: () => undefined,
+      withMediaDevices: true,
+      getUserMediaImpl: () => Promise.reject(notFound),
+    });
+
+    await expect(captureMealPhoto({ source: 'camera' })).rejects.toMatchObject({
+      name: 'CaptureUnsupportedError',
+      message: CAMERA_UNAVAILABLE_USER_COPY,
+    });
+  });
+});
+
+function namedError(name: string, message: string): Error {
+  const err = new Error(message);
+  err.name = name;
+  return err;
+}
+
+describe('userFacingCameraFailure', () => {
+  it('maps NotAllowedError to permission copy and never invents granted', () => {
+    const mapped = userFacingCameraFailure(namedError('NotAllowedError', 'Permission denied'));
+    expect(mapped).toBeInstanceOf(CaptureCancelledError);
+    expect(mapped.message).toBe(CAMERA_PERMISSION_USER_COPY);
+    expect(mapped.message).toContain('not granted');
+    expect(mapped.message).not.toMatch(/permission was granted/i);
+    expect(isCameraPermissionFailure(namedError('NotAllowedError', 'Permission denied'))).toBe(true);
+  });
+
+  it('maps NotFoundError and OverconstrainedError to camera-not-available copy', () => {
+    const notFound = userFacingCameraFailure(namedError('NotFoundError', 'Requested device not found'));
+    const over = userFacingCameraFailure(namedError('OverconstrainedError', 'Overconstrained'));
+    expect(notFound).toBeInstanceOf(CaptureUnsupportedError);
+    expect(over).toBeInstanceOf(CaptureUnsupportedError);
+    expect(notFound.message).toBe(CAMERA_UNAVAILABLE_USER_COPY);
+    expect(over.message).toBe(CAMERA_UNAVAILABLE_USER_COPY);
+    expect(notFound.message).not.toContain('Requested device not found');
+    expect(over.message).not.toContain('Overconstrained');
+  });
+});
+
+describe('acquireWebCameraStream', () => {
+  it('retries unconstrained { video: true } after environment NotFoundError', async () => {
+    const calls: unknown[] = [];
+    const stream = { getTracks: () => [] };
+    const getUserMedia = vi.fn((constraints: unknown) => {
+      calls.push(constraints);
+      if (calls.length === 1) {
+        return Promise.reject(namedError('NotFoundError', 'Requested device not found'));
+      }
+      return Promise.resolve(stream);
+    });
+    vi.stubGlobal('navigator', { mediaDevices: { getUserMedia } });
+
+    const result = await acquireWebCameraStream({ facingMode: 'environment' });
+    expect(result).toBe(stream);
+    expect(calls).toEqual([
+      { video: { facingMode: 'environment' } },
+      { video: true },
+    ]);
+  });
+
+  it('fails honest after unconstrained retry and never leaks Requested device not found', async () => {
+    const getUserMedia = vi.fn(() =>
+      Promise.reject(namedError('NotFoundError', 'Requested device not found')),
+    );
+    vi.stubGlobal('navigator', { mediaDevices: { getUserMedia } });
+
+    await expect(acquireWebCameraStream({ facingMode: 'environment' })).rejects.toMatchObject({
+      name: 'CaptureUnsupportedError',
+      message: CAMERA_UNAVAILABLE_USER_COPY,
+    });
+    expect(getUserMedia).toHaveBeenCalledTimes(2);
+    expect(getUserMedia.mock.calls[1]?.[0]).toEqual({ video: true });
+  });
+
+  it('does not retry unconstrained after NotAllowedError', async () => {
+    const getUserMedia = vi.fn(() =>
+      Promise.reject(namedError('NotAllowedError', 'Permission denied')),
+    );
+    vi.stubGlobal('navigator', { mediaDevices: { getUserMedia } });
+
+    await expect(acquireWebCameraStream({ facingMode: 'environment' })).rejects.toMatchObject({
+      name: 'CaptureCancelledError',
+      message: CAMERA_PERMISSION_USER_COPY,
+    });
+    expect(getUserMedia).toHaveBeenCalledTimes(1);
   });
 });
