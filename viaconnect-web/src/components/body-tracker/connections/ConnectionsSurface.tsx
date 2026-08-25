@@ -283,7 +283,7 @@ export function ConnectionsSurface() {
             import completes, matching the modal's onImported path. */}
         <AdminPanel name="Active source">
           <div className={`${anyConnected ? 'order-2' : 'order-3'} min-[900px]:order-none min-[1280px]:h-full`}>
-            <ActiveSourceDetailPanel>
+            <ActiveSourceDetailPanel
               key={selectedTile?.id ?? 'none'}
               tile={selectedTile}
               onImported={load}
@@ -293,7 +293,7 @@ export function ConnectionsSurface() {
 
         <AdminPanel name="Score contributors">
           <div className={`${anyConnected ? 'order-3' : 'order-1'} min-[900px]:order-none min-[1280px]:h-full`}>
-            <ScoreDetailPanel>
+            <ScoreDetailPanel
               rows={scoreDetail}
               lastUpdatedAt={lastUpdatedAt}
               onOpenDimension={setOpenMetric}
