@@ -3,7 +3,11 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 vi.mock('react-hot-toast', () => ({ default: { success: () => undefined, error: () => undefined } }));
 vi.mock('@/lib/supabase/client', () => ({ createClient: () => ({}) }));
-import { WearableTileCard } from '@/components/body-tracker/connections/WearableTileCard';
+import {
+  WearableTileCard,
+  wearableTileCardChrome,
+  wearableTileTitleClassName,
+} from '@/components/body-tracker/connections/WearableTileCard';
 import { buildWearableTiles, type WearableTileInput } from '@/lib/body-tracker/wearable-tiles';
 const NOW = Date.parse('2026-08-24T10:00:00.000Z');
 const base = (o: Partial<WearableTileInput> = {}): WearableTileInput => ({ oauth: [], humeIngestCount: 0, humeLastPersistAt: null, appleXmlIngested: 0, appleXmlLastPersistAt: null, healthKitPersisted: false, healthKitLastPersistAt: null, dimensionsFed: {}, whoopConfigured: false, ouraConfigured: false, googleHealthConfigured: false, garminConfigured: false, platform: 'web', now: NOW, ...o });
@@ -15,7 +19,12 @@ describe('tile selection state', () => {
     const unsel = renderToStaticMarkup(createElement(WearableTileCard, { tile: apple(), onPrimary: () => undefined, onSelect: () => undefined, selected: false }));
     expect(sel).toContain('data-selected="true"');
     expect(sel).toContain('aria-selected="true"');
-    expect(sel).toContain('border-teal'); // greyscale-distinguishable border, not opacity alone
+    // Brief 28: activated chrome is white glass (border + ring + fill), not teal.
+    expect(sel).toContain('border-white/20');
+    expect(sel).toContain('ring-white/30');
+    expect(sel).toContain('bg-white/[0.08]');
+    expect(wearableTileCardChrome(true)).not.toContain('border-teal');
+    expect(wearableTileTitleClassName(true)).not.toContain('text-teal');
     expect(unsel).toContain('data-selected="false"');
     expect(unsel).not.toContain('aria-selected="true"');
   });
