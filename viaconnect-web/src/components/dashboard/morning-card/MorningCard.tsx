@@ -7,6 +7,9 @@
 import { useMemo, useState } from 'react';
 import { useBOSCurrent } from '@/hooks/use-bos-current';
 import { useDailyScheduleView } from '@/hooks/useDailyScheduleView';
+import { useSleepTileSynced } from '@/hooks/useSleepTileSynced';
+import { resolveHabitSleepPair } from '@/lib/body-tracker/habit-sleep-pair';
+import { HabitSleepPair } from '@/components/body-tracker/connections/HabitSleepPair';
 import { BOS_INSUFFICIENT_DATA_COPY, resolveHonestBosDisplay } from '@/lib/scoring/bos-display';
 import {
   MORNING_CARD_ARIA_LABEL,
@@ -49,6 +52,11 @@ function bucketsFromView(
 export function MorningCard() {
   const { data, error, isLoading, refetch } = useBOSCurrent();
   const schedule = useDailyScheduleView();
+  const sleepTileSynced = useSleepTileSynced();
+  const habitSleepPair = resolveHabitSleepPair({
+    sleepTileSynced,
+    schedule: schedule.status === 'ready' ? schedule.view : null,
+  });
   const chips = useMemo(() => buildMorningChips(), []);
   const [selectedKey, setSelectedKey] = useState<MarketingChipKey | null>(null);
   const [taking, setTaking] = useState(false);
@@ -164,6 +172,8 @@ export function MorningCard() {
           selectedKey={selectedKey}
           onSelect={(key) => setSelectedKey((prev) => (prev === key ? null : key))}
         />
+
+        <HabitSleepPair pair={habitSleepPair} />
 
         {selectedChip ? <MorningContributorList chip={selectedChip} /> : null}
       </div>

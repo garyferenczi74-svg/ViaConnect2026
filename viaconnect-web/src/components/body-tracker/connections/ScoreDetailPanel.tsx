@@ -13,7 +13,12 @@ import {
   EMPTY_BEDTIME_STRIP,
   type BedtimeStripView,
 } from '@/lib/body-tracker/sleep-bedtime-strip';
+import {
+  EMPTY_HABIT_SLEEP_PAIR,
+  type HabitSleepPairView,
+} from '@/lib/body-tracker/habit-sleep-pair';
 import { SleepBedtimeStrip } from './SleepBedtimeStrip';
+import { HabitSleepPair } from './HabitSleepPair';
 
 const DIM_META: Record<
   string,
@@ -90,11 +95,13 @@ interface ScoreDetailPanelProps {
   rows: DimensionSourceRow[];
   lastUpdatedAt: string | null;
   bedtimeStrip?: BedtimeStripView;
+  habitSleepPair?: HabitSleepPairView;
 }
 
 export function ScoreDetailPanel({
   rows,
   bedtimeStrip = EMPTY_BEDTIME_STRIP,
+  habitSleepPair = EMPTY_HABIT_SLEEP_PAIR,
 }: ScoreDetailPanelProps) {
   const lastSyncSynced = bedtimeStrip.sleepTileSynced === true;
   const locked = lockScoreDetailRows(rows, { lastSyncSynced });
@@ -149,6 +156,7 @@ export function ScoreDetailPanel({
           const display = ingest ? row.displayValue : 'UNKNOWN';
           const isSleep = row.dimension === 'sleep';
           const stripKind = isSleep ? bedtimeStrip.kind : undefined;
+          const pairKind = isSleep ? habitSleepPair.kind : undefined;
           return (
             <article
               key={row.dimension}
@@ -156,6 +164,7 @@ export function ScoreDetailPanel({
               data-ingest={ingest ? 'sourced' : 'none'}
               data-ring={ingest ? 'visible' : 'hidden'}
               data-bedtime-strip={stripKind}
+              data-habit-sleep-pair={pairKind}
               className="rounded-xl border border-white/[0.08] bg-[#1A2744]/80 p-3"
             >
               <div className="flex items-center justify-between gap-2">
@@ -215,6 +224,7 @@ export function ScoreDetailPanel({
               ) : null}
 
               {isSleep ? <SleepBedtimeStrip strip={bedtimeStrip} /> : null}
+              {isSleep ? <HabitSleepPair pair={habitSleepPair} /> : null}
             </article>
           );
         })}
