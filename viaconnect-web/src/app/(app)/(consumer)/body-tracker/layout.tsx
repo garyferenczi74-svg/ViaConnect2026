@@ -12,18 +12,19 @@
 // inherit the wider container; tablet and mobile breakpoints are
 // unchanged because both siblings use the same px values.
 //
-// Prompt 180b (2026-06-08): hero background video is suppressed on
+// Prompt 180b (2026-06-08): the hero background is suppressed on
 // the My Biology hub route (/body-tracker) only. Section routes
 // (/body-tracker/<surface>) keep the hero so the existing tab pages
-// still get the cinematic body tracker backdrop they shipped with.
-// Path check via usePathname avoids editing the shared
-// MobileHeroVideoBackground component or each section page.
+// still get the body tracker backdrop they shipped with. Path check
+// via usePathname avoids editing the shared background component or
+// each section page. The section backdrop is a still hero image
+// (swapped 2026-08-24 from the original body-tracker MP4).
 
 import { usePathname } from 'next/navigation';
-import { MobileHeroVideoBackground } from '@/components/ui/MobileHeroVideoBackground';
+import { MobileHeroBackground } from '@/components/ui/MobileHeroBackground';
 
-const HERO_VIDEO =
-  'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Videos/body%20tracker%201.mp4';
+const HERO_IMAGE =
+  'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Athlete%209F.png';
 
 export default function BodyTrackerLayout({
   children,
@@ -39,8 +40,8 @@ export default function BodyTrackerLayout({
   return (
     <>
       {isHub ? null : (
-        <MobileHeroVideoBackground
-          src={HERO_VIDEO}
+        <MobileHeroBackground
+          src={HERO_IMAGE}
           overlayOpacity={0.55}
           objectPosition="center center"
           flipX
