@@ -83,20 +83,31 @@ describe('Brief 28 white glass on activated wearable cards', () => {
       expect(markup).toContain('border-white/[0.08]');
       expect(markup).toContain('bg-card');
       expect(markup).toContain('backdrop-blur-md');
-      expect(markup).not.toContain('border-white/20');
+      expect(markup).not.toContain('border-[rgba(255,255,255,0.45)]');
+      expect(markup).not.toContain('bg-[rgba(255,255,255,0.20)]');
       expect(markup).not.toContain('bg-white/[0.08]');
     }
   });
 
-  it('activated chrome is white translucent glass with no teal fill tokens', () => {
+  it('activated chrome is real white body glass (16px blur, 0.16-0.28 fill, 0.45 stroke)', () => {
     const activated = wearableTileCardChrome(true);
     expect(activated).toBe(WEARABLE_TILE_ACTIVATED_CHROME);
     expect(activated).toContain('rounded-[24px]');
-    expect(activated).toContain('border-white/20');
-    expect(activated).toContain('bg-white/[0.08]');
-    expect(activated).toContain('backdrop-blur-md');
-    expect(activated).toContain('ring-white/30');
+    expect(activated).toMatch(/backdrop-blur-\[16px\]|blur\(16px\)/);
+    expect(activated).toContain('bg-[rgba(255,255,255,0.20)]');
+    expect(activated).toContain('border-[rgba(255,255,255,0.45)]');
+
+    const bgAlpha = Number(activated.match(/bg-\[rgba\(255,\s*255,\s*255,\s*(0\.\d+)\)\]/)?.[1]);
+    expect(bgAlpha).toBeGreaterThanOrEqual(0.16);
+    expect(bgAlpha).toBeLessThanOrEqual(0.28);
+    expect(activated).toMatch(/border-\[rgba\(255,\s*255,\s*255,\s*0\.45\)\]/);
+
+    // Body must not be a white stroke on an opaque navy plate.
+    expect(activated).not.toContain('overflow-hidden');
+    expect(activated).not.toContain('bg-white/[0.08]');
     expect(activated).not.toContain('bg-card');
+    expect(activated).not.toContain('bg-navy');
+    expect(activated).not.toContain('bg-teal');
     for (const token of TEAL_FILL_TOKENS) {
       expect(activated).not.toContain(token);
     }

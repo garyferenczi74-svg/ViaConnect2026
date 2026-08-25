@@ -19,10 +19,14 @@ describe('tile selection state', () => {
     const unsel = renderToStaticMarkup(createElement(WearableTileCard, { tile: apple(), onPrimary: () => undefined, onSelect: () => undefined, selected: false }));
     expect(sel).toContain('data-selected="true"');
     expect(sel).toContain('aria-selected="true"');
-    // Brief 28: activated chrome is white glass (border + ring + fill), not teal.
-    expect(sel).toContain('border-white/20');
-    expect(sel).toContain('ring-white/30');
-    expect(sel).toContain('bg-white/[0.08]');
+    // Brief 28: activated BODY is real white glass, not a stroke on navy/teal.
+    expect(sel).toContain('backdrop-blur-[16px]');
+    expect(sel).toContain('bg-[rgba(255,255,255,0.20)]');
+    expect(sel).toContain('border-[rgba(255,255,255,0.45)]');
+    expect(wearableTileCardChrome(true)).not.toContain('overflow-hidden');
+    expect(wearableTileCardChrome(true)).not.toContain('bg-white/[0.08]');
+    expect(wearableTileCardChrome(true)).not.toContain('bg-card');
+    expect(wearableTileCardChrome(true)).not.toContain('bg-navy');
     expect(wearableTileCardChrome(true)).not.toContain('border-teal');
     expect(wearableTileTitleClassName(true)).not.toContain('text-teal');
     expect(unsel).toContain('data-selected="false"');
