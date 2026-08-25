@@ -24,18 +24,20 @@ describe('consumer analytics IA (Brief 13)', () => {
     expect(src).not.toMatch(/href=["']\/wellness-analytics["']/);
   });
 
-  it('dashboard BOS card and analytics share GET /api/bos/current', () => {
-    const card = readFileSync(
-      join(root, 'src/components/dashboard/bos-card-client.tsx'),
+  it('dashboard BOS card and analytics share Connections BOS SSOT', () => {
+    const morning = readFileSync(
+      join(root, 'src/components/dashboard/morning-card/MorningCard.tsx'),
       'utf8',
     );
     const journey = readFileSync(
       join(root, 'src/components/journey/YourJourneyCoaching.tsx'),
       'utf8',
     );
-    expect(card).toMatch(/useBOSCurrent/);
-    expect(card).toMatch(/toDisplayBosScore/);
-    expect(journey).toMatch(/useBOSCurrent/);
-    expect(journey).toMatch(/toDisplayBosScore/);
+    expect(morning).toMatch(/resolveConnectionsBosDisplay/);
+    expect(morning).toMatch(/ConnectionsBosDial/);
+    expect(journey).toMatch(/resolveConnectionsBosDisplay/);
+    expect(journey).toMatch(/connectionsBosNumericScore/);
+    expect(morning).not.toMatch(/useBOSCurrent/);
+    expect(journey).not.toMatch(/useBOSCurrent/);
   });
 });

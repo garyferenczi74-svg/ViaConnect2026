@@ -24,7 +24,7 @@ type Params = {
   weeksActive: number;
 };
 
-function buildTemplate({
+export function buildHannahInsightTemplate({
   displayName,
   range,
   points,
@@ -69,15 +69,19 @@ function buildTemplate({
   let focusArea = "";
   let impact = 0;
 
-  if (current < 55) {
+  if (score === null) {
+    focusArea = "Devices";
+    recommendation = "Connect a device so Bio Optimization Score can use a real wearable source. Missing stays UNKNOWN, never 0.";
+    impact = 0;
+  } else if (score < 55) {
     focusArea = "Sleep Recovery";
     recommendation = `Prioritize a consistent sleep window tonight; pair it with your evening Magnesium Glycinate dose for a ${range === "7D" ? "fast" : "durable"} lift.`;
     impact = 8;
-  } else if (current < 75) {
+  } else if (score < 75) {
     focusArea = "Nutrition Density";
     recommendation = `Add one whole food meal upgrade per day this week, paired with your Omega 3 Elite. Targeted, small wins compound at your tier.`;
     impact = 6;
-  } else if (current < 90) {
+  } else if (score < 90) {
     focusArea = "Stress Resilience";
     recommendation = `You are close to Optimal. A daily 10 minute breath protocol plus Ashwagandha Root Extract tends to be the bridge at this tier.`;
     impact = 5;
@@ -101,11 +105,17 @@ function buildTemplate({
  * expires_at > now(). If fresh row exists, returns it. Otherwise returns
  * the template and fires a server action to persist it with a TTL.
  */
+export function hannahInsightCitesNumericBos(insight: HannahInsight): boolean {
+  const hay = `${insight.greeting} ${insight.analysis} ${insight.recommendation}`;
+  return /\b(?:6[0-9]|[1-9][0-9]{1,2}|100)\b/.test(hay) && /Bio Optimization/i.test(hay);
+}
+
 export function useHannahInsights({ userId, displayName, range, points, current, weeksActive }: Params): HannahInsight {
   const template = useMemo(
-    () => buildTemplate({ displayName, range, points, current, weeksActive }),
+    () => buildHannahInsightTemplate({ displayName, range, points, current, weeksActive }),
     [displayName, range, points, current, weeksActive],
   );
+  const bosUnknown = current === null;
 
   const { data: cached } = useQuery({
     queryKey: ["analytics-hannah-insight", userId, range],
@@ -136,7 +146,7 @@ export function useHannahInsights({ userId, displayName, range, points, current,
   const [persistedKey, setPersistedKey] = useState<string>("");
 
   useEffect(() => {
-    if (!userId || cached) return;
+    if (!userId || bosUnknown || cached) return;
     const key = `${userId}|${range}|${template.greeting}|${template.analysis}`;
     if (key === persistedKey) return;
     setPersistedKey(key);
@@ -148,7 +158,8 @@ export function useHannahInsights({ userId, displayName, range, points, current,
       focusArea: template.focusArea,
       estimatedImpact: template.estimatedImpact,
     });
-  }, [userId, cached, range, template, persistedKey]);
+  }, [userId, bosUnknown, cached, range, template, persistedKey]);
 
+  if (bosUnknown) return template;
   return cached ?? template;
 }

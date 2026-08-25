@@ -26,13 +26,15 @@ describe('Brief 29 morning card IA', () => {
     expect(dash).toContain('HelixRewardsSummary');
   });
 
-  it('reuses /api/bos/current and does not rewrite score math', () => {
+  it('mounts Connections BOS and does not slot /api/bos/current into the dial', () => {
     const card = src(CARD);
     const hook = src(BOS);
-    expect(card).toContain('useBOSCurrent');
+    expect(card).toContain('ConnectionsBosDial');
+    expect(card).toContain('resolveConnectionsBosDisplay');
+    expect(card).not.toContain('useBOSCurrent');
+    expect(card).not.toContain('resolveHonestBosDisplay');
+    expect(card).not.toContain('labelForScore');
     expect(hook).toContain("/api/bos/current");
-    expect(card).toContain('resolveHonestBosDisplay');
-    expect(card).toContain('BOS_INSUFFICIENT_DATA_COPY');
     expect(card).not.toMatch(/compute_bio_optimization_score/);
     expect(card).not.toMatch(/baseline_from_caq/);
   });

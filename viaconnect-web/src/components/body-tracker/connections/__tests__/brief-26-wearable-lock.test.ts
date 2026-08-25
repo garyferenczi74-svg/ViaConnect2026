@@ -253,7 +253,8 @@ describe('Brief 26 Wearable Data 1280 lock', () => {
 
     const panel = src('src/components/body-tracker/connections/ScoreDetailPanel.tsx');
     expect(panel).not.toMatch(/Stability|Symmetry|Helix|Vitality/);
-    expect(panel).toContain('connectionsBosCompositeDisplay');
+    expect(panel).toContain('resolveConnectionsBosDisplay');
+    expect(panel).toContain('ConnectionsBosDial');
   });
 
   it('imports last-sync-state from @/lib/body-tracker/last-sync-state only', () => {

@@ -35,8 +35,12 @@ import { withTimeout } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
 import { useHannahDailyNote } from "@/hooks/journey/useHannahDailyNote";
 import { heroGaugeScore } from "@/components/journey/coaching/heroHelpers";
-import { useBOSCurrent } from "@/hooks/use-bos-current";
-import { resolveHonestBosDisplay, toDisplayBosScore } from "@/lib/scoring/bos-display";
+import { toDisplayBosScore } from "@/lib/scoring/bos-display";
+import {
+  connectionsBosNumericScore,
+  namedWearableContributorCount,
+  resolveConnectionsBosDisplay,
+} from "@/lib/body-tracker/wearable-tiles";
 import { formatMacroLabel, kcalRemaining, flatSparkline, goalProgressPct } from "@/components/journey/coaching/lowerHelpers";
 import { useJourneyGraphSeries, type PillarKey } from "@/components/journey/coaching/useJourneyGraphSeries";
 import { type JourneyRange } from "@/components/journey/coaching/journeyGraphWindow";
@@ -138,9 +142,12 @@ function PlasmaRing({ value, color, size = 40 }: { value: number | null; color: 
   );
 }
 function GaugeCard({ value, label, color, hero, loading }: { value: number | null; label: string; color: string; hero?: boolean; loading?: boolean }) {
+  const isBos = label === "Bio Optimization";
   return (
     <div
       className="vc-gauge-tile"
+      data-bos-card={isBos ? "analytics" : undefined}
+      data-bos-composite={isBos ? (value === null ? "unknown" : undefined) : undefined}
       style={{
         flex: "1 1 0",
         minWidth: 64,
@@ -162,6 +169,9 @@ function GaugeCard({ value, label, color, hero, loading }: { value: number | nul
         <PlasmaRing value={value} color={color} size={hero ? 52 : 48} />
       )}
       <span style={{ fontSize: 9, fontWeight: 600, color: C.text, textAlign: "center", lineHeight: 1.1 }}>{label}</span>
+      {isBos && value === null ? (
+        <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: 0.12, color: C.muted }}>UNKNOWN</span>
+      ) : null}
     </div>
   );
 }
@@ -1236,12 +1246,11 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
   }, []);
 
   // Real data hooks (fail-open: all return safe defaults on error/loading).
-  // bosCurrent: GET /api/bos/current SSOT for the Bio Optimization Score.
-  // bos7D: Hannah insights trend points only.
+  // Bio Optimization Score SSOT is Connections BOS (resolveConnectionsBosDisplay).
+  // bos7D: Hannah insights trend points only. Never slot /api/bos/current into BOS.
   // bos4W and bos1Y are removed: the Journey graph (T3) reads its own history
   // via useJourneyGraphSeries inside the Journey component.
   const { data: bos7D, isLoading: bos7DLoading } = useBioOptimizationTrend(userId, "7D");
-  const { data: bosCurrent, isLoading: bosCurrentLoading } = useBOSCurrent();
   const { data: hydrationData } = useHydrationToday();
   // J-T1: useDailyScores reuses calculateDailyScores + the same daily_checkins /
   // meal_logs / useHydrationToday reads as DailyScoresPanel so pillar values here
@@ -1251,12 +1260,19 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
   const { snapshot: compositionSnapshot } = useLatestComposition(userId);
   const bodySeries = useRecentBodySeries(userId);
 
-  // J-T2: Bio Optimization Score SSOT is GET /api/bos/current.
-  // NEVER reads profiles.vitality_score. Never fakes 0 for an uncomputable score.
-  // Empty named contributors stay null / UNKNOWN / --, never a silent 62.
+  // Wearable last-sync from first-class tiles + last-sync-state only.
+  const wearableSnapshot = useWearableTilesSnapshot();
+  const wearableSyncLine = wearableSyncLineFromTiles(wearableSnapshot.tiles);
+  const lastSyncLabel = userId ? wearableSyncLine.lastSyncLabel : LAST_SYNC_LABELS.not_connected;
+
+  // J-T2: Bio Optimization Score SSOT is Connections BOS (wearable tiles).
+  // NEVER reads profiles.vitality_score. Never slots a CAQ composite into BOS.
+  // Zero named wearable contributors stay null / UNKNOWN / --, never a silent 62.
   const { profile: dashProfile } = useUserDashboardData();
-  const honestBos = resolveHonestBosDisplay(bosCurrent ?? { score: null, contributors: [] });
-  const bioDashScore: number | null = honestBos.score;
+  const connectionsBos = resolveConnectionsBosDisplay(
+    namedWearableContributorCount(wearableSnapshot.scoreDetail),
+  );
+  const bioDashScore: number | null = connectionsBosNumericScore(connectionsBos);
   const bioDashTier: string | null = dashProfile?.bio_optimization_tier ?? null;
 
   // J-T2: active body_goals row -> goal chip label.
@@ -1271,11 +1287,6 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
 
   // J-T3: today's meal_logs macros (separate from nutrition_logs already read below).
   const todayMealLogs = useTodayMealLogs(userId);
-
-  // Wearable last-sync from first-class tiles + last-sync-state only.
-  const wearableSnapshot = useWearableTilesSnapshot();
-  const wearableSyncLine = wearableSyncLineFromTiles(wearableSnapshot.tiles);
-  const lastSyncLabel = userId ? wearableSyncLine.lastSyncLabel : LAST_SYNC_LABELS.not_connected;
 
   // Display name: resolved async via getDisplayName (mirrors ProfileCard.tsx approach).
   const [displayName, setDisplayName] = useState<string>("");
@@ -1394,8 +1405,8 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
   // J-T1: pillar values from useDailyScores (TODAY's dashboard values via
   // calculateDailyScores + same reads as DailyScoresPanel). Null -> 0 so the
   // GaugeCard renders in its existing computing/0 state (same I-T2a behaviour).
-  // "overall" key maps to GET /api/bos/current (same SSOT as the dashboard card).
-  const overallCurrent = honestBos.score;
+  // "overall" key maps to Connections BOS (same SSOT as the dashboard card).
+  const overallCurrent = bioDashScore;
   const hydrationPct = hydrationData?.percentage_of_target ?? null;
 
   const pillarValues: PillarValues = {
@@ -1812,7 +1823,7 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
           avatarUrl={avatarUrl}
           goalPhrase={goalPhrase}
           lastSyncLabel={lastSyncLabel}
-          gaugesLoading={shouldShowSkeleton(bosCurrentLoading || bos7DLoading || dailyScores.loading, overallCurrent)}
+          gaugesLoading={shouldShowSkeleton(bos7DLoading || dailyScores.loading, dailyScores.sleepQuality ?? dailyScores.energyLevel ?? dailyScores.nutrition)}
         />
 
         <div className="vc-page-sections" style={{ display: "flex", flexDirection: "column", gap: 22 }}>
@@ -1877,7 +1888,7 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
               sleepBarPct={sleepBarPct}
               statBarsLoading={shouldShowSkeleton(todayStats.loading, todayStats.stepsCount ?? todayStats.exerciseMinutes ?? todayStats.sleepHours)}
               vitalsLoading={shouldShowSkeleton(metabolicVitals.loading, metabolicVitals.hrv ?? metabolicVitals.restingHr ?? metabolicVitals.respiratory ?? metabolicVitals.bloodOxygen)}
-              hannahLoading={shouldShowSkeleton(bos7DLoading, bos7D?.current ?? null)}
+              hannahLoading={shouldShowSkeleton(bos7DLoading, bos7D ?? null)}
             />
           </section>
           <section>
