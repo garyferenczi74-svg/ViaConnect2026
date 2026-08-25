@@ -93,7 +93,7 @@ export function ActiveSourceDetailPanel({ tile, onImported }: ActiveSourceDetail
   return (
     <section
       data-detail-source={tile?.id ?? 'none'}
-      className="relative rounded-[24px] border border-[rgba(255,255,255,0.14)] bg-[rgba(255,255,255,0.07)] p-4 backdrop-blur-md sm:p-5"
+      className="relative rounded-[24px] border border-[rgba(255,255,255,0.14)] bg-[rgba(255,255,255,0.07)] p-4 backdrop-blur-md sm:p-5 h-full flex flex-col"
     >
       {tile === null ? (
         <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-white/[0.14] bg-[rgba(255,255,255,0.04)] p-10 text-center">

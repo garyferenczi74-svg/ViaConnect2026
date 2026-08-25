@@ -255,7 +255,7 @@ export function ConnectionsSurface() {
         </div>
       ) : null}
 
-      <div className="grid grid-cols-1 gap-6 min-[900px]:grid-cols-2 min-[1280px]:grid-cols-[1fr_1.2fr_1fr]">
+      <div className="grid grid-cols-1 gap-6 min-[900px]:grid-cols-2 min-[1280px]:grid-cols-[1fr_1.2fr_1fr] min-[1280px]:items-stretch">
         <AdminPanel name="Sources">
           <div
             role="listbox"
@@ -282,7 +282,7 @@ export function ConnectionsSurface() {
             onImported=load refreshes the sources column after an inline
             import completes, matching the modal's onImported path. */}
         <AdminPanel name="Active source">
-          <div className={`${anyConnected ? 'order-2' : 'order-3'} min-[900px]:order-none`}>
+          <div className={`${anyConnected ? 'order-2' : 'order-3'} min-[900px]:order-none min-[1280px]:h-full`}>
             <ActiveSourceDetailPanel
               key={selectedTile?.id ?? 'none'}
               tile={selectedTile}
@@ -292,7 +292,7 @@ export function ConnectionsSurface() {
         </AdminPanel>
 
         <AdminPanel name="Score contributors">
-          <div className={`${anyConnected ? 'order-3' : 'order-1'} min-[900px]:order-none`}>
+          <div className={`${anyConnected ? 'order-3' : 'order-1'} min-[900px]:order-none min-[1280px]:h-full`}>
             <ScoreDetailPanel
               rows={scoreDetail}
               lastUpdatedAt={lastUpdatedAt}
