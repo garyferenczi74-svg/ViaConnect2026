@@ -1,10 +1,11 @@
 'use client';
 
-// Prompt 185a / 219 / 219a: Daily Schedule checklist row (shared across columns).
+// Prompt 185a / 219 / 219a / Brief 34: Daily Schedule checklist row.
 // 219: compact density. 219a: rows size to CONTENT (min-height 56px, height auto).
-// Never fixed/max height; never clip or bleed name or chips outside the row.
-// Name wraps at word boundaries; long chemical tokens may break-word; full text always shown.
-// Chips sit inside the row under dose and wrap as needed. Controls vertical-center.
+// Brief 34: take the column width (w-full min-w-0). Never overflow-wrap:anywhere
+// (that collapses min-content to 1ch and letter-stacks the name). Word wrap only.
+// One flex row: checkbox + name + dose. Name may wrap to two lines; full name shown.
+// Chips sit inside the row and wrap as words. Controls vertical-center.
 // Functions unchanged: take toggle, drag, move, remove, rationale.
 // No emojis, no em/en dashes.
 
@@ -28,7 +29,7 @@ function Chip({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
   return (
     <span className="inline-flex max-w-full items-center gap-0.5 rounded border border-white/10 bg-white/[0.04] px-1 py-0.5 text-[9px] leading-tight text-white/50">
       <Icon className="h-2.5 w-2.5 shrink-0" strokeWidth={1.5} />
-      <span className="min-w-0 break-words">{label}</span>
+      <span className="break-words [overflow-wrap:break-word] [word-break:normal]">{label}</span>
     </span>
   );
 }
@@ -60,7 +61,7 @@ export function ScheduleSupplementCard({
     <div
       data-testid="schedule-compact-row"
       data-row-sizing="content"
-      className={`relative flex h-auto min-h-[56px] items-center gap-1 overflow-visible px-1.5 py-1.5 ${ROW_SURFACE}`}
+      className={`relative flex h-auto min-h-[56px] w-full min-w-0 items-center gap-1 overflow-visible px-1.5 py-1.5 ${ROW_SURFACE}`}
     >
       {/* Drag handle: 44px touch target; centers to final row height */}
       <button
@@ -91,20 +92,16 @@ export function ScheduleSupplementCard({
         )}
       </button>
 
-      {/* Name + dose + chips (content-driven height; full name always shown) */}
+      {/* Name + chips (content-driven height; full name always shown as words) */}
       <div className="min-w-0 flex-1 self-center py-0.5">
         <p
-          className={`text-[13px] font-medium leading-snug [overflow-wrap:anywhere] break-words ${
+          data-testid="schedule-row-name"
+          className={`text-[13px] font-medium leading-snug break-words [overflow-wrap:break-word] [word-break:normal] ${
             taken ? 'text-white/40 line-through' : 'text-white/90'
           }`}
         >
           {card.name}
         </p>
-        {card.dose ? (
-          <p className="mt-0.5 text-[11px] leading-tight text-white/45 break-words">
-            {card.dose}
-          </p>
-        ) : null}
         {chips.length > 0 ? (
           <div
             data-testid="schedule-row-chips"
@@ -116,6 +113,15 @@ export function ScheduleSupplementCard({
           </div>
         ) : null}
       </div>
+
+      {card.dose ? (
+        <p
+          data-testid="schedule-row-dose"
+          className="shrink-0 self-center text-[11px] leading-tight text-white/45 break-words [overflow-wrap:break-word] [word-break:normal]"
+        >
+          {card.dose}
+        </p>
+      ) : null}
 
       {/* Right action cluster: info, move, delete (44px targets), vertical center */}
       <div className="flex flex-shrink-0 items-center gap-0 self-center">

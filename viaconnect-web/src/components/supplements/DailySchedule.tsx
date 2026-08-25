@@ -310,12 +310,12 @@ export function DailySchedule() {
       data-schedule-adherence={counts.adherencePercent}
     >
       {/* Desktop: three columns; compact rows (Prompt 219) */}
-      <div className="hidden gap-3 md:grid md:grid-cols-3">
+      <div className="hidden min-w-0 gap-3 md:grid md:grid-cols-3">
         {BUCKETS.map((b) => {
           const cards = view[b.id] ?? [];
           const Icon = b.icon;
           return (
-            <div key={b.id} ref={(el) => { bucketRefs.current[b.id] = el; }} className="flex flex-col overflow-hidden rounded-xl border border-white/10 bg-[rgba(30,48,84,0.55)]">
+            <div key={b.id} ref={(el) => { bucketRefs.current[b.id] = el; }} className="flex min-w-0 flex-col overflow-hidden rounded-xl border border-white/10 bg-[rgba(30,48,84,0.55)]">
               <div className="flex items-center gap-2 border-b border-white/10 px-3 py-2">
                 <span className="flex h-6 w-6 items-center justify-center rounded-md" style={{ background: `${b.color}1A` }}>
                   <Icon className="h-3.5 w-3.5" strokeWidth={1.5} style={{ color: b.color }} />
@@ -324,7 +324,7 @@ export function DailySchedule() {
                 <span className="text-[11px] text-white/45">{bucketTaken(cards)}/{cards.length}</span>
               </div>
               {cards.length > 0 ? (
-                <div className="flex flex-col gap-2 p-1.5">
+                <div className="min-w-0 flex flex-col gap-2 p-1.5">
                   {cards.map((c) => (
                     <DraggableScheduleCard key={c.slot_id} card={c} taken={c.taken} onToggle={() => handleToggle(c)} onMove={(t) => handleMove(c, t)} onRemove={() => handleRemove(c)} onCardDragEnd={onCardDragEnd} />
                   ))}
@@ -340,13 +340,13 @@ export function DailySchedule() {
       </div>
 
       {/* Mobile: stacked collapsible buckets */}
-      <div className="flex flex-col gap-3 md:hidden">
+      <div className="flex min-w-0 flex-col gap-3 md:hidden">
         {BUCKETS.map((b) => {
           const cards = view[b.id] ?? [];
           const isOpen = openMobile === b.id;
           const Icon = b.icon;
           return (
-            <div key={b.id} className="overflow-hidden rounded-xl border border-white/10 bg-[rgba(30,48,84,0.55)]">
+            <div key={b.id} className="min-w-0 overflow-hidden rounded-xl border border-white/10 bg-[rgba(30,48,84,0.55)]">
               <button
                 type="button"
                 onClick={() => setOpenMobile(isOpen ? null : b.id)}
@@ -362,7 +362,7 @@ export function DailySchedule() {
               </button>
               {isOpen ? (
                 cards.length > 0 ? (
-                  <div className="flex flex-col gap-2 p-1.5">
+                  <div className="min-w-0 flex flex-col gap-2 p-1.5">
                     {cards.map((c) => (
                       <DraggableScheduleCard key={c.slot_id} card={c} taken={c.taken} onToggle={() => handleToggle(c)} onMove={(t) => handleMove(c, t)} onRemove={() => handleRemove(c)} onCardDragEnd={onCardDragEnd} />
                     ))}
