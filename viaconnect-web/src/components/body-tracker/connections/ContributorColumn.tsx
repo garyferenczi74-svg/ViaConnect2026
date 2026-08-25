@@ -75,9 +75,10 @@ function sourceLabel(id: string): string {
 // Vendor tile ids (whoop, oura, hume, apple_health, google_health, garmin)
 // render through the Lex-gated WearableBrandMark, same as the wearable tile
 // card and detail panel. apple_watch (a per-metric source distinct from the
-// apple_health file-import tile), manual, and average are not wearable
-// vendor marks needing Lex clearance, so they keep their existing
-// dedicated Lucide glyphs unchanged.
+// apple_health file-import tile) and manual each keep their own dedicated
+// Lucide glyph below, unchanged. average, and any other id, are not
+// wearable vendor marks needing Lex clearance -- they fall through to the
+// generic Droplet default at the bottom, same as an unrecognized id.
 export function SourceGlyph({ id }: { id: string | null | undefined }) {
   if (
     id === 'whoop' ||

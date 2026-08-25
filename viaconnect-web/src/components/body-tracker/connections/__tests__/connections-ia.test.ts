@@ -47,8 +47,9 @@ describe('Connections IA contracts', () => {
     // Lex-gated WearableBrandMark component (tile now renders
     // <WearableBrandMark id={tile.id} .../> instead of a local switch on
     // lucide-react icons), so the vendor-icon honesty check follows it
-    // there: the shipped fallback set must still cover the whoop/garmin
-    // Watch icon.
+    // there: the shipped fallback set must still cover the Watch icon for
+    // both whoop and garmin -- task-11-brief.md pins garmin to Watch (not
+    // Activity), matching WEARABLE_TILE_SPECS.icon in wearable-tiles.ts.
     expect(tile).toContain('WearableBrandMark');
     const brandMark = src('src/components/body-tracker/connections/WearableBrandMark.tsx');
     expect(brandMark).toContain('Watch');

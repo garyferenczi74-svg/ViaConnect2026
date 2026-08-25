@@ -12,7 +12,7 @@
 // (a later, separate change that flips lexCleared -> true per vendor and
 // adds the asset file).
 
-import { Activity, Circle, Heart, HeartPulse, Scan, Watch, type LucideIcon } from 'lucide-react';
+import { Circle, Heart, HeartPulse, Scan, Watch, type LucideIcon } from 'lucide-react';
 
 export interface WearableMarkAsset {
   /** Local, stored-not-hotlinked path under /public/logos/wearables/. */
@@ -34,20 +34,21 @@ export const WEARABLE_MARK_ASSETS: Record<string, WearableMarkAsset | undefined>
   garmin: { src: '/logos/wearables/garmin.svg', lexCleared: false },
 };
 
-// Keyed by tile id. Matches WEARABLE_TILE_SPECS.icon in wearable-tiles.ts
-// for whoop/oura/apple_health/hume/google_health; garmin deliberately
-// diverges (Watch there, Activity here) per the Task 11 brief, which names
-// Watch/Activity as both acceptable for garmin -- Activity keeps garmin
-// visually distinct from whoop rather than sharing whoop's icon. Any id
-// outside this map -- including an unrecognized vendor id -- renders the
-// safe default (Circle) rather than throwing or rendering nothing.
-const FALLBACK_ICON: Record<string, LucideIcon> = {
+// Keyed by tile id, matching WEARABLE_TILE_SPECS.icon in wearable-tiles.ts
+// exactly (task-11-brief.md:16 pins whoop AND garmin to Watch; the model
+// file agrees -- both list icon: 'Watch'). Whoop and garmin intentionally
+// share a fallback: Lucide fallbacks need not be visually unique per
+// vendor, since the real per-vendor logos will differ once Lex clears
+// them. Any id outside this map -- including an unrecognized vendor id --
+// renders the safe default (Circle) rather than throwing or rendering
+// nothing.
+const FALLBACK_ICON: Partial<Record<string, LucideIcon>> = {
   whoop: Watch,
   oura: Circle,
   apple_health: Heart,
   hume: Scan,
   google_health: HeartPulse,
-  garmin: Activity,
+  garmin: Watch,
 };
 
 const SAFE_DEFAULT_ICON: LucideIcon = Circle;

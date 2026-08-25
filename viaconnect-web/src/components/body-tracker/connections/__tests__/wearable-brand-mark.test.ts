@@ -44,7 +44,7 @@ describe('WearableBrandMark', () => {
     expect(markup).toMatch(/class="[^"]*\bh-5\b[^"]*\bw-5\b[^"]*"/);
   });
 
-  it('uses distinct Lucide fallbacks per known vendor id (not one icon for every tile)', () => {
+  it('uses distinct Lucide fallbacks per known vendor id where the brief specifies distinct icons', () => {
     const svgFor = (id: string) => {
       const markup = renderToStaticMarkup(createElement(WearableBrandMark, { id }));
       const match = markup.match(/<svg[^>]*>[\s\S]*?<\/svg>/);
@@ -55,6 +55,7 @@ describe('WearableBrandMark', () => {
     const appleHealth = svgFor('apple_health');
     const hume = svgFor('hume');
     const googleHealth = svgFor('google_health');
+    const garmin = svgFor('garmin');
     // Different vendors render visually distinct markup (different Lucide
     // icon paths), never one generic icon standing in for every tile.
     expect(whoop).not.toBe(oura);
@@ -63,6 +64,13 @@ describe('WearableBrandMark', () => {
     expect(oura).not.toBe(appleHealth);
     expect(oura).not.toBe(googleHealth);
     expect(appleHealth).not.toBe(hume);
+    // Whoop and garmin are the one deliberate exception: task-11-brief.md
+    // pins BOTH to Watch (matching WEARABLE_TILE_SPECS.icon in
+    // wearable-tiles.ts, which also lists 'Watch' for both). This is an
+    // honest, intentional shared fallback, not a bug -- Lucide fallbacks
+    // need not be unique per vendor; the real per-vendor logos will differ
+    // once Lex clears each one. Do not assert whoop !== garmin here.
+    expect(garmin).toBe(whoop);
   });
 
   it('renders the real local asset once an entry is Lex-cleared', () => {
