@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { ManualInputModal } from '@/components/body-tracker/manual-input/ManualInputModal';
 import { PoseGuide } from './PoseGuide';
 import { PHOTO_POSES } from './poseConstants';
+import { SCAN_PRIVACY_LINE } from '@/lib/body-tracker/scanPrivacyCopy';
 import type { PoseId } from '@/lib/arnold/types';
 
 interface PhotoSessionCaptureProps {
@@ -226,6 +227,12 @@ export function PhotoSessionCapture({ open, onOpenChange, onCompleted }: PhotoSe
         </div>
       }
     >
+      <p
+        data-testid="scan-privacy-line"
+        className="mb-3 text-[11px] leading-snug text-white/55 sm:text-xs"
+      >
+        {SCAN_PRIVACY_LINE}
+      </p>
       {!sessionId && !error && (
         <div className="py-12 flex items-center justify-center text-white/50">
           <Loader2 className="h-5 w-5 animate-spin" strokeWidth={1.5} />

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { GitCompareArrows, Layers, Loader2, SplitSquareVertical, Sparkles } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import type { PoseId } from '@/lib/arnold/types';
+import { SCAN_PRIVACY_LINE } from '@/lib/body-tracker/scanPrivacyCopy';
 import { PHOTO_POSES } from './poseConstants';
 import { SideBySideComparison } from './SideBySideComparison';
 import { OverlaySlider } from './OverlaySlider';
@@ -117,15 +118,23 @@ export function ComparisonPanel({ defaultAfterSessionId }: ComparisonPanelProps)
 
   return (
     <section className="space-y-3">
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-white/50 flex items-center gap-1.5">
-          <GitCompareArrows className="h-3.5 w-3.5" strokeWidth={1.5} />
-          Compare sessions
-        </h3>
-        <div className="flex items-center gap-2">
-          <PoseSelector value={pose} onChange={setPose} />
-          <ModeToggle value={mode} onChange={setMode} />
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-white/50 flex items-center gap-1.5">
+            <GitCompareArrows className="h-3.5 w-3.5" strokeWidth={1.5} />
+            Compare sessions
+          </h3>
+          <div className="flex items-center gap-2">
+            <PoseSelector value={pose} onChange={setPose} />
+            <ModeToggle value={mode} onChange={setMode} />
+          </div>
         </div>
+        <p
+          data-testid="scan-privacy-line"
+          className="text-[11px] leading-snug text-white/55 sm:text-xs"
+        >
+          {SCAN_PRIVACY_LINE}
+        </p>
       </div>
 
       <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-3 space-y-2">

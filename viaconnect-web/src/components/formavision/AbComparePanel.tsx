@@ -11,6 +11,7 @@ import { ArrowDown, ArrowUp, Minus, MoveHorizontal, SplitSquareVertical } from '
 import type { CircumferenceDelta } from '@/lib/formavision/deltas/compositionDeltas';
 import type { AbBaselineKind, AbBaselineMode } from '@/lib/formavision/compare/resolveAbBaseline';
 import { wipePercentFromT, wipeTFromPercent } from '@/lib/formavision/compare/abWipe';
+import { SCAN_PRIVACY_LINE } from '@/lib/body-tracker/scanPrivacyCopy';
 
 export type AbComparePlacement = 'top' | 'phone' | 'controls';
 
@@ -117,6 +118,12 @@ export function AbComparePanelContent({
         <p className="text-xs uppercase tracking-wider text-white/40">A/B Compare</p>
         <p className="text-[10px] text-white/45">Parametric body. No photographic reconstruction.</p>
       </div>
+      <p
+        data-testid="scan-privacy-line"
+        className="text-[11px] leading-snug text-white/55 sm:text-xs"
+      >
+        {SCAN_PRIVACY_LINE}
+      </p>
 
       <div
         role="radiogroup"
