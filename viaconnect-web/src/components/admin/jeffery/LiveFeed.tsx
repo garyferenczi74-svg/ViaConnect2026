@@ -128,7 +128,7 @@ export default function LiveFeed() {
               <div className="p-4 border-t border-white/[0.08]">
                 <p className="text-xs font-medium text-white/40 mb-2">Proposed Action</p>
                 <pre className="text-xs text-white/60 bg-[#0F172A] rounded-lg p-3 overflow-x-auto max-h-40">
-                  {JSON.stringify(msg.proposed_action, null, 2)}
+                  {displayJefferyJson(msg.proposed_action)}
                 </pre>
                 {msg.status === "pending" && (
                   <div className="mt-3">
