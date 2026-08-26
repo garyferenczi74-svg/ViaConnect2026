@@ -108,7 +108,7 @@ describe("Brief 39 page + writer locks", () => {
     const client = read("src/app/(app)/admin/jeffery/JefferyClient.tsx");
     expect(client).toContain("agentRegistry.length");
     expect(client).not.toMatch(/ultrathink_agent_registry/);
-    expect(client).toContain("Jeffery Online");
+    expect(client).toContain("{agentRegistry.length}");
   });
 
   it("Live Feed / MessageCard / Evolution / Review Queue apply the rewrite", () => {
@@ -136,10 +136,10 @@ describe("Brief 39 page + writer locks", () => {
     expect(src).toContain("Weekly Evolution Report");
   });
 
-  it("does not invent a healthier feed or touch the Online pill", () => {
+  it("does not invent a healthier feed; Brief 40 owns the presence pill", () => {
     const client = read("src/app/(app)/admin/jeffery/JefferyClient.tsx");
-    expect(client).toContain("Jeffery Online");
-    expect(client).toContain("bg-emerald-500");
+    expect(client).not.toContain("Jeffery Online");
+    expect(client).toContain("JefferyPresenceBadge");
     const authority = read("src/lib/jeffery/accSeatAuthority.ts");
     expect(authority).toContain("Does not write the database");
     expect(authority).not.toMatch(/createTick|invent.*tick/i);

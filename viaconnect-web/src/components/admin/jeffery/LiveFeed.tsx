@@ -1,75 +1,24 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { Filter } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 import MessageCard, { CATEGORY_CONFIG, type JefferyMessage } from "./MessageCard";
 import ActionButtons from "./ActionButtons";
 import CommentBox from "./CommentBox";
 import { displayJefferyJson } from "@/lib/jeffery/accSeatAuthority";
 
-export default function LiveFeed() {
-  const [messages, setMessages] = useState<JefferyMessage[]>([]);
+interface LiveFeedProps {
+  messages: JefferyMessage[];
+  loading: boolean;
+  onReload: () => void;
+}
+
+export default function LiveFeed({ messages, loading, onReload }: LiveFeedProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const supabase = createClient();
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    const query = supabase
-      .from("jeffery_messages")
-      .select("*, jeffery_message_comments(id, content, is_directive, created_at)")
-      .order("created_at", { ascending: false })
-      .limit(50);
-    if (categoryFilter) query.eq("category", categoryFilter);
-    const { data } = await query;
-    setMessages((data ?? []) as JefferyMessage[]);
-    setLoading(false);
-  }, [categoryFilter, supabase]);
-
-  useEffect(() => { load(); }, [load]);
-
-  // Realtime subscription: INSERT prepends, UPDATE patches in place,
-  // DELETE removes. Approve/reject/flag writes on the server push status
-  // changes here without the admin having to refresh.
-  useEffect(() => {
-    const channel = supabase
-      .channel("jeffery-live-feed")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "jeffery_messages" },
-        (payload: { new: Record<string, unknown> }) => {
-          const row = payload?.new as unknown as JefferyMessage | undefined;
-          if (!row) return;
-          setMessages(prev => [{ ...row, jeffery_message_comments: [] }, ...prev]);
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "jeffery_messages" },
-        (payload: { new: Record<string, unknown> }) => {
-          const row = payload?.new as unknown as JefferyMessage | undefined;
-          if (!row) return;
-          setMessages(prev => prev.map(m =>
-            m.id === row.id
-              ? { ...row, jeffery_message_comments: m.jeffery_message_comments ?? [] }
-              : m
-          ));
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "DELETE", schema: "public", table: "jeffery_messages" },
-        (payload: { old: Record<string, unknown> }) => {
-          const oldId = (payload?.old as { id?: string } | undefined)?.id;
-          if (!oldId) return;
-          setMessages(prev => prev.filter(m => m.id !== oldId));
-        }
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [supabase]);
+  const visible = categoryFilter
+    ? messages.filter((msg) => msg.category === categoryFilter)
+    : messages;
 
   return (
     <div className="space-y-3">
@@ -101,16 +50,16 @@ export default function LiveFeed() {
         })}
       </div>
 
-      {loading && messages.length === 0 && (
+      {loading && visible.length === 0 && (
         <div className="text-center text-white/30 text-sm py-12">Loading messages...</div>
       )}
-      {!loading && messages.length === 0 && (
+      {!loading && visible.length === 0 && (
         <div className="text-center text-white/30 text-sm py-12">
           No messages yet. Jeffery will surface activity here as agents emit events.
         </div>
       )}
 
-      {messages.map(msg => (
+      {visible.map(msg => (
         <MessageCard
           key={msg.id}
           msg={msg}
@@ -132,7 +81,7 @@ export default function LiveFeed() {
                 </pre>
                 {msg.status === "pending" && (
                   <div className="mt-3">
-                    <ActionButtons messageId={msg.id} onActionComplete={load} />
+                    <ActionButtons messageId={msg.id} onActionComplete={onReload} />
                   </div>
                 )}
               </div>
@@ -156,7 +105,7 @@ export default function LiveFeed() {
               </div>
             )}
             <div className="p-4 border-t border-white/[0.08]">
-              <CommentBox messageId={msg.id} onCommentSubmitted={load} />
+              <CommentBox messageId={msg.id} onCommentSubmitted={onReload} />
             </div>
           </div>
         </MessageCard>

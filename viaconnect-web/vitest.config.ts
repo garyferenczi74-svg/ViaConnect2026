@@ -55,6 +55,8 @@ export default defineConfig({
       'src/components/peptide-protocol/__tests__/KbPeptideCatalogSection.bare.test.tsx',
       // Brief 38: Hounddog fail-closed empty (no 847 / 2.1M fixtures)
       'src/components/hounddog/__tests__/HounddogCommandCenter.bare.test.tsx',
+      // Brief 40: Jeffery header presence from Live Feed timestamps
+      'src/components/admin/jeffery/__tests__/JefferyPresenceBadge.bare.test.tsx',
     ],
     exclude: ['node_modules', '.next', 'supabase'],
     globals: true,
