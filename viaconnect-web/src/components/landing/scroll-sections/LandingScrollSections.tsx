@@ -1,26 +1,14 @@
 'use client'
 import { LandingScrollSectionsDesktop } from './desktop/LandingScrollSectionsDesktop'
-import { LandingScrollSectionsMobile } from './mobile/LandingScrollSectionsMobile'
 
-// CSS-class viewport branching (Path X). Both trees ship in bundle; SSR
-// renders both, the unused tree is hidden via Tailwind responsive utilities.
-// Performance budget per Jeffery Pass 2: 45 KB gzipped for this subtree;
-// switch to next/dynamic ssr:false (Path Y) if exceeded. Gary's one-time
-// override of the desktop/mobile-synchronism rule applies here only.
+// Brief 45: one compose tree so page source has one of each major block.
+// Desktop sections are responsive (mobile + desktop) — do not mount a
+// second hidden mobile tree. Standing rule: both viewports still work.
 export function LandingScrollSections() {
     if (process.env.NODE_ENV === 'development') {
         if (typeof window !== 'undefined') {
-            console.log('[LandingScrollSections] CSS-class viewport branching active')
+            console.log('[LandingScrollSections] single compose tree')
         }
     }
-    return (
-        <>
-            <div className="hidden lg:block">
-                <LandingScrollSectionsDesktop />
-            </div>
-            <div className="block lg:hidden">
-                <LandingScrollSectionsMobile />
-            </div>
-        </>
-    )
+    return <LandingScrollSectionsDesktop />
 }

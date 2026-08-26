@@ -13,8 +13,8 @@ interface PractitionerToggleButtonProps {
 // Brand teal accent (matches the rest of the landing page glass-button family).
 // ChevronDown rotates 180 degrees on open via Framer Motion (respects
 // prefers-reduced-motion automatically).
-// id and ariaControls passed in from parent so duplicate ids don't collide
-// when PricingTierGrid renders inside both desktop + mobile scroll trees.
+// id and ariaControls passed in from parent so the toggle stays unique if
+// the pricing grid is reused on /pricing and the homepage compose.
 export function PractitionerToggleButton({ id, ariaControls, isOpen, onToggle }: PractitionerToggleButtonProps) {
     return (
         <button

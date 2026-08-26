@@ -20,7 +20,10 @@ interface PricingTierGridProps {
 
 export function PricingTierGrid({ className = '' }: PricingTierGridProps) {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('annual');
-  const [loadState, setLoadState] = useState<PricingCatalogLoadState>({ status: 'loading' });
+  // Brief 45: SSR / first paint must not ship an infinite spinner.
+  // Empty copy is "Plans load from the catalog" until the live catalog arrives
+  // or the existing timeout bound expires.
+  const [loadState, setLoadState] = useState<PricingCatalogLoadState>({ status: 'empty' });
   const [retryToken, setRetryToken] = useState(0);
   const [currentTierId, setCurrentTierId] = useState<string | null>(null);
   const [showFamilyConfig, setShowFamilyConfig] = useState(false);
@@ -51,6 +54,11 @@ export function PricingTierGrid({ className = '' }: PricingTierGridProps) {
   useEffect(() => {
     let mounted = true;
     setLoadState({ status: 'loading' });
+
+    const failSafe = window.setTimeout(() => {
+      if (!mounted) return;
+      setLoadState((current) => (current.status === 'loading' ? { status: 'empty' } : current));
+    }, PRICING_CATALOG_TIMEOUT_MS);
 
     (async () => {
       try {
@@ -83,26 +91,24 @@ export function PricingTierGrid({ className = '' }: PricingTierGridProps) {
         setLoadState({ status: 'ready', catalog });
       } catch (error) {
         if (!mounted) return;
-        if (error instanceof DOMException && error.name === 'AbortError') {
-          setLoadState({
-            status: 'error',
-            message: 'Live membership prices took too long to load. Please try again.',
-          });
+        const timedOut =
+          (error instanceof DOMException && error.name === 'AbortError') || isTimeoutError(error);
+        if (timedOut) {
+          setLoadState({ status: 'empty' });
           return;
         }
-        const message = isTimeoutError(error)
-          ? 'Live membership prices took too long to load. Please try again.'
-          : isPricingCatalogError(error)
+        const message = isPricingCatalogError(error)
+          ? error.message
+          : error instanceof Error
             ? error.message
-            : error instanceof Error
-              ? error.message
-              : 'We could not load live membership prices. Please try again.';
+            : 'We could not load live membership prices. Please try again.';
         setLoadState({ status: 'error', message });
       }
     })();
 
     return () => {
       mounted = false;
+      window.clearTimeout(failSafe);
     };
   }, [retryToken]);
 
