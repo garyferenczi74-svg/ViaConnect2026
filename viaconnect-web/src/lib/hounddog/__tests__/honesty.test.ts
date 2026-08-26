@@ -10,6 +10,8 @@ import {
 import {
   HOUNDDOG_CONTENT_EMPTY_COPY,
   HOUNDDOG_EMPTY_COPY,
+  HOUNDDOG_EMPTY_METRIC,
+  HOUNDDOG_NO_SCRAPE_COPY,
   STAGED_HOUNDDOG_MARKERS,
   hasLiveSocialLastSync,
   liveAgentJobs,
@@ -82,6 +84,17 @@ describe("Hounddog empty copy is Board-Metrics honest", () => {
     expect(HOUNDDOG_CONTENT_EMPTY_COPY).not.toBe(HOUNDDOG_EMPTY_COPY);
     for (const marker of STAGED_HOUNDDOG_MARKERS) {
       expect(HOUNDDOG_CONTENT_EMPTY_COPY).not.toContain(marker);
+    }
+  });
+
+  it("Overview empty metric is -- / No scrape yet, not 0 and not the 38 banner", () => {
+    expect(HOUNDDOG_EMPTY_METRIC).toBe("--");
+    expect(HOUNDDOG_NO_SCRAPE_COPY).toBe("No scrape yet");
+    expect(HOUNDDOG_NO_SCRAPE_COPY).not.toBe(HOUNDDOG_EMPTY_COPY);
+    expect(HOUNDDOG_EMPTY_METRIC).not.toBe("0");
+    for (const marker of STAGED_HOUNDDOG_MARKERS) {
+      expect(HOUNDDOG_NO_SCRAPE_COPY).not.toContain(marker);
+      expect(HOUNDDOG_EMPTY_METRIC).not.toContain(marker);
     }
   });
 });

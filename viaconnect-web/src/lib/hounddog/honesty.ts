@@ -11,15 +11,26 @@ export const HOUNDDOG_EMPTY_COPY =
 /** Content Scheduled / Scripts empty list. Not the Overview KPI banner. */
 export const HOUNDDOG_CONTENT_EMPTY_COPY = "No scripts yet.";
 
+/** Overview tile / table empty. Not 0 and not a wiped page. */
+export const HOUNDDOG_NO_SCRAPE_COPY = "No scrape yet";
+
+/** Honest empty metric. Not a coalesced 0. */
+export const HOUNDDOG_EMPTY_METRIC = "--";
+
 export const STAGED_HOUNDDOG_MARKERS = [
   "847",
   "+12K",
+  "+1.2K",
   "2.1M",
+  "847K",
   "6.8%",
   "24.7%",
   "3 AGENTS RUNNING",
   "AI replaced my team",
   "Morning Routine",
+  "I tested 29 peptides",
+  "My GoHighLevel automation that saves 10 hrs/week",
+  "Brand deals are dying",
 ] as const;
 
 export type HounddogAgentStatus = "live" | "idle";

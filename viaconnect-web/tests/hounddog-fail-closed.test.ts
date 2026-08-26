@@ -1,7 +1,8 @@
-// Brief 38: /admin/hounddog fail-closed. Overview and header must not
-// paint staged fixtures (847 / +12K / 2.1M / 6.8% / 24.7% / 3 AGENTS RUNNING).
-// Brief 53: the 38 banner stays on Overview KPIs only. Create / Auto-Script /
-// Content / Research stay usable tools without HOUNDDOG_EMPTY_COPY.
+// Brief 38: /admin/hounddog fail-closed. Do not paint staged fixtures
+// (847 / +12K / 2.1M / 6.8% / 24.7% / 3 AGENTS RUNNING).
+// Brief 53: Overview is original chrome with honest empties (-- / No scrape yet),
+// not a wiped EmptyState page. Create / Auto-Script / Content / Research must
+// NOT contain EmptyState / HOUNDDOG_EMPTY_COPY. Content empty = No scripts yet.
 
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
@@ -32,29 +33,45 @@ const OTHER_TABS = [CONTENT, CREATE, AUTO_SCRIPT, RESEARCH] as const;
 const FORBIDDEN = [
   "847",
   "+12K",
+  "+1.2K",
   "2.1M",
+  "847K",
   "6.8%",
   "24.7%",
   "3 AGENTS RUNNING",
   "AI replaced my team",
   "Morning Routine",
+  "I tested 29 peptides",
+  "My GoHighLevel automation that saves 10 hrs/week",
+  "Brand deals are dying",
 ] as const;
 
 describe("Hounddog Overview and header contain no staged fixtures", () => {
-  it("Overview has none of the FAIL tokens and paints the empty copy", () => {
+  it("Overview restores original chrome with honest empties, not a wiped banner", () => {
     const src = read(OVERVIEW);
     for (const token of FORBIDDEN) {
       expect(src, `Overview still contains ${token}`).not.toContain(token);
     }
-    expect(src).toContain("EmptyState");
-    expect(read("src/components/hounddog/shared/EmptyState.tsx")).toContain(
-      "HOUNDDOG_EMPTY_COPY",
-    );
-    expect(src).toContain("loadHounddogLiveAccounts");
+    expect(src).not.toContain("EmptyState");
+    expect(src).not.toContain("HOUNDDOG_EMPTY_COPY");
+    expect(src).not.toContain("getHounddogAnalyticsSummary");
+    expect(src).not.toMatch(/value=\{847\}|value=\{62\}/);
+    expect(src).toContain("AI Tasks Completed");
+    expect(src).toContain("Posts in Queue");
+    expect(src).toContain("Avg Engagement");
+    expect(src).toContain("EXPORT");
+    expect(src).toContain("REPORT");
+    expect(src).toContain("Scriptwriter");
+    expect(src).toContain("Editor");
+    expect(src).toContain("Scheduler");
+    expect(src).toContain("Analyzer");
+    expect(src).toContain("Social Performance");
+    expect(src).toContain("Top Performing Posts");
+    expect(src).toContain("HOUNDDOG_EMPTY_METRIC");
+    expect(src).toContain("HOUNDDOG_NO_SCRAPE_COPY");
     expect(src).toContain("loadHounddogLiveJobs");
-    expect(src).toContain("hasLiveSocialLastSync");
-    expect(src).not.toMatch(/value=\{847\}|AI Tasks Completed|Posts in Queue|Avg Engagement/);
-    expect(src).not.toMatch(/TOP_POSTS|ALERTS|PLATFORMS/);
+    expect(src).toContain("liveAgentJobs");
+    expect(src).not.toMatch(/from ['"]@\/lib\/hounddog\/constants['"].*ALERTS|AGENTS|PLATFORMS|TOP_POSTS/);
   });
 
   it("command center header omits a fixture AGENTS RUNNING badge", () => {

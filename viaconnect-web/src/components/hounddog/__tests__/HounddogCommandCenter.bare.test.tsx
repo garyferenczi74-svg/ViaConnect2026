@@ -9,17 +9,24 @@ import ResearchTab from "@/components/hounddog/tabs/ResearchTab";
 import {
   HOUNDDOG_CONTENT_EMPTY_COPY,
   HOUNDDOG_EMPTY_COPY,
+  HOUNDDOG_EMPTY_METRIC,
+  HOUNDDOG_NO_SCRAPE_COPY,
 } from "@/lib/hounddog/honesty";
 
 const FORBIDDEN = [
   "847",
   "+12K",
+  "+1.2K",
   "2.1M",
+  "847K",
   "6.8%",
   "24.7%",
   "3 AGENTS RUNNING",
   "AI replaced my team",
   "Morning Routine",
+  "I tested 29 peptides",
+  "My GoHighLevel automation that saves 10 hrs/week",
+  "Brand deals are dying",
 ] as const;
 
 describe("Hounddog command center paints honest empty, not fixtures", () => {
@@ -27,20 +34,33 @@ describe("Hounddog command center paints honest empty, not fixtures", () => {
     const html = renderToStaticMarkup(<HounddogCommandCenter />);
     expect(html).toContain("HOUNDDOG");
     expect(html).toContain("AI COMMAND CENTER");
-    expect(html).toContain(HOUNDDOG_EMPTY_COPY);
+    expect(html).not.toContain(HOUNDDOG_EMPTY_COPY);
     expect(html).not.toContain("AGENTS RUNNING");
     for (const token of FORBIDDEN) {
       expect(html, `header paint still contains ${token}`).not.toContain(token);
     }
   });
 
-  it("Overview paints the locked empty copy and no KPI tiles", () => {
+  it("Overview paints original chrome with -- / No scrape yet, not fixtures", () => {
     const html = renderToStaticMarkup(<OverviewTab />);
-    expect(html).toContain(HOUNDDOG_EMPTY_COPY);
-    expect(html).not.toContain("AI Tasks Completed");
-    expect(html).not.toContain("Posts in Queue");
-    expect(html).not.toContain("Avg Engagement");
-    expect(html).not.toContain("YouTube");
+    expect(html).not.toContain(HOUNDDOG_EMPTY_COPY);
+    expect(html).toContain("AI Tasks Completed");
+    expect(html).toContain("Posts in Queue");
+    expect(html).toContain("Avg Engagement");
+    expect(html).toContain("EXPORT");
+    expect(html).toContain("REPORT");
+    expect(html).toContain("Scriptwriter");
+    expect(html).toContain("Editor");
+    expect(html).toContain("Scheduler");
+    expect(html).toContain("Analyzer");
+    expect(html).toContain("Social Performance");
+    expect(html).toContain("Platform");
+    expect(html).toContain("30 Day");
+    expect(html).toContain("Top Performing Posts");
+    expect(html).toContain(HOUNDDOG_EMPTY_METRIC);
+    expect(html).toContain(HOUNDDOG_NO_SCRAPE_COPY);
+    expect(html).not.toContain("4 LIVE");
+    expect(html).not.toContain("2 OFFLINE");
     for (const token of FORBIDDEN) {
       expect(html, `Overview paint still contains ${token}`).not.toContain(token);
     }
