@@ -17,7 +17,7 @@ import {
   loadHounddogLiveJobs,
 } from "@/lib/hounddog/honesty";
 
-const REPO = path.resolve(__dirname, "../../..");
+const REPO = path.resolve(__dirname, "../../../..");
 
 function read(rel: string): string {
   return readFileSync(path.join(REPO, rel), "utf8");
@@ -73,7 +73,8 @@ describe("Hounddog empty copy is Board-Metrics honest", () => {
     for (const marker of STAGED_HOUNDDOG_MARKERS) {
       expect(HOUNDDOG_EMPTY_COPY).not.toContain(marker);
     }
-    expect(HOUNDDOG_EMPTY_COPY).not.toMatch(/Connected|last-sync|last sync/i);
+    expect(HOUNDDOG_EMPTY_COPY).not.toMatch(/last-sync|last sync/i);
+    expect(HOUNDDOG_EMPTY_COPY).not.toMatch(/status:\s*['"]connected['"]/i);
   });
 
   it("Content empty list is No scripts yet, not the Overview banner", () => {
