@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import type { IconType } from '@/types/icon';
 import {
   Target,
@@ -15,9 +15,12 @@ import {
   Calendar,
   BarChart2,
 } from 'lucide-react';
-import { C, AGENTS } from '@/lib/hounddog/constants';
+import { C } from '@/lib/hounddog/constants';
+import {
+  liveAgentJobs,
+  loadHounddogLiveJobs,
+} from '@/lib/hounddog/honesty';
 import LiveBadge from './shared/LiveBadge';
-import PBar from './shared/PBar';
 import OverviewTab from './tabs/OverviewTab';
 import ContentTab from './tabs/ContentTab';
 import CreateTab from './tabs/CreateTab';
@@ -58,15 +61,9 @@ const TABS: TabDef[] = [
 /* ------------------------------------------------------------------ */
 export default function HounddogCommandCenter() {
   const [activeTab, setActiveTab] = useState<TabKey>('overview');
-  const [agentBarOpen, setAgentBarOpen] = useState(true);
-  const [tick, setTick] = useState(0);
-
-  useEffect(() => {
-    const id = setInterval(() => setTick((t) => t + 1), 2500);
-    return () => clearInterval(id);
-  }, []);
-
-  const liveCount = AGENTS.filter((a) => a.status === 'live').length;
+  const jobs = loadHounddogLiveJobs();
+  const liveJobs = liveAgentJobs(jobs);
+  const liveCount = liveJobs.length;
 
   /* ---------------------------------------------------------------- */
   /*  Render                                                           */
@@ -154,40 +151,39 @@ export default function HounddogCommandCenter() {
             }}
           />
 
-          {/* Agent count pill */}
-          <button
-            onClick={() => setAgentBarOpen((o) => !o)}
-            style={{
-              background: C.green + '12',
-              border: `1px solid ${C.green}30`,
-              borderRadius: 20,
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              padding: '4px 10px',
-              cursor: 'pointer',
-              flexShrink: 0,
-            }}
-          >
-            <span
+          {liveCount > 0 && (
+            <div
               style={{
-                width: 5,
-                height: 5,
-                borderRadius: '50%',
-                background: C.green,
-                animation: 'hd-pulse 1.8s infinite',
-              }}
-            />
-            <span
-              style={{
-                fontSize: 10,
-                fontWeight: 700,
-                color: C.green,
+                background: C.green + '12',
+                border: `1px solid ${C.green}30`,
+                borderRadius: 20,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '4px 10px',
+                flexShrink: 0,
               }}
             >
-              {liveCount} AGENTS RUNNING
-            </span>
-          </button>
+              <span
+                style={{
+                  width: 5,
+                  height: 5,
+                  borderRadius: '50%',
+                  background: C.green,
+                  animation: 'hd-pulse 1.8s infinite',
+                }}
+              />
+              <span
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  color: C.green,
+                }}
+              >
+                {liveCount} AGENTS RUNNING
+              </span>
+            </div>
+          )}
 
           {/* Right side */}
           <div
@@ -235,8 +231,7 @@ export default function HounddogCommandCenter() {
           </div>
         </div>
 
-        {/* --- Agent Status Bar (collapsible) --- */}
-        {agentBarOpen && (
+        {jobs.length > 0 && (
           <div
             style={{
               animation: 'hd-slide 0.3s ease',
@@ -246,19 +241,15 @@ export default function HounddogCommandCenter() {
               padding: '8px 16px',
             }}
           >
-            {AGENTS.map((agent) => {
-              const Icon = ICON_MAP[agent.icon];
-              const prog =
-                agent.status === 'live'
-                  ? Math.min(100, agent.progress + (tick % 10) * 3)
-                  : agent.progress;
-
+            {jobs.map((job) => {
+              const Icon = ICON_MAP[job.agentName] ?? BarChart2;
+              const isLive = job.status === 'live';
               return (
                 <div
-                  key={agent.name}
+                  key={job.id}
                   style={{
                     background: C.card,
-                    border: `1px solid ${agent.status === 'live' ? agent.color + '30' : C.border}`,
+                    border: `1px solid ${isLive ? C.teal + '30' : C.border}`,
                     borderRadius: 8,
                     padding: '6px 11px',
                     minWidth: 210,
@@ -268,12 +259,11 @@ export default function HounddogCommandCenter() {
                     alignItems: 'flex-start',
                   }}
                 >
-                  {/* Icon */}
                   <div
                     style={{
                       width: 22,
                       height: 22,
-                      background: agent.color + '2E',
+                      background: C.teal + '2E',
                       borderRadius: 5,
                       display: 'flex',
                       alignItems: 'center',
@@ -281,10 +271,8 @@ export default function HounddogCommandCenter() {
                       flexShrink: 0,
                     }}
                   >
-                    {Icon && <Icon size={12} strokeWidth={1.5} color={agent.color} />}
+                    <Icon size={12} strokeWidth={1.5} color={C.teal} />
                   </div>
-
-                  {/* Info */}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div
                       style={{
@@ -295,23 +283,23 @@ export default function HounddogCommandCenter() {
                       }}
                     >
                       <span style={{ fontSize: 10, fontWeight: 700 }}>
-                        {agent.name}
+                        {job.agentName}
                       </span>
-                      <LiveBadge active={agent.status === 'live'} />
+                      <LiveBadge active={isLive} />
                     </div>
-                    <div
-                      style={{
-                        fontSize: 9,
-                        color: C.muted,
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        marginBottom: 5,
-                      }}
-                    >
-                      {agent.task}
-                    </div>
-                    <PBar value={prog} color={agent.color} height={2} />
+                    {job.task.length > 0 && (
+                      <div
+                        style={{
+                          fontSize: 9,
+                          color: C.muted,
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                      >
+                        {job.task}
+                      </div>
+                    )}
                   </div>
                 </div>
               );
@@ -368,7 +356,7 @@ export default function HounddogCommandCenter() {
           padding: '20px 16px',
         }}
       >
-        {activeTab === 'overview' && <OverviewTab tick={tick} />}
+        {activeTab === 'overview' && <OverviewTab />}
         {activeTab === 'content' && <ContentTab />}
         {activeTab === 'create' && <CreateTab />}
         {activeTab === 'autoscript' && <AutoScriptTab />}
