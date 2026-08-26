@@ -31,6 +31,8 @@ import {
   buildProtocolHomework,
   type ProtocolHomework,
 } from '@/lib/supplements/protocolHomework';
+import { loadGeneticsUploadFacts } from '@/lib/genetics/loadGeneticsUploadFacts';
+import { geneRowProofFromFacts } from '@/lib/genetics/geneLineProvenance';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = any;
@@ -372,7 +374,7 @@ export async function getScheduleView(supabase: Db, userId: string): Promise<Sch
       await assignHannahTiming({ supabase, userId, supplement: s, signals });
     }
 
-    const [slotsRes, rulesRes] = await Promise.all([
+    const [slotsRes, rulesRes, geneProof] = await Promise.all([
       withTimeout(
         supabase
           .from('user_supplement_schedule')
@@ -388,6 +390,7 @@ export async function getScheduleView(supabase: Db, userId: string): Promise<Sch
         DB_TIMEOUT_MS,
         `${SCOPE}.view.rules`,
       ),
+      loadGeneticsUploadFacts(supabase, userId).then(geneRowProofFromFacts),
     ]);
 
     const rulesByKey = new Map<string, TimingRule>();
@@ -461,6 +464,8 @@ export async function getScheduleView(supabase: Db, userId: string): Promise<Sch
           name: supp.supplement_name,
           dosageForm,
           source,
+          hasGenex360Row: geneProof.hasGenex360Row,
+          hasGenexmRow: geneProof.hasGenexmRow,
         }),
       });
     }

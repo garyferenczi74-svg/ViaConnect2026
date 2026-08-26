@@ -22,7 +22,7 @@ import {
   unauthorizedHubPayload,
   type HubVariantsPayload,
 } from '@/lib/genetics/hubVariantsPayload';
-import { variantRowChip, type VariantRowChipKind } from '@/lib/genetics/variantRowChip';
+import { parseVariantRowChipKind, variantRowChip, type VariantRowChipKind } from '@/lib/genetics/variantRowChip';
 import type { VariantProvenance } from '@/lib/genetics/variantProvenance';
 
 export const dynamic = 'force-dynamic';
@@ -83,13 +83,7 @@ function scorePayload(
         is_sample: row.is_sample === true,
         stored_panel_key:
           typeof row.stored_panel_key === 'string' ? row.stored_panel_key : panelKey,
-        chip:
-          row.chip === 'demo' ||
-          row.chip === 'result' ||
-          row.chip === 'unanalyzed' ||
-          row.chip === 'reference'
-            ? row.chip
-            : undefined,
+        chip: parseVariantRowChipKind(row.chip) ?? undefined,
         provenance:
           typeof row.provenance === 'object' && row.provenance !== null
             ? (row.provenance as VariantProvenance)

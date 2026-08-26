@@ -33,8 +33,11 @@ function asVariantFacts(data: unknown): GeneticsUploadVariantFact[] {
   const rows: GeneticsUploadVariantFact[] = [];
   for (const entry of data) {
     if (typeof entry !== 'object' || entry === null) continue;
-    const row = entry as { is_sample?: unknown };
-    rows.push({ is_sample: row.is_sample === true });
+    const row = entry as { is_sample?: unknown; panel_key?: unknown };
+    rows.push({
+      is_sample: row.is_sample === true,
+      panel_key: typeof row.panel_key === 'string' ? row.panel_key : null,
+    });
   }
   return rows;
 }
@@ -68,7 +71,7 @@ export async function loadGeneticsUploadFacts(
   try {
     const [variantsResult, uploadsResult, kitsResult] = await Promise.all([
       withTimeout(
-        supabase.from('user_variants').select('is_sample').eq('user_id', userId),
+        supabase.from('user_variants').select('is_sample, panel_key').eq('user_id', userId),
         TIMEOUT_MS,
         'genetics.upload.user_variants',
       ),
@@ -113,6 +116,7 @@ export async function loadGeneticsUploadFacts(
 
     return {
       variantRows: variants.error ? [] : asVariantFacts(variants.data),
+      variantsReadFailed: Boolean(variants.error),
       realKitIngest:
         !uploads.error && uploadsHaveRealFile(uploads.data)
           ? true

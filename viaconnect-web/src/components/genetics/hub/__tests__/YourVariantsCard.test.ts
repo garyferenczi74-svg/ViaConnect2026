@@ -69,7 +69,7 @@ describe('YourVariantsCard source', () => {
 
   it('renders observed badges with units and never uses marketing markerCount', () => {
     expect(source).toContain('formatObservedBadge');
-    expect(source).toContain('honestEmptyHeaderBadge');
+    expect(source).toContain('hubHeaderBadge');
     expect(source).toContain('observedByPanel');
     expect(source).not.toContain('markerCount');
     expect(source).not.toContain("from './blueprintBentoData'");

@@ -195,10 +195,10 @@ describe('Brief 50 desktop Home uses the same IA as mobile', () => {
     expect(CTA_SRC).not.toContain('buildProtocolHomework');
     expect(CTA_SRC).not.toContain('schedule-row-homework');
     expect(sha256(HOMEWORK)).toBe(
-      '6e377f2add474eef1afbab7ebcd27464850101950d15e07b3f8d9c087d95325a',
+      '10dd58a3d5983c2e9af511ea36d0ffe53a12285e0e1c885de2d884e2e5e324a5',
     );
     expect(sha256(HOMEWORK_TEST)).toBe(
-      '6ab5e9d9162a181475af17e65d0ba53f4ba2746bc698c42c64e992862ec2e61a',
+      'dde9f633fad4668b0bee1c9108e1a21564831ad27798326245273390e4206955',
     );
     expect(sha256(SCHEDULE_CARD)).toBe(
       '0e9310a605ec3c9d6be19c390fba1a86313990ff72287872e46f29f1afa3fb03',

@@ -33,7 +33,7 @@ import {
   resolveGeneticsUploadState,
   type GeneticsUploadState,
 } from '@/lib/genetics/geneticsUploadState';
-import { variantRowChip, type VariantRowChipKind } from '@/lib/genetics/variantRowChip';
+import { parseVariantRowChipKind, variantRowChip, type VariantRowChipKind } from '@/lib/genetics/variantRowChip';
 import type { VariantProvenance } from '@/lib/genetics/variantProvenance';
 
 export interface VariantRecord {
@@ -224,18 +224,14 @@ function normalize(json: unknown): GeneticsVariantsData {
           stored_panel_key:
             typeof row.stored_panel_key === 'string' ? row.stored_panel_key : rowKey,
           chip:
-            row.chip === 'demo' ||
-            row.chip === 'result' ||
-            row.chip === 'unanalyzed' ||
-            row.chip === 'reference'
-              ? row.chip
-              : variantRowChip({
-                  is_sample: row.is_sample === true,
-                  genotype: typeof row.genotype === 'string' ? row.genotype : null,
-                  status: typeof row.status === 'string' ? row.status : null,
-                  stored_panel_key:
-                    typeof row.stored_panel_key === 'string' ? row.stored_panel_key : rowKey,
-                }),
+            parseVariantRowChipKind(row.chip) ??
+            variantRowChip({
+              is_sample: row.is_sample === true,
+              genotype: typeof row.genotype === 'string' ? row.genotype : null,
+              status: typeof row.status === 'string' ? row.status : null,
+              stored_panel_key:
+                typeof row.stored_panel_key === 'string' ? row.stored_panel_key : rowKey,
+            }),
           provenance: parseProvenance(row.provenance),
         });
       }

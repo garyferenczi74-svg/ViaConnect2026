@@ -36,6 +36,10 @@ export interface ProtocolHomeworkInput {
   source?: string | null;
   /** Existing educational copy only. Never invent CAQ, lab, or gene text. */
   moleculeWhy?: string | null;
+  /** Brief 51: from GENEX360 only when a real GENEX360 / kit row exists. */
+  hasGenex360Row?: boolean;
+  /** Brief 51: from GeneXM only when a real GeneXM / genex_m row exists. */
+  hasGenexmRow?: boolean;
 }
 
 export interface ProtocolHomework {
@@ -92,6 +96,7 @@ function isSemaglutide(name: string): boolean {
  */
 export function chipForProtocolSource(
   source: string | null | undefined,
+  proof?: Pick<ProtocolHomeworkInput, 'hasGenex360Row' | 'hasGenexmRow'>,
 ): ProtocolInputChip | null {
   if (typeof source !== 'string') return null;
   const key = normalizeKey(source);
@@ -110,10 +115,10 @@ export function chipForProtocolSource(
     return 'from lab';
   }
   if (key === 'genex360' || key === 'gene_x360' || key === 'genex_360') {
-    return 'from GENEX360';
+    return proof?.hasGenex360Row === true ? 'from GENEX360' : null;
   }
   if (key === 'genexm' || key === 'gene_xm' || key === 'genex_m') {
-    return 'from GeneXM';
+    return proof?.hasGenexmRow === true ? 'from GeneXM' : null;
   }
   if (key === 'profile' || key === 'manual' || key === 'user_logged') {
     return 'from profile';
@@ -175,7 +180,10 @@ export function buildProtocolHomework(input: ProtocolHomeworkInput): ProtocolHom
   const moleculeWhy = sanitizeMoleculeWhy(input.moleculeWhy, input.name);
   const form = deliveryFormLabel(input);
   const deliveryWhy = deliveryWhyLine(form);
-  const inputChip = chipForProtocolSource(input.source);
+  const inputChip = chipForProtocolSource(input.source, {
+    hasGenex360Row: input.hasGenex360Row,
+    hasGenexmRow: input.hasGenexmRow,
+  });
 
   if (moleculeWhy || deliveryWhy || inputChip) {
     return {

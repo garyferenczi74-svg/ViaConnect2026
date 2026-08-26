@@ -33,6 +33,16 @@ describe('Variants Explorer Preview honesty', () => {
   it('does not emit a protocol-change line without a real delta', () => {
     expect(protocolChangeLine(null)).toBeNull();
   });
+
+  it('bans genotype / COMT / CLOCK / MTHFR copy on Demo Explorer', () => {
+    const blob = JSON.stringify(PREVIEW_VARIANTS);
+    expect(blob).not.toMatch(/\bMTHFR\b/);
+    expect(blob).not.toMatch(/\bCOMT\b/);
+    expect(blob).not.toMatch(/\bCLOCK\b/);
+    expect(blob).not.toMatch(/\brs\d+\b/i);
+    expect(blob).toContain('GeneXM');
+    expect(blob).not.toContain('GeneX-M');
+  });
 });
 
 describe('VariantsExplorerPreview source', () => {
