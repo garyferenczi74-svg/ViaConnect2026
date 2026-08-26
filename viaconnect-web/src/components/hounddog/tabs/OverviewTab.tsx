@@ -23,8 +23,19 @@ import {
   HOUNDDOG_EMPTY_METRIC,
   HOUNDDOG_NO_SCRAPE_COPY,
   liveAgentJobs,
+  loadHounddogLiveAccounts,
   loadHounddogLiveJobs,
+  type HounddogSocialAccountRow,
 } from '@/lib/hounddog/honesty';
+import {
+  bindOverviewKpis,
+  bindSocialTableCells,
+  findCountForPlatform,
+  formatSocialCount,
+  loadHounddogSocialCounts,
+  selectRealSocialCounts,
+  type HounddogSocialCountRow,
+} from '@/lib/hounddog/socialCounts';
 import Btn from '../shared/Btn';
 import Pill from '../shared/Pill';
 import SecHead from '../shared/SecHead';
@@ -74,10 +85,20 @@ const mutedCell: React.CSSProperties = {
   color: C.muted2,
 };
 
-export default function OverviewTab() {
+export default function OverviewTab({
+  socialCounts,
+  accounts,
+}: {
+  socialCounts?: readonly HounddogSocialCountRow[];
+  accounts?: readonly HounddogSocialAccountRow[];
+} = {}) {
   const jobs = loadHounddogLiveJobs();
   const liveJobs = liveAgentJobs(jobs);
   const liveCount = liveJobs.length;
+  const counts = socialCounts ?? loadHounddogSocialCounts();
+  const liveAccounts = accounts ?? loadHounddogLiveAccounts();
+  const kpis = bindOverviewKpis(counts, liveAccounts);
+  const topPosts = selectRealSocialCounts(counts).slice(0, TOP_POST_SLOTS.length);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
@@ -120,13 +141,25 @@ export default function OverviewTab() {
         className="hd-kpi-grid"
       >
         <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 16 }}>
-          <KPI label="AI Tasks Completed" value={HOUNDDOG_EMPTY_METRIC} hint={HOUNDDOG_NO_SCRAPE_COPY} />
+          <KPI
+            label="AI Tasks Completed"
+            value={kpis.aiTasks}
+            hint={kpis.hint || undefined}
+          />
         </div>
         <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 16 }}>
-          <KPI label="Posts in Queue" value={HOUNDDOG_EMPTY_METRIC} hint={HOUNDDOG_NO_SCRAPE_COPY} />
+          <KPI
+            label="Posts in Queue"
+            value={kpis.postsInQueue}
+            hint={kpis.hint || undefined}
+          />
         </div>
         <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 16 }}>
-          <KPI label="Avg Engagement" value={HOUNDDOG_EMPTY_METRIC} hint={HOUNDDOG_NO_SCRAPE_COPY} />
+          <KPI
+            label="Avg Engagement"
+            value={kpis.avgEngagement}
+            hint={kpis.hint || undefined}
+          />
         </div>
         <div>
           <button
@@ -292,7 +325,9 @@ export default function OverviewTab() {
                 <span>Growth</span>
                 <span>Actions</span>
               </div>
-              {PLATFORM_SLOTS.map((plat, idx) => (
+              {PLATFORM_SLOTS.map((plat, idx) => {
+                const cells = bindSocialTableCells(findCountForPlatform(counts, plat.name));
+                return (
                 <div
                   key={plat.name}
                   style={{
@@ -317,12 +352,12 @@ export default function OverviewTab() {
                       {plat.name}
                     </span>
                   </div>
-                  <span style={mutedCell}>{HOUNDDOG_NO_SCRAPE_COPY}</span>
-                  <span style={mutedCell}>{HOUNDDOG_EMPTY_METRIC}</span>
-                  <span style={mutedCell}>{HOUNDDOG_EMPTY_METRIC}</span>
-                  <span style={mutedCell}>{HOUNDDOG_EMPTY_METRIC}</span>
-                  <span style={mutedCell}>{HOUNDDOG_EMPTY_METRIC}</span>
-                  <span style={mutedCell}>{HOUNDDOG_EMPTY_METRIC}</span>
+                  <span style={mutedCell}>{cells.day30}</span>
+                  <span style={mutedCell}>{cells.posts}</span>
+                  <span style={mutedCell}>{cells.eng}</span>
+                  <span style={mutedCell}>{cells.reach}</span>
+                  <span style={mutedCell}>{cells.saves}</span>
+                  <span style={mutedCell}>{cells.growth}</span>
                   <div style={{ display: 'flex', gap: 4 }}>
                     <Btn variant="ghost" icon={RefreshCw} onClick={() => {}}>Repurpose</Btn>
                     <button
@@ -345,7 +380,8 @@ export default function OverviewTab() {
                     </button>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
@@ -363,7 +399,9 @@ export default function OverviewTab() {
           }}
           className="hd-top-posts-grid"
         >
-          {TOP_POST_SLOTS.map((idx) => (
+          {TOP_POST_SLOTS.map((idx) => {
+            const row = topPosts[idx];
+            return (
             <div
               key={idx}
               style={{
@@ -375,17 +413,17 @@ export default function OverviewTab() {
               className="hd-top-post-card"
             >
               <div style={{ fontSize: 13, fontWeight: 700, color: C.muted2, marginBottom: 8 }}>
-                {HOUNDDOG_NO_SCRAPE_COPY}
+                {row ? row.platform : HOUNDDOG_NO_SCRAPE_COPY}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 10, color: C.muted2 }}>
-                  <Eye size={10} strokeWidth={1.5} /> {HOUNDDOG_EMPTY_METRIC}
+                  <Eye size={10} strokeWidth={1.5} /> {formatSocialCount(row?.views)}
                 </span>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 10, color: C.muted2 }}>
-                  <TrendingUp size={10} strokeWidth={1.5} /> {HOUNDDOG_EMPTY_METRIC}
+                  <TrendingUp size={10} strokeWidth={1.5} /> {formatSocialCount(row?.reach)}
                 </span>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 10, color: C.muted2 }}>
-                  <Star size={10} strokeWidth={1.5} /> {HOUNDDOG_EMPTY_METRIC}
+                  <Star size={10} strokeWidth={1.5} /> {formatSocialCount(row?.likes)}
                 </span>
               </div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }} className="hd-top-post-actions">
@@ -393,7 +431,8 @@ export default function OverviewTab() {
                 <Btn variant="ghost" icon={Copy} onClick={() => {}}>Clone Angle</Btn>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 

@@ -12,6 +12,7 @@ import {
   HOUNDDOG_EMPTY_METRIC,
   HOUNDDOG_NO_SCRAPE_COPY,
 } from "@/lib/hounddog/honesty";
+import type { HounddogSocialCountRow } from "@/lib/hounddog/socialCounts";
 
 const FORBIDDEN = [
   "847",
@@ -64,6 +65,46 @@ describe("Hounddog command center paints honest empty, not fixtures", () => {
     for (const token of FORBIDDEN) {
       expect(html, `Overview paint still contains ${token}`).not.toContain(token);
     }
+  });
+
+  it("Overview promotes a tile only from a real views/likes/reach row", () => {
+    const real: HounddogSocialCountRow = {
+      platform: "tiktok",
+      views: 142,
+      likes: 9,
+      reach: 400,
+      saves: 3,
+      engRate: 5,
+      recordedAt: "2026-08-26T00:00:00.000Z",
+      postUrl: null,
+    };
+    const html = renderToStaticMarkup(<OverviewTab socialCounts={[real]} />);
+    expect(html).toContain("142");
+    expect(html).toContain("400");
+    expect(html).toContain("5%");
+    expect(html).not.toContain("847");
+    expect(html).not.toContain("2.1M");
+  });
+
+  it("Overview does not bind URL-only digest rows or invent 129 as a count", () => {
+    const urlOnly: HounddogSocialCountRow = {
+      platform: "youtube",
+      views: 0,
+      likes: 0,
+      reach: 0,
+      saves: 0,
+      engRate: 0,
+      recordedAt: null,
+      postUrl: "https://www.youtube.com/watch?v=digest",
+    };
+    const html = renderToStaticMarkup(
+      <OverviewTab socialCounts={Array.from({ length: 129 }, () => urlOnly)} />,
+    );
+    expect(html).toContain(HOUNDDOG_EMPTY_METRIC);
+    expect(html).toContain(HOUNDDOG_NO_SCRAPE_COPY);
+    expect(html).not.toContain("129");
+    expect(html).not.toContain("https://www.youtube.com/watch?v=digest");
+    expect(html).not.toContain("Research Hub digest");
   });
 });
 
@@ -123,9 +164,27 @@ describe("Hounddog tool tabs paint usable controls, not the 38 banner", () => {
     expect(html).toContain("Competitor Analyzer");
     expect(html).toContain("Analyze");
     expect(html).not.toContain(HOUNDDOG_EMPTY_COPY);
+    expect(html).not.toContain("Research findings");
     for (const token of FORBIDDEN) {
       expect(html, `Research still contains ${token}`).not.toContain(token);
     }
+  });
+
+  it("Sherlock findings list on Research only, never Content or Overview KPI", () => {
+    const finding = {
+      title: "Allowlist digest title",
+      url: "https://example.com/sherlock",
+      platform: "youtube",
+      score: 0.77,
+      fetchedAt: "2026-08-25T12:00:00.000Z",
+    };
+    const research = renderToStaticMarkup(<ResearchTab findings={[finding]} />);
+    expect(research).toContain("Research findings");
+    expect(research).toContain("Allowlist digest title");
+    expect(research).toContain("https://example.com/sherlock");
+    expect(renderToStaticMarkup(<ContentTab />)).not.toContain("Allowlist digest title");
+    expect(renderToStaticMarkup(<OverviewTab />)).not.toContain("Allowlist digest title");
+    expect(renderToStaticMarkup(<OverviewTab />)).not.toContain("https://example.com/sherlock");
   });
 });
 
