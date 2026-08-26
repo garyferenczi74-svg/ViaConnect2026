@@ -26,6 +26,7 @@ import ContentTab from './tabs/ContentTab';
 import CreateTab from './tabs/CreateTab';
 import AutoScriptTab from './tabs/AutoScriptTab';
 import ResearchTab from './tabs/ResearchTab';
+import type { HounddogResearchFinding } from '@/lib/hounddog/researchFindings';
 
 /* ------------------------------------------------------------------ */
 /*  Icon resolver                                                      */
@@ -59,7 +60,11 @@ const TABS: TabDef[] = [
 /* ------------------------------------------------------------------ */
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
-export default function HounddogCommandCenter() {
+export default function HounddogCommandCenter({
+  researchFindings,
+}: {
+  researchFindings?: readonly HounddogResearchFinding[];
+} = {}) {
   const [activeTab, setActiveTab] = useState<TabKey>('overview');
   const jobs = loadHounddogLiveJobs();
   const liveJobs = liveAgentJobs(jobs);
@@ -360,7 +365,7 @@ export default function HounddogCommandCenter() {
         {activeTab === 'content' && <ContentTab />}
         {activeTab === 'create' && <CreateTab />}
         {activeTab === 'autoscript' && <AutoScriptTab />}
-        {activeTab === 'research' && <ResearchTab />}
+        {activeTab === 'research' && <ResearchTab findings={researchFindings} />}
       </div>
     </div>
   );
