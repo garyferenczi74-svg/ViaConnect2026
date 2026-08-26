@@ -71,7 +71,7 @@ describe('NutritionHub source', () => {
     // Prompt 183a: the score card no longer uses NutritionScoreCircleGauge; it
     // renders a plain teal PlasmaGauge at size 176 fed the precomputed score.
     expect(source).not.toContain('NutritionScoreCircleGauge');
-    expect(source).toContain('value={metrics.nutritionScore ?? 0}');
+    expect(source).toContain('value={scoreCenter.value}');
     expect(source).toContain('valueFontPx={30}');
     // The hub does not author scoring math.
     expect(source).not.toContain('calorieWeightedMealQualityScore');
@@ -96,18 +96,26 @@ describe('NutritionHub source', () => {
   });
 
   it('Row 1 Daily Macros reuses PlasmaGauge for the percent to target', () => {
-    expect(source).toContain('value={metrics.dailyMacrosPct ?? 0}');
+    expect(source).toContain('value={macroCenter.value}');
     // The shared gauge props object caps the gauge at the 100 percent target.
     expect(source).toContain('max: 100');
   });
 
-  it('Row 1 gauges fail open to a neutral empty gauge when the value is undefined (no real 0)', () => {
-    expect(source).toContain("const hasMacroPct = typeof metrics.dailyMacrosPct === 'number'");
-    expect(source).toContain("const hasScore = typeof metrics.nutritionScore === 'number'");
-    // The empty branches turn the animation off and show a muted note, not a real 0.
+  it('Row 1 empty score rings reuse Connections -- / UNKNOWN, never PlasmaGauge value 0 as OF 100', () => {
+    expect(source).toContain("import { ConnectionsBosDial } from '@/components/body-tracker/connections/ConnectionsBosDial'");
+    expect(source).toContain('from \'./nutritionHubScoreDisplay\'');
+    expect(source).toContain('nutritionHubScoreCenter(metrics.nutritionScore)');
+    expect(source).toContain('nutritionHubMacroCenter(metrics.dailyMacrosPct)');
+    expect(source).toContain('scoreCenter.kind === \'score\'');
+    expect(source).toContain('macroCenter.kind === \'macros\'');
+    const emptyDials = source.match(/<ConnectionsBosDial composite=\{CONNECTIONS_BOS_COMPOSITE\} \/>/g) ?? [];
+    expect(emptyDials.length).toBe(2);
     expect(source).toContain('No macros logged today yet');
     expect(source).toContain('Log a meal to see your score');
-    expect(source).toContain('animated={false}');
+    // Empty branch must not feed PlasmaGauge a fake 0 score with OF 100.
+    expect(source).not.toMatch(/<PlasmaGauge[\s\S]{0,400}value=\{0\}/);
+    expect(source).not.toContain('value={0}');
+    expect(source).not.toContain('animated={false}');
   });
 
   it('Row 1 Daily Macros readout shows absolute grams, not percentages', () => {

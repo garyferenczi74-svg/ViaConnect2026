@@ -8,8 +8,11 @@
 // path and adds no new table. It calls useNutritionHubMetrics ONCE at the top
 // and threads the result down. Every metric is treated as fail open: an
 // undefined value renders the empty / neutral state, never a fabricated 0 and
-// never an invented count. While loading the gauges sit in their own empty
-// state (mealCount / counts undefined) rather than flashing a real looking zero.
+// never an invented count. Brief 31: the two Row 1 score rings reuse the
+// Connections -- / UNKNOWN dial when the hook returns undefined, so a missing
+// score cannot paint as 0 OF 100 or 0% OF TARGET. While loading the gauges sit
+// in their own empty state (mealCount / counts undefined) rather than flashing
+// a real looking zero.
 //
 // The body sits on plain Deep Navy (the page wrapper paints #1A2744); there is
 // NO full bleed hero. Layout bands, in order:
@@ -46,6 +49,7 @@ import { ChevronRight, X } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useNutrivisionManualLogHandoff } from '@/hooks/useNutrivisionManualLogHandoff';
 import { PlasmaGauge, type PlasmaGaugeProps } from '@/components/gauges/PlasmaGauge';
+import { ConnectionsBosDial } from '@/components/body-tracker/connections/ConnectionsBosDial';
 import { ConnectedAppMealDropdown } from '@/components/nutrition/ConnectedAppMealDropdown';
 import { LogYourMealActions } from '@/components/nutrition/LogYourMealActions';
 import { CardMedia } from '@/components/body-tracker/hub/CardMedia';
@@ -53,6 +57,11 @@ import type { SurfaceMedia } from '@/components/body-tracker/hub/hubConfig';
 import { AssessmentRetakeCard } from '@/components/body-tracker/hub/AssessmentRetakeCard';
 import '@/components/body-tracker/hub/hub-card-frame.css';
 import { useNutritionHubMetrics } from './useNutritionHubMetrics';
+import {
+  CONNECTIONS_BOS_COMPOSITE,
+  nutritionHubMacroCenter,
+  nutritionHubScoreCenter,
+} from './nutritionHubScoreDisplay';
 import { NutritionInsightsTile } from './NutritionInsightsTile';
 import { NutritionHubHeader } from './NutritionHubHeader';
 import { NutritionGettingStartedStrip } from './NutritionGettingStartedStrip';
@@ -306,19 +315,16 @@ export function NutritionHub() {
     { label: 'Fiber', grams: metrics.fiberG },
   ];
 
-  // Daily Macros gauge: render the real percent when defined, otherwise a
-  // neutral empty gauge (value 0, animation off) with a caption so it never
-  // reads as a real 0 percent.
-  const hasMacroPct = typeof metrics.dailyMacrosPct === 'number';
-  // Nutrition Score gauge: fail open. When the score is undefined render a
-  // neutral empty gauge (value 0, animation off) with a muted note instead of a
-  // fabricated number. Missing is treated as NULL, never 0.
-  const hasScore = typeof metrics.nutritionScore === 'number';
+  // Brief 31: empty rings reuse the Connections -- / UNKNOWN dial. A missing
+  // score must not paint PlasmaGauge as "0 OF 100" / "0% OF TARGET".
+  // Number.isFinite keeps NaN / Infinity off the numeric path.
+  const scoreCenter = nutritionHubScoreCenter(metrics.nutritionScore);
+  const macroCenter = nutritionHubMacroCenter(metrics.dailyMacrosPct);
+  const hasMacroPct = macroCenter.kind === 'macros';
 
-  // Props shared by the real and empty Daily Macros gauge branches. The two
-  // branches vary only value and animated; keeping the rest here avoids
-  // drifting the gauge geometry between the two states. Prompt 183a: teal hub
-  // finish, Row 1 size 176, percent-to-target caption.
+  // Props for the scored Daily Macros PlasmaGauge. Empty (no meals) uses the
+  // Connections dial instead. Prompt 183a: teal hub finish, Row 1 size 176,
+  // percent-to-target caption.
   const macroGaugeProps: Pick<
     PlasmaGaugeProps,
     | 'metric'
@@ -384,8 +390,8 @@ export function NutritionHub() {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {/* Nutrition Score: plain Plasma gauge in the teal hub finish, the
             title below the gauge, then the signal caption. No Open, no tier word.
-            When the score is undefined a neutral empty gauge plus a muted note
-            stands in for a fabricated number. */}
+            When the score is missing, reuse ConnectionsBosDial (-- / UNKNOWN).
+            Hannah subcopy stays "Log a meal to see your score." */}
         <HubTile
           gradientClass={MEDIA_TEAL_TL}
           media={NUTRITION_CARD_MEDIA.nutritionScore}
@@ -393,11 +399,11 @@ export function NutritionHub() {
           contentClassName="items-center text-center"
         >
           <div className="flex flex-1 flex-col items-center justify-center gap-2">
-            {hasScore ? (
+            {scoreCenter.kind === 'score' ? (
               <PlasmaGauge
                 metric="plasmateal"
                 size={176}
-                value={metrics.nutritionScore ?? 0}
+                value={scoreCenter.value}
                 caption="OF 100"
                 valueFontPx={30}
                 plainNumber
@@ -406,17 +412,7 @@ export function NutritionHub() {
               />
             ) : (
               <div className="flex flex-col items-center gap-2">
-                <PlasmaGauge
-                  metric="plasmateal"
-                  size={176}
-                  value={0}
-                  animated={false}
-                  caption="OF 100"
-                  valueFontPx={30}
-                  plainNumber
-                  subtleTrack
-                  showUnit={false}
-                />
+                <ConnectionsBosDial composite={CONNECTIONS_BOS_COMPOSITE} />
                 <span className="text-[11px] text-white/55">Log a meal to see your score</span>
               </div>
             )}
@@ -458,8 +454,8 @@ export function NutritionHub() {
 
         {/* Daily Macros: single Plasma gauge of percent to target in the
             teal hub finish, the title below the gauge, then the absolute gram
-            readout row. When the overall percent is undefined render a neutral
-            empty gauge, not a real 0. */}
+            readout row. No meals logged => Connections -- / UNKNOWN, not 0%.
+            Logged meals with truly 0 intake may still paint 0% OF TARGET. */}
         <HubTile
           gradientClass={MEDIA_TEAL_TR}
           media={NUTRITION_CARD_MEDIA.dailyMacros}
@@ -467,11 +463,11 @@ export function NutritionHub() {
           contentClassName="items-center text-center"
         >
           <div className="flex flex-1 flex-col items-center justify-center gap-3">
-            {hasMacroPct ? (
-              <PlasmaGauge {...macroGaugeProps} value={metrics.dailyMacrosPct ?? 0} />
+            {macroCenter.kind === 'macros' ? (
+              <PlasmaGauge {...macroGaugeProps} value={macroCenter.value} />
             ) : (
               <div className="flex flex-col items-center gap-2">
-                <PlasmaGauge {...macroGaugeProps} value={0} animated={false} />
+                <ConnectionsBosDial composite={CONNECTIONS_BOS_COMPOSITE} />
                 <span className="text-[11px] text-white/55">No macros logged today yet</span>
               </div>
             )}

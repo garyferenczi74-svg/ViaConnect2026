@@ -189,4 +189,28 @@ describe('computeTodayNutrition', () => {
     expect(result.fatG).toBeUndefined();
     expect(result.fiberG).toBeUndefined();
   });
+
+  it('keeps nutritionScore and dailyMacrosPct undefined when todayMealCount is 0', () => {
+    expect(computeTodayNutrition([], targets, NOW, TZ).nutritionScore).toBeUndefined();
+    expect(computeTodayNutrition([], targets, NOW, TZ).dailyMacrosPct).toBeUndefined();
+  });
+
+  it('returns a finite nutritionScore and 0 dailyMacrosPct for a 0-intake scored meal', () => {
+    const rows: HubMealRow[] = [
+      {
+        logged_at: iso('2026-06-10'),
+        quality_score: 70,
+        calories_kcal: 0,
+        protein_g: 0,
+        carbs_g: 0,
+        fat_total_g: 0,
+        fiber_g: 0,
+      },
+    ];
+    const result = computeTodayNutrition(rows, targets, NOW, TZ);
+    expect(result.nutritionMealCount).toBe(1);
+    expect(Number.isFinite(result.nutritionScore)).toBe(true);
+    expect(result.nutritionScore).not.toBeNaN();
+    expect(result.dailyMacrosPct).toBe(0);
+  });
 });
