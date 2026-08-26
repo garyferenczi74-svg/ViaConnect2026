@@ -4,13 +4,22 @@ import React, { useState } from 'react';
 import { Crosshair, Search } from 'lucide-react';
 import { C, COMPETITORS, TOP_HOOKS } from '@/lib/hounddog/constants';
 import { hasLiveSocialLastSync, loadHounddogLiveAccounts } from '@/lib/hounddog/honesty';
+import {
+  loadHounddogResearchFindings,
+  type HounddogResearchFinding,
+} from '@/lib/hounddog/researchFindings';
 import SecHead from '../shared/SecHead';
 import Btn from '../shared/Btn';
 import Pill from '../shared/Pill';
 
-export default function ResearchTab() {
+export default function ResearchTab({
+  findings,
+}: {
+  findings?: readonly HounddogResearchFinding[];
+} = {}) {
   const [query, setQuery] = useState('');
   const showLive = hasLiveSocialLastSync(loadHounddogLiveAccounts());
+  const researchFindings = findings ?? loadHounddogResearchFindings();
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -52,6 +61,68 @@ export default function ResearchTab() {
           </Btn>
         </div>
       </div>
+
+      {researchFindings.length > 0 && (
+        <div>
+          <SecHead label="Research findings" />
+          <div
+            style={{
+              background: C.card,
+              border: `1px solid ${C.border}`,
+              borderRadius: 12,
+              overflow: 'hidden',
+            }}
+          >
+            {researchFindings.map((finding, index) => (
+              <div
+                key={`${finding.url ?? finding.title}-${index}`}
+                style={{
+                  padding: 12,
+                  borderBottom:
+                    index < researchFindings.length - 1 ? `1px solid ${C.border}` : 'none',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 6,
+                }}
+              >
+                <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>
+                  {finding.title}
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: 10,
+                    fontSize: 11,
+                    color: C.muted2,
+                  }}
+                >
+                  {finding.platform && <span>{finding.platform}</span>}
+                  {finding.score != null && <span>{finding.score}</span>}
+                  {finding.fetchedAt && <span>{finding.fetchedAt}</span>}
+                </div>
+                {finding.url && (
+                  <a
+                    href={finding.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      fontSize: 12,
+                      color: C.teal,
+                      wordBreak: 'break-all',
+                      minHeight: 44,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                    }}
+                  >
+                    {finding.url}
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {showLive && COMPETITORS.length > 0 && (
         <div>

@@ -3,6 +3,10 @@
 // Brief 53: Overview is original chrome with honest empties (-- / No scrape yet),
 // not a wiped EmptyState page. Create / Auto-Script / Content / Research must
 // NOT contain EmptyState / HOUNDDOG_EMPTY_COPY. Content empty = No scripts yet.
+// Brief 54: Overview numbers bind only from a real views/likes/reach row or a
+// real last-sync. No getHounddogAnalyticsSummary. No rollup query. Sherlock
+// digest title/URL/score stay on Research findings (or Research Hub), never
+// Content / pipeline / KPI last-sync.
 
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
@@ -71,6 +75,13 @@ describe("Hounddog Overview and header contain no staged fixtures", () => {
     expect(src).toContain("HOUNDDOG_NO_SCRAPE_COPY");
     expect(src).toContain("loadHounddogLiveJobs");
     expect(src).toContain("liveAgentJobs");
+    expect(src).toContain("bindOverviewKpis");
+    expect(src).toContain("bindSocialTableCells");
+    expect(src).toContain("loadHounddogSocialCounts");
+    expect(src).not.toContain("getHounddogAnalyticsSummary");
+    expect(src).not.toContain("hounddog_analytics_rollup");
+    expect(src).not.toContain("research_hub");
+    expect(src).not.toContain("loadHounddogResearchFindings");
     expect(src).not.toMatch(/from ['"]@\/lib\/hounddog\/constants['"].*ALERTS|AGENTS|PLATFORMS|TOP_POSTS/);
   });
 
@@ -112,6 +123,8 @@ describe("Hounddog tool tabs stay usable without the 38 page-killing banner", ()
     expect(src).toContain("Write a script.");
     expect(src).toContain("Send to Pipeline");
     expect(src).not.toContain("Write only after a live platform is wired.");
+    expect(src).not.toContain("loadHounddogResearchFindings");
+    expect(src).not.toContain("Research findings");
     expect(HOUNDDOG_CONTENT_EMPTY_COPY).toBe("No scripts yet.");
   });
 
@@ -134,6 +147,10 @@ describe("Hounddog tool tabs stay usable without the 38 page-killing banner", ()
     const src = read(RESEARCH);
     expect(src).toContain("Competitor Analyzer");
     expect(src).toContain("Analyze");
+    expect(src).toContain("loadHounddogResearchFindings");
+    expect(src).toContain("Research findings");
+    expect(src).not.toContain("hounddog_scripts");
+    expect(src).not.toContain("hounddog_pipeline");
   });
 
   it("constants do not export populated demo arrays", () => {
