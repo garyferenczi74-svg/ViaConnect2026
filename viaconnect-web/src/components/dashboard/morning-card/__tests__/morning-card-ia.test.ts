@@ -44,6 +44,13 @@ describe('Brief 29 morning card IA', () => {
     const cta = src(CTA);
     expect(card).toContain('firstIncompleteProtocolAction');
     expect(card).toContain('useDailyScheduleView');
+    expect(card).toContain('PROTOCOL_CTA_LOADING_BOUND_MS');
+    expect(card).toContain('loadingElapsedMs');
+    expect(card).toContain('onRetry={schedule.refresh}');
+    expect(cta).toContain('data-cta-kind="error"');
+    expect(cta).toContain('data-cta-retry');
+    expect(cta).not.toContain("cta.kind === 'complete'");
+    expect(cta).not.toContain("cta.kind === 'unavailable'");
     expect(card + cta).not.toMatch(/helix_challenges/);
     expect(card + cta).not.toMatch(/Helix Rewards/);
     expect(card + cta).not.toMatch(/Vitality/);

@@ -7,13 +7,21 @@ export const MORNING_CARD_ARIA_LABEL = 'Bio Optimization Score';
 
 export const MORNING_CARD_PENDING_SCORE = '--';
 
-export const MORNING_CTA_EMPTY = 'Complete your assessment';
+export const MORNING_CTA_EMPTY = 'No protocol item due today.';
 
-export const MORNING_CTA_COMPLETE = "Today's protocol is complete";
+export const MORNING_CTA_EMPTY_LINK = 'My Supplements';
+
+/** Folded into empty (Brief 48). Kept so existing imports stay stable. */
+export const MORNING_CTA_COMPLETE = MORNING_CTA_EMPTY;
 
 export const MORNING_CTA_LOADING = 'Loading today protocol';
 
-export const MORNING_CTA_UNAVAILABLE = 'Protocol unavailable';
+export const MORNING_CTA_ERROR = "Couldn't load today's protocol.";
+
+export const MORNING_CTA_RETRY = 'Retry';
+
+/** Brief 48 error copy. Alias for older imports. */
+export const MORNING_CTA_UNAVAILABLE = MORNING_CTA_ERROR;
 
 export const MORNING_CONTRIBUTOR_PENDING_NOTE =
   'Sources pending until wearable sync is confirmed.';

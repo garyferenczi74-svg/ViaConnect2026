@@ -5,7 +5,7 @@
 // TodaysProtocol action, seven Connections contributor chips as DISPLAY only.
 // Rewards gamification stays off this card. Chip/detail use last-sync SSOT.
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useDailyScheduleView } from '@/hooks/useDailyScheduleView';
 import { useSleepTileSynced } from '@/hooks/useSleepTileSynced';
 import { resolveHabitSleepPair } from '@/lib/body-tracker/habit-sleep-pair';
@@ -24,6 +24,7 @@ import { useWearableTilesSnapshot } from '@/hooks/useWearableTilesSnapshot';
 import { buildMorningChips, chipByKey } from '@/lib/dashboard/morning-card/contributors';
 import { type MorningChipKey } from '@/lib/dashboard/morning-card/keys';
 import {
+  PROTOCOL_CTA_LOADING_BOUND_MS,
   firstIncompleteProtocolAction,
   type MorningProtocolBuckets,
   type MorningProtocolItem,
@@ -70,10 +71,23 @@ export function MorningCard() {
   );
   const [selectedKey, setSelectedKey] = useState<MorningChipKey | null>(null);
   const [taking, setTaking] = useState(false);
+  const [loadingElapsedMs, setLoadingElapsedMs] = useState(0);
+
+  useEffect(() => {
+    if (schedule.status !== 'loading') {
+      setLoadingElapsedMs(0);
+      return;
+    }
+    setLoadingElapsedMs(0);
+    const id = window.setTimeout(() => {
+      setLoadingElapsedMs(PROTOCOL_CTA_LOADING_BOUND_MS);
+    }, PROTOCOL_CTA_LOADING_BOUND_MS);
+    return () => window.clearTimeout(id);
+  }, [schedule.status]);
 
   const cta = firstIncompleteProtocolAction(
     schedule.status === 'ready' ? bucketsFromView(schedule.view) : null,
-    { status: schedule.status },
+    { status: schedule.status, loadingElapsedMs },
   );
   const selectedChip = selectedKey ? chipByKey(chips, selectedKey) : null;
   const composite = resolveConnectionsBosDisplay(
@@ -120,7 +134,12 @@ export function MorningCard() {
             <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-white/40">
               Today protocol
             </p>
-            <MorningProtocolCtaButton cta={cta} onTake={handleTake} taking={taking} />
+            <MorningProtocolCtaButton
+              cta={cta}
+              onTake={handleTake}
+              onRetry={schedule.refresh}
+              taking={taking}
+            />
           </div>
         </div>
 
