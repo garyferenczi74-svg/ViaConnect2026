@@ -113,7 +113,7 @@ describe('NutritionHub source', () => {
     expect(source).toContain('No macros logged today yet');
     expect(source).toContain('Log a meal to see your score');
     // Empty branch must not feed PlasmaGauge a fake 0 score with OF 100.
-    expect(source).not.toMatch(/value=\{0\}[\s\S]{0,180}caption="OF 100"/);
+    expect(source).not.toMatch(/<PlasmaGauge[\s\S]{0,400}value=\{0\}/);
     expect(source).not.toContain('value={0}');
     expect(source).not.toContain('animated={false}');
   });

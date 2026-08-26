@@ -316,7 +316,7 @@ export function NutritionHub() {
   ];
 
   // Brief 31: empty rings reuse the Connections -- / UNKNOWN dial. A missing
-  // score must not paint PlasmaGauge value={0} as "0 OF 100" / "0% OF TARGET".
+  // score must not paint PlasmaGauge as "0 OF 100" / "0% OF TARGET".
   // Number.isFinite keeps NaN / Infinity off the numeric path.
   const scoreCenter = nutritionHubScoreCenter(metrics.nutritionScore);
   const macroCenter = nutritionHubMacroCenter(metrics.dailyMacrosPct);
