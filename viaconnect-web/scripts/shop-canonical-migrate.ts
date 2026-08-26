@@ -84,7 +84,7 @@ const FILENAME_TO_MASTER_NAME: Record<string, string> = {
   'FLEX+.png': 'FLEX+ Joint & Inflammation',
   'Focus+.png': 'FOCUS+ Nootropic Formula',
   'Histamine Relief Protocol+ .png': 'Histamine Relief Protocol',
-  'Inferno+.png': 'GLP-1 Activator Complex',   // "Inferno+" is the creative name for GLP-1
+  'Inferno+.png': 'Inferno',                   // master SKU 04 display name
   'Iron+.png': 'IRON+ Red Blood Cell Support',
   'NeuroAxis+.png': 'NeuroCalm+ (Calm+)',       // — Observed as an alternate skin; SNP-focused NeuroCalm
   'NeuroCalm BH4+.png': 'NeuroCalm BH4+ (Advanced)',
@@ -102,7 +102,7 @@ const FILENAME_TO_MASTER_NAME: Record<string, string> = {
   'Magnesium Synergy Matrix+.png': 'Magnesium Synergy Matrix',
   'Omega-3  DHAEPA (Algal)+.png': 'Omega-3 DHA/EPA (Algal)',
   'Toxibind+ .png': 'ToxiBind Matrix',
-  'Aptigen Complex+ .png': 'GLP-1 Activator Complex', // Aptigen is GLP-1 base
+  'Aptigen Complex+ .png': 'Inferno',          // Aptigen art binds to master SKU 04
   'Thrive+.png': 'Thrive+ Post-Natal GLP-1',
 
   // Women

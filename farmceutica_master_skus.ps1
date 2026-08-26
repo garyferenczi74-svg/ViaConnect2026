@@ -16,7 +16,7 @@ $SKUs = @(
     @{ SKU="01"; Name="BHB Ketone Salts"; Category="Base"; MSRP=68.88; COGS=5.43; DTCMargin=92.1 },
     @{ SKU="02"; Name="MethylB Complete+ B Complex"; Category="Base"; MSRP=48.88; COGS=4.6; DTCMargin=90.6 },
     @{ SKU="03"; Name="Electrolyte Blend"; Category="Base"; MSRP=48.88; COGS=5.52; DTCMargin=88.7 },
-    @{ SKU="04"; Name="GLP-1 Activator Complex"; Category="Base"; MSRP=88.88; COGS=7.68; DTCMargin=91.4 },
+    @{ SKU="04"; Name="Inferno"; Category="Base"; MSRP=88.88; COGS=7.68; DTCMargin=91.4 },
     @{ SKU="05"; Name="Magnesium Synergy Matrix"; Category="Base"; MSRP=58.88; COGS=3.92; DTCMargin=93.3 },
     @{ SKU="06"; Name="NeuroCalm BH4 Complex"; Category="Base"; MSRP=88.88; COGS=5.84; DTCMargin=93.4 },
     @{ SKU="07"; Name="Omega-3 DHA/EPA (Algal)"; Category="Base"; MSRP=48.88; COGS=4.74; DTCMargin=90.3 },

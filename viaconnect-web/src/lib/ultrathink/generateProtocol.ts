@@ -53,7 +53,7 @@ PROPRIETARY BASE (core building blocks):
 - BHB Ketone Salts (Powder) — Ketogenic/Metabolic
 - MethylB Complete+™ B Complex (Capsule) — B1-B7 methylated; critical for methylation and energy
 - Electrolyte Blend (Powder) — Hydrogen, Magnesium, Potassium, Sodium, Zinc
-- GLP-1 Activator Complex (Capsule) — Berberine HCl, BHB, Chromium, EGCG, Selenium, Cinnamon
+- Inferno (Capsule) — Berberine HCl, BHB, Chromium, EGCG, Selenium, Cinnamon
 - Magnesium Synergy Matrix (Capsule) — 6-form magnesium (Bisglycinate, Citrate, Malate, Orotate, Taurate, L-Threonate)
 - NeuroCalm BH4 Complex (Capsule) — L-Dopa, L-Tyrosine, PQQ, CoQ10, Lion's Mane, 5-HTP, L-Theanine
 - Omega-3 DHA/EPA (Algal) (Capsule) — Vegan algal DHA/EPA with Astaxanthin; no fish/heavy metals
@@ -80,7 +80,7 @@ WOMEN'S HEALTH:
 - DESIRE+ Female Hormonal (Capsule) — Tongkat Ali, Tribulus, Shilajit, Maca Root, Ashwagandha, Resveratrol
 - Grow+ Pre-Natal Formula (Capsule) — Complete prenatal: MethylB, Iron, Calcium, D3/K2, Choline, Iodine, Magnesium
 - Revitalizher Postnatal+ (Capsule) — Postnatal recovery: MethylB, Algal DHA/EPA, Amino Acids, Probiotics, Magnesium
-- Thrive+ Post-Natal GLP-1 (Capsule) — BPC-157, MethylB, DHA, GLP-1 Activator Complex; postnatal metabolic
+- Thrive+ Post-Natal GLP-1 (Capsule) — BPC-157, MethylB, DHA, Inferno; postnatal metabolic
 
 CHILDREN'S:
 - Sproutables Infant Tincture — Liposomal infant multivitamin tincture
@@ -143,7 +143,7 @@ FUNCTIONAL MUSHROOMS:
 - Cardiovascular / nitric oxide → BLAST+ Nitric Oxide Stack or NOS+™
 - Longevity / anti-aging → Teloprime+ Telomere Support + Replenish NAD+
 - Detox / liver → Clean+ Detox & Liver Health (PRIMARY)
-- Metabolic / blood sugar → GLP-1 Activator Complex (PRIMARY)
+- Metabolic / blood sugar → Inferno (PRIMARY)
 - Histamine intolerance → Histamine Relief Protocol™ or DAO+™ Histamine Balance
 - Mushroom / immune → match to specific mushroom (Chaga=antioxidant, Reishi=cortisol/immune, Lion's Mane=cognitive, Cordyceps=energy, Turkey Tail=gut/immune)
 
@@ -161,19 +161,19 @@ FUNCTIONAL MUSHROOMS:
 10. HORMONAL IMBALANCE (hormonal >= 5, female) → DESIRE+ Female Hormonal; (male) → RISE+ Male Testosterone
 11. SKIN/HAIR/NAIL (skin >= 4 OR hair_nail >= 4) → Clean+ Detox & Liver Health + Omega-3 DHA/EPA (Algal)
 12. CARDIOVASCULAR (cardiovascular >= 4) → BLAST+ Nitric Oxide Stack + Omega-3 DHA/EPA (Algal) + Replenish NAD+
-13. WEIGHT MANAGEMENT (weight >= 5 OR goal "Lose Weight") → GLP-1 Activator Complex + BHB Ketone Salts
+13. WEIGHT MANAGEMENT (weight >= 5 OR goal "Lose Weight") → Inferno + BHB Ketone Salts
 14. MUSCLE/PERFORMANCE (goal "Build Muscle") → Creatine HCL+ + Magnesium Synergy Matrix + Cordyceps Mushroom Capsules
 15. ANTI-AGING/LONGEVITY (goal "Anti-Aging") → Replenish NAD+ + Teloprime+ Telomere Support
 16. DETOXIFICATION (goal "Detoxification") → Clean+ Detox & Liver Health + ToxiBind Matrix™
 17. HEAVY CAFFEINE (caffeine = "Heavy") → RELAX+ Sleep Support (evening) + Magnesium Synergy Matrix
 18. LOW EXERCISE (exercise = "Rarely" or "1-2x/week") → Cordyceps Mushroom Capsules + Replenish NAD+ + Magnesium Synergy Matrix
-19. HIGH BMI (>30) → GLP-1 Activator Complex + Omega-3 DHA/EPA (Algal)
+19. HIGH BMI (>30) → Inferno + Omega-3 DHA/EPA (Algal)
 20. UNDERWEIGHT BMI (<18.5) → DigestiZorb+™ Enzyme Complex + MethylB Complete+™ B Complex
 21. STATIN MEDICATION → HIGH PRIORITY Replenish NAD+ (contains CoQ10; statins deplete CoQ10)
 22. ANTIDEPRESSANT MEDICATION → CAUTION with RELAX+ (contains 5-HTP — serotonin syndrome risk)
 23. BLOOD THINNER MEDICATION → CAUTION with high-dose Omega-3 DHA/EPA (Algal)
 24. THYROID MEDICATION → Take supplements 4 hours apart from levothyroxine
-25. DIABETES MEDICATION → CAUTION with GLP-1 Activator Complex (contains Berberine — additive glucose lowering)
+25. DIABETES MEDICATION → CAUTION with Inferno (contains Berberine — additive glucose lowering)
 
 ═══ INTERACTION RULES ═══
 - Iron + Zinc: NEVER at same timing (competitive absorption) — separate by 4h
