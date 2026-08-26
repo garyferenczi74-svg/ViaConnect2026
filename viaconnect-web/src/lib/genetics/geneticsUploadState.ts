@@ -13,11 +13,15 @@ export type GeneticsUploadState = 'uploaded' | 'sample_only' | 'none';
 
 export interface GeneticsUploadVariantFact {
   is_sample?: boolean | null;
+  /** Stored alias only. Display maps genex_m / GENEX-M / methylation / reference to GeneXM. */
+  panel_key?: string | null;
 }
 
 export interface GeneticsUploadFacts {
   variantRows: ReadonlyArray<GeneticsUploadVariantFact>;
   realKitIngest?: boolean;
+  /** Successful empty is none. A failed read is not a 0-row account. */
+  variantsReadFailed?: boolean;
 }
 
 export function isRealVariantRow(row: GeneticsUploadVariantFact): boolean {
@@ -44,6 +48,7 @@ export function hubHeaderBadge(args: {
   totalVariants: number | null;
 }): string {
   if (args.isLoading) return 'Loading';
+  // Fail / 401 / null stay Unanalyzed. Honest empty after a successful read may show 0.
   if (args.loadFailed || args.totalVariants === null) return 'Unanalyzed';
   if (args.uploadState === 'sample_only') return `${args.totalVariants} Demo`;
   return `${args.totalVariants} results`;

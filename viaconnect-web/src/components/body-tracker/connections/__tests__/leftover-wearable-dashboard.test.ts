@@ -31,6 +31,10 @@ describe('leftover WearableDashboard cannot invent variants', () => {
     expect(wearables).not.toContain('Oura Ring · Apple Watch');
     expect(wearables).not.toContain('ScoreRing');
     expect(wearables).not.toContain('COMT AG');
+    expect(wearables).not.toMatch(/\bgenotype\b/i);
+    expect(wearables).not.toMatch(/\bCOMT\b/);
+    expect(wearables).not.toMatch(/\bCLOCK\b/);
+    expect(wearables).not.toMatch(/\bMTHFR\b/);
     expect(manage).not.toContain('Apple Watch S9');
     expect(manage).not.toContain('Garmin Venu 3');
     expect(manage).not.toContain('Oura Ring Gen 3');
@@ -47,6 +51,14 @@ describe('leftover WearableDashboard cannot invent variants', () => {
     expect(src('src/components/dashboard/ConnectCard.tsx')).not.toContain('Apple Watch');
     expect(src('src/components/dashboard/ConnectCard.tsx')).not.toContain('Garmin');
     expect(src('src/components/dashboard/ConnectCard.tsx')).not.toContain('Fitbit');
+    expect(joined).not.toMatch(/\bgenotype\b/i);
+    expect(joined).not.toMatch(/\bCOMT\b/);
+    expect(joined).not.toMatch(/\bCLOCK\b/);
+    expect(joined).not.toMatch(/\bMTHFR\b/);
+    expect(src('src/lib/body-tracker/wearable-tiles.ts')).not.toMatch(/\bgenotype\b/i);
+    expect(src('src/lib/body-tracker/wearable-tiles.ts')).not.toMatch(/\bCOMT\b/);
+    expect(src('src/lib/body-tracker/wearable-tiles.ts')).not.toMatch(/\bCLOCK\b/);
+    expect(src('src/lib/body-tracker/wearable-tiles.ts')).not.toMatch(/\bMTHFR\b/);
   });
 
   it('keeps /wearables and connections on the locked four tiles', () => {

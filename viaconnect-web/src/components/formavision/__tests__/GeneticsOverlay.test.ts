@@ -14,7 +14,7 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { computeGeneticsPresence, GeneticsOverlayPanel } from '../GeneticsOverlay';
 import type { GeneticsVariantsData, VariantRecord } from '@/components/genetics/hub/useGeneticsVariants';
-import { EMPTY_OK_DATA } from '@/components/genetics/hub/useGeneticsVariants';
+import { EMPTY_OK_DATA, ERROR_DATA, UNAUTHORIZED_DATA } from '@/components/genetics/hub/useGeneticsVariants';
 import type { PanelKey } from '@/lib/genetics/panelLabels';
 
 // ---------------------------------------------------------------------------
@@ -34,7 +34,7 @@ function makeVariant(is_sample: boolean, panel: PanelKey = 'methylation'): Varia
     severity: null,
     is_sample,
     stored_panel_key: panel,
-    chip: is_sample ? 'demo' : 'result',
+    chip: is_sample ? 'demo' : 'genexm',
     provenance: null,
   };
 }
@@ -108,6 +108,12 @@ describe('computeGeneticsPresence: presence gate', () => {
     };
     expect(computeGeneticsPresence(data)).toBe('absent');
   });
+
+  it('401 or read fail is unknown, never an honest-empty absent', () => {
+    expect(computeGeneticsPresence(ERROR_DATA)).toBe('unknown');
+    expect(computeGeneticsPresence(UNAUTHORIZED_DATA)).toBe('unknown');
+    expect(ERROR_DATA.totalVariants).toBeNull();
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -174,6 +180,21 @@ describe('GeneticsOverlayPanel: present state (invitation)', () => {
   });
 });
 
+describe('GeneticsOverlayPanel: unknown state (read fail)', () => {
+  it('renders Unanalyzed / UNKNOWN and never a 0 or upload CTA', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(GeneticsOverlayPanel, { presence: 'unknown' }),
+    );
+    expect(html).toContain('data-testid="genetics-overlay-unknown"');
+    expect(html).toContain('Unanalyzed');
+    expect(html).toContain('UNKNOWN');
+    expect(html).not.toContain('0 results');
+    expect(html).not.toContain('n/a');
+    expect(html).not.toContain('genetics/upload');
+    expect(html).not.toContain('Your Genetics, Your Protocol');
+  });
+});
+
 describe('GeneticsOverlayPanel: absent state (CTA)', () => {
   it('renders absent testid', () => {
     const html = renderToStaticMarkup(
@@ -212,7 +233,12 @@ describe('GeneticsOverlayPanel: absent state (CTA)', () => {
 // ---------------------------------------------------------------------------
 
 describe('GeneticsOverlayPanel: honesty - no fabricated region band or tint', () => {
-  const ALL_STATES: Array<'present' | 'absent' | 'loading'> = ['present', 'absent', 'loading'];
+  const ALL_STATES: Array<'present' | 'absent' | 'loading' | 'unknown'> = [
+    'present',
+    'absent',
+    'loading',
+    'unknown',
+  ];
 
   for (const presence of ALL_STATES) {
     it(`state "${presence}": no genetics region band or segment tint rendered`, () => {
