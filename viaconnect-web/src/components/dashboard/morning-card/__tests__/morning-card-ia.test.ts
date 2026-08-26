@@ -14,16 +14,19 @@ const CARD = 'src/components/dashboard/morning-card/MorningCard.tsx';
 const CHIPS = 'src/components/dashboard/morning-card/MorningChipGrid.tsx';
 const CTA = 'src/components/dashboard/morning-card/MorningProtocolCta.tsx';
 const LIST = 'src/components/dashboard/morning-card/MorningContributorList.tsx';
-const DASH = 'src/app/(app)/(consumer)/dashboard/page.tsx';
+const DASH = 'src/components/dashboard/ConsumerDashboard.tsx';
+const PAGE = 'src/app/(app)/(consumer)/dashboard/page.tsx';
 const KEYS = 'src/lib/dashboard/morning-card/keys.ts';
 const BOS = 'src/hooks/use-bos-current.ts';
 
 describe('Brief 29 morning card IA', () => {
   it('mounts MorningCard on /dashboard instead of the BOS engagement hero', () => {
     const dash = src(DASH);
+    const page = src(PAGE);
     expect(dash).toContain('MorningCard');
     expect(dash).not.toMatch(/<BOSCard\s*\/>/);
     expect(dash).toContain('HelixRewardsSummary');
+    expect(page).toContain('ConsumerDashboard');
   });
 
   it('mounts Connections BOS and does not slot /api/bos/current into the dial', () => {
