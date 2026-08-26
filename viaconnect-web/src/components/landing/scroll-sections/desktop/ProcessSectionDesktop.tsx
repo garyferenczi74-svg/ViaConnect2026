@@ -41,7 +41,7 @@ export function ProcessSectionDesktop() {
         <SectionAnchor
             id={SECTION_IDS.process}
             ariaLabel="ViaConnect Process"
-            className="min-h-screen py-32 px-12"
+            className="min-h-screen py-20 px-5 md:py-32 md:px-12"
         >
             <div className="max-w-7xl mx-auto">
                 <motion.div
@@ -49,22 +49,22 @@ export function ProcessSectionDesktop() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, amount: 0.3 }}
                     transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-                    className="mb-20"
+                    className="mb-12 md:mb-20"
                 >
-                    <p className="text-[#2DA5A0] uppercase tracking-[0.2em] text-sm mb-4 font-medium">
+                    <p className="text-[#2DA5A0] uppercase tracking-[0.2em] text-xs md:text-sm mb-3 md:mb-4 font-medium">
                         Onboarding Questionnaire
                     </p>
-                    <h2 className="text-white text-6xl font-light leading-tight mb-6">
+                    <h2 className="text-white text-4xl md:text-6xl font-light leading-tight mb-4 md:mb-6">
                         From your DNA to your daily protocol
                     </h2>
-                    <p className="text-white/70 text-xl max-w-3xl leading-relaxed">
+                    <p className="text-white/70 text-base md:text-xl max-w-3xl leading-relaxed">
                         A guided assessment, then your personalized plan. Add genetics or labs anytime to deepen the protocol.
                     </p>
                 </motion.div>
 
-                <div className="relative mb-20">
+                <div className="relative mb-12 md:mb-20">
                     <div className="hidden xl:block absolute top-8 left-12 right-12 h-px bg-gradient-to-r from-transparent via-[#2DA5A0]/40 to-transparent" />
-                    <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-4 md:gap-6">
                         {PHASES.map((phase, i) => {
                             const Icon = phase.icon
                             return (
@@ -103,7 +103,7 @@ export function ProcessSectionDesktop() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, amount: 0.3 }}
                     transition={{ duration: 0.6 }}
-                    className="bg-white/5 border border-white/10 rounded-2xl p-8 mb-16"
+                    className="bg-white/5 border border-white/10 rounded-2xl p-6 md:p-8 mb-10 md:mb-16"
                 >
                     <p className="text-white/80 text-base leading-relaxed">
                         Your protocol generates as soon as the assessment completes. Bio Optimization Score, supplement protocol, interaction checks, and analytics all populate together.

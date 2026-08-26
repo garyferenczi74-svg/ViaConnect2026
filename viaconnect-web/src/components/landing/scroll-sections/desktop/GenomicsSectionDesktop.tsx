@@ -50,7 +50,7 @@ export function GenomicsSectionDesktop() {
         <SectionAnchor
             id={SECTION_IDS.genomics}
             ariaLabel="ViaConnect Genomics"
-            className="min-h-screen py-32 px-12"
+            className="min-h-screen py-20 px-5 md:py-32 md:px-12"
         >
             <div className="max-w-7xl mx-auto">
                 <motion.div
@@ -58,23 +58,23 @@ export function GenomicsSectionDesktop() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, amount: 0.3 }}
                     transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-                    className="mb-20"
+                    className="mb-12 md:mb-20"
                 >
-                    <p className="text-[#2DA5A0] uppercase tracking-[0.2em] text-sm mb-4 font-medium">
+                    <p className="text-[#2DA5A0] uppercase tracking-[0.2em] text-xs md:text-sm mb-3 md:mb-4 font-medium">
                         The Science
                     </p>
-                    <h2 className="text-white text-7xl font-light leading-tight mb-3">
+                    <h2 className="text-white text-4xl md:text-7xl font-light leading-tight mb-2 md:mb-3">
                         {TAGLINES.master}
                     </h2>
-                    <p className="text-[#2DA5A0] text-2xl font-light tracking-wide mb-6">
+                    <p className="text-[#2DA5A0] text-lg md:text-2xl font-light tracking-wide mb-4 md:mb-6">
                         {TAGLINES.snpSubLine}
                     </p>
-                    <p className="text-white/70 text-xl max-w-3xl leading-relaxed">
+                    <p className="text-white/70 text-base md:text-xl max-w-3xl leading-relaxed">
                         GeneX360 reads variants across six clinical panels. Your genetics drive your protocol. Not generic averages. Not population means. You.
                     </p>
                 </motion.div>
 
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-6 mb-24">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-12 md:mb-24">
                     {PANELS.map((panel, i) => {
                         const Icon = panel.icon
                         return (

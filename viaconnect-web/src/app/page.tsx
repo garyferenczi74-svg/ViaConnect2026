@@ -18,7 +18,8 @@ export const dynamic = "force-dynamic";
 // the first viewport and scrolls away as the user moves into TrustBand.
 // `relative` on main is required for the carousel's absolute positioning.
 // TrustBand / SarahScenario / OutcomeTimeline preserved verbatim from #138.
-// LandingScrollSections appends Features, Process, Genomics, About, Final CTA.
+// LandingScrollSections appends one Features / Process / Genomics / About /
+// Membership / Final CTA tree (Brief 45: no dual desktop+mobile SSR).
 // overflow-x-clip on main keeps sticky parent compatible (overflow-x-hidden
 // would create a containing block and break sticky descendants).
 export default function HomePage() {
@@ -29,11 +30,6 @@ export default function HomePage() {
         <StickyHeroWrapper>
           <HeroVariantRenderer />
         </StickyHeroWrapper>
-        {/* Mobile-only buffer below the sticky hero so TrustBand doesn't immediately
-            cover the bottom CTA buttons (Practitioner/Naturopath) as the user scrolls.
-            Without this, TrustBand starts entering the viewport at ~14px scroll and
-            covers the third button before it can be tapped. */}
-        <div aria-hidden="true" className="sm:hidden h-[280px]" />
         <LandingHeroCarousel />
         <TrustBandSection />
         <SarahScenarioSection />

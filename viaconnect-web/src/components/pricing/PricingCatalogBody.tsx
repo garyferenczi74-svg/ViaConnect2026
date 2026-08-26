@@ -7,7 +7,7 @@ import { TierCard } from '@/components/pricing/TierCard';
 import { FamilyConfigurator } from '@/components/pricing/FamilyConfigurator';
 import { PractitionerToggleButton } from '@/components/landing/scroll-sections/shared/PractitionerToggleButton';
 import type { PricingPlanCardModel, PricingCatalogLoadState } from '@/lib/pricing/catalog';
-import { buildPricingPlanCards } from '@/lib/pricing/catalog';
+import { buildPricingPlanCards, PLANS_LOAD_FROM_CATALOG_COPY } from '@/lib/pricing/catalog';
 
 export interface PricingCatalogBodyProps {
   loadState: PricingCatalogLoadState;
@@ -211,9 +211,9 @@ function CatalogStatus({
         data-testid="pricing-catalog-empty"
         className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/75 backdrop-blur-md px-6 py-12 text-center"
       >
-        <h2 className="text-lg font-semibold text-white">No membership plans to show</h2>
+        <h2 className="text-lg font-semibold text-white">{PLANS_LOAD_FROM_CATALOG_COPY}</h2>
         <p className="mt-2 text-sm text-white/70 max-w-md mx-auto">
-          The live catalog did not return any active membership tiers. Please try again in a moment.
+          Membership prices come from the live catalog when it is ready. No placeholder dollars.
         </p>
         <button
           type="button"
