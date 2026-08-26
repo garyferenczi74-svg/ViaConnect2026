@@ -9,9 +9,10 @@ interface KPIProps {
   value: string | number;
   change?: string;
   positive?: boolean;
+  hint?: string;
 }
 
-export default function KPI({ label, value, change, positive }: KPIProps) {
+export default function KPI({ label, value, change, positive, hint }: KPIProps) {
   return (
     <div>
       <div
@@ -37,6 +38,17 @@ export default function KPI({ label, value, change, positive }: KPIProps) {
       >
         {value}
       </div>
+      {hint && (
+        <div
+          style={{
+            fontSize: 11,
+            color: C.muted2,
+            marginTop: 4,
+          }}
+        >
+          {hint}
+        </div>
+      )}
       {change && (
         <div
           style={{

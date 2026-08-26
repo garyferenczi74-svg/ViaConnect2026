@@ -8,7 +8,10 @@ import {
   TOP_POSTS,
 } from "@/lib/hounddog/constants";
 import {
+  HOUNDDOG_CONTENT_EMPTY_COPY,
   HOUNDDOG_EMPTY_COPY,
+  HOUNDDOG_EMPTY_METRIC,
+  HOUNDDOG_NO_SCRAPE_COPY,
   STAGED_HOUNDDOG_MARKERS,
   hasLiveSocialLastSync,
   liveAgentJobs,
@@ -16,7 +19,7 @@ import {
   loadHounddogLiveJobs,
 } from "@/lib/hounddog/honesty";
 
-const REPO = path.resolve(__dirname, "../../..");
+const REPO = path.resolve(__dirname, "../../../..");
 
 function read(rel: string): string {
   return readFileSync(path.join(REPO, rel), "utf8");
@@ -72,7 +75,27 @@ describe("Hounddog empty copy is Board-Metrics honest", () => {
     for (const marker of STAGED_HOUNDDOG_MARKERS) {
       expect(HOUNDDOG_EMPTY_COPY).not.toContain(marker);
     }
-    expect(HOUNDDOG_EMPTY_COPY).not.toMatch(/Connected|last-sync|last sync/i);
+    expect(HOUNDDOG_EMPTY_COPY).not.toMatch(/last-sync|last sync/i);
+    expect(HOUNDDOG_EMPTY_COPY).not.toMatch(/status:\s*['"]connected['"]/i);
+  });
+
+  it("Content empty list is No scripts yet, not the Overview banner", () => {
+    expect(HOUNDDOG_CONTENT_EMPTY_COPY).toBe("No scripts yet.");
+    expect(HOUNDDOG_CONTENT_EMPTY_COPY).not.toBe(HOUNDDOG_EMPTY_COPY);
+    for (const marker of STAGED_HOUNDDOG_MARKERS) {
+      expect(HOUNDDOG_CONTENT_EMPTY_COPY).not.toContain(marker);
+    }
+  });
+
+  it("Overview empty metric is -- / No scrape yet, not 0 and not the 38 banner", () => {
+    expect(HOUNDDOG_EMPTY_METRIC).toBe("--");
+    expect(HOUNDDOG_NO_SCRAPE_COPY).toBe("No scrape yet");
+    expect(HOUNDDOG_NO_SCRAPE_COPY).not.toBe(HOUNDDOG_EMPTY_COPY);
+    expect(HOUNDDOG_EMPTY_METRIC).not.toBe("0");
+    for (const marker of STAGED_HOUNDDOG_MARKERS) {
+      expect(HOUNDDOG_NO_SCRAPE_COPY).not.toContain(marker);
+      expect(HOUNDDOG_EMPTY_METRIC).not.toContain(marker);
+    }
   });
 });
 

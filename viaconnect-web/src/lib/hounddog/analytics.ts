@@ -1,4 +1,8 @@
 import { createClient } from '@/lib/supabase/client'
+import {
+  canWriteAnalyticsRollup,
+  canWritePerformanceSnapshot,
+} from '@/lib/hounddog/socialCounts'
 import type { HounddogAnalyticsSummary } from './types'
 
 export type { HounddogAnalyticsSummary }
@@ -114,6 +118,12 @@ export async function recordPerformance(row: {
   reach?: number
   eng_rate?: number | null
 }) {
+  if (!canWritePerformanceSnapshot(row)) {
+    return {
+      data: null,
+      error: { message: 'social-count only: views, likes, or reach required' },
+    }
+  }
   return insertClient().from('hounddog_performance').insert(row)
 }
 
@@ -128,5 +138,11 @@ export async function saveAnalyticsRollup(row: {
   top_hook_angle?: string
   pipeline_health?: number
 }) {
+  if (!canWriteAnalyticsRollup(row)) {
+    return {
+      data: null,
+      error: { message: 'social-count only: total_reach required' },
+    }
+  }
   return insertClient().from('hounddog_analytics_rollup').insert(row)
 }

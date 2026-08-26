@@ -5,7 +5,6 @@ import { Zap } from 'lucide-react';
 import { C } from '@/lib/hounddog/constants';
 import SecHead from '../shared/SecHead';
 import Btn from '../shared/Btn';
-import EmptyState from '../shared/EmptyState';
 
 const PLATFORMS = ['TikTok', 'Instagram', 'YouTube', 'Facebook', 'Reddit', 'All'] as const;
 
@@ -15,8 +14,9 @@ const inputStyle: React.CSSProperties = {
   border: `1px solid ${C.border}`,
   borderRadius: 7,
   color: C.text,
-  fontSize: 12,
-  padding: '8px 10px',
+  fontSize: 16,
+  padding: '10px 12px',
+  minHeight: 44,
   outline: 'none',
   fontFamily: 'inherit',
 };
@@ -28,8 +28,6 @@ export default function CreateTab() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <EmptyState />
-
       <div>
         <SecHead label="">
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -73,7 +71,7 @@ export default function CreateTab() {
           onBlur={(e) => { e.currentTarget.style.borderColor = C.border as string; }}
         />
 
-        <Btn variant="orange" onClick={() => {}} icon={Zap}>
+        <Btn variant="orange" onClick={() => {}} icon={Zap} className="min-h-[44px]">
           Generate &amp; Push to Pipeline
         </Btn>
       </div>
