@@ -103,4 +103,14 @@ describe('Brief 29 morning card IA', () => {
     expect(all).not.toMatch(/Helix Rewards/);
     expect(all).not.toMatch(/Semaglutide/i);
   });
+
+  it('Brief 49: hero CTA stays one next action, not a homework essay', () => {
+    const cta = src(CTA);
+    expect(cta).toContain('data-cta-kind="action"');
+    expect(cta).not.toContain('buildProtocolHomework');
+    expect(cta).not.toContain('schedule-row-homework');
+    expect(cta).not.toContain('Educational why is not on file');
+    expect(cta).not.toContain('from CAQ');
+    expect(cta).not.toContain('from GENEX360');
+  });
 });

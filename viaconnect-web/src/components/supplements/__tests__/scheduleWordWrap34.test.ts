@@ -122,6 +122,16 @@ describe('Brief 34 word wrap (source presence)', () => {
     expect(scheduleSrc()).toMatch(/flex min-w-0 flex-col overflow-hidden/);
   });
 
+  it('homework line wraps as words, not glyphs', () => {
+    const src = cardSrc();
+    expect(src).toContain('data-testid="schedule-row-homework"');
+    expect(src).toMatch(
+      /schedule-row-homework[\s\S]*?break-words \[overflow-wrap:break-word\] \[word-break:normal\]/,
+    );
+    expect(src).not.toMatch(/schedule-row-homework[\s\S]{0,400}overflow-wrap:anywhere/);
+    expect(src).not.toMatch(/schedule-row-homework[\s\S]{0,400}break-all/);
+  });
+
   it('chip labels wrap as words, not glyphs', () => {
     const src = cardSrc();
     expect(src).toContain('With food');
@@ -200,5 +210,23 @@ describe('Brief 34 fixture strings stay horizontal words', () => {
     );
     expect(html).not.toMatch(/>O</);
     expect(html).not.toMatch(/O<\/span>r<\/span>/);
+  });
+
+  it('Brief 49 homework stays horizontal words and does not letter-stack the name', () => {
+    const liposomal = renderCard();
+    expect(liposomal).toMatch(/data-testid="schedule-row-homework"/);
+    expect(liposomal).toContain('Liposomal is the recorded delivery form.');
+    expect(liposomal).toMatch(/data-testid="schedule-row-name"[^>]*>Liposomal Vitamin D</);
+
+    const creatine = renderCard({
+      name: 'Creatine HCl',
+      dose: '500mg',
+      dosage_form: 'standard_actives',
+      source: 'farmceutica',
+    });
+    expect(creatine).toMatch(/data-testid="schedule-row-name"[^>]*>Creatine HCl</);
+    expect(creatine).toContain('Educational why is not on file for this item.');
+    expect(creatine).not.toContain('from CAQ');
+    expect(creatine).not.toMatch(/C<\/span>r<\/span>/);
   });
 });

@@ -27,6 +27,10 @@ import { recommendTiming } from './engine';
 import { matchRuleKeyForIngredients } from './matchKey';
 import type { CaqTimingSignals, Frequency, TimeOfDay, TimingRule } from './types';
 import { localDateString } from '@/lib/timezone';
+import {
+  buildProtocolHomework,
+  type ProtocolHomework,
+} from '@/lib/supplements/protocolHomework';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = any;
@@ -40,6 +44,10 @@ export interface RegimenSupplement {
   supplement_name: string;
   key_ingredients: string[] | null;
   frequency: string | null;
+  dosage?: string | null;
+  dosage_form?: string | null;
+  source?: string | null;
+  formulation?: string | null;
 }
 
 export interface ScheduleSlot {
@@ -68,6 +76,9 @@ export interface ScheduleCard {
   away_from: string[];
   taken: boolean;
   display_order: number;
+  dosage_form?: string | null;
+  source?: string | null;
+  homework?: ProtocolHomework;
 }
 
 export type ScheduleView = Record<TimeOfDay, ScheduleCard[]>;
@@ -343,7 +354,7 @@ export async function getScheduleView(supabase: Db, userId: string): Promise<Sch
     const { data: regimen, error: regErr } = await withTimeout(
       supabase
         .from('user_current_supplements')
-        .select('id, supplement_name, dosage, key_ingredients, frequency')
+        .select('id, supplement_name, dosage, dosage_form, source, formulation, key_ingredients, frequency')
         .eq('user_id', userId)
         .eq('is_current', true),
       DB_TIMEOUT_MS,
@@ -353,7 +364,9 @@ export async function getScheduleView(supabase: Db, userId: string): Promise<Sch
       safeLog.warn(SCOPE, 'view regimen read failed', { userId, error: regErr.message });
       return view;
     }
-    const supplements = (regimen ?? []) as Array<RegimenSupplement & { dosage: string | null }>;
+    const supplements = (regimen ?? []) as Array<
+      RegimenSupplement & { dosage: string | null; dosage_form: string | null; source: string | null }
+    >;
 
     for (const s of supplements) {
       await assignHannahTiming({ supabase, userId, supplement: s, signals });
@@ -426,6 +439,8 @@ export async function getScheduleView(supabase: Db, userId: string): Promise<Sch
       const tod = slot.time_of_day;
       if (!supp || (tod !== 'morning' && tod !== 'afternoon' && tod !== 'evening')) continue;
       const chips = chipsBySupp.get(slot.user_supplement_id) ?? { with_food: false, empty_stomach: false, fat_soluble: false, away_from: [] };
+      const dosageForm = supp.dosage_form ?? null;
+      const source = supp.source ?? null;
       view[tod].push({
         slot_id: slot.id ?? '',
         user_supplement_id: slot.user_supplement_id,
@@ -440,6 +455,13 @@ export async function getScheduleView(supabase: Db, userId: string): Promise<Sch
         away_from: chips.away_from,
         taken: takenSet.has(`${slot.user_supplement_id}:${tod}`),
         display_order: slot.display_order,
+        dosage_form: dosageForm,
+        source,
+        homework: buildProtocolHomework({
+          name: supp.supplement_name,
+          dosageForm,
+          source,
+        }),
       });
     }
     for (const tod of ['morning', 'afternoon', 'evening'] as TimeOfDay[]) {

@@ -1,9 +1,11 @@
 'use client';
 
-// Prompt 185a / 219 / 219a / Brief 34: Daily Schedule checklist row.
+// Prompt 185a / 219 / 219a / Brief 34 / Brief 49: Daily Schedule checklist row.
 // 219: compact density. 219a: rows size to CONTENT (min-height 56px, height auto).
 // Brief 34: take the column width (w-full min-w-0). Never wrap at every glyph
 // (that collapses min-content and letter-stacks the name). Word wrap only.
+// Brief 49: one homework line (molecule why / delivery why / input chip) or an
+// honest omission. Hero MorningProtocolCta stays one next action.
 // One flex row: checkbox + name + dose. Name may wrap to two lines; full name shown.
 // Chips sit inside the row and wrap as words. Controls vertical-center.
 // Functions unchanged: take toggle, drag, move, remove, rationale.
@@ -18,6 +20,11 @@ import { getDisplayName } from '@/lib/getDisplayName';
 import { SUPPLEMENT_TIMING_AGENT_SLUG } from '@/lib/caq/supplements/timing/agent';
 import type { ScheduleCard } from '@/lib/caq/supplements/timing/assignTiming';
 import type { TimeOfDay } from '@/lib/caq/supplements/timing/types';
+import {
+  buildProtocolHomework,
+  formatHomeworkText,
+  homeworkHasContent,
+} from '@/lib/supplements/protocolHomework';
 
 const AGENT_NAME = getDisplayName(SUPPLEMENT_TIMING_AGENT_SLUG);
 
@@ -56,6 +63,15 @@ export function ScheduleSupplementCard({
   if (card.away_from.length > 0) {
     chips.push({ icon: ArrowLeftRight, label: `Away from ${card.away_from.join(', ')}` });
   }
+
+  const homework =
+    card.homework ??
+    buildProtocolHomework({
+      name: card.name,
+      dosageForm: card.dosage_form,
+      source: card.source,
+    });
+  const homeworkText = formatHomeworkText(homework);
 
   return (
     <div
@@ -102,6 +118,24 @@ export function ScheduleSupplementCard({
         >
           {card.name}
         </p>
+        {homeworkHasContent(homework) ? (
+          <p
+            data-testid="schedule-row-homework"
+            className={`mt-0.5 text-[11px] leading-snug break-words [overflow-wrap:break-word] [word-break:normal] ${
+              taken ? 'text-white/25' : 'text-white/50'
+            }`}
+          >
+            {homeworkText ? <span>{homeworkText}</span> : null}
+            {homework.inputChip ? (
+              <span
+                data-testid="schedule-row-input-chip"
+                className="ml-1 inline-flex max-w-full items-center rounded border border-white/10 bg-white/[0.04] px-1 py-0.5 text-[9px] leading-tight text-white/45"
+              >
+                {homework.inputChip}
+              </span>
+            ) : null}
+          </p>
+        ) : null}
         {chips.length > 0 ? (
           <div
             data-testid="schedule-row-chips"
