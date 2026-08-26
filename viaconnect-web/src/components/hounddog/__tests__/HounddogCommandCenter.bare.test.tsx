@@ -68,6 +68,40 @@ describe("Hounddog command center paints honest empty, not fixtures", () => {
     }
   });
 
+  it("Overview keeps No scrape yet on KPI/table only, not agent/insight/header chrome", () => {
+    const html = renderToStaticMarkup(<OverviewTab />);
+    const kpiStart = html.indexOf("AI Tasks Completed");
+    const agentsStart = html.indexOf("AI Agents");
+    const socialStart = html.indexOf("Social Performance");
+    const topStart = html.indexOf("Top Performing Posts");
+    expect(kpiStart).toBeGreaterThan(-1);
+    expect(agentsStart).toBeGreaterThan(kpiStart);
+    expect(socialStart).toBeGreaterThan(agentsStart);
+    expect(topStart).toBeGreaterThan(socialStart);
+
+    const insightHtml = html.slice(0, kpiStart);
+    const kpiHtml = html.slice(kpiStart, agentsStart);
+    const agentsHtml = html.slice(agentsStart, socialStart);
+    const socialHtml = html.slice(socialStart, topStart);
+    const topHtml = html.slice(topStart);
+
+    expect(insightHtml).not.toContain(HOUNDDOG_NO_SCRAPE_COPY);
+    expect(kpiHtml).toContain(HOUNDDOG_NO_SCRAPE_COPY);
+    expect(kpiHtml).toContain(HOUNDDOG_EMPTY_METRIC);
+    expect(agentsHtml).not.toContain(HOUNDDOG_NO_SCRAPE_COPY);
+    expect(agentsHtml).toContain("Idle");
+    expect(agentsHtml).toContain("IDLE");
+    expect(agentsHtml).not.toContain("4 LIVE");
+    expect(socialHtml).toContain(HOUNDDOG_NO_SCRAPE_COPY);
+    expect(topHtml).not.toContain(HOUNDDOG_NO_SCRAPE_COPY);
+    expect(topHtml).toContain(HOUNDDOG_EMPTY_METRIC);
+
+    const phraseCount = html.split(HOUNDDOG_NO_SCRAPE_COPY).length - 1;
+    // 3 KPI hints + 6 social-table day30 cells. Not banners / agents / top posts.
+    expect(phraseCount).toBe(9);
+    expect(html).not.toContain(HOUNDDOG_EMPTY_COPY);
+  });
+
   it("Overview promotes a tile only from a real views/likes/reach row", () => {
     const real: HounddogSocialCountRow = {
       platform: "tiktok",
