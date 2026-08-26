@@ -114,6 +114,7 @@ export function MorningCard() {
       aria-label={MORNING_CARD_ARIA_LABEL}
       data-morning-card="true"
       data-bos-card="dashboard"
+      data-home-beat="bos"
       className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#1E3054]/60 via-[#1A2744]/60 to-[#141E33]/60 p-5 sm:p-6 md:p-8"
     >
       <div
@@ -130,7 +131,7 @@ export function MorningCard() {
             </p>
             <ConnectionsBosDial composite={composite} />
           </div>
-          <div>
+          <div data-home-beat="protocol">
             <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-white/40">
               Today protocol
             </p>
