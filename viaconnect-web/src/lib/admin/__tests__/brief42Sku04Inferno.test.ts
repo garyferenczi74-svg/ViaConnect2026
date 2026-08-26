@@ -18,7 +18,8 @@ function read(rel: string): string {
 }
 
 function loadMasterSkus(): MasterSkuRow[] {
-  return JSON.parse(read("src/data/farmceutica_master_skus.json")) as MasterSkuRow[];
+  const raw = read("src/data/farmceutica_master_skus.json").replace(/^\uFEFF/, "");
+  return JSON.parse(raw) as MasterSkuRow[];
 }
 
 describe("Brief 42 SKU 04 display name is Inferno", () => {
