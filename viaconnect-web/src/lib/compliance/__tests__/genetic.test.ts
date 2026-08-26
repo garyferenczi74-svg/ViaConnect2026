@@ -8,18 +8,36 @@ describe("MARSHALL.GENETIC.GENEX360_CONSENT", () => {
     });
     expect(hits.length).toBe(1);
     expect(hits[0].severity).toBe("P0");
+    expect(hits[0].message).toContain("v2.0");
+    expect(hits[0].message).toContain("have: none");
+    expect(hits[0].message).not.toContain("vundefined");
   });
   it("blocks on version mismatch", async () => {
     const hits = await GENEX360_CONSENT.evaluate({
       userId: "u1", hasConsent: true, consentVersion: "1.0", requiredVersion: "2.0",
     });
     expect(hits.length).toBe(1);
+    expect(hits[0].message).toContain("v2.0");
+    expect(hits[0].message).toContain("have: 1.0");
+    expect(hits[0].message).not.toContain("vundefined");
   });
   it("allows on exact version match", async () => {
     const hits = await GENEX360_CONSENT.evaluate({
       userId: "u1", hasConsent: true, consentVersion: "2.0", requiredVersion: "2.0",
     });
     expect(hits.length).toBe(0);
+  });
+  it("missing requiredVersion never prints vundefined (uses none)", async () => {
+    const hits = await GENEX360_CONSENT.evaluate({
+      userId: "u1", hasConsent: false,
+    });
+    expect(hits.length).toBe(1);
+    expect(hits[0].severity).toBe("P0");
+    expect(hits[0].message).toBe(
+      "Finding: GeneX360 report attempt without valid none consent (have: none).",
+    );
+    expect(hits[0].message).not.toContain("vundefined");
+    expect(hits[0].message).not.toContain("undefined");
   });
 });
 

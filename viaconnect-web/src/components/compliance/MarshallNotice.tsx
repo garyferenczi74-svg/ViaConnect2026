@@ -2,6 +2,7 @@
 
 import { ShieldCheck, Gavel, FileWarning, Scale } from "lucide-react";
 import type { Finding } from "@/lib/compliance/engine/types";
+import { sanitizeConsentCopy } from "@/lib/compliance/consentCopy";
 
 const SEV_BADGE: Record<Finding["severity"], { bg: string; text: string; label: string }> = {
   P0: { bg: "bg-red-500/15", text: "text-red-400", label: "P0 Critical" },
@@ -23,7 +24,7 @@ export interface MarshallNoticeProps {
 
 export default function MarshallNotice(props: MarshallNoticeProps) {
   const severity = props.finding?.severity ?? props.severity ?? "ADVISORY";
-  const message = props.finding?.message ?? props.message ?? "Compliance notice from Marshall.";
+  const message = sanitizeConsentCopy(props.finding?.message ?? props.message ?? "Compliance notice from Marshall.");
   const citation = props.finding?.citation ?? props.citation ?? "";
   const remediation = props.finding?.remediation.summary ?? props.remediation ?? "";
   const sev = SEV_BADGE[severity];

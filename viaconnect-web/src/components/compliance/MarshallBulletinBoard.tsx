@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Gavel, Filter } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { sanitizeConsentCopy } from "@/lib/compliance/consentCopy";
 
 interface FindingRow {
   id: string;
@@ -107,7 +108,7 @@ export default function MarshallBulletinBoard() {
               <span className="text-[10px] text-white/40">{r.source === "claude_code" ? "Claude Code" : "Runtime"}</span>
               <span className="text-[10px] text-white/30 ml-auto">{new Date(r.created_at).toLocaleString()}</span>
             </div>
-            <p className="text-xs text-white/70 mt-1 line-clamp-2">{r.message}</p>
+            <p className="text-xs text-white/70 mt-1 line-clamp-2">{sanitizeConsentCopy(r.message)}</p>
             <p className="text-[10px] text-white/40 mt-1">{r.rule_id}</p>
           </a>
         ))}
