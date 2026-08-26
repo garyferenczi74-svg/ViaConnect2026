@@ -45,8 +45,8 @@ export const featureCards: FeatureCard[] = [
         id: 'wellness-analytics',
         icon: Gauge,
         headline: 'Wellness Analytics and Bio Optimization Score',
-        teaser: 'One score, fed by every device you use.',
-        body: 'One score across eight dimensions. Your daily Bio Optimization Score tracks recovery, sleep, strain, and regimen, alongside real-time intelligence across nutrients, symptoms, metabolic, and immune signals. Wearables, labs, and connected tools feed it automatically. Five tiers from foundational to optimized.',
+        teaser: "Connect a device when it's available. Coming soon stays Coming soon. Missing stays UNKNOWN.",
+        body: "One score across eight dimensions. Your daily Bio Optimization Score tracks recovery, sleep, strain, and regimen, alongside intelligence across nutrients, symptoms, metabolic, and immune signals. Connect a device when it's available. Coming soon stays Coming soon. Missing stays UNKNOWN. Five tiers from foundational to optimized.",
     },
     {
         id: 'peptide-protocols',
