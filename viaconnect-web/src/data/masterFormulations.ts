@@ -125,7 +125,7 @@ const RAW_MASTER_FORMULATIONS: ProductFormulation[] = [
   },
 
   {
-    name: 'Inferno + GLP-1 Activator Complex',
+    name: 'Inferno',
     slug: 'inferno-glp1-activator-complex',
     category: 'PROPRIETARY BASE',
     deliveryForm: 'Capsule',
@@ -146,7 +146,7 @@ const RAW_MASTER_FORMULATIONS: ProductFormulation[] = [
       ing('Micellar Artichoke Leaf Extract (5% Cynarin)', '10'),
       ing('Inulin-FOS (Prebiotic Blend)', '10'),
     ],
-    marketingDescription: `A metabolic powerhouse combining berberine HCl, BHB ketone salts, L-carnitine tartrate, and chromium picolinate with FarmCeutica's proprietary GLP-1 activation pathway, including EGCG green tea extract, conjugated linoleic acid, and a 10-billion CFU probiotic blend. Inferno + GLP-1 Activator Complex is engineered to support healthy blood sugar metabolism, activate natural satiety signaling, and promote thermogenic fat oxidation through multiple complementary mechanisms, making it the ideal foundation for precision weight management protocols.`,
+    marketingDescription: `A metabolic powerhouse combining berberine HCl, BHB ketone salts, L-carnitine tartrate, and chromium picolinate with FarmCeutica's proprietary GLP-1 activation pathway, including EGCG green tea extract, conjugated linoleic acid, and a 10-billion CFU probiotic blend. Inferno is engineered to support healthy blood sugar metabolism, activate natural satiety signaling, and promote thermogenic fat oxidation through multiple complementary mechanisms, making it the ideal foundation for precision weight management protocols.`,
   },
 
   {
@@ -1374,7 +1374,7 @@ export function getFormulationByName(name: string): ProductFormulation | undefin
   const exact = MASTER_FORMULATIONS.find(p => normalizeName(p.name) === target);
   if (exact) return exact;
 
-  // Containment fallback (handles "Inferno + GLP-1" vs "GLP-1 Activator Complex")
+  // Containment fallback (handles short vs long marketing names)
   return MASTER_FORMULATIONS.find(p => {
     const candidate = normalizeName(p.name);
     return candidate.includes(target) || target.includes(candidate);
