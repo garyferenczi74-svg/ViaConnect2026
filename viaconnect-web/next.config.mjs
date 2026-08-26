@@ -126,6 +126,12 @@ const nextConfig = {
         destination: "/helix",
         permanent: false,
       },
+      // Brief 43: humans type /admin/command-center; Jeffery stays canonical.
+      {
+        source: "/admin/command-center",
+        destination: "/admin/jeffery",
+        permanent: true,
+      },
     ];
   },
 };
