@@ -118,6 +118,9 @@ describe("Brief 39 page + writer locks", () => {
     const queue = read("src/components/admin/jeffery/ReviewQueue.tsx");
     expect(card).toContain("rewriteJefferyHeadcountCopy");
     expect(feed).toContain("displayJefferyJson");
+    expect(feed).toContain("displayJefferyJson(msg.detail)");
+    expect(feed).toContain("displayJefferyJson(msg.proposed_action)");
+    expect(feed).not.toMatch(/JSON\.stringify\(\s*msg\.proposed_action/);
     expect(evo).toContain("rewriteJefferyHeadcountCopy");
     expect(evo).toContain("formatAccRosterReviewedPhrase");
     expect(queue).toContain("displayJefferyJson");
