@@ -2,7 +2,7 @@
  * Brief 40 — Jeffery Command Center presence from Live Feed rows.
  *
  * Status is the age of the newest real jeffery_messages.created_at.
- * No synthetic heartbeat, poll-invented tick, or healthier feed.
+ * No synthetic heartbeat, fabricated feed row, or healthier feed.
  */
 
 export const JEFFERY_FEED_TIME_ZONE = "America/Edmonton";

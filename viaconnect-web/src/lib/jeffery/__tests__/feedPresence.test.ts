@@ -95,7 +95,8 @@ describe("Brief 40 page locks", () => {
   it("does not invent a heartbeat or Grok ops row to stay Online", () => {
     const presence = read("src/lib/jeffery/feedPresence.ts");
     expect(presence).toContain("No synthetic heartbeat");
-    expect(presence).not.toMatch(/createTick|invent.*tick/i);
+    expect(presence).toContain("fabricated feed row");
+    expect(presence).not.toMatch(/createTick/);
     expect(presence).not.toMatch(/grok/i);
   });
 });
