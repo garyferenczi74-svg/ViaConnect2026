@@ -21,7 +21,7 @@ export function AboutSectionDesktop() {
         <SectionAnchor
             id={SECTION_IDS.about}
             ariaLabel="About ViaConnect"
-            className="pt-32 pb-16 px-12"
+            className="pt-20 pb-12 px-5 md:pt-32 md:pb-16 md:px-12"
         >
             <div className="max-w-7xl mx-auto">
                 <motion.div
@@ -29,12 +29,12 @@ export function AboutSectionDesktop() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, amount: 0.3 }}
                     transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-                    className="mb-16"
+                    className="mb-10 md:mb-16"
                 >
-                    <p className="text-[#2DA5A0] uppercase tracking-[0.2em] text-sm mb-4 font-medium">
+                    <p className="text-[#2DA5A0] uppercase tracking-[0.2em] text-xs md:text-sm mb-3 md:mb-4 font-medium">
                         Who Is Behind This
                     </p>
-                    <h2 className="text-white text-5xl font-light leading-tight mb-8 max-w-4xl">
+                    <h2 className="text-white text-3xl md:text-5xl font-light leading-tight mb-6 md:mb-8 max-w-4xl">
                         Built by clinicians, engineers, and operators who refused to settle for generic
                     </h2>
                     <p className="text-white/80 text-lg leading-relaxed max-w-4xl">
@@ -78,7 +78,7 @@ export function AboutSectionDesktop() {
                     transition={{ duration: 0.8 }}
                     className="border-l-2 border-[#B75E18] pl-8"
                 >
-                    <p className="text-white/90 text-2xl font-light leading-relaxed italic mb-3 whitespace-nowrap">
+                    <p className="text-white/90 text-lg md:text-2xl font-light leading-relaxed italic mb-3 whitespace-normal xl:whitespace-nowrap">
                         &ldquo;{TAGLINES.philosophy}&rdquo;
                     </p>
                     <p className="text-white/50 text-sm uppercase tracking-wider">FarmCeutica Wellness LLC</p>

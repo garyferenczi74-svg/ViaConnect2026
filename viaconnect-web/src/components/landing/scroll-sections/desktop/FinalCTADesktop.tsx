@@ -10,7 +10,7 @@ export function FinalCTADesktop() {
         <SectionAnchor
             id={SECTION_IDS.finalCta}
             ariaLabel="Start Today"
-            className="py-20 px-12"
+            className="py-16 px-5 md:py-20 md:px-12"
         >
             <motion.div
                 initial={{ opacity: 0, y: 40 }}
@@ -19,16 +19,16 @@ export function FinalCTADesktop() {
                 transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
                 className="max-w-4xl mx-auto text-center"
             >
-                <p className="text-[#2DA5A0] uppercase tracking-[0.2em] text-sm mb-4 font-medium">
+                <p className="text-[#2DA5A0] uppercase tracking-[0.2em] text-xs md:text-sm mb-3 md:mb-4 font-medium">
                     Start Today
                 </p>
-                <h2 className="text-white text-7xl font-light leading-tight mb-8">
+                <h2 className="text-white text-5xl md:text-7xl font-light leading-tight mb-6 md:mb-8">
                     Your protocol is waiting
                 </h2>
-                <p className="text-white/70 text-xl leading-relaxed mb-12 max-w-2xl mx-auto">
+                <p className="text-white/70 text-base md:text-xl leading-relaxed mb-10 md:mb-12 max-w-2xl mx-auto">
                     Take the assessment. Get your personalized protocol within minutes. Add genetics or labs anytime to deepen your protocol.
                 </p>
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-10">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-4 md:gap-6 mb-8 md:mb-10">
                     <Link
                         href="/signup"
                         className="inline-flex items-center justify-center rounded-full bg-[#b75e18]/30 backdrop-blur-xl border border-[#b75e18]/40 px-10 py-5 text-base font-semibold text-white shadow-[0_0_20px_rgba(183,94,24,0.4)] transition-all duration-300 hover:bg-[#b75e18]/50 hover:border-[#b75e18]/60 hover:shadow-[0_0_40px_rgba(183,94,24,0.5)]"
