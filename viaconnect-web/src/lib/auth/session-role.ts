@@ -1,9 +1,9 @@
 /**
- * Session role policy (Brief 11 / P0 chrome + route leak, Brief 37 tab strip).
+ * Session role policy (Brief 11 / P0 chrome + route leak, Brief 37 + Brief 47 tab strip).
  *
  * Authorization source of truth is profiles.role only.
  * Do not grant clinician/admin access from URL, user_metadata, or email.
- * Admin switcher is Personal Wellness + Admin + Hounddog — not clinician tabs.
+ * Admin switcher is all five PORTAL_TABS. Consumer stays Personal Wellness only.
  */
 
 export type SessionRole = "consumer" | "practitioner" | "naturopath" | "admin";
@@ -61,8 +61,9 @@ const PORTALS_BY_ROLE: Record<SessionRole, readonly PortalKey[]> = {
   consumer: ["consumer"],
   practitioner: ["practitioner"],
   naturopath: ["naturopath"],
-  // Brief 37: admin must not preview Practitioner / Naturopath (clinician product).
-  admin: ["consumer", "admin", "hounddog"],
+  // Brief 47: restore Practitioner / Naturopath for admin preview only.
+  // Brief 37 consumer lock is unchanged — consumer stays Personal Wellness only.
+  admin: ["consumer", "practitioner", "naturopath", "admin", "hounddog"],
 };
 
 const ROLE_CHIP_LABEL: Record<SessionRole, string> = {
