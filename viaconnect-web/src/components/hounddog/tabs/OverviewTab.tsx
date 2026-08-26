@@ -21,7 +21,6 @@ import {
 import { C } from '@/lib/hounddog/constants';
 import {
   HOUNDDOG_EMPTY_METRIC,
-  HOUNDDOG_NO_SCRAPE_COPY,
   liveAgentJobs,
   loadHounddogLiveAccounts,
   loadHounddogLiveJobs,
@@ -123,11 +122,6 @@ export default function OverviewTab({
             ) : (
               <AlertTriangle size={14} strokeWidth={1.5} style={{ color: C.red, flexShrink: 0 }} />
             )}
-            <div style={{ flex: 1, minWidth: 160 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: C.muted2 }}>
-                {HOUNDDOG_NO_SCRAPE_COPY}
-              </div>
-            </div>
           </div>
         );
       })}
@@ -195,9 +189,7 @@ export default function OverviewTab({
         <SecHead label="AI Agents">
           {liveCount > 0 ? (
             <Pill label={`${liveCount} ACTIVE`} color={C.green} />
-          ) : (
-            <Pill label={HOUNDDOG_NO_SCRAPE_COPY} color={C.muted} />
-          )}
+          ) : null}
         </SecHead>
         <div
           style={{
@@ -265,7 +257,7 @@ export default function OverviewTab({
                     marginBottom: 8,
                   }}
                 >
-                  {job && job.task.length > 0 ? job.task : HOUNDDOG_NO_SCRAPE_COPY}
+                  {job && job.task.length > 0 ? job.task : 'Idle'}
                 </div>
                 <div
                   style={{
@@ -290,9 +282,7 @@ export default function OverviewTab({
       </div>
 
       <div>
-        <SecHead label="Social Performance">
-          <Pill label={HOUNDDOG_NO_SCRAPE_COPY} color={C.muted} />
-        </SecHead>
+        <SecHead label="Social Performance" />
         <div
           style={{
             background: C.card,
@@ -413,7 +403,7 @@ export default function OverviewTab({
               className="hd-top-post-card"
             >
               <div style={{ fontSize: 13, fontWeight: 700, color: C.muted2, marginBottom: 8 }}>
-                {row ? row.platform : HOUNDDOG_NO_SCRAPE_COPY}
+                {row ? row.platform : HOUNDDOG_EMPTY_METRIC}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 10, color: C.muted2 }}>

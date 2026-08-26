@@ -3,6 +3,10 @@
 // Brief 53: Overview is original chrome with honest empties (-- / No scrape yet),
 // not a wiped EmptyState page. Create / Auto-Script / Content / Research must
 // NOT contain EmptyState / HOUNDDOG_EMPTY_COPY. Content empty = No scripts yet.
+// Brief 53 lock (empty-copy shrink): HOUNDDOG_NO_SCRAPE_COPY is legal only via
+// bindOverviewKpis (KPI hint) and bindSocialTableCells (table day30). Overview
+// must not bind that phrase onto insight banners, AI Agents header, agent
+// task lines, or Top Performing Posts platform labels.
 // Brief 54: Overview numbers bind only from a real views/likes/reach row or a
 // real last-sync. No getHounddogAnalyticsSummary. No rollup query. Sherlock
 // digest title/URL/score stay on Research findings (or Research Hub), never
@@ -75,7 +79,11 @@ describe("Hounddog Overview and header contain no staged fixtures", () => {
     expect(src).toContain("Social Performance");
     expect(src).toContain("Top Performing Posts");
     expect(src).toContain("HOUNDDOG_EMPTY_METRIC");
-    expect(src).toContain("HOUNDDOG_NO_SCRAPE_COPY");
+    expect(src).not.toContain("HOUNDDOG_NO_SCRAPE_COPY");
+    expect(src).toContain("kpis.hint");
+    expect(src).toContain("cells.day30");
+    expect(src).toMatch(/job && job\.task\.length > 0 \? job\.task : 'Idle'/);
+    expect(src).toMatch(/row \? row\.platform : HOUNDDOG_EMPTY_METRIC/);
     expect(src).toContain("loadHounddogLiveJobs");
     expect(src).toContain("liveAgentJobs");
     expect(src).toContain("bindOverviewKpis");
