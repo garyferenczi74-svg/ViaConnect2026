@@ -38,8 +38,8 @@ export function AdminPortalDetector({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  // Brief 37: never hardcode PORTAL_TABS. A non-admin sessionRole must
-  // only receive portalsForRole(that role) — consumer gets Personal Wellness only.
+  // Brief 37: map the session role only. A non-admin sessionRole must
+  // receive that role's portals — consumer gets Personal Wellness only.
   const portals = portalsForRole(sessionRole);
   const allowed = new Set(portals.map((p) => p.key));
   const fromUrl = portalKeyFromPath(pathname);
