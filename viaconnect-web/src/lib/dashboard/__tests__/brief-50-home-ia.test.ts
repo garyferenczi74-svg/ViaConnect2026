@@ -30,7 +30,9 @@ function sha256(rel: string): string {
 }
 
 function beatIndex(haystack: string, beat: string): number {
-  return haystack.indexOf(`data-home-beat="${beat}"`);
+  const dataAttr = haystack.indexOf(`data-home-beat="${beat}"`);
+  if (dataAttr !== -1) return dataAttr;
+  return haystack.indexOf(`beat="${beat}"`);
 }
 
 vi.mock('next/link', () => ({
@@ -86,6 +88,9 @@ describe('Brief 50 desktop Home uses the same IA as mobile', () => {
 
     expect(HOME).toContain('data-home-beats="true"');
     expect(HOME).toContain('<MorningCard');
+    expect(HOME).toContain('beat="connections"');
+    expect(HOME).toContain('beat="command-center"');
+    expect(ENTRY_SRC).toContain('data-home-beat={beat}');
     expect(HOME).toContain('HOME_CONNECTIONS_HREF');
     expect(HOME).toContain('homeCommandCenterHref(sessionRole)');
     expect(PAGE_SRC).toContain('ConsumerDashboard');
