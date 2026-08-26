@@ -231,12 +231,10 @@ describe("Brief 55 land contract", () => {
     expect(kpis.hint).toBe(HOUNDDOG_NO_SCRAPE_COPY);
 
     const overview = read("src/components/hounddog/tabs/OverviewTab.tsx");
-    const social = read("src/lib/hounddog/socialCounts.ts");
     expect(overview).not.toContain("getHounddogAnalyticsSummary");
     expect(overview).not.toContain("loadHounddogResearchFindings");
-    expect(social).not.toContain("getHounddogAnalyticsSummary");
-    expect(social).toContain("HOUNDDOG_EMPTY_METRIC");
-    expect(social).toContain("HOUNDDOG_NO_SCRAPE_COPY");
+    expect(overview).toContain("bindOverviewKpis");
+    expect(overview).toContain("loadHounddogSocialCounts");
   });
 
   it("Content / pipeline still must not load findings", () => {
