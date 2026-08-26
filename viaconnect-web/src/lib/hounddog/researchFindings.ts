@@ -177,7 +177,7 @@ export function isHounddogResearchTopic(
 }
 
 export function meetsResearchMinScore(
-  score: number | null | undefined,
+  score: number | string | null | undefined,
 ): boolean {
   const value = toFiniteNumber(score);
   return value !== null && value >= HOUNDDOG_RESEARCH_MIN_SCORE;
