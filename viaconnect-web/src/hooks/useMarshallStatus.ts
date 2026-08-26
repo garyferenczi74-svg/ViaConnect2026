@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { countOpenQueue, rowsFromJefferyMessages, selectOpenQueueFindings } from "@/lib/marshall/openQueue";
 
 export interface MarshallStatus {
   p0Count: number;
@@ -21,23 +22,23 @@ export function useMarshallStatus(): MarshallStatus {
   });
 
   useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const supabase = createClient() as any;
+    const supabase = createClient();
     let cancelled = false;
     (async () => {
-      const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-      const [p0, p1, open, last] = await Promise.all([
-        supabase.from("compliance_findings").select("id", { count: "exact", head: true }).eq("severity", "P0").gte("created_at", since),
-        supabase.from("compliance_findings").select("id", { count: "exact", head: true }).eq("severity", "P1").gte("created_at", since),
-        supabase.from("compliance_findings").select("id", { count: "exact", head: true }).eq("status", "open"),
-        supabase.from("compliance_findings").select("created_at").order("created_at", { ascending: false }).limit(1).maybeSingle(),
-      ]);
+      const { data } = await supabase
+        .from("jeffery_messages")
+        .select("id, status, severity, title, summary, detail, created_at, source_agent")
+        .eq("status", "pending")
+        .order("created_at", { ascending: false })
+        .limit(200);
       if (cancelled) return;
+      const findings = selectOpenQueueFindings(rowsFromJefferyMessages(data));
+      const counts = countOpenQueue(findings);
       setStatus({
-        p0Count: p0.count ?? 0,
-        p1Count: p1.count ?? 0,
-        openCount: open.count ?? 0,
-        lastFindingAt: (last.data as { created_at: string } | null)?.created_at ?? null,
+        p0Count: counts.p0,
+        p1Count: counts.p1,
+        openCount: counts.open,
+        lastFindingAt: findings[0]?.createdAt ?? null,
         loading: false,
       });
     })();

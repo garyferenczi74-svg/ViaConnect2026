@@ -6,6 +6,8 @@ import MessageCard, { CATEGORY_CONFIG, type JefferyMessage } from "./MessageCard
 import ActionButtons from "./ActionButtons";
 import CommentBox from "./CommentBox";
 import { displayJefferyJson } from "@/lib/jeffery/accSeatAuthority";
+import { sanitizeConsentCopy } from "@/lib/compliance/consentCopy";
+import { collapseDuplicateKeyErrors } from "@/lib/jeffery/collapseKeyErrors";
 
 interface LiveFeedProps {
   messages: JefferyMessage[];
@@ -16,9 +18,10 @@ interface LiveFeedProps {
 export default function LiveFeed({ messages, loading, onReload }: LiveFeedProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  const collapsed = collapseDuplicateKeyErrors(messages);
   const visible = categoryFilter
-    ? messages.filter((msg) => msg.category === categoryFilter)
-    : messages;
+    ? collapsed.filter((msg) => msg.category === categoryFilter)
+    : collapsed;
 
   return (
     <div className="space-y-3">
@@ -70,14 +73,14 @@ export default function LiveFeed({ messages, loading, onReload }: LiveFeedProps)
             <div className="p-4 bg-[#1A2744]/50">
               <p className="text-xs font-medium text-white/40 mb-2">Full Detail</p>
               <pre className="text-xs text-white/60 bg-[#0F172A] rounded-lg p-3 overflow-x-auto max-h-60">
-                {displayJefferyJson(msg.detail)}
+                {sanitizeConsentCopy(displayJefferyJson(msg.detail))}
               </pre>
             </div>
             {msg.proposed_action && (
               <div className="p-4 border-t border-white/[0.08]">
                 <p className="text-xs font-medium text-white/40 mb-2">Proposed Action</p>
                 <pre className="text-xs text-white/60 bg-[#0F172A] rounded-lg p-3 overflow-x-auto max-h-40">
-                  {displayJefferyJson(msg.proposed_action)}
+                  {sanitizeConsentCopy(displayJefferyJson(msg.proposed_action))}
                 </pre>
                 {msg.status === "pending" && (
                   <div className="mt-3">

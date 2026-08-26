@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowLeft, Gavel } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import MarshallNotice from "@/components/compliance/MarshallNotice";
+import { sanitizeConsentCopy } from "@/lib/compliance/consentCopy";
 
 export const dynamic = "force-dynamic";
 
@@ -52,7 +53,7 @@ export default async function FindingDetailPage({ params }: { params: Promise<{ 
       <MarshallNotice
         title={f.rule_id}
         severity={f.severity}
-        message={f.message}
+        message={sanitizeConsentCopy(f.message)}
         citation={f.citation}
         remediation={f.remediation.summary}
       />

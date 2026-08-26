@@ -4,6 +4,7 @@
 
 import type { EvaluationContext, Finding, Rule } from "../engine/types";
 import { generateFindingId } from "../engine/types";
+import { formatConsentVersion, formatRequiredConsentPhrase } from "../consentCopy";
 
 const LAST_REVIEWED = "2026-04-23";
 
@@ -31,7 +32,7 @@ function f(
   };
 }
 
-export const GENEX360_CONSENT: Rule<{ userId: string; hasConsent: boolean; consentVersion?: string; requiredVersion: string }> = {
+export const GENEX360_CONSENT: Rule<{ userId: string; hasConsent: boolean; consentVersion?: string; requiredVersion?: string }> = {
   id: "MARSHALL.GENETIC.GENEX360_CONSENT",
   pillar: "GENETIC",
   severity: "P0",
@@ -44,12 +45,14 @@ export const GENEX360_CONSENT: Rule<{ userId: string; hasConsent: boolean; conse
     // guard every scan emitted a false-positive P0 and flipped
     // blocked=true. Only evaluate consent-shaped input.
     if (typeof input !== "object" || input === null || typeof input.hasConsent !== "boolean") return [];
-    if (input.hasConsent && input.consentVersion === input.requiredVersion) return [];
+    const required = typeof input.requiredVersion === "string" ? input.requiredVersion.trim() : "";
+    const have = typeof input.consentVersion === "string" ? input.consentVersion.trim() : "";
+    if (input.hasConsent && required.length > 0 && have === required) return [];
     return [
       f(
         "MARSHALL.GENETIC.GENEX360_CONSENT",
         "P0",
-        `Finding: GeneX360 report attempt without valid v${input.requiredVersion} consent (have: ${input.consentVersion ?? "none"}).`,
+        `Finding: GeneX360 report attempt without valid ${formatRequiredConsentPhrase(input.requiredVersion)} consent (have: ${formatConsentVersion(input.consentVersion)}).`,
         "HIPAA 45 CFR 164.506",
         `userId=${input.userId}`,
         { kind: "manual", summary: "Block report rendering; route user to consent flow.", action: "BLOCK_RENDER" },

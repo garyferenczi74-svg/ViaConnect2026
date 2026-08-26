@@ -8,6 +8,7 @@ import {
   MessageCircle, AlertTriangle, Users, AlertOctagon, Search,
 } from "lucide-react";
 import { rewriteJefferyHeadcountCopy } from "@/lib/jeffery/accSeatAuthority";
+import { sanitizeConsentCopy } from "@/lib/compliance/consentCopy";
 
 export const CATEGORY_CONFIG: Record<string, { icon: IconType; color: string; label: string }> = {
   data_ingestion:    { icon: DatabaseZap,   color: "#2DA5A0", label: "Data Ingestion" },
@@ -56,8 +57,8 @@ export default function MessageCard({ msg, expanded, onToggle, children }: Messa
   const sev = SEVERITY_BADGE[msg.severity] ?? SEVERITY_BADGE.info;
   const Icon = cfg.icon;
   const commentCount = msg.jeffery_message_comments?.length ?? 0;
-  const title = rewriteJefferyHeadcountCopy(msg.title);
-  const summary = rewriteJefferyHeadcountCopy(msg.summary);
+  const title = sanitizeConsentCopy(rewriteJefferyHeadcountCopy(msg.title));
+  const summary = sanitizeConsentCopy(rewriteJefferyHeadcountCopy(msg.summary));
 
   return (
     <motion.div

@@ -3,6 +3,7 @@ import type { IconType } from '@/types/icon';
 import { ShieldCheck, Gavel, Scale, FileWarning, ClipboardCheck, Database, Users, AlertOctagon, TrendingUp, BookOpen, FileText, Radio, Eye, Package } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import MarshallBulletinBoard from "@/components/compliance/MarshallBulletinBoard";
+import { countOpenQueue, rowsFromJefferyMessages, selectOpenQueueFindings } from "@/lib/marshall/openQueue";
 
 export const dynamic = "force-dynamic";
 
@@ -22,21 +23,26 @@ const TILES = [
 ];
 
 export default async function MarshallLandingPage() {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = await createClient() as any;
+  const supabase = await createClient();
   const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
-  const [p0Res, p1Res, openRes, escapesRes] = await Promise.all([
-    supabase.from("compliance_findings").select("id", { count: "exact", head: true }).eq("severity", "P0").gte("created_at", since),
-    supabase.from("compliance_findings").select("id", { count: "exact", head: true }).eq("severity", "P1").gte("created_at", since),
-    supabase.from("compliance_findings").select("id", { count: "exact", head: true }).eq("status", "open"),
+  const [pendingRes, escapesRes] = await Promise.all([
+    supabase
+      .from("jeffery_messages")
+      .select("id, status, severity, title, summary, detail, created_at, source_agent")
+      .eq("status", "pending")
+      .order("created_at", { ascending: false })
+      .limit(200),
     supabase.from("compliance_incidents").select("id", { count: "exact", head: true }).eq("dev_side_escape", true).gte("opened_at", since),
   ]);
 
+  const openRows = selectOpenQueueFindings(rowsFromJefferyMessages(pendingRes.data));
+  const queue = countOpenQueue(openRows);
+
   const counts = {
-    p0: p0Res.count ?? 0,
-    p1: p1Res.count ?? 0,
-    open: openRes.count ?? 0,
+    p0: queue.p0,
+    p1: queue.p1,
+    open: queue.open,
     escapes: escapesRes.count ?? 0,
   };
 
@@ -60,9 +66,9 @@ export default async function MarshallLandingPage() {
 
       <div className="px-4 md:px-8 py-6 space-y-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <StatCard label="P0 (30d)" value={counts.p0} tone="red" icon={AlertOctagon} />
-          <StatCard label="P1 (30d)" value={counts.p1} tone="orange" icon={FileWarning} />
-          <StatCard label="Open findings" value={counts.open} tone="amber" icon={Gavel} />
+          <StatCard label="P0 (30d)" value={counts.p0} tone="red" icon={AlertOctagon} href="/admin/marshall/findings?queue=open&severity=P0" />
+          <StatCard label="P1 (30d)" value={counts.p1} tone="orange" icon={FileWarning} href="/admin/marshall/findings?queue=open&severity=P1" />
+          <StatCard label="Open findings" value={counts.open} tone="amber" icon={Gavel} href="/admin/marshall/findings?queue=open" />
           <StatCard label="Dev-side escapes (30d)" value={counts.escapes} tone="blue" icon={TrendingUp} />
         </div>
 
@@ -73,7 +79,7 @@ export default async function MarshallLandingPage() {
               <Link
                 key={t.href}
                 href={t.href}
-                className="bg-[#1E3054] rounded-xl border border-white/[0.08] p-4 hover:bg-white/[0.03] transition-colors flex items-center gap-3"
+                className="bg-[#1E3054] rounded-xl border border-white/[0.08] p-4 hover:bg-white/[0.03] transition-colors flex items-center gap-3 min-h-[44px]"
               >
                 <Icon className="w-5 h-5 text-[#B75E18]" strokeWidth={1.5} />
                 <span className="text-sm font-medium text-white">{t.label}</span>
@@ -88,20 +94,32 @@ export default async function MarshallLandingPage() {
   );
 }
 
-function StatCard({ label, value, tone, icon: Icon }: { label: string; value: number; tone: "red" | "orange" | "amber" | "blue"; icon: IconType }) {
+function StatCard({ label, value, tone, icon: Icon, href }: { label: string; value: number; tone: "red" | "orange" | "amber" | "blue"; icon: IconType; href?: string }) {
   const toneClass = {
     red: "text-red-400 bg-red-500/10 border-red-500/20",
     orange: "text-orange-400 bg-orange-500/10 border-orange-500/20",
     amber: "text-amber-300 bg-amber-500/10 border-amber-500/20",
     blue: "text-blue-300 bg-blue-500/10 border-blue-500/20",
   }[tone];
-  return (
-    <div className={`rounded-xl border p-4 ${toneClass}`}>
+  const body = (
+    <>
       <div className="flex items-center gap-2 mb-1">
         <Icon className="w-4 h-4" strokeWidth={1.5} />
         <span className="text-xs font-medium">{label}</span>
       </div>
       <div className="text-2xl font-bold">{value}</div>
+    </>
+  );
+  if (href) {
+    return (
+      <Link href={href} className={`rounded-xl border p-4 min-h-[44px] hover:bg-white/[0.03] transition-colors ${toneClass}`}>
+        {body}
+      </Link>
+    );
+  }
+  return (
+    <div className={`rounded-xl border p-4 ${toneClass}`}>
+      {body}
     </div>
   );
 }
