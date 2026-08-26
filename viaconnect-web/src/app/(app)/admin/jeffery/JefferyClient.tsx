@@ -9,6 +9,8 @@
 import { useEffect, useState } from "react";
 import { Cpu, Radio, ClipboardCheck, Compass, Brain, Database, Users, Zap, Activity, FlaskConical } from "lucide-react";
 import LiveFeed from "@/components/admin/jeffery/LiveFeed";
+import JefferyPresenceBadge from "@/components/admin/jeffery/JefferyPresenceBadge";
+import { useJefferyLiveFeedMessages } from "@/components/admin/jeffery/useJefferyLiveFeedMessages";
 import ReviewQueue from "@/components/admin/jeffery/ReviewQueue";
 import SteeringConsole from "@/components/admin/jeffery/SteeringConsole";
 import EvolutionTimeline from "@/components/admin/jeffery/EvolutionTimeline";
@@ -19,6 +21,7 @@ import JefferyReviewDesk from "@/components/admin/jeffery/JefferyReviewDesk";
 import CurationOpsPanel from "@/components/admin/jeffery/CurationOpsPanel";
 import { AdminPanel } from "@/components/admin/AdminPanelErrorBoundary";
 import AgentsClient from "./agents/AgentsClient";
+import { newestFeedCreatedAt } from "@/lib/jeffery/feedPresence";
 import type {
   AgentActivityEvent,
   AgentCurrentTask,
@@ -57,6 +60,9 @@ export default function JefferyClient({
   const [activeTab, setActiveTab] = useState<TabId>("feed");
   const [pendingCount, setPendingCount] = useState(0);
   const [curationQueueDepth, setCurationQueueDepth] = useState(0);
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  const { messages, loading: feedLoading, reload: reloadFeed } = useJefferyLiveFeedMessages();
+  const newestCreatedAt = newestFeedCreatedAt(messages);
 
   useEffect(() => {
     let cancelled = false;
@@ -79,6 +85,11 @@ export default function JefferyClient({
     };
   }, []);
 
+  useEffect(() => {
+    const id = window.setInterval(() => setNowMs(Date.now()), 60_000);
+    return () => window.clearInterval(id);
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#1A2744]">
       {/* Header — always renders (shell guarantee) */}
@@ -93,13 +104,11 @@ export default function JefferyClient({
               Self-Evolution Engine, Human-in-the-Loop Intelligence
             </p>
           </div>
-          <div className="ml-auto flex items-center gap-2">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
-            </span>
-            <span className="text-xs text-emerald-400 font-medium">Jeffery Online</span>
-          </div>
+          <JefferyPresenceBadge
+            newestCreatedAt={newestCreatedAt}
+            nowMs={nowMs}
+            loaded={!feedLoading || messages.length > 0}
+          />
         </div>
 
         <div
@@ -165,7 +174,7 @@ export default function JefferyClient({
       >
         {activeTab === "feed" && (
           <AdminPanel name="Live Feed">
-            <LiveFeed />
+            <LiveFeed messages={messages} loading={feedLoading} onReload={reloadFeed} />
           </AdminPanel>
         )}
         {activeTab === "review" && (
