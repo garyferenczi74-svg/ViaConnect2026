@@ -23,6 +23,7 @@ import {
   buildAccuracyAriaLabel,
   accuracyPillDisplayLabel,
 } from './bos-pill-helpers';
+import { DASHBOARD_GENETICS_EMPTY } from '@/lib/genetics/geneLineProvenance';
 
 export interface AccuracyPillProps {
   pill: AccuracyPillData;
@@ -33,7 +34,7 @@ export { accuracyPillClassesForState, accuracyGradientForKey, buildAccuracyAriaL
 const TOOLTIPS: Record<AccuracyPillData['key'], string> = {
   caq: 'Complete your CAQ to unlock 72% confidence',
   labs: 'Add lab work to unlock 86% confidence',
-  genetics: 'Complete your genetic testing to unlock 96% confidence',
+  genetics: DASHBOARD_GENETICS_EMPTY,
 };
 
 export function AccuracyPill({ pill }: AccuracyPillProps) {

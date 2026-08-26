@@ -6,12 +6,32 @@ describe('variantRowChip', () => {
     expect(variantRowChip({ is_sample: true, genotype: 'CT', status: '+/-' })).toBe('demo');
     expect(VARIANT_ROW_CHIP_LABEL.demo).toBe('Demo');
     expect(Object.values(VARIANT_ROW_CHIP_LABEL)).not.toContain('Your variant');
+    expect(Object.values(VARIANT_ROW_CHIP_LABEL)).not.toContain('GeneX-M');
   });
 
-  it('labels a real call Result', () => {
+  it('maps genex_m / GENEX-M / methylation calls to the GeneXM chip', () => {
     expect(
-      variantRowChip({ is_sample: false, genotype: 'CT', status: '+/-' }),
-    ).toBe('result');
+      variantRowChip({
+        is_sample: false,
+        genotype: 'CT',
+        stored_panel_key: 'genex_m',
+      }),
+    ).toBe('genexm');
+    expect(
+      variantRowChip({
+        is_sample: false,
+        genotype: 'CT',
+        stored_panel_key: 'GENEX-M',
+      }),
+    ).toBe('genexm');
+    expect(
+      variantRowChip({
+        is_sample: false,
+        status: '+/-',
+        stored_panel_key: 'methylation',
+      }),
+    ).toBe('genexm');
+    expect(VARIANT_ROW_CHIP_LABEL.genexm).toBe('GeneXM');
   });
 
   it('labels a missing call Unanalyzed, never 0 or n/a', () => {
@@ -44,13 +64,31 @@ describe('variantRowChip', () => {
     ).toBe('reference');
   });
 
-  it('keeps a reference panel with a real call as Result', () => {
+  it('maps a reference panel with a real call to GeneXM', () => {
     expect(
       variantRowChip({
         is_sample: false,
         stored_panel_key: 'reference',
         genotype: 'CC',
       }),
-    ).toBe('result');
+    ).toBe('genexm');
+  });
+
+  it('labels other GENEX360 panel calls GENEX360 and competitor calls your upload', () => {
+    expect(
+      variantRowChip({
+        is_sample: false,
+        genotype: 'AA',
+        stored_panel_key: 'nutrigen_dx',
+      }),
+    ).toBe('genex360');
+    expect(
+      variantRowChip({
+        is_sample: false,
+        genotype: 'AA',
+        stored_panel_key: '23andme',
+      }),
+    ).toBe('your_upload');
+    expect(VARIANT_ROW_CHIP_LABEL.your_upload).toBe('your upload');
   });
 });

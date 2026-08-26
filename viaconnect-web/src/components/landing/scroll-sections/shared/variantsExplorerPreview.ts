@@ -1,6 +1,7 @@
-// Brief 6: marketing Variants Explorer Preview data.
+// Brief 6 / Brief 51: marketing Variants Explorer Preview data.
 // Demo only. Never "Your variant". No protocol-change line (no member delta).
-// MTHFR folate copy here is educational GeneXM preview, not a visitor genotype.
+// Ban genotype / COMT / CLOCK / MTHFR copy on Demo Explorer.
+// Chips stay Demo | Unanalyzed | Reference. Not a diagnosis.
 // Standing rules: existing tokens, no em or en dashes, no any.
 
 export const VARIANTS_EXPLORER_PREVIEW_TITLE = 'Variants Explorer Preview';
@@ -19,24 +20,24 @@ export interface PreviewVariant {
 
 export const PREVIEW_VARIANTS: readonly PreviewVariant[] = [
   {
-    gene: 'MTHFR',
-    variant: 'C677T',
+    gene: 'GeneXM',
+    variant: 'Methylation and detox SNPs',
     implication:
-      'People with this variant may process folate via alternative pathways, which can shift how the body uses certain B vitamins.',
+      'Educational catalog preview of the GeneXM panel. This is not your call and not a diagnosis.',
     state: 'demo',
   },
   {
-    gene: 'COMT',
-    variant: 'V158M',
+    gene: 'NutrigenDX',
+    variant: 'Nutrient-metabolism SNPs',
     implication:
-      'Carriers metabolize catecholamines at differing rates, which may influence how the body responds to stress signaling.',
+      'Educational catalog preview. Empty here is Unanalyzed, not a made-up genotype.',
     state: 'unanalyzed',
   },
   {
-    gene: 'VDR',
-    variant: 'FokI',
+    gene: 'HormoneIQ',
+    variant: 'DUTCH markers',
     implication:
-      'This variant is associated with differences in how cells respond to vitamin D, which can affect baseline calcium and bone signaling.',
+      'HormoneIQ maps DUTCH hormone markers. Reference catalog copy, not your result.',
     state: 'reference',
   },
 ];

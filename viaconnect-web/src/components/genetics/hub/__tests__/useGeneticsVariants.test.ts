@@ -74,7 +74,7 @@ describe('useGeneticsVariants normalize', () => {
     expect(data.variantsByPanel.methylation).toHaveLength(1);
     expect(data.variantsByPanel.methylation?.[0].panel_key).toBe('methylation');
     expect(data.geneticsUploaded).toBe(true);
-    expect(data.variantsByPanel.methylation?.[0].chip).toBe('result');
+    expect(data.variantsByPanel.methylation?.[0].chip).toBe('genexm');
   });
 
   it('does not mark 12 sample rows as uploaded', () => {

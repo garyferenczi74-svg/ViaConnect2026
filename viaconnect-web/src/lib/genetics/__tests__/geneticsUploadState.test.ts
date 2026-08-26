@@ -99,6 +99,25 @@ describe('hubHeaderBadge', () => {
     expect(badge).not.toBe('0');
     expect(badge).not.toBe('n/a');
   });
+
+  it('keeps honest empty 0 distinct from a failed read', () => {
+    expect(
+      hubHeaderBadge({
+        isLoading: false,
+        loadFailed: false,
+        uploadState: 'none',
+        totalVariants: 0,
+      }),
+    ).toBe('0 results');
+    expect(
+      hubHeaderBadge({
+        isLoading: false,
+        loadFailed: true,
+        uploadState: 'none',
+        totalVariants: 0,
+      }),
+    ).toBe('Unanalyzed');
+  });
 });
 
 describe('supplementsGeneticsEmptyCopy', () => {

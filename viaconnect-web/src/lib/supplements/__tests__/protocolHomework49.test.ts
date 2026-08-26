@@ -24,8 +24,14 @@ describe('Brief 49 protocol homework (honest fields)', () => {
     expect(chipForProtocolSource('caq')).toBe('from CAQ');
     expect(chipForProtocolSource('caq_backfill')).toBe('from CAQ');
     expect(chipForProtocolSource('lab')).toBe('from lab');
-    expect(chipForProtocolSource('GENEX360')).toBe('from GENEX360');
-    expect(chipForProtocolSource('GeneXM')).toBe('from GeneXM');
+    expect(chipForProtocolSource('GENEX360', { hasGenex360Row: true })).toBe(
+      'from GENEX360',
+    );
+    expect(chipForProtocolSource('GeneXM', { hasGenexmRow: true })).toBe('from GeneXM');
+    expect(chipForProtocolSource('GENEX360')).toBeNull();
+    expect(chipForProtocolSource('GeneXM')).toBeNull();
+    expect(chipForProtocolSource('genex_m', { hasGenexmRow: true })).toBe('from GeneXM');
+    expect(chipForProtocolSource('genex_m', { hasGenexmRow: false })).toBeNull();
   });
 
   it('does not invent CAQ, lab, or gene from live-looking sources', () => {
