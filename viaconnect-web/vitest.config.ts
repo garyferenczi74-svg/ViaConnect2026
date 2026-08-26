@@ -53,6 +53,8 @@ export default defineConfig({
       'src/components/plugins/__tests__/PluginAppCard.bare.test.tsx',
       // Consumer peptide cards bind live mechanism
       'src/components/peptide-protocol/__tests__/KbPeptideCatalogSection.bare.test.tsx',
+      // Brief 38: Hounddog fail-closed empty (no 847 / 2.1M fixtures)
+      'src/components/hounddog/__tests__/HounddogCommandCenter.bare.test.tsx',
     ],
     exclude: ['node_modules', '.next', 'supabase'],
     globals: true,
