@@ -4,6 +4,7 @@
 
 import { motion } from 'framer-motion';
 import { Check } from 'lucide-react';
+import type { ProtocolInputChip } from '@/lib/supplements/protocolHomework';
 
 export interface ProtocolCheckItemData {
   id: string;
@@ -12,6 +13,8 @@ export interface ProtocolCheckItemData {
   deliveryForm?: string | null;
   dosage?: string | null;
   isCompleted: boolean;
+  homeworkLine?: string | null;
+  inputChip?: ProtocolInputChip | null;
 }
 
 interface Props {
@@ -61,6 +64,19 @@ export function ProtocolCheckItem({ item, onToggle }: Props) {
             </span>
           )}
         </div>
+        {item.homeworkLine || item.inputChip ? (
+          <p
+            data-testid="protocol-row-homework"
+            className="mt-0.5 break-words text-[10px] leading-snug text-white/40 [overflow-wrap:break-word] [word-break:normal]"
+          >
+            {item.homeworkLine ? <span>{item.homeworkLine}</span> : null}
+            {item.inputChip ? (
+              <span className="ml-1 inline-flex items-center rounded border border-white/10 bg-white/[0.04] px-1 py-0.5 text-[9px] text-white/45">
+                {item.inputChip}
+              </span>
+            ) : null}
+          </p>
+        ) : null}
       </div>
     </div>
   );

@@ -23,6 +23,10 @@ import { currentLocalScheduleBucket } from '@/lib/supplements/dailyScheduleShare
 import type { TimeOfDay } from '@/lib/caq/supplements/timing/types';
 import { ProtocolCheckItem, type ProtocolCheckItemData } from './ProtocolCheckItem';
 import { ProtocolProgressGauge } from './ProtocolProgressGauge';
+import {
+  buildProtocolHomework,
+  formatHomeworkText,
+} from '@/lib/supplements/protocolHomework';
 
 interface SlotHeader {
   id: TimeOfDay;
@@ -144,14 +148,26 @@ export function TodaysProtocol(_props?: { supplements?: unknown }) {
   const currentSlotId = currentLocalScheduleBucket();
   const headerConfig = TIME_BLOCKS.find((b) => b.id === currentSlotId)!;
   const slotCards = view[currentSlotId] ?? [];
-  const items: ProtocolCheckItemData[] = slotCards.map((c) => ({
-    id: c.slot_id,
-    productName: c.name,
-    productSlug: c.user_supplement_id,
-    deliveryForm: null,
-    dosage: c.dose,
-    isCompleted: c.taken,
-  }));
+  const items: ProtocolCheckItemData[] = slotCards.map((c) => {
+    const homework =
+      c.homework ??
+      buildProtocolHomework({
+        name: c.name,
+        dosageForm: c.dosage_form,
+        source: c.source,
+      });
+    const homeworkLine = formatHomeworkText(homework);
+    return {
+      id: c.slot_id,
+      productName: c.name,
+      productSlug: c.user_supplement_id,
+      deliveryForm: null,
+      dosage: c.dose,
+      isCompleted: c.taken,
+      homeworkLine: homeworkLine || null,
+      inputChip: homework.inputChip,
+    };
+  });
   const blockDone = items.filter((i) => i.isCompleted).length;
   const Icon = headerConfig.icon;
 
