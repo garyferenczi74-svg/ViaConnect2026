@@ -82,34 +82,31 @@ export default function AgentsClient({
         </div>
       )}
 
-      <div className="px-4 md:px-8 pt-4 space-y-0">
-        <PipelineChainView />
-        <IngestOpsPanel />
-        <AuthoritiesAllowlistPanel />
-        <RegistryReconciliationPanel />
+      {/* ACC seat chips first; selected workspace immediately under them. */}
+      <div data-testid="agents-chip-bar">
+        <AgentTabBar
+          registry={initialRegistry}
+          heartbeats={heartbeatByAgent}
+          activeAgent={activeAgent}
+          onChange={setActiveAgent}
+          deriveStatus={(hb) =>
+            deriveStatus(
+              hb,
+              Date.now(),
+              typeof hb?.metadata?.expected_period_minutes === "number"
+                ? (hb.metadata.expected_period_minutes as number)
+                : undefined,
+            )
+          }
+        />
       </div>
-
-      <AgentTabBar
-        registry={initialRegistry}
-        heartbeats={heartbeatByAgent}
-        activeAgent={activeAgent}
-        onChange={setActiveAgent}
-        deriveStatus={(hb) =>
-          deriveStatus(
-            hb,
-            Date.now(),
-            typeof hb?.metadata?.expected_period_minutes === "number"
-              ? (hb.metadata.expected_period_minutes as number)
-              : undefined,
-          )
-        }
-      />
 
       <div
         id={`agent-panel-${activeAgent}`}
         role="tabpanel"
         aria-labelledby={`agent-tab-${activeAgent}`}
         className="px-4 md:px-8 py-6"
+        data-testid="agents-workspace"
       >
         {activeRegistry && PanelComponent && (
           <AgentPanelShell
@@ -126,6 +123,16 @@ export default function AgentsClient({
             />
           </AgentPanelShell>
         )}
+      </div>
+
+      <div
+        className="px-4 md:px-8 pt-2 pb-8 space-y-0"
+        data-testid="agents-secondary-chrome"
+      >
+        <PipelineChainView />
+        <IngestOpsPanel />
+        <AuthoritiesAllowlistPanel />
+        <RegistryReconciliationPanel />
       </div>
     </>
   );

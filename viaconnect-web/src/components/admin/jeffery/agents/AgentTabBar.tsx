@@ -41,6 +41,7 @@ export default function AgentTabBar({ registry, heartbeats, activeAgent, onChang
     <div
       role="tablist"
       aria-label="Agent tabs"
+      data-testid="agents-chip-bar-tabs"
       className="px-4 md:px-8 pt-3 pb-2 border-b border-white/[0.08] overflow-x-auto snap-x snap-mandatory"
       onKeyDown={handleKey}
     >
