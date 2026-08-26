@@ -7,7 +7,6 @@ import { hasLiveSocialLastSync, loadHounddogLiveAccounts } from '@/lib/hounddog/
 import SecHead from '../shared/SecHead';
 import Btn from '../shared/Btn';
 import Pill from '../shared/Pill';
-import EmptyState from '../shared/EmptyState';
 
 export default function ResearchTab() {
   const [query, setQuery] = useState('');
@@ -15,8 +14,6 @@ export default function ResearchTab() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-      <EmptyState />
-
       <div>
         <SecHead label="">
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -36,19 +33,21 @@ export default function ResearchTab() {
             style={{
               flex: 1,
               minWidth: 200,
+              width: '100%',
               background: C.card2,
               border: `1px solid ${C.border}`,
               borderRadius: 7,
               color: C.text,
-              fontSize: 12,
-              padding: '8px 10px',
+              fontSize: 16,
+              padding: '10px 12px',
+              minHeight: 44,
               outline: 'none',
               fontFamily: 'inherit',
             }}
             onFocus={(e) => { e.currentTarget.style.borderColor = C.teal; }}
             onBlur={(e) => { e.currentTarget.style.borderColor = C.border as string; }}
           />
-          <Btn variant="primary" onClick={() => {}} icon={Search}>
+          <Btn variant="primary" onClick={() => {}} icon={Search} className="min-h-[44px]">
             Analyze
           </Btn>
         </div>

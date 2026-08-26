@@ -8,6 +8,7 @@ import {
   TOP_POSTS,
 } from "@/lib/hounddog/constants";
 import {
+  HOUNDDOG_CONTENT_EMPTY_COPY,
   HOUNDDOG_EMPTY_COPY,
   STAGED_HOUNDDOG_MARKERS,
   hasLiveSocialLastSync,
@@ -73,6 +74,14 @@ describe("Hounddog empty copy is Board-Metrics honest", () => {
       expect(HOUNDDOG_EMPTY_COPY).not.toContain(marker);
     }
     expect(HOUNDDOG_EMPTY_COPY).not.toMatch(/Connected|last-sync|last sync/i);
+  });
+
+  it("Content empty list is No scripts yet, not the Overview banner", () => {
+    expect(HOUNDDOG_CONTENT_EMPTY_COPY).toBe("No scripts yet.");
+    expect(HOUNDDOG_CONTENT_EMPTY_COPY).not.toBe(HOUNDDOG_EMPTY_COPY);
+    for (const marker of STAGED_HOUNDDOG_MARKERS) {
+      expect(HOUNDDOG_CONTENT_EMPTY_COPY).not.toContain(marker);
+    }
   });
 });
 

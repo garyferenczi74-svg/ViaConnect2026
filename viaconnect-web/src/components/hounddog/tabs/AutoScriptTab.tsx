@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { Zap } from 'lucide-react';
 import { C } from '@/lib/hounddog/constants';
 import Btn from '../shared/Btn';
-import EmptyState from '../shared/EmptyState';
 
 const PLATFORMS = ['TikTok', 'Instagram', 'YouTube', 'Facebook', 'Reddit', 'All'] as const;
 const COUNT_OPTIONS = [3, 5, 10, 15] as const;
@@ -15,8 +14,9 @@ const inputStyle: React.CSSProperties = {
   border: `1px solid ${C.border}`,
   borderRadius: 7,
   color: C.text,
-  fontSize: 12,
-  padding: '8px 10px',
+  fontSize: 16,
+  padding: '10px 12px',
+  minHeight: 44,
   outline: 'none',
   fontFamily: 'inherit',
 };
@@ -28,8 +28,6 @@ export default function AutoScriptTab() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <EmptyState />
-
       <div>
         <div
           style={{
@@ -68,7 +66,7 @@ export default function AutoScriptTab() {
           </select>
         </div>
 
-        <Btn variant="orange" onClick={() => {}} icon={Zap}>
+        <Btn variant="orange" onClick={() => {}} icon={Zap} className="min-h-[44px]">
           Generate Scripts
         </Btn>
       </div>

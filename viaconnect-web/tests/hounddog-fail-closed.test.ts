@@ -1,10 +1,15 @@
 // Brief 38: /admin/hounddog fail-closed. Overview and header must not
 // paint staged fixtures (847 / +12K / 2.1M / 6.8% / 24.7% / 3 AGENTS RUNNING).
+// Brief 53: the 38 banner stays on Overview KPIs only. Create / Auto-Script /
+// Content / Research stay usable tools without HOUNDDOG_EMPTY_COPY.
 
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { HOUNDDOG_EMPTY_COPY } from "@/lib/hounddog/honesty";
+import {
+  HOUNDDOG_CONTENT_EMPTY_COPY,
+  HOUNDDOG_EMPTY_COPY,
+} from "@/lib/hounddog/honesty";
 
 const REPO = path.resolve(__dirname, "..");
 
@@ -16,13 +21,13 @@ const OVERVIEW = "src/components/hounddog/tabs/OverviewTab.tsx";
 const HEADER = "src/components/hounddog/HounddogCommandCenter.tsx";
 const CONSTANTS = "src/lib/hounddog/constants.ts";
 const PAGE = "src/app/(app)/admin/hounddog/page.tsx";
+const CONTENT = "src/components/hounddog/tabs/ContentTab.tsx";
+const CREATE = "src/components/hounddog/tabs/CreateTab.tsx";
+const AUTO_SCRIPT = "src/components/hounddog/tabs/AutoScriptTab.tsx";
+const RESEARCH = "src/components/hounddog/tabs/ResearchTab.tsx";
+const HONESTY = "src/lib/hounddog/honesty.ts";
 
-const OTHER_TABS = [
-  "src/components/hounddog/tabs/ContentTab.tsx",
-  "src/components/hounddog/tabs/CreateTab.tsx",
-  "src/components/hounddog/tabs/AutoScriptTab.tsx",
-  "src/components/hounddog/tabs/ResearchTab.tsx",
-] as const;
+const OTHER_TABS = [CONTENT, CREATE, AUTO_SCRIPT, RESEARCH] as const;
 
 const FORBIDDEN = [
   "847",
@@ -74,13 +79,44 @@ describe("Hounddog Overview and header contain no staged fixtures", () => {
   });
 });
 
-describe("Hounddog tabs fail closed after fixture arrays are emptied", () => {
-  it.each(OTHER_TABS)("%s does not leak 2.1M / 847 / demo agent copy", (rel) => {
+describe("Hounddog tool tabs stay usable without the 38 page-killing banner", () => {
+  it.each(OTHER_TABS)("%s does not leak fixtures or paint HOUNDDOG_EMPTY_COPY", (rel) => {
     const src = read(rel);
     for (const token of FORBIDDEN) {
       expect(src, `${rel} still contains ${token}`).not.toContain(token);
     }
-    expect(src).toMatch(/EmptyState|HOUNDDOG_EMPTY_COPY/);
+    expect(src).not.toContain("HOUNDDOG_EMPTY_COPY");
+    expect(src).not.toMatch(/from ['"]\.\.\/shared\/EmptyState['"]/);
+  });
+
+  it("Content empty list copy is No scripts yet, not the 38 banner", () => {
+    const src = read(CONTENT);
+    expect(src).toContain("HOUNDDOG_CONTENT_EMPTY_COPY");
+    expect(src).toContain("Write a script.");
+    expect(src).toContain("Send to Pipeline");
+    expect(src).not.toContain("Write only after a live platform is wired.");
+    expect(HOUNDDOG_CONTENT_EMPTY_COPY).toBe("No scripts yet.");
+  });
+
+  it("Create keeps Idea-to-Pipeline and Generate & Push", () => {
+    const src = read(CREATE);
+    expect(src).toContain("IDEA TO PIPELINE");
+    expect(src).toContain("Generate &amp; Push to Pipeline");
+    expect(src).toContain("TikTok");
+  });
+
+  it("Auto-Script keeps Niche / platform / count and Generate Scripts", () => {
+    const src = read(AUTO_SCRIPT);
+    expect(src).toContain("placeholder=\"Niche\"");
+    expect(src).toContain("Generate Scripts");
+    expect(src).toContain("COUNT_OPTIONS");
+    expect(src).toContain("TikTok");
+  });
+
+  it("Research keeps the competitor analyzer form", () => {
+    const src = read(RESEARCH);
+    expect(src).toContain("Competitor Analyzer");
+    expect(src).toContain("Analyze");
   });
 
   it("constants do not export populated demo arrays", () => {
@@ -104,6 +140,7 @@ describe("Hounddog tabs fail closed after fixture arrays are emptied", () => {
     expect(joined).not.toMatch(/toast\(|sonner|react-hot-toast/);
     expect(joined).not.toMatch(/Last sync|lastSyncAt:\s*['"]20/);
     expect(joined).not.toMatch(/status:\s*['"]connected['"]/);
-    expect(read("src/lib/hounddog/honesty.ts")).toContain("Do not invent Connected");
+    expect(read(HONESTY)).toContain("Do not invent Connected");
+    expect(read(HONESTY)).toContain("return []");
   });
 });

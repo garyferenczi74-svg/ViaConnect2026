@@ -8,6 +8,9 @@
 export const HOUNDDOG_EMPTY_COPY =
   "No connected social accounts. Hounddog stays empty until a live platform is wired.";
 
+/** Content Scheduled / Scripts empty list. Not the Overview KPI banner. */
+export const HOUNDDOG_CONTENT_EMPTY_COPY = "No scripts yet.";
+
 export const STAGED_HOUNDDOG_MARKERS = [
   "847",
   "+12K",
