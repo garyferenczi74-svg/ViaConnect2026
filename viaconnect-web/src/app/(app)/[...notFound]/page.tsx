@@ -6,7 +6,8 @@ import { notFound } from "next/navigation";
  * PortalShellRouter. This catch-all is wrapped by (app)/layout, then
  * notFound() renders (app)/not-found.tsx inside that shell.
  *
- * next.config redirects still win for /helix-rewards and /rewards.
+ * next.config redirects still win for /helix-rewards, /rewards, and
+ * /admin/command-center (Brief 43 alias to /admin/jeffery).
  */
 export default function AppUnmatchedPath() {
   notFound();
