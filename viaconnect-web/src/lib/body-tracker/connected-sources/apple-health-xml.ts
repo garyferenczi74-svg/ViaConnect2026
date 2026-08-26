@@ -137,8 +137,10 @@ export function filterIngestibleRecords(
   parsed: ParsedHealthExport,
   phiConsent: boolean,
 ): ParsedHealthRecord[] {
-  if (phiConsent) return parsed.records;
-  return parsed.bodyRecords;
+  const base = phiConsent ? parsed.records : parsed.bodyRecords;
+  // Hume-tagged sleep / activity / recovery in an Apple export must not
+  // unlock Sleep or Hume last-sync. Body composition still attributes Hume.
+  return base.filter((r) => !(r.isHume && r.requiresPhiConsent));
 }
 
 export function funnelSampleToParsed(

@@ -12,6 +12,10 @@ import {
   appleHealthDisplayName,
   appleStatusLabel,
   buildWearableTiles,
+  isComingSoonTile,
+  railFeedDimensions,
+  railFeedHeading,
+  tileContributorLine,
   connectionsBosCompositeDisplay,
   connectionsBosNumericScore,
   namedWearableContributorCount,
@@ -72,12 +76,15 @@ describe('wearable tile model', () => {
     }
   });
 
-  it('maps advertised dimensions per Picasso ingest map', () => {
+  it('maps advertised dimensions per Arnold source map', () => {
     const byId = Object.fromEntries(WEARABLE_TILE_SPECS.map((s) => [s.id, s.advertisedDimensions]));
-    expect(byId.whoop).toEqual(['recovery', 'sleep', 'strain']);
-    expect(byId.hume).toEqual(['metabolic']);
-    expect(byId.apple_health).toEqual(['sleep', 'metabolic']);
-    expect(byId.oura).toEqual(['recovery', 'sleep']);
+    expect(byId.whoop).toEqual(['sleep', 'recovery', 'strain']);
+    expect(byId.hume).toEqual(['body_comp', 'metabolic']);
+    expect(byId.apple_health).toEqual(['body_comp', 'metabolic']);
+    expect(byId.oura).toEqual(['sleep', 'recovery']);
+    expect(byId.google_health).toEqual([]);
+    expect(byId.garmin).toEqual([]);
+    expect(byId.apple_health).not.toContain('sleep');
   });
 
   it('never connects OAuth from last_sync_at alone', () => {
@@ -399,5 +406,66 @@ describe('wearable tile model', () => {
     expect(FORBIDDEN_FIRST_CLASS_TILE_IDS).not.toContain('google_health');
     expect(FORBIDDEN_FIRST_CLASS_TILE_IDS).not.toContain('garmin');
     expect(FORBIDDEN_FIRST_CLASS_TILE_IDS).toContain('apple_watch');
+  });
+
+  it('uses will feed on Coming soon and feeds only after a real last-sync', () => {
+    const cold = buildWearableTiles(baseInput());
+    const whoop = cold.find((t) => t.id === 'whoop');
+    const oura = cold.find((t) => t.id === 'oura');
+    const google = cold.find((t) => t.id === 'google_health');
+    const garmin = cold.find((t) => t.id === 'garmin');
+    const apple = cold.find((t) => t.id === 'apple_health');
+    const hume = cold.find((t) => t.id === 'hume');
+    if (!whoop || !oura || !google || !garmin || !apple || !hume) {
+      throw new Error('missing first-class tile');
+    }
+    expect(isComingSoonTile(whoop)).toBe(true);
+    expect(isComingSoonTile(oura)).toBe(true);
+    expect(isComingSoonTile(google)).toBe(true);
+    expect(isComingSoonTile(garmin)).toBe(true);
+    expect(isComingSoonTile(apple)).toBe(false);
+    expect(isComingSoonTile(hume)).toBe(false);
+    expect(tileContributorLine(whoop)).toBe('Will feed Sleep, Recovery, Strain');
+    expect(tileContributorLine(oura)).toBe('Will feed Sleep, Recovery');
+    expect(tileContributorLine(google)).toBeNull();
+    expect(tileContributorLine(garmin)).toBeNull();
+    expect(tileContributorLine(apple)).toBeNull();
+    expect(tileContributorLine(hume)).toBeNull();
+    expect(railFeedHeading(whoop)).toBe('Will feed');
+    expect(railFeedHeading(google)).toBeNull();
+    expect(railFeedHeading(apple)).toBe('Feeds');
+    expect(railFeedDimensions(apple)).toEqual(['body_comp', 'metabolic']);
+    expect(railFeedDimensions(apple)).not.toContain('sleep');
+    expect(railFeedDimensions(hume)).toEqual(['body_comp', 'metabolic']);
+
+    const neverSynced = buildWearableTiles(
+      baseInput({
+        oauth: [{ provider: 'whoop', status: 'connected', last_sync_at: null, has_tokens: true }],
+        whoopConfigured: true,
+      }),
+    ).find((t) => t.id === 'whoop');
+    if (!neverSynced) throw new Error('missing whoop');
+    expect(neverSynced.lastSyncState).toBe('connected_never_synced');
+    expect(tileContributorLine(neverSynced)).toBeNull();
+
+    const syncedApple = buildWearableTiles(
+      baseInput({
+        appleXmlIngested: 4,
+        appleXmlLastPersistAt: '2026-08-22T08:00:00.000Z',
+        dimensionsFed: { apple_health: ['body_comp', 'metabolic'] },
+      }),
+    ).find((t) => t.id === 'apple_health');
+    if (!syncedApple) throw new Error('missing apple');
+    expect(syncedApple.lastSyncState).toBe('synced');
+    expect(tileContributorLine(syncedApple)).toBe('Feeds Body comp., Metabolic');
+    expect(tileContributorLine(syncedApple)).not.toMatch(/Sleep/);
+    expect(railFeedDimensions(syncedApple)).toEqual(['body_comp', 'metabolic']);
+
+    const appleWithSleep = {
+      ...syncedApple,
+      dimensionsFed: ['body_comp', 'metabolic', 'sleep'] as const,
+    };
+    expect(railFeedDimensions(appleWithSleep)).toEqual(['body_comp', 'metabolic', 'sleep']);
+    expect(tileContributorLine(appleWithSleep)).toBe('Feeds Body comp., Metabolic, Sleep');
   });
 });

@@ -145,6 +145,34 @@ describe('wearable snapshot', () => {
     expect(metabolic?.manual).toBe(false);
   });
 
+  it('does not unlock Hume last-sync or Apple Sleep from Hume-tagged Apple-export sleep', () => {
+    const snap = assembleWearableSnapshot(
+      base({
+        sleepRows: [
+          {
+            source_provider: 'health_kit',
+            sleep_efficiency_pct: 88,
+            total_sleep_min: 420,
+            end_at: '2026-08-20T10:00:00.000Z',
+            source_app: 'hume_body_pod',
+          },
+        ],
+      }),
+    );
+    const hume = snap.tiles.find((t) => t.id === 'hume');
+    const apple = snap.tiles.find((t) => t.id === 'apple_health');
+    expect(hume?.status).toBe('disconnected');
+    expect(hume?.lastSyncState).toBe('not_connected');
+    expect(hume?.lastSyncAt).toBeNull();
+    expect(hume?.dimensionsFed).toEqual([]);
+    expect(apple?.status).toBe('disconnected');
+    expect(apple?.lastSyncAt).toBeNull();
+    expect(apple?.advertisedDimensions).toEqual(['body_comp', 'metabolic']);
+    expect(apple?.dimensionsFed).toEqual([]);
+    expect(apple?.advertisedDimensions).not.toContain('sleep');
+    expect(snap.scoreDetail.find((r) => r.dimension === 'sleep')?.sources).toEqual([]);
+  });
+
   it('does not feed Hume into sleep or invent Oura strain', () => {
     const rows = scoreDetailFromSnapshot(
       base({
