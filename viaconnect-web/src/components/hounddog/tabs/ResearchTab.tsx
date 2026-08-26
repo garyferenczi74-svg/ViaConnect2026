@@ -54,7 +54,7 @@ export default function ResearchTab() {
         </div>
       </div>
 
-      {showLive && COMPETITORS.length > 0 && (
+      {showLive && COMPETITORS.length > 0 ? (
         <div>
           <SecHead label="Tracked Competitors" />
           <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden' }}>
@@ -100,13 +100,13 @@ export default function ResearchTab() {
             </div>
           </div>
         </div>
-      )}
+      ) : null}
 
-      {showLive && TOP_HOOKS.length > 0 && (
+      {showLive && TOP_HOOKS.length > 0 ? (
         <div>
           <SecHead label="Top Hooks in Niche" />
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

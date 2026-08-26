@@ -42,9 +42,9 @@ export default function OverviewTab() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-      {showEmpty && <EmptyState />}
+      {showEmpty ? <EmptyState /> : null}
 
-      {showSocial && (
+      {showSocial ? (
         <div
           style={{
             background: C.card,
@@ -80,9 +80,9 @@ export default function OverviewTab() {
             </div>
           </div>
         </div>
-      )}
+      ) : null}
 
-      {jobs.length > 0 && (
+      {jobs.length > 0 ? (
         <div>
           <SecHead label="AI Agents" />
           <div
@@ -126,7 +126,7 @@ export default function OverviewTab() {
                     </div>
                     <LiveBadge active={isLive} />
                   </div>
-                  {job.task.length > 0 && (
+                  {job.task.length > 0 ? (
                     <div
                       style={{
                         fontSize: 11,
@@ -136,13 +136,13 @@ export default function OverviewTab() {
                     >
                       {job.task}
                     </div>
-                  )}
+                  ) : null}
                 </div>
               );
             })}
           </div>
         </div>
-      )}
+      ) : null}
 
       <style>{`
         @media (max-width: 768px) {

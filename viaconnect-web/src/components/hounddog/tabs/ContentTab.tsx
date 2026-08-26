@@ -61,7 +61,7 @@ export default function ContentTab() {
         })}
       </div>
 
-      {activeSubTab === 'scheduled' && (
+      {activeSubTab === 'scheduled' ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {!showLive || SCHEDULED.length === 0 ? (
             <EmptyState />
@@ -114,13 +114,13 @@ export default function ContentTab() {
             })
           )}
         </div>
-      )}
+      ) : null}
 
-      {activeSubTab === 'scripts' && <EmptyState />}
+      {activeSubTab === 'scripts' ? <EmptyState /> : null}
 
-      {activeSubTab === 'editor' && (
+      {activeSubTab === 'editor' ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {!showLive && <EmptyState />}
+          {!showLive ? <EmptyState /> : null}
           <textarea
             value={editorText}
             onChange={(e) => setEditorText(e.target.value)}
@@ -150,7 +150,7 @@ export default function ContentTab() {
             <Btn variant="ghost" icon={Copy} onClick={() => {}}>Duplicate</Btn>
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

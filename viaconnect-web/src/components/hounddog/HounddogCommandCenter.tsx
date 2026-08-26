@@ -151,7 +151,7 @@ export default function HounddogCommandCenter() {
             }}
           />
 
-          {liveCount > 0 && (
+          {liveCount > 0 ? (
             <div
               style={{
                 background: C.green + '12',
@@ -183,7 +183,7 @@ export default function HounddogCommandCenter() {
                 {liveCount} AGENTS RUNNING
               </span>
             </div>
-          )}
+          ) : null}
 
           {/* Right side */}
           <div
@@ -231,7 +231,7 @@ export default function HounddogCommandCenter() {
           </div>
         </div>
 
-        {jobs.length > 0 && (
+        {jobs.length > 0 ? (
           <div
             style={{
               animation: 'hd-slide 0.3s ease',
@@ -287,7 +287,7 @@ export default function HounddogCommandCenter() {
                       </span>
                       <LiveBadge active={isLive} />
                     </div>
-                    {job.task.length > 0 && (
+                    {job.task.length > 0 ? (
                       <div
                         style={{
                           fontSize: 9,
@@ -299,13 +299,13 @@ export default function HounddogCommandCenter() {
                       >
                         {job.task}
                       </div>
-                    )}
+                    ) : null}
                   </div>
                 </div>
               );
             })}
           </div>
-        )}
+        ) : null}
 
         {/* --- Tab Navigation --- */}
         <div
