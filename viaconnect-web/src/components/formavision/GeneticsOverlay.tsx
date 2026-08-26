@@ -37,7 +37,12 @@ import { resolveGeneticsUploadState } from '@/lib/genetics/geneticsUploadState';
 // (is_sample=false) variant is found. Falls back to 'absent'.
 // Empty data or sample-only data both return 'absent' - fail-open at the gate.
 // ---------------------------------------------------------------------------
-export function computeGeneticsPresence(data: GeneticsVariantsData): 'present' | 'absent' {
+export function computeGeneticsPresence(
+  data: GeneticsVariantsData,
+): 'present' | 'absent' | 'unknown' {
+  if (data.loadStatus === 'error' || data.loadStatus === 'unauthorized') {
+    return 'unknown';
+  }
   if (data.geneticsUploaded === true || data.geneticsUploadState === 'uploaded') {
     return 'present';
   }
@@ -53,7 +58,7 @@ export function computeGeneticsPresence(data: GeneticsVariantsData): 'present' |
 // Does NOT produce any region band, segment tint, or body-region coloring.
 // ---------------------------------------------------------------------------
 export interface GeneticsOverlayPanelProps {
-  presence: 'present' | 'absent' | 'loading';
+  presence: 'present' | 'absent' | 'loading' | 'unknown';
 }
 
 export function GeneticsOverlayPanel({ presence }: GeneticsOverlayPanelProps) {
@@ -65,6 +70,20 @@ export function GeneticsOverlayPanel({ presence }: GeneticsOverlayPanelProps) {
         aria-label="Loading genetics context"
         className="h-14 rounded-xl bg-white/[0.04] motion-safe:animate-pulse"
       />
+    );
+  }
+
+  if (presence === 'unknown') {
+    return (
+      <div
+        data-testid="genetics-overlay-unknown"
+        className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-4 sm:p-5 backdrop-blur-sm"
+      >
+        <h3 className="text-sm font-semibold text-white">Genetics Unanalyzed</h3>
+        <p className="mt-2 text-xs leading-relaxed text-white/60">
+          We could not confirm this genetics read. The status is UNKNOWN, never a zero count.
+        </p>
+      </div>
     );
   }
 
@@ -132,12 +151,12 @@ export interface GeneticsOverlayProps {
   // P8-T1b: telemetry seam. Called once when the overlay first transitions out
   // of loading (formavision.genetics_overlay_viewed). The state argument is
   // 'present' or 'absent' -- coarse, non-identifying. Absent means no telemetry.
-  onFirstView?: (state: 'present' | 'absent') => void;
+  onFirstView?: (state: 'present' | 'absent' | 'unknown') => void;
 }
 
 export function GeneticsOverlay({ onFirstView }: GeneticsOverlayProps = {}) {
   const { data, isLoading } = useGeneticsVariants();
-  const presence: 'present' | 'absent' | 'loading' = isLoading
+  const presence: 'present' | 'absent' | 'loading' | 'unknown' = isLoading
     ? 'loading'
     : computeGeneticsPresence(data);
 

@@ -8,11 +8,15 @@ const CARD = path.resolve(__dirname, '..', 'hub', 'YourVariantsCard.tsx');
 describe('VariantRowChip source', () => {
   const source = readFileSync(CHIP, 'utf-8');
 
-  it('renders Demo Result Unanalyzed Reference with Lucide 1.5', () => {
+  it('renders locked Brief 51 chips with Lucide 1.5 and GeneXM, not GeneX-M', () => {
     expect(source).toContain('Demo');
-    expect(source).toContain('Result');
     expect(source).toContain('Unanalyzed');
     expect(source).toContain('Reference');
+    expect(source).toContain('your upload');
+    expect(source).toContain('GENEX360');
+    expect(source).toContain('GeneXM');
+    expect(source).not.toContain('GeneX-M');
+    expect(source).toContain('Not a diagnosis.');
     expect(source).toContain('strokeWidth={1.5}');
     expect(source).not.toContain('Your variant');
     expect(source.includes(String.fromCharCode(0x2014))).toBe(false);
@@ -30,5 +34,6 @@ describe('Your Variants mounts a chip on every SNP row', () => {
     const card = readFileSync(CARD, 'utf-8');
     expect(card).toContain('<VariantRowChip');
     expect(card).not.toContain('Your variant');
+    expect(card).not.toContain('GeneX-M');
   });
 });

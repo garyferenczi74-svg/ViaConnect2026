@@ -5,6 +5,9 @@
 
 import { CLINICAL_SNPS, type ClinicalSnp } from '@/lib/genetics/clinicalSnps';
 import { PANEL_SCOPED_RSIDS } from '@/lib/hounddog/ingest/genomes';
+import { CYP2C9_RS1799853 } from '@/lib/genetics/geneLineProvenance';
+
+export { CYP2C9_RS1799853 };
 
 export type InterpretationStatus = 'interpreted' | 'pending' | 'unknown';
 
@@ -26,6 +29,34 @@ export interface CoverageAuditResult {
   missing: string[];
   rows: CoverageRow[];
   pass: boolean;
+}
+
+/** Brief 51: CYP2C9 rs1799853 stays pending / unknown. Never 0. Never unanalyzed-as-missing. */
+export function cyp2c9Rs1799853Coverage(): CoverageRow {
+  return {
+    rsid: CYP2C9_RS1799853,
+    gene: 'CYP2C9',
+    panel_key: 'reference',
+    status: 'pending',
+    effect_summary:
+      'CYP2C9 rs1799853 evidence is pending. Not scored as zero and not treated as unanalyzed as missing.',
+    evidence_grade: 'unknown',
+    population_context: null,
+  };
+}
+
+function lockCyp2c9Rs1799853(rows: CoverageRow[]): void {
+  const locked = cyp2c9Rs1799853Coverage();
+  const idx = rows.findIndex((row) => row.rsid.toLowerCase() === CYP2C9_RS1799853);
+  if (idx >= 0) {
+    rows[idx] = {
+      ...rows[idx],
+      status: 'pending',
+      evidence_grade: 'unknown',
+    };
+    return;
+  }
+  rows.push(locked);
 }
 
 /** Build catalog coverage from clinical SNP set + optional interpretation map. */
@@ -75,6 +106,8 @@ export function auditGenex360Coverage(
       population_context: null,
     });
   }
+
+  lockCyp2c9Rs1799853(rows);
 
   const interpreted = rows.filter((r) => r.status === 'interpreted').length;
   const pending = rows.filter((r) => r.status === 'pending').length;

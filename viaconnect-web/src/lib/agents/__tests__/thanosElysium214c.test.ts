@@ -22,6 +22,7 @@ import {
 import { contentHash } from '@/lib/hounddog/ingest/contentHash';
 import { evaluateHoundDogGate } from '@/lib/hounddog/contentGate';
 import { CLINICAL_SNPS } from '@/lib/genetics/clinicalSnps';
+import { CYP2C9_RS1799853 } from '@/lib/elysium/coverage';
 import { getDisplayName, isKnownSlug } from '@/lib/getDisplayName';
 import { isKnownAgentId } from '@/lib/agents/registry';
 
@@ -87,6 +88,9 @@ describe('214c GENEX360 coverage audit', () => {
       expect(['interpreted', 'pending', 'unknown']).toContain(row.status);
       expect(row.effect_summary.length).toBeGreaterThan(0);
     }
+    const cyp = audit.rows.find((row) => row.rsid === CYP2C9_RS1799853);
+    expect(cyp?.status).toBe('pending');
+    expect(cyp?.evidence_grade).toBe('unknown');
   });
 });
 
