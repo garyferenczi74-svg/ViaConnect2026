@@ -37,6 +37,7 @@ export function recordsToWearableRows(userId: string, records: ParsedHealthRecor
   const now = new Date().toISOString();
 
   for (const rec of records) {
+    if (rec.isHume && rec.requiresPhiConsent) continue;
     const tileId = rec.isHume ? 'hume' : 'apple_health';
     const provider = providerFor(rec);
 

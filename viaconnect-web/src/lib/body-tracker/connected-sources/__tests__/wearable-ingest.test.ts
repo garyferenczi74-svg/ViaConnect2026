@@ -34,6 +34,21 @@ describe('XML ingest to stored wearable rows', () => {
     expect(sleep?.dimension).toBe('sleep');
   });
 
+  it('does not persist Hume-tagged sleep or count it as Hume last-sync', () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<HealthData>
+  <Record type="HKCategoryTypeIdentifierSleepAnalysis" sourceName="Hume Health" value="1" startDate="2026-08-19 22:00:00 +0000" endDate="2026-08-20 06:00:00 +0000"/>
+</HealthData>`;
+    const parsed = parseAppleHealthXml(xml, { includePhi: true });
+    const ingestible = filterIngestibleRecords(parsed, true);
+    const rows = recordsToWearableRows('user-1', ingestible.length ? ingestible : parsed.records);
+    const summary = summarizePersist(rows);
+    expect(rows.some((r) => r.table === 'wearable_sleep_sessions')).toBe(false);
+    expect(summary.humeStored).toBe(0);
+    expect(summary.dimensionsFed).not.toContain('sleep');
+    expect(summary.humeDimensionsFed).toEqual([]);
+  });
+
   it('does not invent zero for missing Hume metrics', () => {
     const xml = `<Record type="HKQuantityTypeIdentifierBodyMass" sourceName="Hume" unit="kg" value="bad" startDate="2026-08-20 07:00:00 +0000"/>`;
     const parsed = parseAppleHealthXml(xml);

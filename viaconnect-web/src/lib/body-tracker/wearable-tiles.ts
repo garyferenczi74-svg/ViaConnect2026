@@ -14,6 +14,12 @@
 // Web Apple is XML only. Hume is XML sourceName hume_body_pod, never copied
 // from phone_health, and has no OAuth. This tile is Apple Health, never Watch.
 // Last-sync display is the shared SM in @/lib/body-tracker/last-sync-state (PR #40).
+//
+// Arnold source map (Brief 46): Coming soon tiles say "will feed"; "feeds"
+// only after a real last-sync. Apple advertised is Body comp. + Metabolic,
+// never Sleep until wearable_sleep_sessions actually persist. Hume advertised
+// is Body comp. + Metabolic after sourceName hume_body_pod only. Google
+// Health and Garmin advertise no feed list.
 
 import {
   oauthNeedsReconnect,
@@ -31,10 +37,31 @@ export type WearableDimension =
   | 'recovery'
   | 'sleep'
   | 'metabolic'
+  | 'body_comp'
   | 'nutrients'
   | 'symptoms'
   | 'immune'
   | 'regimen';
+
+export const WEARABLE_DIMENSION_LABELS: Record<WearableDimension, string> = {
+  strain: 'Strain',
+  recovery: 'Recovery',
+  sleep: 'Sleep',
+  metabolic: 'Metabolic',
+  body_comp: 'Body comp.',
+  nutrients: 'Nutrients',
+  symptoms: 'Symptoms',
+  immune: 'Immune',
+  regimen: 'Regimen',
+};
+
+export function wearableDimensionLabel(dimension: WearableDimension): string {
+  return WEARABLE_DIMENSION_LABELS[dimension];
+}
+
+export function formatWearableDimensionList(dims: readonly WearableDimension[]): string {
+  return dims.map(wearableDimensionLabel).join(', ');
+}
 
 export type TileStatus = 'connected' | 'disconnected';
 
@@ -65,7 +92,7 @@ export const WEARABLE_TILE_SPECS: WearableTileSpec[] = [
     id: 'whoop',
     name: 'Whoop',
     icon: 'Watch',
-    advertisedDimensions: ['recovery', 'sleep', 'strain'],
+    advertisedDimensions: ['sleep', 'recovery', 'strain'],
     action: 'oauth',
     notes: 'Connect through the WHOOP Developer API. Recovery, sleep, and strain feed Bio Optimization Score when ingested.',
   },
@@ -73,7 +100,7 @@ export const WEARABLE_TILE_SPECS: WearableTileSpec[] = [
     id: 'hume',
     name: 'Hume Body Pod',
     icon: 'Scan',
-    advertisedDimensions: ['metabolic'],
+    advertisedDimensions: ['body_comp', 'metabolic'],
     action: 'xml_upload',
     notes: 'Hume has no public developer API. Upload an Apple Health export so Hume-tagged body and weight rows can ingest.',
   },
@@ -81,7 +108,7 @@ export const WEARABLE_TILE_SPECS: WearableTileSpec[] = [
     id: 'apple_health',
     name: 'Apple Health',
     icon: 'Heart',
-    advertisedDimensions: ['sleep', 'metabolic'],
+    advertisedDimensions: ['body_comp', 'metabolic'],
     action: 'xml_upload',
     notes: 'On the web, upload an Apple Health export XML. This tile is Apple Health, never Apple Watch.',
   },
@@ -89,7 +116,7 @@ export const WEARABLE_TILE_SPECS: WearableTileSpec[] = [
     id: 'oura',
     name: 'Oura',
     icon: 'Circle',
-    advertisedDimensions: ['recovery', 'sleep'],
+    advertisedDimensions: ['sleep', 'recovery'],
     action: 'oauth',
     notes: 'Connect through the Oura Cloud API. Sleep and recovery feed Bio Optimization Score when ingested.',
   },
@@ -97,7 +124,7 @@ export const WEARABLE_TILE_SPECS: WearableTileSpec[] = [
     id: 'google_health',
     name: 'Google Health',
     icon: 'HeartPulse',
-    advertisedDimensions: ['sleep', 'recovery'],
+    advertisedDimensions: [],
     action: 'oauth',
     notes: 'Android aggregator for Fitbit and Pixel. Coming soon.',
   },
@@ -105,7 +132,7 @@ export const WEARABLE_TILE_SPECS: WearableTileSpec[] = [
     id: 'garmin',
     name: 'Garmin',
     icon: 'Watch',
-    advertisedDimensions: ['recovery', 'sleep', 'strain'],
+    advertisedDimensions: [],
     action: 'oauth',
     notes: 'Recovery, sleep, and workouts. Coming soon.',
   },
@@ -377,4 +404,50 @@ export function connectionsBosNumericScore(
   if (display.band === 'UNKNOWN' || display.value === '--') return null;
   const n = Number(display.value);
   return Number.isFinite(n) ? n : null;
+}
+
+export function isComingSoonTile(
+  tile: Pick<WearableTileView, 'action' | 'lastSyncState'>,
+): boolean {
+  return (
+    tile.action.kind === 'oauth' &&
+    !tile.action.configured &&
+    tile.lastSyncState === 'not_connected'
+  );
+}
+
+export function railFeedDimensions(
+  tile: Pick<WearableTileView, 'advertisedDimensions' | 'dimensionsFed' | 'lastSyncState'>,
+): WearableDimension[] {
+  const advertised = tile.advertisedDimensions;
+  if (tile.lastSyncState !== 'synced') return [...advertised];
+  const extra = tile.dimensionsFed.filter((d) => !advertised.includes(d));
+  return [...advertised, ...extra];
+}
+
+export function railFeedHeading(
+  tile: Pick<WearableTileView, 'action' | 'lastSyncState' | 'advertisedDimensions' | 'dimensionsFed'>,
+): 'Will feed' | 'Feeds' | null {
+  if (!railFeedDimensions(tile).length) return null;
+  return isComingSoonTile(tile) ? 'Will feed' : 'Feeds';
+}
+
+/**
+ * Contributor line on the tile. Coming soon uses "Will feed".
+ * "Feeds" only after a real last-sync. Not a second score.
+ */
+export function tileContributorLine(
+  tile: Pick<
+    WearableTileView,
+    'action' | 'lastSyncState' | 'advertisedDimensions' | 'dimensionsFed'
+  >,
+): string | null {
+  if (isComingSoonTile(tile)) {
+    if (!tile.advertisedDimensions.length) return null;
+    return `Will feed ${formatWearableDimensionList(tile.advertisedDimensions)}`;
+  }
+  if (tile.lastSyncState !== 'synced') return null;
+  const dims = tile.dimensionsFed.length > 0 ? tile.dimensionsFed : tile.advertisedDimensions;
+  if (!dims.length) return null;
+  return `Feeds ${formatWearableDimensionList(dims)}`;
 }

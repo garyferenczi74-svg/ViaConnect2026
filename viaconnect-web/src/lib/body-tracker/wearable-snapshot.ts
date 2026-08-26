@@ -161,15 +161,22 @@ export function tileInputFromSnapshot(input: WearableSnapshotInput): WearableTil
   if (ouraSleep) ouraDims.push('sleep');
   if (ouraDims.length) dimensionsFed.oura = ouraDims;
 
-  if (humeRows.length) dimensionsFed.hume = ['metabolic'];
+  // Hume last-sync and feeds only from Hume-tagged body composition
+  // (sourceName hume_body_pod / Hume Health). Hume-tagged sleep in an Apple
+  // export never counts here.
+  if (humeRows.length) dimensionsFed.hume = ['body_comp', 'metabolic'];
 
   const appleSleep = input.sleepRows.some(
     (r) => r.source_provider === 'health_kit' && !matchesHume(r.source_app),
   );
   const appleBody = input.bodyRows.some((r) => !matchesHume(r.source_app) && finiteOrNull(r.weight_kg) !== null);
   const appleDims: WearableDimension[] = [];
+  if (appleBody || appleXml.length) {
+    appleDims.push('body_comp', 'metabolic');
+  }
+  // Sleep stays off the Apple tile / FEEDS rail until a real
+  // wearable_sleep_sessions persist (zip+consent or raw XML + PHI).
   if (appleSleep) appleDims.push('sleep');
-  if (appleBody || appleXml.length) appleDims.push('metabolic');
   if (appleDims.length) dimensionsFed.apple_health = appleDims;
 
   return {

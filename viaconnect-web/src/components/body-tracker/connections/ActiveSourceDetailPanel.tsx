@@ -33,12 +33,13 @@ import {
   HEALTH_XML_IMPORT_COPY,
   type HealthXmlImportIntent,
 } from '@/components/body-tracker/connected-sources/useHealthXmlImport';
-import type { WearableTileView } from '@/lib/body-tracker/wearable-tiles';
+import {
+  formatWearableDimensionList,
+  railFeedDimensions,
+  railFeedHeading,
+  type WearableTileView,
+} from '@/lib/body-tracker/wearable-tiles';
 import { WearableBrandMark } from '@/components/body-tracker/connections/WearableBrandMark';
-
-function dimensionLabel(d: string): string {
-  return d.charAt(0).toUpperCase() + d.slice(1);
-}
 
 function formatDate(iso: string | null): string {
   if (!iso) return 'n/a';
@@ -48,13 +49,13 @@ function formatDate(iso: string | null): string {
 }
 
 function feedsBlock(tile: WearableTileView) {
-  if (!tile.advertisedDimensions.length) return null;
+  const heading = railFeedHeading(tile);
+  const dims = railFeedDimensions(tile);
+  if (!heading || !dims.length) return null;
   return (
-    <div>
-      <p className="text-[11px] font-medium uppercase tracking-wider text-white/45">Feeds</p>
-      <p className="mt-1 text-sm text-white/80">
-        {tile.advertisedDimensions.map(dimensionLabel).join(', ')}
-      </p>
+    <div data-feeds-rail="true">
+      <p className="text-[11px] font-medium uppercase tracking-wider text-white/45">{heading}</p>
+      <p className="mt-1 text-sm text-white/80">{formatWearableDimensionList(dims)}</p>
     </div>
   );
 }

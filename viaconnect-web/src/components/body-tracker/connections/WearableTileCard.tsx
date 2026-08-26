@@ -1,15 +1,12 @@
 'use client';
 
 import { ChevronRight, CloudUpload } from 'lucide-react';
-import type { WearableTileView } from '@/lib/body-tracker/wearable-tiles';
+import {
+  isComingSoonTile,
+  tileContributorLine,
+  type WearableTileView,
+} from '@/lib/body-tracker/wearable-tiles';
 import { WearableBrandMark } from '@/components/body-tracker/connections/WearableBrandMark';
-
-function feedsLabel(tile: WearableTileView): string | null {
-  const dims = tile.status === 'connected' ? tile.dimensionsFed : tile.advertisedDimensions;
-  if (!dims.length) return null;
-  const names = dims.map((d) => d.charAt(0).toUpperCase() + d.slice(1));
-  return `Feeds ${names.join(', ')}`;
-}
 
 const outlineBtn =
   'flex min-h-[44px] shrink-0 items-center justify-center rounded-lg border border-teal bg-transparent px-3 text-xs font-semibold text-teal hover:bg-teal/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal/50';
@@ -56,13 +53,10 @@ export function WearableTileCard({
 }: WearableTileCardProps) {
   const connected = tile.lastSyncState === 'synced' || tile.lastSyncState === 'connected_never_synced';
   const needsReconnect = tile.lastSyncState === 'needs_reconnect';
-  const feeds = connected ? feedsLabel(tile) : null;
+  const contributorLine = tileContributorLine(tile);
   const xmlAction = tile.action.kind === 'xml_upload';
   const oauthReady = tile.action.kind === 'oauth' && tile.action.configured;
-  const comingSoon =
-    tile.action.kind === 'oauth' &&
-    !tile.action.configured &&
-    tile.lastSyncState === 'not_connected';
+  const comingSoon = isComingSoonTile(tile);
   const liveDot = connected ? 'bg-teal' : needsReconnect ? 'bg-copper' : 'bg-white/30';
   const cardClassName = `${wearableTileCardChrome(Boolean(selected))} ${WEARABLE_TILE_FOCUS_RING}`;
   const titleClassName = wearableTileTitleClassName(Boolean(selected));
@@ -165,7 +159,11 @@ export function WearableTileCard({
               </button>
             ) : null}
           </div>
-          {connected && feeds ? <p className="mt-1 text-xs text-white/45">{feeds}</p> : null}
+          {contributorLine ? (
+            <p data-contributor-line="true" className="mt-1 text-xs text-white/45">
+              {contributorLine}
+            </p>
+          ) : null}
           {connected && xmlAction ? (
             <button
               type="button"

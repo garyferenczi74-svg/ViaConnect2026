@@ -41,6 +41,15 @@ describe('Apple Health XML parse', () => {
     expect(parsed.humeRecords[0]?.value).toBe(71.2);
   });
 
+  it('does not ingest Hume-tagged sleep even with PHI consent', () => {
+    const xml = `<Record type="HKCategoryTypeIdentifierSleepAnalysis" sourceName="hume_body_pod" value="1" startDate="2026-08-19 22:00:00 +0000" endDate="2026-08-20 06:00:00 +0000"/>`;
+    const parsed = parseAppleHealthXml(xml, { includePhi: true });
+    expect(parsed.humeRecords).toHaveLength(1);
+    expect(parsed.humeRecords[0]?.dimension).toBe('sleep');
+    expect(filterIngestibleRecords(parsed, true)).toEqual([]);
+    expect(filterIngestibleRecords(parsed, false)).toEqual([]);
+  });
+
   it('leaves missing numeric values as null, never 0', () => {
     const xml = `<Record type="HKQuantityTypeIdentifierBodyMass" sourceName="Health" unit="kg" value="not-a-number" startDate="2026-08-20 07:00:00 +0000"/>`;
     const parsed = parseAppleHealthXml(xml);
