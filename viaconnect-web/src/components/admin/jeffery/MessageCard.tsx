@@ -7,6 +7,7 @@ import {
   DatabaseZap, BookOpen, BrainCircuit, Settings2, TrendingUp,
   MessageCircle, AlertTriangle, Users, AlertOctagon, Search,
 } from "lucide-react";
+import { rewriteJefferyHeadcountCopy } from "@/lib/jeffery/accSeatAuthority";
 
 export const CATEGORY_CONFIG: Record<string, { icon: IconType; color: string; label: string }> = {
   data_ingestion:    { icon: DatabaseZap,   color: "#2DA5A0", label: "Data Ingestion" },
@@ -55,6 +56,8 @@ export default function MessageCard({ msg, expanded, onToggle, children }: Messa
   const sev = SEVERITY_BADGE[msg.severity] ?? SEVERITY_BADGE.info;
   const Icon = cfg.icon;
   const commentCount = msg.jeffery_message_comments?.length ?? 0;
+  const title = rewriteJefferyHeadcountCopy(msg.title);
+  const summary = rewriteJefferyHeadcountCopy(msg.summary);
 
   return (
     <motion.div
@@ -74,7 +77,7 @@ export default function MessageCard({ msg, expanded, onToggle, children }: Messa
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-semibold text-white">{msg.title}</span>
+            <span className="text-sm font-semibold text-white">{title}</span>
             <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${sev.bg} ${sev.text}`}>
               {msg.severity.replace("_", " ")}
             </span>
@@ -89,7 +92,7 @@ export default function MessageCard({ msg, expanded, onToggle, children }: Messa
               </span>
             )}
           </div>
-          <p className="text-xs text-white/50 mt-1 line-clamp-2">{msg.summary}</p>
+          <p className="text-xs text-white/50 mt-1 line-clamp-2">{summary}</p>
           <div className="flex items-center gap-3 mt-2 text-[10px] text-white/30 flex-wrap">
             <span>{cfg.label}</span>
             {msg.source_agent && <span>{msg.source_agent}</span>}

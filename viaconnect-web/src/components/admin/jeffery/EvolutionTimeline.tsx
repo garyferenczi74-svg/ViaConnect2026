@@ -3,6 +3,10 @@
 import { useState, useEffect } from "react";
 import { TrendingUp, GraduationCap } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import {
+  formatAccRosterReviewedPhrase,
+  rewriteJefferyHeadcountCopy,
+} from "@/lib/jeffery/accSeatAuthority";
 
 interface EvoEntry {
   id: string;
@@ -97,18 +101,26 @@ export default function EvolutionTimeline() {
                   </span>
                 </div>
                 {isLearn ? (
-                  <p className="text-xs text-white/60 mt-1">{item.lesson}</p>
+                  <p className="text-xs text-white/60 mt-1">{rewriteJefferyHeadcountCopy(item.lesson)}</p>
                 ) : (
                   <>
                     {item.metric_name && (
                       <p className="text-xs text-white/60 mt-1">
-                        {item.metric_name}: {item.metric_value?.toFixed(2) ?? "n/a"}
-                        {item.rolling_30d_avg != null && (
+                        {item.metric_name === "agents_reviewed"
+                          ? formatAccRosterReviewedPhrase(
+                              item.metric_value == null ? undefined : Number(item.metric_value),
+                            )
+                          : `${item.metric_name}: ${item.metric_value?.toFixed(2) ?? "n/a"}`}
+                        {item.metric_name !== "agents_reviewed" && item.rolling_30d_avg != null && (
                           <span className="text-white/30"> &nbsp;(30d avg {item.rolling_30d_avg.toFixed(2)}, {item.delta_pct != null ? `${item.delta_pct > 0 ? "+" : ""}${item.delta_pct.toFixed(1)}%` : "n/a"})</span>
                         )}
                       </p>
                     )}
-                    {item.notes && <p className="text-xs text-white/50 mt-1">{item.notes}</p>}
+                    {item.notes && (
+                      <p className="text-xs text-white/50 mt-1">
+                        {rewriteJefferyHeadcountCopy(item.notes)}
+                      </p>
+                    )}
                   </>
                 )}
               </div>

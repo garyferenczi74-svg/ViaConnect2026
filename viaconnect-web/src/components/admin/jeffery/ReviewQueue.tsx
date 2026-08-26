@@ -5,6 +5,7 @@ import { ClipboardCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import MessageCard, { type JefferyMessage } from "./MessageCard";
 import ActionButtons from "./ActionButtons";
+import { displayJefferyJson } from "@/lib/jeffery/accSeatAuthority";
 
 interface ReviewQueueProps {
   onCountChange?: (count: number) => void;
@@ -80,7 +81,7 @@ export default function ReviewQueue({ onCountChange }: ReviewQueueProps) {
             <div className="border-t border-white/[0.08] p-4">
               <p className="text-xs font-medium text-white/40 mb-2">Proposed Action</p>
               <pre className="text-xs text-white/60 bg-[#0F172A] rounded-lg p-3 overflow-x-auto max-h-40 mb-3">
-                {JSON.stringify(msg.proposed_action ?? msg.detail, null, 2)}
+                {displayJefferyJson(msg.proposed_action ?? msg.detail)}
               </pre>
               <ActionButtons messageId={msg.id} onActionComplete={load} />
             </div>

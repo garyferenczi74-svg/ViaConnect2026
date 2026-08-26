@@ -52,6 +52,9 @@ export const AGENT_IDS: readonly AgentId[] = [
   "hounddog",
 ] as const;
 
+/** Brief 39: one seat authority on /admin/jeffery. Header Agents digit. Not ultrathink. */
+export const ACC_SEAT_COUNT = AGENT_IDS.length;
+
 /**
  * Maps registry / event agent_name values onto panel AgentIds.
  * Includes legacy Kelsey → Lex and name-mismatch aliases from Prompt 214.
