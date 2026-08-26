@@ -12,6 +12,7 @@ import {
   HOUNDDOG_EMPTY_METRIC,
   HOUNDDOG_NO_SCRAPE_COPY,
 } from "@/lib/hounddog/honesty";
+import { HOUNDDOG_RESEARCH_EMPTY_COPY } from "@/lib/hounddog/researchFindings";
 import type { HounddogSocialCountRow } from "@/lib/hounddog/socialCounts";
 
 const FORBIDDEN = [
@@ -163,8 +164,10 @@ describe("Hounddog tool tabs paint usable controls, not the 38 banner", () => {
     const html = renderToStaticMarkup(<ResearchTab />);
     expect(html).toContain("Competitor Analyzer");
     expect(html).toContain("Analyze");
+    expect(html).toContain("Research findings");
+    expect(html).toContain(HOUNDDOG_RESEARCH_EMPTY_COPY);
+    expect(html.indexOf("Competitor Analyzer")).toBeLessThan(html.indexOf("Research findings"));
     expect(html).not.toContain(HOUNDDOG_EMPTY_COPY);
-    expect(html).not.toContain("Research findings");
     for (const token of FORBIDDEN) {
       expect(html, `Research still contains ${token}`).not.toContain(token);
     }
@@ -177,14 +180,38 @@ describe("Hounddog tool tabs paint usable controls, not the 38 banner", () => {
       platform: "youtube",
       score: 0.77,
       fetchedAt: "2026-08-25T12:00:00.000Z",
+      digestLine: "Why a methylation hook lands on YouTube",
+      conversion: 18,
     };
     const research = renderToStaticMarkup(<ResearchTab findings={[finding]} />);
     expect(research).toContain("Research findings");
     expect(research).toContain("Allowlist digest title");
     expect(research).toContain("https://example.com/sherlock");
+    expect(research).toContain("Why a methylation hook lands on YouTube");
+    expect(research).toContain("18");
+    expect(research).not.toContain(HOUNDDOG_RESEARCH_EMPTY_COPY);
     expect(renderToStaticMarkup(<ContentTab />)).not.toContain("Allowlist digest title");
     expect(renderToStaticMarkup(<OverviewTab />)).not.toContain("Allowlist digest title");
     expect(renderToStaticMarkup(<OverviewTab />)).not.toContain("https://example.com/sherlock");
+  });
+
+  it("omits conversion unless the injected finding has a real count > 0", () => {
+    const html = renderToStaticMarkup(
+      <ResearchTab
+        findings={[
+          {
+            title: "Allowlist digest title",
+            url: "https://example.com/sherlock",
+            platform: "youtube",
+            score: 59,
+            fetchedAt: "2026-08-26T12:00:00.000Z",
+          },
+        ]}
+      />,
+    );
+    expect(html).toContain("Allowlist digest title");
+    expect(html).not.toContain("conversion");
+    expect(html).not.toContain(HOUNDDOG_EMPTY_METRIC);
   });
 });
 

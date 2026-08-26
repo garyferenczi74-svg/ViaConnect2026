@@ -7,6 +7,9 @@
 // real last-sync. No getHounddogAnalyticsSummary. No rollup query. Sherlock
 // digest title/URL/score stay on Research findings (or Research Hub), never
 // Content / pipeline / KPI last-sync.
+// Brief 55: Research feed is always under Competitor Analyzer. Empty copy is
+// "No scrape rows today." Bind topic_key=hounddog_research. Do not write
+// hounddog_performance / rollup.
 
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
@@ -149,8 +152,12 @@ describe("Hounddog tool tabs stay usable without the 38 page-killing banner", ()
     expect(src).toContain("Analyze");
     expect(src).toContain("loadHounddogResearchFindings");
     expect(src).toContain("Research findings");
+    expect(src).toContain("HOUNDDOG_RESEARCH_EMPTY_COPY");
+    expect(src.indexOf("Competitor Analyzer")).toBeLessThan(src.indexOf("Research findings"));
+    expect(src).not.toMatch(/researchFindings\.length > 0 &&/);
     expect(src).not.toContain("hounddog_scripts");
     expect(src).not.toContain("hounddog_pipeline");
+    expect(src).not.toContain("getHounddogAnalyticsSummary");
   });
 
   it("constants do not export populated demo arrays", () => {

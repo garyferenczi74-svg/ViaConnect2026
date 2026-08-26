@@ -5,6 +5,8 @@ import { Crosshair, Search } from 'lucide-react';
 import { C, COMPETITORS, TOP_HOOKS } from '@/lib/hounddog/constants';
 import { hasLiveSocialLastSync, loadHounddogLiveAccounts } from '@/lib/hounddog/honesty';
 import {
+  HOUNDDOG_RESEARCH_EMPTY_COPY,
+  isRealConversion,
   loadHounddogResearchFindings,
   type HounddogResearchFinding,
 } from '@/lib/hounddog/researchFindings';
@@ -62,9 +64,29 @@ export default function ResearchTab({
         </div>
       </div>
 
-      {researchFindings.length > 0 && (
-        <div>
-          <SecHead label="Research findings" />
+      <div>
+        <SecHead label="Research findings" />
+        {researchFindings.length === 0 ? (
+          <div
+            style={{
+              background: C.card,
+              border: `1px solid ${C.border}`,
+              borderRadius: 12,
+              padding: 16,
+            }}
+          >
+            <p
+              style={{
+                margin: 0,
+                fontSize: 13,
+                lineHeight: 1.55,
+                color: C.muted2,
+              }}
+            >
+              {HOUNDDOG_RESEARCH_EMPTY_COPY}
+            </p>
+          </div>
+        ) : (
           <div
             style={{
               background: C.card,
@@ -100,7 +122,13 @@ export default function ResearchTab({
                   {finding.platform && <span>{finding.platform}</span>}
                   {finding.score != null && <span>{finding.score}</span>}
                   {finding.fetchedAt && <span>{finding.fetchedAt}</span>}
+                  {isRealConversion(finding.conversion) && <span>{finding.conversion}</span>}
                 </div>
+                {finding.digestLine && (
+                  <div style={{ fontSize: 12, lineHeight: 1.45, color: C.muted2 }}>
+                    {finding.digestLine}
+                  </div>
+                )}
                 {finding.url && (
                   <a
                     href={finding.url}
@@ -121,8 +149,8 @@ export default function ResearchTab({
               </div>
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {showLive && COMPETITORS.length > 0 && (
         <div>
