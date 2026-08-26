@@ -46,20 +46,38 @@ export function FeaturesSectionMobile() {
                     </p>
                 </motion.div>
 
-                <div className="flex flex-col gap-3">
-                    {featureCards.map((feature, i) => (
-                        <AccordionCard
-                            key={feature.id}
-                            feature={feature}
-                            isOpen={openId === feature.id}
-                            onToggle={handleToggle}
-                            index={i}
-                            reduceMotion={!!reduceMotion}
-                        />
-                    ))}
-                </div>
+                <FeaturesMobileAccordion
+                    openId={openId}
+                    onToggle={handleToggle}
+                    reduceMotion={!!reduceMotion}
+                />
             </div>
         </SectionAnchor>
+    )
+}
+
+export function FeaturesMobileAccordion({
+    openId,
+    onToggle,
+    reduceMotion,
+}: {
+    openId: string | null
+    onToggle: (id: string) => void
+    reduceMotion: boolean
+}) {
+    return (
+        <div className="flex flex-col gap-3">
+            {featureCards.map((feature, i) => (
+                <AccordionCard
+                    key={feature.id}
+                    feature={feature}
+                    isOpen={openId === feature.id}
+                    onToggle={onToggle}
+                    index={i}
+                    reduceMotion={reduceMotion}
+                />
+            ))}
+        </div>
     )
 }
 

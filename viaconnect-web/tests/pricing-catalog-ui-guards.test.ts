@@ -37,6 +37,13 @@ describe('pricing UI: live catalog only, no invented dollars', () => {
     }
   });
 
+  it('empty and timeout copy is the catalog load line, not invented dollars', () => {
+    expect(body).toContain('PLANS_LOAD_FROM_CATALOG_COPY');
+    expect(grid).toContain("status: 'empty'");
+    expect(grid).toContain('PRICING_CATALOG_TIMEOUT_MS');
+    expect(body).not.toContain('No membership plans to show');
+  });
+
   it('practitioner panel has Coming Soon, waitlist, and no Helix medals', () => {
     expect(body).toContain('Coming Soon');
     expect(body).toContain('/practitioners');

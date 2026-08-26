@@ -8,6 +8,9 @@ import type { PricingSupabaseClient } from './supabase-types';
 
 export const PRICING_CATALOG_TIMEOUT_MS = 8000;
 
+/** Brief 45: empty catalog or timeout copy. Never invent dollars. */
+export const PLANS_LOAD_FROM_CATALOG_COPY = 'Plans load from the catalog';
+
 export const MEMBERSHIP_TIER_CATALOG_COLUMNS =
   'id, display_name, tier_level, monthly_price_cents, annual_price_cents, annual_savings_cents, description, is_family_tier, base_adults_included, base_children_included, max_adults_allowed, additional_adult_price_cents, additional_children_chunk_price_cents, children_chunk_size, sort_order';
 

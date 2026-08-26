@@ -19,7 +19,7 @@ import {
 } from '../PricingCatalogBody';
 import { TierCard } from '../TierCard';
 import type { PricingCatalog, PricingPlanCardModel } from '@/lib/pricing/catalog';
-import { buildPricingPlanCards } from '@/lib/pricing/catalog';
+import { buildPricingPlanCards, PLANS_LOAD_FROM_CATALOG_COPY } from '@/lib/pricing/catalog';
 
 const EM_DASH = String.fromCharCode(0x2014);
 const EN_DASH = String.fromCharCode(0x2013);
@@ -153,7 +153,8 @@ describe('PricingCatalogBody load states', () => {
   it('shows an empty panel when the live catalog has no tiers', () => {
     const html = renderBody({ loadState: { status: 'empty' } });
     expect(html).toContain('pricing-catalog-empty');
-    expect(html).toContain('No membership plans to show');
+    expect(html).toContain(PLANS_LOAD_FROM_CATALOG_COPY);
+    expect(html).not.toContain('No membership plans to show');
     expect(html).toContain('Refresh catalog');
   });
 
