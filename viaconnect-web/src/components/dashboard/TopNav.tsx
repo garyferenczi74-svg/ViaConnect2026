@@ -46,12 +46,6 @@ function useTypewriter(lines: string[], charDelay = 45, lineDelay = 600) {
   return { display, done };
 }
 
-const portalTabs = [
-  { label: 'Personal Wellness', isActive: true },
-  { label: 'Practitioner' },
-  { label: 'Naturopath' },
-];
-
 export default function TopNav() {
   const message = `${getGreeting()}, Gary`;
 

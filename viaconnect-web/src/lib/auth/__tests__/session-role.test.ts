@@ -49,6 +49,18 @@ describe("portalsForRole / role strip", () => {
     expect(keys).not.toContain("hounddog");
   });
 
+  it("unset / unknown profiles.role maps to the consumer strip", () => {
+    expect(portalsForRole(roleFromProfilesColumn(undefined)).map((p) => p.key)).toEqual(
+      ["consumer"],
+    );
+    expect(portalsForRole(roleFromProfilesColumn(null)).map((p) => p.key)).toEqual(
+      ["consumer"],
+    );
+    expect(portalsForRole(roleFromProfilesColumn("")).map((p) => p.key)).toEqual(
+      ["consumer"],
+    );
+  });
+
   it("practitioner sees only the practitioner tab", () => {
     expect(portalsForRole("practitioner").map((p) => p.key)).toEqual([
       "practitioner",
@@ -59,11 +71,9 @@ describe("portalsForRole / role strip", () => {
     expect(portalsForRole("naturopath").map((p) => p.key)).toEqual(["naturopath"]);
   });
 
-  it("admin sees every portal including Hounddog from role, not email", () => {
+  it("admin sees Personal Wellness + Admin + Hounddog, not clinician tabs", () => {
     expect(portalsForRole("admin").map((p) => p.key)).toEqual([
       "consumer",
-      "practitioner",
-      "naturopath",
       "admin",
       "hounddog",
     ]);
@@ -127,7 +137,10 @@ describe("path access", () => {
     );
     expect(activePortalForSession("consumer", "/admin")).toBe("consumer");
     expect(activePortalForSession("admin", "/practitioner/dashboard")).toBe(
-      "practitioner",
+      "admin",
+    );
+    expect(activePortalForSession("admin", "/naturopath/dashboard")).toBe(
+      "admin",
     );
     expect(activePortalForSession("practitioner", "/dashboard")).toBe(
       "practitioner",
@@ -154,8 +167,9 @@ describe("admin portal chrome follows the selected portal", () => {
     expect(shellRoleForSession("admin", "/admin")).toBe("admin");
     expect(shellRoleForSession("admin", "/admin/hounddog")).toBe("admin");
     expect(shellRoleForSession("admin", "/practitioner/dashboard")).toBe(
-      "practitioner",
+      "admin",
     );
+    expect(shellRoleForSession("admin", "/naturopath/dashboard")).toBe("admin");
   });
 
   it("admin portal list has a single Admin tab", () => {
@@ -375,5 +389,83 @@ describe("source contract: chrome + middleware use session role", () => {
       const src = readFileSync(path.join(REPO, rel), "utf8");
       expect(src).toMatch(/requireConsumerHelixRole/);
     }
+  });
+});
+
+describe("Brief 37: hide clinician/admin tabs from consumer; drop ViaCura from admin switcher", () => {
+  it("consumer tab labels contain none of Practitioner / Naturopath / Admin / Hounddog", () => {
+    const labels = portalsForRole("consumer").map((p) => p.label);
+    expect(labels).toEqual(["Personal Wellness"]);
+    expect(labels).not.toContain("Practitioner");
+    expect(labels).not.toContain("Naturopath");
+    expect(labels).not.toContain("Admin");
+    expect(labels).not.toContain("Hounddog");
+  });
+
+  it("admin tab labels include Admin, Hounddog, and Personal Wellness, not clinician portals", () => {
+    const labels = portalsForRole("admin").map((p) => p.label);
+    expect(labels).toContain("Admin");
+    expect(labels).toContain("Hounddog");
+    expect(labels).toContain("Personal Wellness");
+    expect(labels).not.toContain("Practitioner");
+    expect(labels).not.toContain("Naturopath");
+    expect(portalsForRole("admin").map((p) => p.key)).toEqual([
+      "consumer",
+      "admin",
+      "hounddog",
+    ]);
+    expect(portalsForRole("admin").find((p) => p.key === "admin")?.href).toBe("/admin");
+    expect(portalsForRole("admin").find((p) => p.key === "hounddog")?.href).toBe(
+      "/admin/hounddog",
+    );
+  });
+
+  it("AdminPortalDetector maps portalsForRole(sessionRole) only and does not hardcode PORTAL_TABS", () => {
+    const src = readFileSync(
+      path.join(REPO, "src/components/AdminPortalDetector.tsx"),
+      "utf8",
+    );
+    expect(src).toMatch(/portalsForRole\(sessionRole\)/);
+    expect(src).not.toMatch(/PORTAL_TABS/);
+    expect(src).not.toMatch(/BASE_PORTALS/);
+    expect(src).not.toMatch(/gary@farmceuticawellness\.com/);
+    expect(src).not.toMatch(/user_metadata/);
+    expect(src).not.toMatch(/switch-role/);
+    expect(src).not.toMatch(/switchRole/);
+  });
+
+  it("unused dashboard TopNav does not ship a second Practitioner/Naturopath/Admin/Hounddog strip", () => {
+    const src = readFileSync(
+      path.join(REPO, "src/components/dashboard/TopNav.tsx"),
+      "utf8",
+    );
+    expect(src).not.toMatch(/label: ['"]Practitioner['"]/);
+    expect(src).not.toMatch(/label: ['"]Naturopath['"]/);
+    expect(src).not.toMatch(/label: ['"]Admin['"]/);
+    expect(src).not.toMatch(/label: ['"]Hounddog['"]/);
+    expect(src).not.toMatch(/portalTabs/);
+  });
+
+  it("layout gates the detector on isConfirmedAdmin(session.profileRole) with no email gate", () => {
+    const src = readFileSync(path.join(REPO, "src/app/(app)/layout.tsx"), "utf8");
+    expect(src).toMatch(/isConfirmedAdmin\(session\.profileRole\)/);
+    expect(src).toMatch(/sessionRole="admin"/);
+    expect(src).toMatch(/AdminPortalDetector/);
+    expect(src).toMatch(/PortalShellRouter/);
+    expect(src).not.toMatch(/gary@farmceuticawellness\.com/);
+    expect(src).not.toMatch(/user_metadata/);
+  });
+
+  it("consumer still fail-closes /admin and /admin/hounddog via outOfRoleRedirect to /practitioners", () => {
+    expect(outOfRoleRedirect("consumer", "/admin")).toBe(OUT_OF_ROLE_REDIRECT);
+    expect(outOfRoleRedirect("consumer", "/admin/hounddog")).toBe(
+      OUT_OF_ROLE_REDIRECT,
+    );
+    expect(outOfRoleRedirect(undefined, "/admin")).toBe(OUT_OF_ROLE_REDIRECT);
+    expect(OUT_OF_ROLE_REDIRECT).toBe("/practitioners");
+    expect(canAccessPortalPath("consumer", "/admin")).toBe(false);
+    expect(canAccessPortalPath("consumer", "/admin/hounddog")).toBe(false);
+    expect(canAccessPortalPath("admin", "/admin")).toBe(true);
+    expect(canAccessPortalPath("admin", "/admin/hounddog")).toBe(true);
   });
 });
