@@ -34,6 +34,10 @@ import { safeLog } from '../_shared/safe-log.ts';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const FLAG_THRESHOLD_PCT = -20;
+// Brief 39: public "agents" headcount is ACC seats only. Must match
+// viaconnect-web/src/lib/jeffery/accSeatAuthority.ts. Do not use
+// ultrathink_agent_registry length (historically 22) as "agents".
+const ACC_SEAT_COUNT = 17;
 
 function admin(): SupabaseClient { return createClient(SUPABASE_URL, SERVICE_KEY, { auth: { autoRefreshToken: false, persistSession: false } }); }
 function json(d: unknown, s = 200) { return new Response(JSON.stringify(d), { status: s, headers: { 'Content-Type': 'application/json' } }); }
@@ -195,10 +199,13 @@ serve(async (req) => {
     }
 
     // ── Final weekly summary ──────────────────────────────────────────
+    // Public headcount is ACC seats. Ultrathink loop count stays in
+    // snapshots_written only — Gary has not named that set "agents".
+    const evolutionSummary = `Reviewed the ACC roster (${ACC_SEAT_COUNT}), processed 0 lessons, ${flagsRaised} agents flagged, ${decisionsReviewed} decisions reviewed.`;
     await db.rpc('jeffery_log_evolution', {
       p_entry_type: 'weekly_summary', p_agent_name: null,
       p_metric_name: 'agents_reviewed',
-      p_metric_value: (agents ?? []).length,
+      p_metric_value: ACC_SEAT_COUNT,
       p_rolling_30d_avg: null,
       p_population_size: populationSize,
       p_payload: {
@@ -208,8 +215,30 @@ serve(async (req) => {
         flagged: flagged.slice(0, 10),
         feedback_channels: feedbackChannels.length,
       },
-      p_notes: `Weekly review complete. Population=${populationSize}. ${flagsRaised} agents flagged.`,
+      p_notes: `Weekly review complete. Reviewed the ACC roster (${ACC_SEAT_COUNT}). Population=${populationSize}. ${flagsRaised} agents flagged.`,
     }).then(() => {}, () => {});
+
+    try {
+      await db.rpc('jeffery_emit_message', {
+        p_category: 'evolution_report',
+        p_severity: 'advisory',
+        p_title: 'Weekly Evolution Report',
+        p_summary: evolutionSummary,
+        p_detail: {
+          flags_raised: flagsRaised,
+          agents_reviewed: ACC_SEAT_COUNT,
+          lessons_applied: 0,
+          population_size: populationSize,
+          snapshots_written: snapshotsWritten,
+          decisions_reviewed: decisionsReviewed,
+        },
+        p_source_agent: 'jeffery_self_evolution',
+        p_source_context: null,
+        p_proposed_action: null,
+      });
+    } catch (e) {
+      console.warn(`jeffery emit failed: ${(e as Error).message}`);
+    }
 
     await db.rpc('ultrathink_record_sync', {
       p_run_id: runId, p_source: 'jeffery_self_evolution', p_action: 'weekly_review',
@@ -228,7 +257,7 @@ serve(async (req) => {
     return json({
       ok: true, run_id: runId, duration_ms: Date.now() - t0,
       population_size: populationSize,
-      agents_reviewed: (agents ?? []).length,
+      agents_reviewed: ACC_SEAT_COUNT,
       snapshots_written: snapshotsWritten,
       flags_raised: flagsRaised,
       decisions_reviewed: decisionsReviewed,

@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import MessageCard, { CATEGORY_CONFIG, type JefferyMessage } from "./MessageCard";
 import ActionButtons from "./ActionButtons";
 import CommentBox from "./CommentBox";
+import { displayJefferyJson } from "@/lib/jeffery/accSeatAuthority";
 
 export default function LiveFeed() {
   const [messages, setMessages] = useState<JefferyMessage[]>([]);
@@ -120,7 +121,7 @@ export default function LiveFeed() {
             <div className="p-4 bg-[#1A2744]/50">
               <p className="text-xs font-medium text-white/40 mb-2">Full Detail</p>
               <pre className="text-xs text-white/60 bg-[#0F172A] rounded-lg p-3 overflow-x-auto max-h-60">
-                {JSON.stringify(msg.detail, null, 2)}
+                {displayJefferyJson(msg.detail)}
               </pre>
             </div>
             {msg.proposed_action && (

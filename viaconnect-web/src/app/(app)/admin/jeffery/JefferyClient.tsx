@@ -139,6 +139,7 @@ export default function JefferyClient({
                 )}
                 {tab.id === "agents" && (
                   <span className="ml-1 px-1.5 py-0.5 rounded-full bg-white/10 text-white/70 text-[10px] font-semibold">
+                    {/* Brief 39: ACC seats only. Do not bind this digit to ultrathink. */}
                     {agentRegistry.length}
                   </span>
                 )}
