@@ -18,6 +18,7 @@ describe('mapRows', () => {
       muscle: null,
     });
     expect(snapshot).not.toBeNull();
+    expect(snapshot!.deviceName).toBeNull();
     expect(snapshot!.totalBodyFatPct).toBe(20.5);
     expect(snapshot!.regionFatPct.right_arm).toBeNull();
     expect(snapshot!.regionFatPct.left_arm).toBe(18.0);
@@ -74,11 +75,13 @@ describe('mapRows', () => {
         source: 'scan',
         created_at: '2026-08-24T00:00:00Z',
         scan_id: 'scan-1',
+        device_name: 'FormaVision',
         notes: 'FormaVision estimate: 18.0–22.0% body fat',
       },
       fat: { total_body_fat_pct: 20 },
       muscle: null,
     });
+    expect(snapshot!.deviceName).toBe('FormaVision');
     expect(snapshot!.scanId).toBe('scan-1');
     expect(snapshot!.isEstimated).toBe(true);
     expect(snapshot!.estimatedBodyFatMin).toBe(18);

@@ -33,7 +33,7 @@ describe('Brief 29 morning card IA', () => {
     const card = src(CARD);
     const hook = src(BOS);
     expect(card).toContain('ConnectionsBosDial');
-    expect(card).toContain('resolveConnectionsBosDisplay');
+    expect(card).toContain('useHannahBosDisplay');
     expect(card).not.toContain('useBOSCurrent');
     expect(card).not.toContain('resolveHonestBosDisplay');
     expect(card).not.toContain('labelForScore');

@@ -157,16 +157,17 @@ function hasRealTimestamp(value: unknown): boolean {
   return typeof value === 'string' && value.trim() !== '' && Number.isFinite(Date.parse(value));
 }
 
-function hasFiniteMetric(value: unknown): boolean {
-  return typeof value === 'number' && Number.isFinite(value);
-}
-
-/** Wearable is named only when present with a real ingest signal. Linked-only is not enough. */
+/**
+ * Wearable is named only when present with a real last-sync or Hume/Apple XML
+ * ingest. Linked-only is not enough. Brief 56: do not mint HRV / RHR from
+ * wearable_daily_vitals. native_health_bridge stays off. Coming soon never feeds.
+ */
 export function isRealWearableContributor(wearable: unknown): boolean {
   if (!isRecord(wearable) || wearable.present !== true) return false;
   if (hasRealTimestamp(wearable.last_engaged_at)) return true;
-  if (hasFiniteMetric(wearable.latest_hrv)) return true;
-  if (hasFiniteMetric(wearable.latest_sleep_hours)) return true;
+  if (wearable.xml_ingest === true || wearable.hume_xml === true || wearable.apple_xml === true) {
+    return true;
+  }
   return false;
 }
 

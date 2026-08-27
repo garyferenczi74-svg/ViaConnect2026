@@ -15,6 +15,8 @@ describe('buildScanWrite', () => {
     for (const k of ['right_arm_pct', 'left_arm_pct', 'trunk_pct', 'right_leg_pct', 'left_leg_pct', 'visceral_fat_rating', 'body_water_pct']) {
       expect(segFat[k]).toBeUndefined();
     }
+    expect(segFat).not.toHaveProperty('total_muscle_mass_lbs');
+    expect(JSON.stringify({ entry, segFat, weight })).not.toMatch(/navy|lean_body_mass/);
   });
 
   it('keeps total_body_fat_pct null when the scan could not estimate it', () => {

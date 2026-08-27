@@ -74,11 +74,10 @@ describe('Brief 30 one Bio Optimization Score SSOT', () => {
     const biology = src('src/components/formavision/BOSMovementReadout.tsx');
 
     expect(panel).toContain('ConnectionsBosDial');
-    expect(panel).toContain('resolveConnectionsBosDisplay');
     expect(morning).toContain('ConnectionsBosDial');
-    expect(morning).toContain('resolveConnectionsBosDisplay');
+    expect(morning).toContain('useHannahBosDisplay');
     expect(morning).toContain('data-bos-card="dashboard"');
-    expect(journey).toContain('resolveConnectionsBosDisplay');
+    expect(journey).toContain('useHannahBosDisplay');
     expect(journey).toContain('connectionsBosNumericScore');
     expect(journey).toContain('data-bos-card={isBos ? "analytics"');
     expect(biology).toContain('resolveConnectionsBosDisplay');

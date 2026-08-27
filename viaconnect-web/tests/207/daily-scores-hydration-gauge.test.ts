@@ -33,11 +33,11 @@ describe('Prompt 207 Task 5 - Hydration gauge on Daily Scores', () => {
     expect(src()).toContain('metric="bioscore"');
   });
 
-  it('updates loading skeleton grid to 7 columns', () => {
-    expect(src()).toContain('sm:grid-cols-4 lg:grid-cols-7');
+  it('updates loading skeleton grid to 6 columns after Overall Wellness is removed', () => {
+    expect(src()).toContain('sm:grid-cols-3 lg:grid-cols-6');
   });
 
-  it('updates skeleton placeholder count to 7', () => {
-    expect(src()).toContain('[1, 2, 3, 4, 5, 6, 7]');
+  it('updates skeleton placeholder count to 6', () => {
+    expect(src()).toContain('[1, 2, 3, 4, 5, 6]');
   });
 });

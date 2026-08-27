@@ -1,9 +1,8 @@
 'use client';
 
-// Score-first morning card: Bio Optimization Score from the Connections
-// BOS SSOT (resolveConnectionsBosDisplay + ConnectionsBosDial). One
-// TodaysProtocol action, seven Connections contributor chips as DISPLAY only.
-// Rewards gamification stays off this card. Chip/detail use last-sync SSOT.
+// Score-first morning card: Bio Optimization Score from blendHannahBos +
+// ConnectionsBosDial (Brief 56). One TodaysProtocol action, seven Connections
+// contributor chips as DISPLAY only. Rewards gamification stays off this card.
 
 import { useEffect, useMemo, useState } from 'react';
 import { useDailyScheduleView } from '@/hooks/useDailyScheduleView';
@@ -11,11 +10,8 @@ import { useSleepTileSynced } from '@/hooks/useSleepTileSynced';
 import { resolveHabitSleepPair } from '@/lib/body-tracker/habit-sleep-pair';
 import { HabitSleepPair } from '@/components/body-tracker/connections/HabitSleepPair';
 import { ConnectionsBosDial } from '@/components/body-tracker/connections/ConnectionsBosDial';
-import {
-  BOS_UNKNOWN_NEVER_ZERO_COPY,
-  namedWearableContributorCount,
-  resolveConnectionsBosDisplay,
-} from '@/lib/body-tracker/wearable-tiles';
+import { BOS_UNKNOWN_NEVER_ZERO_COPY } from '@/lib/body-tracker/wearable-tiles';
+import { useHannahBosDisplay } from '@/hooks/useHannahBosDisplay';
 import {
   MORNING_CARD_ARIA_LABEL,
   MORNING_CARD_SCORE_LABEL,
@@ -57,6 +53,7 @@ export function MorningCard() {
   const schedule = useDailyScheduleView();
   const sleepTileSynced = useSleepTileSynced();
   const wearableSnapshot = useWearableTilesSnapshot();
+  const hannahBos = useHannahBosDisplay();
   const habitSleepPair = resolveHabitSleepPair({
     sleepTileSynced,
     schedule: schedule.status === 'ready' ? schedule.view : null,
@@ -90,9 +87,7 @@ export function MorningCard() {
     { status: schedule.status, loadingElapsedMs },
   );
   const selectedChip = selectedKey ? chipByKey(chips, selectedKey) : null;
-  const composite = resolveConnectionsBosDisplay(
-    namedWearableContributorCount(wearableSnapshot.scoreDetail),
-  );
+  const composite = hannahBos.display;
 
   async function handleTake(): Promise<void> {
     if (cta.kind !== 'action' || !cta.item) return;
@@ -154,7 +149,21 @@ export function MorningCard() {
 
         {selectedChip ? <MorningContributorList chip={selectedChip} /> : null}
 
-        <p className="text-center text-[10px] text-white/40">{BOS_UNKNOWN_NEVER_ZERO_COPY}</p>
+        <p className="text-center text-[10px] text-white/40">{hannahBos.sentence}</p>
+        {hannahBos.result.chips.length > 0 ? (
+          <div className="flex flex-wrap justify-center gap-1.5">
+            {hannahBos.result.chips.map((chip) => (
+              <span
+                key={chip}
+                className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] text-white/70"
+              >
+                {chip}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <p className="text-center text-[10px] text-white/40">{BOS_UNKNOWN_NEVER_ZERO_COPY}</p>
+        )}
       </div>
     </section>
   );

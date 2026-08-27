@@ -61,6 +61,7 @@ import { detectTimezone, localDateString } from '@/lib/timezone';
 import { withTimeout } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 import { toDisplayBosScore } from '@/lib/scoring/bos-display';
+import { hydrationScoreFromToday } from '@/lib/scoring/hannah-bos';
 
 // ---------------------------------------------------------------------------
 // Local date helper (mirrors DailyScoresPanel.todayLocal)
@@ -338,11 +339,7 @@ export function useDailyScores(userId: string | null): DailyPillarScores {
 
   // Hydration: real-time hook (same as DailyScoresPanel).
   const hydrationResult = useHydrationToday();
-  const hydrationPct = hydrationResult.data?.percentage_of_target ?? null;
-  const hydrationClamped =
-    hydrationPct !== null
-      ? Math.max(0, Math.min(100, Math.round(hydrationPct)))
-      : null;
+  const hydrationClamped = hydrationScoreFromToday(hydrationResult.data);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   // Intentional hydration-effect split: this effect is scoped to userId so the

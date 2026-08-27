@@ -7,10 +7,11 @@ import { parseFormaVisionEstimateNote } from './estimateNote';
 
 type EntryRow = {
   id: string;
-  source: 'scan' | 'manual';
+  source: string;
   created_at: string;
   scan_id?: string | null;
   notes?: string | null;
+  device_name?: string | null;
 } | null;
 
 type FatRow = Record<string, unknown> | null;
@@ -64,6 +65,7 @@ export function mapRows(args: {
   return {
     entryId: entry.id,
     source: entry.source,
+    deviceName: entry.device_name ?? null,
     recordedAt: entry.created_at,
     totalBodyFatPct: fat ? toNum(fat['total_body_fat_pct']) : null,
     regionFatPct: fat ? fatRegionMap(fat) : { ...EMPTY_REGION },

@@ -140,8 +140,31 @@ export function oauthRowsFromConnected(
     }));
 }
 
+/**
+ * XML does not unlock every dim.
+ * Hume XML → Body comp + Metabolic after sourceName hume_body_pod only.
+ * Never Sleep. phone_health never copies onto Hume.
+ * Apple XML → Body comp + Metabolic only. Sleep stays off Apple until
+ * zip+consent persist wearable_sleep_sessions.
+ * Hume-only last-sync does not unlock Sleep.
+ */
+export function xmlUnlockedDimensions(input: {
+  vendor: 'hume' | 'apple';
+  sourceName?: string | null;
+  hasWearableSleepSessions?: boolean;
+}): WearableDimension[] {
+  if (input.vendor === 'hume') {
+    if (input.sourceName !== 'hume_body_pod') return [];
+    return ['body_comp', 'metabolic'];
+  }
+  const dims: WearableDimension[] = ['body_comp', 'metabolic'];
+  if (input.hasWearableSleepSessions === true) dims.push('sleep');
+  return dims;
+}
+
 export function tileInputFromSnapshot(input: WearableSnapshotInput): WearableTileInput {
   const humeRows = input.bodyRows.filter((r) => matchesHume(r.source_app));
+  const humeExact = input.bodyRows.filter((r) => r.source_app === 'hume_body_pod');
   const appleXml = input.appleImports.filter((r) => (r.records_ingested ?? 0) > 0);
   const dimensionsFed: Partial<Record<FirstClassTileId, WearableDimension[]>> = {};
 
@@ -161,23 +184,30 @@ export function tileInputFromSnapshot(input: WearableSnapshotInput): WearableTil
   if (ouraSleep) ouraDims.push('sleep');
   if (ouraDims.length) dimensionsFed.oura = ouraDims;
 
-  // Hume last-sync and feeds only from Hume-tagged body composition
-  // (sourceName hume_body_pod / Hume Health). Hume-tagged sleep in an Apple
-  // export never counts here.
-  if (humeRows.length) dimensionsFed.hume = ['body_comp', 'metabolic'];
+  // Hume last-sync may come from Hume-tagged body rows. Body comp + Metabolic
+  // unlock only after exact sourceName hume_body_pod. Never Sleep.
+  if (humeExact.length) {
+    dimensionsFed.hume = xmlUnlockedDimensions({
+      vendor: 'hume',
+      sourceName: 'hume_body_pod',
+    });
+  }
 
   const appleSleep = input.sleepRows.some(
     (r) => r.source_provider === 'health_kit' && !matchesHume(r.source_app),
   );
   const appleBody = input.bodyRows.some((r) => !matchesHume(r.source_app) && finiteOrNull(r.weight_kg) !== null);
-  const appleDims: WearableDimension[] = [];
-  if (appleBody || appleXml.length) {
-    appleDims.push('body_comp', 'metabolic');
-  }
   // Sleep stays off the Apple tile / FEEDS rail until a real
   // wearable_sleep_sessions persist (zip+consent or raw XML + PHI).
-  if (appleSleep) appleDims.push('sleep');
-  if (appleDims.length) dimensionsFed.apple_health = appleDims;
+  // XML body / import unlocks Body comp + Metabolic only. Sleep is additive.
+  if (appleBody || appleXml.length) {
+    dimensionsFed.apple_health = xmlUnlockedDimensions({
+      vendor: 'apple',
+      hasWearableSleepSessions: appleSleep,
+    });
+  } else if (appleSleep) {
+    dimensionsFed.apple_health = ['sleep'];
+  }
 
   return {
     oauth: oauthRowsFromConnected(input.connected, input.tokenProviders),

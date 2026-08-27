@@ -36,11 +36,10 @@ import { safeLog } from "@/lib/utils/safe-log";
 import { useHannahDailyNote } from "@/hooks/journey/useHannahDailyNote";
 import { heroGaugeScore } from "@/components/journey/coaching/heroHelpers";
 import { toDisplayBosScore } from "@/lib/scoring/bos-display";
-import {
-  connectionsBosNumericScore,
-  namedWearableContributorCount,
-  resolveConnectionsBosDisplay,
-} from "@/lib/body-tracker/wearable-tiles";
+import { connectionsBosNumericScore } from "@/lib/body-tracker/wearable-tiles";
+import { ConnectionsBosDial } from "@/components/body-tracker/connections/ConnectionsBosDial";
+import { useHannahBosDisplay } from "@/hooks/useHannahBosDisplay";
+import { HANNAH_BOS_BLEND_SENTENCE, hydrationScoreFromToday } from "@/lib/scoring/hannah-bos";
 import { formatMacroLabel, kcalRemaining, goalProgressPct } from "@/components/journey/coaching/lowerHelpers";
 import { ProvenanceChip } from "@/components/journey/coaching/ProvenanceChip";
 import {
@@ -157,13 +156,29 @@ function PlasmaRing({ value, color, size = 40 }: { value: number | null; color: 
     </div>
   );
 }
-function GaugeCard({ value, label, color, hero, loading }: { value: number | null; label: string; color: string; hero?: boolean; loading?: boolean }) {
+function GaugeCard({
+  value,
+  label,
+  color,
+  hero,
+  loading,
+  bosDisplay,
+}: {
+  value: number | null;
+  label: string;
+  color: string;
+  hero?: boolean;
+  loading?: boolean;
+  bosDisplay?: { value: string; band: string };
+}) {
   const isBos = label === "Bio Optimization";
+  const nutritionUnknown = label === "Nutrition" && value === null;
+  const hydrationUnknown = label === "Hydration" && value === null;
   return (
     <div
       className="vc-gauge-tile"
       data-bos-card={isBos ? "analytics" : undefined}
-      data-bos-composite={isBos ? (value === null ? "unknown" : undefined) : undefined}
+      data-bos-composite={isBos ? (bosDisplay?.band === "UNKNOWN" || value === null ? "unknown" : bosDisplay?.band.toLowerCase()) : undefined}
       style={{
         flex: "1 1 0",
         minWidth: 64,
@@ -181,11 +196,16 @@ function GaugeCard({ value, label, color, hero, loading }: { value: number | nul
     >
       {loading ? (
         <Shimmer w={hero ? 52 : 48} h={hero ? 52 : 48} radius={999} />
+      ) : isBos && bosDisplay ? (
+        <ConnectionsBosDial composite={bosDisplay} size="cluster" />
       ) : (
         <PlasmaRing value={value} color={color} size={hero ? 52 : 48} />
       )}
       <span style={{ fontSize: 9, fontWeight: 600, color: C.text, textAlign: "center", lineHeight: 1.1 }}>{label}</span>
-      {isBos && value === null ? (
+      {isBos && (value === null || bosDisplay?.band === "UNKNOWN") ? (
+        <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: 0.12, color: C.muted }}>UNKNOWN</span>
+      ) : null}
+      {(nutritionUnknown || hydrationUnknown) ? (
         <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: 0.12, color: C.muted }}>UNKNOWN</span>
       ) : null}
     </div>
@@ -566,6 +586,7 @@ function Hero({
   lastSyncLabel,
   gaugesLoading,
   sourcedNumbers,
+  bosDisplay,
 }: {
   pillarValues: PillarValues;
   userId: string | null;
@@ -578,6 +599,7 @@ function Hero({
   lastSyncLabel: string;
   gaugesLoading?: boolean;
   sourcedNumbers: number[];
+  bosDisplay: { value: string; band: string };
 }) {
   // J-T2: hero narrative state word driven from canonical dashboard tier +
   // score. Baseline/computing users read as "getting started", not "steady".
@@ -607,7 +629,14 @@ function Hero({
     if (p.key === "overall") {
       return { ...p, value: toDisplayBosScore(raw), delta: null };
     }
-    return { ...p, value: heroGaugeScore(raw ?? 0) };
+    if (p.key === "nutrition" || p.key === "hydration") {
+      return {
+        ...p,
+        value: raw === null || raw === undefined ? null : heroGaugeScore(raw),
+        delta: null,
+      };
+    }
+    return { ...p, value: raw === null || raw === undefined ? null : heroGaugeScore(raw) };
   });
 
   return (
@@ -649,9 +678,12 @@ function Hero({
             </div>
             <div className="vc-gaugecluster">
               {livePillars.map((p) => (
-                <GaugeCard key={p.key} value={p.value} label={p.label} color={p.color} hero={p.hero} loading={gaugesLoading} />
+                <GaugeCard key={p.key} value={p.value} label={p.label} color={p.color} hero={p.hero} loading={gaugesLoading} bosDisplay={p.key === "overall" ? bosDisplay : undefined} />
               ))}
             </div>
+            <p style={{ margin: "8px 0 0", fontSize: 10, color: C.muted, textAlign: "center" }}>
+              {HANNAH_BOS_BLEND_SENTENCE}
+            </p>
           </div>
           {/* Prompt 216: Journey graph card with full-bleed hero video background */}
           <div
@@ -1318,12 +1350,13 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
   }, []);
 
   // Real data hooks (fail-open: all return safe defaults on error/loading).
-  // Bio Optimization Score SSOT is Connections BOS (resolveConnectionsBosDisplay).
+  // Bio Optimization Score SSOT is blendHannahBos + ConnectionsBosDial (Brief 56).
   // bos7D: Hannah insights trend points only. Never slot /api/bos/current into BOS.
   // bos4W and bos1Y are removed: the Journey graph (T3) reads its own history
   // via useJourneyGraphSeries inside the Journey component.
   const { data: bos7D, isLoading: bos7DLoading } = useBioOptimizationTrend(userId, "7D");
   const { data: hydrationData } = useHydrationToday();
+  const hannahBos = useHannahBosDisplay();
   // J-T1: useDailyScores reuses calculateDailyScores + the same daily_checkins /
   // meal_logs / useHydrationToday reads as DailyScoresPanel so pillar values here
   // equal the dashboard "Your pillars" values for the same user.
@@ -1337,13 +1370,10 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
   const wearableSyncLine = wearableSyncLineFromTiles(wearableSnapshot.tiles);
   const lastSyncLabel = userId ? wearableSyncLine.lastSyncLabel : LAST_SYNC_LABELS.not_connected;
 
-  // J-T2: Bio Optimization Score SSOT is Connections BOS (wearable tiles).
-  // NEVER reads profiles.vitality_score. Never slots a CAQ composite into BOS.
-  // Zero named wearable contributors stay null / UNKNOWN / --, never a silent 62.
+  // J-T2: Bio Optimization Score SSOT is blendHannahBos (same as hero / Connections).
+  // NEVER reads profiles.vitality_score. Never a silent Daily Scores 59 labeled as BOS.
   const { profile: dashProfile } = useUserDashboardData();
-  const connectionsBos = resolveConnectionsBosDisplay(
-    namedWearableContributorCount(wearableSnapshot.scoreDetail),
-  );
+  const connectionsBos = hannahBos.display;
   const bioDashScore: number | null = connectionsBosNumericScore(connectionsBos);
   const bioDashTier: string | null = dashProfile?.bio_optimization_tier ?? null;
 
@@ -1476,21 +1506,20 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
     return () => { active = false; };
   }, [userId, refreshTick]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // J-T1: pillar values from useDailyScores (TODAY's dashboard values via
-  // calculateDailyScores + same reads as DailyScoresPanel). Null -> 0 so the
-  // GaugeCard renders in its existing computing/0 state (same I-T2a behaviour).
-  // "overall" key maps to Connections BOS (same SSOT as the dashboard card).
+  // J-T1: pillar values from useDailyScores. Nutrition / hydration stay null
+  // (UNKNOWN) when there is no meal or no ml log — never a painted 0 score.
+  // "overall" key maps to blendHannahBos (same SSOT as the dashboard card).
   const overallCurrent = bioDashScore;
-  const hydrationPct = hydrationData?.percentage_of_target ?? null;
+  const hydrationPct = hydrationScoreFromToday(hydrationData);
 
   const pillarValues: PillarValues = {
-    sleep: dailyScores.sleepQuality ?? 0,
-    energy: dailyScores.energyLevel ?? 0,
-    mood: dailyScores.moodStress ?? 0,
-    nutrition: dailyScores.nutrition ?? 0,
-    activity: dailyScores.physicalActivity ?? 0,
+    sleep: dailyScores.sleepQuality,
+    energy: dailyScores.energyLevel,
+    mood: dailyScores.moodStress,
+    nutrition: dailyScores.nutrition,
+    activity: dailyScores.physicalActivity,
     overall: overallCurrent,
-    hydration: dailyScores.hydration ?? hydrationPct ?? 0,
+    hydration: hydrationPct,
   };
 
   // Profile card data.
@@ -1945,6 +1974,7 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
           lastSyncLabel={lastSyncLabel}
           gaugesLoading={shouldShowSkeleton(bos7DLoading || dailyScores.loading, dailyScores.sleepQuality ?? dailyScores.energyLevel ?? dailyScores.nutrition)}
           sourcedNumbers={sourcedNumbers}
+          bosDisplay={hannahBos.display}
         />
 
         <div className="vc-page-sections" style={{ display: "flex", flexDirection: "column", gap: 22 }}>

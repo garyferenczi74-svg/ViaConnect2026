@@ -11,8 +11,9 @@ export type RegionMap = {
 
 export interface CompositionSnapshot {
   entryId: string;
-  source: 'scan' | 'manual';
+  source: string;
   recordedAt: string;
+  deviceName?: string | null;
   totalBodyFatPct: number | null;
   regionFatPct: RegionMap;
   visceralFatRating: number | null;

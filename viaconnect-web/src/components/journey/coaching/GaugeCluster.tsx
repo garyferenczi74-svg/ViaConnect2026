@@ -9,8 +9,8 @@
  * PlasmaGauge metric prop. Fills the hero main column width with a responsive
  * grid (3 across on mobile, 4 on sm, 7 on lg desktop). No per-gauge delta badge.
  *
- * Honest baseline: a value of 0 shows the gauge at 0 with a COMPUTING caption.
- * Never fabricates a number. Fail-open: missing data resolves to value 0.
+ * Honest baseline: missing Nutrition / Hydration / BOS stay UNKNOWN, never 0.
+ * Bio Optimization uses blendHannahBos + ConnectionsBosDial (Brief 56).
  *
  * PlasmaGauge is reused UNCHANGED. Tint is applied ONLY via the metric prop.
  *
@@ -37,25 +37,25 @@ import {
   PlasmaGauge,
   type GaugeMetric,
 } from '@/components/gauges/PlasmaGauge';
-import { useBioOptimizationTrend } from '@/app/(app)/(consumer)/analytics/components/BioOptimizationTrend/hooks/useBioOptimizationTrend';
+import { ConnectionsBosDial } from '@/components/body-tracker/connections/ConnectionsBosDial';
+import { useHannahBosDisplay } from '@/hooks/useHannahBosDisplay';
 import { useHydrationToday } from '@/components/hydration/useHydrationToday';
-import { useBOSCurrent } from '@/hooks/use-bos-current';
-import { BOS_INSUFFICIENT_DATA_COPY, toDisplayBosScore } from '@/lib/scoring/bos-display';
+import { useDailyScores } from '@/hooks/journey/useDailyScores';
+import { hydrationScoreFromToday } from '@/lib/scoring/hannah-bos';
 
 // ---------------------------------------------------------------------------
 // Tokens (mirror PillarGaugeRow)
 // ---------------------------------------------------------------------------
 
 const DM_SANS = 'var(--font-dm-sans), sans-serif';
-const DM_MONO = 'var(--font-dm-mono), monospace';
 
 // ---------------------------------------------------------------------------
 // gaugeScore: clamp any value into a finite 0..100 integer (mirror PillarGaugeRow)
 // ---------------------------------------------------------------------------
 
-/** Clamp any value into a finite 0..100 gauge score; non-numbers become 0. */
-function gaugeScore(v: unknown): number {
-  if (typeof v !== 'number' || !isFinite(v)) return 0;
+/** Clamp a real number into 0..100. Missing / non-finite stay null (UNKNOWN). */
+function gaugeScore(v: unknown): number | null {
+  if (typeof v !== 'number' || !isFinite(v)) return null;
   return Math.max(0, Math.min(100, Math.round(v)));
 }
 
@@ -66,7 +66,7 @@ function gaugeScore(v: unknown): number {
 export interface GaugeSpec {
   label: string;
   metric: GaugeMetric;
-  value: number;
+  value: number | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -132,51 +132,57 @@ export function buildGaugeData(input: {
 // ---------------------------------------------------------------------------
 
 export function GaugeCluster({ userId }: { userId: string | null }) {
-  // Fail-open: missing data -> value 0 -> computing state. Never throws.
-  const { data: bosData } = useBioOptimizationTrend(userId, '7D');
+  const daily = useDailyScores(userId);
   const { data: hydrationData } = useHydrationToday();
-  const { data: bosCurrent } = useBOSCurrent();
-  const bosScore = toDisplayBosScore(bosCurrent?.score);
+  const hannahBos = useHannahBosDisplay();
+  const bosScore = hannahBos.result.score;
+  const hydrationPct = hydrationScoreFromToday(hydrationData);
 
   const specs = buildGaugeData({
     current: bosScore ?? undefined,
-    averages: bosData?.categoryAverages ?? null,
-    hydrationPct: hydrationData?.percentage_of_target ?? null,
+    averages: {
+      sleep: daily.sleepQuality ?? undefined,
+      adherence: daily.energyLevel ?? undefined,
+      stress: daily.moodStress ?? undefined,
+      nutrition: daily.nutrition ?? undefined,
+      movement: daily.physicalActivity ?? undefined,
+    },
+    hydrationPct,
   });
 
-  // Mobile: horizontal scroll row so gauges never shrink below 92px.
-  // Desktop (lg+): single row of 7, no overflow needed.
   return (
     <div className="overflow-x-auto pb-1 lg:overflow-x-visible">
       <div className="flex gap-2.5 lg:grid lg:grid-cols-7" style={{ minWidth: 'max-content' }} aria-label="Pillar score gauges">
         {specs.map((spec) => {
           const isBos = spec.label === 'Bio Optimization';
-          const has = isBos ? bosScore !== null : spec.value > 0;
+          const isNutrition = spec.label === 'Nutrition';
+          const unknown = spec.value === null || (isBos && bosScore === null);
           return (
             <div
               key={spec.label}
               className="flex shrink-0 flex-col items-center gap-1.5 rounded-xl border border-white/[0.08] bg-[#16203A] px-2 py-3 lg:shrink"
             >
-              {isBos && bosScore === null ? (
+              {isBos ? (
+                <ConnectionsBosDial composite={hannahBos.display} size="cluster" />
+              ) : unknown ? (
                 <div
-                  className="flex h-[92px] w-[92px] items-center justify-center px-1 text-center text-[9px] leading-tight text-white/50"
-                  aria-label={`Bio Optimization Score: ${BOS_INSUFFICIENT_DATA_COPY}`}
+                  className="flex h-[92px] w-[92px] flex-col items-center justify-center px-1 text-center"
+                  aria-label={`${spec.label} UNKNOWN`}
                 >
-                  {BOS_INSUFFICIENT_DATA_COPY}
+                  <span className="text-lg text-white/40">--</span>
+                  <span className="text-[8px] font-semibold uppercase tracking-[0.18em] text-white/40">
+                    UNKNOWN
+                  </span>
                 </div>
               ) : (
               <PlasmaGauge
-                value={isBos && bosScore !== null ? bosScore : spec.value}
+                value={spec.value ?? 0}
                 metric={spec.metric}
                 variant="standard"
                 size={92}
                 max={100}
-                caption={has ? spec.label.toUpperCase() : 'COMPUTING'}
-                ariaLabel={
-                  has
-                    ? `${spec.label} ${isBos ? bosScore : spec.value} of 100`
-                    : `${spec.label} score is computing`
-                }
+                caption={spec.label.toUpperCase()}
+                ariaLabel={`${spec.label} ${spec.value} of 100`}
               />
               )}
               <span
@@ -185,6 +191,11 @@ export function GaugeCluster({ userId }: { userId: string | null }) {
               >
                 {spec.label}
               </span>
+              {isNutrition && unknown ? (
+                <span className="text-[8px] font-semibold uppercase tracking-wide text-white/40">
+                  UNKNOWN
+                </span>
+              ) : null}
             </div>
           );
         })}
