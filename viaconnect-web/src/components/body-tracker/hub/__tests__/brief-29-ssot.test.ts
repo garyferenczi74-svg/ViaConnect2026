@@ -40,7 +40,7 @@ describe('Brief 29 Dashboard Analytics Biology SSOT', () => {
     const journey = src('src/components/journey/YourJourneyCoaching.tsx');
     expect(journey).not.toMatch(/label:\s*"Bio Optimization",\s*value:\s*62/);
     expect(journey).toContain('label: "Bio Optimization", value: null, delta: null');
-    expect(journey).toContain('resolveConnectionsBosDisplay');
+    expect(journey).toContain('useHannahBosDisplay');
     expect(journey).not.toContain('resolveHonestBosDisplay');
     expect(journey).not.toContain('from "@/lib/scoring/sources/wearable-source"');
     const honest = resolveHonestBosDisplay({ score: 62, contributors: [] });

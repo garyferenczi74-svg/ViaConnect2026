@@ -3,10 +3,11 @@
 import { Info } from 'lucide-react';
 import type { DimensionSourceRow } from '@/lib/body-tracker/source-disagreement';
 import {
+  CONNECTIONS_BOS_COMPOSITE,
   SCORE_DETAIL_DIMENSIONS,
-  namedWearableContributorCount,
-  resolveConnectionsBosDisplay,
+  type ConnectionsBosDisplay,
 } from '@/lib/body-tracker/wearable-tiles';
+import { HANNAH_BOS_BLEND_SENTENCE } from '@/lib/scoring/hannah-bos';
 import { ConnectionsBosDial } from './ConnectionsBosDial';
 import { ContributorColumn } from './ContributorColumn';
 import {
@@ -80,6 +81,9 @@ interface ScoreDetailPanelProps {
   onOpenDimension?: (metric: string) => void;
   bedtimeStrip?: BedtimeStripView;
   habitSleepPair?: HabitSleepPairView;
+  composite?: ConnectionsBosDisplay;
+  sentence?: string;
+  chips?: readonly string[];
 }
 
 export function ScoreDetailPanel({
@@ -87,12 +91,12 @@ export function ScoreDetailPanel({
   onOpenDimension,
   bedtimeStrip = EMPTY_BEDTIME_STRIP,
   habitSleepPair = EMPTY_HABIT_SLEEP_PAIR,
+  composite = CONNECTIONS_BOS_COMPOSITE,
+  sentence = HANNAH_BOS_BLEND_SENTENCE,
+  chips = [],
 }: ScoreDetailPanelProps) {
   const lastSyncSynced = bedtimeStrip.sleepTileSynced === true;
-  const locked = lockScoreDetailRows(rows, { lastSyncSynced });
   const contributorRows = gateSleepContributorRows(rows, { lastSyncSynced });
-  const named = namedWearableContributorCount(locked);
-  const composite = resolveConnectionsBosDisplay(named);
 
   return (
     <section
@@ -120,7 +124,21 @@ export function ScoreDetailPanel({
         <HabitSleepPair pair={habitSleepPair} />
       </article>
 
-      <p className="mt-auto pt-2 text-center text-[10px] text-white/40">Missing stays UNKNOWN, never 0.</p>
+      <p className="mt-auto pt-2 text-center text-[10px] text-white/40">{sentence}</p>
+      {chips.length > 0 ? (
+        <div className="flex flex-wrap justify-center gap-1.5 pt-1">
+          {chips.map((chip) => (
+            <span
+              key={chip}
+              className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] text-white/70"
+            >
+              {chip}
+            </span>
+          ))}
+        </div>
+      ) : (
+        <p className="text-center text-[10px] text-white/40">Missing stays UNKNOWN, never 0.</p>
+      )}
     </section>
   );
 }

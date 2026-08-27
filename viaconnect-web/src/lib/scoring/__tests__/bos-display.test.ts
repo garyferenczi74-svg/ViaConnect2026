@@ -167,6 +167,15 @@ describe('Brief 24 contributor honesty', () => {
       isRealWearableContributor({
         present: true,
         last_engaged_at: null,
+        latest_hrv: 42,
+        latest_sleep_hours: 7.2,
+        device_types: ['whoop'],
+      }),
+    ).toBe(false);
+    expect(
+      isRealWearableContributor({
+        present: true,
+        last_engaged_at: null,
         latest_hrv: null,
         latest_sleep_hours: null,
         device_types: ['whoop'],

@@ -352,7 +352,10 @@ export const CONNECTIONS_BOS_COMPOSITE = {
   band: 'UNKNOWN',
 } as const;
 
-export type ConnectionsBosDisplay = typeof CONNECTIONS_BOS_COMPOSITE;
+export type ConnectionsBosDisplay = {
+  value: string;
+  band: string;
+};
 
 export type NamedWearableContributorRow = {
   showRing?: boolean;

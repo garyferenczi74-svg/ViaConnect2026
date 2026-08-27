@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { Bed, Zap, Brain, Apple, Activity, Heart, Sparkles, ClipboardList, Droplet } from 'lucide-react';
+import { Bed, Zap, Brain, Apple, Activity, Sparkles, ClipboardList, Droplet } from 'lucide-react';
 import { DailyScoreGauge } from './DailyScoreGauge';
 import {
   calculateDailyScores,
@@ -15,6 +15,7 @@ import {
 import { topNudge } from '@/lib/scoring/engagementNudges';
 import { detectTimezone, localDateString } from '@/lib/timezone';
 import { useHydrationToday } from '@/components/hydration/useHydrationToday';
+import { hydrationScoreFromToday } from '@/lib/scoring/hannah-bos';
 
 // Local-date helper shared across all date-keyed reads/writes so the panel,
 // the check-in hooks, the meal widget, and the daily_checkins row all key on
@@ -97,16 +98,16 @@ export function DailyScoresPanel({ checkinRaw, previewRaw, onNudge }: DailyScore
   // Prompt 207 Task 5: hydration hook - called unconditionally (Rules of Hooks).
   // Value is percentage_of_target clamped 0..100; gauge renders in loaded state only.
   const hydrationToday = useHydrationToday();
-  const hydrationPct = Math.max(0, Math.min(100, Math.round(hydrationToday.data?.percentage_of_target ?? 0)));
+  const hydrationPct = hydrationScoreFromToday(hydrationToday.data);
   const hydrationGauge = {
-    score: hydrationPct,
+    score: hydrationPct ?? 0,
     manualScore: hydrationPct,
     wearableScore: null,
-    manualWeight: 1,
+    manualWeight: hydrationPct === null ? 0 : 1,
     wearableWeight: 0,
-    confidence: 1,
+    confidence: hydrationPct === null ? 0 : 1,
     label: 'Hydration',
-    color: getScoreColor(hydrationPct),
+    color: getScoreColor(hydrationPct ?? 0),
   };
 
   // Three-state rendering: loading -> empty | loaded. Once loaded, NEVER goes back.
@@ -456,21 +457,12 @@ export function DailyScoresPanel({ checkinRaw, previewRaw, onNudge }: DailyScore
                 : 'Complete your check-in to see scores'}
             </p>
           </div>
-
-          {scoreState === 'loaded' && result && result.overall.confidence > 0 && (
-            <div className="flex flex-shrink-0 items-center gap-2 rounded-xl border border-[#2DA5A0]/30 bg-[#2DA5A0]/10 px-3 py-2">
-              <div className="text-right">
-                <p className="text-[9px] uppercase tracking-wider text-white/40">Overall</p>
-                <p className="text-base font-bold" style={{ color: result.overall.color }}>{result.overall.score}/100</p>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* LOADING: skeleton gauges, never CTA */}
         {scoreState === 'loading' && (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
-            {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
               <div key={i} className="h-[180px] animate-pulse rounded-2xl bg-white/[0.04]" />
             ))}
           </div>
@@ -487,19 +479,12 @@ export function DailyScoresPanel({ checkinRaw, previewRaw, onNudge }: DailyScore
 
         {/* LOADED: gauges (never resets to empty) */}
         {scoreState === 'loaded' && result && (
-          <div className={`relative grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7 ${isPreview ? 'ring-1 ring-[#2DA5A0]/20 rounded-2xl p-1' : ''}`}>
-            {/* Prompt 182 (2026-06-09): metric token routed per gauge so the
-                shared PlasmaGauge picks the correct accent. moodStress maps
-                to the 'mood' token and overall maps to 'wellness'. */}
+          <div className={`relative grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6 ${isPreview ? 'ring-1 ring-[#2DA5A0]/20 rounded-2xl p-1' : ''}`}>
             <DailyScoreGauge metric="sleep"     {...result.sleep}      color="#004aad" dataMode={result.dataMode} icon={Bed}      isPreview={isPreview} />
             <DailyScoreGauge metric="energy"    {...result.energy}     dataMode={result.dataMode} icon={Zap}      isPreview={isPreview} />
             <DailyScoreGauge metric="mood"      {...result.moodStress} dataMode={result.dataMode} icon={Brain}    isPreview={isPreview} />
             <DailyScoreGauge metric="nutrition" {...result.nutrition}  dataMode={result.dataMode} icon={Apple}    isPreview={isPreview} />
             <DailyScoreGauge metric="activity"  {...result.activity}   dataMode={result.dataMode} icon={Activity} isPreview={isPreview} />
-            <DailyScoreGauge metric="wellness"  {...result.overall}    dataMode={result.dataMode} icon={Heart}    isPreview={isPreview} />
-            {/* Prompt 207 Task 5: 7th gauge - Hydration percentage of target.
-                Uses bioscore (brand teal) metric token. Standalone: not folded
-                into the overall score or the scoring engine. */}
             <DailyScoreGauge metric="bioscore" {...hydrationGauge} dataMode={result.dataMode} icon={Droplet} isPreview={isPreview} />
           </div>
         )}

@@ -25,6 +25,14 @@ import { resolveHormonesReportChip } from '@/lib/kb/hormones/hormonesHubChip';
 import type { BiologicalAgeResult } from '@/lib/body-tracker/biological-age';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
+import {
+  ANALYTICS_PROVENANCE_EMPTY,
+  bodyFatDisplay,
+  entryToSourceName,
+  unwrapRelatedEntry,
+  vitalValueDisplay,
+  weightBoundDisplay,
+} from '@/lib/analytics/provenance';
 
 interface DashboardBentoProps {
   userId: string | null;
@@ -33,11 +41,15 @@ interface DashboardBentoProps {
 interface Snapshots {
   weightLbs: number | null;
   weightDelta: string | null;
+  weightSourceName: string | null;
   bodyFatPct: number | null;
+  bodyFatSourceName: string | null;
   leanMassLbs: number | null;
   scanDate: string | null;
   restingHr: number | null;
+  restingHrSourceName: string | null;
   metabolicAge: number | null;
+  metabolicAgeSourceName: string | null;
   hormonesChip: string | null;
   milestonesDone: number | null;
   milestonesTotal: number | null;
@@ -49,11 +61,15 @@ interface Snapshots {
 const EMPTY: Snapshots = {
   weightLbs: null,
   weightDelta: null,
+  weightSourceName: null,
   bodyFatPct: null,
+  bodyFatSourceName: null,
   leanMassLbs: null,
   scanDate: null,
   restingHr: null,
+  restingHrSourceName: null,
   metabolicAge: null,
+  metabolicAgeSourceName: null,
   hormonesChip: null,
   milestonesDone: null,
   milestonesTotal: null,
@@ -116,7 +132,7 @@ export function DashboardBento({ userId }: DashboardBentoProps) {
       ] = await Promise.all([
         (supabase as any)
           .from('body_tracker_weight')
-          .select('weight_lbs, body_fat_pct, goal_weight_lbs, created_at')
+          .select('weight_lbs, body_fat_pct, goal_weight_lbs, created_at, body_tracker_entries(source, device_name, manual_source_id)')
           .eq('user_id', userId)
           .order('created_at', { ascending: false })
           .limit(2),
@@ -136,7 +152,7 @@ export function DashboardBento({ userId }: DashboardBentoProps) {
           .maybeSingle(),
         (supabase as any)
           .from('body_tracker_metabolic')
-          .select('metabolic_age, resting_hr_bpm')
+          .select('metabolic_age, resting_hr_bpm, body_tracker_entries(source, device_name, manual_source_id)')
           .eq('user_id', userId)
           .order('created_at', { ascending: false })
           .limit(1)
@@ -204,11 +220,16 @@ export function DashboardBento({ userId }: DashboardBentoProps) {
 
       void weightWeek;
 
+      const weightSourceName = entryToSourceName(unwrapRelatedEntry(wRows[0]?.body_tracker_entries));
+      const metabSourceName = entryToSourceName(unwrapRelatedEntry(metab?.data?.body_tracker_entries));
+
       setSnap({
         weightLbs: currentW,
         weightDelta,
+        weightSourceName,
         bodyFatPct:
           wRows[0]?.body_fat_pct != null ? Number(wRows[0].body_fat_pct) : null,
+        bodyFatSourceName: weightSourceName,
         leanMassLbs:
           muscle?.data?.total_muscle_mass_lbs != null
             ? Number(muscle.data.total_muscle_mass_lbs)
@@ -220,10 +241,12 @@ export function DashboardBento({ userId }: DashboardBentoProps) {
           metab?.data?.resting_hr_bpm != null
             ? Number(metab.data.resting_hr_bpm)
             : null,
+        restingHrSourceName: metabSourceName,
         metabolicAge:
           metab?.data?.metabolic_age != null
             ? Number(metab.data.metabolic_age)
             : null,
+        metabolicAgeSourceName: metabSourceName,
         hormonesChip: hormoneChip ?? null,
         milestonesDone: ms.length ? done : null,
         milestonesTotal: ms.length || null,
@@ -295,61 +318,75 @@ export function DashboardBento({ userId }: DashboardBentoProps) {
 
       <motion.div className="lg:col-span-3" {...fade(2)}>
         <SnapshotTile href="/body-tracker/weight" icon={Scale} label="Weight">
-          {snap.weightLbs != null ? (
-            <>
-              <p className="text-2xl font-semibold tabular-nums text-white">
-                {snap.weightLbs.toFixed(1)}
-                <span className="ml-1 text-sm font-medium text-white/50">lbs</span>
-              </p>
-              <p className="text-xs text-white/55">
-                {snap.weightDelta ? `${snap.weightDelta} vs prior` : 'Log again for weekly change'}
-              </p>
-            </>
-          ) : (
-            <p className="text-sm text-white/60">Log weight to start</p>
-          )}
+          {(() => {
+            const shown = weightBoundDisplay({
+              kind: 'Now',
+              pounds: snap.weightLbs,
+              sourceName: snap.weightSourceName,
+            });
+            return shown.chip ? (
+              <>
+                <p className="text-2xl font-semibold tabular-nums text-white">
+                  {shown.text}
+                </p>
+                <p className="text-xs text-white/55">{shown.chip}</p>
+              </>
+            ) : (
+              <p className="text-sm text-white/60">{ANALYTICS_PROVENANCE_EMPTY}</p>
+            );
+          })()}
         </SnapshotTile>
       </motion.div>
 
       <motion.div className="lg:col-span-3" {...fade(3)}>
         <SnapshotTile href="/body-tracker/composition" icon={Ruler} label="Body Composition">
-          {snap.bodyFatPct != null || snap.leanMassLbs != null ? (
-            <>
-              <p className="text-lg font-semibold text-white">
-                {snap.bodyFatPct != null
-                  ? `${snap.bodyFatPct.toFixed(1)}% fat`
-                  : 'Composition on file'}
-              </p>
-              <p className="text-xs text-white/55">
-                {snap.leanMassLbs != null
-                  ? `${snap.leanMassLbs.toFixed(1)} lbs lean`
-                  : snap.scanDate
-                    ? `Scan ${snap.scanDate}`
-                    : 'Open FormaVision'}
-              </p>
-            </>
-          ) : (
-            <p className="text-sm text-white/60">Scan My Body</p>
-          )}
+          {(() => {
+            const fat = bodyFatDisplay({
+              bodyFatPct: snap.bodyFatPct,
+              sourceName: snap.bodyFatSourceName,
+            });
+            return fat.chip ? (
+              <>
+                <p className="text-lg font-semibold text-white">{fat.text}</p>
+                <p className="text-xs text-white/55">{fat.chip}</p>
+              </>
+            ) : (
+              <p className="text-sm text-white/60">{ANALYTICS_PROVENANCE_EMPTY}</p>
+            );
+          })()}
         </SnapshotTile>
       </motion.div>
 
       <motion.div className="lg:col-span-3" {...fade(4)}>
         <SnapshotTile href="/body-tracker/metabolic" icon={Activity} label="Metabolic">
-          {snap.restingHr != null || snap.metabolicAge != null ? (
-            <>
-              <p className="text-lg font-semibold text-white">
-                {snap.restingHr != null ? `${snap.restingHr} bpm` : 'Metabolic data'}
-              </p>
-              <p className="text-xs text-white/55">
-                {snap.metabolicAge != null
-                  ? `Metabolic age ${snap.metabolicAge}`
-                  : 'Resting heart rate on file'}
-              </p>
-            </>
-          ) : (
-            <p className="text-sm text-white/60">Log metabolic metrics</p>
-          )}
+          {(() => {
+            const rhr = vitalValueDisplay({
+              value: snap.restingHr,
+              unit: 'bpm',
+              sourceName: snap.restingHrSourceName,
+              round: true,
+            });
+            const meta = vitalValueDisplay({
+              value: snap.metabolicAge,
+              unit: 'yrs',
+              sourceName: snap.metabolicAgeSourceName,
+              round: true,
+            });
+            if (!rhr.chip && !meta.chip) {
+              return <p className="text-sm text-white/60">{ANALYTICS_PROVENANCE_EMPTY}</p>;
+            }
+            return (
+              <>
+                <p className="text-lg font-semibold text-white">
+                  {rhr.chip ? rhr.text : ANALYTICS_PROVENANCE_EMPTY}
+                </p>
+                <p className="text-xs text-white/55">
+                  {rhr.chip ?? ''}
+                  {meta.chip ? ` · Metabolic age ${meta.text} ${meta.chip}` : ''}
+                </p>
+              </>
+            );
+          })()}
         </SnapshotTile>
       </motion.div>
 

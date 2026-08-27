@@ -34,10 +34,10 @@ describe('buildGaugeData', () => {
     expect(result[6]).toMatchObject({ label: 'Hydration', metric: 'plasmateal' });
   });
 
-  it('empty input returns 7 entries all value 0 (computing state)', () => {
+  it('empty input returns 7 entries with UNKNOWN (null), never a painted 0 score', () => {
     const result = buildGaugeData({});
     result.forEach((entry) => {
-      expect(entry.value).toBe(0);
+      expect(entry.value).toBeNull();
     });
   });
 
@@ -62,26 +62,26 @@ describe('buildGaugeData', () => {
     expect(result[0].value).toBe(0);
   });
 
-  it('converts NaN to 0', () => {
+  it('converts NaN to UNKNOWN', () => {
     const result = buildGaugeData({
       averages: { sleep: NaN },
     });
-    expect(result[0].value).toBe(0);
+    expect(result[0].value).toBeNull();
   });
 
-  it('converts undefined averages field to 0', () => {
+  it('converts undefined averages field to UNKNOWN', () => {
     const result = buildGaugeData({
       averages: {},
     });
-    expect(result[0].value).toBe(0);
+    expect(result[0].value).toBeNull();
   });
 
-  it('converts null averages to all zeros', () => {
+  it('converts null averages to UNKNOWN', () => {
     const result = buildGaugeData({
       averages: null,
     });
     result.forEach((entry) => {
-      expect(entry.value).toBe(0);
+      expect(entry.value).toBeNull();
     });
   });
 
@@ -133,11 +133,11 @@ describe('buildGaugeData', () => {
     expect(hydration!.value).toBe(88);
   });
 
-  it('converts null hydrationPct to 0', () => {
+  it('converts null hydrationPct to UNKNOWN', () => {
     const result = buildGaugeData({
       hydrationPct: null,
     });
-    expect(result[6].value).toBe(0);
+    expect(result[6].value).toBeNull();
   });
 
   it('handles all values populated correctly', () => {

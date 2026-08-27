@@ -279,7 +279,7 @@ describe('Brief 46 Arnold source map', () => {
     const registry = src('src/lib/integrations/pluginAppRegistry.ts');
     expect(tile).toContain('strokeWidth={1.5}');
     expect(tile).not.toMatch(/\bas any\b/);
-    expect(panel).toContain('resolveConnectionsBosDisplay');
+    expect(panel).toContain('ConnectionsBosDial');
     expect(plugins).not.toContain('WearableTileCard');
     expect(plugins).not.toContain('Apple Health');
     expect(plugins).not.toContain('Hume Body Pod');

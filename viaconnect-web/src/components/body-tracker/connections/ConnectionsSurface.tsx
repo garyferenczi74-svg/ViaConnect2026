@@ -33,6 +33,7 @@ import {
 } from '@/lib/body-tracker/sleep-bedtime-strip';
 import { resolveHabitSleepPair } from '@/lib/body-tracker/habit-sleep-pair';
 import { useDailyScheduleView } from '@/hooks/useDailyScheduleView';
+import { useHannahBosDisplay } from '@/hooks/useHannahBosDisplay';
 import { WearableTileCard } from './WearableTileCard';
 import { ScoreDetailPanel, gateSleepContributorRows } from './ScoreDetailPanel';
 import { ActiveSourceDetailPanel } from './ActiveSourceDetailPanel';
@@ -97,6 +98,7 @@ export function ConnectionsSurface() {
   const [importIntent, setImportIntent] = useState<HealthXmlImportIntent | null>(null);
   const [consent, setConsent] = useState<'whoop' | 'oura' | null>(null);
   const schedule = useDailyScheduleView();
+  const hannahBos = useHannahBosDisplay();
   const [platform] = useState<'web' | 'ios' | 'android'>(() => {
     const p = detectPlatform();
     if (p.startsWith('ios')) return 'ios';
@@ -303,6 +305,9 @@ export function ConnectionsSurface() {
                 sleepTileSynced: bedtimeStrip.sleepTileSynced,
                 schedule: schedule.status === 'ready' ? schedule.view : null,
               })}
+              composite={hannahBos.display}
+              sentence={hannahBos.sentence}
+              chips={hannahBos.result.chips}
             />
           </div>
         </AdminPanel>

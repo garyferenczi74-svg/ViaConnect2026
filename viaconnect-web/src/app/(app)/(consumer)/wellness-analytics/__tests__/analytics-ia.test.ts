@@ -33,9 +33,9 @@ describe('consumer analytics IA (Brief 13)', () => {
       join(root, 'src/components/journey/YourJourneyCoaching.tsx'),
       'utf8',
     );
-    expect(morning).toMatch(/resolveConnectionsBosDisplay/);
+    expect(morning).toMatch(/useHannahBosDisplay/);
     expect(morning).toMatch(/ConnectionsBosDial/);
-    expect(journey).toMatch(/resolveConnectionsBosDisplay/);
+    expect(journey).toMatch(/useHannahBosDisplay/);
     expect(journey).toMatch(/connectionsBosNumericScore/);
     expect(morning).not.toMatch(/useBOSCurrent/);
     expect(journey).not.toMatch(/useBOSCurrent/);

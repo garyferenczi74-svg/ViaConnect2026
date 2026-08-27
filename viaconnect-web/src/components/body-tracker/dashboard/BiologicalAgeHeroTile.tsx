@@ -27,11 +27,15 @@ export function BiologicalAgeHeroTile({
   const [openContributors, setOpenContributors] = useState(false);
   const [openMethod, setOpenMethod] = useState(false);
 
-  const display = result?.displayAge ?? 0;
-  const confidence = result?.confidencePct ?? 0;
+  const estimated =
+    result?.state === 'estimated'
+    && result.biologicalAge !== null
+    && result.biologicalAge > 0;
+  const display = estimated ? result.biologicalAge : null;
+  const confidence = estimated ? (result.confidencePct ?? 0) : 0;
   const chrono = result?.chronologicalAge ?? 0;
-  const delta = result?.deltaYears ?? 0;
-  const insufficient = !result || result.state === 'insufficient';
+  const delta = estimated ? (result.deltaYears ?? 0) : 0;
+  const insufficient = !estimated;
 
   const deltaLabel =
     insufficient || delta === 0
@@ -84,17 +88,29 @@ export function BiologicalAgeHeroTile({
         <p className="text-sm text-white/50">Loading biological age...</p>
       ) : (
         <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
-          <PlasmaGauge
-            metric="bioscore"
-            variant="hero"
-            size={180}
-            value={Math.max(1, confidence)}
-            max={100}
-            displayValue={display}
-            caption="YEARS"
-            showUnit={false}
-            ariaLabel={`Biological Age ${display} years`}
-          />
+          {display === null ? (
+            <div
+              className="flex h-[180px] w-[180px] flex-col items-center justify-center"
+              aria-label="Biological Age UNKNOWN"
+            >
+              <span className="text-4xl font-bold text-white/40">--</span>
+              <span className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">
+                UNKNOWN
+              </span>
+            </div>
+          ) : (
+            <PlasmaGauge
+              metric="bioscore"
+              variant="hero"
+              size={180}
+              value={Math.max(1, confidence)}
+              max={100}
+              displayValue={display}
+              caption="YEARS"
+              showUnit={false}
+              ariaLabel={`Biological Age ${display} years`}
+            />
+          )}
           <div className="flex min-w-0 flex-1 flex-col gap-2">
             <p className="text-sm text-white/80">
               {insufficient
