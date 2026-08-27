@@ -186,7 +186,7 @@ export function useCountUp(value: number, run: boolean, dur = 1400): number {
 }
 
 export interface PlasmaGaugeProps {
-  value: number;
+  value?: number;
   metric: GaugeMetric;
   finish?: MetalFinish | null;
   size?: number;
@@ -224,13 +224,18 @@ export interface PlasmaGaugeProps {
   // orb (e.g. KCAL) while the arc fills to a separate score. Omitted = the
   // center counts up `value` exactly as before.
   displayValue?: number;
+  // Empty / no-progress mode. Default off: omitted call sites (BOS, Daily
+  // Scores, Age) stay byte-identical. When true the plasma circle stays
+  // (gap at 6, faint track, bloom) and the center reads `--`. No 0 OF 100
+  // caption and no 0-length progress fill.
+  empty?: boolean;
 }
 
 export function PlasmaGauge({
-  value, metric, finish = null, size = 200, variant = 'standard',
+  value = 0, metric, finish = null, size = 200, variant = 'standard',
   max = 100, unit, animated = true, showUnit = true, ariaLabel,
   subtleTrack = false, plainNumber = false, caption, valueFontPx, valueSuffix,
-  displayValue,
+  displayValue, empty = false,
 }: PlasmaGaugeProps) {
   const ref = useRef<HTMLDivElement>(null);
   const uid = useId().replace(/[^a-zA-Z0-9_]/g, '_');
@@ -283,9 +288,11 @@ export function PlasmaGauge({
   const sublabel = unit ? `of ${max} ${unit}` : `/ ${max}`;
   const a11yLabel = ariaLabel
     ? ariaLabel
-    : unit
-      ? `${metric} ${Math.round(value)} of ${max} ${unit}`
-      : `${metric} ${Math.round(value)} of ${max}`;
+    : empty
+      ? 'No score yet'
+      : unit
+        ? `${metric} ${Math.round(value)} of ${max} ${unit}`
+        : `${metric} ${Math.round(value)} of ${max}`;
 
   return (
     <div
@@ -330,15 +337,17 @@ export function PlasmaGauge({
           strokeWidth={metal && !subtleTrack ? sw + 3 : sw}
           strokeLinecap="round"
         />
-        <path
-          d={progD}
-          fill="none"
-          stroke={`url(#pg-${uid})`}
-          strokeWidth={sw}
-          strokeLinecap="round"
-          style={{ filter: `drop-shadow(0 0 8px ${GLOW})` }}
-        />
-        {metal && (
+        {!empty && (
+          <path
+            d={progD}
+            fill="none"
+            stroke={`url(#pg-${uid})`}
+            strokeWidth={sw}
+            strokeLinecap="round"
+            style={{ filter: `drop-shadow(0 0 8px ${GLOW})` }}
+          />
+        )}
+        {metal && !empty && (
           <path
             d={progD}
             fill="none"
@@ -360,20 +369,22 @@ export function PlasmaGauge({
             the bead reads as a defined moving object rather than a
             faint shimmer. arcPath draws progD clockwise from the
             4:30 start, so the bead sweeps 12, 3, 6 on a clock face. */}
-        <path
-          className="g-bead-cw"
-          d={progD}
-          fill="none"
-          stroke="#fff"
-          strokeWidth={Math.max(2.2, sw * 0.6)}
-          strokeLinecap="round"
-          pathLength={100}
-          style={{
-            strokeDasharray: '4 96',
-            mixBlendMode: 'screen',
-            filter: `drop-shadow(0 0 ${Math.round(size * 0.03)}px ${GLOW})`,
-          }}
-        />
+        {!empty && (
+          <path
+            className="g-bead-cw"
+            d={progD}
+            fill="none"
+            stroke="#fff"
+            strokeWidth={Math.max(2.2, sw * 0.6)}
+            strokeLinecap="round"
+            pathLength={100}
+            style={{
+              strokeDasharray: '4 96',
+              mixBlendMode: 'screen',
+              filter: `drop-shadow(0 0 ${Math.round(size * 0.03)}px ${GLOW})`,
+            }}
+          />
+        )}
       </svg>
 
       {/* metallic bezel + rotating sheen (non compact only) */}
@@ -465,8 +476,8 @@ export function PlasmaGauge({
                 color: '#fff',
                 textShadow: `0 2px 12px rgba(0,0,0,.6), 0 0 22px ${GLOW}`,
               }),
-        }}>{centerNumber}{valueSuffix ?? ''}</div>
-        {caption !== undefined ? (
+        }}>{empty ? '--' : <>{centerNumber}{valueSuffix ?? ''}</>}</div>
+        {!empty && caption !== undefined ? (
           // Prompt 183a (2026-06-11): caption replaces the of/max sublabel,
           // same element, size, and position, uppercased, muted token.
           <div style={{
@@ -478,7 +489,7 @@ export function PlasmaGauge({
             marginTop: size * 0.012,
             textTransform: 'uppercase',
           }}>{caption}</div>
-        ) : showUnit ? (
+        ) : showUnit && !empty ? (
           <div style={{
             fontFamily: fontDisplay,
             fontWeight: 600,

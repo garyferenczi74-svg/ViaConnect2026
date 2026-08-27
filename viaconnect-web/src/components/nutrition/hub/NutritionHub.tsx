@@ -8,11 +8,11 @@
 // path and adds no new table. It calls useNutritionHubMetrics ONCE at the top
 // and threads the result down. Every metric is treated as fail open: an
 // undefined value renders the empty / neutral state, never a fabricated 0 and
-// never an invented count. Brief 31: the two Row 1 score rings reuse the
-// Connections -- / UNKNOWN dial when the hook returns undefined, so a missing
-// score cannot paint as 0 OF 100 or 0% OF TARGET. While loading the gauges sit
-// in their own empty state (mealCount / counts undefined) rather than flashing
-// a real looking zero.
+// never an invented count. Brief 31: a missing score cannot paint as 0 OF 100
+// or 0% OF TARGET. The two Row 1 rings always mount the teal PlasmaGauge
+// (circle + -- when empty). A logged 0 still paints 0 OF 100 / 0% OF TARGET.
+// While loading the gauges sit in their own empty state (mealCount / counts
+// undefined) rather than flashing a real looking zero.
 //
 // The body sits on plain Deep Navy (the page wrapper paints #1A2744); there is
 // NO full bleed hero. Layout bands, in order:
@@ -49,7 +49,6 @@ import { ChevronRight, X } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useNutrivisionManualLogHandoff } from '@/hooks/useNutrivisionManualLogHandoff';
 import { PlasmaGauge, type PlasmaGaugeProps } from '@/components/gauges/PlasmaGauge';
-import { ConnectionsBosDial } from '@/components/body-tracker/connections/ConnectionsBosDial';
 import { ConnectedAppMealDropdown } from '@/components/nutrition/ConnectedAppMealDropdown';
 import { LogYourMealActions } from '@/components/nutrition/LogYourMealActions';
 import { CardMedia } from '@/components/body-tracker/hub/CardMedia';
@@ -58,7 +57,6 @@ import { AssessmentRetakeCard } from '@/components/body-tracker/hub/AssessmentRe
 import '@/components/body-tracker/hub/hub-card-frame.css';
 import { useNutritionHubMetrics } from './useNutritionHubMetrics';
 import {
-  CONNECTIONS_BOS_COMPOSITE,
   nutritionHubMacroCenter,
   nutritionHubScoreCenter,
 } from './nutritionHubScoreDisplay';
@@ -315,16 +313,16 @@ export function NutritionHub() {
     { label: 'Fiber', grams: metrics.fiberG },
   ];
 
-  // Brief 31: empty rings reuse the Connections -- / UNKNOWN dial. A missing
-  // score must not paint PlasmaGauge as "0 OF 100" / "0% OF TARGET".
+  // Brief 31: a missing score must not paint PlasmaGauge as "0 OF 100" /
+  // "0% OF TARGET". Empty still mounts the teal circle with a `--` center.
   // Number.isFinite keeps NaN / Infinity off the numeric path.
   const scoreCenter = nutritionHubScoreCenter(metrics.nutritionScore);
   const macroCenter = nutritionHubMacroCenter(metrics.dailyMacrosPct);
   const hasMacroPct = macroCenter.kind === 'macros';
 
-  // Props for the scored Daily Macros PlasmaGauge. Empty (no meals) uses the
-  // Connections dial instead. Prompt 183a: teal hub finish, Row 1 size 176,
-  // percent-to-target caption.
+  // Props for the Daily Macros PlasmaGauge. Empty (no meals) still mounts
+  // this teal hub finish at Row 1 size 176; empty mode keeps `--` and no
+  // 0% OF TARGET fill. Prompt 183a: percent-to-target caption when scored.
   const macroGaugeProps: Pick<
     PlasmaGaugeProps,
     | 'metric'
@@ -390,8 +388,8 @@ export function NutritionHub() {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {/* Nutrition Score: plain Plasma gauge in the teal hub finish, the
             title below the gauge, then the signal caption. No Open, no tier word.
-            When the score is missing, reuse ConnectionsBosDial (-- / UNKNOWN).
-            Hannah subcopy stays "Log a meal to see your score." */}
+            Missing still mounts PlasmaGauge (circle + --), never Connections
+            UnknownWell dashes. Hannah subcopy stays "Log a meal to see your score." */}
         <HubTile
           gradientClass={MEDIA_TEAL_TL}
           media={NUTRITION_CARD_MEDIA.nutritionScore}
@@ -412,7 +410,15 @@ export function NutritionHub() {
               />
             ) : (
               <div className="flex flex-col items-center gap-2">
-                <ConnectionsBosDial composite={CONNECTIONS_BOS_COMPOSITE} />
+                <PlasmaGauge
+                  metric="plasmateal"
+                  size={176}
+                  empty
+                  valueFontPx={30}
+                  plainNumber
+                  subtleTrack
+                  showUnit={false}
+                />
                 <span className="text-[11px] text-white/55">Log a meal to see your score</span>
               </div>
             )}
@@ -454,7 +460,7 @@ export function NutritionHub() {
 
         {/* Daily Macros: single Plasma gauge of percent to target in the
             teal hub finish, the title below the gauge, then the absolute gram
-            readout row. No meals logged => Connections -- / UNKNOWN, not 0%.
+            readout row. No meals logged => plasma circle + --, not 0%.
             Logged meals with truly 0 intake may still paint 0% OF TARGET. */}
         <HubTile
           gradientClass={MEDIA_TEAL_TR}
@@ -467,7 +473,7 @@ export function NutritionHub() {
               <PlasmaGauge {...macroGaugeProps} value={macroCenter.value} />
             ) : (
               <div className="flex flex-col items-center gap-2">
-                <ConnectionsBosDial composite={CONNECTIONS_BOS_COMPOSITE} />
+                <PlasmaGauge {...macroGaugeProps} empty />
                 <span className="text-[11px] text-white/55">No macros logged today yet</span>
               </div>
             )}

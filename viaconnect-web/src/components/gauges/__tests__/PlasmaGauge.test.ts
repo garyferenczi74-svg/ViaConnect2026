@@ -57,6 +57,12 @@ describe('PlasmaGauge source', () => {
     expect(source).toContain('displayValue?: number;');
   });
 
+  it('declares empty as an optional prop that defaults off', () => {
+    expect(source).toContain('empty?: boolean;');
+    expect(source).toContain('empty = false');
+    expect(source).toContain("empty ? '--'");
+  });
+
   it('shows the count-up value in the center when displayValue is omitted', () => {
     // centerNumber falls back to the count-up n unless displayValue is set, so
     // an omitting call site renders byte-identical to before.

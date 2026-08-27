@@ -42,7 +42,7 @@ const FROZEN_AT_2B53743: Record<string, string> = {
   'src/components/body-tracker/dashboard/BiologicalAgeHeroTile.tsx':
     '1c83d3edd753479d02ad59578e8222e7d3f66d352aac7e26c3fdb6f091a2b16b',
   'src/components/gauges/PlasmaGauge.tsx':
-    '6bd3aa9c82bb819a4bffc5b05b1c35022a61f4f7fbc13024079de00dfe24b8f1',
+    'a387fecfc7ac0de41bf06bba085b89ef4e92bcb54afe530a4a9b997e1dd4314a',
   'src/components/dashboard/DailyScoresPanel.tsx':
     '1f113590a451df109b69008881a2e692e4fea0097e4a904dce70b0bb6df5dcc7',
   'package.json':
