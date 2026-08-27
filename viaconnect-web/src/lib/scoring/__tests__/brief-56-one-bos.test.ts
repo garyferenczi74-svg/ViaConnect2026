@@ -117,6 +117,15 @@ describe('Brief 56 one Bio Optimization Score', () => {
     expect(hub).toContain('UNKNOWN');
   });
 
+  it('Arnold body chips are the locked four; empty BOS stays UNKNOWN', () => {
+    const bos = src('src/lib/scoring/hannah-bos.ts');
+    expect(bos).toContain("'from FormaVision'");
+    expect(bos).toContain('HANNAH_BOS_BLEND_SENTENCE');
+    expect(bos).toContain('blendHannahBos');
+    expect(bos).not.toMatch(/Vitality/);
+    expect(blendHannahBos(emptyHannahBosInput()).score).toBeNull();
+  });
+
   it('Biological Age is not 0 YEARS; omitted from BOS while DRAFT', () => {
     const tile = src('src/components/body-tracker/dashboard/BiologicalAgeHeroTile.tsx');
     expect(tile).not.toContain('result?.displayAge ?? 0');

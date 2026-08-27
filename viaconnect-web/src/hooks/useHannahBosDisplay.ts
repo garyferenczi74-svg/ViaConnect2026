@@ -12,7 +12,10 @@ import { useLatestComposition } from '@/hooks/body-tracker/useLatestComposition'
 import { useWearableTilesSnapshot } from '@/hooks/useWearableTilesSnapshot';
 import { useHydrationToday } from '@/components/hydration/useHydrationToday';
 import { useNutritionHubMetrics } from '@/components/nutrition/hub/useNutritionHubMetrics';
-import type { BiologicalAgeResult } from '@/lib/body-tracker/biological-age';
+import {
+  BIOLOGICAL_AGE_FRAMING_DRAFT,
+  type BiologicalAgeResult,
+} from '@/lib/body-tracker/biological-age';
 import {
   CONNECTIONS_BOS_COMPOSITE,
   type ConnectionsBosDisplay,
@@ -21,11 +24,10 @@ import {
   HANNAH_BOS_BLEND_SENTENCE,
   biologicalAgeContributorScore,
   blendHannahBos,
-  bodyFatContributorScore,
-  chipForBodySource,
   emptyHannahBosInput,
   hannahBosToConnectionsDisplay,
   hydrationScoreFromToday,
+  resolveHannahBodyContributor,
   wearableHannahGate,
   type HannahBosInput,
   type HannahBosResult,
@@ -62,8 +64,11 @@ export function buildHannahBosLiveInput(parts: {
   macrosScore: number | undefined;
   bodyFatPct: number | null;
   muscleLbs: number | null;
-  bodyEstimated?: boolean;
-  bodySourceName: string | null;
+  bodySource?: string | null;
+  bodyDeviceName?: string | null;
+  bodySourceName?: string | null;
+  isPhotoScan?: boolean;
+  navyInvented?: boolean;
   biologicalAge: BiologicalAgeResult | null;
   wearableTiles: Parameters<typeof wearableHannahGate>[0];
 }): HannahBosInput {
@@ -95,29 +100,36 @@ export function buildHannahBosLiveInput(parts: {
       ? parts.macrosScore
       : null;
 
-  const fat = !parts.bodyEstimated && typeof parts.bodyFatPct === 'number' && parts.bodyFatPct > 0
-    ? parts.bodyFatPct
-    : null;
-  const muscle = typeof parts.muscleLbs === 'number' && parts.muscleLbs > 0
-    ? parts.muscleLbs
-    : null;
-  next.body.hasRealFatOrMuscle = fat !== null || muscle !== null;
-  next.body.chip = chipForBodySource(parts.bodySourceName);
-  next.body.score = fat !== null ? bodyFatContributorScore(fat) : null;
+  const body = resolveHannahBodyContributor({
+    fatPct: parts.bodyFatPct,
+    leanLbs: parts.muscleLbs,
+    sourceName: parts.bodySourceName ?? parts.bodyDeviceName ?? parts.bodySource ?? null,
+    source: parts.bodySource ?? null,
+    deviceName: parts.bodyDeviceName ?? null,
+    isPhotoScan: parts.isPhotoScan === true,
+    navyInvented: parts.navyInvented === true,
+  });
+  next.body.hasRealFatOrMuscle = body.hasRealFat || body.hasRealLean;
+  next.body.chip = body.chip;
+  next.body.score = body.score;
 
   const bio = parts.biologicalAge;
+  const marshallPending = BIOLOGICAL_AGE_FRAMING_DRAFT.disclaimer.includes('pending Marshall');
   if (bio && bio.state === 'estimated' && bio.biologicalAge !== null && bio.biologicalAge > 0) {
     next.biologicalAge.state = 'estimated';
     next.biologicalAge.score = biologicalAgeContributorScore(
       bio.biologicalAge,
       bio.chronologicalAge,
     );
+    next.biologicalAge.marshallPending = marshallPending;
   } else if (bio && bio.state === 'insufficient') {
     next.biologicalAge.state = 'insufficient';
     next.biologicalAge.score = null;
+    next.biologicalAge.marshallPending = marshallPending;
   } else {
     next.biologicalAge.state = bio ? 'draft' : null;
     next.biologicalAge.score = null;
+    next.biologicalAge.marshallPending = marshallPending;
   }
 
   const gate = wearableHannahGate(parts.wearableTiles);
@@ -170,10 +182,22 @@ export function useHannahBosDisplay(): HannahBosDisplayState {
       nutritionMealCount: nutrition.metrics.nutritionMealCount ?? 0,
       nutritionScore: nutrition.metrics.nutritionScore,
       macrosScore: nutrition.metrics.dailyMacrosPct,
-      bodyFatPct: composition.snapshot?.totalBodyFatPct ?? null,
-      muscleLbs: composition.snapshot?.totalMuscleMassLbs ?? null,
-      bodyEstimated: composition.snapshot?.isEstimated === true,
-      bodySourceName: composition.snapshot?.source ?? null,
+      bodyFatPct: composition.snapshot?.totalBodyFatPct ?? composition.weightBodyFatPct ?? null,
+      muscleLbs:
+        composition.snapshot?.totalMuscleMassLbs
+        ?? composition.snapshot?.skeletalMuscleMassLbs
+        ?? composition.weightLeanLbs
+        ?? null,
+      bodySource: composition.snapshot?.source ?? (composition.weightBodyFatPct || composition.weightLeanLbs ? 'manual' : null),
+      bodyDeviceName: composition.snapshot?.deviceName ?? null,
+      bodySourceName: composition.snapshot?.deviceName ?? composition.snapshot?.source ?? null,
+      isPhotoScan:
+        composition.snapshot?.source === 'scan'
+        && (
+          composition.snapshot.deviceName === 'FormaVision'
+          || Boolean(composition.snapshot.scanId)
+        ),
+      navyInvented: false,
       biologicalAge,
       wearableTiles: wearables.tiles,
     });
@@ -188,6 +212,8 @@ export function useHannahBosDisplay(): HannahBosDisplayState {
     hydration.data,
     nutrition.metrics,
     composition.snapshot,
+    composition.weightBodyFatPct,
+    composition.weightLeanLbs,
     biologicalAge,
     wearables.tiles,
   ]);

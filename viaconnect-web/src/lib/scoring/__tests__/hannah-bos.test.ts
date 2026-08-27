@@ -146,6 +146,9 @@ describe('blendHannahBos', () => {
     expect(blendHannahBos(input({
       biologicalAge: { state: 'estimated', score: 55 },
     })).score).toBe(55);
+    expect(blendHannahBos(input({
+      biologicalAge: { state: 'estimated', score: 55, marshallPending: true },
+    })).score).toBeNull();
   });
 
   it('Whoop/Oura/Google/Garmin coming soon never move BOS', () => {
@@ -194,9 +197,15 @@ describe('blendHannahBos', () => {
     expect(fromHume.score).toBe(66);
     expect(fromHume.chips).toEqual(['from Hume Body Pod']);
     expect(chipForBodySource('hume_body_pod')).toBe('from Hume Body Pod');
+    expect(chipForBodySource('hume')).toBeNull();
     expect(chipForBodySource('apple_health')).toBe('from Apple Health');
     expect(chipForBodySource('manual')).toBe('from profile');
+    expect(chipForBodySource({ source: 'scan', deviceName: 'FormaVision' })).toBe(
+      'from FormaVision',
+    );
+    expect(chipForBodySource('scan')).toBeNull();
     expect(chipForBodySource('phone_health')).toBeNull();
+    expect(chipForBodySource('whoop')).toBeNull();
   });
 
   it('no wearables + no XML is UNKNOWN or only real CAQ/check-in/nutrition/body', () => {

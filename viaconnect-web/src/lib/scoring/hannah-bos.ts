@@ -18,14 +18,25 @@
  *   from nutrition        15  — Nutrition Score and ≥1 real meal
  *   from macros           10  — Daily Macros and ≥1 real meal. Not a second
  *                               nutrition hero. 0 kcal is a count, not a score
- *   from body             15  — real body fat / muscle from profile, scan, or
- *                               XML. Chip from profile / from Hume Body Pod /
- *                               from Apple Health
- *   from biological age   10  — Arnold real estimate only. Omit if DRAFT /
- *                               pending / no estimate. Never 0 YEARS
- *   from wearable          5  — real last-sync or Hume / Apple XML. Coming soon
- *                               never feeds. native_health_bridge stays off.
- *                               Do not mint HRV / RHR from wearable_daily_vitals
+ *   from body             15  — fat and lean are independent. Include the one
+ *                               that exists; omit the one that does not. If
+ *                               neither exists, omit the whole 15, never
+ *                               average 0. Fat only from profile, manual Log
+ *                               Data, FormaVision (source=scan, device_name
+ *                               FormaVision), or Hume / Apple XML. Photo scans
+ *                               do not invent regional fat, muscle, or Navy.
+ *                               Chip is one of: from profile | from FormaVision
+ *                               | from Hume Body Pod | from Apple Health. No
+ *                               chip if unknown. Never from Coming soon.
+ *   from biological age   10  — contributor only, never a second hero, never
+ *                               0 YEARS. Omit if DRAFT / pending Marshall /
+ *                               no real estimate.
+ *   from wearable          5  — omit the whole slice unless a real last-sync
+ *                               or Hume / Apple XML persist. Whoop / Oura /
+ *                               Google / Garmin Coming soon never feeds.
+ *                               native_health_bridge stays off. Do not mint
+ *                               HRV / RHR from wearable_daily_vitals. XML
+ *                               does not unlock every dim.
  *
  * BOS = sum(contributor_score × (weight / remaining_weight_sum)).
  * This module does not invent CAQ completion, seed rows, or an 8-dimension
@@ -60,12 +71,35 @@ export type HannahBosChip =
   | 'from nutrition'
   | 'from macros'
   | 'from profile'
+  | 'from FormaVision'
   | 'from Hume Body Pod'
   | 'from Apple Health'
   | 'from biological age'
   | 'from wearable';
 
-export type HannahBodyChip = 'from profile' | 'from Hume Body Pod' | 'from Apple Health';
+export type HannahBodyChip =
+  | 'from profile'
+  | 'from FormaVision'
+  | 'from Hume Body Pod'
+  | 'from Apple Health';
+
+export const HANNAH_BODY_CHIPS: readonly HannahBodyChip[] = [
+  'from profile',
+  'from FormaVision',
+  'from Hume Body Pod',
+  'from Apple Health',
+];
+
+/** Existing muscle-health even baseline (calculateMuscleScore with no trend). */
+export const HANNAH_LEAN_EVEN_BASELINE = 50;
+
+export const COMING_SOON_BODY_SOURCES = [
+  'whoop',
+  'oura',
+  'google_health',
+  'garmin',
+  'google_health_connect',
+] as const;
 
 export type HannahBiologicalAgeState = 'estimated' | 'insufficient' | 'draft' | 'pending';
 
@@ -103,6 +137,7 @@ export interface HannahBosInput {
   biologicalAge: {
     state: HannahBiologicalAgeState | null;
     score: number | null;
+    marshallPending?: boolean;
   };
   wearable: {
     pluggedIn: boolean;
@@ -145,7 +180,7 @@ export function emptyHannahBosInput(): HannahBosInput {
     nutrition: { mealCount: 0, score: null },
     macros: { mealCount: 0, score: null },
     body: { hasRealFatOrMuscle: false, score: null, chip: null },
-    biologicalAge: { state: null, score: null },
+    biologicalAge: { state: null, score: null, marshallPending: false },
     wearable: {
       pluggedIn: false,
       comingSoonOnly: false,
@@ -200,33 +235,162 @@ export function bodyFatContributorScore(bodyFatPct: number): number {
   return clampScore(Math.max(0, 100 - deviation * 3));
 }
 
+/**
+ * A real lean / muscle reading is included. No lbs-to-score curve is invented.
+ * Reuses the documented muscle-health even baseline when lean is the reading
+ * that exists.
+ */
+export function leanContributorScore(leanLbs: number): number | null {
+  if (!isFiniteScore(leanLbs) || leanLbs <= 0) return null;
+  return HANNAH_LEAN_EVEN_BASELINE;
+}
+
+/**
+ * Fat and lean are independent subs of the body 15. Include the one that
+ * exists; omit the one that does not. If neither exists, omit the whole 15.
+ * Never average a missing sub as 0.
+ */
+export function blendBodyBlock(input: {
+  fatPct: number | null;
+  leanLbs: number | null;
+}): number | null {
+  const parts: number[] = [];
+  if (isFiniteScore(input.fatPct) && input.fatPct > 0) {
+    parts.push(bodyFatContributorScore(input.fatPct));
+  }
+  const lean = input.leanLbs !== null ? leanContributorScore(input.leanLbs) : null;
+  if (lean !== null) parts.push(lean);
+  if (parts.length === 0) return null;
+  const sum = parts.reduce((acc, n) => acc + n, 0);
+  return clampScore(sum / parts.length);
+}
+
+export interface HannahBodyChipInput {
+  sourceName?: string | null;
+  source?: string | null;
+  deviceName?: string | null;
+}
+
+function normalizeSourceKey(value: string | null | undefined): string {
+  if (typeof value !== 'string') return '';
+  return value.trim().toLowerCase().replace(/\s+/g, '_');
+}
+
+/**
+ * BOS body chip. Exact vocabulary only. Hume requires sourceName
+ * hume_body_pod. phone_health never copies onto Hume. Coming soon never chips.
+ */
 export function chipForBodySource(
-  sourceName: string | null | undefined,
+  input?: string | null | HannahBodyChipInput,
 ): HannahBodyChip | null {
-  if (typeof sourceName !== 'string') return null;
-  const raw = sourceName.trim();
-  if (raw.length === 0) return null;
-  const key = raw.toLowerCase().replace(/\s+/g, '_');
-  if (key === 'hume_body_pod' || key === 'hume') return 'from Hume Body Pod';
+  if (input == null) return null;
+  const fields: HannahBodyChipInput =
+    typeof input === 'string' ? { sourceName: input, source: input } : input;
+
+  const sourceName = typeof fields.sourceName === 'string' ? fields.sourceName.trim() : '';
+  const source = typeof fields.source === 'string' ? fields.source.trim() : '';
+  const device = typeof fields.deviceName === 'string' ? fields.deviceName.trim() : '';
+  const keys = [sourceName, source, device].map(normalizeSourceKey).filter(Boolean);
+
+  if (keys.some((key) => (COMING_SOON_BODY_SOURCES as readonly string[]).includes(key))) {
+    return null;
+  }
+  if (keys.includes('phone_health')) return null;
+
+  if (sourceName === 'hume_body_pod' || device === 'hume_body_pod') {
+    return 'from Hume Body Pod';
+  }
+
   if (
-    key === 'apple_health' ||
-    key === 'apple_health_xml' ||
-    key === 'health_kit' ||
-    key === 'healthkit'
+    keys.includes('apple_health')
+    || keys.includes('apple_health_xml')
+    || keys.includes('health_kit')
+    || keys.includes('healthkit')
   ) {
     return 'from Apple Health';
   }
-  if (key === 'phone_health') return null;
+
+  if (source === 'scan' && device === 'FormaVision') {
+    return 'from FormaVision';
+  }
+  if (keys.includes('formavision')) return 'from FormaVision';
+
   if (
-    key === 'profile' ||
-    key === 'manual' ||
-    key === 'scan' ||
-    key === 'formavision' ||
-    key === 'user_logged'
+    keys.includes('profile')
+    || keys.includes('manual')
+    || keys.includes('user_logged')
+    || keys.includes('goals_tab')
+    || keys.includes('weight_card')
+    || keys.includes('log_data')
   ) {
     return 'from profile';
   }
+
   return null;
+}
+
+export interface HannahBodyReading {
+  fatPct: number | null;
+  leanLbs: number | null;
+  sourceName?: string | null;
+  source?: string | null;
+  deviceName?: string | null;
+  /** Photo scan persist. May keep total fat; never invents muscle / Navy. */
+  isPhotoScan?: boolean;
+  /** Navy-formula fat is not a real measured value. */
+  navyInvented?: boolean;
+}
+
+export interface HannahBodyResolved {
+  hasRealFat: boolean;
+  hasRealLean: boolean;
+  chip: HannahBodyChip | null;
+  score: number | null;
+}
+
+/**
+ * Arnold body gate. Fat and lean are independent. Photo scans do not invent
+ * regional fat, muscle, or Navy. No chip if the source is unknown.
+ */
+export function resolveHannahBodyContributor(
+  reading: HannahBodyReading,
+): HannahBodyResolved {
+  const empty: HannahBodyResolved = {
+    hasRealFat: false,
+    hasRealLean: false,
+    chip: null,
+    score: null,
+  };
+
+  const chip = chipForBodySource({
+    sourceName: reading.sourceName,
+    source: reading.source,
+    deviceName: reading.deviceName,
+  });
+  if (!chip) return empty;
+
+  const fatRaw =
+    !reading.navyInvented
+    && isFiniteScore(reading.fatPct)
+    && reading.fatPct > 0
+      ? reading.fatPct
+      : null;
+  const leanRaw =
+    !reading.isPhotoScan
+    && isFiniteScore(reading.leanLbs)
+    && reading.leanLbs > 0
+      ? reading.leanLbs
+      : null;
+
+  const score = blendBodyBlock({ fatPct: fatRaw, leanLbs: leanRaw });
+  if (score === null) return empty;
+
+  return {
+    hasRealFat: fatRaw !== null,
+    hasRealLean: leanRaw !== null,
+    chip,
+    score,
+  };
 }
 
 function unknownResult(): HannahBosResult {
@@ -292,7 +456,10 @@ export function blendHannahBos(input: HannahBosInput): HannahBosResult {
     if (row) included.push(row);
   }
 
-  if (input.biologicalAge.state === 'estimated') {
+  if (
+    input.biologicalAge.state === 'estimated'
+    && input.biologicalAge.marshallPending !== true
+  ) {
     const row = maybeInclude(
       'biologicalAge',
       'from biological age',
@@ -346,13 +513,14 @@ export function sameMomentBosDisplays(
     && b.value === c.value && b.band === c.band;
 }
 
-const REAL_WEARABLE_FEED_IDS = new Set(['hume', 'apple_health', 'whoop', 'oura']);
+const REAL_WEARABLE_FEED_IDS = new Set(['hume', 'apple_health']);
 const COMING_SOON_IDS = new Set(['whoop', 'oura', 'google_health', 'garmin']);
 
 /**
- * Wearable slice only after a real last-sync or Hume/Apple XML ingest.
- * Coming soon Whoop / Oura / Google / Garmin never feed.
- * native_health_bridge stays off — callers must not pass minted vitals.
+ * Wearable slice only after a real Hume / Apple last-sync or XML ingest.
+ * Whoop / Oura / Google / Garmin Coming soon never feed, even with leftover
+ * last-sync. native_health_bridge stays off — callers must not pass minted
+ * vitals. Hume-only last-sync does not unlock Sleep (see xmlUnlockedDimensions).
  */
 export function wearableHannahGate(tiles: readonly WearableTileView[]): {
   pluggedIn: boolean;

@@ -88,6 +88,29 @@ describe('wearable snapshot', () => {
     expect(snap.tiles.find((t) => t.id === 'hume')?.statusLabel).toBe('Synced 4d ago');
     expect(snap.tiles.find((t) => t.id === 'apple_health')?.statusLabel).toBe('Synced 4d ago');
     expect(snap.tiles.find((t) => t.id === 'hume')?.action.kind).toBe('xml_upload');
+    expect(snap.tiles.find((t) => t.id === 'hume')?.dimensionsFed).toEqual([]);
+  });
+
+  it('unlocks Hume Body comp + Metabolic only after exact sourceName hume_body_pod', () => {
+    const snap = assembleWearableSnapshot(
+      base({
+        bodyRows: [
+          {
+            measured_at: '2026-08-20T07:00:00.000Z',
+            updated_at: '2026-08-20T07:00:00.000Z',
+            source_app: 'hume_body_pod',
+            weight_kg: 70.1,
+            body_fat_pct: 18.4,
+          },
+        ],
+      }),
+    );
+    expect(snap.tiles.find((t) => t.id === 'hume')?.lastSyncState).toBe('synced');
+    expect(snap.tiles.find((t) => t.id === 'hume')?.dimensionsFed).toEqual([
+      'body_comp',
+      'metabolic',
+    ]);
+    expect(snap.tiles.find((t) => t.id === 'hume')?.dimensionsFed).not.toContain('sleep');
   });
 
   it('shows DISAGREE, equal-trust average, Pending, and never a fake 0', () => {

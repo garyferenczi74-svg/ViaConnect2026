@@ -19,6 +19,10 @@ export interface UseLatestCompositionResult {
   bmi: number | null;
   /** Latest clinical_assessments.weight_kg converted to lbs (CAQ fact). */
   caqWeightLbs: number | null;
+  /** Manual / XML weight-row fat. Independent of segmental fat. */
+  weightBodyFatPct: number | null;
+  /** Manual / XML weight-row lean. Independent of segmental muscle. */
+  weightLeanLbs: number | null;
   loading: boolean;
   error: boolean;
   refresh: () => void;
@@ -31,6 +35,8 @@ export function useLatestComposition(userId: string | null): UseLatestCompositio
   const [snapshot, setSnapshot] = useState<CompositionSnapshot | null>(null);
   const [bmi, setBmi] = useState<number | null>(null);
   const [caqWeightLbs, setCaqWeightLbs] = useState<number | null>(null);
+  const [weightBodyFatPct, setWeightBodyFatPct] = useState<number | null>(null);
+  const [weightLeanLbs, setWeightLeanLbs] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
@@ -42,6 +48,8 @@ export function useLatestComposition(userId: string | null): UseLatestCompositio
       setSnapshot(null);
       setBmi(null);
       setCaqWeightLbs(null);
+      setWeightBodyFatPct(null);
+      setWeightLeanLbs(null);
       setLoading(false);
       setError(false);
       return;
@@ -162,10 +170,11 @@ export function useLatestComposition(userId: string | null): UseLatestCompositio
 
         type EntryRowRaw = {
           id: string;
-          source: 'scan' | 'manual';
+          source: string;
           created_at: string;
           scan_id?: string | null;
           notes?: string | null;
+          device_name?: string | null;
         };
 
         let entryRow: EntryRowRaw | null = null;
@@ -182,7 +191,7 @@ export function useLatestComposition(userId: string | null): UseLatestCompositio
                 };
               })
                 .from('body_tracker_entries')
-                .select('id,source,created_at,scan_id,notes')
+                .select('id,source,created_at,scan_id,notes,device_name')
                 .eq('id', entryId)
                 .maybeSingle(),
               TIMEOUT_MS,
@@ -215,7 +224,7 @@ export function useLatestComposition(userId: string | null): UseLatestCompositio
                 };
               })
                 .from('body_tracker_entries')
-                .select('id,source,created_at,scan_id,notes')
+                .select('id,source,created_at,scan_id,notes,device_name')
                 .eq('user_id', userId)
                 .order('created_at', { ascending: false })
                 .limit(1)
@@ -278,6 +287,8 @@ export function useLatestComposition(userId: string | null): UseLatestCompositio
         const heightCm: number | null = clinicalRow?.height_cm ?? null;
 
         let weightLbs: number | null = null;
+        let latestWeightFatPct: number | null = null;
+        let latestWeightLeanLbs: number | null = null;
         try {
           const result = await withTimeout(
             (supabase as unknown as {
@@ -287,7 +298,14 @@ export function useLatestComposition(userId: string | null): UseLatestCompositio
                     not: (col: string, op: string, val: null) => {
                       order: (col: string, opts: { ascending: boolean }) => {
                         limit: (n: number) => {
-                          maybeSingle: () => Promise<{ data: { weight_lbs: number | null } | null; error: { message: string } | null }>;
+                          maybeSingle: () => Promise<{
+                            data: {
+                              weight_lbs: number | null;
+                              body_fat_pct: number | null;
+                              lean_body_mass_lbs: number | null;
+                            } | null;
+                            error: { message: string } | null;
+                          }>;
                         };
                       };
                     };
@@ -296,7 +314,7 @@ export function useLatestComposition(userId: string | null): UseLatestCompositio
               };
             })
               .from('body_tracker_weight')
-              .select('weight_lbs')
+              .select('weight_lbs, body_fat_pct, lean_body_mass_lbs')
               .eq('user_id', userId)
               // Prompt 210c T10: ignore weight rows whose weight_lbs is NULL (e.g. a
               // hip-only circumference-scan row, or a manual hip entry from #85d) so
@@ -310,6 +328,14 @@ export function useLatestComposition(userId: string | null): UseLatestCompositio
           );
           if (!result.error && result.data) {
             weightLbs = result.data.weight_lbs;
+            const fat = result.data.body_fat_pct;
+            const lean = result.data.lean_body_mass_lbs;
+            if (typeof fat === 'number' && Number.isFinite(fat) && fat > 0) {
+              latestWeightFatPct = fat;
+            }
+            if (typeof lean === 'number' && Number.isFinite(lean) && lean > 0) {
+              latestWeightLeanLbs = lean;
+            }
           }
         } catch (e) {
           safeLog.warn(SCOPE, 'weight fetch failed (fail-open)', { error: e });
@@ -340,6 +366,8 @@ export function useLatestComposition(userId: string | null): UseLatestCompositio
         setSnapshot(built);
         setBmi(bmiValue);
         setCaqWeightLbs(caqLbs);
+        setWeightBodyFatPct(latestWeightFatPct);
+        setWeightLeanLbs(latestWeightLeanLbs);
         setLoading(false);
         setError(false);
       } catch (e) {
@@ -348,6 +376,8 @@ export function useLatestComposition(userId: string | null): UseLatestCompositio
         setSnapshot(null);
         setBmi(null);
         setCaqWeightLbs(null);
+        setWeightBodyFatPct(null);
+        setWeightLeanLbs(null);
         setLoading(false);
         setError(true);
       }
@@ -358,5 +388,14 @@ export function useLatestComposition(userId: string | null): UseLatestCompositio
     };
   }, [userId, reloadKey]);
 
-  return { snapshot, bmi, caqWeightLbs, loading, error, refresh };
+  return {
+    snapshot,
+    bmi,
+    caqWeightLbs,
+    weightBodyFatPct,
+    weightLeanLbs,
+    loading,
+    error,
+    refresh,
+  };
 }
