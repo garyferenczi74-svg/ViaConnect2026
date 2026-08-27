@@ -14,10 +14,11 @@ export interface AgentMetricsTilesProps {
 }
 
 export default function AgentMetricsTiles({ tasks, tokens24h = 0, sparklines }: AgentMetricsTilesProps) {
-  const completed = tasks.filter((t) => t.task_status === "completed").length;
-  const failed = tasks.filter((t) => t.task_status === "failed").length;
+  const list = Array.isArray(tasks) ? tasks : [];
+  const completed = list.filter((t) => t.task_status === "completed").length;
+  const failed = list.filter((t) => t.task_status === "failed").length;
   const failureRate = completed + failed === 0 ? 0 : Math.round((failed / (completed + failed)) * 100);
-  const running = tasks.filter((t) => t.task_status === "running");
+  const running = list.filter((t) => t.task_status === "running");
   const avgDuration =
     running.length > 0
       ? Math.round(

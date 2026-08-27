@@ -1,9 +1,8 @@
 "use client";
 
-import type { IconType } from '@/types/icon';
 import { useState } from "react";
-import * as Icons from "lucide-react";
 import { Loader2, Pause, Play, Zap } from "lucide-react";
+import { resolveAgentIcon } from "@/lib/agents/resolveAgentIcon";
 import AgentStatusBadge from "./AgentStatusBadge";
 import { deriveStatus } from "@/lib/agents/status";
 import type { AgentHeartbeat, AgentRegistryRow } from "@/lib/agents/types";
@@ -24,8 +23,7 @@ export default function AgentHeader({
   hasRunner = false,
 }: AgentHeaderProps) {
   const status = deriveStatus(heartbeat);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const Icon = ((Icons as unknown) as Record<string, IconType>)[registry.icon_name] ?? Icons.Circle;
+  const Icon = resolveAgentIcon(registry.icon_name);
   const [busy, setBusy] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [runBusy, setRunBusy] = useState(false);

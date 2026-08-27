@@ -1,8 +1,7 @@
 "use client";
 
-import type { IconType } from '@/types/icon';
 import { forwardRef } from "react";
-import * as Icons from "lucide-react";
+import { resolveAgentIcon } from "@/lib/agents/resolveAgentIcon";
 import AgentStatusBadge from "./AgentStatusBadge";
 import type { AgentRegistryRow, AgentStatus } from "@/lib/agents/types";
 
@@ -17,8 +16,7 @@ const AgentTabTrigger = forwardRef<HTMLButtonElement, AgentTabTriggerProps>(func
   { registry, status, active, onSelect },
   ref,
 ) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const Icon = ((Icons as unknown) as Record<string, IconType>)[registry.icon_name] ?? Icons.Circle;
+  const Icon = resolveAgentIcon(registry.icon_name);
   return (
     <button
       ref={ref}

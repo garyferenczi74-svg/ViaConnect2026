@@ -36,22 +36,32 @@ export default function AgentsClient({
   initialEvents,
   embedded = false,
 }: AgentsClientProps) {
-  const firstId = (initialRegistry[0]?.agent_id ?? "jeffery") as AgentId;
+  // Fail-open: missing activity table / prefetch returns [] or a non-array.
+  // Never throw on first paint — idle seats still show the chip bar.
+  const registry = Array.isArray(initialRegistry) ? initialRegistry : [];
+  const heartbeatsIn = Array.isArray(initialHeartbeats) ? initialHeartbeats : [];
+  const tasksIn = Array.isArray(initialTasks) ? initialTasks : [];
+  const eventsIn = Array.isArray(initialEvents) ? initialEvents : [];
+
+  const firstId = (registry[0]?.agent_id ?? "jeffery") as AgentId;
   const { activeAgent, setActiveAgent } = useAgentDeepLink(firstId);
-  const heartbeats = useAgentHeartbeats(initialHeartbeats, 5000);
+  const heartbeats = useAgentHeartbeats(heartbeatsIn, 5000);
   const { events, tasks, reconnecting } = useAgentRealtime({
     agentId: activeAgent,
-    initialEvents: activeAgent === firstId ? initialEvents : [],
-    initialTasks: initialTasks.filter((t) => t.agent_id === activeAgent),
+    initialEvents: activeAgent === firstId ? eventsIn : [],
+    initialTasks: tasksIn.filter((t) => t != null && t.agent_id === activeAgent),
   });
 
   const heartbeatByAgent = useMemo(() => {
     const map = new Map<AgentId, AgentHeartbeat>();
-    for (const h of heartbeats) map.set(h.agent_id, h);
+    const rows = Array.isArray(heartbeats) ? heartbeats : [];
+    for (const h of rows) {
+      if (h?.agent_id) map.set(h.agent_id, h);
+    }
     return map;
   }, [heartbeats]);
 
-  const activeRegistry = initialRegistry.find((r) => r.agent_id === activeAgent) ?? initialRegistry[0];
+  const activeRegistry = registry.find((r) => r.agent_id === activeAgent) ?? registry[0];
   const activeHeartbeat = heartbeatByAgent.get(activeAgent) ?? null;
   const PanelComponent = AGENT_PANELS[activeAgent];
 
@@ -85,7 +95,7 @@ export default function AgentsClient({
       {/* ACC seat chips first; selected workspace immediately under them. */}
       <div data-testid="agents-chip-bar">
         <AgentTabBar
-          registry={initialRegistry}
+          registry={registry}
           heartbeats={heartbeatByAgent}
           activeAgent={activeAgent}
           onChange={setActiveAgent}

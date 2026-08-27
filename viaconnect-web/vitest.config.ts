@@ -57,6 +57,8 @@ export default defineConfig({
       'src/components/hounddog/__tests__/HounddogCommandCenter.bare.test.tsx',
       // Brief 40: Jeffery header presence from Live Feed timestamps
       'src/components/admin/jeffery/__tests__/JefferyPresenceBadge.bare.test.tsx',
+      // Agents tab: empty activity fail-open + chip bar (no testing-library/dom)
+      'src/components/admin/jeffery/agents/__tests__/agentsTabEmpty.bare.test.tsx',
     ],
     exclude: ['node_modules', '.next', 'supabase'],
     globals: true,
