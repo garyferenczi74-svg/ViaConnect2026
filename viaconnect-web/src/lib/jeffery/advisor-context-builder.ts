@@ -230,10 +230,23 @@ function fallbackPromptForRole(role: AdvisorRole): string {
   return HANNAH_CONSUMER_SYSTEM_PROMPT;
 }
 
-const JEFFERY_IDENTITY_RE =
-  /\byou\s+are\s+jeffery\b|\bintroduce\s+yourself\s+as\s+jeffery\b/i;
-const HANNAH_IDENTITY_RE =
-  /\byou\s+are\s+hannah\b|\bintroduce\s+yourself\s+as\s+hannah\b|\byou\s+are\s+\{displaynameassistant\}\b/i;
+function normalizeIdentityText(template: string): string {
+  return template.replace(/\s+/g, " ").toLowerCase();
+}
+
+function claimsJefferyIdentity(template: string): boolean {
+  const text = normalizeIdentityText(template);
+  return text.includes("you are jeffery") || text.includes("introduce yourself as jeffery");
+}
+
+function claimsHannahIdentity(template: string): boolean {
+  const text = normalizeIdentityText(template);
+  return (
+    text.includes("you are hannah") ||
+    text.includes("introduce yourself as hannah") ||
+    text.includes("you are {displaynameassistant}")
+  );
+}
 
 /**
  * Consumer-only identity lock. True when a DB `system_prompt` must not go live:
@@ -241,7 +254,7 @@ const HANNAH_IDENTITY_RE =
  * `{displayNameAssistant}` placeholder, which resolves to Hannah).
  */
 export function isConsumerJefferyIdentityPrompt(template: string): boolean {
-  return JEFFERY_IDENTITY_RE.test(template) || !HANNAH_IDENTITY_RE.test(template);
+  return claimsJefferyIdentity(template) || !claimsHannahIdentity(template);
 }
 
 export type AdvisorPromptRejectReason = "jeffery_identity" | "missing_hannah_identity";
@@ -273,7 +286,7 @@ export function resolveAdvisorPromptTemplate(
   }
 
   if (role === "consumer" && isConsumerJefferyIdentityPrompt(dbSystemPrompt)) {
-    const rejectReason: AdvisorPromptRejectReason = JEFFERY_IDENTITY_RE.test(dbSystemPrompt)
+    const rejectReason: AdvisorPromptRejectReason = claimsJefferyIdentity(dbSystemPrompt)
       ? "jeffery_identity"
       : "missing_hannah_identity";
     return {

@@ -133,6 +133,6 @@ describe("advisor-context-builder consumer lock wiring", () => {
     expect(src).toContain("resolveAdvisorPromptTemplate");
     expect(src).toContain("rejected consumer db prompt; using Hannah fallback");
     expect(src).toContain('displayNameAssistant: getDisplayName("hannah")');
-    expect(src).toMatch(/if \(role === "consumer"\)/);
+    expect(src).toContain('if (role === "consumer" && isConsumerJefferyIdentityPrompt(dbSystemPrompt))');
   });
 });
