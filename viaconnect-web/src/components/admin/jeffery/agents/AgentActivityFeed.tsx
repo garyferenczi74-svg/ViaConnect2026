@@ -35,8 +35,9 @@ function relativeTime(iso: string, now: number = Date.now()): string {
 export default function AgentActivityFeed({ events }: { events: AgentActivityEvent[] }) {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const rows = Array.isArray(events) ? events : [];
 
-  if (events.length === 0) {
+  if (rows.length === 0) {
     return (
       <div className="bg-[#1E3054] rounded-xl border border-white/[0.08] p-4">
         <div className="flex items-center gap-2 mb-2">
@@ -48,7 +49,7 @@ export default function AgentActivityFeed({ events }: { events: AgentActivityEve
     );
   }
 
-  const visible = events.slice(0, visibleCount);
+  const visible = rows.slice(0, visibleCount);
 
   const copyRow = async (e: AgentActivityEvent) => {
     const text = `[${e.created_at}] ${e.event_type} ${e.severity}: ${e.message}\n${JSON.stringify(e.metadata, null, 2)}`;
@@ -65,12 +66,12 @@ export default function AgentActivityFeed({ events }: { events: AgentActivityEve
         <Activity className="w-4 h-4 text-[#2DA5A0]" strokeWidth={1.5} />
         <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wide">Activity</h3>
         <span className="text-[10px] text-white/40 ml-auto">
-          {events.length} {events.length === 1 ? "event" : "events"}
+          {rows.length} {rows.length === 1 ? "event" : "events"}
         </span>
       </div>
       <ol className="space-y-2">
         {visible.map((e) => {
-          const Icon = SEVERITY_ICON[e.severity];
+          const Icon = SEVERITY_ICON[e.severity] ?? Info;
           const hasMetadata = e.metadata && Object.keys(e.metadata).length > 0;
           const isOpen = !!expanded[e.id];
           return (
@@ -79,11 +80,11 @@ export default function AgentActivityFeed({ events }: { events: AgentActivityEve
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.15 }}
-              className={`bg-[#0F172A] rounded-lg p-3 border-l-2 ${SEVERITY_BORDER[e.severity]}`}
+              className={`bg-[#0F172A] rounded-lg p-3 border-l-2 ${SEVERITY_BORDER[e.severity] ?? SEVERITY_BORDER.info}`}
             >
               <div className="flex items-center gap-2 flex-wrap">
                 <Icon className="w-3.5 h-3.5 text-white/70 flex-shrink-0" strokeWidth={1.5} />
-                <span className="text-[10px] uppercase text-white/40 tracking-wide">{e.event_type.replace(/_/g, " ")}</span>
+                <span className="text-[10px] uppercase text-white/40 tracking-wide">{(e.event_type ?? "info").replace(/_/g, " ")}</span>
                 <time
                   className="text-[10px] text-white/30 ml-auto"
                   dateTime={e.created_at}
@@ -121,10 +122,10 @@ export default function AgentActivityFeed({ events }: { events: AgentActivityEve
           );
         })}
       </ol>
-      {visibleCount < events.length && (
+      {visibleCount < rows.length && (
         <div className="text-center mt-3">
           <button
-            onClick={() => setVisibleCount((c) => Math.min(c + PAGE_SIZE, events.length))}
+            onClick={() => setVisibleCount((c) => Math.min(c + PAGE_SIZE, rows.length))}
             className="px-3 py-1.5 rounded-lg text-xs text-white/70 bg-white/5 hover:bg-white/10"
             type="button"
           >

@@ -41,4 +41,12 @@ describe("AgentsClient stack order", () => {
     expect(client).not.toMatch(/ultrathink_agent_registry/);
     expect(src).not.toMatch(/ultrathink_agent_registry/);
   });
+
+  it("fail-opens empty activity props instead of throwing on filter", () => {
+    const src = read("src/app/(app)/admin/jeffery/agents/AgentsClient.tsx");
+    expect(src).toContain("Array.isArray(initialTasks)");
+    expect(src).toContain("Array.isArray(initialEvents)");
+    expect(src).toContain("Array.isArray(initialHeartbeats)");
+    expect(src).toContain("Array.isArray(initialRegistry)");
+  });
 });

@@ -2,7 +2,8 @@ import { ListOrdered } from "lucide-react";
 import type { AgentCurrentTask } from "@/lib/agents/types";
 
 export default function AgentTaskQueueList({ tasks }: { tasks: AgentCurrentTask[] }) {
-  const queue = tasks
+  const list = Array.isArray(tasks) ? tasks : [];
+  const queue = list
     .filter((t) => t.task_status === "queued" || t.task_status === "blocked")
     .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
 
