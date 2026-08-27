@@ -2,14 +2,8 @@
 import { useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { ChevronRight, ArrowDown } from 'lucide-react'
+import { HeroPillars } from './HeroPillars'
 import { HeroOverlayScrollWrapper } from './HeroOverlayScrollWrapper'
-
-// Brief 45: first screen is one consumer job + CAQ start, not a feature grid.
-// Practitioner / Naturopath stays on the existing clinician waitlist
-// path below the fold (Final CTA), never in the hero.
-export const HOME_CONSUMER_JOB = 'CAQ → protocol → Bio Optimization Score'
-export const HOME_CAQ_CTA_LABEL = 'Start the CAQ'
-export const HOME_CAQ_CTA_HREF = '/signup'
 
 // Prompt #138a Phase 4: optional copy props for hero variant rendering.
 // Defaults preserve the original control copy when no variant is active, so
@@ -94,33 +88,47 @@ export function HeroSection({
                         <HeroOverlayScrollWrapper>
                             <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center px-6 lg:items-stretch lg:block lg:px-12">
                                 <div className="w-full mx-auto max-w-lg text-center lg:ml-0 lg:max-w-full lg:text-left">
-                                    <h1
-                                        data-testid="home-hero-job"
-                                        className="w-full max-w-full lg:max-w-5xl mx-auto lg:mx-0 text-center lg:text-left text-balance text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white leading-[1.1]"
-                                    >
+                                    <h1 className="w-full max-w-full lg:max-w-5xl mx-auto lg:mx-0 text-center lg:text-left text-balance text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white leading-[1.1]">
                                         {variantHeadline ? (
                                             <span className="block">{variantHeadline}</span>
                                         ) : (
-                                            <span className="block">
-                                                {HOME_CONSUMER_JOB}
-                                            </span>
+                                            <>
+                                                <span className="block">Precision Personal Health</span>
+                                                <span className="block text-[#B75E18]">Powered by Your Data</span>
+                                            </>
                                         )}
                                     </h1>
-                                    <p className="mt-6 sm:mt-10 w-full max-w-full lg:max-w-2xl mx-auto lg:mx-0 text-center lg:text-left text-balance text-base sm:text-lg text-slate-300 leading-relaxed">
-                                        {variantSubheadline ?? 'Start the Clinical Assessment Questionnaire to receive your protocol and Bio Optimization Score.'}
-                                    </p>
+                                    {!variantSubheadline && (
+                                        <p className="mt-6 sm:mt-4 w-full max-w-full mx-auto lg:mx-0 text-center lg:text-left text-sm sm:text-base text-slate-400 leading-relaxed text-balance lg:whitespace-nowrap">
+                                            Precision health insights from your DNA, delivered through formulations engineered for your unique genome
+                                        </p>
+                                    )}
+                                    <HeroPillars />
+                                    {variantSubheadline ? (
+                                        <p className="mt-6 sm:mt-10 w-full max-w-full lg:max-w-2xl mx-auto lg:mx-0 text-center lg:text-left text-balance text-base sm:text-lg text-slate-300 leading-relaxed">
+                                            {variantSubheadline}
+                                        </p>
+                                    ) : (
+                                        <p className="mt-6 sm:mt-10 w-full max-w-full lg:max-w-2xl mx-auto lg:mx-0 text-center lg:text-left text-balance text-base sm:text-lg text-slate-300 leading-relaxed">
+                                            One Genome  One Formulation  One Life at a Time
+                                        </p>
+                                    )}
                                     <div className="mt-6 sm:mt-10 w-full flex flex-col items-center justify-center gap-3 sm:gap-4 sm:flex-row lg:justify-start">
                                         <Link
-                                            href={variantCtaHref ?? HOME_CAQ_CTA_HREF}
-                                            data-testid="home-hero-caq-cta"
+                                            href={variantCtaHref ?? "/signup"}
                                             className="inline-flex h-14 sm:h-12 w-full sm:w-auto items-center justify-center rounded-full bg-[#b75e18]/30 backdrop-blur-xl border border-[#b75e18]/40 pl-6 pr-4 text-base font-semibold text-white shadow-[0_0_20px_rgba(183,94,24,0.4)] transition-all duration-300 hover:bg-[#b75e18]/50 hover:border-[#b75e18]/60 hover:shadow-[0_0_30px_rgba(183,94,24,0.6)]">
-                                            <span>{variantCtaLabel ?? HOME_CAQ_CTA_LABEL}</span>
+                                            <span>{variantCtaLabel ?? "Your Journey Starts Here"}</span>
                                             <ChevronRight strokeWidth={1.5} className="ml-1" />
                                         </Link>
                                         <Link
                                             href="/login"
-                                            className="inline-flex h-14 sm:h-12 w-full sm:w-auto items-center justify-center rounded-full border border-white/20 px-6 text-base font-semibold text-white backdrop-blur-sm transition-all duration-300 hover:border-white/30 hover:bg-white/10">
+                                            className="order-2 sm:order-1 inline-flex h-14 sm:h-12 w-full sm:w-auto items-center justify-center rounded-full border border-white/20 px-6 text-base font-semibold text-white backdrop-blur-sm transition-all duration-300 hover:border-white/30 hover:bg-white/10">
                                             <span>Sign In</span>
+                                        </Link>
+                                        <Link
+                                            href="/practitioners"
+                                            className="order-1 sm:order-2 inline-flex h-14 sm:h-12 w-full sm:w-auto items-center justify-center rounded-full bg-[#2DA5A0]/30 backdrop-blur-xl border border-[#2DA5A0]/40 px-6 text-base font-semibold text-white shadow-[0_0_20px_rgba(45,165,160,0.4)] transition-all duration-300 hover:bg-[#2DA5A0]/50 hover:border-[#2DA5A0]/60 hover:shadow-[0_0_30px_rgba(45,165,160,0.6)]">
+                                            <span>I am a Practitioner or Naturopath</span>
                                         </Link>
                                     </div>
                                     <div className="mt-3 sm:hidden flex justify-center" aria-hidden="true">

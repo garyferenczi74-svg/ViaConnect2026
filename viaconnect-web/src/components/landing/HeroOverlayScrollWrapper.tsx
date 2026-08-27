@@ -11,7 +11,7 @@ export function HeroOverlayScrollWrapper({ children }: HeroOverlayScrollWrapperP
 
     // Desktop fades over 0-400px scroll (original spec). Mobile uses 0-900px
     // so hero text fully clears before Features section enters viewport
-    // (~scroll 1000px on mobile after 100vh hero when
+    // (~scroll 1000px on mobile after 100vh hero + 280px spacer when
     // TrustBand/Sarah/Outcome render null). Earlier 1500px was too wide and
     // hero text bled into Features section. SSR-safe: state defaults to
     // desktop range and syncs to the viewport on mount + resize.

@@ -4,11 +4,6 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
-import {
-  HOME_CAQ_CTA_HREF,
-  HOME_CAQ_CTA_LABEL,
-  HOME_CONSUMER_JOB,
-} from '@/components/landing/HeroSection';
 import { PricingCatalogBody } from '@/components/pricing/PricingCatalogBody';
 import { PLANS_LOAD_FROM_CATALOG_COPY } from '@/lib/pricing/catalog';
 
@@ -42,6 +37,7 @@ const HANNAH_LINE =
 const FEATURE_CARDS = src('src/components/landing/scroll-sections/shared/featureCards.ts');
 const HOME_PAGE = src('src/app/page.tsx');
 const HERO = src('src/components/landing/HeroSection.tsx');
+const HERO_VARIANT = src('src/components/landing/HeroVariantRenderer.tsx');
 const SCROLL = src('src/components/landing/scroll-sections/LandingScrollSections.tsx');
 const SCROLL_DESKTOP = src(
   'src/components/landing/scroll-sections/desktop/LandingScrollSectionsDesktop.tsx',
@@ -101,31 +97,39 @@ vi.mock('next/link', () => ({
   }) => createElement('a', { href, className }, children),
 }));
 
-describe('Brief 45 homepage one job + single compose + catalog membership', () => {
-  it('locks the above-the-fold job and CAQ start, not a feature catalog', () => {
-    expect(HOME_CONSUMER_JOB).toBe('CAQ → protocol → Bio Optimization Score');
-    expect(HOME_CAQ_CTA_LABEL).toBe('Start the CAQ');
-    expect(HOME_CAQ_CTA_HREF).toBe('/signup');
-    expect(HERO).toContain('HOME_CONSUMER_JOB');
-    expect(HERO).toContain('HOME_CAQ_CTA_LABEL');
-    expect(HERO).toContain('HOME_CAQ_CTA_HREF');
-    expect(HERO).toContain('home-hero-job');
-    expect(HERO).toContain('home-hero-caq-cta');
-    expect(HERO).not.toContain('Precision Personal Health');
-    expect(HERO).not.toContain('Powered by Your Data');
-    expect(HERO).not.toContain('Your Journey Starts Here');
-    expect(HERO).not.toContain('I am a Practitioner or Naturopath');
-    expect(HERO).not.toContain('/practitioners');
-    expect(HERO).not.toContain('HeroPillars');
-    expect(HERO).not.toContain('hero-pillars-desktop-grid');
+describe('Homepage original hero + Brief 45 single compose + catalog membership', () => {
+  it('locks the logged-out hero to the original Precision Personal Health landing', () => {
+    expect(HERO).toContain('Precision Personal Health');
+    expect(HERO).toContain('Powered by Your Data');
+    expect(HERO).toContain('text-[#B75E18]');
+    expect(HERO).toContain(
+      'Precision health insights from your DNA, delivered through formulations engineered for your unique genome',
+    );
+    expect(HERO).toContain('One Genome  One Formulation  One Life at a Time');
+    expect(HERO).toContain('Your Journey Starts Here');
+    expect(HERO).toContain('href={variantCtaHref ?? "/signup"}');
+    expect(HERO).toContain('href="/login"');
+    expect(HERO).toContain('I am a Practitioner or Naturopath');
+    expect(HERO).toContain('href="/practitioners"');
+    expect(HERO).toContain('HeroPillars');
+    expect(HERO).toContain('DNA%20HD.mp4');
+    expect(HOME_PAGE).toContain('HeroVariantRenderer');
+    expect(HERO_VARIANT).toContain('<HeroSection />');
+    expect(HOME_PAGE).toContain('sm:hidden h-[280px]');
+    expect(HERO).not.toContain('CAQ → protocol → Bio Optimization Score');
+    expect(HERO).not.toContain('Start the CAQ');
+    expect(HERO).not.toContain('Clinical Assessment Questionnaire');
+    expect(HERO).not.toContain('HOME_CONSUMER_JOB');
+    expect(HERO).not.toContain('HOME_CAQ_CTA_LABEL');
+    expect(HERO).not.toContain('home-hero-caq-cta');
     expect(HERO).not.toMatch(/Vitality/);
   });
 
-  it('keeps the practitioner waitlist CTA below the fold, not in the hero', () => {
+  it('keeps the practitioner waitlist CTA on the public hero and below the fold', () => {
+    expect(HERO).toContain('I am a Practitioner or Naturopath');
+    expect(HERO).toContain('href="/practitioners"');
     expect(FINAL_CTA_DESKTOP).toContain('I am a Practitioner or Naturopath');
     expect(FINAL_CTA_DESKTOP).toContain('href="/practitioners"');
-    expect(HERO).not.toContain('/practitioners');
-    expect(HERO).not.toContain('I am a Practitioner');
   });
 
   it('SSR-composes one of each major homepage block', () => {
