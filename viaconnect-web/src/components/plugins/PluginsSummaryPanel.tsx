@@ -2,7 +2,7 @@
 
 /**
  * Right column for /plugins: honest connection-state summary.
- * Never a Bio Optimization Score, BOS dial, or PlasmaGauge.
+ * Never a BOS composite or score dial.
  * Empty buckets are omitted, not counted as zero.
  */
 

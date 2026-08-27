@@ -55,7 +55,9 @@ describe("Plugins glass 3-column IA", () => {
     expect(joined).not.toContain("data-bos-card");
     expect(joined).not.toContain("useHealthXmlImport");
     expect(joined).not.toContain("Upload XML");
-    expect(joined).not.toContain("WearableTileCard");
+    expect(surface).not.toContain("WearableTileCard");
+    expect(detail).not.toContain("WearableTileCard");
+    expect(summary).not.toContain("WearableTileCard");
     expect(joined).not.toContain("ConnectionsSurface");
     expect(joined).not.toMatch(/\bas any\b/);
   });
