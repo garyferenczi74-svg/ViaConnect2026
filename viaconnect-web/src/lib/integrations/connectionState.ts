@@ -14,6 +14,7 @@ import { safeLog } from '@/lib/utils/safe-log';
 import {
   PLUGIN_APP_REGISTRY_FALLBACK,
   PLUGIN_SECTION_ORDER,
+  PLUGIN_STATE_COPY,
   honestPluginAppRow,
   isPluginConnectWired,
   isPluginPageApp,
@@ -291,4 +292,43 @@ export function groupCardsByCategory(
   return PLUGIN_SECTION_ORDER
     .filter((section) => (map.get(section)?.length ?? 0) > 0)
     .map((category) => ({ category, cards: map.get(category) ?? [] }));
+}
+
+export interface PluginSummaryBucket {
+  state: ConnectionCardState;
+  label: string;
+  names: readonly string[];
+  slugs: readonly string[];
+}
+
+const SUMMARY_ORDER: readonly ConnectionCardState[] = [
+  'connected',
+  'needs_reconnect',
+  'not_connected',
+  'coming_soon',
+];
+
+function summaryLabel(state: ConnectionCardState): string {
+  if (state === 'connected') return PLUGIN_STATE_COPY.connected;
+  if (state === 'needs_reconnect') return PLUGIN_STATE_COPY.needsReconnect;
+  if (state === 'coming_soon') return PLUGIN_STATE_COPY.comingSoon;
+  return PLUGIN_STATE_COPY.notConnected;
+}
+
+/** Honest buckets only. Empty states are omitted, never shown as zero. */
+export function summarizePluginConnectionState(
+  cards: PluginAppCardModel[],
+): PluginSummaryBucket[] {
+  return SUMMARY_ORDER.flatMap((state) => {
+    const matched = cards.filter((card) => card.cardState === state);
+    if (matched.length === 0) return [];
+    return [
+      {
+        state,
+        label: summaryLabel(state),
+        names: matched.map((card) => card.displayName),
+        slugs: matched.map((card) => card.slug),
+      },
+    ];
+  });
 }

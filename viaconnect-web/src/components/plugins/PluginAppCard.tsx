@@ -1,9 +1,7 @@
 'use client';
 
 /**
- * 21c: /plugins cards use Connections WearableTileCard chrome.
- * Verified SSOT: dark navy card, large radius, left mark, title,
- * status + last-sync from last-sync-state, right action.
+ * /plugins tiles use the same rest / selected glass as WearableTileCard.
  * Vendor marks stay in the icon slot. Apps-only registry.
  * Coming soon right action is Coming soon (not Connect). One line. No
  * duplicate No action yet under the badge.
@@ -25,14 +23,19 @@ import {
   isTruthfulWearablesManage,
 } from '@/lib/integrations/pluginAppRegistry';
 import { PluginVendorMark } from '@/components/plugins/PluginVendorMark';
-
-const TILE_FRAME = 'rounded-2xl border border-white/[0.08] bg-[#1E3054] p-4';
-const TILE_ACTION =
-  'inline-flex min-h-[44px] shrink-0 items-center justify-center rounded-lg bg-[#2DA5A0] px-3 text-center text-xs font-semibold text-white hover:bg-[#2DA5A0]/85 disabled:opacity-50';
+import {
+  PLUGIN_TILE_ACTIVATED_RAIL,
+  PLUGIN_TILE_FOCUS_RING,
+  PLUGIN_TILE_OUTLINE_BTN,
+  pluginTileCardChrome,
+  pluginTileTitleClassName,
+} from '@/components/plugins/pluginTileChrome';
 
 export interface PluginAppCardProps {
   card: PluginAppCardModel;
   busy?: boolean;
+  selected?: boolean;
+  onSelect?: (slug: string) => void;
   onConnect?: (slug: string) => void;
   onDisconnect?: (slug: string) => void;
 }
@@ -63,10 +66,13 @@ function statusLabel(state: PluginAppCardModel['cardState']): string {
 export function PluginAppCard({
   card,
   busy,
+  selected,
+  onSelect,
   onConnect,
   onDisconnect,
 }: PluginAppCardProps) {
   const state = card.cardState;
+  const isSelected = Boolean(selected);
   const connectWired = isPluginConnectWired(card);
   const canIngest = connectWired && state !== 'coming_soon';
   const lastSyncLabel = state === 'connected' ? realLastSyncLabel(card.lastSyncAt) : null;
@@ -78,11 +84,27 @@ export function PluginAppCard({
   return (
     <article
       data-testid={`plugin-app-card-${card.slug}`}
+      data-plugin-slug={card.slug}
       data-card-state={state}
       data-last-sync-state={lastSyncKindFor(card)}
       data-has-file-upload={hasFileUpload ? 'true' : 'false'}
-      className={TILE_FRAME}
+      data-selected={isSelected ? 'true' : 'false'}
+      aria-selected={isSelected ? 'true' : undefined}
+      role="option"
+      tabIndex={isSelected ? 0 : -1}
+      onClick={() => onSelect?.(card.slug)}
+      onKeyDown={(e) => {
+        if (e.target !== e.currentTarget) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onSelect?.(card.slug);
+        }
+      }}
+      className={`${pluginTileCardChrome(isSelected)} ${PLUGIN_TILE_FOCUS_RING} cursor-pointer`}
     >
+      {isSelected ? (
+        <span aria-hidden="true" className={PLUGIN_TILE_ACTIVATED_RAIL} />
+      ) : null}
       <div className="flex items-start gap-3">
         <PluginVendorMark slug={card.slug} displayName={card.displayName} />
 
@@ -95,7 +117,7 @@ export function PluginAppCard({
             ) : null}
 
             <div className="min-w-0 flex-1">
-              <h3 className="text-sm font-semibold leading-snug text-white whitespace-normal break-words">
+              <h3 className={pluginTileTitleClassName(isSelected)}>
                 {card.displayName}
               </h3>
               <p className="mt-0.5 flex items-center gap-1.5 text-xs text-white/60">
@@ -113,8 +135,11 @@ export function PluginAppCard({
                   type="button"
                   data-testid={`plugin-disconnect-${card.slug}`}
                   disabled={busy}
-                  onClick={() => onDisconnect?.(card.slug)}
-                  className="mt-2 min-h-[44px] text-xs font-medium text-[#2DA5A0] hover:underline disabled:opacity-50"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDisconnect?.(card.slug);
+                  }}
+                  className="mt-2 min-h-[44px] text-xs font-medium text-teal hover:underline disabled:opacity-50"
                 >
                   {PLUGIN_STATE_COPY.disconnect}
                 </button>
@@ -125,7 +150,8 @@ export function PluginAppCard({
               <Link
                 href={card.wearablesCrossLink}
                 data-testid={`plugin-manage-${card.slug}`}
-                className={TILE_ACTION}
+                onClick={(e) => e.stopPropagation()}
+                className={PLUGIN_TILE_OUTLINE_BTN}
               >
                 {PLUGIN_STATE_COPY.manage}
               </Link>
@@ -136,8 +162,11 @@ export function PluginAppCard({
                 type="button"
                 data-testid={`plugin-connect-${card.slug}`}
                 disabled={busy}
-                onClick={() => onConnect?.(card.slug)}
-                className={TILE_ACTION}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onConnect?.(card.slug);
+                }}
+                className={PLUGIN_TILE_OUTLINE_BTN}
               >
                 Reconnect
               </button>
@@ -148,8 +177,11 @@ export function PluginAppCard({
                 type="button"
                 data-testid={`plugin-connect-${card.slug}`}
                 disabled={busy}
-                onClick={() => onConnect?.(card.slug)}
-                className={TILE_ACTION}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onConnect?.(card.slug);
+                }}
+                className={PLUGIN_TILE_OUTLINE_BTN}
               >
                 {PLUGIN_STATE_COPY.connect}
               </button>

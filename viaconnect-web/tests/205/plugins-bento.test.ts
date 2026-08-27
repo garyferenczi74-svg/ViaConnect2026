@@ -75,7 +75,7 @@ describe("Plugins Picasso IA honesty", () => {
     expect(card).not.toMatch(/type="button"[^>]*>[\s\S]*PLUGIN_STATE_COPY.comingSoon/);
   });
 
-  it("locks 390 vendor-mark anatomy and 1280 list layout", () => {
+  it("locks 390 vendor-mark anatomy and Connections 3-column IA", () => {
     const card = src("components/plugins/PluginAppCard.tsx");
     const surface = src("components/plugins/PluginsAppsSurface.tsx");
     const mark = src("components/plugins/PluginVendorMark.tsx");
@@ -84,8 +84,13 @@ describe("Plugins Picasso IA honesty", () => {
     expect(card).not.toContain("HeartPulse");
     expect(card).not.toContain("grid-cols-");
     expect(surface).toContain("flex flex-col gap-3");
+    expect(surface).toContain("grid-cols-1");
+    expect(surface).toContain("min-[900px]:grid-cols-2");
+    expect(surface).toContain("min-[1280px]:grid-cols-[1fr_1.2fr_1fr]");
     expect(surface).not.toContain("sm:grid-cols-2");
     expect(surface).not.toContain("min-[1280px]:grid-cols-3");
+    expect(surface).toContain("PluginAppDetailPanel");
+    expect(surface).toContain("PluginsSummaryPanel");
     expect(mark).toContain("google_health");
     expect(mark).toContain("myfitnesspal");
     expect(mark).toContain("cronometer");
@@ -102,14 +107,27 @@ describe("Plugins Picasso IA honesty", () => {
 
   it("matches Connections WearableTileCard chrome without wearable dropzone", () => {
     const card = src("components/plugins/PluginAppCard.tsx");
+    const chrome = src("components/plugins/pluginTileChrome.ts");
     const tile = src("components/body-tracker/connections/WearableTileCard.tsx");
-    expect(tile).toContain("border-white/[0.08] bg-card p-4");
-    expect(card).toContain("rounded-2xl border border-white/[0.08] bg-[#1E3054] p-4");
+    expect(tile).toContain(
+      "relative rounded-[24px] border border-[rgba(255,255,255,0.14)] bg-[rgba(255,255,255,0.07)] p-4 backdrop-blur-md",
+    );
+    expect(tile).toContain(
+      "relative rounded-[24px] border border-[rgba(74,144,217,0.25)] bg-[rgba(74,144,217,0.10)] p-4 pl-6 backdrop-blur-[16px]",
+    );
+    expect(chrome).toContain(
+      "relative rounded-[24px] border border-[rgba(255,255,255,0.14)] bg-[rgba(255,255,255,0.07)] p-4 backdrop-blur-md",
+    );
+    expect(chrome).toContain(
+      "relative rounded-[24px] border border-[rgba(74,144,217,0.25)] bg-[rgba(74,144,217,0.10)] p-4 pl-6 backdrop-blur-[16px]",
+    );
+    expect(card).toContain("pluginTileCardChrome");
     expect(card).toContain("resolveLastSyncState");
     expect(card).toContain("@/lib/body-tracker/last-sync-state");
     expect(card).toContain("PLUGIN_STATE_COPY.comingSoon");
     expect(card).toContain("isPluginConnectWired");
     expect(card).toContain("data-last-sync-state");
+    expect(card).not.toContain("bg-[#1E3054]");
     expect(card).not.toContain("onDragOver");
     expect(card).not.toContain("onDropXml");
     expect(card).not.toContain("Upload XML");
@@ -126,9 +144,11 @@ describe("Plugins Picasso IA honesty", () => {
     const page = src("app/(app)/(consumer)/plugins/page.tsx");
     const surface = src("components/plugins/PluginsAppsSurface.tsx");
     const card = src("components/plugins/PluginAppCard.tsx");
+    const detail = src("components/plugins/PluginAppDetailPanel.tsx");
+    const summary = src("components/plugins/PluginsSummaryPanel.tsx");
     const emDash = String.fromCharCode(0x2014);
     const enDash = String.fromCharCode(0x2013);
-    expect(page + surface + card).not.toContain(emDash);
-    expect(page + surface + card).not.toContain(enDash);
+    expect(page + surface + card + detail + summary).not.toContain(emDash);
+    expect(page + surface + card + detail + summary).not.toContain(enDash);
   });
 });

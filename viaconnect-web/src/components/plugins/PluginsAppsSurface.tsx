@@ -3,13 +3,17 @@
 /**
  * /plugins apps surface. Existing chrome/logo stay in AppShell.
  * Wearable device tiles are not listed here.
+ * 390 stacks sources / detail / summary. 1280 uses the Connections
+ * three-column glass IA.
  */
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, type KeyboardEvent } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { PluginAppCard } from '@/components/plugins/PluginAppCard';
+import { PluginAppDetailPanel } from '@/components/plugins/PluginAppDetailPanel';
+import { PluginsSummaryPanel } from '@/components/plugins/PluginsSummaryPanel';
 import { usePluginAppCards } from '@/hooks/usePluginAppCards';
 import { groupCardsByCategory } from '@/lib/integrations/connectionState';
 import {
@@ -26,6 +30,7 @@ export function PluginsAppsSurface() {
   const searchParams = useSearchParams();
   const { cards, loading, stateOk, refresh } = usePluginAppCards();
   const [busySlug, setBusySlug] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const banner = searchParams?.get('connected')
     ? `Connected: ${searchParams.get('connected')}`
@@ -36,6 +41,17 @@ export function PluginsAppsSurface() {
         : null;
 
   const groups = useMemo(() => groupCardsByCategory(cards), [cards]);
+  const visualCards = useMemo(
+    () => groups.flatMap((group) => group.cards),
+    [groups],
+  );
+  const selectedSlug = useMemo(() => {
+    if (selectedId && visualCards.some((card) => card.slug === selectedId)) {
+      return selectedId;
+    }
+    return visualCards[0]?.slug ?? null;
+  }, [selectedId, visualCards]);
+  const selectedCard = visualCards.find((card) => card.slug === selectedSlug) ?? null;
 
   const onConnect = useCallback(
     (slug: string) => {
@@ -76,6 +92,29 @@ export function PluginsAppsSurface() {
       }
     },
     [cards, refresh],
+  );
+
+  const handleSourceListKeyDown = useCallback(
+    (e: KeyboardEvent<HTMLDivElement>) => {
+      if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+      const target = e.target as HTMLElement;
+      if (!target || target.getAttribute('role') !== 'option') return;
+      if (visualCards.length === 0) return;
+      e.preventDefault();
+      const currentIndex = visualCards.findIndex((card) => card.slug === selectedSlug);
+      const delta = e.key === 'ArrowDown' ? 1 : -1;
+      const nextIndex =
+        currentIndex === -1
+          ? 0
+          : (currentIndex + delta + visualCards.length) % visualCards.length;
+      const next = visualCards[nextIndex];
+      setSelectedId(next.slug);
+      const nextEl = e.currentTarget.querySelector<HTMLElement>(
+        `[data-plugin-slug="${next.slug}"]`,
+      );
+      nextEl?.focus();
+    },
+    [visualCards, selectedSlug],
   );
 
   return (
@@ -128,24 +167,52 @@ export function PluginsAppsSurface() {
       ) : groups.length === 0 ? (
         <div data-testid="plugins-empty" className="min-h-[120px]" />
       ) : (
-        groups.map(({ category, cards: groupCards }) => (
-          <section key={category} data-testid={`plugin-category-${category}`} className="space-y-3">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-[#2DA5A0]">
-              {category}
-            </h2>
-            <div className="flex flex-col gap-3">
-              {groupCards.map((card) => (
-                <PluginAppCard
-                  key={card.slug}
-                  card={card}
-                  busy={busySlug === card.slug}
-                  onConnect={onConnect}
-                  onDisconnect={onDisconnect}
-                />
-              ))}
-            </div>
-          </section>
-        ))
+        <div
+          data-testid="plugins-ia"
+          className="grid grid-cols-1 gap-6 min-[900px]:grid-cols-2 min-[1280px]:grid-cols-[1fr_1.2fr_1fr] min-[1280px]:items-stretch"
+        >
+          <div
+            role="listbox"
+            aria-label="Plugin apps"
+            onKeyDown={handleSourceListKeyDown}
+            className="space-y-6"
+          >
+            {groups.map(({ category, cards: groupCards }) => (
+              <section key={category} data-testid={`plugin-category-${category}`} className="space-y-3">
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-[#2DA5A0]">
+                  {category}
+                </h2>
+                <div className="flex flex-col gap-3">
+                  {groupCards.map((card) => (
+                    <PluginAppCard
+                      key={card.slug}
+                      card={card}
+                      busy={busySlug === card.slug}
+                      selected={card.slug === selectedSlug}
+                      onSelect={setSelectedId}
+                      onConnect={onConnect}
+                      onDisconnect={onDisconnect}
+                    />
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
+
+          <div className="min-[1280px]:h-full">
+            <PluginAppDetailPanel
+              key={selectedCard?.slug ?? 'none'}
+              card={selectedCard}
+              busy={busySlug === selectedCard?.slug}
+              onConnect={onConnect}
+              onDisconnect={onDisconnect}
+            />
+          </div>
+
+          <div className="min-[1280px]:h-full">
+            <PluginsSummaryPanel cards={visualCards} />
+          </div>
+        </div>
       )}
 
       <p className="sr-only">{PLUGIN_COMING_SOON_ACTION}</p>
