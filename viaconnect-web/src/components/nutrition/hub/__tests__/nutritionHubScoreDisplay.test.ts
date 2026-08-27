@@ -173,10 +173,12 @@ describe('nutritionHubScoreDisplay', () => {
     for (const markup of [scoreEmpty, macroEmpty]) {
       expect(markup).toContain('g-root');
       expect(markup).toContain('pg-ring');
-      expect(markup).toContain('--');
+      expect(markup).toContain('>--</div>');
+      expect(markup).toContain('No score yet');
       expect(markup).not.toContain('0 OF 100');
       expect(markup).not.toContain('0% OF TARGET');
-      expect(markup).not.toContain('>0<');
+      expect(markup).not.toContain('>0</div>');
+      expect(markup).not.toContain('>0%</div>');
       expect(markup).not.toContain('OF 100');
       expect(markup).not.toContain('OF TARGET');
       expect(markup).not.toContain(arcPath(100, 100, 78, 0, 0.0001));
@@ -215,15 +217,14 @@ describe('nutritionHubScoreDisplay', () => {
 
     expect(scoreZero).toContain('g-root');
     expect(scoreZero).toContain('pg-ring');
-    expect(scoreZero).toContain('>0<');
+    expect(scoreZero).toContain('>0</div>');
     expect(scoreZero).toContain('OF 100');
-    expect(scoreZero).not.toContain('--');
+    expect(scoreZero).not.toContain('>--</div>');
 
     expect(macroZero).toContain('g-root');
     expect(macroZero).toContain('pg-ring');
-    expect(macroZero).toContain('>0<');
-    expect(macroZero).toContain('%');
+    expect(macroZero).toContain('>0%</div>');
     expect(macroZero).toContain('OF TARGET');
-    expect(macroZero).not.toContain('--');
+    expect(macroZero).not.toContain('>--</div>');
   });
 });
