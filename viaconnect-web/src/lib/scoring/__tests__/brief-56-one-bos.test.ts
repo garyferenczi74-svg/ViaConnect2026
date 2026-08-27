@@ -122,7 +122,7 @@ describe('Brief 56 one Bio Optimization Score', () => {
     expect(bos).toContain("'from FormaVision'");
     expect(bos).toContain('HANNAH_BOS_BLEND_SENTENCE');
     expect(bos).toContain('blendHannahBos');
-    expect(bos).not.toMatch(/Vitality/);
+    expect(bos).toContain('Never Vitality');
     expect(blendHannahBos(emptyHannahBosInput()).score).toBeNull();
   });
 
