@@ -65,6 +65,8 @@ describe('Brief 57 hero BOS uses Daily Scores PlasmaGauge', () => {
     expect(dial).toContain('const HERO_MOBILE_SIZE = 200');
     expect(dial).toContain('const HERO_DESKTOP_SIZE = 240');
     expect(dial).toContain('connectionsBosNumericScore');
+    expect(dial).toContain('empty');
+    expect(dial).not.toContain('UnknownWell');
     expect(dial).not.toContain('value={0}');
     expect(dial).not.toMatch(/\{composite\.band\}/);
 
@@ -92,18 +94,21 @@ describe('Brief 57 hero BOS uses Daily Scores PlasmaGauge', () => {
     expect(html).not.toContain('#4ADE80');
   });
 
-  it('UNKNOWN is -- with no progress fill and never a 0-length PlasmaGauge', () => {
+  it('UNKNOWN is plasma track + bloom + --, never a 0 fill or 0 of 100', () => {
     const html = renderToStaticMarkup(
       createElement(ConnectionsBosDial, { composite: CONNECTIONS_BOS_COMPOSITE }),
     );
     expect(html).toContain('--');
     expect(html).toContain('data-bos-composite="unknown"');
     expect(html).toContain('No score yet');
-    expect(html).not.toContain('g-root');
-    expect(html).not.toContain('pg-ring');
+    expect(html).toContain('g-root');
+    expect(html).toContain('pg-ring');
+    expect(html).toContain('blur(16px)');
     expect(html).not.toContain('g-bead-cw');
     expect(html).not.toContain(arcPath(100, 100, 78, 0, 0.0001));
     expect(html).not.toContain('>0<');
+    expect(html).not.toContain('/ 100');
+    expect(html).not.toContain('0 of 100');
     expect(html).not.toContain('>BOS<');
     expect(html).not.toContain('>UNKNOWN<');
     expect(connectionsBosNumericScore(CONNECTIONS_BOS_COMPOSITE)).toBeNull();
@@ -129,7 +134,13 @@ describe('Brief 57 hero BOS uses Daily Scores PlasmaGauge', () => {
       }),
     );
     expect(unknown).toContain('--');
-    expect(unknown).not.toContain('g-root');
+    expect(unknown).toContain('g-root');
+    expect(unknown).toContain('pg-ring');
+    expect(unknown).not.toContain('g-bead-cw');
+    expect(unknown).not.toContain(arcPath(100, 100, 78, 0, 0.0001));
+    expect(unknown).not.toContain('>0<');
+    expect(unknown).not.toContain('/ 100');
+    expect(unknown).not.toContain('0 of 100');
   });
 
   it('does not edit blend math, chips, protocol, age tile, or Daily OVERALL', () => {
