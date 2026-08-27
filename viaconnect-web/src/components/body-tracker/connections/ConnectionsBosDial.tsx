@@ -1,6 +1,35 @@
 'use client';
 
-import type { ConnectionsBosDisplay } from '@/lib/body-tracker/wearable-tiles';
+import { PlasmaGauge } from '@/components/gauges/PlasmaGauge';
+import {
+  connectionsBosNumericScore,
+  type ConnectionsBosDisplay,
+} from '@/lib/body-tracker/wearable-tiles';
+
+const HERO_MOBILE_SIZE = 200;
+const HERO_DESKTOP_SIZE = 240;
+const CLUSTER_SIZE = 80;
+
+function UnknownWell({ size }: { size: 'hero' | 'cluster' }) {
+  const box =
+    size === 'cluster'
+      ? 'relative h-20 w-20'
+      : 'relative h-[200px] w-[200px] sm:h-[240px] sm:w-[240px]';
+  const valueClass =
+    size === 'cluster'
+      ? 'text-lg text-white/20'
+      : 'text-5xl font-bold text-white/40 sm:text-6xl';
+
+  return (
+    <div className={box}>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span className={valueClass} aria-label="No score yet">
+          --
+        </span>
+      </div>
+    </div>
+  );
+}
 
 export function ConnectionsBosDial({
   composite,
@@ -10,42 +39,48 @@ export function ConnectionsBosDial({
   size?: 'hero' | 'cluster';
 }) {
   const unknown = composite.band === 'UNKNOWN' || composite.value === '--';
-  const box = size === 'cluster' ? 'h-16 w-16' : 'h-36 w-36';
-  const valueClass = size === 'cluster' ? 'text-lg' : 'text-3xl';
-  const bandClass = size === 'cluster' ? 'text-[8px]' : 'text-[10px]';
-  const valueColor = unknown ? 'text-white/40' : 'text-white';
-  const bandColor = unknown ? 'text-white/40' : 'text-white/70';
+  const score = connectionsBosNumericScore(composite);
+  const showPlasma = !unknown && score !== null;
 
   return (
     <div
       className={`flex flex-col items-center ${size === 'hero' ? 'mt-5' : ''}`}
       data-bos-composite={composite.band.toLowerCase()}
     >
-      <div className={`relative ${box}`}>
-        <svg viewBox="0 0 120 120" className="h-full w-full -rotate-90" aria-hidden>
-          <circle
-            cx="60"
-            cy="60"
-            r="48"
-            fill="none"
-            stroke="rgba(255,255,255,0.12)"
-            strokeWidth="8"
+      {showPlasma && score !== null ? (
+        size === 'cluster' ? (
+          <PlasmaGauge
+            metric="bioscore"
+            variant="standard"
+            size={CLUSTER_SIZE}
+            value={score}
+            ariaLabel={`Bio Optimization Score ${score}`}
           />
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span
-            className={`${valueClass} font-bold ${valueColor}`}
-            aria-label={unknown ? 'No score yet' : `Bio Optimization Score ${composite.value}`}
-          >
-            {composite.value}
-          </span>
-          <span
-            className={`mt-1 ${bandClass} font-semibold uppercase tracking-[0.18em] ${bandColor}`}
-          >
-            {composite.band}
-          </span>
-        </div>
-      </div>
+        ) : (
+          <div className="relative h-[200px] w-[200px] sm:h-[240px] sm:w-[240px]">
+            <div className="block sm:hidden">
+              <PlasmaGauge
+                metric="bioscore"
+                variant="hero"
+                size={HERO_MOBILE_SIZE}
+                value={score}
+                ariaLabel={`Bio Optimization Score ${score}`}
+              />
+            </div>
+            <div className="hidden sm:block">
+              <PlasmaGauge
+                metric="bioscore"
+                variant="hero"
+                size={HERO_DESKTOP_SIZE}
+                value={score}
+                ariaLabel={`Bio Optimization Score ${score}`}
+              />
+            </div>
+          </div>
+        )
+      ) : (
+        <UnknownWell size={size} />
+      )}
     </div>
   );
 }

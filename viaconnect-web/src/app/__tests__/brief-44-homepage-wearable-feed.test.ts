@@ -46,18 +46,20 @@ const LANDING_AND_HOME_SOURCES = [
   ...walkFiles(path.join(root, 'src/components/home')).map((file) => readFileSync(file, 'utf8')),
 ].join('\n');
 
-// SHA-256 of in-app Connections wearable-tile files at main 4a13c3de.
+// SHA-256 of in-app Connections wearable-tile files.
+// Brief 56 already moved tiles/surface/panel off 4a13c3de; Brief 57
+// refreshes ConnectionsBosDial to the Daily Scores plasma construction.
 const CONNECTIONS_WEARABLE_TILE_HASHES: Record<string, string> = {
   'src/lib/body-tracker/wearable-tiles.ts':
-    '6523e62154a26da9e02bcb214e2c0e6e98358bcf3a3f4ab34fad49e41843cb62',
+    '016ebf45036060aa586d7193f588ed69d0d119b87a27a03a69c4bda3c32361a6',
   'src/components/body-tracker/connections/WearableTileCard.tsx':
-    '18bf2c5033c81464a32b717bdbc052f444a3244b8e9c2919a04e15d700829f58',
+    'bf0176d880a66d0693858c03802cfdd840c817da345dc1d864cb3d877d19b3b1',
   'src/components/body-tracker/connections/ConnectionsSurface.tsx':
-    '4fe6b72ccd8a3776a9747ed7339fa80fba26b33d2a4dcdc20119514b4e8402a8',
+    '7549cc3d57526dd4789a1a7e287051941b80e306e0406455bddebbdfc44a93aa',
   'src/components/body-tracker/connections/ConnectionsBosDial.tsx':
-    '949b7546058169e812fe4c08b36fbd3adcebffd3612e28a51b02e78e03fca152',
+    '007b0baceb4c9ef8ce5c1641356a59f59b0c52dfdcd0fac0b72f7f2bba5b74d9',
   'src/components/body-tracker/connections/ScoreDetailPanel.tsx':
-    '74efe9a800700dcbeed38cfc84b86260712d6d89c003d889ab77800c737615bd',
+    'c5ac8ebc597ab927e63a4b968d27fa52efc25b119f311c963a4864eaaa8803be',
   'src/hooks/useWearableTilesSnapshot.ts':
     'd29ded22c62d654de85e0613ef7ac9944b8cd3b51191977b36047e7378e698a7',
 };
@@ -110,7 +112,7 @@ describe('Brief 44 homepage stops promising automatic wearable feed', () => {
     expect(LANDING_AND_HOME_SOURCES).not.toMatch(/Google Health/);
   });
 
-  it('leaves in-app Connections wearable-tile files unchanged from 4a13c3de', () => {
+  it('leaves in-app Connections wearable-tile files frozen at Brief 57', () => {
     for (const [rel, expected] of Object.entries(CONNECTIONS_WEARABLE_TILE_HASHES)) {
       expect(sha256(rel), rel).toBe(expected);
     }
