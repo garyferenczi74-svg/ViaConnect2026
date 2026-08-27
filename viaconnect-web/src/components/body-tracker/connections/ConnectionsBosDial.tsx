@@ -10,24 +10,35 @@ const HERO_MOBILE_SIZE = 200;
 const HERO_DESKTOP_SIZE = 240;
 const CLUSTER_SIZE = 80;
 
-function UnknownWell({ size }: { size: 'hero' | 'cluster' }) {
-  const box =
-    size === 'cluster'
-      ? 'relative h-20 w-20'
-      : 'relative h-[200px] w-[200px] sm:h-[240px] sm:w-[240px]';
-  const valueClass =
-    size === 'cluster'
-      ? 'text-lg text-white/20'
-      : 'text-5xl font-bold text-white/40 sm:text-6xl';
+function BosPlasma({
+  variant,
+  size,
+  score,
+}: {
+  variant: 'hero' | 'standard';
+  size: number;
+  score: number | null;
+}) {
+  if (score === null) {
+    return (
+      <PlasmaGauge
+        metric="bioscore"
+        variant={variant}
+        size={size}
+        empty
+        ariaLabel="No score yet"
+      />
+    );
+  }
 
   return (
-    <div className={box}>
-      <div className="absolute inset-0 flex items-center justify-center">
-        <span className={valueClass} aria-label="No score yet">
-          --
-        </span>
-      </div>
-    </div>
+    <PlasmaGauge
+      metric="bioscore"
+      variant={variant}
+      size={size}
+      value={score}
+      ariaLabel={`Bio Optimization Score ${score}`}
+    />
   );
 }
 
@@ -40,46 +51,25 @@ export function ConnectionsBosDial({
 }) {
   const unknown = composite.band === 'UNKNOWN' || composite.value === '--';
   const score = connectionsBosNumericScore(composite);
-  const showPlasma = !unknown && score !== null;
+  const empty = unknown || score === null;
+  const shown = empty ? null : score;
 
   return (
     <div
       className={`flex flex-col items-center ${size === 'hero' ? 'mt-5' : ''}`}
       data-bos-composite={composite.band.toLowerCase()}
     >
-      {showPlasma && score !== null ? (
-        size === 'cluster' ? (
-          <PlasmaGauge
-            metric="bioscore"
-            variant="standard"
-            size={CLUSTER_SIZE}
-            value={score}
-            ariaLabel={`Bio Optimization Score ${score}`}
-          />
-        ) : (
-          <div className="relative h-[200px] w-[200px] sm:h-[240px] sm:w-[240px]">
-            <div className="block sm:hidden">
-              <PlasmaGauge
-                metric="bioscore"
-                variant="hero"
-                size={HERO_MOBILE_SIZE}
-                value={score}
-                ariaLabel={`Bio Optimization Score ${score}`}
-              />
-            </div>
-            <div className="hidden sm:block">
-              <PlasmaGauge
-                metric="bioscore"
-                variant="hero"
-                size={HERO_DESKTOP_SIZE}
-                value={score}
-                ariaLabel={`Bio Optimization Score ${score}`}
-              />
-            </div>
-          </div>
-        )
+      {size === 'cluster' ? (
+        <BosPlasma variant="standard" size={CLUSTER_SIZE} score={shown} />
       ) : (
-        <UnknownWell size={size} />
+        <div className="relative h-[200px] w-[200px] sm:h-[240px] sm:w-[240px]">
+          <div className="block sm:hidden">
+            <BosPlasma variant="hero" size={HERO_MOBILE_SIZE} score={shown} />
+          </div>
+          <div className="hidden sm:block">
+            <BosPlasma variant="hero" size={HERO_DESKTOP_SIZE} score={shown} />
+          </div>
+        </div>
       )}
     </div>
   );

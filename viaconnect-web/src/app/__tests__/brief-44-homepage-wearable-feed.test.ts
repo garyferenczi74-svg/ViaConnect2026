@@ -49,6 +49,7 @@ const LANDING_AND_HOME_SOURCES = [
 // SHA-256 of in-app Connections wearable-tile files.
 // Brief 56 already moved tiles/surface/panel off 4a13c3de; Brief 57
 // refreshes ConnectionsBosDial to the Daily Scores plasma construction.
+// UNKNOWN now remounts PlasmaGauge empty (same as #114 / #115).
 const CONNECTIONS_WEARABLE_TILE_HASHES: Record<string, string> = {
   'src/lib/body-tracker/wearable-tiles.ts':
     '016ebf45036060aa586d7193f588ed69d0d119b87a27a03a69c4bda3c32361a6',
@@ -57,7 +58,7 @@ const CONNECTIONS_WEARABLE_TILE_HASHES: Record<string, string> = {
   'src/components/body-tracker/connections/ConnectionsSurface.tsx':
     '7549cc3d57526dd4789a1a7e287051941b80e306e0406455bddebbdfc44a93aa',
   'src/components/body-tracker/connections/ConnectionsBosDial.tsx':
-    '007b0baceb4c9ef8ce5c1641356a59f59b0c52dfdcd0fac0b72f7f2bba5b74d9',
+    '15aff16122cfeba688ce69a8e03cf75a59a2cf69af0a346226470f0fdaec6425',
   'src/components/body-tracker/connections/ScoreDetailPanel.tsx':
     'c5ac8ebc597ab927e63a4b968d27fa52efc25b119f311c963a4864eaaa8803be',
   'src/hooks/useWearableTilesSnapshot.ts':

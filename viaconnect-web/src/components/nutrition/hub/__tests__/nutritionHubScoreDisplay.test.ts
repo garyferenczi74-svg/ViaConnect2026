@@ -132,14 +132,15 @@ describe('nutritionHubScoreDisplay', () => {
     );
     expect(markup).toContain('--');
     expect(markup).toContain('data-bos-composite="unknown"');
-    expect(markup).not.toContain('g-root');
-    expect(markup).not.toContain('pg-ring');
+    expect(markup).toContain('g-root');
+    expect(markup).toContain('pg-ring');
     expect(markup).not.toContain('g-bead-cw');
     expect(markup).not.toContain(arcPath(100, 100, 78, 0, 0.0001));
     expect(markup).not.toContain('>UNKNOWN<');
     expect(markup).not.toContain('0 OF 100');
     expect(markup).not.toContain('0% OF TARGET');
     expect(markup).not.toContain('>0<');
+    expect(markup).not.toContain('/ 100');
   });
 
   it('empty hub Nutrition Score / Daily Macros mount PlasmaGauge with --, never a fake zero', () => {

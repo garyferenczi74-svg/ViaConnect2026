@@ -1,6 +1,7 @@
-// Empty Biological Age on My Biology mounts PlasmaGauge (circle + --), not
-// the Brief 57 BOS UnknownWell dashes. Estimated years + YEARS is unchanged.
-// Age stays a DRAFT contributor and does not become a second BOS hero.
+// Empty Biological Age on My Biology mounts PlasmaGauge (circle + --).
+// Estimated years + YEARS is unchanged. Age stays a DRAFT contributor and
+// does not become a second BOS hero. Connections UNKNOWN now uses the same
+// empty plasma ring (track + bloom + --), still never a 0 fill.
 
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -115,12 +116,13 @@ describe('Biological Age hero empty plasma', () => {
     );
     expect(html).toContain('--');
     expect(html).toContain('data-bos-composite="unknown"');
-    expect(html).not.toContain('g-root');
-    expect(html).not.toContain('pg-ring');
+    expect(html).toContain('g-root');
+    expect(html).toContain('pg-ring');
     expect(html).not.toContain('g-bead-cw');
     expect(html).not.toContain(arcPath(100, 100, 78, 0, 0.0001));
     expect(html).not.toContain('>UNKNOWN<');
     expect(html).not.toContain('>0<');
+    expect(html).not.toContain('/ 100');
   });
 
   it('does not become a second BOS hero or feed BOS while DRAFT', () => {
@@ -132,6 +134,9 @@ describe('Biological Age hero empty plasma', () => {
     expect(tile).not.toContain('blendHannahBos');
     expect(tile).toContain('metric="bioscore"');
     expect(hub).toContain('metric="plasmateal"');
-    expect(dial).toContain('UnknownWell');
+    expect(dial).not.toContain('UnknownWell');
+    expect(dial).toContain('empty');
+    expect(dial).toContain('size={HERO_MOBILE_SIZE}');
+    expect(dial).toContain('size={HERO_DESKTOP_SIZE}');
   });
 });
