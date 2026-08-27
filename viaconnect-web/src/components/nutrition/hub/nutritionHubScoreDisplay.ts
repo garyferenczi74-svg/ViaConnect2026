@@ -1,7 +1,8 @@
-// Brief 31: Nutrition hub score rings reuse the Connections empty-score
-// treatment. Missing stays -- / UNKNOWN, never 0. Do not invent a third
-// empty visual. The ASCII hyphen pair in CONNECTIONS_BOS_COMPOSITE is the
-// same object Connections already paints (not an em or en dash).
+// Brief 31: Nutrition hub score rings keep the Connections empty-score
+// object. Missing stays -- / UNKNOWN, never 0. The hub paints that empty
+// object on PlasmaGauge empty mode (circle + --), not Connections UnknownWell.
+// The ASCII hyphen pair in CONNECTIONS_BOS_COMPOSITE is the same object
+// Connections already paints (not an em or en dash).
 
 import {
   CONNECTIONS_BOS_COMPOSITE,

@@ -5,6 +5,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, it, expect } from 'vitest';
 import { ConnectionsBosDial } from '@/components/body-tracker/connections/ConnectionsBosDial';
+import { PlasmaGauge, arcPath } from '@/components/gauges/PlasmaGauge';
 import {
   CONNECTIONS_BOS_COMPOSITE,
   connectionsBosCompositeDisplay,
@@ -125,15 +126,105 @@ describe('nutritionHubScoreDisplay', () => {
     expect(nutritionHubScorePaint(nutritionHubScoreCenter(0))).toBe('0 OF 100');
   });
 
-  it('ConnectionsBosDial paints dashes with no 0 OF 100 fill', () => {
+  it('ConnectionsBosDial UNKNOWN still has no progress fill (Brief 57)', () => {
     const markup = renderToStaticMarkup(
       createElement(ConnectionsBosDial, { composite: nutritionHubEmptyScoreDisplay() }),
     );
     expect(markup).toContain('--');
     expect(markup).toContain('data-bos-composite="unknown"');
+    expect(markup).not.toContain('g-root');
+    expect(markup).not.toContain('pg-ring');
+    expect(markup).not.toContain('g-bead-cw');
+    expect(markup).not.toContain(arcPath(100, 100, 78, 0, 0.0001));
     expect(markup).not.toContain('>UNKNOWN<');
     expect(markup).not.toContain('0 OF 100');
     expect(markup).not.toContain('0% OF TARGET');
     expect(markup).not.toContain('>0<');
+  });
+
+  it('empty hub Nutrition Score / Daily Macros mount PlasmaGauge with --, never a fake zero', () => {
+    const scoreEmpty = renderToStaticMarkup(
+      createElement(PlasmaGauge, {
+        metric: 'plasmateal',
+        size: 176,
+        empty: true,
+        valueFontPx: 30,
+        plainNumber: true,
+        subtleTrack: true,
+        showUnit: false,
+      }),
+    );
+    const macroEmpty = renderToStaticMarkup(
+      createElement(PlasmaGauge, {
+        metric: 'plasmateal',
+        variant: 'standard',
+        max: 100,
+        size: 176,
+        showUnit: false,
+        subtleTrack: true,
+        plainNumber: true,
+        caption: 'OF TARGET',
+        valueFontPx: 24,
+        valueSuffix: '%',
+        empty: true,
+      }),
+    );
+
+    for (const markup of [scoreEmpty, macroEmpty]) {
+      expect(markup).toContain('g-root');
+      expect(markup).toContain('pg-ring');
+      expect(markup).toContain('>--</div>');
+      expect(markup).toContain('No score yet');
+      expect(markup).not.toContain('0 OF 100');
+      expect(markup).not.toContain('0% OF TARGET');
+      expect(markup).not.toContain('>0</div>');
+      expect(markup).not.toContain('>0%</div>');
+      expect(markup).not.toContain('OF 100');
+      expect(markup).not.toContain('OF TARGET');
+      expect(markup).not.toContain(arcPath(100, 100, 78, 0, 0.0001));
+      expect(markup).not.toContain('g-bead-cw');
+    }
+  });
+
+  it('finite 0 still paints 0 OF 100 / 0% OF TARGET with PlasmaGauge', () => {
+    const scoreZero = renderToStaticMarkup(
+      createElement(PlasmaGauge, {
+        metric: 'plasmateal',
+        size: 176,
+        value: 0,
+        caption: 'OF 100',
+        valueFontPx: 30,
+        plainNumber: true,
+        subtleTrack: true,
+        showUnit: false,
+      }),
+    );
+    const macroZero = renderToStaticMarkup(
+      createElement(PlasmaGauge, {
+        metric: 'plasmateal',
+        variant: 'standard',
+        max: 100,
+        size: 176,
+        value: 0,
+        showUnit: false,
+        subtleTrack: true,
+        plainNumber: true,
+        caption: 'OF TARGET',
+        valueFontPx: 24,
+        valueSuffix: '%',
+      }),
+    );
+
+    expect(scoreZero).toContain('g-root');
+    expect(scoreZero).toContain('pg-ring');
+    expect(scoreZero).toContain('>0</div>');
+    expect(scoreZero).toContain('OF 100');
+    expect(scoreZero).not.toContain('>--</div>');
+
+    expect(macroZero).toContain('g-root');
+    expect(macroZero).toContain('pg-ring');
+    expect(macroZero).toContain('>0%</div>');
+    expect(macroZero).toContain('OF TARGET');
+    expect(macroZero).not.toContain('>--</div>');
   });
 });

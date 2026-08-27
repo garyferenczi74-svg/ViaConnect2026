@@ -101,15 +101,16 @@ describe('NutritionHub source', () => {
     expect(source).toContain('max: 100');
   });
 
-  it('Row 1 empty score rings reuse Connections -- / UNKNOWN, never PlasmaGauge value 0 as OF 100', () => {
-    expect(source).toContain("import { ConnectionsBosDial } from '@/components/body-tracker/connections/ConnectionsBosDial'");
+  it('Row 1 empty score rings always mount PlasmaGauge, never Connections dashes or a fake 0 OF 100', () => {
+    expect(source).not.toContain('ConnectionsBosDial');
     expect(source).toContain('from \'./nutritionHubScoreDisplay\'');
     expect(source).toContain('nutritionHubScoreCenter(metrics.nutritionScore)');
     expect(source).toContain('nutritionHubMacroCenter(metrics.dailyMacrosPct)');
     expect(source).toContain('scoreCenter.kind === \'score\'');
     expect(source).toContain('macroCenter.kind === \'macros\'');
-    const emptyDials = source.match(/<ConnectionsBosDial composite=\{CONNECTIONS_BOS_COMPOSITE\} \/>/g) ?? [];
-    expect(emptyDials.length).toBe(2);
+    expect(source).toContain('<PlasmaGauge');
+    expect(source).toContain('empty');
+    expect(source).toContain('<PlasmaGauge {...macroGaugeProps} empty />');
     expect(source).toContain('No macros logged today yet');
     expect(source).toContain('Log a meal to see your score');
     // Empty branch must not feed PlasmaGauge a fake 0 score with OF 100.
