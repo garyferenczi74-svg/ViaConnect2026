@@ -16,8 +16,18 @@ vi.mock('next/link', () => ({
   }) => createElement('a', { href, className }, children),
 }));
 
+import {
+  WEARABLE_TILE_ACTIVATED_CHROME,
+  WEARABLE_TILE_RESTING_CHROME,
+} from '@/components/body-tracker/connections/WearableTileCard';
 import { PluginAppCard } from '../PluginAppCard';
+import { PluginAppDetailPanel } from '../PluginAppDetailPanel';
+import { PluginsSummaryPanel } from '../PluginsSummaryPanel';
 import { PluginVendorMark } from '../PluginVendorMark';
+import {
+  PLUGIN_TILE_ACTIVATED_CHROME,
+  PLUGIN_TILE_RESTING_CHROME,
+} from '../pluginTileChrome';
 
 function cardFrom(
   slug: string,
@@ -45,7 +55,10 @@ describe('PluginAppCard Connections chrome', () => {
       />,
     );
 
-    expect(google).toContain('rounded-2xl border border-white/[0.08] bg-[#1E3054] p-4');
+    expect(google).toContain(
+      'rounded-[24px] border border-[rgba(255,255,255,0.14)] bg-[rgba(255,255,255,0.07)] p-4 backdrop-blur-md',
+    );
+    expect(google).not.toContain('bg-[#1E3054]');
     expect(google).toContain('data-vendor-mark="google_health"');
     expect(google).toContain('data-last-sync-state="synced"');
     expect(google).toContain('Connected');
@@ -186,5 +199,88 @@ describe('PluginAppCard Connections chrome', () => {
     expect(marks).toContain('data-vendor-mark="headspace"');
     expect(marks).toContain('data-vendor-mark="calm"');
     expect(marks).not.toContain('data-vendor-mark="whoop"');
+  });
+
+  it('selected tile uses WearableTileCard blue glass; rest uses grey glass', () => {
+    expect(PLUGIN_TILE_RESTING_CHROME).toBe(WEARABLE_TILE_RESTING_CHROME);
+    expect(PLUGIN_TILE_ACTIVATED_CHROME).toBe(WEARABLE_TILE_ACTIVATED_CHROME);
+    const rest = renderToStaticMarkup(
+      <PluginAppCard card={cardFrom('myfitnesspal', 'coming_soon', null)} />,
+    );
+    const selected = renderToStaticMarkup(
+      <PluginAppCard card={cardFrom('myfitnesspal', 'coming_soon', null)} selected />,
+    );
+    expect(rest).toContain(WEARABLE_TILE_RESTING_CHROME);
+    expect(rest).not.toContain(WEARABLE_TILE_ACTIVATED_CHROME);
+    expect(selected).toContain(WEARABLE_TILE_ACTIVATED_CHROME);
+    expect(selected).toContain('data-selected="true"');
+    expect(selected).not.toContain('bg-[#1E3054]');
+  });
+});
+
+describe('PluginAppDetailPanel honesty', () => {
+  it('Coming soon detail has no Connect primary action', () => {
+    const markup = renderToStaticMarkup(
+      <PluginAppDetailPanel card={cardFrom('myfitnesspal', 'coming_soon', null)} />,
+    );
+    expect(markup).toContain('Coming soon');
+    expect(markup).toContain('No action yet. We enable Connect when the flow ships.');
+    expect(markup).not.toContain('plugin-detail-connect-myfitnesspal');
+    expect(markup).not.toContain('Upload XML');
+    expect(markup).not.toContain('Drag and drop');
+    expect(markup).not.toContain('Bio Optimization Score');
+  });
+
+  it('wired not-connected detail shows Connect', () => {
+    const markup = renderToStaticMarkup(
+      <PluginAppDetailPanel
+        card={{
+          slug: 'wired_live_app',
+          displayName: 'Wired live app',
+          category: 'Health Platforms',
+          description: 'Test live connect.',
+          iconKey: 'HeartPulse',
+          status: 'live',
+          connectionType: 'oauth2',
+          stateSource: 'body_tracker_connections',
+          connectPath: '/api/integrations/wired-live/start',
+          disconnectPath: '/api/integrations/wired-live/disconnect',
+          wearablesCrossLink: null,
+          sortOrder: 1,
+          cardState: 'not_connected',
+          connectedAt: null,
+          lastSyncAt: null,
+        }}
+      />,
+    );
+    expect(markup).toContain('plugin-detail-connect-wired_live_app');
+    expect(markup).toContain('Connect');
+    expect(markup).not.toContain('Coming soon');
+    expect(markup).not.toContain('Upload XML');
+  });
+});
+
+describe('PluginsSummaryPanel honesty', () => {
+  it('omits empty buckets and never mounts a BOS score', () => {
+    const markup = renderToStaticMarkup(
+      <PluginsSummaryPanel
+        cards={[
+          cardFrom('myfitnesspal', 'coming_soon', null),
+          cardFrom('strava', 'coming_soon', null),
+        ]}
+      />,
+    );
+    expect(markup).toContain('Plugins summary');
+    expect(markup).toContain('Coming soon');
+    expect(markup).toContain('MyFitnessPal');
+    expect(markup).toContain('Strava');
+    expect(markup).toContain('plugins-summary-coming_soon');
+    expect(markup).not.toContain('plugins-summary-connected');
+    expect(markup).not.toContain('plugins-summary-not_connected');
+    expect(markup).not.toContain('Bio Optimization Score');
+    expect(markup).not.toContain('ConnectionsBosDial');
+    expect(markup).not.toContain('PlasmaGauge');
+    expect(markup).not.toContain('Whoop');
+    expect(markup).not.toContain('Apple Health');
   });
 });

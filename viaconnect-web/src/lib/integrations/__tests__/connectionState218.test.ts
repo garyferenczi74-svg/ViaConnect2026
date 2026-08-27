@@ -8,6 +8,7 @@ import { join } from 'node:path';
 import {
   joinRegistryWithState,
   groupCardsByCategory,
+  summarizePluginConnectionState,
 } from '../connectionState';
 import {
   PLUGIN_APP_REGISTRY_FALLBACK,
@@ -220,6 +221,17 @@ describe('joinRegistryWithState uses last-sync-state only', () => {
     expect(groups.every((g) => g.cards.length > 0)).toBe(true);
     expect(groups.some((g) => g.category === 'Mindfulness')).toBe(false);
     expect(groups.some((g) => g.category === 'Data Import')).toBe(false);
+  });
+
+  it('summary omits empty buckets instead of counting them as zero', () => {
+    const comingSoon = joinRegistryWithState(PLUGIN_APP_REGISTRY_FALLBACK, []);
+    const buckets = summarizePluginConnectionState(comingSoon);
+    expect(buckets.map((b) => b.state)).toEqual(['coming_soon']);
+    expect(buckets.some((b) => b.state === 'connected')).toBe(false);
+    expect(buckets.some((b) => b.state === 'not_connected')).toBe(false);
+    expect(buckets.every((b) => b.names.length > 0)).toBe(true);
+    expect(buckets[0]?.names).not.toContain('Whoop');
+    expect(buckets[0]?.names).not.toContain('Apple Health');
   });
 });
 
