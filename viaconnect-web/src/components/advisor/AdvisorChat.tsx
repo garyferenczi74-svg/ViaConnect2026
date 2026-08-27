@@ -5,7 +5,9 @@
  *
  * Streams responses from /api/advisor/chat. Fail-open UX: preserves the
  * user's message in the input on error, shows an honest error bubble with
- * Retry. Loads persisted history on mount. Chips send real messages.
+ * Retry. Loads persisted history on mount and rewrites stale not-configured
+ * / supabase-secrets assistant copy so it cannot look like a live Hannah
+ * reply. Chips send real messages.
  */
 
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -15,6 +17,12 @@ import MessageBubble from "./MessageBubble";
 import SuggestedPrompts from "./SuggestedPrompts";
 import RatingButtons from "./RatingButtons";
 import { extractMsgIdMarker } from "@/lib/jeffery/advisor-msg-marker";
+import {
+  displayAdvisorAssistantMessage,
+  hydrateAdvisorHistoryMessages,
+  isStaleAdvisorConfigCopy,
+  lastUserRetryText,
+} from "@/lib/jeffery/stale-advisor-config-copy";
 
 type AdvisorRole = "consumer" | "practitioner" | "naturopath";
 
@@ -75,13 +83,15 @@ export default function AdvisorChat({
         };
         if (cancelled || !data.messages?.length) return;
         setMessages(
-          data.messages
-            .filter((m) => m.role === "user" || m.role === "assistant")
-            .map((m) => ({
-              role: m.role as "user" | "assistant",
-              content: m.content,
-              id: m.id,
-            }))
+          hydrateAdvisorHistoryMessages(
+            data.messages
+              .filter((m) => m.role === "user" || m.role === "assistant")
+              .map((m) => ({
+                id: m.id,
+                role: m.role as "user" | "assistant",
+                content: m.content,
+              }))
+          )
         );
       } catch {
         /* fail-open empty */
@@ -156,11 +166,10 @@ export default function AdvisorChat({
           const { clean, messageId } = extractMsgIdMarker(assistantMsg);
           setMessages((prev) => {
             const updated = [...prev];
-            updated[updated.length - 1] = {
-              role: "assistant",
-              content: clean,
+            updated[updated.length - 1] = displayAdvisorAssistantMessage(clean, {
               id: messageId ?? updated[updated.length - 1]?.id,
-            };
+              retryText: lastUserRetryText(updated),
+            });
             return updated;
           });
         }
@@ -170,14 +179,17 @@ export default function AdvisorChat({
         setMessages((prev) => {
           const updated = [...prev];
           if (updated.length && updated[updated.length - 1].role === "assistant") {
-            updated[updated.length - 1] = {
-              role: "assistant",
-              content: final.clean,
+            updated[updated.length - 1] = displayAdvisorAssistantMessage(final.clean, {
               id: final.messageId ?? updated[updated.length - 1].id,
-            };
+              retryText: lastUserRetryText(updated),
+            });
           }
           return updated;
         });
+        if (isStaleAdvisorConfigCopy(final.clean)) {
+          setInput(userMsg);
+          requestAnimationFrame(() => inputRef.current?.focus());
+        }
       } catch {
         setInput(userMsg);
         setMessages((prev) => [
