@@ -89,15 +89,14 @@ export function BiologicalAgeHeroTile({
       ) : (
         <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
           {display === null ? (
-            <div
-              className="flex h-[180px] w-[180px] flex-col items-center justify-center"
-              aria-label="Biological Age UNKNOWN"
-            >
-              <span className="text-4xl font-bold text-white/40">--</span>
-              <span className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">
-                UNKNOWN
-              </span>
-            </div>
+            <PlasmaGauge
+              metric="bioscore"
+              variant="hero"
+              size={180}
+              empty
+              showUnit={false}
+              ariaLabel="Biological Age UNKNOWN"
+            />
           ) : (
             <PlasmaGauge
               metric="bioscore"
