@@ -230,6 +230,81 @@ function fallbackPromptForRole(role: AdvisorRole): string {
   return HANNAH_CONSUMER_SYSTEM_PROMPT;
 }
 
+function normalizeIdentityText(template: string): string {
+  return template.replace(/\s+/g, " ").toLowerCase();
+}
+
+function claimsJefferyIdentity(template: string): boolean {
+  const text = normalizeIdentityText(template);
+  return text.includes("you are jeffery") || text.includes("introduce yourself as jeffery");
+}
+
+function claimsHannahIdentity(template: string): boolean {
+  const text = normalizeIdentityText(template);
+  return (
+    text.includes("you are hannah") ||
+    text.includes("introduce yourself as hannah") ||
+    text.includes("you are {displaynameassistant}")
+  );
+}
+
+/**
+ * Consumer-only identity lock. True when a DB `system_prompt` must not go live:
+ * it claims Jeffery identity, or it never claims Hannah (including the approved
+ * `{displayNameAssistant}` placeholder, which resolves to Hannah).
+ */
+export function isConsumerJefferyIdentityPrompt(template: string): boolean {
+  return claimsJefferyIdentity(template) || !claimsHannahIdentity(template);
+}
+
+export type AdvisorPromptRejectReason = "jeffery_identity" | "missing_hannah_identity";
+
+export interface AdvisorPromptResolution {
+  template: string;
+  promptSource: "db" | "fallback";
+  rejectedDbRow: boolean;
+  rejectReason: AdvisorPromptRejectReason | null;
+}
+
+/**
+ * Choose the live advisor template. Consumer rows that identify as Jeffery
+ * (or fail to identify as Hannah) are discarded in favor of the 219F Hannah
+ * fallback. Practitioner / naturopath DB prompts are used as stored.
+ */
+export function resolveAdvisorPromptTemplate(
+  role: AdvisorRole,
+  dbSystemPrompt: string | null | undefined
+): AdvisorPromptResolution {
+  const fallback = fallbackPromptForRole(role);
+  if (!dbSystemPrompt) {
+    return {
+      template: fallback,
+      promptSource: "fallback",
+      rejectedDbRow: false,
+      rejectReason: null,
+    };
+  }
+
+  if (role === "consumer" && isConsumerJefferyIdentityPrompt(dbSystemPrompt)) {
+    const rejectReason: AdvisorPromptRejectReason = claimsJefferyIdentity(dbSystemPrompt)
+      ? "jeffery_identity"
+      : "missing_hannah_identity";
+    return {
+      template: HANNAH_CONSUMER_SYSTEM_PROMPT,
+      promptSource: "fallback",
+      rejectedDbRow: true,
+      rejectReason,
+    };
+  }
+
+  return {
+    template: dbSystemPrompt,
+    promptSource: "db",
+    rejectedDbRow: false,
+    rejectReason: null,
+  };
+}
+
 /**
  * Build the full advisor context for a query.
  */
@@ -251,8 +326,17 @@ export async function buildAdvisorContext(
       .eq("is_active", true)
       .maybeSingle();
     if (!promptErr && promptRow?.system_prompt) {
-      template = promptRow.system_prompt;
-      promptSource = "db";
+      const resolved = resolveAdvisorPromptTemplate(role, promptRow.system_prompt);
+      template = resolved.template;
+      promptSource = resolved.promptSource;
+      if (resolved.rejectedDbRow) {
+        safeLog.warn("advisor.context", "rejected consumer db prompt; using Hannah fallback", {
+          role,
+          reason: resolved.rejectReason,
+          dbVersion: promptRow.version ?? null,
+          personaVersion: HANNAH_PERSONA_VERSION,
+        });
+      }
     } else {
       safeLog.warn("advisor.context", "using fallback persona", {
         role,

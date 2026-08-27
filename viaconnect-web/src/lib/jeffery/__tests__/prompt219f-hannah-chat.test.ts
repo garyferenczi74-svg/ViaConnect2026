@@ -137,6 +137,8 @@ describe("Prompt 219F route and UI wiring (source shape)", () => {
     expect(src).toMatch(/HANNAH_CONSUMER_SYSTEM_PROMPT/);
     expect(src).toMatch(/getGordonDailyDigest|loadConsumerExtras/);
     expect(src).toMatch(/getScheduleView/);
+    expect(src).toMatch(/isConsumerJefferyIdentityPrompt/);
+    expect(src).toMatch(/resolveAdvisorPromptTemplate/);
   });
 
   it("migration seeds consumer persona", () => {
