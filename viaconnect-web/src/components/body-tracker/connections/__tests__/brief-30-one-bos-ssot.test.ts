@@ -98,8 +98,9 @@ describe('Brief 30 one Bio Optimization Score SSOT', () => {
       createElement(ConnectionsBosDial, { composite }),
     );
     expect(dial).toContain('--');
-    expect(dial).toContain('UNKNOWN');
     expect(dial).toContain('data-bos-composite="unknown"');
+    expect(dial).not.toContain('>UNKNOWN<');
+    expect(dial).not.toContain('>BOS<');
     expect(dial).not.toContain('>62<');
     expect(dial).not.toContain('Good');
     expect(dial).not.toContain('>0<');

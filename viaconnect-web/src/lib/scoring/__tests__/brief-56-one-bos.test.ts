@@ -168,7 +168,9 @@ describe('Brief 56 one Bio Optimization Score', () => {
       createElement(ConnectionsBosDial, { composite: CONNECTIONS_BOS_COMPOSITE }),
     );
     expect(dial).toContain('--');
-    expect(dial).toContain('UNKNOWN');
+    expect(dial).toContain('data-bos-composite="unknown"');
+    expect(dial).not.toContain('>UNKNOWN<');
+    expect(dial).not.toContain('>BOS<');
   });
 
   it('hydrationScoreFromToday is UNKNOWN without a log and 0 only when they logged 0 ml', () => {

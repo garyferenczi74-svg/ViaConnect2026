@@ -47,6 +47,7 @@ const LANDING_AND_HOME_SOURCES = [
 ].join('\n');
 
 // SHA-256 of in-app Connections wearable-tile files at main 4a13c3de.
+// ConnectionsBosDial hash refreshed in Brief 57 (Daily Scores plasma, not closed halo).
 const CONNECTIONS_WEARABLE_TILE_HASHES: Record<string, string> = {
   'src/lib/body-tracker/wearable-tiles.ts':
     '6523e62154a26da9e02bcb214e2c0e6e98358bcf3a3f4ab34fad49e41843cb62',
@@ -55,7 +56,7 @@ const CONNECTIONS_WEARABLE_TILE_HASHES: Record<string, string> = {
   'src/components/body-tracker/connections/ConnectionsSurface.tsx':
     '4fe6b72ccd8a3776a9747ed7339fa80fba26b33d2a4dcdc20119514b4e8402a8',
   'src/components/body-tracker/connections/ConnectionsBosDial.tsx':
-    '949b7546058169e812fe4c08b36fbd3adcebffd3612e28a51b02e78e03fca152',
+    '007b0baceb4c9ef8ce5c1641356a59f59b0c52dfdcd0fac0b72f7f2bba5b74d9',
   'src/components/body-tracker/connections/ScoreDetailPanel.tsx':
     '74efe9a800700dcbeed38cfc84b86260712d6d89c003d889ab77800c737615bd',
   'src/hooks/useWearableTilesSnapshot.ts':

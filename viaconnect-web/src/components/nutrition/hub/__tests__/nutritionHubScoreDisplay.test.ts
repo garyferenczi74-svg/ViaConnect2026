@@ -125,12 +125,13 @@ describe('nutritionHubScoreDisplay', () => {
     expect(nutritionHubScorePaint(nutritionHubScoreCenter(0))).toBe('0 OF 100');
   });
 
-  it('ConnectionsBosDial paints dashes + UNKNOWN, never 0 OF 100', () => {
+  it('ConnectionsBosDial paints dashes with no 0 OF 100 fill', () => {
     const markup = renderToStaticMarkup(
       createElement(ConnectionsBosDial, { composite: nutritionHubEmptyScoreDisplay() }),
     );
     expect(markup).toContain('--');
-    expect(markup).toContain('UNKNOWN');
+    expect(markup).toContain('data-bos-composite="unknown"');
+    expect(markup).not.toContain('>UNKNOWN<');
     expect(markup).not.toContain('0 OF 100');
     expect(markup).not.toContain('0% OF TARGET');
     expect(markup).not.toContain('>0<');
