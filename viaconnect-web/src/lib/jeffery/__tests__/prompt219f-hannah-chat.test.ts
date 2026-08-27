@@ -118,6 +118,9 @@ describe("Prompt 219F route and UI wiring (source shape)", () => {
     expect(src).toMatch(/isError/);
     expect(src).toMatch(/\/api\/advisor\/history/);
     expect(src).toMatch(/extractMsgIdMarker/);
+    expect(src).toMatch(/hydrateAdvisorHistoryMessages/);
+    expect(src).toMatch(/fetch\("\/api\/advisor\/chat"/);
+    expect(src).toMatch(/method:\s*"POST"/);
   });
 
   it("consumer page uses getDisplayName and compliant subtitle", () => {
