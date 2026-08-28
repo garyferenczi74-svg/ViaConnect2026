@@ -41,7 +41,7 @@ export function PluginsSummaryPanel({ cards }: PluginsSummaryPanelProps) {
               key={bucket.state}
               data-testid={`plugins-summary-${bucket.state}`}
               data-summary-state={bucket.state}
-              className="rounded-xl border border-white/[0.08] bg-[rgba(255,255,255,0.06)] p-3"
+              className="rounded-xl border border-white/[0.08] bg-[rgba(255,255,255,0.03)] p-3"
             >
               <h3 className="text-[11px] font-medium uppercase tracking-wider text-white/45">
                 {bucket.label}

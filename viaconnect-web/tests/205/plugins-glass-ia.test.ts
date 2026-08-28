@@ -58,6 +58,10 @@ describe("Plugins glass 3-column IA", () => {
     expect(surface).not.toContain("WearableTileCard");
     expect(detail).not.toContain("WearableTileCard");
     expect(summary).not.toContain("WearableTileCard");
+    expect(detail).toContain("bg-[rgba(255,255,255,0.03)]");
+    expect(detail).not.toContain("bg-[rgba(255,255,255,0.06)]");
+    expect(summary).toContain("bg-[rgba(255,255,255,0.03)]");
+    expect(summary).not.toContain("bg-[rgba(255,255,255,0.06)]");
     expect(joined).not.toContain("ConnectionsSurface");
     expect(joined).not.toMatch(/\bas any\b/);
   });
@@ -78,6 +82,12 @@ describe("Plugins glass 3-column IA", () => {
     expect(shell).toContain("inset-0");
     expect(shell).toContain("objectFit: 'cover'");
     expect(shell).toContain("pointer-events-none");
+    expect(shell).toContain("rgba(13, 21, 32, 0.38)");
+    expect(shell).toContain("rgba(26, 39, 68, 0.28)");
+    expect(shell).toContain("rgba(45, 165, 160, 0.12)");
+    expect(shell).not.toContain("0.72");
+    expect(shell).not.toContain("0.58");
+    expect(shell).not.toContain("backdrop-blur");
     expect(shell).not.toContain("Mobile%20Hero");
     expect(shell).not.toContain("FlaskConical");
     expect(shell).not.toContain("ShareProtocolButton");
