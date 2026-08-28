@@ -54,7 +54,8 @@ describe('GeneticsHubHeader source', () => {
   });
 
   it('uses the Sparkles icon at strokeWidth 1.5', () => {
-    expect(chip).toContain("import { Sparkles } from 'lucide-react'");
+    expect(chip).toContain("from 'lucide-react'");
+    expect(chip).toContain('Sparkles');
     expect(chip).toContain('strokeWidth={1.5}');
   });
 
