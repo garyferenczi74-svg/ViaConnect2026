@@ -102,7 +102,10 @@ export function TodaysProtocol(_props?: { supplements?: unknown }) {
 
   if (status === 'loading') {
     return (
-      <section className="flex min-h-[200px] items-center justify-center rounded-2xl border border-white/10 bg-[#1E3054]/60 p-6">
+      <section
+        data-home-beat="protocol"
+        className="flex min-h-[200px] items-center justify-center rounded-2xl border border-white/10 bg-[#1E3054]/60 p-6"
+      >
         <Loader2 className="h-5 w-5 animate-spin text-[#2DA5A0]" strokeWidth={1.5} />
         <span className="ml-2 text-sm text-white/40">Loading today&apos;s schedule...</span>
       </section>
@@ -111,7 +114,10 @@ export function TodaysProtocol(_props?: { supplements?: unknown }) {
 
   if (status === 'unavailable') {
     return (
-      <section className="rounded-2xl border border-white/10 bg-[#1E3054]/60 p-6 text-center">
+      <section
+        data-home-beat="protocol"
+        className="rounded-2xl border border-white/10 bg-[#1E3054]/60 p-6 text-center"
+      >
         <p className="text-sm text-white/60">
           {errorMessage ?? 'Schedule unavailable. Retry when ready.'}
         </p>
@@ -128,7 +134,10 @@ export function TodaysProtocol(_props?: { supplements?: unknown }) {
 
   if (totalCount === 0) {
     return (
-      <section className="rounded-2xl border border-white/10 bg-[#1E3054]/60 backdrop-blur-md p-6 text-center">
+      <section
+        data-home-beat="protocol"
+        className="rounded-2xl border border-white/10 bg-[#1E3054]/60 backdrop-blur-md p-6 text-center"
+      >
         <Pill className="mx-auto mb-3 h-8 w-8 text-[#2DA5A0]/60" strokeWidth={1.5} />
         <h3 className="text-base font-semibold text-white">No Active Protocol Yet</h3>
         <p className="mx-auto mt-1 max-w-sm text-xs text-white/40">
@@ -174,6 +183,7 @@ export function TodaysProtocol(_props?: { supplements?: unknown }) {
   return (
     <section
       className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#1E3054]/60 backdrop-blur-md"
+      data-home-beat="protocol"
       data-testid="dashboard-daily-schedule"
       data-schedule-total={totalCount}
       data-schedule-completed={completedCount}

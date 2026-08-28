@@ -1,10 +1,11 @@
 'use client';
 
 // Score-first morning card: Bio Optimization Score from blendHannahBos +
-// ConnectionsBosDial (Brief 56). One TodaysProtocol action, seven Connections
-// contributor chips as DISPLAY only. Rewards gamification stays off this card.
+// ConnectionsBosDial (Brief 56). Protocol lives on TodaysProtocol lower on
+// the dashboard. Seven contributor chips as a compact in-score row, not a
+// tab bar. Rewards gamification stays off this card.
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useDailyScheduleView } from '@/hooks/useDailyScheduleView';
 import { useSleepTileSynced } from '@/hooks/useSleepTileSynced';
 import { resolveHabitSleepPair } from '@/lib/body-tracker/habit-sleep-pair';
@@ -19,35 +20,8 @@ import {
 import { useWearableTilesSnapshot } from '@/hooks/useWearableTilesSnapshot';
 import { buildMorningChips, chipByKey } from '@/lib/dashboard/morning-card/contributors';
 import { type MorningChipKey } from '@/lib/dashboard/morning-card/keys';
-import {
-  PROTOCOL_CTA_LOADING_BOUND_MS,
-  firstIncompleteProtocolAction,
-  type MorningProtocolBuckets,
-  type MorningProtocolItem,
-} from '@/lib/dashboard/morning-card/protocol-cta';
 import { MorningChipGrid } from './MorningChipGrid';
 import { MorningContributorList } from './MorningContributorList';
-import { MorningProtocolCtaButton } from './MorningProtocolCta';
-
-function bucketsFromView(
-  view: ReturnType<typeof useDailyScheduleView>['view'],
-): MorningProtocolBuckets {
-  const toItem = (
-    card: (typeof view.morning)[number],
-  ): MorningProtocolItem => ({
-    slotId: card.slot_id,
-    userSupplementId: card.user_supplement_id,
-    name: card.name,
-    dose: card.dose,
-    timeOfDay: card.time_of_day,
-    taken: card.taken,
-  });
-  return {
-    morning: view.morning.map(toItem),
-    afternoon: view.afternoon.map(toItem),
-    evening: view.evening.map(toItem),
-  };
-}
 
 export function MorningCard() {
   const schedule = useDailyScheduleView();
@@ -67,42 +41,9 @@ export function MorningCard() {
     [wearableSnapshot.scoreDetail, sleepTileSynced],
   );
   const [selectedKey, setSelectedKey] = useState<MorningChipKey | null>(null);
-  const [taking, setTaking] = useState(false);
-  const [loadingElapsedMs, setLoadingElapsedMs] = useState(0);
 
-  useEffect(() => {
-    if (schedule.status !== 'loading') {
-      setLoadingElapsedMs(0);
-      return;
-    }
-    setLoadingElapsedMs(0);
-    const id = window.setTimeout(() => {
-      setLoadingElapsedMs(PROTOCOL_CTA_LOADING_BOUND_MS);
-    }, PROTOCOL_CTA_LOADING_BOUND_MS);
-    return () => window.clearTimeout(id);
-  }, [schedule.status]);
-
-  const cta = firstIncompleteProtocolAction(
-    schedule.status === 'ready' ? bucketsFromView(schedule.view) : null,
-    { status: schedule.status, loadingElapsedMs },
-  );
   const selectedChip = selectedKey ? chipByKey(chips, selectedKey) : null;
   const composite = hannahBos.display;
-
-  async function handleTake(): Promise<void> {
-    if (cta.kind !== 'action' || !cta.item) return;
-    setTaking(true);
-    try {
-      await schedule.toggleTaken({
-        slotId: cta.item.slotId,
-        userSupplementId: cta.item.userSupplementId,
-        timeOfDay: cta.item.timeOfDay,
-        nextTaken: true,
-      });
-    } finally {
-      setTaking(false);
-    }
-  }
 
   return (
     <section
@@ -110,32 +51,38 @@ export function MorningCard() {
       data-morning-card="true"
       data-bos-card="dashboard"
       data-home-beat="bos"
-      className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#1E3054]/60 via-[#1A2744]/60 to-[#141E33]/60 p-5 sm:p-6 md:p-8"
+      className="relative overflow-hidden rounded-3xl border border-white/10 bg-[rgba(255,255,255,0.035)] p-5 backdrop-blur-sm sm:p-6 md:p-8"
     >
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full opacity-20 blur-3xl"
+        className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full opacity-10 blur-3xl"
         style={{ backgroundColor: '#2DA5A0' }}
       />
 
       <div className="relative flex flex-col gap-5 md:gap-6">
-        <div className="grid gap-5 md:grid-cols-[auto_1fr] md:items-end md:gap-10">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:gap-10">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-wider text-white/40">
               {MORNING_CARD_SCORE_LABEL}
             </p>
             <ConnectionsBosDial composite={composite} />
           </div>
-          <div data-home-beat="protocol">
-            <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-white/40">
-              Today protocol
-            </p>
-            <MorningProtocolCtaButton
-              cta={cta}
-              onTake={handleTake}
-              onRetry={schedule.refresh}
-              taking={taking}
-            />
+          <div className="flex min-w-0 flex-1 flex-col justify-center gap-2">
+            <p className="text-sm leading-relaxed text-white/70">{hannahBos.sentence}</p>
+            {hannahBos.result.chips.length > 0 ? (
+              <div className="flex flex-wrap gap-1.5">
+                {hannahBos.result.chips.map((chip) => (
+                  <span
+                    key={chip}
+                    className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] text-white/70"
+                  >
+                    {chip}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="text-[10px] text-white/40">{BOS_UNKNOWN_NEVER_ZERO_COPY}</p>
+            )}
           </div>
         </div>
 
@@ -148,22 +95,6 @@ export function MorningCard() {
         <HabitSleepPair pair={habitSleepPair} />
 
         {selectedChip ? <MorningContributorList chip={selectedChip} /> : null}
-
-        <p className="text-center text-[10px] text-white/40">{hannahBos.sentence}</p>
-        {hannahBos.result.chips.length > 0 ? (
-          <div className="flex flex-wrap justify-center gap-1.5">
-            {hannahBos.result.chips.map((chip) => (
-              <span
-                key={chip}
-                className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] text-white/70"
-              >
-                {chip}
-              </span>
-            ))}
-          </div>
-        ) : (
-          <p className="text-center text-[10px] text-white/40">{BOS_UNKNOWN_NEVER_ZERO_COPY}</p>
-        )}
       </div>
     </section>
   );

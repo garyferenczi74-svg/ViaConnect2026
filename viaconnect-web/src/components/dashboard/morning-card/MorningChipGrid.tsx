@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import type { MorningChipKey } from '@/lib/dashboard/morning-card/keys';
 import type { MorningChipView } from '@/lib/dashboard/morning-card/contributors';
+import { MORNING_CARD_CONTRIBUTORS_LABEL } from '@/lib/dashboard/morning-card/copy';
 
 const CHIP_ICONS: Record<MorningChipKey, LucideIcon> = {
   hrv: HeartPulse,
@@ -36,42 +37,45 @@ export function MorningChipGrid({
   onSelect,
 }: MorningChipGridProps) {
   return (
-    <ul
-      role="list"
-      aria-label="Bio Optimization contributors"
-      className="grid grid-cols-4 gap-2 md:grid-cols-7"
-    >
-      {chips.map((chip) => {
-        const Icon = CHIP_ICONS[chip.key];
-        const selected = selectedKey === chip.key;
-        return (
-          <li key={chip.key} className="min-w-0">
-            <Link
-              href={chip.href}
-              data-chip={chip.key}
-              data-source-status={chip.sourceStatus}
-              data-display-value={chip.displayValue}
-              aria-pressed={selected}
-              aria-expanded={selected}
-              aria-label={`${chip.label}, sources ${chip.sourceStatus}`}
-              onClick={(event) => {
-                event.preventDefault();
-                onSelect(chip.key);
-              }}
-              className={`flex min-h-[44px] w-full flex-col items-center justify-center gap-1 rounded-xl border px-1 py-2 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] ${
-                selected
-                  ? 'border-[#2DA5A0]/50 bg-[#2DA5A0]/15'
-                  : 'border-white/10 bg-[#1A2744]/70 hover:border-white/20'
-              }`}
-            >
-              <Icon className="h-4 w-4 text-[#2DA5A0]" strokeWidth={1.5} aria-hidden="true" />
-              <span className="truncate text-[10px] font-medium text-white/80 sm:text-[11px]">
-                {chip.label}
-              </span>
-            </Link>
-          </li>
-        );
-      })}
-    </ul>
+    <div data-morning-contributors="inline">
+      <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-white/40">
+        {MORNING_CARD_CONTRIBUTORS_LABEL}
+      </p>
+      <ul
+        role="list"
+        aria-label="Bio Optimization contributors"
+        className="flex flex-wrap gap-x-1 gap-y-0.5"
+      >
+        {chips.map((chip) => {
+          const Icon = CHIP_ICONS[chip.key];
+          const selected = selectedKey === chip.key;
+          return (
+            <li key={chip.key} className="min-w-0">
+              <Link
+                href={chip.href}
+                data-chip={chip.key}
+                data-source-status={chip.sourceStatus}
+                data-display-value={chip.displayValue}
+                aria-pressed={selected}
+                aria-expanded={selected}
+                aria-label={`${chip.label}, sources ${chip.sourceStatus}`}
+                onClick={(event) => {
+                  event.preventDefault();
+                  onSelect(chip.key);
+                }}
+                className={`inline-flex min-h-[44px] min-w-[44px] items-center gap-1.5 px-2 text-[11px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${
+                  selected
+                    ? 'text-[#2DA5A0] underline decoration-[#2DA5A0]/70 underline-offset-4'
+                    : 'text-white/70 hover:text-white/90'
+                }`}
+              >
+                <Icon className="h-3.5 w-3.5 text-[#2DA5A0]" strokeWidth={1.5} aria-hidden="true" />
+                <span className="whitespace-nowrap">{chip.label}</span>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }
