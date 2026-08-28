@@ -3,7 +3,7 @@
 // Prompt 180 (2026-06-08): My Biology Hub composer.
 //
 // Renders, top to bottom:
-//   1. Header (eyebrow + h1 + subhead + Guided by Arnold pill).
+//   1. Header (eyebrow + h1 + subhead + HannahAIGuidedByChip).
 //   2. GuidanceStrip (Getting Started / Refresh placeholder).
 //   3. The six surface bento grid mapped from SURFACES.
 //   4. ConnectionsStrip (apps and wearables data layer).
@@ -18,7 +18,7 @@
 //     form an equal four-card row at col span 3 each.
 
 import Link from 'next/link';
-import { Sparkles, FlaskConical, ArrowRight } from 'lucide-react';
+import { FlaskConical, ArrowRight } from 'lucide-react';
 import { SURFACES } from './hubConfig';
 import { BentoCard } from './BentoCard';
 import { GuidanceStrip } from './GuidanceStrip';
@@ -49,16 +49,7 @@ export function BodyTrackerHub() {
             Your biology surfaces in one hub. Tap any tile to dive in.
           </p>
         </div>
-        <div className="flex flex-shrink-0 flex-col items-end gap-2">
-          <span
-            aria-hidden="true"
-            className="hidden flex-shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] text-white/75 backdrop-blur-sm md:inline-flex"
-          >
-            <Sparkles className="h-3 w-3 text-[#2DA5A0]" strokeWidth={1.5} />
-            Guided by Arnold
-          </span>
-          <HannahAIGuidedByChip />
-        </div>
+        <HannahAIGuidedByChip />
       </header>
 
       {/* Getting Started strip (placeholder per Section 11). */}
