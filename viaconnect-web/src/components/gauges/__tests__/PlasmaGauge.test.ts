@@ -63,6 +63,14 @@ describe('PlasmaGauge source', () => {
     expect(source).toContain("empty ? '--'");
   });
 
+  it('declares brightReadout as an optional prop that defaults off', () => {
+    expect(source).toContain('brightReadout?: boolean;');
+    expect(source).toContain('brightReadout = false');
+    expect(source).toContain("brightReadout ? 'rgba(255,255,255,.92)' : 'rgba(255,255,255,.6)'");
+    expect(source).toContain("empty ? '--'");
+    expect(source).not.toContain('0 YEARS');
+  });
+
   it('shows the count-up value in the center when displayValue is omitted', () => {
     // centerNumber falls back to the count-up n unless displayValue is set, so
     // an omitting call site renders byte-identical to before.

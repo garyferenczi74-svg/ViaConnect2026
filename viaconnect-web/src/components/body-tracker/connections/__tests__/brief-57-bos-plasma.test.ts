@@ -34,7 +34,7 @@ const FROZEN_AT_2B53743: Record<string, string> = {
   'src/lib/dashboard/morning-card/protocol-cta.ts':
     '0f3b2c44888f69fd9c00d5c3d059cfbecb20a7e3e11ca4a69935a65ca2e3bd55',
   'src/components/dashboard/morning-card/MorningChipGrid.tsx':
-    'c8f95690a7b2678e38ea1cdf8a63f099a5b0a2bdf659504dc29d472c05d0bcc0',
+    '08bf14e6bb9652650c44482ec8607bb482fe9f1ca786b8bf8cc3a0823fe4a5f1',
   'src/components/dashboard/morning-card/MorningProtocolCta.tsx':
     'eb8ac47491ef91f7327afbdad301a607ef00f91b96a5ac3e4bd6bcb797675203',
   'src/hooks/useHannahBosDisplay.ts':
@@ -43,7 +43,7 @@ const FROZEN_AT_2B53743: Record<string, string> = {
   'src/components/body-tracker/dashboard/BiologicalAgeHeroTile.tsx':
     'ab17af9e3da591a06a857ccc297350222659db9e9c11c1e2ce82d01aba998d3e',
   'src/components/gauges/PlasmaGauge.tsx':
-    'a387fecfc7ac0de41bf06bba085b89ef4e92bcb54afe530a4a9b997e1dd4314a',
+    'e83693afafbb34056c51b5115164a6ecf326fff04f0a947609e2ab8e1eceec06',
   'src/components/dashboard/DailyScoresPanel.tsx':
     '1f113590a451df109b69008881a2e692e4fea0097e4a904dce70b0bb6df5dcc7',
   'package.json':
@@ -66,6 +66,8 @@ describe('Brief 57 hero BOS uses Daily Scores PlasmaGauge', () => {
     expect(dial).toContain('const HERO_DESKTOP_SIZE = 240');
     expect(dial).toContain('connectionsBosNumericScore');
     expect(dial).toContain('empty');
+    expect(dial).toContain('brightReadout');
+    expect(dial).toContain("brightReadout = false");
     expect(dial).not.toContain('UnknownWell');
     expect(dial).not.toContain('value={0}');
     expect(dial).not.toMatch(/\{composite\.band\}/);
@@ -79,8 +81,10 @@ describe('Brief 57 hero BOS uses Daily Scores PlasmaGauge', () => {
 
     expect(connectionsBosNumericScore(SCORED)).toBe(69);
     const html = renderToStaticMarkup(
-      createElement(ConnectionsBosDial, { composite: SCORED }),
+      createElement(ConnectionsBosDial, { composite: SCORED, brightReadout: true }),
     );
+    expect(html).toContain('data-bos-readout="bright"');
+    expect(html).toContain('data-plasma-readout="bright"');
     expect(html).toContain('g-root');
     expect(html).toContain('pg-ring');
     expect(html).toContain('blur(16px)');
@@ -100,6 +104,8 @@ describe('Brief 57 hero BOS uses Daily Scores PlasmaGauge', () => {
     );
     expect(html).toContain('--');
     expect(html).toContain('data-bos-composite="unknown"');
+    expect(html).not.toContain('data-bos-readout="bright"');
+    expect(html).not.toContain('data-plasma-readout="bright"');
     expect(html).toContain('No score yet');
     expect(html).toContain('g-root');
     expect(html).toContain('pg-ring');

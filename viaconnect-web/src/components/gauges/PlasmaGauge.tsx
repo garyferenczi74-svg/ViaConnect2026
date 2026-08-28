@@ -229,13 +229,17 @@ export interface PlasmaGaugeProps {
   // (gap at 6, faint track, bloom) and the center reads `--`. No 0 OF 100
   // caption and no 0-length progress fill.
   empty?: boolean;
+  // Dashboard BOS plate only. Default off so Nutrition / Daily Macros /
+  // Biological Age keep the muted center sublabel. When true the value,
+  // `--`, and `/ max` lift to near-white. Empty still renders `--`.
+  brightReadout?: boolean;
 }
 
 export function PlasmaGauge({
   value = 0, metric, finish = null, size = 200, variant = 'standard',
   max = 100, unit, animated = true, showUnit = true, ariaLabel,
   subtleTrack = false, plainNumber = false, caption, valueFontPx, valueSuffix,
-  displayValue, empty = false,
+  displayValue, empty = false, brightReadout = false,
 }: PlasmaGaugeProps) {
   const ref = useRef<HTMLDivElement>(null);
   const uid = useId().replace(/[^a-zA-Z0-9_]/g, '_');
@@ -286,6 +290,8 @@ export function PlasmaGauge({
 
   const fontDisplay = "var(--font-instrument-sans), 'Instrument Sans', system-ui, sans-serif";
   const sublabel = unit ? `of ${max} ${unit}` : `/ ${max}`;
+  const mutedCenter = brightReadout ? 'rgba(255,255,255,.92)' : 'rgba(255,255,255,.6)';
+  const valueFill = brightReadout ? '#ffffff' : '#fff';
   const a11yLabel = ariaLabel
     ? ariaLabel
     : empty
@@ -298,6 +304,7 @@ export function PlasmaGauge({
     <div
       ref={ref}
       className={`g-root ${anim ? 'g-anim' : ''}`}
+      data-plasma-readout={brightReadout ? 'bright' : undefined}
       style={{ width: size, height: size, position: 'relative', perspective: `${600 * size / 200}px` }}
       role="img"
       aria-label={a11yLabel}
@@ -473,7 +480,7 @@ export function PlasmaGauge({
                 filter: 'drop-shadow(0 1px 1px rgba(0,0,0,.6))',
               }
             : {
-                color: '#fff',
+                color: valueFill,
                 textShadow: `0 2px 12px rgba(0,0,0,.6), 0 0 22px ${GLOW}`,
               }),
         }}>{empty ? '--' : <>{centerNumber}{valueSuffix ?? ''}</>}</div>
@@ -484,7 +491,7 @@ export function PlasmaGauge({
             fontFamily: fontDisplay,
             fontWeight: 600,
             fontSize: size * 0.07,
-            color: (metal && !plainNumber) ? `${(M as Material).hi}99` : 'rgba(255,255,255,.6)',
+            color: (metal && !plainNumber) ? `${(M as Material).hi}99` : mutedCenter,
             letterSpacing: 0.5,
             marginTop: size * 0.012,
             textTransform: 'uppercase',
@@ -494,7 +501,7 @@ export function PlasmaGauge({
             fontFamily: fontDisplay,
             fontWeight: 600,
             fontSize: size * 0.07,
-            color: (metal && !plainNumber) ? `${(M as Material).hi}99` : 'rgba(255,255,255,.6)',
+            color: (metal && !plainNumber) ? `${(M as Material).hi}99` : mutedCenter,
             letterSpacing: 0.5,
             marginTop: size * 0.012,
           }}>{sublabel}</div>

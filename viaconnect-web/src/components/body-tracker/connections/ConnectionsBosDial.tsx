@@ -14,10 +14,12 @@ function BosPlasma({
   variant,
   size,
   score,
+  brightReadout,
 }: {
   variant: 'hero' | 'standard';
   size: number;
   score: number | null;
+  brightReadout: boolean;
 }) {
   if (score === null) {
     return (
@@ -26,6 +28,7 @@ function BosPlasma({
         variant={variant}
         size={size}
         empty
+        brightReadout={brightReadout}
         ariaLabel="No score yet"
       />
     );
@@ -37,6 +40,7 @@ function BosPlasma({
       variant={variant}
       size={size}
       value={score}
+      brightReadout={brightReadout}
       ariaLabel={`Bio Optimization Score ${score}`}
     />
   );
@@ -45,9 +49,11 @@ function BosPlasma({
 export function ConnectionsBosDial({
   composite,
   size = 'hero',
+  brightReadout = false,
 }: {
   composite: ConnectionsBosDisplay;
   size?: 'hero' | 'cluster';
+  brightReadout?: boolean;
 }) {
   const unknown = composite.band === 'UNKNOWN' || composite.value === '--';
   const score = connectionsBosNumericScore(composite);
@@ -58,16 +64,32 @@ export function ConnectionsBosDial({
     <div
       className={`flex flex-col items-center ${size === 'hero' ? 'mt-5' : ''}`}
       data-bos-composite={composite.band.toLowerCase()}
+      data-bos-readout={brightReadout ? 'bright' : undefined}
     >
       {size === 'cluster' ? (
-        <BosPlasma variant="standard" size={CLUSTER_SIZE} score={shown} />
+        <BosPlasma
+          variant="standard"
+          size={CLUSTER_SIZE}
+          score={shown}
+          brightReadout={brightReadout}
+        />
       ) : (
         <div className="relative h-[200px] w-[200px] sm:h-[240px] sm:w-[240px]">
           <div className="block sm:hidden">
-            <BosPlasma variant="hero" size={HERO_MOBILE_SIZE} score={shown} />
+            <BosPlasma
+              variant="hero"
+              size={HERO_MOBILE_SIZE}
+              score={shown}
+              brightReadout={brightReadout}
+            />
           </div>
           <div className="hidden sm:block">
-            <BosPlasma variant="hero" size={HERO_DESKTOP_SIZE} score={shown} />
+            <BosPlasma
+              variant="hero"
+              size={HERO_DESKTOP_SIZE}
+              score={shown}
+              brightReadout={brightReadout}
+            />
           </div>
         </div>
       )}

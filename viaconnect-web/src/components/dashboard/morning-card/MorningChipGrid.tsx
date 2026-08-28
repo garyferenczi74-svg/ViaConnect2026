@@ -38,7 +38,7 @@ export function MorningChipGrid({
 }: MorningChipGridProps) {
   return (
     <div data-morning-contributors="inline" data-morning-chip-slot="honesty">
-      <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-white/40">
+      <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-white/80">
         {MORNING_CARD_CONTRIBUTORS_LABEL}
       </p>
       <ul
@@ -66,7 +66,7 @@ export function MorningChipGrid({
                 className={`inline-flex min-h-[44px] min-w-[44px] items-center gap-1.5 px-2 text-[11px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${
                   selected
                     ? 'text-[#2DA5A0] underline decoration-[#2DA5A0]/70 underline-offset-4'
-                    : 'text-white/70 hover:text-white/90'
+                    : 'text-white/90 hover:text-white'
                 }`}
               >
                 <Icon className="h-3.5 w-3.5 text-[#2DA5A0]" strokeWidth={1.5} aria-hidden="true" />
