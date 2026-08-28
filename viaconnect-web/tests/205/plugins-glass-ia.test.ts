@@ -62,6 +62,32 @@ describe("Plugins glass 3-column IA", () => {
     expect(joined).not.toMatch(/\bas any\b/);
   });
 
+  it("uses Athlete 29 as a fixed cover hero behind the glass IA", () => {
+    const page = src("app/(app)/(consumer)/plugins/page.tsx");
+    const apps = src("app/(app)/(consumer)/plugins/apps/page.tsx");
+    const shell = src("components/plugins/PluginsHeroShell.tsx");
+    const layout = src("app/(app)/(consumer)/plugins/layout.tsx");
+    const surface = src("components/plugins/PluginsAppsSurface.tsx");
+    expect(page).toContain("PluginsHeroShell");
+    expect(apps).toContain("PluginsHeroShell");
+    expect(page).toContain("PluginsAppsSurface");
+    expect(shell).toContain(
+      "https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Athlete%2029.png",
+    );
+    expect(shell).toContain("fixed");
+    expect(shell).toContain("inset-0");
+    expect(shell).toContain("objectFit: 'cover'");
+    expect(shell).toContain("pointer-events-none");
+    expect(shell).not.toContain("Mobile%20Hero");
+    expect(shell).not.toContain("Peptide Education");
+    expect(shell).not.toMatch(/\bas any\b/);
+    expect(layout).toContain("isHeroRoute");
+    expect(layout).toContain("transparent");
+    expect(surface).toContain("PLUGIN_PAGE_SUBTITLE");
+    expect(surface).toContain("min-[1280px]:grid-cols-[1fr_1.2fr_1fr]");
+    expect(surface).not.toContain("WearableTileCard");
+  });
+
   it("keeps Lucide 1.5 and file_import only as that plugin path", () => {
     const surface = src("components/plugins/PluginsAppsSurface.tsx");
     const detail = src("components/plugins/PluginAppDetailPanel.tsx");

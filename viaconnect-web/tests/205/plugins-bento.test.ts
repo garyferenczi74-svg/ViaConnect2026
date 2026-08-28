@@ -143,12 +143,13 @@ describe("Plugins Picasso IA honesty", () => {
   it("contains no em-dash or en-dash characters on the plugins surface", () => {
     const page = src("app/(app)/(consumer)/plugins/page.tsx");
     const surface = src("components/plugins/PluginsAppsSurface.tsx");
+    const shell = src("components/plugins/PluginsHeroShell.tsx");
     const card = src("components/plugins/PluginAppCard.tsx");
     const detail = src("components/plugins/PluginAppDetailPanel.tsx");
     const summary = src("components/plugins/PluginsSummaryPanel.tsx");
     const emDash = String.fromCharCode(0x2014);
     const enDash = String.fromCharCode(0x2013);
-    expect(page + surface + card + detail + summary).not.toContain(emDash);
-    expect(page + surface + card + detail + summary).not.toContain(enDash);
+    expect(page + surface + shell + card + detail + summary).not.toContain(emDash);
+    expect(page + surface + shell + card + detail + summary).not.toContain(enDash);
   });
 });

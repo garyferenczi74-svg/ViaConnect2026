@@ -7,10 +7,11 @@ import { usePathname } from 'next/navigation';
 export default function PluginsLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isIndex = pathname === '/plugins';
+  const isHeroRoute = pathname === '/plugins' || pathname === '/plugins/apps';
   return (
     <div
       className="min-h-screen font-[Instrument_Sans]"
-      style={{ background: 'var(--gradient-hero)' }}
+      style={{ background: isHeroRoute ? 'transparent' : 'var(--gradient-hero)' }}
     >
       <div className={`mx-auto px-4 py-6 md:px-6 md:py-8 ${isIndex ? 'max-w-7xl' : 'max-w-3xl'}`}>
         {children}
