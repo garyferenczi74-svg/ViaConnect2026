@@ -4,10 +4,11 @@
 
 import Link from 'next/link';
 import { ArrowRight, type LucideIcon } from 'lucide-react';
-import type { HomeBeatId } from '@/lib/dashboard/home-beats';
+
+export type HomeBeatEntryId = 'connections' | 'command-center';
 
 export interface HomeBeatEntryProps {
-  beat: Extract<HomeBeatId, 'connections' | 'command-center'>;
+  beat: HomeBeatEntryId;
   href: string;
   label: string;
   cta: string;

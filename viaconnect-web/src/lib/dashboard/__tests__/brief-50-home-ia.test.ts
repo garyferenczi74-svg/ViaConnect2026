@@ -58,6 +58,7 @@ const BEATS = 'src/lib/dashboard/home-beats.ts';
 const HOMEWORK = 'src/lib/supplements/protocolHomework.ts';
 const HOMEWORK_TEST = 'src/lib/supplements/__tests__/protocolHomework49.test.ts';
 const SCHEDULE_CARD = 'src/components/supplements/ScheduleSupplementCard.tsx';
+const SIDEBAR = 'src/components/layout/Sidebar.tsx';
 
 const HOME = src(DASH);
 const PAGE_SRC = src(PAGE);
@@ -68,9 +69,9 @@ const ENTRY_SRC = src(ENTRY);
 const HOME_WIDTHS = [390, 1280] as const;
 
 describe('Brief 50 desktop Home uses the same IA as mobile', () => {
-  it.each(HOME_WIDTHS)('locks the four-beat order at %d', (width) => {
+  it.each(HOME_WIDTHS)('locks bos + protocol only on home at %d', (width) => {
     expect(width === 390 || width === 1280).toBe(true);
-    expect(HOME_BEAT_ORDER).toEqual(['bos', 'protocol', 'connections', 'command-center']);
+    expect(HOME_BEAT_ORDER).toEqual(['bos', 'protocol']);
 
     const bos = beatIndex(CARD_SRC, 'bos');
     const protocol = beatIndex(CARD_SRC, 'protocol');
@@ -81,25 +82,33 @@ describe('Brief 50 desktop Home uses the same IA as mobile', () => {
 
     expect(bos).toBeGreaterThan(-1);
     expect(protocol).toBeGreaterThan(bos);
-    expect(connections).toBeGreaterThan(-1);
-    expect(commandCenter).toBeGreaterThan(connections);
-    expect(scores).toBeGreaterThan(commandCenter);
-    expect(schedule).toBeGreaterThan(commandCenter);
+    expect(connections).toBe(-1);
+    expect(commandCenter).toBe(-1);
+    expect(scores).toBeGreaterThan(HOME.indexOf('<MorningCard'));
+    expect(schedule).toBeGreaterThan(HOME.indexOf('<MorningCard'));
 
     expect(HOME).toContain('data-home-beats="true"');
     expect(HOME).toContain('<MorningCard');
-    expect(HOME).toContain('beat="connections"');
-    expect(HOME).toContain('beat="command-center"');
+    expect(HOME).not.toContain('HomeBeatEntry');
+    expect(HOME).not.toContain('beat="connections"');
+    expect(HOME).not.toContain('beat="command-center"');
+    expect(HOME).not.toContain('homeCommandCenterHref');
+    expect(HOME).not.toContain('homeCommandCenterLabel');
+    expect(HOME).not.toContain('HOME_ADMIN_CC_LABEL');
+    expect(HOME).not.toContain('Jeffery™ Command Center');
+    expect(HOME).not.toContain('/admin/jeffery');
     expect(ENTRY_SRC).toContain('data-home-beat={beat}');
-    expect(HOME).toContain('HOME_CONNECTIONS_HREF');
-    expect(HOME).toContain('homeCommandCenterHref(sessionRole)');
     expect(PAGE_SRC).toContain('ConsumerDashboard');
-    expect(PAGE_SRC).toContain("session?.role ?? 'consumer'");
+    expect(PAGE_SRC).not.toContain('sessionRole');
 
     const beatsBlock = HOME.slice(
       HOME.indexOf('data-home-beats="true"'),
       HOME.indexOf('<DailyScoresPanel'),
     );
+    expect(beatsBlock).toContain('<MorningCard');
+    expect(beatsBlock).not.toContain('HomeBeatEntry');
+    expect(beatsBlock).not.toContain('connections');
+    expect(beatsBlock).not.toContain('command-center');
     for (const widthClass of ['hidden lg:', 'lg:hidden', 'hidden md:', 'md:hidden', 'hidden sm:']) {
       expect(beatsBlock).not.toContain(widthClass);
     }
@@ -107,7 +116,7 @@ describe('Brief 50 desktop Home uses the same IA as mobile', () => {
     expect(beatsBlock).not.toMatch(/Vitality/);
   });
 
-  it('keeps MorningCard BOS + Brief 48 next action, then Connections + Hannah/CC entries', () => {
+  it('keeps MorningCard BOS + Brief 48 next action and no Connections/CC home beats', () => {
     expect(CARD_SRC).toContain('ConnectionsBosDial');
     expect(CARD_SRC).toContain('MorningProtocolCtaButton');
     expect(CARD_SRC).toContain('PROTOCOL_CTA_LOADING_BOUND_MS');
@@ -119,7 +128,8 @@ describe('Brief 50 desktop Home uses the same IA as mobile', () => {
     expect(PROTOCOL_CTA_LOADING_BOUND_MS).toBe(1500);
 
     expect(HOME_CONNECTIONS_HREF).toBe('/body-tracker/connections');
-    expect(HOME).toContain('href={HOME_CONNECTIONS_HREF}');
+    expect(HOME).not.toContain('HOME_CONNECTIONS_HREF');
+    expect(HOME).not.toContain('href={HOME_CONNECTIONS_HREF}');
     expect(HOME).toContain('<ConnectCard type="wearable" href="/body-tracker/connections"');
     expect(HOME).toContain('<TodaysProtocol');
     expect(HOME).not.toMatch(/hidden(?:\s+\w+:)*\s*(?:lg:)?.*TodaysProtocol/);
@@ -127,7 +137,7 @@ describe('Brief 50 desktop Home uses the same IA as mobile', () => {
     expect(HOME).not.toContain('lg:hidden');
   });
 
-  it('routes Hannah/CC by session role and never sends a consumer to Jeffery', () => {
+  it('keeps Jeffery CC on the admin sidebar and off the consumer dashboard', () => {
     expect(homeCommandCenterHref('consumer')).toBe(HOME_CONSUMER_HANNAH_HREF);
     expect(homeCommandCenterHref('practitioner')).toBe(HOME_CONSUMER_HANNAH_HREF);
     expect(homeCommandCenterHref('naturopath')).toBe(HOME_CONSUMER_HANNAH_HREF);
@@ -139,20 +149,26 @@ describe('Brief 50 desktop Home uses the same IA as mobile', () => {
     expect(homeCommandCenterLabel('admin')).toBe(HOME_ADMIN_CC_LABEL);
     expect(homeCommandCenterHref('consumer')).not.toBe(HOME_ADMIN_CC_HREF);
     expect(HOME).not.toContain('href="/admin/jeffery"');
-    expect(HOME).toContain('homeCommandCenterHref(sessionRole)');
+    expect(HOME).not.toContain('/admin/jeffery');
+    expect(HOME).not.toContain('HOME_ADMIN_CC_LABEL');
+    expect(HOME).not.toContain('Jeffery™ Command Center');
+    expect(HOME).not.toContain('homeCommandCenterHref');
+    expect(src(SIDEBAR)).toContain('href: "/admin/jeffery"');
+    expect(src(SIDEBAR)).toContain('Jeffery™ Command Center');
     expect(src(BEATS)).not.toMatch(/\bas any\b/);
   });
 
-  it('does not add a desktop-only score or a second OVERALL above the four beats', () => {
-    const fourBeatRegion = HOME.slice(
+  it('does not add a desktop-only score or a second OVERALL above the home beats', () => {
+    const homeBeatRegion = HOME.slice(
       HOME.indexOf('data-home-beats="true"'),
       HOME.indexOf('<DailyScoresPanel'),
     );
-    expect(fourBeatRegion).toContain('<MorningCard');
-    expect(fourBeatRegion).not.toContain('DailyScoresPanel');
-    expect(fourBeatRegion).not.toContain('Overall');
-    expect(fourBeatRegion).not.toContain('Vitality');
-    expect(fourBeatRegion.match(/ConnectionsBosDial/g)).toBeNull();
+    expect(homeBeatRegion).toContain('<MorningCard');
+    expect(homeBeatRegion).not.toContain('DailyScoresPanel');
+    expect(homeBeatRegion).not.toContain('Overall');
+    expect(homeBeatRegion).not.toContain('Vitality');
+    expect(homeBeatRegion).not.toContain('HomeBeatEntry');
+    expect(homeBeatRegion.match(/ConnectionsBosDial/g)).toBeNull();
     expect(HOME).not.toContain('hidden lg:block');
     expect(HOME).not.toContain('lg:block hidden');
     expect((HOME.match(/<MorningCard/g) ?? []).length).toBe(1);
@@ -162,8 +178,13 @@ describe('Brief 50 desktop Home uses the same IA as mobile', () => {
     );
   });
 
-  it.each(HOME_WIDTHS)('renders the Connections entry as a link at %d, not a second score', (width) => {
+  it.each(HOME_WIDTHS)('does not mount a Connections HomeBeatEntry on consumer home at %d', (width) => {
     expect(width === 390 || width === 1280).toBe(true);
+    expect(HOME).not.toContain('HomeBeatEntry');
+    expect(HOME).not.toContain('beat="connections"');
+    expect(HOME).not.toContain('HOME_CONNECTIONS_LABEL');
+    expect(HOME).not.toContain('Open Connections');
+
     const html = renderToStaticMarkup(
       createElement(HomeBeatEntry, {
         beat: 'connections',

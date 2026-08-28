@@ -4,7 +4,6 @@ import { useState, useCallback } from 'react';
 import { useUserDashboardData } from '@/hooks/useUserDashboardData';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { MorningCard } from '@/components/dashboard/morning-card/MorningCard';
-import { HomeBeatEntry } from '@/components/dashboard/HomeBeatEntry';
 import { TodaysProtocol } from '@/components/dashboard/TodaysProtocol';
 import { DailyScoresPanel } from '@/components/dashboard/DailyScoresPanel';
 import { EngagementNudge } from '@/components/dashboard/EngagementNudge';
@@ -20,15 +19,7 @@ import { DashboardLinkCard } from '@/components/dashboard/DashboardLinkCard';
 import { DailyCheckIn } from '@/components/dashboard/DailyCheckIn';
 import { DashboardLogYourMealSection } from '@/components/dashboard/DashboardLogYourMealSection';
 import { MobileHeroVideoBackground } from '@/components/ui/MobileHeroVideoBackground';
-import { Compass, Cpu, MessageCircleHeart, Plug, RefreshCw, FileQuestion } from 'lucide-react';
-import type { SessionRole } from '@/lib/auth/session-role';
-import {
-  HOME_CONNECTIONS_CTA,
-  HOME_CONNECTIONS_HREF,
-  HOME_CONNECTIONS_LABEL,
-  homeCommandCenterHref,
-  homeCommandCenterLabel,
-} from '@/lib/dashboard/home-beats';
+import { Compass, RefreshCw, FileQuestion } from 'lucide-react';
 
 // Dashboard hero video: 16x9 master for landscape frame fill. PNG poster for first paint.
 const DASHBOARD_HERO_VIDEO =
@@ -57,12 +48,8 @@ function DashboardSkeleton() {
   );
 }
 
-export interface ConsumerDashboardProps {
-  sessionRole: SessionRole;
-}
-
 /* ── Page ───────────────────────────────────────────────────── */
-export function ConsumerDashboard({ sessionRole }: ConsumerDashboardProps) {
+export function ConsumerDashboard() {
   const {
     loading,
     userId,
@@ -98,9 +85,6 @@ export function ConsumerDashboard({ sessionRole }: ConsumerDashboardProps) {
   const helixPoints = helixBalance?.current_balance ?? 0;
   const currentStreak = streak?.current_count ?? 0;
   const longestStreak = streak?.longest_count ?? 0;
-  const commandCenterHref = homeCommandCenterHref(sessionRole);
-  const commandCenterLabel = homeCommandCenterLabel(sessionRole);
-  const CommandCenterIcon = sessionRole === 'admin' ? Cpu : MessageCircleHeart;
 
   return (
     // Full-page fixed hero video (Athlete 12 MP4). Poster is the prior still
@@ -135,26 +119,13 @@ export function ConsumerDashboard({ sessionRole }: ConsumerDashboardProps) {
           <DashboardHeader />
         </div>
 
-        {/* Brief 50: four beats first at 390 and 1280. Lower widgets stay below. */}
+        {/* Brief 50: BOS + protocol only on consumer home. Connections live
+            in the sidebar and ConnectCard below. Command Center is admin-only. */}
         <div
           data-home-beats="true"
           className="mx-auto w-full max-w-7xl space-y-4 px-4 mb-8 md:px-6"
         >
           <MorningCard />
-          <HomeBeatEntry
-            beat="connections"
-            href={HOME_CONNECTIONS_HREF}
-            label={HOME_CONNECTIONS_LABEL}
-            cta={HOME_CONNECTIONS_CTA}
-            icon={Plug}
-          />
-          <HomeBeatEntry
-            beat="command-center"
-            href={commandCenterHref}
-            label={commandCenterLabel}
-            cta={commandCenterLabel}
-            icon={CommandCenterIcon}
-          />
         </div>
 
         {/* All remaining content, image fades as overlay darkens */}

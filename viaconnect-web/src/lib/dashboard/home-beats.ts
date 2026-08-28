@@ -1,6 +1,6 @@
-// Brief 50: Home IA is the same four beats at 390 and 1280.
-// BOS + Brief 48 next action live on MorningCard. Connections and
-// Hannah/CC are entries into existing routes, not a second score.
+// Brief 50: consumer Home IA is BOS + protocol at 390 and 1280.
+// Connections stay on the sidebar and ConnectCard. Command Center is
+// admin-sidebar only — never a consumer home beat.
 
 import { CONNECTIONS_PATH } from '@/lib/body-tracker/wearable-tiles';
 import { isAdminRole, type SessionRole } from '@/lib/auth/session-role';
@@ -8,8 +8,6 @@ import { isAdminRole, type SessionRole } from '@/lib/auth/session-role';
 export const HOME_BEAT_ORDER = [
   'bos',
   'protocol',
-  'connections',
-  'command-center',
 ] as const;
 
 export type HomeBeatId = (typeof HOME_BEAT_ORDER)[number];
