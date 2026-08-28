@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { Bell, ShoppingBag, User } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { formatPersonalGreeting } from '@/lib/user/get-display-name';
+import { HannahAIGuidedByChip } from '@/components/hannah/HannahAIGuidedByChip';
 
 interface DashboardHeaderProps {
   /** Optional override; otherwise resolved via getDisplayName. */
@@ -87,7 +88,8 @@ export function DashboardHeader({ initialName }: DashboardHeaderProps) {
       </div>
 
       {/* Quick-access strip */}
-      <div className="flex flex-shrink-0 items-center gap-2">
+      <div className="flex flex-shrink-0 flex-wrap items-center justify-end gap-2">
+        <HannahAIGuidedByChip />
         {/* Notifications */}
         <Link
           href="/account/notifications"

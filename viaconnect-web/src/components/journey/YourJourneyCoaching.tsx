@@ -42,6 +42,8 @@ import { useHannahBosDisplay } from "@/hooks/useHannahBosDisplay";
 import { HANNAH_BOS_BLEND_SENTENCE, hydrationScoreFromToday } from "@/lib/scoring/hannah-bos";
 import { formatMacroLabel, kcalRemaining, goalProgressPct } from "@/components/journey/coaching/lowerHelpers";
 import { ProvenanceChip } from "@/components/journey/coaching/ProvenanceChip";
+import { HannahAIGuidedByChip } from "@/components/hannah/HannahAIGuidedByChip";
+import { HannahAIChatCard } from "@/components/hannah/HannahAIChatCard";
 import {
   bodyFatDisplay,
   chipForGoalOrigin,
@@ -1962,6 +1964,10 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
           <div style={{ display: "flex", gap: 12, color: C.muted }}><Search size={18} strokeWidth={SW} /><Bell size={18} strokeWidth={SW} /></div>
         </div>
 
+        <div className="flex items-center justify-end" style={{ marginBottom: 14 }}>
+          <HannahAIGuidedByChip />
+        </div>
+
         <Hero
           pillarValues={pillarValues}
           userId={userId}
@@ -2053,6 +2059,10 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
           <section>
             <AcceleratorsTab accel={accelItems} activeHubs={activeHubs} narrativeLine={narrativeLine} loading={shouldShowSkeleton(engineAccel.loading, engineAccel.items.length > 0 ? true : null)} />
           </section>
+        </div>
+
+        <div style={{ marginTop: 22 }}>
+          <HannahAIChatCard />
         </div>
 
         <p style={{ fontSize: 11, color: C.muted, marginTop: 18, lineHeight: 1.5 }}>For education and structure-function support only, not a diagnosis or treatment. Avatar and figures are placeholders. The user's real photo would sit in the profile card. Pillar colors shown here would map to your canonical dashboard Daily Scores colors.</p>
