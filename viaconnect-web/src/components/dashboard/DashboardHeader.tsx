@@ -92,7 +92,10 @@ export function DashboardHeader({ initialName }: DashboardHeaderProps) {
       </div>
 
       {/* Chip and icons stack below md; sit together on the right at md+ if they fit. */}
-      <div className="flex w-full flex-col gap-3 md:w-auto md:flex-shrink-0 md:flex-row md:flex-wrap md:items-center md:justify-end md:gap-2">
+      <div
+        data-dashboard-header-strip="chrome"
+        className="flex w-full flex-col gap-3 md:w-auto md:flex-shrink-0 md:flex-row md:flex-wrap md:items-center md:justify-end md:gap-2"
+      >
         <div data-dashboard-header-row="guided-by">
           <HannahAIGuidedByChip />
         </div>

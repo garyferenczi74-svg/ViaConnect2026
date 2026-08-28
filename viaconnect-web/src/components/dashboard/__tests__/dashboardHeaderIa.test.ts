@@ -58,11 +58,13 @@ describe('DashboardHeader stacked mobile IA', () => {
     expect(chipBlock).not.toContain('href="/shop"');
     expect(chipBlock).not.toContain('href="/account/profile"');
 
-    const stripOpen = header.lastIndexOf('<div', chipRowIdx);
-    const stripSlice = header.slice(stripOpen, stripOpen + 220);
-    expect(stripSlice).toContain('flex w-full flex-col gap-3');
-    expect(stripSlice).toContain('md:flex-row');
-    expect(stripSlice).toContain('md:flex-shrink-0');
+    const stripIdx = header.indexOf('data-dashboard-header-strip="chrome"');
+    expect(stripIdx).toBeGreaterThan(greetingIdx);
+    expect(stripIdx).toBeLessThan(chipRowIdx);
+    const stripClass = classNameAfter(header, 'data-dashboard-header-strip="chrome"');
+    expect(stripClass).toContain('flex w-full flex-col gap-3');
+    expect(stripClass).toContain('md:flex-row');
+    expect(stripClass).toContain('md:flex-shrink-0');
   });
 
   it('does not truncate the greeting at the default or mobile classes', () => {
