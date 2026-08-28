@@ -53,6 +53,8 @@ const PAGE = 'src/app/(app)/(consumer)/dashboard/page.tsx';
 const DASH = 'src/components/dashboard/ConsumerDashboard.tsx';
 const CARD = 'src/components/dashboard/morning-card/MorningCard.tsx';
 const CTA = 'src/components/dashboard/morning-card/MorningProtocolCta.tsx';
+const PROTOCOL = 'src/components/dashboard/TodaysProtocol.tsx';
+const CHIPS = 'src/components/dashboard/morning-card/MorningChipGrid.tsx';
 const ENTRY = 'src/components/dashboard/HomeBeatEntry.tsx';
 const BEATS = 'src/lib/dashboard/home-beats.ts';
 const HOMEWORK = 'src/lib/supplements/protocolHomework.ts';
@@ -64,6 +66,8 @@ const HOME = src(DASH);
 const PAGE_SRC = src(PAGE);
 const CARD_SRC = src(CARD);
 const CTA_SRC = src(CTA);
+const PROTOCOL_SRC = src(PROTOCOL);
+const CHIPS_SRC = src(CHIPS);
 const ENTRY_SRC = src(ENTRY);
 
 const HOME_WIDTHS = [390, 1280] as const;
@@ -74,14 +78,17 @@ describe('Brief 50 desktop Home uses the same IA as mobile', () => {
     expect(HOME_BEAT_ORDER).toEqual(['bos', 'protocol']);
 
     const bos = beatIndex(CARD_SRC, 'bos');
-    const protocol = beatIndex(CARD_SRC, 'protocol');
+    const protocolOnCard = beatIndex(CARD_SRC, 'protocol');
+    const protocol = beatIndex(PROTOCOL_SRC, 'protocol');
     const connections = beatIndex(HOME, 'connections');
     const commandCenter = beatIndex(HOME, 'command-center');
     const scores = HOME.indexOf('<DailyScoresPanel');
     const schedule = HOME.indexOf('<TodaysProtocol');
 
     expect(bos).toBeGreaterThan(-1);
-    expect(protocol).toBeGreaterThan(bos);
+    expect(protocolOnCard).toBe(-1);
+    expect(protocol).toBeGreaterThan(-1);
+    expect(schedule).toBeGreaterThan(HOME.indexOf('<MorningCard'));
     expect(connections).toBe(-1);
     expect(commandCenter).toBe(-1);
     expect(scores).toBeGreaterThan(HOME.indexOf('<MorningCard'));
@@ -116,10 +123,17 @@ describe('Brief 50 desktop Home uses the same IA as mobile', () => {
     expect(beatsBlock).not.toMatch(/Vitality/);
   });
 
-  it('keeps MorningCard BOS + Brief 48 next action and no Connections/CC home beats', () => {
+  it('keeps MorningCard BOS score-only and protocol on TodaysProtocol, no Connections/CC home beats', () => {
     expect(CARD_SRC).toContain('ConnectionsBosDial');
-    expect(CARD_SRC).toContain('MorningProtocolCtaButton');
-    expect(CARD_SRC).toContain('PROTOCOL_CTA_LOADING_BOUND_MS');
+    expect(CARD_SRC).toContain('MORNING_CARD_SCORE_LABEL');
+    expect(CARD_SRC).toContain('hannahBos.sentence');
+    expect(CARD_SRC).not.toContain('MorningProtocolCtaButton');
+    expect(CARD_SRC).not.toContain('PROTOCOL_CTA_LOADING_BOUND_MS');
+    expect(CARD_SRC).not.toContain('data-home-beat="protocol"');
+    expect(PROTOCOL_SRC).toContain('data-home-beat="protocol"');
+    expect(CHIPS_SRC).toContain('flex flex-wrap');
+    expect(CHIPS_SRC).not.toContain('md:grid-cols-7');
+    expect(CHIPS_SRC).not.toContain('bg-[#1A2744]/70');
     expect(CTA_SRC).toContain('data-cta-kind="action"');
     expect(CTA_SRC).toContain('data-cta-kind="empty"');
     expect(CTA_SRC).toContain('data-cta-kind="loading"');

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   MORNING_CARD_SCORE_LABEL,
+  MORNING_CARD_CONTRIBUTORS_LABEL,
   MORNING_CARD_PENDING_SCORE,
   MORNING_CTA_EMPTY,
   MORNING_CTA_EMPTY_LINK,
@@ -18,6 +19,8 @@ describe('morning-card copy', () => {
   it('names the score Bio Optimization Score', () => {
     expect(MORNING_CARD_SCORE_LABEL).toBe('Bio Optimization Score');
     expect(MORNING_CARD_SCORE_LABEL).not.toMatch(/Vitality/i);
+    expect(MORNING_CARD_CONTRIBUTORS_LABEL).toBe("In today's score");
+    expect(MORNING_CARD_CONTRIBUTORS_LABEL).not.toMatch(/Vitality/i);
   });
 
   it('uses an honest pending score placeholder, never 0', () => {

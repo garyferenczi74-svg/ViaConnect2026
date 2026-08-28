@@ -5,6 +5,8 @@ export const MORNING_CARD_SCORE_LABEL = 'Bio Optimization Score';
 
 export const MORNING_CARD_ARIA_LABEL = 'Bio Optimization Score';
 
+export const MORNING_CARD_CONTRIBUTORS_LABEL = "In today's score";
+
 export const MORNING_CARD_PENDING_SCORE = '--';
 
 export const MORNING_CTA_EMPTY = 'No protocol item due today.';
