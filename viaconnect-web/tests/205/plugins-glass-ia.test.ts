@@ -79,7 +79,8 @@ describe("Plugins glass 3-column IA", () => {
     expect(shell).toContain("objectFit: 'cover'");
     expect(shell).toContain("pointer-events-none");
     expect(shell).not.toContain("Mobile%20Hero");
-    expect(shell).not.toContain("Peptide Education");
+    expect(shell).not.toContain("FlaskConical");
+    expect(shell).not.toContain("ShareProtocolButton");
     expect(shell).not.toMatch(/\bas any\b/);
     expect(layout).toContain("isHeroRoute");
     expect(layout).toContain("transparent");

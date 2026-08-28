@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 /**
  * Full-viewport Athlete 29 hero behind the /plugins glass IA.
  * One public Hero Images URL for mobile and desktop (no invented Mobile Hero swap).
- * Does not add Peptide Education H1 chrome; PluginsAppsSurface keeps its own header.
+ * Background and scrim only; PluginsAppsSurface keeps its own header.
  */
 export const PLUGINS_HERO_IMAGE =
   'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Hero%20Images/Athlete%2029.png';
