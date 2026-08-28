@@ -2,9 +2,8 @@
 
 // Score-first morning card: Bio Optimization Score from blendHannahBos +
 // ConnectionsBosDial (Brief 56). Protocol lives on TodaysProtocol lower on
-// the dashboard. Five in-score chips sit under the honesty sentence; Body
-// comp. and Steps sit in a centered full-width footer band. Rewards
-// gamification stays off this card.
+// the dashboard. Seven contributor chips sit in one In today's score row
+// under the honesty sentence. Rewards gamification stays off this card.
 
 import { useMemo, useState } from 'react';
 import { useDailyScheduleView } from '@/hooks/useDailyScheduleView';
@@ -20,11 +19,7 @@ import {
 } from '@/lib/dashboard/morning-card/copy';
 import { useWearableTilesSnapshot } from '@/hooks/useWearableTilesSnapshot';
 import { buildMorningChips, chipByKey } from '@/lib/dashboard/morning-card/contributors';
-import {
-  MORNING_CHIP_FOOTER_KEYS,
-  MORNING_CHIP_PRIMARY_KEYS,
-  type MorningChipKey,
-} from '@/lib/dashboard/morning-card/keys';
+import { type MorningChipKey } from '@/lib/dashboard/morning-card/keys';
 import { MorningChipGrid } from './MorningChipGrid';
 import { MorningContributorList } from './MorningContributorList';
 
@@ -79,7 +74,6 @@ export function MorningCard() {
             <p className="text-sm leading-relaxed text-white/70">{hannahBos.sentence}</p>
             <MorningChipGrid
               chips={chips}
-              keys={MORNING_CHIP_PRIMARY_KEYS}
               selectedKey={selectedKey}
               onSelect={toggleChip}
             />
@@ -98,17 +92,6 @@ export function MorningCard() {
               <p className="text-[10px] text-white/40">{BOS_UNKNOWN_NEVER_ZERO_COPY}</p>
             )}
           </div>
-        </div>
-
-        <div className="w-full border-t border-white/10 pt-3">
-          <MorningChipGrid
-            chips={chips}
-            keys={MORNING_CHIP_FOOTER_KEYS}
-            showHeading={false}
-            selectedKey={selectedKey}
-            onSelect={toggleChip}
-            listClassName="justify-center gap-x-6"
-          />
         </div>
 
         <HabitSleepPair pair={habitSleepPair} />

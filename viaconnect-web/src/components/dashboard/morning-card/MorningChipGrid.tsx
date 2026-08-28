@@ -29,51 +29,24 @@ export interface MorningChipGridProps {
   chips: readonly MorningChipView[];
   selectedKey: MorningChipKey | null;
   onSelect: (key: MorningChipKey) => void;
-  keys?: readonly MorningChipKey[];
-  showHeading?: boolean;
-  /** Extra alignment/gap classes for the chip list (footer band uses justify-center). */
-  listClassName?: string;
-}
-
-function chipsForKeys(
-  chips: readonly MorningChipView[],
-  keys: readonly MorningChipKey[] | undefined,
-): readonly MorningChipView[] {
-  if (!keys) return chips;
-  const byKey = new Map(chips.map((chip) => [chip.key, chip]));
-  const next: MorningChipView[] = [];
-  for (const key of keys) {
-    const chip = byKey.get(key);
-    if (chip) next.push(chip);
-  }
-  return next;
 }
 
 export function MorningChipGrid({
   chips,
   selectedKey,
   onSelect,
-  keys,
-  showHeading = true,
-  listClassName,
 }: MorningChipGridProps) {
-  const visible = chipsForKeys(chips, keys);
   return (
-    <div
-      data-morning-contributors="inline"
-      data-morning-chip-slot={showHeading ? 'honesty' : 'footer'}
-    >
-      {showHeading ? (
-        <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-white/40">
-          {MORNING_CARD_CONTRIBUTORS_LABEL}
-        </p>
-      ) : null}
+    <div data-morning-contributors="inline" data-morning-chip-slot="honesty">
+      <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-white/40">
+        {MORNING_CARD_CONTRIBUTORS_LABEL}
+      </p>
       <ul
         role="list"
         aria-label="Bio Optimization contributors"
-        className={`flex flex-wrap gap-y-0.5 ${listClassName ?? 'gap-x-1'}`}
+        className="flex flex-wrap gap-x-1 gap-y-0.5"
       >
-        {visible.map((chip) => {
+        {chips.map((chip) => {
           const Icon = CHIP_ICONS[chip.key];
           const selected = selectedKey === chip.key;
           return (

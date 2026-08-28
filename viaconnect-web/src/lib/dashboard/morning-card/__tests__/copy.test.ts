@@ -36,10 +36,10 @@ describe('morning-card copy', () => {
       'utf8',
     );
     expect(chips).toContain('MORNING_CARD_CONTRIBUTORS_LABEL');
-    expect(chips).toContain('{showHeading ? (');
-    expect(card).toContain('showHeading={false}');
+    expect(chips).not.toContain('showHeading');
+    expect(card).not.toContain('showHeading={false}');
     expect(card).not.toContain('MORNING_CARD_CONTRIBUTORS_LABEL');
-    expect((card.match(/<MorningChipGrid/g) ?? []).length).toBe(2);
+    expect((card.match(/<MorningChipGrid/g) ?? []).length).toBe(1);
   });
 
   it('uses an honest pending score placeholder, never 0', () => {
