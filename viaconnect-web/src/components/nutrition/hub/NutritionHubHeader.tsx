@@ -13,6 +13,7 @@
 
 import { Sparkles } from 'lucide-react';
 import { getDisplayName } from '@/lib/getDisplayName';
+import { HannahAIGuidedByChip } from '@/components/hannah/HannahAIGuidedByChip';
 
 export function NutritionHubHeader() {
   return (
@@ -32,13 +33,16 @@ export function NutritionHubHeader() {
           Eight surfaces, one hub. Tap any tile to dive in.
         </p>
       </div>
-      <span
-        aria-hidden="true"
-        className="hidden flex-shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] text-white/75 backdrop-blur-sm md:inline-flex"
-      >
-        <Sparkles className="h-3 w-3 text-[#2DA5A0]" strokeWidth={1.5} />
-        Guided by {getDisplayName('gordon')}
-      </span>
+      <div className="flex flex-shrink-0 flex-col items-end gap-2">
+        <span
+          aria-hidden="true"
+          className="hidden flex-shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] text-white/75 backdrop-blur-sm md:inline-flex"
+        >
+          <Sparkles className="h-3 w-3 text-[#2DA5A0]" strokeWidth={1.5} />
+          Guided by {getDisplayName('gordon')}
+        </span>
+        <HannahAIGuidedByChip />
+      </div>
     </header>
   );
 }

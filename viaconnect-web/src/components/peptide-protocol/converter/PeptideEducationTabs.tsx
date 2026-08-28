@@ -2,11 +2,12 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { getDisplayName } from '@/lib/getDisplayName';
 
 const TABS = [
   { href: '/peptide-protocol', label: 'Home', exact: true },
   { href: '/peptide-protocol/browse', label: 'Search', exact: false },
-  { href: '/peptide-protocol/suggestions', label: 'Hannah', exact: false },
+  { href: '/peptide-protocol/suggestions', label: getDisplayName('hannahai'), exact: false },
   { href: '/peptide-protocol/converter', label: 'Calculator', exact: false },
   {
     href: '/peptide-protocol/literacy',

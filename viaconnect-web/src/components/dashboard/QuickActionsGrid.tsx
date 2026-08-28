@@ -13,6 +13,7 @@ import {
   ShoppingBag,
   type LucideIcon,
 } from 'lucide-react';
+import { getDisplayName } from '@/lib/getDisplayName';
 
 interface QuickAction {
   label: string;
@@ -23,7 +24,7 @@ interface QuickAction {
 }
 
 const ACTIONS: QuickAction[] = [
-  { label: 'Hannah AI Wellness Assistant', href: '/wellness/advisor', icon: MessageCircleHeart, color: '#2DA5A0', description: 'Chat with your personal AI assistant' },
+  { label: `${getDisplayName('hannahai')} Wellness Assistant`, href: '/dashboard#hannah-ai-chat', icon: MessageCircleHeart, color: '#2DA5A0', description: 'Chat with your personal AI assistant' },
   { label: 'Body Tracker',              href: '/body-tracker',     icon: PersonStanding,     color: '#22C55E', description: 'Weight, composition & muscle trends' },
   { label: 'Wearable Data',             href: '/body-tracker/connections', icon: Activity,           color: '#7C6FE0', description: 'Whoop, Oura, Hume Body Pod, Apple Health' },
   { label: 'Shop',                      href: '/shop',             icon: ShoppingBag,        color: '#B75E18', description: 'Browse supplements and GENEX360 tests' },

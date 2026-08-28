@@ -35,6 +35,8 @@ interface AdvisorChatProps {
   icon: React.ReactNode;
   suggestedPrompts: string[];
   initialPrompt?: string;
+  /** Bounded height for in-page hub cards. Standalone advisor pages omit this. */
+  embedded?: boolean;
 }
 
 interface ChatMessage {
@@ -55,6 +57,7 @@ export default function AdvisorChat({
   icon,
   suggestedPrompts,
   initialPrompt,
+  embedded = false,
 }: AdvisorChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -230,7 +233,13 @@ export default function AdvisorChat({
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)] md:h-[calc(100vh-80px)] bg-[#1A2744] max-w-full overflow-x-hidden">
+    <div
+      className={
+        embedded
+          ? "flex flex-col h-[min(520px,70vh)] min-h-[420px] max-h-[560px] bg-[#1A2744]/40 max-w-full overflow-x-hidden"
+          : "flex flex-col h-[calc(100vh-64px)] md:h-[calc(100vh-80px)] bg-[#1A2744] max-w-full overflow-x-hidden"
+      }
+    >
       {/* Header */}
       <div className="flex items-center gap-3 px-4 md:px-6 py-4 border-b border-white/[0.08] min-w-0">
         <div
@@ -240,7 +249,11 @@ export default function AdvisorChat({
           {icon}
         </div>
         <div className="min-w-0">
-          <h1 className="text-base md:text-lg font-semibold text-white truncate">{title}</h1>
+          {embedded ? (
+            <h2 className="text-base md:text-lg font-semibold text-white truncate">{title}</h2>
+          ) : (
+            <h1 className="text-base md:text-lg font-semibold text-white truncate">{title}</h1>
+          )}
           <p className="text-xs text-white/50 truncate">{subtitle}</p>
         </div>
       </div>

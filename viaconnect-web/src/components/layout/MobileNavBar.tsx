@@ -7,7 +7,6 @@ import {
   User as UserIcon, Users, ClipboardList, BarChart3, AlertTriangle,
   FileText, Brain, Settings, Leaf, Activity, Calendar, Shield, Upload,
   Plug, Newspaper, BookOpen, FlaskConical, ChevronLeft, ChevronRight,
-  MessageCircleHeart,
 } from 'lucide-react';
 import { useRef } from 'react';
 import type { IconType } from '@/types/icon';
@@ -26,7 +25,6 @@ const PORTAL_NAV: Record<string, NavItem[]> = {
     { href: '/body-tracker/connections', label: 'Wearables Data', icon: Activity },
     { href: '/helix', label: 'Helix Rewards', icon: Dna },
     { href: '/peptide-protocol', label: 'Peptide Education', icon: FlaskConical },
-    { href: '/wellness/advisor', label: 'Hannah AI', icon: MessageCircleHeart },
     { href: '/plugins', label: 'Plugins', icon: Plug },
     { href: '/messages', label: 'Connect', icon: MessageSquare },
     { href: '/media-sources', label: 'Research Hub', icon: Newspaper },

@@ -54,6 +54,7 @@ import { LogYourMealActions } from '@/components/nutrition/LogYourMealActions';
 import { CardMedia } from '@/components/body-tracker/hub/CardMedia';
 import type { SurfaceMedia } from '@/components/body-tracker/hub/hubConfig';
 import { AssessmentRetakeCard } from '@/components/body-tracker/hub/AssessmentRetakeCard';
+import { HannahAIChatCard } from '@/components/hannah/HannahAIChatCard';
 import '@/components/body-tracker/hub/hub-card-frame.css';
 import { useNutritionHubMetrics } from './useNutritionHubMetrics';
 import {
@@ -551,6 +552,7 @@ export function NutritionHub() {
       {/* Bottom strips. */}
       <NutritionConnectStrip />
       <AssessmentRetakeCard />
+      <HannahAIChatCard />
     </div>
   );
 }

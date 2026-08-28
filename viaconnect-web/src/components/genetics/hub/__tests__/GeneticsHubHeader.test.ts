@@ -5,17 +5,26 @@
 // the repo convention (see NutritionHubHeader.test.ts) is to assert on
 // the component source as text. Full visual sign off happens at Vercel
 // preview. These assertions lock the eyebrow, H1, subline, the Guided
-// by Hannah pill wiring through getDisplayName, the Sparkles icon, the
-// mobile hidden treatment, and the no dash rule.
+// by HannahAI chip wiring through getDisplayName('hannahai'), the
+// Sparkles icon, and the no dash rule.
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
 const COMPONENT = path.resolve(__dirname, '..', 'GeneticsHubHeader.tsx');
+const CHIP = path.resolve(
+  __dirname,
+  '..',
+  '..',
+  '..',
+  'hannah',
+  'HannahAIGuidedByChip.tsx',
+);
 
 describe('GeneticsHubHeader source', () => {
   const source = readFileSync(COMPONENT, 'utf-8');
+  const chip = readFileSync(CHIP, 'utf-8');
 
   it('renders the MY GENETICS eyebrow', () => {
     expect(source).toContain('MY GENETICS');
@@ -29,28 +38,36 @@ describe('GeneticsHubHeader source', () => {
     expect(source).toContain('The Next Revolution in Wellness is Personalization. Tap any tile to dive in.');
   });
 
-  it('imports getDisplayName and calls it with the hannah slug', () => {
-    expect(source).toContain("import { getDisplayName } from '@/lib/getDisplayName'");
-    expect(source).toContain("getDisplayName('hannah')");
+  it('imports getDisplayName and calls it with the hannahai slug', () => {
+    expect(source).toContain('HannahAIGuidedByChip');
+    expect(chip).toContain("import { getDisplayName } from '@/lib/getDisplayName'");
+    expect(chip).toContain("getDisplayName('hannahai')");
+    expect(source).not.toContain("getDisplayName('hannah')");
   });
 
   it('does not hardcode the guide name next to the Guided by label', () => {
-    expect(source).toContain('Guided by {getDisplayName(');
+    expect(chip).toContain('Guided by {getDisplayName(');
     expect(source).not.toContain('Guided by Hannah');
+    expect(source).not.toContain('Guided by HannahAI');
+    expect(chip).not.toContain('Guided by Hannah');
+    expect(chip).not.toContain('Guided by HannahAI');
   });
 
   it('uses the Sparkles icon at strokeWidth 1.5', () => {
-    expect(source).toContain("import { Sparkles } from 'lucide-react'");
-    expect(source).toContain('strokeWidth={1.5}');
+    expect(chip).toContain("import { Sparkles } from 'lucide-react'");
+    expect(chip).toContain('strokeWidth={1.5}');
   });
 
-  it('hides the guide pill on mobile via hidden md:inline-flex', () => {
-    expect(source).toContain('hidden');
-    expect(source).toContain('md:inline-flex');
+  it('keeps the HannahAI chip visible on mobile and desktop', () => {
+    expect(source).toContain('<HannahAIGuidedByChip');
+    expect(chip).toContain('inline-flex');
+    expect(chip).not.toContain('hidden md:inline-flex');
   });
 
   it('contains no em or en dashes', () => {
     expect(source.includes(String.fromCharCode(0x2014))).toBe(false);
     expect(source.includes(String.fromCharCode(0x2013))).toBe(false);
+    expect(chip.includes(String.fromCharCode(0x2014))).toBe(false);
+    expect(chip.includes(String.fromCharCode(0x2013))).toBe(false);
   });
 });

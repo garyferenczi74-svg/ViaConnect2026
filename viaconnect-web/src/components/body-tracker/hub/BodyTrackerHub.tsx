@@ -25,6 +25,8 @@ import { GuidanceStrip } from './GuidanceStrip';
 import { ConnectionsStrip } from './ConnectionsStrip';
 import { AssessmentRetakeCard } from './AssessmentRetakeCard';
 import { useHubMetrics } from './useHubMetrics';
+import { HannahAIGuidedByChip } from '@/components/hannah/HannahAIGuidedByChip';
+import { HannahAIChatCard } from '@/components/hannah/HannahAIChatCard';
 
 export function BodyTrackerHub() {
   const { metrics } = useHubMetrics();
@@ -48,13 +50,16 @@ export function BodyTrackerHub() {
             Your biology surfaces in one hub. Tap any tile to dive in.
           </p>
         </div>
-        <span
-          aria-hidden="true"
-          className="hidden flex-shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] text-white/75 backdrop-blur-sm md:inline-flex"
-        >
-          <Sparkles className="h-3 w-3 text-[#2DA5A0]" strokeWidth={1.5} />
-          Guided by Arnold
-        </span>
+        <div className="flex flex-shrink-0 flex-col items-end gap-2">
+          <span
+            aria-hidden="true"
+            className="hidden flex-shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] text-white/75 backdrop-blur-sm md:inline-flex"
+          >
+            <Sparkles className="h-3 w-3 text-[#2DA5A0]" strokeWidth={1.5} />
+            Guided by Arnold
+          </span>
+          <HannahAIGuidedByChip />
+        </div>
       </header>
 
       {/* Getting Started strip (placeholder per Section 11). */}
@@ -97,6 +102,8 @@ export function BodyTrackerHub() {
 
       {/* Update Your Assessment card (mirrors the My Supplements design). */}
       <AssessmentRetakeCard />
+
+      <HannahAIChatCard />
     </div>
   );
 }

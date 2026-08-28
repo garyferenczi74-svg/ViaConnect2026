@@ -20,6 +20,7 @@ import { DailyCheckIn } from '@/components/dashboard/DailyCheckIn';
 import { DashboardLogYourMealSection } from '@/components/dashboard/DashboardLogYourMealSection';
 import { MobileHeroVideoBackground } from '@/components/ui/MobileHeroVideoBackground';
 import { Compass, RefreshCw, FileQuestion } from 'lucide-react';
+import { HannahAIChatCard } from '@/components/hannah/HannahAIChatCard';
 
 // Dashboard hero video: 16x9 master for landscape frame fill. PNG poster for first paint.
 const DASHBOARD_HERO_VIDEO =
@@ -197,6 +198,8 @@ export function ConsumerDashboard() {
         <DailyInsightsCard profile={profile} supplements={supplements} />
 
         <PatternCirclePreview userPatterns={[]} />
+
+        <HannahAIChatCard />
         </div>
       </div>
     </div>

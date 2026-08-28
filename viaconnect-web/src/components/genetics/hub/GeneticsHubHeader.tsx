@@ -4,17 +4,14 @@
 //
 // Mirrors the My Nutrition hub header (NutritionHubHeader.tsx), which in
 // turn mirrors the My Biology hub header: eyebrow pill with the bullet
-// dot, H1, subline, and the "Guided by <agent>" pill top right with a
-// Sparkles icon, hidden on mobile via hidden md:inline-flex.
-// Presentational only; no data.
+// dot, H1, subline, and a clickable Guided by HannahAI chip top right.
+// The HannahAI chip is visible on mobile and desktop. Presentational only.
 //
-// Hannah is the genomics agent guiding My Genetics. The guide name flows
-// through getDisplayName('hannah') per the standing rule that every agent
-// slug reference in client-facing copy resolves through getDisplayName
-// rather than a hardcoded string.
+// HannahAI is the genomics agent guiding My Genetics. The chip copy flows
+// through getDisplayName('hannahai') inside HannahAIGuidedByChip so the
+// pill reads HannahAI. Clicking the chip scrolls to #hannah-ai-chat.
 
-import { Sparkles } from 'lucide-react';
-import { getDisplayName } from '@/lib/getDisplayName';
+import { HannahAIGuidedByChip } from '@/components/hannah/HannahAIGuidedByChip';
 
 export function GeneticsHubHeader() {
   return (
@@ -34,13 +31,7 @@ export function GeneticsHubHeader() {
           The Next Revolution in Wellness is Personalization. Tap any tile to dive in.
         </p>
       </div>
-      <span
-        aria-hidden="true"
-        className="hidden flex-shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] text-white/75 backdrop-blur-sm md:inline-flex"
-      >
-        <Sparkles className="h-3 w-3 text-[#2DA5A0]" strokeWidth={1.5} />
-        Guided by {getDisplayName('hannah')}
-      </span>
+      <HannahAIGuidedByChip />
     </header>
   );
 }
