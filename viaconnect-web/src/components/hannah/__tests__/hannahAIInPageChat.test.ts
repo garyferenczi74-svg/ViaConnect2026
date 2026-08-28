@@ -1,5 +1,6 @@
-// Locks HannahAI in-page chat chrome: chip copy, embedded AdvisorChat card
-// on seven consumer hubs, sidebar/nav cleanup, and dashboard #122 guards.
+// Locks HannahAI in-page chat chrome: chip copy, compact popover under
+// the Guided by pill, no page-bottom full-width card, sidebar/nav cleanup,
+// and dashboard #122 guards.
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -12,7 +13,6 @@ function src(rel: string): string {
 }
 
 const CHIP = 'src/components/hannah/HannahAIGuidedByChip.tsx';
-const CARD = 'src/components/hannah/HannahAIChatCard.tsx';
 const ADVISOR = 'src/components/advisor/AdvisorChat.tsx';
 const STANDALONE = 'src/app/(app)/(consumer)/wellness/advisor/page.tsx';
 const SIDEBAR = 'src/components/layout/Sidebar.tsx';
@@ -22,7 +22,17 @@ const DASH = 'src/components/dashboard/ConsumerDashboard.tsx';
 const DASH_HEADER = 'src/components/dashboard/DashboardHeader.tsx';
 const TABS = 'src/components/peptide-protocol/converter/PeptideEducationTabs.tsx';
 
-const SEVEN_SURFACES = [
+const CHIP_OWNERS = [
+  'src/components/dashboard/DashboardHeader.tsx',
+  'src/components/journey/YourJourneyCoaching.tsx',
+  'src/components/genetics/hub/GeneticsHubHeader.tsx',
+  'src/components/nutrition/hub/NutritionHubHeader.tsx',
+  'src/app/(app)/(consumer)/supplements/SupplementsPageContent.tsx',
+  'src/components/body-tracker/hub/BodyTrackerHub.tsx',
+  'src/app/(app)/(consumer)/peptide-protocol/page.tsx',
+] as const;
+
+const NO_BOTTOM_CARD_SURFACES = [
   'src/components/dashboard/ConsumerDashboard.tsx',
   'src/components/journey/YourJourneyCoaching.tsx',
   'src/components/genetics/hub/GeneticsHub.tsx',
@@ -30,71 +40,94 @@ const SEVEN_SURFACES = [
   'src/app/(app)/(consumer)/supplements/SupplementsPageContent.tsx',
   'src/components/body-tracker/hub/BodyTrackerHub.tsx',
   'src/app/(app)/(consumer)/peptide-protocol/page.tsx',
+  'src/app/(app)/(consumer)/peptide-protocol/suggestions/page.tsx',
 ] as const;
 
 describe('HannahAIGuidedByChip', () => {
   const chip = src(CHIP);
 
-  it('is a button that scrolls to #hannah-ai-chat and never routes to /wellness/advisor', () => {
+  it('is a button using getDisplayName that opens a compact popover under the pill', () => {
     expect(chip).toContain('<button');
     expect(chip).toContain("getDisplayName('hannahai')");
     expect(chip).toContain('Guided by {getDisplayName(');
     expect(chip).toContain('hannah-ai-chat');
-    expect(chip).toContain('scrollIntoView');
+    expect(chip).toContain('AdvisorChat');
+    expect(chip).toMatch(/absolute|fixed/);
+    expect(chip).toContain('getBoundingClientRect');
+    expect(chip).toContain('max-w-[min(26rem,calc(100vw-2rem))]');
+    expect(chip).toContain('rounded-2xl');
+    expect(chip).toContain('border-white/[0.08]');
+    expect(chip).toContain('#1E3054');
+    expect(chip).toContain('backdrop-blur');
+    expect(chip).not.toContain('scrollIntoView');
+    expect(chip).not.toContain('hub-card-frame');
     expect(chip).not.toMatch(/href=["']\/wellness\/advisor["']/);
     expect(chip).not.toMatch(/className="[^"]*hidden md:inline-flex/);
     expect(chip).toContain('strokeWidth={1.5}');
     expect(chip).not.toContain('Guided by Hannah');
     expect(chip).not.toContain('Guided by HannahAI');
   });
+
+  it('closes on chip toggle, click outside, and Escape', () => {
+    expect(chip).toContain('togglePanel');
+    expect(chip).toContain('pointerdown');
+    expect(chip).toContain("event.key !== 'Escape'");
+    expect(chip).toContain('location.hash');
+  });
 });
 
-describe('HannahAIChatCard', () => {
-  const card = src(CARD);
+describe('compact AdvisorChat popover chrome', () => {
+  const chip = src(CHIP);
   const advisor = src(ADVISOR);
   const standalone = src(STANDALONE);
 
-  it('wraps AdvisorChat as an embedded consumer card', () => {
-    expect(card).toContain('hub-card-frame');
-    expect(card).toContain('rounded-2xl');
-    expect(card).toContain('border-white/[0.08]');
-    expect(card).toContain('id={HANNAH_AI_CHAT_ID}');
-    expect(card).toContain('embedded');
-    expect(card).toContain('role="consumer"');
-    expect(card).toContain('accentColor={ACCENT}');
-    expect(card).toContain('#2DA5A0');
-    expect(card).toContain("getDisplayName('hannahai')");
-    expect(card).toContain('HANNAH_CONSUMER_SUBTITLE');
-    expect(card).toContain('How can I improve my Bio Optimization Score?');
-    expect(card).toContain('Should I take my supplements with food?');
-    expect(card).toContain('What does my MTHFR result mean?');
-    expect(card).toContain('Which genetic test should I take next?');
+  it('wraps AdvisorChat as an embedded consumer popover', () => {
+    expect(chip).toContain('embedded');
+    expect(chip).toContain('role="consumer"');
+    expect(chip).toContain('accentColor={ACCENT}');
+    expect(chip).toContain('#2DA5A0');
+    expect(chip).toContain("getDisplayName('hannahai')");
+    expect(chip).toContain('HANNAH_CONSUMER_SUBTITLE');
+    expect(chip).toContain('How can I improve my Bio Optimization Score?');
+    expect(chip).toContain('Should I take my supplements with food?');
+    expect(chip).toContain('What does my MTHFR result mean?');
+    expect(chip).toContain('Which genetic test should I take next?');
   });
 
-  it('AdvisorChat supports embedded height without changing the standalone page', () => {
+  it('AdvisorChat supports compact embedded height without changing the standalone page', () => {
     expect(advisor).toContain('embedded?: boolean');
     expect(advisor).toContain('embedded = false');
-    expect(advisor).toContain('h-[min(520px,70vh)]');
+    expect(advisor).toContain('h-[380px]');
+    expect(advisor).toContain('max-h-[440px]');
+    expect(advisor).not.toContain('h-[min(520px,70vh)]');
+    expect(advisor).not.toContain('min-h-[420px]');
     expect(advisor).toContain('h-[calc(100vh-64px)]');
     expect(standalone).not.toContain('embedded');
     expect(standalone).toContain('<AdvisorChat');
   });
 });
 
-describe('HannahAIChatCard mounts on seven consumer hubs', () => {
-  it.each(SEVEN_SURFACES)('imports and mounts HannahAIChatCard on %s', (rel) => {
+describe('seven hubs use the chip and do not mount a page-bottom HannahAIChatCard', () => {
+  it.each(CHIP_OWNERS)('imports and renders HannahAIGuidedByChip on %s', (rel) => {
     const file = src(rel);
-    expect(file).toContain('HannahAIChatCard');
-    expect(file).toMatch(/import \{ HannahAIChatCard \}/);
-    expect(file).toContain('<HannahAIChatCard');
+    expect(file).toContain('HannahAIGuidedByChip');
+    expect(file).toMatch(/import \{ HannahAIGuidedByChip \}/);
+    expect(file).toContain('<HannahAIGuidedByChip');
   });
 
-  it('also mounts the card on peptide suggestions without replacing PeptideSuggestionsClient', () => {
+  it.each(NO_BOTTOM_CARD_SURFACES)('does not mount HannahAIChatCard on %s', (rel) => {
+    const file = src(rel);
+    expect(file).not.toContain('HannahAIChatCard');
+    expect(file).not.toContain('<HannahAIChatCard');
+  });
+
+  it('keeps PeptideSuggestionsClient on peptide suggestions with the chip only', () => {
     const suggestions = src(
       'src/app/(app)/(consumer)/peptide-protocol/suggestions/page.tsx',
     );
-    expect(suggestions).toContain('HannahAIChatCard');
-    expect(suggestions).toContain('<HannahAIChatCard');
+    expect(suggestions).toContain('HannahAIGuidedByChip');
+    expect(suggestions).toContain('<HannahAIGuidedByChip');
+    expect(suggestions).not.toContain('HannahAIChatCard');
     expect(suggestions).toContain('PeptideSuggestionsClient');
     expect(suggestions).toContain('<PeptideSuggestionsClient');
   });
@@ -138,7 +171,7 @@ describe('ConsumerDashboard #122 locks stay intact', () => {
     expect(dash).not.toContain('HomeBeatEntry');
     expect(dash).not.toContain('beat="connections"');
     expect(dash).not.toContain('Jeffery™ Command Center');
-    expect(dash).toContain('<HannahAIChatCard');
+    expect(dash).not.toContain('HannahAIChatCard');
     expect(src(DASH_HEADER)).toContain('<HannahAIGuidedByChip');
   });
 });

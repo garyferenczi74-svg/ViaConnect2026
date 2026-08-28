@@ -36,7 +36,6 @@
 
 import { GeneticsHubHeader } from './GeneticsHubHeader';
 import { GeneticsGettingStartedStrip } from './GeneticsGettingStartedStrip';
-import { HannahAIChatCard } from '@/components/hannah/HannahAIChatCard';
 import { GeneticBlueprintBento } from './GeneticBlueprintBento';
 import {
   UploadDnaCard,
@@ -73,8 +72,6 @@ export function GeneticsHub() {
 
       {/* Update Your Assessment card, reused unchanged from the My Biology hub. */}
       <AssessmentRetakeCard />
-
-      <HannahAIChatCard />
 
       {/* Prompt 204 follow-up (Gary 2026-06-20): the validated #113 DSHEA
           disclaimer. The hub now carries a structure/function claim in the

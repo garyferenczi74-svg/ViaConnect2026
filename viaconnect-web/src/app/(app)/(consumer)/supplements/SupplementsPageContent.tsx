@@ -31,7 +31,6 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { ProtocolConfidenceBadge } from "@/components/protocol/ProtocolConfidenceBadge";
 import { HannahAIGuidedByChip } from "@/components/hannah/HannahAIGuidedByChip";
-import { HannahAIChatCard } from "@/components/hannah/HannahAIChatCard";
 import { PractitionerDisclaimer } from "@/components/protocol/PractitionerDisclaimer";
 import SupplementInput from "@/components/shared/SupplementInput";
 import { useUserDashboardData } from "@/hooks/useUserDashboardData";
@@ -260,8 +259,6 @@ export function SupplementsPageContent({
           <div className="text-center pt-4"><a href="/shop" className="min-h-[48px] inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-teal-400/25 hover:border-teal-400/40 text-white font-semibold text-sm hover:shadow-[0_0_25px_rgba(45,165,160,0.1)] transition-all duration-300" style={{ background: "linear-gradient(135deg, rgba(45,165,160,0.15), rgba(183,94,24,0.15))" }}><ShoppingBag className="w-4 h-4 text-teal-400" strokeWidth={1.5} /> Browse Full Catalog <ArrowRight className="w-4 h-4" strokeWidth={1.5} /></a></div>
         </div>
       </Section>
-
-      <HannahAIChatCard />
 
       {/* DISCLAIMER */}
       <PractitionerDisclaimer />

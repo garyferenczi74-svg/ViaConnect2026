@@ -54,7 +54,8 @@ describe('GeneticsHubHeader source', () => {
   });
 
   it('uses the Sparkles icon at strokeWidth 1.5', () => {
-    expect(chip).toContain("import { Sparkles } from 'lucide-react'");
+    expect(chip).toContain("from 'lucide-react'");
+    expect(chip).toContain('Sparkles');
     expect(chip).toContain('strokeWidth={1.5}');
   });
 
@@ -62,6 +63,16 @@ describe('GeneticsHubHeader source', () => {
     expect(source).toContain('<HannahAIGuidedByChip');
     expect(chip).toContain('inline-flex');
     expect(chip).not.toContain('hidden md:inline-flex');
+  });
+
+  it('chip owns a compact popover under the pill instead of scrolling to a page-bottom card', () => {
+    expect(chip).toMatch(/absolute|fixed/);
+    expect(chip).toContain('AdvisorChat');
+    expect(chip).toContain('getBoundingClientRect');
+    expect(chip).not.toContain('scrollIntoView');
+    expect(chip).not.toContain('hub-card-frame');
+    expect(chip).not.toContain('Guided by Hannah');
+    expect(chip).not.toContain('Guided by HannahAI');
   });
 
   it('contains no em or en dashes', () => {
