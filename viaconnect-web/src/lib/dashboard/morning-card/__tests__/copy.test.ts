@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, it, expect } from 'vitest';
 import {
   MORNING_CARD_SCORE_LABEL,
@@ -15,12 +17,29 @@ import {
   morningScoreAria,
 } from '../copy';
 
+const root = join(__dirname, '..', '..', '..', '..', '..');
+
 describe('morning-card copy', () => {
   it('names the score Bio Optimization Score', () => {
     expect(MORNING_CARD_SCORE_LABEL).toBe('Bio Optimization Score');
     expect(MORNING_CARD_SCORE_LABEL).not.toMatch(/Vitality/i);
     expect(MORNING_CARD_CONTRIBUTORS_LABEL).toBe("In today's score");
     expect(MORNING_CARD_CONTRIBUTORS_LABEL).not.toMatch(/Vitality/i);
+    expect(MORNING_CARD_CONTRIBUTORS_LABEL).not.toMatch(/7-across|tab bar/i);
+
+    const card = readFileSync(
+      join(root, 'src/components/dashboard/morning-card/MorningCard.tsx'),
+      'utf8',
+    );
+    const chips = readFileSync(
+      join(root, 'src/components/dashboard/morning-card/MorningChipGrid.tsx'),
+      'utf8',
+    );
+    expect(chips).toContain('MORNING_CARD_CONTRIBUTORS_LABEL');
+    expect(chips).toContain('{showHeading ? (');
+    expect(card).toContain('showHeading={false}');
+    expect(card).not.toContain('MORNING_CARD_CONTRIBUTORS_LABEL');
+    expect((card.match(/<MorningChipGrid/g) ?? []).length).toBe(2);
   });
 
   it('uses an honest pending score placeholder, never 0', () => {

@@ -1,8 +1,29 @@
+import { createElement, type ReactNode } from 'react';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { describe, it, expect } from 'vitest';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { describe, it, expect, vi } from 'vitest';
 import { METRIC_LABELS, CONTRIBUTOR_METRICS } from '@/lib/body-tracker/contributor-rows';
 import { buildMorningChips } from '@/lib/dashboard/morning-card/contributors';
+import {
+  MORNING_CHIP_FOOTER_KEYS,
+  MORNING_CHIP_PRIMARY_KEYS,
+} from '@/lib/dashboard/morning-card/keys';
+import { MorningChipGrid } from '../MorningChipGrid';
+
+vi.mock('next/link', () => ({
+  default: ({
+    href,
+    children,
+    className,
+    ...rest
+  }: {
+    href: string;
+    children?: ReactNode;
+    className?: string;
+    [key: string]: unknown;
+  }) => createElement('a', { href, className, ...rest }, children),
+}));
 
 const root = process.cwd();
 
@@ -64,16 +85,21 @@ describe('Brief 29 morning card IA', () => {
   it('renders the 7 METRIC_LABELS as a compact in-score row at 390 and 1280 together', () => {
     const chips = src(CHIPS);
     const keys = src(KEYS);
+    const card = src(CARD);
     expect(buildMorningChips().map((c) => c.label)).toEqual(
       CONTRIBUTOR_METRICS.map((k) => METRIC_LABELS[k]),
     );
     expect(keys).toContain('CONTRIBUTOR_METRICS');
     expect(keys).toContain('METRIC_LABELS');
+    expect(keys).toContain('MORNING_CHIP_PRIMARY_KEYS');
+    expect(keys).toContain('MORNING_CHIP_FOOTER_KEYS');
     expect(keys).not.toContain("'regimen'");
     expect(keys).not.toContain("'immune'");
     expect(chips).toContain('flex flex-wrap');
     expect(chips).toContain('MORNING_CARD_CONTRIBUTORS_LABEL');
     expect(chips).toContain('data-morning-contributors="inline"');
+    expect(chips).toContain("data-morning-chip-slot={showHeading ? 'honesty' : 'footer'}");
+    expect(chips).toContain('showHeading = true');
     expect(chips).not.toContain('grid-cols-4');
     expect(chips).not.toContain('md:grid-cols-7');
     expect(chips).not.toContain('md:grid-cols-8');
@@ -82,6 +108,99 @@ describe('Brief 29 morning card IA', () => {
     expect(chips).toContain('strokeWidth={1.5}');
     expect(chips).toContain('href={chip.href}');
     expect(chips).toContain('underline-offset-4');
+    expect((card.match(/<MorningChipGrid/g) ?? []).length).toBe(2);
+  });
+
+  it('places the first five chips under the honesty sentence and Body comp + Steps in the footer', () => {
+    const card = src(CARD);
+    const jsx = card.indexOf('return (');
+    const sentence = card.indexOf('hannahBos.sentence', jsx);
+    const primary = card.indexOf('keys={MORNING_CHIP_PRIMARY_KEYS}', jsx);
+    const sources = card.indexOf('hannahBos.result.chips', jsx);
+    const footer = card.indexOf('keys={MORNING_CHIP_FOOTER_KEYS}', jsx);
+    const habit = card.indexOf('<HabitSleepPair', jsx);
+    const unknown = card.indexOf('{BOS_UNKNOWN_NEVER_ZERO_COPY}', jsx);
+
+    expect(sentence).toBeGreaterThan(-1);
+    expect(primary).toBeGreaterThan(sentence);
+    expect(sources).toBeGreaterThan(primary);
+    expect(unknown).toBeGreaterThan(sources);
+    expect(footer).toBeGreaterThan(unknown);
+    expect(habit).toBeGreaterThan(footer);
+
+    const honestyColumn = card.slice(sentence, sources);
+    expect(honestyColumn).toContain('<MorningChipGrid');
+    expect(honestyColumn).toContain('MORNING_CHIP_PRIMARY_KEYS');
+    expect(honestyColumn).not.toContain('MORNING_CHIP_FOOTER_KEYS');
+    expect(honestyColumn).not.toContain('showHeading={false}');
+    expect(honestyColumn).not.toContain('body_composition');
+    expect(honestyColumn).not.toContain('steps');
+
+    const footerGrid = card.lastIndexOf('<MorningChipGrid');
+    expect(footerGrid).toBeGreaterThan(sources);
+    expect(footerGrid).toBeLessThan(habit);
+    const footerBlock = card.slice(footerGrid, habit);
+    expect(footerBlock).toContain('keys={MORNING_CHIP_FOOTER_KEYS}');
+    expect(footerBlock).toContain('showHeading={false}');
+    expect(footerBlock).not.toContain('MORNING_CARD_CONTRIBUTORS_LABEL');
+    expect(card).not.toContain('MorningProtocolCtaButton');
+  });
+
+  it('renders five honesty chips with the heading and two footer chips without it', () => {
+    const chips = buildMorningChips();
+    const honesty = renderToStaticMarkup(
+      createElement(MorningChipGrid, {
+        chips,
+        keys: [...MORNING_CHIP_PRIMARY_KEYS],
+        selectedKey: null,
+        onSelect: () => undefined,
+      }),
+    );
+    const footer = renderToStaticMarkup(
+      createElement(MorningChipGrid, {
+        chips,
+        keys: [...MORNING_CHIP_FOOTER_KEYS],
+        showHeading: false,
+        selectedKey: null,
+        onSelect: () => undefined,
+      }),
+    );
+
+    expect(honesty).toContain('In today&#x27;s score');
+    expect(honesty).toContain('data-morning-chip-slot="honesty"');
+    expect(honesty).toContain('data-chip="hrv"');
+    expect(honesty).toContain('data-chip="sleep"');
+    expect(honesty).toContain('data-chip="resting_hr"');
+    expect(honesty).toContain('data-chip="recovery"');
+    expect(honesty).toContain('data-chip="workouts"');
+    expect(honesty).not.toContain('data-chip="body_composition"');
+    expect(honesty).not.toContain('data-chip="steps"');
+    expect(honesty).toContain('HRV');
+    expect(honesty).toContain('Sleep');
+    expect(honesty).toContain('Resting HR');
+    expect(honesty).toContain('Recovery');
+    expect(honesty).toContain('Workouts');
+    expect(honesty).not.toContain('Body comp.');
+    expect(honesty).not.toContain('md:grid-cols-7');
+    expect(honesty).not.toContain('bg-[#1A2744]/70');
+
+    expect(footer).not.toContain('In today&#x27;s score');
+    expect(footer).not.toContain("In today's score");
+    expect(footer).toContain('data-morning-chip-slot="footer"');
+    expect(footer).toContain('data-chip="body_composition"');
+    expect(footer).toContain('data-chip="steps"');
+    expect(footer).toContain('Body comp.');
+    expect(footer).toContain('Steps');
+    expect(footer).not.toContain('data-chip="hrv"');
+    expect(footer).not.toContain('md:grid-cols-7');
+    expect(footer).not.toContain('bg-[#1A2744]/70');
+
+    expect((honesty.match(/href="\/body-tracker\/connections"/g) ?? []).length).toBe(5);
+    expect((footer.match(/href="\/body-tracker\/connections"/g) ?? []).length).toBe(2);
+    expect((honesty.match(/min-h-\[44px\]/g) ?? []).length).toBe(5);
+    expect((footer.match(/min-h-\[44px\]/g) ?? []).length).toBe(2);
+    expect((honesty.match(/stroke-width="1.5"/g) ?? []).length).toBe(5);
+    expect((footer.match(/stroke-width="1.5"/g) ?? []).length).toBe(2);
   });
 
   it('drives chip/detail from wearable-tiles last-sync and deep-links to connections', () => {

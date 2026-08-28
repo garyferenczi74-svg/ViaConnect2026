@@ -134,6 +134,25 @@ describe('Brief 50 desktop Home uses the same IA as mobile', () => {
     expect(CHIPS_SRC).toContain('flex flex-wrap');
     expect(CHIPS_SRC).not.toContain('md:grid-cols-7');
     expect(CHIPS_SRC).not.toContain('bg-[#1A2744]/70');
+    expect(CHIPS_SRC).toContain('min-h-[44px]');
+    expect(CHIPS_SRC).toContain('strokeWidth={1.5}');
+    expect(CHIPS_SRC).toContain('href={chip.href}');
+    expect(CARD_SRC).toContain('MORNING_CHIP_PRIMARY_KEYS');
+    expect(CARD_SRC).toContain('MORNING_CHIP_FOOTER_KEYS');
+    expect(CARD_SRC).toContain('showHeading={false}');
+    expect(CARD_SRC.indexOf('hannahBos.sentence')).toBeLessThan(
+      CARD_SRC.indexOf('keys={MORNING_CHIP_PRIMARY_KEYS}'),
+    );
+    expect(CARD_SRC.indexOf('keys={MORNING_CHIP_PRIMARY_KEYS}')).toBeLessThan(
+      CARD_SRC.indexOf('hannahBos.result.chips'),
+    );
+    expect(CARD_SRC.indexOf('hannahBos.result.chips')).toBeLessThan(
+      CARD_SRC.indexOf('keys={MORNING_CHIP_FOOTER_KEYS}'),
+    );
+    expect(CARD_SRC.indexOf('keys={MORNING_CHIP_FOOTER_KEYS}')).toBeLessThan(
+      CARD_SRC.indexOf('<HabitSleepPair'),
+    );
+    expect((CARD_SRC.match(/<MorningChipGrid/g) ?? []).length).toBe(2);
     expect(CTA_SRC).toContain('data-cta-kind="action"');
     expect(CTA_SRC).toContain('data-cta-kind="empty"');
     expect(CTA_SRC).toContain('data-cta-kind="loading"');
