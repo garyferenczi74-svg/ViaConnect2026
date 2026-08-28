@@ -6,15 +6,18 @@
 
 import { Suspense } from 'react';
 import { PluginsAppsSurface } from '@/components/plugins/PluginsAppsSurface';
+import { PluginsHeroShell } from '@/components/plugins/PluginsHeroShell';
 
 export default function PluginsPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="px-4 py-8 text-sm text-white/50">Loading plugins...</div>
-      }
-    >
-      <PluginsAppsSurface />
-    </Suspense>
+    <PluginsHeroShell>
+      <Suspense
+        fallback={
+          <div className="px-4 py-8 text-sm text-white/50">Loading plugins...</div>
+        }
+      >
+        <PluginsAppsSurface />
+      </Suspense>
+    </PluginsHeroShell>
   );
 }
