@@ -37,14 +37,14 @@ export function MorningChipGrid({
   onSelect,
 }: MorningChipGridProps) {
   return (
-    <div data-morning-contributors="inline" data-morning-chip-slot="honesty">
-      <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-white/80">
+    <div data-morning-contributors="inline" data-morning-chip-slot="honesty" className="w-full">
+      <p className="mb-1 text-center text-[10px] font-semibold uppercase tracking-wider text-white/80">
         {MORNING_CARD_CONTRIBUTORS_LABEL}
       </p>
       <ul
         role="list"
         aria-label="Bio Optimization contributors"
-        className="flex flex-wrap gap-x-1 gap-y-0.5"
+        className="flex flex-wrap justify-center gap-x-1 gap-y-0.5"
       >
         {chips.map((chip) => {
           const Icon = CHIP_ICONS[chip.key];
