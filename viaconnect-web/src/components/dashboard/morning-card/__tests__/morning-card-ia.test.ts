@@ -93,7 +93,8 @@ describe('Brief 29 morning card IA', () => {
     expect(keys).not.toContain('MORNING_CHIP_FOOTER_KEYS');
     expect(keys).not.toContain("'regimen'");
     expect(keys).not.toContain("'immune'");
-    expect(chips).toContain('flex flex-wrap');
+    expect(chips).toContain('flex flex-wrap justify-center');
+    expect(chips).toContain('text-center');
     expect(chips).not.toContain('listClassName');
     expect(chips).not.toContain('showHeading');
     expect(chips).toContain('MORNING_CARD_CONTRIBUTORS_LABEL');
@@ -137,6 +138,37 @@ describe('Brief 29 morning card IA', () => {
     expect(chips).not.toContain('text-white/40');
     expect(chips).not.toContain('text-white/70');
     expect(card).not.toMatch(/Vitality|bioavailability|Bio availability/i);
+  });
+
+  it('lines the honesty cluster up with the vertical center of the plasma circle', () => {
+    const card = src(CARD);
+    const chips = src(CHIPS);
+    const jsx = card.indexOf('return (');
+    const rowOpen = card.indexOf('className="grid', jsx);
+    const rowClose = card.indexOf('>', rowOpen);
+    const rowClass = card.slice(rowOpen, rowClose);
+    const copyOpen = card.indexOf('flex w-full min-w-0 flex-col items-center', jsx);
+    const copyClose = card.indexOf('>', copyOpen);
+    const copyClass = card.slice(copyOpen, copyClose);
+    const pillsOpen = card.indexOf('hannahBos.result.chips.length', jsx);
+    const pillsBlock = card.slice(pillsOpen, card.indexOf('<HabitSleepPair', jsx));
+
+    expect(rowClass).toContain('md:items-center');
+    expect(rowClass).toContain('justify-items-center');
+    expect(rowClass).not.toContain('md:items-start');
+    expect(card).not.toContain('md:flex-row md:items-start');
+    expect(copyClass).toContain('items-center');
+    expect(copyClass).toContain('text-center');
+    expect(copyClass).toContain('md:self-center');
+    expect(copyClass).toContain('md:translate-y-2.5');
+    expect(copyClass).toContain('md:row-start-2');
+    expect(card).toContain('md:col-start-1 md:row-start-2');
+    expect(card).toContain('data-bos-honesty="centered"');
+    expect(chips).toContain('text-center');
+    expect(chips).toContain('justify-center');
+    expect(pillsBlock).toContain('justify-center');
+    expect(pillsBlock).toContain('text-center');
+    expect(pillsBlock).toContain('BOS_UNKNOWN_NEVER_ZERO_COPY');
   });
 
   it('places one In today\'s score row of all seven under the honesty sentence, then source chips', () => {
@@ -209,7 +241,8 @@ describe('Brief 29 morning card IA', () => {
 
     expect(honesty).not.toContain('md:grid-cols-7');
     expect(honesty).not.toContain('bg-[#1A2744]/70');
-    expect(honesty).not.toContain('justify-center');
+    expect(honesty).toContain('justify-center');
+    expect(honesty).toContain('text-center');
     expect(honesty).toContain('gap-x-1');
     expect(honesty).toContain('flex-wrap');
 

@@ -63,14 +63,14 @@ export function MorningCard() {
       />
 
       <div className="relative flex flex-col gap-5 md:gap-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:gap-10">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-white/85">
-              {MORNING_CARD_SCORE_LABEL}
-            </p>
+        <div className="grid grid-cols-1 justify-items-center gap-4 md:grid-cols-[auto_minmax(0,1fr)] md:grid-rows-[auto_auto] md:items-center md:justify-items-stretch md:gap-x-10 md:gap-y-0">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-white/85 md:col-start-1 md:row-start-1">
+            {MORNING_CARD_SCORE_LABEL}
+          </p>
+          <div className="md:col-start-1 md:row-start-2">
             <ConnectionsBosDial composite={composite} brightReadout />
           </div>
-          <div className="flex min-w-0 flex-1 flex-col justify-center gap-2">
+          <div className="flex w-full min-w-0 flex-col items-center justify-center gap-2 text-center md:col-start-2 md:row-start-2 md:self-center md:translate-y-2.5">
             <p
               className="text-center text-sm leading-relaxed text-white"
               data-bos-honesty="centered"
@@ -83,7 +83,7 @@ export function MorningCard() {
               onSelect={toggleChip}
             />
             {hannahBos.result.chips.length > 0 ? (
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap justify-center gap-1.5">
                 {hannahBos.result.chips.map((chip) => (
                   <span
                     key={chip}
@@ -94,7 +94,9 @@ export function MorningCard() {
                 ))}
               </div>
             ) : (
-              <p className="text-[10px] text-white/80">{BOS_UNKNOWN_NEVER_ZERO_COPY}</p>
+              <p className="text-center text-[10px] text-white/80">
+                {BOS_UNKNOWN_NEVER_ZERO_COPY}
+              </p>
             )}
           </div>
         </div>
