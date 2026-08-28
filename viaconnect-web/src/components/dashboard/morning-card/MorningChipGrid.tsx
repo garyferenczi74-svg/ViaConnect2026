@@ -31,6 +31,8 @@ export interface MorningChipGridProps {
   onSelect: (key: MorningChipKey) => void;
   keys?: readonly MorningChipKey[];
   showHeading?: boolean;
+  /** Extra alignment/gap classes for the chip list (footer band uses justify-center). */
+  listClassName?: string;
 }
 
 function chipsForKeys(
@@ -53,6 +55,7 @@ export function MorningChipGrid({
   onSelect,
   keys,
   showHeading = true,
+  listClassName,
 }: MorningChipGridProps) {
   const visible = chipsForKeys(chips, keys);
   return (
@@ -68,7 +71,7 @@ export function MorningChipGrid({
       <ul
         role="list"
         aria-label="Bio Optimization contributors"
-        className="flex flex-wrap gap-x-1 gap-y-0.5"
+        className={`flex flex-wrap gap-y-0.5 ${listClassName ?? 'gap-x-1'}`}
       >
         {visible.map((chip) => {
           const Icon = CHIP_ICONS[chip.key];

@@ -23,7 +23,7 @@ export const MORNING_CHIP_PRIMARY_KEYS = [
   'workouts',
 ] as const satisfies readonly MorningChipKey[];
 
-/** Body comp. and Steps sit at the foot of the plate, with no second heading. */
+/** Body comp. and Steps sit in a centered footer band, with no second heading. */
 export const MORNING_CHIP_FOOTER_KEYS = [
   'body_composition',
   'steps',
