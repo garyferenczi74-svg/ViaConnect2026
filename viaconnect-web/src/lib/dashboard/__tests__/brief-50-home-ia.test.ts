@@ -141,15 +141,15 @@ describe('Brief 50 desktop Home uses the same IA as mobile', () => {
     expect(CARD_SRC).toContain('MORNING_CHIP_FOOTER_KEYS');
     expect(CARD_SRC).toContain('showHeading={false}');
     expect(CARD_SRC.indexOf('hannahBos.sentence')).toBeLessThan(
-      CARD_SRC.indexOf('MORNING_CHIP_PRIMARY_KEYS'),
+      CARD_SRC.indexOf('keys={MORNING_CHIP_PRIMARY_KEYS}'),
     );
-    expect(CARD_SRC.indexOf('MORNING_CHIP_PRIMARY_KEYS')).toBeLessThan(
+    expect(CARD_SRC.indexOf('keys={MORNING_CHIP_PRIMARY_KEYS}')).toBeLessThan(
       CARD_SRC.indexOf('hannahBos.result.chips'),
     );
     expect(CARD_SRC.indexOf('hannahBos.result.chips')).toBeLessThan(
-      CARD_SRC.indexOf('MORNING_CHIP_FOOTER_KEYS'),
+      CARD_SRC.indexOf('keys={MORNING_CHIP_FOOTER_KEYS}'),
     );
-    expect(CARD_SRC.indexOf('MORNING_CHIP_FOOTER_KEYS')).toBeLessThan(
+    expect(CARD_SRC.indexOf('keys={MORNING_CHIP_FOOTER_KEYS}')).toBeLessThan(
       CARD_SRC.indexOf('<HabitSleepPair'),
     );
     expect((CARD_SRC.match(/<MorningChipGrid/g) ?? []).length).toBe(2);
