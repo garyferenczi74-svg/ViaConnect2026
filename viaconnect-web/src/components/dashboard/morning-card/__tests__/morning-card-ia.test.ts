@@ -160,6 +160,7 @@ describe('Brief 29 morning card IA', () => {
     expect(copyClass).toContain('items-center');
     expect(copyClass).toContain('text-center');
     expect(copyClass).toContain('md:self-center');
+    expect(copyClass).toContain('md:translate-y-2.5');
     expect(copyClass).toContain('md:row-start-2');
     expect(card).toContain('md:col-start-1 md:row-start-2');
     expect(card).toContain('data-bos-honesty="centered"');

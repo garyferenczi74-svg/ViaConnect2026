@@ -131,6 +131,7 @@ describe('Brief 50 desktop Home uses the same IA as mobile', () => {
     expect(CARD_SRC).toContain('text-center text-sm leading-relaxed text-white');
     expect(CARD_SRC).toContain('md:items-center');
     expect(CARD_SRC).toContain('md:self-center');
+    expect(CARD_SRC).toContain('md:translate-y-2.5');
     expect(CARD_SRC).not.toContain('md:items-start');
     expect(CARD_SRC).toContain('brightReadout');
     expect(CARD_SRC).not.toContain('MorningProtocolCtaButton');

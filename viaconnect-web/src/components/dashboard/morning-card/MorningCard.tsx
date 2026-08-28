@@ -70,7 +70,7 @@ export function MorningCard() {
           <div className="md:col-start-1 md:row-start-2">
             <ConnectionsBosDial composite={composite} brightReadout />
           </div>
-          <div className="flex w-full min-w-0 flex-col items-center justify-center gap-2 text-center md:col-start-2 md:row-start-2 md:self-center">
+          <div className="flex w-full min-w-0 flex-col items-center justify-center gap-2 text-center md:col-start-2 md:row-start-2 md:self-center md:translate-y-2.5">
             <p
               className="text-center text-sm leading-relaxed text-white"
               data-bos-honesty="centered"
