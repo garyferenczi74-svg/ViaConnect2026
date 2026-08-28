@@ -2,8 +2,9 @@
 
 // Score-first morning card: Bio Optimization Score from blendHannahBos +
 // ConnectionsBosDial (Brief 56). Protocol lives on TodaysProtocol lower on
-// the dashboard. Seven contributor chips as a compact in-score row, not a
-// tab bar. Rewards gamification stays off this card.
+// the dashboard. Five in-score chips sit under the honesty sentence; Body
+// comp. and Steps sit at the foot of the plate. Rewards gamification stays
+// off this card.
 
 import { useMemo, useState } from 'react';
 import { useDailyScheduleView } from '@/hooks/useDailyScheduleView';
@@ -19,7 +20,11 @@ import {
 } from '@/lib/dashboard/morning-card/copy';
 import { useWearableTilesSnapshot } from '@/hooks/useWearableTilesSnapshot';
 import { buildMorningChips, chipByKey } from '@/lib/dashboard/morning-card/contributors';
-import { type MorningChipKey } from '@/lib/dashboard/morning-card/keys';
+import {
+  MORNING_CHIP_FOOTER_KEYS,
+  MORNING_CHIP_PRIMARY_KEYS,
+  type MorningChipKey,
+} from '@/lib/dashboard/morning-card/keys';
 import { MorningChipGrid } from './MorningChipGrid';
 import { MorningContributorList } from './MorningContributorList';
 
@@ -44,6 +49,9 @@ export function MorningCard() {
 
   const selectedChip = selectedKey ? chipByKey(chips, selectedKey) : null;
   const composite = hannahBos.display;
+  const toggleChip = (key: MorningChipKey) => {
+    setSelectedKey((prev) => (prev === key ? null : key));
+  };
 
   return (
     <section
@@ -60,7 +68,7 @@ export function MorningCard() {
       />
 
       <div className="relative flex flex-col gap-5 md:gap-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:gap-10">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:gap-10">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-wider text-white/40">
               {MORNING_CARD_SCORE_LABEL}
@@ -69,6 +77,12 @@ export function MorningCard() {
           </div>
           <div className="flex min-w-0 flex-1 flex-col justify-center gap-2">
             <p className="text-sm leading-relaxed text-white/70">{hannahBos.sentence}</p>
+            <MorningChipGrid
+              chips={chips}
+              keys={MORNING_CHIP_PRIMARY_KEYS}
+              selectedKey={selectedKey}
+              onSelect={toggleChip}
+            />
             {hannahBos.result.chips.length > 0 ? (
               <div className="flex flex-wrap gap-1.5">
                 {hannahBos.result.chips.map((chip) => (
@@ -88,8 +102,10 @@ export function MorningCard() {
 
         <MorningChipGrid
           chips={chips}
+          keys={MORNING_CHIP_FOOTER_KEYS}
+          showHeading={false}
           selectedKey={selectedKey}
-          onSelect={(key) => setSelectedKey((prev) => (prev === key ? null : key))}
+          onSelect={toggleChip}
         />
 
         <HabitSleepPair pair={habitSleepPair} />

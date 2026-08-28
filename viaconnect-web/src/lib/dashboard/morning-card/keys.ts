@@ -14,6 +14,21 @@ export type MorningChipKey = ContributorMetric;
 
 export const MORNING_CHIP_LABELS = METRIC_LABELS;
 
+/** First five sit under the honesty sentence, above source chips. */
+export const MORNING_CHIP_PRIMARY_KEYS = [
+  'hrv',
+  'sleep',
+  'resting_hr',
+  'recovery',
+  'workouts',
+] as const satisfies readonly MorningChipKey[];
+
+/** Body comp. and Steps sit at the foot of the plate, with no second heading. */
+export const MORNING_CHIP_FOOTER_KEYS = [
+  'body_composition',
+  'steps',
+] as const satisfies readonly MorningChipKey[];
+
 /** Lucide icon component names. UI maps these; this module stays JSX-free. */
 export const MORNING_CHIP_ICONS: Record<MorningChipKey, string> = {
   hrv: 'HeartPulse',

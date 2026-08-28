@@ -34,7 +34,7 @@ const FROZEN_AT_2B53743: Record<string, string> = {
   'src/lib/dashboard/morning-card/protocol-cta.ts':
     '0f3b2c44888f69fd9c00d5c3d059cfbecb20a7e3e11ca4a69935a65ca2e3bd55',
   'src/components/dashboard/morning-card/MorningChipGrid.tsx':
-    'c5f48f5120db0cba00d07ce4bef370d0b9e06d6103bed91d480f36a06224542c',
+    'ae6b596a6b8b02148e27ad3deeebc871e32ee16cadad2d4f62acce62e93b2e36',
   'src/components/dashboard/morning-card/MorningProtocolCta.tsx':
     'eb8ac47491ef91f7327afbdad301a607ef00f91b96a5ac3e4bd6bcb797675203',
   'src/hooks/useHannahBosDisplay.ts':
