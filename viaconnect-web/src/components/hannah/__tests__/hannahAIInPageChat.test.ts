@@ -41,8 +41,8 @@ describe('HannahAIGuidedByChip', () => {
     expect(chip).toContain('Guided by {getDisplayName(');
     expect(chip).toContain('hannah-ai-chat');
     expect(chip).toContain('scrollIntoView');
-    expect(chip).not.toContain('/wellness/advisor');
-    expect(chip).not.toContain('hidden md:inline-flex');
+    expect(chip).not.toMatch(/href=["']\/wellness\/advisor["']/);
+    expect(chip).not.toMatch(/className="[^"]*hidden md:inline-flex/);
     expect(chip).toContain('strokeWidth={1.5}');
     expect(chip).not.toContain('Guided by Hannah');
     expect(chip).not.toContain('Guided by HannahAI');

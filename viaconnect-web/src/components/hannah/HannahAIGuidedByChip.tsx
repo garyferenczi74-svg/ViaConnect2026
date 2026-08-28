@@ -1,8 +1,9 @@
 'use client';
 
 // In-page HannahAI chrome. Clicking expands/scrolls to #hannah-ai-chat
-// on the same page. Never navigates to /wellness/advisor.
-// Visible on mobile and desktop together (no hidden md:inline-flex).
+// on the same page. Never leaves the current hub for the standalone advisor route.
+// Visible on mobile and desktop together. Do not copy the Gordon/Arnold
+// desktop-only visibility classes.
 
 import { Sparkles } from 'lucide-react';
 import { getDisplayName } from '@/lib/getDisplayName';

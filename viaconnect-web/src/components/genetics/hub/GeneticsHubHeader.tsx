@@ -4,12 +4,11 @@
 //
 // Mirrors the My Nutrition hub header (NutritionHubHeader.tsx), which in
 // turn mirrors the My Biology hub header: eyebrow pill with the bullet
-// dot, H1, subline, and a clickable Guided by HannahAI chip top right.
-// The HannahAI chip is visible on mobile and desktop. Presentational only.
+// dot, H1, subline, and a clickable HannahAIGuidedByChip top right.
+// The chip is visible on mobile and desktop. Presentational only.
 //
-// HannahAI is the genomics agent guiding My Genetics. The chip copy flows
-// through getDisplayName('hannahai') inside HannahAIGuidedByChip so the
-// pill reads HannahAI. Clicking the chip scrolls to #hannah-ai-chat.
+// The genomics guide chip copy flows through getDisplayName('hannahai')
+// inside HannahAIGuidedByChip. Clicking the chip scrolls to #hannah-ai-chat.
 
 import { HannahAIGuidedByChip } from '@/components/hannah/HannahAIGuidedByChip';
 
