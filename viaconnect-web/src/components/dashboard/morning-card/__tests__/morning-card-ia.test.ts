@@ -111,6 +111,34 @@ describe('Brief 29 morning card IA', () => {
     expect((card.match(/<MorningChipGrid/g) ?? []).length).toBe(1);
   });
 
+  it('centers the honesty sentence and brightens plate type on the dark glass', () => {
+    const card = src(CARD);
+    const chips = src(CHIPS);
+    const sentenceOpen = card.indexOf('hannahBos.sentence');
+    const sentenceTag = card.lastIndexOf('<p', sentenceOpen);
+    const sentenceBlock = card.slice(sentenceTag, sentenceOpen);
+
+    expect(sentenceBlock).toContain('text-center');
+    expect(sentenceBlock).toContain('text-white');
+    expect(sentenceBlock).toContain('data-bos-honesty="centered"');
+    expect(sentenceBlock).not.toContain('text-white/70');
+    expect(src('src/lib/scoring/hannah-bos.ts')).toContain(
+      'Bio Optimization Score blends only what you actually have today. Missing pieces are left out, not counted as zero.',
+    );
+    expect(card).toContain('hannahBos.sentence');
+    expect(card).toContain('text-white/85');
+    expect(card).toContain('text-white/90');
+    expect(card).toContain('text-white/80');
+    expect(card).toContain('brightReadout');
+    expect(card).not.toContain('text-white/40');
+    expect(card).not.toContain('text-white/70');
+    expect(chips).toContain('text-white/80');
+    expect(chips).toContain('text-white/90');
+    expect(chips).not.toContain('text-white/40');
+    expect(chips).not.toContain('text-white/70');
+    expect(card).not.toMatch(/Vitality|bioavailability|Bio availability/i);
+  });
+
   it('places one In today\'s score row of all seven under the honesty sentence, then source chips', () => {
     const card = src(CARD);
     const jsx = card.indexOf('return (');
@@ -153,6 +181,10 @@ describe('Brief 29 morning card IA', () => {
     );
 
     expect(honesty).toContain('In today&#x27;s score');
+    expect(honesty).toContain('text-white/80');
+    expect(honesty).toContain('text-white/90');
+    expect(honesty).not.toContain('text-white/40');
+    expect(honesty).not.toContain('text-white/70');
     expect(honesty).toContain('data-morning-chip-slot="honesty"');
     expect(honesty).not.toContain('data-morning-chip-slot="footer"');
     expect((honesty.match(/data-morning-chip-slot=/g) ?? []).length).toBe(1);

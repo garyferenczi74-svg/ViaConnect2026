@@ -65,13 +65,18 @@ export function MorningCard() {
       <div className="relative flex flex-col gap-5 md:gap-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:gap-10">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-white/40">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-white/85">
               {MORNING_CARD_SCORE_LABEL}
             </p>
-            <ConnectionsBosDial composite={composite} />
+            <ConnectionsBosDial composite={composite} brightReadout />
           </div>
           <div className="flex min-w-0 flex-1 flex-col justify-center gap-2">
-            <p className="text-sm leading-relaxed text-white/70">{hannahBos.sentence}</p>
+            <p
+              className="text-center text-sm leading-relaxed text-white"
+              data-bos-honesty="centered"
+            >
+              {hannahBos.sentence}
+            </p>
             <MorningChipGrid
               chips={chips}
               selectedKey={selectedKey}
@@ -82,14 +87,14 @@ export function MorningCard() {
                 {hannahBos.result.chips.map((chip) => (
                   <span
                     key={chip}
-                    className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] text-white/70"
+                    className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] text-white/90"
                   >
                     {chip}
                   </span>
                 ))}
               </div>
             ) : (
-              <p className="text-[10px] text-white/40">{BOS_UNKNOWN_NEVER_ZERO_COPY}</p>
+              <p className="text-[10px] text-white/80">{BOS_UNKNOWN_NEVER_ZERO_COPY}</p>
             )}
           </div>
         </div>

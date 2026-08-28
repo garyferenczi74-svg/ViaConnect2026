@@ -37,6 +37,8 @@ describe('Brief 56 one Bio Optimization Score', () => {
     expect(morning).toContain('useHannahBosDisplay');
     expect(morning).toContain('data-bos-card="dashboard"');
     expect(morning).toContain('hannahBos.sentence');
+    expect(morning).toContain('data-bos-honesty="centered"');
+    expect(morning).toContain('brightReadout');
     expect(morning).not.toContain('Vitality');
     expect(morning).not.toMatch(/Helix/);
 
