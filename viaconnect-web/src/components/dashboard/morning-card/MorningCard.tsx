@@ -3,8 +3,8 @@
 // Score-first morning card: Bio Optimization Score from blendHannahBos +
 // ConnectionsBosDial (Brief 56). Protocol lives on TodaysProtocol lower on
 // the dashboard. Five in-score chips sit under the honesty sentence; Body
-// comp. and Steps sit at the foot of the plate. Rewards gamification stays
-// off this card.
+// comp. and Steps sit in a centered full-width footer band. Rewards
+// gamification stays off this card.
 
 import { useMemo, useState } from 'react';
 import { useDailyScheduleView } from '@/hooks/useDailyScheduleView';
@@ -100,13 +100,16 @@ export function MorningCard() {
           </div>
         </div>
 
-        <MorningChipGrid
-          chips={chips}
-          keys={MORNING_CHIP_FOOTER_KEYS}
-          showHeading={false}
-          selectedKey={selectedKey}
-          onSelect={toggleChip}
-        />
+        <div className="w-full border-t border-white/10 pt-3">
+          <MorningChipGrid
+            chips={chips}
+            keys={MORNING_CHIP_FOOTER_KEYS}
+            showHeading={false}
+            selectedKey={selectedKey}
+            onSelect={toggleChip}
+            listClassName="justify-center gap-x-6"
+          />
+        </div>
 
         <HabitSleepPair pair={habitSleepPair} />
 

@@ -96,6 +96,7 @@ describe('Brief 29 morning card IA', () => {
     expect(keys).not.toContain("'regimen'");
     expect(keys).not.toContain("'immune'");
     expect(chips).toContain('flex flex-wrap');
+    expect(chips).toContain('listClassName');
     expect(chips).toContain('MORNING_CARD_CONTRIBUTORS_LABEL');
     expect(chips).toContain('data-morning-contributors="inline"');
     expect(chips).toContain("data-morning-chip-slot={showHeading ? 'honesty' : 'footer'}");
@@ -117,6 +118,7 @@ describe('Brief 29 morning card IA', () => {
     const sentence = card.indexOf('hannahBos.sentence', jsx);
     const primary = card.indexOf('keys={MORNING_CHIP_PRIMARY_KEYS}', jsx);
     const sources = card.indexOf('hannahBos.result.chips', jsx);
+    const band = card.indexOf('w-full border-t border-white/10 pt-3', jsx);
     const footer = card.indexOf('keys={MORNING_CHIP_FOOTER_KEYS}', jsx);
     const habit = card.indexOf('<HabitSleepPair', jsx);
     const unknown = card.indexOf('{BOS_UNKNOWN_NEVER_ZERO_COPY}', jsx);
@@ -125,7 +127,8 @@ describe('Brief 29 morning card IA', () => {
     expect(primary).toBeGreaterThan(sentence);
     expect(sources).toBeGreaterThan(primary);
     expect(unknown).toBeGreaterThan(sources);
-    expect(footer).toBeGreaterThan(unknown);
+    expect(band).toBeGreaterThan(unknown);
+    expect(footer).toBeGreaterThan(band);
     expect(habit).toBeGreaterThan(footer);
 
     const honestyColumn = card.slice(sentence, sources);
@@ -133,15 +136,18 @@ describe('Brief 29 morning card IA', () => {
     expect(honestyColumn).toContain('MORNING_CHIP_PRIMARY_KEYS');
     expect(honestyColumn).not.toContain('MORNING_CHIP_FOOTER_KEYS');
     expect(honestyColumn).not.toContain('showHeading={false}');
+    expect(honestyColumn).not.toContain('listClassName');
     expect(honestyColumn).not.toContain('body_composition');
     expect(honestyColumn).not.toContain('steps');
 
     const footerGrid = card.lastIndexOf('<MorningChipGrid');
     expect(footerGrid).toBeGreaterThan(sources);
     expect(footerGrid).toBeLessThan(habit);
-    const footerBlock = card.slice(footerGrid, habit);
+    const footerBlock = card.slice(band, habit);
+    expect(footerBlock).toContain('w-full border-t border-white/10 pt-3');
     expect(footerBlock).toContain('keys={MORNING_CHIP_FOOTER_KEYS}');
     expect(footerBlock).toContain('showHeading={false}');
+    expect(footerBlock).toContain('listClassName="justify-center gap-x-6"');
     expect(footerBlock).not.toContain('MORNING_CARD_CONTRIBUTORS_LABEL');
     expect(card).not.toContain('MorningProtocolCtaButton');
   });
@@ -163,6 +169,7 @@ describe('Brief 29 morning card IA', () => {
         showHeading: false,
         selectedKey: null,
         onSelect: () => undefined,
+        listClassName: 'justify-center gap-x-6',
       }),
     );
 
@@ -183,6 +190,8 @@ describe('Brief 29 morning card IA', () => {
     expect(honesty).not.toContain('Body comp.');
     expect(honesty).not.toContain('md:grid-cols-7');
     expect(honesty).not.toContain('bg-[#1A2744]/70');
+    expect(honesty).not.toContain('justify-center');
+    expect(honesty).toContain('gap-x-1');
 
     expect(footer).not.toContain('In today&#x27;s score');
     expect(footer).not.toContain("In today's score");
@@ -191,6 +200,8 @@ describe('Brief 29 morning card IA', () => {
     expect(footer).toContain('data-chip="steps"');
     expect(footer).toContain('Body comp.');
     expect(footer).toContain('Steps');
+    expect(footer).toContain('justify-center');
+    expect(footer).toContain('gap-x-6');
     expect(footer).not.toContain('data-chip="hrv"');
     expect(footer).not.toContain('md:grid-cols-7');
     expect(footer).not.toContain('bg-[#1A2744]/70');
