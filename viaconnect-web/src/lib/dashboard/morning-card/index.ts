@@ -2,8 +2,6 @@ export {
   MORNING_CHIP_KEYS,
   MORNING_CHIP_LABELS,
   MORNING_CHIP_ICONS,
-  MORNING_CHIP_PRIMARY_KEYS,
-  MORNING_CHIP_FOOTER_KEYS,
   isMorningChipKey,
   type MorningChipKey,
 } from './keys';

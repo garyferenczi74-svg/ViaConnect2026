@@ -7,8 +7,6 @@ import {
   MORNING_CHIP_KEYS,
   MORNING_CHIP_LABELS,
   MORNING_CHIP_ICONS,
-  MORNING_CHIP_PRIMARY_KEYS,
-  MORNING_CHIP_FOOTER_KEYS,
   isMorningChipKey,
 } from '../keys';
 
@@ -26,17 +24,6 @@ describe('morning-card contributor keys', () => {
       'Steps',
     ]);
     expect(MORNING_CHIP_LABELS).toEqual(METRIC_LABELS);
-    expect([...MORNING_CHIP_PRIMARY_KEYS]).toEqual([
-      'hrv',
-      'sleep',
-      'resting_hr',
-      'recovery',
-      'workouts',
-    ]);
-    expect([...MORNING_CHIP_FOOTER_KEYS]).toEqual(['body_composition', 'steps']);
-    expect([...MORNING_CHIP_PRIMARY_KEYS, ...MORNING_CHIP_FOOTER_KEYS]).toEqual([
-      ...MORNING_CHIP_KEYS,
-    ]);
   });
 
   it('does not include the eight marketing keys or Helix', () => {
