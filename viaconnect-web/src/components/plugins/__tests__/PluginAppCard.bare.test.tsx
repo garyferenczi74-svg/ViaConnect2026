@@ -56,7 +56,7 @@ describe('PluginAppCard Connections chrome', () => {
     );
 
     expect(google).toContain(
-      'rounded-[24px] border border-[rgba(255,255,255,0.14)] bg-[rgba(255,255,255,0.07)] p-4 backdrop-blur-md',
+      'rounded-[24px] border border-[rgba(255,255,255,0.10)] bg-[rgba(255,255,255,0.035)] p-4 backdrop-blur-sm',
     );
     expect(google).not.toContain('bg-[#1E3054]');
     expect(google).toContain('data-vendor-mark="google_health"');
@@ -201,18 +201,26 @@ describe('PluginAppCard Connections chrome', () => {
     expect(marks).not.toContain('data-vendor-mark="whoop"');
   });
 
-  it('selected tile uses WearableTileCard blue glass; rest uses grey glass', () => {
-    expect(PLUGIN_TILE_RESTING_CHROME).toBe(WEARABLE_TILE_RESTING_CHROME);
-    expect(PLUGIN_TILE_ACTIVATED_CHROME).toBe(WEARABLE_TILE_ACTIVATED_CHROME);
+  it('selected tile uses thinner blue glass; rest uses thinner grey glass', () => {
+    expect(PLUGIN_TILE_RESTING_CHROME).toContain('bg-[rgba(255,255,255,0.035)]');
+    expect(PLUGIN_TILE_RESTING_CHROME).toContain('border-[rgba(255,255,255,0.10)]');
+    expect(PLUGIN_TILE_RESTING_CHROME).toContain('backdrop-blur-sm');
+    expect(PLUGIN_TILE_RESTING_CHROME).not.toContain('backdrop-blur-md');
+    expect(PLUGIN_TILE_ACTIVATED_CHROME).toContain('bg-[rgba(74,144,217,0.05)]');
+    expect(PLUGIN_TILE_ACTIVATED_CHROME).toContain('border-[rgba(74,144,217,0.25)]');
+    expect(PLUGIN_TILE_ACTIVATED_CHROME).toContain('backdrop-blur-sm');
+    expect(PLUGIN_TILE_ACTIVATED_CHROME).not.toContain('backdrop-blur-[16px]');
+    expect(PLUGIN_TILE_RESTING_CHROME).not.toBe(WEARABLE_TILE_RESTING_CHROME);
+    expect(PLUGIN_TILE_ACTIVATED_CHROME).not.toBe(WEARABLE_TILE_ACTIVATED_CHROME);
     const rest = renderToStaticMarkup(
       <PluginAppCard card={cardFrom('myfitnesspal', 'coming_soon', null)} />,
     );
     const selected = renderToStaticMarkup(
       <PluginAppCard card={cardFrom('myfitnesspal', 'coming_soon', null)} selected />,
     );
-    expect(rest).toContain(WEARABLE_TILE_RESTING_CHROME);
-    expect(rest).not.toContain(WEARABLE_TILE_ACTIVATED_CHROME);
-    expect(selected).toContain(WEARABLE_TILE_ACTIVATED_CHROME);
+    expect(rest).toContain(PLUGIN_TILE_RESTING_CHROME);
+    expect(rest).not.toContain(PLUGIN_TILE_ACTIVATED_CHROME);
+    expect(selected).toContain(PLUGIN_TILE_ACTIVATED_CHROME);
     expect(selected).toContain('data-selected="true"');
     expect(selected).not.toContain('bg-[#1E3054]');
   });

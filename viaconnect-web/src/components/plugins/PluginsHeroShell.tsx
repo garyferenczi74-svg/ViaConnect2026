@@ -32,7 +32,7 @@ export function PluginsHeroShell({ children }: { children: ReactNode }) {
           data-testid="plugins-hero-scrim"
           style={{
             background:
-              'linear-gradient(180deg, rgba(13, 21, 32, 0.72) 0%, rgba(26, 39, 68, 0.58) 42%, rgba(45, 165, 160, 0.22) 100%)',
+              'linear-gradient(180deg, rgba(13, 21, 32, 0.38) 0%, rgba(26, 39, 68, 0.28) 42%, rgba(45, 165, 160, 0.12) 100%)',
           }}
         />
       </div>

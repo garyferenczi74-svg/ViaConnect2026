@@ -68,7 +68,7 @@ export function PluginAppDetailPanel({
     >
       {card === null ? (
         <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-white/[0.14] bg-[rgba(255,255,255,0.04)] p-10 text-center">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[rgba(255,255,255,0.06)]">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[rgba(255,255,255,0.03)]">
             <MousePointerClick className="h-5 w-5 text-teal" strokeWidth={1.5} />
           </div>
           <h2 className="text-base font-semibold text-white">Pick an app</h2>
@@ -85,7 +85,7 @@ export function PluginAppDetailPanel({
           </div>
 
           {card.description ? (
-            <div className="rounded-xl border border-white/[0.08] bg-[rgba(255,255,255,0.06)] p-3">
+            <div className="rounded-xl border border-white/[0.08] bg-[rgba(255,255,255,0.03)] p-3">
               <p className="text-sm leading-relaxed text-white/70">{card.description}</p>
             </div>
           ) : null}

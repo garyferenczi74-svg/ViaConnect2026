@@ -105,7 +105,7 @@ describe("Plugins Picasso IA honesty", () => {
     expect(mark).toContain("strokeWidth={1.5}");
   });
 
-  it("matches Connections WearableTileCard chrome without wearable dropzone", () => {
+  it("uses thinner Plugins glass than WearableTileCard without wearable dropzone", () => {
     const card = src("components/plugins/PluginAppCard.tsx");
     const chrome = src("components/plugins/pluginTileChrome.ts");
     const tile = src("components/body-tracker/connections/WearableTileCard.tsx");
@@ -116,11 +116,16 @@ describe("Plugins Picasso IA honesty", () => {
       "relative rounded-[24px] border border-[rgba(74,144,217,0.25)] bg-[rgba(74,144,217,0.10)] p-4 pl-6 backdrop-blur-[16px]",
     );
     expect(chrome).toContain(
-      "relative rounded-[24px] border border-[rgba(255,255,255,0.14)] bg-[rgba(255,255,255,0.07)] p-4 backdrop-blur-md",
+      "relative rounded-[24px] border border-[rgba(255,255,255,0.10)] bg-[rgba(255,255,255,0.035)] p-4 backdrop-blur-sm",
     );
     expect(chrome).toContain(
-      "relative rounded-[24px] border border-[rgba(74,144,217,0.25)] bg-[rgba(74,144,217,0.10)] p-4 pl-6 backdrop-blur-[16px]",
+      "relative rounded-[24px] border border-[rgba(74,144,217,0.25)] bg-[rgba(74,144,217,0.05)] p-4 pl-6 backdrop-blur-sm",
     );
+    expect(chrome).toContain(
+      "relative flex h-full flex-col rounded-[24px] border border-[rgba(255,255,255,0.10)] bg-[rgba(255,255,255,0.035)] p-4 backdrop-blur-sm sm:p-5",
+    );
+    expect(chrome).not.toContain("backdrop-blur-md");
+    expect(chrome).not.toContain("backdrop-blur-[16px]");
     expect(card).toContain("pluginTileCardChrome");
     expect(card).toContain("resolveLastSyncState");
     expect(card).toContain("@/lib/body-tracker/last-sync-state");
