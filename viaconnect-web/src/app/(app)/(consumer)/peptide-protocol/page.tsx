@@ -3,7 +3,6 @@ import { PeptideEducationBento } from '@/components/peptide-protocol/PeptideEduc
 import { PeptideProtocolHeroShell } from '@/components/peptide-protocol/PeptideProtocolHeroShell';
 import { PeptideEducationTabs } from '@/components/peptide-protocol/converter/PeptideEducationTabs';
 import { HannahAIGuidedByChip } from '@/components/hannah/HannahAIGuidedByChip';
-import { HannahAIChatCard } from '@/components/hannah/HannahAIChatCard';
 import { loadConsumerEducationEntries } from '@/lib/peptides/educationEntries';
 
 export const dynamic = 'force-dynamic';
@@ -27,7 +26,6 @@ export default async function PeptideProtocolRoute() {
         entryCount={countsOk ? catalog.total : 0}
         countsOk={countsOk}
       />
-      <HannahAIChatCard />
     </PeptideProtocolHeroShell>
   );
 }

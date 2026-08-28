@@ -35,7 +35,7 @@ interface AdvisorChatProps {
   icon: React.ReactNode;
   suggestedPrompts: string[];
   initialPrompt?: string;
-  /** Bounded height for in-page hub cards. Standalone advisor pages omit this. */
+  /** Bounded height for the in-page HannahAI popover. Standalone advisor pages omit this. */
   embedded?: boolean;
 }
 
@@ -236,7 +236,7 @@ export default function AdvisorChat({
     <div
       className={
         embedded
-          ? "flex flex-col h-[min(520px,70vh)] min-h-[420px] max-h-[560px] bg-[#1A2744]/40 max-w-full overflow-x-hidden"
+          ? "flex flex-col h-[380px] max-h-[440px] bg-[#1A2744]/40 max-w-full overflow-x-hidden"
           : "flex flex-col h-[calc(100vh-64px)] md:h-[calc(100vh-80px)] bg-[#1A2744] max-w-full overflow-x-hidden"
       }
     >

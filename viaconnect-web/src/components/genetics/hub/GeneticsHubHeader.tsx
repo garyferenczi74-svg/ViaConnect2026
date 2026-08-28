@@ -8,7 +8,8 @@
 // The chip is visible on mobile and desktop. Presentational only.
 //
 // The genomics guide chip copy flows through getDisplayName('hannahai')
-// inside HannahAIGuidedByChip. Clicking the chip scrolls to #hannah-ai-chat.
+// inside HannahAIGuidedByChip. Clicking the chip opens a compact popover
+// anchored under the pill.
 
 import { HannahAIGuidedByChip } from '@/components/hannah/HannahAIGuidedByChip';
 

@@ -64,6 +64,16 @@ describe('GeneticsHubHeader source', () => {
     expect(chip).not.toContain('hidden md:inline-flex');
   });
 
+  it('chip owns a compact popover under the pill instead of scrolling to a page-bottom card', () => {
+    expect(chip).toMatch(/absolute|fixed/);
+    expect(chip).toContain('AdvisorChat');
+    expect(chip).toContain('getBoundingClientRect');
+    expect(chip).not.toContain('scrollIntoView');
+    expect(chip).not.toContain('hub-card-frame');
+    expect(chip).not.toContain('Guided by Hannah');
+    expect(chip).not.toContain('Guided by HannahAI');
+  });
+
   it('contains no em or en dashes', () => {
     expect(source.includes(String.fromCharCode(0x2014))).toBe(false);
     expect(source.includes(String.fromCharCode(0x2013))).toBe(false);

@@ -26,7 +26,6 @@ import { ConnectionsStrip } from './ConnectionsStrip';
 import { AssessmentRetakeCard } from './AssessmentRetakeCard';
 import { useHubMetrics } from './useHubMetrics';
 import { HannahAIGuidedByChip } from '@/components/hannah/HannahAIGuidedByChip';
-import { HannahAIChatCard } from '@/components/hannah/HannahAIChatCard';
 
 export function BodyTrackerHub() {
   const { metrics } = useHubMetrics();
@@ -102,8 +101,6 @@ export function BodyTrackerHub() {
 
       {/* Update Your Assessment card (mirrors the My Supplements design). */}
       <AssessmentRetakeCard />
-
-      <HannahAIChatCard />
     </div>
   );
 }
