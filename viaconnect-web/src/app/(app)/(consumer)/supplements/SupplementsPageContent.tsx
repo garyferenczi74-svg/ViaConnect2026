@@ -121,23 +121,23 @@ export function SupplementsPageContent({
 
       <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 md:px-6 md:py-8">
 
-      {/* PAGE HEADER */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
+      {/* PAGE HEADER: title + subline left, HannahAI chip top-right (same as Genetics / Nutrition / Biology). */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-4">
           <PIcon icon={Pill} color="#2DA5A0" size="lg" />
           <div>
             <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">My Supplements</h1>
             <p className="text-sm text-white/40 mt-0.5">Your personalized daily regimen</p>
           </div>
         </div>
-        <div className="flex flex-shrink-0 flex-col items-end gap-2 sm:flex-row sm:items-center">
-          <HannahAIGuidedByChip />
-          <ProtocolConfidenceBadge tier={1} geneticsUploaded={geneticsUploaded} />
-        </div>
+        <HannahAIGuidedByChip />
       </div>
 
       {/* ═══ 1. DAILY SCHEDULE ═══ */}
       <Section icon={CalendarClock} iconColor="#2DA5A0" title="Your personalized daily regimen: Daily Schedule" subtitle="Your supplement checklist for today">
+        <div className="px-5 pt-5 md:px-6 md:pt-6">
+          <ProtocolConfidenceBadge tier={1} geneticsUploaded={geneticsUploaded} />
+        </div>
         <DailySchedule />
       </Section>
 

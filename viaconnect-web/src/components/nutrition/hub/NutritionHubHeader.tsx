@@ -2,17 +2,13 @@
 
 // Prompt 183 Task 3 (2026-06-10): My Nutrition hub header chrome.
 //
-// Mirrors the My Biology hub header (BodyTrackerHub.tsx header block):
-// eyebrow pill with the bullet dot, H1, subline, and the "Guided by
-// <agent>" pill top right with a Sparkles icon, hidden on mobile via
-// hidden md:inline-flex. Presentational only; no data.
+// Mirrors GeneticsHubHeader: eyebrow pill with the bullet dot, H1,
+// subline, and a single HannahAIGuidedByChip top right. The chip is
+// visible on mobile and desktop. Presentational only; no data.
 //
-// The guide name flows through getDisplayName('gordon') per the standing
-// rule that every agent slug reference in client-facing copy resolves
-// through getDisplayName rather than a hardcoded string.
+// Owner guide copy (Gordon) lives in Getting Started / guide surfaces,
+// not as a second header pill stacked with HannahAI.
 
-import { Sparkles } from 'lucide-react';
-import { getDisplayName } from '@/lib/getDisplayName';
 import { HannahAIGuidedByChip } from '@/components/hannah/HannahAIGuidedByChip';
 
 export function NutritionHubHeader() {
@@ -33,16 +29,7 @@ export function NutritionHubHeader() {
           Eight surfaces, one hub. Tap any tile to dive in.
         </p>
       </div>
-      <div className="flex flex-shrink-0 flex-col items-end gap-2">
-        <span
-          aria-hidden="true"
-          className="hidden flex-shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] text-white/75 backdrop-blur-sm md:inline-flex"
-        >
-          <Sparkles className="h-3 w-3 text-[#2DA5A0]" strokeWidth={1.5} />
-          Guided by {getDisplayName('gordon')}
-        </span>
-        <HannahAIGuidedByChip />
-      </div>
+      <HannahAIGuidedByChip />
     </header>
   );
 }

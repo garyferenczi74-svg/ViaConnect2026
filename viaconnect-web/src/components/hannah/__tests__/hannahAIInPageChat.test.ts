@@ -121,6 +121,35 @@ describe('seven hubs use the chip and do not mount a page-bottom HannahAIChatCar
     expect(file).not.toContain('<HannahAIChatCard');
   });
 
+  it('NutritionHubHeader has only the HannahAI chip, no Gordon owner pill', () => {
+    const file = src('src/components/nutrition/hub/NutritionHubHeader.tsx');
+    expect(file).toContain('<HannahAIGuidedByChip');
+    expect(file).not.toContain("getDisplayName('gordon')");
+    expect(file).not.toContain('Guided by Gordon');
+    expect(file).not.toContain('Guided by {getDisplayName(');
+  });
+
+  it('BodyTrackerHub has only the HannahAI chip, no Arnold owner pill', () => {
+    const file = src('src/components/body-tracker/hub/BodyTrackerHub.tsx');
+    expect(file).toContain('<HannahAIGuidedByChip');
+    expect(file).not.toContain("getDisplayName('arnold')");
+    expect(file).not.toContain('Guided by Arnold');
+    expect(file).not.toContain('Guided by Gordon');
+    expect(file).not.toContain('Guided by {getDisplayName(');
+  });
+
+  it('Supplements places HannahAI chip on the title row, not glued to ProtocolConfidenceBadge', () => {
+    const file = src(
+      'src/app/(app)/(consumer)/supplements/SupplementsPageContent.tsx',
+    );
+    expect(file).toContain('<HannahAIGuidedByChip');
+    expect(file).toContain('<ProtocolConfidenceBadge');
+    expect(file).toContain('Your personalized daily regimen: Daily Schedule');
+    expect(file).not.toMatch(
+      /HannahAIGuidedByChip[\s\S]{0,120}ProtocolConfidenceBadge/,
+    );
+  });
+
   it('keeps PeptideSuggestionsClient on peptide suggestions with the chip only', () => {
     const suggestions = src(
       'src/app/(app)/(consumer)/peptide-protocol/suggestions/page.tsx',
