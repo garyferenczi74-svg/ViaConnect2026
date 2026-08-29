@@ -26,10 +26,11 @@ export const CONSUMER_METRIC_LABEL =
   'text-xs uppercase tracking-wide text-white/70';
 
 export const CONSUMER_SOURCE_PILL =
-  'inline-flex min-h-[44px] items-center rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-sm text-white/90';
+  'inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-sm text-white/90';
 
+/** One In today's score row at 390. text-xs (not text-sm). 44px tap height. */
 export const CONSUMER_BOS_CHIP =
-  'inline-flex min-h-[44px] min-w-[44px] items-center gap-1.5 px-2 text-sm font-medium';
+  'inline-flex min-h-[44px] min-w-[44px] shrink-0 items-center gap-1 px-1 text-xs font-medium';
 
 export const CONSUMER_HANNAH_CHIP =
   'inline-flex min-h-[44px] flex-shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-sm text-white/90 backdrop-blur-sm';

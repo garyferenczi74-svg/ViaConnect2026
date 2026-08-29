@@ -9,8 +9,11 @@ import {
   CONSUMER_CARD_SUBHEAD,
   CONSUMER_CARD_TITLE,
   CONSUMER_EYEBROW,
+  CONSUMER_BOS_CHIP,
+  CONSUMER_HANNAH_CHIP,
   CONSUMER_OPEN_PILL_BASE,
   CONSUMER_SCHEDULE_ROW_SCALE,
+  CONSUMER_SOURCE_PILL,
   PLASMA_MAIN_DESKTOP,
   PLASMA_MAIN_MOBILE,
 } from '@/lib/ui/consumerChrome';
@@ -61,8 +64,24 @@ describe('consumer mobile-scale IA', () => {
     expect(CONSUMER_CARD_SUBHEAD).toMatch(/^text-sm\b/);
     expect(CONSUMER_CARD_SUBHEAD).toMatch(/text-white\/8[05]|text-white\/90/);
     expect(CONSUMER_EYEBROW).toMatch(/^text-xs\b/);
+    expect(CONSUMER_BOS_CHIP).toMatch(/\btext-xs\b/);
+    expect(CONSUMER_BOS_CHIP).not.toMatch(/\btext-sm\b/);
+    expect(CONSUMER_BOS_CHIP).toMatch(/min-h-\[44px\]/);
+    expect(CONSUMER_SOURCE_PILL).toMatch(/\btext-sm\b/);
+    expect(CONSUMER_SOURCE_PILL).toMatch(/text-white\/90/);
+    expect(CONSUMER_SOURCE_PILL).not.toMatch(/min-h-\[44px\]/);
     expect(CONSUMER_OPEN_PILL_BASE).toMatch(/text-sm\b/);
     expect(CONSUMER_OPEN_PILL_BASE).toMatch(/min-h-\[44px\]/);
+    expect(CONSUMER_HANNAH_CHIP).toMatch(/min-h-\[44px\]/);
+    expect(src('src/components/dashboard/morning-card/MorningChipGrid.tsx')).toContain(
+      'whitespace-nowrap',
+    );
+    expect(src('src/components/dashboard/morning-card/MorningChipGrid.tsx')).toContain(
+      'flex flex-wrap',
+    );
+    expect(src('src/components/dashboard/morning-card/MorningChipGrid.tsx')).not.toContain(
+      'data-morning-chip-slot="footer"',
+    );
     expect(PLASMA_MAIN_MOBILE).toBeGreaterThanOrEqual(200);
     expect(PLASMA_MAIN_DESKTOP).toBeGreaterThanOrEqual(PLASMA_MAIN_MOBILE);
     expect(CONSUMER_SCHEDULE_ROW_SCALE).toContain('schedule-row-homework');

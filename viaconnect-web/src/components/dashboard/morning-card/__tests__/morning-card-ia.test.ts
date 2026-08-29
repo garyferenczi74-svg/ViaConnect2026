@@ -7,6 +7,7 @@ import { METRIC_LABELS, CONTRIBUTOR_METRICS } from '@/lib/body-tracker/contribut
 import { buildMorningChips } from '@/lib/dashboard/morning-card/contributors';
 import { MORNING_CHIP_KEYS } from '@/lib/dashboard/morning-card/keys';
 import { MorningChipGrid } from '../MorningChipGrid';
+import { CONSUMER_BOS_CHIP, CONSUMER_SOURCE_PILL } from '@/lib/ui/consumerChrome';
 
 vi.mock('next/link', () => ({
   default: ({
@@ -106,6 +107,11 @@ describe('Brief 29 morning card IA', () => {
     expect(chips).not.toContain('md:grid-cols-8');
     expect(chips).not.toContain('bg-[#1A2744]/70');
     expect(chips).toContain('CONSUMER_BOS_CHIP');
+    expect(chips).toContain('whitespace-nowrap');
+    expect(CONSUMER_BOS_CHIP).toMatch(/\btext-xs\b/);
+    expect(CONSUMER_BOS_CHIP).not.toMatch(/\btext-sm\b/);
+    expect(CONSUMER_BOS_CHIP).toMatch(/min-h-\[44px\]/);
+    expect(CONSUMER_SOURCE_PILL).not.toMatch(/min-h-\[44px\]/);
     expect(src('src/lib/ui/consumerChrome.ts')).toContain('min-h-[44px]');
     expect(chips).toContain('strokeWidth={1.5}');
     expect(chips).toContain('href={chip.href}');

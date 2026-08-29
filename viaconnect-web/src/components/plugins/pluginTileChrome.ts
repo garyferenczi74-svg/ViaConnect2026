@@ -28,6 +28,6 @@ export function pluginTileCardChrome(selected: boolean): string {
 
 export function pluginTileTitleClassName(selected: boolean): string {
   return selected
-    ? 'text-xl font-bold leading-snug text-teal whitespace-normal break-words'
-    : 'text-xl font-semibold leading-snug text-white whitespace-normal break-words';
+    ? 'truncate text-base font-bold leading-snug text-teal'
+    : 'truncate text-base font-semibold leading-snug text-white';
 }

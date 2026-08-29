@@ -54,7 +54,7 @@ const CONNECTIONS_WEARABLE_TILE_HASHES: Record<string, string> = {
   'src/lib/body-tracker/wearable-tiles.ts':
     '016ebf45036060aa586d7193f588ed69d0d119b87a27a03a69c4bda3c32361a6',
   'src/components/body-tracker/connections/WearableTileCard.tsx':
-    'cff1f3d777f0ba2a94d1aef1bbc91a6845e75cfaa72886c22d1ae49f2e8bb14a',
+    '56c6dda5cefd3d6efc10a2985fd1680369de12a692e33c56e80b1e095bc97e1b',
   'src/components/body-tracker/connections/ConnectionsSurface.tsx':
     '7549cc3d57526dd4789a1a7e287051941b80e306e0406455bddebbdfc44a93aa',
   'src/components/body-tracker/connections/ConnectionsBosDial.tsx':
