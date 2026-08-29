@@ -81,6 +81,8 @@ export function chipForSourceName(
     return 'from profile';
   }
   if (key === 'estimated' || key === 'derived') return 'estimated';
+  // Photo-scan estimates (FormaVision persist writes device_name + source 'scan').
+  if (key === 'formavision' || key === 'scan') return 'estimated';
 
   return null;
 }

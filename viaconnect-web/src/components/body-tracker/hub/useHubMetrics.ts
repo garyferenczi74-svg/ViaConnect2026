@@ -19,6 +19,10 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { resolveHormonesReportChip } from '@/lib/kb/hormones/hormonesHubChip';
+import {
+  formatBodyFatChip,
+  resolveLatestBodyFat,
+} from '@/lib/body-tracker/composition/resolveLatestBodyFat';
 import { safeLog } from '@/lib/utils/safe-log';
 
 export interface HubMetricMap {
@@ -95,24 +99,71 @@ export function useHubMetrics(): UseHubMetricsResult {
           });
         }
 
-        // Weight + body fat from the latest body tracker weight row.
+        // Weight from the latest real scale/import row. Scan persist inserts a
+        // placeholder weight row (weight_lbs NULL) that must not shadow this chip.
         try {
           const weightResult = (await withTimeout(
             supabase
               .from('body_tracker_weight')
-              .select('weight_lbs, body_fat_pct, goal_weight_lbs')
+              .select('weight_lbs, body_fat_pct, goal_weight_lbs, created_at')
               .eq('user_id', user.id)
+              .not('weight_lbs', 'is', null)
               .order('created_at', { ascending: false })
               .limit(1)
               .maybeSingle(),
             TIMEOUT_MS,
-          )) as { data: { weight_lbs?: number | null; body_fat_pct?: number | null; goal_weight_lbs?: number | null } | null };
+          )) as {
+            data: {
+              weight_lbs?: number | null;
+              body_fat_pct?: number | null;
+              goal_weight_lbs?: number | null;
+              created_at?: string | null;
+            } | null;
+          };
           const weightRow = weightResult.data;
           if (weightRow?.weight_lbs != null) {
             next.latest_weight_lbs = Number(weightRow.weight_lbs).toFixed(1);
           }
-          if (weightRow?.body_fat_pct != null) {
-            next.body_fat_pct = Number(weightRow.body_fat_pct).toFixed(1);
+
+          // Scan body fat is written to segmental_fat.total_body_fat_pct, not
+          // weight.body_fat_pct (that column stays NULL on a photo scan).
+          let segmentalFat: { total_body_fat_pct?: number | null; created_at?: string | null } | null =
+            null;
+          try {
+            const fatResult = (await withTimeout(
+              supabase
+                .from('body_tracker_segmental_fat')
+                .select('total_body_fat_pct, created_at')
+                .eq('user_id', user.id)
+                .not('total_body_fat_pct', 'is', null)
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .maybeSingle(),
+              TIMEOUT_MS,
+            )) as {
+              data: { total_body_fat_pct?: number | null; created_at?: string | null } | null;
+            };
+            segmentalFat = fatResult.data;
+          } catch (fatErr) {
+            safeLog.warn('hub.metrics', 'segmental_fat failed', {
+              error: fatErr instanceof Error ? fatErr.message : String(fatErr),
+            });
+          }
+
+          const resolvedFat = resolveLatestBodyFat([
+            {
+              pct: segmentalFat?.total_body_fat_pct ?? null,
+              createdAt: segmentalFat?.created_at ?? null,
+              sourceName: 'FormaVision',
+            },
+            {
+              pct: weightRow?.body_fat_pct ?? null,
+              createdAt: weightRow?.created_at ?? null,
+              sourceName: 'manual',
+            },
+          ]);
+          if (resolvedFat.pct != null) {
+            next.body_fat_pct = formatBodyFatChip(resolvedFat.pct);
           }
           // pct_to_goal: simple linear share if both current + goal
           // exist. The progress surface owns the real journey math;
