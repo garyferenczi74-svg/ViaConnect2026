@@ -26,6 +26,11 @@ import { resolveHormonesReportChip } from '@/lib/kb/hormones/hormonesHubChip';
 // directly (G79) instead of the composition surface. Wiring only, per the
 // condition 26 scope guard (this tile is not being redesigned).
 import { SCAN_CAPTURE_PATH } from '@/lib/scan/routes';
+// Prompt 231 Task 14 (condition 17): the tile reads the latest 4-pose scan
+// date + status through scanReadsShared.getLatestScan only, via
+// GET /api/scan/latest. Type-only import - no server-only code enters this
+// client bundle.
+import type { ScanSummary } from '@/lib/scan/scanReadsShared';
 import type { BiologicalAgeResult } from '@/lib/body-tracker/biological-age';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
@@ -63,6 +68,28 @@ interface Snapshots {
   pctToGoal: number | null;
 }
 
+// Prompt 231 Task 14: display-only helpers for the additive scan chip. No
+// status/count logic here - captureStatus comes straight from
+// scanReadsShared and is only relabeled for display.
+function formatScanChipDate(dateStr: string): string {
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return dateStr;
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+function scanStatusLabel(status: ScanSummary['captureStatus']): string {
+  switch (status) {
+    case 'ready':
+      return 'Ready';
+    case 'partial':
+      return 'Partial';
+    case 'uploading':
+      return 'Uploading';
+    default:
+      return 'Saved';
+  }
+}
+
 const EMPTY: Snapshots = {
   weightLbs: null,
   weightDelta: null,
@@ -91,6 +118,9 @@ export function DashboardBento({ userId }: DashboardBentoProps) {
   const [bioLoading, setBioLoading] = useState(true);
   const [snap, setSnap] = useState<Snapshots>(EMPTY);
   const [snapError, setSnapError] = useState<string | null>(null);
+  // Prompt 231 Task 14: latest 4-pose scan (condition 26 read-only wiring,
+  // this tile is not being redesigned). null = not loaded yet or none.
+  const [latestScan, setLatestScan] = useState<ScanSummary | null>(null);
 
   const { snapshot: crossRef, tier, loading: crossLoading } = useUserCrossReferenceData(userId);
   const {
@@ -296,6 +326,28 @@ export function DashboardBento({ userId }: DashboardBentoProps) {
     void loadSnaps();
   }, [loadSnaps, refreshKey]);
 
+  // Prompt 231 Task 14: single fetch to GET /api/scan/latest, which is a
+  // thin auth boundary over scanReadsShared.getLatestScan (condition 17).
+  // Fails open to null - never blocks or breaks the rest of the tile.
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/scan/latest', { cache: 'no-store' });
+        const body = (await res.json().catch(() => null)) as { ok?: boolean; scan?: ScanSummary | null } | null;
+        if (!cancelled && res.ok && body?.ok) {
+          setLatestScan(body.scan ?? null);
+        }
+      } catch {
+        // Fail open: the tile still renders its other content.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, refreshKey]);
+
   const fade = (i: number) =>
     reduced
       ? undefined
@@ -381,6 +433,17 @@ export function DashboardBento({ userId }: DashboardBentoProps) {
               <p className="text-sm text-white/60">{ANALYTICS_PROVENANCE_EMPTY}</p>
             );
           })()}
+          {/* Prompt 231 Task 14 (condition 26): additive only, read-only via
+              scanReadsShared.getLatestScan through /api/scan/latest. Never
+              removes the body-fat readout above. */}
+          {latestScan && (
+            <p
+              className="mt-1 text-[11px] text-white/45"
+              data-testid="dashboard-latest-scan-chip"
+            >
+              Last scan: {formatScanChipDate(latestScan.date)} · {scanStatusLabel(latestScan.captureStatus)}
+            </p>
+          )}
         </SnapshotTile>
       </motion.div>
 

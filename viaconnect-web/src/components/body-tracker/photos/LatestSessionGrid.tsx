@@ -15,7 +15,12 @@ interface SessionPaths {
   back_full_path: string | null;  back_thumb_path: string | null;
   left_full_path: string | null;  left_thumb_path: string | null;
   right_full_path: string | null; right_thumb_path: string | null;
+  // Prompt 231 (condition 5): NULL for pre-231 rows, visible. Only
+  // delete_pending/deleted are tombstones and must not render.
+  capture_status?: string | null;
 }
+
+const TOMBSTONE_STATUSES = new Set(['delete_pending', 'deleted']);
 
 export function LatestSessionGrid({ sessionId }: Props) {
   const [signed, setSigned] = useState<Record<PoseId, string | null> | null>(null);
@@ -28,11 +33,17 @@ export function LatestSessionGrid({ sessionId }: Props) {
       const supabase = createClient();
       const { data } = await supabase
         .from('body_photo_sessions')
-        .select('front_full_path, front_thumb_path, back_full_path, back_thumb_path, left_full_path, left_thumb_path, right_full_path, right_thumb_path')
+        .select('front_full_path, front_thumb_path, back_full_path, back_thumb_path, left_full_path, left_thumb_path, right_full_path, right_thumb_path, capture_status')
         .eq('id', sessionId)
         .maybeSingle();
       if (!mounted || !data) { setLoading(false); return; }
-      const paths = data as SessionPaths;
+      const paths = data as unknown as SessionPaths;
+      // Prompt 231 (condition 5): a tombstoned session never renders its
+      // photos, even if a stale sessionId prop is still passed in.
+      if (paths.capture_status && TOMBSTONE_STATUSES.has(paths.capture_status)) {
+        setLoading(false);
+        return;
+      }
       const result: Record<PoseId, string | null> = { front: null, back: null, left: null, right: null };
       for (const p of ['front','back','left','right'] as const) {
         const path = paths[`${p}_thumb_path`] ?? paths[`${p}_full_path`];

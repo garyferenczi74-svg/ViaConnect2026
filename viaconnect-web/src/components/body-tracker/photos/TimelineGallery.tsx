@@ -30,8 +30,11 @@ export function TimelineGallery({ pose, onSelect, selectedIds = [] }: TimelineGa
       const fullCol = `${pose}_full_path`;
       const { data } = await supabase
         .from('body_photo_sessions')
-        .select(`id, session_date, ${pathCol}, ${fullCol}`)
+        .select(`id, session_date, ${pathCol}, ${fullCol}, capture_status`)
         .eq('user_id', user.id)
+        // Prompt 231 (condition 5): tombstoned rows never render. NULL or
+        // any non-tombstone status stays visible.
+        .or('capture_status.is.null,capture_status.not.in.(delete_pending,deleted)')
         .order('session_date', { ascending: true })
         .limit(30);
       if (!mounted || !data) { if (mounted) setItems([]); return; }

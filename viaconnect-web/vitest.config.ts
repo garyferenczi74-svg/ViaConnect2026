@@ -67,6 +67,8 @@ export default defineConfig({
       'src/components/scan/__tests__/SkeletonOverlay.bare.test.tsx',
       // Prompt 231 Task 10: ScanReview skipped-tile / missing-frame smoke test
       'src/components/scan/__tests__/ScanReview.bare.test.tsx',
+      // Prompt 231 Task 14: scan history list (empty state, status, tombstone filter)
+      'src/components/scan/__tests__/ScanHistory.bare.test.tsx',
     ],
     exclude: ['node_modules', '.next', 'supabase'],
     globals: true,

@@ -12,6 +12,9 @@ interface SessionRow {
   poses_completed: string[];
   arnold_status: 'pending' | 'queued' | 'analyzing' | 'complete' | 'failed';
   arnold_confidence: number | null;
+  // Prompt 231 (condition 5): NULL for pre-231 rows, visible. Only
+  // delete_pending/deleted are tombstones and must not render.
+  capture_status?: string | null;
 }
 
 interface PhotoSessionHistoryProps {
@@ -31,12 +34,15 @@ export function PhotoSessionHistory({ excludeSessionId, limit = 10, onSelect }: 
       if (!user) { if (mounted) setSessions([]); return; }
       const { data } = await supabase
         .from('body_photo_sessions')
-        .select('id, session_date, is_complete, poses_completed, arnold_status, arnold_confidence')
+        .select('id, session_date, is_complete, poses_completed, arnold_status, arnold_confidence, capture_status')
         .eq('user_id', user.id)
+        // Prompt 231 (condition 5): tombstoned rows never render. NULL or
+        // any non-tombstone status stays visible.
+        .or('capture_status.is.null,capture_status.not.in.(delete_pending,deleted)')
         .order('session_date', { ascending: false })
         .limit(limit);
       if (!mounted) return;
-      const rows = ((data ?? []) as SessionRow[]).filter((s) => s.id !== excludeSessionId);
+      const rows = ((data ?? []) as unknown as SessionRow[]).filter((s) => s.id !== excludeSessionId);
       setSessions(rows);
     })();
     return () => { mounted = false; };
