@@ -31,6 +31,8 @@ export {
 export {
   framingForRegion,
   FULL_BODY_FRAMING,
+  AVATAR_VERTICAL_FOV_DEG,
+  visibleHeightMeters,
   type CameraFraming,
 } from './regionFraming';
 export {

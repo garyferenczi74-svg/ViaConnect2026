@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { framingForRegion, FULL_BODY_FRAMING } from '../regionFraming';
+import {
+  framingForRegion,
+  FULL_BODY_FRAMING,
+  AVATAR_VERTICAL_FOV_DEG,
+  visibleHeightMeters,
+} from '../regionFraming';
+import { MALE_TEMPLATE } from '../../geometry/types';
 
 describe('framingForRegion', () => {
   it('returns a closer framing at the region height for a known region', () => {
@@ -43,5 +49,21 @@ describe('framingForRegion', () => {
       expect(f.distance).toBeGreaterThanOrEqual(2.2);
       expect(f.distance).toBeLessThanOrEqual(4.5);
     }
+    expect(FULL_BODY_FRAMING.distance).toBeGreaterThanOrEqual(2.2);
+    expect(FULL_BODY_FRAMING.distance).toBeLessThanOrEqual(4.5);
+  });
+
+  it('full-body default is pulled back so a 1.75m mesh cannot crop to a bust', () => {
+    expect(FULL_BODY_FRAMING.distance).toBeGreaterThanOrEqual(4);
+    expect(FULL_BODY_FRAMING.targetY).toBeGreaterThan(0.7);
+    expect(FULL_BODY_FRAMING.targetY).toBeLessThan(1.1);
+    expect(FULL_BODY_FRAMING.targetY).toBeLessThan(framingForRegion('chest').targetY);
+    expect(FULL_BODY_FRAMING.distance).toBeGreaterThan(framingForRegion('chest').distance + 1);
+
+    const visible = visibleHeightMeters(FULL_BODY_FRAMING.distance, AVATAR_VERTICAL_FOV_DEG);
+    expect(visible).toBeGreaterThan(MALE_TEMPLATE.heightM * 1.2);
+
+    // The pre-#141 pose (3.2m @ 30°) cannot fit the male template.
+    expect(visibleHeightMeters(3.2, AVATAR_VERTICAL_FOV_DEG)).toBeLessThan(MALE_TEMPLATE.heightM);
   });
 });

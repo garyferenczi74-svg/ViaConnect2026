@@ -32,6 +32,8 @@ import {
   createOverlayController,
   createScrubController,
   useDemandScheduler,
+  FULL_BODY_FRAMING,
+  AVATAR_VERTICAL_FOV_DEG,
   type CameraFraming,
   type IdleTurntable,
   type MaterializeIntro,
@@ -137,9 +139,9 @@ const TIER_BUILD = {
   lite: { radialSegments: 40, verticalSegments: 32 },
 } as const;
 
-// The body geometry is authored in meters with the floor at y = 0; this lifts the
-// camera target to roughly mid-torso so the avatar sits centered in the frame.
-const TARGET_Y = 0.9;
+// Mid-body orbit target. Must match FULL_BODY_FRAMING so the default view and
+// the "clear selection" tween land on the same head-to-toe pose.
+const TARGET_Y = FULL_BODY_FRAMING.targetY;
 
 // The single mesh node. It builds and owns the mounted body, drives one demand
 // frame whenever its inputs change, and disposes everything on unmount.
@@ -521,7 +523,7 @@ function CameraChoreography(props: {
     const framing = createCameraFramingController({
       readFraming: () => {
         const controls = props.controlsRef.current;
-        return controls ? readControlsFraming(controls) : { targetY: TARGET_Y, distance: 3.2 };
+        return controls ? readControlsFraming(controls) : FULL_BODY_FRAMING;
       },
       applyFraming: (f) => {
         const controls = props.controlsRef.current;
@@ -720,7 +722,12 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
         // r3f reconciler boundary is never crossed for a context read.
         dpr={dprForTier(props.renderTier ?? 'cinematic')}
         gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
-        camera={{ position: [0, 1.0, 3.2], fov: 30, near: 0.1, far: 50 }}
+        camera={{
+          position: [0, FULL_BODY_FRAMING.targetY, FULL_BODY_FRAMING.distance],
+          fov: AVATAR_VERTICAL_FOV_DEG,
+          near: 0.1,
+          far: 50,
+        }}
         onPointerDown={skipIntro}
         // P8-T1c: fire once when the GL context is ready (observe-only;
         // does not affect rendering or the demand loop).

@@ -41,15 +41,16 @@ describe('BodyCompositionAvatar', () => {
   it('renders the 3D sizing container (not the 2D children) before any fallback fires', () => {
     const markup = renderWrapper('bodyFat');
     // The 3D footprint box is present; the 2D floor only shows on the WebGL fallback.
-    expect(markup).toContain('aspect-[720/1152]');
     expect(markup).toContain('formavision-avatar-footprint');
     expect(markup).not.toContain('two-d-floor');
   });
 
-  it('keeps the 3D footprint capped at 600px on every breakpoint (no lg plate blow-up)', () => {
+  it('fills a viewport-capped plate instead of a 960px-tall 720/1152 box', () => {
     const markup = renderWrapper('bodyFat');
     expect(markup).toContain('max-w-[600px]');
     expect(markup).toContain('mx-auto');
+    expect(markup).toContain('h-full');
+    expect(markup).not.toContain('aspect-[720/1152]');
     expect(markup).not.toContain('lg:max-w-none');
     expect(markup).not.toContain('lg:h-full');
     expect(markup).not.toContain('lg:w-auto');
@@ -63,7 +64,7 @@ describe('BodyCompositionAvatar', () => {
     expect(measurements).toEqual(fat);
   });
 
-  it('FormaVision plate hosts the capped footprint; Muscle 2D heatmap keeps column-fill', () => {
+  it('FormaVision plate is viewport-height-capped; heatmap column-fill is unchanged', () => {
     const avatar = readSrc('src/components/formavision/BodyCompositionAvatar.tsx');
     const footprintClass = avatar.match(
       /data-testid="formavision-avatar-footprint"[\s\S]*?className="([^"]+)"/,
@@ -71,7 +72,8 @@ describe('BodyCompositionAvatar', () => {
     expect(footprintClass).toBeDefined();
     expect(footprintClass).toContain('max-w-[600px]');
     expect(footprintClass).toContain('mx-auto');
-    expect(footprintClass).toContain('aspect-[720/1152]');
+    expect(footprintClass).toContain('h-full');
+    expect(footprintClass).not.toContain('aspect-[720/1152]');
     expect(footprintClass).not.toContain('lg:max-w-none');
     expect(footprintClass).not.toContain('lg:h-full');
     expect(footprintClass).not.toContain('lg:w-auto');
@@ -81,11 +83,37 @@ describe('BodyCompositionAvatar', () => {
     );
     expect(formavision).toMatch(/formavision-canvas-grid/);
     expect(formavision).toMatch(/BodyCompositionAvatar/);
-    expect(formavision).toMatch(/flex min-h-\[480px\] justify-center/);
+    expect(formavision).toMatch(/h-\[min\(52vh,520px\)\]/);
+    expect(formavision).toMatch(/max-h-\[min\(52vh,520px\)\]/);
+    expect(formavision).not.toMatch(/aspect-\[720\/1152\]/);
+    expect(formavision).not.toMatch(/min-h-\[480px\]/);
+    expect(formavision).not.toMatch(/min-h-\[560px\]/);
 
     // Muscle / Body Fat / Measurements stay on the 2D heatmap with their
     // existing lg column-fill. Do not steal that class off this wrapper.
     const heatmap = readSrc('src/components/body-tracker/SegmentalHeatMap.tsx');
     expect(heatmap).toMatch(/lg:h-full lg:w-auto lg:max-w-none/);
+  });
+
+  it('default camera is pulled back to a full-body fit, not a chest bust', () => {
+    const canvas = readSrc('src/components/formavision/FormaVisionCanvas.tsx');
+    expect(canvas).toMatch(/FULL_BODY_FRAMING/);
+    expect(canvas).toMatch(/AVATAR_VERTICAL_FOV_DEG/);
+    expect(canvas).not.toMatch(/position:\s*\[0,\s*1\.0,\s*3\.2\]/);
+    expect(canvas).not.toMatch(/distance:\s*3\.2/);
+
+    const framing = readSrc('src/lib/formavision/motion/regionFraming.ts');
+    expect(framing).toMatch(/distance:\s*4\.2/);
+    expect(framing).not.toMatch(/FULL_BODY_FRAMING[^=]*=\s*\{\s*targetY:\s*0\.9,\s*distance:\s*3\.2/);
+  });
+
+  it('viewport-capped plate + gender row fit a 900px laptop; the 720/1152 box does not', () => {
+    const viewport = 900;
+    const plate = Math.min(viewport * 0.52, 520);
+    const genderRow = 52;
+    expect(plate).toBe(468);
+    expect(plate + genderRow).toBeLessThan(viewport);
+    // #140 footprint: 600 × 1152/720 = 960, taller than the content viewport.
+    expect(600 * (1152 / 720)).toBeGreaterThan(viewport);
   });
 });
