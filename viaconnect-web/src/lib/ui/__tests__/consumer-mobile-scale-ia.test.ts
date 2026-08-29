@@ -10,6 +10,7 @@ import {
   CONSUMER_CARD_TITLE,
   CONSUMER_EYEBROW,
   CONSUMER_OPEN_PILL_BASE,
+  CONSUMER_SCHEDULE_ROW_SCALE,
   PLASMA_MAIN_DESKTOP,
   PLASMA_MAIN_MOBILE,
 } from '@/lib/ui/consumerChrome';
@@ -64,6 +65,14 @@ describe('consumer mobile-scale IA', () => {
     expect(CONSUMER_OPEN_PILL_BASE).toMatch(/min-h-\[44px\]/);
     expect(PLASMA_MAIN_MOBILE).toBeGreaterThanOrEqual(200);
     expect(PLASMA_MAIN_DESKTOP).toBeGreaterThanOrEqual(PLASMA_MAIN_MOBILE);
+    expect(CONSUMER_SCHEDULE_ROW_SCALE).toContain('schedule-row-homework');
+    expect(CONSUMER_SCHEDULE_ROW_SCALE).toMatch(/text-sm/);
+    expect(src('src/components/supplements/DailySchedule.tsx')).toContain(
+      'CONSUMER_SCHEDULE_ROW_SCALE',
+    );
+    expect(src('src/components/supplements/ScheduleSupplementCard.tsx')).not.toContain(
+      'CONSUMER_SCHEDULE_ROW_SCALE',
+    );
   });
 
   it('main hub and glass-card titles are at least text-xl on the default class', () => {

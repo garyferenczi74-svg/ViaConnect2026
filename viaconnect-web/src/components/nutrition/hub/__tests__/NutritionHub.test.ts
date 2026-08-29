@@ -19,6 +19,10 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
+function src(rel: string): string {
+  return readFileSync(path.resolve(process.cwd(), rel), 'utf-8');
+}
+
 const HUB = path.resolve(__dirname, '..', 'NutritionHub.tsx');
 const PAGE = path.resolve(
   __dirname,
@@ -72,7 +76,7 @@ describe('NutritionHub source', () => {
     // renders a plain teal PlasmaGauge at size 176 fed the precomputed score.
     expect(source).not.toContain('NutritionScoreCircleGauge');
     expect(source).toContain('value={scoreCenter.value}');
-    expect(source).toContain('valueFontPx={30}');
+    expect(source).toContain('valueFontPx={32}');
     // The hub does not author scoring math.
     expect(source).not.toContain('calorieWeightedMealQualityScore');
     expect(source).not.toContain('totalDailyMacrosScore');
@@ -202,7 +206,8 @@ describe('NutritionHub source', () => {
     expect(n).toBeLessThan(f);
     expect(f).toBeLessThan(h);
     // The Open pills on hub tiles remain halved (media visible through them).
-    expect(source).toContain('bg-[#2A4C9E]/[0.12]');
+    expect(source).toContain('CONSUMER_OPEN_PILL_LINK');
+    expect(src('src/lib/ui/consumerChrome.ts')).toContain('bg-[#2A4C9E]/[0.12]');
     expect(source).not.toContain('bg-[#2A4C9E]/25');
   });
 

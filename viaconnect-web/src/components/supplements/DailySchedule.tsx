@@ -21,6 +21,7 @@ import {
   EMPTY_SCHEDULE_VIEW,
   currentLocalScheduleBucket,
 } from '@/lib/supplements/dailyScheduleShared';
+import { CONSUMER_SCHEDULE_ROW_SCALE } from '@/lib/ui/consumerChrome';
 
 type TimeOfDay = 'morning' | 'afternoon' | 'evening';
 
@@ -324,7 +325,7 @@ export function DailySchedule() {
                 <span className="text-[11px] text-white/45">{bucketTaken(cards)}/{cards.length}</span>
               </div>
               {cards.length > 0 ? (
-                <div className="min-w-0 flex flex-col gap-2 p-1.5">
+                <div className={`min-w-0 flex flex-col gap-2 p-1.5 ${CONSUMER_SCHEDULE_ROW_SCALE}`}>
                   {cards.map((c) => (
                     <DraggableScheduleCard key={c.slot_id} card={c} taken={c.taken} onToggle={() => handleToggle(c)} onMove={(t) => handleMove(c, t)} onRemove={() => handleRemove(c)} onCardDragEnd={onCardDragEnd} />
                   ))}
@@ -362,7 +363,7 @@ export function DailySchedule() {
               </button>
               {isOpen ? (
                 cards.length > 0 ? (
-                  <div className="min-w-0 flex flex-col gap-2 p-1.5">
+                  <div className={`min-w-0 flex flex-col gap-2 p-1.5 ${CONSUMER_SCHEDULE_ROW_SCALE}`}>
                     {cards.map((c) => (
                       <DraggableScheduleCard key={c.slot_id} card={c} taken={c.taken} onToggle={() => handleToggle(c)} onMove={(t) => handleMove(c, t)} onRemove={() => handleRemove(c)} onCardDragEnd={onCardDragEnd} />
                     ))}

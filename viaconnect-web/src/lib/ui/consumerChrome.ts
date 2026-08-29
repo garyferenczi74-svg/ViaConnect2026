@@ -52,3 +52,10 @@ export const PLASMA_COMPACT_ROW = 148;
 
 export const CONSUMER_HOMEWORK =
   'mt-0.5 min-w-0 text-sm leading-snug break-words [overflow-wrap:break-word] [word-break:normal]';
+
+/**
+ * Lift Brief 49 schedule-row type from DailySchedule wrappers only.
+ * Do not edit ScheduleSupplementCard (SHA-locked).
+ */
+export const CONSUMER_SCHEDULE_ROW_SCALE =
+  '[&_[data-testid=schedule-row-name]]:text-base [&_[data-testid=schedule-row-homework]]:min-w-0 [&_[data-testid=schedule-row-homework]]:text-sm [&_[data-testid=schedule-row-homework]]:leading-snug [&_[data-testid=schedule-row-homework]]:text-white/85 [&_[data-testid=schedule-row-dose]]:max-w-[28%] [&_[data-testid=schedule-row-dose]]:text-right';

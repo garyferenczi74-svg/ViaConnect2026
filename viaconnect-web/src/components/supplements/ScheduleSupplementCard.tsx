@@ -25,7 +25,6 @@ import {
   formatHomeworkText,
   homeworkHasContent,
 } from '@/lib/supplements/protocolHomework';
-import { CONSUMER_HOMEWORK } from '@/lib/ui/consumerChrome';
 
 const AGENT_NAME = getDisplayName(SUPPLEMENT_TIMING_AGENT_SLUG);
 
@@ -113,7 +112,7 @@ export function ScheduleSupplementCard({
       <div className="min-w-0 flex-1 self-center py-0.5">
         <p
           data-testid="schedule-row-name"
-          className={`text-base font-medium leading-snug break-words [overflow-wrap:break-word] [word-break:normal] ${
+          className={`text-[13px] font-medium leading-snug break-words [overflow-wrap:break-word] [word-break:normal] ${
             taken ? 'text-white/40 line-through' : 'text-white/90'
           }`}
         >
@@ -122,8 +121,8 @@ export function ScheduleSupplementCard({
         {homeworkHasContent(homework) ? (
           <p
             data-testid="schedule-row-homework"
-            className={`${CONSUMER_HOMEWORK} ${
-              taken ? 'text-white/40' : 'text-white/85'
+            className={`mt-0.5 text-[11px] leading-snug break-words [overflow-wrap:break-word] [word-break:normal] ${
+              taken ? 'text-white/25' : 'text-white/50'
             }`}
           >
             {homeworkText ? <span>{homeworkText}</span> : null}
@@ -152,7 +151,7 @@ export function ScheduleSupplementCard({
       {card.dose ? (
         <p
           data-testid="schedule-row-dose"
-          className="max-w-[28%] shrink-0 self-center text-sm leading-tight text-white/70 break-words [overflow-wrap:break-word] [word-break:normal]"
+          className="shrink-0 self-center text-[11px] leading-tight text-white/45 break-words [overflow-wrap:break-word] [word-break:normal]"
         >
           {card.dose}
         </p>

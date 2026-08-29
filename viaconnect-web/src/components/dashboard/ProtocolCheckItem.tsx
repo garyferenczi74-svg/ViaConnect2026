@@ -58,9 +58,9 @@ export function ProtocolCheckItem({ item, onToggle }: Props) {
           {item.productName}
         </p>
         <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
-          {item.dosage && <span className="text-[10px] text-white/35">{item.dosage}</span>}
+          {item.dosage && <span className="text-xs text-white/70">{item.dosage}</span>}
           {item.deliveryForm && (
-            <span className="rounded bg-white/[0.05] px-1.5 py-0.5 text-[10px] text-white/40">
+            <span className="rounded bg-white/[0.05] px-1.5 py-0.5 text-xs text-white/70">
               {item.deliveryForm}
             </span>
           )}

@@ -142,7 +142,8 @@ describe('Brief 50 desktop Home uses the same IA as mobile', () => {
     expect(CHIPS_SRC).toContain('text-center');
     expect(CHIPS_SRC).not.toContain('md:grid-cols-7');
     expect(CHIPS_SRC).not.toContain('bg-[#1A2744]/70');
-    expect(CHIPS_SRC).toContain('min-h-[44px]');
+    expect(CHIPS_SRC).toContain('CONSUMER_BOS_CHIP');
+    expect(src('src/lib/ui/consumerChrome.ts')).toContain('min-h-[44px]');
     expect(CHIPS_SRC).toContain('strokeWidth={1.5}');
     expect(CHIPS_SRC).toContain('href={chip.href}');
     expect(CARD_SRC).not.toContain('MORNING_CHIP_PRIMARY_KEYS');
