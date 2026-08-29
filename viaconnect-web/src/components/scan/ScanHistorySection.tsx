@@ -1,29 +1,14 @@
 'use client';
 
 /**
- * Prompt 231: mounts the "Your scans" section on the FormaVision landing
- * page (spec Section 14). Fetches the signed-in user's 4-pose scan list
- * from GET /api/scan/history (a thin auth boundary over
- * scanReadsShared.listScans, mirroring the 224 dashboard tile's
- * /api/scan/latest fetch in DashboardBento.tsx) and renders it through
- * ScanHistory, which stays pure/prop-driven. Wires onDeleted so a confirmed
- * delete removes the row from this list immediately - without that,
- * ScanHistory's own delete button would spin forever after a confirmed
- * 200.
- *
- * A failed fetch surfaces "Couldn't load your scans" + Retry rather than
- * leaving `scans` at null forever (which would render ScanHistory's loading
- * spinner permanently - no transitional state without a timeout + named
- * next action) or falling to `[]` (a false "No scans yet").
- *
- * Purely additive: this section never touches the legacy "Scan My Body"
- * button/panel elsewhere on this page, which stays on the old uploader
- * during the transition.
+ * Prompt 231: mounts the "Your scans" section on the FormaVision landing page.
  */
 
 import { useCallback, useEffect, useState } from 'react';
 import { ScanHistory } from './ScanHistory';
 import type { ScanSummary } from '@/lib/scan/scanReadsShared';
+
+const HISTORY_FETCH_TIMEOUT_MS = 8000;
 
 interface HistoryResponse {
   ok?: boolean;
@@ -43,9 +28,14 @@ export function ScanHistorySection({ userId }: ScanHistorySectionProps) {
     if (!userId) return;
     let cancelled = false;
     setLoadFailed(false);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), HISTORY_FETCH_TIMEOUT_MS);
     (async () => {
       try {
-        const res = await fetch('/api/scan/history', { cache: 'no-store' });
+        const res = await fetch('/api/scan/history', {
+          cache: 'no-store',
+          signal: controller.signal,
+        });
         const body = (await res.json().catch(() => null)) as HistoryResponse | null;
         if (cancelled) return;
         if (res.ok && body?.ok) {
@@ -55,10 +45,14 @@ export function ScanHistorySection({ userId }: ScanHistorySectionProps) {
         }
       } catch {
         if (!cancelled) setLoadFailed(true);
+      } finally {
+        clearTimeout(timer);
       }
     })();
     return () => {
       cancelled = true;
+      clearTimeout(timer);
+      controller.abort();
     };
   }, [userId, reloadToken]);
 

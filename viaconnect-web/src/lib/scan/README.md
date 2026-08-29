@@ -101,10 +101,46 @@ degrade can be tracked without capturing anything sensitive.
 ## Landmarks are never persisted
 
 Pose landmarks collected during a live scan session are used only for
-in browser QA (framing, distance, pose match) and are not sent to the
-database. This is enforced independently at the submit boundary by a
-field whitelist, so even if a client attempted to include landmarks in
-a submit payload the server would strip them.
+in browser QA (framing, distance, pose match). Persistence is OFF by
+default and gated end to end (G81):
+
+- The server-only env flag `SCAN_PERSIST_LANDMARKS` defaults OFF. The
+  finalize route (`src/app/api/scan/finalize/route.ts`) only includes
+  landmarks in the frame insert when this flag is explicitly `true`/`1`;
+  otherwise any client-supplied landmarks are stripped before the write.
+- The `landmarks` column on `body_photo_session_frames` exists dormant
+  behind that flag and is never read or rendered by any UI.
+- As defense in depth independent of the flag, the migration
+  (`supabase/migrations/20260829120000_prompt_231_body_photo_sessions_scan.sql`)
+  runs `REVOKE INSERT (landmarks), UPDATE (landmarks) ON
+  body_photo_session_frames FROM anon, authenticated`, so even a
+  compromised client cannot write that column directly regardless of the
+  application-level flag.
+
+## Signed-upload persistence flow
+
+`src/lib/scan/persist.ts` (`persistScan`) is the only path that writes a
+captured scan to Storage and the database. Image bytes never transit this
+app's own API routes:
+
+1. `POST /api/scan/prepare` - metadata only (scan id, which poses are
+   present/skipped), no image bytes. Idempotent on the caller-supplied
+   scan id. Returns one signed UPLOAD URL per full and thumb object, for
+   each non-skipped pose.
+2. The client uploads each full and thumb blob DIRECTLY to Supabase
+   Storage via `uploadToSignedUrl`, bypassing this app's servers
+   entirely.
+3. `POST /api/scan/finalize` - metadata plus the storage paths just
+   uploaded to. The server re-verifies each path (pattern and existence)
+   before recording it, and only reports success once
+   `capture_status='ready'` is confirmed server side.
+
+`finalize` is always called, even when some uploads failed, so a session
+never gets silently stuck at `uploading`; the server records whatever
+succeeded and marks the rest `partial`. Object URLs for captured frames
+are revoked only after `finalize` confirms a CONFIRMED `ready` result,
+never before and never on a partial result, so a failed attempt can still
+retry with the live blobs.
 
 ## Reconstruction attach point
 

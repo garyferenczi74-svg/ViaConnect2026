@@ -27,12 +27,15 @@ import { CountdownOverlay } from './CountdownOverlay';
 import { PoseTitleCard } from './PoseTitleCard';
 import { LevelBubble } from './LevelBubble';
 import { ScanReview } from './ScanReview';
+import { SkeletonOverlay } from './SkeletonOverlay';
 import { POSE_ORDER, INTERSTITIAL } from '@/lib/scan/poses';
 import { evaluatePose, evaluateWeakFrame, messageForCode } from '@/lib/scan/qa';
 import { computeWeakQaInputFromBlob, blobToCanvas } from '@/lib/scan/captureStillMetrics';
 import { revokeFrame, revokeAllFrames, qaResultToAction } from '@/lib/scan/scanFlowDriver';
 import { runSubmit } from '@/lib/scan/submitFlow';
 import { scanResultPath } from '@/lib/scan/routes';
+import { readVoicePreference, writeVoicePreference } from '@/lib/scan/voicePreference';
+import { POSE_CONNECTIONS } from '@/lib/scan/landmarks';
 import {
   WALK_IN_COACHING,
   ARMED_COACHING,
@@ -52,9 +55,32 @@ import {
 import { withTimeout } from '@/lib/utils/with-timeout';
 import type { Landmark, ScanFrame } from '@/lib/scan/types';
 
-const VOICE_STORAGE_KEY = 'formavision.scan.voice';
 const WALK_IN_SECONDS = 10;
 const COUNT_SECONDS = 5;
+
+// Prompt 231: haptic gradation for the COUNT tick (spec: light on 5-2,
+// heavier on 1-0). The shutter buzz at CAPTURE (count 0) keeps its own,
+// more prominent duration below - it is already the heaviest pulse in the
+// sequence, so it needs no separate constant here.
+const HAPTIC_TICK_LIGHT_MS = 15;
+const HAPTIC_TICK_HEAVY_MS = 40;
+
+const DEBUG_SKELETON_STORAGE_KEY = 'formavision.debug';
+
+function readDebugSkeletonEnabled(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('debug') === 'skeleton') return true;
+  } catch {
+    // malformed query string: fall through to the localStorage check
+  }
+  try {
+    return Boolean(window.localStorage.getItem(DEBUG_SKELETON_STORAGE_KEY));
+  } catch {
+    return false;
+  }
+}
 
 // Blur is a still-only signal. The live ARMED/COUNT pre-check runs
 // evaluatePose() on every video frame at ~12fps to gate the countdown;
@@ -64,26 +90,6 @@ const COUNT_SECONDS = 5;
 // computeWeakQaInputFromBlob). Passing a value that can never fail BLURRY
 // here waives that one gate for the live check only.
 const LIVE_PRECHECK_BLUR_SCORE = Number.POSITIVE_INFINITY;
-
-function readVoicePreference(): boolean {
-  if (typeof window === 'undefined') return true;
-  try {
-    const stored = window.localStorage.getItem(VOICE_STORAGE_KEY);
-    if (stored === null) return true; // default ON for first scan
-    return stored === '1';
-  } catch {
-    return true;
-  }
-}
-
-function writeVoicePreference(enabled: boolean): void {
-  if (typeof window === 'undefined') return;
-  try {
-    window.localStorage.setItem(VOICE_STORAGE_KEY, enabled ? '1' : '0');
-  } catch {
-    // benign: private browsing / storage blocked
-  }
-}
 
 function speak(text: string, enabled: boolean): void {
   if (!enabled) return;
@@ -126,6 +132,13 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
   const [flashActive, setFlashActive] = useState(false);
   const [permissionBlocked, setPermissionBlocked] = useState(false);
   const [cameraOpenTimedOut, setCameraOpenTimedOut] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
+  // Debug-only, never on by default: ?debug=skeleton or
+  // localStorage.formavision.debug. debugLandmarks is only ever populated
+  // while debugSkeletonEnabled is true (see the ARMED/COUNT live-check
+  // effects below), so it stays inert for every normal user.
+  const [debugSkeletonEnabled, setDebugSkeletonEnabled] = useState(false);
+  const [debugLandmarks, setDebugLandmarks] = useState<Landmark[] | null>(null);
 
   const framesRef = useRef(state.frames);
   framesRef.current = state.frames;
@@ -149,6 +162,24 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
   useEffect(() => {
     setVoiceEnabled(readVoicePreference());
     setVoiceAvailable(typeof window !== 'undefined' && 'speechSynthesis' in window);
+    setDebugSkeletonEnabled(readDebugSkeletonEnabled());
+  }, []);
+
+  // ---- prefers-reduced-motion: read once on mount and keep in sync with
+  // live OS-level changes, so CountdownOverlay's tick animation is
+  // suppressed the moment the user's system preference says so. ----
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+    let mql: MediaQueryList;
+    try {
+      mql = window.matchMedia('(prefers-reduced-motion: reduce)');
+    } catch {
+      return;
+    }
+    setReducedMotion(mql.matches);
+    const onChange = () => setReducedMotion(mql.matches);
+    mql.addEventListener?.('change', onChange);
+    return () => mql.removeEventListener?.('change', onChange);
   }, []);
 
   // Revoke every real object URL on unmount, from the ref so this always
@@ -283,6 +314,7 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
       if (settled) return;
       const video = camera.videoRef.current;
       const landmarks = video ? poseLandmarker.detectVideo(video, performance.now()) : null;
+      if (debugSkeletonEnabled && landmarks) setDebugLandmarks(landmarks);
       if (landmarks) {
         const result = evaluatePose({
           landmarks,
@@ -307,7 +339,7 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
       clearTimeout(timer);
       cancelAnimationFrame(rafId);
     };
-  }, [state.phase, state.poseIndex, state.retryCount, dispatch, camera.videoRef, landmarkerLive, poseLandmarker.detectVideo]);
+  }, [state.phase, state.poseIndex, state.retryCount, dispatch, camera.videoRef, landmarkerLive, poseLandmarker.detectVideo, debugSkeletonEnabled]);
 
   // ---- COUNT: 5..1 ticks dispatch TICK; the reducer owns count and the
   // CAPTURE flip at 0. Speech fires from the count-change effect below so
@@ -323,6 +355,19 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
     speak(String(state.count), voiceEnabled);
   }, [state.phase, state.count, voiceEnabled]);
 
+  // ---- COUNT haptics: light pulse on 5-2, heavier on 1 (spec gradation).
+  // The 0/CAPTURE shutter buzz below is already heavier still. Fires from
+  // the same count-change dependency as the speech effect above so the two
+  // stay in lockstep. ----
+  useEffect(() => {
+    if (state.phase !== 'COUNT') return;
+    try {
+      navigator.vibrate?.(state.count <= 1 ? HAPTIC_TICK_HEAVY_MS : HAPTIC_TICK_LIGHT_MS);
+    } catch {
+      // fail silently, never blocks capture
+    }
+  }, [state.phase, state.count]);
+
   // ---- COUNT live abort: keep polling the video frame through the
   // countdown; if the pose breaks mid-count in landmarker mode, dispatch
   // PRECHECK_FAIL (reducer: COUNT -> ARMED, count resets to 5). Weak mode
@@ -337,6 +382,7 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
       if (cancelled) return;
       const video = camera.videoRef.current;
       const landmarks = video ? poseLandmarker.detectVideo(video, performance.now()) : null;
+      if (debugSkeletonEnabled && landmarks) setDebugLandmarks(landmarks);
       if (landmarks) {
         const result = evaluatePose({
           landmarks,
@@ -358,7 +404,7 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
       cancelled = true;
       cancelAnimationFrame(rafId);
     };
-  }, [state.phase, state.poseIndex, dispatch, camera.videoRef, landmarkerLive, poseLandmarker.detectVideo]);
+  }, [state.phase, state.poseIndex, dispatch, camera.videoRef, landmarkerLive, poseLandmarker.detectVideo, debugSkeletonEnabled]);
 
   // ---- CAPTURE: grab the still, flash + haptic, run weak QA, dispatch
   // CAPTURED then QA_PASS/QA_FAIL. A hung grab/QA pipeline is a camera
@@ -616,7 +662,7 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
 
       {state.phase === 'WALK_IN' && (
         <CameraPreview videoRef={camera.videoRef} pose={null} showFootMark mirrored={false}>
-          <CountdownOverlay value={walkInDisplay} coaching={WALK_IN_COACHING} />
+          <CountdownOverlay value={walkInDisplay} coaching={WALK_IN_COACHING} reducedMotion={reducedMotion} />
         </CameraPreview>
       )}
 
@@ -643,18 +689,24 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
           >
             {poseLandmarker.ready && poseLandmarker.mode === 'weak' ? POSE_GUIDE_UNAVAILABLE : ARMED_COACHING}
           </p>
+          {debugSkeletonEnabled && (
+            <SkeletonOverlay landmarks={debugLandmarks} connections={POSE_CONNECTIONS} />
+          )}
         </CameraPreview>
       )}
 
       {state.phase === 'COUNT' && currentPose && (
         <CameraPreview videoRef={camera.videoRef} pose={currentPose} showFootMark={false} mirrored={false}>
-          <CountdownOverlay value={state.count} coaching={coachingForCount(state.count)} />
+          <CountdownOverlay value={state.count} coaching={coachingForCount(state.count)} reducedMotion={reducedMotion} />
+          {debugSkeletonEnabled && (
+            <SkeletonOverlay landmarks={debugLandmarks} connections={POSE_CONNECTIONS} />
+          )}
         </CameraPreview>
       )}
 
       {state.phase === 'CAPTURE' && currentPose && (
         <CameraPreview videoRef={camera.videoRef} pose={currentPose} showFootMark={false} mirrored={false}>
-          <CountdownOverlay value={0} coaching={coachingForCount(0)} />
+          <CountdownOverlay value={0} coaching={coachingForCount(0)} reducedMotion={reducedMotion} />
           {flashActive && <div className="pointer-events-none absolute inset-0 bg-white" data-testid="scan-shutter-flash" />}
         </CameraPreview>
       )}
