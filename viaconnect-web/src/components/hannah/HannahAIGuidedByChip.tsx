@@ -10,6 +10,7 @@ import { MessageCircleHeart, Sparkles, X } from 'lucide-react';
 import AdvisorChat from '@/components/advisor/AdvisorChat';
 import { getDisplayName } from '@/lib/getDisplayName';
 import { HANNAH_CONSUMER_SUBTITLE } from '@/lib/jeffery/hannah-persona';
+import { CONSUMER_HANNAH_CHIP } from '@/lib/ui/consumerChrome';
 
 export const HANNAH_AI_CHAT_ID = 'hannah-ai-chat';
 
@@ -136,7 +137,7 @@ export function HannahAIGuidedByChip() {
         ref={buttonRef}
         type="button"
         onClick={togglePanel}
-        className="inline-flex min-h-[44px] flex-shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-sm text-white/90 backdrop-blur-sm"
+        className={CONSUMER_HANNAH_CHIP}
         aria-label={`Open chat guided by ${displayName}`}
         aria-expanded={open}
         aria-controls={panelDomId}

@@ -5,6 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { CONSUMER_HANNAH_CHIP } from '@/lib/ui/consumerChrome';
 
 const root = join(process.cwd());
 
@@ -73,6 +74,32 @@ describe('HannahAIGuidedByChip', () => {
     expect(chip).toContain('pointerdown');
     expect(chip).toContain("event.key !== 'Escape'");
     expect(chip).toContain('location.hash');
+  });
+
+  it('uses a grey/navy frost pill background, not a teal fill', () => {
+    expect(chip).toContain('CONSUMER_HANNAH_CHIP');
+    expect(chip).toContain("getDisplayName('hannahai')");
+    expect(chip).toContain('Guided by {getDisplayName(');
+    expect(chip).toContain('className={CONSUMER_HANNAH_CHIP}');
+    expect(chip).toContain('strokeWidth={1.5}');
+    expect(chip).toContain('max-w-[min(26rem,calc(100vw-2rem))]');
+    expect(chip).toContain('text-[#2DA5A0]');
+    expect(chip).not.toContain('bg-[#2DA5A0]');
+    expect(chip).not.toMatch(/bg-\[#2DA5A0\]/);
+    expect(chip).not.toMatch(/from-\[#2DA5A0\]|to-\[#2DA5A0\]|via-\[#2DA5A0\]/);
+    expect(chip).not.toMatch(/\bbg-teal|\bbg-cyan/);
+
+    expect(CONSUMER_HANNAH_CHIP).toContain('rounded-full');
+    expect(CONSUMER_HANNAH_CHIP).toContain('min-h-[44px]');
+    expect(CONSUMER_HANNAH_CHIP).toContain('bg-[#1A2744]/55');
+    expect(CONSUMER_HANNAH_CHIP).toContain('border-white/15');
+    expect(CONSUMER_HANNAH_CHIP).toContain('backdrop-blur');
+    expect(CONSUMER_HANNAH_CHIP).not.toContain('#2DA5A0');
+    expect(CONSUMER_HANNAH_CHIP).not.toContain('bg-[#2DA5A0]');
+    expect(CONSUMER_HANNAH_CHIP).not.toMatch(/bg-\[#2DA5A0\]/);
+    expect(CONSUMER_HANNAH_CHIP).not.toMatch(/from-\[#2DA5A0\]|to-\[#2DA5A0\]|via-\[#2DA5A0\]/);
+    expect(CONSUMER_HANNAH_CHIP).not.toMatch(/\bbg-teal|\bbg-cyan/);
+    expect(CONSUMER_HANNAH_CHIP).not.toContain('bg-white/[0.04]');
   });
 });
 
