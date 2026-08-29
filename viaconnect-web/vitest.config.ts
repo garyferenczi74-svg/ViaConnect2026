@@ -59,6 +59,12 @@ export default defineConfig({
       'src/components/admin/jeffery/__tests__/JefferyPresenceBadge.bare.test.tsx',
       // Agents tab: empty activity fail-open + chip bar (no testing-library/dom)
       'src/components/admin/jeffery/agents/__tests__/agentsTabEmpty.bare.test.tsx',
+      // FormaVision capture overlays (countdown, ghost, title, level, skeleton)
+      'src/components/scan/__tests__/CountdownOverlay.bare.test.tsx',
+      'src/components/scan/__tests__/PoseGhost.bare.test.tsx',
+      'src/components/scan/__tests__/PoseTitleCard.bare.test.tsx',
+      'src/components/scan/__tests__/LevelBubble.bare.test.tsx',
+      'src/components/scan/__tests__/SkeletonOverlay.bare.test.tsx',
     ],
     exclude: ['node_modules', '.next', 'supabase'],
     globals: true,
