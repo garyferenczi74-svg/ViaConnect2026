@@ -100,7 +100,11 @@ export function DashboardHeader({ initialName }: DashboardHeaderProps) {
           <HannahAIGuidedByChip />
         </div>
 
-        <div data-dashboard-header-row="icons" className="flex items-center gap-2">
+        {/* Own row below md: three icons stay together and pin far right. */}
+        <div
+          data-dashboard-header-row="icons"
+          className="flex w-full items-center justify-end gap-2 md:w-auto"
+        >
           {/* Notifications */}
           <Link
             href="/account/notifications"
