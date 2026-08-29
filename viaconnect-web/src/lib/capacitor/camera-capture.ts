@@ -233,13 +233,19 @@ async function captureNative(
   };
 }
 
-interface MediaStreamLike {
-  getTracks(): Array<{ stop(): void }>;
+interface MediaStreamTrackLike {
+  stop(): void;
+  kind?: string;
+  getSettings?: () => { width?: number; height?: number };
+}
+
+export interface MediaStreamLike {
+  getTracks(): MediaStreamTrackLike[];
 }
 
 type WebCameraVideoConstraints =
   | { video: true }
-  | { video: { facingMode: string } };
+  | { video: { facingMode: string; width?: { ideal: number }; height?: { ideal: number } } };
 
 interface MediaDevicesLike {
   getUserMedia?: (constraints: WebCameraVideoConstraints) => Promise<MediaStreamLike>;
@@ -280,15 +286,35 @@ export function userFacingCameraFailure(
   return new CaptureUnsupportedError(CAMERA_UNAVAILABLE_USER_COPY);
 }
 
+// Prompt 231: optional resolution preference. Undefined width/height leaves
+// the constraints object identical to the pre-resolution shape (facingMode
+// only), which the NutriVision regression test asserts by exact toEqual.
+function buildVideoConstraints(
+  facingMode: 'environment' | 'user',
+  resolution?: { width?: number; height?: number },
+): { facingMode: string; width?: { ideal: number }; height?: { ideal: number } } {
+  const constraints: { facingMode: string; width?: { ideal: number }; height?: { ideal: number } } = {
+    facingMode,
+  };
+  if (typeof resolution?.width === 'number') {
+    constraints.width = { ideal: resolution.width };
+  }
+  if (typeof resolution?.height === 'number') {
+    constraints.height = { ideal: resolution.height };
+  }
+  return constraints;
+}
+
 async function requestWebCameraStream(
   md: MediaDevicesLike,
   facingMode: 'environment' | 'user',
+  resolution?: { width?: number; height?: number },
 ): Promise<MediaStreamLike> {
   if (typeof md.getUserMedia !== 'function') {
     throw new CaptureUnsupportedError(CAMERA_UNAVAILABLE_USER_COPY);
   }
   try {
-    return await md.getUserMedia({ video: { facingMode } });
+    return await md.getUserMedia({ video: buildVideoConstraints(facingMode, resolution) });
   } catch (firstErr) {
     if (isCameraPermissionFailure(firstErr)) {
       throw userFacingCameraFailure(firstErr);
@@ -470,6 +496,11 @@ export async function captureCameraFallbackPhoto(
 
 export interface AcquireWebCameraOpts {
   facingMode?: 'environment' | 'user';
+  // Prompt 231: optional resolution preference, passed as `ideal` so the
+  // browser is free to grant less. Omitted entirely when unset, so existing
+  // NutriVision callers (no width/height) see identical constraints.
+  width?: number;
+  height?: number;
 }
 
 export async function acquireWebCameraStream(
@@ -483,7 +514,27 @@ export async function acquireWebCameraStream(
   if (!md || typeof md.getUserMedia !== 'function') {
     throw new CaptureUnsupportedError(CAMERA_UNAVAILABLE_USER_COPY);
   }
-  return requestWebCameraStream(md, opts.facingMode ?? 'environment');
+  return requestWebCameraStream(md, opts.facingMode ?? 'environment', {
+    width: opts.width,
+    height: opts.height,
+  });
+}
+
+// Prompt 231: report the resolution getUserMedia actually granted (the
+// `ideal` hint above is not a guarantee). Reads the first video track's
+// getSettings(); falls back to 0/0 when the track or getSettings is
+// unavailable rather than fabricating a number.
+export function getGrantedResolution(stream: MediaStreamLike): { width: number; height: number } {
+  const tracks = stream.getTracks();
+  const track = tracks.find((t) => t.kind === undefined || t.kind === 'video') ?? tracks[0];
+  if (!track || typeof track.getSettings !== 'function') {
+    return { width: 0, height: 0 };
+  }
+  const settings = track.getSettings();
+  return {
+    width: typeof settings.width === 'number' ? settings.width : 0,
+    height: typeof settings.height === 'number' ? settings.height : 0,
+  };
 }
 
 export async function webCameraStreamToJpeg(
