@@ -1,0 +1,31 @@
+-- =============================================================================
+-- Prompt 231a: table-level revoke of client write privileges on
+-- body_photo_session_frames, closing the G81 landmarks-write hole found in
+-- storage re-review. The column-level REVOKE INSERT(landmarks),
+-- UPDATE(landmarks) in 20260829120000 does not subtract a column from a
+-- table-level grant, and Supabase default-grants anon/authenticated
+-- table-level INSERT/UPDATE on public tables, so landmarks was still
+-- writable by a direct authenticated PostgREST client. Frame rows are
+-- written only by the finalize route via the service_role admin client, so
+-- anon/authenticated need no write privilege on this table at all. SELECT
+-- is intentionally NOT revoked here; RLS still gates reads and a client
+-- read path may exist. service_role and the table owner are untouched.
+-- Existing RLS policies on this table are left in place; they remain,
+-- harmlessly, atop the removed privilege. REVOKE is idempotent, so
+-- re-application of this migration is safe.
+--
+-- The column-level REVOKE from 20260829120000 stays in place (belt and
+-- suspenders) but is now redundant given the table-level REVOKE below.
+--
+-- Append-only. Author + contract-test only; NOT applied to any live
+-- database by this change (application is a separate Gary/Supabase step).
+-- =============================================================================
+
+REVOKE INSERT, UPDATE, DELETE ON public.body_photo_session_frames FROM anon, authenticated;
+
+-- =============================================================================
+-- Done. anon and authenticated can no longer INSERT, UPDATE, or DELETE any
+-- column on body_photo_session_frames, including landmarks, making the G81
+-- REVOKE effective. SELECT, service_role, the table owner, and existing RLS
+-- policies are all untouched.
+-- =============================================================================
