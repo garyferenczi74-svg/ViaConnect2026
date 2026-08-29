@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useRef } from 'react';
 
 export function tickState(
@@ -29,6 +27,12 @@ export function useCountdown({
   const lastDisplayRef = useRef<number | null>(null);
   const completedRef = useRef(false);
   const rafRef = useRef<number | null>(null);
+  const onTickRef = useRef(onTick);
+  const onCompleteRef = useRef(onComplete);
+
+  // Update callback refs on every render to use latest (prevents clock restart)
+  onTickRef.current = onTick;
+  onCompleteRef.current = onComplete;
 
   useEffect(() => {
     if (!active) {
@@ -53,13 +57,13 @@ export function useCountdown({
 
       // Fire onTick only when whole second display value changes
       if (state.display !== lastDisplayRef.current) {
-        onTick?.(state.display);
+        onTickRef.current?.(state.display);
         lastDisplayRef.current = state.display;
       }
 
       // Fire onComplete exactly once when done
       if (state.done && !completedRef.current) {
-        onComplete?.();
+        onCompleteRef.current?.();
         completedRef.current = true;
       }
 
@@ -80,5 +84,5 @@ export function useCountdown({
         rafRef.current = null;
       }
     };
-  }, [active, totalSeconds, onTick, onComplete]);
+  }, [active, totalSeconds]);
 }
