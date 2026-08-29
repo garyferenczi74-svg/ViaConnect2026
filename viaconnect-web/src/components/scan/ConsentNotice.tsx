@@ -1,0 +1,148 @@
+'use client';
+
+import { useCallback, useEffect, useState } from 'react';
+
+/**
+ * FormaVision scan consent notice (Prompt 231 Task 9).
+ *
+ * Mirrors the Prompt 226 disclaimer pattern: the notice body is a
+ * Lex-controlled versioned row (scan_consent_versions), fetched from the
+ * server via GET /api/scan/consent, never composed client-side. Consent is
+ * only ever recorded server-side via POST /api/scan/consent
+ * (scan_consent_acks); this component never writes to localStorage and never
+ * short-circuits the server-side gate a downstream submit route must call
+ * (condition 9, hasScanConsent() in scanConsentGate.ts).
+ *
+ * The practitioner-visibility line below is hard-coded here, not solely
+ * DB-sourced, so it always renders regardless of what the Lex-cleared copy
+ * says (condition 13, G ruling: scan privacy = accept shared exposure).
+ *
+ * Token discipline: card surface uses var(--card); accent colors use
+ * var(--orange) / var(--teal). Instrument Sans is Helix-scoped (global body
+ * font is Inter), so this notice opts in explicitly via .font-instrument,
+ * matching PoseTitleCard.
+ */
+
+interface ConsentStatus {
+  ok: boolean;
+  available: boolean;
+  version?: string;
+  bodyMarkdown?: string;
+  acknowledged?: boolean;
+}
+
+export interface ConsentNoticeProps {
+  onAcknowledged?: (version: string) => void;
+}
+
+export function ConsentNotice({ onAcknowledged }: ConsentNoticeProps) {
+  const [loading, setLoading] = useState(true);
+  const [status, setStatus] = useState<ConsentStatus | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  const bootstrap = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/scan/consent');
+      if (res.status === 401) {
+        setStatus({ ok: false, available: false });
+        return;
+      }
+      const data = (await res.json()) as ConsentStatus;
+      setStatus(data);
+      if (data.acknowledged && data.version) {
+        onAcknowledged?.(data.version);
+      }
+    } catch {
+      setStatus({ ok: false, available: false });
+    } finally {
+      setLoading(false);
+    }
+  }, [onAcknowledged]);
+
+  useEffect(() => {
+    void bootstrap();
+  }, [bootstrap]);
+
+  async function handleContinue() {
+    setBusy(true);
+    setError('');
+    try {
+      const res = await fetch('/api/scan/consent', { method: 'POST' });
+      const data = (await res.json()) as { ok?: boolean; version?: string };
+      if (data.ok && data.version) {
+        onAcknowledged?.(data.version);
+      } else {
+        setError('Could not record consent. Try again.');
+      }
+    } catch {
+      setError('Could not record consent. Try again.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div
+        className="font-instrument rounded-2xl bg-[var(--card)] p-6 text-sm text-white/60"
+        data-testid="scan-consent-loading"
+      >
+        Loading consent...
+      </div>
+    );
+  }
+
+  if (!status?.available) {
+    return (
+      <div
+        className="font-instrument rounded-2xl border border-[var(--orange)]/40 bg-[var(--card)] p-6 space-y-2"
+        data-testid="scan-consent-unavailable"
+      >
+        <h2 className="text-base font-semibold text-white">Scan consent unavailable</h2>
+        <p className="text-xs text-white/60 leading-relaxed">
+          Scan consent copy is being finalized. Check back soon.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="font-instrument rounded-2xl border border-[var(--orange)]/40 bg-[var(--card)] p-5 md:p-6 space-y-4"
+      data-testid="scan-consent-notice"
+      data-consent-version={status.version}
+    >
+      <h2 className="text-base font-semibold text-white">Before your scan</h2>
+      <div
+        className="prose prose-invert prose-sm max-w-none text-white/75 whitespace-pre-wrap text-sm leading-relaxed"
+        data-testid="scan-consent-body"
+      >
+        {status.bodyMarkdown}
+      </div>
+      <p
+        className="text-xs text-amber-200 leading-relaxed"
+        data-testid="scan-consent-practitioner-notice"
+      >
+        If you have a linked practitioner, they can view your scan photos as part of
+        your shared care record, the same way they can already view your other body
+        tracker photos.
+      </p>
+      {error ? (
+        <p className="text-xs text-red-300" data-testid="scan-consent-error">
+          {error}
+        </p>
+      ) : null}
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() => void handleContinue()}
+        className="rounded-xl px-4 py-2 text-sm font-semibold text-white bg-[var(--teal)] disabled:opacity-50"
+        data-testid="scan-consent-continue"
+      >
+        I understand. Continue
+      </button>
+    </div>
+  );
+}
