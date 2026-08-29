@@ -19,14 +19,45 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Landmark } from '@/lib/scan/types';
 import { withTimeout } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
+import { MEDIAPIPE_ASSET_VERSION } from '@/lib/scan/mediapipeVersion';
 
 const LOG_SCOPE = 'scan.usePoseLandmarker';
 
 // Condition 12: FilesetResolver targets /mediapipe/* only, no CDN, no
 // runtime fetch elsewhere. These two paths are the ONLY asset locations
-// this module ever requests.
-const MEDIAPIPE_WASM_BASE_PATH = '/mediapipe/wasm';
-const MEDIAPIPE_MODEL_ASSET_PATH = '/mediapipe/pose_landmarker_lite.task';
+// this module ever requests. Prompt 231a (R1): the version segment comes
+// from the single MEDIAPIPE_ASSET_VERSION constant, so the runtime path
+// and the version contract test read the same source.
+const MEDIAPIPE_WASM_BASE_PATH = `/mediapipe/${MEDIAPIPE_ASSET_VERSION}/wasm`;
+const MEDIAPIPE_MODEL_ASSET_PATH = `/mediapipe/${MEDIAPIPE_ASSET_VERSION}/pose_landmarker_lite.task`;
+
+// Prompt 231a (R1): minimal WASM module using the v128 result type, the
+// same shape FilesetResolver itself validates internally to pick a SIMD
+// vs non-SIMD asset pair. WebAssembly.validate never executes the module,
+// it only checks the engine recognizes the encoding, so this is a cheap
+// synchronous capability probe.
+const SIMD_TEST_MODULE = new Uint8Array([
+  0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 96, 0, 1, 123, 3, 2, 1, 0, 10, 10, 1,
+  8, 0, 65, 0, 253, 15, 253, 98, 11,
+]);
+
+/**
+ * Prompt 231a (R1): pure, unit-testable SIMD feature-detect used only to
+ * annotate the landmarker load-failure log (simdSupported below). Never
+ * throws; any unsupported environment (no WebAssembly, no validate) reads
+ * as false rather than crashing the flow.
+ */
+export function detectWasmSimd(): boolean {
+  try {
+    return (
+      typeof WebAssembly !== 'undefined' &&
+      typeof WebAssembly.validate === 'function' &&
+      WebAssembly.validate(SIMD_TEST_MODULE)
+    );
+  } catch {
+    return false;
+  }
+}
 
 /** Shared budget for the whole GPU-then-CPU init sequence (see
  * loadPoseLandmarkerWithFallback's header comment for why this is one
@@ -147,6 +178,7 @@ export async function loadPoseLandmarkerWithFallback(
   } catch (error) {
     safeLog.error(LOG_SCOPE, 'PoseLandmarker init failed (GPU and CPU, or timed out); falling back to weak QA mode', {
       error,
+      simdSupported: detectWasmSimd(),
     });
     return { ok: false, reason: error instanceof Error ? error.message : 'unknown init failure' };
   }

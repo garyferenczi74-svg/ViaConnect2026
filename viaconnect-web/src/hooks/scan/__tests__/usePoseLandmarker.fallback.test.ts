@@ -28,6 +28,7 @@ import {
   POSE_LANDMARKER_INIT_TIMEOUT_MS,
   type PoseLandmarkerLike,
 } from '../usePoseLandmarker';
+import { MEDIAPIPE_ASSET_VERSION } from '@/lib/scan/mediapipeVersion';
 
 function fakeInstance(): PoseLandmarkerLike {
   return {
@@ -199,13 +200,13 @@ describe('createPoseLandmarker asset paths (condition 12: self-hosted /mediapipe
     vi.resetModules();
   });
 
-  it('points FilesetResolver at /mediapipe/wasm and the model at /mediapipe/pose_landmarker_lite.task, with no CDN URL anywhere', async () => {
+  it('points FilesetResolver at the versioned /mediapipe/<version>/wasm and model paths, with no CDN URL anywhere', async () => {
     vi.resetModules();
     const { createPoseLandmarker } = await import('../usePoseLandmarker');
 
     await createPoseLandmarker('GPU');
 
-    expect(forVisionTasks).toHaveBeenCalledWith('/mediapipe/wasm');
+    expect(forVisionTasks).toHaveBeenCalledWith(`/mediapipe/${MEDIAPIPE_ASSET_VERSION}/wasm`);
     const optionsArg = createFromOptions.mock.calls[0]?.[1] as {
       baseOptions: { modelAssetPath: string; delegate: string };
       runningMode: string;
@@ -214,7 +215,9 @@ describe('createPoseLandmarker asset paths (condition 12: self-hosted /mediapipe
       minTrackingConfidence: number;
       minPosePresenceConfidence: number;
     };
-    expect(optionsArg.baseOptions.modelAssetPath).toBe('/mediapipe/pose_landmarker_lite.task');
+    expect(optionsArg.baseOptions.modelAssetPath).toBe(
+      `/mediapipe/${MEDIAPIPE_ASSET_VERSION}/pose_landmarker_lite.task`,
+    );
     expect(optionsArg.baseOptions.delegate).toBe('GPU');
     expect(optionsArg.runningMode).toBe('VIDEO');
     expect(optionsArg.numPoses).toBe(1);

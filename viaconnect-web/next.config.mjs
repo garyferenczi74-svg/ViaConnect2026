@@ -78,6 +78,23 @@ const nextConfig = {
       },
     ],
   },
+  // Prompt 231a (R1): versioned self-hosted MediaPipe assets under
+  // /mediapipe/<version>/ are immutable at that path, so they can be
+  // cached for a year; a version bump lands at a new path instead of
+  // mutating this one.
+  async headers() {
+    return [
+      {
+        source: '/mediapipe/:version*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+    ];
+  },
   async redirects() {
     return [
       { source: "/features", destination: "/#features", permanent: true },

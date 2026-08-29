@@ -1,13 +1,28 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { MEDIAPIPE_ASSET_VERSION } from '@/lib/scan/mediapipeVersion';
+import { detectWasmSimd } from '@/hooks/scan/usePoseLandmarker';
 
 interface PackageJsonShape {
   dependencies?: Record<string, string>;
 }
 
 const repoRoot = join(__dirname, '..', '..', '..', '..');
-const versionFilePath = join(repoRoot, 'public', 'mediapipe', 'VERSION');
+const versionFilePath = join(
+  repoRoot,
+  'public',
+  'mediapipe',
+  MEDIAPIPE_ASSET_VERSION,
+  'VERSION',
+);
+const modelFilePath = join(
+  repoRoot,
+  'public',
+  'mediapipe',
+  MEDIAPIPE_ASSET_VERSION,
+  'pose_landmarker_lite.task',
+);
 const packageJsonPath = join(repoRoot, 'package.json');
 
 function readPinnedDependencyVersion(): string {
@@ -21,22 +36,33 @@ function readPinnedDependencyVersion(): string {
 }
 
 describe('mediapipe VERSION contract', () => {
-  it('matches the pinned @mediapipe/tasks-vision version in package.json', () => {
+  it('MEDIAPIPE_ASSET_VERSION, the VERSION file, and the pinned package.json version all match', () => {
     const versionFileContents = readFileSync(versionFilePath, 'utf8').trim();
     const pinnedDependencyVersion = readPinnedDependencyVersion();
-    expect(versionFileContents).toBe(pinnedDependencyVersion);
+    expect(versionFileContents).toBe(MEDIAPIPE_ASSET_VERSION);
+    expect(pinnedDependencyVersion).toBe(MEDIAPIPE_ASSET_VERSION);
   });
 
   it('is an exact version with no caret or tilde range operator', () => {
-    const versionFileContents = readFileSync(versionFilePath, 'utf8').trim();
-    expect(versionFileContents.startsWith('^')).toBe(false);
-    expect(versionFileContents.startsWith('~')).toBe(false);
-    expect(versionFileContents).toMatch(/^\d+\.\d+\.\d+$/);
+    expect(MEDIAPIPE_ASSET_VERSION.startsWith('^')).toBe(false);
+    expect(MEDIAPIPE_ASSET_VERSION.startsWith('~')).toBe(false);
+    expect(MEDIAPIPE_ASSET_VERSION).toMatch(/^\d+\.\d+\.\d+$/);
   });
 
   it('the pinned package.json dependency itself has no caret or tilde range operator', () => {
     const pinnedDependencyVersion = readPinnedDependencyVersion();
     expect(pinnedDependencyVersion.startsWith('^')).toBe(false);
     expect(pinnedDependencyVersion.startsWith('~')).toBe(false);
+  });
+
+  it('the versioned model file exists at the versioned asset path', () => {
+    expect(existsSync(modelFilePath)).toBe(true);
+  });
+});
+
+describe('detectWasmSimd', () => {
+  it('returns a boolean and does not throw', () => {
+    expect(() => detectWasmSimd()).not.toThrow();
+    expect(typeof detectWasmSimd()).toBe('boolean');
   });
 });

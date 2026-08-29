@@ -16,34 +16,75 @@ in `viaconnect-web/package.json`:
 "@mediapipe/tasks-vision": "1.0.1"
 ```
 
-`public/mediapipe/VERSION` contains exactly this same string. A contract
-test at `src/lib/scan/__tests__/mediapipeVersion.test.ts` asserts the two
-stay in sync and that the version is exact.
+`src/lib/scan/mediapipeVersion.ts` exports `MEDIAPIPE_ASSET_VERSION`, the
+single source of truth both the runtime asset path
+(`src/hooks/scan/usePoseLandmarker.ts`) and the versioned `VERSION` file
+below read from. A contract test at
+`src/lib/scan/__tests__/mediapipeVersion.test.ts` asserts
+`MEDIAPIPE_ASSET_VERSION`, `public/mediapipe/<version>/VERSION`, and the
+package.json pin all match, that the version is exact, and that the
+versioned model file exists.
 
 ## Self hosted assets
 
+Assets live under a version segment, `public/mediapipe/<version>/`, so a
+version bump lands at a brand new path rather than mutating one a browser
+may have cached:
+
 ```
 public/mediapipe/
-  VERSION                       exact installed package version
-  wasm/
-    vision_wasm_internal.js
-    vision_wasm_internal.wasm
-    vision_wasm_nosimd_internal.js
-    vision_wasm_nosimd_internal.wasm
-  pose_landmarker_lite.task     the pose landmarker model
+  1.0.1/
+    VERSION                       exact installed package version
+    wasm/
+      vision_wasm_internal.js
+      vision_wasm_internal.wasm
+    pose_landmarker_lite.task     the pose landmarker model
 ```
 
-`FilesetResolver.forVisionTasks` must be pointed at `/mediapipe/wasm` only.
-Do not add a CDN fallback (jsdelivr, googleapis script tag, etc); this is a
-security and privacy requirement for the scan feature, not just a
-performance choice.
+`FilesetResolver.forVisionTasks` must be pointed at
+`/mediapipe/<version>/wasm` only. Do not add a CDN fallback (jsdelivr,
+googleapis script tag, etc); this is a security and privacy requirement for
+the scan feature, not just a performance choice.
 
-At runtime `forVisionTasks` feature detects SIMD support and picks either
-the `vision_wasm_internal` pair or the `vision_wasm_nosimd_internal` pair,
-so both pairs must be present. The `vision_wasm_module_internal` pair that
-also ships in the npm package is only used when `forVisionTasks` is called
-with its module flag set, which this project does not do, so it is
-intentionally not copied here.
+### SIMD only (Prompt 231a ruling R1)
+
+Only the SIMD `vision_wasm_internal` pair is shipped. The non-SIMD
+`vision_wasm_nosimd_internal` pair was dropped by ruling R1 (Prompt 231a) to
+cut the self-hosted payload roughly in half; it is not present anywhere in
+this repository, including old commits going forward.
+
+The browser SIMD floor this relies on:
+
+- Safari 16.4+
+- Chrome 91+
+- Firefox 89+
+
+Every browser still in ViaConnect's supported matrix clears this floor. A
+browser below it (or with WebAssembly disabled entirely) will have
+`FilesetResolver.forVisionTasks` request the now-missing
+`vision_wasm_nosimd_internal` pair, which 404s, and
+`loadPoseLandmarkerWithFallback` in `usePoseLandmarker.ts` catches that and
+degrades to weak QA mode: no live pose overlay, guidance copy "Pose guide
+unavailable. Stand in the outline." instead. See the Weak QA fallback
+section below; this is the same fallback path, not a new one. The failure
+log entry for this path includes a `simdSupported` boolean, computed by
+`detectWasmSimd()` in `usePoseLandmarker.ts` (a synchronous
+`WebAssembly.validate` probe against a minimal SIMD-opcode module, wrapped
+in try/catch so it never throws), so a sub-floor degrade is distinguishable
+from any other init failure in the logs.
+
+The `vision_wasm_module_internal` pair that also ships in the npm package
+is only used when `forVisionTasks` is called with its module flag set,
+which this project does not do, so it is intentionally not copied here.
+
+## Immutable long-cached path
+
+`viaconnect-web/next.config.mjs` sets `Cache-Control: public,
+max-age=31536000, immutable` on `/mediapipe/:version*` via `headers()`.
+This is safe only because the path is versioned: nothing at
+`/mediapipe/1.0.1/...` is ever rewritten in place, a new version always
+lands at a new `/mediapipe/<new version>/...` path, so a year-long browser
+or CDN cache of the old path never serves stale bytes for the new one.
 
 ## Manual asset refresh procedure
 
@@ -53,32 +94,37 @@ assets in this order:
 1. Update the exact version in `viaconnect-web/package.json` and run
    `npm install --save-exact @mediapipe/tasks-vision@<new version>` from
    `viaconnect-web/`. Do not use `^` or `~`.
-2. Recopy the WASM runtime from the freshly installed package (only the
-   `vision_wasm_internal` and `vision_wasm_nosimd_internal` pairs; skip
-   `vision_wasm_module_internal`, which is unused by this project):
+2. Create the new version directory and recopy the WASM runtime from the
+   freshly installed package (only the SIMD `vision_wasm_internal` pair per
+   ruling R1; do not add back `vision_wasm_nosimd_internal` or
+   `vision_wasm_module_internal`):
    ```
-   cp node_modules/@mediapipe/tasks-vision/wasm/vision_wasm_internal.js public/mediapipe/wasm/
-   cp node_modules/@mediapipe/tasks-vision/wasm/vision_wasm_internal.wasm public/mediapipe/wasm/
-   cp node_modules/@mediapipe/tasks-vision/wasm/vision_wasm_nosimd_internal.js public/mediapipe/wasm/
-   cp node_modules/@mediapipe/tasks-vision/wasm/vision_wasm_nosimd_internal.wasm public/mediapipe/wasm/
+   mkdir -p public/mediapipe/<new version>/wasm
+   cp node_modules/@mediapipe/tasks-vision/wasm/vision_wasm_internal.js public/mediapipe/<new version>/wasm/
+   cp node_modules/@mediapipe/tasks-vision/wasm/vision_wasm_internal.wasm public/mediapipe/<new version>/wasm/
    ```
 3. Re-fetch the model file with a pinned, versioned URL (prefer a numbered
    version segment over `latest`):
    ```
    curl -fSL https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/<version>/pose_landmarker_lite.task \
-     -o public/mediapipe/pose_landmarker_lite.task
+     -o public/mediapipe/<new version>/pose_landmarker_lite.task
    ```
    If the versioned URL 404s, fall back to the `latest` path segment and
    note that explicitly in the commit message, since `latest` is not
    reproducible.
 4. Recompute and record the sha256 of the model file (`shasum -a 256
-   public/mediapipe/pose_landmarker_lite.task`) and update the value below.
-5. Update `public/mediapipe/VERSION` to the new exact version string.
-6. Run the version contract test:
+   public/mediapipe/<new version>/pose_landmarker_lite.task`) and update the
+   value below.
+5. Write `public/mediapipe/<new version>/VERSION` with the new exact
+   version string, and update `MEDIAPIPE_ASSET_VERSION` in
+   `src/lib/scan/mediapipeVersion.ts` to match.
+6. Delete the old `public/mediapipe/<old version>/` directory once the new
+   one is verified working; do not leave both checked in.
+7. Run the version contract test:
    ```
    npx vitest run src/lib/scan/__tests__/mediapipeVersion.test.ts
    ```
-7. Commit the package.json, package-lock.json, and public/mediapipe changes
+8. Commit the package.json, package-lock.json, and public/mediapipe changes
    together as one change set.
 
 ## Current model provenance
