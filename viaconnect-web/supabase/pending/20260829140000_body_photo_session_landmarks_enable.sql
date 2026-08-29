@@ -1,0 +1,51 @@
+-- =============================================================================
+-- Prompt 231: G81 landmarks-enable step. WAITING on Lex ruling.
+-- =============================================================================
+-- Status as of 2026-08-29: PENDING. This file is NOT a migration. It lives
+-- in supabase/pending/, never supabase/migrations/, so it does not
+-- auto-apply on push. It may be moved into supabase/migrations/ UNCHANGED
+-- ONLY after Lex rules whether 33-point pose landmarks are, or are not, a
+-- biometric identifier under applicable law. Until that ruling lands this
+-- file must not be applied to any database, local or live.
+--
+-- No backfill: no landmarks have ever been captured (persistence has been
+-- OFF since the body_photo_session_frames table was created in
+-- 20260829120000). Deriving landmarks retroactively from stored images is
+-- itself a question for Lex to clear, not something this file attempts.
+--
+-- -----------------------------------------------------------------------------
+-- The OPERATIVE enable step (this is a code change, not SQL):
+-- -----------------------------------------------------------------------------
+-- Flip the server-only environment flag SCAN_PERSIST_LANDMARKS to a truthy
+-- value ('true' or '1'). It is read only in
+-- src/app/api/scan/finalize/route.ts (persistLandmarks) and is deliberately
+-- NOT a NEXT_PUBLIC_ variable, so it is never bundled to the client. The
+-- finalize route writes frame rows through the ADMIN (service_role)
+-- Supabase client, so this env flip is the entire enable step. NO SQL GRANT
+-- is required for the server write path: service_role bypasses RLS and
+-- column-privilege grants entirely, so it already has, and always had, the
+-- ability to write the landmarks column, REVOKE in 20260829120000 or not.
+--
+-- -----------------------------------------------------------------------------
+-- Intentionally OMITTED: GRANT INSERT, UPDATE (landmarks) ... TO authenticated
+-- -----------------------------------------------------------------------------
+-- Prompt 231's ticket originally proposed granting column-level INSERT/UPDATE
+-- on landmarks back to the authenticated role as part of turning the feature
+-- on. That grant is deliberately NOT included here. The only write path for
+-- landmarks is the finalize route's service_role admin client, which already
+-- retains the privilege (service_role was never revoked in 20260829120000;
+-- only anon and authenticated were). Granting authenticated would RE-OPEN
+-- the direct-client landmarks-write vector that REVOKE INSERT (landmarks),
+-- UPDATE (landmarks) ON body_photo_session_frames FROM anon, authenticated
+-- in 20260829120000 was written to close, letting any authenticated
+-- PostgREST caller write arbitrary landmarks data straight past the
+-- finalize route's validation and the flag itself. That REVOKE stays in
+-- place. This file grants nothing and revokes nothing.
+--
+-- -----------------------------------------------------------------------------
+-- This file is comment-only / no-op SQL. If it is ever run by accident
+-- (before Lex clears, or against the wrong database) it does nothing
+-- destructive: no GRANT, no REVOKE, no write, no schema change.
+-- -----------------------------------------------------------------------------
+SELECT 'landmarks enable is a server-flag flip, see comments';
+-- =============================================================================

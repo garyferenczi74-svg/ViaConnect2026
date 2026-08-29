@@ -61,8 +61,11 @@ describe('mediapipe VERSION contract', () => {
 });
 
 describe('detectWasmSimd', () => {
-  it('returns a boolean and does not throw', () => {
+  // Prompt 231: Node/Vitest supports WASM SIMD, so assert true directly -
+  // a malformed SIMD probe module must FAIL this test, not silently log
+  // simdSupported:false and pass anyway.
+  it('returns true under Node/Vitest and does not throw', () => {
     expect(() => detectWasmSimd()).not.toThrow();
-    expect(typeof detectWasmSimd()).toBe('boolean');
+    expect(detectWasmSimd()).toBe(true);
   });
 });

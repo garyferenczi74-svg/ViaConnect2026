@@ -19,6 +19,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { inMemoryRateLimit } from '@/lib/utils/inMemoryRateLimit';
 import { safeLog } from '@/lib/utils/safe-log';
+import { buildFrameRow } from '@/lib/scan/finalizeFrameRow';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -270,23 +271,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Always inserted regardless of failedPoses: this table carries no
     // image path, only capture metadata, so a failed-to-confirm pose still
     // gets its attempt recorded.
-    const frameRows = frames.map((frame) => {
-      const row: Record<string, unknown> = {
-        session_id: sessionId,
-        view: frame.view,
-        qa: frame.qa,
-        qa_mode: frame.qa.mode,
-        captured_width: frame.capturedWidth,
-        captured_height: frame.capturedHeight,
-        skipped: frame.skipped,
-        retry_count: frame.retryCount,
-        captured_at: frame.capturedAt,
-      };
-      if (persistLandmarks && frame.landmarks) {
-        row.landmarks = frame.landmarks;
-      }
-      return row;
-    });
+    const frameRows = frames.map((frame) => ({
+      session_id: sessionId,
+      ...buildFrameRow(frame, persistLandmarks),
+    }));
 
     // upsert on (session_id, view), never a bare insert: a client that
     // retries finalize after losing the response (the exact scenario this
