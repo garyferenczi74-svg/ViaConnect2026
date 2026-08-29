@@ -1,28 +1,11 @@
-// Prompt 231: prepare route for the 4-pose scan (Task 16a re-architecture:
-// client-direct signed uploads, replacing Task 13's single-POST-of-4-JPEGs
-// shape). This route NEVER receives image bytes. It verifies consent
-// server-side, then idempotently creates (or returns) the
-// body_photo_sessions row using the CLIENT-SUPPLIED scanId as the row id via
-// INSERT ... ON CONFLICT (id) DO NOTHING (admin upsert with
-// ignoreDuplicates), followed by a SELECT scoped to .eq('id').eq('user_id').
-// A retried prepare with the same scanId always resolves the SAME session
-// and never creates a duplicate row; a scanId that already belongs to
-// another user resolves no row and is REJECTED (409), never hijacked, and
-// the two cases (own retry vs. someone else's id) are never distinguished in
-// the response.
-//
-// For each non-skipped pose this mints a signed UPLOAD URL (never a signed
-// READ url) for both the full and thumb object under the EXISTING
-// body-progress-photos path convention:
-// `${userId}/${sessionId}/${pose}_{full|thumb}_${ts}.jpg` (matches the
-// legacy PhotoSessionCapture.tsx / Task 13 convention). A fresh ts is minted
-// per prepare call so a retried prepare never collides with an
-// already-uploaded (non-upsert) signed URL from a prior attempt.
-//
-// device_info is UA FAMILY ONLY - no raw UA string, no platform, no
-// identifiers (the Task 13 security-low fix; Task 13 additionally logged a
-// coarse platform value, which is dropped here). Logs never echo an object
-// path.
+// Prompt 231: prepare route for the 4-pose scan (client-direct signed
+// uploads; no image bytes in this request). Idempotently creates or returns
+// the body_photo_sessions row for the caller-supplied scanId (INSERT ...
+// ON CONFLICT (id) DO NOTHING, then a user-scoped SELECT); a scanId already
+// owned by another user is rejected as 409, never hijacked. Mints a signed
+// UPLOAD url for the full + thumb object of each non-skipped pose under the
+// existing body-progress-photos path convention, with a fresh timestamp per
+// call. device_info is UA family only; logs never carry an object path.
 
 import { NextRequest, NextResponse } from 'next/server';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -73,8 +56,8 @@ function parsePosesField(raw: unknown): ParsedPose[] | null {
   return result;
 }
 
-/** UA FAMILY ONLY (condition 10 / Task 13 security-low fix): no raw UA
- * string, no platform, no identifiers. */
+/** UA FAMILY ONLY (condition 10): no raw UA string, no platform, no
+ * identifiers. */
 function deriveDeviceInfo(userAgent: string | null): { family: string } {
   const ua = userAgent ?? '';
   let family = 'unknown';

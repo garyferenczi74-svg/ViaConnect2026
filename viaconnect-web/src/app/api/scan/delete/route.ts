@@ -5,6 +5,14 @@
 // retry and returns a "still deleting" result - never a false Deleted.
 // Ownership resolved only through .eq('user_id', user.id); never a
 // client-supplied path.
+//
+// Removal targets every object under the session's own
+// `${userId}/${sessionId}/` prefix (listed server-side, paginated), not just
+// the 4 pose columns currently on the row. Because prepare mints a fresh
+// timestamp per attempt, a re-prepare/re-finalize overwrites those columns
+// and leaves the prior attempt's objects unreferenced; listing the whole
+// prefix catches those orphans too so they are not a permanent retention
+// leak of private body images.
 
 import { NextResponse } from 'next/server';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -19,6 +27,8 @@ export const dynamic = 'force-dynamic';
 const BUCKET = 'body-progress-photos';
 const SCOPE = 'api.scan.delete';
 const DB_TIMEOUT_MS = 5000;
+const LIST_TIMEOUT_MS = 5000;
+const LIST_PAGE_SIZE = 1000;
 const RATE_LIMIT_MAX = 5;
 const RATE_LIMIT_WINDOW_MS = 60_000;
 
@@ -36,6 +46,40 @@ const PATH_COLUMNS = [
 interface SessionPathRow {
   id: string;
   [key: string]: unknown;
+}
+
+/**
+ * Lists every object under a storage prefix, paginated. Returns null on any
+ * failure (caller must fail closed - never delete a partial, unverified
+ * set). The prefix passed in is always server-built from the authenticated
+ * user's id + the ownership-checked sessionId, never a client value.
+ */
+async function listAllUnderPrefix(admin: SupabaseClient, prefix: string): Promise<string[] | null> {
+  const paths: string[] = [];
+  let offset = 0;
+  for (;;) {
+    let page: { name: string }[] | null;
+    try {
+      const res = await withTimeout<{ data: { name: string }[] | null; error: { message: string } | null }>(
+        Promise.resolve(
+          admin.storage.from(BUCKET).list(prefix, { limit: LIST_PAGE_SIZE, offset }),
+        ) as Promise<{ data: { name: string }[] | null; error: { message: string } | null }>,
+        LIST_TIMEOUT_MS,
+        `${SCOPE}.list`,
+      );
+      if (res.error) return null;
+      page = res.data;
+    } catch {
+      return null;
+    }
+    const items = page ?? [];
+    for (const item of items) {
+      if (item.name) paths.push(`${prefix}${item.name}`);
+    }
+    if (items.length < LIST_PAGE_SIZE) break;
+    offset += items.length;
+  }
+  return paths;
 }
 
 export async function POST(request: Request): Promise<NextResponse> {
@@ -104,9 +148,29 @@ export async function POST(request: Request): Promise<NextResponse> {
       return NextResponse.json({ ok: false, error: 'tombstone_failed', sessionId }, { status: 500 });
     }
 
-    const paths = PATH_COLUMNS.map((col) => session[col]).filter(
+    const namedPaths = PATH_COLUMNS.map((col) => session[col]).filter(
       (p): p is string => typeof p === 'string' && p.length > 0,
     );
+
+    // List the session's OWN prefix (built only from server-trusted
+    // user.id + sessionId, never a client value) so every object under it
+    // is removed, including any left behind by an earlier prepare/finalize
+    // attempt whose paths were since overwritten on the row.
+    const listedPaths = await listAllUnderPrefix(admin, `${user.id}/${sessionId}/`);
+    if (listedPaths === null) {
+      safeLog.error(SCOPE, 'storage list failed, delete_pending retained', { sessionId });
+      return NextResponse.json(
+        {
+          ok: false,
+          error: 'delete_pending',
+          sessionId,
+          nextAction: 'Deleting... try again in a moment.',
+        },
+        { status: 202 },
+      );
+    }
+
+    const paths = Array.from(new Set([...listedPaths, ...namedPaths]));
 
     if (paths.length > 0) {
       const removeRes = await withTimeout<{ error: { message: string } | null }>(

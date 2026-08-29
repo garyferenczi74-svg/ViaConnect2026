@@ -2,12 +2,16 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Prompt 231: /api/scan/delete tombstone tests. Delete sets
 // capture_status='delete_pending' first; an object-delete failure keeps
-// delete_pending and never reports Deleted.
+// delete_pending and never reports Deleted. Removal targets everything
+// listed under the session's own storage prefix (not just the 4 pose
+// columns), so an orphan left by an earlier prepare/finalize attempt is
+// still removed - closing the retention leak fixed in this round.
 
 const mocks = vi.hoisted(() => ({
   supabaseGetUser: vi.fn(),
   adminFrom: vi.fn(),
   storageRemove: vi.fn(),
+  storageList: vi.fn(),
 }));
 
 vi.mock('@/lib/supabase/server', () => ({
@@ -17,7 +21,7 @@ vi.mock('@/lib/supabase/server', () => ({
 vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: () => ({
     from: mocks.adminFrom,
-    storage: { from: () => ({ remove: mocks.storageRemove }) },
+    storage: { from: () => ({ remove: mocks.storageRemove, list: mocks.storageList }) },
   }),
 }));
 
@@ -108,6 +112,11 @@ beforeEach(() => {
   mocks.adminFrom.mockReset();
   mocks.storageRemove.mockReset();
   mocks.storageRemove.mockResolvedValue({ error: null });
+  mocks.storageList.mockReset();
+  mocks.storageList.mockResolvedValue({
+    data: [{ name: 'front_full_1000.jpg' }, { name: 'front_thumb_1000.jpg' }],
+    error: null,
+  });
 });
 
 describe('POST /api/scan/delete', () => {
@@ -179,6 +188,53 @@ describe('POST /api/scan/delete', () => {
     const body = await res.json();
     expect(res.status).toBe(404);
     expect(body.ok).toBe(false);
+    expect(mocks.storageList).not.toHaveBeenCalled();
+    expect(mocks.storageRemove).not.toHaveBeenCalled();
+  });
+
+  it('removes every object listed under the session prefix, including an orphan not on any column', async () => {
+    mocks.supabaseGetUser.mockResolvedValue({ data: { user: { id: 'owner-user' } } });
+    installSessionsMock();
+    // An object left behind by an earlier prepare/finalize attempt whose
+    // path was since overwritten on the row - never named on any column,
+    // but still present under the session's own prefix.
+    mocks.storageList.mockResolvedValue({
+      data: [
+        { name: 'front_full_1000.jpg' },
+        { name: 'front_thumb_1000.jpg' },
+        { name: 'front_full_500.jpg' },
+        { name: 'front_thumb_500.jpg' },
+      ],
+      error: null,
+    });
+
+    const res = await POST(buildRequest('session-1') as never);
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.deleted).toBe(true);
+    expect(mocks.storageList).toHaveBeenCalledWith('owner-user/session-1/', expect.objectContaining({ offset: 0 }));
+    expect(mocks.storageRemove).toHaveBeenCalledWith([
+      'owner-user/session-1/front_full_1000.jpg',
+      'owner-user/session-1/front_thumb_1000.jpg',
+      'owner-user/session-1/front_full_500.jpg',
+      'owner-user/session-1/front_thumb_500.jpg',
+    ]);
+  });
+
+  it('keeps delete_pending and does NOT report Deleted when the storage listing fails', async () => {
+    mocks.supabaseGetUser.mockResolvedValue({ data: { user: { id: 'owner-user' } } });
+    installSessionsMock();
+    mocks.storageList.mockResolvedValue({ data: null, error: { message: 'storage unavailable' } });
+
+    const res = await POST(buildRequest('session-1') as never);
+    const body = await res.json();
+
+    expect(res.status).toBe(202);
+    expect(body.ok).toBe(false);
+    expect(body.deleted).not.toBe(true);
+    expect(body.error).toBe('delete_pending');
+    expect(body.nextAction).toBeTruthy();
     expect(mocks.storageRemove).not.toHaveBeenCalled();
   });
 });

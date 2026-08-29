@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Prompt 231: /api/scan/prepare route tests. Client-direct signed-upload
-// flow (Task 16a): this route never receives image bytes. It idempotently
+// flow: this route never receives image bytes. It idempotently
 // creates (or returns) the body_photo_sessions row keyed by a
 // client-supplied scanId, then mints signed UPLOAD URLs for each
 // non-skipped pose. Mocks auth, consent gate, height read, and the admin

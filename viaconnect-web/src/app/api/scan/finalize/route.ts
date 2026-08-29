@@ -1,27 +1,16 @@
-// Prompt 231: finalize route for the 4-pose scan (Task 16a re-architecture:
-// replaces Task 13's /api/scan/submit, which took all 4 JPEG bytes in one
-// multipart POST and risked Vercel's 4.5MB request-body cap). The client has
-// already uploaded full + thumb bytes DIRECTLY to Storage via the signed
-// upload URLs minted by POST /api/scan/prepare - this route never receives
-// image bytes, only JSON metadata plus the object paths the client reports
-// having uploaded to.
-//
-// Every reported path is checked twice before it is ever written onto the
-// session row or handed to the read side: (1) it must match the EXACT
-// pattern this user/session/pose/variant was authorized to write in
-// prepare (`${userId}/${sessionId}/${pose}_{full|thumb}_${ts}.jpg`) - this
-// stops a client from reporting another user's real (existing) object path
-// and having it land on this session's {pose}_full_path /
-// {pose}_thumb_path column, which /api/scan/signed-url later signs
-// unconditionally; (2) storage.exists() must confirm the object is actually
-// there. Either failure marks that pose 'partial' and the path is never
-// written - never a faked success.
-//
-// Frame rows use the Task 13 STRICT field whitelist (never a client-JSON
-// spread); landmarks only when SCAN_PERSIST_LANDMARKS is truthy (G81,
-// default OFF). capture_status='ready' is only returned after that UPDATE
-// re-selects and confirms the value. Logs carry sessionId/pose only, never
-// an object path or image bytes.
+// Prompt 231: finalize route for the 4-pose scan (client-direct signed
+// uploads). The client has already uploaded full + thumb bytes DIRECTLY to
+// Storage via the signed upload urls from POST /api/scan/prepare - this
+// route takes JSON metadata only, plus the object paths reported uploaded.
+// Each reported path must match the EXACT user/session/pose/variant pattern
+// prepare authorized AND pass storage.exists() before it is written onto
+// the session row (that column is later signed unconditionally by
+// /api/scan/signed-url, so a mismatched path is rejected here rather than
+// there); either check failing marks that pose 'partial', never a faked
+// success. Frame rows use a strict field whitelist, upserted on
+// (session_id, view) so a retried finalize never 500s on the unique
+// constraint. capture_status='ready' is only returned once that UPDATE
+// re-selects and confirms it. Logs carry sessionId/pose only, never a path.
 
 import { NextRequest, NextResponse } from 'next/server';
 import type { SupabaseClient } from '@supabase/supabase-js';

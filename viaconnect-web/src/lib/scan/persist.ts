@@ -1,6 +1,6 @@
-// Prompt 231: client-direct signed-upload orchestration (Task 16a
-// re-architecture). Supersedes the Task 13 shape that posted all 4 JPEGs in
-// one multipart body (risked Vercel's 4.5MB request-body cap) and wrote a
+// Prompt 231: client-direct signed-upload orchestration for the 4-pose
+// scan. Supersedes the earlier shape that posted all 4 JPEGs in one
+// multipart body (risked Vercel's 4.5MB request-body cap) and wrote a
 // full-size copy as a fake thumb. The flow is now:
 //   1. POST /api/scan/prepare (metadata only, no image bytes) - idempotent
 //      on the caller-supplied scanId - returns signed UPLOAD URLs for the

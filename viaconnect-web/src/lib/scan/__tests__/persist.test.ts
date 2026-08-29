@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Prompt 231: persist.ts orchestration tests (Task 16a). Verifies
+// Prompt 231: persist.ts orchestration tests. Verifies
 // prepare -> upload -> finalize runs in order via the returned signed
 // upload URLs, and that object URLs are revoked ONLY after finalize
 // confirms a ready result - never before, and never on a partial (this
-// closes the Task 13 "persist untested" gap).
+// closes the earlier "persist untested" gap).
 
 const mocks = vi.hoisted(() => ({
   uploadToSignedUrl: vi.fn(),

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Prompt 231: /api/scan/finalize route tests (Task 16a: replaces the Task 13
-// /api/scan/submit route). The client has already uploaded bytes directly to
+// Prompt 231: /api/scan/finalize route tests (client-direct signed
+// uploads). The client has already uploaded bytes directly to
 // Storage via prepare's signed upload URLs; finalize takes metadata only
 // (JSON, no image bytes) plus the paths reported uploaded, and must verify
 // both that the path matches the exact pattern this user/session/pose was
