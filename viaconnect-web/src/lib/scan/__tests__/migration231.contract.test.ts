@@ -39,9 +39,14 @@ describe('prompt 231 converge migration contract', () => {
 
     it('adds capture_status text with the five-value CHECK', () => {
       expect(sqlLower).toContain('add column if not exists capture_status text');
-      expect(sqlLower).toMatch(/capture_status is null or capture_status in \(/);
+
+      const checkMatch = sqlLower.match(
+        /capture_status is null or capture_status in \(([^)]*)\)/
+      );
+      expect(checkMatch).not.toBeNull();
+      const checkValues = checkMatch ? checkMatch[1] : '';
       for (const value of ['uploading', 'ready', 'partial', 'delete_pending', 'deleted']) {
-        expect(sqlLower).toContain(`'${value}'`);
+        expect(checkValues).toContain(`'${value}'`);
       }
     });
 
@@ -185,6 +190,14 @@ describe('prompt 231 converge migration contract', () => {
         expect(rawAuthUid.length).toBe(0);
         expect(selectAuthUid.length).toBeGreaterThan(0);
       }
+    });
+  });
+
+  describe('G81 defense-in-depth (column-level REVOKE on landmarks)', () => {
+    it('revokes INSERT (landmarks) and UPDATE (landmarks) from anon and authenticated', () => {
+      expect(sqlLower).toMatch(
+        /revoke insert \(landmarks\), update \(landmarks\) on body_photo_session_frames from anon, authenticated/
+      );
     });
   });
 

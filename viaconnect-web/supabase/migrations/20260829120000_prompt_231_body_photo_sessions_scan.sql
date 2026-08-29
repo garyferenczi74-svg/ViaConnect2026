@@ -194,11 +194,20 @@ BEGIN
   END IF;
 END $$;
 
+-- -----------------------------------------------------------------------------
+-- Part D: G81 defense-in-depth. Landmarks must not be persisted until Lex rules
+-- on biometric classification. Revoke direct client writes to the landmarks
+-- column; the server-only service_role (admin client) is unaffected, which is
+-- the sole intended write path once the G81 flag is turned on.
+-- -----------------------------------------------------------------------------
+REVOKE INSERT (landmarks), UPDATE (landmarks) ON body_photo_session_frames FROM anon, authenticated;
+
 -- =============================================================================
 -- Done. body_photo_sessions gained protocol / capture_status / consent_version
 -- / device_info (append-only, backfilled by DEFAULT). body_photo_session_frames
 -- created with UNIQUE(session_id, view) as its only index and four per-action
--- RLS policies resolved through the parent session. No parallel scan-table
+-- RLS policies resolved through the parent session, plus a column-level REVOKE
+-- on landmarks for the G81 defense-in-depth gate. No parallel scan-table
 -- family, no new bucket, no bucket-level change, no new body_photo_sessions
 -- index.
 -- =============================================================================
