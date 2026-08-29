@@ -69,6 +69,9 @@ export default defineConfig({
       'src/components/scan/__tests__/ScanReview.bare.test.tsx',
       // Prompt 231 Task 14: scan history list (empty state, status, tombstone filter)
       'src/components/scan/__tests__/ScanHistory.bare.test.tsx',
+      // Prompt 231b: body photo shares management section (settings share hub)
+      'src/components/consumer/photo-shares/__tests__/PhotoSharesSection.bare.test.tsx',
+      'src/components/consumer/photo-shares/__tests__/PhotoShareGrantModal.bare.test.tsx',
     ],
     exclude: ['node_modules', '.next', 'supabase'],
     globals: true,

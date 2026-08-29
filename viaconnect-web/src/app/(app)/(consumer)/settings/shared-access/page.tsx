@@ -18,6 +18,7 @@ import type { LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { ShareProtocolButton } from "@/components/consumer/ShareProtocolButton";
 import { formatInviteCode } from "@/utils/protocolShareAccess";
+import { PhotoSharesSection } from "@/components/consumer/photo-shares/PhotoSharesSection";
 
 interface ShareRow {
   id: string;
@@ -183,6 +184,9 @@ export default function SharedAccessPage() {
             )}
           </div>
         )}
+
+        {/* Prompt 231b: body photo shares, below the protocol-shares content above. */}
+        <PhotoSharesSection />
       </div>
 
       <ConfirmRevokeModal
