@@ -3,24 +3,12 @@
 import { useCallback, useEffect, useState } from 'react';
 
 /**
- * FormaVision scan consent notice (Prompt 231 Task 9).
- *
- * Mirrors the Prompt 226 disclaimer pattern: the notice body is a
- * Lex-controlled versioned row (scan_consent_versions), fetched from the
- * server via GET /api/scan/consent, never composed client-side. Consent is
- * only ever recorded server-side via POST /api/scan/consent
- * (scan_consent_acks); this component never writes to localStorage and never
- * short-circuits the server-side gate a downstream submit route must call
- * (condition 9, hasScanConsent() in scanConsentGate.ts).
- *
- * The practitioner-visibility line below is hard-coded here, not solely
- * DB-sourced, so it always renders regardless of what the Lex-cleared copy
- * says (condition 13, G ruling: scan privacy = accept shared exposure).
- *
- * Token discipline: card surface uses var(--card); accent colors use
- * var(--orange) / var(--teal). Instrument Sans is Helix-scoped (global body
- * font is Inter), so this notice opts in explicitly via .font-instrument,
- * matching PoseTitleCard.
+ * Prompt 231: scan consent notice, mirroring the 226 disclaimer pattern.
+ * Body copy is server-fetched (GET /api/scan/consent), never composed
+ * client-side; Continue POSTs the ack server-side, never localStorage.
+ * The practitioner-visibility line is hard-coded here so it always renders
+ * regardless of the DB copy. Uses var(--card) / var(--orange) / var(--teal)
+ * tokens and the .font-instrument opt-in class, matching PoseTitleCard.
  */
 
 interface ConsentStatus {

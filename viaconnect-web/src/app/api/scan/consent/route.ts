@@ -1,13 +1,7 @@
 /**
- * Prompt 231 Task 9: GET the active scan consent copy / acknowledged state,
- * POST to record a server-side scan consent acknowledgement (226 pattern).
- *
- * Never trusts a client-supplied version id: both handlers resolve the
- * active version themselves via getActiveScanConsentVersion(). The ack
- * write is an upsert keyed on the UNIQUE(user_id, consent_version_id)
- * constraint, so a repeat POST for the same user + version is idempotent
- * (it never throws a duplicate-key error, matching the 226 acknowledge
- * route).
+ * Prompt 231: scan consent status (GET) and server-side acknowledgement
+ * (POST), mirroring the 226 acknowledge route. Never trusts a client
+ * supplied version id; the ack write is an idempotent upsert.
  */
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
@@ -79,7 +73,7 @@ export async function POST(_request: Request): Promise<NextResponse> {
       error: error.message,
       userId: user.id,
     });
-    return NextResponse.json({ ok: false, error: 'ack_failed' }, { status: 200 });
+    return NextResponse.json({ ok: false, error: 'ack_failed' }, { status: 500 });
   }
 
   return NextResponse.json({

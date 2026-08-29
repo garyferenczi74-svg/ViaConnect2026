@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Prompt 231 Task 9: /api/scan/consent route contract tests. Mirrors the
+// Prompt 231: /api/scan/consent route contract tests. Mirrors the
 // Prompt 226 acknowledge route test shape: mocks @/lib/supabase/server (auth)
 // and @/lib/supabase/admin (the scan_consent_versions / scan_consent_acks
 // reads and writes) at the module level, imports the route handlers after
@@ -32,7 +32,7 @@ import { GET, POST } from '@/app/api/scan/consent/route';
 
 const ACTIVE_VERSION_ROW = {
   id: 'version-1',
-  version: 'scan-231-v1',
+  version: '231-scan-v1',
   body_markdown: 'placeholder body',
   lex_status: 'cleared',
 };
@@ -99,7 +99,7 @@ describe('GET /api/scan/consent', () => {
     const body = await res.json();
     expect(res.status).toBe(200);
     expect(body.available).toBe(true);
-    expect(body.version).toBe('scan-231-v1');
+    expect(body.version).toBe('231-scan-v1');
     expect(body.bodyMarkdown).toBe('placeholder body');
     expect(body.acknowledged).toBe(true);
   });
@@ -127,7 +127,7 @@ describe('POST /api/scan/consent', () => {
     const body = await res.json();
     expect(res.status).toBe(200);
     expect(body.ok).toBe(true);
-    expect(body.version).toBe('scan-231-v1');
+    expect(body.version).toBe('231-scan-v1');
     expect(acks.upsert).toHaveBeenCalledWith(
       expect.objectContaining({ user_id: 'user-1', consent_version_id: 'version-1' }),
       { onConflict: 'user_id,consent_version_id' },
@@ -153,5 +153,15 @@ describe('POST /api/scan/consent', () => {
     expect(res.status).toBe(403);
     expect(body.ok).toBe(false);
     expect(body.error).toBe('consent_not_cleared');
+  });
+
+  it('returns 500 (not a masked 200) on a genuine ack write failure', async () => {
+    mocks.supabaseGetUser.mockResolvedValue({ data: { user: { id: 'user-4' } } });
+    installAdminMock({ upsertError: { message: 'connection reset' } });
+    const res = await POST(buildRequest());
+    const body = await res.json();
+    expect(res.status).toBe(500);
+    expect(body.ok).toBe(false);
+    expect(body.error).toBe('ack_failed');
   });
 });

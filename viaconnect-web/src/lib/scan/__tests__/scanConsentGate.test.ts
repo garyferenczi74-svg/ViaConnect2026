@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Prompt 231 Task 9: server-side scan consent gate contract tests.
+// Prompt 231: server-side scan consent gate contract tests.
 // Mirrors the Prompt 226 converterGate test shape: mocks the admin Supabase
 // client only (hasScanConsent is a server-only, admin-backed check), never
 // hits a real database. Covers the true/false ack states plus the two
-// resilience layers (fail-open on throw, fail-open on timeout).
+// resilience layers (fail-closed on throw, fail-closed on timeout).
 
 const mocks = vi.hoisted(() => ({
   adminFrom: vi.fn(),
@@ -27,7 +27,7 @@ import { hasScanConsent } from '@/lib/scan/scanConsentGate';
 
 const ACTIVE_VERSION_ROW = {
   id: 'version-1',
-  version: 'scan-231-v1',
+  version: '231-scan-v1',
   body_markdown: 'placeholder body',
   lex_status: 'cleared',
 };
@@ -73,7 +73,7 @@ describe('hasScanConsent', () => {
     installAdminMock({ hasAck: true });
     const result = await hasScanConsent('user-1');
     expect(result.ok).toBe(true);
-    expect(result.version).toBe('scan-231-v1');
+    expect(result.version).toBe('231-scan-v1');
   });
 
   it('returns ok:false when no Lex-cleared active version exists', async () => {
@@ -82,7 +82,7 @@ describe('hasScanConsent', () => {
     expect(result.ok).toBe(false);
   });
 
-  it('fails open to ok:false when the admin client throws', async () => {
+  it('fails closed to ok:false when the admin client throws', async () => {
     mocks.adminFrom.mockImplementation(() => {
       throw new Error('boom');
     });
@@ -90,7 +90,7 @@ describe('hasScanConsent', () => {
     expect(result.ok).toBe(false);
   });
 
-  it('fails open to ok:false on timeout', async () => {
+  it('fails closed to ok:false on timeout', async () => {
     vi.useFakeTimers();
     try {
       mocks.adminFrom.mockImplementation(() => ({

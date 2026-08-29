@@ -1,15 +1,12 @@
 /**
- * Prompt 231 Task 9: server-side scan consent gate (226 pattern).
- *
- * Mirrors src/lib/peptides/converterGate.ts: a Lex-controlled versioned
- * consent row (scan_consent_versions) plus a per-user per-version
- * acknowledgement row (scan_consent_acks). hasScanConsent() is the single
- * server-side check Task 13's submit route must call before any write;
+ * Prompt 231: server-side scan consent gate, mirroring
+ * src/lib/peptides/converterGate.ts. hasScanConsent() is the single
+ * server-side check the submit route must call before any write;
  * localStorage is never the gate.
  *
  * Three-layer resilience: the whole check is raced against a timeout, wrapped
- * in try/catch, and fails open to { ok: false } (never throws, never treats a
- * degraded read as consent given) with a structured log on failure.
+ * in try/catch, and fails CLOSED to { ok: false } (never throws, never
+ * treats a degraded read as consent given) with a structured log on failure.
  */
 
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -55,7 +52,7 @@ export async function hasScanConsent(userId: string): Promise<ScanConsentResult>
       'scan.scanConsentGate.hasScanConsent',
     );
   } catch (error) {
-    safeLog.warn('scan.scanConsentGate', 'hasScanConsent failed open', {
+    safeLog.warn('scan.scanConsentGate', 'hasScanConsent failed closed', {
       error,
       userId,
     });

@@ -2,10 +2,9 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 
-// Prompt 231 Task 9: scan consent migration contract test. Reads the
-// migration SQL text (never applies it to a database) and asserts the
-// scan_consent_versions / scan_consent_acks shape described in the task-9
-// brief and conditions 9, 13, 16.
+// Prompt 231: scan consent migration contract test. Reads the migration
+// SQL text (never applies it to a database) and asserts the
+// scan_consent_versions / scan_consent_acks shape.
 
 function findMigrationFile(): string {
   const migrationsDir = path.resolve(__dirname, '../../../../supabase/migrations');

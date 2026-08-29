@@ -1,12 +1,12 @@
 -- =============================================================================
--- Prompt 231 Task 9: versioned scan consent (226 pattern)
+-- Prompt 231: versioned scan consent (226 pattern)
 --
 -- Server-side, version-tracked consent gate for the 4-pose body scan flow.
 -- Mirrors the Prompt 226 converter_disclaimer_versions / converter_disclaimer_acks
 -- shape: a Lex-controlled versioned copy table plus a per-user per-version
 -- acknowledgement table. Consent is checked SERVER-side (scanConsentGate.ts,
--- hasScanConsent()) before capture/submit proceeds (condition 9);
--- localStorage is never the gate.
+-- hasScanConsent()) before capture/submit proceeds; localStorage is never
+-- the gate.
 --
 -- scan_consent_versions starts with a placeholder v1 row at lex_status =
 -- 'pending' (Lex has not cleared the copy yet). The SELECT policy and the
