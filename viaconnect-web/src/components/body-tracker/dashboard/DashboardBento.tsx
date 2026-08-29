@@ -22,6 +22,10 @@ import { useUserCrossReferenceData } from '@/hooks/body-tracker/useUserCrossRefe
 import { useArnoldRecommendation } from '@/hooks/body-tracker/useArnoldRecommendation';
 import { useUserJourney } from '@/hooks/body-tracker/useUserJourney';
 import { resolveHormonesReportChip } from '@/lib/kb/hormones/hormonesHubChip';
+// Prompt 231: the FormaVision tile now opens the new 4-pose capture route
+// directly (G79) instead of the composition surface. Wiring only, per the
+// condition 26 scope guard (this tile is not being redesigned).
+import { SCAN_CAPTURE_PATH } from '@/lib/scan/routes';
 import type { BiologicalAgeResult } from '@/lib/body-tracker/biological-age';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
@@ -362,7 +366,7 @@ export function DashboardBento({ userId }: DashboardBentoProps) {
       </motion.div>
 
       <motion.div className="lg:col-span-3" {...fade(3)}>
-        <SnapshotTile href="/body-tracker/composition" icon={Ruler} label="Body Composition">
+        <SnapshotTile href={SCAN_CAPTURE_PATH} icon={Ruler} label="Body Composition">
           {(() => {
             const fat = bodyFatDisplay({
               bodyFatPct: snap.bodyFatPct,

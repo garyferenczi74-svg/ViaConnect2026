@@ -65,6 +65,8 @@ export default defineConfig({
       'src/components/scan/__tests__/PoseTitleCard.bare.test.tsx',
       'src/components/scan/__tests__/LevelBubble.bare.test.tsx',
       'src/components/scan/__tests__/SkeletonOverlay.bare.test.tsx',
+      // Prompt 231 Task 10: ScanReview skipped-tile / missing-frame smoke test
+      'src/components/scan/__tests__/ScanReview.bare.test.tsx',
     ],
     exclude: ['node_modules', '.next', 'supabase'],
     globals: true,

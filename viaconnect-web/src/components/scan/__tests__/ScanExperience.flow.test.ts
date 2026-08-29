@@ -1,0 +1,237 @@
+/**
+ * Bare state-driven coverage for the flow ScanExperience drives.
+ *
+ * ScanExperience itself wires React hooks to real DOM APIs (getUserMedia,
+ * canvas, speechSynthesis, requestAnimationFrame) that do not exist under
+ * vitest's node environment (no jsdom in this repo; see the other
+ * __tests__/*.bare.test.tsx files for the established renderToStaticMarkup
+ * convention). So this suite drives the same pure pieces ScanExperience
+ * calls from its event handlers and effects directly:
+ *   - scanReducer / initialScanState (the state machine ScanExperience
+ *     dispatches into)
+ *   - qaResultToAction (how a QA verdict becomes a dispatched action)
+ *   - revokeFrame / revokeAllFrames (the object URL lifecycle contract)
+ *
+ * A scripted QA-result sequence is fed through the reducer exactly the way
+ * ScanExperience's CAPTURE effect would (CAPTURED, then QA_PASS/QA_FAIL),
+ * asserting the resulting phase transitions match spec Section 7. Real DOM
+ * wiring (camera acquisition, canvas grabStill, speech, countdown timers,
+ * button click handlers) is NOT covered here; it is deferred to Playwright
+ * and the manual device matrix per the plan's Task 10/15 split. That gap is
+ * intentional, not an oversight: see the Task 10 report for the full list.
+ */
+
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { scanReducer, initialScanState, type ScanState } from '@/hooks/scan/useScanSession';
+import { evaluateWeakFrame } from '@/lib/scan/qa';
+import { revokeFrame, revokeAllFrames, qaResultToAction } from '@/lib/scan/scanFlowDriver';
+import type { ScanFrame } from '@/lib/scan/types';
+import type { PoseId } from '@/lib/scan/poses';
+
+function makeFrame(pose: PoseId, objectUrl: string, pass: boolean, retryCount = 0): ScanFrame {
+  const qa = pass
+    ? evaluateWeakFrame({ luminanceVariance: 500, exposure: 0.5, blurScore: 500 })
+    : evaluateWeakFrame({ luminanceVariance: 0, exposure: 0.5, blurScore: 500 });
+  return {
+    pose,
+    blob: new Blob(['x'], { type: 'image/jpeg' }),
+    objectUrl,
+    capturedAt: new Date('2026-08-29T00:00:00Z').toISOString(),
+    qa,
+    retryCount,
+    capturedWidth: 1080,
+    capturedHeight: 1920,
+  };
+}
+
+// Monotonic counter so every captured frame in this suite gets a distinct
+// objectUrl, independent of retryCount (which the reducer legitimately
+// resets to the same value across a retake).
+let captureSeq = 0;
+
+/** Drive one pose attempt (PROMPT -> ARMED -> COUNT(5..0) -> CAPTURE -> QA)
+ * through the reducer exactly as ScanExperience's effects would, using the
+ * scripted `pass` outcome for the captured still. */
+function driveOnePose(state: ScanState, pose: PoseId, pass: boolean): ScanState {
+  let s = state;
+  expect(s.phase).toBe('PROMPT');
+  s = scanReducer(s, { type: 'PROMPT_DONE' });
+  expect(s.phase).toBe('ARMED');
+  s = scanReducer(s, { type: 'PRECHECK_PASS' }); // weak precheck always passes pre-Task-11
+  expect(s.phase).toBe('COUNT');
+  expect(s.count).toBe(5);
+  for (let i = 0; i < 4; i++) {
+    s = scanReducer(s, { type: 'TICK' });
+  }
+  expect(s.phase).toBe('COUNT');
+  expect(s.count).toBe(1);
+  s = scanReducer(s, { type: 'TICK' });
+  expect(s.phase).toBe('CAPTURE');
+  expect(s.count).toBe(0);
+
+  const frame = makeFrame(pose, `blob:${pose}-attempt-${captureSeq++}`, pass, s.retryCount);
+  s = scanReducer(s, { type: 'CAPTURED', frame });
+  expect(s.phase).toBe('QA');
+
+  s = scanReducer(s, qaResultToAction(frame.qa));
+  return s;
+}
+
+describe('ScanExperience flow driver: happy path with one three-fail skip', () => {
+  it('walks SETUP through REVIEW, skipping the pose that fails QA three times', () => {
+    let s = initialScanState();
+    expect(s.phase).toBe('SETUP');
+
+    s = scanReducer(s, { type: 'START' });
+    expect(s.phase).toBe('WALK_IN');
+    s = scanReducer(s, { type: 'WALK_IN_DONE' });
+    expect(s.phase).toBe('PROMPT');
+
+    // front: passes first try
+    s = driveOnePose(s, 'front', true);
+    expect(s.phase).toBe('PROMPT');
+    expect(s.poseIndex).toBe(1);
+    expect(s.frames[0]?.qa.pass).toBe(true);
+
+    // right: fails three times, subject chooses Skip
+    s = driveOnePose(s, 'right', false);
+    expect(s.phase).toBe('PROMPT'); // retry 1
+    expect(s.retryCount).toBe(1);
+    s = driveOnePose(s, 'right', false);
+    expect(s.phase).toBe('PROMPT'); // retry 2
+    expect(s.retryCount).toBe(2);
+    s = driveOnePose(s, 'right', false);
+    expect(s.phase).toBe('CHOICE'); // third failure
+    expect(s.retryCount).toBe(3);
+
+    s = scanReducer(s, { type: 'CHOOSE_SKIP' });
+    expect(s.phase).toBe('PROMPT');
+    expect(s.poseIndex).toBe(2);
+    expect(s.frames[1]?.skipped).toBe(true);
+    expect(s.frames[1]?.objectUrl).toBe('');
+
+    // back: passes first try
+    s = driveOnePose(s, 'back', true);
+    expect(s.phase).toBe('PROMPT');
+    expect(s.poseIndex).toBe(3);
+
+    // left: passes first try -> last pose -> REVIEW
+    s = driveOnePose(s, 'left', true);
+    expect(s.phase).toBe('REVIEW');
+
+    expect(s.frames.map((f) => f?.pose)).toEqual(['front', 'right', 'back', 'left']);
+    expect(s.frames.map((f) => f?.skipped ?? false)).toEqual([false, true, false, false]);
+  });
+});
+
+describe('ScanExperience flow driver: live pre-check failure mid count resets to ARMED', () => {
+  it('PRECHECK_FAIL during COUNT discards the in-flight count and reads Hold still', () => {
+    let s = initialScanState();
+    s = scanReducer(s, { type: 'START' });
+    s = scanReducer(s, { type: 'WALK_IN_DONE' });
+    s = scanReducer(s, { type: 'PROMPT_DONE' });
+    s = scanReducer(s, { type: 'PRECHECK_PASS' });
+    expect(s.phase).toBe('COUNT');
+    s = scanReducer(s, { type: 'TICK' }); // count 5 -> 4
+    expect(s.count).toBe(4);
+
+    s = scanReducer(s, { type: 'PRECHECK_FAIL' });
+    expect(s.phase).toBe('ARMED');
+    expect(s.count).toBe(5);
+    expect(s.error).toBe('Hold still.');
+  });
+});
+
+describe('ScanExperience flow driver: retake from Review returns to Review', () => {
+  it('RETAKE re-runs walk-in for one pose and QA_PASS lands back on Review', () => {
+    let s = initialScanState();
+    s = scanReducer(s, { type: 'START' });
+    s = scanReducer(s, { type: 'WALK_IN_DONE' });
+    s = driveOnePose(s, 'front', true);
+    s = driveOnePose(s, 'right', true);
+    s = driveOnePose(s, 'back', true);
+    s = driveOnePose(s, 'left', true);
+    expect(s.phase).toBe('REVIEW');
+    const originalRightUrl = s.frames[1]?.objectUrl;
+
+    s = scanReducer(s, { type: 'RETAKE', poseIndex: 1 });
+    expect(s.phase).toBe('WALK_IN');
+    expect(s.poseIndex).toBe(1);
+    expect(s.retakeMode).toBe(true);
+
+    s = scanReducer(s, { type: 'WALK_IN_DONE' });
+    s = driveOnePose(s, 'right', true);
+    expect(s.phase).toBe('REVIEW');
+    expect(s.retakeMode).toBe(false);
+    expect(s.frames[1]?.objectUrl).not.toBe(originalRightUrl);
+  });
+});
+
+describe('ScanExperience flow driver: Discard revokes real object URLs, never the skipped placeholder', () => {
+  let revokeSpy: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    revokeSpy = vi.fn();
+    // scanFlowDriver only calls URL.revokeObjectURL; stub just that surface
+    // rather than the full URL constructor (spreading a class copies no
+    // static methods reliably across environments).
+    vi.stubGlobal('URL', { revokeObjectURL: revokeSpy });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('revokes every non-skipped frame URL before DISCARD resets state', () => {
+    const frames: ScanFrame[] = [
+      makeFrame('front', 'blob:front', true),
+      { ...makeFrame('right', '', false), skipped: true },
+      makeFrame('back', 'blob:back', true),
+      makeFrame('left', 'blob:left', true),
+    ];
+    const reviewState: ScanState = { ...initialScanState(), phase: 'REVIEW', frames };
+
+    revokeAllFrames(reviewState.frames);
+
+    expect(revokeSpy).toHaveBeenCalledTimes(3);
+    expect(revokeSpy).toHaveBeenCalledWith('blob:front');
+    expect(revokeSpy).toHaveBeenCalledWith('blob:back');
+    expect(revokeSpy).toHaveBeenCalledWith('blob:left');
+    expect(revokeSpy).not.toHaveBeenCalledWith('');
+
+    const next = scanReducer(reviewState, { type: 'DISCARD' });
+    expect(next).toEqual(initialScanState());
+  });
+
+  it('revokeFrame is a no-op for a skipped frame even if it somehow carried a URL', () => {
+    const skipped = { ...makeFrame('right', 'blob:should-not-revoke', true), skipped: true };
+    revokeFrame(skipped);
+    expect(revokeSpy).not.toHaveBeenCalled();
+  });
+
+  it('revokeFrame is a no-op for null/undefined', () => {
+    revokeFrame(null);
+    revokeFrame(undefined);
+    expect(revokeSpy).not.toHaveBeenCalled();
+  });
+
+  it('RESET (camera lost recovery) also revokes any real frame URLs before resetting', () => {
+    const frames: ScanFrame[] = [
+      makeFrame('front', 'blob:front-2', true),
+      null as unknown as ScanFrame,
+      null as unknown as ScanFrame,
+      null as unknown as ScanFrame,
+    ];
+    let s: ScanState = { ...initialScanState(), phase: 'COUNT', count: 3, frames };
+    s = scanReducer(s, { type: 'CAMERA_LOST' });
+    expect(s.phase).toBe('CAMERA_LOST');
+
+    revokeAllFrames(s.frames);
+    expect(revokeSpy).toHaveBeenCalledWith('blob:front-2');
+
+    const next = scanReducer(s, { type: 'RESET' });
+    expect(next.phase).toBe('SETUP');
+    expect(next.error).toBe('Camera disconnected. Tap Start scan to try again.');
+    expect(next.frames.every((f) => f === null)).toBe(true);
+  });
+});

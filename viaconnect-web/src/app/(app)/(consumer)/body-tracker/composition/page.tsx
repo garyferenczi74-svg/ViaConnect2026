@@ -25,6 +25,10 @@ import {
   parseCompositionSection,
   shouldOpenScanFromQuery,
 } from '@/lib/body-tracker/compositionNav';
+// Prompt 231: the FormaVision button now opens the new 4-pose capture
+// route instead of the legacy single-photo BodyScanUploader sheet below
+// (which stays mounted, read-only, per G84 converge ruling).
+import { SCAN_CAPTURE_PATH } from '@/lib/scan/routes';
 // === PROMPT 210b VR (Section 8) START ===
 // Direct-path imports (not the avatar barrel) so this Visual Results surface
 // stays disjoint from the avatar component files.
@@ -827,12 +831,10 @@ function CompositionPageInner() {
           scanOpen={scanOpen}
           logOpen={open}
           onToggleScan={() => {
-            setOpen(false);
-            setScanOpen((o) => !o);
-            if (!scanOpen) {
-              setScanResult(null);
-              setScanPersist({ phase: 'idle' });
-            }
+            // Prompt 231: repoint to the new 4-pose capture route (G79).
+            // The legacy scanOpen sheet below is left wired but unreachable
+            // from this button; nothing else opens it.
+            router.push(SCAN_CAPTURE_PATH);
           }}
           onToggleLog={() => {
             setScanOpen(false);
