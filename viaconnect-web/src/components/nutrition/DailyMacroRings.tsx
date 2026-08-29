@@ -233,7 +233,7 @@ export function DailyMacroRings(props: DailyMacroRingsProps) {
       aria-label="Daily Macros"
     >
       <header className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="text-[15px] font-semibold text-white">Daily macros</h2>
+        <h2 className="text-xl font-semibold text-white">Daily macros</h2>
         <span className="text-[11px] uppercase tracking-[0.10em] text-white/50">today</span>
       </header>
 

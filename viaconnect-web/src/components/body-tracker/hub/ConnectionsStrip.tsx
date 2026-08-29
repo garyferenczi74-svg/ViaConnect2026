@@ -13,6 +13,10 @@ import { CONNECTIONS } from './hubConfig';
 import { useWearableTilesSnapshot } from '@/hooks/useWearableTilesSnapshot';
 import { buildConnectionsStripSources } from '@/lib/body-tracker/connections-strip-sources';
 import { FIRST_CLASS_TILE_IDS } from '@/lib/body-tracker/wearable-tiles';
+import {
+  CONSUMER_CARD_SUBHEAD,
+  CONSUMER_CARD_TITLE,
+} from '@/lib/ui/consumerChrome';
 import './hub-card-frame.css';
 
 const ACCENT_HEX = '#2DA5A0';
@@ -38,10 +42,10 @@ export function ConnectionsStrip() {
         </span>
 
         <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <h2 className="text-[14px] font-semibold leading-tight text-white md:text-[15px]">
+          <h2 className={CONSUMER_CARD_TITLE}>
             {CONNECTIONS.title}
           </h2>
-          <p className="text-[12px] leading-relaxed text-white/[0.62] md:text-[13px]">
+          <p className={CONSUMER_CARD_SUBHEAD}>
             {CONNECTIONS.description}
           </p>
         </div>
@@ -56,7 +60,7 @@ export function ConnectionsStrip() {
               <span
                 data-tile-id={source.id}
                 data-last-sync-connected={source.connected ? 'true' : 'false'}
-                className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[11px] text-white/75 backdrop-blur-sm"
+                className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-sm text-white/85 backdrop-blur-sm"
               >
                 <span
                   aria-hidden="true"
@@ -72,7 +76,7 @@ export function ConnectionsStrip() {
             </li>
           ))}
         </ul>
-        <span className="ml-auto inline-flex items-center gap-1 text-[12px] font-medium text-white/70 transition-colors group-hover:text-white md:ml-2">
+        <span className="ml-auto inline-flex min-h-[44px] items-center gap-1 text-sm font-medium text-white/85 transition-colors group-hover:text-white md:ml-2">
           <span>Manage</span>
           <ArrowRight
             className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0"

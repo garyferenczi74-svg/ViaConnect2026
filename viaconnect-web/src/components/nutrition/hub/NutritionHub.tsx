@@ -75,6 +75,13 @@ import {
   MEDIA_TEAL_TR,
   NUTRITION_CARD_MEDIA,
 } from './nutritionHubMedia';
+import {
+  CONSUMER_CARD_SUBHEAD,
+  CONSUMER_CARD_TITLE,
+  CONSUMER_METRIC_LABEL,
+  CONSUMER_OPEN_PILL_LINK,
+  PLASMA_MAIN_MOBILE,
+} from '@/lib/ui/consumerChrome';
 
 // Per card media seam. ROW 1 and ROW 3 tiles drop CardMedia in as the z 0 back
 // layer. Prompt 189: the gradient constants and the five real media
@@ -160,10 +167,10 @@ function NutritionProgressTile({
       contentClassName="items-center text-center"
     >
       <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1">
-        <h3 className="text-[15px] font-semibold leading-tight text-white md:text-base">
+        <h3 className={CONSUMER_CARD_TITLE}>
           Goals and Progress
         </h3>
-        <p className="text-[12px] leading-relaxed text-white/[0.62] md:text-[13px]">
+        <p className={CONSUMER_CARD_SUBHEAD}>
           Create and follow your wellness goals
         </p>
       </div>
@@ -172,7 +179,7 @@ function NutritionProgressTile({
         <Link
           href="/body-tracker/progress"
           data-analytics-event="nutrition_progress_open"
-          className="inline-flex items-center gap-1 rounded-full border border-[#5B8DEF]/30 bg-[#2A4C9E]/[0.12] px-3 py-1.5 text-[12px] font-medium text-white no-underline backdrop-blur-md transition-all duration-200 hover:border-[#5B8DEF]/55 hover:bg-[#2A4C9E]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] motion-reduce:transition-none"
+          className={CONSUMER_OPEN_PILL_LINK}
         >
           <span>Open</span>
           <ChevronRight className="h-3.5 w-3.5" strokeWidth={1.5} />
@@ -210,14 +217,14 @@ function SaveMyMealTile({
       {/* Gary (2026-06-11): heading block on the card's TRUE vertical center;
           Open stays bottom anchored. */}
       <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1">
-        <h3 className="text-[15px] font-semibold leading-tight text-white md:text-base">
+        <h3 className={CONSUMER_CARD_TITLE}>
           Save My Meal
         </h3>
-        <p className="text-[12px] leading-relaxed text-white/[0.62] md:text-[13px]">
+        <p className={CONSUMER_CARD_SUBHEAD}>
           Your saved meal library, ready to log in a tap
         </p>
         {typeof savedMealsCount === 'number' ? (
-          <span className="mt-1 inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] font-medium tabular-nums text-white/80 backdrop-blur-sm">
+          <span className="mt-1 inline-flex min-h-[44px] items-center rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-sm font-medium tabular-nums text-white/90 backdrop-blur-sm">
             {savedMealsCount} saved
           </span>
         ) : null}
@@ -227,7 +234,7 @@ function SaveMyMealTile({
       <div className="mt-auto flex pt-4">
         <Link
           href="/nutrition/saved-meals"
-          className="inline-flex items-center gap-1 rounded-full border border-[#5B8DEF]/30 bg-[#2A4C9E]/[0.12] px-3 py-1.5 text-[12px] font-medium text-white no-underline backdrop-blur-md transition-all duration-200 hover:border-[#5B8DEF]/55 hover:bg-[#2A4C9E]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] motion-reduce:transition-none"
+          className={CONSUMER_OPEN_PILL_LINK}
         >
           <span>Open</span>
           <ChevronRight className="h-3.5 w-3.5" strokeWidth={1.5} />
@@ -262,10 +269,10 @@ function NutritionGeneticsTile({
       {/* Gary (2026-06-11): heading block on the card's TRUE vertical center;
           Open stays bottom anchored. */}
       <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1">
-        <h3 className="text-[15px] font-semibold leading-tight text-white md:text-base">
+        <h3 className={CONSUMER_CARD_TITLE}>
           Nutrition by Genetics
         </h3>
-        <p className="text-[12px] leading-relaxed text-white/[0.62] md:text-[13px]">
+        <p className={CONSUMER_CARD_SUBHEAD}>
           Your NutrigenDX results and nutrition test uploads.
         </p>
       </div>
@@ -275,7 +282,7 @@ function NutritionGeneticsTile({
         <Link
           href="/nutrition/genetics"
           data-analytics-event="nutrition_genetics_open"
-          className="inline-flex items-center gap-1 rounded-full border border-[#5B8DEF]/30 bg-[#2A4C9E]/[0.12] px-3 py-1.5 text-[12px] font-medium text-white no-underline backdrop-blur-md transition-all duration-200 hover:border-[#5B8DEF]/55 hover:bg-[#2A4C9E]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] motion-reduce:transition-none"
+          className={CONSUMER_OPEN_PILL_LINK}
         >
           <span>Open</span>
           <ChevronRight className="h-3.5 w-3.5" strokeWidth={1.5} />
@@ -321,7 +328,7 @@ export function NutritionHub() {
   const hasMacroPct = macroCenter.kind === 'macros';
 
   // Props for the Daily Macros PlasmaGauge. Empty (no meals) still mounts
-  // this teal hub finish at Row 1 size 176; empty mode keeps `--` and no
+  // this teal hub finish at the shared main plasma floor; empty mode keeps `--` and no
   // 0% OF TARGET fill. Prompt 183a: percent-to-target caption when scored.
   const macroGaugeProps: Pick<
     PlasmaGaugeProps,
@@ -339,7 +346,7 @@ export function NutritionHub() {
     metric: 'plasmateal',
     variant: 'standard',
     max: 100,
-    size: 176,
+    size: PLASMA_MAIN_MOBILE,
     showUnit: false,
     subtleTrack: true,
     plainNumber: true,
@@ -400,10 +407,10 @@ export function NutritionHub() {
             {scoreCenter.kind === 'score' ? (
               <PlasmaGauge
                 metric="plasmateal"
-                size={176}
+                size={PLASMA_MAIN_MOBILE}
                 value={scoreCenter.value}
                 caption="OF 100"
-                valueFontPx={30}
+                valueFontPx={32}
                 plainNumber
                 subtleTrack
                 showUnit={false}
@@ -412,20 +419,20 @@ export function NutritionHub() {
               <div className="flex flex-col items-center gap-2">
                 <PlasmaGauge
                   metric="plasmateal"
-                  size={176}
+                  size={PLASMA_MAIN_MOBILE}
                   empty
-                  valueFontPx={30}
+                  valueFontPx={32}
                   plainNumber
                   subtleTrack
                   showUnit={false}
                 />
-                <span className="text-[11px] text-white/55">Log a meal to see your score</span>
+                <span className={`${CONSUMER_CARD_SUBHEAD} text-white/80`}>Log a meal to see your score</span>
               </div>
             )}
-            <h3 className="text-[15px] font-semibold leading-tight text-white md:text-base">
+            <h3 className={CONSUMER_CARD_TITLE}>
               Nutrition Score
             </h3>
-            <p className="text-[12px] leading-relaxed text-white/[0.62] md:text-[13px]">
+            <p className={CONSUMER_CARD_SUBHEAD}>
               Your nutrition signal feeding Bio Optimization
             </p>
           </div>
@@ -445,10 +452,10 @@ export function NutritionHub() {
               stack no longer covers the heading. The pills stay anchored at
               the bottom via mt-auto. */}
           <div className="flex flex-col items-center">
-            <h3 className="text-[15px] font-semibold leading-tight text-white md:text-base">
+            <h3 className={CONSUMER_CARD_TITLE}>
               Log Your Meal
             </h3>
-            <p className="mt-1 text-[12px] leading-relaxed text-white/[0.62] md:text-[13px]">
+            <p className={`mt-1 ${CONSUMER_CARD_SUBHEAD}`}>
               The fastest way to add what you ate
             </p>
           </div>
@@ -474,10 +481,10 @@ export function NutritionHub() {
             ) : (
               <div className="flex flex-col items-center gap-2">
                 <PlasmaGauge {...macroGaugeProps} empty />
-                <span className="text-[11px] text-white/55">No macros logged today yet</span>
+                <span className={`${CONSUMER_CARD_SUBHEAD} text-white/80`}>No macros logged today yet</span>
               </div>
             )}
-            <h3 className="text-[15px] font-semibold leading-tight text-white md:text-base">
+            <h3 className={CONSUMER_CARD_TITLE}>
               Daily Macros
             </h3>
             {hasMacroPct ? (
@@ -485,10 +492,10 @@ export function NutritionHub() {
                 {macroReadouts.map((m) =>
                   typeof m.grams === 'number' ? (
                     <div key={m.label} className="flex flex-col items-center">
-                      <span className="text-[10px] uppercase tracking-wide text-white/45">
+                      <span className={CONSUMER_METRIC_LABEL}>
                         {m.label}
                       </span>
-                      <span className="text-[12px] font-semibold tabular-nums text-white/90">
+                      <span className="text-sm font-semibold tabular-nums text-white/90">
                         {m.grams}g
                       </span>
                     </div>

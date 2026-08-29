@@ -37,6 +37,10 @@ import type { LucideIcon } from 'lucide-react';
 import type { SurfaceMedia } from '@/components/body-tracker/hub/hubConfig';
 import { GeneticsHubTile } from './GeneticsHubTile';
 import { GENETICS_CARD_MEDIA } from './geneticsHubMedia';
+import {
+  CONSUMER_CARD_SUBHEAD,
+  CONSUMER_CARD_TITLE,
+} from '@/lib/ui/consumerChrome';
 
 type Accent = 'teal' | 'orange' | 'blue';
 
@@ -101,12 +105,12 @@ function ActionCard({
         {/* Heading block on the card's TRUE vertical center; pointer events pass
             through so the whole card stays one clean anchor. */}
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1 px-1">
-          <h3 className="text-[15px] font-semibold leading-tight text-white md:text-base">
+          <h3 className={CONSUMER_CARD_TITLE}>
             {title}
           </h3>
           <p
-            className={`text-[12px] leading-relaxed md:text-[13px] ${
-              brightSubheading ? 'text-white' : 'text-white/[0.62]'
+            className={`${CONSUMER_CARD_SUBHEAD} ${
+              brightSubheading ? 'text-white' : ''
             }`}
           >
             {description}
@@ -117,7 +121,7 @@ function ActionCard({
             navigation); min height keeps the visual touch target at 44px. */}
         <div className="mt-auto flex pt-4">
           <span
-            className={`inline-flex min-h-[44px] items-center gap-1.5 rounded-full border px-3.5 py-2 text-[12px] font-medium backdrop-blur-md transition-all duration-200 ${ACCENT_CHIP[accent]}`}
+            className={`inline-flex min-h-[44px] items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-medium backdrop-blur-md transition-all duration-200 ${ACCENT_CHIP[accent]}`}
           >
             <CtaIcon aria-hidden="true" className="h-3.5 w-3.5" strokeWidth={1.5} />
             <span>{ctaLabel}</span>

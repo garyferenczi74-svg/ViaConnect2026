@@ -605,7 +605,7 @@ export function UploadNutritionTestTab({ userId }: UploadNutritionTestTabProps) 
         aria-label="Your nutrition test uploads"
         className="rounded-2xl border border-white/[0.08] bg-[#1E3054] p-4 md:p-5"
       >
-        <h2 className="text-[15px] font-semibold text-white">Your uploads</h2>
+        <h2 className="text-xl font-semibold text-white">Your uploads</h2>
         {uploads === null ? (
           <p className="mt-3 text-[12px] text-white/40">Loading your uploads</p>
         ) : uploads.length === 0 ? (
@@ -657,10 +657,10 @@ export function UploadNutritionTestTab({ userId }: UploadNutritionTestTabProps) 
         >
           <header className="flex flex-wrap items-baseline justify-between gap-2">
             <div className="min-w-0">
-              <h2 className="text-[15px] font-semibold text-white">
+              <h2 className="text-xl font-semibold text-white">
                 {selectedUpload.sourceCompany ?? 'Uploaded test'}
               </h2>
-              <p className="mt-0.5 text-[11px] text-white/45">
+              <p className="mt-0.5 text-sm text-white/85">
                 {selectedUpload.analyzedAt
                   ? `Analyzed ${formatDate(selectedUpload.analyzedAt)}`
                   : 'Analyzed'}

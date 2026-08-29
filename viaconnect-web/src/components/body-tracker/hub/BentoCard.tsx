@@ -11,6 +11,12 @@
 import { ChevronRight } from 'lucide-react';
 import type { SurfaceCard } from './hubConfig';
 import { BentoTile } from '@/components/ui/BentoTile';
+import {
+  CONSUMER_CARD_SUBHEAD,
+  CONSUMER_CARD_TITLE,
+  CONSUMER_METRIC_LABEL,
+  CONSUMER_OPEN_PILL_GROUP,
+} from '@/lib/ui/consumerChrome';
 
 interface BentoCardProps {
   surface: SurfaceCard;
@@ -32,7 +38,7 @@ export function BentoCard({ surface, metricValue }: BentoCardProps) {
       dataHubCard={surface.id}
       interactive
       media={surface.media}
-      className={`min-h-[180px] ${surface.gridClass}`}
+      className={`min-h-[200px] ${surface.gridClass}`}
       contentClassName="gap-3"
     >
       {metricValue ? (
@@ -44,15 +50,15 @@ export function BentoCard({ surface, metricValue }: BentoCardProps) {
             <span className="font-mono text-[13px] font-semibold tabular-nums text-white">
               {metricValue}
             </span>
-            <span className="text-[10px] uppercase tracking-wide text-white/55">
+            <span className={CONSUMER_METRIC_LABEL}>
               {surface.metricLabel}
             </span>
           </span>
         </div>
       ) : null}
 
-      <div className={`mt-auto flex flex-col gap-1 ${isFeatured ? '' : 'pb-10 pr-16'}`}>
-        <h3 className="text-[15px] font-semibold leading-tight text-white md:text-base">
+      <div className={`mt-auto flex flex-col gap-1 ${isFeatured ? '' : 'pb-14 pr-20'}`}>
+        <h3 className={CONSUMER_CARD_TITLE}>
           {surface.id === 'composition' ? (
             // Prompt 210j: two-tone FormaVision wordmark + Body Composition.
             <>
@@ -64,14 +70,14 @@ export function BentoCard({ surface, metricValue }: BentoCardProps) {
             surface.title
           )}
         </h3>
-        <p className={`text-[12px] leading-relaxed text-white/[0.62] md:text-[13px] ${isFeatured ? '' : 'line-clamp-2'}`}>
+        <p className={`${CONSUMER_CARD_SUBHEAD} ${isFeatured ? '' : 'line-clamp-2'}`}>
           {surface.description}
         </p>
       </div>
 
       {/* Gary (2026-06-11): Open pill background halved so the card media reads
           through it, matching the nutrition hub Open pills. */}
-      <div className={`inline-flex items-center gap-1 rounded-full border border-[#5B8DEF]/30 bg-[#2A4C9E]/[0.12] px-3 py-1.5 text-[12px] font-medium text-white backdrop-blur-md transition-all duration-200 group-hover:border-[#5B8DEF]/55 group-hover:bg-[#2A4C9E]/20 motion-reduce:transition-none ${isFeatured ? 'self-start' : 'absolute bottom-4 right-4 md:bottom-5 md:right-5'}`}>
+      <div className={`${CONSUMER_OPEN_PILL_GROUP} ${isFeatured ? 'self-start' : 'absolute bottom-4 right-4 md:bottom-5 md:right-5'}`}>
         <span>Open</span>
         <ChevronRight
           className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0"

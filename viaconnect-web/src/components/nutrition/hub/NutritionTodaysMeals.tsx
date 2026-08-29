@@ -70,6 +70,11 @@ import { RemoveMealPill } from '@/components/nutrition/RemoveMealPill';
 import { LogSavedMealButton } from '@/components/nutrition/LogSavedMeal';
 import { GLASS_CHIP, GLASS_TIER2_BODY, GLASS_TIER2_HEADER, GLASS_WHITE } from './glass';
 import {
+  CONSUMER_CARD_TITLE,
+  CONSUMER_METRIC_LABEL,
+  PLASMA_COMPACT_ROW,
+} from '@/lib/ui/consumerChrome';
+import {
   groupTodaysMealsByType,
   hydrationPercentToTarget,
   hydrationRemainingMl,
@@ -162,7 +167,7 @@ function RowHeader({
       onClick={onToggle}
       aria-expanded={isOpen}
       aria-controls={panelId}
-      className={`group relative flex w-full min-h-[44px] items-center justify-between gap-2 px-3 py-2.5 text-[13px] font-semibold text-white transition-all duration-200 ease-out hover:shadow-lg hover:shadow-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] md:text-[14px] ${GLASS_WHITE}`}
+      className={`group relative flex w-full min-h-[44px] items-center justify-between gap-2 px-3 py-2.5 text-sm font-semibold text-white transition-all duration-200 ease-out hover:shadow-lg hover:shadow-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] ${GLASS_WHITE}`}
       style={{
         borderRadius: 12,
         borderLeft: `4px solid ${dot}`,
@@ -182,7 +187,7 @@ function RowHeader({
       <span className="flex items-center gap-2">
         {/* Prompt 191: the total chip is a GLASS_CHIP (text-white lives in the
             recipe); content and tap behavior are identical. */}
-        <span className={`rounded-full px-2 py-0.5 text-[11px] tabular-nums ${GLASS_CHIP}`}>
+        <span className={`rounded-full px-2 py-0.5 text-sm tabular-nums ${GLASS_CHIP}`}>
           {total}
         </span>
         <ChevronDown
@@ -216,7 +221,7 @@ function ColumnLine({ label, value, isLast }: { label: string; value: string; is
 function ColumnHeader({ children }: { children: string }) {
   return (
     <p
-      className="mb-1 pb-1 text-[11px] font-semibold uppercase tracking-[0.10em]"
+      className={`mb-1 pb-1 ${CONSUMER_METRIC_LABEL}`}
       style={{ color: '#2DA5A0', borderBottom: '1px solid rgba(45,165,160,0.28)' }}
     >
       {children}
@@ -276,9 +281,9 @@ function MealTypePanel({
     <div className="flex flex-col gap-2.5">
       {/* Header strip: name + kcal + collapse chevron on its own glass. */}
       <div className={`flex items-baseline justify-between gap-2 rounded-xl px-[18px] py-3 ${GLASS_TIER2_HEADER}`}>
-        <h3 className="flex items-baseline gap-2 text-[14px] font-semibold text-white md:text-[15px]">
+        <h3 className={`flex items-baseline gap-2 ${CONSUMER_CARD_TITLE}`}>
           <span>{def.label}</span>
-          <span className="text-[12px] font-medium tabular-nums text-white/70">{kcalLabel(kcal)}</span>
+          <span className="text-sm font-medium tabular-nums text-white/70">{kcalLabel(kcal)}</span>
         </h3>
         <button
           type="button"
@@ -344,7 +349,7 @@ function MealTypePanel({
               valueFontPx={36}
               metric="plasmateal"
               max={100}
-              size={132}
+              size={PLASMA_COMPACT_ROW}
               showUnit={false}
               ariaLabel={
                 score === null
@@ -411,9 +416,9 @@ function HydrationPanel({
     <div className="flex flex-col gap-2.5">
       {/* Header strip: name + volume + collapse chevron on its own glass. */}
       <div className={`flex items-baseline justify-between gap-2 rounded-xl px-[18px] py-3 ${GLASS_TIER2_HEADER}`}>
-        <h3 className="flex items-baseline gap-2 text-[14px] font-semibold text-white md:text-[15px]">
+        <h3 className={`flex items-baseline gap-2 ${CONSUMER_CARD_TITLE}`}>
           <span>Hydration</span>
-          <span className="text-[12px] font-medium tabular-nums text-white/70">{formatVolumeLabel(totalMl)}</span>
+          <span className="text-sm font-medium tabular-nums text-white/70">{formatVolumeLabel(totalMl)}</span>
         </h3>
         <button
           type="button"
@@ -450,7 +455,7 @@ function HydrationPanel({
               valueFontPx={32}
               metric="bioscore"
               max={100}
-              size={132}
+              size={PLASMA_COMPACT_ROW}
               showUnit={false}
               ariaLabel={`Hydration ${pct} percent of target`}
             />
@@ -504,7 +509,7 @@ export function NutritionTodaysMeals(props: NutritionTodaysMealsProps) {
           from this card; the surface is the plain translucent card again. The
           z-[2] content wrappers stay so content sits above the frame glow. */}
       <header className="relative z-[2] px-4 py-3 md:px-5 md:py-4">
-        <h2 className="text-[15px] font-semibold text-white">Today&apos;s meals</h2>
+        <h2 className={CONSUMER_CARD_TITLE}>Today&apos;s meals</h2>
       </header>
 
       <div className="relative z-[2] flex flex-col gap-3 px-3 pb-3 md:px-4 md:pb-4">

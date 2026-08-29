@@ -34,18 +34,18 @@ const FROZEN_AT_2B53743: Record<string, string> = {
   'src/lib/dashboard/morning-card/protocol-cta.ts':
     '0f3b2c44888f69fd9c00d5c3d059cfbecb20a7e3e11ca4a69935a65ca2e3bd55',
   'src/components/dashboard/morning-card/MorningChipGrid.tsx':
-    'b4f0747d924e5675c7fc457e56534b32ce8320386721bbc4784342fb8aef509a',
+    'b7f250e8f5cfc22045e27b2883c35f55cd045e58834656d648322586d0e28243',
   'src/components/dashboard/morning-card/MorningProtocolCta.tsx':
     'eb8ac47491ef91f7327afbdad301a607ef00f91b96a5ac3e4bd6bcb797675203',
   'src/hooks/useHannahBosDisplay.ts':
     '802b5b18faf7b7b3e3e1a2e882ac8862448e34224ab80b130cd22209dcac4001',
   // Age empty plasma (same as #114) remounts PlasmaGauge; hash refreshed here.
   'src/components/body-tracker/dashboard/BiologicalAgeHeroTile.tsx':
-    'ab17af9e3da591a06a857ccc297350222659db9e9c11c1e2ce82d01aba998d3e',
+    'd033596b7f5009d34d6550e5a48ea1db20923db9fbbdd4d9d5777b94c4b90c75',
   'src/components/gauges/PlasmaGauge.tsx':
     'e83693afafbb34056c51b5115164a6ecf326fff04f0a947609e2ab8e1eceec06',
   'src/components/dashboard/DailyScoresPanel.tsx':
-    '1f113590a451df109b69008881a2e692e4fea0097e4a904dce70b0bb6df5dcc7',
+    'bfb3858f4f405cad7d16f9c87c953a3e4c63cad84dd5550bad8d3ff3e5c3cf40',
   'package.json':
     '063e568f5cfd91d78c94ad76f1d3c59a048f59bd5eea540af8c3e037a9bdec7d',
 };
@@ -60,10 +60,11 @@ describe('Brief 57 hero BOS uses Daily Scores PlasmaGauge', () => {
     expect(dial).toContain("from '@/components/gauges/PlasmaGauge'");
     expect(dial).toContain('metric="bioscore"');
     expect(dial).toContain('variant="hero"');
-    expect(dial).toContain('size={HERO_MOBILE_SIZE}');
-    expect(dial).toContain('size={HERO_DESKTOP_SIZE}');
-    expect(dial).toContain('const HERO_MOBILE_SIZE = 200');
-    expect(dial).toContain('const HERO_DESKTOP_SIZE = 240');
+    expect(dial).toContain('size={PLASMA_MAIN_MOBILE}');
+    expect(dial).toContain('size={PLASMA_MAIN_DESKTOP}');
+    expect(dial).toContain("from '@/lib/ui/consumerChrome'");
+    expect(dial).toContain('PLASMA_MAIN_MOBILE');
+    expect(dial).toContain('PLASMA_MAIN_DESKTOP');
     expect(dial).toContain('connectionsBosNumericScore');
     expect(dial).toContain('empty');
     expect(dial).toContain('brightReadout');

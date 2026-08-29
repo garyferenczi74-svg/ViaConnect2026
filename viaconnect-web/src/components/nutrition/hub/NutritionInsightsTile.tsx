@@ -26,6 +26,11 @@ import { CardMedia } from '@/components/body-tracker/hub/CardMedia';
 import type { SurfaceMedia } from '@/components/body-tracker/hub/hubConfig';
 import '@/components/body-tracker/hub/hub-card-frame.css';
 import { getDisplayName } from '@/lib/getDisplayName';
+import {
+  CONSUMER_CARD_SUBHEAD,
+  CONSUMER_CARD_TITLE,
+  CONSUMER_OPEN_PILL_LINK,
+} from '@/lib/ui/consumerChrome';
 import { safeLog } from '@/lib/utils/safe-log';
 import { withTimeout } from '@/lib/utils/with-timeout';
 import { INSIGHT_TYPE_ICONS } from '@/components/nutrition/insights/insightIcons';
@@ -172,10 +177,10 @@ export function NutritionInsightsTile({
 
       {/* z 2: content. Centered header, glass state panel, bottom anchored Open. */}
       <div className="relative z-[2] flex h-full flex-col items-center p-4 text-center md:p-5">
-        <h3 className="text-[15px] font-semibold leading-tight text-white md:text-base">
+        <h3 className={CONSUMER_CARD_TITLE}>
           Nutrition Insights
         </h3>
-        <p className="mt-1 text-[12px] leading-relaxed text-white/[0.62] md:text-[13px]">
+        <p className={`mt-1 ${CONSUMER_CARD_SUBHEAD}`}>
           What {getDisplayName('gordon')} sees in your logging
         </p>
 
@@ -187,7 +192,7 @@ export function NutritionInsightsTile({
         <div className="mt-auto flex pt-4">
           <Link
             href="/nutrition/insights"
-            className="inline-flex items-center gap-1 rounded-full border border-[#5B8DEF]/30 bg-[#2A4C9E]/[0.12] px-3 py-1.5 text-[12px] font-medium text-white no-underline backdrop-blur-md transition-all duration-200 hover:border-[#5B8DEF]/55 hover:bg-[#2A4C9E]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] motion-reduce:transition-none"
+            className={CONSUMER_OPEN_PILL_LINK}
           >
             <span>Open</span>
             <ChevronRight className="h-3.5 w-3.5" strokeWidth={1.5} />

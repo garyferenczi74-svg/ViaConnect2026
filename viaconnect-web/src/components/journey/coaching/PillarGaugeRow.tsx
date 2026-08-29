@@ -148,7 +148,7 @@ export function PillarGaugeRow({ userId }: { userId: string | null }) {
             value={bos}
             metric="bioscore"
             variant="hero"
-            size={188}
+            size={200}
             max={100}
             ariaLabel={`Bio Optimization Score ${bos} of 100`}
           />

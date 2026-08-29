@@ -212,7 +212,7 @@ export function YourVariantsCard({ className }: YourVariantsCardProps) {
       <div className="flex flex-col gap-1">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-lg font-semibold leading-tight text-white md:text-xl">Your Variants</h2>
+            <h2 className="text-xl font-semibold leading-tight text-white md:text-xl">Your Variants</h2>
             <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-0.5 text-[11px] font-medium tabular-nums text-white/75">
               {headerBadge}
             </span>

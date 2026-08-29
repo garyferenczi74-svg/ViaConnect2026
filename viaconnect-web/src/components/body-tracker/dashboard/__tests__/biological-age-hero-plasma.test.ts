@@ -43,7 +43,7 @@ describe('Biological Age hero empty plasma', () => {
     expect(tile).toContain("from '@/components/gauges/PlasmaGauge'");
     expect(tile).toContain('metric="bioscore"');
     expect(tile).toContain('variant="hero"');
-    expect(tile).toContain('size={180}');
+    expect(tile).toContain('size={PLASMA_MAIN_MOBILE}');
     expect(tile).toContain('empty');
     expect(tile).toContain('display === null');
     expect(tile).toContain('caption="YEARS"');
@@ -136,7 +136,7 @@ describe('Biological Age hero empty plasma', () => {
     expect(hub).toContain('metric="plasmateal"');
     expect(dial).not.toContain('UnknownWell');
     expect(dial).toContain('empty');
-    expect(dial).toContain('size={HERO_MOBILE_SIZE}');
-    expect(dial).toContain('size={HERO_DESKTOP_SIZE}');
+    expect(dial).toContain('size={PLASMA_MAIN_MOBILE}');
+    expect(dial).toContain('size={PLASMA_MAIN_DESKTOP}');
   });
 });

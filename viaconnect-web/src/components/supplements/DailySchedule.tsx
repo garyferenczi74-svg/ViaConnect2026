@@ -320,7 +320,7 @@ export function DailySchedule() {
                 <span className="flex h-6 w-6 items-center justify-center rounded-md" style={{ background: `${b.color}1A` }}>
                   <Icon className="h-3.5 w-3.5" strokeWidth={1.5} style={{ color: b.color }} />
                 </span>
-                <span className="flex-1 text-sm font-semibold" style={{ color: b.color }}>{b.label}</span>
+                <span className="flex-1 text-xl font-semibold" style={{ color: b.color }}>{b.label}</span>
                 <span className="text-[11px] text-white/45">{bucketTaken(cards)}/{cards.length}</span>
               </div>
               {cards.length > 0 ? (
@@ -356,7 +356,7 @@ export function DailySchedule() {
                 <span className="flex h-6 w-6 items-center justify-center rounded-md" style={{ background: `${b.color}1A` }}>
                   <Icon className="h-3.5 w-3.5" strokeWidth={1.5} style={{ color: b.color }} />
                 </span>
-                <span className="flex-1 text-left text-sm font-semibold" style={{ color: b.color }}>{b.label}</span>
+                <span className="flex-1 text-left text-xl font-semibold" style={{ color: b.color }}>{b.label}</span>
                 <span className="text-[11px] text-white/45">{bucketTaken(cards)}/{cards.length}</span>
                 <ChevronDown className={`h-4 w-4 text-white/40 transition-transform ${isOpen ? 'rotate-180' : ''}`} strokeWidth={1.5} />
               </button>

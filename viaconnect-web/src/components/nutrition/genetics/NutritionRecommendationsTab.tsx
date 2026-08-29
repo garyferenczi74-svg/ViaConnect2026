@@ -180,7 +180,7 @@ export function NutritionRecommendationsTab({ userId }: NutritionRecommendations
   if (total === 0) {
     return (
       <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054] p-6 text-center">
-        <h2 className="text-[15px] font-semibold text-white md:text-base">
+        <h2 className="text-xl font-semibold text-white">
           No recommendations yet
         </h2>
         <p className="mx-auto mt-1 max-w-md text-[13px] leading-relaxed text-white/[0.62]">

@@ -9,7 +9,7 @@ import {
 import { WearableBrandMark } from '@/components/body-tracker/connections/WearableBrandMark';
 
 const outlineBtn =
-  'flex min-h-[44px] shrink-0 items-center justify-center rounded-lg border border-teal bg-transparent px-3 text-xs font-semibold text-teal hover:bg-teal/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal/50';
+  'flex min-h-[44px] shrink-0 items-center justify-center rounded-lg border border-teal bg-transparent px-3 text-sm font-semibold text-teal hover:bg-teal/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal/50';
 
 // Brief 28 Gary re-lock: one chrome function for all six first-class tiles.
 // Resting is real grey Apple glass at HALF the prior fill/border alpha so
@@ -32,8 +32,8 @@ export function wearableTileCardChrome(selected: boolean): string {
 
 export function wearableTileTitleClassName(selected: boolean): string {
   return selected
-    ? 'text-sm font-bold leading-snug text-teal whitespace-normal break-words'
-    : 'text-sm font-semibold leading-snug text-white whitespace-normal break-words';
+    ? 'text-xl font-bold leading-snug text-teal whitespace-normal break-words'
+    : 'text-xl font-semibold leading-snug text-white whitespace-normal break-words';
 }
 
 interface WearableTileCardProps {

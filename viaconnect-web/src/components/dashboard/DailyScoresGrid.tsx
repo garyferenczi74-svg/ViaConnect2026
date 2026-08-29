@@ -132,12 +132,12 @@ export function DailyScoresGrid({
         <div className="min-w-0">
           <div className="mb-1.5 flex items-center gap-2">
             <Sparkles className="h-3.5 w-3.5 text-[#2DA5A0]" strokeWidth={1.5} />
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#2DA5A0]">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#2DA5A0]">
               Personal Wellness Dashboard
             </p>
           </div>
-          <h2 className="text-lg font-bold text-white sm:text-xl">Daily Scores</h2>
-          <p className="mt-0.5 text-xs text-white/40">
+          <h2 className="text-xl font-bold text-white sm:text-xl">Daily Scores</h2>
+          <p className="mt-0.5 text-sm text-white/85">
             Today&apos;s readiness across 8 core metrics
           </p>
         </div>

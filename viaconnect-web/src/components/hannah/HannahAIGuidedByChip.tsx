@@ -136,7 +136,7 @@ export function HannahAIGuidedByChip() {
         ref={buttonRef}
         type="button"
         onClick={togglePanel}
-        className="inline-flex min-h-[44px] flex-shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] text-white/75 backdrop-blur-sm"
+        className="inline-flex min-h-[44px] flex-shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-sm text-white/90 backdrop-blur-sm"
         aria-label={`Open chat guided by ${displayName}`}
         aria-expanded={open}
         aria-controls={panelDomId}

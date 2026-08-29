@@ -78,15 +78,15 @@ describe('NutritionHub source', () => {
     expect(source).not.toContain('totalDailyMacrosScore');
   });
 
-  it('Row 1 score and macro gauges use the teal hub metric at size 176', () => {
+  it('Row 1 score and macro gauges use the teal hub metric at the shared main plasma floor', () => {
     expect(source).toContain("from '@/components/gauges/PlasmaGauge'");
     expect(source).toContain('<PlasmaGauge');
     // Both Row 1 gauges carry the teal hub finish, not nutrition / mealscore.
     expect(source).toContain("metric=\"plasmateal\"");
     expect(source).toContain("metric: 'plasmateal'");
-    // Row 1 gauges are size 176 (the props object and the score call site).
-    expect(source).toContain('size: 176');
-    expect(source).toContain('size={176}');
+    expect(source).toContain('PLASMA_MAIN_MOBILE');
+    expect(source).toContain('size: PLASMA_MAIN_MOBILE');
+    expect(source).toContain('size={PLASMA_MAIN_MOBILE}');
   });
 
   it('Row 1 captions read OF 100 on the score and OF TARGET on the macros gauge', () => {

@@ -156,7 +156,7 @@ export function TodaysMealsSummary(props: TodaysMealsSummaryProps) {
       <header className="flex items-center justify-between gap-3 px-4 py-3 md:px-5 md:py-4">
         <div className="flex items-center gap-2">
           <UtensilsCrossed className="h-4 w-4 text-white/70" strokeWidth={1.5} />
-          <h2 className="text-[15px] font-semibold text-white">Today&apos;s Meals</h2>
+          <h2 className="text-xl font-semibold text-white">Today&apos;s Meals</h2>
         </div>
         <span className="rounded-full bg-white/10 px-2 py-0.5 text-[12px] tabular-nums text-white/80">
           {todaysMeals.length}

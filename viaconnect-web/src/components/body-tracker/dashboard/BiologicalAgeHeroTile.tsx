@@ -8,6 +8,10 @@ import {
   BIOLOGICAL_AGE_FRAMING_DRAFT,
   type BiologicalAgeResult,
 } from '@/lib/body-tracker/biological-age';
+import {
+  CONSUMER_EYEBROW,
+  PLASMA_MAIN_MOBILE,
+} from '@/lib/ui/consumerChrome';
 
 interface BiologicalAgeHeroTileProps {
   result: BiologicalAgeResult | null;
@@ -54,7 +58,7 @@ export function BiologicalAgeHeroTile({
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2">
           <FlaskConical className="h-4 w-4 text-[#2DA5A0]" strokeWidth={1.5} />
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-white/50">
+          <span className={CONSUMER_EYEBROW}>
             {BIOLOGICAL_AGE_FRAMING_DRAFT.title}
           </span>
           <span className="rounded-full border border-[#B75E18]/40 bg-[#B75E18]/10 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[#F0A24E]">
@@ -92,7 +96,7 @@ export function BiologicalAgeHeroTile({
             <PlasmaGauge
               metric="bioscore"
               variant="hero"
-              size={180}
+              size={PLASMA_MAIN_MOBILE}
               empty
               showUnit={false}
               ariaLabel="Biological Age UNKNOWN"
@@ -101,7 +105,7 @@ export function BiologicalAgeHeroTile({
             <PlasmaGauge
               metric="bioscore"
               variant="hero"
-              size={180}
+              size={PLASMA_MAIN_MOBILE}
               value={Math.max(1, confidence)}
               max={100}
               displayValue={display}

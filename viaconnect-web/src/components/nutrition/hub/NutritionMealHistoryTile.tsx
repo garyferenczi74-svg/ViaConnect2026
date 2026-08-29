@@ -215,7 +215,7 @@ export function NutritionMealHistoryTile({
       />
 
       <header className="relative z-[2] px-4 py-3 md:px-5 md:py-4">
-        <h2 className="text-[15px] font-semibold text-white">7 day meal history</h2>
+        <h2 className="text-xl font-semibold text-white">7 day meal history</h2>
       </header>
 
       <div className="relative z-[2] flex flex-col items-stretch gap-5 px-4 pb-4 md:flex-row md:items-center md:gap-7 md:px-5 md:pb-5">

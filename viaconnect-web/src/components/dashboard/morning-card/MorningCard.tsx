@@ -22,6 +22,7 @@ import { buildMorningChips, chipByKey } from '@/lib/dashboard/morning-card/contr
 import { type MorningChipKey } from '@/lib/dashboard/morning-card/keys';
 import { MorningChipGrid } from './MorningChipGrid';
 import { MorningContributorList } from './MorningContributorList';
+import { CONSUMER_EYEBROW, CONSUMER_SOURCE_PILL } from '@/lib/ui/consumerChrome';
 
 export function MorningCard() {
   const schedule = useDailyScheduleView();
@@ -64,7 +65,7 @@ export function MorningCard() {
 
       <div className="relative flex flex-col gap-5 md:gap-6">
         <div className="grid grid-cols-1 justify-items-center gap-4 md:grid-cols-[auto_minmax(0,1fr)] md:grid-rows-[auto_auto] md:items-center md:justify-items-stretch md:gap-x-10 md:gap-y-0">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-white/85 md:col-start-1 md:row-start-1">
+          <p className={`${CONSUMER_EYEBROW} md:col-start-1 md:row-start-1`}>
             {MORNING_CARD_SCORE_LABEL}
           </p>
           <div className="md:col-start-1 md:row-start-2">
@@ -87,14 +88,14 @@ export function MorningCard() {
                 {hannahBos.result.chips.map((chip) => (
                   <span
                     key={chip}
-                    className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] text-white/90"
+                    className={CONSUMER_SOURCE_PILL}
                   >
                     {chip}
                   </span>
                 ))}
               </div>
             ) : (
-              <p className="text-center text-[10px] text-white/80">
+              <p className="text-center text-sm text-white/85">
                 {BOS_UNKNOWN_NEVER_ZERO_COPY}
               </p>
             )}
