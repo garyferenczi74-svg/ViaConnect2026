@@ -1,26 +1,32 @@
-// Prompt 231: submit route for the 4-pose scan. Verifies consent
-// server-side, snapshots height, writes ONE body_photo_sessions row plus its
-// body_photo_session_frames children through a strict field whitelist, and
-// only returns success after the capture_status='ready' UPDATE confirms.
+// Prompt 231: finalize route for the 4-pose scan (Task 16a re-architecture:
+// replaces Task 13's /api/scan/submit, which took all 4 JPEG bytes in one
+// multipart POST and risked Vercel's 4.5MB request-body cap). The client has
+// already uploaded full + thumb bytes DIRECTLY to Storage via the signed
+// upload URLs minted by POST /api/scan/prepare - this route never receives
+// image bytes, only JSON metadata plus the object paths the client reports
+// having uploaded to.
 //
-// Bucket is the EXISTING private body-progress-photos bucket (converge, no
-// new bucket). Path convention matches PhotoSessionCapture.tsx (the live
-// journal_v0 flow): `${userId}/${sessionId}/${pose}_full_${ts}.jpg` and
-// `${userId}/${sessionId}/${pose}_thumb_${ts}.jpg`. No thumbnail pipeline
-// exists yet, so the thumb path is a second upload of the same JPEG bytes
-// (never NULL, per the live gallery's expectation).
+// Every reported path is checked twice before it is ever written onto the
+// session row or handed to the read side: (1) it must match the EXACT
+// pattern this user/session/pose/variant was authorized to write in
+// prepare (`${userId}/${sessionId}/${pose}_{full|thumb}_${ts}.jpg`) - this
+// stops a client from reporting another user's real (existing) object path
+// and having it land on this session's {pose}_full_path /
+// {pose}_thumb_path column, which /api/scan/signed-url later signs
+// unconditionally; (2) storage.exists() must confirm the object is actually
+// there. Either failure marks that pose 'partial' and the path is never
+// written - never a faked success.
 //
-// Never trusts a client-supplied user_id: the admin client only writes rows
-// scoped to the id derived from supabase.auth.getUser(). Landmarks are
-// stripped from the frame insert unless SCAN_PERSIST_LANDMARKS is truthy
-// (G81, default OFF); the insert never spreads client JSON.
+// Frame rows use the Task 13 STRICT field whitelist (never a client-JSON
+// spread); landmarks only when SCAN_PERSIST_LANDMARKS is truthy (G81,
+// default OFF). capture_status='ready' is only returned after that UPDATE
+// re-selects and confirms the value. Logs carry sessionId/pose only, never
+// an object path or image bytes.
 
 import { NextRequest, NextResponse } from 'next/server';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { hasScanConsent } from '@/lib/scan/scanConsentGate';
-import { readHeightCm } from '@/lib/scan/readHeightCm';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { inMemoryRateLimit } from '@/lib/utils/inMemoryRateLimit';
 import { safeLog } from '@/lib/utils/safe-log';
@@ -29,15 +35,16 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 const BUCKET = 'body-progress-photos';
-const SCOPE = 'api.scan.submit';
+const SCOPE = 'api.scan.finalize';
 const DB_TIMEOUT_MS = 5000;
-const UPLOAD_TIMEOUT_MS = 8000;
-const UPLOAD_MAX_ATTEMPTS = 2;
-const RATE_LIMIT_MAX = 5;
+const EXISTS_TIMEOUT_MS = 5000;
+const RATE_LIMIT_MAX = 10;
 const RATE_LIMIT_WINDOW_MS = 60_000;
 
 const VIEWS = ['front', 'right', 'back', 'left'] as const;
 type View = (typeof VIEWS)[number];
+type Variant = 'full' | 'thumb';
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function isView(v: unknown): v is View {
   return typeof v === 'string' && (VIEWS as readonly string[]).includes(v);
@@ -50,6 +57,11 @@ interface ParsedQa {
   mode: 'landmarker' | 'weak';
 }
 
+interface ParsedPaths {
+  full: string;
+  thumb: string;
+}
+
 interface ParsedFrame {
   view: View;
   skipped: boolean;
@@ -59,22 +71,16 @@ interface ParsedFrame {
   capturedAt: string;
   retryCount: number;
   landmarks: unknown[] | undefined;
+  paths: ParsedPaths | null;
 }
 
 /** Strict whitelist parse of the client "frames" field. Never trusts shape. */
-function parseFramesField(raw: FormDataEntryValue | null): ParsedFrame[] | null {
-  if (typeof raw !== 'string') return null;
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    return null;
-  }
-  if (!Array.isArray(parsed) || parsed.length !== VIEWS.length) return null;
+function parseFramesField(raw: unknown): ParsedFrame[] | null {
+  if (!Array.isArray(raw) || raw.length !== VIEWS.length) return null;
 
   const result: ParsedFrame[] = [];
   const seen = new Set<View>();
-  for (const item of parsed) {
+  for (const item of raw) {
     if (typeof item !== 'object' || item === null) return null;
     const rec = item as Record<string, unknown>;
     if (!isView(rec.view) || seen.has(rec.view)) return null;
@@ -90,38 +96,43 @@ function parseFramesField(raw: FormDataEntryValue | null): ParsedFrame[] | null 
       mode: qaRec.mode === 'landmarker' ? 'landmarker' : 'weak',
     };
 
+    const skipped = Boolean(rec.skipped);
+    let paths: ParsedPaths | null = null;
+    if (!skipped) {
+      const pathsRaw = rec.paths;
+      if (typeof pathsRaw === 'object' && pathsRaw !== null) {
+        const pr = pathsRaw as Record<string, unknown>;
+        if (typeof pr.full === 'string' && typeof pr.thumb === 'string') {
+          paths = { full: pr.full, thumb: pr.thumb };
+        }
+      }
+    }
+
     result.push({
       view: rec.view,
-      skipped: Boolean(rec.skipped),
+      skipped,
       qa,
       capturedWidth: typeof rec.capturedWidth === 'number' ? rec.capturedWidth : 0,
       capturedHeight: typeof rec.capturedHeight === 'number' ? rec.capturedHeight : 0,
       capturedAt: typeof rec.capturedAt === 'string' ? rec.capturedAt : new Date().toISOString(),
       retryCount: typeof rec.retryCount === 'number' ? rec.retryCount : 0,
       landmarks: Array.isArray(rec.landmarks) ? rec.landmarks : undefined,
+      paths,
     });
   }
   if (!VIEWS.every((v) => seen.has(v))) return null;
   return result;
 }
 
-/** UA FAMILY ONLY (condition 10): no raw UA string, no identifiers. */
-function deriveDeviceInfo(userAgent: string | null): { family: string; platform: string } {
-  const ua = userAgent ?? '';
-  let family = 'unknown';
-  if (/Edg\//.test(ua)) family = 'Edge';
-  else if (/CriOS\//.test(ua) || (/Chrome\//.test(ua) && !/OPR\//.test(ua))) family = 'Chrome';
-  else if (/FxiOS\//.test(ua) || /Firefox\//.test(ua)) family = 'Firefox';
-  else if (/Safari\//.test(ua) && !/Chrome\//.test(ua)) family = 'Safari';
+function escapeForRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
-  let platform = 'unknown';
-  if (/iPhone|iPad|iPod/.test(ua)) platform = 'iOS';
-  else if (/Android/.test(ua)) platform = 'Android';
-  else if (/Windows/.test(ua)) platform = 'Windows';
-  else if (/Macintosh|Mac OS X/.test(ua)) platform = 'macOS';
-  else if (/Linux/.test(ua)) platform = 'Linux';
-
-  return { family, platform };
+/** The EXACT path pattern prepare authorized for this user/session/pose. */
+function expectedPathRegex(userId: string, sessionId: string, view: View, variant: Variant): RegExp {
+  return new RegExp(
+    `^${escapeForRegex(userId)}/${escapeForRegex(sessionId)}/${view}_${variant}_\\d+\\.jpg$`,
+  );
 }
 
 interface DbResult<T> {
@@ -144,34 +155,20 @@ async function dbCall<T>(promise: unknown, label: string): Promise<DbResult<T>> 
   }
 }
 
-async function uploadOnce(
-  admin: SupabaseClient,
-  path: string,
-  bytes: Blob,
-): Promise<boolean> {
+async function checkExists(admin: SupabaseClient, path: string): Promise<boolean> {
   try {
-    const res = await withTimeout<{ error: { message: string } | null }>(
-      Promise.resolve(
-        admin.storage.from(BUCKET).upload(path, bytes, {
-          cacheControl: '3600',
-          upsert: false,
-          contentType: 'image/jpeg',
-        }),
-      ) as Promise<{ error: { message: string } | null }>,
-      UPLOAD_TIMEOUT_MS,
-      `${SCOPE}.upload`,
+    const res = await withTimeout<{ data: boolean; error: { message: string } | null }>(
+      Promise.resolve(admin.storage.from(BUCKET).exists(path)) as Promise<{
+        data: boolean;
+        error: { message: string } | null;
+      }>,
+      EXISTS_TIMEOUT_MS,
+      `${SCOPE}.exists`,
     );
-    return !res.error;
+    return !res.error && res.data === true;
   } catch {
     return false;
   }
-}
-
-async function uploadWithRetry(admin: SupabaseClient, path: string, bytes: Blob): Promise<boolean> {
-  for (let attempt = 1; attempt <= UPLOAD_MAX_ATTEMPTS; attempt++) {
-    if (await uploadOnce(admin, path, bytes)) return true;
-  }
-  return false;
 }
 
 async function markPartial(admin: SupabaseClient, sessionId: string): Promise<void> {
@@ -188,135 +185,86 @@ async function markPartial(admin: SupabaseClient, sessionId: string): Promise<vo
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const supabase = await createClient();
-    const { data: userData } = await withTimeout(
-      supabase.auth.getUser(),
-      5000,
-      `${SCOPE}.auth`,
-    );
+    const { data: userData } = await withTimeout(supabase.auth.getUser(), 5000, `${SCOPE}.auth`);
     const user = userData.user;
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    if (!inMemoryRateLimit(`scan-submit:${user.id}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_MS)) {
+    if (!inMemoryRateLimit(`scan-finalize:${user.id}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_MS)) {
       return NextResponse.json({ ok: false, error: 'rate_limited' }, { status: 429 });
     }
 
-    // Consent gate FIRST. Never write before this resolves ok:true.
-    const consent = await hasScanConsent(user.id);
-    if (!consent.ok || !consent.version) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: 'consent_required',
-          nextAction: 'Review and accept the scan consent notice, then try again.',
-        },
-        { status: 403 },
-      );
-    }
-
-    const form = await request.formData().catch(() => null);
-    if (!form) {
+    const body = await request.json().catch(() => null);
+    if (!body || typeof body !== 'object') {
       return NextResponse.json({ ok: false, error: 'invalid_request' }, { status: 400 });
     }
-
-    const frames = parseFramesField(form.get('frames'));
+    const { sessionId, frames: framesRaw } = body as Record<string, unknown>;
+    if (typeof sessionId !== 'string' || !UUID_RE.test(sessionId)) {
+      return NextResponse.json({ ok: false, error: 'invalid_request' }, { status: 400 });
+    }
+    const frames = parseFramesField(framesRaw);
     if (!frames) {
       return NextResponse.json({ ok: false, error: 'invalid_request' }, { status: 400 });
-    }
-
-    // Every non-skipped frame must carry its blob.
-    const blobs = new Map<View, Blob>();
-    for (const frame of frames) {
-      if (frame.skipped) continue;
-      const entry = form.get(`frame_${frame.view}`);
-      if (!(entry instanceof Blob) || entry.size === 0) {
-        return NextResponse.json({ ok: false, error: 'invalid_request' }, { status: 400 });
-      }
-      blobs.set(frame.view, entry);
     }
 
     const persistLandmarks =
       process.env.SCAN_PERSIST_LANDMARKS === 'true' || process.env.SCAN_PERSIST_LANDMARKS === '1';
 
-    const heightCm = await readHeightCm(supabase, user.id);
-    const deviceInfo = deriveDeviceInfo(request.headers.get('user-agent'));
-
     const admin: SupabaseClient = createAdminClient();
 
-    const sessionInsert = await dbCall<{ id: string }>(
-      admin
-        .from('body_photo_sessions')
-        .insert({
-          user_id: user.id,
-          protocol: '4pose_v1',
-          capture_status: 'uploading',
-          consent_version: consent.version,
-          device_info: deviceInfo,
-          height_cm_at_scan: heightCm,
-          height_cm_source: heightCm !== null ? 'clinical_assessment' : null,
-        })
-        .select('id')
-        .single(),
-      'sessionInsert',
+    // Ownership resolved ONLY through the parent session filtered by
+    // user_id (mirrors signed-url/delete). Not found or owned by someone
+    // else: identical 404, never disclose which.
+    const sessionRead = await dbCall<{ id: string }>(
+      admin.from('body_photo_sessions').select('id').eq('id', sessionId).eq('user_id', user.id).maybeSingle(),
+      'sessionRead',
     );
-    if (sessionInsert.error || !sessionInsert.data) {
-      safeLog.error(SCOPE, 'session insert failed', { error: sessionInsert.error });
-      return NextResponse.json({ ok: false, error: 'session_create_failed' }, { status: 500 });
+    if (sessionRead.error) {
+      safeLog.error(SCOPE, 'session lookup error', { error: sessionRead.error });
+      return NextResponse.json({ ok: false, error: 'lookup_failed' }, { status: 500 });
     }
-    const sessionId = sessionInsert.data.id;
+    if (!sessionRead.data) {
+      return NextResponse.json({ ok: false, error: 'not_found' }, { status: 404 });
+    }
 
-    // Upload phase: each non-skipped pose gets full + thumb (same bytes;
-    // no thumbnail pipeline exists yet, so thumb is never left NULL).
-    const ts = Date.now();
+    // Phase 1: validate + confirm each reported object path BEFORE it is
+    // ever written to the session row.
     const pathPatch: Record<string, string> = {};
     const failedPoses: string[] = [];
 
     for (const frame of frames) {
       if (frame.skipped) continue;
-      const bytes = blobs.get(frame.view);
-      if (!bytes) {
+      if (!frame.paths) {
         failedPoses.push(frame.view);
         continue;
       }
-      const fullPath = `${user.id}/${sessionId}/${frame.view}_full_${ts}.jpg`;
-      const thumbPath = `${user.id}/${sessionId}/${frame.view}_thumb_${ts}.jpg`;
-
-      const [fullOk, thumbOk] = await Promise.all([
-        uploadWithRetry(admin, fullPath, bytes),
-        uploadWithRetry(admin, thumbPath, bytes),
-      ]);
-
+      const fullOk = expectedPathRegex(user.id, sessionId, frame.view, 'full').test(frame.paths.full);
+      const thumbOk = expectedPathRegex(user.id, sessionId, frame.view, 'thumb').test(frame.paths.thumb);
       if (!fullOk || !thumbOk) {
+        safeLog.warn(SCOPE, 'reported path pattern mismatch, rejected', { sessionId, pose: frame.view });
         failedPoses.push(frame.view);
         continue;
       }
-      pathPatch[`${frame.view}_full_path`] = fullPath;
-      pathPatch[`${frame.view}_thumb_path`] = thumbPath;
-    }
-
-    if (failedPoses.length > 0) {
-      safeLog.warn(SCOPE, 'upload failed for pose(s)', { sessionId, failedPoses });
-      if (Object.keys(pathPatch).length > 0) {
-        await dbCall(
-          admin.from('body_photo_sessions').update(pathPatch).eq('id', sessionId).select('id').single(),
-          'pathPatchPartial',
-        );
+      const [fullExists, thumbExists] = await Promise.all([
+        checkExists(admin, frame.paths.full),
+        checkExists(admin, frame.paths.thumb),
+      ]);
+      if (!fullExists || !thumbExists) {
+        failedPoses.push(frame.view);
+        continue;
       }
-      await markPartial(admin, sessionId);
-      return NextResponse.json(
-        {
-          ok: false,
-          error: 'upload_failed',
-          sessionId,
-          failedPoses,
-          nextAction: 'Retry upload for the listed pose(s).',
-        },
-        { status: 502 },
-      );
+      pathPatch[`${frame.view}_full_path`] = frame.paths.full;
+      pathPatch[`${frame.view}_thumb_path`] = frame.paths.thumb;
     }
 
     if (Object.keys(pathPatch).length > 0) {
       const pathUpdate = await dbCall(
-        admin.from('body_photo_sessions').update(pathPatch).eq('id', sessionId).select('id').single(),
+        admin
+          .from('body_photo_sessions')
+          .update(pathPatch)
+          .eq('id', sessionId)
+          .eq('user_id', user.id)
+          .select('id')
+          .single(),
         'pathUpdate',
       );
       if (pathUpdate.error) {
@@ -330,7 +278,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     // Frame rows via a STRICT field whitelist. Never spread client JSON.
-    // landmarks included ONLY when the server flag is truthy (G81, default OFF).
+    // Always inserted regardless of failedPoses: this table carries no
+    // image path, only capture metadata, so a failed-to-confirm pose still
+    // gets its attempt recorded.
     const frameRows = frames.map((frame) => {
       const row: Record<string, unknown> = {
         session_id: sessionId,
@@ -349,16 +299,36 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return row;
     });
 
+    // upsert on (session_id, view), never a bare insert: a client that
+    // retries finalize after losing the response (the exact scenario this
+    // route exists to make safe) must not hit the UNIQUE(session_id, view)
+    // constraint. Rows are server-whitelisted and admin-written, so
+    // refreshing on conflict is correct here.
     const frameInsert = await dbCall(
-      admin.from('body_photo_session_frames').insert(frameRows),
-      'frameInsert',
+      admin.from('body_photo_session_frames').upsert(frameRows, { onConflict: 'session_id,view' }),
+      'frameUpsert',
     );
     if (frameInsert.error) {
-      safeLog.error(SCOPE, 'frame insert failed', { sessionId, error: frameInsert.error });
+      safeLog.error(SCOPE, 'frame upsert failed', { sessionId, error: frameInsert.error });
       await markPartial(admin, sessionId);
       return NextResponse.json(
         { ok: false, error: 'frame_save_failed', sessionId, nextAction: 'Retry.' },
         { status: 500 },
+      );
+    }
+
+    if (failedPoses.length > 0) {
+      safeLog.warn(SCOPE, 'pose(s) could not be confirmed in storage', { sessionId, failedPoses });
+      await markPartial(admin, sessionId);
+      return NextResponse.json(
+        {
+          ok: false,
+          error: 'incomplete_upload',
+          sessionId,
+          failedPoses,
+          nextAction: 'Retry upload for the listed pose(s) and finalize again.',
+        },
+        { status: 422 },
       );
     }
 
@@ -369,6 +339,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         .from('body_photo_sessions')
         .update({ capture_status: 'ready' })
         .eq('id', sessionId)
+        .eq('user_id', user.id)
         .select('capture_status')
         .single(),
       'readyUpdate',
@@ -382,7 +353,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    safeLog.info(SCOPE, 'scan submitted', { sessionId });
+    safeLog.info(SCOPE, 'scan finalized', { sessionId });
     return NextResponse.json({ ok: true, sessionId, failedPoses: [] });
   } catch (error) {
     if (isTimeoutError(error)) {
