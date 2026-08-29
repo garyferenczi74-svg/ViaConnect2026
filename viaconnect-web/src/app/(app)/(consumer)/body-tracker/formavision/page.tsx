@@ -37,6 +37,7 @@ import { useUserJourney } from '@/hooks/body-tracker/useUserJourney';
 import { useCurrentUser } from '@/components/body-tracker/manual-input';
 import { BodyScanUploader, type BodyScanResult } from '@/components/body-tracker/BodyScanUploader';
 import { BodyScanResults } from '@/components/body-tracker/BodyScanResults';
+import { ScanHistorySection } from '@/components/scan/ScanHistorySection';
 import { persistScan } from '@/lib/body-tracker/composition/persistScanClient';
 import { isJourneyCompositionPoint } from '@/lib/body-tracker/composition/journeyPoints';
 import type { MeasurementUnit } from '@/lib/body-tracker/circumference';
@@ -340,6 +341,11 @@ function FormaVisionSurface() {
             : 'Scan your body or log measurements to build your 3D form. No photographic surface reconstruction.'}
         </p>
       </header>
+
+      {/* Prompt 231: additive "Your scans" list for the new 4-pose guided
+          flow (src/lib/scan). Never repoints or replaces the legacy "Scan
+          My Body" button/panel above, which stays on the old uploader. */}
+      <ScanHistorySection userId={userId ?? null} />
 
       {!hasScanData && (
         <div

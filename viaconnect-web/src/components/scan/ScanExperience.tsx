@@ -7,13 +7,15 @@
  * 6). The real MediaPipe pose landmarker gates the ARMED/COUNT live
  * pre-check and the CAPTURE shot QA; evaluateWeakFrame is the fallback path
  * when the landmarker fails to load (mode 'weak'), so the flow stays
- * exercisable end to end either way. The submit route does not exist yet
- * (a later task): the Review "Use these scans" button stays disabled with a
- * visible note rather than faking a success.
+ * exercisable end to end either way. "Use these scans" runs the real
+ * prepare/upload/finalize persist flow (submitFlow.runSubmit over
+ * persist.ts) and only ever reports success after a server-confirmed
+ * ok:true - never optimistically.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { COMPOSITION_PATH } from '@/lib/body-tracker/compositionNav';
 import { useScanSession } from '@/hooks/scan/useScanSession';
 import { useCountdown } from '@/hooks/scan/useCountdown';
@@ -29,6 +31,8 @@ import { POSE_ORDER, INTERSTITIAL } from '@/lib/scan/poses';
 import { evaluatePose, evaluateWeakFrame, messageForCode } from '@/lib/scan/qa';
 import { computeWeakQaInputFromBlob, blobToCanvas } from '@/lib/scan/captureStillMetrics';
 import { revokeFrame, revokeAllFrames, qaResultToAction } from '@/lib/scan/scanFlowDriver';
+import { runSubmit } from '@/lib/scan/submitFlow';
+import { scanResultPath } from '@/lib/scan/routes';
 import {
   WALK_IN_COACHING,
   ARMED_COACHING,
@@ -43,6 +47,7 @@ import {
   SCAN_PRECHECK_TIMEOUT_MS,
   SCAN_CHECKING_POSE_TIMEOUT_MS,
   SCAN_POSE_TITLE_MS,
+  SCAN_SUBMIT_WATCHDOG_MS,
 } from '@/lib/scan/scanTimeouts';
 import { withTimeout } from '@/lib/utils/with-timeout';
 import type { Landmark, ScanFrame } from '@/lib/scan/types';
@@ -125,6 +130,21 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
   const framesRef = useRef(state.frames);
   framesRef.current = state.frames;
   const cameraOpenWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // One scanId per scan ATTEMPT (spans retries), so a retried Submit reuses
+  // the same id and prepare/finalize stay idempotent (persist.ts's
+  // contract). Regenerated only when a new scan begins - i.e. whenever the
+  // reducer
+  // re-enters SETUP, which DISCARD and RESET (CAMERA_LOST recovery) both do
+  // via initialScanState(). A retry from REVIEW never touches SETUP, so the
+  // id is preserved across SUBMIT_FAIL -> Submit again.
+  const scanIdRef = useRef<string>(crypto.randomUUID());
+  useEffect(() => {
+    if (state.phase === 'SETUP') {
+      scanIdRef.current = crypto.randomUUID();
+    }
+  }, [state.phase]);
+  const submitAttemptRef = useRef(0);
 
   useEffect(() => {
     setVoiceEnabled(readVoicePreference());
@@ -476,11 +496,36 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
     dispatch({ type: 'RESET' });
   }, [dispatch]);
 
-  // TODO for Task 13: wire the real submit route (POST body_photo_sessions +
-  // body_photo_session_frames per the converge migration, condition 26).
-  // That route does not exist yet, so "Use these scans" stays disabled with
-  // a visible note rather than claiming a success this build cannot back up.
-  const submitDisabledReason = 'Saving is not available yet. This ships in a later prompt.';
+  // ---- Submit ("Use these scans"): runs the prepare -> upload -> finalize
+  // flow (persist.ts, wired via submitFlow.runSubmit) and only ever reports
+  // success after a server-confirmed ok:true (condition 24c - never before,
+  // never optimistically). A retry from REVIEW after SUBMIT_FAIL reuses the
+  // same scanIdRef, so it lands on the same session rather than minting a
+  // new one. The outer withTimeout is a backstop against a hang somewhere
+  // in that chain, not the normal path - see SCAN_SUBMIT_WATCHDOG_MS. ----
+  const handleSubmit = useCallback(() => {
+    if (state.phase !== 'REVIEW') return;
+    const attempt = ++submitAttemptRef.current;
+    const scanId = scanIdRef.current;
+    void (async () => {
+      try {
+        await withTimeout(
+          runSubmit(dispatch, scanId, framesRef.current),
+          SCAN_SUBMIT_WATCHDOG_MS,
+          'scan.persist.submit',
+        );
+      } catch {
+        // Backstop only: runSubmit itself already dispatches SUBMIT_FAIL on
+        // every normal (non-hang) failure well before this could fire. The
+        // attempt check avoids stomping a phase a later retry has already
+        // moved past; the reducer's UPLOADING-only guard on SUBMIT_FAIL
+        // makes a duplicate dispatch harmless either way.
+        if (submitAttemptRef.current === attempt) {
+          dispatch({ type: 'SUBMIT_FAIL', error: 'Saving is taking longer than expected. Retry.' });
+        }
+      }
+    })();
+  }, [state.phase, dispatch]);
 
   if (!consentAcknowledged) {
     return <ConsentNotice onAcknowledged={() => setConsentAcknowledged(true)} />;
@@ -657,9 +702,8 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
             onToggleVoice={toggleVoice}
             onRetake={handleRetake}
             onDiscard={handleDiscard}
-            onSubmit={() => undefined}
-            submitDisabled
-            submitDisabledReason={submitDisabledReason}
+            onSubmit={handleSubmit}
+            submitDisabled={false}
             submitError={state.error}
           />
         </div>
@@ -672,8 +716,22 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
       )}
 
       {state.phase === 'DONE' && (
-        <div className="flex h-full min-h-[70vh] flex-col items-center justify-center gap-2 p-6 text-center" data-testid="scan-done">
+        <div className="flex h-full min-h-[70vh] flex-col items-center justify-center gap-3 p-6 text-center" data-testid="scan-done">
           <p className="text-sm text-white/80">Scan saved.</p>
+          {state.scanId && (
+            <>
+              <p className="text-xs text-white/50" data-testid="scan-done-id">
+                Scan ID: {state.scanId}
+              </p>
+              <Link
+                href={scanResultPath(state.scanId)}
+                data-testid="scan-done-view-link"
+                className="rounded-xl bg-[var(--teal)] px-5 py-2.5 text-sm font-semibold text-white"
+              >
+                View scan
+              </Link>
+            </>
+          )}
         </div>
       )}
 

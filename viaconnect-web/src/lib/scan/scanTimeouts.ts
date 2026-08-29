@@ -21,9 +21,23 @@ export const SCAN_PRECHECK_TIMEOUT_MS = 600;
  * not that the pose failed QA). */
 export const SCAN_CHECKING_POSE_TIMEOUT_MS = 4000;
 
-/** "Saving..." watchdog for the eventual Task 13 submit call. Next action
- * on expiry: return to Review with an error naming Retry. */
+/** "Saving..." watchdog, reused as the per-call timeout inside persistScan
+ * (prepare fetch, each pose's uploadToSignedUrl, finalize fetch - see
+ * persist.ts). Next action on expiry of any one call: persistScan returns
+ * ok:false with a nextAction string; ScanExperience turns that into
+ * SUBMIT_FAIL, returning to Review with Retry named, never a false
+ * success. */
 export const SCAN_SAVING_TIMEOUT_MS = 15000;
+
+/** Outer backstop for the whole Submit flow (prepare + up to 4 pose
+ * upload-pairs + finalize, each already individually bounded by
+ * SCAN_SAVING_TIMEOUT_MS inside persistScan). persistScan is designed to
+ * never hang - every await it makes is already time-boxed - so this is
+ * defense in depth against a hang somewhere in that chain, not expected to
+ * fire before persistScan's own internal timeouts have already resolved
+ * it. Next action on expiry: return to Review with Retry, never a false
+ * success (228 Rule 1). */
+export const SCAN_SUBMIT_WATCHDOG_MS = SCAN_SAVING_TIMEOUT_MS * 6 + 5000;
 
 /** Pose title card display duration before ARMED begins. */
 export const SCAN_POSE_TITLE_MS = 2000;
