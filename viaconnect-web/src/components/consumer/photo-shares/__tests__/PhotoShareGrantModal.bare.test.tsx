@@ -5,11 +5,18 @@
  * never invoked by a static render, so only the render-time states are
  * covered here; the actual grantPhotoShare submission, timeout, and error
  * mapping paths are deferred to Playwright / the device matrix.
+ *
+ * Prompt 231b fix: PhotoShareGrantLoadingState (the practitioners === null
+ * branch) is tested directly with timedOut as a prop, since useEffect
+ * (and therefore the real setTimeout) never runs under
+ * renderToStaticMarkup. The real modal is also rendered with
+ * practitioners: null to confirm the immediate (pre-timeout) Close
+ * affordance is present without relying on any timer.
  */
 import { describe, it, expect } from 'vitest';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { PhotoShareGrantModal } from '../PhotoShareGrantModal';
+import { PhotoShareGrantModal, PhotoShareGrantLoadingState } from '../PhotoShareGrantModal';
 import type { ShareablePractitioner } from '@/lib/photo-shares/types';
 
 const NOOP = () => {};
@@ -71,6 +78,42 @@ describe('PhotoShareGrantModal - no linked practitioners', () => {
       'You have no linked practitioners yet. A practitioner must add you to their care team before you can share.',
     );
     expect(html).not.toContain('photo-share-grant-list');
+  });
+});
+
+describe('PhotoShareGrantModal - practitioner list still loading', () => {
+  it('never renders a bare spinner with no way out: Close is present before the timeout', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(PhotoShareGrantModal, {
+        open: true,
+        practitioners: null,
+        onClose: NOOP,
+        onConfirm: NEVER_CONFIRM,
+        onGranted: NOOP,
+      }),
+    );
+    expect(html).toContain('photo-share-grant-close');
+    expect(html).toMatch(/close/i);
+  });
+});
+
+describe('PhotoShareGrantLoadingState - named exit and timeout copy', () => {
+  it('shows only the spinner and a Close action before the timeout, no failure copy', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(PhotoShareGrantLoadingState, { timedOut: false, onClose: NOOP }),
+    );
+    expect(html).toContain('photo-share-grant-close');
+    expect(html).not.toContain('photo-share-grant-load-error');
+  });
+
+  it('shows the named failure copy and Close action once timed out', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(PhotoShareGrantLoadingState, { timedOut: true, onClose: NOOP }),
+    );
+    expect(html).toContain('photo-share-grant-load-error');
+    expect(html).toContain('Could not load your practitioners. Close and try again.');
+    expect(html).toContain('photo-share-grant-close');
+    expect(html).toMatch(/close/i);
   });
 });
 

@@ -42,7 +42,7 @@ export function PhotoSharesView({
           type="button"
           data-testid="photo-shares-grant-open"
           onClick={onOpenGrant}
-          disabled={stillLoading}
+          disabled={stillLoading || loadError}
           className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--teal)] hover:text-[var(--teal)]/80 px-3 py-1.5 rounded-lg border border-[var(--teal)]/25 hover:border-[var(--teal)]/50 transition-all disabled:opacity-50"
         >
           <Share2 className="w-3.5 h-3.5" strokeWidth={1.5} />

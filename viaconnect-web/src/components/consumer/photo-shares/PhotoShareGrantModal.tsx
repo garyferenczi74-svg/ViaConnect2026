@@ -19,6 +19,10 @@ import type { GrantPhotoShareResult } from '@/lib/photo-shares/photoShares';
 
 const SAVE_TIMEOUT_MS = 10000;
 const SAVE_TIMEOUT_MESSAGE = 'Sharing is taking longer than expected. Try again.';
+// Prompt 231b fix: named exit + timeout for the practitioners === null
+// (still loading) branch, so it is never a bare spinner with no way out.
+const PRACTITIONERS_LOAD_TIMEOUT_MS = 8000;
+const PRACTITIONERS_LOAD_ERROR_MESSAGE = 'Could not load your practitioners. Close and try again.';
 
 type ConfirmState = 'idle' | 'saving' | 'error';
 
@@ -33,6 +37,36 @@ function reasonMessage(reason: GrantFailureReason): string {
     default:
       return 'Something went wrong. Try again.';
   }
+}
+
+// Prompt 231b fix: pure, prop-driven so the timed-out state renders in a
+// bare renderToStaticMarkup test without needing real timers. Always shows
+// a named Close action, even before the timeout fires.
+export interface PhotoShareGrantLoadingStateProps {
+  timedOut: boolean;
+  onClose: () => void;
+}
+
+export function PhotoShareGrantLoadingState({ timedOut, onClose }: PhotoShareGrantLoadingStateProps) {
+  return (
+    <div className="flex flex-col items-center gap-4 py-6">
+      {timedOut ? (
+        <p data-testid="photo-share-grant-load-error" className="text-sm text-white/60 text-center">
+          {PRACTITIONERS_LOAD_ERROR_MESSAGE}
+        </p>
+      ) : (
+        <Loader2 className="w-5 h-5 animate-spin text-white/40" strokeWidth={1.5} />
+      )}
+      <button
+        type="button"
+        onClick={onClose}
+        data-testid="photo-share-grant-close"
+        className="px-4 py-2 rounded-xl text-sm text-white/70 hover:text-white border border-white/[0.10] hover:border-white/[0.20] transition-all"
+      >
+        Close
+      </button>
+    </div>
+  );
 }
 
 export interface PhotoShareGrantModalProps {
@@ -55,6 +89,7 @@ export function PhotoShareGrantModal({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [state, setState] = useState<ConfirmState>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [practitionersTimedOut, setPractitionersTimedOut] = useState(false);
 
   useEffect(() => {
     if (!open) {
@@ -63,6 +98,19 @@ export function PhotoShareGrantModal({
       setErrorMessage(null);
     }
   }, [open]);
+
+  // Prompt 231b fix: the practitioners === null branch must never spin
+  // forever. If the list has not arrived by the timeout while the modal is
+  // open, switch to the named failure copy (Close stays available the
+  // whole time regardless).
+  useEffect(() => {
+    if (!open || practitioners !== null) {
+      setPractitionersTimedOut(false);
+      return;
+    }
+    const timer = setTimeout(() => setPractitionersTimedOut(true), PRACTITIONERS_LOAD_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+  }, [open, practitioners]);
 
   const handleConfirm = useCallback(() => {
     if (!selectedId) return;
@@ -121,9 +169,7 @@ export function PhotoShareGrantModal({
         <h3 className="text-base font-semibold text-white mb-4">Share your body photos</h3>
 
         {practitioners === null ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-5 h-5 animate-spin text-white/40" strokeWidth={1.5} />
-          </div>
+          <PhotoShareGrantLoadingState timedOut={practitionersTimedOut} onClose={onClose} />
         ) : noPractitioners ? (
           <p data-testid="photo-share-grant-no-practitioners" className="text-sm text-white/60">
             You have no linked practitioners yet. A practitioner must add you to their care team

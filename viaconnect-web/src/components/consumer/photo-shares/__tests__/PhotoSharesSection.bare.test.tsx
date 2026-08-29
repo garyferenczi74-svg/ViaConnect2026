@@ -108,4 +108,36 @@ describe('PhotoSharesView - load error', () => {
     expect(html).toMatch(/retry/i);
     expect(html).not.toContain('You have not shared your body photos');
   });
+
+  // Prompt 231b fix: a load failure must not enable a Share flow whose
+  // practitioner list never loaded (228 no-transitional-dead-end).
+  it('disables the Share your body photos button after a load failure', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(PhotoSharesView, {
+        shares: null,
+        loadError: true,
+        onRetryLoad: NOOP,
+        onOpenGrant: NOOP,
+        onOpenRevoke: NOOP,
+      }),
+    );
+    // exact attribute match, not a substring match: the button's className
+    // includes the Tailwind variant "disabled:opacity-50", which would give
+    // a false positive against a loose "disabled" substring search.
+    expect(html).toContain('data-testid="photo-shares-grant-open" disabled=""');
+  });
+
+  it('re-enables the Share your body photos button once the retried load succeeds', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(PhotoSharesView, {
+        shares: [],
+        loadError: false,
+        onRetryLoad: NOOP,
+        onOpenGrant: NOOP,
+        onOpenRevoke: NOOP,
+      }),
+    );
+    expect(html).toContain('data-testid="photo-shares-grant-open"');
+    expect(html).not.toContain('data-testid="photo-shares-grant-open" disabled=""');
+  });
 });
