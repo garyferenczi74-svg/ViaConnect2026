@@ -24,7 +24,7 @@
 // Resilience: every read is raced against a timeout and fails open to an
 // empty result with a structured log, never a thrown error. Writes
 // (grant/revoke) are also timeout-raced, but a write cannot fail open to a
-// false success — a timeout or error there returns an explicit
+// false success: a timeout or error there returns an explicit
 // { ok: false } result for the caller to surface.
 //
 // All calls are plain RLS-scoped client calls. The patient owns their rows
@@ -107,6 +107,23 @@ interface RevokeQueryResult {
   data: RevokeRow[] | null;
   error: QueryError | null;
 }
+
+interface ActiveLinkRow {
+  id: string;
+}
+
+interface ActiveLinkQueryResult {
+  data: ActiveLinkRow[] | null;
+  error: QueryError | null;
+}
+
+/**
+ * A real Supabase query error (as opposed to a genuine zero-rows result).
+ * findLatestSessionId and hasActivePractitionerLink throw this so
+ * grantPhotoShare's catch block can distinguish "the DB call failed" from
+ * "the DB call succeeded and found nothing" and return the right reason.
+ */
+class PhotoShareQueryError extends Error {}
 
 interface PractitionerDisplay {
   displayName: string;
@@ -265,6 +282,12 @@ export async function listActivePhotoShares(
   }
 }
 
+/**
+ * The user's most recent body_photo_sessions id, or null when the user
+ * genuinely has zero sessions. On a real query error this throws
+ * PhotoShareQueryError rather than returning null, so a transient DB
+ * failure is never mistaken for "no photos yet" by the caller.
+ */
 async function findLatestSessionId(
   supabase: SupabaseClient,
   userId: string,
@@ -282,14 +305,49 @@ async function findLatestSessionId(
     `${SCOPE}.grantPhotoShare.latestSession`,
   );
   if (error) {
-    safeLog.warn(SCOPE, 'findLatestSessionId query error (fail-open to no_photos)', {
-      error,
-      userId,
-    });
-    return null;
+    safeLog.warn(SCOPE, 'findLatestSessionId query error', { error, userId });
+    throw new PhotoShareQueryError('body_photo_sessions query failed');
   }
   const row = (data ?? [])[0];
   return row ? row.id : null;
+}
+
+/**
+ * True only when practitioner_patients has an ACTIVE row linking this
+ * practitioner to this user. grantPhotoShare calls this before inserting so
+ * an arbitrary or stale practitionerId (the UI is expected to only ever
+ * offer valid ones, but this is defense in depth) can never receive a
+ * share. On a real query error this throws PhotoShareQueryError so the
+ * grant fails closed with reason 'error' rather than silently proceeding
+ * or being mistaken for 'not_linked'.
+ */
+async function hasActivePractitionerLink(
+  supabase: SupabaseClient,
+  userId: string,
+  practitionerId: string,
+): Promise<boolean> {
+  const { data, error } = await withTimeout<ActiveLinkQueryResult>(
+    Promise.resolve(
+      supabase
+        .from('practitioner_patients')
+        .select('id')
+        .eq('patient_id', userId)
+        .eq('practitioner_id', practitionerId)
+        .eq('status', 'active')
+        .limit(1),
+    ) as unknown as Promise<ActiveLinkQueryResult>,
+    QUERY_TIMEOUT_MS,
+    `${SCOPE}.grantPhotoShare.activeLink`,
+  );
+  if (error) {
+    safeLog.warn(SCOPE, 'hasActivePractitionerLink query error', {
+      error,
+      userId,
+      practitionerId,
+    });
+    throw new PhotoShareQueryError('practitioner_patients query failed');
+  }
+  return (data ?? []).length > 0;
 }
 
 export interface GrantPhotoShareOptions {
@@ -305,13 +363,22 @@ export interface GrantedPhotoShare {
 
 export type GrantPhotoShareResult =
   | { ok: true; share: GrantedPhotoShare }
-  | { ok: false; reason: 'no_photos' | 'error' };
+  | { ok: false; reason: 'no_photos' | 'not_linked' | 'error' };
 
 /**
  * Shares ALL of this user's body photos with a practitioner until expiry.
+ *
+ * Before touching the DB write path, verifies practitionerId is an ACTIVE
+ * practitioner_patients link for this user; if not, returns
+ * { ok: false, reason: 'not_linked' } and never inserts. This is defense in
+ * depth beyond the UI only ever offering valid practitioner ids.
+ *
  * Anchors the required photo_session_id to the user's most recent
  * body_photo_sessions row; if the user has never captured photos, there is
  * nothing to anchor to and this returns { ok: false, reason: 'no_photos' }.
+ * A real failure in either the link check or the session lookup returns
+ * { ok: false, reason: 'error' } rather than being mistaken for
+ * 'not_linked' or 'no_photos'.
  *
  * Upserts on the (photo_session_id, practitioner_id) unique constraint so a
  * repeat grant for the same pair (including a previously revoked or
@@ -329,6 +396,11 @@ export async function grantPhotoShare(
   opts?: GrantPhotoShareOptions,
 ): Promise<GrantPhotoShareResult> {
   try {
+    const isLinked = await hasActivePractitionerLink(supabase, userId, practitionerId);
+    if (!isLinked) {
+      return { ok: false, reason: 'not_linked' };
+    }
+
     const latestSessionId = await findLatestSessionId(supabase, userId);
     if (!latestSessionId) {
       return { ok: false, reason: 'no_photos' };

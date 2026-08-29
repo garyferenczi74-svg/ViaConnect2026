@@ -243,27 +243,79 @@ describe('listActivePhotoShares', () => {
   });
 });
 
+// grantPhotoShare's first step is the active-link check against
+// practitioner_patients; every test below that expects the flow to reach
+// body_photo_sessions / photo_share_permissions must supply this so the
+// active-link lookup itself succeeds.
+const ACTIVE_LINK_RESULT = { data: [{ id: 'link-1' }], error: null };
+const NOT_LINKED_RESULT = { data: [], error: null };
+
+const UPSERTED_SHARE_RESULT = {
+  data: {
+    id: 'row-1',
+    practitioner_id: 'pract-1',
+    granted_at: '2026-08-01T00:00:00.000Z',
+    expires_at: '2026-08-31T00:00:00.000Z',
+  },
+  error: null,
+};
+
 describe('grantPhotoShare', () => {
+  it('returns not_linked when practitioner_patients has no ACTIVE row for this pair, and does not insert', async () => {
+    const { from, builders } = installTables({
+      practitioner_patients: NOT_LINKED_RESULT,
+    });
+    const result = await grantPhotoShare(asSupabase(from), 'user-1', 'pract-1');
+    expect(result).toEqual({ ok: false, reason: 'not_linked' });
+    expect(builders.practitioner_patients.eq.mock.calls).toContainEqual(['patient_id', 'user-1']);
+    expect(builders.practitioner_patients.eq.mock.calls).toContainEqual([
+      'practitioner_id',
+      'pract-1',
+    ]);
+    expect(builders.practitioner_patients.eq.mock.calls).toContainEqual(['status', 'active']);
+  });
+
+  it('grants successfully when practitioner_patients has an ACTIVE row for this pair', async () => {
+    const { from } = installTables({
+      practitioner_patients: ACTIVE_LINK_RESULT,
+      body_photo_sessions: { data: [{ id: 'sess-latest' }], error: null },
+      photo_share_permissions: UPSERTED_SHARE_RESULT,
+    });
+    const result = await grantPhotoShare(asSupabase(from), 'user-1', 'pract-1');
+    expect(result.ok).toBe(true);
+  });
+
+  it('returns { ok: false, reason: error } when the active-link query itself errors, not not_linked', async () => {
+    const { from } = installTables({
+      practitioner_patients: { data: null, error: { message: 'boom' } },
+    });
+    const result = await grantPhotoShare(asSupabase(from), 'user-1', 'pract-1');
+    expect(result).toEqual({ ok: false, reason: 'error' });
+  });
+
   it('returns no_photos when the user has no body_photo_sessions rows', async () => {
     const { from } = installTables({
+      practitioner_patients: ACTIVE_LINK_RESULT,
       body_photo_sessions: { data: [], error: null },
     });
     const result = await grantPhotoShare(asSupabase(from), 'user-1', 'pract-1');
     expect(result).toEqual({ ok: false, reason: 'no_photos' });
   });
 
+  it('returns { ok: false, reason: error } (not no_photos) when the body_photo_sessions query itself errors', async () => {
+    const { from } = installTables({
+      practitioner_patients: ACTIVE_LINK_RESULT,
+      body_photo_sessions: { data: null, error: { message: 'connection reset' } },
+    });
+    const result = await grantPhotoShare(asSupabase(from), 'user-1', 'pract-1');
+    expect(result).toEqual({ ok: false, reason: 'error' });
+  });
+
   it('looks up the latest session ordered by session_date desc, limit 1', async () => {
     const { from, builders } = installTables({
+      practitioner_patients: ACTIVE_LINK_RESULT,
       body_photo_sessions: { data: [{ id: 'sess-latest' }], error: null },
-      photo_share_permissions: {
-        data: {
-          id: 'row-1',
-          practitioner_id: 'pract-1',
-          granted_at: '2026-08-01T00:00:00.000Z',
-          expires_at: '2026-08-31T00:00:00.000Z',
-        },
-        error: null,
-      },
+      photo_share_permissions: UPSERTED_SHARE_RESULT,
     });
     await grantPhotoShare(asSupabase(from), 'user-1', 'pract-1');
     expect(builders.body_photo_sessions.eq.mock.calls).toContainEqual(['user_id', 'user-1']);
@@ -276,16 +328,9 @@ describe('grantPhotoShare', () => {
 
   it('inserts (via upsert) with the latest session id and a computed 30-day expiry by default', async () => {
     const { from, builders } = installTables({
+      practitioner_patients: ACTIVE_LINK_RESULT,
       body_photo_sessions: { data: [{ id: 'sess-latest' }], error: null },
-      photo_share_permissions: {
-        data: {
-          id: 'row-1',
-          practitioner_id: 'pract-1',
-          granted_at: '2026-08-01T00:00:00.000Z',
-          expires_at: '2026-08-31T00:00:00.000Z',
-        },
-        error: null,
-      },
+      photo_share_permissions: UPSERTED_SHARE_RESULT,
     });
     const result = await grantPhotoShare(asSupabase(from), 'user-1', 'pract-1');
     expect(result.ok).toBe(true);
@@ -307,16 +352,9 @@ describe('grantPhotoShare', () => {
 
   it('handles the UNIQUE(photo_session_id, practitioner_id) conflict via upsert onConflict', async () => {
     const { from, builders } = installTables({
+      practitioner_patients: ACTIVE_LINK_RESULT,
       body_photo_sessions: { data: [{ id: 'sess-latest' }], error: null },
-      photo_share_permissions: {
-        data: {
-          id: 'row-1',
-          practitioner_id: 'pract-1',
-          granted_at: '2026-08-01T00:00:00.000Z',
-          expires_at: '2026-08-31T00:00:00.000Z',
-        },
-        error: null,
-      },
+      photo_share_permissions: UPSERTED_SHARE_RESULT,
     });
     await grantPhotoShare(asSupabase(from), 'user-1', 'pract-1');
     const [, opts] = builders.photo_share_permissions.upsert.mock.calls[0] as [
@@ -328,6 +366,7 @@ describe('grantPhotoShare', () => {
 
   it('respects a custom expiresInDays option', async () => {
     const { from, builders } = installTables({
+      practitioner_patients: ACTIVE_LINK_RESULT,
       body_photo_sessions: { data: [{ id: 'sess-latest' }], error: null },
       photo_share_permissions: {
         data: {
@@ -350,6 +389,7 @@ describe('grantPhotoShare', () => {
 
   it('returns { ok: false, reason: error } when the upsert fails, never throws', async () => {
     const { from } = installTables({
+      practitioner_patients: ACTIVE_LINK_RESULT,
       body_photo_sessions: { data: [{ id: 'sess-latest' }], error: null },
       photo_share_permissions: { data: null, error: { message: 'conflict' } },
     });
@@ -359,6 +399,7 @@ describe('grantPhotoShare', () => {
 
   it('returns { ok: false, reason: error } when a query rejects, never throws', async () => {
     const { from } = installTables({
+      practitioner_patients: ACTIVE_LINK_RESULT,
       body_photo_sessions: () => Promise.reject(new Error('down')),
     });
     const result = await grantPhotoShare(asSupabase(from), 'user-1', 'pract-1');
