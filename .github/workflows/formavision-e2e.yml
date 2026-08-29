@@ -64,13 +64,15 @@ jobs:
         run: npm install --legacy-peer-deps
 
       - name: Run FormaVision node-safe suites (SCHEMA_STRICT_MODE=on)
-        # The three deterministic, headless-runnable FormaVision suites. If any
-        # of them triggers a schema-drift missing-object error, strict mode
-        # rethrows and this step fails (that is the point of the gate).
+        # Deterministic, headless-runnable FormaVision suites (seams, avatar
+        # footprint lock, invariants, resilience). If any of them triggers a
+        # schema-drift missing-object error, strict mode rethrows and this
+        # step fails (that is the point of the gate).
         run: >-
           npx vitest run
           src/lib/formavision/telemetry/__tests__/seam-telemetry.test.ts
           src/components/formavision/__tests__/seam-region-protocol.test.ts
+          src/components/formavision/__tests__/BodyCompositionAvatar.test.ts
           src/lib/formavision/__tests__/invariants.test.ts
           src/lib/formavision/__tests__/resilience.test.ts
 
