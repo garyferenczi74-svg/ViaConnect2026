@@ -1,6 +1,6 @@
 // Locks DashboardHeader IA: three stacked rows below md (greeting,
-// HannahAIGuidedByChip, then the three icon links) and no truncate on
-// the greeting at the default / mobile classes.
+// HannahAIGuidedByChip, then the three icon links), icons row pinned
+// far right with justify-end, and no truncate on the greeting.
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -65,6 +65,14 @@ describe('DashboardHeader stacked mobile IA', () => {
     expect(stripClass).toContain('flex w-full flex-col gap-3');
     expect(stripClass).toContain('md:flex-row');
     expect(stripClass).toContain('md:flex-shrink-0');
+
+    const iconsClass = classNameAfter(header, 'data-dashboard-header-row="icons"');
+    expect(iconsClass).toContain('justify-end');
+    expect(iconsClass).toContain('w-full');
+    expect(iconsClass).toContain('md:w-auto');
+    expect(iconsClass).toContain('flex');
+    expect(iconsClass).toContain('items-center');
+    expect(header).toContain('data-dashboard-header-row="icons"');
   });
 
   it('does not truncate the greeting at the default or mobile classes', () => {
