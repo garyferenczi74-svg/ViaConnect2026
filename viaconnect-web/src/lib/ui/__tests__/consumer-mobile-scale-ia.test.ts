@@ -73,6 +73,14 @@ describe('consumer mobile-scale IA', () => {
     expect(CONSUMER_OPEN_PILL_BASE).toMatch(/text-sm\b/);
     expect(CONSUMER_OPEN_PILL_BASE).toMatch(/min-h-\[44px\]/);
     expect(CONSUMER_HANNAH_CHIP).toMatch(/min-h-\[44px\]/);
+    expect(CONSUMER_HANNAH_CHIP).toContain('rounded-full');
+    expect(CONSUMER_HANNAH_CHIP).toContain('bg-[#1A2744]/55');
+    expect(CONSUMER_HANNAH_CHIP).toContain('border-white/15');
+    expect(CONSUMER_HANNAH_CHIP).not.toContain('#2DA5A0');
+    expect(CONSUMER_HANNAH_CHIP).not.toContain('bg-[#2DA5A0]');
+    expect(src('src/components/hannah/HannahAIGuidedByChip.tsx')).toContain(
+      'CONSUMER_HANNAH_CHIP',
+    );
     expect(src('src/components/dashboard/morning-card/MorningChipGrid.tsx')).toContain(
       'whitespace-nowrap',
     );

@@ -32,8 +32,9 @@ export const CONSUMER_SOURCE_PILL =
 export const CONSUMER_BOS_CHIP =
   'inline-flex min-h-[44px] min-w-[44px] shrink-0 items-center gap-1 px-1 text-xs font-medium';
 
+/** Neutral grey-navy frost. 4% white lets Athlete teal read through at 390. */
 export const CONSUMER_HANNAH_CHIP =
-  'inline-flex min-h-[44px] flex-shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-sm text-white/90 backdrop-blur-sm';
+  'inline-flex min-h-[44px] flex-shrink-0 items-center gap-1.5 rounded-full border border-white/15 bg-[#1A2744]/55 px-2.5 py-1 text-sm text-white/90 backdrop-blur-sm';
 
 export const CONSUMER_OPEN_PILL_BASE =
   'inline-flex min-h-[44px] items-center gap-1 rounded-full border border-[#5B8DEF]/30 bg-[#2A4C9E]/[0.12] px-3 py-1.5 text-sm font-medium text-white backdrop-blur-md';
