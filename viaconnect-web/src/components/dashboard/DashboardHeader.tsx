@@ -1,10 +1,11 @@
 'use client';
 
 // DashboardHeader: in-page header at the top of /dashboard.
-// AppShell already renders a global Header. This in-page header stacks
-// greeting, Guided by HannahAI, and icon buttons as three rows below md
-// so a 390-wide greeting stays fully readable. At md+ the greeting stays
-// left and the chip plus icons sit on the right when they fit.
+// AppShell already renders a global Header. Below md this is two rows:
+// greeting + date on its own row, then a toolbar with Guided by HannahAI
+// left and the three icon buttons right on one line. Do not move the chip
+// onto the greeting. At md+ the greeting stays left and the chip plus
+// icons sit on the right when they fit.
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -91,19 +92,18 @@ export function DashboardHeader({ initialName }: DashboardHeaderProps) {
         <p className="mt-0.5 text-xs text-white/90 sm:text-sm">{formatToday()}</p>
       </div>
 
-      {/* Chip and icons stack below md; sit together on the right at md+ if they fit. */}
+      {/* Toolbar row below md: chip left, icons right. Together on the right at md+. */}
       <div
         data-dashboard-header-strip="chrome"
-        className="flex w-full flex-col gap-3 md:w-auto md:flex-shrink-0 md:flex-row md:flex-wrap md:items-center md:justify-end md:gap-2"
+        className="flex w-full flex-nowrap items-center justify-between gap-2 md:w-auto md:flex-shrink-0 md:flex-wrap md:justify-end"
       >
-        <div data-dashboard-header-row="guided-by">
+        <div data-dashboard-header-row="guided-by" className="shrink-0 whitespace-nowrap">
           <HannahAIGuidedByChip />
         </div>
 
-        {/* Own row below md: three icons stay together and pin far right. */}
         <div
           data-dashboard-header-row="icons"
-          className="flex w-full items-center justify-end gap-2 md:w-auto"
+          className="flex shrink-0 items-center gap-2"
         >
           {/* Notifications */}
           <Link
