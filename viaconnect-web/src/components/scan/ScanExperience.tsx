@@ -771,18 +771,15 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
         <div className="flex h-full min-h-[70vh] flex-col items-center justify-center gap-3 p-6 text-center" data-testid="scan-done">
           <p className="text-sm text-white/80">Scan saved.</p>
           {state.scanId && (
-            <>
-              <p className="text-xs text-white/50" data-testid="scan-done-id">
-                Scan ID: {state.scanId}
-              </p>
-              <Link
-                href={scanResultPath(state.scanId)}
-                data-testid="scan-done-view-link"
-                className="rounded-xl bg-[var(--teal)] px-5 py-2.5 text-sm font-semibold text-white"
-              >
-                View scan
-              </Link>
-            </>
+            // Prompt 231: no visible raw scan id on this consumer surface.
+            // The id is only the link target, never displayed copy.
+            <Link
+              href={scanResultPath(state.scanId)}
+              data-testid="scan-done-view-link"
+              className="rounded-xl bg-[var(--teal)] px-5 py-2.5 text-sm font-semibold text-white"
+            >
+              View scan
+            </Link>
           )}
         </div>
       )}

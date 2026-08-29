@@ -58,6 +58,17 @@ function formatDate(dateStr: string): string {
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
+// Prompt 231: consumer-facing label for a scan protocol id. Never render
+// the raw protocol string (e.g. '4pose_v1') on a consumer surface.
+function protocolLabel(protocol: string): string {
+  switch (protocol) {
+    case '4pose_v1':
+      return 'Body scan';
+    default:
+      return 'Body scan';
+  }
+}
+
 function statusLabel(status: ScanSummary['captureStatus']): string {
   switch (status) {
     case 'ready':
@@ -153,7 +164,9 @@ export function ScanHistory({ scans, onDeleted }: ScanHistoryProps) {
               <div>
                 <p className="text-sm font-semibold text-white">{formatDate(scan.date)}</p>
                 <p className="text-xs text-white/50">
-                  <span data-testid={`scan-history-protocol-${scan.id}`}>{scan.protocol}</span>
+                  <span data-testid={`scan-history-protocol-${scan.id}`}>
+                    {protocolLabel(scan.protocol)}
+                  </span>
                   {' · '}
                   <span data-testid={`scan-history-status-${scan.id}`}>
                     {statusLabel(scan.captureStatus)}

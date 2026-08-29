@@ -47,7 +47,8 @@ describe('ScanHistory - rendering a scan', () => {
       React.createElement(ScanHistory, { scans: [scan()], onDeleted: NOOP }),
     );
     expect(html).toContain('scan-history-item-session-1');
-    expect(html).toContain('4pose_v1');
+    expect(html).toContain('Body scan');
+    expect(html).not.toContain('4pose_v1');
     expect(html).toMatch(/ready/i);
   });
 
