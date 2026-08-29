@@ -32,9 +32,11 @@ import {
   CHECKING_POSE,
   POSE_GUIDE_UNAVAILABLE,
   CAMERA_BLOCKED_MESSAGE,
+  CAMERA_LOST_MESSAGE,
   coachingForCount,
 } from '@/lib/scan/scanCopy';
 import {
+  SCAN_OPEN_CAMERA_TIMEOUT_MS,
   SCAN_PRECHECK_TIMEOUT_MS,
   SCAN_CHECKING_POSE_TIMEOUT_MS,
   SCAN_POSE_TITLE_MS,
@@ -99,9 +101,11 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
   const [walkInDisplay, setWalkInDisplay] = useState(WALK_IN_SECONDS);
   const [flashActive, setFlashActive] = useState(false);
   const [permissionBlocked, setPermissionBlocked] = useState(false);
+  const [cameraOpenTimedOut, setCameraOpenTimedOut] = useState(false);
 
   const framesRef = useRef(state.frames);
   framesRef.current = state.frames;
+  const cameraOpenWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     setVoiceEnabled(readVoicePreference());
@@ -120,6 +124,50 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
     setPermissionBlocked(camera.permission === 'denied');
   }, [camera.permission]);
 
+  // ---- "Opening camera..." watchdog (228 Rule 1: no transitional state
+  // without a timeout + named next action). The watchdog is armed by
+  // startCameraOpenWatchdog (called from handleStart, AFTER camera.open()
+  // has already been invoked as the first statement so it never delays or
+  // precedes that call per condition 21) and cleared the moment the stream
+  // attaches or camera.open() reports an error. If neither happens within
+  // SCAN_OPEN_CAMERA_TIMEOUT_MS, cameraOpenTimedOut surfaces a retry
+  // affordance rather than leaving the flow spinning forever. ----
+  const clearCameraOpenWatchdog = useCallback(() => {
+    if (cameraOpenWatchdogRef.current !== null) {
+      clearTimeout(cameraOpenWatchdogRef.current);
+      cameraOpenWatchdogRef.current = null;
+    }
+  }, []);
+
+  const startCameraOpenWatchdog = useCallback(() => {
+    clearCameraOpenWatchdog();
+    setCameraOpenTimedOut(false);
+    cameraOpenWatchdogRef.current = setTimeout(() => {
+      setCameraOpenTimedOut(true);
+    }, SCAN_OPEN_CAMERA_TIMEOUT_MS);
+  }, [clearCameraOpenWatchdog]);
+
+  useEffect(() => {
+    if (camera.stream || camera.error) {
+      clearCameraOpenWatchdog();
+      setCameraOpenTimedOut(false);
+    }
+  }, [camera.stream, camera.error, clearCameraOpenWatchdog]);
+
+  useEffect(() => {
+    if (state.phase === 'SETUP') {
+      clearCameraOpenWatchdog();
+      setCameraOpenTimedOut(false);
+    }
+  }, [state.phase, clearCameraOpenWatchdog]);
+
+  useEffect(() => clearCameraOpenWatchdog, [clearCameraOpenWatchdog]);
+
+  const handleRetryCameraOpen = useCallback(() => {
+    startCameraOpenWatchdog();
+    void camera.open();
+  }, [camera, startCameraOpenWatchdog]);
+
   const toggleVoice = useCallback(() => {
     setVoiceEnabled((prev) => {
       const next = !prev;
@@ -134,6 +182,7 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
   const handleStart = useCallback(() => {
     if (state.phase !== 'SETUP') return;
     void camera.open();
+    startCameraOpenWatchdog();
     speak('', voiceEnabled); // warms speechSynthesis inside the gesture
     const OrientationCtor = (
       window as unknown as { DeviceOrientationEvent?: { requestPermission?: () => Promise<string> } }
@@ -142,7 +191,7 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
       void OrientationCtor.requestPermission().catch(() => undefined);
     }
     dispatch({ type: 'START' });
-  }, [state.phase, camera, dispatch, voiceEnabled]);
+  }, [state.phase, camera, dispatch, voiceEnabled, startCameraOpenWatchdog]);
 
   // ---- WALK_IN: 10 -> 1 "Walk to the mark" ----
   useEffect(() => {
@@ -204,37 +253,62 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
       // fail silently, never blocks capture
     }
 
+    // Defensive: revoke whatever might still be sitting in this pose's
+    // frame slot before a fresh attempt overwrites it (the reducer already
+    // nulls a failed frame out of state on QA_FAIL, so this is normally a
+    // no-op, but it stays correct if that ever changes, and it is the real
+    // fix for a retake, where the prior passed frame's slot is still live
+    // right up until CAPTURED overwrites it).
+    revokeFrame(framesRef.current[state.poseIndex]);
+
     const pose = POSE_ORDER[state.poseIndex];
 
-    void withTimeout(
-      (async () => {
-        const still = await camera.grabStill();
-        const objectUrl = URL.createObjectURL(still.blob);
-        const metrics = await computeWeakQaInputFromBlob(still.blob);
-        const qa = evaluateWeakFrame(metrics);
-        const frame: ScanFrame = {
-          pose,
-          blob: still.blob,
-          objectUrl,
-          capturedAt: new Date().toISOString(),
-          qa,
-          retryCount: state.retryCount,
-          capturedWidth: still.width,
-          capturedHeight: still.height,
-        };
-        return frame;
-      })(),
-      SCAN_CHECKING_POSE_TIMEOUT_MS,
-      'scan.capture.grabAndQa',
-    )
+    // Kept as a named reference (not inlined into withTimeout) so a
+    // continuation can still be attached after the race settles: withTimeout
+    // discards the loser but does not cancel it, so a still-running capture
+    // that finishes after a CAMERA_LOST timeout would otherwise mint an
+    // object URL nobody ever revokes.
+    const capturePromise = (async (): Promise<ScanFrame> => {
+      const still = await camera.grabStill();
+      const objectUrl = URL.createObjectURL(still.blob);
+      const metrics = await computeWeakQaInputFromBlob(still.blob);
+      const qa = evaluateWeakFrame(metrics);
+      return {
+        pose,
+        blob: still.blob,
+        objectUrl,
+        capturedAt: new Date().toISOString(),
+        qa,
+        retryCount: state.retryCount,
+        capturedWidth: still.width,
+        capturedHeight: still.height,
+      };
+    })();
+
+    void withTimeout(capturePromise, SCAN_CHECKING_POSE_TIMEOUT_MS, 'scan.capture.grabAndQa')
       .then((frame) => {
-        if (cancelled) return;
+        if (cancelled) {
+          // Unmounted, or the phase moved on, before this attempt landed;
+          // this frame will never reach state, so it is the only remaining
+          // reference to its object URL. Revoke it here or it leaks.
+          revokeFrame(frame);
+          return;
+        }
         dispatch({ type: 'CAPTURED', frame });
         dispatch(qaResultToAction(frame.qa));
+        if (!frame.qa.pass) {
+          // The reducer nulls frames[poseIndex] out of state synchronously
+          // on QA_FAIL above; this local `frame` is the only remaining
+          // reference to that failed attempt's object URL.
+          revokeFrame(frame);
+        }
       })
       .catch(() => {
-        if (cancelled) return;
-        dispatch({ type: 'CAMERA_LOST' });
+        if (!cancelled) dispatch({ type: 'CAMERA_LOST' });
+        // If the timeout (not the capture itself) lost the race, the
+        // capture may still resolve later in the background. Attach a
+        // trailing revoke so that eventual frame never leaks its URL.
+        void capturePromise.then((frame) => revokeFrame(frame)).catch(() => undefined);
       });
 
     return () => {
@@ -251,6 +325,16 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
     },
     [state.frames, dispatch],
   );
+
+  const handleChooseRetry = useCallback(() => {
+    revokeFrame(framesRef.current[state.poseIndex]);
+    dispatch({ type: 'CHOOSE_RETRY' });
+  }, [state.poseIndex, dispatch]);
+
+  const handleChooseSkip = useCallback(() => {
+    revokeFrame(framesRef.current[state.poseIndex]);
+    dispatch({ type: 'CHOOSE_SKIP' });
+  }, [state.poseIndex, dispatch]);
 
   const handleDiscard = useCallback(() => {
     revokeAllFrames(framesRef.current);
@@ -277,6 +361,23 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
 
   return (
     <div className="font-instrument relative h-full min-h-[70vh] w-full overflow-hidden rounded-2xl bg-navy-700 text-white" data-testid="scan-experience" data-phase={state.phase}>
+      {cameraOpenTimedOut && state.phase !== 'SETUP' && state.phase !== 'CAMERA_LOST' && (
+        <div
+          className="absolute inset-x-0 top-0 z-20 flex items-center justify-between gap-3 bg-black/80 px-4 py-2 text-xs text-white"
+          data-testid="scan-camera-open-timeout"
+        >
+          <span>{CAMERA_BLOCKED_MESSAGE}</span>
+          <button
+            type="button"
+            data-testid="scan-camera-open-retry"
+            onClick={handleRetryCameraOpen}
+            className="shrink-0 rounded-md border border-white/30 px-2 py-1 font-medium"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
       {state.phase === 'SETUP' && (
         <div className="relative flex h-full min-h-[70vh] flex-col justify-between p-4">
           <CameraPreview videoRef={camera.videoRef} pose="front" showFootMark mirrored={false} />
@@ -397,7 +498,7 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
             <button
               type="button"
               data-testid="scan-choice-retry"
-              onClick={() => dispatch({ type: 'CHOOSE_RETRY' })}
+              onClick={handleChooseRetry}
               className="rounded-xl border border-white/20 px-4 py-2 text-sm text-white"
             >
               Retry
@@ -405,7 +506,7 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
             <button
               type="button"
               data-testid="scan-choice-skip"
-              onClick={() => dispatch({ type: 'CHOOSE_SKIP' })}
+              onClick={handleChooseSkip}
               className="rounded-xl border border-white/20 px-4 py-2 text-sm text-white"
             >
               Skip pose
@@ -445,7 +546,7 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
 
       {state.phase === 'CAMERA_LOST' && (
         <div className="flex h-full min-h-[70vh] flex-col items-center justify-center gap-4 p-6 text-center" data-testid="scan-camera-lost">
-          <p className="text-sm text-white/80">{state.error ?? 'Camera disconnected. Tap Start scan to try again.'}</p>
+          <p className="text-sm text-white/80">{state.error ?? CAMERA_LOST_MESSAGE}</p>
           <button
             type="button"
             data-testid="scan-camera-lost-retry"

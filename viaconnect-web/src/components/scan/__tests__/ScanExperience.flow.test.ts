@@ -167,6 +167,82 @@ describe('ScanExperience flow driver: retake from Review returns to Review', () 
   });
 });
 
+describe('ScanExperience flow driver: a QA-fail retry never orphans the superseded attempt URL', () => {
+  // Mirrors ScanExperience's CAPTURE effect exactly: the reducer nulls a
+  // failed frame out of state on QA_FAIL synchronously, so the component
+  // revokes the local `frame` reference itself, right after dispatching,
+  // whenever qa.pass is false. This suite exercises that same sequence
+  // (dispatch CAPTURED, dispatch the QA action, revoke on fail) so a
+  // three-fail-then-skip run is asserted to leave zero orphaned URLs.
+  let revokeSpy: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    revokeSpy = vi.fn();
+    vi.stubGlobal('URL', { revokeObjectURL: revokeSpy });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  function driveAttemptMirroringComponentRevoke(
+    state: ScanState,
+    pose: PoseId,
+    pass: boolean,
+    urlsUsed: string[],
+  ): ScanState {
+    let s = state;
+    s = scanReducer(s, { type: 'PROMPT_DONE' });
+    s = scanReducer(s, { type: 'PRECHECK_PASS' });
+    for (let i = 0; i < 5; i++) s = scanReducer(s, { type: 'TICK' });
+    expect(s.phase).toBe('CAPTURE');
+
+    const objectUrl = `blob:${pose}-attempt-${captureSeq++}`;
+    urlsUsed.push(objectUrl);
+    const frame = makeFrame(pose, objectUrl, pass, s.retryCount);
+    s = scanReducer(s, { type: 'CAPTURED', frame });
+    s = scanReducer(s, qaResultToAction(frame.qa));
+    if (!frame.qa.pass) revokeFrame(frame); // the component's post-dispatch revoke-on-fail
+    return s;
+  }
+
+  it('revokes each of three failed attempts, then the CHOOSE_SKIP placeholder never needs revoking', () => {
+    let s = initialScanState();
+    s = scanReducer(s, { type: 'START' });
+    s = scanReducer(s, { type: 'WALK_IN_DONE' });
+
+    const failedUrls: string[] = [];
+    s = driveAttemptMirroringComponentRevoke(s, 'right', false, failedUrls);
+    expect(s.phase).toBe('PROMPT');
+    expect(s.retryCount).toBe(1);
+
+    s = driveAttemptMirroringComponentRevoke(s, 'right', false, failedUrls);
+    expect(s.phase).toBe('PROMPT');
+    expect(s.retryCount).toBe(2);
+
+    s = driveAttemptMirroringComponentRevoke(s, 'right', false, failedUrls);
+    expect(s.phase).toBe('CHOICE');
+    expect(s.retryCount).toBe(3);
+
+    // All three superseded attempts were revoked, by their exact URLs.
+    expect(failedUrls).toHaveLength(3);
+    expect(revokeSpy).toHaveBeenCalledTimes(3);
+    for (const url of failedUrls) {
+      expect(revokeSpy).toHaveBeenCalledWith(url);
+    }
+
+    // handleChooseSkip revokes framesRef.current[poseIndex] before
+    // dispatching; at CHOICE that slot is already null (the reducer nulled
+    // it on the third QA_FAIL), so this is correctly a no-op: no 4th call.
+    revokeFrame(s.frames[s.poseIndex]);
+    s = scanReducer(s, { type: 'CHOOSE_SKIP' });
+    expect(revokeSpy).toHaveBeenCalledTimes(3);
+    expect(s.frames[0]?.skipped).toBe(true);
+    expect(s.frames[0]?.objectUrl).toBe('');
+    expect(revokeSpy).not.toHaveBeenCalledWith('');
+  });
+});
+
 describe('ScanExperience flow driver: Discard revokes real object URLs, never the skipped placeholder', () => {
   let revokeSpy: ReturnType<typeof vi.fn>;
 

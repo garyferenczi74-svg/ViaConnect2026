@@ -7,6 +7,7 @@ import { useReducer, type Dispatch } from 'react';
 import type { PoseId } from '@/lib/scan/poses';
 import { POSE_ORDER } from '@/lib/scan/poses';
 import type { QaCode, ScanFrame } from '@/lib/scan/types';
+import { CAMERA_LOST_MESSAGE } from '@/lib/scan/scanCopy';
 
 export type Phase =
   | 'SETUP'
@@ -222,7 +223,7 @@ export function scanReducer(state: ScanState, action: ScanAction): ScanState {
       // CAMERA_LOST -> SETUP: camera reconnected, restart the session and
       // surface the disconnect notice.
       if (state.phase !== 'CAMERA_LOST') return state;
-      return { ...initialScanState(), error: 'Camera disconnected. Tap Start scan to try again.' };
+      return { ...initialScanState(), error: CAMERA_LOST_MESSAGE };
     }
 
     default:
