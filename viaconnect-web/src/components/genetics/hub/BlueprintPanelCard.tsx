@@ -144,7 +144,7 @@ export function BlueprintHeroCard({ className }: BlueprintHeroCardProps) {
             the one line blurb, and the suite stats. */}
         <div className="relative z-[2] flex flex-col gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-lg font-semibold text-white md:text-xl">
+            <span className="text-xl font-semibold text-white md:text-xl">
               GeneX360<span aria-hidden="true">&trade;</span> Complete
             </span>
             <span className="inline-flex items-center rounded-full border border-[#1A2744]/60 bg-white/[0.08] px-2.5 py-0.5 text-[11px] font-medium text-white backdrop-blur-md [text-shadow:0_1px_2px_rgba(0,0,0,0.8)]">

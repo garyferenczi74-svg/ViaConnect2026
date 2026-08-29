@@ -52,8 +52,8 @@ export function PeptideProtocolHeroShell({ children }: { children: ReactNode }) 
                   <FlaskConical className="w-[18px] h-[18px] text-white" strokeWidth={1.5} />
                 </div>
                 <div className="min-w-0">
-                  <h1 className="text-lg font-semibold text-white truncate">Peptide Education</h1>
-                  <p className="text-xs text-white/45 truncate">
+                  <h1 className="text-xl font-semibold text-white truncate">Peptide Education</h1>
+                  <p className="text-sm text-white/85 truncate">
                     Educational reference only
                   </p>
                 </div>

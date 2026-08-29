@@ -21,6 +21,7 @@ import {
   EMPTY_SCHEDULE_VIEW,
   currentLocalScheduleBucket,
 } from '@/lib/supplements/dailyScheduleShared';
+import { CONSUMER_SCHEDULE_ROW_SCALE } from '@/lib/ui/consumerChrome';
 
 type TimeOfDay = 'morning' | 'afternoon' | 'evening';
 
@@ -320,11 +321,11 @@ export function DailySchedule() {
                 <span className="flex h-6 w-6 items-center justify-center rounded-md" style={{ background: `${b.color}1A` }}>
                   <Icon className="h-3.5 w-3.5" strokeWidth={1.5} style={{ color: b.color }} />
                 </span>
-                <span className="flex-1 text-sm font-semibold" style={{ color: b.color }}>{b.label}</span>
+                <span className="flex-1 text-xl font-semibold" style={{ color: b.color }}>{b.label}</span>
                 <span className="text-[11px] text-white/45">{bucketTaken(cards)}/{cards.length}</span>
               </div>
               {cards.length > 0 ? (
-                <div className="min-w-0 flex flex-col gap-2 p-1.5">
+                <div className={`min-w-0 flex flex-col gap-2 p-1.5 ${CONSUMER_SCHEDULE_ROW_SCALE}`}>
                   {cards.map((c) => (
                     <DraggableScheduleCard key={c.slot_id} card={c} taken={c.taken} onToggle={() => handleToggle(c)} onMove={(t) => handleMove(c, t)} onRemove={() => handleRemove(c)} onCardDragEnd={onCardDragEnd} />
                   ))}
@@ -356,13 +357,13 @@ export function DailySchedule() {
                 <span className="flex h-6 w-6 items-center justify-center rounded-md" style={{ background: `${b.color}1A` }}>
                   <Icon className="h-3.5 w-3.5" strokeWidth={1.5} style={{ color: b.color }} />
                 </span>
-                <span className="flex-1 text-left text-sm font-semibold" style={{ color: b.color }}>{b.label}</span>
+                <span className="flex-1 text-left text-xl font-semibold" style={{ color: b.color }}>{b.label}</span>
                 <span className="text-[11px] text-white/45">{bucketTaken(cards)}/{cards.length}</span>
                 <ChevronDown className={`h-4 w-4 text-white/40 transition-transform ${isOpen ? 'rotate-180' : ''}`} strokeWidth={1.5} />
               </button>
               {isOpen ? (
                 cards.length > 0 ? (
-                  <div className="min-w-0 flex flex-col gap-2 p-1.5">
+                  <div className={`min-w-0 flex flex-col gap-2 p-1.5 ${CONSUMER_SCHEDULE_ROW_SCALE}`}>
                     {cards.map((c) => (
                       <DraggableScheduleCard key={c.slot_id} card={c} taken={c.taken} onToggle={() => handleToggle(c)} onMove={(t) => handleMove(c, t)} onRemove={() => handleRemove(c)} onCardDragEnd={onCardDragEnd} />
                     ))}

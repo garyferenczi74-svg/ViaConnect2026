@@ -68,7 +68,7 @@ describe('NutritionTodaysMeals source', () => {
     // The per-meal-type gauge moved from mealscore (green) to the teal hub
     // finish. Prompt 183b grew it to 132 so the kcal sits inside the orb.
     expect(source).toContain('metric="plasmateal"');
-    expect(source).toContain('size={132}');
+    expect(source).toContain('size={PLASMA_COMPACT_ROW}');
     expect(source).not.toContain('metric="mealscore"');
   });
 
@@ -83,7 +83,7 @@ describe('NutritionTodaysMeals source', () => {
     // Gary (2026-06-11): with the hero removed, the heading is plain text on
     // the card surface again, no pill container.
     expect(source).toContain(
-      '<h2 className="text-[15px] font-semibold text-white">Today&apos;s meals</h2>',
+      '<h2 className={CONSUMER_CARD_TITLE}>Today&apos;s meals</h2>',
     );
     expect(source).not.toContain('rounded-full px-3 py-1 text-[15px]');
     expect(source).toContain('Coffee');

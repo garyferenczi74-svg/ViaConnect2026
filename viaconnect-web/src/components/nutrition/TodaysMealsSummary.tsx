@@ -156,7 +156,7 @@ export function TodaysMealsSummary(props: TodaysMealsSummaryProps) {
       <header className="flex items-center justify-between gap-3 px-4 py-3 md:px-5 md:py-4">
         <div className="flex items-center gap-2">
           <UtensilsCrossed className="h-4 w-4 text-white/70" strokeWidth={1.5} />
-          <h2 className="text-[15px] font-semibold text-white">Today&apos;s Meals</h2>
+          <h2 className="text-xl font-semibold text-white">Today&apos;s Meals</h2>
         </div>
         <span className="rounded-full bg-white/10 px-2 py-0.5 text-[12px] tabular-nums text-white/80">
           {todaysMeals.length}
@@ -174,7 +174,7 @@ export function TodaysMealsSummary(props: TodaysMealsSummaryProps) {
                 type="button"
                 onClick={() => handleToggle(def.id)}
                 aria-expanded={isOpen}
-                className={`group relative flex w-full min-h-[44px] items-center justify-between gap-2 rounded-xl border border-white/15 bg-gradient-to-br px-3 py-2.5 text-[13px] font-semibold text-white backdrop-blur-xl transition-all duration-200 ease-out hover:shadow-lg hover:shadow-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] md:text-[14px] ${def.gradient}`}
+                className={`group relative flex w-full min-h-[44px] items-center justify-between gap-2 rounded-xl border border-white/15 bg-gradient-to-br px-3 py-2.5 text-sm font-semibold text-white backdrop-blur-xl transition-all duration-200 ease-out hover:shadow-lg hover:shadow-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] ${def.gradient}`}
               >
                 <span className="flex items-center gap-2">
                   <Icon className="h-4 w-4 flex-shrink-0" strokeWidth={1.5} />
@@ -265,7 +265,7 @@ export function TodaysMealsSummary(props: TodaysMealsSummaryProps) {
                 type="button"
                 onClick={() => handleToggle('hydration')}
                 aria-expanded={isOpen}
-                className="group relative flex w-full min-h-[44px] items-center justify-between gap-2 rounded-xl border border-white/15 bg-gradient-to-br from-sky-600/40 via-blue-500/20 to-sky-700/30 px-3 py-2.5 text-[13px] font-semibold text-white backdrop-blur-xl transition-all duration-200 ease-out hover:shadow-lg hover:shadow-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] md:text-[14px]"
+                className="group relative flex w-full min-h-[44px] items-center justify-between gap-2 rounded-xl border border-white/15 bg-gradient-to-br from-sky-600/40 via-blue-500/20 to-sky-700/30 px-3 py-2.5 text-sm font-semibold text-white backdrop-blur-xl transition-all duration-200 ease-out hover:shadow-lg hover:shadow-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744]"
               >
                 <span className="flex items-center gap-2">
                   <Droplet className="h-4 w-4 flex-shrink-0" strokeWidth={1.5} />

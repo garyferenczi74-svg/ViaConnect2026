@@ -75,8 +75,8 @@ function Section({ icon, iconColor, title, subtitle, children }: { icon: LucideI
         <div className="flex items-center gap-3 p-5 md:p-6 border-b border-white/5">
           <PIcon icon={icon} color={iconColor} size="md" />
           <div>
-            <h2 className="text-base md:text-lg font-bold text-white">{title}</h2>
-            <p className="text-xs text-white/30 mt-0.5">{subtitle}</p>
+            <h2 className="text-xl font-bold text-white">{title}</h2>
+            <p className="mt-0.5 text-sm text-white/85">{subtitle}</p>
           </div>
         </div>
         {children}
@@ -127,7 +127,7 @@ export function SupplementsPageContent({
           <PIcon icon={Pill} color="#2DA5A0" size="lg" />
           <div>
             <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">My Supplements</h1>
-            <p className="text-sm text-white/40 mt-0.5">Your personalized daily regimen</p>
+            <p className="mt-0.5 text-sm text-white/85">Your personalized daily regimen</p>
           </div>
         </div>
         <HannahAIGuidedByChip />
@@ -187,10 +187,10 @@ export function SupplementsPageContent({
             <div className="flex items-start gap-4">
               <PIcon icon={ShoppingBag} color="#2DA5A0" size="lg" />
               <div className="min-w-0 flex-1">
-                <h3 className="text-base font-bold text-white md:text-lg">
+                <h3 className="text-xl font-bold text-white">
                   Browse Our Full Supplement Catalog
                 </h3>
-                <p className="mt-1 text-xs leading-relaxed text-white/50 md:text-sm">
+                <p className="mt-1 text-sm leading-relaxed text-white/85">
                   Explore the complete ViaConnect™ shop: liposomal, micellar,
                   methylated, minerals, amino acids, botanicals, and specialty
                   formulas. All curated for genomics-guided protocols.

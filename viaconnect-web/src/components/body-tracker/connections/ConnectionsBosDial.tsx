@@ -5,9 +5,8 @@ import {
   connectionsBosNumericScore,
   type ConnectionsBosDisplay,
 } from '@/lib/body-tracker/wearable-tiles';
+import { PLASMA_MAIN_DESKTOP, PLASMA_MAIN_MOBILE } from '@/lib/ui/consumerChrome';
 
-const HERO_MOBILE_SIZE = 200;
-const HERO_DESKTOP_SIZE = 240;
 const CLUSTER_SIZE = 80;
 
 function BosPlasma({
@@ -78,7 +77,7 @@ export function ConnectionsBosDial({
           <div className="block sm:hidden">
             <BosPlasma
               variant="hero"
-              size={HERO_MOBILE_SIZE}
+              size={PLASMA_MAIN_MOBILE}
               score={shown}
               brightReadout={brightReadout}
             />
@@ -86,7 +85,7 @@ export function ConnectionsBosDial({
           <div className="hidden sm:block">
             <BosPlasma
               variant="hero"
-              size={HERO_DESKTOP_SIZE}
+              size={PLASMA_MAIN_DESKTOP}
               score={shown}
               brightReadout={brightReadout}
             />

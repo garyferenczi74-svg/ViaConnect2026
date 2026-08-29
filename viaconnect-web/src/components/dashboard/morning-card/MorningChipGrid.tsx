@@ -14,6 +14,7 @@ import {
 import type { MorningChipKey } from '@/lib/dashboard/morning-card/keys';
 import type { MorningChipView } from '@/lib/dashboard/morning-card/contributors';
 import { MORNING_CARD_CONTRIBUTORS_LABEL } from '@/lib/dashboard/morning-card/copy';
+import { CONSUMER_BOS_CHIP, CONSUMER_EYEBROW } from '@/lib/ui/consumerChrome';
 
 const CHIP_ICONS: Record<MorningChipKey, LucideIcon> = {
   hrv: HeartPulse,
@@ -38,7 +39,7 @@ export function MorningChipGrid({
 }: MorningChipGridProps) {
   return (
     <div data-morning-contributors="inline" data-morning-chip-slot="honesty" className="w-full">
-      <p className="mb-1 text-center text-[10px] font-semibold uppercase tracking-wider text-white/80">
+      <p className={`mb-1 text-center ${CONSUMER_EYEBROW}`}>
         {MORNING_CARD_CONTRIBUTORS_LABEL}
       </p>
       <ul
@@ -63,7 +64,7 @@ export function MorningChipGrid({
                   event.preventDefault();
                   onSelect(chip.key);
                 }}
-                className={`inline-flex min-h-[44px] min-w-[44px] items-center gap-1.5 px-2 text-[11px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${
+                className={`${CONSUMER_BOS_CHIP} transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${
                   selected
                     ? 'text-[#2DA5A0] underline decoration-[#2DA5A0]/70 underline-offset-4'
                     : 'text-white/90 hover:text-white'

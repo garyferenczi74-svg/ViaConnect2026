@@ -9,6 +9,7 @@ import { Target } from 'lucide-react';
 import { PlasmaGauge } from '@/components/gauges/PlasmaGauge';
 import { ProgressCard } from './ProgressCard';
 import { computeProgressToGoal } from './progressMath';
+import { CONSUMER_CARD_TITLE, CONSUMER_METRIC_LABEL, PLASMA_MAIN_MOBILE } from '@/lib/ui/consumerChrome';
 
 export interface ProgressToGoalCardProps {
   readonly startLb?: number | null;
@@ -19,7 +20,7 @@ export interface ProgressToGoalCardProps {
 function Readout({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col items-center">
-      <span className="text-[11px] uppercase tracking-wide text-white/45">{label}</span>
+      <span className={CONSUMER_METRIC_LABEL}>{label}</span>
       <span className="text-sm font-semibold tabular-nums text-white">{value}</span>
     </div>
   );
@@ -39,14 +40,14 @@ export function ProgressToGoalCard({ startLb, currentLb, goalLb }: ProgressToGoa
       className="h-full"
       contentClassName="items-center text-center"
     >
-      <h2 className="text-sm font-semibold text-white">Progress to Goal</h2>
+      <h2 className={CONSUMER_CARD_TITLE}>Progress to Goal</h2>
 
       {result ? (
         <div className="flex flex-1 flex-col items-center justify-center">
           <PlasmaGauge
             value={result.pct}
             metric="plasmateal"
-            size={176}
+            size={PLASMA_MAIN_MOBILE}
             valueFontPx={30}
             valueSuffix="%"
             caption="COMPLETE"
@@ -57,7 +58,7 @@ export function ProgressToGoalCard({ startLb, currentLb, goalLb }: ProgressToGoa
             <Readout label="Current" value={`${Math.round(currentLb as number)} lb`} />
             <Readout label="Goal" value={`${Math.round(goalLb as number)} lb`} />
           </div>
-          <p className="mt-2 text-xs text-white/55">
+          <p className="mt-2 text-sm text-white/85">
             {result.lbsToGo} lb to {result.direction === 'loss' ? 'lose' : 'gain'}
           </p>
         </div>
@@ -66,14 +67,14 @@ export function ProgressToGoalCard({ startLb, currentLb, goalLb }: ProgressToGoa
           <PlasmaGauge
             value={0}
             metric="plasmateal"
-            size={176}
+            size={PLASMA_MAIN_MOBILE}
             valueFontPx={30}
             animated={false}
             valueSuffix="%"
             caption="COMPLETE"
             ariaLabel="Progress to goal not available yet"
           />
-          <p className="mt-3 text-xs text-white/55">Start logging to see progress.</p>
+          <p className="mt-3 text-sm text-white/85">Start logging to see progress.</p>
         </div>
       )}
     </ProgressCard>

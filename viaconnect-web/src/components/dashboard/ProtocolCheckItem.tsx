@@ -5,6 +5,7 @@
 import { motion } from 'framer-motion';
 import { Check } from 'lucide-react';
 import type { ProtocolInputChip } from '@/lib/supplements/protocolHomework';
+import { CONSUMER_HOMEWORK } from '@/lib/ui/consumerChrome';
 
 export interface ProtocolCheckItemData {
   id: string;
@@ -57,9 +58,9 @@ export function ProtocolCheckItem({ item, onToggle }: Props) {
           {item.productName}
         </p>
         <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
-          {item.dosage && <span className="text-[10px] text-white/35">{item.dosage}</span>}
+          {item.dosage && <span className="text-xs text-white/70">{item.dosage}</span>}
           {item.deliveryForm && (
-            <span className="rounded bg-white/[0.05] px-1.5 py-0.5 text-[10px] text-white/40">
+            <span className="rounded bg-white/[0.05] px-1.5 py-0.5 text-xs text-white/70">
               {item.deliveryForm}
             </span>
           )}
@@ -67,7 +68,7 @@ export function ProtocolCheckItem({ item, onToggle }: Props) {
         {item.homeworkLine || item.inputChip ? (
           <p
             data-testid="protocol-row-homework"
-            className="mt-0.5 break-words text-[10px] leading-snug text-white/40 [overflow-wrap:break-word] [word-break:normal]"
+            className={`${CONSUMER_HOMEWORK} text-white/85`}
           >
             {item.homeworkLine ? <span>{item.homeworkLine}</span> : null}
             {item.inputChip ? (

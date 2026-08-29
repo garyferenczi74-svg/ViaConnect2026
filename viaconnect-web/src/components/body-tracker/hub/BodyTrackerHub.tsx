@@ -26,6 +26,11 @@ import { ConnectionsStrip } from './ConnectionsStrip';
 import { AssessmentRetakeCard } from './AssessmentRetakeCard';
 import { useHubMetrics } from './useHubMetrics';
 import { HannahAIGuidedByChip } from '@/components/hannah/HannahAIGuidedByChip';
+import {
+  CONSUMER_EYEBROW_TEAL,
+  CONSUMER_HUB_H1,
+  CONSUMER_HUB_SUBLINE,
+} from '@/lib/ui/consumerChrome';
 
 export function BodyTrackerHub() {
   const { metrics } = useHubMetrics();
@@ -35,17 +40,17 @@ export function BodyTrackerHub() {
       {/* Header */}
       <header className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.18em] text-[#2DA5A0]">
+          <p className={CONSUMER_EYEBROW_TEAL}>
             <span
               aria-hidden="true"
               className="inline-block h-1.5 w-1.5 rounded-full bg-[#2DA5A0]"
             />
             My Biology
           </p>
-          <h1 className="mt-1 text-[22px] font-semibold leading-tight text-white md:text-[26px]">
+          <h1 className={CONSUMER_HUB_H1}>
             Your biology at a glance
           </h1>
-          <p className="mt-1 text-[13px] leading-relaxed text-white/[0.62] md:text-[14px]">
+          <p className={CONSUMER_HUB_SUBLINE}>
             Your biology surfaces in one hub. Tap any tile to dive in.
           </p>
         </div>

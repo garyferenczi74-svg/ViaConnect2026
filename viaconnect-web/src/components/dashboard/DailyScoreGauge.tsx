@@ -82,7 +82,7 @@ export function DailyScoreGauge({
           />
         )}
         <p
-          className={`text-[10px] font-semibold uppercase tracking-wider ${noData ? 'text-white/60' : 'text-white'}`}
+          className={`text-xs font-semibold uppercase tracking-wider ${noData ? 'text-white/70' : 'text-white'}`}
         >
           {label}
         </p>

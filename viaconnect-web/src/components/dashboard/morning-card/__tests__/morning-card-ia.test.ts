@@ -7,6 +7,7 @@ import { METRIC_LABELS, CONTRIBUTOR_METRICS } from '@/lib/body-tracker/contribut
 import { buildMorningChips } from '@/lib/dashboard/morning-card/contributors';
 import { MORNING_CHIP_KEYS } from '@/lib/dashboard/morning-card/keys';
 import { MorningChipGrid } from '../MorningChipGrid';
+import { CONSUMER_BOS_CHIP, CONSUMER_SOURCE_PILL } from '@/lib/ui/consumerChrome';
 
 vi.mock('next/link', () => ({
   default: ({
@@ -105,7 +106,13 @@ describe('Brief 29 morning card IA', () => {
     expect(chips).not.toContain('md:grid-cols-7');
     expect(chips).not.toContain('md:grid-cols-8');
     expect(chips).not.toContain('bg-[#1A2744]/70');
-    expect(chips).toContain('min-h-[44px]');
+    expect(chips).toContain('CONSUMER_BOS_CHIP');
+    expect(chips).toContain('whitespace-nowrap');
+    expect(CONSUMER_BOS_CHIP).toMatch(/\btext-xs\b/);
+    expect(CONSUMER_BOS_CHIP).not.toMatch(/\btext-sm\b/);
+    expect(CONSUMER_BOS_CHIP).toMatch(/min-h-\[44px\]/);
+    expect(CONSUMER_SOURCE_PILL).not.toMatch(/min-h-\[44px\]/);
+    expect(src('src/lib/ui/consumerChrome.ts')).toContain('min-h-[44px]');
     expect(chips).toContain('strokeWidth={1.5}');
     expect(chips).toContain('href={chip.href}');
     expect(chips).toContain('underline-offset-4');
@@ -128,12 +135,13 @@ describe('Brief 29 morning card IA', () => {
     );
     expect(card).toContain('hannahBos.sentence');
     expect(card).toContain('text-white/85');
-    expect(card).toContain('text-white/90');
-    expect(card).toContain('text-white/80');
+    expect(card).toContain('CONSUMER_SOURCE_PILL');
+    expect(card).toContain('CONSUMER_EYEBROW');
     expect(card).toContain('brightReadout');
     expect(card).not.toContain('text-white/40');
     expect(card).not.toContain('text-white/70');
-    expect(chips).toContain('text-white/80');
+    expect(chips).toContain('CONSUMER_EYEBROW');
+    expect(chips).toContain('CONSUMER_BOS_CHIP');
     expect(chips).toContain('text-white/90');
     expect(chips).not.toContain('text-white/40');
     expect(chips).not.toContain('text-white/70');

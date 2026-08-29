@@ -14,6 +14,10 @@
 
 import Link from 'next/link';
 import { ArrowRight, Plug } from 'lucide-react';
+import {
+  CONSUMER_CARD_SUBHEAD,
+  CONSUMER_CARD_TITLE,
+} from '@/lib/ui/consumerChrome';
 import '@/components/body-tracker/hub/hub-card-frame.css';
 
 const ACCENT_HEX = '#2DA5A0';
@@ -53,10 +57,10 @@ export function NutritionConnectStrip() {
         </span>
 
         <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <h2 className="text-[14px] font-semibold leading-tight text-white md:text-[15px]">
+          <h2 className={CONSUMER_CARD_TITLE}>
             {TITLE}
           </h2>
-          <p className="text-[12px] leading-relaxed text-white/[0.62] md:text-[13px]">
+          <p className={CONSUMER_CARD_SUBHEAD}>
             {DESCRIPTION}
           </p>
         </div>
@@ -68,7 +72,7 @@ export function NutritionConnectStrip() {
         <ul className="flex flex-wrap items-center gap-1.5">
           {SOURCES.map((source) => (
             <li key={source.id}>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[11px] text-white/75 backdrop-blur-sm">
+              <span className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-sm text-white/85 backdrop-blur-sm">
                 <span
                   aria-hidden="true"
                   className={`h-1.5 w-1.5 rounded-full ${

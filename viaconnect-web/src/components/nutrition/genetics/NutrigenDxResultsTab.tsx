@@ -91,7 +91,7 @@ export function NutrigenDxResultsTab({ nutrigenDxPending }: NutrigenDxResultsTab
             <FlaskConical className="h-5 w-5 text-[#2DA5A0]" strokeWidth={1.5} />
           </span>
           <div className="min-w-0">
-            <h2 className="text-[15px] font-semibold leading-tight text-white md:text-base">
+            <h2 className="text-xl font-semibold leading-tight text-white">
               Your NutrigenDX results are processing
             </h2>
             <p className="mt-1 text-[13px] leading-relaxed text-white/[0.62]">
@@ -139,7 +139,7 @@ export function NutrigenDxResultsTab({ nutrigenDxPending }: NutrigenDxResultsTab
             <Dna className="h-5 w-5 text-[#2DA5A0]" strokeWidth={1.5} />
           </span>
           <div className="min-w-0">
-            <h2 className="text-[15px] font-semibold leading-tight text-white md:text-base">
+            <h2 className="text-xl font-semibold leading-tight text-white">
               Not analyzed
             </h2>
             <p className="mt-1 text-[13px] leading-relaxed text-white/[0.62]">
@@ -183,7 +183,7 @@ export function NutrigenDxResultsTab({ nutrigenDxPending }: NutrigenDxResultsTab
       <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054] p-5 md:p-6">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div>
-            <h2 className="text-[15px] font-semibold leading-tight text-white md:text-base">
+            <h2 className="text-xl font-semibold leading-tight text-white">
               NutrigenDX results
             </h2>
             <p className="mt-1 text-[13px] text-white/[0.62]">
