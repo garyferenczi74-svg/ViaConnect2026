@@ -1,5 +1,10 @@
 # Scan MediaPipe assets
 
+Naming note: the 231 spec names body_scans, body_scan_frames, and bucket
+body-scans; the converged live names are body_photo_sessions,
+body_photo_session_frames, and bucket body-progress-photos, so do not go
+looking for the spec names in this codebase.
+
 This directory backs the FormaVision body scan pose guide. The pose detection
 model (MediaPipe PoseLandmarker) and its WASM runtime are self hosted under
 `public/mediapipe/` rather than loaded from a CDN. There is no postinstall or

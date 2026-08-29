@@ -185,7 +185,11 @@ export async function updateSession(request: NextRequest) {
     // Marshall pre-check public JWKS (Prompt #121). Standard .well-known
     // discovery endpoint for third parties verifying clearance receipts.
     pathname === "/.well-known/marshall-clearance-jwks.json" ||
-    pathname.startsWith("/.well-known/");
+    pathname.startsWith("/.well-known/") ||
+    // Prompt 231b: MediaPipe WASM/model assets served from /mediapipe must be
+    // reachable pre-auth (loaded by the scan camera view before login gates
+    // resolve). Prefix match so /mediapipe/1.0.1/... is public.
+    pathname.startsWith("/mediapipe");
 
   // If not authenticated and trying to access protected route:
   // - API routes return JSON 401 (Capacitor/fetch/webhooks must not get HTML /login)
