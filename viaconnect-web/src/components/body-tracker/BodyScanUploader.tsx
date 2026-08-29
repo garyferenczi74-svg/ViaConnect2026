@@ -157,6 +157,7 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
   const geometricMeasurementsRef = useRef<ExtractedMeasurements | null>(null);
   const visionScanIdRef = useRef<string | null>(null);
   const writeTriggeredRef = useRef(false);
+  const circWritePromiseRef = useRef<Promise<void> | null>(null);
 
   const allFilled = POSITIONS.every((p) => slots[p.key].base64 !== null);
 
@@ -206,6 +207,7 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
     geometricMeasurementsRef.current = null;
     visionScanIdRef.current = null;
     writeTriggeredRef.current = false;
+    circWritePromiseRef.current = null;
     // Reset per-view quality state for this new analysis run.
     setViewQuality({});
 
@@ -300,7 +302,7 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
           const scanId = visionScanIdRef.current;
           if (scanId && !writeTriggeredRef.current) {
             writeTriggeredRef.current = true;
-            void writeCircumferencesFromScan(measurements, scanId);
+            circWritePromiseRef.current = writeCircumferencesFromScan(measurements, scanId);
           }
         } catch (err) {
           // Non-fatal: log and continue. The Claude Vision path is unaffected.
@@ -393,7 +395,7 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
         const pending = geometricMeasurementsRef.current;
         if (pending && !writeTriggeredRef.current) {
           writeTriggeredRef.current = true;
-          void writeCircumferencesFromScan(pending, out.scan_id);
+          circWritePromiseRef.current = writeCircumferencesFromScan(pending, out.scan_id);
         }
       };
       flushCirc();
@@ -404,6 +406,9 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
           if (!isMountedRef.current) return;
           flushCirc();
         }
+      }
+      if (circWritePromiseRef.current) {
+        await circWritePromiseRef.current;
       }
 
       onComplete({ scanId: out.scan_id, scanDate: out.scan_date, estimates: out.estimates });

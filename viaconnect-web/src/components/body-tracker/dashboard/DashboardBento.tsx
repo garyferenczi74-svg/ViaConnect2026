@@ -33,6 +33,7 @@ import {
   vitalValueDisplay,
   weightBoundDisplay,
 } from '@/lib/analytics/provenance';
+import { resolveLatestBodyFat } from '@/lib/body-tracker/composition/resolveLatestBodyFat';
 
 interface DashboardBentoProps {
   userId: string | null;
@@ -129,11 +130,13 @@ export function DashboardBento({ userId }: DashboardBentoProps) {
         labs,
         milestones,
         hormoneLabs,
+        fatLatest,
       ] = await Promise.all([
         (supabase as any)
           .from('body_tracker_weight')
           .select('weight_lbs, body_fat_pct, goal_weight_lbs, created_at, body_tracker_entries(source, device_name, manual_source_id)')
           .eq('user_id', userId)
+          .not('weight_lbs', 'is', null)
           .order('created_at', { ascending: false })
           .limit(2),
         (supabase as any)
@@ -175,6 +178,14 @@ export function DashboardBento({ userId }: DashboardBentoProps) {
           .eq('user_id', userId)
           .order('collection_date', { ascending: false })
           .limit(30),
+        (supabase as any)
+          .from('body_tracker_segmental_fat')
+          .select('total_body_fat_pct, created_at, body_tracker_entries(source, device_name, manual_source_id)')
+          .eq('user_id', userId)
+          .not('total_body_fat_pct', 'is', null)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
       ]);
 
       const wRows = weightLatest?.data ?? [];
@@ -222,14 +233,26 @@ export function DashboardBento({ userId }: DashboardBentoProps) {
 
       const weightSourceName = entryToSourceName(unwrapRelatedEntry(wRows[0]?.body_tracker_entries));
       const metabSourceName = entryToSourceName(unwrapRelatedEntry(metab?.data?.body_tracker_entries));
+      const fatRow = fatLatest?.data ?? null;
+      const resolvedFat = resolveLatestBodyFat([
+        {
+          pct: fatRow?.total_body_fat_pct != null ? Number(fatRow.total_body_fat_pct) : null,
+          createdAt: fatRow?.created_at != null ? String(fatRow.created_at) : null,
+          sourceName: entryToSourceName(unwrapRelatedEntry(fatRow?.body_tracker_entries)),
+        },
+        {
+          pct: wRows[0]?.body_fat_pct != null ? Number(wRows[0].body_fat_pct) : null,
+          createdAt: wRows[0]?.created_at != null ? String(wRows[0].created_at) : null,
+          sourceName: weightSourceName,
+        },
+      ]);
 
       setSnap({
         weightLbs: currentW,
         weightDelta,
         weightSourceName,
-        bodyFatPct:
-          wRows[0]?.body_fat_pct != null ? Number(wRows[0].body_fat_pct) : null,
-        bodyFatSourceName: weightSourceName,
+        bodyFatPct: resolvedFat.pct,
+        bodyFatSourceName: resolvedFat.sourceName,
         leanMassLbs:
           muscle?.data?.total_muscle_mass_lbs != null
             ? Number(muscle.data.total_muscle_mass_lbs)

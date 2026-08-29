@@ -44,6 +44,8 @@ describe('Brief 32 provenance vocabulary', () => {
     expect(chipForSourceName('goals_tab')).toBe('from profile');
     expect(chipForSourceName('weight_card')).toBe('from profile');
     expect(chipForSourceName('estimated')).toBe('estimated');
+    expect(chipForSourceName('FormaVision')).toBe('estimated');
+    expect(chipForSourceName('scan')).toBe('estimated');
     expect(chipForSourceName(null)).toBeNull();
     expect(chipForSourceName('whoop')).toBeNull();
   });
@@ -64,6 +66,10 @@ describe('Brief 32 provenance vocabulary', () => {
       'Hume Health',
     );
     expect(chipForSourceName(entryToSourceName({ device_name: 'Hume Health', source: 'import' }))).toBeNull();
+    expect(entryToSourceName({ device_name: 'FormaVision', source: 'scan' })).toBe('FormaVision');
+    expect(
+      chipForSourceName(entryToSourceName({ device_name: 'FormaVision', source: 'scan' })),
+    ).toBe('estimated');
     expect(entryToSourceName({ source: 'manual', device_name: null })).toBe('manual');
     expect(unwrapRelatedEntry([{ source: 'manual', device_name: null }])?.source).toBe('manual');
     expect(unwrapRelatedEntry(null)).toBeNull();
@@ -160,6 +166,10 @@ describe('Brief 32 printed number honesty', () => {
     expect(bodyFatDisplay({ bodyFatPct: 27, sourceName: 'caq' })).toEqual({
       text: '27.0 %',
       chip: 'from CAQ',
+    });
+    expect(bodyFatDisplay({ bodyFatPct: 21.4, sourceName: 'FormaVision' })).toEqual({
+      text: '21.4 %',
+      chip: 'estimated',
     });
 
     const mixed = sameSourceTrend([

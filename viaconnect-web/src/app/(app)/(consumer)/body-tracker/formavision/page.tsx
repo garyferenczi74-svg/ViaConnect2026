@@ -140,7 +140,7 @@ function FormaVisionSurface() {
 
   const composHistory = useCompositionHistory(userId ?? null);
   const circHistory = useCircumferenceHistory(userId ?? null, unit);
-  const { data: circumferenceData } = useCircumferenceData({
+  const { data: circumferenceData, refresh: refreshCirc } = useCircumferenceData({
     userId: userId ?? null,
     displayUnit: unit,
   });
@@ -320,6 +320,7 @@ function FormaVisionSurface() {
                 void persistScan(r.scanId).then(() => {
                   composHistory.refresh();
                   circHistory.refresh();
+                  refreshCirc();
                 });
               }}
               onCancel={() => setScanOpen(false)}
