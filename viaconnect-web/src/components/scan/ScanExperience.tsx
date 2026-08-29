@@ -2,12 +2,14 @@
 
 /**
  * Prompt 231: the capture flow orchestrator. Wires ConsentNotice,
- * CameraPreview, the Task 8 overlays, useScanSession, useCountdown, and
- * useCamera into the end-to-end flow (spec Section 6). MediaPipe is not
- * wired here (a later task); QA runs on evaluateWeakFrame so the flow is
- * exercisable end to end. The submit route does not exist yet either
- * (also a later task): the Review "Use these scans" button stays disabled
- * with a visible note rather than faking a success.
+ * CameraPreview, the Task 8 overlays, useScanSession, useCountdown,
+ * useCamera, and usePoseLandmarker into the end-to-end flow (spec Section
+ * 6). The real MediaPipe pose landmarker gates the ARMED/COUNT live
+ * pre-check and the CAPTURE shot QA; evaluateWeakFrame is the fallback path
+ * when the landmarker fails to load (mode 'weak'), so the flow stays
+ * exercisable end to end either way. The submit route does not exist yet
+ * (a later task): the Review "Use these scans" button stays disabled with a
+ * visible note rather than faking a success.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -16,6 +18,7 @@ import { COMPOSITION_PATH } from '@/lib/body-tracker/compositionNav';
 import { useScanSession } from '@/hooks/scan/useScanSession';
 import { useCountdown } from '@/hooks/scan/useCountdown';
 import { useCamera } from '@/hooks/scan/useCamera';
+import { usePoseLandmarker } from '@/hooks/scan/usePoseLandmarker';
 import { ConsentNotice } from './ConsentNotice';
 import { CameraPreview } from './CameraPreview';
 import { CountdownOverlay } from './CountdownOverlay';
@@ -23,8 +26,8 @@ import { PoseTitleCard } from './PoseTitleCard';
 import { LevelBubble } from './LevelBubble';
 import { ScanReview } from './ScanReview';
 import { POSE_ORDER, INTERSTITIAL } from '@/lib/scan/poses';
-import { evaluateWeakFrame, messageForCode } from '@/lib/scan/qa';
-import { computeWeakQaInputFromBlob } from '@/lib/scan/captureStillMetrics';
+import { evaluatePose, evaluateWeakFrame, messageForCode } from '@/lib/scan/qa';
+import { computeWeakQaInputFromBlob, blobToCanvas } from '@/lib/scan/captureStillMetrics';
 import { revokeFrame, revokeAllFrames, qaResultToAction } from '@/lib/scan/scanFlowDriver';
 import {
   WALK_IN_COACHING,
@@ -42,11 +45,20 @@ import {
   SCAN_POSE_TITLE_MS,
 } from '@/lib/scan/scanTimeouts';
 import { withTimeout } from '@/lib/utils/with-timeout';
-import type { ScanFrame } from '@/lib/scan/types';
+import type { Landmark, ScanFrame } from '@/lib/scan/types';
 
 const VOICE_STORAGE_KEY = 'formavision.scan.voice';
 const WALK_IN_SECONDS = 10;
 const COUNT_SECONDS = 5;
+
+// Blur is a still-only signal. The live ARMED/COUNT pre-check runs
+// evaluatePose() on every video frame at ~12fps to gate the countdown;
+// running the Laplacian-variance blur pass that often would burn cycles on
+// a signal that is only authoritative on the captured still anyway (the
+// trust-the-still rule below re-evaluates blur for real at CAPTURE via
+// computeWeakQaInputFromBlob). Passing a value that can never fail BLURRY
+// here waives that one gate for the live check only.
+const LIVE_PRECHECK_BLUR_SCORE = Number.POSITIVE_INFINITY;
 
 function readVoicePreference(): boolean {
   if (typeof window === 'undefined') return true;
@@ -92,6 +104,13 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
   const router = useRouter();
   const { state, dispatch } = useScanSession();
   const camera = useCamera({ facingMode: 'environment' });
+  // Lazily loads only once the camera stream is live (never before), and
+  // never throws; on any failure it settles to mode 'weak' (see
+  // usePoseLandmarker.ts). detectVideo/detectStill below are guarded on
+  // mode/ready everywhere they are called, so a still-loading or failed
+  // landmarker is always harmless, never a hang.
+  const poseLandmarker = usePoseLandmarker({ enabled: Boolean(camera.stream) });
+  const landmarkerLive = poseLandmarker.ready && poseLandmarker.mode === 'landmarker';
 
   const [consentAcknowledged, setConsentAcknowledged] = useState(hasConsent);
   const [localHeightCm, setLocalHeightCm] = useState<number | null>(heightCm);
@@ -215,14 +234,60 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
     return () => clearTimeout(timer);
   }, [state.phase, state.poseIndex, dispatch]);
 
-  // ---- ARMED: live pre-check gates the count start. Until Task 11 wires
-  // MediaPipe, the weak pre-check always passes; the timeout still bounds
-  // the wait so ARMED never hangs (228 Rule 1). ----
+  // ---- ARMED: live pre-check gates the count start. In landmarker mode,
+  // poll the video frame at ~12fps (usePoseLandmarker.detectVideo throttles
+  // internally to >= 80ms between calls) and run evaluatePose; PRECHECK_PASS
+  // fires the moment a frame passes. A bounded watchdog (SCAN_PRECHECK_TIMEOUT_MS)
+  // still fires PRECHECK_PASS on its own if nothing passes in time (228 Rule
+  // 1: ARMED never hangs) - the COUNT live-abort effect below keeps
+  // enforcing the pose after that, so passing through on the watchdog here
+  // is not the only gate. In weak mode (landmarker failed to load, no live
+  // geometry signal), this is unchanged from pre-Task-11: wait out the
+  // timeout and pass through. ----
   useEffect(() => {
     if (state.phase !== 'ARMED') return;
-    const timer = setTimeout(() => dispatch({ type: 'PRECHECK_PASS' }), SCAN_PRECHECK_TIMEOUT_MS);
-    return () => clearTimeout(timer);
-  }, [state.phase, state.poseIndex, state.retryCount, dispatch]);
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      dispatch({ type: 'PRECHECK_PASS' });
+    }, SCAN_PRECHECK_TIMEOUT_MS);
+
+    if (!landmarkerLive) {
+      return () => clearTimeout(timer);
+    }
+
+    const pose = POSE_ORDER[state.poseIndex];
+    let rafId: number;
+    const tick = () => {
+      if (settled) return;
+      const video = camera.videoRef.current;
+      const landmarks = video ? poseLandmarker.detectVideo(video, performance.now()) : null;
+      if (landmarks) {
+        const result = evaluatePose({
+          landmarks,
+          pose,
+          frameWidth: video!.videoWidth,
+          frameHeight: video!.videoHeight,
+          blurScore: LIVE_PRECHECK_BLUR_SCORE,
+        });
+        if (result.pass) {
+          settled = true;
+          clearTimeout(timer);
+          dispatch({ type: 'PRECHECK_PASS' });
+          return;
+        }
+      }
+      rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame(tick);
+
+    return () => {
+      settled = true;
+      clearTimeout(timer);
+      cancelAnimationFrame(rafId);
+    };
+  }, [state.phase, state.poseIndex, state.retryCount, dispatch, camera.videoRef, landmarkerLive, poseLandmarker.detectVideo]);
 
   // ---- COUNT: 5..1 ticks dispatch TICK; the reducer owns count and the
   // CAPTURE flip at 0. Speech fires from the count-change effect below so
@@ -237,6 +302,43 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
     if (state.phase !== 'COUNT') return;
     speak(String(state.count), voiceEnabled);
   }, [state.phase, state.count, voiceEnabled]);
+
+  // ---- COUNT live abort: keep polling the video frame through the
+  // countdown; if the pose breaks mid-count in landmarker mode, dispatch
+  // PRECHECK_FAIL (reducer: COUNT -> ARMED, count resets to 5). Weak mode
+  // has no live geometry signal, so this effect is a no-op there - the
+  // countdown simply runs to completion as it did pre-Task-11. ----
+  useEffect(() => {
+    if (state.phase !== 'COUNT' || !landmarkerLive) return;
+    let cancelled = false;
+    const pose = POSE_ORDER[state.poseIndex];
+    let rafId: number;
+    const tick = () => {
+      if (cancelled) return;
+      const video = camera.videoRef.current;
+      const landmarks = video ? poseLandmarker.detectVideo(video, performance.now()) : null;
+      if (landmarks) {
+        const result = evaluatePose({
+          landmarks,
+          pose,
+          frameWidth: video!.videoWidth,
+          frameHeight: video!.videoHeight,
+          blurScore: LIVE_PRECHECK_BLUR_SCORE,
+        });
+        if (!result.pass) {
+          cancelled = true;
+          dispatch({ type: 'PRECHECK_FAIL' });
+          return;
+        }
+      }
+      rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame(tick);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(rafId);
+    };
+  }, [state.phase, state.poseIndex, dispatch, camera.videoRef, landmarkerLive, poseLandmarker.detectVideo]);
 
   // ---- CAPTURE: grab the still, flash + haptic, run weak QA, dispatch
   // CAPTURED then QA_PASS/QA_FAIL. A hung grab/QA pipeline is a camera
@@ -272,7 +374,29 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
       const still = await camera.grabStill();
       const objectUrl = URL.createObjectURL(still.blob);
       const metrics = await computeWeakQaInputFromBlob(still.blob);
-      const qa = evaluateWeakFrame(metrics);
+
+      // Trust-the-still: qa below is ALWAYS computed fresh against this
+      // captured still, never inherited from the ARMED/COUNT live
+      // pre-check's verdict (that verdict only ever gated whether COUNT
+      // started/kept running, above). So a live pass followed by a
+      // failing still correctly fails the shot, per spec.
+      let qa;
+      let landmarks: Landmark[] | undefined;
+      if (landmarkerLive) {
+        const stillCanvas = await blobToCanvas(still.blob);
+        const detected = poseLandmarker.detectStill(stillCanvas);
+        landmarks = detected ?? undefined;
+        qa = evaluatePose({
+          landmarks: detected,
+          pose,
+          frameWidth: still.width,
+          frameHeight: still.height,
+          blurScore: metrics.blurScore,
+        });
+      } else {
+        qa = evaluateWeakFrame(metrics);
+      }
+
       return {
         pose,
         blob: still.blob,
@@ -282,6 +406,11 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
         retryCount: state.retryCount,
         capturedWidth: still.width,
         capturedHeight: still.height,
+        // Collected for this pose's QA only (G81). Never sent anywhere:
+        // this component has no upload/storage call, and Task 13's submit
+        // whitelist + the DB REVOKE are the enforcement layer for the
+        // route that eventually will exist.
+        landmarks,
       };
     })();
 
@@ -462,8 +591,12 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
           <div className="pointer-events-none absolute inset-x-0 top-4 flex justify-center">
             <LevelBubble beta={0} gamma={0} available={false} />
           </div>
-          <p className="pointer-events-none absolute inset-x-0 bottom-8 text-center text-sm text-white/80" aria-live="assertive">
-            {ARMED_COACHING}
+          <p
+            className="pointer-events-none absolute inset-x-0 bottom-8 text-center text-sm text-white/80"
+            aria-live="assertive"
+            data-testid={poseLandmarker.ready && poseLandmarker.mode === 'weak' ? 'scan-pose-guide-unavailable' : undefined}
+          >
+            {poseLandmarker.ready && poseLandmarker.mode === 'weak' ? POSE_GUIDE_UNAVAILABLE : ARMED_COACHING}
           </p>
         </CameraPreview>
       )}

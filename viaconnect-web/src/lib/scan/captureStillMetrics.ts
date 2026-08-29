@@ -29,3 +29,27 @@ export async function computeWeakQaInputFromBlob(blob: Blob): Promise<FrameMetri
     bitmap.close();
   }
 }
+
+/**
+ * Prompt 231 Task 11b: decodes the captured JPEG blob onto a full
+ * resolution offscreen canvas for the pose landmarker shot QA
+ * (usePoseLandmarker.detectStill). Kept separate from
+ * computeWeakQaInputFromBlob above: that one intentionally downscales for
+ * blur/exposure math, this one must not, since MediaPipe landmark accuracy
+ * degrades at 320px. Same not-unit-testable-without-a-DOM caveat as the
+ * rest of this file.
+ */
+export async function blobToCanvas(blob: Blob): Promise<HTMLCanvasElement> {
+  const bitmap = await createImageBitmap(blob);
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('2D canvas context unavailable');
+    ctx.drawImage(bitmap, 0, 0);
+    return canvas;
+  } finally {
+    bitmap.close();
+  }
+}
