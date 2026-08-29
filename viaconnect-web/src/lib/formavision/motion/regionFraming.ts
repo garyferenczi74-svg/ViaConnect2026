@@ -20,9 +20,22 @@ export interface CameraFraming {
   distance: number;
 }
 
-// The default resting framing: the whole body centered, pulled back enough to read
-// head to foot. targetY matches the Canvas TARGET_Y and the distance sits mid-clamp.
-export const FULL_BODY_FRAMING: CameraFraming = { targetY: 0.9, distance: 3.2 };
+// Vertical FOV of the FormaVision perspective camera. Keep this in lockstep with
+// `camera={{ fov }}` in FormaVisionCanvas — framing math uses this value.
+export const AVATAR_VERTICAL_FOV_DEG = 30;
+
+// World-meters visible vertically at `distance` with the avatar perspective FOV.
+export function visibleHeightMeters(
+  distance: number,
+  fovDeg: number = AVATAR_VERTICAL_FOV_DEG,
+): number {
+  return 2 * distance * Math.tan((fovDeg * Math.PI) / 360);
+}
+
+// Default resting framing: mid-body target, pulled back so a 1.75m male mesh
+// (plus head stack) fits head-to-toe with margin. Distance 3.2 at 30° FOV only
+// shows ~1.72m — that is a bust crop. Stay well above region close-ups (~2.6).
+export const FULL_BODY_FRAMING: CameraFraming = { targetY: 0.88, distance: 4.2 };
 
 // Per-region framing. targetY rises up the body from foot to crown; distance pulls
 // in closer than the full-body default so the region reads large. Aliases map the

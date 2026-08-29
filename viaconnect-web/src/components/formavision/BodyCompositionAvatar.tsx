@@ -192,15 +192,15 @@ function BodyCompositionAvatarInner({
   const renderTier: 'cinematic' | 'lite' = tier === 'lite' ? 'lite' : 'cinematic';
 
   // The 3D avatar canvas fills its box absolutely, so it needs an explicit
-  // footprint. Keep a centered 720/1152 portrait box capped at 600px on every
-  // breakpoint. FormaVision mounts this in a full-width plate; lifting the cap
-  // with lg:max-w-none / lg:h-full blows the mesh to plate width and crops to
-  // a bust. Muscle / Body Fat / Measurements use the 2D SegmentalHeatMap, not
-  // this wrapper, so their column-fill classes stay untouched.
+  // footprint. Height comes from the FormaVision plate (viewport-capped), not
+  // from aspect-[720/1152] × max-w-[600px] (~960px — taller than a laptop
+  // content viewport). Fill the plate, stay centered, keep a 600px width cap.
+  // Muscle / Body Fat / Measurements use the 2D SegmentalHeatMap, not this
+  // wrapper, so their column-fill classes stay untouched.
   return (
     <div
       data-testid="formavision-avatar-footprint"
-      className="relative mx-auto aspect-[720/1152] h-auto w-full max-w-[600px]"
+      className="relative mx-auto h-full w-full max-h-full max-w-[600px]"
     >
       <FormaVision3DAvatar
         sex={sex}

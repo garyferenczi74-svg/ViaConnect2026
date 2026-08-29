@@ -422,7 +422,7 @@ function FormaVisionSurface() {
           line (pointer-events none so orbit and Neck callouts stay usable). */}
       <div
         data-testid="formavision-canvas-grid"
-        className="relative flex min-h-[480px] justify-center rounded-2xl border border-white/[0.08] bg-transparent p-4 lg:min-h-[560px]"
+        className="relative flex h-[min(52vh,520px)] max-h-[min(52vh,520px)] items-center justify-center overflow-hidden rounded-2xl border border-white/[0.08] bg-transparent p-4"
       >
         <AbWipeSplitOverlay wipeT={wipeT} visible={abCompareOn && Boolean(wipeVector)} />
         <BodyCompositionAvatar
