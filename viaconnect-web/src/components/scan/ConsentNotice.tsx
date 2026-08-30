@@ -113,9 +113,7 @@ export function ConsentNotice({ onAcknowledged }: ConsentNoticeProps) {
         className="text-xs text-amber-200 leading-relaxed"
         data-testid="scan-consent-practitioner-notice"
       >
-        If you have a linked practitioner, they can view your scan photos as part of
-        your shared care record, the same way they can already view your other body
-        tracker photos.
+        If you have a linked practitioner and you share body photos with them, they can view your scan photos the same way they can view your other body-tracker photos.
       </p>
       {error ? (
         <p className="text-xs text-red-300" data-testid="scan-consent-error">
