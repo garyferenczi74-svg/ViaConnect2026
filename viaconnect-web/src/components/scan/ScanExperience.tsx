@@ -341,13 +341,17 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
     };
   }, [state.phase, state.poseIndex, state.retryCount, dispatch, camera.videoRef, landmarkerLive, poseLandmarker.detectVideo, debugSkeletonEnabled]);
 
-  // ---- COUNT: 5..1 ticks dispatch TICK; the reducer owns count and the
-  // CAPTURE flip at 0. Speech fires from the count-change effect below so
-  // the digit is spoken at the start of that second. ----
+  // ---- COUNT: Prompt 231. onTick sets the displayed digit from real
+  // elapsed seconds (COUNT_SET, idempotent, never drives phase); onComplete
+  // fires the one time-based CAPTURE transition (COUNT_DONE) at the real 5
+  // second mark, mirroring WALK_IN's onComplete -> WALK_IN_DONE. Speech
+  // fires from the count-change effect below so the digit is spoken at the
+  // start of that second. ----
   useCountdown({
     totalSeconds: COUNT_SECONDS,
     active: state.phase === 'COUNT',
-    onTick: () => dispatch({ type: 'TICK' }),
+    onTick: (display) => dispatch({ type: 'COUNT_SET', display }),
+    onComplete: () => dispatch({ type: 'COUNT_DONE' }),
   });
 
   useEffect(() => {

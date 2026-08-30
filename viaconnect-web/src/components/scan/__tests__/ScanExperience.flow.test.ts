@@ -60,12 +60,12 @@ function driveOnePose(state: ScanState, pose: PoseId, pass: boolean): ScanState 
   s = scanReducer(s, { type: 'PRECHECK_PASS' }); // weak precheck always passes pre-Task-11
   expect(s.phase).toBe('COUNT');
   expect(s.count).toBe(5);
-  for (let i = 0; i < 4; i++) {
-    s = scanReducer(s, { type: 'TICK' });
-  }
+  // Prompt 231: COUNT_SET tracks the displayed digit; only COUNT_DONE
+  // (time-based onComplete) flips the phase to CAPTURE.
+  s = scanReducer(s, { type: 'COUNT_SET', display: 1 });
   expect(s.phase).toBe('COUNT');
   expect(s.count).toBe(1);
-  s = scanReducer(s, { type: 'TICK' });
+  s = scanReducer(s, { type: 'COUNT_DONE' });
   expect(s.phase).toBe('CAPTURE');
   expect(s.count).toBe(0);
 
@@ -132,7 +132,7 @@ describe('ScanExperience flow driver: live pre-check failure mid count resets to
     s = scanReducer(s, { type: 'PROMPT_DONE' });
     s = scanReducer(s, { type: 'PRECHECK_PASS' });
     expect(s.phase).toBe('COUNT');
-    s = scanReducer(s, { type: 'TICK' }); // count 5 -> 4
+    s = scanReducer(s, { type: 'COUNT_SET', display: 4 }); // count 5 -> 4
     expect(s.count).toBe(4);
 
     s = scanReducer(s, { type: 'PRECHECK_FAIL' });
@@ -194,7 +194,7 @@ describe('ScanExperience flow driver: a QA-fail retry never orphans the supersed
     let s = state;
     s = scanReducer(s, { type: 'PROMPT_DONE' });
     s = scanReducer(s, { type: 'PRECHECK_PASS' });
-    for (let i = 0; i < 5; i++) s = scanReducer(s, { type: 'TICK' });
+    s = scanReducer(s, { type: 'COUNT_DONE' });
     expect(s.phase).toBe('CAPTURE');
 
     const objectUrl = `blob:${pose}-attempt-${captureSeq++}`;

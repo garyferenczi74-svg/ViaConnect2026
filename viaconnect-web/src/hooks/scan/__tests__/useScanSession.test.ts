@@ -63,27 +63,61 @@ describe('useScanSession reducer', () => {
     expect(s.count).toBe(5);
   });
 
-  it('five TICKs walk the count 5..1 then flip to CAPTURE with count 0', () => {
+  // Prompt 231: COUNT_SET tracks the displayed digit off real elapsed
+  // seconds; it never drives the phase, no matter how it is called.
+  it('COUNT_SET sets count to the given display while phase is COUNT', () => {
     let s = initialScanState();
     s = scanReducer(s, { type: 'START' });
     s = scanReducer(s, { type: 'WALK_IN_DONE' });
     s = scanReducer(s, { type: 'PROMPT_DONE' });
     s = scanReducer(s, { type: 'PRECHECK_PASS' });
 
-    s = scanReducer(s, { type: 'TICK' });
+    s = scanReducer(s, { type: 'COUNT_SET', display: 4 });
     expect(s.phase).toBe('COUNT');
     expect(s.count).toBe(4);
 
-    s = scanReducer(s, { type: 'TICK' });
-    expect(s.count).toBe(3);
-
-    s = scanReducer(s, { type: 'TICK' });
+    s = scanReducer(s, { type: 'COUNT_SET', display: 2 });
     expect(s.count).toBe(2);
+  });
 
-    s = scanReducer(s, { type: 'TICK' });
-    expect(s.count).toBe(1);
+  it('COUNT_SET is ignored outside phase COUNT', () => {
+    const s = scanReducer(initialScanState(), { type: 'COUNT_SET', display: 3 });
+    expect(s.phase).toBe('SETUP');
+    expect(s.count).toBe(0);
+  });
 
-    s = scanReducer(s, { type: 'TICK' });
+  it('COUNT_SET is idempotent and clamps to 0..5', () => {
+    let s: ReturnType<typeof scanReducer> = { ...initialScanState(), phase: 'COUNT', count: 5 };
+    s = scanReducer(s, { type: 'COUNT_SET', display: 5 });
+    expect(s.count).toBe(5);
+    s = scanReducer(s, { type: 'COUNT_SET', display: 5 }); // repeat, same value
+    expect(s.count).toBe(5);
+    s = scanReducer(s, { type: 'COUNT_SET', display: 9 }); // out of range, clamp high
+    expect(s.count).toBe(5);
+    s = scanReducer(s, { type: 'COUNT_SET', display: -1 }); // out of range, clamp low
+    expect(s.count).toBe(0);
+  });
+
+  it('COUNT_DONE transitions COUNT to CAPTURE with count 0', () => {
+    let s: ReturnType<typeof scanReducer> = { ...initialScanState(), phase: 'COUNT', count: 1 };
+    s = scanReducer(s, { type: 'COUNT_DONE' });
+    expect(s.phase).toBe('CAPTURE');
+    expect(s.count).toBe(0);
+  });
+
+  // Regression guard for the instant-weak-mode-capture bug: no volume of
+  // COUNT_SET calls, in any order, can ever reach CAPTURE. Only COUNT_DONE
+  // (the real onComplete, fired once at 5 elapsed seconds) can.
+  it('repeated COUNT_SET, however many or in whatever order, never reaches CAPTURE; only COUNT_DONE does', () => {
+    let s: ReturnType<typeof scanReducer> = { ...initialScanState(), phase: 'COUNT', count: 5 };
+    const displays = [5, 4, 4, 3, 2, 2, 2, 1, 1, 5, 3, 1, 0, 0, 1];
+    for (const display of displays) {
+      s = scanReducer(s, { type: 'COUNT_SET', display });
+      expect(s.phase).toBe('COUNT');
+    }
+    expect(s.phase).toBe('COUNT');
+
+    s = scanReducer(s, { type: 'COUNT_DONE' });
     expect(s.phase).toBe('CAPTURE');
     expect(s.count).toBe(0);
   });
@@ -94,7 +128,7 @@ describe('useScanSession reducer', () => {
     s = scanReducer(s, { type: 'WALK_IN_DONE' });
     s = scanReducer(s, { type: 'PROMPT_DONE' });
     s = scanReducer(s, { type: 'PRECHECK_PASS' });
-    for (let i = 0; i < 5; i++) s = scanReducer(s, { type: 'TICK' });
+    s = scanReducer(s, { type: 'COUNT_DONE' });
     expect(s.phase).toBe('CAPTURE');
 
     const frame = makeFrame('front');
@@ -109,7 +143,7 @@ describe('useScanSession reducer', () => {
     s = scanReducer(s, { type: 'WALK_IN_DONE' });
     s = scanReducer(s, { type: 'PROMPT_DONE' });
     s = scanReducer(s, { type: 'PRECHECK_PASS' });
-    for (let i = 0; i < 5; i++) s = scanReducer(s, { type: 'TICK' });
+    s = scanReducer(s, { type: 'COUNT_DONE' });
     const frame = makeFrame(['front', 'right', 'back', 'left'][poseIndex] as ScanFrame['pose']);
     s = scanReducer(s, { type: 'CAPTURED', frame });
     return s;
@@ -139,12 +173,12 @@ describe('useScanSession reducer', () => {
     s = scanReducer(s, { type: 'QA_FAIL', code: 'BLURRY' }); // retryCount 1, back to PROMPT
     s = scanReducer(s, { type: 'PROMPT_DONE' });
     s = scanReducer(s, { type: 'PRECHECK_PASS' });
-    for (let i = 0; i < 5; i++) s = scanReducer(s, { type: 'TICK' });
+    s = scanReducer(s, { type: 'COUNT_DONE' });
     s = scanReducer(s, { type: 'CAPTURED', frame: makeFrame('front') });
     s = scanReducer(s, { type: 'QA_FAIL', code: 'BLURRY' }); // retryCount 2, back to PROMPT
     s = scanReducer(s, { type: 'PROMPT_DONE' });
     s = scanReducer(s, { type: 'PRECHECK_PASS' });
-    for (let i = 0; i < 5; i++) s = scanReducer(s, { type: 'TICK' });
+    s = scanReducer(s, { type: 'COUNT_DONE' });
     s = scanReducer(s, { type: 'CAPTURED', frame: makeFrame('front') });
     s = scanReducer(s, { type: 'QA_FAIL', code: 'BLURRY' }); // retryCount 3 -> CHOICE
     expect(s.phase).toBe('CHOICE');
@@ -183,7 +217,7 @@ describe('useScanSession reducer', () => {
     s = scanReducer(s, { type: 'WALK_IN_DONE' });
     s = scanReducer(s, { type: 'PROMPT_DONE' });
     s = scanReducer(s, { type: 'PRECHECK_PASS' });
-    s = scanReducer(s, { type: 'TICK' }); // 5 -> 4
+    s = scanReducer(s, { type: 'COUNT_SET', display: 4 }); // 5 -> 4
     s = scanReducer(s, { type: 'PRECHECK_FAIL' });
     expect(s.phase).toBe('ARMED');
     expect(s.count).toBe(5);
@@ -209,7 +243,7 @@ describe('useScanSession reducer', () => {
     expect(s.phase).toBe('PROMPT');
     s = scanReducer(s, { type: 'PROMPT_DONE' });
     s = scanReducer(s, { type: 'PRECHECK_PASS' });
-    for (let i = 0; i < 5; i++) s = scanReducer(s, { type: 'TICK' });
+    s = scanReducer(s, { type: 'COUNT_DONE' });
     s = scanReducer(s, { type: 'CAPTURED', frame: makeFrame('right') });
     s = scanReducer(s, { type: 'QA_PASS' });
 

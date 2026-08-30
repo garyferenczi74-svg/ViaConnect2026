@@ -39,7 +39,8 @@ export type ScanAction =
   | { type: 'WALK_IN_DONE' }
   | { type: 'PROMPT_DONE' }
   | { type: 'PRECHECK_PASS' }
-  | { type: 'TICK' }
+  | { type: 'COUNT_SET'; display: number }
+  | { type: 'COUNT_DONE' }
   | { type: 'PRECHECK_FAIL' }
   | { type: 'CAPTURED'; frame: ScanFrame }
   | { type: 'QA_PASS' }
@@ -125,12 +126,22 @@ export function scanReducer(state: ScanState, action: ScanAction): ScanState {
       return { ...state, phase: 'COUNT', count: 5 };
     }
 
-    case 'TICK': {
-      // COUNT: decrement while above 1; at 1, flip to CAPTURE with count 0.
+    case 'COUNT_SET': {
+      // Prompt 231: COUNT display tracks real elapsed seconds (useCountdown
+      // onTick), not a decrement-per-event counter. Idempotent by
+      // construction: setting the same display twice is a no-op change, so
+      // over-firing ticks (weak-mode re-render pressure) cannot burn the
+      // count down early. Clamped defensively; never drives the phase.
       if (state.phase !== 'COUNT') return state;
-      if (state.count > 1) {
-        return { ...state, count: state.count - 1 };
-      }
+      const count = Math.min(5, Math.max(0, action.display));
+      return { ...state, count };
+    }
+
+    case 'COUNT_DONE': {
+      // Prompt 231: the only path from COUNT to CAPTURE. Fired once by
+      // useCountdown's onComplete at the real 5 second mark (time-based),
+      // matching how WALK_IN_DONE already drives WALK_IN -> PROMPT.
+      if (state.phase !== 'COUNT') return state;
       return { ...state, phase: 'CAPTURE', count: 0 };
     }
 
