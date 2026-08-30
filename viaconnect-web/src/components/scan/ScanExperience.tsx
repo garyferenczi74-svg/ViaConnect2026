@@ -35,6 +35,7 @@ import { revokeFrame, revokeAllFrames, qaResultToAction } from '@/lib/scan/scanF
 import { runSubmit } from '@/lib/scan/submitFlow';
 import { scanResultPath } from '@/lib/scan/routes';
 import { readVoicePreference, writeVoicePreference } from '@/lib/scan/voicePreference';
+import { primeScanVoices, speakScanCountdown as speak } from '@/lib/scan/scanSpeech';
 import { POSE_CONNECTIONS } from '@/lib/scan/landmarks';
 import {
   WALK_IN_COACHING,
@@ -90,19 +91,6 @@ function readDebugSkeletonEnabled(): boolean {
 // computeWeakQaInputFromBlob). Passing a value that can never fail BLURRY
 // here waives that one gate for the live check only.
 const LIVE_PRECHECK_BLUR_SCORE = Number.POSITIVE_INFINITY;
-
-function speak(text: string, enabled: boolean): void {
-  if (!enabled) return;
-  if (typeof window === 'undefined') return;
-  const synth = window.speechSynthesis;
-  if (!synth) return;
-  try {
-    synth.cancel();
-    synth.speak(new SpeechSynthesisUtterance(text));
-  } catch {
-    // fail silently, never blocks capture
-  }
-}
 
 export interface ScanExperienceProps {
   /** clinical_assessments.height_cm, read server side. Null means UNKNOWN
@@ -163,6 +151,7 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
     setVoiceEnabled(readVoicePreference());
     setVoiceAvailable(typeof window !== 'undefined' && 'speechSynthesis' in window);
     setDebugSkeletonEnabled(readDebugSkeletonEnabled());
+    primeScanVoices();
   }, []);
 
   // ---- prefers-reduced-motion: read once on mount and keep in sync with
