@@ -58,10 +58,7 @@ export function CoverFlowCarousel({
     initialIndex = 0,
 }: CoverFlowCarouselProps) {
     const [prefersReducedMotion, setPrefersReducedMotion] = useState<boolean | null>(
-        () => {
-            if (typeof window === 'undefined') return null
-            return window.matchMedia('(prefers-reduced-motion: reduce)').matches
-        },
+        null,
     )
     const reactId = useId()
     const stageRef = useRef<HTMLDivElement>(null)
@@ -479,7 +476,7 @@ function CoverFlowCard({
                 <div className="relative border-t border-white/10 bg-[#111827]/70 px-3 py-2">
                     <h3
                         id={headingId}
-                        className="pr-10 text-sm font-medium leading-snug text-white sm:text-base md:text-lg"
+                        className="pr-10 text-sm font-medium leading-snug text-white sm:text-base md:text-lg lg:text-xl"
                     >
                         {item.title}
                     </h3>

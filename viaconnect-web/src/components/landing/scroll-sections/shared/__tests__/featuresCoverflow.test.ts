@@ -259,6 +259,8 @@ describe('CoverFlowCarousel Features integration', () => {
         expect(CAROUSEL).toContain('dropdownOpen: openId !== null');
         expect(CAROUSEL).toContain('prefersReducedMotion !== false');
         expect(CAROUSEL).toContain("matchMedia('(prefers-reduced-motion: reduce)')");
+        expect(CAROUSEL).toContain('useState<boolean | null>(\n        null,');
+        expect(CAROUSEL).not.toContain("typeof window === 'undefined'");
         expect(CAROUSEL).toContain('data-autoplay');
         expect(CAROUSEL).toContain('data-motion');
         expect(CAROUSEL).toContain('data-motion-pref');
@@ -271,6 +273,7 @@ describe('CoverFlowCarousel Features integration', () => {
         expect(COVERFLOW_STAGE_HEIGHT_CLASS).toContain('h-[288px]');
         expect(COVERFLOW_STAGE_HEIGHT_CLASS).toContain('sm:h-[420px]');
         expect(COVERFLOW_STAGE_HEIGHT_CLASS).toContain('md:h-[540px]');
+        expect(COVERFLOW_STAGE_HEIGHT_CLASS).toContain('lg:h-[620px]');
         expect(COVERFLOW_STAGE_HEIGHT_CLASS).not.toMatch(/(?:^|[\s"'])h-\[420px\]/);
         expect(COVERFLOW_STAGE_HEIGHT_CLASS).not.toContain('md:h-[340px]');
         expect(COVERFLOW_CARD_SIZE_CLASS).toContain('w-[196px]');
@@ -279,6 +282,8 @@ describe('CoverFlowCarousel Features integration', () => {
         expect(COVERFLOW_CARD_SIZE_CLASS).toContain('sm:h-[340px]');
         expect(COVERFLOW_CARD_SIZE_CLASS).toContain('md:w-[360px]');
         expect(COVERFLOW_CARD_SIZE_CLASS).toContain('md:h-[440px]');
+        expect(COVERFLOW_CARD_SIZE_CLASS).toContain('lg:w-[420px]');
+        expect(COVERFLOW_CARD_SIZE_CLASS).toContain('lg:h-[520px]');
         expect(COVERFLOW_CARD_SIZE_CLASS).not.toContain('md:w-[248px]');
         expect(COVERFLOW_CARD_SIZE_CLASS).not.toContain('md:h-[268px]');
         expect(CAROUSEL).toContain('COVERFLOW_STAGE_HEIGHT_CLASS');

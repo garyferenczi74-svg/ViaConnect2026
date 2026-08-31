@@ -9,10 +9,10 @@ export const COVERFLOW_AUTOPLAY_MS_PER_CARD = 2800
 
 /** Mobile 390 keeps the compact #150 plate. Tablet/desktop restore a coverflow hero. */
 export const COVERFLOW_STAGE_HEIGHT_CLASS =
-    'h-[288px] sm:h-[420px] md:h-[540px]'
+    'h-[288px] sm:h-[420px] md:h-[540px] lg:h-[620px]'
 
 export const COVERFLOW_CARD_SIZE_CLASS =
-    'w-[196px] h-[220px] sm:w-[268px] sm:h-[340px] md:w-[360px] md:h-[440px]'
+    'w-[196px] h-[220px] sm:w-[268px] sm:h-[340px] md:w-[360px] md:h-[440px] lg:w-[420px] lg:h-[520px]'
 
 export interface CoverflowTransform {
     rotateY: number
