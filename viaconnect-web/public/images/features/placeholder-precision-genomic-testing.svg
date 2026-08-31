@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="800" viewBox="0 0 640 800" role="img" aria-labelledby="title desc">
+  <title id="title">PLACEHOLDER  Precision Genomic Testing</title>
+  <desc id="desc">Dark branded still. Gary: replace this file to swap the card image. Do not use restaurant or stock food photos, or a photo of a person.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1A2744"/>
+      <stop offset="55%" stop-color="#224852"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="800" fill="url(#bg)"/>
+  <circle cx="480" cy="140" r="180" fill="#2DA5A0" fill-opacity="0.12"/>
+  <circle cx="120" cy="680" r="160" fill="#2DA5A0" fill-opacity="0.08"/>
+  <text x="48" y="360" fill="#2DA5A0" font-family="Inter, system-ui, sans-serif" font-size="22" font-weight="600" letter-spacing="4">PLACEHOLDER</text>
+  <text x="48" y="410" fill="#FFFFFF" font-family="Inter, system-ui, sans-serif" font-size="28" font-weight="500">Precision Genomic Testing</text>
+  <text x="48" y="450" fill="rgba(255,255,255,0.55)" font-family="Inter, system-ui, sans-serif" font-size="16">Swap this file  placeholder-precision-genomic-testing.svg</text>
+</svg>

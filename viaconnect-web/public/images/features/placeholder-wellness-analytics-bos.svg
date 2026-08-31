@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="800" viewBox="0 0 640 800" role="img" aria-labelledby="title desc">
+  <title id="title">PLACEHOLDER  Wellness Analytics and Bio Optimization Score</title>
+  <desc id="desc">Dark branded still. Gary: replace this file to swap the card image. Do not use restaurant or stock food photos, or a photo of a person.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0.2" y1="0" x2="0.9" y2="1">
+      <stop offset="0%" stop-color="#1A2744"/>
+      <stop offset="50%" stop-color="#2c2436"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="800" fill="url(#bg)"/>
+  <circle cx="180" cy="180" r="190" fill="#6D597A" fill-opacity="0.22"/>
+  <circle cx="520" cy="660" r="170" fill="#9D5858" fill-opacity="0.10"/>
+  <text x="48" y="340" fill="#6D597A" font-family="Inter, system-ui, sans-serif" font-size="22" font-weight="600" letter-spacing="4">PLACEHOLDER</text>
+  <text x="48" y="390" fill="#FFFFFF" font-family="Inter, system-ui, sans-serif" font-size="24" font-weight="500">Wellness Analytics and</text>
+  <text x="48" y="422" fill="#FFFFFF" font-family="Inter, system-ui, sans-serif" font-size="24" font-weight="500">Bio Optimization Score</text>
+  <text x="48" y="462" fill="rgba(255,255,255,0.55)" font-family="Inter, system-ui, sans-serif" font-size="16">Swap this file  placeholder-wellness-analytics-bos.svg</text>
+</svg>

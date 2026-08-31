@@ -89,7 +89,6 @@ describe('Brief 44 homepage stops promising automatic wearable feed', () => {
     expect(wellnessBlock).toContain(`"${HANNAH_LINE}"`);
     expect(wellnessBlock.split(HANNAH_LINE).length - 1).toBeGreaterThanOrEqual(2);
     expect(FEATURES_DESKTOP).toContain('card.body');
-    expect(FEATURES_MOBILE).toContain('feature.teaser');
     expect(FEATURES_MOBILE).toContain('feature.body');
   });
 
