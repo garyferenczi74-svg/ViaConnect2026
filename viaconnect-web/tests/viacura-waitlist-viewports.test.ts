@@ -40,10 +40,17 @@ describe('390 + 1280 waitlist honesty surfaces', () => {
   it('homepage features keep a 390 coverflow and a 1280 coverflow', () => {
     const mobile = read('src/components/landing/scroll-sections/mobile/FeaturesSectionMobile.tsx');
     const desktop = read('src/components/landing/scroll-sections/desktop/FeaturesSectionDesktop.tsx');
+    const math = read('src/components/ui/coverflow-math.ts');
+    const carousel = read('src/components/ui/3-d-coverflow-carousel.tsx');
     expect(mobile).toContain('px-5');
     expect(mobile).toContain('max-w-md mx-auto');
     expect(desktop).toContain('px-12');
     expect(mobile).toContain('CoverFlowCarousel');
     expect(desktop).toContain('CoverFlowCarousel');
+    expect(math).toContain('h-[288px]');
+    expect(math).toContain('md:h-[340px]');
+    expect(carousel).toContain('COVERFLOW_STAGE_HEIGHT_CLASS');
+    expect(carousel).toContain('requestAnimationFrame');
+    expect(carousel).not.toContain('COVERFLOW_AUTOPLAY_DWELL_MS');
   });
 });

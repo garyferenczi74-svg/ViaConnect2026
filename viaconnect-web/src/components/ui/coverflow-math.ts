@@ -4,8 +4,14 @@
  * without mounting the client component.
  */
 
-/** Dwell on the focused card before the next clockwise step. Not the spin duration. */
-export const COVERFLOW_AUTOPLAY_DWELL_MS = 2000
+/** Milliseconds to glide one card during continuous autoplay. Not a dwell. */
+export const COVERFLOW_AUTOPLAY_MS_PER_CARD = 6000
+
+export const COVERFLOW_STAGE_HEIGHT_CLASS =
+    'h-[288px] sm:h-[308px] md:h-[340px]'
+
+export const COVERFLOW_CARD_SIZE_CLASS =
+    'w-[196px] h-[220px] sm:w-[216px] sm:h-[240px] md:w-[248px] md:h-[268px]'
 
 export interface CoverflowTransform {
     rotateY: number
@@ -14,6 +20,29 @@ export interface CoverflowTransform {
     scale: number
     opacity: number
     zIndex: number
+}
+
+export function wrapCarouselProgress(progress: number, length: number): number {
+    if (length <= 0) return 0
+    return ((progress % length) + length) % length
+}
+
+export function nearestCoverflowIndex(progress: number, length: number): number {
+    if (length <= 0) return 0
+    return wrapCarouselProgress(Math.round(progress), length)
+}
+
+export function advanceCoverflowProgress(
+    progress: number,
+    dtMs: number,
+    msPerCard: number,
+    length: number,
+): number {
+    if (length <= 1 || msPerCard <= 0) {
+        return wrapCarouselProgress(progress, length)
+    }
+    const delta = Math.max(0, dtMs) / msPerCard
+    return wrapCarouselProgress(progress + delta, length)
 }
 
 export function nextClockwiseIndex(activeIndex: number, length: number): number {
@@ -48,8 +77,9 @@ export function coverflowTransform(
     offset: number,
     reduceMotion: boolean,
 ): CoverflowTransform {
-    const isActive = offset === 0
+    const abs = Math.abs(offset)
     if (reduceMotion) {
+        const isActive = abs < 0.5
         return {
             rotateY: 0,
             translateXPercent: 0,
@@ -60,14 +90,17 @@ export function coverflowTransform(
         }
     }
 
-    const abs = Math.abs(offset)
-    const sign = offset === 0 ? 0 : offset > 0 ? 1 : -1
+    const rotateT = Math.max(-1, Math.min(1, offset))
+    const rotateY = rotateT * -42
+    const opacity =
+        abs >= 2.5 ? 0 : abs <= 1 ? 1 - 0.3 * abs : abs <= 2 ? 0.7 : (0.7 * (2.5 - abs)) / 0.5
+
     return {
-        rotateY: isActive ? 0 : sign * -42,
+        rotateY: rotateY === 0 ? 0 : rotateY,
         translateXPercent: offset * 56,
         translateZ: -abs * 130,
-        scale: abs === 0 ? 1 : Math.max(0.72, 1 - abs * 0.14),
-        opacity: abs > 2 ? 0 : abs === 0 ? 1 : 0.7,
+        scale: Math.max(0.72, 1 - abs * 0.14),
+        opacity,
         zIndex: 20 - abs * 4,
     }
 }
