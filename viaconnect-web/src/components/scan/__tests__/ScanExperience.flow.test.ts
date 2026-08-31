@@ -25,6 +25,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { scanReducer, initialScanState, type ScanState } from '@/hooks/scan/useScanSession';
+import { SCAN_POSE_TITLE_MS } from '@/lib/scan/scanTimeouts';
 import { evaluateWeakFrame } from '@/lib/scan/qa';
 import { revokeFrame, revokeAllFrames, qaResultToAction } from '@/lib/scan/scanFlowDriver';
 import type { ScanFrame } from '@/lib/scan/types';
@@ -218,6 +219,15 @@ describe('ScanExperience wiring: capture overlay must not remount the video per 
     expect(src).toContain("state.phase === 'COUNT'");
     expect(src).toContain("state.phase === 'CAPTURE'");
     expect(src).toContain("state.phase === 'QA'");
+  });
+
+  it('keeps pose how-to until Continue / tap-through, with an 8s hands-free fallback not a 1s yank', () => {
+    expect(src).toContain('scan-pose-title-continue');
+    expect(src).toContain('scan-pose-instructions');
+    expect(src).toContain('SCAN_POSE_TITLE_MS');
+    expect(src).toContain('handlePromptDone');
+    expect(src).not.toMatch(/PROMPT_DONE' \), 2000\)/);
+    expect(SCAN_POSE_TITLE_MS).toBeGreaterThanOrEqual(8000);
   });
 });
 

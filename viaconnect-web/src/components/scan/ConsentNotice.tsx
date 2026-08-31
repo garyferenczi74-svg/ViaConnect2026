@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
  * Prompt 231: scan consent notice, mirroring the 226 disclaimer pattern.
@@ -28,6 +28,8 @@ export function ConsentNotice({ onAcknowledged }: ConsentNoticeProps) {
   const [status, setStatus] = useState<ConsentStatus | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const onAcknowledgedRef = useRef(onAcknowledged);
+  onAcknowledgedRef.current = onAcknowledged;
 
   const bootstrap = useCallback(async () => {
     setLoading(true);
@@ -39,15 +41,15 @@ export function ConsentNotice({ onAcknowledged }: ConsentNoticeProps) {
       }
       const data = (await res.json()) as ConsentStatus;
       setStatus(data);
-      if (data.acknowledged && data.version) {
-        onAcknowledged?.(data.version);
-      }
+      // Duration only: never auto-dismiss when GET reports an existing ack.
+      // The Continue control is the only way off this disclaimer (Gary:
+      // the notice flashed for ~1s and could not be read).
     } catch {
       setStatus({ ok: false, available: false });
     } finally {
       setLoading(false);
     }
-  }, [onAcknowledged]);
+  }, []);
 
   useEffect(() => {
     void bootstrap();
@@ -60,7 +62,7 @@ export function ConsentNotice({ onAcknowledged }: ConsentNoticeProps) {
       const res = await fetch('/api/scan/consent', { method: 'POST' });
       const data = (await res.json()) as { ok?: boolean; version?: string };
       if (data.ok && data.version) {
-        onAcknowledged?.(data.version);
+        onAcknowledgedRef.current?.(data.version);
       } else {
         setError('Could not record consent. Try again.');
       }

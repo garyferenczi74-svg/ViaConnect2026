@@ -39,5 +39,7 @@ export const SCAN_SAVING_TIMEOUT_MS = 15000;
  * success (228 Rule 1). */
 export const SCAN_SUBMIT_WATCHDOG_MS = SCAN_SAVING_TIMEOUT_MS * 6 + 5000;
 
-/** Pose title card display duration before ARMED begins. */
-export const SCAN_POSE_TITLE_MS = 2000;
+/** Pose how-to dwell before ARMED if the user does not dismiss. Must stay
+ * long enough to read (Gary 2026-08-31: the 2s title vanished in ~1s).
+ * Continue / tap-through dismisses immediately; this is only the fallback. */
+export const SCAN_POSE_TITLE_MS = 8000;

@@ -5,10 +5,11 @@ import { POSES, type PoseId } from '@/lib/scan/poses';
 /**
  * FormaVision pose title card.
  *
- * The 2-second interstitial shown before each pose capture: pose label plus
- * the coaching hint. Instrument Sans is Helix-scoped (global body font is
- * Inter), so this card opts in explicitly via the .font-instrument class
- * rather than relying on any global font-family change.
+ * The pose how-to shown before each capture: pose label plus the coaching
+ * hint. Stays until Continue / tap-through, or SCAN_POSE_TITLE_MS (8s).
+ * Instrument Sans is Helix-scoped (global body font is Inter), so this
+ * card opts in explicitly via the .font-instrument class rather than
+ * relying on any global font-family change.
  *
  * Token discipline: the card background uses var(--card), never a raw
  * hex literal.

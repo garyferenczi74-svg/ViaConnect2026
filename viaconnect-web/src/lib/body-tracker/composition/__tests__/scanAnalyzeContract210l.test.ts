@@ -28,6 +28,11 @@ describe('Prompt 210l analyze-chain source contracts', () => {
     expect(src).toMatch(/body-scan-progress/);
     expect(src).not.toMatch(/Promise\.race/);
     expect(src).toMatch(/setError\(e instanceof Error \? e\.message/);
+    expect(src).toMatch(/takeScanSlotFile/);
+    expect(src).toMatch(/SCAN_SLOT_ACCEPT/);
+    expect(src).toMatch(/scan-slot-preview-/);
+    expect(src).not.toMatch(/accept="image\/jpeg,image\/png,image\/webp"/);
+    expect(src).not.toMatch(/MAX_PHOTO_BYTES = 5_000_000/);
   });
 
   it('body-scan-analyze writes photo_scans plus the linked spine and logs key presence', () => {

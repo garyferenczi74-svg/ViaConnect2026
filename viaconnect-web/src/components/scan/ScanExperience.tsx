@@ -112,6 +112,7 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
   const landmarkerLive = poseLandmarker.ready && poseLandmarker.mode === 'landmarker';
 
   const [consentAcknowledged, setConsentAcknowledged] = useState(hasConsent);
+  const handleConsentAck = useCallback(() => setConsentAcknowledged(true), []);
   const [localHeightCm, setLocalHeightCm] = useState<number | null>(heightCm);
   const [heightDraft, setHeightDraft] = useState('');
   const [voiceEnabled, setVoiceEnabled] = useState(true);
@@ -267,7 +268,13 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
     onComplete: () => dispatch({ type: 'WALK_IN_DONE' }),
   });
 
-  // ---- PROMPT: title card for 2s, then ARMED ----
+  // ---- PROMPT: pose how-to stays until Continue / tap-through. The 8s
+  // timer is a hands-free fallback only; it must not yank the card at ~1s. ----
+  const handlePromptDone = useCallback(() => {
+    if (state.phase !== 'PROMPT') return;
+    dispatch({ type: 'PROMPT_DONE' });
+  }, [state.phase, dispatch]);
+
   useEffect(() => {
     if (state.phase !== 'PROMPT') return;
     const timer = setTimeout(() => dispatch({ type: 'PROMPT_DONE' }), SCAN_POSE_TITLE_MS);
@@ -568,7 +575,7 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
   }, [state.phase, dispatch]);
 
   if (!consentAcknowledged) {
-    return <ConsentNotice onAcknowledged={() => setConsentAcknowledged(true)} />;
+    return <ConsentNotice onAcknowledged={handleConsentAck} />;
   }
 
   const currentPose = POSE_ORDER[state.poseIndex] ?? null;
@@ -671,13 +678,36 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
             <CountdownOverlay value={walkInDisplay} coaching={WALK_IN_COACHING} reducedMotion={reducedMotion} />
           )}
           {state.phase === 'PROMPT' && currentPose && (
-            <div className="flex h-full min-h-[70vh] flex-col items-center justify-center gap-3 p-6">
+            <div
+              className="flex h-full min-h-[70vh] flex-col items-center justify-center gap-4 p-6"
+              data-testid="scan-pose-instructions"
+              onClick={handlePromptDone}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handlePromptDone();
+                }
+              }}
+              role="button"
+              tabIndex={0}
+            >
               {state.poseIndex > 0 && (
                 <p className="text-xs text-white/60" data-testid="scan-interstitial">
                   {INTERSTITIAL[POSE_ORDER[state.poseIndex - 1]]}
                 </p>
               )}
               <PoseTitleCard pose={currentPose} index={state.poseIndex} />
+              <button
+                type="button"
+                data-testid="scan-pose-title-continue"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handlePromptDone();
+                }}
+                className="min-h-[44px] rounded-xl bg-[var(--teal)] px-5 py-2.5 text-sm font-semibold text-white"
+              >
+                Continue
+              </button>
             </div>
           )}
           {state.phase === 'ARMED' && currentPose && (
