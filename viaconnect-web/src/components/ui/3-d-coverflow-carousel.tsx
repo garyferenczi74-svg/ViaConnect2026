@@ -479,7 +479,7 @@ function CoverFlowCard({
                 <div className="relative border-t border-white/10 bg-[#111827]/70 px-3 py-2">
                     <h3
                         id={headingId}
-                        className="pr-10 text-sm font-medium leading-snug text-white sm:text-base"
+                        className="pr-10 text-sm font-medium leading-snug text-white sm:text-base md:text-lg"
                     >
                         {item.title}
                     </h3>

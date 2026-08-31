@@ -94,8 +94,8 @@ describe('landing Features coverflow data', () => {
             expect(item.title).toBe(LOCKED_HEADLINES[index]);
             expect(item.description).toBe(LOCKED_BODIES[index]);
             expect(item.imageSrc).toBe(FEATURE_PLACEHOLDER_IMAGES[COVERFLOW_FEATURE_IDS[index]]);
-            expect(item.imageAlt).toContain('PLACEHOLDER');
-            expect(item.imageAlt).toContain(LOCKED_HEADLINES[index]);
+            expect(item.imageAlt).toBe(LOCKED_HEADLINES[index]);
+            expect(item.imageAlt).not.toMatch(/PLACEHOLDER/i);
         }
     });
 
@@ -106,7 +106,8 @@ describe('landing Features coverflow data', () => {
             expect(existsSync(abs)).toBe(true);
             const bytes = readFileSync(abs);
             const svg = bytes.toString('utf8');
-            expect(svg).toContain('PLACEHOLDER');
+            expect(svg).not.toMatch(/PLACEHOLDER/);
+            expect(svg).not.toMatch(/Swap this file/i);
             expect(svg).not.toMatch(/unsplash\.com/i);
             expect(svg).not.toMatch(/risotto|wagyu|menu [Dd]ish/i);
             expect(svg).not.toMatch(/[\u2013\u2014]/);
@@ -153,11 +154,12 @@ describe('coverflow math', () => {
     });
 
     it('advances progress continuously and wraps the eight-card loop', () => {
-        expect(COVERFLOW_AUTOPLAY_MS_PER_CARD).toBe(6000);
-        expect(advanceCoverflowProgress(0, 6000, 6000, 8)).toBe(1);
-        expect(advanceCoverflowProgress(7.5, 3000, 6000, 8)).toBe(0);
-        expect(advanceCoverflowProgress(0, 1000, 6000, 8)).toBeCloseTo(1 / 6);
-        expect(advanceCoverflowProgress(3, 0, 6000, 8)).toBe(3);
+        expect(COVERFLOW_AUTOPLAY_MS_PER_CARD).toBe(2800);
+        expect(COVERFLOW_AUTOPLAY_MS_PER_CARD).toBeLessThan(6000);
+        expect(advanceCoverflowProgress(0, 2800, 2800, 8)).toBe(1);
+        expect(advanceCoverflowProgress(7.5, 1400, 2800, 8)).toBe(0);
+        expect(advanceCoverflowProgress(0, 700, 2800, 8)).toBeCloseTo(0.25);
+        expect(advanceCoverflowProgress(3, 0, 2800, 8)).toBe(3);
     });
 
     it('hides neighbors when reduced motion is on', () => {
@@ -238,7 +240,8 @@ describe('CoverFlowCarousel Features integration', () => {
     });
 
     it('glides continuously with rAF and does not auto-rotate under reduced motion', () => {
-        expect(COVERFLOW_AUTOPLAY_MS_PER_CARD).toBe(6000);
+        expect(COVERFLOW_AUTOPLAY_MS_PER_CARD).toBe(2800);
+        expect(COVERFLOW_AUTOPLAY_MS_PER_CARD).toBeLessThan(6000);
         expect(CAROUSEL).toContain('COVERFLOW_AUTOPLAY_MS_PER_CARD');
         expect(CAROUSEL).toContain('advanceCoverflowProgress');
         expect(CAROUSEL).toContain('requestAnimationFrame');
@@ -264,21 +267,28 @@ describe('CoverFlowCarousel Features integration', () => {
         expect(CAROUSEL).not.toContain('useReducedMotion');
     });
 
-    it('shrinks the coverflow plate on both mobile and desktop', () => {
+    it('keeps the compact 390 plate and enlarges tablet plus desktop', () => {
         expect(COVERFLOW_STAGE_HEIGHT_CLASS).toContain('h-[288px]');
-        expect(COVERFLOW_STAGE_HEIGHT_CLASS).toContain('md:h-[340px]');
-        expect(COVERFLOW_STAGE_HEIGHT_CLASS).not.toContain('h-[420px]');
-        expect(COVERFLOW_STAGE_HEIGHT_CLASS).not.toContain('md:h-[500px]');
+        expect(COVERFLOW_STAGE_HEIGHT_CLASS).toContain('sm:h-[420px]');
+        expect(COVERFLOW_STAGE_HEIGHT_CLASS).toContain('md:h-[540px]');
+        expect(COVERFLOW_STAGE_HEIGHT_CLASS).not.toMatch(/(?:^|[\s"'])h-\[420px\]/);
+        expect(COVERFLOW_STAGE_HEIGHT_CLASS).not.toContain('md:h-[340px]');
+        expect(COVERFLOW_CARD_SIZE_CLASS).toContain('w-[196px]');
         expect(COVERFLOW_CARD_SIZE_CLASS).toContain('h-[220px]');
-        expect(COVERFLOW_CARD_SIZE_CLASS).toContain('md:h-[268px]');
+        expect(COVERFLOW_CARD_SIZE_CLASS).toContain('sm:w-[268px]');
+        expect(COVERFLOW_CARD_SIZE_CLASS).toContain('sm:h-[340px]');
+        expect(COVERFLOW_CARD_SIZE_CLASS).toContain('md:w-[360px]');
+        expect(COVERFLOW_CARD_SIZE_CLASS).toContain('md:h-[440px]');
+        expect(COVERFLOW_CARD_SIZE_CLASS).not.toContain('md:w-[248px]');
+        expect(COVERFLOW_CARD_SIZE_CLASS).not.toContain('md:h-[268px]');
         expect(CAROUSEL).toContain('COVERFLOW_STAGE_HEIGHT_CLASS');
         expect(CAROUSEL).toContain('COVERFLOW_CARD_SIZE_CLASS');
         expect(CAROUSEL).toContain('mt-1.5');
         expect(CAROUSEL).not.toContain('mt-4 flex items-center');
         expect(CAROUSEL).not.toContain('h-[420px]');
         expect(CAROUSEL).not.toContain('md:h-[500px]');
-        expect(CAROUSEL).not.toContain('h-[340px]');
-        expect(CAROUSEL).not.toContain('md:h-[400px]');
+        expect(CAROUSEL).not.toContain('md:h-[340px]');
+        expect(CAROUSEL).not.toContain('md:h-[268px]');
         expect(DESKTOP).toContain('CoverFlowCarousel');
         expect(MOBILE).toContain('CoverFlowCarousel');
     });
@@ -298,6 +308,6 @@ describe('CoverFlowCarousel Features integration', () => {
         expect(html).not.toContain('View Menu');
         expect(html).not.toContain('#0c0a09');
         expect(html).toContain('features-coverflow');
-        expect(html).toContain('PLACEHOLDER');
+        expect(html).not.toContain('PLACEHOLDER');
     });
 });

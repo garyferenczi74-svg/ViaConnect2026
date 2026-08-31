@@ -38,7 +38,7 @@ export function FeaturesSectionMobile() {
                         title: feature.headline,
                         description: feature.body,
                         imageSrc: feature.placeholderImageSrc ?? '',
-                        imageAlt: `PLACEHOLDER — ${feature.headline}. Swap this image.`,
+                        imageAlt: feature.headline,
                     }))}
                 />
             </div>
