@@ -58,7 +58,10 @@ export function CoverFlowCarousel({
     initialIndex = 0,
 }: CoverFlowCarouselProps) {
     const [prefersReducedMotion, setPrefersReducedMotion] = useState<boolean | null>(
-        null,
+        () => {
+            if (typeof window === 'undefined') return null
+            return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        },
     )
     const reactId = useId()
     const stageRef = useRef<HTMLDivElement>(null)
@@ -222,6 +225,13 @@ export function CoverFlowCarousel({
             data-testid="features-coverflow"
             data-autoplay={autoplayState}
             data-motion={spinning ? 'continuous' : autoplayState}
+            data-motion-pref={
+                prefersReducedMotion === null
+                    ? 'unknown'
+                    : prefersReducedMotion
+                      ? 'reduce'
+                      : 'allow'
+            }
             onPointerEnter={(event) => {
                 if (event.pointerType === 'mouse') setHovering(true)
             }}

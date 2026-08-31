@@ -258,6 +258,7 @@ describe('CoverFlowCarousel Features integration', () => {
         expect(CAROUSEL).toContain("matchMedia('(prefers-reduced-motion: reduce)')");
         expect(CAROUSEL).toContain('data-autoplay');
         expect(CAROUSEL).toContain('data-motion');
+        expect(CAROUSEL).toContain('data-motion-pref');
         expect(CAROUSEL).toContain('continuous');
         expect(CAROUSEL).not.toMatch(/transform 0\.45s/);
         expect(CAROUSEL).not.toContain('useReducedMotion');
