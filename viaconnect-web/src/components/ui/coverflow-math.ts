@@ -44,7 +44,7 @@ export function coverflowTransform(
     const abs = Math.abs(offset)
     const sign = offset === 0 ? 0 : offset > 0 ? 1 : -1
     return {
-        rotateY: sign * -42,
+        rotateY: isActive ? 0 : sign * -42,
         translateXPercent: offset * 56,
         translateZ: -abs * 130,
         scale: abs === 0 ? 1 : Math.max(0.72, 1 - abs * 0.14),

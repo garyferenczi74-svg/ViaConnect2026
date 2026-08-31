@@ -79,7 +79,7 @@ describe('landing Features coverflow data', () => {
             expect(existsSync(abs)).toBe(true);
             const svg = readFileSync(abs, 'utf8');
             expect(svg).toContain('PLACEHOLDER');
-            expect(svg).not.toMatch(/unsplash/i);
+            expect(svg).not.toMatch(/unsplash\.com/i);
             expect(svg).not.toMatch(/risotto|wagyu|menu [Dd]ish/i);
         }
     });

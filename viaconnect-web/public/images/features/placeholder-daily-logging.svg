@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="640" height="800" viewBox="0 0 640 800" role="img" aria-labelledby="title desc">
   <title id="title">PLACEHOLDER  Daily Logging</title>
-  <desc id="desc">Dark branded still. Gary: replace this file to swap the card image. Do not use restaurant or Unsplash food, or a photo of a person.</desc>
+  <desc id="desc">Dark branded still. Gary: replace this file to swap the card image. Do not use restaurant or stock food photos, or a photo of a person.</desc>
   <defs>
     <linearGradient id="bg" x1="0" y1="1" x2="1" y2="0">
       <stop offset="0%" stop-color="#1A2744"/>
