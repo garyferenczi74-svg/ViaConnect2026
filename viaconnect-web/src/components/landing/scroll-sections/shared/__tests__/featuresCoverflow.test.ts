@@ -12,8 +12,11 @@ import {
     toCoverFlowFeatureItem,
 } from '../featureCards';
 import {
+    COVERFLOW_AUTOPLAY_DWELL_MS,
     coverflowCssTransform,
     coverflowTransform,
+    nextClockwiseIndex,
+    shouldPauseCoverflowAutoplay,
     shortestCarouselOffset,
 } from '@/components/ui/coverflow-math';
 import { CoverFlowCarousel } from '@/components/ui/3-d-coverflow-carousel';
@@ -128,6 +131,45 @@ describe('coverflow math', () => {
         expect(neighbor.opacity).toBe(0);
         expect(neighbor.rotateY).toBe(0);
     });
+
+    it('advances clockwise through production order and loops', () => {
+        const ids = [...COVERFLOW_FEATURE_IDS];
+        let index = 0;
+        const walked = [ids[index]];
+        for (let step = 0; step < ids.length; step += 1) {
+            index = nextClockwiseIndex(index, ids.length);
+            walked.push(ids[index]);
+        }
+        expect(walked).toEqual([
+            'genomic-testing',
+            'ai-protocols',
+            'daily-logging',
+            'wellness-analytics',
+            'peptide-protocols',
+            'three-portal',
+            'interaction-engine',
+            'helix-rewards',
+            'genomic-testing',
+        ]);
+        expect(nextClockwiseIndex(7, 8)).toBe(0);
+    });
+
+    it('pauses autoplay on hover, focus, touch, dropdown, and reduced motion', () => {
+        const idle = {
+            reduceMotion: false,
+            hovering: false,
+            focusWithin: false,
+            pointerActive: false,
+            dropdownOpen: false,
+        };
+        expect(shouldPauseCoverflowAutoplay(idle)).toBe(false);
+        expect(shouldPauseCoverflowAutoplay({ ...idle, hovering: true })).toBe(true);
+        expect(shouldPauseCoverflowAutoplay({ ...idle, focusWithin: true })).toBe(true);
+        expect(shouldPauseCoverflowAutoplay({ ...idle, pointerActive: true })).toBe(true);
+        expect(shouldPauseCoverflowAutoplay({ ...idle, dropdownOpen: true })).toBe(true);
+        expect(shouldPauseCoverflowAutoplay({ ...idle, reduceMotion: true })).toBe(true);
+        expect(shouldPauseCoverflowAutoplay({ ...idle, reduceMotion: null })).toBe(true);
+    });
 });
 
 describe('CoverFlowCarousel Features integration', () => {
@@ -159,6 +201,23 @@ describe('CoverFlowCarousel Features integration', () => {
         expect(CAROUSEL).toContain('openId === item.id');
         expect(DESKTOP).toContain('card.body');
         expect(MOBILE).toContain('feature.body');
+    });
+
+    it('dwells 2000ms then steps clockwise, and does not auto-rotate under reduced motion', () => {
+        expect(COVERFLOW_AUTOPLAY_DWELL_MS).toBe(2000);
+        expect(CAROUSEL).toContain('COVERFLOW_AUTOPLAY_DWELL_MS');
+        expect(CAROUSEL).toContain('nextClockwiseIndex');
+        expect(CAROUSEL).toContain('shouldPauseCoverflowAutoplay');
+        expect(CAROUSEL).toContain('setTimeout');
+        expect(CAROUSEL).toContain("pointerType === 'mouse'");
+        expect(CAROUSEL).toContain('setHovering(true)');
+        expect(CAROUSEL).toContain('onFocusCapture');
+        expect(CAROUSEL).toContain('onPointerDown');
+        expect(CAROUSEL).toContain('dropdownOpen: openId !== null');
+        expect(CAROUSEL).toContain('reduceMotion !== false');
+        expect(CAROUSEL).toContain('data-autoplay');
+        expect(CAROUSEL).not.toMatch(/transition:\s*[^;]*2000/);
+        expect(CAROUSEL).toMatch(/transform 0\.45s/);
     });
 
     it('SSR-renders eight headings and keeps descriptions collapsed', () => {

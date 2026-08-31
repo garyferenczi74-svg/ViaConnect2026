@@ -23,8 +23,11 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
+    COVERFLOW_AUTOPLAY_DWELL_MS,
     coverflowCssTransform,
     coverflowTransform,
+    nextClockwiseIndex,
+    shouldPauseCoverflowAutoplay,
     shortestCarouselOffset,
 } from '@/components/ui/coverflow-math'
 
@@ -58,9 +61,21 @@ export function CoverFlowCarousel({
         items.length === 0 ? 0 : clampIndex(initialIndex, items.length),
     )
     const [openId, setOpenId] = useState<string | null>(null)
+    const [hovering, setHovering] = useState(false)
+    const [focusWithin, setFocusWithin] = useState(false)
+    const [pointerActive, setPointerActive] = useState(false)
 
     const count = items.length
     const active = count === 0 ? null : items[clampIndex(activeIndex, count)]
+    const autoplayPaused = shouldPauseCoverflowAutoplay({
+        reduceMotion,
+        hovering,
+        focusWithin,
+        pointerActive,
+        dropdownOpen: openId !== null,
+    })
+    const autoplayState =
+        reduceMotion !== false ? 'off' : autoplayPaused ? 'paused' : 'on'
 
     const goTo = useCallback(
         (nextIndex: number) => {
@@ -79,6 +94,14 @@ export function CoverFlowCarousel({
         if (count === 0) return
         setActiveIndex((current) => clampIndex(current, count))
     }, [count])
+
+    useEffect(() => {
+        if (autoplayPaused || count <= 1) return
+        const timer = window.setTimeout(() => {
+            goTo(nextClockwiseIndex(activeIndex, count))
+        }, COVERFLOW_AUTOPLAY_DWELL_MS)
+        return () => window.clearTimeout(timer)
+    }, [activeIndex, autoplayPaused, count, goTo])
 
     const onStageKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
         if (event.key === 'ArrowLeft') {
@@ -117,6 +140,23 @@ export function CoverFlowCarousel({
         <div
             className={cn('relative w-full bg-transparent', className)}
             data-testid="features-coverflow"
+            data-autoplay={autoplayState}
+            onPointerEnter={(event) => {
+                if (event.pointerType === 'mouse') setHovering(true)
+            }}
+            onPointerLeave={() => {
+                setHovering(false)
+                setPointerActive(false)
+            }}
+            onFocusCapture={() => setFocusWithin(true)}
+            onBlurCapture={(event) => {
+                const next = event.relatedTarget
+                if (next instanceof Node && event.currentTarget.contains(next)) return
+                setFocusWithin(false)
+            }}
+            onPointerDown={() => setPointerActive(true)}
+            onPointerUp={() => setPointerActive(false)}
+            onPointerCancel={() => setPointerActive(false)}
         >
             <div
                 ref={stageRef}
