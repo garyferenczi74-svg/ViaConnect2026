@@ -100,6 +100,13 @@ describe('prompt 231 scan consent lex-clear contract', () => {
     expect(noticeSrc).toContain('data-testid="scan-consent-unavailable"');
   });
 
+  it('does not auto-dismiss the disclaimer when GET reports an existing ack', () => {
+    expect(noticeSrc).toContain('data-testid="scan-consent-continue"');
+    expect(noticeSrc).toContain('I understand. Continue');
+    expect(noticeSrc).not.toMatch(/if \(data\.acknowledged && data\.version\)/);
+    expect(noticeSrc).not.toMatch(/setTimeout\([^)]*onAcknowledged/);
+  });
+
   it('contains no em dash or en dash characters', () => {
     const emDash = String.fromCharCode(0x2014);
     const enDash = String.fromCharCode(0x2013);

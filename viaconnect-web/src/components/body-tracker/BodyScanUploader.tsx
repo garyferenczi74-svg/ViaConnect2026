@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { AlertTriangle, Camera, Check, Loader2, RotateCcw, ShieldCheck, X } from 'lucide-react';
+import { AlertTriangle, Camera, Check, ImagePlus, Loader2, RotateCcw, ShieldCheck } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { runInMemoryMeasurement } from '@/lib/arnold/scanning/runScanAnalysis';
 import type { ViewQualityResult } from '@/lib/arnold/scanning/runScanAnalysis';
@@ -11,6 +11,14 @@ import {
   buildAnalyzeRequestMediaFields,
   resolveAllPhotoMediaTypes,
 } from '@/lib/body-tracker/composition/scanMediaTypes';
+import {
+  SCAN_SLOT_ACCEPT,
+  inspectScanSlotFile,
+  isHeicLike,
+  needsScanSlotReencode,
+  takeScanSlotFile,
+} from '@/lib/body-tracker/composition/attachScanSlotPhoto';
+import { processPhoto } from '@/components/body-tracker/photos/photoProcessing';
 import { safeLog } from '@/lib/utils/safe-log';
 import type { ExtractedMeasurements } from '@/lib/arnold/scanning/types';
 import type { PoseId } from '@/lib/arnold/types';
@@ -33,7 +41,6 @@ const POSITION_TO_POSE_ID: Record<PhotoPosition, PoseId> = {
   right_side: 'right',
 };
 
-const MAX_PHOTO_BYTES = 5_000_000; // 5 MB binary
 const SUPABASE_URL =
   process.env.NEXT_PUBLIC_SUPABASE_URL ??
   process.env.NEXT_PUBLIC_SUPABASE_PROJECT_URL ??
@@ -112,6 +119,7 @@ interface BodyScanUploaderProps {
 interface SlotState {
   file: File | null;
   base64: string | null;
+  previewUrl: string | null;
 }
 
 function fileToBase64(file: File): Promise<string> {
@@ -130,10 +138,10 @@ function fileToBase64(file: File): Promise<string> {
 
 export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements }: BodyScanUploaderProps) {
   const initialSlots: Record<PhotoPosition, SlotState> = {
-    front:      { file: null, base64: null },
-    back:       { file: null, base64: null },
-    left_side:  { file: null, base64: null },
-    right_side: { file: null, base64: null },
+    front:      { file: null, base64: null, previewUrl: null },
+    back:       { file: null, base64: null, previewUrl: null },
+    left_side:  { file: null, base64: null, previewUrl: null },
+    right_side: { file: null, base64: null, previewUrl: null },
   };
   const [slots, setSlots] = useState<Record<PhotoPosition, SlotState>>(initialSlots);
   const [submitting, setSubmitting] = useState(false);
@@ -143,13 +151,27 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
   // Map from PhotoPosition to the quality result for that view.
   // Null means the view has not been quality-assessed yet (pipeline still running or skipped).
   const [viewQuality, setViewQuality] = useState<Partial<Record<PhotoPosition, ViewQualityResult>>>({});
-  const inputRefs = useRef<Record<PhotoPosition, HTMLInputElement | null>>({
+  const cameraRefs = useRef<Record<PhotoPosition, HTMLInputElement | null>>({
+    front: null, back: null, left_side: null, right_side: null,
+  });
+  const galleryRefs = useRef<Record<PhotoPosition, HTMLInputElement | null>>({
     front: null, back: null, left_side: null, right_side: null,
   });
 
   // Unmount guard: prevents any post-unmount state updates from the async IIFE.
   const isMountedRef = useRef(true);
-  useEffect(() => () => { isMountedRef.current = false; }, []);
+  useEffect(() => () => {
+    isMountedRef.current = false;
+  }, []);
+
+  const slotsRef = useRef(slots);
+  slotsRef.current = slots;
+  useEffect(() => () => {
+    for (const pos of POSITIONS) {
+      const url = slotsRef.current[pos.key].previewUrl;
+      if (url) URL.revokeObjectURL(url);
+    }
+  }, []);
 
   // Cross-path coordination refs: whichever of (geometric pipeline | Claude Vision)
   // completes LAST will trigger the circumference write (Task 10).
@@ -174,27 +196,51 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
   }, [submitting]);
 
   function clearSlot(key: PhotoPosition) {
-    setSlots((s) => ({ ...s, [key]: { file: null, base64: null } }));
+    setSlots((s) => {
+      if (s[key].previewUrl) URL.revokeObjectURL(s[key].previewUrl);
+      return { ...s, [key]: { file: null, base64: null, previewUrl: null } };
+    });
     setViewQuality((q) => { const next = { ...q }; delete next[key]; return next; });
-    if (inputRefs.current[key]) inputRefs.current[key]!.value = '';
+    if (cameraRefs.current[key]) cameraRefs.current[key]!.value = '';
+    if (galleryRefs.current[key]) galleryRefs.current[key]!.value = '';
   }
 
   async function handleFile(key: PhotoPosition, file: File) {
     setError(null);
-    if (file.size > MAX_PHOTO_BYTES) {
-      setError(`Photo too large (max 5 MB). Try compressing or retaking.`);
+    const inspected = inspectScanSlotFile(file);
+    if (!inspected.ok) {
+      setError(inspected.error);
       return;
     }
-    const declared = (file.type || '').toLowerCase();
-    if (declared === 'image/heic' || declared === 'image/heif') {
-      setError('HEIC photos are not supported. Use JPEG or PNG.');
-      return;
-    }
+
+    // Attach immediately so the slot is never a picker that drops the blob.
+    const previewUrl = URL.createObjectURL(file);
+    setSlots((s) => {
+      if (s[key].previewUrl) URL.revokeObjectURL(s[key].previewUrl);
+      return { ...s, [key]: { file, base64: null, previewUrl } };
+    });
+    setViewQuality((q) => { const next = { ...q }; delete next[key]; return next; });
+
     try {
-      const b64 = await fileToBase64(file);
-      setSlots((s) => ({ ...s, [key]: { file, base64: b64 } }));
+      let stored = file;
+      let shownUrl = previewUrl;
+      if (needsScanSlotReencode(file)) {
+        const pair = await processPhoto(file);
+        stored = new File([pair.full], 'scan.jpg', { type: 'image/jpeg' });
+        const nextUrl = URL.createObjectURL(pair.full);
+        URL.revokeObjectURL(previewUrl);
+        shownUrl = nextUrl;
+      }
+      const b64 = await fileToBase64(stored);
+      if (!isMountedRef.current) return;
+      setSlots((s) => ({ ...s, [key]: { file: stored, base64: b64, previewUrl: shownUrl } }));
     } catch {
-      setError('Could not read photo. Try a different image.');
+      if (!isMountedRef.current) return;
+      setError(
+        isHeicLike(file)
+          ? 'HEIC photos are not supported. Use JPEG or PNG.'
+          : 'Could not read photo. Try a different image.',
+      );
     }
   }
 
@@ -428,6 +474,7 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {POSITIONS.map((pos) => {
           const slot = slots[pos.key];
+          const attached = slot.file !== null || slot.previewUrl !== null;
           const filled = slot.base64 !== null;
           const quality = viewQuality[pos.key];
           // Quality indicator: only shown when filled + quality has been assessed.
@@ -438,16 +485,25 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
             <div key={pos.key} className="space-y-2">
               <label
                 htmlFor={`scan-${pos.key}`}
-                className={`relative flex h-32 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl text-xs font-medium transition-all ${
+                className={`relative flex h-32 cursor-pointer flex-col items-center justify-center gap-2 overflow-hidden rounded-xl text-xs font-medium transition-all ${
                   qualityFailed
                     ? 'border border-[#B75E18]/60 bg-[#B75E18]/10 text-[#B75E18]'
-                    : filled
+                    : attached
                       ? 'border border-[#2DA5A0]/60 bg-[#2DA5A0]/15 text-[#2DA5A0]'
                       : 'border border-dashed border-white/20 bg-white/[0.03] text-white/50 hover:bg-white/[0.06]'
                 }`}
               >
-                {filled ? (
-                  <>
+                {slot.previewUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- object URL, not a remote asset
+                  <img
+                    src={slot.previewUrl}
+                    alt={`${pos.label} photo`}
+                    data-testid={`scan-slot-preview-${pos.key}`}
+                    className="absolute inset-0 h-full w-full object-cover"
+                  />
+                ) : null}
+                {attached ? (
+                  <span className="relative z-10 flex flex-col items-center gap-1 rounded-md bg-black/45 px-2 py-1">
                     {qualityFailed ? (
                       <AlertTriangle size={20} strokeWidth={1.5} />
                     ) : (
@@ -466,9 +522,11 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
                       <span className="text-[10px] text-[#2DA5A0]/80">Quality OK</span>
                     )}
                     {!quality && (
-                      <span className="text-[10px] text-[#2DA5A0]/80">Captured</span>
+                      <span className="text-[10px] text-[#2DA5A0]/80">
+                        {filled ? 'Captured' : 'Attaching'}
+                      </span>
                     )}
-                  </>
+                  </span>
                 ) : (
                   <>
                     <Camera size={20} strokeWidth={1.5} />
@@ -477,19 +535,30 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
                   </>
                 )}
                 <input
-                  ref={(el) => { inputRefs.current[pos.key] = el; }}
+                  ref={(el) => { cameraRefs.current[pos.key] = el; }}
                   id={`scan-${pos.key}`}
                   type="file"
-                  accept="image/jpeg,image/png,image/webp"
+                  accept={SCAN_SLOT_ACCEPT}
                   capture="environment"
-                  className="absolute inset-0 cursor-pointer opacity-0"
+                  className="absolute inset-0 z-20 cursor-pointer opacity-0"
                   onChange={(e) => {
-                    const f = e.target.files?.[0];
+                    const f = takeScanSlotFile(e.currentTarget);
+                    if (f) void handleFile(pos.key, f);
+                  }}
+                />
+                <input
+                  ref={(el) => { galleryRefs.current[pos.key] = el; }}
+                  id={`scan-${pos.key}-upload`}
+                  type="file"
+                  accept={SCAN_SLOT_ACCEPT}
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = takeScanSlotFile(e.currentTarget);
                     if (f) void handleFile(pos.key, f);
                   }}
                 />
               </label>
-              {filled && (
+              {attached ? (
                 <button
                   type="button"
                   onClick={() => clearSlot(pos.key)}
@@ -499,6 +568,15 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
                 >
                   <RotateCcw size={12} strokeWidth={1.5} />
                   {qualityFailed ? 'Retake' : 'Replace'}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => galleryRefs.current[pos.key]?.click()}
+                  className="inline-flex w-full items-center justify-center gap-1 rounded-md text-[11px] text-white/50 transition-colors hover:text-white"
+                >
+                  <ImagePlus size={12} strokeWidth={1.5} />
+                  Upload
                 </button>
               )}
               {/* Task 13b: specific retake prompt for failed views */}
