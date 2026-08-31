@@ -32,7 +32,15 @@ export type ScanState = {
   frames: (ScanFrame | null)[];
   scanId?: string;
   error?: string;
+  /** Last still-QA code. Guidance only; not a silent Front reset. */
+  lastQaCode?: QaCode;
 };
+
+/** Live-abort window. Count 1 and 0 are committed to CAPTURE so a
+ * "step on the mark" miss cannot steal COUNT_DONE and restart Front. */
+export function canAbortCountdown(count: number): boolean {
+  return count > 1;
+}
 
 export type ScanAction =
   | { type: 'START' }
@@ -147,7 +155,10 @@ export function scanReducer(state: ScanState, action: ScanAction): ScanState {
 
     case 'PRECHECK_FAIL': {
       // COUNT -> ARMED: subject left frame mid-count, restart the arm/count cycle.
+      // Last second / zero is committed to capture. Alignment is coaching,
+      // not a silent reset to Front COUNT.
       if (state.phase !== 'COUNT') return state;
+      if (!canAbortCountdown(state.count)) return state;
       return { ...state, phase: 'ARMED', count: 5, error: 'Hold still.' };
     }
 
@@ -164,7 +175,7 @@ export function scanReducer(state: ScanState, action: ScanAction): ScanState {
       // the frame, clear any stale error, and advance.
       if (state.phase !== 'QA') return state;
       const next = advance(state);
-      return { ...state, ...next, error: undefined };
+      return { ...state, ...next, error: undefined, lastQaCode: undefined };
     }
 
     case 'QA_FAIL': {
@@ -176,9 +187,9 @@ export function scanReducer(state: ScanState, action: ScanAction): ScanState {
       frames[state.poseIndex] = null;
       const retryCount = state.retryCount + 1;
       if (retryCount >= 3) {
-        return { ...state, phase: 'CHOICE', frames, retryCount };
+        return { ...state, phase: 'CHOICE', frames, retryCount, lastQaCode: action.code };
       }
-      return { ...state, phase: 'PROMPT', frames, retryCount };
+      return { ...state, phase: 'PROMPT', frames, retryCount, lastQaCode: action.code };
     }
 
     case 'CHOOSE_RETRY': {
