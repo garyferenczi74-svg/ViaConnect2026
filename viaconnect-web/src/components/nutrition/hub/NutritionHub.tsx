@@ -57,8 +57,10 @@ import { AssessmentRetakeCard } from '@/components/body-tracker/hub/AssessmentRe
 import '@/components/body-tracker/hub/hub-card-frame.css';
 import { useNutritionHubMetrics } from './useNutritionHubMetrics';
 import {
+  dailyMacrosEmptyCopy,
   nutritionHubMacroCenter,
   nutritionHubScoreCenter,
+  nutritionScoreEmptyCopy,
 } from './nutritionHubScoreDisplay';
 import { NutritionInsightsTile } from './NutritionInsightsTile';
 import { NutritionHubHeader } from './NutritionHubHeader';
@@ -325,7 +327,9 @@ export function NutritionHub() {
   // Number.isFinite keeps NaN / Infinity off the numeric path.
   const scoreCenter = nutritionHubScoreCenter(metrics.nutritionScore);
   const macroCenter = nutritionHubMacroCenter(metrics.dailyMacrosPct);
-  const hasMacroPct = macroCenter.kind === 'macros';
+  const hasGramReadout = macroReadouts.some((m) => typeof m.grams === 'number');
+  const scoreEmptyHint = nutritionScoreEmptyCopy(metrics.emptyReason);
+  const macroEmptyHint = dailyMacrosEmptyCopy(metrics.emptyReason);
 
   // Props for the Daily Macros PlasmaGauge. Empty (no meals) still mounts
   // this teal hub finish at the shared main plasma floor; empty mode keeps `--` and no
@@ -396,7 +400,8 @@ export function NutritionHub() {
         {/* Nutrition Score: plain Plasma gauge in the teal hub finish, the
             title below the gauge, then the signal caption. No Open, no tier word.
             Missing still mounts PlasmaGauge (circle + --), never Connections
-            UnknownWell dashes. Hannah subcopy stays "Log a meal to see your score." */}
+            UnknownWell dashes. Meals-missing copy is "Log a meal to see your score."
+            Targets-missing copy names nutrition targets instead. */}
         <HubTile
           gradientClass={MEDIA_TEAL_TL}
           media={NUTRITION_CARD_MEDIA.nutritionScore}
@@ -426,7 +431,7 @@ export function NutritionHub() {
                   subtleTrack
                   showUnit={false}
                 />
-                <span className={`${CONSUMER_CARD_SUBHEAD} text-white/80`}>Log a meal to see your score</span>
+                <span className={`${CONSUMER_CARD_SUBHEAD} text-white/80`}>{scoreEmptyHint}</span>
               </div>
             )}
             <h3 className={CONSUMER_CARD_TITLE}>
@@ -468,7 +473,9 @@ export function NutritionHub() {
         {/* Daily Macros: single Plasma gauge of percent to target in the
             teal hub finish, the title below the gauge, then the absolute gram
             readout row. No meals logged => plasma circle + --, not 0%.
-            Logged meals with truly 0 intake may still paint 0% OF TARGET. */}
+            Meals without nutrition_targets use the targets-missing hint,
+            not the meals-missing line. Logged meals with truly 0 intake
+            may still paint 0% OF TARGET. */}
         <HubTile
           gradientClass={MEDIA_TEAL_TR}
           media={NUTRITION_CARD_MEDIA.dailyMacros}
@@ -481,13 +488,13 @@ export function NutritionHub() {
             ) : (
               <div className="flex flex-col items-center gap-2">
                 <PlasmaGauge {...macroGaugeProps} empty />
-                <span className={`${CONSUMER_CARD_SUBHEAD} text-white/80`}>No macros logged today yet</span>
+                <span className={`${CONSUMER_CARD_SUBHEAD} text-white/80`}>{macroEmptyHint}</span>
               </div>
             )}
             <h3 className={CONSUMER_CARD_TITLE}>
               Daily Macros
             </h3>
-            {hasMacroPct ? (
+            {hasGramReadout ? (
               <div className="grid w-full grid-cols-4 gap-1.5">
                 {macroReadouts.map((m) =>
                   typeof m.grams === 'number' ? (

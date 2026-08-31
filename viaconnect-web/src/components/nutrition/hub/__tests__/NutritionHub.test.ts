@@ -115,8 +115,17 @@ describe('NutritionHub source', () => {
     expect(source).toContain('<PlasmaGauge');
     expect(source).toContain('empty');
     expect(source).toContain('<PlasmaGauge {...macroGaugeProps} empty />');
-    expect(source).toContain('No macros logged today yet');
-    expect(source).toContain('Log a meal to see your score');
+    expect(source).toContain('nutritionScoreEmptyCopy(metrics.emptyReason)');
+    expect(source).toContain('dailyMacrosEmptyCopy(metrics.emptyReason)');
+    expect(source).toContain('hasGramReadout');
+    const display = readFileSync(
+      path.resolve(__dirname, '..', 'nutritionHubScoreDisplay.ts'),
+      'utf-8',
+    );
+    expect(display).toContain('Log a meal to see your score');
+    expect(display).toContain('No macros logged today yet');
+    expect(display).toContain('Set nutrition targets to see your score');
+    expect(display).toContain('Set nutrition targets to see Daily Macros');
     // Empty branch must not feed PlasmaGauge a fake 0 score with OF 100.
     expect(source).not.toMatch(/<PlasmaGauge[\s\S]{0,400}value=\{0\}/);
     expect(source).not.toContain('value={0}');

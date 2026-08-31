@@ -9,12 +9,14 @@ import { PlasmaGauge, arcPath } from '@/components/gauges/PlasmaGauge';
 import {
   CONNECTIONS_BOS_COMPOSITE,
   connectionsBosCompositeDisplay,
+  dailyMacrosEmptyCopy,
   isFiniteHubRingValue,
   nutritionHubEmptyScoreDisplay,
   nutritionHubMacroCenter,
   nutritionHubMacroPaint,
   nutritionHubScoreCenter,
   nutritionHubScorePaint,
+  nutritionScoreEmptyCopy,
 } from '../nutritionHubScoreDisplay';
 import {
   computeTodayNutrition,
@@ -44,9 +46,41 @@ describe('nutritionHubScoreDisplay', () => {
     expect(nutritionHubEmptyScoreDisplay()).toEqual(CONNECTIONS_BOS_COMPOSITE);
   });
 
+  it('empty copy uses ASCII hyphens only, never em or en dashes', () => {
+    expect(nutritionScoreEmptyCopy('meals_missing').includes(String.fromCharCode(0x2014))).toBe(
+      false,
+    );
+    expect(nutritionScoreEmptyCopy('targets_missing').includes(String.fromCharCode(0x2013))).toBe(
+      false,
+    );
+    expect(dailyMacrosEmptyCopy('targets_missing').includes(String.fromCharCode(0x2014))).toBe(
+      false,
+    );
+  });
+
+  it('empty copy: meals-missing vs targets-missing are different strings', () => {
+    expect(nutritionScoreEmptyCopy('meals_missing')).toBe('Log a meal to see your score');
+    expect(nutritionScoreEmptyCopy(undefined)).toBe('Log a meal to see your score');
+    expect(nutritionScoreEmptyCopy('targets_missing')).toBe(
+      'Set nutrition targets to see your score',
+    );
+    expect(nutritionScoreEmptyCopy('targets_missing')).not.toBe(
+      'Log a meal to see your score',
+    );
+    expect(dailyMacrosEmptyCopy('meals_missing')).toBe('No macros logged today yet');
+    expect(dailyMacrosEmptyCopy(undefined)).toBe('No macros logged today yet');
+    expect(dailyMacrosEmptyCopy('targets_missing')).toBe(
+      'Set nutrition targets to see Daily Macros',
+    );
+    expect(dailyMacrosEmptyCopy('targets_missing')).not.toBe(
+      'No macros logged today yet',
+    );
+  });
+
   it('no meals logged => Nutrition Score display is not 0 OF 100 and not a numeric 0', () => {
     const today = computeTodayNutrition([], TARGETS, NOW, TZ);
     expect(today.nutritionScore).toBeUndefined();
+    expect(today.emptyReason).toBe('meals_missing');
     const center = nutritionHubScoreCenter(today.nutritionScore);
     expect(center.kind).toBe('empty');
     expect(nutritionHubScorePaint(center)).toBe('-- UNKNOWN');
@@ -62,7 +96,9 @@ describe('nutritionHubScoreDisplay', () => {
       NOW,
       TZ,
     );
-    expect(today).toEqual({});
+    expect(today.emptyReason).toBe('meals_missing');
+    expect(today.nutritionScore).toBeUndefined();
+    expect(today.dailyMacrosPct).toBeUndefined();
     const center = nutritionHubMacroCenter(today.dailyMacrosPct);
     expect(center.kind).toBe('empty');
     expect(nutritionHubMacroPaint(center)).toBe('-- UNKNOWN');
