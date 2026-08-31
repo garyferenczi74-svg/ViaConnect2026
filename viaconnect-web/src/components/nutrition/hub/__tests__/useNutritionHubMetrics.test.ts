@@ -5,6 +5,10 @@
 // so date boundaries are deterministic across machines.
 
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import { assignTier } from '@/lib/gordon/constants';
+import { nutritionHubScoreCenter, nutritionHubScorePaint } from '../nutritionHubScoreDisplay';
 import {
   withTimeout,
   sevenDayKeys,
@@ -113,15 +117,207 @@ describe('computeTodayNutrition', () => {
     expect(computeTodayNutrition(rows, targets, NOW, TZ)).toEqual({});
   });
 
-  it('computes the calorie weighted nutrition score and meal count', () => {
+  it('computes the hero from daily macros, not the calorie-weighted slot score', () => {
     const rows: HubMealRow[] = [
-      { logged_at: iso('2026-06-10', '08:00:00'), quality_score: 90, calories_kcal: 100 },
-      { logged_at: iso('2026-06-10', '13:00:00'), quality_score: 60, calories_kcal: 300 },
+      {
+        logged_at: iso('2026-06-10', '08:00:00'),
+        quality_score: 90,
+        calories_kcal: 1800,
+        protein_g: 90,
+        carbs_g: 180,
+        fat_total_g: 72,
+        fiber_g: 27,
+      },
+      {
+        logged_at: iso('2026-06-10', '13:00:00'),
+        quality_score: 30,
+        calories_kcal: 0,
+        protein_g: 0,
+        carbs_g: 0,
+        fat_total_g: 0,
+        fiber_g: 0,
+      },
     ];
     const result = computeTodayNutrition(rows, targets, NOW, TZ);
-    // weighted: (90*100 + 60*300) / 400 = 27000/400 = 67.5 -> 68
-    expect(result.nutritionScore).toBe(68);
+    // Both meals count; totals hit 90% of each target. Slot score 30
+    // on the second meal must not paint the hero Fair.
+    expect(result.dailyMacrosPct).toBe(90);
+    expect(result.nutritionScore).toBe(90);
     expect(result.nutritionMealCount).toBe(2);
+    expect(['Excellent', 'Perfection']).toContain(assignTier(result.nutritionScore ?? 0));
+  });
+
+  it('(a) 90% macros + dinner slot-quality 30 => hero Excellent, not Fair/30', () => {
+    const rows: HubMealRow[] = [
+      {
+        logged_at: iso('2026-06-10', '19:00:00'),
+        quality_score: 30,
+        calories_kcal: 1800,
+        protein_g: 90,
+        carbs_g: 180,
+        fat_total_g: 72,
+        fiber_g: 27,
+        score_breakdown: {
+          modifiers: [
+            { name: 'Protein Fit', value: -10 },
+            { name: 'Carb Fit', value: -10 },
+            { name: 'Fat Fit', value: -10 },
+            { name: 'Calorie Fit', value: -5 },
+            { name: 'Sugar Penalty', value: 0 },
+            { name: 'Saturated Fat Penalty', value: 0 },
+            { name: 'Sodium Penalty', value: 0 },
+            { name: 'Whole Food Bonus', value: 0 },
+          ],
+        },
+      },
+    ];
+    const result = computeTodayNutrition(rows, targets, NOW, TZ);
+    expect(result.dailyMacrosPct).toBe(90);
+    expect(result.nutritionScore).toBeDefined();
+    expect(result.nutritionScore).toBeGreaterThanOrEqual(60);
+    expect(result.nutritionScore).not.toBe(30);
+    expect(['Excellent', 'Perfection']).toContain(assignTier(result.nutritionScore ?? 0));
+    expect(assignTier(result.nutritionScore ?? 0)).not.toBe('Fair');
+  });
+
+  it('(b) macros >= 80 floors the hero at 40 (Good) after the modifier', () => {
+    const rows: HubMealRow[] = [
+      {
+        logged_at: iso('2026-06-10'),
+        quality_score: 25,
+        calories_kcal: 1600,
+        protein_g: 80,
+        carbs_g: 160,
+        fat_total_g: 64,
+        fiber_g: 24,
+        score_breakdown: {
+          modifiers: [
+            { name: 'Sugar Penalty', value: -20 },
+            { name: 'Saturated Fat Penalty', value: -15 },
+            { name: 'Sodium Penalty', value: -15 },
+            { name: 'Whole Food Bonus', value: 0 },
+          ],
+        },
+      },
+    ];
+    const loseTargets: HubMacroTargets = { ...targets, goalDirection: 'lose' };
+    const result = computeTodayNutrition(rows, loseTargets, NOW, TZ);
+    expect(result.dailyMacrosPct).toBe(80);
+    expect(result.nutritionScore).toBeDefined();
+    expect(result.nutritionScore ?? 0).toBeGreaterThanOrEqual(40);
+  });
+
+  it('(c) no real meals => nutritionScore undefined, display is -- UNKNOWN never 0', () => {
+    const empty = computeTodayNutrition([], targets, NOW, TZ);
+    expect(empty.nutritionScore).toBeUndefined();
+    expect(empty.dailyMacrosPct).toBeUndefined();
+    const center = nutritionHubScoreCenter(empty.nutritionScore);
+    expect(nutritionHubScorePaint(center)).toBe('-- UNKNOWN');
+    expect(center.value).not.toBe(0);
+    expect(center.value).not.toBe('0');
+  });
+
+  it('(c) no real nutrition_targets row => UNKNOWN even when meals exist', () => {
+    const rows: HubMealRow[] = [
+      {
+        logged_at: iso('2026-06-10'),
+        quality_score: 80,
+        calories_kcal: 1800,
+        protein_g: 90,
+        carbs_g: 180,
+        fat_total_g: 72,
+        fiber_g: 27,
+      },
+    ];
+    const result = computeTodayNutrition(rows, null, NOW, TZ);
+    expect(result).toEqual({});
+    expect(result.nutritionScore).toBeUndefined();
+    expect(nutritionHubScorePaint(nutritionHubScoreCenter(result.nutritionScore))).toBe(
+      '-- UNKNOWN',
+    );
+  });
+
+  it('(d) quality input ignores meal-slot protein / carb / fat fit', () => {
+    const rows: HubMealRow[] = [
+      {
+        logged_at: iso('2026-06-10'),
+        quality_score: 30,
+        calories_kcal: 1800,
+        protein_g: 90,
+        carbs_g: 180,
+        fat_total_g: 72,
+        fiber_g: 27,
+        score_breakdown: {
+          modifiers: [
+            { name: 'Protein Fit', value: -10 },
+            { name: 'Carb Fit', value: -10 },
+            { name: 'Fat Fit', value: -10 },
+            { name: 'Calorie Fit', value: -5 },
+            { name: 'Sugar Penalty', value: 0 },
+            { name: 'Saturated Fat Penalty', value: 0 },
+            { name: 'Sodium Penalty', value: 0 },
+            { name: 'Whole Food Bonus', value: 0 },
+          ],
+        },
+      },
+    ];
+    const result = computeTodayNutrition(rows, targets, NOW, TZ);
+    // Neutral food-pattern + 90% macros => 90, not 90-15 from slot fit.
+    expect(result.nutritionScore).toBe(90);
+  });
+
+  it('(e) lose overshoot on a 90% macros day stays Excellent', () => {
+    const rows: HubMealRow[] = [
+      {
+        logged_at: iso('2026-06-10'),
+        quality_score: 30,
+        calories_kcal: 3000,
+        protein_g: 89,
+        carbs_g: 178,
+        fat_total_g: 71,
+        fiber_g: 27,
+        score_breakdown: {
+          modifiers: [
+            { name: 'Sugar Penalty', value: -20 },
+            { name: 'Saturated Fat Penalty', value: -15 },
+            { name: 'Sodium Penalty', value: -15 },
+            { name: 'Whole Food Bonus', value: 0 },
+          ],
+        },
+      },
+    ];
+    const loseTargets: HubMacroTargets = { ...targets, goalDirection: 'lose' };
+    const result = computeTodayNutrition(rows, loseTargets, NOW, TZ);
+    expect(result.dailyMacrosPct).toBeGreaterThanOrEqual(90);
+    expect(result.nutritionScore ?? 0).toBeGreaterThanOrEqual(60);
+    expect(['Excellent', 'Perfection']).toContain(assignTier(result.nutritionScore ?? 0));
+  });
+
+  it('(e) gain protein-miss on a 90% macros day stays Excellent', () => {
+    const rows: HubMealRow[] = [
+      {
+        logged_at: iso('2026-06-10'),
+        quality_score: 30,
+        calories_kcal: 2000,
+        protein_g: 55,
+        carbs_g: 200,
+        fat_total_g: 80,
+        fiber_g: 30,
+        score_breakdown: {
+          modifiers: [
+            { name: 'Sugar Penalty', value: -20 },
+            { name: 'Saturated Fat Penalty', value: -15 },
+            { name: 'Sodium Penalty', value: -15 },
+            { name: 'Whole Food Bonus', value: 0 },
+          ],
+        },
+      },
+    ];
+    const gainTargets: HubMacroTargets = { ...targets, goalDirection: 'gain' };
+    const result = computeTodayNutrition(rows, gainTargets, NOW, TZ);
+    expect(result.dailyMacrosPct).toBeGreaterThanOrEqual(90);
+    expect(result.nutritionScore ?? 0).toBeGreaterThanOrEqual(60);
+    expect(['Excellent', 'Perfection']).toContain(assignTier(result.nutritionScore ?? 0));
   });
 
   it('computes per macro attainment capped at 100', () => {
@@ -212,5 +408,34 @@ describe('computeTodayNutrition', () => {
     expect(Number.isFinite(result.nutritionScore)).toBe(true);
     expect(result.nutritionScore).not.toBeNaN();
     expect(result.dailyMacrosPct).toBe(0);
+  });
+});
+
+describe('useNutritionHubMetrics source lock', () => {
+  const source = readFileSync(
+    path.resolve(__dirname, '..', 'useNutritionHubMetrics.ts'),
+    'utf-8',
+  );
+
+  it('does not use calorieWeightedMealQualityScore or generateTargets', () => {
+    expect(source).not.toContain('calorieWeightedMealQualityScore');
+    expect(source).not.toContain('generateTargets');
+    expect(source).not.toContain("from '@/lib/gordon/generateTargets'");
+    expect(source).toContain('heroNutritionScore');
+    expect(source).toContain('dailyFoodPatternQuality');
+  });
+
+  it('reads only Jeffery live nutrition_targets columns; no lbm_kg', () => {
+    expect(source).toContain(
+      "'daily_kcal, daily_protein_g, daily_carbs_g, daily_fat_total_g, daily_fiber_g, goal_direction'",
+    );
+    expect(source).not.toContain('lbm_kg');
+    expect(source).not.toContain('lbmKg');
+    expect(source).not.toContain('body_fat_fraction');
+    expect(source).not.toContain('meal_distribution');
+  });
+
+  it('does not fold hydration into Nutrition Score', () => {
+    expect(source).not.toContain('hydration');
   });
 });

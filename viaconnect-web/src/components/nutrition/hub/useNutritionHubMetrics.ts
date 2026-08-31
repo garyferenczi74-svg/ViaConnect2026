@@ -13,25 +13,25 @@
 //   - Structured logging: one safeLog.warn line per failed read so the
 //     drop off is observable in the Vercel runtime logs.
 //
-// Read only. No new scoring math: the three gauges reuse the exact
-// helpers the existing Nutrition cards use. Nutrition Score reuses
-// calorieWeightedMealQualityScore with NutritionScoreCard's today
-// filter; Total Daily Macros reuses totalDailyMacrosScore over the same
-// per-macro attainment; targets read the active nutrition_targets row
-// the way useNutritionTargets does and fall back to generateTargets the
-// way the cards do. The consecutive streak math lives in the pure
-// ./streak module.
+// Read only. Nutrition Score hero is daily macro attainment vs the
+// persisted nutrition_targets five macros, plus a bounded food-pattern
+// modifier and an optional goal_direction tilt. Slot-weighted per-meal
+// quality stays on the expanded Today's meals ring. No legacy
+// generate-targets fallback. No real nutrition_targets row or no real
+// meals => score stays undefined so the ring paints UNKNOWN / --. The
+// consecutive streak math lives in the pure ./streak module.
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { safeLog } from '@/lib/utils/safe-log';
 import {
-  calorieWeightedMealQualityScore,
+  dailyFoodPatternQuality,
+  heroNutritionScore,
   totalDailyMacrosScore,
   type DailyMacroAttainments,
-  type ScoredMealContribution,
+  type FoodPatternModifier,
+  type HubGoalDirection,
 } from '@/lib/gordon/daily-aggregate';
-import { generateTargets } from '@/lib/gordon/generateTargets';
 import { fetchGoalOverlay } from '@/lib/gordon/resolveDailyTarget';
 import { withTimeout } from '@/lib/utils/with-timeout';
 import { computeConsecutiveMealStreak } from './streak';
@@ -108,15 +108,19 @@ export interface HubMealRow {
   carbs_g?: number | null;
   fat_total_g?: number | null;
   fiber_g?: number | null;
+  // Food-pattern modifiers only. Slot-share Protein / Carb / Fat Fit
+  // inside this JSON must not drive the hero.
+  score_breakdown?: { modifiers?: ReadonlyArray<FoodPatternModifier> } | null;
 }
 
-/** Minimal target shape the macro attainment math needs. */
+/** Minimal target shape from nutrition_targets. Does not read lean mass. */
 export interface HubMacroTargets {
   dailyKcal: number;
   dailyProteinG: number;
   dailyCarbsG: number;
   dailyFatTotalG: number;
   dailyFiberG: number;
+  goalDirection?: HubGoalDirection;
 }
 
 function numeric(value: unknown): number {
@@ -165,23 +169,19 @@ export function dailyMealCountsFromRows(
 }
 
 /**
- * Pure. Reproduces the NutritionScoreCard today computation: builds the
- * calorie weighted Nutrition Score over today's scored meals (quality
- * score not null) and the per-macro attainment for the Total Daily
- * Macros gauge, then folds the attainment with totalDailyMacrosScore.
- * Returns undefined fields when there is no signal so the hub omits the
- * chip rather than showing a fabricated zero.
+ * Pure. Today's hub gauges. Daily Macros is totalDailyMacrosScore vs
+ * the persisted nutrition_targets five macros. The hero Nutrition Score
+ * is that attainment plus a food-pattern-only +/-15 modifier and an
+ * optional goal_direction tilt. No real meals or no real targets row
+ * returns undefined fields so the ring paints UNKNOWN / --, never 0.
  *
- * Note: the known_nutrients per-meal gate that NutritionScoreCard
- * applies via isMealNutrientKnown is intentionally not reapplied here.
- * The hub reads the meals table select that does not include
- * score_breakdown, so every present macro is treated as known, matching
- * the pre-177d behavior for non-text channels. The score helpers and
- * the targets are reused unchanged; only the data source is leaner.
+ * quality_score is only the "this row was Gordon-scored" gate. The
+ * numeric quality_score (slot-weighted meal quality) does not become
+ * the hero. Hydration is not read here.
  */
 export function computeTodayNutrition(
   rows: ReadonlyArray<HubMealRow>,
-  targets: HubMacroTargets,
+  targets: HubMacroTargets | null,
   now: Date,
   tz: string,
 ): {
@@ -197,10 +197,12 @@ export function computeTodayNutrition(
   fatG?: number;
   fiberG?: number;
 } {
+  if (!targets) return {};
+
   const todayKey = localDateKey(now.toISOString(), tz);
   if (!todayKey) return {};
 
-  const scoredMealsToday: ScoredMealContribution[] = [];
+  const foodPatternMeals: Array<{ modifiers?: ReadonlyArray<FoodPatternModifier> }> = [];
   let todayMealCount = 0;
   let caloriesSum = 0;
   let proteinSum = 0;
@@ -219,17 +221,14 @@ export function computeTodayNutrition(
     carbsSum += numeric(m.carbs_g);
     fatSum += numeric(m.fat_total_g);
     fiberSum += numeric(m.fiber_g);
-    scoredMealsToday.push({
-      qualityScore: numeric(m.quality_score),
-      caloriesKcal: numeric(m.calories_kcal),
+    foodPatternMeals.push({
+      modifiers: m.score_breakdown?.modifiers,
     });
   }
 
   if (todayMealCount === 0) {
     return {};
   }
-
-  const nutritionScore = calorieWeightedMealQualityScore(scoredMealsToday);
 
   // Per-macro attainment, each capped at 100, gated on a positive
   // target. Mirrors NutritionScoreCard. With todayMealCount > 0 every
@@ -253,6 +252,16 @@ export function computeTodayNutrition(
     fiber: fiberPct,
   };
   const dailyMacrosPct = totalDailyMacrosScore(attainments);
+  const dailyFoodQuality = dailyFoodPatternQuality(foodPatternMeals);
+  const nutritionScore = heroNutritionScore({
+    dailyMacrosPct,
+    dailyFoodQuality,
+    goalDirection: targets.goalDirection ?? null,
+    caloriesConsumed: caloriesSum,
+    dailyKcal: targets.dailyKcal,
+    proteinConsumed: proteinSum,
+    dailyProteinG: targets.dailyProteinG,
+  });
 
   return {
     nutritionScore,
@@ -273,7 +282,12 @@ export function computeTodayNutrition(
   };
 }
 
-// Reads the 5 macro target fields off an active nutrition_targets row.
+function goalDirectionFromRow(value: unknown): HubGoalDirection {
+  if (value === 'lose' || value === 'gain' || value === 'maintain') return value;
+  return null;
+}
+
+// Reads the five macro columns plus goal_direction. Does not read lean mass.
 function targetsFromRow(row: Record<string, unknown>): HubMacroTargets {
   return {
     dailyKcal: numeric(row.daily_kcal),
@@ -281,25 +295,7 @@ function targetsFromRow(row: Record<string, unknown>): HubMacroTargets {
     dailyCarbsG: numeric(row.daily_carbs_g),
     dailyFatTotalG: numeric(row.daily_fat_total_g),
     dailyFiberG: numeric(row.daily_fiber_g),
-  };
-}
-
-// generateTargets fallback (mirrors NutritionScoreCard / DailyMacrosCard
-// when no active row exists), narrowed to the 5 macro fields the hub
-// gauges need.
-function fallbackTargets(): HubMacroTargets {
-  const t = generateTargets({
-    caqSnapshot: null,
-    bodySnapshot: null,
-    bioOptDay: null,
-    mealPatternHistory: null,
-  });
-  return {
-    dailyKcal: t.dailyKcal,
-    dailyProteinG: t.dailyProteinG,
-    dailyCarbsG: t.dailyCarbsG,
-    dailyFatTotalG: t.dailyFatTotalG,
-    dailyFiberG: t.dailyFiberG,
+    goalDirection: goalDirectionFromRow(row.goal_direction),
   };
 }
 
@@ -331,27 +327,18 @@ export function useNutritionHubMetrics(): UseNutritionHubMetricsResult {
         const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
         const now = new Date();
 
-        // Active nutrition_targets row, read the same way
-        // useNutritionTargets does (eq user_id, superseded_at IS NULL,
-        // effective_from desc, limit 1, maybeSingle). On any failure or
-        // absence, fall back to generateTargets like the cards do so the
-        // macro attainment still has a denominator.
-        //
-        // Prompt 183 review Fix 1 (2026-06-10): match useNutritionTargets
-        // exactly by overlaying the active goal target onto the static row.
-        // When a goal user has a same-day manual override or an effective
-        // goal target, fetchGoalOverlay replaces the five macro targets so
-        // the hub's dailyMacrosPct and per-macro percents track
-        // DailyMacrosCard rather than the static CAQ row. The overlay is
-        // only applied over a real base row, mirroring how
-        // useNutritionTargets overlays only when a base row exists (no base
-        // row -> the cards use generateTargets with no overlay).
-        let targets: HubMacroTargets = fallbackTargets();
+        // Active nutrition_targets row only. A missing row leaves
+        // targets null so the hero stays UNKNOWN. Jeffery field lock:
+        // daily_kcal, daily_protein_g, daily_carbs_g, daily_fat_total_g,
+        // daily_fiber_g, goal_direction. Do not read lean mass. Overlay
+        // may replace the five persisted grams/kcal when a same-day goal
+        // override exists; goal_direction stays on the row (tilt only).
+        let targets: HubMacroTargets | null = null;
         try {
           const targetsResult = (await withTimeout(
             supabase
               .from('nutrition_targets')
-              .select('daily_kcal, daily_protein_g, daily_carbs_g, daily_fat_total_g, daily_fiber_g')
+              .select('daily_kcal, daily_protein_g, daily_carbs_g, daily_fat_total_g, daily_fiber_g, goal_direction')
               .eq('user_id', user.id)
               .is('superseded_at', null)
               .order('effective_from', { ascending: false })
@@ -362,12 +349,6 @@ export function useNutritionHubMetrics(): UseNutritionHubMetricsResult {
           )) as { data: Record<string, unknown> | null };
           if (targetsResult.data) {
             targets = targetsFromRow(targetsResult.data);
-            // Goal overlay, applied the same way useNutritionTargets does:
-            // localDateISO is the YYYY-MM-DD slice of the current instant,
-            // and fetchGoalOverlay returns the override-then-goal target or
-            // null. This sub-read fails open to no overlay (keeps the base
-            // targets) so an overlay failure never nukes the base targets;
-            // only the base read failing leaves the macro metrics undefined.
             try {
               const todayISO = now.toISOString().slice(0, 10);
               const overlay = await withTimeout(
@@ -382,6 +363,7 @@ export function useNutritionHubMetrics(): UseNutritionHubMetricsResult {
                   dailyCarbsG: overlay.dailyCarbsG,
                   dailyFatTotalG: overlay.dailyFatTotalG,
                   dailyFiberG: overlay.dailyFiberG,
+                  goalDirection: targets.goalDirection ?? null,
                 };
               }
             } catch (overlayErr) {
@@ -414,7 +396,7 @@ export function useNutritionHubMetrics(): UseNutritionHubMetricsResult {
           const mealsResult = (await withTimeout(
             supabase
               .from('meals')
-              .select('logged_at, quality_score, calories_kcal, protein_g, carbs_g, fat_total_g, fiber_g')
+              .select('logged_at, quality_score, calories_kcal, protein_g, carbs_g, fat_total_g, fiber_g, score_breakdown')
               .eq('user_id', user.id)
               .gte('logged_at', sinceIso)
               .order('logged_at', { ascending: false }),
