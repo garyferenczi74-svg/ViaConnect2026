@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
+import { THREE_PORTAL_COPY } from '@/lib/practitioner/waitlist-honesty';
 import {
     COVERFLOW_FEATURE_IDS,
     coverflowFeatureCards,
@@ -33,6 +34,10 @@ const LOCKED_HEADLINES = [
     'AI-Driven Supplement Protocols',
     'Daily Logging',
     'Wellness Analytics and Bio Optimization Score',
+    'Peptide Protocols',
+    THREE_PORTAL_COPY.headline,
+    'Medical and Herbal Interaction Engine',
+    'Helix Rewards',
 ] as const;
 
 const LOCKED_BODIES = [
@@ -40,29 +45,43 @@ const LOCKED_BODIES = [
     'Stop guessing what to take. Our AI matches every supplement to your biology and picks the delivery method your body actually absorbs, so the right molecules reach the right targets.',
     'Log meals, track your body, see the connection. Snap photos for instant macros and micronutrients, track weight, composition, measurements, and progress photos, all plotted against your protocol so you see exactly what is working.',
     "One score across eight dimensions. Your daily Bio Optimization Score tracks recovery, sleep, strain, and regimen, alongside intelligence across nutrients, symptoms, metabolic, and immune signals. Connect a device when it's available. Coming soon stays Coming soon. Missing stays UNKNOWN. Five tiers from foundational to optimized.",
+    'Peptide therapy, finally personalized. Clinician-developed protocols across liposomal, micellar, injectable, and nasal delivery, matched to your variant profile so the right peptide reaches the right system.',
+    THREE_PORTAL_COPY.body,
+    'Built to catch what humans miss. Every supplement, peptide, and herb cross-checked against your medications, allergies, and conditions before it reaches your protocol. Practitioner override available when clinical judgment calls for it.',
+    'Stick with it, get rewarded. Earn points as you log, learn, and progress. Bronze, Silver, Gold, and Platinum tiers turn the daily discipline of your protocol into something worth showing up for.',
 ] as const;
 
 describe('landing Features coverflow data', () => {
-    it('exposes exactly four coverflow cards with locked Hannah copy', () => {
+    it('exposes exactly eight coverflow cards with locked Hannah copy', () => {
         expect(COVERFLOW_FEATURE_IDS).toEqual([
             'genomic-testing',
             'ai-protocols',
             'daily-logging',
             'wellness-analytics',
+            'peptide-protocols',
+            'three-portal',
+            'interaction-engine',
+            'helix-rewards',
         ]);
-        expect(coverflowFeatureCards).toHaveLength(4);
+        expect(coverflowFeatureCards).toHaveLength(8);
+        expect(coverflowFeatureCards.map((card) => card.id)).toEqual([...COVERFLOW_FEATURE_IDS]);
         expect(coverflowFeatureCards.map((card) => card.headline)).toEqual([...LOCKED_HEADLINES]);
         expect(coverflowFeatureCards.map((card) => card.body)).toEqual([...LOCKED_BODIES]);
+        expect(featureCards.map((card) => card.id)).toEqual([...COVERFLOW_FEATURE_IDS]);
     });
 
-    it('keeps Three-Portal copy in the catalog without putting it on the carousel', () => {
-        expect(featureCards.some((card) => card.id === 'three-portal')).toBe(true);
-        expect(coverflowFeatureCards.some((card) => card.id === 'three-portal')).toBe(false);
+    it('keeps waitlist-honest Three-Portal copy on the carousel', () => {
+        const threePortal = coverflowFeatureCards.find((card) => card.id === 'three-portal');
+        expect(threePortal?.headline).toBe(THREE_PORTAL_COPY.headline);
+        expect(threePortal?.teaser).toBe(THREE_PORTAL_COPY.teaser);
+        expect(threePortal?.body).toBe(THREE_PORTAL_COPY.body);
+        expect(threePortal?.body).toMatch(/Q1 2027/);
+        expect(threePortal?.body.toLowerCase()).not.toMatch(/in one tap/);
     });
 
     it('maps headline to title and body to dropdown description', () => {
         const mapped = coverflowFeatureCards.map(toCoverFlowFeatureItem);
-        expect(mapped).toHaveLength(4);
+        expect(mapped).toHaveLength(8);
         for (const [index, item] of mapped.entries()) {
             expect(item.title).toBe(LOCKED_HEADLINES[index]);
             expect(item.description).toBe(LOCKED_BODIES[index]);
@@ -142,7 +161,7 @@ describe('CoverFlowCarousel Features integration', () => {
         expect(MOBILE).toContain('feature.body');
     });
 
-    it('SSR-renders four headings and keeps descriptions collapsed', () => {
+    it('SSR-renders eight headings and keeps descriptions collapsed', () => {
         const html = renderToStaticMarkup(
             createElement(CoverFlowCarousel, {
                 items: coverflowFeatureCards.map(toCoverFlowFeatureItem),

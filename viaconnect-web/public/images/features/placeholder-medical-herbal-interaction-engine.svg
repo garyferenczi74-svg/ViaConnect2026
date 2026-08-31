@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="800" viewBox="0 0 640 800" role="img" aria-labelledby="title desc">
+  <title id="title">PLACEHOLDER  Medical and Herbal Interaction Engine</title>
+  <desc id="desc">Dark branded still. Gary: replace this file to swap the card image. Do not use restaurant or stock food photos, or a photo of a person.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0.2" y1="1" x2="0.9" y2="0">
+      <stop offset="0%" stop-color="#1A2744"/>
+      <stop offset="50%" stop-color="#2a1f28"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="800" fill="url(#bg)"/>
+  <circle cx="500" cy="200" r="190" fill="#9D5858" fill-opacity="0.16"/>
+  <circle cx="110" cy="660" r="160" fill="#B75E18" fill-opacity="0.10"/>
+  <text x="48" y="340" fill="#9D5858" font-family="Inter, system-ui, sans-serif" font-size="22" font-weight="600" letter-spacing="4">PLACEHOLDER</text>
+  <text x="48" y="390" fill="#FFFFFF" font-family="Inter, system-ui, sans-serif" font-size="24" font-weight="500">Medical and Herbal</text>
+  <text x="48" y="422" fill="#FFFFFF" font-family="Inter, system-ui, sans-serif" font-size="24" font-weight="500">Interaction Engine</text>
+  <text x="48" y="462" fill="rgba(255,255,255,0.55)" font-family="Inter, system-ui, sans-serif" font-size="16">Swap this file  placeholder-medical-herbal-interaction-engine.svg</text>
+</svg>

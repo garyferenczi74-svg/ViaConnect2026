@@ -26,6 +26,10 @@ export const COVERFLOW_FEATURE_IDS = [
     'ai-protocols',
     'daily-logging',
     'wellness-analytics',
+    'peptide-protocols',
+    'three-portal',
+    'interaction-engine',
+    'helix-rewards',
 ] as const
 
 export type CoverflowFeatureId = (typeof COVERFLOW_FEATURE_IDS)[number]
@@ -35,6 +39,10 @@ export const FEATURE_PLACEHOLDER_IMAGES: Record<CoverflowFeatureId, string> = {
     'ai-protocols': '/images/features/placeholder-ai-driven-supplement-protocols.svg',
     'daily-logging': '/images/features/placeholder-daily-logging.svg',
     'wellness-analytics': '/images/features/placeholder-wellness-analytics-bos.svg',
+    'peptide-protocols': '/images/features/placeholder-peptide-protocols.svg',
+    'three-portal': '/images/features/placeholder-three-portal-ecosystem.svg',
+    'interaction-engine': '/images/features/placeholder-medical-herbal-interaction-engine.svg',
+    'helix-rewards': '/images/features/placeholder-helix-rewards.svg',
 }
 
 export const featureCards: FeatureCard[] = [
@@ -76,6 +84,7 @@ export const featureCards: FeatureCard[] = [
         headline: 'Peptide Protocols',
         teaser: 'Personalized peptides across four delivery forms.',
         body: 'Peptide therapy, finally personalized. Clinician-developed protocols across liposomal, micellar, injectable, and nasal delivery, matched to your variant profile so the right peptide reaches the right system.',
+        placeholderImageSrc: FEATURE_PLACEHOLDER_IMAGES['peptide-protocols'],
     },
     {
         id: 'three-portal',
@@ -83,6 +92,7 @@ export const featureCards: FeatureCard[] = [
         headline: THREE_PORTAL_COPY.headline,
         teaser: THREE_PORTAL_COPY.teaser,
         body: THREE_PORTAL_COPY.body,
+        placeholderImageSrc: FEATURE_PLACEHOLDER_IMAGES['three-portal'],
     },
     {
         id: 'interaction-engine',
@@ -90,6 +100,7 @@ export const featureCards: FeatureCard[] = [
         headline: 'Medical and Herbal Interaction Engine',
         teaser: 'Catches what humans miss.',
         body: 'Built to catch what humans miss. Every supplement, peptide, and herb cross-checked against your medications, allergies, and conditions before it reaches your protocol. Practitioner override available when clinical judgment calls for it.',
+        placeholderImageSrc: FEATURE_PLACEHOLDER_IMAGES['interaction-engine'],
     },
     {
         id: 'helix-rewards',
@@ -97,6 +108,7 @@ export const featureCards: FeatureCard[] = [
         headline: 'Helix Rewards',
         teaser: 'Earn, compete, and level up.',
         body: 'Stick with it, get rewarded. Earn points as you log, learn, and progress. Bronze, Silver, Gold, and Platinum tiers turn the daily discipline of your protocol into something worth showing up for.',
+        placeholderImageSrc: FEATURE_PLACEHOLDER_IMAGES['helix-rewards'],
     },
 ]
 
