@@ -254,11 +254,13 @@ describe('CoverFlowCarousel Features integration', () => {
         expect(CAROUSEL).toContain('onFocusCapture');
         expect(CAROUSEL).toContain('onPointerDown');
         expect(CAROUSEL).toContain('dropdownOpen: openId !== null');
-        expect(CAROUSEL).toContain('reduceMotion !== false');
+        expect(CAROUSEL).toContain('prefersReducedMotion !== false');
+        expect(CAROUSEL).toContain("matchMedia('(prefers-reduced-motion: reduce)')");
         expect(CAROUSEL).toContain('data-autoplay');
         expect(CAROUSEL).toContain('data-motion');
         expect(CAROUSEL).toContain('continuous');
         expect(CAROUSEL).not.toMatch(/transform 0\.45s/);
+        expect(CAROUSEL).not.toContain('useReducedMotion');
     });
 
     it('shrinks the coverflow plate on both mobile and desktop', () => {

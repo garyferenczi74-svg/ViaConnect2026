@@ -19,7 +19,7 @@ import {
     type KeyboardEvent,
     type PointerEvent as ReactPointerEvent,
 } from 'react'
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
@@ -57,7 +57,9 @@ export function CoverFlowCarousel({
     className,
     initialIndex = 0,
 }: CoverFlowCarouselProps) {
-    const reduceMotion = useReducedMotion()
+    const [prefersReducedMotion, setPrefersReducedMotion] = useState<boolean | null>(
+        null,
+    )
     const reactId = useId()
     const stageRef = useRef<HTMLDivElement>(null)
     const dragStartX = useRef<number | null>(null)
@@ -79,16 +81,25 @@ export function CoverFlowCarousel({
 
     const count = items.length
     const active = count === 0 ? null : items[activeIndex]
+    const reduceMotion = prefersReducedMotion === true
     const autoplayPaused = shouldPauseCoverflowAutoplay({
-        reduceMotion,
+        reduceMotion: prefersReducedMotion,
         hovering,
         focusWithin,
         pointerActive,
         dropdownOpen: openId !== null,
     })
     const autoplayState =
-        reduceMotion !== false ? 'off' : autoplayPaused ? 'paused' : 'on'
+        prefersReducedMotion !== false ? 'off' : autoplayPaused ? 'paused' : 'on'
     const spinning = autoplayState === 'on'
+
+    useEffect(() => {
+        const media = window.matchMedia('(prefers-reduced-motion: reduce)')
+        const sync = () => setPrefersReducedMotion(media.matches)
+        sync()
+        media.addEventListener('change', sync)
+        return () => media.removeEventListener('change', sync)
+    }, [])
 
     const paint = useCallback(
         (value: number, withTransition: boolean) => {
