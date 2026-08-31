@@ -4,6 +4,9 @@
  * without mounting the client component.
  */
 
+/** Dwell on the focused card before the next clockwise step. Not the spin duration. */
+export const COVERFLOW_AUTOPLAY_DWELL_MS = 2000
+
 export interface CoverflowTransform {
     rotateY: number
     translateXPercent: number
@@ -11,6 +14,22 @@ export interface CoverflowTransform {
     scale: number
     opacity: number
     zIndex: number
+}
+
+export function nextClockwiseIndex(activeIndex: number, length: number): number {
+    if (length <= 0) return 0
+    return ((activeIndex + 1) % length + length) % length
+}
+
+export function shouldPauseCoverflowAutoplay(input: {
+    reduceMotion: boolean | null
+    hovering: boolean
+    focusWithin: boolean
+    pointerActive: boolean
+    dropdownOpen: boolean
+}): boolean {
+    if (input.reduceMotion !== false) return true
+    return input.hovering || input.focusWithin || input.pointerActive || input.dropdownOpen
 }
 
 export function shortestCarouselOffset(
