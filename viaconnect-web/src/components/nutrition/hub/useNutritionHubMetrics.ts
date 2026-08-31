@@ -17,9 +17,11 @@
 // persisted nutrition_targets five macros, plus a bounded food-pattern
 // modifier and an optional goal_direction tilt. Slot-weighted per-meal
 // quality stays on the expanded Today's meals ring. No invented
-// fallback targets. No real nutrition_targets row or no real meals =>
-// score stays undefined so the ring paints UNKNOWN / --. The
-// consecutive streak math lives in the pure ./streak module.
+// fallback targets. True no-meals day => UNKNOWN / --. Missing
+// nutrition_targets => Nutrition Score stays UNKNOWN (cannot score vs
+// My Biology) but Daily Macros must not use the meals-missing empty:
+// today's food still surfaces consumed grams, and copy names targets.
+// The consecutive streak math lives in the pure ./streak module.
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
@@ -35,6 +37,7 @@ import {
 import { fetchGoalOverlay } from '@/lib/gordon/resolveDailyTarget';
 import { withTimeout } from '@/lib/utils/with-timeout';
 import { computeConsecutiveMealStreak } from './streak';
+import type { HubGaugeEmptyReason } from './nutritionHubScoreDisplay';
 
 // Re-export the canonical timeout helper so the timeout contract stays
 // unit-testable from this module (the hook body itself is not, it needs
@@ -62,6 +65,10 @@ export interface NutritionHubMetrics {
   streakDays?: number; // 0..7
   dailyMealCounts?: number[]; // length 7, oldest..today, for the history bars
   savedMealsCount?: number; // count of saved_meals
+  // Why the rings are UNKNOWN. Omit when both gauges are numeric.
+  // meals_missing = true empty day. targets_missing = food exists but
+  // there is no persisted nutrition_targets row to score against.
+  emptyReason?: HubGaugeEmptyReason;
 }
 
 export interface UseNutritionHubMetricsResult {
@@ -93,9 +100,10 @@ function localDateKey(iso: string, timezone: string): string {
 
 // Exported for unit testing. The pure helpers and types below
 // (HubMealRow, HubMacroTargets, sevenDayKeys, dailyMealCountsFromRows,
-// computeTodayNutrition, plus the re-exported withTimeout above) are
-// exposed only so the gauge math is unit-testable; they are not a public
-// API and should not be imported as one.
+// todaysFoodMealRows, hasTodaysFoodMeals, computeTodayNutrition, plus
+// the re-exported withTimeout above) are exposed only so the gauge math
+// is unit-testable; they are not a public API and should not be imported
+// as one.
 /**
  * A canonical meals row, narrowed to the fields the hub gauges read.
  * Mirrors the column names fetchUserMeals selects from the meals table.
@@ -169,22 +177,35 @@ export function dailyMealCountsFromRows(
 }
 
 /**
- * Pure. Today's hub gauges. Daily Macros is totalDailyMacrosScore vs
- * the persisted nutrition_targets five macros. The hero Nutrition Score
- * is that attainment plus a food-pattern-only +/-15 modifier and an
- * optional goal_direction tilt. No real meals or no real targets row
- * returns undefined fields so the ring paints UNKNOWN / --, never 0.
- *
- * quality_score is only the "this row was Gordon-scored" gate. The
- * numeric quality_score (slot-weighted meal quality) does not become
- * the hero. Hydration is not read here.
+ * Pure. Today's food rows on the same local calendar day Today's meals
+ * uses. No quality_score gate: a logged meal with kcal still counts as
+ * food even when Gordon has not scored the row.
  */
-export function computeTodayNutrition(
+export function todaysFoodMealRows(
   rows: ReadonlyArray<HubMealRow>,
-  targets: HubMacroTargets | null,
   now: Date,
   tz: string,
-): {
+): HubMealRow[] {
+  const todayKey = localDateKey(now.toISOString(), tz);
+  if (!todayKey) return [];
+  const today: HubMealRow[] = [];
+  for (const row of rows) {
+    if (localDateKey(String(row.logged_at ?? ''), tz) !== todayKey) continue;
+    today.push(row);
+  }
+  return today;
+}
+
+/** True when Today's meals would list at least one food row today. */
+export function hasTodaysFoodMeals(
+  rows: ReadonlyArray<HubMealRow>,
+  now: Date,
+  tz: string,
+): boolean {
+  return todaysFoodMealRows(rows, now, tz).length > 0;
+}
+
+export interface TodayNutritionResult {
   nutritionScore?: number;
   nutritionMealCount?: number;
   dailyMacrosPct?: number;
@@ -196,26 +217,42 @@ export function computeTodayNutrition(
   carbsG?: number;
   fatG?: number;
   fiberG?: number;
-} {
-  if (!targets) return {};
+  emptyReason?: HubGaugeEmptyReason;
+}
 
-  const todayKey = localDateKey(now.toISOString(), tz);
-  if (!todayKey) return {};
+/**
+ * Pure. Today's hub gauges. Daily Macros is totalDailyMacrosScore vs
+ * the persisted nutrition_targets five macros. The hero Nutrition Score
+ * is that attainment plus a food-pattern-only +/-15 modifier and an
+ * optional goal_direction tilt.
+ *
+ * Has-meals matches Today's meals: any food row on the local day, even
+ * when quality_score is null. Missing targets no longer wipe the day
+ * into the meals-missing empty. Grams stay visible; percent and hero
+ * stay undefined so the rings paint UNKNOWN / --, never 0.
+ *
+ * The numeric quality_score (slot-weighted meal quality) does not
+ * become the hero. Hydration is not read here.
+ */
+export function computeTodayNutrition(
+  rows: ReadonlyArray<HubMealRow>,
+  targets: HubMacroTargets | null,
+  now: Date,
+  tz: string,
+): TodayNutritionResult {
+  const todayRows = todaysFoodMealRows(rows, now, tz);
+  if (todayRows.length === 0) {
+    return { emptyReason: 'meals_missing' };
+  }
 
   const foodPatternMeals: Array<{ modifiers?: ReadonlyArray<FoodPatternModifier> }> = [];
-  let todayMealCount = 0;
   let caloriesSum = 0;
   let proteinSum = 0;
   let carbsSum = 0;
   let fatSum = 0;
   let fiberSum = 0;
 
-  for (const m of rows) {
-    if (localDateKey(String(m.logged_at ?? ''), tz) !== todayKey) continue;
-    // Same legacy exclusion NutritionScoreCard uses: a null or absent
-    // quality score is a pre-177d legacy row and does not contribute.
-    if (m.quality_score === null || m.quality_score === undefined) continue;
-    todayMealCount += 1;
+  for (const m of todayRows) {
     caloriesSum += numeric(m.calories_kcal);
     proteinSum += numeric(m.protein_g);
     carbsSum += numeric(m.carbs_g);
@@ -226,8 +263,19 @@ export function computeTodayNutrition(
     });
   }
 
-  if (todayMealCount === 0) {
-    return {};
+  const consumed = {
+    nutritionMealCount: todayRows.length,
+    proteinG: Math.round(proteinSum),
+    carbsG: Math.round(carbsSum),
+    fatG: Math.round(fatSum),
+    fiberG: Math.round(fiberSum),
+  };
+
+  if (!targets) {
+    return {
+      ...consumed,
+      emptyReason: 'targets_missing',
+    };
   }
 
   // Per-macro attainment, each capped at 100, gated on a positive
@@ -265,20 +313,12 @@ export function computeTodayNutrition(
 
   return {
     nutritionScore,
-    nutritionMealCount: todayMealCount,
     dailyMacrosPct,
     proteinPct: proteinPct === null ? undefined : Math.round(proteinPct),
     carbsPct: carbsPct === null ? undefined : Math.round(carbsPct),
     fatPct: fatPct === null ? undefined : Math.round(fatPct),
     fiberPct: fiberPct === null ? undefined : Math.round(fiberPct),
-    // Prompt 183a (2026-06-11): absolute grams consumed today. Reached only
-    // when todayMealCount > 0 (the no-meal case returns {} above), so these are
-    // present exactly when there is data, never an invented 0. Same sums the
-    // percents are derived from; no score or percent math changed.
-    proteinG: Math.round(proteinSum),
-    carbsG: Math.round(carbsSum),
-    fatG: Math.round(fatSum),
-    fiberG: Math.round(fiberSum),
+    ...consumed,
   };
 }
 
@@ -328,7 +368,9 @@ export function useNutritionHubMetrics(): UseNutritionHubMetricsResult {
         const now = new Date();
 
         // Active nutrition_targets row only. A missing row leaves
-        // targets null so the hero stays UNKNOWN. Jeffery field lock:
+        // targets null so the hero stays UNKNOWN (cannot score vs My
+        // Biology) while computeTodayNutrition still marks the day as
+        // targets_missing when food exists. Jeffery field lock:
         // daily_kcal, daily_protein_g, daily_carbs_g, daily_fat_total_g,
         // daily_fiber_g, goal_direction. Do not read lean mass. Overlay
         // may replace the five persisted grams/kcal when a same-day goal
@@ -350,7 +392,8 @@ export function useNutritionHubMetrics(): UseNutritionHubMetricsResult {
           if (targetsResult.data) {
             targets = targetsFromRow(targetsResult.data);
             try {
-              const todayISO = now.toISOString().slice(0, 10);
+              const todayISO =
+                localDateKey(now.toISOString(), tz) || now.toISOString().slice(0, 10);
               const overlay = await withTimeout(
                 fetchGoalOverlay(user.id, todayISO, supabase),
                 TIMEOUT_MS,
@@ -406,6 +449,7 @@ export function useNutritionHubMetrics(): UseNutritionHubMetricsResult {
           const rows = Array.isArray(mealsResult.data) ? mealsResult.data : [];
 
           const today = computeTodayNutrition(rows, targets, now, tz);
+          if (today.emptyReason) next.emptyReason = today.emptyReason;
           if (today.nutritionScore !== undefined) next.nutritionScore = today.nutritionScore;
           if (today.nutritionMealCount !== undefined) {
             next.nutritionMealCount = today.nutritionMealCount;

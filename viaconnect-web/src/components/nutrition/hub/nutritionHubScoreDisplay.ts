@@ -13,9 +13,40 @@ import {
 export { CONNECTIONS_BOS_COMPOSITE, connectionsBosCompositeDisplay };
 export type { ConnectionsBosDisplay };
 
+/** Why a hub ring is UNKNOWN. Meals-missing copy must not run when food exists. */
+export type HubGaugeEmptyReason = 'meals_missing' | 'targets_missing';
+
+const MEALS_MISSING_SCORE_COPY = 'Log a meal to see your score';
+const TARGETS_MISSING_SCORE_COPY = 'Set nutrition targets to see your score';
+const MEALS_MISSING_MACROS_COPY = 'No macros logged today yet';
+const TARGETS_MISSING_MACROS_COPY = 'Set nutrition targets to see Daily Macros';
+
 /** True when a hub ring may paint a numeric score. NaN / Infinity stay UNKNOWN. */
 export function isFiniteHubRingValue(value: number | undefined): value is number {
   return typeof value === 'number' && Number.isFinite(value);
+}
+
+/**
+ * Nutrition Score empty hint. Logged food must never use the meals-missing
+ * line. Missing nutrition_targets keeps -- because the hero cannot score
+ * vs My Biology, but the copy names targets, not a missing meal.
+ */
+export function nutritionScoreEmptyCopy(
+  reason: HubGaugeEmptyReason | undefined,
+): string {
+  if (reason === 'targets_missing') return TARGETS_MISSING_SCORE_COPY;
+  return MEALS_MISSING_SCORE_COPY;
+}
+
+/**
+ * Daily Macros empty hint. Same split: meals-missing copy only when
+ * Today's meals has no food. Targets-missing is a different empty.
+ */
+export function dailyMacrosEmptyCopy(
+  reason: HubGaugeEmptyReason | undefined,
+): string {
+  if (reason === 'targets_missing') return TARGETS_MISSING_MACROS_COPY;
+  return MEALS_MISSING_MACROS_COPY;
 }
 
 /** Same -- / UNKNOWN object Connections uses. No third empty treatment. */

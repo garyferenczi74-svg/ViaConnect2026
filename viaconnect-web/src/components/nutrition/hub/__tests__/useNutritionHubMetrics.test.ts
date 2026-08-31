@@ -8,12 +8,19 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { assignTier } from '@/lib/gordon/constants';
-import { nutritionHubScoreCenter, nutritionHubScorePaint } from '../nutritionHubScoreDisplay';
+import {
+  dailyMacrosEmptyCopy,
+  nutritionHubScoreCenter,
+  nutritionHubScorePaint,
+  nutritionScoreEmptyCopy,
+} from '../nutritionHubScoreDisplay';
 import {
   withTimeout,
   sevenDayKeys,
   dailyMealCountsFromRows,
   computeTodayNutrition,
+  hasTodaysFoodMeals,
+  todaysFoodMealRows,
   type HubMealRow,
   type HubMacroTargets,
 } from '../useNutritionHubMetrics';
@@ -103,18 +110,36 @@ describe('computeTodayNutrition', () => {
     dailyFiberG: 30,
   };
 
-  it('returns empty object when no scored meals today', () => {
+  it('returns meals_missing when no food meals today', () => {
     const rows: HubMealRow[] = [
       { logged_at: iso('2026-06-09'), quality_score: 80, calories_kcal: 500 },
     ];
-    expect(computeTodayNutrition(rows, targets, NOW, TZ)).toEqual({});
+    const result = computeTodayNutrition(rows, targets, NOW, TZ);
+    expect(result.emptyReason).toBe('meals_missing');
+    expect(result.nutritionScore).toBeUndefined();
+    expect(result.dailyMacrosPct).toBeUndefined();
+    expect(hasTodaysFoodMeals(rows, NOW, TZ)).toBe(false);
   });
 
-  it('excludes legacy rows with a null quality score', () => {
+  it('counts a today row even when quality_score is null (Today\'s meals path)', () => {
     const rows: HubMealRow[] = [
-      { logged_at: iso('2026-06-10'), quality_score: null, calories_kcal: 800, protein_g: 50 },
+      {
+        logged_at: iso('2026-06-10'),
+        quality_score: null,
+        calories_kcal: 800,
+        protein_g: 50,
+        carbs_g: 80,
+        fat_total_g: 30,
+        fiber_g: 10,
+      },
     ];
-    expect(computeTodayNutrition(rows, targets, NOW, TZ)).toEqual({});
+    const result = computeTodayNutrition(rows, targets, NOW, TZ);
+    expect(hasTodaysFoodMeals(rows, NOW, TZ)).toBe(true);
+    expect(result.emptyReason).toBeUndefined();
+    expect(result.nutritionMealCount).toBe(1);
+    expect(result.nutritionScore).toBeDefined();
+    expect(result.dailyMacrosPct).toBeDefined();
+    expect(result.proteinG).toBe(50);
   });
 
   it('computes the hero from daily macros, not the calorie-weighted slot score', () => {
@@ -211,13 +236,80 @@ describe('computeTodayNutrition', () => {
     const empty = computeTodayNutrition([], targets, NOW, TZ);
     expect(empty.nutritionScore).toBeUndefined();
     expect(empty.dailyMacrosPct).toBeUndefined();
+    expect(empty.emptyReason).toBe('meals_missing');
     const center = nutritionHubScoreCenter(empty.nutritionScore);
     expect(nutritionHubScorePaint(center)).toBe('-- UNKNOWN');
     expect(center.value).not.toBe(0);
     expect(center.value).not.toBe('0');
+    expect(nutritionScoreEmptyCopy(empty.emptyReason)).toBe('Log a meal to see your score');
+    expect(dailyMacrosEmptyCopy(empty.emptyReason)).toBe('No macros logged today yet');
   });
 
-  it('(c) no real nutrition_targets row => UNKNOWN even when meals exist', () => {
+  it('(b) meals on the Today\'s meals path + no targets => no meals-missing copy', () => {
+    const rows: HubMealRow[] = [
+      {
+        logged_at: iso('2026-06-10'),
+        quality_score: 80,
+        calories_kcal: 436,
+        protein_g: 20,
+        carbs_g: 40,
+        fat_total_g: 16,
+        fiber_g: 6,
+      },
+      {
+        logged_at: iso('2026-06-10', '13:00:00'),
+        quality_score: 70,
+        calories_kcal: 275,
+        protein_g: 18,
+        carbs_g: 22,
+        fat_total_g: 10,
+        fiber_g: 4,
+      },
+      {
+        logged_at: iso('2026-06-10', '19:00:00'),
+        quality_score: 30,
+        calories_kcal: 1196,
+        protein_g: 55,
+        carbs_g: 90,
+        fat_total_g: 48,
+        fiber_g: 12,
+      },
+      {
+        logged_at: iso('2026-06-10', '21:00:00'),
+        quality_score: 60,
+        calories_kcal: 138,
+        protein_g: 6,
+        carbs_g: 18,
+        fat_total_g: 4,
+        fiber_g: 2,
+      },
+    ];
+    const result = computeTodayNutrition(rows, null, NOW, TZ);
+    expect(hasTodaysFoodMeals(rows, NOW, TZ)).toBe(true);
+    expect(todaysFoodMealRows(rows, NOW, TZ)).toHaveLength(4);
+    expect(result.emptyReason).toBe('targets_missing');
+    expect(result.nutritionScore).toBeUndefined();
+    expect(result.dailyMacrosPct).toBeUndefined();
+    expect(result.nutritionMealCount).toBe(4);
+    expect(result.proteinG).toBe(99);
+    expect(nutritionHubScorePaint(nutritionHubScoreCenter(result.nutritionScore))).toBe(
+      '-- UNKNOWN',
+    );
+    expect(nutritionScoreEmptyCopy(result.emptyReason)).not.toBe(
+      'Log a meal to see your score',
+    );
+    expect(dailyMacrosEmptyCopy(result.emptyReason)).not.toBe(
+      'No macros logged today yet',
+    );
+    expect(nutritionScoreEmptyCopy(result.emptyReason)).toBe(
+      'Set nutrition targets to see your score',
+    );
+    expect(dailyMacrosEmptyCopy(result.emptyReason)).toBe(
+      'Set nutrition targets to see Daily Macros',
+    );
+  });
+
+  it('(a) meals on the Today\'s meals path + persisted targets => both gauges numeric', () => {
     const rows: HubMealRow[] = [
       {
         logged_at: iso('2026-06-10'),
@@ -229,12 +321,15 @@ describe('computeTodayNutrition', () => {
         fiber_g: 27,
       },
     ];
-    const result = computeTodayNutrition(rows, null, NOW, TZ);
-    expect(result).toEqual({});
-    expect(result.nutritionScore).toBeUndefined();
-    expect(nutritionHubScorePaint(nutritionHubScoreCenter(result.nutritionScore))).toBe(
-      '-- UNKNOWN',
-    );
+    const result = computeTodayNutrition(rows, targets, NOW, TZ);
+    expect(hasTodaysFoodMeals(rows, NOW, TZ)).toBe(true);
+    expect(result.emptyReason).toBeUndefined();
+    expect(typeof result.nutritionScore).toBe('number');
+    expect(typeof result.dailyMacrosPct).toBe('number');
+    expect(Number.isFinite(result.nutritionScore)).toBe(true);
+    expect(Number.isFinite(result.dailyMacrosPct)).toBe(true);
+    expect(result.nutritionScore).not.toBeUndefined();
+    expect(result.dailyMacrosPct).not.toBeUndefined();
   });
 
   it('(d) quality input ignores meal-slot protein / carb / fat fit', () => {
@@ -375,11 +470,12 @@ describe('computeTodayNutrition', () => {
     expect(result.fiberG).toBe(15);
   });
 
-  it('leaves the gram values undefined when there are no scored meals today', () => {
+  it('leaves the gram values undefined when there are no food meals today', () => {
     const rows: HubMealRow[] = [
       { logged_at: iso('2026-06-09'), quality_score: 80, calories_kcal: 500, protein_g: 30 },
     ];
     const result = computeTodayNutrition(rows, targets, NOW, TZ);
+    expect(result.emptyReason).toBe('meals_missing');
     expect(result.proteinG).toBeUndefined();
     expect(result.carbsG).toBeUndefined();
     expect(result.fatG).toBeUndefined();
@@ -389,6 +485,67 @@ describe('computeTodayNutrition', () => {
   it('keeps nutritionScore and dailyMacrosPct undefined when todayMealCount is 0', () => {
     expect(computeTodayNutrition([], targets, NOW, TZ).nutritionScore).toBeUndefined();
     expect(computeTodayNutrition([], targets, NOW, TZ).dailyMacrosPct).toBeUndefined();
+    expect(computeTodayNutrition([], targets, NOW, TZ).emptyReason).toBe('meals_missing');
+  });
+
+  it('America/Edmonton today window matches Today\'s meals for a UTC morning log', () => {
+    const edmontonNow = new Date('2026-08-31T16:02:00.000Z');
+    const tz = 'America/Edmonton';
+    const rows: HubMealRow[] = [
+      {
+        logged_at: '2026-08-31T06:24:00.000Z',
+        quality_score: 80,
+        calories_kcal: 436,
+        protein_g: 20,
+        carbs_g: 40,
+        fat_total_g: 16,
+        fiber_g: 6,
+      },
+      {
+        logged_at: '2026-08-31T06:25:00.000Z',
+        quality_score: 70,
+        calories_kcal: 275,
+        protein_g: 18,
+        carbs_g: 22,
+        fat_total_g: 10,
+        fiber_g: 4,
+      },
+      {
+        logged_at: '2026-08-31T06:26:00.000Z',
+        quality_score: 30,
+        calories_kcal: 1196,
+        protein_g: 55,
+        carbs_g: 90,
+        fat_total_g: 48,
+        fiber_g: 12,
+      },
+      {
+        logged_at: '2026-08-31T06:27:00.000Z',
+        quality_score: 60,
+        calories_kcal: 138,
+        protein_g: 6,
+        carbs_g: 18,
+        fat_total_g: 4,
+        fiber_g: 2,
+      },
+    ];
+    expect(hasTodaysFoodMeals(rows, edmontonNow, tz)).toBe(true);
+    const withTargets = computeTodayNutrition(rows, targets, edmontonNow, tz);
+    expect(withTargets.emptyReason).toBeUndefined();
+    expect(typeof withTargets.nutritionScore).toBe('number');
+    expect(typeof withTargets.dailyMacrosPct).toBe('number');
+    expect(withTargets.nutritionMealCount).toBe(4);
+
+    const noTargets = computeTodayNutrition(rows, null, edmontonNow, tz);
+    expect(noTargets.emptyReason).toBe('targets_missing');
+    expect(noTargets.nutritionScore).toBeUndefined();
+    expect(noTargets.dailyMacrosPct).toBeUndefined();
+    expect(nutritionScoreEmptyCopy(noTargets.emptyReason)).not.toBe(
+      'Log a meal to see your score',
+    );
+    expect(dailyMacrosEmptyCopy(noTargets.emptyReason)).not.toBe(
+      'No macros logged today yet',
+    );
   });
 
   it('returns a finite nutritionScore and 0 dailyMacrosPct for a 0-intake scored meal', () => {
@@ -450,5 +607,13 @@ describe('useNutritionHubMetrics source lock', () => {
 
   it('does not fold hydration into Nutrition Score', () => {
     expect(source).not.toContain('hydration');
+  });
+
+  it('splits meals-missing from targets-missing instead of wiping both gauges', () => {
+    expect(source).toContain('hasTodaysFoodMeals');
+    expect(source).toContain('targets_missing');
+    expect(source).toContain('meals_missing');
+    expect(source).toContain('if (!targets)');
+    expect(source).not.toContain('if (!targets) return {}');
   });
 });
