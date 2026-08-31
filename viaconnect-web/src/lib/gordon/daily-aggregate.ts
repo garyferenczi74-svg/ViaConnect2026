@@ -207,9 +207,9 @@ export function foodPatternQualityModifier(dailyFoodQuality: number): number {
  * clamp at 100), so overshoot can break a deficit. Cap -15.
  *
  * gain: protein miss vs persisted daily_protein_g is already inside
- * totalDailyMacrosScore. generateMacroTargets already baked LBM into
- * that gram number (0.8 g/lb LBM x Gain 1.0). Extra protein-miss
- * points would double-count, so the gain tilt is 0.
+ * totalDailyMacrosScore. The hero does not re-resolve lean mass and
+ * does not care whether that gram number is estimated or measured.
+ * Extra protein-miss points would double-count, so the gain tilt is 0.
  */
 export function goalDirectionTilt(input: HeroNutritionScoreInput): number {
   if (input.goalDirection === 'lose') {

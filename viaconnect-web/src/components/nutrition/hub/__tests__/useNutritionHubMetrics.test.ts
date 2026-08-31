@@ -435,6 +435,19 @@ describe('useNutritionHubMetrics source lock', () => {
     expect(source).not.toContain('meal_distribution');
   });
 
+  it('does not re-resolve LBM or write protein targets', () => {
+    expect(source).not.toContain('generateMacroTargets');
+    expect(source).not.toContain('generate-targets');
+    expect(source).not.toContain('@/lib/gordon/lbm');
+    expect(source).not.toContain('body_tracker_segmental_fat');
+    expect(source).not.toContain('FormaVision');
+    expect(source).not.toContain('Hume');
+    expect(source).not.toContain('Apple');
+    expect(source).not.toContain('Boer');
+    expect(source).not.toContain('lbm_source');
+    expect(source).not.toContain('measured');
+  });
+
   it('does not fold hydration into Nutrition Score', () => {
     expect(source).not.toContain('hydration');
   });

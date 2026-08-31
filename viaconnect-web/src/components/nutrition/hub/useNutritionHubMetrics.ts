@@ -16,9 +16,9 @@
 // Read only. Nutrition Score hero is daily macro attainment vs the
 // persisted nutrition_targets five macros, plus a bounded food-pattern
 // modifier and an optional goal_direction tilt. Slot-weighted per-meal
-// quality stays on the expanded Today's meals ring. No legacy
-// generate-targets fallback. No real nutrition_targets row or no real
-// meals => score stays undefined so the ring paints UNKNOWN / --. The
+// quality stays on the expanded Today's meals ring. No invented
+// fallback targets. No real nutrition_targets row or no real meals =>
+// score stays undefined so the ring paints UNKNOWN / --. The
 // consecutive streak math lives in the pure ./streak module.
 
 import { useEffect, useState } from 'react';

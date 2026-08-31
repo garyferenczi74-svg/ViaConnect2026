@@ -95,6 +95,13 @@ describe('food-pattern quality input', () => {
     expect(heroBlock).not.toMatch(/calorieWeightedMealQualityScore\(/);
     expect(heroBlock).not.toContain('lbm_kg');
     expect(heroBlock).not.toContain('lbmKg');
+    expect(heroBlock).not.toContain('generateMacroTargets');
+    expect(heroBlock).not.toContain('generate-targets');
+    expect(heroBlock).not.toContain('body_tracker_segmental_fat');
+    expect(heroBlock).not.toContain('FormaVision');
+    expect(heroBlock).not.toContain('Hume');
+    expect(heroBlock).not.toContain('Boer');
+    expect(heroBlock).not.toContain('lbm_source');
   });
 });
 
