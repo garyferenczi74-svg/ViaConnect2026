@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="800" viewBox="0 0 640 800" role="img" aria-labelledby="title desc">
+  <title id="title">PLACEHOLDER  Daily Logging</title>
+  <desc id="desc">Dark branded still. Gary: replace this file to swap the card image. Do not use restaurant or Unsplash food, or a photo of a person.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1A2744"/>
+      <stop offset="55%" stop-color="#2a3328"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="800" fill="url(#bg)"/>
+  <circle cx="500" cy="200" r="200" fill="#76866F" fill-opacity="0.18"/>
+  <circle cx="100" cy="620" r="150" fill="#76866F" fill-opacity="0.10"/>
+  <text x="48" y="360" fill="#76866F" font-family="Inter, system-ui, sans-serif" font-size="22" font-weight="600" letter-spacing="4">PLACEHOLDER</text>
+  <text x="48" y="410" fill="#FFFFFF" font-family="Inter, system-ui, sans-serif" font-size="28" font-weight="500">Daily Logging</text>
+  <text x="48" y="450" fill="rgba(255,255,255,0.55)" font-family="Inter, system-ui, sans-serif" font-size="16">Swap this file  placeholder-daily-logging.svg</text>
+</svg>

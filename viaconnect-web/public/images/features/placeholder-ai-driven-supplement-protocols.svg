@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="800" viewBox="0 0 640 800" role="img" aria-labelledby="title desc">
+  <title id="title">PLACEHOLDER  AI-Driven Supplement Protocols</title>
+  <desc id="desc">Dark branded still. Gary: replace this file to swap the card image. Do not use restaurant or Unsplash food, or a photo of a person.</desc>
+  <defs>
+    <linearGradient id="bg" x1="1" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1A2744"/>
+      <stop offset="50%" stop-color="#3d2a1c"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="800" fill="url(#bg)"/>
+  <circle cx="160" cy="160" r="170" fill="#B75E18" fill-opacity="0.16"/>
+  <circle cx="520" cy="640" r="190" fill="#B75F19" fill-opacity="0.10"/>
+  <text x="48" y="360" fill="#B75E18" font-family="Inter, system-ui, sans-serif" font-size="22" font-weight="600" letter-spacing="4">PLACEHOLDER</text>
+  <text x="48" y="410" fill="#FFFFFF" font-family="Inter, system-ui, sans-serif" font-size="26" font-weight="500">AI-Driven Supplement Protocols</text>
+  <text x="48" y="450" fill="rgba(255,255,255,0.55)" font-family="Inter, system-ui, sans-serif" font-size="16">Swap this file  placeholder-ai-driven-supplement-protocols.svg</text>
+</svg>

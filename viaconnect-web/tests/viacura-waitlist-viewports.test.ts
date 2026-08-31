@@ -37,12 +37,13 @@ describe('390 + 1280 waitlist honesty surfaces', () => {
     expect(src).toContain('flex-wrap');
   });
 
-  it('homepage features keep a 390 accordion and a 1280 grid', () => {
+  it('homepage features keep a 390 coverflow and a 1280 coverflow', () => {
     const mobile = read('src/components/landing/scroll-sections/mobile/FeaturesSectionMobile.tsx');
     const desktop = read('src/components/landing/scroll-sections/desktop/FeaturesSectionDesktop.tsx');
     expect(mobile).toContain('px-5');
     expect(mobile).toContain('max-w-md mx-auto');
     expect(desktop).toContain('px-12');
-    expect(desktop).toContain('grid-cols-2 lg:grid-cols-4');
+    expect(mobile).toContain('CoverFlowCarousel');
+    expect(desktop).toContain('CoverFlowCarousel');
   });
 });
