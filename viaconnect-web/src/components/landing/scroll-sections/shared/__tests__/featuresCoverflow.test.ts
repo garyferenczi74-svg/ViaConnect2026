@@ -12,12 +12,17 @@ import {
     toCoverFlowFeatureItem,
 } from '../featureCards';
 import {
-    COVERFLOW_AUTOPLAY_DWELL_MS,
+    COVERFLOW_AUTOPLAY_MS_PER_CARD,
+    COVERFLOW_CARD_SIZE_CLASS,
+    COVERFLOW_STAGE_HEIGHT_CLASS,
+    advanceCoverflowProgress,
     coverflowCssTransform,
     coverflowTransform,
+    nearestCoverflowIndex,
     nextClockwiseIndex,
     shouldPauseCoverflowAutoplay,
     shortestCarouselOffset,
+    wrapCarouselProgress,
 } from '@/components/ui/coverflow-math';
 import { CoverFlowCarousel } from '@/components/ui/3-d-coverflow-carousel';
 
@@ -99,10 +104,17 @@ describe('landing Features coverflow data', () => {
             const rel = FEATURE_PLACEHOLDER_IMAGES[id].replace(/^\//, '');
             const abs = path.join(root, 'public', rel);
             expect(existsSync(abs)).toBe(true);
-            const svg = readFileSync(abs, 'utf8');
+            const bytes = readFileSync(abs);
+            const svg = bytes.toString('utf8');
             expect(svg).toContain('PLACEHOLDER');
             expect(svg).not.toMatch(/unsplash\.com/i);
             expect(svg).not.toMatch(/risotto|wagyu|menu [Dd]ish/i);
+            expect(svg).not.toMatch(/[\u2013\u2014]/);
+            expect(bytes.includes(0x14)).toBe(false);
+            for (const byte of bytes) {
+                const control = byte < 32 && byte !== 9 && byte !== 10 && byte !== 13;
+                expect(control).toBe(false);
+            }
         }
     });
 });
@@ -124,6 +136,28 @@ describe('coverflow math', () => {
         expect(right.rotateY).toBeLessThan(0);
         expect(left.rotateY).toBeGreaterThan(0);
         expect(coverflowCssTransform(center)).toContain('rotateY(0deg)');
+    });
+
+    it('interpolates fractional offsets so autoplay can glide without a snap', () => {
+        const halfway = coverflowTransform(0.5, false);
+        const center = coverflowTransform(0, false);
+        const right = coverflowTransform(1, false);
+        expect(halfway.rotateY).toBe(-21);
+        expect(halfway.translateXPercent).toBe(28);
+        expect(halfway.opacity).toBeGreaterThan(right.opacity);
+        expect(halfway.opacity).toBeLessThan(center.opacity);
+        expect(shortestCarouselOffset(1, 0.5, 8)).toBe(0.5);
+        expect(shortestCarouselOffset(0, 0.5, 8)).toBe(-0.5);
+        expect(nearestCoverflowIndex(7.6, 8)).toBe(0);
+        expect(wrapCarouselProgress(-0.25, 8)).toBe(7.75);
+    });
+
+    it('advances progress continuously and wraps the eight-card loop', () => {
+        expect(COVERFLOW_AUTOPLAY_MS_PER_CARD).toBe(6000);
+        expect(advanceCoverflowProgress(0, 6000, 6000, 8)).toBe(1);
+        expect(advanceCoverflowProgress(7.5, 3000, 6000, 8)).toBe(0);
+        expect(advanceCoverflowProgress(0, 1000, 6000, 8)).toBeCloseTo(1 / 6);
+        expect(advanceCoverflowProgress(3, 0, 6000, 8)).toBe(3);
     });
 
     it('hides neighbors when reduced motion is on', () => {
@@ -203,12 +237,18 @@ describe('CoverFlowCarousel Features integration', () => {
         expect(MOBILE).toContain('feature.body');
     });
 
-    it('dwells 2000ms then steps clockwise, and does not auto-rotate under reduced motion', () => {
-        expect(COVERFLOW_AUTOPLAY_DWELL_MS).toBe(2000);
-        expect(CAROUSEL).toContain('COVERFLOW_AUTOPLAY_DWELL_MS');
+    it('glides continuously with rAF and does not auto-rotate under reduced motion', () => {
+        expect(COVERFLOW_AUTOPLAY_MS_PER_CARD).toBe(6000);
+        expect(CAROUSEL).toContain('COVERFLOW_AUTOPLAY_MS_PER_CARD');
+        expect(CAROUSEL).toContain('advanceCoverflowProgress');
+        expect(CAROUSEL).toContain('requestAnimationFrame');
+        expect(CAROUSEL).toContain('cancelAnimationFrame');
+        expect(CAROUSEL).not.toContain('COVERFLOW_AUTOPLAY_DWELL_MS');
+        expect(CAROUSEL).not.toContain('setTimeout');
+        expect(MATH).not.toContain('COVERFLOW_AUTOPLAY_DWELL_MS');
+        expect(MATH).not.toMatch(/2000/);
         expect(CAROUSEL).toContain('nextClockwiseIndex');
         expect(CAROUSEL).toContain('shouldPauseCoverflowAutoplay');
-        expect(CAROUSEL).toContain('setTimeout');
         expect(CAROUSEL).toContain("pointerType === 'mouse'");
         expect(CAROUSEL).toContain('setHovering(true)');
         expect(CAROUSEL).toContain('onFocusCapture');
@@ -216,8 +256,28 @@ describe('CoverFlowCarousel Features integration', () => {
         expect(CAROUSEL).toContain('dropdownOpen: openId !== null');
         expect(CAROUSEL).toContain('reduceMotion !== false');
         expect(CAROUSEL).toContain('data-autoplay');
-        expect(CAROUSEL).not.toMatch(/transition:\s*[^;]*2000/);
-        expect(CAROUSEL).toMatch(/transform 0\.45s/);
+        expect(CAROUSEL).toContain('data-motion');
+        expect(CAROUSEL).toContain('continuous');
+        expect(CAROUSEL).not.toMatch(/transform 0\.45s/);
+    });
+
+    it('shrinks the coverflow plate on both mobile and desktop', () => {
+        expect(COVERFLOW_STAGE_HEIGHT_CLASS).toContain('h-[288px]');
+        expect(COVERFLOW_STAGE_HEIGHT_CLASS).toContain('md:h-[340px]');
+        expect(COVERFLOW_STAGE_HEIGHT_CLASS).not.toContain('h-[420px]');
+        expect(COVERFLOW_STAGE_HEIGHT_CLASS).not.toContain('md:h-[500px]');
+        expect(COVERFLOW_CARD_SIZE_CLASS).toContain('h-[220px]');
+        expect(COVERFLOW_CARD_SIZE_CLASS).toContain('md:h-[268px]');
+        expect(CAROUSEL).toContain('COVERFLOW_STAGE_HEIGHT_CLASS');
+        expect(CAROUSEL).toContain('COVERFLOW_CARD_SIZE_CLASS');
+        expect(CAROUSEL).toContain('mt-1.5');
+        expect(CAROUSEL).not.toContain('mt-4 flex items-center');
+        expect(CAROUSEL).not.toContain('h-[420px]');
+        expect(CAROUSEL).not.toContain('md:h-[500px]');
+        expect(CAROUSEL).not.toContain('h-[340px]');
+        expect(CAROUSEL).not.toContain('md:h-[400px]');
+        expect(DESKTOP).toContain('CoverFlowCarousel');
+        expect(MOBILE).toContain('CoverFlowCarousel');
     });
 
     it('SSR-renders eight headings and keeps descriptions collapsed', () => {

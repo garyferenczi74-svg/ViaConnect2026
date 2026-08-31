@@ -5,7 +5,7 @@
  * Original license: MIT
  * Date reviewed: 2026-08-31
  * Sherlock research artifact: Gary landing Features coverflow request
- * Re-derivation: Michelangelo via OBRA — ViaConnect Features coverflow
+ * Re-derivation: Michelangelo via OBRA - ViaConnect Features coverflow
  * Verbatim copy: None (Audit-phase attested)
  */
 'use client'
@@ -23,12 +23,17 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
-    COVERFLOW_AUTOPLAY_DWELL_MS,
+    COVERFLOW_AUTOPLAY_MS_PER_CARD,
+    COVERFLOW_CARD_SIZE_CLASS,
+    COVERFLOW_STAGE_HEIGHT_CLASS,
+    advanceCoverflowProgress,
     coverflowCssTransform,
     coverflowTransform,
+    nearestCoverflowIndex,
     nextClockwiseIndex,
     shouldPauseCoverflowAutoplay,
     shortestCarouselOffset,
+    wrapCarouselProgress,
 } from '@/components/ui/coverflow-math'
 
 export interface CoverFlowCarouselItem {
@@ -57,16 +62,23 @@ export function CoverFlowCarousel({
     const stageRef = useRef<HTMLDivElement>(null)
     const dragStartX = useRef<number | null>(null)
     const dragStartY = useRef<number | null>(null)
+    const cardEls = useRef(new Map<string, HTMLElement>())
+    const progressRef = useRef(
+        items.length === 0 ? 0 : wrapCarouselProgress(initialIndex, items.length),
+    )
     const [activeIndex, setActiveIndex] = useState(() =>
-        items.length === 0 ? 0 : clampIndex(initialIndex, items.length),
+        items.length === 0 ? 0 : nearestCoverflowIndex(progressRef.current, items.length),
     )
     const [openId, setOpenId] = useState<string | null>(null)
     const [hovering, setHovering] = useState(false)
     const [focusWithin, setFocusWithin] = useState(false)
     const [pointerActive, setPointerActive] = useState(false)
+    const [artFailedIds, setArtFailedIds] = useState<ReadonlySet<string>>(
+        () => new Set<string>(),
+    )
 
     const count = items.length
-    const active = count === 0 ? null : items[clampIndex(activeIndex, count)]
+    const active = count === 0 ? null : items[activeIndex]
     const autoplayPaused = shouldPauseCoverflowAutoplay({
         reduceMotion,
         hovering,
@@ -76,32 +88,89 @@ export function CoverFlowCarousel({
     })
     const autoplayState =
         reduceMotion !== false ? 'off' : autoplayPaused ? 'paused' : 'on'
+    const spinning = autoplayState === 'on'
 
-    const goTo = useCallback(
-        (nextIndex: number) => {
+    const paint = useCallback(
+        (value: number, withTransition: boolean) => {
+            const reduced = !!reduceMotion
+            for (const [index, item] of items.entries()) {
+                const el = cardEls.current.get(item.id)
+                if (!el) continue
+                const offset = shortestCarouselOffset(index, value, count)
+                const transform = coverflowTransform(offset, reduced)
+                el.style.transition = reduced
+                    ? 'opacity 0.15s ease'
+                    : withTransition
+                      ? 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease'
+                      : 'none'
+                el.style.transform = coverflowCssTransform(transform)
+                el.style.opacity = String(transform.opacity)
+                el.style.zIndex = String(transform.zIndex)
+            }
+        },
+        [count, items, reduceMotion],
+    )
+
+    const commitIndex = useCallback(
+        (value: number) => {
             if (count === 0) return
-            const clamped = ((nextIndex % count) + count) % count
-            setActiveIndex(clamped)
-            setOpenId(null)
+            const nearest = nearestCoverflowIndex(value, count)
+            setActiveIndex((current) => (current === nearest ? current : nearest))
         },
         [count],
     )
 
-    const goPrev = useCallback(() => goTo(activeIndex - 1), [activeIndex, goTo])
-    const goNext = useCallback(() => goTo(activeIndex + 1), [activeIndex, goTo])
+    const goTo = useCallback(
+        (nextIndex: number) => {
+            if (count === 0) return
+            const clamped = wrapCarouselProgress(nextIndex, count)
+            progressRef.current = clamped
+            commitIndex(clamped)
+            setOpenId(null)
+            paint(clamped, !spinning && !reduceMotion)
+        },
+        [commitIndex, count, paint, reduceMotion, spinning],
+    )
+
+    const goPrev = useCallback(
+        () => goTo(nearestCoverflowIndex(progressRef.current, count) - 1),
+        [count, goTo],
+    )
+    const goNext = useCallback(
+        () => goTo(nextClockwiseIndex(nearestCoverflowIndex(progressRef.current, count), count)),
+        [count, goTo],
+    )
 
     useEffect(() => {
         if (count === 0) return
-        setActiveIndex((current) => clampIndex(current, count))
-    }, [count])
+        progressRef.current = wrapCarouselProgress(progressRef.current, count)
+        commitIndex(progressRef.current)
+        paint(progressRef.current, false)
+    }, [commitIndex, count, paint])
 
     useEffect(() => {
         if (autoplayPaused || count <= 1) return
-        const timer = window.setTimeout(() => {
-            goTo(nextClockwiseIndex(activeIndex, count))
-        }, COVERFLOW_AUTOPLAY_DWELL_MS)
-        return () => window.clearTimeout(timer)
-    }, [activeIndex, autoplayPaused, count, goTo])
+        let frame = 0
+        let lastTs: number | null = null
+        const tick = (ts: number) => {
+            if (lastTs !== null) {
+                const dt = Math.min(ts - lastTs, 64)
+                const next = advanceCoverflowProgress(
+                    progressRef.current,
+                    dt,
+                    COVERFLOW_AUTOPLAY_MS_PER_CARD,
+                    count,
+                )
+                progressRef.current = next
+                paint(next, false)
+                commitIndex(next)
+            }
+            lastTs = ts
+            frame = window.requestAnimationFrame(tick)
+        }
+        frame = window.requestAnimationFrame(tick)
+        return () => window.cancelAnimationFrame(frame)
+    }, [autoplayPaused, commitIndex, count, paint])
 
     const onStageKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
         if (event.key === 'ArrowLeft') {
@@ -141,6 +210,7 @@ export function CoverFlowCarousel({
             className={cn('relative w-full bg-transparent', className)}
             data-testid="features-coverflow"
             data-autoplay={autoplayState}
+            data-motion={spinning ? 'continuous' : autoplayState}
             onPointerEnter={(event) => {
                 if (event.pointerType === 'mouse') setHovering(true)
             }}
@@ -167,7 +237,10 @@ export function CoverFlowCarousel({
                 onKeyDown={onStageKeyDown}
                 onPointerDown={onPointerDown}
                 onPointerUp={onPointerUp}
-                className="relative h-[420px] sm:h-[460px] md:h-[500px] w-full overflow-visible bg-transparent outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#2DA5A0]"
+                className={cn(
+                    'relative w-full overflow-visible bg-transparent outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#2DA5A0]',
+                    COVERFLOW_STAGE_HEIGHT_CLASS,
+                )}
                 style={{ perspective: reduceMotion ? undefined : '1200px' }}
             >
                 <div
@@ -175,9 +248,9 @@ export function CoverFlowCarousel({
                     style={{ transformStyle: reduceMotion ? undefined : 'preserve-3d' }}
                 >
                     {items.map((item, index) => {
-                        const offset = shortestCarouselOffset(index, activeIndex, count)
+                        const offset = shortestCarouselOffset(index, progressRef.current, count)
                         const transform = coverflowTransform(offset, !!reduceMotion)
-                        const isActive = offset === 0
+                        const isActive = index === activeIndex
                         return (
                             <CoverFlowCard
                                 key={item.id}
@@ -185,6 +258,20 @@ export function CoverFlowCarousel({
                                 isActive={isActive}
                                 transform={transform}
                                 reduceMotion={!!reduceMotion}
+                                spinning={spinning}
+                                artFailed={artFailedIds.has(item.id)}
+                                onArtError={() =>
+                                    setArtFailedIds((current) => {
+                                        if (current.has(item.id)) return current
+                                        const next = new Set(current)
+                                        next.add(item.id)
+                                        return next
+                                    })
+                                }
+                                registerEl={(el) => {
+                                    if (el) cardEls.current.set(item.id, el)
+                                    else cardEls.current.delete(item.id)
+                                }}
                                 isOpen={openId === item.id}
                                 onActivate={() => goTo(index)}
                                 onToggleDescription={() =>
@@ -198,7 +285,7 @@ export function CoverFlowCarousel({
                 </div>
             </div>
 
-            <div className="mt-4 flex items-center justify-center gap-3 sm:gap-4">
+            <div className="mt-1.5 flex items-center justify-center gap-1 sm:gap-2">
                 <button
                     type="button"
                     onClick={goPrev}
@@ -207,7 +294,7 @@ export function CoverFlowCarousel({
                 >
                     <ChevronLeft className="h-5 w-5" strokeWidth={1.5} />
                 </button>
-                <div className="flex items-center gap-2" role="tablist" aria-label="Feature slides">
+                <div className="flex items-center gap-0" role="tablist" aria-label="Feature slides">
                     {items.map((item, index) => {
                         const selected = index === activeIndex
                         return (
@@ -219,13 +306,13 @@ export function CoverFlowCarousel({
                                 aria-label={`Show ${item.title}`}
                                 onClick={() => goTo(index)}
                                 className={cn(
-                                    'h-11 min-h-[44px] min-w-[44px] px-2 inline-flex items-center justify-center',
+                                    'h-11 min-h-[44px] min-w-[44px] px-1 inline-flex items-center justify-center',
                                     'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2DA5A0]',
                                 )}
                             >
                                 <span
                                     className={cn(
-                                        'block h-2 w-2 rounded-full transition-colors',
+                                        'block h-1.5 w-1.5 rounded-full transition-colors',
                                         selected ? 'bg-[#2DA5A0]' : 'bg-white/30',
                                     )}
                                 />
@@ -252,16 +339,15 @@ export function CoverFlowCarousel({
     )
 }
 
-function clampIndex(index: number, length: number): number {
-    if (length <= 0) return 0
-    return ((index % length) + length) % length
-}
-
 function CoverFlowCard({
     item,
     isActive,
     transform,
     reduceMotion,
+    spinning,
+    artFailed,
+    onArtError,
+    registerEl,
     isOpen,
     onActivate,
     onToggleDescription,
@@ -272,6 +358,10 @@ function CoverFlowCard({
     isActive: boolean
     transform: ReturnType<typeof coverflowTransform>
     reduceMotion: boolean
+    spinning: boolean
+    artFailed: boolean
+    onArtError: () => void
+    registerEl: (el: HTMLElement | null) => void
     isOpen: boolean
     onActivate: () => void
     onToggleDescription: () => void
@@ -283,13 +373,13 @@ function CoverFlowCard({
 
     return (
         <article
+            ref={registerEl}
             aria-hidden={hidden}
             data-testid={`features-coverflow-card-${item.id}`}
             data-active={isActive ? 'true' : 'false'}
             className={cn(
-                'absolute left-1/2 top-1/2 w-[240px] sm:w-[280px] md:w-[320px]',
-                'h-[340px] sm:h-[380px] md:h-[400px]',
-                'origin-center will-change-transform',
+                'absolute left-1/2 top-1/2 origin-center will-change-transform',
+                COVERFLOW_CARD_SIZE_CLASS,
                 hidden ? 'pointer-events-none' : 'pointer-events-auto',
             )}
             style={{
@@ -298,7 +388,9 @@ function CoverFlowCard({
                 zIndex: transform.zIndex,
                 transition: reduceMotion
                     ? 'opacity 0.15s ease'
-                    : 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease',
+                    : spinning
+                      ? 'none'
+                      : 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease',
             }}
         >
             <div
@@ -323,11 +415,14 @@ function CoverFlowCard({
                             aria-hidden="true"
                             className="absolute inset-0 bg-gradient-to-br from-[#1A2744] via-[#224852] to-[#111827]"
                         />
-                        <img
-                            src={item.imageSrc}
-                            alt={item.imageAlt}
-                            className="absolute inset-0 h-full w-full object-cover"
-                        />
+                        {artFailed ? null : (
+                            <img
+                                src={item.imageSrc}
+                                alt={item.imageAlt}
+                                className="absolute inset-0 h-full w-full object-cover"
+                                onError={onArtError}
+                            />
+                        )}
                     </button>
                     <AnimatePresence initial={false}>
                         {isOpen && isActive ? (
@@ -350,7 +445,7 @@ function CoverFlowCard({
                                         ? { duration: 0 }
                                         : { duration: 0.18, ease: [0.4, 0, 1, 1] },
                                 }}
-                                className="absolute inset-x-0 bottom-0 max-h-full overflow-y-auto bg-[#111827]/90 px-4 py-3 backdrop-blur-sm"
+                                className="absolute inset-x-0 bottom-0 max-h-full overflow-y-auto bg-[#111827]/90 px-3 py-2 backdrop-blur-sm"
                             >
                                 <p className="text-sm leading-relaxed text-white/80">
                                     {item.description}
@@ -360,10 +455,10 @@ function CoverFlowCard({
                     </AnimatePresence>
                 </div>
 
-                <div className="relative border-t border-white/10 bg-[#111827]/70 px-4 py-3">
+                <div className="relative border-t border-white/10 bg-[#111827]/70 px-3 py-2">
                     <h3
                         id={headingId}
-                        className="pr-10 text-base font-medium leading-snug text-white sm:text-lg"
+                        className="pr-10 text-sm font-medium leading-snug text-white sm:text-base"
                     >
                         {item.title}
                     </h3>
@@ -377,7 +472,7 @@ function CoverFlowCard({
                             event.stopPropagation()
                             if (isActive) onToggleDescription()
                         }}
-                        className="absolute right-2 top-1/2 inline-flex h-11 w-11 min-h-[44px] min-w-[44px] -translate-y-1/2 items-center justify-center rounded-full text-white/60 transition-colors hover:text-white disabled:cursor-default disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2DA5A0]"
+                        className="absolute right-1 top-1/2 inline-flex h-11 w-11 min-h-[44px] min-w-[44px] -translate-y-1/2 items-center justify-center rounded-full text-white/60 transition-colors hover:text-white disabled:cursor-default disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2DA5A0]"
                         aria-label={isOpen ? `Hide ${item.title} details` : `Show ${item.title} details`}
                     >
                         <ChevronDown

@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="640" height="800" viewBox="0 0 640 800" role="img" aria-labelledby="title desc">
-  <title id="title">PLACEHOLDER  Three-Portal Ecosystem</title>
+  <title id="title">PLACEHOLDER - Three-Portal Ecosystem</title>
   <desc id="desc">Dark branded still. Gary: replace this file to swap the card image. Do not use restaurant or stock food photos, or a photo of a person.</desc>
   <defs>
     <linearGradient id="bg" x1="1" y1="0" x2="0" y2="1">
@@ -13,5 +13,5 @@
   <circle cx="540" cy="640" r="180" fill="#2DA5A0" fill-opacity="0.10"/>
   <text x="48" y="360" fill="#4ADE80" font-family="Inter, system-ui, sans-serif" font-size="22" font-weight="600" letter-spacing="4">PLACEHOLDER</text>
   <text x="48" y="410" fill="#FFFFFF" font-family="Inter, system-ui, sans-serif" font-size="28" font-weight="500">Three-Portal Ecosystem</text>
-  <text x="48" y="450" fill="rgba(255,255,255,0.55)" font-family="Inter, system-ui, sans-serif" font-size="16">Swap this file  placeholder-three-portal-ecosystem.svg</text>
+  <text x="48" y="450" fill="rgba(255,255,255,0.55)" font-family="Inter, system-ui, sans-serif" font-size="16">Swap this file - placeholder-three-portal-ecosystem.svg</text>
 </svg>

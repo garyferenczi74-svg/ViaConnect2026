@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="640" height="800" viewBox="0 0 640 800" role="img" aria-labelledby="title desc">
-  <title id="title">PLACEHOLDER  Peptide Protocols</title>
+  <title id="title">PLACEHOLDER - Peptide Protocols</title>
   <desc id="desc">Dark branded still. Gary: replace this file to swap the card image. Do not use restaurant or stock food photos, or a photo of a person.</desc>
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
@@ -13,5 +13,5 @@
   <circle cx="90" cy="680" r="150" fill="#2DA5A0" fill-opacity="0.10"/>
   <text x="48" y="360" fill="#06B6D4" font-family="Inter, system-ui, sans-serif" font-size="22" font-weight="600" letter-spacing="4">PLACEHOLDER</text>
   <text x="48" y="410" fill="#FFFFFF" font-family="Inter, system-ui, sans-serif" font-size="28" font-weight="500">Peptide Protocols</text>
-  <text x="48" y="450" fill="rgba(255,255,255,0.55)" font-family="Inter, system-ui, sans-serif" font-size="16">Swap this file  placeholder-peptide-protocols.svg</text>
+  <text x="48" y="450" fill="rgba(255,255,255,0.55)" font-family="Inter, system-ui, sans-serif" font-size="16">Swap this file - placeholder-peptide-protocols.svg</text>
 </svg>
