@@ -20,7 +20,7 @@
 // (null) are excluded from the average so a day where every meal
 // omitted a macro does not zero it out.
 
-import { DAILY_MACRO_WEIGHTS } from './constants';
+import { DAILY_MACRO_WEIGHTS, SCORE_BASE } from './constants';
 
 export interface ScoredMealContribution {
   readonly qualityScore: number;
@@ -111,6 +111,131 @@ export function totalDailyMacrosScore(attainments: DailyMacroAttainments): numbe
 function clampPct(value: number): number {
   if (!Number.isFinite(value)) return 0;
   return Math.max(0, Math.min(100, value));
+}
+
+function clampInt(value: number, min: number, max: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(min, Math.min(max, Math.round(value)));
+}
+
+/**
+ * scoreMeal food-pattern modifiers only. Protein / carb / fat fit and
+ * calorie fit vs meal_distribution slot shares must never enter the hub
+ * hero: that is how a large dinner vs a 30 percent dinner slot painted
+ * Fair / 30 on an on-macro day.
+ */
+export const FOOD_PATTERN_MODIFIER_NAMES: ReadonlyArray<string> = [
+  'Sugar Penalty',
+  'Saturated Fat Penalty',
+  'Sodium Penalty',
+  'Whole Food Bonus',
+];
+
+const FOOD_PATTERN_MODIFIER_NAME_SET = new Set<string>(FOOD_PATTERN_MODIFIER_NAMES);
+
+export type HubGoalDirection = 'lose' | 'gain' | 'maintain' | null;
+
+export interface FoodPatternModifier {
+  readonly name: string;
+  readonly value: number;
+  readonly excluded?: boolean;
+}
+
+export interface FoodPatternMeal {
+  readonly modifiers?: ReadonlyArray<FoodPatternModifier>;
+}
+
+export interface HeroNutritionScoreInput {
+  readonly dailyMacrosPct: number;
+  readonly dailyFoodQuality: number;
+  readonly goalDirection: HubGoalDirection | undefined;
+  readonly caloriesConsumed: number;
+  readonly dailyKcal: number;
+  readonly proteinConsumed: number;
+  readonly dailyProteinG: number;
+}
+
+/**
+ * Per-meal food-pattern quality: SCORE_BASE (50) plus sugar, saturated
+ * fat, sodium, and whole-food modifiers. Excluded modifiers are skipped
+ * so an unknown sodium does not read as a healthy zero. Slot-share
+ * Protein / Carb / Fat / Calorie Fit names are ignored.
+ */
+export function mealFoodPatternQuality(
+  modifiers: ReadonlyArray<FoodPatternModifier> | undefined,
+): number {
+  if (!modifiers || modifiers.length === 0) return SCORE_BASE;
+  let delta = 0;
+  for (const modifier of modifiers) {
+    if (modifier.excluded === true) continue;
+    if (!FOOD_PATTERN_MODIFIER_NAME_SET.has(modifier.name)) continue;
+    const value = Number(modifier.value);
+    if (!Number.isFinite(value)) continue;
+    delta += value;
+  }
+  return clampPct(SCORE_BASE + delta);
+}
+
+/**
+ * Uniform daily food-pattern quality. Must not call
+ * calorieWeightedMealQualityScore and must not weight by meal-slot
+ * protein / carb / fat fit. Empty meals return 50 (neutral modifier),
+ * never 0.
+ */
+export function dailyFoodPatternQuality(
+  meals: ReadonlyArray<FoodPatternMeal>,
+): number {
+  if (meals.length === 0) return SCORE_BASE;
+  let sum = 0;
+  for (const meal of meals) {
+    sum += mealFoodPatternQuality(meal.modifiers);
+  }
+  return Math.round(sum / meals.length);
+}
+
+/** Bounded quality modifier: clamp(dailyFoodQuality - 50, -15, +15). */
+export function foodPatternQualityModifier(dailyFoodQuality: number): number {
+  const quality = Number.isFinite(dailyFoodQuality) ? dailyFoodQuality : SCORE_BASE;
+  return clampInt(quality - SCORE_BASE, -15, 15);
+}
+
+/**
+ * goal_direction is TILT ONLY, not a sixth score.
+ * Null / maintain / unknown: skip.
+ *
+ * lose: kcal overshoot is not inside totalDailyMacrosScore (calories
+ * clamp at 100), so overshoot can break a deficit. Cap -15.
+ *
+ * gain: protein miss vs persisted daily_protein_g is already inside
+ * totalDailyMacrosScore. The hero does not re-resolve lean mass and
+ * does not care whether that gram number is estimated or measured.
+ * Extra protein-miss points would double-count, so the gain tilt is 0.
+ */
+export function goalDirectionTilt(input: HeroNutritionScoreInput): number {
+  if (input.goalDirection === 'lose') {
+    if (!(input.dailyKcal > 0) || !(input.caloriesConsumed > input.dailyKcal)) {
+      return 0;
+    }
+    const overshootPct = (input.caloriesConsumed - input.dailyKcal) / input.dailyKcal;
+    return clampInt(-overshootPct * 30, -15, 0);
+  }
+  return 0;
+}
+
+/**
+ * Hub hero Nutrition Score. Base is daily macro attainment vs the
+ * nutrition_targets five macros. Quality is a +/-15 modifier only.
+ * Hard floors after the modifier: macros >= 80 => >= 40 (Good);
+ * macros >= 90 => >= 60 (Excellent).
+ */
+export function heroNutritionScore(input: HeroNutritionScoreInput): number {
+  const macros = clampPct(input.dailyMacrosPct);
+  const score =
+    macros + foodPatternQualityModifier(input.dailyFoodQuality) + goalDirectionTilt(input);
+  let rounded = Math.round(score);
+  if (macros >= 90) rounded = Math.max(rounded, 60);
+  if (macros >= 80) rounded = Math.max(rounded, 40);
+  return clampPct(rounded);
 }
 
 /**

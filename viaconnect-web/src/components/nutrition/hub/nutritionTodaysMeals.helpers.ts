@@ -9,8 +9,9 @@
 // useUserMeals.
 //
 // No new scoring is authored. The per type aggregate score defers to
-// calorieWeightedMealQualityScore from @/lib/gordon/daily-aggregate, exactly
-// the helper NutritionScoreCard and the hub metrics hook use.
+// calorieWeightedMealQualityScore from @/lib/gordon/daily-aggregate for the
+// expanded Today's meals ring only. The hub hero Nutrition Score uses
+// daily macro attainment, not this slot-weighted helper.
 
 import type { Meal, MealType } from '@/lib/gordon/types';
 import { calorieWeightedMealQualityScore } from '@/lib/gordon/daily-aggregate';
@@ -105,7 +106,8 @@ export function mealTypeTotals(meals: ReadonlyArray<Meal>): MealTypeMacroTotals 
  * Pure. The per meal type aggregate quality score (0..100) for the gauge, or
  * null when no meal of that type today carries a Gordon score (qualityScore
  * not null). Defers to calorieWeightedMealQualityScore so a substantial meal
- * weighs the type more than a small one, matching the daily Nutrition Score.
+ * weighs the type more than a small one on the expanded meal ring. This is
+ * not the hub hero Nutrition Score.
  * null lets the caller render the gauge empty state rather than a fabricated
  * zero.
  */
