@@ -22,6 +22,8 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { scanReducer, initialScanState, type ScanState } from '@/hooks/scan/useScanSession';
 import { evaluateWeakFrame } from '@/lib/scan/qa';
 import { revokeFrame, revokeAllFrames, qaResultToAction } from '@/lib/scan/scanFlowDriver';
@@ -139,6 +141,83 @@ describe('ScanExperience flow driver: live pre-check failure mid count resets to
     expect(s.phase).toBe('ARMED');
     expect(s.count).toBe(5);
     expect(s.error).toBe('Hold still.');
+  });
+});
+
+describe('ScanExperience flow driver: countdown zero cannot reset to pose 1 without a capture outcome', () => {
+  function toFrontCount(): ScanState {
+    let s = initialScanState();
+    s = scanReducer(s, { type: 'START' });
+    s = scanReducer(s, { type: 'WALK_IN_DONE' });
+    s = scanReducer(s, { type: 'PROMPT_DONE' });
+    s = scanReducer(s, { type: 'PRECHECK_PASS' });
+    expect(s.phase).toBe('COUNT');
+    expect(s.poseIndex).toBe(0);
+    return s;
+  }
+
+  it('alignment fail at count 0 does not return to Front COUNT; COUNT_DONE still captures and QA_PASS advances to Right', () => {
+    let s = toFrontCount();
+    s = scanReducer(s, { type: 'COUNT_SET', display: 0 });
+    expect(s.phase).toBe('COUNT');
+    expect(s.count).toBe(0);
+
+    // "Step onto the mark" / live abort at shutter: guidance only.
+    s = scanReducer(s, { type: 'PRECHECK_FAIL' });
+    expect(s.phase).toBe('COUNT');
+    expect(s.poseIndex).toBe(0);
+    expect(s.frames[0]).toBeNull();
+
+    s = scanReducer(s, { type: 'COUNT_DONE' });
+    expect(s.phase).toBe('CAPTURE');
+    expect(s.poseIndex).toBe(0);
+
+    const frame = makeFrame('front', `blob:front-held-${captureSeq++}`, true, s.retryCount);
+    s = scanReducer(s, { type: 'CAPTURED', frame });
+    expect(s.phase).toBe('QA');
+    expect(s.frames[0]?.objectUrl).toBe(frame.objectUrl);
+
+    s = scanReducer(s, qaResultToAction(frame.qa));
+    expect(s.phase).toBe('PROMPT');
+    expect(s.poseIndex).toBe(1);
+    expect(s.frames[0]?.qa.pass).toBe(true);
+  });
+
+  it('COUNT_DONE then CAMERA_LOST is a capture-attempt outcome; poseIndex does not silently return to a new Front COUNT', () => {
+    let s = toFrontCount();
+    s = scanReducer(s, { type: 'COUNT_DONE' });
+    expect(s.phase).toBe('CAPTURE');
+
+    s = scanReducer(s, { type: 'CAMERA_LOST' });
+    expect(s.phase).toBe('CAMERA_LOST');
+    expect(s.poseIndex).toBe(0);
+    expect(s.frames[0]).toBeNull();
+
+    // Recovery is explicit RESET to SETUP, not a silent Front countdown restart.
+    s = scanReducer(s, { type: 'RESET' });
+    expect(s.phase).toBe('SETUP');
+    expect(s.poseIndex).toBe(0);
+  });
+});
+
+describe('ScanExperience wiring: capture overlay must not remount the video per phase', () => {
+  const src = readFileSync(resolve(__dirname, '../ScanExperience.tsx'), 'utf8');
+
+  it('passes the live stream into CameraPreview so a remount rebinds instead of drawing a dead frame', () => {
+    expect(src).toContain('stream={camera.stream}');
+    expect(src).toContain('canAbortCountdown');
+  });
+
+  it('renders one shared CameraPreview for WALK_IN through QA instead of a new video per phase', () => {
+    const previewOpens = src.match(/<CameraPreview/g) ?? [];
+    // SETUP keeps its own pre-start preview; the live scan uses one shared preview.
+    expect(previewOpens.length).toBe(2);
+    expect(src).toContain("state.phase === 'WALK_IN'");
+    expect(src).toContain("state.phase === 'PROMPT'");
+    expect(src).toContain("state.phase === 'ARMED'");
+    expect(src).toContain("state.phase === 'COUNT'");
+    expect(src).toContain("state.phase === 'CAPTURE'");
+    expect(src).toContain("state.phase === 'QA'");
   });
 });
 

@@ -16,7 +16,7 @@
 // call, plus the resolution passthrough, the load-bearing parts of this work.
 
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { openWebCamera, classifyOpenCameraFailure, useCamera } from '../useCamera';
+import { openWebCamera, classifyOpenCameraFailure, useCamera, bindStreamToVideo } from '../useCamera';
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -94,5 +94,36 @@ describe('useCamera', () => {
     // No DOM in this test environment, so the hook is not rendered; see
     // the file header. This only proves the export shape stays honest.
     expect(typeof useCamera).toBe('function');
+  });
+});
+
+describe('bindStreamToVideo', () => {
+  it('attaches a remounted video to the live stream and calls play', () => {
+    const stream = { id: 'live-stream' };
+    const play = vi.fn(() => Promise.resolve());
+    const video = { srcObject: null as unknown, play };
+
+    expect(bindStreamToVideo(video, stream)).toBe(true);
+    expect(video.srcObject).toBe(stream);
+    expect(play).toHaveBeenCalledTimes(1);
+  });
+
+  it('is a no-op when the video element or stream is missing (phase remount before open)', () => {
+    const play = vi.fn(() => Promise.resolve());
+    const video = { srcObject: null as unknown, play };
+
+    expect(bindStreamToVideo(null, { id: 'x' })).toBe(false);
+    expect(bindStreamToVideo(video, null)).toBe(false);
+    expect(play).not.toHaveBeenCalled();
+    expect(video.srcObject).toBeNull();
+  });
+
+  it('does not restart play when the same stream is already bound', () => {
+    const stream = { id: 'already-bound' };
+    const play = vi.fn(() => Promise.resolve());
+    const video = { srcObject: stream as unknown, play };
+
+    expect(bindStreamToVideo(video, stream)).toBe(true);
+    expect(play).not.toHaveBeenCalled();
   });
 });

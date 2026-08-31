@@ -2,7 +2,7 @@
 // Covers every transition in spec Section 7 (task-5-brief.md Step 1 list).
 
 import { describe, it, expect } from 'vitest';
-import { scanReducer, initialScanState } from '../useScanSession';
+import { scanReducer, initialScanState, canAbortCountdown } from '../useScanSession';
 import type { ScanFrame } from '@/lib/scan/types';
 
 function makeFrame(pose: ScanFrame['pose'], overrides: Partial<ScanFrame> = {}): ScanFrame {
@@ -222,6 +222,59 @@ describe('useScanSession reducer', () => {
     expect(s.phase).toBe('ARMED');
     expect(s.count).toBe(5);
     expect(s.error).toBe('Hold still.');
+  });
+
+  it('canAbortCountdown is true only before the last second, so zero cannot silently reset', () => {
+    expect(canAbortCountdown(5)).toBe(true);
+    expect(canAbortCountdown(4)).toBe(true);
+    expect(canAbortCountdown(2)).toBe(true);
+    expect(canAbortCountdown(1)).toBe(false);
+    expect(canAbortCountdown(0)).toBe(false);
+  });
+
+  it('PRECHECK_FAIL at countdown zero stays on COUNT so COUNT_DONE can still capture', () => {
+    let s: ReturnType<typeof scanReducer> = {
+      ...initialScanState(),
+      phase: 'COUNT',
+      count: 0,
+      poseIndex: 0,
+    };
+    s = scanReducer(s, { type: 'PRECHECK_FAIL' });
+    expect(s.phase).toBe('COUNT');
+    expect(s.count).toBe(0);
+    expect(s.poseIndex).toBe(0);
+
+    s = scanReducer(s, { type: 'COUNT_DONE' });
+    expect(s.phase).toBe('CAPTURE');
+    expect(s.count).toBe(0);
+    expect(s.poseIndex).toBe(0);
+  });
+
+  it('PRECHECK_FAIL during the last second (count 1) does not steal the upcoming capture', () => {
+    let s: ReturnType<typeof scanReducer> = {
+      ...initialScanState(),
+      phase: 'COUNT',
+      count: 1,
+      poseIndex: 0,
+    };
+    s = scanReducer(s, { type: 'PRECHECK_FAIL' });
+    expect(s.phase).toBe('COUNT');
+    expect(s.count).toBe(1);
+    expect(s.poseIndex).toBe(0);
+
+    s = scanReducer(s, { type: 'COUNT_SET', display: 0 });
+    s = scanReducer(s, { type: 'COUNT_DONE' });
+    expect(s.phase).toBe('CAPTURE');
+    expect(s.poseIndex).toBe(0);
+  });
+
+  it('QA_FAIL records lastQaCode so Step onto the mark is guidance, not a lost reason', () => {
+    let s = toQaAtPose(0);
+    s = scanReducer(s, { type: 'QA_FAIL', code: 'NO_BODY' });
+    expect(s.phase).toBe('PROMPT');
+    expect(s.poseIndex).toBe(0);
+    expect(s.lastQaCode).toBe('NO_BODY');
+    expect(s.frames[0]).toBeNull();
   });
 
   it('QA_PASS on poseIndex 3 goes to REVIEW', () => {

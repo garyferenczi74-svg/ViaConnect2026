@@ -72,6 +72,25 @@ export function classifyOpenCameraFailure(err: unknown): OpenCameraFailure {
   };
 }
 
+export interface BindableVideo {
+  srcObject: unknown;
+  play: () => Promise<void>;
+}
+
+/** Re-attach a live stream to a (possibly remounted) video element.
+ * CameraPreview unmounts/remounts across scan phases; open() only binds
+ * once, so without this a later grabStill draws a dead frame. */
+export function bindStreamToVideo(
+  video: BindableVideo | null,
+  stream: unknown,
+): boolean {
+  if (!video || !stream) return false;
+  if (video.srcObject === stream) return true;
+  video.srcObject = stream;
+  void video.play().catch(() => undefined);
+  return true;
+}
+
 export interface UseCameraResult {
   videoRef: RefObject<HTMLVideoElement | null>;
   stream: MediaStreamLike | null;
@@ -105,11 +124,7 @@ export function useCamera({
       setStream(acquired.stream);
       setGranted(acquired.granted);
       setPermission('granted');
-      const video = videoRef.current;
-      if (video) {
-        video.srcObject = acquired.stream as unknown as MediaProvider;
-        await video.play();
-      }
+      bindStreamToVideo(videoRef.current, acquired.stream);
     } catch (err) {
       const failure = classifyOpenCameraFailure(err);
       setError(failure.error);
@@ -130,6 +145,13 @@ export function useCamera({
     }
   }, []);
 
+  // Rebind when stream identity changes. Video remounts are handled by
+  // CameraPreview calling bindStreamToVideo on mount (this effect does
+  // not re-run when only the <video> node is new).
+  useEffect(() => {
+    bindStreamToVideo(videoRef.current, stream);
+  }, [stream]);
+
   // Release the camera on unmount even if the caller forgets to call stop().
   useEffect(() => {
     return () => {
@@ -147,6 +169,9 @@ export function useCamera({
     }
     const width = video.videoWidth || granted.width;
     const height = video.videoHeight || granted.height;
+    if (width < 8 || height < 8) {
+      throw new CaptureUnsupportedError('Still capture failed');
+    }
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;

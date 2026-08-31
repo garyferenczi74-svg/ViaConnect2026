@@ -17,7 +17,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { COMPOSITION_PATH } from '@/lib/body-tracker/compositionNav';
-import { useScanSession } from '@/hooks/scan/useScanSession';
+import { canAbortCountdown, useScanSession } from '@/hooks/scan/useScanSession';
 import { useCountdown } from '@/hooks/scan/useCountdown';
 import { useCamera } from '@/hooks/scan/useCamera';
 import { usePoseLandmarker } from '@/hooks/scan/usePoseLandmarker';
@@ -363,11 +363,12 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
 
   // ---- COUNT live abort: keep polling the video frame through the
   // countdown; if the pose breaks mid-count in landmarker mode, dispatch
-  // PRECHECK_FAIL (reducer: COUNT -> ARMED, count resets to 5). Weak mode
-  // has no live geometry signal, so this effect is a no-op there - the
-  // countdown simply runs to completion as it did pre-Task-11. ----
+  // PRECHECK_FAIL (reducer: COUNT -> ARMED, count resets to 5) only while
+  // canAbortCountdown is true. Count 1 and 0 are committed to CAPTURE so
+  // alignment / "step on the mark" cannot steal COUNT_DONE. Weak mode
+  // has no live geometry signal, so this effect is a no-op there. ----
   useEffect(() => {
-    if (state.phase !== 'COUNT' || !landmarkerLive) return;
+    if (state.phase !== 'COUNT' || !landmarkerLive || !canAbortCountdown(state.count)) return;
     let cancelled = false;
     const pose = POSE_ORDER[state.poseIndex];
     let rafId: number;
@@ -397,7 +398,7 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
       cancelled = true;
       cancelAnimationFrame(rafId);
     };
-  }, [state.phase, state.poseIndex, dispatch, camera.videoRef, landmarkerLive, poseLandmarker.detectVideo, debugSkeletonEnabled]);
+  }, [state.phase, state.poseIndex, state.count, dispatch, camera.videoRef, landmarkerLive, poseLandmarker.detectVideo, debugSkeletonEnabled]);
 
   // ---- CAPTURE: grab the still, flash + haptic, run weak QA, dispatch
   // CAPTURED then QA_PASS/QA_FAIL. A hung grab/QA pipeline is a camera
@@ -593,7 +594,7 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
 
       {state.phase === 'SETUP' && (
         <div className="relative flex h-full min-h-[70vh] flex-col justify-between p-4">
-          <CameraPreview videoRef={camera.videoRef} pose="front" showFootMark mirrored={false} />
+          <CameraPreview videoRef={camera.videoRef} stream={camera.stream} pose="front" showFootMark mirrored={false} />
           <div className="relative z-10 mt-auto space-y-3 rounded-2xl bg-[var(--card)]/90 p-4">
             {permissionBlocked && (
               <p className="text-xs text-red-300" data-testid="scan-camera-blocked">
@@ -653,69 +654,79 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
         </div>
       )}
 
-      {state.phase === 'WALK_IN' && (
-        <CameraPreview videoRef={camera.videoRef} pose={null} showFootMark mirrored={false}>
-          <CountdownOverlay value={walkInDisplay} coaching={WALK_IN_COACHING} reducedMotion={reducedMotion} />
-        </CameraPreview>
-      )}
-
-      {state.phase === 'PROMPT' && currentPose && (
-        <div className="flex h-full min-h-[70vh] flex-col items-center justify-center gap-3 p-6">
-          {state.poseIndex > 0 && (
-            <p className="text-xs text-white/60" data-testid="scan-interstitial">
-              {INTERSTITIAL[POSE_ORDER[state.poseIndex - 1]]}
+      {(state.phase === 'WALK_IN' ||
+        state.phase === 'PROMPT' ||
+        state.phase === 'ARMED' ||
+        state.phase === 'COUNT' ||
+        state.phase === 'CAPTURE' ||
+        state.phase === 'QA') && (
+        <CameraPreview
+          videoRef={camera.videoRef}
+          stream={camera.stream}
+          pose={state.phase === 'WALK_IN' ? null : currentPose}
+          showFootMark={state.phase === 'WALK_IN'}
+          mirrored={false}
+        >
+          {state.phase === 'WALK_IN' && (
+            <CountdownOverlay value={walkInDisplay} coaching={WALK_IN_COACHING} reducedMotion={reducedMotion} />
+          )}
+          {state.phase === 'PROMPT' && currentPose && (
+            <div className="flex h-full min-h-[70vh] flex-col items-center justify-center gap-3 p-6">
+              {state.poseIndex > 0 && (
+                <p className="text-xs text-white/60" data-testid="scan-interstitial">
+                  {INTERSTITIAL[POSE_ORDER[state.poseIndex - 1]]}
+                </p>
+              )}
+              <PoseTitleCard pose={currentPose} index={state.poseIndex} />
+            </div>
+          )}
+          {state.phase === 'ARMED' && currentPose && (
+            <>
+              <div className="pointer-events-none absolute inset-x-0 top-4 flex justify-center">
+                <LevelBubble beta={0} gamma={0} available={false} />
+              </div>
+              <p
+                className="pointer-events-none absolute inset-x-0 bottom-8 text-center text-sm text-white/80"
+                aria-live="assertive"
+                data-testid={poseLandmarker.ready && poseLandmarker.mode === 'weak' ? 'scan-pose-guide-unavailable' : undefined}
+              >
+                {state.lastQaCode
+                  ? messageForCode(state.lastQaCode)
+                  : poseLandmarker.ready && poseLandmarker.mode === 'weak'
+                    ? POSE_GUIDE_UNAVAILABLE
+                    : ARMED_COACHING}
+              </p>
+              {debugSkeletonEnabled && (
+                <SkeletonOverlay landmarks={debugLandmarks} connections={POSE_CONNECTIONS} />
+              )}
+            </>
+          )}
+          {state.phase === 'COUNT' && currentPose && (
+            <>
+              <CountdownOverlay value={state.count} coaching={coachingForCount(state.count)} reducedMotion={reducedMotion} />
+              {debugSkeletonEnabled && (
+                <SkeletonOverlay landmarks={debugLandmarks} connections={POSE_CONNECTIONS} />
+              )}
+            </>
+          )}
+          {state.phase === 'CAPTURE' && currentPose && (
+            <>
+              <CountdownOverlay value={0} coaching={coachingForCount(0)} reducedMotion={reducedMotion} />
+              {flashActive && <div className="pointer-events-none absolute inset-0 bg-white" data-testid="scan-shutter-flash" />}
+            </>
+          )}
+          {state.phase === 'QA' && currentPose && (
+            <p className="pointer-events-none absolute inset-x-0 bottom-8 text-center text-sm text-white/80" aria-live="assertive" data-testid="scan-checking-pose">
+              {CHECKING_POSE}
             </p>
           )}
-          <PoseTitleCard pose={currentPose} index={state.poseIndex} />
-        </div>
-      )}
-
-      {state.phase === 'ARMED' && currentPose && (
-        <CameraPreview videoRef={camera.videoRef} pose={currentPose} showFootMark={false} mirrored={false}>
-          <div className="pointer-events-none absolute inset-x-0 top-4 flex justify-center">
-            <LevelBubble beta={0} gamma={0} available={false} />
-          </div>
-          <p
-            className="pointer-events-none absolute inset-x-0 bottom-8 text-center text-sm text-white/80"
-            aria-live="assertive"
-            data-testid={poseLandmarker.ready && poseLandmarker.mode === 'weak' ? 'scan-pose-guide-unavailable' : undefined}
-          >
-            {poseLandmarker.ready && poseLandmarker.mode === 'weak' ? POSE_GUIDE_UNAVAILABLE : ARMED_COACHING}
-          </p>
-          {debugSkeletonEnabled && (
-            <SkeletonOverlay landmarks={debugLandmarks} connections={POSE_CONNECTIONS} />
-          )}
-        </CameraPreview>
-      )}
-
-      {state.phase === 'COUNT' && currentPose && (
-        <CameraPreview videoRef={camera.videoRef} pose={currentPose} showFootMark={false} mirrored={false}>
-          <CountdownOverlay value={state.count} coaching={coachingForCount(state.count)} reducedMotion={reducedMotion} />
-          {debugSkeletonEnabled && (
-            <SkeletonOverlay landmarks={debugLandmarks} connections={POSE_CONNECTIONS} />
-          )}
-        </CameraPreview>
-      )}
-
-      {state.phase === 'CAPTURE' && currentPose && (
-        <CameraPreview videoRef={camera.videoRef} pose={currentPose} showFootMark={false} mirrored={false}>
-          <CountdownOverlay value={0} coaching={coachingForCount(0)} reducedMotion={reducedMotion} />
-          {flashActive && <div className="pointer-events-none absolute inset-0 bg-white" data-testid="scan-shutter-flash" />}
-        </CameraPreview>
-      )}
-
-      {state.phase === 'QA' && currentPose && (
-        <CameraPreview videoRef={camera.videoRef} pose={currentPose} showFootMark={false} mirrored={false}>
-          <p className="pointer-events-none absolute inset-x-0 bottom-8 text-center text-sm text-white/80" aria-live="assertive" data-testid="scan-checking-pose">
-            {CHECKING_POSE}
-          </p>
         </CameraPreview>
       )}
 
       {state.phase === 'CHOICE' && currentPose && (
         <div className="flex h-full min-h-[70vh] flex-col items-center justify-center gap-4 p-6 text-center">
           <p className="text-sm text-white/80" data-testid="scan-choice-message">
-            {messageForCode(state.frames[state.poseIndex]?.qa.code ?? 'NO_BODY') || 'That pose is not passing QA yet.'}
+            {messageForCode(state.lastQaCode ?? state.frames[state.poseIndex]?.qa.code ?? 'NO_BODY') || 'That pose is not passing QA yet.'}
           </p>
           <div className="flex gap-3">
             <button

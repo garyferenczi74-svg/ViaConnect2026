@@ -1,7 +1,8 @@
 'use client';
 
-import type { RefObject } from 'react';
+import { useEffect, type RefObject } from 'react';
 import type { PoseId } from '@/lib/scan/poses';
+import { bindStreamToVideo } from '@/hooks/scan/useCamera';
 import { PoseGhost } from './PoseGhost';
 
 /**
@@ -19,13 +20,19 @@ import { PoseGhost } from './PoseGhost';
  */
 export interface CameraPreviewProps {
   videoRef: RefObject<HTMLVideoElement | null>;
+  /** Live MediaStream. Rebound on mount so a phase remount does not leave a dead video. */
+  stream?: unknown;
   pose: PoseId | null;
   showFootMark: boolean;
   mirrored: boolean;
   children?: React.ReactNode;
 }
 
-export function CameraPreview({ videoRef, pose, showFootMark, mirrored, children }: CameraPreviewProps) {
+export function CameraPreview({ videoRef, stream, pose, showFootMark, mirrored, children }: CameraPreviewProps) {
+  useEffect(() => {
+    bindStreamToVideo(videoRef.current, stream ?? null);
+  }, [stream, videoRef]);
+
   return (
     <div
       data-testid="camera-preview"
