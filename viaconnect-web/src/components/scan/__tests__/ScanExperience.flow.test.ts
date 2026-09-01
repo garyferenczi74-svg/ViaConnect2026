@@ -23,12 +23,13 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 import { scanReducer, initialScanState, type ScanState } from '@/hooks/scan/useScanSession';
 import { SCAN_ORIENTATION_UNAVAILABLE_MS, SCAN_POSE_TITLE_MS } from '@/lib/scan/scanTimeouts';
-import { evaluateWeakFrame } from '@/lib/scan/qa';
-import { revokeFrame, revokeAllFrames, qaResultToAction } from '@/lib/scan/scanFlowDriver';
-import type { ScanFrame } from '@/lib/scan/types';
+import { evaluateWeakFrame, evaluatePose } from '@/lib/scan/qa';
+import { evaluateCapturedStill } from '@/lib/scan/evaluateCapturedStill';
+import { revokeFrame, revokeAllFrames, qaResultToAction, capturedStillVerdictToAction } from '@/lib/scan/scanFlowDriver';
+import type { Landmark, ScanFrame } from '@/lib/scan/types';
 import type { PoseId } from '@/lib/scan/poses';
 
 function makeFrame(pose: PoseId, objectUrl: string, pass: boolean, retryCount = 0): ScanFrame {
@@ -201,6 +202,131 @@ describe('ScanExperience flow driver: countdown zero cannot reset to pose 1 with
   });
 });
 
+describe('ScanExperience flow driver: CAPTURE still QA must not silently re-COUNT the same pose', () => {
+  const frontPassLandmarks = (
+    JSON.parse(
+      readFileSync(join(__dirname, '../../../lib/scan/__fixtures__/front_pass.json'), 'utf8'),
+    ) as { landmarks: Landmark[] }
+  ).landmarks;
+
+  const usableMetrics = { luminanceVariance: 500, exposure: 0.5, blurScore: 500 };
+  const blackMetrics = { luminanceVariance: 0, exposure: 0, blurScore: 0 };
+
+  function toFrontCapture(): ScanState {
+    let s = initialScanState();
+    s = scanReducer(s, { type: 'START' });
+    s = scanReducer(s, { type: 'WALK_IN_DONE' });
+    s = scanReducer(s, { type: 'PROMPT_DONE' });
+    s = scanReducer(s, { type: 'PRECHECK_PASS' });
+    s = scanReducer(s, { type: 'COUNT_DONE' });
+    expect(s.phase).toBe('CAPTURE');
+    expect(s.poseIndex).toBe(0);
+    return s;
+  }
+
+  function frameFromVerdict(pose: PoseId, objectUrl: string, qa: ScanFrame['qa'], retryCount: number): ScanFrame {
+    return {
+      pose,
+      blob: new Blob(['x'], { type: 'image/jpeg' }),
+      objectUrl,
+      capturedAt: new Date('2026-08-29T00:00:00Z').toISOString(),
+      qa,
+      retryCount,
+      capturedWidth: 1080,
+      capturedHeight: 1920,
+    };
+  }
+
+  it('legacy evaluatePose(null) would re-PROMPT Front; live-video fallback advances to Right', () => {
+    const legacy = evaluatePose({
+      landmarks: null,
+      pose: 'front',
+      frameWidth: 1080,
+      frameHeight: 1920,
+      blurScore: usableMetrics.blurScore,
+    });
+    expect(legacy.code).toBe('NO_BODY');
+
+    let looped = toFrontCapture();
+    looped = scanReducer(looped, {
+      type: 'CAPTURED',
+      frame: frameFromVerdict('front', `blob:legacy-${captureSeq++}`, legacy, looped.retryCount),
+    });
+    looped = scanReducer(looped, qaResultToAction(legacy));
+    expect(looped.phase).toBe('PROMPT');
+    expect(looped.poseIndex).toBe(0);
+    expect(looped.frames[0]).toBeNull();
+
+    const verdict = evaluateCapturedStill({
+      stillLandmarks: null,
+      liveLandmarks: frontPassLandmarks,
+      metrics: usableMetrics,
+      pose: 'front',
+      frameWidth: 1080,
+      frameHeight: 1920,
+    });
+    expect(verdict.kind).toBe('qa');
+    if (verdict.kind !== 'qa') throw new Error('expected qa verdict');
+    expect(verdict.qa.pass).toBe(true);
+
+    let s = toFrontCapture();
+    s = scanReducer(s, {
+      type: 'CAPTURED',
+      frame: frameFromVerdict('front', `blob:live-fallback-${captureSeq++}`, verdict.qa, s.retryCount),
+    });
+    s = scanReducer(s, capturedStillVerdictToAction(verdict));
+    expect(s.phase).toBe('PROMPT');
+    expect(s.poseIndex).toBe(1);
+    expect(s.frames[0]?.qa.pass).toBe(true);
+  });
+
+  it('null detectStill + passing weak-frame metrics keeps the still and advances Front → Right', () => {
+    const verdict = evaluateCapturedStill({
+      stillLandmarks: null,
+      liveLandmarks: null,
+      metrics: usableMetrics,
+      pose: 'front',
+      frameWidth: 1080,
+      frameHeight: 1920,
+    });
+    expect(verdict.kind).toBe('qa');
+    if (verdict.kind !== 'qa') throw new Error('expected qa verdict');
+    expect(verdict.qa.pass).toBe(true);
+    expect(verdict.qa.mode).toBe('weak');
+
+    let s = toFrontCapture();
+    s = scanReducer(s, {
+      type: 'CAPTURED',
+      frame: frameFromVerdict('front', `blob:weak-fallback-${captureSeq++}`, verdict.qa, s.retryCount),
+    });
+    s = scanReducer(s, capturedStillVerdictToAction(verdict));
+    expect(s.phase).toBe('PROMPT');
+    expect(s.poseIndex).toBe(1);
+    expect(s.frames[0]?.qa.pass).toBe(true);
+    expect(s.retryCount).toBe(0);
+  });
+
+  it('black still after shutter is CAMERA_LOST, not QA_FAIL → same-pose PROMPT', () => {
+    const verdict = evaluateCapturedStill({
+      stillLandmarks: null,
+      liveLandmarks: frontPassLandmarks,
+      metrics: blackMetrics,
+      pose: 'front',
+      frameWidth: 1080,
+      frameHeight: 1920,
+    });
+    expect(verdict.kind).toBe('camera_lost');
+
+    let s = toFrontCapture();
+    s = scanReducer(s, capturedStillVerdictToAction(verdict));
+    expect(s.phase).toBe('CAMERA_LOST');
+    expect(s.poseIndex).toBe(0);
+    expect(s.frames[0]).toBeNull();
+    expect(s.phase).not.toBe('PROMPT');
+    expect(s.phase).not.toBe('COUNT');
+  });
+});
+
 describe('ScanExperience wiring: capture overlay must not remount the video per phase', () => {
   const src = readFileSync(resolve(__dirname, '../ScanExperience.tsx'), 'utf8');
 
@@ -228,6 +354,15 @@ describe('ScanExperience wiring: capture overlay must not remount the video per 
     expect(src).toContain('handlePromptDone');
     expect(src).not.toMatch(/PROMPT_DONE' \), 2000\)/);
     expect(SCAN_POSE_TITLE_MS).toBeGreaterThanOrEqual(8000);
+  });
+
+  it('still QA uses evaluateCapturedStill so a null detectStill cannot hard-NO_BODY the same pose', () => {
+    expect(src).toContain('evaluateCapturedStill');
+    expect(src).toContain('isNearBlackStill');
+    expect(src).toContain('detectStill(stillCanvas)');
+    expect(src).toContain('detectStill(video)');
+    expect(src).toContain("verdict.kind === 'camera_lost'");
+    expect(src).not.toMatch(/evaluatePose\(\{\s*landmarks:\s*detected/);
   });
 
   it('keeps Orientation unavailable until Continue / tap-through, not ARMED-only 600ms yank', () => {

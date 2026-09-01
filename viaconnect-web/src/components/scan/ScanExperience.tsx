@@ -5,9 +5,9 @@
  * CameraPreview, the Task 8 overlays, useScanSession, useCountdown,
  * useCamera, and usePoseLandmarker into the end-to-end flow (spec Section
  * 6). The real MediaPipe pose landmarker gates the ARMED/COUNT live
- * pre-check and the CAPTURE shot QA; evaluateWeakFrame is the fallback path
- * when the landmarker fails to load (mode 'weak'), so the flow stays
- * exercisable end to end either way. "Use these scans" runs the real
+ * pre-check and the CAPTURE shot QA; evaluateCapturedStill falls back to
+ * live-video landmarks or evaluateWeakFrame when detectStill is null, so a
+ * live precheck pass cannot silently re-COUNT the same pose. "Use these scans" runs the real
  * prepare/upload/finalize persist flow (submitFlow.runSubmit over
  * persist.ts) and only ever reports success after a server-confirmed
  * ok:true - never optimistically.
@@ -29,9 +29,11 @@ import { LevelBubble } from './LevelBubble';
 import { ScanReview } from './ScanReview';
 import { SkeletonOverlay } from './SkeletonOverlay';
 import { POSE_ORDER, INTERSTITIAL } from '@/lib/scan/poses';
-import { evaluatePose, evaluateWeakFrame, messageForCode } from '@/lib/scan/qa';
+import { evaluatePose, messageForCode } from '@/lib/scan/qa';
 import { computeWeakQaInputFromBlob, blobToCanvas } from '@/lib/scan/captureStillMetrics';
+import { evaluateCapturedStill, isNearBlackStill } from '@/lib/scan/evaluateCapturedStill';
 import { revokeFrame, revokeAllFrames, qaResultToAction } from '@/lib/scan/scanFlowDriver';
+import { CaptureUnsupportedError } from '@/lib/capacitor/camera-capture';
 import { runSubmit } from '@/lib/scan/submitFlow';
 import { scanResultPath } from '@/lib/scan/routes';
 import { readVoicePreference, writeVoicePreference } from '@/lib/scan/voicePreference';
@@ -465,26 +467,40 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
       const objectUrl = URL.createObjectURL(still.blob);
       const metrics = await computeWeakQaInputFromBlob(still.blob);
 
-      // Trust-the-still: qa below is ALWAYS computed fresh against this
-      // captured still, never inherited from the ARMED/COUNT live
-      // pre-check's verdict (that verdict only ever gated whether COUNT
-      // started/kept running, above). So a live pass followed by a
-      // failing still correctly fails the shot, per spec.
-      let qa;
-      let landmarks: Landmark[] | undefined;
+      // Trust-the-still when detectStill returns landmarks. VIDEO-mode
+      // detectForVideo on a JPEG canvas often returns null even after a
+      // live precheck pass; evaluatePose(null) is hard NO_BODY and would
+      // silently re-COUNT the same pose. Fall back to an unthrottled
+      // live-video detect, then evaluateWeakFrame. Near-black JPEGs are
+      // CAMERA_LOST (dead preview), not a pose retry.
+      if (isNearBlackStill(metrics)) {
+        URL.revokeObjectURL(objectUrl);
+        throw new CaptureUnsupportedError('Still capture failed');
+      }
+
+      let stillLandmarks: Landmark[] | null = null;
+      let liveLandmarks: Landmark[] | null = null;
       if (landmarkerLive) {
         const stillCanvas = await blobToCanvas(still.blob);
-        const detected = poseLandmarker.detectStill(stillCanvas);
-        landmarks = detected ?? undefined;
-        qa = evaluatePose({
-          landmarks: detected,
-          pose,
-          frameWidth: still.width,
-          frameHeight: still.height,
-          blurScore: metrics.blurScore,
-        });
-      } else {
-        qa = evaluateWeakFrame(metrics);
+        stillLandmarks = poseLandmarker.detectStill(stillCanvas);
+        if (!stillLandmarks) {
+          const video = camera.videoRef.current;
+          liveLandmarks = video ? poseLandmarker.detectStill(video) : null;
+        }
+      }
+
+      const verdict = evaluateCapturedStill({
+        stillLandmarks,
+        liveLandmarks,
+        metrics,
+        pose,
+        frameWidth: still.width,
+        frameHeight: still.height,
+      });
+
+      if (verdict.kind === 'camera_lost') {
+        URL.revokeObjectURL(objectUrl);
+        throw new CaptureUnsupportedError('Still capture failed');
       }
 
       return {
@@ -492,7 +508,7 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
         blob: still.blob,
         objectUrl,
         capturedAt: new Date().toISOString(),
-        qa,
+        qa: verdict.qa,
         retryCount: state.retryCount,
         capturedWidth: still.width,
         capturedHeight: still.height,
@@ -500,7 +516,7 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
         // this component has no upload/storage call, and Task 13's submit
         // whitelist + the DB REVOKE are the enforcement layer for the
         // route that eventually will exist.
-        landmarks,
+        landmarks: verdict.landmarks,
       };
     })();
 
