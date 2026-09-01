@@ -17,6 +17,7 @@ import {
 import toast from 'react-hot-toast';
 import { VCButton } from '@/components/ui/VCButton';
 import { parseLabCsv } from '@/lib/labs/parseLabCsv';
+import { RythmHealthLabCard } from '@/components/labs/RythmHealthLabCard';
 
 type Biomarker = {
   name: string;
@@ -540,6 +541,8 @@ export default function LabsPage() {
           )}
         </VCButton>
       </div>
+
+      <RythmHealthLabCard />
 
       {/* Card 2 - Quest Diagnostics */}
       <div className="glass-v2 p-4 md:p-6 rounded-2xl flex flex-col gap-3 md:gap-4">

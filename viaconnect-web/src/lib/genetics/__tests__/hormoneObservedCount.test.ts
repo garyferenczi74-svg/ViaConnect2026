@@ -24,6 +24,15 @@ describe('countHormoneMarkers', () => {
     expect(count).toBe(0);
   });
 
+  it('does not count Rythm Health blood chemistry as HormoneIQ DUTCH', () => {
+    const count = countHormoneMarkers([
+      { name: 'Estradiol', lab_name: 'Rythm Health', source_type: 'csv' },
+      { name: 'Testosterone', lab_name: 'Rythm Health' },
+      { name: 'Cortisol', source_filename: 'rythm-health-export.csv' },
+    ]);
+    expect(count).toBe(0);
+  });
+
   it('counts rows from an explicit hormone_iq or DUTCH source table', () => {
     const count = countHormoneMarkers([
       { name: '2-OH-E1', source_type: 'hormone_iq' },

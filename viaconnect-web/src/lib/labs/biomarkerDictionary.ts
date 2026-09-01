@@ -46,6 +46,10 @@ export const BIOMARKER_DICTIONARY: BiomarkerDictionaryEntry[] = [
   { key: 'bun', displayName: 'BUN', panelGroup: 'Metabolic', canonicalUnit: 'mg/dL', aliases: ['bun', 'urea nitrogen'] },
   { key: 'creatinine', displayName: 'Creatinine', panelGroup: 'Metabolic', canonicalUnit: 'mg/dL', aliases: ['creatinine'] },
   { key: 'egfr', displayName: 'eGFR', panelGroup: 'Metabolic', canonicalUnit: 'mL/min', aliases: ['egfr', 'gfr'] },
+  { key: 'fructosamine', displayName: 'Fructosamine', panelGroup: 'Metabolic', canonicalUnit: 'umol/L', aliases: ['fructosamine'] },
+  { key: 'uric_acid', displayName: 'Uric acid', panelGroup: 'Metabolic', canonicalUnit: 'mg/dL', aliases: ['uric acid', 'urate'] },
+  { key: 'alp', displayName: 'ALP', panelGroup: 'Metabolic', canonicalUnit: 'U/L', aliases: ['alkaline phosphatase'] },
+  { key: 'ggt', displayName: 'GGT', panelGroup: 'Metabolic', canonicalUnit: 'U/L', aliases: ['gamma glutamyl', 'gamma-glutamyl'] },
   { key: 'sodium', displayName: 'Sodium', panelGroup: 'Metabolic', canonicalUnit: 'mmol/L', aliases: ['sodium', 'na '] },
   { key: 'potassium', displayName: 'Potassium', panelGroup: 'Metabolic', canonicalUnit: 'mmol/L', aliases: ['potassium'] },
   { key: 'chloride', displayName: 'Chloride', panelGroup: 'Metabolic', canonicalUnit: 'mmol/L', aliases: ['chloride'] },
@@ -61,6 +65,7 @@ export const BIOMARKER_DICTIONARY: BiomarkerDictionaryEntry[] = [
   { key: 'triglycerides', displayName: 'Triglycerides', panelGroup: 'Lipids', canonicalUnit: 'mg/dL', aliases: ['triglyceride'] },
   { key: 'apob', displayName: 'ApoB', panelGroup: 'Lipids', canonicalUnit: 'mg/dL', aliases: ['apob', 'apolipoprotein b'] },
   { key: 'lpa', displayName: 'Lp(a)', panelGroup: 'Lipids', canonicalUnit: 'nmol/L', aliases: ['lp(a)', 'lipoprotein (a)', 'lipoprotein a'] },
+  { key: 'remnant_cholesterol', displayName: 'Remnant cholesterol', panelGroup: 'Lipids', canonicalUnit: 'mg/dL', aliases: ['remnant cholesterol', 'remnant chol'] },
   { key: 'total_cholesterol', displayName: 'Total cholesterol', panelGroup: 'Lipids', canonicalUnit: 'mg/dL', aliases: ['total cholesterol', 'cholesterol, total', 'cholesterol'] },
 
   // Inflammatory
@@ -72,7 +77,9 @@ export const BIOMARKER_DICTIONARY: BiomarkerDictionaryEntry[] = [
   { key: 'tsh', displayName: 'TSH', panelGroup: 'Hormones', canonicalUnit: 'uIU/mL', aliases: ['tsh', 'thyroid stimulating'] },
   { key: 'free_t3', displayName: 'Free T3', panelGroup: 'Hormones', canonicalUnit: 'pg/mL', aliases: ['free t3', 'ft3'] },
   { key: 'free_t4', displayName: 'Free T4', panelGroup: 'Hormones', canonicalUnit: 'ng/dL', aliases: ['free t4', 'ft4'] },
+  { key: 'free_testosterone', displayName: 'Free testosterone', panelGroup: 'Hormones', canonicalUnit: 'pg/mL', aliases: ['free testosterone', 'free-t'] },
   { key: 'testosterone', displayName: 'Testosterone', panelGroup: 'Hormones', canonicalUnit: 'ng/dL', aliases: ['testosterone'] },
+  { key: 'shbg', displayName: 'SHBG', panelGroup: 'Hormones', canonicalUnit: 'nmol/L', aliases: ['shbg', 'sex hormone binding'] },
   { key: 'estradiol', displayName: 'Estradiol', panelGroup: 'Hormones', canonicalUnit: 'pg/mL', aliases: ['estradiol', 'e2'] },
   { key: 'progesterone', displayName: 'Progesterone', panelGroup: 'Hormones', canonicalUnit: 'ng/mL', aliases: ['progesterone'] },
   { key: 'cortisol', displayName: 'Cortisol', panelGroup: 'Hormones', canonicalUnit: 'ug/dL', aliases: ['cortisol'] },

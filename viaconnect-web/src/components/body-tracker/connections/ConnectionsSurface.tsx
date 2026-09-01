@@ -38,6 +38,7 @@ import { WearableTileCard } from './WearableTileCard';
 import { ScoreDetailPanel, gateSleepContributorRows } from './ScoreDetailPanel';
 import { ActiveSourceDetailPanel } from './ActiveSourceDetailPanel';
 import { DimensionDetailSheet } from './DimensionDetailSheet';
+import { RythmHealthLabCard } from '@/components/labs/RythmHealthLabCard';
 
 function emptyTiles(platform: 'web' | 'ios' | 'android'): WearableTileView[] {
   return buildWearableTiles({
@@ -312,6 +313,19 @@ export function ConnectionsSurface() {
           </div>
         </AdminPanel>
       </div>
+
+      <section aria-labelledby="connections-labs-heading" className="space-y-3">
+        <div>
+          <h2 id="connections-labs-heading" className="text-xl font-semibold text-white">
+            Labs
+          </h2>
+          <p className="mt-1 text-sm text-white/50">
+            Blood tests and lab panels. These are not wearables and do not feed wearable
+            tiles.
+          </p>
+        </div>
+        <RythmHealthLabCard />
+      </section>
 
       <p className="text-center text-xs text-white/40">{CONNECTIONS_FOOTER}</p>
 
