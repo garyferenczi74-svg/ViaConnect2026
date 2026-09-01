@@ -1,5 +1,6 @@
 import type { ScanAction } from '@/hooks/scan/useScanSession';
 import type { QaResult, ScanFrame } from './types';
+import type { CapturedStillVerdict } from './evaluateCapturedStill';
 
 /**
  * Prompt 231: pure helpers shared by ScanExperience for object URL
@@ -31,4 +32,10 @@ export function revokeAllFrames(frames: ReadonlyArray<ScanFrame | null>): void {
 export function qaResultToAction(result: QaResult): ScanAction {
   if (result.pass) return { type: 'QA_PASS' };
   return { type: 'QA_FAIL', code: result.code };
+}
+
+/** Map still-QA (including a dead/black grab) to the reducer action. */
+export function capturedStillVerdictToAction(verdict: CapturedStillVerdict): ScanAction {
+  if (verdict.kind === 'camera_lost') return { type: 'CAMERA_LOST' };
+  return qaResultToAction(verdict.qa);
 }

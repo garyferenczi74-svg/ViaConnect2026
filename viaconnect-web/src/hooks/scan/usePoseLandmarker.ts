@@ -208,9 +208,11 @@ export interface UsePoseLandmarkerResult {
    * on any detectForVideo error. */
   detectVideo(video: HTMLVideoElement, timestampMs: number): Landmark[] | null;
   /** CAPTURE shot QA only. Never throttled (one call per captured still).
-   * Returns null (never throws) when not ready, in weak mode, or on any
-   * detection error. */
-  detectStill(canvas: HTMLCanvasElement): Landmark[] | null;
+   * Accepts the JPEG canvas or the live <video> at shutter (VIDEO-mode
+   * detectForVideo on canvas often returns null even when the preview just
+   * passed precheck). Returns null (never throws) when not ready, in weak
+   * mode, or on any detection error. */
+  detectStill(source: HTMLCanvasElement | HTMLVideoElement): Landmark[] | null;
   dispose(): void;
 }
 
@@ -297,7 +299,7 @@ export function usePoseLandmarker({ enabled = false }: { enabled?: boolean } = {
   );
 
   const detectStill = useCallback(
-    (canvas: HTMLCanvasElement): Landmark[] | null => {
+    (source: HTMLCanvasElement | HTMLVideoElement): Landmark[] | null => {
       const instance = instanceRef.current;
       if (!instance) return null;
       try {
@@ -311,7 +313,10 @@ export function usePoseLandmarker({ enabled = false }: { enabled?: boolean } = {
         // twice. nextTimestamp() guarantees the value passed here is
         // strictly greater than any prior detectVideo() call regardless of
         // clock source, satisfying VIDEO mode's monotonicity requirement.
-        const result = instance.detectForVideo(canvas, nextTimestamp(Date.now()));
+        // The CAPTURE caller may pass the live <video> when canvas detect
+        // returns null; that path is also unthrottled (detectVideo would
+        // often skip because COUNT just polled within 80ms).
+        const result = instance.detectForVideo(source, nextTimestamp(Date.now()));
         const first = result.landmarks[0];
         return first ? toQaLandmarks(first) : null;
       } catch (error) {
