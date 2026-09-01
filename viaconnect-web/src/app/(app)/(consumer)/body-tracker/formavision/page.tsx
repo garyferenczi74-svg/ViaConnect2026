@@ -37,12 +37,15 @@ import { useUserJourney } from '@/hooks/body-tracker/useUserJourney';
 import { useCurrentUser } from '@/components/body-tracker/manual-input';
 import { BodyScanUploader, type BodyScanResult } from '@/components/body-tracker/BodyScanUploader';
 import { BodyScanResults } from '@/components/body-tracker/BodyScanResults';
+import { FormaVisionScanModeBar, type FormaVisionScanMode } from '@/components/body-tracker/FormaVisionScanModeBar';
 import { ScanHistorySection } from '@/components/scan/ScanHistorySection';
 import { persistScan } from '@/lib/body-tracker/composition/persistScanClient';
 import { isJourneyCompositionPoint } from '@/lib/body-tracker/composition/journeyPoints';
 import type { MeasurementUnit } from '@/lib/body-tracker/circumference';
 import {
   compositionSectionHref,
+  formavisionLiveScanHref,
+  parseFormaVisionScanMode,
 } from '@/lib/body-tracker/compositionNav';
 import { scanToParamVector } from '@/lib/formavision/geometry/scanToParamVector';
 import { buildSegmentTintsFromChange } from '@/lib/formavision/geometry/composSegmentTints';
@@ -104,6 +107,7 @@ function FormaVisionSurface() {
   const [wipeT, setWipeT] = useState(0.5);
   // Prompt 210l: wire the FormaVision tab to the four-photo scan panel.
   const [scanOpen, setScanOpen] = useState(false);
+  const [scanMode, setScanMode] = useState<FormaVisionScanMode>('upload');
   const [scanResult, setScanResult] = useState<BodyScanResult | null>(null);
   // Prompt 210k: same unit spine as composition (localStorage key shared).
   const [unit, setUnit] = useState<MeasurementUnit>(() => readStoredUnit());
@@ -113,6 +117,20 @@ function FormaVisionSurface() {
       setGender(caqSex);
     }
   }, [caqSex, genderManuallySet]);
+
+  useEffect(() => {
+    try {
+      const mode = parseFormaVisionScanMode(
+        new URLSearchParams(window.location.search).get('mode'),
+      );
+      if (mode) {
+        setScanMode(mode);
+        setScanOpen(true);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   useEffect(() => {
     try {
@@ -302,30 +320,53 @@ function FormaVisionSurface() {
           className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 p-4 backdrop-blur-md sm:p-5"
         >
           <h2 className="text-base font-semibold text-white">FormaVision four-photo scan</h2>
-          <p className="mb-4 text-xs text-white/55">
-            JPEG and PNG keep their real types. Analysis can take up to 60 seconds.
+          <p className="mb-3 text-xs text-white/55">
+            Front, Right, Back, Left. JPEG and PNG keep their real types. Analysis can take up to 60
+            seconds.
           </p>
-          {scanResult ? (
-            <BodyScanResults
-              result={scanResult}
-              onRetake={() => setScanResult(null)}
-              onClose={() => {
-                setScanOpen(false);
-                setScanResult(null);
-              }}
-            />
+          <FormaVisionScanModeBar mode={scanMode} onChange={setScanMode} />
+          {scanMode === 'live' ? (
+            <div className="mt-4 space-y-3" data-testid="formavision-live-mode">
+              <p className="text-sm text-white/65">
+                Guided live 4-pose camera capture. Skip a view if needed — we will not invent it.
+              </p>
+              <Link
+                href={formavisionLiveScanHref()}
+                data-testid="formavision-start-live-scan"
+                className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-[#2DA5A0] px-5 py-2.5 text-sm font-medium text-white sm:w-auto"
+              >
+                <Camera size={16} strokeWidth={1.5} />
+                Start live scan
+              </Link>
+            </div>
+          ) : scanResult ? (
+            <div className="mt-4">
+              <BodyScanResults
+                result={scanResult}
+                onRetake={() => setScanResult(null)}
+                onClose={() => {
+                  setScanOpen(false);
+                  setScanResult(null);
+                }}
+              />
+            </div>
           ) : (
-            <BodyScanUploader
-              onComplete={(r) => {
-                setScanResult(r);
-                void persistScan(r.scanId).then(() => {
-                  composHistory.refresh();
-                  circHistory.refresh();
-                  refreshCirc();
-                });
-              }}
-              onCancel={() => setScanOpen(false)}
-            />
+            <div className="mt-4" data-testid="formavision-upload-mode">
+              <p className="mb-3 text-sm text-white/65">
+                Upload saved images from your phone or desktop. Front, Right, Back, Left.
+              </p>
+              <BodyScanUploader
+                onComplete={(r) => {
+                  setScanResult(r);
+                  void persistScan(r.scanId).then(() => {
+                    composHistory.refresh();
+                    circHistory.refresh();
+                    refreshCirc();
+                  });
+                }}
+                onCancel={() => setScanOpen(false)}
+              />
+            </div>
           )}
         </div>
       )}

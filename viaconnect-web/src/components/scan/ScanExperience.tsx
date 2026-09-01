@@ -16,7 +16,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { COMPOSITION_PATH } from '@/lib/body-tracker/compositionNav';
+import { COMPOSITION_PATH, formavisionAfterScanHref } from '@/lib/body-tracker/compositionNav';
+import { persistScan as persistCompositionScan } from '@/lib/body-tracker/composition/persistScanClient';
+import {
+  liveFramesToFormaVisionPhotos,
+  runFormaVisionAnalyzeSpine,
+} from '@/lib/body-tracker/composition/runFormaVisionAnalyze';
 import { canAbortCountdown, useScanSession } from '@/hooks/scan/useScanSession';
 import { useCountdown } from '@/hooks/scan/useCountdown';
 import { useCamera } from '@/hooks/scan/useCamera';
@@ -39,7 +44,6 @@ import { evaluateCapturedStill, isNearBlackStill } from '@/lib/scan/evaluateCapt
 import { revokeFrame, revokeAllFrames, qaResultToAction } from '@/lib/scan/scanFlowDriver';
 import { CaptureUnsupportedError } from '@/lib/capacitor/camera-capture';
 import { runSubmit } from '@/lib/scan/submitFlow';
-import { scanResultPath } from '@/lib/scan/routes';
 import { readVoicePreference, writeVoicePreference } from '@/lib/scan/voicePreference';
 import { primeScanVoices, speakScanCountdown as speak } from '@/lib/scan/scanSpeech';
 import { POSE_CONNECTIONS } from '@/lib/scan/landmarks';
@@ -136,6 +140,7 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
   const [debugSkeletonEnabled, setDebugSkeletonEnabled] = useState(false);
   const [debugLandmarks, setDebugLandmarks] = useState<Landmark[] | null>(null);
   const [orientationGateDismissed, setOrientationGateDismissed] = useState(false);
+  const [compositionPhase, setCompositionPhase] = useState<'idle' | 'running' | 'ok' | 'error'>('idle');
 
   const framesRef = useRef(state.frames);
   framesRef.current = state.frames;
@@ -615,11 +620,26 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
     const scanId = scanIdRef.current;
     void (async () => {
       try {
-        await withTimeout(
+        const submitResult = await withTimeout(
           runSubmit(dispatch, scanId, framesRef.current),
           SCAN_SUBMIT_WATCHDOG_MS,
           'scan.persist.submit',
         );
+        if (submitResult.ok && submitResult.sessionId) {
+          setCompositionPhase('running');
+          try {
+            const photos = await liveFramesToFormaVisionPhotos(framesRef.current);
+            const spine = await runFormaVisionAnalyzeSpine({
+              photos,
+              source: 'live',
+              persistScanFn: persistCompositionScan,
+              heightCm: localHeightCm,
+            });
+            setCompositionPhase(spine.ok ? 'ok' : 'error');
+          } catch {
+            setCompositionPhase('error');
+          }
+        }
       } catch {
         // Backstop only: runSubmit itself already dispatches SUBMIT_FAIL on
         // every normal (non-hang) failure well before this could fire. The
@@ -631,7 +651,7 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
         }
       }
     })();
-  }, [state.phase, dispatch]);
+  }, [state.phase, dispatch, localHeightCm]);
 
   if (!consentAcknowledged) {
     return <ConsentNotice onAcknowledged={handleConsentAck} />;
@@ -892,18 +912,22 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
 
       {state.phase === 'DONE' && (
         <div className="flex h-full min-h-[70vh] flex-col items-center justify-center gap-3 p-6 text-center" data-testid="scan-done">
-          <p className="text-sm text-white/80">Scan saved.</p>
-          {state.scanId && (
-            // Prompt 231: no visible raw scan id on this consumer surface.
-            // The id is only the link target, never displayed copy.
-            <Link
-              href={scanResultPath(state.scanId)}
-              data-testid="scan-done-view-link"
-              className="rounded-xl bg-[var(--teal)] px-5 py-2.5 text-sm font-semibold text-white"
-            >
-              View scan
-            </Link>
-          )}
+          <p className="text-sm text-white/80">
+            {compositionPhase === 'running'
+              ? 'Scan saved. Analyzing composition…'
+              : compositionPhase === 'ok'
+                ? 'Scan saved. Composition is on FormaVision.'
+                : compositionPhase === 'error'
+                  ? 'Scan photos saved. Composition analysis did not finish.'
+                  : 'Scan saved.'}
+          </p>
+          <Link
+            href={formavisionAfterScanHref()}
+            data-testid="scan-done-view-link"
+            className="rounded-xl bg-[var(--teal)] px-5 py-2.5 text-sm font-semibold text-white"
+          >
+            Open FormaVision
+          </Link>
         </div>
       )}
 

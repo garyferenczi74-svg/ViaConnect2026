@@ -6,7 +6,9 @@ import {
   compositionSectionHref,
   compositionScanHref,
   formavisionAfterScanHref,
+  formavisionLiveScanHref,
   parseCompositionSection,
+  parseFormaVisionScanMode,
   shouldOpenScanFromQuery,
 } from '../compositionNav';
 
@@ -25,6 +27,13 @@ describe('compositionNav (210k)', () => {
 
   it('lands completed scans on the FormaVision surface', () => {
     expect(formavisionAfterScanHref()).toBe(FORMAVISION_PATH);
+  });
+
+  it('points live capture at the 4-pose scan route', () => {
+    expect(formavisionLiveScanHref()).toBe(`${FORMAVISION_PATH}/scan`);
+    expect(parseFormaVisionScanMode('upload')).toBe('upload');
+    expect(parseFormaVisionScanMode('live')).toBe('live');
+    expect(parseFormaVisionScanMode('compare')).toBeNull();
   });
 
   it('parses only known composition section query values', () => {

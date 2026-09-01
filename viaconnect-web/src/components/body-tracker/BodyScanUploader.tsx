@@ -2,9 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { AlertTriangle, Camera, Check, ImagePlus, Loader2, RotateCcw, ShieldCheck } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
-import { runInMemoryMeasurement } from '@/lib/arnold/scanning/runScanAnalysis';
-import type { ViewQualityResult } from '@/lib/arnold/scanning/runScanAnalysis';
 import { persistScan } from '@/lib/body-tracker/composition/persistScanClient';
 import {
   ANALYZE_CLIENT_TIMEOUT_MS,
@@ -19,90 +16,25 @@ import {
   takeScanSlotFile,
 } from '@/lib/body-tracker/composition/attachScanSlotPhoto';
 import { processPhoto } from '@/components/body-tracker/photos/photoProcessing';
-import { safeLog } from '@/lib/utils/safe-log';
+import { normalizeScanPhotoUpright } from '@/lib/body-tracker/composition/normalizeScanPhotoOrientation';
+import {
+  FORMAVISION_SLOT_ORDER,
+  POSE_ID_TO_POSITION,
+  emptyFormaVisionSlots,
+  type PhotoPosition,
+} from '@/lib/body-tracker/composition/formaVisionScanSlots';
+import {
+  runFormaVisionAnalyzeSpine,
+  type BodyScanEstimate,
+  type BodyScanResult,
+  type FormaVisionPhotoMap,
+} from '@/lib/body-tracker/composition/runFormaVisionAnalyze';
+import type { ViewQualityResult } from '@/lib/arnold/scanning/runScanAnalysis';
 import type { ExtractedMeasurements } from '@/lib/arnold/scanning/types';
-import type { PoseId } from '@/lib/arnold/types';
 
-export type PhotoPosition = 'front' | 'back' | 'left_side' | 'right_side';
+export type { PhotoPosition, BodyScanEstimate, BodyScanResult };
 
-const POSITIONS: Array<{ key: PhotoPosition; label: string }> = [
-  { key: 'front',      label: 'Front' },
-  { key: 'back',       label: 'Back' },
-  { key: 'left_side',  label: 'Left' },
-  { key: 'right_side', label: 'Right' },
-];
-
-// Map from BodyScanUploader PhotoPosition keys to canonical PoseId values
-// (left_side -> left, right_side -> right; front/back are unchanged).
-const POSITION_TO_POSE_ID: Record<PhotoPosition, PoseId> = {
-  front:      'front',
-  back:       'back',
-  left_side:  'left',
-  right_side: 'right',
-};
-
-const SUPABASE_URL =
-  process.env.NEXT_PUBLIC_SUPABASE_URL ??
-  process.env.NEXT_PUBLIC_SUPABASE_PROJECT_URL ??
-  '';
-
-export interface BodyScanEstimate {
-  estimated_body_fat_min: number;
-  estimated_body_fat_max: number;
-  body_type: string;
-  fat_distribution: string;
-  estimated_whr_min: number;
-  estimated_whr_max: number;
-  muscle_development: Record<string, number>;
-  ai_confidence: 'low' | 'medium' | 'high';
-}
-
-export interface BodyScanResult {
-  scanId: string;
-  scanDate: string;
-  estimates: BodyScanEstimate;
-}
-
-// Profile shape for the geometric measurement (sex only; height_cm comes from
-// clinical_assessments per the 209 fix - profiles.height_cm does not exist).
-interface ProfileSnapshot {
-  sex: string | null;
-}
-
-// Shape of the clinical_assessments row we read for height_cm.
-interface ClinicalSnapshot {
-  height_cm: number | null;
-}
-
-// Attempt to write geometric circumference measurements to the DB.
-// Fire-and-forget helper: called when both the scan entry (scanId) and the
-// geometric measurements are available. Uses the /api/body/circumference route
-// which looks up the entry_id internally and retries for the composition-persist race.
-async function writeCircumferencesFromScan(
-  measurements: ExtractedMeasurements,
-  scanId: string,
-): Promise<void> {
-  try {
-    const res = await fetch('/api/body/circumference', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ scanId, measurements }),
-    });
-    if (!res.ok) {
-      safeLog.warn(
-        'arnold.scanning.uploader',
-        'circumference persist returned non-ok',
-        { status: res.status, scanId },
-      );
-    }
-  } catch (err) {
-    safeLog.warn(
-      'arnold.scanning.uploader',
-      'circumference persist failed (non-fatal)',
-      { error: err instanceof Error ? err.message : String(err) },
-    );
-  }
-}
+const POSITIONS = FORMAVISION_SLOT_ORDER;
 
 interface BodyScanUploaderProps {
   onComplete: (result: BodyScanResult) => void;
@@ -137,12 +69,11 @@ function fileToBase64(file: File): Promise<string> {
 }
 
 export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements }: BodyScanUploaderProps) {
-  const initialSlots: Record<PhotoPosition, SlotState> = {
-    front:      { file: null, base64: null, previewUrl: null },
-    back:       { file: null, base64: null, previewUrl: null },
-    left_side:  { file: null, base64: null, previewUrl: null },
-    right_side: { file: null, base64: null, previewUrl: null },
-  };
+  const initialSlots: Record<PhotoPosition, SlotState> = emptyFormaVisionSlots({
+    file: null,
+    base64: null,
+    previewUrl: null,
+  });
   const [slots, setSlots] = useState<Record<PhotoPosition, SlotState>>(initialSlots);
   const [submitting, setSubmitting] = useState(false);
   const [analyzeElapsedSec, setAnalyzeElapsedSec] = useState(0);
@@ -178,10 +109,10 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
   // Both refs are reset at the start of each handleAnalyze call.
   const geometricMeasurementsRef = useRef<ExtractedMeasurements | null>(null);
   const visionScanIdRef = useRef<string | null>(null);
-  const writeTriggeredRef = useRef(false);
   const circWritePromiseRef = useRef<Promise<void> | null>(null);
 
   const allFilled = POSITIONS.every((p) => slots[p.key].base64 !== null);
+  const anyFilled = POSITIONS.some((p) => slots[p.key].base64 !== null);
 
   useEffect(() => {
     if (!submitting) {
@@ -223,14 +154,19 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
 
     try {
       let stored = file;
-      let shownUrl = previewUrl;
-      if (needsScanSlotReencode(file)) {
+      // HEIC must become JPEG before canvas upright. JPEG EXIF is read first
+      // so processPhoto cannot strip orientation ahead of the 180° fallback.
+      if (isHeicLike(file) && needsScanSlotReencode(file)) {
         const pair = await processPhoto(file);
         stored = new File([pair.full], 'scan.jpg', { type: 'image/jpeg' });
-        const nextUrl = URL.createObjectURL(pair.full);
-        URL.revokeObjectURL(previewUrl);
-        shownUrl = nextUrl;
       }
+      stored = await normalizeScanPhotoUpright(stored, 'upload');
+      if (needsScanSlotReencode(stored)) {
+        const pair = await processPhoto(stored);
+        stored = new File([pair.full], 'scan.jpg', { type: 'image/jpeg' });
+      }
+      const shownUrl = URL.createObjectURL(stored);
+      URL.revokeObjectURL(previewUrl);
       const b64 = await fileToBase64(stored);
       if (!isMountedRef.current) return;
       setSlots((s) => ({ ...s, [key]: { file: stored, base64: b64, previewUrl: shownUrl } }));
@@ -245,219 +181,89 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
   }
 
   async function handleAnalyze() {
-    if (!allFilled || submitting) return;
+    if (!anyFilled || submitting) return;
     setSubmitting(true);
     setError(null);
 
-    // Reset cross-path coordination refs for this scan attempt.
     geometricMeasurementsRef.current = null;
     visionScanIdRef.current = null;
-    writeTriggeredRef.current = false;
     circWritePromiseRef.current = null;
-    // Reset per-view quality state for this new analysis run.
     setViewQuality({});
 
     try {
-      const supabase = createClient();
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData?.session?.access_token;
-      if (!token) throw new Error('Not signed in');
+      const photos: FormaVisionPhotoMap = {};
+      for (const pos of POSITIONS) {
+        const slot = slots[pos.key];
+        if (slot.file && slot.base64) {
+          photos[pos.key] = { file: slot.file, base64: slot.base64 };
+        }
+      }
 
-      // Client-side geometric measurement (Task 9 additive path, Task 10 write).
-      // Runs in-memory on the captured Blobs before they are discarded.
-      // Pixels never leave the device for this path (Gary decision: ephemeral no-store).
-      // Fire-and-forget: does NOT block the Claude Vision composition call or the UX.
-      //
-      // Height read: uses clinical_assessments.height_cm (not profiles.height_cm which
-      // does not exist - 209 fix applied per commit 5a226d2a). Skips gracefully when null.
-      //
-      // Coordination (Task 10): after measurements are ready, if the Claude Vision
-      // call has already returned the scanId, trigger the circumference write immediately.
-      // Otherwise, store measurements in geometricMeasurementsRef and let the Vision
-      // completion path pick them up. Either way the write fires exactly once.
-      void (async () => {
-        try {
-          const userId = sessionData.session?.user?.id;
-          if (!userId) return;
+      // 210l lock: four-filled path still resolves media via the original helpers.
+      if (allFilled) {
+        const mediaResolved = resolveAllPhotoMediaTypes({
+          front: { fileType: slots.front.file?.type, base64: slots.front.base64 },
+          back: { fileType: slots.back.file?.type, base64: slots.back.base64 },
+          left_side: { fileType: slots.left_side.file?.type, base64: slots.left_side.base64 },
+          right_side: { fileType: slots.right_side.file?.type, base64: slots.right_side.base64 },
+        });
+        if (!mediaResolved.ok) throw new Error(mediaResolved.error);
+        void buildAnalyzeRequestMediaFields(mediaResolved.mediaTypes);
+      }
 
-          // height_cm from clinical_assessments (the correct source after 209).
-          // profiles.height_cm does not exist in this schema.
-          const { data: clinicalData } = await supabase
-            .from('clinical_assessments')
-            .select('height_cm')
-            .eq('user_id', userId)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-          const heightCm = (clinicalData as ClinicalSnapshot | null)?.height_cm ?? null;
-          if (!heightCm) {
-            safeLog.warn(
-              'arnold.scanning.uploader',
-              'Skipping geometric measurement - clinical_assessments height_cm unavailable',
-              { userId },
-            );
-            return;
-          }
-
-          // Sex still read from profiles (clinical_assessments does not carry sex).
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('sex')
-            .eq('id', userId)
-            .maybeSingle();
-          const sex = (profileData as ProfileSnapshot | null)?.sex === 'female' ? 'female' : 'male';
-
-          const photos: Partial<Record<PoseId, Blob>> = {};
-          for (const pos of POSITIONS) {
-            const file = slots[pos.key].file;
-            if (file) photos[POSITION_TO_POSE_ID[pos.key]] = file;
-          }
-
-          // POSITION_TO_POSE_ID inverse: map PoseId back to PhotoPosition for quality state updates.
-          const POSE_ID_TO_POSITION: Record<string, PhotoPosition> = {
-            front: 'front',
-            back:  'back',
-            left:  'left_side',
-            right: 'right_side',
-          };
-
-          const measurements = await runInMemoryMeasurement({
-            photos,
-            heightCm,
-            sex,
-            // Task 13b: collect per-view quality results as they arrive.
-            // Updates the viewQuality state so the UI can show retake prompts.
-            // Guard against post-unmount state updates.
-            onViewQuality: (result) => {
-              if (!isMountedRef.current) return;
-              const position = POSE_ID_TO_POSITION[result.poseId];
-              if (position) {
-                setViewQuality((prev) => ({ ...prev, [position]: result }));
-              }
-            },
-          });
-
-          // Guard: do not update state or trigger writes after unmount.
+      const spine = await runFormaVisionAnalyzeSpine({
+        photos,
+        source: 'upload',
+        persistScanFn: persistScan,
+        analyzeTimeoutMs: ANALYZE_CLIENT_TIMEOUT_MS,
+        alreadyNormalized: true,
+        onGeometricMeasurements: (m) => {
+          geometricMeasurementsRef.current = m;
+          onGeometricMeasurements?.(m);
+        },
+        onViewQuality: (result) => {
           if (!isMountedRef.current) return;
-
-          geometricMeasurementsRef.current = measurements;
-          onGeometricMeasurements?.(measurements);
-
-          // Coordinate with Claude Vision path (Task 10):
-          // if the scanId is already known, trigger circumference write now.
-          const scanId = visionScanIdRef.current;
-          if (scanId && !writeTriggeredRef.current) {
-            writeTriggeredRef.current = true;
-            circWritePromiseRef.current = writeCircumferencesFromScan(measurements, scanId);
+          const position = POSE_ID_TO_POSITION[result.poseId];
+          if (position) {
+            setViewQuality((prev) => ({ ...prev, [position]: result }));
           }
-        } catch (err) {
-          // Non-fatal: log and continue. The Claude Vision path is unaffected.
-          safeLog.warn(
-            'arnold.scanning.uploader',
-            'Geometric measurement failed (non-fatal)',
-            { error: err instanceof Error ? err.message : String(err) },
-          );
-        }
-      })();
-
-      const mediaResolved = resolveAllPhotoMediaTypes({
-        front:      { fileType: slots.front.file?.type,      base64: slots.front.base64 },
-        back:       { fileType: slots.back.file?.type,       base64: slots.back.base64 },
-        left_side:  { fileType: slots.left_side.file?.type,  base64: slots.left_side.base64 },
-        right_side: { fileType: slots.right_side.file?.type, base64: slots.right_side.base64 },
+        },
+        isMounted: () => isMountedRef.current,
       });
-      if (!mediaResolved.ok) {
-        throw new Error(mediaResolved.error);
-      }
-      const mediaFields = buildAnalyzeRequestMediaFields(mediaResolved.mediaTypes);
 
-      const url = `${SUPABASE_URL.replace(/\/$/, '')}/functions/v1/body-scan-analyze`;
-      const analyzeController = new AbortController();
-      const analyzeTimer = window.setTimeout(() => analyzeController.abort(), ANALYZE_CLIENT_TIMEOUT_MS);
-      let res: Response;
-      try {
-        res = await fetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          signal: analyzeController.signal,
-          body: JSON.stringify({
-            photos: {
-              front:      slots.front.base64,
-              back:       slots.back.base64,
-              left_side:  slots.left_side.base64,
-              right_side: slots.right_side.base64,
-            },
-            ...mediaFields,
-          }),
-        });
-      } catch (fetchErr) {
-        if (fetchErr instanceof Error && fetchErr.name === 'AbortError') {
-          throw new Error('vision timed out');
-        }
-        throw fetchErr;
-      } finally {
-        window.clearTimeout(analyzeTimer);
-      }
-
-      if (!res.ok) {
-        const errBody = await res.json().catch(() => ({}));
-        throw new Error((errBody as { error?: string }).error ?? `Vision request failed (${res.status})`);
-      }
-      const out = (await res.json()) as {
-        scan_id: string;
-        scan_date: string;
-        estimates: BodyScanEstimate;
-      };
-
-      // Prompt 210l: persist the composition spine BEFORE circumference write
-      // so entry lookup does not race-fail. persistScan is idempotent; the
-      // composition page may call it again after onComplete.
-      visionScanIdRef.current = out.scan_id;
-      const persistRes = await persistScan(out.scan_id);
-      if (!persistRes.ok) {
-        safeLog.warn('arnold.scanning.uploader', 'scan persist failed after vision', {
-          scanId: out.scan_id,
-          reason: persistRes.reason ?? 'unknown',
-        });
-        // Still hand off to parent so the UI can show retry (parent also persists).
-        // Do not pretend success without a spine row.
-        if (persistRes.reason === 'timeout') {
-          setError(
-            'Saving your scan is taking longer than expected. Tap Analyze again to retry save, or open FormaVision after a moment.',
-          );
-        } else {
-          setError(
-            'Scan analysis finished but could not save to your body log. Retry Analyze to save.',
-          );
-        }
-      }
-
-      // After persist (or on failure), still try girth write if geometric finished.
-      // Circumference route retries entry lookup; longer window after 210l.
-      const flushCirc = () => {
-        const pending = geometricMeasurementsRef.current;
-        if (pending && !writeTriggeredRef.current) {
-          writeTriggeredRef.current = true;
-          circWritePromiseRef.current = writeCircumferencesFromScan(pending, out.scan_id);
-        }
-      };
+      // Prompt 210l: persist the composition spine BEFORE circumference write.
+      // Girth flush is POST /api/body/circumference via the shared analyzer.
+      const persistRes = spine.persistRes;
+      visionScanIdRef.current = spine.result?.scanId ?? null;
+      const flushCirc = spine.flushCirc;
+      circWritePromiseRef.current = spine.circWritePromise;
       flushCirc();
-      // Wait up to 10s for in-memory geometric pipeline if vision finished first.
-      if (!writeTriggeredRef.current) {
-        for (let i = 0; i < 20 && !writeTriggeredRef.current; i++) {
+      if (!circWritePromiseRef.current) {
+        for (let i = 0; i < 20 && !circWritePromiseRef.current; i++) {
           await new Promise<void>((r) => setTimeout(r, 500));
           if (!isMountedRef.current) return;
           flushCirc();
+          circWritePromiseRef.current = spine.circWritePromise;
         }
       }
       if (circWritePromiseRef.current) {
         await circWritePromiseRef.current;
       }
 
-      onComplete({ scanId: out.scan_id, scanDate: out.scan_date, estimates: out.estimates });
+      if (!persistRes.ok) {
+        setError(
+          persistRes.reason === 'timeout'
+            ? 'Saving your scan is taking longer than expected. Tap Analyze again to retry save, or open FormaVision after a moment.'
+            : (spine.error ??
+              'Scan analysis finished but could not save to your body log. Retry Analyze to save.'),
+        );
+      }
+
+      if (spine.result) {
+        onComplete(spine.result);
+      } else if (spine.error) {
+        throw new Error(spine.error);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Analysis failed');
     } finally {
@@ -468,7 +274,9 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
   return (
     <div className="space-y-5">
       <p className="text-sm text-white/60">
-        Take 4 photos for an AI body composition estimate.
+        Upload saved images from your phone or desktop — Front, Right, Back, Left.
+        Skip a view you do not have. Photos are uprighted (EXIF, or 180° when inverted)
+        before analysis. Total body fat only; missing views are not invented.
       </p>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -531,7 +339,7 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
                   <>
                     <Camera size={20} strokeWidth={1.5} />
                     <span>{pos.label}</span>
-                    <span className="text-[10px] text-white/40">Tap to capture</span>
+                    <span className="text-[10px] text-white/40">Camera or gallery</span>
                   </>
                 )}
                 <input
@@ -657,7 +465,7 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
         <button
           type="button"
           onClick={handleAnalyze}
-          disabled={!allFilled || submitting}
+          disabled={!anyFilled || submitting}
           className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-[#2DA5A0] px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-[#2DA5A0]/90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {submitting && <Loader2 size={14} strokeWidth={1.5} className="animate-spin" />}
