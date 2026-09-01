@@ -4,10 +4,12 @@ import { join } from 'node:path';
 import {
   evaluateCapturedStill,
   isNearBlackStill,
+  softenStillOnlyBlur,
   NEAR_BLACK_EXPOSURE_MAX,
   NEAR_BLACK_LUMINANCE_VARIANCE_MAX,
 } from '../evaluateCapturedStill';
 import { evaluatePose } from '../qa';
+import { BLUR_VARIANCE_MIN } from '../qaThresholds';
 import type { Landmark } from '../types';
 import type { FrameMetrics } from '../frameMetrics';
 
@@ -134,6 +136,49 @@ describe('evaluateCapturedStill', () => {
       metrics: nearBlackMetrics,
     });
     expect(verdict).toEqual({ kind: 'camera_lost' });
+  });
+
+  it('soft-keeps a still-only BLURRY landmarker result so shutter cannot silent-recount', () => {
+    const blurryMetrics: FrameMetrics = { ...usableMetrics, blurScore: 1 };
+    expect(blurryMetrics.blurScore).toBeLessThan(BLUR_VARIANCE_MIN);
+
+    const raw = evaluatePose({
+      landmarks: frontPass.landmarks,
+      pose: 'front',
+      frameWidth: 1080,
+      frameHeight: 1920,
+      blurScore: blurryMetrics.blurScore,
+    });
+    expect(raw.code).toBe('BLURRY');
+    expect(softenStillOnlyBlur(raw).pass).toBe(true);
+
+    const verdict = evaluateCapturedStill({
+      ...base,
+      stillLandmarks: frontPass.landmarks,
+      liveLandmarks: null,
+      metrics: blurryMetrics,
+    });
+    expect(verdict.kind).toBe('qa');
+    if (verdict.kind === 'qa') {
+      expect(verdict.qa.pass).toBe(true);
+      expect(verdict.qa.code).toBe('PASS');
+      expect(verdict.landmarks).toBe(frontPass.landmarks);
+    }
+  });
+
+  it('soft-keeps a weak-frame still-only BLURRY result', () => {
+    const blurryWeak: FrameMetrics = { luminanceVariance: 500, exposure: 0.5, blurScore: 1 };
+    const verdict = evaluateCapturedStill({
+      ...base,
+      stillLandmarks: null,
+      liveLandmarks: null,
+      metrics: blurryWeak,
+    });
+    expect(verdict.kind).toBe('qa');
+    if (verdict.kind === 'qa') {
+      expect(verdict.qa.pass).toBe(true);
+      expect(verdict.qa.mode).toBe('weak');
+    }
   });
 
   it('does not treat a dim textured frame as camera_lost', () => {

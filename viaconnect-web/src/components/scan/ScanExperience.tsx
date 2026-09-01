@@ -20,7 +20,11 @@ import { COMPOSITION_PATH } from '@/lib/body-tracker/compositionNav';
 import { canAbortCountdown, useScanSession } from '@/hooks/scan/useScanSession';
 import { useCountdown } from '@/hooks/scan/useCountdown';
 import { useCamera } from '@/hooks/scan/useCamera';
-import { usePoseLandmarker } from '@/hooks/scan/usePoseLandmarker';
+import { DETECT_VIDEO_MIN_INTERVAL_MS, usePoseLandmarker } from '@/hooks/scan/usePoseLandmarker';
+import {
+  createCountdownAbortTracker,
+  noteCountdownAbortSample,
+} from '@/lib/scan/countdownAbort';
 import { ConsentNotice } from './ConsentNotice';
 import { CameraPreview } from './CameraPreview';
 import { CountdownOverlay } from './CountdownOverlay';
@@ -135,6 +139,10 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
 
   const framesRef = useRef(state.frames);
   framesRef.current = state.frames;
+  // COUNT abort reads the digit from a ref so the poller does not
+  // resubscribe (and jitter) on every COUNT_SET tick.
+  const countRef = useRef(state.count);
+  countRef.current = state.count;
   const cameraOpenWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // One scanId per scan ATTEMPT (spans retries), so a retried Submit reuses
@@ -302,9 +310,12 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
 
   useEffect(() => {
     if (state.phase !== 'PROMPT') return;
+    // After a still-QA fail, lastQaCode is a fail beat: wait for Retry.
+    // Auto-advance would flash the pose title and silently re-COUNT.
+    if (state.lastQaCode) return;
     const timer = setTimeout(() => dispatch({ type: 'PROMPT_DONE' }), SCAN_POSE_TITLE_MS);
     return () => clearTimeout(timer);
-  }, [state.phase, state.poseIndex, dispatch]);
+  }, [state.phase, state.poseIndex, state.lastQaCode, dispatch]);
 
   // ---- ARMED: live pre-check gates the count start. In landmarker mode,
   // poll the video frame at ~12fps (usePoseLandmarker.detectVideo throttles
@@ -393,34 +404,43 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
     }
   }, [state.phase, state.count]);
 
-  // ---- COUNT live abort: keep polling the video frame through the
-  // countdown; if the pose breaks mid-count in landmarker mode, dispatch
-  // PRECHECK_FAIL (reducer: COUNT -> ARMED, count resets to 5) only while
-  // canAbortCountdown is true. Count 1 and 0 are committed to CAPTURE so
-  // alignment / "step on the mark" cannot steal COUNT_DONE. Weak mode
-  // has no live geometry signal, so this effect is a no-op there. ----
+  // ---- COUNT live abort: poll at the landmarker cadence (not every rAF)
+  // so throttle-nulls are not leave-frame. A single evaluatePose miss must
+  // not PRECHECK_FAIL (that reset COUNT to 5 and restarted useCountdown).
+  // Abort only after consecutive / sustained fails. Count 1 and 0 stay
+  // committed via canAbortCountdown(countRef). Weak mode is a no-op. ----
   useEffect(() => {
-    if (state.phase !== 'COUNT' || !landmarkerLive || !canAbortCountdown(state.count)) return;
+    if (state.phase !== 'COUNT' || !landmarkerLive) return;
     let cancelled = false;
     const pose = POSE_ORDER[state.poseIndex];
-    let rafId: number;
-    const tick = () => {
+    let rafId = 0;
+    let lastSampleMs = 0;
+    let tracker = createCountdownAbortTracker();
+    const tick = (now: number) => {
       if (cancelled) return;
       const video = camera.videoRef.current;
-      const landmarks = video ? poseLandmarker.detectVideo(video, performance.now()) : null;
-      if (debugSkeletonEnabled && landmarks) setDebugLandmarks(landmarks);
-      if (landmarks) {
-        const result = evaluatePose({
-          landmarks,
-          pose,
-          frameWidth: video!.videoWidth,
-          frameHeight: video!.videoHeight,
-          blurScore: LIVE_PRECHECK_BLUR_SCORE,
-        });
-        if (!result.pass) {
-          cancelled = true;
-          dispatch({ type: 'PRECHECK_FAIL' });
-          return;
+      if (now - lastSampleMs >= DETECT_VIDEO_MIN_INTERVAL_MS) {
+        lastSampleMs = now;
+        const landmarks = video ? poseLandmarker.detectVideo(video, now) : null;
+        if (debugSkeletonEnabled && landmarks) setDebugLandmarks(landmarks);
+        if (canAbortCountdown(countRef.current)) {
+          const passed = Boolean(
+            landmarks &&
+              evaluatePose({
+                landmarks,
+                pose,
+                frameWidth: video?.videoWidth ?? 0,
+                frameHeight: video?.videoHeight ?? 0,
+                blurScore: LIVE_PRECHECK_BLUR_SCORE,
+              }).pass,
+          );
+          const noted = noteCountdownAbortSample(tracker, passed, now);
+          tracker = noted.tracker;
+          if (noted.shouldAbort) {
+            cancelled = true;
+            dispatch({ type: 'PRECHECK_FAIL' });
+            return;
+          }
         }
       }
       rafId = requestAnimationFrame(tick);
@@ -430,7 +450,7 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
       cancelled = true;
       cancelAnimationFrame(rafId);
     };
-  }, [state.phase, state.poseIndex, state.count, dispatch, camera.videoRef, landmarkerLive, poseLandmarker.detectVideo, debugSkeletonEnabled]);
+  }, [state.phase, state.poseIndex, dispatch, camera.videoRef, landmarkerLive, poseLandmarker.detectVideo, debugSkeletonEnabled]);
 
   // ---- CAPTURE: grab the still, flash + haptic, run weak QA, dispatch
   // CAPTURED then QA_PASS/QA_FAIL. A hung grab/QA pipeline is a camera
@@ -716,7 +736,25 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
           {state.phase === 'WALK_IN' && (
             <CountdownOverlay value={walkInDisplay} coaching={WALK_IN_COACHING} reducedMotion={reducedMotion} />
           )}
-          {state.phase === 'PROMPT' && currentPose && (
+          {state.phase === 'PROMPT' && currentPose && state.lastQaCode && (
+            <div
+              className="flex h-full min-h-[70vh] flex-col items-center justify-center gap-4 p-6"
+              data-testid="scan-qa-fail-beat"
+            >
+              <p className="text-center text-sm text-white/90" aria-live="assertive" data-testid="scan-qa-fail-reason">
+                {messageForCode(state.lastQaCode)}
+              </p>
+              <button
+                type="button"
+                data-testid="scan-qa-fail-retry"
+                onClick={handlePromptDone}
+                className="min-h-[44px] rounded-xl bg-[var(--teal)] px-5 py-2.5 text-sm font-semibold text-white"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+          {state.phase === 'PROMPT' && currentPose && !state.lastQaCode && (
             <div
               className="flex h-full min-h-[70vh] flex-col items-center justify-center gap-4 p-6"
               data-testid="scan-pose-instructions"
@@ -771,9 +809,11 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
               >
                 {state.lastQaCode
                   ? messageForCode(state.lastQaCode)
-                  : poseLandmarker.ready && poseLandmarker.mode === 'weak'
-                    ? POSE_GUIDE_UNAVAILABLE
-                    : ARMED_COACHING}
+                  : state.error
+                    ? state.error
+                    : poseLandmarker.ready && poseLandmarker.mode === 'weak'
+                      ? POSE_GUIDE_UNAVAILABLE
+                      : ARMED_COACHING}
               </p>
               {debugSkeletonEnabled && (
                 <SkeletonOverlay landmarks={debugLandmarks} connections={POSE_CONNECTIONS} />

@@ -28,6 +28,7 @@ import { scanReducer, initialScanState, type ScanState } from '@/hooks/scan/useS
 import { SCAN_ORIENTATION_UNAVAILABLE_MS, SCAN_POSE_TITLE_MS } from '@/lib/scan/scanTimeouts';
 import { evaluateWeakFrame, evaluatePose } from '@/lib/scan/qa';
 import { evaluateCapturedStill } from '@/lib/scan/evaluateCapturedStill';
+import { noteCountdownAbortSample, createCountdownAbortTracker } from '@/lib/scan/countdownAbort';
 import { revokeFrame, revokeAllFrames, qaResultToAction, capturedStillVerdictToAction } from '@/lib/scan/scanFlowDriver';
 import type { Landmark, ScanFrame } from '@/lib/scan/types';
 import type { PoseId } from '@/lib/scan/poses';
@@ -125,6 +126,21 @@ describe('ScanExperience flow driver: happy path with one three-fail skip', () =
 
     expect(s.frames.map((f) => f?.pose)).toEqual(['front', 'right', 'back', 'left']);
     expect(s.frames.map((f) => f?.skipped ?? false)).toEqual([false, true, false, false]);
+  });
+});
+
+describe('ScanExperience flow driver: COUNT abort hysteresis', () => {
+  it('a single mid-count fail sample does not abort; a sustained streak does', () => {
+    const first = noteCountdownAbortSample(createCountdownAbortTracker(), false, 0);
+    expect(first.shouldAbort).toBe(false);
+    let tracker = first.tracker;
+    let shouldAbort = false;
+    for (let i = 1; i < 4; i += 1) {
+      const noted = noteCountdownAbortSample(tracker, false, i * 80);
+      tracker = noted.tracker;
+      shouldAbort = noted.shouldAbort;
+    }
+    expect(shouldAbort).toBe(true);
   });
 });
 
@@ -306,6 +322,118 @@ describe('ScanExperience flow driver: CAPTURE still QA must not silently re-COUN
     expect(s.retryCount).toBe(0);
   });
 
+  it('still-only BLURRY after shutter keeps the frame and advances Front → Right', () => {
+    const blurryMetrics = { luminanceVariance: 500, exposure: 0.5, blurScore: 1 };
+    const verdict = evaluateCapturedStill({
+      stillLandmarks: frontPassLandmarks,
+      liveLandmarks: null,
+      metrics: blurryMetrics,
+      pose: 'front',
+      frameWidth: 1080,
+      frameHeight: 1920,
+    });
+    expect(verdict.kind).toBe('qa');
+    if (verdict.kind !== 'qa') throw new Error('expected qa verdict');
+    expect(verdict.qa.pass).toBe(true);
+
+    let s = toFrontCapture();
+    s = scanReducer(s, {
+      type: 'CAPTURED',
+      frame: frameFromVerdict('front', `blob:blur-keep-${captureSeq++}`, verdict.qa, s.retryCount),
+    });
+    s = scanReducer(s, capturedStillVerdictToAction(verdict));
+    expect(s.phase).toBe('PROMPT');
+    expect(s.poseIndex).toBe(1);
+    expect(s.frames[0]?.qa.pass).toBe(true);
+    expect(s.retryCount).toBe(0);
+    expect(s.phase).not.toBe('COUNT');
+  });
+
+  it('hard still fail (ARMS_IN) shows a fail beat on PROMPT, not a silent same-pose COUNT', () => {
+    const armsInLandmarks = (
+      JSON.parse(
+        readFileSync(join(__dirname, '../../../lib/scan/__fixtures__/any_arms_in.json'), 'utf8'),
+      ) as { landmarks: Landmark[] }
+    ).landmarks;
+    const verdict = evaluateCapturedStill({
+      stillLandmarks: armsInLandmarks,
+      liveLandmarks: frontPassLandmarks,
+      metrics: usableMetrics,
+      pose: 'front',
+      frameWidth: 1080,
+      frameHeight: 1920,
+    });
+    expect(verdict.kind).toBe('qa');
+    if (verdict.kind !== 'qa') throw new Error('expected qa verdict');
+    expect(verdict.qa.pass).toBe(false);
+    expect(verdict.qa.code).toBe('ARMS_IN');
+
+    let s = toFrontCapture();
+    s = scanReducer(s, {
+      type: 'CAPTURED',
+      frame: frameFromVerdict('front', `blob:arms-fail-${captureSeq++}`, verdict.qa, s.retryCount),
+    });
+    s = scanReducer(s, capturedStillVerdictToAction(verdict));
+    expect(s.phase).toBe('PROMPT');
+    expect(s.poseIndex).toBe(0);
+    expect(s.lastQaCode).toBe('ARMS_IN');
+    expect(s.frames[0]).toBeNull();
+    expect(s.retryCount).toBe(1);
+    expect(s.phase).not.toBe('COUNT');
+    expect(s.phase).not.toBe('ARMED');
+
+    // Fail beat waits for Retry (PROMPT_DONE). No silent re-COUNT.
+    expect(s.phase).toBe('PROMPT');
+    s = scanReducer(s, { type: 'PROMPT_DONE' });
+    expect(s.phase).toBe('ARMED');
+    expect(s.lastQaCode).toBe('ARMS_IN');
+  });
+
+  it('a third hard still fail lands on CHOICE with Retry/Skip, not another COUNT', () => {
+    const armsInLandmarks = (
+      JSON.parse(
+        readFileSync(join(__dirname, '../../../lib/scan/__fixtures__/any_arms_in.json'), 'utf8'),
+      ) as { landmarks: Landmark[] }
+    ).landmarks;
+    const verdict = evaluateCapturedStill({
+      stillLandmarks: armsInLandmarks,
+      liveLandmarks: null,
+      metrics: usableMetrics,
+      pose: 'front',
+      frameWidth: 1080,
+      frameHeight: 1920,
+    });
+    expect(verdict.kind).toBe('qa');
+    if (verdict.kind !== 'qa') throw new Error('expected qa verdict');
+
+    function failOnce(state: ScanState): ScanState {
+      let next = state;
+      if (next.phase === 'PROMPT') next = scanReducer(next, { type: 'PROMPT_DONE' });
+      if (next.phase === 'ARMED') next = scanReducer(next, { type: 'PRECHECK_PASS' });
+      if (next.phase === 'COUNT') next = scanReducer(next, { type: 'COUNT_DONE' });
+      next = scanReducer(next, {
+        type: 'CAPTURED',
+        frame: frameFromVerdict('front', `blob:hard-${captureSeq++}`, verdict.qa, next.retryCount),
+      });
+      return scanReducer(next, capturedStillVerdictToAction(verdict));
+    }
+
+    let s = initialScanState();
+    s = scanReducer(s, { type: 'START' });
+    s = scanReducer(s, { type: 'WALK_IN_DONE' });
+    s = failOnce(s);
+    expect(s.phase).toBe('PROMPT');
+    expect(s.retryCount).toBe(1);
+    s = failOnce(s);
+    expect(s.phase).toBe('PROMPT');
+    expect(s.retryCount).toBe(2);
+    s = failOnce(s);
+    expect(s.phase).toBe('CHOICE');
+    expect(s.retryCount).toBe(3);
+    expect(s.lastQaCode).toBe('ARMS_IN');
+    expect(s.phase).not.toBe('COUNT');
+  });
+
   it('black still after shutter is CAMERA_LOST, not QA_FAIL → same-pose PROMPT', () => {
     const verdict = evaluateCapturedStill({
       stillLandmarks: null,
@@ -363,6 +491,22 @@ describe('ScanExperience wiring: capture overlay must not remount the video per 
     expect(src).toContain('detectStill(video)');
     expect(src).toContain("verdict.kind === 'camera_lost'");
     expect(src).not.toMatch(/evaluatePose\(\{\s*landmarks:\s*detected/);
+  });
+
+  it('COUNT abort uses hysteresis and does not resubscribe the poller on every digit tick', () => {
+    expect(src).toContain('noteCountdownAbortSample');
+    expect(src).toContain('createCountdownAbortTracker');
+    expect(src).toContain('canAbortCountdown(countRef.current)');
+    expect(src).toContain('DETECT_VIDEO_MIN_INTERVAL_MS');
+    expect(src).not.toMatch(/if \(state\.phase !== 'COUNT' \|\| !landmarkerLive \|\| !canAbortCountdown\(state\.count\)\)/);
+    expect(src).not.toMatch(/state\.count, dispatch, camera\.videoRef/);
+  });
+
+  it('still-QA fail beat shows Retry and does not auto-advance the pose title timer', () => {
+    expect(src).toContain('scan-qa-fail-beat');
+    expect(src).toContain('scan-qa-fail-reason');
+    expect(src).toContain('scan-qa-fail-retry');
+    expect(src).toContain('if (state.lastQaCode) return;');
   });
 
   it('keeps Orientation unavailable until Continue / tap-through, not ARMED-only 600ms yank', () => {

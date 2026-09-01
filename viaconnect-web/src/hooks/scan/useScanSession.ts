@@ -159,7 +159,7 @@ export function scanReducer(state: ScanState, action: ScanAction): ScanState {
       // not a silent reset to Front COUNT.
       if (state.phase !== 'COUNT') return state;
       if (!canAbortCountdown(state.count)) return state;
-      return { ...state, phase: 'ARMED', count: 5, error: 'Hold still.' };
+      return { ...state, phase: 'ARMED', count: 5, error: 'Hold still.', lastQaCode: undefined };
     }
 
     case 'CAPTURED': {
@@ -195,7 +195,7 @@ export function scanReducer(state: ScanState, action: ScanAction): ScanState {
     case 'CHOOSE_RETRY': {
       // CHOICE -> PROMPT: subject opts to retry the pose, reset retryCount.
       if (state.phase !== 'CHOICE') return state;
-      return { ...state, phase: 'PROMPT', retryCount: 0 };
+      return { ...state, phase: 'PROMPT', retryCount: 0, lastQaCode: undefined };
     }
 
     case 'CHOOSE_SKIP': {
@@ -205,7 +205,7 @@ export function scanReducer(state: ScanState, action: ScanAction): ScanState {
       const frames = state.frames.slice();
       frames[state.poseIndex] = skippedFrame(POSE_ORDER[state.poseIndex], state.retryCount);
       const next = advance(state);
-      return { ...state, ...next, frames };
+      return { ...state, ...next, frames, lastQaCode: undefined };
     }
 
     case 'RETAKE': {

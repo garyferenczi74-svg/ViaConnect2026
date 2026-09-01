@@ -185,15 +185,27 @@ describe('useScanSession reducer', () => {
     expect(s.retryCount).toBe(3);
   });
 
-  it('CHOOSE_RETRY resets retryCount to 0 and returns to PROMPT', () => {
-    let s: ReturnType<typeof scanReducer> = { ...initialScanState(), phase: 'CHOICE', retryCount: 3 };
+  it('CHOOSE_RETRY resets retryCount to 0, clears lastQaCode, and returns to PROMPT', () => {
+    let s: ReturnType<typeof scanReducer> = {
+      ...initialScanState(),
+      phase: 'CHOICE',
+      retryCount: 3,
+      lastQaCode: 'BLURRY',
+    };
     s = scanReducer(s, { type: 'CHOOSE_RETRY' });
     expect(s.phase).toBe('PROMPT');
     expect(s.retryCount).toBe(0);
+    expect(s.lastQaCode).toBeUndefined();
   });
 
   it('CHOOSE_SKIP marks the frame skipped and advances to the next pose', () => {
-    let s: ReturnType<typeof scanReducer> = { ...initialScanState(), phase: 'CHOICE', retryCount: 3, poseIndex: 0 };
+    let s: ReturnType<typeof scanReducer> = {
+      ...initialScanState(),
+      phase: 'CHOICE',
+      retryCount: 3,
+      poseIndex: 0,
+      lastQaCode: 'ARMS_IN',
+    };
     s = scanReducer(s, { type: 'CHOOSE_SKIP' });
     expect(s.frames[0]).not.toBeNull();
     expect(s.frames[0]?.skipped).toBe(true);
@@ -201,6 +213,7 @@ describe('useScanSession reducer', () => {
     expect(s.phase).toBe('PROMPT');
     expect(s.poseIndex).toBe(1);
     expect(s.retryCount).toBe(0);
+    expect(s.lastQaCode).toBeUndefined();
   });
 
   it('CHOOSE_SKIP on the last pose goes to REVIEW instead of advancing poseIndex', () => {
@@ -222,6 +235,7 @@ describe('useScanSession reducer', () => {
     expect(s.phase).toBe('ARMED');
     expect(s.count).toBe(5);
     expect(s.error).toBe('Hold still.');
+    expect(s.lastQaCode).toBeUndefined();
   });
 
   it('canAbortCountdown is true only before the last second, so zero cannot silently reset', () => {
