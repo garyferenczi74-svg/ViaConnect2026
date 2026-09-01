@@ -58,17 +58,21 @@ describe('Prompt 210l analyze-chain source contracts', () => {
     const edge = read('supabase/functions/body-scan-analyze/index.ts');
     const helper = read('supabase/functions/_shared/vision-model.ts');
     const arnold = read('supabase/functions/arnold-vision-analyze/index.ts');
-    expect(helper).toMatch(/invalid vision model configuration/);
+    expect(helper).toMatch(/Analysis unavailable — try again/);
     expect(helper).toMatch(/clientSafeVisionModelError/);
+    expect(helper).not.toMatch(/invalid vision model: \$\{/);
     expect(helper).toMatch(/sk-ant-|sk-\[A-Za-z0-9/);
     expect(edge).toMatch(/isBadVisionModel/);
     expect(edge).toMatch(/clientSafeVisionModelError\(VISION_MODEL\)/);
+    expect(edge).toMatch(/ANALYZE_UNAVAILABLE_USER_ERROR/);
     expect(edge).toMatch(/resolveVisionModel/);
     expect(edge).not.toMatch(/invalid vision model: \$\{VISION_MODEL\}/);
     expect(edge).not.toMatch(/error: `invalid vision model: \$\{/);
     expect(arnold).toMatch(/resolveVisionModel/);
-    expect(arnold).toMatch(/clientSafeVisionModelError\(VISION_MODEL\)/);
+    expect(arnold).toMatch(/ANALYZE_UNAVAILABLE_USER_ERROR/);
+    expect(arnold).not.toMatch(/ANTHROPIC_API_KEY not configured/);
     expect(arnold).not.toMatch(/invalid vision model: \$\{VISION_MODEL\}/);
+    expect(edge).not.toMatch(/error: 'vision unavailable'/);
   });
 
   it('FormaVision tab hosts the four-photo scan panel', () => {

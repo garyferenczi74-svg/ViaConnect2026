@@ -23,6 +23,7 @@ import {
   redactSecretsForLog,
   clientSafeVisionModelError,
   sanitizeAnalyzeUserError,
+  ANALYZE_UNAVAILABLE_USER_ERROR,
 } from '../_shared/vision-model.ts';
 
 const visionBreaker = getCircuitBreaker('claude-vision');
@@ -466,7 +467,7 @@ serve(async (req) => {
   if (req.method !== 'POST') return json({ error: 'POST required' }, 405);
 
   try {
-    if (!ANTHROPIC_KEY) return json({ error: 'ANTHROPIC_API_KEY not configured' }, 500);
+    if (!ANTHROPIC_KEY) return json({ error: ANALYZE_UNAVAILABLE_USER_ERROR }, 500);
 
     const authHeader = req.headers.get('Authorization') ?? '';
     const jwt = authHeader.replace(/^Bearer /i, '');
@@ -614,9 +615,7 @@ serve(async (req) => {
         vision_model: VISION_MODEL,
       });
       const badModel = isBadVisionModel(apiResponse.status, errTxt);
-      const clientError = badModel
-        ? clientSafeVisionModelError(VISION_MODEL)
-        : `Vision API failure: ${apiResponse.status}`;
+      const clientError = ANALYZE_UNAVAILABLE_USER_ERROR;
       const { error: markNon2xxError } = await db
         .from('body_photo_sessions')
         .update({

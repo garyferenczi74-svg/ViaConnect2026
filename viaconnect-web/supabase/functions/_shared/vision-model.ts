@@ -1,14 +1,21 @@
 // Deno mirror of src/lib/body-tracker/composition/visionModel.ts.
 // ARNOLD_VISION_MODEL must be a Claude model id, never an API key.
+// Client-visible analyze errors are fail-closed copy only (Arnold SSOT).
 
 export const DEFAULT_FORMAVISION_VISION_MODEL = 'claude-sonnet-4-6';
 
-export const VISION_MODEL_CONFIG_USER_ERROR = 'invalid vision model configuration';
+/** Fail-closed copy for Analyze failures that reach the member UI. */
+export const ANALYZE_UNAVAILABLE_USER_ERROR = 'Analysis unavailable — try again';
+
+/** @deprecated Use ANALYZE_UNAVAILABLE_USER_ERROR — same fail-closed string. */
+export const VISION_MODEL_CONFIG_USER_ERROR = ANALYZE_UNAVAILABLE_USER_ERROR;
 
 const SK_TOKEN = /(?:^|[\s:"'`])sk-[A-Za-z0-9_-]{8,}/i;
 const KEY_TOKEN = /(?:^|[\s:"'`])key-[A-Za-z0-9_-]{8,}/i;
 const BEARER = /\bBearer\s+[A-Za-z0-9._\-+=]+/i;
 const LONG_OPAQUE = /^[A-Za-z0-9+/=._-]{40,}$/;
+const ANALYZE_INTERNALS =
+  /invalid vision model|claude-[a-z0-9]|ARNOLD_VISION|ANTHROPIC|API[_-]?KEY|sk-ant-|vision unavailable|not_found_error/i;
 
 export function isSecretLikeValue(value: string): boolean {
   const v = value.trim();
@@ -35,9 +42,9 @@ export function resolveVisionModel(
   return { model: fallback, usedFallback: v.length > 0 };
 }
 
-/** Client JSON for a bad-model response. Never interpolates the raw env/model. */
+/** Client JSON for a bad-model / vision-config failure. Never interpolates env or model ids. */
 export function clientSafeVisionModelError(_model?: string): string {
-  return VISION_MODEL_CONFIG_USER_ERROR;
+  return ANALYZE_UNAVAILABLE_USER_ERROR;
 }
 
 export function redactSecretsForLog(text: string): string {
@@ -48,9 +55,9 @@ export function redactSecretsForLog(text: string): string {
 }
 
 export function sanitizeAnalyzeUserError(message: string | null | undefined): string {
-  if (!message || !message.trim()) return 'Analysis failed';
-  if (isSecretLikeValue(message) || /invalid vision model:/i.test(message)) {
-    return VISION_MODEL_CONFIG_USER_ERROR;
+  if (!message || !message.trim()) return ANALYZE_UNAVAILABLE_USER_ERROR;
+  if (isSecretLikeValue(message) || ANALYZE_INTERNALS.test(message)) {
+    return ANALYZE_UNAVAILABLE_USER_ERROR;
   }
   return message;
 }

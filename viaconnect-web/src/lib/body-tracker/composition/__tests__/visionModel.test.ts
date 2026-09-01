@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
+  ANALYZE_UNAVAILABLE_USER_ERROR,
   DEFAULT_FORMAVISION_VISION_MODEL,
   VISION_MODEL_CONFIG_USER_ERROR,
   clientSafeVisionModelError,
@@ -62,15 +63,19 @@ describe('FormaVision vision model resolution', () => {
 
   it('never returns secrets in user-visible analyze errors', () => {
     const leaked = 'invalid vision model: sk-ant-api03-abcdefghijklmnopqrstuvwxyz';
-    expect(sanitizeAnalyzeUserError(leaked)).toBe(VISION_MODEL_CONFIG_USER_ERROR);
+    expect(ANALYZE_UNAVAILABLE_USER_ERROR).toBe('Analysis unavailable — try again');
+    expect(sanitizeAnalyzeUserError(leaked)).toBe(ANALYZE_UNAVAILABLE_USER_ERROR);
     expect(sanitizeAnalyzeUserError(leaked)).not.toMatch(/sk-ant-/);
-    expect(clientSafeVisionModelError(leaked)).toBe('invalid vision model configuration');
+    expect(sanitizeAnalyzeUserError(leaked)).not.toMatch(/invalid vision model/);
+    expect(clientSafeVisionModelError(leaked)).toBe(ANALYZE_UNAVAILABLE_USER_ERROR);
     expect(clientSafeVisionModelError(leaked)).not.toContain(leaked);
+    expect(sanitizeAnalyzeUserError('ANTHROPIC_API_KEY not configured')).toBe(ANALYZE_UNAVAILABLE_USER_ERROR);
+    expect(sanitizeAnalyzeUserError('ARNOLD_VISION_MODEL=claude-sonnet-4-6')).toBe(ANALYZE_UNAVAILABLE_USER_ERROR);
     expect(sanitizeAnalyzeUserError('vision timed out')).toBe('vision timed out');
     expect(sanitizeAnalyzeUserError('Add at least one photo. Missing views are skipped, not invented.')).toMatch(
       /Add at least one photo/,
     );
-    expect(sanitizeAnalyzeUserError('')).toBe('Analysis failed');
+    expect(sanitizeAnalyzeUserError('')).toBe(ANALYZE_UNAVAILABLE_USER_ERROR);
   });
 
   it('redacts secret-shaped tokens from log previews', () => {
@@ -86,6 +91,7 @@ describe('FormaVision vision model resolution', () => {
     const client = readFileSync(join(root, 'src/lib/body-tracker/composition/visionModel.ts'), 'utf8');
     const edge = readFileSync(join(root, 'supabase/functions/_shared/vision-model.ts'), 'utf8');
     expect(edge).toContain(DEFAULT_FORMAVISION_VISION_MODEL);
+    expect(edge).toContain(ANALYZE_UNAVAILABLE_USER_ERROR);
     expect(edge).toContain(VISION_MODEL_CONFIG_USER_ERROR);
     expect(edge).toContain('export function resolveVisionModel');
     expect(edge).toContain('export function clientSafeVisionModelError');

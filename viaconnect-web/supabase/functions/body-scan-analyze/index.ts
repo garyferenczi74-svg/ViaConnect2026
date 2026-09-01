@@ -28,6 +28,7 @@ import {
   resolveVisionModel,
   redactSecretsForLog,
   clientSafeVisionModelError,
+  ANALYZE_UNAVAILABLE_USER_ERROR,
 } from '../_shared/vision-model.ts';
 
 const visionBreaker = getCircuitBreaker('claude-vision');
@@ -247,7 +248,7 @@ serve(async (req) => {
     vision_model: VISION_MODEL,
   });
 
-  if (!ANTHROPIC_KEY) return json({ error: 'vision unavailable' }, 503);
+  if (!ANTHROPIC_KEY) return json({ error: ANALYZE_UNAVAILABLE_USER_ERROR }, 503);
 
   const auth = req.headers.get('authorization') ?? '';
   const jwt = auth.startsWith('Bearer ') ? auth.slice(7) : '';
@@ -414,7 +415,7 @@ serve(async (req) => {
       return json({ error: 'vision timed out' }, 504);
     }
     safeLog.error('body-scan-analyze', 'failed', { user_id: user.id, error: String(e) });
-    return json({ error: 'analysis failed' }, 502);
+    return json({ error: ANALYZE_UNAVAILABLE_USER_ERROR }, 502);
   }
 
   // Persist estimates ONLY. Photos are not stored anywhere.
