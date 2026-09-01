@@ -301,17 +301,19 @@ describe('CoverFlowCarousel Features integration', () => {
         expect(MOBILE).toContain('CoverFlowCarousel');
     });
 
-    it('does not force Features or Process to min-h-screen so 390 sits close above Onboarding', () => {
+    it('keeps Features→Onboarding junction tight (40–72px) without min-h-screen', () => {
         expect(DESKTOP).not.toContain('min-h-screen');
         expect(DESKTOP).toContain('px-5');
         expect(DESKTOP).toContain('md:px-12');
         expect(DESKTOP).toContain('pt-20');
-        expect(DESKTOP).toContain('pb-10');
+        expect(DESKTOP).toContain('pb-6');
         expect(DESKTOP).toContain('md:pt-32');
-        expect(DESKTOP).toContain('md:pb-16');
+        expect(DESKTOP).toContain('md:pb-8');
+        expect(DESKTOP).not.toContain('md:pb-16');
         expect(PROCESS_DESKTOP).not.toContain('min-h-screen');
-        expect(PROCESS_DESKTOP).toContain('pt-12');
-        expect(PROCESS_DESKTOP).toContain('md:pt-32');
+        expect(PROCESS_DESKTOP).toContain('pt-8');
+        expect(PROCESS_DESKTOP).toContain('md:pt-10');
+        expect(PROCESS_DESKTOP).not.toContain('md:pt-32');
         expect(PROCESS_DESKTOP).toContain('Onboarding Questionnaire');
     });
 

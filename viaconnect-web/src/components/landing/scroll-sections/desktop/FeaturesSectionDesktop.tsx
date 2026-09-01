@@ -11,7 +11,7 @@ export function FeaturesSectionDesktop() {
         <SectionAnchor
             id={SECTION_IDS.features}
             ariaLabel="ViaConnect Features"
-            className="px-5 pt-20 pb-10 md:px-12 md:pt-32 md:pb-16"
+            className="px-5 pt-20 pb-6 md:px-12 md:pt-32 md:pb-8"
         >
             <div className="max-w-7xl mx-auto">
                 <motion.div

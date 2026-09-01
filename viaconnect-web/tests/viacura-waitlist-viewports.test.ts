@@ -46,8 +46,8 @@ describe('390 + 1280 waitlist honesty surfaces', () => {
     expect(mobile).toContain('max-w-md mx-auto');
     expect(desktop).toContain('px-12');
     expect(desktop).not.toContain('min-h-screen');
-    expect(desktop).toContain('pb-10');
-    expect(desktop).toContain('md:pb-16');
+    expect(desktop).toContain('pb-6');
+    expect(desktop).toContain('md:pb-8');
     expect(mobile).toContain('CoverFlowCarousel');
     expect(desktop).toContain('CoverFlowCarousel');
     expect(math).toContain('h-[288px]');
