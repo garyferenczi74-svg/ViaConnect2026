@@ -21,6 +21,20 @@ export function formavisionAfterScanHref(): string {
   return FORMAVISION_PATH;
 }
 
+/** Live 4-pose camera capture (Prompt 231). */
+export function formavisionLiveScanHref(): string {
+  return `${FORMAVISION_PATH}/scan`;
+}
+
+export type FormaVisionScanMode = 'live' | 'upload';
+
+export function parseFormaVisionScanMode(
+  raw: string | null | undefined,
+): FormaVisionScanMode | null {
+  if (raw === 'live' || raw === 'upload') return raw;
+  return null;
+}
+
 export function parseCompositionSection(
   raw: string | null | undefined,
 ): CompositionContentSection | null {

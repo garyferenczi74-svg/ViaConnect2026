@@ -2,10 +2,12 @@ import { describe, it, expect } from 'vitest';
 import {
   ANALYZE_CLIENT_TIMEOUT_MS,
   buildAnalyzeRequestMediaFields,
+  buildPresentAnalyzeRequestMediaFields,
   detectMediaTypeFromBase64,
   normalizeDeclaredMediaType,
   resolveAllPhotoMediaTypes,
   resolvePhotoMediaType,
+  resolvePresentPhotoMediaTypes,
   resolveServerMediaTypes,
 } from '../scanMediaTypes';
 
@@ -69,6 +71,41 @@ describe('scanMediaTypes', () => {
     const missing = resolveServerMediaTypes({});
     expect(missing.ok).toBe(false);
     if (!missing.ok) expect(missing.error).toMatch(/do not default PNG/i);
+  });
+
+  it('resolves only present photos and skips empty slots', () => {
+    const present = resolvePresentPhotoMediaTypes({
+      front: { fileType: 'image/jpeg', base64: JPEG_B64 },
+      back: { fileType: null, base64: null },
+      left_side: { fileType: null, base64: null },
+      right_side: { fileType: 'image/png', base64: PNG_B64 },
+    });
+    expect(present.ok).toBe(true);
+    if (present.ok) {
+      expect(present.present).toEqual(['front', 'right_side']);
+      expect(buildPresentAnalyzeRequestMediaFields(present.mediaTypes)).toEqual({
+        media_types: { front: 'image/jpeg', right_side: 'image/png' },
+      });
+    }
+    const empty = resolvePresentPhotoMediaTypes({
+      front: { fileType: null, base64: null },
+      back: { fileType: null, base64: null },
+      left_side: { fileType: null, base64: null },
+      right_side: { fileType: null, base64: null },
+    });
+    expect(empty.ok).toBe(false);
+  });
+
+  it('accepts per-photo media_types for a present-only subset', () => {
+    const per = resolveServerMediaTypes(
+      { media_types: { front: 'image/jpeg', right_side: 'image/png' } },
+      ['front', 'right_side'],
+    );
+    expect(per.ok).toBe(true);
+    if (per.ok) {
+      expect(per.mediaTypes.front).toBe('image/jpeg');
+      expect(per.mediaTypes.right_side).toBe('image/png');
+    }
   });
 
   it('accepts a single matching media_type and per-photo media_types', () => {

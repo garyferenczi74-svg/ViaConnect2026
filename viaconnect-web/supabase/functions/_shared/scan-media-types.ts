@@ -16,16 +16,20 @@ function normalizeDeclaredMediaType(raw: string | null | undefined): string | nu
   return null;
 }
 
-export function resolveServerMediaTypes(body: {
-  media_type?: string | null;
-  media_types?: Partial<Record<ScanPhotoPosition, string>> | null;
-}): { ok: true; mediaTypes: ScanMediaTypeMap } | { ok: false; error: string } {
+export function resolveServerMediaTypes(
+  body: {
+    media_type?: string | null;
+    media_types?: Partial<Record<ScanPhotoPosition, string>> | null;
+  },
+  present?: readonly ScanPhotoPosition[],
+): { ok: true; mediaTypes: ScanMediaTypeMap } | { ok: false; error: string } {
+  const required = present && present.length > 0 ? present : PHOTO_POSITIONS;
   const perPhoto = body.media_types ?? null;
-  const hasPerPhoto = perPhoto && PHOTO_POSITIONS.some((pos) => Boolean(perPhoto[pos]));
+  const hasPerPhoto = perPhoto && required.some((pos) => Boolean(perPhoto[pos]));
 
   if (hasPerPhoto) {
     const mediaTypes = {} as ScanMediaTypeMap;
-    for (const pos of PHOTO_POSITIONS) {
+    for (const pos of required) {
       const resolved = normalizeDeclaredMediaType(perPhoto[pos]);
       if (!resolved) {
         return { ok: false, error: `unsupported media_type for ${pos}; allowed: image/jpeg, image/png, image/webp` };

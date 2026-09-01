@@ -56,6 +56,22 @@ describe('Prompt 210l analyze-chain source contracts', () => {
     expect(src).toMatch(/formavision-scan-panel/);
     expect(src).toMatch(/BodyScanUploader/);
     expect(src).toMatch(/isJourneyCompositionPoint/);
+    expect(src).toMatch(/FormaVisionScanModeBar/);
+    expect(src).toMatch(/Upload saved images/);
+    expect(src).toMatch(/formavisionLiveScanHref/);
+    expect(src).toMatch(/scanToParamVector/);
+    expect(src).toMatch(/BodyCompositionAvatar/);
+  });
+
+  it('upload path uprights inverted gallery shots before analyze', () => {
+    const uploader = read('src/components/body-tracker/BodyScanUploader.tsx');
+    expect(uploader).toMatch(/normalizeScanPhotoUpright/);
+    expect(uploader).toMatch(/FORMAVISION_SLOT_ORDER/);
+    expect(uploader).toMatch(/anyFilled/);
+    const edge = read('supabase/functions/body-scan-analyze/index.ts');
+    expect(edge).toMatch(/at least one photo required/);
+    expect(edge).not.toMatch(/all 4 photos required/);
+    expect(edge).toMatch(/Skip missing views/);
   });
 
   it('heatmap omits UNKNOWN segments instead of painting No Change yellow', () => {

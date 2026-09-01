@@ -1,8 +1,8 @@
-// Prompt 231 (condition 26): the scan viewer is out of scope for this
-// build. Honest stub only, no fabricated analysis, mesh, or body-fat
-// numbers. Reserved for a later prompt.
+// Live 4-pose capture now shares the 209/210l composition spine.
+// Land on FormaVision (existing 3D avatar) — no second viewer.
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { FORMAVISION_PATH } from '@/lib/body-tracker/compositionNav';
 
 export default async function ScanResultPage() {
   const supabase = await createClient();
@@ -11,10 +11,5 @@ export default async function ScanResultPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  return (
-    <div className="mx-auto flex min-h-[50vh] max-w-2xl flex-col items-center justify-center gap-2 px-4 py-6 text-center md:px-6 md:py-8">
-      <h1 className="text-lg font-semibold text-white">Scan saved</h1>
-      <p className="text-sm text-white/60">Analysis coming soon.</p>
-    </div>
-  );
+  redirect(FORMAVISION_PATH);
 }

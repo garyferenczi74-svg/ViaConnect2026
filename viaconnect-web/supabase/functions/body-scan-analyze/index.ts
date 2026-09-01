@@ -66,7 +66,7 @@ function userClient(jwt: string): SupabaseClient {
   });
 }
 
-const SYSTEM_PROMPT = `You are analyzing 4 body photos (front, back, left side, right side) to estimate body composition.
+const SYSTEM_PROMPT = `You are analyzing the provided body photos (front, right, back, left — some views may be missing) to estimate body composition.
 
 Based on visible body proportions, muscle definition, fat distribution patterns, and body geometry, provide your best estimates for:
 
@@ -80,6 +80,8 @@ Based on visible body proportions, muscle definition, fat distribution patterns,
 CRITICAL RULES:
 - These are ESTIMATES only. Always present body fat and waist to hip as RANGES, never exact numbers.
 - Photo-based estimation has significant limitations versus clinical measurement; reflect this in confidence.
+- If a view is missing, skip it. Do not invent that pose, regional fat, muscle ratings, or Navy body-fat.
+- Only total body fat range is an honest photo-scan output. Do not invent regional fat or muscle mass.
 - Never make health diagnoses from photos.
 - Never reference Semaglutide, Ozempic, Wegovy, or Rybelsus.
 - Never reference non FarmCeutica supplement brands.
@@ -105,10 +107,10 @@ Respond ONLY in JSON, no preamble, no markdown fences, with EXACTLY this shape:
 
 interface BodyScanRequest {
   photos: {
-    front: string;
-    back: string;
-    left_side: string;
-    right_side: string;
+    front?: string;
+    back?: string;
+    left_side?: string;
+    right_side?: string;
   };
   media_type?: string;
   media_types?: {
@@ -250,18 +252,21 @@ serve(async (req) => {
   }
 
   const p = body?.photos;
-  if (!p || !p.front || !p.back || !p.left_side || !p.right_side) {
-    return json({ error: 'all 4 photos required' }, 400);
+  const PHOTO_KEYS = ['front', 'back', 'left_side', 'right_side'] as const;
+  const present = PHOTO_KEYS.filter((pos) => typeof p?.[pos] === 'string' && p[pos].length > 0);
+  if (!p || present.length === 0) {
+    return json({ error: 'at least one photo required' }, 400);
   }
-  for (const pos of ['front', 'back', 'left_side', 'right_side'] as const) {
-    if (p[pos].length > MAX_PHOTO_BYTES) {
+  for (const pos of present) {
+    const bytes = p[pos];
+    if (!bytes || bytes.length > MAX_PHOTO_BYTES) {
       return json({ error: `photo ${pos} too large` }, 413);
     }
   }
   const mediaResolved = resolveServerMediaTypes({
     media_type: body.media_type,
     media_types: body.media_types,
-  });
+  }, present);
   if (!mediaResolved.ok) {
     return json({ error: mediaResolved.error }, 400);
   }
@@ -270,17 +275,19 @@ serve(async (req) => {
   // Cost monitoring: log the base64 payload size pre Anthropic call.
   // Vision pricing is dominated by image bytes, so this lets ops correlate
   // spend spikes to specific user_ids and photo dimensions.
-  const totalBase64Bytes = p.front.length + p.back.length + p.left_side.length + p.right_side.length;
+  const perPhotoBytes: Record<string, number> = {};
+  let totalBase64Bytes = 0;
+  for (const pos of present) {
+    const n = p[pos]?.length ?? 0;
+    perPhotoBytes[pos] = n;
+    totalBase64Bytes += n;
+  }
   safeLog.info('body-scan-analyze', 'egress', {
     user_id: user.id,
     media_types: mediaTypes,
+    present_views: present,
     total_base64_bytes: totalBase64Bytes,
-    per_photo_bytes: {
-      front: p.front.length,
-      back: p.back.length,
-      left_side: p.left_side.length,
-      right_side: p.right_side.length,
-    },
+    per_photo_bytes: perPhotoBytes,
   });
 
   let parsed: BodyScanEstimate;
@@ -311,11 +318,18 @@ serve(async (req) => {
             messages: [{
               role: 'user',
               content: [
-                { type: 'image', source: { type: 'base64', media_type: mediaTypes.front, data: p.front } },
-                { type: 'image', source: { type: 'base64', media_type: mediaTypes.back, data: p.back } },
-                { type: 'image', source: { type: 'base64', media_type: mediaTypes.left_side, data: p.left_side } },
-                { type: 'image', source: { type: 'base64', media_type: mediaTypes.right_side, data: p.right_side } },
-                { type: 'text', text: 'Analyze these 4 photos per the system instructions and respond ONLY in the specified JSON format.' },
+                ...present.map((pos) => ({
+                  type: 'image' as const,
+                  source: {
+                    type: 'base64' as const,
+                    media_type: mediaTypes[pos],
+                    data: p[pos] as string,
+                  },
+                })),
+                {
+                  type: 'text' as const,
+                  text: `Analyze these ${present.length} photo(s) (${present.join(', ')}). Skip missing views. Respond ONLY in the specified JSON format.`,
+                },
               ],
             }],
           }),
