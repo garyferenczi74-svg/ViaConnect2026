@@ -150,11 +150,13 @@ export const CONNECTED_SOURCES: ConnectedSource[] = [
     icon: "Moon",
     category: "wearable",
     status: "coming_soon",
-    authMethod: "oauth2",
+    // Export-based post-GA path (JSON / CSV / HealthKit), Hume-like.
+    // file_import not oauth2: there is no partner API to authorize against.
+    authMethod: "file_import",
     capabilities: [],
     dataTypes: ["Sleep", "Recovery"],
     notes:
-      "Coming soon. Partner domain is wearclair.com only. Sleep and Recovery will feed after real partner OAuth and CLAIR_* secrets exist. Capabilities stay empty until ingest ships.",
+      "Coming soon. Partner domain is wearclair.com only. After launch, connect with a JSON, CSV, or HealthKit export. Capabilities stay empty until ingest ships. Clair is not a medical device and is not for contraception.",
   },
 ];
 

@@ -19,7 +19,9 @@ import {
 import { assembleWearableSnapshot, type WearableSnapshotInput } from '@/lib/body-tracker/wearable-snapshot';
 import { wearableHannahGate } from '@/lib/scoring/hannah-bos';
 import {
+  CLAIR_COMING_SOON_NOTES,
   CLAIR_DISPLAY_NAME,
+  CLAIR_HONESTY_DISCLAIMER,
   CLAIR_PARTNER_HOST,
   CLAIR_PARTNER_ORIGIN,
   CLAIR_SOURCE_ID,
@@ -114,16 +116,23 @@ describe('Clair Health Coming soon lock', () => {
     expect(spec?.advertisedDimensions).toEqual(['sleep', 'recovery']);
     expect(spec?.advertisedDimensions).not.toContain('body_comp');
     expect(spec?.action).toBe('oauth');
+    expect(spec?.notes).toBe(CLAIR_COMING_SOON_NOTES);
     expect(spec?.notes).toMatch(/Coming soon/);
     expect(spec?.notes).toContain(CLAIR_PARTNER_HOST);
+    expect(spec?.notes).toMatch(/JSON, CSV, or HealthKit export/);
+    expect(spec?.notes).toContain(CLAIR_HONESTY_DISCLAIMER);
     expect(spec?.notes).not.toMatch(/estradiol|progesterone|semaglutide/i);
+    expect(spec?.notes).not.toMatch(/\bLH\b|\bFSH\b/);
 
     const registry = CONNECTED_SOURCES.find((s) => s.id === 'clair');
     expect(registry?.displayName).toBe('Clair Health');
     expect(registry?.status).toBe('coming_soon');
-    expect(registry?.authMethod).toBe('oauth2');
+    expect(registry?.authMethod).toBe('file_import');
+    expect(registry?.authMethod).not.toBe('oauth2');
     expect(registry?.capabilities).toEqual([]);
     expect(registry?.notes).toContain(CLAIR_PARTNER_HOST);
+    expect(registry?.notes).toMatch(/JSON, CSV, or HealthKit export/);
+    expect(registry?.notes).toContain(CLAIR_HONESTY_DISCLAIMER);
   });
 
   it('never shows Connect, last-sync, or Connected without real config', () => {
@@ -166,10 +175,13 @@ describe('Clair Health Coming soon lock', () => {
     expect(markup).toContain('Clair Health');
     expect(markup).toContain('Coming soon');
     expect(markup).toContain('Will feed Sleep, Recovery');
+    expect(markup).toContain(CLAIR_HONESTY_DISCLAIMER);
+    expect(markup).toContain('data-clair-disclaimer="true"');
     expect(markup).not.toContain('Connect');
     expect(markup).not.toContain('Last synced');
     expect(markup).not.toContain('Connected');
     expect(markup).not.toContain('Upload XML');
+    expect(markup).not.toMatch(/\bLH\b|\bFSH\b|estradiol|progesterone/i);
 
     const rail = renderToStaticMarkup(
       createElement(ActiveSourceDetailPanel, { tile: leftover }),
@@ -177,8 +189,11 @@ describe('Clair Health Coming soon lock', () => {
     expect(rail).toContain('data-feeds-rail="true"');
     expect(rail).toContain('Will feed');
     expect(rail).toContain('Sleep, Recovery');
+    expect(rail).toContain(CLAIR_HONESTY_DISCLAIMER);
+    expect(rail).toContain('JSON, CSV, or HealthKit export');
     expect(rail).not.toContain('Body comp');
     expect(rail).not.toMatch(/estradiol|progesterone|semaglutide/i);
+    expect(rail).not.toMatch(/\bLH\b|\bFSH\b/);
   });
 
   it('Coming soon Clair never moves the BOS wearable slice or copies phone_health', () => {
@@ -225,7 +240,7 @@ describe('Clair Health Coming soon lock', () => {
 
   it('hard-bans legacy Clair hosts and hormone / GLP-1 adjacency in this scaffold', () => {
     expect(CLAIR_PARTNER_ORIGIN).toBe('https://wearclair.com');
-    expect(isAllowedClairHost('https://wearclair.com/oauth')).toBe(true);
+    expect(isAllowedClairHost('https://wearclair.com/export')).toBe(true);
     expect(isAllowedClairHost('https://www.wearclair.com')).toBe(true);
     expect(isAllowedClairHost(`https://${bannedClairHosts()[0]}`)).toBe(false);
     expect(isAllowedClairHost(`https://${bannedClairHosts()[1]}`)).toBe(false);

@@ -134,9 +134,12 @@ describe('Brief 46 Arnold source map', () => {
     expect(garminMarkup).not.toContain('Will feed');
     expect(garminMarkup).not.toContain('Feeds ');
     expect(clairMarkup).toContain('Will feed Sleep, Recovery');
+    expect(clairMarkup).toContain('not a medical device');
+    expect(clairMarkup).toContain('not for contraception');
     expect(clairMarkup).not.toContain('Feeds ');
     expect(clairMarkup).not.toContain('Connect');
     expect(clairMarkup).not.toContain('Body comp');
+    expect(clairMarkup).not.toMatch(/\bLH\b|\bFSH\b/);
     expect(appleMarkup).not.toContain('Sleep');
     expect(appleMarkup).not.toContain('Will feed');
     expect(appleMarkup).not.toContain('Feeds ');
@@ -189,7 +192,11 @@ describe('Brief 46 Arnold source map', () => {
     expect(clairRail).toContain('data-feeds-rail="true"');
     expect(clairRail).toContain('Will feed');
     expect(clairRail).toContain('Sleep, Recovery');
+    expect(clairRail).toContain('not a medical device');
+    expect(clairRail).toContain('not for contraception');
+    expect(clairRail).toContain('JSON, CSV, or HealthKit export');
     expect(clairRail).not.toContain('Body comp');
+    expect(clairRail).not.toMatch(/\bLH\b|\bFSH\b/);
   });
 
   it('Coming soon tiles have no Connect and no last-sync', () => {

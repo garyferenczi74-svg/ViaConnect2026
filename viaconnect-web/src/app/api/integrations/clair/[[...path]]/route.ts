@@ -1,6 +1,7 @@
 // Fail-closed Clair Health integration scaffold.
-// Returns 501 / not_configured until real CLAIR_* secrets and partner OAuth
-// exist. No hardcoded credentials. Partner domain is wearclair.com only.
+// Returns 501 / not_configured. This is not an authorize or callback route.
+// There is no OAuth client and no redirect to wearclair.com. Post-GA ingest
+// is export-based (JSON / CSV / HealthKit). No hardcoded credentials.
 
 import { NextResponse } from 'next/server';
 import { isClairConfigured } from '@/lib/wearables/clair/config';

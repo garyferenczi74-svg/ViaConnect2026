@@ -1,12 +1,20 @@
 // Clair Health Coming soon connector. Partner domain is wearclair.com only.
-// No OAuth, ingest, or secrets in this scaffold. isClairConfigured stays
-// false until real CLAIR_* secrets and a partner contract exist. Do not
-// invent client ids, tokens, or Connected state.
+// No partner API, OAuth client, redirect, ingest, or secrets in this scaffold.
+// Post-GA connect is JSON / CSV / HealthKit export per privacy policy, not an
+// invented authorize URL. isClairConfigured stays false until a real export
+// ingest path exists. Do not invent client ids, tokens, or Connected state.
 
 export const CLAIR_SOURCE_ID = 'clair';
 export const CLAIR_DISPLAY_NAME = 'Clair Health';
 export const CLAIR_PARTNER_ORIGIN = 'https://wearclair.com';
 export const CLAIR_PARTNER_HOST = 'wearclair.com';
+
+/** Consumer-safe Coming soon honesty. No clinical or contraceptive claim. */
+export const CLAIR_HONESTY_DISCLAIMER =
+  'Clair is not a medical device and is not for contraception.';
+
+export const CLAIR_COMING_SOON_NOTES =
+  'Coming soon. After launch, connect with a JSON, CSV, or HealthKit export from wearclair.com. There is no partner API or OAuth client in this scaffold. Clair is not a medical device and is not for contraception.';
 
 export function isClairConfigured(): boolean {
   return false;

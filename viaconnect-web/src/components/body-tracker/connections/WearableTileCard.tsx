@@ -7,6 +7,7 @@ import {
   type WearableTileView,
 } from '@/lib/body-tracker/wearable-tiles';
 import { WearableBrandMark } from '@/components/body-tracker/connections/WearableBrandMark';
+import { CLAIR_HONESTY_DISCLAIMER } from '@/lib/wearables/clair/config';
 
 const outlineBtn =
   'flex min-h-[44px] shrink-0 items-center justify-center rounded-lg border border-teal bg-transparent px-3 text-sm font-semibold text-teal hover:bg-teal/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal/50';
@@ -162,6 +163,11 @@ export function WearableTileCard({
           {contributorLine ? (
             <p data-contributor-line="true" className="mt-1 text-xs text-white/45">
               {contributorLine}
+            </p>
+          ) : null}
+          {tile.id === 'clair' ? (
+            <p data-clair-disclaimer="true" className="mt-1 text-[11px] leading-snug text-white/40">
+              {CLAIR_HONESTY_DISCLAIMER}
             </p>
           ) : null}
           {connected && xmlAction ? (

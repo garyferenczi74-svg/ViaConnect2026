@@ -6,8 +6,9 @@
 // Apple are XML. Watch tile is out of scope. Whoop/Oura stay Coming soon
 // until OAuth secrets are provisioned. Google Health, Garmin, and Clair
 // Health are honest Coming soon tiles, never connectable here. Clair never
-// copies phone_health and never invents Connected. Hume stays tagged ingest,
-// not OAuth.
+// copies phone_health and never invents Connected. Clair's post-GA path is
+// export (JSON / CSV / HealthKit), not a partner OAuth client. Hume stays
+// tagged ingest, not OAuth.
 
 import { useCallback, useEffect, useState, type KeyboardEvent } from 'react';
 import toast from 'react-hot-toast';

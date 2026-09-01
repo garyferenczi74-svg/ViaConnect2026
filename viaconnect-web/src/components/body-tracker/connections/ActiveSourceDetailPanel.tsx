@@ -40,6 +40,7 @@ import {
   type WearableTileView,
 } from '@/lib/body-tracker/wearable-tiles';
 import { WearableBrandMark } from '@/components/body-tracker/connections/WearableBrandMark';
+import { CLAIR_HONESTY_DISCLAIMER } from '@/lib/wearables/clair/config';
 
 function formatDate(iso: string | null): string {
   if (!iso) return 'n/a';
@@ -233,6 +234,11 @@ export function ActiveSourceDetailPanel({ tile, onImported }: ActiveSourceDetail
           <div className="rounded-xl border border-white/[0.08] bg-[rgba(255,255,255,0.06)] p-3">
             <p className="text-sm leading-relaxed text-white/70">{tile.notes}</p>
           </div>
+          {tile.id === 'clair' ? (
+            <p data-clair-disclaimer="true" className="text-[12px] leading-relaxed text-white/45">
+              {CLAIR_HONESTY_DISCLAIMER}
+            </p>
+          ) : null}
           {tile.statusLabel === 'Coming soon' ? (
             <p className="rounded-xl border border-copper/30 bg-copper/10 px-3 py-2.5 text-sm font-medium text-copper">
               {tile.statusLabel}

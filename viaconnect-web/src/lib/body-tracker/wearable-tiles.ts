@@ -11,8 +11,11 @@
 // Health and Garmin are honest Coming soon tiles: never connectable here,
 // their *Configured flags never set true (Garmin connector is out of scope,
 // spec section 12). Clair Health is Coming soon only: clairConfigured stays
-// false until real CLAIR_* secrets and partner OAuth exist. Partner domain
-// is wearclair.com only. No Connect CTA, no last-sync, never invent Connected.
+// false until a real export ingest path exists. Partner domain is
+// wearclair.com only. No Connect CTA, no last-sync, never invent Connected.
+// Tile action stays the Coming soon oauth stub (configured false) so no
+// Connect or Upload control appears. The real post-GA path is JSON / CSV /
+// HealthKit export, not a partner OAuth client.
 //
 // Web Apple is XML only. Hume is XML sourceName hume_body_pod, never copied
 // from phone_health, and has no OAuth. Clair never copies phone_health.
@@ -32,6 +35,7 @@ import {
   type LastSyncKind,
   type LastSyncState,
 } from '@/lib/body-tracker/last-sync-state';
+import { CLAIR_COMING_SOON_NOTES } from '@/lib/wearables/clair/config';
 
 export const FIRST_CLASS_TILE_IDS = [
   'whoop',
@@ -155,8 +159,7 @@ export const WEARABLE_TILE_SPECS: WearableTileSpec[] = [
     icon: 'Moon',
     advertisedDimensions: ['sleep', 'recovery'],
     action: 'oauth',
-    notes:
-      'Coming soon. Sleep and Recovery via wearclair.com once partner OAuth is provisioned.',
+    notes: CLAIR_COMING_SOON_NOTES,
   },
 ];
 
@@ -194,7 +197,7 @@ export interface WearableTileInput {
   ouraConfigured: boolean;
   googleHealthConfigured: boolean;
   garminConfigured: boolean;
-  /** Always false until real CLAIR_* secrets and partner OAuth exist. */
+  /** Always false until a real Clair export ingest path exists. */
   clairConfigured?: boolean;
   platform: 'web' | 'ios' | 'android';
   now?: number;
