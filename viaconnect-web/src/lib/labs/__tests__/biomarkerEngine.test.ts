@@ -9,6 +9,8 @@ describe('matchBiomarker', () => {
     expect(matchBiomarker('Free T3')?.key).toBe('free_t3');
     expect(matchBiomarker('Glucose, Fasting')?.key).toBe('glucose');
     expect(matchBiomarker('hs-CRP')?.key).toBe('hscrp');
+    expect(matchBiomarker('Free Testosterone')?.key).toBe('free_testosterone');
+    expect(matchBiomarker('sex hormone binding globulin')?.key).toBe('shbg');
   });
   it('returns null for an unknown marker (never guessed)', () => {
     expect(matchBiomarker('Some Unlisted Analyte')).toBeNull();

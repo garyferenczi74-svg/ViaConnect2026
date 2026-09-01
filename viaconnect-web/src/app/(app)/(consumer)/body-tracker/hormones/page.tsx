@@ -9,6 +9,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { FlaskConical, Loader2, Upload } from "lucide-react";
 import { BackToHubLink } from "@/components/body-tracker/hub/BackToHubLink";
+import { RythmHealthLabCard } from "@/components/labs/RythmHealthLabCard";
 import type { HormoneReportPayload, HormoneReportResult } from "@/lib/kb/hormones/types";
 
 type Phase =
@@ -100,6 +101,10 @@ export default function HormonesPage() {
           Educational Hormone Report mapped to your labs and genetics where available.
         </p>
       </header>
+
+      <div className="mb-6">
+        <RythmHealthLabCard />
+      </div>
 
       {phase.kind === "loading" && (
         <div className="flex min-h-[120px] items-center justify-center gap-2 text-white/70">

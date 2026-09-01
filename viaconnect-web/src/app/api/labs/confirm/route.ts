@@ -7,6 +7,8 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { safeLog } from '@/lib/utils/safe-log';
 import { persistLabBiomarkers, type ConfirmedBiomarker } from '@/lib/labs/labUploadStore';
+import { dropRythmDerivedScores } from '@/lib/labs/parseRythmHealthCsv';
+import { RYTHM_HEALTH_LAB_NAME } from '@/lib/labs/rythmHealth';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +22,10 @@ interface ConfirmBody {
   sourceFilename?: unknown;
   sourceType?: unknown;
   collectionDate?: unknown;
+  labName?: unknown;
 }
+
+const ALLOWED_LAB_NAMES = new Set(['Rythm Health']);
 
 const numOrNull = (v: unknown): number | null =>
   typeof v === 'number' && Number.isFinite(v) ? v : null;
@@ -70,7 +75,14 @@ export async function POST(request: Request): Promise<NextResponse> {
     });
   }
 
-  if (biomarkers.length === 0) {
+  const labName =
+    typeof body.labName === 'string' && ALLOWED_LAB_NAMES.has(body.labName)
+      ? body.labName
+      : null;
+  const toSave =
+    labName === RYTHM_HEALTH_LAB_NAME ? dropRythmDerivedScores(biomarkers) : biomarkers;
+
+  if (toSave.length === 0) {
     return NextResponse.json({ error: 'No biomarkers to save.' }, { status: 400 });
   }
 
@@ -82,10 +94,11 @@ export async function POST(request: Request): Promise<NextResponse> {
       : null;
 
   try {
-    const result = await persistLabBiomarkers(supabase, user.id, biomarkers, {
+    const result = await persistLabBiomarkers(supabase, user.id, toSave, {
       sourceFilename,
       sourceType,
       collectionDate,
+      labName,
     });
     return NextResponse.json({ saved: result.saved, uploadId: result.uploadId });
   } catch (err) {

@@ -110,7 +110,8 @@ export function chipForProtocolSource(
     key === 'lab_result' ||
     key === 'lab_results' ||
     key === 'lab_biomarker' ||
-    key === 'lab_biomarkers'
+    key === 'lab_biomarkers' ||
+    key === 'rythm_health'
   ) {
     return 'from lab';
   }
