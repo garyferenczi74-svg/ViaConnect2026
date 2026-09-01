@@ -22,13 +22,16 @@ describe('runFormaVisionAnalyze shared spine', () => {
   it('is the single analyzer for upload and live post-submit', () => {
     const uploader = src('src/components/body-tracker/BodyScanUploader.tsx');
     const live = src('src/components/scan/ScanExperience.tsx');
+    const helper = src('src/lib/body-tracker/composition/convergeLiveScanToFormaVisionSpine.ts');
     const shared = src('src/lib/body-tracker/composition/runFormaVisionAnalyze.ts');
     expect(uploader).toMatch(/runFormaVisionAnalyzeSpine/);
     expect(uploader).toMatch(/normalizeScanPhotoUpright/);
     expect(uploader).toMatch(/source:\s*'upload'/);
-    expect(live).toMatch(/runFormaVisionAnalyzeSpine/);
-    expect(live).toMatch(/liveFramesToFormaVisionPhotos/);
-    expect(live).toMatch(/source:\s*'live'/);
+    expect(live).toMatch(/convergeLiveScanToFormaVisionSpine/);
+    expect(live).not.toMatch(/runFormaVisionAnalyzeSpine\(/);
+    expect(helper).toMatch(/liveFramesToFormaVisionPhotos/);
+    expect(helper).toMatch(/source:\s*'live'/);
+    expect(helper).toMatch(/runFormaVisionAnalyzeSpine/);
     expect(shared).toMatch(/body-scan-analyze/);
     expect(shared).toMatch(/persistScanFn/);
     expect(shared).toMatch(/normalizeScanPhotoUpright/);

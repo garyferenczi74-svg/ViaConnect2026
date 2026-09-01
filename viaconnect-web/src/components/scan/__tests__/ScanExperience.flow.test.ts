@@ -693,3 +693,21 @@ describe('ScanExperience flow driver: Discard revokes real object URLs, never th
     expect(next.frames.every((f) => f === null)).toBe(true);
   });
 });
+
+describe('ScanExperience wiring: live DONE converges onto the shared analyzer', () => {
+  const src = readFileSync(resolve(__dirname, '../ScanExperience.tsx'), 'utf8');
+
+  it('handleSubmit calls the dedicated converge helper after session persist ok', () => {
+    expect(src).toContain('convergeLiveScanToFormaVisionSpine');
+    expect(src).toContain('submitResult.ok && submitResult.sessionId');
+    expect(src).toContain('persistCompositionScan');
+    expect(src).not.toMatch(/Analysis coming soon/i);
+  });
+
+  it('DONE offers retry when composition persist failed and does not claim 3D until ok', () => {
+    expect(src).toContain('scan-done-retry-composition');
+    expect(src).toContain('analyzeLiveFramesOnFormaVisionSpine');
+    expect(src).toContain("compositionPhase === 'ok' ? 'View 3D composition' : 'Open FormaVision'");
+    expect(src).toContain('formavisionAfterScanHref');
+  });
+});
