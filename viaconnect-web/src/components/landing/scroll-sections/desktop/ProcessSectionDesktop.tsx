@@ -41,7 +41,7 @@ export function ProcessSectionDesktop() {
         <SectionAnchor
             id={SECTION_IDS.process}
             ariaLabel="ViaConnect Process"
-            className="min-h-screen py-20 px-5 md:py-32 md:px-12"
+            className="px-5 pt-12 pb-20 md:px-12 md:pt-32 md:pb-32"
         >
             <div className="max-w-7xl mx-auto">
                 <motion.div

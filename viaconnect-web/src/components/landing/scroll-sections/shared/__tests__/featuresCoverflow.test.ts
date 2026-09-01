@@ -35,6 +35,9 @@ function src(rel: string): string {
 const CAROUSEL = src('src/components/ui/3-d-coverflow-carousel.tsx');
 const MATH = src('src/components/ui/coverflow-math.ts');
 const DESKTOP = src('src/components/landing/scroll-sections/desktop/FeaturesSectionDesktop.tsx');
+const PROCESS_DESKTOP = src(
+    'src/components/landing/scroll-sections/desktop/ProcessSectionDesktop.tsx',
+);
 const MOBILE = src('src/components/landing/scroll-sections/mobile/FeaturesSectionMobile.tsx');
 
 const LOCKED_HEADLINES = [
@@ -296,6 +299,20 @@ describe('CoverFlowCarousel Features integration', () => {
         expect(CAROUSEL).not.toContain('md:h-[268px]');
         expect(DESKTOP).toContain('CoverFlowCarousel');
         expect(MOBILE).toContain('CoverFlowCarousel');
+    });
+
+    it('does not force Features or Process to min-h-screen so 390 sits close above Onboarding', () => {
+        expect(DESKTOP).not.toContain('min-h-screen');
+        expect(DESKTOP).toContain('px-5');
+        expect(DESKTOP).toContain('md:px-12');
+        expect(DESKTOP).toContain('pt-20');
+        expect(DESKTOP).toContain('pb-10');
+        expect(DESKTOP).toContain('md:pt-32');
+        expect(DESKTOP).toContain('md:pb-16');
+        expect(PROCESS_DESKTOP).not.toContain('min-h-screen');
+        expect(PROCESS_DESKTOP).toContain('pt-12');
+        expect(PROCESS_DESKTOP).toContain('md:pt-32');
+        expect(PROCESS_DESKTOP).toContain('Onboarding Questionnaire');
     });
 
     it('SSR-renders eight headings and keeps descriptions collapsed', () => {
