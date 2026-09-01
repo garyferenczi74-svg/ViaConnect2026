@@ -359,6 +359,17 @@ describe('useScanSession reducer', () => {
     expect(s.error).toBe('Camera disconnected. Tap Start scan to try again.');
   });
 
+  it('RETURN_SETUP abandons a live fail beat back to a blank SETUP', () => {
+    let s = initialScanState();
+    s = scanReducer(s, { type: 'START' });
+    s = scanReducer(s, { type: 'WALK_IN_DONE' });
+    s = scanReducer(s, { type: 'RETURN_SETUP' });
+    expect(s.phase).toBe('SETUP');
+    expect(s.poseIndex).toBe(0);
+    expect(s.frames).toEqual([null, null, null, null]);
+    expect(s.error).toBeUndefined();
+  });
+
   it('CAMERA_LOST interrupts any phase, including mid-count', () => {
     let s = initialScanState();
     s = scanReducer(s, { type: 'START' });

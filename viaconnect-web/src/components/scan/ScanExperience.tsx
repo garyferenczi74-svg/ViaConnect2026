@@ -21,8 +21,15 @@ import {
   COMPOSITION_PATH,
   FORMAVISION_PATH,
   formavisionAfterScanHref,
+  parseFormaVisionScanMode,
 } from '@/lib/body-tracker/compositionNav';
 import { persistScan as persistCompositionScan } from '@/lib/body-tracker/composition/persistScanClient';
+import {
+  FormaVisionScanModeBar,
+  type FormaVisionScanMode,
+} from '@/components/body-tracker/FormaVisionScanModeBar';
+import { BodyScanUploader, type BodyScanResult } from '@/components/body-tracker/BodyScanUploader';
+import { BodyScanResults } from '@/components/body-tracker/BodyScanResults';
 import {
   analyzeLiveFramesOnFormaVisionSpine,
   convergeLiveScanToFormaVisionSpine,
@@ -36,7 +43,6 @@ import {
   noteCountdownAbortSample,
 } from '@/lib/scan/countdownAbort';
 import { ConsentNotice } from './ConsentNotice';
-import { FormaVisionUploadEscapeLink } from './FormaVisionUploadEscapeLink';
 import { CameraPreview } from './CameraPreview';
 import { CountdownOverlay } from './CountdownOverlay';
 import { PoseTitleCard } from './PoseTitleCard';
@@ -147,6 +153,8 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
   const [debugLandmarks, setDebugLandmarks] = useState<Landmark[] | null>(null);
   const [orientationGateDismissed, setOrientationGateDismissed] = useState(false);
   const [compositionPhase, setCompositionPhase] = useState<'idle' | 'running' | 'ok' | 'error'>('idle');
+  const [setupMode, setSetupMode] = useState<FormaVisionScanMode>('live');
+  const [uploadResult, setUploadResult] = useState<BodyScanResult | null>(null);
 
   const framesRef = useRef(state.frames);
   framesRef.current = state.frames;
@@ -177,6 +185,14 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
     setVoiceAvailable(typeof window !== 'undefined' && 'speechSynthesis' in window);
     setDebugSkeletonEnabled(readDebugSkeletonEnabled());
     primeScanVoices();
+    try {
+      const mode = parseFormaVisionScanMode(
+        new URLSearchParams(window.location.search).get('mode'),
+      );
+      if (mode) setSetupMode(mode);
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   // ---- prefers-reduced-motion: read once on mount and keep in sync with
@@ -613,6 +629,32 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
     dispatch({ type: 'RESET' });
   }, [dispatch]);
 
+  const handleSetupModeChange = useCallback(
+    (mode: FormaVisionScanMode) => {
+      setSetupMode(mode);
+      if (mode !== 'upload') return;
+      setUploadResult(null);
+      revokeAllFrames(framesRef.current);
+      camera.stop();
+      if (state.phase === 'CAMERA_LOST') {
+        dispatch({ type: 'RESET' });
+      } else if (state.phase !== 'SETUP') {
+        dispatch({ type: 'RETURN_SETUP' });
+      }
+    },
+    [camera, dispatch, state.phase],
+  );
+
+  const handleUploadComplete = useCallback((result: BodyScanResult) => {
+    setUploadResult(result);
+    void persistCompositionScan(result.scanId);
+  }, []);
+
+  const handleUploadCancel = useCallback(() => {
+    setUploadResult(null);
+    setSetupMode('live');
+  }, []);
+
   // ---- Submit ("Use these scans"): runs the prepare -> upload -> finalize
   // flow (persist.ts, wired via submitFlow.runSubmit) and only ever reports
   // success after a server-confirmed ok:true (condition 24c - never before,
@@ -679,8 +721,20 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
     })();
   }, [state.phase, compositionPhase, localHeightCm]);
 
-  if (!consentAcknowledged) {
-    return <ConsentNotice onAcknowledged={handleConsentAck} />;
+  if (!consentAcknowledged && setupMode === 'live') {
+    return (
+      <div className="font-instrument space-y-3 rounded-2xl bg-navy-700 p-4 text-white">
+        <div data-testid="scan-setup-mode">
+          <FormaVisionScanModeBar
+            mode={setupMode}
+            onChange={handleSetupModeChange}
+            liveLabel="Live"
+            uploadLabel="Upload images"
+          />
+        </div>
+        <ConsentNotice onAcknowledged={handleConsentAck} />
+      </div>
+    );
   }
 
   const currentPose = POSE_ORDER[state.poseIndex] ?? null;
@@ -706,7 +760,9 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
 
       {state.phase === 'SETUP' && (
         <div className="relative flex h-full min-h-[70vh] flex-col justify-between p-4">
-          <CameraPreview videoRef={camera.videoRef} stream={camera.stream} pose="front" showFootMark mirrored={false} />
+          {setupMode === 'live' && (
+            <CameraPreview videoRef={camera.videoRef} stream={camera.stream} pose="front" showFootMark mirrored={false} />
+          )}
           <div className="relative z-10 mt-auto space-y-3 rounded-2xl bg-[var(--card)]/90 p-4">
             <Link
               href={FORMAVISION_PATH}
@@ -716,61 +772,87 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
               <ArrowLeft size={16} strokeWidth={1.5} />
               Back to FormaVision
             </Link>
-            {permissionBlocked && (
-              <p className="text-xs text-red-300" data-testid="scan-camera-blocked">
-                {CAMERA_BLOCKED_MESSAGE}
-              </p>
-            )}
-            <p className="text-xs text-white/60" data-testid="scan-pose-guide-notice">
-              {POSE_GUIDE_UNAVAILABLE}
-            </p>
-            {localHeightCm !== null ? (
-              <p className="text-sm text-white/80" data-testid="scan-height-chip">
-                Height on file: {localHeightCm} cm
-              </p>
+            <div data-testid="scan-setup-mode">
+              <FormaVisionScanModeBar
+                mode={setupMode}
+                onChange={handleSetupModeChange}
+                liveLabel="Live"
+                uploadLabel="Upload images"
+              />
+            </div>
+            {setupMode === 'upload' ? (
+              <div data-testid="scan-setup-upload-panel">
+                {uploadResult ? (
+                  <BodyScanResults
+                    result={uploadResult}
+                    onRetake={() => setUploadResult(null)}
+                    onClose={() => router.push(formavisionAfterScanHref())}
+                  />
+                ) : (
+                  <BodyScanUploader
+                    onComplete={handleUploadComplete}
+                    onCancel={handleUploadCancel}
+                  />
+                )}
+              </div>
             ) : (
-              <div className="flex items-center gap-2" data-testid="scan-height-prompt">
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  placeholder="Height in cm"
-                  value={heightDraft}
-                  onChange={(e) => setHeightDraft(e.target.value)}
-                  className="w-28 rounded-lg border border-white/20 bg-transparent px-2 py-1.5 text-sm text-white"
-                />
+              <>
+                {permissionBlocked && (
+                  <p className="text-xs text-red-300" data-testid="scan-camera-blocked">
+                    {CAMERA_BLOCKED_MESSAGE}
+                  </p>
+                )}
+                <p className="text-xs text-white/60" data-testid="scan-pose-guide-notice">
+                  {POSE_GUIDE_UNAVAILABLE}
+                </p>
+                {localHeightCm !== null ? (
+                  <p className="text-sm text-white/80" data-testid="scan-height-chip">
+                    Height on file: {localHeightCm} cm
+                  </p>
+                ) : (
+                  <div className="flex items-center gap-2" data-testid="scan-height-prompt">
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      placeholder="Height in cm"
+                      value={heightDraft}
+                      onChange={(e) => setHeightDraft(e.target.value)}
+                      className="w-28 rounded-lg border border-white/20 bg-transparent px-2 py-1.5 text-sm text-white"
+                    />
+                    <button
+                      type="button"
+                      data-testid="scan-height-save"
+                      onClick={() => {
+                        const parsed = Number(heightDraft);
+                        if (Number.isFinite(parsed) && parsed > 0) setLocalHeightCm(parsed);
+                      }}
+                      className="rounded-lg border border-white/20 px-2.5 py-1.5 text-xs text-white/80"
+                    >
+                      Save
+                    </button>
+                  </div>
+                )}
+                {voiceAvailable && (
+                  <button
+                    type="button"
+                    data-testid="scan-setup-voice-toggle"
+                    aria-pressed={voiceEnabled}
+                    onClick={toggleVoice}
+                    className="text-xs text-white/60 underline"
+                  >
+                    Voice countdown: {voiceEnabled ? 'On' : 'Off'}
+                  </button>
+                )}
                 <button
                   type="button"
-                  data-testid="scan-height-save"
-                  onClick={() => {
-                    const parsed = Number(heightDraft);
-                    if (Number.isFinite(parsed) && parsed > 0) setLocalHeightCm(parsed);
-                  }}
-                  className="rounded-lg border border-white/20 px-2.5 py-1.5 text-xs text-white/80"
+                  data-testid="scan-start-button"
+                  onClick={handleStart}
+                  className="w-full rounded-xl bg-[var(--teal)] py-3 text-sm font-semibold text-white"
                 >
-                  Save
+                  Start scan
                 </button>
-              </div>
+              </>
             )}
-            {voiceAvailable && (
-              <button
-                type="button"
-                data-testid="scan-setup-voice-toggle"
-                aria-pressed={voiceEnabled}
-                onClick={toggleVoice}
-                className="text-xs text-white/60 underline"
-              >
-                Voice countdown: {voiceEnabled ? 'On' : 'Off'}
-              </button>
-            )}
-            <button
-              type="button"
-              data-testid="scan-start-button"
-              onClick={handleStart}
-              className="w-full rounded-xl bg-[var(--teal)] py-3 text-sm font-semibold text-white"
-            >
-              Start scan
-            </button>
-            <FormaVisionUploadEscapeLink testId="scan-setup-upload-escape" />
           </div>
         </div>
       )}
@@ -807,7 +889,14 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
               >
                 Retry
               </button>
-              <FormaVisionUploadEscapeLink testId="scan-qa-fail-upload-escape" />
+              <button
+                type="button"
+                data-testid="scan-qa-fail-upload-tab"
+                onClick={() => handleSetupModeChange('upload')}
+                className="inline-flex min-h-[44px] w-full items-center justify-center rounded-xl border border-white/20 bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-white/80 sm:w-auto"
+              >
+                Upload images
+              </button>
             </div>
           )}
           {state.phase === 'PROMPT' && currentPose && !state.lastQaCode && (
@@ -921,7 +1010,14 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
               Skip pose
             </button>
           </div>
-          <FormaVisionUploadEscapeLink testId="scan-choice-upload-escape" />
+          <button
+            type="button"
+            data-testid="scan-choice-upload-tab"
+            onClick={() => handleSetupModeChange('upload')}
+            className="inline-flex min-h-[44px] w-full items-center justify-center rounded-xl border border-white/20 bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-white/80 sm:w-auto"
+          >
+            Upload images
+          </button>
         </div>
       )}
 
@@ -993,7 +1089,14 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
           >
             Tap Start scan to try again
           </button>
-          <FormaVisionUploadEscapeLink testId="scan-camera-lost-upload-escape" />
+          <button
+            type="button"
+            data-testid="scan-camera-lost-upload-tab"
+            onClick={() => handleSetupModeChange('upload')}
+            className="inline-flex min-h-[44px] w-full items-center justify-center rounded-xl border border-white/20 bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-white/80 sm:w-auto"
+          >
+            Upload images
+          </button>
         </div>
       )}
     </div>

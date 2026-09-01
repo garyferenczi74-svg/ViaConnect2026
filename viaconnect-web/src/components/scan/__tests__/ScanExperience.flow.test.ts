@@ -712,39 +712,49 @@ describe('ScanExperience wiring: live DONE converges onto the shared analyzer', 
   });
 });
 
-describe('ScanExperience wiring: Upload escape from live SETUP and fail beats', () => {
+describe('ScanExperience wiring: Live | Upload images tabs on SETUP', () => {
   const src = readFileSync(resolve(__dirname, '../ScanExperience.tsx'), 'utf8');
   const page = readFileSync(
     resolve(__dirname, '../../../app/(app)/(consumer)/body-tracker/formavision/scan/page.tsx'),
     'utf8',
   );
-  const escape = readFileSync(resolve(__dirname, '../FormaVisionUploadEscapeLink.tsx'), 'utf8');
+  const landing = readFileSync(
+    resolve(__dirname, '../../../app/(app)/(consumer)/body-tracker/formavision/page.tsx'),
+    'utf8',
+  );
 
-  it('SETUP, QA fail, CHOICE, and CAMERA_LOST all offer Upload saved images', () => {
-    expect(src).toContain('scan-setup-upload-escape');
-    expect(src).toContain('scan-qa-fail-upload-escape');
-    expect(src).toContain('scan-choice-upload-escape');
-    expect(src).toContain('scan-camera-lost-upload-escape');
-    expect(src).toContain('scan-setup-back-formavision');
-    expect(src).toContain('FormaVisionUploadEscapeLink');
-    expect(src).toContain('Start scan');
-  });
-
-  it('scan capture header can leave live SETUP to FormaVision or upload mode', () => {
-    expect(page).toContain('scan-capture-header');
-    expect(page).toContain('scan-back-formavision');
-    expect(page).toContain('scan-header-upload-escape');
-    expect(page).toContain('formavisionUploadHref');
-    expect(page).toContain('Back to FormaVision');
-    expect(page).toContain('Upload saved images');
-  });
-
-  it('upload escape deep-links to ?mode=upload and does not replace live capture', () => {
-    expect(escape).toContain("formavisionUploadHref()");
-    expect(escape).toContain('Upload saved images');
-    expect(escape).toContain('strokeWidth={1.5}');
-    expect(escape).not.toMatch(/\bany\b/);
+  it('SETUP mounts Live | Upload images tabs and BodyScanUploader in-place', () => {
+    expect(src).toContain('scan-setup-mode');
+    expect(src).toContain('liveLabel="Live"');
+    expect(src).toContain('uploadLabel="Upload images"');
+    expect(src).toContain('scan-setup-upload-panel');
+    expect(src).toContain('BodyScanUploader');
+    expect(src).toContain('persistCompositionScan');
     expect(src).toContain('scan-start-button');
     expect(src).toContain('handleStart');
+    expect(src).not.toContain('FormaVisionUploadEscapeLink');
+    expect(src).not.toMatch(/from '@\/lib\/body-tracker\/composition\/runFormaVisionAnalyze'/);
+  });
+
+  it('fail and disconnect beats switch to the Upload images tab without leaving /scan', () => {
+    expect(src).toContain('scan-qa-fail-upload-tab');
+    expect(src).toContain('scan-choice-upload-tab');
+    expect(src).toContain('scan-camera-lost-upload-tab');
+    expect(src).toContain("handleSetupModeChange('upload')");
+    expect(src).toContain('RETURN_SETUP');
+  });
+
+  it('scan header goes back to FormaVision and does not off-link Upload to ?mode=upload', () => {
+    expect(page).toContain('scan-capture-header');
+    expect(page).toContain('scan-back-formavision');
+    expect(page).toContain('Back to FormaVision');
+    expect(page).not.toContain('formavisionUploadHref');
+    expect(page).not.toContain('scan-header-upload-escape');
+  });
+
+  it('does not add an Upload requirement to the FormaVision landing page', () => {
+    expect(landing).toContain('formavision-open-scan');
+    expect(landing).toContain('Scan My Body');
+    expect(landing).not.toContain('scan-history-upload-escape');
   });
 });

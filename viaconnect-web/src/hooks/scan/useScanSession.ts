@@ -61,7 +61,8 @@ export type ScanAction =
   | { type: 'SUBMIT_FAIL'; error: string }
   | { type: 'DISCARD' }
   | { type: 'CAMERA_LOST' }
-  | { type: 'RESET' };
+  | { type: 'RESET' }
+  | { type: 'RETURN_SETUP' };
 
 export function initialScanState(): ScanState {
   return {
@@ -246,6 +247,11 @@ export function scanReducer(state: ScanState, action: ScanAction): ScanState {
       // surface the disconnect notice.
       if (state.phase !== 'CAMERA_LOST') return state;
       return { ...initialScanState(), error: CAMERA_LOST_MESSAGE };
+    }
+
+    case 'RETURN_SETUP': {
+      // Abandon live capture (fail / switch to Upload images) and land on SETUP.
+      return initialScanState();
     }
 
     default:

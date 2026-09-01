@@ -31,9 +31,7 @@ describe('ScanHistory - empty state', () => {
       React.createElement(ScanHistory, { scans: [], onDeleted: NOOP }),
     );
     expect(html).toContain('No scans yet. Your first scan takes about a minute.');
-    expect(html).toContain('scan-history-upload-escape');
-    expect(html).toContain('Upload saved images');
-    expect(html).toContain('/body-tracker/formavision?mode=upload');
+    expect(html).not.toContain('scan-history-upload-escape');
   });
 
   it('never renders the empty state while scans are loading (scans: null)', () => {
