@@ -126,7 +126,8 @@ describe('DrinkLinc / LINC plugins IA', () => {
     expect(sql).toContain("'Droplets'");
     expect(sql).toContain('35');
     expect(sql).not.toMatch(/\/api\/integrations\/drinklinc\/authorize/);
-    expect(sql).not.toMatch(/FIRST_CLASS_TILE_IDS/);
+    expect(sql).toContain('Do not add drinklinc to FIRST_CLASS_TILE_IDS');
     expect(sql).toContain('not a wearable');
+    expect(sql).not.toMatch(/INSERT INTO.*wearable/i);
   });
 });
