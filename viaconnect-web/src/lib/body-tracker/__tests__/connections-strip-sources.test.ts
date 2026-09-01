@@ -3,10 +3,12 @@ import { FIRST_CLASS_TILE_IDS } from '../wearable-tiles';
 import { buildConnectionsStripSources } from '../connections-strip-sources';
 
 describe('ConnectionsStrip sources SSOT', () => {
-  it('lists the 6 first-class tiles and never hardcodes connected:true', () => {
+  it('lists first-class tiles including Clair and never hardcodes connected:true', () => {
     const sources = buildConnectionsStripSources([]);
     expect(sources.map((s) => s.id)).toEqual([...FIRST_CLASS_TILE_IDS]);
-    expect(sources).toHaveLength(6);
+    expect(sources).toHaveLength(FIRST_CLASS_TILE_IDS.length);
+    expect(sources.find((s) => s.id === 'clair')?.label).toBe('Clair Health');
+    expect(sources.find((s) => s.id === 'clair')?.connected).toBe(false);
     expect(sources.every((s) => s.connected === false)).toBe(true);
     expect(JSON.stringify(sources)).not.toMatch(/"connected":true/);
   });
@@ -29,6 +31,7 @@ describe('ConnectionsStrip sources SSOT', () => {
     const sources = buildConnectionsStripSources([]);
     expect(sources.find((s) => s.id === 'google_health')?.label).toBe('Google Health');
     expect(sources.find((s) => s.id === 'garmin')?.label).toBe('Garmin');
+    expect(sources.find((s) => s.id === 'clair')?.label).toBe('Clair Health');
     expect(sources.find((s) => s.id === 'hume')?.label).toBe('Hume Body Pod');
   });
 });

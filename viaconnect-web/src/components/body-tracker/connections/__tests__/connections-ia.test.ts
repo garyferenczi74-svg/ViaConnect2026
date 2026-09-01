@@ -27,7 +27,7 @@ describe('Connections IA contracts', () => {
     expect(wearables).not.toContain('Strain 42');
   });
 
-  it('ships four tiles, XML Hume action, and BOS footer', () => {
+  it('ships first-class tiles, XML Hume action, and BOS footer', () => {
     const surface = src('src/components/body-tracker/connections/ConnectionsSurface.tsx');
     const tile = src('src/components/body-tracker/connections/WearableTileCard.tsx');
     // Prompt 230 Task 7 split the per-dimension row render out of
@@ -189,9 +189,8 @@ describe('Connections IA contracts', () => {
     expect(hub).toContain('/body-tracker/connections');
     expect(hub).not.toMatch(/connected:\s*true/);
     const model = src('src/lib/body-tracker/wearable-tiles.ts');
-    expect(model).toContain(
-      "FIRST_CLASS_TILE_IDS = ['whoop', 'hume', 'apple_health', 'oura', 'google_health', 'garmin']",
-    );
+    expect(model).toContain("'clair'");
+    expect(model).toContain("name: 'Clair Health'");
     expect(model).toContain('FORBIDDEN_FIRST_CLASS_TILE_IDS');
     expect(model).toContain("'fitbit'");
     expect(model).toContain("'apple_watch'");

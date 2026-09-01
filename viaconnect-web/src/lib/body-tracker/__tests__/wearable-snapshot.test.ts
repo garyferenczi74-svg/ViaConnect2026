@@ -59,6 +59,7 @@ describe('wearable snapshot', () => {
       'oura',
       'google_health',
       'garmin',
+      'clair',
     ]);
     expect(snap.tiles.every((t) => t.lastSyncAt === null)).toBe(true);
     expect(snap.tiles.every((t) => t.appleWatchConnected === false)).toBe(true);

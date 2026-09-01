@@ -47,7 +47,7 @@ describe('Brief 29 Dashboard Analytics Biology SSOT', () => {
     expect(honest.score).toBeNull();
   });
 
-  it('ConnectionsStrip lists 6 first-class tiles and does not hardcode connected:true', () => {
+  it('ConnectionsStrip lists first-class tiles including Clair and does not hardcode connected:true', () => {
     const strip = src('src/components/body-tracker/hub/ConnectionsStrip.tsx');
     const sources = buildConnectionsStripSources([]);
     expect(sources.map((s) => s.id)).toEqual([...FIRST_CLASS_TILE_IDS]);

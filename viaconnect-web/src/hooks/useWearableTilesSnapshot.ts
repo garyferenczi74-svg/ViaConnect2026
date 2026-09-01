@@ -33,6 +33,7 @@ export function emptyWearableTilesSnapshot(
     ouraConfigured: false,
     googleHealthConfigured: false,
     garminConfigured: false,
+    clairConfigured: false,
     platform,
   });
 }

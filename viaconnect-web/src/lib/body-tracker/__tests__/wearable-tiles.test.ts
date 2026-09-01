@@ -50,7 +50,7 @@ function baseInput(over: Partial<WearableTileInput> = {}): WearableTileInput {
 }
 
 describe('wearable tile model', () => {
-  it('exposes Whoop, Hume Body Pod, Apple Health, Oura, Google Health, Garmin and no Watch tile', () => {
+  it('exposes Whoop, Hume Body Pod, Apple Health, Oura, Google Health, Garmin, Clair Health and no Watch tile', () => {
     expect(FIRST_CLASS_TILE_IDS).toEqual([
       'whoop',
       'hume',
@@ -58,6 +58,7 @@ describe('wearable tile model', () => {
       'oura',
       'google_health',
       'garmin',
+      'clair',
     ]);
     expect(WEARABLE_TILE_SPECS.map((s) => s.id)).toEqual([...FIRST_CLASS_TILE_IDS]);
     expect(WEARABLE_TILE_SPECS.map((s) => s.name)).toEqual([
@@ -67,6 +68,7 @@ describe('wearable tile model', () => {
       'Oura',
       'Google Health',
       'Garmin',
+      'Clair Health',
     ]);
     expect(WEARABLE_TILE_SPECS.some((s) => /watch/i.test(s.name))).toBe(false);
     expect(appleHealthDisplayName()).toBe('Apple Health');
@@ -84,6 +86,7 @@ describe('wearable tile model', () => {
     expect(byId.oura).toEqual(['sleep', 'recovery']);
     expect(byId.google_health).toEqual([]);
     expect(byId.garmin).toEqual([]);
+    expect(byId.clair).toEqual(['sleep', 'recovery']);
     expect(byId.apple_health).not.toContain('sleep');
   });
 
@@ -311,6 +314,7 @@ describe('wearable tile model', () => {
     }
     expect(tiles.find((t) => t.id === 'whoop')?.statusLabel).toBe('Coming soon');
     expect(tiles.find((t) => t.id === 'oura')?.statusLabel).toBe('Coming soon');
+    expect(tiles.find((t) => t.id === 'clair')?.statusLabel).toBe('Coming soon');
     expect(tiles.find((t) => t.id === 'hume')?.statusLabel).toBe('Not connected');
     expect(tiles.find((t) => t.id === 'apple_health')?.statusLabel).toBe('Not connected');
   });
@@ -393,14 +397,26 @@ describe('wearable tile model', () => {
 
   it('renders Google Health and Garmin as non-interactive Coming soon tiles', () => {
     const tiles = buildWearableTiles(baseInput());
-    expect(tiles.map((t) => t.id)).toEqual(['whoop', 'hume', 'apple_health', 'oura', 'google_health', 'garmin']);
+    expect(tiles.map((t) => t.id)).toEqual([
+      'whoop',
+      'hume',
+      'apple_health',
+      'oura',
+      'google_health',
+      'garmin',
+      'clair',
+    ]);
     const google = tiles.find((t) => t.id === 'google_health');
     const garmin = tiles.find((t) => t.id === 'garmin');
+    const clair = tiles.find((t) => t.id === 'clair');
     expect(google?.statusLabel).toBe('Coming soon');
     expect(garmin?.statusLabel).toBe('Coming soon');
+    expect(clair?.statusLabel).toBe('Coming soon');
     expect(google?.action).toEqual({ kind: 'oauth', configured: false });
     expect(garmin?.action).toEqual({ kind: 'oauth', configured: false });
+    expect(clair?.action).toEqual({ kind: 'oauth', configured: false });
     expect(google?.status).toBe('disconnected');
+    expect(clair?.status).toBe('disconnected');
   });
   it('keeps google_health and garmin out of the FORBIDDEN device-tile set now that they are Coming soon tiles', () => {
     expect(FORBIDDEN_FIRST_CLASS_TILE_IDS).not.toContain('google_health');
@@ -414,19 +430,22 @@ describe('wearable tile model', () => {
     const oura = cold.find((t) => t.id === 'oura');
     const google = cold.find((t) => t.id === 'google_health');
     const garmin = cold.find((t) => t.id === 'garmin');
+    const clair = cold.find((t) => t.id === 'clair');
     const apple = cold.find((t) => t.id === 'apple_health');
     const hume = cold.find((t) => t.id === 'hume');
-    if (!whoop || !oura || !google || !garmin || !apple || !hume) {
+    if (!whoop || !oura || !google || !garmin || !clair || !apple || !hume) {
       throw new Error('missing first-class tile');
     }
     expect(isComingSoonTile(whoop)).toBe(true);
     expect(isComingSoonTile(oura)).toBe(true);
     expect(isComingSoonTile(google)).toBe(true);
     expect(isComingSoonTile(garmin)).toBe(true);
+    expect(isComingSoonTile(clair)).toBe(true);
     expect(isComingSoonTile(apple)).toBe(false);
     expect(isComingSoonTile(hume)).toBe(false);
     expect(tileContributorLine(whoop)).toBe('Will feed Sleep, Recovery, Strain');
     expect(tileContributorLine(oura)).toBe('Will feed Sleep, Recovery');
+    expect(tileContributorLine(clair)).toBe('Will feed Sleep, Recovery');
     expect(tileContributorLine(google)).toBeNull();
     expect(tileContributorLine(garmin)).toBeNull();
     expect(tileContributorLine(apple)).toBeNull();

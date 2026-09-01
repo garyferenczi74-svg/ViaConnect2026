@@ -514,13 +514,15 @@ export function sameMomentBosDisplays(
 }
 
 const REAL_WEARABLE_FEED_IDS = new Set(['hume', 'apple_health']);
-const COMING_SOON_IDS = new Set(['whoop', 'oura', 'google_health', 'garmin']);
+const COMING_SOON_IDS = new Set(['whoop', 'oura', 'google_health', 'garmin', 'clair']);
 
 /**
  * Wearable slice only after a real Hume / Apple last-sync or XML ingest.
- * Whoop / Oura / Google / Garmin Coming soon never feed, even with leftover
- * last-sync. native_health_bridge stays off — callers must not pass minted
- * vitals. Hume-only last-sync does not unlock Sleep (see xmlUnlockedDimensions).
+ * Whoop / Oura / Google / Garmin / Clair Coming soon never feed, even with
+ * leftover last-sync. native_health_bridge stays off - callers must not pass
+ * minted vitals. Hume-only last-sync does not unlock Sleep (see
+ * xmlUnlockedDimensions). Clair never copies phone_health and never mints
+ * HRV / RHR / Sleep from this source.
  */
 export function wearableHannahGate(tiles: readonly WearableTileView[]): {
   pluggedIn: boolean;

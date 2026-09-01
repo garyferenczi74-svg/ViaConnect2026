@@ -144,6 +144,20 @@ export const CONNECTED_SOURCES: ConnectedSource[] = [
     notes:
       "Apple Health (iOS) and Health Connect (Android, flag-gated). Also covers Apple Watch, Oura, Garmin, and other apps that write into the phone health store, including Hume.",
   },
+  {
+    id: "clair",
+    displayName: "Clair Health",
+    icon: "Moon",
+    category: "wearable",
+    status: "coming_soon",
+    // Export-based post-GA path (JSON / CSV / HealthKit), Hume-like.
+    // file_import not oauth2: there is no partner API to authorize against.
+    authMethod: "file_import",
+    capabilities: [],
+    dataTypes: ["Sleep", "Recovery"],
+    notes:
+      "Coming soon. Partner domain is wearclair.com only. After launch, connect with a JSON, CSV, or HealthKit export. Capabilities stay empty until ingest ships. Clair is not a medical device and is not for contraception.",
+  },
 ];
 
 export function getSource(id: string): ConnectedSource | undefined {

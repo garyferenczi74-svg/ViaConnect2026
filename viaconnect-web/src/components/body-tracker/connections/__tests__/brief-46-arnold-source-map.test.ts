@@ -92,12 +92,14 @@ describe('Brief 46 Arnold source map', () => {
     expect(byId.oura).toEqual(['sleep', 'recovery']);
     expect(byId.google_health).toEqual([]);
     expect(byId.garmin).toEqual([]);
+    expect(byId.clair).toEqual(['sleep', 'recovery']);
     expect(byId.apple_health).not.toContain('sleep');
 
     const whoop = tileById('whoop');
     const oura = tileById('oura');
     const google = tileById('google_health');
     const garmin = tileById('garmin');
+    const clair = tileById('clair');
     const apple = tileById('apple_health');
     const hume = tileById('hume');
 
@@ -112,6 +114,9 @@ describe('Brief 46 Arnold source map', () => {
     );
     const garminMarkup = renderToStaticMarkup(
       createElement(WearableTileCard, { tile: garmin, onPrimary: () => undefined }),
+    );
+    const clairMarkup = renderToStaticMarkup(
+      createElement(WearableTileCard, { tile: clair, onPrimary: () => undefined }),
     );
     const appleMarkup = renderToStaticMarkup(
       createElement(WearableTileCard, { tile: apple, onPrimary: () => undefined }),
@@ -128,6 +133,13 @@ describe('Brief 46 Arnold source map', () => {
     expect(googleMarkup).not.toContain('Feeds ');
     expect(garminMarkup).not.toContain('Will feed');
     expect(garminMarkup).not.toContain('Feeds ');
+    expect(clairMarkup).toContain('Will feed Sleep, Recovery');
+    expect(clairMarkup).toContain('not a medical device');
+    expect(clairMarkup).toContain('not for contraception');
+    expect(clairMarkup).not.toContain('Feeds ');
+    expect(clairMarkup).not.toContain('Connect');
+    expect(clairMarkup).not.toContain('Body comp');
+    expect(clairMarkup).not.toMatch(/\bLH\b|\bFSH\b/);
     expect(appleMarkup).not.toContain('Sleep');
     expect(appleMarkup).not.toContain('Will feed');
     expect(appleMarkup).not.toContain('Feeds ');
@@ -164,6 +176,9 @@ describe('Brief 46 Arnold source map', () => {
     const garminRail = renderToStaticMarkup(
       createElement(ActiveSourceDetailPanel, { tile: tileById('garmin') }),
     );
+    const clairRail = renderToStaticMarkup(
+      createElement(ActiveSourceDetailPanel, { tile: tileById('clair') }),
+    );
 
     expect(appleRail).toContain('data-feeds-rail="true"');
     expect(appleRail).toContain('Body comp., Metabolic');
@@ -174,10 +189,18 @@ describe('Brief 46 Arnold source map', () => {
     expect(whoopRail).toContain('Sleep, Recovery, Strain');
     expect(googleRail).not.toContain('data-feeds-rail="true"');
     expect(garminRail).not.toContain('data-feeds-rail="true"');
+    expect(clairRail).toContain('data-feeds-rail="true"');
+    expect(clairRail).toContain('Will feed');
+    expect(clairRail).toContain('Sleep, Recovery');
+    expect(clairRail).toContain('not a medical device');
+    expect(clairRail).toContain('not for contraception');
+    expect(clairRail).toContain('JSON, CSV, or HealthKit export');
+    expect(clairRail).not.toContain('Body comp');
+    expect(clairRail).not.toMatch(/\bLH\b|\bFSH\b/);
   });
 
   it('Coming soon tiles have no Connect and no last-sync', () => {
-    for (const id of ['whoop', 'oura', 'google_health', 'garmin'] as const) {
+    for (const id of ['whoop', 'oura', 'google_health', 'garmin', 'clair'] as const) {
       const tile = tileById(id);
       expect(tile.statusLabel).toBe('Coming soon');
       expect(tile.lastSyncState).toBe('not_connected');
@@ -261,6 +284,7 @@ describe('Brief 46 Arnold source map', () => {
       'oura',
       'google_health',
       'garmin',
+      'clair',
     ]);
     expect(wearableTileCardChrome(false)).toBe(WEARABLE_TILE_RESTING_CHROME);
     expect(WEARABLE_TILE_RESTING_CHROME).toBe(
