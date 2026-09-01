@@ -129,6 +129,41 @@ export async function completeCAQAndTriggerEngines(): Promise<{
       errors.push(`CAQ version: ${err instanceof Error ? err.message : "Failed"}`);
     }
 
+    // ═══ STEP 1.6: Write nutrition_targets from CAQ Lifestyle + body ═══
+    // The only writer is POST /api/nutrition/generate-targets. Mapping
+    // CAQ EXERCISE_FREQ (Never / Nx/week / Daily) is not enough for an
+    // empty table; completion must call the route. 422
+    // estimate_unavailable means inputs are still missing: keep the
+    // empty copy, do not invent macros, and do not fail CAQ.
+    try {
+      const res = await fetchWithTimeout(
+        "/api/nutrition/generate-targets",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        },
+        ENGINE_TIMEOUT_MS,
+      );
+      if (res.ok || res.status === 422) {
+        results["nutrition_targets"] = true;
+        if (res.status === 422) {
+          safeLog.warn("caq.complete.engine", "nutrition_targets estimate_unavailable", {
+            error: "422",
+          });
+        }
+      } else {
+        results["nutrition_targets"] = false;
+        errors.push(`Nutrition targets: ${res.status}`);
+      }
+    } catch (err) {
+      results["nutrition_targets"] = false;
+      errors.push(`Nutrition targets: ${err instanceof Error ? err.message : "Failed"}`);
+      safeLog.warn("caq.complete.engine", "nutrition_targets failed", {
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+
     // ═══ STEP 2: Generate Symptom Profile (Ultrathink) ═══
     try {
       const res = await fetchWithTimeout("/api/ai/generate-symptom-profile", { method: "POST" }, ENGINE_TIMEOUT_MS);

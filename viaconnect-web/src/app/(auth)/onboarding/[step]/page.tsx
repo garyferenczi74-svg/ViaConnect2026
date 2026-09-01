@@ -960,6 +960,15 @@ export default function OnboardingStepPage() {
               }
             }
           } catch { /* persistence is best-effort; the CAQ proceeds */ }
+          // After Lifestyle + weight-goal persist, ask the sole
+          // nutrition_targets writer to build a row. Fire-and-forget:
+          // 422 estimate_unavailable keeps the empty copy (no invented
+          // macros). completeCAQAndTriggerEngines retries at CAQ end.
+          void fetch("/api/nutrition/generate-targets", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({}),
+          }).catch(() => { /* best-effort; complete-caq retries */ });
           break;
         }
         case "1b": await savePhase("6", { healthConcerns, familyHistory }); break;
