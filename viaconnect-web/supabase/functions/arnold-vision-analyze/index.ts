@@ -17,7 +17,13 @@ import { withTimeout, withAbortTimeout, isTimeoutError } from '../_shared/with-t
 import { safeLog } from '../_shared/safe-log.ts';
 import { getCircuitBreaker, isCircuitBreakerError } from '../_shared/circuit-breaker.ts';
 import { reportSupabaseError } from '../_shared/schema-drift.ts';
-import { resolveVisionModel } from '../_shared/vision-model.ts';
+import { isBadVisionModel } from '../_shared/scan-media-types.ts';
+import {
+  resolveVisionModel,
+  redactSecretsForLog,
+  clientSafeVisionModelError,
+  sanitizeAnalyzeUserError,
+} from '../_shared/vision-model.ts';
 
 const visionBreaker = getCircuitBreaker('claude-vision');
 
@@ -600,15 +606,30 @@ serve(async (req) => {
 
     if (!apiResponse.ok) {
       const errTxt = await apiResponse.text();
-      safeLog.error('arnold.vision-analyze', 'vision non-2xx', { sessionId, status: apiResponse.status, errTxt: errTxt.slice(0, 200) });
+      const preview = redactSecretsForLog(errTxt.slice(0, 200));
+      safeLog.error('arnold.vision-analyze', 'vision non-2xx', {
+        sessionId,
+        status: apiResponse.status,
+        errTxt: preview,
+        vision_model: VISION_MODEL,
+      });
+      const badModel = isBadVisionModel(apiResponse.status, errTxt);
+      const clientError = badModel
+        ? clientSafeVisionModelError(VISION_MODEL)
+        : `Vision API failure: ${apiResponse.status}`;
       const { error: markNon2xxError } = await db
         .from('body_photo_sessions')
-        .update({ arnold_status: 'failed', arnold_error: `Vision API ${apiResponse.status}: ${errTxt.slice(0, 500)}` })
+        .update({
+          arnold_status: 'failed',
+          arnold_error: badModel
+            ? clientSafeVisionModelError(VISION_MODEL)
+            : `Vision API ${apiResponse.status}: ${preview}`,
+        })
         .eq('id', sessionId);
       if (markNon2xxError) {
         reportSupabaseError('arnold-vision-analyze.mark-vision-non-2xx', markNon2xxError, { table: 'body_photo_sessions' });
       }
-      return json({ status: 'failed', error: `Vision API failure: ${apiResponse.status}` }, 502);
+      return json({ status: 'failed', error: clientError }, 502);
     }
 
     const apiJson = await apiResponse.json();
@@ -712,7 +733,7 @@ serve(async (req) => {
     return json({ status: 'complete', analysis: calibrated });
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Unknown error';
-    safeLog.error('arnold.vision-analyze', 'fatal', { error: e });
-    return json({ status: 'failed', error: msg }, 500);
+    safeLog.error('arnold.vision-analyze', 'fatal', { error: redactSecretsForLog(msg) });
+    return json({ status: 'failed', error: sanitizeAnalyzeUserError(msg) }, 500);
   }
 });

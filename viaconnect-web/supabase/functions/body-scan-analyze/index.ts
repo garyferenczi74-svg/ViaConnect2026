@@ -27,7 +27,7 @@ import {
   isUsableVisionModelId,
   resolveVisionModel,
   redactSecretsForLog,
-  VISION_MODEL_CONFIG_USER_ERROR,
+  clientSafeVisionModelError,
 } from '../_shared/vision-model.ts';
 
 const visionBreaker = getCircuitBreaker('claude-vision');
@@ -364,7 +364,7 @@ serve(async (req) => {
         vision_model: VISION_MODEL,
       });
       if (isBadVisionModel(apiResponse.status, errText)) {
-        return json({ error: VISION_MODEL_CONFIG_USER_ERROR }, 502);
+        return json({ error: clientSafeVisionModelError(VISION_MODEL) }, 502);
       }
       throw new Error(`anthropic ${apiResponse.status}: ${preview}`);
     }

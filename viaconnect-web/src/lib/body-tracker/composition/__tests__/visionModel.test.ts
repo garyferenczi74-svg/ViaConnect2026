@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import {
   DEFAULT_FORMAVISION_VISION_MODEL,
   VISION_MODEL_CONFIG_USER_ERROR,
+  clientSafeVisionModelError,
   isSecretLikeValue,
   isUsableVisionModelId,
   redactSecretsForLog,
@@ -36,6 +37,12 @@ describe('FormaVision vision model resolution', () => {
       model: DEFAULT_FORMAVISION_VISION_MODEL,
       usedFallback: true,
     });
+    expect(isSecretLikeValue('key-abcdefghijklmnopqrstuvwxyz0123456789')).toBe(true);
+    expect(isSecretLikeValue('Bearer abcdefghijklmnopqrstuvwxyz0123')).toBe(true);
+    expect(isSecretLikeValue('a'.repeat(48))).toBe(true);
+    expect(resolveVisionModel('key-abcdefghijklmnopqrstuvwxyz0123456789').model).toBe(
+      DEFAULT_FORMAVISION_VISION_MODEL,
+    );
   });
 
   it('falls back when env is empty or not a Claude id', () => {
@@ -57,6 +64,8 @@ describe('FormaVision vision model resolution', () => {
     const leaked = 'invalid vision model: sk-ant-api03-abcdefghijklmnopqrstuvwxyz';
     expect(sanitizeAnalyzeUserError(leaked)).toBe(VISION_MODEL_CONFIG_USER_ERROR);
     expect(sanitizeAnalyzeUserError(leaked)).not.toMatch(/sk-ant-/);
+    expect(clientSafeVisionModelError(leaked)).toBe('invalid vision model configuration');
+    expect(clientSafeVisionModelError(leaked)).not.toContain(leaked);
     expect(sanitizeAnalyzeUserError('vision timed out')).toBe('vision timed out');
     expect(sanitizeAnalyzeUserError('Add at least one photo. Missing views are skipped, not invented.')).toMatch(
       /Add at least one photo/,
@@ -79,6 +88,7 @@ describe('FormaVision vision model resolution', () => {
     expect(edge).toContain(DEFAULT_FORMAVISION_VISION_MODEL);
     expect(edge).toContain(VISION_MODEL_CONFIG_USER_ERROR);
     expect(edge).toContain('export function resolveVisionModel');
+    expect(edge).toContain('export function clientSafeVisionModelError');
     expect(edge).toContain('export function sanitizeAnalyzeUserError');
     expect(client).toContain(VISION_MODEL_CONFIG_USER_ERROR);
   });

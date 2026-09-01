@@ -4,17 +4,19 @@
 
 export const DEFAULT_FORMAVISION_VISION_MODEL = 'claude-sonnet-4-6';
 
-export const VISION_MODEL_CONFIG_USER_ERROR =
-  'Analysis unavailable — model configuration error. Try again later.';
+export const VISION_MODEL_CONFIG_USER_ERROR = 'invalid vision model configuration';
 
-const SECRET_TOKEN = /sk-ant-[A-Za-z0-9_-]+/i;
-const GENERIC_SK = /\bsk-[A-Za-z0-9_-]{16,}\b/i;
-const BEARER = /\bBearer\s+[A-Za-z0-9._\-+=]+\b/i;
+const SK_TOKEN = /(?:^|[\s:"'`])sk-[A-Za-z0-9_-]{8,}/i;
+const KEY_TOKEN = /(?:^|[\s:"'`])key-[A-Za-z0-9_-]{8,}/i;
+const BEARER = /\bBearer\s+[A-Za-z0-9._\-+=]+/i;
+const LONG_OPAQUE = /^[A-Za-z0-9+/=._-]{40,}$/;
 
 export function isSecretLikeValue(value: string): boolean {
   const v = value.trim();
   if (!v) return false;
-  return SECRET_TOKEN.test(v) || GENERIC_SK.test(v) || BEARER.test(v);
+  if (SK_TOKEN.test(v) || KEY_TOKEN.test(v) || BEARER.test(v)) return true;
+  if (LONG_OPAQUE.test(v) && !/^claude-/i.test(v)) return true;
+  return false;
 }
 
 export function isUsableVisionModelId(value: string): boolean {
@@ -34,16 +36,21 @@ export function resolveVisionModel(
   return { model: fallback, usedFallback: v.length > 0 };
 }
 
+/** Client JSON for a bad-model response. Never interpolates the raw env/model. */
+export function clientSafeVisionModelError(_model?: string): string {
+  return VISION_MODEL_CONFIG_USER_ERROR;
+}
+
 export function redactSecretsForLog(text: string): string {
   return text
-    .replace(/sk-ant-[A-Za-z0-9_-]+/gi, '[redacted]')
-    .replace(/\bsk-[A-Za-z0-9_-]{16,}\b/gi, '[redacted]')
-    .replace(/\bBearer\s+[A-Za-z0-9._\-+=]+\b/gi, 'Bearer [redacted]');
+    .replace(/sk-[A-Za-z0-9_-]{8,}/gi, '[redacted]')
+    .replace(/key-[A-Za-z0-9_-]{8,}/gi, '[redacted]')
+    .replace(/\bBearer\s+[A-Za-z0-9._\-+=]+/gi, 'Bearer [redacted]');
 }
 
 export function sanitizeAnalyzeUserError(message: string | null | undefined): string {
   if (!message || !message.trim()) return 'Analysis failed';
-  if (isSecretLikeValue(message) || /invalid vision model/i.test(message)) {
+  if (isSecretLikeValue(message) || /invalid vision model:/i.test(message)) {
     return VISION_MODEL_CONFIG_USER_ERROR;
   }
   return message;

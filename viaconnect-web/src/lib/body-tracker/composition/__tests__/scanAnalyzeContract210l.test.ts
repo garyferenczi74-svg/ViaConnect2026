@@ -44,7 +44,7 @@ describe('Prompt 210l analyze-chain source contracts', () => {
     expect(src).toMatch(/body_tracker_weight/);
     expect(src).toMatch(/anthropic_key_present/);
     expect(src).toMatch(/anthropic_preview/);
-    expect(src).toMatch(/VISION_MODEL_CONFIG_USER_ERROR/);
+    expect(src).toMatch(/clientSafeVisionModelError\(VISION_MODEL\)/);
     expect(src).toMatch(/resolveVisionModel/);
     expect(src).not.toMatch(/invalid vision model: \$\{VISION_MODEL\}/);
     expect(src).toMatch(/media_types/);
@@ -52,6 +52,23 @@ describe('Prompt 210l analyze-chain source contracts', () => {
     expect(src).toMatch(/Never reference Semaglutide/);
     expect(src).toMatch(/10x to 28x/);
     expect(src).not.toMatch(/from ['"].*arnold-vision-analyze/);
+  });
+
+  it('vision model error path exists and never interpolates raw VISION_MODEL', () => {
+    const edge = read('supabase/functions/body-scan-analyze/index.ts');
+    const helper = read('supabase/functions/_shared/vision-model.ts');
+    const arnold = read('supabase/functions/arnold-vision-analyze/index.ts');
+    expect(helper).toMatch(/invalid vision model configuration/);
+    expect(helper).toMatch(/clientSafeVisionModelError/);
+    expect(helper).toMatch(/sk-ant-|sk-\[A-Za-z0-9/);
+    expect(edge).toMatch(/isBadVisionModel/);
+    expect(edge).toMatch(/clientSafeVisionModelError\(VISION_MODEL\)/);
+    expect(edge).toMatch(/resolveVisionModel/);
+    expect(edge).not.toMatch(/invalid vision model: \$\{VISION_MODEL\}/);
+    expect(edge).not.toMatch(/error: `invalid vision model: \$\{/);
+    expect(arnold).toMatch(/resolveVisionModel/);
+    expect(arnold).toMatch(/clientSafeVisionModelError\(VISION_MODEL\)/);
+    expect(arnold).not.toMatch(/invalid vision model: \$\{VISION_MODEL\}/);
   });
 
   it('FormaVision tab hosts the four-photo scan panel', () => {
