@@ -31,6 +31,7 @@ describe('ScanHistory - empty state', () => {
       React.createElement(ScanHistory, { scans: [], onDeleted: NOOP }),
     );
     expect(html).toContain('No scans yet. Your first scan takes about a minute.');
+    expect(html).not.toContain('scan-history-upload-escape');
   });
 
   it('never renders the empty state while scans are loading (scans: null)', () => {

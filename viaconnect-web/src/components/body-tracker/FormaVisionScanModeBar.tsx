@@ -7,9 +7,16 @@ export type FormaVisionScanMode = 'live' | 'upload';
 interface FormaVisionScanModeBarProps {
   mode: FormaVisionScanMode;
   onChange: (mode: FormaVisionScanMode) => void;
+  liveLabel?: string;
+  uploadLabel?: string;
 }
 
-export function FormaVisionScanModeBar({ mode, onChange }: FormaVisionScanModeBarProps) {
+export function FormaVisionScanModeBar({
+  mode,
+  onChange,
+  liveLabel = 'Live scan',
+  uploadLabel = 'Upload saved images',
+}: FormaVisionScanModeBarProps) {
   return (
     <div
       role="tablist"
@@ -30,7 +37,7 @@ export function FormaVisionScanModeBar({ mode, onChange }: FormaVisionScanModeBa
         }`}
       >
         <Camera size={16} strokeWidth={1.5} />
-        Live scan
+        {liveLabel}
       </button>
       <button
         type="button"
@@ -45,7 +52,7 @@ export function FormaVisionScanModeBar({ mode, onChange }: FormaVisionScanModeBa
         }`}
       >
         <ImagePlus size={16} strokeWidth={1.5} />
-        Upload saved images
+        {uploadLabel}
       </button>
     </div>
   );
