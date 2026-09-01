@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
+  bandLumaMeansFromGray,
+  detectAPoseInversionFromBandLuma,
   isIdentityTransform,
   readJpegExifOrientation,
   resolveUprightTransform,
@@ -59,5 +61,48 @@ describe('normalizeScanPhotoOrientation', () => {
     expect(resolveUprightTransform(null, 'live')).toEqual({ rotateQuarterTurns: 0, flipX: false });
     expect(resolveUprightTransform(1, 'live')).toEqual({ rotateQuarterTurns: 0, flipX: false });
     expect(isIdentityTransform(resolveUprightTransform(null, 'live'))).toBe(true);
+  });
+
+  it('auto-upright hint overrides the upload fallback so already-upright gallery shots are not flipped twice', () => {
+    expect(resolveUprightTransform(null, 'upload', 'upright')).toEqual({
+      rotateQuarterTurns: 0,
+      flipX: false,
+    });
+    expect(resolveUprightTransform(1, 'upload', 'inverted')).toEqual({
+      rotateQuarterTurns: 2,
+      flipX: false,
+    });
+    expect(resolveUprightTransform(6, 'upload', 'upright')).toEqual({
+      rotateQuarterTurns: 1,
+      flipX: false,
+    });
+  });
+
+  it('detects inverted A-pose when the dark floor band is at the top', () => {
+    const width = 32;
+    const height = 64;
+    const gray = new Uint8Array(width * height);
+    for (let y = 0; y < height; y += 1) {
+      const value = y < 10 ? 30 : 220;
+      gray.fill(value, y * width, (y + 1) * width);
+    }
+    const bands = bandLumaMeansFromGray(width, height, gray);
+    expect(bands).not.toBeNull();
+    expect(detectAPoseInversionFromBandLuma(bands!.topMean, bands!.bottomMean)).toBe('inverted');
+    expect(resolveUprightTransform(1, 'upload', 'inverted').rotateQuarterTurns).toBe(2);
+  });
+
+  it('detects upright A-pose when the dark floor band is at the bottom', () => {
+    const width = 32;
+    const height = 64;
+    const gray = new Uint8Array(width * height);
+    for (let y = 0; y < height; y += 1) {
+      const value = y >= height - 10 ? 30 : 220;
+      gray.fill(value, y * width, (y + 1) * width);
+    }
+    const bands = bandLumaMeansFromGray(width, height, gray);
+    expect(bands).not.toBeNull();
+    expect(detectAPoseInversionFromBandLuma(bands!.topMean, bands!.bottomMean)).toBe('upright');
+    expect(resolveUprightTransform(null, 'upload', 'upright').rotateQuarterTurns).toBe(0);
   });
 });

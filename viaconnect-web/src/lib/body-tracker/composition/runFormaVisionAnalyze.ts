@@ -68,7 +68,7 @@ export interface FormaVisionAnalyzeArgs {
   onViewQuality?: (result: ViewQualityResult) => void;
   onGeometricMeasurements?: (m: ExtractedMeasurements) => void;
   isMounted?: () => boolean;
-  /** Slot attach already baked EXIF / 180° upright — do not rotate again. */
+  /** Slot attach already baked EXIF / auto-upright — do not rotate again. */
   alreadyNormalized?: boolean;
 }
 

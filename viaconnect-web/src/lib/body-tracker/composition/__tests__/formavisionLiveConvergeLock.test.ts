@@ -55,4 +55,16 @@ describe('FormaVision live converge lock (REQUIRED)', () => {
     expect(persist).toMatch(/device_name:\s*'FormaVision'/);
     expect(persist).toMatch(/source:\s*'scan'/);
   });
+
+  it('upload inverted gallery fixtures are auto-uprighted before the shared analyzer', () => {
+    const normalize = src('src/lib/body-tracker/composition/normalizeScanPhotoOrientation.ts');
+    const golden = src('src/lib/body-tracker/composition/goldenUploadFixtures.ts');
+    expect(normalize).toMatch(/detectAPoseInversionFromBandLuma/);
+    expect(normalize).toMatch(/imageOrientation:\s*'none'/);
+    expect(golden).toMatch(/01-front\.jpg/);
+    expect(golden).toMatch(/02-right\.jpg/);
+    expect(golden).toMatch(/03-back\.jpg/);
+    expect(golden).toMatch(/04-left\.jpg/);
+    expect(uploader).toMatch(/normalizeScanPhotoUpright\(stored, 'upload'\)/);
+  });
 });

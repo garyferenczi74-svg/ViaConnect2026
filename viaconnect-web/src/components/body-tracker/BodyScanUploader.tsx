@@ -275,8 +275,9 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
     <div className="space-y-5">
       <p className="text-sm text-white/60">
         Upload saved images from your phone or desktop — Front, Right, Back, Left.
-        Skip a view you do not have. Photos are uprighted (EXIF, or 180° when inverted)
-        before analysis. Total body fat only; missing views are not invented.
+        Skip a view you do not have. Photos are uprighted (EXIF Orientation, or
+        auto-upright when inverted) before analysis. Total body fat only; missing
+        views are not invented.
       </p>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

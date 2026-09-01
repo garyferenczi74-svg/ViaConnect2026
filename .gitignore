@@ -7,3 +7,6 @@ node_modules/
 
 # Local-only Supabase email template draft — kept on disk, never committed
 supabase-email-template.html
+
+# Arnold golden A-pose body photos — shared box only, never commit
+formavision-review/
