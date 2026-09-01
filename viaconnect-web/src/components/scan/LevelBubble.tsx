@@ -19,6 +19,9 @@ export interface LevelBubbleProps {
   gamma: number;
   tolerance?: number;
   available: boolean;
+  /** When orientation is unavailable, Continue / tap-through dismisses.
+   * Duration only: copy stays Hannah-cleared. */
+  onDismiss?: () => void;
 }
 
 const CHECKLIST_COPY = 'Place the phone on a flat surface';
@@ -36,18 +39,33 @@ export function LevelBubble({
   gamma,
   tolerance = DEFAULT_TOLERANCE,
   available,
+  onDismiss,
 }: LevelBubbleProps) {
   if (!available) {
     return (
       <div
         data-testid="level-bubble-unavailable"
         className="rounded-xl bg-navy-700 p-4 text-sm text-white"
+        onClick={onDismiss}
       >
         <p className="font-semibold">Orientation unavailable</p>
         <ul className="mt-2 list-disc space-y-1 pl-4 text-white/80">
           <li>{CHECKLIST_COPY}</li>
           <li>Allow motion and orientation access in your browser</li>
         </ul>
+        {onDismiss ? (
+          <button
+            type="button"
+            data-testid="scan-orientation-continue"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDismiss();
+            }}
+            className="mt-3 min-h-[44px] rounded-xl bg-[var(--teal)] px-5 py-2.5 text-sm font-semibold text-white"
+          >
+            Continue
+          </button>
+        ) : null}
       </div>
     );
   }
