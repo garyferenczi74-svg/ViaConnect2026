@@ -22,19 +22,18 @@ import {
 import {
   compositionSectionHref,
   formavisionAfterScanHref,
-  formavisionScanEntryHref,
   parseCompositionSection,
   shouldOpenScanFromQuery,
 } from '@/lib/body-tracker/compositionNav';
-// FormaVision button opens the FormaVision scan panel (upload mode).
-// The legacy composition BodyScanUploader sheet stays mounted but is not
-// the SSOT (G84). Do not router.push to /scan from this CTA.
+// Orange CompositionSectionToggle FormaVision tab is the only scan entry.
+// BiologyActionRow no longer offers a second FormaVision CTA. The legacy
+// composition BodyScanUploader sheet stays mounted for ?scan=1 only (G84).
 // === PROMPT 210b VR (Section 8) START ===
 // Direct-path imports (not the avatar barrel) so this Visual Results surface
 // stays disjoint from the avatar component files.
 import { BodyFatReadout } from '@/components/formavision/BodyFatReadout';
 import { NotableChanges } from '@/components/formavision/NotableChanges';
-// Prompt 217: uniform My Biology action row (FormaVision / Log Data / Doctor's Report).
+// Prompt 217: uniform My Biology action row (Log Data / Doctor's Report).
 import { BiologyActionRow } from '@/components/body-tracker/BiologyActionRow';
 // Prompt 211a W1: shareable transformation clip (the growth engine). Imported
 // directly (NOT via the barrel) so the consumer-only structural discipline holds:
@@ -828,13 +827,7 @@ function CompositionPageInner() {
         <CompositionSectionToggle active={section} onChange={onSectionNav} />
         <BiologyActionRow
           userId={userId ?? null}
-          scanOpen={scanOpen}
           logOpen={open}
-          onToggleScan={() => {
-            // Legacy scanOpen sheet stays unreachable. Entry is FormaVision
-            // upload mode; Live remains on the scan panel and /scan SETUP tabs.
-            router.push(formavisionScanEntryHref('upload'));
-          }}
           onToggleLog={() => {
             setScanOpen(false);
             setOpen((o) => !o);

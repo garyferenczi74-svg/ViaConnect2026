@@ -66,7 +66,7 @@ describe('compositionNav (210k)', () => {
     expect(shouldOpenScanFromQuery(null)).toBe(false);
   });
 
-  it('dashboard and composition CTAs enter FormaVision upload mode, not /scan', () => {
+  it('dashboard Body Composition tile enters FormaVision upload mode, not /scan', () => {
     const root = process.cwd();
     const dash = readFileSync(
       join(root, 'src/components/body-tracker/dashboard/DashboardBento.tsx'),
@@ -76,10 +76,18 @@ describe('compositionNav (210k)', () => {
       join(root, 'src/app/(app)/(consumer)/body-tracker/composition/page.tsx'),
       'utf8',
     );
+    const row = readFileSync(
+      join(root, 'src/components/body-tracker/BiologyActionRow.tsx'),
+      'utf8',
+    );
     expect(dash).toContain("formavisionScanEntryHref('upload')");
     expect(dash).not.toContain('SCAN_CAPTURE_PATH');
-    expect(composition).toContain("formavisionScanEntryHref('upload')");
+    expect(composition).not.toContain('formavisionScanEntryHref');
     expect(composition).not.toContain('SCAN_CAPTURE_PATH');
+    expect(composition).not.toContain('biology-action-formavision');
     expect(composition).toContain('BodyScanUploader');
+    expect(composition).toContain('CompositionSectionToggle');
+    expect(row).not.toContain('biology-action-formavision');
+    expect(row).not.toMatch(/>FormaVision</);
   });
 });

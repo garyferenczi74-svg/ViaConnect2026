@@ -24,7 +24,7 @@ describe('Prompt 217 BiologyActionRow', () => {
     expect(BIOLOGY_ACTION_BTN_PRIMARY).toMatch(/45,165,160|2DA5A0/i);
   });
 
-  it('composition page uses BiologyActionRow with renamed labels', () => {
+  it('composition page uses BiologyActionRow without a second FormaVision CTA', () => {
     const page = readFileSync(
       join(root, 'src/app/(app)/(consumer)/body-tracker/composition/page.tsx'),
       'utf8',
@@ -32,17 +32,20 @@ describe('Prompt 217 BiologyActionRow', () => {
     expect(page).toMatch(/BiologyActionRow/);
     // Action UI no longer hardcodes the old Scan My Body button label
     expect(page).not.toMatch(/>\s*Scan My Body\s*</);
+    expect(page).not.toMatch(/formavisionScanEntryHref/);
+    expect(page).not.toMatch(/biology-action-formavision/);
+    expect(page).not.toMatch(/onToggleScan/);
     const row = readFileSync(
       join(root, 'src/components/body-tracker/BiologyActionRow.tsx'),
       'utf8',
     );
-    expect(row).toMatch(/>FormaVision</);
+    expect(row).not.toMatch(/>FormaVision</);
+    expect(row).not.toMatch(/biology-action-formavision/);
+    expect(row).not.toMatch(/onToggleScan/);
     expect(row).toMatch(/>Log Data</);
     expect(row).toMatch(/variant="biology"/);
     expect(row).toMatch(/overflow-x-auto/);
     expect(row).toMatch(/snap-x/);
-    // Functions: scan toggle + log toggle still present
-    expect(row).toMatch(/onToggleScan/);
     expect(row).toMatch(/onToggleLog/);
     expect(row).not.toMatch(/Scan My Body/);
   });

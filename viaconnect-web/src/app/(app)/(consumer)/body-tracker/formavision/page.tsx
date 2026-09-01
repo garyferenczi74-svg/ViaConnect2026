@@ -3,6 +3,7 @@
 // Prompt 210h Revision C: dedicated FormaVision tab.
 // Prompt 210l: four-photo scan panel on this tab.
 // Prompt Brief 2: 3D A/B wipe compare (parametric BodyParamVector only).
+// Single orange-tab entry: Live | Upload scan panel is the primary scan UI.
 // Body Composition remains the numbers / manual / 2D surface.
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -106,7 +107,9 @@ function FormaVisionSurface() {
   const [baselineMode, setBaselineMode] = useState<AbBaselineMode>('last_scan');
   const [wipeT, setWipeT] = useState(0.5);
   // Prompt 210l: wire the FormaVision tab to the four-photo scan panel.
-  const [scanOpen, setScanOpen] = useState(false);
+  // Investor UX: panel is the primary scan path, so it opens by default.
+  // ?mode= still pins Live or Upload. Close scan hides the panel only.
+  const [scanOpen, setScanOpen] = useState(true);
   const [scanMode, setScanMode] = useState<FormaVisionScanMode>('upload');
   const [scanResult, setScanResult] = useState<BodyScanResult | null>(null);
   // Prompt 210k: same unit spine as composition (localStorage key shared).
@@ -328,7 +331,7 @@ function FormaVisionSurface() {
           {scanMode === 'live' ? (
             <div className="mt-4 space-y-3" data-testid="formavision-live-mode">
               <p className="text-sm text-white/65">
-                Guided live 4-pose camera capture. Skip a view if needed — we will not invent it.
+                Guided live 4-pose camera capture. Skip a view if needed. We will not invent it.
               </p>
               <Link
                 href={formavisionLiveScanHref()}

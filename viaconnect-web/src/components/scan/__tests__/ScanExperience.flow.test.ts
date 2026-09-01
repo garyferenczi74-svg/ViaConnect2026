@@ -752,9 +752,18 @@ describe('ScanExperience wiring: Live | Upload images tabs on SETUP', () => {
     expect(page).not.toContain('scan-header-upload-escape');
   });
 
-  it('does not add an Upload requirement to the FormaVision landing page', () => {
+  it('FormaVision landing hosts Live | Upload on the orange tab and keeps /scan tabs', () => {
     expect(landing).toContain('formavision-open-scan');
     expect(landing).toContain('Scan My Body');
+    expect(landing).toContain('formavision-scan-panel');
+    expect(landing).toContain('FormaVisionScanModeBar');
+    expect(landing).toContain('BodyScanUploader');
+    expect(landing).toContain('BodyCompositionAvatar');
+    expect(landing).toContain('scanToParamVector');
+    expect(landing).toMatch(/const \[scanOpen, setScanOpen\] = useState\(true\)/);
     expect(landing).not.toContain('scan-history-upload-escape');
+    expect(src).toContain('scan-setup-mode');
+    expect(src).toContain('liveLabel="Live"');
+    expect(src).toContain('uploadLabel="Upload images"');
   });
 });
