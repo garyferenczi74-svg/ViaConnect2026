@@ -29,6 +29,7 @@ import {
   type ScanPhotoSource,
 } from './normalizeScanPhotoOrientation';
 import { safeLog } from '@/lib/utils/safe-log';
+import { sanitizeAnalyzeUserError } from './visionModel';
 
 export interface BodyScanEstimate {
   estimated_body_fat_min: number;
@@ -191,7 +192,7 @@ export async function runFormaVisionAnalyzeSpine(
     persistRes: { ok: false, reason: 'analyze_failed' },
     flushCirc: () => undefined,
     circWritePromise: null,
-    error,
+    error: sanitizeAnalyzeUserError(error),
   });
 
   const mounted = args.isMounted ?? (() => true);

@@ -33,6 +33,7 @@ describe('runFormaVisionAnalyze shared spine', () => {
     expect(helper).toMatch(/source:\s*'live'/);
     expect(helper).toMatch(/runFormaVisionAnalyzeSpine/);
     expect(shared).toMatch(/body-scan-analyze/);
+    expect(shared).toMatch(/sanitizeAnalyzeUserError/);
     expect(shared).toMatch(/persistScanFn/);
     expect(shared).toMatch(/normalizeScanPhotoUpright/);
     expect(shared).not.toMatch(/navyBodyFat/);

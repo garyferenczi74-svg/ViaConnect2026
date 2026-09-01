@@ -17,6 +17,7 @@ import { withTimeout, withAbortTimeout, isTimeoutError } from '../_shared/with-t
 import { safeLog } from '../_shared/safe-log.ts';
 import { getCircuitBreaker, isCircuitBreakerError } from '../_shared/circuit-breaker.ts';
 import { reportSupabaseError } from '../_shared/schema-drift.ts';
+import { resolveVisionModel } from '../_shared/vision-model.ts';
 
 const visionBreaker = getCircuitBreaker('claude-vision');
 
@@ -26,7 +27,7 @@ const SUPABASE_URL   = Deno.env.get('SUPABASE_URL')!;
 const ANON_KEY       = Deno.env.get('SUPABASE_ANON_KEY')!;
 const SERVICE_KEY    = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const ANTHROPIC_KEY  = Deno.env.get('ANTHROPIC_API_KEY') ?? '';
-const VISION_MODEL   = Deno.env.get('ARNOLD_VISION_MODEL') ?? 'claude-sonnet-4-6';
+const VISION_MODEL   = resolveVisionModel(Deno.env.get('ARNOLD_VISION_MODEL')).model;
 const BUCKET         = 'body-progress-photos';
 
 // ---------- helpers -----------------------------------------------------------

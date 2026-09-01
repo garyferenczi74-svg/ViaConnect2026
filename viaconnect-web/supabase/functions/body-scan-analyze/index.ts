@@ -23,6 +23,12 @@ import { safeLog } from '../_shared/safe-log.ts';
 import { getCircuitBreaker, isCircuitBreakerError } from '../_shared/circuit-breaker.ts';
 import { reportSupabaseError } from '../_shared/schema-drift.ts';
 import { resolveServerMediaTypes, isBadVisionModel } from '../_shared/scan-media-types.ts';
+import {
+  isUsableVisionModelId,
+  resolveVisionModel,
+  redactSecretsForLog,
+  VISION_MODEL_CONFIG_USER_ERROR,
+} from '../_shared/vision-model.ts';
 
 const visionBreaker = getCircuitBreaker('claude-vision');
 
@@ -30,7 +36,9 @@ const SUPABASE_URL  = Deno.env.get('SUPABASE_URL')!;
 const ANON_KEY      = Deno.env.get('SUPABASE_ANON_KEY')!;
 const SERVICE_KEY   = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const ANTHROPIC_KEY = Deno.env.get('ANTHROPIC_API_KEY') ?? '';
-const VISION_MODEL  = Deno.env.get('ARNOLD_VISION_MODEL') ?? 'claude-sonnet-4-6';
+const RAW_VISION_MODEL_ENV = Deno.env.get('ARNOLD_VISION_MODEL');
+const VISION_MODEL_RESOLVED = resolveVisionModel(RAW_VISION_MODEL_ENV);
+const VISION_MODEL = VISION_MODEL_RESOLVED.model;
 
 // 8 MB per photo cap on the base64 string length (~6 MB of binary).
 const MAX_PHOTO_BYTES = 8_000_000;
@@ -211,7 +219,7 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders() });
 
   const keyPresent = ANTHROPIC_KEY.length > 0;
-  const modelConfigured = Boolean(Deno.env.get('ARNOLD_VISION_MODEL'));
+  const modelConfigured = isUsableVisionModelId(RAW_VISION_MODEL_ENV ?? '');
 
   if (req.method === 'GET') {
     safeLog.info('body-scan-analyze', 'health', {
@@ -227,6 +235,12 @@ serve(async (req) => {
 
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405);
 
+  if (VISION_MODEL_RESOLVED.usedFallback) {
+    safeLog.warn('body-scan-analyze', 'vision_model_env_invalid', {
+      using_fallback: true,
+      fallback_model: VISION_MODEL,
+    });
+  }
   safeLog.info('body-scan-analyze', 'vision_config', {
     anthropic_key_present: keyPresent,
     vision_model_configured: modelConfigured,
@@ -342,7 +356,7 @@ serve(async (req) => {
 
     if (!apiResponse.ok) {
       const errText = await apiResponse.text().catch(() => '');
-      const preview = errText.slice(0, 200);
+      const preview = redactSecretsForLog(errText.slice(0, 200));
       safeLog.warn('body-scan-analyze', 'anthropic_error', {
         user_id: user.id,
         anthropic_status: apiResponse.status,
@@ -350,7 +364,7 @@ serve(async (req) => {
         vision_model: VISION_MODEL,
       });
       if (isBadVisionModel(apiResponse.status, errText)) {
-        return json({ error: `invalid vision model: ${VISION_MODEL}` }, 502);
+        return json({ error: VISION_MODEL_CONFIG_USER_ERROR }, 502);
       }
       throw new Error(`anthropic ${apiResponse.status}: ${preview}`);
     }
