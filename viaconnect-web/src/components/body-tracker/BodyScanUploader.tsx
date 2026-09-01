@@ -31,6 +31,7 @@ import {
 } from '@/lib/body-tracker/composition/runFormaVisionAnalyze';
 import type { ViewQualityResult } from '@/lib/arnold/scanning/runScanAnalysis';
 import type { ExtractedMeasurements } from '@/lib/arnold/scanning/types';
+import { sanitizeAnalyzeUserError } from '@/lib/body-tracker/composition/visionModel';
 
 export type { PhotoPosition, BodyScanEstimate, BodyScanResult };
 
@@ -265,7 +266,7 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
         throw new Error(spine.error);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Analysis failed');
+      setError(sanitizeAnalyzeUserError(e instanceof Error ? e.message : 'Analysis failed'));
     } finally {
       setSubmitting(false);
     }
@@ -294,7 +295,8 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
             <div key={pos.key} className="space-y-2">
               <label
                 htmlFor={`scan-${pos.key}`}
-                className={`relative flex h-32 cursor-pointer flex-col items-center justify-center gap-2 overflow-hidden rounded-xl text-xs font-medium transition-all ${
+                data-testid={`scan-slot-frame-${pos.key}`}
+                className={`relative flex aspect-[3/4] w-full min-h-[44px] cursor-pointer flex-col items-center justify-center gap-2 overflow-hidden rounded-xl text-xs font-medium transition-all ${
                   qualityFailed
                     ? 'border border-[#B75E18]/60 bg-[#B75E18]/10 text-[#B75E18]'
                     : attached
@@ -308,7 +310,7 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
                     src={slot.previewUrl}
                     alt={`${pos.label} photo`}
                     data-testid={`scan-slot-preview-${pos.key}`}
-                    className="absolute inset-0 h-full w-full object-cover"
+                    className="absolute inset-0 h-full w-full object-cover object-center"
                   />
                 ) : null}
                 {attached ? (

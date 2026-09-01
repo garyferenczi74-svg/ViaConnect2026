@@ -27,7 +27,8 @@ describe('Prompt 210l analyze-chain source contracts', () => {
     expect(src).toMatch(/ANALYZE_CLIENT_TIMEOUT_MS/);
     expect(src).toMatch(/body-scan-progress/);
     expect(src).not.toMatch(/Promise\.race/);
-    expect(src).toMatch(/setError\(e instanceof Error \? e\.message/);
+    expect(src).toMatch(/sanitizeAnalyzeUserError\(e instanceof Error \? e\.message/);
+    expect(src).toMatch(/from '@\/lib\/body-tracker\/composition\/visionModel'/);
     expect(src).toMatch(/takeScanSlotFile/);
     expect(src).toMatch(/SCAN_SLOT_ACCEPT/);
     expect(src).toMatch(/scan-slot-preview-/);
@@ -43,7 +44,9 @@ describe('Prompt 210l analyze-chain source contracts', () => {
     expect(src).toMatch(/body_tracker_weight/);
     expect(src).toMatch(/anthropic_key_present/);
     expect(src).toMatch(/anthropic_preview/);
-    expect(src).toMatch(/invalid vision model/);
+    expect(src).toMatch(/VISION_MODEL_CONFIG_USER_ERROR/);
+    expect(src).toMatch(/resolveVisionModel/);
+    expect(src).not.toMatch(/invalid vision model: \$\{VISION_MODEL\}/);
     expect(src).toMatch(/media_types/);
     expect(src).not.toMatch(/mediaType = body\.media_type \?\? 'image\/jpeg'/);
     expect(src).toMatch(/Never reference Semaglutide/);
@@ -64,6 +67,17 @@ describe('Prompt 210l analyze-chain source contracts', () => {
     expect(src).toMatch(/const \[scanOpen, setScanOpen\] = useState\(true\)/);
     expect(src).toMatch(/formavision-open-scan/);
     expect(src).toMatch(/Scan My Body/);
+  });
+
+  it('FRBL upload slots are portrait frames, not landscape strips', () => {
+    const src = read('src/components/body-tracker/BodyScanUploader.tsx');
+    expect(src).toMatch(/aspect-\[3\/4\]/);
+    expect(src).toMatch(/object-cover object-center/);
+    expect(src).toMatch(/scan-slot-frame-/);
+    expect(src).toMatch(/grid-cols-2 gap-3 sm:grid-cols-4/);
+    expect(src).not.toMatch(/flex h-32 cursor-pointer/);
+    expect(src).not.toMatch(/aspect-video/);
+    expect(src).not.toMatch(/aspect-\[16\/9\]/);
   });
 
   it('upload path uprights inverted gallery shots before analyze', () => {
