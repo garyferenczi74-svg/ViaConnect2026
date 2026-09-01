@@ -20,6 +20,8 @@ import {
   dailyMealCountsFromRows,
   computeTodayNutrition,
   hasTodaysFoodMeals,
+  interpretGenerateTargetsHealStatus,
+  shouldHealMissingTargets,
   todaysFoodMealRows,
   type HubMealRow,
   type HubMacroTargets,
@@ -568,6 +570,39 @@ describe('computeTodayNutrition', () => {
   });
 });
 
+describe('shouldHealMissingTargets', () => {
+  const present: HubMacroTargets = {
+    dailyKcal: 2000,
+    dailyProteinG: 100,
+    dailyCarbsG: 200,
+    dailyFatTotalG: 80,
+    dailyFiberG: 30,
+  };
+
+  it('is true only when today has food and targets are missing', () => {
+    expect(shouldHealMissingTargets(null, true)).toBe(true);
+    expect(shouldHealMissingTargets(null, false)).toBe(false);
+    expect(shouldHealMissingTargets(present, true)).toBe(false);
+    expect(shouldHealMissingTargets(present, false)).toBe(false);
+  });
+});
+
+describe('interpretGenerateTargetsHealStatus', () => {
+  it('treats 2xx as written so the hub can re-read nutrition_targets', () => {
+    expect(interpretGenerateTargetsHealStatus(200)).toBe('written');
+    expect(interpretGenerateTargetsHealStatus(201)).toBe('written');
+  });
+
+  it('treats 422 as profile_incomplete so the empty copy stays', () => {
+    expect(interpretGenerateTargetsHealStatus(422)).toBe('profile_incomplete');
+  });
+
+  it('treats other statuses as failed without inventing targets', () => {
+    expect(interpretGenerateTargetsHealStatus(401)).toBe('failed');
+    expect(interpretGenerateTargetsHealStatus(500)).toBe('failed');
+  });
+});
+
 describe('useNutritionHubMetrics source lock', () => {
   const source = readFileSync(
     path.resolve(__dirname, '..', 'useNutritionHubMetrics.ts'),
@@ -592,9 +627,8 @@ describe('useNutritionHubMetrics source lock', () => {
     expect(source).not.toContain('meal_distribution');
   });
 
-  it('does not re-resolve LBM or write protein targets', () => {
+  it('does not re-resolve LBM or invent protein targets client-side', () => {
     expect(source).not.toContain('generateMacroTargets');
-    expect(source).not.toContain('generate-targets');
     expect(source).not.toContain('@/lib/gordon/lbm');
     expect(source).not.toContain('body_tracker_segmental_fat');
     expect(source).not.toContain('FormaVision');
@@ -603,6 +637,14 @@ describe('useNutritionHubMetrics source lock', () => {
     expect(source).not.toContain('Boer');
     expect(source).not.toContain('lbm_source');
     expect(source).not.toContain('measured');
+  });
+
+  it('one-shot POSTs generate-targets when food exists and targets are missing', () => {
+    expect(source).toContain("fetch('/api/nutrition/generate-targets'");
+    expect(source).toContain('shouldHealMissingTargets');
+    expect(source).toContain('interpretGenerateTargetsHealStatus');
+    expect(source).toContain('profile_incomplete');
+    expect(source).not.toContain('generateMacroTargets');
   });
 
   it('does not fold hydration into Nutrition Score', () => {
