@@ -4,11 +4,23 @@ import type { FrameMetrics } from './frameMetrics';
 import { evaluatePose, evaluateWeakFrame } from './qa';
 
 /**
+ * Live ARMED/COUNT precheck waives blur (LIVE_PRECHECK_BLUR_SCORE = Infinity)
+ * so a JPEG Laplacian dip at shutter cannot silently QA_FAIL → same-pose COUNT.
+ * Still-only BLURRY is kept as a pass; other still gates stay hard fails.
+ */
+export function softenStillOnlyBlur(qa: QaResult): QaResult {
+  if (qa.code !== 'BLURRY') return qa;
+  return { pass: true, code: 'PASS', message: '', mode: qa.mode };
+}
+
+/**
  * Still-QA after shutter. VIDEO-mode detectForVideo on a JPEG canvas often
  * returns null/throws even when the live ARMED/COUNT precheck just saw a
  * body. evaluatePose(null) is hard NO_BODY and silently re-COUNTS the same
  * pose. This helper keeps a usable still (live-video landmarks or weak-frame
  * metrics) or flags a dead/black grab as camera_lost instead of looping.
+ * Still-only BLURRY is softened to pass so live-waived blur cannot recycle
+ * the same pose into a silent countdown.
  */
 
 /** Mean luma at or below ~5/255. A live room photo is well above this. */
@@ -44,16 +56,18 @@ export function evaluateCapturedStill(input: {
   if (landmarks) {
     return {
       kind: 'qa',
-      qa: evaluatePose({
-        landmarks,
-        pose: input.pose,
-        frameWidth: input.frameWidth,
-        frameHeight: input.frameHeight,
-        blurScore: input.metrics.blurScore,
-      }),
+      qa: softenStillOnlyBlur(
+        evaluatePose({
+          landmarks,
+          pose: input.pose,
+          frameWidth: input.frameWidth,
+          frameHeight: input.frameHeight,
+          blurScore: input.metrics.blurScore,
+        }),
+      ),
       landmarks,
     };
   }
 
-  return { kind: 'qa', qa: evaluateWeakFrame(input.metrics) };
+  return { kind: 'qa', qa: softenStillOnlyBlur(evaluateWeakFrame(input.metrics)) };
 }
