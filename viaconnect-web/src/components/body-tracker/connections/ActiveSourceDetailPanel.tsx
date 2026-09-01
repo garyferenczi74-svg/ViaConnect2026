@@ -6,10 +6,10 @@
 //   - file source (Apple Health, Hume): what it feeds, the iOS export
 //     instructions, and an inline dropzone/browse that runs the import via
 //     the Task-5 hook (useHealthXmlImport).
-//   - OAuth Coming soon source (WHOOP, Oura, Google Health, Garmin): what it
-//     will provide plus a plain, non-interactive Coming soon note. No
-//     Connect control lives here; connect actions stay on the card in the
-//     left column.
+//   - OAuth Coming soon source (WHOOP, Oura, Google Health, Garmin, Clair
+//     Health): what it will provide plus a plain, non-interactive Coming
+//     soon note. No Connect control lives here; connect actions stay on
+//     the card in the left column. Clair advertises Sleep and Recovery only.
 //   - nothing selected: a designed prompt to pick a source.
 //
 // Outer section is the same grey rest glass as wearable tiles. Inner

@@ -177,7 +177,7 @@ describe('Phase 2 habit next to Sleep', () => {
     expect(pairOnly).not.toContain('Helix');
   });
 
-  it('keeps six tiles, Coming soon Whoop/Oura, Brief 24 BOS honesty, and Phase 1 strip hidden without samples', () => {
+  it('keeps first-class tiles, Coming soon Whoop/Oura/Clair, Brief 24 BOS honesty, and Phase 1 strip hidden without samples', () => {
     expect(FIRST_CLASS_TILE_IDS).toEqual([
       'whoop',
       'hume',
@@ -185,6 +185,7 @@ describe('Phase 2 habit next to Sleep', () => {
       'oura',
       'google_health',
       'garmin',
+      'clair',
     ]);
     expect(SCORE_DETAIL_DIMENSIONS).toEqual(['sleep', 'recovery', 'strain', 'metabolic']);
     expect(connectionsBosCompositeDisplay()).toEqual(CONNECTIONS_BOS_COMPOSITE);
@@ -205,6 +206,7 @@ describe('Phase 2 habit next to Sleep', () => {
       'oura',
       'google_health',
       'garmin',
+      'clair',
     ]);
     expect(tiles.find((t) => t.id === 'whoop')?.statusLabel).toBe(OAUTH_COMING_SOON_LABEL);
     expect(tiles.find((t) => t.id === 'oura')?.statusLabel).toBe(OAUTH_COMING_SOON_LABEL);

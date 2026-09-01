@@ -61,14 +61,16 @@ describe('leftover WearableDashboard cannot invent variants', () => {
     expect(src('src/lib/body-tracker/wearable-tiles.ts')).not.toMatch(/\bMTHFR\b/);
   });
 
-  it('keeps /wearables and connections on the locked four tiles', () => {
+  it('keeps /wearables and connections on the first-class tile SSOT', () => {
     const tiles = src('src/lib/body-tracker/wearable-tiles.ts');
     const hub = src('src/components/body-tracker/hub/hubConfig.ts');
     expect(tiles).toContain("id: 'whoop'");
     expect(tiles).toContain("id: 'oura'");
     expect(tiles).toContain("id: 'hume'");
     expect(tiles).toContain("id: 'apple_health'");
+    expect(tiles).toContain("id: 'clair'");
     expect(tiles).toContain('Hume Body Pod');
+    expect(tiles).toContain('Clair Health');
     expect(tiles).toContain('resolveLastSyncState');
     expect(hub).toContain('/body-tracker/connections');
     expect(hub).not.toContain('Dexcom');

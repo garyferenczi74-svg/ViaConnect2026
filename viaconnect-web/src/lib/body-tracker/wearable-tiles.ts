@@ -1,6 +1,7 @@
 // First-class wearable tiles for /body-tracker/connections (/wearables redirects).
-// Prompt 230 Task 1: Whoop, Hume Body Pod, Apple Health, Oura, Google Health, Garmin.
-// Same IA at 390 and 1280.
+// Prompt 230 Task 1 plus Clair Health Coming soon: Whoop, Hume Body Pod,
+// Apple Health, Oura, Google Health, Garmin, Clair Health. Same IA at 390
+// and 1280. No four-tile ceiling.
 //
 // OAuth Connected-state requires provisioned Vercel secrets (WHOOP_*, OURA_*,
 // WEARABLE_TOKEN_KEY, and optional *_REDIRECT_URI). Leftover connected_sources
@@ -9,17 +10,21 @@
 // stay Coming soon (label, not Connect) until those secrets exist. Google
 // Health and Garmin are honest Coming soon tiles: never connectable here,
 // their *Configured flags never set true (Garmin connector is out of scope,
-// spec section 12).
+// spec section 12). Clair Health is Coming soon only: clairConfigured stays
+// false until real CLAIR_* secrets and partner OAuth exist. Partner domain
+// is wearclair.com only. No Connect CTA, no last-sync, never invent Connected.
 //
 // Web Apple is XML only. Hume is XML sourceName hume_body_pod, never copied
-// from phone_health, and has no OAuth. This tile is Apple Health, never Watch.
+// from phone_health, and has no OAuth. Clair never copies phone_health.
+// This tile is Apple Health, never Watch.
 // Last-sync display is the shared SM in @/lib/body-tracker/last-sync-state (PR #40).
 //
 // Arnold source map (Brief 46): Coming soon tiles say "will feed"; "feeds"
 // only after a real last-sync. Apple advertised is Body comp. + Metabolic,
 // never Sleep until wearable_sleep_sessions actually persist. Hume advertised
 // is Body comp. + Metabolic after sourceName hume_body_pod only. Google
-// Health and Garmin advertise no feed list.
+// Health and Garmin advertise no feed list. Clair Health advertises Sleep
+// and Recovery only. No new WearableDimension in this pass.
 
 import {
   oauthNeedsReconnect,
@@ -28,7 +33,15 @@ import {
   type LastSyncState,
 } from '@/lib/body-tracker/last-sync-state';
 
-export const FIRST_CLASS_TILE_IDS = ['whoop', 'hume', 'apple_health', 'oura', 'google_health', 'garmin'] as const;
+export const FIRST_CLASS_TILE_IDS = [
+  'whoop',
+  'hume',
+  'apple_health',
+  'oura',
+  'google_health',
+  'garmin',
+  'clair',
+] as const;
 
 export type FirstClassTileId = (typeof FIRST_CLASS_TILE_IDS)[number];
 
@@ -136,6 +149,15 @@ export const WEARABLE_TILE_SPECS: WearableTileSpec[] = [
     action: 'oauth',
     notes: 'Recovery, sleep, and workouts. Coming soon.',
   },
+  {
+    id: 'clair',
+    name: 'Clair Health',
+    icon: 'Moon',
+    advertisedDimensions: ['sleep', 'recovery'],
+    action: 'oauth',
+    notes:
+      'Coming soon. Sleep and Recovery via wearclair.com once partner OAuth is provisioned.',
+  },
 ];
 
 export const SCORE_DETAIL_DIMENSIONS: WearableDimension[] = [
@@ -172,6 +194,8 @@ export interface WearableTileInput {
   ouraConfigured: boolean;
   googleHealthConfigured: boolean;
   garminConfigured: boolean;
+  /** Always false until real CLAIR_* secrets and partner OAuth exist. */
+  clairConfigured?: boolean;
   platform: 'web' | 'ios' | 'android';
   now?: number;
 }
@@ -264,6 +288,9 @@ export function buildWearableTiles(input: WearableTileInput): WearableTileView[]
       action = { kind: 'oauth', configured: input.googleHealthConfigured };
     } else if (spec.id === 'garmin') {
       action = { kind: 'oauth', configured: input.garminConfigured };
+    } else if (spec.id === 'clair') {
+      // Coming soon only. Never honor leftover flags or invented secrets.
+      action = { kind: 'oauth', configured: false };
     } else {
       linked = isAppleHealthConnected({
         appleXmlIngested: input.appleXmlIngested,
@@ -293,6 +320,7 @@ export function buildWearableTiles(input: WearableTileInput): WearableTileView[]
       : spec.id === 'oura' ? input.ouraConfigured
       : spec.id === 'google_health' ? input.googleHealthConfigured
       : spec.id === 'garmin' ? input.garminConfigured
+      : spec.id === 'clair' ? false
       : true;
     const statusLabel =
       spec.action === 'oauth' ? oauthDisplayLabel(configured, sm) : sm.label;

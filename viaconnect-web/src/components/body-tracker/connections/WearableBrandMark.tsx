@@ -1,18 +1,19 @@
 'use client';
 
-// Prompt 230, Task 11: vendor identity mark for the six first-class
-// wearable tiles (Whoop, Oura, Apple Health, Hume Body Pod, Google Health,
-// Garmin). LEX gate is hard: an entry only renders its real local asset
+// Prompt 230, Task 11: vendor identity mark for first-class wearable tiles
+// (Whoop, Oura, Apple Health, Hume Body Pod, Google Health, Garmin, Clair
+// Health). LEX gate is hard: an entry only renders its real local asset
 // once WEARABLE_MARK_ASSETS[id].lexCleared === true. Every entry ships
 // lexCleared: false today, so production renders the Lucide fallback for
-// all six -- no real vendor logo image file is committed in this task. See
+// all tiles -- no real vendor logo image file is committed in this task. See
 // public/logos/wearables/README-provenance.md for the source + clearance
 // status recorded per vendor. This keeps the branch shippable with zero
 // legal exposure; the actual official marks land only after Lex signs off
 // (a later, separate change that flips lexCleared -> true per vendor and
-// adds the asset file).
+// adds the asset file). Clair Health is Coming soon only; no Lex-cleared
+// mark and no partner logo file.
 
-import { Circle, Heart, HeartPulse, Scan, Watch, type LucideIcon } from 'lucide-react';
+import { Circle, Heart, HeartPulse, Moon, Scan, Watch, type LucideIcon } from 'lucide-react';
 
 export interface WearableMarkAsset {
   /** Local, stored-not-hotlinked path under /public/logos/wearables/. */
@@ -32,6 +33,7 @@ export const WEARABLE_MARK_ASSETS: Record<string, WearableMarkAsset | undefined>
   hume: { src: '/logos/wearables/hume.svg', lexCleared: false },
   google_health: { src: '/logos/wearables/google-health.svg', lexCleared: false },
   garmin: { src: '/logos/wearables/garmin.svg', lexCleared: false },
+  clair: { src: '/logos/wearables/clair.svg', lexCleared: false },
 };
 
 // Keyed by tile id, matching WEARABLE_TILE_SPECS.icon in wearable-tiles.ts
@@ -49,6 +51,7 @@ const FALLBACK_ICON: Partial<Record<string, LucideIcon>> = {
   hume: Scan,
   google_health: HeartPulse,
   garmin: Watch,
+  clair: Moon,
 };
 
 const SAFE_DEFAULT_ICON: LucideIcon = Circle;

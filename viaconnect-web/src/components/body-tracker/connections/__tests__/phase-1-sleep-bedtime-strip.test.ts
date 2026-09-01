@@ -134,7 +134,7 @@ describe('Phase 1 Sleep bedtime strip on Connections', () => {
     expect(hiddenStrip).toBe('');
   });
 
-  it('leaves the six tiles, Coming soon Whoop/Oura, and BOS honesty unchanged', () => {
+  it('leaves first-class tiles, Coming soon Whoop/Oura/Clair, and BOS honesty unchanged', () => {
     expect(FIRST_CLASS_TILE_IDS).toEqual([
       'whoop',
       'hume',
@@ -142,6 +142,7 @@ describe('Phase 1 Sleep bedtime strip on Connections', () => {
       'oura',
       'google_health',
       'garmin',
+      'clair',
     ]);
     expect(SCORE_DETAIL_DIMENSIONS).toEqual(['sleep', 'recovery', 'strain', 'metabolic']);
     expect(connectionsBosCompositeDisplay()).toEqual(CONNECTIONS_BOS_COMPOSITE);
@@ -157,6 +158,7 @@ describe('Phase 1 Sleep bedtime strip on Connections', () => {
       'oura',
       'google_health',
       'garmin',
+      'clair',
     ]);
     expect(tiles.find((t) => t.id === 'whoop')?.statusLabel).toBe(OAUTH_COMING_SOON_LABEL);
     expect(tiles.find((t) => t.id === 'oura')?.statusLabel).toBe(OAUTH_COMING_SOON_LABEL);

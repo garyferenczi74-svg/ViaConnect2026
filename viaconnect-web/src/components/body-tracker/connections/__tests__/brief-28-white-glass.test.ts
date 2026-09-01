@@ -60,6 +60,7 @@ describe('Brief 28 grey rest + portal blue body glass', () => {
       'oura',
       'google_health',
       'garmin',
+      'clair',
     ]);
     const resting = wearableTileCardChrome(false);
     expect(resting).toBe(WEARABLE_TILE_RESTING_CHROME);
@@ -174,7 +175,7 @@ describe('Brief 28 grey rest + portal blue body glass', () => {
   });
 
   it('Coming soon tiles still have no Connect; Hume and Apple still expose Upload XML', () => {
-    for (const id of ['whoop', 'oura', 'google_health', 'garmin'] as const) {
+    for (const id of ['whoop', 'oura', 'google_health', 'garmin', 'clair'] as const) {
       const markup = renderToStaticMarkup(
         createElement(WearableTileCard, {
           tile: tileById(id),
@@ -288,7 +289,7 @@ describe('Brief 28 grey rest + portal blue body glass', () => {
       "className={`space-y-3 ${anyConnected ? 'order-1' : 'order-2'} min-[900px]:order-none`}",
     );
 
-    expect(FIRST_CLASS_TILE_IDS[FIRST_CLASS_TILE_IDS.length - 1]).toBe('garmin');
+    expect(FIRST_CLASS_TILE_IDS[FIRST_CLASS_TILE_IDS.length - 1]).toBe('clair');
     expect(FIRST_CLASS_TILE_IDS).toEqual([
       'whoop',
       'hume',
@@ -296,6 +297,7 @@ describe('Brief 28 grey rest + portal blue body glass', () => {
       'oura',
       'google_health',
       'garmin',
+      'clair',
     ]);
     expect(bosPanel).toContain('Missing stays UNKNOWN, never 0.');
   });

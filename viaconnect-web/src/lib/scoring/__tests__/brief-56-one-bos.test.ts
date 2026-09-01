@@ -141,12 +141,13 @@ describe('Brief 56 one Bio Optimization Score', () => {
     expect(omitted.score).toBeNull();
   });
 
-  it('Whoop/Oura/Google/Garmin coming soon do not move BOS', () => {
+  it('Whoop/Oura/Google/Garmin/Clair coming soon do not move BOS', () => {
     const tiles = emptyWearableTilesSnapshot('web');
     const coming = tiles.filter((t) =>
-      t.id === 'whoop' || t.id === 'oura' || t.id === 'google_health' || t.id === 'garmin',
+      t.id === 'whoop' || t.id === 'oura' || t.id === 'google_health' || t.id === 'garmin' || t.id === 'clair',
     );
     expect(coming.every((t) => t.status === 'disconnected')).toBe(true);
+    expect(coming.find((t) => t.id === 'clair')?.statusLabel).toBe('Coming soon');
     expect(wearableHannahGate(tiles).pluggedIn).toBe(false);
   });
 

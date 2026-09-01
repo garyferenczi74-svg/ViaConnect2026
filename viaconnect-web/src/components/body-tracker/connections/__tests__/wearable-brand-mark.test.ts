@@ -56,6 +56,7 @@ describe('WearableBrandMark', () => {
     const hume = svgFor('hume');
     const googleHealth = svgFor('google_health');
     const garmin = svgFor('garmin');
+    const clair = svgFor('clair');
     // Different vendors render visually distinct markup (different Lucide
     // icon paths), never one generic icon standing in for every tile.
     expect(whoop).not.toBe(oura);
@@ -64,6 +65,11 @@ describe('WearableBrandMark', () => {
     expect(oura).not.toBe(appleHealth);
     expect(oura).not.toBe(googleHealth);
     expect(appleHealth).not.toBe(hume);
+    expect(clair).not.toBe(whoop);
+    expect(clair).not.toBe(oura);
+    expect(clair).not.toBe(appleHealth);
+    expect(clair).not.toBe(hume);
+    expect(clair).not.toBe(googleHealth);
     // Whoop and garmin are the one deliberate exception: task-11-brief.md
     // pins BOTH to Watch (matching WEARABLE_TILE_SPECS.icon in
     // wearable-tiles.ts, which also lists 'Watch' for both). This is an

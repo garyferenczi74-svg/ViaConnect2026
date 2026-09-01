@@ -62,7 +62,7 @@ function tileById(id: WearableTileView['id']): WearableTileView {
 }
 
 describe('Brief 26 Wearable Data 1280 lock', () => {
-  it('ships six tiles only in lock order and same IA at 390 and 1280', () => {
+  it('ships first-class tiles in lock order and same IA at 390 and 1280', () => {
     expect(FIRST_CLASS_TILE_IDS).toEqual([
       'whoop',
       'hume',
@@ -70,6 +70,7 @@ describe('Brief 26 Wearable Data 1280 lock', () => {
       'oura',
       'google_health',
       'garmin',
+      'clair',
     ]);
     const tiles = buildWearableTiles(baseInput());
     expect(tiles.map((t) => t.id)).toEqual([
@@ -79,6 +80,7 @@ describe('Brief 26 Wearable Data 1280 lock', () => {
       'oura',
       'google_health',
       'garmin',
+      'clair',
     ]);
     expect(tiles.map((t) => t.name)).toEqual([
       'Whoop',
@@ -87,9 +89,11 @@ describe('Brief 26 Wearable Data 1280 lock', () => {
       'Oura',
       'Google Health',
       'Garmin',
+      'Clair Health',
     ]);
     expect(tiles.find((t) => t.id === 'google_health')?.statusLabel).toBe('Coming soon');
     expect(tiles.find((t) => t.id === 'garmin')?.statusLabel).toBe('Coming soon');
+    expect(tiles.find((t) => t.id === 'clair')?.statusLabel).toBe('Coming soon');
     expect(tiles.some((t) => /watch/i.test(t.name))).toBe(false);
 
     const surface = src('src/components/body-tracker/connections/ConnectionsSurface.tsx');

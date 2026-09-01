@@ -113,6 +113,10 @@ export interface WearableSnapshot {
   bedtimeStrip: BedtimeStripView;
 }
 
+function isClairIngestProvider(provider: string | null | undefined): boolean {
+  return (provider ?? '').trim().toLowerCase() === 'clair';
+}
+
 function finiteOrNull(v: number | string | null | undefined): number | null {
   if (v === null || v === undefined || v === '') return null;
   const n = typeof v === 'number' ? v : Number(v);
@@ -168,6 +172,8 @@ export function tileInputFromSnapshot(input: WearableSnapshotInput): WearableTil
   const appleXml = input.appleImports.filter((r) => (r.records_ingested ?? 0) > 0);
   const dimensionsFed: Partial<Record<FirstClassTileId, WearableDimension[]>> = {};
 
+  // Coming soon Clair never feeds BOS. Ignore leftover clair rows and never
+  // copy phone_health onto Clair.
   const whoopSleep = input.sleepRows.some((r) => r.source_provider === 'whoop');
   const whoopRec = input.recoveryRows.some((r) => r.source_provider === 'whoop' && finiteOrNull(r.recovery_score) !== null);
   const whoopStrain = input.workoutRows.some((r) => r.source_provider === 'whoop' && finiteOrNull(r.strain) !== null);
@@ -183,6 +189,7 @@ export function tileInputFromSnapshot(input: WearableSnapshotInput): WearableTil
   if (ouraRec) ouraDims.push('recovery');
   if (ouraSleep) ouraDims.push('sleep');
   if (ouraDims.length) dimensionsFed.oura = ouraDims;
+  // clair stays omitted from dimensionsFed. No mint Sleep / Recovery / HRV.
 
   // Hume last-sync may come from Hume-tagged body rows. Body comp + Metabolic
   // unlock only after exact sourceName hume_body_pod. Never Sleep.
@@ -222,6 +229,7 @@ export function tileInputFromSnapshot(input: WearableSnapshotInput): WearableTil
     ouraConfigured: input.ouraConfigured,
     googleHealthConfigured: false,
     garminConfigured: false,
+    clairConfigured: false,
     platform: input.platform,
     now: input.now,
   };
@@ -300,7 +308,10 @@ function recoveryMetricSources(
   overrides?: Record<string, number> | null,
 ): SourceValue[] {
   const usableRows = rows.filter(
-    (row) => HRV_RESTING_HR_PROVIDERS.has(row.source_provider) && finiteOrNull(valueOf(row)) !== null,
+    (row) =>
+      !isClairIngestProvider(row.source_provider) &&
+      HRV_RESTING_HR_PROVIDERS.has(row.source_provider) &&
+      finiteOrNull(valueOf(row)) !== null,
   );
   const latest = latestByVendor(
     usableRows,
@@ -324,7 +335,9 @@ function stepsSourcesFrom(
   overrides?: Record<string, number> | null,
 ): SourceValue[] {
   // Steps has no Oura source, so no provider filter is needed here.
-  const usableRows = rows.filter((row) => finiteOrNull(row.steps) !== null);
+  const usableRows = rows.filter(
+    (row) => !isClairIngestProvider(row.source_provider) && finiteOrNull(row.steps) !== null,
+  );
   const latest = latestByVendor(
     usableRows,
     (row) => vendorFromIngest({ provider: row.source_provider, sourceApp: row.source_app }).vendor,
@@ -449,7 +462,7 @@ export function scoreDetailFromSnapshot(input: WearableSnapshotInput): Dimension
   const overrides = input.trustOverrides;
 
   const sleepLatest = latestByVendor(
-    input.sleepRows.filter((r) => !matchesHume(r.source_app)),
+    input.sleepRows.filter((r) => !matchesHume(r.source_app) && !isClairIngestProvider(r.source_provider)),
     (row) => vendorFromIngest({ provider: row.source_provider, sourceApp: row.source_app }).vendor,
     (row) => row.end_at,
   );
@@ -465,7 +478,11 @@ export function scoreDetailFromSnapshot(input: WearableSnapshotInput): Dimension
   });
 
   const recoveryLatest = latestByVendor(
-    input.recoveryRows.filter((r) => r.source_provider === 'whoop' || r.source_provider === 'oura'),
+    input.recoveryRows.filter(
+      (r) =>
+        !isClairIngestProvider(r.source_provider) &&
+        (r.source_provider === 'whoop' || r.source_provider === 'oura'),
+    ),
     (row) => row.source_provider,
     (row) => row.cycle_date,
   );
