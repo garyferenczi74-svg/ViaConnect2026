@@ -41,6 +41,10 @@ describe('Rythm Health stays on the lab path', () => {
     expect(card).not.toContain('Connect Rythm');
     expect(card).toContain('partnerComingSoon');
     expect(card).toContain('RYTHM_HEALTH_COPY.uploadCta');
+    expect(RYTHM_HEALTH_COPY.partnerComingSoon).toBe(
+      'A direct Rythm Health connection is coming soon. Partner connection is not available yet.',
+    );
+    expect(RYTHM_HEALTH_COPY.partnerComingSoon).not.toMatch(/developer API/i);
     expect(readme).toContain('There is no public developer API');
     expect(readme).toContain('Do not add `RYTHM_HEALTH_CLIENT_ID`');
     expect(readme).toContain(RYTHM_HEALTH_PARTNER_FORM);
