@@ -26,6 +26,11 @@ export function formavisionLiveScanHref(): string {
   return `${FORMAVISION_PATH}/scan`;
 }
 
+/** Open FormaVision scan panel in Upload saved images mode. */
+export function formavisionUploadHref(): string {
+  return `${FORMAVISION_PATH}?mode=upload`;
+}
+
 export type FormaVisionScanMode = 'live' | 'upload';
 
 export function parseFormaVisionScanMode(

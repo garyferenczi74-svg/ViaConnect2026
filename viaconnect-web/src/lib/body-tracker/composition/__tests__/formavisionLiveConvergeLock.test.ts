@@ -43,6 +43,7 @@ describe('FormaVision live converge lock (REQUIRED)', () => {
 
   it('one analyzer, two inputs — upload stays; persist is scan / FormaVision', () => {
     expect(page).toMatch(/BodyScanUploader/);
+    expect(page).toMatch(/formavisionLiveScanHref/);
     expect(uploader).toMatch(/runFormaVisionAnalyzeSpine/);
     expect(uploader).toMatch(/source:\s*'upload'/);
     expect(helper).toMatch(/runFormaVisionAnalyzeSpine/);

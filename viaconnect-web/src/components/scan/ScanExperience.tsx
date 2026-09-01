@@ -16,7 +16,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { COMPOSITION_PATH, formavisionAfterScanHref } from '@/lib/body-tracker/compositionNav';
+import { ArrowLeft } from 'lucide-react';
+import {
+  COMPOSITION_PATH,
+  FORMAVISION_PATH,
+  formavisionAfterScanHref,
+} from '@/lib/body-tracker/compositionNav';
 import { persistScan as persistCompositionScan } from '@/lib/body-tracker/composition/persistScanClient';
 import {
   analyzeLiveFramesOnFormaVisionSpine,
@@ -31,6 +36,7 @@ import {
   noteCountdownAbortSample,
 } from '@/lib/scan/countdownAbort';
 import { ConsentNotice } from './ConsentNotice';
+import { FormaVisionUploadEscapeLink } from './FormaVisionUploadEscapeLink';
 import { CameraPreview } from './CameraPreview';
 import { CountdownOverlay } from './CountdownOverlay';
 import { PoseTitleCard } from './PoseTitleCard';
@@ -702,6 +708,14 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
         <div className="relative flex h-full min-h-[70vh] flex-col justify-between p-4">
           <CameraPreview videoRef={camera.videoRef} stream={camera.stream} pose="front" showFootMark mirrored={false} />
           <div className="relative z-10 mt-auto space-y-3 rounded-2xl bg-[var(--card)]/90 p-4">
+            <Link
+              href={FORMAVISION_PATH}
+              data-testid="scan-setup-back-formavision"
+              className="inline-flex min-h-[44px] items-center gap-1.5 text-sm font-medium text-white/70"
+            >
+              <ArrowLeft size={16} strokeWidth={1.5} />
+              Back to FormaVision
+            </Link>
             {permissionBlocked && (
               <p className="text-xs text-red-300" data-testid="scan-camera-blocked">
                 {CAMERA_BLOCKED_MESSAGE}
@@ -756,6 +770,7 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
             >
               Start scan
             </button>
+            <FormaVisionUploadEscapeLink testId="scan-setup-upload-escape" />
           </div>
         </div>
       )}
@@ -792,6 +807,7 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
               >
                 Retry
               </button>
+              <FormaVisionUploadEscapeLink testId="scan-qa-fail-upload-escape" />
             </div>
           )}
           {state.phase === 'PROMPT' && currentPose && !state.lastQaCode && (
@@ -905,6 +921,7 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
               Skip pose
             </button>
           </div>
+          <FormaVisionUploadEscapeLink testId="scan-choice-upload-escape" />
         </div>
       )}
 
@@ -976,6 +993,7 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
           >
             Tap Start scan to try again
           </button>
+          <FormaVisionUploadEscapeLink testId="scan-camera-lost-upload-escape" />
         </div>
       )}
     </div>

@@ -7,6 +7,7 @@ import {
   compositionScanHref,
   formavisionAfterScanHref,
   formavisionLiveScanHref,
+  formavisionUploadHref,
   parseCompositionSection,
   parseFormaVisionScanMode,
   shouldOpenScanFromQuery,
@@ -34,6 +35,13 @@ describe('compositionNav (210k)', () => {
     expect(parseFormaVisionScanMode('upload')).toBe('upload');
     expect(parseFormaVisionScanMode('live')).toBe('live');
     expect(parseFormaVisionScanMode('compare')).toBeNull();
+  });
+
+  it('opens the FormaVision scan panel in upload mode', () => {
+    expect(formavisionUploadHref()).toBe(`${FORMAVISION_PATH}?mode=upload`);
+    expect(parseFormaVisionScanMode(new URL(formavisionUploadHref(), 'https://app.local').searchParams.get('mode'))).toBe(
+      'upload',
+    );
   });
 
   it('parses only known composition section query values', () => {

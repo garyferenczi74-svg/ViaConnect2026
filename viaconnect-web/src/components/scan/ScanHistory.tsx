@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Camera, ImageOff, Loader2, Trash2 } from 'lucide-react';
 import { POSE_ORDER, type PoseId } from '@/lib/scan/poses';
 import type { ScanSummary } from '@/lib/scan/scanReadsShared';
+import { FormaVisionUploadEscapeLink } from './FormaVisionUploadEscapeLink';
 
 /**
  * Prompt 231: the 4-pose scan history list. Reuses the Task 13
@@ -145,6 +146,9 @@ export function ScanHistory({ scans, onDeleted }: ScanHistoryProps) {
         <p className="text-sm text-white/60">
           No scans yet. Your first scan takes about a minute.
         </p>
+        <div className="mt-4 flex justify-center">
+          <FormaVisionUploadEscapeLink testId="scan-history-upload-escape" />
+        </div>
       </div>
     );
   }
