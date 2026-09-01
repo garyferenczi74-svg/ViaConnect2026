@@ -31,6 +31,33 @@ describe('LevelBubble - unavailable orientation', () => {
   it('does NOT render the level bubble', () => {
     expect(html).not.toContain('data-testid="level-bubble"');
   });
+
+  it('keeps Hannah-cleared title and orientation-access bullet', () => {
+    expect(html).toContain('Orientation unavailable');
+    expect(html).toContain('Allow motion and orientation access in your browser');
+  });
+
+  it('does not show Continue unless onDismiss is provided', () => {
+    expect(html).not.toContain('data-testid="scan-orientation-continue"');
+  });
+});
+
+describe('LevelBubble - unavailable orientation dismiss', () => {
+  const html = renderToStaticMarkup(
+    React.createElement(LevelBubble, {
+      beta: 0,
+      gamma: 0,
+      available: false,
+      onDismiss: () => undefined,
+    }),
+  );
+
+  it('keeps the same checklist copy and adds Continue', () => {
+    expect(html).toContain(CHECKLIST_COPY);
+    expect(html).toContain('Orientation unavailable');
+    expect(html).toContain('data-testid="scan-orientation-continue"');
+    expect(html).toContain('Continue');
+  });
 });
 
 describe('LevelBubble - available and within tolerance', () => {

@@ -51,6 +51,7 @@ import {
   SCAN_PRECHECK_TIMEOUT_MS,
   SCAN_CHECKING_POSE_TIMEOUT_MS,
   SCAN_POSE_TITLE_MS,
+  SCAN_ORIENTATION_UNAVAILABLE_MS,
   SCAN_SUBMIT_WATCHDOG_MS,
 } from '@/lib/scan/scanTimeouts';
 import { withTimeout } from '@/lib/utils/with-timeout';
@@ -128,6 +129,7 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
   // effects below), so it stays inert for every normal user.
   const [debugSkeletonEnabled, setDebugSkeletonEnabled] = useState(false);
   const [debugLandmarks, setDebugLandmarks] = useState<Landmark[] | null>(null);
+  const [orientationGateDismissed, setOrientationGateDismissed] = useState(false);
 
   const framesRef = useRef(state.frames);
   framesRef.current = state.frames;
@@ -144,6 +146,7 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
   useEffect(() => {
     if (state.phase === 'SETUP') {
       scanIdRef.current = crypto.randomUUID();
+      setOrientationGateDismissed(false);
     }
   }, [state.phase]);
   const submitAttemptRef = useRef(0);
@@ -274,6 +277,26 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
     if (state.phase !== 'PROMPT') return;
     dispatch({ type: 'PROMPT_DONE' });
   }, [state.phase, dispatch]);
+
+  const handleOrientationGateDone = useCallback(() => {
+    setOrientationGateDismissed(true);
+  }, []);
+
+  // Orientation-unavailable card: stay until Continue / tap-through. The 8s
+  // timer is a hands-free fallback only. Do not let ARMED -> COUNT unmount
+  // yank the card at the 600ms precheck (Gary: vanished in ~2s).
+  const showOrientationUnavailable =
+    !orientationGateDismissed &&
+    (state.phase === 'ARMED' ||
+      state.phase === 'COUNT' ||
+      state.phase === 'CAPTURE' ||
+      state.phase === 'QA');
+
+  useEffect(() => {
+    if (!showOrientationUnavailable) return;
+    const timer = setTimeout(handleOrientationGateDone, SCAN_ORIENTATION_UNAVAILABLE_MS);
+    return () => clearTimeout(timer);
+  }, [showOrientationUnavailable, handleOrientationGateDone]);
 
   useEffect(() => {
     if (state.phase !== 'PROMPT') return;
@@ -710,11 +733,21 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
               </button>
             </div>
           )}
+          {showOrientationUnavailable && (
+            <div
+              className="absolute inset-x-0 top-4 z-10 flex justify-center px-4"
+              data-testid="scan-orientation-unavailable"
+            >
+              <LevelBubble
+                beta={0}
+                gamma={0}
+                available={false}
+                onDismiss={handleOrientationGateDone}
+              />
+            </div>
+          )}
           {state.phase === 'ARMED' && currentPose && (
             <>
-              <div className="pointer-events-none absolute inset-x-0 top-4 flex justify-center">
-                <LevelBubble beta={0} gamma={0} available={false} />
-              </div>
               <p
                 className="pointer-events-none absolute inset-x-0 bottom-8 text-center text-sm text-white/80"
                 aria-live="assertive"

@@ -43,3 +43,9 @@ export const SCAN_SUBMIT_WATCHDOG_MS = SCAN_SAVING_TIMEOUT_MS * 6 + 5000;
  * long enough to read (Gary 2026-08-31: the 2s title vanished in ~1s).
  * Continue / tap-through dismisses immediately; this is only the fallback. */
 export const SCAN_POSE_TITLE_MS = 8000;
+
+/** Orientation-unavailable card dwell if the user does not dismiss. Same
+ * readable-dwell policy as the pose how-to (Gary 2026-09-01: the ARMED
+ * card vanished in ~2s when PRECHECK_PASS unmounted it). Continue /
+ * tap-through dismisses immediately; this is only the fallback. */
+export const SCAN_ORIENTATION_UNAVAILABLE_MS = SCAN_POSE_TITLE_MS;
