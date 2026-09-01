@@ -65,6 +65,8 @@ describe('FormaVision live converge lock (REQUIRED)', () => {
     expect(golden).toMatch(/02-right\.jpg/);
     expect(golden).toMatch(/03-back\.jpg/);
     expect(golden).toMatch(/04-left\.jpg/);
+    expect(golden).toMatch(/FORMAVISION_GOLDEN_UPRIGHT_DIR/);
+    expect(golden).toMatch(/upload-test-2026-09-01\/upright/);
     expect(uploader).toMatch(/normalizeScanPhotoUpright\(stored, 'upload'\)/);
   });
 });
