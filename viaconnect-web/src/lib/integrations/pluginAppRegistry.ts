@@ -102,6 +102,21 @@ export const PLUGIN_APP_REGISTRY_FALLBACK: PluginAppRegistryRow[] = [
     sortOrder: 30,
   },
   {
+    slug: 'drinklinc',
+    displayName: 'LINC',
+    category: 'Nutrition',
+    description:
+      'Personalized supplement dosing from wearable and biology data. Coming soon. No public API yet.',
+    iconKey: 'Droplets',
+    status: 'coming_soon',
+    connectionType: 'oauth2',
+    stateSource: 'data_source_connections',
+    connectPath: null,
+    disconnectPath: null,
+    wearablesCrossLink: null,
+    sortOrder: 35,
+  },
+  {
     slug: 'strava',
     displayName: 'Strava',
     category: 'Fitness',

@@ -69,6 +69,10 @@ describe('wearable tile model', () => {
       'Garmin',
     ]);
     expect(WEARABLE_TILE_SPECS.some((s) => /watch/i.test(s.name))).toBe(false);
+    expect((FIRST_CLASS_TILE_IDS as readonly string[]).includes('drinklinc')).toBe(false);
+    expect(WEARABLE_TILE_SPECS.some((s) => s.id === 'drinklinc' || /linc/i.test(s.name))).toBe(
+      false,
+    );
     expect(appleHealthDisplayName()).toBe('Apple Health');
     expect(CONNECTIONS_FOOTER).toBe('Bio Optimization Score uses these sources.');
     for (const id of FORBIDDEN_FIRST_CLASS_TILE_IDS) {

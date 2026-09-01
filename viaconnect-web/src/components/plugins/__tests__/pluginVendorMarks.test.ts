@@ -22,6 +22,8 @@ describe('Picasso 21b vendor marks', () => {
     expect(PLUGIN_VENDOR_MARK_SLUGS).not.toContain('oura');
     expect(PLUGIN_VENDOR_MARK_SLUGS).not.toContain('hume');
     expect(PLUGIN_VENDOR_MARK_SLUGS).not.toContain('apple_health');
+    expect(PLUGIN_VENDOR_MARK_SLUGS).not.toContain('drinklinc');
+    expect(pageSlugs).toContain('drinklinc');
   });
 
   it('keeps last-sync-state on main only with no second state machine', () => {

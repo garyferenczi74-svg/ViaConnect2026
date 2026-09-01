@@ -40,6 +40,7 @@ describe('Plugin app registry (apps only)', () => {
     const slugs = pageApps.map((r) => r.slug);
     expect(slugs).toContain('google_health');
     expect(slugs).toContain('myfitnesspal');
+    expect(slugs).toContain('drinklinc');
     expect(slugs).not.toContain('whoop');
     expect(slugs).not.toContain('oura');
     expect(slugs).not.toContain('hume');
@@ -75,6 +76,21 @@ describe('Plugin app registry (apps only)', () => {
       expect(row?.connectPath).toBeNull();
       expect(row && isPluginConnectWired(row)).toBe(false);
     }
+  });
+
+  it('LINC / drinklinc is Nutrition coming soon and is not a wearable tile', () => {
+    const row = PLUGIN_APP_REGISTRY_FALLBACK.find((r) => r.slug === 'drinklinc');
+    const pageApps = PLUGIN_APP_REGISTRY_FALLBACK.filter(isPluginPageApp);
+    expect(row?.displayName).toBe('LINC');
+    expect(row?.category).toBe('Nutrition');
+    expect(row?.status).toBe('coming_soon');
+    expect(row?.connectPath).toBeNull();
+    expect(row?.wearablesCrossLink).toBeNull();
+    expect(row && isPluginConnectWired(row)).toBe(false);
+    expect(row && isPluginPageApp(row)).toBe(true);
+    expect(pageApps.map((r) => r.slug)).toContain('drinklinc');
+    expect(pageApps.map((r) => r.slug)).toContain('myfitnesspal');
+    expect(pageApps.map((r) => r.slug)).toContain('cronometer');
   });
 });
 
