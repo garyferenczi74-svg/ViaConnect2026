@@ -5,13 +5,14 @@
  */
 
 /** Milliseconds to glide one card during continuous autoplay. Not a dwell. */
-export const COVERFLOW_AUTOPLAY_MS_PER_CARD = 6000
+export const COVERFLOW_AUTOPLAY_MS_PER_CARD = 2800
 
+/** Mobile 390 keeps the compact #150 plate. Tablet/desktop restore a coverflow hero. */
 export const COVERFLOW_STAGE_HEIGHT_CLASS =
-    'h-[288px] sm:h-[308px] md:h-[340px]'
+    'h-[288px] sm:h-[420px] md:h-[540px] lg:h-[620px]'
 
 export const COVERFLOW_CARD_SIZE_CLASS =
-    'w-[196px] h-[220px] sm:w-[216px] sm:h-[240px] md:w-[248px] md:h-[268px]'
+    'w-[196px] h-[220px] sm:w-[268px] sm:h-[340px] md:w-[360px] md:h-[440px] lg:w-[420px] lg:h-[520px]'
 
 export interface CoverflowTransform {
     rotateY: number

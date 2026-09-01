@@ -126,6 +126,6 @@ export function toCoverFlowFeatureItem(card: FeatureCard) {
         title: card.headline,
         description: card.body,
         imageSrc: card.placeholderImageSrc ?? '',
-        imageAlt: `PLACEHOLDER — ${card.headline}. Swap this image.`,
+        imageAlt: card.headline,
     }
 }

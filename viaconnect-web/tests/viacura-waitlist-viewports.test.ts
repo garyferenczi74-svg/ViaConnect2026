@@ -48,7 +48,14 @@ describe('390 + 1280 waitlist honesty surfaces', () => {
     expect(mobile).toContain('CoverFlowCarousel');
     expect(desktop).toContain('CoverFlowCarousel');
     expect(math).toContain('h-[288px]');
-    expect(math).toContain('md:h-[340px]');
+    expect(math).toContain('md:h-[540px]');
+    expect(math).toContain('w-[196px]');
+    expect(math).toContain('md:w-[360px]');
+    expect(math).toContain('lg:w-[420px]');
+    expect(math).toContain('lg:h-[620px]');
+    expect(math).toContain('COVERFLOW_AUTOPLAY_MS_PER_CARD = 2800');
+    expect(math).not.toContain('md:h-[340px]');
+    expect(math).not.toContain('COVERFLOW_AUTOPLAY_MS_PER_CARD = 6000');
     expect(carousel).toContain('COVERFLOW_STAGE_HEIGHT_CLASS');
     expect(carousel).toContain('requestAnimationFrame');
     expect(carousel).not.toContain('COVERFLOW_AUTOPLAY_DWELL_MS');
