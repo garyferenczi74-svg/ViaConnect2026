@@ -59,6 +59,8 @@ describe('Prompt 210l analyze-chain source contracts', () => {
     expect(src).toMatch(/FormaVisionScanModeBar/);
     expect(src).toMatch(/Upload saved images/);
     expect(src).toMatch(/formavisionLiveScanHref/);
+    expect(src).toMatch(/formavision-open-upload/);
+    expect(src).toMatch(/formavisionScanEntryHref/);
     expect(src).toMatch(/scanToParamVector/);
     expect(src).toMatch(/BodyCompositionAvatar/);
   });

@@ -21,6 +21,7 @@ import {
   COMPOSITION_PATH,
   FORMAVISION_PATH,
   formavisionAfterScanHref,
+  formavisionUploadHref,
   parseFormaVisionScanMode,
 } from '@/lib/body-tracker/compositionNav';
 import { persistScan as persistCompositionScan } from '@/lib/body-tracker/composition/persistScanClient';
@@ -851,6 +852,7 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
                 >
                   Start scan
                 </button>
+                <SetupUploadEscapeLink testId="scan-setup-upload-escape" />
               </>
             )}
           </div>
@@ -897,6 +899,7 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
               >
                 Upload images
               </button>
+              <SetupUploadEscapeLink testId="scan-qa-fail-upload-escape" />
             </div>
           )}
           {state.phase === 'PROMPT' && currentPose && !state.lastQaCode && (
@@ -1018,6 +1021,7 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
           >
             Upload images
           </button>
+          <SetupUploadEscapeLink testId="scan-choice-upload-escape" />
         </div>
       )}
 
@@ -1097,8 +1101,21 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
           >
             Upload images
           </button>
+          <SetupUploadEscapeLink testId="scan-camera-lost-upload-escape" />
         </div>
       )}
     </div>
+  );
+}
+
+function SetupUploadEscapeLink({ testId }: { testId: string }) {
+  return (
+    <Link
+      href={formavisionUploadHref()}
+      data-testid={testId}
+      className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-white/80 sm:w-auto"
+    >
+      Upload saved images
+    </Link>
   );
 }

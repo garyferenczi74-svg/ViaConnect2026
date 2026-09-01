@@ -732,11 +732,19 @@ describe('ScanExperience wiring: Live | Upload images tabs on SETUP', () => {
     expect(src).toContain('persistCompositionScan');
     expect(src).toContain('scan-start-button');
     expect(src).toContain('handleStart');
-    expect(src).not.toContain('FormaVisionUploadEscapeLink');
     expect(src).not.toMatch(/from '@\/lib\/body-tracker\/composition\/runFormaVisionAnalyze'/);
   });
 
-  it('fail and disconnect beats switch to the Upload images tab without leaving /scan', () => {
+  it('SETUP and fail beats also escape to ?mode=upload', () => {
+    expect(src).toContain('formavisionUploadHref');
+    expect(src).toContain('scan-setup-upload-escape');
+    expect(src).toContain('scan-qa-fail-upload-escape');
+    expect(src).toContain('scan-choice-upload-escape');
+    expect(src).toContain('scan-camera-lost-upload-escape');
+    expect(src).toContain('Upload saved images');
+  });
+
+  it('fail and disconnect beats can switch to the Upload images tab without leaving /scan', () => {
     expect(src).toContain('scan-qa-fail-upload-tab');
     expect(src).toContain('scan-choice-upload-tab');
     expect(src).toContain('scan-camera-lost-upload-tab');
@@ -744,17 +752,19 @@ describe('ScanExperience wiring: Live | Upload images tabs on SETUP', () => {
     expect(src).toContain('RETURN_SETUP');
   });
 
-  it('scan header goes back to FormaVision and does not off-link Upload to ?mode=upload', () => {
+  it('scan header goes back to FormaVision', () => {
     expect(page).toContain('scan-capture-header');
     expect(page).toContain('scan-back-formavision');
     expect(page).toContain('Back to FormaVision');
-    expect(page).not.toContain('formavisionUploadHref');
     expect(page).not.toContain('scan-header-upload-escape');
   });
 
-  it('does not add an Upload requirement to the FormaVision landing page', () => {
+  it('FormaVision landing shows Upload images while the scan panel is closed', () => {
     expect(landing).toContain('formavision-open-scan');
     expect(landing).toContain('Scan My Body');
+    expect(landing).toContain('formavision-open-upload');
+    expect(landing).toContain('formavision-empty-open-upload');
+    expect(landing).toContain('formavisionScanEntryHref');
     expect(landing).not.toContain('scan-history-upload-escape');
   });
 });

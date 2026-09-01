@@ -8,7 +8,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Camera } from 'lucide-react';
+import { Camera, ImagePlus } from 'lucide-react';
 import { BackToHubLink } from '@/components/body-tracker/hub/BackToHubLink';
 import {
   CompositionSectionToggle,
@@ -45,6 +45,7 @@ import type { MeasurementUnit } from '@/lib/body-tracker/circumference';
 import {
   compositionSectionHref,
   formavisionLiveScanHref,
+  formavisionScanEntryHref,
   parseFormaVisionScanMode,
 } from '@/lib/body-tracker/compositionNav';
 import { scanToParamVector } from '@/lib/formavision/geometry/scanToParamVector';
@@ -300,18 +301,36 @@ function FormaVisionSurface() {
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <CompositionSectionToggle active="formavision" onChange={onSectionNav} />
-        <button
-          type="button"
-          data-testid="formavision-open-scan"
-          onClick={() => {
-            setScanOpen((o) => !o);
-            if (scanOpen) setScanResult(null);
-          }}
-          className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-[#B75E18]/50 bg-[#B75E18]/15 px-4 py-2.5 text-sm font-medium text-[#B75E18]"
-        >
-          <Camera size={16} strokeWidth={1.5} />
-          {scanOpen ? 'Close scan' : 'Scan My Body'}
-        </button>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          <button
+            type="button"
+            data-testid="formavision-open-scan"
+            onClick={() => {
+              setScanOpen((o) => !o);
+              if (scanOpen) setScanResult(null);
+            }}
+            className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl border border-[#B75E18]/50 bg-[#B75E18]/15 px-4 py-2.5 text-sm font-medium text-[#B75E18] sm:w-auto"
+          >
+            <Camera size={16} strokeWidth={1.5} />
+            {scanOpen ? 'Close scan' : 'Scan My Body'}
+          </button>
+          {!scanOpen && (
+            <button
+              type="button"
+              data-testid="formavision-open-upload"
+              onClick={() => {
+                setScanMode('upload');
+                setScanOpen(true);
+                setScanResult(null);
+                router.replace(formavisionScanEntryHref('upload'));
+              }}
+              className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl border border-[#2DA5A0]/50 bg-[#2DA5A0]/15 px-4 py-2.5 text-sm font-medium text-[#2DA5A0] sm:w-auto"
+            >
+              <ImagePlus size={16} strokeWidth={1.5} />
+              Upload images
+            </button>
+          )}
+        </div>
       </div>
 
       {scanOpen && (
@@ -407,6 +426,20 @@ function FormaVisionSurface() {
               className="min-h-[44px] rounded-xl border border-[#B75E18]/50 bg-[#B75E18]/15 px-4 py-2.5 text-sm font-medium text-[#B75E18]"
             >
               Scan My Body
+            </button>
+            <button
+              type="button"
+              data-testid="formavision-empty-open-upload"
+              onClick={() => {
+                setScanMode('upload');
+                setScanOpen(true);
+                setScanResult(null);
+                router.replace(formavisionScanEntryHref('upload'));
+              }}
+              className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-[#2DA5A0]/50 bg-[#2DA5A0]/15 px-4 py-2.5 text-sm font-medium text-[#2DA5A0]"
+            >
+              <ImagePlus size={16} strokeWidth={1.5} />
+              Upload images
             </button>
             <Link
               href={compositionSectionHref('measurements')}
