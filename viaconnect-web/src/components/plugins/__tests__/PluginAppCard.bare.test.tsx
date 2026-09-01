@@ -92,6 +92,19 @@ describe('PluginAppCard Connections chrome', () => {
     expect(cronometer).not.toContain('plugin-connect-cronometer');
     expect(cronometer).not.toContain('Synced');
     expect(cronometer).toContain('Coming soon');
+
+    const linc = renderToStaticMarkup(
+      <PluginAppCard card={cardFrom('drinklinc', 'coming_soon', '2026-09-01T00:00:00.000Z')} />,
+    );
+    expect(linc).toContain('data-plugin-slug="drinklinc"');
+    expect(linc).toContain('LINC');
+    expect(linc).toContain('Coming soon');
+    expect(linc).toContain('Not connected');
+    expect(linc).toContain('data-vendor-mark="fallback"');
+    expect(linc).not.toContain('plugin-connect-drinklinc');
+    expect(linc).not.toContain('Manage in Wearables Data');
+    expect(linc).not.toContain('Synced');
+    expect(linc).not.toContain('type="button"');
   });
 
   it('shows Connect only when the plugin can ingest', () => {
@@ -198,7 +211,10 @@ describe('PluginAppCard Connections chrome', () => {
     expect(marks).toContain('data-vendor-mark="peloton"');
     expect(marks).toContain('data-vendor-mark="headspace"');
     expect(marks).toContain('data-vendor-mark="calm"');
+    expect(marks).toContain('data-vendor-mark="fallback"');
+    expect(marks).toContain('plugin-vendor-mark-fallback-drinklinc');
     expect(marks).not.toContain('data-vendor-mark="whoop"');
+    expect(marks).not.toContain('data-vendor-mark="drinklinc"');
   });
 
   it('selected tile uses thinner blue glass; rest uses thinner grey glass', () => {

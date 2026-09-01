@@ -27,6 +27,12 @@ describe("Plugins glass 3-column IA", () => {
     expect(registry).toContain("'whoop'");
     expect(registry).toContain("'oura'");
     expect(registry).toContain("'apple_health'");
+    expect(registry).toContain("slug: 'drinklinc'");
+    expect(registry).toContain("displayName: 'LINC'");
+    expect(registry).toMatch(/export const PLUGIN_PAGE_EXCLUDED_SLUGS = \[[^\]]+\] as const;/);
+    expect(registry.match(/export const PLUGIN_PAGE_EXCLUDED_SLUGS = \[[^\]]+\] as const;/)?.[0]).not.toContain(
+      "drinklinc",
+    );
   });
 
   it("uses Connections 390 stack / 1280 three-column glass IA", () => {
