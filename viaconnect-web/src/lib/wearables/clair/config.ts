@@ -14,7 +14,7 @@ export const CLAIR_HONESTY_DISCLAIMER =
   'Clair is not a medical device and is not for contraception.';
 
 export const CLAIR_COMING_SOON_NOTES =
-  'Coming soon. After launch, connect with a JSON, CSV, or HealthKit export from wearclair.com. There is no partner API or OAuth client in this scaffold. Clair is not a medical device and is not for contraception.';
+  'Coming soon. After launch, connect with a JSON, CSV, or HealthKit export from wearclair.com. Partner OAuth is not available yet. Clair is not a medical device and is not for contraception.';
 
 export function isClairConfigured(): boolean {
   return false;

@@ -121,6 +121,8 @@ describe('Clair Health Coming soon lock', () => {
     expect(spec?.notes).toContain(CLAIR_PARTNER_HOST);
     expect(spec?.notes).toMatch(/JSON, CSV, or HealthKit export/);
     expect(spec?.notes).toContain(CLAIR_HONESTY_DISCLAIMER);
+    expect(spec?.notes).toContain('Partner OAuth is not available yet.');
+    expect(spec?.notes).not.toMatch(/scaffold/i);
     expect(spec?.notes).not.toMatch(/estradiol|progesterone|semaglutide/i);
     expect(spec?.notes).not.toMatch(/\bLH\b|\bFSH\b/);
 

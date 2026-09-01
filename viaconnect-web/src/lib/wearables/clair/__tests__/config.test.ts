@@ -24,6 +24,8 @@ describe('Clair config', () => {
     );
     expect(CLAIR_COMING_SOON_NOTES).toContain(CLAIR_HONESTY_DISCLAIMER);
     expect(CLAIR_COMING_SOON_NOTES).toMatch(/JSON, CSV, or HealthKit export/);
+    expect(CLAIR_COMING_SOON_NOTES).toContain('Partner OAuth is not available yet.');
+    expect(CLAIR_COMING_SOON_NOTES).not.toMatch(/scaffold/i);
 
     const src = readFileSync(join(process.cwd(), 'src/lib/wearables/clair/config.ts'), 'utf8');
     expect(src).not.toMatch(/placeholder/i);
