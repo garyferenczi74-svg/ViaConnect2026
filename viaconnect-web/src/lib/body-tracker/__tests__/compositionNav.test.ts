@@ -1,4 +1,6 @@
 // Prompt 210k: composition / FormaVision navigation wiring contracts.
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, it, expect } from 'vitest';
 import {
   COMPOSITION_PATH,
@@ -7,6 +9,7 @@ import {
   compositionScanHref,
   formavisionAfterScanHref,
   formavisionLiveScanHref,
+  formavisionScanEntryHref,
   formavisionUploadHref,
   parseCompositionSection,
   parseFormaVisionScanMode,
@@ -38,7 +41,10 @@ describe('compositionNav (210k)', () => {
   });
 
   it('opens the FormaVision scan panel in upload mode', () => {
-    expect(formavisionUploadHref()).toBe(`${FORMAVISION_PATH}?mode=upload`);
+    expect(formavisionScanEntryHref()).toBe(`${FORMAVISION_PATH}?mode=upload`);
+    expect(formavisionScanEntryHref('upload')).toBe(`${FORMAVISION_PATH}?mode=upload`);
+    expect(formavisionScanEntryHref('live')).toBe(`${FORMAVISION_PATH}?mode=live`);
+    expect(formavisionUploadHref()).toBe(formavisionScanEntryHref('upload'));
     expect(parseFormaVisionScanMode(new URL(formavisionUploadHref(), 'https://app.local').searchParams.get('mode'))).toBe(
       'upload',
     );
@@ -58,5 +64,22 @@ describe('compositionNav (210k)', () => {
     expect(shouldOpenScanFromQuery('true')).toBe(true);
     expect(shouldOpenScanFromQuery('0')).toBe(false);
     expect(shouldOpenScanFromQuery(null)).toBe(false);
+  });
+
+  it('dashboard and composition CTAs enter FormaVision upload mode, not /scan', () => {
+    const root = process.cwd();
+    const dash = readFileSync(
+      join(root, 'src/components/body-tracker/dashboard/DashboardBento.tsx'),
+      'utf8',
+    );
+    const composition = readFileSync(
+      join(root, 'src/app/(app)/(consumer)/body-tracker/composition/page.tsx'),
+      'utf8',
+    );
+    expect(dash).toContain("formavisionScanEntryHref('upload')");
+    expect(dash).not.toContain('SCAN_CAPTURE_PATH');
+    expect(composition).toContain("formavisionScanEntryHref('upload')");
+    expect(composition).not.toContain('SCAN_CAPTURE_PATH');
+    expect(composition).toContain('BodyScanUploader');
   });
 });

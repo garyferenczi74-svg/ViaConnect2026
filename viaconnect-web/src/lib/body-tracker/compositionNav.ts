@@ -26,12 +26,19 @@ export function formavisionLiveScanHref(): string {
   return `${FORMAVISION_PATH}/scan`;
 }
 
-/** Open FormaVision scan panel in Upload saved images mode. */
-export function formavisionUploadHref(): string {
-  return `${FORMAVISION_PATH}?mode=upload`;
+export type FormaVisionScanMode = 'live' | 'upload';
+
+/** Open the FormaVision scan panel with a mode (default upload). */
+export function formavisionScanEntryHref(
+  mode: FormaVisionScanMode = 'upload',
+): string {
+  return `${FORMAVISION_PATH}?mode=${mode}`;
 }
 
-export type FormaVisionScanMode = 'live' | 'upload';
+/** Open FormaVision scan panel in Upload saved images mode. */
+export function formavisionUploadHref(): string {
+  return formavisionScanEntryHref('upload');
+}
 
 export function parseFormaVisionScanMode(
   raw: string | null | undefined,

@@ -22,10 +22,9 @@ import { useUserCrossReferenceData } from '@/hooks/body-tracker/useUserCrossRefe
 import { useArnoldRecommendation } from '@/hooks/body-tracker/useArnoldRecommendation';
 import { useUserJourney } from '@/hooks/body-tracker/useUserJourney';
 import { resolveHormonesReportChip } from '@/lib/kb/hormones/hormonesHubChip';
-// Prompt 231: the FormaVision tile now opens the new 4-pose capture route
-// directly (G79) instead of the composition surface. Wiring only, per the
-// condition 26 scope guard (this tile is not being redesigned).
-import { SCAN_CAPTURE_PATH } from '@/lib/scan/routes';
+// Body Composition tile opens FormaVision scan entry (upload mode) so
+// phone and desktop are not dropped onto /scan without an Upload path.
+import { formavisionScanEntryHref } from '@/lib/body-tracker/compositionNav';
 // Prompt 231 Task 14 (condition 17): the tile reads the latest 4-pose scan
 // date + status through scanReadsShared.getLatestScan only, via
 // GET /api/scan/latest. Type-only import - no server-only code enters this
@@ -418,7 +417,7 @@ export function DashboardBento({ userId }: DashboardBentoProps) {
       </motion.div>
 
       <motion.div className="lg:col-span-3" {...fade(3)}>
-        <SnapshotTile href={SCAN_CAPTURE_PATH} icon={Ruler} label="Body Composition">
+        <SnapshotTile href={formavisionScanEntryHref('upload')} icon={Ruler} label="Body Composition">
           {(() => {
             const fat = bodyFatDisplay({
               bodyFatPct: snap.bodyFatPct,
