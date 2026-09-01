@@ -104,7 +104,7 @@ export const RYTHM_HEALTH_COPY = {
   exportHelp:
     'In the Rythm Health app, open Account, then Orders (app.rythmhealth.com/account/orders). Download the CSV for the order you want to import.',
   partnerComingSoon:
-    'A direct Rythm Health connection is coming soon. Partner connection is not available yet.',
+    'A direct Rythm Health connection is coming soon.',
   imported: 'Imported to your lab record',
   empty: 'No Rythm Health file imported yet.',
   unknown: 'Import status UNKNOWN.',
