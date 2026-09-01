@@ -40,10 +40,10 @@ import {
   type SafetyFlags,
 } from '@/lib/gordon/generateMacroTargets';
 import {
-  ACTIVITY_MULTIPLIERS,
   type DietaryChoice,
   type MacroActivityLevel,
 } from '@/lib/gordon/macro-config';
+import { normalizeActivity } from '@/lib/gordon/normalizeActivity';
 import { resolveLeanBodyMass } from '@/lib/gordon/lbm';
 import { readActiveHistoryFromProfiles } from '@/lib/body-tracker/disordered-eating-safeguard';
 
@@ -93,18 +93,6 @@ function normalizeSex(value: unknown): BiologicalSex | null {
   if (v === 'male' || v === 'm') return 'male';
   if (v === 'female' || v === 'f') return 'female';
   if (v === 'unspecified' || v === 'non_binary' || v === 'nonbinary' || v === 'other' || v === 'prefer_not_to_say') return 'unspecified';
-  return null;
-}
-
-function normalizeActivity(value: unknown): MacroActivityLevel | null {
-  if (typeof value !== 'string') return null;
-  const v = value.toLowerCase().trim().replace(/[\s-]/g, '_');
-  if (v in ACTIVITY_MULTIPLIERS) return v as MacroActivityLevel;
-  // Tolerate legacy short forms used in main's existing CAQ data.
-  if (v === 'light') return 'lightly_active';
-  if (v === 'moderate') return 'moderately_active';
-  if (v === 'very') return 'very_active';
-  if (v === 'athlete' || v === 'extra') return 'extra_active';
   return null;
 }
 
@@ -203,7 +191,9 @@ async function resolveInputs(
   const biologicalSex = normalizeSex(phase1?.sex);
 
   // Activity level lives inside the Lifestyle (phase 3) payload as
-  // `exercise` in the existing CAQ shape (e.g., "sedentary" / "moderate").
+  // `exercise`. Live CAQ stores frequency strings (Never, 1-2x/week,
+  // 3-4x/week, 5-6x/week, Daily, or empty); normalizeActivity maps those
+  // plus the older enum / short forms onto MacroActivityLevel.
   const activityLevel =
     normalizeActivity(phase3?.exercise) ??
     normalizeActivity(phase3?.activityLevel);

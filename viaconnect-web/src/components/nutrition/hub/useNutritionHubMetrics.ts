@@ -13,15 +13,15 @@
 //   - Structured logging: one safeLog.warn line per failed read so the
 //     drop off is observable in the Vercel runtime logs.
 //
-// Read only. Nutrition Score hero is daily macro attainment vs the
-// persisted nutrition_targets five macros, plus a bounded food-pattern
-// modifier and an optional goal_direction tilt. Slot-weighted per-meal
-// quality stays on the expanded Today's meals ring. No invented
-// fallback targets. True no-meals day => UNKNOWN / --. Missing
-// nutrition_targets => Nutrition Score stays UNKNOWN (cannot score vs
-// My Biology) but Daily Macros must not use the meals-missing empty:
-// today's food still surfaces consumed grams, and copy names targets.
-// The consecutive streak math lives in the pure ./streak module.
+// Read only against meals / saved_meals. Nutrition Score hero is daily
+// macro attainment vs the persisted nutrition_targets five macros, plus
+// a bounded food-pattern modifier and an optional goal_direction tilt.
+// Slot-weighted per-meal quality stays on the expanded Today's meals
+// ring. No invented fallback targets. True no-meals day => UNKNOWN / --.
+// Missing nutrition_targets => one-shot POST /api/nutrition/generate-targets
+// when today has food, then re-read the same five columns. 422
+// estimate_unavailable keeps the targets_missing empty copy (complete
+// profile). The consecutive streak math lives in the pure ./streak module.
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
@@ -35,7 +35,7 @@ import {
   type HubGoalDirection,
 } from '@/lib/gordon/daily-aggregate';
 import { fetchGoalOverlay } from '@/lib/gordon/resolveDailyTarget';
-import { withTimeout } from '@/lib/utils/with-timeout';
+import { withAbortTimeout, withTimeout } from '@/lib/utils/with-timeout';
 import { computeConsecutiveMealStreak } from './streak';
 import type { HubGaugeEmptyReason } from './nutritionHubScoreDisplay';
 
@@ -203,6 +203,28 @@ export function hasTodaysFoodMeals(
   tz: string,
 ): boolean {
   return todaysFoodMealRows(rows, now, tz).length > 0;
+}
+
+/**
+ * One-shot heal gate. Meals today + no persisted targets means the hero
+ * would stay targets_missing. Call generate-targets once; do not invent
+ * numbers client-side. 422 (profile incomplete) must keep the empty copy.
+ */
+export function shouldHealMissingTargets(
+  targets: HubMacroTargets | null,
+  hasTodaysFood: boolean,
+): boolean {
+  return targets === null && hasTodaysFood;
+}
+
+export type GenerateTargetsHealOutcome = 'written' | 'profile_incomplete' | 'failed';
+
+export function interpretGenerateTargetsHealStatus(
+  status: number,
+): GenerateTargetsHealOutcome {
+  if (status >= 200 && status < 300) return 'written';
+  if (status === 422) return 'profile_incomplete';
+  return 'failed';
 }
 
 export interface TodayNutritionResult {
@@ -447,6 +469,83 @@ export function useNutritionHubMetrics(): UseNutritionHubMetricsResult {
             'nutrition.hub.meals',
           )) as { data: HubMealRow[] | null; error: { code?: string } | null };
           const rows = Array.isArray(mealsResult.data) ? mealsResult.data : [];
+
+          // One-shot regenerate when today has food but no active
+          // nutrition_targets row. Mapping CAQ frequency strings is not
+          // enough for an empty table; this POST is the only writer.
+          // 422 estimate_unavailable keeps targets null so the hub still
+          // shows the complete-profile empty copy. Never invent numbers
+          // from the JSON body; re-read the same five columns.
+          if (shouldHealMissingTargets(targets, hasTodaysFoodMeals(rows, now, tz))) {
+            try {
+              const healResponse = await withAbortTimeout(
+                (signal) =>
+                  fetch('/api/nutrition/generate-targets', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({}),
+                    signal,
+                  }),
+                TIMEOUT_MS,
+                'nutrition.hub.generate-targets',
+              );
+              const healOutcome = interpretGenerateTargetsHealStatus(healResponse.status);
+              if (healOutcome === 'written') {
+                try {
+                  const healedResult = (await withTimeout(
+                    supabase
+                      .from('nutrition_targets')
+                      .select('daily_kcal, daily_protein_g, daily_carbs_g, daily_fat_total_g, daily_fiber_g, goal_direction')
+                      .eq('user_id', user.id)
+                      .is('superseded_at', null)
+                      .order('effective_from', { ascending: false })
+                      .limit(1)
+                      .maybeSingle(),
+                    TIMEOUT_MS,
+                    'nutrition.hub.targets.heal',
+                  )) as { data: Record<string, unknown> | null };
+                  if (healedResult.data) {
+                    targets = targetsFromRow(healedResult.data);
+                    try {
+                      const todayISO =
+                        localDateKey(now.toISOString(), tz) || now.toISOString().slice(0, 10);
+                      const overlay = await withTimeout(
+                        fetchGoalOverlay(user.id, todayISO, supabase),
+                        TIMEOUT_MS,
+                        'nutrition.hub.overlay.heal',
+                      );
+                      if (overlay) {
+                        targets = {
+                          dailyKcal: overlay.dailyKcal,
+                          dailyProteinG: overlay.dailyProteinG,
+                          dailyCarbsG: overlay.dailyCarbsG,
+                          dailyFatTotalG: overlay.dailyFatTotalG,
+                          dailyFiberG: overlay.dailyFiberG,
+                          goalDirection: targets.goalDirection ?? null,
+                        };
+                      }
+                    } catch (overlayErr) {
+                      safeLog.warn('nutrition.hub.metrics', 'heal overlay read failed', {
+                        error: overlayErr instanceof Error ? overlayErr.message : String(overlayErr),
+                      });
+                    }
+                  }
+                } catch (healedErr) {
+                  safeLog.warn('nutrition.hub.metrics', 'healed nutrition_targets read failed', {
+                    error: healedErr instanceof Error ? healedErr.message : String(healedErr),
+                  });
+                }
+              } else if (healOutcome === 'failed') {
+                safeLog.warn('nutrition.hub.metrics', 'generate-targets heal failed', {
+                  error: `status ${healResponse.status}`,
+                });
+              }
+            } catch (healErr) {
+              safeLog.warn('nutrition.hub.metrics', 'generate-targets heal failed', {
+                error: healErr instanceof Error ? healErr.message : String(healErr),
+              });
+            }
+          }
 
           const today = computeTodayNutrition(rows, targets, now, tz);
           if (today.emptyReason) next.emptyReason = today.emptyReason;
