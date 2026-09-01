@@ -32,8 +32,8 @@ export function wearableTileCardChrome(selected: boolean): string {
 
 export function wearableTileTitleClassName(selected: boolean): string {
   return selected
-    ? 'truncate text-base font-bold leading-snug text-teal'
-    : 'truncate text-base font-semibold leading-snug text-white';
+    ? 'whitespace-normal break-words text-base font-bold leading-snug text-teal'
+    : 'whitespace-normal break-words text-base font-semibold leading-snug text-white';
 }
 
 interface WearableTileCardProps {
