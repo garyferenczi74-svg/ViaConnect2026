@@ -2,16 +2,17 @@
 
 /**
  * Prompt 217: My Biology action button row.
- * Uniform 48px buttons: FormaVision (scan flow), Log Data, Doctor's Report.
+ * Uniform 48px buttons: Log Data, Doctor's Report.
+ * FormaVision scan lives only on the orange CompositionSectionToggle tab
+ * (/body-tracker/formavision). This row must not label a second FormaVision CTA.
  * Mobile: single-line horizontal snap scroll (no label wrap). Desktop: same
  * variant, no scroll when space allows.
  */
 
-import { Camera, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { DownloadReportButton } from '@/components/formavision/DownloadReportButton';
 
 const CARD = '#1E3054';
-const TEAL = '#2DA5A0';
 
 /** Shared surface for legibility over hero video / navy backdrop. */
 export const BIOLOGY_ACTION_BTN_BASE =
@@ -27,17 +28,13 @@ export const BIOLOGY_ACTION_BTN_NEUTRAL_ACTIVE = `${BIOLOGY_ACTION_BTN_BASE} bor
 
 export interface BiologyActionRowProps {
   userId: string | null;
-  scanOpen: boolean;
   logOpen: boolean;
-  onToggleScan: () => void;
   onToggleLog: () => void;
 }
 
 export function BiologyActionRow({
   userId,
-  scanOpen,
   logOpen,
-  onToggleScan,
   onToggleLog,
 }: BiologyActionRowProps) {
   return (
@@ -46,18 +43,6 @@ export function BiologyActionRow({
       className="flex w-full max-w-full min-w-0 gap-2 overflow-x-auto overscroll-x-contain scroll-smooth snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:w-auto md:overflow-visible md:snap-none"
       style={{ WebkitOverflowScrolling: 'touch' }}
     >
-      {/* Primary: opens the body scan panel (same flow as the prior scan CTA) */}
-      <button
-        type="button"
-        data-testid="biology-action-formavision"
-        aria-pressed={scanOpen}
-        onClick={onToggleScan}
-        className={scanOpen ? BIOLOGY_ACTION_BTN_PRIMARY_ACTIVE : BIOLOGY_ACTION_BTN_PRIMARY}
-      >
-        <Camera className="h-4 w-4 shrink-0" strokeWidth={1.5} color={TEAL} aria-hidden />
-        <span>FormaVision</span>
-      </button>
-
       <button
         type="button"
         data-testid="biology-action-log-data"
