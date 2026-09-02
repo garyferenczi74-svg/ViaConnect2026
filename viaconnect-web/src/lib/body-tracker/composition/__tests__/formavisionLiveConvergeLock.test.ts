@@ -64,6 +64,7 @@ describe('FormaVision live converge lock (REQUIRED)', () => {
     const normalize = src('src/lib/body-tracker/composition/normalizeScanPhotoOrientation.ts');
     const golden = src('src/lib/body-tracker/composition/goldenUploadFixtures.ts');
     expect(normalize).toMatch(/detectAPoseInversionFromBandLuma/);
+    expect(normalize).toMatch(/detectAPoseOrientationFromBandLuma/);
     expect(normalize).toMatch(/imageOrientation:\s*SCAN_PHOTO_IMAGE_ORIENTATION/);
     expect(normalize).not.toMatch(/imageOrientation:\s*'none'/);
     expect(normalize).toMatch(/SCAN_PHOTO_IMAGE_ORIENTATION = 'from-image'/);

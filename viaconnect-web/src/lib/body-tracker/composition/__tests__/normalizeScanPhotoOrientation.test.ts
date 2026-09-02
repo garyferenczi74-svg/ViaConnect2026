@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   bandLumaMeansFromGray,
   detectAPoseInversionFromBandLuma,
+  detectAPoseOrientationFromBandLuma,
   isIdentityTransform,
   needsUprightPixelBake,
   orientedBitmapCanvasSize,
@@ -131,6 +132,8 @@ describe('normalizeScanPhotoOrientation', () => {
     expect(normalize).toMatch(/imageOrientation:\s*SCAN_PHOTO_IMAGE_ORIENTATION/);
     expect(normalize).not.toMatch(/imageOrientation:\s*'none'/);
     expect(normalize).toMatch(/createScanPhotoBitmap/);
+    expect(normalize).toMatch(/detectAPoseOrientationFromBandLuma/);
+    expect(normalize).toMatch(/sideways90cw/);
     expect(processPhoto).toMatch(/createScanPhotoBitmap/);
     expect(processPhoto).not.toMatch(/createImageBitmap\(file\)/);
   });
@@ -146,7 +149,66 @@ describe('normalizeScanPhotoOrientation', () => {
     const bands = bandLumaMeansFromGray(width, height, gray);
     expect(bands).not.toBeNull();
     expect(detectAPoseInversionFromBandLuma(bands!.topMean, bands!.bottomMean)).toBe('inverted');
+    expect(
+      detectAPoseOrientationFromBandLuma(
+        bands!.topMean,
+        bands!.bottomMean,
+        bands!.leftMean,
+        bands!.rightMean,
+      ),
+    ).toBe('inverted');
     expect(resolveUprightTransform(1, 'upload', 'inverted').rotateQuarterTurns).toBe(2);
+  });
+
+  it('detects 90° sideways when EXIF is stripped and the dark floor is on a side', () => {
+    const width = 64;
+    const height = 32;
+    const leftFloor = new Uint8Array(width * height);
+    const rightFloor = new Uint8Array(width * height);
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        leftFloor[y * width + x] = x < 10 ? 30 : 220;
+        rightFloor[y * width + x] = x >= width - 10 ? 30 : 220;
+      }
+    }
+    const leftBands = bandLumaMeansFromGray(width, height, leftFloor);
+    const rightBands = bandLumaMeansFromGray(width, height, rightFloor);
+    expect(leftBands).not.toBeNull();
+    expect(rightBands).not.toBeNull();
+    expect(
+      detectAPoseOrientationFromBandLuma(
+        leftBands!.topMean,
+        leftBands!.bottomMean,
+        leftBands!.leftMean,
+        leftBands!.rightMean,
+      ),
+    ).toBe('sideways90cw');
+    expect(
+      detectAPoseOrientationFromBandLuma(
+        rightBands!.topMean,
+        rightBands!.bottomMean,
+        rightBands!.leftMean,
+        rightBands!.rightMean,
+      ),
+    ).toBe('sideways90ccw');
+    const cw = resolveUprightTransform(null, 'upload', 'sideways90cw');
+    const ccw = resolveUprightTransform(null, 'upload', 'sideways90ccw');
+    expect(cw).toEqual({ rotateQuarterTurns: 1, flipX: false });
+    expect(ccw).toEqual({ rotateQuarterTurns: 3, flipX: false });
+    // Stripped-EXIF landscape pixels (HEIC/reencode) become portrait after 90°.
+    expect(orientedBitmapCanvasSize(400, 300, cw)).toEqual({ width: 300, height: 400 });
+    expect(orientedBitmapCanvasSize(400, 300, ccw)).toEqual({ width: 300, height: 400 });
+    expect(needsUprightPixelBake(null, cw, 'upload')).toBe(true);
+    // EXIF 6 still wins — do not also apply visual 90° (iOS double-rotate).
+    expect(resolveUprightTransform(6, 'upload', 'sideways90cw')).toEqual({
+      rotateQuarterTurns: 0,
+      flipX: false,
+    });
+  });
+
+  it('does not treat unknown stripped-EXIF as a 180° flip (wrong for 90° shots)', () => {
+    expect(resolveUprightTransform(null, 'upload', 'unknown').rotateQuarterTurns).toBe(0);
+    expect(detectAPoseOrientationFromBandLuma(120, 118, 119, 121)).toBe('unknown');
   });
 
   it('detects upright A-pose when the dark floor band is at the bottom', () => {
@@ -160,6 +222,14 @@ describe('normalizeScanPhotoOrientation', () => {
     const bands = bandLumaMeansFromGray(width, height, gray);
     expect(bands).not.toBeNull();
     expect(detectAPoseInversionFromBandLuma(bands!.topMean, bands!.bottomMean)).toBe('upright');
+    expect(
+      detectAPoseOrientationFromBandLuma(
+        bands!.topMean,
+        bands!.bottomMean,
+        bands!.leftMean,
+        bands!.rightMean,
+      ),
+    ).toBe('upright');
     expect(resolveUprightTransform(null, 'upload', 'upright').rotateQuarterTurns).toBe(0);
   });
 });

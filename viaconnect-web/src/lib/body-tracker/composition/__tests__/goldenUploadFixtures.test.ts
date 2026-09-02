@@ -45,9 +45,9 @@ async function grayBandsFromJpeg(buf: Buffer): Promise<{
   bottomMean: number;
   orientation: number | null;
 }> {
-  // Sample stored pixels (no EXIF rotate) so A-pose inversion is judged on
-  // the file bytes. Browser bake uses from-image; extra transform is 180°
-  // only when EXIF is missing/1 and this hint is inverted.
+  // Sample stored pixels (no EXIF rotate) so A-pose inversion / sideways is
+  // judged on the file bytes. Browser bake uses from-image; extra transform
+  // is 180° or 90° only when EXIF is missing/1.
   const { data, info } = await sharp(buf)
     .withMetadata()
     .removeAlpha()
@@ -113,6 +113,7 @@ describe('Arnold golden Upload fixtures (inverted + upright)', () => {
     expect(shared).toMatch(/body-scan-analyze/);
     expect(shared).not.toMatch(/navyBodyFat/);
     expect(normalize).toMatch(/detectAPoseInversionFromBandLuma/);
+    expect(normalize).toMatch(/detectAPoseOrientationFromBandLuma/);
     expect(normalize).toMatch(/imageOrientation:\s*SCAN_PHOTO_IMAGE_ORIENTATION/);
     expect(normalize).not.toMatch(/imageOrientation:\s*'none'/);
     expect(normalize).toMatch(/SCAN_PHOTO_IMAGE_ORIENTATION = 'from-image'/);
