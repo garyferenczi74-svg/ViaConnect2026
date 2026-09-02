@@ -25,6 +25,24 @@ export const SAFE_GL_ATTRIBUTES: WebGLContextAttributes = {
   failIfMajorPerformanceCaveat: false,
 };
 
+// ANGLE SwiftShader (Arnold box / many VMs) often returns null for
+// getContext('webgl'|'webgl2', { antialias: true }) while a bare
+// getContext('webgl') on a fresh canvas succeeds. That is not "no WebGL"
+// and not a SwiftShader refuse — retry without MSAA on the same canvas.
+export const SOFTWARE_SAFE_GL_ATTRIBUTES: WebGLContextAttributes = {
+  ...SAFE_GL_ATTRIBUTES,
+  antialias: false,
+};
+
+export function glAttributeAttempts(
+  preferred: WebGLContextAttributes = SAFE_GL_ATTRIBUTES,
+): readonly WebGLContextAttributes[] {
+  if (preferred.antialias === false) {
+    return [preferred];
+  }
+  return [preferred, { ...preferred, antialias: false }];
+}
+
 const SAFARI_ORDER = ['webgl', 'experimental-webgl'] as const;
 const STANDARD_ORDER = ['webgl2', 'webgl', 'experimental-webgl'] as const;
 
@@ -55,20 +73,34 @@ export interface WebGLContextHost {
   getContext: (contextId: string, attributes?: WebGLContextAttributes) => unknown;
 }
 
+export interface AcquiredWebGLContext {
+  context: unknown;
+  attributes: WebGLContextAttributes;
+}
+
+export function acquireWebGLContextResult(
+  canvas: WebGLContextHost,
+  options: AcquireWebGLContextOptions = {},
+): AcquiredWebGLContext | null {
+  const safariLike = options.safariLike ?? false;
+  const preferred = options.attributes ?? SAFE_GL_ATTRIBUTES;
+  const order = webglContextTypeOrder(safariLike);
+  for (const attributes of glAttributeAttempts(preferred)) {
+    for (const contextId of order) {
+      const context = canvas.getContext(contextId, attributes);
+      if (context) return { context, attributes };
+      // A failed getContext on Safari/WKWebView marks this canvas unusable for
+      // every other GL type. Stay on this type and try the next attribute set
+      // (antialias:false) rather than collecting a poisoned webgl2-null.
+      if (safariLike) break;
+    }
+  }
+  return null;
+}
+
 export function acquireWebGLContext(
   canvas: WebGLContextHost,
   options: AcquireWebGLContextOptions = {},
 ): unknown {
-  const safariLike = options.safariLike ?? false;
-  const attributes = options.attributes ?? SAFE_GL_ATTRIBUTES;
-  const order = webglContextTypeOrder(safariLike);
-  for (const contextId of order) {
-    const context = canvas.getContext(contextId, attributes);
-    if (context) return context;
-    // A failed getContext on Safari/WKWebView marks this canvas unusable for
-    // every other GL type. Stop so the caller can fail honestly instead of
-    // collecting a second null that looks like "no WebGL on the device".
-    if (safariLike) return null;
-  }
-  return null;
+  return acquireWebGLContextResult(canvas, options)?.context ?? null;
 }

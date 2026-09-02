@@ -462,12 +462,21 @@ function FormaVisionSurface() {
         </div>
       )}
 
+      {/* Arnold www: notice host is a previous sibling of the sex-toggle row.
+          empty:hidden so an empty host is display:none (no flex gap-4 on the
+          3D path). A real box — not display:contents — when the banner portals
+          in, so it takes in-flow space above Male/Female and elementFromPoint
+          cannot fall through to Female (contents hit-testing is unreliable).
+          Do not put the banner inside the overflow-hidden plate. */}
+      <div data-testid="formavision-fallback-notice-host" className="empty:hidden" />
+
       {/* Prompt 210m: top control row. Male/Female + units stay above the avatar.
           A/B compare toggle joins this row at md+; on phone it lives below
-          Select Body Part. */}
+          Select Body Part. z-0 traps UnitToggle's inner z-10 so the portaled
+          notice (z-50) stays hittable above this row. */}
       <div
         data-testid="formavision-top-controls"
-        className="flex flex-wrap items-center justify-between gap-2"
+        className="relative z-0 flex flex-wrap items-center justify-between gap-2"
       >
         <div className="flex min-w-0 flex-1 items-center gap-2">
           <button
@@ -513,7 +522,7 @@ function FormaVisionSurface() {
           line (pointer-events none so orbit and Neck callouts stay usable). */}
       <div
         data-testid="formavision-canvas-grid"
-        className="relative flex h-[min(52vh,520px)] max-h-[min(52vh,520px)] items-center justify-center overflow-hidden rounded-2xl border border-white/[0.08] bg-transparent p-4"
+        className="relative z-10 flex h-[min(52vh,520px)] max-h-[min(52vh,520px)] items-center justify-center overflow-hidden rounded-2xl border border-white/[0.08] bg-transparent p-4"
       >
         <AbWipeSplitOverlay wipeT={wipeT} visible={abCompareOn && Boolean(wipeVector)} />
         <BodyCompositionAvatar

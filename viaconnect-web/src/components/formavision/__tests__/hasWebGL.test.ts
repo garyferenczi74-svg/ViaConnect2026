@@ -71,6 +71,23 @@ describe('hasWebGL', () => {
     expect(created).toBeGreaterThan(1);
   });
 
+  it('retries without antialias when MSAA getContext returns null', () => {
+    let created = 0;
+    (globalThis as { document?: unknown }).document = {
+      createElement: () => {
+        created += 1;
+        return {
+          getContext: (_kind: string, attrs?: { antialias?: boolean }) => {
+            if (attrs && attrs.antialias === false) return {};
+            return null;
+          },
+        };
+      },
+    };
+    expect(hasWebGL()).toBe(true);
+    expect(created).toBeGreaterThan(1);
+  });
+
   it('passes failIfMajorPerformanceCaveat false so low-power GPUs still count', () => {
     const getContext = vi.fn((_kind: string, attrs?: { failIfMajorPerformanceCaveat?: boolean }) => {
       if (attrs && attrs.failIfMajorPerformanceCaveat === false) return {};

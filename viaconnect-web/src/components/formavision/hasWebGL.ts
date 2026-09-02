@@ -13,10 +13,14 @@
 //     already failed getContext('webgl2').
 //   - failIfMajorPerformanceCaveat is explicitly false so a software or
 //     low-power GPU still counts as "WebGL exists".
+//   - Each type also retries without antialias on a fresh canvas. ANGLE
+//     SwiftShader often returns null for { antialias: true } while a bare
+//     getContext still succeeds — that must not report unavailable.
 //   - Any thrown error is swallowed and reported as unavailable.
 
 import {
   SAFE_GL_ATTRIBUTES,
+  glAttributeAttempts,
   isSafariWebGLHost,
   webglContextTypeOrder,
 } from '@/lib/formavision/gl/acquireWebGLContext';
@@ -24,11 +28,15 @@ import {
 export type WebGLProbeResult = 'ssr' | 'available' | 'unavailable';
 
 function contextFromFreshCanvas(contextId: string): unknown {
-  const canvas = document.createElement('canvas');
-  if (!canvas || typeof canvas.getContext !== 'function') {
-    return null;
+  for (const attributes of glAttributeAttempts(SAFE_GL_ATTRIBUTES)) {
+    const canvas = document.createElement('canvas');
+    if (!canvas || typeof canvas.getContext !== 'function') {
+      return null;
+    }
+    const context = canvas.getContext(contextId, attributes);
+    if (context) return context;
   }
-  return canvas.getContext(contextId, SAFE_GL_ATTRIBUTES);
+  return null;
 }
 
 export function probeWebGL(): WebGLProbeResult {

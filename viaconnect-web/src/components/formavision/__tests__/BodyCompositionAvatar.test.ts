@@ -117,7 +117,11 @@ describe('BodyCompositionAvatar', () => {
     const canvas = readSrc('src/components/formavision/FormaVisionCanvas.tsx');
     expect(avatar).toMatch(/selectAvatarSurface/);
     expect(avatar).toMatch(/FormaVisionFallbackNotice/);
-    expect(avatar).not.toMatch(/from ['"]\.\/hasWebGL['"]/);
+    expect(avatar).toMatch(/shouldLatchFallback2d/);
+    expect(avatar).toMatch(/probeWebGL/);
+    expect(avatar).toMatch(/setFellBack\(true\)/);
+    expect(avatar).not.toMatch(/if \(!shouldLatchFallback2d\(probe\)\) \{\s*return;\s*\}/);
+    expect(avatar).not.toMatch(/useMemo\(\(\) => hasWebGL\(\), \[\]\)/);
     expect(threeD).toMatch(/formavision-3d-pending/);
     expect(threeD).toMatch(/formavision-3d-mount/);
     expect(threeD).not.toMatch(/useMemo\(\(\) => hasWebGL\(\), \[\]\)/);
