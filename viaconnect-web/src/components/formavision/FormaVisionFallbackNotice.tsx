@@ -11,16 +11,24 @@ export interface FormaVisionFallbackNoticeProps {
   children: React.ReactNode;
 }
 
+// Stacking contract (www smoke after #173): the notice must paint and hit-test
+// above the Male/Female sex toggle. Pin it to the plate top (absolute + z-30)
+// so the 2D child's min-height cannot overflow it onto the toggle row.
+// Wrapper z-20 opens a local stacking context above in-flow sibling controls.
+export const FORMAVISION_FALLBACK_FLOOR_STACK_CLASS = 'relative z-20';
+export const FORMAVISION_FALLBACK_NOTICE_STACK_CLASS =
+  'pointer-events-auto absolute inset-x-2 top-2 z-30';
+
 export function FormaVisionFallbackNotice({ children }: FormaVisionFallbackNoticeProps) {
   return (
     <div
       data-testid="formavision-fallback-2d"
-      className="relative flex h-full w-full flex-col items-center justify-center"
+      className={`${FORMAVISION_FALLBACK_FLOOR_STACK_CLASS} flex h-full w-full flex-col items-center justify-center`}
     >
       <div
         role="status"
         data-testid="formavision-fallback-notice"
-        className="mb-3 flex max-w-sm items-start gap-2 rounded-xl border border-[#B75F19]/40 bg-[#B75F19]/10 px-3 py-2"
+        className={`${FORMAVISION_FALLBACK_NOTICE_STACK_CLASS} mx-auto flex max-w-sm items-start gap-2 rounded-xl border border-[#B75F19]/40 bg-[#B75F19]/10 px-3 py-2`}
       >
         <Box
           className="mt-0.5 h-4 w-4 shrink-0 text-[#B75F19]"
