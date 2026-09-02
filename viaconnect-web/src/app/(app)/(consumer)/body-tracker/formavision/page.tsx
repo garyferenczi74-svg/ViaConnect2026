@@ -462,10 +462,17 @@ function FormaVisionSurface() {
         </div>
       )}
 
+      {/* Arnold www: notice host is a previous sibling of the sex-toggle row.
+          display:contents so an empty host adds no flex gap on the 3D path;
+          when the banner portals in it becomes an in-flow child above Male/
+          Female (z-50 vs this row's z-0). Do not put the banner inside the
+          overflow-hidden plate — that is what made elementFromPoint hit Female. */}
+      <div data-testid="formavision-fallback-notice-host" className="contents" />
+
       {/* Prompt 210m: top control row. Male/Female + units stay above the avatar.
           A/B compare toggle joins this row at md+; on phone it lives below
-          Select Body Part. z-0 traps UnitToggle's inner z-10 so the plate
-          (z-10) + fallback notice (z-30) stay hittable above this row. */}
+          Select Body Part. z-0 traps UnitToggle's inner z-10 so the portaled
+          notice (z-50) stays hittable above this row. */}
       <div
         data-testid="formavision-top-controls"
         className="relative z-0 flex flex-wrap items-center justify-between gap-2"

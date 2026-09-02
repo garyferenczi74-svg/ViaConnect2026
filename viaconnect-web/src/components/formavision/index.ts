@@ -18,6 +18,7 @@ export {
   FormaVisionFallbackNotice,
   FORMAVISION_FALLBACK_FLOOR_STACK_CLASS,
   FORMAVISION_FALLBACK_NOTICE_STACK_CLASS,
+  FORMAVISION_FALLBACK_NOTICE_HOST_TESTID,
 } from './FormaVisionFallbackNotice';
 export type { FormaVisionFallbackNoticeProps } from './FormaVisionFallbackNotice';
 // Prompt 211a W3: doctor-ready scan report download / share control.
