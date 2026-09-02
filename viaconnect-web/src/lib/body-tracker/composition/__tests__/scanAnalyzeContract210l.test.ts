@@ -64,6 +64,10 @@ describe('Prompt 210l analyze-chain source contracts', () => {
     expect(src).toMatch(/formavisionLiveScanHref/);
     expect(src).toMatch(/scanToParamVector/);
     expect(src).toMatch(/BodyCompositionAvatar/);
+    expect(src).toMatch(/ScanHistorySection/);
+    expect(src).toMatch(/refreshKey=\{scanHistoryKey\}/);
+    expect(src).toMatch(/snapshotFromScanResult/);
+    expect(src).toMatch(/estimateCircumferencesFromComposition/);
     expect(src).toMatch(/const \[scanOpen, setScanOpen\] = useState\(true\)/);
     expect(src).toMatch(/formavision-open-scan/);
     expect(src).toMatch(/Scan My Body/);

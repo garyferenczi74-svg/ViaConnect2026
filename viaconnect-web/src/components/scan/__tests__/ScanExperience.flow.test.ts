@@ -730,6 +730,7 @@ describe('ScanExperience wiring: Live | Upload images tabs on SETUP', () => {
     expect(src).toContain('scan-setup-upload-panel');
     expect(src).toContain('BodyScanUploader');
     expect(src).toContain('persistCompositionScan');
+    expect(src).toContain('persistScan already ran inside runFormaVisionAnalyzeSpine');
     expect(src).toContain('scan-start-button');
     expect(src).toContain('handleStart');
     expect(src).not.toContain('FormaVisionUploadEscapeLink');

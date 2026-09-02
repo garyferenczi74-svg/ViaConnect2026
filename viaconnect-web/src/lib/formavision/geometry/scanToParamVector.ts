@@ -8,7 +8,10 @@
 // UNKNOWN preservation is the core contract. A null or absent circumference stays
 // null in the vector (the geometry layer substitutes the sex template and flags the
 // ring estimated). Girth is NEVER fabricated from body fat percent, BMI, or any
-// readout. Shape comes only from measured circumferences.
+// readout. Shape comes only from measured circumferences. Composition estimates
+// that should morph the avatar are turned into CircumferenceMeasurements by
+// estimateCircumferencesFromComposition BEFORE this mapper — they arrive as
+// explicit girths, not as a silent BF fill inside this function.
 
 import { templateForSex } from './types';
 import type { ArmParam, BodyParamVector, BodyRing, Sex } from './types';

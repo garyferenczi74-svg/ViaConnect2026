@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Camera, ImageOff, Loader2, Trash2 } from 'lucide-react';
 import { POSE_ORDER, type PoseId } from '@/lib/scan/poses';
-import type { ScanSummary } from '@/lib/scan/scanReadsShared';
+import { FORMAVISION_PHOTO_PROTOCOL } from '@/lib/scan/scanProtocols';
+import type { ScanSummary } from '@/lib/scan/scanSummary';
 
 /**
  * Prompt 231: the 4-pose scan history list. Reuses the Task 13
@@ -12,10 +13,12 @@ import type { ScanSummary } from '@/lib/scan/scanReadsShared';
  * server loader, mirroring ScanExperienceLoader/ScanExperience) so this
  * component stays pure and testable with renderToStaticMarkup.
  *
- * `scans` comes from scanReadsShared.listScans, which already filters to
- * protocol='4pose_v1' and excludes tombstoned rows (condition 5, 17). This
- * component filters again defensively so a tombstoned row can never render
- * as a normal, deletable scan even if it somehow reaches this prop.
+ * `scans` is a prop from ScanHistorySection, which fetches GET
+ * /api/scan/history only. This file must never import scanReadsShared
+ * (that module pulls supabase/server → next/headers). The API already
+ * filters 4-pose + FormaVision photo scans and excludes tombstones
+ * (condition 5, 17). This component filters tombstones again so a
+ * tombstoned row can never render as a normal, deletable scan.
  *
  * Token discipline: var(--card) / var(--teal), no raw hex. Instrument Sans
  * via the .font-instrument scoped class. Lucide icons, strokeWidth 1.5.
@@ -64,6 +67,8 @@ function protocolLabel(protocol: string): string {
   switch (protocol) {
     case '4pose_v1':
       return 'Body scan';
+    case FORMAVISION_PHOTO_PROTOCOL:
+      return 'FormaVision';
     default:
       return 'Body scan';
   }
@@ -173,7 +178,7 @@ export function ScanHistory({ scans, onDeleted }: ScanHistoryProps) {
                   </span>
                 </p>
               </div>
-              {state === 'deleting' ? (
+              {scan.protocol === FORMAVISION_PHOTO_PROTOCOL ? null : state === 'deleting' ? (
                 <span className="inline-flex items-center gap-1.5 text-xs text-white/50">
                   <Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={1.5} />
                   Deleting...

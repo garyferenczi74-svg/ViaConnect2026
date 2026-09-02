@@ -6,11 +6,13 @@
  * ScanExperienceLoader/ScanExperience) so the list states are testable
  * without mocking effects.
  */
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, it, expect } from 'vitest';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { ScanHistory } from '../ScanHistory';
-import type { ScanSummary } from '@/lib/scan/scanReadsShared';
+import type { ScanSummary } from '@/lib/scan/scanSummary';
 
 const NOOP = () => {};
 
@@ -24,6 +26,20 @@ function scan(overrides: Partial<ScanSummary> = {}): ScanSummary {
     ...overrides,
   };
 }
+
+describe('ScanHistory - client/server boundary', () => {
+  it('does not value-import scanReadsShared (next/headers must stay off the client graph)', () => {
+    const history = readFileSync(join(process.cwd(), 'src/components/scan/ScanHistory.tsx'), 'utf8');
+    const section = readFileSync(join(process.cwd(), 'src/components/scan/ScanHistorySection.tsx'), 'utf8');
+    expect(history).not.toMatch(/from '@\/lib\/scan\/scanReadsShared'/);
+    expect(section).not.toMatch(/from '@\/lib\/scan\/scanReadsShared'/);
+    expect(history).not.toMatch(/listScans/);
+    expect(section).not.toMatch(/listScans/);
+    expect(section).toMatch(/\/api\/scan\/history/);
+    expect(history).toMatch(/from '@\/lib\/scan\/scanProtocols'/);
+    expect(history).toMatch(/from '@\/lib\/scan\/scanSummary'/);
+  });
+});
 
 describe('ScanHistory - empty state', () => {
   it('renders the honest empty-state copy when there are no scans', () => {
@@ -43,6 +59,20 @@ describe('ScanHistory - empty state', () => {
 });
 
 describe('ScanHistory - rendering a scan', () => {
+  it('labels a FormaVision photo scan without a 4-pose delete control', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(ScanHistory, {
+        scans: [scan({ id: 'photo-1', protocol: 'formavision_photo' })],
+        onDeleted: NOOP,
+      }),
+    );
+    expect(html).toContain('scan-history-item-photo-1');
+    expect(html).toContain('FormaVision');
+    expect(html).not.toContain('4pose_v1');
+    expect(html).not.toContain('formavision_photo');
+    expect(html).not.toContain('scan-history-delete-photo-1');
+  });
+
   it('renders the date, protocol, and status of a scan', () => {
     const html = renderToStaticMarkup(
       React.createElement(ScanHistory, { scans: [scan()], onDeleted: NOOP }),

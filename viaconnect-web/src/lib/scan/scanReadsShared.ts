@@ -5,14 +5,15 @@
 // (condition 17). No caller re-derives "latest" or "visible" from a raw
 // body_photo_sessions query.
 //
-// Filtered to protocol='4pose_v1' (the new guided flow; journal_v0 rows are
-// the pre-231 free-form flow and are out of scope here) and excludes
-// tombstoned rows (capture_status delete_pending/deleted). NULL or any
-// non-tombstone capture_status is visible, mirroring the legacy-reader rule
-// (condition 5). Returns capture_status, never the legacy is_complete
-// column, and never raw storage paths (condition 13, least exposure) - only
-// pose presence booleans, since signed URLs are always minted through the
-// Task 13 /api/scan/signed-url route.
+// Lists 4-pose guided sessions (protocol='4pose_v1') AND FormaVision photo
+// scans (body_tracker_photo_scans / protocol='formavision_photo'). journal_v0
+// rows stay out of scope. Tombstoned 4-pose rows (capture_status
+// delete_pending/deleted) are excluded. NULL or any non-tombstone
+// capture_status is visible, mirroring the legacy-reader rule (condition 5).
+// Returns capture_status, never the legacy is_complete column, and never raw
+// storage paths (condition 13, least exposure) - only pose presence booleans,
+// since signed URLs are always minted through the Task 13 /api/scan/signed-url
+// route. Photo-scan rows have no stored poses (analyze discards images).
 //
 // Resilient: every query is raced against a timeout and fails open to a
 // null/empty result with a structured log, never a thrown error.
@@ -21,6 +22,11 @@ import { createClient } from '@/lib/supabase/server';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 import { PROTOCOL_ID, POSE_ORDER, type PoseId } from '@/lib/scan/poses';
+import { FORMAVISION_PHOTO_PROTOCOL } from '@/lib/scan/scanProtocols';
+import type { ScanCaptureStatus, ScanSummary } from '@/lib/scan/scanSummary';
+
+export { FORMAVISION_PHOTO_PROTOCOL } from '@/lib/scan/scanProtocols';
+export type { ScanCaptureStatus, ScanSummary } from '@/lib/scan/scanSummary';
 
 const SCOPE = 'scan.scanReadsShared';
 const QUERY_TIMEOUT_MS = 5000;
@@ -29,15 +35,6 @@ const DEFAULT_HISTORY_LIMIT = 30;
 const TOMBSTONE_STATUSES = ['delete_pending', 'deleted'] as const;
 type TombstoneStatus = (typeof TOMBSTONE_STATUSES)[number];
 
-export type ScanCaptureStatus = 'uploading' | 'ready' | 'partial' | 'delete_pending' | 'deleted';
-
-export interface ScanSummary {
-  id: string;
-  date: string;
-  protocol: string;
-  captureStatus: ScanCaptureStatus | null;
-  poses: Record<PoseId, boolean>;
-}
 
 const SELECT_COLUMNS =
   'id,session_date,protocol,capture_status,' +
@@ -93,10 +90,86 @@ function toSummary(row: RawScanRow): ScanSummary {
  * somehow tombstoned or off-protocol is dropped here too before it ever
  * reaches a caller.
  */
+function isGuidedProtocol(protocol: string): boolean {
+  return protocol === PROTOCOL_ID || protocol === FORMAVISION_PHOTO_PROTOCOL;
+}
+
 function isVisible(row: RawScanRow): boolean {
-  if (row.protocol !== PROTOCOL_ID) return false;
+  if (!isGuidedProtocol(row.protocol)) return false;
   if (isTombstoned(row.capture_status)) return false;
   return true;
+}
+
+interface PhotoScanRow {
+  id: string;
+  scan_date: string;
+}
+
+function photoScanToSummary(row: PhotoScanRow): ScanSummary {
+  const poses = {} as Record<PoseId, boolean>;
+  for (const pose of POSE_ORDER) poses[pose] = false;
+  return {
+    id: row.id,
+    date: row.scan_date,
+    protocol: FORMAVISION_PHOTO_PROTOCOL,
+    captureStatus: 'ready',
+    poses,
+  };
+}
+
+function sortByDateDesc(a: ScanSummary, b: ScanSummary): number {
+  const aTime = new Date(a.date).getTime();
+  const bTime = new Date(b.date).getTime();
+  const aOk = Number.isFinite(aTime);
+  const bOk = Number.isFinite(bTime);
+  if (aOk && bOk) return bTime - aTime;
+  if (a.date === b.date) return 0;
+  return a.date < b.date ? 1 : -1;
+}
+
+async function queryPhotoScanRows(userId: string, limit: number): Promise<{
+  data: PhotoScanRow[] | null;
+  error: { message: string } | null;
+}> {
+  const supabase = await createClient();
+  return withTimeout(
+    Promise.resolve(
+      supabase
+        .from('body_tracker_photo_scans')
+        .select('id, scan_date')
+        .eq('user_id', userId)
+        .order('scan_date', { ascending: false })
+        .limit(limit),
+    ) as unknown as Promise<{ data: PhotoScanRow[] | null; error: { message: string } | null }>,
+    QUERY_TIMEOUT_MS,
+    `${SCOPE}.photoQuery`,
+  );
+}
+
+async function listPhotoScans(userId: string, limit: number): Promise<ScanSummary[]> {
+  try {
+    const { data, error } = await queryPhotoScanRows(userId, limit);
+    if (error) {
+      safeLog.warn(SCOPE, 'photo scan query error (fail-open)', { error, userId });
+      return [];
+    }
+    return (data ?? []).map(photoScanToSummary);
+  } catch (error) {
+    if (isTimeoutError(error)) {
+      safeLog.warn(SCOPE, 'photo scan query timed out (fail-open)', { userId });
+    } else {
+      safeLog.warn(SCOPE, 'photo scan query threw (fail-open)', { error, userId });
+    }
+    return [];
+  }
+}
+
+function mergeScanSummaries(sessions: ScanSummary[], photos: ScanSummary[], limit: number): ScanSummary[] {
+  const byId = new Map<string, ScanSummary>();
+  for (const scan of [...sessions, ...photos]) {
+    if (!byId.has(scan.id)) byId.set(scan.id, scan);
+  }
+  return Array.from(byId.values()).sort(sortByDateDesc).slice(0, limit);
 }
 
 async function queryScanRows(userId: string, limit: number): Promise<QueryResult> {
@@ -122,6 +195,15 @@ async function queryScanRows(userId: string, limit: number): Promise<QueryResult
  * none / the read failed. Used by the 224 dashboard tile.
  */
 export async function getLatestScan(userId: string): Promise<ScanSummary | null> {
+  const [session, photos] = await Promise.all([
+    getLatestSessionScan(userId),
+    listPhotoScans(userId, 1),
+  ]);
+  const merged = mergeScanSummaries(session ? [session] : [], photos, 1);
+  return merged[0] ?? null;
+}
+
+async function getLatestSessionScan(userId: string): Promise<ScanSummary | null> {
   try {
     const { data, error } = await queryScanRows(userId, 1);
     if (error) {
@@ -147,6 +229,17 @@ export async function getLatestScan(userId: string): Promise<ScanSummary | null>
 export async function listScans(
   userId: string,
   limit: number = DEFAULT_HISTORY_LIMIT,
+): Promise<ScanSummary[]> {
+  const [sessions, photos] = await Promise.all([
+    listSessionScans(userId, limit),
+    listPhotoScans(userId, limit),
+  ]);
+  return mergeScanSummaries(sessions, photos, limit);
+}
+
+async function listSessionScans(
+  userId: string,
+  limit: number,
 ): Promise<ScanSummary[]> {
   try {
     const { data, error } = await queryScanRows(userId, limit);

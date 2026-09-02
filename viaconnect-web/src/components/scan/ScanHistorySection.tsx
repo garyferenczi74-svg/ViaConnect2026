@@ -2,11 +2,13 @@
 
 /**
  * Prompt 231: mounts the "Your scans" section on the FormaVision landing page.
+ * Photo-scan rows arrive only through GET /api/scan/history — never via a
+ * client import of scanReadsShared / supabase/server.
  */
 
 import { useCallback, useEffect, useState } from 'react';
 import { ScanHistory } from './ScanHistory';
-import type { ScanSummary } from '@/lib/scan/scanReadsShared';
+import type { ScanSummary } from '@/lib/scan/scanSummary';
 
 const HISTORY_FETCH_TIMEOUT_MS = 8000;
 
@@ -17,9 +19,11 @@ interface HistoryResponse {
 
 export interface ScanHistorySectionProps {
   userId: string | null;
+  /** Bump after Analyze persist so the list refetches without a remount. */
+  refreshKey?: number;
 }
 
-export function ScanHistorySection({ userId }: ScanHistorySectionProps) {
+export function ScanHistorySection({ userId, refreshKey = 0 }: ScanHistorySectionProps) {
   const [scans, setScans] = useState<ScanSummary[] | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
   const [reloadToken, setReloadToken] = useState(0);
@@ -54,7 +58,7 @@ export function ScanHistorySection({ userId }: ScanHistorySectionProps) {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [userId, reloadToken]);
+  }, [userId, reloadToken, refreshKey]);
 
   const handleDeleted = useCallback((sessionId: string) => {
     setScans((prev) => (prev ? prev.filter((s) => s.id !== sessionId) : prev));

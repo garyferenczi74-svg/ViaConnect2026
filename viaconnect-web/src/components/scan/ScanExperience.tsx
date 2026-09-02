@@ -646,8 +646,9 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
   );
 
   const handleUploadComplete = useCallback((result: BodyScanResult) => {
+    // persistScan already ran inside runFormaVisionAnalyzeSpine. Success UI
+    // is gated on persistRes.ok in BodyScanUploader — do not persist again.
     setUploadResult(result);
-    void persistCompositionScan(result.scanId);
   }, []);
 
   const handleUploadCancel = useCallback(() => {
