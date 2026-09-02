@@ -85,6 +85,24 @@ describe('ScanHistory - rendering a scan', () => {
     expect(html).not.toContain('scan-history-delete-photo-1');
   });
 
+  it('shows the Ready photo BF range when the estimate is present', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(ScanHistory, {
+        scans: [scan({
+          id: 'photo-bf',
+          protocol: 'formavision_photo',
+          poses: { front: false, right: false, back: false, left: false },
+          estimatedBodyFatMin: 29,
+          estimatedBodyFatMax: 33,
+        })],
+        onDeleted: NOOP,
+      }),
+    );
+    expect(html).toContain('scan-history-bf-photo-bf');
+    expect(html).toContain('Body fat 29.0–33.0%');
+    expect(html).toMatch(/Ready/);
+  });
+
   it('hides the FRBL grid for formavision_photo even if poses are marked present', () => {
     const html = renderToStaticMarkup(
       React.createElement(ScanHistory, {

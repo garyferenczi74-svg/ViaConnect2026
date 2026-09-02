@@ -25,6 +25,7 @@ import { safeLog } from '@/lib/utils/safe-log';
 import { PROTOCOL_ID, POSE_ORDER, type PoseId } from '@/lib/scan/poses';
 import { FORMAVISION_PHOTO_PROTOCOL } from '@/lib/scan/scanProtocols';
 import {
+  finiteEstimateNumber,
   hasAnyPresentPose,
   type ScanCaptureStatus,
   type ScanSummary,
@@ -116,8 +117,7 @@ interface PhotoScanRow {
 }
 
 function finiteOrNull(value: unknown): number | null {
-  if (typeof value !== 'number' || !Number.isFinite(value)) return null;
-  return value;
+  return finiteEstimateNumber(value);
 }
 
 function photoScanToSummary(row: PhotoScanRow): ScanSummary {

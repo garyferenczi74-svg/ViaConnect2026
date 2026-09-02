@@ -4,6 +4,7 @@ import { estimateCircumferencesFromComposition } from '../estimateCircumferences
 import {
   historySnapshotCanEstimateGirths,
   pickHistorySnapshotForAvatar,
+  pickReadyPhotoSnapshot,
   resolveAvatarCircumferences,
 } from '../resolveAvatarCircumferences';
 import { buildBodyGeometry } from '@/lib/formavision/geometry/buildBodyGeometry';
@@ -196,6 +197,27 @@ describe('resolveAvatarCircumferences', () => {
     });
     const journey = historySnap({ totalBodyFatPct: 31 });
     expect(pickHistorySnapshotForAvatar(weightOnly, [journey])).toBe(journey);
+  });
+
+  it('prefers a Ready photo snapshot over a lean composition latest', () => {
+    const lean = historySnap({
+      totalBodyFatPct: 18,
+      estimatedBodyFatMin: 17,
+      estimatedBodyFatMax: 19,
+    });
+    const ready = pickReadyPhotoSnapshot([
+      {
+        id: 'photo-31',
+        date: '2026-09-01',
+        protocol: 'formavision_photo',
+        captureStatus: 'ready',
+        poses: { front: false, right: false, back: false, left: false },
+        estimatedBodyFatMin: 29,
+        estimatedBodyFatMax: 33,
+      },
+    ]);
+    expect(ready?.totalBodyFatPct).toBe(31);
+    expect(pickHistorySnapshotForAvatar(lean, [], ready)).toBe(ready);
   });
 
   it('journey vector with empty circHistory uses estimated girths; readout waist stays null', () => {

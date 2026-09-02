@@ -41,14 +41,12 @@ import { BodyScanResults } from '@/components/body-tracker/BodyScanResults';
 import { FormaVisionScanModeBar, type FormaVisionScanMode } from '@/components/body-tracker/FormaVisionScanModeBar';
 import { ScanHistorySection } from '@/components/scan/ScanHistorySection';
 import { isJourneyCompositionPoint } from '@/lib/body-tracker/composition/journeyPoints';
+import { snapshotFromScanResult } from '@/lib/body-tracker/composition/snapshotFromScanResult';
 import {
-  snapshotFromPhotoScanSummary,
-  snapshotFromScanResult,
-} from '@/lib/body-tracker/composition/snapshotFromScanResult';
-import {
-  historySnapshotCanEstimateGirths,
   pickHistorySnapshotForAvatar,
+  pickReadyPhotoSnapshot,
   resolveAvatarCircumferences,
+  resolveAvatarGirthSource,
 } from '@/lib/body-tracker/composition/resolveAvatarCircumferences';
 import { estimateCircumferencesFromComposition } from '@/lib/body-tracker/composition/estimateCircumferencesFromComposition';
 import {
@@ -193,23 +191,19 @@ function FormaVisionSurface() {
     () => composHistory.snapshots.filter(isJourneyCompositionPoint),
     [composHistory.snapshots],
   );
-  const readyPhotoSnapshot = useMemo(() => {
-    if (!historyScans) return null;
-    for (const scan of historyScans) {
-      if (!isReadyFormaVisionScan(scan)) continue;
-      const fromScan = snapshotFromPhotoScanSummary(scan);
-      if (fromScan) return fromScan;
-    }
-    return null;
-  }, [historyScans]);
-  const historySnapshotForAvatar = useMemo(() => {
-    const fromComposition = pickHistorySnapshotForAvatar(
-      composHistory.latest,
-      journeySnapshots,
-    );
-    if (historySnapshotCanEstimateGirths(fromComposition)) return fromComposition;
-    return readyPhotoSnapshot ?? fromComposition;
-  }, [composHistory.latest, journeySnapshots, readyPhotoSnapshot]);
+  const readyPhotoSnapshot = useMemo(
+    () => pickReadyPhotoSnapshot(historyScans),
+    [historyScans],
+  );
+  const historySnapshotForAvatar = useMemo(
+    () =>
+      pickHistorySnapshotForAvatar(
+        composHistory.latest,
+        journeySnapshots,
+        readyPhotoSnapshot,
+      ),
+    [composHistory.latest, journeySnapshots, readyPhotoSnapshot],
+  );
   const snapshot = overlaySnapshot ?? historySnapshotForAvatar;
   // Overlay dies on Close/Done (scanResult=null). Live ScanExperience never
   // feeds BodyScanResult here. Measured circs are often emptyMeasurements()
@@ -225,6 +219,15 @@ function FormaVisionSurface() {
         unit,
       }),
     [overlayCircumferences, circumferenceData.latest, historySnapshotForAvatar, gender, unit],
+  );
+  const avatarGirthSource = useMemo(
+    () =>
+      resolveAvatarGirthSource({
+        overlay: overlayCircumferences,
+        measured: circumferenceData.latest,
+        historySnapshot: historySnapshotForAvatar,
+      }),
+    [overlayCircumferences, circumferenceData.latest, historySnapshotForAvatar],
   );
 
   const scanPoints = useMemo(
@@ -557,6 +560,7 @@ function FormaVisionSurface() {
           scan={snapshot}
           firstScan={composHistory.first}
           circumferences={avatarCircumferences}
+          girthSource={avatarGirthSource}
           unit={unit}
           activeTab="bodyFat"
           selectedBodyPart={selectedBodyPart}
