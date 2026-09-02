@@ -6,6 +6,13 @@
 
 export const SCAN_SLOT_ACCEPT = 'image/*';
 
+/**
+ * Visually hide the gallery file input without display:none.
+ * iOS Safari ignores programmatic click() (and often label activation)
+ * when the input uses `hidden` / display:none.
+ */
+export const SCAN_SLOT_FILE_INPUT_CLASS = 'sr-only';
+
 /** Soft encode target. Larger camera stills are resized, not rejected. */
 export const SCAN_SLOT_SOFT_MAX_BYTES = 5_000_000;
 

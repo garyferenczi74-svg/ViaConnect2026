@@ -25,13 +25,14 @@ describe('BodyScanUploader slot picker markup', () => {
     expect(fileInputs).toHaveLength(FORMAVISION_SLOT_ORDER.length);
     for (const pos of FORMAVISION_SLOT_ORDER) {
       expect(html).toContain(`data-testid="scan-slot-frame-${pos.key}"`);
+      expect(html).toContain(`data-testid="scan-slot-upload-${pos.key}"`);
       expect(html).toContain(`data-testid="scan-slot-input-${pos.key}"`);
-      expect(html).toContain(`id="scan-${pos.key}"`);
-      expect(html).toContain(`aria-label="Upload ${pos.label} photo"`);
+      expect(html).toContain(`id="scan-${pos.key}-upload"`);
+      expect(html).toContain(`for="scan-${pos.key}-upload"`);
     }
     expect(html).not.toMatch(/capture=/);
-    expect(html).not.toMatch(/htmlFor=/);
     expect(html).not.toMatch(/class="hidden"/);
+    expect(html).toContain('class="sr-only"');
     expect(html).toContain('accept="image/*"');
     expect(html).toContain('Camera or gallery');
     expect(html).toContain('Upload');

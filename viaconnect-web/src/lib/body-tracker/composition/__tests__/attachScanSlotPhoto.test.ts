@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   SCAN_SLOT_ACCEPT,
+  SCAN_SLOT_FILE_INPUT_CLASS,
   SCAN_SLOT_HARD_MAX_BYTES,
   SCAN_SLOT_SOFT_MAX_BYTES,
   inspectScanSlotFile,
@@ -22,6 +23,8 @@ describe('attachScanSlotPhoto helpers', () => {
   it('accepts any image so iOS camera/library files are not silently dropped', () => {
     expect(SCAN_SLOT_ACCEPT).toBe('image/*');
     expect(SCAN_SLOT_ACCEPT).not.toContain('image/jpeg,image/png');
+    expect(SCAN_SLOT_FILE_INPUT_CLASS).toBe('sr-only');
+    expect(SCAN_SLOT_FILE_INPUT_CLASS).not.toBe('hidden');
   });
 
   it('treats empty MIME (common iOS camera) as a direct still', () => {
