@@ -54,7 +54,7 @@ describe('FormaVisionFallbackNotice', () => {
     expect(FORMAVISION_FALLBACK_NOTICE_STACK_CLASS).toMatch(/\bpointer-events-auto\b/);
     expect(FORMAVISION_FALLBACK_FLOOR_STACK_CLASS).toMatch(/\brelative\b/);
     expect(FORMAVISION_FALLBACK_FLOOR_STACK_CLASS).toMatch(/\bz-20\b/);
-    expect(FORMAVISION_FALLBACK_FLOOR_STACK_CLASS).toMatch(/\bmin-h-\[200px\]\b/);
+    expect(FORMAVISION_FALLBACK_FLOOR_STACK_CLASS).toContain('min-h-[200px]');
 
     const html = renderToStaticMarkup(
       React.createElement(FormaVisionFallbackNotice, {

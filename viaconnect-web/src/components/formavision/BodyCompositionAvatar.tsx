@@ -293,7 +293,7 @@ function BodyCompositionAvatarInner({
     return (
       <div
         data-testid="formavision-avatar-footprint"
-        className="absolute inset-0 h-full w-full"
+        className="absolute inset-0 mx-auto h-full w-full max-w-[600px]"
       >
         <FormaVisionFallbackNotice reason={fallbackReason} webgl={fallbackWebgl}>
           {children}
