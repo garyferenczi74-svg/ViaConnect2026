@@ -245,7 +245,16 @@ describe('scanReadsShared', () => {
     it('merges body_tracker_photo_scans into the list as formavision_photo', async () => {
       installTable(
         { data: [READY_ROW], error: null },
-        { data: [{ id: 'photo-1', scan_date: '2026-08-21', created_at: '2026-08-21T12:00:00Z' }], error: null },
+        {
+          data: [{
+            id: 'photo-1',
+            scan_date: '2026-08-21',
+            created_at: '2026-08-21T12:00:00Z',
+            estimated_body_fat_min: 30,
+            estimated_body_fat_max: 36,
+          }],
+          error: null,
+        },
       );
       const scans = await listScans('user-1');
       expect(scans.map((s) => s.id)).toEqual(['photo-1', 'session-1']);
@@ -254,6 +263,8 @@ describe('scanReadsShared', () => {
         protocol: 'formavision_photo',
         captureStatus: 'ready',
         poses: { front: false, right: false, back: false, left: false },
+        estimatedBodyFatMin: 30,
+        estimatedBodyFatMax: 36,
       });
     });
 

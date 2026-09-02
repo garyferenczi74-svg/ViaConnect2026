@@ -109,6 +109,15 @@ interface PhotoScanRow {
   id: string;
   scan_date: string;
   created_at?: string | null;
+  estimated_body_fat_min?: number | null;
+  estimated_body_fat_max?: number | null;
+  estimated_whr_min?: number | null;
+  estimated_whr_max?: number | null;
+}
+
+function finiteOrNull(value: unknown): number | null {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return null;
+  return value;
 }
 
 function photoScanToSummary(row: PhotoScanRow): ScanSummary {
@@ -122,6 +131,10 @@ function photoScanToSummary(row: PhotoScanRow): ScanSummary {
     protocol: FORMAVISION_PHOTO_PROTOCOL,
     captureStatus: 'ready',
     poses,
+    estimatedBodyFatMin: finiteOrNull(row.estimated_body_fat_min),
+    estimatedBodyFatMax: finiteOrNull(row.estimated_body_fat_max),
+    estimatedWhrMin: finiteOrNull(row.estimated_whr_min),
+    estimatedWhrMax: finiteOrNull(row.estimated_whr_max),
   };
 }
 
@@ -165,7 +178,9 @@ async function queryPhotoScanRows(userId: string, limit: number): Promise<{
     Promise.resolve(
       supabase
         .from('body_tracker_photo_scans')
-        .select('id, scan_date, created_at')
+        .select(
+          'id, scan_date, created_at, estimated_body_fat_min, estimated_body_fat_max, estimated_whr_min, estimated_whr_max',
+        )
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(limit),

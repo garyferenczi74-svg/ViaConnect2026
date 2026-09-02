@@ -12,6 +12,22 @@ export interface ScanSummary {
   protocol: string;
   captureStatus: ScanCaptureStatus | null;
   poses: Record<PoseId, boolean>;
+  // Honest photo-scan estimate range from body_tracker_photo_scans. Absent on
+  // 4-pose guided rows (no analyze numbers on that table). Never invent 0.
+  estimatedBodyFatMin?: number | null;
+  estimatedBodyFatMax?: number | null;
+  estimatedWhrMin?: number | null;
+  estimatedWhrMax?: number | null;
+}
+
+export function isReadyFormaVisionScan(scan: ScanSummary): boolean {
+  return scan.protocol === FORMAVISION_PHOTO_PROTOCOL && scan.captureStatus === 'ready';
+}
+
+export function scanSummaryHasEstimateRange(scan: ScanSummary): boolean {
+  const min = scan.estimatedBodyFatMin;
+  const max = scan.estimatedBodyFatMax;
+  return typeof min === 'number' && typeof max === 'number' && Number.isFinite(min) && Number.isFinite(max);
 }
 
 export function hasAnyPresentPose(poses: Record<PoseId, boolean>): boolean {

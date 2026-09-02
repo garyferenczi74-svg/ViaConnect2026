@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { snapshotFromScanResult } from '../snapshotFromScanResult';
+import { snapshotFromPhotoScanSummary, snapshotFromScanResult } from '../snapshotFromScanResult';
 import { estimateCircumferencesFromComposition } from '../estimateCircumferencesFromComposition';
 import { scanToParamVector } from '@/lib/formavision/geometry/scanToParamVector';
 import type { BodyScanResult } from '../runFormaVisionAnalyze';
@@ -69,5 +69,30 @@ describe('snapshotFromScanResult', () => {
     expect(waistLean).toBeTruthy();
     expect(waistHeavy).toBeTruthy();
     expect(waistLean!).toBeLessThan(waistHeavy!);
+  });
+
+  it('Ready photo-scan summary with a BF range maps to a morphable snapshot', () => {
+    const snap = snapshotFromPhotoScanSummary({
+      id: 'photo-sep1',
+      date: '2026-09-01',
+      estimatedBodyFatMin: 30,
+      estimatedBodyFatMax: 36,
+      estimatedWhrMin: 0.84,
+      estimatedWhrMax: 0.88,
+    });
+    expect(snap?.scanId).toBe('photo-sep1');
+    expect(snap?.totalBodyFatPct).toBe(33);
+    expect(snap?.isEstimated).toBe(true);
+  });
+
+  it('does not invent a snapshot when the Ready row has no BF range', () => {
+    expect(
+      snapshotFromPhotoScanSummary({
+        id: 'photo-empty',
+        date: '2026-09-01',
+        estimatedBodyFatMin: null,
+        estimatedBodyFatMax: null,
+      }),
+    ).toBeNull();
   });
 });

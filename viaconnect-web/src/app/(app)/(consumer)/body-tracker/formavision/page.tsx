@@ -41,12 +41,20 @@ import { BodyScanResults } from '@/components/body-tracker/BodyScanResults';
 import { FormaVisionScanModeBar, type FormaVisionScanMode } from '@/components/body-tracker/FormaVisionScanModeBar';
 import { ScanHistorySection } from '@/components/scan/ScanHistorySection';
 import { isJourneyCompositionPoint } from '@/lib/body-tracker/composition/journeyPoints';
-import { snapshotFromScanResult } from '@/lib/body-tracker/composition/snapshotFromScanResult';
-import { estimateCircumferencesFromComposition } from '@/lib/body-tracker/composition/estimateCircumferencesFromComposition';
 import {
+  snapshotFromPhotoScanSummary,
+  snapshotFromScanResult,
+} from '@/lib/body-tracker/composition/snapshotFromScanResult';
+import {
+  historySnapshotCanEstimateGirths,
   pickHistorySnapshotForAvatar,
   resolveAvatarCircumferences,
 } from '@/lib/body-tracker/composition/resolveAvatarCircumferences';
+import { estimateCircumferencesFromComposition } from '@/lib/body-tracker/composition/estimateCircumferencesFromComposition';
+import {
+  isReadyFormaVisionScan,
+  type ScanSummary,
+} from '@/lib/scan/scanSummary';
 import type { MeasurementUnit } from '@/lib/body-tracker/circumference';
 import {
   compositionSectionHref,
@@ -118,6 +126,7 @@ function FormaVisionSurface() {
   const [scanMode, setScanMode] = useState<FormaVisionScanMode>('upload');
   const [scanResult, setScanResult] = useState<BodyScanResult | null>(null);
   const [scanHistoryKey, setScanHistoryKey] = useState(0);
+  const [historyScans, setHistoryScans] = useState<ScanSummary[] | null>(null);
   // Prompt 210k: same unit spine as composition (localStorage key shared).
   const [unit, setUnit] = useState<MeasurementUnit>(() => readStoredUnit());
 
@@ -184,10 +193,23 @@ function FormaVisionSurface() {
     () => composHistory.snapshots.filter(isJourneyCompositionPoint),
     [composHistory.snapshots],
   );
-  const historySnapshotForAvatar = useMemo(
-    () => pickHistorySnapshotForAvatar(composHistory.latest, journeySnapshots),
-    [composHistory.latest, journeySnapshots],
-  );
+  const readyPhotoSnapshot = useMemo(() => {
+    if (!historyScans) return null;
+    for (const scan of historyScans) {
+      if (!isReadyFormaVisionScan(scan)) continue;
+      const fromScan = snapshotFromPhotoScanSummary(scan);
+      if (fromScan) return fromScan;
+    }
+    return null;
+  }, [historyScans]);
+  const historySnapshotForAvatar = useMemo(() => {
+    const fromComposition = pickHistorySnapshotForAvatar(
+      composHistory.latest,
+      journeySnapshots,
+    );
+    if (historySnapshotCanEstimateGirths(fromComposition)) return fromComposition;
+    return readyPhotoSnapshot ?? fromComposition;
+  }, [composHistory.latest, journeySnapshots, readyPhotoSnapshot]);
   const snapshot = overlaySnapshot ?? historySnapshotForAvatar;
   // Overlay dies on Close/Done (scanResult=null). Live ScanExperience never
   // feeds BodyScanResult here. Measured circs are often emptyMeasurements()
@@ -251,7 +273,8 @@ function FormaVisionSurface() {
     });
   }, [abCompareOn, activeBaseline.baseline, activeBaseline.latest, unit]);
 
-  const hasScanData = Boolean(snapshot || avatarCircumferences);
+  const hasReadyFormaVisionScan = Boolean(historyScans?.some(isReadyFormaVisionScan));
+  const hasScanData = Boolean(snapshot || avatarCircumferences || hasReadyFormaVisionScan);
 
   const journeyVectors = useMemo(
     () =>
@@ -430,7 +453,11 @@ function FormaVisionSurface() {
       {/* Prompt 231: additive "Your scans" list for the new 4-pose guided
           flow (src/lib/scan). Never repoints or replaces the legacy "Scan
           My Body" button/panel above, which stays on the old uploader. */}
-      <ScanHistorySection userId={userId ?? null} refreshKey={scanHistoryKey} />
+      <ScanHistorySection
+        userId={userId ?? null}
+        refreshKey={scanHistoryKey}
+        onScansChange={setHistoryScans}
+      />
 
       {!hasScanData && (
         <div

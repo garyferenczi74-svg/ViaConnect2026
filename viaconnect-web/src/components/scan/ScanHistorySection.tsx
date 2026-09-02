@@ -21,15 +21,25 @@ export interface ScanHistorySectionProps {
   userId: string | null;
   /** Bump after Analyze persist so the list refetches without a remount. */
   refreshKey?: number;
+  /** Latest fetched list so Results / 3D can share the Ready photo-scan row. */
+  onScansChange?: (scans: ScanSummary[] | null) => void;
 }
 
-export function ScanHistorySection({ userId, refreshKey = 0 }: ScanHistorySectionProps) {
+export function ScanHistorySection({
+  userId,
+  refreshKey = 0,
+  onScansChange,
+}: ScanHistorySectionProps) {
   const [scans, setScans] = useState<ScanSummary[] | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
   const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
-    if (!userId) return;
+    if (!userId) {
+      setScans(null);
+      setLoadFailed(false);
+      return;
+    }
     let cancelled = false;
     setLoadFailed(false);
     const controller = new AbortController();
@@ -67,6 +77,10 @@ export function ScanHistorySection({ userId, refreshKey = 0 }: ScanHistorySectio
   const handleRetryLoad = useCallback(() => {
     setReloadToken((n) => n + 1);
   }, []);
+
+  useEffect(() => {
+    onScansChange?.(scans);
+  }, [scans, onScansChange]);
 
   return (
     <section data-testid="formavision-scan-history-section" className="space-y-3">

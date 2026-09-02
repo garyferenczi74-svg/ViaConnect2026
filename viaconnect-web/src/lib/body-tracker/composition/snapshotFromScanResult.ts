@@ -18,6 +18,48 @@ function midpoint(min: number, max: number): number | null {
   return Math.round(((min + max) / 2) * 10) / 10;
 }
 
+export function snapshotFromPhotoScanSummary(scan: {
+  id: string;
+  date: string;
+  estimatedBodyFatMin?: number | null;
+  estimatedBodyFatMax?: number | null;
+  estimatedWhrMin?: number | null;
+  estimatedWhrMax?: number | null;
+}): CompositionSnapshot | null {
+  const min = scan.estimatedBodyFatMin;
+  const max = scan.estimatedBodyFatMax;
+  if (typeof min !== 'number' || typeof max !== 'number') return null;
+  if (!Number.isFinite(min) || !Number.isFinite(max)) return null;
+  const totalBodyFatPct = midpoint(min, max);
+  if (totalBodyFatPct === null) return null;
+  const whrMin = scan.estimatedWhrMin;
+  const whrMax = scan.estimatedWhrMax;
+  const hasWhr =
+    typeof whrMin === 'number' &&
+    typeof whrMax === 'number' &&
+    Number.isFinite(whrMin) &&
+    Number.isFinite(whrMax);
+  return {
+    entryId: scan.id,
+    source: 'scan',
+    recordedAt: scan.date,
+    deviceName: 'FormaVision',
+    totalBodyFatPct,
+    regionFatPct: { ...EMPTY_REGION },
+    visceralFatRating: null,
+    bodyWaterPct: null,
+    regionMuscleLbs: { ...EMPTY_REGION },
+    totalMuscleMassLbs: null,
+    skeletalMuscleMassLbs: null,
+    scanId: scan.id,
+    estimatedBodyFatMin: min,
+    estimatedBodyFatMax: max,
+    estimatedWhrMin: hasWhr ? whrMin : null,
+    estimatedWhrMax: hasWhr ? whrMax : null,
+    isEstimated: true,
+  };
+}
+
 export function snapshotFromScanResult(result: BodyScanResult): CompositionSnapshot {
   const { estimates } = result;
   const totalBodyFatPct = midpoint(

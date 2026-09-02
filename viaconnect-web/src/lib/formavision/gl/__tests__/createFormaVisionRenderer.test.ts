@@ -1,5 +1,5 @@
-// r3f 8.18 calls gl(canvas). A props-object must not be treated as the canvas
-// (that throws getContext-undefined and latches a false "no WebGL" floor).
+// r3f 8 called gl(canvas); fiber 9+ passes { canvas, ... }. A props-object
+// must not be treated as the canvas (getContext-undefined → false "no WebGL").
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {

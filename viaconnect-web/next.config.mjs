@@ -19,7 +19,18 @@ const nextConfig = {
       "@mediapipe/selfie_segmentation":
         "./src/shims/mediapipe-selfie-segmentation.ts",
       "@mediapipe/pose": "./src/shims/mediapipe-pose.ts",
+      // Single React instance for the r3f reconciler (React 19 internals).
+      react: "./node_modules/react",
+      "react-dom": "./node_modules/react-dom",
     },
+  },
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      react: path.resolve(__dirname, "node_modules/react"),
+      "react-dom": path.resolve(__dirname, "node_modules/react-dom"),
+    };
+    return config;
   },
   // Barrel-package optimization
   experimental: {
