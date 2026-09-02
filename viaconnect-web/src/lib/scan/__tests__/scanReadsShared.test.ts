@@ -27,7 +27,9 @@ interface QueryCalls {
   limitArg: number | null;
 }
 
-function installTable(result: { data: unknown; error: unknown } | (() => Promise<unknown>)) {
+function makeBuilder(
+  result: { data: unknown; error: unknown } | (() => Promise<unknown>),
+): { builder: Record<string, unknown>; calls: QueryCalls; select: ReturnType<typeof vi.fn> } {
   const calls: QueryCalls = { eqCalls: [], orArg: null, orderArg: null, limitArg: null };
   const builder: Record<string, unknown> = {};
   builder.eq = vi.fn((col: string, val: unknown) => {
@@ -47,11 +49,21 @@ function installTable(result: { data: unknown; error: unknown } | (() => Promise
     return typeof result === 'function' ? result() : Promise.resolve(result);
   });
   const select = vi.fn(() => builder);
+  return { builder, calls, select };
+}
+
+function installTable(
+  result: { data: unknown; error: unknown } | (() => Promise<unknown>),
+  photoResult: { data: unknown; error: unknown } | (() => Promise<unknown>) = { data: [], error: null },
+) {
+  const session = makeBuilder(result);
+  const photo = makeBuilder(photoResult);
   mocks.from.mockImplementation((tableName: string) => {
-    if (tableName !== 'body_photo_sessions') throw new Error(`unexpected table ${tableName}`);
-    return { select };
+    if (tableName === 'body_photo_sessions') return { select: session.select };
+    if (tableName === 'body_tracker_photo_scans') return { select: photo.select };
+    throw new Error(`unexpected table ${tableName}`);
   });
-  return { calls, select };
+  return { calls: session.calls, select: session.select, photoCalls: photo.calls };
 }
 
 const READY_ROW = {
@@ -93,6 +105,19 @@ describe('scanReadsShared', () => {
       expect(calls.orderArg?.col).toBe('session_date');
       expect(calls.orderArg?.opts).toMatchObject({ ascending: false });
       expect(calls.limitArg).toBe(1);
+    });
+
+    it('returns a newer FormaVision photo scan when it is the latest row', async () => {
+      installTable(
+        { data: [READY_ROW], error: null },
+        { data: [{ id: 'photo-latest', scan_date: '2026-08-22' }], error: null },
+      );
+      const scan = await getLatestScan('user-1');
+      expect(scan).toMatchObject({
+        id: 'photo-latest',
+        protocol: 'formavision_photo',
+        captureStatus: 'ready',
+      });
     });
 
     it('returns capture_status (not is_complete) and no fabricated fields', async () => {
@@ -192,6 +217,30 @@ describe('scanReadsShared', () => {
       const { calls } = installTable({ data: [], error: null });
       await listScans('user-1', 5);
       expect(calls.limitArg).toBe(5);
+    });
+
+    it('merges body_tracker_photo_scans into the list as formavision_photo', async () => {
+      installTable(
+        { data: [READY_ROW], error: null },
+        { data: [{ id: 'photo-1', scan_date: '2026-08-21' }], error: null },
+      );
+      const scans = await listScans('user-1');
+      expect(scans.map((s) => s.id)).toEqual(['photo-1', 'session-1']);
+      expect(scans[0]).toMatchObject({
+        id: 'photo-1',
+        protocol: 'formavision_photo',
+        captureStatus: 'ready',
+        poses: { front: false, right: false, back: false, left: false },
+      });
+    });
+
+    it('fails open on photo-scan errors and still returns 4-pose sessions', async () => {
+      installTable(
+        { data: [READY_ROW], error: null },
+        { data: null, error: { message: 'boom' } },
+      );
+      const scans = await listScans('user-1');
+      expect(scans.map((s) => s.id)).toEqual(['session-1']);
     });
   });
 });

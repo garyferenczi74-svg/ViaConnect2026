@@ -25,11 +25,19 @@ describe('Body-fat chip SSOT after a FormaVision scan', () => {
     expect(dash).toMatch(/not\('weight_lbs',\s*'is',\s*null\)/);
   });
 
-  it('FormaVision refreshes circumference after persist so avatar girths land', () => {
+  it('FormaVision refreshes composition, circumference, and scan history after persist-ok Analyze', () => {
     const page = src('src/app/(app)/(consumer)/body-tracker/formavision/page.tsx');
+    const uploader = src('src/components/body-tracker/BodyScanUploader.tsx');
     expect(page).toMatch(/refresh:\s*refreshCirc/);
     expect(page).toMatch(/refreshCirc\(\)/);
     expect(page).toMatch(/composHistory\.refresh\(\)/);
+    expect(page).toMatch(/circHistory\.refresh\(\)/);
+    expect(page).toMatch(/setScanHistoryKey/);
+    expect(page).toMatch(/snapshotFromScanResult/);
+    expect(page).toMatch(/refreshKey=\{scanHistoryKey\}/);
+    expect(uploader).toMatch(/if \(!persistRes\.ok\)/);
+    expect(uploader).toMatch(/return;/);
+    expect(uploader).toMatch(/onComplete\(spine\.result\)/);
   });
 
   it('uploader awaits the circumference write before onComplete', () => {

@@ -251,6 +251,7 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
             : (spine.error ??
               'Scan analysis finished but could not save to your body log. Retry Analyze to save.'),
         );
+        return;
       }
 
       if (spine.result) {

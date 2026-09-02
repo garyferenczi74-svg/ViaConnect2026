@@ -43,6 +43,20 @@ describe('ScanHistory - empty state', () => {
 });
 
 describe('ScanHistory - rendering a scan', () => {
+  it('labels a FormaVision photo scan without a 4-pose delete control', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(ScanHistory, {
+        scans: [scan({ id: 'photo-1', protocol: 'formavision_photo' })],
+        onDeleted: NOOP,
+      }),
+    );
+    expect(html).toContain('scan-history-item-photo-1');
+    expect(html).toContain('FormaVision');
+    expect(html).not.toContain('4pose_v1');
+    expect(html).not.toContain('formavision_photo');
+    expect(html).not.toContain('scan-history-delete-photo-1');
+  });
+
   it('renders the date, protocol, and status of a scan', () => {
     const html = renderToStaticMarkup(
       React.createElement(ScanHistory, { scans: [scan()], onDeleted: NOOP }),

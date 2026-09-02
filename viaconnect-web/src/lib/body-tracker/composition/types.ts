@@ -26,6 +26,9 @@ export interface CompositionSnapshot {
   /** Photo-scan body fat is a RANGE. Display these; do not treat midpoint as measured. */
   estimatedBodyFatMin?: number | null;
   estimatedBodyFatMax?: number | null;
+  /** Photo-scan waist-to-hip range when the analyze estimate included it. */
+  estimatedWhrMin?: number | null;
+  estimatedWhrMax?: number | null;
   isEstimated?: boolean;
 }
 

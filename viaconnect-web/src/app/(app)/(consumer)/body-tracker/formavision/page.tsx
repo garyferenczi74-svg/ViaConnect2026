@@ -40,8 +40,8 @@ import { BodyScanUploader, type BodyScanResult } from '@/components/body-tracker
 import { BodyScanResults } from '@/components/body-tracker/BodyScanResults';
 import { FormaVisionScanModeBar, type FormaVisionScanMode } from '@/components/body-tracker/FormaVisionScanModeBar';
 import { ScanHistorySection } from '@/components/scan/ScanHistorySection';
-import { persistScan } from '@/lib/body-tracker/composition/persistScanClient';
 import { isJourneyCompositionPoint } from '@/lib/body-tracker/composition/journeyPoints';
+import { snapshotFromScanResult } from '@/lib/body-tracker/composition/snapshotFromScanResult';
 import type { MeasurementUnit } from '@/lib/body-tracker/circumference';
 import {
   compositionSectionHref,
@@ -112,6 +112,7 @@ function FormaVisionSurface() {
   const [scanOpen, setScanOpen] = useState(true);
   const [scanMode, setScanMode] = useState<FormaVisionScanMode>('upload');
   const [scanResult, setScanResult] = useState<BodyScanResult | null>(null);
+  const [scanHistoryKey, setScanHistoryKey] = useState(0);
   // Prompt 210k: same unit spine as composition (localStorage key shared).
   const [unit, setUnit] = useState<MeasurementUnit>(() => readStoredUnit());
 
@@ -166,7 +167,11 @@ function FormaVisionSurface() {
     userId: userId ?? null,
     displayUnit: unit,
   });
-  const snapshot = composHistory.latest;
+  const overlaySnapshot = useMemo(
+    () => (scanResult ? snapshotFromScanResult(scanResult) : null),
+    [scanResult],
+  );
+  const snapshot = overlaySnapshot ?? composHistory.latest;
   const journeySnapshots = useMemo(
     () => composHistory.snapshots.filter(isJourneyCompositionPoint),
     [composHistory.snapshots],
@@ -361,11 +366,10 @@ function FormaVisionSurface() {
               <BodyScanUploader
                 onComplete={(r) => {
                   setScanResult(r);
-                  void persistScan(r.scanId).then(() => {
-                    composHistory.refresh();
-                    circHistory.refresh();
-                    refreshCirc();
-                  });
+                  composHistory.refresh();
+                  circHistory.refresh();
+                  refreshCirc();
+                  setScanHistoryKey((n) => n + 1);
                 }}
                 onCancel={() => setScanOpen(false)}
               />
@@ -389,7 +393,7 @@ function FormaVisionSurface() {
       {/* Prompt 231: additive "Your scans" list for the new 4-pose guided
           flow (src/lib/scan). Never repoints or replaces the legacy "Scan
           My Body" button/panel above, which stays on the old uploader. */}
-      <ScanHistorySection userId={userId ?? null} />
+      <ScanHistorySection userId={userId ?? null} refreshKey={scanHistoryKey} />
 
       {!hasScanData && (
         <div

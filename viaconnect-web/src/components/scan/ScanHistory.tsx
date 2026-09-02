@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Camera, ImageOff, Loader2, Trash2 } from 'lucide-react';
 import { POSE_ORDER, type PoseId } from '@/lib/scan/poses';
-import type { ScanSummary } from '@/lib/scan/scanReadsShared';
+import { FORMAVISION_PHOTO_PROTOCOL, type ScanSummary } from '@/lib/scan/scanReadsShared';
 
 /**
  * Prompt 231: the 4-pose scan history list. Reuses the Task 13
@@ -64,6 +64,8 @@ function protocolLabel(protocol: string): string {
   switch (protocol) {
     case '4pose_v1':
       return 'Body scan';
+    case FORMAVISION_PHOTO_PROTOCOL:
+      return 'FormaVision';
     default:
       return 'Body scan';
   }
@@ -173,7 +175,7 @@ export function ScanHistory({ scans, onDeleted }: ScanHistoryProps) {
                   </span>
                 </p>
               </div>
-              {state === 'deleting' ? (
+              {scan.protocol === FORMAVISION_PHOTO_PROTOCOL ? null : state === 'deleting' ? (
                 <span className="inline-flex items-center gap-1.5 text-xs text-white/50">
                   <Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={1.5} />
                   Deleting...
