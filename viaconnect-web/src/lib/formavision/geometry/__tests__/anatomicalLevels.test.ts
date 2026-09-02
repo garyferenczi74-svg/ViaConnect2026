@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import * as THREE from 'three';
-import { buildBodyGeometry } from '../buildBodyGeometry';
+import { buildBodyGeometry, CINEMATIC_BODY_SEGMENTS } from '../buildBodyGeometry';
 import { MALE_TEMPLATE } from '../types';
 import type { BodyParamVector, BodyRing } from '../types';
 
@@ -203,13 +203,13 @@ describe('structural levels are not flagged estimated', () => {
   });
 });
 
-describe('64 radial points per ring (210e-2 Rev C / 210g)', () => {
-  it('uses 64 radial segments by default', () => {
+describe('cinematic radial points per ring (Brief 58 Phase 1 / 210g)', () => {
+  it('uses the cinematic radial segment count by default', () => {
     const result = buildBodyGeometry(measuredVector());
     const pos = result.geometry.getAttribute('position');
-    // Every part is a multiple of the radial segment count, so the total vertex
-    // count is divisible by 64.
-    expect(pos.count % 64).toBe(0);
+    // Every part is a multiple of the radial segment count.
+    expect(pos.count % CINEMATIC_BODY_SEGMENTS.radialSegments).toBe(0);
+    expect(CINEMATIC_BODY_SEGMENTS.radialSegments).toBeGreaterThan(64);
     result.dispose();
   });
 });

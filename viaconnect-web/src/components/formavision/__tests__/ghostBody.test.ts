@@ -14,7 +14,10 @@
 import { describe, it, expect } from 'vitest';
 import * as THREE from 'three';
 import { scanToParamVector } from '@/lib/formavision/geometry/scanToParamVector';
-import { makeBodyWireframeMaterial } from '@/lib/formavision/materials/bodyWireframeMaterial';
+import {
+  makeBodyWireframeMaterial,
+  BODY_WIREFRAME_DEFAULTS,
+} from '@/lib/formavision/materials/bodyWireframeMaterial';
 import type { BodyParamVector, Sex } from '@/lib/formavision/geometry/types';
 import { mountBodyGeometry } from '../mountBodyGeometry';
 import { shouldRenderGhost, mountGhostBody, GHOST_MATERIAL_OPTIONS } from '../ghostBody';
@@ -104,11 +107,11 @@ describe('mountGhostBody (the projected ghost body)', () => {
 describe('the current body material is unaffected by the ghost treatment', () => {
   it('keeps the default material at the current-body opacity and intensity', () => {
     // The ghost dims via mount-time options only; the default material (no options)
-    // stays byte-identical to today: same fill opacity, line + rim intensity, blend.
+    // stays on the live body knobs (Brief 58 Phase 1 plasma defaults).
     const def = makeBodyWireframeMaterial();
-    expect(def.uniforms.uFillOpacity.value).toBe(0.55);
-    expect(def.uniforms.uLineIntensity.value).toBe(1.6);
-    expect(def.uniforms.uRimIntensity.value).toBe(1.0);
+    expect(def.uniforms.uFillOpacity.value).toBe(BODY_WIREFRAME_DEFAULTS.fillOpacity);
+    expect(def.uniforms.uLineIntensity.value).toBe(BODY_WIREFRAME_DEFAULTS.lineIntensity);
+    expect(def.uniforms.uRimIntensity.value).toBe(BODY_WIREFRAME_DEFAULTS.rimIntensity);
     expect(def.material.transparent).toBe(true);
     expect(def.material.blending).toBe(THREE.AdditiveBlending);
     def.dispose();
@@ -117,8 +120,8 @@ describe('the current body material is unaffected by the ghost treatment', () =>
   it('uses ghost options that are strictly dimmer than the body defaults', () => {
     // The dimming is real (every knob is below the body default) and lives in one
     // cleanly swappable place.
-    expect(GHOST_MATERIAL_OPTIONS.fillOpacity).toBeLessThan(0.55);
-    expect(GHOST_MATERIAL_OPTIONS.lineIntensity).toBeLessThan(1.6);
-    expect(GHOST_MATERIAL_OPTIONS.rimIntensity).toBeLessThan(1.0);
+    expect(GHOST_MATERIAL_OPTIONS.fillOpacity).toBeLessThan(BODY_WIREFRAME_DEFAULTS.fillOpacity);
+    expect(GHOST_MATERIAL_OPTIONS.lineIntensity).toBeLessThan(BODY_WIREFRAME_DEFAULTS.lineIntensity);
+    expect(GHOST_MATERIAL_OPTIONS.rimIntensity).toBeLessThan(BODY_WIREFRAME_DEFAULTS.rimIntensity);
   });
 });
