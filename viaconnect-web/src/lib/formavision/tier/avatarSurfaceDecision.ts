@@ -1,12 +1,12 @@
 // Pure mount-vs-fallback decision for the FormaVision avatar plate.
 //
-// Production #172 smoke (www dpl_5bQNe1UubnBbKb6uwGEBd48n4gR6) rendered the
-// SegmentalHeatMap Male Avatar.svg (250x400) with zero canvas. The old path
-// treated hasWebGL() === false as a hard, sticky floor. That probe is false on
-// SSR (no document) and is a known false-negative on iOS Safari / some Chrome
-// flags (webgl2-null poisons webgl1 on the same canvas). A single false then
-// latched BodyCompositionAvatar.fellBack for the session, so the 3D morph never
-// painted.
+// Production #172 smoke (www dpl_5bQNe1UubnBbKb6uwGEBd48n4gR6) AND Gary phone
+// hard-refresh CONFIRM: SegmentalHeatMap Male Avatar.svg (250x400), no morph,
+// on iPhone Safari and box Chrome. The old path treated hasWebGL() === false
+// as a hard, sticky floor. That probe is false on SSR (no document) for BOTH
+// clients, and additionally false-negatives on iOS Safari (webgl2-null poisons
+// webgl1 on the same canvas). A single false then latched
+// BodyCompositionAvatar.fellBack for the session, so the 3D morph never painted.
 //
 // Policy: prefer FormaVision3DAvatar / FormaVisionCanvas whenever WebGL might
 // still work. SSR, unknown, and a lone "unavailable" probe are NOT enough to

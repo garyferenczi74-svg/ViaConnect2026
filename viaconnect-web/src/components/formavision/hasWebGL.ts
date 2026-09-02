@@ -15,20 +15,20 @@
 //     low-power GPU still counts as "WebGL exists".
 //   - Any thrown error is swallowed and reported as unavailable.
 
+import {
+  SAFE_GL_ATTRIBUTES,
+  isSafariWebGLHost,
+  webglContextTypeOrder,
+} from '@/lib/formavision/gl/acquireWebGLContext';
+
 export type WebGLProbeResult = 'ssr' | 'available' | 'unavailable';
 
-const GL_CONTEXT_IDS = ['webgl2', 'webgl', 'experimental-webgl'] as const;
-
-const PROBE_ATTRIBUTES: WebGLContextAttributes = {
-  failIfMajorPerformanceCaveat: false,
-};
-
-function contextFromFreshCanvas(contextId: (typeof GL_CONTEXT_IDS)[number]): unknown {
+function contextFromFreshCanvas(contextId: string): unknown {
   const canvas = document.createElement('canvas');
   if (!canvas || typeof canvas.getContext !== 'function') {
     return null;
   }
-  return canvas.getContext(contextId, PROBE_ATTRIBUTES);
+  return canvas.getContext(contextId, SAFE_GL_ATTRIBUTES);
 }
 
 export function probeWebGL(): WebGLProbeResult {
@@ -37,7 +37,8 @@ export function probeWebGL(): WebGLProbeResult {
   }
 
   try {
-    for (const contextId of GL_CONTEXT_IDS) {
+    const order = webglContextTypeOrder(isSafariWebGLHost());
+    for (const contextId of order) {
       const context = contextFromFreshCanvas(contextId);
       if (context) {
         return 'available';

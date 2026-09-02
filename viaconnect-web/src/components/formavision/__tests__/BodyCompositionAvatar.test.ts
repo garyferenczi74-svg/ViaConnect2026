@@ -121,9 +121,11 @@ describe('BodyCompositionAvatar', () => {
     expect(threeD).toMatch(/formavision-3d-mount/);
     expect(threeD).not.toMatch(/useMemo\(\(\) => hasWebGL\(\), \[\]\)/);
     expect(threeD).not.toMatch(/WebGL unavailable, falling back to 2D floor/);
-    expect(canvas).toMatch(/powerPreference:\s*'default'/);
-    expect(canvas).toMatch(/failIfMajorPerformanceCaveat:\s*false/);
+    expect(canvas).toMatch(/createFormaVisionRenderer/);
     expect(canvas).toMatch(/onContextLost/);
+    const glFactory = readSrc('src/lib/formavision/gl/createFormaVisionRenderer.ts');
+    expect(glFactory).toMatch(/acquireWebGLContext/);
+    expect(glFactory).toMatch(/isSafariWebGLHost/);
     expect(canvas).toMatch(/shouldHoldScrubMorph/);
   });
 

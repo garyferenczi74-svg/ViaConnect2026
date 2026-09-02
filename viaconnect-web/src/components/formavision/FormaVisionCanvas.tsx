@@ -41,6 +41,7 @@ import {
   type MaterializeIntro,
 } from '@/lib/formavision/motion';
 import { ringLoopForRegion } from '@/lib/formavision/geometry/ringLoopForRegion';
+import { createFormaVisionRenderer } from '@/lib/formavision/gl/createFormaVisionRenderer';
 import { createFrameBudgetSampler } from '@/lib/formavision/tier/frameBudgetMonitor';
 import { dprForTier, showParticlesForTier } from '@/lib/formavision/tier/tierCost';
 import {
@@ -745,15 +746,10 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
         // (in BodyCompositionAvatarInner) and arrives as props.renderTier so the
         // r3f reconciler boundary is never crossed for a context read.
         dpr={dprForTier(props.renderTier ?? 'cinematic')}
-        // default + failIfMajorPerformanceCaveat false: iOS Safari and low-power
-        // Chrome flags reject high-performance or caveat-strict contexts even
-        // when a working WebGL1/2 context exists. Prefer painting 3D.
-        gl={{
-          antialias: true,
-          alpha: true,
-          powerPreference: 'default',
-          failIfMajorPerformanceCaveat: false,
-        }}
+        // Safari-safe factory: WebGL1 first on iPhone / Safari so a failed
+        // webgl2 cannot poison this live canvas (Gary phone static-SVG path).
+        // Chromium still prefers webgl2. Caveat-false + default powerPreference.
+        gl={createFormaVisionRenderer}
         camera={{
           position: [0, FULL_BODY_FRAMING.targetY, FULL_BODY_FRAMING.distance],
           fov: AVATAR_VERTICAL_FOV_DEG,

@@ -86,6 +86,24 @@ describe('hasWebGL', () => {
     );
   });
 
+  it('on iPhone UA tries webgl first so the advisory probe is not webgl2-poisoned', () => {
+    const getContext = vi.fn((kind: string) => (kind === 'webgl' ? {} : null));
+    (globalThis as { document?: unknown }).document = {
+      createElement: () => ({ getContext }),
+    };
+    vi.stubGlobal('navigator', {
+      userAgent:
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
+    });
+    try {
+      expect(hasWebGL()).toBe(true);
+      expect(getContext.mock.calls[0]?.[0]).toBe('webgl');
+      expect(getContext.mock.calls.map((c) => c[0])).not.toContain('webgl2');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('swallows a hostile getContext and returns false', () => {
     (globalThis as { document?: unknown }).document = {
       createElement: () => ({
