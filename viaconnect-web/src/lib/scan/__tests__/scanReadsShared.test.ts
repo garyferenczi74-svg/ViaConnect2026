@@ -219,7 +219,7 @@ describe('scanReadsShared', () => {
       expect(calls.limitArg).toBe(5);
     });
 
-    it('maps pose-present from photo-scan storage paths when they exist', async () => {
+    it('does not map photo-scan storage paths into pose-present', async () => {
       installTable(
         { data: [], error: null },
         {
@@ -229,8 +229,6 @@ describe('scanReadsShared', () => {
             created_at: '2026-09-01T18:00:00Z',
             front_full_path: 'user-1/photo-stored/front.jpg',
             right_thumb_path: 'user-1/photo-stored/right_thumb.jpg',
-            back_full_path: null,
-            left_full_path: '',
           }],
           error: null,
         },
@@ -239,7 +237,7 @@ describe('scanReadsShared', () => {
       expect(scans[0]).toMatchObject({
         id: 'photo-stored',
         protocol: 'formavision_photo',
-        poses: { front: true, right: true, back: false, left: false },
+        poses: { front: false, right: false, back: false, left: false },
       });
       expect(JSON.stringify(scans[0])).not.toContain('user-1/photo-stored/front.jpg');
     });

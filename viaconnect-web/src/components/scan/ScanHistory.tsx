@@ -20,11 +20,9 @@ import { scanHistoryShowsFrblGrid, type ScanSummary } from '@/lib/scan/scanSumma
  * (condition 5, 17). This component filters tombstones again so a
  * tombstoned row can never render as a normal, deletable scan.
  *
- * FormaVision photo FRBL preference (Arnold): if the history API mapped
- * real present views / storage thumbs, show the 4-pose grid. If every
- * pose is absent (analyze discards images; no path columns today), hide
- * the grid and show copy only — never ImageOff placeholders. 4pose_v1
- * thumbs stay on the grid when poses are present.
+ * SSOT: formavision_photo hides the FRBL grid (photos discarded after
+ * analyze). No ImageOff, no signed-URL chase, no pose-present mapping.
+ * 4pose_v1 guided thumbs stay on the grid when poses are present.
  *
  * Token discipline: var(--card) / var(--teal), no raw hex. Instrument Sans
  * via the .font-instrument scoped class. Lucide icons, strokeWidth 1.5.

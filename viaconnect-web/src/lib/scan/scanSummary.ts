@@ -19,11 +19,10 @@ export function hasAnyPresentPose(poses: Record<PoseId, boolean>): boolean {
 }
 
 /**
- * Arnold FRBL preference: show the 4-pose grid when a photo scan has real
- * present views / storage thumbs. Otherwise hide the grid (no ImageOff).
+ * SSOT: formavision_photo never shows the FRBL grid (photos discarded after
+ * analyze). No ImageOff, no signed-URL chase, no pose-present mapping.
  * Guided 4pose_v1 always uses the grid.
  */
-export function scanHistoryShowsFrblGrid(scan: Pick<ScanSummary, 'protocol' | 'poses'>): boolean {
-  if (scan.protocol !== FORMAVISION_PHOTO_PROTOCOL) return true;
-  return hasAnyPresentPose(scan.poses);
+export function scanHistoryShowsFrblGrid(scan: Pick<ScanSummary, 'protocol'>): boolean {
+  return scan.protocol !== FORMAVISION_PHOTO_PROTOCOL;
 }

@@ -13,9 +13,8 @@
 // Returns capture_status, never the legacy is_complete column, and never raw
 // storage paths (condition 13, least exposure) - only pose presence booleans,
 // since signed URLs are always minted through the Task 13 /api/scan/signed-url
-// route. Photo-scan poses are mapped from real storage path columns when
-// present; analyze currently discards images (no path columns in schema),
-// so ScanHistory hides the FRBL grid instead of ImageOff.
+// route. Photo-scan rows have no stored images (analyze discards them);
+// poses stay absent and ScanHistory hides the FRBL grid (no ImageOff).
 //
 // Resilient: every query is raced against a timeout and fails open to a
 // null/empty result with a structured log, never a thrown error.
@@ -110,33 +109,19 @@ interface PhotoScanRow {
   id: string;
   scan_date: string;
   created_at?: string | null;
-  [key: string]: unknown;
-}
-
-function isPresentStoragePath(value: unknown): boolean {
-  return typeof value === 'string' && value.length > 0;
-}
-
-function photoScanPosesFromRow(row: PhotoScanRow): Record<PoseId, boolean> {
-  const poses = {} as Record<PoseId, boolean>;
-  for (const pose of POSE_ORDER) {
-    poses[pose] =
-      isPresentStoragePath(row[`${pose}_full_path`]) ||
-      isPresentStoragePath(row[`${pose}_thumb_path`]);
-  }
-  return poses;
 }
 
 function photoScanToSummary(row: PhotoScanRow): ScanSummary {
-  // Preference 1: map real storage thumbs / present views. Do not force false
-  // when a path column is a non-empty string. Preference 2 (hide FRBL) is the
-  // history UI when every pose stays absent — today's schema has no paths.
+  // SSOT: do not map pose-present for photo scans. Analyze discards images;
+  // history hides the FRBL grid instead of ImageOff / signed-URL.
+  const poses = {} as Record<PoseId, boolean>;
+  for (const pose of POSE_ORDER) poses[pose] = false;
   return {
     id: row.id,
     date: row.scan_date,
     protocol: FORMAVISION_PHOTO_PROTOCOL,
     captureStatus: 'ready',
-    poses: photoScanPosesFromRow(row),
+    poses,
   };
 }
 
@@ -171,49 +156,23 @@ function calendarDay(date: string): string {
   return date;
 }
 
-const PHOTO_SELECT_MIN = 'id, scan_date, created_at';
-const PHOTO_SELECT_WITH_PATHS =
-  `${PHOTO_SELECT_MIN},` +
-  POSE_ORDER.flatMap((pose) => [`${pose}_full_path`, `${pose}_thumb_path`]).join(',');
-
-function isMissingColumnError(error: { message: string } | null): boolean {
-  if (!error?.message) return false;
-  return /column|does not exist|schema cache/i.test(error.message);
-}
-
-async function queryPhotoSelect(
-  userId: string,
-  limit: number,
-  columns: string,
-  label: string,
-): Promise<{ data: PhotoScanRow[] | null; error: { message: string } | null }> {
+async function queryPhotoScanRows(userId: string, limit: number): Promise<{
+  data: PhotoScanRow[] | null;
+  error: { message: string } | null;
+}> {
   const supabase = await createClient();
   return withTimeout(
     Promise.resolve(
       supabase
         .from('body_tracker_photo_scans')
-        .select(columns)
+        .select('id, scan_date, created_at')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(limit),
     ) as unknown as Promise<{ data: PhotoScanRow[] | null; error: { message: string } | null }>,
     QUERY_TIMEOUT_MS,
-    `${SCOPE}.${label}`,
+    `${SCOPE}.photoQuery`,
   );
-}
-
-async function queryPhotoScanRows(userId: string, limit: number): Promise<{
-  data: PhotoScanRow[] | null;
-  error: { message: string } | null;
-}> {
-  const wide = await queryPhotoSelect(userId, limit, PHOTO_SELECT_WITH_PATHS, 'photoQuery.paths');
-  if (!wide.error) return wide;
-  if (!isMissingColumnError(wide.error)) return wide;
-  safeLog.warn(SCOPE, 'photo path columns missing; listing without storage thumbs', {
-    error: wide.error,
-    userId,
-  });
-  return queryPhotoSelect(userId, limit, PHOTO_SELECT_MIN, 'photoQuery');
 }
 
 async function listPhotoScans(userId: string, limit: number): Promise<ScanSummary[]> {

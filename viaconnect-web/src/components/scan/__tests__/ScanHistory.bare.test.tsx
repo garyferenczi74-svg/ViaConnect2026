@@ -40,22 +40,12 @@ describe('ScanHistory - client/server boundary', () => {
     expect(history).toMatch(/from '@\/lib\/scan\/scanSummary'/);
   });
 
-  it('shows FRBL only when a photo scan has present views; otherwise hides the grid', () => {
+  it('always hides the FRBL grid for formavision_photo', () => {
     const history = readFileSync(join(process.cwd(), 'src/components/scan/ScanHistory.tsx'), 'utf8');
     expect(history).toMatch(/scanHistoryShowsFrblGrid/);
     expect(history).toMatch(/Photos are not stored after analysis/);
-    expect(scanHistoryShowsFrblGrid({
-      protocol: 'formavision_photo',
-      poses: { front: false, right: false, back: false, left: false },
-    })).toBe(false);
-    expect(scanHistoryShowsFrblGrid({
-      protocol: 'formavision_photo',
-      poses: { front: true, right: false, back: false, left: false },
-    })).toBe(true);
-    expect(scanHistoryShowsFrblGrid({
-      protocol: '4pose_v1',
-      poses: { front: false, right: false, back: false, left: false },
-    })).toBe(true);
+    expect(scanHistoryShowsFrblGrid({ protocol: 'formavision_photo' })).toBe(false);
+    expect(scanHistoryShowsFrblGrid({ protocol: '4pose_v1' })).toBe(true);
   });
 });
 
@@ -95,7 +85,7 @@ describe('ScanHistory - rendering a scan', () => {
     expect(html).not.toContain('scan-history-delete-photo-1');
   });
 
-  it('shows the FRBL grid for formavision_photo when a real view is present', () => {
+  it('hides the FRBL grid for formavision_photo even if poses are marked present', () => {
     const html = renderToStaticMarkup(
       React.createElement(ScanHistory, {
         scans: [scan({
@@ -106,9 +96,9 @@ describe('ScanHistory - rendering a scan', () => {
         onDeleted: NOOP,
       }),
     );
-    expect(html).not.toContain('scan-history-photos-discarded-photo-stored');
-    expect(html).toContain('scan-history-pose-loading-front');
-    expect(html).toContain('scan-history-pose-placeholder-right');
+    expect(html).toContain('scan-history-photos-discarded-photo-stored');
+    expect(html).not.toContain('scan-history-pose-loading-front');
+    expect(html).not.toContain('scan-history-pose-placeholder-right');
   });
 
   it('hides the FRBL grid for formavision_photo instead of ImageOff placeholders', () => {
