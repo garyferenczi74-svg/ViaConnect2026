@@ -272,6 +272,8 @@ describe('Arnold #176 PRIMARY: Ready photo BF drives girth morphTo', () => {
     expect(canvas).toMatch(/data-morph/);
     expect(canvas).toMatch(/hasGirth/);
     expect(canvas).toMatch(/bodyVectorHasFiniteGirth/);
+    expect(canvas).toMatch(/if \(morphedBodyRef\.current === mounted && !scrubbing\)/);
+    expect(canvas).not.toMatch(/morphedBodyRef\.current === mounted \|\| hasGirth/);
     expect(history).toMatch(/formatScanEstimateBfRange/);
     expect(history).toMatch(/scan-history-bf-/);
     expect(formatScanEstimateBfRange(readyPhoto())).toBe('29.0–33.0%');

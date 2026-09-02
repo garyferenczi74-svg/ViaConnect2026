@@ -50,6 +50,8 @@ describe('BodyCompositionAvatar', () => {
     const markup = renderWrapper('bodyFat');
     expect(markup).toContain('max-w-[600px]');
     expect(markup).toContain('mx-auto');
+    expect(markup).toContain('absolute');
+    expect(markup).toContain('inset-0');
     expect(markup).toContain('h-full');
     expect(markup).not.toContain('aspect-[720/1152]');
     expect(markup).not.toContain('lg:max-w-none');
@@ -73,6 +75,8 @@ describe('BodyCompositionAvatar', () => {
     expect(footprintClass).toBeDefined();
     expect(footprintClass).toContain('max-w-[600px]');
     expect(footprintClass).toContain('mx-auto');
+    expect(footprintClass).toContain('absolute');
+    expect(footprintClass).toContain('inset-0');
     expect(footprintClass).toContain('h-full');
     expect(footprintClass).not.toContain('aspect-[720/1152]');
     expect(footprintClass).not.toContain('lg:max-w-none');
@@ -89,6 +93,16 @@ describe('BodyCompositionAvatar', () => {
     expect(formavision).toMatch(/resolveAvatarCircumferences/);
     expect(formavision).toMatch(/h-\[min\(52vh,520px\)\]/);
     expect(formavision).toMatch(/max-h-\[min\(52vh,520px\)\]/);
+    const plateClass = formavision.match(
+      /data-testid="formavision-canvas-grid"[\s\S]*?className="([^"]+)"/,
+    )?.[1];
+    expect(plateClass).toBeDefined();
+    expect(plateClass).toContain('relative');
+    expect(plateClass).toContain('overflow-hidden');
+    expect(plateClass).not.toMatch(/\bitems-center\b/);
+    expect(plateClass).not.toMatch(/\bflex\b/);
+    expect(formavision).toMatch(/FormaVisionLocalSilhouette/);
+    expect(formavision).not.toMatch(/SegmentalHeatMap/);
     expect(formavision).not.toMatch(/aspect-\[720\/1152\]/);
     expect(formavision).not.toMatch(/min-h-\[480px\]/);
     expect(formavision).not.toMatch(/min-h-\[560px\]/);
@@ -124,10 +138,20 @@ describe('BodyCompositionAvatar', () => {
     expect(avatar).not.toMatch(/useMemo\(\(\) => hasWebGL\(\), \[\]\)/);
     expect(threeD).toMatch(/formavision-3d-pending/);
     expect(threeD).toMatch(/formavision-3d-mount/);
+    expect(threeD).toMatch(/absolute inset-0/);
+    expect(threeD).toMatch(/FormaVisionLocalSilhouette/);
+    expect(threeD).toMatch(/onContextRestored/);
+    expect(avatar).toMatch(/formavision-recovering-floor/);
+    expect(avatar).toMatch(/decideContextLossAction/);
+    expect(avatar).toMatch(/handleContextRestored/);
     expect(threeD).not.toMatch(/useMemo\(\(\) => hasWebGL\(\), \[\]\)/);
     expect(threeD).not.toMatch(/WebGL unavailable, falling back to 2D floor/);
     expect(canvas).toMatch(/createFormaVisionRenderer/);
     expect(canvas).toMatch(/onContextLost/);
+    expect(canvas).toMatch(/onContextRestored/);
+    expect(canvas).toMatch(/attachWebGLContextRecovery/);
+    expect(canvas).toMatch(/scheduleZeroSizeHonestyCheck/);
+    expect(canvas).not.toMatch(/morphedBodyRef\.current === mounted \|\| hasGirth/);
     const glFactory = readSrc('src/lib/formavision/gl/createFormaVisionRenderer.ts');
     expect(glFactory).toMatch(/acquireWebGLContext/);
     expect(glFactory).toMatch(/isSafariWebGLHost/);

@@ -38,8 +38,15 @@ import {
   errorMessageFromUnknown,
   shouldLatchFallback2d,
 } from '@/lib/formavision/tier/fallbackNoticeCopy';
+import {
+  CONTEXT_RESTORE_WAIT_MS,
+  WEBGL_REMOUNT_BUDGET,
+  decideContextLossAction,
+  isWebGLContextLostMessage,
+} from '@/lib/formavision/gl/webglContextRecovery';
 import { FormaVision3DAvatar } from './FormaVision3DAvatar';
 import { FormaVisionFallbackNotice } from './FormaVisionFallbackNotice';
+import { FormaVisionLocalSilhouette } from './FormaVisionLocalSilhouette';
 import { probeWebGL } from './hasWebGL';
 import { useRenderTier, useReportBudgetMiss } from './RenderTierProvider';
 
@@ -122,14 +129,17 @@ function BodyCompositionAvatarInner({
   children,
 }: BodyCompositionAvatarProps) {
   // Remounts a live-canvas miss while getContext still works (not "no WebGL").
-  // After remountsRef >= 2, latch the 2D floor + honest fallbackReason so the
-  // user never sits on a dead 3D mount with no notice. SVG-only-on-unavailable
-  // still holds for the first failures.
+  // Context-loss waits for webglcontextrestored before remounting; only a
+  // restore timeout burns remountsRef. After remountsRef >= budget, latch the
+  // 2D floor + honest fallbackReason. Local silhouette paints while recovering
+  // so the plate is never an empty transparent box.
   const [fellBack, setFellBack] = useState(false);
+  const [recovering, setRecovering] = useState(false);
   const [fallbackReason, setFallbackReason] = useState<string | null>(null);
   const [fallbackWebgl, setFallbackWebgl] = useState<WebGLAvailability>('unknown');
   const [mountEpoch, setMountEpoch] = useState(0);
   const remountsRef = useRef(0);
+  const restoreTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // The active render tier (capability probe initially; stepped down at runtime) and
   // the sticky step-down trigger passed into the Canvas frame-budget monitor.
@@ -155,12 +165,29 @@ function BodyCompositionAvatarInner({
   // P8-T1c: called from FormaVisionCanvas onCreated (GL context ready). Fires
   // once per canvas mount; subsequent calls are no-ops (the null guard prevents
   // overwrite). Used to populate timeToFirstInteractiveMs in the quality snapshot.
+  const clearRestoreTimer = useCallback((): void => {
+    if (restoreTimerRef.current !== null) {
+      clearTimeout(restoreTimerRef.current);
+      restoreTimerRef.current = null;
+    }
+  }, []);
+
   const handleFirstInteractive = useCallback((): void => {
-    if (firstInteractiveMsRef.current !== null) return;
-    const now = typeof performance !== 'undefined' ? performance.now() : 0;
-    firstInteractiveMsRef.current = Math.round(now - mountTimeRef.current);
+    if (firstInteractiveMsRef.current === null) {
+      const now = typeof performance !== 'undefined' ? performance.now() : 0;
+      firstInteractiveMsRef.current = Math.round(now - mountTimeRef.current);
+    }
     setFallbackReason(null);
-  }, []); // refs are stable; no deps needed
+    setRecovering(false);
+    clearRestoreTimer();
+  }, [clearRestoreTimer]);
+
+  const latchHonestFloor = useCallback((message: string): void => {
+    clearRestoreTimer();
+    setRecovering(false);
+    setFallbackReason(message);
+    setFellBack(true);
+  }, [clearRestoreTimer]);
 
   const handleRenderError = useCallback((error: unknown): void => {
     errorCountRef.current += 1;
@@ -168,16 +195,52 @@ function BodyCompositionAvatarInner({
     const probe = probeWebGL();
     setFallbackReason(message);
     setFallbackWebgl(probe);
-    if (!shouldLatchFallback2d(probe) && remountsRef.current < 2) {
+    setRecovering(true);
+
+    if (isWebGLContextLostMessage(message)) {
+      const decision = decideContextLossAction({
+        remountsUsed: remountsRef.current,
+        restoreSeen: false,
+        timedOut: false,
+      });
+      if (decision === 'wait-restore') {
+        clearRestoreTimer();
+        restoreTimerRef.current = setTimeout(() => {
+          const timedOut = decideContextLossAction({
+            remountsUsed: remountsRef.current,
+            restoreSeen: false,
+            timedOut: true,
+          });
+          if (timedOut === 'remount') {
+            remountsRef.current += 1;
+            setMountEpoch((n) => n + 1);
+            return;
+          }
+          latchHonestFloor(message);
+        }, CONTEXT_RESTORE_WAIT_MS);
+        return;
+      }
+    }
+
+    if (!shouldLatchFallback2d(probe) && remountsRef.current < WEBGL_REMOUNT_BUDGET) {
       remountsRef.current += 1;
       setMountEpoch((n) => n + 1);
       return;
     }
-    // Probe still available after remountsRef >= 2, or probe is unavailable:
-    // latch the honest 2D floor + fallbackReason. Never leave a dead 3D mount
-    // with no notice. Copy stays the real later-init error when WebGL works.
-    setFellBack(true);
-  }, []);
+    latchHonestFloor(message);
+  }, [clearRestoreTimer, latchHonestFloor]);
+
+  const handleContextRestored = useCallback((): void => {
+    clearRestoreTimer();
+    setRecovering(true);
+    setMountEpoch((n) => n + 1);
+  }, [clearRestoreTimer]);
+
+  useEffect(() => {
+    return () => {
+      clearRestoreTimer();
+    };
+  }, [clearRestoreTimer]);
 
   // The runtime step-down past 'lite' converges on the SAME fallback latch the WebGL
   // gate and the render-error boundary use: a '2d' tier flips fellBack, so there is
@@ -228,9 +291,14 @@ function BodyCompositionAvatarInner({
   });
   if (surface === 'fallback2d') {
     return (
-      <FormaVisionFallbackNotice reason={fallbackReason} webgl={fallbackWebgl}>
-        {children}
-      </FormaVisionFallbackNotice>
+      <div
+        data-testid="formavision-avatar-footprint"
+        className="absolute inset-0 h-full w-full"
+      >
+        <FormaVisionFallbackNotice reason={fallbackReason} webgl={fallbackWebgl}>
+          {children}
+        </FormaVisionFallbackNotice>
+      </div>
     );
   }
 
@@ -238,17 +306,23 @@ function BodyCompositionAvatarInner({
   // device this is 'cinematic', so the avatar is byte-identical to before this phase.
   const renderTier: 'cinematic' | 'lite' = tier === 'lite' ? 'lite' : 'cinematic';
 
-  // The 3D avatar canvas fills its box absolutely, so it needs an explicit
-  // footprint. Height comes from the FormaVision plate (viewport-capped), not
-  // from aspect-[720/1152] × max-w-[600px] (~960px — taller than a laptop
-  // content viewport). Fill the plate, stay centered, keep a 600px width cap.
-  // Muscle / Body Fat / Measurements use the 2D SegmentalHeatMap, not this
-  // wrapper, so their column-fill classes stay untouched.
+  // The 3D canvas is position:absolute inset-0. A flex items-center plate
+  // plus h-full-only footprint collapses to 0×0 on iPhone WebKit (DOM attrs
+  // still stamp → attr PASS / visual FAIL). Absolute inset-0 sizes against
+  // the plate's definite min(52vh, 520px) box.
   return (
     <div
       data-testid="formavision-avatar-footprint"
-      className="relative mx-auto h-full w-full max-h-full max-w-[600px]"
+      className="absolute inset-0 mx-auto h-full w-full max-w-[600px]"
     >
+      {recovering ? (
+        <div
+          data-testid="formavision-recovering-floor"
+          className="absolute inset-0 z-20"
+        >
+          <FormaVisionLocalSilhouette sex={sex} />
+        </div>
+      ) : null}
       <FormaVision3DAvatar
         key={mountEpoch}
         sex={sex}
@@ -271,6 +345,7 @@ function BodyCompositionAvatarInner({
         renderTier={renderTier}
         onBudgetMissed={reportBudgetMiss}
         onRenderError={handleRenderError}
+        onContextRestored={handleContextRestored}
         onOrbitEnd={onOrbitEnd}
         onFirstInteractive={handleFirstInteractive}
         frameloopMode={frameloopMode}

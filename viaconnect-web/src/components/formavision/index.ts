@@ -4,6 +4,8 @@ export { FormaVision3DAvatar, default } from './FormaVision3DAvatar';
 export type { FormaVision3DAvatarProps } from './FormaVision3DAvatar';
 export { BodyCompositionAvatar } from './BodyCompositionAvatar';
 export type { BodyCompositionAvatarProps } from './BodyCompositionAvatar';
+export { FormaVisionLocalSilhouette } from './FormaVisionLocalSilhouette';
+export type { FormaVisionLocalSilhouetteProps } from './FormaVisionLocalSilhouette';
 export {
   SelectBodyPartControl,
   SELECT_BODY_PART_REGIONS,

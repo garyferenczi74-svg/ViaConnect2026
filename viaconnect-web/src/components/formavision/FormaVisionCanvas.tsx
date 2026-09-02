@@ -43,6 +43,10 @@ import {
 } from '@/lib/formavision/motion';
 import { ringLoopForRegion } from '@/lib/formavision/geometry/ringLoopForRegion';
 import { createFormaVisionRenderer } from '@/lib/formavision/gl/createFormaVisionRenderer';
+import {
+  attachWebGLContextRecovery,
+  scheduleZeroSizeHonestyCheck,
+} from '@/lib/formavision/gl/webglContextRecovery';
 import { createFrameBudgetSampler } from '@/lib/formavision/tier/frameBudgetMonitor';
 import { dprForTier, showParticlesForTier } from '@/lib/formavision/tier/tierCost';
 import {
@@ -133,9 +137,12 @@ export interface FormaVisionCanvasProps {
   onFirstInteractive?: () => void;
   // Honest Ready/overlay/measured girth provenance for data-morph attrs.
   girthSource?: AvatarGirthSource;
-  // Confirmed WebGL context loss after the canvas mounted. The parent latches
-  // the honest 2D floor. Absent means context-lost is ignored here.
+  // Confirmed WebGL context loss after the canvas mounted. The parent waits
+  // for restore (or remounts / latches). Absent means context-lost is ignored.
   onContextLost?: (error: unknown) => void;
+  // Browser restored GL after preventDefault(webglcontextlost). Parent remounts
+  // the Canvas so THREE can rebuild. Absent means restore is ignored.
+  onContextRestored?: () => void;
   // Prompt 211a W1 (shareable clip): the r3f frameloop mode. The canvas is
   // "demand" by default (frames only on interaction / invalidate). The clip
   // recorder sets this to "always" for the duration of a recording so
@@ -307,7 +314,7 @@ function BodyMesh(
     // First pass on a remount that already includes girths is a no-op tween
     // (geometry was built at paramVector). Still morph when the same mount
     // later receives a new vector. Always stamp the live canvas.
-    if ((morphedBodyRef.current === mounted || hasGirth) && !scrubbing) {
+    if (morphedBodyRef.current === mounted && !scrubbing) {
       // Pause the idle turntable for the duration of the morph so the camera does
       // not spin while the body changes shape; recomputeNormals releases it.
       props.turntableRef.current?.setSuspended(true);
@@ -802,11 +809,17 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
           );
           props.onFirstInteractive?.();
           const canvasEl = state.gl.domElement;
-          const onLost = (event: Event) => {
-            event.preventDefault();
-            props.onContextLost?.(new Error('WebGL context lost'));
-          };
-          canvasEl.addEventListener('webglcontextlost', onLost, { once: true });
+          attachWebGLContextRecovery(canvasEl, {
+            onLost: (error) => {
+              props.onContextLost?.(error);
+            },
+            onRestored: () => {
+              props.onContextRestored?.();
+            },
+          });
+          scheduleZeroSizeHonestyCheck(canvasEl, (error) => {
+            props.onContextLost?.(error);
+          });
         }}
       >
         <color attach="background" args={[FORMA_VISION_HEX.navy]} />

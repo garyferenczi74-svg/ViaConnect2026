@@ -9,7 +9,11 @@
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { AvatarErrorBoundary } from '../AvatarErrorBoundary';
+import {
+  AvatarErrorBoundary,
+  AvatarErrorBoundaryFloor,
+  FORMAVISION_BOUNDARY_FLOOR_TESTID,
+} from '../AvatarErrorBoundary';
 
 describe('AvatarErrorBoundary', () => {
   it('derives an error state from a thrown render error', () => {
@@ -39,15 +43,19 @@ describe('AvatarErrorBoundary', () => {
     expect(markup).toContain('avatar-here');
   });
 
-  it('renders the fallback (default null) once errored', () => {
+  it('renders an in-boundary floor (never null) once errored', () => {
     const onRenderError = vi.fn();
     const boundary = new AvatarErrorBoundary({
       onRenderError,
       children: React.createElement('span', null, 'avatar-here'),
     });
     boundary.state = { hasError: true };
-    // Default fallback is null: nothing is shown so the parent's 2D floor wins.
-    expect(boundary.render()).toBeNull();
+    const defaultFloor = boundary.render();
+    expect(defaultFloor).not.toBeNull();
+    const defaultMarkup = renderToStaticMarkup(
+      React.createElement(React.Fragment, null, defaultFloor),
+    );
+    expect(defaultMarkup).toContain(FORMAVISION_BOUNDARY_FLOOR_TESTID);
 
     const withFallback = new AvatarErrorBoundary({
       onRenderError,
@@ -56,5 +64,18 @@ describe('AvatarErrorBoundary', () => {
     });
     withFallback.state = { hasError: true };
     expect(withFallback.render()).not.toBeNull();
+    expect(
+      renderToStaticMarkup(
+        React.createElement(React.Fragment, null, withFallback.render()),
+      ),
+    ).toContain('fallback-floor');
+  });
+
+  it('boundary floor is a definite navy box, not a transparent hole', () => {
+    const markup = renderToStaticMarkup(React.createElement(AvatarErrorBoundaryFloor));
+    expect(markup).toContain(FORMAVISION_BOUNDARY_FLOOR_TESTID);
+    expect(markup).toContain('absolute inset-0');
+    expect(markup).toContain('min-h-[200px]');
+    expect(markup).toContain('#1A2744');
   });
 });

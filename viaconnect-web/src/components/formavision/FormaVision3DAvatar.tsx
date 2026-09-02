@@ -6,7 +6,7 @@
 // the resilience contract so callers do not have to: a client-only canvas mount
 // (never a render-time hasWebGL hard gate — that false-negatives on SSR and iOS
 // Safari), a lazy ssr:false import of the three bundle, and a render error
-// boundary that drops to nothing (so the page wrapper can swap in its 2D floor).
+// boundary that paints a local silhouette (never a silent empty plate).
 // Later phases layer GeneticsOverlay, FutureSelfGhost and JourneyTimeline around
 // THIS component; the renderTier prop and the clean scene seam are here for them.
 // This task builds only the core 3D body.
@@ -35,6 +35,7 @@ import type { Sex, BodyParamVector } from '@/lib/formavision/geometry/types';
 import type { AvatarGirthSource } from '@/lib/formavision/morph/avatarMorphStamp';
 import type { SegmentTintRecord } from '@/lib/formavision/geometry/segmentTints';
 import { AvatarErrorBoundary } from './AvatarErrorBoundary';
+import { FormaVisionLocalSilhouette } from './FormaVisionLocalSilhouette';
 
 // Loading shroud mirrored from AvatarViewer: a centered spinning Loader2 over the
 // navy canvas while the three bundle resolves.
@@ -95,8 +96,12 @@ export interface FormaVision3DAvatarProps {
   // mounted and the avatar is byte-identical to before this phase.
   onBudgetMissed?: () => void;
   // Called on a confirmed render error or WebGL context loss, so the parent can
-  // show its honest 2D floor. Not fired from a render-time hasWebGL probe.
+  // wait for restore, remount, or latch the honest 2D floor. Not fired from a
+  // render-time hasWebGL probe.
   onRenderError: (error: unknown) => void;
+  // Fired after preventDefault(webglcontextlost) when the browser restores GL.
+  // Parent remounts the r3f Canvas; it must not tear the plate empty first.
+  onContextRestored?: () => void;
   // P8-T1b: forwarded into FormaVisionCanvas for the avatar_rotated telemetry seam.
   // Called once at the end of each orbit gesture. Absent means no telemetry.
   onOrbitEnd?: () => void;
@@ -131,6 +136,7 @@ export function FormaVision3DAvatar({
   renderTier = 'cinematic',
   onBudgetMissed,
   onRenderError,
+  onContextRestored,
   onOrbitEnd,
   onFirstInteractive,
   frameloopMode,
@@ -154,15 +160,18 @@ export function FormaVision3DAvatar({
 
   if (!clientReady) {
     return (
-      <div className="relative h-full w-full" data-testid="formavision-3d-pending">
+      <div className="absolute inset-0 h-full w-full" data-testid="formavision-3d-pending">
         <CanvasLoader />
       </div>
     );
   }
 
   return (
-    <div className="relative h-full w-full" data-testid="formavision-3d-mount">
-      <AvatarErrorBoundary onRenderError={handleRenderError}>
+    <div className="absolute inset-0 h-full w-full" data-testid="formavision-3d-mount">
+      <AvatarErrorBoundary
+        onRenderError={handleRenderError}
+        fallback={<FormaVisionLocalSilhouette sex={sex} />}
+      >
         <FormaVisionCanvas
           sex={sex}
           scan={scan}
@@ -185,6 +194,7 @@ export function FormaVision3DAvatar({
           onOrbitEnd={onOrbitEnd}
           onFirstInteractive={onFirstInteractive}
           onContextLost={handleRenderError}
+          onContextRestored={onContextRestored}
           frameloopMode={frameloopMode}
           girthSource={girthSource}
         />
