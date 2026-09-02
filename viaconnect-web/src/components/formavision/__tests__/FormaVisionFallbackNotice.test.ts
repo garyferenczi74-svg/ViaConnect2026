@@ -73,13 +73,23 @@ describe('FormaVisionFallbackNotice', () => {
     expect(noticeSrc).toMatch(/useLayoutEffect/);
     expect(noticeSrc).toMatch(/formavision-fallback-notice-host/);
     expect(noticeSrc).not.toMatch(/failIfMajorPerformanceCaveat/);
-    expect(noticeSrc).not.toMatch(/hasWebGL/);
+    expect(noticeSrc).toMatch(/formatFallbackNoticeDetail/);
+
+    const htmlLater = renderToStaticMarkup(
+      React.createElement(FormaVisionFallbackNotice, {
+        reason: 'Shader compile failed',
+        webgl: 'available',
+        children: React.createElement('div', { 'data-testid': 'two-d-floor' }, 'svg-floor'),
+      }),
+    );
+    expect(htmlLater).toContain('Shader compile failed');
+    expect(htmlLater).not.toContain('This device could not start WebGL');
 
     const page = src('src/app/(app)/(consumer)/body-tracker/formavision/page.tsx');
     const topClass = classOf(page, 'formavision-top-controls');
     const plateClass = classOf(page, 'formavision-canvas-grid');
     expect(page).toMatch(
-      /data-testid="formavision-fallback-notice-host"\s+className="contents"/,
+      /data-testid="formavision-fallback-notice-host"\s+className="empty:hidden"/,
     );
     expect(topClass).toMatch(/\bz-0\b/);
     expect(topClass).not.toMatch(/\bz-(?:[1-9]|[1-9][0-9])\b/);

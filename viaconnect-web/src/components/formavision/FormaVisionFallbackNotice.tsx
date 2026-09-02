@@ -13,9 +13,17 @@
 import { useLayoutEffect, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Box } from 'lucide-react';
+import {
+  formatFallbackNoticeDetail,
+  type FallbackWebGLSignal,
+} from '@/lib/formavision/tier/fallbackNoticeCopy';
 
 export interface FormaVisionFallbackNoticeProps {
   children: ReactNode;
+  // Real createRenderer / scene failure. Never substitute the generic
+  // "This device could not start WebGL" sentence when WebGL actually started.
+  reason?: string | null;
+  webgl?: FallbackWebGLSignal;
 }
 
 export const FORMAVISION_FALLBACK_NOTICE_HOST_TESTID = 'formavision-fallback-notice-host';
@@ -26,7 +34,13 @@ export const FORMAVISION_FALLBACK_FLOOR_STACK_CLASS = 'relative z-20';
 export const FORMAVISION_FALLBACK_NOTICE_STACK_CLASS =
   'pointer-events-auto relative z-50';
 
-function FallbackNoticeBanner() {
+function FallbackNoticeBanner({
+  reason,
+  webgl,
+}: {
+  reason?: string | null;
+  webgl?: FallbackWebGLSignal;
+}) {
   return (
     <div
       role="status"
@@ -41,22 +55,25 @@ function FallbackNoticeBanner() {
       <div>
         <p className="text-xs font-medium text-white/85">3D avatar unavailable</p>
         <p className="text-[10px] leading-relaxed text-white/50">
-          This device could not start WebGL. The outline below is a 2D fallback, not a body
-          morph.
+          {formatFallbackNoticeDetail(reason, webgl)}
         </p>
       </div>
     </div>
   );
 }
 
-export function FormaVisionFallbackNotice({ children }: FormaVisionFallbackNoticeProps) {
+export function FormaVisionFallbackNotice({
+  children,
+  reason,
+  webgl,
+}: FormaVisionFallbackNoticeProps) {
   const [host, setHost] = useState<Element | null>(null);
 
   useLayoutEffect(() => {
     setHost(document.querySelector(`[data-testid="${FORMAVISION_FALLBACK_NOTICE_HOST_TESTID}"]`));
   }, []);
 
-  const banner = <FallbackNoticeBanner />;
+  const banner = <FallbackNoticeBanner reason={reason} webgl={webgl} />;
 
   return (
     <div

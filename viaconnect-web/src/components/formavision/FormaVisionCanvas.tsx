@@ -728,12 +728,6 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
   return (
     <div ref={containerRef} className="absolute inset-0 h-full w-full">
       <Canvas
-        // E3b: exact cinematic discriminator seam. react-three-fiber forwards
-        // unknown DOM props onto the real <canvas> element it renders, so this
-        // testid lands on the 3D canvas specifically. Playwright selects it to
-        // prove the cinematic (WebGL) path mounted, instead of the brittle
-        // "any canvas is present" proxy. Attribute-only; no behavior change.
-        data-testid="formavision-avatar-canvas"
         // Demand loop: frames are produced only on interaction, mount, or an
         // explicit invalidate. No continuous render, no idle spin.
         // Prompt 211a W1: the clip recorder can flip this to "always" via
@@ -760,6 +754,9 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
         // P8-T1c: fire once when the GL context is ready (observe-only;
         // does not affect rendering or the demand loop).
         onCreated={(state) => {
+          // r3f 8.18 spreads unknown DOM props onto the WRAPPER div, not the
+          // <canvas>. Arnold / clip capture need the real WebGL canvas.
+          state.gl.domElement.setAttribute('data-testid', 'formavision-avatar-canvas');
           props.onFirstInteractive?.();
           const canvasEl = state.gl.domElement;
           const onLost = (event: Event) => {

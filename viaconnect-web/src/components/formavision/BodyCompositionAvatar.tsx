@@ -6,13 +6,13 @@
 // SegmentalHeatMap. selectAvatarSurface decides which avatar the user sees:
 //
 //   3D FormaVision3DAvatar  preferred whenever 3D has not confirmed-failed
-//   2D floor (children)     only after a render/context-lost error or tier 2d
+//   2D floor (children)     only after a fresh-canvas probe is unavailable, or tier 2d
 //
 // A render-time hasWebGL() false (SSR, iOS Safari false-negative) must NOT
-// latch the floor. The 2D path is the GUARANTEED FALLBACK FLOOR (Section 2/17)
-// and is wrapped in FormaVisionFallbackNotice so a lean SVG cannot be mistaken
-// for a morph. The 3D avatar reports confirmed failures through onRenderError;
-// this wrapper latches that signal once and never recovers mid-session.
+// latch the floor. A live-canvas / renderer miss while a fresh getContext still
+// works remounts 3D — that is not "device has no WebGL". The 2D path is the
+// GUARANTEED FALLBACK FLOOR (Section 2/17) and is wrapped in
+// FormaVisionFallbackNotice so a lean SVG cannot be mistaken for a morph.
 //
 // UNIT CONTRACT: the page passes the SAME displayUnit it requested from
 // useCircumferenceData as the unit prop, which is forwarded verbatim to the
@@ -28,9 +28,17 @@ import type { Sex, BodyParamVector } from '@/lib/formavision/geometry/types';
 import type { SegmentTintRecord } from '@/lib/formavision/geometry/segmentTints';
 import type { AvatarQualitySignals } from '@/lib/formavision/telemetry/avatarTelemetry';
 import { buildAvatarQualitySnapshot } from '@/lib/formavision/telemetry/avatarTelemetry';
-import { selectAvatarSurface } from '@/lib/formavision/tier/avatarSurfaceDecision';
+import {
+  selectAvatarSurface,
+  type WebGLAvailability,
+} from '@/lib/formavision/tier/avatarSurfaceDecision';
+import {
+  errorMessageFromUnknown,
+  shouldLatchFallback2d,
+} from '@/lib/formavision/tier/fallbackNoticeCopy';
 import { FormaVision3DAvatar } from './FormaVision3DAvatar';
 import { FormaVisionFallbackNotice } from './FormaVisionFallbackNotice';
+import { probeWebGL } from './hasWebGL';
 import { useRenderTier, useReportBudgetMiss } from './RenderTierProvider';
 
 export interface BodyCompositionAvatarProps {
@@ -109,9 +117,14 @@ function BodyCompositionAvatarInner({
   frameloopMode,
   children,
 }: BodyCompositionAvatarProps) {
-  // Latched once the avatar reports a confirmed render / context-lost error.
-  // From that point on the honest 2D floor is shown for the rest of the session.
+  // Latched only when a fresh-canvas probe cannot get a context. A live-canvas
+  // / renderer / context-lost miss while getContext still works remounts 3D
+  // instead of swapping in the SVG + a false "device could not start WebGL".
   const [fellBack, setFellBack] = useState(false);
+  const [fallbackReason, setFallbackReason] = useState<string | null>(null);
+  const [fallbackWebgl, setFallbackWebgl] = useState<WebGLAvailability>('unknown');
+  const [mountEpoch, setMountEpoch] = useState(0);
+  const remountsRef = useRef(0);
 
   // The active render tier (capability probe initially; stepped down at runtime) and
   // the sticky step-down trigger passed into the Canvas frame-budget monitor.
@@ -141,7 +154,25 @@ function BodyCompositionAvatarInner({
     if (firstInteractiveMsRef.current !== null) return;
     const now = typeof performance !== 'undefined' ? performance.now() : 0;
     firstInteractiveMsRef.current = Math.round(now - mountTimeRef.current);
+    setFallbackReason(null);
   }, []); // refs are stable; no deps needed
+
+  const handleRenderError = useCallback((error: unknown): void => {
+    errorCountRef.current += 1;
+    const message = errorMessageFromUnknown(error);
+    const probe = probeWebGL();
+    setFallbackReason(message);
+    setFallbackWebgl(probe);
+    if (!shouldLatchFallback2d(probe) && remountsRef.current < 2) {
+      remountsRef.current += 1;
+      setMountEpoch((n) => n + 1);
+      return;
+    }
+    if (!shouldLatchFallback2d(probe)) {
+      return;
+    }
+    setFellBack(true);
+  }, []);
 
   // The runtime step-down past 'lite' converges on the SAME fallback latch the WebGL
   // gate and the render-error boundary use: a '2d' tier flips fellBack, so there is
@@ -149,6 +180,8 @@ function BodyCompositionAvatarInner({
   useEffect(() => {
     if (tier === '2d') {
       setFellBack(true);
+      setFallbackReason((current) => current ?? '3D stepped down after a sustained frame-budget miss');
+      setFallbackWebgl(probeWebGL());
     }
     // P8-T1b/T1c: fire the step-down telemetry event on the first drop below
     // cinematic, enriched with the quality snapshot (P8-T1c).
@@ -189,7 +222,11 @@ function BodyCompositionAvatarInner({
     webgl: 'unknown',
   });
   if (surface === 'fallback2d') {
-    return <FormaVisionFallbackNotice>{children}</FormaVisionFallbackNotice>;
+    return (
+      <FormaVisionFallbackNotice reason={fallbackReason} webgl={fallbackWebgl}>
+        {children}
+      </FormaVisionFallbackNotice>
+    );
   }
 
   // Only the two 3D tiers reach the avatar here; '2d' was handled above. On a capable
@@ -208,6 +245,7 @@ function BodyCompositionAvatarInner({
       className="relative mx-auto h-full w-full max-h-full max-w-[600px]"
     >
       <FormaVision3DAvatar
+        key={mountEpoch}
         sex={sex}
         scan={scan}
         firstScan={firstScan}
@@ -227,10 +265,7 @@ function BodyCompositionAvatarInner({
         wipeVector={wipeVector}
         renderTier={renderTier}
         onBudgetMissed={reportBudgetMiss}
-        onRenderError={() => {
-          errorCountRef.current += 1;
-          setFellBack(true);
-        }}
+        onRenderError={handleRenderError}
         onOrbitEnd={onOrbitEnd}
         onFirstInteractive={handleFirstInteractive}
         frameloopMode={frameloopMode}

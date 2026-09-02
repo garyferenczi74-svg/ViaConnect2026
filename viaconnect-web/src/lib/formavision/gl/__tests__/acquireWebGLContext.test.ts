@@ -7,6 +7,7 @@ import {
   isSafariWebGLHost,
   webglContextTypeOrder,
   SAFE_GL_ATTRIBUTES,
+  SOFTWARE_SAFE_GL_ATTRIBUTES,
 } from '../acquireWebGLContext';
 
 function canvasThat(
@@ -76,8 +77,21 @@ describe('acquireWebGLContext', () => {
   it('on Safari a failed first request does not try another type on the same canvas', () => {
     const host = canvasThat(() => null);
     expect(acquireWebGLContext(host, { safariLike: true })).toBeNull();
-    expect(host.getContext).toHaveBeenCalledTimes(1);
-    expect(host.getContext.mock.calls[0]?.[0]).toBe('webgl');
+    const ids = host.getContext.mock.calls.map((c) => c[0]);
+    expect(ids.every((id) => id === 'webgl')).toBe(true);
+    expect(ids).not.toContain('webgl2');
+  });
+
+  it('retries without antialias when MSAA getContext returns null (SwiftShader)', () => {
+    const host = canvasThat((_id: string) => null);
+    host.getContext.mockImplementation((_id: string, attrs?: { antialias?: boolean }) => {
+      if (attrs && attrs.antialias === false) return { kind: 'soft' };
+      return null;
+    });
+    expect(acquireWebGLContext(host, { safariLike: false })).toEqual({ kind: 'soft' });
+    const attrCalls = host.getContext.mock.calls.map((c) => c[1] as { antialias?: boolean });
+    expect(attrCalls.some((a) => a?.antialias === true)).toBe(true);
+    expect(attrCalls.some((a) => a?.antialias === false)).toBe(true);
   });
 
   it('on Chrome prefers webgl2 and can fall through to webgl1 on the same canvas', () => {
@@ -92,5 +106,7 @@ describe('acquireWebGLContext', () => {
   it('exports caveat-false default attributes so low-power GPUs still count', () => {
     expect(SAFE_GL_ATTRIBUTES.failIfMajorPerformanceCaveat).toBe(false);
     expect(SAFE_GL_ATTRIBUTES.powerPreference).toBe('default');
+    expect(SOFTWARE_SAFE_GL_ATTRIBUTES.antialias).toBe(false);
+    expect(SOFTWARE_SAFE_GL_ATTRIBUTES.failIfMajorPerformanceCaveat).toBe(false);
   });
 });

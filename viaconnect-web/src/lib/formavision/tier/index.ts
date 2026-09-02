@@ -20,6 +20,13 @@ export {
   selectAvatarSurface,
   wouldSelectSvgDespiteWebGL,
 } from './avatarSurfaceDecision';
+export {
+  formatFallbackNoticeDetail,
+  shouldLatchFallback2d,
+  errorMessageFromUnknown,
+  GENERIC_WEBGL_UNAVAILABLE_DETAIL,
+  LATER_INIT_FALLBACK_DETAIL,
+} from './fallbackNoticeCopy';
 export type {
   AvatarSurface,
   AvatarSurfaceDecisionInput,
