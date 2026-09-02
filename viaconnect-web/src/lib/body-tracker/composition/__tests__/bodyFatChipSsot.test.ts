@@ -34,6 +34,7 @@ describe('Body-fat chip SSOT after a FormaVision scan', () => {
     expect(page).toMatch(/circHistory\.refresh\(\)/);
     expect(page).toMatch(/setScanHistoryKey/);
     expect(page).toMatch(/snapshotFromScanResult/);
+    expect(page).toMatch(/estimateCircumferencesFromComposition/);
     expect(page).toMatch(/refreshKey=\{scanHistoryKey\}/);
     expect(uploader).toMatch(/if \(!persistRes\.ok\)/);
     expect(uploader).toMatch(/return;/);

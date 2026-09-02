@@ -5,13 +5,14 @@
 // measurements and can never drift from them. The render layer (P1-T4) calls this
 // then buildBodyGeometry. Pure and deterministic: no Math.random, no Date, no IO.
 //
-// UNKNOWN preservation is the core contract for *measured* girths. A null or
-// absent circumference stays null unless a composition estimate (body-fat range
-// and optional WHR) is present. Measured circumferences always win. Estimate
-// fill is flagged estimated=true so the mesh can morph from a FormaVision
-// upload/live analyze when the geometric girth write is empty.
+// UNKNOWN preservation is the core contract. A null or absent circumference stays
+// null in the vector (the geometry layer substitutes the sex template and flags the
+// ring estimated). Girth is NEVER fabricated from body fat percent, BMI, or any
+// readout. Shape comes only from measured circumferences. Composition estimates
+// that should morph the avatar are turned into CircumferenceMeasurements by
+// estimateCircumferencesFromComposition BEFORE this mapper — they arrive as
+// explicit girths, not as a silent BF fill inside this function.
 
-import { CIRC_DELTA_PER_BF_POINT, FLOOR_CM } from '@/lib/arnold/scanning/futureMeProjector';
 import { templateForSex } from './types';
 import type { ArmParam, BodyParamVector, BodyRing, Sex } from './types';
 import type { CompositionSnapshot } from '@/lib/body-tracker/composition/types';
@@ -56,56 +57,6 @@ export interface ScanToParamInput {
   semiAxesByRingId?: Partial<Record<string, ScanSemiAxesCm>> | null;
 }
 
-// Sex-template bodies are roughly this body-fat. Estimate fill deltas off this
-// so a 12% scan looks leaner than the template and a 30% scan looks fuller.
-const TEMPLATE_BF_PCT: Record<Sex, number> = { male: 18, female: 26 };
-
-const RING_TO_BF_DELTA: Record<string, keyof typeof CIRC_DELTA_PER_BF_POINT> = {
-  neck: 'neck',
-  chest: 'chest',
-  waist: 'waist',
-  hip: 'hip',
-  rThigh: 'thigh',
-  lThigh: 'thigh',
-  rCalf: 'calf',
-  lCalf: 'calf',
-};
-
-function resolveEstimateBfPct(snapshot: CompositionSnapshot | null): number | null {
-  if (!snapshot) return null;
-  const mid = snapshot.totalBodyFatPct;
-  if (typeof mid === 'number' && Number.isFinite(mid) && mid > 0) return mid;
-  const min = snapshot.estimatedBodyFatMin;
-  const max = snapshot.estimatedBodyFatMax;
-  if (typeof min === 'number' && typeof max === 'number' && Number.isFinite(min) && Number.isFinite(max)) {
-    return (min + max) / 2;
-  }
-  return null;
-}
-
-function resolveEstimateWhr(snapshot: CompositionSnapshot | null): number | null {
-  if (!snapshot) return null;
-  const min = snapshot.estimatedWhrMin;
-  const max = snapshot.estimatedWhrMax;
-  if (typeof min === 'number' && typeof max === 'number' && Number.isFinite(min) && Number.isFinite(max)) {
-    const mid = (min + max) / 2;
-    return mid > 0.5 && mid < 1.4 ? mid : null;
-  }
-  return null;
-}
-
-function estimateCircumferenceM(
-  templateM: number,
-  ringId: string,
-  bfPct: number,
-  sex: Sex,
-): number {
-  const region = RING_TO_BF_DELTA[ringId];
-  if (!region) return templateM;
-  const deltaCm = (bfPct - TEMPLATE_BF_PCT[sex]) * CIRC_DELTA_PER_BF_POINT[region];
-  return Math.max(FLOOR_CM / 100, templateM + deltaCm / 100);
-}
-
 // Ring id -> the circumference measurement key that fills it. shoulderWidth is a
 // WIDTH, not a girth, so it is intentionally absent here and never feeds a ring.
 const RING_TO_MEASUREMENT: Record<string, MeasurementKey> = {
@@ -142,23 +93,15 @@ export function scanToParamVector(input: ScanToParamInput): BodyParamVector {
       : template.heightM;
 
   const circumferences = input.circumferences;
-  const estimateBfPct = resolveEstimateBfPct(input.snapshot);
-  const estimateWhr = resolveEstimateWhr(input.snapshot);
 
   // Build one ring per template ring, carrying the template's levelN and aspect
   // ratio (geometry hints) and filling the circumference from the matching
-  // measurement in meters. UNKNOWN rings stay null unless a composition
-  // estimate can scale the sex-template girth (still flagged estimated).
+  // measurement in meters, or null when absent.
   const semi = input.semiAxesByRingId ?? null;
   const rings: BodyRing[] = template.rings.map((tplRing) => {
     const key = RING_TO_MEASUREMENT[tplRing.id];
     const raw = key && circumferences ? circumferences[key] : null;
-    let circumferenceM = toMeters(raw, factor);
-    let estimated = circumferenceM === null;
-    if (circumferenceM === null && estimateBfPct !== null) {
-      circumferenceM = estimateCircumferenceM(tplRing.circumferenceM, tplRing.id, estimateBfPct, sex);
-      estimated = true;
-    }
+    const circumferenceM = toMeters(raw, factor);
     const axes = semi ? semi[tplRing.id] : undefined;
     // Semi-axes from the scan engine are always in cm.
     const aM =
@@ -178,40 +121,22 @@ export function scanToParamVector(input: ScanToParamInput): BodyParamVector {
       aspectRatio,
       aM,
       bM,
-      estimated,
+      estimated: circumferenceM === null,
     };
   });
-
-  if (estimateWhr !== null) {
-    const waist = rings.find((r) => r.id === 'waist');
-    const hip = rings.find((r) => r.id === 'hip');
-    if (waist && hip && waist.estimated && hip.estimated && hip.circumferenceM !== null) {
-      waist.circumferenceM = Math.max(FLOOR_CM / 100, hip.circumferenceM * estimateWhr);
-    }
-  }
 
   const arms: ArmParam[] = (['r', 'l'] as const).map((side) => {
     const bicepKey: MeasurementKey = side === 'r' ? 'rightBicep' : 'leftBicep';
     const forearmKey: MeasurementKey = side === 'r' ? 'rightForearm' : 'leftForearm';
-    const measuredBicepM = toMeters(circumferences ? circumferences[bicepKey] : null, factor);
-    const measuredForearmM = toMeters(circumferences ? circumferences[forearmKey] : null, factor);
-    let bicepM = measuredBicepM;
-    let forearmM = measuredForearmM;
-    if (bicepM === null && estimateBfPct !== null) {
-      const deltaCm = (estimateBfPct - TEMPLATE_BF_PCT[sex]) * CIRC_DELTA_PER_BF_POINT.bicep;
-      bicepM = Math.max(FLOOR_CM / 100, template.arm.bicepM + deltaCm / 100);
-    }
-    if (forearmM === null && estimateBfPct !== null) {
-      const deltaCm = (estimateBfPct - TEMPLATE_BF_PCT[sex]) * CIRC_DELTA_PER_BF_POINT.bicep * 0.6;
-      forearmM = Math.max(FLOOR_CM / 100, template.arm.forearmM + deltaCm / 100);
-    }
+    const bicepM = toMeters(circumferences ? circumferences[bicepKey] : null, factor);
+    const forearmM = toMeters(circumferences ? circumferences[forearmKey] : null, factor);
     return {
       side,
       bicepM,
       forearmM,
-      // Measured-missing (or estimate-filled) arms stay estimated so geometry
-      // can still mark the limb as non-tape.
-      estimated: measuredBicepM === null || measuredForearmM === null,
+      // An arm is estimated when either measurement is missing, so the geometry
+      // backfills the template for that limb.
+      estimated: bicepM === null || forearmM === null,
     };
   });
 

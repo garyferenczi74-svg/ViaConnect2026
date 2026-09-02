@@ -42,6 +42,7 @@ import { FormaVisionScanModeBar, type FormaVisionScanMode } from '@/components/b
 import { ScanHistorySection } from '@/components/scan/ScanHistorySection';
 import { isJourneyCompositionPoint } from '@/lib/body-tracker/composition/journeyPoints';
 import { snapshotFromScanResult } from '@/lib/body-tracker/composition/snapshotFromScanResult';
+import { estimateCircumferencesFromComposition } from '@/lib/body-tracker/composition/estimateCircumferencesFromComposition';
 import type { MeasurementUnit } from '@/lib/body-tracker/circumference';
 import {
   compositionSectionHref,
@@ -171,7 +172,12 @@ function FormaVisionSurface() {
     () => (scanResult ? snapshotFromScanResult(scanResult) : null),
     [scanResult],
   );
+  const overlayCircumferences = useMemo(
+    () => estimateCircumferencesFromComposition(overlaySnapshot, gender, unit),
+    [overlaySnapshot, gender, unit],
+  );
   const snapshot = overlaySnapshot ?? composHistory.latest;
+  const avatarCircumferences = overlayCircumferences ?? circumferenceData.latest;
   const journeySnapshots = useMemo(
     () => composHistory.snapshots.filter(isJourneyCompositionPoint),
     [composHistory.snapshots],
@@ -223,7 +229,7 @@ function FormaVisionSurface() {
     });
   }, [abCompareOn, activeBaseline.baseline, activeBaseline.latest, unit]);
 
-  const hasScanData = Boolean(snapshot || circumferenceData.latest);
+  const hasScanData = Boolean(snapshot || avatarCircumferences);
 
   const journeyVectors = useMemo(
     () =>
@@ -483,7 +489,7 @@ function FormaVisionSurface() {
           sex={gender}
           scan={snapshot}
           firstScan={composHistory.first}
-          circumferences={circumferenceData.latest}
+          circumferences={avatarCircumferences}
           unit={unit}
           activeTab="bodyFat"
           selectedBodyPart={selectedBodyPart}

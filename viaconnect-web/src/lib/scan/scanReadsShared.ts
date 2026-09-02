@@ -22,6 +22,11 @@ import { createClient } from '@/lib/supabase/server';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 import { PROTOCOL_ID, POSE_ORDER, type PoseId } from '@/lib/scan/poses';
+import { FORMAVISION_PHOTO_PROTOCOL } from '@/lib/scan/scanProtocols';
+import type { ScanCaptureStatus, ScanSummary } from '@/lib/scan/scanSummary';
+
+export { FORMAVISION_PHOTO_PROTOCOL } from '@/lib/scan/scanProtocols';
+export type { ScanCaptureStatus, ScanSummary } from '@/lib/scan/scanSummary';
 
 const SCOPE = 'scan.scanReadsShared';
 const QUERY_TIMEOUT_MS = 5000;
@@ -30,18 +35,6 @@ const DEFAULT_HISTORY_LIMIT = 30;
 const TOMBSTONE_STATUSES = ['delete_pending', 'deleted'] as const;
 type TombstoneStatus = (typeof TOMBSTONE_STATUSES)[number];
 
-export type ScanCaptureStatus = 'uploading' | 'ready' | 'partial' | 'delete_pending' | 'deleted';
-
-/** Upload/Live FormaVision analyze rows in body_tracker_photo_scans. */
-export const FORMAVISION_PHOTO_PROTOCOL = 'formavision_photo';
-
-export interface ScanSummary {
-  id: string;
-  date: string;
-  protocol: string;
-  captureStatus: ScanCaptureStatus | null;
-  poses: Record<PoseId, boolean>;
-}
 
 const SELECT_COLUMNS =
   'id,session_date,protocol,capture_status,' +

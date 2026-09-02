@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { snapshotFromScanResult } from '../snapshotFromScanResult';
+import { estimateCircumferencesFromComposition } from '../estimateCircumferencesFromComposition';
 import { scanToParamVector } from '@/lib/formavision/geometry/scanToParamVector';
 import type { BodyScanResult } from '../runFormaVisionAnalyze';
 
@@ -34,22 +35,34 @@ describe('snapshotFromScanResult', () => {
     expect(snap.estimatedWhrMax).toBe(0.88);
   });
 
-  it('drives a visible waist morph versus the sex-template baseline', () => {
-    const lean = scanToParamVector({
-      snapshot: snapshotFromScanResult(result({
-        estimated_body_fat_min: 10,
-        estimated_body_fat_max: 12,
-      })),
+  it('overlay girths morph the avatar; scanToParamVector still preserves a null waist', () => {
+    const leanSnap = snapshotFromScanResult(result({
+      estimated_body_fat_min: 10,
+      estimated_body_fat_max: 12,
+    }));
+    const heavySnap = snapshotFromScanResult(result({
+      estimated_body_fat_min: 32,
+      estimated_body_fat_max: 36,
+    }));
+    const honest = scanToParamVector({
+      snapshot: heavySnap,
       circumferences: null,
       sex: 'male',
     });
-    const heavy = scanToParamVector({
-      snapshot: snapshotFromScanResult(result({
-        estimated_body_fat_min: 32,
-        estimated_body_fat_max: 36,
-      })),
-      circumferences: null,
+    expect(honest.rings.find((r) => r.id === 'waist')?.circumferenceM).toBeNull();
+    expect(honest.rings.find((r) => r.id === 'waist')?.estimated).toBe(true);
+
+    const lean = scanToParamVector({
+      snapshot: leanSnap,
+      circumferences: estimateCircumferencesFromComposition(leanSnap, 'male', 'in'),
       sex: 'male',
+      unit: 'in',
+    });
+    const heavy = scanToParamVector({
+      snapshot: heavySnap,
+      circumferences: estimateCircumferencesFromComposition(heavySnap, 'male', 'in'),
+      sex: 'male',
+      unit: 'in',
     });
     const waistLean = lean.rings.find((r) => r.id === 'waist')?.circumferenceM;
     const waistHeavy = heavy.rings.find((r) => r.id === 'waist')?.circumferenceM;

@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Camera, ImageOff, Loader2, Trash2 } from 'lucide-react';
 import { POSE_ORDER, type PoseId } from '@/lib/scan/poses';
-import { FORMAVISION_PHOTO_PROTOCOL, type ScanSummary } from '@/lib/scan/scanReadsShared';
+import { FORMAVISION_PHOTO_PROTOCOL } from '@/lib/scan/scanProtocols';
+import type { ScanSummary } from '@/lib/scan/scanSummary';
 
 /**
  * Prompt 231: the 4-pose scan history list. Reuses the Task 13

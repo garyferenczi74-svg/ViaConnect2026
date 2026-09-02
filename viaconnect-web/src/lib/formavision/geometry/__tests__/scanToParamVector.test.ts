@@ -177,45 +177,28 @@ describe('scanToParamVector UNKNOWN preservation', () => {
     expect(arm(v, 'r').estimated).toBe(true);
   });
 
-  it('fills estimated rings from body-fat when girths are UNKNOWN, without overwriting tape', () => {
-    const fatSnap = {
-      entryId: 'e1',
-      source: 'scan',
-      recordedAt: '2026-06-25T00:00:00.000Z',
-      totalBodyFatPct: 35,
-      regionFatPct: { right_arm: null, left_arm: null, trunk: null, right_leg: null, left_leg: null },
-      visceralFatRating: null,
-      bodyWaterPct: null,
-      regionMuscleLbs: { right_arm: null, left_arm: null, trunk: null, right_leg: null, left_leg: null },
-      totalMuscleMassLbs: null,
-      skeletalMuscleMassLbs: null,
-    };
-    const lean = scanToParamVector({
-      snapshot: { ...fatSnap, totalBodyFatPct: 12 },
+  it('never fabricates girth from body fat percent in the snapshot', () => {
+    const v = scanToParamVector({
+      snapshot: {
+        entryId: 'e1',
+        source: 'scan',
+        recordedAt: '2026-06-25T00:00:00.000Z',
+        totalBodyFatPct: 35,
+        regionFatPct: { right_arm: null, left_arm: null, trunk: null, right_leg: null, left_leg: null },
+        visceralFatRating: null,
+        bodyWaterPct: null,
+        regionMuscleLbs: { right_arm: null, left_arm: null, trunk: null, right_leg: null, left_leg: null },
+        totalMuscleMassLbs: null,
+        skeletalMuscleMassLbs: null,
+      },
       circumferences: null,
       sex: 'male',
       heightCm: null,
     });
-    const heavy = scanToParamVector({
-      snapshot: fatSnap,
-      circumferences: null,
-      sex: 'male',
-      heightCm: null,
-    });
-    expect(ring(lean, 'waist').circumferenceM).not.toBeNull();
-    expect(ring(heavy, 'waist').circumferenceM).not.toBeNull();
-    expect(ring(lean, 'waist').circumferenceM!).toBeLessThan(ring(heavy, 'waist').circumferenceM!);
-    expect(ring(heavy, 'waist').estimated).toBe(true);
-
-    const taped = scanToParamVector({
-      snapshot: fatSnap,
-      circumferences: measure({ waist: 32 }),
-      sex: 'male',
-      heightCm: null,
-      unit: 'in',
-    });
-    expect(ring(taped, 'waist').circumferenceM).toBeCloseTo(0.8128, 4);
-    expect(ring(taped, 'waist').estimated).toBe(false);
+    // High body fat must not invent any waist girth; shape comes from measured
+    // circumferences only, which are all absent here.
+    expect(ring(v, 'waist').circumferenceM).toBeNull();
+    expect(ring(v, 'waist').estimated).toBe(true);
   });
 });
 

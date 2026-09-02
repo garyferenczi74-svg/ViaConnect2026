@@ -6,11 +6,13 @@
  * ScanExperienceLoader/ScanExperience) so the list states are testable
  * without mocking effects.
  */
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, it, expect } from 'vitest';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { ScanHistory } from '../ScanHistory';
-import type { ScanSummary } from '@/lib/scan/scanReadsShared';
+import type { ScanSummary } from '@/lib/scan/scanSummary';
 
 const NOOP = () => {};
 
@@ -24,6 +26,17 @@ function scan(overrides: Partial<ScanSummary> = {}): ScanSummary {
     ...overrides,
   };
 }
+
+describe('ScanHistory - client/server boundary', () => {
+  it('does not value-import scanReadsShared (next/headers must stay off the client graph)', () => {
+    const history = readFileSync(join(process.cwd(), 'src/components/scan/ScanHistory.tsx'), 'utf8');
+    const section = readFileSync(join(process.cwd(), 'src/components/scan/ScanHistorySection.tsx'), 'utf8');
+    expect(history).not.toMatch(/from '@\/lib\/scan\/scanReadsShared'/);
+    expect(section).not.toMatch(/from '@\/lib\/scan\/scanReadsShared'/);
+    expect(history).toMatch(/from '@\/lib\/scan\/scanProtocols'/);
+    expect(history).toMatch(/from '@\/lib\/scan\/scanSummary'/);
+  });
+});
 
 describe('ScanHistory - empty state', () => {
   it('renders the honest empty-state copy when there are no scans', () => {

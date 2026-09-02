@@ -29,7 +29,7 @@ import { formavisionScanEntryHref } from '@/lib/body-tracker/compositionNav';
 // date + status through scanReadsShared.getLatestScan only, via
 // GET /api/scan/latest. Type-only import - no server-only code enters this
 // client bundle.
-import type { ScanSummary } from '@/lib/scan/scanReadsShared';
+import type { ScanSummary } from '@/lib/scan/scanSummary';
 import type { BiologicalAgeResult } from '@/lib/body-tracker/biological-age';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';

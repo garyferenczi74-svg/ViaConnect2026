@@ -6,7 +6,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { ScanHistory } from './ScanHistory';
-import type { ScanSummary } from '@/lib/scan/scanReadsShared';
+import type { ScanSummary } from '@/lib/scan/scanSummary';
 
 const HISTORY_FETCH_TIMEOUT_MS = 8000;
 
