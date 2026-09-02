@@ -51,7 +51,11 @@ import { ringLoopForRegion } from '@/lib/formavision/geometry/ringLoopForRegion'
 import { createFormaVisionRenderer } from '@/lib/formavision/gl/createFormaVisionRenderer';
 import {
   attachWebGLContextRecovery,
+  canvasHasZeroClientBox,
+  scheduleFirstPaintWatchdog,
   scheduleZeroSizeHonestyCheck,
+  shouldFireFirstInteractive,
+  shouldTreatGlCreatedAsPainted,
 } from '@/lib/formavision/gl/webglContextRecovery';
 import { createFrameBudgetSampler } from '@/lib/formavision/tier/frameBudgetMonitor';
 import { dprForTier, showParticlesForTier } from '@/lib/formavision/tier/tierCost';
@@ -137,9 +141,9 @@ export interface FormaVisionCanvasProps {
   // Fire-and-forget telemetry seam for formavision.avatar_rotated. Absent means
   // no telemetry fires; the scene is byte-identical to before this phase.
   onOrbitEnd?: () => void;
-  // P8-T1c: called once from Canvas onCreated (GL context ready) so the parent
-  // can measure timeToFirstInteractiveMs. Absent means the metric is omitted.
-  // Fire-and-forget; does not affect rendering.
+  // P8-T1c: called once after the first PAINTED demand frame so the parent
+  // can measure timeToFirstInteractiveMs. GL onCreated must NOT fire this
+  // (context ready ≠ pixels). Absent means the metric is omitted.
   onFirstInteractive?: () => void;
   // Honest Ready/overlay/measured girth provenance for data-morph attrs.
   girthSource?: AvatarGirthSource;
@@ -749,6 +753,49 @@ function FrameBudgetMonitor({
   return null;
 }
 
+// Observes the first demand frame that actually presents (non-zero canvas).
+// onCreated / GL-ready must not claim this — phone WebKit can create a
+// context and never paint. A timeout watchdog re-invalidates; it still
+// does not fire onFirstInteractive unless a frame ran.
+function FirstPaintWatchdog({
+  onFirstPaint,
+}: {
+  onFirstPaint?: () => void;
+}) {
+  const firedRef = useRef(false);
+  const paintedRef = useRef(false);
+  const invalidate = useThree((state) => state.invalidate);
+
+  useEffect(() => {
+    invalidate();
+    return scheduleFirstPaintWatchdog(
+      () => paintedRef.current,
+      () => {
+        invalidate();
+      },
+    );
+  }, [invalidate]);
+
+  useFrame((state) => {
+    if (firedRef.current) {
+      return;
+    }
+    if (canvasHasZeroClientBox(state.gl.domElement)) {
+      return;
+    }
+    if (!shouldFireFirstInteractive('first-demand-frame')) {
+      return;
+    }
+    firedRef.current = true;
+    paintedRef.current = true;
+    queueMicrotask(() => {
+      onFirstPaint?.();
+    });
+  });
+
+  return null;
+}
+
 export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   // Holds the running materialize intro so a pointer interaction can skip it to its
@@ -794,8 +841,7 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
           far: 50,
         }}
         onPointerDown={skipIntro}
-        // P8-T1c: fire once when the GL context is ready (observe-only;
-        // does not affect rendering or the demand loop).
+        // GL ready ≠ painted pixels. Do not fire onFirstInteractive here.
         onCreated={(state) => {
           // r3f spreads unknown DOM props onto the WRAPPER div, not the
           // <canvas>. Arnold / clip capture need the real WebGL canvas.
@@ -810,7 +856,9 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
               source: props.girthSource,
             }),
           );
-          props.onFirstInteractive?.();
+          if (shouldTreatGlCreatedAsPainted()) {
+            props.onFirstInteractive?.();
+          }
           const canvasEl = state.gl.domElement;
           attachWebGLContextRecovery(canvasEl, {
             onLost: (error) => {
@@ -823,6 +871,7 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
           scheduleZeroSizeHonestyCheck(canvasEl, (error) => {
             props.onContextLost?.(error);
           });
+          state.invalidate();
         }}
       >
         <color attach="background" args={[FORMA_VISION_HEX.navy]} />
@@ -965,6 +1014,8 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
         />
 
         <VisibilityPump containerRef={containerRef} />
+
+        <FirstPaintWatchdog onFirstPaint={props.onFirstInteractive} />
 
         {/* Runtime frame-budget monitor: observes rendered-frame duration and asks
             the provider to step the tier down on sustained jank. Only mounted when a

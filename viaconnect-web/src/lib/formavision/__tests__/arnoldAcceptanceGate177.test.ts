@@ -94,7 +94,8 @@ describe('Arnold acceptance gate 3: 3D footprint definite fill', () => {
     expect(markup).toContain('absolute');
     expect(markup).toContain('inset-0');
     expect(markup).toContain('formavision-3d-pending');
-    expect(markup).not.toContain('formavision-local-silhouette');
+    expect(markup).toContain('formavision-local-silhouette');
+    expect(markup).toContain('formavision-recovering-floor');
     expect(markup).not.toContain('formavision-fallback-2d');
 
     const page = src('src/app/(app)/(consumer)/body-tracker/formavision/page.tsx');
@@ -102,7 +103,42 @@ describe('Arnold acceptance gate 3: 3D footprint definite fill', () => {
       /data-testid="formavision-canvas-grid"[\s\S]*?className="([^"]+)"/,
     )?.[1];
     expect(plateClass).toMatch(/h-\[min\(52vh,520px\)\]/);
+    expect(plateClass).toMatch(/bg-\[#1A2744\]/);
+    expect(plateClass).not.toMatch(/\bbg-transparent\b/);
     expect(plateClass).not.toMatch(/\bitems-center\b/);
+    expect(page).toMatch(/formavision-plate-floor/);
+  });
+});
+
+describe('Arnold acceptance gate 6: never-empty plate on 3D-pending', () => {
+  it('SSR / 3D-pending always paints the local silhouette or recovering floor', () => {
+    const markup = renderToStaticMarkup(
+      React.createElement(BodyCompositionAvatar, {
+        sex: 'male',
+        scan: null,
+        circumferences: null,
+        unit: 'in',
+        activeTab: 'bodyFat',
+        children: React.createElement(FormaVisionLocalSilhouette, { sex: 'male' }),
+      }),
+    );
+    expect(markup).toContain('formavision-3d-pending');
+    expect(markup).toContain('formavision-local-silhouette');
+    expect(markup).toContain('formavision-recovering-floor');
+    expect(markup).not.toContain('formavision-fallback-2d');
+
+    const threeD = src('src/components/formavision/FormaVision3DAvatar.tsx');
+    const canvas = src('src/components/formavision/FormaVisionCanvas.tsx');
+    const avatar = src('src/components/formavision/BodyCompositionAvatar.tsx');
+    expect(threeD).toMatch(/function CanvasLoader/);
+    expect(threeD).toMatch(/FormaVisionLocalSilhouette/);
+    expect(threeD).not.toMatch(/loading:\s*\(\)\s*=>\s*<CanvasLoader\s*\/>/);
+    expect(canvas).toMatch(/FirstPaintWatchdog/);
+    expect(canvas).toMatch(/shouldTreatGlCreatedAsPainted/);
+    expect(canvas).toMatch(/if \(shouldTreatGlCreatedAsPainted\(\)\) \{\s*props\.onFirstInteractive/);
+    expect(avatar).toMatch(/shouldPaintPlateFloor/);
+    expect(avatar).toMatch(/decideZeroSizeAction/);
+    expect(avatar).toMatch(/isZeroSizeCanvasMessage/);
   });
 });
 

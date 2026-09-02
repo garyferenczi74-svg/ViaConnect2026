@@ -43,3 +43,12 @@ export function selectAvatarSurface(input: AvatarSurfaceDecisionInput): AvatarSu
 export function wouldSelectSvgDespiteWebGL(input: AvatarSurfaceDecisionInput): boolean {
   return input.webgl === 'available' && selectAvatarSurface(input) === 'fallback2d' && !input.confirmedFailure && input.renderTier !== '2d';
 }
+
+// Always-paint plate floor. Do NOT gate this on 3D "success", GL created,
+// or a healthy probe — phone WebKit can claim the canvas is alive with
+// zero painted pixels. The floor hides only after a live frame presents.
+export function shouldPaintPlateFloor(input: {
+  liveCanvasHasPainted: boolean;
+}): boolean {
+  return !input.liveCanvasHasPainted;
+}

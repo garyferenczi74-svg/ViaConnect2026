@@ -19,6 +19,9 @@ export const WEBGL_CONTEXT_LOST_MESSAGE = 'WebGL context lost';
 export const FORMAVISION_ZERO_SIZE_MESSAGE = 'FormaVision canvas mounted at zero size';
 export const CONTEXT_RESTORE_WAIT_MS = 1500;
 export const WEBGL_REMOUNT_BUDGET = 2;
+// Demand-loop paint watchdog. GL onCreated is NOT a painted frame.
+export const FIRST_PAINT_WATCHDOG_MS = 400;
+export const ZERO_SIZE_LATCH_MS = 80;
 
 export type ContextLossAction = 'wait-restore' | 'remount' | 'latch-2d';
 
@@ -35,6 +38,22 @@ export function canvasHasZeroClientBox(el: {
   clientHeight: number;
 }): boolean {
   return el.clientWidth === 0 || el.clientHeight === 0;
+}
+
+// GL context ready (Canvas onCreated) is not a presented frame. Phone
+// WebKit can fire onCreated with an alpha, never-drawn buffer.
+export function shouldTreatGlCreatedAsPainted(): boolean {
+  return false;
+}
+
+// Zero-size must latch the honest floor immediately. Remounting a 0×0
+// canvas burns the budget while the plate stays empty.
+export function decideZeroSizeAction(): Extract<ContextLossAction, 'latch-2d'> {
+  return 'latch-2d';
+}
+
+export function shouldFireFirstInteractive(source: 'gl-created' | 'first-demand-frame'): boolean {
+  return source === 'first-demand-frame';
 }
 
 export function decideContextLossAction(input: {
@@ -80,9 +99,37 @@ export function scheduleZeroSizeHonestyCheck(
       ? requestAnimationFrame(cb)
       : (setTimeout(cb, 0) as unknown as number),
 ): void {
-  raf(() => {
+  const fireIfZero = (): boolean => {
     if (canvasHasZeroClientBox(el)) {
       report(new Error(FORMAVISION_ZERO_SIZE_MESSAGE));
+      return true;
     }
+    return false;
+  };
+  // Wait one frame for layout (onCreated can see 0×0 before the plate
+  // box is definite). Then latch immediately — do not remount a 0×0
+  // canvas. A short follow-up catches a deferred collapse.
+  raf(() => {
+    if (fireIfZero()) return;
+    setTimeout(() => {
+      fireIfZero();
+    }, ZERO_SIZE_LATCH_MS);
   });
+}
+
+export function scheduleFirstPaintWatchdog(
+  hasPainted: () => boolean,
+  onMiss: () => void,
+  delayMs: number = FIRST_PAINT_WATCHDOG_MS,
+  setTimer: (cb: () => void, ms: number) => ReturnType<typeof setTimeout> = (cb, ms) =>
+    setTimeout(cb, ms),
+): () => void {
+  const handle = setTimer(() => {
+    if (!hasPainted()) {
+      onMiss();
+    }
+  }, delayMs);
+  return () => {
+    clearTimeout(handle);
+  };
 }

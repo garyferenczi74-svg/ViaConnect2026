@@ -88,6 +88,7 @@ export function FormaVisionLocalSilhouette({
       data-testid={FORMAVISION_LOCAL_SILHOUETTE_TESTID}
       data-sex={sex}
       className={`flex h-full min-h-[200px] w-full items-center justify-center ${className ?? ''}`}
+      style={{ backgroundColor: FORMA_VISION_HEX.navy }}
     >
       <svg
         viewBox="0 0 200 360"

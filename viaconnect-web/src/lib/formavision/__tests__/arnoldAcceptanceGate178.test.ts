@@ -133,8 +133,12 @@ describe('Brief 58 Phase 1: #177 always-paint + NO-FABRICATION still hold', () =
     expect(canvas).toMatch(/attachWebGLContextRecovery/);
     expect(canvas).toMatch(/scheduleZeroSizeHonestyCheck/);
     expect(avatar).toMatch(/FormaVisionLocalSilhouette|formavision-recovering-floor/);
+    expect(avatar).toMatch(/shouldPaintPlateFloor/);
     expect(page).toMatch(/FormaVisionLocalSilhouette/);
+    expect(page).toMatch(/formavision-plate-floor/);
+    expect(page).toMatch(/bg-\[#1A2744\]/);
     expect(page).not.toMatch(/Male%20Avatar/);
+    expect(page).not.toMatch(/data-testid="formavision-canvas-grid"[\s\S]*?bg-transparent/);
   });
 
   it('missing circs stay template; no invented waist', () => {

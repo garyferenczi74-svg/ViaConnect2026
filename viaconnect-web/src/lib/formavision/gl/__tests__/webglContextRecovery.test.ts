@@ -1,15 +1,21 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   CONTEXT_RESTORE_WAIT_MS,
+  FIRST_PAINT_WATCHDOG_MS,
   FORMAVISION_ZERO_SIZE_MESSAGE,
   WEBGL_CONTEXT_LOST_MESSAGE,
   WEBGL_REMOUNT_BUDGET,
+  ZERO_SIZE_LATCH_MS,
   attachWebGLContextRecovery,
   canvasHasZeroClientBox,
   decideContextLossAction,
+  decideZeroSizeAction,
   isWebGLContextLostMessage,
   isZeroSizeCanvasMessage,
+  scheduleFirstPaintWatchdog,
   scheduleZeroSizeHonestyCheck,
+  shouldFireFirstInteractive,
+  shouldTreatGlCreatedAsPainted,
 } from '../webglContextRecovery';
 
 describe('decideContextLossAction', () => {
@@ -96,7 +102,7 @@ describe('context-loss messages and canvas box', () => {
     detach();
   });
 
-  it('reports zero-size after the scheduled frame', () => {
+  it('reports zero-size on the first layout frame so the plate latches without remounts', () => {
     const report = vi.fn();
     let queued: (() => void) | null = null;
     scheduleZeroSizeHonestyCheck({ clientWidth: 0, clientHeight: 0 }, report, (cb) => {
@@ -107,5 +113,62 @@ describe('context-loss messages and canvas box', () => {
     queued?.();
     expect(report).toHaveBeenCalledWith(expect.any(Error));
     expect((report.mock.calls[0]?.[0] as Error).message).toBe(FORMAVISION_ZERO_SIZE_MESSAGE);
+  });
+
+  it('rechecks a collapsed box on the scheduled frame', () => {
+    const report = vi.fn();
+    const box = { clientWidth: 320, clientHeight: 400 };
+    let queued: (() => void) | null = null;
+    scheduleZeroSizeHonestyCheck(box, report, (cb) => {
+      queued = cb;
+      return 1;
+    });
+    expect(report).not.toHaveBeenCalled();
+    box.clientWidth = 0;
+    queued?.();
+    expect(report).toHaveBeenCalledWith(expect.any(Error));
+  });
+});
+
+describe('first-paint vs GL-created', () => {
+  it('never treats onCreated as a painted frame', () => {
+    expect(shouldTreatGlCreatedAsPainted()).toBe(false);
+    expect(shouldFireFirstInteractive('gl-created')).toBe(false);
+    expect(shouldFireFirstInteractive('first-demand-frame')).toBe(true);
+    expect(decideZeroSizeAction()).toBe('latch-2d');
+    expect(FIRST_PAINT_WATCHDOG_MS).toBeGreaterThan(0);
+    expect(ZERO_SIZE_LATCH_MS).toBeLessThan(CONTEXT_RESTORE_WAIT_MS);
+  });
+
+  it('paint watchdog only misses when no frame has presented', () => {
+    const onMiss = vi.fn();
+    let painted = false;
+    let queued: (() => void) | null = null;
+    const cancel = scheduleFirstPaintWatchdog(
+      () => painted,
+      onMiss,
+      10,
+      (cb) => {
+        queued = cb;
+        return 1 as unknown as ReturnType<typeof setTimeout>;
+      },
+    );
+    expect(onMiss).not.toHaveBeenCalled();
+    queued?.();
+    expect(onMiss).toHaveBeenCalledTimes(1);
+    painted = true;
+    queued = null;
+    scheduleFirstPaintWatchdog(
+      () => painted,
+      onMiss,
+      10,
+      (cb) => {
+        queued = cb;
+        return 2 as unknown as ReturnType<typeof setTimeout>;
+      },
+    );
+    queued?.();
+    expect(onMiss).toHaveBeenCalledTimes(1);
+    cancel();
   });
 });
