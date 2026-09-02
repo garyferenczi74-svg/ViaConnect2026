@@ -113,16 +113,19 @@ describe('BodyCompositionAvatar', () => {
     expect(heatmap).toMatch(/lg:h-full lg:w-auto lg:max-w-none/);
   });
 
-  it('default camera is pulled back to a full-body fit, not a chest bust', () => {
+  it('default camera is rear ¾ ankle-crop, not a front bust', () => {
     const canvas = readSrc('src/components/formavision/FormaVisionCanvas.tsx');
     expect(canvas).toMatch(/FULL_BODY_FRAMING/);
     expect(canvas).toMatch(/AVATAR_VERTICAL_FOV_DEG/);
+    expect(canvas).toMatch(/fullBodyCameraPosition/);
     expect(canvas).not.toMatch(/position:\s*\[0,\s*1\.0,\s*3\.2\]/);
-    expect(canvas).not.toMatch(/distance:\s*3\.2/);
+    expect(canvas).not.toMatch(/position:\s*\[0,\s*FULL_BODY_FRAMING\.targetY,\s*FULL_BODY_FRAMING\.distance\]/);
 
     const framing = readSrc('src/lib/formavision/motion/regionFraming.ts');
-    expect(framing).toMatch(/distance:\s*4\.2/);
+    expect(framing).toMatch(/distance:\s*3\.42/);
+    expect(framing).toMatch(/FULL_BODY_AZIMUTH_RAD/);
     expect(framing).not.toMatch(/FULL_BODY_FRAMING[^=]*=\s*\{\s*targetY:\s*0\.9,\s*distance:\s*3\.2/);
+    expect(framing).not.toMatch(/distance:\s*4\.2/);
   });
 
   it('prefers the 3D mount and never latches 2D from a render-time hasWebGL false', () => {

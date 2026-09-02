@@ -35,11 +35,11 @@ export function shouldRenderGhost(
 // any value of these knobs). Kept here as the single, cleanly swappable place to tune
 // the ghost look for the Gary localhost eyeball pass.
 export const GHOST_MATERIAL_OPTIONS: BodyWireframeOptions = {
-  // Far fainter fill than the body default (0.55) so the solid avatar shows through.
+  // Far fainter fill than the Phase 1 body default so the solid avatar shows through.
   fillOpacity: 0.18,
-  // Dimmer wireframe than the body default (1.6) so the ghost lines read as secondary.
+  // Dimmer wireframe than the Phase 1 body default so the ghost lines read as secondary.
   lineIntensity: 0.85,
-  // Softer silhouette rim than the body default (1.0).
+  // Softer silhouette rim than the Phase 1 body default.
   rimIntensity: 0.7,
 };
 

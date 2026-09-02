@@ -14,7 +14,7 @@ export const FORMA_VISION_HEX = {
   navy: '#1A2744',
   // Card: the slightly lighter navy used for surfaces and the fill mid-tone.
   card: '#1E3054',
-  // Teal: the primary wireframe glow and fresnel rim.
+  // Plasma teal: the primary wireframe glow and fresnel rim (ViaConnect, never ZOZO purple).
   teal: '#2DA5A0',
   // Orange: emphasis only (for example a flagged or estimated accent). Not the
   // base wireframe color.

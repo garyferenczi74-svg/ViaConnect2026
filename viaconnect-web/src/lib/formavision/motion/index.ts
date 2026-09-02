@@ -36,8 +36,12 @@ export {
 export {
   framingForRegion,
   FULL_BODY_FRAMING,
+  FULL_BODY_AZIMUTH_RAD,
+  ORBIT_DISTANCE_MIN,
+  ORBIT_DISTANCE_MAX,
   AVATAR_VERTICAL_FOV_DEG,
   visibleHeightMeters,
+  fullBodyCameraPosition,
   type CameraFraming,
 } from './regionFraming';
 export {

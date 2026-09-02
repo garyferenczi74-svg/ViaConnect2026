@@ -3,6 +3,8 @@ import * as THREE from 'three';
 import {
   makeBodyWireframeMaterial,
   addBarycentricAttribute,
+  BODY_WIREFRAME_DEFAULTS,
+  PHASE0_WIREFRAME_DEFAULTS,
 } from '../bodyWireframeMaterial';
 import { makeCellTexture } from '../cellTexture';
 import { FORMA_VISION_HEX } from '../formaVisionTokens';
@@ -164,6 +166,27 @@ describe('makeBodyWireframeMaterial', () => {
     m.dispose();
   });
 
+  it('Phase 1 plasma knobs beat Phase 0 cardboard glow (hotter, tighter, glassier)', () => {
+    const m = makeBodyWireframeMaterial();
+    expect(m.uniforms.uLineIntensity.value).toBe(BODY_WIREFRAME_DEFAULTS.lineIntensity);
+    expect(m.uniforms.uRimIntensity.value).toBe(BODY_WIREFRAME_DEFAULTS.rimIntensity);
+    expect(m.uniforms.uFillOpacity.value).toBe(BODY_WIREFRAME_DEFAULTS.fillOpacity);
+    expect(m.uniforms.uEdgeWidth.value).toBe(BODY_WIREFRAME_DEFAULTS.edgeWidth);
+    expect(BODY_WIREFRAME_DEFAULTS.lineIntensity).toBeGreaterThan(
+      PHASE0_WIREFRAME_DEFAULTS.lineIntensity,
+    );
+    expect(BODY_WIREFRAME_DEFAULTS.rimIntensity).toBeGreaterThan(
+      PHASE0_WIREFRAME_DEFAULTS.rimIntensity,
+    );
+    expect(BODY_WIREFRAME_DEFAULTS.fillOpacity).toBeLessThan(
+      PHASE0_WIREFRAME_DEFAULTS.fillOpacity,
+    );
+    expect(BODY_WIREFRAME_DEFAULTS.edgeWidth).toBeLessThan(
+      PHASE0_WIREFRAME_DEFAULTS.edgeWidth,
+    );
+    m.dispose();
+  });
+
   it('is configured for additive transparent emissive rendering', () => {
     const m = makeBodyWireframeMaterial();
     expect(m.material.transparent).toBe(true);
@@ -206,16 +229,33 @@ describe('makeBodyWireframeMaterial', () => {
 describe('addBarycentricAttribute', () => {
   it('adds a 3-component aBary attribute matching the vertex count', () => {
     const geo = new THREE.BufferGeometry();
-    const positions = new Float32Array(9 * 3); // three triangles worth
+    const positions = new Float32Array(9 * 3); // three triangles — not a loft-quad pair
     geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     addBarycentricAttribute(geo);
     const bary = geo.getAttribute('aBary');
     expect(bary.itemSize).toBe(3);
     expect(bary.count).toBe(9);
-    // First triangle corners are the three unit barycentric vectors.
+    // Non-quad leftovers keep the three unit barycentric vectors.
     expect([bary.getX(0), bary.getY(0), bary.getZ(0)]).toEqual([1, 0, 0]);
     expect([bary.getX(1), bary.getY(1), bary.getZ(1)]).toEqual([0, 1, 0]);
     expect([bary.getX(2), bary.getY(2), bary.getZ(2)]).toEqual([0, 0, 1]);
+    geo.dispose();
+  });
+
+  it('hides the loft-quad diagonal so the wire reads as a ZOZO grid', () => {
+    const geo = new THREE.BufferGeometry();
+    const positions = new Float32Array(6 * 3); // one loft quad = two triangles
+    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    addBarycentricAttribute(geo);
+    const bary = geo.getAttribute('aBary');
+    // Triangle 1 (a,c,b): inflate x on c and b so edge c-b never hits bary.x = 0.
+    expect([bary.getX(0), bary.getY(0), bary.getZ(0)]).toEqual([1, 0, 0]);
+    expect([bary.getX(1), bary.getY(1), bary.getZ(1)]).toEqual([1, 1, 0]);
+    expect([bary.getX(2), bary.getY(2), bary.getZ(2)]).toEqual([1, 0, 1]);
+    // Triangle 2 (b,c,d): inflate z on b and c so edge b-c is hidden.
+    expect([bary.getX(3), bary.getY(3), bary.getZ(3)]).toEqual([1, 0, 1]);
+    expect([bary.getX(4), bary.getY(4), bary.getZ(4)]).toEqual([0, 1, 1]);
+    expect([bary.getX(5), bary.getY(5), bary.getZ(5)]).toEqual([0, 0, 1]);
     geo.dispose();
   });
 });

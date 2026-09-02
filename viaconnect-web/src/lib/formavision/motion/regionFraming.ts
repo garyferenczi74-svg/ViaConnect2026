@@ -24,6 +24,14 @@ export interface CameraFraming {
 // `camera={{ fov }}` in FormaVisionCanvas — framing math uses this value.
 export const AVATAR_VERTICAL_FOV_DEG = 30;
 
+// Orbit distance clamp shared with FormaVisionCanvas OrbitControls.
+export const ORBIT_DISTANCE_MIN = 2.2;
+export const ORBIT_DISTANCE_MAX = 4.5;
+
+// Body faces +Z. 148° azimuth is a rear three-quarter A-pose (behind-right),
+// matching the ZOZO Default Mesh hero crop. Front (θ=0) is out of the hero.
+export const FULL_BODY_AZIMUTH_RAD = (148 * Math.PI) / 180;
+
 // World-meters visible vertically at `distance` with the avatar perspective FOV.
 export function visibleHeightMeters(
   distance: number,
@@ -32,10 +40,22 @@ export function visibleHeightMeters(
   return 2 * distance * Math.tan((fovDeg * Math.PI) / 360);
 }
 
-// Default resting framing: mid-body target, pulled back so a 1.75m male mesh
-// (plus head stack) fits head-to-toe with margin. Distance 3.2 at 30° FOV only
-// shows ~1.72m — that is a bust crop. Stay well above region close-ups (~2.6).
-export const FULL_BODY_FRAMING: CameraFraming = { targetY: 0.88, distance: 4.2 };
+// Default camera position for the hero: ¾ rear, same height as the orbit target.
+export function fullBodyCameraPosition(
+  framing: CameraFraming = FULL_BODY_FRAMING,
+  azimuthRad: number = FULL_BODY_AZIMUTH_RAD,
+): [number, number, number] {
+  return [
+    Math.sin(azimuthRad) * framing.distance,
+    framing.targetY,
+    Math.cos(azimuthRad) * framing.distance,
+  ];
+}
+
+// Brief 58 Phase 1 hero: mid-torso target, pulled in so a 1.75m male mesh
+// crops at the ankles (ZOZO phone-mock crop). Phase 0 4.2m showed empty floor;
+// 3.2m @ 30° is still a bust. Stay inside the orbit clamp.
+export const FULL_BODY_FRAMING: CameraFraming = { targetY: 1.0, distance: 3.42 };
 
 // Per-region framing. targetY rises up the body from foot to crown; distance pulls
 // in closer than the full-body default so the region reads large. Aliases map the
