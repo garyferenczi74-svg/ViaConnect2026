@@ -44,6 +44,19 @@ export function takeScanSlotFile(input: HTMLInputElement | null): File | null {
   return file;
 }
 
+/**
+ * Open the OS image picker from a user gesture.
+ * The input must not be display:none (iOS Safari ignores click() on hidden
+ * file inputs) and must not set capture= on the Upload path (that forces
+ * the camera and can no-op on mobile Safari / Chrome).
+ */
+export function openScanSlotPicker(input: HTMLInputElement | null): boolean {
+  if (!input) return false;
+  input.value = '';
+  input.click();
+  return true;
+}
+
 export function inspectScanSlotFile(
   file: File,
 ): { ok: true } | { ok: false; error: string } {

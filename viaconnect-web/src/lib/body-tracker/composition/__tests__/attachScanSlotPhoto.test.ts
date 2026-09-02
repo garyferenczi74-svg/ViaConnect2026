@@ -7,6 +7,7 @@ import {
   isDirectScanImageType,
   isHeicLike,
   needsScanSlotReencode,
+  openScanSlotPicker,
   takeScanSlotFile,
 } from '../attachScanSlotPhoto';
 
@@ -54,5 +55,20 @@ describe('attachScanSlotPhoto helpers', () => {
     expect(taken).toBe(file);
     expect(input.value).toBe('');
     expect(takeScanSlotFile(null)).toBeNull();
+  });
+
+  it('opens the picker on a live input and no-ops a missing one', () => {
+    let clicked = 0;
+    const input = {
+      value: 'C:\\fakepath\\front.jpg',
+      click: () => {
+        clicked += 1;
+      },
+    } as unknown as HTMLInputElement;
+
+    expect(openScanSlotPicker(input)).toBe(true);
+    expect(input.value).toBe('');
+    expect(clicked).toBe(1);
+    expect(openScanSlotPicker(null)).toBe(false);
   });
 });

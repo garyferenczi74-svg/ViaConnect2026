@@ -14,6 +14,7 @@ import {
   isHeicLike,
   needsScanSlotReencode,
   takeScanSlotFile,
+  openScanSlotPicker,
 } from '@/lib/body-tracker/composition/attachScanSlotPhoto';
 import { processPhoto } from '@/components/body-tracker/photos/photoProcessing';
 import { normalizeScanPhotoUpright } from '@/lib/body-tracker/composition/normalizeScanPhotoOrientation';
@@ -83,10 +84,7 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
   // Map from PhotoPosition to the quality result for that view.
   // Null means the view has not been quality-assessed yet (pipeline still running or skipped).
   const [viewQuality, setViewQuality] = useState<Partial<Record<PhotoPosition, ViewQualityResult>>>({});
-  const cameraRefs = useRef<Record<PhotoPosition, HTMLInputElement | null>>({
-    front: null, back: null, left_side: null, right_side: null,
-  });
-  const galleryRefs = useRef<Record<PhotoPosition, HTMLInputElement | null>>({
+  const fileRefs = useRef<Record<PhotoPosition, HTMLInputElement | null>>({
     front: null, back: null, left_side: null, right_side: null,
   });
 
@@ -127,14 +125,8 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
     return () => window.clearInterval(timer);
   }, [submitting]);
 
-  function clearSlot(key: PhotoPosition) {
-    setSlots((s) => {
-      if (s[key].previewUrl) URL.revokeObjectURL(s[key].previewUrl);
-      return { ...s, [key]: { file: null, base64: null, previewUrl: null } };
-    });
-    setViewQuality((q) => { const next = { ...q }; delete next[key]; return next; });
-    if (cameraRefs.current[key]) cameraRefs.current[key]!.value = '';
-    if (galleryRefs.current[key]) galleryRefs.current[key]!.value = '';
+  function openSlotPicker(key: PhotoPosition) {
+    openScanSlotPicker(fileRefs.current[key]);
   }
 
   async function handleFile(key: PhotoPosition, file: File) {
@@ -293,103 +285,103 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
           const qualityWarning = quality !== undefined && quality.pass && quality.issues.length > 0;
           return (
             <div key={pos.key} className="space-y-2">
-              <label
-                htmlFor={`scan-${pos.key}`}
+              {/*
+                One hit target per slot. iOS Safari / Android Chrome no-ops when:
+                - a label htmlFor and a nested file input both fire (picker opens then dismisses)
+                - the picker input is display:none (class hidden) and opened via click()
+                - the capture attribute is set on the Upload path (forces camera; can refuse)
+                The input is parked offscreen (never display:none) and has no capture.
+              */}
+              <button
+                type="button"
                 data-testid={`scan-slot-frame-${pos.key}`}
-                className={`relative flex aspect-[3/4] w-full min-h-[44px] cursor-pointer flex-col items-center justify-center gap-2 overflow-hidden rounded-xl text-xs font-medium transition-all ${
-                  qualityFailed
-                    ? 'border border-[#B75E18]/60 bg-[#B75E18]/10 text-[#B75E18]'
-                    : attached
-                      ? 'border border-[#2DA5A0]/60 bg-[#2DA5A0]/15 text-[#2DA5A0]'
-                      : 'border border-dashed border-white/20 bg-white/[0.03] text-white/50 hover:bg-white/[0.06]'
-                }`}
+                aria-label={attached ? `Replace ${pos.label} photo` : `Upload ${pos.label} photo`}
+                onClick={() => openSlotPicker(pos.key)}
+                className="flex w-full flex-col gap-2 text-left"
               >
-                {slot.previewUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element -- object URL, not a remote asset
-                  <img
-                    src={slot.previewUrl}
-                    alt={`${pos.label} photo`}
-                    data-testid={`scan-slot-preview-${pos.key}`}
-                    className="absolute inset-0 h-full w-full object-cover object-center"
-                  />
-                ) : null}
-                {attached ? (
-                  <span className="relative z-10 flex flex-col items-center gap-1 rounded-md bg-black/45 px-2 py-1">
-                    {qualityFailed ? (
-                      <AlertTriangle size={20} strokeWidth={1.5} />
-                    ) : (
-                      <Check size={20} strokeWidth={1.5} />
-                    )}
-                    <span>{pos.label}</span>
-                    {qualityFailed && (
-                      <span className="text-[10px] text-[#B75E18]/90 text-center px-1 leading-tight">
-                        Retake for accuracy
-                      </span>
-                    )}
-                    {qualityWarning && (
-                      <span className="text-[10px] text-amber-400/80">Quality warning</span>
-                    )}
-                    {!qualityFailed && !qualityWarning && quality?.pass && (
-                      <span className="text-[10px] text-[#2DA5A0]/80">Quality OK</span>
-                    )}
-                    {!quality && (
-                      <span className="text-[10px] text-[#2DA5A0]/80">
-                        {filled ? 'Captured' : 'Attaching'}
-                      </span>
-                    )}
-                  </span>
-                ) : (
-                  <>
-                    <Camera size={20} strokeWidth={1.5} />
-                    <span>{pos.label}</span>
-                    <span className="text-[10px] text-white/40">Camera or gallery</span>
-                  </>
-                )}
-                <input
-                  ref={(el) => { cameraRefs.current[pos.key] = el; }}
-                  id={`scan-${pos.key}`}
-                  type="file"
-                  accept={SCAN_SLOT_ACCEPT}
-                  capture="environment"
-                  className="absolute inset-0 z-20 cursor-pointer opacity-0"
-                  onChange={(e) => {
-                    const f = takeScanSlotFile(e.currentTarget);
-                    if (f) void handleFile(pos.key, f);
-                  }}
-                />
-                <input
-                  ref={(el) => { galleryRefs.current[pos.key] = el; }}
-                  id={`scan-${pos.key}-upload`}
-                  type="file"
-                  accept={SCAN_SLOT_ACCEPT}
-                  className="hidden"
-                  onChange={(e) => {
-                    const f = takeScanSlotFile(e.currentTarget);
-                    if (f) void handleFile(pos.key, f);
-                  }}
-                />
-              </label>
-              {attached ? (
-                <button
-                  type="button"
-                  onClick={() => clearSlot(pos.key)}
-                  className={`inline-flex w-full items-center justify-center gap-1 rounded-md text-[11px] transition-colors hover:text-white ${
+                <span
+                  className={`relative flex aspect-[3/4] w-full min-h-[44px] flex-col items-center justify-center gap-2 overflow-hidden rounded-xl text-xs font-medium transition-all ${
+                    qualityFailed
+                      ? 'border border-[#B75E18]/60 bg-[#B75E18]/10 text-[#B75E18]'
+                      : attached
+                        ? 'border border-[#2DA5A0]/60 bg-[#2DA5A0]/15 text-[#2DA5A0]'
+                        : 'border border-dashed border-white/20 bg-white/[0.03] text-white/50 hover:bg-white/[0.06]'
+                  }`}
+                >
+                  {slot.previewUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- object URL, not a remote asset
+                    <img
+                      src={slot.previewUrl}
+                      alt={`${pos.label} photo`}
+                      data-testid={`scan-slot-preview-${pos.key}`}
+                      className="absolute inset-0 h-full w-full object-cover object-center"
+                    />
+                  ) : null}
+                  {attached ? (
+                    <span className="relative z-10 flex flex-col items-center gap-1 rounded-md bg-black/45 px-2 py-1">
+                      {qualityFailed ? (
+                        <AlertTriangle size={20} strokeWidth={1.5} />
+                      ) : (
+                        <Check size={20} strokeWidth={1.5} />
+                      )}
+                      <span>{pos.label}</span>
+                      {qualityFailed && (
+                        <span className="text-[10px] text-[#B75E18]/90 text-center px-1 leading-tight">
+                          Retake for accuracy
+                        </span>
+                      )}
+                      {qualityWarning && (
+                        <span className="text-[10px] text-amber-400/80">Quality warning</span>
+                      )}
+                      {!qualityFailed && !qualityWarning && quality?.pass && (
+                        <span className="text-[10px] text-[#2DA5A0]/80">Quality OK</span>
+                      )}
+                      {!quality && (
+                        <span className="text-[10px] text-[#2DA5A0]/80">
+                          {filled ? 'Captured' : 'Attaching'}
+                        </span>
+                      )}
+                    </span>
+                  ) : (
+                    <>
+                      <Camera size={20} strokeWidth={1.5} />
+                      <span>{pos.label}</span>
+                      <span className="text-[10px] text-white/40">Camera or gallery</span>
+                    </>
+                  )}
+                </span>
+                <span
+                  className={`inline-flex min-h-[44px] w-full items-center justify-center gap-1 rounded-md text-[11px] ${
                     qualityFailed ? 'text-[#B75E18]/80 font-semibold' : 'text-white/50'
                   }`}
                 >
-                  <RotateCcw size={12} strokeWidth={1.5} />
-                  {qualityFailed ? 'Retake' : 'Replace'}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => galleryRefs.current[pos.key]?.click()}
-                  className="inline-flex w-full items-center justify-center gap-1 rounded-md text-[11px] text-white/50 transition-colors hover:text-white"
-                >
-                  <ImagePlus size={12} strokeWidth={1.5} />
-                  Upload
-                </button>
-              )}
+                  {attached ? (
+                    <>
+                      <RotateCcw size={12} strokeWidth={1.5} />
+                      {qualityFailed ? 'Retake' : 'Replace'}
+                    </>
+                  ) : (
+                    <>
+                      <ImagePlus size={12} strokeWidth={1.5} />
+                      Upload
+                    </>
+                  )}
+                </span>
+              </button>
+              <input
+                ref={(el) => { fileRefs.current[pos.key] = el; }}
+                id={`scan-${pos.key}`}
+                type="file"
+                accept={SCAN_SLOT_ACCEPT}
+                data-testid={`scan-slot-input-${pos.key}`}
+                tabIndex={-1}
+                aria-hidden
+                className="fixed left-[-10000px] top-[-10000px] h-px w-px opacity-0"
+                onChange={(e) => {
+                  const f = takeScanSlotFile(e.currentTarget);
+                  if (f) void handleFile(pos.key, f);
+                }}
+              />
               {/* Task 13b: specific retake prompt for failed views */}
               {qualityFailed && quality?.retakePrompt && (
                 <p className="text-[10px] leading-tight text-[#B75E18]/80 px-0.5">
