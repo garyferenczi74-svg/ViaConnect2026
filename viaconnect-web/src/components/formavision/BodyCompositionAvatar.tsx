@@ -26,6 +26,7 @@ import type {
   MeasurementUnit,
 } from '@/lib/body-tracker/circumference';
 import type { Sex, BodyParamVector } from '@/lib/formavision/geometry/types';
+import type { AvatarGirthSource } from '@/lib/formavision/morph/avatarMorphStamp';
 import type { SegmentTintRecord } from '@/lib/formavision/geometry/segmentTints';
 import type { AvatarQualitySignals } from '@/lib/formavision/telemetry/avatarTelemetry';
 import { buildAvatarQualitySnapshot } from '@/lib/formavision/telemetry/avatarTelemetry';
@@ -82,6 +83,7 @@ export interface BodyCompositionAvatarProps {
   // flip the r3f frameloop to "always" during a recording. Absent / "demand"
   // keeps the byte-identical demand loop. The 2D floor ignores it (no canvas).
   frameloopMode?: 'always' | 'demand';
+  girthSource?: AvatarGirthSource;
   // The 2D floor for this section, rendered as-is on any fallback.
   children: React.ReactNode;
 }
@@ -116,6 +118,7 @@ function BodyCompositionAvatarInner({
   onOrbitEnd,
   onTierStepDown,
   frameloopMode,
+  girthSource,
   children,
 }: BodyCompositionAvatarProps) {
   // Remounts a live-canvas miss while getContext still works (not "no WebGL").
@@ -271,6 +274,7 @@ function BodyCompositionAvatarInner({
         onOrbitEnd={onOrbitEnd}
         onFirstInteractive={handleFirstInteractive}
         frameloopMode={frameloopMode}
+        girthSource={girthSource}
       />
     </div>
   );

@@ -3,28 +3,18 @@
 // fixed) but Ready scan BF 31% still paints the lean sex-template silhouette —
 // the same class as pre-#171/#172 when girths never reach morphTo.
 //
-// ## Gate O — Observe (three hypotheses)
-// H1 LOCKED: pickHistorySnapshotForAvatar preferred composition-history when
-//    historySnapshotCanEstimateGirths(fromComposition). A lean/template-BF
-//    latest (male ~18%) estimates THE sex-template waist (0.9m). Your scans
-//    Ready photo BF 31% was ignored. Overlay/measured still win later.
-// H2: hasScanData is true via hasReadyFormaVisionScan even when the Ready row
-//    failed to map a morphable snapshot (circs stay null → scanToParamVector
-//    leaves waist null → geometry fills the template).
-// H3: numeric-as-string / snake_case estimate fields dropped by
-//    typeof === 'number', so snapshotFromPhotoScanSummary returned null
-//    despite a real 31% on the Ready row.
-//
-// ## Gate O — Lock
-// LOCKED: H1 as primary. H2/H3 are the same class (circs empty/template) and
-// are hardened in the same picker + coerce path. No fabrication: girths come
-// only from overlay, measured, or estimateCircumferencesFromComposition on a
-// real Ready/scan BF.
+// ## Gate O — Observe (reinforce after picker fix)
+// H1: composition-first picker (template-BF 18%) — fixed in the prior revision.
+// H4 LOCKED: estimate girths from Ready BF 31% were computed but did not drive
+//    the mesh. Mount is keyed on buildOptions only; first Canvas paint is the
+//    sex template. First morph effect is a no-op. Later morphTo can cancel on
+//    the demand loop. Arnold sees lean cyan + no data-morph attrs →
+//    INCONCLUSIVE → lean FAIL.
 //
 // ## Gate B — Blueprint (micro-fix)
-// 1. Prefer Ready photo snapshot when it can estimate girths.
-// 2. Coerce string/snake_case estimate numbers (no inventing missing BF).
-// 3. Keep #174 honest fallback + notice-above-toggles and #175 R3F v9 mount.
+// 1. Remount geometry when girth presence flips template→applied.
+// 2. Stamp data-morph / data-morph-bf / data-morph-waist-m on the real canvas.
+// 3. Keep Ready-photo picker, #174/#175 contracts, NO-FABRICATION.
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -43,6 +33,7 @@ import { buildBodyGeometry } from '@/lib/formavision/geometry/buildBodyGeometry'
 import { scanToParamVector } from '@/lib/formavision/geometry/scanToParamVector';
 import { MALE_TEMPLATE } from '@/lib/formavision/geometry/types';
 import { shouldHoldScrubMorph } from '@/lib/formavision/motion/shouldHoldScrubMorph';
+import { buildAvatarMorphStamp } from '@/lib/formavision/morph/avatarMorphStamp';
 import {
   formatScanEstimateBfRange,
   isReadyFormaVisionScan,
@@ -249,6 +240,22 @@ describe('Arnold #176 PRIMARY: Ready photo BF drives girth morphTo', () => {
     expect(resolved).toEqual(overlay);
   });
 
+  it('estimate girths from Ready 31% stamp applied + non-template waist for Arnold', () => {
+    const photo = pickReadyPhotoSnapshot([readyPhoto()]);
+    const { circs } = morphFromHistory(photo);
+    const stamp = buildAvatarMorphStamp({
+      scan: photo,
+      circumferences: circs,
+      sex: 'male',
+      unit: 'in',
+      source: 'estimate',
+    });
+    expect(stamp.morph).toBe('applied');
+    expect(stamp.source).toBe('estimate');
+    expect(stamp.bf).toBe('31.0');
+    expect(Number(stamp.waistM)).toBeGreaterThan(0.9);
+  });
+
   it('page + Your scans wire Ready BF into the avatar picker (not composition-first)', () => {
     const page = src('src/app/(app)/(consumer)/body-tracker/formavision/page.tsx');
     const history = src('src/components/scan/ScanHistory.tsx');
@@ -258,7 +265,13 @@ describe('Arnold #176 PRIMARY: Ready photo BF drives girth morphTo', () => {
     expect(page).toMatch(/readyPhotoSnapshot/);
     expect(page).toMatch(/resolveAvatarCircumferences/);
     expect(page).toMatch(/circumferences=\{avatarCircumferences\}/);
+    expect(page).toMatch(/girthSource=\{avatarGirthSource\}/);
     expect(resolve).toMatch(/if \(historySnapshotCanEstimateGirths\(readyPhoto\)\) return readyPhoto/);
+    const canvas = src('src/components/formavision/FormaVisionCanvas.tsx');
+    expect(canvas).toMatch(/applyAvatarMorphStamp/);
+    expect(canvas).toMatch(/data-morph/);
+    expect(canvas).toMatch(/hasGirth/);
+    expect(canvas).toMatch(/bodyVectorHasFiniteGirth/);
     expect(history).toMatch(/formatScanEstimateBfRange/);
     expect(history).toMatch(/scan-history-bf-/);
     expect(formatScanEstimateBfRange(readyPhoto())).toBe('29.0–33.0%');

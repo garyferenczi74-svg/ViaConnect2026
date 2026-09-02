@@ -46,6 +46,7 @@ import {
   pickHistorySnapshotForAvatar,
   pickReadyPhotoSnapshot,
   resolveAvatarCircumferences,
+  resolveAvatarGirthSource,
 } from '@/lib/body-tracker/composition/resolveAvatarCircumferences';
 import { estimateCircumferencesFromComposition } from '@/lib/body-tracker/composition/estimateCircumferencesFromComposition';
 import {
@@ -218,6 +219,15 @@ function FormaVisionSurface() {
         unit,
       }),
     [overlayCircumferences, circumferenceData.latest, historySnapshotForAvatar, gender, unit],
+  );
+  const avatarGirthSource = useMemo(
+    () =>
+      resolveAvatarGirthSource({
+        overlay: overlayCircumferences,
+        measured: circumferenceData.latest,
+        historySnapshot: historySnapshotForAvatar,
+      }),
+    [overlayCircumferences, circumferenceData.latest, historySnapshotForAvatar],
   );
 
   const scanPoints = useMemo(
@@ -550,6 +560,7 @@ function FormaVisionSurface() {
           scan={snapshot}
           firstScan={composHistory.first}
           circumferences={avatarCircumferences}
+          girthSource={avatarGirthSource}
           unit={unit}
           activeTab="bodyFat"
           selectedBodyPart={selectedBodyPart}

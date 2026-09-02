@@ -65,6 +65,17 @@ export function pickHistorySnapshotForAvatar(
   return readyPhoto ?? latest;
 }
 
+export function resolveAvatarGirthSource(args: {
+  overlay: CircumferenceMeasurements | null;
+  measured: CircumferenceMeasurements | null;
+  historySnapshot: CompositionSnapshot | null;
+}): 'overlay' | 'measured' | 'estimate' | 'none' {
+  if (anyCircumferencePresent(args.overlay)) return 'overlay';
+  if (anyCircumferencePresent(args.measured)) return 'measured';
+  if (historySnapshotCanEstimateGirths(args.historySnapshot)) return 'estimate';
+  return 'none';
+}
+
 export function resolveAvatarCircumferences(args: {
   overlay: CircumferenceMeasurements | null;
   measured: CircumferenceMeasurements | null;

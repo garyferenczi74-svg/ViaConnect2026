@@ -32,6 +32,7 @@ import type {
   MeasurementUnit,
 } from '@/lib/body-tracker/circumference';
 import type { Sex, BodyParamVector } from '@/lib/formavision/geometry/types';
+import type { AvatarGirthSource } from '@/lib/formavision/morph/avatarMorphStamp';
 import type { SegmentTintRecord } from '@/lib/formavision/geometry/segmentTints';
 import { AvatarErrorBoundary } from './AvatarErrorBoundary';
 
@@ -107,6 +108,7 @@ export interface FormaVision3DAvatarProps {
   // the r3f frameloop to "always" during a recording (captureStream needs painted
   // frames). Absent / "demand" keeps the byte-identical demand loop.
   frameloopMode?: 'always' | 'demand';
+  girthSource?: AvatarGirthSource;
 }
 
 export function FormaVision3DAvatar({
@@ -132,6 +134,7 @@ export function FormaVision3DAvatar({
   onOrbitEnd,
   onFirstInteractive,
   frameloopMode,
+  girthSource,
 }: FormaVision3DAvatarProps) {
   // Client-only mount of the r3f canvas. SSR and the first hydrated paint share
   // the pending loader so a Node hasWebGL() === false cannot queue onRenderError
@@ -183,6 +186,7 @@ export function FormaVision3DAvatar({
           onFirstInteractive={onFirstInteractive}
           onContextLost={handleRenderError}
           frameloopMode={frameloopMode}
+          girthSource={girthSource}
         />
       </AvatarErrorBoundary>
     </div>

@@ -33,6 +33,7 @@ import {
   createOverlayController,
   createScrubController,
   shouldHoldScrubMorph,
+  bodyVectorHasFiniteGirth,
   useDemandScheduler,
   FULL_BODY_FRAMING,
   AVATAR_VERTICAL_FOV_DEG,
@@ -55,6 +56,11 @@ import type {
   MeasurementUnit,
 } from '@/lib/body-tracker/circumference';
 import type { Sex, BodyParamVector } from '@/lib/formavision/geometry/types';
+import {
+  applyAvatarMorphStamp,
+  buildAvatarMorphStamp,
+  type AvatarGirthSource,
+} from '@/lib/formavision/morph/avatarMorphStamp';
 import { mountBodyGeometry } from './mountBodyGeometry';
 import { MeasurementRing } from './MeasurementRing';
 import { EmphasisParticles } from './EmphasisParticles';
@@ -125,6 +131,8 @@ export interface FormaVisionCanvasProps {
   // can measure timeToFirstInteractiveMs. Absent means the metric is omitted.
   // Fire-and-forget; does not affect rendering.
   onFirstInteractive?: () => void;
+  // Honest Ready/overlay/measured girth provenance for data-morph attrs.
+  girthSource?: AvatarGirthSource;
   // Confirmed WebGL context loss after the canvas mounted. The parent latches
   // the honest 2D floor. Absent means context-lost is ignored here.
   onContextLost?: (error: unknown) => void;
@@ -201,23 +209,45 @@ function BodyMesh(
   const displayedVectorRef = useRef<BodyParamVector | null>(null);
   const mountedFromRef = useRef<BodyParamVector>(paramVector);
 
-  // Topology-affecting inputs only. sex keeps the same ring ids and build options,
-  // so it morphs; renderTier changes the segment counts (the vertex count), which
-  // changes topology, so it must remount. The mount is keyed on that pair, built
-  // from the param vector live at mount time, and disposed on remount/unmount.
+  // Topology-affecting inputs plus girth presence. First Canvas paint often
+  // happens before Ready/history circs arrive (sex template). Keying only on
+  // buildOptions left that template mesh in place; morphTo could be skipped or
+  // cancelled on the demand loop, so estimate girths never drove the silhouette.
+  // Flipping template→girth remounts at the live param vector (Ready BF estimate).
+  const hasGirth = bodyVectorHasFiniteGirth(paramVector);
   const mounted = useMemo(() => {
     mountedFromRef.current = paramVector;
     displayedVectorRef.current = paramVector;
     return mountBodyGeometry(paramVector, { build: buildOptions });
-    // Remount only when topology changes (the build options). A param-vector change
-    // is handled by the morph effect below, not by rebuilding here.
+    // Remount when topology changes OR when real girths first arrive.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [buildOptions]);
+  }, [buildOptions, hasGirth]);
 
   // Request a frame whenever a fresh body is mounted (demand loop is otherwise idle).
   useEffect(() => {
     invalidate();
   }, [mounted, invalidate]);
+
+  // Arnold smoke reads data-morph-* on the real WebGL canvas. Missing attrs
+  // are INCONCLUSIVE → lean FAIL even when estimate girths are applied.
+  useEffect(() => {
+    const stamp = buildAvatarMorphStamp({
+      scan: props.scan,
+      circumferences: props.circumferences,
+      sex: props.sex,
+      unit: props.unit,
+      source: props.girthSource,
+    });
+    applyAvatarMorphStamp(gl.domElement, stamp);
+  }, [
+    props.scan,
+    props.circumferences,
+    props.sex,
+    props.unit,
+    props.girthSource,
+    paramVector,
+    gl,
+  ]);
 
   // Live morph: when the target param vector changes (and the body is past its first
   // mount), tween the persistent geometry to the new shape by lerping its position
@@ -274,7 +304,10 @@ function BodyMesh(
     // scrub shape. Otherwise a param-vector change morphs (from the last scrub shape
     // when one exists), and the consumed scrub baseline is cleared.
     const scrubbing = shouldHoldScrubMorph(props.scrubVector, props.circumferences);
-    if (morphedBodyRef.current === mounted && !scrubbing) {
+    // First pass on a remount that already includes girths is a no-op tween
+    // (geometry was built at paramVector). Still morph when the same mount
+    // later receives a new vector. Always stamp the live canvas.
+    if ((morphedBodyRef.current === mounted || hasGirth) && !scrubbing) {
       // Pause the idle turntable for the duration of the morph so the camera does
       // not spin while the body changes shape; recomputeNormals releases it.
       props.turntableRef.current?.setSuspended(true);
@@ -282,11 +315,11 @@ function BodyMesh(
       displayedVectorRef.current = paramVector;
       lastScrubVectorRef.current = null;
     } else {
-      morphedBodyRef.current = mounted;
       if (displayedVectorRef.current == null) {
         displayedVectorRef.current = mountedFromRef.current;
       }
     }
+    morphedBodyRef.current = mounted;
 
     return () => {
       controller.cancel();
@@ -757,6 +790,16 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
           // r3f spreads unknown DOM props onto the WRAPPER div, not the
           // <canvas>. Arnold / clip capture need the real WebGL canvas.
           state.gl.domElement.setAttribute('data-testid', 'formavision-avatar-canvas');
+          applyAvatarMorphStamp(
+            state.gl.domElement,
+            buildAvatarMorphStamp({
+              scan: props.scan,
+              circumferences: props.circumferences,
+              sex: props.sex,
+              unit: props.unit,
+              source: props.girthSource,
+            }),
+          );
           props.onFirstInteractive?.();
           const canvasEl = state.gl.domElement;
           const onLost = (event: Event) => {
