@@ -1,7 +1,9 @@
 // Upright-normalize photos before FormaVision analyze / avatar input.
-// Prefer JPEG EXIF Orientation when present. Missing/identity EXIF uses
-// auto-upright (dark-floor band) so inverted phone-gallery A-pose shots
-// are rotated 180° and already-upright uploads are not flipped twice.
+// Decode with createImageBitmap({ imageOrientation: 'from-image' }) so the
+// browser applies JPEG EXIF 1–8 (including iPhone 6/8) once, then bake those
+// pixels to a JPEG. Do not ALSO apply transformFromExifOrientation — iOS often
+// ignores a none-orientation decode, so a second 90° makes FRBL previews
+// sideways. Missing/identity EXIF uses A-pose 180° only when visually inverted.
 // Live camera canvases are already upright — no 180 fallback.
 
 export type ScanPhotoSource = 'upload' | 'live';
@@ -14,6 +16,9 @@ export interface UprightTransform {
 
 const IDENTITY: UprightTransform = { rotateQuarterTurns: 0, flipX: false };
 const ROTATE_180: UprightTransform = { rotateQuarterTurns: 2, flipX: false };
+
+/** Shared with processPhoto so HEIC/resize never decode as `none` while bake uses from-image. */
+export const SCAN_PHOTO_IMAGE_ORIENTATION = 'from-image' as const;
 
 export function isIdentityTransform(t: UprightTransform): boolean {
   return t.rotateQuarterTurns === 0 && !t.flipX;
@@ -155,10 +160,10 @@ export function bandLumaMeansFromGray(
 }
 
 /**
- * EXIF 2–8 always wins.
- * Live + missing/identity EXIF → no-op (camera canvas is already upright).
- * Upload: visual inverted/unknown → 180° (phone-gallery fixtures);
- * already-upright visual → no flip (avoids double-rotate after attach).
+ * Extra canvas transform AFTER a from-image decode (EXIF already applied).
+ * EXIF 2–8 → identity (do not rotate again; that is the sideways iOS bug).
+ * Live + missing/identity EXIF → no-op.
+ * Upload: 180° only when the A-pose hint is inverted; upright/unknown stay put.
  */
 export function resolveUprightTransform(
   orientation: number | null,
@@ -166,12 +171,45 @@ export function resolveUprightTransform(
   visualHint: VisualUprightHint = 'unknown',
 ): UprightTransform {
   if (orientation !== null && orientation >= 2 && orientation <= 8) {
-    return transformFromExifOrientation(orientation);
+    return IDENTITY;
   }
   if (source === 'live') return IDENTITY;
   if (visualHint === 'inverted') return ROTATE_180;
-  if (visualHint === 'upright') return IDENTITY;
-  return ROTATE_180;
+  return IDENTITY;
+}
+
+/** Canvas size for a from-image bitmap plus an extra (usually 180°) transform. */
+export function orientedBitmapCanvasSize(
+  bitmapWidth: number,
+  bitmapHeight: number,
+  transform: UprightTransform,
+): { width: number; height: number } {
+  const swap = transform.rotateQuarterTurns % 2 === 1;
+  return {
+    width: swap ? bitmapHeight : bitmapWidth,
+    height: swap ? bitmapWidth : bitmapHeight,
+  };
+}
+
+/** Upload always bakes; EXIF 2–8 always bakes; extra 180° always bakes. Live identity skips. */
+export function needsUprightPixelBake(
+  orientation: number | null,
+  transform: UprightTransform,
+  source: ScanPhotoSource,
+): boolean {
+  if (!isIdentityTransform(transform)) return true;
+  if (orientation !== null && orientation >= 2 && orientation <= 8) return true;
+  return source === 'upload';
+}
+
+export async function createScanPhotoBitmap(source: Blob): Promise<ImageBitmap> {
+  try {
+    return await createImageBitmap(source, {
+      imageOrientation: SCAN_PHOTO_IMAGE_ORIENTATION,
+    });
+  } catch {
+    return await createImageBitmap(source);
+  }
 }
 
 export async function blobToArrayBuffer(blob: Blob): Promise<ArrayBuffer> {
@@ -179,11 +217,9 @@ export async function blobToArrayBuffer(blob: Blob): Promise<ArrayBuffer> {
 }
 
 async function renderUprightBlob(source: Blob, transform: UprightTransform): Promise<Blob> {
-  const bitmap = await createImageBitmap(source, { imageOrientation: 'none' });
+  const bitmap = await createScanPhotoBitmap(source);
   try {
-    const swap = transform.rotateQuarterTurns % 2 === 1;
-    const width = swap ? bitmap.height : bitmap.width;
-    const height = swap ? bitmap.width : bitmap.height;
+    const { width, height } = orientedBitmapCanvasSize(bitmap.width, bitmap.height, transform);
     const canvas: HTMLCanvasElement | OffscreenCanvas =
       typeof OffscreenCanvas !== 'undefined'
         ? new OffscreenCanvas(width, height)
@@ -219,7 +255,7 @@ async function sampleVisualUprightHint(file: Blob): Promise<VisualUprightHint> {
   if (typeof createImageBitmap !== 'function') return 'unknown';
   let bitmap: ImageBitmap;
   try {
-    bitmap = await createImageBitmap(file, { imageOrientation: 'none' });
+    bitmap = await createScanPhotoBitmap(file);
   } catch {
     return 'unknown';
   }
@@ -267,10 +303,8 @@ export async function normalizeScanPhotoUpright(
   const needsVisual = orientation === null || orientation === 1;
   const visualHint = needsVisual ? await sampleVisualUprightHint(file) : 'unknown';
   const transform = resolveUprightTransform(orientation, source, visualHint);
-  if (isIdentityTransform(transform) && file instanceof File) {
-    return file;
-  }
-  if (isIdentityTransform(transform)) {
+  if (!needsUprightPixelBake(orientation, transform, source)) {
+    if (file instanceof File) return file;
     return new File([file], 'scan.jpg', { type: file.type || 'image/jpeg' });
   }
   const upright = await renderUprightBlob(file, transform);

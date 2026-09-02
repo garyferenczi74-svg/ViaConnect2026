@@ -1,5 +1,8 @@
 // Client-side photo processing: re-encode via canvas to strip EXIF and resize.
-// No external dependencies; uses createImageBitmap + OffscreenCanvas when available.
+// Decode with the same from-image policy as FormaVision upright bake so HEIC /
+// resize never apply a different orientation than normalizeScanPhotoUpright.
+
+import { createScanPhotoBitmap } from '@/lib/body-tracker/composition/normalizeScanPhotoOrientation';
 
 export interface ProcessedPair {
   full: Blob;
@@ -14,7 +17,7 @@ const JPEG_QUALITY_FULL  = 0.85;
 const JPEG_QUALITY_THUMB = 0.70;
 
 async function loadBitmap(file: File | Blob): Promise<ImageBitmap> {
-  return await createImageBitmap(file);
+  return await createScanPhotoBitmap(file);
 }
 
 function computeTarget(w: number, h: number, maxDim: number): { w: number; h: number } {

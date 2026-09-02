@@ -101,6 +101,19 @@ describe('Prompt 210l analyze-chain source contracts', () => {
     expect((src.match(/<label/g) ?? []).length).toBe(1);
   });
 
+  it('slot preview uses the post-normalize ObjectURL only (Attaching until bake)', () => {
+    const uploader = read('src/components/body-tracker/BodyScanUploader.tsx');
+    expect(uploader).toMatch(/normalizeScanPhotoUpright\(stored, 'upload'\)/);
+    expect(uploader).toMatch(/URL\.createObjectURL\(stored\)/);
+    expect(uploader).not.toMatch(/URL\.createObjectURL\(file\)/);
+    expect(uploader).toMatch(/previewUrl:\s*null/);
+    expect(uploader).toMatch(/\{filled \? 'Captured' : 'Attaching'\}/);
+    expect(uploader).toMatch(/alreadyNormalized:\s*true/);
+    const processPhoto = read('src/components/body-tracker/photos/photoProcessing.ts');
+    expect(processPhoto).toMatch(/createScanPhotoBitmap/);
+    expect(processPhoto).not.toMatch(/createImageBitmap\(file\)/);
+  });
+
   it('upload path uprights inverted gallery shots before analyze', () => {
     const uploader = read('src/components/body-tracker/BodyScanUploader.tsx');
     expect(uploader).toMatch(/normalizeScanPhotoUpright/);
