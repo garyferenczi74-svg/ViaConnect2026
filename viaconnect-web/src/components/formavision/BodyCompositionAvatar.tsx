@@ -6,7 +6,8 @@
 // SegmentalHeatMap. selectAvatarSurface decides which avatar the user sees:
 //
 //   3D FormaVision3DAvatar  preferred whenever 3D has not confirmed-failed
-//   2D floor (children)     only after a fresh-canvas probe is unavailable, or tier 2d
+//   2D floor (children)     after a fresh-canvas probe is unavailable, remounts
+//                           are exhausted, or tier 2d
 //
 // A render-time hasWebGL() false (SSR, iOS Safari false-negative) must NOT
 // latch the floor. A live-canvas / renderer miss while a fresh getContext still
@@ -117,9 +118,10 @@ function BodyCompositionAvatarInner({
   frameloopMode,
   children,
 }: BodyCompositionAvatarProps) {
-  // Latched only when a fresh-canvas probe cannot get a context. A live-canvas
-  // / renderer / context-lost miss while getContext still works remounts 3D
-  // instead of swapping in the SVG + a false "device could not start WebGL".
+  // Remounts a live-canvas miss while getContext still works (not "no WebGL").
+  // After remountsRef >= 2, latch the 2D floor + honest fallbackReason so the
+  // user never sits on a dead 3D mount with no notice. SVG-only-on-unavailable
+  // still holds for the first failures.
   const [fellBack, setFellBack] = useState(false);
   const [fallbackReason, setFallbackReason] = useState<string | null>(null);
   const [fallbackWebgl, setFallbackWebgl] = useState<WebGLAvailability>('unknown');
@@ -168,9 +170,9 @@ function BodyCompositionAvatarInner({
       setMountEpoch((n) => n + 1);
       return;
     }
-    if (!shouldLatchFallback2d(probe)) {
-      return;
-    }
+    // Probe still available after remountsRef >= 2, or probe is unavailable:
+    // latch the honest 2D floor + fallbackReason. Never leave a dead 3D mount
+    // with no notice. Copy stays the real later-init error when WebGL works.
     setFellBack(true);
   }, []);
 

@@ -73,17 +73,22 @@ export interface WebGLContextHost {
   getContext: (contextId: string, attributes?: WebGLContextAttributes) => unknown;
 }
 
-export function acquireWebGLContext(
+export interface AcquiredWebGLContext {
+  context: unknown;
+  attributes: WebGLContextAttributes;
+}
+
+export function acquireWebGLContextResult(
   canvas: WebGLContextHost,
   options: AcquireWebGLContextOptions = {},
-): unknown {
+): AcquiredWebGLContext | null {
   const safariLike = options.safariLike ?? false;
   const preferred = options.attributes ?? SAFE_GL_ATTRIBUTES;
   const order = webglContextTypeOrder(safariLike);
   for (const attributes of glAttributeAttempts(preferred)) {
     for (const contextId of order) {
       const context = canvas.getContext(contextId, attributes);
-      if (context) return context;
+      if (context) return { context, attributes };
       // A failed getContext on Safari/WKWebView marks this canvas unusable for
       // every other GL type. Stay on this type and try the next attribute set
       // (antialias:false) rather than collecting a poisoned webgl2-null.
@@ -91,4 +96,11 @@ export function acquireWebGLContext(
     }
   }
   return null;
+}
+
+export function acquireWebGLContext(
+  canvas: WebGLContextHost,
+  options: AcquireWebGLContextOptions = {},
+): unknown {
+  return acquireWebGLContextResult(canvas, options)?.context ?? null;
 }

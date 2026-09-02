@@ -4,6 +4,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import {
   acquireWebGLContext,
+  acquireWebGLContextResult,
   isSafariWebGLHost,
   webglContextTypeOrder,
   SAFE_GL_ATTRIBUTES,
@@ -92,6 +93,9 @@ describe('acquireWebGLContext', () => {
     const attrCalls = host.getContext.mock.calls.map((c) => c[1] as { antialias?: boolean });
     expect(attrCalls.some((a) => a?.antialias === true)).toBe(true);
     expect(attrCalls.some((a) => a?.antialias === false)).toBe(true);
+    expect(acquireWebGLContextResult(host, { safariLike: false })?.attributes.antialias).toBe(
+      false,
+    );
   });
 
   it('on Chrome prefers webgl2 and can fall through to webgl1 on the same canvas', () => {

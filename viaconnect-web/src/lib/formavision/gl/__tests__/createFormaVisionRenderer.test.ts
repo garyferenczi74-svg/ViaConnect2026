@@ -59,8 +59,26 @@ describe('createFormaVisionRenderer', () => {
       expect.objectContaining({
         canvas,
         context,
+        antialias: true,
         failIfMajorPerformanceCaveat: false,
         powerPreference: 'default',
+      }),
+    );
+  });
+
+  it('passes antialias false to WebGLRenderer when the winning context is software-safe', () => {
+    const context = { kind: 'webgl2-soft' };
+    const canvas = {
+      getContext: (_id: string, attrs?: { antialias?: boolean }) =>
+        attrs?.antialias === false ? context : null,
+    };
+    createFormaVisionRenderer(canvas);
+    expect(constructed[0]).toEqual(
+      expect.objectContaining({
+        canvas,
+        context,
+        antialias: false,
+        failIfMajorPerformanceCaveat: false,
       }),
     );
   });

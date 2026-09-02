@@ -119,6 +119,8 @@ describe('BodyCompositionAvatar', () => {
     expect(avatar).toMatch(/FormaVisionFallbackNotice/);
     expect(avatar).toMatch(/shouldLatchFallback2d/);
     expect(avatar).toMatch(/probeWebGL/);
+    expect(avatar).toMatch(/setFellBack\(true\)/);
+    expect(avatar).not.toMatch(/if \(!shouldLatchFallback2d\(probe\)\) \{\s*return;\s*\}/);
     expect(avatar).not.toMatch(/useMemo\(\(\) => hasWebGL\(\), \[\]\)/);
     expect(threeD).toMatch(/formavision-3d-pending/);
     expect(threeD).toMatch(/formavision-3d-mount/);

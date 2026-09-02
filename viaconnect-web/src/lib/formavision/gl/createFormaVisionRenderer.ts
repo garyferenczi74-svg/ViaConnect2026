@@ -10,7 +10,7 @@
 import { WebGLRenderer } from 'three';
 import {
   SAFE_GL_ATTRIBUTES,
-  acquireWebGLContext,
+  acquireWebGLContextResult,
   isSafariWebGLHost,
   type WebGLContextHost,
 } from './acquireWebGLContext';
@@ -41,19 +41,22 @@ export function createFormaVisionRenderer(input: FormaVisionGLFactoryInput): Web
   if (!canvas) {
     throw new Error(FORMAVISION_GL_FACTORY_NO_CANVAS_MESSAGE);
   }
-  const context = acquireWebGLContext(canvas, {
+  const acquired = acquireWebGLContextResult(canvas, {
     safariLike: isSafariWebGLHost(),
     attributes: SAFE_GL_ATTRIBUTES,
   });
-  if (!context) {
+  if (!acquired) {
     throw new Error(WEBGL_CONTEXT_UNAVAILABLE_MESSAGE);
   }
+  // antialias must match the context that actually won (SAFE true, or
+  // SOFTWARE_SAFE false on SwiftShader MSAA-null). Passing true over a
+  // non-MSAA context lies to THREE about the live GL state.
   return new WebGLRenderer({
     canvas: canvas as HTMLCanvasElement,
-    context: context as WebGLRenderingContext,
-    antialias: SAFE_GL_ATTRIBUTES.antialias,
-    alpha: SAFE_GL_ATTRIBUTES.alpha,
-    powerPreference: SAFE_GL_ATTRIBUTES.powerPreference,
-    failIfMajorPerformanceCaveat: SAFE_GL_ATTRIBUTES.failIfMajorPerformanceCaveat,
+    context: acquired.context as WebGLRenderingContext,
+    antialias: acquired.attributes.antialias === true,
+    alpha: acquired.attributes.alpha !== false,
+    powerPreference: acquired.attributes.powerPreference ?? 'default',
+    failIfMajorPerformanceCaveat: acquired.attributes.failIfMajorPerformanceCaveat === true,
   });
 }
