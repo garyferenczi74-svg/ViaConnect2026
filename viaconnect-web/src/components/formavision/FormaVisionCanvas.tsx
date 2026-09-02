@@ -124,6 +124,9 @@ export interface FormaVisionCanvasProps {
   // can measure timeToFirstInteractiveMs. Absent means the metric is omitted.
   // Fire-and-forget; does not affect rendering.
   onFirstInteractive?: () => void;
+  // Confirmed WebGL context loss after the canvas mounted. The parent latches
+  // the honest 2D floor. Absent means context-lost is ignored here.
+  onContextLost?: (error: unknown) => void;
   // Prompt 211a W1 (shareable clip): the r3f frameloop mode. The canvas is
   // "demand" by default (frames only on interaction / invalidate). The clip
   // recorder sets this to "always" for the duration of a recording so
@@ -742,7 +745,15 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
         // (in BodyCompositionAvatarInner) and arrives as props.renderTier so the
         // r3f reconciler boundary is never crossed for a context read.
         dpr={dprForTier(props.renderTier ?? 'cinematic')}
-        gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
+        // default + failIfMajorPerformanceCaveat false: iOS Safari and low-power
+        // Chrome flags reject high-performance or caveat-strict contexts even
+        // when a working WebGL1/2 context exists. Prefer painting 3D.
+        gl={{
+          antialias: true,
+          alpha: true,
+          powerPreference: 'default',
+          failIfMajorPerformanceCaveat: false,
+        }}
         camera={{
           position: [0, FULL_BODY_FRAMING.targetY, FULL_BODY_FRAMING.distance],
           fov: AVATAR_VERTICAL_FOV_DEG,
@@ -752,7 +763,15 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
         onPointerDown={skipIntro}
         // P8-T1c: fire once when the GL context is ready (observe-only;
         // does not affect rendering or the demand loop).
-        onCreated={() => { props.onFirstInteractive?.(); }}
+        onCreated={(state) => {
+          props.onFirstInteractive?.();
+          const canvasEl = state.gl.domElement;
+          const onLost = (event: Event) => {
+            event.preventDefault();
+            props.onContextLost?.(new Error('WebGL context lost'));
+          };
+          canvasEl.addEventListener('webglcontextlost', onLost, { once: true });
+        }}
       >
         <color attach="background" args={[FORMA_VISION_HEX.navy]} />
 

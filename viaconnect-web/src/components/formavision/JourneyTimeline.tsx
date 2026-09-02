@@ -15,11 +15,11 @@
 // Reduced motion: Play JUMPS scan to scan (snap + brief pause), no smooth
 // interpolation; dragging snaps to the nearest real scan. No fabricated frames.
 //
-// Resting / play-end: onScrub(null) so the landing avatar can morph from
-// overlay/history circumferences. A latched scrubVector forever wins in
-// FormaVisionCanvas and would freeze the sex template when journeyVectors
-// were built with empty circHistory. The scrubber still rests visually at
-// the latest scan on mount (position=1); mount does not call onScrub.
+// Resting / play-end / pointer-up / key-up: onScrub(null) so the landing
+// avatar can morph from overlay/history circumferences. A latched scrubVector
+// forever wins in FormaVisionCanvas and would freeze the sex template when
+// journeyVectors were built with empty circHistory. The scrubber still rests
+// visually at the latest scan on mount (position=1); mount does not call onScrub.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Play, Pause } from 'lucide-react';
@@ -330,6 +330,7 @@ export function JourneyTimeline({
           onChange={(e) => handleScrubInput(Number(e.target.value) / last)}
           onPointerUp={restAvatar}
           onPointerCancel={restAvatar}
+          onKeyUp={restAvatar}
           aria-label="Scrub through your scan history"
           aria-valuetext={
             readoutMode.kind === 'measured'

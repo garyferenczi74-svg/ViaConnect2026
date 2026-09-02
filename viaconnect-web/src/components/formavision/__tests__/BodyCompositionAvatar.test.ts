@@ -6,9 +6,10 @@
 // rendered branch (the 3D sizing container) is identical regardless of activeTab, so
 // swapping the section's activeTab on the persistent instance changes no structure
 // and therefore cannot drive a remount or replay the materialize intro. The actual
-// fallback-to-2D-floor behavior is covered by AvatarErrorBoundary + FormaVision3DAvatar
-// (hasWebGL gate); the across-section persistence is structural in composition/page.tsx
-// (one avatar node at a stable position, outside any section-gated unmounting block).
+// fallback-to-2D-floor behavior is covered by AvatarErrorBoundary + selectAvatarSurface
+// (confirmed failure / tier 2d only; hasWebGL is not a mount gate); the across-section
+// persistence is structural in composition/page.tsx (one avatar node at a stable
+// position, outside any section-gated unmounting block).
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -83,6 +84,8 @@ describe('BodyCompositionAvatar', () => {
     );
     expect(formavision).toMatch(/formavision-canvas-grid/);
     expect(formavision).toMatch(/BodyCompositionAvatar/);
+    expect(formavision).toMatch(/onScrub=\{setScrubVector\}/);
+    expect(formavision).toMatch(/resolveAvatarCircumferences/);
     expect(formavision).toMatch(/h-\[min\(52vh,520px\)\]/);
     expect(formavision).toMatch(/max-h-\[min\(52vh,520px\)\]/);
     expect(formavision).not.toMatch(/aspect-\[720\/1152\]/);
@@ -105,6 +108,32 @@ describe('BodyCompositionAvatar', () => {
     const framing = readSrc('src/lib/formavision/motion/regionFraming.ts');
     expect(framing).toMatch(/distance:\s*4\.2/);
     expect(framing).not.toMatch(/FULL_BODY_FRAMING[^=]*=\s*\{\s*targetY:\s*0\.9,\s*distance:\s*3\.2/);
+  });
+
+  it('prefers the 3D mount and never latches 2D from a render-time hasWebGL false', () => {
+    const avatar = readSrc('src/components/formavision/BodyCompositionAvatar.tsx');
+    const threeD = readSrc('src/components/formavision/FormaVision3DAvatar.tsx');
+    const canvas = readSrc('src/components/formavision/FormaVisionCanvas.tsx');
+    expect(avatar).toMatch(/selectAvatarSurface/);
+    expect(avatar).toMatch(/FormaVisionFallbackNotice/);
+    expect(avatar).not.toMatch(/hasWebGL\(/);
+    expect(threeD).toMatch(/formavision-3d-pending/);
+    expect(threeD).toMatch(/formavision-3d-mount/);
+    expect(threeD).not.toMatch(/useMemo\(\(\) => hasWebGL\(\), \[\]\)/);
+    expect(threeD).not.toMatch(/WebGL unavailable, falling back to 2D floor/);
+    expect(canvas).toMatch(/powerPreference:\s*'default'/);
+    expect(canvas).toMatch(/failIfMajorPerformanceCaveat:\s*false/);
+    expect(canvas).toMatch(/onContextLost/);
+    expect(canvas).toMatch(/shouldHoldScrubMorph/);
+  });
+
+  it('SSR first paint stays on the 3D footprint (loader), not the heatmap children', () => {
+    const markup = renderWrapper('bodyFat');
+    expect(markup).toContain('formavision-avatar-footprint');
+    expect(markup).toContain('formavision-3d-pending');
+    expect(markup).not.toContain('two-d-floor');
+    expect(markup).not.toContain('formavision-fallback-2d');
+    expect(markup).not.toContain('segmental-heat-map');
   });
 
   it('viewport-capped plate + gender row fit a 900px laptop; the 720/1152 box does not', () => {

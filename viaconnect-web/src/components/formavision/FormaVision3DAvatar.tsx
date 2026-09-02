@@ -3,12 +3,13 @@
 // The single public mount point for the FormaVision 3D avatar (Prompt 210b, P1-T4).
 //
 // FormaVision3DAvatar is the seam the rest of FormaVision composes around. It owns
-// the resilience contract so callers do not have to: a WebGL capability gate, a
-// lazy ssr:false import of the three bundle, and a render error boundary that drops
-// to nothing (so the page wrapper can swap in its 2D floor). Later phases layer
-// GeneticsOverlay, FutureSelfGhost and JourneyTimeline around THIS component; the
-// renderTier prop and the clean scene seam are here for them. This task builds only
-// the core 3D body.
+// the resilience contract so callers do not have to: a client-only canvas mount
+// (never a render-time hasWebGL hard gate — that false-negatives on SSR and iOS
+// Safari), a lazy ssr:false import of the three bundle, and a render error
+// boundary that drops to nothing (so the page wrapper can swap in its 2D floor).
+// Later phases layer GeneticsOverlay, FutureSelfGhost and JourneyTimeline around
+// THIS component; the renderTier prop and the clean scene seam are here for them.
+// This task builds only the core 3D body.
 //
 // UNIT CONTRACT (critical): CircumferenceMeasurements values carry no embedded
 // unit; useCircumferenceData converts them to a caller-chosen displayUnit. Whoever
@@ -22,7 +23,7 @@
 // renders a neutral template body for the sex rather than blanking. Nothing is
 // fabricated; UNKNOWN stays the template default.
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { Loader2 } from 'lucide-react';
 import type { CompositionSnapshot } from '@/lib/body-tracker/composition/types';
@@ -32,11 +33,7 @@ import type {
 } from '@/lib/body-tracker/circumference';
 import type { Sex, BodyParamVector } from '@/lib/formavision/geometry/types';
 import type { SegmentTintRecord } from '@/lib/formavision/geometry/segmentTints';
-import { safeLog } from '@/lib/utils/safe-log';
 import { AvatarErrorBoundary } from './AvatarErrorBoundary';
-import { hasWebGL } from './hasWebGL';
-
-const LOG_SCOPE = 'formavision.avatar';
 
 // Loading shroud mirrored from AvatarViewer: a centered spinning Loader2 over the
 // navy canvas while the three bundle resolves.
@@ -96,8 +93,8 @@ export interface FormaVision3DAvatarProps {
   // the provider can step the tier down. Optional: when absent the monitor is not
   // mounted and the avatar is byte-identical to before this phase.
   onBudgetMissed?: () => void;
-  // Called on a WebGL-unavailable gate OR a render error, so the parent can show
-  // its 2D floor in place of the 3D avatar.
+  // Called on a confirmed render error or WebGL context loss, so the parent can
+  // show its honest 2D floor. Not fired from a render-time hasWebGL probe.
   onRenderError: (error: unknown) => void;
   // P8-T1b: forwarded into FormaVisionCanvas for the avatar_rotated telemetry seam.
   // Called once at the end of each orbit gesture. Absent means no telemetry.
@@ -136,13 +133,14 @@ export function FormaVision3DAvatar({
   onFirstInteractive,
   frameloopMode,
 }: FormaVision3DAvatarProps) {
-  // Probe WebGL once per mount. When it is unavailable the component renders
-  // nothing and signals the parent to fall back to 2D; the three bundle is never
-  // even imported.
-  const webglAvailable = useMemo(() => hasWebGL(), []);
+  // Client-only mount of the r3f canvas. SSR and the first hydrated paint share
+  // the pending loader so a Node hasWebGL() === false cannot queue onRenderError
+  // and latch the 2D SVG before WebGL is even asked for on the device.
+  const [clientReady, setClientReady] = useState(false);
 
-  // Latch so the WebGL-unavailable signal fires exactly once, not on every render.
-  const [signalled, setSignalled] = useState(false);
+  useEffect(() => {
+    setClientReady(true);
+  }, []);
 
   const handleRenderError = useCallback(
     (error: unknown) => {
@@ -151,20 +149,16 @@ export function FormaVision3DAvatar({
     [onRenderError],
   );
 
-  if (!webglAvailable) {
-    if (!signalled) {
-      safeLog.warn(LOG_SCOPE, 'WebGL unavailable, falling back to 2D floor');
-      // Defer the parent callback out of render to avoid a setState-in-render warning.
-      queueMicrotask(() => {
-        onRenderError(new Error('WebGL unavailable'));
-      });
-      setSignalled(true);
-    }
-    return null;
+  if (!clientReady) {
+    return (
+      <div className="relative h-full w-full" data-testid="formavision-3d-pending">
+        <CanvasLoader />
+      </div>
+    );
   }
 
   return (
-    <div className="relative h-full w-full">
+    <div className="relative h-full w-full" data-testid="formavision-3d-mount">
       <AvatarErrorBoundary onRenderError={handleRenderError}>
         <FormaVisionCanvas
           sex={sex}
@@ -187,6 +181,7 @@ export function FormaVision3DAvatar({
           onBudgetMissed={onBudgetMissed}
           onOrbitEnd={onOrbitEnd}
           onFirstInteractive={onFirstInteractive}
+          onContextLost={handleRenderError}
           frameloopMode={frameloopMode}
         />
       </AvatarErrorBoundary>

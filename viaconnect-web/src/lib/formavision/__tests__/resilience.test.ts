@@ -67,7 +67,8 @@ import {
   isSchemaStrict,
   reportSupabaseError,
 } from '@/lib/utils/schema-drift';
-import { hasWebGL } from '@/components/formavision/hasWebGL';
+import { hasWebGL, probeWebGL } from '@/components/formavision/hasWebGL';
+import { selectAvatarSurface } from '@/lib/formavision/tier/avatarSurfaceDecision';
 import { stepTierDown, isFloorTier } from '@/lib/formavision/tier/tierLadder';
 import type { RenderTier } from '@/lib/formavision/tier/types';
 import {
@@ -417,21 +418,33 @@ describe('CHECK 3: MISSING-OBJECT error classifies missing_table and gates on st
 // are browser / React bound (a real GL context-loss event cannot be raised in a
 // node runner). The component wiring is cited, not fabricated:
 //   - src/components/formavision/hasWebGL.ts: returns false under SSR / node
-//     (no document) so the caller latches the 2D floor.
-//   - src/components/formavision/BodyCompositionAvatar.tsx:101-102,164-174: a '2d'
-//     tier or a caught render error flips the sticky `fellBack` latch and renders
-//     the 2D floor children for the rest of the session (never recovers).
+//     (no document). That probe is advisory only; selectAvatarSurface still
+//     prefers the 3D mount until a confirmed Canvas / error-boundary failure.
+//   - src/lib/formavision/tier/avatarSurfaceDecision.ts: a '2d' tier or
+//     confirmedFailure flips to the 2D floor; SSR / unavailable probes do not.
+//   - src/components/formavision/BodyCompositionAvatar.tsx: a confirmed render
+//     error flips the sticky `fellBack` latch and renders the honest 2D floor
+//     for the rest of the session (never recovers).
 //   - src/components/formavision/AvatarErrorBoundary.tsx:42-47: componentDidCatch
 //     logs 'falling back to 2D' and calls onRenderError, driving that latch.
 // NO fabricated GL test is authored here.
 // ===========================================================================
 
 describe('CHECK 4: WebGL context loss latches the 2D floor via the pure GL + ladder guards', () => {
-  it('hasWebGL returns false with no DOM (SSR / node), so the caller drops to the 2D floor', () => {
-    // The node test runner has no document, which is exactly the WebGL-unavailable
-    // condition the avatar treats as "mount the 2D floor, not a doomed Canvas".
+  it('hasWebGL returns false with no DOM (SSR / node), but that alone does not select the SVG', () => {
+    // The node test runner has no document. The probe reports ssr / false so
+    // callers can log it; selectAvatarSurface still prefers the 3D mount so a
+    // server false-negative cannot latch Male Avatar.svg.
     expect(typeof document).toBe('undefined');
     expect(hasWebGL()).toBe(false);
+    expect(probeWebGL()).toBe('ssr');
+    expect(
+      selectAvatarSurface({
+        renderTier: 'cinematic',
+        confirmedFailure: false,
+        webgl: 'ssr',
+      }),
+    ).toBe('formavision3d');
   });
 
   it('the ladder steps cinematic -> lite -> 2d and never past the floor (sticky, no step-up)', () => {

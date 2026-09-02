@@ -12,7 +12,10 @@ export type {
   SelectBodyPartControlProps,
   SelectableRegion,
 } from './SelectBodyPartControl';
-export { hasWebGL } from './hasWebGL';
+export { hasWebGL, probeWebGL } from './hasWebGL';
+export type { WebGLProbeResult } from './hasWebGL';
+export { FormaVisionFallbackNotice } from './FormaVisionFallbackNotice';
+export type { FormaVisionFallbackNoticeProps } from './FormaVisionFallbackNotice';
 // Prompt 211a W3: doctor-ready scan report download / share control.
 export { DownloadReportButton } from './DownloadReportButton';
 export type { DownloadReportButtonProps } from './DownloadReportButton';
