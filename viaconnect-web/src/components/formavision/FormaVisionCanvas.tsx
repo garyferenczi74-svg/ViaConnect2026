@@ -1,14 +1,16 @@
 'use client';
 
-// The react-three-fiber scene for the FormaVision 3D avatar (Prompt 210b, P1-T4).
+// The react-three-fiber scene for the FormaVision 3D avatar (Prompt 210b, P1-T4;
+// Brief 58 Phase 1 ZOZO-class plasma-teal mesh bar).
 //
 // This module is dynamically imported (ssr:false) by FormaVision3DAvatar, so the
 // whole three bundle stays out of the SSR and first-paint path. It composes the
 // mounted body geometry plus wireframe glow material into a demand-driven Canvas:
 // nothing renders until an interaction, a remount, or a visibility change asks for
 // a frame. A constrained OrbitControls allows turntable azimuth with a clamped
-// polar range and no panning, a soft contact-shadow floor grounds the body, and a
-// faint emissive light pair lifts the navy fill (the glow itself is in the shader).
+// polar range and no panning. Default hero is rear ¾ A-pose, cropped at the
+// ankles. Soft contact-shadow + a teal plate disc ground the body; rim lives in
+// the shader (no @react-three/postprocessing bloom).
 //
 // Lifecycle contract honored here: dispose the mounted body on unmount, pause
 // rendering when the canvas leaves the viewport (IntersectionObserver) or the tab
@@ -22,6 +24,7 @@ import { Mesh, Spherical, Vector3 } from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { scanToParamVector } from '@/lib/formavision/geometry/scanToParamVector';
 import { sampleBodyPositions } from '@/lib/formavision/geometry/sampleBodyPositions';
+import { BODY_BUILD_BY_TIER } from '@/lib/formavision/geometry/buildBodyGeometry';
 import { FORMA_VISION_HEX } from '@/lib/formavision/materials/formaVisionTokens';
 import {
   createMaterializeIntro,
@@ -36,7 +39,10 @@ import {
   bodyVectorHasFiniteGirth,
   useDemandScheduler,
   FULL_BODY_FRAMING,
+  ORBIT_DISTANCE_MIN,
+  ORBIT_DISTANCE_MAX,
   AVATAR_VERTICAL_FOV_DEG,
+  fullBodyCameraPosition,
   type CameraFraming,
   type IdleTurntable,
   type MaterializeIntro,
@@ -152,13 +158,9 @@ export interface FormaVisionCanvasProps {
   frameloopMode?: 'always' | 'demand';
 }
 
-// Vertical / radial density per render tier. Lite keeps the silhouette readable
-// while roughly halving the row count for low-power GPUs.
-// Prompt 210g / 210e-2 Rev C: cinematic uses 64 radial samples (was 40 ellipse stack).
-const TIER_BUILD = {
-  cinematic: { radialSegments: 64, verticalSegments: 48 },
-  lite: { radialSegments: 40, verticalSegments: 32 },
-} as const;
+// Vertical / radial density per render tier. Cinematic is Brief 58 ZOZO-class
+// (96×80). Lite stays cheaper than Phase 0 64×48 for the frame-budget step-down.
+const TIER_BUILD = BODY_BUILD_BY_TIER;
 
 // Mid-body orbit target. Must match FULL_BODY_FRAMING so the default view and
 // the "clear selection" tween land on the same head-to-toe pose.
@@ -785,7 +787,8 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
         // Chromium still prefers webgl2. Caveat-false + default powerPreference.
         gl={createFormaVisionRenderer}
         camera={{
-          position: [0, FULL_BODY_FRAMING.targetY, FULL_BODY_FRAMING.distance],
+          // Brief 58: rear ¾ A-pose, ankles cropped. Front +Z is out of the hero.
+          position: fullBodyCameraPosition(),
           fov: AVATAR_VERTICAL_FOV_DEG,
           near: 0.1,
           far: 50,
@@ -824,10 +827,17 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
       >
         <color attach="background" args={[FORMA_VISION_HEX.navy]} />
 
-        {/* Emissive-leaning light pair: the wireframe glow lives in the shader, so
-            this only lifts the navy fill enough to read depth. */}
-        <ambientLight intensity={0.45} />
-        <directionalLight position={[2, 4, 3]} intensity={0.35} />
+        {/* Soft fill + strong teal rim. Body glow is still shader-emissive;
+            these lift ContactShadows / plate and keep the silhouette separated. */}
+        <ambientLight intensity={0.22} color={FORMA_VISION_HEX.navy} />
+        <directionalLight position={[1.6, 3.4, -2.4]} intensity={0.28} color={FORMA_VISION_HEX.teal} />
+        <directionalLight position={[-2.4, 2.2, 3.0]} intensity={0.55} color={FORMA_VISION_HEX.teal} />
+        <pointLight
+          position={[0, 0.12, 0]}
+          intensity={0.32}
+          distance={2.6}
+          color={FORMA_VISION_HEX.teal}
+        />
 
         <BodyMesh {...props} introRef={introRef} turntableRef={turntableRef} />
 
@@ -890,13 +900,24 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
           reducedMotion={props.reducedMotion}
         />
 
+        {/* Subtle plasma plate glow — no postprocessing bloom package. */}
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.002, 0]} renderOrder={-1}>
+          <circleGeometry args={[0.92, 48]} />
+          <meshBasicMaterial
+            color={FORMA_VISION_HEX.teal}
+            transparent
+            opacity={0.1}
+            depthWrite={false}
+          />
+        </mesh>
+
         {/* Soft contact shadow grounds the body on the floor plane at y = 0. */}
         <ContactShadows
           position={[0, 0, 0]}
-          opacity={0.35}
-          scale={4}
-          blur={2.4}
-          far={2.2}
+          opacity={0.42}
+          scale={3.6}
+          blur={2.8}
+          far={2.4}
           resolution={256}
           color={FORMA_VISION_HEX.navy}
         />
@@ -913,8 +934,8 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
           dampingFactor={0.08}
           minPolarAngle={Math.PI * 0.28}
           maxPolarAngle={Math.PI * 0.62}
-          minDistance={2.2}
-          maxDistance={4.5}
+          minDistance={ORBIT_DISTANCE_MIN}
+          maxDistance={ORBIT_DISTANCE_MAX}
           // No built-in auto-rotate: the idle turntable owns rotation so it can pause
           // on interaction and stay disabled under reduced motion.
           autoRotate={false}

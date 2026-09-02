@@ -33,6 +33,30 @@ export interface BuildOptions {
   disableShapeCorrection?: boolean;
 }
 
+// Phase 0 (#177) cinematic loft — the cardboard floor Brief 58 must beat.
+export const PHASE0_CINEMATIC_BODY_SEGMENTS = {
+  radialSegments: 64,
+  verticalSegments: 48,
+} as const;
+
+// Brief 58 Phase 1 cinematic density. Trunk rows × radial ≈ 7680 verts (SMPL /
+// ZOZO ~6890 class). Cell count is 2.5× the 64×48 cardboard loft — not a token bump.
+export const CINEMATIC_BODY_SEGMENTS = {
+  radialSegments: 96,
+  verticalSegments: 80,
+} as const;
+
+// Lite stays cheaper than Phase 0 cinematic so the frame-budget step-down is real.
+export const LITE_BODY_SEGMENTS = {
+  radialSegments: 48,
+  verticalSegments: 36,
+} as const;
+
+export const BODY_BUILD_BY_TIER = {
+  cinematic: CINEMATIC_BODY_SEGMENTS,
+  lite: LITE_BODY_SEGMENTS,
+} as const;
+
 // The five body segments the composition data and the 2D heat map use, with their
 // stable ordering. This is the single source of the segment ordering: the per-vertex
 // `segment` attribute, the material uSegmentTint array, and the OV-T2/T3 tint feeders
@@ -56,9 +80,9 @@ export interface BodyGeometryResult {
   dispose(): void;
 }
 
-// 64 radial points per ring per Prompt 210e-2 Revision C (was 40 in 210a/210b).
-const DEFAULT_RADIAL_SEGMENTS = 64;
-const DEFAULT_VERTICAL_SEGMENTS = 48;
+// Brief 58 Phase 1: cinematic default is the ZOZO-class grid, not Phase 0 64×48.
+const DEFAULT_RADIAL_SEGMENTS = CINEMATIC_BODY_SEGMENTS.radialSegments;
+const DEFAULT_VERTICAL_SEGMENTS = CINEMATIC_BODY_SEGMENTS.verticalSegments;
 // Arm hang from vertical (degrees). Rev C articulation.
 const ARM_ABDUCTION_DEG = 25;
 

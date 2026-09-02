@@ -1,7 +1,11 @@
 // Prompt 210g anti-regression: geometry must not ship as pure-ellipse barrel.
 import { describe, it, expect } from 'vitest';
 import * as THREE from 'three';
-import { buildBodyGeometry } from '../buildBodyGeometry';
+import {
+  buildBodyGeometry,
+  CINEMATIC_BODY_SEGMENTS,
+  PHASE0_CINEMATIC_BODY_SEGMENTS,
+} from '../buildBodyGeometry';
 import { anatomicalRingPoints, ellipsePointsForPerimeter } from '../ellipse';
 import { correctionSpread, shapeCorrectionFactor } from '../shapeCorrection';
 import { MALE_TEMPLATE, FEMALE_TEMPLATE } from '../types';
@@ -64,22 +68,19 @@ describe('210g shape-correction sanity', () => {
     }
   });
 
-  it('default build uses 64 radial samples (Rev C density)', () => {
+  it('default build uses Brief 58 cinematic radial samples (beats Phase 0 64)', () => {
     const result = buildBodyGeometry(measuredVector('male'));
-    // One trunk control loft: verticalSegments rows * radialSegments cols is not
-    // easy to isolate; assert option default by comparing 64 vs 40 vertex counts.
-    const hi = buildBodyGeometry(measuredVector('male'), { radialSegments: 64 });
-    const lo = buildBodyGeometry(measuredVector('male'), { radialSegments: 40 });
-    expect(hi.geometry.getAttribute('position').count).toBeGreaterThan(
-      lo.geometry.getAttribute('position').count,
+    const cinematic = buildBodyGeometry(measuredVector('male'), CINEMATIC_BODY_SEGMENTS);
+    const phase0 = buildBodyGeometry(measuredVector('male'), PHASE0_CINEMATIC_BODY_SEGMENTS);
+    expect(cinematic.geometry.getAttribute('position').count).toBeGreaterThan(
+      phase0.geometry.getAttribute('position').count,
     );
-    // Default should match explicit 64.
     expect(result.geometry.getAttribute('position').count).toBe(
-      hi.geometry.getAttribute('position').count,
+      cinematic.geometry.getAttribute('position').count,
     );
     result.dispose();
-    hi.dispose();
-    lo.dispose();
+    cinematic.dispose();
+    phase0.dispose();
   });
 
   it('shape-corrected body differs from deliberately degraded pure-ellipse body', () => {

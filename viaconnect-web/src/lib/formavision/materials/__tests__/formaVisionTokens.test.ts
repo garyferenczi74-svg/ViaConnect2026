@@ -44,4 +44,13 @@ describe('formaVisionTokens', () => {
       new THREE.Color(FORMA_VISION_HEX.teal).getHexString(),
     );
   });
+
+  it('never ships ZOZO / brand purple as a wire or skin token', () => {
+    const locked = Object.values(FORMA_VISION_HEX).map((hex) => hex.toLowerCase());
+    const forbiddenPurple = ['#6d597a', '#a78bfa', '#8b5cf6', '#7c3aed', '#9b59b6', '#b388ff'];
+    for (const hex of forbiddenPurple) {
+      expect(locked).not.toContain(hex);
+    }
+    expect(FORMA_VISION_HEX.teal.toLowerCase()).toBe('#2da5a0');
+  });
 });

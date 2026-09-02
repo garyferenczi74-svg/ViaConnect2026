@@ -1,9 +1,10 @@
 // FormaVision wireframe glow material (Prompt 210b, task P1-T3).
 //
 // makeBodyWireframeMaterial returns a THREE.ShaderMaterial that turns the
-// parametric body geometry into the signature look: a dim translucent navy
-// solid with a fine cell grain, overlaid with additive teal wireframe edges, a
-// view-dependent teal fresnel rim, and a sweepable horizontal scan-line band.
+// parametric body geometry into the signature look: a translucent dark volume
+// with a fine cell grain, overlaid with additive plasma-teal (#2DA5A0) wireframe
+// edges, a view-dependent teal fresnel rim, and a sweepable scan-line band.
+// Brief 58 Phase 1: hotter lines, tighter edge factor, glass fill — never purple.
 //
 // Lighting is deliberately emissive, not lit: there is no light rig. The glow is
 // faked entirely inside this one fragment shader (additive lines plus fresnel)
@@ -33,7 +34,27 @@ export interface BodyWireframeOptions {
   rimIntensity?: number;
   // Opacity of the dark navy body fill.
   fillOpacity?: number;
+  // Screen-space wire half-width in fwidth units. Lower = tighter ZOZO grid lines.
+  edgeWidth?: number;
 }
+
+// Phase 0 (#177) shader knobs — Brief 58 must land hotter / tighter / more glass.
+export const PHASE0_WIREFRAME_DEFAULTS = {
+  lineIntensity: 1.6,
+  rimIntensity: 1.0,
+  fillOpacity: 0.55,
+  edgeWidth: 1.5,
+  cellRepeat: 18,
+} as const;
+
+// Brief 58 Phase 1 plasma-teal volume: hotter wires, stronger rim, glass fill.
+export const BODY_WIREFRAME_DEFAULTS = {
+  lineIntensity: 2.45,
+  rimIntensity: 1.85,
+  fillOpacity: 0.32,
+  edgeWidth: 0.72,
+  cellRepeat: 22,
+} as const;
 
 export interface BodyWireframeMaterial {
   material: THREE.ShaderMaterial;
@@ -62,24 +83,68 @@ export interface BodyWireframeMaterial {
   dispose(): void;
 }
 
-const DEFAULT_CELL_REPEAT = 18;
-const DEFAULT_LINE_INTENSITY = 1.6;
-const DEFAULT_RIM_INTENSITY = 1.0;
-const DEFAULT_FILL_OPACITY = 0.55;
+const DEFAULT_CELL_REPEAT = BODY_WIREFRAME_DEFAULTS.cellRepeat;
+const DEFAULT_LINE_INTENSITY = BODY_WIREFRAME_DEFAULTS.lineIntensity;
+const DEFAULT_RIM_INTENSITY = BODY_WIREFRAME_DEFAULTS.rimIntensity;
+const DEFAULT_FILL_OPACITY = BODY_WIREFRAME_DEFAULTS.fillOpacity;
+const DEFAULT_EDGE_WIDTH = BODY_WIREFRAME_DEFAULTS.edgeWidth;
+
+// Write standard per-triangle barycentric (all three edges visible).
+function writeTriangleBary(bary: Float32Array, vertexIndex: number): void {
+  const corner = vertexIndex % 3;
+  const base = vertexIndex * 3;
+  bary[base + corner] = 1;
+}
+
+// Hide the shared diagonal of a loft quad (two triangles / six non-indexed verts)
+// so the wireframe reads as a ZOZO-class quad grid instead of triangulated cardboard.
+// Triangle order from buildLimb: (a,c,b) then (b,c,d). Diagonal is c-b.
+function writeQuadBary(bary: Float32Array, quadVertex: number, vertexIndex: number): void {
+  const base = vertexIndex * 3;
+  if (quadVertex === 0) {
+    bary[base] = 1;
+    bary[base + 1] = 0;
+    bary[base + 2] = 0;
+  } else if (quadVertex === 1) {
+    bary[base] = 1;
+    bary[base + 1] = 1;
+    bary[base + 2] = 0;
+  } else if (quadVertex === 2) {
+    bary[base] = 1;
+    bary[base + 1] = 0;
+    bary[base + 2] = 1;
+  } else if (quadVertex === 3) {
+    bary[base] = 1;
+    bary[base + 1] = 0;
+    bary[base + 2] = 1;
+  } else if (quadVertex === 4) {
+    bary[base] = 0;
+    bary[base + 1] = 1;
+    bary[base + 2] = 1;
+  } else {
+    bary[base] = 0;
+    bary[base + 1] = 0;
+    bary[base + 2] = 1;
+  }
+}
 
 // Bake a barycentric coordinate attribute onto a geometry so the fragment shader
 // can measure distance to the nearest triangle edge. The geometry must be
 // non-indexed (one set of three vertices per triangle); call toNonIndexed first
-// if needed. Returns the same geometry for chaining.
+// if needed. Loft quads (6-vert pairs) hide the diagonal. Returns the same
+// geometry for chaining.
 export function addBarycentricAttribute(
   geometry: THREE.BufferGeometry,
 ): THREE.BufferGeometry {
   const count = geometry.getAttribute('position').count;
   const bary = new Float32Array(count * 3);
+  const hideDiagonals = count >= 6 && count % 6 === 0;
   for (let i = 0; i < count; i += 1) {
-    // Each triangle's three vertices get (1,0,0), (0,1,0), (0,0,1) in turn.
-    const corner = i % 3;
-    bary[i * 3 + corner] = 1;
+    if (hideDiagonals) {
+      writeQuadBary(bary, i % 6, i);
+    } else {
+      writeTriangleBary(bary, i);
+    }
   }
   geometry.setAttribute('aBary', new THREE.BufferAttribute(bary, 3));
   return geometry;
@@ -138,6 +203,7 @@ const FRAGMENT_SHADER = /* glsl */ `
   uniform float uLineIntensity;
   uniform float uRimIntensity;
   uniform float uFillOpacity;
+  uniform float uEdgeWidth;
   uniform float uScanY;
   uniform float uMorph;
   uniform float uHighlightY;
@@ -161,10 +227,11 @@ const FRAGMENT_SHADER = /* glsl */ `
   }
 
   // Edge factor from the barycentric coordinate. fwidth keeps the line a
-  // constant width in screen space regardless of zoom, so edges stay crisp.
+  // constant width in screen space regardless of zoom. uEdgeWidth < 1.0 is the
+  // Brief 58 tight ZOZO grid (Phase 0 used a soft 1.5 hologram halo).
   float edgeFactor() {
     vec3 d = fwidth(vBary);
-    vec3 a = smoothstep(vec3(0.0), d * 1.5, vBary);
+    vec3 a = smoothstep(vec3(0.0), d * max(uEdgeWidth, 0.15), vBary);
     return 1.0 - min(min(a.x, a.y), a.z);
   }
 
@@ -188,14 +255,15 @@ const FRAGMENT_SHADER = /* glsl */ `
     vec3 normal = normalize(vViewNormal);
     float facing = abs(dot(normal, viewDir));
 
-    // Dark translucent navy fill, lifted slightly toward the card tone where the
-    // surface faces away, so the form reads with depth rather than flat.
-    vec3 fill = mix(uNavy, uCard, 1.0 - facing);
+    // Translucent dark volume under the wires (not an opaque navy cutout).
+    // Facing lift stays subtle so additive blend does not wash the plate.
+    vec3 fill = mix(uNavy, uCard, (1.0 - facing) * 0.45);
+    fill *= 0.72;
 
     // Cell grain sampled in UV space. It modulates the fill so the body looks
     // like a textured panel instead of empty triangles.
     float grain = texture2D(uCellTexture, vUv * uCellRepeat).r;
-    fill += uTeal * grain * 0.06;
+    fill += uTeal * grain * 0.04;
 
     // Additive wireframe edges. The line intensity is the fake-bloom knob: pushing
     // it above 1 lets the lines bloom out toward white at the core. The overlay
@@ -206,9 +274,9 @@ const FRAGMENT_SHADER = /* glsl */ `
     vec3 lineBase = mix(uTeal, segmentTint(vSegment), clamp(uOverlayMix, 0.0, 1.0));
     vec3 line = lineBase * edge * uLineIntensity;
 
-    // Teal fresnel rim: brightens at the silhouette where facing approaches 0,
-    // so the body separates cleanly from the navy canvas.
-    float fresnel = pow(1.0 - facing, 3.0) * uRimIntensity;
+    // Plasma-teal fresnel rim: broader than Phase 0 (2.4 vs 3.0) so the
+    // silhouette pops against the dark plate the way ZOZO's rim does.
+    float fresnel = pow(1.0 - facing, 2.4) * uRimIntensity;
     vec3 rim = uTeal * fresnel;
 
     // Scan line accent: a thin bright horizontal band at normalized height
@@ -266,6 +334,7 @@ export function makeBodyWireframeMaterial(
     uLineIntensity: { value: opts.lineIntensity ?? DEFAULT_LINE_INTENSITY },
     uRimIntensity: { value: opts.rimIntensity ?? DEFAULT_RIM_INTENSITY },
     uFillOpacity: { value: opts.fillOpacity ?? DEFAULT_FILL_OPACITY },
+    uEdgeWidth: { value: opts.edgeWidth ?? DEFAULT_EDGE_WIDTH },
     // Hidden by default (outside 0..1) so there is no band until a sweep starts.
     uScanY: { value: -1 },
     // Fully revealed by default; the intro lowers this and animates up to 1.

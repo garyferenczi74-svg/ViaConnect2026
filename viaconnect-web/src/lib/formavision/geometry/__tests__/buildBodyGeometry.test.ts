@@ -1,6 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import * as THREE from 'three';
-import { buildBodyGeometry } from '../buildBodyGeometry';
+import {
+  buildBodyGeometry,
+  CINEMATIC_BODY_SEGMENTS,
+  LITE_BODY_SEGMENTS,
+  PHASE0_CINEMATIC_BODY_SEGMENTS,
+} from '../buildBodyGeometry';
 import { MALE_TEMPLATE } from '../types';
 import type { BodyParamVector, BodyRing } from '../types';
 
@@ -126,6 +131,38 @@ describe('buildBodyGeometry', () => {
     expect(result.estimatedRingIds).toContain('rArm');
     expect(result.estimatedRingIds).not.toContain('lArm');
     result.dispose();
+  });
+
+  it('Brief 58 cinematic default beats Phase 0 64×48 cardboard loft', () => {
+    expect(CINEMATIC_BODY_SEGMENTS.radialSegments).toBeGreaterThan(
+      PHASE0_CINEMATIC_BODY_SEGMENTS.radialSegments,
+    );
+    expect(CINEMATIC_BODY_SEGMENTS.verticalSegments).toBeGreaterThan(
+      PHASE0_CINEMATIC_BODY_SEGMENTS.verticalSegments,
+    );
+    const phase1Cells =
+      CINEMATIC_BODY_SEGMENTS.radialSegments * CINEMATIC_BODY_SEGMENTS.verticalSegments;
+    const phase0Cells =
+      PHASE0_CINEMATIC_BODY_SEGMENTS.radialSegments *
+      PHASE0_CINEMATIC_BODY_SEGMENTS.verticalSegments;
+    expect(phase1Cells).toBeGreaterThanOrEqual(phase0Cells * 2);
+    expect(phase1Cells).toBeGreaterThanOrEqual(6890);
+
+    const cardboard = buildBodyGeometry(measuredVector(), PHASE0_CINEMATIC_BODY_SEGMENTS);
+    const cinematic = buildBodyGeometry(measuredVector());
+    expect(cinematic.geometry.getAttribute('position').count).toBeGreaterThan(
+      cardboard.geometry.getAttribute('position').count,
+    );
+    cardboard.dispose();
+    cinematic.dispose();
+  });
+
+  it('lite tier stays cheaper than Phase 0 cinematic for the frame budget', () => {
+    const liteCells = LITE_BODY_SEGMENTS.radialSegments * LITE_BODY_SEGMENTS.verticalSegments;
+    const phase0Cells =
+      PHASE0_CINEMATIC_BODY_SEGMENTS.radialSegments *
+      PHASE0_CINEMATIC_BODY_SEGMENTS.verticalSegments;
+    expect(liteCells).toBeLessThan(phase0Cells);
   });
 
   it('respects a requested radial segment count by raising the vertex count', () => {

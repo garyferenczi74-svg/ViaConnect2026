@@ -8,6 +8,10 @@
 import { describe, it, expect } from 'vitest';
 import { Vector3 } from 'three';
 import { scanToParamVector } from '@/lib/formavision/geometry/scanToParamVector';
+import {
+  CINEMATIC_BODY_SEGMENTS,
+  LITE_BODY_SEGMENTS,
+} from '@/lib/formavision/geometry/buildBodyGeometry';
 import type { BodyParamVector, Sex } from '@/lib/formavision/geometry/types';
 import { mountBodyGeometry } from '../mountBodyGeometry';
 
@@ -55,10 +59,10 @@ describe('mountBodyGeometry', () => {
 
   it('honors the lite render tier with a lower vertex count than cinematic', () => {
     const cinematic = mountBodyGeometry(neutralParam(), {
-      build: { radialSegments: 64, verticalSegments: 48 },
+      build: CINEMATIC_BODY_SEGMENTS,
     });
     const lite = mountBodyGeometry(neutralParam(), {
-      build: { radialSegments: 40, verticalSegments: 32 },
+      build: LITE_BODY_SEGMENTS,
     });
     expect(lite.geometry.getAttribute('position').count).toBeLessThan(
       cinematic.geometry.getAttribute('position').count,
