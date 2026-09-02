@@ -13,7 +13,8 @@
 // Returns capture_status, never the legacy is_complete column, and never raw
 // storage paths (condition 13, least exposure) - only pose presence booleans,
 // since signed URLs are always minted through the Task 13 /api/scan/signed-url
-// route. Photo-scan rows have no stored poses (analyze discards images).
+// route. Photo-scan rows have no stored images (analyze discards them);
+// poses stay absent and ScanHistory hides the FRBL grid (no ImageOff).
 //
 // Resilient: every query is raced against a timeout and fails open to a
 // null/empty result with a structured log, never a thrown error.
@@ -23,7 +24,11 @@ import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 import { PROTOCOL_ID, POSE_ORDER, type PoseId } from '@/lib/scan/poses';
 import { FORMAVISION_PHOTO_PROTOCOL } from '@/lib/scan/scanProtocols';
-import type { ScanCaptureStatus, ScanSummary } from '@/lib/scan/scanSummary';
+import {
+  hasAnyPresentPose,
+  type ScanCaptureStatus,
+  type ScanSummary,
+} from '@/lib/scan/scanSummary';
 
 export { FORMAVISION_PHOTO_PROTOCOL } from '@/lib/scan/scanProtocols';
 export type { ScanCaptureStatus, ScanSummary } from '@/lib/scan/scanSummary';
@@ -103,9 +108,12 @@ function isVisible(row: RawScanRow): boolean {
 interface PhotoScanRow {
   id: string;
   scan_date: string;
+  created_at?: string | null;
 }
 
 function photoScanToSummary(row: PhotoScanRow): ScanSummary {
+  // SSOT: do not map pose-present for photo scans. Analyze discards images;
+  // history hides the FRBL grid instead of ImageOff / signed-URL.
   const poses = {} as Record<PoseId, boolean>;
   for (const pose of POSE_ORDER) poses[pose] = false;
   return {
@@ -127,6 +135,27 @@ function sortByDateDesc(a: ScanSummary, b: ScanSummary): number {
   return a.date < b.date ? 1 : -1;
 }
 
+function rowTimeMs(row: PhotoScanRow): number {
+  const raw = row.created_at ?? row.scan_date;
+  const t = new Date(raw).getTime();
+  return Number.isFinite(t) ? t : 0;
+}
+
+function sortPhotoRowsNewestFirst(rows: PhotoScanRow[]): PhotoScanRow[] {
+  return [...rows].sort((a, b) => {
+    const byTime = rowTimeMs(b) - rowTimeMs(a);
+    if (byTime !== 0) return byTime;
+    return a.id < b.id ? 1 : a.id > b.id ? -1 : 0;
+  });
+}
+
+function calendarDay(date: string): string {
+  if (/^\d{4}-\d{2}-\d{2}/.test(date)) return date.slice(0, 10);
+  const t = new Date(date).getTime();
+  if (Number.isFinite(t)) return new Date(t).toISOString().slice(0, 10);
+  return date;
+}
+
 async function queryPhotoScanRows(userId: string, limit: number): Promise<{
   data: PhotoScanRow[] | null;
   error: { message: string } | null;
@@ -136,9 +165,9 @@ async function queryPhotoScanRows(userId: string, limit: number): Promise<{
     Promise.resolve(
       supabase
         .from('body_tracker_photo_scans')
-        .select('id, scan_date')
+        .select('id, scan_date, created_at')
         .eq('user_id', userId)
-        .order('scan_date', { ascending: false })
+        .order('created_at', { ascending: false })
         .limit(limit),
     ) as unknown as Promise<{ data: PhotoScanRow[] | null; error: { message: string } | null }>,
     QUERY_TIMEOUT_MS,
@@ -153,7 +182,7 @@ async function listPhotoScans(userId: string, limit: number): Promise<ScanSummar
       safeLog.warn(SCOPE, 'photo scan query error (fail-open)', { error, userId });
       return [];
     }
-    return (data ?? []).map(photoScanToSummary);
+    return sortPhotoRowsNewestFirst(data ?? []).map(photoScanToSummary);
   } catch (error) {
     if (isTimeoutError(error)) {
       safeLog.warn(SCOPE, 'photo scan query timed out (fail-open)', { userId });
@@ -165,8 +194,26 @@ async function listPhotoScans(userId: string, limit: number): Promise<ScanSummar
 }
 
 function mergeScanSummaries(sessions: ScanSummary[], photos: ScanSummary[], limit: number): ScanSummary[] {
+  // Cheap Ready collapse: one formavision_photo per calendar day (scan_date is
+  // DATE), plus drop empty-pose 4pose_v1 leftovers on a day that already has
+  // a photo scan. Guided rows with real pose paths stay.
+  const seenPhotoDay = new Set<string>();
+  const uniquePhotos: ScanSummary[] = [];
+  for (const photo of photos) {
+    const day = calendarDay(photo.date);
+    if (seenPhotoDay.has(day)) continue;
+    seenPhotoDay.add(day);
+    uniquePhotos.push(photo);
+  }
+
+  const uniqueSessions = sessions.filter((scan) => {
+    if (scan.protocol !== PROTOCOL_ID) return true;
+    if (hasAnyPresentPose(scan.poses)) return true;
+    return !seenPhotoDay.has(calendarDay(scan.date));
+  });
+
   const byId = new Map<string, ScanSummary>();
-  for (const scan of [...sessions, ...photos]) {
+  for (const scan of [...uniqueSessions, ...uniquePhotos]) {
     if (!byId.has(scan.id)) byId.set(scan.id, scan);
   }
   return Array.from(byId.values()).sort(sortByDateDesc).slice(0, limit);

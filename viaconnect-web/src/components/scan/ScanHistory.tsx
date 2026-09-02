@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Camera, ImageOff, Loader2, Trash2 } from 'lucide-react';
 import { POSE_ORDER, type PoseId } from '@/lib/scan/poses';
 import { FORMAVISION_PHOTO_PROTOCOL } from '@/lib/scan/scanProtocols';
-import type { ScanSummary } from '@/lib/scan/scanSummary';
+import { scanHistoryShowsFrblGrid, type ScanSummary } from '@/lib/scan/scanSummary';
 
 /**
  * Prompt 231: the 4-pose scan history list. Reuses the Task 13
@@ -19,6 +19,10 @@ import type { ScanSummary } from '@/lib/scan/scanSummary';
  * filters 4-pose + FormaVision photo scans and excludes tombstones
  * (condition 5, 17). This component filters tombstones again so a
  * tombstoned row can never render as a normal, deletable scan.
+ *
+ * SSOT: formavision_photo hides the FRBL grid (photos discarded after
+ * analyze). No ImageOff, no signed-URL chase, no pose-present mapping.
+ * 4pose_v1 guided thumbs stay on the grid when poses are present.
  *
  * Token discipline: var(--card) / var(--teal), no raw hex. Instrument Sans
  * via the .font-instrument scoped class. Lucide icons, strokeWidth 1.5.
@@ -196,16 +200,25 @@ export function ScanHistory({ scans, onDeleted }: ScanHistoryProps) {
               )}
             </div>
 
-            <div className="grid grid-cols-4 gap-2">
-              {POSE_ORDER.map((pose) => (
-                <ScanHistoryThumb
-                  key={pose}
-                  sessionId={scan.id}
-                  pose={pose}
-                  present={scan.poses[pose]}
-                />
-              ))}
-            </div>
+            {scanHistoryShowsFrblGrid(scan) ? (
+              <div className="grid grid-cols-4 gap-2">
+                {POSE_ORDER.map((pose) => (
+                  <ScanHistoryThumb
+                    key={pose}
+                    sessionId={scan.id}
+                    pose={pose}
+                    present={scan.poses[pose]}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p
+                className="text-xs text-white/45"
+                data-testid={`scan-history-photos-discarded-${scan.id}`}
+              >
+                Photos are not stored after analysis.
+              </p>
+            )}
 
             {state === 'error' && message && (
               <p

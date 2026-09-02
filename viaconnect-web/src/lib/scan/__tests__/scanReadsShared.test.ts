@@ -219,10 +219,33 @@ describe('scanReadsShared', () => {
       expect(calls.limitArg).toBe(5);
     });
 
+    it('does not map photo-scan storage paths into pose-present', async () => {
+      installTable(
+        { data: [], error: null },
+        {
+          data: [{
+            id: 'photo-stored',
+            scan_date: '2026-09-01',
+            created_at: '2026-09-01T18:00:00Z',
+            front_full_path: 'user-1/photo-stored/front.jpg',
+            right_thumb_path: 'user-1/photo-stored/right_thumb.jpg',
+          }],
+          error: null,
+        },
+      );
+      const scans = await listScans('user-1');
+      expect(scans[0]).toMatchObject({
+        id: 'photo-stored',
+        protocol: 'formavision_photo',
+        poses: { front: false, right: false, back: false, left: false },
+      });
+      expect(JSON.stringify(scans[0])).not.toContain('user-1/photo-stored/front.jpg');
+    });
+
     it('merges body_tracker_photo_scans into the list as formavision_photo', async () => {
       installTable(
         { data: [READY_ROW], error: null },
-        { data: [{ id: 'photo-1', scan_date: '2026-08-21' }], error: null },
+        { data: [{ id: 'photo-1', scan_date: '2026-08-21', created_at: '2026-08-21T12:00:00Z' }], error: null },
       );
       const scans = await listScans('user-1');
       expect(scans.map((s) => s.id)).toEqual(['photo-1', 'session-1']);
@@ -232,6 +255,51 @@ describe('scanReadsShared', () => {
         captureStatus: 'ready',
         poses: { front: false, right: false, back: false, left: false },
       });
+    });
+
+    it('collapses same-day formavision_photo Ready rows to the newest', async () => {
+      installTable(
+        { data: [], error: null },
+        {
+          data: [
+            { id: 'photo-old', scan_date: '2026-09-01', created_at: '2026-09-01T10:00:00Z' },
+            { id: 'photo-new', scan_date: '2026-09-01', created_at: '2026-09-01T18:00:00Z' },
+            { id: 'photo-mid', scan_date: '2026-09-01', created_at: '2026-09-01T14:00:00Z' },
+          ],
+          error: null,
+        },
+      );
+      const scans = await listScans('user-1');
+      expect(scans.map((s) => s.id)).toEqual(['photo-new']);
+    });
+
+    it('drops an empty-pose 4pose_v1 row on a day that already has a photo scan', async () => {
+      const emptyGuided = {
+        ...READY_ROW,
+        id: 'empty-session',
+        session_date: '2026-09-01',
+        front_full_path: null,
+        right_full_path: null,
+        back_full_path: null,
+        left_full_path: null,
+      };
+      installTable(
+        { data: [emptyGuided], error: null },
+        { data: [{ id: 'photo-1', scan_date: '2026-09-01', created_at: '2026-09-01T18:00:00Z' }], error: null },
+      );
+      const scans = await listScans('user-1');
+      expect(scans.map((s) => s.id)).toEqual(['photo-1']);
+    });
+
+    it('keeps a 4pose_v1 row with poses alongside a same-day photo scan', async () => {
+      const guided = { ...READY_ROW, id: 'session-same-day', session_date: '2026-09-01' };
+      installTable(
+        { data: [guided], error: null },
+        { data: [{ id: 'photo-1', scan_date: '2026-09-01', created_at: '2026-09-01T18:00:00Z' }], error: null },
+      );
+      const scans = await listScans('user-1');
+      expect(scans).toHaveLength(2);
+      expect(scans.map((s) => s.id)).toEqual(expect.arrayContaining(['photo-1', 'session-same-day']));
     });
 
     it('fails open on photo-scan errors and still returns 4-pose sessions', async () => {
