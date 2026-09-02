@@ -534,7 +534,14 @@ function FormaVisionSurface() {
           wipeT={wipeT}
           wipeVector={wipeVector}
         >
-          <div className="flex h-full min-h-[400px] items-center justify-center">
+          {/* Gary iPhone www (viaconnectapp.com after #172): this child IS the
+              flat cyan Male Avatar.svg plate. On main, hasWebGL() false during
+              SSR / iOS Safari latched fellBack and rendered ONLY these children.
+              They must not paint on first paint when 3D can run. */}
+          <div
+            data-testid="formavision-2d-floor-child"
+            className="flex h-full min-h-[400px] items-center justify-center"
+          >
             <SegmentalHeatMap sex={gender} segmentStatuses={{}} />
           </div>
         </BodyCompositionAvatar>

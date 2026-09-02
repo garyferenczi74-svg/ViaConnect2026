@@ -1,12 +1,16 @@
 // Pure mount-vs-fallback decision for the FormaVision avatar plate.
 //
-// Production #172 smoke (www dpl_5bQNe1UubnBbKb6uwGEBd48n4gR6) AND Gary phone
-// hard-refresh CONFIRM: SegmentalHeatMap Male Avatar.svg (250x400), no morph,
-// on iPhone Safari and box Chrome. The old path treated hasWebGL() === false
-// as a hard, sticky floor. That probe is false on SSR (no document) for BOTH
-// clients, and additionally false-negatives on iOS Safari (webgl2-null poisons
-// webgl1 on the same canvas). A single false then latched
-// BodyCompositionAvatar.fellBack for the session, so the 3D morph never painted.
+// Gary iPhone Safari screenshot (viaconnectapp.com after #172): ScanHistory
+// "FormaVision · Ready" + FRBL hide, Male/in, then the bordered plate is the
+// BodyCompositionAvatar *children* — SegmentalHeatMap Male Avatar.svg — not a
+// canvas. That child wins on mobile www because main's FormaVision3DAvatar
+// ran useMemo(() => hasWebGL(), []) during render:
+//   - SSR: document missing → false → queueMicrotask(onRenderError) → fellBack
+//     so the HTML Safari first-paints IS the SVG (hydration mismatch keeps it)
+//   - iOS client: getContext('webgl2') null poisons that canvas; webgl is also
+//     null → hasWebGL false again → same latch
+// A single false never recovers. This decision must not choose fallback2d for
+// SSR / unknown / a lone unavailable probe.
 //
 // Policy: prefer FormaVision3DAvatar / FormaVisionCanvas whenever WebGL might
 // still work. SSR, unknown, and a lone "unavailable" probe are NOT enough to

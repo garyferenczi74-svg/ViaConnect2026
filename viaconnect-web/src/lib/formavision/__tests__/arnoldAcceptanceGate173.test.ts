@@ -170,12 +170,20 @@ describe('Arnold acceptance gate 2: not Male Avatar.svg when 3D can run', () => 
     expect(markup).not.toContain('formavision-fallback-2d');
   });
 
-  it('heatmap SVG is only the fallback child on the FormaVision plate', () => {
+  it('Gary iPhone www plate is the fallback child, and SSR must not paint it', () => {
+    // Screenshot chrome: ScanHistory Ready + FRBL hide, Male/in, bordered
+    // plate = SegmentalHeatMap Male Avatar.svg, Select Body Part, A/B Compare.
     const page = src('src/app/(app)/(consumer)/body-tracker/formavision/page.tsx');
     const heatmap = src('src/components/body-tracker/SegmentalHeatMap.tsx');
+    const threeD = src('src/components/formavision/FormaVision3DAvatar.tsx');
+    expect(page).toMatch(/ScanHistorySection/);
+    expect(page).toMatch(/formavision-gender-male/);
+    expect(page).toMatch(/formavision-2d-floor-child/);
     expect(page).toMatch(/SegmentalHeatMap/);
-    expect(page).toMatch(/<\/BodyCompositionAvatar>/);
+    expect(page).toMatch(/SelectBodyPartControl/);
     expect(heatmap).toMatch(/Male%20Avatar\.svg/);
+    expect(threeD).not.toMatch(/useMemo\(\(\) => hasWebGL\(\), \[\]\)/);
+    expect(threeD).toMatch(/formavision-3d-pending/);
   });
 });
 

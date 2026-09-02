@@ -84,6 +84,7 @@ describe('BodyCompositionAvatar', () => {
     );
     expect(formavision).toMatch(/formavision-canvas-grid/);
     expect(formavision).toMatch(/BodyCompositionAvatar/);
+    expect(formavision).toMatch(/formavision-2d-floor-child/);
     expect(formavision).toMatch(/onScrub=\{setScrubVector\}/);
     expect(formavision).toMatch(/resolveAvatarCircumferences/);
     expect(formavision).toMatch(/h-\[min\(52vh,520px\)\]/);
