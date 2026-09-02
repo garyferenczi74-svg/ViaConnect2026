@@ -28,7 +28,7 @@ import {
   AbWipeSplitOverlay,
 } from '@/components/formavision/AbComparePanel';
 import { useReducedMotion } from '@/components/body-tracker/HoverSystem/useReducedMotion';
-import { SegmentalHeatMap } from '@/components/body-tracker/SegmentalHeatMap';
+import { FormaVisionLocalSilhouette } from '@/components/formavision/FormaVisionLocalSilhouette';
 import { UnitToggle } from '@/components/body-tracker/UnitToggle';
 import { useCompositionHistory } from '@/hooks/body-tracker/useCompositionHistory';
 import { useCircumferenceHistory } from '@/hooks/body-tracker/useCircumferenceHistory';
@@ -552,7 +552,7 @@ function FormaVisionSurface() {
           line (pointer-events none so orbit and Neck callouts stay usable). */}
       <div
         data-testid="formavision-canvas-grid"
-        className="relative z-10 flex h-[min(52vh,520px)] max-h-[min(52vh,520px)] items-center justify-center overflow-hidden rounded-2xl border border-white/[0.08] bg-transparent p-4"
+        className="relative z-10 h-[min(52vh,520px)] max-h-[min(52vh,520px)] overflow-hidden rounded-2xl border border-white/[0.08] bg-transparent"
       >
         <AbWipeSplitOverlay wipeT={wipeT} visible={abCompareOn && Boolean(wipeVector)} />
         <BodyCompositionAvatar
@@ -574,15 +574,13 @@ function FormaVisionSurface() {
           wipeT={wipeT}
           wipeVector={wipeVector}
         >
-          {/* Gary iPhone www (viaconnectapp.com after #172): this child IS the
-              flat cyan Male Avatar.svg plate. On main, hasWebGL() false during
-              SSR / iOS Safari latched fellBack and rendered ONLY these children.
-              They must not paint on first paint when 3D can run. */}
+          {/* Always-paint local floor: inline SVG, no remote Supabase Male
+              Avatar.svg. Must not paint on first paint when 3D can run. */}
           <div
             data-testid="formavision-2d-floor-child"
-            className="flex h-full min-h-[400px] items-center justify-center"
+            className="flex h-full min-h-[200px] w-full items-center justify-center"
           >
-            <SegmentalHeatMap sex={gender} segmentStatuses={{}} />
+            <FormaVisionLocalSilhouette sex={gender} />
           </div>
         </BodyCompositionAvatar>
       </div>

@@ -76,7 +76,7 @@ describe('Arnold #174 PRIMARY: keep 3D when getContext succeeds', () => {
     expect(avatar).toMatch(/shouldLatchFallback2d/);
     expect(avatar).toMatch(/setMountEpoch/);
     expect(avatar).toMatch(/probeWebGL/);
-    expect(avatar).toMatch(/remountsRef\.current < 2/);
+    expect(avatar).toMatch(/remountsRef\.current < WEBGL_REMOUNT_BUDGET/);
     expect(avatar).toMatch(/setFellBack\(true\)/);
     expect(avatar).not.toMatch(/if \(!shouldLatchFallback2d\(probe\)\) \{\s*return;\s*\}/);
     expect(canvas).toMatch(/setAttribute\('data-testid', 'formavision-avatar-canvas'\)/);

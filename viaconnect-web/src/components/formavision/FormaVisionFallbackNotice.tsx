@@ -30,7 +30,8 @@ export const FORMAVISION_FALLBACK_NOTICE_HOST_TESTID = 'formavision-fallback-not
 
 // Floor stays in the plate. Banner is in-flow + z-50 so a portal into the
 // page host (above the sex-toggle row) wins hit-testing against Female.
-export const FORMAVISION_FALLBACK_FLOOR_STACK_CLASS = 'relative z-20';
+export const FORMAVISION_FALLBACK_FLOOR_STACK_CLASS =
+  'relative z-20 h-full min-h-[200px] w-full';
 export const FORMAVISION_FALLBACK_NOTICE_STACK_CLASS =
   'pointer-events-auto relative z-50';
 
