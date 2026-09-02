@@ -754,7 +754,7 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
         // P8-T1c: fire once when the GL context is ready (observe-only;
         // does not affect rendering or the demand loop).
         onCreated={(state) => {
-          // r3f 8.18 spreads unknown DOM props onto the WRAPPER div, not the
+          // r3f spreads unknown DOM props onto the WRAPPER div, not the
           // <canvas>. Arnold / clip capture need the real WebGL canvas.
           state.gl.domElement.setAttribute('data-testid', 'formavision-avatar-canvas');
           props.onFirstInteractive?.();

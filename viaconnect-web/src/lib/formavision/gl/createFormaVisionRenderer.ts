@@ -2,10 +2,10 @@
 // context so iPhone Safari does not throw "Error creating WebGL context"
 // after a poisoned webgl2-null canvas (Gary phone #172 CONFIRM).
 //
-// r3f 8.18 calls `gl(canvas)` with the live HTMLCanvasElement. Later fiber
-// builds pass defaultProps `{ canvas, antialias, ... }`. Accept both so a
-// props-object cannot be treated as the canvas (getContext undefined →
-// error-boundary → false "device could not start WebGL").
+// r3f 8 called `gl(canvas)` with the live HTMLCanvasElement. Fiber 9+ passes
+// defaultProps `{ canvas, antialias, ... }`. Accept both so a props-object
+// cannot be treated as the canvas (getContext undefined → error-boundary →
+// false "device could not start WebGL").
 
 import { WebGLRenderer } from 'three';
 import {
