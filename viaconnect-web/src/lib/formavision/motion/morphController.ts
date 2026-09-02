@@ -56,6 +56,15 @@ export interface MorphController {
   isMorphing(): boolean;
 }
 
+/** On-screen shape the next morph must leave from. Never the incoming target. */
+export function resolveMorphFromVector(
+  lastScrub: BodyParamVector | null,
+  displayed: BodyParamVector | null,
+  incoming: BodyParamVector,
+): BodyParamVector {
+  return lastScrub ?? displayed ?? incoming;
+}
+
 export function createMorphController(
   options: MorphControllerOptions,
   // The shape the avatar currently shows (its first-mount param vector). Subsequent

@@ -107,10 +107,22 @@ export function estimateCircumferencesFromComposition(
     out[key] = unit === 'cm' ? meters * 100 : meters / 0.0254;
   }
 
+  const bfWaist = out.waist;
   const whr = resolveEstimateWhr(snapshot);
   if (whr !== null && out.hip !== null) {
     const hipM = unit === 'cm' ? out.hip / 100 : out.hip * 0.0254;
-    const waistM = Math.max(FLOOR_CM / 100, hipM * whr);
+    const whrWaistM = Math.max(FLOOR_CM / 100, hipM * whr);
+    const bfWaistM =
+      typeof bfWaist === 'number' && Number.isFinite(bfWaist)
+        ? unit === 'cm'
+          ? bfWaist / 100
+          : bfWaist * 0.0254
+        : null;
+    // A moderate/default WHR (e.g. 0.84–0.88) must not collapse a high-BF
+    // waist back onto the sex template (male 0.9m). WHR may only widen the
+    // midsection (apple shape), never undo the BF-driven silhouette.
+    const waistM =
+      bfWaistM !== null ? Math.max(bfWaistM, whrWaistM) : whrWaistM;
     out.waist = unit === 'cm' ? waistM * 100 : waistM / 0.0254;
   }
 

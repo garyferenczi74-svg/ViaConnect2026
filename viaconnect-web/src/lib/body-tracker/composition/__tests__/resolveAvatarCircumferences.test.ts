@@ -3,8 +3,12 @@ import { emptyMeasurements } from '@/lib/body-tracker/circumference';
 import { estimateCircumferencesFromComposition } from '../estimateCircumferencesFromComposition';
 import {
   historySnapshotCanEstimateGirths,
+  pickHistorySnapshotForAvatar,
   resolveAvatarCircumferences,
 } from '../resolveAvatarCircumferences';
+import { buildBodyGeometry } from '@/lib/formavision/geometry/buildBodyGeometry';
+import { MALE_TEMPLATE } from '@/lib/formavision/geometry/types';
+import * as THREE from 'three';
 import { snapshotFromScanResult } from '../snapshotFromScanResult';
 import { scanToParamVector } from '@/lib/formavision/geometry/scanToParamVector';
 import type { BodyScanResult } from '../runFormaVisionAnalyze';
@@ -143,4 +147,129 @@ describe('resolveAvatarCircumferences', () => {
     })).toBeNull();
     expect(historySnapshotCanEstimateGirths(null)).toBe(false);
   });
+
+  it('cold-load history BF 31% drives a non-template male waist (avatar only)', () => {
+    const history = historySnap({
+      totalBodyFatPct: 31,
+      estimatedBodyFatMin: 30,
+      estimatedBodyFatMax: 36,
+      estimatedWhrMin: 0.84,
+      estimatedWhrMax: 0.88,
+    });
+    expect(historySnapshotCanEstimateGirths(history)).toBe(true);
+    const circs = resolveAvatarCircumferences({
+      overlay: null,
+      measured: emptyMeasurements(),
+      historySnapshot: history,
+      sex: 'male',
+      unit: 'in',
+    });
+    const vector = scanToParamVector({
+      snapshot: history,
+      circumferences: circs,
+      sex: 'male',
+      unit: 'in',
+    });
+    const template = scanToParamVector({
+      snapshot: history,
+      circumferences: null,
+      sex: 'male',
+      unit: 'in',
+    });
+    const waist = vector.rings.find((r) => r.id === 'waist')?.circumferenceM;
+    const hip = vector.rings.find((r) => r.id === 'hip')?.circumferenceM;
+    expect(waist).toBeTruthy();
+    expect(hip).toBeTruthy();
+    expect(waist).not.toBe(0.9);
+    expect(hip).not.toBe(0.98);
+    expect(template.rings.find((r) => r.id === 'waist')?.circumferenceM).toBeNull();
+  });
+
+  it('skips a weight-only latest and uses the journey BF snapshot', () => {
+    const weightOnly = historySnap({
+      totalBodyFatPct: null,
+      estimatedBodyFatMin: null,
+      estimatedBodyFatMax: null,
+      isEstimated: false,
+      source: 'manual',
+      scanId: null,
+    });
+    const journey = historySnap({ totalBodyFatPct: 31 });
+    expect(pickHistorySnapshotForAvatar(weightOnly, [journey])).toBe(journey);
+  });
+
+  it('journey vector with empty circHistory uses estimated girths; readout waist stays null', () => {
+    const history = historySnap({
+      totalBodyFatPct: 31,
+      estimatedBodyFatMin: 30,
+      estimatedBodyFatMax: 36,
+    });
+    const measured = null;
+    const readoutWaist = measured?.waist ?? null;
+    expect(readoutWaist).toBeNull();
+    const vector = scanToParamVector({
+      snapshot: history,
+      circumferences: resolveAvatarCircumferences({
+        overlay: null,
+        measured,
+        historySnapshot: history,
+        sex: 'male',
+        unit: 'in',
+      }),
+      sex: 'male',
+      unit: 'in',
+    });
+    expect(vector.rings.find((r) => r.id === 'waist')?.circumferenceM).not.toBe(0.9);
+  });
+
+  it('BF 30–36% overlay girths change the mesh waist radius vs the sex template', () => {
+    const history = historySnap({
+      totalBodyFatPct: 33,
+      estimatedBodyFatMin: 30,
+      estimatedBodyFatMax: 36,
+      estimatedWhrMin: 0.84,
+      estimatedWhrMax: 0.88,
+    });
+    const circs = resolveAvatarCircumferences({
+      overlay: estimateCircumferencesFromComposition(history, 'male', 'in'),
+      measured: emptyMeasurements(),
+      historySnapshot: history,
+      sex: 'male',
+      unit: 'in',
+    });
+    const morphed = scanToParamVector({
+      snapshot: history,
+      circumferences: circs,
+      sex: 'male',
+      unit: 'in',
+    });
+    const template = scanToParamVector({
+      snapshot: null,
+      circumferences: null,
+      sex: 'male',
+      unit: 'in',
+    });
+    const waistY = MALE_TEMPLATE.rings.find((r) => r.id === 'waist')!.levelN * MALE_TEMPLATE.heightM;
+    const morphGeo = buildBodyGeometry(morphed);
+    const templateGeo = buildBodyGeometry(template);
+    const morphR = meanRadiusAtY(morphGeo.geometry, waistY, 0.02);
+    const templateR = meanRadiusAtY(templateGeo.geometry, waistY, 0.02);
+    expect(morphR).toBeGreaterThan(templateR * 1.05);
+    morphGeo.dispose();
+    templateGeo.dispose();
+  });
 });
+
+function meanRadiusAtY(geometry: THREE.BufferGeometry, targetY: number, bandM: number): number {
+  const pos = geometry.getAttribute('position');
+  let sum = 0;
+  let count = 0;
+  for (let i = 0; i < pos.count; i += 1) {
+    const y = pos.getY(i);
+    if (Math.abs(y - targetY) <= bandM) {
+      sum += Math.hypot(pos.getX(i), pos.getZ(i));
+      count += 1;
+    }
+  }
+  return count > 0 ? sum / count : 0;
+}

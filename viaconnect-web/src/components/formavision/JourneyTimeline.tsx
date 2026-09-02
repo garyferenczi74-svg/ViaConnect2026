@@ -15,9 +15,11 @@
 // Reduced motion: Play JUMPS scan to scan (snap + brief pause), no smooth
 // interpolation; dragging snaps to the nearest real scan. No fabricated frames.
 //
-// Resting: on release the scrubVector is left at the last position (the avatar
-// stays at that shape and normal morph resumes from there per P3-T2a). The
-// scrubber rests at the latest scan on mount (sensible default).
+// Resting / play-end: onScrub(null) so the landing avatar can morph from
+// overlay/history circumferences. A latched scrubVector forever wins in
+// FormaVisionCanvas and would freeze the sex template when journeyVectors
+// were built with empty circHistory. The scrubber still rests visually at
+// the latest scan on mount (position=1); mount does not call onScrub.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Play, Pause } from 'lucide-react';
@@ -100,6 +102,12 @@ export function JourneyTimeline({
   const rafRef = useRef<number | null>(null);
   const playStartRef = useRef<number | null>(null);
   const reducedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const onScrubRef = useRef(onScrub);
+  onScrubRef.current = onScrub;
+
+  const restAvatar = useCallback(() => {
+    onScrubRef.current(null);
+  }, []);
 
   const snaps = useMemo(() => buildSnapPositions(count), [count]);
 
@@ -152,12 +160,13 @@ export function JourneyTimeline({
       applyPosition(p);
       if (p >= 1) {
         stopPlay();
+        restAvatar();
         return;
       }
       rafRef.current = requestAnimationFrame(tick);
     };
     rafRef.current = requestAnimationFrame(tick);
-  }, [applyPosition, stopPlay]);
+  }, [applyPosition, stopPlay, restAvatar]);
 
   // Reduced motion play: JUMP scan to scan with a dwell, no interpolation.
   const runJumpPlay = useCallback(() => {
@@ -170,17 +179,19 @@ export function JourneyTimeline({
       i += 1;
       if (i > last) {
         stopPlay();
+        restAvatar();
         return;
       }
       stepTo(i);
       reducedTimerRef.current = setTimeout(advance, REDUCED_STEP_PAUSE_MS);
     };
     reducedTimerRef.current = setTimeout(advance, REDUCED_STEP_PAUSE_MS);
-  }, [applyPosition, count, last, stopPlay]);
+  }, [applyPosition, count, last, stopPlay, restAvatar]);
 
   const togglePlay = useCallback(() => {
     if (playing) {
       stopPlay();
+      restAvatar();
       return;
     }
     if (count < 2) return;
@@ -194,7 +205,7 @@ export function JourneyTimeline({
     } else {
       runSmoothPlay();
     }
-  }, [playing, count, reducedMotion, runJumpPlay, runSmoothPlay, stopPlay, onPlay]);
+  }, [playing, count, reducedMotion, runJumpPlay, runSmoothPlay, stopPlay, onPlay, restAvatar]);
 
   // Manual scrub from the slider. Reduced motion snaps to the nearest scan.
   const handleScrubInput = useCallback(
@@ -317,6 +328,8 @@ export function JourneyTimeline({
           step={reducedMotion ? 1 : 0.001}
           value={sliderValue}
           onChange={(e) => handleScrubInput(Number(e.target.value) / last)}
+          onPointerUp={restAvatar}
+          onPointerCancel={restAvatar}
           aria-label="Scrub through your scan history"
           aria-valuetext={
             readoutMode.kind === 'measured'

@@ -34,6 +34,18 @@ export function historySnapshotCanEstimateGirths(
   return Boolean(snapshot.isEstimated || snapshot.source === 'scan' || snapshot.scanId);
 }
 
+export function pickHistorySnapshotForAvatar(
+  latest: CompositionSnapshot | null,
+  journeySnapshots: readonly CompositionSnapshot[] = [],
+): CompositionSnapshot | null {
+  if (historySnapshotCanEstimateGirths(latest)) return latest;
+  for (let i = journeySnapshots.length - 1; i >= 0; i -= 1) {
+    const snap = journeySnapshots[i];
+    if (historySnapshotCanEstimateGirths(snap)) return snap;
+  }
+  return latest;
+}
+
 export function resolveAvatarCircumferences(args: {
   overlay: CircumferenceMeasurements | null;
   measured: CircumferenceMeasurements | null;
@@ -41,7 +53,7 @@ export function resolveAvatarCircumferences(args: {
   sex: Sex;
   unit: MeasurementUnit;
 }): CircumferenceMeasurements | null {
-  if (args.overlay) return args.overlay;
+  if (anyCircumferencePresent(args.overlay)) return args.overlay;
   if (anyCircumferencePresent(args.measured)) return args.measured;
   if (!historySnapshotCanEstimateGirths(args.historySnapshot)) return null;
   return estimateCircumferencesFromComposition(args.historySnapshot, args.sex, args.unit);

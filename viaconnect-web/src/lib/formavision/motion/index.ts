@@ -19,6 +19,7 @@ export {
 export { assertSameTopology, lerpPositionsInto } from './morphPositions';
 export {
   createMorphController,
+  resolveMorphFromVector,
   type MorphController,
   type MorphControllerOptions,
 } from './morphController';
@@ -28,6 +29,10 @@ export {
   type ScrubControllerOptions,
   type ScrubTimer,
 } from './scrubController';
+export {
+  bodyVectorHasFiniteGirth,
+  shouldHoldScrubMorph,
+} from './shouldHoldScrubMorph';
 export {
   framingForRegion,
   FULL_BODY_FRAMING,

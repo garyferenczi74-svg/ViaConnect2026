@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { createMorphController } from '../morphController';
+import { createMorphController, resolveMorphFromVector } from '../morphController';
 import type { FrameScheduler } from '../demandAnimation';
 import type { BodyParamVector } from '@/lib/formavision/geometry/types';
 
@@ -137,6 +137,14 @@ describe('createMorphController (reduced motion)', () => {
     expect(recomputeNormals).toHaveBeenCalledTimes(1);
     expect(ctrl.scheduleCount()).toBe(0);
     expect(controller.isMorphing()).toBe(false);
+  });
+});
+
+describe('resolveMorphFromVector', () => {
+  it('prefers last scrub, then the on-screen shape, never the incoming target first', () => {
+    expect(resolveMorphFromVector(FROM, TO, TO)).toBe(FROM);
+    expect(resolveMorphFromVector(null, FROM, TO)).toBe(FROM);
+    expect(resolveMorphFromVector(null, null, TO)).toBe(TO);
   });
 });
 

@@ -110,6 +110,7 @@ import {
   type OvalColor,
 } from '@/lib/body-tracker/heatmap-colors';
 import { isJourneyCompositionPoint } from '@/lib/body-tracker/composition/journeyPoints';
+import { resolveAvatarCircumferences } from '@/lib/body-tracker/composition/resolveAvatarCircumferences';
 import {
   CompositionSectionToggle,
   type CompositionSection,
@@ -480,13 +481,19 @@ function CompositionPageInner() {
   const journeyVectors = useMemo<BodyParamVector[]>(
     () =>
       journeySnapshots.map((snap, i) => {
-        const circ =
+        const measured =
           circByDate.get(snap.recordedAt)?.measurements ??
           circHistory.entries[i]?.measurements ??
           null;
         return scanToParamVector({
           snapshot: snap,
-          circumferences: circ,
+          circumferences: resolveAvatarCircumferences({
+            overlay: null,
+            measured,
+            historySnapshot: snap,
+            sex: gender,
+            unit,
+          }),
           sex: gender,
           unit,
         });
@@ -903,6 +910,7 @@ function CompositionPageInner() {
         ) : (
           <BodyScanUploader
             onComplete={(r) => {
+              setScrubVector(null);
               setScanResult(r);
               void runScanPersist(r.scanId);
             }}
