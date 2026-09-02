@@ -2,6 +2,8 @@
 
 /**
  * Prompt 231: mounts the "Your scans" section on the FormaVision landing page.
+ * Photo-scan rows arrive only through GET /api/scan/history — never via a
+ * client import of scanReadsShared / supabase/server.
  */
 
 import { useCallback, useEffect, useState } from 'react';

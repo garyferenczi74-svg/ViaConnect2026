@@ -33,6 +33,9 @@ describe('ScanHistory - client/server boundary', () => {
     const section = readFileSync(join(process.cwd(), 'src/components/scan/ScanHistorySection.tsx'), 'utf8');
     expect(history).not.toMatch(/from '@\/lib\/scan\/scanReadsShared'/);
     expect(section).not.toMatch(/from '@\/lib\/scan\/scanReadsShared'/);
+    expect(history).not.toMatch(/listScans/);
+    expect(section).not.toMatch(/listScans/);
+    expect(section).toMatch(/\/api\/scan\/history/);
     expect(history).toMatch(/from '@\/lib\/scan\/scanProtocols'/);
     expect(history).toMatch(/from '@\/lib\/scan\/scanSummary'/);
   });

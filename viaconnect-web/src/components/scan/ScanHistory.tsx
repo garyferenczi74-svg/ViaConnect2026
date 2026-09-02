@@ -13,10 +13,12 @@ import type { ScanSummary } from '@/lib/scan/scanSummary';
  * server loader, mirroring ScanExperienceLoader/ScanExperience) so this
  * component stays pure and testable with renderToStaticMarkup.
  *
- * `scans` comes from scanReadsShared.listScans, which already filters to
- * protocol='4pose_v1' and excludes tombstoned rows (condition 5, 17). This
- * component filters again defensively so a tombstoned row can never render
- * as a normal, deletable scan even if it somehow reaches this prop.
+ * `scans` is a prop from ScanHistorySection, which fetches GET
+ * /api/scan/history only. This file must never import scanReadsShared
+ * (that module pulls supabase/server → next/headers). The API already
+ * filters 4-pose + FormaVision photo scans and excludes tombstones
+ * (condition 5, 17). This component filters tombstones again so a
+ * tombstoned row can never render as a normal, deletable scan.
  *
  * Token discipline: var(--card) / var(--teal), no raw hex. Instrument Sans
  * via the .font-instrument scoped class. Lucide icons, strokeWidth 1.5.
