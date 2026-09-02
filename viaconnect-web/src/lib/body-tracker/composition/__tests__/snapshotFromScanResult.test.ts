@@ -95,4 +95,29 @@ describe('snapshotFromScanResult', () => {
       }),
     ).toBeNull();
   });
+
+  it('coerces string and snake_case Ready estimate fields without inventing BF', () => {
+    const fromString = snapshotFromPhotoScanSummary({
+      id: 'photo-str',
+      date: '2026-09-01',
+      estimatedBodyFatMin: '29',
+      estimatedBodyFatMax: '33',
+    });
+    expect(fromString?.totalBodyFatPct).toBe(31);
+    const fromSnake = snapshotFromPhotoScanSummary({
+      id: 'photo-snake',
+      date: '2026-09-01',
+      estimated_body_fat_min: 29,
+      estimated_body_fat_max: 33,
+    });
+    expect(fromSnake?.totalBodyFatPct).toBe(31);
+    expect(
+      snapshotFromPhotoScanSummary({
+        id: 'photo-junk',
+        date: '2026-09-01',
+        estimatedBodyFatMin: 'n/a',
+        estimatedBodyFatMax: 'n/a',
+      }),
+    ).toBeNull();
+  });
 });

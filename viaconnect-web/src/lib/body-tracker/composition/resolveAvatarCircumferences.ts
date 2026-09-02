@@ -10,12 +10,14 @@
 
 import { anyCircumferencePresent } from '@/lib/body-tracker/composition/scanSpineContract';
 import { estimateCircumferencesFromComposition } from '@/lib/body-tracker/composition/estimateCircumferencesFromComposition';
+import { snapshotFromPhotoScanSummary } from '@/lib/body-tracker/composition/snapshotFromScanResult';
 import type { CompositionSnapshot } from '@/lib/body-tracker/composition/types';
 import type {
   CircumferenceMeasurements,
   MeasurementUnit,
 } from '@/lib/body-tracker/circumference';
 import type { Sex } from '@/lib/formavision/geometry/types';
+import { isReadyFormaVisionScan, type ScanSummary } from '@/lib/scan/scanSummary';
 
 export function historySnapshotCanEstimateGirths(
   snapshot: CompositionSnapshot | null,
@@ -34,16 +36,33 @@ export function historySnapshotCanEstimateGirths(
   return Boolean(snapshot.isEstimated || snapshot.source === 'scan' || snapshot.scanId);
 }
 
+export function pickReadyPhotoSnapshot(
+  scans: readonly ScanSummary[] | null | undefined,
+): CompositionSnapshot | null {
+  if (!scans) return null;
+  for (const scan of scans) {
+    if (!isReadyFormaVisionScan(scan)) continue;
+    const fromScan = snapshotFromPhotoScanSummary(scan);
+    if (fromScan && historySnapshotCanEstimateGirths(fromScan)) return fromScan;
+  }
+  return null;
+}
+
 export function pickHistorySnapshotForAvatar(
   latest: CompositionSnapshot | null,
   journeySnapshots: readonly CompositionSnapshot[] = [],
+  readyPhoto: CompositionSnapshot | null = null,
 ): CompositionSnapshot | null {
+  // Your scans Ready photo is the BF SSOT Arnold reads (e.g. 31%). Prefer it
+  // for girth estimate so a leaner/template-BF composition latest cannot pin
+  // the mesh to the sex template. Overlay/measured circs still win later.
+  if (historySnapshotCanEstimateGirths(readyPhoto)) return readyPhoto;
   if (historySnapshotCanEstimateGirths(latest)) return latest;
   for (let i = journeySnapshots.length - 1; i >= 0; i -= 1) {
     const snap = journeySnapshots[i];
     if (historySnapshotCanEstimateGirths(snap)) return snap;
   }
-  return latest;
+  return readyPhoto ?? latest;
 }
 
 export function resolveAvatarCircumferences(args: {

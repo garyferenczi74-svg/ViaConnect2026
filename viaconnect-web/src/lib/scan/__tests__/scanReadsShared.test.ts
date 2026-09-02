@@ -268,6 +268,28 @@ describe('scanReadsShared', () => {
       });
     });
 
+    it('coerces numeric-as-string photo-scan estimate fields', async () => {
+      installTable(
+        { data: [], error: null },
+        {
+          data: [{
+            id: 'photo-str',
+            scan_date: '2026-09-01',
+            created_at: '2026-09-01T12:00:00Z',
+            estimated_body_fat_min: '29',
+            estimated_body_fat_max: '33',
+          }],
+          error: null,
+        },
+      );
+      const scans = await listScans('user-1');
+      expect(scans[0]).toMatchObject({
+        id: 'photo-str',
+        estimatedBodyFatMin: 29,
+        estimatedBodyFatMax: 33,
+      });
+    });
+
     it('collapses same-day formavision_photo Ready rows to the newest', async () => {
       installTable(
         { data: [], error: null },

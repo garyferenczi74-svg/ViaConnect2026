@@ -192,12 +192,13 @@ describe('Arnold #175 secondary: Ready photo scan feeds Results + morph', () => 
     expect(pickHistorySnapshotForAvatar(null, [])).toBeNull();
     expect(photo).not.toBeNull();
     expect(historySnapshotCanEstimateGirths(null)).toBe(false);
+    expect(pickHistorySnapshotForAvatar(null, [], photo)).toBe(photo);
   });
 
   it('page wires Your scans Ready rows into snapshot + empty-state', () => {
     const page = src('src/app/(app)/(consumer)/body-tracker/formavision/page.tsx');
     const history = src('src/lib/scan/scanReadsShared.ts');
-    expect(page).toMatch(/snapshotFromPhotoScanSummary/);
+    expect(page).toMatch(/pickReadyPhotoSnapshot/);
     expect(page).toMatch(/isReadyFormaVisionScan/);
     expect(page).toMatch(/onScansChange=\{setHistoryScans\}/);
     expect(page).toMatch(/hasReadyFormaVisionScan/);

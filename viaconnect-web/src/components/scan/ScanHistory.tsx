@@ -4,7 +4,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { Camera, ImageOff, Loader2, Trash2 } from 'lucide-react';
 import { POSE_ORDER, type PoseId } from '@/lib/scan/poses';
 import { FORMAVISION_PHOTO_PROTOCOL } from '@/lib/scan/scanProtocols';
-import { scanHistoryShowsFrblGrid, type ScanSummary } from '@/lib/scan/scanSummary';
+import {
+  formatScanEstimateBfRange,
+  scanHistoryShowsFrblGrid,
+  type ScanSummary,
+} from '@/lib/scan/scanSummary';
 
 /**
  * Prompt 231: the 4-pose scan history list. Reuses the Task 13
@@ -163,6 +167,7 @@ export function ScanHistory({ scans, onDeleted }: ScanHistoryProps) {
       {visible.map((scan) => {
         const state = deleteState[scan.id] ?? 'idle';
         const message = deleteMessage[scan.id] ?? '';
+        const bfRange = formatScanEstimateBfRange(scan);
         return (
           <li
             key={scan.id}
@@ -180,6 +185,14 @@ export function ScanHistory({ scans, onDeleted }: ScanHistoryProps) {
                   <span data-testid={`scan-history-status-${scan.id}`}>
                     {statusLabel(scan.captureStatus)}
                   </span>
+                  {bfRange ? (
+                    <>
+                      {' · '}
+                      <span data-testid={`scan-history-bf-${scan.id}`}>
+                        Body fat {bfRange}
+                      </span>
+                    </>
+                  ) : null}
                 </p>
               </div>
               {scan.protocol === FORMAVISION_PHOTO_PROTOCOL ? null : state === 'deleting' ? (
