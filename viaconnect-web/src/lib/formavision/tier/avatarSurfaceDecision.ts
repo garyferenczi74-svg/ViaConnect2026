@@ -33,7 +33,10 @@ export interface AvatarSurfaceDecisionInput {
 
 export function selectAvatarSurface(input: AvatarSurfaceDecisionInput): AvatarSurface {
   if (input.confirmedFailure) return 'fallback2d';
-  if (input.renderTier === '2d') return 'fallback2d';
+  // A budget-ladder '2d' is not a WebGL-unavailable floor. SwiftShader /
+  // software GL stays on the 3D path. Only a confirmed canvas failure
+  // selects the honest SVG.
+  if (input.renderTier === '2d' && input.webgl === 'unavailable') return 'fallback2d';
   return 'formavision3d';
 }
 

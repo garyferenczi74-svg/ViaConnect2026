@@ -58,12 +58,12 @@ describe('createFormaVisionRenderer', () => {
     expect(constructed[0]).toEqual(
       expect.objectContaining({
         canvas,
-        context,
         antialias: true,
         failIfMajorPerformanceCaveat: false,
         powerPreference: 'default',
       }),
     );
+    expect(constructed[0]).not.toHaveProperty('context');
   });
 
   it('passes antialias false to WebGLRenderer when the winning context is software-safe', () => {
@@ -76,10 +76,10 @@ describe('createFormaVisionRenderer', () => {
     expect(constructed[0]).toEqual(
       expect.objectContaining({
         canvas,
-        context,
         antialias: false,
         failIfMajorPerformanceCaveat: false,
       }),
     );
+    expect(constructed[0]).not.toHaveProperty('context');
   });
 });

@@ -181,9 +181,14 @@ function BodyCompositionAvatarInner({
   // exactly one 2D-floor decision and one render branch, never a parallel 2D path.
   useEffect(() => {
     if (tier === '2d') {
-      setFellBack(true);
-      setFallbackReason((current) => current ?? '3D stepped down after a sustained frame-budget miss');
-      setFallbackWebgl(probeWebGL());
+      const probe = probeWebGL();
+      setFallbackWebgl(probe);
+      // Software GL is allowed. A budget step to '2d' is not "no WebGL" —
+      // keep the 3D mount (lite) whenever a fresh getContext still works.
+      if (shouldLatchFallback2d(probe)) {
+        setFellBack(true);
+        setFallbackReason((current) => current ?? '3D stepped down after a sustained frame-budget miss');
+      }
     }
     // P8-T1b/T1c: fire the step-down telemetry event on the first drop below
     // cinematic, enriched with the quality snapshot (P8-T1c).

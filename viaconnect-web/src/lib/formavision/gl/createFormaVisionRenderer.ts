@@ -48,15 +48,17 @@ export function createFormaVisionRenderer(input: FormaVisionGLFactoryInput): Web
   if (!acquired) {
     throw new Error(WEBGL_CONTEXT_UNAVAILABLE_MESSAGE);
   }
-  // antialias must match the context that actually won (SAFE true, or
-  // SOFTWARE_SAFE false on SwiftShader MSAA-null). Passing true over a
-  // non-MSAA context lies to THREE about the live GL state.
+  // Do NOT pass `context`. THREE r163+ throws "WebGL 1 is not supported" for
+  // `instanceof WebGLRenderingContext`, and WebGL2RenderingContext inherits
+  // that in browsers — so a successful SwiftShader webgl2 context was rejected,
+  // the error boundary latched SVG, and the notice lied. Acquire first so the
+  // antialias:false retry binds the live canvas; THREE then getContext('webgl2')
+  // and receives that same context. Caveat stays false.
   return new WebGLRenderer({
     canvas: canvas as HTMLCanvasElement,
-    context: acquired.context as WebGLRenderingContext,
     antialias: acquired.attributes.antialias === true,
     alpha: acquired.attributes.alpha !== false,
     powerPreference: acquired.attributes.powerPreference ?? 'default',
-    failIfMajorPerformanceCaveat: acquired.attributes.failIfMajorPerformanceCaveat === true,
+    failIfMajorPerformanceCaveat: false,
   });
 }

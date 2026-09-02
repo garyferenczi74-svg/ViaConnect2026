@@ -58,6 +58,13 @@ describe('Arnold #174 PRIMARY: keep 3D when getContext succeeds', () => {
         webgl: 'available',
       }),
     ).toBe('formavision3d');
+    expect(
+      selectAvatarSurface({
+        renderTier: '2d',
+        confirmedFailure: false,
+        webgl: 'available',
+      }),
+    ).toBe('formavision3d');
     expect(shouldLatchFallback2d('available')).toBe(false);
     expect(shouldLatchFallback2d('ssr')).toBe(false);
   });
@@ -86,5 +93,7 @@ describe('Arnold #174 PRIMARY: keep 3D when getContext succeeds', () => {
     const factory = src('src/lib/formavision/gl/createFormaVisionRenderer.ts');
     expect(factory).toMatch(/acquireWebGLContextResult/);
     expect(factory).toMatch(/antialias: acquired\.attributes\.antialias === true/);
+    expect(factory).not.toMatch(/context:\s*acquired/);
+    expect(factory).toMatch(/failIfMajorPerformanceCaveat:\s*false/);
   });
 });

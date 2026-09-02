@@ -80,9 +80,18 @@ describe('selectAvatarSurface', () => {
     ).toBe('fallback2d');
   });
 
-  it('selects the 2D floor when the runtime ladder has stepped to 2d', () => {
+  it('keeps the 3D mount when the budget ladder steps to 2d and getContext works', () => {
     expect(
       selectAvatarSurface(input({ renderTier: '2d', webgl: 'available' })),
+    ).toBe('formavision3d');
+    expect(
+      wouldSelectSvgDespiteWebGL(input({ renderTier: '2d', webgl: 'available' })),
+    ).toBe(false);
+  });
+
+  it('selects the 2D floor on a 2d ladder step only when the probe is unavailable', () => {
+    expect(
+      selectAvatarSurface(input({ renderTier: '2d', webgl: 'unavailable' })),
     ).toBe('fallback2d');
   });
 });
