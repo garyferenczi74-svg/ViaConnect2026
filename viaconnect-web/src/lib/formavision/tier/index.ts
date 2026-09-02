@@ -17,6 +17,15 @@ export {
 export { dprForTier, showParticlesForTier } from './tierCost';
 export { stepTierDown, isFloorTier } from './tierLadder';
 export {
+  selectAvatarSurface,
+  wouldSelectSvgDespiteWebGL,
+} from './avatarSurfaceDecision';
+export type {
+  AvatarSurface,
+  AvatarSurfaceDecisionInput,
+  WebGLAvailability,
+} from './avatarSurfaceDecision';
+export {
   createFrameBudgetSampler,
   DEFAULT_FRAME_BUDGET_MS,
   DEFAULT_IDLE_GAP_MS,

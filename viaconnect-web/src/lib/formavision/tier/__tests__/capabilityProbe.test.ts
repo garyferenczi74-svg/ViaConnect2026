@@ -14,6 +14,7 @@ import { describe, it, expect, vi } from 'vitest';
 import {
   decideInitialTier,
   probeRenderTier,
+  readCapabilitySignals,
   readRendererString,
   LOW_MEMORY_GB_STRONG,
   LOW_MEMORY_GB_COMBINED,
@@ -145,9 +146,22 @@ describe('readRendererString context release (M1 fix, P7-T2)', () => {
     }
   });
 
+  it('readCapabilitySignals does not allocate a throwaway WebGL context', () => {
+    const createElement = vi.fn();
+    vi.stubGlobal('document', { createElement });
+    vi.stubGlobal('navigator', { deviceMemory: 8, hardwareConcurrency: 8 });
+    try {
+      const signals = readCapabilitySignals();
+      expect(createElement).not.toHaveBeenCalled();
+      expect(signals.rendererString).toBeUndefined();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('returns undefined safely when document is absent (SSR / node runner)', () => {
-    // readRendererString is the SSR-safe path used by probeRenderTier; with no DOM
-    // it must return undefined and never throw.
+    // readRendererString is SSR-safe; with no DOM it must return undefined
+    // and never throw. The mount-path probe no longer calls it (iOS starve).
     expect(readRendererString()).toBeUndefined();
     expect(() => readRendererString()).not.toThrow();
   });

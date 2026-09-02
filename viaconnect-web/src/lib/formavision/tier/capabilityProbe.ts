@@ -137,10 +137,11 @@ export function readCapabilitySignals(): CapabilitySignals {
       // matchMedia can throw on a malformed query in some engines; leave it unset.
     }
   }
-  const renderer = readRendererString();
-  if (renderer) {
-    signals.rendererString = renderer;
-  }
+  // Do NOT call readRendererString() here. That creates a throwaway WebGL
+  // context and immediately loseContext()s it on the same tick the r3f canvas
+  // is about to mount. iPhone Safari treats that as a lost-context cooldown
+  // and the live FormaVisionCanvas then fails (error boundary -> SVG).
+  // Software-renderer lite detection is backstopped by the frame-budget ladder.
 
   return signals;
 }

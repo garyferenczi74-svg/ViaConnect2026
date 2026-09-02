@@ -45,14 +45,14 @@ export const FORMAVISION_PATH = '/body-tracker/formavision';
 // Capability probe forcing (the honest fallback lever)
 // ---------------------------------------------------------------------------
 //
-// hasWebGL() builds a throwaway <canvas> and asks for a 'webgl2' / 'webgl' /
-// 'experimental-webgl' context; a null result means "no WebGL" and the surface
-// drops to the guaranteed 2D floor. To make the WebGL-fail path DETERMINISTIC and
-// runnable headless, we stub HTMLCanvasElement.prototype.getContext so that any GL
-// context request returns null while 2D requests pass through untouched. This is
-// installed via page.addInitScript so it runs before any app script, exactly as a
-// GL-blocklisted / GL-disabled browser would behave. It forces fellBack -> true in
-// BodyCompositionAvatar and renders the SegmentalHeatMap floor with numbers intact.
+// hasWebGL() is advisory (SSR / iOS false-negatives must not latch 2D). The
+// cinematic path mounts FormaVisionCanvas; a real getContext null then fails the
+// r3f Canvas and AvatarErrorBoundary latches the honest 2D floor. To make that
+// fail path DETERMINISTIC headless, we stub HTMLCanvasElement.prototype.getContext
+// so any GL context request returns null while 2D requests pass through. Installed
+// via page.addInitScript before any app script, exactly as a GL-blocklisted
+// browser would behave. Canvas creation fails, fellBack latches, and the
+// SegmentalHeatMap floor renders with numbers intact plus the fallback notice.
 export async function forceWebGLUnavailable(page: Page): Promise<void> {
   await page.addInitScript(() => {
     const proto = HTMLCanvasElement.prototype;

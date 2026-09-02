@@ -178,6 +178,7 @@ describe('JourneyTimeline: onScrub contract', () => {
     expect(src).toMatch(/onScrubRef\.current\(null\)/);
     expect(src).toMatch(/onPointerUp=\{restAvatar\}/);
     expect(src).toMatch(/onPointerCancel=\{restAvatar\}/);
+    expect(src).toMatch(/onKeyUp=\{restAvatar\}/);
     expect(src).toMatch(/restAvatar\(\)/);
   });
 });

@@ -2,19 +2,17 @@
 
 // Capability-gated mount point for the Body Composition avatar (Prompt 210b, P1-T5).
 //
-// This wrapper is what the composition page renders in place of the bare 2D
-// SegmentalHeatMap. It decides which avatar the user sees:
+// This wrapper is what the FormaVision plate renders in place of a bare 2D
+// SegmentalHeatMap. selectAvatarSurface decides which avatar the user sees:
 //
-//   3D FormaVision3DAvatar  when WebGL is available and no render error occurred
-//   2D floor (children)     otherwise (WebGL off, low-power, or a render error)
+//   3D FormaVision3DAvatar  preferred whenever 3D has not confirmed-failed
+//   2D floor (children)     only after a render/context-lost error or tier 2d
 //
-// The 2D path is the GUARANTEED FALLBACK FLOOR (Section 2/17): it is passed in
-// verbatim as children and rendered unchanged whenever the 3D avatar cannot or
-// should not run, so the page looks and works exactly as it does today when
-// WebGL is unavailable. The 3D avatar owns its own WebGL probe and render error
-// boundary and reports both through onRenderError; this wrapper latches that
-// signal once and swaps to the floor, never recovering mid-session so the user
-// is not flipped back and forth.
+// A render-time hasWebGL() false (SSR, iOS Safari false-negative) must NOT
+// latch the floor. The 2D path is the GUARANTEED FALLBACK FLOOR (Section 2/17)
+// and is wrapped in FormaVisionFallbackNotice so a lean SVG cannot be mistaken
+// for a morph. The 3D avatar reports confirmed failures through onRenderError;
+// this wrapper latches that signal once and never recovers mid-session.
 //
 // UNIT CONTRACT: the page passes the SAME displayUnit it requested from
 // useCircumferenceData as the unit prop, which is forwarded verbatim to the
@@ -30,7 +28,9 @@ import type { Sex, BodyParamVector } from '@/lib/formavision/geometry/types';
 import type { SegmentTintRecord } from '@/lib/formavision/geometry/segmentTints';
 import type { AvatarQualitySignals } from '@/lib/formavision/telemetry/avatarTelemetry';
 import { buildAvatarQualitySnapshot } from '@/lib/formavision/telemetry/avatarTelemetry';
+import { selectAvatarSurface } from '@/lib/formavision/tier/avatarSurfaceDecision';
 import { FormaVision3DAvatar } from './FormaVision3DAvatar';
+import { FormaVisionFallbackNotice } from './FormaVisionFallbackNotice';
 import { useRenderTier, useReportBudgetMiss } from './RenderTierProvider';
 
 export interface BodyCompositionAvatarProps {
@@ -109,8 +109,8 @@ function BodyCompositionAvatarInner({
   frameloopMode,
   children,
 }: BodyCompositionAvatarProps) {
-  // Latched once the avatar reports a WebGL-unavailable gate or a render error.
-  // From that point on the 2D floor is shown for the rest of the session.
+  // Latched once the avatar reports a confirmed render / context-lost error.
+  // From that point on the honest 2D floor is shown for the rest of the session.
   const [fellBack, setFellBack] = useState(false);
 
   // The active render tier (capability probe initially; stepped down at runtime) and
@@ -183,8 +183,13 @@ function BodyCompositionAvatarInner({
     }
   }, [fellBack, onTierStepDown]);
 
-  if (fellBack || tier === '2d') {
-    return <>{children}</>;
+  const surface = selectAvatarSurface({
+    renderTier: tier,
+    confirmedFailure: fellBack,
+    webgl: 'unknown',
+  });
+  if (surface === 'fallback2d') {
+    return <FormaVisionFallbackNotice>{children}</FormaVisionFallbackNotice>;
   }
 
   // Only the two 3D tiers reach the avatar here; '2d' was handled above. On a capable
