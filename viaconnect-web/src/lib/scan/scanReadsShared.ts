@@ -13,8 +13,9 @@
 // Returns capture_status, never the legacy is_complete column, and never raw
 // storage paths (condition 13, least exposure) - only pose presence booleans,
 // since signed URLs are always minted through the Task 13 /api/scan/signed-url
-// route. Photo-scan rows have no stored poses (analyze discards images);
-// ScanHistory hides the FRBL grid for formavision_photo instead of ImageOff.
+// route. Photo-scan poses are mapped from real storage path columns when
+// present; analyze currently discards images (no path columns in schema),
+// so ScanHistory hides the FRBL grid instead of ImageOff.
 //
 // Resilient: every query is raced against a timeout and fails open to a
 // null/empty result with a structured log, never a thrown error.
@@ -24,7 +25,11 @@ import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 import { PROTOCOL_ID, POSE_ORDER, type PoseId } from '@/lib/scan/poses';
 import { FORMAVISION_PHOTO_PROTOCOL } from '@/lib/scan/scanProtocols';
-import type { ScanCaptureStatus, ScanSummary } from '@/lib/scan/scanSummary';
+import {
+  hasAnyPresentPose,
+  type ScanCaptureStatus,
+  type ScanSummary,
+} from '@/lib/scan/scanSummary';
 
 export { FORMAVISION_PHOTO_PROTOCOL } from '@/lib/scan/scanProtocols';
 export type { ScanCaptureStatus, ScanSummary } from '@/lib/scan/scanSummary';
@@ -105,19 +110,33 @@ interface PhotoScanRow {
   id: string;
   scan_date: string;
   created_at?: string | null;
+  [key: string]: unknown;
+}
+
+function isPresentStoragePath(value: unknown): boolean {
+  return typeof value === 'string' && value.length > 0;
+}
+
+function photoScanPosesFromRow(row: PhotoScanRow): Record<PoseId, boolean> {
+  const poses = {} as Record<PoseId, boolean>;
+  for (const pose of POSE_ORDER) {
+    poses[pose] =
+      isPresentStoragePath(row[`${pose}_full_path`]) ||
+      isPresentStoragePath(row[`${pose}_thumb_path`]);
+  }
+  return poses;
 }
 
 function photoScanToSummary(row: PhotoScanRow): ScanSummary {
-  // Analyze discards images (no storage paths). Do not invent pose-present.
-  // History UI hides the FRBL grid for this protocol.
-  const poses = {} as Record<PoseId, boolean>;
-  for (const pose of POSE_ORDER) poses[pose] = false;
+  // Preference 1: map real storage thumbs / present views. Do not force false
+  // when a path column is a non-empty string. Preference 2 (hide FRBL) is the
+  // history UI when every pose stays absent — today's schema has no paths.
   return {
     id: row.id,
     date: row.scan_date,
     protocol: FORMAVISION_PHOTO_PROTOCOL,
     captureStatus: 'ready',
-    poses,
+    poses: photoScanPosesFromRow(row),
   };
 }
 
@@ -152,27 +171,49 @@ function calendarDay(date: string): string {
   return date;
 }
 
-function hasAnyPresentPose(scan: ScanSummary): boolean {
-  return POSE_ORDER.some((pose) => scan.poses[pose]);
+const PHOTO_SELECT_MIN = 'id, scan_date, created_at';
+const PHOTO_SELECT_WITH_PATHS =
+  `${PHOTO_SELECT_MIN},` +
+  POSE_ORDER.flatMap((pose) => [`${pose}_full_path`, `${pose}_thumb_path`]).join(',');
+
+function isMissingColumnError(error: { message: string } | null): boolean {
+  if (!error?.message) return false;
+  return /column|does not exist|schema cache/i.test(error.message);
+}
+
+async function queryPhotoSelect(
+  userId: string,
+  limit: number,
+  columns: string,
+  label: string,
+): Promise<{ data: PhotoScanRow[] | null; error: { message: string } | null }> {
+  const supabase = await createClient();
+  return withTimeout(
+    Promise.resolve(
+      supabase
+        .from('body_tracker_photo_scans')
+        .select(columns)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(limit),
+    ) as unknown as Promise<{ data: PhotoScanRow[] | null; error: { message: string } | null }>,
+    QUERY_TIMEOUT_MS,
+    `${SCOPE}.${label}`,
+  );
 }
 
 async function queryPhotoScanRows(userId: string, limit: number): Promise<{
   data: PhotoScanRow[] | null;
   error: { message: string } | null;
 }> {
-  const supabase = await createClient();
-  return withTimeout(
-    Promise.resolve(
-      supabase
-        .from('body_tracker_photo_scans')
-        .select('id, scan_date, created_at')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(limit),
-    ) as unknown as Promise<{ data: PhotoScanRow[] | null; error: { message: string } | null }>,
-    QUERY_TIMEOUT_MS,
-    `${SCOPE}.photoQuery`,
-  );
+  const wide = await queryPhotoSelect(userId, limit, PHOTO_SELECT_WITH_PATHS, 'photoQuery.paths');
+  if (!wide.error) return wide;
+  if (!isMissingColumnError(wide.error)) return wide;
+  safeLog.warn(SCOPE, 'photo path columns missing; listing without storage thumbs', {
+    error: wide.error,
+    userId,
+  });
+  return queryPhotoSelect(userId, limit, PHOTO_SELECT_MIN, 'photoQuery');
 }
 
 async function listPhotoScans(userId: string, limit: number): Promise<ScanSummary[]> {
@@ -208,7 +249,7 @@ function mergeScanSummaries(sessions: ScanSummary[], photos: ScanSummary[], limi
 
   const uniqueSessions = sessions.filter((scan) => {
     if (scan.protocol !== PROTOCOL_ID) return true;
-    if (hasAnyPresentPose(scan)) return true;
+    if (hasAnyPresentPose(scan.poses)) return true;
     return !seenPhotoDay.has(calendarDay(scan.date));
   });
 

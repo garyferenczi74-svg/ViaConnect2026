@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Camera, ImageOff, Loader2, Trash2 } from 'lucide-react';
 import { POSE_ORDER, type PoseId } from '@/lib/scan/poses';
 import { FORMAVISION_PHOTO_PROTOCOL } from '@/lib/scan/scanProtocols';
-import type { ScanSummary } from '@/lib/scan/scanSummary';
+import { scanHistoryShowsFrblGrid, type ScanSummary } from '@/lib/scan/scanSummary';
 
 /**
  * Prompt 231: the 4-pose scan history list. Reuses the Task 13
@@ -20,10 +20,11 @@ import type { ScanSummary } from '@/lib/scan/scanSummary';
  * (condition 5, 17). This component filters tombstones again so a
  * tombstoned row can never render as a normal, deletable scan.
  *
- * FormaVision photo scans (body_tracker_photo_scans) discard images after
- * analyze (BAA / ephemeral — no storage paths). Do not mint signed URLs or
- * map pose-present for that protocol. Hide the FRBL grid and show copy only.
- * 4pose_v1 guided thumbs are unchanged when poses are present.
+ * FormaVision photo FRBL preference (Arnold): if the history API mapped
+ * real present views / storage thumbs, show the 4-pose grid. If every
+ * pose is absent (analyze discards images; no path columns today), hide
+ * the grid and show copy only — never ImageOff placeholders. 4pose_v1
+ * thumbs stay on the grid when poses are present.
  *
  * Token discipline: var(--card) / var(--teal), no raw hex. Instrument Sans
  * via the .font-instrument scoped class. Lucide icons, strokeWidth 1.5.
@@ -201,14 +202,7 @@ export function ScanHistory({ scans, onDeleted }: ScanHistoryProps) {
               )}
             </div>
 
-            {scan.protocol === FORMAVISION_PHOTO_PROTOCOL ? (
-              <p
-                className="text-xs text-white/45"
-                data-testid={`scan-history-photos-discarded-${scan.id}`}
-              >
-                Photos are not stored after analysis.
-              </p>
-            ) : (
+            {scanHistoryShowsFrblGrid(scan) ? (
               <div className="grid grid-cols-4 gap-2">
                 {POSE_ORDER.map((pose) => (
                   <ScanHistoryThumb
@@ -219,6 +213,13 @@ export function ScanHistory({ scans, onDeleted }: ScanHistoryProps) {
                   />
                 ))}
               </div>
+            ) : (
+              <p
+                className="text-xs text-white/45"
+                data-testid={`scan-history-photos-discarded-${scan.id}`}
+              >
+                Photos are not stored after analysis.
+              </p>
             )}
 
             {state === 'error' && message && (
