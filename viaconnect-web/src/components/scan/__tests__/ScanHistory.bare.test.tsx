@@ -39,6 +39,15 @@ describe('ScanHistory - client/server boundary', () => {
     expect(history).toMatch(/from '@\/lib\/scan\/scanProtocols'/);
     expect(history).toMatch(/from '@\/lib\/scan\/scanSummary'/);
   });
+
+  it('hides FRBL for formavision_photo and does not chase signed-url / pose-present', () => {
+    const history = readFileSync(join(process.cwd(), 'src/components/scan/ScanHistory.tsx'), 'utf8');
+    expect(history).toMatch(/scan\.protocol === FORMAVISION_PHOTO_PROTOCOL/);
+    expect(history).toMatch(/Photos are not stored after analysis/);
+    expect(history).toMatch(/Do not mint signed URLs or/);
+    expect(history).toMatch(/map pose-present/);
+    expect(history).toMatch(/Hide the FRBL grid/);
+  });
 });
 
 describe('ScanHistory - empty state', () => {
@@ -62,7 +71,11 @@ describe('ScanHistory - rendering a scan', () => {
   it('labels a FormaVision photo scan without a 4-pose delete control', () => {
     const html = renderToStaticMarkup(
       React.createElement(ScanHistory, {
-        scans: [scan({ id: 'photo-1', protocol: 'formavision_photo' })],
+        scans: [scan({
+          id: 'photo-1',
+          protocol: 'formavision_photo',
+          poses: { front: false, right: false, back: false, left: false },
+        })],
         onDeleted: NOOP,
       }),
     );
@@ -71,6 +84,26 @@ describe('ScanHistory - rendering a scan', () => {
     expect(html).not.toContain('4pose_v1');
     expect(html).not.toContain('formavision_photo');
     expect(html).not.toContain('scan-history-delete-photo-1');
+  });
+
+  it('hides the FRBL grid for formavision_photo instead of ImageOff placeholders', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(ScanHistory, {
+        scans: [scan({
+          id: 'photo-1',
+          protocol: 'formavision_photo',
+          poses: { front: false, right: false, back: false, left: false },
+        })],
+        onDeleted: NOOP,
+      }),
+    );
+    expect(html).toContain('scan-history-photos-discarded-photo-1');
+    expect(html).toContain('Photos are not stored after analysis.');
+    expect(html).not.toContain('scan-history-pose-placeholder-front');
+    expect(html).not.toContain('scan-history-pose-placeholder-right');
+    expect(html).not.toContain('scan-history-pose-placeholder-back');
+    expect(html).not.toContain('scan-history-pose-placeholder-left');
+    expect(html).not.toContain('scan-history-pose-loading-front');
   });
 
   it('renders the date, protocol, and status of a scan', () => {

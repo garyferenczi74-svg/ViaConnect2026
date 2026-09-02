@@ -20,6 +20,11 @@ import type { ScanSummary } from '@/lib/scan/scanSummary';
  * (condition 5, 17). This component filters tombstones again so a
  * tombstoned row can never render as a normal, deletable scan.
  *
+ * FormaVision photo scans (body_tracker_photo_scans) discard images after
+ * analyze (BAA / ephemeral — no storage paths). Do not mint signed URLs or
+ * map pose-present for that protocol. Hide the FRBL grid and show copy only.
+ * 4pose_v1 guided thumbs are unchanged when poses are present.
+ *
  * Token discipline: var(--card) / var(--teal), no raw hex. Instrument Sans
  * via the .font-instrument scoped class. Lucide icons, strokeWidth 1.5.
  */
@@ -196,16 +201,25 @@ export function ScanHistory({ scans, onDeleted }: ScanHistoryProps) {
               )}
             </div>
 
-            <div className="grid grid-cols-4 gap-2">
-              {POSE_ORDER.map((pose) => (
-                <ScanHistoryThumb
-                  key={pose}
-                  sessionId={scan.id}
-                  pose={pose}
-                  present={scan.poses[pose]}
-                />
-              ))}
-            </div>
+            {scan.protocol === FORMAVISION_PHOTO_PROTOCOL ? (
+              <p
+                className="text-xs text-white/45"
+                data-testid={`scan-history-photos-discarded-${scan.id}`}
+              >
+                Photos are not stored after analysis.
+              </p>
+            ) : (
+              <div className="grid grid-cols-4 gap-2">
+                {POSE_ORDER.map((pose) => (
+                  <ScanHistoryThumb
+                    key={pose}
+                    sessionId={scan.id}
+                    pose={pose}
+                    present={scan.poses[pose]}
+                  />
+                ))}
+              </div>
+            )}
 
             {state === 'error' && message && (
               <p
