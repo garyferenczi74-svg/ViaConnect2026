@@ -5,6 +5,8 @@
 // the pure journeyTimeline + lerpParamVector lib tests; here we prove the surface
 // wires those honestly (real-scan snaps, honest single-scan state, real numbers).
 
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -169,6 +171,14 @@ describe('JourneyTimeline: onScrub contract', () => {
       }),
     );
     expect(onScrub).not.toHaveBeenCalled();
+  });
+
+  it('releases the avatar on rest and play-end so a latched scrub cannot freeze the template', () => {
+    const src = readFileSync(join(process.cwd(), 'src/components/formavision/JourneyTimeline.tsx'), 'utf8');
+    expect(src).toMatch(/onScrubRef\.current\(null\)/);
+    expect(src).toMatch(/onPointerUp=\{restAvatar\}/);
+    expect(src).toMatch(/onPointerCancel=\{restAvatar\}/);
+    expect(src).toMatch(/restAvatar\(\)/);
   });
 });
 

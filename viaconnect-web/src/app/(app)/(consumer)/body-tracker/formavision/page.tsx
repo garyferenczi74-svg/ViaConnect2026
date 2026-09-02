@@ -43,7 +43,10 @@ import { ScanHistorySection } from '@/components/scan/ScanHistorySection';
 import { isJourneyCompositionPoint } from '@/lib/body-tracker/composition/journeyPoints';
 import { snapshotFromScanResult } from '@/lib/body-tracker/composition/snapshotFromScanResult';
 import { estimateCircumferencesFromComposition } from '@/lib/body-tracker/composition/estimateCircumferencesFromComposition';
-import { resolveAvatarCircumferences } from '@/lib/body-tracker/composition/resolveAvatarCircumferences';
+import {
+  pickHistorySnapshotForAvatar,
+  resolveAvatarCircumferences,
+} from '@/lib/body-tracker/composition/resolveAvatarCircumferences';
 import type { MeasurementUnit } from '@/lib/body-tracker/circumference';
 import {
   compositionSectionHref,
@@ -177,7 +180,15 @@ function FormaVisionSurface() {
     () => estimateCircumferencesFromComposition(overlaySnapshot, gender, unit),
     [overlaySnapshot, gender, unit],
   );
-  const snapshot = overlaySnapshot ?? composHistory.latest;
+  const journeySnapshots = useMemo(
+    () => composHistory.snapshots.filter(isJourneyCompositionPoint),
+    [composHistory.snapshots],
+  );
+  const historySnapshotForAvatar = useMemo(
+    () => pickHistorySnapshotForAvatar(composHistory.latest, journeySnapshots),
+    [composHistory.latest, journeySnapshots],
+  );
+  const snapshot = overlaySnapshot ?? historySnapshotForAvatar;
   // Overlay dies on Close/Done (scanResult=null). Live ScanExperience never
   // feeds BodyScanResult here. Measured circs are often emptyMeasurements()
   // because circumference scan_id FK leans body_photo_sessions. History BF
@@ -187,15 +198,11 @@ function FormaVisionSurface() {
       resolveAvatarCircumferences({
         overlay: overlayCircumferences,
         measured: circumferenceData.latest,
-        historySnapshot: composHistory.latest,
+        historySnapshot: historySnapshotForAvatar,
         sex: gender,
         unit,
       }),
-    [overlayCircumferences, circumferenceData.latest, composHistory.latest, gender, unit],
-  );
-  const journeySnapshots = useMemo(
-    () => composHistory.snapshots.filter(isJourneyCompositionPoint),
-    [composHistory.snapshots],
+    [overlayCircumferences, circumferenceData.latest, historySnapshotForAvatar, gender, unit],
   );
 
   const scanPoints = useMemo(
@@ -249,13 +256,21 @@ function FormaVisionSurface() {
   const journeyVectors = useMemo(
     () =>
       journeySnapshots.map((snap, i) => {
-        const circ =
+        const measured =
           circHistory.entries.find((e) => e.recordedAt === snap.recordedAt)?.measurements ??
           circHistory.entries[i]?.measurements ??
           null;
+        // Avatar-only girths. Journey readout still uses measured waist
+        // (null → "Not measured"). scanToParamVector stays honest.
         return scanToParamVector({
           snapshot: snap,
-          circumferences: circ,
+          circumferences: resolveAvatarCircumferences({
+            overlay: null,
+            measured,
+            historySnapshot: snap,
+            sex: gender,
+            unit,
+          }),
           sex: gender,
           unit,
         });
@@ -386,6 +401,7 @@ function FormaVisionSurface() {
               </p>
               <BodyScanUploader
                 onComplete={(r) => {
+                  setScrubVector(null);
                   setScanResult(r);
                   composHistory.refresh();
                   circHistory.refresh();

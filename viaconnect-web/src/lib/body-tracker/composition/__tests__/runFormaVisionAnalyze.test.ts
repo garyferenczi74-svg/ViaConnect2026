@@ -43,6 +43,7 @@ describe('runFormaVisionAnalyze shared spine', () => {
   it('does not orphan the 209/210l persist + 3D avatar route', () => {
     const page = src('src/app/(app)/(consumer)/body-tracker/formavision/page.tsx');
     const persist = src('src/lib/body-tracker/composition/buildScanWrite.ts');
+    const canvas = src('src/components/formavision/FormaVisionCanvas.tsx');
     const avatar = src('src/components/formavision/FormaVision3DAvatar.tsx');
     expect(page).toMatch(/BodyScanUploader/);
     expect(page).toMatch(/scanToParamVector/);
@@ -50,10 +51,12 @@ describe('runFormaVisionAnalyze shared spine', () => {
     expect(page).toMatch(/formavisionLiveScanHref/);
     expect(page).toMatch(/snapshotFromScanResult/);
     expect(page).toMatch(/resolveAvatarCircumferences/);
+    expect(page).toMatch(/setScrubVector\(null\)/);
     expect(page).toMatch(/ScanHistorySection/);
     expect(persist).toMatch(/device_name:\s*'FormaVision'/);
     expect(persist).toMatch(/source:\s*'scan'/);
     expect(persist).toMatch(/scan_id:\s*null/);
     expect(avatar).toMatch(/scanToParamVector/);
+    expect(canvas).toMatch(/shouldHoldScrubMorph/);
   });
 });

@@ -26,11 +26,13 @@ import { FORMA_VISION_HEX } from '@/lib/formavision/materials/formaVisionTokens'
 import {
   createMaterializeIntro,
   createMorphController,
+  resolveMorphFromVector,
   createCameraFramingController,
   createIdleTurntable,
   createHighlightController,
   createOverlayController,
   createScrubController,
+  shouldHoldScrubMorph,
   useDemandScheduler,
   FULL_BODY_FRAMING,
   AVATAR_VERTICAL_FOV_DEG,
@@ -182,11 +184,26 @@ function BodyMesh(
     [props.scan, props.circumferences, props.sex, props.heightCm, props.unit],
   );
 
+  const morphedBodyRef = useRef<ReturnType<typeof mountBodyGeometry> | null>(null);
+  // True while a scrub is active: the morph stays suspended so it never fights the
+  // direct-set scrub. lastScrubVectorRef holds the shape the body was left at when a
+  // scrub ended, so the next target-morph baselines from there with no jump.
+  const scrubActiveRef = useRef(false);
+  const lastScrubVectorRef = useRef<BodyParamVector | null>(null);
+  // Shape currently on the mesh. Mount is keyed only on topology, so the first
+  // paint may be the sex template; later overlay/history girths must tween FROM
+  // that displayed vector, not from the incoming target (from===to is a no-op
+  // silhouette if the controller thinks it is already at the new shape).
+  const displayedVectorRef = useRef<BodyParamVector | null>(null);
+  const mountedFromRef = useRef<BodyParamVector>(paramVector);
+
   // Topology-affecting inputs only. sex keeps the same ring ids and build options,
   // so it morphs; renderTier changes the segment counts (the vertex count), which
   // changes topology, so it must remount. The mount is keyed on that pair, built
   // from the param vector live at mount time, and disposed on remount/unmount.
   const mounted = useMemo(() => {
+    mountedFromRef.current = paramVector;
+    displayedVectorRef.current = paramVector;
     return mountBodyGeometry(paramVector, { build: buildOptions });
     // Remount only when topology changes (the build options). A param-vector change
     // is handled by the morph effect below, not by rebuilding here.
@@ -209,12 +226,6 @@ function BodyMesh(
   // mounted is a remount (topology changed): that body is freshly built at the
   // current param vector and the intro owns its first paint, so no morph fires. A
   // paramVector change against the same mounted is a real morph target.
-  const morphedBodyRef = useRef<typeof mounted | null>(null);
-  // True while a scrub is active: the morph stays suspended so it never fights the
-  // direct-set scrub. lastScrubVectorRef holds the shape the body was left at when a
-  // scrub ended, so the next target-morph baselines from there with no jump.
-  const scrubActiveRef = useRef(false);
-  const lastScrubVectorRef = useRef<BodyParamVector | null>(null);
   // The live morph controller, held so the scrub effect can cancel an in-flight tween
   // the instant a scrub begins (a coincident data + scrub change must not leave a tween
   // running underneath the direct-set scrub).
@@ -224,7 +235,11 @@ function BodyMesh(
     const positionAttr = geometry.getAttribute('position');
     // Baseline the morph at the last scrubbed shape when one exists, so resuming the
     // tween after a scrub starts from the body on screen rather than a stale target.
-    const baseline = lastScrubVectorRef.current ?? paramVector;
+    const baseline = resolveMorphFromVector(
+      lastScrubVectorRef.current,
+      displayedVectorRef.current ?? mountedFromRef.current,
+      paramVector,
+    );
     const controller = createMorphController(
       {
         samplePositions: (vec) => sampleBodyPositions(vec, buildOptions),
@@ -254,15 +269,19 @@ function BodyMesh(
     // wins, and the data change is honored on the next non-scrub morph from the last
     // scrub shape. Otherwise a param-vector change morphs (from the last scrub shape
     // when one exists), and the consumed scrub baseline is cleared.
-    const scrubbing = props.scrubVector != null || scrubActiveRef.current;
+    const scrubbing = shouldHoldScrubMorph(props.scrubVector, props.circumferences);
     if (morphedBodyRef.current === mounted && !scrubbing) {
       // Pause the idle turntable for the duration of the morph so the camera does
       // not spin while the body changes shape; recomputeNormals releases it.
       props.turntableRef.current?.setSuspended(true);
       controller.morphTo(paramVector);
+      displayedVectorRef.current = paramVector;
       lastScrubVectorRef.current = null;
     } else {
       morphedBodyRef.current = mounted;
+      if (displayedVectorRef.current == null) {
+        displayedVectorRef.current = mountedFromRef.current;
+      }
     }
 
     return () => {
@@ -272,8 +291,9 @@ function BodyMesh(
       }
     };
     // reducedMotion is read at morph time; buildOptions and scheduler are stable.
+    // scrubVector is a dep so rest/play-end (null) can resume circumferences morph.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mounted, paramVector, invalidate]);
+  }, [mounted, paramVector, props.scrubVector, props.circumferences, invalidate]);
 
   // Scrub controller lifecycle: build ONE stable scrub controller per mounted body,
   // held in a ref so scrubTo runs on the same instance across every scrubVector change.
@@ -328,9 +348,9 @@ function BodyMesh(
       return;
     }
 
-    if (!scrubVector) {
+    if (!scrubVector || !shouldHoldScrubMorph(scrubVector, props.circumferences)) {
       if (scrubActiveRef.current) {
-        // Scrub just ended: settle the rim once, then keep the body where it is.
+        // Scrub just ended (or a null-girth latch was ignored): settle the rim.
         controller.end();
         scrubActiveRef.current = false;
       }
@@ -345,9 +365,10 @@ function BodyMesh(
     }
     controller.scrubTo(scrubVector);
     lastScrubVectorRef.current = scrubVector;
+    displayedVectorRef.current = scrubVector;
     // buildOptions, scheduler and invalidate are stable; positions are direct-set.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.scrubVector]);
+  }, [props.scrubVector, props.circumferences]);
 
   // Selected-region highlight: gently brighten the wireframe around the selected
   // region's level via the material highlight uniform. The level comes from the SAME
