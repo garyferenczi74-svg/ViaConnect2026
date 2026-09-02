@@ -6,6 +6,13 @@
 
 export const SCAN_SLOT_ACCEPT = 'image/*';
 
+/**
+ * Visually hide the gallery file input without display:none.
+ * iOS Safari ignores programmatic click() (and often label activation)
+ * when the input uses `hidden` / display:none.
+ */
+export const SCAN_SLOT_FILE_INPUT_CLASS = 'sr-only';
+
 /** Soft encode target. Larger camera stills are resized, not rejected. */
 export const SCAN_SLOT_SOFT_MAX_BYTES = 5_000_000;
 
@@ -42,6 +49,19 @@ export function takeScanSlotFile(input: HTMLInputElement | null): File | null {
   const file = input?.files?.[0] ?? null;
   if (input) input.value = '';
   return file;
+}
+
+/**
+ * Open the OS image picker from a user gesture.
+ * The input must not be display:none (iOS Safari ignores click() on hidden
+ * file inputs) and must not set capture= on the Upload path (that forces
+ * the camera and can no-op on mobile Safari / Chrome).
+ */
+export function openScanSlotPicker(input: HTMLInputElement | null): boolean {
+  if (!input) return false;
+  input.value = '';
+  input.click();
+  return true;
 }
 
 export function inspectScanSlotFile(

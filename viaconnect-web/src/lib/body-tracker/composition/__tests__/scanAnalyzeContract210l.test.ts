@@ -80,6 +80,23 @@ describe('Prompt 210l analyze-chain source contracts', () => {
     expect(src).not.toMatch(/aspect-\[16\/9\]/);
   });
 
+  it('FRBL upload slots use a native label + sr-only gallery input (no capture, no hidden)', () => {
+    const src = read('src/components/body-tracker/BodyScanUploader.tsx');
+    expect(src).toMatch(/htmlFor=\{inputId\}/);
+    expect(src).toMatch(/scan-\$\{pos\.key\}-upload/);
+    expect(src).toMatch(/SCAN_SLOT_FILE_INPUT_CLASS/);
+    expect(src).toMatch(/scan-slot-input-/);
+    expect(src).toMatch(/scan-slot-upload-/);
+    expect(src).toMatch(/type="file"/);
+    expect(src).toMatch(/accept=\{SCAN_SLOT_ACCEPT\}/);
+    expect(src).toMatch(/takeScanSlotFile/);
+    expect(src).not.toMatch(/capture=["']environment["']/);
+    expect(src).not.toMatch(/className="hidden"/);
+    expect(src).not.toMatch(/cameraRefs/);
+    expect(src).not.toMatch(/galleryRefs/);
+    expect(src).toMatch(/sanitizeAnalyzeUserError/);
+  });
+
   it('upload path uprights inverted gallery shots before analyze', () => {
     const uploader = read('src/components/body-tracker/BodyScanUploader.tsx');
     expect(uploader).toMatch(/normalizeScanPhotoUpright/);

@@ -1,12 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import {
   SCAN_SLOT_ACCEPT,
+  SCAN_SLOT_FILE_INPUT_CLASS,
   SCAN_SLOT_HARD_MAX_BYTES,
   SCAN_SLOT_SOFT_MAX_BYTES,
   inspectScanSlotFile,
   isDirectScanImageType,
   isHeicLike,
   needsScanSlotReencode,
+  openScanSlotPicker,
   takeScanSlotFile,
 } from '../attachScanSlotPhoto';
 
@@ -21,6 +23,8 @@ describe('attachScanSlotPhoto helpers', () => {
   it('accepts any image so iOS camera/library files are not silently dropped', () => {
     expect(SCAN_SLOT_ACCEPT).toBe('image/*');
     expect(SCAN_SLOT_ACCEPT).not.toContain('image/jpeg,image/png');
+    expect(SCAN_SLOT_FILE_INPUT_CLASS).toBe('sr-only');
+    expect(SCAN_SLOT_FILE_INPUT_CLASS).not.toBe('hidden');
   });
 
   it('treats empty MIME (common iOS camera) as a direct still', () => {
@@ -54,5 +58,20 @@ describe('attachScanSlotPhoto helpers', () => {
     expect(taken).toBe(file);
     expect(input.value).toBe('');
     expect(takeScanSlotFile(null)).toBeNull();
+  });
+
+  it('opens the picker on a live input and no-ops a missing one', () => {
+    let clicked = 0;
+    const input = {
+      value: 'C:\\fakepath\\front.jpg',
+      click: () => {
+        clicked += 1;
+      },
+    } as unknown as HTMLInputElement;
+
+    expect(openScanSlotPicker(input)).toBe(true);
+    expect(input.value).toBe('');
+    expect(clicked).toBe(1);
+    expect(openScanSlotPicker(null)).toBe(false);
   });
 });

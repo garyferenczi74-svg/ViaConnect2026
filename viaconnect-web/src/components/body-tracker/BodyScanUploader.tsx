@@ -10,6 +10,7 @@ import {
 } from '@/lib/body-tracker/composition/scanMediaTypes';
 import {
   SCAN_SLOT_ACCEPT,
+  SCAN_SLOT_FILE_INPUT_CLASS,
   inspectScanSlotFile,
   isHeicLike,
   needsScanSlotReencode,
@@ -83,13 +84,6 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
   // Map from PhotoPosition to the quality result for that view.
   // Null means the view has not been quality-assessed yet (pipeline still running or skipped).
   const [viewQuality, setViewQuality] = useState<Partial<Record<PhotoPosition, ViewQualityResult>>>({});
-  const cameraRefs = useRef<Record<PhotoPosition, HTMLInputElement | null>>({
-    front: null, back: null, left_side: null, right_side: null,
-  });
-  const galleryRefs = useRef<Record<PhotoPosition, HTMLInputElement | null>>({
-    front: null, back: null, left_side: null, right_side: null,
-  });
-
   // Unmount guard: prevents any post-unmount state updates from the async IIFE.
   const isMountedRef = useRef(true);
   useEffect(() => () => {
@@ -126,16 +120,6 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
     }, 1000);
     return () => window.clearInterval(timer);
   }, [submitting]);
-
-  function clearSlot(key: PhotoPosition) {
-    setSlots((s) => {
-      if (s[key].previewUrl) URL.revokeObjectURL(s[key].previewUrl);
-      return { ...s, [key]: { file: null, base64: null, previewUrl: null } };
-    });
-    setViewQuality((q) => { const next = { ...q }; delete next[key]; return next; });
-    if (cameraRefs.current[key]) cameraRefs.current[key]!.value = '';
-    if (galleryRefs.current[key]) galleryRefs.current[key]!.value = '';
-  }
 
   async function handleFile(key: PhotoPosition, file: File) {
     setError(null);
@@ -291,10 +275,17 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
           // pass=false means the view failed quality (low-confidence results expected).
           const qualityFailed = quality !== undefined && !quality.pass;
           const qualityWarning = quality !== undefined && quality.pass && quality.issues.length > 0;
+          const inputId = `scan-${pos.key}-upload`;
           return (
-            <div key={pos.key} className="space-y-2">
+            <div key={pos.key} className="relative space-y-2">
+              {/*
+                Native label → sibling gallery input. Do not nest the input
+                inside the label (iOS double-fires and dismisses). Do not use
+                hidden/display:none. Do not set capture — the OS then offers
+                Camera | Photo Library, matching "Camera or gallery".
+              */}
               <label
-                htmlFor={`scan-${pos.key}`}
+                htmlFor={inputId}
                 data-testid={`scan-slot-frame-${pos.key}`}
                 className={`relative flex aspect-[3/4] w-full min-h-[44px] cursor-pointer flex-col items-center justify-center gap-2 overflow-hidden rounded-xl text-xs font-medium transition-all ${
                   qualityFailed
@@ -345,51 +336,37 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
                     <span className="text-[10px] text-white/40">Camera or gallery</span>
                   </>
                 )}
-                <input
-                  ref={(el) => { cameraRefs.current[pos.key] = el; }}
-                  id={`scan-${pos.key}`}
-                  type="file"
-                  accept={SCAN_SLOT_ACCEPT}
-                  capture="environment"
-                  className="absolute inset-0 z-20 cursor-pointer opacity-0"
-                  onChange={(e) => {
-                    const f = takeScanSlotFile(e.currentTarget);
-                    if (f) void handleFile(pos.key, f);
-                  }}
-                />
-                <input
-                  ref={(el) => { galleryRefs.current[pos.key] = el; }}
-                  id={`scan-${pos.key}-upload`}
-                  type="file"
-                  accept={SCAN_SLOT_ACCEPT}
-                  className="hidden"
-                  onChange={(e) => {
-                    const f = takeScanSlotFile(e.currentTarget);
-                    if (f) void handleFile(pos.key, f);
-                  }}
-                />
               </label>
-              {attached ? (
-                <button
-                  type="button"
-                  onClick={() => clearSlot(pos.key)}
-                  className={`inline-flex w-full items-center justify-center gap-1 rounded-md text-[11px] transition-colors hover:text-white ${
-                    qualityFailed ? 'text-[#B75E18]/80 font-semibold' : 'text-white/50'
-                  }`}
-                >
-                  <RotateCcw size={12} strokeWidth={1.5} />
-                  {qualityFailed ? 'Retake' : 'Replace'}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => galleryRefs.current[pos.key]?.click()}
-                  className="inline-flex w-full items-center justify-center gap-1 rounded-md text-[11px] text-white/50 transition-colors hover:text-white"
-                >
-                  <ImagePlus size={12} strokeWidth={1.5} />
-                  Upload
-                </button>
-              )}
+              <label
+                htmlFor={inputId}
+                data-testid={`scan-slot-upload-${pos.key}`}
+                className={`inline-flex min-h-[44px] w-full cursor-pointer items-center justify-center gap-1 rounded-md text-[11px] ${
+                  qualityFailed ? 'text-[#B75E18]/80 font-semibold' : 'text-white/50'
+                }`}
+              >
+                {attached ? (
+                  <>
+                    <RotateCcw size={12} strokeWidth={1.5} />
+                    {qualityFailed ? 'Retake' : 'Replace'}
+                  </>
+                ) : (
+                  <>
+                    <ImagePlus size={12} strokeWidth={1.5} />
+                    Upload
+                  </>
+                )}
+              </label>
+              <input
+                id={inputId}
+                type="file"
+                accept={SCAN_SLOT_ACCEPT}
+                data-testid={`scan-slot-input-${pos.key}`}
+                className={SCAN_SLOT_FILE_INPUT_CLASS}
+                onChange={(e) => {
+                  const f = takeScanSlotFile(e.currentTarget);
+                  if (f) void handleFile(pos.key, f);
+                }}
+              />
               {/* Task 13b: specific retake prompt for failed views */}
               {qualityFailed && quality?.retakePrompt && (
                 <p className="text-[10px] leading-tight text-[#B75E18]/80 px-0.5">
