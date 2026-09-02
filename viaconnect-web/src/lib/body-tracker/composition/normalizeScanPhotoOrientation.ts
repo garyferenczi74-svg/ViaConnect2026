@@ -1,8 +1,11 @@
 // Upright-normalize photos before FormaVision analyze / avatar input.
-// Prefer JPEG EXIF Orientation when present. Missing/identity EXIF uses
-// auto-upright (dark-floor band) so inverted phone-gallery A-pose shots
-// are rotated 180° and already-upright uploads are not flipped twice.
-// Live camera canvases are already upright — no 180 fallback.
+// Decode with createImageBitmap({ imageOrientation: 'from-image' }) so the
+// browser applies JPEG EXIF 1–8 (including iPhone 6/8) once, then bake those
+// pixels to a JPEG. Do not ALSO apply transformFromExifOrientation — iOS often
+// ignores a none-orientation decode, so a second 90° makes FRBL previews
+// sideways. Missing/identity EXIF (HEIC reencode strips the tag) uses A-pose
+// visual: 180° if inverted, 90° CW/CCW if the dark floor is on a side.
+// Live camera canvases are already upright — no visual fallback.
 
 export type ScanPhotoSource = 'upload' | 'live';
 
@@ -13,7 +16,12 @@ export interface UprightTransform {
 }
 
 const IDENTITY: UprightTransform = { rotateQuarterTurns: 0, flipX: false };
+const ROTATE_90_CW: UprightTransform = { rotateQuarterTurns: 1, flipX: false };
+const ROTATE_90_CCW: UprightTransform = { rotateQuarterTurns: 3, flipX: false };
 const ROTATE_180: UprightTransform = { rotateQuarterTurns: 2, flipX: false };
+
+/** Shared with processPhoto so HEIC/resize never decode as `none` while bake uses from-image. */
+export const SCAN_PHOTO_IMAGE_ORIENTATION = 'from-image' as const;
 
 export function isIdentityTransform(t: UprightTransform): boolean {
   return t.rotateQuarterTurns === 0 && !t.flipX;
@@ -113,9 +121,14 @@ export function transformFromExifOrientation(orientation: number): UprightTransf
   }
 }
 
-export type VisualUprightHint = 'inverted' | 'upright' | 'unknown';
+export type VisualUprightHint =
+  | 'inverted'
+  | 'upright'
+  | 'unknown'
+  | 'sideways90cw'
+  | 'sideways90ccw';
 
-/** Top/bottom band used to detect inverted A-pose indoor shots (dark floor). */
+/** Edge band used to detect inverted / sideways A-pose indoor shots (dark floor). */
 export const APOSE_BAND_FRACTION = 0.12;
 export const APOSE_LUMA_DELTA = 18;
 
@@ -133,32 +146,70 @@ export function detectAPoseInversionFromBandLuma(
   return 'unknown';
 }
 
+/**
+ * Four-edge A-pose: prefer the stronger axis. Dark left → 90° CW (floor to
+ * bottom); dark right → 90° CCW. Used when HEIC/reencode stripped EXIF and
+ * stored pixels are still sideways. Does not invent girths or fat.
+ */
+export function detectAPoseOrientationFromBandLuma(
+  topMean: number,
+  bottomMean: number,
+  leftMean: number,
+  rightMean: number,
+): VisualUprightHint {
+  const verticalDelta = topMean - bottomMean;
+  const horizontalDelta = leftMean - rightMean;
+  const vAbs = Math.abs(verticalDelta);
+  const hAbs = Math.abs(horizontalDelta);
+  if (hAbs >= APOSE_LUMA_DELTA && hAbs > vAbs) {
+    return horizontalDelta < 0 ? 'sideways90cw' : 'sideways90ccw';
+  }
+  return detectAPoseInversionFromBandLuma(topMean, bottomMean);
+}
+
 export function bandLumaMeansFromGray(
   width: number,
   height: number,
   gray: Uint8Array | Uint8ClampedArray,
-): { topMean: number; bottomMean: number } | null {
-  if (width < 8 || height < 16 || gray.length < width * height) return null;
+): { topMean: number; bottomMean: number; leftMean: number; rightMean: number } | null {
+  if (width < 8 || height < 8 || gray.length < width * height) return null;
   const bandH = Math.max(2, Math.floor(height * APOSE_BAND_FRACTION));
+  const bandW = Math.max(2, Math.floor(width * APOSE_BAND_FRACTION));
   let top = 0;
   let bottom = 0;
-  let n = 0;
+  let left = 0;
+  let right = 0;
+  let nV = 0;
+  let nH = 0;
   for (let y = 0; y < bandH; y += 1) {
     for (let x = 0; x < width; x += 1) {
       top += gray[y * width + x];
       bottom += gray[(height - 1 - y) * width + x];
-      n += 1;
+      nV += 1;
     }
   }
-  if (n === 0) return null;
-  return { topMean: top / n, bottomMean: bottom / n };
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < bandW; x += 1) {
+      left += gray[y * width + x];
+      right += gray[y * width + (width - 1 - x)];
+      nH += 1;
+    }
+  }
+  if (nV === 0 || nH === 0) return null;
+  return {
+    topMean: top / nV,
+    bottomMean: bottom / nV,
+    leftMean: left / nH,
+    rightMean: right / nH,
+  };
 }
 
 /**
- * EXIF 2–8 always wins.
- * Live + missing/identity EXIF → no-op (camera canvas is already upright).
- * Upload: visual inverted/unknown → 180° (phone-gallery fixtures);
- * already-upright visual → no flip (avoids double-rotate after attach).
+ * Extra canvas transform AFTER a from-image decode (EXIF already applied).
+ * EXIF 2–8 → identity (do not rotate again; that is the sideways iOS bug).
+ * Live + missing/identity EXIF → no-op.
+ * Upload, EXIF missing/1: 180° if inverted; 90° if the floor is on a side
+ * (stripped-EXIF HEIC/reencode); upright/unknown stay put.
  */
 export function resolveUprightTransform(
   orientation: number | null,
@@ -166,12 +217,47 @@ export function resolveUprightTransform(
   visualHint: VisualUprightHint = 'unknown',
 ): UprightTransform {
   if (orientation !== null && orientation >= 2 && orientation <= 8) {
-    return transformFromExifOrientation(orientation);
+    return IDENTITY;
   }
   if (source === 'live') return IDENTITY;
   if (visualHint === 'inverted') return ROTATE_180;
-  if (visualHint === 'upright') return IDENTITY;
-  return ROTATE_180;
+  if (visualHint === 'sideways90cw') return ROTATE_90_CW;
+  if (visualHint === 'sideways90ccw') return ROTATE_90_CCW;
+  return IDENTITY;
+}
+
+/** Canvas size for a from-image bitmap plus an extra (usually 180°) transform. */
+export function orientedBitmapCanvasSize(
+  bitmapWidth: number,
+  bitmapHeight: number,
+  transform: UprightTransform,
+): { width: number; height: number } {
+  const swap = transform.rotateQuarterTurns % 2 === 1;
+  return {
+    width: swap ? bitmapHeight : bitmapWidth,
+    height: swap ? bitmapWidth : bitmapHeight,
+  };
+}
+
+/** Upload always bakes; EXIF 2–8 always bakes; extra 180° always bakes. Live identity skips. */
+export function needsUprightPixelBake(
+  orientation: number | null,
+  transform: UprightTransform,
+  source: ScanPhotoSource,
+): boolean {
+  if (!isIdentityTransform(transform)) return true;
+  if (orientation !== null && orientation >= 2 && orientation <= 8) return true;
+  return source === 'upload';
+}
+
+export async function createScanPhotoBitmap(source: Blob): Promise<ImageBitmap> {
+  try {
+    return await createImageBitmap(source, {
+      imageOrientation: SCAN_PHOTO_IMAGE_ORIENTATION,
+    });
+  } catch {
+    return await createImageBitmap(source);
+  }
 }
 
 export async function blobToArrayBuffer(blob: Blob): Promise<ArrayBuffer> {
@@ -179,11 +265,9 @@ export async function blobToArrayBuffer(blob: Blob): Promise<ArrayBuffer> {
 }
 
 async function renderUprightBlob(source: Blob, transform: UprightTransform): Promise<Blob> {
-  const bitmap = await createImageBitmap(source, { imageOrientation: 'none' });
+  const bitmap = await createScanPhotoBitmap(source);
   try {
-    const swap = transform.rotateQuarterTurns % 2 === 1;
-    const width = swap ? bitmap.height : bitmap.width;
-    const height = swap ? bitmap.width : bitmap.height;
+    const { width, height } = orientedBitmapCanvasSize(bitmap.width, bitmap.height, transform);
     const canvas: HTMLCanvasElement | OffscreenCanvas =
       typeof OffscreenCanvas !== 'undefined'
         ? new OffscreenCanvas(width, height)
@@ -219,37 +303,42 @@ async function sampleVisualUprightHint(file: Blob): Promise<VisualUprightHint> {
   if (typeof createImageBitmap !== 'function') return 'unknown';
   let bitmap: ImageBitmap;
   try {
-    bitmap = await createImageBitmap(file, { imageOrientation: 'none' });
+    bitmap = await createScanPhotoBitmap(file);
   } catch {
     return 'unknown';
   }
   try {
     const width = bitmap.width;
     const height = bitmap.height;
-    if (width < 8 || height < 16) return 'unknown';
-    const bandH = Math.max(2, Math.floor(height * APOSE_BAND_FRACTION));
+    if (Math.min(width, height) < 8 || Math.max(width, height) < 16) return 'unknown';
+    const maxEdge = 160;
+    const scale = Math.min(1, maxEdge / Math.max(width, height));
+    const sw = Math.max(8, Math.round(width * scale));
+    const sh = Math.max(8, Math.round(height * scale));
     const canvas: HTMLCanvasElement | OffscreenCanvas =
       typeof OffscreenCanvas !== 'undefined'
-        ? new OffscreenCanvas(width, bandH * 2)
-        : Object.assign(document.createElement('canvas'), { width, height: bandH * 2 });
+        ? new OffscreenCanvas(sw, sh)
+        : Object.assign(document.createElement('canvas'), { width: sw, height: sh });
     const ctx = canvas.getContext('2d', { willReadFrequently: true }) as
       | CanvasRenderingContext2D
       | OffscreenCanvasRenderingContext2D
       | null;
     if (!ctx) return 'unknown';
-    ctx.drawImage(bitmap, 0, 0, width, bandH, 0, 0, width, bandH);
-    ctx.drawImage(bitmap, 0, height - bandH, width, bandH, 0, bandH, width, bandH);
-    const pixels = ctx.getImageData(0, 0, width, bandH * 2).data;
-    const bandPixels = width * bandH;
-    let top = 0;
-    let bottom = 0;
-    for (let i = 0; i < bandPixels; i += 1) {
+    ctx.drawImage(bitmap, 0, 0, sw, sh);
+    const pixels = ctx.getImageData(0, 0, sw, sh).data;
+    const gray = new Uint8Array(sw * sh);
+    for (let i = 0; i < sw * sh; i += 1) {
       const p = i * 4;
-      top += 0.299 * pixels[p] + 0.587 * pixels[p + 1] + 0.114 * pixels[p + 2];
-      const q = (bandPixels + i) * 4;
-      bottom += 0.299 * pixels[q] + 0.587 * pixels[q + 1] + 0.114 * pixels[q + 2];
+      gray[i] = 0.299 * pixels[p] + 0.587 * pixels[p + 1] + 0.114 * pixels[p + 2];
     }
-    return detectAPoseInversionFromBandLuma(top / bandPixels, bottom / bandPixels);
+    const bands = bandLumaMeansFromGray(sw, sh, gray);
+    if (!bands) return 'unknown';
+    return detectAPoseOrientationFromBandLuma(
+      bands.topMean,
+      bands.bottomMean,
+      bands.leftMean,
+      bands.rightMean,
+    );
   } catch {
     return 'unknown';
   } finally {
@@ -267,10 +356,8 @@ export async function normalizeScanPhotoUpright(
   const needsVisual = orientation === null || orientation === 1;
   const visualHint = needsVisual ? await sampleVisualUprightHint(file) : 'unknown';
   const transform = resolveUprightTransform(orientation, source, visualHint);
-  if (isIdentityTransform(transform) && file instanceof File) {
-    return file;
-  }
-  if (isIdentityTransform(transform)) {
+  if (!needsUprightPixelBake(orientation, transform, source)) {
+    if (file instanceof File) return file;
     return new File([file], 'scan.jpg', { type: file.type || 'image/jpeg' });
   }
   const upright = await renderUprightBlob(file, transform);

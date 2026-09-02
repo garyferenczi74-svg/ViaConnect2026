@@ -45,7 +45,9 @@ async function grayBandsFromJpeg(buf: Buffer): Promise<{
   bottomMean: number;
   orientation: number | null;
 }> {
-  // Do not apply EXIF — we own upright, matching createImageBitmap({ imageOrientation: 'none' }).
+  // Sample stored pixels (no EXIF rotate) so A-pose inversion / sideways is
+  // judged on the file bytes. Browser bake uses from-image; extra transform
+  // is 180° or 90° only when EXIF is missing/1.
   const { data, info } = await sharp(buf)
     .withMetadata()
     .removeAlpha()
@@ -111,7 +113,10 @@ describe('Arnold golden Upload fixtures (inverted + upright)', () => {
     expect(shared).toMatch(/body-scan-analyze/);
     expect(shared).not.toMatch(/navyBodyFat/);
     expect(normalize).toMatch(/detectAPoseInversionFromBandLuma/);
-    expect(normalize).toMatch(/imageOrientation:\s*'none'/);
+    expect(normalize).toMatch(/detectAPoseOrientationFromBandLuma/);
+    expect(normalize).toMatch(/imageOrientation:\s*SCAN_PHOTO_IMAGE_ORIENTATION/);
+    expect(normalize).not.toMatch(/imageOrientation:\s*'none'/);
+    expect(normalize).toMatch(/SCAN_PHOTO_IMAGE_ORIENTATION = 'from-image'/);
     expect(golden).toMatch(/upload-test-2026-09-01\/upright/);
     expect(golden).toMatch(/01-front\.jpg/);
   });
@@ -160,7 +165,11 @@ describe('Arnold golden Upload fixtures (inverted + upright)', () => {
         );
         expect(hint).toBe('inverted');
         const transform = resolveUprightTransform(sampled.orientation, 'upload', hint);
-        expect(transform.rotateQuarterTurns).toBe(2);
+        if (sampled.orientation !== null && sampled.orientation >= 2 && sampled.orientation <= 8) {
+          expect(transform.rotateQuarterTurns).toBe(0);
+        } else {
+          expect(transform.rotateQuarterTurns).toBe(2);
+        }
       }
     },
   );

@@ -129,18 +129,18 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
       return;
     }
 
-    // Attach immediately so the slot is never a picker that drops the blob.
-    const previewUrl = URL.createObjectURL(file);
+    // Hold the slot as Attaching — never preview a raw camera/gallery ObjectURL.
+    // Preview + analyze share the post-bake blob only (from-image pixels).
     setSlots((s) => {
       if (s[key].previewUrl) URL.revokeObjectURL(s[key].previewUrl);
-      return { ...s, [key]: { file, base64: null, previewUrl } };
+      return { ...s, [key]: { file, base64: null, previewUrl: null } };
     });
     setViewQuality((q) => { const next = { ...q }; delete next[key]; return next; });
 
     try {
       let stored = file;
-      // HEIC must become JPEG before canvas upright. JPEG EXIF is read first
-      // so processPhoto cannot strip orientation ahead of the 180° fallback.
+      // HEIC must become JPEG before canvas upright. processPhoto uses the same
+      // from-image decode as normalize so EXIF is not stripped as `none`.
       if (isHeicLike(file) && needsScanSlotReencode(file)) {
         const pair = await processPhoto(file);
         stored = new File([pair.full], 'scan.jpg', { type: 'image/jpeg' });
@@ -151,12 +151,21 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
         stored = new File([pair.full], 'scan.jpg', { type: 'image/jpeg' });
       }
       const shownUrl = URL.createObjectURL(stored);
-      URL.revokeObjectURL(previewUrl);
       const b64 = await fileToBase64(stored);
-      if (!isMountedRef.current) return;
-      setSlots((s) => ({ ...s, [key]: { file: stored, base64: b64, previewUrl: shownUrl } }));
+      if (!isMountedRef.current) {
+        URL.revokeObjectURL(shownUrl);
+        return;
+      }
+      setSlots((s) => {
+        if (s[key].previewUrl) URL.revokeObjectURL(s[key].previewUrl);
+        return { ...s, [key]: { file: stored, base64: b64, previewUrl: shownUrl } };
+      });
     } catch {
       if (!isMountedRef.current) return;
+      setSlots((s) => {
+        if (s[key].previewUrl) URL.revokeObjectURL(s[key].previewUrl);
+        return { ...s, [key]: { file: null, base64: null, previewUrl: null } };
+      });
       setError(
         isHeicLike(file)
           ? 'HEIC photos are not supported. Use JPEG or PNG.'

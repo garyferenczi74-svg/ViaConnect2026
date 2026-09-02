@@ -3,6 +3,8 @@
  * Registered by exact name in vitest.config.ts (no @testing-library/dom).
  */
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { BodyScanUploader } from '../BodyScanUploader';
@@ -48,5 +50,16 @@ describe('BodyScanUploader slot picker markup', () => {
     expect(html).toContain('aspect-[3/4]');
     expect(html).toContain('Analyze My Composition');
     expect(html).toContain('Upload saved images');
+  });
+});
+
+describe('BodyScanUploader preview bake contract', () => {
+  it('does not settle slot preview on a raw file ObjectURL', () => {
+    const src = readFileSync(join(process.cwd(), 'src/components/body-tracker/BodyScanUploader.tsx'), 'utf8');
+    expect(src).toMatch(/URL\.createObjectURL\(stored\)/);
+    expect(src).not.toMatch(/URL\.createObjectURL\(file\)/);
+    expect(src).toMatch(/return \{ \.\.\.s, \[key\]: \{ file, base64: null, previewUrl: null \} \}/);
+    expect(src).toMatch(/previewUrl: shownUrl/);
+    expect(src).toMatch(/normalizeScanPhotoUpright\(stored, 'upload'\)/);
   });
 });
