@@ -34,24 +34,38 @@ import type {
 import type { Sex, BodyParamVector } from '@/lib/formavision/geometry/types';
 import type { AvatarGirthSource } from '@/lib/formavision/morph/avatarMorphStamp';
 import type { SegmentTintRecord } from '@/lib/formavision/geometry/segmentTints';
+import { FORMA_VISION_HEX } from '@/lib/formavision/materials/formaVisionTokens';
 import { AvatarErrorBoundary } from './AvatarErrorBoundary';
 import { FormaVisionLocalSilhouette } from './FormaVisionLocalSilhouette';
 
-// Loading shroud mirrored from AvatarViewer: a centered spinning Loader2 over the
-// navy canvas while the three bundle resolves.
-function CanvasLoader() {
+// Pending / chunk-load shroud. Must include the local silhouette (never
+// spinner-only) so the plate paints before the three bundle or GL is ready.
+function CanvasLoader({ sex }: { sex: Sex }) {
   return (
-    <div className="absolute inset-0 flex items-center justify-center text-white/50">
-      <Loader2 className="h-5 w-5 animate-spin" strokeWidth={1.5} />
+    <div
+      className="absolute inset-0"
+      style={{ backgroundColor: FORMA_VISION_HEX.navy }}
+    >
+      <FormaVisionLocalSilhouette sex={sex} />
+      <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-white/50">
+        <Loader2 className="h-5 w-5 animate-spin" strokeWidth={1.5} />
+      </div>
     </div>
   );
 }
 
 // Three + r3f code is loaded client-side only so the SSR bundle stays small and
-// first paint is never blocked by the 3D scene.
+// first paint is never blocked by the 3D scene. Loading must still paint
+// the silhouette — the parent pending path and this loader both do.
 const FormaVisionCanvas = dynamic(() => import('./FormaVisionCanvas'), {
   ssr: false,
-  loading: () => <CanvasLoader />,
+  loading: () => (
+    <div
+      className="absolute inset-0"
+      style={{ backgroundColor: FORMA_VISION_HEX.navy }}
+      data-testid="formavision-canvas-chunk-loading"
+    />
+  ),
 });
 
 export interface FormaVision3DAvatarProps {
@@ -106,8 +120,8 @@ export interface FormaVision3DAvatarProps {
   // Called once at the end of each orbit gesture. Absent means no telemetry.
   onOrbitEnd?: () => void;
   // P8-T1c: forwarded into FormaVisionCanvas for timeToFirstInteractiveMs.
-  // Called once from Canvas onCreated (GL context ready). Absent means the
-  // metric is omitted from the quality snapshot. Fire-and-forget.
+  // Called once after the first PAINTED demand frame (not onCreated).
+  // Absent means the metric is omitted from the quality snapshot.
   onFirstInteractive?: () => void;
   // Prompt 211a W1: forwarded into FormaVisionCanvas so the clip recorder can flip
   // the r3f frameloop to "always" during a recording (captureStream needs painted
@@ -161,7 +175,7 @@ export function FormaVision3DAvatar({
   if (!clientReady) {
     return (
       <div className="absolute inset-0 h-full w-full" data-testid="formavision-3d-pending">
-        <CanvasLoader />
+        <CanvasLoader sex={sex} />
       </div>
     );
   }

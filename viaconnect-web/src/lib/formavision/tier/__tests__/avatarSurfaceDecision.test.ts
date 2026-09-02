@@ -5,6 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   selectAvatarSurface,
+  shouldPaintPlateFloor,
   wouldSelectSvgDespiteWebGL,
   type AvatarSurfaceDecisionInput,
 } from '../avatarSurfaceDecision';
@@ -84,5 +85,12 @@ describe('selectAvatarSurface', () => {
     expect(
       selectAvatarSurface(input({ renderTier: '2d', webgl: 'available' })),
     ).toBe('fallback2d');
+  });
+});
+
+describe('shouldPaintPlateFloor', () => {
+  it('paints the floor until a live canvas has presented pixels — never gated on 3D success', () => {
+    expect(shouldPaintPlateFloor({ liveCanvasHasPainted: false })).toBe(true);
+    expect(shouldPaintPlateFloor({ liveCanvasHasPainted: true })).toBe(false);
   });
 });

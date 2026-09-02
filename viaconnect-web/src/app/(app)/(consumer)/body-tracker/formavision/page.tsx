@@ -552,8 +552,15 @@ function FormaVisionSurface() {
           line (pointer-events none so orbit and Neck callouts stay usable). */}
       <div
         data-testid="formavision-canvas-grid"
-        className="relative z-10 h-[min(52vh,520px)] max-h-[min(52vh,520px)] overflow-hidden rounded-2xl border border-white/[0.08] bg-transparent"
+        className="relative z-10 h-[min(52vh,520px)] max-h-[min(52vh,520px)] overflow-hidden rounded-2xl border border-white/[0.08] bg-[#1A2744]"
       >
+        <div
+          data-testid="formavision-plate-floor"
+          className="pointer-events-none absolute inset-0 z-0 bg-[#1A2744]"
+          aria-hidden
+        >
+          <FormaVisionLocalSilhouette sex={gender} />
+        </div>
         <AbWipeSplitOverlay wipeT={wipeT} visible={abCompareOn && Boolean(wipeVector)} />
         <BodyCompositionAvatar
           sex={gender}
@@ -575,7 +582,8 @@ function FormaVisionSurface() {
           wipeVector={wipeVector}
         >
           {/* Always-paint local floor: inline SVG, no remote Supabase Male
-              Avatar.svg. Must not paint on first paint when 3D can run. */}
+              Avatar.svg. Also mounted under the 3D canvas until pixels paint;
+              these children remain the honest 2D latch path. */}
           <div
             data-testid="formavision-2d-floor-child"
             className="flex h-full min-h-[200px] w-full items-center justify-center"

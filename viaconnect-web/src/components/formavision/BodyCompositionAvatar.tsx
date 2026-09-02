@@ -32,6 +32,7 @@ import type { AvatarQualitySignals } from '@/lib/formavision/telemetry/avatarTel
 import { buildAvatarQualitySnapshot } from '@/lib/formavision/telemetry/avatarTelemetry';
 import {
   selectAvatarSurface,
+  shouldPaintPlateFloor,
   type WebGLAvailability,
 } from '@/lib/formavision/tier/avatarSurfaceDecision';
 import {
@@ -42,8 +43,11 @@ import {
   CONTEXT_RESTORE_WAIT_MS,
   WEBGL_REMOUNT_BUDGET,
   decideContextLossAction,
+  decideZeroSizeAction,
   isWebGLContextLostMessage,
+  isZeroSizeCanvasMessage,
 } from '@/lib/formavision/gl/webglContextRecovery';
+import { FORMA_VISION_HEX } from '@/lib/formavision/materials/formaVisionTokens';
 import { FormaVision3DAvatar } from './FormaVision3DAvatar';
 import { FormaVisionFallbackNotice } from './FormaVisionFallbackNotice';
 import { FormaVisionLocalSilhouette } from './FormaVisionLocalSilhouette';
@@ -131,10 +135,11 @@ function BodyCompositionAvatarInner({
   // Remounts a live-canvas miss while getContext still works (not "no WebGL").
   // Context-loss waits for webglcontextrestored before remounting; only a
   // restore timeout burns remountsRef. After remountsRef >= budget, latch the
-  // 2D floor + honest fallbackReason. Local silhouette paints while recovering
-  // so the plate is never an empty transparent box.
+  // 2D floor + honest fallbackReason. Local silhouette ALWAYS paints until
+  // the live canvas has presented pixels (GL created ≠ painted).
   const [fellBack, setFellBack] = useState(false);
   const [recovering, setRecovering] = useState(false);
+  const [canvasHasPainted, setCanvasHasPainted] = useState(false);
   const [fallbackReason, setFallbackReason] = useState<string | null>(null);
   const [fallbackWebgl, setFallbackWebgl] = useState<WebGLAvailability>('unknown');
   const [mountEpoch, setMountEpoch] = useState(0);
@@ -162,9 +167,8 @@ function BodyCompositionAvatarInner({
   );
   const firstInteractiveMsRef = useRef<number | null>(null);
 
-  // P8-T1c: called from FormaVisionCanvas onCreated (GL context ready). Fires
-  // once per canvas mount; subsequent calls are no-ops (the null guard prevents
-  // overwrite). Used to populate timeToFirstInteractiveMs in the quality snapshot.
+  // P8-T1c: called after the first PAINTED demand frame (not Canvas
+  // onCreated — GL ready ≠ pixels). Fires once per canvas mount.
   const clearRestoreTimer = useCallback((): void => {
     if (restoreTimerRef.current !== null) {
       clearTimeout(restoreTimerRef.current);
@@ -177,6 +181,7 @@ function BodyCompositionAvatarInner({
       const now = typeof performance !== 'undefined' ? performance.now() : 0;
       firstInteractiveMsRef.current = Math.round(now - mountTimeRef.current);
     }
+    setCanvasHasPainted(true);
     setFallbackReason(null);
     setRecovering(false);
     clearRestoreTimer();
@@ -195,7 +200,13 @@ function BodyCompositionAvatarInner({
     const probe = probeWebGL();
     setFallbackReason(message);
     setFallbackWebgl(probe);
+    setCanvasHasPainted(false);
     setRecovering(true);
+
+    if (isZeroSizeCanvasMessage(message) && decideZeroSizeAction() === 'latch-2d') {
+      latchHonestFloor(message);
+      return;
+    }
 
     if (isWebGLContextLostMessage(message)) {
       const decision = decideContextLossAction({
@@ -232,6 +243,7 @@ function BodyCompositionAvatarInner({
 
   const handleContextRestored = useCallback((): void => {
     clearRestoreTimer();
+    setCanvasHasPainted(false);
     setRecovering(true);
     setMountEpoch((n) => n + 1);
   }, [clearRestoreTimer]);
@@ -315,10 +327,11 @@ function BodyCompositionAvatarInner({
       data-testid="formavision-avatar-footprint"
       className="absolute inset-0 mx-auto h-full w-full max-w-[600px]"
     >
-      {recovering ? (
+      {shouldPaintPlateFloor({ liveCanvasHasPainted: canvasHasPainted }) || recovering ? (
         <div
           data-testid="formavision-recovering-floor"
-          className="absolute inset-0 z-20"
+          className={`pointer-events-none absolute inset-0 ${recovering ? 'z-20' : 'z-0'}`}
+          style={{ backgroundColor: FORMA_VISION_HEX.navy }}
         >
           <FormaVisionLocalSilhouette sex={sex} />
         </div>

@@ -99,8 +99,11 @@ describe('BodyCompositionAvatar', () => {
     expect(plateClass).toBeDefined();
     expect(plateClass).toContain('relative');
     expect(plateClass).toContain('overflow-hidden');
+    expect(plateClass).toContain('bg-[#1A2744]');
+    expect(plateClass).not.toMatch(/\bbg-transparent\b/);
     expect(plateClass).not.toMatch(/\bitems-center\b/);
     expect(plateClass).not.toMatch(/\bflex\b/);
+    expect(formavision).toMatch(/formavision-plate-floor/);
     expect(formavision).toMatch(/FormaVisionLocalSilhouette/);
     expect(formavision).not.toMatch(/SegmentalHeatMap/);
     expect(formavision).not.toMatch(/aspect-\[720\/1152\]/);
@@ -161,10 +164,12 @@ describe('BodyCompositionAvatar', () => {
     expect(canvas).toMatch(/shouldHoldScrubMorph/);
   });
 
-  it('SSR first paint stays on the 3D footprint (loader), not the heatmap children', () => {
+  it('SSR first paint stays on the 3D footprint with a local silhouette floor, not the heatmap children', () => {
     const markup = renderWrapper('bodyFat');
     expect(markup).toContain('formavision-avatar-footprint');
     expect(markup).toContain('formavision-3d-pending');
+    expect(markup).toContain('formavision-local-silhouette');
+    expect(markup).toContain('formavision-recovering-floor');
     expect(markup).not.toContain('two-d-floor');
     expect(markup).not.toContain('formavision-fallback-2d');
     expect(markup).not.toContain('segmental-heat-map');
