@@ -1,13 +1,35 @@
-// Arnold tip acceptance gate for the #175 PRIMARY (3D never mounts after #174).
+// Arnold tip + Jeffery Gate O/B for the #175 PRIMARY (3D never mounts after #174).
 // Prod www dpl_9G7qh5EU / main cb1b82d8: getContext works, notice is honest, FRBL
 // PASS — but canvas.length=0 because the r3f bundle throws
 // `Cannot read properties of undefined (reading 'ReactCurrentBatchConfig')`
-// before Canvas creates a <canvas>. That is @react-three/fiber v8
-// (react-reconciler 0.27, peer react >=18 <19) on React 19.2 internals.
+// before Canvas creates a <canvas>.
+//
+// ## Gate O — Observe (three hypotheses)
+// H1 r3f/reconciler vs React 19: Fiber 8.18 peer is `react: ">=18 <19"` and
+//    depends on react-reconciler ^0.27. That reconciler reads
+//    `React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.ReactCurrentBatchConfig`.
+//    React 19.2 exports `__CLIENT_INTERNALS_…` with `{H,A,T,S}` and does NOT
+//    export SECRET_INTERNALS or ReactCurrentBatchConfig. That is the exact throw.
+// H2 Duplicate React: Next also ships `next/dist/compiled/react`. Two Reacts
+//    usually throw "Invalid hook call", not this property-read. A single
+//    React 19.2.8 instance already lacks SECRET_INTERNALS, so alias-only
+//    cannot restore ReactCurrentBatchConfig.
+// H3 WebGL / #174 false-negative: getContext succeeded on the smoke device;
+//    notice was already honest. Not this crash.
+//
+// ## Gate O — Lock
+// LOCKED: H1. Reproduced below against live React 19.2.8. H2 is defense-in-depth
+// only. H3 already fixed by #174 and must not regress.
+//
+// ## Gate B — Blueprint (micro-fix)
+// Align @react-three/fiber → v9 (bundled reconciler, peer react >=19 <19.3) and
+// @react-three/drei → v10 (peer fiber ^9). Keep #174 honest fallback + notice
+// above sex-toggles. Do not change WebGL probe / remount / portal host.
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import React from 'react';
 import { snapshotFromPhotoScanSummary } from '@/lib/body-tracker/composition/snapshotFromScanResult';
 import {
   historySnapshotCanEstimateGirths,
@@ -44,6 +66,43 @@ function readyPhoto(over: Partial<ScanSummary> = {}): ScanSummary {
   };
 }
 
+type ReactLegacyInternals = {
+  __SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED?: {
+    ReactCurrentBatchConfig?: unknown;
+  };
+  __CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE?: Record<string, unknown>;
+};
+
+// Fiber 8 / react-reconciler 0.27 access pattern (the www crash).
+function fiber8ReadReactCurrentBatchConfig(react: ReactLegacyInternals): unknown {
+  const internals = react.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
+  return internals.ReactCurrentBatchConfig;
+}
+
+describe('Jeffery Gate O: lock ReactCurrentBatchConfig root cause', () => {
+  it('H1 LOCKED: React 19.2 has no SECRET_INTERNALS.ReactCurrentBatchConfig', () => {
+    expect(React.version).toMatch(/^19\./);
+    const react = React as unknown as ReactLegacyInternals;
+    expect(react.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED).toBeUndefined();
+    const client = react.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+    expect(client).toBeDefined();
+    expect(client && 'ReactCurrentBatchConfig' in client).toBe(false);
+  });
+
+  it('H1 LOCKED: Fiber 8 access pattern throws the exact www message', () => {
+    expect(() => fiber8ReadReactCurrentBatchConfig(React as unknown as ReactLegacyInternals)).toThrow(
+      /Cannot read properties of undefined \(reading 'ReactCurrentBatchConfig'\)/,
+    );
+  });
+
+  it('H2 rejected as primary: alias-only cannot restore the missing React 19 field', () => {
+    const reactSrc = src('node_modules/react/cjs/react.production.js');
+    expect(reactSrc).toMatch(/__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE/);
+    expect(reactSrc).not.toMatch(/__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED/);
+    expect(reactSrc).not.toMatch(/ReactCurrentBatchConfig/);
+  });
+});
+
 describe('Arnold #175 PRIMARY: R3F v9 on React 19 so Canvas can mount', () => {
   it('aligns fiber/drei to React 19-compatible majors (package.json required)', () => {
     const deps = pkg().dependencies;
@@ -69,6 +128,9 @@ describe('Arnold #175 PRIMARY: R3F v9 on React 19 so Canvas can mount', () => {
   it('loads the fiber 9 Canvas export without a ReactCurrentBatchConfig throw', async () => {
     const fiber = await import('@react-three/fiber');
     expect(typeof fiber.Canvas).toBe('function');
+    const fiberEsm = src('node_modules/@react-three/fiber/dist/events-156d8d12.esm.js');
+    expect(fiberEsm).not.toMatch(/ReactCurrentBatchConfig/);
+    expect(fiberEsm).not.toMatch(/__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED/);
   });
 
   it('does not regress the #174 honest-fallback + notice-above-toggles contract', () => {
