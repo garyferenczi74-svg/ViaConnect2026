@@ -80,9 +80,8 @@ describe('Prompt 210l analyze-chain source contracts', () => {
     expect(src).not.toMatch(/aspect-\[16\/9\]/);
   });
 
-  it('FRBL upload slots use a native label + sr-only gallery input (no capture, no hidden)', () => {
+  it('FRBL upload slots use one label and an opacity-0 inset overlay input (no capture, no sr-only, no hidden)', () => {
     const src = read('src/components/body-tracker/BodyScanUploader.tsx');
-    expect(src).toMatch(/htmlFor=\{inputId\}/);
     expect(src).toMatch(/scan-\$\{pos\.key\}-upload/);
     expect(src).toMatch(/SCAN_SLOT_FILE_INPUT_CLASS/);
     expect(src).toMatch(/scan-slot-input-/);
@@ -92,9 +91,14 @@ describe('Prompt 210l analyze-chain source contracts', () => {
     expect(src).toMatch(/takeScanSlotFile/);
     expect(src).not.toMatch(/capture=["']environment["']/);
     expect(src).not.toMatch(/className="hidden"/);
+    expect(src).not.toMatch(/className="sr-only"/);
+    expect(src).not.toMatch(/h-px w-px/);
     expect(src).not.toMatch(/cameraRefs/);
     expect(src).not.toMatch(/galleryRefs/);
     expect(src).toMatch(/sanitizeAnalyzeUserError/);
+    const htmlForHits = src.match(/htmlFor=\{inputId\}/g) ?? [];
+    expect(htmlForHits.length).toBeLessThanOrEqual(1);
+    expect((src.match(/<label/g) ?? []).length).toBe(1);
   });
 
   it('upload path uprights inverted gallery shots before analyze', () => {

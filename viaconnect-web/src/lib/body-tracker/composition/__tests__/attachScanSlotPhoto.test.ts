@@ -23,8 +23,14 @@ describe('attachScanSlotPhoto helpers', () => {
   it('accepts any image so iOS camera/library files are not silently dropped', () => {
     expect(SCAN_SLOT_ACCEPT).toBe('image/*');
     expect(SCAN_SLOT_ACCEPT).not.toContain('image/jpeg,image/png');
-    expect(SCAN_SLOT_FILE_INPUT_CLASS).toBe('sr-only');
-    expect(SCAN_SLOT_FILE_INPUT_CLASS).not.toBe('hidden');
+    expect(SCAN_SLOT_FILE_INPUT_CLASS).toBe('absolute inset-0 z-20 cursor-pointer opacity-0');
+    expect(SCAN_SLOT_FILE_INPUT_CLASS).toMatch(/opacity-0/);
+    expect(SCAN_SLOT_FILE_INPUT_CLASS).toMatch(/inset-0/);
+    expect(SCAN_SLOT_FILE_INPUT_CLASS).toMatch(/z-20/);
+    expect(SCAN_SLOT_FILE_INPUT_CLASS).not.toMatch(/sr-only/);
+    expect(SCAN_SLOT_FILE_INPUT_CLASS).not.toMatch(/\bhidden\b/);
+    expect(SCAN_SLOT_FILE_INPUT_CLASS).not.toMatch(/h-px/);
+    expect(SCAN_SLOT_FILE_INPUT_CLASS).not.toMatch(/w-px/);
   });
 
   it('treats empty MIME (common iOS camera) as a direct still', () => {

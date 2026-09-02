@@ -7,11 +7,12 @@
 export const SCAN_SLOT_ACCEPT = 'image/*';
 
 /**
- * Visually hide the gallery file input without display:none.
- * iOS Safari ignores programmatic click() (and often label activation)
- * when the input uses `hidden` / display:none.
+ * Real tap target over the slot frame (same geometry as the old camera overlay).
+ * iOS Safari ignores label activation of clipped (`sr-only`), `hidden` /
+ * display:none, or 1px (`h-px w-px`) file inputs — Camera | Library never opens.
+ * `opacity-0` + `absolute inset-0` keeps a full-size hit box.
  */
-export const SCAN_SLOT_FILE_INPUT_CLASS = 'sr-only';
+export const SCAN_SLOT_FILE_INPUT_CLASS = 'absolute inset-0 z-20 cursor-pointer opacity-0';
 
 /** Soft encode target. Larger camera stills are resized, not rejected. */
 export const SCAN_SLOT_SOFT_MAX_BYTES = 5_000_000;
