@@ -1,8 +1,9 @@
-// MOTION-SPEC for the FormaVision Picasso floor ↔ 3D handoff (Brief 59 LOOK amend).
+// MOTION-SPEC for the FormaVision labeled 2D floor ↔ 3D handoff.
 //
-// Proud, not flashy. Floor paints immediately (never blank). 3D is the Brief 58
-// scan-morph mesh — this file only times the CSS/WebGL opacity crossfade.
-// Do not SVG→mesh the illustration.
+// Proud, not flashy. Floor paints immediately (never blank) as loading or
+// hard-failure only. 3D is the Brief 58 scan-morph mesh — this file only
+// times the CSS/WebGL opacity crossfade. Do not SVG→mesh the illustration.
+// Do not paint a stock person as the Ready result.
 
 export const FORMAVISION_MOTION_SPEC = {
   enterPlateMs: 180,
