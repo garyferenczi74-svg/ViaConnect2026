@@ -118,6 +118,21 @@ describe('Brief 59: chrome lock is plasma teal, never ZOZO purple', () => {
   });
 });
 
+describe('Brief 59 LOCKED: 3D is parametric morph, not SVG-to-mesh', () => {
+  it('Canvas still morphs from scan girths/BF and never converts the 2D floor', () => {
+    const canvas = src('src/components/formavision/FormaVisionCanvas.tsx');
+    const floor = src('src/components/formavision/FormaVisionAnatomicalFloor.tsx');
+    expect(canvas).toMatch(/scanToParamVector/);
+    expect(canvas).toMatch(/BODY_BUILD_BY_TIER/);
+    expect(canvas).not.toMatch(/svgToMesh|SVG→mesh|photogrammetry|extrude.*silhouette/i);
+    expect(floor).not.toMatch(/svgToMesh|photogrammetry/);
+    const brief = src('docs/formavision/BRIEF-59-anatomical-2d-floor.md');
+    expect(brief).toMatch(/3D is NOT SVG-to-mesh/);
+    expect(brief).toMatch(/always-paint floor/);
+    expect(brief).toMatch(/Never-empty stays/);
+  });
+});
+
 describe('Brief 59: Gate 178 Phase 1 mesh bar is unchanged', () => {
   it('cinematic density and hotter teal uniforms still beat Phase 0', () => {
     expect(CINEMATIC_BODY_SEGMENTS.radialSegments).toBeGreaterThan(
