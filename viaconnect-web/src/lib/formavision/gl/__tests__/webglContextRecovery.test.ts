@@ -16,6 +16,11 @@ import {
   scheduleZeroSizeHonestyCheck,
   shouldFireFirstInteractive,
   shouldTreatGlCreatedAsPainted,
+  FIRST_PAINT_DEADLINE_MS,
+  FORMAVISION_FIRST_PAINT_TIMEOUT_MESSAGE,
+  RESTORE_SPIN_BUDGET,
+  decideFirstPaintDeadlineAction,
+  decideRestoreSpinAction,
 } from '../webglContextRecovery';
 
 describe('decideContextLossAction', () => {
@@ -137,6 +142,13 @@ describe('first-paint vs GL-created', () => {
     expect(shouldFireFirstInteractive('first-demand-frame')).toBe(true);
     expect(decideZeroSizeAction()).toBe('latch-2d');
     expect(FIRST_PAINT_WATCHDOG_MS).toBeGreaterThan(0);
+    expect(FIRST_PAINT_DEADLINE_MS).toBeGreaterThan(FIRST_PAINT_WATCHDOG_MS);
+    expect(decideFirstPaintDeadlineAction({ painted: false })).toBe('latch-unavailable');
+    expect(decideFirstPaintDeadlineAction({ painted: true })).toBe('keep-waiting');
+    expect(decideRestoreSpinAction({ restoreRemounts: RESTORE_SPIN_BUDGET })).toBe(
+      'latch-2d',
+    );
+    expect(FORMAVISION_FIRST_PAINT_TIMEOUT_MESSAGE).toMatch(/did not present a frame/);
     expect(ZERO_SIZE_LATCH_MS).toBeLessThan(CONTEXT_RESTORE_WAIT_MS);
   });
 

@@ -211,6 +211,8 @@ export function FormaVision3DAvatar({
       data-morph-3d={morph3d}
       style={{
         opacity: morph3d,
+        isolation: 'isolate',
+        transform: 'translateZ(0)',
         transition: floorMotionTransition(morphDurationMs, morphEasing),
       }}
     >

@@ -43,8 +43,13 @@ import {
 } from '@/lib/formavision/tier/fallbackNoticeCopy';
 import {
   CONTEXT_RESTORE_WAIT_MS,
+  FIRST_PAINT_DEADLINE_MS,
+  FORMAVISION_FIRST_PAINT_TIMEOUT_MESSAGE,
+  WEBGL_CONTEXT_LOST_MESSAGE,
   WEBGL_REMOUNT_BUDGET,
   decideContextLossAction,
+  decideFirstPaintDeadlineAction,
+  decideRestoreSpinAction,
   decideZeroSizeAction,
   isWebGLContextLostMessage,
   isZeroSizeCanvasMessage,
@@ -57,6 +62,13 @@ import {
 } from '@/lib/formavision/motion/floorMotionSpec';
 import { resolveScanAppearanceProjection } from '@/lib/formavision/appearance/scanAppearanceProjection';
 import { buildAvatarMorphStamp } from '@/lib/formavision/morph/avatarMorphStamp';
+import {
+  floorRoleForAnatomicalFloor,
+  formatPlateDiagnostics,
+  resolvePlatePresentation,
+  type PlateFloorRole,
+  type PlatePaintState,
+} from '@/lib/formavision/tier/readyPlateContract';
 import { FormaVision3DAvatar } from './FormaVision3DAvatar';
 import { FormaVisionFallbackNotice } from './FormaVisionFallbackNotice';
 import { FormaVisionAnatomicalFloor } from './FormaVisionAnatomicalFloor';
@@ -69,6 +81,8 @@ export interface FloorMotionFrame {
   morph3d: number;
   durationMs: number;
   easing: string;
+  floorRole: PlateFloorRole;
+  paintState: PlatePaintState;
 }
 
 export interface BodyCompositionAvatarProps {
@@ -164,6 +178,7 @@ function BodyCompositionAvatarInner({
   const [fallbackWebgl, setFallbackWebgl] = useState<WebGLAvailability>('unknown');
   const [mountEpoch, setMountEpoch] = useState(0);
   const remountsRef = useRef(0);
+  const restoreSpinsRef = useRef(0);
   const restoreTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [latchSurface, setLatchSurface] = useState(false);
   const [settled, setSettled] = useState(false);
@@ -206,6 +221,7 @@ function BodyCompositionAvatarInner({
     setCanvasHasPainted(true);
     setFallbackReason(null);
     setRecovering(false);
+    restoreSpinsRef.current = 0;
     clearRestoreTimer();
   }, [clearRestoreTimer]);
 
@@ -265,16 +281,33 @@ function BodyCompositionAvatarInner({
 
   const handleContextRestored = useCallback((): void => {
     clearRestoreTimer();
+    restoreSpinsRef.current += 1;
+    if (decideRestoreSpinAction({ restoreRemounts: restoreSpinsRef.current }) === 'latch-2d') {
+      latchHonestFloor(WEBGL_CONTEXT_LOST_MESSAGE);
+      return;
+    }
     setCanvasHasPainted(false);
     setRecovering(true);
     setMountEpoch((n) => n + 1);
-  }, [clearRestoreTimer]);
+  }, [clearRestoreTimer, latchHonestFloor]);
 
   useEffect(() => {
     return () => {
       clearRestoreTimer();
     };
   }, [clearRestoreTimer]);
+
+  useEffect(() => {
+    if (canvasHasPainted || fellBack) return;
+    const timer = setTimeout(() => {
+      if (decideFirstPaintDeadlineAction({ painted: false }) === 'latch-unavailable') {
+        latchHonestFloor(FORMAVISION_FIRST_PAINT_TIMEOUT_MESSAGE);
+      }
+    }, FIRST_PAINT_DEADLINE_MS);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [canvasHasPainted, fellBack, latchHonestFloor, mountEpoch]);
 
   // The runtime step-down past 'lite' converges on the SAME fallback latch the WebGL
   // gate and the render-error boundary use: a '2d' tier flips fellBack, so there is
@@ -325,18 +358,28 @@ function BodyCompositionAvatarInner({
     reducedMotion: Boolean(reducedMotion),
   });
 
+  const presentation = resolvePlatePresentation({
+    canvasHasPainted,
+    fellBack,
+    recovering,
+  });
+
   useEffect(() => {
     onFloorMotion?.({
       floorOpacity: crossfade.floorOpacity,
       morph3d: crossfade.morph3d,
       durationMs: crossfade.durationMs,
       easing: crossfade.easing,
+      floorRole: presentation.floorRole,
+      paintState: presentation.paintState,
     });
   }, [
     crossfade.floorOpacity,
     crossfade.morph3d,
     crossfade.durationMs,
     crossfade.easing,
+    presentation.floorRole,
+    presentation.paintState,
     onFloorMotion,
   ]);
 
@@ -375,13 +418,14 @@ function BodyCompositionAvatarInner({
     source: girthSource,
   });
   const appearance = resolveScanAppearanceProjection();
-  const floorRole = fellBack ? 'unavailable' : 'loading';
-  const resultKind =
-    surface === 'fallback2d' || latchSurface
-      ? 'unavailable'
-      : canvasHasPainted
-        ? 'scan-mesh'
-        : 'loading';
+  const latchedUnavailable = surface === 'fallback2d' || latchSurface;
+  const presented = latchedUnavailable
+    ? resolvePlatePresentation({
+        canvasHasPainted: false,
+        fellBack: true,
+        recovering: false,
+      })
+    : presentation;
   const diagnostics = {
     'data-surface': surface,
     'data-tier': tier,
@@ -390,9 +434,11 @@ function BodyCompositionAvatarInner({
     'data-morph-bf': morphStamp.bf,
     'data-morph-waist-m': morphStamp.waistM,
     'data-appearance': appearance.mode,
-    'data-result': resultKind,
-    'data-floor-role': floorRole,
+    'data-result': presented.resultKind,
+    'data-floor-role': presented.floorRole,
+    'data-paint-state': presented.paintState,
   } as const;
+  const plateDiagnostics = formatPlateDiagnostics(presented);
 
   if (surface === 'fallback2d') {
     return (
@@ -404,6 +450,12 @@ function BodyCompositionAvatarInner({
         <FormaVisionFallbackNotice reason={fallbackReason} webgl={fallbackWebgl}>
           {children}
         </FormaVisionFallbackNotice>
+        <p
+          data-testid="formavision-plate-diagnostics"
+          className="pointer-events-none absolute bottom-1 left-1 z-30 font-mono text-[10px] leading-none text-white/40"
+        >
+          {plateDiagnostics}
+        </p>
       </div>
     );
   }
@@ -439,6 +491,8 @@ function BodyCompositionAvatarInner({
           style={{
             backgroundColor: FORMA_VISION_HEX.navy,
             opacity: crossfade.floorOpacity,
+            isolation: 'isolate',
+            transform: 'translateZ(0)',
             transition: floorMotionTransition(
               crossfade.durationMs,
               crossfade.easing,
@@ -452,7 +506,7 @@ function BodyCompositionAvatarInner({
             sex={sex}
             girths={selectFloorGirths(circumferences, girthSource)}
             reducedMotion={reducedMotion}
-            floorRole={floorRole}
+            floorRole={floorRoleForAnatomicalFloor(presented.floorRole)}
           />
         </div>
       ) : null}
@@ -492,6 +546,12 @@ function BodyCompositionAvatarInner({
         morphDurationMs={crossfade.durationMs}
         morphEasing={crossfade.easing}
       />
+      <p
+        data-testid="formavision-plate-diagnostics"
+        className="pointer-events-none absolute bottom-1 left-1 z-30 font-mono text-[10px] leading-none text-white/40"
+      >
+        {plateDiagnostics}
+      </p>
     </div>
   );
 }

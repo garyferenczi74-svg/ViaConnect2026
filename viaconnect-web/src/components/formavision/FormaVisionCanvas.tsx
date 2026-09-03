@@ -815,7 +815,11 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
   }
 
   return (
-    <div ref={containerRef} className="absolute inset-0 h-full w-full">
+    <div
+      ref={containerRef}
+      className="absolute inset-0 h-full w-full"
+      style={{ isolation: 'isolate', transform: 'translateZ(0)' }}
+    >
       <Canvas
         // Demand loop: frames are produced only on interaction, mount, or an
         // explicit invalidate. No continuous render, no idle spin.

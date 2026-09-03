@@ -21,14 +21,14 @@ describe('MOTION-SPEC floor ↔ 3D timings', () => {
     expect(defaultFloorView()).toBe('rear');
   });
 
-  it('paints the floor immediately before 3D is ready', () => {
+  it('paints the floor immediately before 3D is ready without hiding the live canvas', () => {
     const frame = resolveFloor3dCrossfade({
       liveCanvasHasPainted: false,
       recovering: false,
       fellBack: false,
     });
     expect(frame.floorOpacity).toBe(1);
-    expect(frame.morph3d).toBe(0);
+    expect(frame.morph3d).toBe(1);
     expect(frame.durationMs).toBe(0);
     expect(frame.phase).toBe('floor');
     expect(floorMotionTransition(frame.durationMs, frame.easing)).toBeUndefined();

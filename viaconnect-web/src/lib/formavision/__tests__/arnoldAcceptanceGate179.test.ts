@@ -70,7 +70,7 @@ describe('Brief 59 honesty amend: product floor is designed 2D, not Picasso', ()
     expect(markup).toContain('formavision-recovering-floor');
     expect(markup).toContain('formavision-3d-pending');
     expect(markup).toContain('data-motion-phase="floor"');
-    expect(markup).toContain('data-morph-3d="0"');
+    expect(markup).toContain('data-morph-3d="1"');
     expect(markup).not.toContain('formavision-picasso-plate');
     expect(markup).not.toContain('data-floor="picasso-pack"');
     expect(markup).not.toContain('formavision-local-silhouette');

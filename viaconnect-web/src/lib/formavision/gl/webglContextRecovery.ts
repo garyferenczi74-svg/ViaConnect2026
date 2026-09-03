@@ -21,6 +21,15 @@ export const CONTEXT_RESTORE_WAIT_MS = 1500;
 export const WEBGL_REMOUNT_BUDGET = 2;
 // Demand-loop paint watchdog. GL onCreated is NOT a painted frame.
 export const FIRST_PAINT_WATCHDOG_MS = 400;
+export const FIRST_PAINT_WATCHDOG_RETRIES = 5;
+// Ready scan must not sit on "Loading…" forever. Long enough for the
+// dynamic three chunk + first demand frame; short enough to be honest.
+export const FIRST_PAINT_DEADLINE_MS = 8000;
+export const FORMAVISION_FIRST_PAINT_TIMEOUT_MESSAGE =
+  'FormaVision 3D did not present a frame';
+// webglcontextrestored remounts do not burn WEBGL_REMOUNT_BUDGET. Cap
+// the lost→restore spin so a phone GPU fight cannot stay on Loading.
+export const RESTORE_SPIN_BUDGET = 3;
 export const ZERO_SIZE_LATCH_MS = 80;
 
 export type ContextLossAction = 'wait-restore' | 'remount' | 'latch-2d';
@@ -54,6 +63,20 @@ export function decideZeroSizeAction(): Extract<ContextLossAction, 'latch-2d'> {
 
 export function shouldFireFirstInteractive(source: 'gl-created' | 'first-demand-frame'): boolean {
   return source === 'first-demand-frame';
+}
+
+export function decideFirstPaintDeadlineAction(input: {
+  painted: boolean;
+}): 'keep-waiting' | 'latch-unavailable' {
+  return input.painted ? 'keep-waiting' : 'latch-unavailable';
+}
+
+export function decideRestoreSpinAction(input: {
+  restoreRemounts: number;
+  budget?: number;
+}): 'remount' | 'latch-2d' {
+  const budget = input.budget ?? RESTORE_SPIN_BUDGET;
+  return input.restoreRemounts < budget ? 'remount' : 'latch-2d';
 }
 
 export function decideContextLossAction(input: {
@@ -123,13 +146,20 @@ export function scheduleFirstPaintWatchdog(
   delayMs: number = FIRST_PAINT_WATCHDOG_MS,
   setTimer: (cb: () => void, ms: number) => ReturnType<typeof setTimeout> = (cb, ms) =>
     setTimeout(cb, ms),
+  retries: number = FIRST_PAINT_WATCHDOG_RETRIES,
 ): () => void {
-  const handle = setTimer(() => {
-    if (!hasPainted()) {
-      onMiss();
+  let attempt = 0;
+  let handle: ReturnType<typeof setTimeout> | null = null;
+  const tick = (): void => {
+    if (hasPainted()) return;
+    onMiss();
+    attempt += 1;
+    if (attempt < retries) {
+      handle = setTimer(tick, delayMs);
     }
-  }, delayMs);
+  };
+  handle = setTimer(tick, delayMs);
   return () => {
-    clearTimeout(handle);
+    if (handle !== null) clearTimeout(handle);
   };
 }
