@@ -102,7 +102,8 @@ describe('Brief 59: never-empty plate + honest fallback notice hold', () => {
     expect(page).toMatch(/formavision-plate-floor/);
     expect(page).toMatch(/formavision-2d-floor-child/);
     expect(page).toMatch(/bg-\[#1A2744\]/);
-    expect(page).toMatch(/floorRole="loading"/);
+    expect(page).toMatch(/floorRoleForAnatomicalFloor\(plateFloorMotion\.floorRole\)/);
+    expect(page).toMatch(/floorRole: 'loading'/);
     expect(page).toMatch(/floorRole="unavailable"/);
     expect(page).not.toMatch(/Male%20Avatar/);
     expect(page).not.toMatch(/supabase\.co/);
