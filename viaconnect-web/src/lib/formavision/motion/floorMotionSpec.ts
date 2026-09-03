@@ -30,6 +30,7 @@ export interface Floor3dCrossfadeInput {
   recovering: boolean;
   fellBack: boolean;
   reducedMotion?: boolean;
+  hasReadyScanData?: boolean;
 }
 
 export interface Floor3dCrossfade {
@@ -43,11 +44,10 @@ export interface Floor3dCrossfade {
 export function resolveFloor3dCrossfade(
   input: Floor3dCrossfadeInput,
 ): Floor3dCrossfade {
-  // Hide a broken / recovering canvas. Do NOT hide the live mount while
-  // waiting for the first painted frame — phone WebKit can skip RAF and
-  // WebGL for opacity:0 layers, which deadlocks canvasHasPainted forever
-  // under the labeled loading floor (Gary #182 Ready FAIL).
-  if (input.fellBack || input.recovering) {
+  // Hide a broken / recovering canvas only when there is no Ready scan.
+  // Ready + BF/girths must keep morph3d compositable — opacity:0 on the
+  // r3f mount deadlocks first-paint on phone WebKit (#182/#183/#184).
+  if ((input.fellBack || input.recovering) && !input.hasReadyScanData) {
     return {
       floorOpacity: 1,
       morph3d: 0,
@@ -57,6 +57,17 @@ export function resolveFloor3dCrossfade(
           : FORMAVISION_MOTION_SPEC.fallbackReverseMs,
       easing: 'ease-out',
       phase: 'toFloor',
+    };
+  }
+  if (input.fellBack && input.hasReadyScanData) {
+    return {
+      floorOpacity: 0,
+      morph3d: 1,
+      durationMs: input.reducedMotion
+        ? FORMAVISION_MOTION_SPEC.floorPaintMs
+        : FORMAVISION_MOTION_SPEC.ready3dMs,
+      easing: FORMAVISION_MOTION_SPEC.ready3dEasing,
+      phase: 'to3d',
     };
   }
   if (!input.liveCanvasHasPainted) {

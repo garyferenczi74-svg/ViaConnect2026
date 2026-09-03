@@ -51,8 +51,10 @@ import {
   decideFirstPaintDeadlineAction,
   decideRestoreSpinAction,
   decideZeroSizeAction,
+  frameloopUntilFirstPaint,
   isWebGLContextLostMessage,
   isZeroSizeCanvasMessage,
+  shouldLatchHonestFloor,
 } from '@/lib/formavision/gl/webglContextRecovery';
 import { FORMA_VISION_HEX } from '@/lib/formavision/materials/formaVisionTokens';
 import {
@@ -65,7 +67,9 @@ import { buildAvatarMorphStamp } from '@/lib/formavision/morph/avatarMorphStamp'
 import {
   floorRoleForAnatomicalFloor,
   formatPlateDiagnostics,
+  hasReadyScanData,
   resolvePlatePresentation,
+  resolveReadyPlatePresentation,
   type PlateFloorRole,
   type PlatePaintState,
 } from '@/lib/formavision/tier/readyPlateContract';
@@ -187,6 +191,7 @@ function BodyCompositionAvatarInner({
   const restoreTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [latchSurface, setLatchSurface] = useState(false);
   const [settled, setSettled] = useState(false);
+  const readyLive = hasReadyScanData(scan);
 
   // The active render tier (capability probe initially; stepped down at runtime) and
   // the sticky step-down trigger passed into the Canvas frame-budget monitor.
@@ -247,7 +252,9 @@ function BodyCompositionAvatarInner({
     setRecovering(true);
 
     if (isZeroSizeCanvasMessage(message) && decideZeroSizeAction() === 'latch-2d') {
-      latchHonestFloor(message);
+      if (shouldLatchHonestFloor({ hasReadyScanData: readyLive })) {
+        latchHonestFloor(message);
+      }
       return;
     }
 
@@ -256,6 +263,7 @@ function BodyCompositionAvatarInner({
         remountsUsed: remountsRef.current,
         restoreSeen: false,
         timedOut: false,
+        hasReadyScanData: readyLive,
       });
       if (decision === 'wait-restore') {
         clearRestoreTimer();
@@ -264,13 +272,16 @@ function BodyCompositionAvatarInner({
             remountsUsed: remountsRef.current,
             restoreSeen: false,
             timedOut: true,
+            hasReadyScanData: readyLive,
           });
           if (timedOut === 'remount') {
             remountsRef.current += 1;
             setMountEpoch((n) => n + 1);
             return;
           }
-          latchHonestFloor(message);
+          if (shouldLatchHonestFloor({ hasReadyScanData: readyLive })) {
+            latchHonestFloor(message);
+          }
         }, CONTEXT_RESTORE_WAIT_MS);
         return;
       }
@@ -281,20 +292,32 @@ function BodyCompositionAvatarInner({
       setMountEpoch((n) => n + 1);
       return;
     }
+    if (readyLive) {
+      remountsRef.current += 1;
+      setMountEpoch((n) => n + 1);
+      setFellBack(false);
+      setRecovering(false);
+      return;
+    }
     latchHonestFloor(message);
-  }, [clearRestoreTimer, latchHonestFloor]);
+  }, [clearRestoreTimer, latchHonestFloor, readyLive]);
 
   const handleContextRestored = useCallback((): void => {
     clearRestoreTimer();
     restoreSpinsRef.current += 1;
-    if (decideRestoreSpinAction({ restoreRemounts: restoreSpinsRef.current }) === 'latch-2d') {
+    if (
+      decideRestoreSpinAction({
+        restoreRemounts: restoreSpinsRef.current,
+        hasReadyScanData: readyLive,
+      }) === 'latch-2d'
+    ) {
       latchHonestFloor(WEBGL_CONTEXT_LOST_MESSAGE);
       return;
     }
     setCanvasHasPainted(false);
     setRecovering(true);
     setMountEpoch((n) => n + 1);
-  }, [clearRestoreTimer, latchHonestFloor]);
+  }, [clearRestoreTimer, latchHonestFloor, readyLive]);
 
   useEffect(() => {
     return () => {
@@ -303,22 +326,37 @@ function BodyCompositionAvatarInner({
   }, [clearRestoreTimer]);
 
   useEffect(() => {
-    if (canvasHasPainted || fellBack) return;
+    if (canvasHasPainted || (fellBack && !readyLive)) return;
     const timer = setTimeout(() => {
-      if (decideFirstPaintDeadlineAction({ painted: false }) === 'latch-unavailable') {
+      const action = decideFirstPaintDeadlineAction({
+        painted: false,
+        hasReadyScanData: readyLive,
+      });
+      if (action === 'present-ready-mesh') {
+        handleFirstInteractive();
+        return;
+      }
+      if (action === 'latch-unavailable') {
         latchHonestFloor(FORMAVISION_FIRST_PAINT_TIMEOUT_MESSAGE);
       }
     }, FIRST_PAINT_DEADLINE_MS);
     return () => {
       clearTimeout(timer);
     };
-  }, [canvasHasPainted, fellBack, latchHonestFloor, mountEpoch]);
+  }, [
+    canvasHasPainted,
+    fellBack,
+    handleFirstInteractive,
+    latchHonestFloor,
+    mountEpoch,
+    readyLive,
+  ]);
 
   // The runtime step-down past 'lite' converges on the SAME fallback latch the WebGL
   // gate and the render-error boundary use: a '2d' tier flips fellBack, so there is
   // exactly one 2D-floor decision and one render branch, never a parallel 2D path.
   useEffect(() => {
-    if (tier === '2d') {
+    if (tier === '2d' && !readyLive) {
       setFellBack(true);
       setFallbackReason((current) => current ?? '3D stepped down after a sustained frame-budget miss');
       setFallbackWebgl(probeWebGL());
@@ -340,7 +378,7 @@ function BodyCompositionAvatarInner({
         buildAvatarQualitySnapshot('2d', stepDownCountRef.current, errorCountRef.current, firstInteractiveMsRef.current),
       );
     }
-  }, [tier, onTierStepDown]);
+  }, [tier, onTierStepDown, readyLive]);
 
   // P8-T1b/T1c: also fire the '2d' tier event when fellBack is set by the WebGL
   // gate or render-error boundary (which do not go through the tier ladder).
@@ -361,12 +399,14 @@ function BodyCompositionAvatarInner({
     recovering,
     fellBack,
     reducedMotion: Boolean(reducedMotion),
+    hasReadyScanData: readyLive,
   });
 
-  const presentation = resolvePlatePresentation({
+  const presentation = resolveReadyPlatePresentation({
     canvasHasPainted,
     fellBack,
     recovering,
+    hasReadyScanData: readyLive,
   });
 
   useEffect(() => {
@@ -389,14 +429,14 @@ function BodyCompositionAvatarInner({
   ]);
 
   useEffect(() => {
-    if (!fellBack) {
+    if (!fellBack || readyLive) {
       setLatchSurface(false);
       return;
     }
     const delay = reducedMotion ? 0 : FORMAVISION_MOTION_SPEC.fallbackReverseMs;
     const timer = setTimeout(() => setLatchSurface(true), delay);
     return () => clearTimeout(timer);
-  }, [fellBack, reducedMotion]);
+  }, [fellBack, readyLive, reducedMotion]);
 
   useEffect(() => {
     if (crossfade.phase !== 'to3d') {
@@ -414,6 +454,7 @@ function BodyCompositionAvatarInner({
     renderTier: tier,
     confirmedFailure: latchSurface,
     webgl: 'unknown',
+    hasReadyScanData: readyLive,
   });
   const morphStamp = buildAvatarMorphStamp({
     scan,
@@ -423,7 +464,7 @@ function BodyCompositionAvatarInner({
     source: girthSource,
   });
   const appearance = resolveScanAppearanceProjection();
-  const latchedUnavailable = surface === 'fallback2d' || latchSurface;
+  const latchedUnavailable = !readyLive && (surface === 'fallback2d' || latchSurface);
   const presented = latchedUnavailable
     ? resolvePlatePresentation({
         canvasHasPainted: false,
@@ -515,7 +556,7 @@ function BodyCompositionAvatarInner({
           />
         </div>
       ) : null}
-      {fellBack && !latchSurface ? (
+      {fellBack && !latchSurface && !readyLive ? (
         <FormaVisionFallbackNotice reason={fallbackReason} webgl={fallbackWebgl}>
           {null}
         </FormaVisionFallbackNotice>
@@ -545,7 +586,7 @@ function BodyCompositionAvatarInner({
         onContextRestored={handleContextRestored}
         onOrbitEnd={onOrbitEnd}
         onFirstInteractive={handleFirstInteractive}
-        frameloopMode={frameloopMode}
+        frameloopMode={frameloopUntilFirstPaint(canvasHasPainted, frameloopMode)}
         girthSource={girthSource}
         morph3d={crossfade.morph3d}
         morphDurationMs={crossfade.durationMs}

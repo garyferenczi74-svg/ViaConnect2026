@@ -21,6 +21,8 @@ import {
   RESTORE_SPIN_BUDGET,
   decideFirstPaintDeadlineAction,
   decideRestoreSpinAction,
+  frameloopUntilFirstPaint,
+  shouldLatchHonestFloor,
 } from '../webglContextRecovery';
 
 describe('decideContextLossAction', () => {
@@ -73,6 +75,14 @@ describe('decideContextLossAction', () => {
         timedOut: true,
       }),
     ).toBe('latch-2d');
+    expect(
+      decideContextLossAction({
+        remountsUsed: WEBGL_REMOUNT_BUDGET,
+        restoreSeen: false,
+        timedOut: true,
+        hasReadyScanData: true,
+      }),
+    ).toBe('remount');
   });
 });
 
@@ -145,9 +155,18 @@ describe('first-paint vs GL-created', () => {
     expect(FIRST_PAINT_DEADLINE_MS).toBeGreaterThan(FIRST_PAINT_WATCHDOG_MS);
     expect(decideFirstPaintDeadlineAction({ painted: false })).toBe('latch-unavailable');
     expect(decideFirstPaintDeadlineAction({ painted: true })).toBe('keep-waiting');
+    expect(
+      decideFirstPaintDeadlineAction({ painted: false, hasReadyScanData: true }),
+    ).toBe('present-ready-mesh');
     expect(decideRestoreSpinAction({ restoreRemounts: RESTORE_SPIN_BUDGET })).toBe(
       'latch-2d',
     );
+    expect(
+      decideRestoreSpinAction({
+        restoreRemounts: RESTORE_SPIN_BUDGET,
+        hasReadyScanData: true,
+      }),
+    ).toBe('remount');
     expect(FORMAVISION_FIRST_PAINT_TIMEOUT_MESSAGE).toMatch(/did not present a frame/);
     expect(ZERO_SIZE_LATCH_MS).toBeLessThan(CONTEXT_RESTORE_WAIT_MS);
   });
@@ -182,5 +201,14 @@ describe('first-paint vs GL-created', () => {
     queued?.();
     expect(onMiss).toHaveBeenCalledTimes(1);
     cancel();
+  });
+
+  it('forces always-loop until a Ready mesh paints, then restores demand', () => {
+    expect(frameloopUntilFirstPaint(false)).toBe('always');
+    expect(frameloopUntilFirstPaint(false, 'demand')).toBe('always');
+    expect(frameloopUntilFirstPaint(true)).toBe('demand');
+    expect(frameloopUntilFirstPaint(true, 'always')).toBe('always');
+    expect(shouldLatchHonestFloor({ hasReadyScanData: true })).toBe(false);
+    expect(shouldLatchHonestFloor({ hasReadyScanData: false })).toBe(true);
   });
 });

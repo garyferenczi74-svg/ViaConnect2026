@@ -40,6 +40,13 @@ function asVisual(raw: VisualPayload | undefined): MeshyVisualState {
   };
 }
 
+export function shouldKickMeshyCreate(
+  sessionId: string | null,
+  createdFor: string | null,
+): boolean {
+  return typeof sessionId === 'string' && sessionId.length > 0 && createdFor !== sessionId;
+}
+
 async function fetchJson(url: string, init?: RequestInit): Promise<Record<string, unknown> | null> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
@@ -79,7 +86,7 @@ export function useMeshyVisual(sessionId: string | null): MeshyVisualClient {
     };
 
     const tick = async (): Promise<void> => {
-      if (!createdForRef.current) {
+      if (shouldKickMeshyCreate(sessionId, createdForRef.current)) {
         createdForRef.current = sessionId;
         await fetchJson('/api/formavision/meshy', {
           method: 'POST',

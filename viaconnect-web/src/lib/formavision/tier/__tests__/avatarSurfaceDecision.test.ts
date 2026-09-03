@@ -86,6 +86,24 @@ describe('selectAvatarSurface', () => {
       selectAvatarSurface(input({ renderTier: '2d', webgl: 'available' })),
     ).toBe('fallback2d');
   });
+
+  it('keeps the 3D plate for a Ready scan even after confirmed failure or 2d step-down', () => {
+    expect(
+      selectAvatarSurface(
+        input({
+          renderTier: 'cinematic',
+          webgl: 'available',
+          confirmedFailure: true,
+          hasReadyScanData: true,
+        }),
+      ),
+    ).toBe('formavision3d');
+    expect(
+      selectAvatarSurface(
+        input({ renderTier: '2d', webgl: 'available', hasReadyScanData: true }),
+      ),
+    ).toBe('formavision3d');
+  });
 });
 
 describe('shouldPaintPlateFloor', () => {
