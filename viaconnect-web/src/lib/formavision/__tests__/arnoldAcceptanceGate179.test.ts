@@ -15,7 +15,6 @@ import { FormaVisionAnatomicalFloor } from '@/components/formavision/FormaVision
 import {
   FEMALE_ANATOMICAL_CONTOUR,
   MALE_ANATOMICAL_CONTOUR,
-  STICK_SILHOUETTE_MARKERS,
 } from '@/components/formavision/anatomicalFloorGeometry';
 import { GENERIC_WEBGL_UNAVAILABLE_DETAIL } from '@/lib/formavision/tier/fallbackNoticeCopy';
 import { FORMA_VISION_HEX } from '@/lib/formavision/materials/formaVisionTokens';
@@ -78,8 +77,8 @@ describe('Brief 59: product floor is designed anatomical 2D, not stick', () => {
   it('product path sources import AnatomicalFloor and drop stick markers', () => {
     for (const file of PRODUCT_FLOOR_FILES) {
       const text = src(file);
-      expect(text).not.toContain(STICK_SILHOUETTE_MARKERS[0]);
-      expect(text).not.toContain(STICK_SILHOUETTE_MARKERS[1]);
+      expect(text).not.toMatch(/c13 0 24 11 24 26/);
+      expect(text).not.toMatch(/c12 0 22 10 22 24/);
       if (file.endsWith('page.tsx') || file.endsWith('BodyCompositionAvatar.tsx') || file.endsWith('FormaVision3DAvatar.tsx')) {
         expect(text).toMatch(/FormaVisionAnatomicalFloor/);
         expect(text).not.toMatch(/FormaVisionLocalSilhouette/);

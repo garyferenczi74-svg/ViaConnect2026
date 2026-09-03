@@ -11,7 +11,6 @@ import {
 import {
   FEMALE_ANATOMICAL_CONTOUR,
   MALE_ANATOMICAL_CONTOUR,
-  STICK_SILHOUETTE_MARKERS,
   selectFloorGirths,
 } from '../anatomicalFloorGeometry';
 
@@ -88,8 +87,8 @@ describe('FormaVisionAnatomicalFloor', () => {
     expect(floor).not.toMatch(/Female\.svg/);
     expect(floor).toMatch(/strokeWidth=\{1\.5\}/);
     expect(floor).toMatch(/#2DA5A0|#8EC8C4/);
-    expect(geometry).not.toContain(STICK_SILHOUETTE_MARKERS[0]);
-    expect(geometry).not.toContain(STICK_SILHOUETTE_MARKERS[1]);
+    expect(geometry).not.toMatch(/c13 0 24 11 24 26/);
+    expect(geometry).not.toMatch(/c12 0 22 10 22 24/);
     expect(floor).not.toContain('formavision-local-silhouette');
   });
 });

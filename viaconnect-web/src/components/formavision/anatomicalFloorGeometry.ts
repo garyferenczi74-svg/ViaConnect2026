@@ -149,10 +149,3 @@ const FEMALE_MUSCLE_LINES: readonly string[] = [
 export function anatomicalMuscleLines(sex: Sex): readonly string[] {
   return sex === 'female' ? FEMALE_MUSCLE_LINES : MALE_MUSCLE_LINES;
 }
-
-// Stick LocalSilhouette markers — product floor must never contain these.
-export const STICK_SILHOUETTE_MARKERS = [
-  'c13 0 24 11 24 26',
-  'c12 0 22 10 22 24',
-  'formavision-local-silhouette',
-] as const;
