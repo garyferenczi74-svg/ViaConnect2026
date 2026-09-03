@@ -48,12 +48,24 @@ import {
   isZeroSizeCanvasMessage,
 } from '@/lib/formavision/gl/webglContextRecovery';
 import { FORMA_VISION_HEX } from '@/lib/formavision/materials/formaVisionTokens';
+import {
+  FORMAVISION_MOTION_SPEC,
+  floorMotionTransition,
+  resolveFloor3dCrossfade,
+} from '@/lib/formavision/motion/floorMotionSpec';
 import { FormaVision3DAvatar } from './FormaVision3DAvatar';
 import { FormaVisionFallbackNotice } from './FormaVisionFallbackNotice';
 import { FormaVisionAnatomicalFloor } from './FormaVisionAnatomicalFloor';
 import { selectFloorGirths } from './anatomicalFloorGeometry';
 import { probeWebGL } from './hasWebGL';
 import { useRenderTier, useReportBudgetMiss } from './RenderTierProvider';
+
+export interface FloorMotionFrame {
+  floorOpacity: number;
+  morph3d: number;
+  durationMs: number;
+  easing: string;
+}
 
 export interface BodyCompositionAvatarProps {
   sex: Sex;
@@ -96,6 +108,8 @@ export interface BodyCompositionAvatarProps {
   // keeps the byte-identical demand loop. The 2D floor ignores it (no canvas).
   frameloopMode?: 'always' | 'demand';
   girthSource?: AvatarGirthSource;
+  // MOTION-SPEC: plate underlay on the page fades with the recovering floor.
+  onFloorMotion?: (frame: FloorMotionFrame) => void;
   // The 2D floor for this section, rendered as-is on any fallback.
   children: React.ReactNode;
 }
@@ -131,6 +145,7 @@ function BodyCompositionAvatarInner({
   onTierStepDown,
   frameloopMode,
   girthSource,
+  onFloorMotion,
   children,
 }: BodyCompositionAvatarProps) {
   // Remounts a live-canvas miss while getContext still works (not "no WebGL").
@@ -146,6 +161,8 @@ function BodyCompositionAvatarInner({
   const [mountEpoch, setMountEpoch] = useState(0);
   const remountsRef = useRef(0);
   const restoreTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [latchSurface, setLatchSurface] = useState(false);
+  const [settled, setSettled] = useState(false);
 
   // The active render tier (capability probe initially; stepped down at runtime) and
   // the sticky step-down trigger passed into the Canvas frame-budget monitor.
@@ -297,9 +314,53 @@ function BodyCompositionAvatarInner({
     }
   }, [fellBack, onTierStepDown]);
 
+  const crossfade = resolveFloor3dCrossfade({
+    liveCanvasHasPainted: canvasHasPainted,
+    recovering,
+    fellBack,
+    reducedMotion: Boolean(reducedMotion),
+  });
+
+  useEffect(() => {
+    onFloorMotion?.({
+      floorOpacity: crossfade.floorOpacity,
+      morph3d: crossfade.morph3d,
+      durationMs: crossfade.durationMs,
+      easing: crossfade.easing,
+    });
+  }, [
+    crossfade.floorOpacity,
+    crossfade.morph3d,
+    crossfade.durationMs,
+    crossfade.easing,
+    onFloorMotion,
+  ]);
+
+  useEffect(() => {
+    if (!fellBack) {
+      setLatchSurface(false);
+      return;
+    }
+    const delay = reducedMotion ? 0 : FORMAVISION_MOTION_SPEC.fallbackReverseMs;
+    const timer = setTimeout(() => setLatchSurface(true), delay);
+    return () => clearTimeout(timer);
+  }, [fellBack, reducedMotion]);
+
+  useEffect(() => {
+    if (crossfade.phase !== 'to3d') {
+      setSettled(false);
+      return;
+    }
+    const timer = setTimeout(
+      () => setSettled(true),
+      FORMAVISION_MOTION_SPEC.ready3dMs,
+    );
+    return () => clearTimeout(timer);
+  }, [crossfade.phase]);
+
   const surface = selectAvatarSurface({
     renderTier: tier,
-    confirmedFailure: fellBack,
+    confirmedFailure: latchSurface,
     webgl: 'unknown',
   });
   if (surface === 'fallback2d') {
@@ -326,19 +387,45 @@ function BodyCompositionAvatarInner({
   return (
     <div
       data-testid="formavision-avatar-footprint"
+      data-motion-phase={crossfade.phase}
+      data-morph-3d={crossfade.morph3d}
+      data-settle={settled ? String(FORMAVISION_MOTION_SPEC.settleMs) : undefined}
       className="absolute inset-0 mx-auto h-full w-full max-w-[600px]"
     >
-      {shouldPaintPlateFloor({ liveCanvasHasPainted: canvasHasPainted }) || recovering ? (
+      <style>{`@keyframes fv-plate-enter{from{transform:scale(0.985)}to{transform:scale(1)}}@media (prefers-reduced-motion:reduce){.fv-plate-enter{animation:none}}`}</style>
+      {shouldPaintPlateFloor({ liveCanvasHasPainted: canvasHasPainted }) ||
+      recovering ||
+      fellBack ||
+      crossfade.floorOpacity > 0 ? (
         <div
           data-testid="formavision-recovering-floor"
-          className={`pointer-events-none absolute inset-0 ${recovering ? 'z-20' : 'z-0'}`}
-          style={{ backgroundColor: FORMA_VISION_HEX.navy }}
+          data-floor-opacity={crossfade.floorOpacity}
+          className={`fv-plate-enter pointer-events-none absolute inset-0 ${
+            crossfade.floorOpacity > 0 ? 'z-20' : 'z-0'
+          }`}
+          style={{
+            backgroundColor: FORMA_VISION_HEX.navy,
+            opacity: crossfade.floorOpacity,
+            transition: floorMotionTransition(
+              crossfade.durationMs,
+              crossfade.easing,
+            ),
+            animation: reducedMotion
+              ? undefined
+              : `fv-plate-enter ${FORMAVISION_MOTION_SPEC.enterPlateMs}ms ${FORMAVISION_MOTION_SPEC.enterPlateEasing} both`,
+          }}
         >
           <FormaVisionAnatomicalFloor
             sex={sex}
             girths={selectFloorGirths(circumferences, girthSource)}
+            reducedMotion={reducedMotion}
           />
         </div>
+      ) : null}
+      {fellBack && !latchSurface ? (
+        <FormaVisionFallbackNotice reason={fallbackReason} webgl={fallbackWebgl}>
+          {null}
+        </FormaVisionFallbackNotice>
       ) : null}
       <FormaVision3DAvatar
         key={mountEpoch}
@@ -367,6 +454,9 @@ function BodyCompositionAvatarInner({
         onFirstInteractive={handleFirstInteractive}
         frameloopMode={frameloopMode}
         girthSource={girthSource}
+        morph3d={crossfade.morph3d}
+        morphDurationMs={crossfade.durationMs}
+        morphEasing={crossfade.easing}
       />
     </div>
   );

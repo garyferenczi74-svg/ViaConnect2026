@@ -35,6 +35,7 @@ import type { Sex, BodyParamVector } from '@/lib/formavision/geometry/types';
 import type { AvatarGirthSource } from '@/lib/formavision/morph/avatarMorphStamp';
 import type { SegmentTintRecord } from '@/lib/formavision/geometry/segmentTints';
 import { FORMA_VISION_HEX } from '@/lib/formavision/materials/formaVisionTokens';
+import { floorMotionTransition } from '@/lib/formavision/motion/floorMotionSpec';
 import { AvatarErrorBoundary } from './AvatarErrorBoundary';
 import { FormaVisionAnatomicalFloor } from './FormaVisionAnatomicalFloor';
 import { selectFloorGirths } from './anatomicalFloorGeometry';
@@ -44,16 +45,22 @@ import { selectFloorGirths } from './anatomicalFloorGeometry';
 function CanvasLoader({
   sex,
   girths,
+  reducedMotion,
 }: {
   sex: Sex;
   girths?: CircumferenceMeasurements | null;
+  reducedMotion?: boolean;
 }) {
   return (
     <div
       className="absolute inset-0"
       style={{ backgroundColor: FORMA_VISION_HEX.navy }}
     >
-      <FormaVisionAnatomicalFloor sex={sex} girths={girths ?? null} />
+      <FormaVisionAnatomicalFloor
+        sex={sex}
+        girths={girths ?? null}
+        reducedMotion={reducedMotion}
+      />
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-white/50">
         <Loader2 className="h-5 w-5 animate-spin" strokeWidth={1.5} />
       </div>
@@ -135,6 +142,10 @@ export interface FormaVision3DAvatarProps {
   // frames). Absent / "demand" keeps the byte-identical demand loop.
   frameloopMode?: 'always' | 'demand';
   girthSource?: AvatarGirthSource;
+  // MOTION-SPEC morph_3d: 0 while the Picasso floor holds, 1 after 3D is ready.
+  morph3d?: number;
+  morphDurationMs?: number;
+  morphEasing?: string;
 }
 
 export function FormaVision3DAvatar({
@@ -162,6 +173,9 @@ export function FormaVision3DAvatar({
   onFirstInteractive,
   frameloopMode,
   girthSource,
+  morph3d = 1,
+  morphDurationMs = 0,
+  morphEasing = 'linear',
 }: FormaVision3DAvatarProps) {
   // Client-only mount of the r3f canvas. SSR and the first hydrated paint share
   // the pending loader so a Node hasWebGL() === false cannot queue onRenderError
@@ -184,16 +198,30 @@ export function FormaVision3DAvatar({
   if (!clientReady) {
     return (
       <div className="absolute inset-0 h-full w-full" data-testid="formavision-3d-pending">
-        <CanvasLoader sex={sex} girths={floorGirths} />
+        <CanvasLoader sex={sex} girths={floorGirths} reducedMotion={reducedMotion} />
       </div>
     );
   }
 
   return (
-    <div className="absolute inset-0 h-full w-full" data-testid="formavision-3d-mount">
+    <div
+      className="absolute inset-0 h-full w-full"
+      data-testid="formavision-3d-mount"
+      data-morph-3d={morph3d}
+      style={{
+        opacity: morph3d,
+        transition: floorMotionTransition(morphDurationMs, morphEasing),
+      }}
+    >
       <AvatarErrorBoundary
         onRenderError={handleRenderError}
-        fallback={<FormaVisionAnatomicalFloor sex={sex} girths={floorGirths} />}
+        fallback={
+          <FormaVisionAnatomicalFloor
+            sex={sex}
+            girths={floorGirths}
+            reducedMotion={reducedMotion}
+          />
+        }
       >
         <FormaVisionCanvas
           sex={sex}
