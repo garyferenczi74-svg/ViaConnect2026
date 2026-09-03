@@ -50,7 +50,8 @@ import {
 import { FORMA_VISION_HEX } from '@/lib/formavision/materials/formaVisionTokens';
 import { FormaVision3DAvatar } from './FormaVision3DAvatar';
 import { FormaVisionFallbackNotice } from './FormaVisionFallbackNotice';
-import { FormaVisionLocalSilhouette } from './FormaVisionLocalSilhouette';
+import { FormaVisionAnatomicalFloor } from './FormaVisionAnatomicalFloor';
+import { selectFloorGirths } from './anatomicalFloorGeometry';
 import { probeWebGL } from './hasWebGL';
 import { useRenderTier, useReportBudgetMiss } from './RenderTierProvider';
 
@@ -135,7 +136,7 @@ function BodyCompositionAvatarInner({
   // Remounts a live-canvas miss while getContext still works (not "no WebGL").
   // Context-loss waits for webglcontextrestored before remounting; only a
   // restore timeout burns remountsRef. After remountsRef >= budget, latch the
-  // 2D floor + honest fallbackReason. Local silhouette ALWAYS paints until
+  // 2D floor + honest fallbackReason. Anatomical 2D ALWAYS paints until
   // the live canvas has presented pixels (GL created ≠ painted).
   const [fellBack, setFellBack] = useState(false);
   const [recovering, setRecovering] = useState(false);
@@ -333,7 +334,10 @@ function BodyCompositionAvatarInner({
           className={`pointer-events-none absolute inset-0 ${recovering ? 'z-20' : 'z-0'}`}
           style={{ backgroundColor: FORMA_VISION_HEX.navy }}
         >
-          <FormaVisionLocalSilhouette sex={sex} />
+          <FormaVisionAnatomicalFloor
+            sex={sex}
+            girths={selectFloorGirths(circumferences, girthSource)}
+          />
         </div>
       ) : null}
       <FormaVision3DAvatar

@@ -19,7 +19,7 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { emptyMeasurements } from '@/lib/body-tracker/circumference';
 import { BodyCompositionAvatar } from '@/components/formavision/BodyCompositionAvatar';
-import { FormaVisionLocalSilhouette } from '@/components/formavision/FormaVisionLocalSilhouette';
+import { FormaVisionAnatomicalFloor } from '@/components/formavision/FormaVisionAnatomicalFloor';
 import {
   CONTEXT_RESTORE_WAIT_MS,
   FORMAVISION_ZERO_SIZE_MESSAGE,
@@ -63,15 +63,15 @@ describe('Arnold acceptance gate 1: context-loss restore, do not tear forever', 
 });
 
 describe('Arnold acceptance gate 2: always-paint local floor', () => {
-  it('page fallback child is the inline silhouette, not remote Male Avatar.svg', () => {
+  it('page fallback child is the anatomical 2D floor, not remote Male Avatar.svg', () => {
     const page = src('src/app/(app)/(consumer)/body-tracker/formavision/page.tsx');
-    expect(page).toMatch(/FormaVisionLocalSilhouette/);
+    expect(page).toMatch(/FormaVisionAnatomicalFloor/);
     expect(page).not.toMatch(/SegmentalHeatMap/);
     expect(page).not.toMatch(/supabase\.co/);
     const html = renderToStaticMarkup(
-      React.createElement(FormaVisionLocalSilhouette, { sex: 'male' }),
+      React.createElement(FormaVisionAnatomicalFloor, { sex: 'male' }),
     );
-    expect(html).toContain('formavision-local-silhouette');
+    expect(html).toContain('formavision-anatomical-floor');
     expect(html).toContain('<svg');
     expect(html).not.toContain('supabase.co');
     expect(html).not.toContain('Male%20Avatar');
@@ -87,14 +87,14 @@ describe('Arnold acceptance gate 3: 3D footprint definite fill', () => {
         circumferences: null,
         unit: 'in',
         activeTab: 'bodyFat',
-        children: React.createElement(FormaVisionLocalSilhouette, { sex: 'male' }),
+        children: React.createElement(FormaVisionAnatomicalFloor, { sex: 'male' }),
       }),
     );
     expect(markup).toContain('formavision-avatar-footprint');
     expect(markup).toContain('absolute');
     expect(markup).toContain('inset-0');
     expect(markup).toContain('formavision-3d-pending');
-    expect(markup).toContain('formavision-local-silhouette');
+    expect(markup).toContain('formavision-anatomical-floor');
     expect(markup).toContain('formavision-recovering-floor');
     expect(markup).not.toContain('formavision-fallback-2d');
 
@@ -119,11 +119,11 @@ describe('Arnold acceptance gate 6: never-empty plate on 3D-pending', () => {
         circumferences: null,
         unit: 'in',
         activeTab: 'bodyFat',
-        children: React.createElement(FormaVisionLocalSilhouette, { sex: 'male' }),
+        children: React.createElement(FormaVisionAnatomicalFloor, { sex: 'male' }),
       }),
     );
     expect(markup).toContain('formavision-3d-pending');
-    expect(markup).toContain('formavision-local-silhouette');
+    expect(markup).toContain('formavision-anatomical-floor');
     expect(markup).toContain('formavision-recovering-floor');
     expect(markup).not.toContain('formavision-fallback-2d');
 
@@ -131,7 +131,7 @@ describe('Arnold acceptance gate 6: never-empty plate on 3D-pending', () => {
     const canvas = src('src/components/formavision/FormaVisionCanvas.tsx');
     const avatar = src('src/components/formavision/BodyCompositionAvatar.tsx');
     expect(threeD).toMatch(/function CanvasLoader/);
-    expect(threeD).toMatch(/FormaVisionLocalSilhouette/);
+    expect(threeD).toMatch(/FormaVisionAnatomicalFloor/);
     expect(threeD).not.toMatch(/loading:\s*\(\)\s*=>\s*<CanvasLoader\s*\/>/);
     expect(canvas).toMatch(/FirstPaintWatchdog/);
     expect(canvas).toMatch(/shouldTreatGlCreatedAsPainted/);

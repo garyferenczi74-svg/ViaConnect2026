@@ -4,39 +4,35 @@ import { join } from 'node:path';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import {
+  FORMAVISION_ANATOMICAL_FLOOR_TESTID,
+  FormaVisionAnatomicalFloor,
+} from '../FormaVisionAnatomicalFloor';
+import {
   FORMAVISION_LOCAL_SILHOUETTE_TESTID,
   FormaVisionLocalSilhouette,
 } from '../FormaVisionLocalSilhouette';
 
 const webRoot = process.cwd();
 
-describe('FormaVisionLocalSilhouette', () => {
-  it('paints an inline male/female outline with no remote Supabase URL', () => {
-    const male = renderToStaticMarkup(
+describe('FormaVisionLocalSilhouette alias', () => {
+  it('is the anatomical floor, not the circle-head stick', () => {
+    expect(FORMAVISION_LOCAL_SILHOUETTE_TESTID).toBe(FORMAVISION_ANATOMICAL_FLOOR_TESTID);
+    const alias = renderToStaticMarkup(
       React.createElement(FormaVisionLocalSilhouette, { sex: 'male' }),
     );
-    const female = renderToStaticMarkup(
-      React.createElement(FormaVisionLocalSilhouette, { sex: 'female' }),
+    const floor = renderToStaticMarkup(
+      React.createElement(FormaVisionAnatomicalFloor, { sex: 'male' }),
     );
-    expect(male).toContain(FORMAVISION_LOCAL_SILHOUETTE_TESTID);
-    expect(male).toContain('data-sex="male"');
-    expect(female).toContain('data-sex="female"');
-    expect(male).toContain('<svg');
-    expect(male).toContain('stroke-width="1.5"');
-    expect(male).not.toContain('supabase.co');
-    expect(male).not.toContain('Male%20Avatar');
-    expect(female).not.toContain('Female.svg');
-    expect(male).not.toEqual(female);
-  });
+    expect(alias).toBe(floor);
+    expect(alias).toContain('formavision-anatomical-floor');
+    expect(alias).not.toContain('formavision-local-silhouette');
 
-  it('source never fetches the remote heatmap avatars', () => {
     const src = readFileSync(
       join(webRoot, 'src/components/formavision/FormaVisionLocalSilhouette.tsx'),
       'utf8',
     );
-    expect(src).not.toMatch(/supabase\.co/);
-    expect(src).not.toMatch(/Male%20Avatar/);
-    expect(src).not.toMatch(/Female\.svg/);
-    expect(src).toMatch(/strokeWidth=\{1\.5\}/);
+    expect(src).toMatch(/FormaVisionAnatomicalFloor/);
+    expect(src).not.toMatch(/c13 0 24 11 24 26/);
+    expect(src).not.toMatch(/silhouettePath/);
   });
 });

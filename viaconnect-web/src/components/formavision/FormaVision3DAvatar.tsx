@@ -6,7 +6,7 @@
 // the resilience contract so callers do not have to: a client-only canvas mount
 // (never a render-time hasWebGL hard gate — that false-negatives on SSR and iOS
 // Safari), a lazy ssr:false import of the three bundle, and a render error
-// boundary that paints a local silhouette (never a silent empty plate).
+// boundary that paints the anatomical 2D floor (never a silent empty plate).
 // Later phases layer GeneticsOverlay, FutureSelfGhost and JourneyTimeline around
 // THIS component; the renderTier prop and the clean scene seam are here for them.
 // This task builds only the core 3D body.
@@ -36,17 +36,24 @@ import type { AvatarGirthSource } from '@/lib/formavision/morph/avatarMorphStamp
 import type { SegmentTintRecord } from '@/lib/formavision/geometry/segmentTints';
 import { FORMA_VISION_HEX } from '@/lib/formavision/materials/formaVisionTokens';
 import { AvatarErrorBoundary } from './AvatarErrorBoundary';
-import { FormaVisionLocalSilhouette } from './FormaVisionLocalSilhouette';
+import { FormaVisionAnatomicalFloor } from './FormaVisionAnatomicalFloor';
+import { selectFloorGirths } from './anatomicalFloorGeometry';
 
-// Pending / chunk-load shroud. Must include the local silhouette (never
+// Pending / chunk-load shroud. Must include the anatomical 2D floor (never
 // spinner-only) so the plate paints before the three bundle or GL is ready.
-function CanvasLoader({ sex }: { sex: Sex }) {
+function CanvasLoader({
+  sex,
+  girths,
+}: {
+  sex: Sex;
+  girths?: CircumferenceMeasurements | null;
+}) {
   return (
     <div
       className="absolute inset-0"
       style={{ backgroundColor: FORMA_VISION_HEX.navy }}
     >
-      <FormaVisionLocalSilhouette sex={sex} />
+      <FormaVisionAnatomicalFloor sex={sex} girths={girths ?? null} />
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-white/50">
         <Loader2 className="h-5 w-5 animate-spin" strokeWidth={1.5} />
       </div>
@@ -158,7 +165,7 @@ export function FormaVision3DAvatar({
 }: FormaVision3DAvatarProps) {
   // Client-only mount of the r3f canvas. SSR and the first hydrated paint share
   // the pending loader so a Node hasWebGL() === false cannot queue onRenderError
-  // and latch the 2D SVG before WebGL is even asked for on the device.
+  // and latch the anatomical 2D floor before WebGL is even asked for on the device.
   const [clientReady, setClientReady] = useState(false);
 
   useEffect(() => {
@@ -172,10 +179,12 @@ export function FormaVision3DAvatar({
     [onRenderError],
   );
 
+  const floorGirths = selectFloorGirths(circumferences, girthSource);
+
   if (!clientReady) {
     return (
       <div className="absolute inset-0 h-full w-full" data-testid="formavision-3d-pending">
-        <CanvasLoader sex={sex} />
+        <CanvasLoader sex={sex} girths={floorGirths} />
       </div>
     );
   }
@@ -184,7 +193,7 @@ export function FormaVision3DAvatar({
     <div className="absolute inset-0 h-full w-full" data-testid="formavision-3d-mount">
       <AvatarErrorBoundary
         onRenderError={handleRenderError}
-        fallback={<FormaVisionLocalSilhouette sex={sex} />}
+        fallback={<FormaVisionAnatomicalFloor sex={sex} girths={floorGirths} />}
       >
         <FormaVisionCanvas
           sex={sex}

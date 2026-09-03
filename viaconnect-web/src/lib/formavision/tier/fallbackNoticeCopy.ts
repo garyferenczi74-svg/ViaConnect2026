@@ -6,7 +6,7 @@
 import type { WebGLAvailability } from './avatarSurfaceDecision';
 
 export const GENERIC_WEBGL_UNAVAILABLE_DETAIL =
-  'This device could not start WebGL. The outline below is a 2D fallback, not a body morph.';
+  '3D preview needs a stronger GPU. This device could not start WebGL. The outline below is a 2D fallback, not a body morph.';
 
 export const LATER_INIT_FALLBACK_SUFFIX =
   'The outline below is a 2D fallback, not a body morph.';
