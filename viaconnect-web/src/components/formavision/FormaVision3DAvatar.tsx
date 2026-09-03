@@ -40,8 +40,8 @@ import { AvatarErrorBoundary } from './AvatarErrorBoundary';
 import { FormaVisionAnatomicalFloor } from './FormaVisionAnatomicalFloor';
 import { selectFloorGirths } from './anatomicalFloorGeometry';
 
-// Pending / chunk-load shroud. Must include the anatomical 2D floor (never
-// spinner-only) so the plate paints before the three bundle or GL is ready.
+// Pending / chunk-load shroud. Designed anatomical 2D only — never a stock
+// person and never implied as the user's Ready result.
 function CanvasLoader({
   sex,
   girths,
@@ -60,6 +60,7 @@ function CanvasLoader({
         sex={sex}
         girths={girths ?? null}
         reducedMotion={reducedMotion}
+        floorRole="loading"
       />
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-white/50">
         <Loader2 className="h-5 w-5 animate-spin" strokeWidth={1.5} />
@@ -142,7 +143,7 @@ export interface FormaVision3DAvatarProps {
   // frames). Absent / "demand" keeps the byte-identical demand loop.
   frameloopMode?: 'always' | 'demand';
   girthSource?: AvatarGirthSource;
-  // MOTION-SPEC morph_3d: 0 while the Picasso floor holds, 1 after 3D is ready.
+  // MOTION-SPEC morph_3d: 0 while the labeled 2D floor holds, 1 after 3D is ready.
   morph3d?: number;
   morphDurationMs?: number;
   morphEasing?: string;
@@ -220,6 +221,7 @@ export function FormaVision3DAvatar({
             sex={sex}
             girths={floorGirths}
             reducedMotion={reducedMotion}
+            floorRole="unavailable"
           />
         }
       >

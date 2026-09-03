@@ -72,8 +72,10 @@ describe('Arnold acceptance gate 2: always-paint local floor', () => {
       React.createElement(FormaVisionAnatomicalFloor, { sex: 'male' }),
     );
     expect(html).toContain('formavision-anatomical-floor');
-    expect(html).toContain('formavision-picasso-plate');
-    expect(html).toContain('/formavision/picasso/male-rear.png');
+    expect(html).toContain('formavision-anatomical-contour');
+    expect(html).toContain('data-floor="anatomical-2d"');
+    expect(html).not.toContain('formavision-picasso-plate');
+    expect(html).not.toContain('/formavision/picasso/');
     expect(html).not.toContain('supabase.co');
     expect(html).not.toContain('Male%20Avatar');
   });

@@ -846,6 +846,10 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
           // r3f spreads unknown DOM props onto the WRAPPER div, not the
           // <canvas>. Arnold / clip capture need the real WebGL canvas.
           state.gl.domElement.setAttribute('data-testid', 'formavision-avatar-canvas');
+          state.gl.domElement.setAttribute('data-tier', props.renderTier ?? 'cinematic');
+          state.gl.domElement.setAttribute('data-appearance', 'procedural');
+          state.gl.domElement.setAttribute('data-result', 'scan-mesh');
+          state.gl.domElement.setAttribute('data-surface', 'formavision3d');
           applyAvatarMorphStamp(
             state.gl.domElement,
             buildAvatarMorphStamp({

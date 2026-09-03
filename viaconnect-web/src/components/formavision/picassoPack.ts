@@ -1,5 +1,6 @@
-// Gary-locked Picasso pack — bundled local PNGs only (Brief 59 LOOK amend).
-// Never a remote Supabase Male/Female Avatar.svg.
+// RETIRED as a scan result after PR #181 production FAIL.
+// Photorealistic stock plates must never paint as the user's Ready avatar.
+// Kept only so tests can assert the product path does not import this module.
 
 import type { Sex } from '@/lib/formavision/geometry/types';
 import {

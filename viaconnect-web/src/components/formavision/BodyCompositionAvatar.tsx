@@ -7,7 +7,9 @@
 //
 //   3D FormaVision3DAvatar  preferred whenever 3D has not confirmed-failed
 //   2D floor (children)     after a fresh-canvas probe is unavailable, remounts
-//                           are exhausted, or tier 2d
+//                           are exhausted, or tier 2d — labeled loading /
+//                           unavailable only. Never a stock person. Never the
+//                           user's Ready result.
 //
 // A render-time hasWebGL() false (SSR, iOS Safari false-negative) must NOT
 // latch the floor. A live-canvas / renderer miss while a fresh getContext still
@@ -53,6 +55,8 @@ import {
   floorMotionTransition,
   resolveFloor3dCrossfade,
 } from '@/lib/formavision/motion/floorMotionSpec';
+import { resolveScanAppearanceProjection } from '@/lib/formavision/appearance/scanAppearanceProjection';
+import { buildAvatarMorphStamp } from '@/lib/formavision/morph/avatarMorphStamp';
 import { FormaVision3DAvatar } from './FormaVision3DAvatar';
 import { FormaVisionFallbackNotice } from './FormaVisionFallbackNotice';
 import { FormaVisionAnatomicalFloor } from './FormaVisionAnatomicalFloor';
@@ -363,10 +367,38 @@ function BodyCompositionAvatarInner({
     confirmedFailure: latchSurface,
     webgl: 'unknown',
   });
+  const morphStamp = buildAvatarMorphStamp({
+    scan,
+    circumferences,
+    sex,
+    unit,
+    source: girthSource,
+  });
+  const appearance = resolveScanAppearanceProjection();
+  const floorRole = fellBack ? 'unavailable' : 'loading';
+  const resultKind =
+    surface === 'fallback2d' || latchSurface
+      ? 'unavailable'
+      : canvasHasPainted
+        ? 'scan-mesh'
+        : 'loading';
+  const diagnostics = {
+    'data-surface': surface,
+    'data-tier': tier,
+    'data-morph': morphStamp.morph,
+    'data-morph-source': morphStamp.source,
+    'data-morph-bf': morphStamp.bf,
+    'data-morph-waist-m': morphStamp.waistM,
+    'data-appearance': appearance.mode,
+    'data-result': resultKind,
+    'data-floor-role': floorRole,
+  } as const;
+
   if (surface === 'fallback2d') {
     return (
       <div
         data-testid="formavision-avatar-footprint"
+        {...diagnostics}
         className="absolute inset-0 mx-auto h-full w-full max-w-[600px]"
       >
         <FormaVisionFallbackNotice reason={fallbackReason} webgl={fallbackWebgl}>
@@ -390,6 +422,7 @@ function BodyCompositionAvatarInner({
       data-motion-phase={crossfade.phase}
       data-morph-3d={crossfade.morph3d}
       data-settle={settled ? String(FORMAVISION_MOTION_SPEC.settleMs) : undefined}
+      {...diagnostics}
       className="absolute inset-0 mx-auto h-full w-full max-w-[600px]"
     >
       <style>{`@keyframes fv-plate-enter{from{transform:scale(0.985)}to{transform:scale(1)}}@media (prefers-reduced-motion:reduce){.fv-plate-enter{animation:none}}`}</style>
@@ -419,6 +452,7 @@ function BodyCompositionAvatarInner({
             sex={sex}
             girths={selectFloorGirths(circumferences, girthSource)}
             reducedMotion={reducedMotion}
+            floorRole={floorRole}
           />
         </div>
       ) : null}

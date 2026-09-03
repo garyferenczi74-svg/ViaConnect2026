@@ -587,6 +587,7 @@ function FormaVisionSurface() {
             sex={gender}
             girths={floorGirths}
             reducedMotion={reducedMotion}
+            floorRole="loading"
           />
         </div>
         <AbWipeSplitOverlay wipeT={wipeT} visible={abCompareOn && Boolean(wipeVector)} />
@@ -610,9 +611,8 @@ function FormaVisionSurface() {
           wipeVector={wipeVector}
           onFloorMotion={handleFloorMotion}
         >
-          {/* Always-paint Picasso pack floor: bundled PNGs, no remote
-              Supabase Male Avatar.svg. Also mounted under the 3D canvas
-              until pixels paint; these children remain the honest 2D latch. */}
+          {/* Labeled designed 2D latch only. Never a stock person and never
+              presented as the Ready scan result. */}
           <div
             data-testid="formavision-2d-floor-child"
             className="flex h-full min-h-[200px] w-full items-center justify-center"
@@ -621,6 +621,7 @@ function FormaVisionSurface() {
               sex={gender}
               girths={floorGirths}
               reducedMotion={reducedMotion}
+              floorRole="unavailable"
             />
           </div>
         </BodyCompositionAvatar>
