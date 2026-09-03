@@ -21,8 +21,10 @@ import {
   RESTORE_SPIN_BUDGET,
   decideFirstPaintDeadlineAction,
   decideRestoreSpinAction,
+  frameloopAfterDeadline,
   frameloopUntilFirstPaint,
   shouldLatchHonestFloor,
+  shouldTreatPresentReadyMeshAsPainted,
 } from '../webglContextRecovery';
 
 describe('decideContextLossAction', () => {
@@ -210,5 +212,28 @@ describe('first-paint vs GL-created', () => {
     expect(frameloopUntilFirstPaint(true, 'always')).toBe('always');
     expect(shouldLatchHonestFloor({ hasReadyScanData: true })).toBe(false);
     expect(shouldLatchHonestFloor({ hasReadyScanData: false })).toBe(true);
+  });
+
+  it('present-ready-mesh does not flip frameloop to demand while painted=false', () => {
+    expect(shouldTreatPresentReadyMeshAsPainted()).toBe(false);
+    expect(
+      frameloopAfterDeadline({
+        painted: false,
+        action: 'present-ready-mesh',
+      }),
+    ).toBe('always');
+    expect(
+      frameloopAfterDeadline({
+        painted: false,
+        action: 'present-ready-mesh',
+        requested: 'demand',
+      }),
+    ).toBe('always');
+    expect(
+      frameloopAfterDeadline({
+        painted: true,
+        action: 'keep-waiting',
+      }),
+    ).toBe('demand');
   });
 });

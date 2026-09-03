@@ -114,6 +114,24 @@ export function frameloopUntilFirstPaint(
   return painted ? (requested ?? 'demand') : 'always';
 }
 
+// present-ready-mesh keeps the Ready plate mounted. It is not a GPU
+// frame. Counting it as first-interactive restores demand and deadlocks
+// phone WebKit (Gary #185 after #183/#184).
+export function shouldTreatPresentReadyMeshAsPainted(): boolean {
+  return false;
+}
+
+export function frameloopAfterDeadline(input: {
+  painted: boolean;
+  action: FirstPaintDeadlineAction;
+  requested?: 'always' | 'demand';
+}): 'always' | 'demand' {
+  if (input.action === 'present-ready-mesh' && !input.painted) {
+    return 'always';
+  }
+  return frameloopUntilFirstPaint(input.painted, input.requested);
+}
+
 export function shouldLatchHonestFloor(input: { hasReadyScanData: boolean }): boolean {
   return !input.hasReadyScanData;
 }

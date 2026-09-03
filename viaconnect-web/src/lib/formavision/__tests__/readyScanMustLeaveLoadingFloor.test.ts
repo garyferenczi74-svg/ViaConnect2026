@@ -28,6 +28,8 @@ import {
   FORMAVISION_FIRST_PAINT_TIMEOUT_MESSAGE,
   decideFirstPaintDeadlineAction,
   decideRestoreSpinAction,
+  frameloopAfterDeadline,
+  shouldTreatPresentReadyMeshAsPainted,
 } from '@/lib/formavision/gl/webglContextRecovery';
 import {
   formatPlateDiagnostics,
@@ -231,6 +233,14 @@ describe('First-paint deadline and restore-spin latch', () => {
     expect(
       decideFirstPaintDeadlineAction({ painted: false, hasReadyScanData: true }),
     ).toBe('present-ready-mesh');
+    expect(shouldTreatPresentReadyMeshAsPainted()).toBe(false);
+    expect(
+      frameloopAfterDeadline({
+        painted: false,
+        action: 'present-ready-mesh',
+        requested: 'demand',
+      }),
+    ).toBe('always');
     expect(FIRST_PAINT_DEADLINE_MS).toBeGreaterThan(2000);
     expect(FORMAVISION_FIRST_PAINT_TIMEOUT_MESSAGE).toMatch(/did not present a frame/);
   });
@@ -247,7 +257,11 @@ describe('First-paint deadline and restore-spin latch', () => {
     expect(avatar).toMatch(/FIRST_PAINT_DEADLINE_MS/);
     expect(avatar).toMatch(/decideFirstPaintDeadlineAction/);
     expect(avatar).toMatch(/present-ready-mesh/);
-    expect(avatar).toMatch(/frameloopUntilFirstPaint/);
+    expect(avatar).toMatch(/frameloopAfterDeadline/);
+    expect(avatar).toMatch(/shouldTreatPresentReadyMeshAsPainted/);
+    expect(avatar).not.toMatch(
+      /action === 'present-ready-mesh'\) \{\s*handleFirstInteractive\(\)/,
+    );
     expect(avatar).toMatch(/resolveReadyPlatePresentation/);
     expect(avatar).toMatch(/decideRestoreSpinAction/);
     expect(avatar).toMatch(/data-paint-state/);

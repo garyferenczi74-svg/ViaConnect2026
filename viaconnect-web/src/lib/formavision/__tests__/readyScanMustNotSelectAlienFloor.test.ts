@@ -16,8 +16,10 @@ import { estimateCircumferencesFromComposition } from '@/lib/body-tracker/compos
 import { buildAvatarMorphStamp } from '@/lib/formavision/morph/avatarMorphStamp';
 import {
   decideFirstPaintDeadlineAction,
+  frameloopAfterDeadline,
   frameloopUntilFirstPaint,
   shouldLatchHonestFloor,
+  shouldTreatPresentReadyMeshAsPainted,
 } from '@/lib/formavision/gl/webglContextRecovery';
 import { resolveFloor3dCrossfade } from '@/lib/formavision/motion/floorMotionSpec';
 import { selectAvatarSurface } from '@/lib/formavision/tier/avatarSurfaceDecision';
@@ -95,6 +97,14 @@ describe('Production FAIL #184: Ready morph never selects the alien floor', () =
     expect(decideFirstPaintDeadlineAction({ painted: false })).toBe('latch-unavailable');
     expect(shouldLatchHonestFloor({ hasReadyScanData: true })).toBe(false);
     expect(frameloopUntilFirstPaint(false)).toBe('always');
+    expect(shouldTreatPresentReadyMeshAsPainted()).toBe(false);
+    expect(
+      frameloopAfterDeadline({
+        painted: false,
+        action: 'present-ready-mesh',
+        requested: 'demand',
+      }),
+    ).toBe('always');
   });
 
   it('Ready confirmed-failure still mounts 3D and keeps morph3d compositable', () => {
@@ -128,7 +138,11 @@ describe('Production FAIL #184: Ready morph never selects the alien floor', () =
     const avatar = src('src/components/formavision/BodyCompositionAvatar.tsx');
     expect(avatar).toMatch(/hasReadyScanData: readyLive/);
     expect(avatar).toMatch(/present-ready-mesh/);
-    expect(avatar).toMatch(/frameloopUntilFirstPaint/);
+    expect(avatar).toMatch(/frameloopAfterDeadline/);
+    expect(avatar).toMatch(/shouldTreatPresentReadyMeshAsPainted/);
+    expect(avatar).not.toMatch(
+      /action === 'present-ready-mesh'\) \{\s*handleFirstInteractive\(\)/,
+    );
     expect(avatar).not.toMatch(/picassoPack/);
   });
 });

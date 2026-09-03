@@ -51,10 +51,11 @@ import {
   decideFirstPaintDeadlineAction,
   decideRestoreSpinAction,
   decideZeroSizeAction,
-  frameloopUntilFirstPaint,
+  frameloopAfterDeadline,
   isWebGLContextLostMessage,
   isZeroSizeCanvasMessage,
   shouldLatchHonestFloor,
+  shouldTreatPresentReadyMeshAsPainted,
 } from '@/lib/formavision/gl/webglContextRecovery';
 import { FORMA_VISION_HEX } from '@/lib/formavision/materials/formaVisionTokens';
 import {
@@ -333,7 +334,14 @@ function BodyCompositionAvatarInner({
         hasReadyScanData: readyLive,
       });
       if (action === 'present-ready-mesh') {
-        handleFirstInteractive();
+        // Keep the Ready mesh mounted/compositable. Do NOT stamp
+        // canvasHasPainted — that is FirstPaintWatchdog useFrame only.
+        // Faking first-interactive here restores demand and the phone
+        // WebKit plate never paints (#185 nit 1).
+        if (shouldTreatPresentReadyMeshAsPainted()) {
+          handleFirstInteractive();
+        }
+        setFellBack(false);
         return;
       }
       if (action === 'latch-unavailable') {
@@ -586,7 +594,14 @@ function BodyCompositionAvatarInner({
         onContextRestored={handleContextRestored}
         onOrbitEnd={onOrbitEnd}
         onFirstInteractive={handleFirstInteractive}
-        frameloopMode={frameloopUntilFirstPaint(canvasHasPainted, frameloopMode)}
+        frameloopMode={frameloopAfterDeadline({
+          painted: canvasHasPainted,
+          action: decideFirstPaintDeadlineAction({
+            painted: canvasHasPainted,
+            hasReadyScanData: readyLive,
+          }),
+          requested: frameloopMode,
+        })}
         girthSource={girthSource}
         morph3d={crossfade.morph3d}
         morphDurationMs={crossfade.durationMs}
