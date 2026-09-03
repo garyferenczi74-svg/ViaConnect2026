@@ -12,7 +12,7 @@
 // constraint. capture_status='ready' is only returned once that UPDATE
 // re-selects and confirms it. Logs carry sessionId/pose only, never a path.
 
-import { NextRequest, NextResponse } from 'next/server';
+import { after, NextRequest, NextResponse } from 'next/server';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -20,6 +20,7 @@ import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { inMemoryRateLimit } from '@/lib/utils/inMemoryRateLimit';
 import { safeLog } from '@/lib/utils/safe-log';
 import { buildFrameRow } from '@/lib/scan/finalizeFrameRow';
+import { startMeshyForReadySession } from '@/lib/formavision/meshy/startMeshyForReadySession';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -331,6 +332,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     safeLog.info(SCOPE, 'scan finalized', { sessionId });
+    try {
+      after(() => {
+        void startMeshyForReadySession(sessionId, user.id, admin);
+      });
+    } catch {
+      void startMeshyForReadySession(sessionId, user.id, admin);
+    }
     return NextResponse.json({ ok: true, sessionId, failedPoses: [] });
   } catch (error) {
     if (isTimeoutError(error)) {

@@ -74,6 +74,10 @@ import {
 } from '@/lib/formavision/compare/resolveAbBaseline';
 import { computeAbMeasurementDeltas } from '@/lib/formavision/compare/abMeasurementDeltas';
 import { emitCompareEvent } from '@/lib/formavision/compare/compareTelemetry';
+import { pickReadyFrblSessionId } from '@/lib/formavision/meshy/selectPlateMeshSource';
+import { useMeshyVisual } from '@/hooks/formavision/useMeshyVisual';
+import { FormaVisionMeshyStatus } from '@/components/formavision/FormaVisionMeshyStatus';
+import { PROTOCOL_ID } from '@/lib/scan/poses';
 
 const UNIT_STORAGE_KEY = 'vc.body-tracker.measurement-unit';
 
@@ -199,6 +203,11 @@ function FormaVisionSurface() {
     () => pickReadyPhotoSnapshot(historyScans),
     [historyScans],
   );
+  const readyFrblSessionId = useMemo(
+    () => pickReadyFrblSessionId(historyScans, PROTOCOL_ID),
+    [historyScans],
+  );
+  const meshyVisual = useMeshyVisual(readyFrblSessionId);
   const historySnapshotForAvatar = useMemo(
     () =>
       pickHistorySnapshotForAvatar(
@@ -596,6 +605,7 @@ function FormaVisionSurface() {
           />
         </div>
         <AbWipeSplitOverlay wipeT={wipeT} visible={abCompareOn && Boolean(wipeVector)} />
+        <FormaVisionMeshyStatus status={meshyVisual.status} progress={meshyVisual.progress} />
         <BodyCompositionAvatar
           sex={gender}
           scan={snapshot}
@@ -615,6 +625,8 @@ function FormaVisionSurface() {
           wipeT={wipeT}
           wipeVector={wipeVector}
           onFloorMotion={handleFloorMotion}
+          meshyGlbUrl={meshyVisual.glbUrl}
+          meshyStatus={meshyVisual.status}
         >
           {/* Labeled designed 2D latch only. Never a stock person and never
               presented as the Ready scan result. */}

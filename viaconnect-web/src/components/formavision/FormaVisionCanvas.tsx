@@ -17,7 +17,7 @@
 // is hidden (visibilitychange), and never run an idle turntable when reducedMotion
 // is set (no auto-spin is started anywhere; motion choreography is Phase 2).
 
-import { useEffect, useMemo, useRef } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { ContactShadows, OrbitControls } from '@react-three/drei';
 import { Mesh, Spherical, Vector3 } from 'three';
@@ -86,6 +86,10 @@ import {
   shouldRenderAbWipe,
   wipeModeForRole,
 } from '@/lib/formavision/compare/abWipe';
+import { selectPlateMeshSource } from '@/lib/formavision/meshy/selectPlateMeshSource';
+import type { MeshyVisualStatus } from '@/lib/formavision/meshy/types';
+import { MeshyGlbMesh } from './MeshyGlbMesh';
+import { MeshyGlbBoundary } from './MeshyGlbBoundary';
 
 export interface FormaVisionCanvasProps {
   sex: Sex;
@@ -160,6 +164,9 @@ export interface FormaVisionCanvasProps {
   // undefined (demand) when done. ADDITIVE + minimal: when absent the canvas is
   // byte-identical to before this prop (demand). No other behavior changes.
   frameloopMode?: 'always' | 'demand';
+  // Stored-GLB swap-in. Absent keeps the parametric scan-morph mesh.
+  meshyGlbUrl?: string | null;
+  meshyStatus?: MeshyVisualStatus;
 }
 
 // Vertical / radial density per render tier. Cinematic is Brief 58 ZOZO-class
@@ -753,6 +760,18 @@ function FrameBudgetMonitor({
   return null;
 }
 
+function MeshSourceStamp({ source }: { source: 'parametric' | 'meshy-glb' }) {
+  const gl = useThree((state) => state.gl);
+  useEffect(() => {
+    gl.domElement.setAttribute('data-mesh-source', source);
+    gl.domElement.setAttribute(
+      'data-appearance',
+      source === 'meshy-glb' ? 'meshy-glb' : 'procedural',
+    );
+  }, [gl, source]);
+  return null;
+}
+
 // Observes the first demand frame that actually presents (non-zero canvas).
 // onCreated / GL-ready must not claim this — phone WebKit can create a
 // context and never paint. A timeout watchdog re-invalidates; it still
@@ -797,6 +816,26 @@ function FirstPaintWatchdog({
 }
 
 export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
+  const [glbLoadFailed, setGlbLoadFailed] = useState(false);
+  const [glbReady, setGlbReady] = useState(false);
+  const meshSource = selectPlateMeshSource({
+    meshyGlbUrl: glbReady ? (props.meshyGlbUrl ?? null) : null,
+    meshyStatus: props.meshyStatus ?? 'idle',
+    glbLoadFailed,
+  });
+  const handleGlbReady = useCallback(() => {
+    setGlbReady(true);
+    setGlbLoadFailed(false);
+  }, []);
+  const handleGlbError = useCallback(() => {
+    setGlbReady(false);
+    setGlbLoadFailed(true);
+  }, []);
+  useEffect(() => {
+    setGlbReady(false);
+    setGlbLoadFailed(false);
+  }, [props.meshyGlbUrl]);
+
   const containerRef = useRef<HTMLDivElement>(null);
   // Holds the running materialize intro so a pointer interaction can skip it to its
   // final lit state. BodyMesh owns the lifecycle; this is just the skip handle.
@@ -851,8 +890,12 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
           // <canvas>. Arnold / clip capture need the real WebGL canvas.
           state.gl.domElement.setAttribute('data-testid', 'formavision-avatar-canvas');
           state.gl.domElement.setAttribute('data-tier', props.renderTier ?? 'cinematic');
-          state.gl.domElement.setAttribute('data-appearance', 'procedural');
+          state.gl.domElement.setAttribute(
+            'data-appearance',
+            meshSource === 'meshy-glb' ? 'meshy-glb' : 'procedural',
+          );
           state.gl.domElement.setAttribute('data-result', 'scan-mesh');
+          state.gl.domElement.setAttribute('data-mesh-source', meshSource);
           state.gl.domElement.setAttribute('data-surface', 'formavision3d');
           applyAvatarMorphStamp(
             state.gl.domElement,
@@ -896,37 +939,57 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
           color={FORMA_VISION_HEX.teal}
         />
 
-        <BodyMesh {...props} introRef={introRef} turntableRef={turntableRef} />
+        {meshSource === 'meshy-glb' && props.meshyGlbUrl ? null : (
+          <BodyMesh {...props} introRef={introRef} turntableRef={turntableRef} />
+        )}
+        {props.meshyGlbUrl && !glbLoadFailed ? (
+          <MeshyGlbBoundary onError={handleGlbError}>
+            <Suspense fallback={null}>
+              <MeshyGlbMesh
+                url={props.meshyGlbUrl}
+                heightCm={props.heightCm}
+                visible={glbReady}
+                onReady={handleGlbReady}
+                onError={handleGlbError}
+              />
+            </Suspense>
+          </MeshyGlbBoundary>
+        ) : null}
+        <MeshSourceStamp source={meshSource} />
 
         {/* Projected future-self ghost: a translucent overlay of the projected body,
             shown only when showGhost is true AND ghostVector is non-null. It reuses the
             current body's per-tier build options so it is identical topology. Off by
             default, so the avatar is byte-identical to today until P5-T1c wires it. */}
-        <GhostMesh
-          ghostVector={props.ghostVector}
-          showGhost={props.showGhost}
-          buildOptions={TIER_BUILD[props.renderTier ?? 'cinematic']}
-        />
+        {meshSource === 'meshy-glb' ? null : (
+          <GhostMesh
+            ghostVector={props.ghostVector}
+            showGhost={props.showGhost}
+            buildOptions={TIER_BUILD[props.renderTier ?? 'cinematic']}
+          />
+        )}
 
-        <AbWipeMesh
-          wipeVector={props.wipeVector}
-          wipeActive={props.wipeActive}
-          wipeT={props.wipeT}
-          buildOptions={TIER_BUILD[props.renderTier ?? 'cinematic']}
-        />
+        {meshSource === 'meshy-glb' ? null : (
+          <AbWipeMesh
+            wipeVector={props.wipeVector}
+            wipeActive={props.wipeActive}
+            wipeT={props.wipeT}
+            buildOptions={TIER_BUILD[props.renderTier ?? 'cinematic']}
+          />
+        )}
 
-        {/* The single measurement ring for the selected region. It draws on, counts
-            its value up, and disposes when the selection clears. */}
-        <MeasurementRing
-          sex={props.sex}
-          scan={props.scan}
-          circumferences={props.circumferences}
-          unit={props.unit}
-          heightCm={props.heightCm}
-          selectedBodyPart={props.selectedBodyPart}
-          reducedMotion={props.reducedMotion}
-          turntableRef={turntableRef}
-        />
+        {meshSource === 'meshy-glb' ? null : (
+          <MeasurementRing
+            sex={props.sex}
+            scan={props.scan}
+            circumferences={props.circumferences}
+            unit={props.unit}
+            heightCm={props.heightCm}
+            selectedBodyPart={props.selectedBodyPart}
+            reducedMotion={props.reducedMotion}
+            turntableRef={turntableRef}
+          />
+        )}
 
         {/* Prop-driven orange emphasis accent: fires once at emphasisRegion then
             disposes. Unset means nothing renders. P7-T2: suppressed on lite (pure

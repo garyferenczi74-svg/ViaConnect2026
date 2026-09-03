@@ -75,6 +75,7 @@ import { FormaVisionAnatomicalFloor } from './FormaVisionAnatomicalFloor';
 import { selectFloorGirths } from './anatomicalFloorGeometry';
 import { probeWebGL } from './hasWebGL';
 import { useRenderTier, useReportBudgetMiss } from './RenderTierProvider';
+import type { MeshyVisualStatus } from '@/lib/formavision/meshy/types';
 
 export interface FloorMotionFrame {
   floorOpacity: number;
@@ -128,6 +129,8 @@ export interface BodyCompositionAvatarProps {
   girthSource?: AvatarGirthSource;
   // MOTION-SPEC: plate underlay on the page fades with the recovering floor.
   onFloorMotion?: (frame: FloorMotionFrame) => void;
+  meshyGlbUrl?: string | null;
+  meshyStatus?: MeshyVisualStatus;
   // The 2D floor for this section, rendered as-is on any fallback.
   children: React.ReactNode;
 }
@@ -164,6 +167,8 @@ function BodyCompositionAvatarInner({
   frameloopMode,
   girthSource,
   onFloorMotion,
+  meshyGlbUrl = null,
+  meshyStatus = 'idle',
   children,
 }: BodyCompositionAvatarProps) {
   // Remounts a live-canvas miss while getContext still works (not "no WebGL").
@@ -545,6 +550,8 @@ function BodyCompositionAvatarInner({
         morph3d={crossfade.morph3d}
         morphDurationMs={crossfade.durationMs}
         morphEasing={crossfade.easing}
+        meshyGlbUrl={meshyGlbUrl}
+        meshyStatus={meshyStatus}
       />
       <p
         data-testid="formavision-plate-diagnostics"

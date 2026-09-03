@@ -33,6 +33,10 @@ vi.mock('@/lib/utils/inMemoryRateLimit', () => ({
   inMemoryRateLimit: () => true,
 }));
 
+vi.mock('@/lib/formavision/meshy/startMeshyForReadySession', () => ({
+  startMeshyForReadySession: vi.fn().mockResolvedValue(undefined),
+}));
+
 import { POST } from '@/app/api/scan/finalize/route';
 
 const SESSION_ID = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee';

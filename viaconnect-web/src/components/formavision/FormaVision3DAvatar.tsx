@@ -33,6 +33,7 @@ import type {
 } from '@/lib/body-tracker/circumference';
 import type { Sex, BodyParamVector } from '@/lib/formavision/geometry/types';
 import type { AvatarGirthSource } from '@/lib/formavision/morph/avatarMorphStamp';
+import type { MeshyVisualStatus } from '@/lib/formavision/meshy/types';
 import type { SegmentTintRecord } from '@/lib/formavision/geometry/segmentTints';
 import { FORMA_VISION_HEX } from '@/lib/formavision/materials/formaVisionTokens';
 import { floorMotionTransition } from '@/lib/formavision/motion/floorMotionSpec';
@@ -147,6 +148,8 @@ export interface FormaVision3DAvatarProps {
   morph3d?: number;
   morphDurationMs?: number;
   morphEasing?: string;
+  meshyGlbUrl?: string | null;
+  meshyStatus?: MeshyVisualStatus;
 }
 
 export function FormaVision3DAvatar({
@@ -177,6 +180,8 @@ export function FormaVision3DAvatar({
   morph3d = 1,
   morphDurationMs = 0,
   morphEasing = 'linear',
+  meshyGlbUrl = null,
+  meshyStatus = 'idle',
 }: FormaVision3DAvatarProps) {
   // Client-only mount of the r3f canvas. SSR and the first hydrated paint share
   // the pending loader so a Node hasWebGL() === false cannot queue onRenderError
@@ -252,6 +257,8 @@ export function FormaVision3DAvatar({
           onContextRestored={onContextRestored}
           frameloopMode={frameloopMode}
           girthSource={girthSource}
+          meshyGlbUrl={meshyGlbUrl}
+          meshyStatus={meshyStatus}
         />
       </AvatarErrorBoundary>
     </div>
