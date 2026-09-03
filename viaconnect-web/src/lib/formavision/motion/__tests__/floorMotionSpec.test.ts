@@ -89,4 +89,25 @@ describe('MOTION-SPEC floor ↔ 3D timings', () => {
     expect(reverse.durationMs).toBe(0);
     expect(reverse.floorOpacity).toBe(1);
   });
+
+  it('Ready fallback keeps the mesh compositable and hides the alien floor', () => {
+    const readyFellBack = resolveFloor3dCrossfade({
+      liveCanvasHasPainted: false,
+      recovering: false,
+      fellBack: true,
+      hasReadyScanData: true,
+    });
+    expect(readyFellBack.morph3d).toBe(1);
+    expect(readyFellBack.floorOpacity).toBe(0);
+    expect(readyFellBack.phase).toBe('to3d');
+
+    const readyRecovering = resolveFloor3dCrossfade({
+      liveCanvasHasPainted: false,
+      recovering: true,
+      fellBack: false,
+      hasReadyScanData: true,
+    });
+    expect(readyRecovering.morph3d).toBe(1);
+    expect(readyRecovering.floorOpacity).toBe(1);
+  });
 });

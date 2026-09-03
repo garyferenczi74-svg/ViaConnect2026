@@ -34,6 +34,11 @@ export const ZERO_SIZE_LATCH_MS = 80;
 
 export type ContextLossAction = 'wait-restore' | 'remount' | 'latch-2d';
 
+export type FirstPaintDeadlineAction =
+  | 'keep-waiting'
+  | 'present-ready-mesh'
+  | 'latch-unavailable';
+
 export function isWebGLContextLostMessage(message: string): boolean {
   return message.toLowerCase().includes('webgl context lost');
 }
@@ -67,14 +72,22 @@ export function shouldFireFirstInteractive(source: 'gl-created' | 'first-demand-
 
 export function decideFirstPaintDeadlineAction(input: {
   painted: boolean;
-}): 'keep-waiting' | 'latch-unavailable' {
-  return input.painted ? 'keep-waiting' : 'latch-unavailable';
+  hasReadyScanData?: boolean;
+}): FirstPaintDeadlineAction {
+  if (input.painted) return 'keep-waiting';
+  // Ready + BF/girths must keep the parametric (or Meshy) mesh compositable.
+  // The 8s miss is not proof that there is no scan — only that useFrame
+  // never reported. Latched alien is the #184 phone FAIL.
+  if (input.hasReadyScanData) return 'present-ready-mesh';
+  return 'latch-unavailable';
 }
 
 export function decideRestoreSpinAction(input: {
   restoreRemounts: number;
   budget?: number;
+  hasReadyScanData?: boolean;
 }): 'remount' | 'latch-2d' {
+  if (input.hasReadyScanData) return 'remount';
   const budget = input.budget ?? RESTORE_SPIN_BUDGET;
   return input.restoreRemounts < budget ? 'remount' : 'latch-2d';
 }
@@ -84,12 +97,43 @@ export function decideContextLossAction(input: {
   restoreSeen: boolean;
   timedOut: boolean;
   remountBudget?: number;
+  hasReadyScanData?: boolean;
 }): ContextLossAction {
   const budget = input.remountBudget ?? WEBGL_REMOUNT_BUDGET;
   if (input.restoreSeen) return 'remount';
   if (!input.timedOut) return 'wait-restore';
+  if (input.hasReadyScanData) return 'remount';
   if (input.remountsUsed < budget) return 'remount';
   return 'latch-2d';
+}
+
+export function frameloopUntilFirstPaint(
+  painted: boolean,
+  requested?: 'always' | 'demand',
+): 'always' | 'demand' {
+  return painted ? (requested ?? 'demand') : 'always';
+}
+
+// present-ready-mesh keeps the Ready plate mounted. It is not a GPU
+// frame. Counting it as first-interactive restores demand and deadlocks
+// phone WebKit (Gary #185 after #183/#184).
+export function shouldTreatPresentReadyMeshAsPainted(): boolean {
+  return false;
+}
+
+export function frameloopAfterDeadline(input: {
+  painted: boolean;
+  action: FirstPaintDeadlineAction;
+  requested?: 'always' | 'demand';
+}): 'always' | 'demand' {
+  if (input.action === 'present-ready-mesh' && !input.painted) {
+    return 'always';
+  }
+  return frameloopUntilFirstPaint(input.painted, input.requested);
+}
+
+export function shouldLatchHonestFloor(input: { hasReadyScanData: boolean }): boolean {
+  return !input.hasReadyScanData;
 }
 
 export function attachWebGLContextRecovery(

@@ -51,4 +51,30 @@ describe('pickReadyFrblSessionId', () => {
     ]);
     expect(id).toBe('frbl-ready');
   });
+
+  it('does not post a photo-analyze row that discarded FRBL photos', () => {
+    expect(
+      pickReadyFrblSessionId([
+        {
+          id: 'photo-only',
+          protocol: 'formavision_photo',
+          captureStatus: 'ready',
+          poses: { front: false, right: false, back: false, left: false },
+        },
+      ]),
+    ).toBeNull();
+  });
+
+  it('kicks Meshy for an existing session that still has FRBL photos', () => {
+    expect(
+      pickReadyFrblSessionId([
+        {
+          id: 'old-frbl',
+          protocol: '4pose_v1',
+          captureStatus: 'partial',
+          poses: { front: true, right: true, back: true, left: true },
+        },
+      ]),
+    ).toBe('old-frbl');
+  });
 });

@@ -28,12 +28,16 @@ import {
   FORMAVISION_FIRST_PAINT_TIMEOUT_MESSAGE,
   decideFirstPaintDeadlineAction,
   decideRestoreSpinAction,
+  frameloopAfterDeadline,
+  shouldTreatPresentReadyMeshAsPainted,
 } from '@/lib/formavision/gl/webglContextRecovery';
 import {
   formatPlateDiagnostics,
   hasReadyScanData,
+  isAlienFloorReadySuccessFail,
   isPermanentLoadingRoleFail,
   resolvePlatePresentation,
+  resolveReadyPlatePresentation,
 } from '@/lib/formavision/tier/readyPlateContract';
 import {
   FORMAVISION_FLOOR_LOADING_COPY,
@@ -157,21 +161,30 @@ describe('Production FAIL #182: Ready scan must leave the loading floor', () => 
     ).toBe(false);
   });
 
-  it('hard-unavailable Ready plate is honest, never infinite Loading', () => {
-    const unavailable = resolvePlatePresentation({
+  it('Ready + missed first-paint still presents scan-mesh, never the alien', () => {
+    const readyMiss = resolveReadyPlatePresentation({
       canvasHasPainted: false,
       fellBack: true,
       recovering: false,
+      hasReadyScanData: true,
     });
-    expect(unavailable.floorRole).toBe('unavailable');
-    expect(unavailable.resultKind).toBe('unavailable');
-    expect(unavailable.paintState).toBe('unavailable');
+    expect(readyMiss.resultKind).toBe('scan-mesh');
+    expect(readyMiss.floorRole).toBe('hidden');
+    expect(readyMiss.floorPresented).toBe(false);
     expect(
-      isPermanentLoadingRoleFail({
+      isAlienFloorReadySuccessFail({
         hasReadyScanData: true,
-        ...unavailable,
+        ...readyMiss,
       }),
     ).toBe(false);
+    const noScan = resolveReadyPlatePresentation({
+      canvasHasPainted: false,
+      fellBack: true,
+      recovering: false,
+      hasReadyScanData: false,
+    });
+    expect(noScan.resultKind).toBe('unavailable');
+    expect(noScan.floorRole).toBe('unavailable');
     const caption = renderToStaticMarkup(
       React.createElement(FormaVisionAnatomicalFloor, {
         sex: 'male',
@@ -214,9 +227,20 @@ describe('Live canvas stays compositable under the loading shroud', () => {
 });
 
 describe('First-paint deadline and restore-spin latch', () => {
-  it('deadline misses latch unavailable; painted frames keep waiting off', () => {
+  it('deadline misses latch unavailable only without Ready data', () => {
     expect(decideFirstPaintDeadlineAction({ painted: false })).toBe('latch-unavailable');
     expect(decideFirstPaintDeadlineAction({ painted: true })).toBe('keep-waiting');
+    expect(
+      decideFirstPaintDeadlineAction({ painted: false, hasReadyScanData: true }),
+    ).toBe('present-ready-mesh');
+    expect(shouldTreatPresentReadyMeshAsPainted()).toBe(false);
+    expect(
+      frameloopAfterDeadline({
+        painted: false,
+        action: 'present-ready-mesh',
+        requested: 'demand',
+      }),
+    ).toBe('always');
     expect(FIRST_PAINT_DEADLINE_MS).toBeGreaterThan(2000);
     expect(FORMAVISION_FIRST_PAINT_TIMEOUT_MESSAGE).toMatch(/did not present a frame/);
   });
@@ -232,6 +256,13 @@ describe('First-paint deadline and restore-spin latch', () => {
     expect(avatar).toMatch(/resolvePlatePresentation/);
     expect(avatar).toMatch(/FIRST_PAINT_DEADLINE_MS/);
     expect(avatar).toMatch(/decideFirstPaintDeadlineAction/);
+    expect(avatar).toMatch(/present-ready-mesh/);
+    expect(avatar).toMatch(/frameloopAfterDeadline/);
+    expect(avatar).toMatch(/shouldTreatPresentReadyMeshAsPainted/);
+    expect(avatar).not.toMatch(
+      /action === 'present-ready-mesh'\) \{\s*handleFirstInteractive\(\)/,
+    );
+    expect(avatar).toMatch(/resolveReadyPlatePresentation/);
     expect(avatar).toMatch(/decideRestoreSpinAction/);
     expect(avatar).toMatch(/data-paint-state/);
     expect(avatar).toMatch(/formavision-plate-diagnostics/);

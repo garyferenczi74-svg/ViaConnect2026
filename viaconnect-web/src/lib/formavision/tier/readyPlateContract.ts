@@ -1,10 +1,10 @@
-// Ready-scan plate contract after the #182 production FAIL.
+// Ready-scan plate contract after the #182 / #183 / #184 production FAILs.
 //
-// Gary phone: Ready scan, BF 30–36%, Male, stayed on the labeled loading
-// floor ("Loading 3D avatar…") with no live WebGL mesh. That state is
-// illegal once a first frame has painted OR once 3D has confirmed it
-// cannot paint. The designed outline may flash as loading or sit as
-// hard-unavailable. It is never a permanent Ready result.
+// Gary phone: Ready scan, BF 30–36%, Male. #182 stayed on Loading. #183
+// latched hard-unavailable ("FormaVision 3D did not present a frame")
+// because canvasHasPainted never fired, then unmounted the mesh. The
+// designed outline may flash as loading. It is never the Ready result.
+// Honest unavailable is only when there is no Ready scan data.
 
 import type { AnatomicalFloorRole } from './floorRoleCopy';
 
@@ -60,6 +60,61 @@ export function resolvePlatePresentation(
     paintState: 'pending',
     floorPresented: true,
   };
+}
+
+export interface ReadyPlatePresentationInput extends PlatePresentationInput {
+  hasReadyScanData: boolean;
+}
+
+// Ready + BF/girths never stamps the labeled alien as the success result.
+// A missed first-paint report still presents the live 3D plate.
+export function resolveReadyPlatePresentation(
+  input: ReadyPlatePresentationInput,
+): PlatePresentation {
+  if (!input.hasReadyScanData) {
+    return resolvePlatePresentation(input);
+  }
+  if (input.canvasHasPainted || input.fellBack) {
+    return {
+      floorRole: 'hidden',
+      resultKind: 'scan-mesh',
+      paintState: 'painted',
+      floorPresented: false,
+    };
+  }
+  if (input.recovering) {
+    return {
+      floorRole: 'loading',
+      resultKind: 'loading',
+      paintState: 'pending',
+      floorPresented: true,
+    };
+  }
+  return {
+    floorRole: 'loading',
+    resultKind: 'loading',
+    paintState: 'pending',
+    floorPresented: true,
+  };
+}
+
+// Alien / designed outline presented as the Ready success surface is FAIL.
+export function isAlienFloorReadySuccessFail(input: {
+  hasReadyScanData: boolean;
+  resultKind: PlateResultKind;
+  floorRole: PlateFloorRole;
+  floorPresented: boolean;
+}): boolean {
+  if (!input.hasReadyScanData) return false;
+  if (input.resultKind === 'unavailable' && input.floorPresented) return true;
+  if (
+    input.floorPresented &&
+    input.resultKind === 'scan-mesh' &&
+    (input.floorRole === 'unavailable' || input.floorRole === 'loading')
+  ) {
+    return true;
+  }
+  return false;
 }
 
 export function floorRoleForAnatomicalFloor(

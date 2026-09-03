@@ -29,9 +29,13 @@ export interface AvatarSurfaceDecisionInput {
   // True only after the 3D subtree actually failed (error boundary / context lost).
   confirmedFailure: boolean;
   webgl: WebGLAvailability;
+  // Ready + BF/girths must keep the WebGL plate mounted. The alien floor is
+  // not a Ready result even after a confirmed miss or a tier step-down.
+  hasReadyScanData?: boolean;
 }
 
 export function selectAvatarSurface(input: AvatarSurfaceDecisionInput): AvatarSurface {
+  if (input.hasReadyScanData) return 'formavision3d';
   if (input.confirmedFailure) return 'fallback2d';
   if (input.renderTier === '2d') return 'fallback2d';
   return 'formavision3d';
