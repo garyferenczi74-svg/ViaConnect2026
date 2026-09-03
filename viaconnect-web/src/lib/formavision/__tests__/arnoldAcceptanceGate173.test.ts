@@ -179,7 +179,7 @@ describe('Arnold acceptance gate 2: not Male Avatar.svg when 3D can run', () => 
     expect(page).toMatch(/ScanHistorySection/);
     expect(page).toMatch(/formavision-gender-male/);
     expect(page).toMatch(/formavision-2d-floor-child/);
-    expect(page).toMatch(/FormaVisionLocalSilhouette/);
+    expect(page).toMatch(/FormaVisionAnatomicalFloor/);
     expect(page).not.toMatch(/SegmentalHeatMap/);
     expect(page).toMatch(/SelectBodyPartControl/);
     expect(heatmap).toMatch(/Male%20Avatar\.svg/);

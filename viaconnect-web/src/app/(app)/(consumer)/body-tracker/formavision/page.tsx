@@ -28,7 +28,8 @@ import {
   AbWipeSplitOverlay,
 } from '@/components/formavision/AbComparePanel';
 import { useReducedMotion } from '@/components/body-tracker/HoverSystem/useReducedMotion';
-import { FormaVisionLocalSilhouette } from '@/components/formavision/FormaVisionLocalSilhouette';
+import { FormaVisionAnatomicalFloor } from '@/components/formavision/FormaVisionAnatomicalFloor';
+import { selectFloorGirths } from '@/components/formavision/anatomicalFloorGeometry';
 import { UnitToggle } from '@/components/body-tracker/UnitToggle';
 import { useCompositionHistory } from '@/hooks/body-tracker/useCompositionHistory';
 import { useCircumferenceHistory } from '@/hooks/body-tracker/useCircumferenceHistory';
@@ -229,6 +230,7 @@ function FormaVisionSurface() {
       }),
     [overlayCircumferences, circumferenceData.latest, historySnapshotForAvatar],
   );
+  const floorGirths = selectFloorGirths(avatarCircumferences, avatarGirthSource);
 
   const scanPoints = useMemo(
     () => pairScanPoints(composHistory.snapshots, circHistory.entries),
@@ -559,7 +561,7 @@ function FormaVisionSurface() {
           className="pointer-events-none absolute inset-0 z-0 bg-[#1A2744]"
           aria-hidden
         >
-          <FormaVisionLocalSilhouette sex={gender} />
+          <FormaVisionAnatomicalFloor sex={gender} girths={floorGirths} />
         </div>
         <AbWipeSplitOverlay wipeT={wipeT} visible={abCompareOn && Boolean(wipeVector)} />
         <BodyCompositionAvatar
@@ -581,14 +583,14 @@ function FormaVisionSurface() {
           wipeT={wipeT}
           wipeVector={wipeVector}
         >
-          {/* Always-paint local floor: inline SVG, no remote Supabase Male
-              Avatar.svg. Also mounted under the 3D canvas until pixels paint;
-              these children remain the honest 2D latch path. */}
+          {/* Always-paint anatomical 2D floor: bundled SVG, no remote
+              Supabase Male Avatar.svg. Also mounted under the 3D canvas
+              until pixels paint; these children remain the honest 2D latch. */}
           <div
             data-testid="formavision-2d-floor-child"
             className="flex h-full min-h-[200px] w-full items-center justify-center"
           >
-            <FormaVisionLocalSilhouette sex={gender} />
+            <FormaVisionAnatomicalFloor sex={gender} girths={floorGirths} />
           </div>
         </BodyCompositionAvatar>
       </div>
