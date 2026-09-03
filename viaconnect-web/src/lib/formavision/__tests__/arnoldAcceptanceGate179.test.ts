@@ -70,7 +70,7 @@ describe('Brief 59 honesty amend: product floor is designed 2D, not Picasso', ()
     expect(markup).toContain('formavision-recovering-floor');
     expect(markup).toContain('formavision-3d-pending');
     expect(markup).toContain('data-motion-phase="floor"');
-    expect(markup).toContain('data-morph-3d="0"');
+    expect(markup).toContain('data-morph-3d="1"');
     expect(markup).not.toContain('formavision-picasso-plate');
     expect(markup).not.toContain('data-floor="picasso-pack"');
     expect(markup).not.toContain('formavision-local-silhouette');
@@ -102,7 +102,8 @@ describe('Brief 59: never-empty plate + honest fallback notice hold', () => {
     expect(page).toMatch(/formavision-plate-floor/);
     expect(page).toMatch(/formavision-2d-floor-child/);
     expect(page).toMatch(/bg-\[#1A2744\]/);
-    expect(page).toMatch(/floorRole="loading"/);
+    expect(page).toMatch(/floorRoleForAnatomicalFloor\(plateFloorMotion\.floorRole\)/);
+    expect(page).toMatch(/floorRole: 'loading'/);
     expect(page).toMatch(/floorRole="unavailable"/);
     expect(page).not.toMatch(/Male%20Avatar/);
     expect(page).not.toMatch(/supabase\.co/);

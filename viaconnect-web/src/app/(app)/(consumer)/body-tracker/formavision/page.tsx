@@ -32,6 +32,7 @@ import { FormaVisionAnatomicalFloor } from '@/components/formavision/FormaVision
 import { selectFloorGirths } from '@/components/formavision/anatomicalFloorGeometry';
 import type { FloorMotionFrame } from '@/components/formavision/BodyCompositionAvatar';
 import { floorMotionTransition } from '@/lib/formavision/motion/floorMotionSpec';
+import { floorRoleForAnatomicalFloor } from '@/lib/formavision/tier/readyPlateContract';
 import { UnitToggle } from '@/components/body-tracker/UnitToggle';
 import { useCompositionHistory } from '@/hooks/body-tracker/useCompositionHistory';
 import { useCircumferenceHistory } from '@/hooks/body-tracker/useCircumferenceHistory';
@@ -235,9 +236,11 @@ function FormaVisionSurface() {
   const floorGirths = selectFloorGirths(avatarCircumferences, avatarGirthSource);
   const [plateFloorMotion, setPlateFloorMotion] = useState<FloorMotionFrame>({
     floorOpacity: 1,
-    morph3d: 0,
+    morph3d: 1,
     durationMs: 0,
     easing: 'linear',
+    floorRole: 'loading',
+    paintState: 'pending',
   });
   const handleFloorMotion = useCallback((frame: FloorMotionFrame) => {
     setPlateFloorMotion(frame);
@@ -574,6 +577,8 @@ function FormaVisionSurface() {
           aria-hidden
           style={{
             opacity: plateFloorMotion.floorOpacity,
+            isolation: 'isolate',
+            transform: 'translateZ(0)',
             transition: floorMotionTransition(
               plateFloorMotion.durationMs,
               plateFloorMotion.easing,
@@ -587,7 +592,7 @@ function FormaVisionSurface() {
             sex={gender}
             girths={floorGirths}
             reducedMotion={reducedMotion}
-            floorRole="loading"
+            floorRole={floorRoleForAnatomicalFloor(plateFloorMotion.floorRole)}
           />
         </div>
         <AbWipeSplitOverlay wipeT={wipeT} visible={abCompareOn && Boolean(wipeVector)} />
