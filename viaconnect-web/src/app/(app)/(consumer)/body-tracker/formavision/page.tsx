@@ -30,6 +30,8 @@ import {
 import { useReducedMotion } from '@/components/body-tracker/HoverSystem/useReducedMotion';
 import { FormaVisionAnatomicalFloor } from '@/components/formavision/FormaVisionAnatomicalFloor';
 import { selectFloorGirths } from '@/components/formavision/anatomicalFloorGeometry';
+import type { FloorMotionFrame } from '@/components/formavision/BodyCompositionAvatar';
+import { floorMotionTransition } from '@/lib/formavision/motion/floorMotionSpec';
 import { UnitToggle } from '@/components/body-tracker/UnitToggle';
 import { useCompositionHistory } from '@/hooks/body-tracker/useCompositionHistory';
 import { useCircumferenceHistory } from '@/hooks/body-tracker/useCircumferenceHistory';
@@ -231,6 +233,15 @@ function FormaVisionSurface() {
     [overlayCircumferences, circumferenceData.latest, historySnapshotForAvatar],
   );
   const floorGirths = selectFloorGirths(avatarCircumferences, avatarGirthSource);
+  const [plateFloorMotion, setPlateFloorMotion] = useState<FloorMotionFrame>({
+    floorOpacity: 1,
+    morph3d: 0,
+    durationMs: 0,
+    easing: 'linear',
+  });
+  const handleFloorMotion = useCallback((frame: FloorMotionFrame) => {
+    setPlateFloorMotion(frame);
+  }, []);
 
   const scanPoints = useMemo(
     () => pairScanPoints(composHistory.snapshots, circHistory.entries),
@@ -558,10 +569,25 @@ function FormaVisionSurface() {
       >
         <div
           data-testid="formavision-plate-floor"
-          className="pointer-events-none absolute inset-0 z-0 bg-[#1A2744]"
+          className="fv-plate-enter pointer-events-none absolute inset-0 z-0 bg-[#1A2744]"
+          data-enter-ms="180"
           aria-hidden
+          style={{
+            opacity: plateFloorMotion.floorOpacity,
+            transition: floorMotionTransition(
+              plateFloorMotion.durationMs,
+              plateFloorMotion.easing,
+            ),
+            animation: reducedMotion
+              ? undefined
+              : 'fv-plate-enter 180ms ease-out both',
+          }}
         >
-          <FormaVisionAnatomicalFloor sex={gender} girths={floorGirths} />
+          <FormaVisionAnatomicalFloor
+            sex={gender}
+            girths={floorGirths}
+            reducedMotion={reducedMotion}
+          />
         </div>
         <AbWipeSplitOverlay wipeT={wipeT} visible={abCompareOn && Boolean(wipeVector)} />
         <BodyCompositionAvatar
@@ -582,15 +608,20 @@ function FormaVisionSurface() {
           wipeActive={abCompareOn}
           wipeT={wipeT}
           wipeVector={wipeVector}
+          onFloorMotion={handleFloorMotion}
         >
-          {/* Always-paint anatomical 2D floor: bundled SVG, no remote
+          {/* Always-paint Picasso pack floor: bundled PNGs, no remote
               Supabase Male Avatar.svg. Also mounted under the 3D canvas
               until pixels paint; these children remain the honest 2D latch. */}
           <div
             data-testid="formavision-2d-floor-child"
             className="flex h-full min-h-[200px] w-full items-center justify-center"
           >
-            <FormaVisionAnatomicalFloor sex={gender} girths={floorGirths} />
+            <FormaVisionAnatomicalFloor
+              sex={gender}
+              girths={floorGirths}
+              reducedMotion={reducedMotion}
+            />
           </div>
         </BodyCompositionAvatar>
       </div>

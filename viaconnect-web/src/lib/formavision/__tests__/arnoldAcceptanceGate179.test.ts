@@ -1,8 +1,7 @@
-// Brief 59 — designed anatomical 2D always-paint floor.
+// Brief 59 LOOK amend — Gary-locked Picasso pack always-paint floor.
 //
-// Gary phone: designed-anatomical-2d.png is the quality bar.
-// stick-rejected.png (circle-head / oval-torso LocalSilhouette) is gone.
-// Never-empty plate (#179) stays. Brief 58 / #178 Phase 1 mesh bar unchanged.
+// Procedural SVG stick / diagram geometry is gone. Never-empty plate (#179)
+// stays. Brief 58 / #178 Phase 1 mesh bar unchanged. No SVG→mesh.
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -12,10 +11,8 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { emptyMeasurements } from '@/lib/body-tracker/circumference';
 import { BodyCompositionAvatar } from '@/components/formavision/BodyCompositionAvatar';
 import { FormaVisionAnatomicalFloor } from '@/components/formavision/FormaVisionAnatomicalFloor';
-import {
-  FEMALE_ANATOMICAL_CONTOUR,
-  MALE_ANATOMICAL_CONTOUR,
-} from '@/components/formavision/anatomicalFloorGeometry';
+import { PICASSO_PACK, PICASSO_PACK_FILES } from '@/components/formavision/picassoPack';
+import { FORMAVISION_MOTION_SPEC } from '@/lib/formavision/motion/floorMotionSpec';
 import { GENERIC_WEBGL_UNAVAILABLE_DETAIL } from '@/lib/formavision/tier/fallbackNoticeCopy';
 import { FORMA_VISION_HEX } from '@/lib/formavision/materials/formaVisionTokens';
 import {
@@ -51,8 +48,8 @@ const PURPLE_BRAND_HEX = [
   '#7b2cbf',
 ];
 
-describe('Brief 59: product floor is designed anatomical 2D, not stick', () => {
-  it('requires the anatomical floor testid on SSR / pending / recovering', () => {
+describe('Brief 59 LOOK amend: product floor is the Picasso pack, not stick', () => {
+  it('requires the Picasso floor on SSR / pending / recovering', () => {
     const markup = renderToStaticMarkup(
       React.createElement(BodyCompositionAvatar, {
         sex: 'male',
@@ -64,29 +61,33 @@ describe('Brief 59: product floor is designed anatomical 2D, not stick', () => {
       }),
     );
     expect(markup).toContain('formavision-anatomical-floor');
-    expect(markup).toContain('formavision-anatomical-muscle-lines');
-    expect(markup).toContain('formavision-anatomical-contour');
+    expect(markup).toContain('formavision-picasso-plate');
+    expect(markup).toContain('data-floor="picasso-pack"');
+    expect(markup).toContain(PICASSO_PACK.male.rear);
     expect(markup).toContain('formavision-recovering-floor');
     expect(markup).toContain('formavision-3d-pending');
-    expect(markup).toContain('data-pose="a-pose"');
-    expect(markup).toContain('data-crop="ankles"');
+    expect(markup).toContain('data-view="rear"');
+    expect(markup).toContain('data-motion-phase="floor"');
+    expect(markup).toContain('data-morph-3d="0"');
     expect(markup).not.toContain('formavision-local-silhouette');
+    expect(markup).not.toContain('formavision-anatomical-muscle-lines');
+    expect(markup).not.toContain('formavision-anatomical-contour');
     expect(markup).not.toContain('formavision-fallback-2d');
   });
 
-  it('product path sources import AnatomicalFloor and drop stick markers', () => {
+  it('product path sources import AnatomicalFloor and drop stick / circle-head beziers', () => {
     for (const file of PRODUCT_FLOOR_FILES) {
       const text = src(file);
       expect(text).not.toMatch(/c13 0 24 11 24 26/);
       expect(text).not.toMatch(/c12 0 22 10 22 24/);
+      expect(text).not.toMatch(/C112 8 120 16 121 28/);
       if (file.endsWith('page.tsx') || file.endsWith('BodyCompositionAvatar.tsx') || file.endsWith('FormaVision3DAvatar.tsx')) {
         expect(text).toMatch(/FormaVisionAnatomicalFloor/);
         expect(text).not.toMatch(/FormaVisionLocalSilhouette/);
       }
     }
-    expect(MALE_ANATOMICAL_CONTOUR).toMatch(/24 178/);
-    expect(MALE_ANATOMICAL_CONTOUR).toMatch(/176 178/);
-    expect(FEMALE_ANATOMICAL_CONTOUR).not.toBe(MALE_ANATOMICAL_CONTOUR);
+    expect(PICASSO_PACK_FILES).toHaveLength(4);
+    expect(PICASSO_PACK.male.rear).not.toBe(PICASSO_PACK.female.rear);
   });
 });
 
@@ -108,7 +109,8 @@ describe('Brief 59: chrome lock is plasma teal, never ZOZO purple', () => {
     expect(FORMA_VISION_HEX.teal).toBe('#2DA5A0');
     expect(FORMA_VISION_HEX.navy).toBe('#1A2744');
     const floor = src('src/components/formavision/FormaVisionAnatomicalFloor.tsx');
-    expect(floor).toMatch(/FORMA_VISION_HEX\.teal/);
+    expect(floor).toMatch(/FORMA_VISION_HEX\.teal|FORMA_VISION_HEX\.navy/);
+    expect(FORMAVISION_MOTION_SPEC.ready3dMs).toBe(420);
     for (const file of PRODUCT_FLOOR_FILES) {
       const text = src(file).toLowerCase();
       for (const hex of PURPLE_BRAND_HEX) {
@@ -126,6 +128,11 @@ describe('Brief 59 LOCKED: 3D is parametric morph, not SVG-to-mesh', () => {
     expect(canvas).toMatch(/BODY_BUILD_BY_TIER/);
     expect(canvas).not.toMatch(/svgToMesh|SVG→mesh|photogrammetry|extrude.*silhouette/i);
     expect(floor).not.toMatch(/svgToMesh|photogrammetry/);
+    expect(floor).toMatch(/picassoPackSrc|picasso-pack/);
+    const avatar = src('src/components/formavision/BodyCompositionAvatar.tsx');
+    expect(avatar).toMatch(/resolveFloor3dCrossfade/);
+    expect(avatar).toMatch(/FORMAVISION_MOTION_SPEC/);
+    expect(avatar).toMatch(/morph3d/);
     const brief = src('docs/formavision/BRIEF-59-anatomical-2d-floor.md');
     expect(brief).toMatch(/3D is NOT SVG-to-mesh/);
     expect(brief).toMatch(/always-paint floor/);

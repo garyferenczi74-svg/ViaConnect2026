@@ -1,0 +1,19 @@
+/* MOTION-SPEC enter: plate chrome only. Figure opacity stays 1 (never blank). */
+@keyframes fv-plate-enter {
+  from {
+    transform: scale(0.985);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+.fv-plate-enter {
+  animation: fv-plate-enter 180ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fv-plate-enter {
+    animation: none;
+  }
+}
