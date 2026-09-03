@@ -11,9 +11,7 @@ import type { Sex } from '@/lib/formavision/geometry/types';
 import { FORMA_VISION_HEX } from '@/lib/formavision/materials/formaVisionTokens';
 import {
   ANATOMICAL_FLOOR_VIEWBOX,
-  anatomicalContourPath,
-  anatomicalMuscleLines,
-  anatomicalVolumePath,
+  anatomicalBuild,
   realLandmarkTicks,
 } from './anatomicalFloorGeometry';
 
@@ -34,9 +32,7 @@ export function FormaVisionAnatomicalFloor({
   const uid = rawId.replace(/:/g, '');
   const volumeId = `fv-anatomical-volume-${uid}`;
   const glowId = `fv-anatomical-glow-${uid}`;
-  const contour = anatomicalContourPath(sex);
-  const volume = anatomicalVolumePath(sex);
-  const muscleLines = anatomicalMuscleLines(sex);
+  const build = anatomicalBuild(sex);
   const ticks = realLandmarkTicks(girths);
   const label = sex === 'male' ? 'Male' : 'Female';
 
@@ -76,27 +72,27 @@ export function FormaVisionAnatomicalFloor({
             </feMerge>
           </filter>
         </defs>
-        <path
-          data-testid="formavision-anatomical-volume"
-          d={volume}
-          fill={`url(#${volumeId})`}
-        />
+        <g data-testid="formavision-anatomical-volume" fill={`url(#${volumeId})`}>
+          {build.volumes.map((d) => (
+            <path key={d} d={d} />
+          ))}
+        </g>
         <g
           data-testid="formavision-anatomical-muscle-lines"
           fill="none"
           stroke="#8EC8C4"
-          strokeWidth={0.7}
+          strokeWidth={0.75}
           strokeLinecap="round"
           strokeLinejoin="round"
-          opacity={0.72}
+          opacity={0.88}
         >
-          {muscleLines.map((d) => (
+          {build.muscleLines.map((d) => (
             <path key={d} d={d} />
           ))}
         </g>
         <path
           data-testid="formavision-anatomical-contour"
-          d={contour}
+          d={build.contour}
           fill="none"
           stroke={FORMA_VISION_HEX.teal}
           strokeWidth={1.5}

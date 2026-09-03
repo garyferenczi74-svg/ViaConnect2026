@@ -84,7 +84,8 @@ describe('Brief 59: product floor is designed anatomical 2D, not stick', () => {
         expect(text).not.toMatch(/FormaVisionLocalSilhouette/);
       }
     }
-    expect(MALE_ANATOMICAL_CONTOUR).toMatch(/C1[6-8]0 /);
+    expect(MALE_ANATOMICAL_CONTOUR).toMatch(/24 178/);
+    expect(MALE_ANATOMICAL_CONTOUR).toMatch(/176 178/);
     expect(FEMALE_ANATOMICAL_CONTOUR).not.toBe(MALE_ANATOMICAL_CONTOUR);
   });
 });
