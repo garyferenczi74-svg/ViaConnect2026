@@ -64,17 +64,20 @@ export function resolvePlatePresentation(
 
 export interface ReadyPlatePresentationInput extends PlatePresentationInput {
   hasReadyScanData: boolean;
+  // Set after the first-paint deadline presents the Ready mesh without
+  // stamping canvasHasPainted. The labeled outline must already be hidden.
+  presentReadyWithoutPaint?: boolean;
 }
 
-// Ready + BF/girths never stamps the labeled alien as the success result.
-// A missed first-paint report still presents the live 3D plate.
+// Ready + BF/girths never presents the labeled alien — not as loading,
+// unavailable, Ready, or a flash. Navy + live mesh (or text-only notice).
 export function resolveReadyPlatePresentation(
   input: ReadyPlatePresentationInput,
 ): PlatePresentation {
   if (!input.hasReadyScanData) {
     return resolvePlatePresentation(input);
   }
-  if (input.canvasHasPainted || input.fellBack) {
+  if (input.canvasHasPainted) {
     return {
       floorRole: 'hidden',
       resultKind: 'scan-mesh',
@@ -82,19 +85,11 @@ export function resolveReadyPlatePresentation(
       floorPresented: false,
     };
   }
-  if (input.recovering) {
-    return {
-      floorRole: 'loading',
-      resultKind: 'loading',
-      paintState: 'pending',
-      floorPresented: true,
-    };
-  }
   return {
-    floorRole: 'loading',
-    resultKind: 'loading',
+    floorRole: 'hidden',
+    resultKind: 'scan-mesh',
     paintState: 'pending',
-    floorPresented: true,
+    floorPresented: false,
   };
 }
 
@@ -143,7 +138,7 @@ export function hasReadyScanData(
 }
 
 // Permanent loading-role floor with Ready data is FAIL.
-// Brief loading before the first painted frame is allowed.
+// Gary 2026-09-03: even a brief loading outline on Ready is FAIL.
 export function isPermanentLoadingRoleFail(input: {
   hasReadyScanData: boolean;
   floorRole: PlateFloorRole;
@@ -152,11 +147,7 @@ export function isPermanentLoadingRoleFail(input: {
   floorPresented: boolean;
 }): boolean {
   if (!input.hasReadyScanData) return false;
-  if (
-    input.paintState === 'painted' &&
-    input.floorPresented &&
-    input.floorRole === 'loading'
-  ) {
+  if (input.floorPresented && input.floorRole === 'loading') {
     return true;
   }
   if (input.paintState === 'unavailable' && input.floorRole === 'loading') {

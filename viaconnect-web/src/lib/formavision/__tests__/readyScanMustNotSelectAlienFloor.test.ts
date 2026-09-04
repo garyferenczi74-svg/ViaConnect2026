@@ -129,8 +129,9 @@ describe('Production FAIL #184: Ready morph never selects the alien floor', () =
   it('page floor is not the Ready success surface', () => {
     const page = src('src/app/(app)/(consumer)/body-tracker/formavision/page.tsx');
     expect(page).toMatch(/formavision-plate-floor/);
-    expect(page).toMatch(/plateFloorMotion\.floorOpacity/);
-    expect(page).toMatch(/floorRoleForAnatomicalFloor\(plateFloorMotion\.floorRole\)/);
+    expect(page).toMatch(/FormaVisionPlateNotice/);
+    expect(page).not.toMatch(/FormaVisionAnatomicalFloor/);
+    expect(page).not.toMatch(/floorRoleForAnatomicalFloor/);
     expect(page).toMatch(/useMeshyVisual\(readyFrblSessionId\)/);
     expect(page).toMatch(/meshyGlbUrl=\{meshyVisual\.glbUrl\}/);
     expect(page).not.toMatch(/picassoPack/);

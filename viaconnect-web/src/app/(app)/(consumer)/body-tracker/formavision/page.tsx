@@ -28,11 +28,9 @@ import {
   AbWipeSplitOverlay,
 } from '@/components/formavision/AbComparePanel';
 import { useReducedMotion } from '@/components/body-tracker/HoverSystem/useReducedMotion';
-import { FormaVisionAnatomicalFloor } from '@/components/formavision/FormaVisionAnatomicalFloor';
-import { selectFloorGirths } from '@/components/formavision/anatomicalFloorGeometry';
+import { FormaVisionPlateNotice } from '@/components/formavision/FormaVisionPlateNotice';
 import type { FloorMotionFrame } from '@/components/formavision/BodyCompositionAvatar';
 import { floorMotionTransition } from '@/lib/formavision/motion/floorMotionSpec';
-import { floorRoleForAnatomicalFloor } from '@/lib/formavision/tier/readyPlateContract';
 import { UnitToggle } from '@/components/body-tracker/UnitToggle';
 import { useCompositionHistory } from '@/hooks/body-tracker/useCompositionHistory';
 import { useCircumferenceHistory } from '@/hooks/body-tracker/useCircumferenceHistory';
@@ -242,13 +240,12 @@ function FormaVisionSurface() {
       }),
     [overlayCircumferences, circumferenceData.latest, historySnapshotForAvatar],
   );
-  const floorGirths = selectFloorGirths(avatarCircumferences, avatarGirthSource);
   const [plateFloorMotion, setPlateFloorMotion] = useState<FloorMotionFrame>({
-    floorOpacity: 1,
+    floorOpacity: 0,
     morph3d: 1,
     durationMs: 0,
     easing: 'linear',
-    floorRole: 'loading',
+    floorRole: 'hidden',
     paintState: 'pending',
   });
   const handleFloorMotion = useCallback((frame: FloorMotionFrame) => {
@@ -585,7 +582,7 @@ function FormaVisionSurface() {
           data-enter-ms="180"
           aria-hidden
           style={{
-            opacity: plateFloorMotion.floorOpacity,
+            opacity: 1,
             isolation: 'isolate',
             transform: 'translateZ(0)',
             transition: floorMotionTransition(
@@ -596,14 +593,7 @@ function FormaVisionSurface() {
               ? undefined
               : 'fv-plate-enter 180ms ease-out both',
           }}
-        >
-          <FormaVisionAnatomicalFloor
-            sex={gender}
-            girths={floorGirths}
-            reducedMotion={reducedMotion}
-            floorRole={floorRoleForAnatomicalFloor(plateFloorMotion.floorRole)}
-          />
-        </div>
+        />
         <AbWipeSplitOverlay wipeT={wipeT} visible={abCompareOn && Boolean(wipeVector)} />
         <FormaVisionMeshyStatus status={meshyVisual.status} progress={meshyVisual.progress} />
         <BodyCompositionAvatar
@@ -628,17 +618,14 @@ function FormaVisionSurface() {
           meshyGlbUrl={meshyVisual.glbUrl}
           meshyStatus={meshyVisual.status}
         >
-          {/* Labeled designed 2D latch only. Never a stock person and never
-              presented as the Ready scan result. */}
+          {/* Honest text-only latch. Gary 2026-09-03: no teal outline figure. */}
           <div
             data-testid="formavision-2d-floor-child"
-            className="flex h-full min-h-[200px] w-full items-center justify-center"
+            className="relative flex h-full min-h-[200px] w-full items-center justify-center"
           >
-            <FormaVisionAnatomicalFloor
-              sex={gender}
-              girths={floorGirths}
-              reducedMotion={reducedMotion}
-              floorRole="unavailable"
+            <FormaVisionPlateNotice
+              kind="unavailable"
+              className="px-4 text-center text-[10px] leading-relaxed text-white/55"
             />
           </div>
         </BodyCompositionAvatar>

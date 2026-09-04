@@ -1,9 +1,9 @@
 'use client';
 
-// Designed anatomical 2D floor — loading / hard-failure ONLY.
+// RETIRED from the consumer product path (Gary standing lock 2026-09-03).
+// Kept as a component for isolated unit tests only. Do not mount from
+// page.tsx, BodyCompositionAvatar, or FormaVision3DAvatar.
 // Never a Ready scan result. Never a third-party stock person (PR #181 Picasso pack).
-// Soft volume + muscle-line read + plasma teal chrome-lock rim.
-// Product 3D stays scan-morphed mesh (Brief 58). This is the shroud only.
 
 import { useId } from 'react';
 import type { CircumferenceMeasurements } from '@/lib/body-tracker/circumference';

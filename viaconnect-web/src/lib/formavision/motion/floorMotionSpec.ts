@@ -31,6 +31,7 @@ export interface Floor3dCrossfadeInput {
   fellBack: boolean;
   reducedMotion?: boolean;
   hasReadyScanData?: boolean;
+  presentReadyWithoutPaint?: boolean;
 }
 
 export interface Floor3dCrossfade {
@@ -47,7 +48,21 @@ export function resolveFloor3dCrossfade(
   // Hide a broken / recovering canvas only when there is no Ready scan.
   // Ready + BF/girths must keep morph3d compositable — opacity:0 on the
   // r3f mount deadlocks first-paint on phone WebKit (#182/#183/#184).
-  if ((input.fellBack || input.recovering) && !input.hasReadyScanData) {
+  // Gary 2026-09-03: Ready never paints a covering floor, even before
+  // useFrame reports. present-ready-mesh lifts the shroud without
+  // stamping canvasHasPainted.
+  if (input.hasReadyScanData || input.presentReadyWithoutPaint) {
+    return {
+      floorOpacity: 0,
+      morph3d: 1,
+      durationMs: input.reducedMotion
+        ? FORMAVISION_MOTION_SPEC.floorPaintMs
+        : FORMAVISION_MOTION_SPEC.ready3dMs,
+      easing: FORMAVISION_MOTION_SPEC.ready3dEasing,
+      phase: 'to3d',
+    };
+  }
+  if (input.fellBack || input.recovering) {
     return {
       floorOpacity: 1,
       morph3d: 0,
@@ -57,17 +72,6 @@ export function resolveFloor3dCrossfade(
           : FORMAVISION_MOTION_SPEC.fallbackReverseMs,
       easing: 'ease-out',
       phase: 'toFloor',
-    };
-  }
-  if (input.fellBack && input.hasReadyScanData) {
-    return {
-      floorOpacity: 0,
-      morph3d: 1,
-      durationMs: input.reducedMotion
-        ? FORMAVISION_MOTION_SPEC.floorPaintMs
-        : FORMAVISION_MOTION_SPEC.ready3dMs,
-      easing: FORMAVISION_MOTION_SPEC.ready3dEasing,
-      phase: 'to3d',
     };
   }
   if (!input.liveCanvasHasPainted) {

@@ -18,6 +18,7 @@ import { join } from 'node:path';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { BodyCompositionAvatar } from '@/components/formavision/BodyCompositionAvatar';
+import { FormaVisionPlateNotice } from '@/components/formavision/FormaVisionPlateNotice';
 import { FormaVisionAnatomicalFloor } from '@/components/formavision/FormaVisionAnatomicalFloor';
 import { estimateCircumferencesFromComposition } from '@/lib/body-tracker/composition/estimateCircumferencesFromComposition';
 import { snapshotFromPhotoScanSummary } from '@/lib/body-tracker/composition/snapshotFromScanResult';
@@ -72,9 +73,8 @@ function renderReadyPlate() {
       girthSource: 'estimate',
       unit: 'in',
       activeTab: 'bodyFat',
-      children: React.createElement(FormaVisionAnatomicalFloor, {
-        sex: 'male',
-        floorRole: 'unavailable',
+      children: React.createElement(FormaVisionPlateNotice, {
+        kind: 'unavailable',
       }),
     }),
   );
@@ -97,17 +97,19 @@ describe('Production FAIL #182: Ready scan must leave the loading floor', () => 
     expect(stamp.source).toBe('estimate');
   });
 
-  it('SSR Ready plate mounts 3D with morph=applied and honest loading shroud only', () => {
+  it('SSR Ready plate mounts 3D with morph=applied and no anatomical outline', () => {
     const markup = renderReadyPlate();
     expect(markup).toContain('data-surface="formavision3d"');
     expect(markup).toContain('data-morph="applied"');
     expect(markup).toContain('data-morph-bf="33.0"');
     expect(markup).toContain('data-appearance="procedural"');
     expect(markup).toContain('data-paint-state="pending"');
-    expect(markup).toContain('data-floor-role="loading"');
+    expect(markup).toContain('data-floor-role="hidden"');
+    expect(markup).toContain('data-result="scan-mesh"');
     expect(markup).toContain('formavision-plate-diagnostics');
-    expect(markup).toContain('floor=loading paint=pending');
-    expect(markup).toContain(FORMAVISION_FLOOR_LOADING_COPY);
+    expect(markup).toContain('floor=hidden paint=pending');
+    expect(markup).not.toContain('formavision-anatomical-floor');
+    expect(markup).not.toContain(FORMAVISION_FLOOR_LOADING_COPY);
     expect(markup).not.toContain('formavision-picasso-plate');
     expect(markup).not.toContain('/formavision/picasso/');
     expect(markup).not.toContain('formavision-fallback-2d');
@@ -158,7 +160,7 @@ describe('Production FAIL #182: Ready scan must leave the loading floor', () => 
         paintState: 'pending',
         floorPresented: true,
       }),
-    ).toBe(false);
+    ).toBe(true);
   });
 
   it('Ready + missed first-paint still presents scan-mesh, never the alien', () => {

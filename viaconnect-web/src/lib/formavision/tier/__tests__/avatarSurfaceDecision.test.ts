@@ -5,6 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   selectAvatarSurface,
+  shouldMountAnatomicalOutline,
   shouldPaintPlateFloor,
   wouldSelectSvgDespiteWebGL,
   type AvatarSurfaceDecisionInput,
@@ -107,8 +108,21 @@ describe('selectAvatarSurface', () => {
 });
 
 describe('shouldPaintPlateFloor', () => {
-  it('paints the floor until a live canvas has presented pixels — never gated on 3D success', () => {
-    expect(shouldPaintPlateFloor({ liveCanvasHasPainted: false })).toBe(true);
+  it('never paints a covering anatomical floor over the mesh', () => {
+    expect(shouldPaintPlateFloor({ liveCanvasHasPainted: false })).toBe(false);
     expect(shouldPaintPlateFloor({ liveCanvasHasPainted: true })).toBe(false);
+    expect(
+      shouldPaintPlateFloor({
+        liveCanvasHasPainted: false,
+        hasReadyScanData: true,
+      }),
+    ).toBe(false);
+    expect(
+      shouldPaintPlateFloor({
+        liveCanvasHasPainted: false,
+        presentReadyWithoutPaint: true,
+      }),
+    ).toBe(false);
+    expect(shouldMountAnatomicalOutline()).toBe(false);
   });
 });
