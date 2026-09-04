@@ -126,6 +126,9 @@ describe('Gary 2026-09-03: anatomical outline is gone from the consumer plate', 
     expect(markup).toContain('data-paint-state="pending"');
     expect(markup).toContain('data-morph-3d="1"');
     expect(markup).toContain('floor=hidden paint=pending');
+    expect(markup).toContain('data-notice-presented="true"');
+    expect(markup).toContain('formavision-plate-notice');
+    expect(markup).toContain(FORMAVISION_PLATE_LOADING_NOTICE);
     expect(markup).not.toContain('formavision-anatomical-floor');
     expect(markup).not.toContain('formavision-anatomical-contour');
     expect(markup).not.toContain('data-floor="anatomical-2d"');
@@ -147,6 +150,7 @@ describe('Gary 2026-09-03: anatomical outline is gone from the consumer plate', 
     expect(presented.resultKind).toBe('scan-mesh');
     expect(presented.paintState).toBe('pending');
     expect(presented.floorPresented).toBe(false);
+    expect(presented.noticePresented).toBe(true);
     expect(
       isPermanentLoadingRoleFail({
         hasReadyScanData: true,
