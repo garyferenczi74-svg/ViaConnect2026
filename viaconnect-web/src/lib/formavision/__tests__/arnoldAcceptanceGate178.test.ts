@@ -22,6 +22,9 @@ import {
   makeBodyWireframeMaterial,
 } from '@/lib/formavision/materials/bodyWireframeMaterial';
 import { FORMA_VISION_HEX } from '@/lib/formavision/materials/formaVisionTokens';
+import { mountBodyGeometry } from '@/components/formavision/mountBodyGeometry';
+import { isSolidHumanDrawMode } from '@/lib/formavision/materials/bodySolidMaterial';
+import { scanToParamVector } from '@/lib/formavision/geometry/scanToParamVector';
 import { buildAvatarMorphStamp } from '@/lib/formavision/morph/avatarMorphStamp';
 import {
   FULL_BODY_AZIMUTH_RAD,
@@ -106,6 +109,18 @@ describe('Brief 58 Phase 1: plasma teal wire, never ZOZO purple', () => {
         expect(text).not.toContain(hex);
       }
     }
+  });
+
+  it('Ready product mount is a solid human mesh, not the additive shard field', () => {
+    const vector = scanToParamVector({
+      snapshot: null,
+      circumferences: null,
+      sex: 'male',
+    });
+    const mounted = mountBodyGeometry(vector);
+    expect(isSolidHumanDrawMode(mounted.materialHandle.material)).toBe(true);
+    expect(mounted.materialHandle.material.blending).not.toBe(THREE.AdditiveBlending);
+    mounted.dispose();
   });
 });
 

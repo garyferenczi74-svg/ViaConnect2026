@@ -56,6 +56,7 @@ export function createFormaVisionRenderer(input: FormaVisionGLFactoryInput): Web
     context: acquired.context as WebGLRenderingContext,
     antialias: acquired.attributes.antialias === true,
     alpha: acquired.attributes.alpha !== false,
+    preserveDrawingBuffer: acquired.attributes.preserveDrawingBuffer === true,
     powerPreference: acquired.attributes.powerPreference ?? 'default',
     failIfMajorPerformanceCaveat: acquired.attributes.failIfMajorPerformanceCaveat === true,
   });

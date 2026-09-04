@@ -71,10 +71,12 @@ import {
   hasReadyScanData,
   resolvePlatePresentation,
   resolveReadyPlatePresentation,
+  resolveReadySuccessLook,
   shouldPresentPlateNotice,
   type PlateFloorRole,
   type PlatePaintState,
 } from '@/lib/formavision/tier/readyPlateContract';
+import { selectPlateMeshSource } from '@/lib/formavision/meshy/selectPlateMeshSource';
 import { FormaVision3DAvatar } from './FormaVision3DAvatar';
 import { FormaVisionFallbackNotice } from './FormaVisionFallbackNotice';
 import { FormaVisionPlateNotice } from './FormaVisionPlateNotice';
@@ -488,6 +490,14 @@ function BodyCompositionAvatarInner({
         recovering: false,
       })
     : presentation;
+  const meshLook = resolveReadySuccessLook({
+    meshSource: selectPlateMeshSource({
+      meshyGlbUrl,
+      meshyStatus,
+      glbLoadFailed: false,
+    }),
+    parametricLook: 'solid',
+  });
   const diagnostics = {
     'data-surface': surface,
     'data-tier': tier,
@@ -500,6 +510,7 @@ function BodyCompositionAvatarInner({
     'data-floor-role': presented.floorRole,
     'data-paint-state': presented.paintState,
     'data-notice-presented': presented.noticePresented ? 'true' : 'false',
+    'data-mesh-look': meshLook,
   } as const;
   const plateDiagnostics = formatPlateDiagnostics(presented);
 

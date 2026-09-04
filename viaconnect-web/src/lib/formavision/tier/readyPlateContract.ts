@@ -206,3 +206,41 @@ export function formatPlateDiagnostics(
 ): string {
   return `floor=${presentation.floorRole} paint=${presentation.paintState}`;
 }
+
+// Ready success look. Wireframe / additive shards are Picasso — FAIL.
+export type ReadySuccessLook = 'solid-human' | 'meshy-glb' | 'wireframe-picasso';
+
+export function resolveReadySuccessLook(input: {
+  meshSource: 'parametric' | 'meshy-glb';
+  parametricLook: 'solid' | 'wireframe';
+}): ReadySuccessLook {
+  if (input.meshSource === 'meshy-glb') return 'meshy-glb';
+  return input.parametricLook === 'solid' ? 'solid-human' : 'wireframe-picasso';
+}
+
+// Painted or pending Ready must not treat a wireframe/Picasso shard field
+// as the success surface. Honest notice is allowed while paint is pending;
+// the mesh under it still cannot be the additive shard look.
+export function isPicassoWireframeSuccessFail(input: {
+  hasReadyScanData: boolean;
+  look: ReadySuccessLook;
+}): boolean {
+  return input.hasReadyScanData && input.look === 'wireframe-picasso';
+}
+
+export function isHumanShapedBodyBounds(input: {
+  min: { x: number; y: number; z: number };
+  max: { x: number; y: number; z: number };
+}): boolean {
+  const height = input.max.y - input.min.y;
+  const width = input.max.x - input.min.x;
+  const depth = input.max.z - input.min.z;
+  if (!Number.isFinite(height) || !Number.isFinite(width) || !Number.isFinite(depth)) {
+    return false;
+  }
+  if (height < 1.0 || height > 2.6) return false;
+  if (width <= 0 || depth <= 0) return false;
+  if (width > height * 0.95) return false;
+  if (depth > height * 0.85) return false;
+  return true;
+}

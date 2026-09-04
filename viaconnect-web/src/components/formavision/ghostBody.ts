@@ -54,6 +54,7 @@ export function mountGhostBody(
 ): MountedBody {
   return mountBodyGeometry(ghostVector, {
     build: buildOptions,
+    look: 'wireframe',
     material: GHOST_MATERIAL_OPTIONS,
   });
 }

@@ -8,7 +8,9 @@ import {
   isSafariWebGLHost,
   webglContextTypeOrder,
   SAFE_GL_ATTRIBUTES,
+  SAFARI_SAFE_GL_ATTRIBUTES,
   SOFTWARE_SAFE_GL_ATTRIBUTES,
+  glAttributesForHost,
 } from '../acquireWebGLContext';
 
 function canvasThat(
@@ -112,5 +114,13 @@ describe('acquireWebGLContext', () => {
     expect(SAFE_GL_ATTRIBUTES.powerPreference).toBe('default');
     expect(SOFTWARE_SAFE_GL_ATTRIBUTES.antialias).toBe(false);
     expect(SOFTWARE_SAFE_GL_ATTRIBUTES.failIfMajorPerformanceCaveat).toBe(false);
+  });
+
+  it('uses an opaque preserved buffer on Safari so the first body frame composites', () => {
+    expect(SAFARI_SAFE_GL_ATTRIBUTES.alpha).toBe(false);
+    expect(SAFARI_SAFE_GL_ATTRIBUTES.preserveDrawingBuffer).toBe(true);
+    expect(glAttributesForHost(true)).toBe(SAFARI_SAFE_GL_ATTRIBUTES);
+    expect(glAttributesForHost(false)).toBe(SAFE_GL_ATTRIBUTES);
+    expect(SAFE_GL_ATTRIBUTES.alpha).toBe(true);
   });
 });

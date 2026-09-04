@@ -8,6 +8,9 @@ import {
   ZERO_SIZE_LATCH_MS,
   attachWebGLContextRecovery,
   canvasHasZeroClientBox,
+  drawingBufferHasPixels,
+  shouldStampPaintedFrame,
+  syncCanvasToParentBox,
   decideContextLossAction,
   decideZeroSizeAction,
   isWebGLContextLostMessage,
@@ -100,6 +103,40 @@ describe('context-loss messages and canvas box', () => {
     expect(canvasHasZeroClientBox({ clientWidth: 0, clientHeight: 0 })).toBe(true);
     expect(canvasHasZeroClientBox({ clientWidth: 320, clientHeight: 0 })).toBe(true);
     expect(canvasHasZeroClientBox({ clientWidth: 320, clientHeight: 400 })).toBe(false);
+  });
+
+  it('stamps a presented frame from drawing-buffer pixels on a 0x0 client box', () => {
+    expect(drawingBufferHasPixels({ drawingBufferWidth: 0, drawingBufferHeight: 0 })).toBe(false);
+    expect(drawingBufferHasPixels({ drawingBufferWidth: 390, drawingBufferHeight: 844 })).toBe(
+      true,
+    );
+    expect(
+      shouldStampPaintedFrame({
+        clientBoxZero: true,
+        drawingBufferHasPixels: true,
+      }),
+    ).toBe(true);
+    expect(
+      shouldStampPaintedFrame({
+        clientBoxZero: true,
+        drawingBufferHasPixels: false,
+      }),
+    ).toBe(false);
+  });
+
+  it('syncs the canvas drawing buffer from the parent box', () => {
+    const setSize = vi.fn();
+    const canvas = {
+      clientWidth: 0,
+      clientHeight: 0,
+      style: { display: '', width: '', height: '' },
+      parentElement: {
+        getBoundingClientRect: () => ({ width: 390, height: 520 }),
+      },
+    } as unknown as HTMLCanvasElement;
+    expect(syncCanvasToParentBox(canvas, { setSize })).toEqual({ width: 390, height: 520 });
+    expect(setSize).toHaveBeenCalledWith(390, 520, false);
+    expect(canvas.style.width).toBe('100%');
   });
 
   it('preventDefault on lost so restore can fire, then remounts on restored', () => {

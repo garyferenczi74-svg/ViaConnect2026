@@ -52,11 +52,15 @@ import { createFormaVisionRenderer } from '@/lib/formavision/gl/createFormaVisio
 import {
   attachWebGLContextRecovery,
   canvasHasZeroClientBox,
+  drawingBufferHasPixels,
   scheduleFirstPaintWatchdog,
   scheduleZeroSizeHonestyCheck,
   shouldFireFirstInteractive,
+  shouldStampPaintedFrame,
   shouldTreatGlCreatedAsPainted,
+  syncCanvasToParentBox,
 } from '@/lib/formavision/gl/webglContextRecovery';
+import { isSafariWebGLHost } from '@/lib/formavision/gl/acquireWebGLContext';
 import { createFrameBudgetSampler } from '@/lib/formavision/tier/frameBudgetMonitor';
 import { dprForTier, showParticlesForTier } from '@/lib/formavision/tier/tierCost';
 import {
@@ -519,7 +523,10 @@ function BodyMesh(
     const intro = createMaterializeIntro({
       target: mounted.materialHandle,
       scheduler,
-      reducedMotion: props.reducedMotion,
+      // Never prime uMorph=0. That hide-then-sweep left phone WebKit on an
+      // invisible body while paint stayed pending (#187). First frame is the
+      // lit solid human.
+      reducedMotion: true,
       onComplete: () => {
         invalidate();
         props.turntableRef.current?.setSuspended(false);
@@ -768,6 +775,10 @@ function MeshSourceStamp({ source }: { source: 'parametric' | 'meshy-glb' }) {
       'data-appearance',
       source === 'meshy-glb' ? 'meshy-glb' : 'procedural',
     );
+    gl.domElement.setAttribute(
+      'data-mesh-look',
+      source === 'meshy-glb' ? 'meshy-glb' : 'solid-human',
+    );
   }, [gl, source]);
   return null;
 }
@@ -799,7 +810,10 @@ function FirstPaintWatchdog({
     if (firedRef.current) {
       return;
     }
-    if (canvasHasZeroClientBox(state.gl.domElement)) {
+    const clientBoxZero = canvasHasZeroClientBox(state.gl.domElement);
+    const hasBuffer = drawingBufferHasPixels(state.gl);
+    if (!shouldStampPaintedFrame({ clientBoxZero, drawingBufferHasPixels: hasBuffer })) {
+      syncCanvasToParentBox(state.gl.domElement, state.gl);
       return;
     }
     if (!shouldFireFirstInteractive('first-demand-frame')) {
@@ -856,7 +870,7 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
   return (
     <div
       ref={containerRef}
-      className="absolute inset-0 h-full w-full"
+      className="absolute inset-0 h-full min-h-[200px] w-full"
       style={{ isolation: 'isolate', transform: 'translateZ(0)' }}
     >
       <Canvas
@@ -868,10 +882,15 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
         frameloop={props.frameloopMode ?? 'demand'}
         // P7-T2: dpr scaled by tier. Cinematic stays [1, 2] (byte-identical to
         // before this phase). Lite caps at [1, 1.5] to reduce fill-rate on
-        // low-power GPUs. The tier is already resolved outside the Canvas
-        // (in BodyCompositionAvatarInner) and arrives as props.renderTier so the
-        // r3f reconciler boundary is never crossed for a context read.
-        dpr={dprForTier(props.renderTier ?? 'cinematic')}
+        // low-power GPUs. iPhone WebKit first-paint stays at 1×.
+        dpr={dprForTier(props.renderTier ?? 'cinematic', isSafariWebGLHost())}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'block',
+          width: '100%',
+          height: '100%',
+        }}
         // Safari-safe factory: WebGL1 first on iPhone / Safari so a failed
         // webgl2 cannot poison this live canvas (Gary phone static-SVG path).
         // Chromium still prefers webgl2. Caveat-false + default powerPreference.
@@ -896,6 +915,10 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
           );
           state.gl.domElement.setAttribute('data-result', 'scan-mesh');
           state.gl.domElement.setAttribute('data-mesh-source', meshSource);
+          state.gl.domElement.setAttribute(
+            'data-mesh-look',
+            meshSource === 'meshy-glb' ? 'meshy-glb' : 'solid-human',
+          );
           state.gl.domElement.setAttribute('data-surface', 'formavision3d');
           applyAvatarMorphStamp(
             state.gl.domElement,
@@ -922,22 +945,17 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
           scheduleZeroSizeHonestyCheck(canvasEl, (error) => {
             props.onContextLost?.(error);
           });
+          syncCanvasToParentBox(canvasEl, state.gl);
           state.invalidate();
         }}
       >
         <color attach="background" args={[FORMA_VISION_HEX.navy]} />
 
-        {/* Soft fill + strong teal rim. Body glow is still shader-emissive;
-            these lift ContactShadows / plate and keep the silhouette separated. */}
-        <ambientLight intensity={0.22} color={FORMA_VISION_HEX.navy} />
-        <directionalLight position={[1.6, 3.4, -2.4]} intensity={0.28} color={FORMA_VISION_HEX.teal} />
-        <directionalLight position={[-2.4, 2.2, 3.0]} intensity={0.55} color={FORMA_VISION_HEX.teal} />
-        <pointLight
-          position={[0, 0.12, 0]}
-          intensity={0.32}
-          distance={2.6}
-          color={FORMA_VISION_HEX.teal}
-        />
+        {/* Key + fill for the solid MeshStandardMaterial body. The old navy
+            ambient + additive teal rig only lit the wireframe shard field. */}
+        <ambientLight intensity={0.64} color="#f4efe6" />
+        <directionalLight position={[1.8, 3.6, -2.2]} intensity={1.15} color="#ffffff" />
+        <directionalLight position={[-2.2, 1.8, 2.8]} intensity={0.4} color={FORMA_VISION_HEX.teal} />
 
         {meshSource === 'meshy-glb' && props.meshyGlbUrl ? null : (
           <BodyMesh {...props} introRef={introRef} turntableRef={turntableRef} />
@@ -1031,16 +1049,19 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
           />
         </mesh>
 
-        {/* Soft contact shadow grounds the body on the floor plane at y = 0. */}
-        <ContactShadows
-          position={[0, 0, 0]}
-          opacity={0.42}
-          scale={3.6}
-          blur={2.8}
-          far={2.4}
-          resolution={256}
-          color={FORMA_VISION_HEX.navy}
-        />
+        {/* Soft contact shadow grounds the body. Skipped on WebKit — the extra
+            RT is a known first-paint / context-loss trigger on iPhone. */}
+        {isSafariWebGLHost() ? null : (
+          <ContactShadows
+            position={[0, 0, 0]}
+            opacity={0.42}
+            scale={3.6}
+            blur={2.8}
+            far={2.4}
+            resolution={256}
+            color={FORMA_VISION_HEX.navy}
+          />
+        )}
 
         <OrbitControls
           ref={controlsRef}

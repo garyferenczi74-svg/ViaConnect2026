@@ -19,7 +19,10 @@ const DPR_RANGES: Record<RenderTier3D, [number, number]> = {
   lite: [1, 1.5],
 } as const;
 
-export function dprForTier(tier: RenderTier3D): [number, number] {
+export function dprForTier(tier: RenderTier3D, safariLike = false): [number, number] {
+  // iPhone WebKit first-paint is more reliable at 1×. Cinematic [1, 2] stays
+  // for Chromium / desktop so existing cost tests remain byte-identical.
+  if (safariLike) return [1, 1];
   return DPR_RANGES[tier];
 }
 
