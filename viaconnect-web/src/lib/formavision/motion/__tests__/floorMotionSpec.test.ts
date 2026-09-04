@@ -108,6 +108,19 @@ describe('MOTION-SPEC floor ↔ 3D timings', () => {
       hasReadyScanData: true,
     });
     expect(readyRecovering.morph3d).toBe(1);
-    expect(readyRecovering.floorOpacity).toBe(1);
+    expect(readyRecovering.floorOpacity).toBe(0);
+  });
+
+  it('Ready + paint pending after deadline lifts the covering floor', () => {
+    const afterDeadline = resolveFloor3dCrossfade({
+      liveCanvasHasPainted: false,
+      recovering: false,
+      fellBack: false,
+      hasReadyScanData: true,
+      presentReadyWithoutPaint: true,
+    });
+    expect(afterDeadline.floorOpacity).toBe(0);
+    expect(afterDeadline.morph3d).toBe(1);
+    expect(afterDeadline.phase).toBe('to3d');
   });
 });

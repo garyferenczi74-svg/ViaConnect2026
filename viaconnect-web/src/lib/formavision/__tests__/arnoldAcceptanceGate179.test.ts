@@ -48,8 +48,8 @@ const PURPLE_BRAND_HEX = [
   '#7b2cbf',
 ];
 
-describe('Brief 59 honesty amend: product floor is designed 2D, not Picasso', () => {
-  it('requires the labeled anatomical floor on SSR / pending / recovering', () => {
+describe('Brief 59 honesty amend: product floor is navy + text, not Picasso or alien', () => {
+  it('SSR / pending / recovering never mounts the teal anatomical outline', () => {
     const markup = renderToStaticMarkup(
       React.createElement(BodyCompositionAvatar, {
         sex: 'male',
@@ -63,11 +63,11 @@ describe('Brief 59 honesty amend: product floor is designed 2D, not Picasso', ()
         }),
       }),
     );
-    expect(markup).toContain('formavision-anatomical-floor');
-    expect(markup).toContain('data-floor="anatomical-2d"');
-    expect(markup).toContain('data-floor-role="loading"');
-    expect(markup).toContain(FORMAVISION_FLOOR_LOADING_COPY);
+    expect(markup).not.toContain('formavision-anatomical-floor');
+    expect(markup).not.toContain('data-floor="anatomical-2d"');
+    expect(markup).not.toContain(FORMAVISION_FLOOR_LOADING_COPY);
     expect(markup).toContain('formavision-recovering-floor');
+    expect(markup).toContain('formavision-plate-notice');
     expect(markup).toContain('formavision-3d-pending');
     expect(markup).toContain('data-motion-phase="floor"');
     expect(markup).toContain('data-morph-3d="1"');
@@ -77,7 +77,7 @@ describe('Brief 59 honesty amend: product floor is designed 2D, not Picasso', ()
     expect(markup).not.toContain('formavision-fallback-2d');
   });
 
-  it('product path sources import AnatomicalFloor and drop Picasso + stick beziers', () => {
+  it('product path sources drop AnatomicalFloor, Picasso, and stick beziers', () => {
     for (const file of PRODUCT_FLOOR_FILES) {
       const text = src(file);
       expect(text).not.toMatch(/c13 0 24 11 24 26/);
@@ -89,8 +89,9 @@ describe('Brief 59 honesty amend: product floor is designed 2D, not Picasso', ()
         file.endsWith('BodyCompositionAvatar.tsx') ||
         file.endsWith('FormaVision3DAvatar.tsx')
       ) {
-        expect(text).toMatch(/FormaVisionAnatomicalFloor/);
+        expect(text).not.toMatch(/FormaVisionAnatomicalFloor/);
         expect(text).not.toMatch(/FormaVisionLocalSilhouette/);
+        expect(text).toMatch(/FormaVisionPlateNotice/);
       }
     }
   });
@@ -102,9 +103,9 @@ describe('Brief 59: never-empty plate + honest fallback notice hold', () => {
     expect(page).toMatch(/formavision-plate-floor/);
     expect(page).toMatch(/formavision-2d-floor-child/);
     expect(page).toMatch(/bg-\[#1A2744\]/);
-    expect(page).toMatch(/floorRoleForAnatomicalFloor\(plateFloorMotion\.floorRole\)/);
-    expect(page).toMatch(/floorRole: 'loading'/);
-    expect(page).toMatch(/floorRole="unavailable"/);
+    expect(page).toMatch(/FormaVisionPlateNotice/);
+    expect(page).not.toMatch(/floorRoleForAnatomicalFloor/);
+    expect(page).not.toMatch(/FormaVisionAnatomicalFloor/);
     expect(page).not.toMatch(/Male%20Avatar/);
     expect(page).not.toMatch(/supabase\.co/);
     expect(GENERIC_WEBGL_UNAVAILABLE_DETAIL).toMatch(/3D preview needs a stronger GPU/);
@@ -187,7 +188,7 @@ describe('Brief 59: landmark ticks stay honest', () => {
         }),
       }),
     );
-    expect(markup).toContain('formavision-anatomical-floor');
+    expect(markup).not.toContain('formavision-anatomical-floor');
     expect(markup).not.toContain('formavision-anatomical-landmark-ticks');
   });
 });

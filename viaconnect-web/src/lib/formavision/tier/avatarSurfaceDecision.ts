@@ -48,11 +48,25 @@ export function wouldSelectSvgDespiteWebGL(input: AvatarSurfaceDecisionInput): b
   return input.webgl === 'available' && selectAvatarSurface(input) === 'fallback2d' && !input.confirmedFailure && input.renderTier !== '2d';
 }
 
-// Always-paint plate floor. Do NOT gate this on 3D "success", GL created,
-// or a healthy probe — phone WebKit can claim the canvas is alive with
-// zero painted pixels. The floor hides only after a live frame presents.
+// Gary 2026-09-03 standing lock: the teal anatomical outline is gone from
+// the product path. This must not keep a covering floor over the mesh.
+// Never-empty is navy chamber + live 3D, or a text-only notice.
 export function shouldPaintPlateFloor(input: {
   liveCanvasHasPainted: boolean;
+  hasReadyScanData?: boolean;
+  presentReadyWithoutPaint?: boolean;
 }): boolean {
-  return !input.liveCanvasHasPainted;
+  if (
+    input.hasReadyScanData ||
+    input.presentReadyWithoutPaint ||
+    input.liveCanvasHasPainted
+  ) {
+    return false;
+  }
+  return false;
+}
+
+// Product mounts of FormaVisionAnatomicalFloor / LocalSilhouette are FAIL.
+export function shouldMountAnatomicalOutline(): boolean {
+  return false;
 }

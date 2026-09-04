@@ -6,7 +6,8 @@
 // the resilience contract so callers do not have to: a client-only canvas mount
 // (never a render-time hasWebGL hard gate — that false-negatives on SSR and iOS
 // Safari), a lazy ssr:false import of the three bundle, and a render error
-// boundary that paints the anatomical 2D floor (never a silent empty plate).
+// boundary that paints a navy chamber + text-only notice (never a silent
+// empty plate, never the teal anatomical outline).
 // Later phases layer GeneticsOverlay, FutureSelfGhost and JourneyTimeline around
 // THIS component; the renderTier prop and the clean scene seam are here for them.
 // This task builds only the core 3D body.
@@ -38,41 +39,28 @@ import type { SegmentTintRecord } from '@/lib/formavision/geometry/segmentTints'
 import { FORMA_VISION_HEX } from '@/lib/formavision/materials/formaVisionTokens';
 import { floorMotionTransition } from '@/lib/formavision/motion/floorMotionSpec';
 import { AvatarErrorBoundary } from './AvatarErrorBoundary';
-import { FormaVisionAnatomicalFloor } from './FormaVisionAnatomicalFloor';
-import { selectFloorGirths } from './anatomicalFloorGeometry';
+import { FormaVisionPlateNotice } from './FormaVisionPlateNotice';
 
-// Pending / chunk-load shroud. Designed anatomical 2D only — never a stock
-// person and never implied as the user's Ready result.
-function CanvasLoader({
-  sex,
-  girths,
-  reducedMotion,
-}: {
-  sex: Sex;
-  girths?: CircumferenceMeasurements | null;
-  reducedMotion?: boolean;
-}) {
+// Pending / chunk-load shroud. Navy chamber + spinner. Gary 2026-09-03:
+// no teal anatomical outline — not as loading, unavailable, or a flash.
+function CanvasLoader() {
   return (
     <div
       className="absolute inset-0"
       style={{ backgroundColor: FORMA_VISION_HEX.navy }}
+      data-testid="formavision-canvas-loader"
     >
-      <FormaVisionAnatomicalFloor
-        sex={sex}
-        girths={girths ?? null}
-        reducedMotion={reducedMotion}
-        floorRole="loading"
-      />
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-white/50">
         <Loader2 className="h-5 w-5 animate-spin" strokeWidth={1.5} />
       </div>
+      <FormaVisionPlateNotice kind="loading" />
     </div>
   );
 }
 
 // Three + r3f code is loaded client-side only so the SSR bundle stays small and
-// first paint is never blocked by the 3D scene. Loading must still paint
-// the silhouette — the parent pending path and this loader both do.
+// first paint is never blocked by the 3D scene. Loading paints the navy
+// chamber — never the teal anatomical outline.
 const FormaVisionCanvas = dynamic(() => import('./FormaVisionCanvas'), {
   ssr: false,
   loading: () => (
@@ -199,12 +187,10 @@ export function FormaVision3DAvatar({
     [onRenderError],
   );
 
-  const floorGirths = selectFloorGirths(circumferences, girthSource);
-
   if (!clientReady) {
     return (
       <div className="absolute inset-0 h-full w-full" data-testid="formavision-3d-pending">
-        <CanvasLoader sex={sex} girths={floorGirths} reducedMotion={reducedMotion} />
+        <CanvasLoader />
       </div>
     );
   }
@@ -224,12 +210,13 @@ export function FormaVision3DAvatar({
       <AvatarErrorBoundary
         onRenderError={handleRenderError}
         fallback={
-          <FormaVisionAnatomicalFloor
-            sex={sex}
-            girths={floorGirths}
-            reducedMotion={reducedMotion}
-            floorRole="unavailable"
-          />
+          <div
+            className="absolute inset-0"
+            style={{ backgroundColor: FORMA_VISION_HEX.navy }}
+            data-testid="formavision-3d-unavailable-notice"
+          >
+            <FormaVisionPlateNotice kind="unavailable" />
+          </div>
         }
       >
         <FormaVisionCanvas

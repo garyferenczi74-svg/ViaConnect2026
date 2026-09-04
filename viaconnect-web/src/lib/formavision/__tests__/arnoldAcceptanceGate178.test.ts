@@ -132,9 +132,10 @@ describe('Brief 58 Phase 1: #177 always-paint + NO-FABRICATION still hold', () =
     const page = src('src/app/(app)/(consumer)/body-tracker/formavision/page.tsx');
     expect(canvas).toMatch(/attachWebGLContextRecovery/);
     expect(canvas).toMatch(/scheduleZeroSizeHonestyCheck/);
-    expect(avatar).toMatch(/FormaVisionAnatomicalFloor|formavision-recovering-floor/);
+    expect(avatar).toMatch(/FormaVisionPlateNotice|formavision-recovering-floor/);
     expect(avatar).toMatch(/shouldPaintPlateFloor/);
-    expect(page).toMatch(/FormaVisionAnatomicalFloor/);
+    expect(page).toMatch(/FormaVisionPlateNotice/);
+    expect(page).not.toMatch(/FormaVisionAnatomicalFloor/);
     expect(page).toMatch(/formavision-plate-floor/);
     expect(page).toMatch(/bg-\[#1A2744\]/);
     expect(page).not.toMatch(/Male%20Avatar/);

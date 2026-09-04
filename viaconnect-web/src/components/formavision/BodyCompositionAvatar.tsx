@@ -34,6 +34,7 @@ import type { AvatarQualitySignals } from '@/lib/formavision/telemetry/avatarTel
 import { buildAvatarQualitySnapshot } from '@/lib/formavision/telemetry/avatarTelemetry';
 import {
   selectAvatarSurface,
+  shouldMountAnatomicalOutline,
   shouldPaintPlateFloor,
   type WebGLAvailability,
 } from '@/lib/formavision/tier/avatarSurfaceDecision';
@@ -66,7 +67,6 @@ import {
 import { resolveScanAppearanceProjection } from '@/lib/formavision/appearance/scanAppearanceProjection';
 import { buildAvatarMorphStamp } from '@/lib/formavision/morph/avatarMorphStamp';
 import {
-  floorRoleForAnatomicalFloor,
   formatPlateDiagnostics,
   hasReadyScanData,
   resolvePlatePresentation,
@@ -76,8 +76,7 @@ import {
 } from '@/lib/formavision/tier/readyPlateContract';
 import { FormaVision3DAvatar } from './FormaVision3DAvatar';
 import { FormaVisionFallbackNotice } from './FormaVisionFallbackNotice';
-import { FormaVisionAnatomicalFloor } from './FormaVisionAnatomicalFloor';
-import { selectFloorGirths } from './anatomicalFloorGeometry';
+import { FormaVisionPlateNotice } from './FormaVisionPlateNotice';
 import { probeWebGL } from './hasWebGL';
 import { useRenderTier, useReportBudgetMiss } from './RenderTierProvider';
 import type { MeshyVisualStatus } from '@/lib/formavision/meshy/types';
@@ -136,7 +135,7 @@ export interface BodyCompositionAvatarProps {
   onFloorMotion?: (frame: FloorMotionFrame) => void;
   meshyGlbUrl?: string | null;
   meshyStatus?: MeshyVisualStatus;
-  // The 2D floor for this section, rendered as-is on any fallback.
+  // Honest text-only fallback child. Never an anatomical outline figure.
   children: React.ReactNode;
 }
 
@@ -184,6 +183,7 @@ function BodyCompositionAvatarInner({
   const [fellBack, setFellBack] = useState(false);
   const [recovering, setRecovering] = useState(false);
   const [canvasHasPainted, setCanvasHasPainted] = useState(false);
+  const [presentReadyWithoutPaint, setPresentReadyWithoutPaint] = useState(false);
   const [fallbackReason, setFallbackReason] = useState<string | null>(null);
   const [fallbackWebgl, setFallbackWebgl] = useState<WebGLAvailability>('unknown');
   const [mountEpoch, setMountEpoch] = useState(0);
@@ -327,7 +327,9 @@ function BodyCompositionAvatarInner({
   }, [clearRestoreTimer]);
 
   useEffect(() => {
-    if (canvasHasPainted || (fellBack && !readyLive)) return;
+    if (canvasHasPainted || presentReadyWithoutPaint || (fellBack && !readyLive)) {
+      return;
+    }
     const timer = setTimeout(() => {
       const action = decideFirstPaintDeadlineAction({
         painted: false,
@@ -337,10 +339,12 @@ function BodyCompositionAvatarInner({
         // Keep the Ready mesh mounted/compositable. Do NOT stamp
         // canvasHasPainted — that is FirstPaintWatchdog useFrame only.
         // Faking first-interactive here restores demand and the phone
-        // WebKit plate never paints (#185 nit 1).
+        // WebKit plate never paints (#185 nit 1). Lift the covering
+        // floor without treating this as a painted frame.
         if (shouldTreatPresentReadyMeshAsPainted()) {
           handleFirstInteractive();
         }
+        setPresentReadyWithoutPaint(true);
         setFellBack(false);
         return;
       }
@@ -357,6 +361,7 @@ function BodyCompositionAvatarInner({
     handleFirstInteractive,
     latchHonestFloor,
     mountEpoch,
+    presentReadyWithoutPaint,
     readyLive,
   ]);
 
@@ -408,6 +413,7 @@ function BodyCompositionAvatarInner({
     fellBack,
     reducedMotion: Boolean(reducedMotion),
     hasReadyScanData: readyLive,
+    presentReadyWithoutPaint,
   });
 
   const presentation = resolveReadyPlatePresentation({
@@ -415,6 +421,7 @@ function BodyCompositionAvatarInner({
     fellBack,
     recovering,
     hasReadyScanData: readyLive,
+    presentReadyWithoutPaint,
   });
 
   useEffect(() => {
@@ -532,16 +539,20 @@ function BodyCompositionAvatarInner({
       className="absolute inset-0 mx-auto h-full w-full max-w-[600px]"
     >
       <style>{`@keyframes fv-plate-enter{from{transform:scale(0.985)}to{transform:scale(1)}}@media (prefers-reduced-motion:reduce){.fv-plate-enter{animation:none}}`}</style>
-      {shouldPaintPlateFloor({ liveCanvasHasPainted: canvasHasPainted }) ||
-      recovering ||
-      fellBack ||
-      crossfade.floorOpacity > 0 ? (
+      {!readyLive &&
+      !shouldMountAnatomicalOutline() &&
+      (shouldPaintPlateFloor({
+        liveCanvasHasPainted: canvasHasPainted,
+        hasReadyScanData: readyLive,
+        presentReadyWithoutPaint,
+      }) ||
+        recovering ||
+        fellBack ||
+        crossfade.floorOpacity > 0) ? (
         <div
           data-testid="formavision-recovering-floor"
           data-floor-opacity={crossfade.floorOpacity}
-          className={`fv-plate-enter pointer-events-none absolute inset-0 ${
-            crossfade.floorOpacity > 0 ? 'z-20' : 'z-0'
-          }`}
+          className="fv-plate-enter pointer-events-none absolute inset-0 z-0"
           style={{
             backgroundColor: FORMA_VISION_HEX.navy,
             opacity: crossfade.floorOpacity,
@@ -556,12 +567,7 @@ function BodyCompositionAvatarInner({
               : `fv-plate-enter ${FORMAVISION_MOTION_SPEC.enterPlateMs}ms ${FORMAVISION_MOTION_SPEC.enterPlateEasing} both`,
           }}
         >
-          <FormaVisionAnatomicalFloor
-            sex={sex}
-            girths={selectFloorGirths(circumferences, girthSource)}
-            reducedMotion={reducedMotion}
-            floorRole={floorRoleForAnatomicalFloor(presented.floorRole)}
-          />
+          <FormaVisionPlateNotice kind={fellBack ? 'unavailable' : 'loading'} />
         </div>
       ) : null}
       {fellBack && !latchSurface && !readyLive ? (

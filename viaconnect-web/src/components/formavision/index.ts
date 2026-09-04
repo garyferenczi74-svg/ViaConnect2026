@@ -12,6 +12,16 @@ export type { FormaVisionAnatomicalFloorProps } from './FormaVisionAnatomicalFlo
 export { FormaVisionLocalSilhouette } from './FormaVisionLocalSilhouette';
 export type { FormaVisionLocalSilhouetteProps } from './FormaVisionLocalSilhouette';
 export {
+  FormaVisionPlateNotice,
+  FORMAVISION_PLATE_LOADING_NOTICE,
+  FORMAVISION_PLATE_UNAVAILABLE_NOTICE,
+  FORMAVISION_PLATE_NOTICE_TESTID,
+} from './FormaVisionPlateNotice';
+export type {
+  FormaVisionPlateNoticeProps,
+  PlateNoticeKind,
+} from './FormaVisionPlateNotice';
+export {
   SelectBodyPartControl,
   SELECT_BODY_PART_REGIONS,
 } from './SelectBodyPartControl';

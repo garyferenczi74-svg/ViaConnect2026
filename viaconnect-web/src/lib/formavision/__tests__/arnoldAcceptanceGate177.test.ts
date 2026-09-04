@@ -62,18 +62,17 @@ describe('Arnold acceptance gate 1: context-loss restore, do not tear forever', 
   });
 });
 
-describe('Arnold acceptance gate 2: always-paint local floor', () => {
-  it('page fallback child is the anatomical 2D floor, not remote Male Avatar.svg', () => {
+describe('Arnold acceptance gate 2: always-paint local navy chamber', () => {
+  it('page fallback child is a text-only notice, not the teal outline or remote SVG', () => {
     const page = src('src/app/(app)/(consumer)/body-tracker/formavision/page.tsx');
-    expect(page).toMatch(/FormaVisionAnatomicalFloor/);
+    expect(page).toMatch(/FormaVisionPlateNotice/);
+    expect(page).not.toMatch(/FormaVisionAnatomicalFloor/);
     expect(page).not.toMatch(/SegmentalHeatMap/);
     expect(page).not.toMatch(/supabase\.co/);
     const html = renderToStaticMarkup(
       React.createElement(FormaVisionAnatomicalFloor, { sex: 'male' }),
     );
     expect(html).toContain('formavision-anatomical-floor');
-    expect(html).toContain('formavision-anatomical-contour');
-    expect(html).toContain('data-floor="anatomical-2d"');
     expect(html).not.toContain('formavision-picasso-plate');
     expect(html).not.toContain('/formavision/picasso/');
     expect(html).not.toContain('supabase.co');
@@ -97,8 +96,9 @@ describe('Arnold acceptance gate 3: 3D footprint definite fill', () => {
     expect(markup).toContain('absolute');
     expect(markup).toContain('inset-0');
     expect(markup).toContain('formavision-3d-pending');
-    expect(markup).toContain('formavision-anatomical-floor');
+    expect(markup).not.toContain('formavision-anatomical-floor');
     expect(markup).toContain('formavision-recovering-floor');
+    expect(markup).toContain('formavision-plate-notice');
     expect(markup).not.toContain('formavision-fallback-2d');
 
     const page = src('src/app/(app)/(consumer)/body-tracker/formavision/page.tsx');
@@ -126,15 +126,17 @@ describe('Arnold acceptance gate 6: never-empty plate on 3D-pending', () => {
       }),
     );
     expect(markup).toContain('formavision-3d-pending');
-    expect(markup).toContain('formavision-anatomical-floor');
+    expect(markup).not.toContain('formavision-anatomical-floor');
     expect(markup).toContain('formavision-recovering-floor');
+    expect(markup).toContain('formavision-plate-notice');
     expect(markup).not.toContain('formavision-fallback-2d');
 
     const threeD = src('src/components/formavision/FormaVision3DAvatar.tsx');
     const canvas = src('src/components/formavision/FormaVisionCanvas.tsx');
     const avatar = src('src/components/formavision/BodyCompositionAvatar.tsx');
     expect(threeD).toMatch(/function CanvasLoader/);
-    expect(threeD).toMatch(/FormaVisionAnatomicalFloor/);
+    expect(threeD).toMatch(/FormaVisionPlateNotice/);
+    expect(threeD).not.toMatch(/FormaVisionAnatomicalFloor/);
     expect(threeD).not.toMatch(/loading:\s*\(\)\s*=>\s*<CanvasLoader\s*\/>/);
     expect(canvas).toMatch(/FirstPaintWatchdog/);
     expect(canvas).toMatch(/shouldTreatGlCreatedAsPainted/);

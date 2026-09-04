@@ -104,7 +104,8 @@ describe('BodyCompositionAvatar', () => {
     expect(plateClass).not.toMatch(/\bitems-center\b/);
     expect(plateClass).not.toMatch(/\bflex\b/);
     expect(formavision).toMatch(/formavision-plate-floor/);
-    expect(formavision).toMatch(/FormaVisionAnatomicalFloor/);
+    expect(formavision).toMatch(/FormaVisionPlateNotice/);
+    expect(formavision).not.toMatch(/FormaVisionAnatomicalFloor/);
     expect(formavision).not.toMatch(/SegmentalHeatMap/);
     expect(formavision).not.toMatch(/aspect-\[720\/1152\]/);
     expect(formavision).not.toMatch(/min-h-\[480px\]/);
@@ -145,7 +146,8 @@ describe('BodyCompositionAvatar', () => {
     expect(threeD).toMatch(/formavision-3d-pending/);
     expect(threeD).toMatch(/formavision-3d-mount/);
     expect(threeD).toMatch(/absolute inset-0/);
-    expect(threeD).toMatch(/FormaVisionAnatomicalFloor/);
+    expect(threeD).toMatch(/FormaVisionPlateNotice/);
+    expect(threeD).not.toMatch(/FormaVisionAnatomicalFloor/);
     expect(threeD).toMatch(/onContextRestored/);
     expect(avatar).toMatch(/formavision-recovering-floor/);
     expect(avatar).toMatch(/decideContextLossAction/);
@@ -164,12 +166,13 @@ describe('BodyCompositionAvatar', () => {
     expect(canvas).toMatch(/shouldHoldScrubMorph/);
   });
 
-  it('SSR first paint stays on the 3D footprint with an anatomical 2D floor, not the heatmap children', () => {
+  it('SSR first paint stays on the 3D footprint with a navy chamber, not the heatmap children', () => {
     const markup = renderWrapper('bodyFat');
     expect(markup).toContain('formavision-avatar-footprint');
     expect(markup).toContain('formavision-3d-pending');
-    expect(markup).toContain('formavision-anatomical-floor');
     expect(markup).toContain('formavision-recovering-floor');
+    expect(markup).toContain('formavision-plate-notice');
+    expect(markup).not.toContain('formavision-anatomical-floor');
     expect(markup).not.toContain('two-d-floor');
     expect(markup).not.toContain('formavision-fallback-2d');
     expect(markup).not.toContain('segmental-heat-map');
