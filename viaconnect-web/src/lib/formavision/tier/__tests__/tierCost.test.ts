@@ -32,6 +32,12 @@ describe('dprForTier', () => {
     expect(dprForTier('cinematic')).toEqual(dprForTier('cinematic'));
     expect(dprForTier('lite')).toEqual(dprForTier('lite'));
   });
+
+  it('caps Safari / WebKit at 1× so first-paint does not miss a high-DPR buffer', () => {
+    expect(dprForTier('cinematic', true)).toEqual([1, 1]);
+    expect(dprForTier('lite', true)).toEqual([1, 1]);
+    expect(dprForTier('cinematic')).toEqual([1, 2]);
+  });
 });
 
 describe('showParticlesForTier', () => {

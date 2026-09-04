@@ -1,10 +1,9 @@
 // Geometry-to-material mount wiring for FormaVision (Prompt 210b, task P1-T4).
 //
-// This is the seam where the parametric body geometry (buildBodyGeometry) and the
-// wireframe glow material (makeBodyWireframeMaterial) finally meet. It is kept
-// pure and free of react-three-fiber so the MATERIAL MOUNT CONTRACT can be unit
-// tested in the node runner: the GPU never has to run to prove the wiring is
-// correct.
+// This is the seam where the parametric body geometry (buildBodyGeometry) and
+// the Ready success material (makeBodySolidMaterial) meet. Ghost overlays may
+// still request the additive wireframe look. Kept pure and free of r3f so the
+// MATERIAL MOUNT CONTRACT can be unit tested without a GPU.
 //
 // MATERIAL MOUNT CONTRACT (from the P1-T3 review):
 //  1. Build the indexed geometry from the param vector.
@@ -31,10 +30,15 @@ import {
   type BodyWireframeMaterial,
   type BodyWireframeOptions,
 } from '@/lib/formavision/materials/bodyWireframeMaterial';
+import { makeBodySolidMaterial } from '@/lib/formavision/materials/bodySolidMaterial';
+
+export type PlateBodyLook = 'solid' | 'wireframe';
 
 export interface MountOptions {
   build?: BuildOptions;
   material?: BodyWireframeOptions;
+  // Ready success is solid. Wireframe is ghost-only — never the Ready plate.
+  look?: PlateBodyLook;
 }
 
 export interface MountedBody {
@@ -85,7 +89,11 @@ export function mountBodyGeometry(
   const boundsMin = box.min.clone();
   const boundsMax = box.max.clone();
 
-  const materialHandle = makeBodyWireframeMaterial(opts.material);
+  const look: PlateBodyLook = opts.look ?? 'solid';
+  const materialHandle =
+    look === 'wireframe'
+      ? makeBodyWireframeMaterial(opts.material)
+      : makeBodySolidMaterial();
   materialHandle.uniforms.uBoundsMin.value = boundsMin.clone();
   materialHandle.uniforms.uBoundsMax.value = boundsMax.clone();
 

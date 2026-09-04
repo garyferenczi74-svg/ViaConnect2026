@@ -6,7 +6,7 @@
 // null) param vector must still produce a body.
 
 import { describe, it, expect } from 'vitest';
-import { Vector3 } from 'three';
+import { AdditiveBlending, Vector3 } from 'three';
 import { scanToParamVector } from '@/lib/formavision/geometry/scanToParamVector';
 import {
   CINEMATIC_BODY_SEGMENTS,
@@ -74,5 +74,16 @@ describe('mountBodyGeometry', () => {
   it('dispose frees the geometry and material without throwing', () => {
     const mounted = mountBodyGeometry(neutralParam());
     expect(() => mounted.dispose()).not.toThrow();
+  });
+
+  it('Ready default look is a solid human mesh, not additive wireframe Picasso', () => {
+    const mounted = mountBodyGeometry(neutralParam());
+    expect(mounted.materialHandle.material.type).toBe('MeshStandardMaterial');
+    expect(mounted.materialHandle.material.blending).not.toBe(AdditiveBlending);
+    expect(mounted.materialHandle.material.wireframe).toBe(false);
+    expect(mounted.materialHandle.material.depthWrite).toBe(true);
+    expect(mounted.materialHandle.uniforms.uLineIntensity.value).toBe(0);
+    expect(mounted.materialHandle.uniforms.uFillOpacity.value).toBe(1);
+    mounted.dispose();
   });
 });

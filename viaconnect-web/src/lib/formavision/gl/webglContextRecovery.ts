@@ -21,7 +21,7 @@ export const CONTEXT_RESTORE_WAIT_MS = 1500;
 export const WEBGL_REMOUNT_BUDGET = 2;
 // Demand-loop paint watchdog. GL onCreated is NOT a painted frame.
 export const FIRST_PAINT_WATCHDOG_MS = 400;
-export const FIRST_PAINT_WATCHDOG_RETRIES = 5;
+export const FIRST_PAINT_WATCHDOG_RETRIES = 12;
 // Ready scan must not sit on "Loading…" forever. Long enough for the
 // dynamic three chunk + first demand frame; short enough to be honest.
 export const FIRST_PAINT_DEADLINE_MS = 8000;
@@ -52,6 +52,48 @@ export function canvasHasZeroClientBox(el: {
   clientHeight: number;
 }): boolean {
   return el.clientWidth === 0 || el.clientHeight === 0;
+}
+
+export function drawingBufferHasPixels(gl: {
+  drawingBufferWidth: number;
+  drawingBufferHeight: number;
+}): boolean {
+  return gl.drawingBufferWidth > 0 && gl.drawingBufferHeight > 0;
+}
+
+// Phone WebKit can report a 0×0 client box while the drawing buffer already
+// has pixels (or the reverse). Either is enough to stamp a presented frame.
+export function shouldStampPaintedFrame(input: {
+  clientBoxZero: boolean;
+  drawingBufferHasPixels: boolean;
+}): boolean {
+  if (input.drawingBufferHasPixels) return true;
+  return !input.clientBoxZero;
+}
+
+export function readParentBox(
+  canvas: { parentElement: { getBoundingClientRect: () => DOMRect } | null },
+): { width: number; height: number } | null {
+  const parent = canvas.parentElement;
+  if (!parent) return null;
+  const rect = parent.getBoundingClientRect();
+  if (rect.width <= 0 || rect.height <= 0) return null;
+  return { width: rect.width, height: rect.height };
+}
+
+export function syncCanvasToParentBox(
+  canvas: HTMLCanvasElement,
+  renderer: { setSize: (width: number, height: number, updateStyle?: boolean) => void },
+): { width: number; height: number } | null {
+  const box = readParentBox(canvas);
+  const width = box?.width ?? canvas.clientWidth;
+  const height = box?.height ?? canvas.clientHeight;
+  if (width <= 0 || height <= 0) return null;
+  canvas.style.display = 'block';
+  canvas.style.width = '100%';
+  canvas.style.height = '100%';
+  renderer.setSize(width, height, false);
+  return { width, height };
 }
 
 // GL context ready (Canvas onCreated) is not a presented frame. Phone

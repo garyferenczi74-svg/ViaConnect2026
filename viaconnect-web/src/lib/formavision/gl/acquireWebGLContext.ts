@@ -25,6 +25,21 @@ export const SAFE_GL_ATTRIBUTES: WebGLContextAttributes = {
   failIfMajorPerformanceCaveat: false,
 };
 
+// iPhone WebKit: an alpha canvas plus a discarded drawing buffer is the
+// long-running first-paint miss. Opaque + preserveDrawingBuffer lets the
+// first always-loop frame actually composite a body.
+export const SAFARI_SAFE_GL_ATTRIBUTES: WebGLContextAttributes = {
+  antialias: true,
+  alpha: false,
+  preserveDrawingBuffer: true,
+  powerPreference: 'default',
+  failIfMajorPerformanceCaveat: false,
+};
+
+export function glAttributesForHost(safariLike: boolean): WebGLContextAttributes {
+  return safariLike ? SAFARI_SAFE_GL_ATTRIBUTES : SAFE_GL_ATTRIBUTES;
+}
+
 // ANGLE SwiftShader (Arnold box / many VMs) often returns null for
 // getContext('webgl'|'webgl2', { antialias: true }) while a bare
 // getContext('webgl') on a fresh canvas succeeds. That is not "no WebGL"
@@ -83,7 +98,7 @@ export function acquireWebGLContextResult(
   options: AcquireWebGLContextOptions = {},
 ): AcquiredWebGLContext | null {
   const safariLike = options.safariLike ?? false;
-  const preferred = options.attributes ?? SAFE_GL_ATTRIBUTES;
+  const preferred = options.attributes ?? glAttributesForHost(safariLike);
   const order = webglContextTypeOrder(safariLike);
   for (const attributes of glAttributeAttempts(preferred)) {
     for (const contextId of order) {

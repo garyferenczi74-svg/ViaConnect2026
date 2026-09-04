@@ -195,10 +195,16 @@ export function FormaVision3DAvatar({
       data-testid="formavision-3d-mount"
       data-morph-3d={morph3d}
       style={{
-        opacity: morph3d,
+        // Opacity < 1 (including a transitioning 1) is a WebKit compositor
+        // skip for WebGL. Ready keeps morph3d at 1 with no fade.
+        opacity: morph3d > 0 ? 1 : 0,
         isolation: 'isolate',
         transform: 'translateZ(0)',
-        transition: floorMotionTransition(morphDurationMs, morphEasing),
+        minHeight: 200,
+        transition:
+          morph3d >= 1
+            ? undefined
+            : floorMotionTransition(morphDurationMs, morphEasing),
       }}
     >
       <AvatarErrorBoundary
