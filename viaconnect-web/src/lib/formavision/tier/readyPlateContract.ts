@@ -25,6 +25,10 @@ export interface PlatePresentation {
   resultKind: PlateResultKind;
   paintState: PlatePaintState;
   floorPresented: boolean;
+  // Text-only notice. Required while paint is pending so the plate is
+  // never a blank navy chamber. Independent of canvasHasPainted after
+  // the first-paint deadline (#186 phone FAIL).
+  noticePresented: boolean;
 }
 
 export function resolvePlatePresentation(
@@ -36,6 +40,7 @@ export function resolvePlatePresentation(
       resultKind: 'unavailable',
       paintState: 'unavailable',
       floorPresented: true,
+      noticePresented: true,
     };
   }
   if (input.recovering) {
@@ -44,6 +49,7 @@ export function resolvePlatePresentation(
       resultKind: 'loading',
       paintState: 'pending',
       floorPresented: true,
+      noticePresented: true,
     };
   }
   if (input.canvasHasPainted) {
@@ -52,6 +58,7 @@ export function resolvePlatePresentation(
       resultKind: 'scan-mesh',
       paintState: 'painted',
       floorPresented: false,
+      noticePresented: false,
     };
   }
   return {
@@ -59,6 +66,7 @@ export function resolvePlatePresentation(
     resultKind: 'loading',
     paintState: 'pending',
     floorPresented: true,
+    noticePresented: true,
   };
 }
 
@@ -83,6 +91,7 @@ export function resolveReadyPlatePresentation(
       resultKind: 'scan-mesh',
       paintState: 'painted',
       floorPresented: false,
+      noticePresented: false,
     };
   }
   return {
@@ -90,7 +99,36 @@ export function resolveReadyPlatePresentation(
     resultKind: 'scan-mesh',
     paintState: 'pending',
     floorPresented: false,
+    noticePresented: true,
   };
+}
+
+// Never-empty plate: a text notice while the paint stamp is missing.
+// After the ~8s deadline, do not wait for canvasHasPainted to show it.
+// Ready + pending without a notice is the #186 blank-navy FAIL.
+export function shouldPresentPlateNotice(input: {
+  canvasHasPainted: boolean;
+  hasReadyScanData?: boolean;
+  presentReadyWithoutPaint?: boolean;
+}): boolean {
+  if (input.canvasHasPainted) return false;
+  if (input.presentReadyWithoutPaint) return true;
+  return Boolean(input.hasReadyScanData);
+}
+
+// Blank navy chamber alone (no mesh paint, no text notice) is FAIL.
+// morph3d compositable is not enough — phone WebKit can sit on
+// floor=hidden paint=pending with an undrawn buffer forever.
+export function isBlankOnlyPlateFail(input: {
+  hasReadyScanData: boolean;
+  paintState: PlatePaintState;
+  noticePresented: boolean;
+  presentReadyWithoutPaint?: boolean;
+}): boolean {
+  if (!input.hasReadyScanData) return false;
+  if (input.paintState === 'painted') return false;
+  if (input.noticePresented) return false;
+  return true;
 }
 
 // Alien / designed outline presented as the Ready success surface is FAIL.

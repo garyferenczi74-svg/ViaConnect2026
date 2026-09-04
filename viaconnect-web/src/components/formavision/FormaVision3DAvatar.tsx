@@ -41,8 +41,8 @@ import { floorMotionTransition } from '@/lib/formavision/motion/floorMotionSpec'
 import { AvatarErrorBoundary } from './AvatarErrorBoundary';
 import { FormaVisionPlateNotice } from './FormaVisionPlateNotice';
 
-// Pending / chunk-load shroud. Navy chamber + spinner. Gary 2026-09-03:
-// no teal anatomical outline — not as loading, unavailable, or a flash.
+// Pending / chunk-load shroud. Navy chamber + spinner + text notice.
+// Gary 2026-09-03: no teal anatomical outline. Empty navy alone is FAIL.
 function CanvasLoader() {
   return (
     <div
@@ -63,13 +63,7 @@ function CanvasLoader() {
 // chamber — never the teal anatomical outline.
 const FormaVisionCanvas = dynamic(() => import('./FormaVisionCanvas'), {
   ssr: false,
-  loading: () => (
-    <div
-      className="absolute inset-0"
-      style={{ backgroundColor: FORMA_VISION_HEX.navy }}
-      data-testid="formavision-canvas-chunk-loading"
-    />
-  ),
+  loading: () => <CanvasLoader />,
 });
 
 export interface FormaVision3DAvatarProps {

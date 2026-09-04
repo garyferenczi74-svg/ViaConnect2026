@@ -71,6 +71,7 @@ import {
   hasReadyScanData,
   resolvePlatePresentation,
   resolveReadyPlatePresentation,
+  shouldPresentPlateNotice,
   type PlateFloorRole,
   type PlatePaintState,
 } from '@/lib/formavision/tier/readyPlateContract';
@@ -498,6 +499,7 @@ function BodyCompositionAvatarInner({
     'data-result': presented.resultKind,
     'data-floor-role': presented.floorRole,
     'data-paint-state': presented.paintState,
+    'data-notice-presented': presented.noticePresented ? 'true' : 'false',
   } as const;
   const plateDiagnostics = formatPlateDiagnostics(presented);
 
@@ -569,6 +571,14 @@ function BodyCompositionAvatarInner({
         >
           <FormaVisionPlateNotice kind={fellBack ? 'unavailable' : 'loading'} />
         </div>
+      ) : null}
+      {readyLive &&
+      shouldPresentPlateNotice({
+        canvasHasPainted,
+        hasReadyScanData: readyLive,
+        presentReadyWithoutPaint,
+      }) ? (
+        <FormaVisionPlateNotice kind="loading" />
       ) : null}
       {fellBack && !latchSurface && !readyLive ? (
         <FormaVisionFallbackNotice reason={fallbackReason} webgl={fallbackWebgl}>

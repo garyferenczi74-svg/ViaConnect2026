@@ -137,7 +137,7 @@ describe('Arnold acceptance gate 6: never-empty plate on 3D-pending', () => {
     expect(threeD).toMatch(/function CanvasLoader/);
     expect(threeD).toMatch(/FormaVisionPlateNotice/);
     expect(threeD).not.toMatch(/FormaVisionAnatomicalFloor/);
-    expect(threeD).not.toMatch(/loading:\s*\(\)\s*=>\s*<CanvasLoader\s*\/>/);
+    expect(threeD).toMatch(/loading:\s*\(\)\s*=>\s*<CanvasLoader\s*\/>/);
     expect(canvas).toMatch(/FirstPaintWatchdog/);
     expect(canvas).toMatch(/shouldTreatGlCreatedAsPainted/);
     expect(canvas).toMatch(/if \(shouldTreatGlCreatedAsPainted\(\)\) \{\s*props\.onFirstInteractive/);
