@@ -19,14 +19,19 @@ import { estimateCircumferencesFromComposition } from '@/lib/body-tracker/compos
 import { snapshotFromPhotoScanSummary } from '@/lib/body-tracker/composition/snapshotFromScanResult';
 import { scanToParamVector } from '@/lib/formavision/geometry/scanToParamVector';
 import {
+  isHolographicF3DrawMode,
+} from '@/lib/formavision/materials/bodyHolographicMaterial';
+import {
   isPicassoWireframeDrawMode,
   isSolidHumanDrawMode,
 } from '@/lib/formavision/materials/bodySolidMaterial';
 import {
   hasReadyScanData,
   isAlienFloorReadySuccessFail,
+  isAllowedReadySuccessLook,
   isHumanShapedBodyBounds,
   isPicassoWireframeSuccessFail,
+  isSolidOnlyReadySuccessFail,
   resolveReadyPlatePresentation,
   resolveReadySuccessLook,
   shouldPresentPlateNotice,
@@ -70,8 +75,8 @@ function renderReadyPlate() {
   );
 }
 
-describe('Ready success look is a clean human mesh, not Picasso wireframe', () => {
-  it('contract rejects wireframe/Picasso as a Ready success surface', () => {
+describe('Ready success look is holographic-f3, not Picasso shards or opaque solid', () => {
+  it('contract rejects wireframe/Picasso and solid-only as Ready success', () => {
     expect(
       isPicassoWireframeSuccessFail({
         hasReadyScanData: true,
@@ -81,7 +86,7 @@ describe('Ready success look is a clean human mesh, not Picasso wireframe', () =
     expect(
       isPicassoWireframeSuccessFail({
         hasReadyScanData: true,
-        look: 'solid-human',
+        look: 'holographic-f3',
       }),
     ).toBe(false);
     expect(
@@ -90,6 +95,30 @@ describe('Ready success look is a clean human mesh, not Picasso wireframe', () =
         look: 'meshy-glb',
       }),
     ).toBe(false);
+    expect(
+      isSolidOnlyReadySuccessFail({
+        hasReadyScanData: true,
+        look: 'solid-human',
+        meshSource: 'parametric',
+      }),
+    ).toBe(true);
+    expect(
+      isSolidOnlyReadySuccessFail({
+        hasReadyScanData: true,
+        look: 'holographic-f3',
+        meshSource: 'parametric',
+      }),
+    ).toBe(false);
+    expect(isAllowedReadySuccessLook('holographic-f3')).toBe(true);
+    expect(isAllowedReadySuccessLook('meshy-glb')).toBe(true);
+    expect(isAllowedReadySuccessLook('solid-human')).toBe(false);
+    expect(isAllowedReadySuccessLook('wireframe-picasso')).toBe(false);
+    expect(
+      resolveReadySuccessLook({
+        meshSource: 'parametric',
+        parametricLook: 'holographic',
+      }),
+    ).toBe('holographic-f3');
     expect(
       resolveReadySuccessLook({
         meshSource: 'parametric',
@@ -110,7 +139,7 @@ describe('Ready success look is a clean human mesh, not Picasso wireframe', () =
     ).toBe('meshy-glb');
   });
 
-  it('Gary Ready male 30–36% parametric mount is solid and human-shaped', () => {
+  it('Gary Ready male 30–36% parametric mount is holographic-f3 and human-shaped', () => {
     const scan = garyReadyScan();
     expect(hasReadyScanData(scan)).toBe(true);
     const circumferences = estimateCircumferencesFromComposition(scan, 'male', 'in');
@@ -121,7 +150,8 @@ describe('Ready success look is a clean human mesh, not Picasso wireframe', () =
       unit: 'in',
     });
     const mounted = mountBodyGeometry(vector);
-    expect(isSolidHumanDrawMode(mounted.materialHandle.material)).toBe(true);
+    expect(isHolographicF3DrawMode(mounted.materialHandle.material)).toBe(true);
+    expect(isSolidHumanDrawMode(mounted.materialHandle.material)).toBe(false);
     expect(isPicassoWireframeDrawMode(mounted.materialHandle.material)).toBe(false);
     expect(mounted.materialHandle.material.blending).toBe(THREE.NormalBlending);
     expect(mounted.materialHandle.material.wireframe).toBe(false);
@@ -136,18 +166,22 @@ describe('Ready success look is a clean human mesh, not Picasso wireframe', () =
         hasReadyScanData: true,
         look: resolveReadySuccessLook({
           meshSource: 'parametric',
-          parametricLook: 'solid',
+          parametricLook: 'holographic',
         }),
       }),
     ).toBe(false);
     mounted.dispose();
   });
 
-  it('SSR Ready plate stamps solid-human and never mounts the alien', () => {
+  it('SSR Ready plate stamps holographic-f3 and never mounts the alien', () => {
     const markup = renderReadyPlate();
-    expect(markup).toContain('data-mesh-look="solid-human"');
+    expect(markup).toContain('data-mesh-look="holographic-f3"');
+    expect(markup).not.toContain('data-mesh-look="solid-human"');
+    expect(markup).not.toContain('data-mesh-look="wireframe-picasso"');
     expect(markup).toContain('data-result="scan-mesh"');
     expect(markup).toContain('data-floor-role="hidden"');
+    expect(markup).toContain('data-half-morph-ms="280"');
+    expect(markup).toContain('data-f1-to-f3-ms="800"');
     expect(markup).not.toContain('formavision-anatomical-floor');
     expect(markup).not.toContain('formavision-anatomical-contour');
     const presented = resolveReadyPlatePresentation({
@@ -213,12 +247,12 @@ describe('Mobile WebKit: notice until painted, then the live mesh', () => {
     expect(canvas).toMatch(/syncCanvasToParentBox/);
     expect(canvas).toMatch(/shouldStampPaintedFrame/);
     expect(canvas).toMatch(/isSafariWebGLHost/);
-    expect(canvas).toMatch(/makeBodySolidMaterial|solid-human/);
+    expect(canvas).toMatch(/holographic-f3/);
     expect(canvas).not.toMatch(/FormaVisionAnatomicalFloor/);
 
     const mount = src('src/components/formavision/mountBodyGeometry.ts');
-    expect(mount).toMatch(/makeBodySolidMaterial/);
-    expect(mount).toMatch(/look \?\? 'solid'/);
+    expect(mount).toMatch(/makeBodyHolographicMaterial/);
+    expect(mount).toMatch(/look \?\? 'holographic'/);
 
     const acquire = src('src/lib/formavision/gl/acquireWebGLContext.ts');
     expect(acquire).toMatch(/SAFARI_SAFE_GL_ATTRIBUTES/);

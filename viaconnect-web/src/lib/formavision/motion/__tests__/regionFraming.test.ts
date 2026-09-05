@@ -6,6 +6,7 @@ import {
   ORBIT_DISTANCE_MIN,
   ORBIT_DISTANCE_MAX,
   AVATAR_VERTICAL_FOV_DEG,
+  isBrief60AvatarFov,
   visibleHeightMeters,
   fullBodyCameraPosition,
 } from '../regionFraming';
@@ -68,9 +69,12 @@ describe('framingForRegion', () => {
     // Head-through-ankles on the 1.75m male template — not a chest bust, not floor margin.
     expect(visible).toBeGreaterThan(MALE_TEMPLATE.heightM * 0.95);
     expect(visible).toBeLessThan(MALE_TEMPLATE.heightM * 1.15);
+    expect(isBrief60AvatarFov(AVATAR_VERTICAL_FOV_DEG)).toBe(true);
 
-    // The pre-#141 pose (3.2m @ 30°) cannot fit the male template.
-    expect(visibleHeightMeters(3.2, AVATAR_VERTICAL_FOV_DEG)).toBeLessThan(MALE_TEMPLATE.heightM);
+    // Legacy 3.2m @ 38° overshoots the ankle crop (too much floor).
+    expect(visibleHeightMeters(3.2, AVATAR_VERTICAL_FOV_DEG)).toBeGreaterThan(
+      MALE_TEMPLATE.heightM * 1.15,
+    );
   });
 
   it('default hero camera is rear three-quarter, not front +Z', () => {
