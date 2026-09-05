@@ -94,6 +94,17 @@ export function resolveReadyPlatePresentation(
       noticePresented: false,
     };
   }
+  if (input.presentReadyWithoutPaint) {
+    return {
+      floorRole: 'hidden',
+      resultKind: 'scan-mesh',
+      paintState: 'pending',
+      floorPresented: false,
+      // Mesh is mounted after the deadline. Holding the loading caption
+      // forever is the #189 phone FAIL (Gary stuck on Loading, F3 gone).
+      noticePresented: false,
+    };
+  }
   return {
     floorRole: 'hidden',
     resultKind: 'scan-mesh',
@@ -103,22 +114,23 @@ export function resolveReadyPlatePresentation(
   };
 }
 
-// Never-empty plate: a text notice while the paint stamp is missing.
-// After the ~8s deadline, do not wait for canvasHasPainted to show it.
-// Ready + pending without a notice is the #186 blank-navy FAIL.
+// Never-empty plate: a text notice while the paint stamp is missing AND
+// the Ready mesh is not yet mounted. After the ~8s deadline the holographic
+// mesh stays compositable — do not require canvasHasPainted, and do not
+// keep the Loading caption over Ready. Do not fake the paint stamp.
 export function shouldPresentPlateNotice(input: {
   canvasHasPainted: boolean;
   hasReadyScanData?: boolean;
   presentReadyWithoutPaint?: boolean;
 }): boolean {
   if (input.canvasHasPainted) return false;
-  if (input.presentReadyWithoutPaint) return true;
+  if (input.presentReadyWithoutPaint) return false;
   return Boolean(input.hasReadyScanData);
 }
 
-// Blank navy chamber alone (no mesh paint, no text notice) is FAIL.
-// morph3d compositable is not enough — phone WebKit can sit on
-// floor=hidden paint=pending with an undrawn buffer forever.
+// Blank navy chamber alone (no mesh paint, no text notice, no mounted mesh)
+// is FAIL. After the deadline a mounted F3 path is never-empty even when
+// the paint stamp lags.
 export function isBlankOnlyPlateFail(input: {
   hasReadyScanData: boolean;
   paintState: PlatePaintState;
@@ -128,7 +140,17 @@ export function isBlankOnlyPlateFail(input: {
   if (!input.hasReadyScanData) return false;
   if (input.paintState === 'painted') return false;
   if (input.noticePresented) return false;
+  if (input.presentReadyWithoutPaint) return false;
   return true;
+}
+
+// #189: honesty notice permanently covering a mounted Ready mesh is FAIL.
+export function isNoticeCoveringMountedReadyFail(input: {
+  hasReadyScanData: boolean;
+  presentReadyWithoutPaint: boolean;
+  noticePresented: boolean;
+}): boolean {
+  return input.hasReadyScanData && input.presentReadyWithoutPaint && input.noticePresented;
 }
 
 // Alien / designed outline presented as the Ready success surface is FAIL.

@@ -71,6 +71,14 @@ export function shouldStampPaintedFrame(input: {
   return !input.clientBoxZero;
 }
 
+export const FORMAVISION_FALLBACK_PLATE_WIDTH = 390;
+export const FORMAVISION_FALLBACK_PLATE_HEIGHT = 200;
+
+type LayoutBoxNode = {
+  getBoundingClientRect: () => { width: number; height: number };
+  parentElement: LayoutBoxNode | null;
+} | null;
+
 export function readParentBox(
   canvas: { parentElement: { getBoundingClientRect: () => DOMRect } | null },
 ): { width: number; height: number } | null {
@@ -81,19 +89,54 @@ export function readParentBox(
   return { width: rect.width, height: rect.height };
 }
 
+export function readAncestorBox(
+  canvas: { parentElement: LayoutBoxNode },
+): { width: number; height: number } | null {
+  let node = canvas.parentElement;
+  while (node) {
+    const rect = node.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+      return { width: rect.width, height: rect.height };
+    }
+    node = node.parentElement;
+  }
+  return null;
+}
+
+export function resolveCanvasLayoutBox(
+  canvas: {
+    clientWidth: number;
+    clientHeight: number;
+    parentElement: LayoutBoxNode;
+  },
+): { width: number; height: number; fromLayout: boolean } {
+  const ancestor = readAncestorBox(canvas);
+  if (ancestor) return { ...ancestor, fromLayout: true };
+  if (canvas.clientWidth > 0 && canvas.clientHeight > 0) {
+    return { width: canvas.clientWidth, height: canvas.clientHeight, fromLayout: true };
+  }
+  return {
+    width: FORMAVISION_FALLBACK_PLATE_WIDTH,
+    height: FORMAVISION_FALLBACK_PLATE_HEIGHT,
+    fromLayout: false,
+  };
+}
+
 export function syncCanvasToParentBox(
   canvas: HTMLCanvasElement,
   renderer: { setSize: (width: number, height: number, updateStyle?: boolean) => void },
 ): { width: number; height: number } | null {
-  const box = readParentBox(canvas);
-  const width = box?.width ?? canvas.clientWidth;
-  const height = box?.height ?? canvas.clientHeight;
-  if (width <= 0 || height <= 0) return null;
+  const box = resolveCanvasLayoutBox(canvas);
   canvas.style.display = 'block';
-  canvas.style.width = '100%';
-  canvas.style.height = '100%';
-  renderer.setSize(width, height, false);
-  return { width, height };
+  if (box.fromLayout) {
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+  } else {
+    canvas.style.width = `${box.width}px`;
+    canvas.style.height = `${box.height}px`;
+  }
+  renderer.setSize(box.width, box.height, false);
+  return { width: box.width, height: box.height };
 }
 
 // GL context ready (Canvas onCreated) is not a presented frame. Phone

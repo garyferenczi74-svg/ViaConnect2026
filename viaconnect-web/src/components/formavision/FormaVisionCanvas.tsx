@@ -818,11 +818,15 @@ function FirstPaintWatchdog({
     if (firedRef.current) {
       return;
     }
-    const clientBoxZero = canvasHasZeroClientBox(state.gl.domElement);
-    const hasBuffer = drawingBufferHasPixels(state.gl);
+    let clientBoxZero = canvasHasZeroClientBox(state.gl.domElement);
+    let hasBuffer = drawingBufferHasPixels(state.gl);
     if (!shouldStampPaintedFrame({ clientBoxZero, drawingBufferHasPixels: hasBuffer })) {
       syncCanvasToParentBox(state.gl.domElement, state.gl);
-      return;
+      clientBoxZero = canvasHasZeroClientBox(state.gl.domElement);
+      hasBuffer = drawingBufferHasPixels(state.gl);
+      if (!shouldStampPaintedFrame({ clientBoxZero, drawingBufferHasPixels: hasBuffer })) {
+        return;
+      }
     }
     if (!shouldFireFirstInteractive('first-demand-frame')) {
       return;

@@ -82,4 +82,21 @@ describe('createFormaVisionRenderer', () => {
       }),
     );
   });
+
+  it('asks webgl2 only so THREE r184 is never handed a WebGL1 context', () => {
+    const context = { kind: 'webgl2' };
+    const canvas = {
+      getContext: vi.fn((id: string) => (id === 'webgl2' ? context : null)),
+    };
+    createFormaVisionRenderer(canvas);
+    const ids = canvas.getContext.mock.calls.map((c) => c[0]);
+    expect(ids.every((id) => id === 'webgl2')).toBe(true);
+    expect(ids).not.toContain('webgl');
+    expect(constructed[0]).toEqual(
+      expect.objectContaining({
+        canvas,
+        context,
+      }),
+    );
+  });
 });
