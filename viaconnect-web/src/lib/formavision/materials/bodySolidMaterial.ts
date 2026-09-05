@@ -1,11 +1,8 @@
-// Ready-scan success material: a solid, lit, human-shaped volume.
+// Optional solid volume — ghost / compare overlays only.
 //
-// The additive barycentric wireframe (makeBodyWireframeMaterial) painted
-// Gary's desktop #187 smoke as cyan shards — Picasso, not a body. This
-// handle keeps the same setter surface (scan / morph / highlight / wipe)
-// so mount + motion controllers stay typed, but the GPU path is
-// MeshStandardMaterial: FrontSide, depthWrite, NormalBlending, no
-// wireframe. Meshy textured GLB is the other allowed success look.
+// #188 used this as the Ready anti-shards stamp. Brief 60 supersedes Ready
+// success to makeBodyHolographicMaterial (designed F3 grid). Keep this factory
+// so overlays can still request an opaque human volume without Picasso shards.
 
 import * as THREE from 'three';
 import type { BodyWireframeMaterial } from './bodyWireframeMaterial';

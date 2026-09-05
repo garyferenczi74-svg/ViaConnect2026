@@ -9,12 +9,27 @@ export const FORMAVISION_MOTION_SPEC = {
   enterPlateMs: 180,
   enterPlateEasing: 'ease-out',
   floorPaintMs: 0,
+  // Brief 60 F2 half-morph overlap (anatomical → particle grid).
+  halfMorphMs: 280,
   ready3dMs: 420,
   ready3dEasing: 'cubic-bezier(0.22, 1, 0.36, 1)',
   settleMs: 200,
+  settleEasing: 'ease-out',
   fallbackReverseMs: 240,
   sexToggleMs: 200,
 } as const;
+
+// Brief 60 F1→F3 window: enter + crossfade + settle = 800ms.
+// Half-morph (280ms) overlaps the 420ms crossfade and does not add.
+export function brief60F1ToF3Ms(): number {
+  return (
+    FORMAVISION_MOTION_SPEC.enterPlateMs +
+    FORMAVISION_MOTION_SPEC.ready3dMs +
+    FORMAVISION_MOTION_SPEC.settleMs
+  );
+}
+
+export const BRIEF_60_F1_TO_F3_TOLERANCE_MS = 40;
 
 export type FloorPlateView = 'front' | 'rear';
 

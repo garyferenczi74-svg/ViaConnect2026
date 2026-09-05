@@ -76,14 +76,16 @@ describe('mountBodyGeometry', () => {
     expect(() => mounted.dispose()).not.toThrow();
   });
 
-  it('Ready default look is a solid human mesh, not additive wireframe Picasso', () => {
+  it('Ready default look is holographic-f3, not additive Picasso or opaque solid', () => {
     const mounted = mountBodyGeometry(neutralParam());
-    expect(mounted.materialHandle.material.type).toBe('MeshStandardMaterial');
+    expect(mounted.materialHandle.material.type).toBe('ShaderMaterial');
     expect(mounted.materialHandle.material.blending).not.toBe(AdditiveBlending);
     expect(mounted.materialHandle.material.wireframe).toBe(false);
     expect(mounted.materialHandle.material.depthWrite).toBe(true);
-    expect(mounted.materialHandle.uniforms.uLineIntensity.value).toBe(0);
-    expect(mounted.materialHandle.uniforms.uFillOpacity.value).toBe(1);
+    expect(mounted.materialHandle.material.userData.formavisionLook).toBe('holographic-f3');
+    expect(mounted.materialHandle.uniforms.uLineIntensity.value).toBeGreaterThan(0);
+    expect(mounted.materialHandle.uniforms.uFillOpacity.value).toBeGreaterThanOrEqual(0.25);
+    expect(mounted.materialHandle.uniforms.uFillOpacity.value).toBeLessThanOrEqual(0.4);
     mounted.dispose();
   });
 });

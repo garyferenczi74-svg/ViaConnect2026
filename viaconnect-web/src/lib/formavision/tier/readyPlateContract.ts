@@ -207,15 +207,31 @@ export function formatPlateDiagnostics(
   return `floor=${presentation.floorRole} paint=${presentation.paintState}`;
 }
 
-// Ready success look. Wireframe / additive shards are Picasso — FAIL.
-export type ReadySuccessLook = 'solid-human' | 'meshy-glb' | 'wireframe-picasso';
+// Ready success look. Brief 60 / Gary F3 lock: designed holographic grid.
+// Additive shards are Picasso — FAIL. Opaque solid-human is no longer the
+// parametric Ready stamp (#188 anti-shards, superseded so F3 can land).
+export type ReadyParametricLook = 'holographic' | 'solid' | 'wireframe';
+
+export type ReadySuccessLook =
+  | 'holographic-f3'
+  | 'solid-human'
+  | 'meshy-glb'
+  | 'wireframe-picasso';
+
+export const READY_PARAMETRIC_SUCCESS_LOOK = 'holographic-f3' as const;
 
 export function resolveReadySuccessLook(input: {
   meshSource: 'parametric' | 'meshy-glb';
-  parametricLook: 'solid' | 'wireframe';
+  parametricLook: ReadyParametricLook;
 }): ReadySuccessLook {
   if (input.meshSource === 'meshy-glb') return 'meshy-glb';
-  return input.parametricLook === 'solid' ? 'solid-human' : 'wireframe-picasso';
+  if (input.parametricLook === 'holographic') return 'holographic-f3';
+  if (input.parametricLook === 'solid') return 'solid-human';
+  return 'wireframe-picasso';
+}
+
+export function isAllowedReadySuccessLook(look: ReadySuccessLook): boolean {
+  return look === 'holographic-f3' || look === 'meshy-glb';
 }
 
 // Painted or pending Ready must not treat a wireframe/Picasso shard field
@@ -226,6 +242,16 @@ export function isPicassoWireframeSuccessFail(input: {
   look: ReadySuccessLook;
 }): boolean {
   return input.hasReadyScanData && input.look === 'wireframe-picasso';
+}
+
+// #188 solid-human as the parametric Ready stamp kills Frame 3. Meshy GLB
+// remains an allowed mesh source; ghost overlays may still request solid.
+export function isSolidOnlyReadySuccessFail(input: {
+  hasReadyScanData: boolean;
+  look: ReadySuccessLook;
+  meshSource: 'parametric' | 'meshy-glb';
+}): boolean {
+  return input.hasReadyScanData && input.meshSource === 'parametric' && input.look === 'solid-human';
 }
 
 export function isHumanShapedBodyBounds(input: {

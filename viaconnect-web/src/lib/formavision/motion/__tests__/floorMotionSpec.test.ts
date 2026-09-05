@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  BRIEF_60_F1_TO_F3_TOLERANCE_MS,
   FORMAVISION_MOTION_SPEC,
+  brief60F1ToF3Ms,
   defaultFloorView,
   floorMotionTransition,
   resolveFloor3dCrossfade,
@@ -11,11 +13,17 @@ describe('MOTION-SPEC floor ↔ 3D timings', () => {
     expect(FORMAVISION_MOTION_SPEC.enterPlateMs).toBe(180);
     expect(FORMAVISION_MOTION_SPEC.enterPlateEasing).toBe('ease-out');
     expect(FORMAVISION_MOTION_SPEC.floorPaintMs).toBe(0);
+    expect(FORMAVISION_MOTION_SPEC.halfMorphMs).toBe(280);
     expect(FORMAVISION_MOTION_SPEC.ready3dMs).toBe(420);
     expect(FORMAVISION_MOTION_SPEC.ready3dEasing).toBe(
       'cubic-bezier(0.22, 1, 0.36, 1)',
     );
     expect(FORMAVISION_MOTION_SPEC.settleMs).toBe(200);
+    expect(FORMAVISION_MOTION_SPEC.settleEasing).toBe('ease-out');
+    expect(brief60F1ToF3Ms()).toBe(800);
+    expect(Math.abs(brief60F1ToF3Ms() - 800)).toBeLessThanOrEqual(
+      BRIEF_60_F1_TO_F3_TOLERANCE_MS,
+    );
     expect(FORMAVISION_MOTION_SPEC.fallbackReverseMs).toBe(240);
     expect(FORMAVISION_MOTION_SPEC.sexToggleMs).toBe(200);
     expect(defaultFloorView()).toBe('rear');

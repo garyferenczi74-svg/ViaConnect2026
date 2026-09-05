@@ -126,7 +126,8 @@ describe('BodyCompositionAvatar', () => {
     expect(canvas).not.toMatch(/position:\s*\[0,\s*FULL_BODY_FRAMING\.targetY,\s*FULL_BODY_FRAMING\.distance\]/);
 
     const framing = readSrc('src/lib/formavision/motion/regionFraming.ts');
-    expect(framing).toMatch(/distance:\s*3\.42/);
+    expect(framing).toMatch(/distance:\s*2\.72/);
+    expect(framing).toMatch(/AVATAR_VERTICAL_FOV_DEG = 38/);
     expect(framing).toMatch(/FULL_BODY_AZIMUTH_RAD/);
     expect(framing).not.toMatch(/FULL_BODY_FRAMING[^=]*=\s*\{\s*targetY:\s*0\.9,\s*distance:\s*3\.2/);
     expect(framing).not.toMatch(/distance:\s*4\.2/);

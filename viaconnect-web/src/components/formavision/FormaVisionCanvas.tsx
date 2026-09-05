@@ -90,6 +90,7 @@ import {
   shouldRenderAbWipe,
   wipeModeForRole,
 } from '@/lib/formavision/compare/abWipe';
+import { FORMAVISION_MOTION_SPEC } from '@/lib/formavision/motion/floorMotionSpec';
 import { selectPlateMeshSource } from '@/lib/formavision/meshy/selectPlateMeshSource';
 import type { MeshyVisualStatus } from '@/lib/formavision/meshy/types';
 import { MeshyGlbMesh } from './MeshyGlbMesh';
@@ -525,7 +526,7 @@ function BodyMesh(
       scheduler,
       // Never prime uMorph=0. That hide-then-sweep left phone WebKit on an
       // invisible body while paint stayed pending (#187). First frame is the
-      // lit solid human.
+      // lit holographic F3 grid (honest settle if already 3D).
       reducedMotion: true,
       onComplete: () => {
         invalidate();
@@ -767,7 +768,13 @@ function FrameBudgetMonitor({
   return null;
 }
 
-function MeshSourceStamp({ source }: { source: 'parametric' | 'meshy-glb' }) {
+function MeshSourceStamp({
+  source,
+  orbitUnlocked,
+}: {
+  source: 'parametric' | 'meshy-glb';
+  orbitUnlocked: boolean;
+}) {
   const gl = useThree((state) => state.gl);
   useEffect(() => {
     gl.domElement.setAttribute('data-mesh-source', source);
@@ -777,9 +784,10 @@ function MeshSourceStamp({ source }: { source: 'parametric' | 'meshy-glb' }) {
     );
     gl.domElement.setAttribute(
       'data-mesh-look',
-      source === 'meshy-glb' ? 'meshy-glb' : 'solid-human',
+      source === 'meshy-glb' ? 'meshy-glb' : 'holographic-f3',
     );
-  }, [gl, source]);
+    gl.domElement.setAttribute('data-orbit-unlocked', orbitUnlocked ? 'true' : 'false');
+  }, [gl, source, orbitUnlocked]);
   return null;
 }
 
@@ -832,6 +840,7 @@ function FirstPaintWatchdog({
 export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
   const [glbLoadFailed, setGlbLoadFailed] = useState(false);
   const [glbReady, setGlbReady] = useState(false);
+  const [orbitUnlocked, setOrbitUnlocked] = useState(false);
   const meshSource = selectPlateMeshSource({
     meshyGlbUrl: glbReady ? (props.meshyGlbUrl ?? null) : null,
     meshyStatus: props.meshyStatus ?? 'idle',
@@ -850,6 +859,14 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
     setGlbLoadFailed(false);
   }, [props.meshyGlbUrl]);
 
+  useEffect(() => {
+    const timer = window.setTimeout(
+      () => setOrbitUnlocked(true),
+      FORMAVISION_MOTION_SPEC.settleMs,
+    );
+    return () => window.clearTimeout(timer);
+  }, []);
+
   const containerRef = useRef<HTMLDivElement>(null);
   // Holds the running materialize intro so a pointer interaction can skip it to its
   // final lit state. BodyMesh owns the lifecycle; this is just the skip handle.
@@ -865,6 +882,7 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
   // intro has finished (skip is inert after completion).
   function skipIntro(): void {
     introRef.current?.skip();
+    setOrbitUnlocked(true);
   }
 
   return (
@@ -917,9 +935,13 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
           state.gl.domElement.setAttribute('data-mesh-source', meshSource);
           state.gl.domElement.setAttribute(
             'data-mesh-look',
-            meshSource === 'meshy-glb' ? 'meshy-glb' : 'solid-human',
+            meshSource === 'meshy-glb' ? 'meshy-glb' : 'holographic-f3',
           );
           state.gl.domElement.setAttribute('data-surface', 'formavision3d');
+          state.gl.domElement.setAttribute(
+            'data-orbit-unlocked',
+            orbitUnlocked ? 'true' : 'false',
+          );
           applyAvatarMorphStamp(
             state.gl.domElement,
             buildAvatarMorphStamp({
@@ -973,7 +995,7 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
             </Suspense>
           </MeshyGlbBoundary>
         ) : null}
-        <MeshSourceStamp source={meshSource} />
+        <MeshSourceStamp source={meshSource} orbitUnlocked={orbitUnlocked} />
 
         {/* Projected future-self ghost: a translucent overlay of the projected body,
             shown only when showGhost is true AND ghostVector is non-null. It reuses the
@@ -1067,8 +1089,9 @@ export default function FormaVisionCanvas(props: FormaVisionCanvasProps) {
           ref={controlsRef}
           // Turntable azimuth only: no panning, a clamped polar range so the
           // camera cannot tumble under the floor or over the crown, and a gentle
-          // zoom clamp.
+          // zoom clamp. Brief 60: locked until F3 settle (200ms), then unlock.
           enablePan={false}
+          enableRotate={orbitUnlocked}
           // Inertial orbit: damping lets a drag glide to rest. Under frameloop
           // "demand" onChange keeps invalidating while it settles, then stops.
           enableDamping

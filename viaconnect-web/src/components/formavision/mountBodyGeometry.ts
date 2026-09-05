@@ -1,8 +1,9 @@
 // Geometry-to-material mount wiring for FormaVision (Prompt 210b, task P1-T4).
 //
 // This is the seam where the parametric body geometry (buildBodyGeometry) and
-// the Ready success material (makeBodySolidMaterial) meet. Ghost overlays may
-// still request the additive wireframe look. Kept pure and free of r3f so the
+// the Ready success material (makeBodyHolographicMaterial — Brief 60 F3) meet.
+// Ghost overlays may still request solid or additive wireframe. Kept pure and
+// free of r3f so the
 // MATERIAL MOUNT CONTRACT can be unit tested without a GPU.
 //
 // MATERIAL MOUNT CONTRACT (from the P1-T3 review):
@@ -31,13 +32,14 @@ import {
   type BodyWireframeOptions,
 } from '@/lib/formavision/materials/bodyWireframeMaterial';
 import { makeBodySolidMaterial } from '@/lib/formavision/materials/bodySolidMaterial';
+import { makeBodyHolographicMaterial } from '@/lib/formavision/materials/bodyHolographicMaterial';
 
-export type PlateBodyLook = 'solid' | 'wireframe';
+export type PlateBodyLook = 'holographic' | 'solid' | 'wireframe';
 
 export interface MountOptions {
   build?: BuildOptions;
   material?: BodyWireframeOptions;
-  // Ready success is solid. Wireframe is ghost-only — never the Ready plate.
+  // Ready success is holographic-f3. Solid/wireframe are ghost or compare only.
   look?: PlateBodyLook;
 }
 
@@ -89,11 +91,13 @@ export function mountBodyGeometry(
   const boundsMin = box.min.clone();
   const boundsMax = box.max.clone();
 
-  const look: PlateBodyLook = opts.look ?? 'solid';
+  const look: PlateBodyLook = opts.look ?? 'holographic';
   const materialHandle =
     look === 'wireframe'
       ? makeBodyWireframeMaterial(opts.material)
-      : makeBodySolidMaterial();
+      : look === 'solid'
+        ? makeBodySolidMaterial()
+        : makeBodyHolographicMaterial();
   materialHandle.uniforms.uBoundsMin.value = boundsMin.clone();
   materialHandle.uniforms.uBoundsMax.value = boundsMax.clone();
 

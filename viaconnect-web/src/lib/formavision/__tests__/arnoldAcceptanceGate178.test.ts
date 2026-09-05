@@ -23,6 +23,7 @@ import {
 } from '@/lib/formavision/materials/bodyWireframeMaterial';
 import { FORMA_VISION_HEX } from '@/lib/formavision/materials/formaVisionTokens';
 import { mountBodyGeometry } from '@/components/formavision/mountBodyGeometry';
+import { isHolographicF3DrawMode } from '@/lib/formavision/materials/bodyHolographicMaterial';
 import { isSolidHumanDrawMode } from '@/lib/formavision/materials/bodySolidMaterial';
 import { scanToParamVector } from '@/lib/formavision/geometry/scanToParamVector';
 import { buildAvatarMorphStamp } from '@/lib/formavision/morph/avatarMorphStamp';
@@ -111,14 +112,15 @@ describe('Brief 58 Phase 1: plasma teal wire, never ZOZO purple', () => {
     }
   });
 
-  it('Ready product mount is a solid human mesh, not the additive shard field', () => {
+  it('Ready product mount is holographic-f3, not the additive shard field or opaque solid', () => {
     const vector = scanToParamVector({
       snapshot: null,
       circumferences: null,
       sex: 'male',
     });
     const mounted = mountBodyGeometry(vector);
-    expect(isSolidHumanDrawMode(mounted.materialHandle.material)).toBe(true);
+    expect(isHolographicF3DrawMode(mounted.materialHandle.material)).toBe(true);
+    expect(isSolidHumanDrawMode(mounted.materialHandle.material)).toBe(false);
     expect(mounted.materialHandle.material.blending).not.toBe(THREE.AdditiveBlending);
     mounted.dispose();
   });

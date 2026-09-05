@@ -22,7 +22,15 @@ export interface CameraFraming {
 
 // Vertical FOV of the FormaVision perspective camera. Keep this in lockstep with
 // `camera={{ fov }}` in FormaVisionCanvas — framing math uses this value.
-export const AVATAR_VERTICAL_FOV_DEG = 30;
+// Brief 60 / Gary F3 lock: rear hero at 35–40°.
+export const AVATAR_VERTICAL_FOV_DEG = 38;
+
+export const BRIEF_60_FOV_MIN_DEG = 35;
+export const BRIEF_60_FOV_MAX_DEG = 40;
+
+export function isBrief60AvatarFov(fovDeg: number): boolean {
+  return fovDeg >= BRIEF_60_FOV_MIN_DEG && fovDeg <= BRIEF_60_FOV_MAX_DEG;
+}
 
 // Orbit distance clamp shared with FormaVisionCanvas OrbitControls.
 export const ORBIT_DISTANCE_MIN = 2.2;
@@ -52,10 +60,10 @@ export function fullBodyCameraPosition(
   ];
 }
 
-// Brief 58 Phase 1 hero: mid-torso target, pulled in so a 1.75m male mesh
-// crops at the ankles (ZOZO phone-mock crop). Phase 0 4.2m showed empty floor;
-// 3.2m @ 30° is still a bust. Stay inside the orbit clamp.
-export const FULL_BODY_FRAMING: CameraFraming = { targetY: 1.0, distance: 3.42 };
+// Brief 60 hero: mid-torso target, pulled in so a 1.75m male mesh crops at
+// the ankles at 38° FOV (same visible height as the old 3.42m @ 30° crop).
+// Phase 0 4.2m showed empty floor. Stay inside the orbit clamp.
+export const FULL_BODY_FRAMING: CameraFraming = { targetY: 1.0, distance: 2.72 };
 
 // Per-region framing. targetY rises up the body from foot to crown; distance pulls
 // in closer than the full-body default so the region reads large. Aliases map the

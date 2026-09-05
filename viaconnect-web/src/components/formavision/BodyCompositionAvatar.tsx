@@ -61,6 +61,7 @@ import {
 import { FORMA_VISION_HEX } from '@/lib/formavision/materials/formaVisionTokens';
 import {
   FORMAVISION_MOTION_SPEC,
+  brief60F1ToF3Ms,
   floorMotionTransition,
   resolveFloor3dCrossfade,
 } from '@/lib/formavision/motion/floorMotionSpec';
@@ -496,7 +497,7 @@ function BodyCompositionAvatarInner({
       meshyStatus,
       glbLoadFailed: false,
     }),
-    parametricLook: 'solid',
+    parametricLook: 'holographic',
   });
   const diagnostics = {
     'data-surface': surface,
@@ -511,6 +512,8 @@ function BodyCompositionAvatarInner({
     'data-paint-state': presented.paintState,
     'data-notice-presented': presented.noticePresented ? 'true' : 'false',
     'data-mesh-look': meshLook,
+    'data-half-morph-ms': String(FORMAVISION_MOTION_SPEC.halfMorphMs),
+    'data-f1-to-f3-ms': String(brief60F1ToF3Ms()),
   } as const;
   const plateDiagnostics = formatPlateDiagnostics(presented);
 
