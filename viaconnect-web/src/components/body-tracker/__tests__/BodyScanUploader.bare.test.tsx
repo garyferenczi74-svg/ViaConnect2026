@@ -26,7 +26,7 @@ describe('BodyScanUploader slot picker markup', () => {
     const fileInputs = html.match(/<input[^>]*type="file"[^>]*>/g) ?? [];
     const labels = html.match(/<label\b/g) ?? [];
     expect(fileInputs).toHaveLength(FORMAVISION_SLOT_ORDER.length);
-    expect(labels).toHaveLength(FORMAVISION_SLOT_ORDER.length);
+    expect(labels).toHaveLength(FORMAVISION_SLOT_ORDER.length + 1);
     for (const pos of FORMAVISION_SLOT_ORDER) {
       expect(html).toContain(`data-testid="scan-slot-frame-${pos.key}"`);
       expect(html).toContain(`data-testid="scan-slot-upload-${pos.key}"`);
@@ -60,6 +60,8 @@ describe('BodyScanUploader slot picker markup', () => {
     );
     expect(html).not.toContain('immediately discarded');
     expect(html).not.toContain('Retake for accuracy');
+    expect(html).toContain('retain-frbl-consent');
+    expect(html).toContain('Keep Front, Right, Back, and Left');
   });
 });
 

@@ -27,6 +27,11 @@ import {
   type MeasurementUnit,
 } from '@/lib/body-tracker/circumference';
 import { getDataSource, type DataSourceId } from '@/lib/body-tracker/manual-input';
+import {
+  MUSCLE_SCALE_BLOCKED_COPY,
+  canWriteSegmentalMuscleLbs,
+  formatCompositionProvenanceChip,
+} from '@/lib/body-tracker/composition/segmentalMuscleSources';
 
 interface BodyCompositionFormProps {
   initialSection?: CompositionSection;
@@ -113,6 +118,8 @@ export function BodyCompositionForm({
 
   const fatHasValues = hasAnyValue(fat as unknown as Record<string, number | null>);
   const muscleHasValues = hasAnyValue(muscle as unknown as Record<string, number | null>);
+  const muscleWritable = canWriteSegmentalMuscleLbs(sourceId);
+  const provenanceChip = formatCompositionProvenanceChip(sourceId);
   const circumferenceHasValues = useMemo<boolean>(() => {
     for (const k of MEASUREMENT_KEYS) {
       if (circumference.values[k] !== null) return true;
@@ -123,7 +130,7 @@ export function BodyCompositionForm({
   const canSave = Boolean(
     userId &&
     sourceId &&
-    (fatHasValues || muscleHasValues || circumferenceHasValues),
+    (fatHasValues || (muscleHasValues && muscleWritable) || circumferenceHasValues),
   );
 
   function patchFat(p: Partial<FatState>) { setFat((s) => ({ ...s, ...p })); }
@@ -155,7 +162,7 @@ export function BodyCompositionForm({
         });
       }
 
-      if (muscleHasValues) {
+      if (muscleHasValues && canWriteSegmentalMuscleLbs(sourceId)) {
         details.push({
           table: 'body_tracker_segmental_muscle',
           row: {
@@ -198,6 +205,14 @@ export function BodyCompositionForm({
     <div className="space-y-5">
       <DatePickerWithDefaults value={date} onChange={setDate} />
       <DataSourceSelector value={sourceId} onChange={setSourceId} />
+      {provenanceChip ? (
+        <p
+          data-testid="body-comp-form-provenance"
+          className="text-xs text-white/55"
+        >
+          Source: <span className="font-medium text-white/75">{provenanceChip}</span>
+        </p>
+      ) : null}
 
       {sourceId && (
         <>
@@ -240,7 +255,12 @@ export function BodyCompositionForm({
               <h3 className="text-xs font-semibold uppercase tracking-wider text-white/60">
                 Segmental muscle mass
               </h3>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {!muscleWritable ? (
+                <p data-testid="muscle-scale-blocked" className="text-xs text-white/60">
+                  {MUSCLE_SCALE_BLOCKED_COPY}
+                </p>
+              ) : null}
+              <div className={`grid grid-cols-2 gap-3 sm:grid-cols-3 ${muscleWritable ? '' : 'pointer-events-none opacity-40'}`}>
                 <NumberField label="Right arm" value={muscle.rightArm} onChange={(v) => patchMuscle({ rightArm: v })} unit="lbs" sanityField="segmental_muscle_lbs" compact />
                 <NumberField label="Left arm"  value={muscle.leftArm}  onChange={(v) => patchMuscle({ leftArm:  v })} unit="lbs" sanityField="segmental_muscle_lbs" compact />
                 <NumberField label="Trunk"     value={muscle.trunk}    onChange={(v) => patchMuscle({ trunk:    v })} unit="lbs" sanityField="segmental_muscle_lbs" compact />

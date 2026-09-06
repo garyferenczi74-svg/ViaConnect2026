@@ -50,6 +50,7 @@ type EntryRow = {
   scan_id?: string | null;
   notes?: string | null;
   device_name?: string | null;
+  manual_source_id?: string | null;
 };
 
 type FatRow = {
@@ -96,7 +97,7 @@ interface MinimalClient {
   };
 }
 
-const ENTRY_COLS = 'id,source,created_at,scan_id,notes,device_name';
+const ENTRY_COLS = 'id,source,created_at,scan_id,notes,device_name,manual_source_id';
 const FAT_COLS =
   'right_arm_pct,left_arm_pct,trunk_pct,right_leg_pct,left_leg_pct,total_body_fat_pct,visceral_fat_rating,body_water_pct,entry_id';
 const MUSCLE_COLS =

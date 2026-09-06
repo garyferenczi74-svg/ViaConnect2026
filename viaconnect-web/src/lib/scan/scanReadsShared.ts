@@ -25,6 +25,10 @@ import { safeLog } from '@/lib/utils/safe-log';
 import { PROTOCOL_ID, POSE_ORDER, type PoseId } from '@/lib/scan/poses';
 import { FORMAVISION_PHOTO_PROTOCOL } from '@/lib/scan/scanProtocols';
 import {
+  discardedFrblPoses,
+  retainedFrblPoses,
+} from '@/lib/formavision/retainFrbl';
+import {
   finiteEstimateNumber,
   hasAnyPresentPose,
   type ScanCaptureStatus,
@@ -114,17 +118,21 @@ interface PhotoScanRow {
   estimated_body_fat_max?: number | null;
   estimated_whr_min?: number | null;
   estimated_whr_max?: number | null;
+  photos_retained?: boolean | null;
+  photo_session_id?: string | null;
+  retained_views?: string[] | null;
 }
 
 function finiteOrNull(value: unknown): number | null {
   return finiteEstimateNumber(value);
 }
 
-function photoScanToSummary(row: PhotoScanRow): ScanSummary {
-  // SSOT: do not map pose-present for photo scans. Analyze discards images;
-  // history hides the FRBL grid instead of ImageOff / signed-URL.
-  const poses = {} as Record<PoseId, boolean>;
-  for (const pose of POSE_ORDER) poses[pose] = false;
+export function photoScanToSummary(row: PhotoScanRow): ScanSummary {
+  const retained =
+    row.photos_retained === true &&
+    typeof row.photo_session_id === 'string' &&
+    row.photo_session_id.length > 0;
+  const poses = retained ? retainedFrblPoses(row.retained_views) : discardedFrblPoses();
   return {
     id: row.id,
     date: row.scan_date,
@@ -135,6 +143,8 @@ function photoScanToSummary(row: PhotoScanRow): ScanSummary {
     estimatedBodyFatMax: finiteOrNull(row.estimated_body_fat_max),
     estimatedWhrMin: finiteOrNull(row.estimated_whr_min),
     estimatedWhrMax: finiteOrNull(row.estimated_whr_max),
+    photosRetained: retained,
+    frblSessionId: retained ? row.photo_session_id : null,
   };
 }
 
@@ -179,7 +189,7 @@ async function queryPhotoScanRows(userId: string, limit: number): Promise<{
       supabase
         .from('body_tracker_photo_scans')
         .select(
-          'id, scan_date, created_at, estimated_body_fat_min, estimated_body_fat_max, estimated_whr_min, estimated_whr_max',
+          'id, scan_date, created_at, estimated_body_fat_min, estimated_body_fat_max, estimated_whr_min, estimated_whr_max, photos_retained, photo_session_id, retained_views',
         )
         .eq('user_id', userId)
         .order('created_at', { ascending: false })

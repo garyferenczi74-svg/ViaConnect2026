@@ -7,8 +7,10 @@ import {
   FORMAVISION_PHOTO_PROTOCOL,
   GUIDED_4POSE_PROTOCOL,
 } from '@/lib/scan/scanProtocols';
+import { READY_UNAVAILABLE_VISUAL_FAILED } from '@/lib/formavision/retainFrbl';
 
 export { FORMAVISION_PHOTO_PROTOCOL, GUIDED_4POSE_PROTOCOL };
+export { READY_UNAVAILABLE_VISUAL_FAILED, HYBRID_COSETTLE_COPY } from '@/lib/formavision/retainFrbl';
 
 export const PHOTO_ESTIMATE_LABEL = 'Photo estimate';
 export const GUIDED_4POSE_LABEL = 'Guided 4-pose';
@@ -63,7 +65,7 @@ export const PHOTO_RETAKE_FOR_BEST_RESULTS = 'Retake for best results.';
 export const PHOTO_FLAGGED_PHOTOS_FOR_BEST_RESULTS =
   'Measurements from low-quality views will be marked low-confidence. Retake the flagged photos for best results.';
 
-export type ReadyUnavailableReason = 'photo-discarded' | 'generic';
+export type ReadyUnavailableReason = 'photo-discarded' | 'generic' | 'visual-failed';
 
 export function consumerProtocolLabel(protocol: string): string {
   if (protocol === FORMAVISION_PHOTO_PROTOCOL) return PHOTO_ESTIMATE_LABEL;
@@ -217,19 +219,25 @@ export function isPhotoOnlyMuscleEmpty(input: (PhotoSourcedBodyFatInput & {
 }
 
 export function historyHasDiscardedPhotoScan(
-  scans: ReadonlyArray<{ protocol: string }> | null,
+  scans: ReadonlyArray<{ protocol: string; photosRetained?: boolean | null }> | null,
 ): boolean {
   if (!scans) return false;
-  return scans.some((scan) => scan.protocol === FORMAVISION_PHOTO_PROTOCOL);
+  return scans.some(
+    (scan) => scan.protocol === FORMAVISION_PHOTO_PROTOCOL && scan.photosRetained !== true,
+  );
 }
 
 export function selectReadyUnavailableReason(input: {
   historyResolved: boolean;
   readyFrblSessionId: string | null | undefined;
   hasDiscardedPhotoScan: boolean;
+  visualFailed?: boolean;
 }): ReadyUnavailableReason {
   const hasSession =
     typeof input.readyFrblSessionId === 'string' && input.readyFrblSessionId.length > 0;
+  if (input.historyResolved && input.visualFailed === true && hasSession) {
+    return 'visual-failed';
+  }
   if (input.historyResolved && !hasSession && input.hasDiscardedPhotoScan) {
     return 'photo-discarded';
   }
@@ -237,7 +245,7 @@ export function selectReadyUnavailableReason(input: {
 }
 
 export function readyUnavailableCopy(reason: ReadyUnavailableReason): string {
-  return reason === 'photo-discarded'
-    ? READY_UNAVAILABLE_PHOTO_DISCARDED
-    : READY_UNAVAILABLE_GENERIC;
+  if (reason === 'photo-discarded') return READY_UNAVAILABLE_PHOTO_DISCARDED;
+  if (reason === 'visual-failed') return READY_UNAVAILABLE_VISUAL_FAILED;
+  return READY_UNAVAILABLE_GENERIC;
 }

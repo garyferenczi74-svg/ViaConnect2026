@@ -65,6 +65,21 @@ describe('pickReadyFrblSessionId', () => {
     ).toBeNull();
   });
 
+  it('returns the retained FRBL session id when photo poses were kept', () => {
+    expect(
+      pickReadyFrblSessionId([
+        {
+          id: 'photo-retain',
+          protocol: 'formavision_photo',
+          captureStatus: 'ready',
+          poses: { front: true, right: true, back: true, left: true },
+          photosRetained: true,
+          frblSessionId: 'sess-retain-1',
+        },
+      ]),
+    ).toBe('sess-retain-1');
+  });
+
   it('kicks Meshy for an existing session that still has FRBL photos', () => {
     expect(
       pickReadyFrblSessionId([

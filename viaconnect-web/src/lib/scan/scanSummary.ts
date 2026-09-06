@@ -18,6 +18,10 @@ export interface ScanSummary {
   estimatedBodyFatMax?: number | null;
   estimatedWhrMin?: number | null;
   estimatedWhrMax?: number | null;
+  /** True only after explicit FRBL retain opt-in. Default discard. */
+  photosRetained?: boolean;
+  /** body_photo_sessions.id that holds retained FRBL paths (Tripo / thumbs). */
+  frblSessionId?: string | null;
 }
 
 export function isReadyFormaVisionScan(scan: ScanSummary): boolean {
@@ -53,10 +57,16 @@ export function hasAnyPresentPose(poses: Record<PoseId, boolean>): boolean {
 }
 
 /**
- * SSOT: formavision_photo never shows the FRBL grid (photos discarded after
- * analyze). No ImageOff, no signed-URL chase, no pose-present mapping.
+ * SSOT: formavision_photo never shows the FRBL grid when photos were discarded.
+ * Retained photo scans (opt-in) show the grid when poses.any is true.
  * Guided 4pose_v1 always uses the grid.
  */
-export function scanHistoryShowsFrblGrid(scan: Pick<ScanSummary, 'protocol'>): boolean {
-  return scan.protocol !== FORMAVISION_PHOTO_PROTOCOL;
+export function scanHistoryShowsFrblGrid(
+  scan: Pick<ScanSummary, 'protocol'> &
+    Partial<Pick<ScanSummary, 'photosRetained' | 'poses'>>,
+): boolean {
+  if (scan.protocol !== FORMAVISION_PHOTO_PROTOCOL) return true;
+  if (scan.photosRetained !== true) return false;
+  if (!scan.poses) return false;
+  return hasAnyPresentPose(scan.poses);
 }

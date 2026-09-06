@@ -32,6 +32,8 @@ export interface CompositionSnapshot {
   estimatedWhrMin?: number | null;
   estimatedWhrMax?: number | null;
   isEstimated?: boolean;
+  /** Manual / DEXA / InBody source id when the entry was logged via BodyCompositionForm. */
+  manualSourceId?: string | null;
 }
 
 export interface ScanDerived {
