@@ -1,7 +1,9 @@
 import { orderFrblPhotos, type PosePathRecord } from '@/lib/formavision/meshy/frblOrder';
 import {
+  TRIPO_MULTIVIEW_MODEL,
   TRIPO_VIEW_ORDER,
   isTripoViewId,
+  type TripoCreateRequestBody,
   type TripoViewId,
   type TripoViewInput,
 } from './types';
@@ -27,11 +29,9 @@ export function orderTripoViews(
   return ordered;
 }
 
-export function buildTripoMultiviewBody(views: readonly TripoViewInput[]): {
-  inputs: Array<Partial<Record<TripoViewId, string>>>;
-  texture: true;
-} {
+export function buildTripoMultiviewBody(views: readonly TripoViewInput[]): TripoCreateRequestBody {
   return {
+    model: TRIPO_MULTIVIEW_MODEL,
     inputs: views.map((item) => ({ [item.view]: item.url })),
     texture: true,
   };

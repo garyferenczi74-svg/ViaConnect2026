@@ -8,6 +8,10 @@ export const TRIPO_CREATE_URL = 'https://openapi.tripo3d.ai/v3/generation/multiv
 export const TRIPO_TASK_URL_PREFIX = 'https://openapi.tripo3d.ai/v3/tasks';
 export const TRIPO_GLB_OBJECT_NAME = 'tripo/visual.glb';
 
+/** Latest required id from Tripo v3 multiview-to-model docs (2026-09). */
+export const TRIPO_MULTIVIEW_MODEL = 'v3.1-20260211' as const;
+export type TripoMultiviewModelId = typeof TRIPO_MULTIVIEW_MODEL;
+
 /** Tripo docs: named front / left / back / right. Server canonicalizes order. */
 export const TRIPO_VIEW_ORDER = ['front', 'left', 'back', 'right'] as const;
 export type TripoViewId = (typeof TRIPO_VIEW_ORDER)[number];
@@ -22,6 +26,7 @@ export interface TripoViewInput {
 }
 
 export interface TripoCreateRequestBody {
+  model: TripoMultiviewModelId;
   inputs: Array<Partial<Record<TripoViewId, string>>>;
   texture: true;
 }

@@ -24,7 +24,10 @@ export interface TripoHttpResult<T> {
 }
 
 function redactTripoErrorText(text: string): string {
-  return text.replace(/Bearer\s+[A-Za-z0-9._-]+/gi, 'Bearer [redacted]').slice(0, 400);
+  return text
+    .replace(/Bearer\s+[A-Za-z0-9._-]+/gi, 'Bearer [redacted]')
+    .replace(/Authorization\s*[:=]\s*[^\s,"']+/gi, 'Authorization: [redacted]')
+    .slice(0, 400);
 }
 
 function mapHttpError(status: number): TripoErrorCode {
@@ -61,7 +64,11 @@ export async function createTripoTask(
     const text = await response.text();
     if (!response.ok) {
       const errorCode = mapHttpError(response.status);
-      safeLog.warn(SCOPE, 'create rejected', { status: response.status, errorCode });
+      safeLog.warn(SCOPE, 'create rejected', {
+        status: response.status,
+        errorCode,
+        body: redactTripoErrorText(text),
+      });
       return { ok: false, status: response.status, data: null, errorCode };
     }
     let parsed: TripoApiEnvelope = {};
@@ -116,7 +123,11 @@ export async function getTripoTask(
     const text = await response.text();
     if (!response.ok) {
       const errorCode = mapHttpError(response.status);
-      safeLog.warn(SCOPE, 'poll rejected', { status: response.status, errorCode });
+      safeLog.warn(SCOPE, 'poll rejected', {
+        status: response.status,
+        errorCode,
+        body: redactTripoErrorText(text),
+      });
       return { ok: false, status: response.status, data: null, errorCode };
     }
     try {
