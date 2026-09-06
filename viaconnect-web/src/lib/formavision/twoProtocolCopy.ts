@@ -19,8 +19,21 @@ export const UNKNOWN_PROTOCOL_LABEL = 'Body scan';
 export const PHOTO_WHAT_YOU_GET =
   'A body-fat range estimate and optional girths. Muscle impression is a 1–5 overlay only.';
 
+/** Limits that stay true on both discard and retain. */
+export const PHOTO_WHAT_YOU_DO_NOT_GET_LIMITS =
+  'This path does not fill regional fat, visceral fat, body water, lean mass, muscle lbs, or Navy body fat.';
+
+/** Default / retain-off Analyze explainer. Discard honesty. */
 export const PHOTO_WHAT_YOU_DO_NOT_GET =
-  'Photos are discarded after analysis. This path does not fill regional fat, visceral fat, body water, lean mass, muscle lbs, or Navy body fat.';
+  `Photos are discarded after analysis. ${PHOTO_WHAT_YOU_DO_NOT_GET_LIMITS}`;
+
+/** Retain opt-in Analyze explainer. Must not claim discarded. */
+export const PHOTO_WHAT_YOU_DO_NOT_GET_RETAINED =
+  `Photos stay stored for 3D and re-measure. ${PHOTO_WHAT_YOU_DO_NOT_GET_LIMITS}`;
+
+export function photoWhatYouDoNotGet(retainOptIn: boolean): string {
+  return retainOptIn ? PHOTO_WHAT_YOU_DO_NOT_GET_RETAINED : PHOTO_WHAT_YOU_DO_NOT_GET;
+}
 
 export const READY_UNAVAILABLE_PHOTO_DISCARDED =
   '3D Ready needs a Guided 4-pose scan. Photo estimate photos are discarded after analysis and cannot build a 3D body.';
@@ -51,11 +64,24 @@ export const MUSCLE_ANALYSIS_PHOTO_ONLY_SUBTITLE =
 
 export const SCAN_HISTORY_PHOTOS_DISCARDED = 'Photos are not stored after analysis.';
 
+/** Retained FRBL history caption — not the discard “not stored” line. */
+export const SCAN_HISTORY_PHOTOS_RETAINED = 'Photos kept for 3D and re-measure.';
+
+export function scanHistoryPhotoCaption(scan: {
+  protocol: string;
+  photosRetained?: boolean | null;
+}): string | null {
+  if (scan.protocol !== FORMAVISION_PHOTO_PROTOCOL) return null;
+  return scan.photosRetained === true
+    ? SCAN_HISTORY_PHOTOS_RETAINED
+    : SCAN_HISTORY_PHOTOS_DISCARDED;
+}
+
 /** Lex Theme 5 — BodyScanResults footer. No “clinical”. */
 export const BODY_SCAN_RESULTS_RELIABLE_READING =
   'These are AI estimates from photos. For a more reliable reading, use a smart scale, a DEXA scan, or enter measurements manually.';
 
-/** Lex Theme 5 — uploader privacy strip. History keeps SCAN_HISTORY_PHOTOS_DISCARDED. */
+/** Lex Theme 5 — uploader privacy strip. History uses discard vs retain captions. */
 export const PHOTO_UPLOADER_PRIVACY_STRIP =
   'Photos are used only to calculate measurements. They are not kept as your body photos or used as the Ready 3D body.';
 

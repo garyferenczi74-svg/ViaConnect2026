@@ -165,6 +165,10 @@ describe('retain FRBL — discard vs retain', () => {
       }),
     );
     expect(retainedHtml).not.toContain('scan-history-photos-discarded-photo-1');
+    expect(retainedHtml).toContain('scan-history-photos-retained-photo-1');
+    expect(retainedHtml).toContain('Photos kept for 3D and re-measure.');
+    expect(discardedHtml).toContain('Photos are not stored after analysis.');
+    expect(discardedHtml).not.toContain('Photos kept for 3D and re-measure.');
   });
 });
 
@@ -180,7 +184,8 @@ describe('Ready notice selection — retain fail is honest, never wireframe', ()
     ).toBe('visual-failed');
     expect(readyUnavailableCopy('visual-failed')).toBe(READY_UNAVAILABLE_VISUAL_FAILED);
     expect(READY_UNAVAILABLE_VISUAL_FAILED).not.toMatch(/wireframe|picasso|cyan/i);
-    expect(READY_UNAVAILABLE_VISUAL_FAILED).toMatch(/not a clinical measure/i);
+    expect(READY_UNAVAILABLE_VISUAL_FAILED).not.toMatch(/clinical/i);
+    expect(READY_UNAVAILABLE_VISUAL_FAILED).toMatch(/Photo estimate is still saved/i);
   });
 
   it('keeps photo-discarded when history resolved and no FRBL session', () => {

@@ -19,13 +19,12 @@ export const DISCARD_FRBL_SHIELD =
 export const RETAIN_FRBL_SHIELD =
   'You opted in to keep Front, Right, Back, and Left for 3D and re-measure. Photos stay stored on your account.';
 
-export const SCAN_HISTORY_PHOTOS_RETAINED = 'Photos kept for 3D and re-measure.';
-
 export const HYBRID_COSETTLE_COPY =
   'The 3D look-alike is visual only. Muscle mass (lbs) comes from Manual, DEXA, or InBody — never from photos.';
 
+/** Lex Theme 5 — no “clinical”. Soft-reading language. */
 export const READY_UNAVAILABLE_VISUAL_FAILED =
-  '3D look-alike could not be built from your kept photos. Photo estimate is still saved. This is not a clinical measure.';
+  '3D look-alike could not be built from your kept photos. Photo estimate is still saved.';
 
 export function discardedFrblPoses(): Record<PoseId, boolean> {
   return { front: false, right: false, back: false, left: false };

@@ -58,6 +58,8 @@ describe('BodyScanUploader slot picker markup', () => {
     expect(html).toContain(
       'Photos are used only to calculate measurements. They are not kept as your body photos or used as the Ready 3D body.',
     );
+    expect(html).toContain('Photos are discarded after analysis.');
+    expect(html).not.toContain('Photos stay stored for 3D and re-measure.');
     expect(html).not.toContain('immediately discarded');
     expect(html).not.toContain('Retake for accuracy');
     expect(html).toContain('retain-frbl-consent');
@@ -73,5 +75,6 @@ describe('BodyScanUploader preview bake contract', () => {
     expect(src).toMatch(/return \{ \.\.\.s, \[key\]: \{ file, base64: null, previewUrl: null \} \}/);
     expect(src).toMatch(/previewUrl: shownUrl/);
     expect(src).toMatch(/normalizeScanPhotoUpright\(stored, 'upload'\)/);
+    expect(src).toMatch(/photoWhatYouDoNotGet\(retainFrbl\)/);
   });
 });

@@ -11,7 +11,9 @@ import {
 } from '@/lib/scan/scanSummary';
 import {
   SCAN_HISTORY_PHOTOS_DISCARDED,
+  SCAN_HISTORY_PHOTOS_RETAINED,
   consumerProtocolLabel,
+  scanHistoryPhotoCaption,
 } from '@/lib/formavision/twoProtocolCopy';
 
 /**
@@ -28,9 +30,10 @@ import {
  * (condition 5, 17). This component filters tombstones again so a
  * tombstoned row can never render as a normal, deletable scan.
  *
- * SSOT: formavision_photo hides the FRBL grid (photos discarded after
- * analyze). No ImageOff, no signed-URL chase, no pose-present mapping.
- * 4pose_v1 guided thumbs stay on the grid when poses are present.
+ * SSOT: formavision_photo hides the FRBL grid when photos were discarded.
+ * Retained opt-in rows show the grid plus SCAN_HISTORY_PHOTOS_RETAINED.
+ * Discard rows keep SCAN_HISTORY_PHOTOS_DISCARDED. No ImageOff chase on
+ * the discard path. 4pose_v1 guided thumbs stay on the grid.
  *
  * Token discipline: var(--card) / var(--teal), no raw hex. Instrument Sans
  * via the .font-instrument scoped class. Lucide icons, strokeWidth 1.5.
@@ -159,6 +162,10 @@ export function ScanHistory({ scans, onDeleted }: ScanHistoryProps) {
         const state = deleteState[scan.id] ?? 'idle';
         const message = deleteMessage[scan.id] ?? '';
         const bfRange = formatScanEstimateBfRange(scan);
+        const photoCaption = scanHistoryPhotoCaption(scan);
+        const showFrblGrid = scanHistoryShowsFrblGrid(scan);
+        const retainedCaption = photoCaption === SCAN_HISTORY_PHOTOS_RETAINED;
+        const discardedCaption = photoCaption === SCAN_HISTORY_PHOTOS_DISCARDED;
         return (
           <li
             key={scan.id}
@@ -204,7 +211,21 @@ export function ScanHistory({ scans, onDeleted }: ScanHistoryProps) {
               )}
             </div>
 
-            {scanHistoryShowsFrblGrid(scan) ? (
+            {photoCaption ? (
+              <p
+                className="text-xs text-white/45"
+                data-testid={
+                  retainedCaption
+                    ? `scan-history-photos-retained-${scan.id}`
+                    : discardedCaption
+                      ? `scan-history-photos-discarded-${scan.id}`
+                      : `scan-history-photos-caption-${scan.id}`
+                }
+              >
+                {photoCaption}
+              </p>
+            ) : null}
+            {showFrblGrid ? (
               <div className="grid grid-cols-4 gap-2">
                 {POSE_ORDER.map((pose) => (
                   <ScanHistoryThumb
@@ -215,14 +236,7 @@ export function ScanHistory({ scans, onDeleted }: ScanHistoryProps) {
                   />
                 ))}
               </div>
-            ) : (
-              <p
-                className="text-xs text-white/45"
-                data-testid={`scan-history-photos-discarded-${scan.id}`}
-              >
-                {SCAN_HISTORY_PHOTOS_DISCARDED}
-              </p>
-            )}
+            ) : null}
 
             {state === 'error' && message && (
               <p
