@@ -456,23 +456,25 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
         </ul>
       </div>
 
-      <label
+      <div
         data-testid="retain-frbl-consent"
         className="flex items-start gap-3 rounded-xl border border-white/[0.08] bg-white/[0.03] p-3 text-xs text-white/70"
       >
         <input
+          id="retain-frbl-consent-input"
           type="checkbox"
           checked={retainFrbl}
           onChange={(e) => setRetainFrbl(e.target.checked)}
           disabled={submitting}
-          className="mt-0.5 h-4 w-4 rounded border-white/30 bg-transparent"
+          className="mt-0.5 h-4 w-4 min-h-[44px] min-w-[44px] rounded border-white/30 bg-transparent sm:min-h-4 sm:min-w-4"
           data-testid="retain-frbl-consent-input"
+          aria-describedby="retain-frbl-consent-body"
         />
-        <span>
-          <span className="block font-semibold text-white/80">{RETAIN_FRBL_CONSENT_LABEL}</span>
-          <span className="mt-1 block text-white/55">{RETAIN_FRBL_CONSENT_BODY}</span>
-        </span>
-      </label>
+        <div>
+          <p className="font-semibold text-white/80">{RETAIN_FRBL_CONSENT_LABEL}</p>
+          <p id="retain-frbl-consent-body" className="mt-1 text-white/55">{RETAIN_FRBL_CONSENT_BODY}</p>
+        </div>
+      </div>
 
       <div className="flex items-start gap-2 rounded-lg border border-[#2DA5A0]/30 bg-[#2DA5A0]/10 p-3 text-xs text-white/70">
         <ShieldCheck size={14} strokeWidth={1.5} className="mt-0.5 flex-none text-[#2DA5A0]" />

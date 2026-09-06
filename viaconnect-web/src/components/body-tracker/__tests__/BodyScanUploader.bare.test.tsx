@@ -26,7 +26,7 @@ describe('BodyScanUploader slot picker markup', () => {
     const fileInputs = html.match(/<input[^>]*type="file"[^>]*>/g) ?? [];
     const labels = html.match(/<label\b/g) ?? [];
     expect(fileInputs).toHaveLength(FORMAVISION_SLOT_ORDER.length);
-    expect(labels).toHaveLength(FORMAVISION_SLOT_ORDER.length + 1);
+    expect(labels).toHaveLength(FORMAVISION_SLOT_ORDER.length);
     for (const pos of FORMAVISION_SLOT_ORDER) {
       expect(html).toContain(`data-testid="scan-slot-frame-${pos.key}"`);
       expect(html).toContain(`data-testid="scan-slot-upload-${pos.key}"`);
