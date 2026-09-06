@@ -60,6 +60,8 @@ describe('BodyScanUploader slot picker markup', () => {
     );
     expect(html).not.toContain('immediately discarded');
     expect(html).not.toContain('Retake for accuracy');
+    expect(html).toContain('retain-frbl-consent');
+    expect(html).toContain('Keep Front, Right, Back, and Left');
   });
 });
 

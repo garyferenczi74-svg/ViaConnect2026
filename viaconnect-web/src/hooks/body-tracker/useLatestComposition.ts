@@ -191,7 +191,7 @@ export function useLatestComposition(userId: string | null): UseLatestCompositio
                 };
               })
                 .from('body_tracker_entries')
-                .select('id,source,created_at,scan_id,notes,device_name')
+                .select('id,source,created_at,scan_id,notes,device_name,manual_source_id')
                 .eq('id', entryId)
                 .maybeSingle(),
               TIMEOUT_MS,
@@ -224,7 +224,7 @@ export function useLatestComposition(userId: string | null): UseLatestCompositio
                 };
               })
                 .from('body_tracker_entries')
-                .select('id,source,created_at,scan_id,notes,device_name')
+                .select('id,source,created_at,scan_id,notes,device_name,manual_source_id')
                 .eq('user_id', userId)
                 .order('created_at', { ascending: false })
                 .limit(1)

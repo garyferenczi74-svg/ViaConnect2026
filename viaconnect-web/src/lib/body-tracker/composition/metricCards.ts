@@ -6,6 +6,7 @@ import {
   formatPhotoSourcedBfChip,
   photoSourcedBfStatusValue,
 } from '@/lib/formavision/twoProtocolCopy';
+import { formatCompositionProvenanceChip } from './segmentalMuscleSources';
 import type { CompositionSnapshot } from './types';
 
 export type MetricCardData = {
@@ -13,6 +14,7 @@ export type MetricCardData = {
   value: string;
   status: MetricStatus | 'Unknown';
   trend?: 'up' | 'down' | 'stable';
+  provenance?: string | null;
 };
 
 function bmiStatus(bmi: number): MetricStatus {
@@ -53,6 +55,7 @@ export function buildMetricCards(
   const bodyWaterPct = snap?.bodyWaterPct ?? null;
   const photoChip = snap ? formatPhotoSourcedBfChip(snap) : null;
   const photoStatusValue = snap ? photoSourcedBfStatusValue(snap) : null;
+  const provenance = snap ? formatCompositionProvenanceChip(snap.manualSourceId) : null;
 
   const fatCard: MetricCardData = photoChip
     ? {
@@ -83,5 +86,7 @@ export function buildMetricCards(
       ? { label: 'Body Water', value: `${bodyWaterPct}%`, status: bodyWaterStatus(bodyWaterPct) }
       : { label: 'Body Water', value: NO_DATA, status: 'Unknown' };
 
-  return [fatCard, bmiCard, visceralCard, waterCard];
+  return [fatCard, bmiCard, visceralCard, waterCard].map((card) =>
+    provenance ? { ...card, provenance } : card,
+  );
 }

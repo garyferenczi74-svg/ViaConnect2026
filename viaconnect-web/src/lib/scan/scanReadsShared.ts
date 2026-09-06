@@ -13,8 +13,9 @@
 // Returns capture_status, never the legacy is_complete column, and never raw
 // storage paths (condition 13, least exposure) - only pose presence booleans,
 // since signed URLs are always minted through the Task 13 /api/scan/signed-url
-// route. Photo-scan rows have no stored images (analyze discards them);
-// poses stay absent and ScanHistory hides the FRBL grid (no ImageOff).
+// route. Analyze still discards photos (never stored on photo_scans). Opt-in
+// retain lands FRBL on body_photo_sessions `*_full_path`; poses.any is true
+// only from those session paths, never from photo_scans retained_views flags.
 //
 // Resilient: every query is raced against a timeout and fails open to a
 // null/empty result with a structured log, never a thrown error.
@@ -24,6 +25,10 @@ import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 import { PROTOCOL_ID, POSE_ORDER, type PoseId } from '@/lib/scan/poses';
 import { FORMAVISION_PHOTO_PROTOCOL } from '@/lib/scan/scanProtocols';
+import {
+  discardedFrblPoses,
+  posesFromSessionFullPaths,
+} from '@/lib/formavision/retainFrbl';
 import {
   finiteEstimateNumber,
   hasAnyPresentPose,
@@ -76,11 +81,7 @@ function isTombstoned(value: unknown): value is TombstoneStatus {
 }
 
 function toSummary(row: RawScanRow): ScanSummary {
-  const poses = {} as Record<PoseId, boolean>;
-  for (const pose of POSE_ORDER) {
-    const path = row[`${pose}_full_path`];
-    poses[pose] = typeof path === 'string' && path.length > 0;
-  }
+  const poses = posesFromSessionFullPaths(row);
   return {
     id: row.id,
     date: row.session_date,
@@ -114,27 +115,42 @@ interface PhotoScanRow {
   estimated_body_fat_max?: number | null;
   estimated_whr_min?: number | null;
   estimated_whr_max?: number | null;
+  photos_retained?: boolean | null;
+  photo_session_id?: string | null;
+  retained_views?: string[] | null;
 }
 
 function finiteOrNull(value: unknown): number | null {
   return finiteEstimateNumber(value);
 }
 
-function photoScanToSummary(row: PhotoScanRow): ScanSummary {
-  // SSOT: do not map pose-present for photo scans. Analyze discards images;
-  // history hides the FRBL grid instead of ImageOff / signed-URL.
-  const poses = {} as Record<PoseId, boolean>;
-  for (const pose of POSE_ORDER) poses[pose] = false;
+export type SessionFullPathRow = Partial<Record<`${PoseId}_full_path`, unknown>> & {
+  id?: string;
+};
+
+export function photoScanToSummary(
+  row: PhotoScanRow,
+  sessionPaths?: SessionFullPathRow | null,
+): ScanSummary {
+  const sessionId =
+    typeof row.photo_session_id === 'string' && row.photo_session_id.length > 0
+      ? row.photo_session_id
+      : null;
+  const poses = posesFromSessionFullPaths(sessionPaths);
+  const hasFrbl = hasAnyPresentPose(poses);
+  const retained = row.photos_retained === true && sessionId !== null && hasFrbl;
   return {
     id: row.id,
     date: row.scan_date,
     protocol: FORMAVISION_PHOTO_PROTOCOL,
     captureStatus: 'ready',
-    poses,
+    poses: retained ? poses : discardedFrblPoses(),
     estimatedBodyFatMin: finiteOrNull(row.estimated_body_fat_min),
     estimatedBodyFatMax: finiteOrNull(row.estimated_body_fat_max),
     estimatedWhrMin: finiteOrNull(row.estimated_whr_min),
     estimatedWhrMax: finiteOrNull(row.estimated_whr_max),
+    photosRetained: retained,
+    frblSessionId: retained ? sessionId : null,
   };
 }
 
@@ -179,7 +195,7 @@ async function queryPhotoScanRows(userId: string, limit: number): Promise<{
       supabase
         .from('body_tracker_photo_scans')
         .select(
-          'id, scan_date, created_at, estimated_body_fat_min, estimated_body_fat_max, estimated_whr_min, estimated_whr_max',
+          'id, scan_date, created_at, estimated_body_fat_min, estimated_body_fat_max, estimated_whr_min, estimated_whr_max, photos_retained, photo_session_id, retained_views',
         )
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
@@ -190,6 +206,63 @@ async function queryPhotoScanRows(userId: string, limit: number): Promise<{
   );
 }
 
+function uniquePhotoSessionIds(rows: PhotoScanRow[]): string[] {
+  const ids = new Set<string>();
+  for (const row of rows) {
+    if (typeof row.photo_session_id === 'string' && row.photo_session_id.length > 0) {
+      ids.add(row.photo_session_id);
+    }
+  }
+  return [...ids];
+}
+
+async function queryRetainedSessionPaths(
+  userId: string,
+  sessionIds: string[],
+): Promise<{ data: SessionFullPathRow[] | null; error: { message: string } | null }> {
+  const supabase = await createClient();
+  const columns = ['id', ...POSE_ORDER.map((pose) => `${pose}_full_path`)].join(',');
+  return withTimeout(
+    Promise.resolve(
+      supabase
+        .from('body_photo_sessions')
+        .select(columns)
+        .eq('user_id', userId)
+        .in('id', sessionIds),
+    ) as unknown as Promise<{
+      data: SessionFullPathRow[] | null;
+      error: { message: string } | null;
+    }>,
+    QUERY_TIMEOUT_MS,
+    `${SCOPE}.retainSessionQuery`,
+  );
+}
+
+async function loadSessionPathsById(
+  userId: string,
+  sessionIds: string[],
+): Promise<Map<string, SessionFullPathRow>> {
+  const pathById = new Map<string, SessionFullPathRow>();
+  if (sessionIds.length === 0) return pathById;
+  try {
+    const { data, error } = await queryRetainedSessionPaths(userId, sessionIds);
+    if (error) {
+      safeLog.warn(SCOPE, 'retain session path query error (fail-open)', { error, userId });
+      return pathById;
+    }
+    for (const row of data ?? []) {
+      if (typeof row.id === 'string' && row.id.length > 0) pathById.set(row.id, row);
+    }
+  } catch (error) {
+    if (isTimeoutError(error)) {
+      safeLog.warn(SCOPE, 'retain session path query timed out (fail-open)', { userId });
+    } else {
+      safeLog.warn(SCOPE, 'retain session path query threw (fail-open)', { error, userId });
+    }
+  }
+  return pathById;
+}
+
 async function listPhotoScans(userId: string, limit: number): Promise<ScanSummary[]> {
   try {
     const { data, error } = await queryPhotoScanRows(userId, limit);
@@ -197,7 +270,14 @@ async function listPhotoScans(userId: string, limit: number): Promise<ScanSummar
       safeLog.warn(SCOPE, 'photo scan query error (fail-open)', { error, userId });
       return [];
     }
-    return sortPhotoRowsNewestFirst(data ?? []).map(photoScanToSummary);
+    const rows = sortPhotoRowsNewestFirst(data ?? []);
+    const pathById = await loadSessionPathsById(userId, uniquePhotoSessionIds(rows));
+    return rows.map((row) =>
+      photoScanToSummary(
+        row,
+        row.photo_session_id ? pathById.get(row.photo_session_id) ?? null : null,
+      ),
+    );
   } catch (error) {
     if (isTimeoutError(error)) {
       safeLog.warn(SCOPE, 'photo scan query timed out (fail-open)', { userId });

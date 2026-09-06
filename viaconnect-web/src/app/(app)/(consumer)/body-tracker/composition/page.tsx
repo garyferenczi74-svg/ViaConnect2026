@@ -143,13 +143,19 @@ import { getSegmentStatus, type SegmentStatus } from '@/lib/body-tracker/calcula
 import {
   BODY_COMP_SAVE_TOAST,
   BODY_COMP_SCAN_PANEL_DESCRIPTION,
-  MUSCLE_ANALYSIS_MASS_SUBTITLE,
+  HYBRID_COSETTLE_COPY,
   MUSCLE_ANALYSIS_MASS_TITLE,
   MUSCLE_ANALYSIS_PHOTO_ONLY_EMPTY,
   MUSCLE_ANALYSIS_PHOTO_ONLY_SUBTITLE,
   MUSCLE_ANALYSIS_PHOTO_ONLY_TITLE,
+  hasSegmentalMuscleLbs,
   isPhotoOnlyMuscleEmpty,
 } from '@/lib/formavision/twoProtocolCopy';
+import {
+  MUSCLE_BREAKDOWN_TITLE,
+  formatCompositionProvenanceChip,
+  showMuscleSegmentalBreakdownTitle,
+} from '@/lib/body-tracker/composition/segmentalMuscleSources';
 
 // Prompt #85k: 12 finer-grained body parts that flank the silhouette.
 // Each card inherits its value from its parent segment (trunk / arm / leg)
@@ -955,6 +961,14 @@ function CompositionPageInner() {
               <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 backdrop-blur-md p-4 sm:p-5 lg:p-3">
                 <h2 className="text-lg font-bold text-white">Body Composition</h2>
                 <p className="text-xs text-white/60">Segmental body fat analysis</p>
+                {formatCompositionProvenanceChip(snapshot?.manualSourceId) ? (
+                  <span
+                    data-testid="body-comp-provenance-chip"
+                    className="mt-2 inline-block rounded-full border border-white/15 px-2 py-0.5 text-[10px] font-medium text-white/70"
+                  >
+                    {formatCompositionProvenanceChip(snapshot?.manualSourceId)}
+                  </span>
+                ) : null}
               </div>
             )}
 
@@ -964,8 +978,23 @@ function CompositionPageInner() {
                   {photoOnlyMuscle ? MUSCLE_ANALYSIS_PHOTO_ONLY_TITLE : MUSCLE_ANALYSIS_MASS_TITLE}
                 </h2>
                 <p className="text-xs text-white/60">
-                  {photoOnlyMuscle ? MUSCLE_ANALYSIS_PHOTO_ONLY_SUBTITLE : MUSCLE_ANALYSIS_MASS_SUBTITLE}
+                  {photoOnlyMuscle
+                    ? MUSCLE_ANALYSIS_PHOTO_ONLY_SUBTITLE
+                    : showMuscleSegmentalBreakdownTitle({
+                        manualSourceId: snapshot?.manualSourceId,
+                        hasMuscleLbs: snapshot ? hasSegmentalMuscleLbs(snapshot) : false,
+                      })
+                      ? MUSCLE_BREAKDOWN_TITLE
+                      : 'Muscle mass (lbs) from Manual, DEXA, or InBody'}
                 </p>
+                {formatCompositionProvenanceChip(snapshot?.manualSourceId) ? (
+                  <span
+                    data-testid="muscle-analysis-provenance-chip"
+                    className="mt-2 inline-block rounded-full border border-white/15 px-2 py-0.5 text-[10px] font-medium text-white/70"
+                  >
+                    {formatCompositionProvenanceChip(snapshot?.manualSourceId)}
+                  </span>
+                ) : null}
                 {photoOnlyMuscle ? (
                   <p
                     data-testid="muscle-analysis-photo-only-empty"
@@ -974,6 +1003,7 @@ function CompositionPageInner() {
                     {MUSCLE_ANALYSIS_PHOTO_ONLY_EMPTY}
                   </p>
                 ) : null}
+                <p className="mt-2 text-[11px] leading-relaxed text-white/45">{HYBRID_COSETTLE_COPY}</p>
               </div>
             )}
 

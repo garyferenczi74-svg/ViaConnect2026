@@ -5,6 +5,7 @@ import {
   type ConditionContext,
   type TimeOfDay,
 } from '@/lib/body-tracker/manual-input';
+import { canWriteSegmentalMuscleLbs } from '@/lib/body-tracker/composition/segmentalMuscleSources';
 
 export type DetailTable =
   | 'body_tracker_weight'
@@ -37,6 +38,16 @@ export interface SubmitEntryResult {
  * the entry id is required for detail FK so any failure after the header
  * leaves an orphan header , we surface the error so UI can offer retry).
  */
+export function filterSubmitDetails(
+  details: SubmitEntryInput['details'],
+  sourceId: DataSourceId,
+): SubmitEntryInput['details'] {
+  return details.filter((d) => {
+    if (d.table !== 'body_tracker_segmental_muscle') return true;
+    return canWriteSegmentalMuscleLbs(sourceId);
+  });
+}
+
 export async function submitEntry(input: SubmitEntryInput): Promise<SubmitEntryResult> {
   const supabase = createClient();
   const src = getDataSource(input.manualSourceId);
@@ -68,7 +79,9 @@ export async function submitEntry(input: SubmitEntryInput): Promise<SubmitEntryR
 
   let weightLogged = false;
 
-  for (const d of input.details) {
+  const details = filterSubmitDetails(input.details, input.manualSourceId);
+
+  for (const d of details) {
     // Cast table name: body_tracker_circumference is in the live DB but not yet in
     // generated Supabase types until next typegen pass.
     const { error: dErr } = await supabase

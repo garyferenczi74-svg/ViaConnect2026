@@ -209,7 +209,7 @@ export function ScanHistory({ scans, onDeleted }: ScanHistoryProps) {
                 {POSE_ORDER.map((pose) => (
                   <ScanHistoryThumb
                     key={pose}
-                    sessionId={scan.id}
+                    sessionId={scan.frblSessionId ?? scan.id}
                     pose={pose}
                     present={scan.poses[pose]}
                   />

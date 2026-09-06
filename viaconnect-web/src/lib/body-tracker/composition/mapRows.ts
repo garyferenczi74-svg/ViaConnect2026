@@ -13,6 +13,7 @@ type EntryRow = {
   scan_id?: string | null;
   notes?: string | null;
   device_name?: string | null;
+  manual_source_id?: string | null;
 } | null;
 
 type FatRow = Record<string, unknown> | null;
@@ -80,5 +81,6 @@ export function mapRows(args: {
     estimatedBodyFatMin: range?.min ?? null,
     estimatedBodyFatMax: range?.max ?? null,
     isEstimated: isScan,
+    manualSourceId: entry.manual_source_id ?? null,
   };
 }

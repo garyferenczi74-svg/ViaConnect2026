@@ -1,4 +1,5 @@
 import type { PlateMeshSource, PlateMeshSourceInput } from './types';
+import { sessionIdForFrbl } from '@/lib/formavision/retainFrbl';
 
 /**
  * Ready plate mesh picker. Meshy GLB swaps in only when we have OUR stored
@@ -22,20 +23,27 @@ export function pickReadyFrblSessionId(
     protocol: string;
     captureStatus: string | null;
     poses: Record<string, boolean>;
+    photosRetained?: boolean | null;
+    frblSessionId?: string | null;
   }> | null,
   guidedProtocol = '4pose_v1',
 ): string | null {
   if (!scans) return null;
-  // Meshy reads body_photo_sessions pose paths. Photo-analyze rows
-  // (formavision_photo) discard images and must not be posted as sessionId.
+  // Meshy / Tripo read body_photo_sessions pose paths. Discarded
+  // formavision_photo rows keep poses.all false and must not be posted.
+  // Retained photo rows set poses.any and frblSessionId.
   const withFrbl = scans.filter((scan) => Object.values(scan.poses).some(Boolean));
   if (withFrbl.length === 0) return null;
   const readyGuided = withFrbl.find(
     (scan) => scan.protocol === guidedProtocol && scan.captureStatus === 'ready',
   );
-  if (readyGuided) return readyGuided.id;
+  if (readyGuided) return sessionIdForFrbl(readyGuided);
+  const readyRetained = withFrbl.find(
+    (scan) => scan.photosRetained === true && scan.captureStatus === 'ready',
+  );
+  if (readyRetained) return sessionIdForFrbl(readyRetained);
   const readyAny = withFrbl.find((scan) => scan.captureStatus === 'ready');
-  if (readyAny) return readyAny.id;
+  if (readyAny) return sessionIdForFrbl(readyAny);
   const guided = withFrbl.find((scan) => scan.protocol === guidedProtocol);
-  return guided?.id ?? withFrbl[0]?.id ?? null;
+  return sessionIdForFrbl(guided ?? withFrbl[0]);
 }

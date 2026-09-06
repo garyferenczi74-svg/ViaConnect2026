@@ -25,6 +25,7 @@ interface FloatingMetricCardProps {
   trend?: 'up' | 'down' | 'stable';
   sparklineData?: number[];
   subMetrics?: FloatingMetricSubMetric[];
+  provenance?: string | null;
 }
 
 function Sparkline({ data, color }: { data: number[]; color: string }) {
@@ -56,6 +57,7 @@ export function FloatingMetricCard({
   trend,
   sparklineData,
   subMetrics,
+  provenance,
 }: FloatingMetricCardProps) {
   const isUnknown = status === 'Unknown';
   const color = isUnknown ? null : STATUS_COLORS[status as Exclude<MetricStatus, 'Unknown'>];
@@ -78,6 +80,14 @@ export function FloatingMetricCard({
           </span>
         </div>
       )}
+      {provenance ? (
+        <span
+          data-testid="composition-provenance-chip"
+          className="mt-1 inline-block rounded-full border border-white/15 px-2 py-0.5 text-[10px] font-medium text-white/70"
+        >
+          {provenance}
+        </span>
+      ) : null}
 
       {!isUnknown && color && sparklineData && sparklineData.length >= 2 && (
         <Sparkline data={sparklineData} color={color} />

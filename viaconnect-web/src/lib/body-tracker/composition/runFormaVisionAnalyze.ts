@@ -57,6 +57,11 @@ export type FormaVisionPhotoMap = Partial<Record<PhotoPosition, FormaVisionPhoto
 
 export type PersistScanFn = typeof persistScan;
 
+export type RetainFrblFn = (input: {
+  photoScanId: string;
+  photos: FormaVisionPhotoMap;
+}) => Promise<{ ok: boolean; sessionId?: string; error?: string }>;
+
 export interface FormaVisionAnalyzeArgs {
   photos: FormaVisionPhotoMap;
   source: ScanPhotoSource;
@@ -71,6 +76,9 @@ export interface FormaVisionAnalyzeArgs {
   isMounted?: () => boolean;
   /** Slot attach already baked EXIF / auto-upright — do not rotate again. */
   alreadyNormalized?: boolean;
+  /** Explicit opt-in to keep FRBL. Default discard. */
+  retainPhotos?: boolean;
+  retainFrblFn?: RetainFrblFn;
 }
 
 export interface FormaVisionAnalyzeSpine {
@@ -344,6 +352,24 @@ export async function runFormaVisionAnalyzeSpine(
   const persistScanFn = args.persistScanFn ?? persistScan;
   const persistRes = await persistScanFn(out.scan_id);
   flushCirc();
+
+  if (args.retainPhotos === true && persistRes.ok && args.retainFrblFn) {
+    try {
+      const retained = await args.retainFrblFn({
+        photoScanId: out.scan_id,
+        photos: upright,
+      });
+      if (!retained.ok) {
+        safeLog.warn('formavision.analyze', 'FRBL retain failed (non-fatal)', {
+          error: retained.error ?? 'retain_failed',
+        });
+      }
+    } catch (retainErr) {
+      safeLog.warn('formavision.analyze', 'FRBL retain threw (non-fatal)', {
+        error: retainErr instanceof Error ? retainErr.message : 'unknown',
+      });
+    }
+  }
 
   return {
     ok: persistRes.ok,

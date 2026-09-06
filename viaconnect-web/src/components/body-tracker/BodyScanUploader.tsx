@@ -40,6 +40,13 @@ import {
   PHOTO_WHAT_YOU_DO_NOT_GET,
   PHOTO_WHAT_YOU_GET,
 } from '@/lib/formavision/twoProtocolCopy';
+import {
+  RETAIN_FRBL_CONSENT_BODY,
+  RETAIN_FRBL_CONSENT_LABEL,
+  RETAIN_FRBL_DEFAULT,
+  analyzeConsentCopy,
+} from '@/lib/formavision/retainFrbl';
+import { retainFrblPhotos } from '@/lib/formavision/retainFrblClient';
 
 export type { PhotoPosition, BodyScanEstimate, BodyScanResult };
 
@@ -91,6 +98,7 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
   // Map from PhotoPosition to the quality result for that view.
   // Null means the view has not been quality-assessed yet (pipeline still running or skipped).
   const [viewQuality, setViewQuality] = useState<Partial<Record<PhotoPosition, ViewQualityResult>>>({});
+  const [retainFrbl, setRetainFrbl] = useState(RETAIN_FRBL_DEFAULT);
   // Unmount guard: prevents any post-unmount state updates from the async IIFE.
   const isMountedRef = useRef(true);
   useEffect(() => () => {
@@ -218,6 +226,8 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
         persistScanFn: persistScan,
         analyzeTimeoutMs: ANALYZE_CLIENT_TIMEOUT_MS,
         alreadyNormalized: true,
+        retainPhotos: retainFrbl,
+        retainFrblFn: retainFrbl ? retainFrblPhotos : undefined,
         onGeometricMeasurements: (m) => {
           geometricMeasurementsRef.current = m;
           onGeometricMeasurements?.(m);
@@ -446,10 +456,30 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
         </ul>
       </div>
 
+      <div
+        data-testid="retain-frbl-consent"
+        className="flex items-start gap-3 rounded-xl border border-white/[0.08] bg-white/[0.03] p-3 text-xs text-white/70"
+      >
+        <input
+          id="retain-frbl-consent-input"
+          type="checkbox"
+          checked={retainFrbl}
+          onChange={(e) => setRetainFrbl(e.target.checked)}
+          disabled={submitting}
+          className="mt-0.5 h-4 w-4 min-h-[44px] min-w-[44px] rounded border-white/30 bg-transparent sm:min-h-4 sm:min-w-4"
+          data-testid="retain-frbl-consent-input"
+          aria-describedby="retain-frbl-consent-body"
+        />
+        <div>
+          <p className="font-semibold text-white/80">{RETAIN_FRBL_CONSENT_LABEL}</p>
+          <p id="retain-frbl-consent-body" className="mt-1 text-white/55">{RETAIN_FRBL_CONSENT_BODY}</p>
+        </div>
+      </div>
+
       <div className="flex items-start gap-2 rounded-lg border border-[#2DA5A0]/30 bg-[#2DA5A0]/10 p-3 text-xs text-white/70">
         <ShieldCheck size={14} strokeWidth={1.5} className="mt-0.5 flex-none text-[#2DA5A0]" />
-        <p>
-          {PHOTO_UPLOADER_PRIVACY_STRIP}
+        <p data-testid="retain-frbl-shield">
+          {retainFrbl ? analyzeConsentCopy(true) : PHOTO_UPLOADER_PRIVACY_STRIP}
         </p>
       </div>
 

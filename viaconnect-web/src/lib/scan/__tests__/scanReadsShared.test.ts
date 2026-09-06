@@ -27,10 +27,14 @@ interface QueryCalls {
   limitArg: number | null;
 }
 
+type QueryResult = { data: unknown; error: unknown } | (() => Promise<unknown>);
+
 function makeBuilder(
-  result: { data: unknown; error: unknown } | (() => Promise<unknown>),
+  result: QueryResult,
+  inResult?: QueryResult,
+  sharedCalls?: QueryCalls,
 ): { builder: Record<string, unknown>; calls: QueryCalls; select: ReturnType<typeof vi.fn> } {
-  const calls: QueryCalls = { eqCalls: [], orArg: null, orderArg: null, limitArg: null };
+  const calls: QueryCalls = sharedCalls ?? { eqCalls: [], orArg: null, orderArg: null, limitArg: null };
   const builder: Record<string, unknown> = {};
   builder.eq = vi.fn((col: string, val: unknown) => {
     calls.eqCalls.push([col, val]);
@@ -48,22 +52,29 @@ function makeBuilder(
     calls.limitArg = n;
     return typeof result === 'function' ? result() : Promise.resolve(result);
   });
+  builder.in = vi.fn(() => {
+    const resolved = inResult ?? { data: [], error: null };
+    return typeof resolved === 'function' ? resolved() : Promise.resolve(resolved);
+  });
   const select = vi.fn(() => builder);
   return { builder, calls, select };
 }
 
 function installTable(
-  result: { data: unknown; error: unknown } | (() => Promise<unknown>),
-  photoResult: { data: unknown; error: unknown } | (() => Promise<unknown>) = { data: [], error: null },
+  result: QueryResult,
+  photoResult: QueryResult = { data: [], error: null },
+  retainSessionResult: QueryResult = { data: [], error: null },
 ) {
-  const session = makeBuilder(result);
+  const sessionCalls: QueryCalls = { eqCalls: [], orArg: null, orderArg: null, limitArg: null };
   const photo = makeBuilder(photoResult);
   mocks.from.mockImplementation((tableName: string) => {
-    if (tableName === 'body_photo_sessions') return { select: session.select };
+    if (tableName === 'body_photo_sessions') {
+      return { select: makeBuilder(result, retainSessionResult, sessionCalls).select };
+    }
     if (tableName === 'body_tracker_photo_scans') return { select: photo.select };
     throw new Error(`unexpected table ${tableName}`);
   });
-  return { calls: session.calls, select: session.select, photoCalls: photo.calls };
+  return { calls: sessionCalls, photoCalls: photo.calls };
 }
 
 const READY_ROW = {
@@ -342,6 +353,68 @@ describe('scanReadsShared', () => {
       );
       const scans = await listScans('user-1');
       expect(scans.map((s) => s.id)).toEqual(['session-1']);
+    });
+
+    it('does not treat photo_scans retained_views as pose presence without session paths', async () => {
+      installTable(
+        { data: [], error: null },
+        {
+          data: [{
+            id: 'photo-flags-only',
+            scan_date: '2026-09-06',
+            created_at: '2026-09-06T12:00:00Z',
+            photos_retained: true,
+            photo_session_id: 'sess-missing',
+            retained_views: ['front', 'right', 'back', 'left'],
+          }],
+          error: null,
+        },
+        { data: [], error: null },
+      );
+      const scans = await listScans('user-1');
+      expect(scans[0]).toMatchObject({
+        id: 'photo-flags-only',
+        protocol: 'formavision_photo',
+        photosRetained: false,
+        frblSessionId: null,
+        poses: { front: false, right: false, back: false, left: false },
+      });
+    });
+
+    it('sets poses.any from body_photo_sessions *_full_path for retained photo scans', async () => {
+      installTable(
+        { data: [], error: null },
+        {
+          data: [{
+            id: 'photo-retain',
+            scan_date: '2026-09-06',
+            created_at: '2026-09-06T12:00:00Z',
+            photos_retained: true,
+            photo_session_id: 'sess-retain-1',
+            retained_views: ['front', 'right', 'back', 'left'],
+          }],
+          error: null,
+        },
+        {
+          data: [{
+            id: 'sess-retain-1',
+            front_full_path: 'user-1/sess-retain-1/front_full.jpg',
+            right_full_path: 'user-1/sess-retain-1/right_full.jpg',
+            back_full_path: 'user-1/sess-retain-1/back_full.jpg',
+            left_full_path: 'user-1/sess-retain-1/left_full.jpg',
+          }],
+          error: null,
+        },
+      );
+      const scans = await listScans('user-1');
+      expect(scans[0]).toMatchObject({
+        id: 'photo-retain',
+        protocol: 'formavision_photo',
+        photosRetained: true,
+        frblSessionId: 'sess-retain-1',
+        poses: { front: true, right: true, back: true, left: true },
+      });
+      expect(JSON.stringify(scans[0])).not.toContain('user-1/sess-retain-1/front_full.jpg');
     });
   });
 });
