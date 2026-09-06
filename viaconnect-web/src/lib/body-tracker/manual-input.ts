@@ -5,7 +5,7 @@
 import type { LucideIcon } from 'lucide-react';
 import {
   ScanLine, Radiation, Circle, Waves, Scale, HeartPulse, Watch,
-  Ruler, Scissors, Stethoscope, UserCheck, HelpCircle,
+  Ruler, Scissors, PenLine, Stethoscope, UserCheck, HelpCircle,
 } from 'lucide-react';
 
 export type ConfidenceTier =
@@ -18,7 +18,7 @@ export type ConfidenceTier =
 export type DataSourceId =
   | 'inbody' | 'dexa' | 'bodpod' | 'hydrostatic'
   | 'smart_scale' | 'blood_pressure_monitor' | 'fitness_watch_manual'
-  | 'tape_measure' | 'calipers' | 'bathroom_scale'
+  | 'tape_measure' | 'calipers' | 'bathroom_scale' | 'manual'
   | 'clinical_lab' | 'doctor_visit'
   | 'other';
 
@@ -46,6 +46,7 @@ export const DATA_SOURCES: readonly DataSource[] = [
   { id: 'blood_pressure_monitor', label: 'BP Monitor',                 icon: HeartPulse, tier: 'consumer_device', group: 'device', confidence: 0.90, providesSegmental: false, description: 'Home blood pressure cuff reading' },
   { id: 'fitness_watch_manual',   label: 'Fitness Watch (manual read)', icon: Watch,      tier: 'consumer_device', group: 'device', confidence: 0.82, providesSegmental: false, description: 'Reading from Apple Watch, Garmin etc. not API synced' },
   // Manual methods
+  { id: 'manual',         label: 'Manual',              icon: PenLine,  tier: 'manual', group: 'manual', confidence: 0.80, providesSegmental: true,  description: 'Hand-entered segmental muscle or body composition values' },
   { id: 'tape_measure',   label: 'Tape Measure',        icon: Ruler,    tier: 'manual', group: 'manual', confidence: 0.70, providesSegmental: false, description: 'Body circumference measurements' },
   { id: 'calipers',       label: 'Body Fat Calipers',   icon: Scissors, tier: 'manual', group: 'manual', confidence: 0.75, providesSegmental: false, description: 'Skinfold caliper measurements' },
   { id: 'bathroom_scale', label: 'Bathroom Scale',      icon: Scale,    tier: 'manual', group: 'manual', confidence: 0.80, providesSegmental: false, description: 'Basic weight only scale' },

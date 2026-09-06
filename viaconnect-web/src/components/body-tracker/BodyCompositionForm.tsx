@@ -99,7 +99,7 @@ export function BodyCompositionForm({
   const [section, setSection] = useState<CompositionSection>(initialSection);
   const [date, setDate] = useState<string>(todayIso());
   const [sourceId, setSourceId] = useState<DataSourceId | null>(
-    prefillTotalBodyFat !== null ? 'other' : null,
+    prefillTotalBodyFat !== null ? 'manual' : null,
   );
 
   const [fat, setFat] = useState<FatState>(() =>
