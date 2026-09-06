@@ -229,18 +229,40 @@ export function formatPlateDiagnostics(
   return `floor=${presentation.floorRole} paint=${presentation.paintState}`;
 }
 
-// Ready success look. Brief 60 / Gary F3 lock: designed holographic grid.
-// Additive shards are Picasso — FAIL. Opaque solid-human is no longer the
-// parametric Ready stamp (#188 anti-shards, superseded so F3 can land).
+// Ready success look. Gary 2026-09-06 Picasso lock: the Ready *plate*
+// success look is Meshy textured GLB only. holographic-f3 is the optional
+// sheen on that GLB (data-f3-look), never a parametric/wireframe body.
+// Additive shards are Picasso — FAIL.
 export type ReadyParametricLook = 'holographic' | 'solid' | 'wireframe';
 
 export type ReadySuccessLook =
   | 'holographic-f3'
   | 'solid-human'
   | 'meshy-glb'
-  | 'wireframe-picasso';
+  | 'wireframe-picasso'
+  | 'notice';
+
+export type ReadyPlateMeshLook = 'meshy-glb' | 'notice';
 
 export const READY_PARAMETRIC_SUCCESS_LOOK = 'holographic-f3' as const;
+
+// Product Ready plate: Meshy GLB or honest notice. Never F3-as-body.
+export function resolveReadyPlateMeshLook(
+  readyViewer: 'model-viewer' | 'notice' | 'r3f',
+): ReadyPlateMeshLook {
+  return readyViewer === 'model-viewer' ? 'meshy-glb' : 'notice';
+}
+
+export function isAllowedReadyPlateSuccessLook(look: string): boolean {
+  return look === 'meshy-glb';
+}
+
+export function isF3UsedAsBodySubstituteFail(input: {
+  hasReadyScanData: boolean;
+  plateLook: string;
+}): boolean {
+  return input.hasReadyScanData && input.plateLook === 'holographic-f3';
+}
 
 export function resolveReadySuccessLook(input: {
   meshSource: 'parametric' | 'meshy-glb';
@@ -253,7 +275,7 @@ export function resolveReadySuccessLook(input: {
 }
 
 export function isAllowedReadySuccessLook(look: ReadySuccessLook): boolean {
-  return look === 'holographic-f3' || look === 'meshy-glb';
+  return look === 'meshy-glb';
 }
 
 // Painted or pending Ready must not treat a wireframe/Picasso shard field

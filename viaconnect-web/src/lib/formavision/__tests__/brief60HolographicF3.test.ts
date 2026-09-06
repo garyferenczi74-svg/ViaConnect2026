@@ -48,7 +48,7 @@ describe('Brief 60 F3 holographic Ready settle', () => {
         parametricLook: 'holographic',
       }),
     ).toBe('holographic-f3');
-    expect(isAllowedReadySuccessLook('holographic-f3')).toBe(true);
+    expect(isAllowedReadySuccessLook('holographic-f3')).toBe(false);
     expect(isAllowedReadySuccessLook('meshy-glb')).toBe(true);
     expect(
       isPicassoWireframeSuccessFail({

@@ -75,13 +75,12 @@ import {
   formatPlateDiagnostics,
   hasReadyScanData,
   resolvePlatePresentation,
+  resolveReadyPlateMeshLook,
   resolveReadyPlatePresentation,
-  resolveReadySuccessLook,
   shouldPresentPlateNotice,
   type PlateFloorRole,
   type PlatePaintState,
 } from '@/lib/formavision/tier/readyPlateContract';
-import { selectPlateMeshSource } from '@/lib/formavision/meshy/selectPlateMeshSource';
 import {
   detectReadyViewerHost,
   isTerminalMeshyWithoutGlb,
@@ -562,14 +561,7 @@ function BodyCompositionAvatarInner({
         recovering: false,
       })
     : presentation;
-  const meshLook = resolveReadySuccessLook({
-    meshSource: selectPlateMeshSource({
-      meshyGlbUrl,
-      meshyStatus,
-      glbLoadFailed,
-    }),
-    parametricLook: 'holographic',
-  });
+  const meshLook = resolveReadyPlateMeshLook(readyViewer);
   const mountedSurface =
     readyViewer === 'model-viewer'
       ? 'model-viewer'

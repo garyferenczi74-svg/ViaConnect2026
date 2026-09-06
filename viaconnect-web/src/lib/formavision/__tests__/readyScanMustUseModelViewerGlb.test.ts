@@ -17,7 +17,12 @@ import {
 } from '@/components/formavision/FormaVisionPlateNotice';
 import { estimateCircumferencesFromComposition } from '@/lib/body-tracker/composition/estimateCircumferencesFromComposition';
 import { snapshotFromPhotoScanSummary } from '@/lib/body-tracker/composition/snapshotFromScanResult';
-import { hasReadyScanData } from '@/lib/formavision/tier/readyPlateContract';
+import {
+  hasReadyScanData,
+  isAllowedReadyPlateSuccessLook,
+  isF3UsedAsBodySubstituteFail,
+  resolveReadyPlateMeshLook,
+} from '@/lib/formavision/tier/readyPlateContract';
 import { selectReadyViewer } from '@/lib/formavision/viewer/selectReadyViewer';
 import { MODEL_VIEWER_VERSION } from '@/lib/formavision/viewer/modelViewerPin';
 
@@ -145,6 +150,9 @@ describe('Gary lock: phone AND desktop Ready use model-viewer GLB, not R3F', () 
     expect(src('src/lib/formavision/viewer/applyF3HolographicOverlay.ts')).not.toMatch(
       /setBaseColorFactor/,
     );
+    expect(src('src/lib/formavision/viewer/applyF3HolographicOverlay.ts')).not.toMatch(
+      /wireframe/i,
+    );
     expect(avatar).toMatch(/parkR3fReady/);
     expect(avatar).toMatch(/readyPainted = parkR3fReady \? modelViewerPainted : canvasHasPainted/);
     expect(avatar).not.toMatch(/canvasHasPainted \|\| modelViewerPainted/);
@@ -164,6 +172,46 @@ describe('Gary lock: phone AND desktop Ready use model-viewer GLB, not R3F', () 
     expect(markup).toContain(GLB);
     expect(markup).not.toContain('formavision-3d-pending');
     expect(markup).not.toContain('data-ready-viewer="r3f"');
+  });
+
+  it('Picasso lock: F3 is sheen on Meshy only — never a wireframe body substitute', () => {
+    expect(resolveReadyPlateMeshLook('model-viewer')).toBe('meshy-glb');
+    expect(resolveReadyPlateMeshLook('notice')).toBe('notice');
+    expect(resolveReadyPlateMeshLook('r3f')).toBe('notice');
+    expect(isAllowedReadyPlateSuccessLook('meshy-glb')).toBe(true);
+    expect(isAllowedReadyPlateSuccessLook('holographic-f3')).toBe(false);
+    expect(isAllowedReadyPlateSuccessLook('wireframe-picasso')).toBe(false);
+    expect(
+      isF3UsedAsBodySubstituteFail({
+        hasReadyScanData: true,
+        plateLook: 'holographic-f3',
+      }),
+    ).toBe(true);
+    expect(
+      isF3UsedAsBodySubstituteFail({
+        hasReadyScanData: true,
+        plateLook: 'meshy-glb',
+      }),
+    ).toBe(false);
+
+    const pending = renderPhoneReady({ host: 'desktop', meshyStatus: 'pending' });
+    expect(pending).toContain('data-mesh-look="notice"');
+    expect(pending).toContain('data-ready-viewer="notice"');
+    expect(pending).toContain(FORMAVISION_PLATE_LOADING_NOTICE);
+    expect(pending).not.toContain('data-mesh-look="holographic-f3"');
+    expect(pending).not.toContain('data-mesh-look="wireframe-picasso"');
+    expect(pending).not.toContain('formavision-f3-overlay');
+    expect(pending).not.toContain('formavision-3d-pending');
+
+    const ok = renderPhoneReady({
+      host: 'desktop',
+      meshyGlbUrl: GLB,
+      meshyStatus: 'succeeded',
+    });
+    expect(ok).toContain('data-mesh-look="meshy-glb"');
+    expect(ok).toContain('formavision-f3-overlay');
+    expect(ok).toContain('data-f3-look="holographic-f3"');
+    expect(ok).not.toContain('data-mesh-look="holographic-f3"');
   });
 
   it('desktop Ready without GLB is honest text — never the parametric wireframe', () => {
