@@ -1,19 +1,14 @@
-import {
-  BODY_HOLOGRAPHIC_F3_DEFAULTS,
-  HOLOGRAPHIC_F3_LINE_HEX,
-  isHolographicFillInRange,
-} from '@/lib/formavision/materials/bodyHolographicMaterial';
-import { FORMA_VISION_HEX } from '@/lib/formavision/materials/formaVisionTokens';
+import { HOLOGRAPHIC_F3_LINE_HEX } from '@/lib/formavision/materials/bodyHolographicMaterial';
 
-// F3 brand overlay on the live Meshy GLB (real topology), not a screen-space
-// shard grid and not an opaque solid as the Ready stamp.
+// Brand overlay on the live Meshy mesh. Keep albedo/texture (the scan visual).
+// Cyan emissive + sheen only. Do not stamp a navy solid. Do not additive-shard.
 
-export const F3_OVERLAY_FILL_HEX = FORMA_VISION_HEX.navy;
 export const F3_OVERLAY_LINE_HEX = HOLOGRAPHIC_F3_LINE_HEX;
-export const F3_OVERLAY_FILL_OPACITY = BODY_HOLOGRAPHIC_F3_DEFAULTS.fillOpacity;
+export const F3_EMISSIVE_SCALE = 0.28;
+export const F3_METALLIC = 0.22;
+export const F3_ROUGHNESS = 0.32;
 
 export interface ModelViewerPbr {
-  setBaseColorFactor(factor: readonly [number, number, number, number]): void;
   setMetallicFactor(value: number): void;
   setRoughnessFactor(value: number): void;
 }
@@ -21,7 +16,6 @@ export interface ModelViewerPbr {
 export interface ModelViewerMaterial {
   pbrMetallicRoughness?: ModelViewerPbr;
   setEmissiveFactor?(factor: readonly [number, number, number]): void;
-  setAlphaMode?(mode: 'OPAQUE' | 'MASK' | 'BLEND'): void;
   setDoubleSided?(value: boolean): void;
 }
 
@@ -39,21 +33,21 @@ export function applyF3HolographicOverlay(
   model: ModelViewerModel | null | undefined,
 ): number {
   if (!model || model.materials.length === 0) return 0;
-  if (!isHolographicFillInRange(F3_OVERLAY_FILL_OPACITY)) return 0;
 
-  const [fr, fg, fb] = hexToRgbUnit(F3_OVERLAY_FILL_HEX);
   const [er, eg, eb] = hexToRgbUnit(F3_OVERLAY_LINE_HEX);
   let applied = 0;
 
   for (const material of model.materials) {
     const pbr = material.pbrMetallicRoughness;
     if (!pbr) continue;
-    pbr.setBaseColorFactor([fr, fg, fb, F3_OVERLAY_FILL_OPACITY]);
-    pbr.setMetallicFactor(0.12);
-    pbr.setRoughnessFactor(0.38);
-    material.setAlphaMode?.('BLEND');
+    pbr.setMetallicFactor(F3_METALLIC);
+    pbr.setRoughnessFactor(F3_ROUGHNESS);
     material.setDoubleSided?.(false);
-    material.setEmissiveFactor?.([er * 0.38, eg * 0.38, eb * 0.38]);
+    material.setEmissiveFactor?.([
+      er * F3_EMISSIVE_SCALE,
+      eg * F3_EMISSIVE_SCALE,
+      eb * F3_EMISSIVE_SCALE,
+    ]);
     applied += 1;
   }
 

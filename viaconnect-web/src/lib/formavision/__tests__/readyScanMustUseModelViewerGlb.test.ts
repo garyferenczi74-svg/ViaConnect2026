@@ -87,6 +87,8 @@ describe('Option A: phone Ready uses model-viewer GLB, not R3F', () => {
     expect(markup).toContain('formavision-f3-overlay');
     expect(markup).toContain('data-f3-look="holographic-f3"');
     expect(markup).toContain('data-mesh-look="meshy-glb"');
+    expect(markup).toContain('148deg');
+    expect(markup).toContain('2.72m');
     expect(markup).not.toContain('repeating-linear-gradient');
     expect(markup).not.toContain('ar-modes');
     expect(markup).not.toContain('formavision-3d-pending');
@@ -139,6 +141,9 @@ describe('Option A: phone Ready uses model-viewer GLB, not R3F', () => {
     expect(model).not.toMatch(/SnapMeasure|\.obj['"`]/);
     expect(model).toMatch(/formavision-f3-overlay/);
     expect(model).toMatch(/applyF3HolographicOverlay/);
+    expect(src('src/lib/formavision/viewer/applyF3HolographicOverlay.ts')).not.toMatch(
+      /setBaseColorFactor/,
+    );
     expect(avatar).toMatch(/parkPhoneR3f/);
     expect(avatar).toMatch(/readyPainted = parkPhoneR3f \? modelViewerPainted : canvasHasPainted/);
     expect(avatar).not.toMatch(/canvasHasPainted \|\| modelViewerPainted/);

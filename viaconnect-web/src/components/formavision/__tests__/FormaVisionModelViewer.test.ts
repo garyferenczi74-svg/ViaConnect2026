@@ -22,6 +22,10 @@ describe('FormaVisionModelViewer', () => {
     expect(markup).toContain('https://example.test/visual.glb');
     expect(markup).toContain('https://example.test/visual.usdz');
     expect(markup).toContain('camera-controls');
+    expect(markup).toContain('148deg');
+    expect(markup).toContain('2.72m');
+    expect(markup).toContain('38deg');
+    expect(markup).toContain('auto-rotate');
     expect(markup).toContain('data-f3-look="holographic-f3"');
     expect(markup).not.toContain('ar-modes');
     expect(markup).toContain(FORMAVISION_F3_OVERLAY_TESTID);

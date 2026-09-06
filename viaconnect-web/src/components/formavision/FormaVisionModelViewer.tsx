@@ -1,12 +1,16 @@
 'use client';
 
 // Phone Ready success: in-page Meshy GLB via Google <model-viewer> 4.3.0.
-// F3 cyan overlay is applied to the loaded mesh materials (real topology).
-// R3F is not the phone Ready success path.
+// F3 is a cyan sheen on the loaded mesh, not a navy solid and not R3F.
 
 import { useEffect, useRef, useState } from 'react';
 import { FORMA_VISION_HEX } from '@/lib/formavision/materials/formaVisionTokens';
 import { applyF3HolographicOverlay } from '@/lib/formavision/viewer/applyF3HolographicOverlay';
+import {
+  modelViewerCameraOrbit,
+  modelViewerCameraTarget,
+  modelViewerFieldOfView,
+} from '@/lib/formavision/viewer/modelViewerFraming';
 import {
   MODEL_VIEWER_VERSION,
   ensureModelViewerScript,
@@ -103,12 +107,21 @@ export function FormaVisionModelViewer({
         ios-src={iosSrc ?? undefined}
         alt={alt}
         camera-controls
+        disable-pan
         touch-action="pan-y"
         interaction-prompt="none"
-        camera-orbit="180deg 75deg 2.7m"
-        field-of-view="38deg"
-        shadow-intensity="0"
-        exposure="0.85"
+        camera-orbit={modelViewerCameraOrbit()}
+        camera-target={modelViewerCameraTarget()}
+        field-of-view={modelViewerFieldOfView()}
+        min-field-of-view="35deg"
+        max-field-of-view="40deg"
+        shadow-intensity="0.15"
+        exposure="0.92"
+        environment-image="neutral"
+        tone-mapping="aces"
+        auto-rotate
+        auto-rotate-delay="800"
+        rotation-per-second="8deg"
         reveal="auto"
         data-testid="formavision-model-viewer-el"
         data-script-ready={scriptReady ? 'true' : 'false'}
@@ -124,9 +137,8 @@ export function FormaVisionModelViewer({
         aria-hidden
         className="pointer-events-none absolute inset-0 z-10"
         style={{
-          background:
-            `radial-gradient(ellipse at 50% 42%, transparent 46%, ${FORMA_VISION_HEX.navy}99 100%)`,
-          boxShadow: `inset 0 0 72px ${F3_RIM}33`,
+          background: `radial-gradient(ellipse at 50% 42%, transparent 52%, ${FORMA_VISION_HEX.navy}88 100%)`,
+          boxShadow: `inset 0 0 64px ${F3_RIM}26`,
         }}
       />
       {showNotice ? (
