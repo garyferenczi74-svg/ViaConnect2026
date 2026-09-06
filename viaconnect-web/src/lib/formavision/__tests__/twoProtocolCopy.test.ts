@@ -23,6 +23,7 @@ import {
   MUSCLE_ANALYSIS_PHOTO_ONLY_SUBTITLE,
   MUSCLE_ANALYSIS_PHOTO_ONLY_TITLE,
   PHOTO_ESTIMATE_LABEL,
+  PHOTO_FLAGGED_PHOTOS_FOR_BEST_RESULTS,
   PHOTO_RETAKE_FOR_BEST_RESULTS,
   PHOTO_UPLOADER_PRIVACY_STRIP,
   PHOTO_WHAT_YOU_DO_NOT_GET,
@@ -376,6 +377,11 @@ describe('twoProtocolCopy — Lex Theme 5 live nits', () => {
     expect(SCAN_HISTORY_PHOTOS_DISCARDED).toBe('Photos are not stored after analysis.');
     expect(PHOTO_RETAKE_FOR_BEST_RESULTS).toBe('Retake for best results.');
     expect(PHOTO_RETAKE_FOR_BEST_RESULTS).not.toMatch(/accuracy/i);
+    expect(PHOTO_FLAGGED_PHOTOS_FOR_BEST_RESULTS).toBe(
+      'Measurements from low-quality views will be marked low-confidence. Retake the flagged photos for best results.',
+    );
+    expect(PHOTO_FLAGGED_PHOTOS_FOR_BEST_RESULTS).toMatch(/flagged photos for best results/i);
+    expect(PHOTO_FLAGGED_PHOTOS_FOR_BEST_RESULTS).not.toMatch(/accuracy/i);
   });
 });
 
@@ -399,8 +405,10 @@ describe('two-protocol surfaces stay wired to shared copy', () => {
     expect(uploader).toMatch(/PHOTO_WHAT_YOU_DO_NOT_GET/);
     expect(uploader).toMatch(/PHOTO_UPLOADER_PRIVACY_STRIP/);
     expect(uploader).toMatch(/PHOTO_RETAKE_FOR_BEST_RESULTS/);
+    expect(uploader).toMatch(/PHOTO_FLAGGED_PHOTOS_FOR_BEST_RESULTS/);
     expect(uploader).not.toMatch(/immediately discarded/);
     expect(uploader).not.toMatch(/Retake for accuracy/);
+    expect(uploader).not.toMatch(/best accuracy/);
     expect(composition).toMatch(/BODY_COMP_SCAN_PANEL_DESCRIPTION/);
     expect(composition).toMatch(/BODY_COMP_SAVE_TOAST/);
     expect(composition).toMatch(/MUSCLE_ANALYSIS_PHOTO_ONLY_TITLE/);

@@ -59,6 +59,10 @@ export const PHOTO_UPLOADER_PRIVACY_STRIP =
 
 export const PHOTO_RETAKE_FOR_BEST_RESULTS = 'Retake for best results.';
 
+/** Lex Theme 5 — uploader quality banner. Same “best results” language as retake chip. */
+export const PHOTO_FLAGGED_PHOTOS_FOR_BEST_RESULTS =
+  'Measurements from low-quality views will be marked low-confidence. Retake the flagged photos for best results.';
+
 export type ReadyUnavailableReason = 'photo-discarded' | 'generic';
 
 export function consumerProtocolLabel(protocol: string): string {
