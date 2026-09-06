@@ -1,10 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createTripoTask, mapTripoTaskStatus } from '../tripoClient';
+import { createTripoTask, getTripoTask, mapTripoTaskStatus } from '../tripoClient';
 import { buildTripoMultiviewBody, orderTripoViews } from '../tripoViews';
-import { TRIPO_CREATE_URL, TRIPO_VIEW_ORDER } from '../types';
+import { TRIPO_CREATE_URL, TRIPO_MULTIVIEW_MODEL, TRIPO_VIEW_ORDER } from '../types';
 import { readTripoApiKey } from '../tripoApiKey';
 import { createTripoVisual } from '../createTripoVisual';
 import { pickReadyMeshySessionId, pickReadyTripoSessionId, selectHybridPlateVisual } from '../selectHybridPlate';
+import { safeLog } from '@/lib/utils/safe-log';
 
 describe('Tripo API key', () => {
   it('never reads NEXT_PUBLIC_TRIPO_API_KEY', () => {
@@ -36,6 +37,8 @@ describe('Tripo named FRBL views', () => {
     );
     expect(views.map((v) => v.view)).toEqual([...TRIPO_VIEW_ORDER]);
     const body = buildTripoMultiviewBody(views);
+    expect(body.model).toBe(TRIPO_MULTIVIEW_MODEL);
+    expect(body.model).toBe('v3.1-20260211');
     expect(body.texture).toBe(true);
     expect(body.inputs[0]).toEqual({ front: 'https://signed/front.jpg' });
     expect(body.inputs[1]).toEqual({ left: 'https://signed/left.jpg' });
@@ -63,8 +66,73 @@ describe('createTripoTask mock', () => {
     expect(String(init.headers && (init.headers as Record<string, string>).Authorization)).toBe(
       'Bearer test-key',
     );
-    const posted = JSON.parse(String(init.body)) as { inputs: Array<{ front?: string }> };
+    const posted = JSON.parse(String(init.body)) as {
+      model?: string;
+      texture?: boolean;
+      inputs: Array<{ front?: string }>;
+    };
+    expect(posted.model).toBe(TRIPO_MULTIVIEW_MODEL);
+    expect(posted.texture).toBe(true);
     expect(posted.inputs[0]?.front).toContain('front.jpg');
+  });
+
+  it('logs a redacted reject body snippet and keeps status + errorCode', async () => {
+    const warnSpy = vi.spyOn(safeLog, 'warn').mockImplementation(() => undefined);
+    const fetchImpl = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      text: async () =>
+        JSON.stringify({
+          code: 2000,
+          message: 'missing model Authorization: Bearer super-secret-tripo-key',
+        }),
+    });
+    const result = await createTripoTask(
+      'test-key',
+      [{ view: 'front', url: 'https://signed/front.jpg' }],
+      fetchImpl,
+    );
+    expect(result.ok).toBe(false);
+    expect(result.status).toBe(400);
+    expect(result.errorCode).toBe('tripo_failed');
+    expect(warnSpy).toHaveBeenCalledWith(
+      'formavision.tripo',
+      'create rejected',
+      expect.objectContaining({
+        status: 400,
+        errorCode: 'tripo_failed',
+      }),
+    );
+    const context = warnSpy.mock.calls.find((call) => call[1] === 'create rejected')?.[2] as
+      | { body?: string }
+      | undefined;
+    expect(context?.body).toBeTruthy();
+    expect(context?.body).not.toContain('super-secret-tripo-key');
+    expect(context?.body).not.toMatch(/Bearer\s+super-secret/i);
+    expect(context?.body).not.toContain('test-key');
+    warnSpy.mockRestore();
+  });
+});
+
+describe('getTripoTask mock', () => {
+  it('logs a redacted poll reject body snippet', async () => {
+    const warnSpy = vi.spyOn(safeLog, 'warn').mockImplementation(() => undefined);
+    const fetchImpl = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      text: async () => 'poll failed Bearer leaked-poll-token',
+    });
+    const result = await getTripoTask('test-key', 'task-1', fetchImpl);
+    expect(result.ok).toBe(false);
+    expect(result.status).toBe(400);
+    expect(result.errorCode).toBe('tripo_failed');
+    const context = warnSpy.mock.calls.find((call) => call[1] === 'poll rejected')?.[2] as
+      | { body?: string; status?: number; errorCode?: string }
+      | undefined;
+    expect(context).toMatchObject({ status: 400, errorCode: 'tripo_failed' });
+    expect(context?.body).toContain('Bearer [redacted]');
+    expect(context?.body).not.toContain('leaked-poll-token');
+    warnSpy.mockRestore();
   });
 });
 
