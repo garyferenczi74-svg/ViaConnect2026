@@ -31,6 +31,19 @@ export function discardedFrblPoses(): Record<PoseId, boolean> {
   return { front: false, right: false, back: false, left: false };
 }
 
+/** Pose presence from stored session `*_full_path` only — never from photo_scans flags. */
+export function posesFromSessionFullPaths(
+  row: Partial<Record<`${PoseId}_full_path`, unknown>> | null | undefined,
+): Record<PoseId, boolean> {
+  const poses = discardedFrblPoses();
+  if (!row) return poses;
+  for (const pose of POSE_ORDER) {
+    const path = row[`${pose}_full_path`];
+    poses[pose] = typeof path === 'string' && path.length > 0;
+  }
+  return poses;
+}
+
 export function retainedFrblPoses(
   views: ReadonlyArray<string> | null | undefined,
 ): Record<PoseId, boolean> {

@@ -22,6 +22,7 @@ import {
   discardedFrblPoses,
   historyFrblCopy,
   isRetainedFrblScan,
+  posesFromSessionFullPaths,
   retainedFrblPoses,
   sessionIdForFrbl,
 } from '@/lib/formavision/retainFrbl';
@@ -76,14 +77,43 @@ describe('retain FRBL — discard vs retain', () => {
     expect(historyFrblCopy(discarded)).toBe('discarded');
   });
 
-  it('retained photo rows set poses.any and expose the FRBL session id', () => {
-    const retained = photoScanToSummary({
-      id: 'photo-retain',
+  it('retained_views flags without session *_full_path keep poses.any false', () => {
+    const flagsOnly = photoScanToSummary({
+      id: 'photo-flags',
       scan_date: '2026-09-06',
       photos_retained: true,
-      photo_session_id: 'sess-retain-1',
+      photo_session_id: 'sess-flags-1',
       retained_views: ['front', 'right', 'back', 'left'],
     });
+    expect(flagsOnly.poses).toEqual(discardedFrblPoses());
+    expect(flagsOnly.photosRetained).toBe(false);
+    expect(flagsOnly.frblSessionId).toBeNull();
+    expect(Object.values(flagsOnly.poses).some(Boolean)).toBe(false);
+    expect(pickReadyFrblSessionId([flagsOnly])).toBeNull();
+    expect(scanHistoryShowsFrblGrid(flagsOnly)).toBe(false);
+    expect(isRetainedFrblScan(flagsOnly)).toBe(false);
+  });
+
+  it('retained photo rows set poses.any only from body_photo_sessions *_full_path', () => {
+    const sessionPaths = {
+      front_full_path: 'u/sess-retain-1/front.jpg',
+      right_full_path: 'u/sess-retain-1/right.jpg',
+      back_full_path: 'u/sess-retain-1/back.jpg',
+      left_full_path: 'u/sess-retain-1/left.jpg',
+    };
+    expect(posesFromSessionFullPaths(sessionPaths)).toEqual(
+      retainedFrblPoses(['front', 'right', 'back', 'left']),
+    );
+    const retained = photoScanToSummary(
+      {
+        id: 'photo-retain',
+        scan_date: '2026-09-06',
+        photos_retained: true,
+        photo_session_id: 'sess-retain-1',
+        retained_views: ['front', 'right', 'back', 'left'],
+      },
+      sessionPaths,
+    );
     expect(retained.photosRetained).toBe(true);
     expect(retained.frblSessionId).toBe('sess-retain-1');
     expect(retained.poses).toEqual(retainedFrblPoses(['front', 'right', 'back', 'left']));
@@ -108,6 +138,11 @@ describe('retain FRBL — discard vs retain', () => {
     expect(history).toMatch(/scanHistoryShowsFrblGrid/);
     expect(page).toMatch(/pickReadyFrblSessionId/);
     expect(page).toMatch(/useTripoVisual/);
+    const retainRoute = src('src/app/api/formavision/retain-frbl/route.ts');
+    expect(retainRoute).toMatch(/_full_path/);
+    expect(retainRoute).toMatch(/startMeshyForReadySession/);
+    expect(retainRoute).toMatch(/startTripoForReadySession/);
+    expect(retainRoute).not.toMatch(/SnapMeasure/);
   });
 
   it('ScanHistory shows the FRBL grid for retained photo scans and discard copy otherwise', () => {

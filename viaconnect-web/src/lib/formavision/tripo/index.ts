@@ -1,5 +1,6 @@
 export { readTripoApiKey, isTripoEnabled } from './tripoApiKey';
 export { createTripoVisual } from './createTripoVisual';
+export { startTripoForReadySession } from './startTripoForReadySession';
 export { advanceTripoVisual } from './advanceTripoVisual';
 export { orderTripoViews, buildTripoMultiviewBody, tripoGlbStoragePath } from './tripoViews';
 export { selectHybridPlateVisual, pickReadyMeshySessionId, pickReadyTripoSessionId } from './selectHybridPlate';

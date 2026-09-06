@@ -2,7 +2,7 @@
 // the analyze path. This route never invents muscle lbs.
 
 import { randomUUID } from 'node:crypto';
-import { NextResponse } from 'next/server';
+import { after, NextResponse } from 'next/server';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -11,6 +11,8 @@ import { inMemoryRateLimit } from '@/lib/utils/inMemoryRateLimit';
 import { safeLog } from '@/lib/utils/safe-log';
 import { FORMAVISION_PHOTO_PROTOCOL } from '@/lib/scan/scanProtocols';
 import { POSE_ORDER, type PoseId } from '@/lib/scan/poses';
+import { startMeshyForReadySession } from '@/lib/formavision/meshy/startMeshyForReadySession';
+import { startTripoForReadySession } from '@/lib/formavision/tripo/startTripoForReadySession';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -271,5 +273,14 @@ async function finalizeRetain(
   }
 
   safeLog.info(SCOPE, 'retain finalized', { photoScanId, sessionId, views });
+  try {
+    after(() => {
+      void startMeshyForReadySession(sessionId, userId, admin);
+      void startTripoForReadySession(sessionId, userId, admin);
+    });
+  } catch {
+    void startMeshyForReadySession(sessionId, userId, admin);
+    void startTripoForReadySession(sessionId, userId, admin);
+  }
   return NextResponse.json({ ok: true, sessionId, views });
 }
