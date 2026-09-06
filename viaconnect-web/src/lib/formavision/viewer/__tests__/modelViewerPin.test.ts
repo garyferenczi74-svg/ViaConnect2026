@@ -9,7 +9,7 @@ describe('model-viewer pin', () => {
     expect(MODEL_VIEWER_CDN).toBe(
       'https://ajax.googleapis.com/ajax/libs/model-viewer/4.3.0/model-viewer.min.js',
     );
-    expect(MODEL_VIEWER_CDN).not.toMatch(/4\.2\.|4\.1\.|3\.\d/);
+    expect(MODEL_VIEWER_CDN).not.toMatch(/\/4\.2\.|\/4\.1\.|\/3\.\d/);
   });
 
   it('product sources load 4.3.0 from CDN and do not add an npm package', () => {
