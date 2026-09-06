@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   readOwnedSession: vi.fn(),
   buildCreateDeps: vi.fn(() => ({})),
   buildAdvanceDeps: vi.fn(() => ({})),
+  signStoredGlb: vi.fn(),
 }));
 
 vi.mock('@/lib/supabase/server', () => ({
@@ -37,6 +38,7 @@ vi.mock('@/lib/formavision/meshy/meshySupabase', () => ({
   readOwnedSession: mocks.readOwnedSession,
   buildCreateDeps: mocks.buildCreateDeps,
   buildAdvanceDeps: mocks.buildAdvanceDeps,
+  signStoredGlb: mocks.signStoredGlb,
 }));
 
 import { GET, POST } from '../route';
@@ -48,6 +50,7 @@ beforeEach(() => {
   mocks.createMeshyVisual.mockReset();
   mocks.advanceMeshyVisual.mockReset();
   mocks.readOwnedSession.mockReset();
+  mocks.signStoredGlb.mockReset();
 });
 
 describe('POST /api/formavision/meshy', () => {
@@ -100,6 +103,38 @@ describe('GET /api/formavision/meshy', () => {
     mocks.getUser.mockResolvedValue({ data: { user: { id: 'attacker' } } });
     mocks.readOwnedSession.mockResolvedValue(null);
     const res = await GET(new Request(`http://localhost/api/formavision/meshy?sessionId=${SESSION_ID}`));
+    const body = (await res.json()) as { error: string; visual: { status: string; errorCode: string } };
     expect(res.status).toBe(404);
+    expect(body.error).toBe('not_found');
+    expect(body.visual.status).toBe('failed');
+    expect(body.visual.errorCode).toBe('not_found');
+  });
+
+  it('returns a signed URL with the poll visual when the stored GLB is ready', async () => {
+    mocks.getUser.mockResolvedValue({ data: { user: { id: 'user-1' } } });
+    mocks.readOwnedSession.mockResolvedValue({
+      id: SESSION_ID,
+      meshy_visual: {
+        taskId: 'task-1',
+        status: 'succeeded',
+        glbPath: 'user-1/session-1/meshy/visual.glb',
+        glbBytes: 3_000_000,
+      },
+    });
+    mocks.signStoredGlb.mockResolvedValue(
+      'https://supabase.example/storage/v1/object/sign/body-progress-photos/user-1/session-1/meshy/visual.glb',
+    );
+    const res = await GET(new Request(`http://localhost/api/formavision/meshy?sessionId=${SESSION_ID}`));
+    const body = (await res.json()) as {
+      ok: boolean;
+      signedUrl: string;
+      visual: { status: string; glbPath: string };
+    };
+    expect(res.status).toBe(200);
+    expect(body.ok).toBe(true);
+    expect(body.visual.status).toBe('succeeded');
+    expect(body.visual.glbPath).toBe('user-1/session-1/meshy/visual.glb');
+    expect(body.signedUrl).toContain('body-progress-photos');
+    expect(body.signedUrl).not.toContain('assets.meshy.ai');
   });
 });

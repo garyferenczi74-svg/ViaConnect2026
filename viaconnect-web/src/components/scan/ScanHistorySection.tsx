@@ -56,9 +56,13 @@ export function ScanHistorySection({
           setScans(body.scans ?? []);
         } else {
           setLoadFailed(true);
+          setScans([]);
         }
       } catch {
-        if (!cancelled) setLoadFailed(true);
+        if (!cancelled) {
+          setLoadFailed(true);
+          setScans([]);
+        }
       } finally {
         clearTimeout(timer);
       }

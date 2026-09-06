@@ -9,9 +9,10 @@ import { inMemoryRateLimit } from '@/lib/utils/inMemoryRateLimit';
 import { safeLog } from '@/lib/utils/safe-log';
 import { createMeshyVisual } from '@/lib/formavision/meshy/createMeshyVisual';
 import { advanceMeshyVisual } from '@/lib/formavision/meshy/advanceMeshyVisual';
-import { buildAdvanceDeps, buildCreateDeps, readOwnedSession } from '@/lib/formavision/meshy/meshySupabase';
-import { sanitizeMeshyVisual } from '@/lib/formavision/meshy/meshyVisualState';
+import { buildAdvanceDeps, buildCreateDeps, readOwnedSession, signStoredGlb } from '@/lib/formavision/meshy/meshySupabase';
+import { emptyMeshyVisual, sanitizeMeshyVisual } from '@/lib/formavision/meshy/meshyVisualState';
 import { isTerminalMeshyStatus } from '@/lib/formavision/meshy/meshyVisualState';
+import { GLB_SIGNED_TTL_SECONDS } from '@/lib/formavision/meshy/types';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -96,7 +97,15 @@ export async function GET(request: Request): Promise<NextResponse> {
     const admin = createAdminClient();
     const session = await readOwnedSession(admin, sessionId, auth.id);
     if (!session) {
-      return NextResponse.json({ ok: false, error: 'not_found' }, { status: 404 });
+      const missing = {
+        ...emptyMeshyVisual(),
+        status: 'failed' as const,
+        errorCode: 'not_found' as const,
+      };
+      return NextResponse.json(
+        { ok: false, error: 'not_found', visual: publicVisual(missing) },
+        { status: 404 },
+      );
     }
 
     let visual = sanitizeMeshyVisual(session.meshy_visual);
@@ -109,9 +118,15 @@ export async function GET(request: Request): Promise<NextResponse> {
       visual = await advanceMeshyVisual(sessionId, auth.id, visual, buildAdvanceDeps(admin, auth.id));
     }
 
+    let signedUrl: string | null = null;
+    if (visual.status === 'succeeded' && visual.glbPath) {
+      signedUrl = await signStoredGlb(admin, visual.glbPath, GLB_SIGNED_TTL_SECONDS);
+    }
+
     return NextResponse.json({
       ok: true,
       visual: publicVisual(visual),
+      signedUrl,
     });
   } catch (error) {
     if (isTimeoutError(error)) {

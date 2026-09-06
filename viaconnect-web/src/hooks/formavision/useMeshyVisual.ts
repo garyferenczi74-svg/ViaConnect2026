@@ -4,6 +4,13 @@ import { useEffect, useRef, useState } from 'react';
 import type { MeshyErrorCode, MeshyVisualState, MeshyVisualStatus } from '@/lib/formavision/meshy/types';
 import { emptyMeshyVisual } from '@/lib/formavision/meshy/meshyVisualState';
 import { isTerminalMeshyStatus } from '@/lib/formavision/meshy/meshyVisualState';
+import {
+  MESHY_READY_WAIT_MS,
+  meshyErrorAfterWaitExpired,
+  meshyStatusAfterWaitExpired,
+  shouldMarkMeshyCreateAttempted,
+  visualFromMeshyPollBody,
+} from '@/lib/formavision/viewer/meshyReadyWait';
 
 const POLL_MS = 8000;
 const FETCH_TIMEOUT_MS = 20_000;
@@ -40,11 +47,37 @@ function asVisual(raw: VisualPayload | undefined): MeshyVisualState {
   };
 }
 
+export interface UseMeshyVisualOptions {
+  // True after scan history has resolved (empty list included). False/omit
+  // while history is still in flight so we do not latch no_photos too early.
+  historyResolved?: boolean;
+}
+
 export function shouldKickMeshyCreate(
   sessionId: string | null,
   createdFor: string | null,
 ): boolean {
   return typeof sessionId === 'string' && sessionId.length > 0 && createdFor !== sessionId;
+}
+
+export function noSessionMeshyVisual(now: string = new Date().toISOString()): MeshyVisualState {
+  return {
+    ...emptyMeshyVisual(now),
+    status: 'failed',
+    errorCode: 'no_photos',
+  };
+}
+
+export function timedOutMeshyVisual(
+  current: MeshyVisualState,
+  now: string = new Date().toISOString(),
+): MeshyVisualState {
+  return {
+    ...current,
+    status: meshyStatusAfterWaitExpired(current.status),
+    errorCode: meshyErrorAfterWaitExpired(current.errorCode),
+    updatedAt: now,
+  };
 }
 
 async function fetchJson(url: string, init?: RequestInit): Promise<Record<string, unknown> | null> {
@@ -61,48 +94,84 @@ async function fetchJson(url: string, init?: RequestInit): Promise<Record<string
   }
 }
 
-export function useMeshyVisual(sessionId: string | null): MeshyVisualClient {
+export function useMeshyVisual(
+  sessionId: string | null,
+  options: UseMeshyVisualOptions = {},
+): MeshyVisualClient {
+  const historyResolved = options.historyResolved === true;
   const [visual, setVisual] = useState<MeshyVisualState>(() => emptyMeshyVisual());
   const [glbUrl, setGlbUrl] = useState<string | null>(null);
   const createdForRef = useRef<string | null>(null);
+  const startedAtRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!sessionId) {
-      setVisual(emptyMeshyVisual());
+      setVisual(historyResolved ? noSessionMeshyVisual() : emptyMeshyVisual());
       setGlbUrl(null);
       createdForRef.current = null;
+      startedAtRef.current = null;
       return;
     }
 
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
+    startedAtRef.current = Date.now();
 
-    const loadGlb = async (path: string | null): Promise<void> => {
-      if (!path) return;
+    const loadGlb = async (path: string | null): Promise<string | null> => {
+      if (!path) return null;
       const body = await fetchJson(`/api/formavision/meshy/glb?sessionId=${encodeURIComponent(sessionId)}`);
-      if (cancelled) return;
-      const signed = typeof body?.signedUrl === 'string' ? body.signedUrl : null;
-      setGlbUrl(signed);
+      if (cancelled) return null;
+      return typeof body?.signedUrl === 'string' ? body.signedUrl : null;
+    };
+
+    const waitExpired = (): boolean => {
+      const started = startedAtRef.current;
+      return started !== null && Date.now() - started >= MESHY_READY_WAIT_MS;
     };
 
     const tick = async (): Promise<void> => {
       if (shouldKickMeshyCreate(sessionId, createdForRef.current)) {
-        createdForRef.current = sessionId;
-        await fetchJson('/api/formavision/meshy', {
+        const created = await fetchJson('/api/formavision/meshy', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ sessionId }),
         });
+        if (shouldMarkMeshyCreateAttempted(created)) {
+          createdForRef.current = sessionId;
+        }
       }
       const body = await fetchJson(`/api/formavision/meshy?sessionId=${encodeURIComponent(sessionId)}`);
       if (cancelled) return;
-      const next = asVisual(body?.visual as VisualPayload | undefined);
-      setVisual(next);
-      if (next.status === 'succeeded' && next.glbPath) {
-        await loadGlb(next.glbPath);
-        return;
+      const parsed = visualFromMeshyPollBody(body);
+      let next = parsed.terminalWithoutVisual
+        ? {
+            ...emptyMeshyVisual(),
+            status: parsed.status ?? 'failed',
+            errorCode: parsed.errorCode,
+          }
+        : asVisual(body?.visual as VisualPayload | undefined);
+      const pollSigned = parsed.signedUrl;
+      let signed: string | null = null;
+      if (next.status === 'succeeded' && (pollSigned || next.glbPath)) {
+        signed = pollSigned ?? (await loadGlb(next.glbPath));
+        if (cancelled) return;
+        if (signed) {
+          setVisual(next);
+          setGlbUrl(signed);
+          return;
+        }
       }
-      if (!isTerminalMeshyStatus(next.status)) {
+      if (waitExpired() && !(next.status === 'succeeded' && signed)) {
+        next = timedOutMeshyVisual({
+          ...next,
+          errorCode: next.status === 'succeeded' ? 'store_failed' : next.errorCode,
+        });
+      }
+      setVisual(next);
+      const keepPolling =
+        !isTerminalMeshyStatus(next.status) ||
+        (next.status === 'succeeded' && !signed && !waitExpired());
+      if (keepPolling) {
         timer = setTimeout(() => {
           void tick();
         }, POLL_MS);
@@ -114,7 +183,7 @@ export function useMeshyVisual(sessionId: string | null): MeshyVisualClient {
       cancelled = true;
       if (timer) clearTimeout(timer);
     };
-  }, [sessionId]);
+  }, [historyResolved, sessionId]);
 
   return {
     status: visual.status,

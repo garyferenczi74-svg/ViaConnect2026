@@ -22,6 +22,18 @@ export {
   type SelectReadyViewerInput,
 } from './selectReadyViewer';
 export {
+  MESHY_PAINT_WAIT_MS,
+  MESHY_READY_WAIT_MS,
+  decideReadyNoticeKind,
+  hasMeshySessionId,
+  meshyErrorAfterWaitExpired,
+  meshyStatusAfterWaitExpired,
+  shouldMarkMeshyCreateAttempted,
+  shouldTreatMeshyAsUnavailable,
+  visualFromMeshyPollBody,
+  type MeshyReadyWaitInput,
+} from './meshyReadyWait';
+export {
   applyF3HolographicOverlay,
   F3_OVERLAY_LINE_HEX,
   type ModelViewerModel,

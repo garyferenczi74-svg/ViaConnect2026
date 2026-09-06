@@ -132,7 +132,7 @@ describe('Production FAIL #184: Ready morph never selects the alien floor', () =
     expect(page).toMatch(/FormaVisionPlateNotice/);
     expect(page).not.toMatch(/FormaVisionAnatomicalFloor/);
     expect(page).not.toMatch(/floorRoleForAnatomicalFloor/);
-    expect(page).toMatch(/useMeshyVisual\(readyFrblSessionId\)/);
+    expect(page).toMatch(/useMeshyVisual\(readyFrblSessionId/);
     expect(page).toMatch(/meshyGlbUrl=\{meshyVisual\.glbUrl\}/);
     expect(page).not.toMatch(/picassoPack/);
     expect(page).not.toMatch(/formavision\/picasso/);

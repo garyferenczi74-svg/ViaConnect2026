@@ -82,8 +82,9 @@ import {
   type PlatePaintState,
 } from '@/lib/formavision/tier/readyPlateContract';
 import {
+  decideReadyNoticeKind,
   detectReadyViewerHost,
-  isTerminalMeshyWithoutGlb,
+  MESHY_READY_WAIT_MS,
   selectReadyViewer,
   shouldParkR3fReady,
   type ReadyViewerHost,
@@ -153,6 +154,12 @@ export interface BodyCompositionAvatarProps {
   meshyStatus?: MeshyVisualStatus;
   // Optional USDZ for model-viewer ios-src (Quick Look bonus, not success).
   meshyUsdzUrl?: string | null;
+  // FRBL session used to kick Meshy. Null after history resolves → notice.
+  meshySessionId?: string | null;
+  // True once scan history has resolved (including an empty list).
+  meshyHistoryResolved?: boolean;
+  // Test override. Client starts a MESHY_READY_WAIT_MS clock otherwise.
+  meshyWaitExpired?: boolean;
   // Test / SSR override. Client defaults to unknown then detects phone vs desktop.
   readyViewerHost?: ReadyViewerHost;
   // Honest text-only fallback child. Never an anatomical outline figure.
@@ -194,6 +201,9 @@ function BodyCompositionAvatarInner({
   meshyGlbUrl = null,
   meshyStatus = 'idle',
   meshyUsdzUrl = null,
+  meshySessionId = null,
+  meshyHistoryResolved = false,
+  meshyWaitExpired,
   readyViewerHost,
   children,
 }: BodyCompositionAvatarProps) {
@@ -216,6 +226,7 @@ function BodyCompositionAvatarInner({
   const [settled, setSettled] = useState(false);
   const [modelViewerPainted, setModelViewerPainted] = useState(false);
   const [glbLoadFailed, setGlbLoadFailed] = useState(false);
+  const [meshyClockExpired, setMeshyClockExpired] = useState(false);
   const [detectedHost, setDetectedHost] = useState<ReadyViewerHost>(
     readyViewerHost ?? 'unknown',
   );
@@ -303,6 +314,23 @@ function BodyCompositionAvatarInner({
     setModelViewerPainted(false);
     setGlbLoadFailed(false);
   }, [meshyGlbUrl]);
+
+  useEffect(() => {
+    if (meshyWaitExpired === true) {
+      setMeshyClockExpired(true);
+      return;
+    }
+    if (meshyWaitExpired === false) {
+      setMeshyClockExpired(false);
+    }
+    if (!readyLive) return;
+    const timer = setTimeout(() => {
+      setMeshyClockExpired(true);
+    }, MESHY_READY_WAIT_MS);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [meshyWaitExpired, readyLive, meshyStatus, meshyGlbUrl]);
 
   const latchHonestFloor = useCallback((message: string): void => {
     clearRestoreTimer();
@@ -568,13 +596,15 @@ function BodyCompositionAvatarInner({
       : readyViewer === 'notice'
         ? 'ready-notice'
         : surface;
-  const noticeKind = isTerminalMeshyWithoutGlb({
+  const waitExpired = meshyWaitExpired === true || meshyClockExpired;
+  const noticeKind = decideReadyNoticeKind({
     meshyStatus,
     meshyGlbUrl,
     glbLoadFailed,
-  })
-    ? 'unavailable'
-    : 'loading';
+    waitExpired,
+    historyResolved: meshyHistoryResolved,
+    sessionId: meshySessionId,
+  });
   const diagnostics = {
     'data-surface': mountedSurface,
     'data-tier': tier,
