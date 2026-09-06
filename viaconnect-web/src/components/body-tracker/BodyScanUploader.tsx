@@ -37,8 +37,8 @@ import {
   PHOTO_FLAGGED_PHOTOS_FOR_BEST_RESULTS,
   PHOTO_RETAKE_FOR_BEST_RESULTS,
   PHOTO_UPLOADER_PRIVACY_STRIP,
-  PHOTO_WHAT_YOU_DO_NOT_GET,
   PHOTO_WHAT_YOU_GET,
+  photoWhatYouDoNotGet,
 } from '@/lib/formavision/twoProtocolCopy';
 import {
   RETAIN_FRBL_CONSENT_BODY,
@@ -442,7 +442,7 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
         </p>
         <p className="mt-1.5">
           <span className="font-semibold text-white/65">What you do not get: </span>
-          {PHOTO_WHAT_YOU_DO_NOT_GET}
+          {photoWhatYouDoNotGet(retainFrbl)}
         </p>
       </div>
 

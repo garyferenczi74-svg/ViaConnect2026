@@ -45,6 +45,8 @@ describe('ScanHistory - client/server boundary', () => {
     const history = readFileSync(join(process.cwd(), 'src/components/scan/ScanHistory.tsx'), 'utf8');
     expect(history).toMatch(/scanHistoryShowsFrblGrid/);
     expect(history).toMatch(/SCAN_HISTORY_PHOTOS_DISCARDED/);
+    expect(history).toMatch(/SCAN_HISTORY_PHOTOS_RETAINED/);
+    expect(history).toMatch(/scanHistoryPhotoCaption/);
     expect(scanHistoryShowsFrblGrid({ protocol: 'formavision_photo' })).toBe(false);
     expect(scanHistoryShowsFrblGrid({ protocol: '4pose_v1' })).toBe(true);
   });

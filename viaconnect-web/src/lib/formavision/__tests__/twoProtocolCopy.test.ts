@@ -27,17 +27,22 @@ import {
   PHOTO_RETAKE_FOR_BEST_RESULTS,
   PHOTO_UPLOADER_PRIVACY_STRIP,
   PHOTO_WHAT_YOU_DO_NOT_GET,
+  PHOTO_WHAT_YOU_DO_NOT_GET_RETAINED,
   PHOTO_WHAT_YOU_GET,
   READY_UNAVAILABLE_GENERIC,
   READY_UNAVAILABLE_PHOTO_DISCARDED,
+  READY_UNAVAILABLE_VISUAL_FAILED,
   SCAN_HISTORY_PHOTOS_DISCARDED,
+  SCAN_HISTORY_PHOTOS_RETAINED,
   UNKNOWN_PROTOCOL_LABEL,
   consumerProtocolLabel,
   formatPhotoSourcedBfChip,
   historyHasDiscardedPhotoScan,
   isPhotoOnlyMuscleEmpty,
   isPhotoSourcedBodyFat,
+  photoWhatYouDoNotGet,
   readyUnavailableCopy,
+  scanHistoryPhotoCaption,
   selectReadyUnavailableReason,
 } from '../twoProtocolCopy';
 
@@ -103,6 +108,17 @@ describe('twoProtocolCopy — consumer labels', () => {
     expect(BODY_COMP_SCAN_PANEL_DESCRIPTION).toMatch(/Photo estimate/);
     expect(BODY_COMP_SAVE_TOAST).toBe('BF estimate saved.');
     expect(BODY_COMP_SAVE_TOAST).not.toMatch(/composition is up to date/i);
+  });
+
+  it('what-you-do-not-get is discard-honest off and retain-honest on', () => {
+    expect(photoWhatYouDoNotGet(false)).toBe(PHOTO_WHAT_YOU_DO_NOT_GET);
+    expect(photoWhatYouDoNotGet(false)).toMatch(/discarded/i);
+    expect(photoWhatYouDoNotGet(false)).toMatch(/regional fat/i);
+    expect(photoWhatYouDoNotGet(true)).toBe(PHOTO_WHAT_YOU_DO_NOT_GET_RETAINED);
+    expect(photoWhatYouDoNotGet(true)).toMatch(/3D and re-measure/i);
+    expect(photoWhatYouDoNotGet(true)).toMatch(/regional fat/i);
+    expect(photoWhatYouDoNotGet(true)).not.toMatch(/discard/i);
+    expect(PHOTO_WHAT_YOU_DO_NOT_GET_RETAINED).not.toMatch(/discard/i);
   });
 });
 
@@ -319,8 +335,48 @@ describe('ScanHistory — two-protocol labels', () => {
     expect(html).toContain(GUIDED_4POSE_LABEL);
     expect(html).toContain(SCAN_HISTORY_PHOTOS_DISCARDED);
     expect(html).toContain('scan-history-photos-discarded-photo-1');
+    expect(html).not.toContain(SCAN_HISTORY_PHOTOS_RETAINED);
     expect(html).not.toContain('formavision_photo');
     expect(html).not.toContain('4pose_v1');
+  });
+
+  it('shows the retained history caption when photos were kept', () => {
+    expect(
+      scanHistoryPhotoCaption({
+        protocol: FORMAVISION_PHOTO_PROTOCOL,
+        photosRetained: true,
+      }),
+    ).toBe(SCAN_HISTORY_PHOTOS_RETAINED);
+    expect(
+      scanHistoryPhotoCaption({
+        protocol: FORMAVISION_PHOTO_PROTOCOL,
+        photosRetained: false,
+      }),
+    ).toBe(SCAN_HISTORY_PHOTOS_DISCARDED);
+    expect(
+      scanHistoryPhotoCaption({
+        protocol: GUIDED_4POSE_PROTOCOL,
+        photosRetained: true,
+      }),
+    ).toBeNull();
+
+    const html = renderToStaticMarkup(
+      React.createElement(ScanHistory, {
+        scans: [
+          scan({
+            id: 'photo-kept',
+            protocol: FORMAVISION_PHOTO_PROTOCOL,
+            photosRetained: true,
+            frblSessionId: 'sess-retain-1',
+            poses: { front: true, right: true, back: true, left: true },
+          }),
+        ],
+      }),
+    );
+    expect(html).toContain(SCAN_HISTORY_PHOTOS_RETAINED);
+    expect(html).toContain('scan-history-photos-retained-photo-kept');
+    expect(html).not.toContain(SCAN_HISTORY_PHOTOS_DISCARDED);
+    expect(html).not.toContain('scan-history-photos-discarded-photo-kept');
   });
 });
 
@@ -375,6 +431,9 @@ describe('twoProtocolCopy — Lex Theme 5 live nits', () => {
     );
     expect(PHOTO_UPLOADER_PRIVACY_STRIP).not.toMatch(/immediately discarded/i);
     expect(SCAN_HISTORY_PHOTOS_DISCARDED).toBe('Photos are not stored after analysis.');
+    expect(SCAN_HISTORY_PHOTOS_RETAINED).toBe('Photos kept for 3D and re-measure.');
+    expect(READY_UNAVAILABLE_VISUAL_FAILED).toMatch(/kept photos/i);
+    expect(READY_UNAVAILABLE_VISUAL_FAILED).not.toMatch(/clinical/i);
     expect(PHOTO_RETAKE_FOR_BEST_RESULTS).toBe('Retake for best results.');
     expect(PHOTO_RETAKE_FOR_BEST_RESULTS).not.toMatch(/accuracy/i);
     expect(PHOTO_FLAGGED_PHOTOS_FOR_BEST_RESULTS).toBe(
@@ -397,12 +456,14 @@ describe('two-protocol surfaces stay wired to shared copy', () => {
 
     expect(history).toMatch(/consumerProtocolLabel/);
     expect(history).toMatch(/SCAN_HISTORY_PHOTOS_DISCARDED/);
+    expect(history).toMatch(/SCAN_HISTORY_PHOTOS_RETAINED/);
+    expect(history).toMatch(/scanHistoryPhotoCaption/);
     expect(results).toMatch(/BODY_SCAN_RESULTS_MUSCLE_IMPRESSION_TITLE/);
     expect(results).toMatch(/BODY_SCAN_RESULTS_NOT_MUSCLE_LBS/);
     expect(results).toMatch(/BODY_SCAN_RESULTS_RELIABLE_READING/);
     expect(results).not.toMatch(/clinical accuracy/);
     expect(uploader).toMatch(/PHOTO_WHAT_YOU_GET/);
-    expect(uploader).toMatch(/PHOTO_WHAT_YOU_DO_NOT_GET/);
+    expect(uploader).toMatch(/photoWhatYouDoNotGet\(retainFrbl\)/);
     expect(uploader).toMatch(/PHOTO_UPLOADER_PRIVACY_STRIP/);
     expect(uploader).toMatch(/PHOTO_RETAKE_FOR_BEST_RESULTS/);
     expect(uploader).toMatch(/PHOTO_FLAGGED_PHOTOS_FOR_BEST_RESULTS/);
