@@ -181,7 +181,11 @@ describe('Ready + eternal paint pending still presents visible holographic F3', 
 
   it('SSR Ready plate is holographic-f3 scan-mesh, never the alien', () => {
     const markup = renderReadyPlate();
-    expect(markup).toContain('data-mesh-look="holographic-f3"');
+    expect(markup).toContain('data-mesh-look="notice"');
+    expect(markup).not.toContain('data-mesh-look="holographic-f3"');
+    expect(markup).toContain('data-ready-viewer="notice"');
+    expect(markup).toContain('data-r3f-parked="true"');
+    expect(markup).not.toContain('formavision-3d-pending');
     expect(markup).toContain('data-result="scan-mesh"');
     expect(markup).toContain('data-floor-role="hidden"');
     expect(markup).toContain('data-paint-state="pending"');

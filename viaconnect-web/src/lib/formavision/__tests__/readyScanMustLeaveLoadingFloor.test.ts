@@ -100,7 +100,7 @@ describe('Production FAIL #182: Ready scan must leave the loading floor', () => 
 
   it('SSR Ready plate mounts 3D with morph=applied and no anatomical outline', () => {
     const markup = renderReadyPlate();
-    expect(markup).toContain('data-surface="formavision3d"');
+    expect(markup).toContain('data-surface="ready-notice"');
     expect(markup).toContain('data-morph="applied"');
     expect(markup).toContain('data-morph-bf="33.0"');
     expect(markup).toContain('data-appearance="procedural"');

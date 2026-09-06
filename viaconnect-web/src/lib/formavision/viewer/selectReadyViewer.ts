@@ -24,15 +24,26 @@ export function isMeshyVisualGlbReady(input: {
   );
 }
 
-// Sherlock A+C+D / Jeffery lock: park R3F only on Safari phone Ready
-// (and unknown SSR so iPhone cannot hydrate the #190 paint-pending canvas).
-// Desktop Ready is out of this spike — keep the existing R3F plate.
+// Gary 2026-09-06 Michelangelo standing rule: park R3F on Ready for every
+// host (phone + desktop + unknown). Also park while scan data is still
+// hydrating so the parametric cyan wireframe cannot flash, then unmount
+// into a blank navy plate (#191 on e0aa44c5).
+//
+// R3F stays in FormaVision3DAvatar as a documented non-success fallback
+// only. This selector never returns 'r3f' for the product Ready plate.
+export function shouldParkR3fReady(_input?: {
+  host?: ReadyViewerHost;
+  hasReadyScanData?: boolean;
+}): boolean {
+  return true;
+}
+
+/** @deprecated Use shouldParkR3fReady. Phone-only park caused the #191 FAIL. */
 export function shouldParkPhoneR3fReady(input: {
   host: ReadyViewerHost;
   hasReadyScanData: boolean;
 }): boolean {
-  if (!input.hasReadyScanData) return false;
-  return input.host === 'phone' || input.host === 'unknown';
+  return shouldParkR3fReady(input);
 }
 
 export function isTerminalMeshyWithoutGlb(input: {
@@ -48,9 +59,14 @@ export function isTerminalMeshyWithoutGlb(input: {
   return false;
 }
 
+export function isParametricReadyViewerFail(input: {
+  hasReadyScanData: boolean;
+  readyViewer: ReadyViewerKind;
+}): boolean {
+  return input.hasReadyScanData && input.readyViewer === 'r3f';
+}
+
 export function selectReadyViewer(input: SelectReadyViewerInput): ReadyViewerKind {
-  if (!input.hasReadyScanData) return 'r3f';
-  if (!shouldParkPhoneR3fReady(input)) return 'r3f';
   if (isMeshyVisualGlbReady(input)) return 'model-viewer';
   return 'notice';
 }

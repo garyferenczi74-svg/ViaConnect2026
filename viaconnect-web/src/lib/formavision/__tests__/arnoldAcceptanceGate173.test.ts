@@ -165,7 +165,9 @@ describe('Arnold acceptance gate 2: not Male Avatar.svg when 3D can run', () => 
       }),
     );
     expect(markup).toContain('formavision-avatar-footprint');
-    expect(markup).toContain('formavision-3d-pending');
+    expect(markup).toContain('formavision-plate-notice');
+    expect(markup).toContain('data-ready-viewer="notice"');
+    expect(markup).not.toContain('formavision-3d-pending');
     expect(markup).not.toContain('Male%20Avatar.svg');
     expect(markup).not.toContain('formavision-fallback-2d');
   });

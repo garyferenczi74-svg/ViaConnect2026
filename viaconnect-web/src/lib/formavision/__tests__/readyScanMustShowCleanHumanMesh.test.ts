@@ -110,7 +110,7 @@ describe('Ready success look is holographic-f3, not Picasso shards or opaque sol
         meshSource: 'parametric',
       }),
     ).toBe(false);
-    expect(isAllowedReadySuccessLook('holographic-f3')).toBe(true);
+    expect(isAllowedReadySuccessLook('holographic-f3')).toBe(false);
     expect(isAllowedReadySuccessLook('meshy-glb')).toBe(true);
     expect(isAllowedReadySuccessLook('solid-human')).toBe(false);
     expect(isAllowedReadySuccessLook('wireframe-picasso')).toBe(false);
@@ -176,7 +176,11 @@ describe('Ready success look is holographic-f3, not Picasso shards or opaque sol
 
   it('SSR Ready plate stamps holographic-f3 and never mounts the alien', () => {
     const markup = renderReadyPlate();
-    expect(markup).toContain('data-mesh-look="holographic-f3"');
+    expect(markup).toContain('data-mesh-look="notice"');
+    expect(markup).not.toContain('data-mesh-look="holographic-f3"');
+    expect(markup).toContain('data-ready-viewer="notice"');
+    expect(markup).toContain('data-r3f-parked="true"');
+    expect(markup).not.toContain('formavision-3d-pending');
     expect(markup).not.toContain('data-mesh-look="solid-human"');
     expect(markup).not.toContain('data-mesh-look="wireframe-picasso"');
     expect(markup).toContain('data-result="scan-mesh"');

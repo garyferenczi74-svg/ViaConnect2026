@@ -95,7 +95,8 @@ describe('Arnold acceptance gate 3: 3D footprint definite fill', () => {
     expect(markup).toContain('formavision-avatar-footprint');
     expect(markup).toContain('absolute');
     expect(markup).toContain('inset-0');
-    expect(markup).toContain('formavision-3d-pending');
+    expect(markup).toContain('data-ready-viewer="notice"');
+    expect(markup).not.toContain('formavision-3d-pending');
     expect(markup).not.toContain('formavision-anatomical-floor');
     expect(markup).toContain('formavision-recovering-floor');
     expect(markup).toContain('formavision-plate-notice');
@@ -125,7 +126,8 @@ describe('Arnold acceptance gate 6: never-empty plate on 3D-pending', () => {
         children: React.createElement(FormaVisionAnatomicalFloor, { sex: 'male' }),
       }),
     );
-    expect(markup).toContain('formavision-3d-pending');
+    expect(markup).toContain('data-ready-viewer="notice"');
+    expect(markup).not.toContain('formavision-3d-pending');
     expect(markup).not.toContain('formavision-anatomical-floor');
     expect(markup).toContain('formavision-recovering-floor');
     expect(markup).toContain('formavision-plate-notice');

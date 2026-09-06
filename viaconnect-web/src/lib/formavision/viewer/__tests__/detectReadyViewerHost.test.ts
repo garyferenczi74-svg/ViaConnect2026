@@ -16,7 +16,7 @@ describe('detectReadyViewerHost', () => {
     ).toBe(true);
   });
 
-  it('Jeffery lock: Android stays off the Safari-phone spike', () => {
+  it('classifies Android UA as desktop host (viewer no longer gates on this)', () => {
     expect(
       detectReadyViewerHost({
         userAgent:

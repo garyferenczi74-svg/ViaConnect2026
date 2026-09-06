@@ -1,5 +1,6 @@
-// Jeffery Safari-phone lock + Sherlock A+C+D (Picasso Option A):
-// A: Safari-proven <model-viewer> 4.3.0. C: Meshy visual GLB only.
+// Gary 2026-09-06 Michelangelo standing rule + Sherlock A+C+D:
+// A: <model-viewer> 4.3.0 on phone AND desktop Ready.
+// C: Meshy visual GLB only. No parametric cyan wireframe as Ready.
 // D: no SnapMeasure OBJ, no blind R3F paint-detector churn.
 // Never-empty: live GLB or honest text notice. No alien floor.
 
@@ -16,7 +17,12 @@ import {
 } from '@/components/formavision/FormaVisionPlateNotice';
 import { estimateCircumferencesFromComposition } from '@/lib/body-tracker/composition/estimateCircumferencesFromComposition';
 import { snapshotFromPhotoScanSummary } from '@/lib/body-tracker/composition/snapshotFromScanResult';
-import { hasReadyScanData } from '@/lib/formavision/tier/readyPlateContract';
+import {
+  hasReadyScanData,
+  isAllowedReadyPlateSuccessLook,
+  isF3UsedAsBodySubstituteFail,
+  resolveReadyPlateMeshLook,
+} from '@/lib/formavision/tier/readyPlateContract';
 import { selectReadyViewer } from '@/lib/formavision/viewer/selectReadyViewer';
 import { MODEL_VIEWER_VERSION } from '@/lib/formavision/viewer/modelViewerPin';
 
@@ -41,7 +47,7 @@ function garyReadyScan() {
 function renderPhoneReady(overrides: {
   meshyGlbUrl?: string | null;
   meshyStatus?: 'idle' | 'pending' | 'succeeded' | 'failed' | 'skipped_no_key';
-  host?: 'phone' | 'unknown';
+  host?: 'phone' | 'desktop' | 'unknown';
 } = {}) {
   const scan = garyReadyScan();
   const circumferences = estimateCircumferencesFromComposition(scan, 'male', 'in');
@@ -61,7 +67,7 @@ function renderPhoneReady(overrides: {
   );
 }
 
-describe('Option A: phone Ready uses model-viewer GLB, not R3F', () => {
+describe('Gary lock: phone AND desktop Ready use model-viewer GLB, not R3F', () => {
   it('Ready mobile path selects model-viewer when Meshy visual is ready', () => {
     expect(hasReadyScanData(garyReadyScan())).toBe(true);
     expect(
@@ -144,43 +150,93 @@ describe('Option A: phone Ready uses model-viewer GLB, not R3F', () => {
     expect(src('src/lib/formavision/viewer/applyF3HolographicOverlay.ts')).not.toMatch(
       /setBaseColorFactor/,
     );
-    expect(avatar).toMatch(/parkPhoneR3f/);
-    expect(avatar).toMatch(/readyPainted = parkPhoneR3f \? modelViewerPainted : canvasHasPainted/);
+    expect(src('src/lib/formavision/viewer/applyF3HolographicOverlay.ts')).not.toMatch(
+      /wireframe/i,
+    );
+    expect(avatar).toMatch(/parkR3fReady/);
+    expect(avatar).toMatch(/readyPainted = parkR3fReady \? modelViewerPainted : canvasHasPainted/);
     expect(avatar).not.toMatch(/canvasHasPainted \|\| modelViewerPainted/);
     expect(model).not.toMatch(/shouldStampPaintedFrame|FirstPaintWatchdog|drawingBufferHasPixels/);
   });
 
-  it('Jeffery lock: desktop Ready with Meshy GLB stays on R3F, not model-viewer', () => {
-    const scan = garyReadyScan();
-    const circumferences = estimateCircumferencesFromComposition(scan, 'male', 'in');
-    const markup = renderToStaticMarkup(
-      React.createElement(BodyCompositionAvatar, {
-        sex: 'male',
-        scan,
-        circumferences,
-        girthSource: 'estimate',
-        unit: 'in',
-        activeTab: 'bodyFat',
-        readyViewerHost: 'desktop',
-        meshyGlbUrl: GLB,
-        meshyStatus: 'succeeded',
-        children: React.createElement(FormaVisionPlateNotice, { kind: 'unavailable' }),
+  it('desktop Ready with Meshy GLB uses the same in-page model-viewer, not R3F', () => {
+    const markup = renderPhoneReady({
+      host: 'desktop',
+      meshyGlbUrl: GLB,
+      meshyStatus: 'succeeded',
+    });
+    expect(markup).toContain('data-ready-viewer="model-viewer"');
+    expect(markup).toContain('data-ready-host="desktop"');
+    expect(markup).toContain('data-r3f-parked="true"');
+    expect(markup).toContain('formavision-model-viewer-el');
+    expect(markup).toContain(GLB);
+    expect(markup).not.toContain('formavision-3d-pending');
+    expect(markup).not.toContain('data-ready-viewer="r3f"');
+  });
+
+  it('Picasso lock: F3 is sheen on Meshy only — never a wireframe body substitute', () => {
+    expect(resolveReadyPlateMeshLook('model-viewer')).toBe('meshy-glb');
+    expect(resolveReadyPlateMeshLook('notice')).toBe('notice');
+    expect(resolveReadyPlateMeshLook('r3f')).toBe('notice');
+    expect(isAllowedReadyPlateSuccessLook('meshy-glb')).toBe(true);
+    expect(isAllowedReadyPlateSuccessLook('holographic-f3')).toBe(false);
+    expect(isAllowedReadyPlateSuccessLook('wireframe-picasso')).toBe(false);
+    expect(
+      isF3UsedAsBodySubstituteFail({
+        hasReadyScanData: true,
+        plateLook: 'holographic-f3',
       }),
-    );
-    expect(markup).toContain('data-ready-viewer="r3f"');
-    expect(markup).toContain('data-r3f-parked="false"');
-    expect(markup).toContain('formavision-3d-pending');
+    ).toBe(true);
+    expect(
+      isF3UsedAsBodySubstituteFail({
+        hasReadyScanData: true,
+        plateLook: 'meshy-glb',
+      }),
+    ).toBe(false);
+
+    const pending = renderPhoneReady({ host: 'desktop', meshyStatus: 'pending' });
+    expect(pending).toContain('data-mesh-look="notice"');
+    expect(pending).toContain('data-ready-viewer="notice"');
+    expect(pending).toContain(FORMAVISION_PLATE_LOADING_NOTICE);
+    expect(pending).not.toContain('data-mesh-look="holographic-f3"');
+    expect(pending).not.toContain('data-mesh-look="wireframe-picasso"');
+    expect(pending).not.toContain('formavision-f3-overlay');
+    expect(pending).not.toContain('formavision-3d-pending');
+
+    const ok = renderPhoneReady({
+      host: 'desktop',
+      meshyGlbUrl: GLB,
+      meshyStatus: 'succeeded',
+    });
+    expect(ok).toContain('data-mesh-look="meshy-glb"');
+    expect(ok).toContain('formavision-f3-overlay');
+    expect(ok).toContain('data-f3-look="holographic-f3"');
+    expect(ok).not.toContain('data-mesh-look="holographic-f3"');
+  });
+
+  it('desktop Ready without GLB is honest text — never the parametric wireframe', () => {
+    const markup = renderPhoneReady({
+      host: 'desktop',
+      meshyStatus: 'idle',
+    });
+    expect(markup).toContain('data-ready-viewer="notice"');
+    expect(markup).toContain('data-surface="ready-notice"');
+    expect(markup).toContain('data-r3f-parked="true"');
+    expect(markup).toContain('data-placement="fill"');
+    expect(markup).toContain(FORMAVISION_PLATE_LOADING_NOTICE);
+    expect(markup).not.toContain('formavision-3d-pending');
     expect(markup).not.toContain('formavision-model-viewer-el');
   });
 
-  it('product path wires model-viewer 4.3.0 and does not require phone R3F for Ready', () => {
+  it('product path wires model-viewer 4.3.0 and parks R3F Ready on both surfaces', () => {
     const avatar = src('src/components/formavision/BodyCompositionAvatar.tsx');
     const page = src('src/app/(app)/(consumer)/body-tracker/formavision/page.tsx');
     const viewer = src('src/components/formavision/FormaVisionModelViewer.tsx');
     expect(avatar).toMatch(/selectReadyViewer/);
     expect(avatar).toMatch(/FormaVisionModelViewer/);
     expect(avatar).toMatch(/readyViewer === 'r3f'/);
-    expect(avatar).toMatch(/parkPhoneR3f/);
+    expect(avatar).toMatch(/parkR3fReady/);
+    expect(avatar).toMatch(/shouldParkR3fReady/);
     expect(page).toMatch(/meshyGlbUrl=\{meshyVisual\.glbUrl\}/);
     expect(page).toMatch(/useMeshyVisual\(readyFrblSessionId\)/);
     expect(page).not.toMatch(/FormaVisionAnatomicalFloor/);
