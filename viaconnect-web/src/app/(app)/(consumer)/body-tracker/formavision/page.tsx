@@ -205,7 +205,8 @@ function FormaVisionSurface() {
     () => pickReadyFrblSessionId(historyScans, PROTOCOL_ID),
     [historyScans],
   );
-  const meshyVisual = useMeshyVisual(readyFrblSessionId);
+  const historyResolved = historyScans !== null;
+  const meshyVisual = useMeshyVisual(readyFrblSessionId, { historyResolved });
   const historySnapshotForAvatar = useMemo(
     () =>
       pickHistorySnapshotForAvatar(
@@ -617,6 +618,8 @@ function FormaVisionSurface() {
           onFloorMotion={handleFloorMotion}
           meshyGlbUrl={meshyVisual.glbUrl}
           meshyStatus={meshyVisual.status}
+          meshySessionId={readyFrblSessionId}
+          meshyHistoryResolved={historyResolved}
         >
           {/* Honest text-only latch. Gary 2026-09-03: no teal outline figure. */}
           <div

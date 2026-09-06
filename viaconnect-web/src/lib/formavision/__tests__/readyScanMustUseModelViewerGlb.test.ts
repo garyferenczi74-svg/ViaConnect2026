@@ -238,7 +238,7 @@ describe('Gary lock: phone AND desktop Ready use model-viewer GLB, not R3F', () 
     expect(avatar).toMatch(/parkR3fReady/);
     expect(avatar).toMatch(/shouldParkR3fReady/);
     expect(page).toMatch(/meshyGlbUrl=\{meshyVisual\.glbUrl\}/);
-    expect(page).toMatch(/useMeshyVisual\(readyFrblSessionId\)/);
+    expect(page).toMatch(/useMeshyVisual\(readyFrblSessionId/);
     expect(page).not.toMatch(/FormaVisionAnatomicalFloor/);
     expect(page).not.toMatch(/FormaVisionLocalSilhouette/);
     expect(viewer).toMatch(/4\.3\.0|MODEL_VIEWER_VERSION/);

@@ -18,6 +18,7 @@ import {
 } from '@/lib/formavision/viewer/modelViewerPin';
 import type { ModelViewerModel } from '@/lib/formavision/viewer/applyF3HolographicOverlay';
 import { FormaVisionPlateNotice } from './FormaVisionPlateNotice';
+import { MESHY_PAINT_WAIT_MS } from '@/lib/formavision/viewer/meshyReadyWait';
 
 const F3_RIM = '#2EE6D6';
 
@@ -35,6 +36,7 @@ export interface FormaVisionModelViewerProps {
   painted?: boolean;
   onPainted?: () => void;
   onError?: () => void;
+  paintDeadlineMs?: number;
 }
 
 export function FormaVisionModelViewer({
@@ -44,6 +46,7 @@ export function FormaVisionModelViewer({
   painted = false,
   onPainted,
   onError,
+  paintDeadlineMs = MESHY_PAINT_WAIT_MS,
 }: FormaVisionModelViewerProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const [scriptReady, setScriptReady] = useState(false);
@@ -93,6 +96,16 @@ export function FormaVisionModelViewer({
       el.removeEventListener('error', handleError);
     };
   }, [onError, onPainted, src]);
+
+  useEffect(() => {
+    if (painted || scriptFailed) return;
+    const timer = setTimeout(() => {
+      onError?.();
+    }, paintDeadlineMs);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [onError, paintDeadlineMs, painted, scriptFailed, src]);
 
   const showNotice = !painted || scriptFailed;
 
