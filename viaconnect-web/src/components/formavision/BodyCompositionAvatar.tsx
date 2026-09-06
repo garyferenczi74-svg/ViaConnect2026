@@ -2,6 +2,10 @@
 
 // Capability-gated mount point for the Body Composition avatar (Prompt 210b, P1-T5).
 //
+// Gary 2026-09-06 lock: Ready success on phone AND desktop is in-page
+// model-viewer + Meshy GLB, or an honest text notice. The parametric cyan
+// wireframe (R3F) is parked — not as flash, settle, or fallback.
+//
 // This wrapper is what the FormaVision plate renders in place of a bare 2D
 // SegmentalHeatMap. selectAvatarSurface decides which avatar the user sees:
 //
@@ -82,6 +86,7 @@ import {
   detectReadyViewerHost,
   isTerminalMeshyWithoutGlb,
   selectReadyViewer,
+  shouldParkR3fReady,
   type ReadyViewerHost,
 } from '@/lib/formavision/viewer';
 import { MODEL_VIEWER_VERSION } from '@/lib/formavision/viewer/modelViewerPin';
@@ -224,11 +229,15 @@ function BodyCompositionAvatarInner({
     meshyGlbUrl,
     glbLoadFailed,
   });
-  const parkPhoneR3f = readyViewer !== 'r3f';
+  // Gary 2026-09-06: park R3F on phone AND desktop Ready. #191 flashed the
+  // parametric cyan wireframe (R3F) then blanked the plate when this flag
+  // was phone-only / gated on hasReadyScanData.
+  const parkR3fReady = shouldParkR3fReady({
+    host: viewerHost,
+    hasReadyScanData: readyLive,
+  });
   // Sherlock D: do not OR model-viewer load into the R3F paint detector.
-  // Parked Safari Ready uses modelViewerPainted only. Desktop R3F keeps
-  // canvasHasPainted / FirstPaintWatchdog unchanged.
-  const readyPainted = parkPhoneR3f ? modelViewerPainted : canvasHasPainted;
+  const readyPainted = parkR3fReady ? modelViewerPainted : canvasHasPainted;
 
   // The active render tier (capability probe initially; stepped down at runtime) and
   // the sticky step-down trigger passed into the Canvas frame-budget monitor.
@@ -387,9 +396,9 @@ function BodyCompositionAvatarInner({
   }, [clearRestoreTimer]);
 
   useEffect(() => {
-    // Jeffery Safari-phone lock: parked Ready never runs the R3F first-paint
-    // deadline / paint-detector lift. Notice stays until model-viewer paints.
-    if (parkPhoneR3f) {
+    // Parked Ready never runs the R3F first-paint deadline / paint-detector
+    // lift. Notice stays until model-viewer paints the Meshy GLB.
+    if (parkR3fReady) {
       return;
     }
     if (canvasHasPainted || presentReadyWithoutPaint || (fellBack && !readyLive)) {
@@ -426,7 +435,7 @@ function BodyCompositionAvatarInner({
     handleFirstInteractive,
     latchHonestFloor,
     mountEpoch,
-    parkPhoneR3f,
+    parkR3fReady,
     presentReadyWithoutPaint,
     readyLive,
   ]);
@@ -475,19 +484,19 @@ function BodyCompositionAvatarInner({
 
   const crossfade = resolveFloor3dCrossfade({
     liveCanvasHasPainted: readyPainted,
-    recovering: parkPhoneR3f ? false : recovering,
-    fellBack: parkPhoneR3f ? false : fellBack,
+    recovering: parkR3fReady ? false : recovering,
+    fellBack: parkR3fReady ? false : fellBack,
     reducedMotion: Boolean(reducedMotion),
     hasReadyScanData: readyLive,
-    presentReadyWithoutPaint: parkPhoneR3f ? false : presentReadyWithoutPaint,
+    presentReadyWithoutPaint: parkR3fReady ? false : presentReadyWithoutPaint,
   });
 
   const presentation = resolveReadyPlatePresentation({
     canvasHasPainted: readyPainted,
-    fellBack: parkPhoneR3f ? false : fellBack,
-    recovering: parkPhoneR3f ? false : recovering,
+    fellBack: parkR3fReady ? false : fellBack,
+    recovering: parkR3fReady ? false : recovering,
     hasReadyScanData: readyLive,
-    presentReadyWithoutPaint: parkPhoneR3f ? false : presentReadyWithoutPaint,
+    presentReadyWithoutPaint: parkR3fReady ? false : presentReadyWithoutPaint,
   });
 
   useEffect(() => {
@@ -591,13 +600,13 @@ function BodyCompositionAvatarInner({
     'data-f1-to-f3-ms': String(brief60F1ToF3Ms()),
     'data-ready-viewer': readyViewer,
     'data-ready-host': viewerHost,
-    'data-r3f-parked': parkPhoneR3f ? 'true' : 'false',
+    'data-r3f-parked': parkR3fReady ? 'true' : 'false',
     'data-model-viewer-version':
       readyViewer === 'model-viewer' ? MODEL_VIEWER_VERSION : undefined,
   } as const;
   const plateDiagnostics = formatPlateDiagnostics(presented);
 
-  if (surface === 'fallback2d' && !parkPhoneR3f) {
+  if (surface === 'fallback2d' && !parkR3fReady) {
     return (
       <div
         data-testid="formavision-avatar-footprint"
@@ -666,12 +675,19 @@ function BodyCompositionAvatarInner({
           <FormaVisionPlateNotice kind={fellBack ? 'unavailable' : 'loading'} />
         </div>
       ) : null}
+      {readyViewer === 'notice' ? (
+        <FormaVisionPlateNotice
+          kind={noticeKind}
+          placement={readyLive ? 'fill' : 'caption'}
+        />
+      ) : null}
       {readyLive &&
       readyViewer !== 'model-viewer' &&
+      readyViewer !== 'notice' &&
       shouldPresentPlateNotice({
         canvasHasPainted: readyPainted,
         hasReadyScanData: readyLive,
-        presentReadyWithoutPaint: parkPhoneR3f ? false : presentReadyWithoutPaint,
+        presentReadyWithoutPaint: parkR3fReady ? false : presentReadyWithoutPaint,
       }) ? (
         <FormaVisionPlateNotice kind={noticeKind} />
       ) : null}
@@ -680,6 +696,7 @@ function BodyCompositionAvatarInner({
           {null}
         </FormaVisionFallbackNotice>
       ) : null}
+      {/* R3F is parked for Ready (phone + desktop). model-viewer stays mounted. */}
       {readyViewer === 'model-viewer' && meshyGlbUrl ? (
         <FormaVisionModelViewer
           src={meshyGlbUrl}
@@ -689,6 +706,8 @@ function BodyCompositionAvatarInner({
           onError={handleModelViewerError}
         />
       ) : null}
+      {/* Documented non-success fallback only — selectReadyViewer never
+          returns r3f for the product Ready plate (Gary 2026-09-06 lock). */}
       {readyViewer === 'r3f' ? (
         <FormaVision3DAvatar
           key={mountEpoch}

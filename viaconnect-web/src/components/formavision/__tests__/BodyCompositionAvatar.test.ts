@@ -170,7 +170,8 @@ describe('BodyCompositionAvatar', () => {
   it('SSR first paint stays on the 3D footprint with a navy chamber, not the heatmap children', () => {
     const markup = renderWrapper('bodyFat');
     expect(markup).toContain('formavision-avatar-footprint');
-    expect(markup).toContain('formavision-3d-pending');
+    expect(markup).toContain('data-ready-viewer="notice"');
+    expect(markup).not.toContain('formavision-3d-pending');
     expect(markup).toContain('formavision-recovering-floor');
     expect(markup).toContain('formavision-plate-notice');
     expect(markup).not.toContain('formavision-anatomical-floor');

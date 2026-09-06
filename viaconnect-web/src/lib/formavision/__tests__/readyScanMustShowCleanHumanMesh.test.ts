@@ -177,6 +177,9 @@ describe('Ready success look is holographic-f3, not Picasso shards or opaque sol
   it('SSR Ready plate stamps holographic-f3 and never mounts the alien', () => {
     const markup = renderReadyPlate();
     expect(markup).toContain('data-mesh-look="holographic-f3"');
+    expect(markup).toContain('data-ready-viewer="notice"');
+    expect(markup).toContain('data-r3f-parked="true"');
+    expect(markup).not.toContain('formavision-3d-pending');
     expect(markup).not.toContain('data-mesh-look="solid-human"');
     expect(markup).not.toContain('data-mesh-look="wireframe-picasso"');
     expect(markup).toContain('data-result="scan-mesh"');

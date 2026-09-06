@@ -101,8 +101,9 @@ describe('Ready scan with measurements must mount 3D and apply scan morph', () =
   it('SSR Ready plate stays on the 3D footprint, not the fallback latch', () => {
     const markup = renderReadyPlate();
     expect(markup).toContain('formavision-avatar-footprint');
-    expect(markup).toContain('formavision-3d-pending');
-    expect(markup).toContain('data-surface="formavision3d"');
+    expect(markup).toContain('formavision-plate-notice');
+    expect(markup).toContain('data-surface="ready-notice"');
+    expect(markup).not.toContain('formavision-3d-pending');
     expect(markup).toContain('data-tier="cinematic"');
     expect(markup).toContain('data-morph="applied"');
     expect(markup).toContain('data-morph-source="estimate"');

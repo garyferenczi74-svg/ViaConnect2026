@@ -1,7 +1,8 @@
 'use client';
 
-// Phone Ready success: in-page Meshy GLB via Google <model-viewer> 4.3.0.
-// F3 is a cyan sheen on the loaded mesh, not a navy solid and not R3F.
+// Ready success (phone AND desktop): in-page Meshy GLB via Google
+// <model-viewer> 4.3.0. F3 is a cyan sheen on the loaded scan mesh.
+// Stay mounted after load — never flash R3F, never blank the plate.
 
 import { useEffect, useRef, useState } from 'react';
 import { FORMA_VISION_HEX } from '@/lib/formavision/materials/formaVisionTokens';
@@ -83,6 +84,10 @@ export function FormaVisionModelViewer({
     };
     el.addEventListener('load', handleLoad);
     el.addEventListener('error', handleError);
+    // Upgrade can finish before listeners attach; do not miss a painted mesh.
+    if ((el as ModelViewerHost).model) {
+      handleLoad();
+    }
     return () => {
       el.removeEventListener('load', handleLoad);
       el.removeEventListener('error', handleError);

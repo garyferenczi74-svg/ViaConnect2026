@@ -68,7 +68,8 @@ describe('Brief 59 honesty amend: product floor is navy + text, not Picasso or a
     expect(markup).not.toContain(FORMAVISION_FLOOR_LOADING_COPY);
     expect(markup).toContain('formavision-recovering-floor');
     expect(markup).toContain('formavision-plate-notice');
-    expect(markup).toContain('formavision-3d-pending');
+    expect(markup).toContain('data-ready-viewer="notice"');
+    expect(markup).not.toContain('formavision-3d-pending');
     expect(markup).toContain('data-motion-phase="floor"');
     expect(markup).toContain('data-morph-3d="1"');
     expect(markup).not.toContain('formavision-picasso-plate');

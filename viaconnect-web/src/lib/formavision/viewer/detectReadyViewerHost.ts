@@ -6,8 +6,8 @@ export interface ReadyViewerHostSignals {
   pointerCoarse?: boolean;
 }
 
-// Jeffery scope lock: Safari phone spike only (iPhone / iPad / iPadOS WKWebView).
-// Android and other phones stay on the existing desktop/R3F path.
+// Host is diagnostics only. Gary 2026-09-06 lock: Ready viewer selection
+// no longer follows phone vs desktop — both surfaces share model-viewer.
 export function isSafariPhoneUserAgent(
   userAgent: string,
   maxTouchPoints = 0,

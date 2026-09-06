@@ -6,7 +6,7 @@ export const MESHY_VISUAL_DISCLAIMER =
 export const MESHY_PROGRESS_COPY = 'Building a 3D visual from your photos';
 
 export const MESHY_UNAVAILABLE_COPY =
-  '3D visual unavailable. Showing your scan-shaped mesh.';
+  '3D visual from your photos is not available yet.';
 
 export function meshyStatusLabel(status: MeshyVisualStatus): string | null {
   switch (status) {

@@ -209,7 +209,7 @@ describe('Gary 2026-09-04: Ready paint-pending must not leave a blank navy plate
 
   it('Sep 1 Ready SSR plate is never empty navy: scan-mesh plus text notice', () => {
     const markup = renderReadyPlate();
-    expect(markup).toContain('data-surface="formavision3d"');
+    expect(markup).toContain('data-surface="ready-notice"');
     expect(markup).toContain('data-result="scan-mesh"');
     expect(markup).toContain('data-floor-role="hidden"');
     expect(markup).toContain('data-paint-state="pending"');

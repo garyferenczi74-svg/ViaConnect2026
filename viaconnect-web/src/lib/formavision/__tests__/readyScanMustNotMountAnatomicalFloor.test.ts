@@ -119,7 +119,7 @@ describe('Gary 2026-09-03: anatomical outline is gone from the consumer plate', 
     const scan = garyReadyScan();
     expect(hasReadyScanData(scan)).toBe(true);
     const markup = renderReadyPlate();
-    expect(markup).toContain('data-surface="formavision3d"');
+    expect(markup).toContain('data-surface="ready-notice"');
     expect(markup).toContain('data-morph="applied"');
     expect(markup).toContain('data-morph-bf="33.0"');
     expect(markup).toContain('data-result="scan-mesh"');

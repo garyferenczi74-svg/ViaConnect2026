@@ -13,9 +13,11 @@ export {
 } from './detectReadyViewerHost';
 export {
   isMeshyVisualGlbReady,
+  isParametricReadyViewerFail,
   isTerminalMeshyWithoutGlb,
   selectReadyViewer,
   shouldParkPhoneR3fReady,
+  shouldParkR3fReady,
   type ReadyViewerKind,
   type SelectReadyViewerInput,
 } from './selectReadyViewer';
