@@ -6,10 +6,10 @@
 //
 // Contract:
 //   A. Ready + paint pending past the ~8s deadline presents the compositable
-//      mesh AND/OR an honest text-only notice. Blank navy alone is FAIL.
-//   B. Do not require canvasHasPainted to show the mesh or the notice after
-//      the deadline. Prefer keeping morph3d compositable even if the paint
-//      stamp never fires.
+//      holographic mesh. A text-only notice is for the wait before the mesh
+//      is mounted — not a permanent Ready shroud (#189).
+//   B. Do not require canvasHasPainted to show the mesh after the deadline.
+//      Do not fake the paint stamp. Prefer keeping morph3d compositable.
 //   C. Ready never presents FormaVisionAnatomicalFloor / LocalSilhouette.
 //   D. Notice copy has no outline figure and no "this outline is not your body".
 
@@ -80,7 +80,7 @@ function renderReadyPlate() {
 }
 
 describe('Gary 2026-09-04: Ready paint-pending must not leave a blank navy plate', () => {
-  it('Ready + paint pending past deadline presents mesh and a text notice', () => {
+  it('Ready + paint pending past deadline presents the mounted mesh without a covering notice', () => {
     const presented = resolveReadyPlatePresentation({
       canvasHasPainted: false,
       fellBack: false,
@@ -92,14 +92,14 @@ describe('Gary 2026-09-04: Ready paint-pending must not leave a blank navy plate
     expect(presented.resultKind).toBe('scan-mesh');
     expect(presented.paintState).toBe('pending');
     expect(presented.floorPresented).toBe(false);
-    expect(presented.noticePresented).toBe(true);
+    expect(presented.noticePresented).toBe(false);
     expect(
       shouldPresentPlateNotice({
         canvasHasPainted: false,
         hasReadyScanData: true,
         presentReadyWithoutPaint: true,
       }),
-    ).toBe(true);
+    ).toBe(false);
     expect(
       isBlankOnlyPlateFail({
         hasReadyScanData: true,
@@ -166,13 +166,20 @@ describe('Gary 2026-09-04: Ready paint-pending must not leave a blank navy plate
     expect(markup).not.toContain('This outline is not your body');
   });
 
-  it('never blank-only after the deadline: pending without a notice is FAIL', () => {
+  it('never blank-only after the deadline: mounted F3 path is not blank navy', () => {
     expect(
       isBlankOnlyPlateFail({
         hasReadyScanData: true,
         paintState: 'pending',
         noticePresented: false,
         presentReadyWithoutPaint: true,
+      }),
+    ).toBe(false);
+    expect(
+      isBlankOnlyPlateFail({
+        hasReadyScanData: true,
+        paintState: 'pending',
+        noticePresented: false,
       }),
     ).toBe(true);
     expect(

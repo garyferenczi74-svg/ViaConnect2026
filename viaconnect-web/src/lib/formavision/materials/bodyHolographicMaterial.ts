@@ -86,6 +86,12 @@ export function makeBodyHolographicMaterial(): BodyWireframeMaterial {
   handle.uniforms.uTeal.value = new THREE.Color(HOLOGRAPHIC_F3_LINE_HEX);
   handle.material.userData.formavisionLook = FORMAVISION_HOLOGRAPHIC_F3_LOOK;
   handle.material.customProgramCacheKey = () => 'formavision-holographic-f3';
+  handle.uniforms.uMorph.value = 1;
+  // First-frame F3 without a uMorph hide. The #187/#189 phone miss was a
+  // hide-then-sweep that left WebKit on an invisible body after settle.
+  handle.setMorph = (_progress: number): void => {
+    handle.uniforms.uMorph.value = 1;
+  };
   handle.material.needsUpdate = true;
 
   return handle;

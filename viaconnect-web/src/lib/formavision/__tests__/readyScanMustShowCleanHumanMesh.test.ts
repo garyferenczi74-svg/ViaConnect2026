@@ -258,5 +258,11 @@ describe('Mobile WebKit: notice until painted, then the live mesh', () => {
     expect(acquire).toMatch(/SAFARI_SAFE_GL_ATTRIBUTES/);
     expect(acquire).toMatch(/preserveDrawingBuffer:\s*true/);
     expect(acquire).toMatch(/alpha:\s*false/);
+    expect(acquire).toMatch(/liveCanvasContextTypeOrder/);
+
+    const factory = src('src/lib/formavision/gl/createFormaVisionRenderer.ts');
+    expect(factory).toMatch(/glAttributesForHost/);
+    expect(factory).toMatch(/liveCanvasContextTypeOrder/);
+    expect(factory).not.toMatch(/attributes:\s*SAFE_GL_ATTRIBUTES/);
   });
 });

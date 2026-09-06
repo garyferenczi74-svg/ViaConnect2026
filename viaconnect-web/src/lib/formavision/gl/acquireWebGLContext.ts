@@ -60,6 +60,12 @@ export function glAttributeAttempts(
 
 const SAFARI_ORDER = ['webgl', 'experimental-webgl'] as const;
 const STANDARD_ORDER = ['webgl2', 'webgl', 'experimental-webgl'] as const;
+// THREE r163+ (current r184) throws if handed a WebGL1 context:
+// "WebGL 1 is not supported since r163." The #172 Safari order asked
+// webgl first so a failed webgl2 could not poison the live canvas — and
+// then passed that WebGL1 context into THREE. Gary #189 phone: flash,
+// then dark, paint=pending forever. The live r3f canvas is WebGL2-only.
+const LIVE_CANVAS_ORDER = ['webgl2'] as const;
 
 export function isSafariWebGLHost(
   userAgent: string = typeof navigator !== 'undefined' ? navigator.userAgent : '',
@@ -79,9 +85,27 @@ export function webglContextTypeOrder(
   return safariLike ? SAFARI_ORDER : STANDARD_ORDER;
 }
 
+export function liveCanvasContextTypeOrder(): readonly string[] {
+  return LIVE_CANVAS_ORDER;
+}
+
+// THREE r184 rejects WebGLRenderingContext. WebGL2 is the only live context
+// we may pass. Node unit tests duck-type a mock object — allow that.
+export function shouldPassContextToThreeRenderer(context: unknown): boolean {
+  if (context == null || typeof context !== 'object') return false;
+  if (typeof WebGL2RenderingContext !== 'undefined' && context instanceof WebGL2RenderingContext) {
+    return true;
+  }
+  if (typeof WebGLRenderingContext !== 'undefined' && context instanceof WebGLRenderingContext) {
+    return false;
+  }
+  return true;
+}
+
 export interface AcquireWebGLContextOptions {
   safariLike?: boolean;
   attributes?: WebGLContextAttributes;
+  typeOrder?: readonly string[];
 }
 
 export interface WebGLContextHost {
@@ -99,7 +123,7 @@ export function acquireWebGLContextResult(
 ): AcquiredWebGLContext | null {
   const safariLike = options.safariLike ?? false;
   const preferred = options.attributes ?? glAttributesForHost(safariLike);
-  const order = webglContextTypeOrder(safariLike);
+  const order = options.typeOrder ?? webglContextTypeOrder(safariLike);
   for (const attributes of glAttributeAttempts(preferred)) {
     for (const contextId of order) {
       const context = canvas.getContext(contextId, attributes);

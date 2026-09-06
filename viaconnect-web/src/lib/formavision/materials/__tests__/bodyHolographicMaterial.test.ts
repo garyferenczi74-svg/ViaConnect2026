@@ -29,6 +29,8 @@ describe('makeBodyHolographicMaterial', () => {
     expect(holo.uniforms.uLineIntensity.value).toBe(BODY_HOLOGRAPHIC_F3_DEFAULTS.lineIntensity);
     expect(isHolographicFillInRange(holo.uniforms.uFillOpacity.value as number)).toBe(true);
     expect(holo.uniforms.uMorph.value).toBe(1);
+    holo.setMorph(0);
+    expect(holo.uniforms.uMorph.value).toBe(1);
     holo.dispose();
   });
 

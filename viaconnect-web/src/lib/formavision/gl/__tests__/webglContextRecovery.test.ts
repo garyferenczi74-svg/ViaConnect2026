@@ -10,6 +10,9 @@ import {
   canvasHasZeroClientBox,
   drawingBufferHasPixels,
   shouldStampPaintedFrame,
+  FORMAVISION_FALLBACK_PLATE_HEIGHT,
+  FORMAVISION_FALLBACK_PLATE_WIDTH,
+  resolveCanvasLayoutBox,
   syncCanvasToParentBox,
   decideContextLossAction,
   decideZeroSizeAction,
@@ -137,6 +140,52 @@ describe('context-loss messages and canvas box', () => {
     expect(syncCanvasToParentBox(canvas, { setSize })).toEqual({ width: 390, height: 520 });
     expect(setSize).toHaveBeenCalledWith(390, 520, false);
     expect(canvas.style.width).toBe('100%');
+  });
+
+  it('walks ancestors and falls back to a definite plate box so F3 can draw', () => {
+    const grand = {
+      getBoundingClientRect: () => ({ width: 390, height: 520 }),
+      parentElement: null,
+    };
+    const parent = {
+      getBoundingClientRect: () => ({ width: 0, height: 0 }),
+      parentElement: grand,
+    };
+    expect(
+      resolveCanvasLayoutBox({
+        clientWidth: 0,
+        clientHeight: 0,
+        parentElement: parent,
+      }),
+    ).toEqual({ width: 390, height: 520, fromLayout: true });
+    expect(
+      resolveCanvasLayoutBox({
+        clientWidth: 0,
+        clientHeight: 0,
+        parentElement: null,
+      }),
+    ).toEqual({
+      width: FORMAVISION_FALLBACK_PLATE_WIDTH,
+      height: FORMAVISION_FALLBACK_PLATE_HEIGHT,
+      fromLayout: false,
+    });
+    const setSize = vi.fn();
+    const canvas = {
+      clientWidth: 0,
+      clientHeight: 0,
+      style: { display: '', width: '', height: '' },
+      parentElement: null,
+    } as unknown as HTMLCanvasElement;
+    expect(syncCanvasToParentBox(canvas, { setSize })).toEqual({
+      width: FORMAVISION_FALLBACK_PLATE_WIDTH,
+      height: FORMAVISION_FALLBACK_PLATE_HEIGHT,
+    });
+    expect(canvas.style.width).toBe(`${FORMAVISION_FALLBACK_PLATE_WIDTH}px`);
+    expect(setSize).toHaveBeenCalledWith(
+      FORMAVISION_FALLBACK_PLATE_WIDTH,
+      FORMAVISION_FALLBACK_PLATE_HEIGHT,
+      false,
+    );
   });
 
   it('preventDefault on lost so restore can fire, then remounts on restored', () => {

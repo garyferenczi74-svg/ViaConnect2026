@@ -6,6 +6,8 @@ import {
   acquireWebGLContext,
   acquireWebGLContextResult,
   isSafariWebGLHost,
+  liveCanvasContextTypeOrder,
+  shouldPassContextToThreeRenderer,
   webglContextTypeOrder,
   SAFE_GL_ATTRIBUTES,
   SAFARI_SAFE_GL_ATTRIBUTES,
@@ -50,13 +52,30 @@ describe('isSafariWebGLHost', () => {
 });
 
 describe('webglContextTypeOrder', () => {
-  it('asks WebGL1 first on Safari so the live canvas is never webgl2-poisoned', () => {
+  it('asks WebGL1 first on the Safari capability probe (fresh-canvas, not the live r3f canvas)', () => {
     expect(webglContextTypeOrder(true)[0]).toBe('webgl');
     expect(webglContextTypeOrder(true)).not.toContain('webgl2');
   });
 
   it('asks WebGL2 first on Chromium', () => {
     expect(webglContextTypeOrder(false)[0]).toBe('webgl2');
+  });
+
+  it('live r3f canvas is WebGL2-only so THREE r184 is never handed WebGL1', () => {
+    expect(liveCanvasContextTypeOrder()).toEqual(['webgl2']);
+    expect(liveCanvasContextTypeOrder()).not.toContain('webgl');
+    expect(liveCanvasContextTypeOrder()).not.toContain('experimental-webgl');
+  });
+});
+
+describe('shouldPassContextToThreeRenderer', () => {
+  it('refuses a real WebGL1 context and accepts duck-typed mocks', () => {
+    expect(shouldPassContextToThreeRenderer(null)).toBe(false);
+    expect(shouldPassContextToThreeRenderer({ kind: 'webgl2' })).toBe(true);
+    if (typeof WebGLRenderingContext === 'function') {
+      const webgl1 = Object.create(WebGLRenderingContext.prototype) as WebGLRenderingContext;
+      expect(shouldPassContextToThreeRenderer(webgl1)).toBe(false);
+    }
   });
 });
 
@@ -122,5 +141,20 @@ describe('acquireWebGLContext', () => {
     expect(glAttributesForHost(true)).toBe(SAFARI_SAFE_GL_ATTRIBUTES);
     expect(glAttributesForHost(false)).toBe(SAFE_GL_ATTRIBUTES);
     expect(SAFE_GL_ATTRIBUTES.alpha).toBe(true);
+  });
+
+  it('live Safari canvas asks webgl2 with opaque preserved-buffer attrs', () => {
+    const host = canvasThat((id) => (id === 'webgl2' ? { kind: 'webgl2' } : null));
+    const acquired = acquireWebGLContextResult(host, {
+      safariLike: true,
+      attributes: glAttributesForHost(true),
+      typeOrder: liveCanvasContextTypeOrder(),
+    });
+    expect(acquired?.context).toEqual({ kind: 'webgl2' });
+    expect(acquired?.attributes.alpha).toBe(false);
+    expect(acquired?.attributes.preserveDrawingBuffer).toBe(true);
+    const ids = host.getContext.mock.calls.map((c) => c[0]);
+    expect(ids.every((id) => id === 'webgl2')).toBe(true);
+    expect(ids).not.toContain('webgl');
   });
 });

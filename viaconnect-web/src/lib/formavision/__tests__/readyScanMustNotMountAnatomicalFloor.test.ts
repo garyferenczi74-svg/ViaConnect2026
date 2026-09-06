@@ -150,7 +150,7 @@ describe('Gary 2026-09-03: anatomical outline is gone from the consumer plate', 
     expect(presented.resultKind).toBe('scan-mesh');
     expect(presented.paintState).toBe('pending');
     expect(presented.floorPresented).toBe(false);
-    expect(presented.noticePresented).toBe(true);
+    expect(presented.noticePresented).toBe(false);
     expect(
       isPermanentLoadingRoleFail({
         hasReadyScanData: true,
