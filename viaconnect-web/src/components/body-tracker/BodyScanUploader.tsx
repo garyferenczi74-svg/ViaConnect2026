@@ -34,6 +34,7 @@ import type { ViewQualityResult } from '@/lib/arnold/scanning/runScanAnalysis';
 import type { ExtractedMeasurements } from '@/lib/arnold/scanning/types';
 import { sanitizeAnalyzeUserError } from '@/lib/body-tracker/composition/visionModel';
 import {
+  PHOTO_FLAGGED_PHOTOS_FOR_BEST_RESULTS,
   PHOTO_RETAKE_FOR_BEST_RESULTS,
   PHOTO_UPLOADER_PRIVACY_STRIP,
   PHOTO_WHAT_YOU_DO_NOT_GET,
@@ -413,8 +414,7 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
                   : `${failedViews.length} views need attention`}
               </p>
               <p className="mt-0.5 text-white/60">
-                Measurements from low-quality views will be marked low-confidence. Retake
-                the flagged photos for best accuracy.
+                {PHOTO_FLAGGED_PHOTOS_FOR_BEST_RESULTS}
               </p>
             </div>
           </div>
