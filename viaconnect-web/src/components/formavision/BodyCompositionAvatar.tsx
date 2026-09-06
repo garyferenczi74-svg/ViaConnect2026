@@ -225,7 +225,10 @@ function BodyCompositionAvatarInner({
     glbLoadFailed,
   });
   const parkPhoneR3f = readyViewer !== 'r3f';
-  const platePainted = canvasHasPainted || modelViewerPainted;
+  // Sherlock D: do not OR model-viewer load into the R3F paint detector.
+  // Parked Safari Ready uses modelViewerPainted only. Desktop R3F keeps
+  // canvasHasPainted / FirstPaintWatchdog unchanged.
+  const readyPainted = parkPhoneR3f ? modelViewerPainted : canvasHasPainted;
 
   // The active render tier (capability probe initially; stepped down at runtime) and
   // the sticky step-down trigger passed into the Canvas frame-budget monitor.
@@ -384,8 +387,8 @@ function BodyCompositionAvatarInner({
   }, [clearRestoreTimer]);
 
   useEffect(() => {
-    // Option A: phone / unknown Ready is parked off R3F. Do not lift
-    // presentReadyWithoutPaint or we hide the notice and leave blank navy.
+    // Jeffery Safari-phone lock: parked Ready never runs the R3F first-paint
+    // deadline / paint-detector lift. Notice stays until model-viewer paints.
     if (parkPhoneR3f) {
       return;
     }
@@ -471,16 +474,16 @@ function BodyCompositionAvatarInner({
   }, [fellBack, onTierStepDown]);
 
   const crossfade = resolveFloor3dCrossfade({
-    liveCanvasHasPainted: platePainted,
-    recovering,
-    fellBack,
+    liveCanvasHasPainted: readyPainted,
+    recovering: parkPhoneR3f ? false : recovering,
+    fellBack: parkPhoneR3f ? false : fellBack,
     reducedMotion: Boolean(reducedMotion),
     hasReadyScanData: readyLive,
     presentReadyWithoutPaint: parkPhoneR3f ? false : presentReadyWithoutPaint,
   });
 
   const presentation = resolveReadyPlatePresentation({
-    canvasHasPainted: platePainted,
+    canvasHasPainted: readyPainted,
     fellBack: parkPhoneR3f ? false : fellBack,
     recovering: parkPhoneR3f ? false : recovering,
     hasReadyScanData: readyLive,
@@ -666,7 +669,7 @@ function BodyCompositionAvatarInner({
       {readyLive &&
       readyViewer !== 'model-viewer' &&
       shouldPresentPlateNotice({
-        canvasHasPainted: platePainted,
+        canvasHasPainted: readyPainted,
         hasReadyScanData: readyLive,
         presentReadyWithoutPaint: parkPhoneR3f ? false : presentReadyWithoutPaint,
       }) ? (

@@ -1,6 +1,6 @@
-// Option A spike (Gary greenlight + Arnold TIP PASS):
-// Phone Ready ships via <model-viewer> 4.3.0 + Meshy visual GLB.
-// R3F phone Ready is parked. Forever Loading / paint-pending dark = FAIL.
+// Jeffery Safari-phone lock + Sherlock A+C+D (Picasso Option A):
+// A: Safari-proven <model-viewer> 4.3.0. C: Meshy visual GLB only.
+// D: no SnapMeasure OBJ, no blind R3F paint-detector churn.
 // Never-empty: live GLB or honest text notice. No alien floor.
 
 import { describe, expect, it } from 'vitest';
@@ -123,6 +123,45 @@ describe('Option A: phone Ready uses model-viewer GLB, not R3F', () => {
     expect(markup).toContain('data-r3f-parked="true"');
     expect(markup).not.toContain('formavision-3d-pending');
     expect(markup).toContain(FORMAVISION_PLATE_LOADING_NOTICE);
+  });
+
+  it('Sherlock A+C+D: Meshy GLB only, no SnapMeasure OBJ, no R3F paint-detector churn', () => {
+    const viewer = src('src/lib/formavision/viewer/selectReadyViewer.ts');
+    const pin = src('src/lib/formavision/viewer/modelViewerPin.ts');
+    const model = src('src/components/formavision/FormaVisionModelViewer.tsx');
+    const avatar = src('src/components/formavision/BodyCompositionAvatar.tsx');
+    expect(pin).toContain("MODEL_VIEWER_VERSION = '4.3.0'");
+    expect(viewer).toMatch(/isMeshyVisualGlbReady/);
+    expect(viewer).not.toMatch(/SnapMeasure|\.obj['"`]/);
+    expect(model).not.toMatch(/SnapMeasure|\.obj['"`]/);
+    expect(model).toMatch(/formavision-f3-overlay/);
+    expect(avatar).toMatch(/parkPhoneR3f/);
+    expect(avatar).toMatch(/readyPainted = parkPhoneR3f \? modelViewerPainted : canvasHasPainted/);
+    expect(avatar).not.toMatch(/canvasHasPainted \|\| modelViewerPainted/);
+    expect(model).not.toMatch(/shouldStampPaintedFrame|FirstPaintWatchdog|drawingBufferHasPixels/);
+  });
+
+  it('Jeffery lock: desktop Ready with Meshy GLB stays on R3F, not model-viewer', () => {
+    const scan = garyReadyScan();
+    const circumferences = estimateCircumferencesFromComposition(scan, 'male', 'in');
+    const markup = renderToStaticMarkup(
+      React.createElement(BodyCompositionAvatar, {
+        sex: 'male',
+        scan,
+        circumferences,
+        girthSource: 'estimate',
+        unit: 'in',
+        activeTab: 'bodyFat',
+        readyViewerHost: 'desktop',
+        meshyGlbUrl: GLB,
+        meshyStatus: 'succeeded',
+        children: React.createElement(FormaVisionPlateNotice, { kind: 'unavailable' }),
+      }),
+    );
+    expect(markup).toContain('data-ready-viewer="r3f"');
+    expect(markup).toContain('data-r3f-parked="false"');
+    expect(markup).toContain('formavision-3d-pending');
+    expect(markup).not.toContain('formavision-model-viewer-el');
   });
 
   it('product path wires model-viewer 4.3.0 and does not require phone R3F for Ready', () => {

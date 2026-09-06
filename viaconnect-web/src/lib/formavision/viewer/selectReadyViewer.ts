@@ -24,8 +24,9 @@ export function isMeshyVisualGlbReady(input: {
   );
 }
 
-// Phone Ready never depends on the R3F canvas. Unknown host is treated
-// like phone so SSR / first paint cannot hydrate a parked WebKit R3F path.
+// Sherlock A+C+D / Jeffery lock: park R3F only on Safari phone Ready
+// (and unknown SSR so iPhone cannot hydrate the #190 paint-pending canvas).
+// Desktop Ready is out of this spike — keep the existing R3F plate.
 export function shouldParkPhoneR3fReady(input: {
   host: ReadyViewerHost;
   hasReadyScanData: boolean;
@@ -49,7 +50,7 @@ export function isTerminalMeshyWithoutGlb(input: {
 
 export function selectReadyViewer(input: SelectReadyViewerInput): ReadyViewerKind {
   if (!input.hasReadyScanData) return 'r3f';
+  if (!shouldParkPhoneR3fReady(input)) return 'r3f';
   if (isMeshyVisualGlbReady(input)) return 'model-viewer';
-  if (shouldParkPhoneR3fReady(input)) return 'notice';
-  return 'r3f';
+  return 'notice';
 }

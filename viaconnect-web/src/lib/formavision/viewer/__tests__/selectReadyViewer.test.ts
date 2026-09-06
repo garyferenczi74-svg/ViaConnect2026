@@ -28,7 +28,7 @@ describe('selectReadyViewer Option A', () => {
     ).toBe(true);
   });
 
-  it('desktop Ready shares the same GLB via model-viewer', () => {
+  it('Jeffery lock: desktop Ready stays on R3F even when Meshy GLB exists', () => {
     expect(
       selectReadyViewer({
         host: 'desktop',
@@ -36,7 +36,7 @@ describe('selectReadyViewer Option A', () => {
         meshyStatus: 'succeeded',
         meshyGlbUrl: GLB,
       }),
-    ).toBe('model-viewer');
+    ).toBe('r3f');
   });
 
   it('phone / unknown Ready without GLB is an honest notice, never R3F', () => {

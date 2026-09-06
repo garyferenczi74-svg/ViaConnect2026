@@ -7,6 +7,7 @@ export {
 } from './modelViewerPin';
 export {
   detectReadyViewerHost,
+  isSafariPhoneUserAgent,
   type ReadyViewerHost,
   type ReadyViewerHostSignals,
 } from './detectReadyViewerHost';

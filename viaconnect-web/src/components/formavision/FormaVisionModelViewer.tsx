@@ -1,6 +1,7 @@
 'use client';
 
-// Option A Ready plate: in-page Meshy GLB via Google <model-viewer> 4.3.0.
+// Jeffery Safari-phone spike / Sherlock A+C+D (Picasso Option A):
+// in-page Meshy visual GLB via Google <model-viewer> 4.3.0.
 // Phone WebKit paints this path. R3F is not required for Ready success.
 // USDZ / Quick Look is bonus (ar + auto-generated ios-src in 4.3.0), not
 // the success bar. F3 holographic grid is a CSS overlay on the live GLB.

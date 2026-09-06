@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { detectReadyViewerHost } from '../detectReadyViewerHost';
+import { detectReadyViewerHost, isSafariPhoneUserAgent } from '../detectReadyViewerHost';
 
 describe('detectReadyViewerHost', () => {
-  it('classifies iPhone and Android phone UAs as phone', () => {
+  it('classifies iPhone Safari / WKWebView as phone', () => {
     expect(
       detectReadyViewerHost({
         userAgent:
@@ -10,11 +10,24 @@ describe('detectReadyViewerHost', () => {
       }),
     ).toBe('phone');
     expect(
+      isSafariPhoneUserAgent(
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15',
+      ),
+    ).toBe(true);
+  });
+
+  it('Jeffery lock: Android stays off the Safari-phone spike', () => {
+    expect(
       detectReadyViewerHost({
         userAgent:
           'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Mobile Safari/537.36',
       }),
-    ).toBe('phone');
+    ).toBe('desktop');
+    expect(
+      isSafariPhoneUserAgent(
+        'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Mobile Safari/537.36',
+      ),
+    ).toBe(false);
   });
 
   it('classifies desktop Chrome as desktop', () => {
