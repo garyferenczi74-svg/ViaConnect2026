@@ -3,15 +3,25 @@
 // Text-only plate notice. Gary standing lock 2026-09-03: the teal
 // anatomical outline is gone from the product path. Never-empty plate is
 // navy chamber + live 3D, or this caption. No SVG figure.
+// Theme 5: photo-discarded Ready copy is distinct from generic unavailable.
+// Never a cyan wireframe.
+
+import {
+  READY_UNAVAILABLE_GENERIC,
+  readyUnavailableCopy,
+  type ReadyUnavailableReason,
+} from '@/lib/formavision/twoProtocolCopy';
 
 export type PlateNoticeKind = 'loading' | 'unavailable';
 
 export type PlateNoticePlacement = 'caption' | 'fill';
 
+export type { ReadyUnavailableReason };
+
 export const FORMAVISION_PLATE_LOADING_NOTICE =
   'Loading 3D avatar from your scan.';
 
-export const FORMAVISION_PLATE_UNAVAILABLE_NOTICE = '3D avatar unavailable.';
+export const FORMAVISION_PLATE_UNAVAILABLE_NOTICE = READY_UNAVAILABLE_GENERIC;
 
 export const FORMAVISION_PLATE_NOTICE_TESTID = 'formavision-plate-notice';
 
@@ -25,22 +35,25 @@ export interface FormaVisionPlateNoticeProps {
   kind: PlateNoticeKind;
   className?: string;
   placement?: PlateNoticePlacement;
+  unavailableReason?: ReadyUnavailableReason;
 }
 
 export function FormaVisionPlateNotice({
   kind,
   className,
   placement = 'caption',
+  unavailableReason = 'generic',
 }: FormaVisionPlateNoticeProps) {
   const copy =
     kind === 'unavailable'
-      ? FORMAVISION_PLATE_UNAVAILABLE_NOTICE
+      ? readyUnavailableCopy(unavailableReason)
       : FORMAVISION_PLATE_LOADING_NOTICE;
 
   return (
     <p
       data-testid={FORMAVISION_PLATE_NOTICE_TESTID}
       data-notice={kind}
+      data-unavailable-reason={kind === 'unavailable' ? unavailableReason : undefined}
       data-placement={placement}
       role="status"
       className={

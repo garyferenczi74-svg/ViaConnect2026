@@ -140,6 +140,12 @@ import { resolveSurfaceState } from '@/lib/body-tracker/composition/surfaceState
 import { persistScan } from '@/lib/body-tracker/composition/persistScanClient';
 import type { MeasurementUnit } from '@/lib/body-tracker/circumference';
 import { getSegmentStatus, type SegmentStatus } from '@/lib/body-tracker/calculations';
+import {
+  BODY_COMP_SAVE_TOAST,
+  BODY_COMP_SCAN_PANEL_DESCRIPTION,
+  MUSCLE_ANALYSIS_PHOTO_ONLY_EMPTY,
+  isPhotoOnlyMuscleEmpty,
+} from '@/lib/formavision/twoProtocolCopy';
 
 // Prompt #85k: 12 finer-grained body parts that flank the silhouette.
 // Each card inherits its value from its parent segment (trunk / arm / leg)
@@ -861,8 +867,8 @@ function CompositionPageInner() {
       <InlineEntryPanel
         open={scanOpen}
         onOpenChange={(o) => { setScanOpen(o); if (!o) { setScanResult(null); setScanPersist({ phase: 'idle' }); } }}
-        title="Body Scan"
-        description="AI body composition estimate from 4 photos"
+        title="Photo estimate"
+        description={BODY_COMP_SCAN_PANEL_DESCRIPTION}
       >
         {scanResult ? (
           <div className="space-y-3">
@@ -890,7 +896,7 @@ function CompositionPageInner() {
             {scanPersist.phase === 'saved' && (
               <p className="inline-flex items-center gap-1.5 text-xs text-[#2DA5A0]">
                 <Check size={14} strokeWidth={1.5} />
-                Saved. Your composition is up to date.
+                {BODY_COMP_SAVE_TOAST}
               </p>
             )}
             {scanPersist.phase === 'error' && (
@@ -951,6 +957,14 @@ function CompositionPageInner() {
               <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 backdrop-blur-md p-4 sm:p-5 lg:p-3">
                 <h2 className="text-lg font-bold text-white">Muscle Analysis</h2>
                 <p className="text-xs text-white/60">Segmental muscle mass breakdown</p>
+                {isPhotoOnlyMuscleEmpty(snapshot) ? (
+                  <p
+                    data-testid="muscle-analysis-photo-only-empty"
+                    className="mt-3 text-sm leading-relaxed text-white/70"
+                  >
+                    {MUSCLE_ANALYSIS_PHOTO_ONLY_EMPTY}
+                  </p>
+                ) : null}
               </div>
             )}
 

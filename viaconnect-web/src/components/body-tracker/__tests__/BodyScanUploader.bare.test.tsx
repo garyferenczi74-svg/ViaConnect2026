@@ -50,6 +50,11 @@ describe('BodyScanUploader slot picker markup', () => {
     expect(html).toContain('aspect-[3/4]');
     expect(html).toContain('Analyze My Composition');
     expect(html).toContain('Upload saved images');
+    expect(html).toContain('photo-estimate-explainer');
+    expect(html).toContain('What you get:');
+    expect(html).toContain('What you do not get:');
+    expect(html).toContain('body-fat range estimate');
+    expect(html).not.toContain('Navy body fat from photos');
   });
 });
 

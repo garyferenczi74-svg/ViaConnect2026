@@ -2,6 +2,10 @@
 
 import { Info } from 'lucide-react';
 import type { BodyScanResult } from './BodyScanUploader';
+import {
+  BODY_SCAN_RESULTS_MUSCLE_IMPRESSION_TITLE,
+  BODY_SCAN_RESULTS_NOT_MUSCLE_LBS,
+} from '@/lib/formavision/twoProtocolCopy';
 
 interface BodyScanResultsProps {
   result: BodyScanResult;
@@ -93,7 +97,12 @@ export function BodyScanResults({ result, onRetake, onClose, onUseAsBaseline }: 
       </div>
 
       <div className="rounded-xl border border-white/[0.08] bg-white/5 p-4">
-        <p className="mb-3 text-[11px] uppercase tracking-wider text-white/40">Muscle Development</p>
+        <p
+          data-testid="body-scan-results-muscle-impression-title"
+          className="mb-3 text-[11px] uppercase tracking-wider text-white/40"
+        >
+          {BODY_SCAN_RESULTS_MUSCLE_IMPRESSION_TITLE}
+        </p>
         <div className="space-y-2">
           {muscleEntries.map(([key, val]) => (
             <div key={key} className="flex items-center justify-between gap-3">
@@ -102,6 +111,12 @@ export function BodyScanResults({ result, onRetake, onClose, onUseAsBaseline }: 
             </div>
           ))}
         </div>
+        <p
+          data-testid="body-scan-results-not-muscle-lbs"
+          className="mt-3 text-[11px] leading-relaxed text-white/45"
+        >
+          {BODY_SCAN_RESULTS_NOT_MUSCLE_LBS}
+        </p>
       </div>
 
       <div className="flex items-start gap-2 rounded-lg border border-white/[0.06] bg-white/[0.03] p-3 text-xs text-white/55">

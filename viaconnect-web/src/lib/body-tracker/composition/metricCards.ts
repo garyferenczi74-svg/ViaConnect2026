@@ -2,6 +2,10 @@
 // UNKNOWN (null) renders value 'No data' and status 'Unknown' - never '0' or '0%'.
 
 import type { MetricStatus } from '@/components/body-tracker/FloatingMetricCard';
+import {
+  formatPhotoSourcedBfChip,
+  photoSourcedBfStatusValue,
+} from '@/lib/formavision/twoProtocolCopy';
 import type { CompositionSnapshot } from './types';
 
 export type MetricCardData = {
@@ -47,21 +51,19 @@ export function buildMetricCards(
   const totalFatPct = snap?.totalBodyFatPct ?? null;
   const visceralFatRating = snap?.visceralFatRating ?? null;
   const bodyWaterPct = snap?.bodyWaterPct ?? null;
-  const estMin = snap?.estimatedBodyFatMin ?? null;
-  const estMax = snap?.estimatedBodyFatMax ?? null;
-  const showRange =
-    estMin !== null && estMax !== null && Number.isFinite(estMin) && Number.isFinite(estMax);
+  const photoChip = snap ? formatPhotoSourcedBfChip(snap) : null;
+  const photoStatusValue = snap ? photoSourcedBfStatusValue(snap) : null;
 
-  const fatCard: MetricCardData = showRange
+  const fatCard: MetricCardData = photoChip
     ? {
         label: 'Total Body Fat',
-        value: `est. ${estMin.toFixed(1)}–${estMax.toFixed(1)}%`,
-        status: bodyFatStatus((estMin + estMax) / 2),
+        value: photoChip,
+        status: photoStatusValue !== null ? bodyFatStatus(photoStatusValue) : 'Unknown',
       }
     : totalFatPct !== null
       ? {
           label: 'Total Body Fat',
-          value: snap?.isEstimated ? `est. ${totalFatPct}%` : `${totalFatPct}%`,
+          value: `${totalFatPct}%`,
           status: bodyFatStatus(totalFatPct),
         }
       : { label: 'Total Body Fat', value: NO_DATA, status: 'Unknown' };

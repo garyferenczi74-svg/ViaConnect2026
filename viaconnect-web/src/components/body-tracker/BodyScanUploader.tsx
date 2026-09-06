@@ -33,6 +33,10 @@ import {
 import type { ViewQualityResult } from '@/lib/arnold/scanning/runScanAnalysis';
 import type { ExtractedMeasurements } from '@/lib/arnold/scanning/types';
 import { sanitizeAnalyzeUserError } from '@/lib/body-tracker/composition/visionModel';
+import {
+  PHOTO_WHAT_YOU_DO_NOT_GET,
+  PHOTO_WHAT_YOU_GET,
+} from '@/lib/formavision/twoProtocolCopy';
 
 export type { PhotoPosition, BodyScanEstimate, BodyScanResult };
 
@@ -414,6 +418,21 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
           </div>
         );
       })()}
+
+      <div
+        data-testid="photo-estimate-explainer"
+        className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-3 text-xs text-white/55"
+      >
+        <p className="font-semibold text-white/70">Photo estimate</p>
+        <p className="mt-2">
+          <span className="font-semibold text-white/65">What you get: </span>
+          {PHOTO_WHAT_YOU_GET}
+        </p>
+        <p className="mt-1.5">
+          <span className="font-semibold text-white/65">What you do not get: </span>
+          {PHOTO_WHAT_YOU_DO_NOT_GET}
+        </p>
+      </div>
 
       <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-3 text-xs text-white/55">
         <p className="font-semibold text-white/70">Tips for best results:</p>

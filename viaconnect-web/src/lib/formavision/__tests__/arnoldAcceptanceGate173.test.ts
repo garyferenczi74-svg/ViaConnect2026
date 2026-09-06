@@ -262,7 +262,9 @@ describe('Arnold acceptance gate 4: FRBL hide unchanged', () => {
     const history = src('src/components/scan/ScanHistory.tsx');
     const summary = src('src/lib/scan/scanSummary.ts');
     expect(history).toMatch(/scanHistoryShowsFrblGrid/);
-    expect(history).toMatch(/Photos are not stored after analysis/);
+    expect(history).toMatch(/SCAN_HISTORY_PHOTOS_DISCARDED/);
     expect(summary).toMatch(/formavision_photo never shows the FRBL grid/);
+    const copy = src('src/lib/formavision/twoProtocolCopy.ts');
+    expect(copy).toMatch(/Photos are not stored after analysis/);
   });
 });

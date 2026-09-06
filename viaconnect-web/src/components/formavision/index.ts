@@ -22,6 +22,7 @@ export {
 export type {
   FormaVisionPlateNoticeProps,
   PlateNoticeKind,
+  ReadyUnavailableReason,
 } from './FormaVisionPlateNotice';
 export {
   SelectBodyPartControl,
