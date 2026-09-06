@@ -19,3 +19,9 @@ export {
   type ReadyViewerKind,
   type SelectReadyViewerInput,
 } from './selectReadyViewer';
+export {
+  applyF3HolographicOverlay,
+  F3_OVERLAY_FILL_OPACITY,
+  F3_OVERLAY_LINE_HEX,
+  type ModelViewerModel,
+} from './applyF3HolographicOverlay';

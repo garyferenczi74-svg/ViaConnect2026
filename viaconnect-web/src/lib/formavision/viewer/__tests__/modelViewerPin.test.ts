@@ -25,6 +25,8 @@ describe('model-viewer pin', () => {
     expect(pin).toContain('ajax.googleapis.com/ajax/libs/model-viewer');
     expect(viewer).toContain('ensureModelViewerScript');
     expect(viewer).toContain('<model-viewer');
+    expect(viewer).toContain('applyF3HolographicOverlay');
     expect(viewer).toContain('ios-src');
+    expect(viewer).not.toContain('ar-modes');
   });
 });

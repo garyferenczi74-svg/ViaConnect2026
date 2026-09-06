@@ -1,25 +1,27 @@
 'use client';
 
-// Jeffery Safari-phone spike / Sherlock A+C+D (Picasso Option A):
-// in-page Meshy visual GLB via Google <model-viewer> 4.3.0.
-// Phone WebKit paints this path. R3F is not required for Ready success.
-// USDZ / Quick Look is bonus (ar + auto-generated ios-src in 4.3.0), not
-// the success bar. F3 holographic grid is a CSS overlay on the live GLB.
+// Phone Ready success: in-page Meshy GLB via Google <model-viewer> 4.3.0.
+// F3 cyan overlay is applied to the loaded mesh materials (real topology).
+// R3F is not the phone Ready success path.
 
 import { useEffect, useRef, useState } from 'react';
 import { FORMA_VISION_HEX } from '@/lib/formavision/materials/formaVisionTokens';
+import { applyF3HolographicOverlay } from '@/lib/formavision/viewer/applyF3HolographicOverlay';
 import {
   MODEL_VIEWER_VERSION,
   ensureModelViewerScript,
 } from '@/lib/formavision/viewer/modelViewerPin';
+import type { ModelViewerModel } from '@/lib/formavision/viewer/applyF3HolographicOverlay';
 import { FormaVisionPlateNotice } from './FormaVisionPlateNotice';
 
-// Brief 60 Frame 3 line color (Chrome plasma teal). Overlay only — the
-// four locked brand tokens stay unchanged.
-const F3_GRID_TEAL = '#2EE6D6';
+const F3_RIM = '#2EE6D6';
 
 export const FORMAVISION_MODEL_VIEWER_TESTID = 'formavision-model-viewer';
 export const FORMAVISION_F3_OVERLAY_TESTID = 'formavision-f3-overlay';
+
+interface ModelViewerHost extends HTMLElement {
+  model?: ModelViewerModel;
+}
 
 export interface FormaVisionModelViewerProps {
   src: string;
@@ -41,6 +43,7 @@ export function FormaVisionModelViewer({
   const hostRef = useRef<HTMLDivElement | null>(null);
   const [scriptReady, setScriptReady] = useState(false);
   const [scriptFailed, setScriptFailed] = useState(false);
+  const [f3Applied, setF3Applied] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -67,6 +70,8 @@ export function FormaVisionModelViewer({
     if (!el) return;
 
     const handleLoad = (): void => {
+      const applied = applyF3HolographicOverlay((el as ModelViewerHost).model);
+      setF3Applied(applied);
       onPainted?.();
     };
     const handleError = (): void => {
@@ -88,6 +93,8 @@ export function FormaVisionModelViewer({
       data-testid={FORMAVISION_MODEL_VIEWER_TESTID}
       data-model-viewer-version={MODEL_VIEWER_VERSION}
       data-painted={painted ? 'true' : 'false'}
+      data-f3-applied={String(f3Applied)}
+      data-f3-look="holographic-f3"
       className="absolute inset-0 h-full w-full"
       style={{ backgroundColor: FORMA_VISION_HEX.navy }}
     >
@@ -101,10 +108,8 @@ export function FormaVisionModelViewer({
         camera-orbit="180deg 75deg 2.7m"
         field-of-view="38deg"
         shadow-intensity="0"
-        exposure="0.9"
+        exposure="0.85"
         reveal="auto"
-        ar
-        ar-modes="webxr scene-viewer quick-look"
         data-testid="formavision-model-viewer-el"
         data-script-ready={scriptReady ? 'true' : 'false'}
         style={{
@@ -119,12 +124,9 @@ export function FormaVisionModelViewer({
         aria-hidden
         className="pointer-events-none absolute inset-0 z-10"
         style={{
-          backgroundImage: [
-            `repeating-linear-gradient(0deg, transparent 0 7px, ${F3_GRID_TEAL}14 7px 8px)`,
-            `repeating-linear-gradient(90deg, transparent 0 7px, ${F3_GRID_TEAL}10 7px 8px)`,
-          ].join(', '),
-          mixBlendMode: 'screen',
-          boxShadow: `inset 0 0 80px ${F3_GRID_TEAL}40`,
+          background:
+            `radial-gradient(ellipse at 50% 42%, transparent 46%, ${FORMA_VISION_HEX.navy}99 100%)`,
+          boxShadow: `inset 0 0 72px ${F3_RIM}33`,
         }}
       />
       {showNotice ? (

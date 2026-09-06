@@ -18,8 +18,6 @@ interface ModelViewerJSX
   exposure?: string | number;
   reveal?: string;
   loading?: 'auto' | 'lazy' | 'eager';
-  ar?: boolean | '';
-  'ar-modes'?: string;
   'data-testid'?: string;
   class?: string;
   className?: string;

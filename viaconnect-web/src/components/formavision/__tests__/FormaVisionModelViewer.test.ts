@@ -22,7 +22,8 @@ describe('FormaVisionModelViewer', () => {
     expect(markup).toContain('https://example.test/visual.glb');
     expect(markup).toContain('https://example.test/visual.usdz');
     expect(markup).toContain('camera-controls');
-    expect(markup).toContain('ar-modes');
+    expect(markup).toContain('data-f3-look="holographic-f3"');
+    expect(markup).not.toContain('ar-modes');
     expect(markup).toContain(FORMAVISION_F3_OVERLAY_TESTID);
     expect(markup).toContain(FORMAVISION_PLATE_LOADING_NOTICE);
     expect(markup).not.toContain('formavision-anatomical-floor');
