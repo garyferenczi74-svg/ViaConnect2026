@@ -9,7 +9,9 @@ import {
 
 export const SEGMENTAL_MUSCLE_SOURCE_DEXA = 'dexa' as const;
 export const SEGMENTAL_MUSCLE_SOURCE_INBODY = 'inbody' as const;
-export const SEGMENTAL_MUSCLE_SOURCE_MANUAL = 'other' as const;
+export const SEGMENTAL_MUSCLE_SOURCE_MANUAL = 'manual' as const;
+/** Theme 3 wrote Manual as opaque `other`. Read-only alias — never a write allow-list member. */
+export const SEGMENTAL_MUSCLE_SOURCE_MANUAL_LEGACY = 'other' as const;
 
 export const SEGMENTAL_MUSCLE_ALLOWED_SOURCE_IDS = [
   SEGMENTAL_MUSCLE_SOURCE_DEXA,
@@ -31,6 +33,12 @@ export function isSegmentalMuscleSourceId(
   );
 }
 
+export function isLegacyManualSegmentalSourceId(
+  sourceId: string | null | undefined,
+): boolean {
+  return sourceId === SEGMENTAL_MUSCLE_SOURCE_MANUAL_LEGACY;
+}
+
 export function canWriteSegmentalMuscleLbs(
   sourceId: DataSourceId | string | null | undefined,
 ): boolean {
@@ -46,17 +54,37 @@ export function formatSegmentalMuscleProvenanceChip(
 ): string | null {
   if (sourceId === SEGMENTAL_MUSCLE_SOURCE_DEXA) return 'DEXA';
   if (sourceId === SEGMENTAL_MUSCLE_SOURCE_INBODY) return 'InBody';
-  if (sourceId === SEGMENTAL_MUSCLE_SOURCE_MANUAL) return 'Manual';
+  if (
+    sourceId === SEGMENTAL_MUSCLE_SOURCE_MANUAL ||
+    isLegacyManualSegmentalSourceId(sourceId)
+  ) {
+    return 'Manual';
+  }
   return null;
 }
 
 export function formatCompositionProvenanceChip(
   sourceId: string | null | undefined,
 ): string | null {
-  const muscleChip = formatSegmentalMuscleProvenanceChip(sourceId);
-  if (muscleChip) return muscleChip;
+  // Write-allow ids keep DEXA / InBody / Manual chips. Do not alias `other`
+  // here — true Other / Estimate stays labeled from DATA_SOURCES.
+  if (isSegmentalMuscleSourceId(sourceId)) {
+    return formatSegmentalMuscleProvenanceChip(sourceId);
+  }
   const src = getDataSource(sourceId as DataSourceId | null);
   return src?.label ?? null;
+}
+
+/** Muscle-section chip: legacy `other` → Manual only when lbs are already stored. */
+export function formatMuscleSectionProvenanceChip(
+  sourceId: string | null | undefined,
+  hasMuscleLbs: boolean,
+): string | null {
+  if (hasMuscleLbs) {
+    const muscleChip = formatSegmentalMuscleProvenanceChip(sourceId);
+    if (muscleChip) return muscleChip;
+  }
+  return formatCompositionProvenanceChip(sourceId);
 }
 
 export const MUSCLE_SCALE_BLOCKED_COPY =
@@ -68,5 +96,9 @@ export function showMuscleSegmentalBreakdownTitle(input: {
   manualSourceId?: string | null;
   hasMuscleLbs: boolean;
 }): boolean {
-  return input.hasMuscleLbs && isSegmentalMuscleSourceId(input.manualSourceId);
+  return (
+    input.hasMuscleLbs &&
+    (isSegmentalMuscleSourceId(input.manualSourceId) ||
+      isLegacyManualSegmentalSourceId(input.manualSourceId))
+  );
 }

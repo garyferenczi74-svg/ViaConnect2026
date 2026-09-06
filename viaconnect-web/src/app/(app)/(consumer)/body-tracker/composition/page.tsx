@@ -154,6 +154,7 @@ import {
 import {
   MUSCLE_BREAKDOWN_TITLE,
   formatCompositionProvenanceChip,
+  formatMuscleSectionProvenanceChip,
   showMuscleSegmentalBreakdownTitle,
 } from '@/lib/body-tracker/composition/segmentalMuscleSources';
 
@@ -955,6 +956,11 @@ function CompositionPageInner() {
         const isMuscle = section === 'muscle';
         const isMeasurements = section === 'measurements';
         const photoOnlyMuscle = isMuscle && isPhotoOnlyMuscleEmpty(snapshot);
+        const hasMuscleLbs = snapshot ? hasSegmentalMuscleLbs(snapshot) : false;
+        const muscleProvenanceChip = formatMuscleSectionProvenanceChip(
+          snapshot?.manualSourceId,
+          hasMuscleLbs,
+        );
         return (
           <>
             {section === 'fat' && (
@@ -982,17 +988,17 @@ function CompositionPageInner() {
                     ? MUSCLE_ANALYSIS_PHOTO_ONLY_SUBTITLE
                     : showMuscleSegmentalBreakdownTitle({
                         manualSourceId: snapshot?.manualSourceId,
-                        hasMuscleLbs: snapshot ? hasSegmentalMuscleLbs(snapshot) : false,
+                        hasMuscleLbs,
                       })
                       ? MUSCLE_BREAKDOWN_TITLE
                       : 'Muscle mass (lbs) from Manual, DEXA, or InBody'}
                 </p>
-                {formatCompositionProvenanceChip(snapshot?.manualSourceId) ? (
+                {muscleProvenanceChip ? (
                   <span
                     data-testid="muscle-analysis-provenance-chip"
                     className="mt-2 inline-block rounded-full border border-white/15 px-2 py-0.5 text-[10px] font-medium text-white/70"
                   >
-                    {formatCompositionProvenanceChip(snapshot?.manualSourceId)}
+                    {muscleProvenanceChip}
                   </span>
                 ) : null}
                 {photoOnlyMuscle ? (
