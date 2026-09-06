@@ -78,8 +78,16 @@ import {
   type PlatePaintState,
 } from '@/lib/formavision/tier/readyPlateContract';
 import { selectPlateMeshSource } from '@/lib/formavision/meshy/selectPlateMeshSource';
+import {
+  detectReadyViewerHost,
+  isTerminalMeshyWithoutGlb,
+  selectReadyViewer,
+  type ReadyViewerHost,
+} from '@/lib/formavision/viewer';
+import { MODEL_VIEWER_VERSION } from '@/lib/formavision/viewer/modelViewerPin';
 import { FormaVision3DAvatar } from './FormaVision3DAvatar';
 import { FormaVisionFallbackNotice } from './FormaVisionFallbackNotice';
+import { FormaVisionModelViewer } from './FormaVisionModelViewer';
 import { FormaVisionPlateNotice } from './FormaVisionPlateNotice';
 import { probeWebGL } from './hasWebGL';
 import { useRenderTier, useReportBudgetMiss } from './RenderTierProvider';
@@ -139,6 +147,10 @@ export interface BodyCompositionAvatarProps {
   onFloorMotion?: (frame: FloorMotionFrame) => void;
   meshyGlbUrl?: string | null;
   meshyStatus?: MeshyVisualStatus;
+  // Optional USDZ for model-viewer ios-src (Quick Look bonus, not success).
+  meshyUsdzUrl?: string | null;
+  // Test / SSR override. Client defaults to unknown then detects phone vs desktop.
+  readyViewerHost?: ReadyViewerHost;
   // Honest text-only fallback child. Never an anatomical outline figure.
   children: React.ReactNode;
 }
@@ -177,6 +189,8 @@ function BodyCompositionAvatarInner({
   onFloorMotion,
   meshyGlbUrl = null,
   meshyStatus = 'idle',
+  meshyUsdzUrl = null,
+  readyViewerHost,
   children,
 }: BodyCompositionAvatarProps) {
   // Remounts a live-canvas miss while getContext still works (not "no WebGL").
@@ -196,7 +210,22 @@ function BodyCompositionAvatarInner({
   const restoreTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [latchSurface, setLatchSurface] = useState(false);
   const [settled, setSettled] = useState(false);
+  const [modelViewerPainted, setModelViewerPainted] = useState(false);
+  const [glbLoadFailed, setGlbLoadFailed] = useState(false);
+  const [detectedHost, setDetectedHost] = useState<ReadyViewerHost>(
+    readyViewerHost ?? 'unknown',
+  );
   const readyLive = hasReadyScanData(scan);
+  const viewerHost = readyViewerHost ?? detectedHost;
+  const readyViewer = selectReadyViewer({
+    host: viewerHost,
+    hasReadyScanData: readyLive,
+    meshyStatus,
+    meshyGlbUrl,
+    glbLoadFailed,
+  });
+  const parkPhoneR3f = readyViewer !== 'r3f';
+  const platePainted = canvasHasPainted || modelViewerPainted;
 
   // The active render tier (capability probe initially; stepped down at runtime) and
   // the sticky step-down trigger passed into the Canvas frame-budget monitor.
@@ -239,6 +268,30 @@ function BodyCompositionAvatarInner({
     restoreSpinsRef.current = 0;
     clearRestoreTimer();
   }, [clearRestoreTimer]);
+
+  const handleModelViewerPainted = useCallback((): void => {
+    setModelViewerPainted(true);
+    setGlbLoadFailed(false);
+    setFallbackReason(null);
+  }, []);
+
+  const handleModelViewerError = useCallback((): void => {
+    setModelViewerPainted(false);
+    setGlbLoadFailed(true);
+  }, []);
+
+  useEffect(() => {
+    if (readyViewerHost) {
+      setDetectedHost(readyViewerHost);
+      return;
+    }
+    setDetectedHost(detectReadyViewerHost());
+  }, [readyViewerHost]);
+
+  useEffect(() => {
+    setModelViewerPainted(false);
+    setGlbLoadFailed(false);
+  }, [meshyGlbUrl]);
 
   const latchHonestFloor = useCallback((message: string): void => {
     clearRestoreTimer();
@@ -331,6 +384,11 @@ function BodyCompositionAvatarInner({
   }, [clearRestoreTimer]);
 
   useEffect(() => {
+    // Option A: phone / unknown Ready is parked off R3F. Do not lift
+    // presentReadyWithoutPaint or we hide the notice and leave blank navy.
+    if (parkPhoneR3f) {
+      return;
+    }
     if (canvasHasPainted || presentReadyWithoutPaint || (fellBack && !readyLive)) {
       return;
     }
@@ -365,6 +423,7 @@ function BodyCompositionAvatarInner({
     handleFirstInteractive,
     latchHonestFloor,
     mountEpoch,
+    parkPhoneR3f,
     presentReadyWithoutPaint,
     readyLive,
   ]);
@@ -412,20 +471,20 @@ function BodyCompositionAvatarInner({
   }, [fellBack, onTierStepDown]);
 
   const crossfade = resolveFloor3dCrossfade({
-    liveCanvasHasPainted: canvasHasPainted,
+    liveCanvasHasPainted: platePainted,
     recovering,
     fellBack,
     reducedMotion: Boolean(reducedMotion),
     hasReadyScanData: readyLive,
-    presentReadyWithoutPaint,
+    presentReadyWithoutPaint: parkPhoneR3f ? false : presentReadyWithoutPaint,
   });
 
   const presentation = resolveReadyPlatePresentation({
-    canvasHasPainted,
-    fellBack,
-    recovering,
+    canvasHasPainted: platePainted,
+    fellBack: parkPhoneR3f ? false : fellBack,
+    recovering: parkPhoneR3f ? false : recovering,
     hasReadyScanData: readyLive,
-    presentReadyWithoutPaint,
+    presentReadyWithoutPaint: parkPhoneR3f ? false : presentReadyWithoutPaint,
   });
 
   useEffect(() => {
@@ -495,12 +554,25 @@ function BodyCompositionAvatarInner({
     meshSource: selectPlateMeshSource({
       meshyGlbUrl,
       meshyStatus,
-      glbLoadFailed: false,
+      glbLoadFailed,
     }),
     parametricLook: 'holographic',
   });
+  const mountedSurface =
+    readyViewer === 'model-viewer'
+      ? 'model-viewer'
+      : readyViewer === 'notice'
+        ? 'ready-notice'
+        : surface;
+  const noticeKind = isTerminalMeshyWithoutGlb({
+    meshyStatus,
+    meshyGlbUrl,
+    glbLoadFailed,
+  })
+    ? 'unavailable'
+    : 'loading';
   const diagnostics = {
-    'data-surface': surface,
+    'data-surface': mountedSurface,
     'data-tier': tier,
     'data-morph': morphStamp.morph,
     'data-morph-source': morphStamp.source,
@@ -514,10 +586,15 @@ function BodyCompositionAvatarInner({
     'data-mesh-look': meshLook,
     'data-half-morph-ms': String(FORMAVISION_MOTION_SPEC.halfMorphMs),
     'data-f1-to-f3-ms': String(brief60F1ToF3Ms()),
+    'data-ready-viewer': readyViewer,
+    'data-ready-host': viewerHost,
+    'data-r3f-parked': parkPhoneR3f ? 'true' : 'false',
+    'data-model-viewer-version':
+      readyViewer === 'model-viewer' ? MODEL_VIEWER_VERSION : undefined,
   } as const;
   const plateDiagnostics = formatPlateDiagnostics(presented);
 
-  if (surface === 'fallback2d') {
+  if (surface === 'fallback2d' && !parkPhoneR3f) {
     return (
       <div
         data-testid="formavision-avatar-footprint"
@@ -587,58 +664,70 @@ function BodyCompositionAvatarInner({
         </div>
       ) : null}
       {readyLive &&
+      readyViewer !== 'model-viewer' &&
       shouldPresentPlateNotice({
-        canvasHasPainted,
+        canvasHasPainted: platePainted,
         hasReadyScanData: readyLive,
-        presentReadyWithoutPaint,
+        presentReadyWithoutPaint: parkPhoneR3f ? false : presentReadyWithoutPaint,
       }) ? (
-        <FormaVisionPlateNotice kind="loading" />
+        <FormaVisionPlateNotice kind={noticeKind} />
       ) : null}
       {fellBack && !latchSurface && !readyLive ? (
         <FormaVisionFallbackNotice reason={fallbackReason} webgl={fallbackWebgl}>
           {null}
         </FormaVisionFallbackNotice>
       ) : null}
-      <FormaVision3DAvatar
-        key={mountEpoch}
-        sex={sex}
-        scan={scan}
-        firstScan={firstScan}
-        circumferences={circumferences}
-        unit={unit}
-        heightCm={heightCm}
-        activeTab={activeTab}
-        selectedBodyPart={selectedBodyPart}
-        onSelectBodyPart={onSelectBodyPart}
-        reducedMotion={reducedMotion}
-        segmentTints={segmentTints}
-        scrubVector={scrubVector}
-        ghostVector={ghostVector}
-        showGhost={showGhost}
-        wipeActive={wipeActive}
-        wipeT={wipeT}
-        wipeVector={wipeVector}
-        renderTier={renderTier}
-        onBudgetMissed={reportBudgetMiss}
-        onRenderError={handleRenderError}
-        onContextRestored={handleContextRestored}
-        onOrbitEnd={onOrbitEnd}
-        onFirstInteractive={handleFirstInteractive}
-        frameloopMode={frameloopAfterDeadline({
-          painted: canvasHasPainted,
-          action: decideFirstPaintDeadlineAction({
+      {readyViewer === 'model-viewer' && meshyGlbUrl ? (
+        <FormaVisionModelViewer
+          src={meshyGlbUrl}
+          iosSrc={meshyUsdzUrl}
+          painted={modelViewerPainted}
+          onPainted={handleModelViewerPainted}
+          onError={handleModelViewerError}
+        />
+      ) : null}
+      {readyViewer === 'r3f' ? (
+        <FormaVision3DAvatar
+          key={mountEpoch}
+          sex={sex}
+          scan={scan}
+          firstScan={firstScan}
+          circumferences={circumferences}
+          unit={unit}
+          heightCm={heightCm}
+          activeTab={activeTab}
+          selectedBodyPart={selectedBodyPart}
+          onSelectBodyPart={onSelectBodyPart}
+          reducedMotion={reducedMotion}
+          segmentTints={segmentTints}
+          scrubVector={scrubVector}
+          ghostVector={ghostVector}
+          showGhost={showGhost}
+          wipeActive={wipeActive}
+          wipeT={wipeT}
+          wipeVector={wipeVector}
+          renderTier={renderTier}
+          onBudgetMissed={reportBudgetMiss}
+          onRenderError={handleRenderError}
+          onContextRestored={handleContextRestored}
+          onOrbitEnd={onOrbitEnd}
+          onFirstInteractive={handleFirstInteractive}
+          frameloopMode={frameloopAfterDeadline({
             painted: canvasHasPainted,
-            hasReadyScanData: readyLive,
-          }),
-          requested: frameloopMode,
-        })}
-        girthSource={girthSource}
-        morph3d={crossfade.morph3d}
-        morphDurationMs={crossfade.durationMs}
-        morphEasing={crossfade.easing}
-        meshyGlbUrl={meshyGlbUrl}
-        meshyStatus={meshyStatus}
-      />
+            action: decideFirstPaintDeadlineAction({
+              painted: canvasHasPainted,
+              hasReadyScanData: readyLive,
+            }),
+            requested: frameloopMode,
+          })}
+          girthSource={girthSource}
+          morph3d={crossfade.morph3d}
+          morphDurationMs={crossfade.durationMs}
+          morphEasing={crossfade.easing}
+          meshyGlbUrl={meshyGlbUrl}
+          meshyStatus={meshyStatus}
+        />
+      ) : null}
       <p
         data-testid="formavision-plate-diagnostics"
         className="pointer-events-none absolute bottom-1 left-1 z-30 font-mono text-[10px] leading-none text-white/40"

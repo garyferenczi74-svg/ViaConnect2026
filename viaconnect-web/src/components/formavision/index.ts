@@ -7,6 +7,8 @@ export type {
   BodyCompositionAvatarProps,
   FloorMotionFrame,
 } from './BodyCompositionAvatar';
+export { FormaVisionModelViewer } from './FormaVisionModelViewer';
+export type { FormaVisionModelViewerProps } from './FormaVisionModelViewer';
 export { FormaVisionAnatomicalFloor } from './FormaVisionAnatomicalFloor';
 export type { FormaVisionAnatomicalFloorProps } from './FormaVisionAnatomicalFloor';
 export { FormaVisionLocalSilhouette } from './FormaVisionLocalSilhouette';

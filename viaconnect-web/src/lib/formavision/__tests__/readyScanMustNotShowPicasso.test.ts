@@ -64,6 +64,7 @@ function renderReadyPlate() {
       girthSource: 'estimate',
       unit: 'in',
       activeTab: 'bodyFat',
+      readyViewerHost: 'desktop',
       children: React.createElement(FormaVisionAnatomicalFloor, {
         sex: 'male',
         floorRole: 'unavailable',

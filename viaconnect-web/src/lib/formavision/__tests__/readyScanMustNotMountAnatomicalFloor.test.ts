@@ -78,6 +78,7 @@ function renderReadyPlate() {
       girthSource: 'estimate',
       unit: 'in',
       activeTab: 'bodyFat',
+      readyViewerHost: 'desktop',
       children: React.createElement(FormaVisionPlateNotice, {
         kind: 'unavailable',
       }),
