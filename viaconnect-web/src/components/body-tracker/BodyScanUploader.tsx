@@ -34,6 +34,8 @@ import type { ViewQualityResult } from '@/lib/arnold/scanning/runScanAnalysis';
 import type { ExtractedMeasurements } from '@/lib/arnold/scanning/types';
 import { sanitizeAnalyzeUserError } from '@/lib/body-tracker/composition/visionModel';
 import {
+  PHOTO_RETAKE_FOR_BEST_RESULTS,
+  PHOTO_UPLOADER_PRIVACY_STRIP,
   PHOTO_WHAT_YOU_DO_NOT_GET,
   PHOTO_WHAT_YOU_GET,
 } from '@/lib/formavision/twoProtocolCopy';
@@ -329,7 +331,7 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
                       <span>{pos.label}</span>
                       {qualityFailed && (
                         <span className="text-[10px] text-[#B75E18]/90 text-center px-1 leading-tight">
-                          Retake for accuracy
+                          {PHOTO_RETAKE_FOR_BEST_RESULTS}
                         </span>
                       )}
                       {qualityWarning && (
@@ -447,8 +449,7 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
       <div className="flex items-start gap-2 rounded-lg border border-[#2DA5A0]/30 bg-[#2DA5A0]/10 p-3 text-xs text-white/70">
         <ShieldCheck size={14} strokeWidth={1.5} className="mt-0.5 flex-none text-[#2DA5A0]" />
         <p>
-          Photos are sent securely for analysis and immediately discarded. Only the
-          estimated metrics are saved to your profile.
+          {PHOTO_UPLOADER_PRIVACY_STRIP}
         </p>
       </div>
 

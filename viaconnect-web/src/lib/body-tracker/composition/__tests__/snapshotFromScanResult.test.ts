@@ -27,6 +27,7 @@ describe('snapshotFromScanResult', () => {
     const snap = snapshotFromScanResult(result());
     expect(snap.scanId).toBe('scan-1');
     expect(snap.source).toBe('scan');
+    expect(snap.protocol).toBe('formavision_photo');
     expect(snap.isEstimated).toBe(true);
     expect(snap.totalBodyFatPct).toBe(24);
     expect(snap.estimatedBodyFatMin).toBe(22);

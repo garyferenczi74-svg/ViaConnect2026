@@ -13,11 +13,18 @@ import {
   BODY_COMP_SCAN_PANEL_DESCRIPTION,
   BODY_SCAN_RESULTS_MUSCLE_IMPRESSION_TITLE,
   BODY_SCAN_RESULTS_NOT_MUSCLE_LBS,
+  BODY_SCAN_RESULTS_RELIABLE_READING,
   FORMAVISION_PHOTO_PROTOCOL,
   GUIDED_4POSE_PROTOCOL,
   GUIDED_4POSE_LABEL,
+  MUSCLE_ANALYSIS_MASS_SUBTITLE,
+  MUSCLE_ANALYSIS_MASS_TITLE,
   MUSCLE_ANALYSIS_PHOTO_ONLY_EMPTY,
+  MUSCLE_ANALYSIS_PHOTO_ONLY_SUBTITLE,
+  MUSCLE_ANALYSIS_PHOTO_ONLY_TITLE,
   PHOTO_ESTIMATE_LABEL,
+  PHOTO_RETAKE_FOR_BEST_RESULTS,
+  PHOTO_UPLOADER_PRIVACY_STRIP,
   PHOTO_WHAT_YOU_DO_NOT_GET,
   PHOTO_WHAT_YOU_GET,
   READY_UNAVAILABLE_GENERIC,
@@ -182,6 +189,14 @@ describe('twoProtocolCopy — Muscle Analysis photo-only empty', () => {
     expect(MUSCLE_ANALYSIS_PHOTO_ONLY_EMPTY).toMatch(/Log Data/);
     expect(MUSCLE_ANALYSIS_PHOTO_ONLY_EMPTY).toMatch(/muscle mass \(lbs\)/);
   });
+
+  it('photo-only empty heading is impression language, not mass breakdown', () => {
+    expect(MUSCLE_ANALYSIS_PHOTO_ONLY_TITLE).toBe(BODY_SCAN_RESULTS_MUSCLE_IMPRESSION_TITLE);
+    expect(MUSCLE_ANALYSIS_PHOTO_ONLY_SUBTITLE).toMatch(/did not measure muscle mass/i);
+    expect(MUSCLE_ANALYSIS_PHOTO_ONLY_SUBTITLE).not.toMatch(/segmental muscle mass breakdown/i);
+    expect(MUSCLE_ANALYSIS_MASS_TITLE).toBe('Muscle Analysis');
+    expect(MUSCLE_ANALYSIS_MASS_SUBTITLE).toBe('Segmental muscle mass breakdown');
+  });
 });
 
 describe('twoProtocolCopy — Body Comp BF chip helper', () => {
@@ -196,6 +211,7 @@ describe('twoProtocolCopy — Body Comp BF chip helper', () => {
     ).toBe('est. 18.0–22.0%');
     expect(
       formatPhotoSourcedBfChip({
+        protocol: FORMAVISION_PHOTO_PROTOCOL,
         isEstimated: true,
         totalBodyFatPct: 21.3,
       }),
@@ -213,8 +229,74 @@ describe('twoProtocolCopy — Body Comp BF chip helper', () => {
         totalBodyFatPct: 21.3,
       }),
     ).toBeNull();
-    expect(isPhotoSourcedBodyFat({ isEstimated: true })).toBe(true);
+    expect(
+      isPhotoSourcedBodyFat({
+        protocol: FORMAVISION_PHOTO_PROTOCOL,
+        isEstimated: true,
+        deviceName: 'FormaVision',
+      }),
+    ).toBe(true);
+    expect(isPhotoSourcedBodyFat({ isEstimated: true })).toBe(false);
+    expect(isPhotoSourcedBodyFat({ scanId: 'any-scan-id' })).toBe(false);
     expect(isPhotoSourcedBodyFat({})).toBe(false);
+  });
+
+  it('does not over-label guided 4-pose or Manual BF as a photo estimate', () => {
+    expect(
+      isPhotoSourcedBodyFat({
+        protocol: GUIDED_4POSE_PROTOCOL,
+        scanId: 'guided-1',
+        isEstimated: true,
+        deviceName: 'FormaVision',
+        source: 'scan',
+        totalBodyFatPct: 21.3,
+      }),
+    ).toBe(false);
+    expect(
+      formatPhotoSourcedBfChip({
+        protocol: GUIDED_4POSE_PROTOCOL,
+        scanId: 'guided-1',
+        isEstimated: true,
+        deviceName: 'FormaVision',
+        source: 'scan',
+        totalBodyFatPct: 21.3,
+      }),
+    ).toBeNull();
+    expect(
+      isPhotoSourcedBodyFat({
+        source: 'manual',
+        scanId: 'manual-1',
+        isEstimated: false,
+        totalBodyFatPct: 18.4,
+        deviceName: 'DEXA Scan',
+      }),
+    ).toBe(false);
+    expect(
+      formatPhotoSourcedBfChip({
+        source: 'manual',
+        scanId: 'manual-1',
+        isEstimated: false,
+        totalBodyFatPct: 18.4,
+        deviceName: 'DEXA Scan',
+      }),
+    ).toBeNull();
+    expect(
+      isPhotoOnlyMuscleEmpty({
+        protocol: GUIDED_4POSE_PROTOCOL,
+        scanId: 'guided-1',
+        isEstimated: true,
+        totalBodyFatPct: 22,
+        regionMuscleLbs: emptyMuscle,
+      }),
+    ).toBe(false);
+    expect(
+      isPhotoOnlyMuscleEmpty({
+        source: 'manual',
+        scanId: 'manual-1',
+        totalBodyFatPct: 18.4,
+        regionMuscleLbs: emptyMuscle,
+      }),
+    ).toBe(false);
   });
 });
 
@@ -275,7 +357,25 @@ describe('BodyScanResults — muscle impression strings', () => {
     expect(html).toContain('body-scan-results-muscle-impression-title');
     expect(html).toContain('body-scan-results-not-muscle-lbs');
     expect(html).not.toContain('Muscle Development');
-    expect(html).toMatch(/For clinical accuracy/);
+    expect(html).toContain(BODY_SCAN_RESULTS_RELIABLE_READING);
+    expect(html).not.toMatch(/clinical/i);
+  });
+});
+
+describe('twoProtocolCopy — Lex Theme 5 live nits', () => {
+  it('drops clinical from the results footer and softens uploader privacy + retake', () => {
+    expect(BODY_SCAN_RESULTS_RELIABLE_READING).toMatch(/more reliable reading/i);
+    expect(BODY_SCAN_RESULTS_RELIABLE_READING).toMatch(/smart scale/);
+    expect(BODY_SCAN_RESULTS_RELIABLE_READING).toMatch(/DEXA/);
+    expect(BODY_SCAN_RESULTS_RELIABLE_READING).toMatch(/manually/);
+    expect(BODY_SCAN_RESULTS_RELIABLE_READING).not.toMatch(/clinical/i);
+    expect(PHOTO_UPLOADER_PRIVACY_STRIP).toBe(
+      'Photos are used only to calculate measurements. They are not kept as your body photos or used as the Ready 3D body.',
+    );
+    expect(PHOTO_UPLOADER_PRIVACY_STRIP).not.toMatch(/immediately discarded/i);
+    expect(SCAN_HISTORY_PHOTOS_DISCARDED).toBe('Photos are not stored after analysis.');
+    expect(PHOTO_RETAKE_FOR_BEST_RESULTS).toBe('Retake for best results.');
+    expect(PHOTO_RETAKE_FOR_BEST_RESULTS).not.toMatch(/accuracy/i);
   });
 });
 
@@ -293,10 +393,18 @@ describe('two-protocol surfaces stay wired to shared copy', () => {
     expect(history).toMatch(/SCAN_HISTORY_PHOTOS_DISCARDED/);
     expect(results).toMatch(/BODY_SCAN_RESULTS_MUSCLE_IMPRESSION_TITLE/);
     expect(results).toMatch(/BODY_SCAN_RESULTS_NOT_MUSCLE_LBS/);
+    expect(results).toMatch(/BODY_SCAN_RESULTS_RELIABLE_READING/);
+    expect(results).not.toMatch(/clinical accuracy/);
     expect(uploader).toMatch(/PHOTO_WHAT_YOU_GET/);
     expect(uploader).toMatch(/PHOTO_WHAT_YOU_DO_NOT_GET/);
+    expect(uploader).toMatch(/PHOTO_UPLOADER_PRIVACY_STRIP/);
+    expect(uploader).toMatch(/PHOTO_RETAKE_FOR_BEST_RESULTS/);
+    expect(uploader).not.toMatch(/immediately discarded/);
+    expect(uploader).not.toMatch(/Retake for accuracy/);
     expect(composition).toMatch(/BODY_COMP_SCAN_PANEL_DESCRIPTION/);
     expect(composition).toMatch(/BODY_COMP_SAVE_TOAST/);
+    expect(composition).toMatch(/MUSCLE_ANALYSIS_PHOTO_ONLY_TITLE/);
+    expect(composition).toMatch(/MUSCLE_ANALYSIS_PHOTO_ONLY_SUBTITLE/);
     expect(composition).toMatch(/muscle-analysis-photo-only-empty/);
     expect(composition).not.toMatch(/composition is up to date/);
     expect(formavision).toMatch(/selectReadyUnavailableReason/);

@@ -75,10 +75,40 @@ describe('buildMetricCards', () => {
       isEstimated: true,
       deviceName: 'FormaVision',
       scanId: 'photo-1',
+      protocol: 'formavision_photo',
     };
     const cards = buildMetricCards(photoMidpoint, null);
     expect(cards[0].value).toBe('est. 21.3%');
     expect(cards[0].value).not.toBe('21.3%');
+  });
+
+  it('does not over-label guided 4-pose or Manual BF as a photo estimate chip', () => {
+    const guided = buildMetricCards(
+      {
+        ...partialSnap,
+        source: 'scan',
+        protocol: '4pose_v1',
+        scanId: 'guided-1',
+        isEstimated: true,
+        deviceName: 'FormaVision',
+      },
+      null,
+    );
+    expect(guided[0].value).toBe('21.3%');
+    expect(guided[0].value).not.toMatch(/^est\./);
+
+    const manual = buildMetricCards(
+      {
+        ...partialSnap,
+        source: 'manual',
+        scanId: 'manual-1',
+        isEstimated: false,
+        deviceName: 'DEXA Scan',
+      },
+      null,
+    );
+    expect(manual[0].value).toBe('21.3%');
+    expect(manual[0].value).not.toMatch(/^est\./);
   });
 
   it('renders BMI as Unknown when null', () => {

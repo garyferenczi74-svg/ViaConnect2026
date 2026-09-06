@@ -4,6 +4,7 @@
 
 import type { BodyScanResult } from '@/lib/body-tracker/composition/runFormaVisionAnalyze';
 import type { CompositionSnapshot, RegionMap } from '@/lib/body-tracker/composition/types';
+import { FORMAVISION_PHOTO_PROTOCOL } from '@/lib/formavision/twoProtocolCopy';
 import { finiteEstimateNumber } from '@/lib/scan/scanSummary';
 
 const EMPTY_REGION: RegionMap = {
@@ -56,6 +57,7 @@ export function snapshotFromPhotoScanSummary(scan: {
     totalMuscleMassLbs: null,
     skeletalMuscleMassLbs: null,
     scanId: scan.id,
+    protocol: FORMAVISION_PHOTO_PROTOCOL,
     estimatedBodyFatMin: min,
     estimatedBodyFatMax: max,
     estimatedWhrMin: hasWhr ? whrMin : null,
@@ -83,6 +85,7 @@ export function snapshotFromScanResult(result: BodyScanResult): CompositionSnaps
     totalMuscleMassLbs: null,
     skeletalMuscleMassLbs: null,
     scanId: result.scanId,
+    protocol: FORMAVISION_PHOTO_PROTOCOL,
     estimatedBodyFatMin: estimates.estimated_body_fat_min,
     estimatedBodyFatMax: estimates.estimated_body_fat_max,
     estimatedWhrMin: estimates.estimated_whr_min,

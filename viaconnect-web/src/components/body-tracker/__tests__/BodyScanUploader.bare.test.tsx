@@ -55,6 +55,11 @@ describe('BodyScanUploader slot picker markup', () => {
     expect(html).toContain('What you do not get:');
     expect(html).toContain('body-fat range estimate');
     expect(html).not.toContain('Navy body fat from photos');
+    expect(html).toContain(
+      'Photos are used only to calculate measurements. They are not kept as your body photos or used as the Ready 3D body.',
+    );
+    expect(html).not.toContain('immediately discarded');
+    expect(html).not.toContain('Retake for accuracy');
   });
 });
 

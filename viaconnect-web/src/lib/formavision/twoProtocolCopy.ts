@@ -38,7 +38,26 @@ export const BODY_SCAN_RESULTS_MUSCLE_IMPRESSION_TITLE = 'Muscle impression';
 export const BODY_SCAN_RESULTS_NOT_MUSCLE_LBS =
   'This is a 1–5 scan impression, not Muscle Analysis mass (lbs).';
 
+/** Muscle Analysis headings when segmental lbs exist (Manual / DEXA / scale). */
+export const MUSCLE_ANALYSIS_MASS_TITLE = 'Muscle Analysis';
+export const MUSCLE_ANALYSIS_MASS_SUBTITLE = 'Segmental muscle mass breakdown';
+
+/** Photo-only empty: do not read like a mass analysis. */
+export const MUSCLE_ANALYSIS_PHOTO_ONLY_TITLE = BODY_SCAN_RESULTS_MUSCLE_IMPRESSION_TITLE;
+export const MUSCLE_ANALYSIS_PHOTO_ONLY_SUBTITLE =
+  'Photo estimate did not measure muscle mass.';
+
 export const SCAN_HISTORY_PHOTOS_DISCARDED = 'Photos are not stored after analysis.';
+
+/** Lex Theme 5 — BodyScanResults footer. No “clinical”. */
+export const BODY_SCAN_RESULTS_RELIABLE_READING =
+  'These are AI estimates from photos. For a more reliable reading, use a smart scale, a DEXA scan, or enter measurements manually.';
+
+/** Lex Theme 5 — uploader privacy strip. History keeps SCAN_HISTORY_PHOTOS_DISCARDED. */
+export const PHOTO_UPLOADER_PRIVACY_STRIP =
+  'Photos are used only to calculate measurements. They are not kept as your body photos or used as the Ready 3D body.';
+
+export const PHOTO_RETAKE_FOR_BEST_RESULTS = 'Retake for best results.';
 
 export type ReadyUnavailableReason = 'photo-discarded' | 'generic';
 
@@ -52,30 +71,78 @@ function finiteNumber(value: unknown): number | null {
   return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
-export function isPhotoSourcedBodyFat(input: {
+export type PhotoSourcedBodyFatInput = {
   isEstimated?: boolean;
   deviceName?: string | null;
   estimatedBodyFatMin?: number | null;
   estimatedBodyFatMax?: number | null;
   scanId?: string | null;
-}): boolean {
-  if (input.isEstimated === true) return true;
-  const device = typeof input.deviceName === 'string' ? input.deviceName.trim().toLowerCase() : '';
-  if (device === 'formavision') return true;
+  protocol?: string | null;
+  source?: string | null;
+};
+
+const MEASURED_COMPOSITION_SOURCES = new Set([
+  'manual',
+  'dexa',
+  'inbody',
+  'bodpod',
+  'hydrostatic',
+  'scale',
+  'smart_scale',
+  'bathroom_scale',
+  'import',
+]);
+
+function normalizedToken(value: string | null | undefined): string {
+  return typeof value === 'string' ? value.trim().toLowerCase() : '';
+}
+
+function isMeasuredCompositionSource(source: string): boolean {
+  return MEASURED_COMPOSITION_SOURCES.has(source);
+}
+
+function isMeasuredCompositionDevice(device: string): boolean {
+  if (!device) return false;
+  return (
+    device === 'manual' ||
+    device.includes('dexa') ||
+    device.includes('inbody') ||
+    device.includes('bodpod') ||
+    device.includes('hydrostatic') ||
+    device.includes('scale')
+  );
+}
+
+/**
+ * Photo-sourced BF only for formavision_photo / true photo-estimate provenance.
+ * scanId alone is not enough — guided 4pose_v1 and some Manual rows also have ids.
+ */
+export function isPhotoSourcedBodyFat(input: PhotoSourcedBodyFatInput): boolean {
+  const protocol = typeof input.protocol === 'string' ? input.protocol.trim() : '';
+  if (protocol === FORMAVISION_PHOTO_PROTOCOL) return true;
+  if (protocol === GUIDED_4POSE_PROTOCOL) return false;
+
+  const source = normalizedToken(input.source);
+  if (isMeasuredCompositionSource(source)) return false;
+
+  const device = normalizedToken(input.deviceName);
+  if (isMeasuredCompositionDevice(device)) return false;
+
   const min = finiteNumber(input.estimatedBodyFatMin);
   const max = finiteNumber(input.estimatedBodyFatMax);
-  if (min !== null && max !== null) return true;
-  return typeof input.scanId === 'string' && input.scanId.length > 0;
+  const hasPhotoRange = min !== null && max !== null;
+  const photoDevice = device === 'formavision';
+
+  if (hasPhotoRange && (input.isEstimated === true || photoDevice)) return true;
+  if (input.isEstimated === true && photoDevice) return true;
+  return false;
 }
 
 /** Body Comp BF chip when the latest fat is photo-sourced. Never a bare clinical %. */
-export function formatPhotoSourcedBfChip(input: {
+export function formatPhotoSourcedBfChip(input: PhotoSourcedBodyFatInput & {
   estimatedBodyFatMin?: number | null;
   estimatedBodyFatMax?: number | null;
   totalBodyFatPct?: number | null;
-  isEstimated?: boolean;
-  deviceName?: string | null;
-  scanId?: string | null;
 }): string | null {
   if (!isPhotoSourcedBodyFat(input)) return null;
   const min = finiteNumber(input.estimatedBodyFatMin);
@@ -123,13 +190,8 @@ export function hasSegmentalMuscleLbs(input: {
 }
 
 /** Photo BF present and zero muscle lbs — honest Muscle Analysis empty. */
-export function isPhotoOnlyMuscleEmpty(input: {
-  isEstimated?: boolean;
-  deviceName?: string | null;
-  estimatedBodyFatMin?: number | null;
-  estimatedBodyFatMax?: number | null;
+export function isPhotoOnlyMuscleEmpty(input: (PhotoSourcedBodyFatInput & {
   totalBodyFatPct?: number | null;
-  scanId?: string | null;
   regionMuscleLbs?: {
     right_arm: number | null;
     left_arm: number | null;
@@ -139,7 +201,7 @@ export function isPhotoOnlyMuscleEmpty(input: {
   } | null;
   totalMuscleMassLbs?: number | null;
   skeletalMuscleMassLbs?: number | null;
-} | null): boolean {
+}) | null): boolean {
   if (!input) return false;
   if (!isPhotoSourcedBodyFat(input)) return false;
   const hasPhotoBf =

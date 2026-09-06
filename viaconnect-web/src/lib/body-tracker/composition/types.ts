@@ -23,6 +23,8 @@ export interface CompositionSnapshot {
   skeletalMuscleMassLbs: number | null;
   /** Present when this entry is linked to body_tracker_photo_scans. */
   scanId?: string | null;
+  /** Scan protocol when known. Photo estimate is formavision_photo; guided is 4pose_v1. */
+  protocol?: string | null;
   /** Photo-scan body fat is a RANGE. Display these; do not treat midpoint as measured. */
   estimatedBodyFatMin?: number | null;
   estimatedBodyFatMax?: number | null;

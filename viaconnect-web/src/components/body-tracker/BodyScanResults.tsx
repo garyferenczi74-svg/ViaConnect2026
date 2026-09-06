@@ -5,6 +5,7 @@ import type { BodyScanResult } from './BodyScanUploader';
 import {
   BODY_SCAN_RESULTS_MUSCLE_IMPRESSION_TITLE,
   BODY_SCAN_RESULTS_NOT_MUSCLE_LBS,
+  BODY_SCAN_RESULTS_RELIABLE_READING,
 } from '@/lib/formavision/twoProtocolCopy';
 
 interface BodyScanResultsProps {
@@ -122,7 +123,7 @@ export function BodyScanResults({ result, onRetake, onClose, onUseAsBaseline }: 
       <div className="flex items-start gap-2 rounded-lg border border-white/[0.06] bg-white/[0.03] p-3 text-xs text-white/55">
         <Info size={14} strokeWidth={1.5} className="mt-0.5 flex-none text-white/40" />
         <p>
-          These are AI estimates from photos. For clinical accuracy, use a smart scale, DEXA scan, or enter measurements manually in the entry form.
+          {BODY_SCAN_RESULTS_RELIABLE_READING}
         </p>
       </div>
 
