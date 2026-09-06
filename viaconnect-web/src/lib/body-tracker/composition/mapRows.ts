@@ -2,6 +2,7 @@
 // CRITICAL: preserve a real numeric 0 as 0; coerce undefined/missing to null.
 // null === UNKNOWN - never silently coerce to 0.
 
+import { FORMAVISION_PHOTO_PROTOCOL } from '@/lib/formavision/twoProtocolCopy';
 import type { CompositionSnapshot, RegionMap } from './types';
 import { parseFormaVisionEstimateNote } from './estimateNote';
 
@@ -75,6 +76,7 @@ export function mapRows(args: {
     totalMuscleMassLbs: muscle ? toNum(muscle['total_muscle_mass_lbs']) : null,
     skeletalMuscleMassLbs: muscle ? toNum(muscle['skeletal_muscle_mass_lbs']) : null,
     scanId: entry.scan_id ?? null,
+    protocol: range ? FORMAVISION_PHOTO_PROTOCOL : null,
     estimatedBodyFatMin: range?.min ?? null,
     estimatedBodyFatMax: range?.max ?? null,
     isEstimated: isScan,

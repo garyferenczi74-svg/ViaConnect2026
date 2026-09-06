@@ -143,7 +143,11 @@ import { getSegmentStatus, type SegmentStatus } from '@/lib/body-tracker/calcula
 import {
   BODY_COMP_SAVE_TOAST,
   BODY_COMP_SCAN_PANEL_DESCRIPTION,
+  MUSCLE_ANALYSIS_MASS_SUBTITLE,
+  MUSCLE_ANALYSIS_MASS_TITLE,
   MUSCLE_ANALYSIS_PHOTO_ONLY_EMPTY,
+  MUSCLE_ANALYSIS_PHOTO_ONLY_SUBTITLE,
+  MUSCLE_ANALYSIS_PHOTO_ONLY_TITLE,
   isPhotoOnlyMuscleEmpty,
 } from '@/lib/formavision/twoProtocolCopy';
 
@@ -944,6 +948,7 @@ function CompositionPageInner() {
         // (fat) config. Only 'muscle' flips to the muscle variant.
         const isMuscle = section === 'muscle';
         const isMeasurements = section === 'measurements';
+        const photoOnlyMuscle = isMuscle && isPhotoOnlyMuscleEmpty(snapshot);
         return (
           <>
             {section === 'fat' && (
@@ -955,9 +960,13 @@ function CompositionPageInner() {
 
             {isMuscle && (
               <div className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/35 backdrop-blur-md p-4 sm:p-5 lg:p-3">
-                <h2 className="text-lg font-bold text-white">Muscle Analysis</h2>
-                <p className="text-xs text-white/60">Segmental muscle mass breakdown</p>
-                {isPhotoOnlyMuscleEmpty(snapshot) ? (
+                <h2 className="text-lg font-bold text-white">
+                  {photoOnlyMuscle ? MUSCLE_ANALYSIS_PHOTO_ONLY_TITLE : MUSCLE_ANALYSIS_MASS_TITLE}
+                </h2>
+                <p className="text-xs text-white/60">
+                  {photoOnlyMuscle ? MUSCLE_ANALYSIS_PHOTO_ONLY_SUBTITLE : MUSCLE_ANALYSIS_MASS_SUBTITLE}
+                </p>
+                {photoOnlyMuscle ? (
                   <p
                     data-testid="muscle-analysis-photo-only-empty"
                     className="mt-3 text-sm leading-relaxed text-white/70"
@@ -1017,7 +1026,11 @@ function CompositionPageInner() {
               }`}
             >
               <h3 className="mb-3 shrink-0 text-center text-xs font-semibold uppercase tracking-wider text-white/40 lg:hidden">
-                {isMuscle ? 'Segmental Muscle Analysis' : 'Segmental Body Fat Analysis'}
+                {isMuscle
+                  ? photoOnlyMuscle
+                    ? MUSCLE_ANALYSIS_PHOTO_ONLY_TITLE
+                    : 'Segmental Muscle Analysis'
+                  : 'Segmental Body Fat Analysis'}
               </h3>
               <HeatmapLegend metric={isMuscle ? 'muscle' : 'fat'} className="mb-4 shrink-0 lg:hidden" />
               <div className="flex flex-col lg:flex-1 lg:flex-row lg:items-stretch lg:gap-6 lg:min-h-0">
@@ -1057,7 +1070,11 @@ function CompositionPageInner() {
                       Spacing only; block position and every card are unchanged. */}
                   <div data-testid="kpi-stack-header" className="flex flex-col items-center gap-1.5 lg:mb-4">
                     <h3 className="text-center text-xs font-semibold uppercase tracking-wider text-white/40">
-                      {isMuscle ? 'Segmental Muscle Analysis' : 'Segmental Body Fat Analysis'}
+                      {isMuscle
+                        ? photoOnlyMuscle
+                          ? MUSCLE_ANALYSIS_PHOTO_ONLY_TITLE
+                          : 'Segmental Muscle Analysis'
+                        : 'Segmental Body Fat Analysis'}
                     </h3>
                     <ul className="flex flex-col gap-1.5 text-[10px] lg:w-fit lg:mx-auto">
                       <li className="flex items-center gap-1.5">

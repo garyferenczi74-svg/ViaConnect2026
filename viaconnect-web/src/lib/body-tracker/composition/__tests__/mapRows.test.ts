@@ -83,6 +83,7 @@ describe('mapRows', () => {
     });
     expect(snapshot!.deviceName).toBe('FormaVision');
     expect(snapshot!.scanId).toBe('scan-1');
+    expect(snapshot!.protocol).toBe('formavision_photo');
     expect(snapshot!.isEstimated).toBe(true);
     expect(snapshot!.estimatedBodyFatMin).toBe(18);
     expect(snapshot!.estimatedBodyFatMax).toBe(22);
