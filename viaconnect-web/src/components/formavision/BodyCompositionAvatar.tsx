@@ -93,7 +93,10 @@ import { MODEL_VIEWER_VERSION } from '@/lib/formavision/viewer/modelViewerPin';
 import { FormaVision3DAvatar } from './FormaVision3DAvatar';
 import { FormaVisionFallbackNotice } from './FormaVisionFallbackNotice';
 import { FormaVisionModelViewer } from './FormaVisionModelViewer';
-import { FormaVisionPlateNotice } from './FormaVisionPlateNotice';
+import {
+  FormaVisionPlateNotice,
+  type ReadyUnavailableReason,
+} from './FormaVisionPlateNotice';
 import { probeWebGL } from './hasWebGL';
 import { useRenderTier, useReportBudgetMiss } from './RenderTierProvider';
 import type { MeshyVisualStatus } from '@/lib/formavision/meshy/types';
@@ -162,6 +165,8 @@ export interface BodyCompositionAvatarProps {
   meshyWaitExpired?: boolean;
   // Test / SSR override. Client defaults to unknown then detects phone vs desktop.
   readyViewerHost?: ReadyViewerHost;
+  // Theme 5: photo-discarded Ready copy vs generic unavailable. Never wireframe.
+  plateUnavailableReason?: ReadyUnavailableReason;
   // Honest text-only fallback child. Never an anatomical outline figure.
   children: React.ReactNode;
 }
@@ -205,6 +210,7 @@ function BodyCompositionAvatarInner({
   meshyHistoryResolved = false,
   meshyWaitExpired,
   readyViewerHost,
+  plateUnavailableReason = 'generic',
   children,
 }: BodyCompositionAvatarProps) {
   // Remounts a live-canvas miss while getContext still works (not "no WebGL").
@@ -694,13 +700,17 @@ function BodyCompositionAvatarInner({
               : `fv-plate-enter ${FORMAVISION_MOTION_SPEC.enterPlateMs}ms ${FORMAVISION_MOTION_SPEC.enterPlateEasing} both`,
           }}
         >
-          <FormaVisionPlateNotice kind={fellBack ? 'unavailable' : 'loading'} />
+          <FormaVisionPlateNotice
+            kind={fellBack ? 'unavailable' : 'loading'}
+            unavailableReason={plateUnavailableReason}
+          />
         </div>
       ) : null}
       {readyViewer === 'notice' ? (
         <FormaVisionPlateNotice
           kind={noticeKind}
           placement={readyLive ? 'fill' : 'caption'}
+          unavailableReason={plateUnavailableReason}
         />
       ) : null}
       {readyLive &&
@@ -711,7 +721,10 @@ function BodyCompositionAvatarInner({
         hasReadyScanData: readyLive,
         presentReadyWithoutPaint: parkR3fReady ? false : presentReadyWithoutPaint,
       }) ? (
-        <FormaVisionPlateNotice kind={noticeKind} />
+        <FormaVisionPlateNotice
+          kind={noticeKind}
+          unavailableReason={plateUnavailableReason}
+        />
       ) : null}
       {fellBack && !latchSurface && !readyLive ? (
         <FormaVisionFallbackNotice reason={fallbackReason} webgl={fallbackWebgl}>

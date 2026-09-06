@@ -76,6 +76,10 @@ import { pickReadyFrblSessionId } from '@/lib/formavision/meshy/selectPlateMeshS
 import { useMeshyVisual } from '@/hooks/formavision/useMeshyVisual';
 import { FormaVisionMeshyStatus } from '@/components/formavision/FormaVisionMeshyStatus';
 import { PROTOCOL_ID } from '@/lib/scan/poses';
+import {
+  historyHasDiscardedPhotoScan,
+  selectReadyUnavailableReason,
+} from '@/lib/formavision/twoProtocolCopy';
 
 const UNIT_STORAGE_KEY = 'vc.body-tracker.measurement-unit';
 
@@ -206,6 +210,11 @@ function FormaVisionSurface() {
     [historyScans],
   );
   const historyResolved = historyScans !== null;
+  const readyUnavailableReason = selectReadyUnavailableReason({
+    historyResolved,
+    readyFrblSessionId,
+    hasDiscardedPhotoScan: historyHasDiscardedPhotoScan(historyScans),
+  });
   const meshyVisual = useMeshyVisual(readyFrblSessionId, { historyResolved });
   const historySnapshotForAvatar = useMemo(
     () =>
@@ -620,6 +629,7 @@ function FormaVisionSurface() {
           meshyStatus={meshyVisual.status}
           meshySessionId={readyFrblSessionId}
           meshyHistoryResolved={historyResolved}
+          plateUnavailableReason={readyUnavailableReason}
         >
           {/* Honest text-only latch. Gary 2026-09-03: no teal outline figure. */}
           <div
@@ -628,6 +638,7 @@ function FormaVisionSurface() {
           >
             <FormaVisionPlateNotice
               kind="unavailable"
+              unavailableReason={readyUnavailableReason}
               className="px-4 text-center text-[10px] leading-relaxed text-white/55"
             />
           </div>

@@ -69,6 +69,18 @@ describe('buildMetricCards', () => {
     expect(measured[0].value).toBe('21.3%');
   });
 
+  it('labels a photo-sourced midpoint as an estimate, never a bare clinical %', () => {
+    const photoMidpoint: CompositionSnapshot = {
+      ...partialSnap,
+      isEstimated: true,
+      deviceName: 'FormaVision',
+      scanId: 'photo-1',
+    };
+    const cards = buildMetricCards(photoMidpoint, null);
+    expect(cards[0].value).toBe('est. 21.3%');
+    expect(cards[0].value).not.toBe('21.3%');
+  });
+
   it('renders BMI as Unknown when null', () => {
     const cards = buildMetricCards(partialSnap, null);
     expect(cards[1].status).toBe('Unknown');

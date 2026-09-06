@@ -38,12 +38,13 @@ describe('ScanHistory - client/server boundary', () => {
     expect(section).toMatch(/\/api\/scan\/history/);
     expect(history).toMatch(/from '@\/lib\/scan\/scanProtocols'/);
     expect(history).toMatch(/from '@\/lib\/scan\/scanSummary'/);
+    expect(history).toMatch(/from '@\/lib\/formavision\/twoProtocolCopy'/);
   });
 
   it('always hides the FRBL grid for formavision_photo', () => {
     const history = readFileSync(join(process.cwd(), 'src/components/scan/ScanHistory.tsx'), 'utf8');
     expect(history).toMatch(/scanHistoryShowsFrblGrid/);
-    expect(history).toMatch(/Photos are not stored after analysis/);
+    expect(history).toMatch(/SCAN_HISTORY_PHOTOS_DISCARDED/);
     expect(scanHistoryShowsFrblGrid({ protocol: 'formavision_photo' })).toBe(false);
     expect(scanHistoryShowsFrblGrid({ protocol: '4pose_v1' })).toBe(true);
   });
@@ -79,7 +80,7 @@ describe('ScanHistory - rendering a scan', () => {
       }),
     );
     expect(html).toContain('scan-history-item-photo-1');
-    expect(html).toContain('FormaVision');
+    expect(html).toContain('Photo estimate');
     expect(html).not.toContain('4pose_v1');
     expect(html).not.toContain('formavision_photo');
     expect(html).not.toContain('scan-history-delete-photo-1');
@@ -144,7 +145,7 @@ describe('ScanHistory - rendering a scan', () => {
       React.createElement(ScanHistory, { scans: [scan()], onDeleted: NOOP }),
     );
     expect(html).toContain('scan-history-item-session-1');
-    expect(html).toContain('Body scan');
+    expect(html).toContain('Guided 4-pose');
     expect(html).not.toContain('4pose_v1');
     expect(html).toMatch(/ready/i);
   });

@@ -9,6 +9,10 @@ import {
   scanHistoryShowsFrblGrid,
   type ScanSummary,
 } from '@/lib/scan/scanSummary';
+import {
+  SCAN_HISTORY_PHOTOS_DISCARDED,
+  consumerProtocolLabel,
+} from '@/lib/formavision/twoProtocolCopy';
 
 /**
  * Prompt 231: the 4-pose scan history list. Reuses the Task 13
@@ -67,19 +71,6 @@ function formatDate(dateStr: string): string {
   const d = new Date(dateStr);
   if (Number.isNaN(d.getTime())) return dateStr;
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-}
-
-// Prompt 231: consumer-facing label for a scan protocol id. Never render
-// the raw protocol string (e.g. '4pose_v1') on a consumer surface.
-function protocolLabel(protocol: string): string {
-  switch (protocol) {
-    case '4pose_v1':
-      return 'Body scan';
-    case FORMAVISION_PHOTO_PROTOCOL:
-      return 'FormaVision';
-    default:
-      return 'Body scan';
-  }
 }
 
 function statusLabel(status: ScanSummary['captureStatus']): string {
@@ -179,7 +170,7 @@ export function ScanHistory({ scans, onDeleted }: ScanHistoryProps) {
                 <p className="text-sm font-semibold text-white">{formatDate(scan.date)}</p>
                 <p className="text-xs text-white/50">
                   <span data-testid={`scan-history-protocol-${scan.id}`}>
-                    {protocolLabel(scan.protocol)}
+                    {consumerProtocolLabel(scan.protocol)}
                   </span>
                   {' · '}
                   <span data-testid={`scan-history-status-${scan.id}`}>
@@ -229,7 +220,7 @@ export function ScanHistory({ scans, onDeleted }: ScanHistoryProps) {
                 className="text-xs text-white/45"
                 data-testid={`scan-history-photos-discarded-${scan.id}`}
               >
-                Photos are not stored after analysis.
+                {SCAN_HISTORY_PHOTOS_DISCARDED}
               </p>
             )}
 
