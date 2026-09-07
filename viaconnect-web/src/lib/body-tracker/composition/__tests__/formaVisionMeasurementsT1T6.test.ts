@@ -13,7 +13,6 @@ import {
   CIRC_WRITE_FAIL_COPY,
   ENTER_HEIGHT_CTA,
   HEIGHT_MISSING_GEOMETRIC_COPY,
-  HEIGHT_PERSIST_FAIL_COPY,
   LOG_MEASUREMENTS_CTA,
   MEASUREMENTS_EMPTY_COPY,
   hasFiniteGeometricGirth,
@@ -174,7 +173,6 @@ describe('T2 height gate honesty', () => {
     expect(analyze).not.toMatch(/heightCm\s*=\s*170/);
     expect(analyze).not.toMatch(/heightCm\s*\?\?\s*1[567]\d/);
     expect(HEIGHT_MISSING_GEOMETRIC_COPY).toMatch(/never guess/i);
-    expect(HEIGHT_PERSIST_FAIL_COPY).toMatch(/did not finish/i);
     expect(ENTER_HEIGHT_CTA).toBe('Enter height');
   });
 
@@ -183,9 +181,8 @@ describe('T2 height gate honesty', () => {
     expect(uploader).toMatch(/scan-height-missing/);
     expect(uploader).toMatch(/ENTER_HEIGHT_CTA/);
     expect(uploader).toMatch(/heightCm: heightOverride \?\? localHeightCm/);
-    expect(uploader).toMatch(/persistEnteredHeightForCurrentUserFailOpen/);
+    expect(uploader).toMatch(/persistEnteredHeightForCurrentUser/);
     expect(uploader).toMatch(/handleAnalyze\(parsed\)/);
-    expect(uploader).toMatch(/toast\(copy/);
     expect(uploader).toMatch(/strokeWidth=\{1\.5\}/);
   });
 });

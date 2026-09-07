@@ -12,9 +12,6 @@ export const HEIGHT_MISSING_GEOMETRIC_COPY =
 
 export const ENTER_HEIGHT_CTA = 'Enter height';
 
-export const HEIGHT_PERSIST_FAIL_COPY =
-  'Height will be used for this scan. Saving it to your profile did not finish.';
-
 export const MEASUREMENTS_EMPTY_COPY =
   'No tape measurements yet. Photo scans estimate body fat only — they do not invent girths.';
 
