@@ -15,7 +15,7 @@
 import type { LandmarkMap, LandmarkKey, Point2D } from './types';
 import {
   createImagePoseLandmarker,
-  loadPoseLandmarkerWithFallback,
+  loadImagePoseLandmarkerWithFallback,
   type ImagePoseLandmarkerLike,
   type MediaPipeNormalizedLandmark,
 } from '@/hooks/scan/usePoseLandmarker';
@@ -24,7 +24,7 @@ import { safeLog } from '@/lib/utils/safe-log';
 
 const LOG_SCOPE = 'arnold.scanning.landmarkDetector';
 
-/** Still-photo detect budget (init is separately bounded by load fallback). */
+/** Still-photo detect budget (init is separately bounded by IMAGE GPU+CPU). */
 export const POSE_DETECT_TIMEOUT_MS = 15000;
 
 // MediaPipe Pose landmark indices (0-32)
@@ -66,11 +66,22 @@ export function resetImagePoseLandmarkerCacheForTests(): void {
   cachedLandmarkerPromise = null;
 }
 
+/**
+ * Nose + at least one ankle — the live front scale anchors.
+ * Without both, scaleCmPerPx stays null (UNKNOWN). Never invents cm.
+ */
+export function hasFrontScaleAnchors(landmarks: LandmarkMap): boolean {
+  const noseY = landmarks.nose?.y;
+  const ankleY = landmarks.left_ankle?.y ?? landmarks.right_ankle?.y;
+  return Number.isFinite(noseY) && Number.isFinite(ankleY);
+}
+
 async function loadDefaultImageLandmarker(): Promise<ImagePoseLandmarkerLike | null> {
   if (!cachedLandmarkerPromise) {
-    cachedLandmarkerPromise = loadPoseLandmarkerWithFallback(createImagePoseLandmarker).then((result) => {
+    cachedLandmarkerPromise = loadImagePoseLandmarkerWithFallback(createImagePoseLandmarker).then((result) => {
       if (!result.ok) {
-        safeLog.warn(LOG_SCOPE, 'IMAGE PoseLandmarker init failed; landmarks empty (fail-open)', {
+        cachedLandmarkerPromise = null;
+        safeLog.warn(LOG_SCOPE, 'IMAGE PoseLandmarker init failed; will retry (no cached fail-open)', {
           reason: result.reason,
         });
         return null;
@@ -125,11 +136,11 @@ export async function detectLandmarks(
       (async () => {
         const landmarker = await loadLandmarker();
         if (!landmarker) {
-          safeLog.warn(LOG_SCOPE, 'IMAGE Pose empty landmarks (fail-open, no invented cm)', {
-            reason: 'empty_landmarks',
+          safeLog.warn(LOG_SCOPE, 'IMAGE Pose init miss after GPU+CPU (fail-open, no invented cm)', {
+            reason: 'timeout',
             detail: 'init_failed',
           });
-          return {};
+          throw new Error('Pose detection timeout');
         }
 
         const bitmap = await createBitmap(blob);

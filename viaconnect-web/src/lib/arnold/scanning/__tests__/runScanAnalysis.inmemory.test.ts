@@ -63,7 +63,7 @@ import {
   VIEW_INFERENCE_TIMEOUT_MS,
 } from '../runScanAnalysis';
 import { detectLandmarks, ensureImagePoseLandmarker } from '../landmarkDetector';
-import { processSilhouette, ensureSelfieSegmenter } from '../silhouetteProcessor';
+import { processSilhouette, ensureSelfieSegmenter, awaitSelfieSegmenterSettled } from '../silhouetteProcessor';
 import { extractMeasurements, unknownExtractedMeasurements } from '../measurementEngine';
 import { classifyCircFail } from '../circFailReason';
 import type { PoseSilhouette, ExtractedMeasurements, MeasuredValue } from '../types';
@@ -128,6 +128,7 @@ describe('runInMemoryMeasurement', () => {
     vi.mocked(detectLandmarks).mockResolvedValue({});
     vi.mocked(ensureImagePoseLandmarker).mockResolvedValue(true);
     vi.mocked(ensureSelfieSegmenter).mockResolvedValue(true);
+    vi.mocked(awaitSelfieSegmenterSettled).mockResolvedValue(true);
     vi.mocked(processSilhouette).mockImplementation(async ({ poseId }) =>
       makeSilhouette(poseId),
     );
@@ -389,6 +390,62 @@ describe('runInMemoryMeasurement', () => {
       expect(classifyCircFail({
         error: new Error('Unable to compute pixel-to-cm scale. Verify user height and landmark detection.'),
       })).toBe('extract_throw');
+    });
+
+    it('retries IMAGE pose pre-warm after a failed init (no cached fail-open)', async () => {
+      vi.mocked(ensureImagePoseLandmarker)
+        .mockResolvedValueOnce(false)
+        .mockResolvedValueOnce(true);
+
+      await runInMemoryMeasurement({
+        photos: { front: makeBlob() },
+        heightCm: 180,
+        sex: 'male',
+      });
+
+      expect(ensureImagePoseLandmarker).toHaveBeenCalledTimes(2);
+      expect(awaitSelfieSegmenterSettled).not.toHaveBeenCalled();
+    });
+
+    it('waits for in-flight selfie after a timed-out pre-warm so front 12s is detect-only', async () => {
+      vi.mocked(ensureSelfieSegmenter).mockResolvedValueOnce(false);
+
+      await runInMemoryMeasurement({
+        photos: { front: makeBlob() },
+        heightCm: 180,
+        sex: 'male',
+      });
+
+      expect(awaitSelfieSegmenterSettled).toHaveBeenCalled();
+    });
+
+    it('surfaces empty_landmarks via onCircFail when front detect returns {}', async () => {
+      const onCircFail = vi.fn();
+      await runInMemoryMeasurement({
+        photos: { front: makeBlob() },
+        heightCm: 180,
+        sex: 'male',
+        onCircFail,
+      });
+      expect(onCircFail).toHaveBeenCalledWith(
+        'empty_landmarks',
+        expect.arrayContaining([expect.objectContaining({ pose: 'front', reason: 'empty_landmarks' })]),
+      );
+    });
+
+    it('surfaces all_unknown when views succeed but every girth is UNKNOWN', async () => {
+      vi.mocked(detectLandmarks).mockResolvedValue({
+        nose: { x: 10, y: 20 },
+        left_ankle: { x: 12, y: 200 },
+      });
+      const onCircFail = vi.fn();
+      await runInMemoryMeasurement({
+        photos: { front: makeBlob() },
+        heightCm: 180,
+        sex: 'male',
+        onCircFail,
+      });
+      expect(onCircFail).toHaveBeenCalledWith('all_unknown', []);
     });
   });
 });

@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
   detectLandmarks,
+  hasFrontScaleAnchors,
   mapNormalizedLandmarksToPixelSpace,
   resetImagePoseLandmarkerCacheForTests,
   type ImageBitmapLike,
@@ -118,13 +119,23 @@ describe('detectLandmarks IMAGE landmarker path', () => {
     expect(map).toEqual({});
   });
 
-  it('fail-open: landmarker init null → empty map (no fabricated girths)', async () => {
-    const map = await detectLandmarks(new Blob(['init-fail']), {
-      loadLandmarker: async () => null,
-      createBitmap: async () => bitmap,
-    });
-    expect(map).toEqual({});
-    expect(Object.keys(map)).toHaveLength(0);
+  it('fail-open: landmarker init null → timeout (not cached empty_landmarks)', async () => {
+    await expect(
+      detectLandmarks(new Blob(['init-fail']), {
+        loadLandmarker: async () => null,
+        createBitmap: async () => bitmap,
+      }),
+    ).rejects.toThrow('Pose detection timeout');
+  });
+
+  it('hasFrontScaleAnchors requires finite nose and at least one ankle', () => {
+    expect(hasFrontScaleAnchors({})).toBe(false);
+    expect(hasFrontScaleAnchors({ nose: { x: 10, y: 20 } })).toBe(false);
+    expect(hasFrontScaleAnchors({ left_ankle: { x: 10, y: 200 } })).toBe(false);
+    expect(hasFrontScaleAnchors({
+      nose: { x: 10, y: 20 },
+      left_ankle: { x: 12, y: 200 },
+    })).toBe(true);
   });
 
   it('timeout throws Pose detection timeout (upstream UNKNOWN), never invents', async () => {
@@ -147,11 +158,13 @@ describe('landmarkDetector source contract (PASS OBRA B)', () => {
     expect(src).not.toMatch(/import\(\s*[^)]*@mediapipe\/pose/);
     expect(src).not.toMatch(/cdn\.jsdelivr/);
     expect(src).toMatch(/createImagePoseLandmarker/);
+    expect(src).toMatch(/loadImagePoseLandmarkerWithFallback/);
     expect(src).toMatch(/IMAGE/);
     expect(src).toMatch(/reason: 'timeout'/);
     expect(src).toMatch(/reason: 'empty_landmarks'/);
     expect(src).toMatch(/reason: 'extract_throw'/);
     expect(src).toMatch(/no invented cm/);
+    expect(src).toMatch(/will retry \(no cached fail-open\)/);
   });
 
   it('next.config no longer aliases @mediapipe/pose to the no-op shim', () => {

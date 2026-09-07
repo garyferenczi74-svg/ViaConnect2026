@@ -70,6 +70,7 @@ export default defineConfig({
       // FormaVision FRBL upload slot picker (one live file input, no capture)
       'src/components/body-tracker/__tests__/BodyScanUploader.bare.test.tsx',
       'src/components/body-tracker/__tests__/MeasurementsGrid.bare.test.tsx',
+      'src/components/body-tracker/__tests__/CircFailChip.bare.test.tsx',
       // Prompt 231 Task 14: scan history list (empty state, status, tombstone filter)
       'src/components/scan/__tests__/ScanHistory.bare.test.tsx',
       // Prompt 231b: body photo shares management section (settings share hub)

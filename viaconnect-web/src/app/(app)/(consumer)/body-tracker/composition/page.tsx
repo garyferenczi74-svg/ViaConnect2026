@@ -121,6 +121,7 @@ import { MeasurementsGrid } from '@/components/body-tracker/MeasurementsGrid';
 import { MeasurementsPanel } from '@/components/body-tracker/measurements/MeasurementsPanel';
 import { BodyCompositionForm } from '@/components/body-tracker/BodyCompositionForm';
 import { BodyScanUploader, type BodyScanResult } from '@/components/body-tracker/BodyScanUploader';
+import type { CircFailReason } from '@/lib/arnold/scanning/circFailReason';
 import { BodyScanResults } from '@/components/body-tracker/BodyScanResults';
 import { FloatingMetricCard } from '@/components/body-tracker/FloatingMetricCard';
 import {
@@ -316,6 +317,7 @@ function CompositionPageInner() {
   // Prompt 210k: ?scan=1 opens Scan My Body (FormaVision empty-state CTA deep link).
   const [scanOpen, setScanOpen] = useState(() => shouldOpenScanFromQuery(scanParam));
   const [scanResult, setScanResult] = useState<BodyScanResult | null>(null);
+  const [circFailReason, setCircFailReason] = useState<CircFailReason | null>(null);
   const [scanPersist, setScanPersist] = useState<ScanPersistState>({ phase: 'idle' });
   const [prefillBodyFat, setPrefillBodyFat] = useState<number | null>(null);
   const [unit, setUnit] = useState<MeasurementUnit>(() => readStoredUnit());
@@ -932,6 +934,7 @@ function CompositionPageInner() {
               void runScanPersist(r.scanId);
             }}
             onCancel={() => setScanOpen(false)}
+            onCircFailReason={setCircFailReason}
           />
         )}
       </InlineEntryPanel>
@@ -1355,6 +1358,7 @@ function CompositionPageInner() {
               previous={circumferenceData.previous}
               unit={unit}
               confidence={circumferenceData.latestConfidence ?? null}
+              circFailReason={circFailReason}
               onLogMeasurements={() => {
                 setScanOpen(false);
                 setOpen(true);

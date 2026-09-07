@@ -141,6 +141,9 @@ describe('T1 dual-path circ write + ok:false', () => {
     const uploader = src('src/components/body-tracker/BodyScanUploader.tsx');
     expect(uploader).toMatch(/CIRC_WRITE_FAIL_COPY/);
     expect(uploader).toMatch(/body-scan-circ-notice/);
+    expect(uploader).toMatch(/scan-circ-fail-chip|CircFailChip/);
+    expect(uploader).toMatch(/circFailPromise/);
+    expect(uploader).toMatch(/ensureImagePoseLandmarker/);
     expect(uploader).toMatch(/toast\(CIRC_WRITE_FAIL_COPY/);
     expect(uploader).toMatch(/await circWritePromiseRef\.current/);
     expect(uploader).toMatch(/if \(!persistRes\.ok\)/);
@@ -158,6 +161,9 @@ describe('T1 dual-path circ write + ok:false', () => {
     expect(live).toMatch(/await converge\.composition\.circWritePromise/);
     expect(live).toMatch(/setCompositionPhase\(converge\.composition\?\.ok \? 'ok' : 'error'\)/);
     expect(live).toMatch(/Circ fail is best-effort/);
+    expect(live).toMatch(/circFailPromise/);
+    expect(live).toMatch(/CircFailChip/);
+    expect(live).toMatch(/ensureImagePoseLandmarker/);
   });
 });
 
@@ -228,6 +234,8 @@ describe('T3 empty-state CTA', () => {
     expect(page).toMatch(/setOpen\(true\)/);
     expect(page).toMatch(/BodyCompositionForm/);
     expect(page).toMatch(/CircumferenceEntryForm|initialSection=\{section\}/);
+    expect(page).toMatch(/circFailReason=\{circFailReason\}/);
+    expect(page).toMatch(/onCircFailReason=\{setCircFailReason\}/);
   });
 });
 

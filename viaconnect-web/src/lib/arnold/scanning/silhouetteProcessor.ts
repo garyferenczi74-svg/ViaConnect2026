@@ -13,7 +13,7 @@ import { safeLog } from '@/lib/utils/safe-log';
 const LOG_SCOPE = 'arnold.scanning.silhouetteProcessor';
 
 /** TFJS selfie + WASM cold-start bound. Fail-open if the pre-warm loses. */
-export const SELFIE_PREWARM_TIMEOUT_MS = 10000;
+export const SELFIE_PREWARM_TIMEOUT_MS = 20000;
 
 // Lazy-load tf and body-segmentation so the SSR / Turbopack graph stays lean.
 // Avoid type-import() of TF packages (they re-enter the module graph under Turbopack).
@@ -38,7 +38,10 @@ async function getSegmenter() {
         { runtime: "tfjs", modelType: "general" } as never
       );
       return { tf, bodySeg, segmenter };
-    })();
+    })().catch((error: unknown) => {
+      modelPromise = null;
+      throw error;
+    });
   }
   return modelPromise;
 }
@@ -52,6 +55,20 @@ export async function ensureSelfieSegmenter(): Promise<boolean> {
     safeLog.warn(LOG_SCOPE, 'TFJS selfie segmenter pre-warm failed (fail-open)', {
       error: error instanceof Error ? error.message : String(error),
     });
+    return false;
+  }
+}
+
+/**
+ * After a timed-out pre-warm, wait for the in-flight load without a second
+ * short cap so leftover init is not charged to the 12s front detect race.
+ */
+export async function awaitSelfieSegmenterSettled(): Promise<boolean> {
+  if (!modelPromise) return ensureSelfieSegmenter();
+  try {
+    await modelPromise;
+    return true;
+  } catch {
     return false;
   }
 }

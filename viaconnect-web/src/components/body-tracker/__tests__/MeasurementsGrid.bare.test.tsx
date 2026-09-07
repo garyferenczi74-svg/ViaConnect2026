@@ -39,4 +39,20 @@ describe('MeasurementsGrid empty-state CTA', () => {
     expect(html).not.toContain('measurements-empty-cta');
     expect(html).toContain('80.0');
   });
+
+  it('shows the honest circ fail chip on the empty CTA when Analyze failed', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(MeasurementsGrid, {
+        data: emptyMeasurements(),
+        previous: null,
+        unit: 'cm',
+        circFailReason: 'empty_landmarks',
+        onLogMeasurements: () => undefined,
+      }),
+    );
+    expect(html).toContain('scan-circ-fail-chip');
+    expect(html).toContain('data-reason="empty_landmarks"');
+    expect(html).toContain('Tape measurements were not invented');
+    expect(html).not.toMatch(/\d+\s*cm/i);
+  });
 });
