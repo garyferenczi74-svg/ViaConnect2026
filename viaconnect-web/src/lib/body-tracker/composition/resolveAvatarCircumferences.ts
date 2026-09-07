@@ -7,6 +7,7 @@
 //
 // NO-FABRICATION: scanToParamVector is not called here and still must not
 // invent girth from BF. Empty / all-null measurements are absent, not zeros.
+// AVATAR MORPH ONLY — never write body_tracker_circumference.
 
 import { anyCircumferencePresent } from '@/lib/body-tracker/composition/scanSpineContract';
 import { estimateCircumferencesFromComposition } from '@/lib/body-tracker/composition/estimateCircumferencesFromComposition';

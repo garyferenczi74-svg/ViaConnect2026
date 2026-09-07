@@ -5,6 +5,9 @@
 // page may pass THESE measurements as circumferences so the 3D avatar morphs
 // from BF/WHR. Callers that must stay honest (future-self, journey, A/B) do
 // not use this helper.
+//
+// AVATAR MORPH ONLY — never write body_tracker_circumference. Cards SSOT is
+// the geometric / manual circ write path, not this BF→girth estimate.
 
 import { CIRC_DELTA_PER_BF_POINT, FLOOR_CM } from '@/lib/arnold/scanning/futureMeProjector';
 import { emptyMeasurements } from '@/lib/body-tracker/circumference';

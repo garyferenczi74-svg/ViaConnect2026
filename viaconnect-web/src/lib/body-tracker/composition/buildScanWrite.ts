@@ -13,6 +13,7 @@ import type { ScanDerived } from './types';
 import type { ExtractedMeasurements, MeasuredValue, ConfidenceLevel } from '@/lib/arnold/scanning/types';
 import { CALIBRATION_VERSION } from '@/lib/arnold/scanning/accuracy/calibrationConfig';
 import { formatFormaVisionEstimateNote } from './estimateNote';
+import { measuredCmOrNull, resolveCircumferenceScanId } from './circWriteContract';
 
 // ---- confidenceToNumeric ----------------------------------------------------
 
@@ -37,9 +38,9 @@ function round1(n: number): number {
   return Math.round(n * 10) / 10;
 }
 
-/** Extract cm value from a MeasuredValue; null when UNKNOWN (RULE 9: never 0). */
+/** Extract finite cm only; null when UNKNOWN or non-finite (RULE 9: never 0). */
 function cmOrNull(v: MeasuredValue): number | null {
-  return v.cm !== null ? round1(v.cm) : null;
+  return measuredCmOrNull(v);
 }
 
 /**
@@ -49,7 +50,7 @@ function cmOrNull(v: MeasuredValue): number | null {
  * which is distinct from the null "not measured at all" state.
  */
 function confOrNull(v: MeasuredValue): number | null {
-  return v.cm !== null ? confidenceToNumeric(v.confidence) : null;
+  return measuredCmOrNull(v) !== null ? confidenceToNumeric(v.confidence) : null;
 }
 
 /**
@@ -66,13 +67,20 @@ function confOrNull(v: MeasuredValue): number | null {
 export function buildCircumferenceWrite(args: {
   userId: string;
   entryId: string;
-  scanId?: string;
+  /** Vision / photo_scans id — used for entry lookup only, never circ.scan_id. */
+  scanId?: string | null;
+  /** body_photo_sessions.id — the only valid circ.scan_id FK. */
+  photoSessionId?: string | null;
   measurements: ExtractedMeasurements;
 }): {
   circ: Record<string, unknown>;
   hips: { hips_in: number | null; hips_confidence: number | null };
 } {
-  const { userId, entryId, scanId = null, measurements: m } = args;
+  const { userId, entryId, measurements: m } = args;
+  const scanId = resolveCircumferenceScanId({
+    visionScanId: args.scanId,
+    photoSessionId: args.photoSessionId,
+  });
 
   const circ: Record<string, unknown> = {
     user_id:   userId,
@@ -80,12 +88,9 @@ export function buildCircumferenceWrite(args: {
     entry_unit: 'cm',
     source:    'scan',
     // body_tracker_circumference.scan_id has a FK -> body_photo_sessions(id).
-    // The 209 in-memory vision scanId comes from body_tracker_photo_scans (the
-    // body-scan-analyze edge function), which is NOT a body_photo_sessions id.
-    // Writing the vision scanId here would cause a FK violation and silently
-    // drop the circumference row. The row is already linked to the scan via
-    // entry_id (which is correct and unconstrained). Always write null here.
-    scan_id:   null,
+    // A 209 vision scanId (body_tracker_photo_scans) is not a valid session id.
+    // Write the session id only after retain-FRBL; otherwise keep null.
+    scan_id:   scanId,
     scan_calibration_version: CALIBRATION_VERSION,
 
     // 12 girth columns (excludes hip which lives in body_tracker_weight)
@@ -128,7 +133,7 @@ export function buildCircumferenceWrite(args: {
 
   // Hip is stored in body_tracker_weight.hips_in (inches) per MEASUREMENT_EXTERNAL_KEYS.
   // Convert cm -> inches (round 1dp). Null when UNKNOWN (RULE 9: never 0).
-  const hipCm = m.hipCirc.cm;
+  const hipCm = measuredCmOrNull(m.hipCirc);
   const hips: { hips_in: number | null; hips_confidence: number | null } = {
     hips_in:         hipCm !== null ? round1(hipCm / 2.54) : null,
     hips_confidence: hipCm !== null ? confidenceToNumeric(m.hipCirc.confidence) : null,

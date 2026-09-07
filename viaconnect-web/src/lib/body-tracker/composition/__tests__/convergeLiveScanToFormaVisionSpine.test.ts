@@ -71,6 +71,7 @@ describe('convergeLiveScanToFormaVisionSpine', () => {
         persistScanFn,
         heightCm: 178,
         alreadyNormalized: false,
+        photoSessionId: 'sess-1',
       }),
     );
   });

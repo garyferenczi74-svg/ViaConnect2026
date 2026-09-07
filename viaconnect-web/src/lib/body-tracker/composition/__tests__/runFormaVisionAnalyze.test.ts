@@ -55,7 +55,8 @@ describe('runFormaVisionAnalyze shared spine', () => {
     expect(page).toMatch(/ScanHistorySection/);
     expect(persist).toMatch(/device_name:\s*'FormaVision'/);
     expect(persist).toMatch(/source:\s*'scan'/);
-    expect(persist).toMatch(/scan_id:\s*null/);
+    expect(persist).toMatch(/resolveCircumferenceScanId/);
+    expect(persist).toMatch(/photoSessionId/);
     expect(avatar).toMatch(/scanToParamVector/);
     expect(canvas).toMatch(/shouldHoldScrubMorph/);
   });

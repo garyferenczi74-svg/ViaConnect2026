@@ -1355,6 +1355,10 @@ function CompositionPageInner() {
               previous={circumferenceData.previous}
               unit={unit}
               confidence={circumferenceData.latestConfidence ?? null}
+              onLogMeasurements={() => {
+                setScanOpen(false);
+                setOpen(true);
+              }}
             />
           </div>
           <MeasurementsPanel unit={unit} onChanged={refreshCirc} />

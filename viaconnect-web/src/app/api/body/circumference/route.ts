@@ -15,6 +15,11 @@ import { createClient } from '@/lib/supabase/server';
 import { withTimeout } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 import { buildCircumferenceWrite } from '@/lib/body-tracker/composition/buildScanWrite';
+import {
+  hasFiniteGeometricGirth,
+  isUniqueScanConstraintError,
+  resolveCircumferenceScanId,
+} from '@/lib/body-tracker/composition/circWriteContract';
 import type { ExtractedMeasurements } from '@/lib/arnold/scanning/types';
 
 export const dynamic = 'force-dynamic';
@@ -40,6 +45,10 @@ export async function POST(req: Request): Promise<NextResponse> {
     }
 
     const scanId = typeof body.scanId === 'string' ? body.scanId.trim() : '';
+    const photoSessionId = resolveCircumferenceScanId({
+      visionScanId: scanId,
+      photoSessionId: typeof body.photoSessionId === 'string' ? body.photoSessionId : null,
+    });
 
     // Validate the measurements payload shape before trusting it. A malformed
     // payload returns ok:false cleanly rather than throwing inside buildCircumferenceWrite.
@@ -55,6 +64,11 @@ export async function POST(req: Request): Promise<NextResponse> {
       return NextResponse.json({ ok: false, reason: 'bad_request' }, { status: 400 });
     }
     const measurements = rawMeasurements as ExtractedMeasurements;
+
+    if (!hasFiniteGeometricGirth(measurements)) {
+      safeLog.info(SCOPE, 'skipping all-UNKNOWN circumference payload', { scanId });
+      return NextResponse.json({ ok: false, reason: 'all_unknown' });
+    }
 
     // Auth - fail closed
     const supabase = await createClient();
@@ -127,7 +141,13 @@ export async function POST(req: Request): Promise<NextResponse> {
       return NextResponse.json({ ok: false, reason: 'entry_not_found' });
     }
 
-    const { circ, hips } = buildCircumferenceWrite({ userId, entryId, scanId, measurements });
+    const { circ, hips } = buildCircumferenceWrite({
+      userId,
+      entryId,
+      scanId,
+      photoSessionId,
+      measurements,
+    });
 
     // Write circumferences to body_tracker_circumference (12 girths + confidence + calibration).
     // The route contract is fail-open (never throw) but honest: a failed insert
@@ -147,6 +167,13 @@ export async function POST(req: Request): Promise<NextResponse> {
         `${SCOPE}.insert_circ`
       );
       if (circInsert?.error) {
+        if (isUniqueScanConstraintError(circInsert.error.code)) {
+          safeLog.info(SCOPE, 'circumference insert idempotent (scan unique)', {
+            entryId,
+            photoSessionId,
+          });
+          return NextResponse.json({ ok: true, entryId, idempotent: true });
+        }
         safeLog.warn(SCOPE, 'circumference insert returned error', {
           entryId,
           error: circInsert.error.message,

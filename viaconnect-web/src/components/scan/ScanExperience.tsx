@@ -687,6 +687,10 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
               persistScanFn: persistCompositionScan,
               heightCm: localHeightCm,
             });
+            if (converge.composition?.circWritePromise) {
+              await converge.composition.circWritePromise;
+            }
+            // Circ fail is best-effort — Ready / SUBMIT_OK stay on persist-ok.
             setCompositionPhase(converge.composition?.ok ? 'ok' : 'error');
           } catch {
             setCompositionPhase('error');
@@ -715,6 +719,9 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
           persistScanFn: persistCompositionScan,
           heightCm: localHeightCm,
         });
+        if (spine.circWritePromise) {
+          await spine.circWritePromise;
+        }
         setCompositionPhase(spine.ok ? 'ok' : 'error');
       } catch {
         setCompositionPhase('error');
