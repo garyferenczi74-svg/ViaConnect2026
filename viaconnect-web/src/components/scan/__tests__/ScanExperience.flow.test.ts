@@ -749,6 +749,9 @@ describe('ScanExperience wiring: Live | Upload images tabs on SETUP', () => {
     expect(page).toContain('scan-capture-header');
     expect(page).toContain('scan-back-formavision');
     expect(page).toContain('Back to FormaVision');
+    expect(page).toContain('backfillClinicalHeightIfMissing');
+    expect(page).toContain('readHeightCm');
+    expect(src).toContain('persistEnteredHeightForCurrentUser');
     expect(page).not.toContain('formavisionUploadHref');
     expect(page).not.toContain('scan-header-upload-escape');
   });

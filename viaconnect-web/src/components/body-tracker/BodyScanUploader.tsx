@@ -54,6 +54,8 @@ import {
   analyzeConsentCopy,
 } from '@/lib/formavision/retainFrbl';
 import { retainFrblPhotos } from '@/lib/formavision/retainFrblClient';
+import { parsePositiveFinite } from '@/lib/scan/clinicalBodyMetrics';
+import { persistEnteredHeightForCurrentUser } from '@/lib/scan/persistEnteredHeight';
 
 export type { PhotoPosition, BodyScanEstimate, BodyScanResult };
 
@@ -200,7 +202,7 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
     }
   }
 
-  async function handleAnalyze() {
+  async function handleAnalyze(heightOverride?: number | null) {
     if (!anyFilled || submitting) return;
     setSubmitting(true);
     setError(null);
@@ -239,7 +241,7 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
         persistScanFn: persistScan,
         analyzeTimeoutMs: ANALYZE_CLIENT_TIMEOUT_MS,
         alreadyNormalized: true,
-        heightCm: localHeightCm,
+        heightCm: heightOverride ?? localHeightCm,
         retainPhotos: retainFrbl,
         retainFrblFn: retainFrbl ? retainFrblPhotos : undefined,
         onGeometricMeasurements: (m) => {
@@ -528,11 +530,15 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
               type="button"
               data-testid="scan-height-save"
               onClick={() => {
-                const parsed = Number(heightDraft);
-                if (Number.isFinite(parsed) && parsed > 0) {
-                  setLocalHeightCm(parsed);
-                  setHeightMissing(false);
-                }
+                const parsed = parsePositiveFinite(heightDraft);
+                if (parsed === null) return;
+                setLocalHeightCm(parsed);
+                setHeightMissing(false);
+                void persistEnteredHeightForCurrentUser(parsed).then(() => {
+                  if (anyFilled && !submitting) {
+                    void handleAnalyze(parsed);
+                  }
+                });
               }}
               className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-white/20 px-3 py-2 text-xs font-medium text-white/80"
             >
@@ -569,7 +575,9 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
         </button>
         <button
           type="button"
-          onClick={handleAnalyze}
+          onClick={() => {
+            void handleAnalyze();
+          }}
           disabled={!anyFilled || submitting}
           className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-[#2DA5A0] px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-[#2DA5A0]/90 disabled:cursor-not-allowed disabled:opacity-50"
         >

@@ -26,6 +26,19 @@ describe('completeCAQAndTriggerEngines nutrition_targets', () => {
   });
 });
 
+describe('completeCAQAndTriggerEngines clinical height write-through', () => {
+  const source = src('src/lib/caq/complete-caq.ts');
+  const onboarding = src('src/app/(auth)/onboarding/[step]/page.tsx');
+
+  it('upserts clinical_assessments from CAQ demographics without inventing 170', () => {
+    expect(source).toContain('writeThroughCaqDemographicsToClinical');
+    expect(source).toContain('backfillClinicalHeightIfMissing');
+    expect(source).not.toMatch(/height_cm:\s*170/);
+    expect(onboarding).toContain('writeThroughCaqDemographicsToClinical');
+    expect(onboarding).not.toMatch(/height_cm:\s*170/);
+  });
+});
+
 describe('CAQ Lifestyle save triggers generate-targets', () => {
   const source = src('src/app/(auth)/onboarding/[step]/page.tsx');
 

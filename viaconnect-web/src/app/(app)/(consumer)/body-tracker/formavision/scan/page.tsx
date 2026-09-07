@@ -7,6 +7,7 @@ import { redirect } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { hasScanConsent } from '@/lib/scan/scanConsentGate';
+import { backfillClinicalHeightIfMissing } from '@/lib/scan/clinicalBodyMetrics';
 import { readHeightCm } from '@/lib/scan/readHeightCm';
 import { ScanExperienceLoader } from '@/components/scan/ScanExperienceLoader';
 import { FORMAVISION_PATH } from '@/lib/body-tracker/compositionNav';
@@ -18,6 +19,7 @@ export default async function ScanCapturePage() {
   } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
+  await backfillClinicalHeightIfMissing(supabase, user.id);
   const [consent, heightCm] = await Promise.all([
     hasScanConsent(user.id),
     readHeightCm(supabase, user.id),

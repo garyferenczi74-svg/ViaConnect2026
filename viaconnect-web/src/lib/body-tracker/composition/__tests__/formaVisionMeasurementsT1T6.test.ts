@@ -167,17 +167,23 @@ describe('T2 height gate honesty', () => {
     expect(analyze).toMatch(/heightMissing/);
     expect(analyze).toMatch(/HEIGHT_MISSING_GEOMETRIC_COPY/);
     expect(analyze).toMatch(/Skipping geometric measurement/);
+    expect(analyze).toMatch(/readResolvedHeightCm/);
+    expect(analyze).toMatch(/height unknown from clinical, body_goals, and CAQ/);
+    expect(analyze).not.toMatch(/\.from\('clinical_assessments'\)/);
     expect(analyze).not.toMatch(/heightCm\s*=\s*170/);
     expect(analyze).not.toMatch(/heightCm\s*\?\?\s*1[567]\d/);
     expect(HEIGHT_MISSING_GEOMETRIC_COPY).toMatch(/never guess/i);
     expect(ENTER_HEIGHT_CTA).toBe('Enter height');
   });
 
-  it('uploader shows honest height CTA without blocking BF persist', () => {
+  it('uploader shows honest height CTA, persists clinical, remasures when photos exist', () => {
     const uploader = src('src/components/body-tracker/BodyScanUploader.tsx');
     expect(uploader).toMatch(/scan-height-missing/);
     expect(uploader).toMatch(/ENTER_HEIGHT_CTA/);
-    expect(uploader).toMatch(/heightCm: localHeightCm/);
+    expect(uploader).toMatch(/heightCm: heightOverride \?\? localHeightCm/);
+    expect(uploader).toMatch(/persistEnteredHeightForCurrentUser/);
+    expect(uploader).toMatch(/handleAnalyze\(parsed\)/);
+    expect(uploader).toMatch(/strokeWidth=\{1\.5\}/);
   });
 });
 

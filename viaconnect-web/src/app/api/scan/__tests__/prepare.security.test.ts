@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   createSignedUploadUrl: vi.fn(),
   hasScanConsent: vi.fn(),
   readHeightCm: vi.fn(),
+  readResolvedHeightCm: vi.fn(),
 }));
 
 vi.mock('@/lib/supabase/server', () => ({
@@ -32,6 +33,7 @@ vi.mock('@/lib/scan/scanConsentGate', () => ({
 
 vi.mock('@/lib/scan/readHeightCm', () => ({
   readHeightCm: mocks.readHeightCm,
+  readResolvedHeightCm: mocks.readResolvedHeightCm,
 }));
 
 vi.mock('@/lib/utils/safe-log', () => ({
@@ -112,6 +114,8 @@ beforeEach(() => {
   mocks.hasScanConsent.mockResolvedValue(CONSENT_OK);
   mocks.readHeightCm.mockReset();
   mocks.readHeightCm.mockResolvedValue(null);
+  mocks.readResolvedHeightCm.mockReset();
+  mocks.readResolvedHeightCm.mockResolvedValue({ heightCm: null, source: null });
 });
 
 describe('POST /api/scan/prepare', () => {

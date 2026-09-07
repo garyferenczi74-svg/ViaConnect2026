@@ -9,6 +9,11 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { safeLog } from "@/lib/utils/safe-log";
+import {
+  asDemographicsRecord,
+  backfillClinicalHeightIfMissing,
+  writeThroughCaqDemographicsToClinical,
+} from "@/lib/scan/clinicalBodyMetrics";
 
 const ENGINE_TIMEOUT_MS = 15_000;
 
@@ -73,6 +78,33 @@ export async function completeCAQAndTriggerEngines(): Promise<{
     } catch (err) {
       results["sync_profile"] = false;
       errors.push(`Sync profile: ${err instanceof Error ? err.message : "Failed"}`);
+    }
+
+    // ═══ STEP 1.4: Write-through CAQ height/weight into clinical_assessments ═══
+    // FormaVision geometric reads clinical_assessments.height_cm. Web CAQ used
+    // to persist only assessment_results / body_goals. Copy finite values only.
+    try {
+      const { data: phase1 } = await supabase
+        .from("assessment_results")
+        .select("data")
+        .eq("user_id", user.id)
+        .eq("phase", 1)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      await writeThroughCaqDemographicsToClinical(
+        supabase,
+        user.id,
+        asDemographicsRecord(phase1?.data),
+      );
+      await backfillClinicalHeightIfMissing(supabase, user.id);
+      results["clinical_body"] = true;
+    } catch (err) {
+      results["clinical_body"] = false;
+      errors.push(`Clinical body: ${err instanceof Error ? err.message : "Failed"}`);
+      safeLog.warn("caq.complete.engine", "clinical_body write-through failed", {
+        error: err instanceof Error ? err.message : String(err),
+      });
     }
 
     // ═══ STEP 1.5: Write the canonical CAQ version row (Prompt 196c) ═══

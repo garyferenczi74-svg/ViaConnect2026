@@ -29,6 +29,8 @@ import {
   type FormaVisionScanMode,
 } from '@/components/body-tracker/FormaVisionScanModeBar';
 import { BodyScanUploader, type BodyScanResult } from '@/components/body-tracker/BodyScanUploader';
+import { parsePositiveFinite } from '@/lib/scan/clinicalBodyMetrics';
+import { persistEnteredHeightForCurrentUser } from '@/lib/scan/persistEnteredHeight';
 import { BodyScanResults } from '@/components/body-tracker/BodyScanResults';
 import {
   analyzeLiveFramesOnFormaVisionSpine,
@@ -709,7 +711,7 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
     })();
   }, [state.phase, dispatch, localHeightCm]);
 
-  const handleRetryComposition = useCallback(() => {
+  const handleRetryComposition = useCallback((heightOverride?: number | null) => {
     if (state.phase !== 'DONE' || compositionPhase === 'running') return;
     setCompositionPhase('running');
     void (async () => {
@@ -717,7 +719,7 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
         const spine = await analyzeLiveFramesOnFormaVisionSpine({
           frames: framesRef.current,
           persistScanFn: persistCompositionScan,
-          heightCm: localHeightCm,
+          heightCm: heightOverride ?? localHeightCm,
         });
         if (spine.circWritePromise) {
           await spine.circWritePromise;
@@ -831,8 +833,14 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
                       type="button"
                       data-testid="scan-height-save"
                       onClick={() => {
-                        const parsed = Number(heightDraft);
-                        if (Number.isFinite(parsed) && parsed > 0) setLocalHeightCm(parsed);
+                        const parsed = parsePositiveFinite(heightDraft);
+                        if (parsed === null) return;
+                        setLocalHeightCm(parsed);
+                        void persistEnteredHeightForCurrentUser(parsed).then(() => {
+                          if (state.phase === 'DONE' && compositionPhase !== 'running') {
+                            handleRetryComposition(parsed);
+                          }
+                        });
                       }}
                       className="rounded-lg border border-white/20 px-2.5 py-1.5 text-xs text-white/80"
                     >
@@ -1066,7 +1074,9 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
             <button
               type="button"
               data-testid="scan-done-retry-composition"
-              onClick={handleRetryComposition}
+              onClick={() => {
+                handleRetryComposition();
+              }}
               className="rounded-xl border border-white/30 px-5 py-2.5 text-sm font-semibold text-white"
             >
               Retry composition

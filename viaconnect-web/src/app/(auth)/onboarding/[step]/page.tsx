@@ -13,6 +13,7 @@ import { VoiceInput } from "@/components/caq/VoiceInput";
 import { CalmingHelixBackground } from "@/components/caq/CalmingHelixBackground";
 import { BodyTypeSelector } from "@/components/caq/BodyTypeSelector";
 import { completeCAQAndTriggerEngines } from "@/lib/caq/complete-caq";
+import { writeThroughCaqDemographicsToClinical } from "@/lib/scan/clinicalBodyMetrics";
 import { fetchPreviousCAQ } from "@/lib/caq/fetchPreviousCAQ";
 import SupplementPhotoUpload from "@/components/caq/phase6/SupplementPhotoUpload";
 import { CONVERSATIONAL_LABELS } from "@/config/caq-conversational-labels";
@@ -827,6 +828,14 @@ export default function OnboardingStepPage() {
       data,
       updated_at: new Date().toISOString(),
     }, { onConflict: "user_id,phase" });
+
+    if (phaseId === "1" && data && typeof data === "object") {
+      await writeThroughCaqDemographicsToClinical(
+        supabase,
+        user.id,
+        data as Record<string, unknown>,
+      );
+    }
   }
 
   // Per-row save state machinery for CAQ Phase 4 supplements (Prompt #39 §7.3.4).
