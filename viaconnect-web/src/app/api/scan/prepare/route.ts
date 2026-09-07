@@ -12,7 +12,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { hasScanConsent } from '@/lib/scan/scanConsentGate';
-import { readHeightCm } from '@/lib/scan/readHeightCm';
+import { readResolvedHeightCm } from '@/lib/scan/readHeightCm';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { inMemoryRateLimit } from '@/lib/utils/inMemoryRateLimit';
 import { safeLog } from '@/lib/utils/safe-log';
@@ -151,7 +151,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ ok: false, error: 'invalid_request' }, { status: 400 });
     }
 
-    const heightCm = await readHeightCm(supabase, user.id);
+    const resolvedHeight = await readResolvedHeightCm(supabase, user.id);
+    const heightCm = resolvedHeight.heightCm;
     const deviceInfo = deriveDeviceInfo(request.headers.get('user-agent'));
 
     const admin: SupabaseClient = createAdminClient();
@@ -169,7 +170,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           consent_version: consent.version,
           device_info: deviceInfo,
           height_cm_at_scan: heightCm,
-          height_cm_source: heightCm !== null ? 'clinical_assessment' : null,
+          height_cm_source: resolvedHeight.source,
         },
         { onConflict: 'id', ignoreDuplicates: true },
       ),

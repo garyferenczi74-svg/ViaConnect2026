@@ -38,6 +38,11 @@ import {
 } from './normalizeScanPhotoOrientation';
 import { safeLog } from '@/lib/utils/safe-log';
 import { sanitizeAnalyzeUserError } from './visionModel';
+import {
+  backfillClinicalHeightIfMissing,
+  parsePositiveFinite,
+} from '@/lib/scan/clinicalBodyMetrics';
+import { readResolvedHeightCm } from '@/lib/scan/readHeightCm';
 
 export interface BodyScanEstimate {
   estimated_body_fat_min: number;
@@ -312,20 +317,13 @@ export async function runFormaVisionAnalyzeSpine(
     heightCm: number | null;
     sex: 'male' | 'female';
   }> {
-    let heightCm = resolvedHeightCm;
-    if (heightCm === null || heightCm === undefined) {
-      const { data: clinicalData } = await supabase
-        .from('clinical_assessments')
-        .select('height_cm')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      const row = clinicalData as { height_cm: number | null } | null;
-      const raw = row?.height_cm ?? null;
-      heightCm = typeof raw === 'number' && raw > 0 && Number.isFinite(raw) ? raw : null;
-    } else if (!(typeof heightCm === 'number' && heightCm > 0 && Number.isFinite(heightCm))) {
-      heightCm = null;
+    let heightCm = parsePositiveFinite(resolvedHeightCm);
+    if (heightCm === null) {
+      const resolved = await readResolvedHeightCm(supabase, userId);
+      heightCm = resolved.heightCm;
+      if (heightCm !== null) {
+        void backfillClinicalHeightIfMissing(supabase, userId);
+      }
     }
     resolvedHeightCm = heightCm;
 
@@ -348,7 +346,7 @@ export async function runFormaVisionAnalyzeSpine(
       heightMissing = true;
       safeLog.warn(
         'formavision.analyze',
-        'Skipping geometric measurement - clinical_assessments height_cm unavailable',
+        'Skipping geometric measurement - height unknown from clinical, body_goals, and CAQ',
         { userId },
       );
       return null;
