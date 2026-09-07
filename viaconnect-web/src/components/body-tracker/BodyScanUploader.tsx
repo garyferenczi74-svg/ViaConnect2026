@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { AlertTriangle, Camera, Check, ImagePlus, Loader2, RotateCcw, ShieldCheck } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { AlertTriangle, Camera, Check, ImagePlus, Loader2, Ruler, RotateCcw, ShieldCheck } from 'lucide-react';
 import { persistScan } from '@/lib/body-tracker/composition/persistScanClient';
 import {
   ANALYZE_CLIENT_TIMEOUT_MS,
@@ -25,11 +26,17 @@ import {
   type PhotoPosition,
 } from '@/lib/body-tracker/composition/formaVisionScanSlots';
 import {
+  CIRC_WRITE_FAIL_COPY,
+  HEIGHT_MISSING_GEOMETRIC_COPY,
   runFormaVisionAnalyzeSpine,
   type BodyScanEstimate,
   type BodyScanResult,
   type FormaVisionPhotoMap,
 } from '@/lib/body-tracker/composition/runFormaVisionAnalyze';
+import {
+  ENTER_HEIGHT_CTA,
+  type CircWriteResult,
+} from '@/lib/body-tracker/composition/circWriteContract';
 import type { ViewQualityResult } from '@/lib/arnold/scanning/runScanAnalysis';
 import type { ExtractedMeasurements } from '@/lib/arnold/scanning/types';
 import { sanitizeAnalyzeUserError } from '@/lib/body-tracker/composition/visionModel';
@@ -99,6 +106,10 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
   // Null means the view has not been quality-assessed yet (pipeline still running or skipped).
   const [viewQuality, setViewQuality] = useState<Partial<Record<PhotoPosition, ViewQualityResult>>>({});
   const [retainFrbl, setRetainFrbl] = useState(RETAIN_FRBL_DEFAULT);
+  const [circNotice, setCircNotice] = useState<string | null>(null);
+  const [heightMissing, setHeightMissing] = useState(false);
+  const [heightDraft, setHeightDraft] = useState('');
+  const [localHeightCm, setLocalHeightCm] = useState<number | null>(null);
   // Unmount guard: prevents any post-unmount state updates from the async IIFE.
   const isMountedRef = useRef(true);
   useEffect(() => () => {
@@ -119,7 +130,7 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
   // Both refs are reset at the start of each handleAnalyze call.
   const geometricMeasurementsRef = useRef<ExtractedMeasurements | null>(null);
   const visionScanIdRef = useRef<string | null>(null);
-  const circWritePromiseRef = useRef<Promise<void> | null>(null);
+  const circWritePromiseRef = useRef<Promise<CircWriteResult> | null>(null);
 
   const allFilled = POSITIONS.every((p) => slots[p.key].base64 !== null);
   const anyFilled = POSITIONS.some((p) => slots[p.key].base64 !== null);
@@ -197,6 +208,8 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
     geometricMeasurementsRef.current = null;
     visionScanIdRef.current = null;
     circWritePromiseRef.current = null;
+    setCircNotice(null);
+    setHeightMissing(false);
     setViewQuality({});
 
     try {
@@ -226,6 +239,7 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
         persistScanFn: persistScan,
         analyzeTimeoutMs: ANALYZE_CLIENT_TIMEOUT_MS,
         alreadyNormalized: true,
+        heightCm: localHeightCm,
         retainPhotos: retainFrbl,
         retainFrblFn: retainFrbl ? retainFrblPhotos : undefined,
         onGeometricMeasurements: (m) => {
@@ -258,7 +272,14 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
         }
       }
       if (circWritePromiseRef.current) {
-        await circWritePromiseRef.current;
+        const circRes = await circWritePromiseRef.current;
+        if (circRes && !circRes.ok && !circRes.skipped) {
+          setCircNotice(CIRC_WRITE_FAIL_COPY);
+          toast(CIRC_WRITE_FAIL_COPY, { icon: 'i' });
+        }
+      }
+      if (spine.heightMissing) {
+        setHeightMissing(true);
       }
 
       if (!persistRes.ok) {
@@ -271,6 +292,7 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
         return;
       }
 
+      // Circ fail is best-effort: BF persist-ok still settles Ready.
       if (spine.result) {
         onComplete(spine.result);
       } else if (spine.error) {
@@ -483,6 +505,47 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
         </p>
       </div>
 
+      {heightMissing && (
+        <div
+          data-testid="scan-height-missing"
+          className="flex flex-col gap-3 rounded-xl border border-[#B75E18]/40 bg-[#B75E18]/10 p-3 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div className="flex min-w-0 items-start gap-2">
+            <Ruler className="mt-0.5 h-4 w-4 shrink-0 text-[#B75E18]" strokeWidth={1.5} aria-hidden />
+            <p className="text-xs text-white/75">{HEIGHT_MISSING_GEOMETRIC_COPY}</p>
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <input
+              type="number"
+              inputMode="decimal"
+              placeholder="Height in cm"
+              value={heightDraft}
+              onChange={(e) => setHeightDraft(e.target.value)}
+              className="w-full min-h-[44px] rounded-lg border border-white/20 bg-transparent px-3 py-2 text-base text-white sm:w-28"
+              data-testid="scan-height-input"
+            />
+            <button
+              type="button"
+              data-testid="scan-height-save"
+              onClick={() => {
+                const parsed = Number(heightDraft);
+                if (Number.isFinite(parsed) && parsed > 0) {
+                  setLocalHeightCm(parsed);
+                  setHeightMissing(false);
+                }
+              }}
+              className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-white/20 px-3 py-2 text-xs font-medium text-white/80"
+            >
+              {ENTER_HEIGHT_CTA}
+            </button>
+          </div>
+        </div>
+      )}
+      {circNotice && (
+        <p data-testid="body-scan-circ-notice" className="text-xs text-[#FCA5A5]">
+          {circNotice}
+        </p>
+      )}
       {error && (
         <p data-testid="body-scan-error" className="text-xs text-[#FCA5A5]">
           {error}

@@ -34,6 +34,7 @@ export async function analyzeLiveFramesOnFormaVisionSpine(args: {
   persistScanFn: PersistScanFn;
   heightCm?: number | null;
   analyzeTimeoutMs?: number;
+  photoSessionId?: string | null;
   deps?: ConvergeLiveScanDeps;
 }): Promise<FormaVisionAnalyzeSpine> {
   const framesToPhotos = args.deps?.framesToPhotos ?? liveFramesToFormaVisionPhotos;
@@ -46,6 +47,7 @@ export async function analyzeLiveFramesOnFormaVisionSpine(args: {
     heightCm: args.heightCm,
     analyzeTimeoutMs: args.analyzeTimeoutMs,
     alreadyNormalized: false,
+    photoSessionId: args.photoSessionId,
   });
 }
 
@@ -72,6 +74,7 @@ export async function convergeLiveScanToFormaVisionSpine(args: {
     persistScanFn: args.persistScanFn,
     heightCm: args.heightCm,
     analyzeTimeoutMs: args.analyzeTimeoutMs,
+    photoSessionId: sessionId,
     deps: args.deps,
   });
 

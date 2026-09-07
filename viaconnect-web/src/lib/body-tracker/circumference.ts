@@ -156,6 +156,14 @@ export function emptyMeasurements(): CircumferenceMeasurements {
   }, {} as CircumferenceMeasurements);
 }
 
+/** True when every card value is null/absent — Measurements empty-state CTA. */
+export function allCircumferenceCardsEmpty(
+  data: CircumferenceMeasurements | null | undefined,
+): boolean {
+  if (!data) return true;
+  return MEASUREMENT_KEYS.every((k) => data[k] == null);
+}
+
 // ── Symmetry score (0..1) ──────────────────────────────────────────────────
 export function calculateCircumferenceBalance(data: CircumferenceMeasurements): number {
   const validPairs: Array<[number, number]> = [];

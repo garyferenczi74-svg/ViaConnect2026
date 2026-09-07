@@ -207,6 +207,42 @@ describe('buildCircumferenceWrite', () => {
     expect(circ.scan_id).toBeNull();
   });
 
+  it('T5: vision-only scanId stays null on circ.scan_id (photo_scans is not the FK)', () => {
+    const m = makeEmptyMeasurements();
+    m.waistNaturalCirc = measuredValue(86, 'high');
+    const { circ } = buildCircumferenceWrite({
+      userId: 'user-1',
+      entryId: 'entry-1',
+      scanId: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee',
+      measurements: m,
+    });
+    expect(circ.scan_id).toBeNull();
+    expect(circ.waist).toBe(86);
+  });
+
+  it('T6: photoSessionId is the only value written to circ.scan_id', () => {
+    const m = makeEmptyMeasurements();
+    m.waistNaturalCirc = measuredValue(86, 'high');
+    const sessionId = '11111111-2222-4333-8444-555555555555';
+    const { circ } = buildCircumferenceWrite({
+      userId: 'user-1',
+      entryId: 'entry-1',
+      scanId: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee',
+      photoSessionId: sessionId,
+      measurements: m,
+    });
+    expect(circ.scan_id).toBe(sessionId);
+  });
+
+  it('T6: non-finite cm values stay null (never written)', () => {
+    const m = makeEmptyMeasurements();
+    m.waistNaturalCirc = measuredValue(Number.NaN, 'high');
+    m.chestCirc = measuredValue(Number.POSITIVE_INFINITY, 'high');
+    const { circ } = buildCircumferenceWrite({ ...BASE, measurements: m });
+    expect(circ.waist).toBeNull();
+    expect(circ.chest).toBeNull();
+  });
+
   it('all 12 circ columns present (null or numeric)', () => {
     const m = makeEmptyMeasurements();
     const { circ } = buildCircumferenceWrite({ ...BASE, measurements: m });

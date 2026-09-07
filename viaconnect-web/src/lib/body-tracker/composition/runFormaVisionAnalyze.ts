@@ -2,7 +2,7 @@
 // One pipeline: upright-normalize → body-scan-analyze → persistScan (210l)
 // → in-memory girths. Missing views are omitted. Photo scans write total
 // body fat only (never regional fat, muscle, or Navy). Circumference
-// scan_id stays null (FK → body_photo_sessions).
+// scan_id stays null unless a valid body_photo_sessions id is known (T5/T6).
 
 import { createClient } from '@/lib/supabase/client';
 import { runInMemoryMeasurement } from '@/lib/arnold/scanning/runScanAnalysis';
@@ -10,6 +10,14 @@ import type { ViewQualityResult } from '@/lib/arnold/scanning/runScanAnalysis';
 import type { ExtractedMeasurements } from '@/lib/arnold/scanning/types';
 import type { PoseId } from '@/lib/arnold/types';
 import { persistScan } from './persistScanClient';
+import {
+  CIRC_WRITE_FAIL_COPY,
+  HEIGHT_MISSING_GEOMETRIC_COPY,
+  type CircWriteResult,
+  hasFiniteGeometricGirth,
+  parseCircWriteResponse,
+  resolveCircumferenceScanId,
+} from './circWriteContract';
 import {
   ANALYZE_CLIENT_TIMEOUT_MS,
   PHOTO_POSITIONS,
@@ -79,6 +87,8 @@ export interface FormaVisionAnalyzeArgs {
   /** Explicit opt-in to keep FRBL. Default discard. */
   retainPhotos?: boolean;
   retainFrblFn?: RetainFrblFn;
+  /** Valid body_photo_sessions.id when already known (live persist or retain). */
+  photoSessionId?: string | null;
 }
 
 export interface FormaVisionAnalyzeSpine {
@@ -86,7 +96,10 @@ export interface FormaVisionAnalyzeSpine {
   result?: BodyScanResult;
   persistRes: { ok: boolean; entryId?: string; reason?: string };
   flushCirc: () => void;
-  circWritePromise: Promise<void> | null;
+  circWritePromise: Promise<CircWriteResult> | null;
+  circWrite?: CircWriteResult | null;
+  heightMissing?: boolean;
+  heightMissingCopy?: string;
   error?: string;
 }
 
@@ -152,23 +165,44 @@ export async function liveFramesToFormaVisionPhotos(
 export async function writeCircumferencesFromScan(
   measurements: ExtractedMeasurements,
   scanId: string,
-): Promise<void> {
+  opts?: { photoSessionId?: string | null },
+): Promise<CircWriteResult> {
+  if (!hasFiniteGeometricGirth(measurements)) {
+    safeLog.info('formavision.analyze', 'skipping all-UNKNOWN circumference payload', {
+      scanId,
+    });
+    return { ok: true, skipped: true, reason: 'all_unknown' };
+  }
+  const photoSessionId = resolveCircumferenceScanId({
+    visionScanId: scanId,
+    photoSessionId: opts?.photoSessionId,
+  });
   try {
     const res = await fetch('/api/body/circumference', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ scanId, measurements }),
+      body: JSON.stringify({
+        scanId,
+        measurements,
+        ...(photoSessionId ? { photoSessionId } : {}),
+      }),
     });
-    if (!res.ok) {
-      safeLog.warn('formavision.analyze', 'circumference persist returned non-ok', {
+    const json: unknown = await res.json().catch(() => null);
+    const parsed = parseCircWriteResponse({ httpOk: res.ok, json });
+    if (!parsed.ok) {
+      safeLog.warn('formavision.analyze', 'circumference persist failed (non-fatal)', {
         status: res.status,
         scanId,
+        photoSessionId,
+        reason: parsed.reason,
       });
     }
+    return parsed;
   } catch (err) {
     safeLog.warn('formavision.analyze', 'circumference persist failed (non-fatal)', {
       error: err instanceof Error ? err.message : String(err),
     });
+    return { ok: false, reason: 'network' };
   }
 }
 
@@ -200,6 +234,8 @@ export async function runFormaVisionAnalyzeSpine(
     persistRes: { ok: false, reason: 'analyze_failed' },
     flushCirc: () => undefined,
     circWritePromise: null,
+    circWrite: null,
+    heightMissing: false,
     error: sanitizeAnalyzeUserError(error),
   });
 
@@ -241,70 +277,110 @@ export async function runFormaVisionAnalyzeSpine(
 
   let geometricMeasurements: ExtractedMeasurements | null = null;
   let visionScanId: string | null = null;
+  let photoSessionId: string | null = resolveCircumferenceScanId({
+    photoSessionId: args.photoSessionId,
+  });
   let writeTriggered = false;
-  let circWritePromise: Promise<void> | null = null;
+  let t6Triggered = false;
+  let heightMissing = false;
+  let resolvedHeightCm: number | null = args.heightCm ?? null;
+  let resolvedSex: 'male' | 'female' | null = args.sex ?? null;
+  const circState: { promise: Promise<CircWriteResult> | null } = { promise: null };
 
   const flushCirc = () => {
     const pending = geometricMeasurements;
     if (pending && visionScanId && !writeTriggered) {
       writeTriggered = true;
-      circWritePromise = writeCircumferencesFromScan(pending, visionScanId);
+      circState.promise = writeCircumferencesFromScan(pending, visionScanId);
     }
   };
+
+  const flushT6 = () => {
+    const pending = geometricMeasurements;
+    if (!pending || !visionScanId || !photoSessionId || t6Triggered) return;
+    t6Triggered = true;
+    const t6 = writeCircumferencesFromScan(pending, visionScanId, { photoSessionId });
+    circState.promise = circState.promise
+      ? circState.promise.then(async (first) => {
+          const second = await t6;
+          return second.ok || first.ok ? (second.ok ? second : first) : second;
+        })
+      : t6;
+  };
+
+  async function resolveHeightAndSex(userId: string): Promise<{
+    heightCm: number | null;
+    sex: 'male' | 'female';
+  }> {
+    let heightCm = resolvedHeightCm;
+    if (heightCm === null || heightCm === undefined) {
+      const { data: clinicalData } = await supabase
+        .from('clinical_assessments')
+        .select('height_cm')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const row = clinicalData as { height_cm: number | null } | null;
+      const raw = row?.height_cm ?? null;
+      heightCm = typeof raw === 'number' && raw > 0 && Number.isFinite(raw) ? raw : null;
+    } else if (!(typeof heightCm === 'number' && heightCm > 0 && Number.isFinite(heightCm))) {
+      heightCm = null;
+    }
+    resolvedHeightCm = heightCm;
+
+    let sex: 'male' | 'female' = resolvedSex ?? 'male';
+    if (!args.sex) {
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('sex')
+        .eq('id', userId)
+        .maybeSingle();
+      sex = (profileData as { sex: string | null } | null)?.sex === 'female' ? 'female' : 'male';
+    }
+    resolvedSex = sex;
+    return { heightCm, sex };
+  }
+
+  async function runGeometricFromPhotos(userId: string): Promise<ExtractedMeasurements | null> {
+    const { heightCm, sex } = await resolveHeightAndSex(userId);
+    if (!heightCm) {
+      heightMissing = true;
+      safeLog.warn(
+        'formavision.analyze',
+        'Skipping geometric measurement - clinical_assessments height_cm unavailable',
+        { userId },
+      );
+      return null;
+    }
+
+    const posePhotos: Partial<Record<PoseId, Blob>> = {};
+    for (const pos of present) {
+      const file = upright[pos]?.file;
+      if (file) posePhotos[POSITION_TO_POSE_ID[pos]] = file;
+    }
+
+    const measurements = await runInMemoryMeasurement({
+      photos: posePhotos,
+      heightCm,
+      sex,
+      onViewQuality: args.onViewQuality,
+    });
+    if (!mounted()) return null;
+    geometricMeasurements = measurements;
+    args.onGeometricMeasurements?.(measurements);
+    return measurements;
+  }
 
   void (async () => {
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       const userId = sessionData.session?.user?.id;
       if (!userId || !mounted()) return;
-
-      let heightCm = args.heightCm ?? null;
-      if (heightCm === null || heightCm === undefined) {
-        const { data: clinicalData } = await supabase
-          .from('clinical_assessments')
-          .select('height_cm')
-          .eq('user_id', userId)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        const row = clinicalData as { height_cm: number | null } | null;
-        heightCm = row?.height_cm ?? null;
-      }
-      if (!heightCm) {
-        safeLog.warn(
-          'formavision.analyze',
-          'Skipping geometric measurement - clinical_assessments height_cm unavailable',
-          { userId },
-        );
-        return;
-      }
-
-      let sex: 'male' | 'female' = args.sex ?? 'male';
-      if (!args.sex) {
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('sex')
-          .eq('id', userId)
-          .maybeSingle();
-        sex = (profileData as { sex: string | null } | null)?.sex === 'female' ? 'female' : 'male';
-      }
-
-      const posePhotos: Partial<Record<PoseId, Blob>> = {};
-      for (const pos of present) {
-        const file = upright[pos]?.file;
-        if (file) posePhotos[POSITION_TO_POSE_ID[pos]] = file;
-      }
-
-      const measurements = await runInMemoryMeasurement({
-        photos: posePhotos,
-        heightCm,
-        sex,
-        onViewQuality: args.onViewQuality,
-      });
-      if (!mounted()) return;
-      geometricMeasurements = measurements;
-      args.onGeometricMeasurements?.(measurements);
+      const measurements = await runGeometricFromPhotos(userId);
+      if (!measurements) return;
       flushCirc();
+      flushT6();
     } catch (err) {
       safeLog.warn('formavision.analyze', 'Geometric measurement failed (non-fatal)', {
         error: err instanceof Error ? err.message : String(err),
@@ -363,6 +439,22 @@ export async function runFormaVisionAnalyzeSpine(
         safeLog.warn('formavision.analyze', 'FRBL retain failed (non-fatal)', {
           error: retained.error ?? 'retain_failed',
         });
+      } else if (retained.sessionId) {
+        photoSessionId = retained.sessionId;
+        // T6: remasure from the same retained FRBL; write with session FK.
+        // Fail-open — never blocks BF persist / Ready settle.
+        try {
+          const { data: sessionData } = await supabase.auth.getSession();
+          const userId = sessionData.session?.user?.id;
+          if (userId && mounted()) {
+            await runGeometricFromPhotos(userId);
+          }
+        } catch (remeasureErr) {
+          safeLog.warn('formavision.analyze', 'T6 remasure failed (non-fatal)', {
+            error: remeasureErr instanceof Error ? remeasureErr.message : 'unknown',
+          });
+        }
+        flushT6();
       }
     } catch (retainErr) {
       safeLog.warn('formavision.analyze', 'FRBL retain threw (non-fatal)', {
@@ -375,8 +467,15 @@ export async function runFormaVisionAnalyzeSpine(
     ok: persistRes.ok,
     result: { scanId: out.scan_id, scanDate: out.scan_date, estimates: out.estimates },
     persistRes,
-    flushCirc,
-    circWritePromise,
+    flushCirc: () => {
+      flushCirc();
+      flushT6();
+    },
+    get circWritePromise() {
+      return circState.promise;
+    },
+    heightMissing,
+    heightMissingCopy: heightMissing ? HEIGHT_MISSING_GEOMETRIC_COPY : undefined,
     error: persistRes.ok
       ? undefined
       : persistRes.reason === 'timeout'
@@ -384,3 +483,5 @@ export async function runFormaVisionAnalyzeSpine(
         : 'Scan analysis finished but could not save to your body log. Retry Analyze to save.',
   };
 }
+
+export { CIRC_WRITE_FAIL_COPY, HEIGHT_MISSING_GEOMETRIC_COPY };
