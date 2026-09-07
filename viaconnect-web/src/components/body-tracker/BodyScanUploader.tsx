@@ -55,7 +55,7 @@ import {
 } from '@/lib/formavision/retainFrbl';
 import { retainFrblPhotos } from '@/lib/formavision/retainFrblClient';
 import { parsePositiveFinite } from '@/lib/scan/clinicalBodyMetrics';
-import { persistEnteredHeightForCurrentUser } from '@/lib/scan/persistEnteredHeight';
+import { persistEnteredHeightForCurrentUserFailOpen } from '@/lib/scan/persistEnteredHeight';
 
 export type { PhotoPosition, BodyScanEstimate, BodyScanResult };
 
@@ -534,7 +534,9 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
                 if (parsed === null) return;
                 setLocalHeightCm(parsed);
                 setHeightMissing(false);
-                void persistEnteredHeightForCurrentUser(parsed).then(() => {
+                void persistEnteredHeightForCurrentUserFailOpen(parsed, (copy) => {
+                  toast(copy, { icon: 'i' });
+                }).finally(() => {
                   if (anyFilled && !submitting) {
                     void handleAnalyze(parsed);
                   }

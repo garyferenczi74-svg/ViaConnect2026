@@ -30,7 +30,8 @@ import {
 } from '@/components/body-tracker/FormaVisionScanModeBar';
 import { BodyScanUploader, type BodyScanResult } from '@/components/body-tracker/BodyScanUploader';
 import { parsePositiveFinite } from '@/lib/scan/clinicalBodyMetrics';
-import { persistEnteredHeightForCurrentUser } from '@/lib/scan/persistEnteredHeight';
+import toast from 'react-hot-toast';
+import { persistEnteredHeightForCurrentUserFailOpen } from '@/lib/scan/persistEnteredHeight';
 import { BodyScanResults } from '@/components/body-tracker/BodyScanResults';
 import {
   analyzeLiveFramesOnFormaVisionSpine,
@@ -836,7 +837,9 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
                         const parsed = parsePositiveFinite(heightDraft);
                         if (parsed === null) return;
                         setLocalHeightCm(parsed);
-                        void persistEnteredHeightForCurrentUser(parsed).then(() => {
+                        void persistEnteredHeightForCurrentUserFailOpen(parsed, (copy) => {
+                          toast(copy, { icon: 'i' });
+                        }).finally(() => {
                           if (state.phase === 'DONE' && compositionPhase !== 'running') {
                             handleRetryComposition(parsed);
                           }
