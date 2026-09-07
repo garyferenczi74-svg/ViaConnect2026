@@ -153,6 +153,14 @@ type QueryPack<T> = {
   error: { message: string } | null;
 };
 
+type ClinicalHeightRow = Pick<Database['public']['Tables']['clinical_assessments']['Row'], 'height_cm'>;
+type BodyGoalHeightRow = Pick<Database['public']['Tables']['body_goals']['Row'], 'height_in'>;
+type AssessmentDataRow = Pick<Database['public']['Tables']['assessment_results']['Row'], 'data'>;
+
+function asQueryPack<T>(promise: PromiseLike<unknown>): PromiseLike<QueryPack<T>> {
+  return promise as PromiseLike<QueryPack<T>>;
+}
+
 async function timedMaybeSingle<T>(
   promise: PromiseLike<QueryPack<T>>,
   label: string,
@@ -175,13 +183,15 @@ export async function readClinicalHeightCm(
   userId: string,
 ): Promise<number | null> {
   const row = await timedMaybeSingle(
-    supabase
-      .from('clinical_assessments')
-      .select('height_cm')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle(),
+    asQueryPack<ClinicalHeightRow>(
+      supabase
+        .from('clinical_assessments')
+        .select('height_cm')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ),
     'clinical',
   );
   return parsePositiveFinite(row?.height_cm);
@@ -192,13 +202,15 @@ export async function readBodyGoalsHeightCm(
   userId: string,
 ): Promise<number | null> {
   const row = await timedMaybeSingle(
-    supabase
-      .from('body_goals')
-      .select('height_in')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle(),
+    asQueryPack<BodyGoalHeightRow>(
+      supabase
+        .from('body_goals')
+        .select('height_in')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ),
     'body_goals',
   );
   return heightInchesToCm(row?.height_in);
@@ -209,14 +221,16 @@ export async function readCaqAssessmentHeightCm(
   userId: string,
 ): Promise<number | null> {
   const row = await timedMaybeSingle(
-    supabase
-      .from('assessment_results')
-      .select('data')
-      .eq('user_id', userId)
-      .eq('phase', 1)
-      .order('updated_at', { ascending: false })
-      .limit(1)
-      .maybeSingle(),
+    asQueryPack<AssessmentDataRow>(
+      supabase
+        .from('assessment_results')
+        .select('data')
+        .eq('user_id', userId)
+        .eq('phase', 1)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ),
     'caq_phase1',
   );
   return parseCaqHeightCm(asDemographicsRecord(row?.data));
@@ -260,14 +274,16 @@ export async function backfillClinicalHeightIfMissing(
   }
 
   const row = await timedMaybeSingle(
-    supabase
-      .from('assessment_results')
-      .select('data')
-      .eq('user_id', userId)
-      .eq('phase', 1)
-      .order('updated_at', { ascending: false })
-      .limit(1)
-      .maybeSingle(),
+    asQueryPack<AssessmentDataRow>(
+      supabase
+        .from('assessment_results')
+        .select('data')
+        .eq('user_id', userId)
+        .eq('phase', 1)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ),
     'caq_phase1_backfill',
   );
   const demographics = asDemographicsRecord(row?.data);
