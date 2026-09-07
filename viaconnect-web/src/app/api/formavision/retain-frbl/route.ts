@@ -16,8 +16,6 @@ import { startMeshyForReadySession } from '@/lib/formavision/meshy/startMeshyFor
 import { startTripoForReadySession } from '@/lib/formavision/tripo/startTripoForReadySession';
 import type { Database } from '@/lib/supabase/types';
 
-type UserScopedClient = SupabaseClient<Database>;
-
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
@@ -31,12 +29,12 @@ function isPoseId(value: unknown): value is PoseId {
   return typeof value === 'string' && (POSE_ORDER as readonly string[]).includes(value);
 }
 
-async function requireUser(): Promise<{ id: string; supabase: UserScopedClient } | NextResponse> {
+async function requireUser(): Promise<{ id: string } | NextResponse> {
   const supabase = await createClient();
   const { data: userData } = await withTimeout(supabase.auth.getUser(), 5000, `${SCOPE}.auth`);
   const user = userData.user;
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  return { id: user.id, supabase };
+  return { id: user.id };
 }
 
 interface SignedUploadTarget {
@@ -107,7 +105,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     }
 
     if (action === 'prepare') {
-      return prepareRetain(admin, auth.supabase, auth.id, photoScanId, rec.poses);
+      return prepareRetain(admin, auth.id, photoScanId, rec.poses);
     }
     if (action === 'finalize') {
       return finalizeRetain(admin, auth.id, photoScanId, rec);
@@ -126,7 +124,6 @@ export async function POST(request: Request): Promise<NextResponse> {
 
 async function prepareRetain(
   admin: SupabaseClient,
-  userClient: UserScopedClient,
   userId: string,
   photoScanId: string,
   rawPoses: unknown,
@@ -148,7 +145,9 @@ async function prepareRetain(
   }
 
   const sessionId = randomUUID();
-  const resolvedHeight = await readResolvedHeightCm(userClient, userId);
+  // Same cookie createClient() as /api/scan/prepare — never the admin client.
+  const supabase = await createClient();
+  const resolvedHeight = await readResolvedHeightCm(supabase, userId);
   const heightCm = resolvedHeight.heightCm;
   const sessionRow: Database['public']['Tables']['body_photo_sessions']['Insert'] = {
     id: sessionId,

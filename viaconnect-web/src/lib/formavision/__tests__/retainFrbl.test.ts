@@ -143,7 +143,8 @@ describe('retain FRBL — discard vs retain', () => {
     expect(retainRoute).toMatch(/startMeshyForReadySession/);
     expect(retainRoute).toMatch(/startTripoForReadySession/);
     expect(retainRoute).not.toMatch(/SnapMeasure/);
-    expect(retainRoute).toMatch(/readResolvedHeightCm\(userClient,/);
+    expect(retainRoute).toMatch(/const supabase = await createClient\(\)/);
+    expect(retainRoute).toMatch(/readResolvedHeightCm\(supabase,/);
     expect(retainRoute).toMatch(/height_cm_at_scan/);
     expect(retainRoute).toMatch(/height_cm_source/);
     expect(retainRoute).toMatch(/heightCm !== null && Number\.isFinite\(heightCm\)/);
@@ -174,6 +175,24 @@ describe('retain FRBL — discard vs retain', () => {
     expect(retainedHtml).toContain('Photos kept for 3D and re-measure.');
     expect(discardedHtml).toContain('Photos are not stored after analysis.');
     expect(discardedHtml).not.toContain('Photos kept for 3D and re-measure.');
+  });
+});
+
+describe('retain-frbl prepare height stamp contract', () => {
+  it('stamps finite CAQ-first height on session insert via cookie createClient', () => {
+    const retainRoute = src('src/app/api/formavision/retain-frbl/route.ts');
+    const prepareFn = retainRoute.slice(
+      retainRoute.indexOf('async function prepareRetain'),
+      retainRoute.indexOf('async function finalizeRetain'),
+    );
+    expect(prepareFn).toMatch(/const supabase = await createClient\(\)/);
+    expect(prepareFn).toMatch(/readResolvedHeightCm\(supabase,/);
+    expect(prepareFn).toMatch(/height_cm_at_scan/);
+    expect(prepareFn).toMatch(/height_cm_source/);
+    expect(prepareFn).toMatch(/heightCm !== null && Number\.isFinite\(heightCm\)/);
+    expect(prepareFn.indexOf('createClient()')).toBeLessThan(prepareFn.indexOf('.insert(sessionRow)'));
+    expect(prepareFn).not.toMatch(/createAdminClient/);
+    expect(prepareFn).not.toMatch(/heightCm\s*=\s*170|heightCm\s*\?\?\s*170/);
   });
 });
 
