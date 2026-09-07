@@ -79,6 +79,6 @@ describe('circ fail persist wiring', () => {
     expect(page).toMatch(/circFailReason=\{circFailReason\}/);
     expect(page).not.toMatch(/CircFailChip/);
     expect(page).toMatch(/Segmental body fat analysis/);
-    expect(page.indexOf('MeasurementsGrid')).toBeGreaterThan(page.indexOf('Segmental body fat analysis'));
+    expect(page).not.toMatch(/body-comp-provenance-chip[\s\S]{0,200}scan-circ-fail-chip/);
   });
 });
