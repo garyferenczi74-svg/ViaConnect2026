@@ -1,7 +1,13 @@
 // Shared CAQ ↔ clinical_assessments body-metric bridge.
-// Geometric height SSOT is clinical_assessments.height_cm. Web CAQ historically
-// wrote only assessment_results / body_goals, so readers fall back in order
-// and writers copy finite values through. Never invent height or weight —
+// Geometric height SSOT write target is clinical_assessments.height_cm.
+// CAQ / body_goals are read fallbacks for finite real values only.
+//
+// UNITS LOCK (never invent, never swap):
+// - assessment_results CAQ demographics.height is centimeters as a string
+//   (e.g. "180"). Parse as cm. Do not treat as inches.
+// - body_goals.height_in is inches (e.g. "70.90"). Convert inches→cm with
+//   ×2.54 only when finite positive. Do not treat as cm.
+// - clinical_assessments.height_cm is already centimeters.
 // Gary's CAQ 180 cm / 120 kg is real fixture data, not a default.
 
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -55,6 +61,7 @@ export function asDemographicsRecord(value: unknown): Record<string, unknown> | 
   return value as Record<string, unknown>;
 }
 
+/** CAQ demographics.height is centimeters. Never multiply by INCHES_TO_CM. */
 export function parseCaqHeightCm(
   demographics: Record<string, unknown> | null | undefined,
 ): number | null {
@@ -77,6 +84,7 @@ export function parseBiologicalSex(raw: unknown): 'male' | 'female' | null {
   return null;
 }
 
+/** body_goals.height_in is inches. Only path that may apply ×2.54. */
 export function heightInchesToCm(heightIn: unknown): number | null {
   const inches = parsePositiveFinite(heightIn);
   if (inches === null) return null;

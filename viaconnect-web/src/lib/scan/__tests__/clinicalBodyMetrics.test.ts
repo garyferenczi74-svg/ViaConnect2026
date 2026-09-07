@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import {
+  INCHES_TO_CM,
   asDemographicsRecord,
   backfillClinicalHeightIfMissing,
   heightInchesToCm,
@@ -15,7 +18,12 @@ import {
 
 /** Gary LIVE CAQ 2026-04-02 — real stored values, not a default. */
 const GARY_CAQ = { height: '180', weight: '120', sex: 'male' } as const;
-const GARY_HEIGHT_IN = 70.9;
+const GARY_HEIGHT_IN = '70.90';
+const GARY_HEIGHT_IN_AS_CM = 70.9 * INCHES_TO_CM;
+
+function src(rel: string): string {
+  return readFileSync(join(process.cwd(), rel), 'utf8');
+}
 
 type TableSpec = {
   row?: unknown;
@@ -49,12 +57,44 @@ function mockClient(tables: Record<string, TableSpec>): {
   return { client: client as unknown as ClinicalMetricsClient, upserts };
 }
 
-describe('parsePositiveFinite / CAQ demographics', () => {
-  it('parses Gary CAQ string height and weight without inventing', () => {
+describe('units lock: CAQ cm vs body_goals inches', () => {
+  it('parses CAQ demographics.height "180" as centimeters, not inches', () => {
+    expect(parseCaqHeightCm({ height: '180' })).toBe(180);
     expect(parseCaqHeightCm({ ...GARY_CAQ })).toBe(180);
+    expect(parseCaqHeightCm({ height: '180' })).not.toBeCloseTo(180 * INCHES_TO_CM, 3);
     expect(parseCaqWeightKg({ ...GARY_CAQ })).toBe(120);
     expect(parseBiologicalSex(GARY_CAQ.sex)).toBe('male');
   });
+
+  it('converts body_goals.height_in "70.90" inches → ~180.086 cm, never as cm', () => {
+    expect(heightInchesToCm(GARY_HEIGHT_IN)).toBeCloseTo(180.086, 3);
+    expect(heightInchesToCm(GARY_HEIGHT_IN)).toBeCloseTo(GARY_HEIGHT_IN_AS_CM, 5);
+    expect(heightInchesToCm('70.90')).not.toBe(70.9);
+    expect(heightInchesToCm('')).toBeNull();
+    expect(heightInchesToCm('abc')).toBeNull();
+    expect(heightInchesToCm(Number.NaN)).toBeNull();
+  });
+
+  it('keeps parser roles from swapping units', () => {
+    const helpers = src('src/lib/scan/clinicalBodyMetrics.ts');
+    const parseFn = helpers.slice(
+      helpers.indexOf('export function parseCaqHeightCm'),
+      helpers.indexOf('export function parseCaqWeightKg'),
+    );
+    const inchesFn = helpers.slice(
+      helpers.indexOf('export function heightInchesToCm'),
+      helpers.indexOf('function emptyWrite'),
+    );
+    expect(parseFn).not.toMatch(/INCHES_TO_CM|heightInchesToCm|\*\s*2\.54/);
+    expect(inchesFn).toMatch(/INCHES_TO_CM/);
+    expect(helpers).toMatch(/readBodyGoalsHeightCm[\s\S]*heightInchesToCm\(row\?\.height_in\)/);
+    expect(helpers).toMatch(/readCaqAssessmentHeightCm[\s\S]*parseCaqHeightCm\(/);
+    expect(helpers).not.toMatch(/parseCaqHeightCm\(.*height_in/);
+    expect(helpers).not.toMatch(/heightInchesToCm\(.*demographics\.height/);
+  });
+});
+
+describe('parsePositiveFinite / CAQ demographics', () => {
 
   it('accepts height_cm / weight_kg keys used by mobile CAQWizard', () => {
     expect(parseCaqHeightCm({ height_cm: 182 })).toBe(182);
@@ -102,6 +142,7 @@ describe('upsertClinicalBodyMetrics / write-through', () => {
     expect(upserts[0]?.table).toBe('clinical_assessments');
     expect(upserts[0]?.payload.user_id).toBe('user-gary');
     expect(upserts[0]?.payload.height_cm).toBe(180);
+    expect(upserts[0]?.payload.height_cm).not.toBeCloseTo(180 * INCHES_TO_CM, 3);
     expect(upserts[0]?.payload.weight_kg).toBe(120);
     expect(upserts[0]?.payload.biological_sex).toBe('male');
     expect(upserts[0]?.payload.height_cm).not.toBe(170);

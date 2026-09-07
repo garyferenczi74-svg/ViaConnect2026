@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { readHeightCm, readResolvedHeightCm } from '../readHeightCm';
 import type { ClinicalMetricsClient } from '../clinicalBodyMetrics';
 
 /** Gary LIVE CAQ 2026-04-02 — real stored values, not a default. */
 const GARY_CAQ = { height: '180', weight: '120', sex: 'male' } as const;
-const GARY_HEIGHT_IN = 70.9;
+const GARY_HEIGHT_IN = '70.90';
 
 type TableSpec = {
   row?: unknown;
@@ -28,6 +30,16 @@ function mockClient(tables: Record<string, TableSpec>): ClinicalMetricsClient {
   } as unknown as ClinicalMetricsClient;
 }
 
+describe('readHeightCm units lock comments', () => {
+  it('documents cm vs inches and does not invent a default', () => {
+    const reader = readFileSync(join(process.cwd(), 'src/lib/scan/readHeightCm.ts'), 'utf8');
+    expect(reader).toMatch(/already cm/);
+    expect(reader).toMatch(/inches → cm/);
+    expect(reader).toMatch(/cm string; never inches/);
+    expect(reader).not.toMatch(/heightCm\s*=\s*170|heightCm\s*\?\?\s*170/);
+  });
+});
+
 describe('readHeightCm ordered fallback', () => {
   it('prefers clinical_assessments.height_cm over CAQ and body_goals', async () => {
     const supabase = mockClient({
@@ -49,6 +61,7 @@ describe('readHeightCm ordered fallback', () => {
     const resolved = await readResolvedHeightCm(supabase, 'user-gary');
     expect(resolved.source).toBe('body_goals');
     expect(resolved.heightCm).toBeCloseTo(180.086, 3);
+    expect(resolved.heightCm).not.toBe(70.9);
   });
 
   it('falls back to CAQ phase-1 demographics.height last', async () => {

@@ -13,9 +13,9 @@ export type { HeightCmSource, ResolvedHeightCm };
 
 /**
  * Ordered geometric height read. Never fabricates a height (no 170 default).
- * 1. clinical_assessments.height_cm
- * 2. body_goals.height_in (inches → cm)
- * 3. assessment_results phase=1 demographics.height
+ * 1. clinical_assessments.height_cm (already cm)
+ * 2. body_goals.height_in (inches → cm via ×2.54; never treat as cm)
+ * 3. assessment_results phase=1 demographics.height (cm string; never inches)
  * Missing / non-positive / read failure → null (UNKNOWN).
  */
 export async function readResolvedHeightCm(
