@@ -19,17 +19,16 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Landmark } from '@/lib/scan/types';
 import { withTimeout } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
-import { MEDIAPIPE_ASSET_VERSION } from '@/lib/scan/mediapipeVersion';
+import {
+  MEDIAPIPE_MODEL_ASSET_PATH,
+  MEDIAPIPE_WASM_BASE_PATH,
+} from '@/lib/scan/mediapipeVersion';
 
 const LOG_SCOPE = 'scan.usePoseLandmarker';
 
 // Condition 12: FilesetResolver targets /mediapipe/* only, no CDN, no
-// runtime fetch elsewhere. These two paths are the ONLY asset locations
-// this module ever requests. Prompt 231a (R1): the version segment comes
-// from the single MEDIAPIPE_ASSET_VERSION constant, so the runtime path
-// and the version contract test read the same source.
-const MEDIAPIPE_WASM_BASE_PATH = `/mediapipe/${MEDIAPIPE_ASSET_VERSION}/wasm`;
-const MEDIAPIPE_MODEL_ASSET_PATH = `/mediapipe/${MEDIAPIPE_ASSET_VERSION}/pose_landmarker_lite.task`;
+// runtime fetch elsewhere. Paths come from mediapipeVersion.ts so VIDEO
+// capture and IMAGE-mode geometric detect share the same self-hosted assets.
 
 // Prompt 231a (R1): minimal WASM module using the v128 result type, the
 // same shape FilesetResolver itself validates internally to pick a SIMD
@@ -82,6 +81,12 @@ export interface PoseLandmarkerLike {
   close(): void;
 }
 
+/** IMAGE-mode surface for still-photo geometric detect (landmarkDetector). */
+export interface ImagePoseLandmarkerLike {
+  detect(image: unknown): { landmarks: MediaPipeNormalizedLandmark[][] };
+  close(): void;
+}
+
 /** Matches @mediapipe/tasks-vision's NormalizedLandmark. Note: this
  * package version has no `presence` field on NormalizedLandmark (only
  * Landmark, the world-coordinates variant, does not either); toQaLandmarks
@@ -127,13 +132,37 @@ export async function createPoseLandmarker(
   return landmarker as unknown as PoseLandmarkerLike;
 }
 
-export type PoseLandmarkerLoadResult =
-  | { ok: true; instance: PoseLandmarkerLike; delegate: PoseLandmarkerDelegate }
+/**
+ * Same self-hosted FilesetResolver + model as VIDEO create, but runningMode
+ * IMAGE so still-photo detect() works (BlazePose-on-blob for circumference).
+ * Never constructs a URL outside /mediapipe/*.
+ */
+export async function createImagePoseLandmarker(
+  delegate: PoseLandmarkerDelegate = 'GPU',
+): Promise<ImagePoseLandmarkerLike> {
+  const { FilesetResolver, PoseLandmarker } = await import('@mediapipe/tasks-vision');
+  const filesetResolver = await FilesetResolver.forVisionTasks(MEDIAPIPE_WASM_BASE_PATH);
+  const landmarker = await PoseLandmarker.createFromOptions(filesetResolver, {
+    baseOptions: {
+      modelAssetPath: MEDIAPIPE_MODEL_ASSET_PATH,
+      delegate,
+    },
+    runningMode: 'IMAGE',
+    numPoses: 1,
+    minPoseDetectionConfidence: 0.5,
+    minTrackingConfidence: 0.5,
+    minPosePresenceConfidence: 0.5,
+  });
+  return landmarker as unknown as ImagePoseLandmarkerLike;
+}
+
+export type PoseLandmarkerLoadResult<T extends { close(): void } = PoseLandmarkerLike> =
+  | { ok: true; instance: T; delegate: PoseLandmarkerDelegate }
   | { ok: false; reason: string };
 
-async function attemptGpuThenCpu(
-  create: (delegate: PoseLandmarkerDelegate) => Promise<PoseLandmarkerLike>,
-): Promise<{ instance: PoseLandmarkerLike; delegate: PoseLandmarkerDelegate }> {
+async function attemptGpuThenCpu<T extends { close(): void }>(
+  create: (delegate: PoseLandmarkerDelegate) => Promise<T>,
+): Promise<{ instance: T; delegate: PoseLandmarkerDelegate }> {
   try {
     const instance = await create('GPU');
     return { instance, delegate: 'GPU' };
@@ -164,10 +193,12 @@ async function attemptGpuThenCpu(
  * so no real @mediapipe/tasks-vision / WASM code runs under vitest's node
  * environment.
  */
-export async function loadPoseLandmarkerWithFallback(
-  create: (delegate: PoseLandmarkerDelegate) => Promise<PoseLandmarkerLike> = createPoseLandmarker,
+export async function loadPoseLandmarkerWithFallback<T extends { close(): void } = PoseLandmarkerLike>(
+  create: (delegate: PoseLandmarkerDelegate) => Promise<T> = createPoseLandmarker as (
+    delegate: PoseLandmarkerDelegate,
+  ) => Promise<T>,
   timeoutMs: number = POSE_LANDMARKER_INIT_TIMEOUT_MS,
-): Promise<PoseLandmarkerLoadResult> {
+): Promise<PoseLandmarkerLoadResult<T>> {
   try {
     const { instance, delegate } = await withTimeout(
       attemptGpuThenCpu(create),

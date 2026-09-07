@@ -7,3 +7,7 @@
  * constant, VERSION file, and package.json pin together.
  */
 export const MEDIAPIPE_ASSET_VERSION = '1.0.1';
+
+/** Condition 12: FilesetResolver targets /mediapipe/* only — no CDN. */
+export const MEDIAPIPE_WASM_BASE_PATH = `/mediapipe/${MEDIAPIPE_ASSET_VERSION}/wasm`;
+export const MEDIAPIPE_MODEL_ASSET_PATH = `/mediapipe/${MEDIAPIPE_ASSET_VERSION}/pose_landmarker_lite.task`;
