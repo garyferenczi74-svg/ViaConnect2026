@@ -184,16 +184,17 @@ describe('backfillClinicalHeightIfMissing', () => {
     expect(upserts).toHaveLength(0);
   });
 
-  it('copies Gary CAQ 180 when clinical is empty', async () => {
+  it('copies Gary CAQ 180 when clinical is empty, even if body_goals 70.90 exists', async () => {
     const { client, upserts } = mockClient({
       clinical_assessments: { row: null },
-      body_goals: { row: null },
+      body_goals: { row: { height_in: GARY_HEIGHT_IN } },
       assessment_results: { row: { data: { ...GARY_CAQ } } },
     });
     const result = await backfillClinicalHeightIfMissing(client, 'user-gary');
     expect(result.ok).toBe(true);
     expect(result.wrote.heightCm).toBe(180);
     expect(upserts[0]?.payload.height_cm).toBe(180);
+    expect(upserts[0]?.payload.height_cm).not.toBeCloseTo(180.086, 3);
   });
 
   it('copies body_goals.height_in when CAQ is also empty', async () => {

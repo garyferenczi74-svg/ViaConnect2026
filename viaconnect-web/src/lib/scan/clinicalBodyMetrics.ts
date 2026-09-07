@@ -249,23 +249,17 @@ export async function resolveHeightCm(
   userId: string,
 ): Promise<ResolvedHeightCm> {
   const clinical = await readClinicalHeightCm(supabase, userId);
-  if (clinical !== null) {
-    return { heightCm: clinical, source: 'clinical_assessment' };
-  }
-  const fromGoals = await readBodyGoalsHeightCm(supabase, userId);
-  if (fromGoals !== null) {
-    return { heightCm: fromGoals, source: 'body_goals' };
-  }
+  if (clinical !== null) return { heightCm: clinical, source: 'clinical_assessment' };
   const fromCaq = await readCaqAssessmentHeightCm(supabase, userId);
-  if (fromCaq !== null) {
-    return { heightCm: fromCaq, source: 'caq_demographics' };
-  }
+  if (fromCaq !== null) return { heightCm: fromCaq, source: 'caq_demographics' };
+  const fromGoals = await readBodyGoalsHeightCm(supabase, userId);
+  if (fromGoals !== null) return { heightCm: fromGoals, source: 'body_goals' };
   return { heightCm: null, source: null };
 }
 
 /**
  * One-time heal: if clinical height is missing, copy a finite fallback from
- * body_goals.height_in or CAQ phase-1 demographics. Never invents a value.
+ * CAQ phase-1 demographics first, then body_goals.height_in. Never invents.
  */
 export async function backfillClinicalHeightIfMissing(
   supabase: ClinicalMetricsClient,
@@ -276,26 +270,14 @@ export async function backfillClinicalHeightIfMissing(
     return { ok: true, wrote: { heightCm: existing, weightKg: null } };
   }
 
+  const fromCaq = await readCaqAssessmentHeightCm(supabase, userId);
+  if (fromCaq !== null) {
+    return upsertClinicalBodyMetrics(supabase, userId, { heightCm: fromCaq });
+  }
+
   const fromGoals = await readBodyGoalsHeightCm(supabase, userId);
   if (fromGoals !== null) {
     return upsertClinicalBodyMetrics(supabase, userId, { heightCm: fromGoals });
   }
-
-  const row = await timedMaybeSingle(
-    asQueryPack<AssessmentDataRow>(
-      supabase
-        .from('assessment_results')
-        .select('data')
-        .eq('user_id', userId)
-        .eq('phase', 1)
-        .order('updated_at', { ascending: false })
-        .limit(1)
-        .maybeSingle(),
-    ),
-    'caq_phase1_backfill',
-  );
-  const demographics = asDemographicsRecord(row?.data);
-  const fromCaq = parseCaqHeightCm(demographics);
-  if (fromCaq === null) return emptyWrite();
-  return writeThroughCaqDemographicsToClinical(supabase, userId, demographics);
+  return emptyWrite();
 }

@@ -34,8 +34,11 @@ describe('readHeightCm units lock comments', () => {
   it('documents cm vs inches and does not invent a default', () => {
     const reader = readFileSync(join(process.cwd(), 'src/lib/scan/readHeightCm.ts'), 'utf8');
     expect(reader).toMatch(/already cm/);
-    expect(reader).toMatch(/inches → cm/);
     expect(reader).toMatch(/cm string; never inches/);
+    expect(reader).toMatch(/inches → cm/);
+    expect(reader.indexOf('cm string; never inches')).toBeLessThan(
+      reader.indexOf('inches → cm'),
+    );
     expect(reader).not.toMatch(/heightCm\s*=\s*170|heightCm\s*\?\?\s*170/);
   });
 });
@@ -52,26 +55,27 @@ describe('readHeightCm ordered fallback', () => {
     expect(await readHeightCm(supabase, 'user-gary')).toBe(178);
   });
 
-  it('falls back to body_goals.height_in when clinical is empty', async () => {
+  it('prefers CAQ "180" over body_goals "70.90" when clinical is empty', async () => {
     const supabase = mockClient({
       clinical_assessments: { row: { height_cm: null } },
       body_goals: { row: { height_in: GARY_HEIGHT_IN } },
       assessment_results: { row: { data: { ...GARY_CAQ } } },
     });
     const resolved = await readResolvedHeightCm(supabase, 'user-gary');
+    expect(resolved).toEqual({ heightCm: 180, source: 'caq_demographics' });
+    expect(resolved.heightCm).not.toBeCloseTo(180.086, 3);
+  });
+
+  it('falls back to body_goals.height_in only when CAQ is absent', async () => {
+    const supabase = mockClient({
+      clinical_assessments: { row: null },
+      body_goals: { row: { height_in: GARY_HEIGHT_IN } },
+      assessment_results: { row: { data: {} } },
+    });
+    const resolved = await readResolvedHeightCm(supabase, 'user-gary');
     expect(resolved.source).toBe('body_goals');
     expect(resolved.heightCm).toBeCloseTo(180.086, 3);
     expect(resolved.heightCm).not.toBe(70.9);
-  });
-
-  it('falls back to CAQ phase-1 demographics.height last', async () => {
-    const supabase = mockClient({
-      clinical_assessments: { row: null },
-      body_goals: { row: { height_in: null } },
-      assessment_results: { row: { data: { ...GARY_CAQ } } },
-    });
-    const resolved = await readResolvedHeightCm(supabase, 'user-gary');
-    expect(resolved).toEqual({ heightCm: 180, source: 'caq_demographics' });
   });
 
   it('returns UNKNOWN when every source is missing and never invents 170', async () => {
