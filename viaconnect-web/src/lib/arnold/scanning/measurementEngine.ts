@@ -39,6 +39,50 @@ export interface ExtractionInputs {
   depthFrame?: DepthFrame | null;
 }
 
+/** All-UNKNOWN girths. Used when extract cannot run (no front / no scale). Never invents cm. */
+export function unknownExtractedMeasurements(): ExtractedMeasurements {
+  const unknown = missing();
+  const emptyAxes: LevelSemiAxes = { aCm: null, bCm: null, aspectRatio: null };
+  return {
+    neckCirc: unknown,
+    shoulderCirc: unknown,
+    chestCirc: unknown,
+    waistNaturalCirc: unknown,
+    waistNavelCirc: unknown,
+    hipCirc: unknown,
+    rightBicepCirc: unknown,
+    leftBicepCirc: unknown,
+    rightForearmCirc: unknown,
+    leftForearmCirc: unknown,
+    rightThighCirc: unknown,
+    leftThighCirc: unknown,
+    rightCalfCirc: unknown,
+    leftCalfCirc: unknown,
+    waistToHipRatio: 0,
+    waistToHeightRatio: 0,
+    shoulderToWaistRatio: 0,
+    inseamCm: 0,
+    torsoLengthCm: 0,
+    corroborationSignals: { lrCorroboration: 0, fbCorroboration: 0, lrAsymmetry: null },
+    semiAxes: {
+      neck: emptyAxes,
+      shoulder: emptyAxes,
+      chest: emptyAxes,
+      waistNatural: emptyAxes,
+      waistNavel: emptyAxes,
+      hip: emptyAxes,
+      bicepR: emptyAxes,
+      bicepL: emptyAxes,
+      forearmR: emptyAxes,
+      forearmL: emptyAxes,
+      thighR: emptyAxes,
+      thighL: emptyAxes,
+      calfR: emptyAxes,
+      calfL: emptyAxes,
+    },
+  };
+}
+
 export function extractMeasurements({ silhouettes, sex, heightCm, depthFrame }: ExtractionInputs): ExtractedMeasurements {
   const front = silhouettes.find((s) => s.poseId === 'front') ?? null;
   const back  = silhouettes.find((s) => s.poseId === 'back')  ?? null;

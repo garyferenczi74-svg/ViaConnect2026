@@ -148,6 +148,10 @@ describe('landmarkDetector source contract (PASS OBRA B)', () => {
     expect(src).not.toMatch(/cdn\.jsdelivr/);
     expect(src).toMatch(/createImagePoseLandmarker/);
     expect(src).toMatch(/IMAGE/);
+    expect(src).toMatch(/reason: 'timeout'/);
+    expect(src).toMatch(/reason: 'empty_landmarks'/);
+    expect(src).toMatch(/reason: 'extract_throw'/);
+    expect(src).toMatch(/no invented cm/);
   });
 
   it('next.config no longer aliases @mediapipe/pose to the no-op shim', () => {

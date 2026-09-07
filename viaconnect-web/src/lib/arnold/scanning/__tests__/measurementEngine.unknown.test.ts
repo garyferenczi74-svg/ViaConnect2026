@@ -4,7 +4,7 @@
 // missing() to return cm:null (GREEN).
 
 import { describe, it, expect } from 'vitest';
-import { extractMeasurements } from '../measurementEngine';
+import { extractMeasurements, unknownExtractedMeasurements } from '../measurementEngine';
 import { buildAvatarParameters, AVATAR_TEMPLATE_CM } from '../runScanAnalysis';
 import type { ExtractedMeasurements, MeasuredValue, PoseSilhouette } from '../types';
 
@@ -500,5 +500,17 @@ describe('Task 6: back view provides fb corroboration and hip refinement', () =>
     });
     // With a wider back view, hip circumference should be >= without back
     expect(withWiderBack.hipCirc.cm).toBeGreaterThanOrEqual(withoutBack.hipCirc.cm ?? 0);
+  });
+});
+
+describe('unknownExtractedMeasurements', () => {
+  it('is all-UNKNOWN girths — never invents cm or Muscle lbs', () => {
+    const result = unknownExtractedMeasurements();
+    expect(result.chestCirc.cm).toBeNull();
+    expect(result.waistNaturalCirc.cm).toBeNull();
+    expect(result.hipCirc.cm).toBeNull();
+    expect(result.neckCirc.source).toBe('missing');
+    expect(JSON.stringify(result)).not.toMatch(/"cm":\s*[1-9]/);
+    expect(JSON.stringify(result).toLowerCase()).not.toMatch(/muscle/);
   });
 });

@@ -12,6 +12,8 @@ import {
   parsePositiveFinite,
   persistEnteredHeightCm,
   resolveHeightCm,
+  resolveWeightKg,
+  backfillClinicalWeightIfMissing,
   upsertClinicalBodyMetrics,
   writeThroughCaqDemographicsToClinical,
   type ClinicalMetricsClient,
@@ -263,5 +265,84 @@ describe('backfillClinicalHeightIfMissing', () => {
     expect(result.ok).toBe(false);
     expect(result.wrote.heightCm).toBeNull();
     expect(upserts).toHaveLength(0);
+  });
+});
+
+describe('resolveWeightKg CAQ-first Total Weight', () => {
+  it('returns Gary CAQ 120 kg over clinical weight', async () => {
+    const { client } = mockClient({
+      clinical_assessments: { row: { weight_kg: 90 } },
+      assessment_results: { row: { data: { ...GARY_CAQ } } },
+    });
+    const resolved = await resolveWeightKg(client, 'user-gary');
+    expect(resolved).toEqual({ weightKg: 120, source: 'caq_demographics' });
+  });
+
+  it('falls back to clinical weight_kg, then honest null — never invents', async () => {
+    const clinicalOnly = mockClient({
+      clinical_assessments: { row: { weight_kg: 81.5 } },
+      assessment_results: { row: { data: {} } },
+    });
+    expect(await resolveWeightKg(clinicalOnly.client, 'user-gary')).toEqual({
+      weightKg: 81.5,
+      source: 'clinical_assessment',
+    });
+
+    const empty = mockClient({
+      clinical_assessments: { row: null },
+      assessment_results: { row: { data: {} } },
+    });
+    expect(await resolveWeightKg(empty.client, 'user-1')).toEqual({
+      weightKg: null,
+      source: null,
+    });
+    expect((await resolveWeightKg(empty.client, 'user-1')).weightKg).not.toBe(70);
+    expect((await resolveWeightKg(empty.client, 'user-1')).weightKg).not.toBe(75);
+  });
+});
+
+describe('backfillClinicalWeightIfMissing', () => {
+  it('leaves an existing clinical weight untouched', async () => {
+    const { client, upserts } = mockClient({
+      clinical_assessments: { row: { weight_kg: 88 } },
+    });
+    const result = await backfillClinicalWeightIfMissing(client, 'user-1');
+    expect(result.ok).toBe(true);
+    expect(result.wrote.weightKg).toBe(88);
+    expect(upserts).toHaveLength(0);
+  });
+
+  it('copies Gary CAQ 120 when clinical weight is empty', async () => {
+    const { client, upserts } = mockClient({
+      clinical_assessments: { row: null },
+      assessment_results: { row: { data: { ...GARY_CAQ } } },
+    });
+    const result = await backfillClinicalWeightIfMissing(client, 'user-gary');
+    expect(result.ok).toBe(true);
+    expect(result.wrote.weightKg).toBe(120);
+    expect(upserts[0]?.payload.weight_kg).toBe(120);
+  });
+
+  it('writes nothing when CAQ and clinical weight are UNKNOWN', async () => {
+    const { client, upserts } = mockClient({
+      clinical_assessments: { row: null },
+      assessment_results: { row: { data: {} } },
+    });
+    const result = await backfillClinicalWeightIfMissing(client, 'user-1');
+    expect(result.ok).toBe(false);
+    expect(result.wrote.weightKg).toBeNull();
+    expect(upserts).toHaveLength(0);
+  });
+});
+
+describe('composition consumers prefer resolveWeightKg when finite', () => {
+  it('useLatestComposition and persist scan read CAQ-first weight', () => {
+    const hook = src('src/hooks/body-tracker/useLatestComposition.ts');
+    const persist = src('src/lib/arnold/scanning/runScanAnalysis.ts');
+    expect(hook).toMatch(/resolveWeightKg/);
+    expect(hook).toMatch(/prefer finite CAQ Total Weight/);
+    expect(hook).not.toMatch(/weightKg:\s*70/);
+    expect(persist).toMatch(/resolveWeightKg/);
+    expect(persist).toMatch(/Never invent weight/);
   });
 });
