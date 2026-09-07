@@ -39,7 +39,14 @@ vi.mock('@/lib/supabase/client', () => ({
   })),
 }));
 
-vi.mock('../landmarkDetector');
+vi.mock('../landmarkDetector', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../landmarkDetector')>();
+  return {
+    ...actual,
+    detectLandmarks: vi.fn(),
+    ensureImagePoseLandmarker: vi.fn(),
+  };
+});
 vi.mock('../silhouetteProcessor');
 vi.mock('../measurementEngine');
 vi.mock('../scanQualityAssessor');
@@ -62,7 +69,7 @@ import {
   VIEW_INFERENCE_FRONT_TIMEOUT_MS,
   VIEW_INFERENCE_TIMEOUT_MS,
 } from '../runScanAnalysis';
-import { detectLandmarks, ensureImagePoseLandmarker } from '../landmarkDetector';
+import { detectLandmarks, ensureImagePoseLandmarker, hasFrontScaleAnchors } from '../landmarkDetector';
 import { processSilhouette, ensureSelfieSegmenter, awaitSelfieSegmenterSettled } from '../silhouetteProcessor';
 import { extractMeasurements, unknownExtractedMeasurements } from '../measurementEngine';
 import { classifyCircFail } from '../circFailReason';
@@ -446,6 +453,56 @@ describe('runInMemoryMeasurement', () => {
         onCircFail,
       });
       expect(onCircFail).toHaveBeenCalledWith('all_unknown', []);
+    });
+
+    it('C2: hasFrontScaleAnchors gates the live front path (non-empty map, no nose+ankle)', async () => {
+      const landmarks = {
+        left_shoulder: { x: 40, y: 80 },
+        right_shoulder: { x: 160, y: 80 },
+      };
+      expect(hasFrontScaleAnchors(landmarks)).toBe(false);
+      vi.mocked(detectLandmarks).mockResolvedValue(landmarks);
+      const onCircFail = vi.fn();
+
+      await runInMemoryMeasurement({
+        photos: { front: makeBlob() },
+        heightCm: 180,
+        sex: 'male',
+        onCircFail,
+      });
+
+      expect(processSilhouette).toHaveBeenCalled();
+      expect(onCircFail).toHaveBeenCalledWith(
+        'empty_landmarks',
+        expect.arrayContaining([
+          expect.objectContaining({ pose: 'front', reason: 'empty_landmarks' }),
+        ]),
+      );
+    });
+
+    it('C2: non-finite nose/ankle on a non-empty map is empty_landmarks, not extract_throw', async () => {
+      const landmarks = {
+        nose: { x: 10, y: Number.NaN },
+        left_ankle: { x: 12, y: 200 },
+      };
+      expect(hasFrontScaleAnchors(landmarks)).toBe(false);
+      vi.mocked(detectLandmarks).mockResolvedValue(landmarks);
+      const onCircFail = vi.fn();
+
+      await runInMemoryMeasurement({
+        photos: { front: makeBlob() },
+        heightCm: 180,
+        sex: 'male',
+        onCircFail,
+      });
+
+      expect(onCircFail).toHaveBeenCalledWith(
+        'empty_landmarks',
+        expect.arrayContaining([
+          expect.objectContaining({ pose: 'front', reason: 'empty_landmarks' }),
+        ]),
+      );
+      expect(onCircFail.mock.calls[0][0]).not.toBe('extract_throw');
     });
   });
 });

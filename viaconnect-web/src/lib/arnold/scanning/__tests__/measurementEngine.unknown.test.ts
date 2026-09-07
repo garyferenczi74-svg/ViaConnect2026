@@ -3,9 +3,12 @@
 // never cm:0.  Write tests first (RED against old cm:0 code), then fix
 // missing() to return cm:null (GREEN).
 
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, it, expect } from 'vitest';
 import { extractMeasurements, unknownExtractedMeasurements } from '../measurementEngine';
 import { buildAvatarParameters, AVATAR_TEMPLATE_CM } from '../runScanAnalysis';
+import { hasFiniteGeometricGirth } from '@/lib/body-tracker/composition/circWriteContract';
 import type { ExtractedMeasurements, MeasuredValue, PoseSilhouette } from '../types';
 
 // ---------------------------------------------------------------------------
@@ -512,5 +515,85 @@ describe('unknownExtractedMeasurements', () => {
     expect(result.neckCirc.source).toBe('missing');
     expect(JSON.stringify(result)).not.toMatch(/"cm":\s*[1-9]/);
     expect(JSON.stringify(result).toLowerCase()).not.toMatch(/muscle/);
+  });
+});
+
+describe('C3: known residuals return UNKNOWN (no throw)', () => {
+  it('returns unknownExtractedMeasurements when front is missing', () => {
+    const result = extractMeasurements({
+      silhouettes: [makeSideSilhouette('left')],
+      sex: 'male',
+      heightCm: 180,
+    });
+    expect(result.chestCirc.cm).toBeNull();
+    expect(result.waistNaturalCirc.cm).toBeNull();
+    expect(result.hipCirc.cm).toBeNull();
+    expect(JSON.stringify(result)).not.toMatch(/"cm":\s*[1-9]/);
+  });
+
+  it('returns unknownExtractedMeasurements when front scaleCmPerPx is not finite', () => {
+    const front = frontFullLandmarks();
+    front.scaleCmPerPx = null;
+    const result = extractMeasurements({
+      silhouettes: [front],
+      sex: 'male',
+      heightCm: 180,
+    });
+    expect(result.chestCirc.cm).toBeNull();
+    expect(result.hipCirc.cm).toBeNull();
+    expect(JSON.stringify(result)).not.toMatch(/"cm":\s*[1-9]/);
+  });
+
+  it('does not throw for missing front or non-finite scale', () => {
+    expect(() =>
+      extractMeasurements({ silhouettes: [], sex: 'male', heightCm: 180 }),
+    ).not.toThrow();
+
+    const nanScale = frontFullLandmarks();
+    nanScale.scaleCmPerPx = Number.NaN;
+    expect(() =>
+      extractMeasurements({ silhouettes: [nanScale], sex: 'male', heightCm: 180 }),
+    ).not.toThrow();
+
+    const zeroScale = frontFullLandmarks();
+    zeroScale.scaleCmPerPx = 0;
+    expect(() =>
+      extractMeasurements({ silhouettes: [zeroScale], sex: 'male', heightCm: 180 }),
+    ).not.toThrow();
+    expect(
+      extractMeasurements({ silhouettes: [zeroScale], sex: 'male', heightCm: 180 }).chestCirc.cm,
+    ).toBeNull();
+  });
+
+  it('still extracts a finite chest circ when front + scale are present (no invented skip)', () => {
+    const result = extractMeasurements({
+      silhouettes: [frontFullLandmarks()],
+      sex: 'male',
+      heightCm: 180,
+    });
+    expect(Number.isFinite(result.chestCirc.cm)).toBe(true);
+    expect(result.chestCirc.cm).toBeGreaterThan(0);
+  });
+
+  it('C5: POST gate is still hasFiniteGeometricGirth — finite geometry passes, residuals skip', () => {
+    const finite = extractMeasurements({
+      silhouettes: [frontFullLandmarks()],
+      sex: 'male',
+      heightCm: 180,
+    });
+    expect(hasFiniteGeometricGirth(finite)).toBe(true);
+    expect(hasFiniteGeometricGirth(unknownExtractedMeasurements())).toBe(false);
+    expect(hasFiniteGeometricGirth(extractMeasurements({
+      silhouettes: [],
+      sex: 'male',
+      heightCm: 180,
+    }))).toBe(false);
+  });
+
+  it('C3 source: known residuals return unknown — do not throw', () => {
+    const src = readFileSync(join(__dirname, '..', 'measurementEngine.ts'), 'utf8');
+    expect(src).toMatch(/return unknownExtractedMeasurements\(\)/);
+    expect(src).not.toMatch(/throw new Error\('Front silhouette required/);
+    expect(src).not.toMatch(/throw new Error\('Unable to compute pixel-to-cm scale/);
   });
 });

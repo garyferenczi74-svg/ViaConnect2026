@@ -6,7 +6,7 @@
 
 import { createClient } from '@/lib/supabase/client';
 import { processSilhouette, ensureSelfieSegmenter, awaitSelfieSegmenterSettled } from './silhouetteProcessor';
-import { detectLandmarks, ensureImagePoseLandmarker } from './landmarkDetector';
+import { detectLandmarks, ensureImagePoseLandmarker, hasFrontScaleAnchors } from './landmarkDetector';
 import { assessQuality } from './scanQualityAssessor';
 import { extractMeasurements, unknownExtractedMeasurements } from './measurementEngine';
 import {
@@ -171,6 +171,16 @@ export async function runInMemoryMeasurement(
               `${pose} view empty landmarks (fail-open, no invented cm)`,
               fail,
             );
+          } else if (pose === 'front' && !hasFrontScaleAnchors(landmarks)) {
+            // Non-empty map without nose+ankle cannot tape. Reuse empty_landmarks
+            // (C2 — do not expand the five-reason taxonomy). Never invent cm.
+            const fail: CircViewFail = { pose, reason: 'empty_landmarks' };
+            viewFails.push(fail);
+            safeLog.warn(
+              'arnold.scanning.inmemory',
+              `${pose} view missing nose+ankle scale anchors (fail-open, no invented cm)`,
+              { ...fail, hasFrontScaleAnchors: false },
+            );
           }
           return processSilhouette({ blob, poseId: pose, userHeightCm: heightCm, landmarks });
         })(),
@@ -260,6 +270,7 @@ export async function runInMemoryMeasurement(
     hasFiniteGirth: hasFiniteGeometricGirth(measurements),
   });
   onCircFail?.(circFailReason, viewFails);
+  const frontSil = silhouettes.find((s) => s.poseId === 'front');
   safeLog.info(
     'arnold.scanning.inmemory',
     'In-memory scan measurement complete',
@@ -270,6 +281,8 @@ export async function runInMemoryMeasurement(
       circFailReason,
       // Height stamp is NOT the live circ gate. Girth POST is hasFiniteGeometricGirth.
       circGate: 'hasFiniteGeometricGirth',
+      hasFrontScaleAnchors: frontSil ? hasFrontScaleAnchors(frontSil.landmarks) : false,
+      scaleCmPerPx: frontSil?.scaleCmPerPx ?? null,
     },
   );
 

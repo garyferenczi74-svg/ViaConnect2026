@@ -9,6 +9,7 @@
 import type { Point2D, PoseSilhouette, LandmarkMap, PoseId } from './types';
 import { withTimeout } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
+import { BODY_HEIGHT_MIN } from '@/lib/scan/qaThresholds';
 
 const LOG_SCOPE = 'arnold.scanning.silhouetteProcessor';
 
@@ -101,7 +102,7 @@ export async function processSilhouette(params: {
   );
 
   const contour = extractContour(maskImage, bitmap.width, bitmap.height);
-  const scale = computeScale(landmarks, userHeightCm, bitmap.height);
+  const scale = frontScaleCmPerPx(landmarks, userHeightCm, bitmap.height);
 
   if ('close' in bitmap) bitmap.close();
 
@@ -155,27 +156,42 @@ function downsample(points: Point2D[], maxN: number): Point2D[] {
   return out;
 }
 
-function computeScale(
+/** Nose-to-ankle is ~90 percent of standing height. Never invents the rest. */
+const NOSE_TO_ANKLE_HEIGHT_FRACTION = 0.9;
+
+function finiteLandmarkY(point: { y: number } | undefined): number | null {
+  const y = point?.y;
+  if (typeof y !== 'number' || !Number.isFinite(y)) return null;
+  return y;
+}
+
+/**
+ * Front-pose cm-per-pixel from CAQ/clinical height + nose/ankle anchors.
+ * Finite only when height>0, nose and at least one ankle are finite mid-frame,
+ * and the nose-to-ankle span is at least BODY_HEIGHT_MIN of the frame.
+ * C4a: full-bleed FRBL is allowed (no 1.1× frame reject). Never invents cm.
+ */
+export function frontScaleCmPerPx(
   landmarks: LandmarkMap,
   heightCm: number | null,
   imageHeight: number,
 ): number | null {
-  if (!heightCm || heightCm <= 0) return null;
-  const topY = landmarks.nose?.y;
-  const ankleLY = landmarks.left_ankle?.y;
-  const ankleRY = landmarks.right_ankle?.y;
+  if (heightCm === null || !Number.isFinite(heightCm) || heightCm <= 0) return null;
+  if (!Number.isFinite(imageHeight) || imageHeight <= 0) return null;
+  const topY = finiteLandmarkY(landmarks.nose);
+  const ankleLY = finiteLandmarkY(landmarks.left_ankle);
+  const ankleRY = finiteLandmarkY(landmarks.right_ankle);
   const bottomY =
-    ankleLY !== undefined && ankleRY !== undefined
-      ? (ankleLY + ankleRY) / 2
-      : (ankleLY ?? ankleRY);
-  if (topY === undefined || bottomY === undefined) return null;
-  // Nose-to-ankle is ~90 percent of full standing height. Scale accordingly.
+    ankleLY !== null && ankleRY !== null ? (ankleLY + ankleRY) / 2 : (ankleLY ?? ankleRY);
+  if (topY === null || bottomY === null) return null;
   const pixelSpan = Math.abs(bottomY - topY);
   if (pixelSpan <= 0) return null;
-  const estimatedTotalPx = pixelSpan / 0.9;
-  // Sanity check: should not exceed image height by more than 10%
-  if (estimatedTotalPx > imageHeight * 1.1) return null;
-  return heightCm / estimatedTotalPx;
+  // Too far from camera: span is not mid-frame. Null, never invent.
+  if (pixelSpan < BODY_HEIGHT_MIN * imageHeight) return null;
+  const estimatedTotalPx = pixelSpan / NOSE_TO_ANKLE_HEIGHT_FRACTION;
+  if (!Number.isFinite(estimatedTotalPx) || estimatedTotalPx <= 0) return null;
+  const scale = heightCm / estimatedTotalPx;
+  return Number.isFinite(scale) && scale > 0 ? scale : null;
 }
 
 /** Compute the width of the silhouette at a given Y coordinate.

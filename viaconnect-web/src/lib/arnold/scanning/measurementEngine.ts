@@ -91,14 +91,16 @@ export function extractMeasurements({ silhouettes, sex, heightCm, depthFrame }: 
   // Task 6: `side = left ?? right` removed - depths are now averaged per level
   // (see leftDepths / rightDepths / sideDepths below).
 
+  // C3: missing front / non-finite scale are known residuals → all-UNKNOWN.
+  // Never invent cm. Throws stay reserved for unexpected bugs.
   if (!front) {
-    throw new Error('Front silhouette required for measurement extraction');
+    return unknownExtractedMeasurements();
   }
 
   // Scale guard: front is required; side views are optional boosters.
   const scale = front.scaleCmPerPx ?? (left?.scaleCmPerPx ?? (right?.scaleCmPerPx ?? null));
-  if (!scale) {
-    throw new Error('Unable to compute pixel-to-cm scale. Verify user height and landmark detection.');
+  if (scale === null || !Number.isFinite(scale) || scale <= 0) {
+    return unknownExtractedMeasurements();
   }
 
   // Derive characteristic Y positions in FRONT pose
