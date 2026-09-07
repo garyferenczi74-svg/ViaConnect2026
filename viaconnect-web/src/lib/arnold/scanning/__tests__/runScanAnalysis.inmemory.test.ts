@@ -56,10 +56,16 @@ vi.mock('@/lib/body-measurements/ingestScanMeasurements', () => ({
 // Imports (resolved AFTER hoisted mocks execute)
 // ---------------------------------------------------------------------------
 
-import { runInMemoryMeasurement } from '../runScanAnalysis';
+import {
+  runInMemoryMeasurement,
+  viewInferenceTimeoutMs,
+  VIEW_INFERENCE_FRONT_TIMEOUT_MS,
+  VIEW_INFERENCE_TIMEOUT_MS,
+} from '../runScanAnalysis';
 import { detectLandmarks, ensureImagePoseLandmarker } from '../landmarkDetector';
-import { processSilhouette } from '../silhouetteProcessor';
-import { extractMeasurements } from '../measurementEngine';
+import { processSilhouette, ensureSelfieSegmenter } from '../silhouetteProcessor';
+import { extractMeasurements, unknownExtractedMeasurements } from '../measurementEngine';
+import { classifyCircFail } from '../circFailReason';
 import type { PoseSilhouette, ExtractedMeasurements, MeasuredValue } from '../types';
 
 // ---------------------------------------------------------------------------
@@ -121,10 +127,12 @@ describe('runInMemoryMeasurement', () => {
     // returns a minimal silhouette, extractMeasurements returns MOCK_MEASUREMENTS.
     vi.mocked(detectLandmarks).mockResolvedValue({});
     vi.mocked(ensureImagePoseLandmarker).mockResolvedValue(true);
+    vi.mocked(ensureSelfieSegmenter).mockResolvedValue(true);
     vi.mocked(processSilhouette).mockImplementation(async ({ poseId }) =>
       makeSilhouette(poseId),
     );
     vi.mocked(extractMeasurements).mockReturnValue(MOCK_MEASUREMENTS);
+    vi.mocked(unknownExtractedMeasurements).mockReturnValue(MOCK_MEASUREMENTS);
   });
 
   afterEach(() => {
@@ -149,6 +157,7 @@ describe('runInMemoryMeasurement', () => {
       });
 
       expect(ensureImagePoseLandmarker).toHaveBeenCalled();
+      expect(ensureSelfieSegmenter).toHaveBeenCalled();
       expect(detectLandmarks).toHaveBeenCalledTimes(4);
       expect(detectLandmarks).toHaveBeenCalledWith(frontBlob);
       expect(detectLandmarks).toHaveBeenCalledWith(backBlob);
@@ -343,6 +352,43 @@ describe('runInMemoryMeasurement', () => {
       expect(extractMeasurements).toHaveBeenCalledWith(
         expect.objectContaining({ sex: 'female', heightCm: 162 }),
       );
+    });
+
+    it('extract throw returns UNKNOWN girths (flushCirc can skip, never invents cm)', async () => {
+      vi.mocked(extractMeasurements).mockImplementation(() => {
+        throw new Error('Front silhouette required for measurement extraction');
+      });
+
+      const result = await runInMemoryMeasurement({
+        photos: { front: makeBlob() },
+        heightCm: 180,
+        sex: 'male',
+      });
+
+      expect(result.chestCirc.cm).toBeNull();
+      expect(result.waistNaturalCirc.cm).toBeNull();
+      expect(result.hipCirc.cm).toBeNull();
+      expect(JSON.stringify(result)).not.toMatch(/"cm":\s*[1-9]/);
+    });
+  });
+
+  describe('per-view budget + honest fail taxonomy', () => {
+    it('raises the front view budget only; back/left/right stay at 4s', () => {
+      expect(VIEW_INFERENCE_TIMEOUT_MS).toBe(4000);
+      expect(VIEW_INFERENCE_FRONT_TIMEOUT_MS).toBe(12000);
+      expect(viewInferenceTimeoutMs('front')).toBe(12000);
+      expect(viewInferenceTimeoutMs('back')).toBe(4000);
+      expect(viewInferenceTimeoutMs('left')).toBe(4000);
+      expect(viewInferenceTimeoutMs('right')).toBe(4000);
+    });
+
+    it('classifies timeout vs empty landmarks vs extract throw', () => {
+      expect(classifyCircFail({ landmarkCount: 0 })).toBe('empty_landmarks');
+      expect(classifyCircFail({ error: new Error('Pose detection timeout') })).toBe('timeout');
+      expect(classifyCircFail({ error: new Error('[T9] front view CV timeout after 12000ms') })).toBe('timeout');
+      expect(classifyCircFail({
+        error: new Error('Unable to compute pixel-to-cm scale. Verify user height and landmark detection.'),
+      })).toBe('extract_throw');
     });
   });
 });

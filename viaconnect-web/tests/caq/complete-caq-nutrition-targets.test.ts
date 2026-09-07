@@ -33,7 +33,9 @@ describe('completeCAQAndTriggerEngines clinical height write-through', () => {
   it('upserts clinical_assessments from CAQ demographics without inventing 170', () => {
     expect(source).toContain('writeThroughCaqDemographicsToClinical');
     expect(source).toContain('backfillClinicalHeightIfMissing');
+    expect(source).toContain('backfillClinicalWeightIfMissing');
     expect(source).not.toMatch(/height_cm:\s*170/);
+    expect(source).not.toMatch(/weight_kg:\s*70/);
     expect(onboarding).toContain('writeThroughCaqDemographicsToClinical');
     expect(onboarding).not.toMatch(/height_cm:\s*170/);
   });
