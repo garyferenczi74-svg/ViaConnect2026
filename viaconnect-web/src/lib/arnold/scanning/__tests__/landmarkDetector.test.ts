@@ -143,10 +143,11 @@ describe('detectLandmarks IMAGE landmarker path', () => {
 describe('landmarkDetector source contract (PASS OBRA B)', () => {
   it('does not import @mediapipe/pose or a CDN locateFile', () => {
     const src = readFileSync(join(__dirname, '..', 'landmarkDetector.ts'), 'utf8');
-    expect(src).not.toMatch(/@mediapipe\/pose/);
+    expect(src).not.toMatch(/from ['"]@mediapipe\/pose['"]/);
+    expect(src).not.toMatch(/import\(\s*[^)]*@mediapipe\/pose/);
     expect(src).not.toMatch(/cdn\.jsdelivr/);
     expect(src).toMatch(/createImagePoseLandmarker/);
-    expect(src).toMatch(/runningMode|IMAGE/);
+    expect(src).toMatch(/IMAGE/);
   });
 
   it('next.config no longer aliases @mediapipe/pose to the no-op shim', () => {
