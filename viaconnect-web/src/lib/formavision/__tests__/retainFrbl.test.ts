@@ -145,9 +145,10 @@ describe('retain FRBL — discard vs retain', () => {
     expect(retainRoute).not.toMatch(/SnapMeasure/);
     expect(retainRoute).toMatch(/const supabase = await createClient\(\)/);
     expect(retainRoute).toMatch(/readResolvedHeightCm\(supabase,/);
+    expect(retainRoute).toMatch(/stampFiniteHeight/);
     expect(retainRoute).toMatch(/height_cm_at_scan/);
     expect(retainRoute).toMatch(/height_cm_source/);
-    expect(retainRoute).toMatch(/heightCm !== null && Number\.isFinite\(heightCm\)/);
+    expect(retainRoute).not.toMatch(/height_cm_source:\s*resolvedHeight\.source/);
     expect(retainRoute).not.toMatch(/heightCm\s*=\s*170|heightCm\s*\?\?\s*170/);
   });
 
@@ -187,9 +188,10 @@ describe('retain-frbl prepare height stamp contract', () => {
     );
     expect(prepareFn).toMatch(/const supabase = await createClient\(\)/);
     expect(prepareFn).toMatch(/readResolvedHeightCm\(supabase,/);
+    expect(prepareFn).toMatch(/stampFiniteHeight/);
     expect(prepareFn).toMatch(/height_cm_at_scan/);
     expect(prepareFn).toMatch(/height_cm_source/);
-    expect(prepareFn).toMatch(/heightCm !== null && Number\.isFinite\(heightCm\)/);
+    expect(prepareFn).not.toMatch(/height_cm_source:\s*resolvedHeight\.source/);
     expect(prepareFn.indexOf('createClient()')).toBeLessThan(prepareFn.indexOf('.insert(sessionRow)'));
     expect(prepareFn).not.toMatch(/createAdminClient/);
     expect(prepareFn).not.toMatch(/heightCm\s*=\s*170|heightCm\s*\?\?\s*170/);

@@ -236,6 +236,8 @@ describe('T3 empty-state CTA', () => {
     expect(page).toMatch(/CircumferenceEntryForm|initialSection=\{section\}/);
     expect(page).toMatch(/circFailReason=\{circFailReason\}/);
     expect(page).toMatch(/onCircFailReason=\{setCircFailReason\}/);
+    expect(page).toMatch(/readCircFailReason/);
+    expect(page).toMatch(/writeCircFailReason/);
   });
 });
 

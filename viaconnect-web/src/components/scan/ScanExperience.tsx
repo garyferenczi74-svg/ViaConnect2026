@@ -31,6 +31,7 @@ import {
 import { BodyScanUploader, type BodyScanResult } from '@/components/body-tracker/BodyScanUploader';
 import { CircFailChip } from '@/components/body-tracker/CircFailChip';
 import { type CircFailReason } from '@/lib/arnold/scanning/circFailReason';
+import { writeCircFailReason } from '@/lib/arnold/scanning/circFailPersist';
 import { ensureImagePoseLandmarker } from '@/lib/arnold/scanning/landmarkDetector';
 import { ensureSelfieSegmenter } from '@/lib/arnold/scanning/silhouetteProcessor';
 import { parsePositiveFinite } from '@/lib/scan/clinicalBodyMetrics';
@@ -161,7 +162,11 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
   const [compositionPhase, setCompositionPhase] = useState<'idle' | 'running' | 'ok' | 'error'>('idle');
   const [setupMode, setSetupMode] = useState<FormaVisionScanMode>('live');
   const [uploadResult, setUploadResult] = useState<BodyScanResult | null>(null);
-  const [circFailReason, setCircFailReason] = useState<CircFailReason | null>(null);
+  const [circFailReason, setCircFailReasonState] = useState<CircFailReason | null>(null);
+  const setCircFailReason = useCallback((reason: CircFailReason | null) => {
+    writeCircFailReason(reason);
+    setCircFailReasonState(reason);
+  }, []);
 
   const framesRef = useRef(state.frames);
   framesRef.current = state.frames;

@@ -293,12 +293,28 @@ describe('POST /api/scan/prepare', () => {
     expect(update).toHaveBeenCalledTimes(1);
     expect(update.mock.calls[0][0]).toEqual({
       height_cm_at_scan: 180,
-      height_cm_source: 'caq_demographics',
+      height_cm_source: 'caq_phase_1',
     });
     expect(store.get(SCAN_ID)).toMatchObject({
       user_id: 'user-1',
       height_cm_at_scan: 180,
-      height_cm_source: 'caq_demographics',
+      height_cm_source: 'caq_phase_1',
+    });
+  });
+
+  it('maps clinical_assessment to CHECK-allowed manual', async () => {
+    mocks.supabaseGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } });
+    const { update } = installSessionsStore();
+    mocks.readResolvedHeightCm.mockResolvedValue({
+      heightCm: 178,
+      source: 'clinical_assessment',
+    });
+
+    const res = await POST(buildRequest({ scanId: SCAN_ID, poses: FULL_POSES }) as never);
+    expect((await res.json()).ok).toBe(true);
+    expect(update.mock.calls[0][0]).toEqual({
+      height_cm_at_scan: 178,
+      height_cm_source: 'manual',
     });
   });
 
@@ -343,8 +359,9 @@ describe('prepare height stamp contract', () => {
   it('refreshes finite height columns after ignoreDuplicates session insert', () => {
     const src = readFileSync(join(process.cwd(), 'src/app/api/scan/prepare/route.ts'), 'utf8');
     expect(src).toMatch(/ignoreDuplicates:\s*true/);
+    expect(src).toMatch(/stampFiniteHeight/);
     expect(src).toMatch(/heightCm !== null && Number\.isFinite\(heightCm\)/);
-    expect(src).toMatch(/\.update\(\s*\{\s*height_cm_at_scan:\s*heightCm,\s*height_cm_source:\s*resolvedHeight\.source,/);
+    expect(src).toMatch(/\.update\(\s*\{\s*height_cm_at_scan:\s*heightCm,\s*height_cm_source:\s*heightSource,/);
     expect(src).toMatch(/\.eq\('id',\s*scanId\)/);
     expect(src).toMatch(/\.eq\('user_id',\s*user\.id\)/);
     expect(src).not.toMatch(/heightCm\s*=\s*170|heightCm\s*\?\?\s*170/);
