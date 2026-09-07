@@ -13,6 +13,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { hasScanConsent } from '@/lib/scan/scanConsentGate';
 import { readResolvedHeightCm } from '@/lib/scan/readHeightCm';
+import { stampFiniteHeight } from '@/lib/scan/heightCmSourceStamp';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { inMemoryRateLimit } from '@/lib/utils/inMemoryRateLimit';
 import { safeLog } from '@/lib/utils/safe-log';
@@ -152,7 +153,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     const resolvedHeight = await readResolvedHeightCm(supabase, user.id);
-    const heightCm = resolvedHeight.heightCm;
+    const stamped = stampFiniteHeight(resolvedHeight);
+    const heightCm = stamped?.heightCm ?? null;
+    const heightSource = stamped?.source ?? null;
     const deviceInfo = deriveDeviceInfo(request.headers.get('user-agent'));
 
     const admin: SupabaseClient = createAdminClient();
@@ -173,7 +176,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           consent_version: consent.version,
           device_info: deviceInfo,
           height_cm_at_scan: heightCm,
-          height_cm_source: resolvedHeight.source,
+          height_cm_source: heightSource,
         },
         { onConflict: 'id', ignoreDuplicates: true },
       ),
@@ -190,7 +193,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           .from('body_photo_sessions')
           .update({
             height_cm_at_scan: heightCm,
-            height_cm_source: resolvedHeight.source,
+            height_cm_source: heightSource,
           })
           .eq('id', scanId)
           .eq('user_id', user.id),

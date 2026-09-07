@@ -87,5 +87,6 @@ describe('BodyScanUploader circ fail + IMAGE pre-warm', () => {
     expect(src).toMatch(/circFailPromise/);
     expect(src).toMatch(/CircFailChip/);
     expect(src).toMatch(/onCircFailReason/);
+    expect(src).toMatch(/writeCircFailReason/);
   });
 });

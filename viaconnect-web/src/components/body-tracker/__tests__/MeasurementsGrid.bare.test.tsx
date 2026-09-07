@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { MeasurementsGrid } from '../MeasurementsGrid';
@@ -38,6 +40,12 @@ describe('MeasurementsGrid empty-state CTA', () => {
     );
     expect(html).not.toContain('measurements-empty-cta');
     expect(html).toContain('80.0');
+  });
+
+  it('hydrates the empty CTA chip from persist after Ready remount', () => {
+    expect(readFileSync(join(process.cwd(), 'src/components/body-tracker/MeasurementsGrid.tsx'), 'utf8')).toMatch(
+      /readCircFailReason/,
+    );
   });
 
   it('shows the honest circ fail chip on the empty CTA when Analyze failed', () => {

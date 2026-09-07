@@ -122,6 +122,7 @@ import { MeasurementsPanel } from '@/components/body-tracker/measurements/Measur
 import { BodyCompositionForm } from '@/components/body-tracker/BodyCompositionForm';
 import { BodyScanUploader, type BodyScanResult } from '@/components/body-tracker/BodyScanUploader';
 import type { CircFailReason } from '@/lib/arnold/scanning/circFailReason';
+import { readCircFailReason, writeCircFailReason } from '@/lib/arnold/scanning/circFailPersist';
 import { BodyScanResults } from '@/components/body-tracker/BodyScanResults';
 import { FloatingMetricCard } from '@/components/body-tracker/FloatingMetricCard';
 import {
@@ -317,7 +318,14 @@ function CompositionPageInner() {
   // Prompt 210k: ?scan=1 opens Scan My Body (FormaVision empty-state CTA deep link).
   const [scanOpen, setScanOpen] = useState(() => shouldOpenScanFromQuery(scanParam));
   const [scanResult, setScanResult] = useState<BodyScanResult | null>(null);
-  const [circFailReason, setCircFailReason] = useState<CircFailReason | null>(null);
+  const [circFailReason, setCircFailReasonState] = useState<CircFailReason | null>(null);
+  useEffect(() => {
+    setCircFailReasonState(readCircFailReason());
+  }, []);
+  const setCircFailReason = useCallback((reason: CircFailReason | null) => {
+    writeCircFailReason(reason);
+    setCircFailReasonState(reason);
+  }, []);
   const [scanPersist, setScanPersist] = useState<ScanPersistState>({ phase: 'idle' });
   const [prefillBodyFat, setPrefillBodyFat] = useState<number | null>(null);
   const [unit, setUnit] = useState<MeasurementUnit>(() => readStoredUnit());

@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Ruler } from 'lucide-react';
 import { MeasurementCard } from './MeasurementCard';
 import {
@@ -16,6 +17,7 @@ import {
 } from '@/lib/body-tracker/composition/circWriteContract';
 import { CircFailChip } from './CircFailChip';
 import type { CircFailReason } from '@/lib/arnold/scanning/circFailReason';
+import { readCircFailReason } from '@/lib/arnold/scanning/circFailPersist';
 
 interface MeasurementsGridProps {
   data: CircumferenceMeasurements | null;
@@ -40,6 +42,15 @@ export function MeasurementsGrid({
   onLogMeasurements,
   circFailReason,
 }: MeasurementsGridProps) {
+  const [persistedFail, setPersistedFail] = useState<CircFailReason | null>(null);
+  useEffect(() => {
+    if (circFailReason) {
+      setPersistedFail(null);
+      return;
+    }
+    setPersistedFail(readCircFailReason());
+  }, [circFailReason]);
+  const shownFail = circFailReason ?? persistedFail;
   const empty = allCircumferenceCardsEmpty(data);
   return (
     <div>
@@ -52,7 +63,7 @@ export function MeasurementsGrid({
             <Ruler className="mt-0.5 h-4 w-4 shrink-0 text-[#2DA5A0]" strokeWidth={1.5} aria-hidden />
             <div className="min-w-0 space-y-2">
               <p className="text-sm text-white/70">{MEASUREMENTS_EMPTY_COPY}</p>
-              {circFailReason ? <CircFailChip reason={circFailReason} /> : null}
+              {shownFail ? <CircFailChip reason={shownFail} /> : null}
             </div>
           </div>
           <button

@@ -711,6 +711,7 @@ describe('ScanExperience wiring: live DONE converges onto the shared analyzer', 
     expect(src).toContain('formavisionAfterScanHref');
     expect(src).toContain('CircFailChip');
     expect(src).toContain('circFailPromise');
+    expect(src).toContain('writeCircFailReason');
     expect(src).toContain('ensureImagePoseLandmarker');
   });
 });

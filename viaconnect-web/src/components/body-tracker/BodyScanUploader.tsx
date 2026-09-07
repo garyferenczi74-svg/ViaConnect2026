@@ -40,6 +40,7 @@ import {
 import type { ViewQualityResult } from '@/lib/arnold/scanning/runScanAnalysis';
 import type { ExtractedMeasurements } from '@/lib/arnold/scanning/types';
 import { isCircFailReason, type CircFailReason } from '@/lib/arnold/scanning/circFailReason';
+import { writeCircFailReason } from '@/lib/arnold/scanning/circFailPersist';
 import { ensureImagePoseLandmarker } from '@/lib/arnold/scanning/landmarkDetector';
 import { ensureSelfieSegmenter } from '@/lib/arnold/scanning/silhouetteProcessor';
 import { CircFailChip } from './CircFailChip';
@@ -229,6 +230,7 @@ export function BodyScanUploader({
     circWritePromiseRef.current = null;
     setCircNotice(null);
     setCircFailReason(null);
+    writeCircFailReason(null);
     onCircFailReason?.(null);
     setHeightMissing(false);
     setViewQuality({});
@@ -307,6 +309,7 @@ export function BodyScanUploader({
         (isCircFailReason(circSkipReason) ? circSkipReason : null);
       if (settledFail) {
         setCircFailReason(settledFail);
+        writeCircFailReason(settledFail);
         onCircFailReason?.(settledFail);
       }
       if (spine.heightMissing || settledFail === 'height') {
