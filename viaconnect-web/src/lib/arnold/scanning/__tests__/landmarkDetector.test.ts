@@ -133,6 +133,10 @@ describe('detectLandmarks IMAGE landmarker path', () => {
     expect(hasFrontScaleAnchors({ nose: { x: 10, y: 20 } })).toBe(false);
     expect(hasFrontScaleAnchors({ left_ankle: { x: 10, y: 200 } })).toBe(false);
     expect(hasFrontScaleAnchors({
+      nose: { x: 10, y: Number.NaN },
+      left_ankle: { x: 12, y: 200 },
+    })).toBe(false);
+    expect(hasFrontScaleAnchors({
       nose: { x: 10, y: 20 },
       left_ankle: { x: 12, y: 200 },
     })).toBe(true);
