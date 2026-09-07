@@ -37,6 +37,6 @@ describe('MeasurementsGrid empty-state CTA', () => {
       }),
     );
     expect(html).not.toContain('measurements-empty-cta');
-    expect(html).not.toContain('Not yet logged');
+    expect(html).toContain('80.0');
   });
 });

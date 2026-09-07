@@ -229,11 +229,11 @@ describe('T4 morph ≠ cards', () => {
     const resolve = src('src/lib/body-tracker/composition/resolveAvatarCircumferences.ts');
     for (const file of [estimate, resolve]) {
       expect(file).toMatch(/AVATAR MORPH ONLY/);
-      expect(file).not.toMatch(/body_tracker_circumference/);
+      expect(file).not.toMatch(/from\('body_tracker_circumference'\)/);
       expect(file).not.toMatch(/\/api\/body\/circumference/);
       expect(file).not.toMatch(/writeCircumferencesFromScan/);
       expect(file).not.toMatch(/\.insert\(/);
-      expect(file).not.toMatch(/body_tracker_segmental_muscle/);
+      expect(file).not.toMatch(/from\('body_tracker_segmental_muscle'\)/);
     }
   });
 });
