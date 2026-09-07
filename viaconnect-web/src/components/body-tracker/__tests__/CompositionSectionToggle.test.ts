@@ -1,8 +1,16 @@
 // Prompt 210i: four-tab navigation contract (both directions + active state).
+// Arnold PASS / Picasso Brief 61: mobile 2×2 grid, no overflow-x snap chips.
 import { describe, it, expect, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { CompositionSectionToggle } from '../CompositionSectionToggle';
+
+const TOGGLE_SRC = readFileSync(
+  join(process.cwd(), 'src/components/body-tracker/CompositionSectionToggle.tsx'),
+  'utf8',
+);
 
 describe('CompositionSectionToggle (210i)', () => {
   it('renders four tabs including FormaVision when includeFormaVision is true', () => {
@@ -57,6 +65,71 @@ describe('CompositionSectionToggle (210i)', () => {
     );
     expect(html).toContain('composition-tab-formavision');
     expect(html).toContain('role="radio"');
+    expect(html).toContain('role="radiogroup"');
     expect(onChange).not.toHaveBeenCalled();
+  });
+});
+
+describe('CompositionSectionToggle (Brief 61 layout)', () => {
+  it('uses a 2×2 mobile grid without horizontal snap scroll', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(CompositionSectionToggle, {
+        active: 'fat',
+        onChange: () => {},
+      }),
+    );
+    expect(html).toContain('grid-cols-2');
+    expect(html).toContain('gap-2');
+    expect(html).toContain('min-h-[52px]');
+    expect(html).toContain('py-3');
+    expect(html).toContain('px-2');
+    expect(html).toContain('text-sm');
+    expect(html).toContain('rounded-xl');
+    expect(html).toContain('text-foreground');
+    expect(html).toContain('h-[52px]');
+    expect(html).not.toContain('overflow-x-auto');
+    expect(html).not.toContain('snap-x');
+    expect(html).not.toContain('snap-mandatory');
+    expect(html).not.toContain('snap-start');
+    expect(html).not.toContain('truncate');
+    expect(html).not.toContain('text-ellipsis');
+  });
+
+  it('keeps tab order Body Fat, Muscle Mass, Measurements, FormaVision', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(CompositionSectionToggle, {
+        active: 'fat',
+        onChange: () => {},
+      }),
+    );
+    const fat = html.indexOf('composition-tab-fat');
+    const muscle = html.indexOf('composition-tab-muscle');
+    const measurements = html.indexOf('composition-tab-measurements');
+    const formavision = html.indexOf('composition-tab-formavision');
+    expect(fat).toBeGreaterThan(-1);
+    expect(muscle).toBeGreaterThan(fat);
+    expect(measurements).toBeGreaterThan(muscle);
+    expect(formavision).toBeGreaterThan(measurements);
+  });
+
+  it('locks Picasso DESIGN-READY tokens (Log Data glass, teal active, 1280 row)', () => {
+    expect(TOGGLE_SRC).toMatch(/grid-cols-2/);
+    expect(TOGGLE_SRC).toMatch(/gap-2/);
+    expect(TOGGLE_SRC).toMatch(/xl:flex/);
+    expect(TOGGLE_SRC).not.toMatch(/md:flex/);
+    expect(TOGGLE_SRC).not.toMatch(/overflow-x-auto/);
+    expect(TOGGLE_SRC).not.toMatch(/snap-x/);
+    expect(TOGGLE_SRC).not.toMatch(/className=.*truncate|truncate /);
+    expect(TOGGLE_SRC).not.toMatch(/rounded-full/);
+    expect(TOGGLE_SRC).toMatch(/rounded-xl/);
+    expect(TOGGLE_SRC).toMatch(/text-foreground/);
+    expect(TOGGLE_SRC).toMatch(/size=\{20\}/);
+    expect(TOGGLE_SRC).toMatch(/strokeWidth=\{1\.5\}/);
+    expect(TOGGLE_SRC).toMatch(/layoutId="composition-pill"/);
+    expect(TOGGLE_SRC).toMatch(/includeFormaVision/);
+    expect(TOGGLE_SRC).toMatch(/45,165,160|#2DA5A0/);
+    expect(TOGGLE_SRC).toMatch(/30,48,84|#1E3054/);
+    expect(TOGGLE_SRC).not.toMatch(/#5B8DEF|#2A4C9E/);
+    expect(TOGGLE_SRC).not.toMatch(/rgba\(255,255,255,0\.[0-9]+\)/);
   });
 });

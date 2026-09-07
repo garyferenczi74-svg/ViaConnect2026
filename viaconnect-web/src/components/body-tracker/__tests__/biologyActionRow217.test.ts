@@ -60,15 +60,18 @@ describe('Prompt 217 BiologyActionRow', () => {
   });
 });
 
-describe('Prompt 217 CompositionSectionToggle scroll row', () => {
-  it('is single-line scrollable snap with 44px targets (no flex-wrap)', () => {
+describe('Prompt 217 CompositionSectionToggle (superseded by Brief 61)', () => {
+  it('is a 2×2 mobile grid without overflow-x snap chips', () => {
     const src = readFileSync(
       join(root, 'src/components/body-tracker/CompositionSectionToggle.tsx'),
       'utf8',
     );
-    expect(src).toMatch(/overflow-x-auto/);
-    expect(src).toMatch(/snap-x/);
-    expect(src).toMatch(/min-h-\[44px\]/);
+    expect(src).toMatch(/grid-cols-2/);
+    expect(src).toMatch(/min-h-\[52px\]/);
+    expect(src).toMatch(/rounded-xl/);
+    expect(src).toMatch(/text-foreground/);
+    expect(src).not.toMatch(/overflow-x-auto/);
+    expect(src).not.toMatch(/snap-x/);
     expect(src).not.toMatch(/flex-wrap/);
     expect(src).toMatch(/#B75E18/);
   });
@@ -84,6 +87,6 @@ describe('Prompt 217 CompositionSectionToggle scroll row', () => {
     expect(html).toContain('composition-tab-formavision');
     expect(html).toContain('Forma');
     expect(html).toContain('Vision');
-    expect(html).toContain('overflow-x-auto');
+    expect(html).not.toContain('overflow-x-auto');
   });
 });

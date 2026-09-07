@@ -1,8 +1,10 @@
 'use client';
 
 // Prompt 210i: four-tab row (Body Fat, Muscle Mass, Measurements, FormaVision).
-// Prompt 217: mobile single-line horizontal snap scroll (no orphan wrap);
-// 44px touch targets; FormaVision two-tone wordmark preserved.
+// Prompt 217 snap-scroll chips superseded by Arnold PASS / Picasso Brief 61.
+// Picasso DESIGN-READY: 390→~358 inner, grid-cols-2 gap-2, cells ~175×52,
+// rounded-xl Log Data glass, text-foreground, teal consumerChrome active,
+// 2×2 until 1280 (xl row only if no scroll).
 
 import { motion } from 'framer-motion';
 import { PieChart, Dumbbell, Ruler, Box } from 'lucide-react';
@@ -29,13 +31,20 @@ const FORMAVISION_TAB = {
   icon: Box,
 };
 
-function TabLabel({ id, label, isActive }: { id: string; label: string; isActive: boolean }) {
+// Log Data family glass (BiologyActionRow): rounded-xl, #1E3054 frost, teal active.
+const CELL_BASE =
+  'relative z-10 flex h-[52px] min-h-[52px] w-full min-w-0 items-center justify-center gap-1.5 rounded-xl border px-2 py-3 text-sm font-semibold text-foreground backdrop-blur-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/45 xl:h-auto xl:min-h-[52px] xl:flex-1';
+const CELL_IDLE = `${CELL_BASE} border-white/15 bg-[rgba(30,48,84,0.92)]`;
+const CELL_ACTIVE = `${CELL_BASE} border-[rgba(45,165,160,0.8)] bg-transparent`;
+
+function TabLabel({ id, label }: { id: string; label: string }) {
   if (id === 'formavision') {
-    // Two-tone wordmark: Forma Orange #B75E18, Vision white (210i / 217).
+    // Two-tone wordmark: Forma Orange #B75E18, Vision inherits text-foreground.
+    // Full "FormaVision" stays readable in a ~175px cell (no ellipsis clip).
     return (
       <span className="relative z-10">
-        <span style={{ color: isActive ? '#B75E18' : 'rgba(183,94,24,0.65)' }}>Forma</span>
-        <span style={{ color: isActive ? '#ffffff' : 'rgba(255,255,255,0.5)' }}>Vision</span>
+        <span className="text-[#B75E18]">Forma</span>
+        <span>Vision</span>
       </span>
     );
   }
@@ -56,8 +65,7 @@ export function CompositionSectionToggle({
       role="radiogroup"
       aria-label="Body composition section"
       data-testid="composition-section-toggle"
-      className="relative flex w-full max-w-full min-w-0 gap-1 overflow-x-auto overscroll-x-contain scroll-smooth snap-x snap-mandatory rounded-full bg-white/[0.03] p-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:inline-flex md:w-auto md:max-w-none md:overflow-visible md:snap-none"
-      style={{ WebkitOverflowScrolling: 'touch' }}
+      className="relative grid w-full max-w-full grid-cols-2 gap-2 xl:flex xl:flex-nowrap"
     >
       {sections.map((s) => {
         const Icon = s.icon;
@@ -71,18 +79,17 @@ export function CompositionSectionToggle({
             data-testid={`composition-tab-${s.id}`}
             data-active={isActive ? 'true' : 'false'}
             onClick={() => onChange(s.id)}
-            className="relative z-10 inline-flex h-11 min-h-[44px] shrink-0 snap-start items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-2 text-xs font-medium transition-colors sm:px-4"
-            style={{ color: isActive ? '#ffffff' : 'rgba(255,255,255,0.5)' }}
+            className={isActive ? CELL_ACTIVE : CELL_IDLE}
           >
             {isActive && (
               <motion.div
                 layoutId="composition-pill"
-                className="absolute inset-0 rounded-full border border-[#5B8DEF]/40 bg-[#2A4C9E]/25 backdrop-blur-sm"
+                className="absolute inset-0 rounded-xl border border-[rgba(45,165,160,0.8)] bg-[rgba(45,165,160,0.18)] backdrop-blur-md"
                 transition={{ type: 'spring', stiffness: 400, damping: 30 }}
               />
             )}
-            <Icon className="relative z-10 shrink-0" size={14} strokeWidth={1.5} />
-            <TabLabel id={s.id} label={s.label} isActive={isActive} />
+            <Icon className="relative z-10 shrink-0" size={20} strokeWidth={1.5} />
+            <TabLabel id={s.id} label={s.label} />
           </button>
         );
       })}
