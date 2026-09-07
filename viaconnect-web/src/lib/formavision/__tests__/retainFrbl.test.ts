@@ -143,6 +143,11 @@ describe('retain FRBL — discard vs retain', () => {
     expect(retainRoute).toMatch(/startMeshyForReadySession/);
     expect(retainRoute).toMatch(/startTripoForReadySession/);
     expect(retainRoute).not.toMatch(/SnapMeasure/);
+    expect(retainRoute).toMatch(/readResolvedHeightCm\(userClient,/);
+    expect(retainRoute).toMatch(/height_cm_at_scan/);
+    expect(retainRoute).toMatch(/height_cm_source/);
+    expect(retainRoute).toMatch(/heightCm !== null && Number\.isFinite\(heightCm\)/);
+    expect(retainRoute).not.toMatch(/heightCm\s*=\s*170|heightCm\s*\?\?\s*170/);
   });
 
   it('ScanHistory shows the FRBL grid for retained photo scans and discard copy otherwise', () => {
