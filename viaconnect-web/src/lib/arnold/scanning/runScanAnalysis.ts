@@ -5,16 +5,18 @@
 // React component; progress events surfaced via onProgress callback.
 
 import { createClient } from '@/lib/supabase/client';
-import { processSilhouette } from './silhouetteProcessor';
+import { processSilhouette, ensureSelfieSegmenter } from './silhouetteProcessor';
 import { detectLandmarks, ensureImagePoseLandmarker } from './landmarkDetector';
 import { assessQuality } from './scanQualityAssessor';
-import { extractMeasurements } from './measurementEngine';
+import { extractMeasurements, unknownExtractedMeasurements } from './measurementEngine';
+import { classifyCircFail, circFailDetail, type CircViewFail } from './circFailReason';
 import { analyzeAsymmetry } from './asymmetryAnalyzer';
 import { navyBodyFat } from './navyBodyFat';
 import { cunbaeBodyFat } from './cunbaeBodyFat';
 import { blendComposition } from './compositionBlender';
 import { applyCalibration } from './calibrationManager';
 import { ingestMeasurementsFromScan, type IngestClient } from '@/lib/body-measurements/ingestScanMeasurements';
+import { resolveWeightKg } from '@/lib/scan/clinicalBodyMetrics';
 import { safeLog } from '@/lib/utils/safe-log';
 import { assessCaptureQuality } from './accuracy/captureQuality';
 import { silhouetteToQualityInput, retakePromptForIssues, type ViewQualityResult } from './accuracy/silhouetteToQualityInput';
@@ -72,7 +74,17 @@ export interface ScanAnalysisInputs {
 // ---------------------------------------------------------------------------
 
 /** Per-view CV inference timeout in milliseconds. Set to 4 s (Section 13). */
-const VIEW_INFERENCE_TIMEOUT_MS = 4000;
+export const VIEW_INFERENCE_TIMEOUT_MS = 4000;
+
+/**
+ * Front view only: IMAGE WASM detect + TFJS selfie can still pay residual
+ * work after pre-warm. Side/back stay at 4s. Fail-open if this still loses.
+ */
+export const VIEW_INFERENCE_FRONT_TIMEOUT_MS = 12000;
+
+export function viewInferenceTimeoutMs(pose: PoseId): number {
+  return pose === 'front' ? VIEW_INFERENCE_FRONT_TIMEOUT_MS : VIEW_INFERENCE_TIMEOUT_MS;
+}
 
 /** Input for the in-memory client-side measurement pipeline. */
 export interface InMemoryPhotoInput {
@@ -110,7 +122,7 @@ export async function runInMemoryMeasurement(
     onProgress?.({ phase, percent, message });
 
   report('loading_models', 5, 'Loading scan models');
-  await ensureImagePoseLandmarker();
+  await Promise.all([ensureImagePoseLandmarker(), ensureSelfieSegmenter()]);
 
   const poses: PoseId[] = ['front', 'back', 'left', 'right'];
   const progressSteps: Record<PoseId, ScanProgress['phase']> = {
@@ -121,6 +133,7 @@ export async function runInMemoryMeasurement(
   };
 
   const silhouettes: PoseSilhouette[] = [];
+  const viewFails: CircViewFail[] = [];
 
   for (let i = 0; i < poses.length; i++) {
     const pose = poses[i];
@@ -128,17 +141,27 @@ export async function runInMemoryMeasurement(
     if (!blob) continue;
 
     report(progressSteps[pose], 10 + i * 18, `Processing ${pose} view`);
+    const viewBudgetMs = viewInferenceTimeoutMs(pose);
 
     try {
       const silhouette = await Promise.race([
         (async (): Promise<PoseSilhouette> => {
           const landmarks = await detectLandmarks(blob);
+          if (Object.keys(landmarks).length === 0) {
+            const fail: CircViewFail = { pose, reason: 'empty_landmarks' };
+            viewFails.push(fail);
+            safeLog.warn(
+              'arnold.scanning.inmemory',
+              `${pose} view empty landmarks (fail-open, no invented cm)`,
+              fail,
+            );
+          }
           return processSilhouette({ blob, poseId: pose, userHeightCm: heightCm, landmarks });
         })(),
         new Promise<never>((_, rej) =>
           setTimeout(
-            () => rej(new Error(`[T9] ${pose} view CV timeout after ${VIEW_INFERENCE_TIMEOUT_MS}ms`)),
-            VIEW_INFERENCE_TIMEOUT_MS,
+            () => rej(new Error(`[T9] ${pose} view CV timeout after ${viewBudgetMs}ms`)),
+            viewBudgetMs,
           ),
         ),
       ]);
@@ -182,25 +205,50 @@ export async function runInMemoryMeasurement(
 
       silhouettes.push(silhouette);
     } catch (err) {
-      // Fail-open: log the failure and skip this view.
+      // Fail-open: log the honest reason and skip this view.
       // Its measurements will be UNKNOWN (null), never fabricated (RULE 9).
+      const reason = classifyCircFail({ error: err });
+      const fail: CircViewFail = { pose, reason, detail: circFailDetail(err) };
+      viewFails.push(fail);
       safeLog.warn(
         'arnold.scanning.inmemory',
-        `${pose} view failed or timed out - treated as UNKNOWN (fail-open)`,
-        { pose, error: err instanceof Error ? err.message : String(err) },
+        `${pose} view ${reason} - treated as UNKNOWN (fail-open, no invented cm)`,
+        fail,
       );
     }
   }
 
   report('measuring', 82, 'Extracting measurements from silhouettes');
 
-  const measurements = extractMeasurements({ silhouettes, sex, heightCm });
+  let measurements;
+  try {
+    measurements = extractMeasurements({ silhouettes, sex, heightCm });
+  } catch (err) {
+    const fail: CircViewFail = {
+      pose: 'extract',
+      reason: 'extract_throw',
+      detail: circFailDetail(err),
+    };
+    viewFails.push(fail);
+    safeLog.warn(
+      'arnold.scanning.inmemory',
+      'extractMeasurements threw - UNKNOWN girths (fail-open, no invented cm)',
+      fail,
+    );
+    measurements = unknownExtractedMeasurements();
+  }
 
   report('complete', 100, 'Client-side measurement complete');
   safeLog.info(
     'arnold.scanning.inmemory',
     'In-memory scan measurement complete',
-    { viewsProcessed: silhouettes.length, totalViews: poses.filter((p) => p in photos).length },
+    {
+      viewsProcessed: silhouettes.length,
+      totalViews: poses.filter((p) => p in photos).length,
+      viewFails,
+      // Height stamp is NOT the live circ gate. Girth POST is hasFiniteGeometricGirth.
+      circGate: 'hasFiniteGeometricGirth',
+    },
   );
 
   return measurements;
@@ -230,7 +278,7 @@ export async function runScanAnalysis({ sessionId, onProgress }: ScanAnalysisInp
     onProgress?.({ phase, percent, message });
 
   report('loading_models', 5, 'Loading scan models');
-  await ensureImagePoseLandmarker();
+  await Promise.all([ensureImagePoseLandmarker(), ensureSelfieSegmenter()]);
 
   const { data: session, error: sErr } = await supabase
     .from('body_photo_sessions')
@@ -250,13 +298,14 @@ export async function runScanAnalysis({ sessionId, onProgress }: ScanAnalysisInp
   const p = profile as unknown as ProfileRow | null;
   const sex: BiologicalSex = p?.sex === 'female' ? 'female' : 'male';
   const heightCm = p?.height_cm ?? null;
-  const weightKg = p?.weight_kg ?? null;
+  const resolvedWeight = await resolveWeightKg(supabase, (session as unknown as SessionRow).user_id);
+  const weightKg = resolvedWeight.weightKg;
   const age = p?.date_of_birth
     ? Math.floor((Date.now() - new Date(p.date_of_birth).getTime()) / (365.25 * 86400000))
     : 30;
 
   if (!heightCm || !weightKg) {
-    throw new Error('Height and weight in your profile are required for scan analysis. Set them in your profile and try again.');
+    throw new Error('Height and a real CAQ/clinical weight are required for scan analysis. Never invent weight.');
   }
 
   // Phase-by-phase silhouette extraction
@@ -304,7 +353,17 @@ export async function runScanAnalysis({ sessionId, onProgress }: ScanAnalysisInp
   report('measuring', 70, 'Extracting measurements');
   await supabase.from('body_photo_sessions').update({ scan_status: 'measuring' } as never).eq('id', sessionId);
 
-  let measurements = extractMeasurements({ silhouettes, sex, heightCm });
+  let measurements;
+  try {
+    measurements = extractMeasurements({ silhouettes, sex, heightCm });
+  } catch (err) {
+    safeLog.warn(
+      'arnold.scanning',
+      'extractMeasurements threw - UNKNOWN girths (fail-open, no invented cm)',
+      { reason: 'extract_throw', detail: circFailDetail(err) },
+    );
+    measurements = unknownExtractedMeasurements();
+  }
 
   // Calibrate with latest tape measurements if available
   const { data: tapeRow } = await supabase

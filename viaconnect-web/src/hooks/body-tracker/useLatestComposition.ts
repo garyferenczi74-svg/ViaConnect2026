@@ -13,11 +13,12 @@ import { withTimeout } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 import { mapRows } from '@/lib/body-tracker/composition/mapRows';
 import type { CompositionSnapshot } from '@/lib/body-tracker/composition/types';
+import { parsePositiveFinite, resolveWeightKg } from '@/lib/scan/clinicalBodyMetrics';
 
 export interface UseLatestCompositionResult {
   snapshot: CompositionSnapshot | null;
   bmi: number | null;
-  /** Latest clinical_assessments.weight_kg converted to lbs (CAQ fact). */
+  /** CAQ-first Total Weight (resolveWeightKg) converted to lbs. Honest null. */
   caqWeightLbs: number | null;
   /** Manual / XML weight-row fat. Independent of segmental fat. */
   weightBodyFatPct: number | null;
@@ -341,11 +342,15 @@ export function useLatestComposition(userId: string | null): UseLatestCompositio
           safeLog.warn(SCOPE, 'weight fetch failed (fail-open)', { error: e });
         }
 
-        // Prefer body_tracker_weight (lbs converted); fall back to clinical assessment weight_kg.
-        const weightKg: number | null =
-          weightLbs !== null
+        // Gary HARD: prefer finite CAQ Total Weight; never invent kg / Muscle lbs.
+        // Tracker lbs is only used when CAQ + clinical weight are UNKNOWN.
+        const resolvedWeight = await resolveWeightKg(supabase, userId);
+        const caqKg = parsePositiveFinite(resolvedWeight.weightKg);
+        const trackerKg =
+          weightLbs !== null && Number.isFinite(weightLbs) && weightLbs > 0
             ? weightLbs * 0.45359237
-            : (clinicalRow?.weight_kg ?? null);
+            : null;
+        const weightKg: number | null = caqKg ?? trackerKg;
 
         if (heightCm !== null && heightCm > 0 && weightKg !== null && weightKg > 0) {
           const heightM = heightCm / 100;
@@ -357,11 +362,7 @@ export function useLatestComposition(userId: string | null): UseLatestCompositio
         // Build the snapshot. mapRows returns null when entry is null.
         const built = mapRows({ entry: entryRow, fat: fatRow, muscle: muscleRow });
 
-        const caqKg = clinicalRow?.weight_kg ?? null;
-        const caqLbs =
-          typeof caqKg === 'number' && Number.isFinite(caqKg) && caqKg > 0
-            ? caqKg * 2.20462262
-            : null;
+        const caqLbs = caqKg !== null ? caqKg * 2.20462262 : null;
 
         setSnapshot(built);
         setBmi(bmiValue);

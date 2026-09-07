@@ -175,6 +175,9 @@ export async function writeCircumferencesFromScan(
   if (!hasFiniteGeometricGirth(measurements)) {
     safeLog.info('formavision.analyze', 'skipping all-UNKNOWN circumference payload', {
       scanId,
+      reason: 'all_unknown',
+      // Height stamp is NOT the live circ gate. Live POST requires a finite girth.
+      circGate: 'hasFiniteGeometricGirth',
     });
     return { ok: true, skipped: true, reason: 'all_unknown' };
   }
@@ -380,7 +383,8 @@ export async function runFormaVisionAnalyzeSpine(
       flushCirc();
       flushT6();
     } catch (err) {
-      safeLog.warn('formavision.analyze', 'Geometric measurement failed (non-fatal)', {
+      safeLog.warn('formavision.analyze', 'Geometric measurement failed (non-fatal, no invented cm)', {
+        reason: 'extract_throw',
         error: err instanceof Error ? err.message : String(err),
       });
     }

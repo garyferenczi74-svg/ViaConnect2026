@@ -7,6 +7,13 @@
 // sending the photo off device.
 
 import type { Point2D, PoseSilhouette, LandmarkMap, PoseId } from './types';
+import { withTimeout } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
+
+const LOG_SCOPE = 'arnold.scanning.silhouetteProcessor';
+
+/** TFJS selfie + WASM cold-start bound. Fail-open if the pre-warm loses. */
+export const SELFIE_PREWARM_TIMEOUT_MS = 10000;
 
 // Lazy-load tf and body-segmentation so the SSR / Turbopack graph stays lean.
 // Avoid type-import() of TF packages (they re-enter the module graph under Turbopack).
@@ -34,6 +41,19 @@ async function getSegmenter() {
     })();
   }
   return modelPromise;
+}
+
+/** Pre-warm TFJS selfie so the front view is not init-bound inside the CV race. */
+export async function ensureSelfieSegmenter(): Promise<boolean> {
+  try {
+    await withTimeout(getSegmenter(), SELFIE_PREWARM_TIMEOUT_MS, `${LOG_SCOPE}.selfiePrewarm`);
+    return true;
+  } catch (error) {
+    safeLog.warn(LOG_SCOPE, 'TFJS selfie segmenter pre-warm failed (fail-open)', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return false;
+  }
 }
 
 /** Extract silhouette + landmarks from a single photo. */

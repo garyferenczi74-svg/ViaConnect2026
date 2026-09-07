@@ -124,13 +124,24 @@ export async function detectLandmarks(
     return await withTimeout(
       (async () => {
         const landmarker = await loadLandmarker();
-        if (!landmarker) return {};
+        if (!landmarker) {
+          safeLog.warn(LOG_SCOPE, 'IMAGE Pose empty landmarks (fail-open, no invented cm)', {
+            reason: 'empty_landmarks',
+            detail: 'init_failed',
+          });
+          return {};
+        }
 
         const bitmap = await createBitmap(blob);
         try {
           const result = landmarker.detect(bitmap);
           const pts = result.landmarks[0] ?? [];
-          if (pts.length === 0) return {};
+          if (pts.length === 0) {
+            safeLog.warn(LOG_SCOPE, 'IMAGE Pose empty landmarks (fail-open, no invented cm)', {
+              reason: 'empty_landmarks',
+            });
+            return {};
+          }
           return mapNormalizedLandmarksToPixelSpace(pts, bitmap.width, bitmap.height);
         } finally {
           bitmap.close?.();
@@ -141,8 +152,15 @@ export async function detectLandmarks(
     );
   } catch (error) {
     if (isTimeoutError(error)) {
+      safeLog.warn(LOG_SCOPE, 'IMAGE Pose detect timeout (fail-open, no invented cm)', {
+        reason: 'timeout',
+      });
       throw new Error('Pose detection timeout');
     }
+    safeLog.warn(LOG_SCOPE, 'IMAGE Pose detect threw (fail-open, no invented cm)', {
+      reason: 'extract_throw',
+      error: error instanceof Error ? error.message : String(error),
+    });
     throw error;
   }
 }

@@ -3,6 +3,10 @@
 // (backfill/upsert OK). Ordered geometric READ is CAQ-first:
 // CAQ demographics → clinical_assessments → body_goals. Never invent.
 //
+// Gary HARD Total Weight: CAQ phase-1 demographics include height AND
+// Total Weight. resolveWeightKg is CAQ-first → clinical weight_kg → null.
+// Never invent weight or Muscle lbs.
+//
 // UNITS LOCK (never invent, never swap):
 // - assessment_results CAQ demographics.height is centimeters as a string
 //   (e.g. "180"). Parse as cm. Do not treat as inches.
@@ -28,6 +32,13 @@ export type HeightCmSource = 'clinical_assessment' | 'body_goals' | 'caq_demogra
 export type ResolvedHeightCm = {
   heightCm: number | null;
   source: HeightCmSource | null;
+};
+
+export type WeightKgSource = 'clinical_assessment' | 'caq_demographics';
+
+export type ResolvedWeightKg = {
+  weightKg: number | null;
+  source: WeightKgSource | null;
 };
 
 export type ClinicalBodyMetrics = {
@@ -163,6 +174,7 @@ type QueryPack<T> = {
 };
 
 type ClinicalHeightRow = Pick<Database['public']['Tables']['clinical_assessments']['Row'], 'height_cm'>;
+type ClinicalWeightRow = Pick<Database['public']['Tables']['clinical_assessments']['Row'], 'weight_kg'>;
 type BodyGoalHeightRow = Pick<Database['public']['Tables']['body_goals']['Row'], 'height_in'>;
 type AssessmentDataRow = Pick<Database['public']['Tables']['assessment_results']['Row'], 'data'>;
 
@@ -259,6 +271,61 @@ export async function resolveHeightCm(
   return { heightCm: null, source: null };
 }
 
+export async function readClinicalWeightKg(
+  supabase: ClinicalMetricsClient,
+  userId: string,
+): Promise<number | null> {
+  const row = await timedMaybeSingle(
+    asQueryPack<ClinicalWeightRow>(
+      supabase
+        .from('clinical_assessments')
+        .select('weight_kg')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ),
+    'clinical_weight',
+  );
+  return parsePositiveFinite(row?.weight_kg);
+}
+
+export async function readCaqAssessmentWeightKg(
+  supabase: ClinicalMetricsClient,
+  userId: string,
+): Promise<number | null> {
+  const row = await timedMaybeSingle(
+    asQueryPack<AssessmentDataRow>(
+      supabase
+        .from('assessment_results')
+        .select('data')
+        .eq('user_id', userId)
+        .eq('phase', 1)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ),
+    'caq_phase1_weight',
+  );
+  return parseCaqWeightKg(asDemographicsRecord(row?.data));
+}
+
+/**
+ * Gary HARD: CAQ phase-1 Total Weight is SSOT when finite.
+ * CAQ demographics → clinical_assessments.weight_kg → honest null.
+ * Never invents weight or Muscle lbs.
+ */
+export async function resolveWeightKg(
+  supabase: ClinicalMetricsClient,
+  userId: string,
+): Promise<ResolvedWeightKg> {
+  const fromCaq = await readCaqAssessmentWeightKg(supabase, userId);
+  if (fromCaq !== null) return { weightKg: fromCaq, source: 'caq_demographics' };
+  const clinical = await readClinicalWeightKg(supabase, userId);
+  if (clinical !== null) return { weightKg: clinical, source: 'clinical_assessment' };
+  return { weightKg: null, source: null };
+}
+
 /**
  * One-time heal: if clinical height is missing, copy a finite fallback from
  * CAQ phase-1 demographics first, then body_goals.height_in. Never invents.
@@ -280,6 +347,26 @@ export async function backfillClinicalHeightIfMissing(
   const fromGoals = await readBodyGoalsHeightCm(supabase, userId);
   if (fromGoals !== null) {
     return upsertClinicalBodyMetrics(supabase, userId, { heightCm: fromGoals });
+  }
+  return emptyWrite();
+}
+
+/**
+ * One-time heal: if clinical weight is missing, copy a finite CAQ phase-1
+ * Total Weight. Never invents; no body_goals weight fallback.
+ */
+export async function backfillClinicalWeightIfMissing(
+  supabase: ClinicalMetricsClient,
+  userId: string,
+): Promise<ClinicalUpsertResult> {
+  const existing = await readClinicalWeightKg(supabase, userId);
+  if (existing !== null) {
+    return { ok: true, wrote: { heightCm: null, weightKg: existing } };
+  }
+
+  const fromCaq = await readCaqAssessmentWeightKg(supabase, userId);
+  if (fromCaq !== null) {
+    return upsertClinicalBodyMetrics(supabase, userId, { weightKg: fromCaq });
   }
   return emptyWrite();
 }

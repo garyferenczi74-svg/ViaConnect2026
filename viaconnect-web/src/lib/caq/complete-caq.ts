@@ -12,6 +12,7 @@ import { safeLog } from "@/lib/utils/safe-log";
 import {
   asDemographicsRecord,
   backfillClinicalHeightIfMissing,
+  backfillClinicalWeightIfMissing,
   writeThroughCaqDemographicsToClinical,
 } from "@/lib/scan/clinicalBodyMetrics";
 
@@ -81,8 +82,9 @@ export async function completeCAQAndTriggerEngines(): Promise<{
     }
 
     // ═══ STEP 1.4: Write-through CAQ height/weight into clinical_assessments ═══
-    // clinical_assessments.height_cm remains write SSOT (backfill/upsert OK).
-    // Geometric READ is CAQ-first via resolveHeightCm. Copy finite values only.
+    // clinical_assessments.height_cm / weight_kg remain write SSOT (backfill/upsert OK).
+    // Geometric READ is CAQ-first via resolveHeightCm / resolveWeightKg.
+    // Copy finite values only. Never invent weight or Muscle lbs.
     try {
       const { data: phase1 } = await supabase
         .from("assessment_results")
@@ -98,6 +100,7 @@ export async function completeCAQAndTriggerEngines(): Promise<{
         asDemographicsRecord(phase1?.data),
       );
       await backfillClinicalHeightIfMissing(supabase, user.id);
+      await backfillClinicalWeightIfMissing(supabase, user.id);
       results["clinical_body"] = true;
     } catch (err) {
       results["clinical_body"] = false;
