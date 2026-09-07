@@ -18,7 +18,6 @@ const nextConfig = {
       // Relative aliases only (absolute Windows paths are not supported by Turbopack).
       "@mediapipe/selfie_segmentation":
         "./src/shims/mediapipe-selfie-segmentation.ts",
-      "@mediapipe/pose": "./src/shims/mediapipe-pose.ts",
       // Single React instance for the r3f reconciler (React 19 internals).
       react: "./node_modules/react",
       "react-dom": "./node_modules/react-dom",
@@ -60,7 +59,6 @@ const nextConfig = {
     "unpdf",
     "@tensorflow/tfjs",
     "@tensorflow-models/body-segmentation",
-    "@mediapipe/pose",
     "@mediapipe/selfie_segmentation",
   ],
   outputFileTracingExcludes: {

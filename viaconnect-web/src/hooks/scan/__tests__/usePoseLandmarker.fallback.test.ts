@@ -240,3 +240,50 @@ describe('createPoseLandmarker asset paths (condition 12: self-hosted /mediapipe
     expect(optionsArg.baseOptions.delegate).toBe('CPU');
   });
 });
+
+describe('createImagePoseLandmarker asset paths (IMAGE mode, same self-hosted /mediapipe/*)', () => {
+  const forVisionTasks = vi.fn(async (basePath: string) => ({ basePath }));
+  const createFromOptions = vi.fn(async (_fileset: unknown, options: Record<string, unknown>) => ({
+    options,
+    detect: vi.fn(),
+    close: vi.fn(),
+  }));
+
+  beforeEach(() => {
+    forVisionTasks.mockClear();
+    createFromOptions.mockClear();
+    vi.doMock('@mediapipe/tasks-vision', () => ({
+      FilesetResolver: { forVisionTasks },
+      PoseLandmarker: { createFromOptions },
+    }));
+  });
+
+  afterEach(() => {
+    vi.doUnmock('@mediapipe/tasks-vision');
+    vi.resetModules();
+  });
+
+  it('uses IMAGE runningMode and the same versioned wasm/model paths as VIDEO, never a CDN', async () => {
+    vi.resetModules();
+    const { createImagePoseLandmarker } = await import('../usePoseLandmarker');
+
+    await createImagePoseLandmarker('GPU');
+
+    expect(forVisionTasks).toHaveBeenCalledWith(`/mediapipe/${MEDIAPIPE_ASSET_VERSION}/wasm`);
+    const optionsArg = createFromOptions.mock.calls[0]?.[1] as {
+      baseOptions: { modelAssetPath: string; delegate: string };
+      runningMode: string;
+      numPoses: number;
+    };
+    expect(optionsArg.baseOptions.modelAssetPath).toBe(
+      `/mediapipe/${MEDIAPIPE_ASSET_VERSION}/pose_landmarker_lite.task`,
+    );
+    expect(optionsArg.baseOptions.delegate).toBe('GPU');
+    expect(optionsArg.runningMode).toBe('IMAGE');
+    expect(optionsArg.numPoses).toBe(1);
+
+    const serialized = JSON.stringify([forVisionTasks.mock.calls, createFromOptions.mock.calls]);
+    expect(serialized).not.toMatch(/https?:\/\//i);
+    expect(serialized.toLowerCase()).not.toContain('cdn');
+  });
+});

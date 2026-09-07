@@ -1,7 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { MEDIAPIPE_ASSET_VERSION } from '@/lib/scan/mediapipeVersion';
+import {
+  MEDIAPIPE_ASSET_VERSION,
+  MEDIAPIPE_MODEL_ASSET_PATH,
+  MEDIAPIPE_WASM_BASE_PATH,
+} from '@/lib/scan/mediapipeVersion';
 import { detectWasmSimd } from '@/hooks/scan/usePoseLandmarker';
 
 interface PackageJsonShape {
@@ -57,6 +61,16 @@ describe('mediapipe VERSION contract', () => {
 
   it('the versioned model file exists at the versioned asset path', () => {
     expect(existsSync(modelFilePath)).toBe(true);
+  });
+
+  it('exported WASM and model paths stay under /mediapipe/<version>/ with no CDN', () => {
+    expect(MEDIAPIPE_WASM_BASE_PATH).toBe(`/mediapipe/${MEDIAPIPE_ASSET_VERSION}/wasm`);
+    expect(MEDIAPIPE_MODEL_ASSET_PATH).toBe(
+      `/mediapipe/${MEDIAPIPE_ASSET_VERSION}/pose_landmarker_lite.task`,
+    );
+    expect(MEDIAPIPE_WASM_BASE_PATH).not.toMatch(/https?:\/\//i);
+    expect(MEDIAPIPE_MODEL_ASSET_PATH).not.toMatch(/https?:\/\//i);
+    expect(`${MEDIAPIPE_WASM_BASE_PATH}${MEDIAPIPE_MODEL_ASSET_PATH}`.toLowerCase()).not.toContain('cdn');
   });
 });
 

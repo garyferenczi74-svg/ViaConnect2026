@@ -57,7 +57,7 @@ vi.mock('@/lib/body-measurements/ingestScanMeasurements', () => ({
 // ---------------------------------------------------------------------------
 
 import { runInMemoryMeasurement } from '../runScanAnalysis';
-import { detectLandmarks } from '../landmarkDetector';
+import { detectLandmarks, ensureImagePoseLandmarker } from '../landmarkDetector';
 import { processSilhouette } from '../silhouetteProcessor';
 import { extractMeasurements } from '../measurementEngine';
 import type { PoseSilhouette, ExtractedMeasurements, MeasuredValue } from '../types';
@@ -120,6 +120,7 @@ describe('runInMemoryMeasurement', () => {
     // Happy-path defaults: detectLandmarks returns empty landmarks, processSilhouette
     // returns a minimal silhouette, extractMeasurements returns MOCK_MEASUREMENTS.
     vi.mocked(detectLandmarks).mockResolvedValue({});
+    vi.mocked(ensureImagePoseLandmarker).mockResolvedValue(true);
     vi.mocked(processSilhouette).mockImplementation(async ({ poseId }) =>
       makeSilhouette(poseId),
     );
@@ -147,6 +148,7 @@ describe('runInMemoryMeasurement', () => {
         sex: 'male',
       });
 
+      expect(ensureImagePoseLandmarker).toHaveBeenCalled();
       expect(detectLandmarks).toHaveBeenCalledTimes(4);
       expect(detectLandmarks).toHaveBeenCalledWith(frontBlob);
       expect(detectLandmarks).toHaveBeenCalledWith(backBlob);

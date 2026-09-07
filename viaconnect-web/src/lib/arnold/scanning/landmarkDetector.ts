@@ -1,12 +1,31 @@
 'use client';
 
-// Pose landmark detection using MediaPipe Pose.
-// Returns 33 anatomical landmarks, spec-named to LandmarkKey.
+// Pose landmark detection using tasks-vision PoseLandmarker in IMAGE mode.
+// Returns 33 anatomical landmarks, spec-named to LandmarkKey, in pixel space.
 // NOTE: the original Prompt #86C referenced "68+ landmarks" but that figure
 // came from facial landmark models (dlib). MediaPipe Pose provides 33 body
 // landmarks, which is what we use here.
+//
+// Arnold PASS OBRA B: do NOT use @mediapipe/pose — Turbopack aliased that
+// package to a no-op shim, so geometric girths were all-UNKNOWN. IMAGE-mode
+// PoseLandmarker reuses the same self-hosted /mediapipe/<version>/ assets as
+// live VIDEO capture. Fail-open: timeout throws (upstream UNKNOWN), empty
+// detect returns {}. Never invents height, cm, or Muscle lbs.
 
 import type { LandmarkMap, LandmarkKey, Point2D } from './types';
+import {
+  createImagePoseLandmarker,
+  loadPoseLandmarkerWithFallback,
+  type ImagePoseLandmarkerLike,
+  type MediaPipeNormalizedLandmark,
+} from '@/hooks/scan/usePoseLandmarker';
+import { isTimeoutError, withTimeout } from '@/lib/utils/with-timeout';
+import { safeLog } from '@/lib/utils/safe-log';
+
+const LOG_SCOPE = 'arnold.scanning.landmarkDetector';
+
+/** Still-photo detect budget (init is separately bounded by load fallback). */
+export const POSE_DETECT_TIMEOUT_MS = 15000;
 
 // MediaPipe Pose landmark indices (0-32)
 // https://developers.google.com/mediapipe/solutions/vision/pose_landmarker
@@ -29,81 +48,101 @@ const MP_INDEX: Record<number, LandmarkKey> = {
   31: 'left_foot_index', 32: 'right_foot_index',
 };
 
-interface PoseModule {
-  Pose: new (config: { locateFile?: (file: string) => string }) => {
-    setOptions: (opts: unknown) => void;
-    onResults: (cb: (r: {
-      poseLandmarks?: Array<{ x: number; y: number; z: number; visibility?: number }>;
-    }) => void) => void;
-    send: (input: { image: HTMLImageElement | HTMLCanvasElement | HTMLVideoElement | OffscreenCanvas | ImageBitmap }) => Promise<void>;
-    close: () => void;
-  };
+export interface ImageBitmapLike {
+  width: number;
+  height: number;
+  close?: () => void;
 }
 
-let poseModulePromise: Promise<PoseModule> | null = null;
-function loadPoseModule(): Promise<PoseModule> {
-  if (!poseModulePromise) {
-    poseModulePromise = import(
-      /* turbopackIgnore: true */ "@mediapipe/pose"
-    ) as unknown as Promise<PoseModule>;
+export interface DetectLandmarksDeps {
+  loadLandmarker?: () => Promise<ImagePoseLandmarkerLike | null>;
+  createBitmap?: (blob: Blob) => Promise<ImageBitmapLike>;
+  timeoutMs?: number;
+}
+
+let cachedLandmarkerPromise: Promise<ImagePoseLandmarkerLike | null> | null = null;
+
+export function resetImagePoseLandmarkerCacheForTests(): void {
+  cachedLandmarkerPromise = null;
+}
+
+async function loadDefaultImageLandmarker(): Promise<ImagePoseLandmarkerLike | null> {
+  if (!cachedLandmarkerPromise) {
+    cachedLandmarkerPromise = loadPoseLandmarkerWithFallback(createImagePoseLandmarker).then((result) => {
+      if (!result.ok) {
+        safeLog.warn(LOG_SCOPE, 'IMAGE PoseLandmarker init failed; landmarks empty (fail-open)', {
+          reason: result.reason,
+        });
+        return null;
+      }
+      return result.instance;
+    });
   }
-  return poseModulePromise;
+  return cachedLandmarkerPromise;
+}
+
+/** Pre-warm the cached IMAGE landmarker so the first view is not init-bound. */
+export async function ensureImagePoseLandmarker(): Promise<boolean> {
+  const instance = await loadDefaultImageLandmarker();
+  return instance !== null;
+}
+
+/** Map 33 normalized MediaPipe landmarks into image pixel space (origin top-left). */
+export function mapNormalizedLandmarksToPixelSpace(
+  pts: ReadonlyArray<Pick<MediaPipeNormalizedLandmark, 'x' | 'y'> & { visibility?: number }>,
+  width: number,
+  height: number,
+): LandmarkMap {
+  const map: LandmarkMap = {};
+  pts.forEach((pt, i) => {
+    const key = MP_INDEX[i];
+    if (!key) return;
+    const point: Point2D & { visibility?: number } = {
+      x: pt.x * width,
+      y: pt.y * height,
+      visibility: pt.visibility,
+    };
+    map[key] = point;
+  });
+  return map;
 }
 
 /** Detect 33 MediaPipe pose landmarks from an image blob. Coordinates are
- *  returned in image pixel space (origin at top left). */
-export async function detectLandmarks(blob: Blob): Promise<LandmarkMap> {
-  const { Pose } = await loadPoseModule();
-  const bitmap = await createImageBitmap(blob);
-  const w = bitmap.width;
-  const h = bitmap.height;
-
-  const canvas: HTMLCanvasElement | OffscreenCanvas =
-    typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(w, h) : document.createElement('canvas');
-  if (canvas instanceof HTMLCanvasElement) { canvas.width = w; canvas.height = h; }
-  const ctx = canvas.getContext('2d') as CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null;
-  if (!ctx) throw new Error('Canvas context unavailable');
-  ctx.drawImage(bitmap, 0, 0);
-
-  const pose = new Pose({
-    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`,
-  });
-  pose.setOptions({
-    modelComplexity: 1,
-    smoothLandmarks: false,
-    enableSegmentation: false,
-    minDetectionConfidence: 0.5,
-    minTrackingConfidence: 0.5,
-    staticImageMode: true,
-  });
-
-  const map: LandmarkMap = {};
-  const done = new Promise<LandmarkMap>((resolve) => {
-    pose.onResults((results) => {
-      const pts = results.poseLandmarks ?? [];
-      pts.forEach((pt, i) => {
-        const key = MP_INDEX[i];
-        if (!key) return;
-        const point: Point2D & { visibility?: number } = {
-          x: pt.x * w,
-          y: pt.y * h,
-          visibility: pt.visibility,
-        };
-        map[key] = point;
-      });
-      resolve(map);
-    });
-  });
+ *  returned in image pixel space (origin at top left). Empty / failed detect
+ *  returns {}. Timeout throws (handled upstream as UNKNOWN girths). */
+export async function detectLandmarks(
+  blob: Blob,
+  deps: DetectLandmarksDeps = {},
+): Promise<LandmarkMap> {
+  const timeoutMs = deps.timeoutMs ?? POSE_DETECT_TIMEOUT_MS;
+  const loadLandmarker = deps.loadLandmarker ?? loadDefaultImageLandmarker;
+  const createBitmap =
+    deps.createBitmap ??
+    (async (source: Blob): Promise<ImageBitmapLike> => createImageBitmap(source));
 
   try {
-    await pose.send({ image: canvas as unknown as HTMLCanvasElement });
-    const result = await Promise.race([
-      done,
-      new Promise<LandmarkMap>((_, rej) => setTimeout(() => rej(new Error('Pose detection timeout')), 15000)),
-    ]);
-    return result;
-  } finally {
-    try { pose.close(); } catch { /* ignore */ }
-    if ('close' in bitmap) bitmap.close();
+    return await withTimeout(
+      (async () => {
+        const landmarker = await loadLandmarker();
+        if (!landmarker) return {};
+
+        const bitmap = await createBitmap(blob);
+        try {
+          const result = landmarker.detect(bitmap);
+          const pts = result.landmarks[0] ?? [];
+          if (pts.length === 0) return {};
+          return mapNormalizedLandmarksToPixelSpace(pts, bitmap.width, bitmap.height);
+        } finally {
+          bitmap.close?.();
+        }
+      })(),
+      timeoutMs,
+      'arnold.scanning.detectLandmarks',
+    );
+  } catch (error) {
+    if (isTimeoutError(error)) {
+      throw new Error('Pose detection timeout');
+    }
+    throw error;
   }
 }

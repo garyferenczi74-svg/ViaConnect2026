@@ -6,7 +6,7 @@
 
 import { createClient } from '@/lib/supabase/client';
 import { processSilhouette } from './silhouetteProcessor';
-import { detectLandmarks } from './landmarkDetector';
+import { detectLandmarks, ensureImagePoseLandmarker } from './landmarkDetector';
 import { assessQuality } from './scanQualityAssessor';
 import { extractMeasurements } from './measurementEngine';
 import { analyzeAsymmetry } from './asymmetryAnalyzer';
@@ -108,6 +108,9 @@ export async function runInMemoryMeasurement(
   const { photos, heightCm, sex, onProgress, onViewQuality } = input;
   const report = (phase: ScanProgress['phase'], percent: number, message: string) =>
     onProgress?.({ phase, percent, message });
+
+  report('loading_models', 5, 'Loading scan models');
+  await ensureImagePoseLandmarker();
 
   const poses: PoseId[] = ['front', 'back', 'left', 'right'];
   const progressSteps: Record<PoseId, ScanProgress['phase']> = {
@@ -227,6 +230,7 @@ export async function runScanAnalysis({ sessionId, onProgress }: ScanAnalysisInp
     onProgress?.({ phase, percent, message });
 
   report('loading_models', 5, 'Loading scan models');
+  await ensureImagePoseLandmarker();
 
   const { data: session, error: sErr } = await supabase
     .from('body_photo_sessions')
