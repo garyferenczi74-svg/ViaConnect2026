@@ -36,6 +36,9 @@ describe('runFormaVisionAnalyze shared spine', () => {
     expect(shared).toMatch(/sanitizeAnalyzeUserError/);
     expect(shared).toMatch(/persistScanFn/);
     expect(shared).toMatch(/normalizeScanPhotoUpright/);
+    expect(shared).toMatch(/circFailPromise/);
+    expect(shared).toMatch(/resolveSurfaceCircFail/);
+    expect(shared).toMatch(/onCircFail/);
     expect(shared).not.toMatch(/navyBodyFat/);
     expect(shared).not.toMatch(/arnold-vision-analyze/);
   });

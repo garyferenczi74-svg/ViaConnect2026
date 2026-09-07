@@ -39,6 +39,10 @@ import {
 } from '@/lib/body-tracker/composition/circWriteContract';
 import type { ViewQualityResult } from '@/lib/arnold/scanning/runScanAnalysis';
 import type { ExtractedMeasurements } from '@/lib/arnold/scanning/types';
+import { isCircFailReason, type CircFailReason } from '@/lib/arnold/scanning/circFailReason';
+import { ensureImagePoseLandmarker } from '@/lib/arnold/scanning/landmarkDetector';
+import { ensureSelfieSegmenter } from '@/lib/arnold/scanning/silhouetteProcessor';
+import { CircFailChip } from './CircFailChip';
 import { sanitizeAnalyzeUserError } from '@/lib/body-tracker/composition/visionModel';
 import {
   PHOTO_FLAGGED_PHOTOS_FOR_BEST_RESULTS,
@@ -71,6 +75,8 @@ interface BodyScanUploaderProps {
    * block the composition result or the UI.
    */
   onGeometricMeasurements?: (m: ExtractedMeasurements) => void;
+  /** Last honest photo-girth fail (timeout / empty landmarks / …). Never invents cm. */
+  onCircFailReason?: (reason: CircFailReason | null) => void;
 }
 
 interface SlotState {
@@ -93,7 +99,12 @@ function fileToBase64(file: File): Promise<string> {
   });
 }
 
-export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements }: BodyScanUploaderProps) {
+export function BodyScanUploader({
+  onComplete,
+  onCancel,
+  onGeometricMeasurements,
+  onCircFailReason,
+}: BodyScanUploaderProps) {
   const initialSlots: Record<PhotoPosition, SlotState> = emptyFormaVisionSlots({
     file: null,
     base64: null,
@@ -109,6 +120,7 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
   const [viewQuality, setViewQuality] = useState<Partial<Record<PhotoPosition, ViewQualityResult>>>({});
   const [retainFrbl, setRetainFrbl] = useState(RETAIN_FRBL_DEFAULT);
   const [circNotice, setCircNotice] = useState<string | null>(null);
+  const [circFailReason, setCircFailReason] = useState<CircFailReason | null>(null);
   const [heightMissing, setHeightMissing] = useState(false);
   const [heightDraft, setHeightDraft] = useState('');
   const [localHeightCm, setLocalHeightCm] = useState<number | null>(null);
@@ -136,6 +148,11 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
 
   const allFilled = POSITIONS.every((p) => slots[p.key].base64 !== null);
   const anyFilled = POSITIONS.some((p) => slots[p.key].base64 !== null);
+
+  useEffect(() => {
+    if (!anyFilled) return;
+    void Promise.all([ensureImagePoseLandmarker(), ensureSelfieSegmenter()]);
+  }, [anyFilled]);
 
   useEffect(() => {
     if (!submitting) {
@@ -211,6 +228,8 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
     visionScanIdRef.current = null;
     circWritePromiseRef.current = null;
     setCircNotice(null);
+    setCircFailReason(null);
+    onCircFailReason?.(null);
     setHeightMissing(false);
     setViewQuality({});
 
@@ -273,14 +292,24 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
           circWritePromiseRef.current = spine.circWritePromise;
         }
       }
+      let circSkipReason: string | undefined;
       if (circWritePromiseRef.current) {
         const circRes = await circWritePromiseRef.current;
         if (circRes && !circRes.ok && !circRes.skipped) {
           setCircNotice(CIRC_WRITE_FAIL_COPY);
           toast(CIRC_WRITE_FAIL_COPY, { icon: 'i' });
         }
+        if (circRes?.skipped) circSkipReason = circRes.reason;
       }
-      if (spine.heightMissing) {
+      const settledFail =
+        spine.circFailReason ??
+        (await spine.circFailPromise) ??
+        (isCircFailReason(circSkipReason) ? circSkipReason : null);
+      if (settledFail) {
+        setCircFailReason(settledFail);
+        onCircFailReason?.(settledFail);
+      }
+      if (spine.heightMissing || settledFail === 'height') {
         setHeightMissing(true);
       }
 
@@ -547,6 +576,11 @@ export function BodyScanUploader({ onComplete, onCancel, onGeometricMeasurements
           </div>
         </div>
       )}
+      {circFailReason && circFailReason !== 'height' ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <CircFailChip reason={circFailReason} />
+        </div>
+      ) : null}
       {circNotice && (
         <p data-testid="body-scan-circ-notice" className="text-xs text-[#FCA5A5]">
           {circNotice}

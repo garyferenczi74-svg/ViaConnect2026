@@ -29,6 +29,10 @@ import {
   type FormaVisionScanMode,
 } from '@/components/body-tracker/FormaVisionScanModeBar';
 import { BodyScanUploader, type BodyScanResult } from '@/components/body-tracker/BodyScanUploader';
+import { CircFailChip } from '@/components/body-tracker/CircFailChip';
+import { type CircFailReason } from '@/lib/arnold/scanning/circFailReason';
+import { ensureImagePoseLandmarker } from '@/lib/arnold/scanning/landmarkDetector';
+import { ensureSelfieSegmenter } from '@/lib/arnold/scanning/silhouetteProcessor';
 import { parsePositiveFinite } from '@/lib/scan/clinicalBodyMetrics';
 import { persistEnteredHeightForCurrentUser } from '@/lib/scan/persistEnteredHeight';
 import { BodyScanResults } from '@/components/body-tracker/BodyScanResults';
@@ -157,6 +161,7 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
   const [compositionPhase, setCompositionPhase] = useState<'idle' | 'running' | 'ok' | 'error'>('idle');
   const [setupMode, setSetupMode] = useState<FormaVisionScanMode>('live');
   const [uploadResult, setUploadResult] = useState<BodyScanResult | null>(null);
+  const [circFailReason, setCircFailReason] = useState<CircFailReason | null>(null);
 
   const framesRef = useRef(state.frames);
   framesRef.current = state.frames;
@@ -181,6 +186,12 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
     }
   }, [state.phase]);
   const submitAttemptRef = useRef(0);
+
+  useEffect(() => {
+    if (setupMode === 'upload' || state.phase === 'REVIEW' || state.phase === 'DONE') {
+      void Promise.all([ensureImagePoseLandmarker(), ensureSelfieSegmenter()]);
+    }
+  }, [setupMode, state.phase]);
 
   useEffect(() => {
     setVoiceEnabled(readVoicePreference());
@@ -692,6 +703,10 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
             if (converge.composition?.circWritePromise) {
               await converge.composition.circWritePromise;
             }
+            const liveFail =
+              converge.composition?.circFailReason ??
+              (converge.composition ? await converge.composition.circFailPromise : null);
+            setCircFailReason(liveFail);
             // Circ fail is best-effort — Ready / SUBMIT_OK stay on persist-ok.
             setCompositionPhase(converge.composition?.ok ? 'ok' : 'error');
           } catch {
@@ -724,6 +739,8 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
         if (spine.circWritePromise) {
           await spine.circWritePromise;
         }
+        const retryFail = spine.circFailReason ?? (await spine.circFailPromise);
+        setCircFailReason(retryFail);
         setCompositionPhase(spine.ok ? 'ok' : 'error');
       } catch {
         setCompositionPhase('error');
@@ -802,6 +819,7 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
                   <BodyScanUploader
                     onComplete={handleUploadComplete}
                     onCancel={handleUploadCancel}
+                    onCircFailReason={setCircFailReason}
                   />
                 )}
               </div>
@@ -1070,6 +1088,7 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
                   ? 'Scan photos saved. Composition analysis did not finish.'
                   : 'Scan saved.'}
           </p>
+          {circFailReason ? <CircFailChip reason={circFailReason} /> : null}
           {compositionPhase === 'error' && (
             <button
               type="button"

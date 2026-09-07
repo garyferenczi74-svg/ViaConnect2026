@@ -5,11 +5,18 @@
 // React component; progress events surfaced via onProgress callback.
 
 import { createClient } from '@/lib/supabase/client';
-import { processSilhouette, ensureSelfieSegmenter } from './silhouetteProcessor';
+import { processSilhouette, ensureSelfieSegmenter, awaitSelfieSegmenterSettled } from './silhouetteProcessor';
 import { detectLandmarks, ensureImagePoseLandmarker } from './landmarkDetector';
 import { assessQuality } from './scanQualityAssessor';
 import { extractMeasurements, unknownExtractedMeasurements } from './measurementEngine';
-import { classifyCircFail, circFailDetail, type CircViewFail } from './circFailReason';
+import {
+  classifyCircFail,
+  circFailDetail,
+  resolveSurfaceCircFail,
+  type CircFailReason,
+  type CircViewFail,
+} from './circFailReason';
+import { hasFiniteGeometricGirth } from '@/lib/body-tracker/composition/circWriteContract';
 import { analyzeAsymmetry } from './asymmetryAnalyzer';
 import { navyBodyFat } from './navyBodyFat';
 import { cunbaeBodyFat } from './cunbaeBodyFat';
@@ -106,6 +113,8 @@ export interface InMemoryPhotoInput {
    * confidence scoring reflects the actual capture quality.
    */
   onViewQuality?: (result: ViewQualityResult) => void;
+  /** Honest Analyze chip. Null when at least one finite girth was measured. */
+  onCircFail?: (reason: CircFailReason | null, viewFails: CircViewFail[]) => void;
 }
 
 /**
@@ -117,12 +126,19 @@ export interface InMemoryPhotoInput {
 export async function runInMemoryMeasurement(
   input: InMemoryPhotoInput,
 ): Promise<ExtractedMeasurements> {
-  const { photos, heightCm, sex, onProgress, onViewQuality } = input;
+  const { photos, heightCm, sex, onProgress, onViewQuality, onCircFail } = input;
   const report = (phase: ScanProgress['phase'], percent: number, message: string) =>
     onProgress?.({ phase, percent, message });
 
   report('loading_models', 5, 'Loading scan models');
-  await Promise.all([ensureImagePoseLandmarker(), ensureSelfieSegmenter()]);
+  let poseReady = await ensureImagePoseLandmarker();
+  if (!poseReady) {
+    poseReady = await ensureImagePoseLandmarker();
+  }
+  const selfieReady = await ensureSelfieSegmenter();
+  if (!selfieReady) {
+    await awaitSelfieSegmenterSettled();
+  }
 
   const poses: PoseId[] = ['front', 'back', 'left', 'right'];
   const progressSteps: Record<PoseId, ScanProgress['phase']> = {
@@ -239,6 +255,11 @@ export async function runInMemoryMeasurement(
   }
 
   report('complete', 100, 'Client-side measurement complete');
+  const circFailReason = resolveSurfaceCircFail({
+    viewFails,
+    hasFiniteGirth: hasFiniteGeometricGirth(measurements),
+  });
+  onCircFail?.(circFailReason, viewFails);
   safeLog.info(
     'arnold.scanning.inmemory',
     'In-memory scan measurement complete',
@@ -246,6 +267,7 @@ export async function runInMemoryMeasurement(
       viewsProcessed: silhouettes.length,
       totalViews: poses.filter((p) => p in photos).length,
       viewFails,
+      circFailReason,
       // Height stamp is NOT the live circ gate. Girth POST is hasFiniteGeometricGirth.
       circGate: 'hasFiniteGeometricGirth',
     },

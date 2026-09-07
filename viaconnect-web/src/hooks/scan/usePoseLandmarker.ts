@@ -60,8 +60,16 @@ export function detectWasmSimd(): boolean {
 
 /** Shared budget for the whole GPU-then-CPU init sequence (see
  * loadPoseLandmarkerWithFallback's header comment for why this is one
- * shared window rather than one timeout per attempt). */
+ * shared window rather than one timeout per attempt). VIDEO live QA. */
 export const POSE_LANDMARKER_INIT_TIMEOUT_MS = 8000;
+
+/**
+ * IMAGE still-photo init: GPU and CPU each get their own window so a hung
+ * GPU cold-start does not skip CPU. Analyze already budgets 60s. Never
+ * invents landmarks — a true miss still fail-opens upstream.
+ */
+export const IMAGE_POSE_GPU_TIMEOUT_MS = 12000;
+export const IMAGE_POSE_CPU_TIMEOUT_MS = 12000;
 
 /** detectForVideo throttle floor: 1000ms / 12fps = 83.3ms, rounded down to
  * 80ms per the spec's "about 12fps, throttled to 80ms between calls". */
@@ -212,6 +220,38 @@ export async function loadPoseLandmarkerWithFallback<T extends { close(): void }
       simdSupported: detectWasmSimd(),
     });
     return { ok: false, reason: error instanceof Error ? error.message : 'unknown init failure' };
+  }
+}
+
+/**
+ * IMAGE-mode init: GPU window, then a separate CPU window. Do not share the
+ * VIDEO 8s budget — a hung GPU there never reaches CPU, which is why
+ * still-photo detect was caching fail-open `{}` and skipping nose+ankles.
+ */
+export async function loadImagePoseLandmarkerWithFallback<T extends { close(): void } = ImagePoseLandmarkerLike>(
+  create: (delegate: PoseLandmarkerDelegate) => Promise<T> = createImagePoseLandmarker as (
+    delegate: PoseLandmarkerDelegate,
+  ) => Promise<T>,
+  gpuTimeoutMs: number = IMAGE_POSE_GPU_TIMEOUT_MS,
+  cpuTimeoutMs: number = IMAGE_POSE_CPU_TIMEOUT_MS,
+): Promise<PoseLandmarkerLoadResult<T>> {
+  try {
+    const instance = await withTimeout(create('GPU'), gpuTimeoutMs, 'scan.imagePoseLandmarker.gpu');
+    return { ok: true, instance, delegate: 'GPU' };
+  } catch (gpuError) {
+    safeLog.warn(LOG_SCOPE, 'IMAGE GPU delegate init failed, trying CPU with its own budget', {
+      error: gpuError,
+    });
+    try {
+      const instance = await withTimeout(create('CPU'), cpuTimeoutMs, 'scan.imagePoseLandmarker.cpu');
+      return { ok: true, instance, delegate: 'CPU' };
+    } catch (cpuError) {
+      safeLog.error(LOG_SCOPE, 'IMAGE PoseLandmarker init failed (GPU then CPU); no invented landmarks', {
+        error: cpuError,
+        simdSupported: detectWasmSimd(),
+      });
+      return { ok: false, reason: cpuError instanceof Error ? cpuError.message : 'unknown init failure' };
+    }
   }
 }
 

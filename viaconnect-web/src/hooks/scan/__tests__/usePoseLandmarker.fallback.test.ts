@@ -22,10 +22,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   loadPoseLandmarkerWithFallback,
+  loadImagePoseLandmarkerWithFallback,
   shouldThrottleDetect,
   toQaLandmarks,
   DETECT_VIDEO_MIN_INTERVAL_MS,
   POSE_LANDMARKER_INIT_TIMEOUT_MS,
+  IMAGE_POSE_GPU_TIMEOUT_MS,
+  IMAGE_POSE_CPU_TIMEOUT_MS,
   type PoseLandmarkerLike,
 } from '../usePoseLandmarker';
 import { MEDIAPIPE_ASSET_VERSION } from '@/lib/scan/mediapipeVersion';
@@ -127,6 +130,37 @@ describe('loadPoseLandmarkerWithFallback', () => {
 
   it('uses the exported 8 second default init timeout constant', () => {
     expect(POSE_LANDMARKER_INIT_TIMEOUT_MS).toBe(8000);
+  });
+});
+
+describe('loadImagePoseLandmarkerWithFallback', () => {
+  it('gives GPU and CPU separate 12s windows so hung GPU still reaches CPU', async () => {
+    expect(IMAGE_POSE_GPU_TIMEOUT_MS).toBe(12000);
+    expect(IMAGE_POSE_CPU_TIMEOUT_MS).toBe(12000);
+    vi.useFakeTimers();
+    try {
+      const cpuInstance = fakeInstance();
+      const create = vi.fn((delegate: 'GPU' | 'CPU') => {
+        if (delegate === 'GPU') return new Promise<PoseLandmarkerLike>(() => {});
+        return Promise.resolve(cpuInstance);
+      });
+      const pending = loadImagePoseLandmarkerWithFallback(create, 40, 40);
+      await vi.advanceTimersByTimeAsync(40);
+      const result = await pending;
+      expect(result).toEqual({ ok: true, instance: cpuInstance, delegate: 'CPU' });
+      expect(create).toHaveBeenCalledWith('GPU');
+      expect(create).toHaveBeenCalledWith('CPU');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('fail-open ok:false after both IMAGE windows lose — never invents landmarks', async () => {
+    const create = vi.fn(async () => {
+      throw new Error('IMAGE WASM init failed');
+    });
+    const result = await loadImagePoseLandmarkerWithFallback(create, 20, 20);
+    expect(result.ok).toBe(false);
   });
 });
 

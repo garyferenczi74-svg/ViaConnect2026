@@ -13,6 +13,8 @@ const okSpine = (): FormaVisionAnalyzeSpine => ({
   persistRes: { ok: true, entryId: 'e1' },
   flushCirc: () => undefined,
   circWritePromise: null,
+  circFailReason: null,
+  circFailPromise: Promise.resolve(null),
 });
 
 const failSpine = (error: string): FormaVisionAnalyzeSpine => ({
@@ -20,6 +22,8 @@ const failSpine = (error: string): FormaVisionAnalyzeSpine => ({
   persistRes: { ok: false, reason: 'analyze_failed' },
   flushCirc: () => undefined,
   circWritePromise: null,
+  circFailReason: null,
+  circFailPromise: Promise.resolve(null),
   error,
 });
 

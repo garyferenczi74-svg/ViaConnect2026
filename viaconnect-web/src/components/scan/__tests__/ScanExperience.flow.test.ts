@@ -709,6 +709,9 @@ describe('ScanExperience wiring: live DONE converges onto the shared analyzer', 
     expect(src).toContain('analyzeLiveFramesOnFormaVisionSpine');
     expect(src).toContain("compositionPhase === 'ok' ? 'View 3D composition' : 'Open FormaVision'");
     expect(src).toContain('formavisionAfterScanHref');
+    expect(src).toContain('CircFailChip');
+    expect(src).toContain('circFailPromise');
+    expect(src).toContain('ensureImagePoseLandmarker');
   });
 });
 

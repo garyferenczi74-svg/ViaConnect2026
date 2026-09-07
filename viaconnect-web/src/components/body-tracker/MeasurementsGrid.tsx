@@ -14,6 +14,8 @@ import {
   LOG_MEASUREMENTS_CTA,
   MEASUREMENTS_EMPTY_COPY,
 } from '@/lib/body-tracker/composition/circWriteContract';
+import { CircFailChip } from './CircFailChip';
+import type { CircFailReason } from '@/lib/arnold/scanning/circFailReason';
 
 interface MeasurementsGridProps {
   data: CircumferenceMeasurements | null;
@@ -26,6 +28,8 @@ interface MeasurementsGridProps {
    */
   confidence?: CircumferenceConfidence | null;
   onLogMeasurements?: () => void;
+  /** Last photo-Analyze fail. Shown on empty CTA only. Never invents cm. */
+  circFailReason?: CircFailReason | null;
 }
 
 export function MeasurementsGrid({
@@ -34,6 +38,7 @@ export function MeasurementsGrid({
   unit,
   confidence,
   onLogMeasurements,
+  circFailReason,
 }: MeasurementsGridProps) {
   const empty = allCircumferenceCardsEmpty(data);
   return (
@@ -45,7 +50,10 @@ export function MeasurementsGrid({
         >
           <div className="flex min-w-0 items-start gap-2">
             <Ruler className="mt-0.5 h-4 w-4 shrink-0 text-[#2DA5A0]" strokeWidth={1.5} aria-hidden />
-            <p className="text-sm text-white/70">{MEASUREMENTS_EMPTY_COPY}</p>
+            <div className="min-w-0 space-y-2">
+              <p className="text-sm text-white/70">{MEASUREMENTS_EMPTY_COPY}</p>
+              {circFailReason ? <CircFailChip reason={circFailReason} /> : null}
+            </div>
           </div>
           <button
             type="button"

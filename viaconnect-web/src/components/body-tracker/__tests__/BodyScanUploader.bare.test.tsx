@@ -78,3 +78,14 @@ describe('BodyScanUploader preview bake contract', () => {
     expect(src).toMatch(/photoWhatYouDoNotGet\(retainFrbl\)/);
   });
 });
+
+describe('BodyScanUploader circ fail + IMAGE pre-warm', () => {
+  it('pre-warms IMAGE pose and selfie on first photo and surfaces circFailReason', () => {
+    const src = readFileSync(join(process.cwd(), 'src/components/body-tracker/BodyScanUploader.tsx'), 'utf8');
+    expect(src).toMatch(/ensureImagePoseLandmarker/);
+    expect(src).toMatch(/ensureSelfieSegmenter/);
+    expect(src).toMatch(/circFailPromise/);
+    expect(src).toMatch(/CircFailChip/);
+    expect(src).toMatch(/onCircFailReason/);
+  });
+});

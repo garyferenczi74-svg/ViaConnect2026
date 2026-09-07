@@ -8,6 +8,11 @@ import { createClient } from '@/lib/supabase/client';
 import { runInMemoryMeasurement } from '@/lib/arnold/scanning/runScanAnalysis';
 import type { ViewQualityResult } from '@/lib/arnold/scanning/runScanAnalysis';
 import type { ExtractedMeasurements } from '@/lib/arnold/scanning/types';
+import {
+  resolveSurfaceCircFail,
+  type CircFailReason,
+  type CircViewFail,
+} from '@/lib/arnold/scanning/circFailReason';
 import type { PoseId } from '@/lib/arnold/types';
 import { persistScan } from './persistScanClient';
 import {
@@ -105,6 +110,8 @@ export interface FormaVisionAnalyzeSpine {
   circWrite?: CircWriteResult | null;
   heightMissing?: boolean;
   heightMissingCopy?: string;
+  circFailReason?: CircFailReason | null;
+  circFailPromise: Promise<CircFailReason | null>;
   error?: string;
 }
 
@@ -170,16 +177,17 @@ export async function liveFramesToFormaVisionPhotos(
 export async function writeCircumferencesFromScan(
   measurements: ExtractedMeasurements,
   scanId: string,
-  opts?: { photoSessionId?: string | null },
+  opts?: { photoSessionId?: string | null; circFailReason?: CircFailReason | null },
 ): Promise<CircWriteResult> {
   if (!hasFiniteGeometricGirth(measurements)) {
+    const reason = opts?.circFailReason ?? 'all_unknown';
     safeLog.info('formavision.analyze', 'skipping all-UNKNOWN circumference payload', {
       scanId,
-      reason: 'all_unknown',
+      reason,
       // Height stamp is NOT the live circ gate. Live POST requires a finite girth.
       circGate: 'hasFiniteGeometricGirth',
     });
-    return { ok: true, skipped: true, reason: 'all_unknown' };
+    return { ok: true, skipped: true, reason };
   }
   const photoSessionId = resolveCircumferenceScanId({
     visionScanId: scanId,
@@ -244,6 +252,8 @@ export async function runFormaVisionAnalyzeSpine(
     circWritePromise: null,
     circWrite: null,
     heightMissing: false,
+    circFailReason: null,
+    circFailPromise: Promise.resolve(null),
     error: sanitizeAnalyzeUserError(error),
   });
 
@@ -293,13 +303,30 @@ export async function runFormaVisionAnalyzeSpine(
   let heightMissing = false;
   let resolvedHeightCm: number | null = args.heightCm ?? null;
   let resolvedSex: 'male' | 'female' | null = args.sex ?? null;
+  let circFailReason: CircFailReason | null = null;
+  let viewFails: CircViewFail[] = [];
+  let settleCircFail: (reason: CircFailReason | null) => void = () => undefined;
+  const circFailPromise = new Promise<CircFailReason | null>((resolve) => {
+    settleCircFail = resolve;
+  });
   const circState: { promise: Promise<CircWriteResult> | null } = { promise: null };
+
+  const settleSurfaceCircFail = (measurements: ExtractedMeasurements | null) => {
+    circFailReason = resolveSurfaceCircFail({
+      heightMissing,
+      viewFails,
+      hasFiniteGirth: measurements ? hasFiniteGeometricGirth(measurements) : false,
+    });
+    settleCircFail(circFailReason);
+  };
 
   const flushCirc = () => {
     const pending = geometricMeasurements;
     if (pending && visionScanId && !writeTriggered) {
       writeTriggered = true;
-      circState.promise = writeCircumferencesFromScan(pending, visionScanId);
+      circState.promise = writeCircumferencesFromScan(pending, visionScanId, {
+        circFailReason,
+      });
     }
   };
 
@@ -307,7 +334,10 @@ export async function runFormaVisionAnalyzeSpine(
     const pending = geometricMeasurements;
     if (!pending || !visionScanId || !photoSessionId || t6Triggered) return;
     t6Triggered = true;
-    const t6 = writeCircumferencesFromScan(pending, visionScanId, { photoSessionId });
+    const t6 = writeCircumferencesFromScan(pending, visionScanId, {
+      photoSessionId,
+      circFailReason,
+    });
     circState.promise = circState.promise
       ? circState.promise.then(async (first) => {
           const second = await t6;
@@ -347,6 +377,7 @@ export async function runFormaVisionAnalyzeSpine(
     const { heightCm, sex } = await resolveHeightAndSex(userId);
     if (!heightCm) {
       heightMissing = true;
+      settleSurfaceCircFail(null);
       safeLog.warn(
         'formavision.analyze',
         'Skipping geometric measurement - height unknown from CAQ, clinical, and body_goals',
@@ -366,9 +397,17 @@ export async function runFormaVisionAnalyzeSpine(
       heightCm,
       sex,
       onViewQuality: args.onViewQuality,
+      onCircFail: (reason, fails) => {
+        viewFails = fails;
+        circFailReason = reason;
+      },
     });
-    if (!mounted()) return null;
+    if (!mounted()) {
+      settleSurfaceCircFail(measurements);
+      return null;
+    }
     geometricMeasurements = measurements;
+    settleSurfaceCircFail(measurements);
     args.onGeometricMeasurements?.(measurements);
     return measurements;
   }
@@ -377,12 +416,20 @@ export async function runFormaVisionAnalyzeSpine(
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       const userId = sessionData.session?.user?.id;
-      if (!userId || !mounted()) return;
+      if (!userId || !mounted()) {
+        settleSurfaceCircFail(null);
+        return;
+      }
       const measurements = await runGeometricFromPhotos(userId);
-      if (!measurements) return;
+      if (!measurements) {
+        if (!heightMissing) settleSurfaceCircFail(null);
+        return;
+      }
       flushCirc();
       flushT6();
     } catch (err) {
+      viewFails = [...viewFails, { pose: 'extract', reason: 'extract_throw', detail: err instanceof Error ? err.message : String(err) }];
+      settleSurfaceCircFail(geometricMeasurements);
       safeLog.warn('formavision.analyze', 'Geometric measurement failed (non-fatal, no invented cm)', {
         reason: 'extract_throw',
         error: err instanceof Error ? err.message : String(err),
@@ -478,6 +525,8 @@ export async function runFormaVisionAnalyzeSpine(
     },
     heightMissing,
     heightMissingCopy: heightMissing ? HEIGHT_MISSING_GEOMETRIC_COPY : undefined,
+    circFailReason,
+    circFailPromise,
     error: persistRes.ok
       ? undefined
       : persistRes.reason === 'timeout'
