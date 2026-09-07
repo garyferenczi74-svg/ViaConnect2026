@@ -346,7 +346,7 @@ export async function runFormaVisionAnalyzeSpine(
       heightMissing = true;
       safeLog.warn(
         'formavision.analyze',
-        'Skipping geometric measurement - height unknown from clinical, body_goals, and CAQ',
+        'Skipping geometric measurement - height unknown from CAQ, clinical, and body_goals',
         { userId },
       );
       return null;

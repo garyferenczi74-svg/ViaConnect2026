@@ -11,6 +11,7 @@ import {
   parseCaqWeightKg,
   parsePositiveFinite,
   persistEnteredHeightCm,
+  resolveHeightCm,
   upsertClinicalBodyMetrics,
   writeThroughCaqDemographicsToClinical,
   type ClinicalMetricsClient,
@@ -170,6 +171,49 @@ describe('upsertClinicalBodyMetrics / write-through', () => {
     expect(wrote.wrote.heightCm).toBe(178);
     expect(upserts[0]?.payload.height_cm).toBe(178);
     expect(JSON.stringify(upserts[0]?.payload)).not.toMatch(/"height_cm":170/);
+  });
+});
+
+describe('resolveHeightCm CAQ-first order', () => {
+  it('returns caq_demographics when clinical is also present', async () => {
+    const { client } = mockClient({
+      clinical_assessments: { row: { height_cm: 178 } },
+      body_goals: { row: { height_in: GARY_HEIGHT_IN } },
+      assessment_results: { row: { data: { ...GARY_CAQ } } },
+    });
+    const resolved = await resolveHeightCm(client, 'user-gary');
+    expect(resolved).toEqual({ heightCm: 180, source: 'caq_demographics' });
+  });
+
+  it('falls back to clinical, then body_goals, and never invents', async () => {
+    const clinicalOnly = mockClient({
+      clinical_assessments: { row: { height_cm: 178 } },
+      body_goals: { row: { height_in: GARY_HEIGHT_IN } },
+      assessment_results: { row: { data: {} } },
+    });
+    expect(await resolveHeightCm(clinicalOnly.client, 'user-gary')).toEqual({
+      heightCm: 178,
+      source: 'clinical_assessment',
+    });
+
+    const goalsOnly = mockClient({
+      clinical_assessments: { row: null },
+      body_goals: { row: { height_in: GARY_HEIGHT_IN } },
+      assessment_results: { row: { data: {} } },
+    });
+    const fromGoals = await resolveHeightCm(goalsOnly.client, 'user-gary');
+    expect(fromGoals.source).toBe('body_goals');
+    expect(fromGoals.heightCm).toBeCloseTo(180.086, 3);
+
+    const empty = mockClient({
+      clinical_assessments: { row: null },
+      body_goals: { row: null },
+      assessment_results: { row: { data: {} } },
+    });
+    expect(await resolveHeightCm(empty.client, 'user-1')).toEqual({
+      heightCm: null,
+      source: null,
+    });
   });
 });
 

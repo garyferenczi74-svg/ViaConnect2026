@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 // Prompt 231: /api/scan/prepare route tests. Client-direct signed-upload
 // flow: this route never receives image bytes. It idempotently
@@ -56,21 +58,62 @@ const FULL_POSES = [
   { pose: 'left', skipped: false },
 ];
 
+type SessionRow = {
+  id: string;
+  user_id: string;
+  height_cm_at_scan: number | null;
+  height_cm_source: string | null;
+};
+
 /**
  * Models a persistent store keyed by scanId so idempotency and cross-user
  * collision can be exercised: upsert "creates" a row only if none exists for
- * that id (ON CONFLICT (id) DO NOTHING semantics never error); the
- * ownership-scoped select only ever resolves a row that matches BOTH id and
- * user_id.
+ * that id (ON CONFLICT (id) DO NOTHING semantics never error); a later
+ * user-scoped UPDATE may refresh height_cm_at_scan / height_cm_source when
+ * resolve returns a finite height. Ownership-scoped select only ever
+ * resolves a row that matches BOTH id and user_id.
  */
 function installSessionsStore() {
-  const store = new Map<string, { id: string; user_id: string }>();
+  const store = new Map<string, SessionRow>();
   const upsert = vi.fn((row: Record<string, unknown>) => {
     const id = row.id as string;
     if (!store.has(id)) {
-      store.set(id, { id, user_id: row.user_id as string });
+      store.set(id, {
+        id,
+        user_id: row.user_id as string,
+        height_cm_at_scan:
+          typeof row.height_cm_at_scan === 'number' ? row.height_cm_at_scan : null,
+        height_cm_source:
+          typeof row.height_cm_source === 'string' ? row.height_cm_source : null,
+      });
     }
     return Promise.resolve({ data: null, error: null });
+  });
+  const update = vi.fn((patch: Record<string, unknown>) => {
+    const filters: Record<string, unknown> = {};
+    const apply = () => {
+      const row = store.get(filters.id as string);
+      if (row && row.user_id === filters.user_id) {
+        if ('height_cm_at_scan' in patch) {
+          row.height_cm_at_scan =
+            typeof patch.height_cm_at_scan === 'number' ? patch.height_cm_at_scan : null;
+        }
+        if ('height_cm_source' in patch) {
+          row.height_cm_source =
+            typeof patch.height_cm_source === 'string' ? patch.height_cm_source : null;
+        }
+      }
+      return Promise.resolve({ data: null, error: null });
+    };
+    const chain = {
+      eq: vi.fn((col: string, val: unknown) => {
+        filters[col] = val;
+        return chain;
+      }),
+      then: (onFulfilled: (value: { data: null; error: null }) => unknown, onRejected?: (reason: unknown) => unknown) =>
+        apply().then(onFulfilled, onRejected),
+    };
+    return chain;
   });
   const select = vi.fn(() => {
     const filters: Record<string, unknown> = {};
@@ -90,10 +133,10 @@ function installSessionsStore() {
     return chain;
   });
   mocks.adminFrom.mockImplementation((table: string) => {
-    if (table === 'body_photo_sessions') return { upsert, select };
+    if (table === 'body_photo_sessions') return { upsert, update, select };
     throw new Error(`unexpected table ${table}`);
   });
-  return { upsert, select, store };
+  return { upsert, update, select, store };
 }
 
 function buildRequest(body: Record<string, unknown>) {
@@ -228,5 +271,82 @@ describe('POST /api/scan/prepare', () => {
     const row = upsert.mock.calls[0][0] as Record<string, unknown>;
     expect(row.device_info).toEqual({ family: 'Safari' });
     expect(Object.keys(row.device_info as Record<string, unknown>)).toEqual(['family']);
+  });
+
+  it('refreshes height_cm_at_scan / height_cm_source on retry when resolve is finite', async () => {
+    mocks.supabaseGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } });
+    const { update, store } = installSessionsStore();
+    store.set(SCAN_ID, {
+      id: SCAN_ID,
+      user_id: 'user-1',
+      height_cm_at_scan: null,
+      height_cm_source: null,
+    });
+    mocks.readResolvedHeightCm.mockResolvedValue({
+      heightCm: 180,
+      source: 'caq_demographics',
+    });
+
+    const res = await POST(buildRequest({ scanId: SCAN_ID, poses: FULL_POSES }) as never);
+    const body = await res.json();
+    expect(body.ok).toBe(true);
+    expect(update).toHaveBeenCalledTimes(1);
+    expect(update.mock.calls[0][0]).toEqual({
+      height_cm_at_scan: 180,
+      height_cm_source: 'caq_demographics',
+    });
+    expect(store.get(SCAN_ID)).toMatchObject({
+      user_id: 'user-1',
+      height_cm_at_scan: 180,
+      height_cm_source: 'caq_demographics',
+    });
+  });
+
+  it('does not invent a height stamp when resolve is UNKNOWN', async () => {
+    mocks.supabaseGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } });
+    const { update, store } = installSessionsStore();
+    mocks.readResolvedHeightCm.mockResolvedValue({ heightCm: null, source: null });
+
+    const res = await POST(buildRequest({ scanId: SCAN_ID, poses: FULL_POSES }) as never);
+    expect((await res.json()).ok).toBe(true);
+    expect(update).not.toHaveBeenCalled();
+    expect(store.get(SCAN_ID)?.height_cm_at_scan).toBeNull();
+    expect(store.get(SCAN_ID)?.height_cm_source).toBeNull();
+  });
+
+  it('does not refresh another user\'s height stamp on conflict', async () => {
+    const { update, store } = installSessionsStore();
+    store.set(SCAN_ID, {
+      id: SCAN_ID,
+      user_id: 'owner-user',
+      height_cm_at_scan: 178,
+      height_cm_source: 'clinical_assessment',
+    });
+    mocks.supabaseGetUser.mockResolvedValue({ data: { user: { id: 'attacker-user' } } });
+    mocks.readResolvedHeightCm.mockResolvedValue({
+      heightCm: 180,
+      source: 'caq_demographics',
+    });
+
+    const res = await POST(buildRequest({ scanId: SCAN_ID, poses: FULL_POSES }) as never);
+    expect(res.status).toBe(409);
+    expect(update).toHaveBeenCalledTimes(1);
+    expect(store.get(SCAN_ID)).toMatchObject({
+      user_id: 'owner-user',
+      height_cm_at_scan: 178,
+      height_cm_source: 'clinical_assessment',
+    });
+  });
+});
+
+describe('prepare height stamp contract', () => {
+  it('refreshes finite height columns after ignoreDuplicates session insert', () => {
+    const src = readFileSync(join(process.cwd(), 'src/app/api/scan/prepare/route.ts'), 'utf8');
+    expect(src).toMatch(/ignoreDuplicates:\s*true/);
+    expect(src).toMatch(/heightCm !== null && Number\.isFinite\(heightCm\)/);
+    expect(src).toMatch(/\.update\(\s*\{\s*height_cm_at_scan:\s*heightCm,\s*height_cm_source:\s*resolvedHeight\.source,/);
+    expect(src).toMatch(/\.eq\('id',\s*scanId\)/);
+    expect(src).toMatch(/\.eq\('user_id',\s*user\.id\)/);
+    expect(src).not.toMatch(/heightCm\s*=\s*170|heightCm\s*\?\?\s*170/);
   });
 });

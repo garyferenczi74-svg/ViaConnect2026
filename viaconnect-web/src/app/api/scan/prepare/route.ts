@@ -157,9 +157,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const admin: SupabaseClient = createAdminClient();
 
-    // INSERT ... ON CONFLICT (id) DO NOTHING. Never read this result for
-    // data - a duplicate resolves with no row and no error. The follow-up
-    // SELECT below is the sole authority on the session's contents.
+    // Session identity: INSERT ... ON CONFLICT (id) DO NOTHING. Never read
+    // this result for data — a duplicate resolves with no row and no error.
+    // The follow-up SELECT below is the sole authority on session existence.
+    // Height stamp honesty: ignoreDuplicates freezes height_cm_at_scan /
+    // height_cm_source after first insert, so a finite resolved height is
+    // refreshed with a user-scoped UPDATE of those two columns only.
     const upsertResult = await dbCall(
       admin.from('body_photo_sessions').upsert(
         {
@@ -179,6 +182,24 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (upsertResult.error) {
       safeLog.error(SCOPE, 'session upsert failed', { error: upsertResult.error });
       return NextResponse.json({ ok: false, error: 'session_create_failed' }, { status: 500 });
+    }
+
+    if (heightCm !== null && Number.isFinite(heightCm)) {
+      const stampResult = await dbCall(
+        admin
+          .from('body_photo_sessions')
+          .update({
+            height_cm_at_scan: heightCm,
+            height_cm_source: resolvedHeight.source,
+          })
+          .eq('id', scanId)
+          .eq('user_id', user.id),
+        'sessionHeightStamp',
+      );
+      if (stampResult.error) {
+        safeLog.error(SCOPE, 'session height stamp failed', { error: stampResult.error });
+        return NextResponse.json({ ok: false, error: 'session_create_failed' }, { status: 500 });
+      }
     }
 
     // Authoritative read, scoped to this user. A scanId already owned by

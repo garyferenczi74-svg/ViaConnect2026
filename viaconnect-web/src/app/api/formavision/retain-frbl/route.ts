@@ -11,8 +11,10 @@ import { inMemoryRateLimit } from '@/lib/utils/inMemoryRateLimit';
 import { safeLog } from '@/lib/utils/safe-log';
 import { FORMAVISION_PHOTO_PROTOCOL } from '@/lib/scan/scanProtocols';
 import { POSE_ORDER, type PoseId } from '@/lib/scan/poses';
+import { readResolvedHeightCm } from '@/lib/scan/readHeightCm';
 import { startMeshyForReadySession } from '@/lib/formavision/meshy/startMeshyForReadySession';
 import { startTripoForReadySession } from '@/lib/formavision/tripo/startTripoForReadySession';
+import type { Database } from '@/lib/supabase/types';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -143,14 +145,24 @@ async function prepareRetain(
   }
 
   const sessionId = randomUUID();
+  // Same cookie createClient() as /api/scan/prepare — never the admin client.
+  const supabase = await createClient();
+  const resolvedHeight = await readResolvedHeightCm(supabase, userId);
+  const heightCm = resolvedHeight.heightCm;
+  const sessionRow: Database['public']['Tables']['body_photo_sessions']['Insert'] = {
+    id: sessionId,
+    user_id: userId,
+    protocol: FORMAVISION_PHOTO_PROTOCOL,
+    capture_status: 'uploading',
+  };
+  // Gary HARD lock: stamp finite CAQ-first height only. Never invent.
+  if (heightCm !== null && Number.isFinite(heightCm)) {
+    sessionRow.height_cm_at_scan = heightCm;
+    sessionRow.height_cm_source = resolvedHeight.source;
+  }
   const created = await withTimeout<{ error: { message: string } | null }>(
     Promise.resolve(
-      admin.from('body_photo_sessions').insert({
-        id: sessionId,
-        user_id: userId,
-        protocol: FORMAVISION_PHOTO_PROTOCOL,
-        capture_status: 'uploading',
-      }),
+      admin.from('body_photo_sessions').insert(sessionRow),
     ) as Promise<{ error: { message: string } | null }>,
     DB_TIMEOUT_MS,
     `${SCOPE}.sessionInsert`,
