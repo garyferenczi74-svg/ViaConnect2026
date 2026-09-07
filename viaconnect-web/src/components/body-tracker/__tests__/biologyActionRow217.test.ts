@@ -68,6 +68,8 @@ describe('Prompt 217 CompositionSectionToggle (superseded by Brief 61)', () => {
     );
     expect(src).toMatch(/grid-cols-2/);
     expect(src).toMatch(/min-h-\[52px\]/);
+    expect(src).toMatch(/rounded-xl/);
+    expect(src).toMatch(/text-foreground/);
     expect(src).not.toMatch(/overflow-x-auto/);
     expect(src).not.toMatch(/snap-x/);
     expect(src).not.toMatch(/flex-wrap/);

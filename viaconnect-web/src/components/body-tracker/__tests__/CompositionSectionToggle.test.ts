@@ -84,10 +84,15 @@ describe('CompositionSectionToggle (Brief 61 layout)', () => {
     expect(html).toContain('py-3');
     expect(html).toContain('px-2');
     expect(html).toContain('text-sm');
+    expect(html).toContain('rounded-xl');
+    expect(html).toContain('text-foreground');
+    expect(html).toContain('h-[52px]');
     expect(html).not.toContain('overflow-x-auto');
     expect(html).not.toContain('snap-x');
     expect(html).not.toContain('snap-mandatory');
     expect(html).not.toContain('snap-start');
+    expect(html).not.toContain('truncate');
+    expect(html).not.toContain('text-ellipsis');
   });
 
   it('keeps tab order Body Fat, Muscle Mass, Measurements, FormaVision', () => {
@@ -107,15 +112,24 @@ describe('CompositionSectionToggle (Brief 61 layout)', () => {
     expect(formavision).toBeGreaterThan(measurements);
   });
 
-  it('does not reintroduce tiny scroll chips in source (desktop is md row)', () => {
+  it('locks Picasso DESIGN-READY tokens (Log Data glass, teal active, 1280 row)', () => {
     expect(TOGGLE_SRC).toMatch(/grid-cols-2/);
-    expect(TOGGLE_SRC).toMatch(/md:flex/);
+    expect(TOGGLE_SRC).toMatch(/gap-2/);
+    expect(TOGGLE_SRC).toMatch(/xl:flex/);
+    expect(TOGGLE_SRC).not.toMatch(/md:flex/);
     expect(TOGGLE_SRC).not.toMatch(/overflow-x-auto/);
     expect(TOGGLE_SRC).not.toMatch(/snap-x/);
+    expect(TOGGLE_SRC).not.toMatch(/className=.*truncate|truncate /);
+    expect(TOGGLE_SRC).not.toMatch(/rounded-full/);
+    expect(TOGGLE_SRC).toMatch(/rounded-xl/);
+    expect(TOGGLE_SRC).toMatch(/text-foreground/);
     expect(TOGGLE_SRC).toMatch(/size=\{20\}/);
     expect(TOGGLE_SRC).toMatch(/strokeWidth=\{1\.5\}/);
     expect(TOGGLE_SRC).toMatch(/layoutId="composition-pill"/);
     expect(TOGGLE_SRC).toMatch(/includeFormaVision/);
-    expect(TOGGLE_SRC).toMatch(/rgba\(255,255,255,0\.85\)/);
+    expect(TOGGLE_SRC).toMatch(/45,165,160|#2DA5A0/);
+    expect(TOGGLE_SRC).toMatch(/30,48,84|#1E3054/);
+    expect(TOGGLE_SRC).not.toMatch(/#5B8DEF|#2A4C9E/);
+    expect(TOGGLE_SRC).not.toMatch(/rgba\(255,255,255,0\.[0-9]+\)/);
   });
 });
