@@ -168,7 +168,7 @@ describe('T2 height gate honesty', () => {
     expect(analyze).toMatch(/HEIGHT_MISSING_GEOMETRIC_COPY/);
     expect(analyze).toMatch(/Skipping geometric measurement/);
     expect(analyze).toMatch(/readResolvedHeightCm/);
-    expect(analyze).toMatch(/height unknown from clinical, body_goals, and CAQ/);
+    expect(analyze).toMatch(/height unknown from CAQ, clinical, and body_goals/);
     expect(analyze).not.toMatch(/\.from\('clinical_assessments'\)/);
     expect(analyze).not.toMatch(/heightCm\s*=\s*170/);
     expect(analyze).not.toMatch(/heightCm\s*\?\?\s*1[567]\d/);

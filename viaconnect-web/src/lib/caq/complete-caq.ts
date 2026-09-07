@@ -81,8 +81,8 @@ export async function completeCAQAndTriggerEngines(): Promise<{
     }
 
     // ═══ STEP 1.4: Write-through CAQ height/weight into clinical_assessments ═══
-    // FormaVision geometric reads clinical_assessments.height_cm. Web CAQ used
-    // to persist only assessment_results / body_goals. Copy finite values only.
+    // clinical_assessments.height_cm remains write SSOT (backfill/upsert OK).
+    // Geometric READ is CAQ-first via resolveHeightCm. Copy finite values only.
     try {
       const { data: phase1 } = await supabase
         .from("assessment_results")

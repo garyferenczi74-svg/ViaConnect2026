@@ -37,18 +37,31 @@ describe('readHeightCm units lock comments', () => {
     expect(reader).toMatch(/cm string; never inches/);
     expect(reader).toMatch(/inches → cm/);
     expect(reader.indexOf('cm string; never inches')).toBeLessThan(
-      reader.indexOf('inches → cm'),
+      reader.indexOf('already cm'),
     );
+    expect(reader.indexOf('already cm')).toBeLessThan(reader.indexOf('inches → cm'));
     expect(reader).not.toMatch(/heightCm\s*=\s*170|heightCm\s*\?\?\s*170/);
   });
 });
 
 describe('readHeightCm ordered fallback', () => {
-  it('prefers clinical_assessments.height_cm over CAQ and body_goals', async () => {
+  it('prefers CAQ demographics over clinical_assessments and body_goals', async () => {
     const supabase = mockClient({
       clinical_assessments: { row: { height_cm: 178 } },
       body_goals: { row: { height_in: GARY_HEIGHT_IN } },
       assessment_results: { row: { data: { ...GARY_CAQ } } },
+    });
+    const resolved = await readResolvedHeightCm(supabase, 'user-gary');
+    expect(resolved).toEqual({ heightCm: 180, source: 'caq_demographics' });
+    expect(await readHeightCm(supabase, 'user-gary')).toBe(180);
+    expect(resolved.heightCm).not.toBe(178);
+  });
+
+  it('uses clinical_assessments.height_cm when CAQ is empty', async () => {
+    const supabase = mockClient({
+      clinical_assessments: { row: { height_cm: 178 } },
+      body_goals: { row: { height_in: GARY_HEIGHT_IN } },
+      assessment_results: { row: { data: {} } },
     });
     const resolved = await readResolvedHeightCm(supabase, 'user-gary');
     expect(resolved).toEqual({ heightCm: 178, source: 'clinical_assessment' });

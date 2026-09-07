@@ -1,6 +1,7 @@
 // Shared CAQ ↔ clinical_assessments body-metric bridge.
-// Geometric height SSOT write target is clinical_assessments.height_cm.
-// CAQ / body_goals are read fallbacks for finite real values only.
+// Geometric height SSOT write target is clinical_assessments.height_cm
+// (backfill/upsert OK). Ordered geometric READ is CAQ-first:
+// CAQ demographics → clinical_assessments → body_goals. Never invent.
 //
 // UNITS LOCK (never invent, never swap):
 // - assessment_results CAQ demographics.height is centimeters as a string
@@ -248,10 +249,11 @@ export async function resolveHeightCm(
   supabase: ClinicalMetricsClient,
   userId: string,
 ): Promise<ResolvedHeightCm> {
-  const clinical = await readClinicalHeightCm(supabase, userId);
-  if (clinical !== null) return { heightCm: clinical, source: 'clinical_assessment' };
+  // Gary HARD lock: FormaVision Measurements T6 height gauge is CAQ-first.
   const fromCaq = await readCaqAssessmentHeightCm(supabase, userId);
   if (fromCaq !== null) return { heightCm: fromCaq, source: 'caq_demographics' };
+  const clinical = await readClinicalHeightCm(supabase, userId);
+  if (clinical !== null) return { heightCm: clinical, source: 'clinical_assessment' };
   const fromGoals = await readBodyGoalsHeightCm(supabase, userId);
   if (fromGoals !== null) return { heightCm: fromGoals, source: 'body_goals' };
   return { heightCm: null, source: null };
