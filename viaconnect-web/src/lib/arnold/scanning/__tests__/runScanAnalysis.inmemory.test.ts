@@ -363,20 +363,32 @@ describe('runInMemoryMeasurement', () => {
     });
 
     it('extract throw returns UNKNOWN girths (flushCirc can skip, never invents cm)', async () => {
+      vi.mocked(detectLandmarks).mockResolvedValue({
+        nose: { x: 10, y: 20 },
+        left_ankle: { x: 12, y: 200 },
+      });
       vi.mocked(extractMeasurements).mockImplementation(() => {
         throw new Error('Front silhouette required for measurement extraction');
       });
+      const onCircFail = vi.fn();
 
       const result = await runInMemoryMeasurement({
         photos: { front: makeBlob() },
         heightCm: 180,
         sex: 'male',
+        onCircFail,
       });
 
       expect(result.chestCirc.cm).toBeNull();
       expect(result.waistNaturalCirc.cm).toBeNull();
       expect(result.hipCirc.cm).toBeNull();
       expect(JSON.stringify(result)).not.toMatch(/"cm":\s*[1-9]/);
+      expect(onCircFail).toHaveBeenCalledWith(
+        'extract_throw',
+        expect.arrayContaining([
+          expect.objectContaining({ pose: 'extract', reason: 'extract_throw' }),
+        ]),
+      );
     });
   });
 
@@ -397,6 +409,14 @@ describe('runInMemoryMeasurement', () => {
       expect(classifyCircFail({
         error: new Error('Unable to compute pixel-to-cm scale. Verify user height and landmark detection.'),
       })).toBe('extract_throw');
+      expect(classifyCircFail({
+        error: new Error('Landmark detection failed for front'),
+        viewStage: 'detect',
+      })).toBe('empty_landmarks');
+      expect(classifyCircFail({
+        error: new Error('Segmentation failed for front'),
+        viewStage: 'process',
+      })).toBe('empty_landmarks');
     });
 
     it('retries IMAGE pose pre-warm after a failed init (no cached fail-open)', async () => {
@@ -478,6 +498,80 @@ describe('runInMemoryMeasurement', () => {
           expect.objectContaining({ pose: 'front', reason: 'empty_landmarks' }),
         ]),
       );
+    });
+
+    it('non-timeout detectLandmarks throw is empty_landmarks, not extract_throw (no invented cm)', async () => {
+      vi.mocked(detectLandmarks).mockRejectedValue(new Error('Landmark detection failed for front'));
+      const onCircFail = vi.fn();
+
+      const result = await runInMemoryMeasurement({
+        photos: { front: makeBlob() },
+        heightCm: 180,
+        sex: 'male',
+        onCircFail,
+      });
+
+      expect(onCircFail).toHaveBeenCalledWith(
+        'empty_landmarks',
+        expect.arrayContaining([
+          expect.objectContaining({ pose: 'front', reason: 'empty_landmarks' }),
+        ]),
+      );
+      expect(onCircFail.mock.calls[0][0]).not.toBe('extract_throw');
+      expect(result.chestCirc.cm).toBeNull();
+      expect(result.waistNaturalCirc.cm).toBeNull();
+      expect(result.hipCirc.cm).toBeNull();
+      expect(JSON.stringify(result)).not.toMatch(/"cm":\s*[1-9]/);
+      expect(processSilhouette).not.toHaveBeenCalled();
+    });
+
+    it('non-timeout processSilhouette throw is empty_landmarks, not extract_throw (no invented cm)', async () => {
+      vi.mocked(detectLandmarks).mockResolvedValue({
+        nose: { x: 10, y: 20 },
+        left_ankle: { x: 12, y: 200 },
+      });
+      vi.mocked(processSilhouette).mockRejectedValue(new Error('Segmentation failed for front'));
+      const onCircFail = vi.fn();
+
+      const result = await runInMemoryMeasurement({
+        photos: { front: makeBlob() },
+        heightCm: 180,
+        sex: 'male',
+        onCircFail,
+      });
+
+      expect(onCircFail).toHaveBeenCalledWith(
+        'empty_landmarks',
+        expect.arrayContaining([
+          expect.objectContaining({ pose: 'front', reason: 'empty_landmarks' }),
+        ]),
+      );
+      expect(onCircFail.mock.calls[0][0]).not.toBe('extract_throw');
+      expect(result.chestCirc.cm).toBeNull();
+      expect(JSON.stringify(result)).not.toMatch(/"cm":\s*[1-9]/);
+    });
+
+    it('timeout on detectLandmarks stays timeout (not empty_landmarks / extract_throw)', async () => {
+      vi.mocked(detectLandmarks).mockRejectedValue(new Error('Pose detection timeout'));
+      const onCircFail = vi.fn();
+
+      const result = await runInMemoryMeasurement({
+        photos: { front: makeBlob() },
+        heightCm: 180,
+        sex: 'male',
+        onCircFail,
+      });
+
+      expect(onCircFail).toHaveBeenCalledWith(
+        'timeout',
+        expect.arrayContaining([
+          expect.objectContaining({ pose: 'front', reason: 'timeout' }),
+        ]),
+      );
+      expect(onCircFail.mock.calls[0][0]).not.toBe('extract_throw');
+      expect(onCircFail.mock.calls[0][0]).not.toBe('empty_landmarks');
+      expect(result.chestCirc.cm).toBeNull();
+      expect(JSON.stringify(result)).not.toMatch(/"cm":\s*[1-9]/);
     });
 
     it('C2: non-finite nose/ankle on a non-empty map is empty_landmarks, not extract_throw', async () => {
