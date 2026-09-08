@@ -13,6 +13,13 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { ScanHistory } from '../ScanHistory';
 import { scanHistoryShowsFrblGrid, type ScanSummary } from '@/lib/scan/scanSummary';
+import { patchScanAfterFrblDiscard } from '@/lib/formavision/retainFrbl';
+import {
+  HISTORY_REMOVE_PHOTOS_BODY,
+  HISTORY_REMOVE_PHOTOS_CONFIRM,
+  HISTORY_REMOVE_PHOTOS_TITLE,
+  SCAN_HISTORY_PHOTOS_DISCARDED,
+} from '@/lib/formavision/twoProtocolCopy';
 
 const NOOP = () => {};
 
@@ -39,6 +46,15 @@ describe('ScanHistory - client/server boundary', () => {
     expect(history).toMatch(/from '@\/lib\/scan\/scanProtocols'/);
     expect(history).toMatch(/from '@\/lib\/scan\/scanSummary'/);
     expect(history).toMatch(/from '@\/lib\/formavision\/twoProtocolCopy'/);
+    expect(history).toMatch(/scan-history-remove-photos-\$\{/);
+    expect(history).toMatch(/HISTORY_REMOVE_PHOTOS_TITLE/);
+    expect(history).toMatch(/HISTORY_REMOVE_PHOTOS_BODY/);
+    expect(history).toMatch(/HISTORY_REMOVE_PHOTOS_CONFIRM/);
+    expect(history).toMatch(/action: 'discard'/);
+    expect(history).toMatch(/\/api\/formavision\/retain-frbl/);
+    expect(history).not.toMatch(/scan-history-delete-\$\{scan\.id\}.*retain-frbl/);
+    expect(section).toMatch(/onPhotosDiscarded/);
+    expect(section).toMatch(/patchScanAfterFrblDiscard/);
   });
 
   it('always hides the FRBL grid for formavision_photo', () => {
@@ -169,6 +185,67 @@ describe('ScanHistory - rendering a scan', () => {
     );
     expect(html).toContain('scan-history-delete-session-1');
     expect(html).toMatch(/delete/i);
+    expect(html).not.toContain('scan-history-remove-photos-session-1');
+  });
+
+  it('shows Remove only on retained FormaVision rows gated by scanHistoryShowsFrblGrid', () => {
+    const retained = scan({
+      id: 'photo-kept',
+      protocol: 'formavision_photo',
+      photosRetained: true,
+      frblSessionId: 'sess-retain-1',
+      poses: { front: true, right: true, back: true, left: true },
+      estimatedBodyFatMin: 29,
+      estimatedBodyFatMax: 33,
+    });
+    expect(scanHistoryShowsFrblGrid(retained)).toBe(true);
+    const html = renderToStaticMarkup(
+      React.createElement(ScanHistory, { scans: [retained], onDeleted: NOOP }),
+    );
+    expect(html).toContain('scan-history-remove-photos-photo-kept');
+    expect(html).not.toContain('scan-history-delete-photo-kept');
+    expect(html).toContain('Photos kept for 3D and re-measure.');
+    expect(html).toContain('Body fat 29.0–33.0%');
+    expect(html).toMatch(/min-h-\[44px\]/);
+  });
+
+  it('after discard patch the row matches non-stored copy with no orphan thumbs', () => {
+    const retained = scan({
+      id: 'photo-kept',
+      protocol: 'formavision_photo',
+      photosRetained: true,
+      frblSessionId: 'sess-retain-1',
+      poses: { front: true, right: true, back: true, left: true },
+      estimatedBodyFatMin: 29,
+      estimatedBodyFatMax: 33,
+    });
+    const patched = patchScanAfterFrblDiscard(retained);
+    expect(patched.photosRetained).toBe(false);
+    expect(patched.frblSessionId).toBeNull();
+    expect(patched.poses).toEqual({ front: false, right: false, back: false, left: false });
+    expect(patched.estimatedBodyFatMin).toBe(29);
+    expect(patched.estimatedBodyFatMax).toBe(33);
+    expect(scanHistoryShowsFrblGrid(patched)).toBe(false);
+    const html = renderToStaticMarkup(
+      React.createElement(ScanHistory, { scans: [patched], onDeleted: NOOP }),
+    );
+    expect(html).toContain(SCAN_HISTORY_PHOTOS_DISCARDED);
+    expect(html).toContain('scan-history-photos-discarded-photo-kept');
+    expect(html).toContain('Body fat 29.0–33.0%');
+    expect(html).toContain('scan-history-item-photo-kept');
+    expect(html).not.toContain('scan-history-remove-photos-photo-kept');
+    expect(html).not.toContain('scan-history-delete-photo-kept');
+    expect(html).not.toContain('scan-history-pose-placeholder-front');
+    expect(html).not.toContain('scan-history-pose-loading-front');
+    expect(html).not.toContain('Photos kept for 3D and re-measure.');
+  });
+
+  it('wires draft Lex remove-photos confirm copy', () => {
+    expect(HISTORY_REMOVE_PHOTOS_TITLE).toBe('Remove kept photos?');
+    expect(HISTORY_REMOVE_PHOTOS_BODY).toBe(
+      'Photos used for 3D and re-measure will be deleted. Your body-fat estimate stays.',
+    );
+    expect(HISTORY_REMOVE_PHOTOS_CONFIRM).toBe('Remove photos');
   });
 
   it('shows partial status distinctly from ready', () => {
