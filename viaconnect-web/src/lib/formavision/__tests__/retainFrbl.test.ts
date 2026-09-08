@@ -22,6 +22,7 @@ import {
   discardedFrblPoses,
   historyFrblCopy,
   isRetainedFrblScan,
+  patchScanAfterFrblDiscard,
   posesFromSessionFullPaths,
   retainedFrblPoses,
   sessionIdForFrbl,
@@ -142,6 +143,11 @@ describe('retain FRBL — discard vs retain', () => {
     expect(retainRoute).toMatch(/_full_path/);
     expect(retainRoute).toMatch(/startMeshyForReadySession/);
     expect(retainRoute).toMatch(/startTripoForReadySession/);
+    expect(retainRoute).toMatch(/action === 'discard'/);
+    expect(retainRoute).toMatch(/async function discardRetain/);
+    expect(history).toMatch(/scan-history-remove-photos-\$\{/);
+    expect(history).toMatch(/\/api\/formavision\/retain-frbl/);
+    expect(history).toMatch(/action: 'discard'/);
     expect(retainRoute).not.toMatch(/SnapMeasure/);
     expect(retainRoute).toMatch(/const supabase = await createClient\(\)/);
     expect(retainRoute).toMatch(/readResolvedHeightCm\(supabase,/);
@@ -174,8 +180,31 @@ describe('retain FRBL — discard vs retain', () => {
     expect(retainedHtml).not.toContain('scan-history-photos-discarded-photo-1');
     expect(retainedHtml).toContain('scan-history-photos-retained-photo-1');
     expect(retainedHtml).toContain('Photos kept for 3D and re-measure.');
+    expect(retainedHtml).toContain('scan-history-remove-photos-photo-1');
+    expect(retainedHtml).not.toContain('scan-history-delete-photo-1');
     expect(discardedHtml).toContain('Photos are not stored after analysis.');
     expect(discardedHtml).not.toContain('Photos kept for 3D and re-measure.');
+    expect(discardedHtml).not.toContain('scan-history-remove-photos-photo-1');
+  });
+
+  it('patchScanAfterFrblDiscard keeps BF and clears FRBL only', () => {
+    const retained = scan({
+      photosRetained: true,
+      frblSessionId: 'sess-retain-1',
+      poses: { front: true, right: true, back: true, left: true },
+      estimatedBodyFatMin: 22,
+      estimatedBodyFatMax: 26,
+    });
+    const patched = patchScanAfterFrblDiscard(retained);
+    expect(patched.estimatedBodyFatMin).toBe(22);
+    expect(patched.estimatedBodyFatMax).toBe(26);
+    expect(patched.photosRetained).toBe(false);
+    expect(patched.frblSessionId).toBeNull();
+    expect(patched.poses).toEqual(discardedFrblPoses());
+    expect(scanHistoryShowsFrblGrid(patched)).toBe(false);
+    expect(historyFrblCopy(patched)).toBe('discarded');
+    expect(patched).not.toHaveProperty('waistCm');
+    expect(patched).not.toHaveProperty('muscleLbs');
   });
 });
 

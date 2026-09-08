@@ -67,6 +67,12 @@ export const SCAN_HISTORY_PHOTOS_DISCARDED = 'Photos are not stored after analys
 /** Retained FRBL history caption — not the discard “not stored” line. */
 export const SCAN_HISTORY_PHOTOS_RETAINED = 'Photos kept for 3D and re-measure.';
 
+/** Draft Lex — tip before --prod. History Remove on a kept-FRBL row. */
+export const HISTORY_REMOVE_PHOTOS_TITLE = 'Remove kept photos?';
+export const HISTORY_REMOVE_PHOTOS_BODY =
+  'Photos used for 3D and re-measure will be deleted. Your body-fat estimate stays.';
+export const HISTORY_REMOVE_PHOTOS_CONFIRM = 'Remove photos';
+
 export function scanHistoryPhotoCaption(scan: {
   protocol: string;
   photosRetained?: boolean | null;

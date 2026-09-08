@@ -4,6 +4,7 @@
 
 import { POSE_ORDER, type PoseId } from '@/lib/scan/poses';
 import { FORMAVISION_PHOTO_PROTOCOL } from '@/lib/scan/scanProtocols';
+import type { ScanSummary } from '@/lib/scan/scanSummary';
 
 export const RETAIN_FRBL_DEFAULT = false;
 
@@ -28,6 +29,19 @@ export const READY_UNAVAILABLE_VISUAL_FAILED =
 
 export function discardedFrblPoses(): Record<PoseId, boolean> {
   return { front: false, right: false, back: false, left: false };
+}
+
+/**
+ * In-place history patch after retain-frbl discard. Clears FRBL presence only.
+ * Never invents girths or muscle lbs. Never wipes estimated body fat.
+ */
+export function patchScanAfterFrblDiscard(scan: ScanSummary): ScanSummary {
+  return {
+    ...scan,
+    photosRetained: false,
+    frblSessionId: null,
+    poses: discardedFrblPoses(),
+  };
 }
 
 /** Pose presence from stored session `*_full_path` only — never from photo_scans flags. */

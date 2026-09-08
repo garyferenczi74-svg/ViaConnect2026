@@ -32,6 +32,9 @@ import {
   READY_UNAVAILABLE_GENERIC,
   READY_UNAVAILABLE_PHOTO_DISCARDED,
   READY_UNAVAILABLE_VISUAL_FAILED,
+  HISTORY_REMOVE_PHOTOS_BODY,
+  HISTORY_REMOVE_PHOTOS_CONFIRM,
+  HISTORY_REMOVE_PHOTOS_TITLE,
   SCAN_HISTORY_PHOTOS_DISCARDED,
   SCAN_HISTORY_PHOTOS_RETAINED,
   UNKNOWN_PROTOCOL_LABEL,
@@ -432,6 +435,13 @@ describe('twoProtocolCopy — Lex Theme 5 live nits', () => {
     expect(PHOTO_UPLOADER_PRIVACY_STRIP).not.toMatch(/immediately discarded/i);
     expect(SCAN_HISTORY_PHOTOS_DISCARDED).toBe('Photos are not stored after analysis.');
     expect(SCAN_HISTORY_PHOTOS_RETAINED).toBe('Photos kept for 3D and re-measure.');
+    expect(HISTORY_REMOVE_PHOTOS_TITLE).toBe('Remove kept photos?');
+    expect(HISTORY_REMOVE_PHOTOS_BODY).toBe(
+      'Photos used for 3D and re-measure will be deleted. Your body-fat estimate stays.',
+    );
+    expect(HISTORY_REMOVE_PHOTOS_CONFIRM).toBe('Remove photos');
+    expect(HISTORY_REMOVE_PHOTOS_BODY).toMatch(/body-fat estimate stays/i);
+    expect(HISTORY_REMOVE_PHOTOS_BODY).not.toMatch(/clinical/i);
     expect(READY_UNAVAILABLE_VISUAL_FAILED).toMatch(/kept photos/i);
     expect(READY_UNAVAILABLE_VISUAL_FAILED).not.toMatch(/clinical/i);
     expect(PHOTO_RETAKE_FOR_BEST_RESULTS).toBe('Retake for best results.');
@@ -457,6 +467,9 @@ describe('two-protocol surfaces stay wired to shared copy', () => {
     expect(history).toMatch(/consumerProtocolLabel/);
     expect(history).toMatch(/SCAN_HISTORY_PHOTOS_DISCARDED/);
     expect(history).toMatch(/SCAN_HISTORY_PHOTOS_RETAINED/);
+    expect(history).toMatch(/HISTORY_REMOVE_PHOTOS_TITLE/);
+    expect(history).toMatch(/HISTORY_REMOVE_PHOTOS_BODY/);
+    expect(history).toMatch(/HISTORY_REMOVE_PHOTOS_CONFIRM/);
     expect(history).toMatch(/scanHistoryPhotoCaption/);
     expect(results).toMatch(/BODY_SCAN_RESULTS_MUSCLE_IMPRESSION_TITLE/);
     expect(results).toMatch(/BODY_SCAN_RESULTS_NOT_MUSCLE_LBS/);

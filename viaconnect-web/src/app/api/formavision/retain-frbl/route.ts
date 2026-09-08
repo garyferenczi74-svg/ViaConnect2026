@@ -15,6 +15,8 @@ import { readResolvedHeightCm } from '@/lib/scan/readHeightCm';
 import { stampFiniteHeight } from '@/lib/scan/heightCmSourceStamp';
 import { startMeshyForReadySession } from '@/lib/formavision/meshy/startMeshyForReadySession';
 import { startTripoForReadySession } from '@/lib/formavision/tripo/startTripoForReadySession';
+import { frblGlbStoragePath } from '@/lib/formavision/meshy/frblOrder';
+import { tripoGlbStoragePath } from '@/lib/formavision/tripo/tripoViews';
 import type { Database } from '@/lib/supabase/types';
 
 export const dynamic = 'force-dynamic';
@@ -25,6 +27,81 @@ const BUCKET = 'body-progress-photos';
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const SIGN_TIMEOUT_MS = 5000;
 const DB_TIMEOUT_MS = 5000;
+const LIST_TIMEOUT_MS = 5000;
+const LIST_PAGE_SIZE = 1000;
+
+const SESSION_PATH_COLUMNS = POSE_ORDER.flatMap(
+  (pose) => [`${pose}_full_path`, `${pose}_thumb_path`] as const,
+);
+
+interface OwnedPhotoScanRow {
+  id: string;
+  photos_retained: boolean | null;
+  photo_session_id: string | null;
+}
+
+interface SessionPathRow {
+  id: string;
+  user_id: string;
+  [key: string]: unknown;
+}
+
+interface StorageListItem {
+  name: string;
+  id?: string | null;
+  metadata?: Record<string, unknown> | null;
+}
+
+function isListedStorageFile(item: StorageListItem): boolean {
+  if (typeof item.name !== 'string' || item.name.length === 0) return false;
+  if (item.id === null) return false;
+  if (item.metadata === null) return false;
+  return true;
+}
+
+function clearedSessionPathPatch(): Record<string, null> {
+  const patch: Record<string, null> = {};
+  for (const pose of POSE_ORDER) {
+    patch[`${pose}_full_path`] = null;
+    patch[`${pose}_thumb_path`] = null;
+  }
+  return patch;
+}
+
+/**
+ * Lists files under a server-built prefix. Returns null on any failure
+ * (fail closed — never report discarded without a verified list).
+ */
+async function listAllUnderPrefix(admin: SupabaseClient, prefix: string): Promise<string[] | null> {
+  const paths: string[] = [];
+  let offset = 0;
+  for (;;) {
+    let page: StorageListItem[] | null;
+    try {
+      const res = await withTimeout<{
+        data: StorageListItem[] | null;
+        error: { message: string } | null;
+      }>(
+        Promise.resolve(
+          admin.storage.from(BUCKET).list(prefix, { limit: LIST_PAGE_SIZE, offset }),
+        ) as Promise<{ data: StorageListItem[] | null; error: { message: string } | null }>,
+        LIST_TIMEOUT_MS,
+        `${SCOPE}.list`,
+      );
+      if (res.error) return null;
+      page = res.data;
+    } catch {
+      return null;
+    }
+    const items = page ?? [];
+    for (const item of items) {
+      if (isListedStorageFile(item)) paths.push(`${prefix}${item.name}`);
+    }
+    if (items.length < LIST_PAGE_SIZE) break;
+    offset += items.length;
+  }
+  return paths;
+}
 
 function isPoseId(value: unknown): value is PoseId {
   return typeof value === 'string' && (POSE_ORDER as readonly string[]).includes(value);
@@ -87,17 +164,17 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     const admin = createAdminClient();
     const ownedScan = await withTimeout<{
-      data: { id: string } | null;
+      data: OwnedPhotoScanRow | null;
       error: { message: string } | null;
     }>(
       Promise.resolve(
         admin
           .from('body_tracker_photo_scans')
-          .select('id')
+          .select('id, photos_retained, photo_session_id')
           .eq('id', photoScanId)
           .eq('user_id', auth.id)
           .maybeSingle(),
-      ) as Promise<{ data: { id: string } | null; error: { message: string } | null }>,
+      ) as Promise<{ data: OwnedPhotoScanRow | null; error: { message: string } | null }>,
       DB_TIMEOUT_MS,
       `${SCOPE}.scan`,
     );
@@ -110,6 +187,9 @@ export async function POST(request: Request): Promise<NextResponse> {
     }
     if (action === 'finalize') {
       return finalizeRetain(admin, auth.id, photoScanId, rec);
+    }
+    if (action === 'discard') {
+      return discardRetain(admin, auth.id, ownedScan.data);
     }
     return NextResponse.json({ ok: false, error: 'invalid_request' }, { status: 400 });
   } catch (error) {
@@ -297,4 +377,128 @@ async function finalizeRetain(
     void startTripoForReadySession(sessionId, userId, admin);
   }
   return NextResponse.json({ ok: true, sessionId, views });
+}
+
+/**
+ * Option C: discard kept FRBL for one owned photo scan.
+ * Resolves photo_session_id server-side. Removes named full/thumb paths,
+ * everything listed under the session prefix, and explicit Meshy/Tripo GLB
+ * paths. Fail closed if list/remove fails. Updates scan retain flags only
+ * — never estimated_body_fat_*. Clears session path columns. Does not
+ * DELETE body_photo_sessions (no CASCADE). Does not start Meshy/Tripo.
+ * Already-discarded is idempotent 200.
+ */
+async function discardRetain(
+  admin: SupabaseClient,
+  userId: string,
+  scan: OwnedPhotoScanRow,
+): Promise<NextResponse> {
+  const sessionId =
+    typeof scan.photo_session_id === 'string' && UUID_RE.test(scan.photo_session_id)
+      ? scan.photo_session_id
+      : null;
+  const alreadyDiscarded = scan.photos_retained !== true && sessionId === null;
+  if (alreadyDiscarded) {
+    return NextResponse.json({ ok: true, discarded: true });
+  }
+
+  if (sessionId) {
+    const sessionRes = await withTimeout<{
+      data: SessionPathRow | null;
+      error: { message: string } | null;
+    }>(
+      Promise.resolve(
+        admin
+          .from('body_photo_sessions')
+          .select(`id,user_id,${SESSION_PATH_COLUMNS.join(',')}`)
+          .eq('id', sessionId)
+          .eq('user_id', userId)
+          .maybeSingle(),
+      ) as Promise<{ data: SessionPathRow | null; error: { message: string } | null }>,
+      DB_TIMEOUT_MS,
+      `${SCOPE}.discardSession`,
+    );
+    if (sessionRes.error) {
+      safeLog.error(SCOPE, 'discard session lookup failed', { error: sessionRes.error.message });
+      return NextResponse.json({ ok: false, error: 'lookup_failed' }, { status: 500 });
+    }
+
+    const namedPaths = SESSION_PATH_COLUMNS.map((col) => sessionRes.data?.[col]).filter(
+      (p): p is string => typeof p === 'string' && p.length > 0,
+    );
+
+    const listedPaths = await listAllUnderPrefix(admin, `${userId}/${sessionId}/`);
+    if (listedPaths === null) {
+      safeLog.error(SCOPE, 'discard storage list failed', { sessionId });
+      return NextResponse.json({ ok: false, error: 'storage_list_failed' }, { status: 500 });
+    }
+
+    const paths = Array.from(
+      new Set([
+        ...namedPaths,
+        ...listedPaths,
+        frblGlbStoragePath(userId, sessionId),
+        tripoGlbStoragePath(userId, sessionId),
+      ]),
+    );
+
+    if (paths.length > 0) {
+      const removeRes = await withTimeout<{ error: { message: string } | null }>(
+        Promise.resolve(admin.storage.from(BUCKET).remove(paths)) as Promise<{
+          error: { message: string } | null;
+        }>,
+        DB_TIMEOUT_MS,
+        `${SCOPE}.discardRemove`,
+      ).catch((error: unknown) => ({
+        error: { message: error instanceof Error ? error.message : 'unknown' },
+      }));
+
+      if (removeRes.error) {
+        safeLog.error(SCOPE, 'discard storage remove failed', {
+          sessionId,
+          error: removeRes.error.message,
+        });
+        return NextResponse.json({ ok: false, error: 'storage_remove_failed' }, { status: 500 });
+      }
+    }
+
+    const sessionUpdate = await withTimeout<{ error: { message: string } | null }>(
+      Promise.resolve(
+        admin
+          .from('body_photo_sessions')
+          .update(clearedSessionPathPatch())
+          .eq('id', sessionId)
+          .eq('user_id', userId),
+      ) as Promise<{ error: { message: string } | null }>,
+      DB_TIMEOUT_MS,
+      `${SCOPE}.discardSessionClear`,
+    );
+    if (sessionUpdate.error) {
+      safeLog.warn(SCOPE, 'discard session path clear failed', { error: sessionUpdate.error.message });
+      return NextResponse.json({ ok: false, error: 'store_failed' }, { status: 500 });
+    }
+  }
+
+  const scanUpdate = await withTimeout<{ error: { message: string } | null }>(
+    Promise.resolve(
+      admin
+        .from('body_tracker_photo_scans')
+        .update({
+          photos_retained: false,
+          photo_session_id: null,
+          retained_views: null,
+        })
+        .eq('id', scan.id)
+        .eq('user_id', userId),
+    ) as Promise<{ error: { message: string } | null }>,
+    DB_TIMEOUT_MS,
+    `${SCOPE}.discardScan`,
+  );
+  if (scanUpdate.error) {
+    safeLog.warn(SCOPE, 'discard scan flag update failed', { error: scanUpdate.error.message });
+    return NextResponse.json({ ok: false, error: 'store_failed' }, { status: 500 });
+  }
+
+  safeLog.info(SCOPE, 'retain discarded', { photoScanId: scan.id, sessionId });
+  return NextResponse.json({ ok: true, discarded: true });
 }

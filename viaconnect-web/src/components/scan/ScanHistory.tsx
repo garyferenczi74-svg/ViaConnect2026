@@ -10,11 +10,16 @@ import {
   type ScanSummary,
 } from '@/lib/scan/scanSummary';
 import {
+  HISTORY_REMOVE_PHOTOS_BODY,
+  HISTORY_REMOVE_PHOTOS_CONFIRM,
+  HISTORY_REMOVE_PHOTOS_TITLE,
   SCAN_HISTORY_PHOTOS_DISCARDED,
   SCAN_HISTORY_PHOTOS_RETAINED,
   consumerProtocolLabel,
   scanHistoryPhotoCaption,
 } from '@/lib/formavision/twoProtocolCopy';
+import { patchScanAfterFrblDiscard } from '@/lib/formavision/retainFrbl';
+import { Modal } from '@/components/ui/Modal';
 
 /**
  * Prompt 231: the 4-pose scan history list. Reuses the Task 13
@@ -31,19 +36,24 @@ import {
  * tombstoned row can never render as a normal, deletable scan.
  *
  * SSOT: formavision_photo hides the FRBL grid when photos were discarded.
- * Retained opt-in rows show the grid plus SCAN_HISTORY_PHOTOS_RETAINED.
+ * Retained opt-in rows show the grid plus SCAN_HISTORY_PHOTOS_RETAINED and
+ * a Remove control (retain-frbl discard — never /api/scan/delete).
  * Discard rows keep SCAN_HISTORY_PHOTOS_DISCARDED. No ImageOff chase on
- * the discard path. 4pose_v1 guided thumbs stay on the grid.
+ * the discard path. 4pose_v1 guided thumbs stay on the grid; Delete is
+ * unchanged.
  *
  * Token discipline: var(--card) / var(--teal), no raw hex. Instrument Sans
  * via the .font-instrument scoped class. Lucide icons, strokeWidth 1.5.
  */
 
 const DELETE_TIMEOUT_MS = 10000;
+const DISCARD_TIMEOUT_MS = 10000;
 const SIGN_TIMEOUT_MS = 8000;
 const DELETE_TIMEOUT_MESSAGE = 'Deleting is taking longer than expected. Try again.';
+const DISCARD_TIMEOUT_MESSAGE = 'Removing photos is taking longer than expected. Try again.';
 
 type DeleteState = 'idle' | 'deleting' | 'error';
+type DiscardState = 'idle' | 'discarding' | 'error';
 
 interface DeleteResponse {
   ok?: boolean;
@@ -58,12 +68,21 @@ interface SignedUrlResponse {
   error?: string;
 }
 
+interface DiscardResponse {
+  ok?: boolean;
+  discarded?: boolean;
+  error?: string;
+}
+
 export interface ScanHistoryProps {
   /** null = still loading. [] = loaded, no scans (honest empty state). */
   scans: ScanSummary[] | null;
   /** Called once a delete is confirmed by the server. Removing the row from
    * the list this component renders is the caller's responsibility. */
   onDeleted?: (sessionId: string) => void;
+  /** Called after retain-frbl discard succeeds. Caller patches the row in
+   * place (photosRetained false, clear FRBL) and keeps the card + BF. */
+  onPhotosDiscarded?: (photoScanId: string) => void;
 }
 
 function isVisible(scan: ScanSummary): boolean {
@@ -89,9 +108,13 @@ function statusLabel(status: ScanSummary['captureStatus']): string {
   }
 }
 
-export function ScanHistory({ scans, onDeleted }: ScanHistoryProps) {
+export function ScanHistory({ scans, onDeleted, onPhotosDiscarded }: ScanHistoryProps) {
   const [deleteState, setDeleteState] = useState<Record<string, DeleteState>>({});
   const [deleteMessage, setDeleteMessage] = useState<Record<string, string>>({});
+  const [discardedIds, setDiscardedIds] = useState<ReadonlySet<string>>(() => new Set());
+  const [confirmScanId, setConfirmScanId] = useState<string | null>(null);
+  const [discardState, setDiscardState] = useState<Record<string, DiscardState>>({});
+  const [discardMessage, setDiscardMessage] = useState<Record<string, string>>({});
 
   const handleDelete = useCallback(
     async (sessionId: string) => {
@@ -129,6 +152,47 @@ export function ScanHistory({ scans, onDeleted }: ScanHistoryProps) {
     [onDeleted],
   );
 
+  const handleDiscardPhotos = useCallback(
+    async (photoScanId: string) => {
+      setDiscardState((s) => ({ ...s, [photoScanId]: 'discarding' }));
+      setDiscardMessage((m) => ({ ...m, [photoScanId]: '' }));
+
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), DISCARD_TIMEOUT_MS);
+      try {
+        const res = await fetch('/api/formavision/retain-frbl', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'discard', photoScanId }),
+          signal: controller.signal,
+        });
+        const body = (await res.json().catch(() => null)) as DiscardResponse | null;
+        if (res.ok && body?.ok) {
+          setDiscardedIds((prev) => {
+            const next = new Set(prev);
+            next.add(photoScanId);
+            return next;
+          });
+          setConfirmScanId(null);
+          setDiscardState((s) => ({ ...s, [photoScanId]: 'idle' }));
+          onPhotosDiscarded?.(photoScanId);
+          return;
+        }
+        setDiscardState((s) => ({ ...s, [photoScanId]: 'error' }));
+        setDiscardMessage((m) => ({
+          ...m,
+          [photoScanId]: body?.error ?? DISCARD_TIMEOUT_MESSAGE,
+        }));
+      } catch {
+        setDiscardState((s) => ({ ...s, [photoScanId]: 'error' }));
+        setDiscardMessage((m) => ({ ...m, [photoScanId]: DISCARD_TIMEOUT_MESSAGE }));
+      } finally {
+        clearTimeout(timer);
+      }
+    },
+    [onPhotosDiscarded],
+  );
+
   if (scans === null) {
     return (
       <div
@@ -156,23 +220,53 @@ export function ScanHistory({ scans, onDeleted }: ScanHistoryProps) {
     );
   }
 
+  const confirmScan = confirmScanId
+    ? visible.find((s) => s.id === confirmScanId) ?? null
+    : null;
+  const confirmDiscarding = confirmScan
+    ? (discardState[confirmScan.id] ?? 'idle') === 'discarding'
+    : false;
+
   return (
+    <>
     <ul className="font-instrument space-y-3" data-testid="scan-history-list">
-      {visible.map((scan) => {
+      {visible.map((raw) => {
+        const scan = discardedIds.has(raw.id) ? patchScanAfterFrblDiscard(raw) : raw;
         const state = deleteState[scan.id] ?? 'idle';
         const message = deleteMessage[scan.id] ?? '';
+        const removeState = discardState[scan.id] ?? 'idle';
+        const removeMessage = discardMessage[scan.id] ?? '';
         const bfRange = formatScanEstimateBfRange(scan);
         const photoCaption = scanHistoryPhotoCaption(scan);
         const showFrblGrid = scanHistoryShowsFrblGrid(scan);
+        const showRemovePhotos =
+          scan.protocol === FORMAVISION_PHOTO_PROTOCOL && showFrblGrid;
         const retainedCaption = photoCaption === SCAN_HISTORY_PHOTOS_RETAINED;
         const discardedCaption = photoCaption === SCAN_HISTORY_PHOTOS_DISCARDED;
         return (
           <li
             key={scan.id}
             data-testid={`scan-history-item-${scan.id}`}
-            className="space-y-3 rounded-2xl border border-white/10 bg-[var(--card)] p-4"
+            className="relative space-y-3 rounded-2xl border border-white/10 bg-[var(--card)] p-4"
           >
-            <div className="flex items-center justify-between gap-3">
+            {showRemovePhotos ? (
+              removeState === 'discarding' ? (
+                <span className="absolute right-2 top-2 inline-flex min-h-[44px] min-w-[44px] items-center justify-center text-white/50">
+                  <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.5} />
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  data-testid={`scan-history-remove-photos-${scan.id}`}
+                  onClick={() => setConfirmScanId(scan.id)}
+                  aria-label={HISTORY_REMOVE_PHOTOS_TITLE}
+                  className="absolute right-2 top-2 inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl text-white/70"
+                >
+                  <Trash2 className="h-4 w-4" strokeWidth={1.5} />
+                </button>
+              )
+            ) : null}
+            <div className={`flex items-center justify-between gap-3${showRemovePhotos ? ' pr-12' : ''}`}>
               <div>
                 <p className="text-sm font-semibold text-white">{formatDate(scan.date)}</p>
                 <p className="text-xs text-white/50">
@@ -255,10 +349,53 @@ export function ScanHistory({ scans, onDeleted }: ScanHistoryProps) {
                 </button>
               </p>
             )}
+            {removeState === 'error' && removeMessage && (
+              <p
+                className="text-xs text-red-300"
+                data-testid={`scan-history-remove-photos-error-${scan.id}`}
+              >
+                {removeMessage}
+              </p>
+            )}
           </li>
         );
       })}
     </ul>
+    {confirmScan ? (
+      <Modal
+        open
+        onOpenChange={(open) => {
+          if (!open && !confirmDiscarding) setConfirmScanId(null);
+        }}
+        title={HISTORY_REMOVE_PHOTOS_TITLE}
+        description={HISTORY_REMOVE_PHOTOS_BODY}
+      >
+        <div className="flex items-center justify-end gap-2">
+          <button
+            type="button"
+            data-testid="scan-history-remove-photos-cancel"
+            onClick={() => setConfirmScanId(null)}
+            disabled={confirmDiscarding}
+            className="inline-flex min-h-[44px] items-center rounded-xl border border-white/15 px-4 text-sm text-white/70 disabled:opacity-60"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            data-testid="scan-history-remove-photos-confirm"
+            onClick={() => void handleDiscardPhotos(confirmScan.id)}
+            disabled={confirmDiscarding}
+            className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-red-500/90 px-4 text-sm font-semibold text-white disabled:opacity-60"
+          >
+            {confirmDiscarding ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={1.5} />
+            ) : null}
+            {HISTORY_REMOVE_PHOTOS_CONFIRM}
+          </button>
+        </div>
+      </Modal>
+    ) : null}
+    </>
   );
 }
 
