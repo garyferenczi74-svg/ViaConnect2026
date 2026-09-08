@@ -106,6 +106,10 @@ describe('C2/C5 live in-memory path source contract', () => {
     expect(src).toMatch(/hasFrontScaleAnchors: frontSil/);
     expect(src).toMatch(/scaleCmPerPx: frontSil/);
     expect(src).toMatch(/circGate: 'hasFiniteGeometricGirth'/);
+    expect(src).toMatch(/viewStage: 'detect'/);
+    expect(src).toMatch(/viewStage: 'process'/);
+    expect(src).toMatch(/on detectLandmarks/);
+    expect(src).toMatch(/on processSilhouette/);
   });
 
   it('does not expand the five-reason circ taxonomy', () => {

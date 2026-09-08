@@ -32,6 +32,7 @@ import type {
   CompositionEstimate,
   ExtractedMeasurements,
   ManualCalibrationInput,
+  LandmarkMap,
   PoseId,
   PoseSilhouette,
   BodyModelParameters,
@@ -162,7 +163,21 @@ export async function runInMemoryMeasurement(
     try {
       const silhouette = await Promise.race([
         (async (): Promise<PoseSilhouette> => {
-          const landmarks = await detectLandmarks(blob);
+          let landmarks: LandmarkMap;
+          try {
+            landmarks = await detectLandmarks(blob);
+          } catch (detectErr) {
+            // Non-timeout detect/init miss is empty_landmarks, not extract_throw.
+            const reason = classifyCircFail({ error: detectErr, viewStage: 'detect' });
+            const fail: CircViewFail = { pose, reason, detail: circFailDetail(detectErr) };
+            viewFails.push(fail);
+            safeLog.warn(
+              'arnold.scanning.inmemory',
+              `${pose} view ${reason} on detectLandmarks (fail-open, no invented cm)`,
+              fail,
+            );
+            throw detectErr;
+          }
           if (Object.keys(landmarks).length === 0) {
             const fail: CircViewFail = { pose, reason: 'empty_landmarks' };
             viewFails.push(fail);
@@ -182,7 +197,20 @@ export async function runInMemoryMeasurement(
               { ...fail, hasFrontScaleAnchors: false },
             );
           }
-          return processSilhouette({ blob, poseId: pose, userHeightCm: heightCm, landmarks });
+          try {
+            return await processSilhouette({ blob, poseId: pose, userHeightCm: heightCm, landmarks });
+          } catch (processErr) {
+            // Selfie/init throw before scale is a view miss, not extract.
+            const reason = classifyCircFail({ error: processErr, viewStage: 'process' });
+            const fail: CircViewFail = { pose, reason, detail: circFailDetail(processErr) };
+            viewFails.push(fail);
+            safeLog.warn(
+              'arnold.scanning.inmemory',
+              `${pose} view ${reason} on processSilhouette (fail-open, no invented cm)`,
+              fail,
+            );
+            throw processErr;
+          }
         })(),
         new Promise<never>((_, rej) =>
           setTimeout(
@@ -231,16 +259,18 @@ export async function runInMemoryMeasurement(
 
       silhouettes.push(silhouette);
     } catch (err) {
-      // Fail-open: log the honest reason and skip this view.
-      // Its measurements will be UNKNOWN (null), never fabricated (RULE 9).
-      const reason = classifyCircFail({ error: err });
-      const fail: CircViewFail = { pose, reason, detail: circFailDetail(err) };
-      viewFails.push(fail);
-      safeLog.warn(
-        'arnold.scanning.inmemory',
-        `${pose} view ${reason} - treated as UNKNOWN (fail-open, no invented cm)`,
-        fail,
-      );
+      // Fail-open: skip this view. Detect/process already recorded a viewFail
+      // with the honest reason — do not remap a detect/init miss as extract_throw.
+      if (!viewFails.some((f) => f.pose === pose)) {
+        const reason = classifyCircFail({ error: err });
+        const fail: CircViewFail = { pose, reason, detail: circFailDetail(err) };
+        viewFails.push(fail);
+        safeLog.warn(
+          'arnold.scanning.inmemory',
+          `${pose} view ${reason} - treated as UNKNOWN (fail-open, no invented cm)`,
+          fail,
+        );
+      }
     }
   }
 

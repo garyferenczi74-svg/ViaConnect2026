@@ -1,7 +1,7 @@
-// Honest circumference fail taxonomy after #206 / #208.
-// IMAGE Pose empty/timeout still reaches extract, which throws when front
-// scale/landmarks are missing — flushCirc then never POSTs. Classify the
-// actual reason. Never invent cm / girths / Muscle lbs.
+// Honest circumference fail taxonomy after #206 / #208 / #211.
+// IMAGE Pose empty/timeout still reaches extract. Known residuals return
+// UNKNOWN (C3). Non-timeout detect/process throws are empty_landmarks, not
+// extract_throw. Classify the actual reason. Never invent cm / girths / Muscle lbs.
 
 export const CIRC_VIEW_FAIL_REASONS = ['timeout', 'empty_landmarks', 'extract_throw'] as const;
 
@@ -40,6 +40,12 @@ export function isCircFailReason(value: string | null | undefined): value is Cir
 export function classifyCircFail(input: {
   error?: unknown;
   landmarkCount?: number;
+  /**
+   * View-level detect / selfie — not extractMeasurements.
+   * Non-timeout throws here are a pose/init miss (`empty_landmarks`),
+   * not an extract bug. Timeout still wins. Never invents cm.
+   */
+  viewStage?: 'detect' | 'process';
 }): CircViewFailReason {
   if (input.error === undefined && input.landmarkCount === 0) {
     return 'empty_landmarks';
@@ -51,6 +57,9 @@ export function classifyCircFail(input: {
         ? String(input.error)
         : '';
   if (/timeout/i.test(msg)) return 'timeout';
+  if (input.viewStage === 'detect' || input.viewStage === 'process' || input.landmarkCount === 0) {
+    return 'empty_landmarks';
+  }
   return 'extract_throw';
 }
 
