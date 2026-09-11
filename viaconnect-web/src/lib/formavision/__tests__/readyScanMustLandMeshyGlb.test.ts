@@ -60,6 +60,9 @@ function renderReady(overrides: {
   meshySessionId?: string | null;
   meshyHistoryResolved?: boolean;
   meshyWaitExpired?: boolean;
+  photosRetained?: boolean;
+  frblSessionId?: string | null;
+  frblPoses?: Record<string, boolean> | null;
 } = {}) {
   const scan = garyReadyScan();
   const circumferences = estimateCircumferencesFromComposition(scan, 'male', 'in');
@@ -77,10 +80,19 @@ function renderReady(overrides: {
       meshySessionId: overrides.meshySessionId ?? null,
       meshyHistoryResolved: overrides.meshyHistoryResolved ?? false,
       meshyWaitExpired: overrides.meshyWaitExpired,
+      photosRetained: overrides.photosRetained,
+      frblSessionId: overrides.frblSessionId,
+      frblPoses: overrides.frblPoses,
       children: React.createElement(FormaVisionPlateNotice, { kind: 'unavailable' }),
     }),
   );
 }
+
+const RETAINED = {
+  photosRetained: true,
+  frblSessionId: 'sess-retain-1',
+  frblPoses: { front: true, right: true, back: true, left: true },
+} as const;
 
 describe('1. Ready without GLB kicks Meshy and does not stay Loading forever', () => {
   it('existing Ready FRBL sessionId still POSTs create', () => {
@@ -151,42 +163,45 @@ describe('1. Ready without GLB kicks Meshy and does not stay Loading forever', (
   });
 });
 
-describe('2. Ready with GLB URL mounts model-viewer on phone and desktop', () => {
-  it('phone Ready + signed GLB is model-viewer, not a notice shroud', () => {
+describe('2. Ready with retained FRBL mounts 2D photos on phone and desktop', () => {
+  it('phone Ready + retained FRBL is frbl-2d, even when a Meshy GLB exists', () => {
     expect(
       selectReadyViewer({
         host: 'phone',
         hasReadyScanData: true,
         meshyStatus: 'succeeded',
         meshyGlbUrl: GLB,
+        ...RETAINED,
       }),
-    ).toBe('model-viewer');
+    ).toBe('frbl-2d');
     const markup = renderReady({
       meshyGlbUrl: GLB,
       meshyStatus: 'succeeded',
       meshySessionId: SESSION,
       meshyHistoryResolved: true,
       host: 'phone',
+      ...RETAINED,
     });
-    expect(markup).toContain('data-ready-viewer="model-viewer"');
-    expect(markup).toContain('formavision-model-viewer-el');
-    expect(markup).toContain(GLB);
-    expect(markup).toContain('data-mesh-look="meshy-glb"');
+    expect(markup).toContain('data-ready-viewer="frbl-2d"');
+    expect(markup).toContain('formavision-frbl-ready-plate');
+    expect(markup).toContain('data-mesh-look="frbl-2d"');
+    expect(markup).not.toContain('formavision-model-viewer-el');
     expect(markup).not.toContain('formavision-3d-pending');
   });
 
-  it('desktop Ready uses the same in-page model-viewer path', () => {
+  it('desktop Ready uses the same in-page FRBL 2D plate', () => {
     const markup = renderReady({
       meshyGlbUrl: GLB,
       meshyStatus: 'succeeded',
       meshySessionId: SESSION,
       meshyHistoryResolved: true,
       host: 'desktop',
+      ...RETAINED,
     });
-    expect(markup).toContain('data-ready-viewer="model-viewer"');
+    expect(markup).toContain('data-ready-viewer="frbl-2d"');
     expect(markup).toContain('data-ready-host="desktop"');
-    expect(markup).toContain('formavision-model-viewer-el');
-    expect(markup).toContain(GLB);
+    expect(markup).toContain('formavision-frbl-ready-plate');
+    expect(markup).not.toContain('formavision-model-viewer-el');
   });
 });
 

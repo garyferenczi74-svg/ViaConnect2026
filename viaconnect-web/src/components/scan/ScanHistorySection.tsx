@@ -10,6 +10,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ScanHistory } from './ScanHistory';
 import type { ScanSummary } from '@/lib/scan/scanSummary';
 import { patchScanAfterFrblDiscard } from '@/lib/formavision/retainFrbl';
+import { invalidateSignedFullUrlsForScan } from '@/lib/formavision/viewer/signedFullUrlCache';
 
 const HISTORY_FETCH_TIMEOUT_MS = 8000;
 
@@ -80,11 +81,13 @@ export function ScanHistorySection({
   }, []);
 
   const handlePhotosDiscarded = useCallback((photoScanId: string) => {
-    setScans((prev) =>
-      prev
+    setScans((prev) => {
+      const current = prev?.find((scan) => scan.id === photoScanId);
+      if (current) invalidateSignedFullUrlsForScan(current);
+      return prev
         ? prev.map((scan) => (scan.id === photoScanId ? patchScanAfterFrblDiscard(scan) : scan))
-        : prev,
-    );
+        : prev;
+    });
   }, []);
 
   const handleRetryLoad = useCallback(() => {

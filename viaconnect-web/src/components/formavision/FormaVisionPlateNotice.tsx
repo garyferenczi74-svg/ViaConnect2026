@@ -19,7 +19,7 @@ export type PlateNoticePlacement = 'caption' | 'fill';
 export type { ReadyUnavailableReason };
 
 export const FORMAVISION_PLATE_LOADING_NOTICE =
-  'Loading 3D avatar from your scan.';
+  'Loading Ready photo from your scan.';
 
 export const FORMAVISION_PLATE_UNAVAILABLE_NOTICE = READY_UNAVAILABLE_GENERIC;
 

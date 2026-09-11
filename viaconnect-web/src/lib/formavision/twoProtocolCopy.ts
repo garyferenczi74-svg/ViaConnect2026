@@ -29,16 +29,16 @@ export const PHOTO_WHAT_YOU_DO_NOT_GET =
 
 /** Retain opt-in Analyze explainer. Must not claim discarded. */
 export const PHOTO_WHAT_YOU_DO_NOT_GET_RETAINED =
-  `Photos stay stored for 3D and re-measure. ${PHOTO_WHAT_YOU_DO_NOT_GET_LIMITS}`;
+  `Photos stay stored for Ready photos and re-measure. ${PHOTO_WHAT_YOU_DO_NOT_GET_LIMITS}`;
 
 export function photoWhatYouDoNotGet(retainOptIn: boolean): string {
   return retainOptIn ? PHOTO_WHAT_YOU_DO_NOT_GET_RETAINED : PHOTO_WHAT_YOU_DO_NOT_GET;
 }
 
 export const READY_UNAVAILABLE_PHOTO_DISCARDED =
-  '3D Ready needs a Guided 4-pose scan. Photo estimate photos are discarded after analysis and cannot build a 3D body.';
+  'Ready photo needs kept Front, Right, Back, or Left photos. Photo estimate photos are discarded after analysis and cannot show a Ready photo.';
 
-export const READY_UNAVAILABLE_GENERIC = '3D avatar unavailable.';
+export const READY_UNAVAILABLE_GENERIC = 'Ready photo unavailable.';
 
 export const MUSCLE_ANALYSIS_PHOTO_ONLY_EMPTY =
   'Photo estimate does not fill muscle mass (lbs). Log Data for full Muscle Analysis.';
@@ -65,12 +65,12 @@ export const MUSCLE_ANALYSIS_PHOTO_ONLY_SUBTITLE =
 export const SCAN_HISTORY_PHOTOS_DISCARDED = 'Photos are not stored after analysis.';
 
 /** Retained FRBL history caption — not the discard “not stored” line. */
-export const SCAN_HISTORY_PHOTOS_RETAINED = 'Photos kept for 3D and re-measure.';
+export const SCAN_HISTORY_PHOTOS_RETAINED = 'Photos kept for Ready and re-measure.';
 
 /** Draft Lex — tip before --prod. History Remove on a kept-FRBL row. */
 export const HISTORY_REMOVE_PHOTOS_TITLE = 'Remove kept photos?';
 export const HISTORY_REMOVE_PHOTOS_BODY =
-  'Photos used for 3D and re-measure will be deleted. Your body-fat estimate stays.';
+  'Photos used for Ready and re-measure will be deleted. Your body-fat estimate stays.';
 export const HISTORY_REMOVE_PHOTOS_CONFIRM = 'Remove photos';
 
 export function scanHistoryPhotoCaption(scan: {
@@ -89,7 +89,7 @@ export const BODY_SCAN_RESULTS_RELIABLE_READING =
 
 /** Lex Theme 5 — uploader privacy strip. History uses discard vs retain captions. */
 export const PHOTO_UPLOADER_PRIVACY_STRIP =
-  'Photos are used only to calculate measurements. They are not kept as your body photos or used as the Ready 3D body.';
+  'Photos are used only to calculate measurements. They are not kept as your body photos or used as the Ready photo.';
 
 export const PHOTO_RETAKE_FOR_BEST_RESULTS = 'Retake for best results.';
 

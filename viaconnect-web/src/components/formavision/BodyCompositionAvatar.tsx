@@ -2,9 +2,10 @@
 
 // Capability-gated mount point for the Body Composition avatar (Prompt 210b, P1-T5).
 //
-// Gary 2026-09-06 lock: Ready success on phone AND desktop is in-page
-// model-viewer + Meshy GLB, or an honest text notice. The parametric cyan
-// wireframe (R3F) is parked — not as flash, settle, or fallback.
+// Brief 63: Ready success on phone AND desktop is a retained FRBL 2D photo
+// (looks-like-me, object-fit contain) or an honest text notice. Meshy /
+// Tripo GLB and the parametric cyan wireframe (R3F) are parked — not as
+// flash, settle, or fallback.
 //
 // This wrapper is what the FormaVision plate renders in place of a bare 2D
 // SegmentalHeatMap. selectAvatarSurface decides which avatar the user sees:
@@ -92,6 +93,7 @@ import {
 import { MODEL_VIEWER_VERSION } from '@/lib/formavision/viewer/modelViewerPin';
 import { FormaVision3DAvatar } from './FormaVision3DAvatar';
 import { FormaVisionFallbackNotice } from './FormaVisionFallbackNotice';
+import { FormaVisionFrblReadyPlate } from './FormaVisionFrblReadyPlate';
 import { FormaVisionModelViewer } from './FormaVisionModelViewer';
 import {
   FormaVisionPlateNotice,
@@ -167,6 +169,10 @@ export interface BodyCompositionAvatarProps {
   readyViewerHost?: ReadyViewerHost;
   // Theme 5: photo-discarded Ready copy vs generic unavailable. Never wireframe.
   plateUnavailableReason?: ReadyUnavailableReason;
+  // Brief 63: retained FRBL 2D Ready. Paint only when photosRetained + a pose.
+  photosRetained?: boolean;
+  frblSessionId?: string | null;
+  frblPoses?: Record<string, boolean> | null;
   // Honest text-only fallback child. Never an anatomical outline figure.
   children: React.ReactNode;
 }
@@ -211,6 +217,9 @@ function BodyCompositionAvatarInner({
   meshyWaitExpired,
   readyViewerHost,
   plateUnavailableReason = 'generic',
+  photosRetained = false,
+  frblSessionId = null,
+  frblPoses = null,
   children,
 }: BodyCompositionAvatarProps) {
   // Remounts a live-canvas miss while getContext still works (not "no WebGL").
@@ -231,6 +240,7 @@ function BodyCompositionAvatarInner({
   const [latchSurface, setLatchSurface] = useState(false);
   const [settled, setSettled] = useState(false);
   const [modelViewerPainted, setModelViewerPainted] = useState(false);
+  const [frblPhotoPainted, setFrblPhotoPainted] = useState(false);
   const [glbLoadFailed, setGlbLoadFailed] = useState(false);
   const [meshyClockExpired, setMeshyClockExpired] = useState(false);
   const [detectedHost, setDetectedHost] = useState<ReadyViewerHost>(
@@ -244,6 +254,9 @@ function BodyCompositionAvatarInner({
     meshyStatus,
     meshyGlbUrl,
     glbLoadFailed,
+    photosRetained,
+    frblPoses,
+    frblSessionId,
   });
   // Gary 2026-09-06: park R3F on phone AND desktop Ready. #191 flashed the
   // parametric cyan wireframe (R3F) then blanked the plate when this flag
@@ -253,7 +266,11 @@ function BodyCompositionAvatarInner({
     hasReadyScanData: readyLive,
   });
   // Sherlock D: do not OR model-viewer load into the R3F paint detector.
-  const readyPainted = parkR3fReady ? modelViewerPainted : canvasHasPainted;
+  const readyPainted = parkR3fReady
+    ? readyViewer === 'frbl-2d'
+      ? frblPhotoPainted
+      : modelViewerPainted
+    : canvasHasPainted;
 
   // The active render tier (capability probe initially; stepped down at runtime) and
   // the sticky step-down trigger passed into the Canvas frame-budget monitor.
@@ -303,6 +320,11 @@ function BodyCompositionAvatarInner({
     setFallbackReason(null);
   }, []);
 
+  const handleFrblPhotoPainted = useCallback((): void => {
+    setFrblPhotoPainted(true);
+    setFallbackReason(null);
+  }, []);
+
   const handleModelViewerError = useCallback((): void => {
     setModelViewerPainted(false);
     setGlbLoadFailed(true);
@@ -320,6 +342,10 @@ function BodyCompositionAvatarInner({
     setModelViewerPainted(false);
     setGlbLoadFailed(false);
   }, [meshyGlbUrl]);
+
+  useEffect(() => {
+    setFrblPhotoPainted(false);
+  }, [frblSessionId, photosRetained]);
 
   useEffect(() => {
     if (meshyWaitExpired === true) {
@@ -597,11 +623,13 @@ function BodyCompositionAvatarInner({
     : presentation;
   const meshLook = resolveReadyPlateMeshLook(readyViewer);
   const mountedSurface =
-    readyViewer === 'model-viewer'
-      ? 'model-viewer'
-      : readyViewer === 'notice'
-        ? 'ready-notice'
-        : surface;
+    readyViewer === 'frbl-2d'
+      ? 'frbl-2d'
+      : readyViewer === 'model-viewer'
+        ? 'model-viewer'
+        : readyViewer === 'notice'
+          ? 'ready-notice'
+          : surface;
   const waitExpired = meshyWaitExpired === true || meshyClockExpired;
   const noticeKind = decideReadyNoticeKind({
     meshyStatus,
@@ -714,6 +742,7 @@ function BodyCompositionAvatarInner({
         />
       ) : null}
       {readyLive &&
+      readyViewer !== 'frbl-2d' &&
       readyViewer !== 'model-viewer' &&
       readyViewer !== 'notice' &&
       shouldPresentPlateNotice({
@@ -731,7 +760,16 @@ function BodyCompositionAvatarInner({
           {null}
         </FormaVisionFallbackNotice>
       ) : null}
-      {/* R3F is parked for Ready (phone + desktop). model-viewer stays mounted. */}
+      {readyViewer === 'frbl-2d' && frblSessionId ? (
+        <FormaVisionFrblReadyPlate
+          sessionId={frblSessionId}
+          poses={frblPoses ?? { front: false, right: false, back: false, left: false }}
+          reducedMotion={reducedMotion}
+          onPainted={handleFrblPhotoPainted}
+        />
+      ) : null}
+      {/* Parked Meshy path — selectReadyViewer never returns model-viewer when
+          retained FRBL 2D is present. Do not mount as Ready SUCCESS. */}
       {readyViewer === 'model-viewer' && meshyGlbUrl ? (
         <FormaVisionModelViewer
           src={meshyGlbUrl}

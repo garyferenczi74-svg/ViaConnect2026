@@ -78,6 +78,11 @@ import { useTripoVisual } from '@/hooks/formavision/useTripoVisual';
 import { FormaVisionMeshyStatus } from '@/components/formavision/FormaVisionMeshyStatus';
 import { PROTOCOL_ID } from '@/lib/scan/poses';
 import {
+  discardedFrblPoses,
+  pickRetainedFrblReadyScan,
+  sessionIdForFrbl,
+} from '@/lib/formavision/retainFrbl';
+import {
   HYBRID_COSETTLE_COPY,
   historyHasDiscardedPhotoScan,
   selectReadyUnavailableReason,
@@ -216,6 +221,13 @@ function FormaVisionSurface() {
     () => pickReadyFrblSessionId(historyScans, PROTOCOL_ID),
     [historyScans],
   );
+  const retainedFrblScan = useMemo(
+    () => pickRetainedFrblReadyScan(historyScans),
+    [historyScans],
+  );
+  const retainedFrblSessionId = retainedFrblScan
+    ? sessionIdForFrbl(retainedFrblScan)
+    : null;
   const meshySessionId = useMemo(
     () => pickReadyMeshySessionId(historyScans, PROTOCOL_ID),
     [historyScans],
@@ -225,8 +237,14 @@ function FormaVisionSurface() {
     [historyScans],
   );
   const historyResolved = historyScans !== null;
-  const meshyRaw = useMeshyVisual(readyFrblSessionId, { historyResolved });
-  const tripoVisual = useTripoVisual(tripoSessionId, { historyResolved });
+  const meshyRaw = useMeshyVisual(readyFrblSessionId, {
+    historyResolved,
+    parkCreate: true,
+  });
+  const tripoVisual = useTripoVisual(tripoSessionId, {
+    historyResolved,
+    parkCreate: true,
+  });
   const hybridPlate = selectHybridPlateVisual({
     tripoStatus: tripoVisual.status,
     tripoGlbUrl: tripoVisual.glbUrl,
@@ -241,9 +259,9 @@ function FormaVisionSurface() {
   };
   const readyUnavailableReason = selectReadyUnavailableReason({
     historyResolved,
-    readyFrblSessionId,
+    readyFrblSessionId: retainedFrblSessionId,
     hasDiscardedPhotoScan: historyHasDiscardedPhotoScan(historyScans),
-    visualFailed: hybridPlate.failed,
+    visualFailed: retainedFrblSessionId ? false : hybridPlate.failed,
   });
   const historySnapshotForAvatar = useMemo(
     () =>
@@ -634,10 +652,12 @@ function FormaVisionSurface() {
           }}
         />
         <AbWipeSplitOverlay wipeT={wipeT} visible={abCompareOn && Boolean(wipeVector)} />
-        <FormaVisionMeshyStatus
-          status={hybridPlate.status}
-          progress={hybridPlate.provider === 'tripo' ? tripoVisual.progress : meshyVisual.progress}
-        />
+        {!retainedFrblSessionId ? (
+          <FormaVisionMeshyStatus
+            status={hybridPlate.status}
+            progress={hybridPlate.provider === 'tripo' ? tripoVisual.progress : meshyVisual.progress}
+          />
+        ) : null}
         <p className="pointer-events-none absolute left-3 top-3 z-10 max-w-[16rem] text-[10px] leading-relaxed text-white/45">
           {HYBRID_COSETTLE_COPY}
         </p>
@@ -665,6 +685,9 @@ function FormaVisionSurface() {
           meshySessionId={readyFrblSessionId}
           meshyHistoryResolved={historyResolved}
           plateUnavailableReason={readyUnavailableReason}
+          photosRetained={retainedFrblScan?.photosRetained === true}
+          frblSessionId={retainedFrblSessionId}
+          frblPoses={retainedFrblScan?.poses ?? discardedFrblPoses()}
         >
           {/* Honest text-only latch. Gary 2026-09-03: no teal outline figure. */}
           <div

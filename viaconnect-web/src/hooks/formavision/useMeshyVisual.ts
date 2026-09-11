@@ -51,6 +51,8 @@ export interface UseMeshyVisualOptions {
   // True after scan history has resolved (empty list included). False/omit
   // while history is still in flight so we do not latch no_photos too early.
   historyResolved?: boolean;
+  // Brief 63: Ready settle is retained FRBL 2D. Do not POST Meshy create.
+  parkCreate?: boolean;
 }
 
 export function shouldKickMeshyCreate(
@@ -99,6 +101,7 @@ export function useMeshyVisual(
   options: UseMeshyVisualOptions = {},
 ): MeshyVisualClient {
   const historyResolved = options.historyResolved === true;
+  const parkCreate = options.parkCreate === true;
   const [visual, setVisual] = useState<MeshyVisualState>(() => emptyMeshyVisual());
   const [glbUrl, setGlbUrl] = useState<string | null>(null);
   const createdForRef = useRef<string | null>(null);
@@ -130,7 +133,7 @@ export function useMeshyVisual(
     };
 
     const tick = async (): Promise<void> => {
-      if (shouldKickMeshyCreate(sessionId, createdForRef.current)) {
+      if (!parkCreate && shouldKickMeshyCreate(sessionId, createdForRef.current)) {
         const created = await fetchJson('/api/formavision/meshy', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -183,7 +186,7 @@ export function useMeshyVisual(
       cancelled = true;
       if (timer) clearTimeout(timer);
     };
-  }, [historyResolved, sessionId]);
+  }, [historyResolved, parkCreate, sessionId]);
 
   return {
     status: visual.status,

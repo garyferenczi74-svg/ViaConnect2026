@@ -1,7 +1,8 @@
 import type { MeshyVisualStatus } from '@/lib/formavision/meshy/types';
 import type { ReadyViewerHost } from './detectReadyViewerHost';
+import { hasRetainedFrblReady } from './frblReadySide';
 
-export type ReadyViewerKind = 'model-viewer' | 'notice' | 'r3f';
+export type ReadyViewerKind = 'frbl-2d' | 'model-viewer' | 'notice' | 'r3f';
 
 export interface SelectReadyViewerInput {
   host: ReadyViewerHost;
@@ -9,6 +10,9 @@ export interface SelectReadyViewerInput {
   meshyStatus: MeshyVisualStatus;
   meshyGlbUrl: string | null;
   glbLoadFailed?: boolean;
+  photosRetained?: boolean | null;
+  frblPoses?: Record<string, boolean> | null;
+  frblSessionId?: string | null;
 }
 
 export function isMeshyVisualGlbReady(input: {
@@ -67,6 +71,8 @@ export function isParametricReadyViewerFail(input: {
 }
 
 export function selectReadyViewer(input: SelectReadyViewerInput): ReadyViewerKind {
-  if (isMeshyVisualGlbReady(input)) return 'model-viewer';
+  // Brief 63: retained FRBL 2D photos are Ready SUCCESS. Parked Meshy /
+  // Tripo GLB must not settle the plate — even when a signed GLB exists.
+  if (hasRetainedFrblReady(input)) return 'frbl-2d';
   return 'notice';
 }

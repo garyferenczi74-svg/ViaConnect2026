@@ -56,10 +56,10 @@ describe('BodyScanUploader slot picker markup', () => {
     expect(html).toContain('body-fat range estimate');
     expect(html).not.toContain('Navy body fat from photos');
     expect(html).toContain(
-      'Photos are used only to calculate measurements. They are not kept as your body photos or used as the Ready 3D body.',
+      'Photos are used only to calculate measurements. They are not kept as your body photos or used as the Ready photo.',
     );
     expect(html).toContain('Photos are discarded after analysis.');
-    expect(html).not.toContain('Photos stay stored for 3D and re-measure.');
+    expect(html).not.toContain('Photos stay stored for Ready photos and re-measure.');
     expect(html).not.toContain('immediately discarded');
     expect(html).not.toContain('Retake for accuracy');
     expect(html).toContain('retain-frbl-consent');

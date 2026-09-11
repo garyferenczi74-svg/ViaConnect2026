@@ -9,23 +9,23 @@ import type { ScanSummary } from '@/lib/scan/scanSummary';
 export const RETAIN_FRBL_DEFAULT = false;
 
 export const RETAIN_FRBL_CONSENT_LABEL =
-  'Keep Front, Right, Back, and Left photos for 3D and re-measure';
+  'Keep Front, Right, Back, and Left photos for Ready and re-measure';
 
 export const RETAIN_FRBL_CONSENT_BODY =
-  'Optional. Photos stay stored so we can build a look-alike 3D body and let you re-measure. Off by default — we discard FRBL after analysis unless you opt in.';
+  'Optional. Photos stay stored so Ready can show your 2D photos and let you re-measure. Off by default — we discard FRBL after analysis unless you opt in.';
 
 export const DISCARD_FRBL_SHIELD =
-  'Photos are used only to calculate measurements. They are not kept as your body photos or used as the Ready 3D body.';
+  'Photos are used only to calculate measurements. They are not kept as your body photos or used as the Ready photo.';
 
 export const RETAIN_FRBL_SHIELD =
-  'You opted in to keep Front, Right, Back, and Left for 3D and re-measure. Photos stay stored on your account.';
+  'You opted in to keep Front, Right, Back, and Left for Ready photos and re-measure. Photos stay stored on your account.';
 
 export const HYBRID_COSETTLE_COPY =
-  'The 3D look-alike is visual only. Muscle mass (lbs) comes from Manual, DEXA, or InBody — never from photos.';
+  'The Ready photo is visual only. Muscle mass (lbs) comes from Manual, DEXA, or InBody — never from photos.';
 
 /** Lex Theme 5 — no “clinical”. Soft-reading language. */
 export const READY_UNAVAILABLE_VISUAL_FAILED =
-  '3D look-alike could not be built from your kept photos. Photo estimate is still saved.';
+  'Ready photo could not be shown from your kept photos. Photo estimate is still saved.';
 
 export function discardedFrblPoses(): Record<PoseId, boolean> {
   return { front: false, right: false, back: false, left: false };
@@ -74,6 +74,21 @@ export function isRetainedFrblScan(scan: {
   if (scan.photosRetained !== true) return false;
   if (scan.protocol && scan.protocol !== FORMAVISION_PHOTO_PROTOCOL) return false;
   return Object.values(scan.poses).some(Boolean);
+}
+
+/** Latest retained FRBL photo row for Ready 2D. Never a guided 4-pose / Meshy pick. */
+export function pickRetainedFrblReadyScan<
+  T extends {
+    protocol?: string;
+    photosRetained?: boolean | null;
+    poses: Record<string, boolean>;
+    captureStatus?: string | null;
+  },
+>(scans: ReadonlyArray<T> | null | undefined): T | null {
+  if (!scans) return null;
+  const retained = scans.filter(isRetainedFrblScan);
+  if (retained.length === 0) return null;
+  return retained.find((scan) => scan.captureStatus === 'ready') ?? retained[0];
 }
 
 export function sessionIdForFrbl(scan: {

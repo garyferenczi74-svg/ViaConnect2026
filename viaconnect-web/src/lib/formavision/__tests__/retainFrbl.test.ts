@@ -23,6 +23,7 @@ import {
   historyFrblCopy,
   isRetainedFrblScan,
   patchScanAfterFrblDiscard,
+  pickRetainedFrblReadyScan,
   posesFromSessionFullPaths,
   retainedFrblPoses,
   sessionIdForFrbl,
@@ -58,7 +59,8 @@ describe('retain FRBL — discard vs retain', () => {
     expect(analyzeConsentCopy(true)).toBe(RETAIN_FRBL_SHIELD);
     expect(RETAIN_FRBL_CONSENT_LABEL).toMatch(/Front, Right, Back, and Left/);
     expect(RETAIN_FRBL_CONSENT_BODY).toMatch(/opt in/i);
-    expect(RETAIN_FRBL_CONSENT_BODY).toMatch(/3D/);
+    expect(RETAIN_FRBL_CONSENT_BODY).toMatch(/Ready|2D/);
+    expect(RETAIN_FRBL_CONSENT_BODY).not.toMatch(/3D look-alike/);
   });
 
   it('discarded photo rows keep poses.any false so pickReadyFrblSessionId is null', () => {
@@ -124,6 +126,23 @@ describe('retain FRBL — discard vs retain', () => {
     expect(historyHasDiscardedPhotoScan([retained])).toBe(false);
     expect(isRetainedFrblScan(retained)).toBe(true);
     expect(sessionIdForFrbl(retained)).toBe('sess-retain-1');
+    expect(pickRetainedFrblReadyScan([retained])).toEqual(retained);
+  });
+
+  it('pickRetainedFrblReadyScan ignores guided 4-pose and discarded photo rows', () => {
+    const discarded = scan();
+    const guided = scan({
+      id: 'guided-1',
+      protocol: '4pose_v1',
+      poses: { front: true, right: true, back: true, left: true },
+    });
+    const retained = scan({
+      photosRetained: true,
+      frblSessionId: 'sess-retain-1',
+      poses: { front: true, right: false, back: false, left: false },
+    });
+    expect(pickRetainedFrblReadyScan([guided, discarded])).toBeNull();
+    expect(pickRetainedFrblReadyScan([guided, discarded, retained])?.id).toBe('photo-1');
   });
 
   it('history, Analyze, and Ready share the same retain constants', () => {
@@ -138,7 +157,14 @@ describe('retain FRBL — discard vs retain', () => {
     expect(analyze).toMatch(/retainFrblFn/);
     expect(history).toMatch(/scanHistoryShowsFrblGrid/);
     expect(page).toMatch(/pickReadyFrblSessionId/);
+    expect(page).toMatch(/pickRetainedFrblReadyScan/);
     expect(page).toMatch(/useTripoVisual/);
+    expect(page).toMatch(/parkCreate: true/);
+    expect(page).toMatch(/FormaVisionFrblReadyPlate|frblSessionId=\{retainedFrblSessionId\}/);
+    expect(history).toMatch(/invalidateSignedFullUrlsForScan/);
+    expect(src('src/components/scan/ScanHistorySection.tsx')).toMatch(
+      /invalidateSignedFullUrlsForScan/,
+    );
     const retainRoute = src('src/app/api/formavision/retain-frbl/route.ts');
     expect(retainRoute).toMatch(/_full_path/);
     expect(retainRoute).toMatch(/startMeshyForReadySession/);
@@ -179,11 +205,11 @@ describe('retain FRBL — discard vs retain', () => {
     );
     expect(retainedHtml).not.toContain('scan-history-photos-discarded-photo-1');
     expect(retainedHtml).toContain('scan-history-photos-retained-photo-1');
-    expect(retainedHtml).toContain('Photos kept for 3D and re-measure.');
+    expect(retainedHtml).toContain('Photos kept for Ready and re-measure.');
     expect(retainedHtml).toContain('scan-history-remove-photos-photo-1');
     expect(retainedHtml).not.toContain('scan-history-delete-photo-1');
     expect(discardedHtml).toContain('Photos are not stored after analysis.');
-    expect(discardedHtml).not.toContain('Photos kept for 3D and re-measure.');
+    expect(discardedHtml).not.toContain('Photos kept for Ready and re-measure.');
     expect(discardedHtml).not.toContain('scan-history-remove-photos-photo-1');
   });
 

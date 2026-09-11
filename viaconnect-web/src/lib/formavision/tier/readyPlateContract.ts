@@ -242,19 +242,20 @@ export type ReadySuccessLook =
   | 'wireframe-picasso'
   | 'notice';
 
-export type ReadyPlateMeshLook = 'meshy-glb' | 'notice';
+export type ReadyPlateMeshLook = 'frbl-2d' | 'meshy-glb' | 'notice';
 
 export const READY_PARAMETRIC_SUCCESS_LOOK = 'holographic-f3' as const;
 
-// Product Ready plate: Meshy GLB or honest notice. Never F3-as-body.
+// Product Ready plate: retained FRBL 2D photo. Parked Meshy GLB is never SUCCESS.
 export function resolveReadyPlateMeshLook(
-  readyViewer: 'model-viewer' | 'notice' | 'r3f',
+  readyViewer: 'frbl-2d' | 'model-viewer' | 'notice' | 'r3f',
 ): ReadyPlateMeshLook {
+  if (readyViewer === 'frbl-2d') return 'frbl-2d';
   return readyViewer === 'model-viewer' ? 'meshy-glb' : 'notice';
 }
 
 export function isAllowedReadyPlateSuccessLook(look: string): boolean {
-  return look === 'meshy-glb';
+  return look === 'frbl-2d';
 }
 
 export function isF3UsedAsBodySubstituteFail(input: {

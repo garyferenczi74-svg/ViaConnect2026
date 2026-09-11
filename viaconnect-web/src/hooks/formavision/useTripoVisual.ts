@@ -48,6 +48,8 @@ function asVisual(raw: VisualPayload | undefined): MeshyVisualState {
 
 export interface UseTripoVisualOptions {
   historyResolved?: boolean;
+  // Brief 63: Ready settle is retained FRBL 2D. Do not POST Tripo create.
+  parkCreate?: boolean;
 }
 
 export function shouldKickTripoCreate(
@@ -96,6 +98,7 @@ export function useTripoVisual(
   options: UseTripoVisualOptions = {},
 ): TripoVisualClient {
   const historyResolved = options.historyResolved === true;
+  const parkCreate = options.parkCreate === true;
   const [visual, setVisual] = useState<MeshyVisualState>(() => emptyMeshyVisual());
   const [glbUrl, setGlbUrl] = useState<string | null>(null);
   const createdForRef = useRef<string | null>(null);
@@ -127,7 +130,7 @@ export function useTripoVisual(
     };
 
     const tick = async (): Promise<void> => {
-      if (shouldKickTripoCreate(sessionId, createdForRef.current)) {
+      if (!parkCreate && shouldKickTripoCreate(sessionId, createdForRef.current)) {
         const created = await fetchJson('/api/formavision/tripo', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -180,7 +183,7 @@ export function useTripoVisual(
       cancelled = true;
       if (timer) clearTimeout(timer);
     };
-  }, [historyResolved, sessionId]);
+  }, [historyResolved, parkCreate, sessionId]);
 
   return {
     status: visual.status,
