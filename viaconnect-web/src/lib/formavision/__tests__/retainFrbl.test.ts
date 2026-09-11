@@ -28,6 +28,7 @@ import {
   retainedFrblPoses,
   sessionIdForFrbl,
 } from '@/lib/formavision/retainFrbl';
+import { selectReadyViewer } from '@/lib/formavision/viewer/selectReadyViewer';
 import {
   historyHasDiscardedPhotoScan,
   READY_UNAVAILABLE_VISUAL_FAILED,
@@ -80,7 +81,7 @@ describe('retain FRBL — discard vs retain', () => {
     expect(historyFrblCopy(discarded)).toBe('discarded');
   });
 
-  it('retained_views flags without session *_full_path keep poses.any false', () => {
+  it('retained_views flags without session *_full_path still mark honest FRBL presence', () => {
     const flagsOnly = photoScanToSummary({
       id: 'photo-flags',
       scan_date: '2026-09-06',
@@ -88,13 +89,14 @@ describe('retain FRBL — discard vs retain', () => {
       photo_session_id: 'sess-flags-1',
       retained_views: ['front', 'right', 'back', 'left'],
     });
-    expect(flagsOnly.poses).toEqual(discardedFrblPoses());
-    expect(flagsOnly.photosRetained).toBe(false);
-    expect(flagsOnly.frblSessionId).toBeNull();
-    expect(Object.values(flagsOnly.poses).some(Boolean)).toBe(false);
-    expect(pickReadyFrblSessionId([flagsOnly])).toBeNull();
-    expect(scanHistoryShowsFrblGrid(flagsOnly)).toBe(false);
-    expect(isRetainedFrblScan(flagsOnly)).toBe(false);
+    expect(flagsOnly.poses).toEqual(retainedFrblPoses(['front', 'right', 'back', 'left']));
+    expect(flagsOnly.photosRetained).toBe(true);
+    expect(flagsOnly.frblSessionId).toBe('sess-flags-1');
+    expect(Object.values(flagsOnly.poses).some(Boolean)).toBe(true);
+    expect(pickReadyFrblSessionId([flagsOnly])).toBe('sess-flags-1');
+    expect(scanHistoryShowsFrblGrid(flagsOnly)).toBe(true);
+    expect(isRetainedFrblScan(flagsOnly)).toBe(true);
+    expect(pickRetainedFrblReadyScan([flagsOnly])).toEqual(flagsOnly);
   });
 
   it('retained photo rows set poses.any only from body_photo_sessions *_full_path', () => {
@@ -143,6 +145,38 @@ describe('retain FRBL — discard vs retain', () => {
     });
     expect(pickRetainedFrblReadyScan([guided, discarded])).toBeNull();
     expect(pickRetainedFrblReadyScan([guided, discarded, retained])?.id).toBe('photo-1');
+  });
+
+  it('retained history scan drives selectReadyViewer frbl-2d; discard stays notice', () => {
+    const historyRetained = scan({
+      photosRetained: true,
+      frblSessionId: 'sess-retain-1',
+      poses: { front: true, right: true, back: true, left: true },
+    });
+    const picked = pickRetainedFrblReadyScan([scan(), historyRetained]);
+    expect(picked).toEqual(historyRetained);
+    expect(
+      selectReadyViewer({
+        host: 'phone',
+        hasReadyScanData: true,
+        meshyStatus: 'failed',
+        meshyGlbUrl: null,
+        photosRetained: picked?.photosRetained === true,
+        frblPoses: picked?.poses ?? discardedFrblPoses(),
+        frblSessionId: picked ? sessionIdForFrbl(picked) : null,
+      }),
+    ).toBe('frbl-2d');
+    expect(
+      selectReadyViewer({
+        host: 'desktop',
+        hasReadyScanData: true,
+        meshyStatus: 'idle',
+        meshyGlbUrl: null,
+        photosRetained: false,
+        frblPoses: discardedFrblPoses(),
+        frblSessionId: null,
+      }),
+    ).toBe('notice');
   });
 
   it('history, Analyze, and Ready share the same retain constants', () => {

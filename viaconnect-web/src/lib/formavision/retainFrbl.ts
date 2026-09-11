@@ -44,7 +44,7 @@ export function patchScanAfterFrblDiscard(scan: ScanSummary): ScanSummary {
   };
 }
 
-/** Pose presence from stored session `*_full_path` only — never from photo_scans flags. */
+/** Pose presence from stored session `*_full_path`. */
 export function posesFromSessionFullPaths(
   row: Partial<Record<`${PoseId}_full_path`, unknown>> | null | undefined,
 ): Record<PoseId, boolean> {
@@ -55,6 +55,20 @@ export function posesFromSessionFullPaths(
     poses[pose] = typeof path === 'string' && path.length > 0;
   }
   return poses;
+}
+
+/**
+ * Honest FRBL presence for Ready / history. Session `*_full_path` wins.
+ * If those columns are empty (user-scoped join miss) but `retained_views`
+ * lists kept poses, use that so Ready can still mount frbl-2d.
+ */
+export function posesFromRetainedPhotoRow(
+  sessionPaths?: Partial<Record<`${PoseId}_full_path`, unknown>> | null,
+  retainedViews?: ReadonlyArray<string> | null,
+): Record<PoseId, boolean> {
+  const fromPaths = posesFromSessionFullPaths(sessionPaths);
+  if (Object.values(fromPaths).some(Boolean)) return fromPaths;
+  return retainedFrblPoses(retainedViews);
 }
 
 export function retainedFrblPoses(
@@ -70,10 +84,12 @@ export function isRetainedFrblScan(scan: {
   protocol?: string;
   photosRetained?: boolean | null;
   poses: Record<string, boolean>;
+  retainedViews?: ReadonlyArray<string> | null;
 }): boolean {
   if (scan.photosRetained !== true) return false;
   if (scan.protocol && scan.protocol !== FORMAVISION_PHOTO_PROTOCOL) return false;
-  return Object.values(scan.poses).some(Boolean);
+  if (Object.values(scan.poses).some(Boolean)) return true;
+  return Object.values(retainedFrblPoses(scan.retainedViews)).some(Boolean);
 }
 
 /** Latest retained FRBL photo row for Ready 2D. Never a guided 4-pose / Meshy pick. */

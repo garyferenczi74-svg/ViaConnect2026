@@ -355,7 +355,7 @@ describe('scanReadsShared', () => {
       expect(scans.map((s) => s.id)).toEqual(['session-1']);
     });
 
-    it('does not treat photo_scans retained_views as pose presence without session paths', async () => {
+    it('uses retained_views as pose presence when session paths are empty', async () => {
       installTable(
         { data: [], error: null },
         {
@@ -375,9 +375,53 @@ describe('scanReadsShared', () => {
       expect(scans[0]).toMatchObject({
         id: 'photo-flags-only',
         protocol: 'formavision_photo',
-        photosRetained: false,
-        frblSessionId: null,
-        poses: { front: false, right: false, back: false, left: false },
+        photosRetained: true,
+        frblSessionId: 'sess-missing',
+        poses: { front: true, right: true, back: true, left: true },
+      });
+    });
+
+    it('prefers a same-day retained FRBL row over a newer discarded Analyze', async () => {
+      installTable(
+        { data: [], error: null },
+        {
+          data: [
+            {
+              id: 'photo-new-discard',
+              scan_date: '2026-09-06',
+              created_at: '2026-09-06T20:01:00Z',
+              photos_retained: false,
+              photo_session_id: null,
+              retained_views: null,
+            },
+            {
+              id: 'photo-old-retain',
+              scan_date: '2026-09-06',
+              created_at: '2026-09-06T19:25:00Z',
+              photos_retained: true,
+              photo_session_id: 'sess-retain-1',
+              retained_views: ['front', 'right', 'back', 'left'],
+            },
+          ],
+          error: null,
+        },
+        {
+          data: [{
+            id: 'sess-retain-1',
+            front_full_path: 'user-1/sess-retain-1/front_full.jpg',
+            right_full_path: 'user-1/sess-retain-1/right_full.jpg',
+            back_full_path: 'user-1/sess-retain-1/back_full.jpg',
+            left_full_path: 'user-1/sess-retain-1/left_full.jpg',
+          }],
+          error: null,
+        },
+      );
+      const scans = await listScans('user-1');
+      expect(scans.map((s) => s.id)).toEqual(['photo-old-retain']);
+      expect(scans[0]).toMatchObject({
+        photosRetained: true,
+        frblSessionId: 'sess-retain-1',
+        poses: { front: true, right: true, back: true, left: true },
       });
     });
 
