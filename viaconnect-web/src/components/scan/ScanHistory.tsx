@@ -19,6 +19,7 @@ import {
   scanHistoryPhotoCaption,
 } from '@/lib/formavision/twoProtocolCopy';
 import { patchScanAfterFrblDiscard } from '@/lib/formavision/retainFrbl';
+import { invalidateSignedFullUrlsForScan } from '@/lib/formavision/viewer/signedFullUrlCache';
 import { Modal } from '@/components/ui/Modal';
 
 /**
@@ -168,6 +169,8 @@ export function ScanHistory({ scans, onDeleted, onPhotosDiscarded }: ScanHistory
         });
         const body = (await res.json().catch(() => null)) as DiscardResponse | null;
         if (res.ok && body?.ok) {
+          const discarded = scans?.find((scan) => scan.id === photoScanId);
+          if (discarded) invalidateSignedFullUrlsForScan(discarded);
           setDiscardedIds((prev) => {
             const next = new Set(prev);
             next.add(photoScanId);
@@ -190,7 +193,7 @@ export function ScanHistory({ scans, onDeleted, onPhotosDiscarded }: ScanHistory
         clearTimeout(timer);
       }
     },
-    [onPhotosDiscarded],
+    [onPhotosDiscarded, scans],
   );
 
   if (scans === null) {

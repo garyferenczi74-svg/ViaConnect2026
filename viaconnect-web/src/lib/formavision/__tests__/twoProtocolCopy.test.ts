@@ -35,6 +35,7 @@ import {
   HISTORY_REMOVE_PHOTOS_BODY,
   HISTORY_REMOVE_PHOTOS_CONFIRM,
   HISTORY_REMOVE_PHOTOS_TITLE,
+  HYBRID_COSETTLE_COPY,
   SCAN_HISTORY_PHOTOS_DISCARDED,
   SCAN_HISTORY_PHOTOS_RETAINED,
   UNKNOWN_PROTOCOL_LABEL,
@@ -118,7 +119,7 @@ describe('twoProtocolCopy — consumer labels', () => {
     expect(photoWhatYouDoNotGet(false)).toMatch(/discarded/i);
     expect(photoWhatYouDoNotGet(false)).toMatch(/regional fat/i);
     expect(photoWhatYouDoNotGet(true)).toBe(PHOTO_WHAT_YOU_DO_NOT_GET_RETAINED);
-    expect(photoWhatYouDoNotGet(true)).toMatch(/3D and re-measure/i);
+    expect(photoWhatYouDoNotGet(true)).toMatch(/Ready photos and re-measure/i);
     expect(photoWhatYouDoNotGet(true)).toMatch(/regional fat/i);
     expect(photoWhatYouDoNotGet(true)).not.toMatch(/discard/i);
     expect(PHOTO_WHAT_YOU_DO_NOT_GET_RETAINED).not.toMatch(/discard/i);
@@ -136,7 +137,8 @@ describe('twoProtocolCopy — Ready unavailable selection', () => {
     ).toBe('photo-discarded');
     expect(readyUnavailableCopy('photo-discarded')).toBe(READY_UNAVAILABLE_PHOTO_DISCARDED);
     expect(READY_UNAVAILABLE_PHOTO_DISCARDED).toMatch(/discarded/i);
-    expect(READY_UNAVAILABLE_PHOTO_DISCARDED).toMatch(/Guided 4-pose/);
+    expect(READY_UNAVAILABLE_PHOTO_DISCARDED).toMatch(/Ready photo/i);
+    expect(READY_UNAVAILABLE_PHOTO_DISCARDED).not.toMatch(/3D look-alike|Guided 4-pose/i);
     expect(READY_UNAVAILABLE_PHOTO_DISCARDED).not.toMatch(/wireframe/i);
   });
 
@@ -430,20 +432,24 @@ describe('twoProtocolCopy — Lex Theme 5 live nits', () => {
     expect(BODY_SCAN_RESULTS_RELIABLE_READING).toMatch(/manually/);
     expect(BODY_SCAN_RESULTS_RELIABLE_READING).not.toMatch(/clinical/i);
     expect(PHOTO_UPLOADER_PRIVACY_STRIP).toBe(
-      'Photos are used only to calculate measurements. They are not kept as your body photos or used as the Ready 3D body.',
+      'Photos are used only to calculate measurements. They are not kept as your body photos or used as the Ready photo.',
     );
     expect(PHOTO_UPLOADER_PRIVACY_STRIP).not.toMatch(/immediately discarded/i);
     expect(SCAN_HISTORY_PHOTOS_DISCARDED).toBe('Photos are not stored after analysis.');
-    expect(SCAN_HISTORY_PHOTOS_RETAINED).toBe('Photos kept for 3D and re-measure.');
+    expect(SCAN_HISTORY_PHOTOS_RETAINED).toBe('Photos kept for Ready and re-measure.');
     expect(HISTORY_REMOVE_PHOTOS_TITLE).toBe('Remove kept photos?');
     expect(HISTORY_REMOVE_PHOTOS_BODY).toBe(
-      'Photos used for 3D and re-measure will be deleted. Your body-fat estimate stays.',
+      'Photos used for Ready and re-measure will be deleted. Your body-fat estimate stays.',
     );
     expect(HISTORY_REMOVE_PHOTOS_CONFIRM).toBe('Remove photos');
     expect(HISTORY_REMOVE_PHOTOS_BODY).toMatch(/body-fat estimate stays/i);
     expect(HISTORY_REMOVE_PHOTOS_BODY).not.toMatch(/clinical/i);
     expect(READY_UNAVAILABLE_VISUAL_FAILED).toMatch(/kept photos/i);
     expect(READY_UNAVAILABLE_VISUAL_FAILED).not.toMatch(/clinical/i);
+    expect(READY_UNAVAILABLE_VISUAL_FAILED).not.toMatch(/3D look-alike/);
+    expect(READY_UNAVAILABLE_GENERIC).toBe('Ready photo unavailable.');
+    expect(HYBRID_COSETTLE_COPY).toMatch(/Ready photo is visual only/);
+    expect(HYBRID_COSETTLE_COPY).not.toMatch(/3D look-alike/);
     expect(PHOTO_RETAKE_FOR_BEST_RESULTS).toBe('Retake for best results.');
     expect(PHOTO_RETAKE_FOR_BEST_RESULTS).not.toMatch(/accuracy/i);
     expect(PHOTO_FLAGGED_PHOTOS_FOR_BEST_RESULTS).toBe(

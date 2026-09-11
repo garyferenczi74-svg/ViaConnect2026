@@ -48,6 +48,9 @@ function renderPhoneReady(overrides: {
   meshyGlbUrl?: string | null;
   meshyStatus?: 'idle' | 'pending' | 'succeeded' | 'failed' | 'skipped_no_key';
   host?: 'phone' | 'desktop' | 'unknown';
+  photosRetained?: boolean;
+  frblSessionId?: string | null;
+  frblPoses?: Record<string, boolean> | null;
 } = {}) {
   const scan = garyReadyScan();
   const circumferences = estimateCircumferencesFromComposition(scan, 'male', 'in');
@@ -62,13 +65,22 @@ function renderPhoneReady(overrides: {
       readyViewerHost: overrides.host ?? 'phone',
       meshyGlbUrl: overrides.meshyGlbUrl ?? null,
       meshyStatus: overrides.meshyStatus ?? 'idle',
+      photosRetained: overrides.photosRetained,
+      frblSessionId: overrides.frblSessionId,
+      frblPoses: overrides.frblPoses,
       children: React.createElement(FormaVisionPlateNotice, { kind: 'unavailable' }),
     }),
   );
 }
 
-describe('Gary lock: phone AND desktop Ready use model-viewer GLB, not R3F', () => {
-  it('Ready mobile path selects model-viewer when Meshy visual is ready', () => {
+const RETAINED = {
+  photosRetained: true,
+  frblSessionId: 'sess-retain-1',
+  frblPoses: { front: true, right: true, back: true, left: true },
+} as const;
+
+describe('Gary lock: phone AND desktop Ready use retained FRBL 2D, not R3F', () => {
+  it('Ready mobile path selects frbl-2d when retained FRBL is present — even with a Meshy GLB', () => {
     expect(hasReadyScanData(garyReadyScan())).toBe(true);
     expect(
       selectReadyViewer({
@@ -76,27 +88,22 @@ describe('Gary lock: phone AND desktop Ready use model-viewer GLB, not R3F', () 
         hasReadyScanData: true,
         meshyStatus: 'succeeded',
         meshyGlbUrl: GLB,
+        ...RETAINED,
       }),
-    ).toBe('model-viewer');
+    ).toBe('frbl-2d');
 
     const markup = renderPhoneReady({
       meshyGlbUrl: GLB,
       meshyStatus: 'succeeded',
+      ...RETAINED,
     });
-    expect(markup).toContain('data-ready-viewer="model-viewer"');
-    expect(markup).toContain('data-surface="model-viewer"');
+    expect(markup).toContain('data-ready-viewer="frbl-2d"');
+    expect(markup).toContain('data-surface="frbl-2d"');
     expect(markup).toContain('data-r3f-parked="true"');
-    expect(markup).toContain(`data-model-viewer-version="${MODEL_VIEWER_VERSION}"`);
-    expect(markup).toContain('formavision-model-viewer');
-    expect(markup).toContain('formavision-model-viewer-el');
-    expect(markup).toContain(GLB);
-    expect(markup).toContain('formavision-f3-overlay');
-    expect(markup).toContain('data-f3-look="holographic-f3"');
-    expect(markup).toContain('data-mesh-look="meshy-glb"');
-    expect(markup).toContain('148deg');
-    expect(markup).toContain('2.72m');
+    expect(markup).toContain('data-mesh-look="frbl-2d"');
+    expect(markup).toContain('formavision-frbl-ready-plate');
+    expect(markup).not.toContain('formavision-model-viewer-el');
     expect(markup).not.toContain('repeating-linear-gradient');
-    expect(markup).not.toContain('ar-modes');
     expect(markup).not.toContain('formavision-3d-pending');
     expect(markup).not.toContain('formavision-3d-mount');
     expect(markup).not.toContain('formavision-anatomical-floor');
@@ -154,31 +161,35 @@ describe('Gary lock: phone AND desktop Ready use model-viewer GLB, not R3F', () 
       /wireframe/i,
     );
     expect(avatar).toMatch(/parkR3fReady/);
-    expect(avatar).toMatch(/readyPainted = parkR3fReady \? modelViewerPainted : canvasHasPainted/);
+    expect(avatar).toMatch(/modelViewerPainted/);
+    expect(avatar).toMatch(/frblPhotoPainted/);
     expect(avatar).not.toMatch(/canvasHasPainted \|\| modelViewerPainted/);
     expect(model).not.toMatch(/shouldStampPaintedFrame|FirstPaintWatchdog|drawingBufferHasPixels/);
   });
 
-  it('desktop Ready with Meshy GLB uses the same in-page model-viewer, not R3F', () => {
+  it('desktop Ready with retained FRBL uses the same 2D photo plate, not R3F', () => {
     const markup = renderPhoneReady({
       host: 'desktop',
       meshyGlbUrl: GLB,
       meshyStatus: 'succeeded',
+      ...RETAINED,
     });
-    expect(markup).toContain('data-ready-viewer="model-viewer"');
+    expect(markup).toContain('data-ready-viewer="frbl-2d"');
     expect(markup).toContain('data-ready-host="desktop"');
     expect(markup).toContain('data-r3f-parked="true"');
-    expect(markup).toContain('formavision-model-viewer-el');
-    expect(markup).toContain(GLB);
+    expect(markup).toContain('formavision-frbl-ready-plate');
+    expect(markup).not.toContain('formavision-model-viewer-el');
     expect(markup).not.toContain('formavision-3d-pending');
     expect(markup).not.toContain('data-ready-viewer="r3f"');
   });
 
   it('Picasso lock: F3 is sheen on Meshy only — never a wireframe body substitute', () => {
+    expect(resolveReadyPlateMeshLook('frbl-2d')).toBe('frbl-2d');
     expect(resolveReadyPlateMeshLook('model-viewer')).toBe('meshy-glb');
     expect(resolveReadyPlateMeshLook('notice')).toBe('notice');
     expect(resolveReadyPlateMeshLook('r3f')).toBe('notice');
-    expect(isAllowedReadyPlateSuccessLook('meshy-glb')).toBe(true);
+    expect(isAllowedReadyPlateSuccessLook('frbl-2d')).toBe(true);
+    expect(isAllowedReadyPlateSuccessLook('meshy-glb')).toBe(false);
     expect(isAllowedReadyPlateSuccessLook('holographic-f3')).toBe(false);
     expect(isAllowedReadyPlateSuccessLook('wireframe-picasso')).toBe(false);
     expect(
@@ -207,11 +218,12 @@ describe('Gary lock: phone AND desktop Ready use model-viewer GLB, not R3F', () 
       host: 'desktop',
       meshyGlbUrl: GLB,
       meshyStatus: 'succeeded',
+      ...RETAINED,
     });
-    expect(ok).toContain('data-mesh-look="meshy-glb"');
-    expect(ok).toContain('formavision-f3-overlay');
-    expect(ok).toContain('data-f3-look="holographic-f3"');
+    expect(ok).toContain('data-mesh-look="frbl-2d"');
+    expect(ok).not.toContain('formavision-f3-overlay');
     expect(ok).not.toContain('data-mesh-look="holographic-f3"');
+    expect(ok).not.toContain('data-mesh-look="meshy-glb"');
   });
 
   it('desktop Ready without GLB is honest text — never the parametric wireframe', () => {

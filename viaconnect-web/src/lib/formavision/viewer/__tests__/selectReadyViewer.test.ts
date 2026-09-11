@@ -11,7 +11,7 @@ import {
 const GLB = 'https://storage.example/u/s/meshy/visual.glb?token=1';
 
 describe('selectReadyViewer Gary lock: phone + desktop together', () => {
-  it('phone Ready + Meshy GLB selects model-viewer', () => {
+  it('phone Ready + Meshy GLB does not settle model-viewer without retained FRBL', () => {
     expect(
       selectReadyViewer({
         host: 'phone',
@@ -20,7 +20,7 @@ describe('selectReadyViewer Gary lock: phone + desktop together', () => {
         meshyGlbUrl: GLB,
         glbLoadFailed: false,
       }),
-    ).toBe('model-viewer');
+    ).toBe('notice');
     expect(
       isMeshyVisualGlbReady({
         meshyStatus: 'succeeded',
@@ -30,7 +30,7 @@ describe('selectReadyViewer Gary lock: phone + desktop together', () => {
     ).toBe(true);
   });
 
-  it('desktop Ready + Meshy GLB selects the same model-viewer path', () => {
+  it('desktop Ready + Meshy GLB stays on the same notice path without retained FRBL', () => {
     expect(
       selectReadyViewer({
         host: 'desktop',
@@ -38,7 +38,7 @@ describe('selectReadyViewer Gary lock: phone + desktop together', () => {
         meshyStatus: 'succeeded',
         meshyGlbUrl: GLB,
       }),
-    ).toBe('model-viewer');
+    ).toBe('notice');
     expect(
       isParametricReadyViewerFail({
         hasReadyScanData: true,

@@ -204,7 +204,7 @@ describe('ScanHistory - rendering a scan', () => {
     );
     expect(html).toContain('scan-history-remove-photos-photo-kept');
     expect(html).not.toContain('scan-history-delete-photo-kept');
-    expect(html).toContain('Photos kept for 3D and re-measure.');
+    expect(html).toContain('Photos kept for Ready and re-measure.');
     expect(html).toContain('Body fat 29.0–33.0%');
     expect(html).toMatch(/min-h-\[44px\]/);
   });
@@ -237,13 +237,13 @@ describe('ScanHistory - rendering a scan', () => {
     expect(html).not.toContain('scan-history-delete-photo-kept');
     expect(html).not.toContain('scan-history-pose-placeholder-front');
     expect(html).not.toContain('scan-history-pose-loading-front');
-    expect(html).not.toContain('Photos kept for 3D and re-measure.');
+    expect(html).not.toContain('Photos kept for Ready and re-measure.');
   });
 
   it('wires draft Lex remove-photos confirm copy', () => {
     expect(HISTORY_REMOVE_PHOTOS_TITLE).toBe('Remove kept photos?');
     expect(HISTORY_REMOVE_PHOTOS_BODY).toBe(
-      'Photos used for 3D and re-measure will be deleted. Your body-fat estimate stays.',
+      'Photos used for Ready and re-measure will be deleted. Your body-fat estimate stays.',
     );
     expect(HISTORY_REMOVE_PHOTOS_CONFIRM).toBe('Remove photos');
   });
