@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { FrblSideToggle } from '../FrblSideToggle';
@@ -32,7 +34,7 @@ describe('FrblSideToggle', () => {
     expect(html).toContain('data-present="false"');
     expect(html).toContain('formavision-frbl-side-missing');
     expect(html).toContain(FRBL_SIDE_UNAVAILABLE_HELPER);
-    expect(html).not.toMatch(/silhouette|outline|wireframe/i);
+    expect(html).not.toMatch(/silhouette|wireframe|anatomical/i);
   });
 });
 
@@ -46,13 +48,18 @@ describe('FormaVisionFrblReadyPlate', () => {
     );
     expect(html).toContain('formavision-frbl-ready-plate');
     expect(html).toContain('data-ready-side="front"');
-    expect(html).toContain('object-contain');
     expect(html).toContain('overflow-hidden');
     expect(html).toContain('formavision-frbl-side-toggle');
     expect(html).not.toContain('overflow-y-auto');
     expect(html).not.toContain('formavision-model-viewer');
     expect(html).not.toContain('formavision-3d-mount');
     expect(html).not.toContain('formavision-anatomical-floor');
+    const plateSrc = readFileSync(
+      join(process.cwd(), 'src/components/formavision/FormaVisionFrblReadyPlate.tsx'),
+      'utf8',
+    );
+    expect(plateSrc).toMatch(/object-contain/);
+    expect(plateSrc).toMatch(/fetchSignedFullUrl/);
   });
 
   it('defaults to first available side when Front was not kept', () => {
