@@ -160,7 +160,7 @@ export function FormaVisionFrblReadyPlate({
       >
         <div
           data-testid="formavision-frbl-ready-aperture"
-          className={`absolute inset-x-2 top-2 bottom-[4.75rem] overflow-hidden rounded-[1.5rem] sm:bottom-[5.25rem] sm:rounded-[1.75rem] ${
+          className={`absolute inset-x-2 top-2 bottom-[4.75rem] overflow-hidden rounded-[1.5rem] bg-[#111827] sm:bottom-[5.25rem] sm:rounded-[1.75rem] ${
             !reducedMotion && rimPulse ? 'fv-frbl-rim-pulse' : ''
           }`}
           style={{
@@ -180,39 +180,37 @@ export function FormaVisionFrblReadyPlate({
                 'radial-gradient(ellipse 58% 72% at 50% 46%, rgba(17,24,39,0) 38%, rgba(17,24,39,0.55) 78%, rgba(11,21,32,0.82) 100%)',
             }}
           />
-          <div className="absolute inset-0 z-[1] flex items-center justify-center">
-            {displayUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element -- signed Ready full URL, not an optimizable remote asset
-              <img
-                key={url ?? displayUrl}
-                src={displayUrl}
-                alt={`${FRBL_SIDE_LABELS[side]} Ready photo`}
-                data-testid="formavision-frbl-ready-photo"
-                onLoad={handleLoad}
-                className="h-full w-full object-contain"
-                style={{
-                  opacity: fading && url && url !== shownUrl ? 0.35 : 1,
-                  transition: reducedMotion ? undefined : `opacity ${CROSSFADE_MS}ms ease`,
-                }}
-              />
-            ) : present && !failed ? (
-              <p
-                data-testid="formavision-frbl-ready-loading"
-                className="px-6 text-center text-sm text-white/70"
-                role="status"
-              >
-                Loading Ready photo from your scan.
-              </p>
-            ) : (
-              <p
-                data-testid="formavision-frbl-ready-empty"
-                className="px-6 text-center text-sm text-white/70"
-                role="status"
-              >
-                {FRBL_SIDE_UNAVAILABLE_HELPER}
-              </p>
-            )}
-          </div>
+          {displayUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- signed Ready full URL, not an optimizable remote asset
+            <img
+              key={url ?? displayUrl}
+              src={displayUrl}
+              alt={`${FRBL_SIDE_LABELS[side]} Ready photo`}
+              data-testid="formavision-frbl-ready-photo"
+              onLoad={handleLoad}
+              className="absolute inset-0 z-[1] h-full w-full object-contain"
+              style={{
+                opacity: fading && url && url !== shownUrl ? 0.35 : 1,
+                transition: reducedMotion ? undefined : `opacity ${CROSSFADE_MS}ms ease`,
+              }}
+            />
+          ) : present && !failed ? (
+            <p
+              data-testid="formavision-frbl-ready-loading"
+              className="absolute inset-0 z-[3] flex items-center justify-center px-6 text-center text-sm text-white/70"
+              role="status"
+            >
+              Loading Ready photo from your scan.
+            </p>
+          ) : (
+            <p
+              data-testid="formavision-frbl-ready-empty"
+              className="absolute inset-0 z-[3] flex items-center justify-center px-6 text-center text-sm text-white/70"
+              role="status"
+            >
+              {FRBL_SIDE_UNAVAILABLE_HELPER}
+            </p>
+          )}
           {displayUrl ? (
             <div
               data-testid="formavision-frbl-ready-ground-glow"

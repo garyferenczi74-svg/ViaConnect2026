@@ -107,8 +107,12 @@ describe('FormaVisionFrblReadyPlate', () => {
       }),
     );
     expect(html).toContain('data-reduced-motion="true"');
-    expect(html).not.toContain('fv-frbl-stage-enter');
-    expect(html).not.toContain('fv-frbl-rim-pulse');
+    expect(html).not.toMatch(
+      /data-testid="formavision-frbl-ready-bezel"[^>]*fv-frbl-stage-enter/,
+    );
+    expect(html).not.toMatch(
+      /data-testid="formavision-frbl-ready-aperture"[^>]*fv-frbl-rim-pulse/,
+    );
     expect(html).toMatch(/prefers-reduced-motion: reduce/);
   });
 
@@ -129,6 +133,7 @@ describe('FormaVisionFrblReadyPlate', () => {
     expect(FRBL_READY_STAGE_SPEC.plasmaCyan).toBe('#2EE6D6');
     expect(plateSrc).toMatch(/object-contain/);
     expect(plateSrc).toMatch(/border-white\/15/);
+    expect(plateSrc).toMatch(/bg-\[#111827\]/);
     expect(plateSrc).toMatch(/radial-gradient/);
     expect(plateSrc).toMatch(/#2EE6D6|46,230,214/);
     expect(plateSrc).toMatch(/prefers-reduced-motion/);
