@@ -85,6 +85,7 @@ import {
 import {
   decideReadyNoticeKind,
   detectReadyViewerHost,
+  hasRetainedFrblReady,
   MESHY_READY_WAIT_MS,
   selectReadyViewer,
   shouldParkR3fReady,
@@ -248,6 +249,11 @@ function BodyCompositionAvatarInner({
   );
   const readyLive = hasReadyScanData(scan);
   const viewerHost = readyViewerHost ?? detectedHost;
+  const retainedFrblReady = hasRetainedFrblReady({
+    photosRetained,
+    frblPoses,
+    frblSessionId,
+  });
   const readyViewer = selectReadyViewer({
     host: viewerHost,
     hasReadyScanData: readyLive,
@@ -655,6 +661,8 @@ function BodyCompositionAvatarInner({
     'data-half-morph-ms': String(FORMAVISION_MOTION_SPEC.halfMorphMs),
     'data-f1-to-f3-ms': String(brief60F1ToF3Ms()),
     'data-ready-viewer': readyViewer,
+    'data-photos-retained': photosRetained ? 'true' : 'false',
+    'data-frbl-session': frblSessionId ?? '',
     'data-ready-host': viewerHost,
     'data-r3f-parked': parkR3fReady ? 'true' : 'false',
     'data-model-viewer-version':
@@ -734,7 +742,7 @@ function BodyCompositionAvatarInner({
           />
         </div>
       ) : null}
-      {readyViewer === 'notice' ? (
+      {readyViewer === 'notice' && !retainedFrblReady ? (
         <FormaVisionPlateNotice
           kind={noticeKind}
           placement={readyLive ? 'fill' : 'caption'}

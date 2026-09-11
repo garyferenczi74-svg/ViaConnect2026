@@ -14,8 +14,9 @@
 // storage paths (condition 13, least exposure) - only pose presence booleans,
 // since signed URLs are always minted through the Task 13 /api/scan/signed-url
 // route. Analyze still discards photos (never stored on photo_scans). Opt-in
-// retain lands FRBL on body_photo_sessions `*_full_path`; poses.any is true
-// only from those session paths, never from photo_scans retained_views flags.
+// retain lands FRBL on body_photo_sessions `*_full_path`. Pose presence
+// prefers those session paths; if the join is empty, retained_views is an
+// honest fallback so Ready can still mount frbl-2d.
 //
 // Resilient: every query is raced against a timeout and fails open to a
 // null/empty result with a structured log, never a thrown error.
@@ -27,6 +28,7 @@ import { PROTOCOL_ID, POSE_ORDER, type PoseId } from '@/lib/scan/poses';
 import { FORMAVISION_PHOTO_PROTOCOL } from '@/lib/scan/scanProtocols';
 import {
   discardedFrblPoses,
+  posesFromRetainedPhotoRow,
   posesFromSessionFullPaths,
 } from '@/lib/formavision/retainFrbl';
 import {
@@ -136,9 +138,9 @@ export function photoScanToSummary(
     typeof row.photo_session_id === 'string' && row.photo_session_id.length > 0
       ? row.photo_session_id
       : null;
-  const poses = posesFromSessionFullPaths(sessionPaths);
+  const poses = posesFromRetainedPhotoRow(sessionPaths, row.retained_views);
   const hasFrbl = hasAnyPresentPose(poses);
-  const retained = row.photos_retained === true && sessionId !== null && hasFrbl;
+  const retained = row.photos_retained === true && hasFrbl;
   return {
     id: row.id,
     date: row.scan_date,
@@ -151,6 +153,7 @@ export function photoScanToSummary(
     estimatedWhrMax: finiteOrNull(row.estimated_whr_max),
     photosRetained: retained,
     frblSessionId: retained ? sessionId : null,
+    retainedViews: retained ? (row.retained_views ?? null) : null,
   };
 }
 
@@ -288,17 +291,37 @@ async function listPhotoScans(userId: string, limit: number): Promise<ScanSummar
   }
 }
 
+function isRetainedHistoryPhoto(scan: ScanSummary): boolean {
+  return scan.photosRetained === true && hasAnyPresentPose(scan.poses);
+}
+
+function pickVisiblePhotoForDay(photosForDay: readonly ScanSummary[]): ScanSummary {
+  // Newest-first list. A later discard-default Analyze must not hide an
+  // earlier same-day retain — Ready pick and history thumbs share this row.
+  const newest = photosForDay[0];
+  if (!newest) {
+    throw new Error('pickVisiblePhotoForDay requires a same-day photo row');
+  }
+  return photosForDay.find(isRetainedHistoryPhoto) ?? newest;
+}
+
 function mergeScanSummaries(sessions: ScanSummary[], photos: ScanSummary[], limit: number): ScanSummary[] {
   // Cheap Ready collapse: one formavision_photo per calendar day (scan_date is
-  // DATE), plus drop empty-pose 4pose_v1 leftovers on a day that already has
-  // a photo scan. Guided rows with real pose paths stay.
-  const seenPhotoDay = new Set<string>();
-  const uniquePhotos: ScanSummary[] = [];
+  // DATE), preferring a retained FRBL row over a newer discarded one, plus
+  // drop empty-pose 4pose_v1 leftovers on a day that already has a photo scan.
+  // Guided rows with real pose paths stay.
+  const photosByDay = new Map<string, ScanSummary[]>();
   for (const photo of photos) {
     const day = calendarDay(photo.date);
-    if (seenPhotoDay.has(day)) continue;
+    const list = photosByDay.get(day);
+    if (list) list.push(photo);
+    else photosByDay.set(day, [photo]);
+  }
+  const uniquePhotos: ScanSummary[] = [];
+  const seenPhotoDay = new Set<string>();
+  for (const [day, photosForDay] of photosByDay) {
     seenPhotoDay.add(day);
-    uniquePhotos.push(photo);
+    uniquePhotos.push(pickVisiblePhotoForDay(photosForDay));
   }
 
   const uniqueSessions = sessions.filter((scan) => {

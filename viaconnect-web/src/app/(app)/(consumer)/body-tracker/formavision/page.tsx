@@ -547,8 +547,8 @@ function FormaVisionSurface() {
           className="rounded-2xl border border-white/10 bg-[#0D1520]/60 p-6 text-center"
         >
           <p className="text-sm text-white/70">
-            No scan or measurements yet. Start a body scan or enter measurements to render your 3D
-            body.
+            No scan or measurements yet. Start a body scan or enter measurements to show your Ready
+            photo.
           </p>
           <div className="mt-4 flex flex-wrap justify-center gap-3">
             <button

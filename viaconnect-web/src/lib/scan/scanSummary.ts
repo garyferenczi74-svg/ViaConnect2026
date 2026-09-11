@@ -22,6 +22,8 @@ export interface ScanSummary {
   photosRetained?: boolean;
   /** body_photo_sessions.id that holds retained FRBL paths (Tripo / thumbs). */
   frblSessionId?: string | null;
+  /** Kept FRBL sides from photo_scans. Ready pose fallback when session paths miss. */
+  retainedViews?: string[] | null;
 }
 
 export function isReadyFormaVisionScan(scan: ScanSummary): boolean {

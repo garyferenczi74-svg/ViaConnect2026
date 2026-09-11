@@ -101,7 +101,11 @@ describe('BodyCompositionAvatar Ready FRBL 2D vs discard', () => {
       }),
     );
     expect(html).toContain('data-ready-viewer="frbl-2d"');
+    expect(html).toContain('data-photos-retained="true"');
+    expect(html).toContain('data-frbl-session="sess-retain-1"');
     expect(html).toContain('formavision-frbl-ready-plate');
+    expect(html).toContain('formavision-frbl-side-toggle');
+    expect(html).not.toContain('data-unavailable-reason="visual-failed"');
     expect(html).not.toContain('formavision-model-viewer-el');
     expect(html).not.toContain('formavision-3d-mount');
   });

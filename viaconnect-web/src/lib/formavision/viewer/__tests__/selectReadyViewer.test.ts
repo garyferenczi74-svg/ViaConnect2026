@@ -109,6 +109,47 @@ describe('selectReadyViewer Gary lock: phone + desktop together', () => {
     expect(shouldParkR3fReady({ hasReadyScanData: false })).toBe(true);
   });
 
+  it('retained history scan selects frbl-2d — notice is not Ready settle', () => {
+    const retained = {
+      host: 'phone' as const,
+      hasReadyScanData: true,
+      meshyStatus: 'failed' as const,
+      meshyGlbUrl: null,
+      photosRetained: true,
+      frblPoses: { front: true, right: true, back: true, left: true },
+      frblSessionId: 'sess-retain-1',
+    };
+    expect(selectReadyViewer(retained)).toBe('frbl-2d');
+    expect(
+      selectReadyViewer({
+        ...retained,
+        host: 'desktop',
+        meshyStatus: 'succeeded',
+        meshyGlbUrl: GLB,
+      }),
+    ).toBe('frbl-2d');
+    expect(
+      selectReadyViewer({
+        ...retained,
+        glbLoadFailed: true,
+      }),
+    ).not.toBe('notice');
+  });
+
+  it('discard regression: photosRetained false stays notice, never frbl-2d', () => {
+    expect(
+      selectReadyViewer({
+        host: 'desktop',
+        hasReadyScanData: true,
+        meshyStatus: 'succeeded',
+        meshyGlbUrl: GLB,
+        photosRetained: false,
+        frblPoses: { front: true, right: true, back: true, left: true },
+        frblSessionId: 'stale-session',
+      }),
+    ).toBe('notice');
+  });
+
   it('failed GLB load is a notice, not another R3F paint patch', () => {
     expect(
       selectReadyViewer({
