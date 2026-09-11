@@ -29,6 +29,7 @@ import { FORMAVISION_PHOTO_PROTOCOL } from '@/lib/scan/scanProtocols';
 import {
   discardedFrblPoses,
   posesFromRetainedPhotoRow,
+  posesFromSessionFullPaths,
 } from '@/lib/formavision/retainFrbl';
 import {
   finiteEstimateNumber,
