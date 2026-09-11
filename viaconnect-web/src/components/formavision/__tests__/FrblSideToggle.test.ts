@@ -4,7 +4,10 @@ import { join } from 'node:path';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { FrblSideToggle } from '../FrblSideToggle';
-import { FormaVisionFrblReadyPlate } from '../FormaVisionFrblReadyPlate';
+import {
+  FormaVisionFrblReadyPlate,
+  FRBL_READY_STAGE_SPEC,
+} from '../FormaVisionFrblReadyPlate';
 import { BodyCompositionAvatar } from '../BodyCompositionAvatar';
 import { FormaVisionPlateNotice } from '../FormaVisionPlateNotice';
 import { FRBL_SIDE_UNAVAILABLE_HELPER } from '@/lib/formavision/viewer/frblReadySide';
@@ -71,6 +74,68 @@ describe('FormaVisionFrblReadyPlate', () => {
     );
     expect(html).toContain('data-ready-side="right"');
     expect(html).toContain(FRBL_SIDE_UNAVAILABLE_HELPER);
+  });
+
+  it('Brief 64: empty chamber + helper only when a side was not kept — no invented silhouette', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(FormaVisionFrblReadyPlate, {
+        sessionId: 'sess-removed',
+        poses: discardedFrblPoses(),
+      }),
+    );
+    expect(html).toContain('data-avatar-stage="frbl-2d"');
+    expect(html).toContain('data-chamber="empty"');
+    expect(html).toContain('formavision-frbl-ready-bezel');
+    expect(html).toContain('formavision-frbl-ready-aperture');
+    expect(html).toContain('formavision-frbl-ready-vignette');
+    expect(html).toContain('formavision-frbl-ready-empty');
+    expect(html).toContain(FRBL_SIDE_UNAVAILABLE_HELPER);
+    expect(html).not.toContain('formavision-frbl-ready-photo');
+    expect(html).not.toContain('formavision-frbl-ready-ground-glow');
+    expect(html).not.toMatch(/silhouette|wireframe|anatomical|alien|picasso/i);
+    expect(html).not.toContain('formavision-anatomical-floor');
+    expect(html).not.toContain('formavision-model-viewer');
+    expect(html).not.toContain('formavision-3d-mount');
+  });
+
+  it('Brief 64: reduced motion is instant — no enter scale or rim pulse', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(FormaVisionFrblReadyPlate, {
+        sessionId: 'sess-retain-1',
+        poses: { front: true, right: true, back: true, left: true },
+        reducedMotion: true,
+      }),
+    );
+    expect(html).toContain('data-reduced-motion="true"');
+    expect(html).not.toContain('fv-frbl-stage-enter');
+    expect(html).not.toContain('fv-frbl-rim-pulse');
+    expect(html).toMatch(/prefers-reduced-motion: reduce/);
+  });
+
+  it('Brief 64: avatar-stage chrome stays 2D CSS — contain, bezel, plasma rim, no GLB', () => {
+    const plateSrc = readFileSync(
+      join(process.cwd(), 'src/components/formavision/FormaVisionFrblReadyPlate.tsx'),
+      'utf8',
+    );
+    expect(FRBL_READY_STAGE_SPEC.enterMs).toBeGreaterThanOrEqual(180);
+    expect(FRBL_READY_STAGE_SPEC.enterMs).toBeLessThanOrEqual(220);
+    expect(FRBL_READY_STAGE_SPEC.enterScaleFrom).toBe(0.98);
+    expect(FRBL_READY_STAGE_SPEC.crossfadeMs).toBe(180);
+    expect(FRBL_READY_STAGE_SPEC.rimPulseMs).toBe(180);
+    expect(FRBL_READY_STAGE_SPEC.bezelInsetPx).toBeGreaterThanOrEqual(8);
+    expect(FRBL_READY_STAGE_SPEC.bezelInsetPx).toBeLessThanOrEqual(12);
+    expect(FRBL_READY_STAGE_SPEC.rimPx).toBeGreaterThanOrEqual(1);
+    expect(FRBL_READY_STAGE_SPEC.rimPx).toBeLessThanOrEqual(2);
+    expect(FRBL_READY_STAGE_SPEC.plasmaCyan).toBe('#2EE6D6');
+    expect(plateSrc).toMatch(/object-contain/);
+    expect(plateSrc).toMatch(/border-white\/15/);
+    expect(plateSrc).toMatch(/radial-gradient/);
+    expect(plateSrc).toMatch(/#2EE6D6|46,230,214/);
+    expect(plateSrc).toMatch(/prefers-reduced-motion/);
+    expect(plateSrc).toMatch(/formavision-frbl-ready-ground-glow/);
+    expect(plateSrc).not.toMatch(/FormaVisionAnatomicalFloor|anatomical-2d/);
+    expect(plateSrc).not.toMatch(/@react-three|model-viewer|WebGL|THREE\./);
+    expect(plateSrc).not.toMatch(/pickRetainedFrblReadyScan|mergeScanSummaries/);
   });
 });
 
