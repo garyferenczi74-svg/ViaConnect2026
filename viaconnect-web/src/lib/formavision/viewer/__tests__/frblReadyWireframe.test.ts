@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import React from 'react';
@@ -9,7 +9,9 @@ import type { PoseSilhouette } from '@/lib/arnold/scanning/types';
 import type { PoseId } from '@/lib/scan/poses';
 import {
   classifyWireframeThrow,
+  FRBL_WIREFRAME_BUILD_TIMEOUT_MS,
   FRBL_WIREFRAME_FAIL_REASONS,
+  FRBL_WIREFRAME_PREWARM_TIMEOUT_MS,
   isFrblWireframeFailReason,
   resolveFrblWireframeMaskFrame,
   runFrblReadyWireframeBuild,
@@ -17,6 +19,25 @@ import {
 import { buildDenseCageFromMask } from '../frblWireframeCage';
 
 const allPoses = { front: true, right: true, back: true, left: true };
+
+/** Attr on a specific testid node — Arnold smoke reads the fail node, not only the plate. */
+function attrOnTestId(html: string, testId: string, attr: string): string | undefined {
+  const tagged = html.match(
+    new RegExp(`<[^>]*data-testid="${testId}"[^>]*>|<[^>]*${attr}="[^"]*"[^>]*data-testid="${testId}"[^>]*>`),
+  );
+  const tag = tagged?.[0];
+  if (!tag) return undefined;
+  return tag.match(new RegExp(`${attr}="([^"]*)"`))?.[1];
+}
+
+function expectFailReasonOnPlateAndFailNode(html: string, reason: string): void {
+  expect(attrOnTestId(html, 'formavision-frbl-ready-plate', 'data-wireframe-fail-reason')).toBe(
+    reason,
+  );
+  expect(
+    attrOnTestId(html, 'formavision-frbl-ready-wireframe-fail', 'data-wireframe-fail-reason'),
+  ).toBe(reason);
+}
 
 function fillRect(
   mask: Uint8Array,
@@ -242,6 +263,45 @@ describe('runFrblReadyWireframeBuild — fail-reason branches', () => {
     expect(result).toEqual({ ok: false, reason: 'timeout' });
   });
 
+  it('does not classify timeout when blob + prewarm eat less than the seg budget', async () => {
+    const figure = standingFigure();
+    const result = await runFrblReadyWireframeBuild({
+      sessionId: 'sess-1',
+      side: 'front',
+      timeoutMs: 40,
+      prewarmTimeoutMs: 80,
+      fetchBlob: async () => {
+        await new Promise((resolve) => setTimeout(resolve, 30));
+        return new Blob([new Uint8Array([1])], { type: 'image/jpeg' });
+      },
+      prewarm: async () => {
+        await new Promise((resolve) => setTimeout(resolve, 30));
+        return true;
+      },
+      segment: async () => silhouetteFromMask(figure),
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.spec.ringCount).toBeGreaterThanOrEqual(36);
+  });
+
+  it('prewarm timeout stays fail-open — hung leftover TFJS init is not a cage timeout', async () => {
+    const figure = standingFigure();
+    const result = await runFrblReadyWireframeBuild({
+      sessionId: 'sess-1',
+      side: 'front',
+      timeoutMs: 200,
+      prewarmTimeoutMs: 20,
+      fetchBlob: async () => new Blob([new Uint8Array([1])], { type: 'image/jpeg' }),
+      prewarm: async () => {
+        await new Promise((resolve) => setTimeout(resolve, 120));
+        return true;
+      },
+      segment: async () => silhouetteFromMask(figure),
+    });
+    expect(result.ok).toBe(true);
+  });
+
   it('unknown: fetch throws a non-abort error', async () => {
     const result = await runFrblReadyWireframeBuild({
       sessionId: 'sess-1',
@@ -303,7 +363,7 @@ describe('Brief 65 smoke — stay on Wireframe chamber', () => {
     );
     expect(html).toContain('data-ready-mode="wireframe"');
     expect(html).toContain('data-chamber="fail"');
-    expect(html).toContain('data-wireframe-fail-reason="seg"');
+    expectFailReasonOnPlateAndFailNode(html, 'seg');
     expect(html).toContain('formavision-frbl-ready-wireframe-fail');
     expect(html).toContain(FRBL_READY_WIREFRAME_FAIL);
     expect(html).not.toContain('data-testid="formavision-frbl-ready-wireframe"');
@@ -325,7 +385,7 @@ describe('Brief 65 smoke — stay on Wireframe chamber', () => {
     );
     expect(html).toContain('data-ready-mode="wireframe"');
     expect(html).toContain('data-chamber="fail"');
-    expect(html).toContain('data-wireframe-fail-reason="abort"');
+    expectFailReasonOnPlateAndFailNode(html, 'abort');
     expect(html).toContain(FRBL_READY_WIREFRAME_FAIL);
     expect(html).not.toContain('data-ready-mode="photo"');
   });
@@ -341,7 +401,10 @@ describe('Brief 65 smoke — stay on Wireframe chamber', () => {
       'utf8',
     );
     expect(plate).toMatch(/stayOnWireframeFail/);
-    expect(plate).toMatch(/data-wireframe-fail-reason/);
+    expect(plate).toMatch(/data-testid="formavision-frbl-ready-plate"/);
+    expect(plate).toMatch(/data-testid="formavision-frbl-ready-wireframe-fail"/);
+    expect(plate).toMatch(/data-wireframe-fail-reason=\{wireframeFail \? \(wireframeFailReason \?\? 'unknown'\) : undefined\}/);
+    expect(plate).toMatch(/data-wireframe-fail-reason=\{wireframeFailReason \?\? 'unknown'\}/);
     expect(plate).toMatch(/runFrblReadyWireframeBuild/);
     expect(plate).toMatch(/ensureSelfieSegmenter/);
     expect(plate).not.toMatch(/revertToPhoto/);
@@ -349,6 +412,14 @@ describe('Brief 65 smoke — stay on Wireframe chamber', () => {
     expect(plate).not.toMatch(/from ['"][^'"]*avatarMeshGenerator['"]/);
     expect(plate).not.toMatch(/FormaVisionAnatomicalFloor/);
     expect(helper).toMatch(/includeMask:\s*true/);
+    expect(helper).toMatch(/FRBL_WIREFRAME_PREWARM_TIMEOUT_MS/);
+    expect(helper).toMatch(/formavision\.frblReadyWireframe\.processSilhouette/);
+    expect(helper).toMatch(/formavision\.frblReadyWireframe\.prewarm/);
+    expect(helper).not.toMatch(/withTimeout\(work\(/);
+    expect(helper).not.toMatch(/withTimeout\(work\(\),\s*timeoutMs/);
+    expect(helper).not.toMatch(/\$\{LOG_SCOPE\}\.build/);
+    expect(FRBL_WIREFRAME_PREWARM_TIMEOUT_MS).toBeLessThan(FRBL_WIREFRAME_BUILD_TIMEOUT_MS);
+    expect(FRBL_WIREFRAME_BUILD_TIMEOUT_MS).toBe(20000);
     expect(helper).not.toMatch(/generateAvatarMesh|AnatomicalFloor|avatarMeshGenerator/);
     expect(helper).not.toMatch(/@react-three|model-viewer/);
     expect(runtime).toMatch(/@tensorflow\/tfjs/);

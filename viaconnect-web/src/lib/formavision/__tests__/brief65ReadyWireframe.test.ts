@@ -174,6 +174,11 @@ describe('Brief 65 observe — same-origin blob + stay Wireframe on fail', () =>
     expect(helper).toMatch(/fetchSignedFullBlob/);
     expect(helper).toMatch(/processSilhouette/);
     expect(helper).toMatch(/includeMask:\s*true/);
+    expect(helper).not.toMatch(/withTimeout\(work\(/);
+    expect(helper).not.toMatch(/\$\{LOG_SCOPE\}\.build/);
+    expect(helper).toMatch(/formavision\.frblReadyWireframe\.processSilhouette/);
+    expect(plate).toMatch(/data-testid="formavision-frbl-ready-wireframe-fail"/);
+    expect(plate).toMatch(/data-wireframe-fail-reason=\{wireframeFailReason \?\? 'unknown'\}/);
     expect(plate).not.toMatch(/fetch\(signed/);
     expect(plate).not.toMatch(/setMode\('photo'\)/);
     expect(plate).not.toMatch(/revertToPhoto/);
@@ -196,7 +201,12 @@ describe('Brief 65 observe — same-origin blob + stay Wireframe on fail', () =>
     );
     expect(html).toContain('data-ready-mode="wireframe"');
     expect(html).toContain('data-chamber="fail"');
-    expect(html).toContain('data-wireframe-fail-reason="match"');
+    expect(html).toMatch(
+      /data-testid="formavision-frbl-ready-plate"[^>]*data-wireframe-fail-reason="match"/,
+    );
+    expect(html).toMatch(
+      /data-testid="formavision-frbl-ready-wireframe-fail"[^>]*data-wireframe-fail-reason="match"/,
+    );
     expect(html).toContain('formavision-frbl-ready-wireframe-fail');
     expect(html).toContain(FRBL_READY_WIREFRAME_FAIL);
     expect(html).not.toContain('data-testid="formavision-frbl-ready-wireframe"');

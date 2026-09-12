@@ -430,6 +430,7 @@ export function FormaVisionFrblReadyPlate({
           ) : mode === 'wireframe' && present && wireframeFail && !wireframeSpec ? (
             <p
               data-testid="formavision-frbl-ready-wireframe-fail"
+              data-wireframe-fail-reason={wireframeFailReason ?? 'unknown'}
               className="absolute inset-0 z-[3] flex items-center justify-center px-6 text-center text-sm text-white/70"
               role="status"
             >
