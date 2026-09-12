@@ -74,14 +74,26 @@ export async function awaitSelfieSegmenterSettled(): Promise<boolean> {
   }
 }
 
+/** Pack ImageData R-channel to a 0/255 occupancy mask. */
+export function packBinaryMask(mask: ImageData): Uint8Array {
+  const out = new Uint8Array(mask.width * mask.height);
+  const data = mask.data;
+  for (let i = 0; i < out.length; i += 1) {
+    out[i] = data[i * 4] > 127 ? 255 : 0;
+  }
+  return out;
+}
+
 /** Extract silhouette + landmarks from a single photo. */
 export async function processSilhouette(params: {
   blob: Blob;
   poseId: PoseId;
   userHeightCm: number | null;
   landmarks: LandmarkMap;
+  /** Brief 65: attach packed mask for the FRBL wireframe cage. */
+  includeMask?: boolean;
 }): Promise<PoseSilhouette> {
-  const { blob, poseId, userHeightCm, landmarks } = params;
+  const { blob, poseId, userHeightCm, landmarks, includeMask = false } = params;
   const bitmap = await createImageBitmap(blob);
   const { segmenter, bodySeg } = await getSegmenter();
   const canvas = offscreenCanvas(bitmap.width, bitmap.height);
@@ -101,19 +113,23 @@ export async function processSilhouette(params: {
     0.5,
   );
 
-  const contour = extractContour(maskImage, bitmap.width, bitmap.height);
-  const scale = frontScaleCmPerPx(landmarks, userHeightCm, bitmap.height);
+  const width = bitmap.width;
+  const height = bitmap.height;
+  const contour = extractContour(maskImage, width, height);
+  const scale = frontScaleCmPerPx(landmarks, userHeightCm, height);
+  const mask = includeMask ? packBinaryMask(maskImage) : undefined;
 
   if ('close' in bitmap) bitmap.close();
 
   return {
     poseId,
-    imageWidth: bitmap.width,
-    imageHeight: bitmap.height,
+    imageWidth: width,
+    imageHeight: height,
     contour,
     landmarks,
     scaleCmPerPx: scale,
-    maskDimensions: { width: bitmap.width, height: bitmap.height },
+    maskDimensions: { width, height },
+    ...(mask ? { mask } : {}),
     qualityScore: 0,
     qualityIssues: [],
   };

@@ -73,6 +73,14 @@ export const HISTORY_REMOVE_PHOTOS_BODY =
   'Photos used for Ready and re-measure will be deleted. Your body-fat estimate stays.';
 export const HISTORY_REMOVE_PHOTOS_CONFIRM = 'Remove photos';
 
+/** Brief 65 — Ready Photo | Wireframe mode. Draft Lex tip. */
+export const FRBL_READY_MODE_PHOTO = 'Photo';
+export const FRBL_READY_MODE_WIREFRAME = 'Wireframe';
+export const FRBL_READY_PHOTO_LOADING = 'Loading Ready photo from your scan.';
+export const FRBL_READY_WIREFRAME_LOADING = 'Building wireframe from your scan.';
+export const FRBL_READY_WIREFRAME_FAIL =
+  'Could not match a wireframe to this Ready photo.';
+
 export function scanHistoryPhotoCaption(scan: {
   protocol: string;
   photosRetained?: boolean | null;

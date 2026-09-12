@@ -50,6 +50,12 @@ export interface PoseSilhouette {
   scaleCmPerPx: number | null;
   /** Segmentation mask dimensions (for reconstruction if needed). */
   maskDimensions: { width: number; height: number };
+  /**
+   * Packed 0/255 body mask (length width*height). Present only when
+   * processSilhouette is called with includeMask — Brief 65 cage path.
+   * Measurement callers never request it.
+   */
+  mask?: Uint8Array;
   /** 0..1 quality score from scanQualityAssessor. */
   qualityScore: number;
   qualityIssues: string[];

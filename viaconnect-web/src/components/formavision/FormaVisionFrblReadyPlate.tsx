@@ -1,7 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { FrblSideToggle } from './FrblSideToggle';
+import { FrblReadyModeToggle, type FrblReadyViewMode } from './FrblReadyModeToggle';
+import { FrblReadyWireframeCage } from './FrblReadyWireframeCage';
 import {
   defaultFrblReadySide,
   FRBL_SIDE_LABELS,
@@ -9,11 +11,24 @@ import {
   isFrblSidePresent,
 } from '@/lib/formavision/viewer/frblReadySide';
 import { fetchSignedFullUrl } from '@/lib/formavision/viewer/signedFullUrlCache';
+import {
+  buildDenseCageFromMask,
+  silhouetteMaskIsBodyMatched,
+  type FrblWireframeCageSpec,
+} from '@/lib/formavision/viewer/frblWireframeCage';
+import { processSilhouette } from '@/lib/arnold/scanning/silhouetteProcessor';
+import {
+  FRBL_READY_PHOTO_LOADING,
+  FRBL_READY_WIREFRAME_FAIL,
+  FRBL_READY_WIREFRAME_LOADING,
+} from '@/lib/formavision/twoProtocolCopy';
 import type { PoseId } from '@/lib/scan/poses';
 
 // Brief 64 / Blueprint 64 — DESIGN-READY 2D avatar stage around retained
-// FRBL photos. Still photos + toggle. Not Tripo/Meshy GLB. Not cyan
-// wireframe / AnatomicalFloor. Pick/list logic stays in #214/#215.
+// FRBL photos. Still photos + toggle. Not Tripo/Meshy GLB.
+// Brief 65 — Photo | Wireframe mode lives INSIDE this frbl-2d plate.
+// Wireframe SUCCESS is a processSilhouette mask/contour cage only.
+// Never generateAvatarMesh, AnatomicalFloor, Picasso PNGs, or GLB.
 
 export const FRBL_READY_STAGE_SPEC = {
   enterMs: 200,
@@ -26,10 +41,14 @@ export const FRBL_READY_STAGE_SPEC = {
   rimPx: 1.5,
   plasmaCyan: '#2EE6D6',
   brandTeal: '#2DA5A0',
+  toWireframeMs: 250,
+  toPhotoMs: 200,
+  wireframeSideMs: 180,
 } as const;
 
 const CROSSFADE_MS = FRBL_READY_STAGE_SPEC.crossfadeMs;
 const SIGN_TIMEOUT_MS = 8000;
+const WIREFRAME_TIMEOUT_MS = 20000;
 
 const STAGE_STYLE = `
 @keyframes fv-frbl-stage-enter {
@@ -41,15 +60,31 @@ const STAGE_STYLE = `
   40% { opacity: 1; }
   100% { opacity: 0.88; }
 }
+@keyframes fv-frbl-to-wireframe {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes fv-frbl-to-photo {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
 .fv-frbl-stage-enter {
   animation: fv-frbl-stage-enter ${FRBL_READY_STAGE_SPEC.enterMs}ms ${FRBL_READY_STAGE_SPEC.enterEasing} both;
 }
 .fv-frbl-rim-pulse {
   animation: fv-frbl-rim-pulse ${FRBL_READY_STAGE_SPEC.rimPulseMs}ms ease-out 1;
 }
+.fv-frbl-to-wireframe {
+  animation: fv-frbl-to-wireframe ${FRBL_READY_STAGE_SPEC.toWireframeMs}ms ease-out both;
+}
+.fv-frbl-to-photo {
+  animation: fv-frbl-to-photo ${FRBL_READY_STAGE_SPEC.toPhotoMs}ms ease-out both;
+}
 @media (prefers-reduced-motion: reduce) {
   .fv-frbl-stage-enter,
-  .fv-frbl-rim-pulse {
+  .fv-frbl-rim-pulse,
+  .fv-frbl-to-wireframe,
+  .fv-frbl-to-photo {
     animation: none !important;
     transform: none !important;
   }
@@ -61,6 +96,8 @@ export interface FormaVisionFrblReadyPlateProps {
   poses: Record<string, boolean>;
   reducedMotion?: boolean;
   onPainted?: () => void;
+  /** Test hook only. Product cold start is always Photo. */
+  initialMode?: FrblReadyViewMode;
 }
 
 export function FormaVisionFrblReadyPlate({
@@ -68,13 +105,24 @@ export function FormaVisionFrblReadyPlate({
   poses,
   reducedMotion = false,
   onPainted,
+  initialMode = 'photo',
 }: FormaVisionFrblReadyPlateProps) {
   const [side, setSide] = useState<PoseId>(() => defaultFrblReadySide(poses) ?? 'front');
+  const [mode, setMode] = useState<FrblReadyViewMode>(initialMode);
   const [url, setUrl] = useState<string | null>(null);
   const [shownUrl, setShownUrl] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   const [fading, setFading] = useState(false);
   const [rimPulse, setRimPulse] = useState(false);
+  const [wireframeSpec, setWireframeSpec] = useState<FrblWireframeCageSpec | null>(null);
+  const [wireframeFail, setWireframeFail] = useState(false);
+  const [wireframeLoading, setWireframeLoading] = useState(
+    () =>
+      initialMode === 'wireframe' &&
+      isFrblSidePresent(poses, defaultFrblReadySide(poses) ?? 'front'),
+  );
+  const [modeMotion, setModeMotion] = useState<'to-wireframe' | 'to-photo' | null>(null);
+  const cageCacheRef = useRef<Map<string, FrblWireframeCageSpec>>(new Map());
 
   useEffect(() => {
     const next = defaultFrblReadySide(poses);
@@ -118,6 +166,102 @@ export function FormaVisionFrblReadyPlate({
     };
   }, [sessionId, side, poses]);
 
+  useEffect(() => {
+    if (mode !== 'wireframe') {
+      setWireframeLoading(false);
+      return;
+    }
+    if (!isFrblSidePresent(poses, side)) {
+      setWireframeSpec(null);
+      setWireframeFail(false);
+      setWireframeLoading(false);
+      return;
+    }
+    const cacheKey = `${sessionId}:${side}`;
+    const cached = cageCacheRef.current.get(cacheKey);
+    if (cached) {
+      setWireframeSpec(cached);
+      setWireframeFail(false);
+      setWireframeLoading(false);
+      onPainted?.();
+      return;
+    }
+
+    let cancelled = false;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), WIREFRAME_TIMEOUT_MS);
+    setWireframeLoading(true);
+    setWireframeFail(false);
+    setWireframeSpec(null);
+
+    (async () => {
+      try {
+        const signed = url ?? (await fetchSignedFullUrl(sessionId, side, controller.signal));
+        if (cancelled) return;
+        if (!signed) {
+          setWireframeFail(true);
+          setWireframeLoading(false);
+          return;
+        }
+        const res = await fetch(signed, { signal: controller.signal });
+        if (cancelled) return;
+        if (!res.ok) {
+          setWireframeFail(true);
+          setWireframeLoading(false);
+          return;
+        }
+        const blob = await res.blob();
+        if (cancelled) return;
+        const silhouette = await processSilhouette({
+          blob,
+          poseId: side,
+          userHeightCm: null,
+          landmarks: {},
+          includeMask: true,
+        });
+        if (cancelled) return;
+        const matched = silhouetteMaskIsBodyMatched({
+          mask: silhouette.mask,
+          width: silhouette.imageWidth,
+          height: silhouette.imageHeight,
+          contour: silhouette.contour,
+        });
+        const cage =
+          matched && silhouette.mask
+            ? buildDenseCageFromMask(
+                silhouette.mask,
+                silhouette.imageWidth,
+                silhouette.imageHeight,
+                silhouette.contour,
+              )
+            : null;
+        if (!cage) {
+          setWireframeFail(true);
+          setWireframeLoading(false);
+          return;
+        }
+        cageCacheRef.current.set(cacheKey, cage);
+        setWireframeSpec(cage);
+        setWireframeFail(false);
+        setWireframeLoading(false);
+        onPainted?.();
+      } catch {
+        if (!cancelled) {
+          setWireframeFail(true);
+          setWireframeLoading(false);
+        }
+      } finally {
+        clearTimeout(timer);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [mode, sessionId, side, poses, url, onPainted]);
+
   const handleLoad = (): void => {
     if (!url) return;
     const isSideChange = Boolean(shownUrl && shownUrl !== url);
@@ -138,16 +282,65 @@ export function FormaVisionFrblReadyPlate({
     onPainted?.();
   };
 
+  const handleModeChange = (next: FrblReadyViewMode): void => {
+    if (next === mode) return;
+    setMode(next);
+    if (reducedMotion) {
+      setModeMotion(null);
+      setRimPulse(false);
+      return;
+    }
+    setModeMotion(next === 'wireframe' ? 'to-wireframe' : 'to-photo');
+    if (next === 'wireframe') setRimPulse(true);
+    window.setTimeout(
+      () => {
+        setModeMotion(null);
+        setRimPulse(false);
+      },
+      next === 'wireframe'
+        ? FRBL_READY_STAGE_SPEC.toWireframeMs
+        : FRBL_READY_STAGE_SPEC.toPhotoMs,
+    );
+  };
+
+  const handleSideChange = (next: PoseId): void => {
+    if (next === side) return;
+    setSide(next);
+    if (mode === 'wireframe' && !reducedMotion) {
+      setRimPulse(true);
+      window.setTimeout(() => setRimPulse(false), FRBL_READY_STAGE_SPEC.wireframeSideMs);
+    }
+  };
+
   const displayUrl = shownUrl ?? url;
   const present = isFrblSidePresent(poses, side);
-  const chamber = displayUrl ? 'photo' : 'empty';
+  const chamber = !present
+    ? 'empty'
+    : mode === 'wireframe'
+      ? wireframeSpec
+        ? 'wireframe'
+        : wireframeFail
+          ? 'fail'
+          : 'loading'
+      : displayUrl
+        ? 'photo'
+        : 'empty';
+
+  const modeMotionClass =
+    !reducedMotion && modeMotion === 'to-wireframe'
+      ? 'fv-frbl-to-wireframe'
+      : !reducedMotion && modeMotion === 'to-photo'
+        ? 'fv-frbl-to-photo'
+        : '';
 
   return (
     <div
       data-testid="formavision-frbl-ready-plate"
       data-ready-side={side}
+      data-ready-mode={mode}
       data-avatar-stage="frbl-2d"
       data-chamber={chamber}
+      data-wireframe-loading={wireframeLoading ? 'true' : 'false'}
       data-reduced-motion={reducedMotion ? 'true' : 'false'}
       className="absolute inset-0 overflow-hidden"
     >
@@ -158,9 +351,10 @@ export function FormaVisionFrblReadyPlate({
           reducedMotion ? '' : 'fv-frbl-stage-enter'
         }`}
       >
+        <FrblReadyModeToggle active={mode} onChange={handleModeChange} />
         <div
           data-testid="formavision-frbl-ready-aperture"
-          className={`absolute inset-x-2 top-2 bottom-[4.75rem] overflow-hidden rounded-[1.5rem] bg-[#111827] sm:bottom-[5.25rem] sm:rounded-[1.75rem] ${
+          className={`absolute inset-x-2 top-[3.75rem] bottom-[4.75rem] overflow-hidden rounded-[1.5rem] bg-[#111827] sm:bottom-[5.25rem] sm:rounded-[1.75rem] ${
             !reducedMotion && rimPulse ? 'fv-frbl-rim-pulse' : ''
           }`}
           style={{
@@ -180,7 +374,7 @@ export function FormaVisionFrblReadyPlate({
                 'radial-gradient(ellipse 58% 72% at 50% 46%, rgba(17,24,39,0) 38%, rgba(17,24,39,0.55) 78%, rgba(11,21,32,0.82) 100%)',
             }}
           />
-          {displayUrl ? (
+          {mode === 'photo' && displayUrl ? (
             // eslint-disable-next-line @next/next/no-img-element -- signed Ready full URL, not an optimizable remote asset
             <img
               key={url ?? displayUrl}
@@ -188,21 +382,43 @@ export function FormaVisionFrblReadyPlate({
               alt={`${FRBL_SIDE_LABELS[side]} Ready photo`}
               data-testid="formavision-frbl-ready-photo"
               onLoad={handleLoad}
-              className="absolute inset-0 z-[1] h-full w-full object-contain"
+              className={`absolute inset-0 z-[1] h-full w-full object-contain ${modeMotionClass}`}
               style={{
                 opacity: fading && url && url !== shownUrl ? 0.35 : 1,
                 transition: reducedMotion ? undefined : `opacity ${CROSSFADE_MS}ms ease`,
               }}
             />
-          ) : present && !failed ? (
+          ) : null}
+          {mode === 'wireframe' && wireframeSpec ? (
+            <div className={`absolute inset-0 z-[1] ${modeMotionClass}`}>
+              <FrblReadyWireframeCage spec={wireframeSpec} />
+            </div>
+          ) : null}
+          {mode === 'photo' && !displayUrl && present && !failed ? (
             <p
               data-testid="formavision-frbl-ready-loading"
               className="absolute inset-0 z-[3] flex items-center justify-center px-6 text-center text-sm text-white/70"
               role="status"
             >
-              Loading Ready photo from your scan.
+              {FRBL_READY_PHOTO_LOADING}
             </p>
-          ) : (
+          ) : mode === 'wireframe' && present && !wireframeSpec && !wireframeFail ? (
+            <p
+              data-testid="formavision-frbl-ready-wireframe-loading"
+              className="absolute inset-0 z-[3] flex items-center justify-center px-6 text-center text-sm text-white/70"
+              role="status"
+            >
+              {FRBL_READY_WIREFRAME_LOADING}
+            </p>
+          ) : mode === 'wireframe' && present && wireframeFail ? (
+            <p
+              data-testid="formavision-frbl-ready-wireframe-fail"
+              className="absolute inset-0 z-[3] flex items-center justify-center px-6 text-center text-sm text-white/70"
+              role="status"
+            >
+              {FRBL_READY_WIREFRAME_FAIL}
+            </p>
+          ) : !present || (mode === 'photo' && failed) ? (
             <p
               data-testid="formavision-frbl-ready-empty"
               className="absolute inset-0 z-[3] flex items-center justify-center px-6 text-center text-sm text-white/70"
@@ -210,8 +426,8 @@ export function FormaVisionFrblReadyPlate({
             >
               {FRBL_SIDE_UNAVAILABLE_HELPER}
             </p>
-          )}
-          {displayUrl ? (
+          ) : null}
+          {(displayUrl && mode === 'photo') || wireframeSpec ? (
             <div
               data-testid="formavision-frbl-ready-ground-glow"
               aria-hidden="true"
@@ -225,7 +441,7 @@ export function FormaVisionFrblReadyPlate({
           ) : null}
         </div>
       </div>
-      <FrblSideToggle active={side} poses={poses} onChange={setSide} />
+      <FrblSideToggle active={side} poses={poses} onChange={handleSideChange} />
     </div>
   );
 }

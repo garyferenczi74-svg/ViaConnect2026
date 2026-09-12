@@ -7,6 +7,7 @@
 // Never a cyan wireframe.
 
 import {
+  FRBL_READY_PHOTO_LOADING,
   READY_UNAVAILABLE_GENERIC,
   readyUnavailableCopy,
   type ReadyUnavailableReason,
@@ -18,8 +19,7 @@ export type PlateNoticePlacement = 'caption' | 'fill';
 
 export type { ReadyUnavailableReason };
 
-export const FORMAVISION_PLATE_LOADING_NOTICE =
-  'Loading Ready photo from your scan.';
+export const FORMAVISION_PLATE_LOADING_NOTICE = FRBL_READY_PHOTO_LOADING;
 
 export const FORMAVISION_PLATE_UNAVAILABLE_NOTICE = READY_UNAVAILABLE_GENERIC;
 
