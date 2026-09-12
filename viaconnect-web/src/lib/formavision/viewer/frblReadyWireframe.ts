@@ -20,7 +20,14 @@ import { fetchSignedFullBlob } from '@/lib/formavision/viewer/signedFullUrlCache
 
 const LOG_SCOPE = 'formavision.frblReadyWireframe';
 
+/** Single cage-build budget — applied once, to processSilhouette only. */
 export const FRBL_WIREFRAME_BUILD_TIMEOUT_MS = 20000;
+
+/**
+ * Fail-open leftover TFJS init. Shorter than the cage budget so blob +
+ * prewarm cannot alone force a false `timeout` before seg starts.
+ */
+export const FRBL_WIREFRAME_PREWARM_TIMEOUT_MS = 8000;
 
 export const FRBL_WIREFRAME_FAIL_REASONS = [
   'blob',
@@ -136,6 +143,7 @@ export async function runFrblReadyWireframeBuild(input: {
   side: PoseId;
   signal?: AbortSignal;
   timeoutMs?: number;
+  prewarmTimeoutMs?: number;
   fetchBlob?: (
     sessionId: string,
     view: PoseId,
@@ -148,9 +156,10 @@ export async function runFrblReadyWireframeBuild(input: {
   const segment = input.segment ?? processSilhouette;
   const prewarm = input.prewarm ?? awaitSelfieSegmenterSettled;
   const timeoutMs = input.timeoutMs ?? FRBL_WIREFRAME_BUILD_TIMEOUT_MS;
+  const prewarmTimeoutMs = input.prewarmTimeoutMs ?? FRBL_WIREFRAME_PREWARM_TIMEOUT_MS;
   const { sessionId, side, signal } = input;
 
-  const work = async (): Promise<FrblReadyWireframeBuildResult> => {
+  try {
     if (signal?.aborted) {
       logFrblWireframeFail('abort', { poseId: side });
       return { ok: false, reason: 'abort' };
@@ -174,14 +183,14 @@ export async function runFrblReadyWireframeBuild(input: {
     }
 
     try {
-      await prewarm();
+      await withTimeout(prewarm(), prewarmTimeoutMs, `${LOG_SCOPE}.prewarm`);
     } catch (error) {
-      const reason = classifyWireframeThrow(error, signal);
-      if (reason !== 'unknown') {
-        logFrblWireframeFail(reason, { poseId: side, error });
-        return { ok: false, reason };
+      if (isAbortLike(error, signal)) {
+        logFrblWireframeFail('abort', { poseId: side, error });
+        return { ok: false, reason: 'abort' };
       }
-      // Prewarm is fail-open — processSilhouette still tries.
+      // Fail-open — leftover TFJS init / short prewarm cap must not
+      // classify the cage as timeout before processSilhouette runs.
       safeLog.warn(LOG_SCOPE, 'selfie prewarm failed (fail-open)', {
         poseId: side,
         error: error instanceof Error ? error.message : String(error),
@@ -243,10 +252,6 @@ export async function runFrblReadyWireframeBuild(input: {
     }
 
     return { ok: true, spec: cage };
-  };
-
-  try {
-    return await withTimeout(work(), timeoutMs, `${LOG_SCOPE}.build`);
   } catch (error) {
     const reason = classifyWireframeThrow(error, signal);
     logFrblWireframeFail(reason, { poseId: side, error });

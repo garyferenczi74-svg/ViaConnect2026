@@ -39,6 +39,7 @@ export {
 } from './frblWireframeCage';
 export {
   FRBL_WIREFRAME_BUILD_TIMEOUT_MS,
+  FRBL_WIREFRAME_PREWARM_TIMEOUT_MS,
   FRBL_WIREFRAME_FAIL_REASONS,
   classifyWireframeThrow,
   isFrblWireframeFailReason,
