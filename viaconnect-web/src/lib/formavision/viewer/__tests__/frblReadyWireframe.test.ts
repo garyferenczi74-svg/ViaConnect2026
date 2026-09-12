@@ -361,8 +361,8 @@ describe('Brief 65 smoke — stay on Wireframe chamber', () => {
     const lock = readFileSync(join(process.cwd(), 'package-lock.json'), 'utf8');
     expect(lock).toMatch(/@tensorflow\/tfjs-backend-webgl/);
     const nextConfig = readFileSync(join(process.cwd(), 'next.config.mjs'), 'utf8');
-    expect(nextConfig).not.toMatch(/transpilePackages/);
-    expect(nextConfig).toMatch(/serverExternalPackages/);
+    expect(nextConfig).not.toMatch(/transpilePackages\s*:/);
+    expect(nextConfig).toMatch(/serverExternalPackages\s*:/);
     expect(nextConfig).toMatch(/@tensorflow\/tfjs/);
     expect(nextConfig).toMatch(/@tensorflow-models\/body-segmentation/);
     expect(nextConfig).toMatch(/mediapipe-selfie-segmentation/);

@@ -53,9 +53,9 @@ const nextConfig = {
     ],
     turbopackFileSystemCacheForBuild: true,
   },
-  // TFJS / body-segmentation stay server-external only. Do NOT also list
-  // them in transpilePackages — that dual-list trips TurbopackInternalError
-  // on the FormaVision Playwright @fallback `next build`. Ready Wireframe
+  // TFJS / body-segmentation stay server-external only. Listing them
+  // again on the Next transpile list trips TurbopackInternalError on the
+  // FormaVision Playwright @fallback `next build`. Ready Wireframe
   // selfie-seg loads from the client chunk
   // src/lib/arnold/scanning/selfieSegmenterRuntime.ts ('use client').
   serverExternalPackages: [
