@@ -163,32 +163,39 @@ describe('Brief 65 — selectReadyViewer stays frbl-2d', () => {
   });
 });
 
-describe('Brief 65 observe — same-origin blob + stay Photo on fail', () => {
-  it('plate uses fetchSignedFullBlob and never fetches a Storage signed URL', () => {
+describe('Brief 65 observe — same-origin blob + stay Wireframe on fail', () => {
+  it('plate uses same-origin blob helper and never fetches a Storage signed URL', () => {
     const plate = src('src/components/formavision/FormaVisionFrblReadyPlate.tsx');
+    const helper = src('src/lib/formavision/viewer/frblReadyWireframe.ts');
     const cache = src('src/lib/formavision/viewer/signedFullUrlCache.ts');
     const route = src('src/app/api/scan/signed-url/route.ts');
-    expect(plate).toMatch(/fetchSignedFullBlob/);
-    expect(plate).toMatch(/processSilhouette/);
-    expect(plate).toMatch(/includeMask:\s*true/);
+    expect(plate).toMatch(/runFrblReadyWireframeBuild/);
+    expect(helper).toMatch(/fetchSignedFullBlob/);
+    expect(helper).toMatch(/processSilhouette/);
+    expect(helper).toMatch(/includeMask:\s*true/);
     expect(plate).not.toMatch(/fetch\(signed/);
-    expect(plate).toMatch(/setMode\('photo'\)/);
+    expect(plate).not.toMatch(/setMode\('photo'\)/);
+    expect(plate).not.toMatch(/revertToPhoto/);
     expect(cache).toMatch(/delivery: 'blob'/);
     expect(route).toMatch(/delivery === 'blob'/);
     expect(route).toMatch(/\.download\(path\)/);
+    expect(route).toMatch(/arrayBuffer\(\)/);
     expect(route).not.toMatch(/from ['"][^'"]*avatarMeshGenerator['"]/);
   });
 
-  it('Wireframe fail stays on Photo with honesty — no fallback body', () => {
+  it('Wireframe fail stays on Wireframe chamber with honesty — no fallback body', () => {
     const html = renderToStaticMarkup(
       React.createElement(FormaVisionFrblReadyPlate, {
         sessionId: 'sess-retain-65',
         poses: allPoses,
         initialMode: 'wireframe',
         initialWireframeFail: true,
+        initialWireframeFailReason: 'match',
       }),
     );
-    expect(html).toContain('data-ready-mode="photo"');
+    expect(html).toContain('data-ready-mode="wireframe"');
+    expect(html).toContain('data-chamber="fail"');
+    expect(html).toContain('data-wireframe-fail-reason="match"');
     expect(html).toContain('formavision-frbl-ready-wireframe-fail');
     expect(html).toContain(FRBL_READY_WIREFRAME_FAIL);
     expect(html).not.toContain('data-testid="formavision-frbl-ready-wireframe"');

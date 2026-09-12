@@ -78,7 +78,7 @@ describe('fetchSignedFullBlob — same-origin, no Storage signed URL', () => {
     expect(blob?.type).toMatch(/image\/jpeg/);
   });
 
-  it('returns null on JSON error so the plate can stay on Photo', async () => {
+  it('returns null on JSON error so the plate can stay on Wireframe + honesty', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async () =>

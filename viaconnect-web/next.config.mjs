@@ -28,9 +28,23 @@ const nextConfig = {
       ...config.resolve.alias,
       react: path.resolve(__dirname, "node_modules/react"),
       "react-dom": path.resolve(__dirname, "node_modules/react-dom"),
+      "@mediapipe/selfie_segmentation": path.resolve(
+        __dirname,
+        "src/shims/mediapipe-selfie-segmentation.ts",
+      ),
     };
     return config;
   },
+  // Client chunks for Ready Wireframe selfie-seg (H1). Must transpile so
+  // www ships TFJS instead of leaving a bare specifier.
+  transpilePackages: [
+    "@tensorflow/tfjs",
+    "@tensorflow/tfjs-core",
+    "@tensorflow/tfjs-converter",
+    "@tensorflow/tfjs-backend-cpu",
+    "@tensorflow/tfjs-backend-webgl",
+    "@tensorflow-models/body-segmentation",
+  ],
   // Barrel-package optimization
   experimental: {
     optimizePackageImports: [

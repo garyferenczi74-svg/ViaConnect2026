@@ -101,9 +101,14 @@ describe('Brief 65 cage source contract', () => {
       expect(src).not.toMatch(/@react-three|model-viewer|THREE\./);
       expect(src).not.toMatch(/picasso|anatomical-2d/);
     }
-    expect(plate).toMatch(/processSilhouette/);
-    expect(plate).toMatch(/includeMask:\s*true/);
-    expect(plate).toMatch(/buildDenseCageFromMask/);
+    const helper = readFileSync(
+      join(process.cwd(), 'src/lib/formavision/viewer/frblReadyWireframe.ts'),
+      'utf8',
+    );
+    expect(plate).toMatch(/runFrblReadyWireframeBuild/);
+    expect(helper).toMatch(/processSilhouette/);
+    expect(helper).toMatch(/includeMask:\s*true/);
+    expect(helper).toMatch(/buildDenseCageFromMask/);
     expect(cage).toMatch(/2\.5D extrusion/);
   });
 });

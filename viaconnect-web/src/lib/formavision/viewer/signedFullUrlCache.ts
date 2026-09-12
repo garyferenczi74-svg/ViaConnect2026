@@ -92,7 +92,7 @@ export async function fetchSignedFullUrl(
 /**
  * Brief 65: same-origin bytes for processSilhouette. Do not fetch the
  * Storage signed URL in the browser — that canvas can CORS-taint
- * selfie segmentation. Fail returns null (honesty, stay Photo).
+ * selfie segmentation. Fail returns null (honesty; plate stays Wireframe).
  */
 export async function fetchSignedFullBlob(
   sessionId: string,

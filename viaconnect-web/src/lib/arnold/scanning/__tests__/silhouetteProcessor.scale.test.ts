@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { BODY_HEIGHT_MIN } from '@/lib/scan/qaThresholds';
-import { frontScaleCmPerPx } from '../silhouetteProcessor';
+import { canvasForSegmentPeople, frontScaleCmPerPx, packBinaryMask } from '../silhouetteProcessor';
 import type { LandmarkMap } from '../types';
 
 const HEIGHT_CM = 180;
@@ -86,11 +86,45 @@ describe('frontScaleCmPerPx', () => {
   });
 });
 
+describe('packBinaryMask — H3 length equals maskImage w×h', () => {
+  it('packs R-channel occupancy with length width*height', () => {
+    const width = 4;
+    const height = 3;
+    const data = new Uint8ClampedArray(width * height * 4);
+    data[0] = 255;
+    data[4] = 10;
+    data[8] = 200;
+    const image = { width, height, data } as ImageData;
+    const packed = packBinaryMask(image);
+    expect(packed.length).toBe(width * height);
+    expect(packed[0]).toBe(255);
+    expect(packed[1]).toBe(0);
+    expect(packed[2]).toBe(255);
+  });
+
+  it('prefers HTMLCanvasElement when document exists, else refuses Offscreen cast', () => {
+    if (typeof document === 'undefined') {
+      expect(() => canvasForSegmentPeople(8, 8)).toThrow(/HTMLCanvasElement/);
+      return;
+    }
+    const canvas = canvasForSegmentPeople(8, 8);
+    expect(canvas).toBeInstanceOf(HTMLCanvasElement);
+    expect(canvas.width).toBe(8);
+    expect(canvas.height).toBe(8);
+  });
+});
+
 describe('silhouetteProcessor C4a source contract', () => {
   it('dropped the estimatedTotalPx > imageHeight * 1.1 reject', () => {
     const src = readFileSync(join(__dirname, '..', 'silhouetteProcessor.ts'), 'utf8');
     expect(src).toMatch(/includeMask/);
     expect(src).toMatch(/packBinaryMask/);
+    expect(src).toMatch(/canvasForSegmentPeople/);
+    expect(src).toMatch(/document\.createElement\('canvas'\)/);
+    expect(src).toMatch(/maskImage\.width/);
+    expect(src).toMatch(/selfieSegmenterRuntime/);
+    expect(src).not.toMatch(/turbopackIgnore/);
+    expect(src).not.toMatch(/offscreenCanvas/);
     expect(src).toMatch(/export function frontScaleCmPerPx/);
     expect(src).toMatch(/Number\.isFinite/);
     expect(src).toMatch(/BODY_HEIGHT_MIN/);
