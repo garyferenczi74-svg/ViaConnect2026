@@ -38,6 +38,16 @@ export {
   type FrblWireframeCageSpec,
 } from './frblWireframeCage';
 export {
+  FRBL_WIREFRAME_BUILD_TIMEOUT_MS,
+  FRBL_WIREFRAME_FAIL_REASONS,
+  classifyWireframeThrow,
+  isFrblWireframeFailReason,
+  resolveFrblWireframeMaskFrame,
+  runFrblReadyWireframeBuild,
+  type FrblReadyWireframeBuildResult,
+  type FrblWireframeFailReason,
+} from './frblReadyWireframe';
+export {
   fetchSignedFullBlob,
   fetchSignedFullUrl,
   getCachedSignedFullUrl,

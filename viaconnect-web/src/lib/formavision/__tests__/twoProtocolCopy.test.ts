@@ -518,7 +518,9 @@ describe('twoProtocolCopy — Brief 65 Ready Photo | Wireframe Lex', () => {
     expect(FRBL_READY_MODE_PHOTO).toBe('Photo');
     expect(FRBL_READY_MODE_WIREFRAME).toBe('Wireframe');
     expect(FRBL_READY_PHOTO_LOADING).toBe('Loading Ready photo from your scan.');
-    expect(FRBL_READY_WIREFRAME_LOADING).toBe('Building wireframe from your scan.');
+    expect(FRBL_READY_WIREFRAME_LOADING).toBe(
+      'Building wireframe from your Ready photo.',
+    );
     expect(FRBL_READY_WIREFRAME_FAIL).toMatch(/could not match a wireframe/i);
     expect(FRBL_READY_WIREFRAME_FAIL).not.toMatch(/silhouette|MediaPipe|parametric|GLB|muscle lbs/i);
     expect(FRBL_READY_WIREFRAME_LOADING).not.toMatch(/clinical|3D look-alike/i);

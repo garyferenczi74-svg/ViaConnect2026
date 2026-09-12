@@ -28,6 +28,10 @@ const nextConfig = {
       ...config.resolve.alias,
       react: path.resolve(__dirname, "node_modules/react"),
       "react-dom": path.resolve(__dirname, "node_modules/react-dom"),
+      "@mediapipe/selfie_segmentation": path.resolve(
+        __dirname,
+        "src/shims/mediapipe-selfie-segmentation.ts",
+      ),
     };
     return config;
   },
@@ -49,6 +53,11 @@ const nextConfig = {
     ],
     turbopackFileSystemCacheForBuild: true,
   },
+  // TFJS / body-segmentation stay server-external only. Listing them
+  // again on the Next transpile list trips TurbopackInternalError on the
+  // FormaVision Playwright @fallback `next build`. Ready Wireframe
+  // selfie-seg loads from the client chunk
+  // src/lib/arnold/scanning/selfieSegmenterRuntime.ts ('use client').
   serverExternalPackages: [
     "exceljs",
     "@google-cloud/vision",

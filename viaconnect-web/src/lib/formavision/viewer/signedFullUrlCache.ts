@@ -92,7 +92,7 @@ export async function fetchSignedFullUrl(
 /**
  * Brief 65: same-origin bytes for processSilhouette. Do not fetch the
  * Storage signed URL in the browser — that canvas can CORS-taint
- * selfie segmentation. Fail returns null (honesty, stay Photo).
+ * selfie segmentation. Fail returns null (honesty; plate stays Wireframe).
  */
 export async function fetchSignedFullBlob(
   sessionId: string,
@@ -112,7 +112,9 @@ export async function fetchSignedFullBlob(
   });
   if (!res.ok) return null;
   const delivery = res.headers.get('X-ViaConnect-Scan-Delivery');
-  const contentType = res.headers.get('Content-Type') ?? '';
+  const contentType = (res.headers.get('Content-Type') ?? '').split(';')[0].trim();
+  // H2: Photo JSON signedUrl must never be treated as Ready Wireframe bytes.
+  if (contentType === 'application/json') return null;
   if (delivery !== 'blob' && !contentType.startsWith('image/')) {
     return null;
   }

@@ -16,29 +16,17 @@ const LOG_SCOPE = 'arnold.scanning.silhouetteProcessor';
 /** TFJS selfie + WASM cold-start bound. Fail-open if the pre-warm loses. */
 export const SELFIE_PREWARM_TIMEOUT_MS = 20000;
 
-// Lazy-load tf and body-segmentation so the SSR / Turbopack graph stays lean.
-// Avoid type-import() of TF packages (they re-enter the module graph under Turbopack).
+// Lazy-load the client TFJS chunk so SSR stays lean. Keep the import
+// inside the bundler graph so www emits tfjs / body-segmentation (H1).
+// MediaPipe ESM is shimmed in next.config.mjs.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let modelPromise: Promise<{ tf: any; bodySeg: any; segmenter: any }> | null = null;
 
 async function getSegmenter() {
   if (!modelPromise) {
     modelPromise = (async () => {
-      // turbopackIgnore: keep ML deps out of the production graph analysis
-      // (MediaPipe packages have no ESM exports under Turbopack).
-      const tf = await import(/* turbopackIgnore: true */ "@tensorflow/tfjs");
-      await import(/* turbopackIgnore: true */ "@tensorflow/tfjs-backend-webgl").catch(
-        () => {}
-      );
-      await tf.ready();
-      const bodySeg = await import(
-        /* turbopackIgnore: true */ "@tensorflow-models/body-segmentation"
-      );
-      const segmenter = await bodySeg.createSegmenter(
-        bodySeg.SupportedModels.MediaPipeSelfieSegmentation,
-        { runtime: "tfjs", modelType: "general" } as never
-      );
-      return { tf, bodySeg, segmenter };
+      const { createSelfieSegmenter } = await import('./selfieSegmenterRuntime');
+      return createSelfieSegmenter();
     })().catch((error: unknown) => {
       modelPromise = null;
       throw error;
@@ -74,12 +62,33 @@ export async function awaitSelfieSegmenterSettled(): Promise<boolean> {
   }
 }
 
-/** Pack ImageData R-channel to a 0/255 occupancy mask. */
+/** Occupancy polarity: R>127 is body. includeMask must paint the person white. */
+export const SELFIE_MASK_OCCUPANCY_R_THRESHOLD = 127;
+export const SELFIE_MASK_PERSON_COLOR = { r: 255, g: 255, b: 255, a: 255 } as const;
+export const SELFIE_MASK_NON_PERSON_COLOR = { r: 0, g: 0, b: 0, a: 0 } as const;
+/** Scan-path colors kept as-is so measurement contour polarity does not shift. */
+export const SELFIE_MASK_LEGACY_FOREGROUND = { r: 0, g: 0, b: 0, a: 0 } as const;
+export const SELFIE_MASK_LEGACY_BACKGROUND = { r: 255, g: 255, b: 255, a: 255 } as const;
+
+export function isBodyOccupancyR(r: number): boolean {
+  return r > SELFIE_MASK_OCCUPANCY_R_THRESHOLD;
+}
+
+export function selfieBinaryMaskColors(includeMask: boolean): {
+  foreground: { r: number; g: number; b: number; a: number };
+  background: { r: number; g: number; b: number; a: number };
+} {
+  return includeMask
+    ? { foreground: SELFIE_MASK_PERSON_COLOR, background: SELFIE_MASK_NON_PERSON_COLOR }
+    : { foreground: SELFIE_MASK_LEGACY_FOREGROUND, background: SELFIE_MASK_LEGACY_BACKGROUND };
+}
+
+/** Pack ImageData R-channel to a 0/255 occupancy mask (white person = body). */
 export function packBinaryMask(mask: ImageData): Uint8Array {
   const out = new Uint8Array(mask.width * mask.height);
   const data = mask.data;
   for (let i = 0; i < out.length; i += 1) {
-    out[i] = data[i * 4] > 127 ? 255 : 0;
+    out[i] = isBodyOccupancyR(data[i * 4]) ? 255 : 0;
   }
   return out;
 }
@@ -96,60 +105,73 @@ export async function processSilhouette(params: {
   const { blob, poseId, userHeightCm, landmarks, includeMask = false } = params;
   const bitmap = await createImageBitmap(blob);
   const { segmenter, bodySeg } = await getSegmenter();
-  const canvas = offscreenCanvas(bitmap.width, bitmap.height);
-  const ctx = canvas.getContext('2d') as CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
+  // Prefer HTMLCanvasElement. OffscreenCanvas + HTMLCanvasElement cast
+  // breaks TFJS segmentPeople on www (Ready Wireframe H1).
+  const canvas = canvasForSegmentPeople(bitmap.width, bitmap.height);
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    throw new Error(`${LOG_SCOPE}: 2d canvas context unavailable`);
+  }
   ctx.drawImage(bitmap, 0, 0);
 
-  const segmentation = await segmenter.segmentPeople(canvas as unknown as HTMLCanvasElement, {
+  const segmentation = await segmenter.segmentPeople(canvas, {
     multiSegmentation: false,
     segmentBodyParts: false,
   });
 
+  const colors = selfieBinaryMaskColors(includeMask);
   const maskImage = await bodySeg.toBinaryMask(
     segmentation,
-    { r: 0, g: 0, b: 0, a: 0 },
-    { r: 255, g: 255, b: 255, a: 255 },
+    colors.foreground,
+    colors.background,
     false,
     0.5,
   );
 
-  const width = bitmap.width;
-  const height = bitmap.height;
-  const contour = extractContour(maskImage, width, height);
-  const scale = frontScaleCmPerPx(landmarks, userHeightCm, height);
+  // Packed mask + contour must share maskImage w×h (H3). bitmap size is
+  // kept on imageWidth/Height for landmark scale only.
+  const maskWidth = maskImage.width;
+  const maskHeight = maskImage.height;
+  const contour = extractContour(maskImage);
+  const scale = frontScaleCmPerPx(landmarks, userHeightCm, bitmap.height);
   const mask = includeMask ? packBinaryMask(maskImage) : undefined;
 
   if ('close' in bitmap) bitmap.close();
 
   return {
     poseId,
-    imageWidth: width,
-    imageHeight: height,
+    imageWidth: bitmap.width,
+    imageHeight: bitmap.height,
     contour,
     landmarks,
     scaleCmPerPx: scale,
-    maskDimensions: { width, height },
+    maskDimensions: { width: maskWidth, height: maskHeight },
     ...(mask ? { mask } : {}),
     qualityScore: 0,
     qualityIssues: [],
   };
 }
 
-function offscreenCanvas(w: number, h: number): HTMLCanvasElement | OffscreenCanvas {
-  if (typeof OffscreenCanvas !== 'undefined') return new OffscreenCanvas(w, h);
-  const c = document.createElement('canvas');
-  c.width = w;
-  c.height = h;
-  return c;
+/** HTMLCanvasElement first so segmentPeople receives a real canvas. */
+export function canvasForSegmentPeople(w: number, h: number): HTMLCanvasElement {
+  if (typeof document !== 'undefined') {
+    const c = document.createElement('canvas');
+    c.width = w;
+    c.height = h;
+    return c;
+  }
+  throw new Error(`${LOG_SCOPE}: HTMLCanvasElement required for segmentPeople`);
 }
 
 /** March-squares-lite contour trace: walks perimeter of the binary mask
  *  and returns a downsampled list of boundary points. */
-function extractContour(mask: ImageData, width: number, height: number): Point2D[] {
+function extractContour(mask: ImageData): Point2D[] {
+  const width = mask.width;
+  const height = mask.height;
   const data = mask.data;
   const inside = (x: number, y: number): boolean => {
     if (x < 0 || y < 0 || x >= width || y >= height) return false;
-    return data[(y * width + x) * 4] > 127; // R channel
+    return isBodyOccupancyR(data[(y * width + x) * 4]);
   };
   // Collect boundary cells: inside pixels with at least one outside neighbour
   const points: Point2D[] = [];

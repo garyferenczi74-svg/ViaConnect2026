@@ -131,11 +131,19 @@ export async function POST(request: Request): Promise<NextResponse> {
         downloadResult.data.type && downloadResult.data.type.length > 0
           ? downloadResult.data.type
           : 'image/jpeg';
-      return new NextResponse(downloadResult.data, {
+      // ArrayBuffer body — NextResponse(Blob) can drop bytes on the Node
+      // runtime (H2). Same-origin image/* + delivery header stay required.
+      const bytes = await downloadResult.data.arrayBuffer();
+      if (bytes.byteLength === 0) {
+        safeLog.error(SCOPE, 'download empty after arrayBuffer', {});
+        return NextResponse.json({ ok: false, error: 'download_failed' }, { status: 500 });
+      }
+      return new NextResponse(bytes, {
         status: 200,
         headers: {
           'Content-Type': type,
           'Cache-Control': 'private, no-store',
+          'Content-Length': String(bytes.byteLength),
           'X-ViaConnect-Scan-Delivery': 'blob',
         },
       });
