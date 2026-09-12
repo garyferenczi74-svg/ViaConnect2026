@@ -89,6 +89,8 @@ describe('frontScaleCmPerPx', () => {
 describe('silhouetteProcessor C4a source contract', () => {
   it('dropped the estimatedTotalPx > imageHeight * 1.1 reject', () => {
     const src = readFileSync(join(__dirname, '..', 'silhouetteProcessor.ts'), 'utf8');
+    expect(src).toMatch(/includeMask/);
+    expect(src).toMatch(/packBinaryMask/);
     expect(src).toMatch(/export function frontScaleCmPerPx/);
     expect(src).toMatch(/Number\.isFinite/);
     expect(src).toMatch(/BODY_HEIGHT_MIN/);

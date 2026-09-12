@@ -88,3 +88,35 @@ export async function fetchSignedFullUrl(
   setCachedSignedFullUrl(sessionId, view, body.signedUrl, generation);
   return getCachedSignedFullUrl(sessionId, view) ?? body.signedUrl;
 }
+
+/**
+ * Brief 65: same-origin bytes for processSilhouette. Do not fetch the
+ * Storage signed URL in the browser — that canvas can CORS-taint
+ * selfie segmentation. Fail returns null (honesty, stay Photo).
+ */
+export async function fetchSignedFullBlob(
+  sessionId: string,
+  view: PoseId,
+  signal?: AbortSignal,
+): Promise<Blob | null> {
+  const res = await fetch('/api/scan/signed-url', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      sessionId,
+      view,
+      variant: 'full',
+      delivery: 'blob',
+    }),
+    signal,
+  });
+  if (!res.ok) return null;
+  const delivery = res.headers.get('X-ViaConnect-Scan-Delivery');
+  const contentType = res.headers.get('Content-Type') ?? '';
+  if (delivery !== 'blob' && !contentType.startsWith('image/')) {
+    return null;
+  }
+  const blob = await res.blob();
+  if (!blob || blob.size === 0) return null;
+  return blob;
+}

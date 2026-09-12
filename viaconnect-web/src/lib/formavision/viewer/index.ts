@@ -32,6 +32,13 @@ export {
   isFrblSidePresent,
 } from './frblReadySide';
 export {
+  buildDenseCageFromMask,
+  FRBL_WIREFRAME_CYAN,
+  silhouetteMaskIsBodyMatched,
+  type FrblWireframeCageSpec,
+} from './frblWireframeCage';
+export {
+  fetchSignedFullBlob,
   fetchSignedFullUrl,
   getCachedSignedFullUrl,
   invalidateSignedFullUrlsForScan,

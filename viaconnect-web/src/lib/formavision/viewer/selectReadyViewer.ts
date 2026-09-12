@@ -71,8 +71,9 @@ export function isParametricReadyViewerFail(input: {
 }
 
 export function selectReadyViewer(input: SelectReadyViewerInput): ReadyViewerKind {
-  // Brief 63: retained FRBL 2D photos are Ready SUCCESS. Parked Meshy /
-  // Tripo GLB must not settle the plate — even when a signed GLB exists.
+  // Brief 63/65: retained FRBL 2D photos are Ready SUCCESS. Wireframe is a
+  // mode inside FormaVisionFrblReadyPlate — never reopen model-viewer / r3f
+  // for SUCCESS. Parked Meshy / Tripo GLB must not settle the plate.
   if (hasRetainedFrblReady(input)) return 'frbl-2d';
   return 'notice';
 }

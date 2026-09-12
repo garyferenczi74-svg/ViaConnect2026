@@ -51,6 +51,10 @@ describe('FormaVisionFrblReadyPlate', () => {
     );
     expect(html).toContain('formavision-frbl-ready-plate');
     expect(html).toContain('data-ready-side="front"');
+    expect(html).toContain('data-ready-mode="photo"');
+    expect(html).toContain('formavision-frbl-ready-mode-toggle');
+    expect(html).toContain('formavision-frbl-ready-mode-photo');
+    expect(html).toContain('formavision-frbl-ready-mode-wireframe');
     expect(html).toContain('overflow-hidden');
     expect(html).toContain('formavision-frbl-side-toggle');
     expect(html).not.toContain('overflow-y-auto');
@@ -92,7 +96,10 @@ describe('FormaVisionFrblReadyPlate', () => {
     expect(html).toContain(FRBL_SIDE_UNAVAILABLE_HELPER);
     expect(html).not.toContain('formavision-frbl-ready-photo');
     expect(html).not.toContain('formavision-frbl-ready-ground-glow');
-    expect(html).not.toMatch(/silhouette|wireframe|anatomical|alien|picasso/i);
+    expect(html).toContain('formavision-frbl-ready-mode-toggle');
+    expect(html).toContain('data-ready-mode="photo"');
+    expect(html).not.toContain('data-testid="formavision-frbl-ready-wireframe"');
+    expect(html).not.toMatch(/anatomical|alien|picasso|generateAvatarMesh/i);
     expect(html).not.toContain('formavision-anatomical-floor');
     expect(html).not.toContain('formavision-model-viewer');
     expect(html).not.toContain('formavision-3d-mount');
@@ -131,6 +138,15 @@ describe('FormaVisionFrblReadyPlate', () => {
     expect(FRBL_READY_STAGE_SPEC.rimPx).toBeGreaterThanOrEqual(1);
     expect(FRBL_READY_STAGE_SPEC.rimPx).toBeLessThanOrEqual(2);
     expect(FRBL_READY_STAGE_SPEC.plasmaCyan).toBe('#2EE6D6');
+    expect(FRBL_READY_STAGE_SPEC.toWireframeMs).toBeGreaterThanOrEqual(220);
+    expect(FRBL_READY_STAGE_SPEC.toWireframeMs).toBeLessThanOrEqual(280);
+    expect(FRBL_READY_STAGE_SPEC.toPhotoMs).toBeGreaterThanOrEqual(180);
+    expect(FRBL_READY_STAGE_SPEC.toPhotoMs).toBeLessThanOrEqual(220);
+    expect(FRBL_READY_STAGE_SPEC.wireframeSideMs).toBe(180);
+    expect(plateSrc).toMatch(/processSilhouette/);
+    expect(plateSrc).toMatch(/fetchSignedFullBlob/);
+    expect(plateSrc).not.toMatch(/fetch\(signed/);
+    expect(plateSrc).not.toMatch(/from ['"][^'"]*avatarMeshGenerator['"]/);
     expect(plateSrc).toMatch(/object-contain/);
     expect(plateSrc).toMatch(/border-white\/15/);
     expect(plateSrc).toMatch(/bg-\[#111827\]/);
@@ -153,7 +169,7 @@ describe('BodyCompositionAvatar Ready FRBL 2D vs discard', () => {
   });
   const circumferences = estimateCircumferencesFromComposition(scan, 'male', 'in');
 
-  it('retained FRBL paints the 2D plate and never mounts GLB or wireframe', () => {
+  it('retained FRBL paints the 2D plate and never mounts GLB or R3F', () => {
     const html = renderToStaticMarkup(
       React.createElement(BodyCompositionAvatar, {
         sex: 'male',

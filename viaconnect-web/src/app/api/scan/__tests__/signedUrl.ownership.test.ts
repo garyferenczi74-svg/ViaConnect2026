@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   supabaseGetUser: vi.fn(),
   adminFrom: vi.fn(),
   createSignedUrl: vi.fn(),
+  download: vi.fn(),
 }));
 
 vi.mock('@/lib/supabase/server', () => ({
@@ -17,7 +18,12 @@ vi.mock('@/lib/supabase/server', () => ({
 vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: () => ({
     from: mocks.adminFrom,
-    storage: { from: () => ({ createSignedUrl: mocks.createSignedUrl }) },
+    storage: {
+      from: () => ({
+        createSignedUrl: mocks.createSignedUrl,
+        download: mocks.download,
+      }),
+    },
   }),
 }));
 
@@ -76,8 +82,13 @@ beforeEach(() => {
   mocks.supabaseGetUser.mockReset();
   mocks.adminFrom.mockReset();
   mocks.createSignedUrl.mockReset();
+  mocks.download.mockReset();
   mocks.createSignedUrl.mockResolvedValue({
     data: { signedUrl: 'https://signed.example/owner-user/session-1/front_full_1000.jpg' },
+    error: null,
+  });
+  mocks.download.mockResolvedValue({
+    data: new Blob([new Uint8Array([0xff, 0xd8, 0xff, 0xd9])], { type: 'image/jpeg' }),
     error: null,
   });
 });
@@ -136,5 +147,51 @@ describe('POST /api/scan/signed-url', () => {
     const res = await POST(buildRequest({ sessionId: 'session-1', view: 'right' }) as never);
     expect(res.status).toBe(404);
     expect(mocks.createSignedUrl).not.toHaveBeenCalled();
+  });
+});
+
+describe('POST /api/scan/signed-url delivery=blob', () => {
+  it('returns same-origin image bytes for the owning user', async () => {
+    mocks.supabaseGetUser.mockResolvedValue({ data: { user: { id: 'owner-user' } } });
+    installOwnedSessionMock();
+    const res = await POST(
+      buildRequest({ sessionId: 'session-1', view: 'front', delivery: 'blob' }) as never,
+    );
+    expect(res.status).toBe(200);
+    expect(res.headers.get('X-ViaConnect-Scan-Delivery')).toBe('blob');
+    expect(res.headers.get('Content-Type')).toMatch(/image\/jpeg/);
+    expect(mocks.download).toHaveBeenCalledWith(SESSION_ROW.front_full_path);
+    expect(mocks.createSignedUrl).not.toHaveBeenCalled();
+    const bytes = await res.arrayBuffer();
+    expect(bytes.byteLength).toBeGreaterThan(0);
+  });
+
+  it('a second user cannot download another user\'s full photo', async () => {
+    mocks.supabaseGetUser.mockResolvedValue({ data: { user: { id: 'attacker-user' } } });
+    installOwnedSessionMock();
+    const res = await POST(
+      buildRequest({ sessionId: 'session-1', view: 'front', delivery: 'blob' }) as never,
+    );
+    expect(res.status).toBe(404);
+    expect(mocks.download).not.toHaveBeenCalled();
+    expect(mocks.createSignedUrl).not.toHaveBeenCalled();
+  });
+
+  it('ignores a client-supplied path on blob delivery', async () => {
+    mocks.supabaseGetUser.mockResolvedValue({ data: { user: { id: 'owner-user' } } });
+    installOwnedSessionMock();
+    const res = await POST(
+      buildRequest({
+        sessionId: 'session-1',
+        view: 'front',
+        delivery: 'blob',
+        path: 'attacker-user/other-session/front_full_9999.jpg',
+      }) as never,
+    );
+    expect(res.status).toBe(200);
+    expect(mocks.download).toHaveBeenCalledWith(SESSION_ROW.front_full_path);
+    expect(mocks.download).not.toHaveBeenCalledWith(
+      'attacker-user/other-session/front_full_9999.jpg',
+    );
   });
 });

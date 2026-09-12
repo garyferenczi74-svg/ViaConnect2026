@@ -18,6 +18,7 @@ const BUCKET = 'body-progress-photos';
 const SCOPE = 'api.scan.signed-url';
 const SIGNED_URL_TTL_SECONDS = 300;
 const DB_TIMEOUT_MS = 5000;
+const DOWNLOAD_TIMEOUT_MS = 15000;
 const RATE_LIMIT_MAX = 30;
 const RATE_LIMIT_WINDOW_MS = 60_000;
 
@@ -61,11 +62,14 @@ export async function POST(request: Request): Promise<NextResponse> {
     if (!body || typeof body !== 'object') {
       return NextResponse.json({ ok: false, error: 'invalid_request' }, { status: 400 });
     }
-    const { sessionId, view, variant } = body as Record<string, unknown>;
+    const { sessionId, view, variant, delivery } = body as Record<string, unknown>;
     if (typeof sessionId !== 'string' || !sessionId || !isView(view)) {
       return NextResponse.json({ ok: false, error: 'invalid_request' }, { status: 400 });
     }
     const resolvedVariant: Variant = isVariant(variant) ? variant : 'full';
+    // Brief 65: same-origin blob so createImageBitmap/selfie-seg is not
+    // CORS-tainted by the Storage signed URL. Default stays JSON signedUrl.
+    const wantsBlob = delivery === 'blob';
 
     const admin: SupabaseClient = createAdminClient();
 
@@ -105,6 +109,36 @@ export async function POST(request: Request): Promise<NextResponse> {
     const path = session[columnKey];
     if (typeof path !== 'string' || !path) {
       return NextResponse.json({ ok: false, error: 'not_found' }, { status: 404 });
+    }
+
+    if (wantsBlob) {
+      const downloadResult = await withTimeout<{
+        data: Blob | null;
+        error: { message: string } | null;
+      }>(
+        Promise.resolve(admin.storage.from(BUCKET).download(path)) as Promise<{
+          data: Blob | null;
+          error: { message: string } | null;
+        }>,
+        DOWNLOAD_TIMEOUT_MS,
+        `${SCOPE}.download`,
+      );
+      if (downloadResult.error || !downloadResult.data || downloadResult.data.size === 0) {
+        safeLog.error(SCOPE, 'download failed', { error: downloadResult.error });
+        return NextResponse.json({ ok: false, error: 'download_failed' }, { status: 500 });
+      }
+      const type =
+        downloadResult.data.type && downloadResult.data.type.length > 0
+          ? downloadResult.data.type
+          : 'image/jpeg';
+      return new NextResponse(downloadResult.data, {
+        status: 200,
+        headers: {
+          'Content-Type': type,
+          'Cache-Control': 'private, no-store',
+          'X-ViaConnect-Scan-Delivery': 'blob',
+        },
+      });
     }
 
     const signResult = await withTimeout<{
