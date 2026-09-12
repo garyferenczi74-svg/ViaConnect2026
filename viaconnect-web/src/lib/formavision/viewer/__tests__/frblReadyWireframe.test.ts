@@ -413,8 +413,8 @@ describe('Brief 65 smoke — stay on Wireframe chamber', () => {
     expect(plate).not.toMatch(/FormaVisionAnatomicalFloor/);
     expect(helper).toMatch(/includeMask:\s*true/);
     expect(helper).toMatch(/FRBL_WIREFRAME_PREWARM_TIMEOUT_MS/);
-    expect(helper).toMatch(/formavision\.frblReadyWireframe\.processSilhouette/);
-    expect(helper).toMatch(/formavision\.frblReadyWireframe\.prewarm/);
+    expect(helper).toMatch(/\$\{LOG_SCOPE\}\.processSilhouette/);
+    expect(helper).toMatch(/\$\{LOG_SCOPE\}\.prewarm/);
     expect(helper).not.toMatch(/withTimeout\(work\(/);
     expect(helper).not.toMatch(/withTimeout\(work\(\),\s*timeoutMs/);
     expect(helper).not.toMatch(/\$\{LOG_SCOPE\}\.build/);

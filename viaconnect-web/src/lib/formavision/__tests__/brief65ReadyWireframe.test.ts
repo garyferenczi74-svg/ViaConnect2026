@@ -176,7 +176,8 @@ describe('Brief 65 observe — same-origin blob + stay Wireframe on fail', () =>
     expect(helper).toMatch(/includeMask:\s*true/);
     expect(helper).not.toMatch(/withTimeout\(work\(/);
     expect(helper).not.toMatch(/\$\{LOG_SCOPE\}\.build/);
-    expect(helper).toMatch(/formavision\.frblReadyWireframe\.processSilhouette/);
+    expect(helper).toMatch(/\$\{LOG_SCOPE\}\.processSilhouette/);
+    expect(helper).toMatch(/\$\{LOG_SCOPE\}\.prewarm/);
     expect(plate).toMatch(/data-testid="formavision-frbl-ready-wireframe-fail"/);
     expect(plate).toMatch(/data-wireframe-fail-reason=\{wireframeFailReason \?\? 'unknown'\}/);
     expect(plate).not.toMatch(/fetch\(signed/);
