@@ -35,16 +35,6 @@ const nextConfig = {
     };
     return config;
   },
-  // Client chunks for Ready Wireframe selfie-seg (H1). Must transpile so
-  // www ships TFJS instead of leaving a bare specifier.
-  transpilePackages: [
-    "@tensorflow/tfjs",
-    "@tensorflow/tfjs-core",
-    "@tensorflow/tfjs-converter",
-    "@tensorflow/tfjs-backend-cpu",
-    "@tensorflow/tfjs-backend-webgl",
-    "@tensorflow-models/body-segmentation",
-  ],
   // Barrel-package optimization
   experimental: {
     optimizePackageImports: [
@@ -63,6 +53,11 @@ const nextConfig = {
     ],
     turbopackFileSystemCacheForBuild: true,
   },
+  // TFJS / body-segmentation stay server-external only. Do NOT also list
+  // them in transpilePackages — that dual-list trips TurbopackInternalError
+  // on the FormaVision Playwright @fallback `next build`. Ready Wireframe
+  // selfie-seg loads from the client chunk
+  // src/lib/arnold/scanning/selfieSegmenterRuntime.ts ('use client').
   serverExternalPackages: [
     "exceljs",
     "@google-cloud/vision",

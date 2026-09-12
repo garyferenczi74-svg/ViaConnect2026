@@ -3,7 +3,8 @@
 // Client chunk for Ready Wireframe + in-browser scan silhouette.
 // Must stay inside the bundler graph so www actually ships
 // @tensorflow/tfjs + body-segmentation. MediaPipe ESM is shimmed
-// in next.config.mjs.
+// in next.config.mjs. TFJS is serverExternalPackages-only — never also
+// listed in transpilePackages (Turbopack dual-list crash).
 //
 // @tensorflow/tfjs-backend-webgl is a transitive of @tensorflow/tfjs
 // (not a direct package.json dep — do not add one). Static import so
