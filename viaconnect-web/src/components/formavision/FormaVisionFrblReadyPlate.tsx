@@ -13,10 +13,13 @@ import {
 import { fetchSignedFullUrl } from '@/lib/formavision/viewer/signedFullUrlCache';
 import type { FrblWireframeCageSpec } from '@/lib/formavision/viewer/frblWireframeCage';
 import {
+  classifyWireframeThrow,
+  FRBL_WIREFRAME_BUILD_TIMEOUT_MS,
   logFrblWireframeFail,
   runFrblReadyWireframeBuild,
   type FrblWireframeFailReason,
 } from '@/lib/formavision/viewer/frblReadyWireframe';
+import { ensureSelfieSegmenter } from '@/lib/arnold/scanning/silhouetteProcessor';
 import {
   FRBL_READY_PHOTO_LOADING,
   FRBL_READY_WIREFRAME_FAIL,
@@ -49,7 +52,7 @@ export const FRBL_READY_STAGE_SPEC = {
 
 const CROSSFADE_MS = FRBL_READY_STAGE_SPEC.crossfadeMs;
 const SIGN_TIMEOUT_MS = 8000;
-const WIREFRAME_TIMEOUT_MS = 20000;
+const WIREFRAME_TIMEOUT_MS = FRBL_WIREFRAME_BUILD_TIMEOUT_MS;
 
 const STAGE_STYLE = `
 @keyframes fv-frbl-stage-enter {
@@ -137,6 +140,19 @@ export function FormaVisionFrblReadyPlate({
   const [modeMotion, setModeMotion] = useState<'to-wireframe' | 'to-photo' | null>(null);
   const cageCacheRef = useRef<Map<string, FrblWireframeCageSpec>>(new Map());
   const skipInitialFailRetryRef = useRef(initialWireframeFail);
+  const selfiePrewarmStartedRef = useRef(false);
+
+  useEffect(() => {
+    if (selfiePrewarmStartedRef.current) return;
+    selfiePrewarmStartedRef.current = true;
+    // H1: scan path pre-warms TFJS selfie; Ready Wireframe must too.
+    void ensureSelfieSegmenter();
+  }, []);
+
+  useEffect(() => {
+    if (mode !== 'wireframe') return;
+    void ensureSelfieSegmenter();
+  }, [mode]);
 
   useEffect(() => {
     const next = defaultFrblReadySide(poses);
@@ -209,7 +225,6 @@ export function FormaVisionFrblReadyPlate({
 
     let cancelled = false;
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), WIREFRAME_TIMEOUT_MS);
     setWireframeLoading(true);
     setWireframeFail(false);
     setWireframeFailReason(null);
@@ -230,6 +245,7 @@ export function FormaVisionFrblReadyPlate({
           sessionId,
           side,
           signal: controller.signal,
+          timeoutMs: WIREFRAME_TIMEOUT_MS,
         });
         if (cancelled) return;
         if (!result.ok) {
@@ -244,24 +260,14 @@ export function FormaVisionFrblReadyPlate({
         onPainted?.();
       } catch (error) {
         if (cancelled) return;
-        const reason =
-          controller.signal.aborted ||
-          (typeof error === 'object' &&
-            error !== null &&
-            'name' in error &&
-            (error.name === 'AbortError' || error.name === 'TimeoutError'))
-            ? 'timeout'
-            : 'unknown';
+        const reason = classifyWireframeThrow(error, controller.signal);
         logFrblWireframeFail(reason, { poseId: side, error });
         stayOnWireframeFail(reason);
-      } finally {
-        clearTimeout(timer);
       }
     })();
 
     return () => {
       cancelled = true;
-      clearTimeout(timer);
       controller.abort();
     };
   }, [mode, sessionId, side, poses, onPainted]);

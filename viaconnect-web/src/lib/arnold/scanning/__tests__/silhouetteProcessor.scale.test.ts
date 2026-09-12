@@ -5,7 +5,13 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { BODY_HEIGHT_MIN } from '@/lib/scan/qaThresholds';
-import { canvasForSegmentPeople, frontScaleCmPerPx, packBinaryMask } from '../silhouetteProcessor';
+import {
+  canvasForSegmentPeople,
+  frontScaleCmPerPx,
+  isBodyOccupancyR,
+  packBinaryMask,
+  selfieBinaryMaskColors,
+} from '../silhouetteProcessor';
 import type { LandmarkMap } from '../types';
 
 const HEIGHT_CM = 180;
@@ -102,6 +108,25 @@ describe('packBinaryMask — H3 length equals maskImage w×h', () => {
     expect(packed[2]).toBe(255);
   });
 
+  it('includeMask paints person white so R>127 occupancy is the body, not the room', () => {
+    const include = selfieBinaryMaskColors(true);
+    const legacy = selfieBinaryMaskColors(false);
+    expect(include.foreground.r).toBe(255);
+    expect(include.background.r).toBe(0);
+    expect(isBodyOccupancyR(include.foreground.r)).toBe(true);
+    expect(isBodyOccupancyR(include.background.r)).toBe(false);
+    expect(isBodyOccupancyR(legacy.foreground.r)).toBe(false);
+    expect(isBodyOccupancyR(legacy.background.r)).toBe(true);
+    const inverted = { width: 2, height: 1, data: new Uint8ClampedArray([0, 0, 0, 0, 255, 255, 255, 255]) } as ImageData;
+    const packedInverted = packBinaryMask(inverted);
+    expect(packedInverted[0]).toBe(0);
+    expect(packedInverted[1]).toBe(255);
+    const personWhite = { width: 2, height: 1, data: new Uint8ClampedArray([255, 255, 255, 255, 0, 0, 0, 0]) } as ImageData;
+    const packedBody = packBinaryMask(personWhite);
+    expect(packedBody[0]).toBe(255);
+    expect(packedBody[1]).toBe(0);
+  });
+
   it('prefers HTMLCanvasElement when document exists, else refuses Offscreen cast', () => {
     if (typeof document === 'undefined') {
       expect(() => canvasForSegmentPeople(8, 8)).toThrow(/HTMLCanvasElement/);
@@ -123,6 +148,7 @@ describe('silhouetteProcessor C4a source contract', () => {
     expect(src).toMatch(/document\.createElement\('canvas'\)/);
     expect(src).toMatch(/maskImage\.width/);
     expect(src).toMatch(/selfieSegmenterRuntime/);
+    expect(src).toMatch(/selfieBinaryMaskColors\(includeMask\)/);
     expect(src).not.toMatch(/turbopackIgnore:\s*true/);
     expect(src).not.toMatch(/offscreenCanvas/);
     expect(src).toMatch(/export function frontScaleCmPerPx/);

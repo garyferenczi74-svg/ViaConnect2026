@@ -170,6 +170,7 @@ describe('Brief 65 observe — same-origin blob + stay Wireframe on fail', () =>
     const cache = src('src/lib/formavision/viewer/signedFullUrlCache.ts');
     const route = src('src/app/api/scan/signed-url/route.ts');
     expect(plate).toMatch(/runFrblReadyWireframeBuild/);
+    expect(plate).toMatch(/ensureSelfieSegmenter/);
     expect(helper).toMatch(/fetchSignedFullBlob/);
     expect(helper).toMatch(/processSilhouette/);
     expect(helper).toMatch(/includeMask:\s*true/);

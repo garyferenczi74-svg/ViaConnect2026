@@ -112,7 +112,9 @@ export async function fetchSignedFullBlob(
   });
   if (!res.ok) return null;
   const delivery = res.headers.get('X-ViaConnect-Scan-Delivery');
-  const contentType = res.headers.get('Content-Type') ?? '';
+  const contentType = (res.headers.get('Content-Type') ?? '').split(';')[0].trim();
+  // H2: Photo JSON signedUrl must never be treated as Ready Wireframe bytes.
+  if (contentType === 'application/json') return null;
   if (delivery !== 'blob' && !contentType.startsWith('image/')) {
     return null;
   }

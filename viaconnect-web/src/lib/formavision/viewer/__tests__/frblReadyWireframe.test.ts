@@ -71,13 +71,14 @@ function silhouetteFromMask(
 }
 
 describe('FrblWireframeFailReason', () => {
-  it('is the closed D0 set', () => {
+  it('is the closed D0 set including abort', () => {
     expect(FRBL_WIREFRAME_FAIL_REASONS).toEqual([
       'blob',
       'seg',
       'match',
       'cage',
       'timeout',
+      'abort',
       'unknown',
     ]);
     for (const reason of FRBL_WIREFRAME_FAIL_REASONS) {
@@ -86,13 +87,13 @@ describe('FrblWireframeFailReason', () => {
     expect(isFrblWireframeFailReason('photo')).toBe(false);
   });
 
-  it('classifies abort / timeout throws as timeout, else unknown', () => {
+  it('classifies TimeoutError as timeout, AbortError as abort, else unknown', () => {
     const aborted = new AbortController();
     aborted.abort();
-    expect(classifyWireframeThrow(new Error('nope'), aborted.signal)).toBe('timeout');
+    expect(classifyWireframeThrow(new Error('nope'), aborted.signal)).toBe('abort');
     const abortErr = new Error('aborted');
     abortErr.name = 'AbortError';
-    expect(classifyWireframeThrow(abortErr)).toBe('timeout');
+    expect(classifyWireframeThrow(abortErr)).toBe('abort');
     const timeoutErr = new Error('timed out');
     timeoutErr.name = 'TimeoutError';
     expect(classifyWireframeThrow(timeoutErr)).toBe('timeout');
@@ -137,6 +138,7 @@ describe('runFrblReadyWireframeBuild — fail-reason branches', () => {
     const result = await runFrblReadyWireframeBuild({
       sessionId: 'sess-1',
       side: 'front',
+      prewarm: async () => true,
       fetchBlob: async () => null,
       segment: async () => {
         throw new Error('segment must not run');
@@ -149,6 +151,7 @@ describe('runFrblReadyWireframeBuild — fail-reason branches', () => {
     const result = await runFrblReadyWireframeBuild({
       sessionId: 'sess-1',
       side: 'front',
+      prewarm: async () => true,
       fetchBlob: async () => new Blob([new Uint8Array([1])], { type: 'image/jpeg' }),
       segment: async () => {
         throw new Error('TFJS selfie failed');
@@ -161,6 +164,7 @@ describe('runFrblReadyWireframeBuild — fail-reason branches', () => {
     const result = await runFrblReadyWireframeBuild({
       sessionId: 'sess-1',
       side: 'front',
+      prewarm: async () => true,
       fetchBlob: async () => new Blob([new Uint8Array([1])], { type: 'image/jpeg' }),
       segment: async () =>
         silhouetteFromMask({
@@ -182,6 +186,7 @@ describe('runFrblReadyWireframeBuild — fail-reason branches', () => {
     const result = await runFrblReadyWireframeBuild({
       sessionId: 'sess-1',
       side: 'front',
+      prewarm: async () => true,
       fetchBlob: async () => new Blob([new Uint8Array([1])], { type: 'image/jpeg' }),
       segment: async () =>
         silhouetteFromMask({ mask, width, height, contour }),
@@ -189,32 +194,49 @@ describe('runFrblReadyWireframeBuild — fail-reason branches', () => {
     expect(result).toEqual({ ok: false, reason: 'cage' });
   });
 
-  it('timeout: aborted signal before fetch', async () => {
+  it('abort: aborted signal before fetch', async () => {
     const controller = new AbortController();
     controller.abort();
     const result = await runFrblReadyWireframeBuild({
       sessionId: 'sess-1',
       side: 'front',
+      prewarm: async () => true,
       signal: controller.signal,
       fetchBlob: async () => new Blob([new Uint8Array([1])]),
       segment: async () => {
         throw new Error('must not run');
       },
     });
-    expect(result).toEqual({ ok: false, reason: 'timeout' });
+    expect(result).toEqual({ ok: false, reason: 'abort' });
   });
 
-  it('timeout: fetch throws AbortError', async () => {
+  it('abort: fetch throws AbortError', async () => {
     const err = new Error('The user aborted a request.');
     err.name = 'AbortError';
     const result = await runFrblReadyWireframeBuild({
       sessionId: 'sess-1',
       side: 'front',
+      prewarm: async () => true,
       fetchBlob: async () => {
         throw err;
       },
       segment: async () => {
         throw new Error('must not run');
+      },
+    });
+    expect(result).toEqual({ ok: false, reason: 'abort' });
+  });
+
+  it('timeout: processSilhouette exceeds the explicit race', async () => {
+    const result = await runFrblReadyWireframeBuild({
+      sessionId: 'sess-1',
+      side: 'front',
+      prewarm: async () => true,
+      timeoutMs: 25,
+      fetchBlob: async () => new Blob([new Uint8Array([1])], { type: 'image/jpeg' }),
+      segment: async () => {
+        await new Promise((resolve) => setTimeout(resolve, 200));
+        return silhouetteFromMask(standingFigure());
       },
     });
     expect(result).toEqual({ ok: false, reason: 'timeout' });
@@ -224,6 +246,7 @@ describe('runFrblReadyWireframeBuild — fail-reason branches', () => {
     const result = await runFrblReadyWireframeBuild({
       sessionId: 'sess-1',
       side: 'front',
+      prewarm: async () => true,
       fetchBlob: async () => {
         throw new Error('network down');
       },
@@ -239,6 +262,7 @@ describe('runFrblReadyWireframeBuild — fail-reason branches', () => {
     const result = await runFrblReadyWireframeBuild({
       sessionId: 'sess-1',
       side: 'front',
+      prewarm: async () => true,
       fetchBlob: async () => new Blob([new Uint8Array([1])], { type: 'image/jpeg' }),
       segment: async ({ includeMask }) => {
         expect(includeMask).toBe(true);
@@ -289,6 +313,23 @@ describe('Brief 65 smoke — stay on Wireframe chamber', () => {
     expect(html).not.toMatch(/generateAvatarMesh|AnatomicalFloor|avatarMeshGenerator/);
   });
 
+  it('abort fail-reason also stays on Wireframe — Arnold override of force Photo', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(FormaVisionFrblReadyPlate, {
+        sessionId: 'sess-retain-65',
+        poses: allPoses,
+        initialMode: 'wireframe',
+        initialWireframeFail: true,
+        initialWireframeFailReason: 'abort',
+      }),
+    );
+    expect(html).toContain('data-ready-mode="wireframe"');
+    expect(html).toContain('data-chamber="fail"');
+    expect(html).toContain('data-wireframe-fail-reason="abort"');
+    expect(html).toContain(FRBL_READY_WIREFRAME_FAIL);
+    expect(html).not.toContain('data-ready-mode="photo"');
+  });
+
   it('plate source never force-reverts to Photo; still bans GLB / AnatomicalFloor', () => {
     const plate = readFileSync(
       join(process.cwd(), 'src/components/formavision/FormaVisionFrblReadyPlate.tsx'),
@@ -302,6 +343,7 @@ describe('Brief 65 smoke — stay on Wireframe chamber', () => {
     expect(plate).toMatch(/stayOnWireframeFail/);
     expect(plate).toMatch(/data-wireframe-fail-reason/);
     expect(plate).toMatch(/runFrblReadyWireframeBuild/);
+    expect(plate).toMatch(/ensureSelfieSegmenter/);
     expect(plate).not.toMatch(/revertToPhoto/);
     expect(plate).not.toMatch(/setMode\('photo'\)/);
     expect(plate).not.toMatch(/from ['"][^'"]*avatarMeshGenerator['"]/);
@@ -311,7 +353,13 @@ describe('Brief 65 smoke — stay on Wireframe chamber', () => {
     expect(helper).not.toMatch(/@react-three|model-viewer/);
     expect(runtime).toMatch(/@tensorflow\/tfjs/);
     expect(runtime).toMatch(/@tensorflow-models\/body-segmentation/);
+    expect(runtime).toMatch(/@tensorflow\/tfjs-backend-webgl/);
+    expect(runtime).toMatch(/setBackend\('webgl'\)/);
     expect(runtime).not.toMatch(/turbopackIgnore:\s*true/);
+    const pkg = readFileSync(join(process.cwd(), 'package.json'), 'utf8');
+    expect(pkg).not.toMatch(/@tensorflow\/tfjs-backend-webgl/);
+    const lock = readFileSync(join(process.cwd(), 'package-lock.json'), 'utf8');
+    expect(lock).toMatch(/@tensorflow\/tfjs-backend-webgl/);
     const nextConfig = readFileSync(join(process.cwd(), 'next.config.mjs'), 'utf8');
     expect(nextConfig).toMatch(/transpilePackages/);
     expect(nextConfig).toMatch(/@tensorflow\/tfjs/);

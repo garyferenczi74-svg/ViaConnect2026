@@ -62,12 +62,33 @@ export async function awaitSelfieSegmenterSettled(): Promise<boolean> {
   }
 }
 
-/** Pack ImageData R-channel to a 0/255 occupancy mask. */
+/** Occupancy polarity: R>127 is body. includeMask must paint the person white. */
+export const SELFIE_MASK_OCCUPANCY_R_THRESHOLD = 127;
+export const SELFIE_MASK_PERSON_COLOR = { r: 255, g: 255, b: 255, a: 255 } as const;
+export const SELFIE_MASK_NON_PERSON_COLOR = { r: 0, g: 0, b: 0, a: 0 } as const;
+/** Scan-path colors kept as-is so measurement contour polarity does not shift. */
+export const SELFIE_MASK_LEGACY_FOREGROUND = { r: 0, g: 0, b: 0, a: 0 } as const;
+export const SELFIE_MASK_LEGACY_BACKGROUND = { r: 255, g: 255, b: 255, a: 255 } as const;
+
+export function isBodyOccupancyR(r: number): boolean {
+  return r > SELFIE_MASK_OCCUPANCY_R_THRESHOLD;
+}
+
+export function selfieBinaryMaskColors(includeMask: boolean): {
+  foreground: { r: number; g: number; b: number; a: number };
+  background: { r: number; g: number; b: number; a: number };
+} {
+  return includeMask
+    ? { foreground: SELFIE_MASK_PERSON_COLOR, background: SELFIE_MASK_NON_PERSON_COLOR }
+    : { foreground: SELFIE_MASK_LEGACY_FOREGROUND, background: SELFIE_MASK_LEGACY_BACKGROUND };
+}
+
+/** Pack ImageData R-channel to a 0/255 occupancy mask (white person = body). */
 export function packBinaryMask(mask: ImageData): Uint8Array {
   const out = new Uint8Array(mask.width * mask.height);
   const data = mask.data;
   for (let i = 0; i < out.length; i += 1) {
-    out[i] = data[i * 4] > 127 ? 255 : 0;
+    out[i] = isBodyOccupancyR(data[i * 4]) ? 255 : 0;
   }
   return out;
 }
@@ -98,10 +119,11 @@ export async function processSilhouette(params: {
     segmentBodyParts: false,
   });
 
+  const colors = selfieBinaryMaskColors(includeMask);
   const maskImage = await bodySeg.toBinaryMask(
     segmentation,
-    { r: 0, g: 0, b: 0, a: 0 },
-    { r: 255, g: 255, b: 255, a: 255 },
+    colors.foreground,
+    colors.background,
     false,
     0.5,
   );
@@ -149,7 +171,7 @@ function extractContour(mask: ImageData): Point2D[] {
   const data = mask.data;
   const inside = (x: number, y: number): boolean => {
     if (x < 0 || y < 0 || x >= width || y >= height) return false;
-    return data[(y * width + x) * 4] > 127; // R channel
+    return isBodyOccupancyR(data[(y * width + x) * 4]);
   };
   // Collect boundary cells: inside pixels with at least one outside neighbour
   const points: Point2D[] = [];

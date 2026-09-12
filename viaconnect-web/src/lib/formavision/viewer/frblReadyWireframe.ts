@@ -3,9 +3,13 @@
 // Fail stays on the Wireframe chamber with Lex honesty. Never a
 // parametric mannequin, floor plate, Picasso pack, or Meshy-Tripo GLB.
 
-import { processSilhouette } from '@/lib/arnold/scanning/silhouetteProcessor';
+import {
+  awaitSelfieSegmenterSettled,
+  processSilhouette,
+} from '@/lib/arnold/scanning/silhouetteProcessor';
 import type { PoseSilhouette } from '@/lib/arnold/scanning/types';
 import type { PoseId } from '@/lib/scan/poses';
+import { isTimeoutError, withTimeout } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 import {
   buildDenseCageFromMask,
@@ -16,12 +20,15 @@ import { fetchSignedFullBlob } from '@/lib/formavision/viewer/signedFullUrlCache
 
 const LOG_SCOPE = 'formavision.frblReadyWireframe';
 
+export const FRBL_WIREFRAME_BUILD_TIMEOUT_MS = 20000;
+
 export const FRBL_WIREFRAME_FAIL_REASONS = [
   'blob',
   'seg',
   'match',
   'cage',
   'timeout',
+  'abort',
   'unknown',
 ] as const;
 
@@ -43,8 +50,7 @@ export function isFrblWireframeFailReason(
 export function isAbortLike(error: unknown, signal?: AbortSignal): boolean {
   if (signal?.aborted) return true;
   if (typeof error === 'object' && error !== null && 'name' in error) {
-    const name = String((error as { name: unknown }).name);
-    if (name === 'AbortError' || name === 'TimeoutError') return true;
+    return String((error as { name: unknown }).name) === 'AbortError';
   }
   return false;
 }
@@ -52,8 +58,13 @@ export function isAbortLike(error: unknown, signal?: AbortSignal): boolean {
 export function classifyWireframeThrow(
   error: unknown,
   signal?: AbortSignal,
-): Extract<FrblWireframeFailReason, 'timeout' | 'unknown'> {
-  return isAbortLike(error, signal) ? 'timeout' : 'unknown';
+): Extract<FrblWireframeFailReason, 'timeout' | 'abort' | 'unknown'> {
+  if (isTimeoutError(error)) return 'timeout';
+  if (typeof error === 'object' && error !== null && 'name' in error) {
+    if (String((error as { name: unknown }).name) === 'TimeoutError') return 'timeout';
+  }
+  if (isAbortLike(error, signal)) return 'abort';
+  return 'unknown';
 }
 
 /**
@@ -124,80 +135,121 @@ export async function runFrblReadyWireframeBuild(input: {
   sessionId: string;
   side: PoseId;
   signal?: AbortSignal;
+  timeoutMs?: number;
   fetchBlob?: (
     sessionId: string,
     view: PoseId,
     signal?: AbortSignal,
   ) => Promise<Blob | null>;
   segment?: typeof processSilhouette;
+  prewarm?: () => Promise<boolean>;
 }): Promise<FrblReadyWireframeBuildResult> {
   const fetchBlob = input.fetchBlob ?? fetchSignedFullBlob;
   const segment = input.segment ?? processSilhouette;
+  const prewarm = input.prewarm ?? awaitSelfieSegmenterSettled;
+  const timeoutMs = input.timeoutMs ?? FRBL_WIREFRAME_BUILD_TIMEOUT_MS;
   const { sessionId, side, signal } = input;
 
-  if (signal?.aborted) {
-    logFrblWireframeFail('timeout', { poseId: side });
-    return { ok: false, reason: 'timeout' };
-  }
+  const work = async (): Promise<FrblReadyWireframeBuildResult> => {
+    if (signal?.aborted) {
+      logFrblWireframeFail('abort', { poseId: side });
+      return { ok: false, reason: 'abort' };
+    }
 
-  let blob: Blob | null;
+    let blob: Blob | null;
+    try {
+      blob = await fetchBlob(sessionId, side, signal);
+    } catch (error) {
+      const reason = classifyWireframeThrow(error, signal);
+      logFrblWireframeFail(reason, { poseId: side, error });
+      return { ok: false, reason };
+    }
+    if (signal?.aborted) {
+      logFrblWireframeFail('abort', { poseId: side });
+      return { ok: false, reason: 'abort' };
+    }
+    if (!blob) {
+      logFrblWireframeFail('blob', { poseId: side });
+      return { ok: false, reason: 'blob' };
+    }
+
+    try {
+      await prewarm();
+    } catch (error) {
+      const reason = classifyWireframeThrow(error, signal);
+      if (reason !== 'unknown') {
+        logFrblWireframeFail(reason, { poseId: side, error });
+        return { ok: false, reason };
+      }
+      // Prewarm is fail-open — processSilhouette still tries.
+      safeLog.warn(LOG_SCOPE, 'selfie prewarm failed (fail-open)', {
+        poseId: side,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+    if (signal?.aborted) {
+      logFrblWireframeFail('abort', { poseId: side });
+      return { ok: false, reason: 'abort' };
+    }
+
+    let silhouette: PoseSilhouette;
+    try {
+      silhouette = await withTimeout(
+        segment({
+          blob,
+          poseId: side,
+          userHeightCm: null,
+          landmarks: {},
+          includeMask: true,
+        }),
+        timeoutMs,
+        `${LOG_SCOPE}.processSilhouette`,
+      );
+    } catch (error) {
+      const reason = isTimeoutError(error)
+        ? 'timeout'
+        : isAbortLike(error, signal)
+          ? 'abort'
+          : 'seg';
+      logFrblWireframeFail(reason, { poseId: side, error });
+      return { ok: false, reason };
+    }
+    if (signal?.aborted) {
+      logFrblWireframeFail('abort', { poseId: side });
+      return { ok: false, reason: 'abort' };
+    }
+
+    const frame = resolveFrblWireframeMaskFrame(silhouette);
+    const matched = silhouetteMaskIsBodyMatched({
+      mask: frame.mask,
+      width: frame.width,
+      height: frame.height,
+      contour: frame.contour,
+    });
+    if (!matched || !frame.mask) {
+      logFrblWireframeFail('match', { poseId: side });
+      return { ok: false, reason: 'match' };
+    }
+
+    const cage = buildDenseCageFromMask(
+      frame.mask,
+      frame.width,
+      frame.height,
+      frame.contour ?? [],
+    );
+    if (!cage) {
+      logFrblWireframeFail('cage', { poseId: side });
+      return { ok: false, reason: 'cage' };
+    }
+
+    return { ok: true, spec: cage };
+  };
+
   try {
-    blob = await fetchBlob(sessionId, side, signal);
+    return await withTimeout(work(), timeoutMs, `${LOG_SCOPE}.build`);
   } catch (error) {
     const reason = classifyWireframeThrow(error, signal);
     logFrblWireframeFail(reason, { poseId: side, error });
     return { ok: false, reason };
   }
-  if (signal?.aborted) {
-    logFrblWireframeFail('timeout', { poseId: side });
-    return { ok: false, reason: 'timeout' };
-  }
-  if (!blob) {
-    logFrblWireframeFail('blob', { poseId: side });
-    return { ok: false, reason: 'blob' };
-  }
-
-  let silhouette: PoseSilhouette;
-  try {
-    silhouette = await segment({
-      blob,
-      poseId: side,
-      userHeightCm: null,
-      landmarks: {},
-      includeMask: true,
-    });
-  } catch (error) {
-    const reason = isAbortLike(error, signal) ? 'timeout' : 'seg';
-    logFrblWireframeFail(reason, { poseId: side, error });
-    return { ok: false, reason };
-  }
-  if (signal?.aborted) {
-    logFrblWireframeFail('timeout', { poseId: side });
-    return { ok: false, reason: 'timeout' };
-  }
-
-  const frame = resolveFrblWireframeMaskFrame(silhouette);
-  const matched = silhouetteMaskIsBodyMatched({
-    mask: frame.mask,
-    width: frame.width,
-    height: frame.height,
-    contour: frame.contour,
-  });
-  if (!matched || !frame.mask) {
-    logFrblWireframeFail('match', { poseId: side });
-    return { ok: false, reason: 'match' };
-  }
-
-  const cage = buildDenseCageFromMask(
-    frame.mask,
-    frame.width,
-    frame.height,
-    frame.contour ?? [],
-  );
-  if (!cage) {
-    logFrblWireframeFail('cage', { poseId: side });
-    return { ok: false, reason: 'cage' };
-  }
-
-  return { ok: true, spec: cage };
 }

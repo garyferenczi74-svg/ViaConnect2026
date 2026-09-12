@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   fetchSignedFullBlob,
+  fetchSignedFullUrl,
   getCachedSignedFullUrl,
   invalidateSignedFullUrlsForScan,
   invalidateSignedFullUrlsForSession,
@@ -91,10 +92,46 @@ describe('fetchSignedFullBlob — same-origin, no Storage signed URL', () => {
     expect(await fetchSignedFullBlob('sess-1', 'front')).toBeNull();
   });
 
+  it('rejects a JSON signedUrl body so Photo delivery cannot leak into Wireframe', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        new Response(JSON.stringify({ ok: true, signedUrl: 'https://signed.example/front.jpg' }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      ),
+    );
+    expect(await fetchSignedFullBlob('sess-1', 'front')).toBeNull();
+  });
+
   it('source never fetches a cross-origin signed URL', () => {
     const src = readFileSync(join(__dirname, '..', 'signedFullUrlCache.ts'), 'utf8');
     expect(src).toMatch(/delivery: 'blob'/);
     expect(src).not.toMatch(/fetch\(signed/);
     expect(src).not.toMatch(/createImageBitmap/);
+  });
+});
+
+describe('H2 — Photo JSON signed URL vs Wireframe blob', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    resetSignedFullUrlCacheForTests();
+  });
+
+  it('Photo fetchSignedFullUrl does not send delivery=blob', async () => {
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body)) as { delivery?: string; variant?: string };
+      expect(body.delivery).toBeUndefined();
+      expect(body.variant).toBe('full');
+      return new Response(JSON.stringify({ ok: true, signedUrl: 'https://signed.example/front.jpg' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const url = await fetchSignedFullUrl('sess-1', 'front');
+    expect(url).toBe('https://signed.example/front.jpg');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });
