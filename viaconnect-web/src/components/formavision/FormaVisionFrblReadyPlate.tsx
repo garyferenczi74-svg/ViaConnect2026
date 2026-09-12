@@ -28,7 +28,7 @@ import type { PoseId } from '@/lib/scan/poses';
 // FRBL photos. Still photos + toggle. Not Tripo/Meshy GLB.
 // Brief 65 — Photo | Wireframe mode lives INSIDE this frbl-2d plate.
 // Wireframe SUCCESS is a processSilhouette mask/contour cage only.
-// Never generateAvatarMesh, AnatomicalFloor, Picasso PNGs, or GLB.
+// Never a parametric mannequin, AnatomicalFloor, Picasso PNGs, or GLB.
 
 export const FRBL_READY_STAGE_SPEC = {
   enterMs: 200,

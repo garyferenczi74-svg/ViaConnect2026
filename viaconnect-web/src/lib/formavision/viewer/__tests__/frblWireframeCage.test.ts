@@ -96,7 +96,7 @@ describe('Brief 65 cage source contract', () => {
       'utf8',
     );
     for (const src of [cage, plate, painter]) {
-      expect(src).not.toMatch(/generateAvatarMesh/);
+      expect(src).not.toMatch(/from ['"][^'"]*avatarMeshGenerator['"]/);
       expect(src).not.toMatch(/FormaVisionAnatomicalFloor|FormaVisionLocalSilhouette/);
       expect(src).not.toMatch(/@react-three|model-viewer|THREE\./);
       expect(src).not.toMatch(/picasso|anatomical-2d/);

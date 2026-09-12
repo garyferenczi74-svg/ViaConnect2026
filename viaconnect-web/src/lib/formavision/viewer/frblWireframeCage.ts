@@ -1,6 +1,6 @@
 // Brief 65 — dense cyan neon cage from a processSilhouette mask/contour.
-// 2.5D extrusion of THAT person's FRBL silhouette. Not generateAvatarMesh,
-// not AnatomicalFloor, not Picasso PNGs, not a sparse cardboard loft.
+// 2.5D extrusion of THAT person's FRBL silhouette. Not a parametric
+// mannequin, AnatomicalFloor, Picasso PNGs, or a sparse cardboard loft.
 // Visual depth is display-only — never published as girth or Muscle lbs.
 
 import type { Point2D } from '@/lib/arnold/scanning/types';

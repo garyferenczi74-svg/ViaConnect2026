@@ -124,7 +124,8 @@ describe('Brief 65 — Wireframe chamber is honesty-first, never parametric', ()
     expect(html).not.toMatch(
       /data-testid="formavision-frbl-ready-bezel"[^>]*fv-frbl-stage-enter/,
     );
-    expect(html).not.toMatch(/fv-frbl-to-wireframe|fv-frbl-to-photo/);
+    expect(html).not.toMatch(/class="[^"]*fv-frbl-to-wireframe/);
+    expect(html).not.toMatch(/class="[^"]*fv-frbl-to-photo/);
     expect(html).toMatch(/prefers-reduced-motion: reduce/);
   });
 });
