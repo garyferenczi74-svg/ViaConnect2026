@@ -14,6 +14,7 @@ import {
   FRBL_READY_MODE_PHOTO,
   FRBL_READY_MODE_WIREFRAME,
   FRBL_READY_WIREFRAME_FAIL,
+  FRBL_READY_WIREFRAME_HINT,
   FRBL_READY_WIREFRAME_LOADING,
 } from '@/lib/formavision/twoProtocolCopy';
 import { FRBL_SIDE_UNAVAILABLE_HELPER } from '@/lib/formavision/viewer/frblReadySide';
@@ -159,5 +160,55 @@ describe('Brief 65 — selectReadyViewer stays frbl-2d', () => {
     expect(FRBL_READY_STAGE_SPEC.toPhotoMs).toBeLessThanOrEqual(220);
     expect(FRBL_READY_STAGE_SPEC.wireframeSideMs).toBe(180);
     expect(FRBL_READY_WIREFRAME_FAIL).toMatch(/Ready photo/);
+  });
+});
+
+describe('Brief 65 observe — same-origin blob + stay Photo on fail', () => {
+  it('plate uses fetchSignedFullBlob and never fetches a Storage signed URL', () => {
+    const plate = src('src/components/formavision/FormaVisionFrblReadyPlate.tsx');
+    const cache = src('src/lib/formavision/viewer/signedFullUrlCache.ts');
+    const route = src('src/app/api/scan/signed-url/route.ts');
+    expect(plate).toMatch(/fetchSignedFullBlob/);
+    expect(plate).toMatch(/processSilhouette/);
+    expect(plate).toMatch(/includeMask:\s*true/);
+    expect(plate).not.toMatch(/fetch\(signed/);
+    expect(plate).toMatch(/setMode\('photo'\)/);
+    expect(cache).toMatch(/delivery: 'blob'/);
+    expect(route).toMatch(/delivery === 'blob'/);
+    expect(route).toMatch(/\.download\(path\)/);
+    expect(route).not.toMatch(/from ['"][^'"]*avatarMeshGenerator['"]/);
+  });
+
+  it('Wireframe fail stays on Photo with honesty — no fallback body', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(FormaVisionFrblReadyPlate, {
+        sessionId: 'sess-retain-65',
+        poses: allPoses,
+        initialMode: 'wireframe',
+        initialWireframeFail: true,
+      }),
+    );
+    expect(html).toContain('data-ready-mode="photo"');
+    expect(html).toContain('formavision-frbl-ready-wireframe-fail');
+    expect(html).toContain(FRBL_READY_WIREFRAME_FAIL);
+    expect(html).not.toContain('data-testid="formavision-frbl-ready-wireframe"');
+    expect(html).not.toContain('formavision-anatomical-floor');
+    expect(html).not.toContain('formavision-model-viewer');
+    expect(html).not.toContain('formavision-3d-mount');
+  });
+
+  it('Photo|Wireframe stays inside the Ready plate above the aperture — no page row', () => {
+    const plate = src('src/components/formavision/FormaVisionFrblReadyPlate.tsx');
+    const toggle = src('src/components/formavision/FrblReadyModeToggle.tsx');
+    const page = src('src/app/(app)/(consumer)/body-tracker/formavision/page.tsx');
+    expect(toggle).toMatch(/absolute inset-x-2 top-2/);
+    expect(plate).toMatch(/FrblReadyModeToggle/);
+    expect(plate).toMatch(/top-\[3\.75rem\]/);
+    expect(plate).toMatch(/FrblSideToggle/);
+    expect(page).not.toMatch(/FrblReadyModeToggle/);
+    expect(page).not.toMatch(/formavision-frbl-ready-mode-toggle/);
+    expect(page).toMatch(/SelectBodyPartControl/);
+    expect(page).toMatch(/formavision-select-body-part-slot/);
+    expect(FRBL_READY_WIREFRAME_HINT).toMatch(/kept Ready photo/i);
   });
 });

@@ -39,6 +39,7 @@ import {
   FRBL_READY_PHOTO_LOADING,
   FRBL_READY_WIREFRAME_LOADING,
   FRBL_READY_WIREFRAME_FAIL,
+  FRBL_READY_WIREFRAME_HINT,
   HISTORY_REMOVE_PHOTOS_TITLE,
   HYBRID_COSETTLE_COPY,
   SCAN_HISTORY_PHOTOS_DISCARDED,
@@ -507,6 +508,7 @@ describe('two-protocol surfaces stay wired to shared copy', () => {
     const plate = src('src/components/formavision/FormaVisionFrblReadyPlate.tsx');
     expect(plate).toMatch(/FRBL_READY_WIREFRAME_LOADING/);
     expect(plate).toMatch(/FRBL_READY_WIREFRAME_FAIL/);
+    expect(plate).toMatch(/FRBL_READY_WIREFRAME_HINT/);
     expect(plate).toMatch(/FRBL_READY_MODE_PHOTO|FrblReadyModeToggle/);
   });
 });
@@ -520,5 +522,8 @@ describe('twoProtocolCopy — Brief 65 Ready Photo | Wireframe Lex', () => {
     expect(FRBL_READY_WIREFRAME_FAIL).toMatch(/could not match a wireframe/i);
     expect(FRBL_READY_WIREFRAME_FAIL).not.toMatch(/silhouette|MediaPipe|parametric|GLB|muscle lbs/i);
     expect(FRBL_READY_WIREFRAME_LOADING).not.toMatch(/clinical|3D look-alike/i);
+    expect(FRBL_READY_WIREFRAME_HINT).toMatch(/kept Ready photo/i);
+    expect(FRBL_READY_WIREFRAME_HINT).toMatch(/not a 3D visual/i);
+    expect(FRBL_READY_WIREFRAME_HINT).not.toMatch(/GLB settle|clinical/i);
   });
 });

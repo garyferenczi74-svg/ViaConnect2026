@@ -144,6 +144,8 @@ describe('FormaVisionFrblReadyPlate', () => {
     expect(FRBL_READY_STAGE_SPEC.toPhotoMs).toBeLessThanOrEqual(220);
     expect(FRBL_READY_STAGE_SPEC.wireframeSideMs).toBe(180);
     expect(plateSrc).toMatch(/processSilhouette/);
+    expect(plateSrc).toMatch(/fetchSignedFullBlob/);
+    expect(plateSrc).not.toMatch(/fetch\(signed/);
     expect(plateSrc).not.toMatch(/from ['"][^'"]*avatarMeshGenerator['"]/);
     expect(plateSrc).toMatch(/object-contain/);
     expect(plateSrc).toMatch(/border-white\/15/);

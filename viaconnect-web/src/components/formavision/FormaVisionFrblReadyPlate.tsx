@@ -10,7 +10,10 @@ import {
   FRBL_SIDE_UNAVAILABLE_HELPER,
   isFrblSidePresent,
 } from '@/lib/formavision/viewer/frblReadySide';
-import { fetchSignedFullUrl } from '@/lib/formavision/viewer/signedFullUrlCache';
+import {
+  fetchSignedFullBlob,
+  fetchSignedFullUrl,
+} from '@/lib/formavision/viewer/signedFullUrlCache';
 import {
   buildDenseCageFromMask,
   silhouetteMaskIsBodyMatched,
@@ -20,6 +23,7 @@ import { processSilhouette } from '@/lib/arnold/scanning/silhouetteProcessor';
 import {
   FRBL_READY_PHOTO_LOADING,
   FRBL_READY_WIREFRAME_FAIL,
+  FRBL_READY_WIREFRAME_HINT,
   FRBL_READY_WIREFRAME_LOADING,
 } from '@/lib/formavision/twoProtocolCopy';
 import type { PoseId } from '@/lib/scan/poses';
@@ -98,6 +102,8 @@ export interface FormaVisionFrblReadyPlateProps {
   onPainted?: () => void;
   /** Test hook only. Product cold start is always Photo. */
   initialMode?: FrblReadyViewMode;
+  /** Test hook: Wireframe already failed — stay on Photo + honesty. */
+  initialWireframeFail?: boolean;
 }
 
 export function FormaVisionFrblReadyPlate({
@@ -106,16 +112,19 @@ export function FormaVisionFrblReadyPlate({
   reducedMotion = false,
   onPainted,
   initialMode = 'photo',
+  initialWireframeFail = false,
 }: FormaVisionFrblReadyPlateProps) {
   const [side, setSide] = useState<PoseId>(() => defaultFrblReadySide(poses) ?? 'front');
-  const [mode, setMode] = useState<FrblReadyViewMode>(initialMode);
+  const [mode, setMode] = useState<FrblReadyViewMode>(
+    initialWireframeFail ? 'photo' : initialMode,
+  );
   const [url, setUrl] = useState<string | null>(null);
   const [shownUrl, setShownUrl] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   const [fading, setFading] = useState(false);
   const [rimPulse, setRimPulse] = useState(false);
   const [wireframeSpec, setWireframeSpec] = useState<FrblWireframeCageSpec | null>(null);
-  const [wireframeFail, setWireframeFail] = useState(false);
+  const [wireframeFail, setWireframeFail] = useState(initialWireframeFail);
   const [wireframeLoading, setWireframeLoading] = useState(
     () =>
       initialMode === 'wireframe' &&
@@ -194,24 +203,23 @@ export function FormaVisionFrblReadyPlate({
     setWireframeFail(false);
     setWireframeSpec(null);
 
+    const revertToPhoto = (): void => {
+      setWireframeFail(true);
+      setWireframeLoading(false);
+      setWireframeSpec(null);
+      setMode('photo');
+      if (!reducedMotion) setModeMotion('to-photo');
+    };
+
     (async () => {
       try {
-        const signed = url ?? (await fetchSignedFullUrl(sessionId, side, controller.signal));
+        // Same-origin blob — never fetch the Storage signed URL in-page.
+        const blob = await fetchSignedFullBlob(sessionId, side, controller.signal);
         if (cancelled) return;
-        if (!signed) {
-          setWireframeFail(true);
-          setWireframeLoading(false);
+        if (!blob) {
+          revertToPhoto();
           return;
         }
-        const res = await fetch(signed, { signal: controller.signal });
-        if (cancelled) return;
-        if (!res.ok) {
-          setWireframeFail(true);
-          setWireframeLoading(false);
-          return;
-        }
-        const blob = await res.blob();
-        if (cancelled) return;
         const silhouette = await processSilhouette({
           blob,
           poseId: side,
@@ -236,8 +244,7 @@ export function FormaVisionFrblReadyPlate({
               )
             : null;
         if (!cage) {
-          setWireframeFail(true);
-          setWireframeLoading(false);
+          revertToPhoto();
           return;
         }
         cageCacheRef.current.set(cacheKey, cage);
@@ -246,10 +253,7 @@ export function FormaVisionFrblReadyPlate({
         setWireframeLoading(false);
         onPainted?.();
       } catch {
-        if (!cancelled) {
-          setWireframeFail(true);
-          setWireframeLoading(false);
-        }
+        if (!cancelled) revertToPhoto();
       } finally {
         clearTimeout(timer);
       }
@@ -260,7 +264,7 @@ export function FormaVisionFrblReadyPlate({
       clearTimeout(timer);
       controller.abort();
     };
-  }, [mode, sessionId, side, poses, url, onPainted]);
+  }, [mode, sessionId, side, poses, onPainted, reducedMotion]);
 
   const handleLoad = (): void => {
     if (!url) return;
@@ -392,6 +396,12 @@ export function FormaVisionFrblReadyPlate({
           {mode === 'wireframe' && wireframeSpec ? (
             <div className={`absolute inset-0 z-[1] ${modeMotionClass}`}>
               <FrblReadyWireframeCage spec={wireframeSpec} />
+              <p
+                data-testid="formavision-frbl-ready-wireframe-hint"
+                className="pointer-events-none absolute inset-x-3 bottom-3 z-[3] text-center text-[10px] leading-relaxed text-white/55 sm:text-xs"
+              >
+                {FRBL_READY_WIREFRAME_HINT}
+              </p>
             </div>
           ) : null}
           {mode === 'photo' && !displayUrl && present && !failed ? (
@@ -410,21 +420,22 @@ export function FormaVisionFrblReadyPlate({
             >
               {FRBL_READY_WIREFRAME_LOADING}
             </p>
-          ) : mode === 'wireframe' && present && wireframeFail ? (
-            <p
-              data-testid="formavision-frbl-ready-wireframe-fail"
-              className="absolute inset-0 z-[3] flex items-center justify-center px-6 text-center text-sm text-white/70"
-              role="status"
-            >
-              {FRBL_READY_WIREFRAME_FAIL}
-            </p>
-          ) : !present || (mode === 'photo' && failed) ? (
+          ) : !present || (mode === 'photo' && failed && !wireframeFail) ? (
             <p
               data-testid="formavision-frbl-ready-empty"
               className="absolute inset-0 z-[3] flex items-center justify-center px-6 text-center text-sm text-white/70"
               role="status"
             >
               {FRBL_SIDE_UNAVAILABLE_HELPER}
+            </p>
+          ) : null}
+          {mode === 'photo' && present && wireframeFail ? (
+            <p
+              data-testid="formavision-frbl-ready-wireframe-fail"
+              className="pointer-events-none absolute inset-x-3 bottom-3 z-[3] text-center text-xs leading-relaxed text-white/70 sm:text-sm"
+              role="status"
+            >
+              {FRBL_READY_WIREFRAME_FAIL}
             </p>
           ) : null}
           {(displayUrl && mode === 'photo') || wireframeSpec ? (

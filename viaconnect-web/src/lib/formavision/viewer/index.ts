@@ -38,6 +38,7 @@ export {
   type FrblWireframeCageSpec,
 } from './frblWireframeCage';
 export {
+  fetchSignedFullBlob,
   fetchSignedFullUrl,
   getCachedSignedFullUrl,
   invalidateSignedFullUrlsForScan,
