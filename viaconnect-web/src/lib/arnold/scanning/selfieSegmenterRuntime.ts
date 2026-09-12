@@ -1,8 +1,8 @@
 'use client';
 
 // Client chunk for Ready Wireframe + in-browser scan silhouette.
-// Must stay inside the bundler graph (no turbopackIgnore) so www actually
-// ships @tensorflow/tfjs + body-segmentation. MediaPipe ESM is shimmed
+// Must stay inside the bundler graph so www actually ships
+// @tensorflow/tfjs + body-segmentation. MediaPipe ESM is shimmed
 // in next.config.mjs.
 
 import * as tf from '@tensorflow/tfjs';

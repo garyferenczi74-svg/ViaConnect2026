@@ -1,7 +1,7 @@
 // Brief 65 smoke — Ready Wireframe build + fail-reason diagnostics.
 // SUCCESS is processSilhouette mask/contour → dense cyan cage only.
-// Fail stays on the Wireframe chamber with Lex honesty. Never parametric
-// generateAvatarMesh / AnatomicalFloor / Picasso / Meshy-Tripo GLB.
+// Fail stays on the Wireframe chamber with Lex honesty. Never a
+// parametric mannequin, floor plate, Picasso pack, or Meshy-Tripo GLB.
 
 import { processSilhouette } from '@/lib/arnold/scanning/silhouetteProcessor';
 import type { PoseSilhouette } from '@/lib/arnold/scanning/types';

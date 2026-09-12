@@ -16,9 +16,9 @@ const LOG_SCOPE = 'arnold.scanning.silhouetteProcessor';
 /** TFJS selfie + WASM cold-start bound. Fail-open if the pre-warm loses. */
 export const SELFIE_PREWARM_TIMEOUT_MS = 20000;
 
-// Lazy-load the client TFJS chunk so SSR stays lean. Do NOT mark the
-// import turbopackIgnore — www must emit the tfjs / body-segmentation
-// client chunk (H1). MediaPipe ESM is shimmed in next.config.mjs.
+// Lazy-load the client TFJS chunk so SSR stays lean. Keep the import
+// inside the bundler graph so www emits tfjs / body-segmentation (H1).
+// MediaPipe ESM is shimmed in next.config.mjs.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let modelPromise: Promise<{ tf: any; bodySeg: any; segmenter: any }> | null = null;
 

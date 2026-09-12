@@ -311,7 +311,7 @@ describe('Brief 65 smoke — stay on Wireframe chamber', () => {
     expect(helper).not.toMatch(/@react-three|model-viewer/);
     expect(runtime).toMatch(/@tensorflow\/tfjs/);
     expect(runtime).toMatch(/@tensorflow-models\/body-segmentation/);
-    expect(runtime).not.toMatch(/turbopackIgnore/);
+    expect(runtime).not.toMatch(/turbopackIgnore:\s*true/);
     const nextConfig = readFileSync(join(process.cwd(), 'next.config.mjs'), 'utf8');
     expect(nextConfig).toMatch(/transpilePackages/);
     expect(nextConfig).toMatch(/@tensorflow\/tfjs/);

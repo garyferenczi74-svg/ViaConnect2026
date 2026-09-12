@@ -123,7 +123,7 @@ describe('silhouetteProcessor C4a source contract', () => {
     expect(src).toMatch(/document\.createElement\('canvas'\)/);
     expect(src).toMatch(/maskImage\.width/);
     expect(src).toMatch(/selfieSegmenterRuntime/);
-    expect(src).not.toMatch(/turbopackIgnore/);
+    expect(src).not.toMatch(/turbopackIgnore:\s*true/);
     expect(src).not.toMatch(/offscreenCanvas/);
     expect(src).toMatch(/export function frontScaleCmPerPx/);
     expect(src).toMatch(/Number\.isFinite/);
