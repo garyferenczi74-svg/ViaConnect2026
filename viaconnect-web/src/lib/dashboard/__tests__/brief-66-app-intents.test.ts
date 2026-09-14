@@ -42,7 +42,7 @@ describe('Brief 66 BOS / protocol App Intents glance', () => {
       const text = src(rel);
       expect(text).not.toMatch(/Vitality/);
       expect(text).not.toMatch(/:\s*any\b|as any\b/);
-      expect(text).not.toMatch(/native_health_bridge/);
+      expect(text).not.toMatch(/wearable_daily_vitals/);
     }
     expect(src('src/components/dashboard/morning-card/MorningCard.tsx')).toContain(
       'BosExplainChip',

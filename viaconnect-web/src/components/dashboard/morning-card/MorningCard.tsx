@@ -47,6 +47,9 @@ export function MorningCard() {
 
   const selectedChip = selectedKey ? chipByKey(chips, selectedKey) : null;
   const composite = hannahBos.display;
+  const explainResult = hannahBos.result;
+  const explainChips = explainResult.chips;
+  const explainDriver = topDriverChip(explainResult.contributors);
   const toggleChip = (key: MorningChipKey) => {
     setSelectedKey((prev) => (prev === key ? null : key));
   };
@@ -73,10 +76,10 @@ export function MorningCard() {
           <div className="flex flex-col items-center gap-2 md:col-start-1 md:row-start-2">
             <ConnectionsBosDial composite={composite} brightReadout />
             <BosExplainChip
-              score={hannahBos.result.score}
-              chips={hannahBos.result.chips}
-              band={bosGlanceFromScore(hannahBos.result.score).band}
-              topDriverChip={topDriverChip(hannahBos.result.contributors)}
+              score={explainResult.score}
+              chips={explainChips}
+              band={bosGlanceFromScore(explainResult.score).band}
+              topDriverChip={explainDriver}
             />
           </div>
           <div className="flex w-full min-w-0 flex-col items-center justify-center gap-2 text-center md:col-start-2 md:row-start-2 md:self-center md:translate-y-2.5">

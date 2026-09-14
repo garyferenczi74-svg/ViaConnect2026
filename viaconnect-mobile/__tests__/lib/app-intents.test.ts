@@ -25,7 +25,7 @@ describe('Brief 66 Expo App Intents exposure', () => {
     );
     expect(swift).not.toMatch(/Vitality/);
     expect(swift).not.toMatch(/Helix/);
-    expect(swift).not.toMatch(/native_health_bridge/);
+    expect(swift).not.toMatch(/wearable_daily_vitals/);
 
     expect(app).toContain('./plugins/with-app-intents');
     expect(app).toContain('NSSiriUsageDescription');

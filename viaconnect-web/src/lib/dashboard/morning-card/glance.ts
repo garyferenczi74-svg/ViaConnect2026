@@ -1,9 +1,9 @@
 /**
  * Brief 66 — glance honesty adapters.
  * UNKNOWN never 0. Coming soon never feeds BOS. Band appends only when
- * Brief 62 numeric cutoffs exist AND the score is known. native_health_bridge
- * stays off — callers must not mint last-sync / HRV / RHR from
- * wearable_daily_vitals.
+ * Brief 62 numeric cutoffs exist AND the score is known. The native health
+ * bridge stays off — callers must not mint last-sync / HRV / RHR from
+ * wearable daily vitals.
  */
 
 import { formatSyncedRelative } from '@/lib/body-tracker/last-sync-state';

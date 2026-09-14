@@ -6,7 +6,7 @@ import Foundation
 // glance adapters from Hannah SSOT. Native dialogs are fail-closed:
 // UNKNOWN / Coming soon only. Never invent a score, band, molecule,
 // dose, CTA, or last-sync timestamp. Never store PHI on device.
-// native_health_bridge stays off.
+// The native health bridge stays off.
 
 @available(iOS 16.0, *)
 struct GetBioOptimizationScoreIntent: AppIntent {
