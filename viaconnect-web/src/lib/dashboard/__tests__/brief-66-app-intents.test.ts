@@ -84,6 +84,38 @@ describe('Brief 66 BOS / protocol App Intents glance', () => {
     expect(shown).toContain('Right now the strongest real piece is from Hume Body Pod.');
     expect(shown).not.toContain('You\'re in');
     expect(shown).not.toContain('Vitality');
+
+    const shownCaq = renderToStaticMarkup(
+      createElement(BosExplainChip, {
+        score: 71,
+        chips: ['from CAQ'],
+      }),
+    );
+    expect(shownCaq).toContain('data-bos-explain-chip="true"');
+    expect(shownCaq).toContain(HANNAH_APP_INTENT_VOICE.explainDefault);
+    expect(shownCaq).toContain('Right now the strongest real piece is from CAQ.');
+  });
+
+  it('Morning Explain sits after source pills, not under the dial-only column', () => {
+    const card = src('src/components/dashboard/morning-card/MorningCard.tsx');
+    const jsx = card.indexOf('return (');
+    const dialCol = card.indexOf('md:col-start-1 md:row-start-2', jsx);
+    const honestyCol = card.indexOf('md:col-start-2 md:row-start-2', jsx);
+    const pills = card.indexOf('hannahBos.result.chips.length', jsx);
+    const explain = card.indexOf('<BosExplainChip', jsx);
+    const habit = card.indexOf('<HabitSleepPair', jsx);
+    const dialOnly = card.slice(dialCol, honestyCol);
+
+    expect(dialOnly).toContain('ConnectionsBosDial');
+    expect(dialOnly).not.toContain('BosExplainChip');
+    expect(explain).toBeGreaterThan(pills);
+    expect(habit).toBeGreaterThan(explain);
+    expect(card).toContain('data-bos-explain-eligible=');
+    expect(card).toContain('data-bos-explain-chip-count={String(explainChips.length)}');
+    expect(card).toContain('shouldShowBosExplainChip');
+    expect(card).toContain('flex justify-center pt-2');
+    expect(card).toContain('md:items-center');
+    expect(card).not.toContain('md:items-start');
   });
 
   it('does not reopen Helix, FormaVision, or email templates', () => {

@@ -167,8 +167,11 @@ describe('Brief 66 glance honesty adapters', () => {
 
   it('Explain chip omits UNKNOWN and omitted-band-why', () => {
     expect(shouldShowBosExplainChip(null, ['from CAQ'])).toBe(false);
+    expect(shouldShowBosExplainChip(Number.NaN, ['from CAQ'])).toBe(false);
     expect(shouldShowBosExplainChip(72, [])).toBe(false);
+    expect(shouldShowBosExplainChip(71, [])).toBe(false);
     expect(shouldShowBosExplainChip(72, ['from check-in'])).toBe(true);
+    expect(shouldShowBosExplainChip(71, ['from CAQ'])).toBe(true);
     expect(buildBosExplainLines({ score: 72, chips: ['from Hume Body Pod'] })).toEqual([
       HANNAH_APP_INTENT_VOICE.explainDefault,
       'Right now the strongest real piece is from Hume Body Pod.',

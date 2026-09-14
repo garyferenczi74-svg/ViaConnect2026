@@ -160,6 +160,9 @@ describe('Brief 29 morning card IA', () => {
     const copyClass = card.slice(copyOpen, copyClose);
     const pillsOpen = card.indexOf('hannahBos.result.chips.length', jsx);
     const pillsBlock = card.slice(pillsOpen, card.indexOf('<HabitSleepPair', jsx));
+    const dialColOpen = card.indexOf('md:col-start-1 md:row-start-2', jsx);
+    const honestyColOpen = card.indexOf('md:col-start-2 md:row-start-2', jsx);
+    const dialColumn = card.slice(dialColOpen, honestyColOpen);
 
     expect(rowClass).toContain('md:items-center');
     expect(rowClass).toContain('justify-items-center');
@@ -177,6 +180,10 @@ describe('Brief 29 morning card IA', () => {
     expect(pillsBlock).toContain('justify-center');
     expect(pillsBlock).toContain('text-center');
     expect(pillsBlock).toContain('BOS_UNKNOWN_NEVER_ZERO_COPY');
+    expect(dialColumn).toContain('ConnectionsBosDial');
+    expect(dialColumn).not.toContain('BosExplainChip');
+    expect(pillsBlock).toContain('BosExplainChip');
+    expect(pillsBlock).toContain('flex justify-center pt-2');
   });
 
   it('places one In today\'s score row of all seven under the honesty sentence, then source chips', () => {
@@ -187,12 +194,14 @@ describe('Brief 29 morning card IA', () => {
     const sources = card.indexOf('hannahBos.result.chips', jsx);
     const habit = card.indexOf('<HabitSleepPair', jsx);
     const unknown = card.indexOf('{BOS_UNKNOWN_NEVER_ZERO_COPY}', jsx);
+    const explain = card.indexOf('<BosExplainChip', jsx);
 
     expect(sentence).toBeGreaterThan(-1);
     expect(grid).toBeGreaterThan(sentence);
     expect(sources).toBeGreaterThan(grid);
     expect(unknown).toBeGreaterThan(sources);
-    expect(habit).toBeGreaterThan(unknown);
+    expect(explain).toBeGreaterThan(unknown);
+    expect(habit).toBeGreaterThan(explain);
 
     const honestyColumn = card.slice(sentence, sources);
     expect(honestyColumn).toContain('<MorningChipGrid');
@@ -208,6 +217,10 @@ describe('Brief 29 morning card IA', () => {
     expect(card).not.toContain('MORNING_CHIP_FOOTER_KEYS');
     expect(card).not.toContain('MorningProtocolCtaButton');
     expect((card.match(/<MorningChipGrid/g) ?? []).length).toBe(1);
+    expect((card.match(/<BosExplainChip/g) ?? []).length).toBe(1);
+    expect(card).toContain('data-bos-explain-eligible=');
+    expect(card).toContain('data-bos-explain-chip-count={String(explainChips.length)}');
+    expect(card).toContain('shouldShowBosExplainChip(explainResult.score, explainChips)');
   });
 
   it('renders all seven labels in SSOT order in one honesty slot', () => {

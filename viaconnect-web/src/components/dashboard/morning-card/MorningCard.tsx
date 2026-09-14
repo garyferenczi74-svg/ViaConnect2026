@@ -20,7 +20,11 @@ import {
 import { useWearableTilesSnapshot } from '@/hooks/useWearableTilesSnapshot';
 import { buildMorningChips, chipByKey } from '@/lib/dashboard/morning-card/contributors';
 import { type MorningChipKey } from '@/lib/dashboard/morning-card/keys';
-import { bosGlanceFromScore, topDriverChip } from '@/lib/dashboard/morning-card/glance';
+import {
+  bosGlanceFromScore,
+  shouldShowBosExplainChip,
+  topDriverChip,
+} from '@/lib/dashboard/morning-card/glance';
 import { BosExplainChip } from './BosExplainChip';
 import { MorningChipGrid } from './MorningChipGrid';
 import { MorningContributorList } from './MorningContributorList';
@@ -60,6 +64,10 @@ export function MorningCard() {
       data-morning-card="true"
       data-bos-card="dashboard"
       data-home-beat="bos"
+      data-bos-explain-eligible={
+        shouldShowBosExplainChip(explainResult.score, explainChips) ? 'true' : 'false'
+      }
+      data-bos-explain-chip-count={String(explainChips.length)}
       className="relative overflow-hidden rounded-3xl border border-white/10 bg-[rgba(255,255,255,0.035)] p-5 backdrop-blur-sm sm:p-6 md:p-8"
     >
       <div
@@ -73,14 +81,8 @@ export function MorningCard() {
           <p className={`${CONSUMER_EYEBROW} md:col-start-1 md:row-start-1`}>
             {MORNING_CARD_SCORE_LABEL}
           </p>
-          <div className="flex flex-col items-center gap-2 md:col-start-1 md:row-start-2">
+          <div className="md:col-start-1 md:row-start-2">
             <ConnectionsBosDial composite={composite} brightReadout />
-            <BosExplainChip
-              score={explainResult.score}
-              chips={explainChips}
-              band={bosGlanceFromScore(explainResult.score).band}
-              topDriverChip={explainDriver}
-            />
           </div>
           <div className="flex w-full min-w-0 flex-col items-center justify-center gap-2 text-center md:col-start-2 md:row-start-2 md:self-center md:translate-y-2.5">
             <p
@@ -110,6 +112,14 @@ export function MorningCard() {
                 {BOS_UNKNOWN_NEVER_ZERO_COPY}
               </p>
             )}
+            <div className="flex justify-center pt-2">
+              <BosExplainChip
+                score={explainResult.score}
+                chips={explainChips}
+                band={bosGlanceFromScore(explainResult.score).band}
+                topDriverChip={explainDriver}
+              />
+            </div>
           </div>
         </div>
 
