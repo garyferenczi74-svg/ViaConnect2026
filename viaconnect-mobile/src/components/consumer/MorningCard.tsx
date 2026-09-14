@@ -5,11 +5,16 @@ import {
   Apple,
   ClipboardList,
   Heart,
+  Info,
   Leaf,
   Moon,
   Pill,
   Shield,
 } from 'lucide-react';
+import {
+  buildBosExplainLines,
+  shouldShowBosExplainChip,
+} from '../../lib/morning-card/glance';
 import {
   MORNING_CARD_PENDING_SCORE,
   MORNING_CARD_SCORE_LABEL,
@@ -40,6 +45,7 @@ export interface MorningCardProps {
   score: number | null;
   protocolItems: readonly MorningProtocolItem[];
   onTake?: (item: MorningProtocolItem) => void;
+  explainChips?: readonly string[];
 }
 
 function ChipGrid({
@@ -153,7 +159,12 @@ function ProtocolCta({
   );
 }
 
-export function MorningCard({ score, protocolItems, onTake }: MorningCardProps) {
+export function MorningCard({
+  score,
+  protocolItems,
+  onTake,
+  explainChips = [],
+}: MorningCardProps) {
   const chips = useMemo(() => buildMorningChips(), []);
   const [selectedKey, setSelectedKey] = useState<MarketingChipKey | null>(null);
   const { width } = useWindowDimensions();
@@ -185,6 +196,24 @@ export function MorningCard({ score, protocolItems, onTake }: MorningCardProps) 
           >
             {score === null ? MORNING_CARD_PENDING_SCORE : String(score)}
           </Text>
+          {shouldShowBosExplainChip(score, explainChips) ? (
+            <View
+              testID="bos-explain-chip"
+              accessibilityLabel="Explain Bio Optimization Score"
+              className="mt-2 max-w-md rounded-full border border-white/15 px-2.5 py-1"
+              style={{ backgroundColor: 'rgba(26,39,68,0.55)' }}
+            >
+              <View className="flex-row items-center">
+                <Info color="#FFFFFF" size={14} strokeWidth={1.5} />
+                <Text className="ml-1.5 text-sm font-medium text-white/90">Explain</Text>
+              </View>
+              {buildBosExplainLines({ score, chips: explainChips }).map((line) => (
+                <Text key={line} className="mt-1 text-sm leading-relaxed text-white/90">
+                  {line}
+                </Text>
+              ))}
+            </View>
+          ) : null}
         </View>
         <View className={rowLayout ? '' : 'mt-4'}>
           <Text className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-white/40">

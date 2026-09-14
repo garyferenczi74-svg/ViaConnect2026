@@ -38,7 +38,9 @@ import { heroGaugeScore } from "@/components/journey/coaching/heroHelpers";
 import { toDisplayBosScore } from "@/lib/scoring/bos-display";
 import { connectionsBosNumericScore } from "@/lib/body-tracker/wearable-tiles";
 import { ConnectionsBosDial } from "@/components/body-tracker/connections/ConnectionsBosDial";
+import { BosExplainChip } from "@/components/dashboard/morning-card/BosExplainChip";
 import { useHannahBosDisplay } from "@/hooks/useHannahBosDisplay";
+import { bosGlanceFromScore, topDriverChip } from "@/lib/dashboard/morning-card/glance";
 import { HANNAH_BOS_BLEND_SENTENCE, hydrationScoreFromToday } from "@/lib/scoring/hannah-bos";
 import { formatMacroLabel, kcalRemaining, goalProgressPct } from "@/components/journey/coaching/lowerHelpers";
 import { ProvenanceChip } from "@/components/journey/coaching/ProvenanceChip";
@@ -588,6 +590,8 @@ function Hero({
   gaugesLoading,
   sourcedNumbers,
   bosDisplay,
+  bosChips = [],
+  bosTopDriver = null,
 }: {
   pillarValues: PillarValues;
   userId: string | null;
@@ -601,6 +605,8 @@ function Hero({
   gaugesLoading?: boolean;
   sourcedNumbers: number[];
   bosDisplay: { value: string; band: string };
+  bosChips?: readonly string[];
+  bosTopDriver?: string | null;
 }) {
   // J-T2: hero narrative state word driven from canonical dashboard tier +
   // score. Baseline/computing users read as "getting started", not "steady".
@@ -685,6 +691,14 @@ function Hero({
             <p style={{ margin: "8px 0 0", fontSize: 10, color: C.muted, textAlign: "center" }}>
               {HANNAH_BOS_BLEND_SENTENCE}
             </p>
+            <div className="flex justify-center pt-2">
+              <BosExplainChip
+                score={connectionsBosNumericScore(bosDisplay)}
+                chips={bosChips}
+                band={bosGlanceFromScore(connectionsBosNumericScore(bosDisplay)).band}
+                topDriverChip={bosTopDriver}
+              />
+            </div>
           </div>
           {/* Prompt 216: Journey graph card with full-bleed hero video background */}
           <div
@@ -1980,6 +1994,8 @@ export function YourJourneyCoaching({ userId: _userId }: { userId: string | null
           gaugesLoading={shouldShowSkeleton(bos7DLoading || dailyScores.loading, dailyScores.sleepQuality ?? dailyScores.energyLevel ?? dailyScores.nutrition)}
           sourcedNumbers={sourcedNumbers}
           bosDisplay={hannahBos.display}
+          bosChips={hannahBos.result.chips}
+          bosTopDriver={topDriverChip(hannahBos.result.contributors)}
         />
 
         <div className="vc-page-sections" style={{ display: "flex", flexDirection: "column", gap: 22 }}>

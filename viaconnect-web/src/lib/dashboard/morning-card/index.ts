@@ -54,3 +54,26 @@ export {
   type MorningProtocolCtaKind,
   type MorningProtocolBuckets,
 } from './protocol-cta';
+
+export {
+  BOS_BAND_CUTOFFS,
+  BOS_BAND_LABELS,
+  UNWIRED_COMING_SOON_SOURCE_IDS,
+  WEARABLE_GLANCE_SOURCE_NAMES,
+  bandFromScore,
+  bosGlanceFromScore,
+  buildBosExplainLines,
+  isUnwiredComingSoonSource,
+  protocolNextGlance,
+  protocolNextGlanceFromBuckets,
+  shouldShowBosExplainChip,
+  speakBosGlance,
+  speakWearablesLastSync,
+  topDriverChip,
+  wearableLastSyncGlance,
+  type BosBandLabel,
+  type BosGlance,
+  type ProtocolNextGlance,
+  type WearableLastSyncGlance,
+  type WearableLastSyncInput,
+} from './glance';

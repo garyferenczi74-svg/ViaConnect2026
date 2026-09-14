@@ -3,6 +3,7 @@
     "name": "viaconnect-mobile",
     "slug": "viaconnect-mobile",
     "version": "1.0.0",
+    "scheme": "viaconnect",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -12,7 +13,10 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSSiriUsageDescription": "ViaConnect uses Siri to speak your Bio Optimization Score, today's protocol next step, and wearable last-sync. Missing pieces stay out, not counted as zero."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -29,7 +33,8 @@
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store"
+      "expo-secure-store",
+      "./plugins/with-app-intents"
     ]
   }
 }
