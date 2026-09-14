@@ -5,8 +5,11 @@ import type { DimensionSourceRow } from '@/lib/body-tracker/source-disagreement'
 import {
   CONNECTIONS_BOS_COMPOSITE,
   SCORE_DETAIL_DIMENSIONS,
+  connectionsBosNumericScore,
   type ConnectionsBosDisplay,
 } from '@/lib/body-tracker/wearable-tiles';
+import { bosGlanceFromScore } from '@/lib/dashboard/morning-card/glance';
+import { BosExplainChip } from '@/components/dashboard/morning-card/BosExplainChip';
 import { HANNAH_BOS_BLEND_SENTENCE } from '@/lib/scoring/hannah-bos';
 import { ConnectionsBosDial } from './ConnectionsBosDial';
 import { ContributorColumn } from './ContributorColumn';
@@ -112,6 +115,13 @@ export function ScoreDetailPanel({
       </div>
 
       <ConnectionsBosDial composite={composite} />
+      <div className="flex justify-center pt-2">
+        <BosExplainChip
+          score={connectionsBosNumericScore(composite)}
+          chips={chips}
+          band={bosGlanceFromScore(connectionsBosNumericScore(composite)).band}
+        />
+      </div>
 
       <ContributorColumn rows={contributorRows} onOpenDimension={onOpenDimension ?? (() => undefined)} />
 
