@@ -13,6 +13,7 @@ import JefferyPanel from "../panels/JefferyPanel";
 import { PipelineChainView } from "@/components/admin/jeffery/PipelineChainView";
 import { AdminPanelErrorBoundary } from "@/components/admin/AdminPanelErrorBoundary";
 import { classifyPanelThrow } from "@/lib/admin/classifyPanelThrow";
+import { quarantineStages } from "@/lib/jeffery/quarantineStages";
 import { orderedRegistry } from "@/lib/agents/registry";
 import { quarantineAgentEnrichment } from "@/lib/agents/quarantineEnrichment";
 import { resolveAgentIcon } from "@/lib/agents/resolveAgentIcon";
@@ -141,6 +142,7 @@ describe("Agents tab load M4", () => {
         (s) => s.stage === "ingest",
       ),
     ).toThrow(/find is not a function/);
+    expect(quarantineStages(objectStages)).toEqual([]);
 
     const badRun = {
       runId: "sync-2026-09-15",
@@ -165,14 +167,20 @@ describe("Agents tab load M4", () => {
     );
     expect((html.match(/role="tab"/g) ?? []).length).toBe(17);
     expect(html).toContain('data-testid="pipeline-chain-view"');
+    expect(html).toContain('data-pipeline-stages-quarantine="array"');
     expect(html).toContain("sync-2026-09-15");
     expect(html).toContain('data-testid="pipeline-stage-ingest"');
     expect((html.match(/>skipped</g) ?? []).length).toBe(STAGE_ORDER.length);
     expect(html).not.toContain("failed to load");
     const pipeline = read("src/components/admin/jeffery/PipelineChainView.tsx");
-    expect(pipeline).toContain("Array.isArray(rawStages)");
+    expect(pipeline).toContain("from '@/lib/jeffery/quarantineStages'");
+    expect(pipeline).toContain("quarantineStages<StageResult>(run?.stages)");
+    expect(pipeline).toContain('data-pipeline-stages-quarantine="array"');
     expect(pipeline).toContain("stages.find");
     expect(pipeline).not.toMatch(/run\.stages\.find/);
+    const helper = read("src/lib/jeffery/quarantineStages.ts");
+    expect(helper).toContain("Array.isArray(raw)");
+    expect(helper).not.toMatch(/Object\.keys/);
     expect(classifyPanelThrow(new TypeError("a.stages.find is not a function")).kind).toBe(
       "invalid_row_shape",
     );

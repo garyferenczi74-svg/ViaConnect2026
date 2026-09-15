@@ -6,7 +6,8 @@
  */
 
 import { useEffect, useState } from 'react';
-import { STAGE_ORDER, type ChainRunResult, type StageStatus } from '@/lib/agents/synchronism/chainTypes';
+import { STAGE_ORDER, type ChainRunResult, type StageResult, type StageStatus } from '@/lib/agents/synchronism/chainTypes';
+import { quarantineStages } from '@/lib/jeffery/quarantineStages';
 
 const STATUS_COLOR: Record<StageStatus, string> = {
   ok: '#2DA5A0',
@@ -23,11 +24,11 @@ interface Props {
 export function PipelineChainView({ initialRun = null }: Props) {
   const [run, setRun] = useState<ChainRunResult | null>(initialRun);
   const [error, setError] = useState<string | null>(null);
-  // Live residual after #222: pipeline_runs.stages can be a JSON object.
+  // Live residual after #222/#223: pipeline_runs.stages can be a JSON object.
   // `.find` on a non-array throws TypeError and takes down AdminPanel Agents.
+  // New module import forces a new served chunk (served miss of inline Array.isArray).
   // Empty is honest — do not invent stage rows from object keys.
-  const rawStages = run?.stages;
-  const stages = Array.isArray(rawStages) ? rawStages : [];
+  const stages = quarantineStages<StageResult>(run?.stages);
 
   useEffect(() => {
     if (initialRun) return;
@@ -53,6 +54,7 @@ export function PipelineChainView({ initialRun = null }: Props) {
   return (
     <section
       data-testid="pipeline-chain-view"
+      data-pipeline-stages-quarantine="array"
       className="rounded-2xl border border-white/[0.08] bg-[#1E3054]/40 p-4 md:p-5"
     >
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-4">
