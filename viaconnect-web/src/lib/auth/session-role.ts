@@ -3,7 +3,7 @@
  *
  * Authorization source of truth is profiles.role only.
  * Do not grant clinician/admin access from URL, user_metadata, or email.
- * Admin switcher is all five PORTAL_TABS. Consumer stays Personal Wellness only.
+ * Admin switcher is all six PORTAL_TABS. Consumer stays Personal Wellness only.
  */
 
 export type SessionRole = "consumer" | "practitioner" | "naturopath" | "admin";
@@ -13,6 +13,7 @@ export type PortalKey =
   | "practitioner"
   | "naturopath"
   | "admin"
+  | "jeffery"
   | "hounddog";
 
 export type PortalTab = {
@@ -50,6 +51,12 @@ export const PORTAL_TABS: readonly PortalTab[] = [
     color: "bg-copper/20 text-copper",
   },
   {
+    key: "jeffery",
+    label: "Command Center",
+    href: "/admin/jeffery",
+    color: "bg-copper/20 text-[#E09A5A]",
+  },
+  {
     key: "hounddog",
     label: "Hounddog",
     href: "/admin/hounddog",
@@ -63,7 +70,7 @@ const PORTALS_BY_ROLE: Record<SessionRole, readonly PortalKey[]> = {
   naturopath: ["naturopath"],
   // Brief 47: restore Practitioner / Naturopath for admin preview only.
   // Brief 37 consumer lock is unchanged — consumer stays Personal Wellness only.
-  admin: ["consumer", "practitioner", "naturopath", "admin", "hounddog"],
+  admin: ["consumer", "practitioner", "naturopath", "admin", "hounddog", "jeffery"],
 };
 
 const ROLE_CHIP_LABEL: Record<SessionRole, string> = {
@@ -121,6 +128,12 @@ export function isAdminPortalPath(pathname: string): boolean {
 export function isHounddogPath(pathname: string): boolean {
   return pathname === "/admin/hounddog" || pathname.startsWith("/admin/hounddog/");
 }
+
+export function isJefferyPath(pathname: string): boolean {
+  return pathname === "/admin/jeffery" || pathname.startsWith("/admin/jeffery/");
+}
+
+export const isCommandCenterPath = isJefferyPath;
 
 export function isHelixPath(pathname: string): boolean {
   return pathname === "/helix" || pathname.startsWith("/helix/");
@@ -238,6 +251,9 @@ export function canAccessPortalPath(
   if (isHounddogPath(pathname)) {
     return role === "admin";
   }
+  if (isJefferyPath(pathname)) {
+    return role === "admin";
+  }
   if (isPractitionerPortalPath(pathname)) {
     return role === "practitioner" || role === "admin";
   }
@@ -300,6 +316,7 @@ export function activePortalForSession(
 
 export function portalKeyFromPath(pathname: string): PortalKey | null {
   if (isHounddogPath(pathname)) return "hounddog";
+  if (isJefferyPath(pathname)) return "jeffery";
   if (isPractitionerPortalPath(pathname)) return "practitioner";
   if (isNaturopathPortalPath(pathname)) return "naturopath";
   if (isAdminPortalPath(pathname)) return "admin";
@@ -320,6 +337,7 @@ export function shellRoleForActivePortal(
   if (active === "consumer") return "consumer";
   if (active === "practitioner") return "practitioner";
   if (active === "naturopath") return "naturopath";
+  // hounddog + jeffery Command Center keep Admin sidebar / section nav
   return "admin";
 }
 

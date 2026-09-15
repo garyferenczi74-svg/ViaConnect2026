@@ -15,12 +15,15 @@ import {
   isPractitionerPortalPath,
   outOfRoleRedirect,
   portalsForRole,
+  portalKeyFromPath,
   PORTAL_TABS,
   roleChipLabel,
   roleFromProfilesColumn,
   roleHomePath,
   shellRoleForActivePortal,
   shellRoleForSession,
+  isJefferyPath,
+  isCommandCenterPath,
   OUT_OF_ROLE_REDIRECT,
 } from "@/lib/auth/session-role";
 
@@ -48,6 +51,7 @@ describe("portalsForRole / role strip", () => {
     expect(keys).not.toContain("naturopath");
     expect(keys).not.toContain("admin");
     expect(keys).not.toContain("hounddog");
+    expect(keys).not.toContain("jeffery");
   });
 
   it("unset / unknown profiles.role maps to the consumer strip", () => {
@@ -72,12 +76,13 @@ describe("portalsForRole / role strip", () => {
     expect(portalsForRole("naturopath").map((p) => p.key)).toEqual(["naturopath"]);
   });
 
-  it("admin sees all five portals (Brief 47)", () => {
+  it("admin sees all six portals (Brief 47 + Command Center)", () => {
     expect(portalsForRole("admin").map((p) => p.key)).toEqual([
       "consumer",
       "practitioner",
       "naturopath",
       "admin",
+      "jeffery",
       "hounddog",
     ]);
   });
@@ -111,7 +116,10 @@ describe("path access", () => {
     expect(canAccessPortalPath("admin", "/helix")).toBe(true);
     expect(canAccessPortalPath("admin", "/api/helix/redeem")).toBe(false);
     expect(canAccessPortalPath("admin", "/admin/hounddog")).toBe(true);
+    expect(canAccessPortalPath("admin", "/admin/jeffery")).toBe(true);
+    expect(canAccessPortalPath("consumer", "/admin/jeffery")).toBe(false);
     expect(canAccessPortalPath("practitioner", "/admin/hounddog")).toBe(false);
+    expect(canAccessPortalPath("practitioner", "/admin/jeffery")).toBe(false);
     expect(canAccessPortalPath("practitioner", "/dashboard")).toBe(false);
     expect(canAccessPortalPath("admin", "/dashboard")).toBe(true);
   });
@@ -169,6 +177,8 @@ describe("admin portal chrome follows the selected portal", () => {
     expect(shellRoleForSession("admin", "/nutrition")).toBe("consumer");
     expect(shellRoleForSession("admin", "/admin")).toBe("admin");
     expect(shellRoleForSession("admin", "/admin/hounddog")).toBe("admin");
+    expect(shellRoleForSession("admin", "/admin/jeffery")).toBe("admin");
+    expect(shellRoleForSession("admin", "/admin/jeffery/agents")).toBe("admin");
     expect(shellRoleForSession("admin", "/practitioner/dashboard")).toBe(
       "practitioner",
     );
@@ -189,7 +199,49 @@ describe("admin portal chrome follows the selected portal", () => {
     expect(shellRoleForActivePortal("admin", "naturopath")).toBe("naturopath");
     expect(shellRoleForActivePortal("admin", "admin")).toBe("admin");
     expect(shellRoleForActivePortal("admin", "hounddog")).toBe("admin");
+    expect(shellRoleForActivePortal("admin", "jeffery")).toBe("admin");
     expect(shellRoleForActivePortal("consumer", "consumer")).toBe("consumer");
+  });
+});
+
+describe("Command Center portal tab (admin-only)", () => {
+  it("admin strip includes jeffery Command Center", () => {
+    const adminTabs = portalsForRole("admin");
+    const keys = adminTabs.map((p) => p.key);
+    expect(keys).toContain("jeffery");
+    expect(adminTabs.find((p) => p.key === "jeffery")?.href).toBe("/admin/jeffery");
+    expect(adminTabs.find((p) => p.key === "jeffery")?.label).toBe("Command Center");
+    expect(PORTAL_TABS).toHaveLength(6);
+  });
+
+  it("consumer strip does not include jeffery", () => {
+    const keys = portalsForRole("consumer").map((p) => p.key);
+    expect(keys).not.toContain("jeffery");
+    expect(portalsForRole("consumer").map((p) => p.label)).not.toContain("Command Center");
+    expect(portalsForRole("practitioner").map((p) => p.key)).not.toContain("jeffery");
+    expect(portalsForRole("naturopath").map((p) => p.key)).not.toContain("jeffery");
+  });
+
+  it("/admin/jeffery lights the jeffery tab, not plain admin", () => {
+    expect(isJefferyPath("/admin/jeffery")).toBe(true);
+    expect(isJefferyPath("/admin/jeffery/agents")).toBe(true);
+    expect(isJefferyPath("/admin")).toBe(false);
+    expect(isJefferyPath("/admin/hounddog")).toBe(false);
+    expect(isCommandCenterPath("/admin/jeffery")).toBe(true);
+    expect(portalKeyFromPath("/admin/jeffery")).toBe("jeffery");
+    expect(portalKeyFromPath("/admin/jeffery/agents")).toBe("jeffery");
+    expect(activePortalForSession("admin", "/admin/jeffery")).toBe("jeffery");
+    expect(activePortalForSession("admin", "/admin/jeffery/agents")).toBe("jeffery");
+    expect(activePortalForSession("admin", "/admin/jeffery")).not.toBe("admin");
+    expect(activePortalForSession("consumer", "/admin/jeffery")).toBe("consumer");
+  });
+
+  it("/admin stays admin", () => {
+    expect(portalKeyFromPath("/admin")).toBe("admin");
+    expect(portalKeyFromPath("/admin/marshall")).toBe("admin");
+    expect(activePortalForSession("admin", "/admin")).toBe("admin");
+    expect(activePortalForSession("admin", "/admin/board")).toBe("admin");
+    expect(activePortalForSession("admin", "/admin")).not.toBe("jeffery");
   });
 });
 
@@ -293,6 +345,7 @@ describe("source contract: chrome + middleware use session role", () => {
     expect(src).toMatch(/portalsForRole/);
     expect(src).toMatch(/roleChipLabel/);
     expect(src).toMatch(/shellRoleForActivePortal/);
+    expect(src).toMatch(/value === "jeffery"/);
     expect(src).not.toMatch(/session-role-chip/);
     expect(src).not.toMatch(/gary@farmceuticawellness\.com/);
     expect(src).not.toMatch(/BASE_PORTALS/);
@@ -407,16 +460,21 @@ describe("Brief 37: hide clinician/admin tabs from consumer; drop ViaCura from a
     expect(labels).not.toContain("Naturopath");
     expect(labels).not.toContain("Admin");
     expect(labels).not.toContain("Hounddog");
+    expect(labels).not.toContain("Command Center");
   });
 
-  it("admin tab labels include Admin, Hounddog, and Personal Wellness", () => {
+  it("admin tab labels include Admin, Hounddog, Command Center, and Personal Wellness", () => {
     const labels = portalsForRole("admin").map((p) => p.label);
     expect(labels).toContain("Admin");
     expect(labels).toContain("Hounddog");
+    expect(labels).toContain("Command Center");
     expect(labels).toContain("Personal Wellness");
     expect(portalsForRole("admin").find((p) => p.key === "admin")?.href).toBe("/admin");
     expect(portalsForRole("admin").find((p) => p.key === "hounddog")?.href).toBe(
       "/admin/hounddog",
+    );
+    expect(portalsForRole("admin").find((p) => p.key === "jeffery")?.href).toBe(
+      "/admin/jeffery",
     );
   });
 
@@ -443,6 +501,7 @@ describe("Brief 37: hide clinician/admin tabs from consumer; drop ViaCura from a
     expect(src).not.toMatch(/label: ['"]Naturopath['"]/);
     expect(src).not.toMatch(/label: ['"]Admin['"]/);
     expect(src).not.toMatch(/label: ['"]Hounddog['"]/);
+    expect(src).not.toMatch(/label: ['"]Command Center['"]/);
     expect(src).not.toMatch(/portalTabs/);
   });
 
@@ -456,28 +515,34 @@ describe("Brief 37: hide clinician/admin tabs from consumer; drop ViaCura from a
     expect(src).not.toMatch(/user_metadata/);
   });
 
-  it("consumer still fail-closes /admin and /admin/hounddog via outOfRoleRedirect to /practitioners", () => {
+  it("consumer still fail-closes /admin, /admin/hounddog, and /admin/jeffery via outOfRoleRedirect to /practitioners", () => {
     expect(outOfRoleRedirect("consumer", "/admin")).toBe(OUT_OF_ROLE_REDIRECT);
     expect(outOfRoleRedirect("consumer", "/admin/hounddog")).toBe(
+      OUT_OF_ROLE_REDIRECT,
+    );
+    expect(outOfRoleRedirect("consumer", "/admin/jeffery")).toBe(
       OUT_OF_ROLE_REDIRECT,
     );
     expect(outOfRoleRedirect(undefined, "/admin")).toBe(OUT_OF_ROLE_REDIRECT);
     expect(OUT_OF_ROLE_REDIRECT).toBe("/practitioners");
     expect(canAccessPortalPath("consumer", "/admin")).toBe(false);
     expect(canAccessPortalPath("consumer", "/admin/hounddog")).toBe(false);
+    expect(canAccessPortalPath("consumer", "/admin/jeffery")).toBe(false);
     expect(canAccessPortalPath("admin", "/admin")).toBe(true);
     expect(canAccessPortalPath("admin", "/admin/hounddog")).toBe(true);
+    expect(canAccessPortalPath("admin", "/admin/jeffery")).toBe(true);
   });
 });
 
 describe("Brief 47: restore Practitioner / Naturopath tabs for admin only", () => {
-  it("admin portalsForRole keys are exactly the five PORTAL_TABS", () => {
+  it("admin portalsForRole keys are exactly the six PORTAL_TABS", () => {
     const adminTabs = portalsForRole("admin");
     expect(adminTabs.map((p) => p.key)).toEqual([
       "consumer",
       "practitioner",
       "naturopath",
       "admin",
+      "jeffery",
       "hounddog",
     ]);
     expect(adminTabs.map((p) => p.label)).toEqual([
@@ -485,6 +550,7 @@ describe("Brief 47: restore Practitioner / Naturopath tabs for admin only", () =
       "Practitioner",
       "Naturopath",
       "Admin",
+      "Command Center",
       "Hounddog",
     ]);
     expect(adminTabs.map((p) => p.href)).toEqual(PORTAL_TABS.map((p) => p.href));
