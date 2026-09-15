@@ -33,6 +33,18 @@ describe("classifyPanelThrow / admin.panel.boundary digest", () => {
     });
   });
 
+  it("classifies stages.find TypeError as invalid_row_shape (no stack)", () => {
+    const error = withDigest(
+      "a.stages.find is not a function",
+      "admin-panel-digest-stages",
+    );
+    error.name = "TypeError";
+    const classified = classifyPanelThrow(error);
+    expect(classified.kind).toBe("invalid_row_shape");
+    expect(classified.digest).toBe("admin-panel-digest-stages");
+    expect(classified.name).toBe("TypeError");
+  });
+
   it("classifies Next 16 useSearchParams missing Suspense", () => {
     const error = withDigest(
       "Missing Suspense boundary with useSearchParams",

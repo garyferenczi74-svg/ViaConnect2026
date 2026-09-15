@@ -23,6 +23,11 @@ interface Props {
 export function PipelineChainView({ initialRun = null }: Props) {
   const [run, setRun] = useState<ChainRunResult | null>(initialRun);
   const [error, setError] = useState<string | null>(null);
+  // Live residual after #222: pipeline_runs.stages can be a JSON object.
+  // `.find` on a non-array throws TypeError and takes down AdminPanel Agents.
+  // Empty is honest — do not invent stage rows from object keys.
+  const rawStages = run?.stages;
+  const stages = Array.isArray(rawStages) ? rawStages : [];
 
   useEffect(() => {
     if (initialRun) return;
@@ -79,7 +84,7 @@ export function PipelineChainView({ initialRun = null }: Props) {
       {run && (
         <ol className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
           {STAGE_ORDER.map((stageId) => {
-            const stage = run.stages.find((s) => s.stage === stageId);
+            const stage = stages.find((s) => s.stage === stageId);
             const status = stage?.status ?? 'skipped';
             const color = STATUS_COLOR[status];
             return (
