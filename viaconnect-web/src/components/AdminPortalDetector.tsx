@@ -6,7 +6,7 @@ import { AppShell } from "@/components/app-shell";
 import { MobileNavBar } from "@/components/layout/MobileNavBar";
 import type { User } from "@supabase/supabase-js";
 import Link from "next/link";
-import { Target } from "lucide-react";
+import { Cpu, Target } from "lucide-react";
 import {
   portalKeyFromPath,
   portalsForRole,
@@ -24,6 +24,7 @@ function isPortalKey(value: string | null): value is PortalKey {
     value === "practitioner" ||
     value === "naturopath" ||
     value === "admin" ||
+    value === "jeffery" ||
     value === "hounddog"
   );
 }
@@ -105,6 +106,9 @@ export function AdminPortalDetector({
                   : "text-white hover:bg-[#1A2744]/80"
               }`}
             >
+              {p.key === "jeffery" && (
+                <Cpu className="w-3 h-3 shrink-0" strokeWidth={1.5} />
+              )}
               {p.key === "hounddog" && (
                 <Target className="w-3 h-3 shrink-0" strokeWidth={1.5} />
               )}
