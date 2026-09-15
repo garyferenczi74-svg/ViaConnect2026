@@ -85,6 +85,7 @@ describe("Agents tab empty / fail-open paint", () => {
     expect(agents).toContain('data-testid="agents-chip-bar"');
     expect(agents).toContain('data-testid="agents-workspace"');
     expect(agents).toContain("RegistryReconciliationPanel");
+    expect(agents).toContain("quarantineAgentEnrichment");
     expect(boundary).toContain("failed to load");
     expect(agents).not.toContain("failed to load");
   });

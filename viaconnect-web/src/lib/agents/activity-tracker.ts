@@ -16,6 +16,7 @@ import type {
 } from "./types";
 import { AGENT_IDS, resolveAgentId } from "./types";
 import { AGENT_REGISTRY } from "./registry";
+import { quarantineTasks } from "./quarantineEnrichment";
 import { safeLog } from "@/lib/utils/safe-log";
 
 // ── Event-type mapping ──────────────────────────────────────────────────────
@@ -69,25 +70,37 @@ export interface UltrathinkRegistryRow {
 }
 
 export function mapUltrathinkEvent(row: UltrathinkEventRow): AgentActivityEvent | null {
-  const agentId = resolveAgentId(row.agent_name);
-  if (!agentId) return null;
-  const message = typeof row.payload?.message === "string"
-    ? (row.payload.message as string)
-    : humanizeEvent(row.event_type, agentId);
-  return {
-    id: row.id,
-    agent_id: agentId,
-    event_type: EVENT_TYPE_MAP[row.event_type] ?? "info",
-    severity: SEVERITY_MAP[row.severity] ?? "info",
-    message,
-    metadata: { ...row.payload, source_agent_name: row.agent_name },
-    correlation_id: row.run_id,
-    user_id: null,
-    created_at: row.created_at,
-  };
+  try {
+    if (!row || typeof row !== "object") return null;
+    const agentId = resolveAgentId(row.agent_name);
+    if (!agentId) return null;
+    if (typeof row.id !== "string" || row.id.length === 0) return null;
+    if (typeof row.created_at !== "string" || row.created_at.length === 0) return null;
+    const payload =
+      row.payload && typeof row.payload === "object" && !Array.isArray(row.payload)
+        ? row.payload
+        : {};
+    const message = typeof payload.message === "string"
+      ? payload.message
+      : humanizeEvent(row.event_type, agentId);
+    return {
+      id: row.id,
+      agent_id: agentId,
+      event_type: EVENT_TYPE_MAP[row.event_type] ?? "info",
+      severity: SEVERITY_MAP[row.severity] ?? "info",
+      message,
+      metadata: { ...payload, source_agent_name: row.agent_name },
+      correlation_id: typeof row.run_id === "string" ? row.run_id : null,
+      user_id: null,
+      created_at: row.created_at,
+    };
+  } catch {
+    return null;
+  }
 }
 
 export function mapUltrathinkRegistry(row: UltrathinkRegistryRow): AgentHeartbeat | null {
+  if (!row || typeof row !== "object") return null;
   const agentId = resolveAgentId(row.agent_name);
   if (!agentId) return null;
   // Disabled registry rows are paused (ACC Pause control).
@@ -225,7 +238,7 @@ export async function fetchCurrentTasks(db: SupabaseClient): Promise<AgentCurren
       });
       return [];
     }
-    return (data ?? []) as AgentCurrentTask[];
+    return quarantineTasks(data ?? []);
   } catch (err) {
     safeLog.warn("agents.activity", "fetchCurrentTasks threw fail-open", {
       error: err instanceof Error ? err.message : String(err),
