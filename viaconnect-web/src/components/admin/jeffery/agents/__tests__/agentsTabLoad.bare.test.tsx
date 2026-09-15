@@ -10,12 +10,14 @@ import { renderToStaticMarkup } from "react-dom/server";
 import AgentTabBar from "../AgentTabBar";
 import AgentPanelShell from "../AgentPanelShell";
 import JefferyPanel from "../panels/JefferyPanel";
+import { PipelineChainView } from "@/components/admin/jeffery/PipelineChainView";
 import { AdminPanelErrorBoundary } from "@/components/admin/AdminPanelErrorBoundary";
 import { classifyPanelThrow } from "@/lib/admin/classifyPanelThrow";
 import { orderedRegistry } from "@/lib/agents/registry";
 import { quarantineAgentEnrichment } from "@/lib/agents/quarantineEnrichment";
 import { resolveAgentIcon } from "@/lib/agents/resolveAgentIcon";
 import { deriveStatus } from "@/lib/agents/status";
+import { STAGE_ORDER, type ChainRunResult } from "@/lib/agents/synchronism/chainTypes";
 import { ACC_SEAT_COUNT } from "@/lib/agents/types";
 import type { AgentActivityEvent, AgentCurrentTask } from "@/lib/agents/types";
 
@@ -130,6 +132,50 @@ describe("Agents tab load M4", () => {
     expect(workspace).not.toContain("failed to load");
     expect(safe.tasks).toEqual([]);
     expect(safe.events).toEqual([]);
+  });
+
+  it("non-array pipeline stages do not crash Agents panel chrome", () => {
+    const objectStages = { ingest: { status: "ok" } };
+    expect(() =>
+      (objectStages as unknown as ChainRunResult["stages"]).find(
+        (s) => s.stage === "ingest",
+      ),
+    ).toThrow(/find is not a function/);
+
+    const badRun = {
+      runId: "sync-2026-09-15",
+      runDate: "2026-09-15",
+      startedAt: "2026-09-15T06:15:00.000Z",
+      endedAt: "2026-09-15T06:16:00.000Z",
+      status: "ok",
+      stages: objectStages,
+    } as unknown as ChainRunResult;
+
+    const html = renderToStaticMarkup(
+      <>
+        <AgentTabBar
+          registry={registry}
+          heartbeats={new Map()}
+          activeAgent="jeffery"
+          onChange={() => undefined}
+          deriveStatus={(hb) => deriveStatus(hb)}
+        />
+        <PipelineChainView initialRun={badRun} />
+      </>,
+    );
+    expect((html.match(/role="tab"/g) ?? []).length).toBe(17);
+    expect(html).toContain('data-testid="pipeline-chain-view"');
+    expect(html).toContain("sync-2026-09-15");
+    expect(html).toContain('data-testid="pipeline-stage-ingest"');
+    expect((html.match(/>skipped</g) ?? []).length).toBe(STAGE_ORDER.length);
+    expect(html).not.toContain("failed to load");
+    const pipeline = read("src/components/admin/jeffery/PipelineChainView.tsx");
+    expect(pipeline).toContain("Array.isArray(rawStages)");
+    expect(pipeline).toContain("stages.find");
+    expect(pipeline).not.toMatch(/run\.stages\.find/);
+    expect(classifyPanelThrow(new TypeError("a.stages.find is not a function")).kind).toBe(
+      "invalid_row_shape",
+    );
   });
 
   it("deliberate throw still trips the Agents boundary", () => {

@@ -7,6 +7,7 @@ export type AdminPanelThrowKind =
   | "invalid_element"
   | "invalid_child"
   | "missing_suspense"
+  | "invalid_row_shape"
   | "unknown";
 
 export interface ClassifiedPanelThrow {
@@ -38,6 +39,9 @@ export function classifyPanelThrow(error: unknown): ClassifiedPanelThrow {
     /useSearchParams/i.test(message)
   ) {
     return { kind: "missing_suspense", digest, name };
+  }
+  if (/\b(?:find|map|filter|forEach)\s+is not a function/i.test(message)) {
+    return { kind: "invalid_row_shape", digest, name };
   }
   return { kind: "unknown", digest, name };
 }
