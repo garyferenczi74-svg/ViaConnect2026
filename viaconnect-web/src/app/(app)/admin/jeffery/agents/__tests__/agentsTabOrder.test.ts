@@ -44,9 +44,8 @@ describe("AgentsClient stack order", () => {
 
   it("fail-opens empty activity props instead of throwing on filter", () => {
     const src = read("src/app/(app)/admin/jeffery/agents/AgentsClient.tsx");
-    expect(src).toContain("Array.isArray(initialTasks)");
-    expect(src).toContain("Array.isArray(initialEvents)");
-    expect(src).toContain("Array.isArray(initialHeartbeats)");
     expect(src).toContain("Array.isArray(initialRegistry)");
+    expect(src).toContain("quarantineAgentEnrichment");
+    expect(src).not.toContain(".filter((t) => t.task_status");
   });
 });

@@ -8,7 +8,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { AGENT_REGISTRY, orderedRegistry } from "../registry";
-import { resolveAgentIcon } from "../resolveAgentIcon";
+import { asLucideIcon, resolveAgentIcon } from "../resolveAgentIcon";
 
 const root = process.cwd();
 function read(rel: string): string {
@@ -37,6 +37,30 @@ describe("resolveAgentIcon", () => {
     expect(isRenderableIcon(fallback)).toBe(true);
     expect(resolveAgentIcon("")).toBe(fallback);
     expect(resolveAgentIcon("NotARealLucideIcon")).toBe(fallback);
+  });
+
+  it("unwraps optimizePackageImports { default: Component } and rejects undefined", () => {
+    const fallback = resolveAgentIcon(undefined);
+    const wrapped = { default: fallback };
+    expect(asLucideIcon(wrapped)).toBe(fallback);
+    expect(asLucideIcon(undefined)).toBeNull();
+    expect(asLucideIcon({ default: undefined })).toBeNull();
+    expect(isRenderableIcon(resolveAgentIcon("Brain"))).toBe(true);
+  });
+
+  it("17 registry icons stay renderable when NODE_ENV is production", () => {
+    const prev = process.env.NODE_ENV;
+    process.env.NODE_ENV = "production";
+    try {
+      for (const row of orderedRegistry()) {
+        expect(isRenderableIcon(resolveAgentIcon(row.icon_name))).toBe(true);
+      }
+    } finally {
+      process.env.NODE_ENV = prev;
+    }
+    const nextConfig = read("next.config.mjs");
+    expect(nextConfig).toContain("optimizePackageImports");
+    expect(nextConfig).toContain("lucide-react");
   });
 
   it("chip trigger and header do not namespace-import lucide-react", () => {

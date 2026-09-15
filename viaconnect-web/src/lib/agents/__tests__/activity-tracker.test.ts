@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { mapUltrathinkEvent, mapUltrathinkRegistry } from "../activity-tracker";
+import {
+  mapUltrathinkEvent,
+  mapUltrathinkRegistry,
+  type UltrathinkEventRow,
+} from "../activity-tracker";
 
 describe("mapUltrathinkEvent", () => {
   it("maps canonical agent + event_type to spec shape", () => {
@@ -30,6 +34,21 @@ describe("mapUltrathinkEvent", () => {
       created_at: new Date().toISOString(),
     });
     expect(e).toBeNull();
+  });
+
+  it("returns null for a missing or non-string agent_name without throwing", () => {
+    expect(
+      mapUltrathinkEvent({
+        id: "e-bad",
+        agent_name: null as unknown as string,
+        event_type: "heartbeat",
+        run_id: null,
+        payload: {},
+        severity: "info",
+        created_at: new Date().toISOString(),
+      }),
+    ).toBeNull();
+    expect(mapUltrathinkEvent(null as unknown as UltrathinkEventRow)).toBeNull();
   });
 
   it("maps critical severity to error", () => {

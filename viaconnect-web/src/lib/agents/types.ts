@@ -93,7 +93,8 @@ export const AGENT_NAME_ALIASES: Readonly<Record<string, AgentId>> = {
   michelangelo_pipeline: "michelangelo",
 };
 
-export function resolveAgentId(raw: string): AgentId | null {
+export function resolveAgentId(raw: unknown): AgentId | null {
+  if (typeof raw !== "string") return null;
   const key = raw.trim().toLowerCase();
   return AGENT_NAME_ALIASES[key] ?? null;
 }

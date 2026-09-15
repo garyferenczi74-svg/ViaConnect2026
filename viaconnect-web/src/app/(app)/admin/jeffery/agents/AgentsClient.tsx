@@ -9,6 +9,7 @@ import { useAgentRealtime } from "@/hooks/useAgentRealtime";
 import { useAgentHeartbeats } from "@/hooks/useAgentHeartbeats";
 import { useAgentDeepLink } from "@/hooks/useAgentDeepLink";
 import { deriveStatus } from "@/lib/agents/status";
+import { quarantineAgentEnrichment } from "@/lib/agents/quarantineEnrichment";
 import { PipelineChainView } from "@/components/admin/jeffery/PipelineChainView";
 import { IngestOpsPanel } from "@/components/admin/jeffery/IngestOpsPanel";
 import { AuthoritiesAllowlistPanel } from "@/components/admin/jeffery/AuthoritiesAllowlistPanel";
@@ -37,11 +38,17 @@ export default function AgentsClient({
   embedded = false,
 }: AgentsClientProps) {
   // Fail-open: missing activity table / prefetch returns [] or a non-array.
+  // Quarantine malformed enrichment so one bad row cannot take down the roster.
   // Never throw on first paint — idle seats still show the chip bar.
   const registry = Array.isArray(initialRegistry) ? initialRegistry : [];
-  const heartbeatsIn = Array.isArray(initialHeartbeats) ? initialHeartbeats : [];
-  const tasksIn = Array.isArray(initialTasks) ? initialTasks : [];
-  const eventsIn = Array.isArray(initialEvents) ? initialEvents : [];
+  const initialSafe = quarantineAgentEnrichment({
+    heartbeats: initialHeartbeats,
+    tasks: initialTasks,
+    events: initialEvents,
+  });
+  const heartbeatsIn = initialSafe.heartbeats;
+  const tasksIn = initialSafe.tasks;
+  const eventsIn = initialSafe.events;
 
   const firstId = (registry[0]?.agent_id ?? "jeffery") as AgentId;
   const { activeAgent, setActiveAgent } = useAgentDeepLink(firstId);
@@ -52,14 +59,19 @@ export default function AgentsClient({
     initialTasks: tasksIn.filter((t) => t != null && t.agent_id === activeAgent),
   });
 
+  const liveSafe = quarantineAgentEnrichment({
+    heartbeats,
+    tasks,
+    events,
+  });
+
   const heartbeatByAgent = useMemo(() => {
     const map = new Map<AgentId, AgentHeartbeat>();
-    const rows = Array.isArray(heartbeats) ? heartbeats : [];
-    for (const h of rows) {
-      if (h?.agent_id) map.set(h.agent_id, h);
+    for (const h of liveSafe.heartbeats) {
+      map.set(h.agent_id, h);
     }
     return map;
-  }, [heartbeats]);
+  }, [liveSafe.heartbeats]);
 
   const activeRegistry = registry.find((r) => r.agent_id === activeAgent) ?? registry[0];
   const activeHeartbeat = heartbeatByAgent.get(activeAgent) ?? null;
@@ -122,14 +134,14 @@ export default function AgentsClient({
           <AgentPanelShell
             registry={activeRegistry}
             heartbeat={activeHeartbeat}
-            tasks={tasks}
-            events={events}
+            tasks={liveSafe.tasks}
+            events={liveSafe.events}
           >
             <PanelComponent
               registry={activeRegistry}
               heartbeat={activeHeartbeat}
-              tasks={tasks}
-              events={events}
+              tasks={liveSafe.tasks}
+              events={liveSafe.events}
             />
           </AgentPanelShell>
         )}

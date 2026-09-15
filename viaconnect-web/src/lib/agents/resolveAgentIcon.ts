@@ -8,8 +8,12 @@
  * Icons.Circle are undefined. Rendering that as <Icon /> throws
  * "Element type is invalid" and trips AdminPanelErrorBoundary on the
  * Agents tab (chip bar first paint). Named imports stay real components.
+ *
+ * Turbopack / optimizePackageImports can still wrap a named import as
+ * `{ default: Component }`. Unwrap before render. Circle is the last resort.
  */
 
+import { createElement, type SVGProps } from "react";
 import {
   BookOpen,
   Brain,
@@ -32,7 +36,7 @@ import {
 } from "lucide-react";
 import type { IconType } from "@/types/icon";
 
-const AGENT_ICON_BY_NAME: Record<string, IconType> = {
+const AGENT_ICON_BY_NAME: Record<string, unknown> = {
   BookOpen,
   Brain,
   Circle,
@@ -53,7 +57,29 @@ const AGENT_ICON_BY_NAME: Record<string, IconType> = {
   ShieldCheck,
 };
 
+function CircleFallback(props: SVGProps<SVGSVGElement>) {
+  return createElement(
+    "svg",
+    { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", ...props },
+    createElement("circle", { cx: 12, cy: 12, r: 10 }),
+  );
+}
+
+export function asLucideIcon(mod: unknown): IconType | null {
+  if (typeof mod === "function") return mod as IconType;
+  if (mod && typeof mod === "object") {
+    const inner = (mod as { default?: unknown }).default;
+    if (typeof inner === "function") return inner as IconType;
+  }
+  return null;
+}
+
+function circleFallback(): IconType {
+  return asLucideIcon(Circle) ?? (CircleFallback as IconType);
+}
+
 export function resolveAgentIcon(iconName: string | null | undefined): IconType {
-  if (typeof iconName !== "string" || iconName.length === 0) return Circle;
-  return AGENT_ICON_BY_NAME[iconName] ?? Circle;
+  const fallback = circleFallback();
+  if (typeof iconName !== "string" || iconName.length === 0) return fallback;
+  return asLucideIcon(AGENT_ICON_BY_NAME[iconName]) ?? fallback;
 }

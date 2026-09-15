@@ -8,6 +8,7 @@
 
 import React from "react";
 import { AlertCircle, RefreshCw } from "lucide-react";
+import { classifyPanelThrow } from "@/lib/admin/classifyPanelThrow";
 import { safeLog } from "@/lib/utils/safe-log";
 
 interface Props {
@@ -27,23 +28,21 @@ export class AdminPanelErrorBoundary extends React.Component<Props, State> {
   state: State = { hasError: false, errorId: null, message: "failed to load" };
 
   static getDerivedStateFromError(error: Error): State {
-    const digest =
-      typeof (error as Error & { digest?: string }).digest === "string"
-        ? (error as Error & { digest?: string }).digest!
-        : null;
+    const classified = classifyPanelThrow(error);
     return {
       hasError: true,
-      errorId: digest,
+      errorId: classified.digest,
       message: "failed to load",
     };
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo): void {
+    const classified = classifyPanelThrow(error);
     safeLog.error("admin.panel.boundary", "panel render failed", {
       panel: this.props.panelName,
-      name: error.name,
-      message: error.message,
-      digest: (error as Error & { digest?: string }).digest,
+      name: classified.name,
+      kind: classified.kind,
+      digest: classified.digest,
       componentStack: info.componentStack?.slice(0, 400),
     });
   }
