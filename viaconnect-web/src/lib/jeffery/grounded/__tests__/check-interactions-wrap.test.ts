@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { FAQ } from "../copy";
+import { FAQ, VIA_CURA_DRAFT_BANNER } from "../copy";
 import { resolveGroundedChatTurn } from "../chat-stub";
 import { LLM_GROUNDED_CHAT_FLAG } from "../flag";
+import { INTERACTIONS_LISTING_EXPLANATION } from "../refuse";
 import {
   assembleCheckInteractions,
   emptyCheckInteractionsPayload,
@@ -147,6 +148,62 @@ describe("check_interactions live wrap", () => {
     expect(turn.kind).toBe("legacy");
   });
 
+  it("flag-on interactions-only success assembles engine restatement, not tool_refuse", async () => {
+    process.env[FLAG] = "true";
+    const turn = await resolveGroundedChatTurn({
+      message: "Does this interact with my warfarin?",
+      role: "consumer",
+      userId: "user-1",
+      requestId: "req-on-interact-ok",
+      checkInteractionsAssemble: async () => SUCCESS_FIXTURE,
+    });
+    expect(turn.kind).toBe("static");
+    if (turn.kind !== "static") return;
+    expect(turn.reason).toBe("assembled_from_tools");
+    expect(turn.reason).not.toBe("tool_refuse");
+    expect(turn.text).toContain(INTERACTIONS_LISTING_EXPLANATION);
+    expect(turn.text).toContain("medication: Warfarin");
+    expect(turn.text).toContain("interactsWith: NAD+");
+    expect(turn.text).toContain("severity: moderate");
+    expect(turn.text).toContain("mechanism: engine mechanism");
+    expect(turn.text).toContain("clinicalEffect: engine effect");
+    expect(turn.text).toContain("mitigation: engine mitigation");
+    expect(turn.text).not.toContain(VIA_CURA_DRAFT_BANNER);
+    expect(turn.text.toLowerCase()).not.toMatch(
+      /safe to take|cleared|approved to combine|no interactions means safe|prescribe|prescribed/
+    );
+    expect(turn.requiredTools).toEqual(["check_interactions"]);
+  });
+
+  it("flag-on protocol + interactions success lists protocol before interactions", async () => {
+    process.env[FLAG] = "true";
+    const turn = await resolveGroundedChatTurn({
+      message: "Does this interact with my stack?",
+      role: "practitioner",
+      userId: "user-1",
+      requestId: "req-on-both-ok",
+      advisorContextVariables: {
+        currentSupplements: "MTHFR+ (1 capsule daily)",
+        medications: "Warfarin",
+      },
+      checkInteractionsAssemble: async () => SUCCESS_FIXTURE,
+    });
+    expect(turn.kind).toBe("static");
+    if (turn.kind !== "static") return;
+    expect(turn.reason).toBe("assembled_from_tools");
+    expect(turn.requiredTools).toEqual(expect.arrayContaining(["get_protocol", "check_interactions"]));
+    expect(turn.requiredTools).not.toContain("lookup_peptide");
+    const protocolIdx = turn.text.indexOf("I can only restate what ViaConnect already listed");
+    const interactionsIdx = turn.text.indexOf(INTERACTIONS_LISTING_EXPLANATION);
+    expect(protocolIdx).toBeGreaterThan(-1);
+    expect(interactionsIdx).toBeGreaterThan(protocolIdx);
+    expect(turn.text).toContain("MTHFR+");
+    expect(turn.text).toContain("Already on your protocol");
+    expect(turn.text.startsWith(VIA_CURA_DRAFT_BANNER)).toBe(true);
+    expect(turn.text.split(VIA_CURA_DRAFT_BANNER).length - 1).toBe(1);
+    expect(turn.text.toLowerCase()).not.toContain("prescribed");
+  });
+
   it("flag-on soft-empty+error uses existing refuse / FAQ.toolFailed", async () => {
     process.env[FLAG] = "true";
     const turn = await resolveGroundedChatTurn({
@@ -170,5 +227,20 @@ describe("check_interactions live wrap", () => {
 
   it("allow_generate stays hard false", () => {
     expect(isAllowGenerateHardFalse()).toBe(true);
+  });
+
+  it("flag-on SNP-only still fail-closes because lookup_snp is unwired", async () => {
+    process.env[FLAG] = "true";
+    const turn = await resolveGroundedChatTurn({
+      message: "What does rs1801133 mean on my genetic card?",
+      role: "consumer",
+      userId: "user-1",
+      requestId: "req-on-snp-stub",
+    });
+    expect(turn.kind).toBe("static");
+    if (turn.kind !== "static") return;
+    expect(turn.reason).toBe("tool_refuse");
+    expect(turn.text).toContain(FAQ.toolFailed);
+    expect(turn.requiredTools).toContain("lookup_snp");
   });
 });

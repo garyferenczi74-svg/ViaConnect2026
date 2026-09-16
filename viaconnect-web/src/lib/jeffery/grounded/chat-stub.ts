@@ -1,17 +1,20 @@
 /**
  * Stage A grounded-chat orchestrator.
  * Flag OFF → legacy (today's stream). Flag ON → stub retriever + refuse-if-tool-fails.
- * Marshall scan stays on the host route after the full answer.
+ * Success: get_protocol and/or check_interactions restatement (protocol block first).
+ * Other required tools still fail-closed. Marshall scan stays on the host route.
  */
 
 import { safeLog } from "@/lib/utils/safe-log";
 import { isLlmGroundedChatEnabled } from "./flag";
 import { inferRequiredTools } from "./intent";
 import {
+  assembleInteractionsListingText,
   assembleProtocolListingText,
   assembleSafetyRefuseText,
   assembleToolRefuseText,
   detectSafetyRefuse,
+  joinAssembledListingBlocks,
 } from "./refuse";
 import type { StreamOptions, StreamResult } from "@/lib/jeffery/advisor-stream";
 import { retrieveGroundedChunks } from "./retriever";
@@ -19,6 +22,7 @@ import { streamStaticAdvisorAnswer } from "./static-stream";
 import { runRequiredTools } from "./tool-router";
 import type {
   AdvisorChatRole,
+  CheckInteractionsData,
   GetProtocolData,
   GroundedToolContext,
   GroundedToolName,
@@ -109,18 +113,39 @@ export async function resolveGroundedChatTurn(
     };
   }
 
+  const listingBlocks: string[] = [];
   const protocol = results.get_protocol;
+  const interactions = results.check_interactions;
+  const interactionsOk = Boolean(interactions && interactions.ok === true);
+
   if (protocol && protocol.ok === true) {
     const data = protocol.data as GetProtocolData;
-    return {
-      kind: "static",
-      reason: "assembled_from_tools",
-      text: assembleProtocolListingText({
+    listingBlocks.push(
+      assembleProtocolListingText({
         role: input.role,
         items: data.items,
         protocolName: data.protocol_name,
         sourceRoute: protocol.route,
-      }),
+        includeDisclaimer: !interactionsOk,
+      })
+    );
+  }
+
+  if (interactions && interactions.ok === true) {
+    listingBlocks.push(
+      assembleInteractionsListingText({
+        role: input.role,
+        data: interactions.data as CheckInteractionsData,
+        sourceRoute: interactions.route,
+      })
+    );
+  }
+
+  if (listingBlocks.length > 0) {
+    return {
+      kind: "static",
+      reason: "assembled_from_tools",
+      text: joinAssembledListingBlocks(listingBlocks),
       requiredTools: required,
     };
   }

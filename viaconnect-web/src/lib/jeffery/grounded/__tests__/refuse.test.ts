@@ -2,14 +2,18 @@ import { describe, expect, it } from "vitest";
 import { FAQ, FAQ_KILL_SWITCH_LINES, VIA_CURA_DRAFT_BANNER } from "../copy";
 import {
   assembleFourPartAnswer,
+  assembleInteractionsListingText,
   assembleProtocolListingText,
   assembleSafetyRefuseText,
   assembleToolRefuseText,
   assertNoPrescribedWording,
   detectSafetyRefuse,
   explanationForToolFailure,
+  INTERACTIONS_LISTING_EXPLANATION,
+  joinAssembledListingBlocks,
   killSwitchFaqExplanation,
 } from "../refuse";
+import type { CheckInteractionsData } from "../types";
 
 describe("refuse helpers", () => {
   it("uses Lex FAQ strings and includes 988 US Suicide and Crisis Lifeline on SI", () => {
@@ -101,6 +105,80 @@ describe("refuse helpers", () => {
     expect(text.toLowerCase()).not.toContain("prescribed");
     expect(text).toContain("already listed");
     expect(text).not.toContain(VIA_CURA_DRAFT_BANNER);
+  });
+
+  it("restates check_interactions engine fields and omits empty optionals", () => {
+    const data: CheckInteractionsData = {
+      interactions: [
+        {
+          medication: "Warfarin",
+          interactsWith: "NAD+",
+          severity: "moderate",
+          mechanism: "engine mechanism",
+          clinicalEffect: "",
+          mitigation: "   ",
+        },
+      ],
+      summary: { major: 0, moderate: 1, minor: 0, synergistic: 0 },
+      blockedProducts: ["St. John's Wort", "", "  "],
+    };
+    const text = assembleInteractionsListingText({
+      role: "practitioner",
+      data,
+      sourceRoute: "POST /api/ai/check-interactions",
+    });
+    expect(INTERACTIONS_LISTING_EXPLANATION).toBe(
+      "Here is what the ViaConnect interaction check listed."
+    );
+    expect(text.startsWith(VIA_CURA_DRAFT_BANNER)).toBe(true);
+    expect(text).toContain(INTERACTIONS_LISTING_EXPLANATION);
+    expect(text).toContain("medication: Warfarin");
+    expect(text).toContain("interactsWith: NAD+");
+    expect(text).toContain("severity: moderate");
+    expect(text).toContain("mechanism: engine mechanism");
+    expect(text).not.toMatch(/clinicalEffect:/);
+    expect(text).not.toMatch(/mitigation:/);
+    expect(text).toContain("summary: major 0, moderate 1, minor 0, synergistic 0");
+    expect(text).toContain("blockedProducts:");
+    expect(text).toContain("St. John's Wort");
+    expect(text).toContain("POST /api/ai/check-interactions");
+    expect(text).toContain("Open your protocol screen or ask your clinician");
+    expect(text.toLowerCase()).not.toMatch(
+      /safe to take|cleared|approved to combine|no interactions means safe|prescribe|prescribed|diagnos|treat|cure/
+    );
+    expect(assertNoPrescribedWording(text)).toBe(true);
+  });
+
+  it("joins protocol then interactions with the ViaCura banner once", () => {
+    const protocol = assembleProtocolListingText({
+      role: "naturopath",
+      protocolName: "ViaConnect protocol on file",
+      sourceRoute: "advisor.context / stored user_protocols",
+      includeDisclaimer: false,
+      items: [
+        {
+          productName: "MTHFR+",
+          dosage: "1 capsule",
+          reason: "on file",
+          bucket: "morning",
+        },
+      ],
+    });
+    const interactions = assembleInteractionsListingText({
+      role: "naturopath",
+      sourceRoute: "POST /api/ai/check-interactions",
+      data: {
+        interactions: [],
+        summary: { major: 0, moderate: 0, minor: 0, synergistic: 0 },
+        blockedProducts: [],
+      },
+    });
+    const joined = joinAssembledListingBlocks([protocol, interactions]);
+    expect(joined.indexOf("I can only restate what ViaConnect already listed")).toBeLessThan(
+      joined.indexOf(INTERACTIONS_LISTING_EXPLANATION)
+    );
+    expect(joined.split(VIA_CURA_DRAFT_BANNER).length - 1).toBe(1);
+    expect(joined.startsWith(VIA_CURA_DRAFT_BANNER)).toBe(true);
   });
 
   it("prepends ViaCura draft banner on clinician refuse / static assemble", () => {

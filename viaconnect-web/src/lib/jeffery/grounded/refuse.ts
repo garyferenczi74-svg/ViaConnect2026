@@ -11,7 +11,14 @@ import {
   TOOLS_UNAVAILABLE,
   VIA_CURA_DRAFT_BANNER,
 } from "./copy";
-import type { AdvisorChatRole, GroundedToolName, ProtocolItem, ToolError } from "./types";
+import type {
+  AdvisorChatRole,
+  CheckInteractionsData,
+  GroundedToolName,
+  InteractionFinding,
+  ProtocolItem,
+  ToolError,
+} from "./types";
 
 export type SafetyRefuseKind =
   | "emergency"
@@ -164,11 +171,19 @@ export function assembleSafetyRefuseText(input: {
   );
 }
 
+/** Lex-cleared explanation frame (2026-09-15). Do not rewrite. */
+export const INTERACTIONS_LISTING_EXPLANATION =
+  "Here is what the ViaConnect interaction check listed.";
+
+const PROTOCOL_NEXT_ACTION =
+  "Open your protocol screen or ask your clinician before changing anything.";
+
 export function assembleProtocolListingText(input: {
   role: AdvisorChatRole;
   items: ProtocolItem[];
   protocolName: string;
   sourceRoute: string;
+  includeDisclaimer?: boolean;
 }): string {
   const listed =
     input.items.length === 0
@@ -186,10 +201,74 @@ export function assembleProtocolListingText(input: {
         "I can only restate what ViaConnect already listed for you. This is educational context, not a new plan.",
       alreadyListed: listed,
       sources: [input.sourceRoute, input.protocolName],
-      nextAction: "Open your protocol screen or ask your clinician before changing anything.",
+      nextAction: PROTOCOL_NEXT_ACTION,
     },
-    { role: input.role }
+    { role: input.role, includeDisclaimer: input.includeDisclaimer }
   );
+}
+
+function engineFieldLine(label: string, value: string | undefined): string | null {
+  if (typeof value !== "string" || !value.trim()) return null;
+  return `${label}: ${value}`;
+}
+
+function formatInteractionFinding(finding: InteractionFinding): string {
+  const lines = [
+    `medication: ${finding.medication}`,
+    `interactsWith: ${finding.interactsWith}`,
+    `severity: ${finding.severity}`,
+    engineFieldLine("mechanism", finding.mechanism),
+    engineFieldLine("clinicalEffect", finding.clinicalEffect),
+    engineFieldLine("mitigation", finding.mitigation),
+  ].filter((line): line is string => line !== null);
+  return `- ${lines.join("\n  ")}`;
+}
+
+function assembleInteractionsAlreadyListed(data: CheckInteractionsData): string {
+  const sections: string[] = [];
+  if (data.interactions.length > 0) {
+    sections.push(data.interactions.map(formatInteractionFinding).join("\n"));
+  }
+  const { major, moderate, minor, synergistic } = data.summary;
+  sections.push(`summary: major ${major}, moderate ${moderate}, minor ${minor}, synergistic ${synergistic}`);
+  const blockedNames = data.blockedProducts.filter((name) => typeof name === "string" && name.trim());
+  if (blockedNames.length > 0) {
+    sections.push(`blockedProducts:\n${blockedNames.map((name) => `- ${name}`).join("\n")}`);
+  }
+  return sections.join("\n");
+}
+
+/**
+ * Four-part restatement of CheckInteractionsData. Engine fields verbatim.
+ * mechanism / clinicalEffect / mitigation only when non-empty on the payload.
+ */
+export function assembleInteractionsListingText(input: {
+  role: AdvisorChatRole;
+  data: CheckInteractionsData;
+  sourceRoute: string;
+  includeDisclaimer?: boolean;
+}): string {
+  return assembleFourPartAnswer(
+    {
+      explanation: INTERACTIONS_LISTING_EXPLANATION,
+      alreadyListed: assembleInteractionsAlreadyListed(input.data),
+      sources: [input.sourceRoute],
+      nextAction: PROTOCOL_NEXT_ACTION,
+    },
+    { role: input.role, includeDisclaimer: input.includeDisclaimer }
+  );
+}
+
+/** Protocol listing first, then interactions. Banner stays once at the top. */
+export function joinAssembledListingBlocks(blocks: string[]): string {
+  if (blocks.length === 0) return "";
+  if (blocks.length === 1) return blocks[0];
+  return blocks
+    .map((block, index) => {
+      if (index === 0 || !block.startsWith(VIA_CURA_DRAFT_BANNER)) return block;
+      return block.slice(VIA_CURA_DRAFT_BANNER.length).replace(/^\n+/, "");
+    })
+    .join("\n\n");
 }
 
 function requestIdNote(requestId: string, toolList: string): string {
