@@ -13,7 +13,9 @@ import {
   assembleToolRefuseText,
   detectSafetyRefuse,
 } from "./refuse";
+import type { StreamOptions, StreamResult } from "@/lib/jeffery/advisor-stream";
 import { retrieveGroundedChunks } from "./retriever";
+import { streamStaticAdvisorAnswer } from "./static-stream";
 import { runRequiredTools } from "./tool-router";
 import type {
   AdvisorChatRole,
@@ -130,4 +132,17 @@ export async function resolveGroundedChatTurn(
     }),
     requiredTools: required,
   };
+}
+
+/**
+ * Optional hook for /api/advisor/chat.
+ * Flag off (default) or non-tool turns → null so the host keeps today's stream.
+ */
+export async function maybeGroundedStaticStream(
+  input: ResolveGroundedChatInput,
+  options?: StreamOptions
+): Promise<StreamResult | null> {
+  const turn = await resolveGroundedChatTurn(input);
+  if (turn.kind !== "static") return null;
+  return streamStaticAdvisorAnswer(turn.text, options);
 }

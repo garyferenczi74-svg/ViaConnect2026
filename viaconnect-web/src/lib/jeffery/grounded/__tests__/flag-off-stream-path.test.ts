@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { isLlmGroundedChatEnabled, LLM_GROUNDED_CHAT_FLAG } from "../flag";
-import { resolveGroundedChatTurn } from "../chat-stub";
+import { maybeGroundedStaticStream, resolveGroundedChatTurn } from "../chat-stub";
 import { inferRequiredTools } from "../intent";
 import {
   getProtocolFromContext,
@@ -53,8 +53,9 @@ describe("flag-off leaves stream path", () => {
     expect(src).toMatch(/buildAdvisorContext/);
     expect(src).toMatch(/streamAdvisorResponse/);
     expect(src).toMatch(/scanAiOutput/);
-    expect(src).toMatch(/isLlmGroundedChatEnabled\(\)/);
-    expect(src.indexOf("buildAdvisorContext")).toBeLessThan(src.indexOf("isLlmGroundedChatEnabled()"));
+    expect(src).toMatch(/maybeGroundedStaticStream/);
+    expect(src).toMatch(/\?\? streamAdvisorResponse/);
+    expect(src.indexOf("buildAdvisorContext")).toBeLessThan(src.indexOf("maybeGroundedStaticStream"));
     expect(src.indexOf("streamAdvisorResponse")).toBeLessThan(src.lastIndexOf("scanAiOutput"));
     expect(src).not.toMatch(/\/api\/ai\/generate-protocol/);
     expect(src).not.toMatch(/formavision/i);
@@ -69,6 +70,13 @@ describe("flag-off leaves stream path", () => {
       requestId: "req-off",
     });
     expect(turn.kind).toBe("legacy");
+    const hooked = await maybeGroundedStaticStream({
+      message: "Why is MTHFR+ on my protocol?",
+      role: "consumer",
+      userId: "user-1",
+      requestId: "req-off-hook",
+    });
+    expect(hooked).toBeNull();
   });
 
   it("flag-on required-tool miss refuses instead of inventing", async () => {
