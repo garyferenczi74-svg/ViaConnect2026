@@ -29,6 +29,14 @@ export function stripPeptideDeliveryOptions<T>(value: T): T {
   return stripValue(value) as T;
 }
 
+/**
+ * Choke point before peptide data enters assembler / model context.
+ * Always strip display-banned delivery option fields on success payloads.
+ */
+export function preparePeptideToolPayload<T>(data: T): T {
+  return stripPeptideDeliveryOptions(data);
+}
+
 function stripValue(value: unknown): unknown {
   if (Array.isArray(value)) {
     return value.map((item) => stripValue(item));

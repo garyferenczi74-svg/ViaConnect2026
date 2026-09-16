@@ -7,7 +7,7 @@
 **Never invent doses.**
 
 Jeffery ack: Stage A on `/api/advisor/chat` (not greenfield). Tip when pack ready for OBRA route + Lex HIPAA/edu review.  
-Lex tipped: review `06-compliance/HIPAA-OPS.md` + `04-prompts/SYSTEM-PROMPT.md` when ready.
+Lex tipped: review `docs/viaconnect-llm/HIPAA-OPS.md` + `docs/viaconnect-llm/SYSTEM-PROMPT.md` when ready.
 
 ---
 
@@ -39,7 +39,7 @@ After triple PASS → undraft Blueprint → micro-implement PRs (still no --prod
 12. **Semaglutide / GLP-1 deny example** for eval (question only).  
 13. **ViaCura draft banner copy** one line for clinician UI mock (Lex).  
 14. **Hybrid search smoke plan** — 3 manual queries (`rs1801133`, `MTHFR+`, `edu-sermorelin`) expected doc_types.  
-15. **Rollback note** — DONE: flag `LLM_GROUNDED_CHAT_ENABLED` (false = FAQ / non-grounded fallback). Must be in first code PR.  
+15. **Rollback note** — DONE: flag `LLM_GROUNDED_CHAT_ENABLED` (false = **legacy** advisor stream / today’s Claude). FAQ-only = provider outage / explicit ops kill — not default-off. Must be in first code PR.  
 16. **Clinician gold author ask** — email outline to medical director for 10 seed answers (process only).  
 17. **Stage B parking lot** — single paragraph why not hosting 8B this quarter.  
 18. **Pack index link** from agent memory / Jeffery tip when gates start.  

@@ -5,10 +5,10 @@
  * Other tools return ok:false not_implemented so the refuse path fires.
  *
  * Retatrutide lock (comment only; this stub does not invent routes or stacks):
- * injectable-only, never stacked. Semaglutide / GLP-1 stay blocked topics.
+ * injectable-only, never stacked. Semaglutide / excluded GLP-1 stay blocked.
  */
 
-import { stripPeptideDeliveryOptions } from "./strip-peptide-delivery";
+import { preparePeptideToolPayload } from "./strip-peptide-delivery";
 import type {
   CheckInteractionsInput,
   CheckInteractionsResult,
@@ -19,6 +19,7 @@ import type {
   GetProtocolResult,
   GroundedToolContext,
   GroundedToolName,
+  LookupPeptideData,
   LookupPeptideInput,
   LookupPeptideResult,
   LookupSnpInput,
@@ -203,10 +204,31 @@ export function lookupSnpStub(_input: LookupSnpInput): LookupSnpResult {
   return notImplemented("GET /api/genetics/variants", "lookup_snp");
 }
 
+/**
+ * When lookup_peptide returns ok (live wrap or fixture), strip before assembler.
+ * Stub still refuse-closes; success path cannot skip the display ban.
+ */
+export function finalizeLookupPeptideResult(result: LookupPeptideResult): LookupPeptideResult {
+  if (result.ok !== true) return result;
+  return {
+    ...result,
+    data: preparePeptideToolPayload(result.data),
+  };
+}
+
+/** Success fixture so strip is proven on ok payloads, not only the refuse stub. */
+export function lookupPeptideSuccessFixture(data: LookupPeptideData): LookupPeptideResult {
+  return finalizeLookupPeptideResult({
+    ok: true,
+    data,
+    route: "GET /api/peptides/search",
+    retrieved_at: nowIso(),
+  });
+}
+
 export function lookupPeptideStub(input: LookupPeptideInput): LookupPeptideResult {
-  const stub = notImplemented("GET /api/peptides/search", "lookup_peptide");
-  void stripPeptideDeliveryOptions({ name: input.name, deliveryOptions_raw: null });
-  return stub;
+  void preparePeptideToolPayload({ name: input.name, deliveryOptions_raw: null });
+  return finalizeLookupPeptideResult(notImplemented("GET /api/peptides/search", "lookup_peptide"));
 }
 
 export function getEducationStub(_input: GetEducationInput): GetEducationResult {
@@ -236,7 +258,9 @@ export function routeGroundedTool(
     case "lookup_snp":
       return lookupSnpStub({ rsid: "" });
     case "lookup_peptide":
-      return lookupPeptideStub({ name: isRecord(input) ? asString(input.name) ?? "" : "" });
+      return finalizeLookupPeptideResult(
+        lookupPeptideStub({ name: isRecord(input) ? asString(input.name) ?? "" : "" })
+      );
     case "get_education":
       return getEducationStub({ topic_id: "" });
   }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FAQ, VIA_CURA_DRAFT_BANNER } from "../copy";
+import { FAQ, FAQ_KILL_SWITCH_LINES, VIA_CURA_DRAFT_BANNER } from "../copy";
 import {
   assembleFourPartAnswer,
   assembleProtocolListingText,
@@ -26,11 +26,27 @@ describe("refuse helpers", () => {
     expect(text.toLowerCase()).not.toContain("prescribed");
   });
 
-  it("refuses Semaglutide / GLP-1 recommendation asks", () => {
+  it("refuses Semaglutide / excluded GLP-1 adjacency, not broad educational GLP-1", () => {
     expect(detectSafetyRefuse("Should I take semaglutide?")).toBe("semaglutide");
+    expect(detectSafetyRefuse("Is Wegovy in scope?")).toBe("semaglutide");
+    expect(detectSafetyRefuse("excluded GLP-1 recommendations")).toBe("semaglutide");
+    expect(detectSafetyRefuse("What is a GLP-1 and how does the pathway work?")).toBeNull();
     const text = assembleSafetyRefuseText({ role: "consumer", kind: "semaglutide" });
     expect(text).toContain(FAQ.semaglutide);
     expect(text).not.toMatch(/retatrutide.*stack/i);
+    expect(text).not.toContain(VIA_CURA_DRAFT_BANNER);
+  });
+
+  it("joins the five Lex-cleared kill-switch FAQ lines for display", () => {
+    expect(FAQ.killSwitchLines).toEqual(FAQ_KILL_SWITCH_LINES);
+    expect(FAQ.killSwitchLines).toHaveLength(5);
+    expect(FAQ.killSwitch).toBe(FAQ_KILL_SWITCH_LINES.join("\n"));
+    expect(killSwitchFaqExplanation()).toBe(FAQ.killSwitch);
+    expect(FAQ.killSwitch).toContain("temporarily unavailable");
+    expect(FAQ.killSwitch).toContain("Do not change products or amounts");
+    expect(FAQ.killSwitch).toContain("ViaConnect clinician or licensed healthcare provider");
+    expect(FAQ.killSwitch).toContain("988 (US Suicide and Crisis Lifeline)");
+    expect(FAQ.killSwitch).toContain("not a diagnosis or prescription");
   });
 
   it("builds a 4-part tool-fail refuse without prescribed wording", () => {
@@ -67,7 +83,8 @@ describe("refuse helpers", () => {
         },
       ],
     });
-    expect(VIA_CURA_DRAFT_BANNER).toBe("DRAFT — human send required");
+    expect(VIA_CURA_DRAFT_BANNER).toBe("DRAFT ONLY — human send required");
+    expect(text.startsWith(VIA_CURA_DRAFT_BANNER)).toBe(true);
     expect(text).toContain("MTHFR+");
     expect(text.toLowerCase()).toContain("already on your protocol");
     expect(text).toContain("engine listing: 1 capsule");
@@ -83,5 +100,17 @@ describe("refuse helpers", () => {
     });
     expect(text.toLowerCase()).not.toContain("prescribed");
     expect(text).toContain("already listed");
+    expect(text).not.toContain(VIA_CURA_DRAFT_BANNER);
+  });
+
+  it("prepends ViaCura draft banner on clinician refuse / static assemble", () => {
+    const refuse = assembleToolRefuseText({
+      role: "naturopath",
+      failedTools: ["lookup_peptide"],
+      requestId: "req-clin",
+    });
+    expect(refuse.startsWith(VIA_CURA_DRAFT_BANNER)).toBe(true);
+    const safety = assembleSafetyRefuseText({ role: "practitioner", kind: "new_dose" });
+    expect(safety.startsWith(VIA_CURA_DRAFT_BANNER)).toBe(true);
   });
 });

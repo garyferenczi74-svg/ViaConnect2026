@@ -98,7 +98,7 @@ Keeps existing gates:
 
 **Stage A adds** (design only until PASS): retriever call, tool-router call, assembler that refuses when tools fail.
 
-**Kill switch (named before first code PR):** `LLM_GROUNDED_CHAT_ENABLED` — when false, FAQ-only path (see HIPAA-OPS); leave today’s non-grounded advisor behavior / FAQ as fallback. Do not leave the flag unnamed in the first Stay DRAFT PR.
+**Kill switch (named before first code PR):** `LLM_GROUNDED_CHAT_ENABLED` — when **false** → **legacy** advisor stream (today’s Claude path). FAQ-only path = provider outage / explicit ops kill — **not** the default-off meaning (see HIPAA-OPS). Do not leave the flag unnamed in the first Stay DRAFT PR.
 
 ### 3. Retriever
 
