@@ -21,6 +21,19 @@ export {
   formatAllowlistSourceLine,
   mergeEducationSourceLines,
 } from "./retriever-cites";
+export {
+  STAGE_A_AUTHORITIES_ALLOWLIST_MAX,
+  STAGE_A_AUTHORITIES_CITE_ALLOWLIST,
+  STAGE_A_RETRIEVER_COMBINED_ALLOWLIST_MAX,
+  citesFromApprovedAuthorityRows,
+  loadApprovedAuthorityCites,
+} from "./authorities-cites";
+export {
+  STAGE_A_HOUNDDOG_URL_CITE_MAX,
+  STAGE_A_HOUNDDOG_URL_CITES_ENABLED,
+  citesFromHounddogResearchRows,
+  loadHounddogUrlCites,
+} from "./hounddog-url-cites";
 export { resolveGroundedChatTurn, maybeGroundedStaticStream } from "./chat-stub";
 export { streamStaticAdvisorAnswer } from "./static-stream";
 export {

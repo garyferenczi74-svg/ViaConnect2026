@@ -39,6 +39,7 @@ export const STAGE_A_RETRIEVER_ALLOWLIST = [
   ...STAGE_A_EDUCATION_ALLOWLIST,
 ] as const;
 
+/** Edu + safety_never_say slice. Combined + authorities ≤35 is a separate NEW GATE. */
 export const STAGE_A_RETRIEVER_ALLOWLIST_MAX = 20;
 
 export type StageASafetyNeverSayId = (typeof STAGE_A_SAFETY_NEVER_SAY_IDS)[number];

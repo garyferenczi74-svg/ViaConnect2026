@@ -106,6 +106,7 @@ Keeps existing gates:
 - Index versioned chunks per `02-rag-schema/DOCUMENT-SCHEMA.md`.
 - Return chunk ids + citation objects into the assembler. Never silent uncited claims for protocol / interaction facts.
 - Stage A allowlist retriever cites feed Sources on **education success only** (cite_id + label; empty → no phantom cites; flag off).
+- Research Hub → allowlisted education/cite sources only (`auth:…` from approved+active `authorities_sources`, ≤15; optional Hounddog URL cites ≤10 default OFF). cite≠dose; engines SSOT. edu+safety ≤20 unchanged; combined ≤35. Expanding past those caps needs a **NEW GATE**. Flag off.
 
 ### 4. Tool router
 
@@ -117,7 +118,7 @@ Allowlist only (see `03-tools/TOOL-CONTRACTS.md`):
 | `check_interactions` | Interaction engine |
 | `lookup_snp` | Genetics / NutrigenDX surfaces |
 | `lookup_peptide` | Peptide search + PeptideIQ evidence |
-| `get_education` | Optional topic / KB education — **wired** (flag off): READ `peptide_education_entries` + first RAG education/safety allowlist ≤20 |
+| `get_education` | Optional topic / KB education — **wired** (flag off): READ `peptide_education_entries` + first RAG education/safety allowlist ≤20 + Research Hub cite-only Sources (`authorities_sources` ≤15; optional Hounddog URLs ≤10 default OFF) |
 
 **Refuse-if-tool-fails** is mandatory for any claim that depends on that tool.
 

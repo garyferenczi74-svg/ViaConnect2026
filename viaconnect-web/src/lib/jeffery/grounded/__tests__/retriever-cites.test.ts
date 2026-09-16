@@ -107,6 +107,8 @@ function educationCiteTurn(
     userId: "user-1",
     requestId: "req-edu-cites",
     getEducationAssemble: async () => SS31_OK,
+    loadAuthorityCites: async () => [],
+    loadHounddogUrlCites: async () => [],
     ...extra,
   });
 }
@@ -431,7 +433,7 @@ describe("chat-stub retriever cites — education success only", () => {
       role: "consumer",
       userId: "user-1",
       requestId: "req-edu-cites-off",
-      getEducationAssemble: async () => SERMORELIN_OK,
+      getEducationAssemble: async () => SS31_OK,
       retrieveChunks: async () => ({
         chunks: [EXTRA_EDU_CHUNK],
         index_version: "test-off",

@@ -12,7 +12,7 @@ import {
   VIA_CURA_DRAFT_BANNER,
 } from "./copy";
 import { isAllowlistedNonPeptide } from "@/lib/peptides/educationEntryFields";
-import { mergeEducationSourceLines } from "./retriever-cites";
+import { mergeEducationSourceLines, type SourceCite } from "./retriever-cites";
 import type {
   AdvisorChatRole,
   CheckInteractionsData,
@@ -404,6 +404,7 @@ function assembleEducationAlreadyListed(data: GetEducationData): string {
  * Four-part restatement of GetEducationData. Lex frame EXACT + stored field labels
  * and cite_ids only. Retriever chunks append Sources as cite_id + label
  * (education success only; never chunk.text / doses). Empty chunks → no extras.
+ * Research Hub authorities / optional Hounddog URLs append cite_id + label only.
  * No diagnose / prescribe / dose / invent monograph /
  * Semaglutide recommend / safe-to-take / stack coaching.
  */
@@ -413,6 +414,8 @@ export function assembleEducationListingText(input: {
   sourceRoute: string;
   includeDisclaimer?: boolean;
   retrieverChunks?: RetrieverChunk[];
+  authorityCites?: SourceCite[];
+  hounddogUrlCites?: SourceCite[];
 }): string {
   return assembleFourPartAnswer(
     {
@@ -422,6 +425,8 @@ export function assembleEducationListingText(input: {
         sourceRoute: input.sourceRoute,
         toolCitations: input.data.citations,
         retrieverChunks: input.retrieverChunks,
+        authorityCites: input.authorityCites,
+        hounddogUrlCites: input.hounddogUrlCites,
       }),
       nextAction: PROTOCOL_NEXT_ACTION,
     },

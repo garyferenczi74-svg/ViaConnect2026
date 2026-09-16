@@ -21,7 +21,10 @@ import {
   joinAssembledListingBlocks,
 } from "./refuse";
 import type { StreamOptions, StreamResult } from "@/lib/jeffery/advisor-stream";
+import { loadApprovedAuthorityCites } from "./authorities-cites";
+import { loadHounddogUrlCites } from "./hounddog-url-cites";
 import { retrieveGroundedChunks } from "./retriever";
+import type { SourceCite } from "./retriever-cites";
 import { streamStaticAdvisorAnswer } from "./static-stream";
 import { runRequiredTools } from "./tool-router";
 import type {
@@ -53,6 +56,10 @@ export interface ResolveGroundedChatInput {
   getEducationAssemble?: GroundedToolContext["getEducationAssemble"];
   /** Test/injection seam. Production uses Stage A allowlist retriever. */
   retrieveChunks?: (query: RetrieverQuery) => Promise<RetrieverResult>;
+  /** Test/injection seam. Production READ approved+active authorities_sources. */
+  loadAuthorityCites?: () => Promise<SourceCite[]>;
+  /** Test/injection seam. Production default OFF — no Hounddog URL cites. */
+  loadHounddogUrlCites?: () => Promise<SourceCite[]>;
 }
 
 function isToolError(value: { ok: boolean }): value is ToolError {
@@ -196,6 +203,18 @@ export async function resolveGroundedChatTurn(
   }
 
   if (education && education.ok === true) {
+    let authorityCites: SourceCite[] = [];
+    let hounddogUrlCites: SourceCite[] = [];
+    try {
+      authorityCites = await (input.loadAuthorityCites ?? loadApprovedAuthorityCites)();
+    } catch {
+      authorityCites = [];
+    }
+    try {
+      hounddogUrlCites = await (input.loadHounddogUrlCites ?? loadHounddogUrlCites)();
+    } catch {
+      hounddogUrlCites = [];
+    }
     listingBlocks.push(
       assembleEducationListingText({
         role: input.role,
@@ -203,6 +222,8 @@ export async function resolveGroundedChatTurn(
         sourceRoute: education.route,
         // Cite-only on education success. Protocol/interactions/snp/peptide omit these.
         retrieverChunks,
+        authorityCites,
+        hounddogUrlCites,
       })
     );
   }
