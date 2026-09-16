@@ -119,8 +119,10 @@ Return drug / supplement / herb / recommendation conflicts from the **interactio
 | Preference | Route | Notes |
 | --- | --- | --- |
 | Primary | `POST /api/ai/check-interactions` | Body: `userId`, `medications`, `supplements`, `recommendations`, `allergies` |
-| Cached / evaluate | `GET` or `POST /api/interactions/evaluate` | Uses `user_interaction_cache` when present |
+| Cached / evaluate | `GET` or `POST /api/interactions/evaluate` | Different finding shape — **not** a drop-in twin; no blind map into `CheckInteractionsData` |
 | Gate | `runProtocolGate` inside generate-protocol | Not called directly by LLM; engine-side |
+
+**Chat path (Stage A wrap):** `check_interactions` is wired in-process on grounded chat (Claude+local+floor assemble + `blockedProducts`; no HTTP loopback). Flag `LLM_GROUNDED_CHAT_ENABLED` stays default **false**. Soft-empty + `error` → `ok:false` refuse.
 
 ### Contract
 
@@ -132,6 +134,8 @@ export interface CheckInteractionsInput {
   /** Optional; when set, engine may persist + notify */
   user_id?: string;
   allergies?: string[];
+  /** Asked candidate under discussion — never LLM-authored; no dose strings. */
+  candidate?: string[];
 }
 
 export type InteractionSeverity = "major" | "moderate" | "minor" | "synergistic";
@@ -161,12 +165,12 @@ export type CheckInteractionsResult = ToolResult<CheckInteractionsData>;
 ### Request mapping to live API
 
 ```ts
-// Tool router → POST /api/ai/check-interactions
+// Tool router → in-process check-interactions assemble (same body as POST /api/ai/check-interactions)
 {
   userId: input.user_id,
   medications: input.meds,
   supplements: input.herbs.length ? [...input.stack, ...input.herbs] : input.stack,
-  recommendations: [], // or split stack vs recommendations explicitly
+  recommendations: input.candidate ?? [], // asked product/peptide under discussion; never LLM-authored
   allergies: input.allergies ?? []
 }
 ```
@@ -176,6 +180,7 @@ export type CheckInteractionsResult = ToolResult<CheckInteractionsData>;
 - Empty meds with engine early-return `{ interactions: [] }` is **valid**, not a failure.  
 - Claude upstream failure that falls back to local floor is OK if payload validates.  
 - Timeout / 5xx with no usable payload → `upstream_*` → **refuse**.
+- Soft-empty arrays plus `error` (route/assemble catch) → `ok:false` (`upstream_5xx` / `malformed_payload`), never “no conflicts.”
 
 ### Refuse-if-fails
 

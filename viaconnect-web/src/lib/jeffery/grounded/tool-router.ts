@@ -1,17 +1,21 @@
 /**
  * Allowlisted Stage A tool router.
  * get_protocol reads advisor context / stored protocol only.
+ * check_interactions is live in-process (Claude+local+floor assemble; no HTTP loopback).
  * allow_generate is hard false (never silent generate-protocol).
- * Other tools return ok:false not_implemented so the refuse path fires.
+ * SNP / peptide / education still return ok:false not_implemented so the refuse path fires.
  *
- * Retatrutide lock (comment only; this stub does not invent routes or stacks):
+ * Retatrutide lock (comment only; peptide stub does not invent routes or stacks):
  * injectable-only, never stacked. Semaglutide / excluded GLP-1 stay blocked.
  */
 
+import {
+  buildCheckInteractionsInputFromContext,
+  checkInteractionsLive,
+} from "./check-interactions-wrap";
 import { preparePeptideToolPayload } from "./strip-peptide-delivery";
 import type {
   CheckInteractionsInput,
-  CheckInteractionsResult,
   GetEducationInput,
   GetEducationResult,
   GetProtocolData,
@@ -119,6 +123,11 @@ function itemsFromStoredProtocol(payload: StoredProtocolPayload): ProtocolItem[]
   return items;
 }
 
+export function protocolItemsFromContext(ctx: GroundedToolContext): ProtocolItem[] {
+  const storedItems = ctx.storedProtocol ? itemsFromStoredProtocol(ctx.storedProtocol) : [];
+  return storedItems.length ? storedItems : itemsFromAdvisorContext(ctx.advisorContextVariables);
+}
+
 function itemsFromAdvisorContext(vars: Record<string, string> | undefined): ProtocolItem[] {
   if (!vars) return [];
   const raw = vars.currentSupplements?.trim();
@@ -164,8 +173,7 @@ export function getProtocolFromContext(
     };
   }
 
-  const storedItems = ctx.storedProtocol ? itemsFromStoredProtocol(ctx.storedProtocol) : [];
-  const contextItems = storedItems.length ? storedItems : itemsFromAdvisorContext(ctx.advisorContextVariables);
+  const contextItems = protocolItemsFromContext(ctx);
   if (!contextItems.length) {
     return {
       ok: false,
@@ -196,9 +204,7 @@ export function getProtocolFromContext(
   };
 }
 
-export function checkInteractionsStub(_input: CheckInteractionsInput): CheckInteractionsResult {
-  return notImplemented("POST /api/ai/check-interactions", "check_interactions");
-}
+export { checkInteractionsLive } from "./check-interactions-wrap";
 
 export function lookupSnpStub(_input: LookupSnpInput): LookupSnpResult {
   return notImplemented("GET /api/genetics/variants", "lookup_snp");
@@ -237,11 +243,34 @@ export function getEducationStub(_input: GetEducationInput): GetEducationResult 
 
 export type RoutedToolResult = ToolResult<unknown>;
 
-export function routeGroundedTool(
+function readStringArray(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const names = value.filter((v): v is string => typeof v === "string");
+  return names.length ? names : undefined;
+}
+
+function partialCheckInteractionsInput(input: unknown): Partial<CheckInteractionsInput> | undefined {
+  if (!isRecord(input)) return undefined;
+  const partial: Partial<CheckInteractionsInput> = {};
+  const stack = readStringArray(input.stack);
+  const meds = readStringArray(input.meds);
+  const herbs = readStringArray(input.herbs);
+  const candidate = readStringArray(input.candidate);
+  const allergies = readStringArray(input.allergies);
+  if (stack) partial.stack = stack;
+  if (meds) partial.meds = meds;
+  if (herbs) partial.herbs = herbs;
+  if (candidate) partial.candidate = candidate;
+  if (allergies) partial.allergies = allergies;
+  if (typeof input.user_id === "string") partial.user_id = input.user_id;
+  return Object.keys(partial).length ? partial : undefined;
+}
+
+export async function routeGroundedTool(
   name: GroundedToolName,
   ctx: GroundedToolContext,
   input?: unknown
-): RoutedToolResult {
+): Promise<RoutedToolResult> {
   switch (name) {
     case "get_protocol": {
       const parsed: GetProtocolInput = {
@@ -254,7 +283,14 @@ export function routeGroundedTool(
       return getProtocolFromContext(parsed, ctx);
     }
     case "check_interactions":
-      return checkInteractionsStub({ stack: [], meds: [], herbs: [] });
+      return checkInteractionsLive(
+        buildCheckInteractionsInputFromContext(
+          partialCheckInteractionsInput(input),
+          ctx,
+          protocolItemsFromContext(ctx)
+        ),
+        ctx
+      );
     case "lookup_snp":
       return lookupSnpStub({ rsid: "" });
     case "lookup_peptide":
@@ -266,10 +302,10 @@ export function routeGroundedTool(
   }
 }
 
-export function runRequiredTools(
+export async function runRequiredTools(
   required: GroundedToolName[],
   ctx: GroundedToolContext
-): Record<GroundedToolName, RoutedToolResult | undefined> {
+): Promise<Record<GroundedToolName, RoutedToolResult | undefined>> {
   const out: Record<GroundedToolName, RoutedToolResult | undefined> = {
     get_protocol: undefined,
     check_interactions: undefined,
@@ -279,7 +315,7 @@ export function runRequiredTools(
   };
   for (const name of required) {
     if (!GROUNDED_TOOL_ALLOWLIST.includes(name)) continue;
-    out[name] = routeGroundedTool(name, ctx);
+    out[name] = await routeGroundedTool(name, ctx);
   }
   return out;
 }

@@ -27,6 +27,7 @@ export {
   isAllowGenerateHardFalse,
   finalizeLookupPeptideResult,
   lookupPeptideSuccessFixture,
+  checkInteractionsLive,
   GROUNDED_TOOL_ALLOWLIST,
 } from "./tool-router";
 export type {
