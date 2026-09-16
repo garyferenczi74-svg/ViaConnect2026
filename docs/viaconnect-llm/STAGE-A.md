@@ -149,6 +149,7 @@ Blocks: new diagnoses, new doses, pregnancy / pediatric disease treatment, Semag
 
 ## Out of scope for Stage A
 
+- MediSearch / Prove It / Suppie external quality feeds are CAQ compare only — not Hannah RAG / grounded Sources. Flag `CAQ_MEDISEARCH_ENABLED` default false.
 - FormaVision / GLB / body mesh.
 - Foundation pretrain.
 - On-device 70B for every consumer.
