@@ -18,6 +18,7 @@ export {
   assembleToolRefuseText,
   assembleSafetyRefuseText,
   assembleSnpListingText,
+  assemblePeptideListingText,
   detectSafetyRefuse,
 } from "./refuse";
 export { inferRequiredTools } from "./intent";
@@ -30,6 +31,7 @@ export {
   lookupPeptideSuccessFixture,
   checkInteractionsLive,
   lookupSnpLive,
+  lookupPeptideLive,
   GROUNDED_TOOL_ALLOWLIST,
 } from "./tool-router";
 export type {

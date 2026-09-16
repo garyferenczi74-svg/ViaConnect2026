@@ -16,6 +16,7 @@ import type {
   CheckInteractionsData,
   GroundedToolName,
   InteractionFinding,
+  LookupPeptideData,
   LookupSnpData,
   ProtocolItem,
   ToolError,
@@ -92,6 +93,14 @@ export function explanationForToolFailure(
 ): string {
   if (error?.code === "not_found" && failedTools?.includes("lookup_snp")) {
     return FAQ.genotypeMissing;
+  }
+  if (
+    failedTools?.includes("lookup_peptide") &&
+    (error?.code === "not_found" ||
+      error?.code === "refuse_required" ||
+      error?.code === "validation")
+  ) {
+    return FAQ.outOfScope;
   }
   if (error?.code === "not_found") {
     return FAQ.newDose;
@@ -270,6 +279,10 @@ export function assembleInteractionsListingText(input: {
 export const SNP_LISTING_EXPLANATION =
   "Here is what ViaConnect has on file for that genetic result.";
 
+/** Lex-cleared explanation frame (2026-09-16). Do not rewrite. */
+export const PEPTIDE_LISTING_EXPLANATION =
+  "Here is what ViaConnect has on file for that peptide education.";
+
 function assembleSnpAlreadyListed(data: LookupSnpData): string {
   const genotypeToken = data.genotype === null ? "null" : data.genotype;
   const lines = [
@@ -304,7 +317,52 @@ export function assembleSnpListingText(input: {
   );
 }
 
-/** Protocol then interactions then snp. Banner stays once at the top. */
+function assemblePeptideAlreadyListed(data: LookupPeptideData): string {
+  const listedNames = Array.isArray(data.listed_names)
+    ? data.listed_names.filter((name) => typeof name === "string" && name.trim())
+    : [];
+  const compoundClass =
+    data.entry_key === "edu-peptideiq-topic-map"
+      ? "index"
+      : data.is_peptide === false
+        ? "non-peptide"
+        : "peptide";
+  const lines = [
+    `name: ${data.name}`,
+    engineFieldLine("slug", data.slug),
+    `educational_only: ${data.educational_only}`,
+    engineFieldLine("summary", data.summary),
+    data.pathway_tags.length ? `pathway_tags: ${data.pathway_tags.join(", ")}` : null,
+    engineFieldLine("entry_key", data.entry_key),
+    `compound_class: ${compoundClass}`,
+    listedNames.length ? `listed: ${listedNames.join(", ")}` : null,
+  ].filter((line): line is string => line !== null);
+  return `- ${lines.join("\n  ")}`;
+}
+
+/**
+ * Four-part restatement of LookupPeptideData. Field labels + Lex frame only.
+ * No prescribe / dose / titration / stack / oral Retatrutide / safe-to-take /
+ * Semaglutide recommend / mcg-mg coaching. Consumer copy says listed, not Rx.
+ */
+export function assemblePeptideListingText(input: {
+  role: AdvisorChatRole;
+  data: LookupPeptideData;
+  sourceRoute: string;
+  includeDisclaimer?: boolean;
+}): string {
+  return assembleFourPartAnswer(
+    {
+      explanation: PEPTIDE_LISTING_EXPLANATION,
+      alreadyListed: assemblePeptideAlreadyListed(input.data),
+      sources: [input.sourceRoute],
+      nextAction: PROTOCOL_NEXT_ACTION,
+    },
+    { role: input.role, includeDisclaimer: input.includeDisclaimer }
+  );
+}
+
+/** Protocol then interactions then snp then peptide. Banner stays once at the top. */
 export function joinAssembledListingBlocks(blocks: string[]): string {
   if (blocks.length === 0) return "";
   if (blocks.length === 1) return blocks[0];

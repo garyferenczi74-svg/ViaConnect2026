@@ -1,8 +1,8 @@
 /**
  * Stage A grounded-chat orchestrator.
  * Flag OFF → legacy (today's stream). Flag ON → stub retriever + refuse-if-tool-fails.
- * Success: get_protocol / check_interactions / lookup_snp restatement
- * (protocol → interactions → snp). Other required tools still fail-closed.
+ * Success: get_protocol / check_interactions / lookup_snp / lookup_peptide restatement
+ * (protocol → interactions → snp → peptide). Other required tools still fail-closed.
  * Marshall scan stays on the host route.
  */
 
@@ -11,6 +11,7 @@ import { isLlmGroundedChatEnabled } from "./flag";
 import { inferRequiredTools } from "./intent";
 import {
   assembleInteractionsListingText,
+  assemblePeptideListingText,
   assembleProtocolListingText,
   assembleSafetyRefuseText,
   assembleSnpListingText,
@@ -29,6 +30,7 @@ import type {
   GroundedToolContext,
   GroundedToolName,
   GroundedTurn,
+  LookupPeptideData,
   LookupSnpData,
   ToolError,
 } from "./types";
@@ -42,6 +44,7 @@ export interface ResolveGroundedChatInput {
   requestId: string;
   checkInteractionsAssemble?: GroundedToolContext["checkInteractionsAssemble"];
   lookupSnpAssemble?: GroundedToolContext["lookupSnpAssemble"];
+  lookupPeptideAssemble?: GroundedToolContext["lookupPeptideAssemble"];
 }
 
 function isToolError(value: { ok: boolean }): value is ToolError {
@@ -64,6 +67,7 @@ export async function resolveGroundedChatTurn(
     message: input.message,
     checkInteractionsAssemble: input.checkInteractionsAssemble,
     lookupSnpAssemble: input.lookupSnpAssemble,
+    lookupPeptideAssemble: input.lookupPeptideAssemble,
   };
 
   await retrieveGroundedChunks({
@@ -122,8 +126,10 @@ export async function resolveGroundedChatTurn(
   const protocol = results.get_protocol;
   const interactions = results.check_interactions;
   const snp = results.lookup_snp;
+  const peptide = results.lookup_peptide;
   const interactionsOk = Boolean(interactions && interactions.ok === true);
   const snpOk = Boolean(snp && snp.ok === true);
+  const peptideOk = Boolean(peptide && peptide.ok === true);
 
   if (protocol && protocol.ok === true) {
     const data = protocol.data as GetProtocolData;
@@ -133,7 +139,7 @@ export async function resolveGroundedChatTurn(
         items: data.items,
         protocolName: data.protocol_name,
         sourceRoute: protocol.route,
-        includeDisclaimer: !interactionsOk && !snpOk,
+        includeDisclaimer: !interactionsOk && !snpOk && !peptideOk,
       })
     );
   }
@@ -144,7 +150,7 @@ export async function resolveGroundedChatTurn(
         role: input.role,
         data: interactions.data as CheckInteractionsData,
         sourceRoute: interactions.route,
-        includeDisclaimer: !snpOk,
+        includeDisclaimer: !snpOk && !peptideOk,
       })
     );
   }
@@ -155,6 +161,17 @@ export async function resolveGroundedChatTurn(
         role: input.role,
         data: snp.data as LookupSnpData,
         sourceRoute: snp.route,
+        includeDisclaimer: !peptideOk,
+      })
+    );
+  }
+
+  if (peptide && peptide.ok === true) {
+    listingBlocks.push(
+      assemblePeptideListingText({
+        role: input.role,
+        data: peptide.data as LookupPeptideData,
+        sourceRoute: peptide.route,
       })
     );
   }

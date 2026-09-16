@@ -7,6 +7,7 @@ import { inferRequiredTools } from "../intent";
 import {
   getProtocolFromContext,
   isAllowGenerateHardFalse,
+  getEducationStub,
   lookupPeptideStub,
   lookupSnpLive,
   checkInteractionsLive,
@@ -141,7 +142,7 @@ describe("tool router stub locks", () => {
     }
   });
 
-  it("unwired tools return not_implemented so the refuse path fires", async () => {
+  it("education stays not_implemented; peptide stub remains refuse-closed", async () => {
     const emptyMeds = await checkInteractionsLive(
       { stack: [], meds: [], herbs: [] },
       { userId: "user-1", role: "consumer", requestId: "r-empty-meds" }
@@ -158,6 +159,7 @@ describe("tool router stub locks", () => {
     );
     expect(snpMissing.ok).toBe(false);
     expect(lookupPeptideStub({ name: "retatrutide" }).ok).toBe(false);
+    expect(getEducationStub({ topic_id: "edu-retatrutide" }).ok).toBe(false);
   });
 
   it("retriever stub returns empty chunks", async () => {

@@ -140,6 +140,12 @@ export interface LookupPeptideData {
   summary: string;
   pathway_tags: string[];
   evidence_record_ids?: string[];
+  entry_key?: string | null;
+  /** false for labeled non-peptides; never teach those as peptides. */
+  is_peptide?: boolean;
+  /** Listed catalog names only — never Rx dose / vial / frequency coaching. */
+  listed_names?: string[];
+  /** Present only if listed endpoint returns rows — names only, not model-authored. */
   prescribed?: unknown;
   deliveryOptions_raw?: unknown;
   blocked_topics?: string[];
@@ -237,6 +243,41 @@ export interface GroundedToolContext {
       genotype: string;
       impactSummary: string;
     }>;
+    error?: string;
+  }>;
+  /**
+   * Test/injection seam for the in-process lookup_peptide assemble.
+   * Production omits this and uses search_peptides + consumer education + optional listed.
+   */
+  lookupPeptideAssemble?: (input: {
+    userId: string;
+    searchQuery: string;
+    name?: string;
+    slug?: string;
+  }) => Promise<{
+    loadStatus: "ok" | "unauthorized" | "error";
+    searchVerified: boolean;
+    searchFailed: boolean;
+    queryTooShort?: boolean;
+    results: Array<{
+      peptide_id: string;
+      product_name: string;
+      category_name: string | null;
+      evidence_level: string | null;
+      genex_panel: string | null;
+      match_score: number | null;
+      deliveryOptions?: unknown;
+    }>;
+    education: {
+      entryKey: string;
+      title: string;
+      isPeptide: boolean;
+      mechanism: string | null;
+      evidenceGrade: string;
+    } | null;
+    educationFailed?: boolean;
+    listedNames: string[];
+    listedFailed?: boolean;
     error?: string;
   }>;
 }
