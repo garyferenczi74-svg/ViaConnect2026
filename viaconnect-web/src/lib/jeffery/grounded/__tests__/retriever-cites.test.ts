@@ -86,16 +86,30 @@ function storedRow(
   };
 }
 
-const SERMORELIN_OK: GetEducationEnginePayload = {
+/** edu-ss31 is education-only (does not trip PEPTIDE_RE). */
+const SS31_OK: GetEducationEnginePayload = {
   loadStatus: "ok",
-  topicId: "edu-sermorelin",
+  topicId: "edu-ss31",
   education: storedRow({
-    entryKey: "edu-sermorelin",
-    title: "Sermorelin",
-    mechanism: "Stored Sermorelin mechanism on file.",
+    entryKey: "edu-ss31",
+    title: "SS-31",
+    mechanism: "Stored SS-31 mechanism on file.",
     pmids: ["12345678"],
   }),
 };
+
+function educationCiteTurn(
+  extra: Partial<Parameters<typeof resolveGroundedChatTurn>[0]> = {}
+) {
+  return resolveGroundedChatTurn({
+    message: "Show the ViaConnect education on file for edu-ss31",
+    role: "consumer",
+    userId: "user-1",
+    requestId: "req-edu-cites",
+    getEducationAssemble: async () => SS31_OK,
+    ...extra,
+  });
+}
 
 describe("retriever cites merge (cite≠dose)", () => {
   it("maps education chunks to cite_id + label and omits safety_never_say + empty", () => {
@@ -185,12 +199,8 @@ describe("chat-stub retriever cites — education success only", () => {
 
   it("education success + allowlist chunks → Sources include deduped cite_id/labels", async () => {
     process.env[FLAG] = "true";
-    const turn = await resolveGroundedChatTurn({
-      message: "Show the ViaConnect education on file for edu-sermorelin",
-      role: "consumer",
-      userId: "user-1",
+    const turn = await educationCiteTurn({
       requestId: "req-edu-cites-ok",
-      getEducationAssemble: async () => SERMORELIN_OK,
       retrieveChunks: async () => ({
         chunks: [TOOL_PMID_CHUNK, EXTRA_EDU_CHUNK, SAFETY_CHUNK],
         index_version: "test-allowlist-cites",
@@ -200,7 +210,7 @@ describe("chat-stub retriever cites — education success only", () => {
     if (turn.kind !== "static") return;
     expect(turn.reason).toBe("assembled_from_tools");
     expect(turn.text).toContain(EDUCATION_LISTING_EXPLANATION);
-    expect(turn.text).toContain("topic_id: edu-sermorelin");
+    expect(turn.text).toContain("topic_id: edu-ss31");
     expect(turn.text).toContain("PMID 12345678");
     expect(turn.text).toContain("cite_id: pmid:87654321; label: PMID 87654321");
     expect(sourcesSection(turn.text).split("PMID 12345678").length - 1).toBe(1);
@@ -217,12 +227,8 @@ describe("chat-stub retriever cites — education success only", () => {
 
   it("empty retriever → no phantom cites; Lex education frame unchanged", async () => {
     process.env[FLAG] = "true";
-    const turn = await resolveGroundedChatTurn({
-      message: "Show the ViaConnect education on file for edu-sermorelin",
-      role: "consumer",
-      userId: "user-1",
+    const turn = await educationCiteTurn({
       requestId: "req-edu-cites-empty",
-      getEducationAssemble: async () => SERMORELIN_OK,
       retrieveChunks: async () => ({ chunks: [], index_version: "test-empty" }),
     });
     expect(turn.kind).toBe("static");
@@ -232,7 +238,7 @@ describe("chat-stub retriever cites — education success only", () => {
     expect(EDUCATION_LISTING_EXPLANATION).toBe(
       "Here is the ViaConnect education on file for that topic."
     );
-    expect(turn.text).toContain("text: Stored Sermorelin mechanism on file.");
+    expect(turn.text).toContain("text: Stored SS-31 mechanism on file.");
     expect(sourceBodies(turn.text)).toEqual([
       "peptide_education_entries / Stage A education allowlist",
       "PMID 12345678",
@@ -243,12 +249,8 @@ describe("chat-stub retriever cites — education success only", () => {
 
   it("failed retrieve matches empty — no phantom cites", async () => {
     process.env[FLAG] = "true";
-    const turn = await resolveGroundedChatTurn({
-      message: "Show the ViaConnect education on file for edu-sermorelin",
-      role: "consumer",
-      userId: "user-1",
+    const turn = await educationCiteTurn({
       requestId: "req-edu-cites-throw",
-      getEducationAssemble: async () => SERMORELIN_OK,
       retrieveChunks: async () => {
         throw new Error("retriever down");
       },
@@ -315,11 +317,11 @@ describe("chat-stub retriever cites — education success only", () => {
     };
 
     const protocol = await resolveGroundedChatTurn({
-      message: "Why is MTHFR+ on my protocol?",
+      message: "What is already listed on my protocol?",
       role: "consumer",
       userId: "user-1",
       requestId: "req-cites-protocol",
-      advisorContextVariables: { currentSupplements: "MTHFR+ (1 capsule daily)" },
+      advisorContextVariables: { currentSupplements: "NAD+ (1 capsule daily)" },
       retrieveChunks: async () => spray,
     });
     expect(protocol.kind).toBe("static");
@@ -425,7 +427,7 @@ describe("chat-stub retriever cites — education success only", () => {
   it("flag-off stays legacy; allow_generate stays hard false", async () => {
     delete process.env[FLAG];
     const turn = await resolveGroundedChatTurn({
-      message: "Show the ViaConnect education on file for edu-sermorelin",
+      message: "Show the ViaConnect education on file for edu-ss31",
       role: "consumer",
       userId: "user-1",
       requestId: "req-edu-cites-off",
