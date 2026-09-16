@@ -2,8 +2,9 @@
  * Allowlisted Stage A tool router.
  * get_protocol reads advisor context / stored protocol only.
  * check_interactions is live in-process (Claude+local+floor assemble; no HTTP loopback).
+ * lookup_snp is live in-process (hub variants + NutrigenDX helpers; no HTTP loopback).
  * allow_generate is hard false (never silent generate-protocol).
- * SNP / peptide / education still return ok:false not_implemented so the refuse path fires.
+ * Peptide / education still return ok:false not_implemented so the refuse path fires.
  *
  * Retatrutide lock (comment only; peptide stub does not invent routes or stacks):
  * injectable-only, never stacked. Semaglutide / excluded GLP-1 stay blocked.
@@ -13,6 +14,10 @@ import {
   buildCheckInteractionsInputFromContext,
   checkInteractionsLive,
 } from "./check-interactions-wrap";
+import {
+  buildLookupSnpInputFromContext,
+  lookupSnpLive,
+} from "./lookup-snp-wrap";
 import { preparePeptideToolPayload } from "./strip-peptide-delivery";
 import type {
   CheckInteractionsInput,
@@ -27,7 +32,6 @@ import type {
   LookupPeptideInput,
   LookupPeptideResult,
   LookupSnpInput,
-  LookupSnpResult,
   ProtocolBucket,
   ProtocolItem,
   StoredProtocolPayload,
@@ -205,10 +209,7 @@ export function getProtocolFromContext(
 }
 
 export { checkInteractionsLive } from "./check-interactions-wrap";
-
-export function lookupSnpStub(_input: LookupSnpInput): LookupSnpResult {
-  return notImplemented("GET /api/genetics/variants", "lookup_snp");
-}
+export { lookupSnpLive } from "./lookup-snp-wrap";
 
 /**
  * When lookup_peptide returns ok (live wrap or fixture), strip before assembler.
@@ -247,6 +248,15 @@ function readStringArray(value: unknown): string[] | undefined {
   if (!Array.isArray(value)) return undefined;
   const names = value.filter((v): v is string => typeof v === "string");
   return names.length ? names : undefined;
+}
+
+function partialLookupSnpInput(input: unknown): Partial<LookupSnpInput> | undefined {
+  if (!isRecord(input)) return undefined;
+  const partial: Partial<LookupSnpInput> = {};
+  if (typeof input.rsid === "string") partial.rsid = input.rsid;
+  if (typeof input.gene === "string") partial.gene = input.gene;
+  if (typeof input.user_id === "string") partial.user_id = input.user_id;
+  return Object.keys(partial).length ? partial : undefined;
 }
 
 function partialCheckInteractionsInput(input: unknown): Partial<CheckInteractionsInput> | undefined {
@@ -292,7 +302,7 @@ export async function routeGroundedTool(
         ctx
       );
     case "lookup_snp":
-      return lookupSnpStub({ rsid: "" });
+      return lookupSnpLive(buildLookupSnpInputFromContext(partialLookupSnpInput(input), ctx), ctx);
     case "lookup_peptide":
       return finalizeLookupPeptideResult(
         lookupPeptideStub({ name: isRecord(input) ? asString(input.name) ?? "" : "" })

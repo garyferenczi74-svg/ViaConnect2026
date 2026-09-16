@@ -16,6 +16,7 @@ import type {
   CheckInteractionsData,
   GroundedToolName,
   InteractionFinding,
+  LookupSnpData,
   ProtocolItem,
   ToolError,
 } from "./types";
@@ -85,7 +86,13 @@ export function explanationForSafety(kind: SafetyRefuseKind): string {
   }
 }
 
-export function explanationForToolFailure(error?: ToolError): string {
+export function explanationForToolFailure(
+  error?: ToolError,
+  failedTools?: GroundedToolName[]
+): string {
+  if (error?.code === "not_found" && failedTools?.includes("lookup_snp")) {
+    return FAQ.genotypeMissing;
+  }
   if (error?.code === "not_found") {
     return FAQ.newDose;
   }
@@ -143,7 +150,7 @@ export function assembleToolRefuseText(input: {
   const toolList = input.failedTools.join(", ") || "required tool";
   return assembleFourPartAnswer(
     {
-      explanation: explanationForToolFailure(input.error),
+      explanation: explanationForToolFailure(input.error, input.failedTools),
       alreadyListed: TOOLS_UNAVAILABLE,
       sources: input.failedTools.map((name) => `${name} (${input.error?.code ?? "unavailable"})`),
       nextAction:
@@ -207,7 +214,7 @@ export function assembleProtocolListingText(input: {
   );
 }
 
-function engineFieldLine(label: string, value: string | undefined): string | null {
+function engineFieldLine(label: string, value: string | undefined | null): string | null {
   if (typeof value !== "string" || !value.trim()) return null;
   return `${label}: ${value}`;
 }
@@ -259,7 +266,45 @@ export function assembleInteractionsListingText(input: {
   );
 }
 
-/** Protocol listing first, then interactions. Banner stays once at the top. */
+/** Lex-cleared explanation frame (2026-09-15). Do not rewrite. */
+export const SNP_LISTING_EXPLANATION =
+  "Here is what ViaConnect has on file for that genetic result.";
+
+function assembleSnpAlreadyListed(data: LookupSnpData): string {
+  const genotypeToken = data.genotype === null ? "null" : data.genotype;
+  const lines = [
+    `rsid: ${data.rsid}`,
+    engineFieldLine("gene", data.gene),
+    `genotype: ${genotypeToken}`,
+    engineFieldLine("panel_key", data.panel_key),
+    engineFieldLine("status", data.status),
+    engineFieldLine("educational_summary", data.educational_summary),
+  ].filter((line): line is string => line !== null);
+  return `- ${lines.join("\n  ")}`;
+}
+
+/**
+ * Four-part restatement of LookupSnpData. Field labels only.
+ * null / UNKNOWN / pending stay verbatim. No diagnose, prescribe, or safe-to-take.
+ */
+export function assembleSnpListingText(input: {
+  role: AdvisorChatRole;
+  data: LookupSnpData;
+  sourceRoute: string;
+  includeDisclaimer?: boolean;
+}): string {
+  return assembleFourPartAnswer(
+    {
+      explanation: SNP_LISTING_EXPLANATION,
+      alreadyListed: assembleSnpAlreadyListed(input.data),
+      sources: [input.sourceRoute],
+      nextAction: PROTOCOL_NEXT_ACTION,
+    },
+    { role: input.role, includeDisclaimer: input.includeDisclaimer }
+  );
+}
+
+/** Protocol then interactions then snp. Banner stays once at the top. */
 export function joinAssembledListingBlocks(blocks: string[]): string {
   if (blocks.length === 0) return "";
   if (blocks.length === 1) return blocks[0];

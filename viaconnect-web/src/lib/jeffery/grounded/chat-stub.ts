@@ -1,8 +1,9 @@
 /**
  * Stage A grounded-chat orchestrator.
  * Flag OFF → legacy (today's stream). Flag ON → stub retriever + refuse-if-tool-fails.
- * Success: get_protocol and/or check_interactions restatement (protocol block first).
- * Other required tools still fail-closed. Marshall scan stays on the host route.
+ * Success: get_protocol / check_interactions / lookup_snp restatement
+ * (protocol → interactions → snp). Other required tools still fail-closed.
+ * Marshall scan stays on the host route.
  */
 
 import { safeLog } from "@/lib/utils/safe-log";
@@ -12,6 +13,7 @@ import {
   assembleInteractionsListingText,
   assembleProtocolListingText,
   assembleSafetyRefuseText,
+  assembleSnpListingText,
   assembleToolRefuseText,
   detectSafetyRefuse,
   joinAssembledListingBlocks,
@@ -27,6 +29,7 @@ import type {
   GroundedToolContext,
   GroundedToolName,
   GroundedTurn,
+  LookupSnpData,
   ToolError,
 } from "./types";
 
@@ -38,6 +41,7 @@ export interface ResolveGroundedChatInput {
   storedProtocol?: GroundedToolContext["storedProtocol"];
   requestId: string;
   checkInteractionsAssemble?: GroundedToolContext["checkInteractionsAssemble"];
+  lookupSnpAssemble?: GroundedToolContext["lookupSnpAssemble"];
 }
 
 function isToolError(value: { ok: boolean }): value is ToolError {
@@ -59,6 +63,7 @@ export async function resolveGroundedChatTurn(
     requestId: input.requestId,
     message: input.message,
     checkInteractionsAssemble: input.checkInteractionsAssemble,
+    lookupSnpAssemble: input.lookupSnpAssemble,
   };
 
   await retrieveGroundedChunks({
@@ -116,7 +121,9 @@ export async function resolveGroundedChatTurn(
   const listingBlocks: string[] = [];
   const protocol = results.get_protocol;
   const interactions = results.check_interactions;
+  const snp = results.lookup_snp;
   const interactionsOk = Boolean(interactions && interactions.ok === true);
+  const snpOk = Boolean(snp && snp.ok === true);
 
   if (protocol && protocol.ok === true) {
     const data = protocol.data as GetProtocolData;
@@ -126,7 +133,7 @@ export async function resolveGroundedChatTurn(
         items: data.items,
         protocolName: data.protocol_name,
         sourceRoute: protocol.route,
-        includeDisclaimer: !interactionsOk,
+        includeDisclaimer: !interactionsOk && !snpOk,
       })
     );
   }
@@ -137,6 +144,17 @@ export async function resolveGroundedChatTurn(
         role: input.role,
         data: interactions.data as CheckInteractionsData,
         sourceRoute: interactions.route,
+        includeDisclaimer: !snpOk,
+      })
+    );
+  }
+
+  if (snp && snp.ok === true) {
+    listingBlocks.push(
+      assembleSnpListingText({
+        role: input.role,
+        data: snp.data as LookupSnpData,
+        sourceRoute: snp.route,
       })
     );
   }

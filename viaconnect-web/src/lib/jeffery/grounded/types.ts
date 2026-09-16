@@ -205,6 +205,40 @@ export interface GroundedToolContext {
     blockedProducts?: unknown;
     error?: string;
   }>;
+  /**
+   * Test/injection seam for the in-process lookup_snp assemble.
+   * Production omits this and uses loadHubVariants + NutrigenDX helpers.
+   */
+  lookupSnpAssemble?: (input: {
+    userId: string;
+    rsid?: string;
+    gene?: string;
+    consultNutrigen: boolean;
+  }) => Promise<{
+    loadStatus: "ok" | "unauthorized" | "error";
+    variants: Array<{
+      rsid: string;
+      gene: string | null;
+      genotype: string | null;
+      panel_key: string;
+      stored_panel_key: string | null;
+      status: string | null;
+      clinical_significance: string | null;
+      is_sample: boolean;
+      chip: string | null;
+    }>;
+    snpCountsUnknown?: boolean;
+    demoAccount?: boolean;
+    nutrigenAttempted?: boolean;
+    nutrigenFailed?: boolean;
+    nutrigenMarkers?: Array<{
+      gene: string;
+      rsid: string;
+      genotype: string;
+      impactSummary: string;
+    }>;
+    error?: string;
+  }>;
 }
 
 export interface RetrieverQuery {

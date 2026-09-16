@@ -229,18 +229,24 @@ describe("check_interactions live wrap", () => {
     expect(isAllowGenerateHardFalse()).toBe(true);
   });
 
-  it("flag-on SNP-only still fail-closes because lookup_snp is unwired", async () => {
+  it("flag-on SNP-only without an injected assemble fail-closes rather than inventing a genotype", async () => {
     process.env[FLAG] = "true";
     const turn = await resolveGroundedChatTurn({
       message: "What does rs1801133 mean on my genetic card?",
       role: "consumer",
       userId: "user-1",
-      requestId: "req-on-snp-stub",
+      requestId: "req-on-snp-no-inject",
+      lookupSnpAssemble: async () => ({
+        loadStatus: "error",
+        variants: [],
+        error: "hub load failed",
+      }),
     });
     expect(turn.kind).toBe("static");
     if (turn.kind !== "static") return;
     expect(turn.reason).toBe("tool_refuse");
     expect(turn.text).toContain(FAQ.toolFailed);
     expect(turn.requiredTools).toContain("lookup_snp");
+    expect(turn.text.toLowerCase()).not.toMatch(/\b(ct|tt|cc)\b/);
   });
 });

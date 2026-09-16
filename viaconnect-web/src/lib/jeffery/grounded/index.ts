@@ -17,6 +17,7 @@ export {
   assembleFourPartAnswer,
   assembleToolRefuseText,
   assembleSafetyRefuseText,
+  assembleSnpListingText,
   detectSafetyRefuse,
 } from "./refuse";
 export { inferRequiredTools } from "./intent";
@@ -28,6 +29,7 @@ export {
   finalizeLookupPeptideResult,
   lookupPeptideSuccessFixture,
   checkInteractionsLive,
+  lookupSnpLive,
   GROUNDED_TOOL_ALLOWLIST,
 } from "./tool-router";
 export type {

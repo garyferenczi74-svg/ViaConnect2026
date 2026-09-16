@@ -5,15 +5,17 @@ import {
   assembleInteractionsListingText,
   assembleProtocolListingText,
   assembleSafetyRefuseText,
+  assembleSnpListingText,
   assembleToolRefuseText,
   assertNoPrescribedWording,
   detectSafetyRefuse,
   explanationForToolFailure,
   INTERACTIONS_LISTING_EXPLANATION,
   joinAssembledListingBlocks,
+  SNP_LISTING_EXPLANATION,
   killSwitchFaqExplanation,
 } from "../refuse";
-import type { CheckInteractionsData } from "../types";
+import type { CheckInteractionsData, LookupSnpData } from "../types";
 
 describe("refuse helpers", () => {
   it("uses Lex FAQ strings and includes 988 US Suicide and Crisis Lifeline on SI", () => {
@@ -190,5 +192,109 @@ describe("refuse helpers", () => {
     expect(refuse.startsWith(VIA_CURA_DRAFT_BANNER)).toBe(true);
     const safety = assembleSafetyRefuseText({ role: "practitioner", kind: "new_dose" });
     expect(safety.startsWith(VIA_CURA_DRAFT_BANNER)).toBe(true);
+  });
+
+  it("restates lookup_snp field labels and keeps UNKNOWN / null verbatim", () => {
+    const data: LookupSnpData = {
+      rsid: "rs1799853",
+      gene: "CYP2C9",
+      genotype: "UNKNOWN",
+      panel_key: "genex_m",
+      status: "pending",
+      educational_summary: "",
+      citations: [],
+      loadStatus: "ok",
+    };
+    const text = assembleSnpListingText({
+      role: "consumer",
+      data,
+      sourceRoute: "GET /api/genetics/variants",
+    });
+    expect(SNP_LISTING_EXPLANATION).toBe(
+      "Here is what ViaConnect has on file for that genetic result."
+    );
+    expect(text).toContain(SNP_LISTING_EXPLANATION);
+    expect(text).toContain("rsid: rs1799853");
+    expect(text).toContain("gene: CYP2C9");
+    expect(text).toContain("genotype: UNKNOWN");
+    expect(text).toContain("status: pending");
+    expect(text).not.toMatch(/educational_summary:/);
+    expect(text.toLowerCase()).not.toMatch(
+      /diagnos|safe to take|prescribe|prescribed|normal|negative|clear/
+    );
+    expect(assertNoPrescribedWording(text)).toBe(true);
+
+    const nullText = assembleSnpListingText({
+      role: "consumer",
+      sourceRoute: "GET /api/genetics/variants",
+      data: { ...data, genotype: null, gene: "APOE", rsid: "rs429358" },
+    });
+    expect(nullText).toContain("genotype: null");
+    expect(nullText).toContain("gene: APOE");
+  });
+
+  it("uses FAQ.genotypeMissing when lookup_snp is not on file", () => {
+    const text = assembleToolRefuseText({
+      role: "consumer",
+      failedTools: ["lookup_snp"],
+      error: {
+        ok: false,
+        code: "not_found",
+        message: "lookup_snp not_found",
+        retryable: false,
+      },
+      requestId: "req-snp-miss",
+    });
+    expect(text).toContain(FAQ.genotypeMissing);
+    expect(explanationForToolFailure({ ok: false, code: "not_found", message: "x", retryable: false }, [
+      "lookup_snp",
+    ])).toBe(FAQ.genotypeMissing);
+  });
+
+  it("joins protocol then interactions then snp with the ViaCura banner once", () => {
+    const protocol = assembleProtocolListingText({
+      role: "naturopath",
+      protocolName: "ViaConnect protocol on file",
+      sourceRoute: "advisor.context / stored user_protocols",
+      includeDisclaimer: false,
+      items: [
+        {
+          productName: "MTHFR+",
+          dosage: "1 capsule",
+          reason: "on file",
+          bucket: "morning",
+        },
+      ],
+    });
+    const interactions = assembleInteractionsListingText({
+      role: "naturopath",
+      sourceRoute: "POST /api/ai/check-interactions",
+      includeDisclaimer: false,
+      data: {
+        interactions: [],
+        summary: { major: 0, moderate: 0, minor: 0, synergistic: 0 },
+        blockedProducts: [],
+      },
+    });
+    const snp = assembleSnpListingText({
+      role: "naturopath",
+      sourceRoute: "GET /api/genetics/variants",
+      data: {
+        rsid: "rs1801133",
+        gene: "MTHFR",
+        genotype: "CT",
+        panel_key: "genex_m",
+        educational_summary: "",
+        citations: [],
+      },
+    });
+    const joined = joinAssembledListingBlocks([protocol, interactions, snp]);
+    expect(joined.indexOf("I can only restate what ViaConnect already listed")).toBeLessThan(
+      joined.indexOf(INTERACTIONS_LISTING_EXPLANATION)
+    );
+    expect(joined.indexOf(INTERACTIONS_LISTING_EXPLANATION)).toBeLessThan(
+      joined.indexOf(SNP_LISTING_EXPLANATION)
+    );
+    expect(joined.split(VIA_CURA_DRAFT_BANNER).length - 1).toBe(1);
   });
 });
