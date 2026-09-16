@@ -4,8 +4,8 @@
  * check_interactions is live in-process (Claude+local+floor assemble; no HTTP loopback).
  * lookup_snp is live in-process (hub variants + NutrigenDX helpers; no HTTP loopback).
  * lookup_peptide is live in-process (search_peptides + consumer education + optional listed).
+ * get_education is live in-process (READ peptide_education_entries + Lex/FAQ safety fixtures).
  * allow_generate is hard false (never silent generate-protocol).
- * Education still returns ok:false not_implemented so the refuse path fires.
  *
  * Retatrutide lock: injectable-only, never stacked. Semaglutide / excluded GLP-1 stay blocked.
  * Delivery options always strip via finalizeLookupPeptideResult / preparePeptideToolPayload.
@@ -23,6 +23,10 @@ import {
   buildLookupPeptideInputFromContext,
   lookupPeptideLive,
 } from "./lookup-peptide-wrap";
+import {
+  buildGetEducationInputFromContext,
+  getEducationLive,
+} from "./get-education-wrap";
 import { preparePeptideToolPayload } from "./strip-peptide-delivery";
 import type {
   CheckInteractionsInput,
@@ -216,6 +220,7 @@ export function getProtocolFromContext(
 export { checkInteractionsLive } from "./check-interactions-wrap";
 export { lookupSnpLive } from "./lookup-snp-wrap";
 export { lookupPeptideLive } from "./lookup-peptide-wrap";
+export { getEducationLive } from "./get-education-wrap";
 
 /**
  * When lookup_peptide returns ok (live wrap or fixture), strip before assembler.
@@ -254,6 +259,12 @@ function readStringArray(value: unknown): string[] | undefined {
   if (!Array.isArray(value)) return undefined;
   const names = value.filter((v): v is string => typeof v === "string");
   return names.length ? names : undefined;
+}
+
+function partialGetEducationInput(input: unknown): Partial<GetEducationInput> | undefined {
+  if (!isRecord(input)) return undefined;
+  if (typeof input.topic_id !== "string") return undefined;
+  return { topic_id: input.topic_id };
 }
 
 function partialLookupPeptideInput(input: unknown): Partial<LookupPeptideInput> | undefined {
@@ -325,7 +336,10 @@ export async function routeGroundedTool(
         )
       );
     case "get_education":
-      return getEducationStub({ topic_id: "" });
+      return getEducationLive(
+        buildGetEducationInputFromContext(partialGetEducationInput(input), ctx),
+        ctx
+      );
   }
 }
 

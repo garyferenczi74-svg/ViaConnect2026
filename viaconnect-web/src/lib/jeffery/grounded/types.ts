@@ -280,6 +280,35 @@ export interface GroundedToolContext {
     listedFailed?: boolean;
     error?: string;
   }>;
+  /**
+   * Test/injection seam for the in-process get_education assemble.
+   * Production omits this and uses READ peptide_education_entries + Lex/FAQ fixtures.
+   */
+  getEducationAssemble?: (input: { topic_id: string }) => Promise<{
+    loadStatus: "ok" | "unauthorized" | "error";
+    topicId: string;
+    education: {
+      entryKey: string;
+      title: string;
+      isPeptide: boolean;
+      mechanism: string | null;
+      evidenceGrade: string;
+      regulatoryStatus: string | null;
+      safetyContext: string | null;
+      provenanceText: string | null;
+      pmids: string[];
+    } | null;
+    educationFailed?: boolean;
+    safetyFixture?: { id: string; title: string; text: string } | null;
+    blocked?:
+      | "depth"
+      | "glp1"
+      | "semaglutide"
+      | "tirzepatide"
+      | "oral_stack"
+      | "clinician_only";
+    error?: string;
+  }>;
 }
 
 export interface RetrieverQuery {

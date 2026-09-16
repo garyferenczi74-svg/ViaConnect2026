@@ -1,8 +1,8 @@
 /**
  * Stage A grounded-chat orchestrator.
- * Flag OFF → legacy (today's stream). Flag ON → stub retriever + refuse-if-tool-fails.
- * Success: get_protocol / check_interactions / lookup_snp / lookup_peptide restatement
- * (protocol → interactions → snp → peptide). Other required tools still fail-closed.
+ * Flag OFF → legacy (today's stream). Flag ON → allowlist retriever + refuse-if-tool-fails.
+ * Success: get_protocol / check_interactions / lookup_snp / lookup_peptide / get_education
+ * restatement (protocol → interactions → snp → peptide → education). Fail-closed otherwise.
  * Marshall scan stays on the host route.
  */
 
@@ -10,6 +10,7 @@ import { safeLog } from "@/lib/utils/safe-log";
 import { isLlmGroundedChatEnabled } from "./flag";
 import { inferRequiredTools } from "./intent";
 import {
+  assembleEducationListingText,
   assembleInteractionsListingText,
   assemblePeptideListingText,
   assembleProtocolListingText,
@@ -26,6 +27,7 @@ import { runRequiredTools } from "./tool-router";
 import type {
   AdvisorChatRole,
   CheckInteractionsData,
+  GetEducationData,
   GetProtocolData,
   GroundedToolContext,
   GroundedToolName,
@@ -45,6 +47,7 @@ export interface ResolveGroundedChatInput {
   checkInteractionsAssemble?: GroundedToolContext["checkInteractionsAssemble"];
   lookupSnpAssemble?: GroundedToolContext["lookupSnpAssemble"];
   lookupPeptideAssemble?: GroundedToolContext["lookupPeptideAssemble"];
+  getEducationAssemble?: GroundedToolContext["getEducationAssemble"];
 }
 
 function isToolError(value: { ok: boolean }): value is ToolError {
@@ -68,13 +71,18 @@ export async function resolveGroundedChatTurn(
     checkInteractionsAssemble: input.checkInteractionsAssemble,
     lookupSnpAssemble: input.lookupSnpAssemble,
     lookupPeptideAssemble: input.lookupPeptideAssemble,
+    getEducationAssemble: input.getEducationAssemble,
   };
 
-  await retrieveGroundedChunks({
-    message: input.message,
-    role: input.role,
-    userId: input.userId,
-  });
+  try {
+    await retrieveGroundedChunks({
+      message: input.message,
+      role: input.role,
+      userId: input.userId,
+    });
+  } catch {
+    // Empty / failed retrieve never authorizes doses or invented edu.
+  }
 
   const safety = detectSafetyRefuse(input.message);
   if (safety) {
@@ -127,9 +135,11 @@ export async function resolveGroundedChatTurn(
   const interactions = results.check_interactions;
   const snp = results.lookup_snp;
   const peptide = results.lookup_peptide;
+  const education = results.get_education;
   const interactionsOk = Boolean(interactions && interactions.ok === true);
   const snpOk = Boolean(snp && snp.ok === true);
   const peptideOk = Boolean(peptide && peptide.ok === true);
+  const educationOk = Boolean(education && education.ok === true);
 
   if (protocol && protocol.ok === true) {
     const data = protocol.data as GetProtocolData;
@@ -139,7 +149,7 @@ export async function resolveGroundedChatTurn(
         items: data.items,
         protocolName: data.protocol_name,
         sourceRoute: protocol.route,
-        includeDisclaimer: !interactionsOk && !snpOk && !peptideOk,
+        includeDisclaimer: !interactionsOk && !snpOk && !peptideOk && !educationOk,
       })
     );
   }
@@ -150,7 +160,7 @@ export async function resolveGroundedChatTurn(
         role: input.role,
         data: interactions.data as CheckInteractionsData,
         sourceRoute: interactions.route,
-        includeDisclaimer: !snpOk && !peptideOk,
+        includeDisclaimer: !snpOk && !peptideOk && !educationOk,
       })
     );
   }
@@ -161,7 +171,7 @@ export async function resolveGroundedChatTurn(
         role: input.role,
         data: snp.data as LookupSnpData,
         sourceRoute: snp.route,
-        includeDisclaimer: !peptideOk,
+        includeDisclaimer: !peptideOk && !educationOk,
       })
     );
   }
@@ -172,6 +182,17 @@ export async function resolveGroundedChatTurn(
         role: input.role,
         data: peptide.data as LookupPeptideData,
         sourceRoute: peptide.route,
+        includeDisclaimer: !educationOk,
+      })
+    );
+  }
+
+  if (education && education.ok === true) {
+    listingBlocks.push(
+      assembleEducationListingText({
+        role: input.role,
+        data: education.data as GetEducationData,
+        sourceRoute: education.route,
       })
     );
   }
