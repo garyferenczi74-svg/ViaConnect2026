@@ -1,6 +1,8 @@
 /**
  * Jeffery lock: named kill switch for Stage A grounded chat.
  * Default OFF so today's /api/advisor/chat stream is unchanged until Gary --prod.
+ * false = legacy advisor stream (today's Claude). FAQ-only = provider outage /
+ * explicit ops kill — not the default-off meaning (HIPAA-OPS §4).
  */
 
 export const LLM_GROUNDED_CHAT_FLAG = "LLM_GROUNDED_CHAT_ENABLED" as const;

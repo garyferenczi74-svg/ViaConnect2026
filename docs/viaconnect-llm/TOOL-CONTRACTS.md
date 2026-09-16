@@ -38,7 +38,7 @@ export type ToolResult<T> = { ok: true; data: T; route: string; retrieved_at: st
 2. Say you cannot verify right now.  
 3. Offer retry + ask clinician.  
 4. Log tool name, code, route, request id.  
-5. Optional FAQ fallback if kill switch / model offline (see `06-compliance/HIPAA-OPS.md`).
+5. Optional FAQ fallback if **provider outage / explicit ops kill** — not the default-off meaning of `LLM_GROUNDED_CHAT_ENABLED=false` (false = **legacy** advisor stream / today’s Claude). See `docs/viaconnect-llm/HIPAA-OPS.md`.
 
 ---
 

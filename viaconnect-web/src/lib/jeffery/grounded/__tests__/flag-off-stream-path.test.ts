@@ -70,6 +70,7 @@ describe("flag-off leaves stream path", () => {
       requestId: "req-off",
     });
     expect(turn.kind).toBe("legacy");
+    expect(turn).not.toHaveProperty("text");
     const hooked = await maybeGroundedStaticStream({
       message: "Why is MTHFR+ on my protocol?",
       role: "consumer",

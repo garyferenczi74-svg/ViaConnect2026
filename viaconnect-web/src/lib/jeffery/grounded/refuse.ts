@@ -9,6 +9,7 @@ import {
   FAQ,
   NOTHING_ON_FILE,
   TOOLS_UNAVAILABLE,
+  VIA_CURA_DRAFT_BANNER,
 } from "./copy";
 import type { AdvisorChatRole, GroundedToolName, ProtocolItem, ToolError } from "./types";
 
@@ -47,7 +48,8 @@ export function detectSafetyRefuse(message: string): SafetyRefuseKind | null {
   }
   if (/\bpregnan/.test(t)) return "pregnancy";
   if (/\b(pediatric|for kids|infant|toddler|my (child|baby|kid))\b/.test(t)) return "pediatric";
-  if (/\b(semaglutide|ozempic|wegovy|liraglutide|excluded glp-?1)\b/.test(t) || /\bglp-?1\b/.test(t)) {
+  // Lex-safe: Semaglutide / excluded GLP-1 adjacency only — not broad educational GLP-1.
+  if (/\b(semaglutide|ozempic|wegovy|liraglutide|excluded glp-?1)\b/.test(t)) {
     return "semaglutide";
   }
   if (/\b(do i have|diagnos|treat my (disease|cancer|diabetes|condition))\b/.test(t)) {
@@ -87,7 +89,18 @@ export function explanationForToolFailure(error?: ToolError): string {
 }
 
 export function killSwitchFaqExplanation(): string {
-  return FAQ.killSwitch;
+  return FAQ.killSwitchLines.join("\n");
+}
+
+function isClinicianDraftRole(role?: AdvisorChatRole): boolean {
+  return role === "practitioner" || role === "naturopath";
+}
+
+function prependViaCuraDraftBanner(text: string, role?: AdvisorChatRole): string {
+  if (!isClinicianDraftRole(role) || text.startsWith(VIA_CURA_DRAFT_BANNER)) {
+    return text;
+  }
+  return `${VIA_CURA_DRAFT_BANNER}\n\n${text}`;
 }
 
 export function assembleFourPartAnswer(
@@ -104,8 +117,7 @@ export function assembleFourPartAnswer(
     `3. Sources\n${sourceLines}`,
     `4. Next action / ask clinician\n${parts.nextAction.trim()}`,
   ];
-  void options?.role;
-  let text = sections.join("\n\n");
+  let text = prependViaCuraDraftBanner(sections.join("\n\n"), options?.role);
   if (options?.includeDisclaimer !== false && !text.includes("educational purposes only")) {
     text += `\n\n${EDUCATIONAL_DISCLAIMER}`;
   }
