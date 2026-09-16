@@ -1,5 +1,9 @@
 export { isLlmGroundedChatEnabled, LLM_GROUNDED_CHAT_FLAG } from "./flag";
 export {
+  PROTOCOL_NEXT_ORDER_FLAG,
+  isProtocolNextOrderEnabled,
+} from "@/lib/caq/protocol-next-order";
+export {
   VIA_CURA_DRAFT_BANNER,
   EDUCATIONAL_DISCLAIMER,
   FAQ,
