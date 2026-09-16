@@ -3,7 +3,12 @@
  * Marshall drafts / box digests / IG dumps / ViaCura / FormaVision / performance
  * never appear in Sources. URL host labels from the optional Hounddog lane
  * are allowed only when they do not match these keys.
+ *
+ * Surgical exception: education-shaped cite_id+label on the ViaCura
+ * supplement-edu allowlist only. Keep blanket via-?cura for all other strings.
  */
+
+import { isEducationShapedViacuraSupplementEduCite } from "./viacura-supplement-edu";
 
 export interface OffListCiteFields {
   cite_id: string;
@@ -11,9 +16,10 @@ export interface OffListCiteFields {
 }
 
 const OFF_LIST_RE =
-  /peptide-education-staging|marshall[-_ ]?draft|via-?cura|formavision|\bglb\b|instagram\.com|hounddog_performance|hounddog_analytics_rollup|box[-_ ]?(yt|digest)|hounddog[-_ ]?digest/i;
+  /peptide-education-staging|marshall[-_ ]?draft|via-?cura|via cura|formavision|\bglb\b|instagram\.com|hounddog_performance|hounddog_analytics_rollup|box[-_ ]?(yt|digest)|hounddog[-_ ]?digest/i;
 
 export function isOffListSourceCite(cite: OffListCiteFields): boolean {
+  if (isEducationShapedViacuraSupplementEduCite(cite)) return false;
   const hay = `${cite.cite_id} ${cite.label}`.trim();
   if (!hay) return true;
   return OFF_LIST_RE.test(hay);

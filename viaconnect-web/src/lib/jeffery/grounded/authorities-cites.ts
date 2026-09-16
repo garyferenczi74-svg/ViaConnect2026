@@ -9,6 +9,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { FALLBACK_ALLOWLIST_DOMAINS } from "@/lib/agents/authorityAllowlist";
 import { isOffListSourceCite } from "./sources-off-list";
 import { STAGE_A_RETRIEVER_ALLOWLIST_MAX } from "./education-allowlist";
+import { assertStageAViacuraSupplementEduCapsHeld } from "./viacura-supplement-edu";
 
 export interface AuthoritySourceCite {
   cite_id: string;
@@ -74,7 +75,8 @@ export function assertStageAAllowlistCapsHeld(): boolean {
     STAGE_A_RETRIEVER_COMBINED_ALLOWLIST_MAX === 35 &&
     STAGE_A_RETRIEVER_ALLOWLIST_MAX + STAGE_A_AUTHORITIES_ALLOWLIST_MAX ===
       STAGE_A_RETRIEVER_COMBINED_ALLOWLIST_MAX &&
-    STAGE_A_AUTHORITIES_CITE_ALLOWLIST.length <= STAGE_A_AUTHORITIES_ALLOWLIST_MAX
+    STAGE_A_AUTHORITIES_CITE_ALLOWLIST.length <= STAGE_A_AUTHORITIES_ALLOWLIST_MAX &&
+    assertStageAViacuraSupplementEduCapsHeld()
   );
 }
 

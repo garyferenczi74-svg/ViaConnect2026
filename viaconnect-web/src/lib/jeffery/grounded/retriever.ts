@@ -1,6 +1,7 @@
 /**
  * Hybrid retriever interface. Stage A first wire: ≤20 allowlisted
- * education + safety_never_say ids only. No open corpus / embeddings host.
+ * education + safety_never_say ids, plus a separate ViaCura supplement-edu
+ * ≤5 lane. No open corpus / embeddings host.
  * Prefer READ stored PeptideIQ rows. Never invent chunk / monograph bodies.
  * Empty / missing never authorize new doses.
  */
@@ -19,6 +20,10 @@ import {
   safetyNeverSayFixture,
   STAGE_A_RETRIEVER_ALLOWLIST_MAX,
 } from "./education-allowlist";
+import {
+  extractViacuraSupplementEduIds,
+  mapViacuraSupplementEduToChunk,
+} from "./viacura-supplement-edu";
 import type { RetrieverChunk, RetrieverQuery, RetrieverResult } from "./types";
 
 export interface GroundedRetriever {
@@ -118,6 +123,11 @@ export async function retrieveAllowlistedChunks(
     } catch {
       // Missing / read fail → no invented chunk.
     }
+  }
+
+  for (const id of extractViacuraSupplementEduIds(query.message)) {
+    const chunk = mapViacuraSupplementEduToChunk(id);
+    if (chunk) chunks.push(chunk);
   }
 
   return {
