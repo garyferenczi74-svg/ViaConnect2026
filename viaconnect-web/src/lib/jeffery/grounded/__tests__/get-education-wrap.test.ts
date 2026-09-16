@@ -357,6 +357,8 @@ describe("get_education live wrap", () => {
         listedNames: [],
       }),
       getEducationAssemble: async () => SERMORELIN_OK,
+      loadAuthorityCites: async () => [],
+      loadHounddogUrlCites: async () => [],
     });
     expect(turn.kind).toBe("static");
     if (turn.kind !== "static") return;
@@ -515,6 +517,8 @@ describe("get_education live wrap", () => {
       }),
       getEducationAssemble: async () =>
         okPayload({ topicId: "edu-retatrutide", education: RETA_EDU_ROW }),
+      loadAuthorityCites: async () => [],
+      loadHounddogUrlCites: async () => [],
     });
     expect(turn.kind).toBe("static");
     if (turn.kind !== "static") return;

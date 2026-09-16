@@ -346,7 +346,7 @@ export type GetEducationResult = ToolResult<GetEducationData>;
 
 Optional for UC-C1/C2/P3. If missing, RAG education chunks may substitute; still no new doses.
 
-**Chat path (Stage A wrap):** `get_education` is wired in-process on grounded chat (READ consumer `peptide_education_entries` + Lex/FAQ `safety_never_say` fixtures; first RAG slice ≤20 allowlisted ids; no HTTP loopback). Allowlist retriever chunks append cite_id + label into Sources on education success only (deduped vs tool PMIDs/sources; empty → no phantom cites). Flag `LLM_GROUNDED_CHAT_ENABLED` stays default **false**.
+**Chat path (Stage A wrap):** `get_education` is wired in-process on grounded chat (READ consumer `peptide_education_entries` + Lex/FAQ `safety_never_say` fixtures; first RAG slice ≤20 allowlisted ids; no HTTP loopback). Allowlist retriever chunks append cite_id + label into Sources on education success only (deduped vs tool PMIDs/sources; empty → no phantom cites). Research Hub folds approved+active `authorities_sources` as cite-only `auth:…` Sources (≤15; stored label/domain only) plus optional Hounddog URL cites (≤10; title/host only; score≥50 non-GLP; default OFF). cite≠dose; engines remain SSOT. Combined edu+safety+authorities ≤35 — past-cap expand needs a **NEW GATE**. Flag `LLM_GROUNDED_CHAT_ENABLED` stays default **false**.
 
 ---
 

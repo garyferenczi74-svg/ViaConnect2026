@@ -5,6 +5,8 @@
  */
 
 import type { RetrieverChunk } from "./types";
+import { sanitizeAuthorityCites } from "./authorities-cites";
+import { sanitizeHounddogUrlCites } from "./hounddog-url-cites";
 
 export interface SourceCite {
   cite_id: string;
@@ -76,6 +78,8 @@ export function mergeEducationSourceLines(input: {
   sourceRoute: string;
   toolCitations: Array<{ cite_id: string; label: string }>;
   retrieverChunks?: RetrieverChunk[];
+  authorityCites?: SourceCite[];
+  hounddogUrlCites?: SourceCite[];
 }): string[] {
   const sources: string[] = [];
   const seen = new Set<string>();
@@ -83,6 +87,14 @@ export function mergeEducationSourceLines(input: {
   const remember = (cite: SourceCite): void => {
     const key = citeDedupeKey(cite);
     if (key) seen.add(key);
+  };
+
+  const appendCiteLine = (cite: SourceCite): void => {
+    const key = citeDedupeKey(cite);
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    const line = formatAllowlistSourceLine(cite);
+    if (line) sources.push(line);
   };
 
   const route = input.sourceRoute.trim();
@@ -97,11 +109,15 @@ export function mergeEducationSourceLines(input: {
   }
 
   for (const cite of citesFromRetrieverChunks(input.retrieverChunks)) {
-    const key = citeDedupeKey(cite);
-    if (!key || seen.has(key)) continue;
-    seen.add(key);
-    const line = formatAllowlistSourceLine(cite);
-    if (line) sources.push(line);
+    appendCiteLine(cite);
+  }
+
+  for (const cite of sanitizeAuthorityCites(input.authorityCites)) {
+    appendCiteLine(cite);
+  }
+
+  for (const cite of sanitizeHounddogUrlCites(input.hounddogUrlCites)) {
+    appendCiteLine(cite);
   }
 
   return sources;
