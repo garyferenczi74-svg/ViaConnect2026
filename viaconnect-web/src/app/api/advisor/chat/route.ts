@@ -15,6 +15,7 @@ import { emitJefferyMessage } from "@/lib/jeffery/message-bus";
 import { scanAiOutput } from "@/lib/compliance/adapters/ai_output";
 import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
+import { maybeGroundedStaticStream } from "@/lib/jeffery/grounded/chat-stub";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -183,30 +184,51 @@ export async function POST(req: Request) {
   });
 
   // ── 8. Stream Claude response; persist inside onComplete ────────────
-  const { stream, meta } = streamAdvisorResponse(ctx, message, {
-    onComplete: async (fullText, m) => {
-      try {
-        const ids = await persistConversationTurn(telemetryDb, {
-          userId: user.id,
-          role: role as AdvisorRole,
-          patientId,
-          userMessage: message,
-          assistantMessage: fullText,
-          contextSnapshot: ctx.contextVariables,
-          durationMs: m.duration_ms,
-          inputTokens: m.input_tokens,
-          outputTokens: m.output_tokens,
-          error: m.error,
-        });
-        return ids.assistantMessageId;
-      } catch (e) {
-        safeLog.warn("api.advisor.chat", "persist failed", {
-          error: e instanceof Error ? e.message : String(e),
-        });
-        return null;
-      }
-    },
-  });
+  // Additive hook only. LLM_GROUNDED_CHAT_ENABLED default false → null, so
+  // today's streamAdvisorResponse path is unchanged. Marshall still scans
+  // the full answer below. Never silent-generates a protocol.
+  const onComplete = async (
+    fullText: string,
+    m: {
+      duration_ms: number;
+      input_tokens: number;
+      output_tokens: number;
+      error?: string;
+    }
+  ) => {
+    try {
+      const ids = await persistConversationTurn(telemetryDb, {
+        userId: user.id,
+        role: role as AdvisorRole,
+        patientId,
+        userMessage: message,
+        assistantMessage: fullText,
+        contextSnapshot: ctx.contextVariables,
+        durationMs: m.duration_ms,
+        inputTokens: m.input_tokens,
+        outputTokens: m.output_tokens,
+        error: m.error,
+      });
+      return ids.assistantMessageId;
+    } catch (e) {
+      safeLog.warn("api.advisor.chat", "persist failed", {
+        error: e instanceof Error ? e.message : String(e),
+      });
+      return null;
+    }
+  };
+
+  const { stream, meta } =
+    (await maybeGroundedStaticStream(
+      {
+        message,
+        role: role as AdvisorRole,
+        userId: user.id,
+        advisorContextVariables: ctx.contextVariables,
+        requestId: crypto.randomUUID(),
+      },
+      { onComplete }
+    )) ?? streamAdvisorResponse(ctx, message, { onComplete });
 
   // Post-flight compliance + Jeffery bus (fire-and-forget; no message content in logs)
   void meta.then(async (m) => {
