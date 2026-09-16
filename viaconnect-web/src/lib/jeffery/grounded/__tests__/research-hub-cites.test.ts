@@ -174,6 +174,23 @@ describe("authorities cite lane", () => {
     ]);
   });
 
+  function assertCiteIdLabelOnly(
+    cites: Array<{ cite_id: string; label: string }>
+  ): void {
+    expect(cites.length).toBeGreaterThan(0);
+    expect(cites.length).toBeLessThanOrEqual(STAGE_A_AUTHORITIES_ALLOWLIST_MAX);
+    for (const cite of cites) {
+      expect(Object.keys(cite).sort()).toEqual(["cite_id", "label"]);
+      expect(cite.cite_id.startsWith("auth:")).toBe(true);
+      expect(cite.label.trim().length).toBeGreaterThan(0);
+    }
+    const serialized = JSON.stringify(cites);
+    expect(serialized).not.toContain(ABSTRACT_INVENT);
+    expect(serialized).not.toMatch(/abstract|monograph|summary|protocol|genotype/i);
+    expect(serialized).not.toMatch(/\b(mg|mcg|dosage|Muscle lbs)\b/);
+    expect(serialized).not.toMatch(/\b\d+\s+sources?\b/i);
+  }
+
   it("empty / miss → no phantom cites; fallback only when the READ loader is used", async () => {
     expect(citesFromApprovedAuthorityRows([])).toEqual([]);
     expect(citesFromApprovedAuthorityRows(undefined)).toEqual([]);
@@ -181,6 +198,27 @@ describe("authorities cite lane", () => {
     const fallback = await loadApprovedAuthorityCites(async () => []);
     expect(fallback.length).toBe(12);
     expect(fallback.every((cite) => cite.cite_id.startsWith("auth:"))).toBe(true);
+  });
+
+  it("production empty / unmappable / load-fail uses gated seed cite_id+label only", async () => {
+    const seed = fallbackAuthorityCites();
+    const empty = await loadApprovedAuthorityCites(async () => []);
+    const unmappable = await loadApprovedAuthorityCites(async () => [
+      { domain: "who.int", label: "WHO", is_active: true, approval_status: "approved" },
+      { domain: "", label: "x" },
+    ]);
+    const loadFail = await loadApprovedAuthorityCites(async () => {
+      throw new Error("authorities_sources READ failed — do not cite this text");
+    });
+    expect(empty).toEqual(seed);
+    expect(unmappable).toEqual(seed);
+    expect(loadFail).toEqual(seed);
+    expect(loadFail.map((cite) => cite.cite_id)).not.toContain("auth:who.int");
+    expect(JSON.stringify(loadFail)).not.toContain("authorities_sources READ failed");
+    assertCiteIdLabelOnly(empty);
+    assertCiteIdLabelOnly(unmappable);
+    assertCiteIdLabelOnly(loadFail);
+    assertCiteIdLabelOnly(seed);
   });
 
   it("caps authorities at 15 and never quotes notes/abstracts", () => {
@@ -335,7 +373,7 @@ describe("education success attach — Research Hub cites", () => {
     expect(turn.text).not.toMatch(/\b(10 mg|oral Retatrutide|Muscle lbs)\b/);
   });
 
-  it("empty authorities → no phantom auth cites; Lex frame unchanged", async () => {
+  it("injected empty loader stays truly empty — no phantom auth cites or Sources", async () => {
     process.env[FLAG] = "true";
     const turn = await resolveGroundedChatTurn({
       message: "Show the ViaConnect education on file for edu-ss31",
@@ -353,7 +391,10 @@ describe("education success attach — Research Hub cites", () => {
       "PMID 12345678",
     ]);
     expect(turn.text).not.toContain("auth:");
+    expect(turn.text).not.toContain("cite_id: auth:");
     expect(turn.text).toContain(EDUCATION_LISTING_EXPLANATION);
+    expect(fallbackAuthorityCites().length).toBeGreaterThan(0);
+    expect(turn.text).not.toContain(fallbackAuthorityCites()[0]?.cite_id ?? "auth:pubmed");
   });
 
   it("optional Hounddog on education success; Semaglutide still refuses", async () => {
@@ -492,6 +533,9 @@ describe("Research Hub cite source locks", () => {
     expect(authSrc).toContain("authorities_sources");
     expect(authSrc).toContain("approval_status");
     expect(authSrc).toContain("is_active");
+    expect(authSrc).toMatch(/gated static (authority )?seed|continuity seed/i);
+    expect(authSrc).toMatch(/not (a successful )?DB (read|evidence)|not loaded evidence/i);
+    expect(authSrc).toContain("loadAuthorityCites: async () => []");
     expect(authSrc).not.toMatch(/fetch\s*\(\s*["'`][^"'`]*\/api\//);
     expect(authSrc).not.toMatch(/\.insert\(|\.upsert\(|\.update\(/);
     expect(hdSrc).toContain("STAGE_A_HOUNDDOG_URL_CITES_ENABLED = false");
@@ -502,5 +546,14 @@ describe("Research Hub cite source locks", () => {
     expect(stubSrc).toContain("education.ok === true");
     expect(flagSrc).not.toMatch(/LLM_GROUNDED_CHAT_ENABLED.*=.*true/);
     expect(routerSrc).toContain("const ALLOW_GENERATE = false");
+
+    const stageA = readFileSync(join(process.cwd(), "../docs/viaconnect-llm/STAGE-A.md"), "utf8");
+    const contracts = readFileSync(
+      join(process.cwd(), "../docs/viaconnect-llm/TOOL-CONTRACTS.md"),
+      "utf8"
+    );
+    expect(stageA).toMatch(/gated static authority seed|continuity seed/i);
+    expect(contracts).toMatch(/loadAuthorityCites: async \(\) => \[\]/);
+    expect(contracts).toMatch(/user_variants/);
   });
 });

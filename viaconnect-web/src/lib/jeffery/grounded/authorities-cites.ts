@@ -133,6 +133,16 @@ export function citesFromApprovedAuthorityRows(
   return out;
 }
 
+/**
+ * Intentional production continuity seed — not a successful DB read and not
+ * loaded evidence. Empty, unmappable, or failed approved-authority READ may
+ * return only this gated static authority seed (`cite_id` + label). Never
+ * invents abstract / body / summary / dose / monograph / protocol / genotype /
+ * source-count. Distinct from the chat injection seam
+ * `loadAuthorityCites: async () => []`, which stays truly empty and yields no
+ * phantom Sources. Soft-park: true-empty Sources when live DB is empty is a
+ * later product gate — do not collapse these seams.
+ */
 export function fallbackAuthorityCites(): AuthoritySourceCite[] {
   const fallbackSet = new Set(
     FALLBACK_ALLOWLIST_DOMAINS.map((domain) => normalizeAuthorityDomain(domain))
@@ -172,6 +182,12 @@ export async function readApprovedActiveAuthorityRows(): Promise<AuthorityCiteRo
   }
 }
 
+/**
+ * Production approved+active authorities_sources READ.
+ * Empty / unmappable / throw → fallbackAuthorityCites() continuity seed only
+ * (`cite_id` + label; not DB evidence). An explicit injected empty loader at
+ * the chat seam bypasses this function and must stay zero cites.
+ */
 export async function loadApprovedAuthorityCites(
   loadRows?: LoadAuthorityCiteRows
 ): Promise<AuthoritySourceCite[]> {

@@ -4,7 +4,11 @@ import { join } from "node:path";
 import { FAQ, VIA_CURA_DRAFT_BANNER } from "../copy";
 import { resolveGroundedChatTurn } from "../chat-stub";
 import { LLM_GROUNDED_CHAT_FLAG } from "../flag";
-import { SNP_LISTING_EXPLANATION, INTERACTIONS_LISTING_EXPLANATION } from "../refuse";
+import {
+  SNP_LISTING_EXPLANATION,
+  INTERACTIONS_LISTING_EXPLANATION,
+  assembleSnpListingText,
+} from "../refuse";
 import {
   extractLookupSnpAsk,
   honestGenotype,
@@ -66,6 +70,24 @@ const MTHFR_OK = okPayload([
     clinical_significance: "Stored MTHFR C677T note on file.",
   }),
 ]);
+
+const ADVERSARIAL_MARKER_GENOTYPE = "GG-invented-nutrigen";
+const ADVERSARIAL_IMPACT =
+  "Take 12.4 mg oral Retatrutide stacking; 7 sources found; Muscle lbs +4; monograph summary.";
+
+function withAdversarialNutrigenFields(payload: LookupSnpEnginePayload): LookupSnpEnginePayload {
+  return Object.assign({}, payload, {
+    nutrigenMarkers: [
+      {
+        gene: "FTO",
+        rsid: "rs9939609",
+        genotype: ADVERSARIAL_MARKER_GENOTYPE,
+        impactSummary: ADVERSARIAL_IMPACT,
+      },
+    ],
+    impactSummary: ADVERSARIAL_IMPACT,
+  });
+}
 
 describe("lookup_snp live wrap", () => {
   afterEach(() => {
@@ -246,6 +268,38 @@ describe("lookup_snp live wrap", () => {
       expect(fto.data.genotype).toBe("AA");
     }
 
+    const adversarialFto = await lookupSnpLive(
+      { rsid: "rs9939609", gene: "FTO" },
+      { ...ctx, message: "What is my FTO rs9939609 NutrigenDX result?" },
+      async () =>
+        withAdversarialNutrigenFields(
+          okPayload(
+            [
+              row({
+                rsid: "rs9939609",
+                gene: "FTO",
+                genotype: "AA",
+                panel_key: "nutrition",
+                stored_panel_key: "nutrigen_dx",
+                clinical_significance: "Stored FTO appetite note.",
+              }),
+            ],
+            { nutrigenAttempted: true, nutrigenFailed: false }
+          )
+        )
+    );
+    expect(adversarialFto.ok).toBe(true);
+    if (adversarialFto.ok) {
+      expect(adversarialFto.data.genotype).toBe("AA");
+      expect(adversarialFto.data.genotype).not.toBe(ADVERSARIAL_MARKER_GENOTYPE);
+      expect(adversarialFto.data.educational_summary).toBe("Stored FTO appetite note.");
+      expect(JSON.stringify(adversarialFto.data)).not.toContain(ADVERSARIAL_MARKER_GENOTYPE);
+      expect(JSON.stringify(adversarialFto.data)).not.toContain(ADVERSARIAL_IMPACT);
+      expect(JSON.stringify(adversarialFto.data)).not.toMatch(/\b(12\.4 mg|Muscle lbs|7 sources)\b/);
+      expect(adversarialFto.data).not.toHaveProperty("nutrigenMarkers");
+      expect(adversarialFto.data).not.toHaveProperty("impactSummary");
+    }
+
     const fadsMismatch = await lookupSnpLive(
       { rsid: "rs174537" },
       { ...ctx, message: "What about FADS1 rs174537?" },
@@ -311,6 +365,86 @@ describe("lookup_snp live wrap", () => {
     const notOnFile = await lookupSnpLive({ rsid: "rs1801133" }, ctx, async () => okPayload([]));
     expect(notOnFile.ok).toBe(false);
     if (notOnFile.ok === false) expect(notOnFile.code).toBe("not_found");
+
+    const nutrigenFailWithMarkers = await lookupSnpLive(
+      { rsid: "rs9939609", gene: "FTO" },
+      { ...ctx, message: "FTO rs9939609" },
+      async () =>
+        withAdversarialNutrigenFields(
+          okPayload([], {
+            nutrigenAttempted: true,
+            nutrigenFailed: true,
+          })
+        )
+    );
+    expect(nutrigenFailWithMarkers.ok).toBe(false);
+    if (nutrigenFailWithMarkers.ok === false) {
+      expect(nutrigenFailWithMarkers.code).toBe("upstream_5xx");
+    }
+
+    const unknownCountsWithMarkers = await lookupSnpLive({ rsid: "rs1801133" }, ctx, async () =>
+      withAdversarialNutrigenFields(okPayload([], { snpCountsUnknown: true }))
+    );
+    expect(unknownCountsWithMarkers.ok).toBe(false);
+    if (unknownCountsWithMarkers.ok === false) {
+      expect(unknownCountsWithMarkers.code).toBe("upstream_5xx");
+    }
+  });
+
+  it("adversarial Nutrigen marker genotype/impact never enter LookupSnpData or assembled text", async () => {
+    process.env[FLAG] = "true";
+    const hubUnknown = okPayload(
+      [
+        row({
+          rsid: "rs9939609",
+          gene: "FTO",
+          genotype: "UNKNOWN",
+          status: "pending",
+          panel_key: "nutrition",
+          stored_panel_key: "nutrigen_dx",
+          clinical_significance: "Stored FTO appetite note.",
+        }),
+      ],
+      { nutrigenAttempted: true, nutrigenFailed: false }
+    );
+    const result = await lookupSnpLive(
+      { rsid: "rs9939609", gene: "FTO" },
+      { ...ctx, message: "What is my FTO rs9939609 NutrigenDX result?" },
+      async () => withAdversarialNutrigenFields(hubUnknown)
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.genotype).toBe("UNKNOWN");
+      expect(result.data.status).toBe("pending");
+      expect(result.data.genotype).not.toBe("0");
+      expect(result.data.genotype).not.toBe(ADVERSARIAL_MARKER_GENOTYPE);
+      expect(result.data.genotype).not.toMatch(/normal|negative|clear/i);
+      const listed = assembleSnpListingText({
+        role: "consumer",
+        data: result.data,
+        sourceRoute: result.route,
+      });
+      expect(listed).toContain("genotype: UNKNOWN");
+      expect(listed).not.toContain(ADVERSARIAL_MARKER_GENOTYPE);
+      expect(listed).not.toContain(ADVERSARIAL_IMPACT);
+      expect(listed).not.toMatch(/\b(12\.4 mg|Muscle lbs|7 sources)\b/);
+    }
+
+    const turn = await resolveGroundedChatTurn({
+      message: "What is my FTO rs9939609 NutrigenDX result?",
+      role: "consumer",
+      userId: "user-1",
+      requestId: "req-on-snp-adversarial-nutrigen",
+      lookupSnpAssemble: async () => withAdversarialNutrigenFields(hubUnknown),
+    });
+    expect(turn.kind).toBe("static");
+    if (turn.kind === "static") {
+      expect(turn.reason).toBe("assembled_from_tools");
+      expect(turn.text).toContain("genotype: UNKNOWN");
+      expect(turn.text).not.toContain(ADVERSARIAL_MARKER_GENOTYPE);
+      expect(turn.text).not.toContain(ADVERSARIAL_IMPACT);
+      expect(turn.text).not.toMatch(/\b(12\.4 mg|Muscle lbs|7 sources)\b/);
+    }
   });
 
   it("flag-off stays legacy even when a genotype question would require the tool", async () => {
@@ -485,6 +619,8 @@ describe("lookup_snp assemble source locks", () => {
     "utf8"
   );
   const wrapSrc = readFileSync(join(process.cwd(), "src/lib/jeffery/grounded/lookup-snp-wrap.ts"), "utf8");
+  const typesSrc = readFileSync(join(process.cwd(), "src/lib/jeffery/grounded/types.ts"), "utf8");
+  const refuseSrc = readFileSync(join(process.cwd(), "src/lib/jeffery/grounded/refuse.ts"), "utf8");
 
   it("names the shared genetics helpers and does not HTTP-loopback the live GETs", () => {
     expect(assembleSrc).toContain("loadHubVariants");
@@ -498,5 +634,20 @@ describe("lookup_snp assemble source locks", () => {
     expect(assembleSrc).not.toMatch(/fetch\s*\(\s*["'`][^"'`]*\/api\/nutrition\/genetics\/nutrigendx/);
     expect(wrapSrc).toContain("isMthfrFolateTarget");
     expect(wrapSrc).toContain("normalizeObservedPanelKey");
+  });
+
+  it("static source-lock: marker genotype/impact never plumb into LookupSnpData or restatement", () => {
+    expect(assembleSrc).toContain("buildNutrigenDxCrossRefPayload");
+    expect(assembleSrc).toContain("nutrigenFailed");
+    expect(assembleSrc).not.toMatch(/nutrigenMarkers\s*:/);
+    expect(assembleSrc).not.toMatch(/impactSummary\s*:/);
+    expect(wrapSrc).not.toMatch(/nutrigenMarkers/);
+    expect(wrapSrc).not.toMatch(/impactSummary/);
+    expect(wrapSrc).toContain("payload.nutrigenFailed");
+    expect(typesSrc).not.toMatch(/nutrigenMarkers\s*:/);
+    expect(typesSrc).not.toMatch(/impactSummary\s*:/);
+    expect(refuseSrc).not.toMatch(/nutrigenMarkers/);
+    expect(refuseSrc).not.toMatch(/impactSummary/);
+    expect(refuseSrc).toContain("assembleSnpListingText");
   });
 });

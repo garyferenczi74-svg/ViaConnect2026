@@ -256,6 +256,8 @@ export function mapEnginePayloadToSnpResult(
     gene: ask.gene,
   });
 
+  // Fail-gate reads nutrigenFailed only. Marker genotype / impact text never
+  // participate in refuse decisions and never enter LookupSnpData.
   if (payload.nutrigenFailed && consultNutrigen && !match) {
     return fail("upstream_5xx", true);
   }

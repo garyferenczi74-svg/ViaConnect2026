@@ -11,6 +11,7 @@
  *
  * No HTTP loopback. No third genetics path.
  * Nutrigen catch / query error is a read fail, not a verified empty genotype.
+ * Consult is fail-gated only; marker genotype / impact never enter the payload.
  * HormoneIQ / EpigenHQ rows are not SNP length.
  */
 
@@ -61,13 +62,6 @@ export interface LookupSnpHubRow {
   chip: string | null;
 }
 
-export interface LookupSnpNutrigenMarker {
-  gene: string;
-  rsid: string;
-  genotype: string;
-  impactSummary: string;
-}
-
 export type LookupSnpEngineLoadStatus = "ok" | "unauthorized" | "error";
 
 export interface LookupSnpEnginePayload {
@@ -77,7 +71,6 @@ export interface LookupSnpEnginePayload {
   demoAccount?: boolean;
   nutrigenAttempted?: boolean;
   nutrigenFailed?: boolean;
-  nutrigenMarkers?: LookupSnpNutrigenMarker[];
   error?: string;
 }
 
@@ -169,7 +162,7 @@ function flattenHub(
 async function loadNutrigenDxSameAsRoute(
   supabase: SupabaseLike,
   userId: string
-): Promise<{ failed: boolean; markers: LookupSnpNutrigenMarker[] }> {
+): Promise<{ failed: boolean }> {
   const [{ data: varData, error: varError }, findings] = await Promise.all([
     supabase
       .from("user_variants")
@@ -184,7 +177,7 @@ async function loadNutrigenDxSameAsRoute(
       user_id: userId,
       error: varError.message ?? "supabase error",
     });
-    return { failed: true, markers: [] };
+    return { failed: true };
   }
 
   const variants: NutrigenDxVariantRow[] = (
@@ -206,16 +199,10 @@ async function loadNutrigenDxSameAsRoute(
     severity: severityFor("nutrigen-dx", String(row.rsid ?? ""), row.genotype ?? null) ?? null,
   }));
 
-  const payload = buildNutrigenDxCrossRefPayload(variants, findings);
-  return {
-    failed: false,
-    markers: payload.resultSet.markers.map((m) => ({
-      gene: m.gene,
-      rsid: m.rsid,
-      genotype: m.genotype,
-      impactSummary: m.impactSummary,
-    })),
-  };
+  // Consult only — fail-closed if this throws. Never copy marker genotype or
+  // impact text into the grounded SNP payload. Hub user_variants remains SSOT.
+  void buildNutrigenDxCrossRefPayload(variants, findings);
+  return { failed: false };
 }
 
 /**
@@ -266,7 +253,6 @@ export async function assembleLookupSnp(
         ...base,
         nutrigenAttempted: true,
         nutrigenFailed: nutrigen.failed,
-        nutrigenMarkers: nutrigen.markers,
       };
     } catch (err) {
       safeLog.error("advisor.grounded.lookup-snp", "nutrigen read failed (not empty genotype)", {
@@ -277,7 +263,6 @@ export async function assembleLookupSnp(
         ...base,
         nutrigenAttempted: true,
         nutrigenFailed: true,
-        nutrigenMarkers: [],
         error: base.error,
       };
     }
