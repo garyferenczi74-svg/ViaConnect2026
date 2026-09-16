@@ -263,6 +263,8 @@ Peptide catalog / PeptideIQ **education** lookup. No consumer dosing protocols.
 | Listed (route name `prescribed`) | `GET /api/peptides/prescribed` | What is already on the protocol / listed — prefer over inventing; UI copy says "listed" not medical Rx |
 | Share handoff | `POST /api/advisor/peptide-share` | Not a lookup; human share flow |
 
+**Chat path (Stage A wrap):** `lookup_peptide` is wired in-process on grounded chat (`search_peptides` + consumer `peptide_education_entries` + optional listed; delivery options always stripped). Flag `LLM_GROUNDED_CHAT_ENABLED` stays default **false**.
+
 ### Contract
 
 ```ts

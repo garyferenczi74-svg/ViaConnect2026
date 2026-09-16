@@ -3,6 +3,7 @@ import { FAQ, FAQ_KILL_SWITCH_LINES, VIA_CURA_DRAFT_BANNER } from "../copy";
 import {
   assembleFourPartAnswer,
   assembleInteractionsListingText,
+  assemblePeptideListingText,
   assembleProtocolListingText,
   assembleSafetyRefuseText,
   assembleSnpListingText,
@@ -12,10 +13,11 @@ import {
   explanationForToolFailure,
   INTERACTIONS_LISTING_EXPLANATION,
   joinAssembledListingBlocks,
+  PEPTIDE_LISTING_EXPLANATION,
   SNP_LISTING_EXPLANATION,
   killSwitchFaqExplanation,
 } from "../refuse";
-import type { CheckInteractionsData, LookupSnpData } from "../types";
+import type { CheckInteractionsData, LookupPeptideData, LookupSnpData } from "../types";
 
 describe("refuse helpers", () => {
   it("uses Lex FAQ strings and includes 988 US Suicide and Crisis Lifeline on SI", () => {
@@ -294,6 +296,138 @@ describe("refuse helpers", () => {
     );
     expect(joined.indexOf(INTERACTIONS_LISTING_EXPLANATION)).toBeLessThan(
       joined.indexOf(SNP_LISTING_EXPLANATION)
+    );
+    expect(joined.split(VIA_CURA_DRAFT_BANNER).length - 1).toBe(1);
+  });
+
+  it("restates lookup_peptide field labels and Lex frame without dose or prescribe coaching", () => {
+    const data: LookupPeptideData = {
+      name: "Retatrutide",
+      slug: "retatrutide",
+      educational_only: true,
+      summary: "Incretin-class educational note on file.",
+      pathway_tags: ["incretin"],
+      entry_key: "edu-retatrutide",
+      is_peptide: true,
+      listed_names: ["Retatrutide"],
+    };
+    const text = assemblePeptideListingText({
+      role: "consumer",
+      data,
+      sourceRoute: "GET /api/peptides/search",
+    });
+    expect(PEPTIDE_LISTING_EXPLANATION).toBe(
+      "Here is what ViaConnect has on file for that peptide education."
+    );
+    expect(text).toContain(PEPTIDE_LISTING_EXPLANATION);
+    expect(text).toContain("name: Retatrutide");
+    expect(text).toContain("educational_only: true");
+    expect(text).toContain("listed: Retatrutide");
+    expect(text).toContain("compound_class: peptide");
+    expect(text).toContain("GET /api/peptides/search");
+    expect(text.toLowerCase()).not.toMatch(
+      /prescribe|titration|oral retatrutide|safe to take|semaglutide|stacking schedule/
+    );
+    expect(text).not.toMatch(/\b(mcg|mg)\b/);
+    expect(assertNoPrescribedWording(text)).toBe(true);
+
+    const nonPeptide = assemblePeptideListingText({
+      role: "consumer",
+      sourceRoute: "GET /api/peptides/search",
+      data: {
+        name: "5-Amino-1MQ",
+        slug: "5-amino-1mq",
+        educational_only: true,
+        summary: "Non-peptide educational card on file.",
+        pathway_tags: ["non-peptide"],
+        entry_key: "edu-5-amino-1mq-nonpeptide",
+        is_peptide: false,
+      },
+    });
+    expect(nonPeptide).toContain("compound_class: non-peptide");
+  });
+
+  it("uses FAQ.outOfScope when lookup_peptide is not on file", () => {
+    const text = assembleToolRefuseText({
+      role: "consumer",
+      failedTools: ["lookup_peptide"],
+      error: {
+        ok: false,
+        code: "not_found",
+        message: "lookup_peptide not_found",
+        retryable: false,
+      },
+      requestId: "req-peptide-miss",
+    });
+    expect(text).toContain(FAQ.outOfScope);
+    expect(
+      explanationForToolFailure(
+        { ok: false, code: "not_found", message: "x", retryable: false },
+        ["lookup_peptide"]
+      )
+    ).toBe(FAQ.outOfScope);
+  });
+
+  it("joins protocol then interactions then snp then peptide with the ViaCura banner once", () => {
+    const protocol = assembleProtocolListingText({
+      role: "naturopath",
+      protocolName: "ViaConnect protocol on file",
+      sourceRoute: "advisor.context / stored user_protocols",
+      includeDisclaimer: false,
+      items: [
+        {
+          productName: "MTHFR+",
+          dosage: "1 capsule",
+          reason: "on file",
+          bucket: "morning",
+        },
+      ],
+    });
+    const interactions = assembleInteractionsListingText({
+      role: "naturopath",
+      sourceRoute: "POST /api/ai/check-interactions",
+      includeDisclaimer: false,
+      data: {
+        interactions: [],
+        summary: { major: 0, moderate: 0, minor: 0, synergistic: 0 },
+        blockedProducts: [],
+      },
+    });
+    const snp = assembleSnpListingText({
+      role: "naturopath",
+      sourceRoute: "GET /api/genetics/variants",
+      includeDisclaimer: false,
+      data: {
+        rsid: "rs1801133",
+        gene: "MTHFR",
+        genotype: "CT",
+        panel_key: "genex_m",
+        educational_summary: "",
+        citations: [],
+      },
+    });
+    const peptide = assemblePeptideListingText({
+      role: "naturopath",
+      sourceRoute: "GET /api/peptides/search",
+      data: {
+        name: "Retatrutide",
+        slug: "retatrutide",
+        educational_only: true,
+        summary: "Incretin-class educational note on file.",
+        pathway_tags: [],
+        entry_key: "edu-retatrutide",
+        is_peptide: true,
+      },
+    });
+    const joined = joinAssembledListingBlocks([protocol, interactions, snp, peptide]);
+    expect(joined.indexOf("I can only restate what ViaConnect already listed")).toBeLessThan(
+      joined.indexOf(INTERACTIONS_LISTING_EXPLANATION)
+    );
+    expect(joined.indexOf(INTERACTIONS_LISTING_EXPLANATION)).toBeLessThan(
+      joined.indexOf(SNP_LISTING_EXPLANATION)
+    );
+    expect(joined.indexOf(SNP_LISTING_EXPLANATION)).toBeLessThan(
+      joined.indexOf(PEPTIDE_LISTING_EXPLANATION)
     );
     expect(joined.split(VIA_CURA_DRAFT_BANNER).length - 1).toBe(1);
   });
