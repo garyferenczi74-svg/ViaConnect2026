@@ -346,6 +346,8 @@ export type GetEducationResult = ToolResult<GetEducationData>;
 
 Optional for UC-C1/C2/P3. If missing, RAG education chunks may substitute; still no new doses.
 
+**Chat path (Stage A wrap):** `get_education` is wired in-process on grounded chat (READ consumer `peptide_education_entries` + Lex/FAQ `safety_never_say` fixtures; first RAG slice ≤20 allowlisted ids; no HTTP loopback). Flag `LLM_GROUNDED_CHAT_ENABLED` stays default **false**.
+
 ---
 
 ## Tool → use-case matrix

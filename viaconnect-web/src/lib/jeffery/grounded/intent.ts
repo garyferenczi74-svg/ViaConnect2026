@@ -3,6 +3,7 @@
  * Prefer refuse over answering when a claim would need an unwired engine.
  */
 
+import { isEducationAsk } from "./education-allowlist";
 import type { GroundedToolName } from "./types";
 
 const PROTOCOL_RE =
@@ -26,5 +27,6 @@ export function inferRequiredTools(message: string): GroundedToolName[] {
     required.add("get_protocol");
     required.add("check_interactions");
   }
+  if (isEducationAsk(message)) required.add("get_education");
   return Array.from(required);
 }

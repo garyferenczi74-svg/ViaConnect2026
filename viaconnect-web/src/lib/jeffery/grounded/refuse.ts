@@ -11,9 +11,11 @@ import {
   TOOLS_UNAVAILABLE,
   VIA_CURA_DRAFT_BANNER,
 } from "./copy";
+import { isAllowlistedNonPeptide } from "@/lib/peptides/educationEntryFields";
 import type {
   AdvisorChatRole,
   CheckInteractionsData,
+  GetEducationData,
   GroundedToolName,
   InteractionFinding,
   LookupPeptideData,
@@ -96,6 +98,14 @@ export function explanationForToolFailure(
   }
   if (
     failedTools?.includes("lookup_peptide") &&
+    (error?.code === "not_found" ||
+      error?.code === "refuse_required" ||
+      error?.code === "validation")
+  ) {
+    return FAQ.outOfScope;
+  }
+  if (
+    failedTools?.includes("get_education") &&
     (error?.code === "not_found" ||
       error?.code === "refuse_required" ||
       error?.code === "validation")
@@ -283,6 +293,10 @@ export const SNP_LISTING_EXPLANATION =
 export const PEPTIDE_LISTING_EXPLANATION =
   "Here is what ViaConnect has on file for that peptide education.";
 
+/** Lex-cleared explanation frame (2026-09-16). Do not rewrite. */
+export const EDUCATION_LISTING_EXPLANATION =
+  "Here is the ViaConnect education on file for that topic.";
+
 function assembleSnpAlreadyListed(data: LookupSnpData): string {
   const genotypeToken = data.genotype === null ? "null" : data.genotype;
   const lines = [
@@ -362,7 +376,51 @@ export function assemblePeptideListingText(input: {
   );
 }
 
-/** Protocol then interactions then snp then peptide. Banner stays once at the top. */
+function educationCompoundClass(data: GetEducationData): string {
+  if (data.topic_id === "edu-peptideiq-topic-map") return "index";
+  if (isAllowlistedNonPeptide(data.topic_id)) return "non-peptide";
+  return "peptide";
+}
+
+function assembleEducationAlreadyListed(data: GetEducationData): string {
+  const citeIds = data.citations
+    .map((cite) => cite.cite_id)
+    .filter((id) => typeof id === "string" && id.trim());
+  const lines = [
+    `topic_id: ${data.topic_id}`,
+    `title: ${data.title}`,
+    `audience: ${data.audience}`,
+    engineFieldLine("text", data.text),
+    citeIds.length ? `cite_ids: ${citeIds.join(", ")}` : null,
+    data.safety_flags.length ? `safety_flags: ${data.safety_flags.join(", ")}` : null,
+    `compound_class: ${educationCompoundClass(data)}`,
+  ].filter((line): line is string => line !== null);
+  return `- ${lines.join("\n  ")}`;
+}
+
+/**
+ * Four-part restatement of GetEducationData. Lex frame EXACT + stored field labels
+ * and cite_ids only. No diagnose / prescribe / dose / invent monograph /
+ * Semaglutide recommend / safe-to-take / stack coaching.
+ */
+export function assembleEducationListingText(input: {
+  role: AdvisorChatRole;
+  data: GetEducationData;
+  sourceRoute: string;
+  includeDisclaimer?: boolean;
+}): string {
+  return assembleFourPartAnswer(
+    {
+      explanation: EDUCATION_LISTING_EXPLANATION,
+      alreadyListed: assembleEducationAlreadyListed(input.data),
+      sources: [input.sourceRoute, ...input.data.citations.map((cite) => cite.label)],
+      nextAction: PROTOCOL_NEXT_ACTION,
+    },
+    { role: input.role, includeDisclaimer: input.includeDisclaimer }
+  );
+}
+
+/** Protocol then interactions then snp then peptide then education. Banner once. */
 export function joinAssembledListingBlocks(blocks: string[]): string {
   if (blocks.length === 0) return "";
   if (blocks.length === 1) return blocks[0];

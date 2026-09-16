@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { FAQ, FAQ_KILL_SWITCH_LINES, VIA_CURA_DRAFT_BANNER } from "../copy";
 import {
+  assembleEducationListingText,
   assembleFourPartAnswer,
   assembleInteractionsListingText,
   assemblePeptideListingText,
@@ -10,6 +11,7 @@ import {
   assembleToolRefuseText,
   assertNoPrescribedWording,
   detectSafetyRefuse,
+  EDUCATION_LISTING_EXPLANATION,
   explanationForToolFailure,
   INTERACTIONS_LISTING_EXPLANATION,
   joinAssembledListingBlocks,
@@ -17,7 +19,12 @@ import {
   SNP_LISTING_EXPLANATION,
   killSwitchFaqExplanation,
 } from "../refuse";
-import type { CheckInteractionsData, LookupPeptideData, LookupSnpData } from "../types";
+import type {
+  CheckInteractionsData,
+  GetEducationData,
+  LookupPeptideData,
+  LookupSnpData,
+} from "../types";
 
 describe("refuse helpers", () => {
   it("uses Lex FAQ strings and includes 988 US Suicide and Crisis Lifeline on SI", () => {
@@ -347,6 +354,68 @@ describe("refuse helpers", () => {
     expect(nonPeptide).toContain("compound_class: non-peptide");
   });
 
+  it("restates get_education field labels and Lex frame without dose or diagnose coaching", () => {
+    const data: GetEducationData = {
+      topic_id: "edu-sermorelin",
+      title: "Sermorelin",
+      audience: "consumer",
+      text: "Stored Sermorelin mechanism on file.",
+      citations: [{ cite_id: "pmid:12345678", label: "PMID 12345678" }],
+      safety_flags: ["edu_not_dx", "no_new_dose"],
+    };
+    const text = assembleEducationListingText({
+      role: "consumer",
+      data,
+      sourceRoute: "peptide_education_entries / Stage A education allowlist",
+    });
+    expect(EDUCATION_LISTING_EXPLANATION).toBe(
+      "Here is the ViaConnect education on file for that topic."
+    );
+    expect(text).toContain(EDUCATION_LISTING_EXPLANATION);
+    expect(text).toContain("topic_id: edu-sermorelin");
+    expect(text).toContain("cite_ids: pmid:12345678");
+    expect(text).toContain("compound_class: peptide");
+    expect(text.toLowerCase()).not.toMatch(
+      /diagnose|prescribe|titration|invent monograph|safe to take|semaglutide recommend|stack coaching/
+    );
+    expect(assertNoPrescribedWording(text)).toBe(true);
+
+    const nonPeptide = assembleEducationListingText({
+      role: "consumer",
+      sourceRoute: "peptide_education_entries / Stage A education allowlist",
+      data: {
+        topic_id: "edu-5-amino-1mq-nonpeptide",
+        title: "5-Amino-1MQ",
+        audience: "consumer",
+        text: "Non-peptide educational card on file.",
+        citations: [],
+        safety_flags: ["edu_not_dx", "no_new_dose", "non_peptide"],
+      },
+    });
+    expect(nonPeptide).toContain("compound_class: non-peptide");
+  });
+
+  it("uses FAQ.outOfScope when get_education is not on file", () => {
+    const text = assembleToolRefuseText({
+      role: "consumer",
+      failedTools: ["get_education"],
+      error: {
+        ok: false,
+        code: "not_found",
+        message: "get_education not_found",
+        retryable: false,
+      },
+      requestId: "req-edu-miss",
+    });
+    expect(text).toContain(FAQ.outOfScope);
+    expect(
+      explanationForToolFailure(
+        { ok: false, code: "not_found", message: "x", retryable: false },
+        ["get_education"]
+      )
+    ).toBe(FAQ.outOfScope);
+  });
+
   it("uses FAQ.outOfScope when lookup_peptide is not on file", () => {
     const text = assembleToolRefuseText({
       role: "consumer",
@@ -368,7 +437,7 @@ describe("refuse helpers", () => {
     ).toBe(FAQ.outOfScope);
   });
 
-  it("joins protocol then interactions then snp then peptide with the ViaCura banner once", () => {
+  it("joins protocol then interactions then snp then peptide then education with the ViaCura banner once", () => {
     const protocol = assembleProtocolListingText({
       role: "naturopath",
       protocolName: "ViaConnect protocol on file",
@@ -419,7 +488,19 @@ describe("refuse helpers", () => {
         is_peptide: true,
       },
     });
-    const joined = joinAssembledListingBlocks([protocol, interactions, snp, peptide]);
+    const education = assembleEducationListingText({
+      role: "naturopath",
+      sourceRoute: "peptide_education_entries / Stage A education allowlist",
+      data: {
+        topic_id: "edu-retatrutide",
+        title: "Retatrutide",
+        audience: "consumer",
+        text: "Incretin-class educational note on file.",
+        citations: [],
+        safety_flags: ["edu_not_dx", "no_new_dose", "no_glp1_adjacency"],
+      },
+    });
+    const joined = joinAssembledListingBlocks([protocol, interactions, snp, peptide, education]);
     expect(joined.indexOf("I can only restate what ViaConnect already listed")).toBeLessThan(
       joined.indexOf(INTERACTIONS_LISTING_EXPLANATION)
     );
@@ -428,6 +509,9 @@ describe("refuse helpers", () => {
     );
     expect(joined.indexOf(SNP_LISTING_EXPLANATION)).toBeLessThan(
       joined.indexOf(PEPTIDE_LISTING_EXPLANATION)
+    );
+    expect(joined.indexOf(PEPTIDE_LISTING_EXPLANATION)).toBeLessThan(
+      joined.indexOf(EDUCATION_LISTING_EXPLANATION)
     );
     expect(joined.split(VIA_CURA_DRAFT_BANNER).length - 1).toBe(1);
   });

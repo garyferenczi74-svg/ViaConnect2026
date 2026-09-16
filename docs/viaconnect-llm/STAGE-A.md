@@ -116,7 +116,7 @@ Allowlist only (see `03-tools/TOOL-CONTRACTS.md`):
 | `check_interactions` | Interaction engine |
 | `lookup_snp` | Genetics / NutrigenDX surfaces |
 | `lookup_peptide` | Peptide search + PeptideIQ evidence |
-| `get_education` | Optional topic / KB education |
+| `get_education` | Optional topic / KB education — **wired** (flag off): READ `peptide_education_entries` + first RAG education/safety allowlist ≤20 |
 
 **Refuse-if-tool-fails** is mandatory for any claim that depends on that tool.
 
