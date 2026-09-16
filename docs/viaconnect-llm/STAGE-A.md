@@ -105,6 +105,7 @@ Keeps existing gates:
 - Hybrid: dense embeddings + keyword / filter on `snp_ids`, `peptide_slugs`, `product_skus`, `pathway_tags`, `doc_type`, `audience`, `tier`.
 - Index versioned chunks per `02-rag-schema/DOCUMENT-SCHEMA.md`.
 - Return chunk ids + citation objects into the assembler. Never silent uncited claims for protocol / interaction facts.
+- Stage A allowlist retriever cites feed Sources on **education success only** (cite_id + label; empty → no phantom cites; flag off).
 
 ### 4. Tool router
 

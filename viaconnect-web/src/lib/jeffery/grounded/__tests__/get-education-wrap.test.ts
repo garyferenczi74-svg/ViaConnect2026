@@ -693,6 +693,7 @@ describe("get_education assemble source locks", () => {
 
   it("names the READ-only helpers and does not HTTP-loopback or write tables", () => {
     expect(assembleSrc).toContain("loadConsumerEducationEntryByKey");
+    expect(assembleSrc).not.toContain("loadConsumerEducationEntries");
     expect(assembleSrc).toContain("dropPractitionerDepthEducation");
     expect(assembleSrc).not.toMatch(/fetch\s*\(\s*["'`][^"'`]*\/api\//);
     expect(assembleSrc).not.toMatch(/\.insert\(|\.upsert\(|\.update\(/);

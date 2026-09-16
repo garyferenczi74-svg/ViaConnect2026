@@ -16,6 +16,11 @@ export {
   StageAAllowlistRetriever,
   getGroundedRetriever,
 } from "./retriever";
+export {
+  citesFromRetrieverChunks,
+  formatAllowlistSourceLine,
+  mergeEducationSourceLines,
+} from "./retriever-cites";
 export { resolveGroundedChatTurn, maybeGroundedStaticStream } from "./chat-stub";
 export { streamStaticAdvisorAnswer } from "./static-stream";
 export {

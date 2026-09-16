@@ -12,6 +12,7 @@ import {
   VIA_CURA_DRAFT_BANNER,
 } from "./copy";
 import { isAllowlistedNonPeptide } from "@/lib/peptides/educationEntryFields";
+import { mergeEducationSourceLines } from "./retriever-cites";
 import type {
   AdvisorChatRole,
   CheckInteractionsData,
@@ -21,6 +22,7 @@ import type {
   LookupPeptideData,
   LookupSnpData,
   ProtocolItem,
+  RetrieverChunk,
   ToolError,
 } from "./types";
 
@@ -400,7 +402,9 @@ function assembleEducationAlreadyListed(data: GetEducationData): string {
 
 /**
  * Four-part restatement of GetEducationData. Lex frame EXACT + stored field labels
- * and cite_ids only. No diagnose / prescribe / dose / invent monograph /
+ * and cite_ids only. Retriever chunks append Sources as cite_id + label
+ * (education success only; never chunk.text / doses). Empty chunks → no extras.
+ * No diagnose / prescribe / dose / invent monograph /
  * Semaglutide recommend / safe-to-take / stack coaching.
  */
 export function assembleEducationListingText(input: {
@@ -408,12 +412,17 @@ export function assembleEducationListingText(input: {
   data: GetEducationData;
   sourceRoute: string;
   includeDisclaimer?: boolean;
+  retrieverChunks?: RetrieverChunk[];
 }): string {
   return assembleFourPartAnswer(
     {
       explanation: EDUCATION_LISTING_EXPLANATION,
       alreadyListed: assembleEducationAlreadyListed(input.data),
-      sources: [input.sourceRoute, ...input.data.citations.map((cite) => cite.label)],
+      sources: mergeEducationSourceLines({
+        sourceRoute: input.sourceRoute,
+        toolCitations: input.data.citations,
+        retrieverChunks: input.retrieverChunks,
+      }),
       nextAction: PROTOCOL_NEXT_ACTION,
     },
     { role: input.role, includeDisclaimer: input.includeDisclaimer }

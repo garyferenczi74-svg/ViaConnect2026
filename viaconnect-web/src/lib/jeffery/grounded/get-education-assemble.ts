@@ -1,7 +1,7 @@
 /**
  * In-process get_education assemble (chat wrap).
  *
- * Edu SSOT: READ loadConsumerEducationEntryByKey / loadConsumerEducationEntries
+ * Edu SSOT: READ loadConsumerEducationEntryByKey
  *   (peptide_education_entries, is_practitioner_depth false, Thanos consumer keys).
  *   Mechanism first, then regulatory/safety_context as stored.
  *   Never invent monograph bodies, doses, or alias rows.

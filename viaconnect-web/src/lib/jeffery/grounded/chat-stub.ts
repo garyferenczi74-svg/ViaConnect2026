@@ -34,6 +34,9 @@ import type {
   GroundedTurn,
   LookupPeptideData,
   LookupSnpData,
+  RetrieverChunk,
+  RetrieverQuery,
+  RetrieverResult,
   ToolError,
 } from "./types";
 
@@ -48,6 +51,8 @@ export interface ResolveGroundedChatInput {
   lookupSnpAssemble?: GroundedToolContext["lookupSnpAssemble"];
   lookupPeptideAssemble?: GroundedToolContext["lookupPeptideAssemble"];
   getEducationAssemble?: GroundedToolContext["getEducationAssemble"];
+  /** Test/injection seam. Production uses Stage A allowlist retriever. */
+  retrieveChunks?: (query: RetrieverQuery) => Promise<RetrieverResult>;
 }
 
 function isToolError(value: { ok: boolean }): value is ToolError {
@@ -74,14 +79,17 @@ export async function resolveGroundedChatTurn(
     getEducationAssemble: input.getEducationAssemble,
   };
 
+  let retrieverChunks: RetrieverChunk[] = [];
   try {
-    await retrieveGroundedChunks({
+    const retrieved = await (input.retrieveChunks ?? retrieveGroundedChunks)({
       message: input.message,
       role: input.role,
       userId: input.userId,
     });
+    retrieverChunks = Array.isArray(retrieved.chunks) ? retrieved.chunks : [];
   } catch {
     // Empty / failed retrieve never authorizes doses or invented edu.
+    retrieverChunks = [];
   }
 
   const safety = detectSafetyRefuse(input.message);
@@ -193,6 +201,8 @@ export async function resolveGroundedChatTurn(
         role: input.role,
         data: education.data as GetEducationData,
         sourceRoute: education.route,
+        // Cite-only on education success. Protocol/interactions/snp/peptide omit these.
+        retrieverChunks,
       })
     );
   }
