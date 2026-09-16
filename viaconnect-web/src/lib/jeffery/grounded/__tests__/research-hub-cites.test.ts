@@ -33,6 +33,10 @@ import {
   STAGE_A_RETRIEVER_ALLOWLIST_MAX,
   STAGE_A_SAFETY_NEVER_SAY_IDS,
 } from "../education-allowlist";
+import {
+  STAGE_A_VIACURA_SUPPLEMENT_EDU_ALLOWLIST,
+  STAGE_A_VIACURA_SUPP_EDU_MAX,
+} from "../viacura-supplement-edu";
 import { mergeEducationSourceLines } from "../retriever-cites";
 import { isOffListSourceCite } from "../sources-off-list";
 import { isAllowGenerateHardFalse } from "../tool-router";
@@ -118,6 +122,11 @@ describe("Stage A Research Hub N lock", () => {
     expect(STAGE_A_AUTHORITIES_CITE_ALLOWLIST).toHaveLength(12);
     expect(STAGE_A_HOUNDDOG_URL_CITE_MAX).toBe(10);
     expect(STAGE_A_HOUNDDOG_URL_CITES_ENABLED).toBe(false);
+    expect(STAGE_A_VIACURA_SUPP_EDU_MAX).toBe(5);
+    expect(STAGE_A_VIACURA_SUPPLEMENT_EDU_ALLOWLIST).toHaveLength(5);
+    expect(STAGE_A_EDUCATION_ALLOWLIST).not.toEqual(
+      expect.arrayContaining([...STAGE_A_VIACURA_SUPPLEMENT_EDU_ALLOWLIST])
+    );
     expect(assertStageAAllowlistCapsHeld()).toBe(true);
   });
 

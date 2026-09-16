@@ -29,6 +29,15 @@ export {
   loadApprovedAuthorityCites,
 } from "./authorities-cites";
 export {
+  STAGE_A_VIACURA_SUPP_EDU_MAX,
+  STAGE_A_VIACURA_SUPPLEMENT_EDU_ALLOWLIST,
+  STAGE_A_VIACURA_SUPPLEMENT_EDU_SEEDS,
+  extractViacuraSupplementEduIds,
+  isEducationShapedViacuraSupplementEduCite,
+  isStageAViacuraSupplementEduId,
+  mapViacuraSupplementEduToChunk,
+} from "./viacura-supplement-edu";
+export {
   STAGE_A_HOUNDDOG_URL_CITE_MAX,
   STAGE_A_HOUNDDOG_URL_CITES_ENABLED,
   citesFromHounddogResearchRows,

@@ -5,8 +5,12 @@
  */
 
 import type { RetrieverChunk } from "./types";
-import { sanitizeAuthorityCites } from "./authorities-cites";
+import {
+  STAGE_A_RETRIEVER_COMBINED_ALLOWLIST_MAX,
+  sanitizeAuthorityCites,
+} from "./authorities-cites";
 import { sanitizeHounddogUrlCites } from "./hounddog-url-cites";
+import { rejectOffListCites } from "./sources-off-list";
 
 export interface SourceCite {
   cite_id: string;
@@ -67,7 +71,7 @@ export function citesFromRetrieverChunks(chunks: RetrieverChunk[] | undefined): 
     seen.add(key);
     out.push({ cite_id, label });
   }
-  return out;
+  return rejectOffListCites(out);
 }
 
 /**
@@ -89,12 +93,16 @@ export function mergeEducationSourceLines(input: {
     if (key) seen.add(key);
   };
 
+  let extraCount = 0;
   const appendCiteLine = (cite: SourceCite): void => {
+    if (extraCount >= STAGE_A_RETRIEVER_COMBINED_ALLOWLIST_MAX) return;
     const key = citeDedupeKey(cite);
     if (!key || seen.has(key)) return;
     seen.add(key);
     const line = formatAllowlistSourceLine(cite);
-    if (line) sources.push(line);
+    if (!line) return;
+    extraCount += 1;
+    sources.push(line);
   };
 
   const route = input.sourceRoute.trim();
