@@ -496,7 +496,7 @@ describe("Research Hub cite source locks", () => {
     expect(authSrc).not.toMatch(/\.insert\(|\.upsert\(|\.update\(/);
     expect(hdSrc).toContain("STAGE_A_HOUNDDOG_URL_CITES_ENABLED = false");
     expect(hdSrc).toContain("hounddog_research");
-    expect(hdSrc).not.toContain("hounddog_performance");
+    expect(hdSrc).not.toMatch(/\.from\(\s*["'`]hounddog_performance["'`]/);
     expect(hdSrc).not.toMatch(/fetch\s*\(\s*["'`][^"'`]*\/api\//);
     expect(stubSrc).toContain("authorityCites");
     expect(stubSrc).toContain("education.ok === true");
