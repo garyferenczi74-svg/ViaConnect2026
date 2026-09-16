@@ -4,6 +4,10 @@ export {
   isProtocolNextOrderEnabled,
 } from "@/lib/caq/protocol-next-order";
 export {
+  GENEX360_NEXT_ORDER_FLAG,
+  isGenex360NextOrderEnabled,
+} from "@/lib/caq/genex360-next-order";
+export {
   VIA_CURA_DRAFT_BANNER,
   EDUCATIONAL_DISCLAIMER,
   FAQ,
