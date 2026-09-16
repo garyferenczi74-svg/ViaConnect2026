@@ -136,6 +136,7 @@ describe("MediSearch refuse shape (PR A — no live network)", () => {
     expect(src).not.toMatch(/api\.backend\.medisearch\.io/);
     expect(src).not.toMatch(/EventSource|text\/event-stream|medichat/);
     expect(src).not.toMatch(/\bfetch\s*\(/);
+    expect(src).not.toMatch(/https?:\/\//);
   });
 });
 

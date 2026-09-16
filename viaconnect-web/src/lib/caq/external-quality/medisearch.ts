@@ -3,7 +3,7 @@
  *
  * If `CAQ_MEDISEARCH_ENABLED` is off or `MEDISEARCH_API_KEY` is missing,
  * return honest unavailable / refuse. This module never makes a network call.
- * Live SSE (`api.backend.medisearch.io`) is PR B only.
+ * Live SSE fetch is PR B only.
  *
  * CAQ compare lane only — not Hannah RAG / grounded Sources.
  */
