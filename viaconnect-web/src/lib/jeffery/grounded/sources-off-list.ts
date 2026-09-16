@@ -16,7 +16,7 @@ export interface OffListCiteFields {
 }
 
 const OFF_LIST_RE =
-  /peptide-education-staging|marshall[-_ ]?draft|via-?cura|formavision|\bglb\b|instagram\.com|hounddog_performance|hounddog_analytics_rollup|box[-_ ]?(yt|digest)|hounddog[-_ ]?digest/i;
+  /peptide-education-staging|marshall[-_ ]?draft|via-?cura|via cura|formavision|\bglb\b|instagram\.com|hounddog_performance|hounddog_analytics_rollup|box[-_ ]?(yt|digest)|hounddog[-_ ]?digest/i;
 
 export function isOffListSourceCite(cite: OffListCiteFields): boolean {
   if (isEducationShapedViacuraSupplementEduCite(cite)) return false;

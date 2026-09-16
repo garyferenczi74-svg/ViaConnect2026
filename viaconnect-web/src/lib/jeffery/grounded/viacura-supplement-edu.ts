@@ -3,6 +3,8 @@
  * Elizabeth-approved first slice (2026-09-16): cite_id + stored label only.
  * Not dose SSOT. No milligrams / PK folds / genotypes / monographs on cites.
  * Held-outs stay out of this slice. Flag remains OFF.
+ * Competitor catalog/SKU rows are CAQ comparison only — not Hannah's store.
+ * Do not wire competitive seeds or competitor cites into this lane.
  */
 
 import { VIA_CURA_DRAFT_BANNER } from "./copy";

@@ -347,7 +347,7 @@ describe("chat-stub ViaCura supplement-edu — education success only", () => {
     expect(chunk).not.toBeNull();
     if (!chunk) return;
     const turn = await resolveGroundedChatTurn({
-      message: `Show the ViaConnect education on file for edu-ss31 ${MTHFR_CITE_ID}`,
+      message: "Show the ViaConnect education on file for edu-ss31",
       role: "consumer",
       userId: "user-1",
       requestId: "req-viacura-edu-ok",
@@ -437,7 +437,7 @@ describe("ViaCura supplement-edu source locks", () => {
     expect(offSrc).toContain("via-?cura");
     expect(offSrc).toMatch(/marshall\[-_ \]\?draft/);
     expect(offSrc).toContain("formavision");
-    expect(offSrc).toContain("instagram.com");
+    expect(offSrc).toContain("instagram\\.com");
     expect(offSrc).toContain("hounddog_performance");
     expect(offSrc).not.toMatch(/OFF_LIST_RE[\s\S]*via-?cura[\s\S]*replace/);
     expect(viacuraSrc).toContain("STAGE_A_VIACURA_SUPP_EDU_MAX = 5");
@@ -447,14 +447,43 @@ describe("ViaCura supplement-edu source locks", () => {
     expect(viacuraSrc).toContain("ViaCura RELAX+");
     expect(viacuraSrc).not.toMatch(/\b(10x|28x|take 5 mg|monograph body)\b/i);
     expect(viacuraSrc).not.toMatch(/edu-viacura:(flex-plus|grow-plus|tesofensine|bpc-157)/);
+    expect(viacuraSrc).not.toMatch(/competitiveSkuSeeds|competitor_pricing|viacura_comparable/);
     expect(eduSrc).not.toContain("edu-viacura:");
+    expect(eduSrc).not.toMatch(/STAGE_A_VIACURA_SUPPLEMENT_EDU_ALLOWLIST\s*=/);
     expect(flagSrc).not.toMatch(/LLM_GROUNDED_CHAT_ENABLED.*=.*true/);
     expect(routerSrc).toContain("const ALLOW_GENERATE = false");
     expect(stageA).toMatch(/STAGE_A_VIACURA_SUPPLEMENT_EDU_ALLOWLIST/);
     expect(stageA).toMatch(/combined extra cites still ≤35/);
+    expect(stageA).toMatch(/CAQ comparison only/);
     expect(contracts).toMatch(/ViaCura supplement education is a separate ≤5 cite lane/);
+    expect(contracts).toMatch(/CAQ comparison only/);
     expect(STAGE_A_VIACURA_SUPPLEMENT_EDU_SEEDS[NAD_CITE_ID]?.label).toBe("ViaCura Replenish NAD+");
     expect(STAGE_A_VIACURA_SUPPLEMENT_EDU_SEEDS[RISE_CITE_ID]?.label).toBe("ViaCura RISE+");
     expect(STAGE_A_VIACURA_SUPPLEMENT_EDU_SEEDS[RELAX_CITE_ID]?.label).toBe("ViaCura RELAX+");
+  });
+
+  it("keeps competitor comparison seeds out of Hannah ViaCura Sources", () => {
+    const competitor = {
+      cite_id: "competitor:caq-comparison-nad",
+      label: "CAQ comparison NAD+",
+    };
+    expect(isStageAViacuraSupplementEduId(competitor.cite_id)).toBe(false);
+    expect(isEducationShapedViacuraSupplementEduCite(competitor)).toBe(false);
+    expect(mapViacuraSupplementEduToChunk(competitor.cite_id)).toBeNull();
+    expect(
+      extractViacuraSupplementEduIds("education on file for Thorne zinc picolinate CAQ comparison")
+    ).toEqual([]);
+    const laneCites = citesFromRetrieverChunks(
+      STAGE_A_VIACURA_SUPPLEMENT_EDU_ALLOWLIST.map((id) => mapViacuraSupplementEduToChunk(id)).filter(
+        (chunk): chunk is NonNullable<typeof chunk> => chunk !== null
+      )
+    );
+    expect(laneCites).toHaveLength(5);
+    expect(laneCites.every((cite) => isStageAViacuraSupplementEduId(cite.cite_id))).toBe(true);
+    expect(JSON.stringify(laneCites)).not.toMatch(/competitor|thorne|pure encapsulations|life extension/i);
+    for (const seed of Object.values(STAGE_A_VIACURA_SUPPLEMENT_EDU_SEEDS)) {
+      expect(seed.label.startsWith("ViaCura")).toBe(true);
+      expect(seed.label).not.toMatch(/competitor|thorne|pure encapsulations|life extension/i);
+    }
   });
 });

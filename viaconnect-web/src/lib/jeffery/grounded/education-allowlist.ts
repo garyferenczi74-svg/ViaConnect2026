@@ -2,7 +2,7 @@
  * Stage A first RAG education / safety slice — ≤20 allowlisted ids HARD.
  * Live PeptideIQ spellings only. Never invent alias rows or expand past 20.
  * safety_never_say = Lex/FAQ pass-through only. No new clinical invent.
- * ViaCura supplement edu is a separate ≤5 lane — do not append edu-viacura:* here.
+ * ViaCura supplement edu is a separate ≤5 lane — do not append those ids here.
  */
 
 import { FAQ } from "./copy";
