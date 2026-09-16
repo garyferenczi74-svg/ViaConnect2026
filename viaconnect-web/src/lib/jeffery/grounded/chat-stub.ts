@@ -33,6 +33,7 @@ export interface ResolveGroundedChatInput {
   advisorContextVariables?: Record<string, string>;
   storedProtocol?: GroundedToolContext["storedProtocol"];
   requestId: string;
+  checkInteractionsAssemble?: GroundedToolContext["checkInteractionsAssemble"];
 }
 
 function isToolError(value: { ok: boolean }): value is ToolError {
@@ -52,6 +53,8 @@ export async function resolveGroundedChatTurn(
     advisorContextVariables: input.advisorContextVariables,
     storedProtocol: input.storedProtocol ?? null,
     requestId: input.requestId,
+    message: input.message,
+    checkInteractionsAssemble: input.checkInteractionsAssemble,
   };
 
   await retrieveGroundedChunks({
@@ -75,7 +78,7 @@ export async function resolveGroundedChatTurn(
     return { kind: "legacy" };
   }
 
-  const results = runRequiredTools(required, ctx);
+  const results = await runRequiredTools(required, ctx);
   const failed: GroundedToolName[] = [];
   let firstError: ToolError | undefined;
   for (const name of required) {

@@ -9,7 +9,7 @@ import {
   isAllowGenerateHardFalse,
   lookupPeptideStub,
   lookupSnpStub,
-  checkInteractionsStub,
+  checkInteractionsLive,
 } from "../tool-router";
 import { retrieveGroundedChunks } from "../retriever";
 
@@ -141,8 +141,16 @@ describe("tool router stub locks", () => {
     }
   });
 
-  it("unwired tools return not_implemented so the refuse path fires", () => {
-    expect(checkInteractionsStub({ stack: [], meds: [], herbs: [] }).ok).toBe(false);
+  it("unwired tools return not_implemented so the refuse path fires", async () => {
+    const emptyMeds = await checkInteractionsLive(
+      { stack: [], meds: [], herbs: [] },
+      { userId: "user-1", role: "consumer", requestId: "r-empty-meds" }
+    );
+    expect(emptyMeds.ok).toBe(true);
+    if (emptyMeds.ok) {
+      expect(emptyMeds.data.interactions).toEqual([]);
+      expect(emptyMeds.data.blockedProducts).toEqual([]);
+    }
     expect(lookupSnpStub({ rsid: "rs1801133" }).ok).toBe(false);
     expect(lookupPeptideStub({ name: "retatrutide" }).ok).toBe(false);
   });

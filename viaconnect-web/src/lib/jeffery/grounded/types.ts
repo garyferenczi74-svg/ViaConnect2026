@@ -81,6 +81,8 @@ export interface CheckInteractionsInput {
   herbs: string[];
   user_id?: string;
   allergies?: string[];
+  /** Asked product/peptide under discussion — never LLM-authored; no dose strings. */
+  candidate?: string[];
 }
 
 export type InteractionSeverity = "major" | "moderate" | "minor" | "synergistic";
@@ -183,6 +185,26 @@ export interface GroundedToolContext {
   advisorContextVariables?: Record<string, string>;
   storedProtocol?: StoredProtocolPayload | null;
   requestId: string;
+  /** User turn text — used only to extract an on-message candidate token. */
+  message?: string;
+  /**
+   * Test/injection seam for the in-process check-interactions assemble.
+   * Production omits this and uses the shared Claude+local+floor path.
+   */
+  checkInteractionsAssemble?: (
+    body: {
+      userId?: string;
+      medications: string[];
+      supplements: string[];
+      recommendations: string[];
+      allergies: string[];
+    }
+  ) => Promise<{
+    interactions: unknown;
+    summary?: unknown;
+    blockedProducts?: unknown;
+    error?: string;
+  }>;
 }
 
 export interface RetrieverQuery {
