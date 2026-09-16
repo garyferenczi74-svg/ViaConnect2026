@@ -210,6 +210,8 @@ Educational SNP / gene card + member genotype **as stored**. No diagnosis.
 | Nutrition genetics | `GET /api/nutrition/genetics/nutrigendx` | NutrigenDX cross-ref |
 | Catalog education | GeneXM / PeptideIQ deep report modules (static data) | Via RAG `snp_card` + optional future thin GET |
 
+**Chat path (Stage A wrap):** `lookup_snp` is wired in-process on grounded chat (hub variants + NutrigenDX helpers; no HTTP loopback). Flag `LLM_GROUNDED_CHAT_ENABLED` stays default **false**.
+
 ### Contract
 
 ```ts

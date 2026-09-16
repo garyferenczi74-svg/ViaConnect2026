@@ -8,7 +8,7 @@ import {
   getProtocolFromContext,
   isAllowGenerateHardFalse,
   lookupPeptideStub,
-  lookupSnpStub,
+  lookupSnpLive,
   checkInteractionsLive,
 } from "../tool-router";
 import { retrieveGroundedChunks } from "../retriever";
@@ -151,7 +151,12 @@ describe("tool router stub locks", () => {
       expect(emptyMeds.data.interactions).toEqual([]);
       expect(emptyMeds.data.blockedProducts).toEqual([]);
     }
-    expect(lookupSnpStub({ rsid: "rs1801133" }).ok).toBe(false);
+    const snpMissing = await lookupSnpLive(
+      { rsid: "rs1801133" },
+      { userId: "user-1", role: "consumer", requestId: "r-snp" },
+      async () => ({ loadStatus: "ok", variants: [] })
+    );
+    expect(snpMissing.ok).toBe(false);
     expect(lookupPeptideStub({ name: "retatrutide" }).ok).toBe(false);
   });
 
