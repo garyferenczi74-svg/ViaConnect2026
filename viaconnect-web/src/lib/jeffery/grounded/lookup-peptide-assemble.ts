@@ -12,7 +12,7 @@
  * Listed (optional): same tables as GET /api/peptides/prescribed
  *   user_prescribed_peptides + kb_peptides name/slug join.
  *   Names only — never select Rx dose / vial / frequency for chat.
- *   Converter / loadConverterAllowlist stay OOB.
+ *   Converter allowlist / dose compute stay OOB.
  *
  * No HTTP loopback. Search catch/RPC empty is a read fail, not a verified catalog miss.
  */

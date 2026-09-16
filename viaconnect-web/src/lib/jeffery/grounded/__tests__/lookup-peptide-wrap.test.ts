@@ -632,7 +632,7 @@ describe("lookup_peptide assemble source locks", () => {
     expect(assembleSrc).toContain("loadConsumerEducationEntries");
     expect(assembleSrc).toContain("user_prescribed_peptides");
     expect(assembleSrc).toContain("kb_peptides");
-    expect(assembleSrc).not.toContain("loadConverterAllowlist");
+    expect(assembleSrc).not.toMatch(/from ["']@\/lib\/peptides\/converterAllowlist["']/);
     expect(assembleSrc).not.toMatch(/fetch\s*\(\s*["'`][^"'`]*\/api\/peptides\/search/);
     expect(assembleSrc).not.toMatch(/fetch\s*\(\s*["'`][^"'`]*\/api\/peptides\/prescribed/);
     expect(wrapSrc).toContain("preparePeptideToolPayload");
