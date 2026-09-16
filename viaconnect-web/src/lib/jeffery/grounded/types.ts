@@ -237,12 +237,6 @@ export interface GroundedToolContext {
     demoAccount?: boolean;
     nutrigenAttempted?: boolean;
     nutrigenFailed?: boolean;
-    nutrigenMarkers?: Array<{
-      gene: string;
-      rsid: string;
-      genotype: string;
-      impactSummary: string;
-    }>;
     error?: string;
   }>;
   /**

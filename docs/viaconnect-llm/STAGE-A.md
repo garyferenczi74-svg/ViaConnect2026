@@ -107,6 +107,7 @@ Keeps existing gates:
 - Return chunk ids + citation objects into the assembler. Never silent uncited claims for protocol / interaction facts.
 - Stage A allowlist retriever cites feed Sources on **education success only** (cite_id + label; empty → no phantom cites; flag off).
 - Research Hub → allowlisted education/cite sources only (`auth:…` from approved+active `authorities_sources`, ≤15; optional Hounddog URL cites ≤10 default OFF). cite≠dose; engines SSOT. edu+safety ≤20 unchanged; combined ≤35. Expanding past those caps needs a **NEW GATE**. Flag off.
+- Production empty / unmappable / failed `authorities_sources` READ may use the existing gated static authority seed for continuity (`cite_id` + label only). That seed is not DB evidence and invents no abstract/body/dose/monograph/count. Injected `loadAuthorityCites: async () => []` stays truly empty (no phantom Sources). Soft-park: true-empty Sources when live DB is empty is a later product gate — do not collapse these seams.
 
 ### 4. Tool router
 

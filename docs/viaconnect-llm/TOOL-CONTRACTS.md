@@ -210,7 +210,7 @@ Educational SNP / gene card + member genotype **as stored**. No diagnosis.
 | Nutrition genetics | `GET /api/nutrition/genetics/nutrigendx` | NutrigenDX cross-ref |
 | Catalog education | GeneXM / PeptideIQ deep report modules (static data) | Via RAG `snp_card` + optional future thin GET |
 
-**Chat path (Stage A wrap):** `lookup_snp` is wired in-process on grounded chat (hub variants + NutrigenDX helpers; no HTTP loopback). Flag `LLM_GROUNDED_CHAT_ENABLED` stays default **false**.
+**Chat path (Stage A wrap):** `lookup_snp` is wired in-process on grounded chat (hub variants + NutrigenDX helpers; no HTTP loopback). Flag `LLM_GROUNDED_CHAT_ENABLED` stays default **false**. Hub `user_variants` is member genotype SSOT. NutrigenDX consult is fail-gated only (`nutrigenFailed`); marker genotype / impact is never copied into `LookupSnpData` or restatement.
 
 ### Contract
 
@@ -346,7 +346,7 @@ export type GetEducationResult = ToolResult<GetEducationData>;
 
 Optional for UC-C1/C2/P3. If missing, RAG education chunks may substitute; still no new doses.
 
-**Chat path (Stage A wrap):** `get_education` is wired in-process on grounded chat (READ consumer `peptide_education_entries` + Lex/FAQ `safety_never_say` fixtures; first RAG slice ≤20 allowlisted ids; no HTTP loopback). Allowlist retriever chunks append cite_id + label into Sources on education success only (deduped vs tool PMIDs/sources; empty → no phantom cites). Research Hub folds approved+active `authorities_sources` as cite-only `auth:…` Sources (≤15; stored label/domain only) plus optional Hounddog URL cites (≤10; title/host only; score≥50 non-GLP; default OFF). cite≠dose; engines remain SSOT. Combined edu+safety+authorities ≤35 — past-cap expand needs a **NEW GATE**. Flag `LLM_GROUNDED_CHAT_ENABLED` stays default **false**.
+**Chat path (Stage A wrap):** `get_education` is wired in-process on grounded chat (READ consumer `peptide_education_entries` + Lex/FAQ `safety_never_say` fixtures; first RAG slice ≤20 allowlisted ids; no HTTP loopback). Allowlist retriever chunks append cite_id + label into Sources on education success only (deduped vs tool PMIDs/sources; empty → no phantom cites). Research Hub folds approved+active `authorities_sources` as cite-only `auth:…` Sources (≤15; stored label/domain only) plus optional Hounddog URL cites (≤10; title/host only; score≥50 non-GLP; default OFF). cite≠dose; engines remain SSOT. Combined edu+safety+authorities ≤35 — past-cap expand needs a **NEW GATE**. Flag `LLM_GROUNDED_CHAT_ENABLED` stays default **false**. Production empty/unmappable/failed approved-authority READ may attach only the existing gated static seed (`cite_id`+label; not loaded evidence). The chat injection seam `loadAuthorityCites: async () => []` remains zero cites / no phantom Sources. Do not treat those seams as the same.
 
 ---
 
