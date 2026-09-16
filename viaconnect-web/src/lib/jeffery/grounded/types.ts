@@ -71,6 +71,8 @@ export interface GetProtocolData {
   items: ProtocolItem[];
   blockedProducts: string[];
   interactions_summary?: unknown;
+  /** Flag-gated CAQ map suggestions. Omitted when PROTOCOL_NEXT_ORDER_ENABLED is false. */
+  protocol_entries?: import("@/lib/caq/protocol-next-order/types").ProtocolNextOrderEntry[];
 }
 
 export type GetProtocolResult = ToolResult<GetProtocolData>;

@@ -6,6 +6,7 @@
  * lookup_peptide is live in-process (search_peptides + consumer education + optional listed).
  * get_education is live in-process (READ peptide_education_entries + Lex/FAQ safety fixtures).
  * allow_generate is hard false (never silent generate-protocol).
+ * protocol_entries attach only when PROTOCOL_NEXT_ORDER_ENABLED (default false).
  *
  * Retatrutide lock: injectable-only, never stacked. Semaglutide / excluded GLP-1 stay blocked.
  * Delivery options always strip via finalizeLookupPeptideResult / preparePeptideToolPayload.
@@ -27,6 +28,12 @@ import {
   buildGetEducationInputFromContext,
   getEducationLive,
 } from "./get-education-wrap";
+import {
+  attachProtocolNextOrder,
+  isProtocolNextOrderEnabled,
+  sourceFromDataSource,
+  splitBrandProduct,
+} from "@/lib/caq/protocol-next-order";
 import { preparePeptideToolPayload } from "./strip-peptide-delivery";
 import type {
   CheckInteractionsInput,
@@ -141,6 +148,20 @@ export function protocolItemsFromContext(ctx: GroundedToolContext): ProtocolItem
   return storedItems.length ? storedItems : itemsFromAdvisorContext(ctx.advisorContextVariables);
 }
 
+function protocolEntriesFromItems(items: ProtocolItem[]) {
+  return attachProtocolNextOrder(
+    items.map((item) => {
+      const parsed = splitBrandProduct(item.productName);
+      return {
+        brand: parsed.brand,
+        product_name: parsed.product_name || item.productName,
+        source: sourceFromDataSource(item.dataSource),
+      };
+    }),
+    isProtocolNextOrderEnabled()
+  );
+}
+
 function itemsFromAdvisorContext(vars: Record<string, string> | undefined): ProtocolItem[] {
   if (!vars) return [];
   const raw = vars.currentSupplements?.trim();
@@ -208,6 +229,8 @@ export function getProtocolFromContext(
     blockedProducts: blockedFromStored(stored),
     interactions_summary: stored?.interactions,
   };
+  const protocolEntries = protocolEntriesFromItems(contextItems);
+  if (protocolEntries) data.protocol_entries = protocolEntries;
 
   return {
     ok: true,

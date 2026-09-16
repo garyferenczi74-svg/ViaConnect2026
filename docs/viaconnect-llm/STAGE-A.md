@@ -116,7 +116,7 @@ Allowlist only (see `03-tools/TOOL-CONTRACTS.md`):
 
 | Tool | Engine |
 | --- | --- |
-| `get_protocol` | Protocol engine / stored protocol |
+| `get_protocol` | Protocol engine / stored protocol. Next-order = protocol + CAQ map (not Hannah RAG invent); flag `PROTOCOL_NEXT_ORDER_ENABLED` default false |
 | `check_interactions` | Interaction engine |
 | `lookup_snp` | Genetics / NutrigenDX surfaces |
 | `lookup_peptide` | Peptide search + PeptideIQ evidence |
@@ -150,6 +150,7 @@ Blocks: new diagnoses, new doses, pregnancy / pediatric disease treatment, Semag
 ## Out of scope for Stage A
 
 - MediSearch / Prove It / Suppie external quality feeds are CAQ compare only — not Hannah RAG / grounded Sources. Flag `CAQ_MEDISEARCH_ENABLED` default false.
+- Next-order suggestions = daily protocol + CAQ replacement map — not Hannah RAG invent. Flag `PROTOCOL_NEXT_ORDER_ENABLED` default false. GeneX360/SNP Soft deferred.
 - FormaVision / GLB / body mesh.
 - Foundation pretrain.
 - On-device 70B for every consumer.
