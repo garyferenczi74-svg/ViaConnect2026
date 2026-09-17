@@ -2,7 +2,7 @@
  * Concrete on-file lab → ViaCura SKU pairs for Labs Soft.
  * Arnold Soft scan (caq-compare + ViaConnect labs surfaces): ZERO pairs today.
  * Honesty Soft path: empty table. Do not invent from Master product names.
- * Missing pair → empty / unavailable. Never treat-this-lab / dose coach.
+ * Missing pair → empty / unavailable. Educational mapping only.
  *
  * SUPPLEMENT_BIOMARKER_LINKS is the reverse direction (supplement → biomarker
  * monitor) and is not a lab→SKU map. Do not reuse it here.

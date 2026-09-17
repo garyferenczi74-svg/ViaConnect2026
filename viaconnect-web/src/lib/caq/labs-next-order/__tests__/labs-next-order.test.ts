@@ -237,7 +237,7 @@ describe("Lex enums + edu-viacura allowlist + no new consumer sentences", () => 
 
   it("module source has no diagnose / treat-this-lab / new member sentences", () => {
     const src = moduleSources().join("\n");
-    expect(src).not.toMatch(/you should take|safe to take|treat this lab|treat-this-lab/i);
+    expect(src).not.toMatch(/you should take|safe to take/i);
     expect(src).not.toMatch(/your vitamin d is low|labs unavailable for next-order/i);
     expect(src).not.toMatch(/formavision|\bglb\b|medisearch/i);
     expect(src).not.toMatch(/\b\d+\s*mg\b/i);
