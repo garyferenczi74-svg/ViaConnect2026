@@ -6,7 +6,9 @@
  * lookup_peptide is live in-process (search_peptides + consumer education + optional listed).
  * get_education is live in-process (READ peptide_education_entries + Lex/FAQ safety fixtures).
  * allow_generate is hard false (never silent generate-protocol).
- * protocol_entries attach only when PROTOCOL_NEXT_ORDER_ENABLED (default false).
+ * protocol_entries attach when PROTOCOL_NEXT_ORDER_ENABLED and/or
+ * GENEX360_NEXT_ORDER_ENABLED (both default false). GeneX360 Soft is engines
+ * SSOT + catalog map — never invent genotypes.
  *
  * Retatrutide lock: injectable-only, never stacked. Semaglutide / excluded GLP-1 stay blocked.
  * Delivery options always strip via finalizeLookupPeptideResult / preparePeptideToolPayload.
@@ -29,10 +31,16 @@ import {
   getEducationLive,
 } from "./get-education-wrap";
 import {
+  attachGenex360NextOrder,
+  isGenex360NextOrderEnabled,
+} from "@/lib/caq/genex360-next-order";
+import { assembleLookupSnp } from "./lookup-snp-assemble";
+import {
   attachProtocolNextOrder,
   isProtocolNextOrderEnabled,
   sourceFromDataSource,
   splitBrandProduct,
+  suggestProtocolNextOrder,
 } from "@/lib/caq/protocol-next-order";
 import { preparePeptideToolPayload } from "./strip-peptide-delivery";
 import type {
@@ -148,18 +156,26 @@ export function protocolItemsFromContext(ctx: GroundedToolContext): ProtocolItem
   return storedItems.length ? storedItems : itemsFromAdvisorContext(ctx.advisorContextVariables);
 }
 
-function protocolEntriesFromItems(items: ProtocolItem[]) {
-  return attachProtocolNextOrder(
-    items.map((item) => {
-      const parsed = splitBrandProduct(item.productName);
-      return {
-        brand: parsed.brand,
-        product_name: parsed.product_name || item.productName,
-        source: sourceFromDataSource(item.dataSource),
-      };
-    }),
-    isProtocolNextOrderEnabled()
-  );
+function protocolEntriesFromItems(
+  items: ProtocolItem[],
+  ctx: GroundedToolContext
+) {
+  const currents = items.map((item) => {
+    const parsed = splitBrandProduct(item.productName);
+    return {
+      brand: parsed.brand,
+      product_name: parsed.product_name || item.productName,
+      source: sourceFromDataSource(item.dataSource),
+    };
+  });
+  const protocolOn = isProtocolNextOrderEnabled();
+  const genexOn = isGenex360NextOrderEnabled();
+  if (!protocolOn && !genexOn) return undefined;
+
+  const caqEntries = attachProtocolNextOrder(currents, protocolOn);
+  const base = caqEntries ?? suggestProtocolNextOrder(currents).filter((row) => row.status === "current");
+  if (!genexOn) return base;
+  return attachGenex360NextOrder(base, ctx.genex360EnginePayload);
 }
 
 function itemsFromAdvisorContext(vars: Record<string, string> | undefined): ProtocolItem[] {
@@ -229,7 +245,7 @@ export function getProtocolFromContext(
     blockedProducts: blockedFromStored(stored),
     interactions_summary: stored?.interactions,
   };
-  const protocolEntries = protocolEntriesFromItems(contextItems);
+  const protocolEntries = protocolEntriesFromItems(contextItems, ctx);
   if (protocolEntries) data.protocol_entries = protocolEntries;
 
   return {
@@ -337,6 +353,21 @@ export async function routeGroundedTool(
       };
       if (isRecord(input) && typeof input.user_id === "string") {
         parsed.user_id = input.user_id;
+      }
+      if (isGenex360NextOrderEnabled() && ctx.genex360EnginePayload === undefined) {
+        const assemble = ctx.lookupSnpAssemble ?? assembleLookupSnp;
+        try {
+          const payload = await assemble({
+            userId: ctx.userId,
+            consultNutrigen: true,
+          });
+          return getProtocolFromContext(parsed, { ...ctx, genex360EnginePayload: payload });
+        } catch {
+          return getProtocolFromContext(parsed, {
+            ...ctx,
+            genex360EnginePayload: { loadStatus: "error", variants: [] },
+          });
+        }
       }
       return getProtocolFromContext(parsed, ctx);
     }

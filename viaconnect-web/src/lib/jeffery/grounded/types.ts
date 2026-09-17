@@ -71,7 +71,10 @@ export interface GetProtocolData {
   items: ProtocolItem[];
   blockedProducts: string[];
   interactions_summary?: unknown;
-  /** Flag-gated CAQ map suggestions. Omitted when PROTOCOL_NEXT_ORDER_ENABLED is false. */
+  /**
+   * Flag-gated next-order rows. Omitted unless PROTOCOL_NEXT_ORDER_ENABLED
+   * and/or GENEX360_NEXT_ORDER_ENABLED (both default false).
+   */
   protocol_entries?: import("@/lib/caq/protocol-next-order/types").ProtocolNextOrderEntry[];
 }
 
@@ -213,6 +216,29 @@ export interface GroundedToolContext {
     blockedProducts?: unknown;
     error?: string;
   }>;
+  /**
+   * Optional pre-assembled hub/NutrigenDX payload for GeneX360 Soft next-order.
+   * Route assembles via lookupSnpAssemble when the flag is on and this is omitted.
+   */
+  genex360EnginePayload?: {
+    loadStatus: "ok" | "unauthorized" | "error";
+    variants: Array<{
+      rsid: string;
+      gene: string | null;
+      genotype: string | null;
+      panel_key: string;
+      stored_panel_key: string | null;
+      status: string | null;
+      clinical_significance: string | null;
+      is_sample: boolean;
+      chip: string | null;
+    }>;
+    snpCountsUnknown?: boolean;
+    demoAccount?: boolean;
+    nutrigenAttempted?: boolean;
+    nutrigenFailed?: boolean;
+    error?: string;
+  };
   /**
    * Test/injection seam for the in-process lookup_snp assemble.
    * Production omits this and uses loadHubVariants + NutrigenDX helpers.

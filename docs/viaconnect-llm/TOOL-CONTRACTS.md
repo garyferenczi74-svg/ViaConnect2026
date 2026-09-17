@@ -48,7 +48,7 @@ export type ToolResult<T> = { ok: true; data: T; route: string; retrieved_at: st
 
 Return what ViaConnect **already** has on file for the user (engine / stored protocol). LLM may explain these items only.
 
-**Next-order (additive):** When `PROTOCOL_NEXT_ORDER_ENABLED` is true, attach `protocol_entries` from protocol SSOT + `CAQ_REPLACEMENT_MAP` (exact pairs then category). Competitors stay `current`. Unmapped (greens/all-in-one) → no fake SKU. Not Hannah RAG invent. Flag default **false**. GeneX360 Soft deferred.
+**Next-order (additive):** When `PROTOCOL_NEXT_ORDER_ENABLED` is true, attach `protocol_entries` from protocol SSOT + `CAQ_REPLACEMENT_MAP` (exact pairs then category). Competitors stay `current`. Unmapped (greens/all-in-one) → no fake SKU. Not Hannah RAG invent. Flag default **false**. GeneX360 Soft = engines SSOT + catalog map; GeneXM naming; flag `GENEX360_NEXT_ORDER_ENABLED` default **false**.
 
 **Jeffery lock (2026-09-15):** `allow_generate` defaults **false** for grounded chat MVP. Do not call `generate-protocol` from chat unless Arnold tips an explicit opt-in.
 

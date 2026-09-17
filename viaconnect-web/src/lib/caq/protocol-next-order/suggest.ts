@@ -1,7 +1,7 @@
 /**
  * Map current protocol rows → ViaCura next-order suggestions.
  * Never deletes a competitor `current` row. Never invents milligrams / COAs / BA.
- * GeneX360 Soft deferred — no SNP mapping here.
+ * GeneX360 Soft maps in genex360-next-order; this file stays CAQ-only.
  */
 
 import {

@@ -9,6 +9,7 @@ import {
   STAGE_A_VIACURA_SUPPLEMENT_EDU_SEEDS,
   isEducationShapedViacuraSupplementEduCite,
 } from "@/lib/jeffery/grounded/viacura-supplement-edu";
+import { GENEX360_NEXT_ORDER_FLAG } from "@/lib/caq/genex360-next-order";
 import {
   PROTOCOL_NEXT_ORDER_FLAG,
   attachProtocolNextOrder,
@@ -40,6 +41,7 @@ function assertNoInventedFacts(serialized: string): void {
 describe("PROTOCOL_NEXT_ORDER_ENABLED flag", () => {
   afterEach(() => {
     delete process.env[PROTOCOL_NEXT_ORDER_FLAG];
+    delete process.env[GENEX360_NEXT_ORDER_FLAG];
     delete process.env[LLM_GROUNDED_CHAT_FLAG];
   });
 
@@ -158,6 +160,7 @@ describe("CAQ map honesty", () => {
 describe("get_protocol advisor hook", () => {
   afterEach(() => {
     delete process.env[PROTOCOL_NEXT_ORDER_FLAG];
+    delete process.env[GENEX360_NEXT_ORDER_FLAG];
     delete process.env[LLM_GROUNDED_CHAT_FLAG];
   });
 
@@ -283,7 +286,9 @@ describe("diff audit — Soft locks", () => {
     );
     expect(stageA).toMatch(/Next-order suggestions = daily protocol \+ CAQ replacement map/);
     expect(stageA).toMatch(/not Hannah RAG invent/);
+    expect(stageA).toMatch(/GeneX360 Soft = engines SSOT \+ catalog map/);
     expect(contracts).toMatch(/protocol SSOT \+ `CAQ_REPLACEMENT_MAP`/);
     expect(contracts).toMatch(/Not Hannah RAG invent/);
+    expect(contracts).toMatch(/GeneX360 Soft = engines SSOT \+ catalog map/);
   });
 });
