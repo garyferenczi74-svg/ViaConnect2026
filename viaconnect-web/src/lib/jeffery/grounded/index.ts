@@ -8,6 +8,10 @@ export {
   isGenex360NextOrderEnabled,
 } from "@/lib/caq/genex360-next-order";
 export {
+  LABS_NEXT_ORDER_FLAG,
+  isLabsNextOrderEnabled,
+} from "@/lib/caq/labs-next-order";
+export {
   VIA_CURA_DRAFT_BANNER,
   EDUCATIONAL_DISCLAIMER,
   FAQ,

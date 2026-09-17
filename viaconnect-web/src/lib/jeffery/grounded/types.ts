@@ -73,7 +73,8 @@ export interface GetProtocolData {
   interactions_summary?: unknown;
   /**
    * Flag-gated next-order rows. Omitted unless PROTOCOL_NEXT_ORDER_ENABLED
-   * and/or GENEX360_NEXT_ORDER_ENABLED (both default false).
+   * and/or GENEX360_NEXT_ORDER_ENABLED and/or LABS_NEXT_ORDER_ENABLED
+   * (all default false).
    */
   protocol_entries?: import("@/lib/caq/protocol-next-order/types").ProtocolNextOrderEntry[];
 }
@@ -239,6 +240,39 @@ export interface GroundedToolContext {
     nutrigenFailed?: boolean;
     error?: string;
   };
+  /**
+   * Optional pre-assembled labs payload for Labs Soft next-order.
+   * Route assembles via labsAssemble / loadLabResults when the flag is on and this is omitted.
+   * Biomarker keys only — never raw values / units / ranges.
+   */
+  labsEnginePayload?: {
+    loadStatus: "ok" | "unauthorized" | "error";
+    biomarkers: Array<{
+      biomarker_key: string;
+      is_sample?: boolean | null;
+      source_type?: string | null;
+      lab_name?: string | null;
+    }>;
+    demoAccount?: boolean;
+    labsUnread?: boolean;
+    error?: string;
+  };
+  /**
+   * Test/injection seam for Labs Soft assemble.
+   * Production omits this and uses loadLabResults (GET /api/labs/results SSOT).
+   */
+  labsAssemble?: (input: { userId: string }) => Promise<{
+    loadStatus: "ok" | "unauthorized" | "error";
+    biomarkers: Array<{
+      biomarker_key: string;
+      is_sample?: boolean | null;
+      source_type?: string | null;
+      lab_name?: string | null;
+    }>;
+    demoAccount?: boolean;
+    labsUnread?: boolean;
+    error?: string;
+  }>;
   /**
    * Test/injection seam for the in-process lookup_snp assemble.
    * Production omits this and uses loadHubVariants + NutrigenDX helpers.
