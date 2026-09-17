@@ -7,8 +7,9 @@
  * get_education is live in-process (READ peptide_education_entries + Lex/FAQ safety fixtures).
  * allow_generate is hard false (never silent generate-protocol).
  * protocol_entries attach when PROTOCOL_NEXT_ORDER_ENABLED and/or
- * GENEX360_NEXT_ORDER_ENABLED (both default false). GeneX360 Soft is engines
- * SSOT + catalog map — never invent genotypes.
+ * GENEX360_NEXT_ORDER_ENABLED and/or LABS_NEXT_ORDER_ENABLED (all default false).
+ * GeneX360 Soft is engines SSOT + catalog map — never invent genotypes.
+ * Labs Soft is engines/labs SSOT + on-file map only (honesty empty if zero pairs).
  *
  * Retatrutide lock: injectable-only, never stacked. Semaglutide / excluded GLP-1 stay blocked.
  * Delivery options always strip via finalizeLookupPeptideResult / preparePeptideToolPayload.
@@ -34,6 +35,11 @@ import {
   attachGenex360NextOrder,
   isGenex360NextOrderEnabled,
 } from "@/lib/caq/genex360-next-order";
+import {
+  assembleLabsNextOrder,
+  attachLabsNextOrder,
+  isLabsNextOrderEnabled,
+} from "@/lib/caq/labs-next-order";
 import { assembleLookupSnp } from "./lookup-snp-assemble";
 import {
   attachProtocolNextOrder,
@@ -170,12 +176,14 @@ function protocolEntriesFromItems(
   });
   const protocolOn = isProtocolNextOrderEnabled();
   const genexOn = isGenex360NextOrderEnabled();
-  if (!protocolOn && !genexOn) return undefined;
+  const labsOn = isLabsNextOrderEnabled();
+  if (!protocolOn && !genexOn && !labsOn) return undefined;
 
   const caqEntries = attachProtocolNextOrder(currents, protocolOn);
   const base = caqEntries ?? suggestProtocolNextOrder(currents).filter((row) => row.status === "current");
-  if (!genexOn) return base;
-  return attachGenex360NextOrder(base, ctx.genex360EnginePayload);
+  const withGenex = genexOn ? attachGenex360NextOrder(base, ctx.genex360EnginePayload) : base;
+  if (!labsOn) return withGenex;
+  return attachLabsNextOrder(withGenex, ctx.labsEnginePayload);
 }
 
 function itemsFromAdvisorContext(vars: Record<string, string> | undefined): ProtocolItem[] {
@@ -354,6 +362,7 @@ export async function routeGroundedTool(
       if (isRecord(input) && typeof input.user_id === "string") {
         parsed.user_id = input.user_id;
       }
+      let nextCtx = ctx;
       if (isGenex360NextOrderEnabled() && ctx.genex360EnginePayload === undefined) {
         const assemble = ctx.lookupSnpAssemble ?? assembleLookupSnp;
         try {
@@ -361,15 +370,27 @@ export async function routeGroundedTool(
             userId: ctx.userId,
             consultNutrigen: true,
           });
-          return getProtocolFromContext(parsed, { ...ctx, genex360EnginePayload: payload });
+          nextCtx = { ...nextCtx, genex360EnginePayload: payload };
         } catch {
-          return getProtocolFromContext(parsed, {
-            ...ctx,
+          nextCtx = {
+            ...nextCtx,
             genex360EnginePayload: { loadStatus: "error", variants: [] },
-          });
+          };
         }
       }
-      return getProtocolFromContext(parsed, ctx);
+      if (isLabsNextOrderEnabled() && ctx.labsEnginePayload === undefined) {
+        const assemble = ctx.labsAssemble ?? assembleLabsNextOrder;
+        try {
+          const payload = await assemble({ userId: ctx.userId });
+          nextCtx = { ...nextCtx, labsEnginePayload: payload };
+        } catch {
+          nextCtx = {
+            ...nextCtx,
+            labsEnginePayload: { loadStatus: "error", biomarkers: [] },
+          };
+        }
+      }
+      return getProtocolFromContext(parsed, nextCtx);
     }
     case "check_interactions":
       return checkInteractionsLive(
