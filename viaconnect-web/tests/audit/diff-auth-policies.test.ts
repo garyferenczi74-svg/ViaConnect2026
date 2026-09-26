@@ -5,6 +5,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
+import { compareSnapshotToTemplate } from '../../scripts/audit/diff-auth-policies.ts';
+import { planPolicyAlter, renderManualTemplate } from '../../scripts/audit/emit-alter-policy.ts';
 import { flattenAuthExpr } from '../../scripts/audit/flatten-auth-expr.ts';
 
 const SCRIPT = fileURLToPath(new URL('../../scripts/audit/diff-auth-policies.ts', import.meta.url));
@@ -63,6 +65,21 @@ describe('diff-auth-policies exit codes', () => {
     const result = run(['--check', snapshot]);
     expect(result.status).toBe(0);
     expect(result.stdout).toBe('ok\n');
+  });
+
+  it('compares every policy in a template and rejects a non-flatten edit', () => {
+    const policies = [NESTED, { ...NESTED, policyname: 'already flat', qual: '(id = ( SELECT auth.uid() AS uid))' }];
+    const alter = planPolicyAlter(NESTED);
+    if (alter === null || alter === 'semicolon') throw new Error('expected alter');
+    const sql = renderManualTemplate({ sha256: 'abc', capturedMt: '2026-09-26', held: [] }, [alter]);
+    const ok = compareSnapshotToTemplate(policies, sql, new Set());
+    expect(ok.compared).toBe(2);
+    expect(ok.intendedChanges).toBe(1);
+    expect(ok.unchanged).toBe(1);
+    expect(ok.mismatches).toEqual([]);
+    const drifted = sql.replace('(id = ( SELECT auth.uid() AS uid))', '(id = ( SELECT auth.uid() AS uid) OR false)');
+    const bad = compareSnapshotToTemplate(policies, drifted, new Set());
+    expect(bad.mismatches.length).toBeGreaterThan(0);
   });
 
   it('exits zero after a flatten diff and non-zero if after is still the nested snapshot', () => {

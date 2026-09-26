@@ -33,16 +33,16 @@ The scan of the snapshot and of the earliest `policy_rewrite_backup` rows found 
 
 ## What this change does
 
-Apply order, in a quiet window, after confirming production job 10 is still paused:
+Apply order, in a quiet window, after confirming production job 10 is still paused. A routine `supabase db push` runs only step 1. Steps 2–4 live in `supabase/manual/` and Gary applies them by hand. See `supabase/manual/README.md`.
 
-1. `20260926190000_retire_performance_advisor_autoheal.sql` unschedules pg_cron job `performance_advisor_autoheal` only. This file does not unschedule `security_advisor_autoheal`. If `cron.job` or the job-10 name is absent, it does nothing. Running it twice is a no-op the second time.
-2. `20260926190001_drop_performance_advisor_autoheal_function.sql` is optional. Skip it to keep the function body (the unschedule-only option). It drops `extensions.performance_advisor_autoheal_run()` and `extensions.performance_advisor_autoheal()` only. It does not drop or alter `extensions.performance_advisor_autoheal_log` or `extensions.policy_rewrite_backup`.
-3. `20260926190002_optional_unschedule_security_advisor_autoheal.sql` is optional. Gary decides at apply time whether to apply it. It unschedules `security_advisor_autoheal` only. It does not drop or alter `extensions.security_advisor_autoheal` or `extensions.security_advisor_autoheal_run`. It does not drop or alter the backup table or the autoheal log. Running it twice is a no-op the second time.
-4. `20260926190003_flatten_auth_uid_policies.sql` is `ALTER POLICY` only, one `BEGIN`/`COMMIT` per table, with `lock_timeout = '3s'` and `statement_timeout = '60s'`. A run of two or more `( SELECT auth.uid() AS uid)` wrappers collapses to one. The same rule is applied to `auth.jwt()` and `auth.role()`. Depth-1 wrappers and bare calls are copied through.
+1. `supabase/migrations/20260926190000_retire_performance_advisor_autoheal.sql` unschedules pg_cron job `performance_advisor_autoheal` only. This file does not unschedule `security_advisor_autoheal`. If `cron.job` or the job-10 name is absent, it does nothing. Running it twice is a no-op the second time. This is the only file from this change left on the auto-apply path.
+2. `supabase/manual/optional_drop_performance_advisor_autoheal_function.sql` is optional. Skip it to keep the function body. It drops `extensions.performance_advisor_autoheal_run()` and `extensions.performance_advisor_autoheal()` only. It does not drop or alter `extensions.performance_advisor_autoheal_log` or `extensions.policy_rewrite_backup`.
+3. `supabase/manual/optional_unschedule_security_advisor_autoheal.sql` is optional. Gary decides at apply time whether to apply it. It unschedules `security_advisor_autoheal` only. It does not drop or alter `extensions.security_advisor_autoheal` or `extensions.security_advisor_autoheal_run`. It does not drop or alter the backup table or the autoheal log. Running it twice is a no-op the second time.
+4. `supabase/manual/flatten_auth_uid_policies.sql` is a generated template, not a migration. Regenerate it from a fresh `pg_policies` snapshot immediately before applying (the generator command is in the file header). It records snapshot id `df94404d465a08e9c7115038923be79b2ee41fda5f215100234f8f995aabf321` and capture time `2026-09-26 ~12:20-12:25 MT`. Each `ALTER POLICY` is preceded by a `DO` block that compares `md5(pg_get_expr(polqual, polrelid))` and `md5(pg_get_expr(polwithcheck, polrelid))` to the snapshot and `RAISE EXCEPTION` on a mismatch or a missing policy. The file is one transaction: a single `BEGIN`/`COMMIT` with `SET LOCAL lock_timeout = '3s'` and `SET LOCAL statement_timeout = '60s'`. There is no per-table commit and no session-level `SET`. A run of two or more `( SELECT auth.uid() AS uid)` wrappers collapses to one. The same rule is applied to `auth.jwt()` and `auth.role()`. Depth-1 wrappers and bare calls are copied through.
 
-No migration drops or alters `extensions.policy_rewrite_backup` or `extensions.performance_advisor_autoheal_log`. For the 29 merges, `policy-rewrite-backup-earliest.json` is the source of truth. Migration history is compared as well and is listed below. The 361 dropped indexes stay report-only. None are recreated.
+No file drops or alters `extensions.policy_rewrite_backup` or `extensions.performance_advisor_autoheal_log`. For the 29 merges, `policy-rewrite-backup-earliest.json` is the source of truth. Migration history is compared as well and is listed below. The 361 dropped indexes stay report-only. None are recreated.
 
-The flatten file alters 475 policies on 335 tables. The longest `ALTER POLICY` statement in that file is 1,328 characters, so every expression it writes is under 2,000 characters. It does not touch `public.engagement_score_snapshots` (see HOLD).
+The flatten template alters 475 policies on 335 tables. The longest `ALTER POLICY` statement in that file is 1,328 characters, so every expression it writes is under 2,000 characters. It does not touch `public.engagement_score_snapshots` (see HOLD).
 
 ## Schema-cache reloads (T3)
 
@@ -63,7 +63,7 @@ Job 10 did cause the lock and statement timeouts. Section 1 takes `ACCESS EXCLUS
 
 ## Merge HOLD
 
-29 merges were checked. For each one the normalized live policy was compared with the OR of the normalized earliest backup originals, and with the last `CREATE POLICY` of those original names in `supabase/migrations`. `( SELECT auth.uid() AS uid)` is treated as the same call as bare `auth.uid()` for that comparison. Migration text is also normalized for `pg_get_expr` differences: `public.` qualifiers, column qualification, a self-reference alias such as `family_members family_members_1`, `'...'::text`, and grouping parentheses. The backup-to-live comparison does not use that second normalization, because both sides are already deparsed.
+29 merges were checked. For each one the normalized live policy was compared with the OR of the normalized earliest backup originals, and with the last `CREATE POLICY` of those original names in `supabase/migrations`. `( SELECT auth.uid() AS uid)` is treated as the same call as bare `auth.uid()` for that comparison. Migration text is also normalized for `pg_get_expr` differences: `public.` qualifiers, column qualification, a self-reference alias such as `family_members family_members_1`, and `'...'::text`. Parentheses are removed only when a parse shows they do not change the expression. Stripping every parenthesis made different expressions compare equal, for example `(a + b) * c` and `a + b * c`, and `auth.uid()` and `auth.uid`. After that fix the 29-merge result is unchanged: 6 match migration history, 22 are incomplete, 1 differs, 0 implicit WITH CHECK bugs. The backup-to-live comparison does not use that second normalization, because both sides are already deparsed.
 
 No merge hit the known WITH CHECK bug. Every ALL or UPDATE original in the backup had an explicit WITH CHECK, so the autoheal did not drop an implicit USING-as-WITH-CHECK.
 
@@ -73,7 +73,7 @@ No merge hit the known WITH CHECK bug. Every ALL or UPDATE original in the backu
 
 The normalized live USING matches the OR of the backup originals, and it does not match the last migration definitions. The backup (and the live policy) still use `patient_practitioner_relationships` joined to `practitioners`, which is the body in `20260418000050_helix_phase1_integration.sql`. The last `CREATE POLICY engagement_scores_practitioner_read_with_consent` is in `20260418000160_practitioners_schema_reconciliation.sql` and reads `practitioner_patients` instead. `20260707150000_prompt_210f_practitioner_core_additive.sql` says that merged policy stays untouched and adds a separate policy, `engagement_scores_practitioner_read_via_pp_210f`.
 
-The flatten migration emits no `ALTER` for this table. `engagement_score_snapshots_select_merged` stays at 31,175 characters and depth 907. The other policy on the table, `engagement_scores_practitioner_read_via_pp_210f`, is already depth 1 (251 characters) and is skipped with the table. Until this hold is cleared, the full catalog's longest expression is not under 2,000 characters.
+The flatten template emits no `ALTER` for this table. `engagement_score_snapshots_select_merged` stays at 31,175 characters and depth 907. The other policy on the table, `engagement_scores_practitioner_read_via_pp_210f`, is already depth 1 (251 characters) and is skipped with the table. Until this hold is cleared, the full catalog's longest expression is not under 2,000 characters.
 
 ### Checked, not held
 
@@ -139,38 +139,50 @@ The DROP migration then ran. Neither performance-advisor function existed on thi
 
 ### Optional job-1 unschedule, proved locally
 
-A dummy job named `security_advisor_autoheal` was present (`*/15 * * * *`, command `SELECT 1`). `20260926190002_optional_unschedule_security_advisor_autoheal.sql` was applied twice.
+A dummy job named `security_advisor_autoheal` was present (`*/15 * * * *`, command `SELECT 1`). `supabase/manual/optional_unschedule_security_advisor_autoheal.sql` was applied twice.
 
 - After the first apply: `security_advisor_autoheal` was gone. No other cron job remained.
 - After the second apply: still no cron jobs. The second run did not error.
 - `pg_proc` had no `security_advisor_autoheal` or `performance_advisor_autoheal` function. The file does not create or drop functions. The production function bodies were not installed on this database.
 
-### Flatten proof and allow/deny matrix: stopped
+### Allow/deny matrix on stubbed tables
 
-The repo migrations are not a bootstrap of the live catalog. Applying them in filename order succeeded for `20260326_ai_personalization_engine.sql` and `20260326_gamification_engine.sql`, then stopped on `20260326_three_portal_architecture.sql`:
+The historical migrations are still not a bootstrap of the live catalog. Applying them in filename order stops on `20260326_three_portal_architecture.sql` with `relation "profiles" does not exist`. This proof did not pretend otherwise. It created a local database `flatten_proof` with the Supabase `auth.uid()`, `auth.role()`, and `auth.jwt()` bodies (they read `request.jwt.claims`) and minimal stub tables for the columns the sample policies reference.
 
-`ERROR: relation "profiles" does not exist` at `ALTER TABLE profiles ADD COLUMN practice_name TEXT`.
+42 policies were loaded from the snapshot, on 30 tables, covering owner-only uid checks, admin checks through `profiles.role`, jwt role claims, jwt email claims, `auth.role()`, patient/practitioner linked rows, an `EXISTS` parent row, and a board-member `JOIN`. The before expressions were the nested snapshot text, including the md5 drift guards from `supabase/manual/flatten_auth_uid_policies.sql`.
 
-A scan of `CREATE TABLE` in the 609 historical migration files found statements for 552 of the 679 public tables in the snapshot. 127 public snapshot tables have no `CREATE TABLE` in this repository. That includes the tables the matrix was going to use:
+Each cell is SELECT, INSERT, UPDATE, or DELETE as anon, owner, other, admin, or service (`service_role` is `BYPASSRLS`). That is 30 × 5 × 4 = 600 cells. The same matrix after the guarded template matched the before matrix: 600 cells compared, 0 mismatches. `pg_policies` after the apply was compared to the snapshot for all 42 policies (roles, cmd, permissive, qual, with check): 42 intended expression changes, 0 mismatches.
 
-| role | table | in snapshot | CREATE TABLE in migrations |
-|---|---|---|---|
-| consumer profile | `public.profiles` | yes | no |
-| launch | `public.launch_phases` | yes | yes (`20260418000180_create_launch_phases.sql`) |
-| shop | `public.products` | yes | no |
-| protocol | `public.protocols` | yes | no |
-| labs | `public.lab_results_normalized` | yes | yes (`20260621133000_prompt_208a_lab_concordance.sql`) |
-| admin | `public.compliance_audit_log` | yes | yes |
+Representative before cells (the after file is identical):
 
-Those three missing base tables, and the migration chain dying on `profiles` at file 3 of 609, mean the local database cannot hold the live policy catalog. Policies were not invented, and tables were not stubbed. There is no post-flatten `pg_policies` re-snapshot, and the six-table allow/deny matrix was not run.
+- `profiles` SELECT: anon `rows=0`, owner `rows=1`, other `rows=0`, admin `rows=1` (admin sees only the admin profile row), service `rows=2`.
+- `audit_logs` SELECT: admin `rows=1`, owner `rows=0`.
+- `appeal_agreement_rollups` SELECT: admin `rows=1`, owner `rows=0`.
+- `bundles` SELECT (`auth.role() = 'authenticated'`): owner `rows=1`, admin `rows=0`.
+- `verification_codes` SELECT: owner `rows=1`, other `rows=0`.
+- `advisor_peptide_shares` SELECT: owner `rows=1`, other (the practitioner) `rows=1`, anon `rows=0`.
+- `board_packs` SELECT: owner `rows=1`, other `rows=0`.
+- `email_otps` SELECT (`auth.role() = 'service_role'`): owner `rows=0`, service `rows=1`.
 
-### Diff script exit codes
+Full grids: `supabase/audit/2026-09-26-flatten-matrix-before.md` and `supabase/audit/2026-09-26-flatten-matrix-after.md`.
 
-`scripts/audit/diff-auth-policies.ts --check` on the unflattened snapshot exited 1:
+### Drift guard rolls back
+
+Inside one transaction the proof inserted a row into `proof_sentinel` and replaced `Users can view own profile` with `USING (false)`, then ran that policy's guard and `ALTER` from the template. Postgres raised `policy drift`. After the failed script, `proof_sentinel` had 0 rows and the policy's `md5(pg_get_expr(polqual, polrelid))` was unchanged.
+
+### Full catalog compare
+
+`scripts/audit/diff-auth-policies.ts --snapshot <policies.json> --template supabase/manual/flatten_auth_uid_policies.sql --held public.engagement_score_snapshots` compared all 1,188 policies (roles, cmd, permissive, qual, with check):
+
+- intended expression changes: 475
+- unchanged: 713 (711 already flat, plus the two policies on held `public.engagement_score_snapshots`)
+- mismatches: 0
+
+`--check` on the unflattened snapshot still exits 1:
 
 - `476 policies are not flattened (max depth 908)`
 - `458 policies have an expression of 2000 characters or more (max 46502)`
 
-`--before` / `--after` against a database re-snapshot was not run, because that re-snapshot does not exist. The same script's unit tests, on a one-policy hand-written fixture, exit 1 when the after file is still nested and exit 0 when the after file is the flattened expression. `npx vitest run tests/audit/flatten-auth-expr.test.ts tests/audit/diff-auth-policies.test.ts`: 2 files, 29 tests, all passed.
+`npx vitest run tests/audit/flatten-auth-expr.test.ts tests/audit/diff-auth-policies.test.ts`: 2 files, 31 tests, all passed.
 
-Because `engagement_score_snapshots_select_merged` is held, a full-catalog re-snapshot after this migration would still fail the "longest expression under 2,000 characters" check on that one policy even if every other table could be materialized.
+Because `engagement_score_snapshots_select_merged` is held, a full-catalog re-snapshot after this template would still fail the "longest expression under 2,000 characters" check on that one policy.

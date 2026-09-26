@@ -1,18 +1,22 @@
 // Diff two pg_policies snapshots, or check that one snapshot is fully flattened.
 //
 //   node --experimental-strip-types scripts/audit/diff-auth-policies.ts --check <snapshot.json>
-//   node --experimental-strip-types scripts/audit/diff-auth-policies.ts --before <before.json> --after <after.json>
+//   node --experimental-strip-types scripts/audit/diff-auth-policies.ts --before <before.json> --after <after.json> [--held schema.table]
+//   node --experimental-strip-types scripts/audit/diff-auth-policies.ts --snapshot <snapshot.json> --template <flatten.sql> [--held schema.table]
 //
 // --check exits 0 only when every qual/with_check is already equal to its
 // flattened form and every expression is under 2,000 characters.
-// The unflattened 2026-09-26 snapshot fails that check.
 //
-// --before/--after exits 0 only when names, roles, cmd, permissive, and count
-// are identical, only qual/with_check differ, flatten(before) equals after
-// for every row, and the after snapshot's longest expression is under 2,000.
+// --before/--after and --snapshot/--template compare every policy: roles, cmd,
+// permissive, qual, and with_check. The only allowed difference is the
+// intended auth-wrapper flatten (clauses the template emits). Held tables
+// and already-flat policies must stay byte for byte. Exit 1 on any other difference.
 
 import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
+import { exprMd5, planPolicyAlter } from './emit-alter-policy.ts';
 import { flattenAuthExpr, maxWrapperDepth } from './flatten-auth-expr.ts';
 
 interface PolicyRow {
@@ -112,47 +116,255 @@ function checkOne(policies: readonly PolicyRow[]): string[] {
   return failures;
 }
 
-function diffPair(before: readonly PolicyRow[], after: readonly PolicyRow[]): string[] {
-  const failures: string[] = [];
+export interface CompareResult {
+  readonly compared: number;
+  readonly intendedChanges: number;
+  readonly unchanged: number;
+  readonly mismatches: readonly string[];
+}
+
+function tableKey(policy: PolicyRow): string {
+  return `${policy.schemaname}.${policy.tablename}`;
+}
+
+/** Clauses the flatten template rewrites become the flat form. Everything else stays byte for byte. */
+export function expectedExpressions(
+  policy: PolicyRow,
+  held: ReadonlySet<string>,
+): { qual: string | null; withCheck: string | null; changed: boolean } {
+  if (held.has(tableKey(policy))) {
+    return { qual: policy.qual, withCheck: policy.with_check, changed: false };
+  }
+  const planned = planPolicyAlter(policy);
+  if (planned === null || planned === 'semicolon') {
+    return { qual: policy.qual, withCheck: policy.with_check, changed: false };
+  }
+  return {
+    qual: planned.usingExpr !== null ? planned.usingExpr : policy.qual,
+    withCheck: planned.checkExpr !== null ? planned.checkExpr : policy.with_check,
+    changed: true,
+  };
+}
+
+export function compareFlattenedPolicies(
+  before: readonly PolicyRow[],
+  after: readonly PolicyRow[],
+  held: ReadonlySet<string>,
+): CompareResult {
+  const mismatches: string[] = [];
   if (before.length !== after.length) {
-    failures.push(`count differs: before ${before.length}, after ${after.length}`);
+    mismatches.push(`count differs: before ${before.length}, after ${after.length}`);
   }
   const afterByKey = new Map<string, PolicyRow>();
   for (const policy of after) afterByKey.set(keyOf(policy), policy);
   const seen = new Set<string>();
-  let exprMismatches = 0;
-  let identityMismatches = 0;
+  let intendedChanges = 0;
+  let unchanged = 0;
   for (const policy of before) {
     const key = keyOf(policy);
     seen.add(key);
     const next = afterByKey.get(key);
     if (next === undefined) {
-      identityMismatches += 1;
+      mismatches.push(`missing after ${policy.schemaname}.${policy.tablename}.${policy.policyname}`);
       continue;
     }
-    if (
-      next.permissive !== policy.permissive ||
-      next.cmd !== policy.cmd ||
-      !sameRoles(next.roles, policy.roles)
-    ) {
-      identityMismatches += 1;
+    if (next.permissive !== policy.permissive || next.cmd !== policy.cmd || !sameRoles(next.roles, policy.roles)) {
+      mismatches.push(`identity changed ${policy.schemaname}.${policy.tablename}.${policy.policyname}`);
     }
-    const expectQual = clauseFlat(policy.qual);
-    const expectCheck = clauseFlat(policy.with_check);
-    if (next.qual !== expectQual || next.with_check !== expectCheck) exprMismatches += 1;
+    const expected = expectedExpressions(policy, held);
+    if (expected.changed) intendedChanges += 1;
+    else unchanged += 1;
+    if (next.qual !== expected.qual || next.with_check !== expected.withCheck) {
+      mismatches.push(`expression changed beyond flatten ${policy.schemaname}.${policy.tablename}.${policy.policyname}`);
+    }
   }
   for (const policy of after) {
-    if (!seen.has(keyOf(policy))) identityMismatches += 1;
+    if (!seen.has(keyOf(policy))) {
+      mismatches.push(`extra after ${policy.schemaname}.${policy.tablename}.${policy.policyname}`);
+    }
   }
-  if (identityMismatches > 0) {
-    failures.push(`${identityMismatches} identity mismatches (name, roles, cmd, permissive, or missing row)`);
+  return { compared: before.length, intendedChanges, unchanged, mismatches };
+}
+
+interface ParsedAlter {
+  readonly schemaname: string;
+  readonly tablename: string;
+  readonly policyname: string;
+  readonly usingExpr: string | null;
+  readonly checkExpr: string | null;
+  readonly guard: string;
+}
+
+function parseQuotedIdent(sql: string, start: number): { value: string; next: number } {
+  if (sql[start] !== '"') throw new Error(`expected quoted ident at ${start}`);
+  let value = '';
+  let i = start + 1;
+  while (i < sql.length) {
+    const ch = sql[i] ?? '';
+    if (ch === '"' && sql[i + 1] === '"') {
+      value += '"';
+      i += 2;
+      continue;
+    }
+    if (ch === '"') return { value, next: i + 1 };
+    value += ch;
+    i += 1;
   }
-  if (exprMismatches > 0) {
-    failures.push(`${exprMismatches} rows where flatten(before) does not equal after`);
+  throw new Error('unterminated identifier');
+}
+
+function parseParenBody(sql: string, open: number): { expr: string; next: number } {
+  let depth = 0;
+  let inString = false;
+  for (let i = open; i < sql.length; i += 1) {
+    const ch = sql[i] ?? '';
+    if (inString) {
+      if (ch === "'" && sql[i + 1] === "'") {
+        i += 1;
+        continue;
+      }
+      if (ch === "'") inString = false;
+      continue;
+    }
+    if (ch === "'") {
+      inString = true;
+      continue;
+    }
+    if (ch === '(') depth += 1;
+    else if (ch === ')') {
+      depth -= 1;
+      if (depth === 0) return { expr: sql.slice(open + 1, i), next: i + 1 };
+    }
   }
-  const afterFailures = checkOne(after);
-  for (const failure of afterFailures) failures.push(`after: ${failure}`);
-  return failures;
+  throw new Error('unterminated expression');
+}
+
+function skipWs(sql: string, index: number): number {
+  let i = index;
+  while (i < sql.length && (sql[i] === ' ' || sql[i] === '\n' || sql[i] === '\r' || sql[i] === '\t')) i += 1;
+  return i;
+}
+
+export function parseTemplateAlters(sql: string): ParsedAlter[] {
+  const alters: ParsedAlter[] = [];
+  const needle = '\nALTER POLICY ';
+  let from = 0;
+  let guardFrom = 0;
+  while (from < sql.length) {
+    const at = sql.indexOf(needle, from);
+    if (at === -1) break;
+    const guard = sql.slice(guardFrom, at);
+    let i = at + needle.length;
+    const policyname = parseQuotedIdent(sql, i);
+    i = skipWs(sql, policyname.next);
+    if (sql.slice(i, i + 2).toUpperCase() !== 'ON') throw new Error('ALTER POLICY missing ON');
+    i = skipWs(sql, i + 2);
+    const schema = parseQuotedIdent(sql, i);
+    i = schema.next;
+    if (sql[i] !== '.') throw new Error('ALTER POLICY missing schema dot');
+    const table = parseQuotedIdent(sql, i + 1);
+    i = skipWs(sql, table.next);
+    let usingExpr: string | null = null;
+    let checkExpr: string | null = null;
+    if (sql.slice(i, i + 5).toUpperCase() === 'USING') {
+      i = skipWs(sql, i + 5);
+      if (sql[i] !== '(') throw new Error('USING missing paren');
+      const body = parseParenBody(sql, i);
+      usingExpr = body.expr;
+      i = skipWs(sql, body.next);
+    }
+    if (sql.slice(i, i + 10).toUpperCase() === 'WITH CHECK') {
+      i = skipWs(sql, i + 10);
+      if (sql[i] !== '(') throw new Error('WITH CHECK missing paren');
+      const body = parseParenBody(sql, i);
+      checkExpr = body.expr;
+      i = skipWs(sql, body.next);
+    }
+    if (sql[i] !== ';') throw new Error(`ALTER POLICY missing semicolon near ${sql.slice(i, i + 20)}`);
+    alters.push({
+      schemaname: schema.value,
+      tablename: table.value,
+      policyname: policyname.value,
+      usingExpr,
+      checkExpr,
+      guard,
+    });
+    from = i + 1;
+    guardFrom = from;
+  }
+  return alters;
+}
+
+export function compareSnapshotToTemplate(
+  policies: readonly PolicyRow[],
+  sql: string,
+  held: ReadonlySet<string>,
+): CompareResult {
+  const parsed = parseTemplateAlters(sql);
+  const byKey = new Map<string, ParsedAlter>();
+  const mismatches: string[] = [];
+  for (const alter of parsed) {
+    const key = `${alter.schemaname}\t${alter.tablename}\t${alter.policyname}`;
+    if (byKey.has(key)) mismatches.push(`duplicate alter ${alter.schemaname}.${alter.tablename}.${alter.policyname}`);
+    byKey.set(key, alter);
+  }
+  const after: PolicyRow[] = [];
+  for (const policy of policies) {
+    const key = keyOf(policy);
+    const alter = byKey.get(key);
+    const expected = expectedExpressions(policy, held);
+    if (held.has(tableKey(policy)) && alter !== undefined) {
+      mismatches.push(`held table was altered ${tableKey(policy)}.${policy.policyname}`);
+    }
+    if (expected.changed && alter === undefined) {
+      mismatches.push(`missing template alter ${policy.schemaname}.${policy.tablename}.${policy.policyname}`);
+    }
+    if (!expected.changed && alter !== undefined) {
+      mismatches.push(`unexpected template alter ${policy.schemaname}.${policy.tablename}.${policy.policyname}`);
+    }
+    if (alter !== undefined) {
+      const qualMd5 = exprMd5(policy.qual);
+      const checkMd5 = exprMd5(policy.with_check);
+      if (qualMd5 !== null && !alter.guard.includes(qualMd5)) {
+        mismatches.push(`guard missing qual md5 ${policy.schemaname}.${policy.tablename}.${policy.policyname}`);
+      }
+      if (checkMd5 !== null && !alter.guard.includes(checkMd5)) {
+        mismatches.push(`guard missing check md5 ${policy.schemaname}.${policy.tablename}.${policy.policyname}`);
+      }
+      if (!alter.guard.includes('RAISE EXCEPTION')) {
+        mismatches.push(`guard missing RAISE ${policy.schemaname}.${policy.tablename}.${policy.policyname}`);
+      }
+      const qual = alter.usingExpr !== null ? alter.usingExpr : policy.qual;
+      const withCheck = alter.checkExpr !== null ? alter.checkExpr : policy.with_check;
+      if (qual !== expected.qual || withCheck !== expected.withCheck) {
+        mismatches.push(`template expression is not the flatten ${policy.schemaname}.${policy.tablename}.${policy.policyname}`);
+      }
+      after.push({ ...policy, qual, with_check: withCheck });
+      byKey.delete(key);
+    } else {
+      after.push(policy);
+    }
+  }
+  for (const alter of byKey.values()) {
+    mismatches.push(`template alter not in snapshot ${alter.schemaname}.${alter.tablename}.${alter.policyname}`);
+  }
+  const compared = compareFlattenedPolicies(policies, after, held);
+  return {
+    compared: policies.length,
+    intendedChanges: compared.intendedChanges,
+    unchanged: compared.unchanged,
+    mismatches: [...mismatches, ...compared.mismatches],
+  };
+}
+
+function formatCompare(result: CompareResult): string[] {
+  return [
+    `compared ${result.compared} policies`,
+    `intended expression changes ${result.intendedChanges}`,
+    `unchanged ${result.unchanged}`,
+    `mismatches ${result.mismatches.length}`,
+    ...result.mismatches.slice(0, 30),
+  ];
 }
 
 function argValue(argv: readonly string[], flag: string): string | undefined {
@@ -161,26 +373,54 @@ function argValue(argv: readonly string[], flag: string): string | undefined {
   return argv[index + 1];
 }
 
+function heldSet(argv: readonly string[]): Set<string> {
+  const held = new Set<string>();
+  for (let i = 0; i < argv.length; i += 1) {
+    if (argv[i] === '--held' && argv[i + 1] !== undefined) held.add(argv[i + 1] ?? '');
+  }
+  return held;
+}
+
 function main(): void {
   const argv = process.argv.slice(2);
   const checkPath = argValue(argv, '--check');
   const beforePath = argValue(argv, '--before');
   const afterPath = argValue(argv, '--after');
-  let failures: string[] = [];
+  const snapshotPath = argValue(argv, '--snapshot');
+  const templatePath = argValue(argv, '--template');
+  const held = heldSet(argv);
   if (checkPath !== undefined) {
-    failures = checkOne(readPolicies(checkPath));
-  } else if (beforePath !== undefined && afterPath !== undefined) {
-    failures = diffPair(readPolicies(beforePath), readPolicies(afterPath));
+    const failures = checkOne(readPolicies(checkPath));
+    if (failures.length === 0) {
+      process.stdout.write('ok\n');
+      process.exit(0);
+    }
+    for (const failure of failures) process.stdout.write(`${failure}\n`);
+    process.exit(1);
+  }
+  let lines: string[] = [];
+  let mismatches = 0;
+  if (beforePath !== undefined && afterPath !== undefined) {
+    const result = compareFlattenedPolicies(readPolicies(beforePath), readPolicies(afterPath), held);
+    lines = formatCompare(result);
+    mismatches = result.mismatches.length;
+  } else if (snapshotPath !== undefined && templatePath !== undefined) {
+    const result = compareSnapshotToTemplate(readPolicies(snapshotPath), readFileSync(templatePath, 'utf8'), held);
+    lines = formatCompare(result);
+    mismatches = result.mismatches.length;
   } else {
-    process.stderr.write('usage: diff-auth-policies.ts --check <snapshot> | --before <a> --after <b>\n');
+    process.stderr.write(
+      'usage: diff-auth-policies.ts --check <snapshot> | --before <a> --after <b> [--held schema.table] | --snapshot <json> --template <sql> [--held schema.table]\n',
+    );
     process.exit(2);
   }
-  if (failures.length === 0) {
+  for (const line of lines) process.stdout.write(`${line}\n`);
+  if (mismatches === 0) {
     process.stdout.write('ok\n');
     process.exit(0);
   }
-  for (const failure of failures) process.stdout.write(`${failure}\n`);
   process.exit(1);
 }
 
-main();
+const isDirectRun = process.argv[1] !== undefined && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isDirectRun) main();

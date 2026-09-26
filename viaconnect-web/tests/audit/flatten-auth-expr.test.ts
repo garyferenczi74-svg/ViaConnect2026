@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { planPolicyAlter, quoteIdent, renderAlter, renderTableBlock } from '../../scripts/audit/emit-alter-policy.ts';
+import { planPolicyAlter, quoteIdent, renderAlter, renderManualTemplate } from '../../scripts/audit/emit-alter-policy.ts';
 import { buildNestedWrapper, flattenAuthExpr, maxWrapperDepth } from '../../scripts/audit/flatten-auth-expr.ts';
 import { assessMerge, type BackupPolicyRow, type LivePolicyRef, type MergeRecord } from '../../scripts/audit/hold-merges.ts';
 import { parseCreatePolicies } from '../../scripts/audit/migration-policy-history.ts';
@@ -69,6 +69,12 @@ describe('canonical OR comparison', () => {
     const migrationFamily =
       'primary_user_id IN ( SELECT primary_user_id FROM family_members WHERE member_user_id = auth.uid() AND is_active = true )';
     expect(migrationKeysEqual(migrationCompareKey(liveFamily), migrationCompareKey(migrationFamily))).toBe(true);
+  });
+
+  it('does not treat different parenthesizations as the same expression', () => {
+    expect(migrationKeysEqual(migrationCompareKey('(a + b) * c'), migrationCompareKey('a + b * c'))).toBe(false);
+    expect(migrationKeysEqual(migrationCompareKey('auth.uid()'), migrationCompareKey('auth.uid'))).toBe(false);
+    expect(migrationKeysEqual(migrationCompareKey('(a OR b) AND (c OR d)'), migrationCompareKey('a OR b AND c OR d'))).toBe(false);
   });
 
   it('does not treat a different relation as the same policy', () => {
@@ -142,9 +148,17 @@ describe('ALTER POLICY emit', () => {
       with_check: '(id = ( SELECT auth.uid() AS uid))',
     });
     if (nested === null || nested === 'semicolon') throw new Error('expected an alter');
-    const sql = renderTableBlock([nested]);
-    expect(sql.startsWith('BEGIN;')).toBe(true);
-    expect(sql.endsWith('COMMIT;')).toBe(true);
+    const sql = renderManualTemplate(
+      { sha256: 'abc', capturedMt: '2026-09-26', held: [] },
+      [nested],
+    );
+    expect(sql.match(/\bBEGIN;/g)?.length).toBe(1);
+    expect(sql.match(/\bCOMMIT;/g)?.length).toBe(1);
+    expect(sql).toContain("SET LOCAL lock_timeout = '3s'");
+    expect(sql).toContain("SET LOCAL statement_timeout = '60s'");
+    expect(sql).not.toContain('\nSET lock_timeout');
+    expect(sql).toContain('md5(pg_get_expr(polqual, polrelid))');
+    expect(sql).toContain('RAISE EXCEPTION');
     expect(sql).toContain('USING ((id = ( SELECT auth.uid() AS uid)))');
     expect(sql).toContain('WITH CHECK ((id = ( SELECT auth.uid() AS uid)))');
   });

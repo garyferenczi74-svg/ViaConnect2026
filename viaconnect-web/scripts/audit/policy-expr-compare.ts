@@ -5,6 +5,7 @@
 // `( SELECT auth.uid() AS uid)` and `(SELECT auth.uid())` both reduce to `auth.uid()`.
 
 import { AUTH_WRAPPERS, flattenAuthExpr, type AuthWrapper } from './flatten-auth-expr.ts';
+import { normalizeSqlParens } from './sql-expr-normalize.ts';
 
 function isIdentChar(ch: string): boolean {
   return /[A-Za-z0-9_]/.test(ch);
@@ -323,22 +324,30 @@ function stripSelfAliases(code: string): string {
   return code.replaceAll(/\b([A-Za-z_][A-Za-z0-9_]*) \1_[0-9]+\b/g, '$1');
 }
 
-function stripGroupingParens(code: string): string {
-  return code.replaceAll(/[()]/g, '');
+function tryNormalizeParens(input: string): string {
+  try {
+    return normalizeSqlParens(input);
+  } catch {
+    // Keep the parentheses. Deleting every parenthesis makes different
+    // expressions compare equal, for example (a + b) * c and a + b * c.
+    return input;
+  }
 }
 
 /**
  * Comparison key for migration source versus a pg_policies deparse.
  * Drops text-literal casts, table qualifiers other than auth.*, self-aliases,
- * grouping parentheses, and whitespace. Backup-to-live comparison does not
- * use this; both of those sides are already deparsed.
+ * and whitespace. Parentheses are removed only when a parse shows they do
+ * not change the expression. Backup-to-live comparison does not use this;
+ * both of those sides are already deparsed.
  */
 export function migrationCompareKey(expr: string | null): string | null {
   const branches = canonicalOrBranches(expr);
   if (branches === null) return null;
-  const normalized = branches.map((branch) =>
-    mapOutsideStrings(branch, (code) => stripGroupingParens(stripSelfAliases(stripQualifiers(stripTextLiteralCasts(code))))),
-  );
+  const normalized = branches.map((branch) => {
+    const prepared = mapOutsideStrings(branch, (code) => stripSelfAliases(stripQualifiers(stripTextLiteralCasts(code))));
+    return tryNormalizeParens(prepared);
+  });
   const compact = normalized.map((branch) => stripWsOutsideStrings(branch).replaceAll(' ', ''));
   compact.sort();
   return compact.join(' OR ');
