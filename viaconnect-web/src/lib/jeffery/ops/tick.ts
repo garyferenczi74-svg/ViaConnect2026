@@ -40,7 +40,7 @@ export async function runOpsTick(opts?: {
   let pausedSkipped = 0;
   let registryEnsured = 0;
 
-  // 0) Schema bootstrap (219H tables + 219M cursors/pg_cron)
+  // 0) Read-only presence check. Migrations own 219H tables and pg_cron.
   let schemaResult: OpsTickResult["schema"] = undefined;
   let discoveryCursorCount = 0;
   try {

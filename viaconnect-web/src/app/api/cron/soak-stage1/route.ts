@@ -50,12 +50,11 @@ export async function GET(request: Request): Promise<Response> {
     const postgres = (await import("postgres")).default;
     const sql = postgres(conn, { max: 1, idle_timeout: 5, connect_timeout: 20 });
     try {
-      // Ensure schema/cron registration path has run once
+      // Read-only presence check. Does not apply DDL or register pg_cron jobs.
       try {
         const { ensureContinuousOpsSchema } = await import(
           "@/lib/jeffery/ops/ensureSchema"
         );
-        // Force re-run within process if needed: call anyway; may no-op if applied
         await ensureContinuousOpsSchema();
       } catch (e) {
         safeLog.warn("soak.stage1", "ensureSchema threw", { error: e });
@@ -83,36 +82,6 @@ export async function GET(request: Request): Promise<Response> {
         }));
       } catch (e) {
         cronError = e instanceof Error ? e.message : String(e);
-      }
-
-      // If missing, try schedule again and re-query
-      const missing = EXPECTED_JOBS.filter(
-        (j) => !cronJobs.some((c) => c.jobname === j && c.active)
-      );
-      if (missing.length > 0 && !cronError) {
-        try {
-          await sql.unsafe(`
-            DO $$ BEGIN PERFORM cron.unschedule('viaconnect_ops_tick_15m'); EXCEPTION WHEN OTHERS THEN NULL; END $$;
-            SELECT cron.schedule('viaconnect_ops_tick_15m', '*/15 * * * *', $cron$ SELECT public.invoke_ops_tick(); $cron$);
-            DO $$ BEGIN PERFORM cron.unschedule('viaconnect_ops_discovery_6h'); EXCEPTION WHEN OTHERS THEN NULL; END $$;
-            SELECT cron.schedule('viaconnect_ops_discovery_6h', '22 */6 * * *', $cron$ SELECT public.invoke_ops_tick(); $cron$);
-          `);
-          const rows = await sql<
-            { jobname: string; schedule: string; active: boolean }[]
-          >`
-            SELECT jobname, schedule, active
-            FROM cron.job
-            WHERE jobname LIKE 'viaconnect%'
-            ORDER BY jobname
-          `;
-          cronJobs = rows.map((r) => ({
-            jobname: r.jobname,
-            schedule: r.schedule,
-            active: Boolean(r.active),
-          }));
-        } catch (e) {
-          cronError = e instanceof Error ? e.message : String(e);
-        }
       }
 
       let cursors: Array<Record<string, unknown>> = [];
