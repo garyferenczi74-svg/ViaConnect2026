@@ -8,12 +8,23 @@
  * Invariants:
  *   1. Exact file names, and each sorts after every other migration file
  *      present in this tree (predecessor 20260926190000).
- *   2. Migration A aborts in a leading DO block unless all 6 SKUs exist,
- *      then a second DO block checks the 3 + 3 link. Phase 2 date stays null.
- *   3. Migration B enables and forces RLS, re-grants only select/insert/delete
- *      to authenticated, and scopes those policies to (select auth.uid()) once.
- *   4. Neither file is destructive: no DROP, no ALTER ... DROP, no TRUNCATE,
- *      no DELETE FROM, no RENAME, and no auth email or template changes.
+ *   2. Each file sets lock_timeout inside the caller's transaction and does
+ *      not COMMIT, so `psql --single-transaction` stays one transaction.
+ *   3. Migration A aborts unless 6 active rows and 6 distinct SKUs exist,
+ *      then checks the 3 + 3 link. Phase 2 date stays null. The phase 1
+ *      actual date is America/Edmonton local, not UTC current_date.
+ *   4. Migration B enables and forces RLS. Policies are pg_policies-guarded.
+ *      authenticated gets select, insert, and delete of own rows only.
+ *   5. Neither file is destructive, and the launch_phase_id comment does
+ *      not describe a kit exemption.
+ *
+ * CI: no workflow runs src/lib/__tests__ as a glob, and none runs this file.
+ *   .github/workflows/ci.yml does not invoke vitest.
+ *   .github/workflows/formavision-e2e.yml runs a fixed FormaVision list.
+ *   .github/workflows/gold-set-eval.yml runs
+ *     src/lib/eval/__tests__/goldSet.test.ts only.
+ * vitest.config.ts includes src __tests__ files matching *.test.ts, so
+ * `npx vitest run` and a direct path run pick this file up locally.
  *
  * Node-safe (no jsdom), node builtins only, zero any.
  * Rules: no em dashes, no en dashes, no emojis.
@@ -34,6 +45,12 @@ const PREDECESSOR = '20260926190000_retire_performance_advisor_autoheal.sql';
 const PHASE_1_SKUS = ['FC-NAD-001', 'FC-RISE-001', 'FC-DESIRE-001'] as const;
 const PHASE_2_SKUS = ['FC-CREATINE-001', 'FC-CATALYST-001', 'FC-MTHFR-001'] as const;
 const SEEDED_SKUS = [...PHASE_1_SKUS, ...PHASE_2_SKUS] as const;
+
+const POLICY_NAMES = [
+  'shop_product_waitlist_select_own',
+  'shop_product_waitlist_insert_own',
+  'shop_product_waitlist_delete_own',
+] as const;
 
 function readMigration(fileName: string): string {
   return readFileSync(join(MIGRATIONS_DIR, fileName), 'utf8');
@@ -98,7 +115,7 @@ function policyStatements(sql: string): string[] {
 
 function assertAdditive(sql: string, label: string): void {
   expect(sql, `${label} contains DROP`).not.toMatch(/\bdrop\b/);
-  expect(sql, `${label} alters a table to drop`).not.toMatch(/\balter\s+table\b[\s\S]{0,80}\bdrop\b/);
+  expect(sql, `${label} alters a table to drop`).not.toMatch(/\balter\s+table\b[\s\S]{0,120}\bdrop\b/);
   expect(sql, `${label} contains TRUNCATE`).not.toMatch(/\btruncate\b/);
   expect(sql, `${label} contains DELETE FROM`).not.toMatch(/\bdelete\s+from\b/);
   expect(sql, `${label} contains RENAME`).not.toMatch(/\brename\b/);
@@ -131,11 +148,19 @@ describe('shop release migrations sort last with the exact PR 1 names', () => {
   });
 });
 
-describe('migration A guards the 6 SKU seed before and after the link', () => {
-  it('opens with a DO block that raises unless all 6 SKUs exist, before any write', () => {
-    const sql = normalize(readMigration(MIGRATION_A));
-    expect(sql.startsWith('do $$')).toBe(true);
+describe('both migrations rely on the caller transaction and do not end it', () => {
+  it('sets lock_timeout first and never commits', () => {
+    for (const fileName of [MIGRATION_A, MIGRATION_B]) {
+      const sql = normalize(readMigration(fileName));
+      expect(sql.startsWith("set local lock_timeout = '5s';")).toBe(true);
+      expect(sql).not.toMatch(/\bcommit\b/);
+    }
+  });
+});
 
+describe('migration A guards the 6 active SKU seed before and after the link', () => {
+  it('raises unless count(*) and count(distinct sku) are both 6 on active rows, before any write', () => {
+    const sql = normalize(readMigration(MIGRATION_A));
     const guardEnd = sql.indexOf('end $$');
     const insertAt = sql.indexOf('insert into public.launch_phases');
     const alterAt = sql.indexOf('alter table public.products');
@@ -146,52 +171,67 @@ describe('migration A guards the 6 SKU seed before and after the link', () => {
     expect(updateAt).toBeGreaterThan(alterAt);
 
     const guard = sql.slice(0, guardEnd);
-    expect(guard).toContain('select count(distinct sku) into found_count');
+    expect(guard).toContain('select count(*), count(distinct sku) into row_count, distinct_count');
     expect(guard).toContain('from public.products');
+    expect(guard).toContain('where active = true');
     for (const sku of SEEDED_SKUS) {
       expect(guard).toContain(`'${sku.toLowerCase()}'`);
     }
-    expect(guard).toContain('if found_count <> 6 then');
+    expect(guard).toContain('if row_count <> 6 or distinct_count <> 6 then');
     expect(guard).toContain('raise exception');
     expect(guard).not.toContain('insert into');
     expect(guard).not.toContain('update public.products');
     expect(guard).not.toContain('alter table');
   });
 
-  it('inserts both phases idempotently, leaves phase 2 undated, and adds the nullable FK', () => {
+  it('inserts both phases idempotently, dates phase 1 in Edmonton, and leaves phase 2 undated', () => {
     const sql = normalize(readMigration(MIGRATION_A));
     expect(sql).toContain('on conflict (id) do nothing');
     expect(sql).toContain("'custom_event'");
     expect(sql).toContain("'shop_release_phase_1', 'shop release phase 1'");
-    expect(sql).toContain("'custom_event', 'active', null, current_date, 10");
+    expect(sql).toContain(
+      "'custom_event', 'active', null, ((now() at time zone 'america/edmonton')::date), 10",
+    );
+    expect(sql).not.toContain('current_date');
     expect(sql).toContain("'shop_release_phase_2', 'shop release phase 2'");
     expect(sql).toContain("'custom_event', 'planned', null, null, 11");
-    expect(sql).toContain('add column if not exists launch_phase_id text');
-    expect(sql).toContain('references public.launch_phases(id) on delete set null');
-    expect(sql).toContain('create index if not exists products_launch_phase_id_idx');
     expect(countMatches(sql, /\binsert into\b/g)).toBe(1);
     expect(countMatches(sql, /\bupdate\s+public\.products\b/g)).toBe(2);
   });
 
-  it('links phase 1 and phase 2 only when launch_phase_id is still null', () => {
+  it('adds the nullable column and attaches the FK only when the constraint is absent', () => {
+    const sql = normalize(readMigration(MIGRATION_A));
+    expect(sql).toContain('add column if not exists launch_phase_id text');
+    expect(sql).toContain(
+      "if not exists ( select 1 from pg_constraint where conrelid = 'public.products'::regclass and conname = 'products_launch_phase_id_fkey' ) then alter table public.products add constraint products_launch_phase_id_fkey foreign key (launch_phase_id) references public.launch_phases(id) on delete set null",
+    );
+    expect(sql).toContain('create index if not exists products_launch_phase_id_idx');
+    expect(sql).toContain(
+      "comment on column public.products.launch_phase_id is 'optional link to public.launch_phases.id for a shop release wave. null means this product is not linked to a wave.'",
+    );
+    expect(sql).not.toContain('test_kit');
+    expect(sql).not.toContain('exempt');
+  });
+
+  it('links phase 1 and phase 2 only for active rows whose launch_phase_id is still null', () => {
     const sql = normalize(readMigration(MIGRATION_A));
     expect(sql).toContain(
-      "update public.products set launch_phase_id = 'shop_release_phase_1' where sku in ('fc-nad-001','fc-rise-001','fc-desire-001') and launch_phase_id is null",
+      "update public.products set launch_phase_id = 'shop_release_phase_1' where active = true and sku in ('fc-nad-001','fc-rise-001','fc-desire-001') and launch_phase_id is null",
     );
     expect(sql).toContain(
-      "update public.products set launch_phase_id = 'shop_release_phase_2' where sku in ('fc-creatine-001','fc-catalyst-001','fc-mthfr-001') and launch_phase_id is null",
+      "update public.products set launch_phase_id = 'shop_release_phase_2' where active = true and sku in ('fc-creatine-001','fc-catalyst-001','fc-mthfr-001') and launch_phase_id is null",
     );
     expect(sql).not.toContain('fc-custom-vit-001');
   });
 
-  it('closes with a second DO block that requires exactly 3 phase 1 and 3 phase 2 links', () => {
+  it('closes with a DO block that requires exactly 3 active phase 1 and 3 active phase 2 links', () => {
     const sql = normalize(readMigration(MIGRATION_A));
-    const firstEnd = sql.indexOf('end $$');
-    const secondStart = sql.indexOf('do $$', firstEnd);
     const phase2Update = sql.lastIndexOf('update public.products');
-    expect(secondStart).toBeGreaterThan(phase2Update);
+    const postStart = sql.lastIndexOf('do $$');
+    expect(postStart).toBeGreaterThan(phase2Update);
 
-    const post = sql.slice(secondStart);
+    const post = sql.slice(postStart);
+    expect(post).toContain('where active = true');
     expect(post).toContain("launch_phase_id = 'shop_release_phase_1'");
     expect(post).toContain("launch_phase_id = 'shop_release_phase_2'");
     for (const sku of SEEDED_SKUS) {
@@ -199,7 +239,7 @@ describe('migration A guards the 6 SKU seed before and after the link', () => {
     }
     expect(post).toContain('if p1 <> 3 or p2 <> 3 then');
     expect(post).toContain('raise exception');
-    expect(countMatches(sql, /\bdo \$\$/g)).toBe(2);
+    expect(countMatches(sql, /\bdo \$\$/g)).toBe(3);
     expect(countMatches(sql, /\braise exception\b/g)).toBe(2);
   });
 
@@ -248,9 +288,16 @@ describe('migration B forces own-row RLS on the minimal waitlist table', () => {
     expect(sql).not.toMatch(/\bfor\s+update\b/);
   });
 
-  it('ships select, insert, and delete own policies with a single auth.uid() wrapper', () => {
-    const policies = policyStatements(normalize(readMigration(MIGRATION_B)));
+  it('guards each own-row policy on pg_policies and wraps auth.uid() once', () => {
+    const sql = normalize(readMigration(MIGRATION_B));
+    const policies = policyStatements(sql);
     expect(policies).toHaveLength(3);
+
+    for (const policyName of POLICY_NAMES) {
+      expect(sql).toContain(
+        `if not exists ( select 1 from pg_policies where schemaname = 'public' and tablename = 'shop_product_waitlist' and policyname = '${policyName}' ) then create policy ${policyName}`,
+      );
+    }
 
     const select = policies.find((policy) => policy.includes('for select'));
     const insert = policies.find((policy) => policy.includes('for insert'));
@@ -259,15 +306,10 @@ describe('migration B forces own-row RLS on the minimal waitlist table', () => {
       throw new Error('expected select, insert, and delete policies');
     }
 
-    expect(select).toContain('shop_product_waitlist_select_own');
     expect(select).toContain('to authenticated');
     expect(select).toContain('using (user_id = (select auth.uid()))');
-
-    expect(insert).toContain('shop_product_waitlist_insert_own');
     expect(insert).toContain('to authenticated');
     expect(insert).toContain('with check (user_id = (select auth.uid()))');
-
-    expect(del).toContain('shop_product_waitlist_delete_own');
     expect(del).toContain('to authenticated');
     expect(del).toContain('using (user_id = (select auth.uid()))');
 
