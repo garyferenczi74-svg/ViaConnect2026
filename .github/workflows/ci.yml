@@ -44,6 +44,14 @@ jobs:
       - name: Install dependencies
         run: npm install --legacy-peer-deps
 
+      - name: Shop unit tests
+        # Vitest 4 CLI filters are path substrings, not globs, so quote-wrapping
+        # these patterns matches nothing. Bash expands them first (globstar so
+        # ** is recursive). working-directory is viaconnect-web.
+        run: |
+          shopt -s globstar
+          npx vitest run src/lib/__tests__/shop-*.test.ts src/lib/shop/__tests__/**
+
       - name: TypeScript check (advisory)
         # Tracked tech debt: ~335 type errors, mostly Supabase `never` from
         # untyped tables introduced in 8f28bd6. The Next.js build itself
