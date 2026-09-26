@@ -1,11 +1,13 @@
 -- Retire pg_cron job performance_advisor_autoheal (production job 10).
 -- Guarded and idempotent: does nothing when the cron schema or the job is absent.
 -- Does not unschedule security_advisor_autoheal (production job 1) or any other job.
--- The only allowed touch of job 1 is the optional unschedule migration, which
+-- The only allowed touch of job 1 is the optional file
+-- supabase/manual/optional_unschedule_security_advisor_autoheal.sql, which
 -- Gary decides at apply time.
 --
--- The function body is dropped only by the next migration. Gary can skip that
--- file and keep extensions.performance_advisor_autoheal() and
+-- The function body is dropped only by
+-- supabase/manual/optional_drop_performance_advisor_autoheal_function.sql.
+-- Gary can skip that file and keep extensions.performance_advisor_autoheal() and
 -- extensions.performance_advisor_autoheal_run() installed (unschedule-only).
 --
 -- Needs Gary approval before applying. Apply in a quiet window after confirming

@@ -1,4 +1,4 @@
-// Read a pg_policies snapshot and emit the flatten migration.
+// Read a pg_policies snapshot and emit the manual flatten template.
 //
 // Usage:
 //   node --experimental-strip-types scripts/audit/flatten-auth-policies.ts \
@@ -6,12 +6,15 @@
 //     --backup <policy-rewrite-backup-earliest.json> \
 //     --merges <autoheal-merges.json> \
 //     --migrations <supabase/migrations> \
-//     --out <supabase/migrations/<ts>_flatten_auth_uid_policies.sql> \
+//     --search-path '<SHOW search_path from the snapshot session>' \
+//     --out supabase/manual/flatten_auth_uid_policies.sql \
 //     --summary-out <path.json>
 //
 // The snapshot, backup, and merges files are inputs. They are not written
-// into the migration. Tables whose merged policies disagree with backup
-// originals or with migration history are omitted and listed in the summary.
+// into the template. --search-path must be the SHOW search_path text from
+// the same session that captured the snapshot. Tables whose merged policies
+// disagree with backup originals or with migration history are omitted and
+// listed in the summary.
 
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -213,6 +216,7 @@ function statsFor(policies: readonly PolicyRow[]): LengthStats {
 function renderMigration(args: {
   readonly sha256: string;
   readonly capturedMt: string;
+  readonly searchPath: string;
   readonly alters: readonly PolicyAlter[];
   readonly held: ReadonlySet<string>;
 }): string {
@@ -220,6 +224,7 @@ function renderMigration(args: {
     {
       sha256: args.sha256,
       capturedMt: args.capturedMt,
+      searchPath: args.searchPath,
       held: [...args.held].sort(),
     },
     args.alters,
@@ -234,6 +239,7 @@ function main(): void {
   const migrationsDir = argValue(argv, '--migrations');
   const outPath = argValue(argv, '--out');
   const summaryPath = argValue(argv, '--summary-out');
+  const searchPath = argValue(argv, '--search-path');
 
   const snapshotBytes = readFileSync(snapshotPath);
   const sha256 = createHash('sha256').update(snapshotBytes).digest('hex');
@@ -341,6 +347,7 @@ function main(): void {
   const sql = renderMigration({
     sha256,
     capturedMt,
+    searchPath,
     alters,
     held,
   });

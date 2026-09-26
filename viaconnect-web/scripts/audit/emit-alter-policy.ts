@@ -138,10 +138,37 @@ export interface ManualTemplateInfo {
   readonly sha256: string;
   readonly capturedMt: string;
   readonly held: readonly string[];
+  /** Exact `SHOW search_path` text from the session that captured the snapshot. */
+  readonly searchPath: string;
+}
+
+/** Reject a search_path that could break out of the SET LOCAL statement. */
+export function assertSearchPath(searchPath: string): string {
+  const trimmed = searchPath.trim();
+  if (trimmed.length === 0) throw new Error('empty search_path');
+  if (/[;\n\r]/.test(trimmed)) throw new Error('search_path must be a single SET list');
+  return trimmed;
+}
+
+function renderLockedAlters(alters: readonly PolicyAlter[]): string {
+  const parts: string[] = [];
+  let previousTable = '';
+  for (const alter of alters) {
+    const table = `${alter.policy.schemaname}.${alter.policy.tablename}`;
+    const marker = `-- policy ${alter.policy.schemaname}.${alter.policy.tablename} :: ${alter.policy.policyname}`;
+    const lock =
+      table === previousTable
+        ? ''
+        : `LOCK TABLE ${quoteIdent(alter.policy.schemaname)}.${quoteIdent(alter.policy.tablename)} IN ACCESS EXCLUSIVE MODE;\n`;
+    previousTable = table;
+    parts.push(`${marker}\n${lock}${renderDriftGuard(alter.policy)}\n${renderAlter(alter)}`);
+  }
+  return parts.join('\n\n');
 }
 
 export function renderManualTemplate(info: ManualTemplateInfo, alters: readonly PolicyAlter[]): string {
   const held = info.held.length === 0 ? '(none)' : info.held.join(', ');
+  const searchPath = assertSearchPath(info.searchPath);
   const header = `-- MANUAL TEMPLATE. Not a migration. Gary applies this file by hand.
 -- Regenerate it from a fresh pg_policies snapshot immediately before applying.
 -- Each policy has an md5 drift guard. Any mismatch or missing policy RAISES
@@ -149,6 +176,10 @@ export function renderManualTemplate(info: ManualTemplateInfo, alters: readonly 
 --
 -- Snapshot id (sha256): ${info.sha256}
 -- Captured: ${info.capturedMt}
+-- search_path (SET LOCAL): ${searchPath}
+-- pg_get_expr qualification depends on search_path. A different path makes
+-- the md5 guards raise on an unchanged policy. Pass --search-path as the
+-- SHOW search_path text from the session that captured the snapshot.
 --
 -- Generator (run from viaconnect-web):
 --   node --experimental-strip-types scripts/audit/flatten-auth-policies.ts \\
@@ -156,16 +187,18 @@ export function renderManualTemplate(info: ManualTemplateInfo, alters: readonly 
 --     --backup <policy-rewrite-backup-earliest.json> \\
 --     --merges <autoheal-merges.json> \\
 --     --migrations supabase/migrations \\
+--     --search-path '<SHOW search_path from the snapshot session>' \\
 --     --out supabase/manual/flatten_auth_uid_policies.sql \\
 --     --summary-out <summary.json>
 --
 -- ALTER POLICY only. No DROP POLICY, no CREATE POLICY.
--- One transaction. SET LOCAL lock_timeout and statement_timeout.
--- No per-table commit. No session-level SET.
+-- One transaction. SET LOCAL lock_timeout, statement_timeout, and search_path.
+-- Each altered table is locked ACCESS EXCLUSIVE before its drift guards.
+-- Those locks are held until COMMIT. No per-table commit. No session-level SET.
 -- Held tables are omitted: ${held}.
 -- See supabase/audit/2026-09-26-policy-diff.md.
 --
 -- Needs Gary approval before applying.`;
-  const body = alters.map((alter) => renderGuardedAlter(alter)).join('\n\n');
-  return `${header}\nBEGIN;\nSET LOCAL lock_timeout = '3s';\nSET LOCAL statement_timeout = '60s';\n\n${body}\n\nCOMMIT;\n`;
+  const body = renderLockedAlters(alters);
+  return `${header}\nBEGIN;\nSET LOCAL lock_timeout = '3s';\nSET LOCAL statement_timeout = '60s';\nSET LOCAL search_path TO ${searchPath};\n\n${body}\n\nCOMMIT;\n`;
 }

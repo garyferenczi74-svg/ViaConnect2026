@@ -71,7 +71,10 @@ describe('diff-auth-policies exit codes', () => {
     const policies = [NESTED, { ...NESTED, policyname: 'already flat', qual: '(id = ( SELECT auth.uid() AS uid))' }];
     const alter = planPolicyAlter(NESTED);
     if (alter === null || alter === 'semicolon') throw new Error('expected alter');
-    const sql = renderManualTemplate({ sha256: 'abc', capturedMt: '2026-09-26', held: [] }, [alter]);
+    const sql = renderManualTemplate(
+      { sha256: 'abc', capturedMt: '2026-09-26', held: [], searchPath: '"$user", public, extensions' },
+      [alter],
+    );
     const ok = compareSnapshotToTemplate(policies, sql, new Set());
     expect(ok.compared).toBe(2);
     expect(ok.intendedChanges).toBe(1);

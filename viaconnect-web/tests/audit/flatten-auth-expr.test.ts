@@ -149,18 +149,55 @@ describe('ALTER POLICY emit', () => {
     });
     if (nested === null || nested === 'semicolon') throw new Error('expected an alter');
     const sql = renderManualTemplate(
-      { sha256: 'abc', capturedMt: '2026-09-26', held: [] },
+      { sha256: 'abc', capturedMt: '2026-09-26', held: [], searchPath: '"$user", public, extensions' },
       [nested],
     );
     expect(sql.match(/\bBEGIN;/g)?.length).toBe(1);
     expect(sql.match(/\bCOMMIT;/g)?.length).toBe(1);
     expect(sql).toContain("SET LOCAL lock_timeout = '3s'");
     expect(sql).toContain("SET LOCAL statement_timeout = '60s'");
+    expect(sql).toContain('SET LOCAL search_path TO "$user", public, extensions;');
+    expect(sql).toContain('LOCK TABLE "public"."profiles" IN ACCESS EXCLUSIVE MODE;');
     expect(sql).not.toContain('\nSET lock_timeout');
+    expect(sql).not.toContain('\nSET search_path');
     expect(sql).toContain('md5(pg_get_expr(polqual, polrelid))');
     expect(sql).toContain('RAISE EXCEPTION');
     expect(sql).toContain('USING ((id = ( SELECT auth.uid() AS uid)))');
     expect(sql).toContain('WITH CHECK ((id = ( SELECT auth.uid() AS uid)))');
+    const lockAt = sql.indexOf('LOCK TABLE "public"."profiles"');
+    const guardAt = sql.indexOf('DO $guard$');
+    expect(lockAt).toBeGreaterThan(0);
+    expect(lockAt).toBeLessThan(guardAt);
+  });
+
+  it('locks each altered table once, before that table\'s guards', () => {
+    const qual = '(id = ( SELECT ( SELECT auth.uid() AS uid) AS uid))';
+    const row = {
+      schemaname: 'public',
+      permissive: 'PERMISSIVE',
+      roles: ['authenticated'],
+      with_check: null,
+      qual,
+    };
+    const first = planPolicyAlter({ ...row, tablename: 'profiles', policyname: 'read own', cmd: 'SELECT' });
+    const second = planPolicyAlter({ ...row, tablename: 'profiles', policyname: 'write own', cmd: 'UPDATE', with_check: qual });
+    const third = planPolicyAlter({ ...row, tablename: 'audit_logs', policyname: 'admins', cmd: 'SELECT' });
+    if (first === null || first === 'semicolon' || second === null || second === 'semicolon' || third === null || third === 'semicolon') {
+      throw new Error('expected alters');
+    }
+    const sql = renderManualTemplate(
+      { sha256: 'abc', capturedMt: '2026-09-26', held: [], searchPath: 'public' },
+      [first, second, third],
+    );
+    expect(sql.match(/LOCK TABLE/g)?.length).toBe(2);
+    const profilesLock = sql.indexOf('LOCK TABLE "public"."profiles"');
+    const profilesGuard = sql.indexOf('-- policy public.profiles :: read own');
+    const secondPolicy = sql.indexOf('-- policy public.profiles :: write own');
+    const logsLock = sql.indexOf('LOCK TABLE "public"."audit_logs"');
+    expect(profilesLock).toBeGreaterThan(profilesGuard);
+    expect(profilesLock).toBeLessThan(secondPolicy);
+    expect(sql.slice(profilesLock, secondPolicy).match(/LOCK TABLE/g)?.length).toBe(1);
+    expect(logsLock).toBeGreaterThan(secondPolicy);
   });
 
   it('doubles quotes inside identifiers', () => {

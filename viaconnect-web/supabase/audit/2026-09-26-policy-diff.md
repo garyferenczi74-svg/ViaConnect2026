@@ -38,7 +38,7 @@ Apply order, in a quiet window, after confirming production job 10 is still paus
 1. `supabase/migrations/20260926190000_retire_performance_advisor_autoheal.sql` unschedules pg_cron job `performance_advisor_autoheal` only. This file does not unschedule `security_advisor_autoheal`. If `cron.job` or the job-10 name is absent, it does nothing. Running it twice is a no-op the second time. This is the only file from this change left on the auto-apply path.
 2. `supabase/manual/optional_drop_performance_advisor_autoheal_function.sql` is optional. Skip it to keep the function body. It drops `extensions.performance_advisor_autoheal_run()` and `extensions.performance_advisor_autoheal()` only. It does not drop or alter `extensions.performance_advisor_autoheal_log` or `extensions.policy_rewrite_backup`.
 3. `supabase/manual/optional_unschedule_security_advisor_autoheal.sql` is optional. Gary decides at apply time whether to apply it. It unschedules `security_advisor_autoheal` only. It does not drop or alter `extensions.security_advisor_autoheal` or `extensions.security_advisor_autoheal_run`. It does not drop or alter the backup table or the autoheal log. Running it twice is a no-op the second time.
-4. `supabase/manual/flatten_auth_uid_policies.sql` is a generated template, not a migration. Regenerate it from a fresh `pg_policies` snapshot immediately before applying (the generator command is in the file header). It records snapshot id `df94404d465a08e9c7115038923be79b2ee41fda5f215100234f8f995aabf321` and capture time `2026-09-26 ~12:20-12:25 MT`. Each `ALTER POLICY` is preceded by a `DO` block that compares `md5(pg_get_expr(polqual, polrelid))` and `md5(pg_get_expr(polwithcheck, polrelid))` to the snapshot and `RAISE EXCEPTION` on a mismatch or a missing policy. The file is one transaction: a single `BEGIN`/`COMMIT` with `SET LOCAL lock_timeout = '3s'` and `SET LOCAL statement_timeout = '60s'`. There is no per-table commit and no session-level `SET`. A run of two or more `( SELECT auth.uid() AS uid)` wrappers collapses to one. The same rule is applied to `auth.jwt()` and `auth.role()`. Depth-1 wrappers and bare calls are copied through.
+4. `supabase/manual/flatten_auth_uid_policies.sql` is a generated template, not a migration. Regenerate it from a fresh `pg_policies` snapshot immediately before applying (the generator command is in the file header; the apply runbook is `supabase/manual/README.md`). It records snapshot id `df94404d465a08e9c7115038923be79b2ee41fda5f215100234f8f995aabf321` and capture time `2026-09-26 ~12:20-12:25 MT`. Each `ALTER POLICY` is preceded by a `DO` block that compares `md5(pg_get_expr(polqual, polrelid))` and `md5(pg_get_expr(polwithcheck, polrelid))` to the snapshot and `RAISE EXCEPTION` on a mismatch or a missing policy. The file is one transaction: a single `BEGIN`/`COMMIT` with `SET LOCAL lock_timeout = '3s'`, `SET LOCAL statement_timeout = '60s'`, and `SET LOCAL search_path TO "$user", public, extensions`. The capture meta did not store `SHOW search_path`. That value is the Supabase `postgres` role default, and the snapshot text matches it: public routines and enums are unqualified, while `auth.uid()`, `auth.jwt()`, `auth.role()`, and `storage.foldername()` are schema-qualified. A path that includes `auth` would not. Each altered table is `LOCK TABLE ... IN ACCESS EXCLUSIVE MODE` once, before its guards, and those locks are held until `COMMIT`. There is no per-table commit and no session-level `SET`. A run of two or more `( SELECT auth.uid() AS uid)` wrappers collapses to one. The same rule is applied to `auth.jwt()` and `auth.role()`. Depth-1 wrappers and bare calls are copied through.
 
 No file drops or alters `extensions.policy_rewrite_backup` or `extensions.performance_advisor_autoheal_log`. For the 29 merges, `policy-rewrite-backup-earliest.json` is the source of truth. Migration history is compared as well and is listed below. The 361 dropped indexes stay report-only. None are recreated.
 
@@ -153,6 +153,8 @@ The historical migrations are still not a bootstrap of the live catalog. Applyin
 
 Each cell is SELECT, INSERT, UPDATE, or DELETE as anon, owner, other, admin, or service (`service_role` is `BYPASSRLS`). That is 30 × 5 × 4 = 600 cells. The same matrix after the guarded template matched the before matrix: 600 cells compared, 0 mismatches. `pg_policies` after the apply was compared to the snapshot for all 42 policies (roles, cmd, permissive, qual, with check): 42 intended expression changes, 0 mismatches.
 
+The runtime allow/deny matrix covered 42 of the 475 changed policies. 433 changed policies had no runtime test. Those 433 are covered by the expression transform tests in `tests/audit/flatten-auth-expr.test.ts`.
+
 Representative before cells (the after file is identical):
 
 - `profiles` SELECT: anon `rows=0`, owner `rows=1`, other `rows=0`, admin `rows=1` (admin sees only the admin profile row), service `rows=2`.
@@ -178,11 +180,13 @@ Inside one transaction the proof inserted a row into `proof_sentinel` and replac
 - unchanged: 713 (711 already flat, plus the two policies on held `public.engagement_score_snapshots`)
 - mismatches: 0
 
+That full catalog compare proves the template equals the generator output. It is not an independent semantic proof that the flattened expressions mean the same thing as the nested ones. The runtime meaning check is the 42-policy matrix above, plus the expression transform tests for the policies the matrix did not execute.
+
 `--check` on the unflattened snapshot still exits 1:
 
 - `476 policies are not flattened (max depth 908)`
 - `458 policies have an expression of 2000 characters or more (max 46502)`
 
-`npx vitest run tests/audit/flatten-auth-expr.test.ts tests/audit/diff-auth-policies.test.ts`: 2 files, 31 tests, all passed.
+`npx vitest run tests/audit/flatten-auth-expr.test.ts tests/audit/diff-auth-policies.test.ts`: 2 files, 32 tests, all passed.
 
 Because `engagement_score_snapshots_select_merged` is held, a full-catalog re-snapshot after this template would still fail the "longest expression under 2,000 characters" check on that one policy.

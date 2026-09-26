@@ -272,6 +272,9 @@ function main(): void {
     }
   }
   const template = readFileSync(templatePath, 'utf8');
+  const searchPathMatch = template.match(/^SET LOCAL search_path TO (.+);$/m);
+  const searchPath = searchPathMatch?.[1];
+  if (searchPath === undefined) throw new Error('template missing SET LOCAL search_path');
   const chunks = sample.map((policy) => extractChunk(template, policy.tablename, policy.policyname));
 
   psql(
@@ -459,7 +462,7 @@ $fn$;
   expectCell(beforeMap, 'email_otps', 'owner', 'select', 'rows=0');
   expectCell(beforeMap, 'email_otps', 'service', 'select', 'rows=1');
 
-  const apply = `BEGIN;\nSET LOCAL lock_timeout = '3s';\nSET LOCAL statement_timeout = '60s';\n${chunks.join('\n\n')}\nCOMMIT;\n`;
+  const apply = `BEGIN;\nSET LOCAL lock_timeout = '3s';\nSET LOCAL statement_timeout = '60s';\nSET LOCAL search_path TO ${searchPath};\n${chunks.join('\n\n')}\nCOMMIT;\n`;
   psql('flatten_proof', apply);
   psql('flatten_proof', matrixSql('after'));
   const afterRows = psqlValue(
@@ -512,7 +515,7 @@ $fn$;
   );
   const drift = psql(
     'flatten_proof',
-    `BEGIN;\nINSERT INTO public.proof_sentinel (id) VALUES (1);\nALTER POLICY ${quoteIdent(profiles.policyname)} ON public.profiles USING (false);\n${extractChunk(template, 'profiles', profiles.policyname)}\nCOMMIT;\n`,
+    `BEGIN;\nSET LOCAL search_path TO ${searchPath};\nINSERT INTO public.proof_sentinel (id) VALUES (1);\nALTER POLICY ${quoteIdent(profiles.policyname)} ON public.profiles USING (false);\n${extractChunk(template, 'profiles', profiles.policyname)}\nCOMMIT;\n`,
     true,
   );
   if (drift.status === 0) throw new Error('drift guard did not fail');

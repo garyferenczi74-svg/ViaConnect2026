@@ -5,6 +5,10 @@
 --
 -- Snapshot id (sha256): df94404d465a08e9c7115038923be79b2ee41fda5f215100234f8f995aabf321
 -- Captured: 2026-09-26 ~12:20-12:25 MT (America/Edmonton, UTC-6); captured in 14 ordered pages, row count and total expression chars cross-checked against a single aggregate query (1188 rows, 9,144,121 chars)
+-- search_path (SET LOCAL): "$user", public, extensions
+-- pg_get_expr qualification depends on search_path. A different path makes
+-- the md5 guards raise on an unchanged policy. Pass --search-path as the
+-- SHOW search_path text from the session that captured the snapshot.
 --
 -- Generator (run from viaconnect-web):
 --   node --experimental-strip-types scripts/audit/flatten-auth-policies.ts \
@@ -12,12 +16,14 @@
 --     --backup <policy-rewrite-backup-earliest.json> \
 --     --merges <autoheal-merges.json> \
 --     --migrations supabase/migrations \
+--     --search-path '<SHOW search_path from the snapshot session>' \
 --     --out supabase/manual/flatten_auth_uid_policies.sql \
 --     --summary-out <summary.json>
 --
 -- ALTER POLICY only. No DROP POLICY, no CREATE POLICY.
--- One transaction. SET LOCAL lock_timeout and statement_timeout.
--- No per-table commit. No session-level SET.
+-- One transaction. SET LOCAL lock_timeout, statement_timeout, and search_path.
+-- Each altered table is locked ACCESS EXCLUSIVE before its drift guards.
+-- Those locks are held until COMMIT. No per-table commit. No session-level SET.
 -- Held tables are omitted: public.engagement_score_snapshots.
 -- See supabase/audit/2026-09-26-policy-diff.md.
 --
@@ -25,8 +31,10 @@
 BEGIN;
 SET LOCAL lock_timeout = '3s';
 SET LOCAL statement_timeout = '60s';
+SET LOCAL search_path TO "$user", public, extensions;
 
 -- policy public.advisor_peptide_shares :: peptide_shares_patient_insert
+LOCK TABLE "public"."advisor_peptide_shares" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -96,6 +104,7 @@ ALTER POLICY "peptide_shares_read" ON "public"."advisor_peptide_shares"
   USING (((patient_id = ( SELECT auth.uid() AS uid)) OR (practitioner_id = ( SELECT auth.uid() AS uid))));
 
 -- policy public.aggregation_snapshots :: agg_snapshots_exec_admin_all
+LOCK TABLE "public"."aggregation_snapshots" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -123,6 +132,7 @@ ALTER POLICY "agg_snapshots_exec_admin_all" ON "public"."aggregation_snapshots"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'cfo'::text, 'ceo'::text, 'exec_reporting_admin'::text]))))));
 
 -- policy public.ai_insights :: Users can insert own ai_insights
+LOCK TABLE "public"."ai_insights" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -189,6 +199,7 @@ ALTER POLICY "Users can view own ai_insights" ON "public"."ai_insights"
   USING ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.analytics_category_history :: Users view own category history
+LOCK TABLE "public"."analytics_category_history" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -211,6 +222,7 @@ ALTER POLICY "Users view own category history" ON "public"."analytics_category_h
   USING ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.appeal_agreement_rollups :: agreement_admin_read
+LOCK TABLE "public"."appeal_agreement_rollups" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -233,6 +245,7 @@ ALTER POLICY "agreement_admin_read" ON "public"."appeal_agreement_rollups"
   USING (((( SELECT auth.jwt() AS jwt) ->> 'role'::text) = ANY (ARRAY['compliance_admin'::text, 'admin'::text, 'superadmin'::text])));
 
 -- policy public.appeal_analyses :: appeals_admin_read
+LOCK TABLE "public"."appeal_analyses" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -255,6 +268,7 @@ ALTER POLICY "appeals_admin_read" ON "public"."appeal_analyses"
   USING (((( SELECT auth.jwt() AS jwt) ->> 'role'::text) = ANY (ARRAY['compliance_admin'::text, 'admin'::text, 'superadmin'::text])));
 
 -- policy public.appeal_decisions :: decisions_admin_read
+LOCK TABLE "public"."appeal_decisions" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -277,6 +291,7 @@ ALTER POLICY "decisions_admin_read" ON "public"."appeal_decisions"
   USING (((( SELECT auth.jwt() AS jwt) ->> 'role'::text) = ANY (ARRAY['compliance_admin'::text, 'admin'::text, 'superadmin'::text])));
 
 -- policy public.appeal_drafts :: drafts_admin_read
+LOCK TABLE "public"."appeal_drafts" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -299,6 +314,7 @@ ALTER POLICY "drafts_admin_read" ON "public"."appeal_drafts"
   USING (((( SELECT auth.jwt() AS jwt) ->> 'role'::text) = ANY (ARRAY['compliance_admin'::text, 'admin'::text, 'superadmin'::text])));
 
 -- policy public.appeal_patterns :: patterns_admin_rw
+LOCK TABLE "public"."appeal_patterns" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -322,6 +338,7 @@ ALTER POLICY "patterns_admin_rw" ON "public"."appeal_patterns"
   WITH CHECK (((( SELECT auth.jwt() AS jwt) ->> 'role'::text) = ANY (ARRAY['compliance_admin'::text, 'admin'::text, 'superadmin'::text])));
 
 -- policy public.approver_assignments :: approver_assignments_admin_all
+LOCK TABLE "public"."approver_assignments" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -349,6 +366,7 @@ ALTER POLICY "approver_assignments_admin_all" ON "public"."approver_assignments"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text)))));
 
 -- policy public.assessment_results :: Users manage own assessment results
+LOCK TABLE "public"."assessment_results" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -372,6 +390,7 @@ ALTER POLICY "Users manage own assessment results" ON "public"."assessment_resul
   WITH CHECK ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.audit_logs :: Only admins can view audit logs
+LOCK TABLE "public"."audit_logs" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -396,6 +415,7 @@ ALTER POLICY "Only admins can view audit logs" ON "public"."audit_logs"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text)))));
 
 -- policy public.bio_optimization_history :: bos_history_select_own
+LOCK TABLE "public"."bio_optimization_history" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -418,6 +438,7 @@ ALTER POLICY "bos_history_select_own" ON "public"."bio_optimization_history"
   USING ((user_id = ( SELECT auth.uid() AS uid)));
 
 -- policy public.board_meetings :: bme_attendee_read
+LOCK TABLE "public"."board_meetings" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -470,6 +491,7 @@ ALTER POLICY "bme_exec_admin_all" ON "public"."board_meetings"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'cfo'::text, 'ceo'::text, 'exec_reporting_admin'::text]))))));
 
 -- policy public.board_members :: bm_exec_admin_all
+LOCK TABLE "public"."board_members" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -519,6 +541,7 @@ ALTER POLICY "bm_self_read" ON "public"."board_members"
   USING ((auth_user_id = ( SELECT auth.uid() AS uid)));
 
 -- policy public.board_pack_ai_prompts :: bpap_exec_admin_all
+LOCK TABLE "public"."board_pack_ai_prompts" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -546,6 +569,7 @@ ALTER POLICY "bpap_exec_admin_all" ON "public"."board_pack_ai_prompts"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'cfo'::text, 'ceo'::text, 'exec_reporting_admin'::text]))))));
 
 -- policy public.board_pack_artifacts :: bpa_exec_admin_all
+LOCK TABLE "public"."board_pack_artifacts" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -573,6 +597,7 @@ ALTER POLICY "bpa_exec_admin_all" ON "public"."board_pack_artifacts"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'cfo'::text, 'ceo'::text, 'exec_reporting_admin'::text]))))));
 
 -- policy public.board_pack_distributions :: bpd_board_member_read_own
+LOCK TABLE "public"."board_pack_distributions" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -624,6 +649,7 @@ ALTER POLICY "bpd_exec_admin_all" ON "public"."board_pack_distributions"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'cfo'::text, 'ceo'::text, 'exec_reporting_admin'::text]))))));
 
 -- policy public.board_pack_download_events :: bpde_exec_admin_read
+LOCK TABLE "public"."board_pack_download_events" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -673,6 +699,7 @@ ALTER POLICY "bpde_member_insert_own" ON "public"."board_pack_download_events"
   WHERE ((m.auth_user_id = ( SELECT auth.uid() AS uid)) AND (m.departure_date IS NULL) AND (m.nda_status = 'on_file'::nda_status) AND (d.access_revoked_at IS NULL)))));
 
 -- policy public.board_pack_kpi_snapshots :: bpks_exec_admin_all
+LOCK TABLE "public"."board_pack_kpi_snapshots" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -700,6 +727,7 @@ ALTER POLICY "bpks_exec_admin_all" ON "public"."board_pack_kpi_snapshots"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'cfo'::text, 'ceo'::text, 'exec_reporting_admin'::text]))))));
 
 -- policy public.board_pack_sections :: bps_exec_admin_all
+LOCK TABLE "public"."board_pack_sections" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -727,6 +755,7 @@ ALTER POLICY "bps_exec_admin_all" ON "public"."board_pack_sections"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'cfo'::text, 'ceo'::text, 'exec_reporting_admin'::text]))))));
 
 -- policy public.board_pack_templates :: bpt_exec_admin_all
+LOCK TABLE "public"."board_pack_templates" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -754,6 +783,7 @@ ALTER POLICY "bpt_exec_admin_all" ON "public"."board_pack_templates"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'cfo'::text, 'ceo'::text, 'exec_reporting_admin'::text]))))));
 
 -- policy public.board_packs :: bp_board_member_distributed
+LOCK TABLE "public"."board_packs" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -806,6 +836,7 @@ ALTER POLICY "bp_exec_admin_all" ON "public"."board_packs"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'cfo'::text, 'ceo'::text, 'exec_reporting_admin'::text]))))));
 
 -- policy public.body_graphic_interactions :: bgi_self_insert
+LOCK TABLE "public"."body_graphic_interactions" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -852,6 +883,7 @@ ALTER POLICY "bgi_self_read" ON "public"."body_graphic_interactions"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text))))));
 
 -- policy public.body_graphics_preferences :: bgp_self_rw
+LOCK TABLE "public"."body_graphics_preferences" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -875,6 +907,7 @@ ALTER POLICY "bgp_self_rw" ON "public"."body_graphics_preferences"
   WITH CHECK ((user_id = ( SELECT auth.uid() AS uid)));
 
 -- policy public.body_photo_sessions :: Users manage own photo sessions
+LOCK TABLE "public"."body_photo_sessions" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -898,6 +931,7 @@ ALTER POLICY "Users manage own photo sessions" ON "public"."body_photo_sessions"
   WITH CHECK ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.body_scan_measurements :: Users manage own scan measurements
+LOCK TABLE "public"."body_scan_measurements" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -921,6 +955,7 @@ ALTER POLICY "Users manage own scan measurements" ON "public"."body_scan_measure
   WITH CHECK ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.body_tracker_activity :: Users own activity
+LOCK TABLE "public"."body_tracker_activity" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -944,6 +979,7 @@ ALTER POLICY "Users own activity" ON "public"."body_tracker_activity"
   WITH CHECK ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.body_tracker_chronic_risk :: Users own chronic risk
+LOCK TABLE "public"."body_tracker_chronic_risk" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -967,6 +1003,7 @@ ALTER POLICY "Users own chronic risk" ON "public"."body_tracker_chronic_risk"
   WITH CHECK ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.body_tracker_circumference :: Users manage own bt circumference
+LOCK TABLE "public"."body_tracker_circumference" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -990,6 +1027,7 @@ ALTER POLICY "Users manage own bt circumference" ON "public"."body_tracker_circu
   WITH CHECK ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.body_tracker_entries :: Users manage own bt entries
+LOCK TABLE "public"."body_tracker_entries" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -1013,6 +1051,7 @@ ALTER POLICY "Users manage own bt entries" ON "public"."body_tracker_entries"
   WITH CHECK ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.body_tracker_journey_events :: Users own bt journey events
+LOCK TABLE "public"."body_tracker_journey_events" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -1036,6 +1075,7 @@ ALTER POLICY "Users own bt journey events" ON "public"."body_tracker_journey_eve
   WITH CHECK ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.body_tracker_journeys :: Users own journeys
+LOCK TABLE "public"."body_tracker_journeys" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -1059,6 +1099,7 @@ ALTER POLICY "Users own journeys" ON "public"."body_tracker_journeys"
   WITH CHECK ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.body_tracker_metabolic :: Users manage own bt metabolic
+LOCK TABLE "public"."body_tracker_metabolic" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -1082,6 +1123,7 @@ ALTER POLICY "Users manage own bt metabolic" ON "public"."body_tracker_metabolic
   WITH CHECK ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.body_tracker_milestones :: Users manage own bt milestones
+LOCK TABLE "public"."body_tracker_milestones" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -1105,6 +1147,7 @@ ALTER POLICY "Users manage own bt milestones" ON "public"."body_tracker_mileston
   WITH CHECK ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.body_tracker_photo_scans :: Users own photo scans
+LOCK TABLE "public"."body_tracker_photo_scans" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -1128,6 +1171,7 @@ ALTER POLICY "Users own photo scans" ON "public"."body_tracker_photo_scans"
   WITH CHECK ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.body_tracker_recommendations :: Users own bt recommendations
+LOCK TABLE "public"."body_tracker_recommendations" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -1151,6 +1195,7 @@ ALTER POLICY "Users own bt recommendations" ON "public"."body_tracker_recommenda
   WITH CHECK ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.body_tracker_scores :: Users manage own bt scores
+LOCK TABLE "public"."body_tracker_scores" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -1174,6 +1219,7 @@ ALTER POLICY "Users manage own bt scores" ON "public"."body_tracker_scores"
   WITH CHECK ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.body_tracker_segmental_fat :: Users manage own bt seg fat
+LOCK TABLE "public"."body_tracker_segmental_fat" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -1197,6 +1243,7 @@ ALTER POLICY "Users manage own bt seg fat" ON "public"."body_tracker_segmental_f
   WITH CHECK ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.body_tracker_segmental_muscle :: Users manage own bt seg muscle
+LOCK TABLE "public"."body_tracker_segmental_muscle" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -1220,6 +1267,7 @@ ALTER POLICY "Users manage own bt seg muscle" ON "public"."body_tracker_segmenta
   WITH CHECK ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.body_tracker_user_state :: Users own bt user state
+LOCK TABLE "public"."body_tracker_user_state" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -1243,6 +1291,7 @@ ALTER POLICY "Users own bt user state" ON "public"."body_tracker_user_state"
   WITH CHECK ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.body_tracker_weight :: Users manage own bt weight
+LOCK TABLE "public"."body_tracker_weight" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -1266,6 +1315,7 @@ ALTER POLICY "Users manage own bt weight" ON "public"."body_tracker_weight"
   WITH CHECK ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.bos_compute_queue :: bos_queue_insert_own
+LOCK TABLE "public"."bos_compute_queue" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -1310,6 +1360,7 @@ ALTER POLICY "bos_queue_select_own" ON "public"."bos_compute_queue"
   USING ((user_id = ( SELECT auth.uid() AS uid)));
 
 -- policy public.bos_write_telemetry :: bos_telemetry_insert_observability
+LOCK TABLE "public"."bos_write_telemetry" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -1332,6 +1383,7 @@ ALTER POLICY "bos_telemetry_insert_observability" ON "public"."bos_write_telemet
   WITH CHECK (((is_canonical = false) AND (user_id = ( SELECT auth.uid() AS uid))));
 
 -- policy public.botanical_formula_items :: Items insertable with formula access
+LOCK TABLE "public"."botanical_formula_items" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -1380,6 +1432,7 @@ ALTER POLICY "Items viewable with formula access" ON "public"."botanical_formula
   WHERE ((botanical_formulas.id = botanical_formula_items.formula_id) AND (botanical_formulas.practitioner_id = ( SELECT auth.uid() AS uid))))));
 
 -- policy public.botanical_formulas :: Practitioners can insert formulas
+LOCK TABLE "public"."botanical_formulas" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -1446,6 +1499,7 @@ ALTER POLICY "Practitioners can view own formulas" ON "public"."botanical_formul
   USING ((( SELECT auth.uid() AS uid) = practitioner_id));
 
 -- policy public.bundles :: Authenticated read bundles
+LOCK TABLE "public"."bundles" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -1468,6 +1522,7 @@ ALTER POLICY "Authenticated read bundles" ON "public"."bundles"
   USING ((( SELECT auth.role() AS role) = 'authenticated'::text));
 
 -- policy public.caq_assessment_versions :: Users manage own assessments
+LOCK TABLE "public"."caq_assessment_versions" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -1491,6 +1546,7 @@ ALTER POLICY "Users manage own assessments" ON "public"."caq_assessment_versions
   WITH CHECK ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.channel_verification_attempts :: cva_inherit
+LOCK TABLE "public"."channel_verification_attempts" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -1526,6 +1582,7 @@ ALTER POLICY "cva_inherit" ON "public"."channel_verification_attempts"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text))))));
 
 -- policy public.channel_volume_checks :: cvc_read_admin_write
+LOCK TABLE "public"."channel_volume_checks" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -1554,6 +1611,7 @@ ALTER POLICY "cvc_read_admin_write" ON "public"."channel_volume_checks"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text))))));
 
 -- policy public.clinical_assessments :: Users can insert own assessment
+LOCK TABLE "public"."clinical_assessments" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -1620,6 +1678,7 @@ ALTER POLICY "Users can view own assessment" ON "public"."clinical_assessments"
   USING ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.commission_accruals :: commission_accruals_self_read
+LOCK TABLE "public"."commission_accruals" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -1646,6 +1705,7 @@ ALTER POLICY "commission_accruals_self_read" ON "public"."commission_accruals"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text))))));
 
 -- policy public.commission_reconciliation_lines :: crl_inherit
+LOCK TABLE "public"."commission_reconciliation_lines" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -1674,6 +1734,7 @@ ALTER POLICY "crl_inherit" ON "public"."commission_reconciliation_lines"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text))))));
 
 -- policy public.commission_reconciliation_runs :: crr_self_read
+LOCK TABLE "public"."commission_reconciliation_runs" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -1700,6 +1761,7 @@ ALTER POLICY "crr_self_read" ON "public"."commission_reconciliation_runs"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text))))));
 
 -- policy public.competitor_pricing :: competitor_pricing_admin_all
+LOCK TABLE "public"."competitor_pricing" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -1727,6 +1789,7 @@ ALTER POLICY "competitor_pricing_admin_all" ON "public"."competitor_pricing"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text)))));
 
 -- policy public.compliance_findings :: cf_read
+LOCK TABLE "public"."compliance_findings" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -1749,6 +1812,7 @@ ALTER POLICY "cf_read" ON "public"."compliance_findings"
   USING ((is_compliance_reader() OR (assigned_to = ( SELECT auth.uid() AS uid))));
 
 -- policy public.compliance_waivers :: cw_insert
+LOCK TABLE "public"."compliance_waivers" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -1771,6 +1835,7 @@ ALTER POLICY "cw_insert" ON "public"."compliance_waivers"
   WITH CHECK ((is_compliance_reader() AND (approved_by = ( SELECT auth.uid() AS uid))));
 
 -- policy public.consent_ledger :: cl_self_insert
+LOCK TABLE "public"."consent_ledger" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -1838,6 +1903,7 @@ ALTER POLICY "cl_self_update" ON "public"."consent_ledger"
   WITH CHECK ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.consumer_counterfeit_reports :: consumer_report_insert
+LOCK TABLE "public"."consumer_counterfeit_reports" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -1882,6 +1948,7 @@ ALTER POLICY "consumer_report_self_read" ON "public"."consumer_counterfeit_repor
   USING (((submitted_by_user_id = ( SELECT auth.uid() AS uid)) OR is_compliance_reader()));
 
 -- policy public.counterfeit_dispositions :: dispositions_insert
+LOCK TABLE "public"."counterfeit_dispositions" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -1904,6 +1971,7 @@ ALTER POLICY "dispositions_insert" ON "public"."counterfeit_dispositions"
   WITH CHECK (((decided_by = ( SELECT auth.uid() AS uid)) AND is_compliance_reader()));
 
 -- policy public.counterfeit_exemplars :: exemplars_insert
+LOCK TABLE "public"."counterfeit_exemplars" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -1926,6 +1994,7 @@ ALTER POLICY "exemplars_insert" ON "public"."counterfeit_exemplars"
   WITH CHECK (((confirmed_by = ( SELECT auth.uid() AS uid)) AND is_compliance_reader()));
 
 -- policy public.counterfeit_reference_corpus :: crc_write
+LOCK TABLE "public"."counterfeit_reference_corpus" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -1953,6 +2022,7 @@ ALTER POLICY "crc_write" ON "public"."counterfeit_reference_corpus"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'superadmin'::text, 'compliance_admin'::text]))))));
 
 -- policy public.counterfeit_test_buys :: test_buys_write
+LOCK TABLE "public"."counterfeit_test_buys" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -1980,6 +2050,7 @@ ALTER POLICY "test_buys_write" ON "public"."counterfeit_test_buys"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'superadmin'::text, 'compliance_admin'::text]))))));
 
 -- policy public.custom_formulation_development_fees :: cf_dev_fees_admin_all
+LOCK TABLE "public"."custom_formulation_development_fees" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -2033,6 +2104,7 @@ ALTER POLICY "cf_dev_fees_self_read" ON "public"."custom_formulation_development
           WHERE (practitioners.user_id = ( SELECT auth.uid() AS uid)))))));
 
 -- policy public.custom_formulation_ingredients :: custom_formulation_ingredients_all_merged
+LOCK TABLE "public"."custom_formulation_ingredients" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -2068,6 +2140,7 @@ ALTER POLICY "custom_formulation_ingredients_all_merged" ON "public"."custom_for
           WHERE (practitioners.user_id = ( SELECT auth.uid() AS uid))))))));
 
 -- policy public.custom_formulation_medical_reviews :: cf_medical_review_admin_all
+LOCK TABLE "public"."custom_formulation_medical_reviews" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -2121,6 +2194,7 @@ ALTER POLICY "cf_medical_review_practitioner_read" ON "public"."custom_formulati
           WHERE (practitioners.user_id = ( SELECT auth.uid() AS uid)))))));
 
 -- policy public.custom_formulation_regulatory_reviews :: cf_reg_review_admin_all
+LOCK TABLE "public"."custom_formulation_regulatory_reviews" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -2174,6 +2248,7 @@ ALTER POLICY "cf_reg_review_practitioner_read" ON "public"."custom_formulation_r
           WHERE (practitioners.user_id = ( SELECT auth.uid() AS uid)))))));
 
 -- policy public.custom_formulation_stability_tests :: cf_stability_admin_all
+LOCK TABLE "public"."custom_formulation_stability_tests" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -2227,6 +2302,7 @@ ALTER POLICY "cf_stability_self_read" ON "public"."custom_formulation_stability_
           WHERE (practitioners.user_id = ( SELECT auth.uid() AS uid)))))));
 
 -- policy public.custom_formulations :: custom_formulations_all_merged
+LOCK TABLE "public"."custom_formulations" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -2258,6 +2334,7 @@ ALTER POLICY "custom_formulations_all_merged" ON "public"."custom_formulations"
   WHERE (practitioners.user_id = ( SELECT auth.uid() AS uid))))));
 
 -- policy public.customer_price_bindings :: cpb_admin_all
+LOCK TABLE "public"."customer_price_bindings" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -2307,6 +2384,7 @@ ALTER POLICY "cpb_self_read" ON "public"."customer_price_bindings"
   USING ((user_id = ( SELECT auth.uid() AS uid)));
 
 -- policy public.customs_authentication_guides :: customs_guides_legal_ops_all
+LOCK TABLE "public"."customs_authentication_guides" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -2334,6 +2412,7 @@ ALTER POLICY "customs_guides_legal_ops_all" ON "public"."customs_authentication_
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'compliance_officer'::text, 'legal_ops'::text]))))));
 
 -- policy public.customs_counsel_reviews :: customs_counsel_reviews_insert_legal_ops
+LOCK TABLE "public"."customs_counsel_reviews" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -2421,6 +2500,7 @@ ALTER POLICY "customs_counsel_reviews_update_decide" ON "public"."customs_counse
   WHERE ((s.user_id = ( SELECT auth.uid() AS uid)) AND (s.revoked_at IS NULL) AND (s.expires_at > now()) AND ((s.case_id IS NULL) OR (s.case_id = customs_counsel_reviews.case_id))))))));
 
 -- policy public.customs_counsel_sessions :: customs_counsel_sessions_read
+LOCK TABLE "public"."customs_counsel_sessions" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -2472,6 +2552,7 @@ ALTER POLICY "customs_counsel_sessions_update_revoke_only" ON "public"."customs_
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'compliance_officer'::text, 'legal_ops'::text]))))));
 
 -- policy public.customs_detention_images :: customs_detention_images_legal_ops_all
+LOCK TABLE "public"."customs_detention_images" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -2499,6 +2580,7 @@ ALTER POLICY "customs_detention_images_legal_ops_all" ON "public"."customs_deten
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'compliance_officer'::text, 'legal_ops'::text]))))));
 
 -- policy public.customs_detentions :: customs_detentions_legal_ops_all
+LOCK TABLE "public"."customs_detentions" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -2526,6 +2608,7 @@ ALTER POLICY "customs_detentions_legal_ops_all" ON "public"."customs_detentions"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'compliance_officer'::text, 'legal_ops'::text]))))));
 
 -- policy public.customs_e_allegations :: customs_e_allegations_legal_ops_all
+LOCK TABLE "public"."customs_e_allegations" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -2553,6 +2636,7 @@ ALTER POLICY "customs_e_allegations_legal_ops_all" ON "public"."customs_e_allega
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'compliance_officer'::text, 'legal_ops'::text]))))));
 
 -- policy public.customs_fee_ledger :: customs_fee_ledger_insert_cfo
+LOCK TABLE "public"."customs_fee_ledger" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -2628,6 +2712,7 @@ ALTER POLICY "customs_fee_ledger_update_cfo" ON "public"."customs_fee_ledger"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'compliance_officer'::text, 'cfo'::text]))))));
 
 -- policy public.customs_fines_imposed :: customs_fines_insert_cfo
+LOCK TABLE "public"."customs_fines_imposed" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -2703,6 +2788,7 @@ ALTER POLICY "customs_fines_update_cfo" ON "public"."customs_fines_imposed"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'cfo'::text]))))));
 
 -- policy public.customs_guide_sections :: customs_guide_sections_legal_ops_all
+LOCK TABLE "public"."customs_guide_sections" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -2730,6 +2816,7 @@ ALTER POLICY "customs_guide_sections_legal_ops_all" ON "public"."customs_guide_s
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'compliance_officer'::text, 'legal_ops'::text]))))));
 
 -- policy public.customs_iprs_scan_results :: customs_iprs_legal_ops_all
+LOCK TABLE "public"."customs_iprs_scan_results" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -2757,6 +2844,7 @@ ALTER POLICY "customs_iprs_legal_ops_all" ON "public"."customs_iprs_scan_results
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'compliance_officer'::text, 'legal_ops'::text]))))));
 
 -- policy public.customs_moiety_claims :: customs_moiety_exec_only
+LOCK TABLE "public"."customs_moiety_claims" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -2784,6 +2872,7 @@ ALTER POLICY "customs_moiety_exec_only" ON "public"."customs_moiety_claims"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'ceo'::text, 'cfo'::text]))))));
 
 -- policy public.customs_recordation_classes :: customs_recordation_classes_cfo_ceo_read
+LOCK TABLE "public"."customs_recordation_classes" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -2835,6 +2924,7 @@ ALTER POLICY "customs_recordation_classes_legal_ops_all" ON "public"."customs_re
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'compliance_officer'::text, 'legal_ops'::text]))))));
 
 -- policy public.customs_recordation_products :: customs_recordation_products_cfo_ceo_read
+LOCK TABLE "public"."customs_recordation_products" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -2886,6 +2976,7 @@ ALTER POLICY "customs_recordation_products_legal_ops_all" ON "public"."customs_r
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'compliance_officer'::text, 'legal_ops'::text]))))));
 
 -- policy public.customs_recordations :: customs_recordations_cfo_ceo_read
+LOCK TABLE "public"."customs_recordations" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -2937,6 +3028,7 @@ ALTER POLICY "customs_recordations_legal_ops_all" ON "public"."customs_recordati
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'compliance_officer'::text, 'legal_ops'::text, 'ceo'::text]))))));
 
 -- policy public.customs_seizures :: customs_seizures_cfo_ceo_read
+LOCK TABLE "public"."customs_seizures" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -2988,6 +3080,7 @@ ALTER POLICY "customs_seizures_legal_ops_all" ON "public"."customs_seizures"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'compliance_officer'::text, 'legal_ops'::text]))))));
 
 -- policy public.customs_trainings :: customs_trainings_legal_ops_all
+LOCK TABLE "public"."customs_trainings" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -3015,6 +3108,7 @@ ALTER POLICY "customs_trainings_legal_ops_all" ON "public"."customs_trainings"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'compliance_officer'::text, 'legal_ops'::text]))))));
 
 -- policy public.daily_checkins :: Users manage own checkins
+LOCK TABLE "public"."daily_checkins" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -3038,6 +3132,7 @@ ALTER POLICY "Users manage own checkins" ON "public"."daily_checkins"
   WITH CHECK ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.daily_scores :: Users manage own daily scores
+LOCK TABLE "public"."daily_scores" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -3060,6 +3155,7 @@ ALTER POLICY "Users manage own daily scores" ON "public"."daily_scores"
   USING ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.daily_tasks :: Users can insert own daily_tasks
+LOCK TABLE "public"."daily_tasks" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -3126,6 +3222,7 @@ ALTER POLICY "Users can view own daily_tasks" ON "public"."daily_tasks"
   USING ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.data_events :: Users manage own events
+LOCK TABLE "public"."data_events" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -3148,6 +3245,7 @@ ALTER POLICY "Users manage own events" ON "public"."data_events"
   USING ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.decision_rights_rules :: decision_rights_admin_all
+LOCK TABLE "public"."decision_rights_rules" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -3175,6 +3273,7 @@ ALTER POLICY "decision_rights_admin_all" ON "public"."decision_rights_rules"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text)))));
 
 -- policy public.dsar_requests :: dsar_self_read
+LOCK TABLE "public"."dsar_requests" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -3197,6 +3296,7 @@ ALTER POLICY "dsar_self_read" ON "public"."dsar_requests"
   USING (((( SELECT auth.uid() AS uid) = user_id) OR is_compliance_reader()));
 
 -- policy public.email_otps :: service_role_only_email_otps
+LOCK TABLE "public"."email_otps" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -3219,6 +3319,7 @@ ALTER POLICY "service_role_only_email_otps" ON "public"."email_otps"
   USING ((( SELECT auth.role() AS role) = 'service_role'::text));
 
 -- policy public.executive_recommendations :: Authenticated read executive_recommendations
+LOCK TABLE "public"."executive_recommendations" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -3241,6 +3342,7 @@ ALTER POLICY "Authenticated read executive_recommendations" ON "public"."executi
   USING ((( SELECT auth.role() AS role) = 'authenticated'::text));
 
 -- policy public.executive_reporting_audit_log :: eral_exec_admin_read
+LOCK TABLE "public"."executive_reporting_audit_log" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -3265,6 +3367,7 @@ ALTER POLICY "eral_exec_admin_read" ON "public"."executive_reporting_audit_log"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'cfo'::text, 'ceo'::text, 'exec_reporting_admin'::text]))))));
 
 -- policy public.family_members :: family_members_primary_full_access
+LOCK TABLE "public"."family_members" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -3312,6 +3415,7 @@ ALTER POLICY "family_members_select_merged" ON "public"."family_members"
   WHERE ((family_members_1.member_user_id = ( SELECT auth.uid() AS uid)) AND (family_members_1.is_active = true))))));
 
 -- policy public.farma_tokens :: Users can insert own farma_tokens
+LOCK TABLE "public"."farma_tokens" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -3378,6 +3482,7 @@ ALTER POLICY "Users can view own farma_tokens" ON "public"."farma_tokens"
   USING ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.feature_flag_audit :: flag_audit_admin_insert
+LOCK TABLE "public"."feature_flag_audit" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -3426,6 +3531,7 @@ ALTER POLICY "flag_audit_admin_read" ON "public"."feature_flag_audit"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text)))));
 
 -- policy public.forecast_monthly :: Authenticated read forecast_monthly
+LOCK TABLE "public"."forecast_monthly" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -3448,6 +3554,7 @@ ALTER POLICY "Authenticated read forecast_monthly" ON "public"."forecast_monthly
   USING ((( SELECT auth.role() AS role) = 'authenticated'::text));
 
 -- policy public.framework_consistency_flags :: fcf_admin_update
+LOCK TABLE "public"."framework_consistency_flags" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -3475,6 +3582,7 @@ ALTER POLICY "fcf_admin_update" ON "public"."framework_consistency_flags"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'superadmin'::text, 'compliance_admin'::text, 'compliance_officer'::text]))))));
 
 -- policy public.framework_registry_flags :: framework_registry_flags_update_merged
+LOCK TABLE "public"."framework_registry_flags" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -3502,6 +3610,7 @@ ALTER POLICY "framework_registry_flags_update_merged" ON "public"."framework_reg
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'superadmin'::text, 'compliance_admin'::text, 'compliance_officer'::text]))))) OR is_iso_admin()));
 
 -- policy public.genetic_profiles :: Users can insert own genetic_profiles
+LOCK TABLE "public"."genetic_profiles" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -3568,6 +3677,7 @@ ALTER POLICY "Users can view own genetic_profiles" ON "public"."genetic_profiles
   USING ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.genex360_purchase_currency_details :: gx_ocd_read_admin
+LOCK TABLE "public"."genex360_purchase_currency_details" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -3592,6 +3702,7 @@ ALTER POLICY "gx_ocd_read_admin" ON "public"."genex360_purchase_currency_details
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'finance_admin'::text, 'compliance_admin'::text]))))));
 
 -- policy public.genex360_purchases :: genex360_purchases_user_own_insert
+LOCK TABLE "public"."genex360_purchases" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -3636,6 +3747,7 @@ ALTER POLICY "genex360_purchases_user_own_read" ON "public"."genex360_purchases"
   USING ((user_id = ( SELECT auth.uid() AS uid)));
 
 -- policy public.governance_configuration_log :: gov_config_log_admin_insert
+LOCK TABLE "public"."governance_configuration_log" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -3684,6 +3796,7 @@ ALTER POLICY "gov_config_log_admin_read" ON "public"."governance_configuration_l
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text)))));
 
 -- policy public.governance_notifications_queue :: gov_notif_admin_all
+LOCK TABLE "public"."governance_notifications_queue" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -3733,6 +3846,7 @@ ALTER POLICY "gov_notif_self_read" ON "public"."governance_notifications_queue"
   USING ((recipient_user_id = ( SELECT auth.uid() AS uid)));
 
 -- policy public.health_metrics :: Users can insert own health_metrics
+LOCK TABLE "public"."health_metrics" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -3799,6 +3913,7 @@ ALTER POLICY "Users can view own health_metrics" ON "public"."health_metrics"
   USING ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.health_scores :: Users can insert own health_scores
+LOCK TABLE "public"."health_scores" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -3865,6 +3980,7 @@ ALTER POLICY "Users can view own health_scores" ON "public"."health_scores"
   USING ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.helix_achievement_unlocks :: Consumer only helix_achievement_unlocks
+LOCK TABLE "public"."helix_achievement_unlocks" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -3887,6 +4003,7 @@ ALTER POLICY "Consumer only helix_achievement_unlocks" ON "public"."helix_achiev
   USING ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.helix_balances :: Consumer only helix_balances
+LOCK TABLE "public"."helix_balances" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -3909,6 +4026,7 @@ ALTER POLICY "Consumer only helix_balances" ON "public"."helix_balances"
   USING ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.helix_challenge_participants :: Consumer only helix_challenge_participants
+LOCK TABLE "public"."helix_challenge_participants" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -3931,6 +4049,7 @@ ALTER POLICY "Consumer only helix_challenge_participants" ON "public"."helix_cha
   USING ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.helix_family_pool_config :: helix_pool_family_read
+LOCK TABLE "public"."helix_family_pool_config" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -3978,6 +4097,7 @@ ALTER POLICY "helix_pool_primary_manage" ON "public"."helix_family_pool_config"
   WITH CHECK ((primary_user_id = ( SELECT auth.uid() AS uid)));
 
 -- policy public.helix_leaderboard :: Consumer only helix_leaderboard
+LOCK TABLE "public"."helix_leaderboard" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -4000,6 +4120,7 @@ ALTER POLICY "Consumer only helix_leaderboard" ON "public"."helix_leaderboard"
   USING ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.helix_redemptions :: Consumer only helix_redemptions
+LOCK TABLE "public"."helix_redemptions" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -4022,6 +4143,7 @@ ALTER POLICY "Consumer only helix_redemptions" ON "public"."helix_redemptions"
   USING ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.helix_referral_codes :: referral_codes_self_read
+LOCK TABLE "public"."helix_referral_codes" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -4044,6 +4166,7 @@ ALTER POLICY "referral_codes_self_read" ON "public"."helix_referral_codes"
   USING ((user_id = ( SELECT auth.uid() AS uid)));
 
 -- policy public.helix_referrals :: Consumer only helix_referrals
+LOCK TABLE "public"."helix_referrals" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -4066,6 +4189,7 @@ ALTER POLICY "Consumer only helix_referrals" ON "public"."helix_referrals"
   USING ((( SELECT auth.uid() AS uid) = referrer_id));
 
 -- policy public.helix_streaks :: Consumer only helix_streaks
+LOCK TABLE "public"."helix_streaks" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -4088,6 +4212,7 @@ ALTER POLICY "Consumer only helix_streaks" ON "public"."helix_streaks"
   USING ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.helix_transactions :: Consumer only helix_transactions
+LOCK TABLE "public"."helix_transactions" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -4110,6 +4235,7 @@ ALTER POLICY "Consumer only helix_transactions" ON "public"."helix_transactions"
   USING ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.herbs :: Authenticated users can view herbs
+LOCK TABLE "public"."herbs" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -4132,6 +4258,7 @@ ALTER POLICY "Authenticated users can view herbs" ON "public"."herbs"
   USING ((( SELECT auth.role() AS role) = 'authenticated'::text));
 
 -- policy public.hipaa_breach_determinations :: hipaa_breach_insert
+LOCK TABLE "public"."hipaa_breach_determinations" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -4154,6 +4281,7 @@ ALTER POLICY "hipaa_breach_insert" ON "public"."hipaa_breach_determinations"
   WITH CHECK ((is_hipaa_admin() AND (assessed_by = ( SELECT auth.uid() AS uid))));
 
 -- policy public.hipaa_contingency_plan_tests :: hipaa_contingency_insert
+LOCK TABLE "public"."hipaa_contingency_plan_tests" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -4176,6 +4304,7 @@ ALTER POLICY "hipaa_contingency_insert" ON "public"."hipaa_contingency_plan_test
   WITH CHECK ((is_hipaa_admin() AND (recorded_by = ( SELECT auth.uid() AS uid))));
 
 -- policy public.hipaa_emergency_access_invocations :: hipaa_emergency_insert
+LOCK TABLE "public"."hipaa_emergency_access_invocations" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -4198,6 +4327,7 @@ ALTER POLICY "hipaa_emergency_insert" ON "public"."hipaa_emergency_access_invoca
   WITH CHECK ((is_hipaa_admin() AND (invoked_by = ( SELECT auth.uid() AS uid))));
 
 -- policy public.hipaa_sanction_actions :: hipaa_sanction_actions_insert
+LOCK TABLE "public"."hipaa_sanction_actions" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -4220,6 +4350,7 @@ ALTER POLICY "hipaa_sanction_actions_insert" ON "public"."hipaa_sanction_actions
   WITH CHECK ((is_hipaa_admin() AND (recorded_by = ( SELECT auth.uid() AS uid))));
 
 -- policy public.hipaa_workforce_training :: hipaa_training_insert
+LOCK TABLE "public"."hipaa_workforce_training" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -4242,6 +4373,7 @@ ALTER POLICY "hipaa_training_insert" ON "public"."hipaa_workforce_training"
   WITH CHECK ((is_hipaa_admin() AND (recorded_by = ( SELECT auth.uid() AS uid))));
 
 -- policy public.ingredient_library :: ingredient_library_admin_all
+LOCK TABLE "public"."ingredient_library" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -4294,6 +4426,7 @@ ALTER POLICY "ingredient_library_read_enrolled" ON "public"."ingredient_library"
   WHERE ((p.user_id = ( SELECT auth.uid() AS uid)) AND (le.status = ANY (ARRAY['active'::text, 'formulation_development'::text, 'eligibility_verified'::text])))))));
 
 -- policy public.ingredient_library_interactions :: ingredient_interactions_admin_all
+LOCK TABLE "public"."ingredient_library_interactions" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -4346,6 +4479,7 @@ ALTER POLICY "ingredient_interactions_read_enrolled" ON "public"."ingredient_lib
   WHERE ((p.user_id = ( SELECT auth.uid() AS uid)) AND (le.status = ANY (ARRAY['active'::text, 'formulation_development'::text, 'eligibility_verified'::text]))))));
 
 -- policy public.interaction_notifications :: own_interaction_notifications
+LOCK TABLE "public"."interaction_notifications" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -4368,6 +4502,7 @@ ALTER POLICY "own_interaction_notifications" ON "public"."interaction_notificati
   USING ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.interaction_overrides :: interaction_overrides_access
+LOCK TABLE "public"."interaction_overrides" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -4391,6 +4526,7 @@ ALTER POLICY "interaction_overrides_access" ON "public"."interaction_overrides"
   WITH CHECK ((( SELECT auth.uid() AS uid) = practitioner_user_id));
 
 -- policy public.international_audit_log :: intl_audit_insert_admin
+LOCK TABLE "public"."international_audit_log" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -4439,6 +4575,7 @@ ALTER POLICY "intl_audit_read_admin" ON "public"."international_audit_log"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'finance_admin'::text, 'compliance_admin'::text]))))));
 
 -- policy public.international_country_to_market :: ictm_write_admin
+LOCK TABLE "public"."international_country_to_market" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -4466,6 +4603,7 @@ ALTER POLICY "ictm_write_admin" ON "public"."international_country_to_market"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'compliance_admin'::text]))))));
 
 -- policy public.international_fx_drift_findings :: fx_drift_read_admin
+LOCK TABLE "public"."international_fx_drift_findings" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -4517,6 +4655,7 @@ ALTER POLICY "fx_drift_update_admin" ON "public"."international_fx_drift_finding
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'finance_admin'::text]))))));
 
 -- policy public.international_fx_rate_history :: fx_hist_read_admin
+LOCK TABLE "public"."international_fx_rate_history" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -4541,6 +4680,7 @@ ALTER POLICY "fx_hist_read_admin" ON "public"."international_fx_rate_history"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'finance_admin'::text]))))));
 
 -- policy public.international_market_config :: imc_write_admin
+LOCK TABLE "public"."international_market_config" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -4568,6 +4708,7 @@ ALTER POLICY "imc_write_admin" ON "public"."international_market_config"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'finance_admin'::text, 'compliance_admin'::text]))))));
 
 -- policy public.international_refunds :: intl_refund_read_admin
+LOCK TABLE "public"."international_refunds" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -4592,6 +4733,7 @@ ALTER POLICY "intl_refund_read_admin" ON "public"."international_refunds"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'finance_admin'::text, 'compliance_admin'::text]))))));
 
 -- policy public.international_settlement_daily_reports :: settle_report_read_admin
+LOCK TABLE "public"."international_settlement_daily_reports" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -4616,6 +4758,7 @@ ALTER POLICY "settle_report_read_admin" ON "public"."international_settlement_da
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'finance_admin'::text]))))));
 
 -- policy public.international_tax_registrations :: tax_reg_read_admin
+LOCK TABLE "public"."international_tax_registrations" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -4667,6 +4810,7 @@ ALTER POLICY "tax_reg_write_admin" ON "public"."international_tax_registrations"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'finance_admin'::text, 'compliance_admin'::text]))))));
 
 -- policy public.international_vat_invoice_sequences :: vat_seq_read_admin
+LOCK TABLE "public"."international_vat_invoice_sequences" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -4691,6 +4835,7 @@ ALTER POLICY "vat_seq_read_admin" ON "public"."international_vat_invoice_sequenc
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'finance_admin'::text]))))));
 
 -- policy public.international_vat_invoices :: vat_inv_read_admin
+LOCK TABLE "public"."international_vat_invoices" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -4715,6 +4860,7 @@ ALTER POLICY "vat_inv_read_admin" ON "public"."international_vat_invoices"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'finance_admin'::text, 'compliance_admin'::text]))))));
 
 -- policy public.international_vat_number_validations :: vat_val_read_admin
+LOCK TABLE "public"."international_vat_number_validations" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -4739,6 +4885,7 @@ ALTER POLICY "vat_val_read_admin" ON "public"."international_vat_number_validati
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'finance_admin'::text, 'compliance_admin'::text]))))));
 
 -- policy public.iprs_scan_config :: iprs_scan_config_admin_write
+LOCK TABLE "public"."iprs_scan_config" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -4790,6 +4937,7 @@ ALTER POLICY "iprs_scan_config_legal_ops_read" ON "public"."iprs_scan_config"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'compliance_officer'::text, 'legal_ops'::text, 'cfo'::text, 'ceo'::text]))))));
 
 -- policy public.iso_internal_audits :: iso_internal_audits_insert_merged
+LOCK TABLE "public"."iso_internal_audits" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -4812,6 +4960,7 @@ ALTER POLICY "iso_internal_audits_insert_merged" ON "public"."iso_internal_audit
   WITH CHECK ((is_iso_admin() OR (is_iso_admin() AND (recorded_by = ( SELECT auth.uid() AS uid)))));
 
 -- policy public.iso_isms_scope_documents :: iso_isms_scope_documents_insert_merged
+LOCK TABLE "public"."iso_isms_scope_documents" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -4834,6 +4983,7 @@ ALTER POLICY "iso_isms_scope_documents_insert_merged" ON "public"."iso_isms_scop
   WITH CHECK ((is_iso_admin() OR (is_iso_admin() AND (recorded_by = ( SELECT auth.uid() AS uid)))));
 
 -- policy public.iso_management_reviews :: iso_management_reviews_insert_merged
+LOCK TABLE "public"."iso_management_reviews" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -4856,6 +5006,7 @@ ALTER POLICY "iso_management_reviews_insert_merged" ON "public"."iso_management_
   WITH CHECK ((is_iso_admin() OR (is_iso_admin() AND (recorded_by = ( SELECT auth.uid() AS uid)))));
 
 -- policy public.iso_nonconformities :: iso_nonconformities_insert_merged
+LOCK TABLE "public"."iso_nonconformities" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -4878,6 +5029,7 @@ ALTER POLICY "iso_nonconformities_insert_merged" ON "public"."iso_nonconformitie
   WITH CHECK ((is_iso_admin() OR (is_iso_admin() AND (recorded_by = ( SELECT auth.uid() AS uid)))));
 
 -- policy public.iso_risk_register :: iso_risk_register_insert_merged
+LOCK TABLE "public"."iso_risk_register" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -4900,6 +5052,7 @@ ALTER POLICY "iso_risk_register_insert_merged" ON "public"."iso_risk_register"
   WITH CHECK ((is_iso_admin() OR (is_iso_admin() AND (recorded_by = ( SELECT auth.uid() AS uid)))));
 
 -- policy public.iso_risk_treatments :: iso_risk_treatments_insert_merged
+LOCK TABLE "public"."iso_risk_treatments" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -4922,6 +5075,7 @@ ALTER POLICY "iso_risk_treatments_insert_merged" ON "public"."iso_risk_treatment
   WITH CHECK ((is_iso_admin() OR (is_iso_admin() AND (recorded_by = ( SELECT auth.uid() AS uid)))));
 
 -- policy public.iso_statements_of_applicability :: iso_statements_of_applicability_insert_merged
+LOCK TABLE "public"."iso_statements_of_applicability" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -4944,6 +5098,7 @@ ALTER POLICY "iso_statements_of_applicability_insert_merged" ON "public"."iso_st
   WITH CHECK ((is_iso_admin() OR (is_iso_admin() AND (recorded_by = ( SELECT auth.uid() AS uid)))));
 
 -- policy public.jeffery_directives :: jeffery_directives_admin_insert
+LOCK TABLE "public"."jeffery_directives" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -5019,6 +5174,7 @@ ALTER POLICY "jeffery_directives_admin_update" ON "public"."jeffery_directives"
   WHERE ((p.id = ( SELECT auth.uid() AS uid)) AND (p.role = 'admin'::text)))) AND (status = ANY (ARRAY['active'::text, 'completed'::text, 'paused'::text, 'cancelled'::text]))));
 
 -- policy public.jeffery_knowledge_entries :: jeffery_knowledge_admin_read
+LOCK TABLE "public"."jeffery_knowledge_entries" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -5070,6 +5226,7 @@ ALTER POLICY "jeffery_knowledge_admin_update" ON "public"."jeffery_knowledge_ent
   WHERE ((p.id = ( SELECT auth.uid() AS uid)) AND (p.role = 'admin'::text)))) AND (admin_verified IS NOT NULL)));
 
 -- policy public.jeffery_learning_log :: jeffery_learning_admin_read
+LOCK TABLE "public"."jeffery_learning_log" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -5094,6 +5251,7 @@ ALTER POLICY "jeffery_learning_admin_read" ON "public"."jeffery_learning_log"
   WHERE ((p.id = ( SELECT auth.uid() AS uid)) AND (p.role = 'admin'::text)))));
 
 -- policy public.jeffery_message_comments :: jeffery_comments_admin_insert
+LOCK TABLE "public"."jeffery_message_comments" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -5142,6 +5300,7 @@ ALTER POLICY "jeffery_comments_admin_read" ON "public"."jeffery_message_comments
   WHERE ((p.id = ( SELECT auth.uid() AS uid)) AND (p.role = 'admin'::text)))));
 
 -- policy public.jeffery_messages :: jeffery_msgs_admin_insert
+LOCK TABLE "public"."jeffery_messages" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -5217,6 +5376,7 @@ ALTER POLICY "jeffery_msgs_admin_update" ON "public"."jeffery_messages"
   WHERE ((p.id = ( SELECT auth.uid() AS uid)) AND (p.role = 'admin'::text)))) AND (status = ANY (ARRAY['pending'::text, 'approved'::text, 'rejected'::text, 'applied'::text, 'flagged'::text, 'auto_applied'::text]))));
 
 -- policy public.kit_registrations :: Users can register kits
+LOCK TABLE "public"."kit_registrations" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -5261,6 +5421,7 @@ ALTER POLICY "Users can view own kits" ON "public"."kit_registrations"
   USING ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.kpi_library :: kpi_library_exec_admin_all
+LOCK TABLE "public"."kpi_library" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -5288,6 +5449,7 @@ ALTER POLICY "kpi_library_exec_admin_all" ON "public"."kpi_library"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'cfo'::text, 'ceo'::text, 'exec_reporting_admin'::text]))))));
 
 -- policy public.launch_phases :: launch_phases_admin_all
+LOCK TABLE "public"."launch_phases" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -5315,6 +5477,7 @@ ALTER POLICY "launch_phases_admin_all" ON "public"."launch_phases"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text)))));
 
 -- policy public.legal_case_settlements :: legal_settlements_admin_chain
+LOCK TABLE "public"."legal_case_settlements" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -5339,6 +5502,7 @@ ALTER POLICY "legal_settlements_admin_chain" ON "public"."legal_case_settlements
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'compliance_officer'::text, 'legal_ops'::text, 'cfo'::text, 'ceo'::text]))))));
 
 -- policy public.legal_case_timeline :: legal_timeline_admin_legal_ops
+LOCK TABLE "public"."legal_case_timeline" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -5363,6 +5527,7 @@ ALTER POLICY "legal_timeline_admin_legal_ops" ON "public"."legal_case_timeline"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'compliance_officer'::text, 'legal_ops'::text]))))));
 
 -- policy public.legal_counsel_engagements :: legal_engagements_insert_legal_ops
+LOCK TABLE "public"."legal_counsel_engagements" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -5435,6 +5600,7 @@ ALTER POLICY "legal_engagements_update_authorised" ON "public"."legal_counsel_en
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'compliance_officer'::text, 'legal_ops'::text, 'cfo'::text, 'ceo'::text]))))));
 
 -- policy public.legal_counterparties :: legal_counterparties_admin_legal_ops
+LOCK TABLE "public"."legal_counterparties" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -5459,6 +5625,7 @@ ALTER POLICY "legal_counterparties_admin_legal_ops" ON "public"."legal_counterpa
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'compliance_officer'::text, 'legal_ops'::text]))))));
 
 -- policy public.legal_counterparty_merge_history :: legal_counterparty_merge_admin_legal_ops
+LOCK TABLE "public"."legal_counterparty_merge_history" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -5483,6 +5650,7 @@ ALTER POLICY "legal_counterparty_merge_admin_legal_ops" ON "public"."legal_count
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'compliance_officer'::text, 'legal_ops'::text]))))));
 
 -- policy public.legal_dmca_counter_notices :: legal_dmca_counter_notices_admin_legal_ops
+LOCK TABLE "public"."legal_dmca_counter_notices" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -5507,6 +5675,7 @@ ALTER POLICY "legal_dmca_counter_notices_admin_legal_ops" ON "public"."legal_dmc
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'compliance_officer'::text, 'legal_ops'::text]))))));
 
 -- policy public.legal_dmca_filings :: legal_dmca_admin_legal_ops
+LOCK TABLE "public"."legal_dmca_filings" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -5531,6 +5700,7 @@ ALTER POLICY "legal_dmca_admin_legal_ops" ON "public"."legal_dmca_filings"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'compliance_officer'::text, 'legal_ops'::text]))))));
 
 -- policy public.legal_enforcement_actions :: legal_actions_admin_legal_ops
+LOCK TABLE "public"."legal_enforcement_actions" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -5555,6 +5725,7 @@ ALTER POLICY "legal_actions_admin_legal_ops" ON "public"."legal_enforcement_acti
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'compliance_officer'::text, 'legal_ops'::text]))))));
 
 -- policy public.legal_investigation_cases :: legal_cases_admin_legal_ops
+LOCK TABLE "public"."legal_investigation_cases" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -5582,6 +5753,7 @@ ALTER POLICY "legal_cases_admin_legal_ops" ON "public"."legal_investigation_case
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'compliance_officer'::text, 'legal_ops'::text]))))));
 
 -- policy public.legal_investigation_evidence :: legal_evidence_admin_legal_ops
+LOCK TABLE "public"."legal_investigation_evidence" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -5606,6 +5778,7 @@ ALTER POLICY "legal_evidence_admin_legal_ops" ON "public"."legal_investigation_e
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'compliance_officer'::text, 'legal_ops'::text]))))));
 
 -- policy public.legal_marketplace_complaints :: legal_marketplace_complaints_admin_legal_ops
+LOCK TABLE "public"."legal_marketplace_complaints" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -5630,6 +5803,7 @@ ALTER POLICY "legal_marketplace_complaints_admin_legal_ops" ON "public"."legal_m
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'compliance_officer'::text, 'legal_ops'::text]))))));
 
 -- policy public.legal_marketplace_integrations :: legal_marketplace_integrations_admin_legal_ops
+LOCK TABLE "public"."legal_marketplace_integrations" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -5654,6 +5828,7 @@ ALTER POLICY "legal_marketplace_integrations_admin_legal_ops" ON "public"."legal
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'compliance_officer'::text, 'legal_ops'::text]))))));
 
 -- policy public.legal_operations_audit_log :: legal_audit_admin_read
+LOCK TABLE "public"."legal_operations_audit_log" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -5678,6 +5853,7 @@ ALTER POLICY "legal_audit_admin_read" ON "public"."legal_operations_audit_log"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text)))));
 
 -- policy public.legal_outside_counsel :: legal_counsel_admin_only
+LOCK TABLE "public"."legal_outside_counsel" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -5702,6 +5878,7 @@ ALTER POLICY "legal_counsel_admin_only" ON "public"."legal_outside_counsel"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text)))));
 
 -- policy public.legal_privilege_grants :: legal_privilege_grants_admin
+LOCK TABLE "public"."legal_privilege_grants" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -5729,6 +5906,7 @@ ALTER POLICY "legal_privilege_grants_admin" ON "public"."legal_privilege_grants"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text)))));
 
 -- policy public.legal_privileged_communications :: legal_privileged_comms_scoped
+LOCK TABLE "public"."legal_privileged_communications" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -5760,6 +5938,7 @@ ALTER POLICY "legal_privileged_comms_scoped" ON "public"."legal_privileged_commu
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text))))));
 
 -- policy public.legal_templates_library :: legal_templates_admin_legal_ops
+LOCK TABLE "public"."legal_templates_library" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -5784,6 +5963,7 @@ ALTER POLICY "legal_templates_admin_legal_ops" ON "public"."legal_templates_libr
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'compliance_officer'::text, 'legal_ops'::text]))))));
 
 -- policy public.level_4_enrollments :: l4_enroll_admin_all
+LOCK TABLE "public"."level_4_enrollments" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -5835,6 +6015,7 @@ ALTER POLICY "l4_enroll_self_read" ON "public"."level_4_enrollments"
   WHERE (practitioners.user_id = ( SELECT auth.uid() AS uid)))));
 
 -- policy public.level_4_parameters :: l4_params_admin_write
+LOCK TABLE "public"."level_4_parameters" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -5862,6 +6043,7 @@ ALTER POLICY "l4_params_admin_write" ON "public"."level_4_parameters"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text)))));
 
 -- policy public.manual_customers :: manual_customers_self_rw
+LOCK TABLE "public"."manual_customers" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -5893,6 +6075,7 @@ ALTER POLICY "manual_customers_self_rw" ON "public"."manual_customers"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text))))));
 
 -- policy public.map_compliance_scores :: map_compliance_self_read
+LOCK TABLE "public"."map_compliance_scores" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -5919,6 +6102,7 @@ ALTER POLICY "map_compliance_self_read" ON "public"."map_compliance_scores"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text))))));
 
 -- policy public.map_policies :: map_policies_admin_all
+LOCK TABLE "public"."map_policies" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -5970,6 +6154,7 @@ ALTER POLICY "map_policies_read_for_practitioners_admins" ON "public"."map_polic
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['practitioner'::text, 'admin'::text]))))));
 
 -- policy public.map_policy_change_log :: map_policy_log_admin_insert
+LOCK TABLE "public"."map_policy_change_log" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -6018,6 +6203,7 @@ ALTER POLICY "map_policy_log_admin_read" ON "public"."map_policy_change_log"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text)))));
 
 -- policy public.map_price_observations :: map_observations_admin_read
+LOCK TABLE "public"."map_price_observations" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -6042,6 +6228,7 @@ ALTER POLICY "map_observations_admin_read" ON "public"."map_price_observations"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text)))));
 
 -- policy public.map_remediation_evidence :: map_evidence_self_rw
+LOCK TABLE "public"."map_remediation_evidence" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -6073,6 +6260,7 @@ ALTER POLICY "map_evidence_self_rw" ON "public"."map_remediation_evidence"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text))))));
 
 -- policy public.map_violations :: map_violations_admin_all
+LOCK TABLE "public"."map_violations" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -6126,6 +6314,7 @@ ALTER POLICY "map_violations_self_read" ON "public"."map_violations"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text))))));
 
 -- policy public.map_vip_exemption_sensitive_notes :: map_vip_sensitive_notes_restricted_read
+LOCK TABLE "public"."map_vip_exemption_sensitive_notes" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -6153,6 +6342,7 @@ ALTER POLICY "map_vip_sensitive_notes_restricted_read" ON "public"."map_vip_exem
   WHERE ((ve.vip_exemption_id = map_vip_exemption_sensitive_notes.vip_exemption_id) AND (pr.user_id = ( SELECT auth.uid() AS uid)))))));
 
 -- policy public.map_vip_exemptions :: map_vip_exemptions_self_rw
+LOCK TABLE "public"."map_vip_exemptions" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -6184,6 +6374,7 @@ ALTER POLICY "map_vip_exemptions_self_rw" ON "public"."map_vip_exemptions"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text))))));
 
 -- policy public.map_waiver_evidence :: map_waiver_evidence_inherit
+LOCK TABLE "public"."map_waiver_evidence" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -6219,6 +6410,7 @@ ALTER POLICY "map_waiver_evidence_inherit" ON "public"."map_waiver_evidence"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text))))));
 
 -- policy public.map_waiver_skus :: map_waiver_skus_inherit
+LOCK TABLE "public"."map_waiver_skus" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -6254,6 +6446,7 @@ ALTER POLICY "map_waiver_skus_inherit" ON "public"."map_waiver_skus"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text))))));
 
 -- policy public.map_waivers :: map_waivers_self_rw
+LOCK TABLE "public"."map_waivers" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -6285,6 +6478,7 @@ ALTER POLICY "map_waivers_self_rw" ON "public"."map_waivers"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text))))));
 
 -- policy public.marketing_copy_conversions :: conversions_admin_read
+LOCK TABLE "public"."marketing_copy_conversions" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -6307,6 +6501,7 @@ ALTER POLICY "conversions_admin_read" ON "public"."marketing_copy_conversions"
   USING (((( SELECT auth.jwt() AS jwt) ->> 'role'::text) = ANY (ARRAY['marketing_admin'::text, 'admin'::text, 'superadmin'::text])));
 
 -- policy public.marketing_copy_impressions :: impressions_admin_read
+LOCK TABLE "public"."marketing_copy_impressions" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -6329,6 +6524,7 @@ ALTER POLICY "impressions_admin_read" ON "public"."marketing_copy_impressions"
   USING (((( SELECT auth.jwt() AS jwt) ->> 'role'::text) = ANY (ARRAY['marketing_admin'::text, 'admin'::text, 'superadmin'::text])));
 
 -- policy public.marketing_copy_test_rounds :: test_rounds_admin
+LOCK TABLE "public"."marketing_copy_test_rounds" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -6352,6 +6548,7 @@ ALTER POLICY "test_rounds_admin" ON "public"."marketing_copy_test_rounds"
   WITH CHECK (((( SELECT auth.jwt() AS jwt) ->> 'role'::text) = ANY (ARRAY['marketing_admin'::text, 'admin'::text, 'superadmin'::text])));
 
 -- policy public.marketing_copy_variant_events :: variant_events_admin_insert
+LOCK TABLE "public"."marketing_copy_variant_events" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -6396,6 +6593,7 @@ ALTER POLICY "variant_events_admin_read" ON "public"."marketing_copy_variant_eve
   USING (((( SELECT auth.jwt() AS jwt) ->> 'role'::text) = ANY (ARRAY['marketing_admin'::text, 'admin'::text, 'superadmin'::text])));
 
 -- policy public.marketing_copy_variants :: variants_admin_rw
+LOCK TABLE "public"."marketing_copy_variants" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -6419,6 +6617,7 @@ ALTER POLICY "variants_admin_rw" ON "public"."marketing_copy_variants"
   WITH CHECK (((( SELECT auth.jwt() AS jwt) ->> 'role'::text) = ANY (ARRAY['marketing_admin'::text, 'admin'::text, 'superadmin'::text, 'compliance_admin'::text])));
 
 -- policy public.marshall_vision_config :: mvc_write
+LOCK TABLE "public"."marshall_vision_config" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -6446,6 +6645,7 @@ ALTER POLICY "mvc_write" ON "public"."marshall_vision_config"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'superadmin'::text]))))));
 
 -- policy public.master_skus_market_pricing :: mskumkt_read_all_admin
+LOCK TABLE "public"."master_skus_market_pricing" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -6497,6 +6697,7 @@ ALTER POLICY "mskumkt_write_admin" ON "public"."master_skus_market_pricing"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'finance_admin'::text, 'compliance_admin'::text]))))));
 
 -- policy public.meal_logs :: Users can manage own meal logs
+LOCK TABLE "public"."meal_logs" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -6520,6 +6721,7 @@ ALTER POLICY "Users can manage own meal logs" ON "public"."meal_logs"
   WITH CHECK ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.medication_interactions :: Users view own interactions
+LOCK TABLE "public"."medication_interactions" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -6542,6 +6744,7 @@ ALTER POLICY "Users view own interactions" ON "public"."medication_interactions"
   USING ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.memberships :: Users can view own membership
+LOCK TABLE "public"."memberships" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -6564,6 +6767,7 @@ ALTER POLICY "Users can view own membership" ON "public"."memberships"
   USING ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.naturopath_profiles :: Naturopaths delete own profile
+LOCK TABLE "public"."naturopath_profiles" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -6631,6 +6835,7 @@ ALTER POLICY "Naturopaths update own profile" ON "public"."naturopath_profiles"
   WITH CHECK ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.notification_batch_queue :: nbq_read_scoped
+LOCK TABLE "public"."notification_batch_queue" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -6655,6 +6860,7 @@ ALTER POLICY "nbq_read_scoped" ON "public"."notification_batch_queue"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'compliance_admin'::text])))))));
 
 -- policy public.notification_channel_credentials :: ncc_own_read
+LOCK TABLE "public"."notification_channel_credentials" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -6706,6 +6912,7 @@ ALTER POLICY "ncc_own_write" ON "public"."notification_channel_credentials"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text))))));
 
 -- policy public.notification_event_registry :: nevreg_write_admin
+LOCK TABLE "public"."notification_event_registry" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -6733,6 +6940,7 @@ ALTER POLICY "nevreg_write_admin" ON "public"."notification_event_registry"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'compliance_admin'::text]))))));
 
 -- policy public.notification_events_inbox :: inbox_insert_admin
+LOCK TABLE "public"."notification_events_inbox" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -6781,6 +6989,7 @@ ALTER POLICY "inbox_read_admin" ON "public"."notification_events_inbox"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'compliance_admin'::text]))))));
 
 -- policy public.notification_legal_ops_preferences :: nlop_read_scoped
+LOCK TABLE "public"."notification_legal_ops_preferences" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -6834,6 +7043,7 @@ ALTER POLICY "nlop_write_admin" ON "public"."notification_legal_ops_preferences"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text)))));
 
 -- policy public.notification_legal_ops_recipients :: nlor_read_admin
+LOCK TABLE "public"."notification_legal_ops_recipients" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -6885,6 +7095,7 @@ ALTER POLICY "nlor_write_admin" ON "public"."notification_legal_ops_recipients"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text)))));
 
 -- policy public.notification_phi_redaction_failures :: phifail_admin_all
+LOCK TABLE "public"."notification_phi_redaction_failures" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -6912,6 +7123,7 @@ ALTER POLICY "phifail_admin_all" ON "public"."notification_phi_redaction_failure
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'compliance_admin'::text]))))));
 
 -- policy public.notification_preferences :: npref_own_read
+LOCK TABLE "public"."notification_preferences" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -6963,6 +7175,7 @@ ALTER POLICY "npref_own_write" ON "public"."notification_preferences"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text))))));
 
 -- policy public.notification_quiet_hours :: nqh_own_all
+LOCK TABLE "public"."notification_quiet_hours" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -6990,6 +7203,7 @@ ALTER POLICY "nqh_own_all" ON "public"."notification_quiet_hours"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text))))));
 
 -- policy public.notification_sms_opt_in_log :: optin_insert_admin
+LOCK TABLE "public"."notification_sms_opt_in_log" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -7038,6 +7252,7 @@ ALTER POLICY "optin_read_admin" ON "public"."notification_sms_opt_in_log"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'compliance_admin'::text])))))));
 
 -- policy public.notifications :: Users can insert own notifications
+LOCK TABLE "public"."notifications" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -7104,6 +7319,7 @@ ALTER POLICY "Users can view own notifications" ON "public"."notifications"
   USING ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.notifications_dispatched :: nd_insert_admin
+LOCK TABLE "public"."notifications_dispatched" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -7152,6 +7368,7 @@ ALTER POLICY "nd_read_admin" ON "public"."notifications_dispatched"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'compliance_admin'::text])))))));
 
 -- policy public.nutrition_logs :: Users delete own nutrition logs
+LOCK TABLE "public"."nutrition_logs" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -7241,6 +7458,7 @@ ALTER POLICY "Users update own nutrition logs" ON "public"."nutrition_logs"
   WITH CHECK ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.order_currency_details :: ocd_read_admin
+LOCK TABLE "public"."order_currency_details" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -7265,6 +7483,7 @@ ALTER POLICY "ocd_read_admin" ON "public"."order_currency_details"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'finance_admin'::text, 'compliance_admin'::text]))))));
 
 -- policy public.order_items :: Users can view own order items
+LOCK TABLE "public"."order_items" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -7289,6 +7508,7 @@ ALTER POLICY "Users can view own order items" ON "public"."order_items"
   WHERE ((orders.id = order_items.order_id) AND (orders.user_id = ( SELECT auth.uid() AS uid))))));
 
 -- policy public.orders :: Users can insert own orders
+LOCK TABLE "public"."orders" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -7333,6 +7553,7 @@ ALTER POLICY "Users can view own orders" ON "public"."orders"
   USING ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.outcome_timeline_cta :: outcome_cta_admin
+LOCK TABLE "public"."outcome_timeline_cta" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -7356,6 +7577,7 @@ ALTER POLICY "outcome_cta_admin" ON "public"."outcome_timeline_cta"
   WITH CHECK (((( SELECT auth.jwt() AS jwt) ->> 'role'::text) = ANY (ARRAY['marketing_admin'::text, 'admin'::text, 'superadmin'::text, 'compliance_admin'::text])));
 
 -- policy public.outcome_timeline_events :: outcome_events_admin
+LOCK TABLE "public"."outcome_timeline_events" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -7379,6 +7601,7 @@ ALTER POLICY "outcome_events_admin" ON "public"."outcome_timeline_events"
   WITH CHECK (((( SELECT auth.jwt() AS jwt) ->> 'role'::text) = ANY (ARRAY['marketing_admin'::text, 'admin'::text, 'superadmin'::text, 'compliance_admin'::text])));
 
 -- policy public.outcome_timeline_phases :: outcome_phases_admin
+LOCK TABLE "public"."outcome_timeline_phases" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -7402,6 +7625,7 @@ ALTER POLICY "outcome_phases_admin" ON "public"."outcome_timeline_phases"
   WITH CHECK (((( SELECT auth.jwt() AS jwt) ->> 'role'::text) = ANY (ARRAY['marketing_admin'::text, 'admin'::text, 'superadmin'::text, 'compliance_admin'::text])));
 
 -- policy public.outcome_timeline_qualifier :: outcome_qualifier_admin
+LOCK TABLE "public"."outcome_timeline_qualifier" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -7425,6 +7649,7 @@ ALTER POLICY "outcome_qualifier_admin" ON "public"."outcome_timeline_qualifier"
   WITH CHECK (((( SELECT auth.jwt() AS jwt) ->> 'role'::text) = ANY (ARRAY['marketing_admin'::text, 'admin'::text, 'superadmin'::text, 'compliance_admin'::text])));
 
 -- policy public.outcome_timeline_section_blocks :: outcome_section_blocks_admin
+LOCK TABLE "public"."outcome_timeline_section_blocks" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -7448,6 +7673,7 @@ ALTER POLICY "outcome_section_blocks_admin" ON "public"."outcome_timeline_sectio
   WITH CHECK (((( SELECT auth.jwt() AS jwt) ->> 'role'::text) = ANY (ARRAY['marketing_admin'::text, 'admin'::text, 'superadmin'::text, 'compliance_admin'::text])));
 
 -- policy public.outcome_timeline_variant_sets :: outcome_variant_sets_admin
+LOCK TABLE "public"."outcome_timeline_variant_sets" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -7471,6 +7697,7 @@ ALTER POLICY "outcome_variant_sets_admin" ON "public"."outcome_timeline_variant_
   WITH CHECK (((( SELECT auth.jwt() AS jwt) ->> 'role'::text) = ANY (ARRAY['marketing_admin'::text, 'admin'::text, 'superadmin'::text, 'compliance_admin'::text])));
 
 -- policy public.patient_practitioner_relationships :: ppr_patient_full_access
+LOCK TABLE "public"."patient_practitioner_relationships" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -7518,6 +7745,7 @@ ALTER POLICY "ppr_practitioner_read" ON "public"."patient_practitioner_relations
   WHERE (practitioners.user_id = ( SELECT auth.uid() AS uid)))));
 
 -- policy public.payout_batch_lines :: pbl_admin_all
+LOCK TABLE "public"."payout_batch_lines" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -7571,6 +7799,7 @@ ALTER POLICY "pbl_practitioner_read_admin_full" ON "public"."payout_batch_lines"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text))))));
 
 -- policy public.payout_batches :: payout_batches_admin_only
+LOCK TABLE "public"."payout_batches" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -7598,6 +7827,7 @@ ALTER POLICY "payout_batches_admin_only" ON "public"."payout_batches"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text)))));
 
 -- policy public.payout_disputes :: disputes_self_rw
+LOCK TABLE "public"."payout_disputes" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -7629,6 +7859,7 @@ ALTER POLICY "disputes_self_rw" ON "public"."payout_disputes"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text))))));
 
 -- policy public.payout_transactions :: pt_admin_only
+LOCK TABLE "public"."payout_transactions" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -7656,6 +7887,7 @@ ALTER POLICY "pt_admin_only" ON "public"."payout_transactions"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text)))));
 
 -- policy public.peptide_detected_patterns :: own_pep_patterns
+LOCK TABLE "public"."peptide_detected_patterns" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -7678,6 +7910,7 @@ ALTER POLICY "own_pep_patterns" ON "public"."peptide_detected_patterns"
   USING ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.peptide_stack_protocols :: own_pep_protocols
+LOCK TABLE "public"."peptide_stack_protocols" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -7700,6 +7933,7 @@ ALTER POLICY "own_pep_protocols" ON "public"."peptide_stack_protocols"
   USING ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.peptide_stack_recommendations :: own_pep_recs
+LOCK TABLE "public"."peptide_stack_recommendations" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -7722,6 +7956,7 @@ ALTER POLICY "own_pep_recs" ON "public"."peptide_stack_recommendations"
   USING ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.photo_share_permissions :: photo_share_permissions_delete_owner
+LOCK TABLE "public"."photo_share_permissions" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -7811,6 +8046,7 @@ ALTER POLICY "photo_share_permissions_update_owner" ON "public"."photo_share_per
   WITH CHECK ((( SELECT auth.uid() AS uid) = photo_session_user_id));
 
 -- policy public.practitioner_notice_appeals :: pna_self_insert
+LOCK TABLE "public"."practitioner_notice_appeals" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -7859,6 +8095,7 @@ ALTER POLICY "pna_self_read" ON "public"."practitioner_notice_appeals"
   WHERE ((pn.id = practitioner_notice_appeals.notice_id) AND is_practitioner_self(pn.practitioner_id))))));
 
 -- policy public.practitioner_operations_audit_log :: poal_admin_read
+LOCK TABLE "public"."practitioner_operations_audit_log" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -7883,6 +8120,7 @@ ALTER POLICY "poal_admin_read" ON "public"."practitioner_operations_audit_log"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text)))));
 
 -- policy public.practitioner_payout_methods :: payout_methods_self_rw
+LOCK TABLE "public"."practitioner_payout_methods" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -7914,6 +8152,7 @@ ALTER POLICY "payout_methods_self_rw" ON "public"."practitioner_payout_methods"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text))))));
 
 -- policy public.practitioner_statements :: statements_self_read
+LOCK TABLE "public"."practitioner_statements" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -7940,6 +8179,7 @@ ALTER POLICY "statements_self_read" ON "public"."practitioner_statements"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text))))));
 
 -- policy public.practitioner_tax_documents :: tax_docs_self_rw
+LOCK TABLE "public"."practitioner_tax_documents" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -7971,6 +8211,7 @@ ALTER POLICY "tax_docs_self_rw" ON "public"."practitioner_tax_documents"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text))))));
 
 -- policy public.practitioner_verified_channels :: channels_self_rw
+LOCK TABLE "public"."practitioner_verified_channels" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -8002,6 +8243,7 @@ ALTER POLICY "channels_self_rw" ON "public"."practitioner_verified_channels"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text))))));
 
 -- policy public.practitioners :: practitioners_self_read
+LOCK TABLE "public"."practitioners" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -8024,6 +8266,7 @@ ALTER POLICY "practitioners_self_read" ON "public"."practitioners"
   USING ((user_id = ( SELECT auth.uid() AS uid)));
 
 -- policy public.prescription_consume_failures :: prescription_consume_failures_insert_own_order
+LOCK TABLE "public"."prescription_consume_failures" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -8048,6 +8291,7 @@ ALTER POLICY "prescription_consume_failures_insert_own_order" ON "public"."presc
   WHERE ((shop_orders.id = prescription_consume_failures.order_id) AND (shop_orders.user_id = ( SELECT auth.uid() AS uid))))));
 
 -- policy public.prescription_tokens :: prescription_tokens_select_merged
+LOCK TABLE "public"."prescription_tokens" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -8070,6 +8314,7 @@ ALTER POLICY "prescription_tokens_select_merged" ON "public"."prescription_token
   USING (((patient_user_id = ( SELECT auth.uid() AS uid)) OR (practitioner_user_id = ( SELECT auth.uid() AS uid))));
 
 -- policy public.price_change_history :: price_history_insert_admin
+LOCK TABLE "public"."price_change_history" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -8118,6 +8363,7 @@ ALTER POLICY "price_history_read_admin" ON "public"."price_change_history"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text)))));
 
 -- policy public.pricing_domains :: pricing_domains_admin_all
+LOCK TABLE "public"."pricing_domains" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -8145,6 +8391,7 @@ ALTER POLICY "pricing_domains_admin_all" ON "public"."pricing_domains"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text)))));
 
 -- policy public.pricing_proposals :: pricing_proposals_admin_all
+LOCK TABLE "public"."pricing_proposals" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -8172,6 +8419,7 @@ ALTER POLICY "pricing_proposals_admin_all" ON "public"."pricing_proposals"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text)))));
 
 -- policy public.products_image_audit :: products_image_audit_admin_all
+LOCK TABLE "public"."products_image_audit" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -8199,6 +8447,7 @@ ALTER POLICY "products_image_audit_admin_all" ON "public"."products_image_audit"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text)))));
 
 -- policy public.profiles :: Users can insert own profile
+LOCK TABLE "public"."profiles" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -8265,6 +8514,7 @@ ALTER POLICY "Users can view own profile" ON "public"."profiles"
   USING ((( SELECT auth.uid() AS uid) = id));
 
 -- policy public.promotion_roi :: Authenticated read promotion_roi
+LOCK TABLE "public"."promotion_roi" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -8287,6 +8537,7 @@ ALTER POLICY "Authenticated read promotion_roi" ON "public"."promotion_roi"
   USING ((( SELECT auth.role() AS role) = 'authenticated'::text));
 
 -- policy public.proposal_approvals :: proposal_approvals_admin_all
+LOCK TABLE "public"."proposal_approvals" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -8314,6 +8565,7 @@ ALTER POLICY "proposal_approvals_admin_all" ON "public"."proposal_approvals"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text)))));
 
 -- policy public.proposal_comments :: proposal_comments_admin_all
+LOCK TABLE "public"."proposal_comments" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -8341,6 +8593,7 @@ ALTER POLICY "proposal_comments_admin_all" ON "public"."proposal_comments"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text)))));
 
 -- policy public.protocol_ingredients :: Users can delete protocol ingredients
+LOCK TABLE "public"."protocol_ingredients" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -8437,6 +8690,7 @@ ALTER POLICY "Users can view protocol ingredients" ON "public"."protocol_ingredi
   WHERE ((protocols.id = protocol_ingredients.protocol_id) AND ((protocols.user_id = ( SELECT auth.uid() AS uid)) OR (protocols.patient_id = ( SELECT auth.uid() AS uid)))))));
 
 -- policy public.protocol_share_activity :: Share parties read activity
+LOCK TABLE "public"."protocol_share_activity" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -8485,6 +8739,7 @@ ALTER POLICY "Share parties write activity" ON "public"."protocol_share_activity
   WHERE ((protocol_shares.patient_id = ( SELECT auth.uid() AS uid)) OR (protocol_shares.provider_id = ( SELECT auth.uid() AS uid)))))));
 
 -- policy public.protocol_shares :: Patients delete own shares
+LOCK TABLE "public"."protocol_shares" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -8574,6 +8829,7 @@ ALTER POLICY "Share parties read shares" ON "public"."protocol_shares"
   USING (((( SELECT auth.uid() AS uid) = patient_id) OR ((( SELECT auth.uid() AS uid) = provider_id) AND (status = 'active'::text))));
 
 -- policy public.protocols :: Users can insert own protocols
+LOCK TABLE "public"."protocols" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -8640,6 +8896,7 @@ ALTER POLICY "Users can view own protocols" ON "public"."protocols"
   USING (((( SELECT auth.uid() AS uid) = user_id) OR (( SELECT auth.uid() AS uid) = patient_id)));
 
 -- policy public.rebuttal_templates :: templates_admin_rw
+LOCK TABLE "public"."rebuttal_templates" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -8663,6 +8920,7 @@ ALTER POLICY "templates_admin_rw" ON "public"."rebuttal_templates"
   WITH CHECK (((( SELECT auth.jwt() AS jwt) ->> 'role'::text) = ANY (ARRAY['compliance_admin'::text, 'admin'::text, 'superadmin'::text])));
 
 -- policy public.recommendations :: System can insert recommendations
+LOCK TABLE "public"."recommendations" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -8751,6 +9009,7 @@ ALTER POLICY "Users view own recommendations" ON "public"."recommendations"
   USING ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.regulatory_alerts :: regalert_read_admin
+LOCK TABLE "public"."regulatory_alerts" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -8802,6 +9061,7 @@ ALTER POLICY "regalert_write_compliance" ON "public"."regulatory_alerts"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'compliance_admin'::text]))))));
 
 -- policy public.regulatory_audit_log :: regaudit_insert_admin
+LOCK TABLE "public"."regulatory_audit_log" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -8850,6 +9110,7 @@ ALTER POLICY "regaudit_read_admin" ON "public"."regulatory_audit_log"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'compliance_admin'::text]))))));
 
 -- policy public.regulatory_claim_library :: regclaim_read_all_admin
+LOCK TABLE "public"."regulatory_claim_library" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -8901,6 +9162,7 @@ ALTER POLICY "regclaim_write_compliance" ON "public"."regulatory_claim_library"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'compliance_admin'::text]))))));
 
 -- policy public.regulatory_disclaimer_events :: regdisc_insert_authenticated
+LOCK TABLE "public"."regulatory_disclaimer_events" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -8947,6 +9209,7 @@ ALTER POLICY "regdisc_read_admin" ON "public"."regulatory_disclaimer_events"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'compliance_admin'::text]))))));
 
 -- policy public.regulatory_disease_dictionary :: regdd_write_admin
+LOCK TABLE "public"."regulatory_disease_dictionary" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -8974,6 +9237,7 @@ ALTER POLICY "regdd_write_admin" ON "public"."regulatory_disease_dictionary"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'compliance_admin'::text]))))));
 
 -- policy public.regulatory_ingredients :: regingr_read_admin
+LOCK TABLE "public"."regulatory_ingredients" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -9025,6 +9289,7 @@ ALTER POLICY "regingr_write_compliance" ON "public"."regulatory_ingredients"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'compliance_admin'::text]))))));
 
 -- policy public.regulatory_jurisdictions :: regj_write_admin
+LOCK TABLE "public"."regulatory_jurisdictions" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -9052,6 +9317,7 @@ ALTER POLICY "regj_write_admin" ON "public"."regulatory_jurisdictions"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'compliance_admin'::text]))))));
 
 -- policy public.regulatory_kelsey_reviews :: regkr_insert_admin
+LOCK TABLE "public"."regulatory_kelsey_reviews" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -9100,6 +9366,7 @@ ALTER POLICY "regkr_read_admin" ON "public"."regulatory_kelsey_reviews"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'compliance_admin'::text, 'medical'::text]))))));
 
 -- policy public.regulatory_peptide_classifications :: regpep_write_compliance
+LOCK TABLE "public"."regulatory_peptide_classifications" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -9127,6 +9394,7 @@ ALTER POLICY "regpep_write_compliance" ON "public"."regulatory_peptide_classific
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'compliance_admin'::text, 'medical'::text]))))));
 
 -- policy public.regulatory_sku_jurisdiction_status :: skujs_read_all_admin
+LOCK TABLE "public"."regulatory_sku_jurisdiction_status" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -9178,6 +9446,7 @@ ALTER POLICY "skujs_write_compliance" ON "public"."regulatory_sku_jurisdiction_s
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'compliance_admin'::text]))))));
 
 -- policy public.regulatory_substantiation :: regsub_read_admin
+LOCK TABLE "public"."regulatory_substantiation" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -9229,6 +9498,7 @@ ALTER POLICY "regsub_write_compliance" ON "public"."regulatory_substantiation"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'compliance_admin'::text]))))));
 
 -- policy public.research_hub_alerts :: Users manage own alerts
+LOCK TABLE "public"."research_hub_alerts" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -9252,6 +9522,7 @@ ALTER POLICY "Users manage own alerts" ON "public"."research_hub_alerts"
   WITH CHECK ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.research_hub_user_items :: Users manage own items
+LOCK TABLE "public"."research_hub_user_items" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -9275,6 +9546,7 @@ ALTER POLICY "Users manage own items" ON "public"."research_hub_user_items"
   WITH CHECK ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.research_hub_user_sources :: Users manage own sources
+LOCK TABLE "public"."research_hub_user_sources" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -9298,6 +9570,7 @@ ALTER POLICY "Users manage own sources" ON "public"."research_hub_user_sources"
   WITH CHECK ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.research_hub_user_tabs :: Users manage own tabs
+LOCK TABLE "public"."research_hub_user_tabs" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -9321,6 +9594,7 @@ ALTER POLICY "Users manage own tabs" ON "public"."research_hub_user_tabs"
   WITH CHECK ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.reward_redemptions :: Users can insert own reward_redemptions
+LOCK TABLE "public"."reward_redemptions" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -9387,6 +9661,7 @@ ALTER POLICY "Users can view own reward_redemptions" ON "public"."reward_redempt
   USING ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.rewards :: Authenticated users can view rewards
+LOCK TABLE "public"."rewards" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -9409,6 +9684,7 @@ ALTER POLICY "Authenticated users can view rewards" ON "public"."rewards"
   USING ((( SELECT auth.role() AS role) = 'authenticated'::text));
 
 -- policy public.rollout_cohorts :: rollout_cohorts_admin_all
+LOCK TABLE "public"."rollout_cohorts" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -9436,6 +9712,7 @@ ALTER POLICY "rollout_cohorts_admin_all" ON "public"."rollout_cohorts"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text)))));
 
 -- policy public.safety_alerts :: Users can view safety alerts
+LOCK TABLE "public"."safety_alerts" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -9460,6 +9737,7 @@ ALTER POLICY "Users can view safety alerts" ON "public"."safety_alerts"
   WHERE ((protocols.id = safety_alerts.protocol_id) AND ((protocols.user_id = ( SELECT auth.uid() AS uid)) OR (protocols.patient_id = ( SELECT auth.uid() AS uid)))))));
 
 -- policy public.scan_calibration_nudges :: Users manage own calibration nudges
+LOCK TABLE "public"."scan_calibration_nudges" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -9483,6 +9761,7 @@ ALTER POLICY "Users manage own calibration nudges" ON "public"."scan_calibration
   WITH CHECK ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.scenario_categories :: scenario_categories_admin
+LOCK TABLE "public"."scenario_categories" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -9506,6 +9785,7 @@ ALTER POLICY "scenario_categories_admin" ON "public"."scenario_categories"
   WITH CHECK (((( SELECT auth.jwt() AS jwt) ->> 'role'::text) = ANY (ARRAY['marketing_admin'::text, 'admin'::text, 'superadmin'::text, 'compliance_admin'::text])));
 
 -- policy public.scenario_copy_blocks :: scenario_copy_blocks_admin
+LOCK TABLE "public"."scenario_copy_blocks" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -9529,6 +9809,7 @@ ALTER POLICY "scenario_copy_blocks_admin" ON "public"."scenario_copy_blocks"
   WITH CHECK (((( SELECT auth.jwt() AS jwt) ->> 'role'::text) = ANY (ARRAY['marketing_admin'::text, 'admin'::text, 'superadmin'::text, 'compliance_admin'::text])));
 
 -- policy public.scenario_disclosures :: scenario_disclosures_admin
+LOCK TABLE "public"."scenario_disclosures" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -9552,6 +9833,7 @@ ALTER POLICY "scenario_disclosures_admin" ON "public"."scenario_disclosures"
   WITH CHECK (((( SELECT auth.jwt() AS jwt) ->> 'role'::text) = ANY (ARRAY['marketing_admin'::text, 'admin'::text, 'superadmin'::text, 'compliance_admin'::text])));
 
 -- policy public.scenario_events :: scenario_events_admin
+LOCK TABLE "public"."scenario_events" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -9575,6 +9857,7 @@ ALTER POLICY "scenario_events_admin" ON "public"."scenario_events"
   WITH CHECK (((( SELECT auth.jwt() AS jwt) ->> 'role'::text) = ANY (ARRAY['marketing_admin'::text, 'admin'::text, 'superadmin'::text, 'compliance_admin'::text])));
 
 -- policy public.scenario_personas :: scenario_personas_admin
+LOCK TABLE "public"."scenario_personas" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -9598,6 +9881,7 @@ ALTER POLICY "scenario_personas_admin" ON "public"."scenario_personas"
   WITH CHECK (((( SELECT auth.jwt() AS jwt) ->> 'role'::text) = ANY (ARRAY['marketing_admin'::text, 'admin'::text, 'superadmin'::text, 'compliance_admin'::text])));
 
 -- policy public.scheduled_flag_activations :: scheduled_activations_admin_all
+LOCK TABLE "public"."scheduled_flag_activations" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -9625,6 +9909,7 @@ ALTER POLICY "scheduled_activations_admin_all" ON "public"."scheduled_flag_activ
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text)))));
 
 -- policy public.scheduler_connections :: scheduler_conns_self_rw
+LOCK TABLE "public"."scheduler_connections" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -9652,6 +9937,7 @@ ALTER POLICY "scheduler_conns_self_rw" ON "public"."scheduler_connections"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'superadmin'::text, 'compliance_admin'::text])))))));
 
 -- policy public.scheduler_events :: scheduler_events_admin
+LOCK TABLE "public"."scheduler_events" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -9676,6 +9962,7 @@ ALTER POLICY "scheduler_events_admin" ON "public"."scheduler_events"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'superadmin'::text, 'compliance_admin'::text]))))));
 
 -- policy public.scheduler_interceptions :: scheduler_interceptions_admin
+LOCK TABLE "public"."scheduler_interceptions" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -9700,6 +9987,7 @@ ALTER POLICY "scheduler_interceptions_admin" ON "public"."scheduler_interception
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'superadmin'::text, 'compliance_admin'::text]))))));
 
 -- policy public.scheduler_overrides :: scheduler_overrides_self_insert
+LOCK TABLE "public"."scheduler_overrides" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -9746,6 +10034,7 @@ ALTER POLICY "scheduler_overrides_self_read" ON "public"."scheduler_overrides"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'superadmin'::text, 'compliance_admin'::text])))))));
 
 -- policy public.scheduler_platform_state_changes :: spc_admin_approve
+LOCK TABLE "public"."scheduler_platform_state_changes" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -9821,6 +10110,7 @@ ALTER POLICY "spc_admin_read" ON "public"."scheduler_platform_state_changes"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'superadmin'::text, 'compliance_admin'::text]))))));
 
 -- policy public.scheduler_platform_states :: sps_admin_read
+LOCK TABLE "public"."scheduler_platform_states" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -9845,6 +10135,7 @@ ALTER POLICY "sps_admin_read" ON "public"."scheduler_platform_states"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'superadmin'::text, 'compliance_admin'::text]))))));
 
 -- policy public.scheduler_poll_state :: scheduler_poll_state_admin
+LOCK TABLE "public"."scheduler_poll_state" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -9872,6 +10163,7 @@ ALTER POLICY "scheduler_poll_state_admin" ON "public"."scheduler_poll_state"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'superadmin'::text, 'compliance_admin'::text]))))));
 
 -- policy public.scheduler_scans :: scheduler_scans_self_read
+LOCK TABLE "public"."scheduler_scans" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -9896,6 +10188,7 @@ ALTER POLICY "scheduler_scans_self_read" ON "public"."scheduler_scans"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'superadmin'::text, 'compliance_admin'::text])))))));
 
 -- policy public.scoring_audit_log :: audit_log_user_read
+LOCK TABLE "public"."scoring_audit_log" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -9918,6 +10211,7 @@ ALTER POLICY "audit_log_user_read" ON "public"."scoring_audit_log"
   USING ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.sherlock_activity_log :: sherlock_activity_log_user_read
+LOCK TABLE "public"."sherlock_activity_log" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -9940,6 +10234,7 @@ ALTER POLICY "sherlock_activity_log_user_read" ON "public"."sherlock_activity_lo
   USING (((user_id IS NULL) OR (( SELECT auth.uid() AS uid) = user_id)));
 
 -- policy public.sherlock_escalations :: sherlock_escalations_user_read
+LOCK TABLE "public"."sherlock_escalations" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -9962,6 +10257,7 @@ ALTER POLICY "sherlock_escalations_user_read" ON "public"."sherlock_escalations"
   USING ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.sherlock_insights_cache :: sherlock_insights_admin_all
+LOCK TABLE "public"."sherlock_insights_cache" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -10013,6 +10309,7 @@ ALTER POLICY "sherlock_insights_self_read" ON "public"."sherlock_insights_cache"
   WHERE (practitioners.user_id = ( SELECT auth.uid() AS uid)))));
 
 -- policy public.sherlock_task_queue :: sherlock_task_queue_user_read
+LOCK TABLE "public"."sherlock_task_queue" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -10035,6 +10332,7 @@ ALTER POLICY "sherlock_task_queue_user_read" ON "public"."sherlock_task_queue"
   USING (((user_id IS NULL) OR (( SELECT auth.uid() AS uid) = user_id)));
 
 -- policy public.shop_cart_items :: Users manage own cart
+LOCK TABLE "public"."shop_cart_items" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -10058,6 +10356,7 @@ ALTER POLICY "Users manage own cart" ON "public"."shop_cart_items"
   WITH CHECK ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.shop_order_items :: Users create own order items
+LOCK TABLE "public"."shop_order_items" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -10106,6 +10405,7 @@ ALTER POLICY "Users view own order items" ON "public"."shop_order_items"
   WHERE (shop_orders.user_id = ( SELECT auth.uid() AS uid)))));
 
 -- policy public.shop_order_status_history :: Users insert own order history
+LOCK TABLE "public"."shop_order_status_history" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -10154,6 +10454,7 @@ ALTER POLICY "Users view own order history" ON "public"."shop_order_status_histo
   WHERE (shop_orders.user_id = ( SELECT auth.uid() AS uid)))));
 
 -- policy public.shop_orders :: Users create own orders
+LOCK TABLE "public"."shop_orders" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -10198,6 +10499,7 @@ ALTER POLICY "Users view own orders" ON "public"."shop_orders"
   USING ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.shop_refresh_audit_log :: srl_admin_select
+LOCK TABLE "public"."shop_refresh_audit_log" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -10222,6 +10524,7 @@ ALTER POLICY "srl_admin_select" ON "public"."shop_refresh_audit_log"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text)))));
 
 -- policy public.shop_refresh_reconciliation_findings :: srrf_admin_all
+LOCK TABLE "public"."shop_refresh_reconciliation_findings" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -10249,6 +10552,7 @@ ALTER POLICY "srrf_admin_all" ON "public"."shop_refresh_reconciliation_findings"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text)))));
 
 -- policy public.sku_rationalization :: Authenticated read sku_rationalization
+LOCK TABLE "public"."sku_rationalization" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -10271,6 +10575,7 @@ ALTER POLICY "Authenticated read sku_rationalization" ON "public"."sku_rationali
   USING ((( SELECT auth.role() AS role) = 'authenticated'::text));
 
 -- policy public.soc2_auditor_access_log :: soc2_auditor_access_log_select_merged
+LOCK TABLE "public"."soc2_auditor_access_log" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -10295,6 +10600,7 @@ ALTER POLICY "soc2_auditor_access_log_select_merged" ON "public"."soc2_auditor_a
   WHERE ((g.id = soc2_auditor_access_log.grant_id) AND (g.auditor_email = (( SELECT auth.jwt() AS jwt) ->> 'email'::text))))) OR is_compliance_reader()));
 
 -- policy public.soc2_auditor_grants :: soc2_auditor_grants_compliance_insert
+LOCK TABLE "public"."soc2_auditor_grants" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -10339,6 +10645,7 @@ ALTER POLICY "soc2_auditor_grants_select_merged" ON "public"."soc2_auditor_grant
   USING ((((auditor_email = (( SELECT auth.jwt() AS jwt) ->> 'email'::text)) AND (revoked = false)) OR is_compliance_reader()));
 
 -- policy public.soc2_collector_config :: soc2_collector_config_admin_write
+LOCK TABLE "public"."soc2_collector_config" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -10366,6 +10673,7 @@ ALTER POLICY "soc2_collector_config_admin_write" ON "public"."soc2_collector_con
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'superadmin'::text]))))));
 
 -- policy public.soc2_distribution_targets :: sdt_admin_write
+LOCK TABLE "public"."soc2_distribution_targets" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -10393,6 +10701,7 @@ ALTER POLICY "sdt_admin_write" ON "public"."soc2_distribution_targets"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'superadmin'::text]))))));
 
 -- policy public.soc2_manual_evidence :: soc2_manual_insert
+LOCK TABLE "public"."soc2_manual_evidence" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -10415,6 +10724,7 @@ ALTER POLICY "soc2_manual_insert" ON "public"."soc2_manual_evidence"
   WITH CHECK ((is_compliance_reader() AND (uploaded_by = ( SELECT auth.uid() AS uid))));
 
 -- policy public.subscription_sku_economics :: Authenticated read subscription_sku_economics
+LOCK TABLE "public"."subscription_sku_economics" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -10437,6 +10747,7 @@ ALTER POLICY "Authenticated read subscription_sku_economics" ON "public"."subscr
   USING ((( SELECT auth.role() AS role) = 'authenticated'::text));
 
 -- policy public.supplement_adherence :: Users manage own supplement adherence
+LOCK TABLE "public"."supplement_adherence" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -10460,6 +10771,7 @@ ALTER POLICY "Users manage own supplement adherence" ON "public"."supplement_adh
   WITH CHECK ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.supplement_photo_bindings :: spb_admin_all
+LOCK TABLE "public"."supplement_photo_bindings" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -10487,6 +10799,7 @@ ALTER POLICY "spb_admin_all" ON "public"."supplement_photo_bindings"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text)))));
 
 -- policy public.supplement_photo_inventory :: spi_admin_all
+LOCK TABLE "public"."supplement_photo_inventory" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -10514,6 +10827,7 @@ ALTER POLICY "spi_admin_all" ON "public"."supplement_photo_inventory"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = 'admin'::text)))));
 
 -- policy public.supplier_scorecard :: Authenticated read supplier_scorecard
+LOCK TABLE "public"."supplier_scorecard" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -10536,6 +10850,7 @@ ALTER POLICY "Authenticated read supplier_scorecard" ON "public"."supplier_score
   USING ((( SELECT auth.role() AS role) = 'authenticated'::text));
 
 -- policy public.takedown_templates :: templates_write
+LOCK TABLE "public"."takedown_templates" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -10563,6 +10878,7 @@ ALTER POLICY "templates_write" ON "public"."takedown_templates"
   WHERE ((profiles.id = ( SELECT auth.uid() AS uid)) AND (profiles.role = ANY (ARRAY['admin'::text, 'superadmin'::text, 'compliance_admin'::text]))))));
 
 -- policy public.token_transactions :: Users can insert own token_transactions
+LOCK TABLE "public"."token_transactions" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -10629,6 +10945,7 @@ ALTER POLICY "Users can view own token_transactions" ON "public"."token_transact
   USING ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.trust_band_chips :: trust_chips_admin
+LOCK TABLE "public"."trust_band_chips" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -10652,6 +10969,7 @@ ALTER POLICY "trust_chips_admin" ON "public"."trust_band_chips"
   WITH CHECK (((( SELECT auth.jwt() AS jwt) ->> 'role'::text) = ANY (ARRAY['marketing_admin'::text, 'admin'::text, 'superadmin'::text, 'compliance_admin'::text])));
 
 -- policy public.trust_band_clinician_cards :: trust_clinician_admin
+LOCK TABLE "public"."trust_band_clinician_cards" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -10675,6 +10993,7 @@ ALTER POLICY "trust_clinician_admin" ON "public"."trust_band_clinician_cards"
   WITH CHECK (((( SELECT auth.jwt() AS jwt) ->> 'role'::text) = ANY (ARRAY['marketing_admin'::text, 'admin'::text, 'superadmin'::text, 'compliance_admin'::text])));
 
 -- policy public.trust_band_events :: trust_events_admin
+LOCK TABLE "public"."trust_band_events" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -10698,6 +11017,7 @@ ALTER POLICY "trust_events_admin" ON "public"."trust_band_events"
   WITH CHECK (((( SELECT auth.jwt() AS jwt) ->> 'role'::text) = ANY (ARRAY['marketing_admin'::text, 'admin'::text, 'superadmin'::text, 'compliance_admin'::text])));
 
 -- policy public.trust_band_regulatory_paragraphs :: trust_regulatory_admin
+LOCK TABLE "public"."trust_band_regulatory_paragraphs" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -10721,6 +11041,7 @@ ALTER POLICY "trust_regulatory_admin" ON "public"."trust_band_regulatory_paragra
   WITH CHECK (((( SELECT auth.jwt() AS jwt) ->> 'role'::text) = ANY (ARRAY['marketing_admin'::text, 'admin'::text, 'superadmin'::text, 'compliance_admin'::text])));
 
 -- policy public.trust_band_scale_measurements :: trust_scale_admin
+LOCK TABLE "public"."trust_band_scale_measurements" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -10744,6 +11065,7 @@ ALTER POLICY "trust_scale_admin" ON "public"."trust_band_scale_measurements"
   WITH CHECK (((( SELECT auth.jwt() AS jwt) ->> 'role'::text) = ANY (ARRAY['marketing_admin'::text, 'admin'::text, 'superadmin'::text, 'compliance_admin'::text])));
 
 -- policy public.trust_band_testimonials :: trust_testimonials_admin
+LOCK TABLE "public"."trust_band_testimonials" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -10767,6 +11089,7 @@ ALTER POLICY "trust_testimonials_admin" ON "public"."trust_band_testimonials"
   WITH CHECK (((( SELECT auth.jwt() AS jwt) ->> 'role'::text) = ANY (ARRAY['marketing_admin'::text, 'admin'::text, 'superadmin'::text, 'compliance_admin'::text])));
 
 -- policy public.ultrathink_advisor_conversations :: advisor_conv_insert_own
+LOCK TABLE "public"."ultrathink_advisor_conversations" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -10813,6 +11136,7 @@ ALTER POLICY "advisor_conv_select" ON "public"."ultrathink_advisor_conversations
   WHERE ((ps.patient_id = ultrathink_advisor_conversations.patient_id) AND (ps.provider_id = ( SELECT auth.uid() AS uid)) AND (ps.status = 'accepted'::text)))))));
 
 -- policy public.ultrathink_advisor_query_log :: advisor_query_log_read
+LOCK TABLE "public"."ultrathink_advisor_query_log" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -10835,6 +11159,7 @@ ALTER POLICY "advisor_query_log_read" ON "public"."ultrathink_advisor_query_log"
   USING ((user_id = ( SELECT auth.uid() AS uid)));
 
 -- policy public.ultrathink_advisor_ratings :: advisor_ratings_insert
+LOCK TABLE "public"."ultrathink_advisor_ratings" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -10881,6 +11206,7 @@ ALTER POLICY "advisor_ratings_select" ON "public"."ultrathink_advisor_ratings"
   USING ((user_id = ( SELECT auth.uid() AS uid)));
 
 -- policy public.ultrathink_protocols :: user_own_protocols
+LOCK TABLE "public"."ultrathink_protocols" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -10904,6 +11230,7 @@ ALTER POLICY "user_own_protocols" ON "public"."ultrathink_protocols"
   WITH CHECK ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.ultrathink_recommendations :: user_own_recs
+LOCK TABLE "public"."ultrathink_recommendations" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -10926,6 +11253,7 @@ ALTER POLICY "user_own_recs" ON "public"."ultrathink_recommendations"
   USING ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.user_addresses :: Users manage own addresses
+LOCK TABLE "public"."user_addresses" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -10949,6 +11277,7 @@ ALTER POLICY "Users manage own addresses" ON "public"."user_addresses"
   WITH CHECK ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.user_current_supplements :: Users manage own current supplements
+LOCK TABLE "public"."user_current_supplements" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -10972,6 +11301,7 @@ ALTER POLICY "Users manage own current supplements" ON "public"."user_current_su
   WITH CHECK ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.user_feature_opt_ins :: user_opt_ins_admin_read
+LOCK TABLE "public"."user_feature_opt_ins" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -11019,6 +11349,7 @@ ALTER POLICY "user_opt_ins_self_manage" ON "public"."user_feature_opt_ins"
   WITH CHECK ((user_id = ( SELECT auth.uid() AS uid)));
 
 -- policy public.user_interaction_cache :: own_interaction_cache
+LOCK TABLE "public"."user_interaction_cache" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -11041,6 +11372,7 @@ ALTER POLICY "own_interaction_cache" ON "public"."user_interaction_cache"
   USING ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.user_interactions :: own_user_interactions
+LOCK TABLE "public"."user_interactions" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -11063,6 +11395,7 @@ ALTER POLICY "own_user_interactions" ON "public"."user_interactions"
   USING ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.user_notification_preferences :: Users manage own notification prefs
+LOCK TABLE "public"."user_notification_preferences" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -11086,6 +11419,7 @@ ALTER POLICY "Users manage own notification prefs" ON "public"."user_notificatio
   WITH CHECK ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.user_notifications :: Users view own notifications
+LOCK TABLE "public"."user_notifications" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -11108,6 +11442,7 @@ ALTER POLICY "Users view own notifications" ON "public"."user_notifications"
   USING ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.user_peptide_prescriptions :: Users read own prescriptions
+LOCK TABLE "public"."user_peptide_prescriptions" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -11130,6 +11465,7 @@ ALTER POLICY "Users read own prescriptions" ON "public"."user_peptide_prescripti
   USING ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.user_protocols :: Users can view own protocols
+LOCK TABLE "public"."user_protocols" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -11152,6 +11488,7 @@ ALTER POLICY "Users can view own protocols" ON "public"."user_protocols"
   USING ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.user_streaks :: Users can insert own user_streaks
+LOCK TABLE "public"."user_streaks" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -11218,6 +11555,7 @@ ALTER POLICY "Users can view own user_streaks" ON "public"."user_streaks"
   USING ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.user_supplements :: Users can manage own supplements
+LOCK TABLE "public"."user_supplements" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -11240,6 +11578,7 @@ ALTER POLICY "Users can manage own supplements" ON "public"."user_supplements"
   USING ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.user_tiers :: Users can insert own user_tiers
+LOCK TABLE "public"."user_tiers" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -11306,6 +11645,7 @@ ALTER POLICY "Users can view own user_tiers" ON "public"."user_tiers"
   USING ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.verification_codes :: Users can delete own codes
+LOCK TABLE "public"."verification_codes" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -11395,6 +11735,7 @@ ALTER POLICY "Users can update own codes" ON "public"."verification_codes"
   WITH CHECK ((((( SELECT auth.jwt() AS jwt) ->> 'email'::text) IS NOT NULL) AND (email = (( SELECT auth.jwt() AS jwt) ->> 'email'::text))));
 
 -- policy public.wearable_integrations :: Users can insert own wearable_integrations
+LOCK TABLE "public"."wearable_integrations" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
@@ -11461,6 +11802,7 @@ ALTER POLICY "Users can view own wearable_integrations" ON "public"."wearable_in
   USING ((( SELECT auth.uid() AS uid) = user_id));
 
 -- policy public.wellness_analytics :: Users view own analytics
+LOCK TABLE "public"."wellness_analytics" IN ACCESS EXCLUSIVE MODE;
 DO $guard$
 DECLARE
   qual_hash text;
