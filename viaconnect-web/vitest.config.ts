@@ -77,6 +77,8 @@ export default defineConfig({
       // Prompt 231b: body photo shares management section (settings share hub)
       'src/components/consumer/photo-shares/__tests__/PhotoSharesSection.bare.test.tsx',
       'src/components/consumer/photo-shares/__tests__/PhotoShareGrantModal.bare.test.tsx',
+      // Shop PLP: outage is not the empty-category message
+      'src/components/shop/__tests__/PlpProductGrid.bare.test.tsx',
     ],
     exclude: ['node_modules', '.next', 'supabase'],
     globals: true,
