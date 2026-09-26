@@ -1,7 +1,7 @@
 /**
- * One-shot / manual trigger: apply Prompt 219H continuous-ops SQL.
- * Auth: Bearer CRON_SECRET (same as other cron routes).
- * Safe to call repeatedly (CREATE IF NOT EXISTS + ON CONFLICT seeds).
+ * Manual, CRON_SECRET-gated presence check for Prompt 219H tables.
+ * Does not apply DDL and does not register pg_cron jobs.
+ * Schema ownership is supabase/migrations. Nothing calls this route automatically.
  */
 
 import { isCronAuthorized } from "@/lib/jeffery/ops/cronAuth";
@@ -19,7 +19,7 @@ export async function POST(request: Request): Promise<Response> {
   try {
     const result = await ensureContinuousOpsSchema();
     safeLog.info("api.admin.migrate-219h", "result", result);
-    return Response.json({ ok: result.ok, ...result }, { status: 200 });
+    return Response.json(result, { status: 200 });
   } catch (err) {
     safeLog.error("api.admin.migrate-219h", "threw", { error: err });
     return Response.json(
