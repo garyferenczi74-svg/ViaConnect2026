@@ -35,12 +35,15 @@ interface ShopCategoryPageProps {
 
 export async function ShopCategoryPage({ slug, hasCaqOnFile, belowHeader }: ShopCategoryPageProps) {
     const category = getShopCategoryBySlug(slug)
-    const [productResult, session, releasedPhaseIds] = await Promise.all([
+    const sessionPromise = getCurrentShopSession()
+    const [productResult, session, releasedPhaseIds, joinedProductIds] = await Promise.all([
         getProductsByCategory(slug),
-        getCurrentShopSession(),
+        sessionPromise,
         getReleasedShopPhaseIds(),
+        sessionPromise.then((current) =>
+            current.userId ? getJoinedWaitlistProductIds() : Promise.resolve<string[]>([]),
+        ),
     ])
-    const joinedProductIds = session.userId ? await getJoinedWaitlistProductIds() : []
     const gridResult =
         productResult.status === 'ok'
             ? {

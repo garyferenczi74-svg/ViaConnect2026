@@ -159,7 +159,7 @@ describe('guardCardClick', () => {
         )
         expect(source).toContain('guardCardClick(event)')
         expect(source).not.toMatch(/\bany\b/)
-        for (const icon of ['BellRing', 'Check', 'Loader2', 'X']) {
+        for (const icon of ['ListPlus', 'Check', 'Loader2', 'X']) {
             expect(source).toContain(icon)
         }
         expect(source.split('strokeWidth={1.5}').length - 1).toBeGreaterThanOrEqual(4)

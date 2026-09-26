@@ -79,9 +79,9 @@ function readProductId(body: Record<string, unknown>): string | NextResponse {
     return productId
 }
 
-function mapJoin(result: WaitlistJoinResult, userId: string, productId: string) {
+function mapJoin(result: WaitlistJoinResult, productId: string) {
     if (result.status === 'joined') {
-        safeLog.info('api.shop.waitlist', 'joined', { userId, productId })
+        safeLog.info('api.shop.waitlist', 'joined', { productId })
         return json(200, true, { status: 'joined' })
     }
     if (result.status === 'released') {
@@ -122,7 +122,7 @@ export async function POST(request: Request) {
     }
 
     const result = await joinProductWaitlist(auth.userId, productId, source as WaitlistSource)
-    return mapJoin(result, auth.userId, productId)
+    return mapJoin(result, productId)
 }
 
 export async function DELETE(request: Request) {

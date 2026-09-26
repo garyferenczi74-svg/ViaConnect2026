@@ -133,17 +133,38 @@ function purchasableLines(lines: SyncCartLine[], lookup: ReleaseLookupResult): S
     })
 }
 
+const UNAVAILABLE_SKU_CAP = 100
+
 export async function serverUnavailableCartSkus(skus: string[]): Promise<string[]> {
     try {
-        const lookup = await getReleaseLookupBySkus(skus)
+        const uniqueKeys: string[] = []
+        const seen = new Set<string>()
+        for (const sku of skus) {
+            const key = typeof sku === 'string' ? sku.trim() : ''
+            if (!key || seen.has(key)) continue
+            seen.add(key)
+            uniqueKeys.push(key)
+        }
+        if (uniqueKeys.length > UNAVAILABLE_SKU_CAP) {
+            const blocked = [...uniqueKeys]
+            for (const sku of skus) {
+                const key = typeof sku === 'string' ? sku.trim() : ''
+                if (!key) blocked.push(sku)
+            }
+            return blocked
+        }
+        const lookup = await getReleaseLookupBySkus(uniqueKeys)
         if (lookup.status === 'error') return []
         const unavailable: string[] = []
+        const reported = new Set<string>()
         for (const sku of skus) {
             const key = typeof sku === 'string' ? sku.trim() : ''
             if (!key) {
                 unavailable.push(sku)
                 continue
             }
+            if (reported.has(key)) continue
+            reported.add(key)
             const state = lookup.bySku.get(key)
             if (!state || (!state.exempt && !state.released)) unavailable.push(sku)
         }

@@ -112,6 +112,12 @@ interface AppliedPromoSnapshot {
     discountCents: number
 }
 
+function unavailableLineLabel(line: CheckoutCartLine): string {
+    const name = line.productName.trim()
+    if (name.length > 0) return name
+    return line.sku
+}
+
 export async function validateCheckout(
     cart: CheckoutCartLine[],
     appliedHelix: number,
@@ -141,7 +147,7 @@ export async function validateCheckout(
             const key = line.sku.trim()
             const state = key ? release.bySku.get(key) : undefined
             if (state && (state.exempt || state.released)) continue
-            const blockedName = state ? state.name : line.sku
+            const blockedName = unavailableLineLabel(line)
             if (seenNames.has(blockedName)) continue
             seenNames.add(blockedName)
             blockedNames.push(blockedName)

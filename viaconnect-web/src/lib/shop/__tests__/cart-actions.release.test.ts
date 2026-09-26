@@ -121,4 +121,15 @@ describe('cart release filter', () => {
         lookup.mockRejectedValue(new Error('network'))
         await expect(serverUnavailableCartSkus(['SOON'])).resolves.toEqual([])
     })
+
+    it('dedupes SKUs and fails closed past 100 without a lookup', async () => {
+        lookup.mockResolvedValue({ status: 'ok', bySku: new Map() } satisfies ReleaseLookupResult)
+        await expect(serverUnavailableCartSkus(['SOON', ' SOON ', 'SOON'])).resolves.toEqual(['SOON'])
+        expect(lookup).toHaveBeenCalledWith(['SOON'])
+
+        lookup.mockClear()
+        const many = Array.from({ length: 101 }, (_, index) => `SKU-${index}`)
+        await expect(serverUnavailableCartSkus(many)).resolves.toEqual(many)
+        expect(lookup).not.toHaveBeenCalled()
+    })
 })

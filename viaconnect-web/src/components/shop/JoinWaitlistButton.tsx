@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
-import { BellRing, Check, Loader2, X } from 'lucide-react'
+import { Check, ListPlus, Loader2, X } from 'lucide-react'
 import {
     JOIN_WAITLIST_ARIA,
     JOIN_WAITLIST_ERROR,
@@ -273,7 +273,7 @@ export function JoinWaitlistButtonView({
                 {pending ? (
                     <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.5} aria-hidden="true" />
                 ) : (
-                    <BellRing className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+                    <ListPlus className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
                 )}
                 {pending ? JOIN_WAITLIST_PENDING : JOIN_WAITLIST_LABEL}
             </button>

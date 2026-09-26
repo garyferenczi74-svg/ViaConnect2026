@@ -120,14 +120,14 @@ describe('validateCheckout release guard', () => {
         process.env.STRIPE_SECRET_KEY = 'sk_test_placeholder'
     })
 
-    it('returns the singular string with the database name', async () => {
+    it('returns the singular string with the cart line name', async () => {
         state.products = { data: [dbRow({ name: 'Alpha' })], error: null }
         const result = await validateCheckout([line({ sku: 'FC-CREATINE-001' })], 0, null)
         expect(result.ok).toBe(false)
         expect(result.error).toBe(
-            'This item is not available yet: Alpha. Remove it from your cart to continue.',
+            'This item is not available yet: Client Label. Remove it from your cart to continue.',
         )
-        expect(result.error).not.toContain('Client Label')
+        expect(result.error).not.toContain('Alpha')
     })
 
     it('returns the plural string joined with a comma', async () => {
@@ -147,14 +147,35 @@ describe('validateCheckout release guard', () => {
             null,
         )
         expect(result.error).toBe(
-            'These items are not available yet: Alpha, Beta. Remove them from your cart to continue.',
+            'These items are not available yet: Client A, Client B. Remove them from your cart to continue.',
         )
     })
 
-    it('blocks an unknown SKU', async () => {
+    it('blocks an unknown SKU using the cart line name', async () => {
         state.products = { data: [], error: null }
         const result = await validateCheckout([line({ sku: 'UNKNOWN-SKU' })], 0, null)
         expect(result.error).toBe(
+            'This item is not available yet: Client Label. Remove it from your cart to continue.',
+        )
+    })
+
+    it('falls back to the raw SKU when the cart line name is blank', async () => {
+        state.products = { data: [], error: null }
+        const named = await validateCheckout(
+            [line({ sku: ' ', productName: 'Named Item' })],
+            0,
+            null,
+        )
+        expect(named.error).toBe(
+            'This item is not available yet: Named Item. Remove it from your cart to continue.',
+        )
+
+        const blankName = await validateCheckout(
+            [line({ sku: 'UNKNOWN-SKU', productName: '   ' })],
+            0,
+            null,
+        )
+        expect(blankName.error).toBe(
             'This item is not available yet: UNKNOWN-SKU. Remove it from your cart to continue.',
         )
     })
@@ -208,7 +229,7 @@ describe('validateCheckout release guard', () => {
             null,
         )
         expect(result.ok).toBe(false)
-        expect(result.error).toContain('Alpha')
+        expect(result.error).toContain('Client Label')
         expect(rx).not.toHaveBeenCalled()
     })
 

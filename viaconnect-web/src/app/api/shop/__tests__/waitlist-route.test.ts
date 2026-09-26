@@ -99,13 +99,23 @@ vi.mock('@/lib/supabase/server', () => ({
                         return Promise.resolve({ error: state.upsertError })
                     },
                     delete() {
-                        return {
+                        const chain = {
                             eq(column: string, value: string) {
                                 deleteEqs.push({ column, value })
+                                return chain
+                            },
+                            then(
+                                onFulfilled: (value: unknown) => unknown,
+                                onRejected?: (reason: unknown) => unknown,
+                            ) {
                                 if (state.deleteHang) return new Promise(() => undefined)
-                                return Promise.resolve({ data: null, error: state.deleteError })
+                                return Promise.resolve({ data: null, error: state.deleteError }).then(
+                                    onFulfilled,
+                                    onRejected,
+                                )
                             },
                         }
+                        return chain
                     },
                     select() {
                         const promise = Promise.resolve({ data: [], error: null })
@@ -259,10 +269,12 @@ describe('/api/shop/waitlist', () => {
                 options: { onConflict: 'user_id,product_id', ignoreDuplicates: true },
             },
         ])
-        const logged = vi.mocked(safeLog.info).mock.calls.some((callArgs) =>
-            JSON.stringify(callArgs).includes('Creatine Fixture'),
-        )
-        expect(logged).toBe(false)
+        expect(vi.mocked(safeLog.info)).toHaveBeenCalledWith('api.shop.waitlist', 'joined', {
+            productId: PRODUCT_ID,
+        })
+        const logged = JSON.stringify(vi.mocked(safeLog.info).mock.calls)
+        expect(logged).not.toContain('Creatine Fixture')
+        expect(logged).not.toContain(USER_ID)
 
         const second = await call('POST', { productId: PRODUCT_ID, source: 'plp' })
         expect(second.status).toBe(200)
@@ -292,16 +304,19 @@ describe('/api/shop/waitlist', () => {
         expect(((await missing.json()) as { errorCode: string }).errorCode).toBe('SERVER_ERROR')
     })
 
-    it('deletes by product id only and accepts a repeat leave', async () => {
+    it('deletes by product id and the signed-in user id, and accepts a repeat leave', async () => {
         const first = await call('DELETE', { productId: PRODUCT_ID })
         expect(first.status).toBe(200)
         expect(((await first.json()) as { data: { status: string } }).data.status).toBe('left')
-        expect(deleteEqs).toEqual([{ column: 'product_id', value: PRODUCT_ID }])
+        expect(deleteEqs).toEqual([
+            { column: 'product_id', value: PRODUCT_ID },
+            { column: 'user_id', value: USER_ID },
+        ])
 
         const second = await call('DELETE', { productId: PRODUCT_ID })
         expect(second.status).toBe(200)
-        expect(deleteEqs).toHaveLength(2)
-        expect(deleteEqs.every((eq) => eq.column === 'product_id')).toBe(true)
+        expect(deleteEqs).toHaveLength(4)
+        expect(deleteEqs.filter((eq) => eq.column === 'user_id').every((eq) => eq.value === USER_ID)).toBe(true)
     })
 
     it('returns 503 or 500 when leave times out or the table is missing', async () => {

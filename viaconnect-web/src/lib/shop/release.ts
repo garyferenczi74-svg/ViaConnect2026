@@ -14,6 +14,7 @@ import {
 } from '@/lib/shop/release-rules'
 
 const RELEASE_LOOKUP_TIMEOUT_MS = 1500
+const RELEASE_LOOKUP_SKU_CHUNK = 100
 
 export interface ReleaseSkuState {
     productId: string
@@ -126,6 +127,24 @@ function trimSkus(skus: readonly string[]): string[] {
     return trimmed
 }
 
+function skuChunks(skus: readonly string[], size: number): string[][] {
+    const chunks: string[][] = []
+    for (let index = 0; index < skus.length; index += size) {
+        chunks.push(skus.slice(index, index + size))
+    }
+    return chunks
+}
+
+function productsBySkuQuery(sb: ReleaseReader, chunk: readonly string[]) {
+    return sb
+        .from('products')
+        .select('*')
+        .eq('active', true)
+        .in('sku', chunk)
+        .not('category', 'eq', 'peptide')
+        .not('product_type', 'eq', 'peptide')
+}
+
 export async function getReleaseLookupBySkus(skus: readonly string[]): Promise<ReleaseLookupResult> {
     const trimmed = trimSkus(skus)
     const phaseIds = await getReleasedShopPhaseIds()
@@ -137,29 +156,30 @@ export async function getReleaseLookupBySkus(skus: readonly string[]): Promise<R
     try {
         const supabase = await createClient()
         const sb = supabase as unknown as ReleaseReader
-        const query = sb
-            .from('products')
-            .select('*')
-            .eq('active', true)
-            .in('sku', trimmed)
-            .not('category', 'eq', 'peptide')
-            .not('product_type', 'eq', 'peptide')
-        const { data, error } = await withTimeout(
-            Promise.resolve(query),
+        const pages = await withTimeout(
+            Promise.all(
+                skuChunks(trimmed, RELEASE_LOOKUP_SKU_CHUNK).map((chunk) =>
+                    Promise.resolve(productsBySkuQuery(sb, chunk)),
+                ),
+            ),
             RELEASE_LOOKUP_TIMEOUT_MS,
             'shop.release.productsBySku',
         )
-        if (error) {
-            logReleaseFailure('getReleaseLookupBySkus products read failed', error)
-            return { status: 'error' }
-        }
-        if (data != null && !Array.isArray(data)) {
-            logReleaseFailure('getReleaseLookupBySkus products read failed', { code: 'upstream' })
-            return { status: 'error' }
+        const rows: Record<string, unknown>[] = []
+        for (const page of pages) {
+            if (page.error) {
+                logReleaseFailure('getReleaseLookupBySkus products read failed', page.error)
+                return { status: 'error' }
+            }
+            if (page.data != null && !Array.isArray(page.data)) {
+                logReleaseFailure('getReleaseLookupBySkus products read failed', { code: 'upstream' })
+                return { status: 'error' }
+            }
+            for (const row of page.data ?? []) rows.push(row)
         }
 
         const grouped = new Map<string, Record<string, unknown>[]>()
-        for (const row of data ?? []) {
+        for (const row of rows) {
             if (row.active !== true) continue
             if (isPeptideRow(row)) continue
             if (typeof row.sku !== 'string') continue

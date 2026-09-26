@@ -46,14 +46,17 @@ export async function generateMetadata(props: PageProps) {
 export default async function ProductDetailPage(props: PageProps) {
     const params = await props.params;
     const searchParams = props.searchParams ? await props.searchParams : {};
-    const [loaded, session, releasedPhaseIds] = await Promise.all([
+    const sessionPromise = getCurrentShopSession()
+    const [loaded, session, releasedPhaseIds, joinedProductIds] = await Promise.all([
         getProductBySlug(params.slug),
-        getCurrentShopSession(),
+        sessionPromise,
         getReleasedShopPhaseIds(),
+        sessionPromise.then((current) =>
+            current.userId ? getJoinedWaitlistProductIds() : Promise.resolve<string[]>([]),
+        ),
     ])
     if (!loaded) notFound()
     const product = withReleaseState([loaded], releasedPhaseIds)[0]
-    const joinedProductIds = session.userId ? await getJoinedWaitlistProductIds() : []
     const consumerSession = isConsumerSession(session.role)
 
     const slug = product.slug ?? params.slug

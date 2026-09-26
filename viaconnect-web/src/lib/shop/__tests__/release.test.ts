@@ -20,6 +20,7 @@ interface QueryResult {
 }
 
 const selects: string[] = []
+let productQueries = 0
 let phaseExec: () => Promise<QueryResult> = async () => ({ data: [], error: null })
 let productExec: () => Promise<QueryResult> = async () => ({ data: [], error: null })
 
@@ -52,7 +53,10 @@ function installClient() {
     mocks.createClient.mockImplementation(async () => ({
         from(table: string) {
             if (table === 'launch_phases') return builder(phaseExec)
-            if (table === 'products') return builder(productExec)
+            if (table === 'products') {
+                productQueries += 1
+                return builder(productExec)
+            }
             throw new Error(`unexpected table ${table}`)
         },
     }))
@@ -146,6 +150,7 @@ describe('getReleasedShopPhaseIds', () => {
 describe('getReleaseLookupBySkus', () => {
     beforeEach(() => {
         selects.length = 0
+        productQueries = 0
         mocks.createClient.mockReset()
         installClient()
         phaseExec = async () => ({
@@ -291,5 +296,23 @@ describe('getReleaseLookupBySkus', () => {
         if (result.status !== 'ok') return
         expect(result.bySku.get('GX-KIT')).toMatchObject({ exempt: true, released: true })
         expect(result.bySku.get('FC-CREATINE-001')).toMatchObject({ exempt: false, released: false })
+    })
+
+    it('starts every SKU chunk together and fails closed on the shared 1.5s timeout', async () => {
+        vi.useFakeTimers()
+        productExec = () => new Promise<QueryResult>(() => undefined)
+        const skus = Array.from({ length: 101 }, (_, index) => `SKU-${index}`)
+        let result: Awaited<ReturnType<typeof getReleaseLookupBySkus>> | undefined
+        const pending = getReleaseLookupBySkus(skus).then((value) => {
+            result = value
+        })
+        await vi.advanceTimersByTimeAsync(0)
+        expect(productQueries).toBe(2)
+        expect(result).toBeUndefined()
+        await vi.advanceTimersByTimeAsync(1499)
+        expect(result).toBeUndefined()
+        await vi.advanceTimersByTimeAsync(1)
+        await pending
+        expect(result).toEqual({ status: 'error' })
     })
 })
