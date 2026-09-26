@@ -1,14 +1,17 @@
 /**
  * migrate-219h must not echo exception text to the caller.
+ * Uses the real presence check. The admin client throws; the function
+ * fails open with a fixed reason.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-const { ensureContinuousOpsSchema } = vi.hoisted(() => ({
-  ensureContinuousOpsSchema: vi.fn(),
+const { createAdminClientOrNull } = vi.hoisted(() => ({
+  createAdminClientOrNull: vi.fn(),
 }));
 
-vi.mock("@/lib/jeffery/ops/ensureSchema", () => ({
-  ensureContinuousOpsSchema,
+vi.mock("@/lib/supabase/admin", () => ({
+  createAdminClient: vi.fn(),
+  createAdminClientOrNull,
 }));
 
 vi.mock("@/lib/utils/safe-log", () => ({
@@ -27,7 +30,7 @@ const SECRET = "test-cron-secret-value";
 
 beforeEach(() => {
   process.env.CRON_SECRET = SECRET;
-  ensureContinuousOpsSchema.mockReset();
+  createAdminClientOrNull.mockReset();
 });
 
 afterEach(() => {
@@ -35,9 +38,11 @@ afterEach(() => {
 });
 
 describe("POST /api/admin/migrate-219h", () => {
-  it("returns a generic error and logs the thrown detail", async () => {
+  it("does not return the thrown admin-client message", async () => {
     const secretDetail = "postgres password leaked in this message";
-    ensureContinuousOpsSchema.mockRejectedValue(new Error(secretDetail));
+    createAdminClientOrNull.mockImplementation(() => {
+      throw new Error(secretDetail);
+    });
 
     const response = await POST(
       new Request("http://localhost/api/admin/migrate-219h", {
@@ -45,15 +50,23 @@ describe("POST /api/admin/migrate-219h", () => {
         headers: { authorization: `Bearer ${SECRET}` },
       })
     );
-    const body = (await response.json()) as { ok: boolean; error?: string };
+    const body = (await response.json()) as {
+      ok: boolean;
+      applied: boolean;
+      reason?: string;
+      error?: string;
+    };
 
     expect(response.status).toBe(200);
-    expect(body.ok).toBe(false);
-    expect(body.error).toBe("presence_check_failed");
+    expect(body).toEqual({
+      ok: true,
+      applied: false,
+      reason: "fail_open:threw",
+    });
     expect(JSON.stringify(body)).not.toContain(secretDetail);
     expect(safeLog.error).toHaveBeenCalledWith(
-      "api.admin.migrate-219h",
-      "threw",
+      "ops.ensureSchema",
+      "presence check threw; failed open",
       expect.objectContaining({
         error: expect.objectContaining({ message: secretDetail }),
       })

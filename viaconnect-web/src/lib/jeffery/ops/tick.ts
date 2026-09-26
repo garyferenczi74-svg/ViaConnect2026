@@ -45,11 +45,7 @@ export async function runOpsTick(opts?: {
   let discoveryCursorCount = 0;
   try {
     const { ensureContinuousOpsSchema } = await import("./ensureSchema");
-    const schema = await ensureContinuousOpsSchema();
-    schemaResult = schema;
-    if (schema.applied) {
-      safeLog.info("ops.tick", "schema bootstrap applied", { reason: schema.reason });
-    }
+    schemaResult = await ensureContinuousOpsSchema();
     try {
       const { listDiscoveryCursors } = await import("./discoveryCursors");
       discoveryCursorCount = (await listDiscoveryCursors()).length;

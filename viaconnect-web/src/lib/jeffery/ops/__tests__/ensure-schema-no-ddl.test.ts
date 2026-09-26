@@ -205,7 +205,8 @@ describe("ensureContinuousOpsSchema never applies DDL", () => {
     expectNoDdl();
     expect(result.applied).toBe(false);
     expect(result.ok).toBe(true);
-    expect(result.reason).toContain("admin client exploded");
+    expect(result.reason).toBe("fail_open:threw");
+    expect(result.reason).not.toContain("admin client exploded");
     expect(safeLog.error).toHaveBeenCalled();
   });
 
@@ -261,7 +262,8 @@ describe("ops tick fails open when the presence check cannot confirm tables", ()
     const result = await runOpsTick();
     expectNoDdl();
     expect(result.schema?.applied).toBe(false);
-    expect(result.schema?.reason).toContain("admin client exploded");
+    expect(result.schema?.reason).toBe("fail_open:threw");
+    expect(JSON.stringify(result.schema)).not.toContain("admin client exploded");
     expect(result.endedAt).toEqual(expect.any(String));
   });
 });
