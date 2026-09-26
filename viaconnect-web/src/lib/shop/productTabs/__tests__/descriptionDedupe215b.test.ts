@@ -62,6 +62,7 @@ function mockProduct(slug: string, description: string): ShopProduct {
     requires_practitioner_order: false,
     active: true,
     display_config: null,
+    is_released: true,
   };
 }
 

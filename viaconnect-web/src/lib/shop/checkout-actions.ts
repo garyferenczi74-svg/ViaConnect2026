@@ -51,6 +51,8 @@ import { createClient } from '@/lib/supabase/server'
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout'
 import { safeLog } from '@/lib/utils/safe-log'
 import { finalizeOrderForSession } from '@/lib/shop/checkout-helpers'
+import { checkoutUnavailableError } from '@/lib/shop/coming-soon-copy'
+import { getReleaseLookupBySkus } from '@/lib/shop/release'
 import { serverCheckRxEligibility } from '@/lib/prescriptions/patient-actions'
 
 const MAP_MULTIPLIER = 1.72
@@ -93,6 +95,18 @@ export interface CheckoutValidationResult {
     rxTokens?: { sku: string; tokenId: string; quantity: number }[]
 }
 
+interface MasterSkuQuery extends PromiseLike<{
+    data: { sku: string; cogs: number | null }[] | null
+    error: unknown
+}> {
+    select: (columns: string) => MasterSkuQuery
+    in: (column: string, values: readonly string[]) => MasterSkuQuery
+}
+
+interface MasterSkuReader {
+    from: (table: string) => MasterSkuQuery
+}
+
 interface AppliedPromoSnapshot {
     code: string
     discountCents: number
@@ -107,6 +121,49 @@ export async function validateCheckout(
 
     if (cart.length === 0) {
         return { ok: false, error: 'Your cart is empty.', warnings }
+    }
+
+    const releaseSkus = Array.from(
+        new Set(cart.map((line) => line.sku.trim()).filter((sku) => sku.length > 0)),
+    )
+    try {
+        const release = await getReleaseLookupBySkus(releaseSkus)
+        if (release.status === 'error') {
+            return {
+                ok: false,
+                error: 'Could not validate the cart. Please try again.',
+                warnings,
+            }
+        }
+        const blockedNames: string[] = []
+        const seenNames = new Set<string>()
+        for (const line of cart) {
+            const key = line.sku.trim()
+            const state = key ? release.bySku.get(key) : undefined
+            if (state && (state.exempt || state.released)) continue
+            const blockedName = state ? state.name : line.sku
+            if (seenNames.has(blockedName)) continue
+            seenNames.add(blockedName)
+            blockedNames.push(blockedName)
+        }
+        if (blockedNames.length > 0) {
+            return {
+                ok: false,
+                error: checkoutUnavailableError(blockedNames),
+                warnings,
+            }
+        }
+    } catch (error) {
+        if (isTimeoutError(error)) {
+            safeLog.warn('shop.checkout', 'release lookup timed out', { error })
+        } else {
+            safeLog.warn('shop.checkout', 'release lookup failed', { error })
+        }
+        return {
+            ok: false,
+            error: 'Could not validate the cart. Please try again.',
+            warnings,
+        }
     }
 
     let rxTokensForOrder: { sku: string; tokenId: string; quantity: number }[] | undefined
@@ -177,12 +234,11 @@ export async function validateCheckout(
 
     try {
         const supabase = await createClient()
-        const sb = supabase as unknown as {
-            from: (t: string) => any
-        }
+        const sb = supabase as unknown as MasterSkuReader
         const skus = Array.from(new Set(cart.map((l) => l.sku)))
+        const skuQuery = sb.from('master_skus').select('sku, cogs').in('sku', skus)
         const { data: skuRows, error: skuError } = await withTimeout(
-            sb.from('master_skus').select('sku, cogs').in('sku', skus),
+            Promise.resolve(skuQuery),
             3000,
             'shop.checkout.validate.master_skus',
         )

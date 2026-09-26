@@ -16,6 +16,7 @@
 
 import { ShoppingBag } from 'lucide-react'
 import { FullDescriptionLink } from './FullDescriptionLink'
+import { JoinWaitlistButton, type ShopWaitlistState } from './JoinWaitlistButton'
 import { TestingMetaDropdown } from './TestingMetaDropdown'
 import { addToCart } from '@/lib/shop/cart-store'
 import type { ShopProduct } from '@/lib/shop/queries'
@@ -29,12 +30,14 @@ interface ProductCardTestingBodyProps {
     product: ShopProduct
     isFormulationOpen: boolean
     onToggleFormulation: () => void
+    waitlist: ShopWaitlistState
 }
 
 export function ProductCardTestingBody({
     product,
     isFormulationOpen,
     onToggleFormulation,
+    waitlist,
 }: ProductCardTestingBodyProps) {
     const displayPrice = product.price_msrp ?? product.price
     const summary = product.summary ?? ''
@@ -58,33 +61,43 @@ export function ProductCardTestingBody({
                 />
             </div>
 
-            <button
-                type="button"
-                onClick={(e) => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    addToCart(
-                        {
-                            sku: product.sku,
-                            productId: product.id,
-                            name: product.name,
-                            format: product.format,
-                            image:
-                                (product.image_urls && product.image_urls[0]) ||
-                                product.image_url ||
-                                null,
-                            price: product.price_msrp ?? product.price ?? 0,
-                            pricingTier: product.pricing_tier ?? null,
-                            productType: 'testing',
-                        },
-                        { openDrawer: true },
-                    )
-                }}
-                className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-[#2DA5A0] py-3 font-medium text-white transition-colors hover:bg-[#26918d]"
-            >
-                <ShoppingBag className="h-4 w-4" strokeWidth={1.5} />
-                {ctaCopy}
-            </button>
+            {product.is_released === true ? (
+                <button
+                    type="button"
+                    onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        addToCart(
+                            {
+                                sku: product.sku,
+                                productId: product.id,
+                                name: product.name,
+                                format: product.format,
+                                image:
+                                    (product.image_urls && product.image_urls[0]) ||
+                                    product.image_url ||
+                                    null,
+                                price: product.price_msrp ?? product.price ?? 0,
+                                pricingTier: product.pricing_tier ?? null,
+                                productType: 'testing',
+                            },
+                            { openDrawer: true },
+                        )
+                    }}
+                    className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-[#2DA5A0] py-3 font-medium text-white transition-colors hover:bg-[#26918d]"
+                >
+                    <ShoppingBag className="h-4 w-4" strokeWidth={1.5} />
+                    {ctaCopy}
+                </button>
+            ) : (
+                <JoinWaitlistButton
+                    productId={product.id}
+                    productName={product.name}
+                    source="plp"
+                    signedIn={waitlist.signedIn}
+                    joined={waitlist.joined}
+                />
+            )}
         </div>
     )
 }

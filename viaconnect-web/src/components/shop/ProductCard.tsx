@@ -26,9 +26,11 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { CategoryFallbackImage } from './CategoryFallbackImage'
+import { ComingSoonOverlay } from './ComingSoonOverlay'
 import { ProductCardSupplementBody } from './ProductCard.SupplementBody'
 import { ProductCardTestingBody } from './ProductCard.TestingBody'
 import { StatusPill } from './StatusPill'
+import type { ShopWaitlistState } from './JoinWaitlistButton'
 import { resolveDisplayConfig } from '@/lib/shop/resolve-display-config'
 import type { ShopCardVariant } from '@/lib/shop/categories'
 import type { ShopProduct } from '@/lib/shop/queries'
@@ -63,6 +65,7 @@ interface ProductCardProps {
     geneMatchActive?: boolean
     isFormulationOpen: boolean
     onToggleFormulation: () => void
+    waitlist: ShopWaitlistState
 }
 
 export function ProductCard({
@@ -72,6 +75,7 @@ export function ProductCard({
     geneMatchActive,
     isFormulationOpen,
     onToggleFormulation,
+    waitlist,
 }: ProductCardProps) {
     const primaryImage = (product.image_urls && product.image_urls[0]) || product.image_url || null
     const tags = product.status_tags ?? []
@@ -128,6 +132,9 @@ export function ProductCard({
                 ) : (
                     <CategoryFallbackImage categorySlug={product.category_slug} />
                 )}
+                {product.is_released !== true && (
+                    <ComingSoonOverlay tone={primaryImage ? 'onLight' : 'onDark'} size="card" />
+                )}
                 {visibleTags.length > 0 && (
                     <div className="absolute top-3 right-3 z-10 flex flex-col items-end gap-1">
                         {visibleTags.map((tag) => (
@@ -141,12 +148,14 @@ export function ProductCard({
                     product={product}
                     isFormulationOpen={isFormulationOpen}
                     onToggleFormulation={onToggleFormulation}
+                    waitlist={waitlist}
                 />
             ) : (
                 <ProductCardSupplementBody
                     product={product}
                     isFormulationOpen={isFormulationOpen}
                     onToggleFormulation={onToggleFormulation}
+                    waitlist={waitlist}
                 />
             )}
         </Link>

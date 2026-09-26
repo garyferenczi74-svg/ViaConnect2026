@@ -19,6 +19,7 @@ import { createClient } from '@/lib/supabase/server'
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout'
 import { safeLog } from '@/lib/utils/safe-log'
 import { annotateShopIngredientJson } from '@/lib/supplements/confirmedBioavailability'
+import { resolveRelease } from '@/lib/shop/release-rules'
 
 const QUERY_TIMEOUT_MS = 5000
 
@@ -85,6 +86,16 @@ export interface ShopProduct {
     requires_practitioner_order: boolean | null
     active: boolean
     display_config: import('./resolve-display-config').ProductDisplayConfig | null
+    /**
+     * Purchasable right now. Pages set this via withReleaseState.
+     * Test kits (category and product_type exactly test_kit) are true.
+     */
+    is_released: boolean
+    /**
+     * Hand-typed for products.launch_phase_id (migration 20260926200000).
+     * The key is absent on rows read before that column exists.
+     */
+    launch_phase_id?: string | null
 }
 
 export async function getShopCategories(): Promise<ShopCategoryRow[]> {
@@ -181,10 +192,19 @@ export async function getProductsByCategory(slug: string): Promise<ProductsByCat
     }
 }
 
+interface ProductBySlugQuery {
+    select: (columns: string) => ProductBySlugQuery
+    eq: (column: string, value: string | boolean) => ProductBySlugQuery
+    not: (column: string, operator: string, value: string) => ProductBySlugQuery
+    maybeSingle: () => Promise<{ data: ShopProduct | null; error: unknown }>
+}
+
+interface ProductBySlugReader {
+    from: (table: string) => ProductBySlugQuery
+}
+
 export async function getProductBySlug(productSlug: string): Promise<ShopProduct | null> {
-    const sb = await createClient() as unknown as {
-        from: (table: string) => any
-    }
+    const sb = (await createClient()) as unknown as ProductBySlugReader
     try {
         const query = sb
             .from('products')
@@ -196,7 +216,7 @@ export async function getProductBySlug(productSlug: string): Promise<ShopProduct
             .maybeSingle()
 
         const { data, error } = await withTimeout(
-            query as Promise<{ data: ShopProduct | null; error: unknown }>,
+            query,
             QUERY_TIMEOUT_MS,
             `shop.getProductBySlug:${productSlug}`,
         )
@@ -251,4 +271,19 @@ export async function searchProducts(searchQuery: string): Promise<ShopProduct[]
         }
         return []
     }
+}
+
+/**
+ * Apply the separate release lookup onto catalog rows.
+ * releasedPhaseIds null means the lookup failed: exempt kits stay released,
+ * every other row is unreleased. Does not query Supabase.
+ */
+export function withReleaseState(
+    products: ShopProduct[],
+    releasedPhaseIds: ReadonlySet<string> | null,
+): ShopProduct[] {
+    return products.map((product) => ({
+        ...product,
+        is_released: resolveRelease(product, releasedPhaseIds),
+    }))
 }

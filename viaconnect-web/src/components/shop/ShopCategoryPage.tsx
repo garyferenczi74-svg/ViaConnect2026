@@ -22,8 +22,10 @@ import { CartChrome } from '@/components/shop/CartChrome'
 import { PlpProductGrid } from '@/components/shop/PlpProductGrid'
 import { FilterSortDrawer } from '@/components/shop/FilterSortDrawer'
 import { getShopCategoryBySlug } from '@/lib/shop/categories'
-import { getProductsByCategory } from '@/lib/shop/queries'
+import { getProductsByCategory, withReleaseState } from '@/lib/shop/queries'
+import { getReleasedShopPhaseIds } from '@/lib/shop/release'
 import { getCurrentShopSession, isConsumerSession } from '@/lib/shop/role'
+import { getJoinedWaitlistProductIds } from '@/lib/shop/waitlist'
 
 interface ShopCategoryPageProps {
     slug: string
@@ -33,10 +35,19 @@ interface ShopCategoryPageProps {
 
 export async function ShopCategoryPage({ slug, hasCaqOnFile, belowHeader }: ShopCategoryPageProps) {
     const category = getShopCategoryBySlug(slug)
-    const [productResult, session] = await Promise.all([
+    const [productResult, session, releasedPhaseIds] = await Promise.all([
         getProductsByCategory(slug),
         getCurrentShopSession(),
+        getReleasedShopPhaseIds(),
     ])
+    const joinedProductIds = session.userId ? await getJoinedWaitlistProductIds() : []
+    const gridResult =
+        productResult.status === 'ok'
+            ? {
+                  status: 'ok' as const,
+                  products: withReleaseState(productResult.products, releasedPhaseIds),
+              }
+            : productResult
     const consumerSession = isConsumerSession(session.role)
     const variant = category?.cardVariant ?? 'supplement'
     const displayName = category?.name ?? slug
@@ -68,9 +79,11 @@ export async function ShopCategoryPage({ slug, hasCaqOnFile, belowHeader }: Shop
 
                 <Suspense>
                     <PlpProductGrid
-                        result={productResult}
+                        result={gridResult}
                         variant={variant}
                         categorySlug={slug}
+                        signedIn={session.userId !== null}
+                        joinedProductIds={joinedProductIds}
                     />
                 </Suspense>
             </div>

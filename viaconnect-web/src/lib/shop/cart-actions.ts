@@ -25,6 +25,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout'
 import { safeLog } from '@/lib/utils/safe-log'
+import { getReleaseLookupBySkus, type ReleaseLookupResult } from '@/lib/shop/release'
 
 export interface SyncCartLine {
     productSlug: string
@@ -101,6 +102,61 @@ export async function serverGetCart(): Promise<SyncCartLine[]> {
     }
 }
 
+interface CartInsertRow {
+    user_id: string
+    product_slug: string
+    product_name: string
+    product_type: string
+    delivery_form: string | null
+    quantity: number
+    unit_price_cents: number | null
+    metadata: Record<string, unknown>
+}
+
+interface CartWriteQuery {
+    delete: () => {
+        eq: (column: string, value: string) => Promise<{ error: unknown }>
+    }
+    insert: (rows: CartInsertRow[]) => Promise<{ error: unknown }>
+}
+
+interface CartWriter {
+    from: (table: string) => CartWriteQuery
+}
+
+function purchasableLines(lines: SyncCartLine[], lookup: ReleaseLookupResult): SyncCartLine[] | null {
+    if (lookup.status === 'error') return null
+    return lines.filter((line) => {
+        const key = line.productSlug.trim()
+        const state = lookup.bySku.get(key)
+        return !!state && (state.exempt || state.released)
+    })
+}
+
+export async function serverUnavailableCartSkus(skus: string[]): Promise<string[]> {
+    try {
+        const lookup = await getReleaseLookupBySkus(skus)
+        if (lookup.status === 'error') return []
+        const unavailable: string[] = []
+        for (const sku of skus) {
+            const key = typeof sku === 'string' ? sku.trim() : ''
+            if (!key) {
+                unavailable.push(sku)
+                continue
+            }
+            const state = lookup.bySku.get(key)
+            if (!state || (!state.exempt && !state.released)) unavailable.push(sku)
+        }
+        return unavailable
+    } catch (error) {
+        safeLog.warn('shop.cart-actions', 'serverUnavailableCartSkus failed', {
+            reason: 'error',
+            error,
+        })
+        return []
+    }
+}
+
 export async function serverReplaceCart(lines: SyncCartLine[]): Promise<SyncCartLine[]> {
     try {
         const supabase = await createClient()
@@ -112,9 +168,23 @@ export async function serverReplaceCart(lines: SyncCartLine[]): Promise<SyncCart
         if (userResult.error || !userResult.data.user) return []
         const userId = userResult.data.user.id
 
-        const sb = supabase as unknown as {
-            from: (t: string) => any
+        let lookup: ReleaseLookupResult
+        try {
+            lookup = await getReleaseLookupBySkus(lines.map((line) => line.productSlug))
+        } catch (error) {
+            safeLog.warn('shop.cart-actions', 'serverReplaceCart skipped write', {
+                reason: 'release_lookup_error',
+                error,
+            })
+            return lines
         }
+        const kept = purchasableLines(lines, lookup)
+        if (kept === null) {
+            safeLog.warn('shop.cart-actions', 'serverReplaceCart skipped write', { reason: 'release_lookup_error' })
+            return lines
+        }
+
+        const sb = supabase as unknown as CartWriter
 
         await withTimeout(
             sb.from('shop_cart_items').delete().eq('user_id', userId),
@@ -122,8 +192,8 @@ export async function serverReplaceCart(lines: SyncCartLine[]): Promise<SyncCart
             'cart-actions.replaceCart.delete',
         )
 
-        if (lines.length > 0) {
-            const rows = lines.map((line) => ({
+        if (kept.length > 0) {
+            const rows = kept.map((line) => ({
                 user_id: userId,
                 product_slug: line.productSlug,
                 product_name: line.productName,

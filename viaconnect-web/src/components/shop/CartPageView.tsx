@@ -23,6 +23,8 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
 import { ChevronLeft, Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react'
+import { CartLineUnavailableBadge } from '@/components/shop/CartLineUnavailableBadge'
+import { useUnavailableCartSkus } from '@/components/shop/useUnavailableCartSkus'
 import {
     applyHelix,
     applyPromo,
@@ -49,6 +51,8 @@ export function CartPageView({ consumerSession = true, userId = null }: CartPage
     const [promoInput, setPromoInput] = useState('')
     const [promoError, setPromoError] = useState<string | null>(null)
     const cart = useCart(userId)
+    const lineSkus = useMemo(() => cart.lines.map((line) => line.sku), [cart.lines])
+    const unavailableSkus = useUnavailableCartSkus(lineSkus, true)
 
     const rxSkus = useMemo(
         () =>
@@ -143,6 +147,7 @@ export function CartPageView({ consumerSession = true, userId = null }: CartPage
                                                 <h3 className="text-base font-medium text-white md:text-lg">
                                                     {line.name}
                                                 </h3>
+                                                {unavailableSkus.has(line.sku) ? <CartLineUnavailableBadge /> : null}
                                                 {line.format && (
                                                     <p className="text-xs text-white/55 md:text-sm">
                                                         ({line.format.toLowerCase()})

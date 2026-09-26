@@ -40,6 +40,7 @@ import {
     Users,
 } from 'lucide-react'
 import { FormatIndicator } from './FormatIndicator'
+import { JoinWaitlistButton, type ShopWaitlistState } from './JoinWaitlistButton'
 import { ProductAccordions } from './ProductAccordions'
 import { SectionHeading } from '@/components/ui/SectionHeading'
 import { TabPills } from '@/components/ui/TabPills'
@@ -185,6 +186,7 @@ export function renderStructuredDescription(text: string): ReactNode {
 interface PdpRightRailProps {
     product: ShopProduct
     variant: ShopCardVariant
+    waitlist: ShopWaitlistState
     /** Prompt 215a: five accordion sections (always for supplements) */
     accordionSections?: import('@/lib/shop/productTabs/types').ProductTabContent[]
     compatibility?: import('@/lib/shop/productTabs/types').CompatibilityResult
@@ -194,6 +196,7 @@ interface PdpRightRailProps {
 export function PdpRightRail({
     product,
     variant,
+    waitlist,
     accordionSections,
     compatibility,
     initialSectionHash,
@@ -253,7 +256,7 @@ export function PdpRightRail({
                 </p>
             )}
 
-            {variant === 'supplement' && (
+            {variant === 'supplement' && product.is_released === true && (
                 <div className="flex items-center gap-3">
                     <span className="text-sm text-white/70">Quantity</span>
                     <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.02] p-1 lg:h-10 lg:w-[120px]">
@@ -280,44 +283,56 @@ export function PdpRightRail({
                 </div>
             )}
 
-            <div className="flex flex-col gap-3 sm:flex-row lg:mt-5 lg:max-w-[420px]">
-                <button
-                    type="button"
-                    onClick={() =>
-                        addToCart(
-                            {
-                                sku: product.sku,
-                                productId: product.id,
-                                name: product.name,
-                                format: product.format,
-                                image:
-                                    (product.image_urls && product.image_urls[0]) ||
-                                    product.image_url ||
-                                    null,
-                                price: product.price_msrp ?? product.price ?? 0,
-                                quantity,
-                                pricingTier: product.pricing_tier ?? null,
-                                productType: variant,
-                            },
-                            { openDrawer: true },
-                        )
-                    }
-                    className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#2DA5A0] py-3 font-medium text-white transition-colors hover:bg-[#26918d] lg:px-5 lg:py-2.5 lg:text-sm lg:hover:bg-[#2DA5A0]/90"
-                >
-                    <ShoppingBag className="h-4 w-4" strokeWidth={1.5} />
-                    {ctaCopy}
-                </button>
-                {variant === 'supplement' && (
+            {product.is_released === true ? (
+                <div className="flex flex-col gap-3 sm:flex-row lg:mt-5 lg:max-w-[420px]">
                     <button
                         type="button"
-                        onClick={() => console.info('[shop] PDP Add to Bundle (stub)', { sku: product.sku })}
-                        className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/[0.04] py-3 font-medium text-white transition-colors hover:bg-white/[0.08] lg:border-white/20 lg:bg-transparent lg:px-5 lg:py-2.5 lg:text-sm lg:hover:border-white/30 lg:hover:bg-white/5"
+                        onClick={() =>
+                            addToCart(
+                                {
+                                    sku: product.sku,
+                                    productId: product.id,
+                                    name: product.name,
+                                    format: product.format,
+                                    image:
+                                        (product.image_urls && product.image_urls[0]) ||
+                                        product.image_url ||
+                                        null,
+                                    price: product.price_msrp ?? product.price ?? 0,
+                                    quantity,
+                                    pricingTier: product.pricing_tier ?? null,
+                                    productType: variant,
+                                },
+                                { openDrawer: true },
+                            )
+                        }
+                        className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#2DA5A0] py-3 font-medium text-white transition-colors hover:bg-[#26918d] lg:px-5 lg:py-2.5 lg:text-sm lg:hover:bg-[#2DA5A0]/90"
                     >
-                        <Bookmark className="h-4 w-4" strokeWidth={1.5} />
-                        Add to Bundle
+                        <ShoppingBag className="h-4 w-4" strokeWidth={1.5} />
+                        {ctaCopy}
                     </button>
-                )}
-            </div>
+                    {variant === 'supplement' && (
+                        <button
+                            type="button"
+                            onClick={() => console.info('[shop] PDP Add to Bundle (stub)', { sku: product.sku })}
+                            className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/[0.04] py-3 font-medium text-white transition-colors hover:bg-white/[0.08] lg:border-white/20 lg:bg-transparent lg:px-5 lg:py-2.5 lg:text-sm lg:hover:border-white/30 lg:hover:bg-white/5"
+                        >
+                            <Bookmark className="h-4 w-4" strokeWidth={1.5} />
+                            Add to Bundle
+                        </button>
+                    )}
+                </div>
+            ) : (
+                <div className="flex w-full flex-col lg:mt-5 lg:max-w-[420px]">
+                    <JoinWaitlistButton
+                        productId={product.id}
+                        productName={product.name}
+                        source="pdp"
+                        signedIn={waitlist.signedIn}
+                        joined={waitlist.joined}
+                    />
+                </div>
+            )}
 
             {/* Prompt 215a: five accordion sections always mounted for supplements */}
             {variant === 'supplement' && accordionSections && compatibility && (

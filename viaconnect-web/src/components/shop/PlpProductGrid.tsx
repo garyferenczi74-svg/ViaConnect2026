@@ -33,9 +33,17 @@ interface PlpProductGridProps {
     result: ProductsByCategoryResult
     variant: ShopCardVariant
     categorySlug: string
+    signedIn: boolean
+    joinedProductIds: readonly string[]
 }
 
-export function PlpProductGrid({ result, variant, categorySlug }: PlpProductGridProps) {
+export function PlpProductGrid({
+    result,
+    variant,
+    categorySlug,
+    signedIn,
+    joinedProductIds,
+}: PlpProductGridProps) {
     if (result.status === 'error') {
         return (
             <div className="flex flex-col gap-6">
@@ -63,6 +71,8 @@ export function PlpProductGrid({ result, variant, categorySlug }: PlpProductGrid
             products={result.products}
             variant={variant}
             categorySlug={categorySlug}
+            signedIn={signedIn}
+            joinedProductIds={joinedProductIds}
         />
     )
 }
@@ -71,10 +81,14 @@ function PlpProductGridLoaded({
     products,
     variant,
     categorySlug,
+    signedIn,
+    joinedProductIds,
 }: {
     products: ShopProduct[]
     variant: ShopCardVariant
     categorySlug: string
+    signedIn: boolean
+    joinedProductIds: readonly string[]
 }) {
     const searchParams = useSearchParams()
 
@@ -89,6 +103,7 @@ function PlpProductGridLoaded({
     }, [products, filters, categorySlug])
 
     const [openCardId, setOpenCardId] = useState<string | null>(null)
+    const joinedIds = useMemo(() => new Set(joinedProductIds), [joinedProductIds])
 
     return (
         <div className="flex flex-col gap-6">
@@ -112,6 +127,10 @@ function PlpProductGridLoaded({
                             onToggleFormulation={() =>
                                 setOpenCardId((prev) => (prev === product.id ? null : product.id))
                             }
+                            waitlist={{
+                                signedIn,
+                                joined: joinedIds.has(product.id),
+                            }}
                         />
                     ))}
                 </div>

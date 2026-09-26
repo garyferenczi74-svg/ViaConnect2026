@@ -49,7 +49,7 @@ const COMING_ONLINE = 'Products in this category are coming online. Check back s
 const LOAD_ERROR = "We couldn't load these products right now."
 const TRY_AGAIN = 'Try again'
 
-function product(name: string): ShopProduct {
+function product(name: string, extras: Partial<ShopProduct> = {}): ShopProduct {
   return {
     id: `id-${name}`,
     sku: 'MTHFR-PLUS',
@@ -76,6 +76,8 @@ function product(name: string): ShopProduct {
     requires_practitioner_order: false,
     active: true,
     display_config: null,
+    is_released: true,
+    ...extras,
   }
 }
 
@@ -85,7 +87,13 @@ function renderGrid(
     | { status: 'error'; reason: 'timeout' | 'upstream' },
 ) {
   return renderToStaticMarkup(
-    <PlpProductGrid result={result} variant="supplement" categorySlug="advanced-formulas" />,
+    <PlpProductGrid
+      result={result}
+      variant="supplement"
+      categorySlug="advanced-formulas"
+      signedIn
+      joinedProductIds={[]}
+    />,
   )
 }
 
@@ -131,6 +139,29 @@ describe('PlpProductGrid honest states', () => {
     expect(html).toContain('disabled=""')
     expect(html).toContain('data-pending="true"')
     expect(html).toContain('aria-busy="true"')
+  })
+
+  it('renders two overlays and two buy buttons for one released, two unreleased, and one kit', () => {
+    const html = renderGrid({
+      status: 'ok',
+      products: [
+        product('Released Supplement', { id: 'rel', sku: 'FC-NAD-001', is_released: true }),
+        product('Unreleased One', { id: 'u1', sku: 'FC-CREATINE-001', is_released: false }),
+        product('Unreleased Two', { id: 'u2', sku: 'FC-CATALYST-001', is_released: false }),
+        product('GeneX Kit', {
+          id: 'kit',
+          sku: 'GX-KIT',
+          category: 'test_kit',
+          product_type: 'test_kit',
+          is_released: true,
+        }),
+      ],
+    })
+    expect(html.match(/data-testid="coming-soon-overlay"/g)?.length ?? 0).toBe(2)
+    expect(html.match(/>Add to Cart</g)?.length ?? 0).toBe(2)
+    expect(html).not.toContain('Join the Revolution waiting list for Released Supplement')
+    expect(html).toContain('Join the Revolution waiting list for Unreleased One')
+    expect(html).toContain('Join the Revolution waiting list for Unreleased Two')
   })
 
   it('wires Try again to router.refresh inside a transition', () => {
