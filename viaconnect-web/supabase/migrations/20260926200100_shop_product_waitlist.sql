@@ -2,10 +2,12 @@
 -- Not applied by merge. Gary applies migration A first, then this file.
 --
 -- Hand-apply is atomic only when the whole file runs in one transaction.
--- SET LOCAL is valid only inside a transaction, and plain psql -f keeps
--- going after an error. Use one of these:
+-- SET LOCAL is valid only inside a transaction. Outside one, it emits a
+-- WARNING and has no effect. Plain psql -f also keeps going after an error.
+-- Primary path:
 --   psql -v ON_ERROR_STOP=1 --single-transaction -f <this file>
---   paste this whole file into the Supabase SQL editor and run it once
+-- Fallback: paste this whole file into the Supabase SQL editor and run it
+-- once. Transaction behaviour of the SQL editor is not verified from the repo.
 -- Do not put BEGIN or COMMIT in this file. --single-transaction already
 -- opens the transaction, and an inner COMMIT would end it early.
 -- A later db push does not see a hand-apply. Policies below are guarded
