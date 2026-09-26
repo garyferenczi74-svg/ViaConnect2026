@@ -23,7 +23,7 @@ export async function POST(request: Request): Promise<Response> {
   } catch (err) {
     safeLog.error("api.admin.migrate-219h", "threw", { error: err });
     return Response.json(
-      { ok: false, error: err instanceof Error ? err.message : String(err) },
+      { ok: false, error: "presence_check_failed" },
       { status: 200 }
     );
   }

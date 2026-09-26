@@ -4,9 +4,10 @@
 -- Not applied in this PR. Awaiting Gary approval. No --prod.
 --
 -- Scheduler columns: 20260816120000 filled these only for rows that already
--- existed. These three keys are not special-cased in that UPDATE, so the
--- null-fill below uses that migration's ELSE branch
--- (pg_cron, */15 * * * *, /api/cron/ops-tick) and only when a column is null.
+-- existed. These three keys are not special-cased there, so a null column
+-- takes that migration's ELSE branch (pg_cron, */15 * * * *, /api/cron/ops-tick).
+-- Each column is assigned with COALESCE(existing, fill). A value already
+-- stored stays in place even when another of the three columns is null.
 
 INSERT INTO public.agent_cadence_jobs (
   job_key, agent_id, label, interval_minutes, priority, budget_class,
@@ -55,12 +56,12 @@ ON CONFLICT (job_key) DO UPDATE SET
 
 UPDATE public.agent_cadence_jobs
 SET
-  scheduler_mechanism = CASE
+  scheduler_mechanism = COALESCE(scheduler_mechanism, CASE
     WHEN mechanism IN ('cron_tick', 'hybrid') THEN 'pg_cron'
     WHEN mechanism = 'cron_daily' THEN 'vercel_cron'
     WHEN mechanism = 'event' THEN 'event'
-    ELSE COALESCE(scheduler_mechanism, 'pg_cron')
-  END,
+    ELSE 'pg_cron'
+  END),
   cron_expression = COALESCE(cron_expression, '*/15 * * * *'),
   invocation_target = COALESCE(invocation_target, '/api/cron/ops-tick')
 WHERE job_key IN (

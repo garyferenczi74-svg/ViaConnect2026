@@ -303,5 +303,13 @@ describe("runtime sources do not reschedule continuous-ops cron", () => {
     expect(sql).not.toMatch(/cron\.alter_job/);
     expect(sql).not.toMatch(/NOTIFY\s+pgrst/i);
     expect(sql).not.toMatch(/\bCREATE TABLE\b/);
+    expect(sql).toMatch(
+      /scheduler_mechanism\s*=\s*COALESCE\(\s*scheduler_mechanism\s*,\s*CASE/
+    );
+    expect(sql).not.toMatch(/scheduler_mechanism\s*=\s*CASE/);
+    expect(sql).toMatch(/cron_expression\s*=\s*COALESCE\(\s*cron_expression\s*,/);
+    expect(sql).toMatch(
+      /invocation_target\s*=\s*COALESCE\(\s*invocation_target\s*,/
+    );
   });
 });

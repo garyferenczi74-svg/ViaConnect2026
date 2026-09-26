@@ -49,8 +49,6 @@ export async function runOpsTick(opts?: {
     schemaResult = schema;
     if (schema.applied) {
       safeLog.info("ops.tick", "schema bootstrap applied", { reason: schema.reason });
-    } else if (!schema.ok) {
-      safeLog.warn("ops.tick", "schema bootstrap skipped", { reason: schema.reason });
     }
     try {
       const { listDiscoveryCursors } = await import("./discoveryCursors");
