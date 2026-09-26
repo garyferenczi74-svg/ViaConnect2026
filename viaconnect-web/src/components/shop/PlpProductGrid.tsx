@@ -18,18 +18,64 @@
 
 import { useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { AlertCircle } from 'lucide-react'
 import { ProductCard } from './ProductCard'
+import { PlpProductsRetryButton } from './PlpProductsRetryButton'
 import { applyFilters, applySort, readFilterState } from '@/lib/shop/filters'
 import type { ShopCardVariant } from '@/lib/shop/categories'
-import type { ShopProduct } from '@/lib/shop/queries'
+import type { ProductsByCategoryResult, ShopProduct } from '@/lib/shop/queries'
+import {
+    PLP_PRODUCTS_COMING_ONLINE_COPY,
+    PLP_PRODUCTS_LOAD_ERROR_MESSAGE,
+} from '@/lib/shop/plp-copy'
 
 interface PlpProductGridProps {
-    products: ShopProduct[]
+    result: ProductsByCategoryResult
     variant: ShopCardVariant
     categorySlug: string
 }
 
-export function PlpProductGrid({ products, variant, categorySlug }: PlpProductGridProps) {
+export function PlpProductGrid({ result, variant, categorySlug }: PlpProductGridProps) {
+    if (result.status === 'error') {
+        return (
+            <div className="flex flex-col gap-6">
+                <div
+                    role="alert"
+                    data-testid="plp-products-error"
+                    className="rounded-2xl border border-white/10 bg-white/[0.02] p-10 text-center backdrop-blur-sm"
+                >
+                    <div className="mx-auto flex max-w-md flex-col items-center gap-4">
+                        <AlertCircle
+                            className="h-6 w-6 text-rose-400"
+                            strokeWidth={1.5}
+                            aria-hidden="true"
+                        />
+                        <p className="text-base text-white/65">{PLP_PRODUCTS_LOAD_ERROR_MESSAGE}</p>
+                        <PlpProductsRetryButton />
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
+    return (
+        <PlpProductGridLoaded
+            products={result.products}
+            variant={variant}
+            categorySlug={categorySlug}
+        />
+    )
+}
+
+function PlpProductGridLoaded({
+    products,
+    variant,
+    categorySlug,
+}: {
+    products: ShopProduct[]
+    variant: ShopCardVariant
+    categorySlug: string
+}) {
     const searchParams = useSearchParams()
 
     const filters = useMemo(
@@ -50,7 +96,7 @@ export function PlpProductGrid({ products, variant, categorySlug }: PlpProductGr
                 <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-10 text-center backdrop-blur-sm">
                     <p className="text-base text-white/65">
                         {products.length === 0
-                            ? 'Products in this category are coming online. Check back soon.'
+                            ? PLP_PRODUCTS_COMING_ONLINE_COPY
                             : 'No products match the current filters. Try clearing one or two.'}
                     </p>
                 </div>

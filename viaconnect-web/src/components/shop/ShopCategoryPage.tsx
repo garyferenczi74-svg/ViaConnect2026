@@ -12,9 +12,9 @@
  * only category currently mapped to 'testing'; everything else falls back
  * to 'supplement'.
  *
- * Empty state per spec §7.3: until migration 20260429000000 is applied AND
- * a backfill prompt populates products.category_slug on existing rows, this
- * template renders the graceful empty-state block. No throw, no spinner.
+ * Empty state per spec §7.3: a successful query with zero products renders
+ * the coming-online block. A failed query renders the load-error block in
+ * that same slot. No throw, no spinner.
  */
 import { Suspense, type ReactNode } from 'react'
 import { BreadcrumbPills } from '@/components/BreadcrumbPills'
@@ -33,7 +33,7 @@ interface ShopCategoryPageProps {
 
 export async function ShopCategoryPage({ slug, hasCaqOnFile, belowHeader }: ShopCategoryPageProps) {
     const category = getShopCategoryBySlug(slug)
-    const [products, session] = await Promise.all([
+    const [productResult, session] = await Promise.all([
         getProductsByCategory(slug),
         getCurrentShopSession(),
     ])
@@ -68,7 +68,7 @@ export async function ShopCategoryPage({ slug, hasCaqOnFile, belowHeader }: Shop
 
                 <Suspense>
                     <PlpProductGrid
-                        products={products}
+                        result={productResult}
                         variant={variant}
                         categorySlug={slug}
                     />

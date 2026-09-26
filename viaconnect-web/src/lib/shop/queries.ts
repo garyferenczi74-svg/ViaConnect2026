@@ -122,10 +122,35 @@ export async function getShopCategories(): Promise<ShopCategoryRow[]> {
     }
 }
 
-export async function getProductsByCategory(slug: string): Promise<ShopProduct[]> {
-    const sb = await createClient() as unknown as {
-        from: (table: string) => any
-    }
+export type ProductsByCategoryFailureReason = 'timeout' | 'upstream'
+
+/** Ok is a real category read, including a true empty list. Error is an outage. */
+export type ProductsByCategoryResult =
+    | { status: 'ok'; products: ShopProduct[] }
+    | { status: 'error'; reason: ProductsByCategoryFailureReason }
+
+interface CategoryProductQuery {
+    select: (columns: string) => CategoryProductQuery
+    eq: (column: string, value: string | boolean) => CategoryProductQuery
+    not: (column: string, operator: string, value: string) => CategoryProductQuery
+    order: (
+        column: string,
+        options: { ascending: boolean },
+    ) => Promise<{ data: ShopProduct[] | null; error: unknown }>
+}
+
+interface ShopProductsReader {
+    from: (table: string) => CategoryProductQuery
+}
+
+/**
+ * Active products for one shop PLP. The 5s timeout is unchanged and there
+ * is no server-side retry. A Supabase error or timeout is returned as
+ * status 'error' so the PLP can show a load failure instead of the
+ * empty-category copy.
+ */
+export async function getProductsByCategory(slug: string): Promise<ProductsByCategoryResult> {
+    const sb = (await createClient()) as unknown as ShopProductsReader
     try {
         const query = sb
             .from('products')
@@ -137,22 +162,22 @@ export async function getProductsByCategory(slug: string): Promise<ShopProduct[]
             .order('name', { ascending: true })
 
         const { data, error } = await withTimeout(
-            query as Promise<{ data: ShopProduct[] | null; error: unknown }>,
+            query,
             QUERY_TIMEOUT_MS,
             `shop.getProductsByCategory:${slug}`,
         )
         if (error) {
             safeLog.warn('shop.queries', 'getProductsByCategory supabase error', { slug, error })
-            return []
+            return { status: 'error', reason: 'upstream' }
         }
-        return (data ?? []).map(hydrateShopProduct)
+        return { status: 'ok', products: (data ?? []).map(hydrateShopProduct) }
     } catch (error) {
         if (isTimeoutError(error)) {
             safeLog.warn('shop.queries', 'getProductsByCategory timed out', { slug, error })
-        } else {
-            safeLog.error('shop.queries', 'getProductsByCategory failed', { slug, error })
+            return { status: 'error', reason: 'timeout' }
         }
-        return []
+        safeLog.error('shop.queries', 'getProductsByCategory failed', { slug, error })
+        return { status: 'error', reason: 'upstream' }
     }
 }
 
