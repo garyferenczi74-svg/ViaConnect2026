@@ -1,6 +1,8 @@
 -- Retire pg_cron job performance_advisor_autoheal (production job 10).
 -- Guarded and idempotent: does nothing when the cron schema or the job is absent.
--- Does not touch security_advisor_autoheal (production job 1) or any other job.
+-- Does not unschedule security_advisor_autoheal (production job 1) or any other job.
+-- The only allowed touch of job 1 is the optional unschedule migration, which
+-- Gary decides at apply time.
 --
 -- The function body is dropped only by the next migration. Gary can skip that
 -- file and keep extensions.performance_advisor_autoheal() and

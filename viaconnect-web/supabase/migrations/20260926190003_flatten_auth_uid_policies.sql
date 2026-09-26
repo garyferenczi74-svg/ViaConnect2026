@@ -3,8 +3,9 @@
 -- pg_policies snapshot (sha256 df94404d465a08e9c7115038923be79b2ee41fda5f215100234f8f995aabf321).
 -- That snapshot is not stored in this public repository.
 --
--- Apply after the retire migration and, if Gary chooses, after the DROP
--- migration. Needs Gary approval before applying.
+-- Apply after the retire migration, then, if Gary chooses, the optional DROP
+-- and the optional security_advisor_autoheal unschedule.
+-- Needs Gary approval before applying.
 --
 -- ALTER POLICY only. No DROP POLICY, no CREATE POLICY.
 -- One transaction per table. lock_timeout 3s, statement_timeout 60s.

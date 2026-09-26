@@ -35,9 +35,12 @@ The scan of the snapshot and of the earliest `policy_rewrite_backup` rows found 
 
 Apply order, in a quiet window, after confirming production job 10 is still paused:
 
-1. `20260926190000_retire_performance_advisor_autoheal.sql` unschedules pg_cron job `performance_advisor_autoheal` only. It does not touch `security_advisor_autoheal` or any other job. If `cron.job` or that job name is absent, it does nothing. Running it twice is a no-op the second time.
-2. `20260926190001_drop_performance_advisor_autoheal_function.sql` is optional. Skip it to keep the function body (the unschedule-only option). It drops `extensions.performance_advisor_autoheal_run()` and `extensions.performance_advisor_autoheal()` only. It does not drop `extensions.performance_advisor_autoheal_log` or `extensions.policy_rewrite_backup`.
-3. `20260926190002_flatten_auth_uid_policies.sql` is `ALTER POLICY` only, one `BEGIN`/`COMMIT` per table, with `lock_timeout = '3s'` and `statement_timeout = '60s'`. A run of two or more `( SELECT auth.uid() AS uid)` wrappers collapses to one. The same rule is applied to `auth.jwt()` and `auth.role()`. Depth-1 wrappers and bare calls are copied through.
+1. `20260926190000_retire_performance_advisor_autoheal.sql` unschedules pg_cron job `performance_advisor_autoheal` only. This file does not unschedule `security_advisor_autoheal`. If `cron.job` or the job-10 name is absent, it does nothing. Running it twice is a no-op the second time.
+2. `20260926190001_drop_performance_advisor_autoheal_function.sql` is optional. Skip it to keep the function body (the unschedule-only option). It drops `extensions.performance_advisor_autoheal_run()` and `extensions.performance_advisor_autoheal()` only. It does not drop or alter `extensions.performance_advisor_autoheal_log` or `extensions.policy_rewrite_backup`.
+3. `20260926190002_optional_unschedule_security_advisor_autoheal.sql` is optional. Gary decides at apply time whether to apply it. It unschedules `security_advisor_autoheal` only. It does not drop or alter `extensions.security_advisor_autoheal` or `extensions.security_advisor_autoheal_run`. It does not drop or alter the backup table or the autoheal log. Running it twice is a no-op the second time.
+4. `20260926190003_flatten_auth_uid_policies.sql` is `ALTER POLICY` only, one `BEGIN`/`COMMIT` per table, with `lock_timeout = '3s'` and `statement_timeout = '60s'`. A run of two or more `( SELECT auth.uid() AS uid)` wrappers collapses to one. The same rule is applied to `auth.jwt()` and `auth.role()`. Depth-1 wrappers and bare calls are copied through.
+
+No migration drops or alters `extensions.policy_rewrite_backup` or `extensions.performance_advisor_autoheal_log`. For the 29 merges, `policy-rewrite-backup-earliest.json` is the source of truth. Migration history is compared as well and is listed below. The 361 dropped indexes stay report-only. None are recreated.
 
 The flatten file alters 475 policies on 335 tables. The longest `ALTER POLICY` statement in that file is 1,328 characters, so every expression it writes is under 2,000 characters. It does not touch `public.engagement_score_snapshots` (see HOLD).
 
@@ -132,7 +135,15 @@ Two dummy jobs were scheduled with `cron.schedule`: `performance_advisor_autohea
 - After the retire migration once: only `security_advisor_autoheal` remained.
 - After the retire migration a second time: still only `security_advisor_autoheal`.
 
-The DROP migration then ran. Neither autoheal function existed on this database (the production bodies were not installed). Postgres reported `does not exist, skipping` for both `DROP FUNCTION IF EXISTS` statements.
+The DROP migration then ran. Neither performance-advisor function existed on this database (the production bodies were not installed). Postgres reported `does not exist, skipping` for both `DROP FUNCTION IF EXISTS` statements. `security_advisor_autoheal` was still scheduled.
+
+### Optional job-1 unschedule, proved locally
+
+A dummy job named `security_advisor_autoheal` was present (`*/15 * * * *`, command `SELECT 1`). `20260926190002_optional_unschedule_security_advisor_autoheal.sql` was applied twice.
+
+- After the first apply: `security_advisor_autoheal` was gone. No other cron job remained.
+- After the second apply: still no cron jobs. The second run did not error.
+- `pg_proc` had no `security_advisor_autoheal` or `performance_advisor_autoheal` function. The file does not create or drop functions. The production function bodies were not installed on this database.
 
 ### Flatten proof and allow/deny matrix: stopped
 
