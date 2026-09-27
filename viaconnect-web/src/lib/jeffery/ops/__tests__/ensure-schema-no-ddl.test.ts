@@ -205,7 +205,8 @@ describe("ensureContinuousOpsSchema never applies DDL", () => {
     expectNoDdl();
     expect(result.applied).toBe(false);
     expect(result.ok).toBe(true);
-    expect(result.reason).toContain("admin client exploded");
+    expect(result.reason).toBe("fail_open:threw");
+    expect(result.reason).not.toContain("admin client exploded");
     expect(safeLog.error).toHaveBeenCalled();
   });
 
@@ -261,7 +262,8 @@ describe("ops tick fails open when the presence check cannot confirm tables", ()
     const result = await runOpsTick();
     expectNoDdl();
     expect(result.schema?.applied).toBe(false);
-    expect(result.schema?.reason).toContain("admin client exploded");
+    expect(result.schema?.reason).toBe("fail_open:threw");
+    expect(JSON.stringify(result.schema)).not.toContain("admin client exploded");
     expect(result.endedAt).toEqual(expect.any(String));
   });
 });
@@ -303,5 +305,13 @@ describe("runtime sources do not reschedule continuous-ops cron", () => {
     expect(sql).not.toMatch(/cron\.alter_job/);
     expect(sql).not.toMatch(/NOTIFY\s+pgrst/i);
     expect(sql).not.toMatch(/\bCREATE TABLE\b/);
+    expect(sql).toMatch(
+      /scheduler_mechanism\s*=\s*COALESCE\(\s*scheduler_mechanism\s*,\s*CASE/
+    );
+    expect(sql).not.toMatch(/scheduler_mechanism\s*=\s*CASE/);
+    expect(sql).toMatch(/cron_expression\s*=\s*COALESCE\(\s*cron_expression\s*,/);
+    expect(sql).toMatch(
+      /invocation_target\s*=\s*COALESCE\(\s*invocation_target\s*,/
+    );
   });
 });

@@ -40,10 +40,9 @@ export async function ensureContinuousOpsSchema(): Promise<{
 
     return { ok: true, applied: false, reason: "tables_present" };
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
     safeLog.error("ops.ensureSchema", "presence check threw; failed open", {
       error: err,
     });
-    return { ok: true, applied: false, reason: `fail_open:${message}` };
+    return { ok: true, applied: false, reason: "fail_open:threw" };
   }
 }
