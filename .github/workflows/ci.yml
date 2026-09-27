@@ -44,6 +44,16 @@ jobs:
       - name: Install dependencies
         run: npm install --legacy-peer-deps
 
+      - name: Shop unit tests
+        # Vitest 4 CLI filters are path substrings, not globs, so the shell
+        # expands these first. globstar makes ** recursive. failglob aborts
+        # when a pattern matches nothing, instead of passing the literal
+        # through. Do not enable nullglob: an empty argument list would run
+        # the whole suite. working-directory is viaconnect-web.
+        run: |
+          shopt -s globstar failglob
+          npx vitest run src/lib/__tests__/shop-*.test.ts src/lib/shop/__tests__/**/*.test.ts
+
       - name: TypeScript check (advisory)
         # Tracked tech debt: ~335 type errors, mostly Supabase `never` from
         # untyped tables introduced in 8f28bd6. The Next.js build itself
