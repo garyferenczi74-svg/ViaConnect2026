@@ -30,7 +30,7 @@ const SIZES = [
 
 const BACKGROUNDS = ['white', 'noise', 'navy'] as const
 type BackgroundName = (typeof BACKGROUNDS)[number]
-type PoseName = 'apex' | 'floor'
+type PoseName = 'peak' | 'final'
 
 interface PixelResult {
     project: string
@@ -49,7 +49,6 @@ function overlayMarkup(size: 'card' | 'pdp', tone: 'onLight' | 'onDark' = 'onLig
     const layers = ['cs-edge', 'cs-deep', 'cs-hi'] as const
     const style = {
         '--cs-delay': '0s',
-        '--cs-intro-delay': '0s',
         '--font-coming-soon': '"Playfair Display"',
     } as CSSProperties
     return renderToStaticMarkup(
@@ -148,16 +147,15 @@ async function paintNoise(page: Page, seed: number): Promise<void> {
     }, seed)
 }
 
-async function freeze(page: Page, pose: PoseName): Promise<{ y: number; expected: number }> {
+async function freeze(page: Page, pose: PoseName): Promise<{ scale: number }> {
     return page.evaluate((which) => {
-        const delay = which === 'floor' ? '-1.250s' : '0s'
+        const targetMs = which === 'peak' ? 620 : 2600
         document.querySelectorAll<HTMLElement>('.cs-metal').forEach((el) => {
-            el.style.setProperty('--cs-delay', delay)
-            el.style.setProperty('--cs-intro-delay', '-1s')
+            el.style.setProperty('--cs-delay', '0s')
             el.removeAttribute('data-cs-paused')
             el.removeAttribute('data-cs-static')
         })
-        const animated = document.querySelectorAll<HTMLElement>('.cs-intro, .cs-bob, .cs-word, .cs-hi, .cs-refl')
+        const animated = document.querySelectorAll<HTMLElement>('.cs-intro, .cs-word, .cs-hi')
         animated.forEach((el) => {
             el.style.animation = 'none'
         })
@@ -168,18 +166,18 @@ async function freeze(page: Page, pose: PoseName): Promise<{ y: number; expected
         document.body.getBoundingClientRect()
         const anims = document.getAnimations()
         if (anims.length === 0) throw new Error('no animations to freeze')
-        for (const anim of anims) anim.pause()
-        const bob = document.querySelector<HTMLElement>('.cs-bob')
-        const stage = document.querySelector<HTMLElement>('.cs-stage')
-        const root = document.querySelector<HTMLElement>('.cs-metal')
-        if (!bob || !stage || !root) throw new Error('overlay nodes missing')
-        const fontSize = Number.parseFloat(getComputedStyle(stage).fontSize)
-        const travelEm = root.getAttribute('data-size') === 'pdp' ? 0.45 : 0.4
-        const travel = travelEm * fontSize
-        const transform = getComputedStyle(bob).transform
-        const y = transform === 'none' ? 0 : new DOMMatrix(transform).m42
-        const expected = which === 'apex' ? -travel : 0
-        return { y, expected }
+        for (const anim of anims) {
+            const effect = anim.effect as KeyframeEffect | null
+            const target = effect?.target as Element | null
+            if (target?.closest('.cs-metal')) anim.currentTime = targetMs
+            anim.pause()
+        }
+        const word = document.querySelector<HTMLElement>('.cs-word')
+        if (!word) throw new Error('overlay nodes missing')
+        const transform = getComputedStyle(word).transform
+        const matrix = transform === 'none' ? new DOMMatrix() : new DOMMatrix(transform)
+        const scale = Math.hypot(matrix.a, matrix.b)
+        return { scale }
     }, pose)
 }
 
@@ -303,40 +301,40 @@ test.describe('coming soon overlay harness', () => {
                 const loaded = await page.evaluate(() => document.fonts.check('600 28px "Playfair Display"'))
                 expect(loaded).toBe(true)
 
-                for (const pose of ['apex', 'floor'] as const) {
+                for (const pose of ['peak', 'final'] as const) {
                     const placed = await freeze(page, pose)
-                    expect(Math.abs(placed.y - placed.expected), `${size.name} ${pose}`).toBeLessThan(1.25)
-                    let place: {
-                        centerX: number
-                        centerY: number
-                        stageDelta: number
-                        rotate: string
-                        reflDisplay: string
-                    } | null = null
-                    if (pose === 'floor') {
-                        place = await page.evaluate(() => {
-                            const frame = document.querySelector<HTMLElement>('.frame')
-                            const word = document.querySelector<HTMLElement>('.cs-word')
-                            const stage = document.querySelector<HTMLElement>('.cs-stage')
-                            const refl = document.querySelector<HTMLElement>('.cs-refl')
-                            if (!frame || !word || !stage || !refl) throw new Error('word missing')
-                            const frameRect = frame.getBoundingClientRect()
-                            const wordRect = word.getBoundingClientRect()
-                            const stageRect = stage.getBoundingClientRect()
-                            const centerX = (wordRect.left + wordRect.right) / 2
-                            const centerY = (wordRect.top + wordRect.bottom) / 2
-                            return {
-                                centerX: (centerX - frameRect.left) / frameRect.width,
-                                centerY: (centerY - frameRect.top) / frameRect.height,
-                                stageDelta: Math.abs(centerY - stageRect.top),
-                                rotate: getComputedStyle(word).rotate,
-                                reflDisplay: getComputedStyle(refl).display,
-                            }
-                        })
-                        expect(place.reflDisplay, size.name).toBe('none')
-                        expect(place.rotate, size.name).toMatch(/-45deg/)
-                        expect(place.stageDelta, size.name).toBeLessThan(4)
-                        expect(Math.abs(place.centerX - 0.50), size.name).toBeLessThan(0.03)
+                    const expectedScale = pose === 'peak' ? 1.035 : 1
+                    expect(Math.abs(placed.scale - expectedScale), `${size.name} ${pose}`).toBeLessThan(pose === 'peak' ? 0.02 : 0.01)
+                    const place = await page.evaluate(() => {
+                        const frame = document.querySelector<HTMLElement>('.frame')
+                        const word = document.querySelector<HTMLElement>('.cs-word')
+                        const refl = document.querySelector<HTMLElement>('.cs-refl')
+                        if (!frame || !word || !refl) throw new Error('word missing')
+                        const frameRect = frame.getBoundingClientRect()
+                        const wordRect = word.getBoundingClientRect()
+                        const centerX = (wordRect.left + wordRect.right) / 2
+                        const centerY = (wordRect.top + wordRect.bottom) / 2
+                        return {
+                            centerX: (centerX - frameRect.left) / frameRect.width,
+                            centerY: (centerY - frameRect.top) / frameRect.height,
+                            insetLeft: (wordRect.left - frameRect.left) / frameRect.width,
+                            insetRight: (frameRect.right - wordRect.right) / frameRect.width,
+                            insetTop: (wordRect.top - frameRect.top) / frameRect.height,
+                            insetBottom: (frameRect.bottom - wordRect.bottom) / frameRect.height,
+                            wide: frameRect.width / frameRect.height >= 0.79,
+                            rotate: getComputedStyle(word).rotate,
+                            reflDisplay: getComputedStyle(refl).display,
+                        }
+                    })
+                    expect(place.reflDisplay, size.name).toBe('none')
+                    expect(place.rotate, size.name).toMatch(/-45deg/)
+                    expect(Math.abs(place.centerX - 0.5), `${size.name} ${pose} x`).toBeLessThan(0.01)
+                    expect(Math.abs(place.centerY - (place.wide ? 0.52 : 0.49)), `${size.name} ${pose} y`).toBeLessThan(0.01)
+                    if (pose === 'peak') {
+                        expect(place.insetLeft, `${size.name} left`).toBeGreaterThanOrEqual(0.08)
+                        expect(place.insetRight, `${size.name} right`).toBeGreaterThanOrEqual(0.08)
+                        expect(place.insetTop, `${size.name} top`).toBeGreaterThanOrEqual(0.08)
+                        expect(place.insetBottom, `${size.name} bottom`).toBeGreaterThanOrEqual(0.08)
                     }
                     const diff = await pixelDiff(page, 'root')
                     expect(diff.changedOut, `${testInfo.project.name} ${size.name} ${background} ${pose}`).toBe(0)
@@ -349,7 +347,7 @@ test.describe('coming soon overlay harness', () => {
                         changedIn: diff.changedIn,
                         changedOut: diff.changedOut,
                     }
-                    if (pose === 'floor' && background === 'white' && place) {
+                    if (pose === 'final' && background === 'white') {
                         row.centerX = place.centerX
                         row.centerY = place.centerY
                     }
@@ -416,26 +414,24 @@ test.describe('coming soon overlay harness', () => {
                     const target = (anim.effect as KeyframeEffect | null)?.target as Element | null
                     return Boolean(target?.closest('.cs-metal'))
                 })
-                const bob = document.querySelector<HTMLElement>('.cs-bob')
+                const word = document.querySelector<HTMLElement>('.cs-word')
                 const hi = document.querySelector<HTMLElement>('.cs-hi')
                 const refl = document.querySelector<HTMLElement>('.cs-refl')
-                const stage = document.querySelector<HTMLElement>('.cs-stage')
-                const root = document.querySelector<HTMLElement>('.cs-metal')
-                if (!bob || !hi || !refl || !stage || !root) throw new Error('reduced nodes missing')
-                const fontSize = Number.parseFloat(getComputedStyle(stage).fontSize)
-                const travel = (root.getAttribute('data-size') === 'pdp' ? 0.45 : 0.4) * fontSize
-                const bobTransform = getComputedStyle(bob).transform
-                const y = bobTransform === 'none' ? 0 : new DOMMatrix(bobTransform).m42
+                const bob = document.querySelector<HTMLElement>('.cs-bob')
+                if (!word || !hi || !refl || !bob) throw new Error('reduced nodes missing')
+                const transform = getComputedStyle(word).transform
+                const matrix = transform === 'none' ? new DOMMatrix() : new DOMMatrix(transform)
                 return {
                     anims: anims.length,
-                    y,
-                    expectedY: -0.5 * travel,
+                    scale: Math.hypot(matrix.a, matrix.b),
+                    bobTransform: getComputedStyle(bob).transform,
                     hiOpacity: getComputedStyle(hi).opacity,
                     reflDisplay: getComputedStyle(refl).display,
                 }
             })
             expect(state.anims, size.name).toBe(0)
-            expect(Math.abs(state.y - state.expectedY), size.name).toBeLessThan(0.75)
+            expect(Math.abs(state.scale - 1), size.name).toBeLessThan(0.01)
+            expect(state.bobTransform, size.name).toBe('none')
             expect(state.hiOpacity).toBe('0.55')
             expect(state.reflDisplay, size.name).toBe('none')
             if (testInfo.project.name === 'desktop-1440') {
@@ -450,7 +446,7 @@ test.describe('coming soon overlay harness', () => {
         const size = SIZES[0]
         await page.setViewportSize({ width: 390, height: 700 })
         await mount(page, frameHtml(size.name, size.width, size.height, size.size, '#FFFFFF'), fontCss)
-        await freeze(page, 'apex')
+        await freeze(page, 'final')
         const diff = await pixelDiff(page, 'edge')
         expect(diff.changedIn).toBeGreaterThan(0)
     })

@@ -1,12 +1,12 @@
 /**
  * One shared IntersectionObserver for coming soon overlays.
- * At most 12 overlays run. On-screen cards take those slots before the
- * rootMargin pre-load band. The rest that are on screen get data-cs-static.
- * Off-screen overlays, including pre-load cards that did not get a slot,
- * get data-cs-paused. Reduced motion never observes and never runs.
- * COMING_SOON_MAX_RUN_MS stops each overlay at the static mid pose.
- * One timer per registered node, cleared on unregister. The intro delay
- * sits inside that window. The settle transition finishes by the cap.
+ * At most 12 unfinished overlays run. On-screen cards take those slots
+ * before the rootMargin pre-load band. On-screen cards past the cap get
+ * data-cs-static. Off-screen overlays, including pre-load cards that did
+ * not get a slot, get data-cs-paused. A finished zoom frees its slot.
+ * data-cs-static is set after cs-zoom ends (animationend, or a fallback
+ * of the card's --cs-delay plus COMING_SOON_ZOOM_MS). Reduced motion
+ * never observes and is static from the start.
  * This module is self-contained so tests can evaluate it in a browser.
  */
 
@@ -21,6 +21,9 @@ export interface MotionNode {
     removeAttribute(qualifiedName: string): void
     compareDocumentPosition(other: Node): number
     querySelector?(selector: string): { style: MotionIntroStyle } | null
+    addEventListener?(type: string, listener: (event: Event) => void): void
+    removeEventListener?(type: string, listener: (event: Event) => void): void
+    style?: { getPropertyValue(property: string): string }
 }
 
 export interface MotionEntry {
@@ -56,10 +59,8 @@ export interface MotionSchedulerOptions {
     matchMedia?: (query: string) => MotionMediaQuery
     /** Test clock. Production uses Date.now. */
     now?: () => number
-    /** Overrides COMING_SOON_MAX_RUN_MS. Infinity does not stop the bob. */
-    maxRunMs?: number
-    /** Overrides COMING_SOON_SETTLE_MS. The attribute flips this long before the cap. */
-    settleMs?: number
+    /** Overrides COMING_SOON_ZOOM_MS. Fallback is --cs-delay plus this many ms. */
+    zoomMs?: number
 }
 
 export interface MotionScheduler {
@@ -69,21 +70,27 @@ export interface MotionScheduler {
 }
 
 /**
- * Motion ends by this many milliseconds after the overlay registers.
- * The intro delay is inside the window, not added after it.
- * Reversible: set this to Infinity to restore the endless bob.
+ * cs-zoom duration. The per-card --cs-delay (at most 0.4 s) is added,
+ * so every card that starts on mount is done by 3.0 s.
  */
-export const COMING_SOON_MAX_RUN_MS = 5000
-
-/**
- * Length of the static-pose transition appended to the stylesheet.
- * The attribute flips this early so the transition finishes by the cap.
- */
-export const COMING_SOON_SETTLE_MS = 200
+export const COMING_SOON_ZOOM_MS = 2600
 
 interface ViewState {
     onScreen: boolean
     near: boolean
+}
+
+function animationNameOf(event: Event): string {
+    if (!('animationName' in event)) return ''
+    const name = (event as Event & { animationName?: unknown }).animationName
+    return typeof name === 'string' ? name : ''
+}
+
+function delayMsOf(node: MotionNode): number {
+    const raw = node.style?.getPropertyValue('--cs-delay') ?? ''
+    const seconds = Number.parseFloat(raw)
+    if (!Number.isFinite(seconds) || seconds <= 0) return 0
+    return seconds * 1000
 }
 
 export function createMotionScheduler(options?: MotionSchedulerOptions): MotionScheduler {
@@ -94,8 +101,7 @@ export function createMotionScheduler(options?: MotionSchedulerOptions): MotionS
     const REDUCED_QUERY = '(prefers-reduced-motion: reduce)'
     const cap = options?.cap ?? DEFAULT_CAP
     const rootMargin = options?.rootMargin ?? DEFAULT_ROOT_MARGIN
-    const maxRunMs = options?.maxRunMs ?? COMING_SOON_MAX_RUN_MS
-    const settleMs = options?.settleMs ?? COMING_SOON_SETTLE_MS
+    const zoomMs = options?.zoomMs ?? COMING_SOON_ZOOM_MS
     const now = options?.now ?? Date.now
 
     function documentOrder(a: MotionNode, b: MotionNode): number {
@@ -152,19 +158,18 @@ export function createMotionScheduler(options?: MotionSchedulerOptions): MotionS
 
     interface Tracked {
         view: ViewState
-        mountedAt: number
         settled: boolean
         timer: ReturnType<typeof setTimeout> | null
+        segmentStart: number | null
+        ranMs: number
+        onZoomEnd: (event: Event) => void
     }
 
     const tracked = new Map<MotionNode, Tracked>()
     const introduced = new WeakSet<MotionNode>()
     let observer: MotionObserver | null = null
-
-    function settleAtMs(): number {
-        if (!Number.isFinite(maxRunMs)) return Number.POSITIVE_INFINITY
-        return Math.max(0, maxRunMs - Math.max(0, settleMs))
-    }
+    let applying = false
+    let applyAgain = false
 
     function clearTimer(entry: Tracked): void {
         if (entry.timer === null) return
@@ -172,34 +177,44 @@ export function createMotionScheduler(options?: MotionSchedulerOptions): MotionS
         entry.timer = null
     }
 
-    function arm(node: MotionNode, entry: Tracked): void {
+    function pauseClock(entry: Tracked): void {
+        if (entry.segmentStart !== null) {
+            entry.ranMs += Math.max(0, now() - entry.segmentStart)
+            entry.segmentStart = null
+        }
         clearTimer(entry)
-        const fireAt = settleAtMs()
-        if (!Number.isFinite(fireAt)) return
-        const delay = Math.max(0, fireAt - (now() - entry.mountedAt))
-        if (delay === 0) {
+    }
+
+    function finish(node: MotionNode): void {
+        const entry = tracked.get(node)
+        if (!entry || entry.settled) return
+        entry.settled = true
+        pauseClock(entry)
+        apply()
+    }
+
+    function armFallback(node: MotionNode, entry: Tracked): void {
+        if (entry.settled || entry.timer !== null) return
+        if (entry.segmentStart === null) entry.segmentStart = now()
+        const total = delayMsOf(node) + zoomMs
+        const elapsed = entry.ranMs + Math.max(0, now() - entry.segmentStart)
+        if (elapsed >= total) {
             entry.settled = true
+            pauseClock(entry)
             return
         }
         const handle = setTimeout(() => {
-            entry.timer = null
-            if (!tracked.has(node)) return
-            entry.settled = true
+            const current = tracked.get(node)
+            if (!current || current.timer !== handle) return
+            current.timer = null
+            if (current.settled) return
+            current.settled = true
+            pauseClock(current)
             apply()
-        }, delay)
+        }, total - elapsed)
         const maybe = handle as { unref?: () => void }
         maybe.unref?.()
         entry.timer = handle
-    }
-
-    function expired(entry: Tracked): boolean {
-        if (entry.settled) return true
-        const fireAt = settleAtMs()
-        if (!Number.isFinite(fireAt)) return false
-        if (now() - entry.mountedAt < fireAt) return false
-        entry.settled = true
-        clearTimer(entry)
-        return true
     }
 
     function settleIntro(node: MotionNode): void {
@@ -224,38 +239,74 @@ export function createMotionScheduler(options?: MotionSchedulerOptions): MotionS
         return { onScreen: false, near: true }
     }
 
-    function apply(): void {
+    function applyOnce(): boolean {
         const nodes = [...tracked.keys()].sort(documentOrder)
         const eligible = reduced
             ? []
-            : nodes.filter((node) => {
-                const entry = tracked.get(node)
-                return Boolean(entry) && !expired(entry as Tracked)
-            })
+            : nodes.filter((node) => tracked.get(node)?.settled !== true)
         const onScreen = eligible.filter((node) => tracked.get(node)?.view.onScreen === true)
         const preload = eligible.filter((node) => {
             const state = tracked.get(node)?.view
             return state?.near === true && state.onScreen !== true
         })
         const runningNodes = new Set([...onScreen, ...preload].slice(0, cap))
+        let newlySettled = false
         for (const node of nodes) {
             const entry = tracked.get(node)
             if (!entry) continue
-            if (reduced || entry.settled) {
+            if (reduced) {
+                pauseClock(entry)
+                entry.ranMs = 0
                 holdStatic(node)
                 continue
             }
-            const on = entry.view.onScreen === true
-            if (runningNodes.has(node)) {
+            if (entry.settled) {
+                pauseClock(entry)
+                holdStatic(node)
+                continue
+            }
+            const running = runningNodes.has(node)
+            if (running) {
+                armFallback(node, entry)
+                if (entry.settled) {
+                    newlySettled = true
+                    holdStatic(node)
+                    continue
+                }
                 if (introduced.has(node)) settleIntro(node)
                 node.removeAttribute('data-cs-paused')
                 node.removeAttribute('data-cs-static')
-            } else if (on) {
+            } else if (entry.view.onScreen === true) {
+                pauseClock(entry)
                 holdStatic(node)
             } else {
+                pauseClock(entry)
                 node.removeAttribute('data-cs-static')
                 node.setAttribute('data-cs-paused', 'true')
             }
+        }
+        return newlySettled
+    }
+
+    function apply(): void {
+        if (applying) {
+            applyAgain = true
+            return
+        }
+        applying = true
+        try {
+            let spins = 0
+            let again = true
+            while (again && spins < 8) {
+                spins += 1
+                again = applyOnce()
+            }
+        } finally {
+            applying = false
+        }
+        if (applyAgain) {
+            applyAgain = false
+            apply()
         }
     }
 
@@ -294,12 +345,17 @@ export function createMotionScheduler(options?: MotionSchedulerOptions): MotionS
             if (tracked.has(node)) return
             const entry: Tracked = {
                 view: { onScreen: false, near: false },
-                mountedAt: now(),
                 settled: false,
                 timer: null,
+                segmentStart: null,
+                ranMs: 0,
+                onZoomEnd(event: Event) {
+                    if (animationNameOf(event) !== 'cs-zoom') return
+                    finish(node)
+                },
             }
             tracked.set(node, entry)
-            arm(node, entry)
+            node.addEventListener?.('animationend', entry.onZoomEnd)
             const current = ensureObserver()
             current?.observe(node)
             apply()
@@ -308,6 +364,7 @@ export function createMotionScheduler(options?: MotionSchedulerOptions): MotionS
             const entry = tracked.get(node)
             if (!entry) return
             clearTimer(entry)
+            node.removeEventListener?.('animationend', entry.onZoomEnd)
             tracked.delete(node)
             observer?.unobserve(node)
             if (tracked.size === 0 && observer) {

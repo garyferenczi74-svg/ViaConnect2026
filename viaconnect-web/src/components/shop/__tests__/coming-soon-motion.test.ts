@@ -3,8 +3,7 @@
  */
 import { beforeEach, describe, expect, it } from 'vitest'
 import {
-    COMING_SOON_MAX_RUN_MS,
-    COMING_SOON_SETTLE_MS,
+    COMING_SOON_ZOOM_MS,
     createMotionScheduler,
     type MotionEntry,
     type MotionIntroStyle,
@@ -16,6 +15,7 @@ interface FakeNode extends MotionNode {
     index: number
     intro: { style: MotionIntroStyle }
     getAttribute(name: string): string | null
+    emit(animationName: string): void
 }
 
 class FakeIO implements MotionObserver {
@@ -45,9 +45,10 @@ class FakeIO implements MotionObserver {
     }
 }
 
-function makeNode(index: number): FakeNode {
+function makeNode(index: number, delay = ''): FakeNode {
     const attrs = new Map<string, string>()
     const intro = { style: { animation: '', opacity: '', transform: '' } }
+    const listeners: Array<(event: Event) => void> = []
     return {
         index,
         intro,
@@ -69,6 +70,22 @@ function makeNode(index: number): FakeNode {
         querySelector(selector: string) {
             return selector === '.cs-intro' ? intro : null
         },
+        addEventListener(_type: string, listener: (event: Event) => void) {
+            listeners.push(listener)
+        },
+        removeEventListener(_type: string, listener: (event: Event) => void) {
+            const at = listeners.indexOf(listener)
+            if (at >= 0) listeners.splice(at, 1)
+        },
+        emit(animationName: string) {
+            const event = { animationName } as unknown as Event
+            for (const listener of [...listeners]) listener(event)
+        },
+        style: {
+            getPropertyValue(property: string) {
+                return property === '--cs-delay' ? delay : ''
+            },
+        },
     }
 }
 
@@ -85,7 +102,7 @@ describe('coming soon motion scheduler', () => {
         FakeIO.instances = []
     })
 
-    it('runs the first 12 intersecting nodes in document order and holds the rest static', () => {
+    it('counts unfinished overlays right after mount, then runs the first 12', () => {
         const nodes = Array.from({ length: 20 }, (_, index) => makeNode(index))
         const scheduler = createMotionScheduler({
             IO: FakeIO,
@@ -288,13 +305,11 @@ describe('coming soon motion scheduler', () => {
         expect(node.intro.style.animation).toBe('none')
     })
 
-    it('keeps moving before 5s, then rests static, and drops the timer on unregister', () => {
+    it('sets static when cs-zoom ends, with a fallback of the card delay plus 2.6s', () => {
         vi.useFakeTimers()
         try {
-            expect(COMING_SOON_MAX_RUN_MS).toBe(5000)
-            expect(COMING_SOON_SETTLE_MS).toBe(200)
-            const flipAt = COMING_SOON_MAX_RUN_MS - COMING_SOON_SETTLE_MS
-            const node = makeNode(0)
+            expect(COMING_SOON_ZOOM_MS).toBe(2600)
+            const node = makeNode(0, '0s')
             const scheduler = createMotionScheduler({
                 IO: FakeIO,
                 matchMedia: () => ({ matches: false }),
@@ -302,25 +317,54 @@ describe('coming soon motion scheduler', () => {
             scheduler.register(node)
             FakeIO.instances[0].callback([{ target: node, isIntersecting: true, intersectionRatio: 1 }])
             expect(isRunning(node)).toBe(true)
-            vi.advanceTimersByTime(flipAt - 1)
+            node.emit('cs-intro')
             expect(isRunning(node)).toBe(true)
             expect(node.getAttribute('data-cs-static')).toBeNull()
+            vi.advanceTimersByTime(COMING_SOON_ZOOM_MS - 1)
+            expect(isRunning(node)).toBe(true)
             vi.advanceTimersByTime(1)
             expect(node.getAttribute('data-cs-static')).toBe('true')
             expect(isRunning(node)).toBe(false)
-            vi.advanceTimersByTime(COMING_SOON_SETTLE_MS)
-            expect(node.getAttribute('data-cs-static')).toBe('true')
 
-            const later = makeNode(1)
-            scheduler.register(later)
-            FakeIO.instances[0].callback([{ target: later, isIntersecting: true, intersectionRatio: 1 }])
-            expect(isRunning(later)).toBe(true)
+            const early = makeNode(1, '0.400s')
+            scheduler.register(early)
+            FakeIO.instances[0].callback([{ target: early, isIntersecting: true, intersectionRatio: 1 }])
+            expect(isRunning(early)).toBe(true)
             expect(vi.getTimerCount()).toBe(1)
-            scheduler.unregister(later)
+            early.emit('cs-zoom')
+            expect(early.getAttribute('data-cs-static')).toBe('true')
+            expect(vi.getTimerCount()).toBe(0)
+
+            const staggered = makeNode(2, '0.400s')
+            scheduler.register(staggered)
+            FakeIO.instances[0].callback([{ target: staggered, isIntersecting: true, intersectionRatio: 1 }])
+            vi.advanceTimersByTime(COMING_SOON_ZOOM_MS + 400 - 1)
+            expect(isRunning(staggered)).toBe(true)
+            vi.advanceTimersByTime(1)
+            expect(staggered.getAttribute('data-cs-static')).toBe('true')
+            scheduler.unregister(staggered)
             expect(vi.getTimerCount()).toBe(0)
         } finally {
             vi.useRealTimers()
         }
+    })
+
+    it('frees a cap slot as soon as a running overlay goes static', () => {
+        const nodes = Array.from({ length: 13 }, (_, index) => makeNode(index))
+        const scheduler = createMotionScheduler({
+            IO: FakeIO,
+            matchMedia: () => ({ matches: false }),
+        })
+        for (const node of nodes) scheduler.register(node)
+        FakeIO.instances[0].callback(
+            nodes.map((node) => ({ target: node, isIntersecting: true, intersectionRatio: 1 })),
+        )
+        expect(runningCount(nodes)).toBe(12)
+        expect(nodes[12].getAttribute('data-cs-static')).toBe('true')
+        nodes[0].emit('cs-zoom')
+        expect(nodes[0].getAttribute('data-cs-static')).toBe('true')
+        expect(isRunning(nodes[12])).toBe(true)
+        expect(runningCount(nodes)).toBe(12)
     })
 
     it('is static immediately under reduced motion without waiting out the cap', () => {

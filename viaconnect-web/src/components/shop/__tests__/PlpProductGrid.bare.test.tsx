@@ -174,8 +174,9 @@ describe('PlpProductGrid honest states', () => {
       ],
     })
     expect(html).toContain('--cs-delay:0.000s')
-    expect(html).toContain('--cs-delay:-1.421s')
-    expect(html).toContain('--cs-delay:-0.543s')
+    expect(html).toContain('--cs-delay:0.247s')
+    expect(html).toContain('--cs-delay:0.094s')
+    expect(html).not.toContain('--cs-intro-delay')
   })
 
   it('wires Try again to router.refresh inside a transition', () => {

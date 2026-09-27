@@ -7,7 +7,7 @@ import { ComingSoonOverlay } from '@/components/shop/ComingSoonOverlay'
 import { comingSoonSerif } from '@/components/shop/coming-soon-font'
 import { COMING_SOON_OVERLAY_TEXT } from '@/lib/shop/coming-soon-copy'
 
-const STAGGER_SECONDS = ['0.000', '-1.421', '-0.543', '-1.964', '-1.086', '-0.207', '-1.628', '-0.750']
+const STAGGER_SECONDS = ['0.000', '0.247', '0.094', '0.342', '0.189', '0.036', '0.283', '0.130']
 
 function rootTag(html: string): string {
     const match = html.match(/<div\b[^>]*data-testid="coming-soon-overlay"[^>]*>/)
@@ -62,7 +62,7 @@ describe('ComingSoonOverlay', () => {
                 <ComingSoonOverlay tone="onLight" size="card" staggerIndex={index} />,
             )
             expect(html).toContain(`--cs-delay:${seconds}s`)
-            expect(html).toContain(`--cs-intro-delay:${((index % 8) * 0.04).toFixed(3)}s`)
+            expect(html).not.toContain('--cs-intro-delay')
         })
     })
 })

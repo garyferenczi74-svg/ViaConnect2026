@@ -7,7 +7,7 @@ import { useInViewPause } from './useInViewPause'
 import './coming-soon-metal.css'
 
 const STAGGER_STEP = 0.618
-const PERIOD_SECONDS = 2.3
+const STAGGER_SPAN = 0.4
 
 interface ComingSoonOverlayProps {
     tone: 'onLight' | 'onDark'
@@ -15,7 +15,7 @@ interface ComingSoonOverlayProps {
     staggerIndex?: number
 }
 
-type ComingSoonStyle = CSSProperties & Record<'--cs-delay' | '--cs-intro-delay', string>
+type ComingSoonStyle = CSSProperties & Record<'--cs-delay', string>
 
 const LAYERS = ['cs-edge', 'cs-deep', 'cs-hi'] as const
 
@@ -28,11 +28,7 @@ function formatSeconds(value: number): string {
 
 function delaySeconds(index: number): number {
     const phase = (index * STAGGER_STEP) % 1
-    return -phase * PERIOD_SECONDS
-}
-
-function introSeconds(index: number): number {
-    return (index % 8) * 0.04
+    return phase * STAGGER_SPAN
 }
 
 /**
@@ -47,7 +43,6 @@ export function ComingSoonOverlay({ tone, size, staggerIndex = 0 }: ComingSoonOv
     const words = COMING_SOON_OVERLAY_TEXT.split(' ')
     const style: ComingSoonStyle = {
         '--cs-delay': formatSeconds(delaySeconds(staggerIndex)),
-        '--cs-intro-delay': formatSeconds(introSeconds(staggerIndex)),
     }
 
     return (
