@@ -3,14 +3,17 @@
  */
 import { beforeEach, describe, expect, it } from 'vitest'
 import {
+    COMING_SOON_MAX_RUN_MS,
     createMotionScheduler,
     type MotionEntry,
+    type MotionIntroStyle,
     type MotionNode,
     type MotionObserver,
 } from '@/components/shop/coming-soon-motion'
 
 interface FakeNode extends MotionNode {
     index: number
+    intro: { style: MotionIntroStyle }
     getAttribute(name: string): string | null
 }
 
@@ -43,8 +46,10 @@ class FakeIO implements MotionObserver {
 
 function makeNode(index: number): FakeNode {
     const attrs = new Map<string, string>()
+    const intro = { style: { animation: '', opacity: '', transform: '' } }
     return {
         index,
+        intro,
         setAttribute(name: string, value: string) {
             attrs.set(name, value)
         },
@@ -59,6 +64,9 @@ function makeNode(index: number): FakeNode {
             if (next.index > index) return 4
             if (next.index < index) return 2
             return 0
+        },
+        querySelector(selector: string) {
+            return selector === '.cs-intro' ? intro : null
         },
     }
 }
@@ -207,5 +215,97 @@ describe('coming soon motion scheduler', () => {
         node.setAttribute('data-cs-paused', 'true')
         scheduler.sync(node)
         expect(isRunning(node)).toBe(true)
+    })
+
+    it('gives viewport slots before rootMargin pre-load slots', () => {
+        const nodes = Array.from({ length: 13 }, (_, index) => makeNode(index))
+        const scheduler = createMotionScheduler({
+            IO: FakeIO,
+            matchMedia: () => ({ matches: false }),
+        })
+        for (const node of nodes) scheduler.register(node)
+        FakeIO.instances[0].callback([
+            ...nodes.slice(0, 12).map((node) => ({
+                target: node,
+                isIntersecting: true,
+                intersectionRatio: 0,
+            })),
+            { target: nodes[12], isIntersecting: true, intersectionRatio: 1 },
+        ])
+        expect(isRunning(nodes[12])).toBe(true)
+        expect(runningCount(nodes)).toBe(12)
+        const preload = nodes.slice(0, 12)
+        expect(preload.filter(isRunning)).toHaveLength(11)
+        const waiting = preload.find((node) => !isRunning(node))
+        expect(waiting?.getAttribute('data-cs-paused')).toBe('true')
+        expect(waiting?.getAttribute('data-cs-static')).toBeNull()
+    })
+
+    it('does not replay the intro when a static overlay starts running again', () => {
+        const nodes = Array.from({ length: 13 }, (_, index) => makeNode(index))
+        const scheduler = createMotionScheduler({
+            IO: FakeIO,
+            matchMedia: () => ({ matches: false }),
+        })
+        for (const node of nodes) scheduler.register(node)
+        const io = FakeIO.instances[0]
+        io.callback(nodes.map((node) => ({ target: node, isIntersecting: true, intersectionRatio: 1 })))
+        expect(isRunning(nodes[0])).toBe(true)
+        expect(nodes[0].intro.style.animation).toBe('')
+        expect(nodes[12].getAttribute('data-cs-static')).toBe('true')
+        scheduler.unregister(nodes[0])
+        expect(isRunning(nodes[12])).toBe(true)
+        expect(nodes[12].intro.style.animation).toBe('none')
+        expect(nodes[12].intro.style.opacity).toBe('1')
+        expect(nodes[12].intro.style.transform).toBe('none')
+    })
+
+    it('follows a live prefers-reduced-motion change', () => {
+        let listener: ((event: { matches: boolean }) => void) | null = null
+        const node = makeNode(0)
+        const scheduler = createMotionScheduler({
+            IO: FakeIO,
+            matchMedia: () => ({
+                matches: false,
+                addEventListener(_type, next) {
+                    listener = next
+                },
+            }),
+        })
+        scheduler.register(node)
+        const io = FakeIO.instances[0]
+        io.callback([{ target: node, isIntersecting: true, intersectionRatio: 1 }])
+        expect(isRunning(node)).toBe(true)
+        expect(listener).toBeTruthy()
+        listener?.({ matches: true })
+        expect(node.getAttribute('data-cs-static')).toBe('true')
+        expect(io.disconnected).toBe(true)
+        listener?.({ matches: false })
+        expect(FakeIO.instances).toHaveLength(2)
+        FakeIO.instances[1].callback([{ target: node, isIntersecting: true, intersectionRatio: 1 }])
+        expect(isRunning(node)).toBe(true)
+        expect(node.intro.style.animation).toBe('none')
+    })
+
+    it('stops at the static pose only when the max-run constant is finite', () => {
+        expect(COMING_SOON_MAX_RUN_MS).toBe(Number.POSITIVE_INFINITY)
+        let clock = 0
+        const node = makeNode(0)
+        const scheduler = createMotionScheduler({
+            IO: FakeIO,
+            matchMedia: () => ({ matches: false }),
+            maxRunMs: 5000,
+            now: () => clock,
+        })
+        scheduler.register(node)
+        FakeIO.instances[0].callback([{ target: node, isIntersecting: true, intersectionRatio: 1 }])
+        expect(isRunning(node)).toBe(true)
+        clock = 4999
+        scheduler.sync(node)
+        expect(isRunning(node)).toBe(true)
+        clock = 5000
+        scheduler.sync(node)
+        expect(node.getAttribute('data-cs-static')).toBe('true')
+        expect(isRunning(node)).toBe(false)
     })
 })

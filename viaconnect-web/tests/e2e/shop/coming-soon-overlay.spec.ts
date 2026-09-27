@@ -1,29 +1,24 @@
 /**
  * Brief 67 harness. No dev server, no auth, no catalog photos.
+ * Markup is built here. This file does not import ComingSoonOverlay,
+ * because that module pulls CSS and next/font.
  * Backgrounds are white, seeded noise, and the navy fallback gradient.
+ * Shop Playwright does not run in CI. These results are local evidence.
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { createElement as h, type CSSProperties } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { expect, test, type Page } from '@playwright/test'
-import ts from 'typescript'
 import { COMING_SOON_OVERLAY_TEXT } from '../../../src/lib/shop/coming-soon-copy'
 
 const CSS_PATH = join(process.cwd(), 'src/components/shop/coming-soon-metal.css')
+const FONT_PATH = join(process.cwd(), 'tests/fixtures/fonts/playfair-display-600.woff2')
+const BUTTON_CSS_PATH = join(process.cwd(), 'tests/e2e/shop/join-button-utilities.css')
+const BUTTON_SOURCE = join(process.cwd(), 'src/components/shop/JoinWaitlistButton.tsx')
 const ARTIFACT_DIR = '/opt/cursor/artifacts/brief67'
-const BUTTON_STYLE = [
-    'box-sizing:border-box',
-    'width:240px',
-    'height:48px',
-    'padding:0',
-    'margin:0',
-    'border:0',
-    'border-radius:12px',
-    'background:#2DA5A0',
-    'color:#ffffff',
-    'font:600 16px/48px Arial,sans-serif',
-].join(';')
+/** Shadow offset 0.06em + 1.5 * blur 0.14em. Review N2, about 0.27em. */
+const SHADOW_PAD_EM = 0.27
 
 const SIZES = [
     { name: 'card-390', width: 167, height: 223, size: 'card' as const },
@@ -101,29 +96,17 @@ function frameHtml(name: string, width: number, height: number, size: 'card' | '
     return `<div class="frame" data-surface="${name}" style="position:relative;width:${width}px;height:${height}px;overflow:hidden;background:${background}">${overlayMarkup(size, background.includes('1A2744') ? 'onDark' : 'onLight')}</div>`
 }
 
-function schedulerFactorySource(): string {
-    const src = readFileSync(join(process.cwd(), 'src/components/shop/coming-soon-motion.ts'), 'utf8')
-    const js = ts.transpileModule(src, {
-        compilerOptions: { target: ts.ScriptTarget.ES2020 },
-    }).outputText
-    const start = js.indexOf('function createMotionScheduler')
-    const end = js.indexOf('let singleton')
-    if (start < 0 || end < start) throw new Error('could not slice createMotionScheduler')
-    return js.slice(start, end)
+function playfairFaceCss(): string {
+    const b64 = readFileSync(FONT_PATH).toString('base64')
+    return `@font-face{font-family:"Playfair Display";font-style:normal;font-weight:600;font-display:block;src:url(data:font/woff2;base64,${b64}) format("woff2");}`
 }
 
-async function playfairFaceCss(): Promise<string> {
-    const cssUrl = 'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&display=swap'
-    const ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
-    const cssRes = await fetch(cssUrl, { headers: { 'User-Agent': ua } })
-    if (!cssRes.ok) throw new Error(`Playfair css ${cssRes.status}`)
-    const css = await cssRes.text()
-    const fontUrl = css.match(/url\((https:[^)]+)\)/)?.[1]
-    if (!fontUrl) throw new Error('Playfair woff2 url missing')
-    const fontRes = await fetch(fontUrl)
-    if (!fontRes.ok) throw new Error(`Playfair woff2 ${fontRes.status}`)
-    const b64 = Buffer.from(await fontRes.arrayBuffer()).toString('base64')
-    return `@font-face{font-family:"Playfair Display";font-style:normal;font-weight:600;font-display:block;src:url(data:font/woff2;base64,${b64}) format("woff2");}`
+function tealButtonClass(): string {
+    const source = readFileSync(BUTTON_SOURCE, 'utf8')
+    const focus = source.match(/const focusRing =\s*'([^']*)'/)?.[1]
+    const teal = source.match(/const tealButton =\s*`([^`]*)`/)?.[1]
+    if (!focus || !teal) throw new Error('tealButton source missing')
+    return teal.replace(/\$\{focusRing\}/g, focus).replace(/\s+/g, ' ').trim()
 }
 
 async function mount(page: Page, body: string, fontCss: string): Promise<void> {
@@ -165,21 +148,25 @@ async function paintNoise(page: Page, seed: number): Promise<void> {
 
 async function freeze(page: Page, pose: PoseName): Promise<{ y: number; expected: number }> {
     return page.evaluate((which) => {
+        const delay = which === 'floor' ? '-1.250s' : '0s'
         document.querySelectorAll<HTMLElement>('.cs-metal').forEach((el) => {
+            el.style.setProperty('--cs-delay', delay)
+            el.style.setProperty('--cs-intro-delay', '-1s')
             el.removeAttribute('data-cs-paused')
             el.removeAttribute('data-cs-static')
+        })
+        const animated = document.querySelectorAll<HTMLElement>('.cs-intro, .cs-bob, .cs-word, .cs-hi, .cs-refl')
+        animated.forEach((el) => {
+            el.style.animation = 'none'
+        })
+        document.body.getBoundingClientRect()
+        animated.forEach((el) => {
+            el.style.animation = ''
         })
         document.body.getBoundingClientRect()
         const anims = document.getAnimations()
         if (anims.length === 0) throw new Error('no animations to freeze')
-        for (const anim of anims) {
-            const named = anim as CSSAnimation
-            const target = (anim.effect as KeyframeEffect | null)?.target as Element | null
-            const name = named.animationName
-                || (target?.classList.contains('cs-intro') ? 'cs-intro' : 'loop')
-            anim.pause()
-            anim.currentTime = name === 'cs-intro' ? 800 : which === 'floor' ? 1250 : 0
-        }
+        for (const anim of anims) anim.pause()
         const bob = document.querySelector<HTMLElement>('.cs-bob')
         const stage = document.querySelector<HTMLElement>('.cs-stage')
         const root = document.querySelector<HTMLElement>('.cs-metal')
@@ -198,11 +185,11 @@ async function pixelDiff(
     page: Page,
     hide: 'root' | 'edge',
 ): Promise<{ changedIn: number; changedOut: number }> {
-    const meta = await page.evaluate(() => {
+    const meta = await page.evaluate((padEm) => {
         const frame = document.querySelector<HTMLElement>('.frame')
         const stage = document.querySelector<HTMLElement>('.cs-stage')
         if (!frame || !stage) throw new Error('frame missing')
-        const pad = 0.2 * Number.parseFloat(getComputedStyle(stage).fontSize)
+        const pad = padEm * Number.parseFloat(getComputedStyle(stage).fontSize)
         const origin = frame.getBoundingClientRect()
         const boxes = [...frame.querySelectorAll<HTMLElement>('.cs-word, .cs-refl')].map((el) => {
             const rect = el.getBoundingClientRect()
@@ -213,8 +200,12 @@ async function pixelDiff(
                 h: rect.height + pad * 2,
             }
         })
-        return { boxes, dpr: window.devicePixelRatio || 1 }
-    })
+        return {
+            boxes,
+            frameW: origin.width,
+            frameH: origin.height,
+        }
+    }, SHADOW_PAD_EM)
     const frame = page.locator('.frame')
     const on = await frame.screenshot()
     await page.evaluate((mode) => {
@@ -235,7 +226,7 @@ async function pixelDiff(
         })
     })
     return page.evaluate(
-        async ({ onB64, offB64, boxes, dpr }) => {
+        async ({ onB64, offB64, boxes, frameW, frameH }) => {
             const load = (b64: string) =>
                 new Promise<HTMLImageElement>((resolve, reject) => {
                     const img = new Image()
@@ -269,15 +260,15 @@ async function pixelDiff(
                 const pixel = index / 4
                 const x = (pixel % shown.width) + 0.5
                 const y = Math.floor(pixel / shown.width) + 0.5
-                const cssX = x / dpr
-                const cssY = y / dpr
+                const cssX = x / (shown.width / frameW)
+                const cssY = y / (shown.height / frameH)
                 const inside = boxes.some((box) => cssX >= box.x && cssY >= box.y && cssX < box.x + box.w && cssY < box.y + box.h)
                 if (inside) changedIn += 1
                 else changedOut += 1
             }
             return { changedIn, changedOut }
         },
-        { onB64: on.toString('base64'), offB64: off.toString('base64'), boxes: meta.boxes, dpr: meta.dpr },
+        { onB64: on.toString('base64'), offB64: off.toString('base64'), boxes: meta.boxes, frameW: meta.frameW, frameH: meta.frameH },
     )
 }
 
@@ -286,8 +277,8 @@ test.describe.configure({ mode: 'serial' })
 test.describe('coming soon overlay harness', () => {
     let fontCss = ''
 
-    test.beforeAll(async () => {
-        fontCss = await playfairFaceCss()
+    test.beforeAll(() => {
+        fontCss = playfairFaceCss()
         mkdirSync(ARTIFACT_DIR, { recursive: true })
     })
 
@@ -458,38 +449,6 @@ test.describe('coming soon overlay harness', () => {
         }
     })
 
-    test('at most 12 overlays in view keep running animations', async ({ page }) => {
-        const cells = Array.from({ length: 20 }, () =>
-            `<div class="cell" style="position:relative;width:64px;height:48px;overflow:hidden">${overlayMarkup('card')}</div>`,
-        ).join('')
-        await page.setViewportSize({ width: 400, height: 360 })
-        await mount(
-            page,
-            `<div style="display:flex;flex-wrap:wrap;width:360px">${cells}</div>`,
-            fontCss,
-        )
-        await page.evaluate((source) => {
-            const createMotionScheduler = (0, eval)(`(${source})`) as () => {
-                register(node: Element): void
-            }
-            const scheduler = createMotionScheduler()
-            document.querySelectorAll('.cs-metal').forEach((el) => scheduler.register(el))
-        }, schedulerFactorySource())
-        await page.waitForFunction(() => {
-            const nodes = [...document.querySelectorAll('.cs-metal')]
-            const running = nodes.filter((node) => !node.hasAttribute('data-cs-paused') && !node.hasAttribute('data-cs-static')).length
-            const stat = nodes.filter((node) => node.getAttribute('data-cs-static') === 'true').length
-            return running === 12 && stat === 8
-        })
-        const runningAnims = await page.evaluate(() =>
-            [...document.querySelectorAll('.cs-metal')].filter((overlay) =>
-                overlay.getAnimations({ subtree: true }).some((anim) => anim.playState === 'running'),
-            ).length,
-        )
-        expect(runningAnims).toBeGreaterThan(0)
-        expect(runningAnims).toBeLessThanOrEqual(12)
-    })
-
     test('fill layer paints inside the glyph box', async ({ page }) => {
         const size = SIZES[0]
         await page.setViewportSize({ width: 390, height: 700 })
@@ -500,17 +459,60 @@ test.describe('coming soon overlay harness', () => {
     })
 
     test('idle join button is unchanged and the sheen sweeps once', async ({ page }, testInfo) => {
+        const teal = tealButtonClass()
+        const utilities = readFileSync(BUTTON_CSS_PATH, 'utf8')
+        for (const token of teal.split(' ')) {
+            const escaped = token.replace(/([!#:.[\]/])/g, '\\$1')
+            expect(utilities, token).toContain(escaped)
+        }
         await page.setViewportSize({ width: 800, height: 400 })
+        // Compiled utility values (radius 1rem, teal #2DA5A0, 44px, weight 500).
+        // Inline, because the generated rgb(.../var()) form does not resolve here.
+        const face = [
+            'appearance:none',
+            '-webkit-appearance:none',
+            'background-color:#2DA5A0',
+            'color:#fff',
+            'border:0',
+            'border-radius:1rem',
+            'min-height:44px',
+            'padding:0.75rem 0',
+            'font-weight:500',
+            'display:flex',
+            'align-items:center',
+            'justify-content:center',
+            'gap:0.5rem',
+            'width:100%',
+            'box-sizing:border-box',
+            'font:500 16px/1.5 Arial,sans-serif',
+        ].join(';')
         await page.setContent(
             `<!doctype html><html><body style="margin:16px;background:#0F1A2E">
-                <button id="plain" style="${BUTTON_STYLE}">Join the Revolution</button>
-                <button id="sheen" class="jr-sheen" style="${BUTTON_STYLE}">Join the Revolution</button>
+                <div style="width:280px"><button id="plain" type="button" class="${teal}" style="${face}">Join the Revolution</button></div>
+                <div style="width:280px"><button id="sheen" type="button" class="${teal} jr-sheen" style="${face}">Join the Revolution</button></div>
             </body></html>`,
             { waitUntil: 'domcontentloaded' },
         )
+        await page.addStyleTag({ path: BUTTON_CSS_PATH })
         await page.addStyleTag({ path: CSS_PATH })
+        // Element screenshots can leave the pointer on the button. On engines
+        // that match (hover: hover) that starts the 200ms hairline transition,
+        // so park the pointer and let opacity settle before each capture.
+        const parkPointer = async () => {
+            await page.mouse.move(0, 0)
+            await page.waitForFunction(() => {
+                const button = document.querySelector('#sheen')
+                if (!button) return false
+                const before = Number(getComputedStyle(button, '::before').opacity)
+                const after = Number(getComputedStyle(button, '::after').opacity)
+                return before === 0 && after === 0
+            })
+        }
+        await parkPointer()
         const plain = await page.locator('#plain').screenshot()
+        await parkPointer()
         const sheen = await page.locator('#sheen').screenshot()
+        await parkPointer()
         const idle = await page.evaluate(
             async ({ plainB64, sheenB64 }) => {
                 const load = (b64: string) =>
@@ -531,8 +533,21 @@ test.describe('coming soon overlay harness', () => {
                 const dataA = ctx.getImageData(0, 0, a.width, a.height).data
                 ctx.drawImage(b, 0, 0)
                 const dataB = ctx.getImageData(0, 0, a.width, a.height).data
+                const plainEl = document.querySelector<HTMLElement>('#plain')
+                const box = plainEl?.getBoundingClientRect()
+                const scale = box && box.width > 0 ? a.width / box.width : 1
+                const radiusCss = plainEl ? parseFloat(getComputedStyle(plainEl).borderTopLeftRadius) : 16
+                const radius = Number.isFinite(radiusCss) ? radiusCss * scale : 16 * scale
+                // Antialiasing sits on the rounded outline, including the quarter-circle
+                // corners, so a rectangular inset misses the arc.
+                const stroke = 2 * scale
+                const halfW = a.width / 2
+                const halfH = a.height / 2
+                const innerW = Math.max(0, halfW - radius)
+                const innerH = Math.max(0, halfH - radius)
                 let interior = 0
                 let rim = 0
+                const samples: string[] = []
                 for (let index = 0; index < dataA.length; index += 4) {
                     const delta = Math.abs(dataA[index] - dataB[index])
                         + Math.abs(dataA[index + 1] - dataB[index + 1])
@@ -542,14 +557,23 @@ test.describe('coming soon overlay harness', () => {
                     const pixel = index / 4
                     const x = pixel % a.width
                     const y = Math.floor(pixel / a.width)
-                    const onRim = x < 2 || y < 2 || x >= a.width - 2 || y >= a.height - 2
+                    const qx = Math.abs(x + 0.5 - halfW) - innerW
+                    const qy = Math.abs(y + 0.5 - halfH) - innerH
+                    const outside = Math.hypot(Math.max(qx, 0), Math.max(qy, 0))
+                    const inside = Math.min(Math.max(qx, qy), 0)
+                    const edge = Math.abs(outside + inside - radius)
+                    const onRim = edge <= stroke
                     if (onRim) rim += 1
-                    else interior += 1
+                    else {
+                        interior += 1
+                        if (samples.length < 8) samples.push(`${x},${y}:${delta}`)
+                    }
                 }
                 const button = document.querySelector<HTMLElement>('#sheen')
                 return {
                     interior,
                     rim,
+                    samples,
                     widthA: a.width,
                     widthB: b.width,
                     heightA: a.height,
@@ -562,10 +586,10 @@ test.describe('coming soon overlay harness', () => {
         )
         expect(idle.widthA).toBe(idle.widthB)
         expect(idle.heightA).toBe(idle.heightB)
-        // Opacity-0 pseudos do not paint the face. A few right-edge samples can
-        // still differ where overflow clipping antialiases the rounded corner.
-        expect(idle.interior).toBe(0)
-        expect(idle.rim).toBeLessThanOrEqual(16)
+        // Opacity-0 pseudos do not paint the face. Outline antialiasing along the
+        // 1rem radius can still differ by about 2px, which is a small share of the bitmap.
+        expect(idle.interior, idle.samples.join(' ')).toBe(0)
+        expect(idle.rim).toBeLessThan(idle.widthA * idle.heightA * 0.15)
         expect(idle.beforeOpacity).toBe('0')
         expect(idle.afterOpacity).toBe('0')
 

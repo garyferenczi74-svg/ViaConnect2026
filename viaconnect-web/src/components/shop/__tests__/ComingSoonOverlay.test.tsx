@@ -7,7 +7,7 @@ import { ComingSoonOverlay } from '@/components/shop/ComingSoonOverlay'
 import { comingSoonSerif } from '@/components/shop/coming-soon-font'
 import { COMING_SOON_OVERLAY_TEXT } from '@/lib/shop/coming-soon-copy'
 
-const STAGGER_SECONDS = [0, -1.421, -0.543, -1.964, -1.086, -0.207, -1.628, -0.75]
+const STAGGER_SECONDS = ['0.000', '-1.421', '-0.543', '-1.964', '-1.086', '-0.207', '-1.628', '-0.750']
 
 function rootTag(html: string): string {
     const match = html.match(/<div\b[^>]*data-testid="coming-soon-overlay"[^>]*>/)
@@ -46,6 +46,7 @@ describe('ComingSoonOverlay', () => {
         expect(html).toContain('>Coming<')
         expect(html).toContain('>soon<')
         expect(html.match(/class="sr-only"/g)?.length).toBe(1)
+        expect(html).toContain('<span class="sr-only">Coming soon</span>')
         expect(accessibleText(html)).toBe(COMING_SOON_OVERLAY_TEXT)
 
         const pdp = renderToStaticMarkup(<ComingSoonOverlay tone="onDark" size="pdp" staggerIndex={3} />)
@@ -61,7 +62,7 @@ describe('ComingSoonOverlay', () => {
                 <ComingSoonOverlay tone="onLight" size="card" staggerIndex={index} />,
             )
             expect(html).toContain(`--cs-delay:${seconds}s`)
-            expect(html).toContain(`--cs-intro-delay:${(index % 8) * 0.04}s`)
+            expect(html).toContain(`--cs-intro-delay:${((index % 8) * 0.04).toFixed(3)}s`)
         })
     })
 })

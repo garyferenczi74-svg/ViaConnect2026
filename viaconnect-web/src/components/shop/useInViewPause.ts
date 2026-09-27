@@ -4,10 +4,11 @@ import { useEffect, useLayoutEffect, type RefObject } from 'react'
 import { getMotionScheduler } from './coming-soon-motion'
 
 /**
- * Registers the overlay with the shared scheduler after mount.
- * The markup always renders data-cs-paused so server and client match.
- * useLayoutEffect writes the remembered pose back before paint when a
- * parent re-render resets that attribute from the virtual DOM.
+ * Thin wrapper. Cap, document order, reduced motion, and the max-run
+ * constant stay in the shared scheduler. This hook only registers,
+ * unregisters, and syncs. Markup renders data-cs-paused so server and
+ * client match. useLayoutEffect writes the remembered pose back before
+ * paint when a parent re-render resets that attribute.
  */
 export function useInViewPause(ref: RefObject<HTMLElement | null>): void {
     useEffect(() => {

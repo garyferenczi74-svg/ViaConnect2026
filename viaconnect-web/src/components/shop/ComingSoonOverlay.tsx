@@ -21,8 +21,9 @@ const LAYERS = ['cs-edge', 'cs-deep', 'cs-hi'] as const
 
 function formatSeconds(value: number): string {
     const rounded = Math.round(value * 1000) / 1000
-    const normalized = rounded === 0 ? 0 : rounded
-    return `${normalized}s`
+    const negative = rounded < 0
+    const fixed = Math.abs(rounded).toFixed(3)
+    return `${negative ? '-' : ''}${fixed}s`
 }
 
 function delaySeconds(index: number): number {

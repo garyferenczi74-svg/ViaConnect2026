@@ -5,6 +5,8 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import tailwindConfig from '../../../../tailwind.config'
+import approvedPalette from './coming-soon-palette.json'
 
 const CSS_PATH = join(process.cwd(), 'src/components/shop/coming-soon-metal.css')
 const IMPLEMENTATION_FILES = [
@@ -169,6 +171,55 @@ function declarationProps(block: string): string[] {
     return props
 }
 
+const NAMED_COLOURS = [
+    'aliceblue', 'antiquewhite', 'aqua', 'aquamarine', 'azure', 'beige', 'bisque', 'black',
+    'blanchedalmond', 'blue', 'blueviolet', 'brown', 'burlywood', 'cadetblue', 'chartreuse',
+    'chocolate', 'coral', 'cornflowerblue', 'cornsilk', 'crimson', 'cyan', 'darkblue',
+    'darkcyan', 'darkgoldenrod', 'darkgray', 'darkgreen', 'darkgrey', 'darkkhaki',
+    'darkmagenta', 'darkolivegreen', 'darkorange', 'darkorchid', 'darkred', 'darksalmon',
+    'darkseagreen', 'darkslateblue', 'darkslategray', 'darkslategrey', 'darkturquoise',
+    'darkviolet', 'deeppink', 'deepskyblue', 'dimgray', 'dimgrey', 'dodgerblue', 'firebrick',
+    'floralwhite', 'forestgreen', 'fuchsia', 'gainsboro', 'ghostwhite', 'gold', 'goldenrod',
+    'gray', 'green', 'greenyellow', 'grey', 'honeydew', 'hotpink', 'indianred', 'indigo',
+    'ivory', 'khaki', 'lavender', 'lavenderblush', 'lawngreen', 'lemonchiffon', 'lightblue',
+    'lightcoral', 'lightcyan', 'lightgoldenrodyellow', 'lightgray', 'lightgreen', 'lightgrey',
+    'lightpink', 'lightsalmon', 'lightseagreen', 'lightskyblue', 'lightslategray',
+    'lightslategrey', 'lightsteelblue', 'lightyellow', 'lime', 'limegreen', 'linen',
+    'magenta', 'maroon', 'mediumaquamarine', 'mediumblue', 'mediumorchid', 'mediumpurple',
+    'mediumseagreen', 'mediumslateblue', 'mediumspringgreen', 'mediumturquoise',
+    'mediumvioletred', 'midnightblue', 'mintcream', 'mistyrose', 'moccasin', 'navajowhite',
+    'navy', 'oldlace', 'olive', 'olivedrab', 'orange', 'orangered', 'orchid',
+    'palegoldenrod', 'palegreen', 'paleturquoise', 'palevioletred', 'papayawhip', 'peachpuff',
+    'peru', 'pink', 'plum', 'powderblue', 'purple', 'rebeccapurple', 'red', 'rosybrown',
+    'royalblue', 'saddlebrown', 'salmon', 'sandybrown', 'seagreen', 'seashell', 'sienna',
+    'silver', 'skyblue', 'slateblue', 'slategray', 'slategrey', 'snow', 'springgreen',
+    'steelblue', 'tan', 'teal', 'thistle', 'tomato', 'turquoise', 'violet', 'wheat', 'white',
+    'whitesmoke', 'yellow', 'yellowgreen', 'currentcolor',
+]
+
+function tealPaletteHexes(): Set<string> {
+    const found = new Set<string>()
+    const teal = tailwindConfig.theme?.extend?.colors
+    const bucket = teal && typeof teal === 'object' && 'teal' in teal ? teal.teal : undefined
+    const walk = (value: unknown): void => {
+        if (typeof value === 'string') {
+            for (const item of value.match(/#[0-9A-Fa-f]{3,8}/g) ?? []) found.add(item.toLowerCase())
+            return
+        }
+        if (value && typeof value === 'object') {
+            for (const child of Object.values(value as Record<string, unknown>)) walk(child)
+        }
+    }
+    walk(bucket)
+    return found
+}
+
+function channelsToHex(literal: string): string | null {
+    const match = literal.match(/^rgb\(\s*(\d+)\s+(\d+)\s+(\d+)/)
+    if (!match) return null
+    return `#${[match[1], match[2], match[3]].map((part) => Number(part).toString(16).padStart(2, '0')).join('')}`
+}
+
 describe('coming soon css contract', () => {
     const css = stripComments(readFileSync(CSS_PATH, 'utf8'))
 
@@ -185,6 +236,28 @@ describe('coming soon css contract', () => {
             expect(source, file).not.toMatch(/#[0-9A-Fa-f]{3,8}\b/)
             expect(source, file).not.toMatch(/rgba?\(/)
             expect(source, file).not.toMatch(/hsla?\(/)
+        }
+    })
+
+    it('matches the approved palette and rejects other colour functions', () => {
+        const fromCss = [...allowedColours(css)].sort()
+        const approved = [...approvedPalette.colours].sort()
+        expect(fromCss).toEqual(approved)
+        expect(css).not.toMatch(/hsla?\(/i)
+        expect(css).not.toMatch(/oklch\(/i)
+        expect(css).not.toMatch(/color-mix\(/i)
+        const named = new RegExp(`(?<![\\w-])(?:${NAMED_COLOURS.join('|')})(?![\\w-])`, 'i')
+        expect(css).not.toMatch(named)
+
+        const sheen = extractExactRule(css, '.jr-sheen')
+        const sheenColours = colorLiterals(sheen)
+        expect(sheenColours.length).toBeGreaterThan(0)
+        const teal = tealPaletteHexes()
+        expect(teal.size).toBeGreaterThan(0)
+        for (const literal of sheenColours) {
+            const hex = literal.startsWith('#') ? literal : channelsToHex(literal)
+            expect(hex, literal).toBeTruthy()
+            expect(teal.has(hex ?? ''), literal).toBe(true)
         }
     })
 

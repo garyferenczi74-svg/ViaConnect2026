@@ -173,7 +173,7 @@ describe('PlpProductGrid honest states', () => {
         product('Unreleased Three', { id: 'u3', sku: 'FC-THREE', is_released: false }),
       ],
     })
-    expect(html).toContain('--cs-delay:0s')
+    expect(html).toContain('--cs-delay:0.000s')
     expect(html).toContain('--cs-delay:-1.421s')
     expect(html).toContain('--cs-delay:-0.543s')
   })
