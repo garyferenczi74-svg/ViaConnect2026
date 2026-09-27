@@ -97,7 +97,7 @@ export default async function ProductDetailPage(props: PageProps) {
 
                 <div className="grid grid-cols-1 gap-8 md:gap-10 lg:grid-cols-2 lg:gap-12">
                     <div className="flex flex-col gap-3">
-                        <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl bg-white/[0.04] shadow-md">
+                        <div className={`relative aspect-[4/5] w-full overflow-hidden rounded-2xl ${primaryImage ? 'bg-white' : 'bg-white/[0.04]'} shadow-md`}>
                             {primaryImage ? (
                                 <Image
                                     src={primaryImage}
@@ -122,7 +122,7 @@ export default async function ProductDetailPage(props: PageProps) {
                                 {thumbs.map((url, i) => (
                                     <div
                                         key={`${url}-${i}`}
-                                        className="relative aspect-square overflow-hidden rounded-lg bg-white/[0.04]"
+                                        className="relative aspect-square overflow-hidden rounded-lg bg-white"
                                     >
                                         <Image
                                             src={url}

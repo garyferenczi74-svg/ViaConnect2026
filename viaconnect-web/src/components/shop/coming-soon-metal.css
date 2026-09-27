@@ -1,0 +1,285 @@
+/*
+ * Brief 67 + A1 (Gary 2026-09-27 00:18): green-metallic serif "Coming / Soon" overlay (DESIGN-READY reference CSS).
+ * A2 (Gary 00:19): tuned for a white (#FFFFFF) image area + silver bottles only. No peach anywhere.
+ * Target path: viaconnect-web/src/components/shop/coming-soon-metal.css
+ * Imported only by ComingSoonOverlay.tsx (co-located, like gauges/plasma-gauge.css).
+ * Rules: animate transform and opacity only. No filter, no color, no background animation.
+ * Colour contract (Blueprint T3a): every colour literal lives in a --cs-* or --jr-* token declaration.
+ * FROZEN NAMES (tests key on them): root .cs-metal; .cs-intro .cs-refl .cs-stage .cs-bob .cs-word
+ * .cs-layer .cs-edge .cs-deep .cs-hi .cs-line; attributes data-size, data-tone, data-cs-paused, data-cs-static;
+ * button class .jr-sheen. Do not rename after posting.
+ */
+
+/* ---------- Tokens ---------------------------------------------------------- */
+.cs-metal {
+  /* Timing (measured from the Grok Imagine reference: mean cycle 2.26 s) */
+  --cs-period: 2.3s;
+  /* Hang at the apex = 0.25 s = 10.87% of the period (baked into the keyframes) */
+  --cs-hang: 0.25s;
+  /* Fall 0.95 s (10.87% to 52.17%), floor dwell 0.10 s (to 56.52%), rise 1.00 s (to 100%) */
+  --cs-ease-fall: cubic-bezier(0.5, 0, 0.75, 1);   /* sine-in with a soft landing */
+  --cs-ease-rise: cubic-bezier(0.37, 0, 0.63, 1);  /* easeInOutSine */
+
+  /* Travel (peak to peak), em of the overlay font size */
+  --cs-travel: 0.4em;            /* card: 11 px at 28 px type, 18 px at 44 px type */
+
+  /* Contact squash-settle (applied on .cs-word, same clock) */
+  --cs-scale-contact: 1.02;
+  --cs-scale-peak: 1.025;        /* peaks ~0.25 s after contact, as in the reference */
+
+  /* Floor reflection (contact ellipse) */
+  --cs-refl-min: 0.1;            /* opacity at the apex */
+  --cs-refl-max: 0.3;            /* opacity at the floor (A2: 0.34 -> 0.3, reads as a stain on flat white) */
+  --cs-refl-scale-min: 0.72;     /* scaleX at the apex (1 at the floor) */
+  --cs-refl-rgb: 11 77 59;       /* deep emerald #0B4D3B on light photos */
+
+  /* Intro fade-up (runs once per mount) */
+  --cs-intro-dur: 0.5s;
+  --cs-intro-offset: 0.6em;
+  --cs-intro-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --cs-intro-delay: 0s;          /* set per card: (index % 8) * 40ms */
+
+  /* Grid stagger: negative phase so cards never bob in lockstep */
+  --cs-delay: 0s;                /* set per card: -((index * 0.618) % 1) * 2.3s */
+
+  /* Edge */
+  --cs-stroke: #08231C;                          /* green-black outline: 16.57:1 on #FFFFFF */
+  --cs-stroke-w: clamp(1.25px, 0.05em, 2px);     /* A2: min 1 -> 1.25 px so the 24-28 px card type keeps a solid edge on white */
+  /* Glyph shadow only (Lock L1). A2 tuning for white + silver:
+     1) 1 px light top rim: invisible on #FFFFFF, a bevel line on the dark silver bands (p10 #6F6F6F)
+     2) tight contact shadow, 3) soft lift shadow (green-black, never neutral grey, so it stays in the metal) */
+  --cs-shadow:
+      0 calc(-1 * clamp(0.75px, 0.022em, 1.5px)) 0 rgb(255 255 255 / 0.55),
+      0 0.02em 0.02em rgb(8 35 28 / 0.5),
+      0 0.06em 0.14em rgb(8 35 28 / 0.2);
+
+  /* Metal fills, per line, top to bottom of the line box (A1: green metallic).
+     Hue ~160 deg (emerald) harmonised with brand teal #2DA5A0 (178 deg): the mint
+     layer passes through teal-100 #E0F5F4, the emerald layer reflects teal-600 #1F8A85.
+     The 17-21% white/pale band is the specular highlight that makes it read as metal. */
+  --cs-mint: linear-gradient(180deg,
+      #E4FBF2 0%, #FFFFFF 17%, #FFFFFF 21%, #E0F5F4 30%, #A6EAD2 42%,
+      #3FAE8C 51%, #8FE0C4 58%, #CFF6E6 76%, #86D3B8 100%);
+  --cs-emerald: linear-gradient(180deg,
+      #8ED9BE 0%, #D8F7EB 17%, #D8F7EB 21%, #45B893 30%, #1C8C6A 44%,
+      #0A4A38 51%, #1F8A85 58%, #13775A 76%, #0B4F3C 100%);
+  /* Solid fills for engines without background-clip:text (Brief 67 build delta c) */
+  --cs-fill-solid-deep: #13775A;
+  --cs-fill-solid-hi: #E0F5F4;
+
+  /* LOCK L1 (Gary 00:13 MT): fully transparent. No background, plate, scrim,
+     backdrop-filter, gradient wash or opacity on this box. Only glyphs (and the
+     faint floor reflection) paint; every other image pixel is untouched. */
+  background: none;
+  position: absolute;
+  inset: 0;
+  z-index: 5;                    /* unchanged from #247: under status pills (z-10) */
+  pointer-events: none;
+  overflow: hidden;
+  container-type: size;
+  user-select: none;
+}
+
+.cs-metal[data-size="pdp"] {
+  --cs-travel: 0.45em;           /* 21 px at 46 px type, 35 px at 77 px type */
+  --cs-stroke-w: clamp(1.5px, 0.032em, 2.5px);   /* A2: 1.5 px at 46 px type, 2.5 px at 77 px */
+}
+
+.cs-metal[data-tone="onDark"] {
+  --cs-refl-rgb: 143 220 194;    /* mint glint #8FDCC2 on the navy fallback gradient */
+  --cs-refl-min: 0.06;
+  --cs-refl-max: 0.2;
+  --cs-shadow: 0 0.02em 0.02em rgb(0 0 0 / 0.5), 0 0.06em 0.18em rgb(0 0 0 / 0.35);
+}
+
+/* ---------- Layout ---------------------------------------------------------- */
+.cs-stage {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 7%;                    /* the "floor": safe inset from the image bottom */
+  display: flex;
+  justify-content: center;
+  font-size: clamp(24px, 17cqw, 44px);   /* card: 28 px at 167 px wide, 37 px at 219, 44 px at 284 */
+  line-height: 0.92;
+}
+.cs-metal[data-size="pdp"] .cs-stage {
+  font-size: clamp(40px, 13cqw, 80px);   /* PDP: 46 px at 358 px wide, 77 px at 592 */
+}
+
+.cs-intro { position: absolute; inset: 0; }   /* wraps the floor reflection and the word */
+.cs-bob,
+.cs-word { display: flow-root; }   /* flow-root: stops the line margins collapsing out of the edge layer */
+
+.cs-bob { transform-origin: 50% 100%; }
+.cs-word {
+  position: relative;
+  transform-origin: 50% 100%;
+  font-family: var(--font-coming-soon), "Playfair Display", Georgia, "Times New Roman", serif;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  text-align: center;
+  white-space: nowrap;
+  font-kerning: normal;
+}
+
+.cs-layer { display: flow-root; }
+.cs-layer + .cs-layer,
+.cs-layer.cs-deep,
+.cs-layer.cs-hi { position: absolute; inset: 0; }
+
+.cs-line {
+  display: block;
+  text-transform: capitalize;    /* renders COMING_SOON_OVERLAY_TEXT split on the space as Coming / Soon */
+  /* pad the paint box so ascenders and the g descender get the gradient */
+  padding: 0.14em 0.08em;
+  margin: -0.14em -0.08em;
+}
+
+.cs-edge .cs-line {
+  color: var(--cs-stroke);
+  -webkit-text-stroke: calc(var(--cs-stroke-w) * 2) var(--cs-stroke);
+  text-shadow: var(--cs-shadow);
+}
+.cs-deep .cs-line,
+.cs-hi .cs-line {
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+.cs-deep .cs-line { background-image: var(--cs-emerald); }
+.cs-hi .cs-line { background-image: var(--cs-mint); }
+
+.cs-refl {
+  position: absolute;
+  left: 50%;
+  bottom: calc(7% - 0.12em);
+  width: 2.6em;
+  height: 0.26em;
+  margin-left: -1.3em;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(var(--cs-refl-rgb) / 0.55), rgb(var(--cs-refl-rgb) / 0));
+  font-size: clamp(24px, 17cqw, 44px);
+  opacity: var(--cs-refl-max);
+}
+.cs-metal[data-size="pdp"] .cs-refl { font-size: clamp(40px, 13cqw, 80px); }
+
+/* ---------- Motion ---------------------------------------------------------- */
+@keyframes cs-intro {
+  from { opacity: 0; transform: translate3d(0, var(--cs-intro-offset), 0); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+/* translateY 0 = resting on the floor; negative = lifted */
+@keyframes cs-bob {
+  0%, 10.87% { transform: translate3d(0, calc(-1 * var(--cs-travel)), 0); animation-timing-function: var(--cs-ease-fall); }
+  52.17%     { transform: translate3d(0, 0, 0); animation-timing-function: linear; }
+  56.52%     { transform: translate3d(0, 0, 0); animation-timing-function: var(--cs-ease-rise); }
+  100%       { transform: translate3d(0, calc(-1 * var(--cs-travel)), 0); }
+}
+
+@keyframes cs-settle {
+  0%, 44%  { transform: scale(1); animation-timing-function: var(--cs-ease-rise); }
+  52.17%   { transform: scale(var(--cs-scale-contact)); animation-timing-function: ease-out; }
+  63%      { transform: scale(var(--cs-scale-peak)); animation-timing-function: var(--cs-ease-rise); }
+  88%, 100% { transform: scale(1); }
+}
+
+/* light tied to height: mint highlight layer fades out as the word falls, back in as it rises */
+@keyframes cs-light {
+  0%, 10.87% { opacity: 1; animation-timing-function: var(--cs-ease-fall); }
+  52.17%     { opacity: 0; animation-timing-function: linear; }
+  56.52%     { opacity: 0; animation-timing-function: var(--cs-ease-rise); }
+  100%       { opacity: 1; }
+}
+
+@keyframes cs-refl {
+  0%, 10.87% { opacity: var(--cs-refl-min); transform: scaleX(var(--cs-refl-scale-min)); animation-timing-function: var(--cs-ease-fall); }
+  52.17%     { opacity: var(--cs-refl-max); transform: scaleX(1); animation-timing-function: linear; }
+  56.52%     { opacity: var(--cs-refl-max); transform: scaleX(1); animation-timing-function: var(--cs-ease-rise); }
+  100%       { opacity: var(--cs-refl-min); transform: scaleX(var(--cs-refl-scale-min)); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .cs-intro {
+    animation: cs-intro var(--cs-intro-dur) var(--cs-intro-ease) var(--cs-intro-delay) 1 both;
+  }
+  .cs-bob   { animation: cs-bob    var(--cs-period) linear var(--cs-delay) infinite both; will-change: transform; }
+  .cs-word  { animation: cs-settle var(--cs-period) linear var(--cs-delay) infinite both; will-change: transform; }
+  .cs-hi { animation: cs-light  var(--cs-period) linear var(--cs-delay) infinite both; will-change: opacity; }
+  .cs-refl  { animation: cs-refl   var(--cs-period) linear var(--cs-delay) infinite both; will-change: opacity, transform; }
+
+  /* off-screen or over the cap: freeze the loop, drop the layer hints (intro still completes) */
+  .cs-metal[data-cs-paused="true"] :is(.cs-bob, .cs-word, .cs-hi, .cs-refl) {
+    animation-play-state: paused;
+    will-change: auto;
+  }
+}
+
+/* ---------- Over the 12-running cap: static mid-state (Brief 67 build delta a, Blueprint T3f / OPEN-6) ----------
+   The scheduler sets data-cs-static="true" on intersecting overlays beyond the first 12 (document order).
+   Mirrors the reduced-motion block exactly, so over-cap cards never freeze mid-bob at their stagger phase. */
+.cs-metal[data-cs-static="true"] :is(.cs-intro, .cs-bob, .cs-word, .cs-hi, .cs-refl) { animation: none; will-change: auto; }
+.cs-metal[data-cs-static="true"] .cs-intro { opacity: 1; transform: none; }
+.cs-metal[data-cs-static="true"] .cs-bob   { transform: translate3d(0, calc(-0.5 * var(--cs-travel)), 0); }
+.cs-metal[data-cs-static="true"] .cs-word  { transform: none; }
+.cs-metal[data-cs-static="true"] .cs-hi    { opacity: 0.55; }
+.cs-metal[data-cs-static="true"] .cs-refl  { opacity: calc((var(--cs-refl-min) + var(--cs-refl-max)) / 2); transform: scaleX(0.86); }
+
+/* ---------- No background-clip:text (Brief 67 build delta c) ----------
+   Without clip support the gradient would paint the whole line box (a plate, breaking Lock L1),
+   so drop the background and use solid token fills; the highlight crossfade still works on opacity. */
+@supports not ((-webkit-background-clip: text) or (background-clip: text)) {
+  .cs-deep .cs-line,
+  .cs-hi .cs-line { background: none; }
+  .cs-deep .cs-line { color: var(--cs-fill-solid-deep); }
+  .cs-hi .cs-line   { color: var(--cs-fill-solid-hi); }
+}
+
+/* ---------- Reduced motion: static mid-state metal ------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .cs-intro, .cs-bob, .cs-word, .cs-hi, .cs-refl { animation: none; will-change: auto; }
+  .cs-bob   { transform: translate3d(0, calc(-0.5 * var(--cs-travel)), 0); }
+  .cs-hi { opacity: 0.55; }
+  .cs-refl  { opacity: calc((var(--cs-refl-min) + var(--cs-refl-max)) / 2); transform: scaleX(0.86); }
+}
+
+/* ---------- Join the Revolution: hover-only mint hairline + one sheen pass (teal-100 #E0F5F4) ---------- */
+/* Add `jr-sheen` to the idle teal join button only (phase === 'idle'). Idle look is unchanged.
+   Idle and pending share tealButton; pending renders disabled + aria-busy="true", so the selectors
+   below also exclude those states in case the class lingers during a phase change. */
+.jr-sheen {
+  --jr-hairline: inset 0 1px 0 rgb(224 245 244 / 0.45), inset 0 0 0 1px rgb(224 245 244 / 0.2);
+  --jr-sweep: rgb(224 245 244 / 0.3);
+  position: relative; overflow: hidden; isolation: isolate;
+}
+.jr-sheen::before,
+.jr-sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+}
+.jr-sheen::before {               /* mint hairline */
+  box-shadow: var(--jr-hairline);
+  transition: opacity 200ms ease-out;
+}
+.jr-sheen::after {                /* single sheen sweep */
+  background: linear-gradient(105deg, transparent 38%, var(--jr-sweep) 50%, transparent 62%);
+  transform: translate3d(-120%, 0, 0);
+}
+@media (hover: hover) {
+  .jr-sheen:not(:disabled):not([aria-busy="true"]):hover::before,
+  .jr-sheen:not(:disabled):not([aria-busy="true"]):focus-visible::before { opacity: 1; }
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .jr-sheen:not(:disabled):not([aria-busy="true"]):hover::after,
+  .jr-sheen:not(:disabled):not([aria-busy="true"]):focus-visible::after { animation: jr-sheen 700ms cubic-bezier(0.4, 0, 0.2, 1) 1 both; }
+}
+@keyframes jr-sheen {
+  0%   { transform: translate3d(-120%, 0, 0); opacity: 0; }
+  15%  { opacity: 1; }
+  100% { transform: translate3d(120%, 0, 0); opacity: 0; }
+}

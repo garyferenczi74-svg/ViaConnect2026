@@ -164,6 +164,20 @@ describe('PlpProductGrid honest states', () => {
     expect(html).toContain('Join the Revolution waiting list for Unreleased Two')
   })
 
+  it('staggers coming soon delays across three unreleased cards', () => {
+    const html = renderGrid({
+      status: 'ok',
+      products: [
+        product('Unreleased One', { id: 'u1', sku: 'FC-ONE', is_released: false }),
+        product('Unreleased Two', { id: 'u2', sku: 'FC-TWO', is_released: false }),
+        product('Unreleased Three', { id: 'u3', sku: 'FC-THREE', is_released: false }),
+      ],
+    })
+    expect(html).toContain('--cs-delay:0s')
+    expect(html).toContain('--cs-delay:-1.421s')
+    expect(html).toContain('--cs-delay:-0.543s')
+  })
+
   it('wires Try again to router.refresh inside a transition', () => {
     const source = readFileSync(
       join(process.cwd(), 'src/components/shop/PlpProductsRetryButton.tsx'),

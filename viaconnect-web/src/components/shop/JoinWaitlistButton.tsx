@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { Check, ListPlus, Loader2, X } from 'lucide-react'
+import './coming-soon-metal.css'
 import {
     JOIN_WAITLIST_ARIA,
     JOIN_WAITLIST_ERROR,
@@ -268,7 +269,7 @@ export function JoinWaitlistButtonView({
                 disabled={pending}
                 aria-busy={pending ? true : undefined}
                 aria-label={applyProductName(JOIN_WAITLIST_ARIA, productName)}
-                className={tealButton}
+                className={phase === 'idle' ? `${tealButton} jr-sheen` : tealButton}
             >
                 {pending ? (
                     <Loader2 className="h-4 w-4 animate-spin" strokeWidth={1.5} aria-hidden="true" />

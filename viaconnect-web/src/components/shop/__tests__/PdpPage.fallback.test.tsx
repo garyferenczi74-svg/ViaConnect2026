@@ -73,7 +73,11 @@ vi.mock('@/lib/shop/productTabs/loadCompatibility', () => ({
 
 import ProductDetailPage from '@/app/(app)/(consumer)/shop/product/[slug]/page'
 
-function supplement(): ShopProduct {
+function classTokens(className: string): string[] {
+    return className.trim().split(/\s+/)
+}
+
+function supplement(partial: Partial<ShopProduct> = {}): ShopProduct {
     const row: ShopProduct = {
         id: 'sup-1',
         sku: 'FC-CREATINE-001',
@@ -101,6 +105,7 @@ function supplement(): ShopProduct {
         active: true,
         display_config: null,
         is_released: true,
+        ...partial,
     }
     delete row.launch_phase_id
     return row
@@ -125,5 +130,38 @@ describe('PDP release fallback', () => {
         expect(html).toContain('Join the Revolution')
         expect(html).toContain('data-testid="coming-soon-overlay"')
         expect(html).not.toContain('Add to Cart')
+    })
+
+    it('uses bg-white on the main image and thumbs when a photo exists', async () => {
+        mocks.getProductBySlug.mockResolvedValue(
+            supplement({
+                image_urls: ['https://example.test/a.png', 'https://example.test/b.png'],
+                image_url: 'https://example.test/a.png',
+            }),
+        )
+        const element = await ProductDetailPage({
+            params: Promise.resolve({ slug: 'creatine-fixture' }),
+        })
+        const html = renderToStaticMarkup(element)
+        const main = html.match(/class="(relative aspect-\[4\/5\][^"]*)"/)?.[1] ?? ''
+        expect(classTokens(main)).toContain('bg-white')
+        expect(classTokens(main)).not.toContain('bg-white/[0.04]')
+        const thumbs = html.match(/class="(relative aspect-square[^"]*)"/g) ?? []
+        expect(thumbs.length).toBeGreaterThan(1)
+        for (const thumb of thumbs) {
+            const tokens = classTokens(thumb.replace(/^class="/, '').replace(/"$/, ''))
+            expect(tokens).toContain('bg-white')
+            expect(tokens).not.toContain('bg-white/[0.04]')
+        }
+    })
+
+    it('keeps the navy fallback on the main image when there is no photo', async () => {
+        const element = await ProductDetailPage({
+            params: Promise.resolve({ slug: 'creatine-fixture' }),
+        })
+        const html = renderToStaticMarkup(element)
+        const main = html.match(/class="(relative aspect-\[4\/5\][^"]*)"/)?.[1] ?? ''
+        expect(classTokens(main)).toContain('bg-white/[0.04]')
+        expect(classTokens(main)).not.toContain('bg-white')
     })
 })

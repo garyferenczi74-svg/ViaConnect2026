@@ -22,7 +22,8 @@ vi.mock('next/link', () => ({
 }))
 
 vi.mock('next/image', () => ({
-    default: ({ alt }: { alt?: string }) => createElement('img', { alt: alt ?? '' }),
+    default: ({ alt, blurDataURL }: { alt?: string; blurDataURL?: string }) =>
+        createElement('img', { alt: alt ?? '', 'data-blur': blurDataURL ?? '' }),
 }))
 
 vi.mock('next/navigation', () => ({
@@ -144,6 +145,35 @@ describe('ProductCard coming soon', () => {
         const html = renderCard(base(), 'supplement', false, false)
         expect(html).toContain('Sign in to join the list')
         expect(html).toContain('/login?redirectTo=')
+    })
+
+    it('renders the overlay inside the image container before the pills', () => {
+        const html = renderCard(base({ status_tags: ['NEW'], is_released: false }))
+        const imageAt = html.indexOf('aspect-[3/4]')
+        const overlayAt = html.indexOf('data-testid="coming-soon-overlay"')
+        const pillsAt = html.indexOf('absolute top-3 right-3 z-10')
+        expect(imageAt).toBeGreaterThan(-1)
+        expect(overlayAt).toBeGreaterThan(imageAt)
+        expect(pillsAt).toBeGreaterThan(overlayAt)
+    })
+
+    it('uses a white image container when a photo exists and the navy fallback when it does not', () => {
+        const whiteBlur =
+            'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0IDUiPjxyZWN0IHdpZHRoPSI0IiBoZWlnaHQ9IjUiIGZpbGw9IiNGRkZGRkYiLz48L3N2Zz4='
+        const withPhoto = renderCard(base({ image_urls: ['https://example.test/photo.png'] }))
+        const photoClass = withPhoto.match(/class="([^"]*aspect-\[3\/4\][^"]*)"/)?.[1] ?? ''
+        expect(photoClass.split(/\s+/)).toContain('bg-white')
+        expect(photoClass.split(/\s+/)).not.toContain('bg-white/[0.04]')
+        expect(withPhoto).toContain(whiteBlur)
+
+        const noPhoto = renderCard(base())
+        const fallbackClass = noPhoto.match(/class="([^"]*aspect-\[3\/4\][^"]*)"/)?.[1] ?? ''
+        expect(fallbackClass.split(/\s+/)).toContain('bg-white/[0.04]')
+        expect(fallbackClass.split(/\s+/)).not.toContain('bg-white')
+        expect(noPhoto).not.toContain(whiteBlur)
+
+        const source = readFileSync(join(process.cwd(), 'src/components/shop/ProductCard.tsx'), 'utf8')
+        expect(source).toContain(whiteBlur)
     })
 
     it('uses strokeWidth 1.5 on new icons and no any', () => {
