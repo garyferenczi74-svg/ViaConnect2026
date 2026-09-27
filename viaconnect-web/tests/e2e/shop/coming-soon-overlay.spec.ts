@@ -336,7 +336,7 @@ test.describe('coming soon overlay harness', () => {
                         expect(place.reflDisplay, size.name).toBe('none')
                         expect(place.rotate, size.name).toMatch(/-45deg/)
                         expect(place.stageDelta, size.name).toBeLessThan(4)
-                        expect(Math.abs(place.centerX - 0.62), size.name).toBeLessThan(0.03)
+                        expect(Math.abs(place.centerX - 0.50), size.name).toBeLessThan(0.03)
                     }
                     const diff = await pixelDiff(page, 'root')
                     expect(diff.changedOut, `${testInfo.project.name} ${size.name} ${background} ${pose}`).toBe(0)

@@ -31,8 +31,8 @@
 
   /* A4 diagonal: static tilt + placement (centre of the tilted block at the floor state, % of image height) */
   --cs-tilt: -45deg;             /* static, applied with the `rotate` property on .cs-word; never animated */
-  --cs-cx: 62%;                  /* centre of the diagonal, % of image width (right of centre keeps the rising end off the label) */
-  --cs-cy: 69%;                  /* 3/4 box (mobile card): centre at the floor state, % of image height */
+  --cs-cx: 50%;                  /* A6: centre of the diagonal = centre of the bottle and box (bottle centre measured 49.8%) */
+  --cs-cy: calc(49% + 0.5 * var(--cs-travel));   /* A6: 3/4 box: bob MIDPOINT on the bottle visual centre (measured 48.8%) */
   --cs-fs: clamp(16px, 12.5cqw, 72px);   /* 3/4 box: 20 px at 160 wide, 20.9 px at 167 */
 
   /* Travel (peak to peak), em of the overlay font size */
@@ -101,7 +101,7 @@
    Tokens are overridden on .cs-intro (a child of the size container) and inherited by the stage. */
 @container (min-aspect-ratio: 79/100) {
   .cs-intro {
-    --cs-cy: 72%;
+    --cs-cy: calc(52% + 0.5 * var(--cs-travel));   /* A6: 4/5 box: bob midpoint on the bottle centre (measured 52.0%) */
     --cs-fs: clamp(16px, 10.6cqw, 72px);   /* 23.2 px at 219, 30.1 px at 284, 37.9 px at 358, 62.8 px at 592 */
   }
 }
