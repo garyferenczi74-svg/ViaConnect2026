@@ -4,6 +4,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import {
     COMING_SOON_MAX_RUN_MS,
+    COMING_SOON_SETTLE_MS,
     createMotionScheduler,
     type MotionEntry,
     type MotionIntroStyle,
@@ -287,25 +288,57 @@ describe('coming soon motion scheduler', () => {
         expect(node.intro.style.animation).toBe('none')
     })
 
-    it('stops at the static pose only when the max-run constant is finite', () => {
-        expect(COMING_SOON_MAX_RUN_MS).toBe(Number.POSITIVE_INFINITY)
-        let clock = 0
-        const node = makeNode(0)
-        const scheduler = createMotionScheduler({
-            IO: FakeIO,
-            matchMedia: () => ({ matches: false }),
-            maxRunMs: 5000,
-            now: () => clock,
-        })
-        scheduler.register(node)
-        FakeIO.instances[0].callback([{ target: node, isIntersecting: true, intersectionRatio: 1 }])
-        expect(isRunning(node)).toBe(true)
-        clock = 4999
-        scheduler.sync(node)
-        expect(isRunning(node)).toBe(true)
-        clock = 5000
-        scheduler.sync(node)
-        expect(node.getAttribute('data-cs-static')).toBe('true')
-        expect(isRunning(node)).toBe(false)
+    it('keeps moving before 5s, then rests static, and drops the timer on unregister', () => {
+        vi.useFakeTimers()
+        try {
+            expect(COMING_SOON_MAX_RUN_MS).toBe(5000)
+            expect(COMING_SOON_SETTLE_MS).toBe(200)
+            const flipAt = COMING_SOON_MAX_RUN_MS - COMING_SOON_SETTLE_MS
+            const node = makeNode(0)
+            const scheduler = createMotionScheduler({
+                IO: FakeIO,
+                matchMedia: () => ({ matches: false }),
+            })
+            scheduler.register(node)
+            FakeIO.instances[0].callback([{ target: node, isIntersecting: true, intersectionRatio: 1 }])
+            expect(isRunning(node)).toBe(true)
+            vi.advanceTimersByTime(flipAt - 1)
+            expect(isRunning(node)).toBe(true)
+            expect(node.getAttribute('data-cs-static')).toBeNull()
+            vi.advanceTimersByTime(1)
+            expect(node.getAttribute('data-cs-static')).toBe('true')
+            expect(isRunning(node)).toBe(false)
+            vi.advanceTimersByTime(COMING_SOON_SETTLE_MS)
+            expect(node.getAttribute('data-cs-static')).toBe('true')
+
+            const later = makeNode(1)
+            scheduler.register(later)
+            FakeIO.instances[0].callback([{ target: later, isIntersecting: true, intersectionRatio: 1 }])
+            expect(isRunning(later)).toBe(true)
+            expect(vi.getTimerCount()).toBe(1)
+            scheduler.unregister(later)
+            expect(vi.getTimerCount()).toBe(0)
+        } finally {
+            vi.useRealTimers()
+        }
+    })
+
+    it('is static immediately under reduced motion without waiting out the cap', () => {
+        vi.useFakeTimers()
+        try {
+            const node = makeNode(0)
+            const scheduler = createMotionScheduler({
+                IO: FakeIO,
+                matchMedia: () => ({ matches: true }),
+            })
+            scheduler.register(node)
+            expect(node.getAttribute('data-cs-static')).toBe('true')
+            expect(isRunning(node)).toBe(false)
+            expect(FakeIO.instances).toHaveLength(0)
+            vi.advanceTimersByTime(0)
+            expect(node.getAttribute('data-cs-static')).toBe('true')
+        } finally {
+            vi.useRealTimers()
+        }
     })
 })

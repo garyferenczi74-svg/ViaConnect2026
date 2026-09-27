@@ -354,6 +354,22 @@ describe('coming soon css contract', () => {
         expect(noPref?.body).toMatch(/animation-play-state:\s*paused/)
     })
 
+    it('appends the S2 settle transition after the pasted sheet', () => {
+        const raw = readFileSync(CSS_PATH, 'utf8')
+        const marker = '/* Brief 67 S2 settle */'
+        const at = raw.indexOf(marker)
+        expect(at).toBeGreaterThan(0)
+        expect(raw.indexOf(marker, at + marker.length)).toBe(-1)
+        expect(raw.indexOf('@keyframes jr-sheen')).toBeLessThan(at)
+        const tail = raw.slice(at)
+        expect(tail).toContain('[data-cs-static="true"]')
+        expect(tail).toContain('prefers-reduced-motion: no-preference')
+        expect(tail).toContain('transition: transform 200ms linear, opacity 200ms linear')
+        expect(tail).toContain('.cs-bob')
+        expect(tail).toContain('.cs-word')
+        expect(tail).toContain('.cs-hi')
+    })
+
     it('guards the join sheen against disabled and busy buttons', () => {
         expect(css).toContain('.jr-sheen:not(:disabled):not([aria-busy="true"]):hover')
         expect(css).toContain('.jr-sheen:not(:disabled):not([aria-busy="true"]):focus-visible')

@@ -321,3 +321,10 @@
   15%  { opacity: 1; }
   100% { transform: translate3d(120%, 0, 0); opacity: 0; }
 }
+
+/* Brief 67 S2 settle */
+@media (prefers-reduced-motion: no-preference) {
+  .cs-metal[data-cs-static="true"] :is(.cs-bob, .cs-word, .cs-hi) {
+    transition: transform 200ms linear, opacity 200ms linear;
+  }
+}

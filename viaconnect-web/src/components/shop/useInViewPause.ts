@@ -4,8 +4,8 @@ import { useEffect, useLayoutEffect, type RefObject } from 'react'
 import { getMotionScheduler } from './coming-soon-motion'
 
 /**
- * Thin wrapper. Cap, document order, reduced motion, and the max-run
- * constant stay in the shared scheduler. This hook only registers,
+ * Thin wrapper. Cap, document order, reduced motion, and the per-node
+ * settle timer stay in the shared scheduler. This hook only registers,
  * unregisters, and syncs. Markup renders data-cs-paused so server and
  * client match. useLayoutEffect writes the remembered pose back before
  * paint when a parent re-render resets that attribute.
