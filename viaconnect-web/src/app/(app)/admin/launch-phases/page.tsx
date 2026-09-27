@@ -113,7 +113,7 @@ export default function AdminLaunchPhasesPage() {
           </Link>
           <h1 className="text-xl sm:text-2xl font-semibold mt-2">Launch phases</h1>
           <p className="text-xs text-white/55 mt-1">
-            Activating a phase enables every feature linked to it. Two-step confirmation with a 60-second delay.
+            Activating a feature phase enables every feature linked to it. Activating a shop release phase makes that phase's supplements available to buy. Two-step confirmation with a 60-second delay.
           </p>
         </div>
 

@@ -16,10 +16,13 @@ import { notFound } from 'next/navigation'
 import { BreadcrumbPills, type BreadcrumbItem } from '@/components/BreadcrumbPills'
 import { CartChrome } from '@/components/shop/CartChrome'
 import { CategoryFallbackImage } from '@/components/shop/CategoryFallbackImage'
+import { ComingSoonOverlay } from '@/components/shop/ComingSoonOverlay'
 import { PdpRightRail } from '@/components/shop/PdpRightRail'
 import { getShopCategoryBySlug } from '@/lib/shop/categories'
-import { getProductBySlug } from '@/lib/shop/queries'
+import { getProductBySlug, withReleaseState } from '@/lib/shop/queries'
+import { getReleasedShopPhaseIds } from '@/lib/shop/release'
 import { getCurrentShopSession, isConsumerSession } from '@/lib/shop/role'
+import { getJoinedWaitlistProductIds } from '@/lib/shop/waitlist'
 import { buildFiveSections } from '@/lib/shop/productTabs/buildFromProduct'
 import { loadProductCompatibility } from '@/lib/shop/productTabs/loadCompatibility'
 
@@ -43,11 +46,17 @@ export async function generateMetadata(props: PageProps) {
 export default async function ProductDetailPage(props: PageProps) {
     const params = await props.params;
     const searchParams = props.searchParams ? await props.searchParams : {};
-    const [product, session] = await Promise.all([
+    const sessionPromise = getCurrentShopSession()
+    const [loaded, session, releasedPhaseIds, joinedProductIds] = await Promise.all([
         getProductBySlug(params.slug),
-        getCurrentShopSession(),
+        sessionPromise,
+        getReleasedShopPhaseIds(),
+        sessionPromise.then((current) =>
+            current.userId ? getJoinedWaitlistProductIds() : Promise.resolve<string[]>([]),
+        ),
     ])
-    if (!product) notFound()
+    if (!loaded) notFound()
+    const product = withReleaseState([loaded], releasedPhaseIds)[0]
     const consumerSession = isConsumerSession(session.role)
 
     const slug = product.slug ?? params.slug
@@ -101,6 +110,12 @@ export default async function ProductDetailPage(props: PageProps) {
                             ) : (
                                 <CategoryFallbackImage categorySlug={product.category_slug} />
                             )}
+                            {product.is_released !== true && (
+                                <ComingSoonOverlay
+                                    tone={primaryImage ? 'onLight' : 'onDark'}
+                                    size="pdp"
+                                />
+                            )}
                         </div>
                         {thumbs.length > 1 && (
                             <div className="grid grid-cols-4 gap-2">
@@ -125,6 +140,10 @@ export default async function ProductDetailPage(props: PageProps) {
                     <PdpRightRail
                         product={product}
                         variant={variant}
+                        waitlist={{
+                            signedIn: session.userId !== null,
+                            joined: joinedProductIds.includes(product.id),
+                        }}
                         accordionSections={
                             variant === 'supplement' ? accordionSections : undefined
                         }

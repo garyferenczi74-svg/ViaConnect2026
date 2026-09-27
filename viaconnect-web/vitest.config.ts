@@ -79,6 +79,14 @@ export default defineConfig({
       'src/components/consumer/photo-shares/__tests__/PhotoShareGrantModal.bare.test.tsx',
       // Shop PLP: outage is not the empty-category message
       'src/components/shop/__tests__/PlpProductGrid.bare.test.tsx',
+      // Shop coming soon + waitlist (PR 2). Node renderToStaticMarkup, no jsdom.
+      'src/components/shop/__tests__/ComingSoonOverlay.test.tsx',
+      'src/components/shop/__tests__/ProductCard.comingSoon.test.tsx',
+      'src/components/shop/__tests__/JoinWaitlistButton.test.tsx',
+      'src/components/shop/__tests__/PdpRightRail.comingSoon.test.tsx',
+      'src/components/shop/__tests__/ShopCategoryPage.fallback.test.tsx',
+      'src/components/shop/__tests__/PdpPage.fallback.test.tsx',
+      'src/components/shop/__tests__/CartLineUnavailableBadge.test.tsx',
     ],
     exclude: ['node_modules', '.next', 'supabase'],
     globals: true,

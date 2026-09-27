@@ -1,0 +1,160 @@
+/**
+ * Product card release states. Fixtures are not catalog data.
+ */
+import { createElement, type ReactNode } from 'react'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { describe, expect, it, vi } from 'vitest'
+import { renderToStaticMarkup } from 'react-dom/server'
+import { ProductCard } from '@/components/shop/ProductCard'
+import { withReleaseState, type ShopProduct } from '@/lib/shop/queries'
+
+vi.mock('next/link', () => ({
+    default: ({
+        href,
+        children,
+        className,
+    }: {
+        href: string
+        children?: ReactNode
+        className?: string
+    }) => createElement('a', { href, className }, children),
+}))
+
+vi.mock('next/image', () => ({
+    default: ({ alt }: { alt?: string }) => createElement('img', { alt: alt ?? '' }),
+}))
+
+vi.mock('next/navigation', () => ({
+    usePathname: () => '/shop/genex360',
+    useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn() }),
+    useSearchParams: () => new URLSearchParams(),
+}))
+
+function base(partial: Partial<ShopProduct> = {}): ShopProduct {
+    return {
+        id: 'id-1',
+        sku: 'FC-CREATINE-001',
+        slug: 'creatine-fixture',
+        name: 'Creatine Fixture',
+        short_name: 'Creatine',
+        summary: 'Not catalog data',
+        description: 'Not catalog data',
+        format: 'powder',
+        category: 'supplement',
+        category_slug: 'advanced-formulas',
+        price: 20,
+        price_msrp: 24,
+        pricing_tier: 'L1',
+        image_url: null,
+        image_urls: null,
+        status_tags: null,
+        testing_meta: null,
+        snp_targets: null,
+        bioavailability_pct: null,
+        product_type: 'supplement',
+        ingredients: null,
+        gene_match_score: null,
+        requires_practitioner_order: false,
+        active: true,
+        display_config: null,
+        is_released: false,
+        ...partial,
+    }
+}
+
+function renderCard(product: ShopProduct, variant: 'supplement' | 'testing' = 'supplement', joined = false, signedIn = true) {
+    return renderToStaticMarkup(
+        <ProductCard
+            product={product}
+            variant={variant}
+            href={`/shop/product/${product.slug}`}
+            isFormulationOpen={false}
+            onToggleFormulation={() => undefined}
+            waitlist={{ signedIn, joined }}
+        />,
+    )
+}
+
+describe('ProductCard coming soon', () => {
+    it('keeps Add to Cart on a released supplement and hides the overlay and the join button', () => {
+        const html = renderCard(base({ name: 'Released Fixture', is_released: true }))
+        expect(html).not.toContain('data-testid="coming-soon-overlay"')
+        expect(html).toContain('Add to Cart')
+        expect(html).not.toContain('Join the Revolution')
+    })
+
+    it('shows the overlay and Join the Revolution on an unreleased supplement, with no Add to Cart', () => {
+        const html = renderCard(base({ is_released: false }))
+        expect(html).toContain('data-testid="coming-soon-overlay"')
+        expect(html).toContain('Join the Revolution')
+        expect(html).not.toContain('Add to Cart')
+    })
+
+    it('keeps a GeneX360 kit buyable when the release lookup failed', () => {
+        const [kit] = withReleaseState(
+            [
+                base({
+                    id: 'kit',
+                    sku: 'GX-KIT',
+                    name: 'Panel Kit',
+                    category: 'test_kit',
+                    product_type: 'test_kit',
+                    category_slug: 'genex360',
+                    requires_practitioner_order: true,
+                }),
+            ],
+            null,
+        )
+        const html = renderCard(kit, 'testing')
+        expect(kit.is_released).toBe(true)
+        expect(html).not.toContain('data-testid="coming-soon-overlay"')
+        expect(html).not.toContain('Join the Revolution')
+        expect(html).toContain('Order Test Kit')
+    })
+
+    it('puts a null product_type in the genex360 category on the waitlist', () => {
+        const [row] = withReleaseState(
+            [
+                base({
+                    name: 'Null Type Fixture',
+                    category: 'test_kit',
+                    product_type: null,
+                    category_slug: 'genex360',
+                }),
+            ],
+            null,
+        )
+        const html = renderCard(row, 'testing')
+        expect(row.is_released).toBe(false)
+        expect(html).toContain('data-testid="coming-soon-overlay"')
+        expect(html).toContain('Join the Revolution')
+        expect(html).not.toContain('Add to Cart')
+        expect(html).not.toContain('Order Test Kit')
+    })
+
+    it('shows the joined state and the leave control', () => {
+        const html = renderCard(base(), 'supplement', true, true)
+        expect(html).toContain('role="status"')
+        expect(html).toContain("You&#x27;re on the list")
+        expect(html).toContain('Leave the list')
+    })
+
+    it('shows the signed-out fallback', () => {
+        const html = renderCard(base(), 'supplement', false, false)
+        expect(html).toContain('Sign in to join the list')
+        expect(html).toContain('/login?redirectTo=')
+    })
+
+    it('uses strokeWidth 1.5 on new icons and no any', () => {
+        const button = readFileSync(
+            join(process.cwd(), 'src/components/shop/JoinWaitlistButton.tsx'),
+            'utf8',
+        )
+        const card = readFileSync(join(process.cwd(), 'src/components/shop/ProductCard.tsx'), 'utf8')
+        expect(button).toContain('strokeWidth={1.5}')
+        expect(button).not.toMatch(/\bany\b/)
+        expect(card).not.toMatch(/\bany\b/)
+        expect(card).toContain('ComingSoonOverlay')
+    })
+})

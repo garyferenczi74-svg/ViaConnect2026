@@ -43,6 +43,7 @@ function mockProduct(partial: Partial<ShopProduct> & { slug: string; name: strin
     requires_practitioner_order: false,
     active: true,
     display_config: null,
+    is_released: true,
   };
 }
 

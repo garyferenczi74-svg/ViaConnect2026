@@ -59,6 +59,7 @@ function product(name: string): ShopProduct {
     requires_practitioner_order: false,
     active: true,
     display_config: null,
+    is_released: true,
   }
 }
 
