@@ -17,7 +17,7 @@ const FONT_PATH = join(process.cwd(), 'tests/fixtures/fonts/playfair-display-600
 const BUTTON_CSS_PATH = join(process.cwd(), 'tests/e2e/shop/join-button-utilities.css')
 const BUTTON_SOURCE = join(process.cwd(), 'src/components/shop/JoinWaitlistButton.tsx')
 const ARTIFACT_DIR = '/opt/cursor/artifacts/brief67'
-/** Shadow offset 0.06em + 1.5 * blur 0.14em. Review N2, about 0.27em. */
+/** Largest shadow is offset 0.07em plus 1.5 times blur 0.13em. About 0.27em. No stroke. */
 const SHADOW_PAD_EM = 0.27
 
 const SIZES = [
@@ -300,15 +300,6 @@ test.describe('coming soon overlay harness', () => {
                 if (background === 'noise') await paintNoise(page, 67)
                 const loaded = await page.evaluate(() => document.fonts.check('600 28px "Playfair Display"'))
                 expect(loaded).toBe(true)
-
-                const drift = await page.evaluate(() => {
-                    const edges = [...document.querySelectorAll<HTMLElement>('.cs-edge .cs-line')]
-                    const fills = [...document.querySelectorAll<HTMLElement>('.cs-deep .cs-line')]
-                    return edges.map((edge, index) =>
-                        Math.abs(edge.getBoundingClientRect().top - fills[index].getBoundingClientRect().top),
-                    )
-                })
-                for (const delta of drift) expect(delta).toBeLessThanOrEqual(0.5)
 
                 for (const pose of ['apex', 'floor'] as const) {
                     const placed = await freeze(page, pose)

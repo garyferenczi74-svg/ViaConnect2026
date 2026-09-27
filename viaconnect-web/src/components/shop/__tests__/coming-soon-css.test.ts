@@ -228,9 +228,8 @@ describe('coming soon css contract', () => {
         expect(allowed.size).toBeGreaterThan(0)
         const literals = colorLiterals(css)
         expect(literals.length).toBeGreaterThan(0)
-        for (const literal of literals) {
-            expect(allowed.has(literal), literal).toBe(true)
-        }
+        const outside = literals.filter((literal) => !allowed.has(literal))
+        expect(outside).toEqual([])
         for (const file of IMPLEMENTATION_FILES) {
             const source = readFileSync(join(process.cwd(), file), 'utf8')
             expect(source, file).not.toMatch(/#[0-9A-Fa-f]{3,8}\b/)
@@ -270,6 +269,19 @@ describe('coming soon css contract', () => {
         expect(root).not.toMatch(/mix-blend-mode/)
         expect(css).not.toMatch(/\.cs-metal::before/)
         expect(css).not.toMatch(/\.cs-metal::after/)
+    })
+
+    it('paints no stroke and declares no stroke token', () => {
+        expect(css).not.toContain('--cs-stroke')
+        expect(css).not.toMatch(/var\(--cs-mint\)/)
+        expect(css).not.toMatch(/var\(--cs-emerald\)/)
+        expect(css).toContain('background-image: var(--cs-emerald-deep)')
+        expect(css).toContain('background-image: var(--cs-emerald-hi)')
+        const edge = extractExactRule(css, '.cs-edge .cs-line')
+        expect(edge).toMatch(/color:\s*transparent/)
+        expect(edge).toContain('text-shadow: var(--cs-shadow)')
+        const strokes = [...css.matchAll(/-webkit-text-stroke\s*:\s*([^;]+)/g)].map((match) => match[1].trim())
+        expect(strokes).toEqual(['0'])
     })
 
     it('uses flow-root on the layer, bob, and word', () => {

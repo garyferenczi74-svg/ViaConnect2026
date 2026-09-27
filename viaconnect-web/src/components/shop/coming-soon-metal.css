@@ -1,6 +1,9 @@
 /*
  * Brief 67 + A1 (Gary 2026-09-27 00:18): green-metallic serif "Coming / Soon" overlay (DESIGN-READY reference CSS).
  * A2 (Gary 00:19): tuned for a white (#FFFFFF) image area + silver bottles only. No peach anywhere.
+ * A3 (Gary 00:27): NO outline. No text-stroke, no dark edge. Readability = emerald fill (>= 3:1 on white and
+ *   bright silver across the letter body) + a soft green-black shadow. .cs-edge is kept (frozen name, Blueprint
+ *   T2/T6-4 key on it) but paints no glyph and no stroke: it is the transparent carrier of the soft shadow only.
  * Target path: viaconnect-web/src/components/shop/coming-soon-metal.css
  * Imported only by ComingSoonOverlay.tsx (co-located, like gauges/plasma-gauge.css).
  * Rules: animate transform and opacity only. No filter, no color, no background animation.
@@ -42,30 +45,25 @@
   /* Grid stagger: negative phase so cards never bob in lockstep */
   --cs-delay: 0s;                /* set per card: -((index * 0.618) % 1) * 2.3s */
 
-  /* Edge */
-  --cs-stroke: #08231C;                          /* green-black outline: 16.57:1 on #FFFFFF */
-  --cs-stroke-w: clamp(1.25px, 0.05em, 2px);     /* A2: min 1 -> 1.25 px so the 24-28 px card type keeps a solid edge on white */
-  /* Glyph shadow only (Lock L1). A2 tuning for white + silver:
-     1) 1 px light top rim: invisible on #FFFFFF, a bevel line on the dark silver bands (p10 #6F6F6F)
-     2) tight contact shadow, 3) soft lift shadow (green-black, never neutral grey, so it stays in the metal) */
+  /* Shadow only (A3: no outline, no stroke tokens). Soft, blurred, offset down; blur >= 2x offset so it never
+     reads as a rim. Total reach (offset + blur) <= 0.2em so it stays inside the L1 pixel-check boxes. */
   --cs-shadow:
-      0 calc(-1 * clamp(0.75px, 0.022em, 1.5px)) 0 rgb(255 255 255 / 0.55),
-      0 0.02em 0.02em rgb(8 35 28 / 0.5),
-      0 0.06em 0.14em rgb(8 35 28 / 0.2);
+      0 0.03em 0.07em rgb(8 35 28 / 0.34),
+      0 0.07em 0.13em rgb(8 35 28 / 0.2);
 
-  /* Metal fills, per line, top to bottom of the line box (A1: green metallic).
-     Hue ~160 deg (emerald) harmonised with brand teal #2DA5A0 (178 deg): the mint
-     layer passes through teal-100 #E0F5F4, the emerald layer reflects teal-600 #1F8A85.
-     The 17-21% white/pale band is the specular highlight that makes it read as metal. */
-  --cs-mint: linear-gradient(180deg,
-      #E4FBF2 0%, #FFFFFF 17%, #FFFFFF 21%, #E0F5F4 30%, #A6EAD2 42%,
-      #3FAE8C 51%, #8FE0C4 58%, #CFF6E6 76%, #86D3B8 100%);
-  --cs-emerald: linear-gradient(180deg,
-      #8ED9BE 0%, #D8F7EB 17%, #D8F7EB 21%, #45B893 30%, #1C8C6A 44%,
-      #0A4A38 51%, #1F8A85 58%, #13775A 76%, #0B4F3C 100%);
+  /* Metal fills, per line, top to bottom of the line box (A3: emerald on emerald, no near-white mint on light).
+     Hue ~160 deg emerald, harmonised with brand teal #2DA5A0 (178 deg). The 15.5-19.5% band is a THIN specular
+     streak (4% of the line); every other stop is >= 3:1 on #FFFFFF and >= 3:1 on bright silver #F1F1F1.
+     Height-linked light: --cs-emerald-hi (brighter, apex) crossfades over --cs-emerald-deep (floor). */
+  --cs-emerald-hi: linear-gradient(180deg,
+      #23916E 0%, #289878 15.5%, #A9E6CE 17.5%, #289878 19.5%, #23946F 32%,
+      #177E5E 46%, #0C5A43 51%, #1A8B68 57%, #1F9571 76%, #11704F 100%);
+  --cs-emerald-deep: linear-gradient(180deg,
+      #127457 0%, #17805F 15.5%, #5FB897 17.5%, #17805F 19.5%, #106E52 32%,
+      #0B5641 46%, #05342A 51%, #0C5E47 57%, #0D6249 76%, #073A2C 100%);
   /* Solid fills for engines without background-clip:text (Brief 67 build delta c) */
-  --cs-fill-solid-deep: #13775A;
-  --cs-fill-solid-hi: #E0F5F4;
+  --cs-fill-solid-deep: #106E52;
+  --cs-fill-solid-hi: #1F9571;
 
   /* LOCK L1 (Gary 00:13 MT): fully transparent. No background, plate, scrim,
      backdrop-filter, gradient wash or opacity on this box. Only glyphs (and the
@@ -82,14 +80,23 @@
 
 .cs-metal[data-size="pdp"] {
   --cs-travel: 0.45em;           /* 21 px at 46 px type, 35 px at 77 px type */
-  --cs-stroke-w: clamp(1.5px, 0.032em, 2.5px);   /* A2: 1.5 px at 46 px type, 2.5 px at 77 px */
 }
 
 .cs-metal[data-tone="onDark"] {
   --cs-refl-rgb: 143 220 194;    /* mint glint #8FDCC2 on the navy fallback gradient */
   --cs-refl-min: 0.06;
   --cs-refl-max: 0.2;
-  --cs-shadow: 0 0.02em 0.02em rgb(0 0 0 / 0.5), 0 0.06em 0.18em rgb(0 0 0 / 0.35);
+  --cs-shadow: 0 0.03em 0.07em rgb(0 0 0 / 0.45), 0 0.07em 0.13em rgb(0 0 0 / 0.32);
+  /* Navy fallback (no photo): deep emerald would vanish on #1A2744 without an outline, so the dark tone keeps
+     the A1 light metal: mint apex over a lighter emerald floor. */
+  --cs-emerald-hi: linear-gradient(180deg,
+      #E4FBF2 0%, #FFFFFF 17%, #FFFFFF 21%, #E0F5F4 30%, #A6EAD2 42%,
+      #3FAE8C 51%, #8FE0C4 58%, #CFF6E6 76%, #86D3B8 100%);
+  --cs-emerald-deep: linear-gradient(180deg,
+      #8ED9BE 0%, #D8F7EB 17%, #D8F7EB 21%, #45B893 30%, #2FA37F 44%,
+      #1C8C6A 51%, #3FAE8C 58%, #45B893 76%, #2FA37F 100%);
+  --cs-fill-solid-deep: #45B893;
+  --cs-fill-solid-hi: #CFF6E6;
 }
 
 /* ---------- Layout ---------------------------------------------------------- */
@@ -136,9 +143,11 @@
   margin: -0.14em -0.08em;
 }
 
+/* A3: the edge layer paints no glyph and no stroke. Transparent text + text-shadow = shadow only, drawn
+   under the fill layers (a text-shadow on the background-clip:text layers would paint over the gradient). */
 .cs-edge .cs-line {
-  color: var(--cs-stroke);
-  -webkit-text-stroke: calc(var(--cs-stroke-w) * 2) var(--cs-stroke);
+  color: transparent;
+  -webkit-text-stroke: 0;
   text-shadow: var(--cs-shadow);
 }
 .cs-deep .cs-line,
@@ -147,8 +156,8 @@
   -webkit-background-clip: text;
   background-clip: text;
 }
-.cs-deep .cs-line { background-image: var(--cs-emerald); }
-.cs-hi .cs-line { background-image: var(--cs-mint); }
+.cs-deep .cs-line { background-image: var(--cs-emerald-deep); }
+.cs-hi .cs-line { background-image: var(--cs-emerald-hi); }
 
 .cs-refl {
   position: absolute;
@@ -185,7 +194,7 @@
   88%, 100% { transform: scale(1); }
 }
 
-/* light tied to height: mint highlight layer fades out as the word falls, back in as it rises */
+/* light tied to height: brighter emerald layer (.cs-hi) fades out as the word falls, back in as it rises */
 @keyframes cs-light {
   0%, 10.87% { opacity: 1; animation-timing-function: var(--cs-ease-fall); }
   52.17%     { opacity: 0; animation-timing-function: linear; }
