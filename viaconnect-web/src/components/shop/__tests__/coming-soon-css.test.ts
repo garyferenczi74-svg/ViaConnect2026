@@ -284,6 +284,30 @@ describe('coming soon css contract', () => {
         expect(strokes).toEqual(['0'])
     })
 
+    it('tilts one line with a static rotate and hides the reflection', () => {
+        expect(css).toMatch(/--cs-tilt:\s*-45deg/)
+        expect(css).toMatch(/\.cs-word\s*\{[^}]*rotate:\s*var\(--cs-tilt\)/)
+        expect(css).toMatch(/--cs-cx:\s*62%/)
+        expect(css).toMatch(/--cs-cy:\s*69%/)
+        expect(css).toMatch(/container-type:\s*size/)
+        expect(css).toMatch(/--cs-fs:\s*clamp\(16px,\s*12\.5cqw,\s*72px\)/)
+        const containers = extractAtBlocks(css, 'container')
+        const wide = containers.find((block) => block.header.replace(/\s+/g, ' ').includes('min-aspect-ratio: 79/100'))
+        expect(wide).toBeTruthy()
+        expect(wide?.body).toContain('--cs-cy: 72%')
+        expect(wide?.body).toMatch(/10\.6cqw/)
+        expect(css).toMatch(/\.cs-line\s*\{[^}]*display:\s*inline-block/)
+        expect(css).toMatch(/\.cs-line\s*\+\s*\.cs-line\s*\{[^}]*0\.25em/)
+        expect(extractExactRule(css, '.cs-refl')).toMatch(/display:\s*none/)
+        const frames = keyframeBodies(css)
+        expect(frames.length).toBeGreaterThan(0)
+        for (const frame of frames) {
+            for (const block of frame.blocks) {
+                expect(declarationProps(block), frame.name).not.toContain('rotate')
+            }
+        }
+    })
+
     it('uses flow-root on the layer, bob, and word', () => {
         expect(css).toMatch(/\.cs-layer\s*\{[^}]*display:\s*flow-root/)
         expect(css).toMatch(/\.cs-bob\s*,\s*\.cs-word\s*\{[^}]*display:\s*flow-root/)

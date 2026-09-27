@@ -37,6 +37,7 @@ function introSeconds(index: number): number {
 
 /**
  * Transparent "Coming soon" over a product image.
+ * Both .cs-line spans stay. The stylesheet lays them on one diagonal.
  * The visual layer is hidden from assistive tech. A separate sr-only twin
  * carries the same words. Sits under status pills (z-10).
  */

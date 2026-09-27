@@ -17,7 +17,7 @@ const FONT_PATH = join(process.cwd(), 'tests/fixtures/fonts/playfair-display-600
 const BUTTON_CSS_PATH = join(process.cwd(), 'tests/e2e/shop/join-button-utilities.css')
 const BUTTON_SOURCE = join(process.cwd(), 'src/components/shop/JoinWaitlistButton.tsx')
 const ARTIFACT_DIR = '/opt/cursor/artifacts/brief67'
-/** Largest shadow is offset 0.07em plus 1.5 times blur 0.13em. About 0.27em. No stroke. */
+/** On-screen shadow reach stays about 0.2em after the pre-rotated offsets. Pad is 0.27em. */
 const SHADOW_PAD_EM = 0.27
 
 const SIZES = [
@@ -40,6 +40,8 @@ interface PixelResult {
     changedIn: number
     changedOut: number
     apexRatio?: number
+    centerX?: number
+    centerY?: number
 }
 
 function overlayMarkup(size: 'card' | 'pdp', tone: 'onLight' | 'onDark' = 'onLight'): string {
@@ -191,7 +193,7 @@ async function pixelDiff(
         if (!frame || !stage) throw new Error('frame missing')
         const pad = padEm * Number.parseFloat(getComputedStyle(stage).fontSize)
         const origin = frame.getBoundingClientRect()
-        const boxes = [...frame.querySelectorAll<HTMLElement>('.cs-word, .cs-refl')].map((el) => {
+        const boxes = [...frame.querySelectorAll<HTMLElement>('.cs-word')].map((el) => {
             const rect = el.getBoundingClientRect()
             return {
                 x: rect.x - origin.x - pad,
@@ -282,7 +284,7 @@ test.describe('coming soon overlay harness', () => {
         mkdirSync(ARTIFACT_DIR, { recursive: true })
     })
 
-    test('L1 pixels stay inside the glyph, shadow, and reflection boxes', async ({ page }, testInfo) => {
+    test('L1 pixels stay inside the glyph and shadow boxes', async ({ page }, testInfo) => {
         test.setTimeout(180_000)
         const results: PixelResult[] = []
         for (const size of SIZES) {
@@ -304,27 +306,37 @@ test.describe('coming soon overlay harness', () => {
                 for (const pose of ['apex', 'floor'] as const) {
                     const placed = await freeze(page, pose)
                     expect(Math.abs(placed.y - placed.expected), `${size.name} ${pose}`).toBeLessThan(1.25)
-                    if (pose === 'apex') {
-                        const ratio = await page.evaluate(() => {
+                    let place: {
+                        centerX: number
+                        centerY: number
+                        stageDelta: number
+                        rotate: string
+                        reflDisplay: string
+                    } | null = null
+                    if (pose === 'floor') {
+                        place = await page.evaluate(() => {
                             const frame = document.querySelector<HTMLElement>('.frame')
                             const word = document.querySelector<HTMLElement>('.cs-word')
-                            if (!frame || !word) throw new Error('word missing')
+                            const stage = document.querySelector<HTMLElement>('.cs-stage')
+                            const refl = document.querySelector<HTMLElement>('.cs-refl')
+                            if (!frame || !word || !stage || !refl) throw new Error('word missing')
                             const frameRect = frame.getBoundingClientRect()
                             const wordRect = word.getBoundingClientRect()
-                            return (wordRect.top - frameRect.top) / frameRect.height
+                            const stageRect = stage.getBoundingClientRect()
+                            const centerX = (wordRect.left + wordRect.right) / 2
+                            const centerY = (wordRect.top + wordRect.bottom) / 2
+                            return {
+                                centerX: (centerX - frameRect.left) / frameRect.width,
+                                centerY: (centerY - frameRect.top) / frameRect.height,
+                                stageDelta: Math.abs(centerY - stageRect.top),
+                                rotate: getComputedStyle(word).rotate,
+                                reflDisplay: getComputedStyle(refl).display,
+                            }
                         })
-                        expect(ratio, size.name).toBeGreaterThanOrEqual(0.6)
-                        if (background === 'white') {
-                            results.push({
-                                project: testInfo.project.name,
-                                surface: size.name,
-                                background,
-                                pose,
-                                changedIn: 0,
-                                changedOut: 0,
-                                apexRatio: ratio,
-                            })
-                        }
+                        expect(place.reflDisplay, size.name).toBe('none')
+                        expect(place.rotate, size.name).toMatch(/-45deg/)
+                        expect(place.stageDelta, size.name).toBeLessThan(4)
+                        expect(Math.abs(place.centerX - 0.62), size.name).toBeLessThan(0.03)
                     }
                     const diff = await pixelDiff(page, 'root')
                     expect(diff.changedOut, `${testInfo.project.name} ${size.name} ${background} ${pose}`).toBe(0)
@@ -337,15 +349,11 @@ test.describe('coming soon overlay harness', () => {
                         changedIn: diff.changedIn,
                         changedOut: diff.changedOut,
                     }
-                    if (pose === 'apex' && background === 'white') {
-                        const existing = results.find((item) => item.surface === size.name && item.pose === 'apex' && item.background === 'white')
-                        if (existing) {
-                            existing.changedIn = diff.changedIn
-                            existing.changedOut = diff.changedOut
-                        }
-                    } else {
-                        results.push(row)
+                    if (pose === 'floor' && background === 'white' && place) {
+                        row.centerX = place.centerX
+                        row.centerY = place.centerY
                     }
+                    results.push(row)
                     if (
                         testInfo.project.name === 'desktop-1440'
                         && background === 'white'
@@ -418,20 +426,18 @@ test.describe('coming soon overlay harness', () => {
                 const travel = (root.getAttribute('data-size') === 'pdp' ? 0.45 : 0.4) * fontSize
                 const bobTransform = getComputedStyle(bob).transform
                 const y = bobTransform === 'none' ? 0 : new DOMMatrix(bobTransform).m42
-                const reflTransform = getComputedStyle(refl).transform
-                const scaleX = reflTransform === 'none' ? 1 : new DOMMatrix(reflTransform).a
                 return {
                     anims: anims.length,
                     y,
                     expectedY: -0.5 * travel,
                     hiOpacity: getComputedStyle(hi).opacity,
-                    scaleX,
+                    reflDisplay: getComputedStyle(refl).display,
                 }
             })
             expect(state.anims, size.name).toBe(0)
             expect(Math.abs(state.y - state.expectedY), size.name).toBeLessThan(0.75)
             expect(state.hiOpacity).toBe('0.55')
-            expect(Math.abs(state.scaleX - 0.86)).toBeLessThan(0.02)
+            expect(state.reflDisplay, size.name).toBe('none')
             if (testInfo.project.name === 'desktop-1440') {
                 await page.locator('.frame').screenshot({
                     path: join(ARTIFACT_DIR, `${size.name}-reduced.png`),

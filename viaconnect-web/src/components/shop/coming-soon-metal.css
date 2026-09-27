@@ -4,6 +4,12 @@
  * A3 (Gary 00:27): NO outline. No text-stroke, no dark edge. Readability = emerald fill (>= 3:1 on white and
  *   bright silver across the letter body) + a soft green-black shadow. .cs-edge is kept (frozen name, Blueprint
  *   T2/T6-4 key on it) but paints no glyph and no stroke: it is the transparent carrier of the soft shadow only.
+ * A4 (Gary 00:31): the word sits on a -45deg diagonal (rising lower-left to upper-right, same direction as the
+ *   #247 stamp). The tilt is the STATIC individual `rotate` property on .cs-word (never in a keyframe), so the
+ *   .cs-bob translateY stays vertical on screen and cs-settle's `transform` scale composes after it.
+ * A5 (Gary 00:32): ONE line, "Coming Soon" (title case, one space). The two .cs-line spans stay (Blueprint T2
+ *   expects two per layer) but render inline-block on one line; the space is a 0.25em inline margin (the
+ *   Playfair space advance). The floor reflection is switched off (display: none; element kept, see brief A4/A5).
  * Target path: viaconnect-web/src/components/shop/coming-soon-metal.css
  * Imported only by ComingSoonOverlay.tsx (co-located, like gauges/plasma-gauge.css).
  * Rules: animate transform and opacity only. No filter, no color, no background animation.
@@ -23,8 +29,14 @@
   --cs-ease-fall: cubic-bezier(0.5, 0, 0.75, 1);   /* sine-in with a soft landing */
   --cs-ease-rise: cubic-bezier(0.37, 0, 0.63, 1);  /* easeInOutSine */
 
+  /* A4 diagonal: static tilt + placement (centre of the tilted block at the floor state, % of image height) */
+  --cs-tilt: -45deg;             /* static, applied with the `rotate` property on .cs-word; never animated */
+  --cs-cx: 62%;                  /* centre of the diagonal, % of image width (right of centre keeps the rising end off the label) */
+  --cs-cy: 69%;                  /* 3/4 box (mobile card): centre at the floor state, % of image height */
+  --cs-fs: clamp(16px, 12.5cqw, 72px);   /* 3/4 box: 20 px at 160 wide, 20.9 px at 167 */
+
   /* Travel (peak to peak), em of the overlay font size */
-  --cs-travel: 0.4em;            /* card: 11 px at 28 px type, 18 px at 44 px type */
+  --cs-travel: 0.4em;            /* card: 8.7 px at 21.7 px type, 14.4 px at 36 px type */
 
   /* Contact squash-settle (applied on .cs-word, same clock) */
   --cs-scale-contact: 1.02;
@@ -45,11 +57,13 @@
   /* Grid stagger: negative phase so cards never bob in lockstep */
   --cs-delay: 0s;                /* set per card: -((index * 0.618) % 1) * 2.3s */
 
-  /* Shadow only (A3: no outline, no stroke tokens). Soft, blurred, offset down; blur >= 2x offset so it never
-     reads as a rim. Total reach (offset + blur) <= 0.2em so it stays inside the L1 pixel-check boxes. */
+  /* Shadow only (A3: no outline, no stroke tokens). Soft, blurred; blur >= 2x offset so it never reads as a rim.
+     Total reach (offset + blur) <= 0.2em so it stays inside the L1 pixel-check boxes.
+     A4: text-shadow rotates with the -45deg word, so the offsets are pre-rotated (x = -y = d * 0.707) to land
+     straight DOWN on screen (0.03em and 0.07em), under the word, where the floor reflection is. */
   --cs-shadow:
-      0 0.03em 0.07em rgb(8 35 28 / 0.34),
-      0 0.07em 0.13em rgb(8 35 28 / 0.2);
+      -0.021em 0.021em 0.07em rgb(8 35 28 / 0.34),
+      -0.05em 0.05em 0.13em rgb(8 35 28 / 0.2);
 
   /* Metal fills, per line, top to bottom of the line box (A3: emerald on emerald, no near-white mint on light).
      Hue ~160 deg emerald, harmonised with brand teal #2DA5A0 (178 deg). The 15.5-19.5% band is a THIN specular
@@ -79,14 +93,24 @@
 }
 
 .cs-metal[data-size="pdp"] {
-  --cs-travel: 0.45em;           /* 21 px at 46 px type, 35 px at 77 px type */
+  --cs-travel: 0.45em;           /* 17 px at 37.9 px type, 28.2 px at 62.8 px type */
+}
+
+/* A4/A5 fit by box shape, not by surface: every 4/5 box (md+ cards and the PDP) is relatively shorter and its
+   label sits x1.067 lower (object-top crop), so the line is smaller and a little lower there.
+   Tokens are overridden on .cs-intro (a child of the size container) and inherited by the stage. */
+@container (min-aspect-ratio: 79/100) {
+  .cs-intro {
+    --cs-cy: 72%;
+    --cs-fs: clamp(16px, 10.6cqw, 72px);   /* 23.2 px at 219, 30.1 px at 284, 37.9 px at 358, 62.8 px at 592 */
+  }
 }
 
 .cs-metal[data-tone="onDark"] {
   --cs-refl-rgb: 143 220 194;    /* mint glint #8FDCC2 on the navy fallback gradient */
   --cs-refl-min: 0.06;
   --cs-refl-max: 0.2;
-  --cs-shadow: 0 0.03em 0.07em rgb(0 0 0 / 0.45), 0 0.07em 0.13em rgb(0 0 0 / 0.32);
+  --cs-shadow: -0.021em 0.021em 0.07em rgb(0 0 0 / 0.45), -0.05em 0.05em 0.13em rgb(0 0 0 / 0.32);
   /* Navy fallback (no photo): deep emerald would vanish on #1A2744 without an outline, so the dark tone keeps
      the A1 light metal: mint apex over a lighter emerald floor. */
   --cs-emerald-hi: linear-gradient(180deg,
@@ -102,16 +126,15 @@
 /* ---------- Layout ---------------------------------------------------------- */
 .cs-stage {
   position: absolute;
-  left: 0;
+  top: var(--cs-cy);             /* A4: zero-height line through the centre of the tilted block (floor state) */
+  left: calc(var(--cs-cx) * 2 - 100%);   /* centres the stage on --cs-cx (valid for cx >= 50%) */
   right: 0;
-  bottom: 7%;                    /* the "floor": safe inset from the image bottom */
+  height: 0;
   display: flex;
   justify-content: center;
-  font-size: clamp(24px, 17cqw, 44px);   /* card: 28 px at 167 px wide, 37 px at 219, 44 px at 284 */
+  align-items: center;           /* the word is centred on that line and overflows it equally up and down */
+  font-size: var(--cs-fs);
   line-height: 0.92;
-}
-.cs-metal[data-size="pdp"] .cs-stage {
-  font-size: clamp(40px, 13cqw, 80px);   /* PDP: 46 px at 358 px wide, 77 px at 592 */
 }
 
 .cs-intro { position: absolute; inset: 0; }   /* wraps the floor reflection and the word */
@@ -121,7 +144,8 @@
 .cs-bob { transform-origin: 50% 100%; }
 .cs-word {
   position: relative;
-  transform-origin: 50% 100%;
+  transform-origin: 50% 50%;     /* A4: tilt and settle-scale about the block centre */
+  rotate: var(--cs-tilt);        /* A4: STATIC diagonal. Individual property, not in any @keyframes. */
   font-family: var(--font-coming-soon), "Playfair Display", Georgia, "Times New Roman", serif;
   font-weight: 600;
   letter-spacing: -0.005em;
@@ -136,12 +160,14 @@
 .cs-layer.cs-hi { position: absolute; inset: 0; }
 
 .cs-line {
-  display: block;
-  text-transform: capitalize;    /* renders COMING_SOON_OVERLAY_TEXT split on the space as Coming / Soon */
+  display: inline-block;         /* A5: both words on ONE line ("Coming Soon"); two spans kept for Blueprint T2 */
+  text-transform: capitalize;    /* COMING_SOON_OVERLAY_TEXT "Coming soon" -> "Coming Soon" */
   /* pad the paint box so ascenders and the g descender get the gradient */
   padding: 0.14em 0.08em;
   margin: -0.14em -0.08em;
 }
+
+.cs-line + .cs-line { margin-inline-start: calc(-0.08em + 0.25em); }   /* A5: one normal word space (0.25em) */
 
 /* A3: the edge layer paints no glyph and no stroke. Transparent text + text-shadow = shadow only, drawn
    under the fill layers (a text-shadow on the background-clip:text layers would paint over the gradient). */
@@ -162,16 +188,19 @@
 .cs-refl {
   position: absolute;
   left: 50%;
-  bottom: calc(7% - 0.12em);
-  width: 2.6em;
-  height: 0.26em;
-  margin-left: -1.3em;
+  /* A4: the lowest glyph of the tilted block is the foot of the "S" in Soon, ~1.4em below the block centre and
+     within ~0.1em of centre-x, so the contact ellipse sits there, narrower than before (only a corner lands). */
+  top: calc(var(--cs-cy) + 1.38em);
+  width: 1.5em;
+  height: 0.2em;
+  margin-left: -0.75em;
   border-radius: 50%;
   background: radial-gradient(closest-side, rgb(var(--cs-refl-rgb) / 0.55), rgb(var(--cs-refl-rgb) / 0));
-  font-size: clamp(24px, 17cqw, 44px);
+  font-size: var(--cs-fs);
   opacity: var(--cs-refl-max);
+  display: none;                 /* A4/A5: off. A single -45deg line only touches the "floor" at the C's corner; an
+                                    ellipse there reads as a smudge on the lower label copy. Element kept (T2). */
 }
-.cs-metal[data-size="pdp"] .cs-refl { font-size: clamp(40px, 13cqw, 80px); }
 
 /* ---------- Motion ---------------------------------------------------------- */
 @keyframes cs-intro {
