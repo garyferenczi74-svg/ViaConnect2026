@@ -126,6 +126,16 @@
       "version": "20260824030817",
       "name": "20260824001000_prompt_170r_content_cards",
       "note": "Confirmed in supabase_migrations.schema_migrations 2026-08-24. DB name column was prompt_170r_content_cards."
+    },
+    {
+      "version": "20260926200000",
+      "name": "20260926200000_shop_release_phases",
+      "note": "Confirmed in supabase_migrations.schema_migrations 2026-09-27. Applied 2026-09-26 via MCP apply_migration (recorded as version 20260926222048, DB name shop_release_phases); history repaired 2026-09-27 to the filename stamp (CLI-style version=filename stamp)."
+    },
+    {
+      "version": "20260926200100",
+      "name": "20260926200100_shop_product_waitlist",
+      "note": "Confirmed in supabase_migrations.schema_migrations 2026-09-27. Applied 2026-09-26 via MCP apply_migration (recorded as version 20260926222055, DB name shop_product_waitlist); history repaired 2026-09-27 to the filename stamp (CLI-style version=filename stamp)."
     }
   ],
   "unapplied_note": "Repo stems confirmed ABSENT from supabase_migrations.schema_migrations on 2026-08-24. These are not apply records. Do not invent versions. They remain awaiting apply sign-off per apply-procedure.md.",
