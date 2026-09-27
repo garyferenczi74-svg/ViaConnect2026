@@ -2,6 +2,8 @@
  * Own-row waitlist reads. Fixtures are not catalog data.
  * A read error returns an empty id list so the shop still renders.
  */
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const state = {
@@ -75,5 +77,14 @@ describe('getJoinedWaitlistProductIds', () => {
         state.hang = false
         state.throwRead = true
         expect(await getJoinedWaitlistProductIds()).toEqual([])
+    })
+})
+
+describe('waitlist module server boundary', () => {
+    it('keeps leaveProductWaitlist in a use server module', () => {
+        const source = readFileSync(join(process.cwd(), 'src/lib/shop/waitlist.ts'), 'utf8')
+        const directive = source.match(/^\s*(?:\/\*\*[\s\S]*?\*\/\s*)?(['"])use server\1/)
+        expect(directive).not.toBeNull()
+        expect(source).toContain('export async function leaveProductWaitlist')
     })
 })

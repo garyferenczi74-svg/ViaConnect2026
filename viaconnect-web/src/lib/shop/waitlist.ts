@@ -4,6 +4,7 @@
  * A missing shop_product_waitlist table (42P01) is schema_missing, which the
  * route surfaces as the existing 500 SERVER_ERROR.
  */
+'use server'
 import { createClient } from '@/lib/supabase/server'
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout'
 import { safeLog } from '@/lib/utils/safe-log'
