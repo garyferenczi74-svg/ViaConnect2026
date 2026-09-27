@@ -112,10 +112,14 @@ interface AppliedPromoSnapshot {
     discountCents: number
 }
 
+const BLOCKED_PRODUCT_NAME_MAX = 120
+
 function unavailableLineLabel(line: CheckoutCartLine): string {
-    const name = line.productName.trim()
-    if (name.length > 0) return name
-    return line.sku
+    const raw: unknown = line.productName
+    if (typeof raw !== 'string') return line.sku
+    const name = raw.trim()
+    if (name.length === 0 || name.length > BLOCKED_PRODUCT_NAME_MAX) return line.sku
+    return name
 }
 
 export async function validateCheckout(

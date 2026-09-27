@@ -180,6 +180,43 @@ describe('validateCheckout release guard', () => {
         )
     })
 
+    it('falls back to the SKU when the cart line name is not a string', async () => {
+        state.products = { data: [], error: null }
+        const result = await validateCheckout(
+            [line({ sku: 'UNKNOWN-SKU', productName: 12 as unknown as string })],
+            0,
+            null,
+        )
+        expect(result.ok).toBe(false)
+        expect(result.error).toBe(
+            'This item is not available yet: UNKNOWN-SKU. Remove it from your cart to continue.',
+        )
+    })
+
+    it('falls back to the SKU when the cart line name is longer than 120 characters', async () => {
+        state.products = { data: [], error: null }
+        const longName = 'N'.repeat(121)
+        const atCap = await validateCheckout(
+            [line({ sku: 'UNKNOWN-SKU', productName: 'N'.repeat(120) })],
+            0,
+            null,
+        )
+        expect(atCap.error).toBe(
+            'This item is not available yet: ' + 'N'.repeat(120) + '. Remove it from your cart to continue.',
+        )
+
+        const overCap = await validateCheckout(
+            [line({ sku: 'UNKNOWN-SKU', productName: longName })],
+            0,
+            null,
+        )
+        expect(overCap.ok).toBe(false)
+        expect(overCap.error).toBe(
+            'This item is not available yet: UNKNOWN-SKU. Remove it from your cart to continue.',
+        )
+        expect(overCap.error).not.toContain(longName)
+    })
+
     it('returns the existing cart error when the lookup fails', async () => {
         state.products = { data: null, error: { code: '08000', message: 'down' } }
         const result = await validateCheckout([line({})], 0, null)

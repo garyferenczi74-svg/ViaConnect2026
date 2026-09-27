@@ -128,23 +128,16 @@ export async function joinProductWaitlist(
     }
 }
 
-export async function leaveProductWaitlist(productId: string): Promise<WaitlistLeaveResult> {
+export async function leaveProductWaitlist(
+    userId: string,
+    productId: string,
+): Promise<WaitlistLeaveResult> {
     try {
         const supabase = await createClient()
-        const authResult = await withTimeout(
-            supabase.auth.getUser(),
-            WAITLIST_TIMEOUT_MS,
-            'shop.waitlist.leave.auth',
-        )
-        const user = authResult.data.user
-        if (authResult.error || !user) {
-            logWaitlist('leave failed', 'upstream', productId)
-            return { status: 'error', reason: 'upstream' }
-        }
         const sb = supabase as unknown as WaitlistReader
         const deleted = await withTimeout(
             Promise.resolve(
-                sb.from('shop_product_waitlist').delete().eq('product_id', productId).eq('user_id', user.id),
+                sb.from('shop_product_waitlist').delete().eq('product_id', productId).eq('user_id', userId),
             ),
             WAITLIST_TIMEOUT_MS,
             'shop.waitlist.leave',
