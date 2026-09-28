@@ -5,6 +5,7 @@
  * route surfaces as the existing 500 SERVER_ERROR.
  */
 import { createClient } from '@/lib/supabase/server'
+// Server-only: imports @/lib/supabase/server (next/headers), which fails in a client bundle.
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout'
 import { safeLog } from '@/lib/utils/safe-log'
 import { getReleasedShopPhaseIds } from '@/lib/shop/release'
@@ -128,23 +129,16 @@ export async function joinProductWaitlist(
     }
 }
 
-export async function leaveProductWaitlist(productId: string): Promise<WaitlistLeaveResult> {
+export async function leaveProductWaitlist(
+    userId: string,
+    productId: string,
+): Promise<WaitlistLeaveResult> {
     try {
         const supabase = await createClient()
-        const authResult = await withTimeout(
-            supabase.auth.getUser(),
-            WAITLIST_TIMEOUT_MS,
-            'shop.waitlist.leave.auth',
-        )
-        const user = authResult.data.user
-        if (authResult.error || !user) {
-            logWaitlist('leave failed', 'upstream', productId)
-            return { status: 'error', reason: 'upstream' }
-        }
         const sb = supabase as unknown as WaitlistReader
         const deleted = await withTimeout(
             Promise.resolve(
-                sb.from('shop_product_waitlist').delete().eq('product_id', productId).eq('user_id', user.id),
+                sb.from('shop_product_waitlist').delete().eq('product_id', productId).eq('user_id', userId),
             ),
             WAITLIST_TIMEOUT_MS,
             'shop.waitlist.leave',

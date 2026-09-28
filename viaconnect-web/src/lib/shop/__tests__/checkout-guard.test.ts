@@ -72,6 +72,7 @@ vi.mock('@/lib/supabase/server', () => ({
     }),
 }))
 
+import { CART_LINE_UNAVAILABLE_BADGE } from '@/lib/shop/coming-soon-copy'
 import { createCheckoutSession, validateCheckout } from '@/lib/shop/checkout-actions'
 
 function line(partial: Partial<CheckoutCartLine>): CheckoutCartLine {
@@ -177,6 +178,84 @@ describe('validateCheckout release guard', () => {
         )
         expect(blankName.error).toBe(
             'This item is not available yet: UNKNOWN-SKU. Remove it from your cart to continue.',
+        )
+    })
+
+    it('falls back to the SKU when the cart line name is not a string', async () => {
+        state.products = { data: [], error: null }
+        const result = await validateCheckout(
+            [line({ sku: 'UNKNOWN-SKU', productName: 12 as unknown as string })],
+            0,
+            null,
+        )
+        expect(result.ok).toBe(false)
+        expect(result.error).toBe(
+            'This item is not available yet: UNKNOWN-SKU. Remove it from your cart to continue.',
+        )
+    })
+
+    it('falls back to the SKU when the cart line name is longer than 120 characters', async () => {
+        state.products = { data: [], error: null }
+        const longName = 'N'.repeat(121)
+        const atCap = await validateCheckout(
+            [line({ sku: 'UNKNOWN-SKU', productName: 'N'.repeat(120) })],
+            0,
+            null,
+        )
+        expect(atCap.error).toBe(
+            'This item is not available yet: ' + 'N'.repeat(120) + '. Remove it from your cart to continue.',
+        )
+
+        const overCap = await validateCheckout(
+            [line({ sku: 'UNKNOWN-SKU', productName: longName })],
+            0,
+            null,
+        )
+        expect(overCap.ok).toBe(false)
+        expect(overCap.error).toBe(
+            'This item is not available yet: UNKNOWN-SKU. Remove it from your cart to continue.',
+        )
+        expect(overCap.error).not.toContain(longName)
+    })
+
+    it('does not use an overlong SKU as the blocked-item label', async () => {
+        state.products = { data: [], error: null }
+        const longSku = 'S'.repeat(121)
+        const atCap = await validateCheckout(
+            [line({ sku: 'S'.repeat(120), productName: '   ' })],
+            0,
+            null,
+        )
+        expect(atCap.error).toBe(
+            'This item is not available yet: ' + 'S'.repeat(120) + '. Remove it from your cart to continue.',
+        )
+
+        const overCap = await validateCheckout(
+            [line({ sku: longSku, productName: '   ' })],
+            0,
+            null,
+        )
+        expect(overCap.ok).toBe(false)
+        expect(overCap.error).toBe(
+            'This item is not available yet: ' +
+                CART_LINE_UNAVAILABLE_BADGE +
+                '. Remove it from your cart to continue.',
+        )
+        expect(overCap.error).not.toContain(longSku)
+    })
+
+    it('uses the cart badge when the name and the SKU are both blank', async () => {
+        state.products = { data: [], error: null }
+        const result = await validateCheckout(
+            [line({ sku: '   ', productName: '   ' })],
+            0,
+            null,
+        )
+        expect(result.ok).toBe(false)
+        expect(result.error).toBe(
+            'This item is not available yet: ' +
+                CART_LINE_UNAVAILABLE_BADGE +
+                '. Remove it from your cart to continue.',
         )
     })
 

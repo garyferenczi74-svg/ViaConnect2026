@@ -14,6 +14,8 @@ const state = {
     user: { id: USER_ID } as { id: string } | null,
     authHang: false,
     authThrow: false,
+    authError: null as { message: string } | null,
+    getUserCalls: 0,
     product: null as Record<string, unknown> | null,
     productError: null as { code: string; message?: string } | null,
     productHang: false,
@@ -29,6 +31,8 @@ function resetState() {
     state.user = { id: USER_ID }
     state.authHang = false
     state.authThrow = false
+    state.authError = null
+    state.getUserCalls = 0
     state.product = null
     state.productError = null
     state.productHang = false
@@ -46,8 +50,12 @@ vi.mock('@/lib/supabase/server', () => ({
     createClient: async () => ({
         auth: {
             getUser: async () => {
+                state.getUserCalls += 1
                 if (state.authHang) return new Promise(() => undefined)
                 if (state.authThrow) throw new Error('network')
+                if (state.authError) {
+                    return { data: { user: null }, error: state.authError }
+                }
                 return { data: { user: state.user }, error: null }
             },
         },
@@ -171,6 +179,18 @@ describe('/api/shop/waitlist', () => {
     afterEach(() => {
         vi.useRealTimers()
         vi.restoreAllMocks()
+    })
+
+    it('returns 401 when DELETE auth fails', async () => {
+        state.authError = { message: 'invalid session' }
+        state.user = null
+        const response = await call('DELETE', { productId: PRODUCT_ID })
+        expect(response.status).toBe(401)
+        const body = (await response.json()) as { success: boolean; errorCode: string }
+        expect(body.success).toBe(false)
+        expect(body.errorCode).toBe('AUTH_REQUIRED')
+        expect(deleteEqs).toEqual([])
+        expect(state.getUserCalls).toBe(1)
     })
 
     it('returns 401 when there is no user', async () => {
@@ -317,6 +337,16 @@ describe('/api/shop/waitlist', () => {
         expect(second.status).toBe(200)
         expect(deleteEqs).toHaveLength(4)
         expect(deleteEqs.filter((eq) => eq.column === 'user_id').every((eq) => eq.value === USER_ID)).toBe(true)
+    })
+
+    it('passes the route user id into leave and does not call getUser again', async () => {
+        const response = await call('DELETE', { productId: PRODUCT_ID })
+        expect(response.status).toBe(200)
+        expect(state.getUserCalls).toBe(1)
+        expect(deleteEqs).toEqual([
+            { column: 'product_id', value: PRODUCT_ID },
+            { column: 'user_id', value: USER_ID },
+        ])
     })
 
     it('returns 503 or 500 when leave times out or the table is missing', async () => {

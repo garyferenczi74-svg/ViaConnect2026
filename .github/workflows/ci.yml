@@ -52,7 +52,7 @@ jobs:
         # the whole suite. working-directory is viaconnect-web.
         run: |
           shopt -s globstar failglob
-          npx vitest run src/lib/__tests__/shop-*.test.ts src/lib/shop/__tests__/**/*.test.ts
+          npx vitest run src/lib/__tests__/shop-*.test.ts src/lib/shop/__tests__/**/*.test.ts src/lib/shop/**/__tests__/**/*.test.ts src/components/shop/__tests__/**/*.test.tsx src/components/shop/__tests__/**/*.test.ts src/app/api/shop/__tests__/**/*.test.ts
 
       - name: TypeScript check (advisory)
         # Tracked tech debt: ~335 type errors, mostly Supabase `never` from

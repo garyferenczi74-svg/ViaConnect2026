@@ -146,12 +146,7 @@ export async function serverUnavailableCartSkus(skus: string[]): Promise<string[
             uniqueKeys.push(key)
         }
         if (uniqueKeys.length > UNAVAILABLE_SKU_CAP) {
-            const blocked = [...uniqueKeys]
-            for (const sku of skus) {
-                const key = typeof sku === 'string' ? sku.trim() : ''
-                if (!key) blocked.push(sku)
-            }
-            return blocked
+            return [...skus]
         }
         const lookup = await getReleaseLookupBySkus(uniqueKeys)
         if (lookup.status === 'error') return []

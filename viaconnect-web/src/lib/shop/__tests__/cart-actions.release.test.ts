@@ -132,4 +132,12 @@ describe('cart release filter', () => {
         await expect(serverUnavailableCartSkus(many)).resolves.toEqual(many)
         expect(lookup).not.toHaveBeenCalled()
     })
+
+    it('returns the original SKUs, not the trimmed ones, when the input is over the cap', async () => {
+        lookup.mockClear()
+        const originals = Array.from({ length: 101 }, (_, index) => ` SKU-${index} `)
+        originals.push(' SKU-0 ')
+        await expect(serverUnavailableCartSkus(originals)).resolves.toEqual(originals)
+        expect(lookup).not.toHaveBeenCalled()
+    })
 })

@@ -51,7 +51,7 @@ import { createClient } from '@/lib/supabase/server'
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout'
 import { safeLog } from '@/lib/utils/safe-log'
 import { finalizeOrderForSession } from '@/lib/shop/checkout-helpers'
-import { checkoutUnavailableError } from '@/lib/shop/coming-soon-copy'
+import { CART_LINE_UNAVAILABLE_BADGE, checkoutUnavailableError } from '@/lib/shop/coming-soon-copy'
 import { getReleaseLookupBySkus } from '@/lib/shop/release'
 import { serverCheckRxEligibility } from '@/lib/prescriptions/patient-actions'
 
@@ -112,10 +112,21 @@ interface AppliedPromoSnapshot {
     discountCents: number
 }
 
+const BLOCKED_PRODUCT_NAME_MAX = 120
+
+function cappedClientLabel(value: unknown): string | null {
+    if (typeof value !== 'string') return null
+    const trimmed = value.trim()
+    if (trimmed.length === 0 || trimmed.length > BLOCKED_PRODUCT_NAME_MAX) return null
+    return trimmed
+}
+
 function unavailableLineLabel(line: CheckoutCartLine): string {
-    const name = line.productName.trim()
-    if (name.length > 0) return name
-    return line.sku
+    const name = cappedClientLabel(line.productName)
+    if (name) return name
+    const sku = cappedClientLabel(line.sku)
+    if (sku) return sku
+    return CART_LINE_UNAVAILABLE_BADGE
 }
 
 export async function validateCheckout(

@@ -135,6 +135,6 @@ export async function DELETE(request: Request) {
     const productId = readProductId(body)
     if (productId instanceof NextResponse) return productId
 
-    const result = await leaveProductWaitlist(productId)
+    const result = await leaveProductWaitlist(auth.userId, productId)
     return mapLeave(result)
 }
