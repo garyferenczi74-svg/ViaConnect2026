@@ -3,6 +3,7 @@
  */
 import { beforeEach, describe, expect, it } from 'vitest'
 import {
+    COMING_SOON_ZOOM_MARGIN_MS,
     COMING_SOON_ZOOM_MS,
     createMotionScheduler,
     type MotionEntry,
@@ -305,10 +306,12 @@ describe('coming soon motion scheduler', () => {
         expect(node.intro.style.animation).toBe('none')
     })
 
-    it('sets static when cs-zoom ends, with a fallback of the card delay plus 2.6s', () => {
+    it('sets static when cs-zoom ends, after the card delay plus 3.0s plus margin', () => {
         vi.useFakeTimers()
         try {
-            expect(COMING_SOON_ZOOM_MS).toBe(2600)
+            expect(COMING_SOON_ZOOM_MS).toBe(3000)
+            expect(COMING_SOON_ZOOM_MARGIN_MS).toBe(75)
+            const fallback = COMING_SOON_ZOOM_MS + COMING_SOON_ZOOM_MARGIN_MS
             const node = makeNode(0, '0s')
             const scheduler = createMotionScheduler({
                 IO: FakeIO,
@@ -320,7 +323,9 @@ describe('coming soon motion scheduler', () => {
             node.emit('cs-intro')
             expect(isRunning(node)).toBe(true)
             expect(node.getAttribute('data-cs-static')).toBeNull()
-            vi.advanceTimersByTime(COMING_SOON_ZOOM_MS - 1)
+            vi.advanceTimersByTime(COMING_SOON_ZOOM_MS)
+            expect(isRunning(node)).toBe(true)
+            vi.advanceTimersByTime(COMING_SOON_ZOOM_MARGIN_MS - 1)
             expect(isRunning(node)).toBe(true)
             vi.advanceTimersByTime(1)
             expect(node.getAttribute('data-cs-static')).toBe('true')
@@ -338,12 +343,35 @@ describe('coming soon motion scheduler', () => {
             const staggered = makeNode(2, '0.400s')
             scheduler.register(staggered)
             FakeIO.instances[0].callback([{ target: staggered, isIntersecting: true, intersectionRatio: 1 }])
-            vi.advanceTimersByTime(COMING_SOON_ZOOM_MS + 400 - 1)
+            vi.advanceTimersByTime(fallback + 400 - 1)
             expect(isRunning(staggered)).toBe(true)
             vi.advanceTimersByTime(1)
             expect(staggered.getAttribute('data-cs-static')).toBe('true')
             scheduler.unregister(staggered)
             expect(vi.getTimerCount()).toBe(0)
+        } finally {
+            vi.useRealTimers()
+        }
+    })
+
+    it('finishes every in-view overlay by about 3.5s', () => {
+        vi.useFakeTimers()
+        try {
+            const delays = [0, 0.247, 0.094, 0.342, 0.189, 0.036, 0.283, 0.13, 0.378, 0.225, 0.072, 0.319]
+            const nodes = delays.map((delay, index) => makeNode(index, `${delay.toFixed(3)}s`))
+            const scheduler = createMotionScheduler({
+                IO: FakeIO,
+                matchMedia: () => ({ matches: false }),
+            })
+            for (const node of nodes) scheduler.register(node)
+            FakeIO.instances[0].callback(
+                nodes.map((node) => ({ target: node, isIntersecting: true, intersectionRatio: 1 })),
+            )
+            expect(runningCount(nodes)).toBe(12)
+            vi.advanceTimersByTime(3500)
+            for (const node of nodes) {
+                expect(node.getAttribute('data-cs-static'), `index ${node.index}`).toBe('true')
+            }
         } finally {
             vi.useRealTimers()
         }

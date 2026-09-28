@@ -332,6 +332,30 @@ describe('coming soon css contract', () => {
         }
     })
 
+    it('samples one continuous zoom with matching light stops and no overshoot', () => {
+        expect(css).toMatch(/--cs-zoom-dur:\s*3s/)
+        expect(css).not.toContain('--cs-zoom-small')
+        expect(css).not.toContain('--cs-zoom-dip')
+        expect(css).not.toContain('--cs-zoom-over-1')
+        expect(css).not.toContain('--cs-zoom-over-2')
+        const frames = extractAtBlocks(css, 'keyframes')
+        const stopsOf = (name: string): string[] => {
+            const body = frames.find((block) => block.header === name)?.body ?? ''
+            return [...body.matchAll(/(?:^|\n)\s*([0-9.]+%)\s*\{/g)].map((match) => match[1])
+        }
+        const zoomStops = stopsOf('cs-zoom')
+        const lightStops = stopsOf('cs-light')
+        expect(zoomStops).toHaveLength(24)
+        expect(lightStops).toEqual(zoomStops)
+        const zoom = frames.find((block) => block.header === 'cs-zoom')?.body ?? ''
+        const scales = [...zoom.matchAll(/scale\(\s*([0-9.]+)\s*\)/g)].map((match) => Number(match[1]))
+        expect(scales.length).toBeGreaterThan(0)
+        for (const scale of scales) expect(scale).toBeLessThanOrEqual(1)
+        for (const block of frames) {
+            expect(block.body, block.header).not.toMatch(/animation-timing-function:\s*var\(/)
+        }
+    })
+
     it('matches the reduced-motion mid-state and the over-cap static pose', () => {
         const media = extractAtBlocks(css, 'media')
         const reduced = media.find((block) => block.header === '(prefers-reduced-motion: reduce)')
@@ -342,7 +366,10 @@ describe('coming soon css contract', () => {
         expect(reducedBody).toMatch(/\.cs-intro[\s\S]*\.cs-bob[\s\S]*\.cs-word[\s\S]*\.cs-hi[\s\S]*\.cs-refl[\s\S]*animation:\s*none/)
         expect(reducedBody).toMatch(/\.cs-bob\s*\{[^}]*transform:\s*none/)
         expect(reducedBody).toMatch(/\.cs-word\s*\{[^}]*transform:\s*scale\(1\)/)
+        expect(reducedBody).toMatch(/\.cs-word\s*\{[^}]*will-change:\s*transform/)
         expect(reducedBody).toMatch(/\.cs-hi\s*\{[^}]*opacity:\s*var\(--cs-light-rest\)/)
+        expect(reducedBody).toMatch(/\.cs-hi\s*\{[^}]*will-change:\s*opacity/)
+        expect(reducedBody).toMatch(/will-change:\s*auto/)
         expect(reducedBody).toContain('scaleX(0.86)')
         expect(reducedBody).not.toContain('data-cs-paused')
         expect(reducedBody).not.toContain('translate3d')
@@ -352,7 +379,10 @@ describe('coming soon css contract', () => {
         const staticCss = css.slice(staticStart, supportsAt)
         expect(staticCss).toMatch(/\.cs-bob[\s\S]*animation:\s*none/)
         expect(staticCss).toMatch(/\.cs-word\s*\{[^}]*transform:\s*scale\(1\)/)
+        expect(staticCss).toMatch(/\.cs-word\s*\{[^}]*will-change:\s*transform/)
         expect(staticCss).toMatch(/\.cs-hi\s*\{[^}]*opacity:\s*var\(--cs-light-rest\)/)
+        expect(staticCss).toMatch(/\.cs-hi\s*\{[^}]*will-change:\s*opacity/)
+        expect(staticCss).toMatch(/will-change:\s*auto/)
         expect(staticCss).toContain('scaleX(0.86)')
         expect(staticCss).not.toContain('translate3d')
 
@@ -371,10 +401,11 @@ describe('coming soon css contract', () => {
         expect(tail).toContain('[data-cs-static="true"]')
         expect(tail).toContain('prefers-reduced-motion: no-preference')
         expect(tail).toContain('transition: transform 200ms linear, opacity 200ms linear')
+        expect(tail).toContain(':is(.cs-bob, .cs-hi)')
+        expect(tail).not.toContain('.cs-word')
         expect(tail).not.toMatch(/var\(/)
         expect(tail).not.toMatch(/@keyframes/)
         expect(tail).toContain('.cs-bob')
-        expect(tail).toContain('.cs-word')
         expect(tail).toContain('.cs-hi')
     })
 

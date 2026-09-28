@@ -4,9 +4,13 @@
  * before the rootMargin pre-load band. On-screen cards past the cap get
  * data-cs-static. Off-screen overlays, including pre-load cards that did
  * not get a slot, get data-cs-paused. A finished zoom frees its slot.
- * data-cs-static is set after cs-zoom ends (animationend, or a fallback
- * of the card's --cs-delay plus COMING_SOON_ZOOM_MS). Reduced motion
- * never observes and is static from the start.
+ * data-cs-static is set after cs-zoom ends (animationend on .cs-word when
+ * animationName === 'cs-zoom', or a fallback of the card's --cs-delay plus
+ * COMING_SOON_ZOOM_MS plus COMING_SOON_ZOOM_MARGIN_MS). The margin keeps
+ * the timeout from firing mid-zoom. Reduced motion never observes and is
+ * static from the start.
+ * The 12 slots count unfinished zooms only (playState !== 'finished':
+ * running, or still waiting out --cs-delay). A finished zoom frees its slot.
  * This module is self-contained so tests can evaluate it in a browser.
  */
 
@@ -59,7 +63,7 @@ export interface MotionSchedulerOptions {
     matchMedia?: (query: string) => MotionMediaQuery
     /** Test clock. Production uses Date.now. */
     now?: () => number
-    /** Overrides COMING_SOON_ZOOM_MS. Fallback is --cs-delay plus this many ms. */
+    /** Overrides COMING_SOON_ZOOM_MS. Fallback is --cs-delay plus this many ms plus the margin. */
     zoomMs?: number
 }
 
@@ -70,10 +74,14 @@ export interface MotionScheduler {
 }
 
 /**
- * cs-zoom duration. The per-card --cs-delay (at most 0.4 s) is added,
- * so every card that starts on mount is done by 3.0 s.
+ * cs-zoom duration. Settles and holds LARGE by 3.0 s after its delay
+ * (≤ 3.4 s per grid); no overshoot; continuous speed.
+ * The fallback waits this long, plus the card delay, plus the margin.
  */
-export const COMING_SOON_ZOOM_MS = 2600
+export const COMING_SOON_ZOOM_MS = 3000
+
+/** Extra time so the fallback never fires while cs-zoom is still running. */
+export const COMING_SOON_ZOOM_MARGIN_MS = 75
 
 interface ViewState {
     onScreen: boolean
@@ -102,6 +110,7 @@ export function createMotionScheduler(options?: MotionSchedulerOptions): MotionS
     const cap = options?.cap ?? DEFAULT_CAP
     const rootMargin = options?.rootMargin ?? DEFAULT_ROOT_MARGIN
     const zoomMs = options?.zoomMs ?? COMING_SOON_ZOOM_MS
+    const marginMs = COMING_SOON_ZOOM_MARGIN_MS
     const now = options?.now ?? Date.now
 
     function documentOrder(a: MotionNode, b: MotionNode): number {
@@ -196,7 +205,7 @@ export function createMotionScheduler(options?: MotionSchedulerOptions): MotionS
     function armFallback(node: MotionNode, entry: Tracked): void {
         if (entry.settled || entry.timer !== null) return
         if (entry.segmentStart === null) entry.segmentStart = now()
-        const total = delayMsOf(node) + zoomMs
+        const total = delayMsOf(node) + zoomMs + marginMs
         const elapsed = entry.ranMs + Math.max(0, now() - entry.segmentStart)
         if (elapsed >= total) {
             entry.settled = true

@@ -30,7 +30,28 @@ const SIZES = [
 
 const BACKGROUNDS = ['white', 'noise', 'navy'] as const
 type BackgroundName = (typeof BACKGROUNDS)[number]
-type PoseName = 'peak' | 'final'
+type PoseName = 'small' | 'large' | 'dip' | 'final'
+
+const FREEZE_MS: Record<PoseName, number> = {
+    small: 120,
+    large: 731.7,
+    dip: 1594,
+    final: 3000,
+}
+
+const EXPECTED_SCALE: Record<PoseName, number> = {
+    small: 0.58,
+    large: 1,
+    dip: 0.65,
+    final: 1,
+}
+
+const SCALE_TOLERANCE: Record<PoseName, number> = {
+    small: 0.04,
+    large: 0.015,
+    dip: 0.025,
+    final: 0.01,
+}
 
 interface PixelResult {
     project: string
@@ -148,8 +169,7 @@ async function paintNoise(page: Page, seed: number): Promise<void> {
 }
 
 async function freeze(page: Page, pose: PoseName): Promise<{ scale: number }> {
-    return page.evaluate((which) => {
-        const targetMs = which === 'peak' ? 620 : 2600
+    return page.evaluate((targetMs) => {
         document.querySelectorAll<HTMLElement>('.cs-metal').forEach((el) => {
             el.style.setProperty('--cs-delay', '0s')
             el.removeAttribute('data-cs-paused')
@@ -178,7 +198,7 @@ async function freeze(page: Page, pose: PoseName): Promise<{ scale: number }> {
         const matrix = transform === 'none' ? new DOMMatrix() : new DOMMatrix(transform)
         const scale = Math.hypot(matrix.a, matrix.b)
         return { scale }
-    }, pose)
+    }, FREEZE_MS[pose])
 }
 
 async function pixelDiff(
@@ -301,10 +321,9 @@ test.describe('coming soon overlay harness', () => {
                 const loaded = await page.evaluate(() => document.fonts.check('600 28px "Playfair Display"'))
                 expect(loaded).toBe(true)
 
-                for (const pose of ['peak', 'final'] as const) {
+                for (const pose of ['small', 'large', 'dip', 'final'] as const) {
                     const placed = await freeze(page, pose)
-                    const expectedScale = pose === 'peak' ? 1.035 : 1
-                    expect(Math.abs(placed.scale - expectedScale), `${size.name} ${pose}`).toBeLessThan(pose === 'peak' ? 0.02 : 0.01)
+                    expect(Math.abs(placed.scale - EXPECTED_SCALE[pose]), `${size.name} ${pose} scale ${placed.scale}`).toBeLessThan(SCALE_TOLERANCE[pose])
                     const place = await page.evaluate(() => {
                         const frame = document.querySelector<HTMLElement>('.frame')
                         const word = document.querySelector<HTMLElement>('.cs-word')
@@ -328,17 +347,24 @@ test.describe('coming soon overlay harness', () => {
                     })
                     expect(place.reflDisplay, size.name).toBe('none')
                     expect(place.rotate, size.name).toMatch(/-45deg/)
-                    expect(Math.abs(place.centerX - 0.5), `${size.name} ${pose} x`).toBeLessThan(0.01)
-                    expect(Math.abs(place.centerY - (place.wide ? 0.52 : 0.49)), `${size.name} ${pose} y`).toBeLessThan(0.01)
-                    if (pose === 'peak') {
+                    if (pose === 'large' || pose === 'final') {
+                        expect(Math.abs(place.centerX - 0.5), `${size.name} ${pose} x`).toBeLessThan(0.01)
+                        expect(Math.abs(place.centerY - (place.wide ? 0.52 : 0.49)), `${size.name} ${pose} y`).toBeLessThan(0.01)
+                    }
+                    if (pose === 'final') {
                         expect(place.insetLeft, `${size.name} left`).toBeGreaterThanOrEqual(0.08)
                         expect(place.insetRight, `${size.name} right`).toBeGreaterThanOrEqual(0.08)
                         expect(place.insetTop, `${size.name} top`).toBeGreaterThanOrEqual(0.08)
                         expect(place.insetBottom, `${size.name} bottom`).toBeGreaterThanOrEqual(0.08)
                     }
-                    const diff = await pixelDiff(page, 'root')
-                    expect(diff.changedOut, `${testInfo.project.name} ${size.name} ${background} ${pose}`).toBe(0)
-                    expect(diff.changedIn).toBeGreaterThan(0)
+                    const checkPixels = pose === 'large' || pose === 'final'
+                    const diff = checkPixels
+                        ? await pixelDiff(page, 'root')
+                        : { changedIn: 0, changedOut: 0 }
+                    if (checkPixels) {
+                        expect(diff.changedOut, `${testInfo.project.name} ${size.name} ${background} ${pose}`).toBe(0)
+                        expect(diff.changedIn).toBeGreaterThan(0)
+                    }
                     const row: PixelResult = {
                         project: testInfo.project.name,
                         surface: size.name,
@@ -347,7 +373,7 @@ test.describe('coming soon overlay harness', () => {
                         changedIn: diff.changedIn,
                         changedOut: diff.changedOut,
                     }
-                    if (pose === 'final' && background === 'white') {
+                    if ((pose === 'large' || pose === 'final') && background === 'white') {
                         row.centerX = place.centerX
                         row.centerY = place.centerY
                     }
@@ -427,6 +453,8 @@ test.describe('coming soon overlay harness', () => {
                     bobTransform: getComputedStyle(bob).transform,
                     hiOpacity: getComputedStyle(hi).opacity,
                     reflDisplay: getComputedStyle(refl).display,
+                    wordWillChange: getComputedStyle(word).willChange,
+                    hiWillChange: getComputedStyle(hi).willChange,
                 }
             })
             expect(state.anims, size.name).toBe(0)
@@ -434,6 +462,8 @@ test.describe('coming soon overlay harness', () => {
             expect(state.bobTransform, size.name).toBe('none')
             expect(state.hiOpacity).toBe('0.55')
             expect(state.reflDisplay, size.name).toBe('none')
+            expect(state.wordWillChange, size.name).toBe('transform')
+            expect(state.hiWillChange, size.name).toBe('opacity')
             if (testInfo.project.name === 'desktop-1440') {
                 await page.locator('.frame').screenshot({
                     path: join(ARTIFACT_DIR, `${size.name}-reduced.png`),
