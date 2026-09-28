@@ -11,23 +11,22 @@
  *   expects two per layer) but render inline-block on one line; the space is a 0.25em inline margin (the
  *   Playfair space advance). The floor reflection is switched off (display: none; element kept, see brief A4/A5).
  * A6 (Gary 00:45): centred on the bottle (x 50%, y = measured bottle centre per box shape).
- * A7 (Gary 00:48): the vertical bob is REPLACED by a one-shot ZOOM on mount: small -> large -> small -> large,
- *   settle and hold LARGE (2.6 s + <= 0.4 s stagger = done by 3.0 s, inside the 5 s window). Scale only, on
- *   .cs-word about its centre (the static -45deg `rotate` is untouched). Light follows scale. The finished
- *   animation fills forwards at exactly the static values, so data-cs-static (S2 timer / over-cap / reduced
- *   motion) takes over with no snap. .cs-bob stays in the markup but no longer animates.
- * A8 (Gary, on the A7 preview: "glitching and lagging, it has to be smooth and flow properly"): same beats (small -> large ->
- *   small -> large, hold LARGE, once), rebuilt as ONE continuous curve. A7 joined five eased segments that each
- *   stopped dead (a stall at 0.85 s in the middle of a shrink, acceleration jumps at every join) with two overshoot
- *   humps above the final size. A8 samples a smooth function into 24 stops whose literal cubic-beziers match the
- *   curve's slope at every join (velocity continuous), never exceeds scale 1 (no overshoot), and eases to zero speed
- *   AND zero acceleration at the end. 3.0 s (+ <= 0.4 s stagger = done by 3.4 s). Light (.cs-hi) uses the same
- *   stops, duration and delay; every layer scales from the one .cs-word transform, so nothing drifts.
+ * A7 (Gary 00:48): the vertical bob is REPLACED by a one-shot ZOOM on mount. Scale only, on .cs-word about its
+ *   centre (the static -45deg `rotate` is untouched). Light follows scale. The finished animation fills forwards
+ *   at exactly the static values, so data-cs-static (S2 timer / over-cap / reduced motion) takes over with no snap.
+ *   .cs-bob stays in the markup but no longer animates. The A7 four-beat shape is superseded by A10.
+ * A8 (Gary, on the A7 preview: "glitching and lagging, it has to be smooth and flow properly"): superseded by A10.
+ *   The 24-stop beat curve is retired.
  * A9 (Gary 2026-09-28 12:09 MT, "the green is hard to see"): COLOUR ONLY. The onLight fill tokens become a very dark
  *   bottle green with a bright emerald specular streak, and the shadow becomes tight + soft-wide green-black (still
  *   no stroke/outline; blur >= 2x offset; reach <= 0.2em). Fill contrast (rest pose, min / median): white 10.69 / 12.75
- *   (A8 4.34 / 5.36), bright silver 5.23 / 10.43 (A8 2.12 / 4.48). Motion, curve, timing, stagger, geometry, L1 and
- *   the onDark (navy fallback) tokens are unchanged. Token values only; no class, keyframe or selector change.
+ *   (A8 4.34 / 5.36), bright silver 5.23 / 10.43 (A8 2.12 / 4.48). A9 did not change motion. Token values only;
+ *   no class, keyframe or selector change.
+ * A10 (Gary 2026-09-28 15:14 MT, "I would rather the stamp just grow once and stop."): MOTION ONLY.
+ *   .cs-word scales once from 0.55 to 1 over 1.2 s and holds. Ease-out cubic-bezier(0.22, 1, 0.36, 1) arrives
+ *   with zero velocity. Monotonic, never above 1. .cs-hi uses the same duration and ease: deeper when small,
+ *   brightening as it grows, ending at the rest light 0.55. No dip, no overshoot. Colour (A9), stagger, geometry,
+ *   L1, placement, sizes, and the static pose (equal to the 100% frame) are unchanged.
  * Target path: viaconnect-web/src/components/shop/coming-soon-metal.css
  * Imported only by ComingSoonOverlay.tsx (co-located, like gauges/plasma-gauge.css).
  * Rules: animate transform and opacity only. No filter, no color, no background animation.
@@ -39,18 +38,15 @@
 
 /* ---------- Tokens ---------------------------------------------------------- */
 .cs-metal {
-  /* A8 zoom (one shot on mount, one continuous curve). Retired bob tokens: --cs-period, --cs-hang, --cs-ease-fall,
-     --cs-ease-rise, --cs-travel, --cs-scale-contact, --cs-scale-peak, --cs-intro-offset, --cs-intro-delay.
-     Retired in A8: --cs-zoom-small, --cs-zoom-dip, --cs-zoom-over-1, --cs-zoom-over-2 (the curve is sampled into
-     the keyframes, so single-value tokens could no longer drive it; the overshoots are gone).
-     Curve (generator: brief-67/tools/curve-a8.js): s(t) = 1 - a * (1 + cos(pi * phase)) / 2, phase = 3 * (1 - (1 - t/T)^1.45),
-     depth a eases 0.45 -> 0.35 (smootherstep). Beats: 0.55 small at 0 s -> 1 LARGE at 0.73 s -> 0.65 small at 1.59 s
-     -> 1 LARGE at 3.0 s (0.99 by 2.70 s), speed and acceleration 0 at the end. Scale never exceeds 1. */
-  --cs-zoom-dur: 3s;             /* drives cs-zoom AND cs-light (same duration + delay = the layers cannot drift) */
-  /* Easings are literals inside @keyframes cs-zoom / cs-light: Chrome does not resolve var() in a keyframe's
-     animation-timing-function (it silently falls back to linear). A8: every segment is cubic-bezier(0.3333, y1, 0.6667, y2),
-     i.e. cubic Hermite, with y1/y2 set so the slope matches the curve at both ends of the segment. */
-  --cs-light-rest: 0.55;         /* .cs-hi opacity held at rest (satin mid tone; brightest at the first LARGE, a softer catch on the second) */
+  /* A10 zoom (one shot on mount): grows once from 0.55 to 1 and holds. A8's 24-stop beat curve is superseded.
+     Retired bob tokens: --cs-period, --cs-hang, --cs-ease-fall, --cs-ease-rise, --cs-travel, --cs-scale-contact,
+     --cs-scale-peak, --cs-intro-offset, --cs-intro-delay.
+     Retired zoom tokens: --cs-zoom-small, --cs-zoom-dip, --cs-zoom-over-1, --cs-zoom-over-2. */
+  --cs-zoom-dur: 1.2s;           /* drives cs-zoom AND cs-light (same duration + delay = the layers cannot drift) */
+  /* Easing is a literal inside @keyframes cs-zoom / cs-light: Chrome does not resolve var() in a keyframe's
+     animation-timing-function (it silently falls back to linear). A10: cubic-bezier(0.22, 1, 0.36, 1),
+     an ease-out that reaches 100% with zero velocity. Scale never exceeds 1. */
+  --cs-light-rest: 0.55;         /* .cs-hi opacity held at rest; the single grow ends on this satin value */
 
   /* A4 diagonal: static tilt + placement (centre of the tilted line, % of image box); A7: zoom scales about this point */
   --cs-tilt: -45deg;             /* static, applied with the `rotate` property on .cs-word; never animated */
@@ -68,8 +64,8 @@
   --cs-intro-dur: 0.35s;
   --cs-intro-ease: cubic-bezier(0.22, 1, 0.36, 1);
 
-  /* Grid stagger (A7, unchanged in A8): small POSITIVE start delay, set per card: ((index * 0.618) % 1) * 0.4s
-     (max 0.4 s; 0.378 s for index 0-11), so every overlay is settled by 3.0 + 0.4 = 3.4 s */
+  /* Grid stagger (A7, unchanged): small POSITIVE start delay, set per card: ((index * 0.618) % 1) * 0.4s
+     (max 0.4 s; 0.378 s for index 0-11). A10 zoom is 1.2 s, so the zoom itself is done by 1.2 + 0.4 = 1.6 s. */
   --cs-delay: 0s;
 
   /* Shadow only (A3: no outline, no stroke tokens). Soft, blurred; blur >= 2x offset so it never reads as a rim.
@@ -216,73 +212,25 @@
                                     ellipse there reads as a smudge on the lower label copy. Element kept (T2). */
 }
 
-/* ---------- Motion (A7 one-shot zoom; A8 one continuous curve) --------------- */
+/* ---------- Motion (A10: one monotonic grow, then hold) ---------------------- */
 @keyframes cs-intro {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
 
-/* A8: scale about the line centre (.cs-word transform-origin 50% 50%); the static `rotate` composes before it.
-   24 stops sampled from one smooth curve (tools/curve-a8.js). Each segment's literal cubic-bezier(1/3, y1, 2/3, y2) is the
-   cubic Hermite segment whose end slopes equal the curve's velocity at both stops, so speed is continuous through every
-   stop (A7 stopped dead at each join). The four beats are stops with slope 0: 0% (0.55), 24.39% = 0.73 s (1),
-   53.12% = 1.59 s (0.65), 100% = 3.0 s (1). Max scale is 1 (no overshoot humps). The 100% frame equals the static
-   pose exactly (see the static block for the layer hints that keep the hand-over pixel-identical). */
+/* A10: scale about the line centre (.cs-word transform-origin 50% 50%); the static `rotate` composes before it.
+   One segment, 0.55 -> 1. cubic-bezier(0.22, 1, 0.36, 1) is ease-out: monotonic, never above 1, zero velocity
+   at 100%. The 100% frame equals the static pose exactly (see the static block). */
 @keyframes cs-zoom {
-  0%      { transform: scale(0.55);   animation-timing-function: cubic-bezier(0.3333, 0, 0.6667, 0.341); }
-  2.63%   { transform: scale(0.5644); animation-timing-function: cubic-bezier(0.3333, 0.227, 0.6667, 0.569); }
-  5.4%    { transform: scale(0.6083); animation-timing-function: cubic-bezier(0.3333, 0.277, 0.6667, 0.623); }
-  8.8%    { transform: scale(0.6923); animation-timing-function: cubic-bezier(0.3333, 0.323, 0.6667, 0.686); }
-  14.25%  { transform: scale(0.8498); animation-timing-function: cubic-bezier(0.3333, 0.38, 0.6667, 0.722); }
-  17.7%   { transform: scale(0.9323); animation-timing-function: cubic-bezier(0.3333, 0.423, 0.6667, 0.761); }
-  20.7%   { transform: scale(0.9794); animation-timing-function: cubic-bezier(0.3333, 0.559, 0.6667, 0.891); }
-  23.65%  { transform: scale(0.9992); animation-timing-function: cubic-bezier(0.3333, 0.667, 0.6667, 1); }
-  24.39%  { transform: scale(1);      animation-timing-function: cubic-bezier(0.3333, 0, 0.6667, 0.348); }
-  26.72%  { transform: scale(0.9925); animation-timing-function: cubic-bezier(0.3333, 0.206, 0.6667, 0.555); }
-  30.18%  { transform: scale(0.9571); animation-timing-function: cubic-bezier(0.3333, 0.275, 0.6667, 0.626); }
-  34.67%  { transform: scale(0.8829); animation-timing-function: cubic-bezier(0.3333, 0.333, 0.6667, 0.694); }
-  41.35%  { transform: scale(0.7591); animation-timing-function: cubic-bezier(0.3333, 0.387, 0.6667, 0.729); }
-  45.7%   { transform: scale(0.6953); animation-timing-function: cubic-bezier(0.3333, 0.443, 0.6667, 0.782); }
-  49.6%   { transform: scale(0.6603); animation-timing-function: cubic-bezier(0.3333, 0.666, 0.6667, 1); }
-  53.12%  { transform: scale(0.65);   animation-timing-function: cubic-bezier(0.3333, 0, 0.6667, 0.356); }
-  57.33%  { transform: scale(0.6638); animation-timing-function: cubic-bezier(0.3333, 0.236, 0.6667, 0.584); }
-  61.8%   { transform: scale(0.7039); animation-timing-function: cubic-bezier(0.3333, 0.288, 0.6667, 0.642); }
-  68.17%  { transform: scale(0.7866); animation-timing-function: cubic-bezier(0.3333, 0.35, 0.6667, 0.702); }
-  75.63%  { transform: scale(0.8857); animation-timing-function: cubic-bezier(0.3333, 0.387, 0.6667, 0.725); }
-  81.08%  { transform: scale(0.9414); animation-timing-function: cubic-bezier(0.3333, 0.425, 0.6667, 0.755); }
-  86.4%   { transform: scale(0.9767); animation-timing-function: cubic-bezier(0.3333, 0.504, 0.6667, 0.817); }
-  92.17%  { transform: scale(0.9952); animation-timing-function: cubic-bezier(0.3333, 0.962, 0.6667, 1); }
-  100%    { transform: scale(1);      }
+  0%   { transform: scale(0.55); animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1); }
+  100% { transform: scale(1); }
 }
 
-/* A8 light: the SAME 24 stop offsets, duration and delay as cs-zoom. .cs-hi opacity = how large the word is
-   ((scale - 0.55) / 0.45: 0 small, 1 LARGE), blended with smootherstep between 2.2 s and 3.0 s into --cs-light-rest, so the
-   first arrival is full bright, the second a softer catch (0.82 at ~2.4 s) that relaxes into satin. Continuous slope too. */
+/* A10 light: same duration, delay, and ease as cs-zoom. Deeper when small (opacity 0, the deep fill shows),
+   brightening as the word grows, ending at --cs-light-rest (0.55). No mid dip. */
 @keyframes cs-light {
-  0%      { opacity: 0;     animation-timing-function: cubic-bezier(0.3333, 0, 0.6667, 0.341); }
-  2.63%   { opacity: 0.032; animation-timing-function: cubic-bezier(0.3333, 0.227, 0.6667, 0.569); }
-  5.4%    { opacity: 0.13;  animation-timing-function: cubic-bezier(0.3333, 0.277, 0.6667, 0.623); }
-  8.8%    { opacity: 0.316; animation-timing-function: cubic-bezier(0.3333, 0.323, 0.6667, 0.686); }
-  14.25%  { opacity: 0.666; animation-timing-function: cubic-bezier(0.3333, 0.38, 0.6667, 0.722); }
-  17.7%   { opacity: 0.85;  animation-timing-function: cubic-bezier(0.3333, 0.423, 0.6667, 0.761); }
-  20.7%   { opacity: 0.954; animation-timing-function: cubic-bezier(0.3333, 0.559, 0.6667, 0.891); }
-  23.65%  { opacity: 0.998; animation-timing-function: cubic-bezier(0.3333, 0.667, 0.6667, 1); }
-  24.39%  { opacity: 1;     animation-timing-function: cubic-bezier(0.3333, 0, 0.6667, 0.348); }
-  26.72%  { opacity: 0.983; animation-timing-function: cubic-bezier(0.3333, 0.206, 0.6667, 0.555); }
-  30.18%  { opacity: 0.905; animation-timing-function: cubic-bezier(0.3333, 0.275, 0.6667, 0.626); }
-  34.67%  { opacity: 0.74;  animation-timing-function: cubic-bezier(0.3333, 0.333, 0.6667, 0.694); }
-  41.35%  { opacity: 0.465; animation-timing-function: cubic-bezier(0.3333, 0.387, 0.6667, 0.729); }
-  45.7%   { opacity: 0.323; animation-timing-function: cubic-bezier(0.3333, 0.443, 0.6667, 0.782); }
-  49.6%   { opacity: 0.245; animation-timing-function: cubic-bezier(0.3333, 0.666, 0.6667, 1); }
-  53.12%  { opacity: 0.222; animation-timing-function: cubic-bezier(0.3333, 0, 0.6667, 0.356); }
-  57.33%  { opacity: 0.253; animation-timing-function: cubic-bezier(0.3333, 0.236, 0.6667, 0.584); }
-  61.8%   { opacity: 0.342; animation-timing-function: cubic-bezier(0.3333, 0.288, 0.6667, 0.642); }
-  68.17%  { opacity: 0.526; animation-timing-function: cubic-bezier(0.3333, 0.352, 0.6667, 0.717); }
-  75.63%  { opacity: 0.745; animation-timing-function: cubic-bezier(0.3333, 0.589, 0.6667, 0.985); }
-  81.08%  { opacity: 0.822; animation-timing-function: cubic-bezier(0.3333, -0.018, 0.6667, 0.39); }
-  86.4%   { opacity: 0.757; animation-timing-function: cubic-bezier(0.3333, 0.311, 0.6667, 0.713); }
-  92.17%  { opacity: 0.618; animation-timing-function: cubic-bezier(0.3333, 0.793, 0.6667, 1); }
-  100%    { opacity: var(--cs-light-rest); }
+  0%   { opacity: 0; animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1); }
+  100% { opacity: var(--cs-light-rest); }
 }
 
 /* Floor reflection keyframes kept for a one-line restore (the element is display: none since A4/A5). */
@@ -293,7 +241,7 @@
 
 @media (prefers-reduced-motion: no-preference) {
   .cs-intro { animation: cs-intro var(--cs-intro-dur) var(--cs-intro-ease) var(--cs-delay) 1 both; }
-  /* A8: linear at the animation level (the shape lives in the keyframes); one composited transform on .cs-word
+  /* A10: linear at the animation level (the ease-out lives in the keyframes); one composited transform on .cs-word
      carries all three layers (edge shadow, deep fill, hi fill), and .cs-hi adds only an opacity on the same clock. */
   .cs-word  { animation: cs-zoom  var(--cs-zoom-dur) linear var(--cs-delay) 1 both; will-change: transform; }
   .cs-hi    { animation: cs-light var(--cs-zoom-dur) linear var(--cs-delay) 1 both; will-change: opacity; }

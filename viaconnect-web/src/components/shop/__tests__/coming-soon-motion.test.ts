@@ -306,10 +306,10 @@ describe('coming soon motion scheduler', () => {
         expect(node.intro.style.animation).toBe('none')
     })
 
-    it('sets static when cs-zoom ends, after the card delay plus 3.0s plus margin', () => {
+    it('sets static when cs-zoom ends, after the card delay plus 1.2s plus margin', () => {
         vi.useFakeTimers()
         try {
-            expect(COMING_SOON_ZOOM_MS).toBe(3000)
+            expect(COMING_SOON_ZOOM_MS).toBe(1200)
             expect(COMING_SOON_ZOOM_MARGIN_MS).toBe(75)
             const fallback = COMING_SOON_ZOOM_MS + COMING_SOON_ZOOM_MARGIN_MS
             const node = makeNode(0, '0s')
@@ -354,7 +354,7 @@ describe('coming soon motion scheduler', () => {
         }
     })
 
-    it('finishes every in-view overlay by about 3.5s', () => {
+    it('finishes every in-view overlay by about 1.7s', () => {
         vi.useFakeTimers()
         try {
             const delays = [0, 0.247, 0.094, 0.342, 0.189, 0.036, 0.283, 0.13, 0.378, 0.225, 0.072, 0.319]
@@ -368,7 +368,8 @@ describe('coming soon motion scheduler', () => {
                 nodes.map((node) => ({ target: node, isIntersecting: true, intersectionRatio: 1 })),
             )
             expect(runningCount(nodes)).toBe(12)
-            vi.advanceTimersByTime(3500)
+            // Longest stagger in this set is 0.378s. Fallback is delay + 1.2s + 75ms = 1.653s.
+            vi.advanceTimersByTime(1700)
             for (const node of nodes) {
                 expect(node.getAttribute('data-cs-static'), `index ${node.index}`).toBe('true')
             }

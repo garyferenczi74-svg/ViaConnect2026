@@ -30,28 +30,65 @@ const SIZES = [
 
 const BACKGROUNDS = ['white', 'noise', 'navy'] as const
 type BackgroundName = (typeof BACKGROUNDS)[number]
-type PoseName = 'small' | 'large' | 'dip' | 'final'
+/** 0.12 s, 0.6 s, 1.2 s (arrival), and the held final frame at 2.0 s. */
+type PoseName = 't012' | 't060' | 't120' | 'final'
+
+const ZOOM_DUR_MS = 1200
 
 const FREEZE_MS: Record<PoseName, number> = {
-    small: 120,
-    large: 731.7,
-    dip: 1594,
-    final: 3000,
+    t012: 120,
+    t060: 600,
+    t120: 1200,
+    final: 2000,
+}
+
+/** cubic-bezier(0.22, 1, 0.36, 1): ease-out, zero velocity at the end, y stays in [0, 1]. */
+function easeOutProgress(progress: number): number {
+    const x1 = 0.22
+    const y1 = 1
+    const x2 = 0.36
+    const y2 = 1
+    const cx = 3 * x1
+    const bx = 3 * (x2 - x1) - cx
+    const ax = 1 - cx - bx
+    const cy = 3 * y1
+    const by = 3 * (y2 - y1) - cy
+    const ay = 1 - cy - by
+    const sampleX = (t: number) => ((ax * t + bx) * t + cx) * t
+    const sampleY = (t: number) => ((ay * t + by) * t + cy) * t
+    const sampleDX = (t: number) => (3 * ax * t + 2 * bx) * t + cx
+    let t = progress
+    for (let step = 0; step < 12; step += 1) {
+        const slope = sampleDX(t)
+        if (Math.abs(slope) < 1e-6) break
+        t -= (sampleX(t) - progress) / slope
+    }
+    if (t < 0) t = 0
+    if (t > 1) t = 1
+    return sampleY(t)
+}
+
+function expectedScale(ms: number): number {
+    if (ms <= 0) return 0.55
+    if (ms >= ZOOM_DUR_MS) return 1
+    return 0.55 + 0.45 * easeOutProgress(ms / ZOOM_DUR_MS)
 }
 
 const EXPECTED_SCALE: Record<PoseName, number> = {
-    small: 0.58,
-    large: 1,
-    dip: 0.65,
-    final: 1,
+    t012: expectedScale(FREEZE_MS.t012),
+    t060: expectedScale(FREEZE_MS.t060),
+    t120: expectedScale(FREEZE_MS.t120),
+    final: expectedScale(FREEZE_MS.final),
 }
 
 const SCALE_TOLERANCE: Record<PoseName, number> = {
-    small: 0.04,
-    large: 0.015,
-    dip: 0.025,
+    t012: 0.015,
+    t060: 0.015,
+    t120: 0.01,
     final: 0.01,
 }
+
+const FULL_POSES = new Set<PoseName>(['t120', 'final'])
 
 interface PixelResult {
     project: string
@@ -201,6 +238,48 @@ async function freeze(page: Page, pose: PoseName): Promise<{ scale: number }> {
     }, FREEZE_MS[pose])
 }
 
+const SAMPLE_STEPS = Array.from({ length: 21 }, (_, index) => index * 100)
+
+async function sampleTimeline(page: Page): Promise<{ ms: number; scale: number; opacity: number }[]> {
+    return page.evaluate(async (steps) => {
+        document.querySelectorAll<HTMLElement>('.cs-metal').forEach((el) => {
+            el.style.setProperty('--cs-delay', '0s')
+            el.removeAttribute('data-cs-paused')
+            el.removeAttribute('data-cs-static')
+        })
+        const animated = document.querySelectorAll<HTMLElement>('.cs-intro, .cs-word, .cs-hi')
+        animated.forEach((el) => {
+            el.style.animation = 'none'
+        })
+        document.body.getBoundingClientRect()
+        animated.forEach((el) => {
+            el.style.animation = ''
+        })
+        document.body.getBoundingClientRect()
+        const anims = document.getAnimations().filter((anim) => {
+            const target = (anim.effect as KeyframeEffect | null)?.target as Element | null
+            return Boolean(target?.closest('.cs-metal'))
+        })
+        if (anims.length === 0) throw new Error('no animations to sample')
+        for (const anim of anims) anim.pause()
+        const rows: { ms: number; scale: number; opacity: number }[] = []
+        const word = document.querySelector<HTMLElement>('.cs-word')
+        const hi = document.querySelector<HTMLElement>('.cs-hi')
+        if (!word || !hi) throw new Error('overlay nodes missing')
+        for (const ms of steps) {
+            for (const anim of anims) anim.currentTime = ms
+            const transform = getComputedStyle(word).transform
+            const matrix = transform === 'none' ? new DOMMatrix() : new DOMMatrix(transform)
+            rows.push({
+                ms,
+                scale: Math.hypot(matrix.a, matrix.b),
+                opacity: Number(getComputedStyle(hi).opacity),
+            })
+        }
+        return rows
+    }, SAMPLE_STEPS)
+}
+
 async function pixelDiff(
     page: Page,
     hide: 'root' | 'edge',
@@ -321,7 +400,7 @@ test.describe('coming soon overlay harness', () => {
                 const loaded = await page.evaluate(() => document.fonts.check('600 28px "Playfair Display"'))
                 expect(loaded).toBe(true)
 
-                for (const pose of ['small', 'large', 'dip', 'final'] as const) {
+                for (const pose of ['t012', 't060', 't120', 'final'] as const) {
                     const placed = await freeze(page, pose)
                     expect(Math.abs(placed.scale - EXPECTED_SCALE[pose]), `${size.name} ${pose} scale ${placed.scale}`).toBeLessThan(SCALE_TOLERANCE[pose])
                     const place = await page.evaluate(() => {
@@ -347,7 +426,7 @@ test.describe('coming soon overlay harness', () => {
                     })
                     expect(place.reflDisplay, size.name).toBe('none')
                     expect(place.rotate, size.name).toMatch(/-45deg/)
-                    if (pose === 'large' || pose === 'final') {
+                    if (FULL_POSES.has(pose)) {
                         expect(Math.abs(place.centerX - 0.5), `${size.name} ${pose} x`).toBeLessThan(0.01)
                         expect(Math.abs(place.centerY - (place.wide ? 0.52 : 0.49)), `${size.name} ${pose} y`).toBeLessThan(0.01)
                     }
@@ -357,7 +436,7 @@ test.describe('coming soon overlay harness', () => {
                         expect(place.insetTop, `${size.name} top`).toBeGreaterThanOrEqual(0.08)
                         expect(place.insetBottom, `${size.name} bottom`).toBeGreaterThanOrEqual(0.08)
                     }
-                    const checkPixels = pose === 'large' || pose === 'final'
+                    const checkPixels = FULL_POSES.has(pose)
                     const diff = checkPixels
                         ? await pixelDiff(page, 'root')
                         : { changedIn: 0, changedOut: 0 }
@@ -373,7 +452,7 @@ test.describe('coming soon overlay harness', () => {
                         changedIn: diff.changedIn,
                         changedOut: diff.changedOut,
                     }
-                    if ((pose === 'large' || pose === 'final') && background === 'white') {
+                    if (FULL_POSES.has(pose) && background === 'white') {
                         row.centerX = place.centerX
                         row.centerY = place.centerY
                     }
@@ -415,6 +494,53 @@ test.describe('coming soon overlay harness', () => {
             JSON.stringify(results, null, 2),
         )
         console.log(`PIXEL ${testInfo.project.name} ${JSON.stringify(results)}`)
+    })
+
+    test('scale grows once and holds through 2s', async ({ page }, testInfo) => {
+        test.setTimeout(120_000)
+        const surfaces = SIZES.filter((size) => size.name === 'card-390' || size.name === 'card-1440' || size.name === 'pdp-1440')
+        const table: { project: string; surface: string; ms: number; scale: number; opacity: number }[] = []
+        for (const size of surfaces) {
+            await page.setViewportSize({
+                width: Math.max(size.width + 32, 390),
+                height: Math.max(size.height + 32, 700),
+            })
+            await mount(page, frameHtml(size.name, size.width, size.height, size.size, '#FFFFFF'), fontCss)
+            const rows = await sampleTimeline(page)
+            expect(rows).toHaveLength(SAMPLE_STEPS.length)
+            let maxScale = 0
+            for (let index = 0; index < rows.length; index += 1) {
+                const row = rows[index]
+                if (!row) throw new Error(`missing sample ${index}`)
+                maxScale = Math.max(maxScale, row.scale)
+                expect(row.scale, `${size.name} ${row.ms}ms`).toBeLessThanOrEqual(1 + 1e-4)
+                expect(Math.abs(row.scale - expectedScale(row.ms)), `${size.name} ${row.ms}ms scale ${row.scale}`).toBeLessThan(0.012)
+                if (index > 0) {
+                    const previous = rows[index - 1]
+                    if (!previous) throw new Error(`missing sample ${index - 1}`)
+                    expect(row.scale + 1e-4, `${size.name} ${row.ms}ms`).toBeGreaterThanOrEqual(previous.scale)
+                    expect(row.opacity + 1e-4, `${size.name} ${row.ms}ms light`).toBeGreaterThanOrEqual(previous.opacity)
+                }
+                table.push({
+                    project: testInfo.project.name,
+                    surface: size.name,
+                    ms: row.ms,
+                    scale: Number(row.scale.toFixed(6)),
+                    opacity: Number(row.opacity.toFixed(6)),
+                })
+            }
+            expect(Math.abs(maxScale - 1), size.name).toBeLessThan(1e-3)
+            expect(Math.abs(rows[rows.length - 1].scale - 1), size.name).toBeLessThan(1e-3)
+            expect(Math.abs(rows[rows.length - 1].opacity - 0.55), size.name).toBeLessThan(0.01)
+            const diff = await pixelDiff(page, 'root')
+            expect(diff.changedOut, `${testInfo.project.name} ${size.name} final`).toBe(0)
+            expect(diff.changedIn, size.name).toBeGreaterThan(0)
+        }
+        writeFileSync(
+            `/tmp/coming-soon-scale-${testInfo.project.name}.json`,
+            JSON.stringify(table, null, 2),
+        )
+        console.log(`SCALE ${testInfo.project.name} ${JSON.stringify(table)}`)
     })
 
     test('reduced motion holds the static mid-state', async ({ page }, testInfo) => {
