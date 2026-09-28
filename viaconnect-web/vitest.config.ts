@@ -15,6 +15,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),
+      'next/font/google': path.resolve(__dirname, 'tests/stubs/next-font-google.ts'),
+      'next/font/local': path.resolve(__dirname, 'tests/stubs/next-font-local.ts'),
     },
   },
   // Top-level oxc.jsx automatic runtime is required so JSX components (.tsx) can be

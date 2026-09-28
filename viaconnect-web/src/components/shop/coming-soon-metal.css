@@ -1,0 +1,389 @@
+/*
+ * Brief 67 + A1 (Gary 2026-09-27 00:18): green-metallic serif "Coming / Soon" overlay (DESIGN-READY reference CSS).
+ * A2 (Gary 00:19): tuned for a white (#FFFFFF) image area + silver bottles only. No peach anywhere.
+ * A3 (Gary 00:27): NO outline. No text-stroke, no dark edge. Readability = emerald fill (>= 3:1 on white and
+ *   bright silver across the letter body) + a soft green-black shadow. .cs-edge is kept (frozen name, Blueprint
+ *   T2/T6-4 key on it) but paints no glyph and no stroke: it is the transparent carrier of the soft shadow only.
+ * A4 (Gary 00:31): the word sits on a -45deg diagonal (rising lower-left to upper-right, same direction as the
+ *   #247 stamp). The tilt is the STATIC individual `rotate` property on .cs-word (never in a keyframe), so the
+ *   .cs-bob translateY stays vertical on screen (A7: the bob is gone; the zoom scale on .cs-word composes after the rotate).
+ * A5 (Gary 00:32): ONE line, "Coming Soon" (title case, one space). The two .cs-line spans stay (Blueprint T2
+ *   expects two per layer) but render inline-block on one line; the space is a 0.25em inline margin (the
+ *   Playfair space advance). The floor reflection is switched off (display: none; element kept, see brief A4/A5).
+ * A6 (Gary 00:45): centred on the bottle (x 50%, y = measured bottle centre per box shape).
+ * A7 (Gary 00:48): the vertical bob is REPLACED by a one-shot ZOOM on mount: small -> large -> small -> large,
+ *   settle and hold LARGE (2.6 s + <= 0.4 s stagger = done by 3.0 s, inside the 5 s window). Scale only, on
+ *   .cs-word about its centre (the static -45deg `rotate` is untouched). Light follows scale. The finished
+ *   animation fills forwards at exactly the static values, so data-cs-static (S2 timer / over-cap / reduced
+ *   motion) takes over with no snap. .cs-bob stays in the markup but no longer animates.
+ * A8 (Gary, on the A7 preview: "glitching and lagging, it has to be smooth and flow properly"): same beats (small -> large ->
+ *   small -> large, hold LARGE, once), rebuilt as ONE continuous curve. A7 joined five eased segments that each
+ *   stopped dead (a stall at 0.85 s in the middle of a shrink, acceleration jumps at every join) with two overshoot
+ *   humps above the final size. A8 samples a smooth function into 24 stops whose literal cubic-beziers match the
+ *   curve's slope at every join (velocity continuous), never exceeds scale 1 (no overshoot), and eases to zero speed
+ *   AND zero acceleration at the end. 3.0 s (+ <= 0.4 s stagger = done by 3.4 s). Light (.cs-hi) uses the same
+ *   stops, duration and delay; every layer scales from the one .cs-word transform, so nothing drifts.
+ * A9 (Gary 2026-09-28 12:09 MT, "the green is hard to see"): COLOUR ONLY. The onLight fill tokens become a very dark
+ *   bottle green with a bright emerald specular streak, and the shadow becomes tight + soft-wide green-black (still
+ *   no stroke/outline; blur >= 2x offset; reach <= 0.2em). Fill contrast (rest pose, min / median): white 10.69 / 12.75
+ *   (A8 4.34 / 5.36), bright silver 5.23 / 10.43 (A8 2.12 / 4.48). Motion, curve, timing, stagger, geometry, L1 and
+ *   the onDark (navy fallback) tokens are unchanged. Token values only; no class, keyframe or selector change.
+ * Target path: viaconnect-web/src/components/shop/coming-soon-metal.css
+ * Imported only by ComingSoonOverlay.tsx (co-located, like gauges/plasma-gauge.css).
+ * Rules: animate transform and opacity only. No filter, no color, no background animation.
+ * Colour contract (Blueprint T3a): every colour literal lives in a --cs-* or --jr-* token declaration.
+ * FROZEN NAMES (tests key on them): root .cs-metal; .cs-intro .cs-refl .cs-stage .cs-bob .cs-word
+ * .cs-layer .cs-edge .cs-deep .cs-hi .cs-line; attributes data-size, data-tone, data-cs-paused, data-cs-static;
+ * button class .jr-sheen. Do not rename after posting.
+ */
+
+/* ---------- Tokens ---------------------------------------------------------- */
+.cs-metal {
+  /* A8 zoom (one shot on mount, one continuous curve). Retired bob tokens: --cs-period, --cs-hang, --cs-ease-fall,
+     --cs-ease-rise, --cs-travel, --cs-scale-contact, --cs-scale-peak, --cs-intro-offset, --cs-intro-delay.
+     Retired in A8: --cs-zoom-small, --cs-zoom-dip, --cs-zoom-over-1, --cs-zoom-over-2 (the curve is sampled into
+     the keyframes, so single-value tokens could no longer drive it; the overshoots are gone).
+     Curve (generator: brief-67/tools/curve-a8.js): s(t) = 1 - a * (1 + cos(pi * phase)) / 2, phase = 3 * (1 - (1 - t/T)^1.45),
+     depth a eases 0.45 -> 0.35 (smootherstep). Beats: 0.55 small at 0 s -> 1 LARGE at 0.73 s -> 0.65 small at 1.59 s
+     -> 1 LARGE at 3.0 s (0.99 by 2.70 s), speed and acceleration 0 at the end. Scale never exceeds 1. */
+  --cs-zoom-dur: 3s;             /* drives cs-zoom AND cs-light (same duration + delay = the layers cannot drift) */
+  /* Easings are literals inside @keyframes cs-zoom / cs-light: Chrome does not resolve var() in a keyframe's
+     animation-timing-function (it silently falls back to linear). A8: every segment is cubic-bezier(0.3333, y1, 0.6667, y2),
+     i.e. cubic Hermite, with y1/y2 set so the slope matches the curve at both ends of the segment. */
+  --cs-light-rest: 0.55;         /* .cs-hi opacity held at rest (satin mid tone; brightest at the first LARGE, a softer catch on the second) */
+
+  /* A4 diagonal: static tilt + placement (centre of the tilted line, % of image box); A7: zoom scales about this point */
+  --cs-tilt: -45deg;             /* static, applied with the `rotate` property on .cs-word; never animated */
+  --cs-cx: 50%;                  /* A6: centre of the diagonal = centre of the bottle and box (bottle centre measured 49.8%) */
+  --cs-cy: 49%;                  /* A7: 3/4 box: line centre on the bottle visual centre (measured 48.8%); no bob offset */
+  --cs-fs: clamp(16px, 15.6cqw, 90px);   /* A7 LARGE (final) size, 3/4 box: 25 px at 160 wide, 26.1 px at 167 */
+
+  /* Floor reflection (contact ellipse) */
+  --cs-refl-min: 0.1;            /* opacity at the apex */
+  --cs-refl-max: 0.3;            /* opacity at the floor (A2: 0.34 -> 0.3, reads as a stain on flat white) */
+  --cs-refl-scale-min: 0.72;     /* scaleX at the apex (1 at the floor) */
+  --cs-refl-rgb: 11 77 59;       /* deep emerald #0B4D3B on light photos */
+
+  /* Intro fade (opacity only since A7), same start as the zoom so it blends into the first zoom-in */
+  --cs-intro-dur: 0.35s;
+  --cs-intro-ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Grid stagger (A7, unchanged in A8): small POSITIVE start delay, set per card: ((index * 0.618) % 1) * 0.4s
+     (max 0.4 s; 0.378 s for index 0-11), so every overlay is settled by 3.0 + 0.4 = 3.4 s */
+  --cs-delay: 0s;
+
+  /* Shadow only (A3: no outline, no stroke tokens). Soft, blurred; blur >= 2x offset so it never reads as a rim.
+     Total reach (offset + blur) <= 0.2em so it stays inside the L1 pixel-check boxes.
+     A4: text-shadow rotates with the -45deg word, so the offsets are pre-rotated (x = -y = d * 0.707) to land
+     straight DOWN on screen (0.03em and 0.07em), under the word, where the floor reflection is. */
+  /* A9: tight contact shadow (0.02em down, 0.04em blur) + soft wide one (0.05em down, 0.15em blur, reach 0.2em). */
+  --cs-shadow:
+      -0.014em 0.014em 0.04em rgb(2 14 10 / 0.6),
+      -0.035em 0.035em 0.15em rgb(2 14 10 / 0.3);
+
+  /* Metal fills, per line, top to bottom of the line box (A3: emerald on emerald, no near-white mint on light).
+     A9: very dark bottle green (hue ~158 deg), same stop layout as A3-A8: the 15.5-19.5% band is a THIN bright
+     emerald specular streak (4% of the line), 51% is the dark horizon of the metal. Every non-streak stop is
+     >= 8.8:1 on #FFFFFF and >= 7.8:1 on bright silver #F1F1F1 (A8: >= 3:1).
+     A7 scale-linked light: --cs-emerald-hi (brighter, large) crossfades over --cs-emerald-deep (small). */
+  --cs-emerald-hi: linear-gradient(180deg,
+      #0C4D36 0%, #0E553C 15.5%, #5FF0B4 17.5%, #0E553C 19.5%, #0B4A33 32%,
+      #083D2A 46%, #042A1D 51%, #093F2C 57%, #0B4631 76%, #063123 100%);
+  --cs-emerald-deep: linear-gradient(180deg,
+      #083B29 0%, #0A412D 15.5%, #3FD99A 17.5%, #0A412D 19.5%, #073625 32%,
+      #052C1E 46%, #021A11 51%, #052E20 57%, #063324 76%, #031F15 100%);
+  /* Solid fills for engines without background-clip:text (Brief 67 build delta c) */
+  --cs-fill-solid-deep: #073625;
+  --cs-fill-solid-hi: #0B4A33;
+
+  /* LOCK L1 (Gary 00:13 MT): fully transparent. No background, plate, scrim,
+     backdrop-filter, gradient wash or opacity on this box. Only glyphs (and the
+     faint floor reflection) paint; every other image pixel is untouched. */
+  background: none;
+  position: absolute;
+  inset: 0;
+  z-index: 5;                    /* unchanged from #247: under status pills (z-10) */
+  pointer-events: none;
+  overflow: hidden;
+  container-type: size;
+  user-select: none;
+}
+
+
+/* A4/A5 fit by box shape, not by surface: every 4/5 box (md+ cards and the PDP) is relatively shorter and its
+   label sits x1.067 lower (object-top crop), so the line is smaller and a little lower there.
+   Tokens are overridden on .cs-intro (a child of the size container) and inherited by the stage. */
+@container (min-aspect-ratio: 79/100) {
+  .cs-intro {
+    --cs-cy: 52%;                  /* A7: 4/5 box: line centre on the bottle centre (measured 52.0%) */
+    --cs-fs: clamp(16px, 13.25cqw, 90px);  /* A7 LARGE: 29 px at 219, 37.6 px at 284, 47.4 px at 358, 78.4 px at 592 */
+  }
+}
+
+.cs-metal[data-tone="onDark"] {
+  --cs-refl-rgb: 143 220 194;    /* mint glint #8FDCC2 on the navy fallback gradient */
+  --cs-refl-min: 0.06;
+  --cs-refl-max: 0.2;
+  --cs-shadow: -0.021em 0.021em 0.07em rgb(0 0 0 / 0.45), -0.05em 0.05em 0.13em rgb(0 0 0 / 0.32);
+  /* Navy fallback (no photo): deep emerald would vanish on #1A2744 without an outline, so the dark tone keeps
+     the A1 light metal: mint apex over a lighter emerald floor. */
+  --cs-emerald-hi: linear-gradient(180deg,
+      #E4FBF2 0%, #FFFFFF 17%, #FFFFFF 21%, #E0F5F4 30%, #A6EAD2 42%,
+      #3FAE8C 51%, #8FE0C4 58%, #CFF6E6 76%, #86D3B8 100%);
+  --cs-emerald-deep: linear-gradient(180deg,
+      #8ED9BE 0%, #D8F7EB 17%, #D8F7EB 21%, #45B893 30%, #2FA37F 44%,
+      #1C8C6A 51%, #3FAE8C 58%, #45B893 76%, #2FA37F 100%);
+  --cs-fill-solid-deep: #45B893;
+  --cs-fill-solid-hi: #CFF6E6;
+}
+
+/* ---------- Layout ---------------------------------------------------------- */
+.cs-stage {
+  position: absolute;
+  top: var(--cs-cy);             /* A4: zero-height line through the centre of the tilted block (floor state) */
+  left: calc(var(--cs-cx) * 2 - 100%);   /* centres the stage on --cs-cx (valid for cx >= 50%) */
+  right: 0;
+  height: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;           /* the word is centred on that line and overflows it equally up and down */
+  font-size: var(--cs-fs);
+  line-height: 0.92;
+}
+
+.cs-intro { position: absolute; inset: 0; }   /* wraps the floor reflection and the word */
+.cs-bob,
+.cs-word { display: flow-root; }   /* flow-root: stops the line margins collapsing out of the edge layer */
+
+.cs-bob { transform-origin: 50% 50%; }   /* A7: no longer animated; kept (frozen name) */
+.cs-word {
+  position: relative;
+  transform-origin: 50% 50%;     /* A4/A7: tilt and zoom scale about the line centre (stays centred on the bottle) */
+  rotate: var(--cs-tilt);        /* A4: STATIC diagonal. Individual property, not in any @keyframes. */
+  font-family: var(--font-coming-soon), "Playfair Display", Georgia, "Times New Roman", serif;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  text-align: center;
+  white-space: nowrap;
+  font-kerning: normal;
+}
+
+.cs-layer { display: flow-root; }
+.cs-layer + .cs-layer,
+.cs-layer.cs-deep,
+.cs-layer.cs-hi { position: absolute; inset: 0; }
+
+.cs-line {
+  display: inline-block;         /* A5: both words on ONE line ("Coming Soon"); two spans kept for Blueprint T2 */
+  text-transform: capitalize;    /* COMING_SOON_OVERLAY_TEXT "Coming soon" -> "Coming Soon" */
+  /* pad the paint box so ascenders and the g descender get the gradient */
+  padding: 0.14em 0.08em;
+  margin: -0.14em -0.08em;
+}
+
+.cs-line + .cs-line { margin-inline-start: calc(-0.08em + 0.25em); }   /* A5: one normal word space (0.25em) */
+
+/* A3: the edge layer paints no glyph and no stroke. Transparent text + text-shadow = shadow only, drawn
+   under the fill layers (a text-shadow on the background-clip:text layers would paint over the gradient). */
+.cs-edge .cs-line {
+  color: transparent;
+  -webkit-text-stroke: 0;
+  text-shadow: var(--cs-shadow);
+}
+.cs-deep .cs-line,
+.cs-hi .cs-line {
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+.cs-deep .cs-line { background-image: var(--cs-emerald-deep); }
+.cs-hi .cs-line { background-image: var(--cs-emerald-hi); }
+
+.cs-refl {
+  position: absolute;
+  left: 50%;
+  /* A4: the lowest glyph of the tilted block is the foot of the "S" in Soon, ~1.4em below the block centre and
+     within ~0.1em of centre-x, so the contact ellipse sits there, narrower than before (only a corner lands). */
+  top: calc(var(--cs-cy) + 1.38em);
+  width: 1.5em;
+  height: 0.2em;
+  margin-left: -0.75em;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(var(--cs-refl-rgb) / 0.55), rgb(var(--cs-refl-rgb) / 0));
+  font-size: var(--cs-fs);
+  opacity: var(--cs-refl-max);
+  display: none;                 /* A4/A5: off. A single -45deg line only touches the "floor" at the C's corner; an
+                                    ellipse there reads as a smudge on the lower label copy. Element kept (T2). */
+}
+
+/* ---------- Motion (A7 one-shot zoom; A8 one continuous curve) --------------- */
+@keyframes cs-intro {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* A8: scale about the line centre (.cs-word transform-origin 50% 50%); the static `rotate` composes before it.
+   24 stops sampled from one smooth curve (tools/curve-a8.js). Each segment's literal cubic-bezier(1/3, y1, 2/3, y2) is the
+   cubic Hermite segment whose end slopes equal the curve's velocity at both stops, so speed is continuous through every
+   stop (A7 stopped dead at each join). The four beats are stops with slope 0: 0% (0.55), 24.39% = 0.73 s (1),
+   53.12% = 1.59 s (0.65), 100% = 3.0 s (1). Max scale is 1 (no overshoot humps). The 100% frame equals the static
+   pose exactly (see the static block for the layer hints that keep the hand-over pixel-identical). */
+@keyframes cs-zoom {
+  0%      { transform: scale(0.55);   animation-timing-function: cubic-bezier(0.3333, 0, 0.6667, 0.341); }
+  2.63%   { transform: scale(0.5644); animation-timing-function: cubic-bezier(0.3333, 0.227, 0.6667, 0.569); }
+  5.4%    { transform: scale(0.6083); animation-timing-function: cubic-bezier(0.3333, 0.277, 0.6667, 0.623); }
+  8.8%    { transform: scale(0.6923); animation-timing-function: cubic-bezier(0.3333, 0.323, 0.6667, 0.686); }
+  14.25%  { transform: scale(0.8498); animation-timing-function: cubic-bezier(0.3333, 0.38, 0.6667, 0.722); }
+  17.7%   { transform: scale(0.9323); animation-timing-function: cubic-bezier(0.3333, 0.423, 0.6667, 0.761); }
+  20.7%   { transform: scale(0.9794); animation-timing-function: cubic-bezier(0.3333, 0.559, 0.6667, 0.891); }
+  23.65%  { transform: scale(0.9992); animation-timing-function: cubic-bezier(0.3333, 0.667, 0.6667, 1); }
+  24.39%  { transform: scale(1);      animation-timing-function: cubic-bezier(0.3333, 0, 0.6667, 0.348); }
+  26.72%  { transform: scale(0.9925); animation-timing-function: cubic-bezier(0.3333, 0.206, 0.6667, 0.555); }
+  30.18%  { transform: scale(0.9571); animation-timing-function: cubic-bezier(0.3333, 0.275, 0.6667, 0.626); }
+  34.67%  { transform: scale(0.8829); animation-timing-function: cubic-bezier(0.3333, 0.333, 0.6667, 0.694); }
+  41.35%  { transform: scale(0.7591); animation-timing-function: cubic-bezier(0.3333, 0.387, 0.6667, 0.729); }
+  45.7%   { transform: scale(0.6953); animation-timing-function: cubic-bezier(0.3333, 0.443, 0.6667, 0.782); }
+  49.6%   { transform: scale(0.6603); animation-timing-function: cubic-bezier(0.3333, 0.666, 0.6667, 1); }
+  53.12%  { transform: scale(0.65);   animation-timing-function: cubic-bezier(0.3333, 0, 0.6667, 0.356); }
+  57.33%  { transform: scale(0.6638); animation-timing-function: cubic-bezier(0.3333, 0.236, 0.6667, 0.584); }
+  61.8%   { transform: scale(0.7039); animation-timing-function: cubic-bezier(0.3333, 0.288, 0.6667, 0.642); }
+  68.17%  { transform: scale(0.7866); animation-timing-function: cubic-bezier(0.3333, 0.35, 0.6667, 0.702); }
+  75.63%  { transform: scale(0.8857); animation-timing-function: cubic-bezier(0.3333, 0.387, 0.6667, 0.725); }
+  81.08%  { transform: scale(0.9414); animation-timing-function: cubic-bezier(0.3333, 0.425, 0.6667, 0.755); }
+  86.4%   { transform: scale(0.9767); animation-timing-function: cubic-bezier(0.3333, 0.504, 0.6667, 0.817); }
+  92.17%  { transform: scale(0.9952); animation-timing-function: cubic-bezier(0.3333, 0.962, 0.6667, 1); }
+  100%    { transform: scale(1);      }
+}
+
+/* A8 light: the SAME 24 stop offsets, duration and delay as cs-zoom. .cs-hi opacity = how large the word is
+   ((scale - 0.55) / 0.45: 0 small, 1 LARGE), blended with smootherstep between 2.2 s and 3.0 s into --cs-light-rest, so the
+   first arrival is full bright, the second a softer catch (0.82 at ~2.4 s) that relaxes into satin. Continuous slope too. */
+@keyframes cs-light {
+  0%      { opacity: 0;     animation-timing-function: cubic-bezier(0.3333, 0, 0.6667, 0.341); }
+  2.63%   { opacity: 0.032; animation-timing-function: cubic-bezier(0.3333, 0.227, 0.6667, 0.569); }
+  5.4%    { opacity: 0.13;  animation-timing-function: cubic-bezier(0.3333, 0.277, 0.6667, 0.623); }
+  8.8%    { opacity: 0.316; animation-timing-function: cubic-bezier(0.3333, 0.323, 0.6667, 0.686); }
+  14.25%  { opacity: 0.666; animation-timing-function: cubic-bezier(0.3333, 0.38, 0.6667, 0.722); }
+  17.7%   { opacity: 0.85;  animation-timing-function: cubic-bezier(0.3333, 0.423, 0.6667, 0.761); }
+  20.7%   { opacity: 0.954; animation-timing-function: cubic-bezier(0.3333, 0.559, 0.6667, 0.891); }
+  23.65%  { opacity: 0.998; animation-timing-function: cubic-bezier(0.3333, 0.667, 0.6667, 1); }
+  24.39%  { opacity: 1;     animation-timing-function: cubic-bezier(0.3333, 0, 0.6667, 0.348); }
+  26.72%  { opacity: 0.983; animation-timing-function: cubic-bezier(0.3333, 0.206, 0.6667, 0.555); }
+  30.18%  { opacity: 0.905; animation-timing-function: cubic-bezier(0.3333, 0.275, 0.6667, 0.626); }
+  34.67%  { opacity: 0.74;  animation-timing-function: cubic-bezier(0.3333, 0.333, 0.6667, 0.694); }
+  41.35%  { opacity: 0.465; animation-timing-function: cubic-bezier(0.3333, 0.387, 0.6667, 0.729); }
+  45.7%   { opacity: 0.323; animation-timing-function: cubic-bezier(0.3333, 0.443, 0.6667, 0.782); }
+  49.6%   { opacity: 0.245; animation-timing-function: cubic-bezier(0.3333, 0.666, 0.6667, 1); }
+  53.12%  { opacity: 0.222; animation-timing-function: cubic-bezier(0.3333, 0, 0.6667, 0.356); }
+  57.33%  { opacity: 0.253; animation-timing-function: cubic-bezier(0.3333, 0.236, 0.6667, 0.584); }
+  61.8%   { opacity: 0.342; animation-timing-function: cubic-bezier(0.3333, 0.288, 0.6667, 0.642); }
+  68.17%  { opacity: 0.526; animation-timing-function: cubic-bezier(0.3333, 0.352, 0.6667, 0.717); }
+  75.63%  { opacity: 0.745; animation-timing-function: cubic-bezier(0.3333, 0.589, 0.6667, 0.985); }
+  81.08%  { opacity: 0.822; animation-timing-function: cubic-bezier(0.3333, -0.018, 0.6667, 0.39); }
+  86.4%   { opacity: 0.757; animation-timing-function: cubic-bezier(0.3333, 0.311, 0.6667, 0.713); }
+  92.17%  { opacity: 0.618; animation-timing-function: cubic-bezier(0.3333, 0.793, 0.6667, 1); }
+  100%    { opacity: var(--cs-light-rest); }
+}
+
+/* Floor reflection keyframes kept for a one-line restore (the element is display: none since A4/A5). */
+@keyframes cs-refl {
+  from { opacity: var(--cs-refl-min); transform: scaleX(var(--cs-refl-scale-min)); }
+  to   { opacity: var(--cs-refl-max); transform: scaleX(1); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .cs-intro { animation: cs-intro var(--cs-intro-dur) var(--cs-intro-ease) var(--cs-delay) 1 both; }
+  /* A8: linear at the animation level (the shape lives in the keyframes); one composited transform on .cs-word
+     carries all three layers (edge shadow, deep fill, hi fill), and .cs-hi adds only an opacity on the same clock. */
+  .cs-word  { animation: cs-zoom  var(--cs-zoom-dur) linear var(--cs-delay) 1 both; will-change: transform; }
+  .cs-hi    { animation: cs-light var(--cs-zoom-dur) linear var(--cs-delay) 1 both; will-change: opacity; }
+
+  /* Off-screen: hold the zoom until the overlay is in view, so the sequence plays when it is seen.
+     The intro fade still completes, so the word is never stuck invisible (it waits at the small scale). */
+  .cs-metal[data-cs-paused="true"] :is(.cs-word, .cs-hi) {
+    animation-play-state: paused;
+    will-change: auto;
+  }
+}
+
+/* ---------- Static pose = the LARGE final state (A7/A8; Brief 67 build delta a, Blueprint T3f / OPEN-6) ----------
+   data-cs-static="true" is set by the scheduler on over-cap overlays and by the S2 timer after the zoom ends.
+   Values equal the cs-zoom / cs-light / cs-intro 100% frames, so the hand-over from the finished (fill: both)
+   animation has no snap. Mirrors the reduced-motion block.
+   A8: .cs-word keeps will-change: transform and .cs-hi keeps will-change: opacity in the rest pose. The finished
+   animation is drawn from composited layers (the -45deg word is rasterised upright and rotated by the compositor);
+   dropping the layers at the hand-over re-rasterised the text directly rotated, a visible edge "sharpen" (A7 and the
+   first A8 pass: 48,985 px changed across 13 overlays, 4,094 by more than 32/255). Keeping both layers makes
+   finished -> static max 3/255 (invisible). Two small layers per overlay; reduced motion uses the same rest look. */
+.cs-metal[data-cs-static="true"] :is(.cs-intro, .cs-bob, .cs-word, .cs-hi, .cs-refl) { animation: none; will-change: auto; }
+.cs-metal[data-cs-static="true"] .cs-intro { opacity: 1; transform: none; }
+.cs-metal[data-cs-static="true"] .cs-bob   { transform: none; }
+.cs-metal[data-cs-static="true"] .cs-word  { transform: scale(1); will-change: transform; }   /* = cs-zoom 100% frame; A8: same layer as the finished run */
+.cs-metal[data-cs-static="true"] .cs-hi    { opacity: var(--cs-light-rest); will-change: opacity; }
+.cs-metal[data-cs-static="true"] .cs-refl  { opacity: calc((var(--cs-refl-min) + var(--cs-refl-max)) / 2); transform: scaleX(0.86); }
+
+/* ---------- No background-clip:text (Brief 67 build delta c) ----------
+   Without clip support the gradient would paint the whole line box (a plate, breaking Lock L1),
+   so drop the background and use solid token fills; the highlight crossfade still works on opacity. */
+@supports not ((-webkit-background-clip: text) or (background-clip: text)) {
+  .cs-deep .cs-line,
+  .cs-hi .cs-line { background: none; }
+  .cs-deep .cs-line { color: var(--cs-fill-solid-deep); }
+  .cs-hi .cs-line   { color: var(--cs-fill-solid-hi); }
+}
+
+/* ---------- Reduced motion: LARGE final state immediately, no zoom (A7; A8 same layer hints as the static pose) ------ */
+@media (prefers-reduced-motion: reduce) {
+  .cs-intro, .cs-bob, .cs-word, .cs-hi, .cs-refl { animation: none; will-change: auto; }
+  .cs-bob   { transform: none; }
+  .cs-word  { transform: scale(1); will-change: transform; }   /* same as the static pose */
+  .cs-hi { opacity: var(--cs-light-rest); will-change: opacity; }
+  .cs-refl  { opacity: calc((var(--cs-refl-min) + var(--cs-refl-max)) / 2); transform: scaleX(0.86); }
+}
+
+/* ---------- Join the Revolution: hover-only mint hairline + one sheen pass (teal-100 #E0F5F4) ---------- */
+/* Add `jr-sheen` to the idle teal join button only (phase === 'idle'). Idle look is unchanged.
+   Idle and pending share tealButton; pending renders disabled + aria-busy="true", so the selectors
+   below also exclude those states in case the class lingers during a phase change. */
+.jr-sheen {
+  --jr-hairline: inset 0 1px 0 rgb(224 245 244 / 0.45), inset 0 0 0 1px rgb(224 245 244 / 0.2);
+  --jr-sweep: rgb(224 245 244 / 0.3);
+  position: relative; overflow: hidden; isolation: isolate;
+}
+.jr-sheen::before,
+.jr-sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+}
+.jr-sheen::before {               /* mint hairline */
+  box-shadow: var(--jr-hairline);
+  transition: opacity 200ms ease-out;
+}
+.jr-sheen::after {                /* single sheen sweep */
+  background: linear-gradient(105deg, transparent 38%, var(--jr-sweep) 50%, transparent 62%);
+  transform: translate3d(-120%, 0, 0);
+}
+@media (hover: hover) {
+  .jr-sheen:not(:disabled):not([aria-busy="true"]):hover::before,
+  .jr-sheen:not(:disabled):not([aria-busy="true"]):focus-visible::before { opacity: 1; }
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .jr-sheen:not(:disabled):not([aria-busy="true"]):hover::after,
+  .jr-sheen:not(:disabled):not([aria-busy="true"]):focus-visible::after { animation: jr-sheen 700ms cubic-bezier(0.4, 0, 0.2, 1) 1 both; }
+}
+@keyframes jr-sheen {
+  0%   { transform: translate3d(-120%, 0, 0); opacity: 0; }
+  15%  { opacity: 1; }
+  100% { transform: translate3d(120%, 0, 0); opacity: 0; }
+}
+
+/* Brief 67 S2 settle */
+@media (prefers-reduced-motion: no-preference) {
+  .cs-metal[data-cs-static="true"] :is(.cs-bob, .cs-hi) {
+    transition: transform 200ms linear, opacity 200ms linear;
+  }
+}

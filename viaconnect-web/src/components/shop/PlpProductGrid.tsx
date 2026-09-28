@@ -117,12 +117,13 @@ function PlpProductGridLoaded({
                 </div>
             ) : (
                 <div className="grid grid-cols-2 gap-6 md:grid-cols-3 md:gap-8 xl:grid-cols-4">
-                    {visibleProducts.map((product) => (
+                    {visibleProducts.map((product, index) => (
                         <ProductCard
                             key={product.id}
                             product={product}
                             variant={variant}
                             href={`/shop/product/${product.slug ?? product.sku}`}
+                            staggerIndex={index}
                             isFormulationOpen={openCardId === product.id}
                             onToggleFormulation={() =>
                                 setOpenCardId((prev) => (prev === product.id ? null : product.id))

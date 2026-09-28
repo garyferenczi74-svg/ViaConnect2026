@@ -147,6 +147,22 @@ describe('beginJoin and beginLeave', () => {
     })
 })
 
+describe('JoinWaitlistButtonView sheen', () => {
+    it('adds jr-sheen only while idle and keeps the label, aria-label, and ListPlus stroke', () => {
+        const idle = view({ phase: 'idle' })
+        expect(idle).toContain('jr-sheen')
+        expect(idle).toContain(JOIN_WAITLIST_LABEL)
+        expect(idle).toContain('Join the Revolution waiting list for Alpha Supplement')
+        expect(idle).toContain('stroke-width="1.5"')
+        expect(idle).toContain('list-plus')
+
+        expect(view({ phase: 'pending' })).not.toContain('jr-sheen')
+        expect(view({ phase: 'joined' })).not.toContain('jr-sheen')
+        expect(view({ phase: 'leaving' })).not.toContain('jr-sheen')
+        expect(view({ signedIn: false })).not.toContain('jr-sheen')
+    })
+})
+
 describe('guardCardClick', () => {
     it('calls preventDefault and stopPropagation', () => {
         const event = { preventDefault: vi.fn(), stopPropagation: vi.fn() }

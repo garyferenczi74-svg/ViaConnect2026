@@ -35,12 +35,11 @@ import { resolveDisplayConfig } from '@/lib/shop/resolve-display-config'
 import type { ShopCardVariant } from '@/lib/shop/categories'
 import type { ShopProduct } from '@/lib/shop/queries'
 
-// Generic blur placeholder per spec §4.1. Uses a 4x5 SVG of the brand Deep
-// Navy #1A2744 so every product image fades in from the brand surface
-// without requiring a per-image thumbhash. Replace with column-driven
-// blurDataURL when the photo backfill prompt ships.
+// Generic blur placeholder. A2 white. Uses a 4x5 SVG so every product
+// image fades in from white without requiring a per-image thumbhash.
+// Replace with column-driven blurDataURL when the photo backfill prompt ships.
 const SHOP_CARD_BLUR_DATA_URL =
-    'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0IDUiPjxyZWN0IHdpZHRoPSI0IiBoZWlnaHQ9IjUiIGZpbGw9IiMxQTI3NDQiLz48L3N2Zz4='
+    'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0IDUiPjxyZWN0IHdpZHRoPSI0IiBoZWlnaHQ9IjUiIGZpbGw9IiNGRkZGRkYiLz48L3N2Zz4='
 
 // Per Prompt #149 §4. Source PNGs for the Testing and Diagnostics panels
 // are 3000x4000 with bleed white space around the kit boxes; the parent
@@ -66,6 +65,7 @@ interface ProductCardProps {
     isFormulationOpen: boolean
     onToggleFormulation: () => void
     waitlist: ShopWaitlistState
+    staggerIndex?: number
 }
 
 export function ProductCard({
@@ -76,6 +76,7 @@ export function ProductCard({
     isFormulationOpen,
     onToggleFormulation,
     waitlist,
+    staggerIndex = 0,
 }: ProductCardProps) {
     const primaryImage = (product.image_urls && product.image_urls[0]) || product.image_url || null
     const tags = product.status_tags ?? []
@@ -93,14 +94,14 @@ export function ProductCard({
             className="group flex flex-col gap-3 h-full rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0F1A2E]"
         >
             <div
-                className="
-                    relative overflow-hidden block w-full rounded-xl bg-white/[0.04] shadow-md
+                className={`
+                    relative overflow-hidden block w-full rounded-xl ${primaryImage ? 'bg-white' : 'bg-white/[0.04]'} shadow-md
                     aspect-[3/4] md:aspect-[4/5]
                     transition-[transform,box-shadow] duration-300 ease-in-out
                     group-hover:scale-[1.02] group-hover:shadow-[0_12px_32px_rgba(45,165,160,0.22)]
                     before:content-[''] before:absolute before:inset-0 before:rounded-xl before:pointer-events-none
                     before:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]
-                "
+                `}
             >
                 {primaryImage ? (
                     display.hasOverride ? (
@@ -133,7 +134,11 @@ export function ProductCard({
                     <CategoryFallbackImage categorySlug={product.category_slug} />
                 )}
                 {product.is_released !== true && (
-                    <ComingSoonOverlay tone={primaryImage ? 'onLight' : 'onDark'} size="card" />
+                    <ComingSoonOverlay
+                        tone={primaryImage ? 'onLight' : 'onDark'}
+                        size="card"
+                        staggerIndex={staggerIndex}
+                    />
                 )}
                 {visibleTags.length > 0 && (
                     <div className="absolute top-3 right-3 z-10 flex flex-col items-end gap-1">
