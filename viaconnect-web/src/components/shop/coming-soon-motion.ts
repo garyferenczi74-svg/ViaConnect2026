@@ -74,11 +74,11 @@ export interface MotionScheduler {
 }
 
 /**
- * cs-zoom duration. Settles and holds LARGE by 3.0 s after its delay
- * (≤ 3.4 s per grid); no overshoot; continuous speed.
+ * cs-zoom duration. It grows once from small to LARGE and holds,
+ * with no dip and no overshoot.
  * The fallback waits this long, plus the card delay, plus the margin.
  */
-export const COMING_SOON_ZOOM_MS = 3000
+export const COMING_SOON_ZOOM_MS = 1200
 
 /** Extra time so the fallback never fires while cs-zoom is still running. */
 export const COMING_SOON_ZOOM_MARGIN_MS = 75

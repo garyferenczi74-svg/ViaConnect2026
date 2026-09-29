@@ -332,8 +332,8 @@ describe('coming soon css contract', () => {
         }
     })
 
-    it('samples one continuous zoom with matching light stops and no overshoot', () => {
-        expect(css).toMatch(/--cs-zoom-dur:\s*3s/)
+    it('grows once with monotonic scale stops, max 1, and no var() in keyframe timing', () => {
+        expect(css).toMatch(/--cs-zoom-dur:\s*1\.2s/)
         expect(css).not.toContain('--cs-zoom-small')
         expect(css).not.toContain('--cs-zoom-dip')
         expect(css).not.toContain('--cs-zoom-over-1')
@@ -345,12 +345,32 @@ describe('coming soon css contract', () => {
         }
         const zoomStops = stopsOf('cs-zoom')
         const lightStops = stopsOf('cs-light')
-        expect(zoomStops).toHaveLength(24)
+        expect(zoomStops[0]).toBe('0%')
+        expect(zoomStops[zoomStops.length - 1]).toBe('100%')
         expect(lightStops).toEqual(zoomStops)
         const zoom = frames.find((block) => block.header === 'cs-zoom')?.body ?? ''
+        const light = frames.find((block) => block.header === 'cs-light')?.body ?? ''
         const scales = [...zoom.matchAll(/scale\(\s*([0-9.]+)\s*\)/g)].map((match) => Number(match[1]))
         expect(scales.length).toBeGreaterThan(0)
-        for (const scale of scales) expect(scale).toBeLessThanOrEqual(1)
+        expect(scales[0]).toBe(0.55)
+        expect(scales[scales.length - 1]).toBe(1)
+        for (let index = 0; index < scales.length; index += 1) {
+            expect(scales[index]).toBeLessThanOrEqual(1)
+            if (index > 0) expect(scales[index]).toBeGreaterThanOrEqual(scales[index - 1])
+        }
+        expect(zoom).toContain('cubic-bezier(0.22, 1, 0.36, 1)')
+        expect(light).toContain('cubic-bezier(0.22, 1, 0.36, 1)')
+        const lightOpacity = [...light.matchAll(/opacity:\s*([^;]+)/g)].map((match) => match[1].trim())
+        expect(lightOpacity[0]).toBe('0')
+        expect(lightOpacity[lightOpacity.length - 1]).toBe('var(--cs-light-rest)')
+        const numericOpacity = lightOpacity.map((value) => (
+            value === 'var(--cs-light-rest)' ? 0.55 : Number(value)
+        ))
+        for (let index = 0; index < numericOpacity.length; index += 1) {
+            expect(Number.isFinite(numericOpacity[index]), lightOpacity[index]).toBe(true)
+            expect(numericOpacity[index]).toBeLessThanOrEqual(0.55)
+            if (index > 0) expect(numericOpacity[index]).toBeGreaterThanOrEqual(numericOpacity[index - 1])
+        }
         for (const block of frames) {
             expect(block.body, block.header).not.toMatch(/animation-timing-function:\s*var\(/)
         }
