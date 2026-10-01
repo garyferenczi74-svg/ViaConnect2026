@@ -8,8 +8,9 @@
 //      onClick fake link, and has no nested interactive element; and
 //   2. each of the four exported cards passes the correct destination literal
 //      (/genetics/upload, /plugins/labs, /shop#category-snp, /shop).
-// They also lock the blue glass CTA accent (Prompt 193d), the Lucide stroke
-// width, and the no dash rule.
+// They also lock the section-tab CTA treatment (replacing the blue glass
+// pill), the shortened visible labels, the full original aria phrases, the
+// Lucide stroke width, and the no dash rule.
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -60,14 +61,32 @@ describe('GeneticsActionCards source', () => {
     expect(source).toContain('href="/shop"');
   });
 
-  it('keeps the DNA and Lab media seams and gives every card the blue glass CTA pill', () => {
+  it('keeps the DNA and Lab media seams and styles the chip as a section tab', () => {
     expect(source).toContain('GENETICS_CARD_MEDIA.uploadDna');
     expect(source).toContain('GENETICS_CARD_MEDIA.uploadLab');
-    // Prompt 193d (Gary 2026-06-13): all four action card CTA pills are now the
-    // blue glass treatment; the teal / orange accents are no longer used here.
-    expect(source).toContain('accent="blue"');
+    expect(source).toContain('GENETICS_ACTION_TAB_CTA_CLASS');
+    expect(source).toContain('data-genetics-action-cta');
+    expect(source).not.toContain('accent="blue"');
     expect(source).not.toContain('accent="teal"');
     expect(source).not.toContain('accent="orange"');
+    expect(source).not.toContain('backdrop-blur-md');
+    expect(source).not.toContain('text-shadow');
+  });
+
+  it('shows the shortened labels and keeps the original phrases in the accessible name', () => {
+    expect(source).toContain('ctaLabel={GENETICS_ACTION_CTA_COPY.uploadDna.visible}');
+    expect(source).toContain('ctaAriaLabel={GENETICS_ACTION_CTA_COPY.uploadDna.aria}');
+    expect(source).toContain('ctaLabel={GENETICS_ACTION_CTA_COPY.uploadLabs.visible}');
+    expect(source).toContain('ctaAriaLabel={GENETICS_ACTION_CTA_COPY.uploadLabs.aria}');
+    expect(source).toContain('ctaLabel={GENETICS_ACTION_CTA_COPY.catalog.visible}');
+    expect(source).toContain('ctaAriaLabel={GENETICS_ACTION_CTA_COPY.catalog.aria}');
+    expect(source).toContain('ctaLabel={GENETICS_ACTION_CTA_COPY.panels.visible}');
+    expect(source).toContain('ctaAriaLabel={GENETICS_ACTION_CTA_COPY.panels.aria}');
+    expect(source).toContain('aria-label={`${title}. ${description}. ${ctaAriaLabel}`}');
+    expect(source).not.toContain('ctaLabel="Upload DNA"');
+    expect(source).not.toContain('ctaLabel="Upload Labs"');
+    expect(source).not.toContain('ctaLabel="Browse Catalog"');
+    expect(source).not.toContain('ctaLabel="View Panels"');
   });
 
   it('uses the ShoppingCart icon for the SNP formulations CTA', () => {

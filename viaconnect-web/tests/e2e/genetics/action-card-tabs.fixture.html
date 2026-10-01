@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Genetics action chips</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; background: #1A2744; color: #fff; font-family: "Instrument Sans", ui-sans-serif, system-ui, sans-serif; }
+    h2 { margin: 0 0 12px; font-size: 14px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: rgba(255,255,255,0.7); }
+    .page { padding: 16px; display: flex; flex-direction: column; gap: 28px; }
+    .grid { display: grid; gap: 16px; }
+    .grid[data-viewport="390"] { grid-template-columns: 1fr; }
+    .grid[data-viewport="1280"] { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .card { position: relative; min-height: 220px; border-radius: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; }
+    .photo { position: absolute; inset: 0; }
+    .scrim { position: absolute; inset: 0; background: linear-gradient(to top, rgba(26,39,68,0.85), rgba(26,39,68,0.30), transparent); }
+    .body { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; flex: 1; padding: 16px; text-align: center; }
+    .title { margin: 0 0 auto; padding-top: 48px; font-size: 16px; font-weight: 600; }
+    .ref { display: flex; gap: 8px; overflow-x: auto; padding: 8px 12px; background: #0D1520; border-radius: 12px; }
+    a.card-link { color: inherit; text-decoration: none; display: inline-flex; }
+  </style>
+</head>
+<body>
+  <div class="page" id="stage"></div>
+  <script>
+    const PHOTOS = [
+      'linear-gradient(160deg, #f4f7fb 0%, #d7e4ea 45%, #8fd0cb 100%)',
+      'linear-gradient(160deg, #fff 0%, #f6d2b0 40%, #b75e18 100%)',
+      'linear-gradient(160deg, #ffffff 0%, #efe7f6 50%, #6d597a 100%)',
+      'linear-gradient(160deg, #f7f7f7 0%, #c9d4c4 46%, #2da5a0 100%)',
+    ];
+    const BEFORE = [
+      { label: 'Upload DNA', title: 'Upload Your DNA Test', icon: 'upload' },
+      { label: 'Upload Labs', title: 'Upload Lab Results', icon: 'file' },
+      { label: 'Browse Catalog', title: 'Browse Genetic SNP Support Formulations', icon: 'cart' },
+      { label: 'View Panels', title: 'Unlock Your Genetic Blueprint', icon: 'arrow' },
+    ];
+    const AFTER = [
+      { label: 'DNA', aria: 'Upload DNA', title: 'Upload Your DNA Test', icon: 'upload' },
+      { label: 'Labs', aria: 'Upload Labs', title: 'Upload Lab Results', icon: 'file' },
+      { label: 'Catalog', aria: 'Browse Catalog', title: 'Browse Genetic SNP Support Formulations', icon: 'cart' },
+      { label: 'Panels', aria: 'View Panels', title: 'Unlock Your Genetic Blueprint', icon: 'arrow' },
+    ];
+    const ICONS = {
+      upload: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>',
+      file: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>',
+      cart: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>',
+      arrow: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>',
+    };
+    const GLASS = 'inline-flex min-h-[44px] items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-medium backdrop-blur-md transition-all duration-200 border-[#1A2744]/60 bg-white/[0.08] text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.8)]';
+    const TAB = 'inline-flex min-h-[44px] flex-shrink-0 items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium whitespace-nowrap transition-all border border-[rgba(45,165,160,0.3)] text-[#2DA5A0] bg-[linear-gradient(rgba(45,165,160,0.15),rgba(45,165,160,0.15)),linear-gradient(#0D1520,#0D1520)] group-hover:bg-none group-hover:border-[#2DA5A0]/50 group-hover:bg-[#1A2744] group-focus-visible:outline-none group-focus-visible:border-[#2DA5A0] group-focus-visible:ring-2 group-focus-visible:ring-[#2DA5A0]/70 group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-[#1A2744] group-active:border-[#2DA5A0]';
+    const REF_ACTIVE = 'min-h-[44px] flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium whitespace-nowrap flex-shrink-0 transition-all bg-[rgba(45,165,160,0.15)] text-[#2DA5A0] border border-[rgba(45,165,160,0.3)]';
+    const REF_IDLE = 'min-h-[44px] flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium whitespace-nowrap flex-shrink-0 transition-all text-white hover:bg-[#1A2744]/80 border border-transparent';
+
+    function card(photo, chipHtml, title) {
+      return '<article class="card"><div class="photo" style="background:' + photo + '"></div><div class="scrim"></div><div class="body"><p class="title">' + title + '</p>' + chipHtml + '</div></article>';
+    }
+
+    function render(viewport) {
+      const before = BEFORE.map((item, i) => card(
+        PHOTOS[i],
+        '<span class="' + GLASS + '" data-chip="before">' + ICONS[item.icon] + '<span data-chip-label>' + item.label + '</span></span>',
+        item.title
+      )).join('');
+      const after = AFTER.map((item, i) => card(
+        PHOTOS[i],
+        '<a class="group card-link" href="#dest" data-card-link><span class="' + TAB + '" data-chip="after" aria-label="' + item.aria + '">' + ICONS[item.icon] + '<span data-chip-label>' + item.label + '</span></span></a>',
+        item.title
+      )).join('');
+      const ref = '<div class="ref" data-tab-reference>'
+        + '<span class="' + REF_ACTIVE + '">' + ICONS.upload + 'Research Hub</span>'
+        + '<span class="' + REF_IDLE + '">Science</span>'
+        + '<span class="' + REF_IDLE + '">Shop</span>'
+        + '<span class="' + REF_IDLE + '">Profile</span>'
+        + '</div>';
+      document.getElementById('stage').innerHTML =
+        '<section data-phase="before"><h2>Before</h2><div class="grid" data-viewport="' + viewport + '">' + before + '</div></section>'
+        + '<section data-phase="after"><h2>After</h2>' + ref + '<div class="grid" data-viewport="' + viewport + '">' + after + '</div></section>';
+    }
+    window.renderGeneticsChips = render;
+    render('1280');
+  </script>
+</body>
+</html>

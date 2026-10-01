@@ -24,7 +24,10 @@
 // Theme continuity: DNA reads TEAL and Lab reads ORANGE, matching the current
 // /genetics page (the GENETICS_CARD_MEDIA.uploadDna seam was switched to teal
 // in this task for exactly this reason). SNP stays orange; Order panels reads
-// teal.
+// teal. The bottom chips no longer tint by accent. They reuse the section
+// sub-nav tab (teal border, teal label, 44px pill) so they match the tabs
+// used on the rest of the site. Visible labels are shortened; the link
+// accessible name keeps the original chip phrase.
 //
 // Standing rules honored: tokens only (Navy #1A2744, Card #1E3054, Teal
 // #2DA5A0, Orange #B75E18, white opacity neutrals), Lucide strokeWidth 1.5,
@@ -41,59 +44,49 @@ import {
   CONSUMER_CARD_SUBHEAD,
   CONSUMER_CARD_TITLE,
 } from '@/lib/ui/consumerChrome';
-
-type Accent = 'teal' | 'orange' | 'blue';
+import {
+  GENETICS_ACTION_CTA_COPY,
+  GENETICS_ACTION_TAB_CTA_CLASS,
+} from './geneticsActionTabCta';
 
 // One shared shell so all four cards stay pixel identical in structure and only
-// differ by copy, destination, media seam, accent, and CTA icon. The shell
-// itself owns the centered heading block and the bottom anchored chip; callers
-// pass content only. This is the genetics analogue of NutritionHub's
-// SaveMyMealTile / NutritionGeneticsTile, collapsed to one parameterized shell.
+// differ by copy, destination, media seam, and CTA icon. The shell itself owns
+// the centered heading block and the bottom anchored chip; callers pass content
+// only. This is the genetics analogue of NutritionHub's SaveMyMealTile /
+// NutritionGeneticsTile, collapsed to one parameterized shell.
 interface ActionCardProps {
   href: string;
   title: string;
   description: string;
   ctaLabel: string;
+  // Full original chip phrase. The visible label is shortened; this stays in
+  // the link accessible name so the meaning of the control is unchanged.
+  ctaAriaLabel: string;
   ctaIcon: LucideIcon;
   media: SurfaceMedia;
   mediaLogKey: string;
-  accent: Accent;
   // Brightens the subheading (description) to full white. Used on the cards whose
   // background media makes the default 62 percent white too dim (Gary 2026-06-13).
   brightSubheading?: boolean;
   className?: string;
 }
 
-// Accent maps the two themes to their token tinted chip treatments. Teal and
-// Orange are both real design tokens; the focus ring keeps the teal accent on
-// both so keyboard focus reads consistently across the hub.
-const ACCENT_CHIP: Record<Accent, string> = {
-  teal: 'border-[#2DA5A0]/40 bg-[#2DA5A0]/[0.14] text-[#2DA5A0] group-hover:border-[#2DA5A0]/60 group-hover:bg-[#2DA5A0]/20',
-  orange:
-    'border-[#B75E18]/45 bg-[#B75E18]/20 text-[#B75E18] group-hover:border-[#B75E18]/65 group-hover:bg-[#B75E18]/30',
-  // Blue (the Deep Navy token #1A2744) outline on a very see-through white glass
-  // fill (8 percent), with BRIGHT WHITE label text. The base chip className adds
-  // backdrop-blur-md so the video stays visible but frosted; the white text caries
-  // a soft shadow so it reads over the moving video at this low fill.
-  blue: 'border-[#1A2744]/60 bg-white/[0.08] text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.8)] group-hover:border-[#1A2744]/80 group-hover:bg-white/[0.16]',
-};
-
 function ActionCard({
   href,
   title,
   description,
   ctaLabel,
+  ctaAriaLabel,
   ctaIcon: CtaIcon,
   media,
   mediaLogKey,
-  accent,
   brightSubheading,
   className,
 }: ActionCardProps) {
   return (
     <Link
       href={href}
-      aria-label={`${title}. ${description}`}
+      aria-label={`${title}. ${description}. ${ctaAriaLabel}`}
       className={`group block no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] ${className ?? ''}`}
     >
       <GeneticsHubTile
@@ -118,12 +111,12 @@ function ActionCard({
         </div>
 
         {/* Bottom anchored CTA chip. Presentational only (the Link above owns
-            navigation); min height keeps the visual touch target at 44px. */}
+            navigation). Styled as the section sub-nav tab: 44px pill, 14px
+            icon, teal active border. The short visible label is not the
+            accessible name; ctaAriaLabel on the Link keeps the full phrase. */}
         <div className="mt-auto flex pt-4">
-          <span
-            className={`inline-flex min-h-[44px] items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-medium backdrop-blur-md transition-all duration-200 ${ACCENT_CHIP[accent]}`}
-          >
-            <CtaIcon aria-hidden="true" className="h-3.5 w-3.5" strokeWidth={1.5} />
+          <span data-genetics-action-cta="" className={GENETICS_ACTION_TAB_CTA_CLASS}>
+            <CtaIcon aria-hidden="true" className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
             <span>{ctaLabel}</span>
           </span>
         </div>
@@ -132,36 +125,36 @@ function ActionCard({
   );
 }
 
-// Upload Your DNA Test -> the real DNA raw file upload flow. BLUE accent.
+// Upload Your DNA Test -> the real DNA raw file upload flow.
 export function UploadDnaCard({ className }: { className?: string }) {
   return (
     <ActionCard
       href="/genetics/upload"
       title="Upload Your DNA Test"
       description="23andMe, AncestryDNA, and other raw files"
-      ctaLabel="Upload DNA"
+      ctaLabel={GENETICS_ACTION_CTA_COPY.uploadDna.visible}
+      ctaAriaLabel={GENETICS_ACTION_CTA_COPY.uploadDna.aria}
       ctaIcon={Upload}
       media={GENETICS_CARD_MEDIA.uploadDna}
       mediaLogKey="uploadDna"
-      accent="blue"
       brightSubheading
       className={className}
     />
   );
 }
 
-// Upload Lab Results -> the Connect Lab Results page (Prompt 204 fix). BLUE accent.
+// Upload Lab Results -> the Connect Lab Results page (Prompt 204 fix).
 export function UploadLabCard({ className }: { className?: string }) {
   return (
     <ActionCard
       href="/plugins/labs"
       title="Upload Lab Results"
       description="Blood panels, biomarkers, and lab reports"
-      ctaLabel="Upload Labs"
+      ctaLabel={GENETICS_ACTION_CTA_COPY.uploadLabs.visible}
+      ctaAriaLabel={GENETICS_ACTION_CTA_COPY.uploadLabs.aria}
       ctaIcon={FileText}
       media={GENETICS_CARD_MEDIA.uploadLab}
       mediaLogKey="uploadLab"
-      accent="blue"
       brightSubheading
       className={className}
     />
@@ -169,36 +162,35 @@ export function UploadLabCard({ className }: { className?: string }) {
 }
 
 // Browse Genetic SNP Support Formulations -> the SNP support catalog anchor.
-// BLUE accent, shopping cart CTA icon.
+// Shopping cart CTA icon.
 export function SnpFormulationsCard({ className }: { className?: string }) {
   return (
     <ActionCard
       href="/shop#category-snp"
       title="Browse Genetic SNP Support Formulations"
       description="Methylation cofactors, neurotransmitter, detox and more"
-      ctaLabel="Browse Catalog"
+      ctaLabel={GENETICS_ACTION_CTA_COPY.catalog.visible}
+      ctaAriaLabel={GENETICS_ACTION_CTA_COPY.catalog.aria}
       ctaIcon={ShoppingCart}
       media={GENETICS_CARD_MEDIA.snpFormulations}
       mediaLogKey="snpFormulations"
-      accent="blue"
       className={className}
     />
   );
 }
 
-// Unlock Your Genetic Blueprint -> the full storefront. BLUE accent, arrow CTA
-// icon.
+// Unlock Your Genetic Blueprint -> the full storefront. Arrow CTA icon.
 export function OrderPanelsCard({ className }: { className?: string }) {
   return (
     <ActionCard
       href="/shop"
       title="Unlock Your Genetic Blueprint"
       description="Explore all six GeneX360 panels"
-      ctaLabel="View Panels"
+      ctaLabel={GENETICS_ACTION_CTA_COPY.panels.visible}
+      ctaAriaLabel={GENETICS_ACTION_CTA_COPY.panels.aria}
       ctaIcon={ArrowRight}
       media={GENETICS_CARD_MEDIA.orderPanels}
       mediaLogKey="orderPanels"
-      accent="blue"
       className={className}
     />
   );
