@@ -1,27 +1,34 @@
+/* Centered on the same point as the old translate(-50%, -50%) anchor.
+   No transform here: a transformed ancestor blocks the pill backdrop-filter
+   from sampling the bottle. left 10% + width 80% matches the old horizontal
+   center. A flex box of height 2x the old top percent centers the stack there. */
 .vc-launch-vote {
     position: absolute;
-    left: 50%;
+    left: 10%;
     z-index: 5;
     display: flex;
     width: 80%;
-    transform: translate(-50%, -50%);
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     pointer-events: none;
 }
 
 .vc-launch-vote[data-size='card'] {
-    top: 49%;
+    top: 0;
+    height: 98%;
 }
 
 @media (min-width: 768px) {
     .vc-launch-vote[data-size='card'] {
-        top: 52%;
+        top: 0;
+        height: 104%;
     }
 }
 
 .vc-launch-vote[data-size='pdp'] {
-    top: 52%;
+    top: 0;
+    height: 104%;
 }
 
 .vc-launch-vote .vc-stardust,
