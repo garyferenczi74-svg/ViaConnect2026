@@ -26,6 +26,9 @@ export function SiteFooter() {
           <Link href="/terms" className="hover:text-teal transition-colors">
             Terms of Service
           </Link>
+          <Link href="/delete-account" className="hover:text-teal transition-colors min-h-[44px] inline-flex items-center">
+            Delete account
+          </Link>
         </nav>
       </div>
     </footer>

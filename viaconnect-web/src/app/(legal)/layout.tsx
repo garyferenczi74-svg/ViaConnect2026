@@ -17,14 +17,22 @@ export default function LegalLayout({
           <Link href="/" aria-label="ViaConnect home">
             <ViaConnectLogo size="md" />
           </Link>
-          <Link
-            href="/"
-            aria-label="Back to home"
-            className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" strokeWidth={1.5} aria-hidden="true" />
-            Back to home
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/delete-account"
+              className="text-sm text-gray-400 hover:text-white transition-colors min-h-[44px] inline-flex items-center"
+            >
+              Delete account
+            </Link>
+            <Link
+              href="/"
+              aria-label="Back to home"
+              className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors min-h-[44px]"
+            >
+              <ArrowLeft className="w-4 h-4" strokeWidth={1.5} aria-hidden="true" />
+              Back to home
+            </Link>
+          </div>
         </div>
       </header>
       <main className="mx-auto max-w-3xl px-4 py-10 leading-relaxed">
