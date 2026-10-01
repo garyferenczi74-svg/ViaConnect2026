@@ -120,6 +120,10 @@ export async function updateSession(request: NextRequest) {
     // privacy policy URL submission.
     pathname === "/privacy" ||
     pathname === "/terms" ||
+    // Public account-deletion URL for store listings, plus the post-delete
+    // confirmation. The deletion API stays authenticated.
+    pathname === "/delete-account" ||
+    pathname === "/account-deleted" ||
     pathname === "/privacy-policy" ||
     pathname === "/terms-of-service" ||
     pathname === "/tos" ||

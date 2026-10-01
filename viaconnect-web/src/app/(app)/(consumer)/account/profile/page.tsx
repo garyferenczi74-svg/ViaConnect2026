@@ -5,7 +5,6 @@
 // profiles table; email lives on auth.users.
 
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   Loader2,
   Check,
@@ -14,6 +13,7 @@ import {
   CircleCheck,
   AlertTriangle,
 } from "lucide-react";
+import { DeleteAccountDialog } from "@/components/account/DeleteAccountDialog";
 import toast from "react-hot-toast";
 import { ConfirmLocationBanner } from "@/components/location/ConfirmLocationBanner";
 import { LocationSelector } from "@/components/location/LocationSelector";
@@ -76,7 +76,7 @@ export default function ProfilePage() {
   const [pwCurrent, setPwCurrent] = useState("");
   const [pwNew, setPwNew] = useState("");
   const [pwConfirm, setPwConfirm] = useState("");
-  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -191,23 +191,6 @@ export default function ProfilePage() {
       setPwNew("");
       setPwConfirm("");
     }
-  }
-
-  async function handleDeleteAccount() {
-    // Account deletion requires elevated privileges; this is a UX
-    // placeholder that opens a support email until the deletion RPC
-    // exists.
-    const subject = encodeURIComponent("Account deletion request");
-    const body = encodeURIComponent(
-      `Please delete my ViaConnect account (${email}).`,
-    );
-    if (typeof window !== "undefined") {
-      window.open(
-        `mailto:support@farmceutica.com?subject=${subject}&body=${body}`,
-        "_blank",
-      );
-    }
-    setConfirmDelete(false);
   }
 
   if (loading) {
@@ -377,63 +360,20 @@ export default function ProfilePage() {
           Danger Zone
         </h3>
         <p className="text-xs text-red-300/70 mb-4">
-          Permanently delete your account and all associated data. This action
-          cannot be undone.
+          Permanently delete your account and the personal, health, genetic, and photo data stored with it. This cannot be undone.
         </p>
         <button
           type="button"
-          onClick={() => setConfirmDelete(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 hover:border-red-500/50 transition-all min-h-[40px]"
+          data-testid="delete-account-open"
+          onClick={() => setDeleteOpen(true)}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 hover:border-red-500/50 transition-all min-h-[44px]"
         >
           <Trash2 className="w-4 h-4" strokeWidth={1.5} />
-          Delete Account
+          Delete account
         </button>
       </div>
 
-      <AnimatePresence>
-        {confirmDelete && (
-          <div className="fixed inset-0 z-[120] flex items-center justify-center px-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setConfirmDelete(false)}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="relative w-full max-w-md rounded-2xl border border-red-500/30 bg-[#1E3054] p-6 shadow-2xl"
-            >
-              <h3 className="text-base font-semibold text-white mb-1">
-                Delete your account?
-              </h3>
-              <p className="text-sm text-white/60 mb-5 leading-relaxed">
-                Account deletion is processed manually by our support team to
-                ensure your data is fully removed across all systems. We'll
-                open an email so you can confirm your request.
-              </p>
-              <div className="flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setConfirmDelete(false)}
-                  className="px-4 py-2 rounded-xl text-sm text-white/70 hover:text-white border border-white/[0.10] hover:border-white/[0.20] transition-all"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleDeleteAccount}
-                  className="px-4 py-2 rounded-xl text-sm font-semibold text-white bg-red-500/90 hover:bg-red-500 transition-all"
-                >
-                  Email Support
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      <DeleteAccountDialog open={deleteOpen} onOpenChange={setDeleteOpen} />
     </div>
   );
 }

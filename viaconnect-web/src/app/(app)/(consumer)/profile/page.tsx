@@ -8,8 +8,8 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { Modal } from "@/components/ui/Modal";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { DeleteAccountDialog } from "@/components/account/DeleteAccountDialog";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import {
@@ -69,8 +69,7 @@ const notificationPrefs = [
 
 export default function ProfilePage() {
   const [userId, setUserId] = useState<string | null>(null);
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [formData, setFormData] = useState({
     full_name: "",
@@ -409,75 +408,27 @@ export default function ProfilePage() {
           {/* Danger Zone */}
           <Card className="p-6 border-rose/20">
             <div className="flex items-center gap-2 mb-4">
-              <AlertTriangle className="w-5 h-5 text-rose" />
+              <AlertTriangle className="w-5 h-5 text-rose" strokeWidth={1.5} />
               <h3 className="text-lg font-semibold text-rose">Danger Zone</h3>
             </div>
             <p className="text-sm text-gray-400 mb-4">
-              Permanently delete your account and all associated data. This action cannot be undone.
+              Permanently delete your account and the personal, health, genetic, and photo data stored with it. This cannot be undone.
             </p>
             <Button
               variant="danger"
               size="sm"
-              onClick={() => setDeleteModalOpen(true)}
+              data-testid="delete-account-open"
+              className="min-h-[44px]"
+              onClick={() => setDeleteOpen(true)}
             >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Delete Account
+              <Trash2 className="w-4 h-4 mr-2" strokeWidth={1.5} />
+              Delete account
             </Button>
           </Card>
         </div>
       </StaggerChild>
 
-      {/* Delete Account Modal */}
-      <Modal
-        open={deleteModalOpen}
-        onOpenChange={setDeleteModalOpen}
-        title="Delete Account"
-      >
-        <div className="space-y-4">
-          <div className="p-4 rounded-lg bg-rose/10 border border-rose/20">
-            <p className="text-sm text-rose font-medium">
-              This will permanently delete your account, including:
-            </p>
-            <ul className="text-xs text-rose/80 mt-2 space-y-1 list-disc pl-4">
-              <li>All genetic profile data</li>
-              <li>Assessment results and health scores</li>
-              <li>ViaTokens balance and history</li>
-              <li>Supplement protocols and logs</li>
-              <li>All messages and conversations</li>
-            </ul>
-          </div>
-          <Input
-            label={`Type "DELETE" to confirm`}
-            value={deleteConfirm}
-            onChange={(e) => setDeleteConfirm(e.target.value)}
-            error={deleteConfirm.length > 0 && deleteConfirm !== "DELETE" ? "Type DELETE to confirm" : undefined}
-          />
-          <div className="flex gap-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setDeleteModalOpen(false);
-                setDeleteConfirm("");
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="danger"
-              size="sm"
-              disabled={deleteConfirm !== "DELETE"}
-              onClick={() => {
-                toast.error("Account deletion is processed by our team. You will receive a confirmation email.");
-                setDeleteModalOpen(false);
-                setDeleteConfirm("");
-              }}
-            >
-              Permanently Delete
-            </Button>
-          </div>
-        </div>
-      </Modal>
+      <DeleteAccountDialog open={deleteOpen} onOpenChange={setDeleteOpen} />
     </PageTransition>
   );
 }
