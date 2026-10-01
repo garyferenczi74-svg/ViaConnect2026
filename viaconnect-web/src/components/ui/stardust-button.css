@@ -1,0 +1,149 @@
+.vc-stardust {
+    --vc-stardust-rest-bg: #0a1929;
+    --vc-stardust-rest-fg: #81d8ff;
+    --vc-stardust-hover-bg: #0f4d33;
+    --vc-stardust-hover-fg: #a7f3d0;
+    --vc-stardust-hover-glow: rgba(52, 211, 153, 0.55);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0;
+    border: 0;
+    border-radius: 999px;
+    background: var(--vc-stardust-rest-bg);
+    color: var(--vc-stardust-rest-fg);
+    cursor: pointer;
+    font: inherit;
+    font-size: 12.5px;
+    line-height: 1.25;
+    padding: 9px 16px;
+    min-height: calc(1.25em * 2 + 18px);
+    text-align: center;
+    transition: background-color 200ms, color 200ms, box-shadow 200ms;
+}
+
+.vc-stardust[data-size='pdp'] {
+    font-size: 16px;
+    padding: 12px 26px;
+    width: min(20rem, 100%);
+}
+
+.vc-stardust-labels {
+    display: grid;
+    flex: 1;
+    min-width: 0;
+}
+
+.vc-stardust-label,
+.vc-stardust-detail {
+    grid-area: 1 / 1;
+}
+
+.vc-stardust-detail {
+    grid-area: auto;
+}
+
+.vc-stardust-labels-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.vc-stardust-label {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+}
+
+.vc-stardust-label-alt,
+.vc-stardust-glyph-alt {
+    visibility: hidden;
+}
+
+.vc-stardust-glyphs {
+    display: grid;
+    flex: none;
+    width: 12px;
+    height: 12px;
+}
+
+.vc-stardust-glyph {
+    grid-area: 1 / 1;
+    width: 12px;
+    height: 12px;
+}
+
+.vc-stardust-glyph-alt {
+    display: none;
+}
+
+@media (hover: hover) {
+    .vc-stardust[data-state='rest']:hover {
+        background: var(--vc-stardust-hover-bg);
+        color: var(--vc-stardust-hover-fg);
+        box-shadow: 0 0 0.6rem var(--vc-stardust-hover-glow);
+    }
+
+    .vc-stardust[data-state='rest']:hover .vc-stardust-label-rest {
+        visibility: hidden;
+    }
+
+    .vc-stardust[data-state='rest']:hover .vc-stardust-label-alt {
+        visibility: visible;
+    }
+
+    .vc-stardust[data-state='rest']:hover .vc-stardust-glyph-rest {
+        display: none;
+    }
+
+    .vc-stardust[data-state='rest']:hover .vc-stardust-glyph-alt {
+        display: block;
+        visibility: visible;
+    }
+}
+
+.vc-stardust[data-state='rest']:focus-visible,
+.vc-stardust[data-state='rest']:active {
+    background: var(--vc-stardust-hover-bg);
+    color: var(--vc-stardust-hover-fg);
+    box-shadow: 0 0 0.6rem var(--vc-stardust-hover-glow);
+}
+
+.vc-stardust[data-state='rest']:focus-visible .vc-stardust-label-rest,
+.vc-stardust[data-state='rest']:active .vc-stardust-label-rest {
+    visibility: hidden;
+}
+
+.vc-stardust[data-state='rest']:focus-visible .vc-stardust-label-alt,
+.vc-stardust[data-state='rest']:active .vc-stardust-label-alt {
+    visibility: visible;
+}
+
+.vc-stardust[data-state='rest']:focus-visible .vc-stardust-glyph-rest,
+.vc-stardust[data-state='rest']:active .vc-stardust-glyph-rest {
+    display: none;
+}
+
+.vc-stardust[data-state='rest']:focus-visible .vc-stardust-glyph-alt,
+.vc-stardust[data-state='rest']:active .vc-stardust-glyph-alt {
+    display: block;
+    visibility: visible;
+}
+
+.vc-stardust[data-state='voted'],
+.vc-stardust[data-state='popular'] {
+    background: var(--vc-stardust-hover-bg);
+    color: var(--vc-stardust-hover-fg);
+    cursor: default;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .vc-stardust {
+        transition: none;
+    }
+}

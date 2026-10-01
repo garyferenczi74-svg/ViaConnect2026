@@ -6,7 +6,8 @@
  * (label "Full Panel Details"), TestingMetaDropdown rendering 3 sections
  * What's Tested / Who It's For / What You Get from products.testing_meta,
  * Add to Cart (or Order Test Kit when products.requires_practitioner_order
- * is true).
+ * is true) is the purchase button and appears only when released.
+ * Join the Revolution is the email sign-up and stays on every product.
  *
  * Single-open accordion: isFormulationOpen + onToggleFormulation are
  * passed down from <PlpProductGrid>; same prop names used as supplement
@@ -61,7 +62,7 @@ export function ProductCardTestingBody({
                 />
             </div>
 
-            {product.is_released === true ? (
+            {product.is_released === true && (
                 <button
                     type="button"
                     onClick={(e) => {
@@ -89,15 +90,14 @@ export function ProductCardTestingBody({
                     <ShoppingBag className="h-4 w-4" strokeWidth={1.5} />
                     {ctaCopy}
                 </button>
-            ) : (
-                <JoinWaitlistButton
-                    productId={product.id}
-                    productName={product.name}
-                    source="plp"
-                    signedIn={waitlist.signedIn}
-                    joined={waitlist.joined}
-                />
             )}
+            <JoinWaitlistButton
+                productId={product.id}
+                productName={product.name}
+                source="plp"
+                signedIn={waitlist.signedIn}
+                joined={waitlist.joined}
+            />
         </div>
     )
 }

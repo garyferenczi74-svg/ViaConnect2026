@@ -135,16 +135,22 @@ describe('shop release migrations sort last with the exact PR 1 names', () => {
     ]);
   });
 
-  it('sorts both files after the predecessor and after every other migration', () => {
+  it('sorts both files after the predecessor and before the launch vote migrations', () => {
     const files = migrationFiles();
     expect(files).toContain(PREDECESSOR);
-    const others = files.filter((name) => name !== MIGRATION_A && name !== MIGRATION_B);
+    const launchVote = [
+      '20260930230000_launch_vote_waitlist_columns.sql',
+      '20260930230100_launch_vote_plan_codes_email.sql',
+    ];
+    const others = files.filter(
+      (name) => name !== MIGRATION_A && name !== MIGRATION_B && !launchVote.includes(name),
+    );
     for (const other of others) {
       expect(MIGRATION_A > other, `${MIGRATION_A} should sort after ${other}`).toBe(true);
       expect(MIGRATION_B > other, `${MIGRATION_B} should sort after ${other}`).toBe(true);
     }
     expect(MIGRATION_A < MIGRATION_B).toBe(true);
-    expect(files.slice(-2)).toEqual([MIGRATION_A, MIGRATION_B]);
+    expect(files.slice(-4)).toEqual([MIGRATION_A, MIGRATION_B, ...launchVote]);
   });
 });
 

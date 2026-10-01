@@ -10,9 +10,10 @@
  * passed down from <PlpProductGrid> so opening one card's Formulation
  * collapses any other open card across the grid.
  *
- * The Add to Cart button stops the card-wide Link from navigating so
- * direct cart adds work without leaving the PLP. Cart wiring lands in
- * Phase F (cart drawer plus checkout); for now it logs the SKU.
+ * Three separate controls. Add to Cart is the purchase button and
+ * appears only when the product is released. Join the Revolution is the
+ * email sign-up and stays on every product. The vote pill lives on the
+ * image and is not rendered here.
  */
 'use client'
 
@@ -67,7 +68,7 @@ export function ProductCardSupplementBody({
                 />
             </div>
 
-            {product.is_released === true ? (
+            {product.is_released === true && (
                 <button
                     type="button"
                     onClick={(e) => {
@@ -95,15 +96,14 @@ export function ProductCardSupplementBody({
                     <ShoppingBag className="h-4 w-4" strokeWidth={1.5} />
                     Add to Cart
                 </button>
-            ) : (
-                <JoinWaitlistButton
-                    productId={product.id}
-                    productName={product.name}
-                    source="plp"
-                    signedIn={waitlist.signedIn}
-                    joined={waitlist.joined}
-                />
             )}
+            <JoinWaitlistButton
+                productId={product.id}
+                productName={product.name}
+                source="plp"
+                signedIn={waitlist.signedIn}
+                joined={waitlist.joined}
+            />
         </div>
     )
 }

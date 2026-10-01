@@ -128,7 +128,7 @@ describe('PDP release fallback', () => {
         const html = renderToStaticMarkup(element)
         expect(notFound).not.toHaveBeenCalled()
         expect(html).toContain('Join the Revolution')
-        expect(html).toContain('data-testid="coming-soon-overlay"')
+        expect(html).toContain('data-testid="launch-vote-pill"')
         expect(html).not.toContain('Add to Cart')
     })
 

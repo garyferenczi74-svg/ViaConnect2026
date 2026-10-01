@@ -1,0 +1,25 @@
+@media (max-width: 640px) {
+    .vc-launch-votes thead {
+        display: none;
+    }
+
+    .vc-launch-votes tr {
+        display: block;
+        margin: 0 0 12px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 8px;
+    }
+
+    .vc-launch-votes td {
+        display: block;
+        padding: 6px 0;
+    }
+
+    .vc-launch-votes td::before {
+        content: attr(data-label);
+        display: block;
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.45);
+    }
+}

@@ -25,6 +25,7 @@ import { getShopCategoryBySlug } from '@/lib/shop/categories'
 import { getProductsByCategory, withReleaseState } from '@/lib/shop/queries'
 import { getReleasedShopPhaseIds } from '@/lib/shop/release'
 import { getCurrentShopSession, isConsumerSession } from '@/lib/shop/role'
+import { getLaunchVoteView } from '@/lib/shop/launch-vote/read'
 import { getJoinedWaitlistProductIds } from '@/lib/shop/waitlist'
 
 interface ShopCategoryPageProps {
@@ -36,13 +37,14 @@ interface ShopCategoryPageProps {
 export async function ShopCategoryPage({ slug, hasCaqOnFile, belowHeader }: ShopCategoryPageProps) {
     const category = getShopCategoryBySlug(slug)
     const sessionPromise = getCurrentShopSession()
-    const [productResult, session, releasedPhaseIds, joinedProductIds] = await Promise.all([
+    const [productResult, session, releasedPhaseIds, joinedProductIds, voteView] = await Promise.all([
         getProductsByCategory(slug),
         sessionPromise,
         getReleasedShopPhaseIds(),
         sessionPromise.then((current) =>
             current.userId ? getJoinedWaitlistProductIds() : Promise.resolve<string[]>([]),
         ),
+        sessionPromise.then((current) => getLaunchVoteView(current.userId)),
     ])
     const gridResult =
         productResult.status === 'ok'
@@ -87,6 +89,13 @@ export async function ShopCategoryPage({ slug, hasCaqOnFile, belowHeader }: Shop
                         categorySlug={slug}
                         signedIn={session.userId !== null}
                         joinedProductIds={joinedProductIds}
+                        vote={{
+                            signedIn: session.userId !== null,
+                            votingEnabled: voteView.enabled,
+                            votedProductIds: voteView.votedProductIds,
+                            top3: voteView.top3,
+                            hasPriorPaidOrder: voteView.hasPriorPaidOrder,
+                        }}
                     />
                 </Suspense>
             </div>

@@ -7,6 +7,8 @@
  * calls and risk a write race.
  */
 import { CartPageView } from '@/components/shop/CartPageView'
+import { getMyEarlyVoterCodes } from '@/lib/shop/launch-vote/early-voter'
+import { earlyVoterDiscountEnabled } from '@/lib/shop/launch-vote/flags'
 import { getCurrentShopSession, isConsumerSession } from '@/lib/shop/role'
 
 export const metadata = {
@@ -18,5 +20,12 @@ export const metadata = {
 export default async function CartPage() {
     const session = await getCurrentShopSession()
     const consumerSession = isConsumerSession(session.role)
-    return <CartPageView consumerSession={consumerSession} userId={session.userId} />
+    const codes = session.userId ? await getMyEarlyVoterCodes() : []
+    return (
+        <CartPageView
+            consumerSession={consumerSession}
+            userId={session.userId}
+            earlyVoter={{ enabled: earlyVoterDiscountEnabled(), codes }}
+        />
+    )
 }

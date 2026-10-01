@@ -16,12 +16,14 @@ import { notFound } from 'next/navigation'
 import { BreadcrumbPills, type BreadcrumbItem } from '@/components/BreadcrumbPills'
 import { CartChrome } from '@/components/shop/CartChrome'
 import { CategoryFallbackImage } from '@/components/shop/CategoryFallbackImage'
-import { ComingSoonOverlay } from '@/components/shop/ComingSoonOverlay'
+import { LaunchVotePill } from '@/components/shop/LaunchVotePill'
 import { PdpRightRail } from '@/components/shop/PdpRightRail'
 import { getShopCategoryBySlug } from '@/lib/shop/categories'
 import { getProductBySlug, withReleaseState } from '@/lib/shop/queries'
 import { getReleasedShopPhaseIds } from '@/lib/shop/release'
 import { getCurrentShopSession, isConsumerSession } from '@/lib/shop/role'
+import { getLaunchVoteView } from '@/lib/shop/launch-vote/read'
+import { pillForProduct } from '@/lib/shop/launch-vote/state'
 import { getJoinedWaitlistProductIds } from '@/lib/shop/waitlist'
 import { buildFiveSections } from '@/lib/shop/productTabs/buildFromProduct'
 import { loadProductCompatibility } from '@/lib/shop/productTabs/loadCompatibility'
@@ -47,13 +49,14 @@ export default async function ProductDetailPage(props: PageProps) {
     const params = await props.params;
     const searchParams = props.searchParams ? await props.searchParams : {};
     const sessionPromise = getCurrentShopSession()
-    const [loaded, session, releasedPhaseIds, joinedProductIds] = await Promise.all([
+    const [loaded, session, releasedPhaseIds, joinedProductIds, voteView] = await Promise.all([
         getProductBySlug(params.slug),
         sessionPromise,
         getReleasedShopPhaseIds(),
         sessionPromise.then((current) =>
             current.userId ? getJoinedWaitlistProductIds() : Promise.resolve<string[]>([]),
         ),
+        sessionPromise.then((current) => getLaunchVoteView(current.userId)),
     ])
     if (!loaded) notFound()
     const product = withReleaseState([loaded], releasedPhaseIds)[0]
@@ -76,6 +79,18 @@ export default async function ProductDetailPage(props: PageProps) {
     const compatibility = await loadProductCompatibility(slug)
     const initialHash =
         searchParams.tab?.replace(/_/g, '-') ?? null
+    const voteModel = {
+        signedIn: session.userId !== null,
+        votingEnabled: voteView.enabled,
+        votedProductIds: voteView.votedProductIds,
+        top3: voteView.top3,
+        hasPriorPaidOrder: voteView.hasPriorPaidOrder,
+    }
+    const pill = pillForProduct({
+        released: product.is_released === true,
+        productId: product.id,
+        model: voteModel,
+    })
 
     return (
         <div className="min-h-screen bg-[#0F1A2E] text-white">
@@ -110,10 +125,17 @@ export default async function ProductDetailPage(props: PageProps) {
                             ) : (
                                 <CategoryFallbackImage categorySlug={product.category_slug} />
                             )}
-                            {product.is_released !== true && (
-                                <ComingSoonOverlay
-                                    tone={primaryImage ? 'onLight' : 'onDark'}
+                            {pill.kind !== 'hidden' && (
+                                <LaunchVotePill
+                                    productId={product.id}
+                                    productName={product.name}
+                                    productPath={`/shop/product/${slug}`}
+                                    source="pdp"
                                     size="pdp"
+                                    pill={pill}
+                                    signedIn={voteModel.signedIn}
+                                    votingEnabled={voteModel.votingEnabled}
+                                    hasPriorPaidOrder={voteModel.hasPriorPaidOrder}
                                 />
                             )}
                         </div>

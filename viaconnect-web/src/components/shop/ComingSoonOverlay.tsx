@@ -1,3 +1,8 @@
+/**
+ * RETIRED from render by Brief 70, remove in follow-up.
+ * The Launching Soon vote pill replaces this stamp on unreleased products.
+ * Join the Revolution stays; it is the email sign-up, not this overlay.
+ */
 'use client'
 
 import { useRef, type CSSProperties } from 'react'
