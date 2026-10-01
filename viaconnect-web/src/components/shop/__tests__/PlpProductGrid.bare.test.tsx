@@ -141,7 +141,7 @@ describe('PlpProductGrid honest states', () => {
     expect(html).toContain('aria-busy="true"')
   })
 
-  it('renders two overlays and two buy buttons for one released, two unreleased, and one kit', () => {
+  it('renders two vote pills, Join on every card, and buy buttons only on released products', () => {
     const html = renderGrid({
       status: 'ok',
       products: [
@@ -157,14 +157,15 @@ describe('PlpProductGrid honest states', () => {
         }),
       ],
     })
-    expect(html.match(/data-testid="coming-soon-overlay"/g)?.length ?? 0).toBe(2)
+    expect(html.match(/data-testid="launch-vote-pill"/g)?.length ?? 0).toBe(2)
     expect(html.match(/>Add to Cart</g)?.length ?? 0).toBe(2)
-    expect(html).not.toContain('Join the Revolution waiting list for Released Supplement')
+    expect(html).toContain('Join the Revolution waiting list for Released Supplement')
     expect(html).toContain('Join the Revolution waiting list for Unreleased One')
     expect(html).toContain('Join the Revolution waiting list for Unreleased Two')
+    expect(html).toContain('Join the Revolution waiting list for GeneX Kit')
   })
 
-  it('staggers coming soon delays across three unreleased cards', () => {
+  it('does not render the retired coming soon stamp on unreleased cards', () => {
     const html = renderGrid({
       status: 'ok',
       products: [
@@ -173,10 +174,9 @@ describe('PlpProductGrid honest states', () => {
         product('Unreleased Three', { id: 'u3', sku: 'FC-THREE', is_released: false }),
       ],
     })
-    expect(html).toContain('--cs-delay:0.000s')
-    expect(html).toContain('--cs-delay:0.247s')
-    expect(html).toContain('--cs-delay:0.094s')
-    expect(html).not.toContain('--cs-intro-delay')
+    expect(html.match(/data-testid="launch-vote-pill"/g)?.length ?? 0).toBe(3)
+    expect(html).not.toContain('data-testid="coming-soon-overlay"')
+    expect(html).not.toContain('--cs-delay')
   })
 
   it('wires Try again to router.refresh inside a transition', () => {

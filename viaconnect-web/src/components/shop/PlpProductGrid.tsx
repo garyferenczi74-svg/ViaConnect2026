@@ -23,6 +23,7 @@ import { ProductCard } from './ProductCard'
 import { PlpProductsRetryButton } from './PlpProductsRetryButton'
 import { applyFilters, applySort, readFilterState } from '@/lib/shop/filters'
 import type { ShopCardVariant } from '@/lib/shop/categories'
+import { staticVoteModel, type LaunchVoteCardModel } from '@/lib/shop/launch-vote/types'
 import type { ProductsByCategoryResult, ShopProduct } from '@/lib/shop/queries'
 import {
     PLP_PRODUCTS_COMING_ONLINE_COPY,
@@ -35,6 +36,7 @@ interface PlpProductGridProps {
     categorySlug: string
     signedIn: boolean
     joinedProductIds: readonly string[]
+    vote?: LaunchVoteCardModel
 }
 
 export function PlpProductGrid({
@@ -43,6 +45,7 @@ export function PlpProductGrid({
     categorySlug,
     signedIn,
     joinedProductIds,
+    vote,
 }: PlpProductGridProps) {
     if (result.status === 'error') {
         return (
@@ -73,6 +76,7 @@ export function PlpProductGrid({
             categorySlug={categorySlug}
             signedIn={signedIn}
             joinedProductIds={joinedProductIds}
+            vote={vote ?? staticVoteModel(signedIn)}
         />
     )
 }
@@ -83,12 +87,14 @@ function PlpProductGridLoaded({
     categorySlug,
     signedIn,
     joinedProductIds,
+    vote,
 }: {
     products: ShopProduct[]
     variant: ShopCardVariant
     categorySlug: string
     signedIn: boolean
     joinedProductIds: readonly string[]
+    vote: LaunchVoteCardModel
 }) {
     const searchParams = useSearchParams()
 
@@ -132,6 +138,7 @@ function PlpProductGridLoaded({
                                 signedIn,
                                 joined: joinedIds.has(product.id),
                             }}
+                            vote={vote}
                         />
                     ))}
                 </div>

@@ -255,13 +255,12 @@ describe('/api/shop/waitlist', () => {
         expect(upserts).toEqual([])
     })
 
-    it('returns 409 with no upsert for a released product or an exempt kit', async () => {
+    it('upserts a released product and an exempt kit because Join is the email sign-up', async () => {
         unreleasedProduct({ launch_phase_id: 'shop_release_phase_1' })
         state.phases = [{ id: 'shop_release_phase_1', activation_status: 'active' }]
         const released = await call('POST', { productId: PRODUCT_ID, source: 'plp' })
-        expect(released.status).toBe(409)
-        expect(((await released.json()) as { errorCode: string }).errorCode).toBe('PRODUCT_RELEASED')
-        expect(upserts).toEqual([])
+        expect(released.status).toBe(200)
+        expect(((await released.json()) as { data: { status: string } }).data.status).toBe('joined')
 
         resetState()
         unreleasedProduct({
@@ -272,8 +271,13 @@ describe('/api/shop/waitlist', () => {
         })
         state.phaseError = { code: '42501', message: 'rls' }
         const kit = await call('POST', { productId: PRODUCT_ID, source: 'plp' })
-        expect(kit.status).toBe(409)
-        expect(upserts).toEqual([])
+        expect(kit.status).toBe(200)
+        expect(upserts).toEqual([
+            {
+                values: { user_id: USER_ID, product_id: PRODUCT_ID, source: 'plp' },
+                options: { onConflict: 'user_id,product_id', ignoreDuplicates: true },
+            },
+        ])
     })
 
     it('upserts an unreleased product and accepts a repeat join', async () => {

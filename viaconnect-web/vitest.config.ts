@@ -89,6 +89,8 @@ export default defineConfig({
       'src/components/shop/__tests__/ShopCategoryPage.fallback.test.tsx',
       'src/components/shop/__tests__/PdpPage.fallback.test.tsx',
       'src/components/shop/__tests__/CartLineUnavailableBadge.test.tsx',
+      'src/components/shop/__tests__/LaunchVotePill.test.tsx',
+      'src/components/admin/__tests__/launch-votes-panel.test.tsx',
     ],
     exclude: ['node_modules', '.next', 'supabase'],
     globals: true,

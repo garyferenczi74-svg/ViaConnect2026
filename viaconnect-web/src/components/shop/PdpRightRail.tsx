@@ -16,8 +16,10 @@
  *     section retains its supplement lg:hidden gating per #148 + #151
  *     scope; that surface is unchanged by 152p.
  *
- * Purchase flow elements (price + summary + quantity stepper + Add to
- * Cart + Add to Bundle) untouched.
+ * Purchase flow: Add to Cart (or Order Test Kit) is the purchase button
+ * and appears only when the product is released. Join the Revolution is
+ * the email sign-up and stays beside it on released products and alone
+ * on unreleased products. The vote pill is a third control on the image.
  *
  * Testing variant: renders the 3 testing_meta sections (What's Tested +
  * Who It's For + What You Get) below the Description Accordion, with
@@ -284,7 +286,7 @@ export function PdpRightRail({
             )}
 
             {product.is_released === true ? (
-                <div className="flex flex-col gap-3 sm:flex-row lg:mt-5 lg:max-w-[420px]">
+                <div className="flex flex-col gap-3 sm:flex-row lg:mt-5">
                     <button
                         type="button"
                         onClick={() =>
@@ -321,6 +323,15 @@ export function PdpRightRail({
                             Add to Bundle
                         </button>
                     )}
+                    <div className="flex min-w-0 flex-1 flex-col">
+                        <JoinWaitlistButton
+                            productId={product.id}
+                            productName={product.name}
+                            source="pdp"
+                            signedIn={waitlist.signedIn}
+                            joined={waitlist.joined}
+                        />
+                    </div>
                 </div>
             ) : (
                 <div className="flex w-full flex-col lg:mt-5 lg:max-w-[420px]">

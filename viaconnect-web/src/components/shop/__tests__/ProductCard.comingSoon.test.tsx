@@ -78,16 +78,17 @@ function renderCard(product: ShopProduct, variant: 'supplement' | 'testing' = 's
 }
 
 describe('ProductCard coming soon', () => {
-    it('keeps Add to Cart on a released supplement and hides the overlay and the join button', () => {
+    it('keeps Add to Cart and Join the Revolution on a released supplement and hides the vote pill', () => {
         const html = renderCard(base({ name: 'Released Fixture', is_released: true }))
-        expect(html).not.toContain('data-testid="coming-soon-overlay"')
+        expect(html).not.toContain('data-testid="launch-vote-pill"')
         expect(html).toContain('Add to Cart')
-        expect(html).not.toContain('Join the Revolution')
+        expect(html).toContain('Join the Revolution')
     })
 
-    it('shows the overlay and Join the Revolution on an unreleased supplement, with no Add to Cart', () => {
+    it('shows the vote pill and Join the Revolution on an unreleased supplement, with no Add to Cart', () => {
         const html = renderCard(base({ is_released: false }))
-        expect(html).toContain('data-testid="coming-soon-overlay"')
+        expect(html).toContain('data-testid="launch-vote-pill"')
+        expect(html).toContain('Launching Soon')
         expect(html).toContain('Join the Revolution')
         expect(html).not.toContain('Add to Cart')
     })
@@ -109,8 +110,8 @@ describe('ProductCard coming soon', () => {
         )
         const html = renderCard(kit, 'testing')
         expect(kit.is_released).toBe(true)
-        expect(html).not.toContain('data-testid="coming-soon-overlay"')
-        expect(html).not.toContain('Join the Revolution')
+        expect(html).not.toContain('data-testid="launch-vote-pill"')
+        expect(html).toContain('Join the Revolution')
         expect(html).toContain('Order Test Kit')
     })
 
@@ -128,7 +129,7 @@ describe('ProductCard coming soon', () => {
         )
         const html = renderCard(row, 'testing')
         expect(row.is_released).toBe(false)
-        expect(html).toContain('data-testid="coming-soon-overlay"')
+        expect(html).toContain('data-testid="launch-vote-pill"')
         expect(html).toContain('Join the Revolution')
         expect(html).not.toContain('Add to Cart')
         expect(html).not.toContain('Order Test Kit')
@@ -150,7 +151,7 @@ describe('ProductCard coming soon', () => {
     it('renders the overlay inside the image container before the pills', () => {
         const html = renderCard(base({ status_tags: ['NEW'], is_released: false }))
         const imageAt = html.indexOf('aspect-[3/4]')
-        const overlayAt = html.indexOf('data-testid="coming-soon-overlay"')
+        const overlayAt = html.indexOf('data-testid="launch-vote-pill"')
         const pillsAt = html.indexOf('absolute top-3 right-3 z-10')
         expect(imageAt).toBeGreaterThan(-1)
         expect(overlayAt).toBeGreaterThan(imageAt)
@@ -185,6 +186,7 @@ describe('ProductCard coming soon', () => {
         expect(button).toContain('strokeWidth={1.5}')
         expect(button).not.toMatch(/\bany\b/)
         expect(card).not.toMatch(/\bany\b/)
-        expect(card).toContain('ComingSoonOverlay')
+        expect(card).toContain('LaunchVotePill')
+        expect(card).not.toContain('ComingSoonOverlay')
     })
 })

@@ -1,3 +1,9 @@
+/**
+ * EMAIL SIGN-UP ONLY. Creates a shop_product_waitlist row.
+ * Not a vote and not a purchase. Do not rename this control.
+ * It stays on released products (next to Add to Cart) and on unreleased products.
+ * The Stardust pill is the separate vote control.
+ */
 'use client'
 
 import { useState } from 'react'

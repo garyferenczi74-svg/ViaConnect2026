@@ -36,6 +36,16 @@ import {
 } from '@/lib/shop/cart-store'
 import { useRxEligibility } from '@/lib/shop/use-rx-eligibility'
 import { CartLineRxPill } from '@/components/shop/CartLineRxPill'
+import {
+    CART_EARLY_VOTER_EXPIRES,
+    CART_EARLY_VOTER_FIRST,
+    CART_EARLY_VOTER_LINE,
+    CART_EARLY_VOTER_NEXT,
+    CART_EARLY_VOTER_UNAVAILABLE,
+    fillLaunchTemplate,
+} from '@/lib/shop/launch-vote-copy'
+import { listEarlyVoterRows, type EarlyVoterCodeRow } from '@/lib/shop/launch-vote/early-voter-math'
+import { formatUtcInstantDate } from '@/lib/shop/launch-vote/state'
 
 function formatPrice(value: number): string {
     return `$${value.toFixed(2)}`
@@ -44,9 +54,17 @@ function formatPrice(value: number): string {
 interface CartPageViewProps {
     consumerSession?: boolean
     userId?: string | null
+    earlyVoter?: {
+        enabled: boolean
+        codes: readonly EarlyVoterCodeRow[]
+    }
 }
 
-export function CartPageView({ consumerSession = true, userId = null }: CartPageViewProps) {
+export function CartPageView({
+    consumerSession = true,
+    userId = null,
+    earlyVoter = { enabled: false, codes: [] },
+}: CartPageViewProps) {
     const [helixInput, setHelixInput] = useState('')
     const [promoInput, setPromoInput] = useState('')
     const [promoError, setPromoError] = useState<string | null>(null)
@@ -232,6 +250,42 @@ export function CartPageView({ consumerSession = true, userId = null }: CartPage
                                             <span className="tabular-nums">{formatPrice(-cart.helixDiscount)}</span>
                                         </div>
                                     )}
+                                    {listEarlyVoterRows({
+                                        enabled: earlyVoter.enabled,
+                                        codes: earlyVoter.codes,
+                                        lines: cart.lines.map((line) => ({
+                                            sku: line.sku,
+                                            productId: line.productId,
+                                            unitPriceCents: Math.round(line.price * 100),
+                                            quantity: line.quantity,
+                                        })),
+                                        nowMs: Date.now(),
+                                        otherOfferApplied: Boolean(cart.appliedPromo) || cart.appliedHelix > 0,
+                                    }).map((row) => {
+                                        const expires = formatUtcInstantDate(row.expiresAt)
+                                        const scope =
+                                            row.orderScope === 'next_order'
+                                                ? CART_EARLY_VOTER_NEXT
+                                                : CART_EARLY_VOTER_FIRST
+                                        return (
+                                            <div key={row.productId} data-testid="early-voter-row">
+                                                <div className="flex items-center justify-between text-[#2DA5A0]">
+                                                    <span>{CART_EARLY_VOTER_LINE}</span>
+                                                    <span className="tabular-nums">
+                                                        {row.kind === 'applied' && row.discountCents !== null
+                                                            ? formatPrice(-(row.discountCents / 100))
+                                                            : CART_EARLY_VOTER_UNAVAILABLE}
+                                                    </span>
+                                                </div>
+                                                {expires ? (
+                                                    <p className="text-xs text-white/45">
+                                                        {fillLaunchTemplate(CART_EARLY_VOTER_EXPIRES, { date: expires })}
+                                                    </p>
+                                                ) : null}
+                                                <p className="text-xs text-white/45">{scope}</p>
+                                            </div>
+                                        )
+                                    })}
                                     {cart.appliedPromo && (
                                         <div className="flex items-center justify-between text-[#2DA5A0]">
                                             <span className="flex items-center gap-2">

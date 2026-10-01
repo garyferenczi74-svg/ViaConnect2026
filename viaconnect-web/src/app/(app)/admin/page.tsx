@@ -14,6 +14,7 @@ import {
   formatCatalogPrice,
 } from "@/lib/admin/erp-honesty";
 import { loadAdminLiveCatalog } from "@/lib/admin/live-catalog";
+import { LaunchVotesPanel } from "@/components/admin/LaunchVotesPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -99,6 +100,10 @@ export default async function AdminDashboardPage() {
           <h2 className="text-sm font-semibold text-white mb-2">Inventory</h2>
           <p className="text-xs text-gray-500">{ADMIN_INVENTORY_EMPTY_COPY}</p>
         </Card>
+      </StaggerChild>
+
+      <StaggerChild>
+        <LaunchVotesPanel />
       </StaggerChild>
 
       <StaggerChild>

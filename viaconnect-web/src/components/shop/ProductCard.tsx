@@ -26,11 +26,13 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { CategoryFallbackImage } from './CategoryFallbackImage'
-import { ComingSoonOverlay } from './ComingSoonOverlay'
+import { LaunchVotePill } from './LaunchVotePill'
 import { ProductCardSupplementBody } from './ProductCard.SupplementBody'
 import { ProductCardTestingBody } from './ProductCard.TestingBody'
 import { StatusPill } from './StatusPill'
 import type { ShopWaitlistState } from './JoinWaitlistButton'
+import { pillForProduct } from '@/lib/shop/launch-vote/state'
+import { staticVoteModel, type LaunchVoteCardModel } from '@/lib/shop/launch-vote/types'
 import { resolveDisplayConfig } from '@/lib/shop/resolve-display-config'
 import type { ShopCardVariant } from '@/lib/shop/categories'
 import type { ShopProduct } from '@/lib/shop/queries'
@@ -65,6 +67,7 @@ interface ProductCardProps {
     isFormulationOpen: boolean
     onToggleFormulation: () => void
     waitlist: ShopWaitlistState
+    vote?: LaunchVoteCardModel
     staggerIndex?: number
 }
 
@@ -76,6 +79,7 @@ export function ProductCard({
     isFormulationOpen,
     onToggleFormulation,
     waitlist,
+    vote,
     staggerIndex = 0,
 }: ProductCardProps) {
     const primaryImage = (product.image_urls && product.image_urls[0]) || product.image_url || null
@@ -87,6 +91,13 @@ export function ProductCard({
     const display = resolveDisplayConfig(product.display_config)
     const overzoomClass =
         !display.hasOverride && product.slug ? PLP_IMAGE_OVERZOOM[product.slug] || '' : ''
+    void staggerIndex
+    const voteModel = vote ?? staticVoteModel(waitlist.signedIn)
+    const pill = pillForProduct({
+        released: product.is_released === true,
+        productId: product.id,
+        model: voteModel,
+    })
 
     return (
         <Link
@@ -133,11 +144,17 @@ export function ProductCard({
                 ) : (
                     <CategoryFallbackImage categorySlug={product.category_slug} />
                 )}
-                {product.is_released !== true && (
-                    <ComingSoonOverlay
-                        tone={primaryImage ? 'onLight' : 'onDark'}
+                {pill.kind !== 'hidden' && (
+                    <LaunchVotePill
+                        productId={product.id}
+                        productName={product.name}
+                        productPath={href}
+                        source="plp"
                         size="card"
-                        staggerIndex={staggerIndex}
+                        pill={pill}
+                        signedIn={voteModel.signedIn}
+                        votingEnabled={voteModel.votingEnabled}
+                        hasPriorPaidOrder={voteModel.hasPriorPaidOrder}
                     />
                 )}
                 {visibleTags.length > 0 && (

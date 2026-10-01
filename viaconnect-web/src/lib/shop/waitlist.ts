@@ -1,6 +1,8 @@
 /**
- * Per-product waiting list. Signed-in users only.
- * Internal launch planning. No emails. Rows are the caller's own under RLS.
+ * Per-product email sign-up ("Join the Revolution"). Signed-in users only.
+ * This is not a vote and not a purchase. The row is the caller's own under RLS.
+ * Released products are allowed: the sign-up stays on every product.
+ * Voting is a separate path (shop_cast_launch_vote) and still refuses released products.
  * A missing shop_product_waitlist table (42P01) is schema_missing, which the
  * route surfaces as the existing 500 SERVER_ERROR.
  */
@@ -8,8 +10,6 @@ import { createClient } from '@/lib/supabase/server'
 // Server-only: imports @/lib/supabase/server (next/headers), which fails in a client bundle.
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout'
 import { safeLog } from '@/lib/utils/safe-log'
-import { getReleasedShopPhaseIds } from '@/lib/shop/release'
-import { isExemptTestKit, releaseFieldsFromRow, resolveRelease } from '@/lib/shop/release-rules'
 
 const WAITLIST_TIMEOUT_MS = 1500
 
@@ -100,12 +100,6 @@ export async function joinProductWaitlist(
         }
         if (typeof data.id !== 'string' || typeof data.name !== 'string') {
             return { status: 'not_found' }
-        }
-
-        const phaseIds = await getReleasedShopPhaseIds()
-        const fields = releaseFieldsFromRow(data)
-        if (isExemptTestKit(fields) || resolveRelease(fields, phaseIds)) {
-            return { status: 'released' }
         }
 
         const upserted = await withTimeout(

@@ -75,7 +75,7 @@ describe('PdpRightRail coming soon', () => {
         expect(html).toContain('Decrease quantity')
         expect(html).toContain('Add to Bundle')
         expect(html).toContain('Add to Cart')
-        expect(html).not.toContain('Join the Revolution')
+        expect(html).toContain('Join the Revolution')
     })
 
     it('leaves a kit buyable', () => {
@@ -91,7 +91,7 @@ describe('PdpRightRail coming soon', () => {
             'testing',
         )
         expect(html).toContain('Order Test Kit')
-        expect(html).not.toContain('Join the Revolution')
+        expect(html).toContain('Join the Revolution')
         expect(html).not.toContain('Add to Bundle')
     })
 })
