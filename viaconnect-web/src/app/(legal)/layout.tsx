@@ -13,11 +13,17 @@ export default function LegalLayout({
       style={{ fontFamily: "'Instrument Sans', sans-serif" }}
     >
       <header className="border-b border-white/[0.06]">
-        <div className="mx-auto max-w-3xl px-4 py-4 flex items-center justify-between">
+        <div className="mx-auto max-w-3xl px-4 py-4 flex flex-wrap items-center justify-between gap-3">
           <Link href="/" aria-label="ViaConnect home">
             <ViaConnectLogo size="md" />
           </Link>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            <Link
+              href="/support"
+              className="text-sm text-gray-400 hover:text-white transition-colors min-h-[44px] inline-flex items-center"
+            >
+              Support
+            </Link>
             <Link
               href="/delete-account"
               className="text-sm text-gray-400 hover:text-white transition-colors min-h-[44px] inline-flex items-center"

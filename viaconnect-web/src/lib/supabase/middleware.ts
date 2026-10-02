@@ -124,6 +124,9 @@ export async function updateSession(request: NextRequest) {
     // confirmation. The deletion API stays authenticated.
     pathname === "/delete-account" ||
     pathname === "/account-deleted" ||
+    // Public support URL for App Store and Play listings. There is no
+    // authenticated /support page to preserve.
+    pathname === "/support" ||
     pathname === "/privacy-policy" ||
     pathname === "/terms-of-service" ||
     pathname === "/tos" ||
