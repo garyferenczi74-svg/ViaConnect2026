@@ -15,6 +15,7 @@ import { createWhiteLabelPaymentIntent } from '@/lib/white-label/stripe-producti
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
 import { getCircuitBreaker, isCircuitBreakerError } from '@/lib/utils/circuit-breaker';
+import { reviewerPaymentBlockMessage } from '@/lib/reviewer/payment-block';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,6 +46,14 @@ export async function POST(request: NextRequest, props: { params: Promise<{ orde
       throw err;
     }
     if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+
+    const reviewerBlock = reviewerPaymentBlockMessage({
+      userId: user.id,
+      appMetadata: user.app_metadata,
+    });
+    if (reviewerBlock) {
+      return NextResponse.json({ error: reviewerBlock }, { status: 403 });
+    }
 
     const sb = supabase as any;
 
@@ -78,6 +87,8 @@ export async function POST(request: NextRequest, props: { params: Promise<{ orde
             productionOrderId: params.orderId,
             paymentType: 'final',
             supabase,
+            actorUserId: user.id,
+            actorAppMetadata: user.app_metadata,
           }),
           15000,
           'api.white-label.checkout-final.payment-intent',

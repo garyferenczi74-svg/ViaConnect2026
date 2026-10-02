@@ -12,6 +12,7 @@
 import type Stripe from 'stripe';
 import { getStripe } from '@/lib/pricing/stripe';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { assertReviewerMayCreatePayment } from '@/lib/reviewer/payment-block';
 
 export type WhiteLabelPaymentType = 'deposit' | 'final';
 
@@ -19,6 +20,8 @@ export interface CreatePaymentIntentInput {
   productionOrderId: string;
   paymentType: WhiteLabelPaymentType;
   supabase: SupabaseClient | unknown;
+  actorUserId?: string;
+  actorAppMetadata?: unknown;
 }
 
 export interface CreatePaymentIntentResult {
@@ -35,6 +38,13 @@ export interface CreatePaymentIntentResult {
 export async function createWhiteLabelPaymentIntent(
   input: CreatePaymentIntentInput,
 ): Promise<CreatePaymentIntentResult> {
+  if (input.actorUserId) {
+    assertReviewerMayCreatePayment({
+      userId: input.actorUserId,
+      appMetadata: input.actorAppMetadata,
+    });
+  }
+
   const sb = input.supabase as any;
 
   const { data: order, error } = await sb
