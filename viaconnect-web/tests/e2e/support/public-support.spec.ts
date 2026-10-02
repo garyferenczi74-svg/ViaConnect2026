@@ -38,7 +38,9 @@ test.describe('public support page', () => {
       await expect(main.getByRole('link', { name: 'Terms of Service' })).toHaveAttribute('href', '/terms');
       await expect(main.getByRole('link', { name: 'Delete account' })).toHaveAttribute('href', '/delete-account');
       await expect(main.getByRole('link', { name: 'Privacy request form' })).toHaveAttribute('href', '/dsar');
-      await expect(page.getByRole('link', { name: 'Support' }).first()).toHaveAttribute('href', '/support');
+      await expect(
+        page.getByRole('navigation', { name: 'Footer' }).getByRole('link', { name: 'Support', exact: true }),
+      ).toHaveAttribute('href', '/support');
       await expect(
         page.getByText(
           'The Services are for informational and wellness purposes only. They do not provide medical advice, diagnosis, or treatment.',
