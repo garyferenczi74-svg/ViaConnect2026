@@ -11,6 +11,13 @@ import {
   roleHomePath,
   type SessionRole,
 } from "@/lib/auth/session-role";
+import {
+  isNaturopathCredentialPortalEnabled,
+  portalPermitted,
+  readNaturopathCredentialForUser,
+  shouldLoadNaturopathCredentialForPortal,
+  type PractitionerNaturopathCredential,
+} from "@/lib/auth/naturopath-credential";
 
 // Prompt #140a Layer 1 hardening. Every Supabase auth + data call is wrapped
 // with withTimeout. On timeout: treat as unauthenticated and let the public-
@@ -278,6 +285,44 @@ export async function updateSession(request: NextRequest) {
 
     const role: SessionRole = roleFromProfilesColumn(profileRole);
     const isAdmin = isConfirmedAdmin(profileRole);
+    const sessionRole: SessionRole = isAdmin ? "admin" : role;
+    // Default off. The credential table is not read unless the flag is on
+    // and the existing profiles.role check already denied a practitioner
+    // on /naturopath/*. Existing routes are unchanged while the flag is off.
+    const portalFlagEnabled = isNaturopathCredentialPortalEnabled();
+    const alreadyPermitted = canAccessPortalPath(sessionRole, pathname);
+    let credential: PractitionerNaturopathCredential | null = null;
+    if (
+      typeof claims.sub === "string" &&
+      shouldLoadNaturopathCredentialForPortal({
+        portalFlagEnabled,
+        sessionRole: role,
+        pathname,
+        alreadyPermitted,
+      })
+    ) {
+      try {
+        credential = await withTimeout(
+          readNaturopathCredentialForUser(supabase, claims.sub),
+          800,
+          "middleware.naturopath-credential",
+        );
+      } catch (error) {
+        credential = null;
+        if (isTimeoutError(error)) {
+          safeLog.warn("middleware.role", "naturopath credential lookup timed out", {
+            path: pathname,
+            userId: claims.sub,
+          });
+        } else {
+          safeLog.warn("middleware.role", "naturopath credential lookup failed", {
+            path: pathname,
+            userId: claims.sub,
+            error,
+          });
+        }
+      }
+    }
 
     // Redirect authenticated users away from auth pages
     if (
@@ -286,13 +331,20 @@ export async function updateSession(request: NextRequest) {
       pathname === "/forgot-password"
     ) {
       const url = request.nextUrl.clone();
-      url.pathname = roleHomePath(isAdmin ? "admin" : role);
+      url.pathname = roleHomePath(sessionRole);
       return NextResponse.redirect(url);
     }
 
-    if (!canAccessPortalPath(isAdmin ? "admin" : role, pathname)) {
+    const permitted = portalPermitted({
+      sessionRole,
+      pathname,
+      profileRole,
+      credential,
+      portalFlagEnabled,
+    });
+    if (!permitted) {
       const url = request.nextUrl.clone();
-      url.pathname = outOfRoleRedirect(isAdmin ? "admin" : role, pathname) ?? roleHomePath(role);
+      url.pathname = outOfRoleRedirect(sessionRole, pathname) ?? roleHomePath(role);
       url.searchParams.set("portal_switch", "1");
       if (roleLookupFailed) {
         safeLog.warn("middleware.role", "denying portal path after role lookup failure", {
