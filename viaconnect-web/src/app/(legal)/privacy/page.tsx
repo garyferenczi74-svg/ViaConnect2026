@@ -198,7 +198,7 @@ export default function PrivacyPolicyPage() {
       <section className="space-y-3">
         <h2 className="text-xl font-semibold text-white">9. How We Protect Your Information</h2>
         <p>
-          We maintain administrative, technical, and physical safeguards designed to protect personal information, including encryption in transit, access controls, role-based permissions, and monitoring. The platform is designed to be HIPAA-aware in its handling of health information. No method of transmission or storage is completely secure, and we cannot guarantee absolute security. If we become aware of a breach affecting your personal information, we will notify you and the relevant authorities as required by applicable law.
+          We maintain administrative, technical, and physical safeguards designed to protect personal information, including encryption in transit, access controls, role-based permissions, and monitoring. No method of transmission or storage is completely secure, and we cannot guarantee absolute security. If we become aware of a breach affecting your personal information, we will notify you and the relevant authorities as required by applicable law.
         </p>
       </section>
 

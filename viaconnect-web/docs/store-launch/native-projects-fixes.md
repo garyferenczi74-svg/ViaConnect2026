@@ -8,6 +8,8 @@ This follows the merged Capacitor 8.5.2 upgrade (`docs/store-launch/capacitor-8-
 
 Gary's standing lock for store work: until submission, build only what an Apple App Store or Google Play code or policy requirement calls for. No other feature work. Guideline text below was checked against Apple's App Review Guidelines page and Play Console Help on 2026-10-03.
 
+Gary's lock on health-privacy wording: do not write that ViaConnect is HIPAA compliant, HIPAA-certified, or HIPAA-aware in store listing text, App Review notes, privacy answers, or marketing until an audit passes. Safeguards may be named only as implemented facts. The store-launch docs, `Info.plist`, and Android strings on this branch do not make that claim. The public privacy policy no longer says the platform is HIPAA-aware. Other user-facing screens that still say it are listed in the PR and are not edited here.
+
 ## Store requirement for each change
 
 | Change in this PR | Requirement | Removal |
