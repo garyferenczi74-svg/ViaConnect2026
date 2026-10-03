@@ -1,5 +1,29 @@
 apply plugin: 'com.android.application'
 
+// Play upload signing. Values come from the environment or from a Gradle
+// property (for example ~/.gradle/gradle.properties or -P). Nothing in this
+// repo holds the keystore or the passwords. See
+// docs/store-launch/native-projects-fixes.md.
+def viaUploadProp = { String name ->
+    def fromEnv = System.getenv(name)
+    if (fromEnv != null && fromEnv.trim().length() > 0) {
+        return fromEnv.trim()
+    }
+    if (project.hasProperty(name)) {
+        def value = project.property(name)
+        if (value != null && value.toString().trim().length() > 0) {
+            return value.toString().trim()
+        }
+    }
+    return null
+}
+
+def viaUploadStoreFile = viaUploadProp('VIA_UPLOAD_STORE_FILE')
+def viaUploadStorePassword = viaUploadProp('VIA_UPLOAD_STORE_PASSWORD')
+def viaUploadKeyAlias = viaUploadProp('VIA_UPLOAD_KEY_ALIAS')
+def viaUploadKeyPassword = viaUploadProp('VIA_UPLOAD_KEY_PASSWORD')
+def viaUploadSigningReady = viaUploadStoreFile != null && viaUploadStorePassword != null && viaUploadKeyAlias != null && viaUploadKeyPassword != null
+
 android {
     namespace = "com.farmceutica.viaconnect"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -16,9 +40,22 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    if (viaUploadSigningReady) {
+        signingConfigs {
+            release {
+                storeFile file(viaUploadStoreFile)
+                storePassword viaUploadStorePassword
+                keyAlias viaUploadKeyAlias
+                keyPassword viaUploadKeyPassword
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
+            if (viaUploadSigningReady) {
+                signingConfig signingConfigs.release
+            }
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }

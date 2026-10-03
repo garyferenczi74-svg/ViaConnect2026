@@ -27,3 +27,42 @@ allprojects {
 task clean(type: Delete) {
     delete rootProject.buildDir
 }
+
+// capacitor-health-connect 0.7.0 (unchanged npm package) applies Kotlin 1.8.20
+// and never sets kotlinOptions.jvmTarget. With JDK 21 and Android Gradle
+// Plugin 8.13 that module is asked to compile for JVM target 21, which
+// Kotlin 1.8.20 rejects ("Unknown Kotlin JVM target: 21").
+//
+// Two Gradle-only alignments, scoped to that module:
+// 1. settings.gradle replaces the requested kotlin-gradle-plugin 1.8.20 with
+//    2.2.20, the Kotlin version @capacitor/camera 8.2.5 already uses here.
+// 2. Java and Kotlin for this module are pinned to 17, which matches the
+//    Java 17 compileOptions in the plugin's own build.gradle. 17 bytecode
+//    can still be packaged in the Java 21 app.
+subprojects { sub ->
+    sub.plugins.withId('kotlin-android') {
+        if (sub.name == 'capacitor-health-connect') {
+            sub.android {
+                compileOptions {
+                    sourceCompatibility JavaVersion.VERSION_17
+                    targetCompatibility JavaVersion.VERSION_17
+                }
+            }
+        }
+    }
+}
+
+gradle.projectsEvaluated {
+    rootProject.subprojects.each { sub ->
+        if (sub.name != 'capacitor-health-connect') {
+            return
+        }
+        // Groovy would treat an unquoted org.jetbrains... name as a property.
+        // Match the Kotlin compile tasks by name instead.
+        sub.tasks.configureEach { task ->
+            if (task.name.endsWith('Kotlin')) {
+                task.kotlinOptions.jvmTarget = '17'
+            }
+        }
+    }
+}

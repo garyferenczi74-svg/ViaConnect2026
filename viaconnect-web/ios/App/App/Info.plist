@@ -47,7 +47,7 @@
 	<string>Main</string>
 	<key>UIRequiredDeviceCapabilities</key>
 	<array>
-		<string>armv7</string>
+		<string>arm64</string>
 	</array>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
@@ -69,20 +69,14 @@
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>ViaConnect uses speech recognition to turn your spoken meal edits into text. Speech is transcribed on your device when possible; transcripts are used only to apply edits you confirm.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>ViaConnect uses your camera to photograph meals and scan barcodes on packaged foods. Photos are sent to our analysis service only when you choose to log a meal.</string>
-	<!-- Task 14 (Prompt 210c): ARKit LiDAR depth booster. The body scan uses
-	     ARKit scene depth on LiDAR-equipped devices to improve front-to-back
-	     measurement accuracy. Depth data is processed on-device and never sent
-	     to any server. The scan works without LiDAR on all other devices. -->
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>ViaConnect does not use your location. ARKit requires this key on iOS even when location is not accessed.</string>
-	<!-- ARKit privacy strings (required for App Store submission when using ARKit) -->
+	<string>ViaConnect uses the camera to photograph meals, body-progress photos, body scans, and supplement labels. A photo is uploaded only after you choose to save it.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>ViaConnect uses your photo library so you can choose an existing meal photo, body-progress photo, or supplement label. The photo is uploaded only after you choose to save it.</string>
 	<key>NSMotionUsageDescription</key>
 	<string>ViaConnect uses device motion to stabilize the body scan camera view for more accurate measurements. Motion data is processed on-device and not transmitted.</string>
-	<!-- Prompt 212: HealthKit wearable reads (WHOOP companion path + Hume via Apple Health) -->
+	<!-- DRAFT pending Lex/Gary approval. See docs/store-launch/native-projects-fixes.md.
+	     NSHealthUpdateUsageDescription is omitted: this build does not save Apple Health samples. -->
 	<key>NSHealthShareUsageDescription</key>
-	<string>ViaCura reads heart rate, HRV, sleep, steps, and body composition from Apple Health to personalize your Bio Optimization Score. Health data is never used for advertising.</string>
-	<key>NSHealthUpdateUsageDescription</key>
-	<string>ViaCura does not write health samples to Apple Health. This permission is listed only for compatibility with the health plugin.</string>
+	<string>ViaConnect reads your step count from Apple Health when you choose to connect it, and stores that activity with your account. This data is not used for advertising.</string>
 </dict>
 </plist>

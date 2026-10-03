@@ -35,27 +35,45 @@ It does not write labs, genetics, symptoms, scores, doses, protocols, orders, or
 
 ## HealthKit
 
-The iOS purpose string in `ios/App/App/Info.plist` (`NSHealthShareUsageDescription`) says, exactly:
+`docs/store-launch/app-review-notes-draft.md` is on `main` (added in PR #258). This section is an update on the VIA-8 branch, not a second copy.
 
-> ViaCura reads heart rate, HRV, sleep, steps, and body composition from Apple Health to personalize your Bio Optimization Score. Health data is never used for advertising.
+Gary decided on 2026-10-02 that the first release depends on Apple Health data. The HealthKit entitlement stays on. On-device reads were not run. **UNVERIFIED.**
 
-The same file's `NSHealthUpdateUsageDescription` says the app does not write health samples to Apple Health.
+This note is for Apple 2.1(a) (the reviewer needs an accurate description) and Apple 5.1.3(i) (disclose the specific health data the app collects). Apple 5.1.1(ii) is why the purpose string has to match that use. The full requirement map is in `docs/store-launch/native-projects-fixes.md`.
 
-The HealthKit client requests read access for heart rate, resting heart rate, heart rate variability, sleep, respiratory rate, oxygen saturation, step count, active energy, body mass, body fat percentage, and lean body mass. It requests no write types (`src/lib/wearables/health-client.ts`).
+`NSHealthShareUsageDescription` in `ios/App/App/Info.plist` is a **DRAFT pending Lex/Gary approval**. The current draft says, exactly:
+
+> ViaConnect reads your step count from Apple Health when you choose to connect it, and stores that activity with your account. This data is not used for advertising.
+
+`NSHealthUpdateUsageDescription` is omitted. The app does not save an Apple Health sample. `IosHealthBridge.writeBodyComposition` throws, and no screen calls `syncHealthData`. If a later build requests write access, this key has to come back with approved wording. Do not tell the reviewer the app writes weight or body fat.
+
+What the code does today:
+
+- `src/lib/wearables/health-client.ts` queries `stepCount` only, then posts that batch to `/api/integrations/health-sync`.
+- The same function's read list also names heart rate, resting heart rate, heart rate variability, sleep, respiratory rate, oxygen saturation, active energy, body mass, body fat percentage, and lean body mass, with no write types. `@perfood/capacitor-healthkit` 1.3.2 does not map those identifier strings, so that call does not add them to the native authorization set. They are not queried.
+- A proposed launch set, not implemented, is step count only and no write. It is in `docs/store-launch/native-projects-fixes.md`.
+
+The HealthKit pod is named in `ios/App/Podfile`. `pod install` was not run here, so whether the submitted Xcode target links it is **UNCONFIRMED**.
 
 Android Health Connect stays off unless `NEXT_PUBLIC_HEALTH_CONNECT_ENABLED` is `1`. That flag defaults off.
 
-UNCONFIRMED: whether HealthKit read works on a device in the submitted build. The 2026-10-01 audit reported the native project may not include the Health plugin in the Xcode target.
+UNCONFIRMED: whether HealthKit read works on a device in the submitted build.
 
 ## Camera
 
-The iOS camera purpose string says, exactly:
+The iOS camera purpose string in `ios/App/App/Info.plist` now says, exactly:
 
-> ViaConnect uses your camera to photograph meals and scan barcodes on packaged foods. Photos are sent to our analysis service only when you choose to log a meal.
+> ViaConnect uses the camera to photograph meals, body-progress photos, body scans, and supplement labels. A photo is uploaded only after you choose to save it.
 
-The app also has a body-scan camera flow (FormaVision) that asks for the camera when that screen is opened. The purpose string above does not mention body scans.
+That replaced an older sentence that claimed barcode scanning. No live camera barcode scanner was found. Apple 5.1.1(ii) and 2.5.14. FormaVision depth capture is not in this binary. A body-scan screen can still open the camera. Depth is on hold until the FormaVision rebuild.
 
-UNCONFIRMED: which camera uses are linked in the submitted native binary, and which photos leave the device.
+`NSPhotoLibraryUsageDescription` says, exactly:
+
+> ViaConnect uses your photo library so you can choose an existing meal photo, body-progress photo, or supplement label. The photo is uploaded only after you choose to save it.
+
+`NSLocationWhenInUseUsageDescription` is not in this plist. No location API was found.
+
+UNCONFIRMED: which photos leave the device.
 
 ## AI features
 
