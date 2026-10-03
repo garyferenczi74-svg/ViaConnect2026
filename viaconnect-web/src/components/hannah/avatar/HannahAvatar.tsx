@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { Video, X, Loader2 } from 'lucide-react';
+import { useSensitiveAction } from '@/components/ai/SensitiveAction';
 
 const HANNAH_IMG =
   'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/Mobile%20Hero/Hannah%204.png';
@@ -24,6 +25,7 @@ export function HannahAvatar({ onClose }: HannahAvatarProps) {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { guard, panel } = useSensitiveAction();
 
   const start = async () => {
     setLoading(true);
@@ -71,6 +73,10 @@ export function HannahAvatar({ onClose }: HannahAvatarProps) {
         </button>
       </div>
 
+      {panel ? (
+        <div className="max-h-[80vh] overflow-y-auto bg-[#0B1520] p-4">{panel}</div>
+      ) : null}
+
       {/* Video area */}
       <div className="aspect-video bg-black relative">
         {!conversationUrl && !loading && !error && (
@@ -90,7 +96,7 @@ export function HannahAvatar({ onClose }: HannahAvatarProps) {
               your camera and microphone are ready.
             </p>
             <button
-              onClick={start}
+              onClick={() => guard('microphone', () => { void start(); })}
               className="min-h-[44px] px-6 py-3 bg-[#2DA5A0] hover:bg-[#2DA5A0]/90 text-white rounded-lg font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
             >
               Start Conversation
@@ -118,7 +124,7 @@ export function HannahAvatar({ onClose }: HannahAvatarProps) {
           <div className="absolute inset-0 flex flex-col items-center justify-center p-8 gap-3">
             <p className="text-red-300 text-sm max-w-md text-center">{error}</p>
             <button
-              onClick={start}
+              onClick={() => guard('microphone', () => { void start(); })}
               className="min-h-[44px] px-4 py-2 text-sm text-[#2DA5A0] border border-[#2DA5A0]/30 rounded-lg hover:bg-[#2DA5A0]/10 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/50"
             >
               Try Again

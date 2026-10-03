@@ -27,6 +27,7 @@ import { WebCameraPreview } from './WebCameraPreview';
 import { mapAIErrorToClass } from '@/lib/nutrition/vision/error-class-mapper';
 import { writeNutrivisionManualLogHandoff } from '@/hooks/useNutrivisionManualLogHandoff';
 import { MobileHeroBackground } from '@/components/ui/MobileHeroBackground';
+import { useSensitiveAction } from '@/components/ai/SensitiveAction';
 import { AnalysisProgress } from './AnalysisProgress';
 import { AnalysisResult } from './AnalysisResult';
 import { ErrorStateCard } from './ErrorStateCard';
@@ -197,6 +198,7 @@ export default function NutriVisionTab() {
   // voiceNativeContext rides through ReviewingSurface so handleSave routes
   // to /api/nutrition/voice-native/save with transcript + STT context.
   const [voiceNativeOpen, setVoiceNativeOpen] = useState(false);
+  const { guard: guardSensitive, panel: sensitivePanel } = useSensitiveAction();
   const [voiceNativeContext, setVoiceNativeContext] = useState<{
     transcript: string;
     stt_provider: SttProvider;
@@ -531,8 +533,8 @@ export default function NutriVisionTab() {
 
   // Prompt 170n Phase C: Voice-Native flow handlers.
   const handleOpenVoiceNative = useCallback(() => {
-    setVoiceNativeOpen(true);
-  }, []);
+    guardSensitive('microphone', () => setVoiceNativeOpen(true));
+  }, [guardSensitive]);
 
   const handleVoiceNativeClose = useCallback(() => {
     setVoiceNativeOpen(false);
@@ -758,6 +760,7 @@ export default function NutriVisionTab() {
           Prompt 173 removed the deaf/HoH onSwitchToText fallback when the
           170m Quick Log modal was deleted; Photo is the implicit text-free
           fallback via the entry row. */}
+      {sensitivePanel}
       <VoiceNativeCaptureOverlay
         open={voiceNativeOpen}
         onClose={handleVoiceNativeClose}

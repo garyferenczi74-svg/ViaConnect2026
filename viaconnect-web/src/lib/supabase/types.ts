@@ -534,6 +534,36 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_response_reports: {
+        Row: {
+          created_at: string
+          id: string
+          message_id: string
+          note: string | null
+          reason: string
+          surface: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message_id: string
+          note?: string | null
+          reason: string
+          surface: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message_id?: string
+          note?: string | null
+          reason?: string
+          surface?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ai_insights: {
         Row: {
           generated_at: string | null
@@ -36672,6 +36702,9 @@ export type Database = {
       }
       user_consents: {
         Row: {
+          ai_data_sharing_accepted_at: string | null
+          ai_data_sharing_consent_version: string | null
+          ai_data_sharing_revoked_at: string | null
           created_at: string
           policy_version: string | null
           privacy_accepted_at: string | null
@@ -36679,6 +36712,9 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          ai_data_sharing_accepted_at?: string | null
+          ai_data_sharing_consent_version?: string | null
+          ai_data_sharing_revoked_at?: string | null
           created_at?: string
           policy_version?: string | null
           privacy_accepted_at?: string | null
@@ -36686,6 +36722,9 @@ export type Database = {
           user_id: string
         }
         Update: {
+          ai_data_sharing_accepted_at?: string | null
+          ai_data_sharing_consent_version?: string | null
+          ai_data_sharing_revoked_at?: string | null
           created_at?: string
           policy_version?: string | null
           privacy_accepted_at?: string | null

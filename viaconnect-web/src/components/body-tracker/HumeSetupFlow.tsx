@@ -6,6 +6,7 @@
 
 import { useState } from 'react';
 import { Check, ChevronRight, Smartphone } from 'lucide-react';
+import { useSensitiveAction } from '@/components/ai/SensitiveAction';
 import {
   getHealthPlatform,
   isHealthConnectEnabled,
@@ -23,6 +24,7 @@ export function HumeSetupFlow({ onComplete, onClose }: HumeSetupFlowProps) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const platform = getHealthPlatform();
+  const { guard, panel } = useSensitiveAction();
 
   const storeName =
     platform === 'android' ? 'Health Connect' : 'Apple Health';
@@ -128,6 +130,7 @@ export function HumeSetupFlow({ onComplete, onClose }: HumeSetupFlowProps) {
           </p>
         )}
 
+        {panel}
         <div className="flex flex-col sm:flex-row gap-2">
           <button
             type="button"
@@ -150,7 +153,7 @@ export function HumeSetupFlow({ onComplete, onClose }: HumeSetupFlowProps) {
             <button
               type="button"
               disabled={busy}
-              onClick={() => void grantPermissions()}
+              onClick={() => guard('health', () => { void grantPermissions(); })}
               className="flex-1 min-h-[44px] rounded-xl bg-[#2DA5A0] text-[#0B1520] text-sm font-semibold disabled:opacity-50"
             >
               {busy ? 'Requesting…' : 'Grant permissions'}

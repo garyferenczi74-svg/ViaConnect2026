@@ -29,6 +29,7 @@ import {
   redactSecretsForLog,
   VISION_MODEL_CONFIG_USER_ERROR,
 } from '../_shared/vision-model.ts';
+import { aiDataSharingBlocked } from '../_shared/ai-data-sharing-consent.ts';
 
 const visionBreaker = getCircuitBreaker('claude-vision');
 
@@ -257,6 +258,10 @@ serve(async (req) => {
   const { data: userData } = await sb.auth.getUser();
   const user = userData?.user;
   if (!user) return json({ error: 'unauthorized' }, 401);
+
+  if (await aiDataSharingBlocked(sb, user.id)) {
+    return json({ error: 'AI data sharing is off until you agree.', code: 'ai_consent_required' }, 403);
+  }
 
   let body: BodyScanRequest;
   try {

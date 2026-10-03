@@ -91,7 +91,7 @@ export interface CaptureParams {
 // Fail-open: logs and returns on any error; never throws.
 // ---------------------------------------------------------------------------
 
-export async function captureQuery(p: CaptureParams): Promise<void> {
+export async function captureQuery(p: CaptureParams): Promise<string | null> {
   try {
     const normalized = stripPII(p.questionText);
 
@@ -123,7 +123,7 @@ export async function captureQuery(p: CaptureParams): Promise<void> {
     };
 
     const supabase = createAdminClient();
-    const { error } = await supabase.from('knowledge_queries').insert(row);
+    const { data, error } = await supabase.from('knowledge_queries').insert(row).select('id').single();
 
     if (error) {
       safeLog.error('kb.captureQuery', 'Failed to insert knowledge_queries row', {
@@ -132,12 +132,16 @@ export async function captureQuery(p: CaptureParams): Promise<void> {
         coverage: p.coverage,
         error,
       });
+      return null;
     }
+    const id = (data as { id?: unknown } | null)?.id;
+    return typeof id === 'string' ? id : null;
   } catch (err) {
     safeLog.error('kb.captureQuery', 'Unexpected error in captureQuery (fail-open)', {
       userId: p.userId,
       domain: p.domain,
       error: err instanceof Error ? err.message : String(err),
     });
+    return null;
   }
 }

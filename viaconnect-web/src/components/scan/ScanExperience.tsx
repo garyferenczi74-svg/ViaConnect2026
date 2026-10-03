@@ -17,6 +17,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import { AiDataSharingConsent } from '@/components/ai/AiDataSharingConsent';
+import { useAiSharingStatus } from '@/components/ai/useAiSharingStatus';
 import {
   COMPOSITION_PATH,
   FORMAVISION_PATH,
@@ -141,6 +143,10 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
   const poseLandmarker = usePoseLandmarker({ enabled: Boolean(camera.stream) });
   const landmarkerLive = poseLandmarker.ready && poseLandmarker.mode === 'landmarker';
 
+  const aiSharing = useAiSharingStatus();
+  const aiSharingRef = useRef(aiSharing);
+  aiSharingRef.current = aiSharing;
+  const [scanSharePrompt, setScanSharePrompt] = useState(false);
   const [consentAcknowledged, setConsentAcknowledged] = useState(hasConsent);
   const handleConsentAck = useCallback(() => setConsentAcknowledged(true), []);
   const [localHeightCm, setLocalHeightCm] = useState<number | null>(heightCm);
@@ -282,6 +288,11 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
   useEffect(() => clearCameraOpenWatchdog, [clearCameraOpenWatchdog]);
 
   const handleRetryCameraOpen = useCallback(() => {
+    const sharing = aiSharingRef.current;
+    if (sharing.gateEnabled && !sharing.consented) {
+      setScanSharePrompt(true);
+      return;
+    }
     startCameraOpenWatchdog();
     void camera.open();
   }, [camera, startCameraOpenWatchdog]);
@@ -296,9 +307,16 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
 
   // ---- Start tap: the single user gesture that unlocks camera, voice,
   // device orientation, and haptics (condition 21). camera.open() must be
-  // the first statement in this handler, no prior await. ----
+  // the first call when the scan proceeds, with no prior await. The only
+  // earlier work is a synchronous check that returns without opening the
+  // camera when AI sharing consent is still required. ----
   const handleStart = useCallback(() => {
     if (state.phase !== 'SETUP') return;
+    const sharing = aiSharingRef.current;
+    if (sharing.gateEnabled && !sharing.consented) {
+      setScanSharePrompt(true);
+      return;
+    }
     void camera.open();
     startCameraOpenWatchdog();
     speak('', voiceEnabled); // warms speechSynthesis inside the gesture
@@ -881,6 +899,18 @@ export function ScanExperience({ heightCm, hasConsent }: ScanExperienceProps) {
                   >
                     Voice countdown: {voiceEnabled ? 'On' : 'Off'}
                   </button>
+                )}
+                {aiSharing.gateEnabled && aiSharing.consented && (
+                  <p className="text-sm text-white/80 leading-relaxed">
+                    {aiSharing.disclosures.camera_body}
+                  </p>
+                )}
+                {scanSharePrompt && aiSharing.gateEnabled && !aiSharing.consented && (
+                  <AiDataSharingConsent
+                    status={aiSharing}
+                    onAgreed={() => setScanSharePrompt(false)}
+                    onDeclined={() => setScanSharePrompt(false)}
+                  />
                 )}
                 <button
                   type="button"

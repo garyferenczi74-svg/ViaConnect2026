@@ -54,6 +54,13 @@ export const FLAG_REGISTRY: Record<string, FlagDef> = {
     description:
       'Google Health API web OAuth connector (Fitbit / Pixel Watch and others). Off until Google Cloud credentials are provisioned and the connector is verified in staging.',
   },
+
+  // Store launch VIA-10. Off until Gary applies the consent migration and sets the env var.
+  ai_third_party_consent_gate: {
+    default: false,
+    description:
+      'Require a recorded agree choice before routes send personal data to third-party AI, and show the matching in-app disclosures. Set AI_THIRD_PARTY_CONSENT_GATE=true after the consent migration is applied.',
+  },
 } as const;
 
 /**

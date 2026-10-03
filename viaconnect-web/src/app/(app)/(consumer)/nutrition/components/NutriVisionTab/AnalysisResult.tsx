@@ -36,6 +36,7 @@ import { QuickApplyToast } from '@/lib/nutrition/voice/components/QuickApplyToas
 import { VoiceCaptureOverlay } from '@/lib/nutrition/voice/components/VoiceCaptureOverlay';
 import { VoiceEditedChip } from '@/lib/nutrition/voice/components/VoiceEditedChip';
 import { VoiceFAB } from '@/lib/nutrition/voice/components/VoiceFAB';
+import { useSensitiveAction } from '@/components/ai/SensitiveAction';
 import { VoiceHelpSheet } from '@/lib/nutrition/voice/components/VoiceHelpSheet';
 import { VoiceTutorial } from '@/lib/nutrition/voice/components/VoiceTutorial';
 import { useVoiceSession } from '@/lib/nutrition/voice/hooks/useVoiceSession';
@@ -136,6 +137,7 @@ export function AnalysisResult(props: AnalysisResultProps) {
   const noopRestoreSnapshot: NonNullable<typeof props.onRestoreSnapshot> = () => {};
   const noopAppendItem: NonNullable<typeof props.onAppendItem> = () => {};
 
+  const { guard, panel } = useSensitiveAction();
   const voiceSession = useVoiceSession({
     draft,
     mutators: {
@@ -294,7 +296,15 @@ export function AnalysisResult(props: AnalysisResultProps) {
 
       {/* Prompt 170j Phase 1c-2: voice surfaces. FAB sits above the Save bar. */}
       {voiceAvailable && voiceSession.phase === 'closed' && (
-        <VoiceFAB available={true} onClick={voiceSession.open} />
+        <VoiceFAB
+          available={true}
+          onClick={() => guard('microphone', () => { void voiceSession.open(); })}
+        />
+      )}
+      {panel && (
+        <div className="fixed inset-x-4 z-40 max-h-[50vh] overflow-y-auto" style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 160px)' }}>
+          {panel}
+        </div>
       )}
       {voiceAvailable && (voiceSession.phase === 'capturing' || voiceSession.phase === 'processing') && (
         <VoiceCaptureOverlay

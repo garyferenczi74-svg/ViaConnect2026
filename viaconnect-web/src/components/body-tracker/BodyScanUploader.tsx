@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { AlertTriangle, Camera, Check, ImagePlus, Loader2, Ruler, RotateCcw, ShieldCheck } from 'lucide-react';
+import { useSensitiveAction } from '@/components/ai/SensitiveAction';
 import { persistScan } from '@/lib/body-tracker/composition/persistScanClient';
 import {
   ANALYZE_CLIENT_TIMEOUT_MS,
@@ -127,6 +128,8 @@ export function BodyScanUploader({
   const [localHeightCm, setLocalHeightCm] = useState<number | null>(null);
   // Unmount guard: prevents any post-unmount state updates from the async IIFE.
   const isMountedRef = useRef(true);
+  const allowedSlotRef = useRef<PhotoPosition | null>(null);
+  const { guard, panel, status: aiSharingStatus } = useSensitiveAction();
   useEffect(() => () => {
     isMountedRef.current = false;
   }, []);
@@ -446,6 +449,19 @@ export function BodyScanUploader({
                   data-testid={`scan-slot-input-${pos.key}`}
                   className={SCAN_SLOT_FILE_INPUT_CLASS}
                   aria-label={`${pos.label} photo, camera or library`}
+                  onClick={(event) => {
+                    if (!aiSharingStatus.gateEnabled) return;
+                    if (allowedSlotRef.current === pos.key) {
+                      allowedSlotRef.current = null;
+                      return;
+                    }
+                    event.preventDefault();
+                    guard('photo_library', () => {
+                      allowedSlotRef.current = pos.key;
+                      const node = document.getElementById(inputId);
+                      if (node instanceof HTMLInputElement) node.click();
+                    });
+                  }}
                   onChange={(e) => {
                     const f = takeScanSlotFile(e.currentTarget);
                     if (f) void handleFile(pos.key, f);
@@ -462,6 +478,7 @@ export function BodyScanUploader({
           );
         })}
       </div>
+      {panel}
 
       {/* Task 13b: quality summary banner - shown when at least one view has results */}
       {Object.keys(viewQuality).length > 0 && (() => {
