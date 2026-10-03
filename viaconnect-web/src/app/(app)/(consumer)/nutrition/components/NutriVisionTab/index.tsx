@@ -14,6 +14,7 @@ import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { Camera, ChevronLeft, HelpCircle, ImageUp, Loader2, Mic, Settings, X } from 'lucide-react';
+import { MealBarcodeEntry } from '@/components/native/MealBarcodeEntry';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import type { CaptureResult, CaptureSource } from '@/lib/capacitor/camera-capture';
@@ -565,7 +566,12 @@ export default function NutriVisionTab() {
     [persistDraftToReview],
   );
 
-  // Prompt 175m (2026-06-05): manual barcode entry handlers removed.
+  const handleBarcodeDraft = useCallback((nextDraft: MealDraft) => {
+    setDraft(nextDraft);
+    persistInFlight.current = true;
+    setPhase('analyzing');
+    void persistDraftToReview(nextDraft, 'text');
+  }, [persistDraftToReview]);
 
   return (
     <>
@@ -618,6 +624,7 @@ export default function NutriVisionTab() {
               error={analysisError ?? capture.error}
               recentMeals={recentMeals}
               onPickRecent={setRecentMealView}
+              onBarcodeDraft={handleBarcodeDraft}
             />
           )}
 
@@ -784,6 +791,7 @@ interface IdleSurfaceProps {
   error: string | null;
   recentMeals: RecentMealSummary[];
   onPickRecent: (m: RecentMealSummary) => void;
+  onBarcodeDraft: (draft: MealDraft) => void;
 }
 
 // Prompt 170l Phase 1c-2 + Hannah 11.1: equal-weight peer entry path row.
@@ -821,6 +829,8 @@ function IdleSurface(props: IdleSurfaceProps) {
           ariaLabel="Voice. Say what you ate hands-free."
         />
       </div>
+
+      <MealBarcodeEntry onDraft={props.onBarcodeDraft} />
 
       {props.error ? (
         <p className="rounded-xl border border-[#FCA5A5]/40 bg-[#1A2744]/30 p-3 text-[12px] text-[#FCA5A5]" role="alert">

@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { AdminPortalDetector } from "@/components/AdminPortalDetector";
+import { BiometricLockGate } from "@/components/native/BiometricLockGate";
 import { PortalShellRouter } from "@/components/practitioner/PortalShellRouter";
 import { resolveSessionRoleForUser } from "@/lib/auth/resolve-session-role";
 import { isConfirmedAdmin } from "@/lib/auth/session-role";
@@ -34,6 +35,7 @@ export default async function AppLayout({
     return (
       <AdminPortalDetector user={user} sessionRole="admin">
         {children}
+        <BiometricLockGate />
       </AdminPortalDetector>
     );
   }
@@ -79,6 +81,7 @@ export default async function AppLayout({
       showNaturopathTab={showNaturopathTab}
     >
       {children}
+      <BiometricLockGate />
     </PortalShellRouter>
   );
 }

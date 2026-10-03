@@ -60,8 +60,9 @@ captures/
 .externalNativeBuild
 .cxx/
 
-# Google Services (e.g. APIs or Firebase)
-# google-services.json
+# Google Services (e.g. APIs or Firebase). Gary places this file locally.
+# Do not commit it. The Google Services plugin applies only when the file exists.
+google-services.json
 
 # Freeline
 freeline.py

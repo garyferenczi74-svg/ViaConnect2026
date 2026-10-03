@@ -7,29 +7,11 @@
  * packages. A future plugin swap is therefore a one-file change.
  *
  * Two concrete implementations are provided:
- *   - IosHealthBridge    -- wraps @perfood/capacitor-healthkit (DEVICE-UNTESTED,
- *                           see honesty note below)
- *   - AndroidHealthBridge -- wraps capacitor-health-connect
+ *   - IosHealthBridge    -- in-repo read-only step-count plugin (DEVICE-UNTESTED)
+ *   - AndroidHealthBridge -- not wired in this release (Health Connect stays out)
  *
- * IMPORTANT HONESTY NOTE (Cap-6 native-build risk):
- *   @perfood/capacitor-healthkit@1.3.2 and capacitor-health-connect@0.7.0
- *   were force-installed with --legacy-peer-deps on Capacitor 6.2.0. Neither
- *   plugin has a Cap-6 native release. The JS-layer types are usable here, but
- *   the actual HealthKit and Health Connect native calls cannot be exercised
- *   without a device build. All native paths in this file are marked
- *   DEVICE-UNTESTED and must be verified on a real iOS/Android device before
- *   the native_health_bridge flag is enabled in production.
- *
- *   Additionally, @perfood/capacitor-healthkit@1.3.2 is a READ-ONLY plugin --
- *   it exposes requestAuthorization and queryHKitSampleType but has no
- *   write/save method in its public JS API. The iOS write path therefore calls
- *   requestAuthorization (for the grant check) and then documents that the
- *   actual HKHealthStore.save() call requires native Swift code beyond what
- *   this plugin exposes. The writeBodyComposition method on IosHealthBridge
- *   throws a "not implemented" error to make this limitation visible.
- *   A proper iOS write would require either a fork of the plugin, a second
- *   plugin that adds HKHealthStore.save() bridging, or a custom Capacitor
- *   plugin written in Swift.
+ * VIA-9: iOS reads step count through the in-repo plugin. Write methods throw.
+ * Android Health Connect is not called. Device behavior is UNVERIFIED.
  *
  * Standing rules: no em dashes, no en dashes, no emojis, zero any, TS strict.
  */
@@ -142,88 +124,40 @@ export interface HealthBridge {
 // ---------------------------------------------------------------------------
 
 /**
- * IosHealthBridge wraps @perfood/capacitor-healthkit for permission checking.
+ * IosHealthBridge checks the in-repo ViaConnectHealthKit plugin.
  *
- * DEVICE-UNTESTED: This implementation cannot be verified without a real iOS
- * device build. The Cap-6 native-build risk means the native bridge may not
- * work until the plugin is updated or replaced.
+ * DEVICE-UNTESTED: this cannot be verified without a real iOS device build.
  *
- * WRITE LIMITATION: @perfood/capacitor-healthkit@1.3.2 does not expose a
- * write/save method in its JS API (it is a read-only plugin). writeBodyComposition
- * therefore throws a NotImplementedError to make this explicit. A production
- * iOS write requires native Swift code (HKHealthStore.save) or a different plugin.
+ * This release reads step count only. requestWritePermissions and
+ * writeBodyComposition throw. They do not call HealthKit save.
  */
 export class IosHealthBridge implements HealthBridge {
-  // The plugin is imported lazily inside each method so the module can be
-  // imported in web/test environments without triggering Capacitor boot.
-
   async isAvailable(): Promise<boolean> {
-    // DEVICE-UNTESTED
     try {
-      const { CapacitorHealthkit } = await import('@perfood/capacitor-healthkit');
-      await CapacitorHealthkit.isAvailable();
-      return true;
+      const { ViaConnectHealthKit } = await import('@/lib/wearables/viaconnect-healthkit');
+      const result = await ViaConnectHealthKit.isAvailable();
+      return result.available;
     } catch {
       return false;
     }
   }
 
   async requestWritePermissions(): Promise<void> {
-    // DEVICE-UNTESTED
-    // The plugin's requestAuthorization accepts write: string[] for the
-    // sample names. We request write access for the three body-composition
-    // types. Note: HealthKit never tells the app if permission was denied.
-    const { CapacitorHealthkit, SampleNames } = await import('@perfood/capacitor-healthkit');
-    await CapacitorHealthkit.requestAuthorization({
-      all: [],
-      read: [],
-      write: [SampleNames.WEIGHT, SampleNames.BODY_FAT],
-    });
-    // leanBodyMass is not a SampleNames enum member in v1.3.2. We request
-    // it by string literal per the HealthKit HKQuantityTypeIdentifier name.
-    // This may silently be ignored by the plugin's native handler on Cap-6.
+    throw new Error(
+      'IosHealthBridge.requestWritePermissions: this release reads step count only and does not request Apple Health write access.',
+    );
   }
 
   async checkGrants(): Promise<GrantState> {
-    // DEVICE-UNTESTED
-    // isEditionAuthorized resolves on grant, rejects on denial/unknown.
-    // We check each metric independently so a partial grant is honored.
-    const { CapacitorHealthkit, SampleNames } = await import('@perfood/capacitor-healthkit');
-
-    async function checkOne(sampleName: string): Promise<boolean> {
-      try {
-        await CapacitorHealthkit.isEditionAuthorized({ sampleName });
-        return true;
-      } catch {
-        return false;
-      }
-    }
-
-    const [weight, bodyFat, leanMass] = await Promise.all([
-      checkOne(SampleNames.WEIGHT),
-      checkOne(SampleNames.BODY_FAT),
-      // leanBodyMass: use HealthKit identifier string directly
-      checkOne('leanBodyMass'),
-    ]);
-
-    return { weight, body_fat: bodyFat, lean_mass: leanMass };
+    return { weight: false, body_fat: false, lean_mass: false };
   }
 
   async writeBodyComposition(
     _payload: HealthCompositionPayload,
     _grants: GrantState,
   ): Promise<WriteResult> {
-    // DEVICE-UNTESTED / NOT IMPLEMENTED
-    // @perfood/capacitor-healthkit@1.3.2 is a read-only plugin. There is no
-    // write/save method in its JS API. A production iOS write requires either:
-    //   (a) A custom Capacitor plugin that bridges HKHealthStore.save() in Swift
-    //   (b) A fork or replacement of @perfood/capacitor-healthkit that adds write
-    //   (c) Direct native Swift code added to the iOS Capacitor project
-    // This limitation is documented in docs/formavision/211a-w2-health-sync.md.
-    // Until a write-capable plugin is available, this bridge correctly signals
-    // all metrics as failed so the sync service can emit telemetry and fail-open.
     throw new Error(
-      'IosHealthBridge.writeBodyComposition: not implemented -- @perfood/capacitor-healthkit v1.3.2 is a read-only plugin. A write-capable native bridge is required for iOS writes. See docs/formavision/211a-w2-health-sync.md.',
+      'IosHealthBridge.writeBodyComposition: this release reads step count only and does not save Apple Health samples.',
     );
   }
 }
@@ -233,123 +167,34 @@ export class IosHealthBridge implements HealthBridge {
 // ---------------------------------------------------------------------------
 
 /**
- * AndroidHealthBridge wraps capacitor-health-connect for permission checking
- * and writing. Health Connect's insertRecords API and its per-record-type
- * permission model map cleanly to W2's per-metric revocable grant requirement.
+ * AndroidHealthBridge does not call capacitor-health-connect in this release.
+ * isAvailable returns false. Write methods throw. Health Connect stays out of v1.
  *
- * DEVICE-UNTESTED: This implementation cannot be verified without a real
- * Android device running Health Connect. The Cap-6 native-build risk means
- * the native bridge may not work until the plugin is updated or replaced.
- *
- * Body fat percent: Health Connect's BodyFat record expects { percentage: { value: N } }
- * where N is the percent (0..100), NOT a 0..1 fraction. The Percentage type is
- * { value: number } with no unit field.
+ * DEVICE-UNTESTED: the Android binary still lists the plugin module because
+ * the package remains a dependency. JS does not import it.
  */
 export class AndroidHealthBridge implements HealthBridge {
   async isAvailable(): Promise<boolean> {
-    // DEVICE-UNTESTED
-    try {
-      const { HealthConnect } = await import('capacitor-health-connect');
-      const { availability } = await HealthConnect.checkAvailability();
-      return availability === 'Available';
-    } catch {
-      return false;
-    }
+    return false;
   }
 
   async requestWritePermissions(): Promise<void> {
-    // DEVICE-UNTESTED
-    const { HealthConnect } = await import('capacitor-health-connect');
-    await HealthConnect.requestHealthPermissions({
-      read: [],
-      write: ['Weight', 'BodyFat'],
-    });
-    // LeanBodyMass is not a RecordType in capacitor-health-connect@0.7.0's
-    // type definition. Health Connect does not have a dedicated LeanBodyMass
-    // record type in Android Health Connect API level 1. We omit it from the
-    // permission request. lean_mass writes will be permanently skipped on Android
-    // until Health Connect exposes this type or a custom record is used.
+    throw new Error(
+      'AndroidHealthBridge.requestWritePermissions: Health Connect is not in this release.',
+    );
   }
 
   async checkGrants(): Promise<GrantState> {
-    // DEVICE-UNTESTED
-    // checkHealthPermissions returns grantedPermissions: string[].
-    // We check write permissions for each type independently.
-    try {
-      const { HealthConnect } = await import('capacitor-health-connect');
-      const result = await HealthConnect.checkHealthPermissions({
-        read: [],
-        write: ['Weight', 'BodyFat'],
-      });
-      const granted = new Set(result.grantedPermissions);
-      return {
-        weight: granted.has('android.permission.health.WRITE_WEIGHT'),
-        body_fat: granted.has('android.permission.health.WRITE_BODY_FAT'),
-        // lean_mass: not supported in Android Health Connect v1 API
-        lean_mass: false,
-      };
-    } catch {
-      return { weight: false, body_fat: false, lean_mass: false };
-    }
+    return { weight: false, body_fat: false, lean_mass: false };
   }
 
   async writeBodyComposition(
-    payload: HealthCompositionPayload,
-    grants: GrantState,
+    _payload: HealthCompositionPayload,
+    _grants: GrantState,
   ): Promise<WriteResult> {
-    // DEVICE-UNTESTED
-    const { HealthConnect } = await import('capacitor-health-connect');
-    const written: HealthMetric[] = [];
-    const skipped: HealthMetric[] = [];
-    const failed: HealthMetric[] = [];
-
-    const sampleDate = new Date(payload.sampleDate);
-
-    // Weight
-    if (payload.weightKg === null || !grants.weight) {
-      skipped.push('weight');
-    } else {
-      try {
-        await HealthConnect.insertRecords({
-          records: [
-            {
-              type: 'Weight',
-              time: sampleDate,
-              weight: { unit: 'kilogram', value: payload.weightKg },
-            },
-          ],
-        });
-        written.push('weight');
-      } catch {
-        failed.push('weight');
-      }
-    }
-
-    // Body fat
-    if (payload.bodyFatPct === null || !grants.body_fat) {
-      skipped.push('body_fat');
-    } else {
-      try {
-        await HealthConnect.insertRecords({
-          records: [
-            {
-              type: 'BodyFat',
-              time: sampleDate,
-              // Health Connect Percentage.value is the raw percent (0..100)
-              percentage: { value: payload.bodyFatPct },
-            },
-          ],
-        });
-        written.push('body_fat');
-      } catch {
-        failed.push('body_fat');
-      }
-    }
-
-    // Lean mass: not supported in Android Health Connect v1 API
-    skipped.push('lean_mass');
-
-    return { written, skipped, failed };
+    throw new Error(
+      'AndroidHealthBridge.writeBodyComposition: Health Connect is not in this release.',
+    );
   }
 }
 

@@ -3,7 +3,7 @@
  * Consent-mediated, digest-only. Never scrapes; never cross-user.
  *
  * Existing pathway (Prompt 212/218):
- * - Apple HealthKit via Capacitor @perfood/capacitor-healthkit + /api/integrations/health-sync
+ * - Apple Health step count via the in-repo ViaConnectHealthKit plugin + /api/integrations/health-sync
  * - Google Health OAuth + Health Connect scaffold in connected-sources registry
  * Agents read via digests / connection state, not raw device APIs.
  */

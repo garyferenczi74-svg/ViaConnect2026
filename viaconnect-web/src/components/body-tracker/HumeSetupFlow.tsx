@@ -9,7 +9,6 @@ import { Check, ChevronRight, Smartphone } from 'lucide-react';
 import { useSensitiveAction } from '@/components/ai/SensitiveAction';
 import {
   getHealthPlatform,
-  isHealthConnectEnabled,
   requestHealthPermissions,
   syncHealthSamples,
 } from '@/lib/wearables/health-client';
@@ -38,7 +37,7 @@ export function HumeSetupFlow({ onComplete, onClose }: HumeSetupFlowProps) {
       if (res.reason === 'open_in_app') {
         setMessage('Open the ViaCura mobile app to grant health permissions.');
       } else if (res.reason === 'health_connect_not_enabled') {
-        setMessage('Health Connect support is not enabled in this build yet. iOS is fully supported.');
+        setMessage('Step count sync in this release is Apple Health on iPhone. Android Health Connect is not in this version.');
       } else {
         setMessage('Permissions were not granted. You can try again from Settings.');
       }
@@ -104,9 +103,9 @@ export function HumeSetupFlow({ onComplete, onClose }: HumeSetupFlowProps) {
                 )}
                 {n === 2 && (
                   <>
-                    <p className="font-medium text-white">Grant ViaCura read access</p>
+                    <p className="font-medium text-white">Grant step-count read access</p>
                     <p className="mt-1 text-white/60">
-                      Allow heart rate, HRV, sleep, steps, and body composition reads.
+                      Allow ViaConnect to read your step count from Apple Health. No other health types are requested, and nothing is written back.
                     </p>
                   </>
                 )}
@@ -171,10 +170,9 @@ export function HumeSetupFlow({ onComplete, onClose }: HumeSetupFlowProps) {
           )}
         </div>
 
-        {platform === 'android' && !isHealthConnectEnabled() && (
+        {platform === 'android' && (
           <p className="mt-3 text-xs text-white/45">
-            Health Connect is prepared behind a capability flag. Use iOS HealthKit for full Hume
-            phone-health sync in this release.
+            Step count sync in this release is Apple Health on iPhone. Android Health Connect is not in this version.
           </p>
         )}
       </div>
