@@ -1,8 +1,11 @@
 /**
  * Session role policy (Brief 11 / P0 chrome + route leak, Brief 37 + Brief 47 tab strip).
  *
- * Authorization source of truth is profiles.role only.
+ * Authorization source of truth for existing routes is profiles.role.
  * Do not grant clinician/admin access from URL, user_metadata, or email.
+ * A naturopath credential on a practitioner account is a separate check
+ * (naturopath-credential.ts). It does not open /naturopath/* unless
+ * NATUROPATH_CREDENTIAL_PORTAL_ACCESS is on and the credential is verified.
  * Admin switcher is all six PORTAL_TABS. Consumer stays Personal Wellness only.
  */
 

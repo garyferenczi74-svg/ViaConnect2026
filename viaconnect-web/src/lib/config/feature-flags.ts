@@ -54,6 +54,17 @@ export const FLAG_REGISTRY: Record<string, FlagDef> = {
     description:
       'Google Health API web OAuth connector (Fitbit / Pixel Watch and others). Off until Google Cloud credentials are provisioned and the connector is verified in staging.',
   },
+
+  // Gary 2026-10-03: naturopath is a credential on the practitioner account.
+  // Default off. Opening /naturopath/* also requires verification_status
+  // verified. See src/lib/auth/naturopath-credential.ts.
+  // Store support: Apple 5.1.1 (permission) and 5.1.3 (health data),
+  // Google Play User Data / Data safety. Not a self-serve role grant.
+  naturopath_credential_portal_access: {
+    default: false,
+    description:
+      'Allow a practitioner with a verified naturopath credential to open /naturopath/*. Off until Gary sets NATUROPATH_CREDENTIAL_PORTAL_ACCESS=true. Unverified credentials never open the portal.',
+  },
 } as const;
 
 /**
