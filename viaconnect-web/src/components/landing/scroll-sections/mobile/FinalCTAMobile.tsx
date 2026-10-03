@@ -45,7 +45,7 @@ export function FinalCTAMobile() {
                     </Link>
                 </div>
                 <p className="text-white/50 text-xs">
-                    No subscription required. HIPAA-aware. Your data, your control.
+                    No subscription required. Private and secure. Your data, your control.
                 </p>
             </motion.div>
         </SectionAnchor>

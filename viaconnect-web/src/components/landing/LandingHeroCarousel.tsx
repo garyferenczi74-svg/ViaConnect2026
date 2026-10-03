@@ -39,7 +39,7 @@ export function LandingHeroCarousel() {
                                 <span className="text-xs lg:text-sm font-semibold tracking-wider uppercase whitespace-nowrap">Backed by Science</span>
                             </div>
                             <div className="flex items-center gap-[6px] lg:gap-2 text-slate-400">
-                                <span className="text-xs lg:text-sm font-semibold tracking-wider uppercase whitespace-nowrap">HIPAA-aware</span>
+                                <span className="text-xs lg:text-sm font-semibold tracking-wider uppercase whitespace-nowrap">Encrypted in transit</span>
                             </div>
                             <div className="flex items-center gap-[6px] lg:gap-2 text-slate-400">
                                 <span className="text-xs lg:text-sm font-semibold tracking-wider uppercase whitespace-nowrap">GMP Certified</span>

@@ -25,7 +25,7 @@ export default function TrustCompliancePage() {
             ViaConnect is operated by FarmCeutica Wellness LLC. Our supplements comply with DSHEA and 21 CFR 111 GMP
             standards. Peptide protocols follow state-specific scope-of-practice rules, and practitioners on our
             platform are verified against the CMS NPPES registry and the OIG LEIE sanctions list on a weekly cadence.
-            Our genetic panels are run by HIPAA-compliant lab partners with active BAAs.
+            Our genetic panels are run by our CLIA-certified laboratory partner under a written agreement limited to returning your results.
           </p>
         </section>
 

@@ -61,7 +61,7 @@ export function AboutSectionMobile() {
 
                 <div className="bg-white/5 border border-white/10 rounded-xl p-6 mb-10">
                     <p className="text-white/70 text-sm leading-relaxed">
-                        Beyond our named scientific leadership, ViaConnect is supported by a broader leadership group spanning compliance and regulatory oversight, financial stewardship, and day-to-day operations. Each function is led by senior practitioners with multi-decade track records in their respective fields, working alongside the science team to keep the platform HIPAA-aware, financially disciplined, and operationally accountable to the people we serve.
+                        Beyond our named scientific leadership, ViaConnect is supported by a broader leadership group spanning compliance and regulatory oversight, financial stewardship, and day-to-day operations. Each function is led by senior practitioners with multi-decade track records in their respective fields, working alongside the science team to keep the platform private and secure, financially disciplined, and operationally accountable to the people we serve.
                     </p>
                 </div>
 

@@ -11,7 +11,7 @@
 //   - the score is always referred to by its exact canonical name
 //   - blocked-compound dictionary is enforced via indirect language
 //     (the dictionary itself lives outside this file)
-//   - claims language ("HIPAA-aware" only) and education-only framing
+//   - claims language (no HIPAA, SOC 2, BAA, or end-to-end encryption) and education-only framing
 //     are baked into the rule block below
 
 import type { BOSTier, BOSTriggerSource } from './types';
@@ -90,7 +90,7 @@ export const HANNAH_SYSTEM_PROMPT = [
   '  3. The score is named exactly Bio Optimization Score in every reference. Do not use any other name for it.',
   '  4. Never name specific GLP, GIP, glucagon, or central appetite-modulating compounds in your output. The system maintains a separate blocked-compound dictionary; if the user message references such a compound, route around it and do not echo the name back.',
   '  5. If any GLP, GIP, or glucagon agonist is referenced in the input, do not pair it with any other agonist in your output; injectable references are the only sanctioned framing.',
-  '  6. Do not state or imply that ViaConnect or its products are HIPAA Compliant, FDA-authorized, or clinically validated for any condition. Use HIPAA-aware framing only. Stay educational; the brand stance is wellness-supportive, not clinical-interventional.',
+  '  6. Do not state or imply that ViaConnect or its products are HIPAA compliant, HIPAA-aware, HIPAA-ready, SOC 2 certified, FDA-authorized, or clinically validated for any condition. Do not mention HIPAA, SOC 2, BAAs, or end-to-end encryption. If you describe security, say health data is encrypted in transit, with access controls. Stay educational; the brand stance is wellness-supportive, not clinical-interventional.',
   '',
   'Score semantics:',
   '  Floor: the user CAQ-derived baseline score. The Bio Optimization Score never falls below this floor.',

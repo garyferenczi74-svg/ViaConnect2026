@@ -75,13 +75,13 @@ const auditData: AuditEntry[] = [
 ];
 
 const consentData: ConsentRecord[] = [
-  { patient: "Elena Vasquez", consentType: "HIPAA Authorization", status: "Active", signedDate: "2026-01-15", expiryDate: "2027-01-15" },
+  { patient: "Elena Vasquez", consentType: "Privacy Authorization", status: "Active", signedDate: "2026-01-15", expiryDate: "2027-01-15" },
   { patient: "James Robertson", consentType: "Genetic Testing Consent", status: "Active", signedDate: "2026-02-01", expiryDate: "2027-02-01" },
   { patient: "Anika Patel", consentType: "Telehealth Consent", status: "Active", signedDate: "2026-03-10", expiryDate: "2027-03-10" },
-  { patient: "Marcus Thompson", consentType: "HIPAA Authorization", status: "Active", signedDate: "2026-02-20", expiryDate: "2027-02-20" },
+  { patient: "Marcus Thompson", consentType: "Privacy Authorization", status: "Active", signedDate: "2026-02-20", expiryDate: "2027-02-20" },
   { patient: "Emily Zhao", consentType: "Treatment Consent", status: "Expired", signedDate: "2025-03-15", expiryDate: "2026-03-15" },
   { patient: "David Kim", consentType: "Genetic Testing Consent", status: "Pending", signedDate: "", expiryDate: "" },
-  { patient: "Sarah Mitchell", consentType: "HIPAA Authorization", status: "Active", signedDate: "2026-01-08", expiryDate: "2027-01-08" },
+  { patient: "Sarah Mitchell", consentType: "Privacy Authorization", status: "Active", signedDate: "2026-01-08", expiryDate: "2027-01-08" },
   { patient: "Robert Chen", consentType: "Research Participation", status: "Active", signedDate: "2025-12-05", expiryDate: "2026-12-05" },
 ];
 
@@ -89,7 +89,7 @@ const credentials: CredentialRecord[] = [
   { credential: "Medical License (NY)", type: "State License", status: "Current", issueDate: "2024-06-01", expiryDate: "2027-06-01", ceHours: 0 },
   { credential: "DEA Registration", type: "Federal", status: "Current", issueDate: "2023-09-15", expiryDate: "2026-09-15", ceHours: 0 },
   { credential: "Board Certification (IM)", type: "Board Cert", status: "Current", issueDate: "2022-01-10", expiryDate: "2032-01-10", ceHours: 0 },
-  { credential: "HIPAA Certification", type: "Compliance", status: "Current", issueDate: "2026-01-20", expiryDate: "2027-01-20", ceHours: 4 },
+  { credential: "Security Training", type: "Compliance", status: "Current", issueDate: "2026-01-20", expiryDate: "2027-01-20", ceHours: 4 },
   { credential: "Nutrigenomics CME", type: "CME", status: "Current", issueDate: "2026-02-15", expiryDate: "2027-02-15", ceHours: 12 },
   { credential: "Controlled Substance (NY)", type: "State License", status: "Expiring", issueDate: "2024-04-01", expiryDate: "2026-04-01", ceHours: 0 },
 ];
@@ -98,7 +98,7 @@ const initialActionItems: ActionItem[] = [
   { id: "1", label: "Renew Emily Zhao treatment consent (expired March 15)", dueDate: "March 30, 2026", priority: "high", completed: false, category: "Consent" },
   { id: "2", label: "Send genetic testing consent to David Kim", dueDate: "March 28, 2026", priority: "high", completed: false, category: "Consent" },
   { id: "3", label: "Renew Controlled Substance license (expires April 1)", dueDate: "April 1, 2026", priority: "high", completed: false, category: "Credential" },
-  { id: "4", label: "Complete annual HIPAA security risk assessment", dueDate: "April 15, 2026", priority: "medium", completed: false, category: "Compliance" },
+  { id: "4", label: "Complete annual security risk assessment", dueDate: "April 15, 2026", priority: "medium", completed: false, category: "Compliance" },
   { id: "5", label: "Review and update drug interaction database", dueDate: "March 31, 2026", priority: "medium", completed: false, category: "Clinical" },
   { id: "6", label: "Update data breach response plan", dueDate: "March 10, 2026", priority: "high", completed: true, category: "Compliance" },
   { id: "7", label: "Q1 prescribing audit review", dueDate: "March 14, 2026", priority: "medium", completed: true, category: "Compliance" },
@@ -225,7 +225,7 @@ export default function PractitionerCompliancePage() {
           <div>
             <h1 className="text-3xl font-bold text-white">Compliance & Credentialing</h1>
             <p className="mt-1 text-gray-400">
-              HIPAA compliance, audit trail, credentials, and patient consents
+              Security controls, audit trail, credentials, and patient consents
             </p>
           </div>
           <Button className="bg-portal-green hover:bg-portal-green/80 text-white">
@@ -255,7 +255,7 @@ export default function PractitionerCompliancePage() {
           </Card>
 
           <div className="lg:col-span-2 grid grid-cols-2 lg:grid-cols-3 gap-4">
-            <StatCard icon={Shield} label="HIPAA Status" value="Compliant" />
+            <StatCard icon={Shield} label="Security Status" value="Private" />
             <StatCard icon={AlertTriangle} label="Open Issues" value="3" className="border border-portal-yellow/20" />
             <StatCard icon={Activity} label="PHI Access (30d)" value="147" />
             <StatCard icon={Users} label="Active Consents" value="6/8 (75%)" />
@@ -283,7 +283,7 @@ export default function PractitionerCompliancePage() {
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2">
               <Eye className="w-5 h-5 text-cyan-400" />
-              <h2 className="text-lg font-semibold text-white">HIPAA Audit Trail</h2>
+              <h2 className="text-lg font-semibold text-white">Access Audit Trail</h2>
             </div>
             <div className="flex items-center gap-2">
               <Lock className="w-3.5 h-3.5 text-gray-500" />
