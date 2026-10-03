@@ -20,6 +20,19 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<!-- OAuth return. System browser, not the WebView. Scheme matches capacitor.config.ts appId.
+	     Sign in with Apple entitlement is not set: this is the Supabase web provider. -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.farmceutica.viaconnect</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.farmceutica.viaconnect</string>
+			</array>
+		</dict>
+	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>

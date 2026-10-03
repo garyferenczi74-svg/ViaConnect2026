@@ -3,5 +3,6 @@
     <string name="app_name">ViaConnect</string>
     <string name="title_activity_main">ViaConnect</string>
     <string name="package_name">com.farmceutica.viaconnect</string>
+    <!-- OAuth return scheme. Must match capacitor.config.ts appId. -->
     <string name="custom_url_scheme">com.farmceutica.viaconnect</string>
 </resources>
