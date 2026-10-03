@@ -13,18 +13,21 @@ export function SiteFooter() {
             Farmceutica Wellness LLC. All rights reserved {year}.
           </p>
           <a
-            href="mailto:info@farmceuticawellness.com"
-            className="text-xs text-gray-400 hover:text-teal transition-colors"
+            href="mailto:info@viaconnectapp.com"
+            className="text-xs text-gray-400 hover:text-teal transition-colors min-h-[44px] inline-flex items-center"
           >
-            info@farmceuticawellness.com
+            info@viaconnectapp.com
           </a>
         </div>
-        <nav aria-label="Footer" className="flex items-center gap-6 text-sm">
-          <Link href="/privacy" className="hover:text-teal transition-colors">
+        <nav aria-label="Footer" className="flex flex-wrap items-center justify-center gap-x-6 gap-y-1 text-sm md:justify-end">
+          <Link href="/privacy" className="hover:text-teal transition-colors min-h-[44px] inline-flex items-center">
             Privacy Policy
           </Link>
-          <Link href="/terms" className="hover:text-teal transition-colors">
+          <Link href="/terms" className="hover:text-teal transition-colors min-h-[44px] inline-flex items-center">
             Terms of Service
+          </Link>
+          <Link href="/support" className="hover:text-teal transition-colors min-h-[44px] inline-flex items-center">
+            Support
           </Link>
           <Link href="/delete-account" className="hover:text-teal transition-colors min-h-[44px] inline-flex items-center">
             Delete account

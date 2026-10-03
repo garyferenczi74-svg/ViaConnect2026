@@ -380,7 +380,7 @@ export default function OrderDetailPage() {
             Print Order
           </button>
           <a
-            href="mailto:support@farmceutica.com?subject=Help%20with%20order%20%23"
+            href="mailto:support@viaconnectapp.com?subject=Help%20with%20order%20%23"
             className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-xl text-sm font-semibold text-white/80 transition-all min-h-[44px]"
           >
             <HelpCircle className="w-4 h-4" strokeWidth={1.5} />

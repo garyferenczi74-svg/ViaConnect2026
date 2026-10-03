@@ -10,7 +10,7 @@ const src = readFileSync(
 describe("SiteFooter", () => {
   it("names the entity and uses the contact mailto", () => {
     expect(src).toContain("Farmceutica Wellness LLC");
-    expect(src).toContain("mailto:info@farmceuticawellness.com");
+    expect(src).toContain("mailto:info@viaconnectapp.com");
   });
 
   it("links to both legal routes", () => {
