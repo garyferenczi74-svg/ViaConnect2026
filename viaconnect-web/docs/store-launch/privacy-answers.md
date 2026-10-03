@@ -133,6 +133,8 @@ Play requires this declaration for every app. Draft from the features in this re
 
 DRAFT for the privacy forms. Gary decided on 2026-10-02 that the first release depends on Apple Health data, so `com.apple.developer.healthkit` stays true. On-device authorization and reads were not run. **UNVERIFIED.**
 
+Store rules this section is for: Apple 5.1.3(i) (disclose the specific health data collected from the device; health data is not for advertising), Apple 5.1.1(i) and 2.3 (privacy information must match the app), and Google Play's User Data policy plus the Data safety form. Play's Health Connect publish notes say to declare only types the app uses. Health Connect is off unless its flag is `1`. The requirement map for the native edits is in `native-projects-fixes.md`.
+
 This section uses only what the code does. The type inventory and the proposed minimum (step count only, no write) are in `docs/store-launch/native-projects-fixes.md`. That minimum is a proposal. It is not what the JS read array contains today.
 
 ### Collected through the HealthKit API

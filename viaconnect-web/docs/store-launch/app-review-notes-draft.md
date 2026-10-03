@@ -39,6 +39,8 @@ It does not write labs, genetics, symptoms, scores, doses, protocols, orders, or
 
 Gary decided on 2026-10-02 that the first release depends on Apple Health data. The HealthKit entitlement stays on. On-device reads were not run. **UNVERIFIED.**
 
+This note is for Apple 2.1(a) (the reviewer needs an accurate description) and Apple 5.1.3(i) (disclose the specific health data the app collects). Apple 5.1.1(ii) is why the purpose string has to match that use. The full requirement map is in `docs/store-launch/native-projects-fixes.md`.
+
 `NSHealthShareUsageDescription` in `ios/App/App/Info.plist` is a **DRAFT pending Lex/Gary approval**. The current draft says, exactly:
 
 > ViaConnect reads your step count from Apple Health when you choose to connect it, and stores that activity with your account. This data is not used for advertising.
@@ -59,13 +61,19 @@ UNCONFIRMED: whether HealthKit read works on a device in the submitted build.
 
 ## Camera
 
-The iOS camera purpose string says, exactly:
+The iOS camera purpose string in `ios/App/App/Info.plist` now says, exactly:
 
-> ViaConnect uses your camera to photograph meals and scan barcodes on packaged foods. Photos are sent to our analysis service only when you choose to log a meal.
+> ViaConnect uses the camera to photograph meals, body-progress photos, body scans, and supplement labels. A photo is uploaded only after you choose to save it.
 
-The app also has a body-scan camera flow (FormaVision) that asks for the camera when that screen is opened. The purpose string above does not mention body scans.
+That replaced an older sentence that claimed barcode scanning. No live camera barcode scanner was found. Apple 5.1.1(ii) and 2.5.14. FormaVision depth capture is not in this binary. A body-scan screen can still open the camera. Depth is on hold until the FormaVision rebuild.
 
-UNCONFIRMED: which camera uses are linked in the submitted native binary, and which photos leave the device.
+`NSPhotoLibraryUsageDescription` says, exactly:
+
+> ViaConnect uses your photo library so you can choose an existing meal photo, body-progress photo, or supplement label. The photo is uploaded only after you choose to save it.
+
+`NSLocationWhenInUseUsageDescription` is not in this plist. No location API was found.
+
+UNCONFIRMED: which photos leave the device.
 
 ## AI features
 
