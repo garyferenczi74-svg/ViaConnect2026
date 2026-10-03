@@ -20,6 +20,9 @@ const config: CapacitorConfig = {
   webDir: 'public',
   server: {
     url: 'https://viaconnectapp.com',
+    // Local page when the hosted shell cannot load. Apple 4.2 and Play
+    // Spam / Minimum Functionality: the binary includes its own offline screen.
+    errorPath: 'offline.html',
     androidScheme: 'https',
     allowNavigation: [
       'viaconnectapp.com',

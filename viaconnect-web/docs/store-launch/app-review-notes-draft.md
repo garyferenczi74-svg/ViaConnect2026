@@ -47,15 +47,15 @@ This note is for Apple 2.1(a) (the reviewer needs an accurate description) and A
 
 `NSHealthUpdateUsageDescription` is omitted. The app does not save an Apple Health sample. `IosHealthBridge.writeBodyComposition` throws, and no screen calls `syncHealthData`. If a later build requests write access, this key has to come back with approved wording. Do not tell the reviewer the app writes weight or body fat.
 
-What the code does today:
+What the code does after VIA-9:
 
-- `src/lib/wearables/health-client.ts` queries `stepCount` only, then posts that batch to `/api/integrations/health-sync`.
-- The same function's read list also names heart rate, resting heart rate, heart rate variability, sleep, respiratory rate, oxygen saturation, active energy, body mass, body fat percentage, and lean body mass, with no write types. `@perfood/capacitor-healthkit` 1.3.2 does not map those identifier strings, so that call does not add them to the native authorization set. They are not queried.
-- A proposed launch set, not implemented, is step count only and no write. It is in `docs/store-launch/native-projects-fixes.md`.
+- `src/lib/wearables/health-client.ts` requests `HKQuantityTypeIdentifierStepCount` only, queries `stepCount`, and posts that batch to `/api/integrations/health-sync`.
+- The in-repo plugin `ios/App/App/ViaConnectHealthKitPlugin.swift` requests that read and does not save samples. `@perfood/capacitor-healthkit` is no longer a dependency.
+- Android Health Connect is not called. The screen tells Android users that step count sync in this release is Apple Health on iPhone.
 
-The HealthKit pod is named in `ios/App/Podfile`. `pod install` was not run here, so whether the submitted Xcode target links it is **UNCONFIRMED**.
+`pod install` was not run here. Whether the submitted Xcode target builds the in-repo plugin is **UNCONFIRMED**.
 
-Android Health Connect stays off unless `NEXT_PUBLIC_HEALTH_CONNECT_ENABLED` is `1`. That flag defaults off.
+Android Health Connect is not called. `requestHealthPermissions` and `syncHealthSamples` return `health_connect_not_enabled` on Android. `NEXT_PUBLIC_HEALTH_CONNECT_ENABLED` does not turn the client on. The npm package is still on the Android classpath because removing it was not part of this change.
 
 UNCONFIRMED: whether HealthKit read works on a device in the submitted build.
 
@@ -63,9 +63,11 @@ UNCONFIRMED: whether HealthKit read works on a device in the submitted build.
 
 The iOS camera purpose string in `ios/App/App/Info.plist` now says, exactly:
 
-> ViaConnect uses the camera to photograph meals, body-progress photos, body scans, and supplement labels. A photo is uploaded only after you choose to save it.
+> ViaConnect uses the camera to photograph meals, body-progress photos, body scans, and supplement labels, and to scan barcodes on supplements and packaged products. A photo is uploaded only after you choose to save it.
 
-That replaced an older sentence that claimed barcode scanning. No live camera barcode scanner was found. Apple 5.1.1(ii) and 2.5.14. FormaVision depth capture is not in this binary. A body-scan screen can still open the camera. Depth is on hold until the FormaVision rebuild.
+VIA-9 added the barcode clause because the camera now scans supplement and packaged-food barcodes. The rest of the VIA-8 sentence is unchanged. Apple 5.1.1(ii) and 2.5.14. FormaVision depth capture is not in this binary. A body-scan screen can still open the camera. Depth is on hold until the FormaVision rebuild.
+
+Native functionality for review (Apple 4.2, Play Spam and Minimum Functionality) is written in `docs/store-launch/via-9-native-features.md`. Account, then Notifications, then On this device, is where app lock and device alerts are turned on. Add Your Supplements and NutriVision are where a barcode is scanned or typed.
 
 `NSPhotoLibraryUsageDescription` says, exactly:
 

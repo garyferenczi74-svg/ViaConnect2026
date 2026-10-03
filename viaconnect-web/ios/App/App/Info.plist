@@ -69,7 +69,9 @@
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>ViaConnect uses speech recognition to turn your spoken meal edits into text. Speech is transcribed on your device when possible; transcripts are used only to apply edits you confirm.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>ViaConnect uses the camera to photograph meals, body-progress photos, body scans, and supplement labels. A photo is uploaded only after you choose to save it.</string>
+	<string>ViaConnect uses the camera to photograph meals, body-progress photos, body scans, and supplement labels, and to scan barcodes on supplements and packaged products. A photo is uploaded only after you choose to save it.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>ViaConnect uses Face ID to unlock the app after you turn on the app lock. If Face ID does not succeed, you can sign in with your password.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>ViaConnect uses your photo library so you can choose an existing meal photo, body-progress photo, or supplement label. The photo is uploaded only after you choose to save it.</string>
 	<key>NSMotionUsageDescription</key>

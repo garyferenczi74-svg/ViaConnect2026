@@ -22,6 +22,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import toast from "react-hot-toast";
 import { createClient } from "@/lib/supabase/client";
+import { DeviceNativeSettings } from "@/components/native/DeviceNativeSettings";
 
 interface NotificationRow {
   id: string;
@@ -235,6 +236,8 @@ export default function NotificationsPage() {
           />
         </div>
       )}
+
+      <DeviceNativeSettings />
 
       {/* Preferences */}
       <div className="pt-6 mt-6 border-t border-white/[0.08]">

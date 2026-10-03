@@ -8,8 +8,8 @@
 // and Marshall's canonical ingest all flow through the existing shared
 // atomic components (SupplementBarcodeConfirm, SupplementPhotoUpload).
 //
-// 175m surfaces (2026-06-05): barcode entry removed per Gary, leaving
-// search and photo as the two supported paths.
+// VIA-9 restores barcode entry (camera scan or typed digits) next to
+// search and photo. The confirm panel still calls /api/caq/supplements/resolve.
 //
 // Visual order:
 //   1. Search field (typeahead against search_supplements RPC)
@@ -34,6 +34,7 @@ import {
   type SupplementConfirmInitialDraft,
 } from '@/components/caq/phase6/SupplementBarcodeConfirm';
 import SupplementPhotoUpload from '@/components/caq/phase6/SupplementPhotoUpload';
+import { BarcodeEntryFields } from '@/components/native/BarcodeEntryFields';
 
 type SearchRow = {
   brand_name: string;
@@ -65,6 +66,7 @@ export function SupplementCaptureBlock({
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [searchResults, setSearchResults] = useState<SearchRow[]>([]);
   const [pendingSearchDraft, setPendingSearchDraft] = useState<SupplementConfirmInitialDraft | null>(null);
+  const [pendingBarcode, setPendingBarcode] = useState<{ value: string; format: string | null } | null>(null);
   const [saving, setSaving] = useState<boolean>(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -108,7 +110,7 @@ export function SupplementCaptureBlock({
     }
   }
 
-  const isConfirming = pendingSearchDraft !== null;
+  const isConfirming = pendingSearchDraft !== null || pendingBarcode !== null;
 
   return (
     <div className="space-y-4">
@@ -166,8 +168,13 @@ export function SupplementCaptureBlock({
 
           <OrDivider />
 
-          {/* Prompt 175m (2026-06-05): Scan barcode button removed per
-              Gary. Search and Photo remain the supported paths. */}
+          <BarcodeEntryFields
+            title="Supplement barcode"
+            body="The camera reads the barcode on the bottle or box. A photo is not uploaded unless you save one separately. You can type the digits on a computer."
+            onDigits={(digits, format) => setPendingBarcode({ value: digits, format })}
+          />
+
+          <OrDivider />
 
           {/* Photo upload (dashed card + two-photo capture + confirm) */}
           <SupplementPhotoUpload onProductAdded={(rec) => commit(rec)} />
@@ -189,8 +196,18 @@ export function SupplementCaptureBlock({
         />
       )}
 
-      {/* Prompt 175m (2026-06-05): SupplementBarcodeOverlay mount
-          removed with the rest of the barcode entry path. */}
+      {pendingBarcode && (
+        <SupplementBarcodeConfirm
+          barcodeValue={pendingBarcode.value}
+          barcodeFormat={pendingBarcode.format}
+          source="barcode"
+          onConfirm={async (rec) => {
+            await commit(rec);
+            setPendingBarcode(null);
+          }}
+          onCancel={() => setPendingBarcode(null)}
+        />
+      )}
     </div>
   );
 }

@@ -1,8 +1,11 @@
-// Prompt 212: Capacitor HealthKit client wrapper.
-// Uses @perfood/capacitor-healthkit when available; no-ops on web with clear status.
+// Prompt 212, VIA-9: Apple Health step-count client.
+// iOS uses the in-repo ViaConnectHealthKit plugin (read-only step count).
+// Android Health Connect is not called in this release.
 
 import { Capacitor } from "@capacitor/core";
 import { safeLog } from "@/lib/utils/safe-log";
+import { ViaConnectHealthKit } from "@/lib/wearables/viaconnect-healthkit";
+import { HEALTHKIT_STEP_COUNT_READ, normalizeStepSamples, type StepSample } from "@/lib/wearables/step-samples";
 
 const SCOPE = "lib.wearables.health-client";
 
@@ -29,32 +32,15 @@ export async function requestHealthPermissions(): Promise<{
   if (platform === "web") {
     return { ok: false, reason: "open_in_app" };
   }
-  if (platform === "android" && !isHealthConnectEnabled()) {
+  if (platform === "android") {
     return { ok: false, reason: "health_connect_not_enabled" };
   }
 
   try {
-    // Dynamic import so web builds never hard-fail without the native plugin.
-    const mod = await import("@perfood/capacitor-healthkit").catch(() => null);
-    if (!mod?.CapacitorHealthkit) {
-      return { ok: false, reason: "plugin_missing" };
-    }
-    const Healthkit = mod.CapacitorHealthkit;
-    await Healthkit.requestAuthorization({
-      all: [],
-      read: [
-        "HKQuantityTypeIdentifierHeartRate",
-        "HKQuantityTypeIdentifierRestingHeartRate",
-        "HKQuantityTypeIdentifierHeartRateVariabilitySDNN",
-        "HKCategoryTypeIdentifierSleepAnalysis",
-        "HKQuantityTypeIdentifierRespiratoryRate",
-        "HKQuantityTypeIdentifierOxygenSaturation",
-        "HKQuantityTypeIdentifierStepCount",
-        "HKQuantityTypeIdentifierActiveEnergyBurned",
-        "HKQuantityTypeIdentifierBodyMass",
-        "HKQuantityTypeIdentifierBodyFatPercentage",
-        "HKQuantityTypeIdentifierLeanBodyMass",
-      ],
+    const available = await ViaConnectHealthKit.isAvailable();
+    if (!available.available) return { ok: false, reason: "plugin_missing" };
+    await ViaConnectHealthKit.requestAuthorization({
+      read: [...HEALTHKIT_STEP_COUNT_READ],
       write: [],
     });
     return { ok: true };
@@ -78,7 +64,7 @@ export interface SyncResult {
 export async function syncHealthSamples(): Promise<SyncResult> {
   const platform = getHealthPlatform();
   if (platform === "web") return { ok: false, reason: "open_in_app" };
-  if (platform === "android" && !isHealthConnectEnabled()) {
+  if (platform === "android") {
     return { ok: false, reason: "health_connect_not_enabled" };
   }
 
@@ -88,33 +74,17 @@ export async function syncHealthSamples(): Promise<SyncResult> {
       ? crypto.randomUUID()
       : `batch_${Date.now()}`;
 
-  // On native without full query implementation of the plugin surface, send an
-  // empty first-sync handshake so connected_sources is marked connected.
-  // Full sample query depends on device entitlements; production iOS builds
-  // extend querySampleType calls here.
-  let samples: Array<Record<string, unknown>> = [];
+  let samples: StepSample[] = [];
   try {
-    const mod = await import("@perfood/capacitor-healthkit").catch(() => null);
-    if (mod?.CapacitorHealthkit?.queryHKitSampleType) {
-      const since = loadAnchor("steps") ?? new Date(Date.now() - 7 * 864e5).toISOString();
-      const result = await mod.CapacitorHealthkit.queryHKitSampleType({
-        sampleName: "stepCount",
-        startDate: since,
-        endDate: new Date().toISOString(),
-        limit: 100,
-      });
-      // Shape varies by plugin version; normalize defensively.
-      const raw = (result as { resultData?: unknown[] })?.resultData ?? [];
-      samples = (raw as Array<Record<string, unknown>>).map((r, i) => ({
-        type: "steps",
-        value: r.value ?? r.quantity ?? null,
-        startDate: r.startDate ?? r.startDateString ?? null,
-        endDate: r.endDate ?? r.endDateString ?? null,
-        sourceApp: r.sourceName ?? r.sourceBundleId ?? null,
-        id: r.uuid ?? `step_${i}`,
-      }));
-      saveAnchor("steps", new Date().toISOString());
-    }
+    const since = loadAnchor("steps") ?? new Date(Date.now() - 7 * 864e5).toISOString();
+    const result = await ViaConnectHealthKit.queryHKitSampleType({
+      sampleName: "stepCount",
+      startDate: since,
+      endDate: new Date().toISOString(),
+      limit: 100,
+    });
+    samples = normalizeStepSamples(result.resultData);
+    saveAnchor("steps", new Date().toISOString());
   } catch (err) {
     safeLog.warn(SCOPE, "sample query failed (sending handshake batch)", { error: err });
   }

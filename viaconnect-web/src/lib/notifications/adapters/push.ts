@@ -6,6 +6,7 @@
 // retrieval, and invalid-token pruning helpers.
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { mergeDeviceTokens, type StoredDeviceToken } from "@/lib/native/device-tokens";
 
 export interface WebPushSubscription {
   endpoint: string;
@@ -62,6 +63,48 @@ export async function addSubscription(practitionerId: string, sub: WebPushSubscr
     practitioner_id: practitionerId,
     push_subscriptions: next,
   });
+  return !error;
+}
+
+type CredentialTokenRow = {
+  fcm_device_tokens?: unknown;
+  apns_device_tokens?: unknown;
+};
+
+/**
+ * Stores an APNs or FCM device token on the existing
+ * notification_channel_credentials row. Does not send a notification.
+ * practitioner_id is the auth user id on that table.
+ */
+export async function addNativeDeviceToken(userId: string, next: StoredDeviceToken): Promise<boolean> {
+  const admin = createAdminClient();
+  const { data: existing, error: readError } = await admin
+    .from("notification_channel_credentials")
+    .select("fcm_device_tokens, apns_device_tokens")
+    .eq("practitioner_id", userId)
+    .maybeSingle();
+  if (readError) return false;
+
+  const row = (existing ?? null) as CredentialTokenRow | null;
+  const column = next.platform === "ios" ? "apns_device_tokens" : "fcm_device_tokens";
+  const current = next.platform === "ios" ? row?.apns_device_tokens : row?.fcm_device_tokens;
+  const merged = mergeDeviceTokens(current, next);
+
+  if (row) {
+    const patch = column === "apns_device_tokens"
+      ? { apns_device_tokens: merged, updated_at: new Date().toISOString() }
+      : { fcm_device_tokens: merged, updated_at: new Date().toISOString() };
+    const { error } = await admin
+      .from("notification_channel_credentials")
+      .update(patch)
+      .eq("practitioner_id", userId);
+    return !error;
+  }
+
+  const insert = column === "apns_device_tokens"
+    ? { practitioner_id: userId, apns_device_tokens: merged }
+    : { practitioner_id: userId, fcm_device_tokens: merged };
+  const { error } = await admin.from("notification_channel_credentials").insert(insert);
   return !error;
 }
 

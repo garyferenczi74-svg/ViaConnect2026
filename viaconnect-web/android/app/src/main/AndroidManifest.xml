@@ -36,6 +36,10 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Android 13+ notification prompt. Play User Data: requested only after the in-app explanation. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- BiometricPrompt. Normal permission. Play User Data: app lock is user opt-in. -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
 
     <!-- Camera is preferred but not required so the app remains installable
          on devices without a camera. -->
