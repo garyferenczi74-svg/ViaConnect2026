@@ -13,7 +13,7 @@ This follows the merged Capacitor 8.5.2 upgrade (`docs/store-launch/capacitor-8-
 | Android FormaVision depth | **Wired.** `MainActivity` registers `FormaVisionDepthPlugin`. The app module applies `kotlin-android` and depends on `com.google.ar:core:1.44.0`. | `:app:compileDebugKotlin` and `:app:compileDebugJavaWithJavac` succeeded with that dependency. The version is the one named in `FormaVisionDepthPlugin.kt`. Maven also has later 1.x releases (up to 1.56.0 on 2026-10-03). Those were not tried. |
 | iOS FormaVision depth | **Left out of the Xcode target.** `FormaVisionDepthPlugin.swift` and `FormaVisionDepthPluginBridge.m` are not in `project.pbxproj`. | The task said not to add the Swift file. Nothing else in the iOS target references it. |
 | `ITSAppUsesNonExemptEncryption` | **Omitted.** | The value must be boolean. This change does not guess it. The Expo app sets `false` in `viaconnect-mobile/app.config.ts`. That is a different codebase and is not counsel's answer for this shell. |
-| HealthKit entitlement | **Kept.** | Sync was not run on a device, so the entitlement was not removed. |
+| HealthKit entitlement | **Kept. Decision, 2026-10-02.** | Gary decided the first release depends on Apple Health data. The entitlement stays on. On-device HealthKit behavior is still **UNVERIFIED**. |
 | `android:allowBackup` | **`false`**, with backup rules that exclude app storage from cloud backup and device-to-device transfer. | Health data can land in WebView storage. See the backup section. |
 | Photo library purpose string | **Added.** | Native meal upload calls Capacitor Camera with the photo-library source, and that plugin requests photo-library authorization. |
 | Location purpose string | **Removed.** | No location API is called. The old string said the app does not use location. |
@@ -171,10 +171,10 @@ Photo library use:
 
 `NSHealthShareUsageDescription` and `NSHealthUpdateUsageDescription`
 
-- Before: both said "ViaCura".
-- After: both say "ViaConnect". The rest of each sentence is unchanged.
+- Before this HealthKit pass: both said "ViaConnect". The share string said the app reads heart rate, HRV, sleep, steps, and body composition to personalize the Bio Optimization Score, and that health data is never used for advertising. The update string said ViaConnect does not write health samples and that the key exists for plugin compatibility.
+- After: the share string is the draft below. `NSHealthUpdateUsageDescription` is removed. Both edits are **DRAFT, pending Lex/Gary approval**.
 
-The share string still says the app reads heart rate, HRV, sleep, steps, and body composition to personalize the Bio Optimization Score, and that health data is not used for advertising. `src/lib/wearables/health-client.ts` `requestAuthorization` also asks for resting heart rate, respiratory rate, oxygen saturation, active energy, body mass, body fat percentage, and lean body mass, with `write: []`. Whether every read changes the Bio Optimization Score was not re-proven here. The update string says ViaConnect does not write Apple Health samples and that the key exists for the health plugin. `src/lib/formavision/health/healthBridge.ts` describes `@perfood/capacitor-healthkit` 1.3.2 as read-only. Writes were not tried on a device. **UNVERIFIED.**
+The old share sentence is wider than the only HealthKit query in the app, and it names a Bio Optimization Score effect that `health-client.ts` does not implement. The old update sentence is the wrong place to disclose a write the app does not perform. See the inventory below.
 
 `NSMotionUsageDescription` was not edited. It still says motion is used to stabilize the body-scan camera and is not transmitted. `ScanExperience.tsx` calls `DeviceOrientationEvent.requestPermission` on the body-scan start tap. The orientation-unavailable `LevelBubble` in that file is passed `beta={0}` and `gamma={0}`. A full trace of live tilt values was not done. **UNVERIFIED** whether the current sentence matches what the scan does with motion.
 
@@ -187,7 +187,128 @@ The share string still says the app reads heart rate, HRV, sleep, steps, and bod
 - `com.apple.developer.healthkit` = true
 - `com.apple.developer.healthkit.access` = empty array
 
-HealthKit sync was not run on a device. The entitlement stays. **UNVERIFIED.** Gary decides whether to keep it after a device check or remove it.
+Gary decided on 2026-10-02 that the first release depends on Apple Health data, so this entitlement stays **on**. That is a product decision. It is not a device test. Authorization and sample reads were not run on an iPhone. **UNVERIFIED** on device.
+
+The entitlement turns the HealthKit capability on. It does not list quantity or category types. The empty `healthkit.access` array does not declare clinical-record types. Individual sample types are requested at runtime, if the native plugin maps them.
+
+## HealthKit data types
+
+Checked 2026-10-03 against `viaconnect-web` TypeScript, `@perfood/capacitor-healthkit` 1.3.2 (the copy in `node_modules`), `ios/App/App/App.entitlements`, and `ios/App/App/Info.plist`. No Swift, Java, or Kotlin file under `ios/` or `android/` calls `HKHealthStore` or Health Connect. The only native HealthKit calls are inside the npm package.
+
+### Read authorization requested in app code
+
+`src/lib/wearables/health-client.ts` `requestHealthPermissions` calls `requestAuthorization` with `write: []` and `all: []`, and this `read` list (lines 45-57). `src/components/body-tracker/HumeSetupFlow.tsx` `grantPermissions` (line 33) is the caller. This path is not behind `native_health_bridge`.
+
+| String passed | HealthKit type it names |
+|---|---|
+| `HKQuantityTypeIdentifierHeartRate` | heart rate |
+| `HKQuantityTypeIdentifierRestingHeartRate` | resting heart rate |
+| `HKQuantityTypeIdentifierHeartRateVariabilitySDNN` | heart rate variability (SDNN) |
+| `HKCategoryTypeIdentifierSleepAnalysis` | sleep analysis |
+| `HKQuantityTypeIdentifierRespiratoryRate` | respiratory rate |
+| `HKQuantityTypeIdentifierOxygenSaturation` | oxygen saturation |
+| `HKQuantityTypeIdentifierStepCount` | step count |
+| `HKQuantityTypeIdentifierActiveEnergyBurned` | active energy |
+| `HKQuantityTypeIdentifierBodyMass` | body mass |
+| `HKQuantityTypeIdentifierBodyFatPercentage` | body fat percentage |
+| `HKQuantityTypeIdentifierLeanBodyMass` | lean body mass |
+
+The plugin does not map those strings. `CapacitorHealthkitPlugin.swift` `getTypes` (lines 84-129) accepts short names such as `heartRate`, `steps`, and `weight`. It has no case for an `HKQuantityTypeIdentifier…` or `HKCategoryTypeIdentifier…` string, and no case for heart-rate variability or lean body mass. `requestAuthorization` (lines 520-523) builds the HealthKit set from `getTypes`. For this read list the native read set is empty. That is what the plugin source does. It was not observed on a device. **UNVERIFIED.**
+
+### Sample actually queried
+
+`syncHealthSamples` in the same file (lines 100-104) calls `queryHKitSampleType` with `sampleName: "stepCount"`, a 7-day anchor when none is stored, and `limit: 100`. `getSampleType` maps `stepCount` to `HKQuantityTypeIdentifier.stepCount` (plugin Swift lines 39-40). No other sample name is queried. Returned rows are posted to `POST /api/integrations/health-sync` with `source: "health_kit"`. `HumeSetupFlow.tsx` `firstSync` (line 51) is the caller.
+
+### Write
+
+No HealthKit sample is saved.
+
+`src/lib/formavision/health/healthBridge.ts` `IosHealthBridge.requestWritePermissions` (lines 177-180) calls `requestAuthorization` with `read: []` and `write: [SampleNames.WEIGHT, SampleNames.BODY_FAT]`. Those plugin names are `weight` and `bodyFat`, which `getTypes` maps to body mass and body fat percentage. The following comment mentions lean body mass and does not pass it. `writeBodyComposition` (lines 225-227) throws. The plugin Swift file has no `HKHealthStore.save`.
+
+`syncHealthData` in `healthSync.ts` (line 249) returns before that bridge when `native_health_bridge` is off. The flag defaults to false (`src/lib/config/feature-flags.ts` lines 45-48). A search of `src/**/*.{ts,tsx}` found no screen that imports `syncHealthData`. The only calls are in `src/lib/formavision/health/__tests__/healthSync.test.ts`.
+
+`checkGrants` (lines 202-206) calls `isEditionAuthorized` for `weight`, `bodyFat`, and the string `leanBodyMass`. The plugin rejects `leanBodyMass` (`getSampleType` default, lines 79-80). That call checks sharing authorization. It does not write a sample.
+
+### Declared, not requested as a HealthKit type list
+
+| Place | What it declares |
+|---|---|
+| `App.entitlements` | HealthKit capability on. `healthkit.access` is an empty array. No quantity types. No clinical records. |
+| `Info.plist` `NSHealthShareUsageDescription` | Purpose string only. It is not the type list Apple shows from `requestAuthorization`. |
+| `Info.plist` | `NSHealthUpdateUsageDescription` removed in this change. See the draft below. |
+| `src/lib/integrations/appRegistry.ts` | Catalog copy lists Steps, Workouts, Sleep, HRV, and Heart Rate for `apple_health`. That array is not a HealthKit request. |
+| `src/lib/body-tracker/connected-sources/apple-health-xml.ts` | Parses an export file the user uploads. It is not an `HKHealthStore` read. Body mass, body fat percentage, lean body mass, and BMI are always mapped (lines 7-11). Sleep, step count, active energy, HRV, and resting heart rate are mapped only when wearable PHI consent is on (lines 14-19). The zip branch of `src/app/api/body-tracker/connected-sources/apple-health/parse/route.ts` (lines 39-44 and 207) keeps only the four body types. |
+
+### Proposed minimum for launch
+
+**Proposal only. Not implemented. Lex/Gary have not approved it.**
+
+Apple rejects a HealthKit request that asks for types the app does not use. The only HealthKit sample this app queries is step count. The proposed launch set is:
+
+- Read: step count (`HKQuantityTypeIdentifierStepCount`) only.
+- Write: none.
+
+Do not request heart rate, resting heart rate, HRV, sleep, respiratory rate, oxygen saturation, active energy, body mass, body fat percentage, or lean body mass until a caller queries them. The uploaded Apple Health export stays a file import. It does not need those types on the HealthKit permission sheet.
+
+The JS read list above is wider than this proposal. This change does not edit that list.
+
+## Draft HealthKit purpose strings
+
+**DRAFT for Lex/Gary. Not an approved App Store string.** The share string is in `Info.plist` so the binary is not left on the old Bio Optimization Score sentence. The comment in that file says approval is still pending.
+
+`NSHealthShareUsageDescription` (in `Info.plist` now):
+
+> ViaConnect reads your step count from Apple Health when you choose to connect it, and stores that activity with your account. This data is not used for advertising.
+
+That sentence matches the only query. It does not mention the Bio Optimization Score. `health-client.ts` does not apply steps to that score. "Not used for advertising" matches this path: the health client, `POST /api/integrations/health-sync`, and the Apple Health XML parser do not call an ads SDK. Ads outside this repo are still **UNCONFIRMED** (`privacy-answers.md` item 21).
+
+`NSHealthUpdateUsageDescription` should be **omitted**. This build does not write an Apple Health sample. The key was removed from `Info.plist` for that reason.
+
+Before any build calls `IosHealthBridge.requestWritePermissions`, review that write list. It asks for body mass and body fat percentage, and `writeBodyComposition` still throws. If that request stays, put the update key back only with wording Lex/Gary approve. A draft for that case, not in the plist:
+
+> ViaConnect asks to save your body weight and body-fat percentage in Apple Health after a body scan. This version does not save those samples.
+
+## HealthKit plugin risk
+
+`package.json` depends on `@perfood/capacitor-healthkit` `^1.3.2` and `capacitor-health-connect` `^0.7.0`. This change does not edit `package.json` or the lockfile, and it does not add a plugin.
+
+npm registry, queried 2026-10-03:
+
+| Package | Latest version on npm | Published | `peerDependencies` |
+|---|---|---|---|
+| `@perfood/capacitor-healthkit` | 1.3.2 (stable). Also 2.0.0-alpha.0, alpha.1, alpha.2 | 1.3.2 on 2025-02-13. alpha.2 on 2023-10-11. Package `modified` 2025-02-13 | 1.3.2: `@capacitor/core` `^4.0.0`. alpha.2: `^5.0.0` |
+| `capacitor-health-connect` | 0.7.0 | 2024-08-29. Package `modified` 2024-08-29 | `@capacitor/core` `^5.0.0` |
+
+There is no `@perfood/capacitor-healthkit` version whose peer is Capacitor 6, 7, or 8. npm does not mark a package maintained or abandoned. The version list is the record: the 2.0.0 alpha line stopped on 2023-10-11, and 1.3.2 on 2025-02-13 is the newest publish.
+
+The published 1.3.2 tarball has `PerfoodCapacitorHealthkit.podspec` and `ios/Plugin/`. It has no `Package.swift`. `ios/App/Podfile` already has `pod 'PerfoodCapacitorHealthkit'`. `pod install` and `xcodebuild` were not run. This machine has no `pod` and no `xcodebuild`. Whether 1.3.2 compiles against Capacitor 8 on iOS is **UNVERIFIED**.
+
+`capacitor-health-connect` 0.7.0 did compile: `:capacitor-health-connect:compileDebugKotlin` completed inside `:app:assembleDebug` after the Kotlin alignment in this branch. That is Android. It is not a HealthKit result. Health Connect stays off unless `NEXT_PUBLIC_HEALTH_CONNECT_ENABLED` is `1` and the server `HEALTH_CONNECT_ENABLED` is `1`.
+
+Other npm packages, same query. Not installed. Peers are from `npm view`:
+
+| Package | Version | Published | Peer `@capacitor/core` |
+|---|---|---|---|
+| `@capgo/capacitor-health` | 8.11.4 | 2026-09-22 | `>=8.0.0` |
+| `capacitor-health` | 8.4.0 | 2026-09-23 | `>=8.0.0` |
+| `@capacitor/health-fitness` | 1.0.1 | 2026-08-19 | `>=8.0.0` |
+| `@flomentumsolutions/capacitor-health-extended` | 0.8.3 | 2026-02-05 | `>=8.0.0` |
+| `@devmaxime/capacitor-healthkit` | 1.1.4 | 2025-10-30 | `^7.0.0` |
+| `@johnjasonhudson/capacitor-healthkit` | 1.3.0 | 2025-03-07 | `^7.0.1` |
+| `@followathletics/capacitor-healthkit` | 1.3.7 | 2024-11-27 | `^6.0.0` |
+| `@hassankbrian/capacitor-healthkit` | 1.3.7 | 2025-12-09 | `^4.0.0` |
+
+`@followathletics/capacitor-healthkit` and `@hassankbrian/capacitor-healthkit` list `github.com/perfood/capacitor-healthkit` as their repository URL on npm. Their peers are not Capacitor 8.
+
+### Options
+
+None of these are implemented.
+
+1. **Keep 1.3.2 and Health Connect 0.7.0.** No package change. Android Health Connect already compiled on this branch. The iOS pod is declared and was not built. The app's read strings do not match `getTypes`, so the permission call does not ask for the 11 types the JS names. The plugin cannot request HRV or lean body mass at all. Effort to stay: none. Effort to make the current plugin request step count: a small JS change from the HK identifier to the plugin name `steps`, still on a Capacitor 4 peer, still unverified on device.
+2. **Move to a Capacitor 8 package from the table above.** `@capgo/capacitor-health` 8.11.4, `capacitor-health` 8.4.0, and `@capacitor/health-fitness` 1.0.1 all peer `@capacitor/core` `>=8.0.0` and were published in 2026. This needs a `package.json` and lockfile change, a new Podfile entry, and a rewrite of `health-client.ts` to that plugin's API. Out of scope for this PR. Their read and write surfaces were not audited type by type.
+3. **Small in-repo Swift plugin, read-only, step count only.** A Capacitor plugin in this repo that calls `HKHealthStore` for `HKQuantityTypeIdentifierStepCount` and does not request write. No new npm package. The permission sheet can match the proposed minimum. Android Health Connect stays on 0.7.0 and behind its flag. Effort is one Swift plugin, its registration, and a thin TypeScript wrapper, then a device test. The other 10 JS read types stay unused until someone adds them on purpose.
+
+**Recommendation: option 3.** The first release depends on Apple Health, and the only sample the app queries is step count. Option 1 does not map the current read list and has no Capacitor 8 release. Option 2 is a new dependency this PR is not allowed to add, and it would be the wrong first step if launch only needs steps. If the launch set grows past step count, revisit option 2 and rewrite the purpose string before submitting. Do not ship the 11-type JS list as the permission request.
 
 ### What was not built on iOS
 
@@ -208,8 +329,8 @@ An Xcode 26 archive, a physical iPhone, and a physical Android device were **not
 ## Decisions for Gary
 
 1. **Export compliance (A21).** Choose the boolean for `ITSAppUsesNonExemptEncryption` with counsel, then add the key to `ios/App/App/Info.plist`. This branch does not set it. The Expo config's `false` is not that decision.
-2. **HealthKit entitlement (A10).** Keep it only if a device shows HealthKit reads working. This branch could not do that, so the entitlement is unchanged and marked **UNVERIFIED**.
-3. **Health purpose strings.** Confirm the Bio Optimization Score sentence, and whether the share string should list the extra types `health-client.ts` requests. Confirm the "does not write" sentence still matches the plugin you ship.
+2. **HealthKit entitlement (A10).** Decided on 2026-10-02: keep it on. The first release depends on Apple Health data. On-device reads are still **UNVERIFIED**.
+3. **Health purpose strings.** Approve or replace the draft `NSHealthShareUsageDescription` in `Info.plist`. `NSHealthUpdateUsageDescription` is omitted because no Apple Health sample is saved. Approve that omission, or restore the key with the draft in the HealthKit section if the write request in `healthBridge.ts` will ship. The proposed read set is step count only. That proposal is not implemented.
 4. **Motion string.** Confirm or replace `NSMotionUsageDescription` before submission. It was not changed.
 5. **Camera string and barcodes.** Confirm the new camera and photo-library sentences. They do not mention barcode scanning, because no live camera barcode path was found. If a scanner is turned back on, the camera string has to say so.
 6. **Android depth.** The plugin compiles. It is **UNVERIFIED** on a device. ARCore 1.44.0 is the version named in the Kotlin file. Later ARCore versions were not tested. `captureDepth` still has the limitations written in that file, including `mainExecutor` on API 28 while minSdk is 26.
@@ -222,7 +343,8 @@ An Xcode 26 archive, a physical iPhone, and a physical Android device were **not
 
 - Xcode 26 archive and `pod install`
 - Install and launch on an iPhone or an Android device
-- HealthKit authorization and sample reads
+- HealthKit authorization and sample reads (entitlement stays on by the 2026-10-02 decision; not run on a device)
+- Whether `@perfood/capacitor-healthkit` 1.3.2's pod compiles against Capacitor 8 (`pod install` and `xcodebuild` were not run)
 - ARCore depth on a device that supports the Depth API
 - iOS behavior with `FormaVisionDepth` absent from the target (the JS catch path was not run on a phone)
 - Whether the motion and HealthKit purpose sentences match what a reviewer sees in use

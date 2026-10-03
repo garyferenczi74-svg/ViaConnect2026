@@ -123,11 +123,49 @@ Play requires this declaration for every app. Draft from the features in this re
 
 - The app has health features. Evidenced features: nutrition logging, body measurements, body-progress photos, labs and symptoms described in privacy policy section 4, genetic results, and advisor answers that use health context.
 - Category that matches shipped web features: nutrition and weight management (meal logging, body measurements, progress photos).
-- Activity and fitness, and sleep: the HealthKit client requests heart rate, HRV, sleep, respiratory rate, SpO2, steps, active energy, body mass, body fat, and lean mass (`src/lib/wearables/health-client.ts`). Flag `native_health_bridge` defaults to false. The HealthKit pod is not in the Podfile. Do not check these categories for the current native project until that flag and pod are confirmed. **UNCONFIRMED**.
+- Activity and fitness, and sleep: see **HealthKit disclosure** below. The live HealthKit query reads step count only. The JS read list names more types, and the installed plugin does not map those strings. Sleep is parsed from an uploaded Apple Health export when wearable PHI consent is on. It is not a HealthKit API read. On-device HealthKit is **UNVERIFIED**.
 - Health Connect: `isHealthConnectEnabled()` is true only when `NEXT_PUBLIC_HEALTH_CONNECT_ENABLED` is `1` (`src/lib/wearables/health-client.ts`). The audit (section 3.1 and G11) says Health Connect is not in the Android manifest. Draft answer for the current native project: Health Connect is not in the shipping manifest. The production env value is **UNCONFIRMED**.
 - Medical device: in-app strings say the information is educational and not a substitute for professional medical advice (`src/lib/jeffery/advisor-stream.ts`). Whether the app is a medical device is **UNCONFIRMED** and is a legal answer.
 - Medications are fields in advisor context and in the privacy policy's CAQ description. Whether that is Play's "medication and treatment management" category is **UNCONFIRMED**.
-- Apple HealthKit entitlement and usage strings exist on `Info.plist`. The strings say "ViaCura". The plugin is not linked. On-device HealthKit reads were not verified (audit section 10). **UNCONFIRMED**.
+- Apple HealthKit entitlement stays on. Gary decided on 2026-10-02 that the first release depends on Apple Health data. `NSHealthShareUsageDescription` is a draft pending Lex/Gary approval. `NSHealthUpdateUsageDescription` is omitted. The HealthKit pod is in `ios/App/Podfile`. `pod install` was not run, so the Xcode link is **UNCONFIRMED**. On-device reads were not verified.
+
+## HealthKit disclosure
+
+DRAFT for the privacy forms. Gary decided on 2026-10-02 that the first release depends on Apple Health data, so `com.apple.developer.healthkit` stays true. On-device authorization and reads were not run. **UNVERIFIED.**
+
+This section uses only what the code does. The type inventory and the proposed minimum (step count only, no write) are in `docs/store-launch/native-projects-fixes.md`. That minimum is a proposal. It is not what the JS read array contains today.
+
+### Collected through the HealthKit API
+
+`src/lib/wearables/health-client.ts` `syncHealthSamples` queries one sample name, `stepCount`, and posts the rows to `POST /api/integrations/health-sync`. That route stores them in `wearable_events` with the signed-in `user_id` when the batch is not empty. Empty batches do not mark the source connected.
+
+The same file's `requestAuthorization` `read` array also names heart rate, resting heart rate, heart rate variability (SDNN), sleep analysis, respiratory rate, oxygen saturation, active energy, body mass, body fat percentage, and lean body mass, with `write: []`. `@perfood/capacitor-healthkit` 1.3.2 `getTypes` does not match those identifier strings, so that call does not add them to the native HealthKit set. They are not queried. Do not declare them as collected by the HealthKit API unless a device build shows otherwise. **UNCONFIRMED** on device.
+
+No Apple Health sample is written. `IosHealthBridge.writeBodyComposition` throws. `NSHealthUpdateUsageDescription` is omitted. See the native-projects note for the unused write-authorization call.
+
+`App.entitlements` `com.apple.developer.healthkit.access` is an empty array. Clinical health records are not declared.
+
+### Collected from an uploaded Apple Health export
+
+This is a file the user uploads. It is not an `HKHealthStore` read.
+
+`src/lib/body-tracker/connected-sources/apple-health-xml.ts` always maps body mass, body fat percentage, lean body mass, and BMI. When wearable PHI consent is on, it also maps sleep analysis, step count, active energy, heart rate variability (SDNN), and resting heart rate. The zip branch of `src/app/api/body-tracker/connected-sources/apple-health/parse/route.ts` keeps only the four body types.
+
+### Form answers this code supports
+
+| Question | Answer from this code | Limit |
+|---|---|---|
+| Health and fitness data | Step count, if the HealthKit query returns samples and the user is signed in | Device read **UNVERIFIED**. The wider JS read list is not mapped by the plugin |
+| Body measurements | Weight, body fat, lean mass, and BMI from an uploaded export | File import, not the HealthKit permission sheet |
+| Sleep, HRV, resting heart rate, active energy from Apple Health | Only from that export file, and only with wearable PHI consent | Not queried through HealthKit |
+| Purpose | Store the step batch on the account. The export path feeds body-composition ingest (`persistRecordsAndBosContributor`) | `health-client.ts` does not apply the step batch to the Bio Optimization Score. Whether processing later changes that score is **UNCONFIRMED** |
+| Linked to the user | Yes for a non-empty health-sync batch (`user_id` on `wearable_events`) | — |
+| Used for tracking | No tracking call was found on this path | — |
+| Used for advertising | No ads call was found in the health client, the health-sync route, or the Apple Health XML parser | Ads outside this repo remain **UNCONFIRMED** (item 21) |
+| Third parties | Stored through the app API in Supabase | Whether those rows are later sent to an AI vendor is **UNCONFIRMED** |
+| Product personalization | Do not claim the live HealthKit read personalizes the Bio Optimization Score | The old purpose string said that. The code path above does not |
+
+`NSHealthShareUsageDescription` in `Info.plist` is the draft sentence in `native-projects-fixes.md`. It is pending Lex/Gary approval.
 
 ## (d) Content rating (IARC) inputs
 
@@ -170,11 +208,11 @@ Support URL: no `src/app/support` page and no `/support` redirect were found in 
 
 1. **UNCONFIRMED** archive result for `PrivacyInfo.xcprivacy` on a Mac. The file is in the App Resources phase. Xcode was not run here.
 2. **UNCONFIRMED** required-reason symbols inside Apple system frameworks (WebKit) after a real archive. App and plugin sources reviewed above do not call UserDefaults, file timestamp, system boot time, or disk space, so those APIs are not declared.
-3. **UNCONFIRMED** after a future `cap sync`. Camera, speech recognition, and HealthKit are in `package.json` and are absent from `ios/App/Podfile`. Their current sources did not show the four required-reason APIs. Re-grep before declaring anything if those pods are added. VIA-8. This change does not sync them.
+3. **UNCONFIRMED** iOS archive after `pod install`. Camera, speech recognition, and HealthKit are in `ios/App/Podfile` (Capacitor 8 upgrade, PR #259). `pod install` was not run on this branch. Re-grep the archived binary before declaring required-reason APIs. HealthKit collection is in the HealthKit disclosure section.
 4. **UNCONFIRMED** Camera EXIF GPS. Camera 6.1.3 copies a GPS metadata dictionary when the asset has one. The plugin is not in the Podfile. Whether body or meal uploads keep GPS is not proven. Precise Location is not declared.
 5. **UNCONFIRMED** whether profile city, subdivision, and country should be a separate Coarse Location answer in addition to Physical Address.
 6. **UNCONFIRMED** whether name is required at signup. Phone is optional in the profile save payload.
-7. **UNCONFIRMED** Fitness as its own data type. HealthKit read types exist in `health-client.ts`. `native_health_bridge` defaults to false. The pod is not linked. Audit section 10 did not verify on-device HealthKit reads.
+7. **UNCONFIRMED** Fitness as its own data type on a device. The only HealthKit query is step count (`health-client.ts`). `native_health_bridge` still defaults to false and gates the write bridge, not that read. The pod is in the Podfile and was not installed here. Audit section 10 did not verify on-device HealthKit reads. See the HealthKit disclosure section.
 8. **UNCONFIRMED** production value of `NEXT_PUBLIC_HEALTH_CONNECT_ENABLED`. Default path in code is off unless the env var is `1`.
 9. **UNCONFIRMED** whether genetic data is sent to Anthropic, Tavus, Gemini, or Google Vision. It was not found in `advisor-context-builder.ts`. Audit section 5 marked AI vendors for genetic data as "to confirm".
 10. **UNCONFIRMED** Tavus in production. Avatar flags default to false. The client can send `conversational_context` when a session is created.

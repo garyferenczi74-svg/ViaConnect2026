@@ -74,10 +74,9 @@
 	<string>ViaConnect uses your photo library so you can choose an existing meal photo, body-progress photo, or supplement label. The photo is uploaded only after you choose to save it.</string>
 	<key>NSMotionUsageDescription</key>
 	<string>ViaConnect uses device motion to stabilize the body scan camera view for more accurate measurements. Motion data is processed on-device and not transmitted.</string>
-	<!-- Prompt 212: HealthKit wearable reads (WHOOP companion path + Hume via Apple Health) -->
+	<!-- DRAFT pending Lex/Gary approval. See docs/store-launch/native-projects-fixes.md.
+	     NSHealthUpdateUsageDescription is omitted: this build does not save Apple Health samples. -->
 	<key>NSHealthShareUsageDescription</key>
-	<string>ViaConnect reads heart rate, HRV, sleep, steps, and body composition from Apple Health to personalize your Bio Optimization Score. Health data is never used for advertising.</string>
-	<key>NSHealthUpdateUsageDescription</key>
-	<string>ViaConnect does not write health samples to Apple Health. This permission is listed only for compatibility with the health plugin.</string>
+	<string>ViaConnect reads your step count from Apple Health when you choose to connect it, and stores that activity with your account. This data is not used for advertising.</string>
 </dict>
 </plist>
