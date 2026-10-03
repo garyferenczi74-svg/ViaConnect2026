@@ -63,8 +63,8 @@ export const INTERSTITIALS: InterstitialConfig[] = [
   },
   {
     id: "privacy",
-    quote: "Your data stays yours. Always encrypted. Never sold.",
-    subtext: "HIPAA compliant \u00b7 SOC2 certified \u00b7 End-to-end encryption",
+    quote: "Your data stays yours. Encrypted in transit. Never sold.",
+    subtext: "Private and secure \u00b7 Encrypted in transit \u00b7 Access controls",
     background: {
       type: "video",
       src: INTERSTITIAL_VIDEO_URL,

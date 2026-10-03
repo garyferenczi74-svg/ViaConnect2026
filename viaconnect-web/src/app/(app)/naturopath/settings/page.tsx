@@ -91,7 +91,7 @@ export default function SettingsPage() {
     "Full botanical database access",
     "Constitutional assessment tools",
     "Custom formula builder",
-    "HIPAA compliance dashboard",
+    "Compliance and security dashboard",
     "Priority support",
     "ViaConnect AI clinical insights",
     "Dispensary integration",

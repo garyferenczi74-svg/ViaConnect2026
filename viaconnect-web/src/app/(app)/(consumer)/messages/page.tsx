@@ -181,7 +181,7 @@ export default function MessagesPage() {
       <StaggerChild className="mb-6">
         <h1 className="text-2xl font-bold text-white">Secure Messaging</h1>
         <p className="text-gray-400 text-sm mt-1">
-          HIPAA-compliant communication with your practitioner
+          Private and secure communication with your practitioner
         </p>
       </StaggerChild>
 

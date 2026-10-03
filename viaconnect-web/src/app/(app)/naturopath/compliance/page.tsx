@@ -50,7 +50,7 @@ const auditData: AuditEntry[] = [
   { timestamp: "2026-03-21 08:47 AM", action: "Protocol Change", resource: "Adrenal Recovery Protocol", user: "Dr. Thompson", ip: "192.168.1.45", status: "success" },
   { timestamp: "2026-03-20 04:32 PM", action: "Formula Export", resource: "Liver Support Tincture", user: "Dr. Thompson", ip: "192.168.1.45", status: "success" },
   { timestamp: "2026-03-20 02:15 PM", action: "Record Access", resource: "Patient #1038 — Marcus Chen", user: "Dr. Thompson", ip: "192.168.1.45", status: "success" },
-  { timestamp: "2026-03-20 02:10 PM", action: "Consent Update", resource: "HIPAA Authorization — Marcus Chen", user: "System", ip: "10.0.0.1", status: "success" },
+  { timestamp: "2026-03-20 02:10 PM", action: "Consent Update", resource: "Privacy Authorization — Marcus Chen", user: "System", ip: "10.0.0.1", status: "success" },
   { timestamp: "2026-03-19 11:30 AM", action: "Login", resource: "Web Portal", user: "Dr. Thompson", ip: "73.42.118.206", status: "warning" },
   { timestamp: "2026-03-19 09:00 AM", action: "Record Access", resource: "Patient #1035 — Priya Patel", user: "Dr. Thompson", ip: "192.168.1.45", status: "success" },
   { timestamp: "2026-03-18 03:45 PM", action: "Formula Export", resource: "Nervine Calm Blend", user: "Dr. Thompson", ip: "192.168.1.45", status: "success" },
@@ -59,19 +59,19 @@ const auditData: AuditEntry[] = [
 ];
 
 const consentData: ConsentRecord[] = [
-  { patient: "Elena Vasquez", consentType: "HIPAA Auth", status: "Active", signedDate: "2026-01-15", expiryDate: "2027-01-15" },
+  { patient: "Elena Vasquez", consentType: "Privacy Auth", status: "Active", signedDate: "2026-01-15", expiryDate: "2027-01-15" },
   { patient: "Marcus Chen", consentType: "Treatment", status: "Active", signedDate: "2026-02-01", expiryDate: "2027-02-01" },
   { patient: "Sarah Kim", consentType: "Data Sharing", status: "Expired", signedDate: "2025-03-10", expiryDate: "2026-03-10" },
-  { patient: "James Wright", consentType: "HIPAA Auth", status: "Pending", signedDate: "", expiryDate: "" },
+  { patient: "James Wright", consentType: "Privacy Auth", status: "Pending", signedDate: "", expiryDate: "" },
   { patient: "Priya Patel", consentType: "Research", status: "Active", signedDate: "2026-01-20", expiryDate: "2027-01-20" },
   { patient: "Lisa Monroe", consentType: "Treatment", status: "Active", signedDate: "2025-12-05", expiryDate: "2026-12-05" },
-  { patient: "David Santos", consentType: "HIPAA Auth", status: "Active", signedDate: "2026-02-14", expiryDate: "2027-02-14" },
+  { patient: "David Santos", consentType: "Privacy Auth", status: "Active", signedDate: "2026-02-14", expiryDate: "2027-02-14" },
   { patient: "Karen O'Brien", consentType: "Data Sharing", status: "Expired", signedDate: "2025-03-20", expiryDate: "2026-03-20" },
 ];
 
 const initialActionItems: ActionItem[] = [
   { id: "1", label: "Review and update privacy policy", dueDate: "March 30, 2026", priority: "high", completed: false },
-  { id: "2", label: "Complete staff HIPAA training", dueDate: "April 15, 2026", priority: "medium", completed: false },
+  { id: "2", label: "Complete staff security training", dueDate: "April 15, 2026", priority: "medium", completed: false },
   { id: "3", label: "Update data breach response plan", dueDate: "March 10, 2026", priority: "high", completed: true },
   { id: "4", label: "Quarterly access review", dueDate: "March 14, 2026", priority: "medium", completed: true },
   { id: "5", label: "Renew 2 expiring patient consents", dueDate: "March 25, 2026", priority: "high", completed: false },
@@ -202,7 +202,7 @@ export default function CompliancePage() {
         {/* Header */}
         <StaggerChild className="mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-white">HIPAA Compliance Dashboard</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-white">Compliance & Security</h1>
             <p className="mt-1 text-gray-400">
               Monitor compliance status, audit logs, and patient consents
             </p>

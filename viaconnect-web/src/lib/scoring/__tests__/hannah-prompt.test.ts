@@ -142,6 +142,13 @@ describe('HANNAH_SYSTEM_PROMPT brand and tone', () => {
     expect(lower).toContain('educational');
   });
 
+  it('forbids HIPAA-aware and SOC 2 framing in user-facing explanations', () => {
+    expect(HANNAH_SYSTEM_PROMPT).not.toContain('Use HIPAA-aware framing only');
+    expect(HANNAH_SYSTEM_PROMPT).toContain('Do not mention HIPAA');
+    expect(HANNAH_SYSTEM_PROMPT).toContain('or end-to-end encryption');
+    expect(HANNAH_SYSTEM_PROMPT).toContain('encrypted in transit, with access controls');
+  });
+
   it('specifies single forced tool call output', () => {
     expect(HANNAH_SYSTEM_PROMPT).toContain('report_bos_compute');
   });
