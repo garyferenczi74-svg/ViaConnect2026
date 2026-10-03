@@ -1,5 +1,4 @@
 apply plugin: 'com.android.application'
-apply plugin: 'kotlin-android'
 
 // Play upload signing. Values come from the environment or from a Gradle
 // property (for example ~/.gradle/gradle.properties or -P). Nothing in this
@@ -41,9 +40,6 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
-    kotlinOptions {
-        jvmTarget = '21'
-    }
     if (viaUploadSigningReady) {
         signingConfigs {
             release {
@@ -81,8 +77,6 @@ dependencies {
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')
-    // Version named in FormaVisionDepthPlugin.kt. Depth stays optional in the manifest.
-    implementation 'com.google.ar:core:1.44.0'
 }
 
 apply from: 'capacitor.build.gradle'

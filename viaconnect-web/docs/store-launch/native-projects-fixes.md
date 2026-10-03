@@ -10,8 +10,8 @@ This follows the merged Capacitor 8.5.2 upgrade (`docs/store-launch/capacitor-8-
 
 | Topic | Decision | Why |
 |---|---|---|
-| Android FormaVision depth | **Wired.** `MainActivity` registers `FormaVisionDepthPlugin`. The app module applies `kotlin-android` and depends on `com.google.ar:core:1.44.0`. | `:app:compileDebugKotlin` and `:app:compileDebugJavaWithJavac` succeeded with that dependency. The version is the one named in `FormaVisionDepthPlugin.kt`. Maven also has later 1.x releases (up to 1.56.0 on 2026-10-03). Those were not tried. |
-| iOS FormaVision depth | **Left out of the Xcode target.** `FormaVisionDepthPlugin.swift` and `FormaVisionDepthPluginBridge.m` are not in `project.pbxproj`. | The task said not to add the Swift file. Nothing else in the iOS target references it. |
+| Android FormaVision depth | **On hold.** Not registered, not compiled, ARCore not packaged. | Gary decided FormaVision will be rebuilt over the next few days. Depth capture returns with that rebuild. Plugin source stays on disk. |
+| iOS FormaVision depth | **On hold.** Still out of the Xcode target. | Same decision. `FormaVisionDepthPlugin.swift` and `FormaVisionDepthPluginBridge.m` stay on disk and stay out of `project.pbxproj`. |
 | `ITSAppUsesNonExemptEncryption` | **Omitted.** | The value must be boolean. This change does not guess it. The Expo app sets `false` in `viaconnect-mobile/app.config.ts`. That is a different codebase and is not counsel's answer for this shell. |
 | HealthKit entitlement | **Kept. Decision, 2026-10-02.** | Gary decided the first release depends on Apple Health data. The entitlement stays on. On-device HealthKit behavior is still **UNVERIFIED**. |
 | `android:allowBackup` | **`false`**, with backup rules that exclude app storage from cloud backup and device-to-device transfer. | Health data can land in WebView storage. See the backup section. |
@@ -34,21 +34,25 @@ Gradle-only alignment, no npm change:
 
 The Gradle cache for this build contains `kotlin-gradle-plugin` **2.2.20** jars and no 1.8.20 plugin jar. `:capacitor-health-connect:compileDebugKotlin` completed inside `:app:assembleDebug`.
 
-An earlier successful debug build, before the app module applied Kotlin, printed: "The Kotlin Gradle plugin was loaded multiple times in different subprojects" for `:capacitor-camera` and `:capacitor-health-connect`. The later `assembleDebug` log that also compiles the app plugin did not print that line. `--warning-mode all` was not run.
+The app module no longer applies `kotlin-android`. The root classpath no longer includes `kotlin-gradle-plugin`. Those existed only so `FormaVisionDepthPlugin.kt` could compile. Camera and Health Connect still apply Kotlin inside their own modules. The Health Connect alignment above is unchanged.
 
-### FormaVision on Android
+### FormaVision depth is on hold
 
-Before: `MainActivity.java` called `registerPlugin(FormaVisionDepthPlugin.class)`, the app module did not apply Kotlin, and `com.google.ar:core` was not a dependency. The Kotlin file was not compiled. The Capacitor 8 notes say a build with Health Connect removed then failed because `FormaVisionDepthPlugin` could not be found.
+Gary decided FormaVision will be rebuilt over the next few days. Depth capture (ARCore on Android, ARKit on iOS) is **on hold**. It returns with that rebuild. This branch does not wire it and does not ship it.
 
-After: the app module applies `kotlin-android` (plugin 2.2.20 on the root classpath), sets `kotlinOptions.jvmTarget = '21'` to match the app's Java 21 compile options, and adds `implementation 'com.google.ar:core:1.44.0'`. `MainActivity` still registers the plugin.
+Android, after the hold:
 
-`:app:compileDebugKotlin` and `:app:compileDebugJavaWithJavac` succeeded. `FormaVisionDepthPlugin.kt` was not edited. Its header still says **UNVERIFIED**. It still uses `context.mainExecutor` (API 28) while `minSdkVersion` is 26, and its own comment says `captureDepth` does a synchronous `session.update()`. Those are source limitations, not compile errors.
+- `MainActivity` does not call `registerPlugin(FormaVisionDepthPlugin.class)`.
+- `com.google.ar:core` is not an app dependency.
+- The app module does not apply `kotlin-android` and does not set `kotlinOptions`.
+- `FormaVisionDepthPlugin.kt` is still on disk and was not edited.
+- `AndroidManifest.xml` no longer has `com.google.ar.core` meta-data or `android.hardware.camera.ar`. Those two entries were the Prompt 210c depth booster. Camera permission and `android.hardware.camera` stay, because meal photos, body-progress photos, body scans, and supplement labels still use the camera.
 
-`assembleDebug` also printed: "Unable to strip the following libraries, packaging them as they are: libarcore_sdk_c.so, libarcore_sdk_jni.so, libimage_processing_util_jni.so, libsurface_util_jni.so." The NDK strip tool is not installed here. The libraries were packaged as shipped in the ARCore 1.44.0 AAR, including `armeabi-v7a`, `arm64-v8a`, `x86`, and `x86_64`.
+`:app:assembleDebug` after this hold: **BUILD SUCCESSFUL** (exit 0), run from `viaconnect-web/android` with `ANDROID_HOME=/opt/android-sdk` as `./gradlew :app:assembleDebug --offline`. `:capacitor-health-connect:compileDebugKotlin` still ran. The debug APK has no `libarcore_*.so` and no `FormaVisionDepth` class. `aapt dump xmltree` of that APK shows no `com.google.ar.core` and no `android.hardware.camera.ar`.
 
-The manifest already had `com.google.ar.core` = `optional` and `android.hardware.camera.ar` required = `false`. Those were not changed.
+`stripDebugDebugSymbols` still printed: "Unable to strip the following libraries, packaging them as they are: libimage_processing_util_jni.so, libsurface_util_jni.so." The NDK strip tool is not installed here. Those two are not ARCore.
 
-On-device depth (ARCore installed, depth supported, a real frame) was **not** run. **UNVERIFIED.**
+On-device depth is **deferred** with the FormaVision rebuild. It is not an open check for this PR.
 
 ### Backup
 
@@ -107,7 +111,7 @@ export ANDROID_HOME=/opt/android-sdk
 ./gradlew :app:assembleDebug
 ```
 
-Result: **BUILD SUCCESSFUL** (exit 0). Debug APK: `android/app/build/outputs/apk/debug/app-debug.apk` (about 27 MB). It is signed with the debug keystore, not a Play upload key.
+Result after the depth hold: **BUILD SUCCESSFUL** (exit 0), including a later `./gradlew :app:assembleDebug --offline` once ARCore and the app-module Kotlin plugin were removed. Debug APK: `android/app/build/outputs/apk/debug/app-debug.apk` (about 26 MB). It is signed with the debug keystore, not a Play upload key. The APK does not contain ARCore native libraries.
 
 `npx cap sync android` was run so the gitignored `android/capacitor-cordova-android-plugins` directory existed. It did not change tracked files. A clean checkout still needs `npx cap sync android` before Gradle, same as after the Capacitor 8 upgrade.
 
@@ -118,15 +122,15 @@ Result: **BUILD SUCCESSFUL** (exit 0). Debug APK: `android/app/build/outputs/apk
   app/build/outputs/apk/debug/app-debug.apk
 ```
 
-Exit 0. The last line was `Verification successful`. This is the debug APK only. A release AAB was not built, and this was not a device check.
+Exit 0, last line `Verification successful`, on the debug APK from before the depth hold and again on the APK built after ARCore was removed. This is the debug APK only. A release AAB was not built, and this was not a device check.
 
 ## iOS
 
 ### FormaVision
 
-`ios/App/App/FormaVisionDepthPlugin.swift` and `FormaVisionDepthPluginBridge.m` are still on disk. `project.pbxproj` does not list either file. This change does not add them. `AppDelegate.swift` does not reference them. The Swift file's own header still says **UNVERIFIED**.
+Depth on iOS is on hold with the Android plugin. `ios/App/App/FormaVisionDepthPlugin.swift` and `FormaVisionDepthPluginBridge.m` are still on disk. `project.pbxproj` does not list either file. This change does not add them. `AppDelegate.swift` does not reference them.
 
-`src/lib/arnold/scanning/depth/formaVisionDepth.ts` still calls `registerPlugin('FormaVisionDepth')`. `probeDepthCapability` and `captureDepthFrame` catch bridge failures and return false or null. That path was not executed on an iPhone. **UNVERIFIED.**
+`src/lib/arnold/scanning/depth/formaVisionDepth.ts` still calls `registerPlugin('FormaVisionDepth')`. `probeDepthCapability` and `captureDepthFrame` catch a missing bridge and return false or null. Device behavior of that catch is **deferred** with the FormaVision rebuild.
 
 ### Info.plist
 
@@ -333,11 +337,11 @@ An Xcode 26 archive, a physical iPhone, and a physical Android device were **not
 3. **Health purpose strings.** Approve or replace the draft `NSHealthShareUsageDescription` in `Info.plist`. `NSHealthUpdateUsageDescription` is omitted because no Apple Health sample is saved. Approve that omission, or restore the key with the draft in the HealthKit section if the write request in `healthBridge.ts` will ship. The proposed read set is step count only. That proposal is not implemented.
 4. **Motion string.** Confirm or replace `NSMotionUsageDescription` before submission. It was not changed.
 5. **Camera string and barcodes.** Confirm the new camera and photo-library sentences. They do not mention barcode scanning, because no live camera barcode path was found. If a scanner is turned back on, the camera string has to say so.
-6. **Android depth.** The plugin compiles. It is **UNVERIFIED** on a device. ARCore 1.44.0 is the version named in the Kotlin file. Later ARCore versions were not tested. `captureDepth` still has the limitations written in that file, including `mainExecutor` on API 28 while minSdk is 26.
-7. **iOS depth.** Still not in the Xcode target, still **UNVERIFIED**. Add it only after an Xcode 26 device build.
-8. **Play upload key (G5).** Create the upload keystore as above, enroll in Play App Signing, and set the four `VIA_UPLOAD_*` values outside the repo. Then run `bundleRelease`. `versionCode` is still 1 and `minifyEnabled` is still false.
-9. **Cross-platform Android backup.** Cloud backup and device transfer are excluded. Android 16 cross-platform transfer to iOS is not configured, because that block needs the Apple team id. Provide the team id if that mode should be turned off explicitly, or accept the gap.
-10. **16 KB pages.** `zipalign -c -P 16` succeeded on this debug APK. Re-check the signed release AAB. The debug package still contains ARCore `armeabi-v7a` libraries because they are inside the 1.44.0 AAR.
+6. **Play upload key (G5).** Create the upload keystore as above, enroll in Play App Signing, and set the four `VIA_UPLOAD_*` values outside the repo. Then run `bundleRelease`. `versionCode` is still 1 and `minifyEnabled` is still false.
+7. **Cross-platform Android backup.** Cloud backup and device transfer are excluded. Android 16 cross-platform transfer to iOS is not configured, because that block needs the Apple team id. Provide the team id if that mode should be turned off explicitly, or accept the gap.
+8. **16 KB pages.** `zipalign -c -P 16` succeeded on the debug APK built after ARCore was removed. Re-check the signed release AAB. That debug APK does not package `libarcore_*.so`.
+
+**Deferred with the FormaVision rebuild.** Android and iOS depth capture are on hold. Do not device-test ARCore or ARKit depth for this PR. `FormaVisionDepthPlugin.kt` stays on disk and is not in the debug APK. The Swift plugin stays out of the Xcode target. Wire both again only when the rebuild is ready.
 
 ## UNVERIFIED
 
@@ -345,9 +349,8 @@ An Xcode 26 archive, a physical iPhone, and a physical Android device were **not
 - Install and launch on an iPhone or an Android device
 - HealthKit authorization and sample reads (entitlement stays on by the 2026-10-02 decision; not run on a device)
 - Whether `@perfood/capacitor-healthkit` 1.3.2's pod compiles against Capacitor 8 (`pod install` and `xcodebuild` were not run)
-- ARCore depth on a device that supports the Depth API
-- iOS behavior with `FormaVisionDepth` absent from the target (the JS catch path was not run on a phone)
 - Whether the motion and HealthKit purpose sentences match what a reviewer sees in use
+- FormaVision depth (ARCore and ARKit) is **deferred**, not an open device check for this PR
 - Signed release AAB and Play App Signing enrollment
 - `zipalign` on a release AAB (the debug APK check did pass)
 - NDK symbol stripping (the strip tool was absent; libraries were packaged as-is)
