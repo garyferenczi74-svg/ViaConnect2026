@@ -13,10 +13,10 @@ function stripSqlComments(sql: string): string {
 }
 
 const credentialSql = read(
-  "supabase/migrations/20261003120000_practitioner_naturopath_credential.sql",
+  "supabase/migrations/20261003130000_practitioner_naturopath_credential.sql",
 );
 const vipSql = read(
-  "supabase/migrations/20261003120100_vip_sensitive_note_search_path.sql",
+  "supabase/migrations/20261003130100_vip_sensitive_note_search_path.sql",
 );
 const credentialBody = stripSqlComments(credentialSql);
 const vipBody = stripSqlComments(vipSql);
@@ -109,6 +109,12 @@ describe("encryption design docs", () => {
     expect(plan).toMatch(/covered-entity/i);
     expect(plan).toMatch(/\bBAA\b/);
     expect(plan).toMatch(/NOT APPLIED/);
+    expect(plan).toMatch(
+      /20261003130000_practitioner_naturopath_credential\.sql/,
+    );
+    expect(plan).toMatch(/20261003130100_vip_sensitive_note_search_path\.sql/);
+    expect(plan).not.toMatch(/20261003120000_practitioner_naturopath_credential/);
+    expect(plan).not.toMatch(/20261003120100_vip_sensitive_note_search_path/);
   });
 
   it("does not claim a regulatory certification or that encryption is end-to-end", () => {

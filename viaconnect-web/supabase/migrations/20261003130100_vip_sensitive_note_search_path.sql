@@ -2,7 +2,7 @@
 -- Encryption slice 1 (Gary 2026-10-03). NOT APPLIED by this change.
 -- Apply only after Gary approves.
 --
--- Apply order: AFTER 20261003120000_practitioner_naturopath_credential.sql.
+-- Apply order: AFTER 20261003130000_practitioner_naturopath_credential.sql.
 --
 -- Fixes the search_path gap in public.create_vip_sensitive_note.
 -- The previous body (20260421000008_vip_sensitive_note_encryption.sql) is

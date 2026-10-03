@@ -25,8 +25,8 @@ This document does not say the product meets a regulatory standard.
 
 | Item | Where | Applied? |
 |---|---|---|
-| Naturopath credential table and `profiles_role_check` widen | `supabase/migrations/20261003120000_practitioner_naturopath_credential.sql` | **No** |
-| VIP note function: schema-qualify `extensions.digest` and `extensions.pgp_sym_encrypt` | `supabase/migrations/20261003120100_vip_sensitive_note_search_path.sql` | **No** |
+| Naturopath credential table and `profiles_role_check` widen | `supabase/migrations/20261003130000_practitioner_naturopath_credential.sql` | **No** |
+| VIP note function: schema-qualify `extensions.digest` and `extensions.pgp_sym_encrypt` | `supabase/migrations/20261003130100_vip_sensitive_note_search_path.sql` | **No** |
 | Helper `isNaturopathCredentialedPractitioner` | `src/lib/auth/naturopath-credential.ts` | Code only. Portal opening is off unless `NATUROPATH_CREDENTIAL_PORTAL_ACCESS` is `true` or `1`, and then only when `verification_status` is `verified`. |
 | Per-session photo access | `docs/security/per-session-practitioner-photo-access.md` | Design only. Storage policies are not changed. |
 | KMS client, envelope code, key table | Not in this slice | No new npm packages. `package.json` stays locked. |
@@ -183,10 +183,12 @@ Plaintext that later slices may keep (blueprint **proposal**, not decided): ids,
 
 Do not apply these until Gary says so. Do not apply them from an agent, a cron route, or a production SQL session as part of merging this branch.
 
-1. `viaconnect-web/supabase/migrations/20261003120000_practitioner_naturopath_credential.sql`
-2. `viaconnect-web/supabase/migrations/20261003120100_vip_sensitive_note_search_path.sql`
+1. `viaconnect-web/supabase/migrations/20261003130000_practitioner_naturopath_credential.sql`
+2. `viaconnect-web/supabase/migrations/20261003130100_vip_sensitive_note_search_path.sql`
 
 They do not depend on each other. Apply in that filename order. Roll back in reverse order.
+
+Versions are `20261003130000` and `20261003130100` so they do not share a prefix with `20261003120000_via_10_ai_data_sharing_consent.sql`.
 
 Rollback notes are comments inside each file. Short version:
 

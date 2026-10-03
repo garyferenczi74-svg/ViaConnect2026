@@ -4,8 +4,10 @@
 -- from the app, CI, or an agent session.
 --
 -- Apply order: this file FIRST, then
---   20261003120100_vip_sensitive_note_search_path.sql
+--   20261003130100_vip_sensitive_note_search_path.sql
 -- The two files do not depend on each other. Filename order is the order.
+-- Version 20261003130000 avoids the prefix already used by
+-- 20261003120000_via_10_ai_data_sharing_consent.sql.
 --
 -- What this file does
 -- 1. Stores one naturopath credential on the practitioner account
