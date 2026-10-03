@@ -3,8 +3,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Info, FlaskConical, ChevronRight, type LucideIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { CONSUMER_OPEN_PILL_BASE, CONSUMER_OPEN_PILL_LINK } from '@/lib/ui/consumerChrome';
+import { openPillClass, PANEL_GLASS } from './cardOpenPill';
 
 export interface IngredientRow {
   ingredient: string;
@@ -26,17 +25,7 @@ interface ProductInfoButtonsProps {
 
 type Panel = 'description' | 'formulation' | null;
 
-const CARD_PILL_LAYOUT =
-  'w-full min-w-[9.75rem] flex-1 basis-[9.75rem] justify-center gap-1.5 whitespace-nowrap';
-
-const ACTIVE_PILL =
-  'border-[#5B8DEF]/70 bg-[#2A4C9E]/30 text-white transition-all duration-200 hover:border-[#5B8DEF]/70 hover:bg-[#2A4C9E]/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A2744] motion-reduce:transition-none';
-
-const PANEL_GLASS = 'rounded-xl border border-[#5B8DEF]/30 bg-[#2A4C9E]/[0.12] px-3 py-2.5 mt-0.5';
-
-function infoPillClass(active: boolean): string {
-  return cn(active ? CONSUMER_OPEN_PILL_BASE : CONSUMER_OPEN_PILL_LINK, CARD_PILL_LAYOUT, active && ACTIVE_PILL);
-}
+const PANEL_GAP = `${PANEL_GLASS} mt-0.5`;
 
 function normalizeFormulation(data: FormulationData): { ingredients: IngredientRow[]; totalMg: number | null } {
   if (!data) return { ingredients: [], totalMg: null };
@@ -114,7 +103,7 @@ function InfoPillButton({
       type="button"
       onClick={onClick}
       whileTap={reduceMotion ? undefined : { scale: 0.97 }}
-      className={infoPillClass(active)}
+      className={openPillClass(active)}
     >
       <Icon className="h-3.5 w-3.5 shrink-0 text-white/80" strokeWidth={1.5} aria-hidden />
       <span>{label}</span>
@@ -169,7 +158,7 @@ export function ProductInfoButtons({ description, formulationJson, deliveryForm 
 
       {/* Description panel */}
       <InfoPanel isOpen={openPanel === 'description'}>
-        <div className={PANEL_GLASS}>
+        <div className={PANEL_GAP}>
           {deliveryForm && (
             <span className="inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full mb-2 bg-[rgba(45,165,160,0.15)] text-[#2DA5A0] border border-[rgba(45,165,160,0.25)]">
               {deliveryForm}
@@ -184,7 +173,7 @@ export function ProductInfoButtons({ description, formulationJson, deliveryForm 
 
       {/* Formulation panel */}
       <InfoPanel isOpen={openPanel === 'formulation'}>
-        <div className={PANEL_GLASS}>
+        <div className={PANEL_GAP}>
           <div className="flex items-center gap-2 mb-2">
             <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-[rgba(45,165,160,0.15)] text-[#2DA5A0]">LIP</span>
             <span className="text-[9px] text-[rgba(255,255,255,0.35)]">Liposomal</span>

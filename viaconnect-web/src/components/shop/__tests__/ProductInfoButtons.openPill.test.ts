@@ -10,20 +10,23 @@ import { ProductInfoButtons } from '@/components/shop/ProductInfoButtons'
 import { CONSUMER_OPEN_PILL_BASE, CONSUMER_OPEN_PILL_LINK } from '@/lib/ui/consumerChrome'
 
 const source = readFileSync(join(process.cwd(), 'src/components/shop/ProductInfoButtons.tsx'), 'utf8')
+const pillSource = readFileSync(join(process.cwd(), 'src/components/shop/cardOpenPill.ts'), 'utf8')
 
 describe('ProductInfoButtons open pill', () => {
     it('reuses CONSUMER_OPEN_PILL_BASE and the link hover treatment', () => {
-        expect(source).toContain('CONSUMER_OPEN_PILL_BASE')
-        expect(source).toContain('CONSUMER_OPEN_PILL_LINK')
-        expect(source).toContain("from '@/lib/ui/consumerChrome'")
+        expect(pillSource).toContain('CONSUMER_OPEN_PILL_BASE')
+        expect(pillSource).toContain('CONSUMER_OPEN_PILL_LINK')
+        expect(pillSource).toContain("from '@/lib/ui/consumerChrome'")
+        expect(source).toContain('openPillClass')
+        expect(source).toContain("from './cardOpenPill'")
         expect(source).toContain('stopPropagation')
         expect(source).toContain('strokeWidth={1.5}')
         expect(source).toContain('ChevronRight')
         expect(source).not.toContain('ChevronDown')
         expect(source).not.toContain('bg-[rgba(45,165,160,0.20)]')
         expect(source).not.toContain('bg-[rgba(183,94,24,0.18)]')
-        expect(source).toContain('border-[#5B8DEF]/70')
-        expect(source).toContain('bg-[#2A4C9E]/30')
+        expect(pillSource).toContain('border-[#5B8DEF]/70')
+        expect(pillSource).toContain('bg-[#2A4C9E]/30')
         expect(source).toContain('motion-reduce:transition-none')
         expect(source).toContain('flex flex-wrap gap-2')
 

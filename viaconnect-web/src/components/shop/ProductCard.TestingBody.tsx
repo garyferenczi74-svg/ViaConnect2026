@@ -53,7 +53,7 @@ export function ProductCardTestingBody({
             </p>
             <p className="text-base font-medium text-white/75">{formatPrice(displayPrice)}</p>
 
-            <div className="mt-auto flex flex-col gap-2">
+            <div className="mt-auto flex min-w-0 flex-wrap gap-2">
                 <FullDescriptionLink slug={slug} categorySlug={product.category_slug} />
                 <TestingMetaDropdown
                     testingMeta={product.testing_meta}
