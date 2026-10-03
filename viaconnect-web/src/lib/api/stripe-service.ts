@@ -3,6 +3,7 @@
 // ---------------------------------------------------------------------------
 
 import Stripe from 'stripe';
+import { assertReviewerMayCreatePayment } from '@/lib/reviewer/payment-block';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   // Cast: this code targets the 2024-04-10 API but the installed @types/stripe
@@ -36,6 +37,7 @@ export async function createSubscriptionCheckout(
   email: string,
   tier: 'gold' | 'platinum' | 'practitioner',
 ): Promise<{ url: string; sessionId: string }> {
+  assertReviewerMayCreatePayment({ userId });
   const priceId = SUBSCRIPTION_PRICE_MAP[tier];
   if (!priceId) {
     throw new Error(`Unknown subscription tier: ${tier}`);
@@ -60,6 +62,7 @@ export async function createPanelCheckout(
   panelType: string,
   patientId?: string,
 ): Promise<{ url: string }> {
+  assertReviewerMayCreatePayment({ userId });
   const unitAmount = PANEL_PRICE_MAP[panelType];
   if (!unitAmount) {
     throw new Error(`Unknown panel type: ${panelType}`);

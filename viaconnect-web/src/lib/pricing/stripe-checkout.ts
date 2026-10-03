@@ -7,6 +7,14 @@ import type { BillingCycle, TierId, GeneX360ProductId } from '@/types/pricing';
 import { computeFamilyPricing } from './family-pricing';
 import type { MembershipTier } from '@/types/pricing';
 import type { PricingSupabaseClient } from './supabase-types';
+import { assertReviewerMayCreatePayment } from '@/lib/reviewer/payment-block';
+
+function guardReviewerCheckout(args: { userId: string; appMetadata?: unknown }): void {
+  assertReviewerMayCreatePayment({
+    userId: args.userId,
+    appMetadata: args.appMetadata,
+  });
+}
 
 export interface CheckoutResult {
   sessionId: string;
@@ -44,9 +52,11 @@ export async function createMembershipCheckoutSession(args: {
   email: string | null;
   tierId: TierId;
   billingCycle: BillingCycle;
+  appMetadata?: unknown;
   successPath?: string;
   cancelPath?: string;
 }): Promise<CheckoutResult> {
+  guardReviewerCheckout(args);
   if (args.tierId === 'free') {
     throw new Error('Free tier does not require a Stripe checkout');
   }
@@ -110,9 +120,11 @@ export async function createFamilyMembershipCheckoutSession(args: {
   totalAdults: number;
   totalChildren: number;
   billingCycle: 'monthly' | 'annual';
+  appMetadata?: unknown;
   successPath?: string;
   cancelPath?: string;
 }): Promise<CheckoutResult> {
+  guardReviewerCheckout(args);
   const stripe = getStripe();
 
   const { data: tier, error: tierErr } = await args.client
@@ -189,9 +201,11 @@ export async function createGeneX360CheckoutSession(args: {
   email: string | null;
   productId: GeneX360ProductId;
   familyMemberId?: string | null;
+  appMetadata?: unknown;
   successPath?: string;
   cancelPath?: string;
 }): Promise<CheckoutResult> {
+  guardReviewerCheckout(args);
   const stripe = getStripe();
 
   const { data: product, error } = await args.client
@@ -234,9 +248,11 @@ export async function createOutcomeStackCheckoutSession(args: {
   email: string | null;
   stackId: string;
   isSubscription: boolean;
+  appMetadata?: unknown;
   successPath?: string;
   cancelPath?: string;
 }): Promise<CheckoutResult> {
+  guardReviewerCheckout(args);
   const stripe = getStripe();
 
   const { data: stack, error } = await args.client

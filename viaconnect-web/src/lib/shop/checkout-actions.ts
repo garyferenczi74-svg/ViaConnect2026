@@ -54,6 +54,7 @@ import { finalizeOrderForSession } from '@/lib/shop/checkout-helpers'
 import { CART_LINE_UNAVAILABLE_BADGE, checkoutUnavailableError } from '@/lib/shop/coming-soon-copy'
 import { getReleaseLookupBySkus } from '@/lib/shop/release'
 import { serverCheckRxEligibility } from '@/lib/prescriptions/patient-actions'
+import { reviewerPaymentBlockMessage } from '@/lib/reviewer/payment-block'
 
 const MAP_MULTIPLIER = 1.72
 
@@ -323,6 +324,38 @@ export async function createCheckoutSession(args: {
 }): Promise<{ ok: boolean; url?: string; error?: string }> {
     const { cart, form, appliedHelix, appliedPromo } = args
 
+    const supabase = await createClient()
+    let userId: string | null = null
+    let appMetadata: unknown = null
+    try {
+        const userResult = await withTimeout(
+            supabase.auth.getUser(),
+            2000,
+            'shop.checkout.createSession.getUser',
+        )
+        const signedIn = userResult?.data?.user
+        userId = signedIn?.id ?? null
+        appMetadata = signedIn?.app_metadata ?? null
+    } catch (error) {
+        if (isTimeoutError(error)) {
+            safeLog.warn('shop.checkout', 'getUser timed out', { error })
+            return { ok: false, error: 'Please sign in to complete checkout.' }
+        }
+        throw error
+    }
+
+    if (!userId) {
+        return {
+            ok: false,
+            error: 'Please sign in to complete checkout.',
+        }
+    }
+
+    const reviewerBlock = reviewerPaymentBlockMessage({ userId, appMetadata })
+    if (reviewerBlock) {
+        return { ok: false, error: reviewerBlock }
+    }
+
     const validation = await validateCheckout(cart, appliedHelix, appliedPromo)
     if (!validation.ok) {
         return { ok: false, error: validation.error }
@@ -336,25 +369,6 @@ export async function createCheckoutSession(args: {
 
     try {
         const stripe = new Stripe(stripeKey)
-        const supabase = await createClient()
-        const userResult = await withTimeout(
-            supabase.auth.getUser(),
-            2000,
-            'shop.checkout.createSession.getUser',
-        )
-        const userId = userResult?.data?.user?.id ?? null
-
-        // Hard gate: shop_orders.user_id is NOT NULL on the live schema, so an
-        // anonymous Stripe Checkout session would charge the card and then
-        // throw at the order insert in finalizeShopOrder. Prevent the
-        // "money taken, no order recorded" scenario by blocking the session
-        // creation up front.
-        if (!userId) {
-            return {
-                ok: false,
-                error: 'Please sign in to complete checkout.',
-            }
-        }
 
         // Phase F5d.6: address collection moved entirely to Stripe Checkout's
         // hosted page (eliminates the F4-F5d.5 double-entry). Customer is

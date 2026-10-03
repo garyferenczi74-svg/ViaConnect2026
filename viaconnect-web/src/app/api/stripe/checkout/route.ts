@@ -5,6 +5,10 @@ import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
 import { reportSupabaseError } from "@/lib/utils/schema-drift";
 import { getCircuitBreaker, isCircuitBreakerError } from "@/lib/utils/circuit-breaker";
+import {
+  REVIEWER_PAYMENT_BLOCKED_CODE,
+  reviewerPaymentBlockMessage,
+} from "@/lib/reviewer/payment-block";
 
 export const dynamic = 'force-dynamic';
 
@@ -58,6 +62,17 @@ export async function POST(request: Request) {
       return NextResponse.json(
         apiEnvelope(false, undefined, "Unauthorized", "AUTH_REQUIRED"),
         { status: 401 }
+      );
+    }
+
+    const reviewerBlock = reviewerPaymentBlockMessage({
+      userId: user.id,
+      appMetadata: user.app_metadata,
+    });
+    if (reviewerBlock) {
+      return NextResponse.json(
+        apiEnvelope(false, undefined, reviewerBlock, REVIEWER_PAYMENT_BLOCKED_CODE),
+        { status: 403 }
       );
     }
 
