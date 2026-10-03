@@ -1,20 +1,17 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, type JSX } from 'react';
 import { SendHorizonal, ChevronDown } from 'lucide-react';
 import { getDisplayName } from '@/lib/getDisplayName';
 import { DSHEADisclaimer } from '@/components/compliance/DSHEADisclaimer';
+import { AiDataSharingConsent } from '@/components/ai/AiDataSharingConsent';
+import { ReportAiResponse } from '@/components/ai/ReportAiResponse';
+import { useAiSharingStatus } from '@/components/ai/useAiSharingStatus';
+import { AI_CONSENT_REQUIRED_CODE } from '@/lib/ai/data-sharing/consent';
 import { EmergingBadge } from './EmergingBadge';
 import { BEGINNER_QA_DOMAINS, type BeginnerQADomainId } from './beginnerQADomains';
 
 // ── Types ────────────────────────────────────────────────────────────────────
-
-interface HannahAskResponse {
-  answer: string;
-  emerging: boolean;
-  coverage?: string;
-  citedAtomIds?: string[];
-}
 
 interface QAEntry {
   id: string;
@@ -22,6 +19,7 @@ interface QAEntry {
   answer: string;
   emerging: boolean;
   coverage?: string;
+  messageId: string | null;
 }
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -61,13 +59,41 @@ function ThinkingDots() {
 
 // ── BeginnerQA ────────────────────────────────────────────────────────────────
 
+function readAskPayload(value: unknown): {
+  answer: string;
+  emerging: boolean;
+  coverage?: string;
+  messageId: string | null;
+  code?: string;
+} | null {
+  if (!value || typeof value !== 'object') return null;
+  const row = value as Record<string, unknown>;
+  if (typeof row.answer !== 'string' || typeof row.emerging !== 'boolean') return null;
+  return {
+    answer: row.answer,
+    emerging: row.emerging,
+    coverage: typeof row.coverage === 'string' ? row.coverage : undefined,
+    messageId: typeof row.messageId === 'string' ? row.messageId : null,
+    code: typeof row.code === 'string' ? row.code : undefined,
+  };
+}
+
+function readErrorCode(value: unknown): string | null {
+  if (!value || typeof value !== 'object') return null;
+  const code = (value as Record<string, unknown>).code;
+  return typeof code === 'string' ? code : null;
+}
+
 export function BeginnerQA(): JSX.Element {
   const [domain, setDomain]       = useState<DomainId>('nutraceuticals');
   const [question, setQuestion]   = useState('');
   const [entries, setEntries]     = useState<QAEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError]         = useState<string | null>(null);
+  const [aiDeclined, setAiDeclined] = useState(false);
   const bottomRef                 = useRef<HTMLDivElement>(null);
+  const aiSharing = useAiSharingStatus();
+  const aiBlocked = aiSharing.gateEnabled && !aiSharing.consented;
 
   // Auto-scroll to bottom on new entries or thinking state
   useEffect(() => {
@@ -78,6 +104,10 @@ export function BeginnerQA(): JSX.Element {
     e?.preventDefault();
     const q = question.trim();
     if (!q || isLoading) return;
+    if (aiSharing.gateEnabled && !aiSharing.consented) {
+      setError('AI answers stay off until you agree to share data with the listed providers.');
+      return;
+    }
 
     setQuestion('');
     setError(null);
@@ -90,11 +120,19 @@ export function BeginnerQA(): JSX.Element {
         body: JSON.stringify({ question: q, domain }),
       });
 
+      const payload: unknown = await res.json().catch(() => null);
       if (!res.ok) {
+        if (readErrorCode(payload) === AI_CONSENT_REQUIRED_CODE) {
+          setError('AI answers stay off until you agree to share data with the listed providers.');
+          return;
+        }
         throw new Error(`Server error ${res.status}`);
       }
 
-      const data: HannahAskResponse = await res.json();
+      const data = readAskPayload(payload);
+      if (!data) {
+        throw new Error('Unexpected reply');
+      }
 
       setEntries((prev) => [
         ...prev,
@@ -104,6 +142,7 @@ export function BeginnerQA(): JSX.Element {
           answer: data.answer,
           emerging: data.emerging,
           coverage: data.coverage,
+          messageId: data.messageId,
         },
       ]);
     } catch {
@@ -218,6 +257,7 @@ export function BeginnerQA(): JSX.Element {
                     Coverage: {entry.coverage}
                   </p>
                 )}
+                <ReportAiResponse surface="hannah" messageId={entry.messageId} />
               </div>
             </div>
           </div>
@@ -239,6 +279,21 @@ export function BeginnerQA(): JSX.Element {
       </div>
 
       {/* ── Input area ──────────────────────────────────────────── */}
+      {aiBlocked ? (
+        <div className="px-3 md:px-5 pt-3 pb-2">
+          {aiDeclined ? (
+            <p className="text-sm text-white/75 leading-relaxed">
+              AI answers stay off. The rest of ViaConnect still works. You can agree later in Account, under AI sharing.
+            </p>
+          ) : (
+            <AiDataSharingConsent
+              status={aiSharing}
+              onAgreed={() => setAiDeclined(false)}
+              onDeclined={() => setAiDeclined(true)}
+            />
+          )}
+        </div>
+      ) : (
       <form
         onSubmit={(e) => { void handleSubmit(e); }}
         className="px-3 md:px-5 pt-3 pb-2"
@@ -268,6 +323,7 @@ export function BeginnerQA(): JSX.Element {
           </button>
         </div>
       </form>
+      )}
 
       {/* ── DSHEA educational disclaimer ────────────────────────── */}
       <DSHEADisclaimer surface="beginner-qa" surfaceId="hannah-ask" />

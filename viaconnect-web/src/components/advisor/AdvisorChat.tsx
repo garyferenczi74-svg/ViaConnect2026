@@ -16,6 +16,9 @@ import { Send, Sparkles, Loader2, RotateCcw } from "lucide-react";
 import MessageBubble from "./MessageBubble";
 import SuggestedPrompts from "./SuggestedPrompts";
 import RatingButtons from "./RatingButtons";
+import { ReportAiResponse } from "@/components/ai/ReportAiResponse";
+import { AiDataSharingConsent } from "@/components/ai/AiDataSharingConsent";
+import { useAiSharingStatus } from "@/components/ai/useAiSharingStatus";
 import { extractMsgIdMarker } from "@/lib/jeffery/advisor-msg-marker";
 import {
   displayAdvisorAssistantMessage,
@@ -63,6 +66,8 @@ export default function AdvisorChat({
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(true);
+  const [aiDeclined, setAiDeclined] = useState(false);
+  const aiSharing = useAiSharingStatus();
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const didAutoSendRef = useRef(false);
@@ -213,10 +218,11 @@ export default function AdvisorChat({
   );
 
   useEffect(() => {
-    if (!initialPrompt || didAutoSendRef.current || historyLoading) return;
+    if (!initialPrompt || didAutoSendRef.current || historyLoading || aiSharing.loading) return;
+    if (aiSharing.gateEnabled && !aiSharing.consented) return;
     didAutoSendRef.current = true;
     void sendMessage(initialPrompt);
-  }, [initialPrompt, historyLoading, sendMessage]);
+  }, [initialPrompt, historyLoading, sendMessage, aiSharing.loading, aiSharing.gateEnabled, aiSharing.consented]);
 
   const handleRetry = (text: string) => {
     // Remove the error bubble and the preceding user bubble so we do not duplicate
@@ -260,7 +266,21 @@ export default function AdvisorChat({
 
       {/* Messages area */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden px-4 md:px-6 py-4 space-y-4">
-        {historyLoading ? (
+        {aiSharing.gateEnabled && !aiSharing.consented ? (
+          <div className="max-w-xl mx-auto">
+            {aiDeclined ? (
+              <p className="text-sm text-white/75 leading-relaxed">
+                AI chat stays off. The rest of ViaConnect still works. You can agree later in Account, under AI sharing.
+              </p>
+            ) : (
+              <AiDataSharingConsent
+                status={aiSharing}
+                onAgreed={() => setAiDeclined(false)}
+                onDeclined={() => setAiDeclined(true)}
+              />
+            )}
+          </div>
+        ) : historyLoading ? (
           <div className="flex items-center justify-center h-full text-white/40 text-sm gap-2">
             <Loader2 className="w-4 h-4 animate-spin" strokeWidth={1.5} />
             <span>Loading conversation...</span>
@@ -309,8 +329,9 @@ export default function AdvisorChat({
                   i === messages.length - 1 &&
                   !isStreaming &&
                   m.content && (
-                    <div className="flex justify-start mt-1 ml-1">
+                    <div className="flex flex-col items-start mt-1 ml-1 sm:flex-row sm:items-center sm:gap-2">
                       <RatingButtons conversationId={m.id ?? null} />
+                      <ReportAiResponse surface="advisor" messageId={m.id} />
                     </div>
                   )}
               </div>
@@ -334,7 +355,7 @@ export default function AdvisorChat({
         )}
       </div>
 
-      {/* Composer — sticky; safe-area for mobile keyboard */}
+      {!(aiSharing.gateEnabled && !aiSharing.consented) && (
       <div className="px-4 md:px-6 py-3 md:py-4 border-t border-white/[0.08] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <div className="flex items-center gap-2 bg-[#1E3054] rounded-xl border border-white/[0.08] focus-within:border-white/20 transition-colors px-3 py-2 md:px-4 md:py-3 min-w-0">
           <input
@@ -367,6 +388,7 @@ export default function AdvisorChat({
           </button>
         </div>
       </div>
+      )}
     </div>
   );
 }

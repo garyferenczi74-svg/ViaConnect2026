@@ -4,6 +4,7 @@ import { runEdgeMarshallChecks } from "@/lib/marshall/edge";
 import { withTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
 import { authTimeoutAction } from "@/lib/auth/session-role";
+import { blockAiRouteWithoutConsent } from "@/lib/ai/data-sharing/block-route";
 
 const VISITOR_COOKIE = "vc_visitor_id";
 const VISITOR_COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1 year
@@ -83,6 +84,14 @@ export async function middleware(request: NextRequest) {
 
     if (marshall) response.headers.set("x-marshall-finding", marshall.findingId);
     ensureVisitorCookie(request, response);
+
+    const blocked = await blockAiRouteWithoutConsent(request);
+    if (blocked) {
+      for (const cookie of response.cookies.getAll()) {
+        blocked.cookies.set(cookie);
+      }
+      return blocked;
+    }
     return response;
   } catch (error) {
     // Outer safety net. Never let an unhandled error reach the edge runtime

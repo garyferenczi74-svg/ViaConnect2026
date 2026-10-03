@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Mic } from "lucide-react";
 import toast from "react-hot-toast";
+import { useSensitiveAction } from "@/components/ai/SensitiveAction";
 
 interface VoiceInputProps {
   onTranscript: (text: string) => void;
@@ -15,6 +16,7 @@ interface VoiceInputProps {
 
 export function VoiceInput({ onTranscript }: VoiceInputProps) {
   const [listening, setListening] = useState(false);
+  const { guard, panel } = useSensitiveAction();
 
   const handleVoice = () => {
     const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -42,8 +44,9 @@ export function VoiceInput({ onTranscript }: VoiceInputProps) {
   };
 
   return (
+    <>
     <button
-      onClick={handleVoice}
+      onClick={() => guard("microphone", handleVoice)}
       type="button"
       className={`min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg transition-all ${
         listening
@@ -54,5 +57,7 @@ export function VoiceInput({ onTranscript }: VoiceInputProps) {
     >
       <Mic className="w-4 h-4" strokeWidth={1.5} />
     </button>
+    {panel}
+    </>
   );
 }

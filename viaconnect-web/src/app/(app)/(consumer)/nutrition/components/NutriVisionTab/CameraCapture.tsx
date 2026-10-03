@@ -22,6 +22,7 @@ import { useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Camera, CreditCard, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { detectPlatform, type CaptureResult, type CaptureSource } from '@/lib/capacitor/camera-capture';
+import { useSensitiveAction } from '@/components/ai/SensitiveAction';
 import { WebCameraPreview } from './WebCameraPreview';
 
 interface CameraCaptureProps {
@@ -37,6 +38,7 @@ interface CameraCaptureProps {
 export function CameraCapture({ onCapture, isCapturing, error, onWebCaptureResult }: CameraCaptureProps) {
   const router = useRouter();
   const [showWebPreview, setShowWebPreview] = useState(false);
+  const { guard, panel } = useSensitiveAction();
 
   const handleTakePhoto = useCallback(() => {
     // Native iOS / Android: Capacitor camera plugin opens the system camera UI
@@ -91,7 +93,7 @@ export function CameraCapture({ onCapture, isCapturing, error, onWebCaptureResul
         <div className="flex w-full flex-col gap-2 sm:flex-row">
           <button
             type="button"
-            onClick={handleTakePhoto}
+            onClick={() => guard('camera_meal', handleTakePhoto)}
             disabled={isCapturing}
             className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#2DA5A0] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#2DA5A0]/90 disabled:cursor-not-allowed disabled:opacity-50"
           >
@@ -100,7 +102,7 @@ export function CameraCapture({ onCapture, isCapturing, error, onWebCaptureResul
           </button>
           <button
             type="button"
-            onClick={() => onCapture('gallery')}
+            onClick={() => guard('photo_library', () => onCapture('gallery'))}
             disabled={isCapturing}
             className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/5 px-4 py-3 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
           >
@@ -124,6 +126,7 @@ export function CameraCapture({ onCapture, isCapturing, error, onWebCaptureResul
         {error && (
           <p className="text-[11px] text-[#FCA5A5]" role="alert">{error}</p>
         )}
+        {panel}
       </div>
       {/* Prompt 171a: web preview overlay mounted at document root via portal-
           like fixed positioning. Native iOS / Android never opens this. */}

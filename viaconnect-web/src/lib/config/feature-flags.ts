@@ -55,6 +55,13 @@ export const FLAG_REGISTRY: Record<string, FlagDef> = {
       'Google Health API web OAuth connector (Fitbit / Pixel Watch and others). Off until Google Cloud credentials are provisioned and the connector is verified in staging.',
   },
 
+  // Store launch VIA-10. Off until Gary applies the consent migration and sets the env var.
+  ai_third_party_consent_gate: {
+    default: false,
+    description:
+      'Require a recorded agree choice before routes send personal data to third-party AI, and show the matching in-app disclosures. Set AI_THIRD_PARTY_CONSENT_GATE=true after the consent migration is applied.',
+  },
+
   // Gary 2026-10-03: naturopath is a credential on the practitioner account.
   // Default off. Opening /naturopath/* also requires verification_status
   // verified. See src/lib/auth/naturopath-credential.ts.

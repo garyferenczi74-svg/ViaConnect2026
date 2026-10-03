@@ -19,6 +19,7 @@ import {
   LogOut,
   User as UserIcon,
   ClipboardList,
+  Shield,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -37,6 +38,7 @@ const NAV: NavItem[] = [
   { label: "Shared Access", href: "/settings/shared-access", icon: Share2 },
   { label: "Notifications", href: "/account/notifications", icon: Bell, badgeKey: "notifications" },
   { label: "Profile",       href: "/account/profile",       icon: Settings },
+  { label: "AI sharing",    href: "/account/ai-sharing",    icon: Shield },
 ];
 
 export default function AccountLayout({ children }: { children: React.ReactNode }) {

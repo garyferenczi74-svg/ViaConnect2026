@@ -13,6 +13,7 @@ import { AnalysisErrorCard } from '@/components/nutrition/AnalysisErrorCard';
 import { BackToNutritionLink } from '@/components/nutrition/hub/BackToNutritionLink';
 import { LogSavedMealButton } from '@/components/nutrition/LogSavedMeal';
 import type { MealType } from '@/lib/nutrition/schema';
+import { useSensitiveAction } from '@/components/ai/SensitiveAction';
 
 function toLocalDatetimeInput(d: Date): string {
   const off = d.getTimezoneOffset();
@@ -31,6 +32,7 @@ export default function LogMealPage() {
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const usedDictationRef = useRef(false);
   const [speechSupported, setSpeechSupported] = useState(false);
+  const { guard, panel } = useSensitiveAction();
 
   useEffect(() => {
     const W = window as Window & {
@@ -65,12 +67,14 @@ export default function LogMealPage() {
     if (dictating) {
       recog.stop();
     } else {
-      try {
-        recog.start();
-        setDictating(true);
-      } catch {
-        setDictating(false);
-      }
+      guard('microphone', () => {
+        try {
+          recog.start();
+          setDictating(true);
+        } catch {
+          setDictating(false);
+        }
+      });
     }
   }
 
@@ -196,6 +200,7 @@ export default function LogMealPage() {
               )}
             </div>
             <p className="mt-1 text-[11px] text-white/30">{description.length} / 2000 characters</p>
+            {panel}
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

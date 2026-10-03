@@ -425,7 +425,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
 
   // Capture the exchange (fail-open: captureQuery never throws).
-  await captureQuery({
+  const messageId = await captureQuery({
     userId: user.id,
     domain,
     questionText: question,
@@ -435,13 +435,15 @@ export async function POST(request: Request): Promise<NextResponse> {
     tiersUsed,
   });
 
+  const payload = {
+    answer,
+    emerging: answerFailed ? true : emerging,
+    coverage,
+    citedAtomIds: atoms.map((a) => a.id),
+  };
+
   return NextResponse.json(
-    {
-      answer,
-      emerging: answerFailed ? true : emerging,
-      coverage,
-      citedAtomIds: atoms.map((a) => a.id),
-    },
+    typeof messageId === 'string' ? { ...payload, messageId } : payload,
     { status: 200 },
   );
 }

@@ -18,6 +18,7 @@ import { safeLog } from '../_shared/safe-log.ts';
 import { getCircuitBreaker, isCircuitBreakerError } from '../_shared/circuit-breaker.ts';
 import { reportSupabaseError } from '../_shared/schema-drift.ts';
 import { resolveVisionModel } from '../_shared/vision-model.ts';
+import { aiDataSharingBlocked } from '../_shared/ai-data-sharing-consent.ts';
 
 const visionBreaker = getCircuitBreaker('claude-vision');
 
@@ -475,6 +476,10 @@ serve(async (req) => {
     const { data: userInfo } = await uc.auth.getUser();
     const userId = userInfo.user?.id;
     if (!userId) return json({ error: 'Invalid JWT' }, 401);
+
+    if (await aiDataSharingBlocked(uc, userId)) {
+      return json({ error: 'AI data sharing is off until you agree.', code: 'ai_consent_required' }, 403);
+    }
 
     const { data: session, error: sessErr } = await uc
       .from('body_photo_sessions')

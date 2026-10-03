@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { Camera, ImagePlus, Loader2, Minus, Package, SkipForward, RotateCcw, Smartphone } from 'lucide-react';
+import { useSensitiveAction } from '@/components/ai/SensitiveAction';
 import { SilhouetteOverlay } from './SilhouetteOverlay';
 import { processPhoto } from './photoProcessing';
 import { CAPTURE_TIPS, type PoseDefinition } from './poseConstants';
@@ -53,6 +54,7 @@ export function PoseGuide({ pose, stepLabel, existingPreviewUrl, onCaptured, onS
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<string | null>(existingPreviewUrl);
   const [error, setError] = useState<string | null>(null);
+  const { guard, panel } = useSensitiveAction();
 
   // Task 13b Task C: reference-object opt-in state (OFF by default).
   const [refEnabled, setRefEnabled] = useState(false);
@@ -238,7 +240,7 @@ export function PoseGuide({ pose, stepLabel, existingPreviewUrl, onCaptured, onS
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <button
             type="button"
-            onClick={clickCamera}
+            onClick={() => guard('camera_body', clickCamera)}
             disabled={busy}
             className="flex items-center justify-center gap-2 rounded-xl border border-[#2DA5A0]/40 bg-[#2DA5A0]/20 px-4 py-3 text-sm font-semibold text-[#2DA5A0] hover:bg-[#2DA5A0]/30 min-h-[48px] disabled:opacity-50"
           >
@@ -247,7 +249,7 @@ export function PoseGuide({ pose, stepLabel, existingPreviewUrl, onCaptured, onS
           </button>
           <button
             type="button"
-            onClick={clickGallery}
+            onClick={() => guard('photo_library', clickGallery)}
             disabled={busy}
             className="flex items-center justify-center gap-2 rounded-xl border border-white/[0.12] bg-white/[0.03] px-4 py-3 text-sm font-medium text-white/80 hover:bg-white/[0.08] min-h-[48px] disabled:opacity-50"
           >
@@ -293,6 +295,7 @@ export function PoseGuide({ pose, stepLabel, existingPreviewUrl, onCaptured, onS
         className="hidden"
         onChange={(e) => { const f = e.target.files?.[0]; if (f) void handleFile(f); }}
       />
+      {panel}
     </div>
   );
 }
