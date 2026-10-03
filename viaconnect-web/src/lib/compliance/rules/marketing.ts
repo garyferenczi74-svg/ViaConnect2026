@@ -419,7 +419,7 @@ export const REGULATORY_FRAMEWORK_NAMING: Rule<MarketingCopyInput | string> = {
             redactExcerpt(text, m.index, 80),
             {
               kind: "suggested",
-              summary: `Replace with permitted framing per #138c §4.1: "medically directed", "built against FTC Endorsement Guide standards", "DSHEA supplement-label conventions", "HIPAA Security Rule safeguards".`,
+              summary: `Replace with permitted framing per #138c §4.1: "medically directed", "built against FTC Endorsement Guide standards", "DSHEA supplement-label conventions". Do not claim HIPAA, SOC 2, or BAAs.`,
             },
             ctx,
           ),

@@ -31,5 +31,5 @@ export const TAGLINES = {
 } as const
 
 export const COMPLIANCE_COPY = {
-    hipaa: 'HIPAA-aware',
+    hipaa: 'Private and secure',
 } as const

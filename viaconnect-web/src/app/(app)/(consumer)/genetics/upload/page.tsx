@@ -466,7 +466,7 @@ export default function GeneticUploadPage() {
                 )}
               </div>
               <div className="mt-4 flex items-center gap-4 text-xs text-gray-500">
-                <div className="flex items-center gap-1"><Shield className="w-3.5 h-3.5" strokeWidth={1.5} /> HIPAA-aware</div>
+                <div className="flex items-center gap-1"><Shield className="w-3.5 h-3.5" strokeWidth={1.5} /> Private and secure</div>
                 <div className="flex items-center gap-1"><Zap className="w-3.5 h-3.5" strokeWidth={1.5} /> Instant Analysis</div>
                 <div className="flex items-center gap-1"><Dna className="w-3.5 h-3.5" strokeWidth={1.5} /> 6-Panel Complete</div>
               </div>
@@ -543,9 +543,9 @@ export default function GeneticUploadPage() {
               <div>
                 <p className="text-sm font-medium text-white">Your data is secure</p>
                 <p className="text-xs text-gray-400 mt-1">
-                  Genetic data is encrypted at rest and in transit. To read a PDF or image report, AI extraction
-                  sends that document to our AI provider (Google Gemini); we do not sell your data. Processing
-                  happens on HIPAA-aware infrastructure, and you can delete your data at any time from your profile settings.
+                  Genetic data is encrypted in transit, with access controls. To read a PDF or image report, AI extraction
+                  sends that document to our AI provider (Google Gemini); we do not sell your data. You can delete
+                  your data at any time from your profile settings.
                 </p>
               </div>
             </div>

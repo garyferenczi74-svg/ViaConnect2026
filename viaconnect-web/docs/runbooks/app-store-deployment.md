@@ -107,7 +107,7 @@ npm run cap:open:android
 3. Product → Archive. The archive uploads to App Store Connect.
 4. On https://appstoreconnect.apple.com, assign the build to TestFlight, invite internal testers.
 5. After internal QA, submit the same build for App Store review.
-6. Review takes 24–48 hours for health apps. Be prepared for reviewer questions about HIPAA-adjacent data handling, genetic data retention policies, and the Bio Optimization score methodology. Have the `/docs/legal/` package ready.
+6. Review takes 24–48 hours for health apps. Be prepared for reviewer questions about health-data handling, genetic data retention policies, and the Bio Optimization score methodology. Have the `/docs/legal/` package ready.
 
 ### iOS review gotchas (ViaConnect-specific)
 - **Genetic testing copy**: anything that claims to diagnose or prescribe will be rejected. Keep wording in the "wellness optimization" lane.
@@ -225,12 +225,11 @@ Localization (Spanish, Mandarin for practitioner B2B) deferred to post-launch sp
 - **iOS: 17+.** App Store Review Guideline 1.4.1 triggers this for treatment information, medication interaction guidance, and peptide protocols. CAQ output qualifies.
 - **Google Play: Mature 17+.** Same reasoning plus Retatrutide injectable reference triggers drug/medication content flags.
 
-**HIPAA posture:**
-- Positioned as HIPAA-covered for PHI surfaces; supporting BAAs in place:
-  - Supabase BAA (from Prompt #88 Hannah/Tavus integration)
-  - Vercel HIPAA-ready deployment config
-  - Anthropic Claude API BAA (verify coverage in App Store privacy disclosure)
-- Both stores increasingly audit BAA coverage for health apps; be prepared to document.
+**Health-data posture (store copy):**
+- Do not describe the app as HIPAA-covered, HIPAA-ready, HIPAA-aware, or SOC 2 certified in metadata, screenshots, or review notes until an audit passes.
+- Say health data is encrypted in transit, with access controls. Do not claim end-to-end encryption.
+- Do not state that BAAs or partner BAAs are in place.
+- Store privacy answers must match the live privacy policy. Lex reviews store copy before submission.
 
 ### Adjacent decisions (recorded for completeness)
 
