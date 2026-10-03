@@ -8,10 +8,28 @@
     z-index: 5;
     display: flex;
     width: 80%;
+    min-width: 80%;
+    max-width: 80%;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     pointer-events: none;
+}
+
+.vc-launch-vote[data-size='card'] > .vc-stardust {
+    align-self: stretch;
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 100%;
+    max-width: 100%;
+}
+
+.vc-launch-vote[data-size='pdp'] > .vc-stardust {
+    align-self: stretch;
+    box-sizing: border-box;
+    width: min(20rem, 100%);
+    min-width: min(20rem, 100%);
+    max-width: min(20rem, 100%);
 }
 
 .vc-launch-vote[data-size='card'] {
@@ -58,6 +76,7 @@
     justify-content: center;
     background: rgba(10, 25, 41, 0.55);
     padding: 16px;
+    pointer-events: auto;
 }
 
 .vc-vote-dialog-card {

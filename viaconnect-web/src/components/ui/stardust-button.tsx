@@ -1,7 +1,7 @@
 /**
  * Stardust vote pill. Vote control only. Not Join the Revolution and not Add to Cart.
  */
-import type { MouseEvent, ReactNode } from 'react'
+import type { MouseEvent, PointerEvent, ReactNode } from 'react'
 import './stardust-button.css'
 
 export type StardustSize = 'card' | 'pdp'
@@ -22,6 +22,7 @@ interface StardustButtonProps {
     ariaExpanded?: boolean
     role?: 'status'
     onClick?: (event: MouseEvent<HTMLButtonElement>) => void
+    onPointerDown?: (event: PointerEvent<HTMLButtonElement>) => void
 }
 
 export function StardustButton({
@@ -39,6 +40,7 @@ export function StardustButton({
     ariaExpanded,
     role,
     onClick,
+    onPointerDown,
 }: StardustButtonProps) {
     const className = 'vc-stardust'
     const body = (
@@ -90,6 +92,7 @@ export function StardustButton({
             aria-haspopup={ariaHaspopup}
             aria-expanded={ariaExpanded}
             onClick={onClick}
+            onPointerDown={onPointerDown}
         >
             {body}
         </button>
