@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { Info, FlaskConical, ChevronDown } from 'lucide-react';
+import { Info, FlaskConical, ChevronRight, type LucideIcon } from 'lucide-react';
+import { openPillClass, PANEL_GLASS } from './cardOpenPill';
 
 export interface IngredientRow {
   ingredient: string;
@@ -23,6 +24,8 @@ interface ProductInfoButtonsProps {
 }
 
 type Panel = 'description' | 'formulation' | null;
+
+const PANEL_GAP = `${PANEL_GLASS} mt-0.5`;
 
 function normalizeFormulation(data: FormulationData): { ingredients: IngredientRow[]; totalMg: number | null } {
   if (!data) return { ingredients: [], totalMg: null };
@@ -82,6 +85,39 @@ function IngredientLine({ ingredient, mg }: { ingredient: string; mg: number | s
   );
 }
 
+function InfoPillButton({
+  active,
+  label,
+  icon: Icon,
+  onClick,
+  reduceMotion,
+}: {
+  active: boolean;
+  label: string;
+  icon: LucideIcon;
+  onClick: () => void;
+  reduceMotion: boolean | null;
+}) {
+  return (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      whileTap={reduceMotion ? undefined : { scale: 0.97 }}
+      className={openPillClass(active)}
+    >
+      <Icon className="h-3.5 w-3.5 shrink-0 text-white/80" strokeWidth={1.5} aria-hidden />
+      <span>{label}</span>
+      <motion.span
+        className="inline-flex motion-reduce:transition-none"
+        animate={{ rotate: active ? 90 : 0 }}
+        transition={{ duration: reduceMotion ? 0 : 0.2 }}
+      >
+        <ChevronRight className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} aria-hidden />
+      </motion.span>
+    </motion.button>
+  );
+}
+
 export function ProductInfoButtons({ description, formulationJson, deliveryForm }: ProductInfoButtonsProps) {
   const [openPanel, setOpenPanel] = useState<Panel>(null);
   const shouldReduceMotion = useReducedMotion();
@@ -99,54 +135,30 @@ export function ProductInfoButtons({ description, formulationJson, deliveryForm 
   return (
     <div className="mt-2 space-y-1.5" onClick={(e) => e.stopPropagation()}>
       {/* Button row */}
-      <div className="flex gap-1.5">
+      <div className="flex flex-wrap gap-2">
         {hasDescription && (
-          <motion.button
-            type="button"
+          <InfoPillButton
+            active={openPanel === 'description'}
+            label="Description"
+            icon={Info}
             onClick={() => toggle('description')}
-            whileTap={shouldReduceMotion ? undefined : { scale: 0.97 }}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-xs font-medium transition-all duration-200 border ${
-              openPanel === 'description'
-                ? 'bg-[rgba(45,165,160,0.20)] text-[#2DA5A0] border-[rgba(45,165,160,0.40)]'
-                : 'bg-[rgba(255,255,255,0.05)] text-[rgba(255,255,255,0.50)] border-[rgba(255,255,255,0.10)] hover:border-[rgba(255,255,255,0.20)] hover:text-[rgba(255,255,255,0.75)]'
-            }`}
-          >
-            <Info className="w-3 h-3 flex-shrink-0" strokeWidth={1.5} />
-            <span>Description</span>
-            <motion.div
-              animate={{ rotate: openPanel === 'description' ? 180 : 0 }}
-              transition={{ duration: shouldReduceMotion ? 0 : 0.2 }}
-            >
-              <ChevronDown className="w-3 h-3" strokeWidth={1.5} />
-            </motion.div>
-          </motion.button>
+            reduceMotion={shouldReduceMotion}
+          />
         )}
         {hasFormulation && (
-          <motion.button
-            type="button"
+          <InfoPillButton
+            active={openPanel === 'formulation'}
+            label="Formulation"
+            icon={FlaskConical}
             onClick={() => toggle('formulation')}
-            whileTap={shouldReduceMotion ? undefined : { scale: 0.97 }}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-xs font-medium transition-all duration-200 border ${
-              openPanel === 'formulation'
-                ? 'bg-[rgba(183,94,24,0.18)] text-[#FB923C] border-[rgba(183,94,24,0.40)]'
-                : 'bg-[rgba(255,255,255,0.05)] text-[rgba(255,255,255,0.50)] border-[rgba(255,255,255,0.10)] hover:border-[rgba(255,255,255,0.20)] hover:text-[rgba(255,255,255,0.75)]'
-            }`}
-          >
-            <FlaskConical className="w-3 h-3 flex-shrink-0" strokeWidth={1.5} />
-            <span>Formulation</span>
-            <motion.div
-              animate={{ rotate: openPanel === 'formulation' ? 180 : 0 }}
-              transition={{ duration: shouldReduceMotion ? 0 : 0.2 }}
-            >
-              <ChevronDown className="w-3 h-3" strokeWidth={1.5} />
-            </motion.div>
-          </motion.button>
+            reduceMotion={shouldReduceMotion}
+          />
         )}
       </div>
 
       {/* Description panel */}
       <InfoPanel isOpen={openPanel === 'description'}>
-        <div className="rounded-xl bg-[rgba(45,165,160,0.07)] border border-[rgba(45,165,160,0.20)] px-3 py-2.5 mt-0.5">
+        <div className={PANEL_GAP}>
           {deliveryForm && (
             <span className="inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full mb-2 bg-[rgba(45,165,160,0.15)] text-[#2DA5A0] border border-[rgba(45,165,160,0.25)]">
               {deliveryForm}
@@ -161,7 +173,7 @@ export function ProductInfoButtons({ description, formulationJson, deliveryForm 
 
       {/* Formulation panel */}
       <InfoPanel isOpen={openPanel === 'formulation'}>
-        <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.08)] px-3 py-2.5 mt-0.5">
+        <div className={PANEL_GAP}>
           <div className="flex items-center gap-2 mb-2">
             <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-[rgba(45,165,160,0.15)] text-[#2DA5A0]">LIP</span>
             <span className="text-[9px] text-[rgba(255,255,255,0.35)]">Liposomal</span>

@@ -80,7 +80,7 @@ test('states A through D and confirm at 390 and 1280', async ({ page }) => {
                 const style = getComputedStyle(node)
                 return { background: style.backgroundColor, blur: style.backdropFilter }
             })
-            expect(cssColor(restPaint.background)).toBe('rgba(10,25,41,0.18)')
+            expect(cssColor(restPaint.background)).toBe('rgba(42,76,158,0.12)')
             expect(restPaint.blur).toContain('blur')
             const before = await pill.boundingBox()
             await page.screenshot({

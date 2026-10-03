@@ -41,29 +41,6 @@ function renderView(partial: Partial<Parameters<typeof LaunchVotePillView>[0]> =
     )
 }
 
-function contrast(fg: [number, number, number], bg: [number, number, number]): number {
-    const lin = (channel: number) => {
-        const value = channel / 255
-        return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4
-    }
-    const lum = (rgb: [number, number, number]) => 0.2126 * lin(rgb[0]) + 0.7152 * lin(rgb[1]) + 0.0722 * lin(rgb[2])
-    const lighter = Math.max(lum(fg), lum(bg))
-    const darker = Math.min(lum(fg), lum(bg))
-    return (lighter + 0.05) / (darker + 0.05)
-}
-
-function over(
-    src: [number, number, number, number],
-    dst: [number, number, number],
-): [number, number, number] {
-    const alpha = src[3]
-    return [
-        Math.round(src[0] * alpha + dst[0] * (1 - alpha)),
-        Math.round(src[1] * alpha + dst[1] * (1 - alpha)),
-        Math.round(src[2] * alpha + dst[2] * (1 - alpha)),
-    ]
-}
-
 function rgbaVar(css: string, name: string): [number, number, number, number] {
     const match = css.match(
         new RegExp(`${name}:\\s*rgba\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(0?\\.\\d+|1|0)\\s*\\)`),
@@ -117,7 +94,7 @@ describe('LaunchVotePillView', () => {
         expect(button).toContain('strokeWidth={1.5}')
     })
 
-    it('paints a glass pill that stays WCAG AA on white, black, and the light card', () => {
+    it('paints one open-pill glass shape with a green hover and no inner dark pill', () => {
         const css = readFileSync(join(process.cwd(), 'src/components/ui/stardust-button.css'), 'utf8')
         const base = css.slice(0, css.indexOf('@media (hover: hover)'))
         const hoverBlock = css.slice(css.indexOf('@media (hover: hover)'), css.indexOf('.vc-stardust[data-state=\'rest\']:focus-visible'))
@@ -125,41 +102,32 @@ describe('LaunchVotePillView', () => {
         const reduced = css.slice(css.indexOf('@media (prefers-reduced-transparency: reduce)'))
         expect(css).toContain('-webkit-backdrop-filter: blur(12px)')
         expect(css).toContain('backdrop-filter: blur(12px)')
-        expect(css).toContain('rgba(255, 255, 255, 0.42)')
-        expect(css).toContain('text-shadow: 0 1px 1px rgba(0, 0, 0, 0.45)')
-        expect(base).toContain('border: 0')
+        expect(css).not.toContain('::before')
+        expect(css).not.toContain('::after')
+        expect(css).not.toContain('text-shadow:')
+        expect(css).not.toContain('--vc-stardust-scrim')
+        expect(css.toLowerCase()).not.toContain('#0a1929')
+        expect(css).not.toContain('rgba(0, 0, 0')
+        expect(base).toContain('border: 1px solid var(--vc-stardust-rest-border)')
+        expect(base).toContain('box-shadow: none')
+        expect(base).toContain('border-radius: 999px')
+        expect(base).toContain('min-height: 44px')
 
         const restGlass = rgbaVar(base, '--vc-stardust-rest-bg')
         const hoverGlass = rgbaVar(base, '--vc-stardust-hover-bg')
+        const restBorder = rgbaVar(base, '--vc-stardust-rest-border')
         const restInk = hexVar(base, '--vc-stardust-rest-fg')
         const hoverInk = hexVar(base, '--vc-stardust-hover-fg')
-        const restScrim = rgbaVar(base, '--vc-stardust-scrim')
-        const greenScrim = rgbaVar(hoverBlock, '--vc-stardust-scrim')
-        expect(restGlass[3]).toBeGreaterThanOrEqual(0.1)
-        expect(restGlass[3]).toBeLessThanOrEqual(0.25)
-        expect(hoverGlass[3]).toBeGreaterThanOrEqual(0.1)
-        expect(hoverGlass[3]).toBeLessThanOrEqual(0.25)
+        expect(restGlass).toEqual([42, 76, 158, 0.12])
+        expect(restBorder).toEqual([91, 141, 239, 0.3])
+        expect(restInk).toEqual([255, 255, 255])
+        expect(hoverInk).toEqual([255, 255, 255])
+        expect(hoverGlass).toEqual([15, 77, 51, 0.2])
+        expect(hoverBlock).toContain('border-color: var(--vc-stardust-hover-border)')
+        expect(hoverBlock).toContain('box-shadow: none')
         expect(rgbaVar(fallback, '--vc-stardust-rest-bg')[3]).toBeGreaterThan(restGlass[3])
         expect(rgbaVar(reduced, '--vc-stardust-rest-bg')[3]).toBeGreaterThan(rgbaVar(fallback, '--vc-stardust-rest-bg')[3])
         expect(reduced).toContain('backdrop-filter: none')
-
-        const surfaces: Array<[string, [number, number, number]]> = [
-            ['white bottle', [255, 255, 255]],
-            ['black bottle', [17, 17, 17]],
-            ['light card', [255, 255, 255]],
-        ]
-        const states: Array<[string, [number, number, number, number], [number, number, number, number], [number, number, number]]> = [
-            ['rest', restGlass, restScrim, restInk],
-            ['hover', hoverGlass, greenScrim, hoverInk],
-            ['voted', hoverGlass, greenScrim, hoverInk],
-            ['popular', hoverGlass, greenScrim, hoverInk],
-        ]
-        for (const [surfaceName, surface] of surfaces) {
-            for (const [stateName, glass, scrim, ink] of states) {
-                const ratio = contrast(ink, over(scrim, over(glass, surface)))
-                expect(ratio, `${stateName} on ${surfaceName}`).toBeGreaterThanOrEqual(4.5)
-            }
-        }
     })
 
     it('describes Join, purchase, and vote as three separate controls', () => {

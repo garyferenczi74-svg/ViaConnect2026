@@ -1,15 +1,10 @@
 .vc-stardust {
-    --vc-stardust-rest-bg: rgba(10, 25, 41, 0.18);
-    --vc-stardust-rest-fg: #81d8ff;
+    --vc-stardust-rest-bg: rgba(42, 76, 158, 0.12);
+    --vc-stardust-rest-fg: #ffffff;
+    --vc-stardust-rest-border: rgba(91, 141, 239, 0.3);
     --vc-stardust-hover-bg: rgba(15, 77, 51, 0.2);
-    --vc-stardust-hover-fg: #a7f3d0;
-    --vc-stardust-hover-glow: rgba(52, 211, 153, 0.55);
-    --vc-stardust-scrim: rgba(5, 16, 32, 0.68);
-    --vc-stardust-glass-shadow:
-        inset 0 0 0 1px rgba(255, 255, 255, 0.42),
-        0 0 0 1px rgba(255, 255, 255, 0.4),
-        inset 0 1px 0 rgba(255, 255, 255, 0.48),
-        0 6px 16px rgba(0, 0, 0, 0.16);
+    --vc-stardust-hover-fg: #ffffff;
+    --vc-stardust-hover-border: rgba(52, 211, 153, 0.55);
     position: relative;
     isolation: isolate;
     display: inline-flex;
@@ -19,22 +14,22 @@
     width: 100%;
     box-sizing: border-box;
     margin: 0;
-    border: 0;
+    border: 1px solid var(--vc-stardust-rest-border);
     border-radius: 999px;
     background: var(--vc-stardust-rest-bg);
     color: var(--vc-stardust-rest-fg);
     -webkit-backdrop-filter: blur(12px);
     backdrop-filter: blur(12px);
-    box-shadow: var(--vc-stardust-glass-shadow);
-    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.45);
+    box-shadow: none;
     cursor: pointer;
     font: inherit;
-    font-size: 12.5px;
+    font-size: 14px;
+    font-weight: 500;
     line-height: 1.25;
-    padding: 9px 16px;
-    min-height: calc(1.25em * 2 + 18px);
+    padding: 6px 12px;
+    min-height: 44px;
     text-align: center;
-    transition: background-color 200ms, color 200ms, box-shadow 200ms;
+    transition: background-color 200ms, color 200ms, border-color 200ms;
 }
 
 .vc-stardust[data-size='pdp'] {
@@ -49,22 +44,6 @@
     display: grid;
     flex: 1;
     min-width: 0;
-}
-
-/* Scrim tracks the label, not the whole capsule, so the glass above and below stays clear. */
-.vc-stardust-labels::before {
-    content: "";
-    position: absolute;
-    z-index: -1;
-    inset: -4px -8px;
-    border-radius: 999px;
-    background: var(--vc-stardust-scrim);
-    pointer-events: none;
-    transition: background-color 200ms;
-}
-
-.vc-stardust:has(.vc-stardust-glyphs) .vc-stardust-labels::before {
-    right: -22px;
 }
 
 .vc-stardust-label,
@@ -121,10 +100,10 @@
 
 @media (hover: hover) {
     .vc-stardust[data-state='rest']:hover {
-        --vc-stardust-scrim: rgba(4, 36, 24, 0.68);
         background: var(--vc-stardust-hover-bg);
         color: var(--vc-stardust-hover-fg);
-        box-shadow: var(--vc-stardust-glass-shadow), 0 0 0.6rem var(--vc-stardust-hover-glow);
+        border-color: var(--vc-stardust-hover-border);
+        box-shadow: none;
     }
 
     .vc-stardust[data-state='rest']:hover .vc-stardust-label-rest {
@@ -147,10 +126,15 @@
 
 .vc-stardust[data-state='rest']:focus-visible,
 .vc-stardust[data-state='rest']:active {
-    --vc-stardust-scrim: rgba(4, 36, 24, 0.68);
     background: var(--vc-stardust-hover-bg);
     color: var(--vc-stardust-hover-fg);
-    box-shadow: var(--vc-stardust-glass-shadow), 0 0 0.6rem var(--vc-stardust-hover-glow);
+    border-color: var(--vc-stardust-hover-border);
+    box-shadow: none;
+}
+
+.vc-stardust[data-state='rest']:focus-visible {
+    outline: 2px solid rgba(45, 165, 160, 0.7);
+    outline-offset: 2px;
 }
 
 .vc-stardust[data-state='rest']:focus-visible .vc-stardust-label-rest,
@@ -176,29 +160,29 @@
 
 .vc-stardust[data-state='voted'],
 .vc-stardust[data-state='popular'] {
-    --vc-stardust-scrim: rgba(4, 36, 24, 0.68);
     background: var(--vc-stardust-hover-bg);
     color: var(--vc-stardust-hover-fg);
+    border-color: var(--vc-stardust-hover-border);
+    box-shadow: none;
     cursor: default;
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .vc-stardust,
-    .vc-stardust-labels::before {
+    .vc-stardust {
         transition: none;
     }
 }
 
 @supports not (backdrop-filter: blur(1px)) {
     .vc-stardust {
-        --vc-stardust-rest-bg: rgba(10, 25, 41, 0.4);
+        --vc-stardust-rest-bg: rgba(42, 76, 158, 0.4);
         --vc-stardust-hover-bg: rgba(15, 77, 51, 0.42);
     }
 }
 
 @media (prefers-reduced-transparency: reduce) {
     .vc-stardust {
-        --vc-stardust-rest-bg: rgba(10, 25, 41, 0.55);
+        --vc-stardust-rest-bg: rgba(42, 76, 158, 0.55);
         --vc-stardust-hover-bg: rgba(15, 77, 51, 0.55);
         -webkit-backdrop-filter: none;
         backdrop-filter: none;

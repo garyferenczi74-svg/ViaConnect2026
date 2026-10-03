@@ -1,18 +1,17 @@
 /**
- * FullDescriptionLink renders a Lucide ArrowRight link from the catalog
- * card or preview PDP to /shop/product/<slug>/full per Prompt #144 v2 §3.2.
+ * FullDescriptionLink renders a link from the catalog card to
+ * /shop/product/<slug>/full per Prompt #144 v2 §3.2.
  *
  * Label branches on category: testing kits show "Full Panel Details",
- * supplements show "Full Description". Stops Link click propagation when
+ * supplements show "Description". Stops Link click propagation when
  * nested inside a card-wide <Link> wrapper so taps reach the canonical
  * full-card route rather than the preview PDP.
- *
- * Tap target meets WCAG 44px minimum via px-4 py-3 plus text-sm.
  */
 'use client'
 
 import Link from 'next/link'
-import { ArrowRight } from 'lucide-react'
+import { ChevronRight, Info } from 'lucide-react'
+import { openPillClass } from './cardOpenPill'
 
 interface FullDescriptionLinkProps {
     slug: string
@@ -27,14 +26,12 @@ export function FullDescriptionLink({ slug, categorySlug }: FullDescriptionLinkP
         <Link
             href={`/shop/product/${slug}/full`}
             onClick={(e) => e.stopPropagation()}
-            className="group flex w-full items-center justify-between rounded-lg border border-white/10 bg-white/5 px-4 py-3 transition-all duration-200 hover:border-[#2DA5A0]/40 hover:bg-white/10"
+            className={openPillClass(false)}
             aria-label={`${label} for this product`}
         >
-            <span className="text-sm font-medium text-white">{label}</span>
-            <ArrowRight
-                className="h-4 w-4 text-white/60 transition-colors group-hover:text-[#2DA5A0]"
-                aria-hidden="true"
-            />
+            <Info className="h-3.5 w-3.5 shrink-0 text-white/80" strokeWidth={1.5} aria-hidden />
+            <span>{label}</span>
+            <ChevronRight className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} aria-hidden />
         </Link>
     )
 }

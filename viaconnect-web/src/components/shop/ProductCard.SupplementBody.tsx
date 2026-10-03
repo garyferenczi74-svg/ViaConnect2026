@@ -58,7 +58,7 @@ export function ProductCardSupplementBody({
                 {summary || description || 'Description coming soon.'}
             </p>
 
-            <div className="mt-auto flex flex-col gap-2">
+            <div className="mt-auto flex min-w-0 flex-wrap gap-2">
                 <FullDescriptionLink slug={slug} categorySlug={product.category_slug} />
                 <FormulationDropdown
                     ingredients={product.ingredients}
