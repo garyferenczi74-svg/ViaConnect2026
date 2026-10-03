@@ -72,6 +72,17 @@ export const FLAG_REGISTRY: Record<string, FlagDef> = {
     description:
       'Allow a practitioner with a verified naturopath credential to open /naturopath/*. Off until Gary sets NATUROPATH_CREDENTIAL_PORTAL_ACCESS=true. Unverified credentials never open the portal.',
   },
+
+  // Store launch VIA-11. Registry default stays false (web-safe).
+  // The Capacitor shell turns the system browser on unless
+  // NEXT_PUBLIC_NATIVE_OAUTH_SYSTEM_BROWSER is 0 or false.
+  // See nativeSystemBrowserOAuthEnabled in src/lib/auth/native-oauth.ts.
+  // Apple 4.8, Apple 5.1.1(vii), Google OAuth secure-browser policy.
+  native_oauth_system_browser: {
+    default: false,
+    description:
+      'On the Capacitor shell, open Google and Apple sign-in in the system browser and return through the app URL scheme. The shell defaults this on because in-WebView OAuth is blocked. Set NEXT_PUBLIC_NATIVE_OAUTH_SYSTEM_BROWSER=0 to use the in-WebView path. Web sign-in ignores this flag. This registry default stays false.',
+  },
 } as const;
 
 /**

@@ -55,8 +55,9 @@ const config: CapacitorConfig = {
       overlaysWebView: true,
     },
     App: {
-      // Deep-link scheme handled per-platform in native manifests;
-      // this is just the Capacitor stub.
+      // OAuth return scheme is the appId, registered in Info.plist and
+      // AndroidManifest.xml. ios.scheme above is the local content scheme
+      // and is not the OAuth callback. See docs/store-launch/via-11-native-signin.md.
     },
   },
 };
