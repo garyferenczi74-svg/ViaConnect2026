@@ -4,12 +4,8 @@ import android.os.Bundle;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
-    // Task 14 (Prompt 210c): register the ARCore depth plugin so Capacitor
-    // auto-discovers it alongside the existing community plugins.
-    // UNVERIFIED: requires a native Android build with ARCore dependency.
-    // If the ARCore dependency (com.google.ar:core) is not yet added to
-    // android/app/build.gradle, this registration line will fail to compile.
-    // See FormaVisionDepthPlugin.kt for the full build.gradle requirement.
+    // Compiled with com.google.ar:core:1.44.0. On-device depth behavior is
+    // UNVERIFIED. See docs/store-launch/native-projects-fixes.md.
     @Override
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(FormaVisionDepthPlugin.class);
