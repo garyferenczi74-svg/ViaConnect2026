@@ -215,7 +215,8 @@ describe('Homepage original hero + Brief 45 single compose + catalog membership'
     expect(HERO).not.toMatch(/Vitality/);
     expect(FEATURES_DESKTOP).not.toMatch(/Vitality/);
     expect(sha256('package.json')).toBe(
-      '063e568f5cfd91d78c94ad76f1d3c59a048f59bd5eea540af8c3e037a9bdec7d',
+      // Refreshed for the authorized Capacitor 8 upgrade (VIA-7).
+      'fb8bfd3ae8ddd59c3bcc38292866d4d10d2e3b8d37eb00d9c3d4291e399aea01',
     );
   });
 });

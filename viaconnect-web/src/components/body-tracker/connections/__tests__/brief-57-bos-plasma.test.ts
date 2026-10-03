@@ -47,7 +47,8 @@ const FROZEN_AT_2B53743: Record<string, string> = {
   'src/components/dashboard/DailyScoresPanel.tsx':
     'bfb3858f4f405cad7d16f9c87c953a3e4c63cad84dd5550bad8d3ff3e5c3cf40',
   'package.json':
-    '063e568f5cfd91d78c94ad76f1d3c59a048f59bd5eea540af8c3e037a9bdec7d',
+    // Refreshed for the authorized Capacitor 8 upgrade (VIA-7).
+    'fb8bfd3ae8ddd59c3bcc38292866d4d10d2e3b8d37eb00d9c3d4291e399aea01',
 };
 
 const SCORED = { value: '69', band: 'BOS' } as const;
