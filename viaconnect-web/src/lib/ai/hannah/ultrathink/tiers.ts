@@ -1,3 +1,5 @@
+import { CLAUDE_HAIKU, CLAUDE_SONNET } from '@/lib/ai/claude-models';
+
 export type HannahTier = 'fast' | 'standard' | 'ultrathink';
 
 export interface TierConfig {
@@ -14,7 +16,7 @@ export interface TierConfig {
 export const TIER_CONFIGS: Record<HannahTier, TierConfig> = {
   fast: {
     tier: 'fast',
-    model: 'claude-haiku-4-5-20251001',
+    model: CLAUDE_HAIKU,
     thinkingEnabled: false,
     ragPasses: 0,
     selfCritique: false,
@@ -23,7 +25,7 @@ export const TIER_CONFIGS: Record<HannahTier, TierConfig> = {
   },
   standard: {
     tier: 'standard',
-    model: 'claude-sonnet-4-6',
+    model: CLAUDE_SONNET,
     thinkingEnabled: false,
     ragPasses: 1,
     selfCritique: false,

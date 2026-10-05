@@ -12,9 +12,10 @@
  */
 
 import { z } from 'zod';
+import { CLAUDE_HAIKU } from '@/lib/ai/claude-models';
 
 export const VOICE_NATIVE_PARSER_VERSION = 'voice-native.haiku.v1.1.0';
-export const VOICE_NATIVE_HAIKU_MODEL = 'claude-haiku-4-5-20251001';
+export const VOICE_NATIVE_HAIKU_MODEL = CLAUDE_HAIKU;
 
 export const STT_PROVIDERS = [
   'web_speech_api',

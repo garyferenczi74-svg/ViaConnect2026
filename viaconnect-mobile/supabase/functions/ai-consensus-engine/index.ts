@@ -43,6 +43,10 @@ const InputSchema = z.object({
   patientId: z.string().uuid().optional(),
 });
 
+// Keep identical to CLAUDE_SONNET in viaconnect-web/src/lib/ai/claude-models.ts.
+// This Deno function cannot import that module.
+const CLAUDE_SONNET = 'claude-sonnet-4-6';
+
 interface AIResponse {
   provider: string;
   content: string;
@@ -66,7 +70,7 @@ async function callClaude(prompt: string, context: string): Promise<AIResponse> 
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: CLAUDE_SONNET,
         max_tokens: 2048,
         system: CLAUDE_SYSTEM,
         messages: [
@@ -79,7 +83,7 @@ async function callClaude(prompt: string, context: string): Promise<AIResponse> 
     return {
       provider: 'claude',
       content: data.content?.[0]?.text ?? '',
-      model: data.model ?? 'claude-sonnet-4-20250514',
+      model: data.model ?? CLAUDE_SONNET,
       tokensUsed: (data.usage?.input_tokens ?? 0) + (data.usage?.output_tokens ?? 0),
       latencyMs: Date.now() - start,
     };
@@ -87,7 +91,7 @@ async function callClaude(prompt: string, context: string): Promise<AIResponse> 
     return {
       provider: 'claude',
       content: '',
-      model: 'claude-sonnet-4-20250514',
+      model: CLAUDE_SONNET,
       tokensUsed: 0,
       latencyMs: Date.now() - start,
       error: e instanceof Error ? e.message : 'Claude API error',

@@ -18,12 +18,13 @@ import {
   buildHaikuSystemPrompt,
   buildHaikuUserMessage,
 } from '@/lib/nutrition/voice/nlu/system-prompt';
+import { CLAUDE_HAIKU } from '@/lib/ai/claude-models';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const NLU_TIMEOUT_MS = 8_000;
-const HAIKU_MODEL = 'claude-haiku-4-5-20251001';
+const HAIKU_MODEL = CLAUDE_HAIKU;
 
 interface ParseRequest {
   transcript: string;
