@@ -435,36 +435,55 @@ test('real ProductCard and PDP caps clear by 8px at 390, 1024, and 1280', async 
             const after = await page.getByTestId('launch-vote-pill').boundingBox()
             expect(after?.width).toBe(before?.width)
             expect(after?.height).toBe(before?.height)
-            if (surface === 'card' && (viewport.width === 390 || viewport.width === 1280)) {
-                expect(beforePlace.restCenterDelta).toBeLessThan(1)
-                const hoverLabel = await readHoverLabel(page)
-                expect(hoverLabel.visibility, `${viewport.name} hover`).toBe('visible')
-                expect(hoverLabel.text, `${viewport.name} hover`).toBe('Vote for the next product launch')
-                expect(hoverLabel.ellipsis, `${viewport.name} hover`).toBe(false)
-                expect(hoverLabel.cut, `${viewport.name} hover lines=${hoverLabel.lineCount} clamp=${hoverLabel.clamp}`).toBe(false)
-                expect(hoverLabel.lineCount, `${viewport.name} hover`).toBeGreaterThan(0)
-                expect(hoverLabel.lineCount, `${viewport.name} hover`).toBeLessThanOrEqual(3)
-                expect(hoverLabel.clamp === 'none' || hoverLabel.clamp === 'unset', hoverLabel.clamp).toBe(true)
-                const hoverPad = await readCapClearance(page)
-                expect(hoverPad, `${viewport.name} hover`).toBeGreaterThanOrEqual(8)
-                const afterPlace = await page.getByTestId('launch-vote-pill').evaluate((node) => {
-                    const pill = node as HTMLElement
-                    return {
-                        left: pill.style.left,
-                        top: pill.style.top,
-                        width: pill.offsetWidth,
-                        height: pill.offsetHeight,
-                    }
-                })
-                expect(afterPlace).toEqual({
+            if (viewport.width === 390 || viewport.width === 1280) {
+                expect(beforePlace.restCenterDelta, `${surface} ${viewport.name} rest center`).toBeLessThan(1)
+                const shared = {
                     left: beforePlace.left,
                     top: beforePlace.top,
                     width: beforePlace.width,
                     height: beforePlace.height,
-                })
+                }
+                const assertSharedHover = async (state: string) => {
+                    const hoverLabel = await readHoverLabel(page)
+                    const where = `${surface} ${viewport.name} ${state}`
+                    expect(hoverLabel.visibility, where).toBe('visible')
+                    expect(hoverLabel.text, where).toBe('Vote for the next product launch')
+                    expect(hoverLabel.ellipsis, where).toBe(false)
+                    expect(hoverLabel.scrollHeight, where).toBeLessThanOrEqual(hoverLabel.clientHeight)
+                    expect(hoverLabel.scrollWidth, where).toBeLessThanOrEqual(hoverLabel.clientWidth + 1)
+                    expect(hoverLabel.lineCount, where).toBeGreaterThan(0)
+                    expect(hoverLabel.lineCount, where).toBeLessThanOrEqual(3)
+                    expect(hoverLabel.clamp === 'none' || hoverLabel.clamp === 'unset', hoverLabel.clamp).toBe(true)
+                    expect(await readCapClearance(page), where).toBeGreaterThanOrEqual(8)
+                    const place = await page.getByTestId('launch-vote-pill').evaluate((node) => {
+                        const pill = node as HTMLElement
+                        return {
+                            left: pill.style.left,
+                            top: pill.style.top,
+                            width: pill.offsetWidth,
+                            height: pill.offsetHeight,
+                        }
+                    })
+                    expect(place, where).toEqual(shared)
+                    const box = await page.getByTestId('launch-vote-pill').boundingBox()
+                    expect(box?.width, where).toBe(before?.width)
+                    expect(box?.height, where).toBe(before?.height)
+                }
+                await assertSharedHover('hover')
                 await page.locator('[data-testid="sash-grid"] > *').screenshot({
-                    path: join(ARTIFACT_DIR, `card-hover-${viewport.name}.png`),
+                    path: join(ARTIFACT_DIR, `${surface}-hover-${viewport.name}.png`),
                 })
+                await page.mouse.move(0, 0)
+                await page.getByTestId('launch-vote-pill').evaluate((node) => {
+                    ;(node as HTMLElement).focus({ focusVisible: true } as FocusOptions)
+                })
+                await assertSharedHover('focus')
+                const tapBox = await page.getByTestId('launch-vote-pill').boundingBox()
+                if (!tapBox) throw new Error(`missing pill for tap ${surface} ${viewport.name}`)
+                await page.mouse.move(tapBox.x + tapBox.width / 2, tapBox.y + tapBox.height / 2)
+                await page.mouse.down()
+                await assertSharedHover('active')
+                await page.mouse.up()
             }
             const terms = page.getByTestId('launch-vote-terms')
             const termsBox = await terms.boundingBox()
@@ -511,7 +530,8 @@ test('real ProductCard and PDP caps clear by 8px at 390, 1024, and 1280', async 
         expect(hoverPlace).toEqual(restPlace)
         expect(hoverLabel.text, `histamine ${viewport.name}`).toBe('Vote for the next product launch')
         expect(hoverLabel.ellipsis).toBe(false)
-        expect(hoverLabel.cut, `histamine ${viewport.name}`).toBe(false)
+        expect(hoverLabel.scrollHeight, `histamine ${viewport.name}`).toBeLessThanOrEqual(hoverLabel.clientHeight)
+        expect(hoverLabel.scrollWidth, `histamine ${viewport.name}`).toBeLessThanOrEqual(hoverLabel.clientWidth + 1)
         expect(hoverLabel.lineCount).toBeLessThanOrEqual(3)
         expect(await readCapClearance(page), `histamine ${viewport.name}`).toBeGreaterThanOrEqual(8)
         await page.locator('[data-testid="sash-grid"] > *').screenshot({
@@ -526,7 +546,10 @@ async function readHoverLabel(page: Page): Promise<{
     visibility: string
     lineCount: number
     clamp: string
-    cut: boolean
+    scrollHeight: number
+    clientHeight: number
+    scrollWidth: number
+    clientWidth: number
     ellipsis: boolean
 }> {
     return page.getByTestId('launch-vote-pill').evaluate((node) => {
@@ -536,18 +559,15 @@ async function readHoverLabel(page: Page): Promise<{
         if (alt) range.selectNodeContents(alt)
         const text = (alt?.innerText ?? '').replace(/\s+/g, ' ').trim()
         const clamp = style?.webkitLineClamp ?? ''
-        const cut =
-            !alt ||
-            style?.visibility !== 'visible' ||
-            alt.scrollHeight > alt.clientHeight + 1 ||
-            alt.scrollWidth > alt.clientWidth + 1 ||
-            (clamp !== 'none' && clamp !== 'unset' && clamp !== '')
         return {
             text,
             visibility: style?.visibility ?? '',
             lineCount: alt ? range.getClientRects().length : 0,
             clamp,
-            cut,
+            scrollHeight: alt?.scrollHeight ?? 999,
+            clientHeight: alt?.clientHeight ?? 0,
+            scrollWidth: alt?.scrollWidth ?? 999,
+            clientWidth: alt?.clientWidth ?? 0,
             ellipsis: text.includes('…') || text.includes('...'),
         }
     })
