@@ -162,6 +162,9 @@ describe('LaunchVotePillView', () => {
         expect(sash).not.toContain('11.25rem')
         expect(sash).toContain('width: max-content')
         expect(sash).toContain('white-space: nowrap')
+        expect(sash).toContain('align-self: center')
+        expect(sash).not.toContain('line-clamp: 2')
+        expect(sash).not.toContain('-webkit-line-clamp: 2')
         expect(sash).not.toContain('::before')
         expect(sash).not.toContain('::after')
         expect(sash).not.toContain('#0a1929')
@@ -226,6 +229,8 @@ describe('LaunchVotePillView', () => {
         expect(overlay).toContain(".vc-launch-vote > .vc-stardust[data-interactive='true'] .vc-stardust-label-alt")
         expect(overlay).toContain('white-space: normal')
         expect(overlay).toContain('min-width: 100%')
+        expect(overlay).toContain('line-clamp: unset')
+        expect(overlay).not.toContain('line-clamp: 2')
         expect(overlay).toContain('pointer-events: auto')
         const width = 128
         const height = 36

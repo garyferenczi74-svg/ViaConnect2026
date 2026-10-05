@@ -30,12 +30,15 @@ const vote: LaunchVoteCardModel = {
 }
 
 function product(): ShopProduct {
+    const photo = document.documentElement.dataset.sashPhoto || BOTTLE
+    const shortName = document.documentElement.dataset.sashName || 'Balance+'
+    const name = document.documentElement.dataset.sashFullName || 'Balance+ Gut Repair'
     return {
         id: 'balance-plus',
         sku: 'FC-BALANCE-PLUS',
         slug: 'balance-plus-gut-repair',
-        name: 'Balance+ Gut Repair',
-        short_name: 'Balance+',
+        name,
+        short_name: shortName,
         summary: 'Not catalog data',
         description: 'Not catalog data',
         format: 'capsule',
@@ -44,8 +47,8 @@ function product(): ShopProduct {
         price: 98.88,
         price_msrp: null,
         pricing_tier: 'L1',
-        image_url: BOTTLE,
-        image_urls: [BOTTLE],
+        image_url: photo,
+        image_urls: [photo],
         status_tags: null,
         testing_meta: null,
         snp_targets: null,
@@ -101,7 +104,7 @@ function PdpSurface() {
                             className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl bg-white shadow-md"
                             data-testid="pdp-photo"
                         >
-                            <img alt={item.name} src={BOTTLE} />
+                            <img alt={item.name} src={item.image_url ?? BOTTLE} />
                         </div>
                     </LaunchVotePill>
                 </div>

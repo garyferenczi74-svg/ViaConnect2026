@@ -196,11 +196,17 @@ test('states A through D and confirm at 390 and 1280', async ({ page }) => {
                 const style = getComputedStyle(node)
                 const labels = [...node.querySelectorAll('.vc-stardust-label')]
                 const restLabel = node.querySelector('.vc-stardust-label-rest')
+                const altLabel = node.querySelector('.vc-stardust-label-alt') as HTMLElement | null
                 const clipped = restLabel
                     ? getComputedStyle(restLabel).visibility !== 'hidden' &&
                       (restLabel.scrollHeight > restLabel.clientHeight + 1 ||
                           restLabel.scrollWidth > restLabel.clientWidth + 1)
                     : false
+                const altStyle = altLabel ? getComputedStyle(altLabel) : null
+                const altRange = document.createRange()
+                if (altLabel) altRange.selectNodeContents(altLabel)
+                const altText = (altLabel?.innerText ?? '').replace(/\s+/g, ' ').trim()
+                const altClamp = altStyle?.webkitLineClamp ?? ''
                 return {
                     borderLeft: style.borderLeftWidth,
                     borderRight: style.borderRightWidth,
@@ -209,6 +215,14 @@ test('states A through D and confirm at 390 and 1280', async ({ page }) => {
                     clipped,
                     restText: restLabel?.textContent ?? '',
                     text: labels.map((label) => label.textContent).join('|'),
+                    altText,
+                    altLines: altLabel ? altRange.getClientRects().length : 0,
+                    altCut:
+                        !altLabel ||
+                        altLabel.scrollHeight > altLabel.clientHeight + 1 ||
+                        altLabel.scrollWidth > altLabel.clientWidth + 1 ||
+                        (altClamp !== 'none' && altClamp !== 'unset' && altClamp !== '') ||
+                        altText.includes('…'),
                 }
             })
             expect(metrics.borderLeft).toBe('1px')
@@ -217,7 +231,10 @@ test('states A through D and confirm at 390 and 1280', async ({ page }) => {
             expect(metrics.appearance).toBe('none')
             expect(metrics.clipped).toBe(false)
             expect(metrics.text).toContain('Launching Soon')
-            expect(metrics.text).toContain('Vote for the next product launch')
+            expect(metrics.altText).toBe('Vote for the next product launch')
+            expect(metrics.altLines).toBeGreaterThan(0)
+            expect(metrics.altLines).toBeLessThanOrEqual(3)
+            expect(metrics.altCut).toBe(false)
             await page.mouse.up()
             await page.setContent(pageHtml(tone, 'static'), { waitUntil: 'domcontentloaded' })
             await tuckSash(page)
@@ -395,21 +412,177 @@ test('real ProductCard and PDP caps clear by 8px at 390, 1024, and 1280', async 
             expect(fit.restScroll).toBeLessThanOrEqual(1)
             expect(fit.minPad, `${surface} ${viewport.name} frame ${fit.frameWidth}x${fit.frameHeight} pill ${fit.pillWidth}x${fit.pillHeight}`).toBeGreaterThanOrEqual(8)
             const before = await page.getByTestId('launch-vote-pill').boundingBox()
+            const beforePlace = await page.getByTestId('launch-vote-pill').evaluate((node) => {
+                const pill = node as HTMLElement
+                const rest = pill.querySelector('.vc-stardust-label-rest') as HTMLElement | null
+                const labels = rest?.parentElement as HTMLElement | null
+                const restBox = rest?.getBoundingClientRect()
+                const labelsBox = labels?.getBoundingClientRect()
+                const restMid = restBox ? restBox.top + restBox.height / 2 : 0
+                const labelsMid = labelsBox ? labelsBox.top + labelsBox.height / 2 : 0
+                return {
+                    left: pill.style.left,
+                    top: pill.style.top,
+                    width: pill.offsetWidth,
+                    height: pill.offsetHeight,
+                    restCenterDelta: Math.abs(restMid - labelsMid),
+                }
+            })
+            await page.locator('[data-testid="sash-grid"] > *').screenshot({
+                path: join(ARTIFACT_DIR, `${surface}-${viewport.name}.png`),
+            })
             await page.getByTestId('launch-vote-pill').hover()
             const after = await page.getByTestId('launch-vote-pill').boundingBox()
             expect(after?.width).toBe(before?.width)
             expect(after?.height).toBe(before?.height)
+            if (surface === 'card' && (viewport.width === 390 || viewport.width === 1280)) {
+                expect(beforePlace.restCenterDelta).toBeLessThan(1)
+                const hoverLabel = await readHoverLabel(page)
+                expect(hoverLabel.visibility, `${viewport.name} hover`).toBe('visible')
+                expect(hoverLabel.text, `${viewport.name} hover`).toBe('Vote for the next product launch')
+                expect(hoverLabel.ellipsis, `${viewport.name} hover`).toBe(false)
+                expect(hoverLabel.cut, `${viewport.name} hover lines=${hoverLabel.lineCount} clamp=${hoverLabel.clamp}`).toBe(false)
+                expect(hoverLabel.lineCount, `${viewport.name} hover`).toBeGreaterThan(0)
+                expect(hoverLabel.lineCount, `${viewport.name} hover`).toBeLessThanOrEqual(3)
+                expect(hoverLabel.clamp === 'none' || hoverLabel.clamp === 'unset', hoverLabel.clamp).toBe(true)
+                const hoverPad = await readCapClearance(page)
+                expect(hoverPad, `${viewport.name} hover`).toBeGreaterThanOrEqual(8)
+                const afterPlace = await page.getByTestId('launch-vote-pill').evaluate((node) => {
+                    const pill = node as HTMLElement
+                    return {
+                        left: pill.style.left,
+                        top: pill.style.top,
+                        width: pill.offsetWidth,
+                        height: pill.offsetHeight,
+                    }
+                })
+                expect(afterPlace).toEqual({
+                    left: beforePlace.left,
+                    top: beforePlace.top,
+                    width: beforePlace.width,
+                    height: beforePlace.height,
+                })
+                await page.locator('[data-testid="sash-grid"] > *').screenshot({
+                    path: join(ARTIFACT_DIR, `card-hover-${viewport.name}.png`),
+                })
+            }
             const terms = page.getByTestId('launch-vote-terms')
             const termsBox = await terms.boundingBox()
             const frameBox = await page.getByTestId('launch-vote-overlay').boundingBox()
             expect(termsBox?.y ?? 0).toBeGreaterThanOrEqual((frameBox?.y ?? 0) + (frameBox?.height ?? 0) - 1)
-            await page.locator('[data-testid="sash-grid"] > *').screenshot({
-                path: join(ARTIFACT_DIR, `${surface}-${viewport.name}.png`),
-            })
         }
+    }
+
+    const histamine =
+        'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/supplement-photos/Advance%20Formulations/histamine-relief-protocol.png'
+    for (const viewport of FIT_VIEWPORTS) {
+        if (viewport.width !== 390 && viewport.width !== 1280) continue
+        await page.setViewportSize({ width: viewport.width, height: viewport.height })
+        await page.setContent(realHarness('card', builtCss), { waitUntil: 'domcontentloaded' })
+        await page.evaluate(
+            ({ photo, name, fullName }) => {
+                document.documentElement.dataset.sashPhoto = photo
+                document.documentElement.dataset.sashName = name
+                document.documentElement.dataset.sashFullName = fullName
+            },
+            { photo: histamine, name: 'Histamine Relief', fullName: 'Histamine Relief' },
+        )
+        await page.addScriptTag({ path: bundlePath })
+        await page.waitForSelector('[data-sash-placed="true"]', { state: 'attached', timeout: 8000 })
+        await page.evaluate(() => document.fonts.ready)
+        await page.locator('img').first().evaluate((node) => (node as HTMLImageElement).decode().catch(() => undefined))
+        const restBox = await page.getByTestId('launch-vote-pill').boundingBox()
+        const restPlace = await page.getByTestId('launch-vote-pill').evaluate((node) => {
+            const pill = node as HTMLElement
+            return { left: pill.style.left, top: pill.style.top, width: pill.offsetWidth, height: pill.offsetHeight }
+        })
+        await page.locator('[data-testid="sash-grid"] > *').screenshot({
+            path: join(ARTIFACT_DIR, `histamine-card-${viewport.name}-rest.png`),
+        })
+        await page.getByTestId('launch-vote-pill').hover()
+        const hoverBox = await page.getByTestId('launch-vote-pill').boundingBox()
+        const hoverPlace = await page.getByTestId('launch-vote-pill').evaluate((node) => {
+            const pill = node as HTMLElement
+            return { left: pill.style.left, top: pill.style.top, width: pill.offsetWidth, height: pill.offsetHeight }
+        })
+        const hoverLabel = await readHoverLabel(page)
+        expect(hoverBox?.width).toBe(restBox?.width)
+        expect(hoverBox?.height).toBe(restBox?.height)
+        expect(hoverPlace).toEqual(restPlace)
+        expect(hoverLabel.text, `histamine ${viewport.name}`).toBe('Vote for the next product launch')
+        expect(hoverLabel.ellipsis).toBe(false)
+        expect(hoverLabel.cut, `histamine ${viewport.name}`).toBe(false)
+        expect(hoverLabel.lineCount).toBeLessThanOrEqual(3)
+        expect(await readCapClearance(page), `histamine ${viewport.name}`).toBeGreaterThanOrEqual(8)
+        await page.locator('[data-testid="sash-grid"] > *').screenshot({
+            path: join(ARTIFACT_DIR, `histamine-card-${viewport.name}-hover.png`),
+        })
     }
     expect(pageErrors).toEqual([])
 })
+
+async function readHoverLabel(page: Page): Promise<{
+    text: string
+    visibility: string
+    lineCount: number
+    clamp: string
+    cut: boolean
+    ellipsis: boolean
+}> {
+    return page.getByTestId('launch-vote-pill').evaluate((node) => {
+        const alt = node.querySelector('.vc-stardust-label-alt') as HTMLElement | null
+        const style = alt ? getComputedStyle(alt) : null
+        const range = document.createRange()
+        if (alt) range.selectNodeContents(alt)
+        const text = (alt?.innerText ?? '').replace(/\s+/g, ' ').trim()
+        const clamp = style?.webkitLineClamp ?? ''
+        const cut =
+            !alt ||
+            style?.visibility !== 'visible' ||
+            alt.scrollHeight > alt.clientHeight + 1 ||
+            alt.scrollWidth > alt.clientWidth + 1 ||
+            (clamp !== 'none' && clamp !== 'unset' && clamp !== '')
+        return {
+            text,
+            visibility: style?.visibility ?? '',
+            lineCount: alt ? range.getClientRects().length : 0,
+            clamp,
+            cut,
+            ellipsis: text.includes('…') || text.includes('...'),
+        }
+    })
+}
+
+async function readCapClearance(page: Page): Promise<number> {
+    return page.getByTestId('launch-vote-pill').evaluate((node) => {
+        const pill = node as HTMLElement
+        const frame = pill.parentElement as HTMLElement
+        const style = getComputedStyle(pill)
+        const w = pill.offsetWidth
+        const h = pill.offsetHeight
+        const origin = style.transformOrigin.split(' ').map((part) => parseFloat(part))
+        const matrix = new DOMMatrix(style.transform)
+        const frameRect = frame.getBoundingClientRect()
+        const host = pill.offsetParent as HTMLElement
+        const hostRect = host.getBoundingClientRect()
+        const radius = h / 2
+        const samples: Array<[number, number]> = []
+        for (let i = 0; i <= 16; i += 1) {
+            const leftAngle = Math.PI / 2 + (Math.PI * i) / 16
+            const rightAngle = -Math.PI / 2 + (Math.PI * i) / 16
+            samples.push([radius + Math.cos(leftAngle) * radius, radius + Math.sin(leftAngle) * radius])
+            samples.push([w - radius + Math.cos(rightAngle) * radius, radius + Math.sin(rightAngle) * radius])
+        }
+        let minPad = Number.POSITIVE_INFINITY
+        for (const [x, y] of samples) {
+            const point = matrix.transformPoint(new DOMPoint(x - origin[0], y - origin[1]))
+            const sx = hostRect.left + pill.offsetLeft + origin[0] + point.x
+            const sy = hostRect.top + pill.offsetTop + origin[1] + point.y
+            minPad = Math.min(minPad, sx - frameRect.left, sy - frameRect.top, frameRect.right - sx, frameRect.bottom - sy)
+        }
+        return minPad
+    })
+}
 
 function dismissHtml(): string {
     return `<!DOCTYPE html><html><head><style>
