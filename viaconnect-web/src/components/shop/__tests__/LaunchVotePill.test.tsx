@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { LaunchVotePillView } from '@/components/shop/LaunchVotePill'
+import { armFollowThroughBlock, LaunchVotePillView } from '@/components/shop/LaunchVotePill'
 import { SHOP_CONTROL_JOIN, SHOP_CONTROL_PURCHASE, SHOP_CONTROL_VOTE } from '@/lib/shop/launch-vote-copy'
 import type { ResolvedPill } from '@/lib/shop/launch-vote/state'
 
@@ -128,6 +128,87 @@ describe('LaunchVotePillView', () => {
         expect(rgbaVar(fallback, '--vc-stardust-rest-bg')[3]).toBeGreaterThan(restGlass[3])
         expect(rgbaVar(reduced, '--vc-stardust-rest-bg')[3]).toBeGreaterThan(rgbaVar(fallback, '--vc-stardust-rest-bg')[3])
         expect(reduced).toContain('backdrop-filter: none')
+    })
+
+    it('keeps the pill border box the same size in rest, hover, focus, and active', () => {
+        const css = readFileSync(join(process.cwd(), 'src/components/ui/stardust-button.css'), 'utf8')
+        const overlay = readFileSync(join(process.cwd(), 'src/components/shop/launch-vote-pill.css'), 'utf8')
+        const base = css.slice(0, css.indexOf('@media (hover: hover)'))
+        const hoverBlock = css.slice(
+            css.indexOf('@media (hover: hover)'),
+            css.indexOf(".vc-stardust[data-state='rest']:focus-visible"),
+        )
+        const focusBlock = css.slice(
+            css.indexOf(".vc-stardust[data-state='rest']:focus-visible"),
+            css.indexOf(".vc-stardust[data-state='voted']"),
+        )
+        expect(base).toContain('appearance: none')
+        expect(base).toContain('box-sizing: border-box')
+        expect(base).toContain('border: 1px solid var(--vc-stardust-rest-border)')
+        expect(base).toContain('flex: 1 1 0%')
+        expect(base).toContain('flex: 0 0 12px')
+        expect(hoverBlock).toContain('border-width: 1px')
+        expect(hoverBlock).toContain('border-style: solid')
+        expect(hoverBlock).toContain('box-sizing: border-box')
+        expect(hoverBlock).not.toContain('display: none')
+        expect(focusBlock).toContain('border-width: 1px')
+        expect(focusBlock).toContain('border-style: solid')
+        expect(focusBlock).not.toContain('display: none')
+        expect(overlay).toContain('min-width: 80%')
+        expect(overlay).toContain('max-width: 80%')
+        expect(overlay).toContain(".vc-launch-vote[data-size='card'] > .vc-stardust")
+        expect(overlay).toContain('min-width: 100%')
+        expect(overlay).toContain('max-width: 100%')
+        expect(overlay).toContain('pointer-events: auto')
+    })
+
+    it('seals dialog taps so Cancel, overlay, Submit, and Escape do not reach the card link', () => {
+        const source = readFileSync(join(process.cwd(), 'src/components/shop/LaunchVotePill.tsx'), 'utf8')
+        expect(source).toContain('createPortal(dialog, document.body)')
+        expect(source).toContain('data-testid="launch-vote-dialog"')
+        expect(source).toContain('armFollowThroughBlock')
+        expect(source).toContain('guardCardClick(event)')
+        expect(source).toContain('event.stopPropagation()')
+        expect(source).toContain("event.key === 'Escape'")
+        expect(source).toContain('closeConfirmRef.current()')
+        expect(source).not.toMatch(/\bany\b/)
+        const confirm = renderView({ phase: 'confirm' })
+        expect(confirm).toContain('data-testid="launch-vote-dialog"')
+        expect(confirm).toContain('type="button"')
+        expect(confirm).toContain('Cancel')
+        expect(confirm).toContain('Submit vote')
+
+        const listeners: Array<{ type: string; listener: (event: Event) => void; capture: true }> = []
+        let removed = 0
+        let scheduled: { fn: () => void; ms: number } | null = null
+        armFollowThroughBlock(
+            {
+                addEventListener(type, listener, capture) {
+                    listeners.push({ type, listener, capture })
+                },
+                removeEventListener() {
+                    removed += 1
+                },
+            },
+            (fn, ms) => {
+                scheduled = { fn, ms }
+                return 1
+            },
+            { x: 40, y: 80 },
+        )
+        expect(listeners).toHaveLength(1)
+        expect(listeners[0]?.type).toBe('click')
+        expect(listeners[0]?.capture).toBe(true)
+        const near = { clientX: 48, clientY: 90, preventDefault: vi.fn(), stopPropagation: vi.fn() }
+        listeners[0]?.listener(near as unknown as Event)
+        expect(near.preventDefault).toHaveBeenCalledOnce()
+        expect(near.stopPropagation).toHaveBeenCalledOnce()
+        const away = { clientX: 200, clientY: 400, preventDefault: vi.fn(), stopPropagation: vi.fn() }
+        listeners[0]?.listener(away as unknown as Event)
+        expect(away.preventDefault).not.toHaveBeenCalled()
+        expect(scheduled?.ms).toBe(350)
+        scheduled?.fn()
+        expect(removed).toBe(1)
     })
 
     it('describes Join, purchase, and vote as three separate controls', () => {

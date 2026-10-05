@@ -15,6 +15,7 @@
 // only bioavailability figure ever permitted is the verbatim string
 // "Maximum Bioavailability".
 
+import { CLAUDE_HAIKU } from '@/lib/ai/claude-models';
 import type { ComposedCopy, InsightComposer, InsightFact } from './types';
 
 function num(value: unknown): string {
@@ -203,7 +204,7 @@ export interface MinimalAnthropicClient {
   };
 }
 
-const DEFAULT_INSIGHT_MODEL = 'claude-haiku-4-5';
+const DEFAULT_INSIGHT_MODEL = CLAUDE_HAIKU;
 const MAX_COPY_TOKENS = 300;
 
 const COMPOSER_SYSTEM_PROMPT = [

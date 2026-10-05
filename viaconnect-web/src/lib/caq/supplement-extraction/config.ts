@@ -1,12 +1,12 @@
 // =============================================================================
 // Prompt 175 Part C (2026-06-04): single source of truth for the tiered
-// extraction router. Tuning the cadence, thresholds, or model ids touches
-// this file only.
+// extraction router. Tuning the cadence or thresholds touches this file.
+// Model ids are imported from src/lib/ai/claude-models.ts.
 //
 // Tiers locked by 175 spec:
 //   Primary:        Claude Haiku 4.5  ($1 / $5 per 1M tokens)
 //   Escalation:     Claude Sonnet 4.6 ($3 / $15)
-//   Optional deep:  Claude Opus 4.8   ($5 / $25), behind OPUS_ENABLED, OFF default
+//   Optional deep:  Claude Opus 4.7   ($5 / $25), behind OPUS_ENABLED, OFF default
 //
 // Escalation rules (175 Part C):
 //   * Try Haiku.
@@ -19,15 +19,17 @@
 // =============================================================================
 
 import type { ModelTier } from './types';
+import { CLAUDE_HAIKU, CLAUDE_OPUS, CLAUDE_SONNET } from '@/lib/ai/claude-models';
 
-// Anthropic model ids. The dated suffix is the public API identifier and
-// changes when Anthropic ships a new build of a tier; keep these literal
-// so a future tuning pass updates the constants without touching call sites.
+// Anthropic model ids. Current IDs live in claude-models.ts so a retirement
+// updates one module. Haiku stays on the listed 4.5 snapshot. Sonnet is the
+// documented successor of the retired Sonnet 4 snapshot. Opus is the listed
+// dateless Opus 4.7 id (the previous dated form was not in Anthropic's list).
 export const CLAUDE_MODEL_IDS: Record<ModelTier, string> = {
   gemini: 'n/a', // adapter ignores; included so the record is exhaustive
-  haiku: 'claude-haiku-4-5-20251001',
-  sonnet: 'claude-sonnet-4-20250514',
-  opus: 'claude-opus-4-7-20250520',
+  haiku: CLAUDE_HAIKU,
+  sonnet: CLAUDE_SONNET,
+  opus: CLAUDE_OPUS,
 };
 
 // Per-tier request deadline. Haiku stays tight; Sonnet a bit longer for the

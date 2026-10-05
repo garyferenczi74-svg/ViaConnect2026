@@ -8,6 +8,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import * as fs from 'fs';
 import * as dotenv from 'dotenv';
+import { CLAUDE_SONNET } from '../src/lib/ai/claude-models';
 
 dotenv.config({ path: '.env.local' });
 
@@ -37,7 +38,7 @@ const FARMCEUTICA_PRODUCTS = [
 
 async function generateRulesForPair(drug: string, product: string): Promise<any[]> {
   const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6-20250514',
+    model: CLAUDE_SONNET,
     max_tokens: 2000,
     messages: [{
       role: 'user',

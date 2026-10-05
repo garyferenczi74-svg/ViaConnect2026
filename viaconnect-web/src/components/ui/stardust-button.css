@@ -13,6 +13,8 @@
     gap: 6px;
     width: 100%;
     box-sizing: border-box;
+    -webkit-appearance: none;
+    appearance: none;
     margin: 0;
     border: 1px solid var(--vc-stardust-rest-border);
     border-radius: 999px;
@@ -42,7 +44,8 @@
     position: relative;
     z-index: 1;
     display: grid;
-    flex: 1;
+    flex: 1 1 0%;
+    width: 0;
     min-width: 0;
 }
 
@@ -78,8 +81,10 @@
     position: relative;
     z-index: 1;
     display: grid;
-    flex: none;
+    flex: 0 0 12px;
     width: 12px;
+    min-width: 12px;
+    max-width: 12px;
     height: 12px;
 }
 
@@ -94,15 +99,22 @@
     height: 12px;
 }
 
-.vc-stardust-glyph-alt {
-    display: none;
+.vc-stardust-glyph svg {
+    display: block;
+    width: 12px;
+    height: 12px;
+    overflow: visible;
 }
 
 @media (hover: hover) {
     .vc-stardust[data-state='rest']:hover {
         background: var(--vc-stardust-hover-bg);
         color: var(--vc-stardust-hover-fg);
+        border-style: solid;
+        border-width: 1px;
         border-color: var(--vc-stardust-hover-border);
+        box-sizing: border-box;
+        margin: 0;
         box-shadow: none;
     }
 
@@ -115,11 +127,10 @@
     }
 
     .vc-stardust[data-state='rest']:hover .vc-stardust-glyph-rest {
-        display: none;
+        visibility: hidden;
     }
 
     .vc-stardust[data-state='rest']:hover .vc-stardust-glyph-alt {
-        display: block;
         visibility: visible;
     }
 }
@@ -128,7 +139,11 @@
 .vc-stardust[data-state='rest']:active {
     background: var(--vc-stardust-hover-bg);
     color: var(--vc-stardust-hover-fg);
+    border-style: solid;
+    border-width: 1px;
     border-color: var(--vc-stardust-hover-border);
+    box-sizing: border-box;
+    margin: 0;
     box-shadow: none;
 }
 
@@ -149,12 +164,11 @@
 
 .vc-stardust[data-state='rest']:focus-visible .vc-stardust-glyph-rest,
 .vc-stardust[data-state='rest']:active .vc-stardust-glyph-rest {
-    display: none;
+    visibility: hidden;
 }
 
 .vc-stardust[data-state='rest']:focus-visible .vc-stardust-glyph-alt,
 .vc-stardust[data-state='rest']:active .vc-stardust-glyph-alt {
-    display: block;
     visibility: visible;
 }
 

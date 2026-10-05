@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { withAbortTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
 import { getCircuitBreaker, isCircuitBreakerError } from "@/lib/utils/circuit-breaker";
+import { CLAUDE_SONNET } from "@/lib/ai/claude-models";
 
 export const dynamic = 'force-dynamic';
 
@@ -30,7 +31,7 @@ export async function POST(req: Request) {
             "anthropic-version": "2023-06-01",
           },
           body: JSON.stringify({
-            model: "claude-sonnet-4-20250514",
+            model: CLAUDE_SONNET,
             max_tokens: 1000,
             system: `You are a supplement product identification expert. When given a search query, return a JSON array of the most likely supplement products the user is looking for. Each product must include: brandName, productName, formulation (key facts like "24g protein, 5.5g BCAAs per serving"), category, dosageForm, typicalDosage, and keyIngredients array.
 

@@ -3,6 +3,7 @@
  * Full 60+ product catalog, 25 clinical decision rules, interaction matrix, genetic variant handling
  */
 
+import { CLAUDE_SONNET } from '@/lib/ai/claude-models';
 import { UltrathinkContext } from './buildContext';
 // Prompt #60 v2 — optional cache-first path. Imported lazily so existing
 // callers without a Supabase client suffer no behavior change.
@@ -313,7 +314,7 @@ export async function generateProtocol(
     method: 'POST',
     headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-6-20250514',
+      model: CLAUDE_SONNET,
       max_tokens: 6000,
       system: protocolSystemPrompt(),
       messages: [{ role: 'user', content: userPrompt }],
