@@ -1,0 +1,17 @@
+{
+  "id": "msg_fixture",
+  "type": "message",
+  "model": "claude-sonnet-4-6",
+  "stop_reason": "end_turn",
+  "content": [
+    {
+      "type": "text",
+      "text": "{\"proposedRewrite\":\"Supports daily energy.\",\"delta\":[],\"rationale\":\"Kept the original claim shape.\"}"
+    }
+  ],
+  "usage": {
+    "input_tokens": 11,
+    "output_tokens": 9,
+    "cache_read_input_tokens": 2
+  }
+}

@@ -4,7 +4,7 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { safeLog } from '@/lib/utils/safe-log';
 
-export type Provider = 'google' | 'anthropic' | 'usda';
+export type Provider = 'google' | 'anthropic' | 'usda' | 'xai';
 export type Outcome = 'success' | 'failure';
 
 export interface AuditRecord {

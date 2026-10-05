@@ -1,0 +1,7 @@
+event: response.output_text.delta
+data: {"type":"response.output_text.delta","delta":"Hello"}
+
+event: response.completed
+data: {"type":"response.completed","response":{"status":"completed","usage":{"input_tokens":5,"output_tokens":1,"cost_in_usd_ticks":10000000000,"input_tokens_details":{"cached_tokens":0},"output_tokens_details":{"reasoning_tokens":2}}}}
+
+data: [DONE]

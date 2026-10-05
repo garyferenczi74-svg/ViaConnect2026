@@ -1,0 +1,26 @@
+{
+  "id": "resp_fixture",
+  "object": "response",
+  "status": "completed",
+  "model": "grok-4.7",
+  "store": false,
+  "output": [
+    {
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "{\"proposedRewrite\":\"Supports daily energy.\",\"delta\":[],\"rationale\":\"Removed a disease claim.\"}"
+        }
+      ]
+    }
+  ],
+  "usage": {
+    "input_tokens": 20,
+    "output_tokens": 12,
+    "input_tokens_details": { "cached_tokens": 4 },
+    "output_tokens_details": { "reasoning_tokens": 3 },
+    "cost_in_usd_ticks": 5000000000
+  }
+}
