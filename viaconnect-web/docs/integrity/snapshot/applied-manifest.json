@@ -138,6 +138,16 @@
       "note": "Confirmed in supabase_migrations.schema_migrations 2026-09-27. Applied 2026-09-26 via MCP apply_migration (recorded as version 20260926222055, DB name shop_product_waitlist); history repaired 2026-09-27 to the filename stamp (CLI-style version=filename stamp)."
     },
     {
+      "version": "20261005145424",
+      "name": "20261005145424_profiles_role_guard_pp05b",
+      "note": "Recovered from live schema_migrations.statements Soft GO Jeffery 2026-10-05. Live version equals filename stamp; no history repair. Soft GO file recovery; nothing re-applied."
+    },
+    {
+      "version": "20261005145509",
+      "name": "20261005145509_exec_issue_pack_hardening_pp05c",
+      "note": "Recovered from live schema_migrations.statements Soft GO Jeffery 2026-10-05. Live version equals filename stamp; no history repair. Soft GO file recovery; nothing re-applied."
+    },
+    {
       "version": "20261005160636",
       "name": "20261005160000_pp_05d_phase_a_stopgap_execute_revokes",
       "note": "Confirmed in supabase_migrations.schema_migrations 2026-10-05 (Arnold Soft LIVE). Live version is the unrepaired MCP apply stamp 20261005160636; DB name column was pp_05d_phase_a_stopgap_execute_revokes. Filename stem is 20261005160000_pp_05d_phase_a_stopgap_execute_revokes. Live schema_migrations still has the MCP stamp. Jeffery may repair history later. This entry does not repair live."
