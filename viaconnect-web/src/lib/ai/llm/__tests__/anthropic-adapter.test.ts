@@ -33,7 +33,9 @@ describe('anthropic adapter', () => {
     expect(result.text).toContain('proposedRewrite');
     expect(result.usage.inputTokens).toBe(11);
     expect(result.usage.cachedInputTokens).toBe(2);
-    expect(result.usage.costUsd).toBeNull();
+    // claude-sonnet-4-6 is priced by LM-00: $3 / $15 per million. Cached input
+    // uses the base input rate because this row has no separate cache price.
+    expect(result.usage.costUsd).toBeCloseTo((9 * 3 + 2 * 3 + 9 * 15) / 1_000_000);
     const [url, init] = fetchImpl.mock.calls[0] as [string, RequestInit];
     expect(url).toBe('https://api.anthropic.com/v1/messages');
     expect(String(init.headers && (init.headers as Record<string, string>)['anthropic-version'])).toBe('2023-06-01');

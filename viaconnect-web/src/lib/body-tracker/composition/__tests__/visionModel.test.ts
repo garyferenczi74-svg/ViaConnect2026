@@ -17,8 +17,8 @@ describe('FormaVision vision model resolution', () => {
       model: 'claude-sonnet-4-6',
       usedFallback: false,
     });
-    expect(resolveVisionModel('claude-sonnet-4-20250514')).toEqual({
-      model: 'claude-sonnet-4-20250514',
+    expect(resolveVisionModel('claude-opus-4-7')).toEqual({
+      model: 'claude-opus-4-7',
       usedFallback: false,
     });
     expect(isUsableVisionModelId(DEFAULT_FORMAVISION_VISION_MODEL)).toBe(true);

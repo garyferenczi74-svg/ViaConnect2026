@@ -1,44 +1,55 @@
-/* Centered on the same point as the old translate(-50%, -50%) anchor.
-   No transform here: a transformed ancestor blocks the pill backdrop-filter
-   from sampling the bottle. left 10% + width 80% matches the old horizontal
-   center. A flex box of height 2x the old top percent centers the stack there. */
+/* Corner sash. The overlay fills the image and clips the strip.
+   Transform stays on the pill, not this box, so backdrop-filter still
+   samples the bottle. Origin is the image top-left because the pill is
+   pinned to that corner. */
 .vc-launch-vote {
     position: absolute;
-    left: 10%;
+    inset: 0;
     z-index: 5;
-    display: flex;
-    width: 80%;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+    overflow: hidden;
     pointer-events: none;
 }
 
-.vc-launch-vote[data-size='card'] {
+.vc-launch-vote > .vc-stardust {
+    position: absolute;
     top: 0;
-    height: 98%;
-}
-
-@media (min-width: 768px) {
-    .vc-launch-vote[data-size='card'] {
-        top: 0;
-        height: 104%;
-    }
-}
-
-.vc-launch-vote[data-size='pdp'] {
-    top: 0;
-    height: 104%;
-}
-
-.vc-launch-vote .vc-stardust,
-.vc-launch-vote .vc-stardust-note,
-.vc-launch-vote .vc-vote-dialog {
+    left: 0;
+    box-sizing: border-box;
+    width: max-content;
+    max-width: 11.25rem;
+    margin: 0;
+    transform-origin: top left;
+    transform: rotate(-45deg) translate(-50%, 4.5rem);
     pointer-events: auto;
 }
 
+.vc-launch-vote > .vc-stardust[data-interactive='true'],
+.vc-launch-vote > .vc-stardust[data-state='voted'],
+.vc-launch-vote > .vc-stardust[data-state='popular'] {
+    width: 11.25rem;
+    min-width: 11.25rem;
+    max-width: 11.25rem;
+}
+
+.vc-launch-vote-notes {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    left: 8px;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    pointer-events: none;
+}
+
+.vc-launch-vote-notes .vc-stardust-note {
+    pointer-events: none;
+}
+
 .vc-stardust-note {
-    margin-top: 6px;
+    margin-top: 0;
     max-width: 100%;
     border-radius: 999px;
     background: #0a1929;
@@ -58,6 +69,7 @@
     justify-content: center;
     background: rgba(10, 25, 41, 0.55);
     padding: 16px;
+    pointer-events: auto;
 }
 
 .vc-vote-dialog-card {

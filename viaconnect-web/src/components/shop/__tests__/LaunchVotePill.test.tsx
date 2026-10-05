@@ -2,7 +2,8 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { LaunchVotePillView } from '@/components/shop/LaunchVotePill'
+import { armFollowThroughBlock, LaunchVotePillView } from '@/components/shop/LaunchVotePill'
+import { CONSUMER_OPEN_PILL_BASE } from '@/lib/ui/consumerChrome'
 import { SHOP_CONTROL_JOIN, SHOP_CONTROL_PURCHASE, SHOP_CONTROL_VOTE } from '@/lib/shop/launch-vote-copy'
 import type { ResolvedPill } from '@/lib/shop/launch-vote/state'
 
@@ -86,8 +87,12 @@ describe('LaunchVotePillView', () => {
 
     it('keeps hover rules inside hover media and reduced motion at none', () => {
         const css = readFileSync(join(process.cwd(), 'src/components/ui/stardust-button.css'), 'utf8')
-        const hoverBlock = css.slice(css.indexOf('@media (hover: hover)'), css.indexOf('.vc-stardust[data-state=\'rest\']:focus-visible'))
+        const hoverBlock = css.slice(
+            css.indexOf('@media (hover: hover)'),
+            css.indexOf(".vc-stardust[data-interactive='true'][data-state='rest']:focus-visible"),
+        )
         expect(hoverBlock).toContain(':hover')
+        expect(hoverBlock).toContain("data-interactive='true'")
         expect(css).toContain('@media (prefers-reduced-motion: reduce)')
         expect(css).toContain('transition: none')
         const button = readFileSync(join(process.cwd(), 'src/components/shop/LaunchVotePill.tsx'), 'utf8')
@@ -97,7 +102,10 @@ describe('LaunchVotePillView', () => {
     it('paints one open-pill glass shape with a green hover and no inner dark pill', () => {
         const css = readFileSync(join(process.cwd(), 'src/components/ui/stardust-button.css'), 'utf8')
         const base = css.slice(0, css.indexOf('@media (hover: hover)'))
-        const hoverBlock = css.slice(css.indexOf('@media (hover: hover)'), css.indexOf('.vc-stardust[data-state=\'rest\']:focus-visible'))
+        const hoverBlock = css.slice(
+            css.indexOf('@media (hover: hover)'),
+            css.indexOf(".vc-stardust[data-interactive='true'][data-state='rest']:focus-visible"),
+        )
         const fallback = css.slice(css.indexOf('@supports not (backdrop-filter: blur(1px))'))
         const reduced = css.slice(css.indexOf('@media (prefers-reduced-transparency: reduce)'))
         expect(css).toContain('-webkit-backdrop-filter: blur(12px)')
@@ -111,7 +119,7 @@ describe('LaunchVotePillView', () => {
         expect(base).toContain('border: 1px solid var(--vc-stardust-rest-border)')
         expect(base).toContain('box-shadow: none')
         expect(base).toContain('border-radius: 999px')
-        expect(base).toContain('min-height: 44px')
+        expect(base).toContain('min-height: 0')
 
         const restGlass = rgbaVar(base, '--vc-stardust-rest-bg')
         const hoverGlass = rgbaVar(base, '--vc-stardust-hover-bg')
@@ -128,6 +136,136 @@ describe('LaunchVotePillView', () => {
         expect(rgbaVar(fallback, '--vc-stardust-rest-bg')[3]).toBeGreaterThan(restGlass[3])
         expect(rgbaVar(reduced, '--vc-stardust-rest-bg')[3]).toBeGreaterThan(rgbaVar(fallback, '--vc-stardust-rest-bg')[3])
         expect(reduced).toContain('backdrop-filter: none')
+        expect(base).toContain('font-size: 12px')
+        expect(base).toContain('padding: 6px 14px')
+        expect(base).not.toContain('::before')
+        expect(base).not.toContain('::after')
+        const buttonSource = readFileSync(join(process.cwd(), 'src/components/ui/stardust-button.tsx'), 'utf8')
+        expect(buttonSource).toContain('CONSUMER_OPEN_PILL_BASE')
+        expect(CONSUMER_OPEN_PILL_BASE).toContain('bg-[#2A4C9E]/[0.12]')
+        expect(CONSUMER_OPEN_PILL_BASE).toContain('border-[#5B8DEF]/30')
+        expect(CONSUMER_OPEN_PILL_BASE).toContain('backdrop-blur-md')
+        expect(CONSUMER_OPEN_PILL_BASE).toContain('text-white')
+    })
+
+    it('sits in the image top-left as a single -45deg sash and stays static when votes are off', () => {
+        const overlay = readFileSync(join(process.cwd(), 'src/components/shop/launch-vote-pill.css'), 'utf8')
+        const sash = overlay.slice(0, overlay.indexOf('.vc-launch-vote-notes'))
+        expect(sash).toContain('inset: 0')
+        expect(sash).toContain('overflow: hidden')
+        expect(sash).toContain('top: 0')
+        expect(sash).toContain('left: 0')
+        expect(sash).toContain('transform-origin: top left')
+        expect(sash).toContain('transform: rotate(-45deg) translate(-50%, 4.5rem)')
+        expect(sash).not.toContain('::before')
+        expect(sash).not.toContain('::after')
+        expect(sash).not.toContain('#0a1929')
+        expect(overlay).not.toContain('left: 10%')
+
+        const off = renderView({
+            pill: pill({ kind: 'rest', interactive: false }),
+            votingEnabled: false,
+        })
+        expect(off).toContain('Launching Soon')
+        expect(off).toContain('data-interactive="false"')
+        expect(off).not.toContain('Vote for the next product launch')
+        expect(off).not.toContain('<button')
+
+        const on = renderView()
+        expect(on).toContain('data-interactive="true"')
+        expect(on).toContain('Vote for the next product launch')
+
+        const card = readFileSync(join(process.cwd(), 'src/components/shop/ProductCard.tsx'), 'utf8')
+        const pdp = readFileSync(
+            join(process.cwd(), 'src/app/(app)/(consumer)/shop/product/[slug]/page.tsx'),
+            'utf8',
+        )
+        expect(card).toContain('overflow-hidden')
+        expect(card).toContain('<LaunchVotePill')
+        expect(pdp).toContain('overflow-hidden')
+        expect(pdp).toContain('<LaunchVotePill')
+    })
+
+    it('keeps the pill border box the same size in rest, hover, focus, and active', () => {
+        const css = readFileSync(join(process.cwd(), 'src/components/ui/stardust-button.css'), 'utf8')
+        const overlay = readFileSync(join(process.cwd(), 'src/components/shop/launch-vote-pill.css'), 'utf8')
+        const base = css.slice(0, css.indexOf('@media (hover: hover)'))
+        const hoverBlock = css.slice(
+            css.indexOf('@media (hover: hover)'),
+            css.indexOf(".vc-stardust[data-interactive='true'][data-state='rest']:focus-visible"),
+        )
+        const focusAt = css.indexOf(".vc-stardust[data-interactive='true'][data-state='rest']:focus-visible")
+        const focusBlock = css.slice(
+            focusAt,
+            css.indexOf(".vc-stardust[data-interactive='false'][data-state='rest']:hover", focusAt),
+        )
+        expect(base).toContain('appearance: none')
+        expect(base).toContain('box-sizing: border-box')
+        expect(base).toContain('border: 1px solid var(--vc-stardust-rest-border)')
+        expect(base).toContain('flex: 1 1 0%')
+        expect(base).toContain('width: 0')
+        expect(base).toContain('flex: 0 0 12px')
+        expect(hoverBlock).toContain('border-width: 1px')
+        expect(hoverBlock).toContain('border-style: solid')
+        expect(hoverBlock).toContain('box-sizing: border-box')
+        expect(hoverBlock).not.toContain('display: none')
+        expect(focusBlock).toContain('border-width: 1px')
+        expect(focusBlock).toContain('border-style: solid')
+        expect(focusBlock).not.toContain('display: none')
+        expect(overlay).toContain('width: 11.25rem')
+        expect(overlay).toContain('min-width: 11.25rem')
+        expect(overlay).toContain('max-width: 11.25rem')
+        expect(overlay).toContain(".vc-launch-vote > .vc-stardust[data-interactive='true']")
+        expect(overlay).toContain('pointer-events: auto')
+    })
+
+    it('seals dialog taps so Cancel, overlay, Submit, and Escape do not reach the card link', () => {
+        const source = readFileSync(join(process.cwd(), 'src/components/shop/LaunchVotePill.tsx'), 'utf8')
+        expect(source).toContain('createPortal(dialog, document.body)')
+        expect(source).toContain('data-testid="launch-vote-dialog"')
+        expect(source).toContain('armFollowThroughBlock')
+        expect(source).toContain('guardCardClick(event)')
+        expect(source).toContain('event.stopPropagation()')
+        expect(source).toContain("event.key === 'Escape'")
+        expect(source).toContain('closeConfirmRef.current()')
+        expect(source).not.toMatch(/\bany\b/)
+        const confirm = renderView({ phase: 'confirm' })
+        expect(confirm).toContain('data-testid="launch-vote-dialog"')
+        expect(confirm).toContain('type="button"')
+        expect(confirm).toContain('Cancel')
+        expect(confirm).toContain('Submit vote')
+
+        const listeners: Array<{ type: string; listener: (event: Event) => void; capture: true }> = []
+        let removed = 0
+        let scheduled: { fn: () => void; ms: number } | null = null
+        armFollowThroughBlock(
+            {
+                addEventListener(type, listener, capture) {
+                    listeners.push({ type, listener, capture })
+                },
+                removeEventListener() {
+                    removed += 1
+                },
+            },
+            (fn, ms) => {
+                scheduled = { fn, ms }
+                return 1
+            },
+            { x: 40, y: 80 },
+        )
+        expect(listeners).toHaveLength(1)
+        expect(listeners[0]?.type).toBe('click')
+        expect(listeners[0]?.capture).toBe(true)
+        const near = { clientX: 48, clientY: 90, preventDefault: vi.fn(), stopPropagation: vi.fn() }
+        listeners[0]?.listener(near as unknown as Event)
+        expect(near.preventDefault).toHaveBeenCalledOnce()
+        expect(near.stopPropagation).toHaveBeenCalledOnce()
+        const away = { clientX: 200, clientY: 400, preventDefault: vi.fn(), stopPropagation: vi.fn() }
+        listeners[0]?.listener(away as unknown as Event)
+        expect(away.preventDefault).not.toHaveBeenCalled()
+        expect(scheduled?.ms).toBe(350)
+        scheduled?.fn()
+        expect(removed).toBe(1)
     })
 
     it('describes Join, purchase, and vote as three separate controls', () => {

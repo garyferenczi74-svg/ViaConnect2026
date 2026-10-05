@@ -6,8 +6,8 @@
  * runtime inference API.
  *
  * Claude model IDs are chosen by the call site. The canonical map is
- * `src/lib/ai/claude-models.ts` on LM-00 (PR #270), which is not on main.
- * This module does not import it and does not retarget existing model IDs.
+ * `src/lib/ai/claude-models.ts` (LM-00, merged). This module does not
+ * retarget existing model IDs.
  */
 
 export const LLM_PROVIDER_IDS = ['anthropic', 'xai'] as const;

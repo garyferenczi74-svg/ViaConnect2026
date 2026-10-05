@@ -1,7 +1,10 @@
 /**
  * Stardust vote pill. Vote control only. Not Join the Revolution and not Add to Cart.
+ * One Open-pill glass surface. Colours come from CONSUMER_OPEN_PILL_BASE.
  */
-import type { MouseEvent, ReactNode } from 'react'
+import type { MouseEvent, PointerEvent, ReactNode } from 'react'
+import { CONSUMER_OPEN_PILL_BASE } from '@/lib/ui/consumerChrome'
+import { cn } from '@/lib/utils'
 import './stardust-button.css'
 
 export type StardustSize = 'card' | 'pdp'
@@ -21,7 +24,9 @@ interface StardustButtonProps {
     ariaHaspopup?: 'dialog'
     ariaExpanded?: boolean
     role?: 'status'
+    interactive?: boolean
     onClick?: (event: MouseEvent<HTMLButtonElement>) => void
+    onPointerDown?: (event: PointerEvent<HTMLButtonElement>) => void
 }
 
 export function StardustButton({
@@ -38,9 +43,15 @@ export function StardustButton({
     ariaHaspopup,
     ariaExpanded,
     role,
+    interactive = as === 'button',
     onClick,
+    onPointerDown,
 }: StardustButtonProps) {
-    const className = 'vc-stardust'
+    const className = cn(
+        'vc-stardust',
+        CONSUMER_OPEN_PILL_BASE,
+        'min-h-0 gap-1.5 px-[14px] py-1.5 text-xs font-medium leading-tight',
+    )
     const body = (
         <>
             {state === 'popular' ? (
@@ -70,6 +81,7 @@ export function StardustButton({
                 className={className}
                 data-size={size}
                 data-state={state}
+                data-interactive={interactive ? 'true' : 'false'}
                 data-testid="launch-vote-pill"
                 role={role}
                 aria-label={ariaLabel}
@@ -85,11 +97,13 @@ export function StardustButton({
             className={className}
             data-size={size}
             data-state={state}
+            data-interactive={interactive ? 'true' : 'false'}
             data-testid="launch-vote-pill"
             aria-label={ariaLabel}
             aria-haspopup={ariaHaspopup}
             aria-expanded={ariaExpanded}
             onClick={onClick}
+            onPointerDown={onPointerDown}
         >
             {body}
         </button>

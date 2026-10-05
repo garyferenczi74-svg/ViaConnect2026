@@ -1,6 +1,7 @@
 "use client";
 
 import { DISCLAIMERS } from "@/config/regulatory/disclaimers";
+import { redactLockedIngredientText } from "@/lib/shop/lockedIngredientDisplay";
 import { Shield } from "lucide-react";
 
 interface WADAWarningProps {
@@ -14,7 +15,7 @@ export default function WADAWarning({ className = "" }: WADAWarningProps) {
         <Shield className="h-4 w-4 shrink-0 text-red-400/80 mt-0.5" strokeWidth={1.5} />
         <div>
           <p className="text-xs font-medium text-red-300/80 mb-1">WADA Anti-Doping Notice</p>
-          <p className="text-xs text-white/50 leading-relaxed">{DISCLAIMERS.athleteWADA.text}</p>
+          <p className="text-xs text-white/50 leading-relaxed">{redactLockedIngredientText(DISCLAIMERS.athleteWADA.text)}</p>
         </div>
       </div>
     </div>

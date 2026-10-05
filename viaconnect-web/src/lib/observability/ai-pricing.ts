@@ -3,13 +3,18 @@
 // inflating cost figures. The 'gemini-2.5-flash-paid' row is for the day we
 // outgrow the free quota; switch is one constant change in gemini-client.ts.
 //
+// Current Claude keys follow src/lib/ai/claude-models.ts (LM-00, merged).
+// Rates are Anthropic base input/output USD per million tokens (fetched 2026-10-05):
+// https://docs.anthropic.com/en/docs/about-claude/pricing
+// Retired and alias keys stay so historical usage rows still price.
+//
 // xAI rows are the published under-200k-token rates (OBSERVE 7.2, docs.x.ai
 // models page, fetched 2026-10-04), USD per 1M tokens. At 200k tokens or
 // more the whole request is billed at 2x; this table does not apply that
 // multiplier. The US endpoint adds 10% and is not applied here. When a
 // response includes usage.cost_in_usd_ticks, prefer usdFromXaiTicks.
-// Existing Anthropic keys are unchanged. LM-00 (PR #270) owns additional
-// Claude keys and is not imported here because claude-models.ts is not on main.
+
+import { CLAUDE_HAIKU, CLAUDE_OPUS, CLAUDE_SONNET } from '@/lib/ai/claude-models';
 
 export const PROVIDER_IDS = ['anthropic', 'google', 'xai'] as const;
 export type ProviderId = (typeof PROVIDER_IDS)[number];
@@ -30,7 +35,13 @@ export function usdFromXaiTicks(ticks: number): number | null {
 }
 
 export const PRICING: Record<string, ModelPrice> = {
-  'claude-haiku-4-5-20251001': { input: 1.0, output: 5.0 },
+  [CLAUDE_HAIKU]: { input: 1.0, output: 5.0 },
+  // Documented alias of CLAUDE_HAIKU. New calls use the dated ID. Kept so
+  // historical rows that logged the alias still price.
+  'claude-haiku-4-5': { input: 1.0, output: 5.0 },
+  [CLAUDE_SONNET]: { input: 3.0, output: 15.0 },
+  [CLAUDE_OPUS]: { input: 5.0, output: 25.0 },
+  // Retired 2026-06-15. No new call site sends this ID.
   'claude-sonnet-4-20250514': { input: 3.0, output: 15.0 },
   'claude-sonnet-4-5': { input: 3.0, output: 15.0 },
   'gemini-2.5-flash': { input: 0, output: 0 },

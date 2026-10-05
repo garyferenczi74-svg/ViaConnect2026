@@ -3,11 +3,16 @@
  * Full 60+ product catalog, 25 clinical decision rules, interaction matrix, genetic variant handling
  */
 
+import { CLAUDE_SONNET } from '@/lib/ai/claude-models';
 import { UltrathinkContext } from './buildContext';
 // Prompt #60 v2 — optional cache-first path. Imported lazily so existing
 // callers without a Supabase client suffer no behavior change.
 import { matchPattern, hashSignals, type UserSignals } from './patternMatcher';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import {
+  lockedIngredientsVisible,
+  redactLockedIngredientText,
+} from '@/lib/shop/lockedIngredientDisplay';
 
 export interface ProtocolRecommendation {
   rank: number;
@@ -234,6 +239,29 @@ Return ONLY valid JSON (no markdown, no backticks):
 - Maximum 5 HIGH priority, maximum 12 total recommendations
 - Quality over quantity — every recommendation must be justified by data`;
 
+/** Catalog text sent to the model. Locked ingredient names are omitted while the pre-launch lock is on. */
+export function protocolSystemPrompt(): string {
+  if (lockedIngredientsVisible()) return SYSTEM_PROMPT;
+  return redactLockedIngredientText(SYSTEM_PROMPT);
+}
+
+function scrubGeneratedProtocol<T extends GeneratedProtocol>(result: T): T {
+  if (lockedIngredientsVisible()) return result;
+  return {
+    ...result,
+    protocol_rationale: redactLockedIngredientText(result.protocol_rationale),
+    recommendations: result.recommendations.map((row) => ({
+      ...row,
+      farmceutica_product: redactLockedIngredientText(row.farmceutica_product),
+      dosage: redactLockedIngredientText(row.dosage),
+      rationale: redactLockedIngredientText(row.rationale),
+      bioavailability_note: row.bioavailability_note
+        ? redactLockedIngredientText(row.bioavailability_note)
+        : row.bioavailability_note,
+    })),
+  };
+}
+
 /**
  * Generate a protocol for a given user context.
  *
@@ -260,7 +288,7 @@ export async function generateProtocol(
       if (hit) {
         // Cache hit: deserialize the stored protocol payload and return it
         const payload = hit.protocol_payload as Partial<GeneratedProtocol>;
-        return {
+        return scrubGeneratedProtocol({
           recommendations: payload.recommendations ?? [],
           protocol_rationale: payload.protocol_rationale ?? hit.signal_summary,
           bio_score_impact: payload.bio_score_impact ?? { overall_delta: 0, primary_improvements: [], timeline_weeks: 12 },
@@ -268,7 +296,7 @@ export async function generateProtocol(
           output_tokens: 0,
           source: 'cache',
           cache_hit: true,
-        };
+        });
       }
     } catch {
       // Cache lookup failure must NEVER block protocol generation —
@@ -286,9 +314,9 @@ export async function generateProtocol(
     method: 'POST',
     headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-6-20250514',
+      model: CLAUDE_SONNET,
       max_tokens: 6000,
-      system: SYSTEM_PROMPT,
+      system: protocolSystemPrompt(),
       messages: [{ role: 'user', content: userPrompt }],
     }),
   });
@@ -305,7 +333,7 @@ export async function generateProtocol(
   if (!jsonMatch) throw new Error('No valid JSON in Ultrathink response');
 
   const parsed = JSON.parse(jsonMatch[0]);
-  const result: GeneratedProtocol & { source?: 'cache' | 'claude'; cache_hit?: boolean } = {
+  const result: GeneratedProtocol & { source?: 'cache' | 'claude'; cache_hit?: boolean } = scrubGeneratedProtocol({
     recommendations: parsed.recommendations ?? [],
     protocol_rationale: parsed.protocol_rationale ?? '',
     bio_score_impact: parsed.bio_score_impact ?? { overall_delta: 0, primary_improvements: [], timeline_weeks: 12 },
@@ -313,7 +341,7 @@ export async function generateProtocol(
     output_tokens: data.usage?.output_tokens ?? 0,
     source: 'claude',
     cache_hit: false,
-  };
+  });
 
   // ── Cache write-back (best-effort, fire-and-forget) ─────────────────
   // Prompt #60 v2 — store the Claude result so future identical signal

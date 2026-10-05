@@ -19,20 +19,23 @@ import { createClient } from '@/lib/supabase/server'
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout'
 import { safeLog } from '@/lib/utils/safe-log'
 import { annotateShopIngredientJson } from '@/lib/supplements/confirmedBioavailability'
+import { applyLockedIngredientShopFields } from '@/lib/shop/lockedIngredientDisplay'
 import { resolveRelease } from '@/lib/shop/release-rules'
 
 const QUERY_TIMEOUT_MS = 5000
 
 function hydrateShopProduct(product: ShopProduct): ShopProduct {
-    if (!product.ingredients?.length) return product
-    return {
-        ...product,
-        ingredients: annotateShopIngredientJson(
-            product.slug ?? product.sku,
-            product.name,
-            product.ingredients,
-        ),
-    }
+    const annotated = product.ingredients?.length
+        ? {
+              ...product,
+              ingredients: annotateShopIngredientJson(
+                  product.slug ?? product.sku,
+                  product.name,
+                  product.ingredients,
+              ),
+          }
+        : product
+    return applyLockedIngredientShopFields(annotated)
 }
 
 export interface ShopCategoryRow {

@@ -16,15 +16,27 @@ const VIEWPORTS = [
     { name: '1280', width: 1280, height: 800 },
 ] as const
 
-function pageHtml(tone: 'white' | 'black', state: 'rest' | 'voted' | 'popular' | 'confirm'): string {
+const GLYPH = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M8 7l4 4 4-4"/></svg>`
+
+function pageHtml(tone: 'white' | 'black', state: 'rest' | 'voted' | 'popular' | 'confirm' | 'static'): string {
     const rest = `
-      <button type="button" class="vc-stardust" data-size="card" data-state="rest" data-testid="launch-vote-pill">
+      <button type="button" class="vc-stardust" data-size="card" data-state="rest" data-interactive="true" data-testid="launch-vote-pill">
         <span class="vc-stardust-labels">
           <span class="vc-stardust-label vc-stardust-label-rest">Launching Soon</span>
           <span class="vc-stardust-label vc-stardust-label-alt">Vote for the next product launch</span>
         </span>
+        <span class="vc-stardust-glyphs" aria-hidden="true">
+          <span class="vc-stardust-glyph vc-stardust-glyph-rest">${GLYPH}</span>
+          <span class="vc-stardust-glyph vc-stardust-glyph-alt">${GLYPH}</span>
+        </span>
       </button>
       <span class="vc-stardust-note">25% off your first order of this product if you have not ordered before, or your next order if you have. Terms apply.</span>`
+    const staticSash = `
+      <span class="vc-stardust" data-size="card" data-state="rest" data-interactive="false" data-testid="launch-vote-pill">
+        <span class="vc-stardust-labels">
+          <span class="vc-stardust-label vc-stardust-label-rest">Launching Soon</span>
+        </span>
+      </span>`
     const voted = `<span class="vc-stardust" data-size="card" data-state="voted" data-testid="launch-vote-pill" role="status"><span class="vc-stardust-labels"><span class="vc-stardust-label">You voted. 25% off at launch</span></span></span>`
     const popular = `<span class="vc-stardust" data-size="card" data-state="popular" data-testid="launch-vote-pill"><span class="vc-stardust-labels vc-stardust-labels-stack"><span class="vc-stardust-label">By Popular Demand</span><span class="vc-stardust-detail">Releases Oct 5</span></span></span>`
     const confirm = `${rest}
@@ -34,7 +46,7 @@ function pageHtml(tone: 'white' | 'black', state: 'rest' | 'voted' | 'popular' |
         <button type="button" class="vc-vote-dialog-submit">Submit vote</button>
         <button type="button" class="vc-vote-dialog-cancel">Cancel</button>
       </div></div>`
-    const body = state === 'voted' ? voted : state === 'popular' ? popular : state === 'confirm' ? confirm : rest
+    const body = state === 'voted' ? voted : state === 'popular' ? popular : state === 'confirm' ? confirm : state === 'static' ? staticSash : rest
     const bottleFill = tone === 'black'
         ? 'linear-gradient(90deg, #050505 0%, #2c2c2c 28%, #4a4a4a 46%, #111111 58%, #2a2a2a 100%)'
         : 'linear-gradient(90deg, #8b939b 0%, #e6e8eb 22%, #ffffff 42%, #f7f7f8 56%, #c5c9ce 100%)'
@@ -73,6 +85,7 @@ test('states A through D and confirm at 390 and 1280', async ({ page }) => {
     mkdirSync(ARTIFACT_DIR, { recursive: true })
     for (const viewport of VIEWPORTS) {
         await page.setViewportSize({ width: viewport.width, height: viewport.height })
+        const restWidths: number[] = []
         for (const tone of ['white', 'black'] as const) {
             await page.setContent(pageHtml(tone, 'rest'), { waitUntil: 'domcontentloaded' })
             const pill = page.getByTestId('launch-vote-pill')
@@ -83,18 +96,79 @@ test('states A through D and confirm at 390 and 1280', async ({ page }) => {
             expect(cssColor(restPaint.background)).toBe('rgba(42,76,158,0.12)')
             expect(restPaint.blur).toContain('blur')
             const before = await pill.boundingBox()
+            restWidths.push(before?.width ?? -1)
             await page.screenshot({
                 path: join(ARTIFACT_DIR, `A-rest-${tone}-${viewport.name}.png`),
             })
+            const placed = await pill.evaluate((node) => {
+                const style = getComputedStyle(node)
+                const overlay = node.parentElement ? getComputedStyle(node.parentElement) : null
+                return {
+                    transform: style.transform,
+                    origin: style.transformOrigin,
+                    overflow: overlay?.overflow ?? '',
+                }
+            })
+            expect(placed.transform).toContain('matrix')
+            expect(placed.origin.startsWith('0px')).toBe(true)
+            expect(placed.overflow).toBe('hidden')
+            const cardBox = await page.getByTestId('bottle').boundingBox()
+            const restCenterX = (before?.x ?? 0) + (before?.width ?? 0) / 2
+            const restCenterY = (before?.y ?? 0) + (before?.height ?? 0) / 2
+            expect(restCenterX).toBeLessThan((cardBox?.x ?? 0) + (cardBox?.width ?? 0) * 0.45)
+            expect(restCenterY).toBeLessThan((cardBox?.y ?? 0) + (cardBox?.height ?? 0) * 0.45)
             await pill.hover()
             await expect.poll(async () => cssColor(await pill.evaluate((node) => getComputedStyle(node).backgroundColor))).toBe('rgba(15,77,51,0.2)')
             const after = await pill.boundingBox()
             expect(before?.width).toBe(after?.width)
             expect(before?.height).toBe(after?.height)
-            const bottle = await page.getByTestId('bottle').boundingBox()
-            expect((after?.width ?? 0) <= (bottle?.width ?? 0) * 0.81).toBe(true)
             await page.screenshot({
                 path: join(ARTIFACT_DIR, `B-hover-${tone}-${viewport.name}.png`),
+            })
+            await page.keyboard.press('Tab')
+            await expect(pill).toBeFocused()
+            const focused = await pill.boundingBox()
+            expect(focused?.width).toBe(before?.width)
+            expect(focused?.height).toBe(before?.height)
+            expect(await pill.evaluate((node) => getComputedStyle(node.querySelector('.vc-stardust-label-alt') as Element).visibility)).toBe('visible')
+            const box = await pill.boundingBox()
+            if (!box) throw new Error('missing pill box')
+            await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+            await page.mouse.down()
+            const active = await pill.boundingBox()
+            expect(active?.width).toBe(before?.width)
+            expect(active?.height).toBe(before?.height)
+            const metrics = await pill.evaluate((node) => {
+                const style = getComputedStyle(node)
+                const labels = [...node.querySelectorAll('.vc-stardust-label')]
+                const clipped = labels.some((label) => {
+                    const shown = getComputedStyle(label).visibility !== 'hidden'
+                    if (!shown) return false
+                    return label.scrollHeight > label.clientHeight + 1 || label.scrollWidth > label.clientWidth + 1
+                })
+                return {
+                    borderLeft: style.borderLeftWidth,
+                    borderRight: style.borderRightWidth,
+                    boxSizing: style.boxSizing,
+                    appearance: style.appearance,
+                    clipped,
+                    text: labels.map((label) => label.textContent).join('|'),
+                }
+            })
+            expect(metrics.borderLeft).toBe('1px')
+            expect(metrics.borderRight).toBe('1px')
+            expect(metrics.boxSizing).toBe('border-box')
+            expect(metrics.appearance).toBe('none')
+            expect(metrics.clipped).toBe(false)
+            expect(metrics.text).toContain('Launching Soon')
+            expect(metrics.text).toContain('Vote for the next product launch')
+            await page.mouse.up()
+            await page.setContent(pageHtml(tone, 'static'), { waitUntil: 'domcontentloaded' })
+            const staticPill = page.getByTestId('launch-vote-pill')
+            await staticPill.hover()
+            expect(cssColor(await staticPill.evaluate((node) => getComputedStyle(node).backgroundColor))).toBe('rgba(42,76,158,0.12)')
+            await page.screenshot({
+                path: join(ARTIFACT_DIR, `E-static-${tone}-${viewport.name}.png`),
             })
             for (const state of ['voted', 'popular', 'confirm'] as const) {
                 await page.setContent(pageHtml(tone, state), { waitUntil: 'domcontentloaded' })
@@ -108,5 +182,125 @@ test('states A through D and confirm at 390 and 1280', async ({ page }) => {
                 })
             }
         }
+        expect(restWidths[0]).toBe(restWidths[1])
+        expect(restWidths[0]).toBeGreaterThan(0)
     }
+})
+
+function dismissHtml(): string {
+    return `<!DOCTYPE html><html><head><style>
+      ${CSS}
+      ${OVERLAY_CSS}
+      body { margin: 0; background: #0F1A2E; font-family: Inter, system-ui, sans-serif; }
+      .card { position: relative; width: 180px; height: 240px; margin: 24px auto; background: #111; }
+    </style></head><body>
+      <a id="card" href="/shop/product/acat-plus-mitochondrial-support" style="position:fixed;inset:0;display:block;">
+      <div class="vc-vote-dialog" id="dialog" data-testid="launch-vote-dialog">
+        <div class="vc-vote-dialog-card" role="dialog" aria-modal="true" data-testid="launch-vote-confirm">
+          <h2>Vote for ACAT+?</h2>
+          <p>One vote per product. Votes can't be undone.</p>
+          <div class="vc-vote-dialog-actions">
+            <button type="button" class="vc-vote-dialog-submit">Submit vote</button>
+            <button type="button" class="vc-vote-dialog-cancel">Cancel</button>
+          </div>
+        </div>
+      </div>
+      </a>
+      <script>
+        if (!document.documentElement.dataset.voteBound) {
+          document.documentElement.dataset.voteBound = '1'
+          const card = document.getElementById('card')
+          const dialog = document.getElementById('dialog')
+          window.__navigated = 0
+          card.addEventListener('click', (event) => {
+            window.__navigated += 1
+            event.preventDefault()
+          })
+          function seal(event) { event.preventDefault(); event.stopPropagation() }
+          function arm(event) {
+            const origin = { x: event.clientX, y: event.clientY }
+            const block = (next) => {
+              if (typeof next.clientX !== 'number') return
+              if (Math.abs(next.clientX - origin.x) > 24 || Math.abs(next.clientY - origin.y) > 24) return
+              next.preventDefault()
+              next.stopPropagation()
+            }
+            document.addEventListener('click', block, true)
+            setTimeout(() => document.removeEventListener('click', block, true), 350)
+          }
+          function closeDialog(event) {
+            seal(event)
+            arm(event)
+            dialog.remove()
+          }
+          dialog.addEventListener('pointerdown', (event) => event.stopPropagation())
+          dialog.addEventListener('click', (event) => {
+            seal(event)
+            if (event.target === dialog) closeDialog(event)
+          })
+          const panel = dialog.querySelector('.vc-vote-dialog-card')
+          panel.addEventListener('pointerdown', (event) => event.stopPropagation())
+          panel.addEventListener('click', seal)
+          dialog.querySelector('.vc-vote-dialog-cancel').addEventListener('click', closeDialog)
+          dialog.querySelector('.vc-vote-dialog-submit').addEventListener('click', (event) => {
+            seal(event)
+            arm(event)
+            dialog.remove()
+          })
+          document.addEventListener('keydown', (event) => {
+            if (event.key !== 'Escape' || !dialog.isConnected) return
+            event.preventDefault()
+            event.stopPropagation()
+            dialog.remove()
+          })
+        }
+      </script>
+    </body></html>`
+}
+
+async function navigatedCount(page: import('@playwright/test').Page): Promise<number> {
+    return page.evaluate(() => {
+        const win = window as Window & { __navigated?: number }
+        return win.__navigated ?? 0
+    })
+}
+
+test('Cancel, overlay, Submit, and Escape do not open the product', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+
+    await page.setContent(dismissHtml(), { waitUntil: 'domcontentloaded' })
+    await page.getByRole('heading', { name: 'Vote for ACAT+?' }).click()
+    await expect(page.getByRole('dialog')).toHaveCount(1)
+    expect(await navigatedCount(page)).toBe(0)
+
+    const cancel = page.getByRole('button', { name: 'Cancel' })
+    const cancelBox = await cancel.boundingBox()
+    if (!cancelBox) throw new Error('missing Cancel box')
+    await cancel.click()
+    await expect(page.getByRole('dialog')).toHaveCount(0)
+    expect(await navigatedCount(page)).toBe(0)
+    expect(page.url()).not.toContain('acat-plus-mitochondrial-support')
+    await page.mouse.click(cancelBox.x + cancelBox.width / 2, cancelBox.y + cancelBox.height / 2)
+    expect(await navigatedCount(page)).toBe(0)
+    await page.locator('#card').click()
+    expect(await navigatedCount(page)).toBe(1)
+
+    await page.setContent(dismissHtml(), { waitUntil: 'domcontentloaded' })
+    await page.getByTestId('launch-vote-dialog').click({ position: { x: 8, y: 8 } })
+    await expect(page.getByRole('dialog')).toHaveCount(0)
+    expect(await navigatedCount(page)).toBe(0)
+    expect(page.url()).not.toContain('acat-plus-mitochondrial-support')
+
+    await page.setContent(dismissHtml(), { waitUntil: 'domcontentloaded' })
+    await page.getByRole('button', { name: 'Submit vote' }).click()
+    await expect(page.getByRole('dialog')).toHaveCount(0)
+    expect(await navigatedCount(page)).toBe(0)
+    expect(page.url()).not.toContain('acat-plus-mitochondrial-support')
+
+    await page.setContent(dismissHtml(), { waitUntil: 'domcontentloaded' })
+    await page.getByRole('button', { name: 'Submit vote' }).focus()
+    await page.keyboard.press('Escape')
+    await expect(page.getByRole('dialog')).toHaveCount(0)
+    expect(await navigatedCount(page)).toBe(0)
+    expect(page.url()).not.toContain('acat-plus-mitochondrial-support')
 })

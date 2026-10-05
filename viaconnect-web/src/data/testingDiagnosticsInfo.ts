@@ -1,6 +1,13 @@
 // Testing & Diagnostics product info, content for the
 // TestingProductInfoButtons accordion shown on each Testing
 // category card in /shop. Hardcoded per Prompt #49h.
+// Historical copy stays in TESTING_DIAGNOSTICS_INFO. The getters omit
+// pre-launch locked ingredient names before a shopper sees them.
+
+import {
+  lockedIngredientsVisible,
+  redactLockedIngredientText,
+} from '@/lib/shop/lockedIngredientDisplay';
 //
 // `sku` is the canonical lookup key (matches MASTER_SKUS).
 // `slug` is preserved per the prompt spec for any future routing.
@@ -439,8 +446,31 @@ export const TESTING_DIAGNOSTICS_INFO: TestingProductInfo[] = [
   },
 ];
 
-export const getTestingProductBySlug = (slug: string): TestingProductInfo | undefined =>
-  TESTING_DIAGNOSTICS_INFO.find((p) => p.slug === slug);
+function testingProductForDisplay(product: TestingProductInfo): TestingProductInfo {
+  if (lockedIngredientsVisible()) return product;
+  return {
+    ...product,
+    subtitle: redactLockedIngredientText(product.subtitle),
+    marketingDescription: redactLockedIngredientText(product.marketingDescription),
+    sections: product.sections.map((section) => ({
+      ...section,
+      label: redactLockedIngredientText(section.label),
+      items: section.items
+        .map((item) => ({
+          title: redactLockedIngredientText(item.title),
+          detail: redactLockedIngredientText(item.detail),
+        }))
+        .filter((item) => item.title.length > 0 || item.detail.length > 0),
+    })),
+  };
+}
 
-export const getTestingProductBySku = (sku: string): TestingProductInfo | undefined =>
-  TESTING_DIAGNOSTICS_INFO.find((p) => p.sku === sku);
+export const getTestingProductBySlug = (slug: string): TestingProductInfo | undefined => {
+  const product = TESTING_DIAGNOSTICS_INFO.find((p) => p.slug === slug);
+  return product ? testingProductForDisplay(product) : undefined;
+};
+
+export const getTestingProductBySku = (sku: string): TestingProductInfo | undefined => {
+  const product = TESTING_DIAGNOSTICS_INFO.find((p) => p.sku === sku);
+  return product ? testingProductForDisplay(product) : undefined;
+};
