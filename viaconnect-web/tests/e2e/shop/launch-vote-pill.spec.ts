@@ -18,9 +18,9 @@ const VIEWPORTS = [
 
 const GLYPH = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M8 7l4 4 4-4"/></svg>`
 
-function pageHtml(tone: 'white' | 'black', state: 'rest' | 'voted' | 'popular' | 'confirm'): string {
+function pageHtml(tone: 'white' | 'black', state: 'rest' | 'voted' | 'popular' | 'confirm' | 'static'): string {
     const rest = `
-      <button type="button" class="vc-stardust" data-size="card" data-state="rest" data-testid="launch-vote-pill">
+      <button type="button" class="vc-stardust" data-size="card" data-state="rest" data-interactive="true" data-testid="launch-vote-pill">
         <span class="vc-stardust-labels">
           <span class="vc-stardust-label vc-stardust-label-rest">Launching Soon</span>
           <span class="vc-stardust-label vc-stardust-label-alt">Vote for the next product launch</span>
@@ -31,6 +31,12 @@ function pageHtml(tone: 'white' | 'black', state: 'rest' | 'voted' | 'popular' |
         </span>
       </button>
       <span class="vc-stardust-note">25% off your first order of this product if you have not ordered before, or your next order if you have. Terms apply.</span>`
+    const staticSash = `
+      <span class="vc-stardust" data-size="card" data-state="rest" data-interactive="false" data-testid="launch-vote-pill">
+        <span class="vc-stardust-labels">
+          <span class="vc-stardust-label vc-stardust-label-rest">Launching Soon</span>
+        </span>
+      </span>`
     const voted = `<span class="vc-stardust" data-size="card" data-state="voted" data-testid="launch-vote-pill" role="status"><span class="vc-stardust-labels"><span class="vc-stardust-label">You voted. 25% off at launch</span></span></span>`
     const popular = `<span class="vc-stardust" data-size="card" data-state="popular" data-testid="launch-vote-pill"><span class="vc-stardust-labels vc-stardust-labels-stack"><span class="vc-stardust-label">By Popular Demand</span><span class="vc-stardust-detail">Releases Oct 5</span></span></span>`
     const confirm = `${rest}
@@ -40,7 +46,7 @@ function pageHtml(tone: 'white' | 'black', state: 'rest' | 'voted' | 'popular' |
         <button type="button" class="vc-vote-dialog-submit">Submit vote</button>
         <button type="button" class="vc-vote-dialog-cancel">Cancel</button>
       </div></div>`
-    const body = state === 'voted' ? voted : state === 'popular' ? popular : state === 'confirm' ? confirm : rest
+    const body = state === 'voted' ? voted : state === 'popular' ? popular : state === 'confirm' ? confirm : state === 'static' ? staticSash : rest
     const bottleFill = tone === 'black'
         ? 'linear-gradient(90deg, #050505 0%, #2c2c2c 28%, #4a4a4a 46%, #111111 58%, #2a2a2a 100%)'
         : 'linear-gradient(90deg, #8b939b 0%, #e6e8eb 22%, #ffffff 42%, #f7f7f8 56%, #c5c9ce 100%)'
@@ -94,11 +100,31 @@ test('states A through D and confirm at 390 and 1280', async ({ page }) => {
             await page.screenshot({
                 path: join(ARTIFACT_DIR, `A-rest-${tone}-${viewport.name}.png`),
             })
+            const placed = await pill.evaluate((node) => {
+                const style = getComputedStyle(node)
+                const overlay = node.parentElement ? getComputedStyle(node.parentElement) : null
+                return {
+                    transform: style.transform,
+                    origin: style.transformOrigin,
+                    overflow: overlay?.overflow ?? '',
+                }
+            })
+            expect(placed.transform).toContain('matrix')
+            expect(placed.origin.startsWith('0px')).toBe(true)
+            expect(placed.overflow).toBe('hidden')
+            const cardBox = await page.getByTestId('bottle').boundingBox()
+            const restCenterX = (before?.x ?? 0) + (before?.width ?? 0) / 2
+            const restCenterY = (before?.y ?? 0) + (before?.height ?? 0) / 2
+            expect(restCenterX).toBeLessThan((cardBox?.x ?? 0) + (cardBox?.width ?? 0) * 0.45)
+            expect(restCenterY).toBeLessThan((cardBox?.y ?? 0) + (cardBox?.height ?? 0) * 0.45)
             await pill.hover()
             await expect.poll(async () => cssColor(await pill.evaluate((node) => getComputedStyle(node).backgroundColor))).toBe('rgba(15,77,51,0.2)')
             const after = await pill.boundingBox()
             expect(before?.width).toBe(after?.width)
             expect(before?.height).toBe(after?.height)
+            await page.screenshot({
+                path: join(ARTIFACT_DIR, `B-hover-${tone}-${viewport.name}.png`),
+            })
             await page.keyboard.press('Tab')
             await expect(pill).toBeFocused()
             const focused = await pill.boundingBox()
@@ -112,7 +138,6 @@ test('states A through D and confirm at 390 and 1280', async ({ page }) => {
             const active = await pill.boundingBox()
             expect(active?.width).toBe(before?.width)
             expect(active?.height).toBe(before?.height)
-            expect(await pill.evaluate((node) => getComputedStyle(node.querySelector('.vc-stardust-label-alt') as Element).visibility)).toBe('visible')
             const metrics = await pill.evaluate((node) => {
                 const style = getComputedStyle(node)
                 const labels = [...node.querySelectorAll('.vc-stardust-label')]
@@ -138,10 +163,12 @@ test('states A through D and confirm at 390 and 1280', async ({ page }) => {
             expect(metrics.text).toContain('Launching Soon')
             expect(metrics.text).toContain('Vote for the next product launch')
             await page.mouse.up()
-            const bottle = await page.getByTestId('bottle').boundingBox()
-            expect((after?.width ?? 0) <= (bottle?.width ?? 0) * 0.81).toBe(true)
+            await page.setContent(pageHtml(tone, 'static'), { waitUntil: 'domcontentloaded' })
+            const staticPill = page.getByTestId('launch-vote-pill')
+            await staticPill.hover()
+            expect(cssColor(await staticPill.evaluate((node) => getComputedStyle(node).backgroundColor))).toBe('rgba(42,76,158,0.12)')
             await page.screenshot({
-                path: join(ARTIFACT_DIR, `B-hover-${tone}-${viewport.name}.png`),
+                path: join(ARTIFACT_DIR, `E-static-${tone}-${viewport.name}.png`),
             })
             for (const state of ['voted', 'popular', 'confirm'] as const) {
                 await page.setContent(pageHtml(tone, state), { waitUntil: 'domcontentloaded' })

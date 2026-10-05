@@ -141,6 +141,7 @@ export function LaunchVotePillView({
                 as="span"
                 size={size}
                 state="popular"
+                interactive={false}
                 label={LAUNCH_PILL_POPULAR}
                 detail={fillLaunchTemplate(LAUNCH_PILL_RELEASES, { date: pill.releaseDateLabel })}
             />
@@ -151,6 +152,7 @@ export function LaunchVotePillView({
                 as="span"
                 size={size}
                 state="voted"
+                interactive={false}
                 role="status"
                 label={LAUNCH_PILL_VOTED}
                 glyph={<Check className="h-3 w-3" strokeWidth={1.5} />}
@@ -162,6 +164,7 @@ export function LaunchVotePillView({
                 as="span"
                 size={size}
                 state="rest"
+                interactive={false}
                 label={LAUNCH_PILL_REST}
                 ariaDisabled
             />
@@ -182,6 +185,7 @@ export function LaunchVotePillView({
                 ariaExpanded={dialogOpen}
                 glyph={<Sparkles className="h-3 w-3" strokeWidth={1.5} />}
                 altGlyph={<ThumbsUp className="h-3 w-3" strokeWidth={1.5} />}
+                interactive
                 onPointerDown={(event: PointerEvent<HTMLButtonElement>) => {
                     stopCardBubble(event)
                 }}
@@ -252,8 +256,12 @@ export function LaunchVotePillView({
     return (
         <div className="vc-launch-vote" data-size={size} data-testid="launch-vote-overlay">
             {control}
-            {pill.topVoted ? <span className="vc-stardust-note">{LAUNCH_TOP_VOTED}</span> : null}
-            {terms ? <span className="vc-stardust-note">{terms}</span> : null}
+            {pill.topVoted || terms ? (
+                <div className="vc-launch-vote-notes">
+                    {pill.topVoted ? <span className="vc-stardust-note">{LAUNCH_TOP_VOTED}</span> : null}
+                    {terms ? <span className="vc-stardust-note">{terms}</span> : null}
+                </div>
+            ) : null}
             {portaled}
         </div>
     )
