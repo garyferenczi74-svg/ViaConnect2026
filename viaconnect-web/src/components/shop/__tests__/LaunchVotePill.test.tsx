@@ -224,9 +224,17 @@ describe('LaunchVotePillView', () => {
         expect(focusBlock).not.toContain('display: none')
         expect(overlay).not.toContain('11.25rem')
         expect(overlay).toContain(".vc-launch-vote > .vc-stardust[data-interactive='true'] .vc-stardust-label-alt")
+        expect(overlay).toContain(".vc-launch-vote > .vc-stardust[data-interactive='true'] .vc-stardust-label-rest")
+        expect(overlay).toContain('align-items: center')
+        expect(overlay).toContain('align-self: center')
         expect(overlay).toContain('white-space: normal')
         expect(overlay).toContain('min-width: 100%')
+        expect(overlay).not.toContain('-webkit-line-clamp: 2')
+        expect(overlay).not.toContain('line-clamp: 2')
         expect(overlay).toContain('pointer-events: auto')
+        const place = readFileSync(join(process.cwd(), 'src/components/shop/launch-sash-place.ts'), 'utf8')
+        expect(place).toContain('fitLaunchSashLabel')
+        expect(place).toContain('dataset.sashBox')
         const width = 128
         const height = 36
         const placed = launchSashOffset(width, height)
