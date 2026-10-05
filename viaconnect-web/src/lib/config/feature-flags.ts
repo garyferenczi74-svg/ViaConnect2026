@@ -2,6 +2,8 @@
 // All flags default to false unless overridden by environment variable
 // or per-user override in Supabase (future: feature_flag_overrides table).
 
+import { LLM_XAI_FLAG_REGISTRY } from '@/lib/ai/llm/flags';
+
 export interface FlagDef {
   readonly default: boolean;
   readonly description: string;
@@ -83,7 +85,10 @@ export const FLAG_REGISTRY: Record<string, FlagDef> = {
     description:
       'On the Capacitor shell, open Google and Apple sign-in in the system browser and return through the app URL scheme. The shell defaults this on because in-WebView OAuth is blocked. Set NEXT_PUBLIC_NATIVE_OAUTH_SYSTEM_BROWSER=0 to use the in-WebView path. Web sign-in ignores this flag. This registry default stays false.',
   },
-} as const;
+
+  // LLM router (LM-04). Every entry defaults false. See src/lib/ai/llm/flags.ts.
+  ...LLM_XAI_FLAG_REGISTRY,
+};
 
 /**
  * Check whether a feature flag is enabled.

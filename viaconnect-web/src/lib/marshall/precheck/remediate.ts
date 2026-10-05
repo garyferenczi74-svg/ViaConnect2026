@@ -11,11 +11,15 @@
  */
 
 import Anthropic from "@anthropic-ai/sdk";
+import { CLAUDE_SONNET } from "@/lib/ai/claude-models";
+import { isFeatureEnabled } from "@/lib/config/feature-flags";
+import { llmXaiRouteIsActive } from "@/lib/ai/llm/flags";
+import { LLM_WIRED_FEATURE_ID } from "@/lib/ai/llm/types";
 import type { PrecheckFindingDto, NormalizedDraft } from "./types";
 import { normalizeDraft } from "./normalize";
 import { evaluateDraft } from "./evaluate";
 
-const MODEL = "claude-sonnet-4-6";
+const MODEL = CLAUDE_SONNET;
 const MAX_TOKENS = 1024;
 const TIMEOUT_MS = 30_000;
 
@@ -121,11 +125,41 @@ function parseAndValidate(rawText: string, originalLength: number): RewritePropo
   };
 }
 
+/**
+ * Flag off (the default): the existing Anthropic SDK call.
+ * Flag on: xAI first, Claude fetch fallback. P0 marketing copy only.
+ * The router module is loaded only when the flag is on.
+ */
+async function callRewriteModel(
+  findingRuleId: string,
+  citation: string,
+  excerpt: string,
+  fullDraft: string,
+): Promise<string | null> {
+  if (llmXaiRouteIsActive(LLM_WIRED_FEATURE_ID, isFeatureEnabled)) {
+    try {
+      const { completeMarshallRemediate } = await import("@/lib/ai/llm/marshall-remediate");
+      return await completeMarshallRemediate({
+        systemPrompt: SYSTEM_PROMPT,
+        userText: userPrompt(findingRuleId, citation, excerpt, fullDraft),
+        anthropicModel: MODEL,
+        maxOutputTokens: MAX_TOKENS,
+        timeoutMs: TIMEOUT_MS,
+      });
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn(`[precheck/remediate] router threw; using the existing Claude call: ${(err as Error).message}`);
+      return callClaude(findingRuleId, citation, excerpt, fullDraft);
+    }
+  }
+  return callClaude(findingRuleId, citation, excerpt, fullDraft);
+}
+
 export async function proposeRewrite(
   finding: PrecheckFindingDto,
   fullDraft: string,
 ): Promise<RewriteProposal | RewriteUnremediable> {
-  const raw = await callClaude(finding.ruleId, finding.citation, finding.excerpt, fullDraft);
+  const raw = await callRewriteModel(finding.ruleId, finding.citation, finding.excerpt, fullDraft);
   if (!raw) return { unremediable: true, reason: "claude_unavailable" };
   return parseAndValidate(raw, fullDraft.length);
 }
