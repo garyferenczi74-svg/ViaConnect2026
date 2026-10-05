@@ -155,14 +155,14 @@ export default function SignupScreen() {
       }
 
       if (authData.user) {
-        // Map app roles to DB roles: consumer→patient, naturopath→practitioner
-        const dbRole = data.role === 'consumer' ? 'patient' as const : 'practitioner' as const;
-
-        // Create profile record
+        // Create the profile with name and onboarding state only.
+        // profiles.role stays on the DB default / handle_new_user (patient).
+        // TODO(PP-05b): practitioner and naturopath access must be granted by a
+        // service-role or admin approval path. Do not write profiles.role from
+        // this user session. Self-selecting practitioner unlocks prescription_issue.
         await supabase.from('profiles').upsert({
           id: authData.user.id,
           full_name: data.fullName,
-          role: dbRole,
           onboarding_completed: false,
         });
       }
