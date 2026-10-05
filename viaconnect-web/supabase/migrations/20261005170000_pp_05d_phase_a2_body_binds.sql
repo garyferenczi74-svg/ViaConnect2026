@@ -1,10 +1,15 @@
 -- =============================================================================
 -- PP-05d Phase A2 body-binds (B1-B9 only). DRAFT / NOT APPLIED.
 -- Soft GO Jeffery 2026-10-05 (via Michelangelo): Stay DRAFT follow-up.
+-- In-place revision of this unapplied file (still DRAFT, not applied):
+--   * caq_compute_user_hash and helix_increment_balance KEEP authenticated
+--     EXECUTE. REVOKE PUBLIC and anon only. Arnold Soft HOLD on #275.
+--   * Role gate reads auth.role(), matching bos_compute_v2.
 -- Sibling: Phase A stopgap A1-A3 is draft PR #274
 --   (20261005160000_pp_05d_phase_a_stopgap_execute_revokes.sql).
 -- This file sorts after that stamp. It does not repeat A1-A3.
--- Do not apply until Arnold branch smoke and a Jeffery Soft GO apply.
+-- Do not apply until Arnold branch smoke, a Jeffery Soft GO, and a
+-- Gary Soft GO. Apply order is 20261005160000, then this file.
 -- No --prod. This file is not an apply path. Not added to applied-manifest.
 --
 -- Project: nnhkcufyqjojdbvdrpky
@@ -33,6 +38,8 @@
 --
 --   public.helix_increment_balance(uuid, integer) returns void
 --       20260418000050. REVOKE/GRANT only. No body change.
+--       KEEP authenticated. finalizeShopOrder passes the cookie session
+--       client. A later draft PR may move that call to the service client.
 --   public.helix_create_redemption(uuid, integer, text, text, uuid) returns uuid
 --       20260418000050. Body bind. Keep authenticated.
 --   public.helix_redeem_catalog_item(uuid, text, jsonb) returns uuid
@@ -56,33 +63,58 @@
 --       later REPLACE copies pg_get_functiondef and inserts the gate.
 --   public.reconcile_body_composition(uuid, date[]) returns integer
 --       20260616000010. REVOKE/GRANT only. service_role only.
+--       No RLS, view, trigger, or other function-body dependency.
 --   public.increment_user_off_lookup(uuid, date, timestamptz) returns int
 --       20260530143030. REVOKE/GRANT only. service_role only.
+--       No RLS, view, trigger, or other function-body dependency.
 --   public.caq_compute_user_hash(uuid) returns text
---       20260605010002. REVOKE/GRANT only. service_role only.
---       Branch-smoke note: 20260609000010 and 20260621045202 call
---       caq_compute_user_hash(auth.uid()) from RLS policies and a column
---       default. Those run as the session role and need EXECUTE.
---       Confirm authenticated still succeeds on those tables before any
---       apply. Do not apply this file if that smoke fails.
+--       20260605010002. REVOKE/GRANT only. No body change.
+--       KEEP authenticated. REVOKE PUBLIC and anon only.
+--       20260609000010 and 20260621045202 call
+--       caq_compute_user_hash(auth.uid()) from 28 RLS policies on 7
+--       tables, and from user_hash defaults on hydration_log_sessions
+--       and user_beverages. Policies and defaults run as the session
+--       role and need EXECUTE. This file does not rewrite them.
 --
--- Role gate in the CREATE OR REPLACE bodies is the attached draft:
--- current_setting('role', true) distinct from service_role must match
--- auth.uid(). In-repo SECURITY DEFINER gates (bos_compute_v2) use
--- auth.role(). Smoke must show service_role callers that pass a user id
+-- Role gate in the CREATE OR REPLACE bodies uses auth.role(), the same
+-- helper as 20260512020236_bos_compute_v2 (compute_bio_optimization_score
+-- and claim_bos_compute_batch). auth.role() reads
+-- request.jwt.claim.role, else request.jwt.claims ->> 'role'. PostgREST
+-- sets those GUCs on every request, and SECURITY DEFINER's user-id
+-- switch does not clear them. current_setting('role', true) is the
+-- SET ROLE GUC. PostgreSQL documents its default as none when SET ROLE
+-- has not run, and that GUC is not the JWT role. A service_role JWT has
+-- no sub, so a missed role check raises caller_mismatch (42501) when
+-- the caller passes another user's id (gordon-generate-targets, shop
+-- webhook). Smoke must show service_role callers that pass a user id
 -- still succeed, and authenticated callers that pass a different id fail
 -- with caller_mismatch (42501).
 -- =============================================================================
 
 -- -----------------------------------------------------------------------------
--- B1. helix_increment_balance - 20260418000050 intended service_role only.
---     Callers: earning-engine / shop checkout and reversal via admin clients.
---     No auth.uid() bind: the body does not take a session user, and
---     authenticated EXECUTE is removed.
+-- B1. helix_increment_balance - REVOKE PUBLIC and anon. KEEP authenticated
+--     and service_role. No body change. No auth.uid() bind.
+--
+--     finalizeShopOrder (src/lib/shop/checkout-actions.ts) builds the
+--     cookie session client from src/lib/supabase/server.ts (anon key +
+--     user JWT, role authenticated) and passes that client to
+--     finalizeOrderForSession. That helper calls this RPC for the Helix
+--     burn, then creditEarning() calls it again for the earn, both on
+--     the same client. Revoking authenticated EXECUTE returns 42501 on
+--     that success-page path.
+--     The Stripe webhook (src/app/api/shop/webhook/route.ts) and
+--     reverseHelixForOrder use createAdminClient() (service_role).
+--     Hydration quick-log creditEarning also uses the admin client.
+--     trackReferralSignup / trackReferralPurchase take a caller-supplied
+--     client and have no in-repo caller.
+--     Moving the success-page call onto the service client is a later
+--     draft PR. Until that lands, authenticated EXECUTE stays.
+--     Not referenced by RLS policies, views, triggers, or other function
+--     bodies in migrations or the integrity snapshot.
 -- -----------------------------------------------------------------------------
 REVOKE ALL ON FUNCTION public.helix_increment_balance(uuid, integer) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.helix_increment_balance(uuid, integer) FROM anon;
-REVOKE ALL ON FUNCTION public.helix_increment_balance(uuid, integer) FROM authenticated;
+GRANT EXECUTE ON FUNCTION public.helix_increment_balance(uuid, integer) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.helix_increment_balance(uuid, integer) TO service_role;
 
 -- -----------------------------------------------------------------------------
@@ -105,7 +137,7 @@ AS $function$
 DECLARE
   v_redemption_id UUID;
   v_uid UUID := auth.uid();
-  v_role TEXT := current_setting('role', true);
+  v_role TEXT := auth.role();
 BEGIN
   IF v_role IS DISTINCT FROM 'service_role' THEN
     IF v_uid IS NULL THEN
@@ -167,7 +199,7 @@ DECLARE
   v_redemption_count INTEGER;
   v_balance_after INTEGER;
   v_uid UUID := auth.uid();
-  v_role TEXT := current_setting('role', true);
+  v_role TEXT := auth.role();
 BEGIN
   IF v_role IS DISTINCT FROM 'service_role' THEN
     IF v_uid IS NULL THEN
@@ -249,7 +281,7 @@ AS $function$
 DECLARE
   v_claimed boolean;
   v_uid UUID := auth.uid();
-  v_role TEXT := current_setting('role', true);
+  v_role TEXT := auth.role();
 BEGIN
   IF v_role IS DISTINCT FROM 'service_role' THEN
     IF v_uid IS NULL THEN
@@ -282,7 +314,7 @@ GRANT EXECUTE ON FUNCTION public.fn_claim_free_body_scan_teaser(uuid) TO service
 -- B5. get_latest_completed_caq - PHI bind. Keep authenticated.
 --     OUT column assessment_id matches the snapshot signature. Callers:
 --     browser fetchPreviousCAQ (target_user_id) and edge
---     gordon-generate-targets (service client).
+--     gordon-generate-targets (service client, target_user_id).
 -- -----------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.get_latest_completed_caq(target_user_id uuid)
 RETURNS TABLE (
@@ -305,7 +337,7 @@ SET search_path = public
 AS $function$
 DECLARE
   v_uid UUID := auth.uid();
-  v_role TEXT := current_setting('role', true);
+  v_role TEXT := auth.role();
 BEGIN
   IF v_role IS DISTINCT FROM 'service_role' THEN
     IF v_uid IS NULL THEN
@@ -339,12 +371,14 @@ GRANT EXECUTE ON FUNCTION public.get_latest_completed_caq(uuid) TO service_role;
 --     Body bind is not in this file. The SELECT bodies are not in CREATE
 --     FUNCTION history, and this migration does not invent them.
 --     Authenticated spoof of p_user_id remains until a follow-up REPLACE
---     copies pg_get_functiondef and inserts this gate at the top:
---       IF current_setting('role', true) IS DISTINCT FROM 'service_role' THEN
+--     copies pg_get_functiondef and inserts this gate at the top.
+--     Use auth.role(), not current_setting('role', true):
+--       IF auth.role() IS DISTINCT FROM 'service_role' THEN
 --         IF auth.uid() IS NULL OR p_user_id IS DISTINCT FROM auth.uid() THEN
 --           RAISE EXCEPTION 'caller_mismatch' USING ERRCODE = '42501';
 --         END IF;
 --       END IF;
+--     This file does not invent the SELECT bodies.
 --     Snapshot OUT columns to preserve on that REPLACE (do not reorder):
 --       get_active_peptide_stack(p_user_id uuid) returns TABLE(
 --         protocol_id uuid, stack_narrative text, patterns_detected text[],
@@ -374,6 +408,9 @@ GRANT EXECUTE ON FUNCTION public.get_active_protocol(uuid) TO service_role;
 -- -----------------------------------------------------------------------------
 -- B7. reconcile_body_composition - edge ingest uses admin. service_role only.
 --     Signature (uuid, date[]) from 20260616000010. No body change.
+--     No policy in policies.json, no view in views.json, and no migration
+--     trigger or function body calls it. Sole caller:
+--     supabase/functions/ingest-body-composition admin.rpc.
 -- -----------------------------------------------------------------------------
 REVOKE ALL ON FUNCTION public.reconcile_body_composition(uuid, date[]) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.reconcile_body_composition(uuid, date[]) FROM anon;
@@ -383,6 +420,9 @@ GRANT EXECUTE ON FUNCTION public.reconcile_body_composition(uuid, date[]) TO ser
 -- -----------------------------------------------------------------------------
 -- B8. increment_user_off_lookup - createAdminClient only.
 --     Signature (uuid, date, timestamptz) from 20260530143030. No body change.
+--     No policy, view, trigger, or other function body calls it.
+--     Sole caller: src/lib/nutrition/barcode/rate-limit.ts
+--     (createAdminClient).
 -- -----------------------------------------------------------------------------
 REVOKE ALL ON FUNCTION public.increment_user_off_lookup(uuid, date, timestamptz) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.increment_user_off_lookup(uuid, date, timestamptz) FROM anon;
@@ -390,19 +430,36 @@ REVOKE ALL ON FUNCTION public.increment_user_off_lookup(uuid, date, timestamptz)
 GRANT EXECUTE ON FUNCTION public.increment_user_off_lookup(uuid, date, timestamptz) TO service_role;
 
 -- -----------------------------------------------------------------------------
--- B9. caq_compute_user_hash - admin.rpc only in the audit. service_role only.
---     Signature (uuid) returns text from 20260605010002. No body change.
---     See header: RLS in 20260609000010 and 20260621045202 calls this as
---     the session user. Smoke that before apply.
+-- B9. caq_compute_user_hash - REVOKE PUBLIC and anon. KEEP authenticated
+--     and service_role. Signature (uuid) returns text from 20260605010002.
+--     No body change. Policies are not rewritten.
+--
+--     Live snapshot policies.json: 28 policies on hydration_log_sessions,
+--     quick_log_sessions, user_beverages, user_meal_corpus,
+--     voice_edit_operations_log, voice_edit_sessions, and
+--     voice_native_sessions call caq_compute_user_hash(auth.uid()) in
+--     USING / WITH CHECK. Those expressions run as the session role.
+--     Column defaults on hydration_log_sessions (20260609000010) and
+--     user_beverages (20260621045202) call it the same way on INSERT.
+--     barcode-capture uses the admin client and keeps working via
+--     service_role. REVOKE FROM authenticated would 42501 the signed-in
+--     reads and the defaults. Arnold Soft HOLD on #275.
 -- -----------------------------------------------------------------------------
 REVOKE ALL ON FUNCTION public.caq_compute_user_hash(uuid) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.caq_compute_user_hash(uuid) FROM anon;
-REVOKE ALL ON FUNCTION public.caq_compute_user_hash(uuid) FROM authenticated;
+GRANT EXECUTE ON FUNCTION public.caq_compute_user_hash(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.caq_compute_user_hash(uuid) TO service_role;
 
 -- -----------------------------------------------------------------------------
--- B*-only assertion: fail if anon still has EXECUTE on the functions above.
--- Phase A stopgap functions are not in this list.
+-- B*-only assertions. Phase A stopgap functions are not in these lists.
+-- 1. anon must not have EXECUTE on any function in this file.
+-- 2. authenticated must keep EXECUTE on the session-role and body-bind
+--    functions (including caq_compute_user_hash and helix_increment_balance).
+-- 3. authenticated must not have EXECUTE on reconcile_body_composition
+--    or increment_user_off_lookup (no RLS / view / trigger / invoker-function
+--    dependency; callers are service_role).
+-- has_function_privilege is true for PUBLIC as well as a direct grant, so
+-- these checks run after the REVOKEs above, in the same transaction.
 -- -----------------------------------------------------------------------------
 DO $$
 DECLARE
@@ -427,5 +484,47 @@ BEGIN
     AND has_function_privilege('anon', p.oid, 'EXECUTE');
   IF bad IS NOT NULL THEN
     RAISE EXCEPTION 'PP-05d Phase A2 assertion failed: anon still has EXECUTE on: %', bad;
+  END IF;
+END $$;
+
+DO $$
+DECLARE
+  missing text;
+BEGIN
+  SELECT string_agg(p.proname, ', ' ORDER BY p.proname) INTO missing
+  FROM pg_proc p
+  JOIN pg_namespace n ON n.oid = p.pronamespace
+  WHERE n.nspname = 'public'
+    AND p.proname IN (
+      'helix_increment_balance',
+      'helix_create_redemption',
+      'helix_redeem_catalog_item',
+      'fn_claim_free_body_scan_teaser',
+      'get_latest_completed_caq',
+      'get_active_peptide_stack',
+      'get_active_protocol',
+      'caq_compute_user_hash'
+    )
+    AND NOT has_function_privilege('authenticated', p.oid, 'EXECUTE');
+  IF missing IS NOT NULL THEN
+    RAISE EXCEPTION 'PP-05d Phase A2 assertion failed: authenticated lost EXECUTE on: %', missing;
+  END IF;
+END $$;
+
+DO $$
+DECLARE
+  bad text;
+BEGIN
+  SELECT string_agg(p.proname, ', ' ORDER BY p.proname) INTO bad
+  FROM pg_proc p
+  JOIN pg_namespace n ON n.oid = p.pronamespace
+  WHERE n.nspname = 'public'
+    AND p.proname IN (
+      'reconcile_body_composition',
+      'increment_user_off_lookup'
+    )
+    AND has_function_privilege('authenticated', p.oid, 'EXECUTE');
+  IF bad IS NOT NULL THEN
+    RAISE EXCEPTION 'PP-05d Phase A2 assertion failed: authenticated still has EXECUTE on: %', bad;
   END IF;
 END $$;
