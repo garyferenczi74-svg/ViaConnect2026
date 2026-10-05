@@ -4,6 +4,11 @@
  */
 
 import { MASTER_FORMULATIONS, type ProductFormulation } from '@/data/masterFormulations';
+import {
+  lockedIngredientsVisible,
+  omitLockedIngredients,
+  redactLockedIngredientText,
+} from '@/lib/shop/lockedIngredientDisplay';
 import { normalizeProductCopy } from './lexicon';
 import {
   formatDescriptionNarrative,
@@ -69,7 +74,19 @@ function whoBenefitsBody(
   return { body, gate: 'pending' };
 }
 
+function formulationForDisplay(p: ProductFormulation): ProductFormulation {
+  if (lockedIngredientsVisible()) return p;
+  const ingredients = omitLockedIngredients(p.ingredients, (item) => item.name);
+  return {
+    ...p,
+    ingredients,
+    ingredientCount: ingredients.length,
+    marketingDescription: redactLockedIngredientText(p.marketingDescription),
+  };
+}
+
 export function buildTabsForProduct(p: ProductFormulation): ProductTabContent[] {
+  p = formulationForDisplay(p);
   const split = splitLongScrollDescription(p.marketingDescription);
   const who = whoBenefitsBody(p, split.whoBenefits);
   const now = new Date().toISOString();

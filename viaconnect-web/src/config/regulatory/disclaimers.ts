@@ -29,6 +29,8 @@ export const DISCLAIMERS = {
   },
 
   athleteWADA: {
+    // Source string kept. WADAWarning redacts locked names at render.
+    // Peptide-education G1 disclaimer copy is not rewritten here.
     text: 'Important for competitive athletes: certain peptide compounds (including BPC-157, TB-500, and others) are prohibited under WADA anti-doping rules (Category S0: unapproved substances). If you are a competitive athlete subject to anti-doping testing, consult your sports medicine physician before using any peptide product.',
     required: false as const,
     trigger: 'User selects "competitive athlete" in lifestyle or profile',

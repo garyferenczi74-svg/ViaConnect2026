@@ -4,6 +4,7 @@ import { buildUltrathinkContext, UltrathinkContext, SymptomEntry } from '@/lib/u
 import { detectPatterns } from '@/lib/ultrathink/patternDetection';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { safeLog } from '@/lib/utils/safe-log';
+import { redactLockedIngredientText } from '@/lib/shop/lockedIngredientDisplay';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/lib/supabase/types';
 
@@ -156,8 +157,13 @@ export async function POST(request: Request) {
         rank: i + 1, priority: r.priority,
         farmceutica_product: r.product_name, product_category: r.product_category,
         delivery_form: r.delivery_form, dosage: r.dosage, frequency: r.frequency,
-        timing: r.timing, duration_weeks: 12, rationale: r.rationale,
-        health_signals: r.health_signals, bioavailability_note: r.bioavailability_note,
+        timing: r.timing, duration_weeks: 12, rationale: redactLockedIngredientText(r.rationale),
+        health_signals: Array.isArray(r.health_signals)
+          ? r.health_signals.map((signal: string) => redactLockedIngredientText(signal))
+          : r.health_signals,
+        bioavailability_note: r.bioavailability_note
+          ? redactLockedIngredientText(r.bioavailability_note)
+          : r.bioavailability_note,
         contraindications: r.contraindications ?? [], interaction_check: 'safe',
         synergy_with: r.synergy_with ?? [], replaces_current: null,
         evidence_level: r.evidence_level, is_accepted: false, is_dismissed: false,

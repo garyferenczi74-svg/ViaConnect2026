@@ -1,5 +1,12 @@
 // RAG Knowledge Base — Content Source Definitions
 // Each source category maps to content that gets embedded into pgvector
+// Historical strings stay in KNOWLEDGE_SOURCES. Speakable retrieval uses
+// speakableKnowledgeSources() so the pre-launch lock can omit names.
+
+import {
+  lockedIngredientsVisible,
+  redactLockedIngredientText,
+} from "@/lib/shop/lockedIngredientDisplay";
 
 export const KNOWLEDGE_SOURCES = {
   expertAuthorities: {
@@ -91,3 +98,8 @@ export const KNOWLEDGE_SOURCES = {
     ],
   },
 };
+
+export function speakableKnowledgeSources(): typeof KNOWLEDGE_SOURCES {
+  if (lockedIngredientsVisible()) return KNOWLEDGE_SOURCES;
+  return JSON.parse(redactLockedIngredientText(JSON.stringify(KNOWLEDGE_SOURCES))) as typeof KNOWLEDGE_SOURCES;
+}

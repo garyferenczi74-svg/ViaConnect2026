@@ -16,6 +16,7 @@
 //   marketing copy is minimal and awaits the prior catalog deliverable.
 
 import { applyConfirmedBioavailability } from '@/lib/supplements/confirmedBioavailability';
+import { omitLockedIngredients } from '@/lib/shop/lockedIngredientDisplay';
 
 export interface Ingredient {
   /** Full ingredient label as printed on the supplement facts panel */
@@ -142,6 +143,7 @@ const RAW_MASTER_FORMULATIONS: ProductFormulation[] = [
       ing('Micellar Moringa Leaf Extract (10:1)', '10'),
       ing('Liposomal Paraxanthine (PureCaf®)', '10'),
       ing('Selenium (L-Selenomethionine)', '1'),
+      // PRELAUNCH_DISPLAY_LOCK: Tesofensine hidden at read until after launch (Gary Soft GO 2026-10-05). Row kept.
       ing('Tesofensine (botanical analog mimic)', '2'),
       ing('Micellar Artichoke Leaf Extract (5% Cynarin)', '10'),
       ing('Inulin-FOS (Prebiotic Blend)', '10'),
@@ -292,6 +294,7 @@ const RAW_MASTER_FORMULATIONS: ProductFormulation[] = [
       ing('Liposomal Quercetin', '100'),
       ing('Liposomal L-Taurine', '100'),
       ing('Selenium (L-selenomethionine)', '0.2'),
+      // PRELAUNCH_DISPLAY_LOCK: Tesofensine hidden at read until after launch (Gary Soft GO 2026-10-05). Row kept.
       ing('Tesofensine', '0.5'),
       ing('Zinc (Bisglycinate)', '15'),
       ing('Micellar Bioperine®', '10'),
@@ -338,6 +341,7 @@ const RAW_MASTER_FORMULATIONS: ProductFormulation[] = [
     deliveryForm: 'Capsule',
     ingredientCount: 17,
     ingredients: [
+      // PRELAUNCH_DISPLAY_LOCK: BPC-157 hidden at read until after launch (Gary Soft GO 2026-10-05). Row kept.
       ing('Liposomal BPC-157', '0.5'),
       ing('L-Glutamine', '100'),
       ing('Liposomal N-Acetyl Glucosamine', '75'),
@@ -543,6 +547,7 @@ const RAW_MASTER_FORMULATIONS: ProductFormulation[] = [
     ingredients: [
       ing('BioB Fusion™ Methylated B Complex', '35'),
       ing('Digestzorb Probiotic Blend (10B CFU)', '150'),
+      // PRELAUNCH_DISPLAY_LOCK: BPC-157 hidden at read until after launch (Gary Soft GO 2026-10-05). Row kept.
       ing('Liposomal BPC-157 Peptide', '0.2'),
       ing('Liposomal Quercetin (Aglycone)', '100'),
       ing('Liposomal Magnesium (Bisglycinate)', '50'),
@@ -765,6 +770,7 @@ const RAW_MASTER_FORMULATIONS: ProductFormulation[] = [
     deliveryForm: 'Capsule',
     ingredientCount: 17,
     ingredients: [
+      // PRELAUNCH_DISPLAY_LOCK: BPC-157 hidden at read until after launch (Gary Soft GO 2026-10-05). Row kept.
       ing('BPC 157', '0.2'),
       ing('MethylB Complete+™ B Complex', '76.3'),
       ing('Magnesium Citrate', '25'),
@@ -1391,10 +1397,16 @@ export const getTotalIngredientCount = (): number =>
   MASTER_FORMULATIONS.reduce((sum, p) => sum + p.ingredients.length, 0);
 
 export const getLiposomalIngredients = (slug: string): Ingredient[] =>
-  (getFormulationBySlug(slug)?.ingredients ?? []).filter(i => i.isLiposomal);
+  omitLockedIngredients(
+    (getFormulationBySlug(slug)?.ingredients ?? []).filter(i => i.isLiposomal),
+    (item) => item.name,
+  );
 
 export const getMicellarIngredients = (slug: string): Ingredient[] =>
-  (getFormulationBySlug(slug)?.ingredients ?? []).filter(i => i.isMicellar);
+  omitLockedIngredients(
+    (getFormulationBySlug(slug)?.ingredients ?? []).filter(i => i.isMicellar),
+    (item) => item.name,
+  );
 
 /**
  * Convert a ProductFormulation into the legacy `{ total_mg, ingredients: [{ingredient, mg}] }`
@@ -1406,7 +1418,8 @@ export function getFormulationDataByName(
 ): { total_mg: number; ingredients: { ingredient: string; mg: string }[] } | null {
   const f = getFormulationByName(name);
   if (!f) return null;
-  const total = f.ingredients.reduce((sum, i) => {
+  const ingredients = omitLockedIngredients(f.ingredients, (item) => item.name);
+  const total = ingredients.reduce((sum, i) => {
     const v = parseFloat(i.mgPerServing);
     return sum + (Number.isFinite(v) ? v : 0);
   }, 0);
@@ -1414,7 +1427,7 @@ export function getFormulationDataByName(
   const total_mg = Math.round(total * 1000) / 1000;
   return {
     total_mg,
-    ingredients: f.ingredients.map(i => ({ ingredient: i.name, mg: i.mgPerServing })),
+    ingredients: ingredients.map(i => ({ ingredient: i.name, mg: i.mgPerServing })),
   };
 }
 

@@ -18,6 +18,7 @@
  */
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { redactLockedIngredientText } from "@/lib/shop/lockedIngredientDisplay";
 
 export interface ProductMatch {
   productName: string;
@@ -163,7 +164,9 @@ export async function mapToFarmceuticaProducts(
         category: row.category,
         subcategory: row.subcategory,
         deliveryForm: row.delivery_form,
-        shortDescription: row.short_description ?? row.description?.slice(0, 120) ?? null,
+        shortDescription: redactLockedIngredientText(
+          row.short_description ?? row.description?.slice(0, 120) ?? "",
+        ) || null,
         matchedTags: Array.from(new Set(matchedTags)),
         matchReason: reasons.join("; ") || "keyword match",
         score,
@@ -187,7 +190,9 @@ export function formatProductsForPrompt(matches: ProductMatch[]): string {
   const lines = matches.map(m =>
     `- ${m.productName}${m.deliveryForm ? ` (${m.deliveryForm})` : ""}${m.category ? ` — ${m.category}` : ""}${m.shortDescription ? `: ${m.shortDescription}` : ""}`
   );
-  return `\n\nRELEVANT FARMCEUTICA PRODUCTS (recommend ONLY from this list — never any other brand):\n${lines.join("\n")}`;
+  return redactLockedIngredientText(
+    `\n\nRELEVANT FARMCEUTICA PRODUCTS (recommend ONLY from this list - never any other brand):\n${lines.join("\n")}`,
+  );
 }
 
 // ─── Peptide registry helpers (used by detection in advisor-stream) ────────

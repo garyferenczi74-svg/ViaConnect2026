@@ -1,6 +1,8 @@
 // Peptide Pattern Matching Engine
 // Maps Ultrathink master patterns to FarmCeutica peptide recommendations
 
+import { redactLockedIngredientText, omitLockedIngredients } from "@/lib/shop/lockedIngredientDisplay";
+
 export interface PeptideProduct {
   name: string;
   category: string;
@@ -203,6 +205,12 @@ export function matchPeptidesToPatterns(masterPatterns: MasterPattern[]): Peptid
       ...template,
       id: `peptide-${category}-${recommendations.length}`,
       patternName: pattern.name,
+      personalizedReason: redactLockedIngredientText(template.personalizedReason),
+      analogy: redactLockedIngredientText(template.analogy),
+      dosingProtocol: redactLockedIngredientText(template.dosingProtocol),
+      evidenceSummary: redactLockedIngredientText(template.evidenceSummary),
+      genexSynergy: redactLockedIngredientText(template.genexSynergy),
+      products: omitLockedIngredients(template.products, (item) => item.name),
     });
   }
 
