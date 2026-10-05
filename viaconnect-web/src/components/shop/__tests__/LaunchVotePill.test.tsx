@@ -226,6 +226,11 @@ describe('LaunchVotePillView', () => {
         expect(overlay).toContain(".vc-launch-vote > .vc-stardust[data-interactive='true'] .vc-stardust-label-alt")
         expect(overlay).toContain('white-space: normal')
         expect(overlay).toContain('min-width: 100%')
+        expect(overlay).toContain('overflow: visible')
+        expect(overlay).toContain(".vc-launch-vote > .vc-stardust[data-interactive='true'] .vc-stardust-label-rest")
+        expect(overlay).toContain('align-self: center')
+        expect(overlay).not.toContain('-webkit-line-clamp: 2')
+        expect(overlay).not.toContain('line-clamp: 2')
         expect(overlay).toContain('pointer-events: auto')
         const width = 128
         const height = 36

@@ -1,8 +1,9 @@
 /* Corner sash. The overlay fills the image and clips to its radius.
    Transform stays on the pill, not this box, so backdrop-filter still
-   samples the bottle. The pill is content-sized. JS writes left/top so
-   both stadium caps clear the photo after rotate(-45deg). The placer
-   aims 1px past the 8px floor so subpixel samples still clear it. */
+   samples the bottle. The interactive pill is one fixed box: the rest
+   line sets the width and the hover wrap sets the height. JS writes
+   left/top so both stadium caps clear the photo after rotate(-45deg).
+   The placer aims 1px past the 8px floor so subpixel samples still clear it. */
 .vc-launch-vote {
     position: absolute;
     inset: 0;
@@ -29,7 +30,7 @@
     pointer-events: auto;
 }
 
-/* Rest copy sets the width. Line-clamp on the shared label would ellipsize it. */
+/* Rest copy sets the width. Leave the shared label unclamped so the hover wrap can set the row height. */
 .vc-launch-vote .vc-stardust-labels {
     flex: 0 0 auto;
     width: max-content;
@@ -47,17 +48,25 @@
     white-space: nowrap;
 }
 
-/* Votes on: the hover line wraps inside the rest label's width, two lines max,
-   so the pill stays the rest stamp and does not grow across the bottle. */
+/* One shared box. The rest line sets the width. The hover label wraps
+   inside that width at 12px, up to three lines, and that wrap sets the
+   height for rest and hover together. Hover must not widen the pill:
+   a wider box moves the caps and clips them. Do not clamp to two lines.
+   That ellipsizes "Vote for the next product launch". */
 .vc-launch-vote > .vc-stardust[data-interactive='true'] .vc-stardust-label-alt {
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    overflow: hidden;
+    display: block;
+    -webkit-box-orient: unset;
+    -webkit-line-clamp: unset;
+    line-clamp: unset;
+    overflow: visible;
     white-space: normal;
     width: 0;
     min-width: 100%;
+}
+
+.vc-launch-vote > .vc-stardust[data-interactive='true'] .vc-stardust-label-rest {
+    align-self: center;
+    text-align: center;
 }
 
 .vc-launch-vote > .vc-stardust[data-state='voted'] .vc-stardust-labels,

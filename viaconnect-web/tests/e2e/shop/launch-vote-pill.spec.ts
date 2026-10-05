@@ -131,40 +131,15 @@ test('states A through D and confirm at 390 and 1280', async ({ page }) => {
             const restCenterY = (before?.y ?? 0) + (before?.height ?? 0) / 2
             expect(restCenterX).toBeLessThan((cardBox?.x ?? 0) + (cardBox?.width ?? 0) * 0.45)
             expect(restCenterY).toBeLessThan((cardBox?.y ?? 0) + (cardBox?.height ?? 0) * 0.45)
-            const clearance = await pill.evaluate((node) => {
-                const pillNode = node as HTMLElement
-                const card = pillNode.closest('[data-testid="bottle"]') as HTMLElement
-                const w = pillNode.offsetWidth
-                const h = pillNode.offsetHeight
-                const style = getComputedStyle(pillNode)
-                const origin = style.transformOrigin.split(' ').map((part) => parseFloat(part))
-                const matrix = new DOMMatrix(style.transform)
-                const cardRect = card.getBoundingClientRect()
-                const host = pillNode.offsetParent as HTMLElement
-                const hostRect = host.getBoundingClientRect()
-                const radius = h / 2
-                const samples: Array<[number, number]> = []
-                for (let i = 0; i <= 12; i += 1) {
-                    const leftAngle = Math.PI / 2 + (Math.PI * i) / 12
-                    const rightAngle = -Math.PI / 2 + (Math.PI * i) / 12
-                    samples.push([radius + Math.cos(leftAngle) * radius, radius + Math.sin(leftAngle) * radius])
-                    samples.push([w - radius + Math.cos(rightAngle) * radius, radius + Math.sin(rightAngle) * radius])
-                }
-                for (let i = 0; i <= 8; i += 1) {
-                    const x = radius + ((w - radius * 2) * i) / 8
-                    samples.push([x, 0])
-                    samples.push([x, h])
-                }
-                let minPad = Number.POSITIVE_INFINITY
-                for (const [x, y] of samples) {
-                    const point = matrix.transformPoint(new DOMPoint(x - origin[0], y - origin[1]))
-                    const sx = hostRect.left + pillNode.offsetLeft + origin[0] + point.x
-                    const sy = hostRect.top + pillNode.offsetTop + origin[1] + point.y
-                    minPad = Math.min(minPad, sx - cardRect.left, sy - cardRect.top, cardRect.right - sx, cardRect.bottom - sy)
-                }
-                return minPad
-            })
+            const clearance = await pill.evaluate(measureHarnessPad)
             expect(clearance).toBeGreaterThanOrEqual(8)
+            const sharedRest = await pill.evaluate(readSharedLabel)
+            expect(sharedRest.clipped, `${tone} ${viewport.name} rest`).toBe(false)
+            expect(sharedRest.text).toBe('Vote for the next product launch')
+            expect(sharedRest.lines).toBeGreaterThan(0)
+            expect(sharedRest.lines).toBeLessThanOrEqual(3)
+            expect(sharedRest.clamp === 'none' || sharedRest.clamp === 'unset').toBe(true)
+            expect(sharedRest.restCenterDelta).toBeLessThanOrEqual(1)
             const terms = page.getByTestId('launch-vote-terms')
             const termsBox = await terms.boundingBox()
             expect(termsBox?.y ?? 0).toBeGreaterThanOrEqual((cardBox?.y ?? 0) + (cardBox?.height ?? 0) - 1)
@@ -176,6 +151,18 @@ test('states A through D and confirm at 390 and 1280', async ({ page }) => {
             const after = await pill.boundingBox()
             expect(before?.width).toBe(after?.width)
             expect(before?.height).toBe(after?.height)
+            const sharedHover = await pill.evaluate(readSharedLabel)
+            expect(sharedHover.width).toBe(sharedRest.width)
+            expect(sharedHover.height).toBe(sharedRest.height)
+            expect(sharedHover.left).toBe(sharedRest.left)
+            expect(sharedHover.top).toBe(sharedRest.top)
+            expect(sharedHover.clipped, `${tone} ${viewport.name} hover`).toBe(false)
+            expect(sharedHover.text).toBe('Vote for the next product launch')
+            expect(sharedHover.lines).toBeGreaterThan(0)
+            expect(sharedHover.lines).toBeLessThanOrEqual(3)
+            expect(sharedHover.clamp === 'none' || sharedHover.clamp === 'unset').toBe(true)
+            const hoverClearance = await pill.evaluate(measureHarnessPad)
+            expect(hoverClearance, `${tone} ${viewport.name} hover minPad`).toBeGreaterThanOrEqual(8)
             await page.screenshot({
                 path: join(ARTIFACT_DIR, `B-hover-${tone}-${viewport.name}.png`),
             })
@@ -196,11 +183,13 @@ test('states A through D and confirm at 390 and 1280', async ({ page }) => {
                 const style = getComputedStyle(node)
                 const labels = [...node.querySelectorAll('.vc-stardust-label')]
                 const restLabel = node.querySelector('.vc-stardust-label-rest')
-                const clipped = restLabel
-                    ? getComputedStyle(restLabel).visibility !== 'hidden' &&
-                      (restLabel.scrollHeight > restLabel.clientHeight + 1 ||
-                          restLabel.scrollWidth > restLabel.clientWidth + 1)
-                    : false
+                const altLabel = node.querySelector('.vc-stardust-label-alt')
+                const clipped = [restLabel, altLabel].some((label) => {
+                    if (!label) return false
+                    const shown = getComputedStyle(label).visibility !== 'hidden'
+                    if (!shown) return false
+                    return label.scrollHeight > label.clientHeight + 1 || label.scrollWidth > label.clientWidth + 1
+                })
                 return {
                     borderLeft: style.borderLeftWidth,
                     borderRight: style.borderRightWidth,
@@ -244,6 +233,90 @@ test('states A through D and confirm at 390 and 1280', async ({ page }) => {
         expect(restWidths[0]).toBeGreaterThan(0)
     }
 })
+
+function measureHarnessPad(node: Element): number {
+    const pillNode = node as HTMLElement
+    const card = (pillNode.closest('[data-testid="bottle"]') ?? pillNode.parentElement) as HTMLElement
+    const w = pillNode.offsetWidth
+    const h = pillNode.offsetHeight
+    const style = getComputedStyle(pillNode)
+    const origin = style.transformOrigin.split(' ').map((part) => parseFloat(part))
+    const matrix = new DOMMatrix(style.transform)
+    const cardRect = card.getBoundingClientRect()
+    const host = pillNode.offsetParent as HTMLElement
+    const hostRect = host.getBoundingClientRect()
+    const radius = h / 2
+    const samples: Array<[number, number]> = []
+    for (let i = 0; i <= 12; i += 1) {
+        const leftAngle = Math.PI / 2 + (Math.PI * i) / 12
+        const rightAngle = -Math.PI / 2 + (Math.PI * i) / 12
+        samples.push([radius + Math.cos(leftAngle) * radius, radius + Math.sin(leftAngle) * radius])
+        samples.push([w - radius + Math.cos(rightAngle) * radius, radius + Math.sin(rightAngle) * radius])
+    }
+    for (let i = 0; i <= 8; i += 1) {
+        const x = radius + ((w - radius * 2) * i) / 8
+        samples.push([x, 0])
+        samples.push([x, h])
+    }
+    let minPad = Number.POSITIVE_INFINITY
+    for (const [x, y] of samples) {
+        const point = matrix.transformPoint(new DOMPoint(x - origin[0], y - origin[1]))
+        const sx = hostRect.left + pillNode.offsetLeft + origin[0] + point.x
+        const sy = hostRect.top + pillNode.offsetTop + origin[1] + point.y
+        minPad = Math.min(minPad, sx - cardRect.left, sy - cardRect.top, cardRect.right - sx, cardRect.bottom - sy)
+    }
+    return minPad
+}
+
+function readSharedLabel(node: Element): {
+    lines: number
+    clipped: boolean
+    text: string
+    clamp: string
+    restCenterDelta: number
+    width: number
+    height: number
+    left: string
+    top: string
+} {
+    const pillNode = node as HTMLElement
+    const alt = pillNode.querySelector('.vc-stardust-label-alt') as HTMLElement | null
+    const rest = pillNode.querySelector('.vc-stardust-label-rest') as HTMLElement | null
+    let lines = 0
+    let clipped = false
+    let text = ''
+    let clamp = ''
+    if (alt) {
+        const style = getComputedStyle(alt)
+        text = alt.textContent ?? ''
+        clamp = style.webkitLineClamp
+        clipped = alt.scrollHeight > alt.clientHeight + 1 || alt.scrollWidth > alt.clientWidth + 1
+        const range = document.createRange()
+        range.selectNodeContents(alt)
+        lines = new Set([...range.getClientRects()].map((rect) => Math.round(rect.top))).size
+    }
+    let restCenterDelta = 0
+    if (rest) {
+        let mid = rest.offsetTop + rest.offsetHeight / 2
+        let parent = rest.offsetParent as HTMLElement | null
+        while (parent && parent !== pillNode) {
+            mid += parent.offsetTop
+            parent = parent.offsetParent as HTMLElement | null
+        }
+        restCenterDelta = Math.abs(mid - pillNode.clientHeight / 2)
+    }
+    return {
+        lines,
+        clipped,
+        text,
+        clamp,
+        restCenterDelta,
+        width: pillNode.offsetWidth,
+        height: pillNode.offsetHeight,
+        left: pillNode.style.left,
+        top: pillNode.style.top,
+    }
+}
 
 async function tuckSash(page: Page): Promise<void> {
     const pills = page.getByTestId('launch-vote-pill')
@@ -310,8 +383,9 @@ const REAL_LAYOUT = `
   }
 `
 
-function realHarness(surface: 'card' | 'pdp', builtCss: string): string {
-    return `<!DOCTYPE html><html data-sash-surface="${surface}"><head><style>${builtCss}${REAL_LAYOUT}</style></head><body><script>window.process={env:{NODE_ENV:"production"}}</script><div id="root"></div></body></html>`
+function realHarness(surface: 'card' | 'pdp', builtCss: string, bottle?: string): string {
+    const bottleAttr = bottle ? ` data-bottle="${bottle}"` : ''
+    return `<!DOCTYPE html><html data-sash-surface="${surface}"${bottleAttr}><head><style>${builtCss}${REAL_LAYOUT}</style></head><body><script>window.process={env:{NODE_ENV:"production"}}</script><div id="root"></div></body></html>`
 }
 
 test('real ProductCard and PDP caps clear by 8px at 390, 1024, and 1280', async ({ page }) => {
@@ -394,11 +468,36 @@ test('real ProductCard and PDP caps clear by 8px at 390, 1024, and 1280', async 
             expect(fit.padding).toBe('6px 14px')
             expect(fit.restScroll).toBeLessThanOrEqual(1)
             expect(fit.minPad, `${surface} ${viewport.name} frame ${fit.frameWidth}x${fit.frameHeight} pill ${fit.pillWidth}x${fit.pillHeight}`).toBeGreaterThanOrEqual(8)
-            const before = await page.getByTestId('launch-vote-pill').boundingBox()
-            await page.getByTestId('launch-vote-pill').hover()
-            const after = await page.getByTestId('launch-vote-pill').boundingBox()
+            const pill = page.getByTestId('launch-vote-pill')
+            const before = await pill.boundingBox()
+            const beforeShared = await pill.evaluate(readSharedLabel)
+            expect(beforeShared.clipped, `${surface} ${viewport.name} rest`).toBe(false)
+            expect(beforeShared.lines).toBeGreaterThan(0)
+            expect(beforeShared.lines).toBeLessThanOrEqual(3)
+            expect(beforeShared.restCenterDelta).toBeLessThanOrEqual(1)
+            if (surface === 'card') {
+                await page.locator('[data-testid="sash-grid"] > *').screenshot({
+                    path: join(ARTIFACT_DIR, `card-${viewport.name}-rest.png`),
+                })
+            }
+            await pill.hover()
+            const after = await pill.boundingBox()
             expect(after?.width).toBe(before?.width)
             expect(after?.height).toBe(before?.height)
+            const hoverShared = await pill.evaluate(readSharedLabel)
+            expect(hoverShared.width).toBe(beforeShared.width)
+            expect(hoverShared.height).toBe(beforeShared.height)
+            expect(hoverShared.left).toBe(beforeShared.left)
+            expect(hoverShared.top).toBe(beforeShared.top)
+            expect(hoverShared.clipped, `${surface} ${viewport.name} hover`).toBe(false)
+            expect(hoverShared.text).toBe('Vote for the next product launch')
+            expect(hoverShared.lines).toBeGreaterThan(0)
+            expect(hoverShared.lines).toBeLessThanOrEqual(3)
+            expect(hoverShared.clamp === 'none' || hoverShared.clamp === 'unset').toBe(true)
+            if (viewport.name === '390' || viewport.name === '1280') {
+                const hoverPad = await pill.evaluate(measureHarnessPad)
+                expect(hoverPad, `${surface} ${viewport.name} hover minPad`).toBeGreaterThanOrEqual(8)
+            }
             const terms = page.getByTestId('launch-vote-terms')
             const termsBox = await terms.boundingBox()
             const frameBox = await page.getByTestId('launch-vote-overlay').boundingBox()
@@ -406,7 +505,39 @@ test('real ProductCard and PDP caps clear by 8px at 390, 1024, and 1280', async 
             await page.locator('[data-testid="sash-grid"] > *').screenshot({
                 path: join(ARTIFACT_DIR, `${surface}-${viewport.name}.png`),
             })
+            if (surface === 'card') {
+                await page.locator('[data-testid="sash-grid"] > *').screenshot({
+                    path: join(ARTIFACT_DIR, `card-${viewport.name}-hover.png`),
+                })
+            }
         }
+    }
+
+    const bottleUrl =
+        'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/supplement-photos/MTHFR%20Support+.png'
+    for (const viewport of VIEWPORTS.filter((item) => item.name === '390' || item.name === '1280')) {
+        await page.setViewportSize({ width: viewport.width, height: viewport.height })
+        await page.setContent(realHarness('card', builtCss, bottleUrl), { waitUntil: 'domcontentloaded' })
+        await page.addScriptTag({ path: bundlePath })
+        await page.waitForSelector('[data-sash-placed="true"]', { state: 'attached', timeout: 8000 })
+        await page.waitForFunction(() => {
+            const img = document.querySelector('.relative img')
+            return img instanceof HTMLImageElement && img.complete && img.naturalWidth > 0
+        })
+        const photo = page.getByTestId('launch-vote-overlay').locator('xpath=..')
+        await photo.screenshot({ path: join(ARTIFACT_DIR, `mthfr-${viewport.name}-rest.png`) })
+        const pill = page.getByTestId('launch-vote-pill')
+        const before = await pill.evaluate(readSharedLabel)
+        await pill.hover()
+        const after = await pill.evaluate(readSharedLabel)
+        expect(after.width).toBe(before.width)
+        expect(after.height).toBe(before.height)
+        expect(after.clipped, `mthfr ${viewport.name} hover`).toBe(false)
+        expect(after.lines).toBeLessThanOrEqual(3)
+        expect(after.text).toBe('Vote for the next product launch')
+        const hoverPad = await pill.evaluate(measureHarnessPad)
+        expect(hoverPad, `mthfr ${viewport.name} hover minPad`).toBeGreaterThanOrEqual(8)
+        await photo.screenshot({ path: join(ARTIFACT_DIR, `mthfr-${viewport.name}-hover.png`) })
     }
     expect(pageErrors).toEqual([])
 })

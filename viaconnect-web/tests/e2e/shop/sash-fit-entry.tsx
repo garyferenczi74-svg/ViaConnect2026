@@ -30,22 +30,25 @@ const vote: LaunchVoteCardModel = {
 }
 
 function product(): ShopProduct {
+    const bottle = document.documentElement.dataset.bottle
+    const image = bottle && bottle.length > 0 ? bottle : BOTTLE
+    const darkBottle = Boolean(bottle)
     return {
-        id: 'balance-plus',
-        sku: 'FC-BALANCE-PLUS',
-        slug: 'balance-plus-gut-repair',
-        name: 'Balance+ Gut Repair',
-        short_name: 'Balance+',
-        summary: 'Not catalog data',
-        description: 'Not catalog data',
+        id: darkBottle ? 'mthfr-plus' : 'balance-plus',
+        sku: darkBottle ? 'MTHFR-PLUS' : 'FC-BALANCE-PLUS',
+        slug: darkBottle ? 'mthfr-plus-folate-metabolism' : 'balance-plus-gut-repair',
+        name: darkBottle ? 'MTHFR+ Folate Metabolism' : 'Balance+ Gut Repair',
+        short_name: darkBottle ? 'MTHFR+' : 'Balance+',
+        summary: darkBottle ? null : 'Not catalog data',
+        description: darkBottle ? null : 'Not catalog data',
         format: 'capsule',
         category: 'supplement',
-        category_slug: 'advanced-formulas',
+        category_slug: darkBottle ? 'methylation-snp' : 'advanced-formulas',
         price: 98.88,
         price_msrp: null,
         pricing_tier: 'L1',
-        image_url: BOTTLE,
-        image_urls: [BOTTLE],
+        image_url: image,
+        image_urls: [image],
         status_tags: null,
         testing_meta: null,
         snp_targets: null,
