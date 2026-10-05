@@ -10,6 +10,8 @@ import { createPortal } from 'react-dom'
 import { usePathname, useRouter } from 'next/navigation'
 import { Check, Sparkles, ThumbsUp } from 'lucide-react'
 import { StardustButton, type StardustSize } from '@/components/ui/stardust-button'
+import { CONSUMER_OPEN_PILL_BASE } from '@/lib/ui/consumerChrome'
+import { cn } from '@/lib/utils'
 import { guardCardClick } from '@/components/shop/JoinWaitlistButton'
 import {
     LAUNCH_CONFIRM_BODY,
@@ -95,6 +97,7 @@ export interface LaunchVotePillViewProps {
     onOpen: (event: MouseEvent<HTMLButtonElement>) => void
     onCancel: () => void
     onSubmit: () => void
+    children?: ReactNode
 }
 
 export function LaunchVotePillView({
@@ -109,6 +112,7 @@ export function LaunchVotePillView({
     onOpen,
     onCancel,
     onSubmit,
+    children,
 }: LaunchVotePillViewProps) {
     const titleId = useId()
     const overlayRef = useRef<HTMLDivElement>(null)
@@ -253,15 +257,31 @@ export function LaunchVotePillView({
     const portaled =
         dialog && typeof document !== 'undefined' ? createPortal(dialog, document.body) : dialog
 
+    const notes =
+        pill.topVoted || terms ? (
+            <div className="vc-launch-vote-notes" data-testid="launch-vote-terms">
+                {pill.topVoted ? (
+                    <span className={cn(CONSUMER_OPEN_PILL_BASE, 'vc-stardust-note w-full min-w-0 justify-center text-center')}>
+                        <span className="min-w-0 whitespace-normal text-center">{LAUNCH_TOP_VOTED}</span>
+                    </span>
+                ) : null}
+                {terms ? (
+                    <span className={cn(CONSUMER_OPEN_PILL_BASE, 'vc-stardust-note w-full min-w-0 justify-center text-center')}>
+                        <span className="min-w-0 whitespace-normal text-center">{terms}</span>
+                    </span>
+                ) : null}
+            </div>
+        ) : null
+
     return (
-        <div className="vc-launch-vote" data-size={size} data-testid="launch-vote-overlay">
-            {control}
-            {pill.topVoted || terms ? (
-                <div className="vc-launch-vote-notes">
-                    {pill.topVoted ? <span className="vc-stardust-note">{LAUNCH_TOP_VOTED}</span> : null}
-                    {terms ? <span className="vc-stardust-note">{terms}</span> : null}
+        <div className="flex flex-col gap-2">
+            <div className="relative">
+                {children}
+                <div className="vc-launch-vote" data-size={size} data-testid="launch-vote-overlay">
+                    {control}
                 </div>
-            ) : null}
+            </div>
+            {notes}
             {portaled}
         </div>
     )
@@ -283,6 +303,7 @@ export function LaunchVotePill({
     signedIn,
     votingEnabled,
     hasPriorPaidOrder,
+    children,
 }: {
     productId: string
     productName: string
@@ -293,6 +314,7 @@ export function LaunchVotePill({
     signedIn: boolean
     votingEnabled: boolean
     hasPriorPaidOrder: boolean | null
+    children?: ReactNode
 }) {
     const router = useRouter()
     const pathname = usePathname()
@@ -405,7 +427,7 @@ export function LaunchVotePill({
             })
     }
 
-    if (pill.kind === 'hidden') return null
+    if (pill.kind === 'hidden') return <>{children}</>
 
     return (
         <LaunchVotePillView
@@ -421,6 +443,8 @@ export function LaunchVotePill({
             onOpen={onOpen}
             onCancel={onCancel}
             onSubmit={onSubmit}
-        />
+        >
+            {children}
+        </LaunchVotePillView>
     )
 }

@@ -18,6 +18,8 @@ const VIEWPORTS = [
 
 const GLYPH = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M8 7l4 4 4-4"/></svg>`
 
+const TERMS = '25% off your first order of this product if you have not ordered before, or your next order if you have. Terms apply.'
+
 function pageHtml(tone: 'white' | 'black', state: 'rest' | 'voted' | 'popular' | 'confirm' | 'static'): string {
     const rest = `
       <button type="button" class="vc-stardust" data-size="card" data-state="rest" data-interactive="true" data-testid="launch-vote-pill">
@@ -29,8 +31,7 @@ function pageHtml(tone: 'white' | 'black', state: 'rest' | 'voted' | 'popular' |
           <span class="vc-stardust-glyph vc-stardust-glyph-rest">${GLYPH}</span>
           <span class="vc-stardust-glyph vc-stardust-glyph-alt">${GLYPH}</span>
         </span>
-      </button>
-      <span class="vc-stardust-note">25% off your first order of this product if you have not ordered before, or your next order if you have. Terms apply.</span>`
+      </button>`
     const staticSash = `
       <span class="vc-stardust" data-size="card" data-state="rest" data-interactive="false" data-testid="launch-vote-pill">
         <span class="vc-stardust-labels">
@@ -47,6 +48,9 @@ function pageHtml(tone: 'white' | 'black', state: 'rest' | 'voted' | 'popular' |
         <button type="button" class="vc-vote-dialog-cancel">Cancel</button>
       </div></div>`
     const body = state === 'voted' ? voted : state === 'popular' ? popular : state === 'confirm' ? confirm : state === 'static' ? staticSash : rest
+    const terms = state === 'rest' || state === 'confirm'
+        ? `<div class="vc-launch-vote-notes" data-testid="launch-vote-terms"><span class="vc-stardust-note">${TERMS}</span></div>`
+        : ''
     const bottleFill = tone === 'black'
         ? 'linear-gradient(90deg, #050505 0%, #2c2c2c 28%, #4a4a4a 46%, #111111 58%, #2a2a2a 100%)'
         : 'linear-gradient(90deg, #8b939b 0%, #e6e8eb 22%, #ffffff 42%, #f7f7f8 56%, #c5c9ce 100%)'
@@ -54,7 +58,8 @@ function pageHtml(tone: 'white' | 'black', state: 'rest' | 'voted' | 'popular' |
       ${CSS}
       ${OVERLAY_CSS}
       body { margin: 0; background: #0F1A2E; }
-      .card { position: relative; width: 280px; height: 360px; margin: 40px auto; background: #ffffff; overflow: hidden; }
+      .stack { width: 280px; margin: 40px auto; }
+      .card { position: relative; width: 280px; height: 360px; background: #ffffff; overflow: hidden; border-radius: 12px; }
       .bottle-shape {
         position: absolute;
         left: 50%;
@@ -66,9 +71,12 @@ function pageHtml(tone: 'white' | 'black', state: 'rest' | 'voted' | 'popular' |
         background: ${bottleFill};
       }
     </style></head><body>
+      <div class="stack">
       <div class="card" data-testid="bottle" data-tone="${tone}">
         <div class="bottle-shape" data-testid="bottle-shape"></div>
         <div class="vc-launch-vote" data-size="card">${body}</div>
+      </div>
+      ${terms}
       </div>
     </body></html>`
 }
@@ -117,6 +125,46 @@ test('states A through D and confirm at 390 and 1280', async ({ page }) => {
             const restCenterY = (before?.y ?? 0) + (before?.height ?? 0) / 2
             expect(restCenterX).toBeLessThan((cardBox?.x ?? 0) + (cardBox?.width ?? 0) * 0.45)
             expect(restCenterY).toBeLessThan((cardBox?.y ?? 0) + (cardBox?.height ?? 0) * 0.45)
+            const clearance = await pill.evaluate((node) => {
+                const pillNode = node as HTMLElement
+                const card = pillNode.closest('[data-testid="bottle"]') as HTMLElement
+                const w = pillNode.offsetWidth
+                const h = pillNode.offsetHeight
+                const style = getComputedStyle(pillNode)
+                const origin = style.transformOrigin.split(' ').map((part) => parseFloat(part))
+                const matrix = new DOMMatrix(style.transform)
+                const cardRect = card.getBoundingClientRect()
+                const host = pillNode.offsetParent as HTMLElement
+                const hostRect = host.getBoundingClientRect()
+                const radius = h / 2
+                const samples: Array<[number, number]> = []
+                for (let i = 0; i <= 12; i += 1) {
+                    const leftAngle = Math.PI / 2 + (Math.PI * i) / 12
+                    const rightAngle = -Math.PI / 2 + (Math.PI * i) / 12
+                    samples.push([radius + Math.cos(leftAngle) * radius, radius + Math.sin(leftAngle) * radius])
+                    samples.push([w - radius + Math.cos(rightAngle) * radius, radius + Math.sin(rightAngle) * radius])
+                }
+                for (let i = 0; i <= 8; i += 1) {
+                    const x = radius + ((w - radius * 2) * i) / 8
+                    samples.push([x, 0])
+                    samples.push([x, h])
+                }
+                let minPad = Number.POSITIVE_INFINITY
+                for (const [x, y] of samples) {
+                    const point = matrix.transformPoint(new DOMPoint(x - origin[0], y - origin[1]))
+                    const sx = hostRect.left + pillNode.offsetLeft + origin[0] + point.x
+                    const sy = hostRect.top + pillNode.offsetTop + origin[1] + point.y
+                    minPad = Math.min(minPad, sx - cardRect.left, sy - cardRect.top, cardRect.right - sx, cardRect.bottom - sy)
+                }
+                return minPad
+            })
+            expect(clearance).toBeGreaterThanOrEqual(4)
+            const terms = page.getByTestId('launch-vote-terms')
+            const termsBox = await terms.boundingBox()
+            expect(termsBox?.y ?? 0).toBeGreaterThanOrEqual((cardBox?.y ?? 0) + (cardBox?.height ?? 0) - 1)
+            const termsPaint = await terms.locator('.vc-stardust-note').evaluate((node) => getComputedStyle(node).backgroundColor)
+            expect(cssColor(termsPaint)).toBe('rgba(42,76,158,0.12)')
+            expect(await terms.evaluate((node) => node.closest('[data-testid="bottle"]') === null)).toBe(true)
             await pill.hover()
             await expect.poll(async () => cssColor(await pill.evaluate((node) => getComputedStyle(node).backgroundColor))).toBe('rgba(15,77,51,0.2)')
             const after = await pill.boundingBox()
