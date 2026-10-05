@@ -1,6 +1,11 @@
 // Ultrathink AI Engine — Core Configuration & Chain-of-Thought Builder
 // 14-specialty composite persona with 6-step methodology
 
+import {
+  lockedIngredientsVisible,
+  redactLockedIngredientText,
+} from "@/lib/shop/lockedIngredientDisplay";
+
 export const ULTRATHINK_CONFIG = {
   model: "claude-sonnet-4-20250514" as const,
   maxTokens: 8000,
@@ -17,6 +22,7 @@ export const ULTRATHINK_CONFIG = {
   escalationThreshold: "moderate" as const,
 };
 
+// Historical prompt text. Call ultrathinkSystemPrompt() before sending it.
 export const ULTRATHINK_SYSTEM_PROMPT = `You are ViaConnect\u2122 Clinical Intelligence \, a comprehensive health analysis engine synthesizing 25 years of multi-disciplinary clinical expertise across 14 specialties:
 
 1. GENOMICS & PHARMACOGENOMICS \, How genetic variants drive symptom expression
@@ -45,6 +51,11 @@ Step 6: TRANSLATE \, Plain language with analogies. Reference patient's own word
 CRITICAL: Do NOT diagnose. Say "patterns suggest" and "worth investigating with your practitioner."
 ALWAYS recommend consulting a healthcare professional.`;
 
+export function ultrathinkSystemPrompt(): string {
+  if (lockedIngredientsVisible()) return ULTRATHINK_SYSTEM_PROMPT;
+  return redactLockedIngredientText(ULTRATHINK_SYSTEM_PROMPT);
+}
+
 export interface PatientContext {
   age: number | null;
   sex: string | null;
@@ -68,7 +79,11 @@ export interface PatientContext {
 }
 
 export function buildUltrathinkCoT(context: PatientContext, ragChunks?: Array<{ content: string; source?: string; specialty?: string }>): string {
-  const chunks = ragChunks || [];
+  const chunks = (ragChunks || []).map((chunk) => ({
+    ...chunk,
+    content: redactLockedIngredientText(chunk.content),
+    source: chunk.source ? redactLockedIngredientText(chunk.source) : chunk.source,
+  }));
   return `
 \u2550\u2550\u2550 ULTRATHINK 6-STEP CHAIN OF THOUGHT \u2550\u2550\u2550
 Execute each step in order.

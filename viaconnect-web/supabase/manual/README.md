@@ -2,6 +2,8 @@
 
 Gary applies every file in this directory by hand. A routine `supabase db push` does not run them.
 
+`supabase/pending/NOT_APPLIED_locked_ingredient_display.sql` is a draft display-lock log. It is not in this directory and it is not applied. Do not run it with this runbook.
+
 `supabase/migrations/` from this change contains only `20260926190000_retire_performance_advisor_autoheal.sql`. That file unschedules pg_cron job `performance_advisor_autoheal`. It does not unschedule `security_advisor_autoheal`.
 
 Apply order, after confirming production job 10 is still paused:

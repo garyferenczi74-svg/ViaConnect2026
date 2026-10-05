@@ -14,6 +14,7 @@ import {
 } from './compatibility';
 import type { CompatibilityResult, CompatibilityState } from './types';
 import { getFormulationBySlug } from '@/data/masterFormulations';
+import { omitLockedIngredients } from '@/lib/shop/lockedIngredientDisplay';
 
 export async function loadProductCompatibility(
   productSlug: string,
@@ -27,9 +28,10 @@ export async function loadProductCompatibility(
     const formulation =
       getFormulationBySlug(productSlug) ??
       getFormulationBySlug(productSlug.replace('balance-plus-gut-repair', 'balance-gut-repair'));
-    const ingredientNames =
-      formulation?.ingredients.map((i) => i.name) ??
-      [];
+    const ingredientNames = omitLockedIngredients(
+      formulation?.ingredients ?? [],
+      (item) => item.name,
+    ).map((item) => item.name);
 
     if (!user) {
       return scoreGeneticCompatibility({

@@ -1,4 +1,12 @@
 // US FDA Regulatory Status — ViaConnect Peptide Portfolio (March 2026)
+// Historical regulatory notes stay in US_FDA_STATUS. Shop and RAG paths
+// that speak this object must use speakableUsFdaStatus() so the pre-launch
+// lock can omit ingredient names. Peptide-education disclaimer copy is unchanged.
+
+import {
+  lockedIngredientsVisible,
+  redactLockedIngredientText,
+} from '@/lib/shop/lockedIngredientDisplay';
 
 export const US_FDA_STATUS = {
 
@@ -41,3 +49,8 @@ export const US_FDA_STATUS = {
     implication: 'If user indicates they are a competitive athlete, flag WADA prohibition in their profile.',
   },
 };
+
+export function speakableUsFdaStatus(): typeof US_FDA_STATUS {
+  if (lockedIngredientsVisible()) return US_FDA_STATUS;
+  return JSON.parse(redactLockedIngredientText(JSON.stringify(US_FDA_STATUS))) as typeof US_FDA_STATUS;
+}

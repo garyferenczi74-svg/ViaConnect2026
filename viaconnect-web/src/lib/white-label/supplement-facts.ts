@@ -13,6 +13,8 @@
 // designer can flag the practitioner ("we are missing serving size for
 // this SKU; ask ViaCura ops to populate before submitting for review").
 
+import { omitLockedIngredients } from '@/lib/shop/lockedIngredientDisplay';
+
 export interface SupplementFactsIngredient {
   name: string;
   amount: string;            // e.g. "500 mg" or "100 mcg"
@@ -50,7 +52,10 @@ export function buildSupplementFactsPanel(product: ProductCatalogRow): Supplemen
     deriveNetQuantity(servingsPerContainer, product.delivery_form);
   if (!netQuantity) warnings.push('net_quantity could not be derived');
 
-  const ingredients = normalizeIngredients(f.ingredients);
+  const ingredients = omitLockedIngredients(
+    normalizeIngredients(f.ingredients),
+    (item) => item.name,
+  );
   if (ingredients.length === 0) warnings.push('ingredients list is empty');
 
   return {
