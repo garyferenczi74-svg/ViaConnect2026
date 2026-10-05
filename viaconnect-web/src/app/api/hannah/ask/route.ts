@@ -25,6 +25,7 @@ import { safeLog } from '@/lib/utils/safe-log';
 import { withTimeout, isTimeoutError } from '@/lib/utils/with-timeout';
 import { reviewServerText } from '@/lib/compliance/review-server-text';
 import { getUserJurisdictionCode } from '@/lib/compliance/jurisdiction';
+import { CLAUDE_HAIKU } from '@/lib/ai/claude-models';
 
 export const dynamic = 'force-dynamic';
 
@@ -66,7 +67,7 @@ export function resetAskRateLimitForTesting(): void {
 const ANTHROPIC_API = 'https://api.anthropic.com/v1/messages';
 const ANTHROPIC_VERSION = '2023-06-01';
 // Use the same fast-tier model as engine.ts tier "fast".
-const QA_MODEL = 'claude-haiku-4-5-20251001';
+const QA_MODEL = CLAUDE_HAIKU;
 const QA_MAX_TOKENS = 1024;
 const QA_TIMEOUT_MS = 5000;
 

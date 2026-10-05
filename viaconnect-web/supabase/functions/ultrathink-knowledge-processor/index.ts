@@ -6,8 +6,9 @@
 //
 // Two extraction modes:
 //   1. Claude Sonnet (preferred) — if ANTHROPIC_API_KEY is set, sends the
-//      title+abstract to claude-sonnet-4-20250514 with a tight JSON schema
-//      prompt and parses the response.
+//      title+abstract to claude-sonnet-4-6 (CLAUDE_SONNET in
+//      src/lib/ai/claude-models.ts; Deno cannot import that module) with a
+//      tight JSON schema prompt and parses the response.
 //   2. Heuristic fallback — when Claude is unavailable, uses regex/keyword
 //      patterns to extract a single low-confidence "subject mentions object"
 //      fact per article. Better than nothing; flagged with evidence_level
@@ -24,6 +25,9 @@ import { safeLog } from '../_shared/safe-log.ts';
 import { getCircuitBreaker, isCircuitBreakerError } from '../_shared/circuit-breaker.ts';
 
 const claudeBreaker = getCircuitBreaker('claude-api');
+
+// Keep identical to CLAUDE_SONNET in src/lib/ai/claude-models.ts.
+const CLAUDE_SONNET = 'claude-sonnet-4-6';
 
 const SUPABASE_URL  = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY   = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -99,7 +103,7 @@ Return up to 5 facts. If no extractable facts, return [].`;
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: CLAUDE_SONNET,
         max_tokens: 1500,
         messages: [{ role: 'user', content: prompt }],
       }),

@@ -3,6 +3,7 @@
  * Calls Claude with detected patterns + context to generate personalized peptide protocol
  */
 
+import { CLAUDE_SONNET } from '@/lib/ai/claude-models';
 import { UltrathinkContext } from './buildContext';
 import { DetectedPattern } from './patternDetection';
 import { PEPTIDE_PATTERN_MAP } from './peptidePatternMap';
@@ -105,7 +106,7 @@ export async function generatePeptideStack(
     method: 'POST',
     headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-6-20250514',
+      model: CLAUDE_SONNET,
       max_tokens: 4000,
       system: PEPTIDE_SYSTEM_PROMPT,
       messages: [{ role: 'user', content: prompt }],

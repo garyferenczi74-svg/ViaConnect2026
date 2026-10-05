@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { withAbortTimeout, isTimeoutError } from "@/lib/utils/with-timeout";
 import { safeLog } from "@/lib/utils/safe-log";
 import { getCircuitBreaker, isCircuitBreakerError } from "@/lib/utils/circuit-breaker";
+import { CLAUDE_SONNET } from "@/lib/ai/claude-models";
 
 export const dynamic = 'force-dynamic';
 
@@ -116,7 +117,7 @@ export async function POST(request: Request) {
             "anthropic-version": "2023-06-01",
           },
           body: JSON.stringify({
-            model: "claude-sonnet-4-20250514",
+            model: CLAUDE_SONNET,
             max_tokens: 4096,
             messages: [{ role: "user", content: buildPrompt(query) }],
           }),
