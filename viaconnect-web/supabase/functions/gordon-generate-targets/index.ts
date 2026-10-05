@@ -133,8 +133,11 @@ function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
 // Outline phase. Returns null if neither path yields data.
 async function loadCaqSnapshot(db: SupabaseClient, userId: string): Promise<unknown | null> {
   try {
+    // Live arg name is target_user_id (db-functions.json, types.ts,
+    // fetchPreviousCAQ). PostgREST binds by name, so p_user_id does not
+    // reach the function and the body bind would see NULL.
     const rpc = await withTimeout(
-      db.rpc('get_latest_completed_caq', { p_user_id: userId }),
+      db.rpc('get_latest_completed_caq', { target_user_id: userId }),
       TIMEOUT_MS,
       'rpc get_latest_completed_caq',
     );
