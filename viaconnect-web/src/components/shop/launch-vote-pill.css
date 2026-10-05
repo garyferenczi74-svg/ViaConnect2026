@@ -1,7 +1,8 @@
 /* Corner sash. The overlay fills the image and clips to its radius.
    Transform stays on the pill, not this box, so backdrop-filter still
-   samples the bottle. A5 insets 10px before the -45deg rotate so the
-   rounded caps sit fully inside the photo. */
+   samples the bottle. The pill is content-sized. JS writes left/top so
+   both stadium caps clear the photo after rotate(-45deg). The placer
+   aims 1px past the 8px floor so subpixel samples still clear it. */
 .vc-launch-vote {
     position: absolute;
     inset: 0;
@@ -17,23 +18,60 @@
 
 .vc-launch-vote > .vc-stardust {
     position: absolute;
-    top: 10px;
-    left: 10px;
+    top: 0;
+    left: 0;
     box-sizing: border-box;
     width: max-content;
-    max-width: 11.25rem;
+    max-width: none;
     margin: 0;
-    transform-origin: top left;
-    transform: rotate(-45deg) translate(-50%, 4.5rem);
+    transform-origin: center;
+    transform: rotate(-45deg);
     pointer-events: auto;
 }
 
-.vc-launch-vote > .vc-stardust[data-interactive='true'],
-.vc-launch-vote > .vc-stardust[data-state='voted'],
-.vc-launch-vote > .vc-stardust[data-state='popular'] {
-    width: 11.25rem;
-    min-width: 11.25rem;
-    max-width: 11.25rem;
+/* Rest copy sets the width. Line-clamp on the shared label would ellipsize it. */
+.vc-launch-vote .vc-stardust-labels {
+    flex: 0 0 auto;
+    width: max-content;
+    min-width: max-content;
+    max-width: none;
+}
+
+.vc-launch-vote .vc-stardust-label,
+.vc-launch-vote .vc-stardust-detail {
+    display: block;
+    overflow: visible;
+    -webkit-line-clamp: unset;
+    line-clamp: unset;
+    -webkit-box-orient: horizontal;
+    white-space: nowrap;
+}
+
+/* Votes on: the hover line wraps inside the rest label's width, two lines max,
+   so the pill stays the rest stamp and does not grow across the bottle. */
+.vc-launch-vote > .vc-stardust[data-interactive='true'] .vc-stardust-label-alt {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+    white-space: normal;
+    width: 0;
+    min-width: 100%;
+}
+
+.vc-launch-vote > .vc-stardust[data-state='voted'] .vc-stardust-labels,
+.vc-launch-vote > .vc-stardust[data-state='popular'] .vc-stardust-labels {
+    width: auto;
+    min-width: 0;
+    max-width: 6.5rem;
+}
+
+.vc-launch-vote > .vc-stardust[data-state='voted'] .vc-stardust-label,
+.vc-launch-vote > .vc-stardust[data-state='popular'] .vc-stardust-label,
+.vc-launch-vote > .vc-stardust[data-state='popular'] .vc-stardust-detail {
+    white-space: normal;
+    max-width: 6.5rem;
 }
 
 /* Terms sit under the photo, not on it. Paint matches CONSUMER_OPEN_PILL_BASE. */

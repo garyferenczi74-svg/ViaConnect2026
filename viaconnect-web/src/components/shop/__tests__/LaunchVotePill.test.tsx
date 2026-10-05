@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { armFollowThroughBlock, LaunchVotePillView } from '@/components/shop/LaunchVotePill'
+import { LAUNCH_SASH_CLEARANCE_PX, launchSashCapReach, launchSashOffset } from '@/components/shop/launch-sash-place'
 import { CONSUMER_OPEN_PILL_BASE } from '@/lib/ui/consumerChrome'
 import { SHOP_CONTROL_JOIN, SHOP_CONTROL_PURCHASE, SHOP_CONTROL_VOTE } from '@/lib/shop/launch-vote-copy'
 import type { ResolvedPill } from '@/lib/shop/launch-vote/state'
@@ -153,16 +154,22 @@ describe('LaunchVotePillView', () => {
         const sash = overlay.slice(0, overlay.indexOf('.vc-launch-vote-notes'))
         expect(sash).toContain('inset: 0')
         expect(sash).toContain('overflow: hidden')
-        expect(sash).toContain('top: 10px')
-        expect(sash).toContain('left: 10px')
-        expect(sash).not.toContain('top: 0')
-        expect(sash).not.toContain('left: 0')
-        expect(sash).toContain('transform-origin: top left')
-        expect(sash).toContain('transform: rotate(-45deg) translate(-50%, 4.5rem)')
+        expect(sash).toContain('border-radius: 0.75rem')
+        expect(sash).toContain("border-radius: 1rem")
+        expect(sash).toContain('transform-origin: center')
+        expect(sash).toContain('transform: rotate(-45deg)')
+        expect(sash).not.toContain('translate(')
+        expect(sash).not.toContain('11.25rem')
+        expect(sash).toContain('width: max-content')
+        expect(sash).toContain('white-space: nowrap')
         expect(sash).not.toContain('::before')
         expect(sash).not.toContain('::after')
         expect(sash).not.toContain('#0a1929')
         expect(overlay).not.toContain('left: 10%')
+        const source = readFileSync(join(process.cwd(), 'src/components/shop/LaunchVotePill.tsx'), 'utf8')
+        expect(source).toContain('useLayoutEffect')
+        expect(source).toContain('applyLaunchSash')
+        expect(LAUNCH_SASH_CLEARANCE_PX).toBe(8)
 
         const off = renderView({
             pill: pill({ kind: 'rest', interactive: false }),
@@ -215,11 +222,17 @@ describe('LaunchVotePillView', () => {
         expect(focusBlock).toContain('border-width: 1px')
         expect(focusBlock).toContain('border-style: solid')
         expect(focusBlock).not.toContain('display: none')
-        expect(overlay).toContain('width: 11.25rem')
-        expect(overlay).toContain('min-width: 11.25rem')
-        expect(overlay).toContain('max-width: 11.25rem')
-        expect(overlay).toContain(".vc-launch-vote > .vc-stardust[data-interactive='true']")
+        expect(overlay).not.toContain('11.25rem')
+        expect(overlay).toContain(".vc-launch-vote > .vc-stardust[data-interactive='true'] .vc-stardust-label-alt")
+        expect(overlay).toContain('white-space: normal')
+        expect(overlay).toContain('min-width: 100%')
         expect(overlay).toContain('pointer-events: auto')
+        const width = 128
+        const height = 36
+        const placed = launchSashOffset(width, height)
+        const reach = launchSashCapReach(width, height)
+        expect(placed.left + width / 2 - reach).toBeCloseTo(LAUNCH_SASH_CLEARANCE_PX, 6)
+        expect(placed.top + height / 2 - reach).toBeCloseTo(LAUNCH_SASH_CLEARANCE_PX, 6)
     })
 
     it('keeps the full sash inset and the terms line as a glass strip under the image', () => {

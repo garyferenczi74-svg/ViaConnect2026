@@ -5,7 +5,7 @@
  */
 'use client'
 
-import { useEffect, useId, useRef, useState, type MouseEvent, type PointerEvent, type ReactNode } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState, type MouseEvent, type PointerEvent, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { usePathname, useRouter } from 'next/navigation'
 import { Check, Sparkles, ThumbsUp } from 'lucide-react'
@@ -39,6 +39,7 @@ import {
     type ResolvedPill,
     type VotePhase,
 } from '@/lib/shop/launch-vote/state'
+import { applyLaunchSash } from '@/components/shop/launch-sash-place'
 import './launch-vote-pill.css'
 
 const FOLLOW_THROUGH_MS = 350
@@ -116,8 +117,26 @@ export function LaunchVotePillView({
 }: LaunchVotePillViewProps) {
     const titleId = useId()
     const overlayRef = useRef<HTMLDivElement>(null)
+    const frameRef = useRef<HTMLDivElement>(null)
     const terms = termsForPill(pill.kind, votingEnabled, hasPriorPaidOrder)
     const dialogOpen = phase === 'confirm' || phase === 'pending'
+
+    useLayoutEffect(() => {
+        const frame = frameRef.current
+        if (!frame) return
+        const apply = () => applyLaunchSash(frame)
+        apply()
+        let observer: ResizeObserver | null = null
+        if (typeof ResizeObserver !== 'undefined') {
+            observer = new ResizeObserver(apply)
+            observer.observe(frame)
+            const sash = frame.querySelector('[data-testid="launch-vote-pill"]')
+            if (sash) observer.observe(sash)
+        }
+        const fonts = document.fonts
+        if (fonts?.ready) void fonts.ready.then(apply)
+        return () => observer?.disconnect()
+    }, [pill.kind, phase, size, votingEnabled])
 
     useEffect(() => {
         if (!dialogOpen) return
@@ -277,7 +296,12 @@ export function LaunchVotePillView({
         <div className="flex flex-col gap-2">
             <div className="relative">
                 {children}
-                <div className="vc-launch-vote" data-size={size} data-testid="launch-vote-overlay">
+                <div
+                    ref={frameRef}
+                    className="vc-launch-vote"
+                    data-size={size}
+                    data-testid="launch-vote-overlay"
+                >
                     {control}
                 </div>
             </div>
@@ -285,6 +309,30 @@ export function LaunchVotePillView({
             {portaled}
         </div>
     )
+}
+
+function pendingVoteMarker(): string | null {
+    try {
+        return window.sessionStorage.getItem(PENDING_VOTE_STORAGE_KEY)
+    } catch {
+        return null
+    }
+}
+
+function clearPendingVoteMarker(): void {
+    try {
+        window.sessionStorage.removeItem(PENDING_VOTE_STORAGE_KEY)
+    } catch {
+        return
+    }
+}
+
+function rememberPendingVote(productId: string): void {
+    try {
+        window.sessionStorage.setItem(PENDING_VOTE_STORAGE_KEY, productId)
+    } catch {
+        return
+    }
 }
 
 function isVotePayload(value: unknown): value is { success: true; data: { status: string } } {
@@ -326,7 +374,7 @@ export function LaunchVotePill({
     useEffect(() => {
         if (!pill.interactive || typeof window === 'undefined') return
         const params = new URLSearchParams(window.location.search)
-        const marker = window.sessionStorage.getItem(PENDING_VOTE_STORAGE_KEY)
+        const marker = pendingVoteMarker()
         if (
             shouldOpenConfirmOnReturn({
                 signedIn,
@@ -369,7 +417,7 @@ export function LaunchVotePill({
 
     const clearReturn = () => {
         if (typeof window === 'undefined') return
-        window.sessionStorage.removeItem(PENDING_VOTE_STORAGE_KEY)
+        clearPendingVoteMarker()
         if (window.location.search.includes('vote=')) {
             router.replace(pathname)
         }
@@ -392,7 +440,7 @@ export function LaunchVotePill({
         submitLock.current = true
         setPhase((current) => nextVoteState(current, 'submit'))
         if (!signedIn) {
-            window.sessionStorage.setItem(PENDING_VOTE_STORAGE_KEY, productId)
+            rememberPendingVote(productId)
             router.push(signInVoteRedirect(pathname || productPath, productId))
             return
         }
