@@ -99,13 +99,9 @@ export function ProductCard({
         model: voteModel,
     })
 
-    return (
-        <Link
-            href={href}
-            className="group flex flex-col gap-3 h-full rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0F1A2E]"
-        >
-            <div
-                className={`
+    const photo = (
+        <div
+            className={`
                     relative overflow-hidden block w-full rounded-xl ${primaryImage ? 'bg-white' : 'bg-white/[0.04]'} shadow-md
                     aspect-[3/4] md:aspect-[4/5]
                     transition-[transform,box-shadow] duration-300 ease-in-out
@@ -113,58 +109,65 @@ export function ProductCard({
                     before:content-[''] before:absolute before:inset-0 before:rounded-xl before:pointer-events-none
                     before:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]
                 `}
-            >
-                {primaryImage ? (
-                    display.hasOverride ? (
-                        <div className={`absolute inset-0 ${display.bgClass}`}>
-                            <div className={`relative h-full w-full ${display.paddingClass}`}>
-                                <Image
-                                    src={primaryImage}
-                                    alt={product.name}
-                                    fill
-                                    className={`${display.fitClass} transform-gpu`}
-                                    style={display.style}
-                                    sizes="(min-width: 1280px) 296px, (min-width: 768px) 33vw, 50vw"
-                                    placeholder="blur"
-                                    blurDataURL={SHOP_CARD_BLUR_DATA_URL}
-                                />
-                            </div>
+        >
+            {primaryImage ? (
+                display.hasOverride ? (
+                    <div className={`absolute inset-0 ${display.bgClass}`}>
+                        <div className={`relative h-full w-full ${display.paddingClass}`}>
+                            <Image
+                                src={primaryImage}
+                                alt={product.name}
+                                fill
+                                className={`${display.fitClass} transform-gpu`}
+                                style={display.style}
+                                sizes="(min-width: 1280px) 296px, (min-width: 768px) 33vw, 50vw"
+                                placeholder="blur"
+                                blurDataURL={SHOP_CARD_BLUR_DATA_URL}
+                            />
                         </div>
-                    ) : (
-                        <Image
-                            src={primaryImage}
-                            alt={product.name}
-                            fill
-                            className={`object-cover object-top transform-gpu ${overzoomClass}`.trim()}
-                            sizes="(min-width: 1280px) 296px, (min-width: 768px) 33vw, 50vw"
-                            placeholder="blur"
-                            blurDataURL={SHOP_CARD_BLUR_DATA_URL}
-                        />
-                    )
-                ) : (
-                    <CategoryFallbackImage categorySlug={product.category_slug} />
-                )}
-                {pill.kind !== 'hidden' && (
-                    <LaunchVotePill
-                        productId={product.id}
-                        productName={product.name}
-                        productPath={href}
-                        source="plp"
-                        size="card"
-                        pill={pill}
-                        signedIn={voteModel.signedIn}
-                        votingEnabled={voteModel.votingEnabled}
-                        hasPriorPaidOrder={voteModel.hasPriorPaidOrder}
-                    />
-                )}
-                {visibleTags.length > 0 && (
-                    <div className="absolute top-3 right-3 z-10 flex flex-col items-end gap-1">
-                        {visibleTags.map((tag) => (
-                            <StatusPill key={tag} kind={tag} />
-                        ))}
                     </div>
-                )}
-            </div>
+                ) : (
+                    <Image
+                        src={primaryImage}
+                        alt={product.name}
+                        fill
+                        className={`object-cover object-top transform-gpu ${overzoomClass}`.trim()}
+                        sizes="(min-width: 1280px) 296px, (min-width: 768px) 33vw, 50vw"
+                        placeholder="blur"
+                        blurDataURL={SHOP_CARD_BLUR_DATA_URL}
+                    />
+                )
+            ) : (
+                <CategoryFallbackImage categorySlug={product.category_slug} />
+            )}
+            {visibleTags.length > 0 && (
+                <div className="absolute top-3 right-3 z-10 flex flex-col items-end gap-1">
+                    {visibleTags.map((tag) => (
+                        <StatusPill key={tag} kind={tag} />
+                    ))}
+                </div>
+            )}
+        </div>
+    )
+
+    return (
+        <Link
+            href={href}
+            className="group flex flex-col gap-3 h-full rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DA5A0] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0F1A2E]"
+        >
+            <LaunchVotePill
+                productId={product.id}
+                productName={product.name}
+                productPath={href}
+                source="plp"
+                size="card"
+                pill={pill}
+                signedIn={voteModel.signedIn}
+                votingEnabled={voteModel.votingEnabled}
+                hasPriorPaidOrder={voteModel.hasPriorPaidOrder}
+            >
+                {photo}
+            </LaunchVotePill>
             {variant === 'testing' ? (
                 <ProductCardTestingBody
                     product={product}

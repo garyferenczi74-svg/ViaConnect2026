@@ -148,14 +148,15 @@ describe('ProductCard coming soon', () => {
         expect(html).toContain('/login?redirectTo=')
     })
 
-    it('renders the overlay inside the image container before the pills', () => {
+    it('keeps the sash on the photo and status pills in the image frame', () => {
         const html = renderCard(base({ status_tags: ['NEW'], is_released: false }))
         const imageAt = html.indexOf('aspect-[3/4]')
         const overlayAt = html.indexOf('data-testid="launch-vote-pill"')
         const pillsAt = html.indexOf('absolute top-3 right-3 z-10')
         expect(imageAt).toBeGreaterThan(-1)
-        expect(overlayAt).toBeGreaterThan(imageAt)
-        expect(pillsAt).toBeGreaterThan(overlayAt)
+        expect(pillsAt).toBeGreaterThan(imageAt)
+        expect(overlayAt).toBeGreaterThan(pillsAt)
+        expect(html).not.toContain('data-testid="launch-vote-terms"')
     })
 
     it('uses a white image container when a photo exists and the navy fallback when it does not', () => {

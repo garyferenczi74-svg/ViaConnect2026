@@ -153,8 +153,10 @@ describe('LaunchVotePillView', () => {
         const sash = overlay.slice(0, overlay.indexOf('.vc-launch-vote-notes'))
         expect(sash).toContain('inset: 0')
         expect(sash).toContain('overflow: hidden')
-        expect(sash).toContain('top: 0')
-        expect(sash).toContain('left: 0')
+        expect(sash).toContain('top: 10px')
+        expect(sash).toContain('left: 10px')
+        expect(sash).not.toContain('top: 0')
+        expect(sash).not.toContain('left: 0')
         expect(sash).toContain('transform-origin: top left')
         expect(sash).toContain('transform: rotate(-45deg) translate(-50%, 4.5rem)')
         expect(sash).not.toContain('::before')
@@ -169,6 +171,7 @@ describe('LaunchVotePillView', () => {
         expect(off).toContain('Launching Soon')
         expect(off).toContain('data-interactive="false"')
         expect(off).not.toContain('Vote for the next product launch')
+        expect(off).not.toContain('data-testid="launch-vote-terms"')
         expect(off).not.toContain('<button')
 
         const on = renderView()
@@ -217,6 +220,40 @@ describe('LaunchVotePillView', () => {
         expect(overlay).toContain('max-width: 11.25rem')
         expect(overlay).toContain(".vc-launch-vote > .vc-stardust[data-interactive='true']")
         expect(overlay).toContain('pointer-events: auto')
+    })
+
+    it('keeps the full sash inset and the terms line as a glass strip under the image', () => {
+        const overlay = readFileSync(join(process.cwd(), 'src/components/shop/launch-vote-pill.css'), 'utf8')
+        const note = overlay.slice(overlay.indexOf('.vc-stardust-note {'), overlay.indexOf('.vc-vote-dialog'))
+        expect(note).toContain('rgba(42, 76, 158, 0.12)')
+        expect(note).toContain('rgba(91, 141, 239, 0.3)')
+        expect(note).toContain('backdrop-filter: blur(12px)')
+        expect(note).toContain('border-radius: 999px')
+        expect(note).toContain('min-height: 44px')
+        expect(note).not.toContain('#0a1929')
+        expect(note).not.toContain('bottom:')
+        expect(overlay.slice(0, overlay.indexOf('.vc-launch-vote-notes'))).not.toContain('position: absolute;\n    right: 8px')
+
+        const html = renderView()
+        const overlayAt = html.indexOf('data-testid="launch-vote-overlay"')
+        const termsAt = html.indexOf('data-testid="launch-vote-terms"')
+        expect(overlayAt).toBeGreaterThan(-1)
+        expect(termsAt).toBeGreaterThan(overlayAt)
+        const between = html.slice(overlayAt, termsAt)
+        expect(between).not.toContain('25% off your first order')
+        expect(html).toContain('25% off your first order of this product if you have not ordered before, or your next order if you have. Terms apply.')
+        expect(html).toContain('bg-[#2A4C9E]/[0.12]')
+        expect(html).toContain('border-[#5B8DEF]/30')
+        expect(html).toContain('backdrop-blur-md')
+        const source = readFileSync(join(process.cwd(), 'src/components/shop/LaunchVotePill.tsx'), 'utf8')
+        expect(source).toContain('CONSUMER_OPEN_PILL_BASE')
+        const card = readFileSync(join(process.cwd(), 'src/components/shop/ProductCard.tsx'), 'utf8')
+        const pdp = readFileSync(
+            join(process.cwd(), 'src/app/(app)/(consumer)/shop/product/[slug]/page.tsx'),
+            'utf8',
+        )
+        expect(card.indexOf('<LaunchVotePill')).toBeLessThan(card.indexOf('{photo}'))
+        expect(pdp.indexOf('<LaunchVotePill')).toBeLessThan(pdp.indexOf('aspect-[4/5]'))
     })
 
     it('seals dialog taps so Cancel, overlay, Submit, and Escape do not reach the card link', () => {

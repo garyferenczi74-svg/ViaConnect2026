@@ -112,33 +112,32 @@ export default async function ProductDetailPage(props: PageProps) {
 
                 <div className="grid grid-cols-1 gap-8 md:gap-10 lg:grid-cols-2 lg:gap-12">
                     <div className="flex flex-col gap-3">
-                        <div className={`relative aspect-[4/5] w-full overflow-hidden rounded-2xl ${primaryImage ? 'bg-white' : 'bg-white/[0.04]'} shadow-md`}>
-                            {primaryImage ? (
-                                <Image
-                                    src={primaryImage}
-                                    alt={product.name}
-                                    fill
-                                    className="object-cover object-top"
-                                    sizes="(min-width: 1024px) 50vw, 100vw"
-                                    priority
-                                />
-                            ) : (
-                                <CategoryFallbackImage categorySlug={product.category_slug} />
-                            )}
-                            {pill.kind !== 'hidden' && (
-                                <LaunchVotePill
-                                    productId={product.id}
-                                    productName={product.name}
-                                    productPath={`/shop/product/${slug}`}
-                                    source="pdp"
-                                    size="pdp"
-                                    pill={pill}
-                                    signedIn={voteModel.signedIn}
-                                    votingEnabled={voteModel.votingEnabled}
-                                    hasPriorPaidOrder={voteModel.hasPriorPaidOrder}
-                                />
-                            )}
-                        </div>
+                        <LaunchVotePill
+                            productId={product.id}
+                            productName={product.name}
+                            productPath={`/shop/product/${slug}`}
+                            source="pdp"
+                            size="pdp"
+                            pill={pill}
+                            signedIn={voteModel.signedIn}
+                            votingEnabled={voteModel.votingEnabled}
+                            hasPriorPaidOrder={voteModel.hasPriorPaidOrder}
+                        >
+                            <div className={`relative aspect-[4/5] w-full overflow-hidden rounded-2xl ${primaryImage ? 'bg-white' : 'bg-white/[0.04]'} shadow-md`}>
+                                {primaryImage ? (
+                                    <Image
+                                        src={primaryImage}
+                                        alt={product.name}
+                                        fill
+                                        className="object-cover object-top"
+                                        sizes="(min-width: 1024px) 50vw, 100vw"
+                                        priority
+                                    />
+                                ) : (
+                                    <CategoryFallbackImage categorySlug={product.category_slug} />
+                                )}
+                            </div>
+                        </LaunchVotePill>
                         {thumbs.length > 1 && (
                             <div className="grid grid-cols-4 gap-2">
                                 {thumbs.map((url, i) => (
