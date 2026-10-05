@@ -113,6 +113,8 @@ export const SEED_INGREDIENTS: FarmceuticaIngredient[] = [
   ing("Manganese Bisglycinate","Minerals & Cofactors","Standard"),
 
   // ═══ Amino Acids & Peptides ═══
+  // PRELAUNCH_DISPLAY_LOCK: hidden from shop and speakable paths until after launch
+  // (Gary Soft GO 2026-10-05). Historical seed row kept.
   ing("BPC-157 (Body Protection Compound)","Amino Acids & Peptides","Standard"),
   ing("L-Glutamine","Amino Acids & Peptides","Standard"),
   ing("NAC (N-Acetyl Cysteine)","Amino Acids & Peptides","Standard"),

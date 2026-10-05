@@ -5,6 +5,7 @@
 
 import type { ShopProduct } from '@/lib/shop/queries';
 import { annotateShopIngredientJson } from '@/lib/supplements/confirmedBioavailability';
+import { applyLockedIngredientShopFields } from '@/lib/shop/lockedIngredientDisplay';
 import { normalizeProductCopy } from './lexicon';
 import { buildTabsForProduct } from './contentSeed';
 import { resolveFormulationBySlug } from './resolveSlug';
@@ -117,6 +118,7 @@ export function buildFiveSections(
   product: ShopProduct,
   slugOverride?: string,
 ): ProductTabContent[] {
+  product = applyLockedIngredientShopFields(product);
   const slug = slugOverride ?? product.slug ?? product.sku ?? '';
   const formulation = resolveFormulationBySlug(slug);
   const seeded = formulation ? buildTabsForProduct(formulation) : [];

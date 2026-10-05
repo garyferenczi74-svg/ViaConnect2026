@@ -4,6 +4,10 @@ import { useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Info, FlaskConical, ChevronRight, type LucideIcon } from 'lucide-react';
 import { openPillClass, PANEL_GLASS } from './cardOpenPill';
+import {
+  omitLockedIngredients,
+  redactLockedIngredientText,
+} from '@/lib/shop/lockedIngredientDisplay';
 
 export interface IngredientRow {
   ingredient: string;
@@ -29,13 +33,16 @@ const PANEL_GAP = `${PANEL_GLASS} mt-0.5`;
 
 function normalizeFormulation(data: FormulationData): { ingredients: IngredientRow[]; totalMg: number | null } {
   if (!data) return { ingredients: [], totalMg: null };
-  if (Array.isArray(data)) {
-    const total = data.reduce((sum, r) => sum + (typeof r.mg === 'number' ? r.mg : 0), 0);
-    return { ingredients: data, totalMg: total };
+  const rows = Array.isArray(data) ? data : (data.ingredients ?? []);
+  const ingredients = omitLockedIngredients(rows, (row) => row.ingredient);
+  const removed = ingredients.length !== rows.length;
+  const listedTotal = ingredients.reduce((sum, row) => sum + (typeof row.mg === 'number' ? row.mg : 0), 0);
+  if (Array.isArray(data) || removed) {
+    return { ingredients, totalMg: listedTotal > 0 ? listedTotal : null };
   }
   return {
-    ingredients: data.ingredients ?? [],
-    totalMg: typeof data.total_mg === 'number' ? data.total_mg : null,
+    ingredients,
+    totalMg: typeof data.total_mg === 'number' ? data.total_mg : (listedTotal > 0 ? listedTotal : null),
   };
 }
 
@@ -119,6 +126,7 @@ function InfoPillButton({
 }
 
 export function ProductInfoButtons({ description, formulationJson, deliveryForm }: ProductInfoButtonsProps) {
+  description = description ? redactLockedIngredientText(description) : description;
   const [openPanel, setOpenPanel] = useState<Panel>(null);
   const shouldReduceMotion = useReducedMotion();
 

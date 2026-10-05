@@ -3,6 +3,7 @@
 
 import { createClient } from "@/lib/supabase/client";
 import type { PatientContext } from "../ultrathink-engine";
+import { redactLockedIngredientText } from "@/lib/shop/lockedIngredientDisplay";
 
 export interface RetrievedChunk {
   id: string;
@@ -85,5 +86,9 @@ export async function retrieveRelevantKnowledge(context: PatientContext): Promis
     // RAG not yet set up — engine works without it
   }
 
-  return chunks;
+  return chunks.map((chunk) => ({
+    ...chunk,
+    content: redactLockedIngredientText(chunk.content),
+    source: redactLockedIngredientText(chunk.source),
+  }));
 }
