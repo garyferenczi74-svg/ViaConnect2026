@@ -6,13 +6,13 @@
     --vc-stardust-hover-fg: #ffffff;
     --vc-stardust-hover-border: rgba(52, 211, 153, 0.55);
     position: relative;
-    isolation: isolate;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 6px;
-    width: 100%;
     box-sizing: border-box;
+    -webkit-appearance: none;
+    appearance: none;
     margin: 0;
     border: 1px solid var(--vc-stardust-rest-border);
     border-radius: 999px;
@@ -23,26 +23,30 @@
     box-shadow: none;
     cursor: pointer;
     font: inherit;
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 500;
     line-height: 1.25;
-    padding: 6px 12px;
-    min-height: 44px;
+    padding: 6px 14px;
+    min-height: 0;
     text-align: center;
     transition: background-color 200ms, color 200ms, border-color 200ms;
 }
 
-.vc-stardust[data-size='pdp'] {
-    font-size: 16px;
-    padding: 12px 26px;
-    width: min(20rem, 100%);
+.vc-stardust-labels,
+.vc-stardust-label,
+.vc-stardust-detail,
+.vc-stardust-glyphs,
+.vc-stardust-glyph {
+    background: none;
+    border: 0;
+    box-shadow: none;
 }
 
 .vc-stardust-labels {
     position: relative;
     z-index: 1;
     display: grid;
-    flex: 1;
+    flex: 1 1 auto;
     min-width: 0;
 }
 
@@ -67,6 +71,7 @@
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
     overflow: hidden;
+    align-self: center;
 }
 
 .vc-stardust-label-alt,
@@ -78,8 +83,10 @@
     position: relative;
     z-index: 1;
     display: grid;
-    flex: none;
+    flex: 0 0 12px;
     width: 12px;
+    min-width: 12px;
+    max-width: 12px;
     height: 12px;
 }
 
@@ -94,68 +101,92 @@
     height: 12px;
 }
 
-.vc-stardust-glyph-alt {
-    display: none;
+.vc-stardust-glyph svg {
+    display: block;
+    width: 12px;
+    height: 12px;
+    overflow: visible;
+}
+
+.vc-stardust[data-interactive='false'] {
+    cursor: default;
 }
 
 @media (hover: hover) {
-    .vc-stardust[data-state='rest']:hover {
+    .vc-stardust[data-interactive='true'][data-state='rest']:hover {
         background: var(--vc-stardust-hover-bg);
         color: var(--vc-stardust-hover-fg);
+        border-style: solid;
+        border-width: 1px;
         border-color: var(--vc-stardust-hover-border);
+        box-sizing: border-box;
+        margin: 0;
         box-shadow: none;
     }
 
-    .vc-stardust[data-state='rest']:hover .vc-stardust-label-rest {
+    .vc-stardust[data-interactive='true'][data-state='rest']:hover .vc-stardust-label-rest {
         visibility: hidden;
     }
 
-    .vc-stardust[data-state='rest']:hover .vc-stardust-label-alt {
+    .vc-stardust[data-interactive='true'][data-state='rest']:hover .vc-stardust-label-alt {
         visibility: visible;
     }
 
-    .vc-stardust[data-state='rest']:hover .vc-stardust-glyph-rest {
-        display: none;
+    .vc-stardust[data-interactive='true'][data-state='rest']:hover .vc-stardust-glyph-rest {
+        visibility: hidden;
     }
 
-    .vc-stardust[data-state='rest']:hover .vc-stardust-glyph-alt {
-        display: block;
+    .vc-stardust[data-interactive='true'][data-state='rest']:hover .vc-stardust-glyph-alt {
         visibility: visible;
     }
 }
 
-.vc-stardust[data-state='rest']:focus-visible,
-.vc-stardust[data-state='rest']:active {
+.vc-stardust[data-interactive='true'][data-state='rest']:focus-visible,
+.vc-stardust[data-interactive='true'][data-state='rest']:active {
     background: var(--vc-stardust-hover-bg);
     color: var(--vc-stardust-hover-fg);
+    border-style: solid;
+    border-width: 1px;
     border-color: var(--vc-stardust-hover-border);
+    box-sizing: border-box;
+    margin: 0;
     box-shadow: none;
 }
 
-.vc-stardust[data-state='rest']:focus-visible {
+.vc-stardust[data-interactive='true'][data-state='rest']:focus-visible {
     outline: 2px solid rgba(45, 165, 160, 0.7);
     outline-offset: 2px;
 }
 
-.vc-stardust[data-state='rest']:focus-visible .vc-stardust-label-rest,
-.vc-stardust[data-state='rest']:active .vc-stardust-label-rest {
+.vc-stardust[data-interactive='true'][data-state='rest']:focus-visible .vc-stardust-label-rest,
+.vc-stardust[data-interactive='true'][data-state='rest']:active .vc-stardust-label-rest {
     visibility: hidden;
 }
 
-.vc-stardust[data-state='rest']:focus-visible .vc-stardust-label-alt,
-.vc-stardust[data-state='rest']:active .vc-stardust-label-alt {
+.vc-stardust[data-interactive='true'][data-state='rest']:focus-visible .vc-stardust-label-alt,
+.vc-stardust[data-interactive='true'][data-state='rest']:active .vc-stardust-label-alt {
     visibility: visible;
 }
 
-.vc-stardust[data-state='rest']:focus-visible .vc-stardust-glyph-rest,
-.vc-stardust[data-state='rest']:active .vc-stardust-glyph-rest {
-    display: none;
+.vc-stardust[data-interactive='true'][data-state='rest']:focus-visible .vc-stardust-glyph-rest,
+.vc-stardust[data-interactive='true'][data-state='rest']:active .vc-stardust-glyph-rest {
+    visibility: hidden;
 }
 
-.vc-stardust[data-state='rest']:focus-visible .vc-stardust-glyph-alt,
-.vc-stardust[data-state='rest']:active .vc-stardust-glyph-alt {
-    display: block;
+.vc-stardust[data-interactive='true'][data-state='rest']:focus-visible .vc-stardust-glyph-alt,
+.vc-stardust[data-interactive='true'][data-state='rest']:active .vc-stardust-glyph-alt {
     visibility: visible;
+}
+
+.vc-stardust[data-interactive='false'][data-state='rest']:hover,
+.vc-stardust[data-interactive='false'][data-state='rest']:focus-visible,
+.vc-stardust[data-interactive='false'][data-state='rest']:active {
+    background: var(--vc-stardust-rest-bg);
+    color: var(--vc-stardust-rest-fg);
+    border-style: solid;
+    border-width: 1px;
+    border-color: var(--vc-stardust-rest-border);
+    box-shadow: none;
 }
 
 .vc-stardust[data-state='voted'],
