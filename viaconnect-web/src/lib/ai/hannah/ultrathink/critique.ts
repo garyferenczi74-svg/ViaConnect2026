@@ -1,3 +1,4 @@
+import { CLAUDE_HAIKU } from '@/lib/ai/claude-models';
 import { getCritiqueSystemPrompt } from './prompts/critique-system';
 
 const ANTHROPIC_API = 'https://api.anthropic.com/v1/messages';
@@ -30,7 +31,7 @@ export async function runSelfCritique(input: CritiqueInput): Promise<CritiqueRes
     },
     signal: AbortSignal.timeout(15000), // 15s timeout for fast critic
     body: JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
+      model: CLAUDE_HAIKU,
       max_tokens: 400,
       system: getCritiqueSystemPrompt(),
       messages: [

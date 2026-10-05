@@ -85,6 +85,7 @@ test('states A through D and confirm at 390 and 1280', async ({ page }) => {
     mkdirSync(ARTIFACT_DIR, { recursive: true })
     for (const viewport of VIEWPORTS) {
         await page.setViewportSize({ width: viewport.width, height: viewport.height })
+        const restWidths: number[] = []
         for (const tone of ['white', 'black'] as const) {
             await page.setContent(pageHtml(tone, 'rest'), { waitUntil: 'domcontentloaded' })
             const pill = page.getByTestId('launch-vote-pill')
@@ -95,6 +96,7 @@ test('states A through D and confirm at 390 and 1280', async ({ page }) => {
             expect(cssColor(restPaint.background)).toBe('rgba(42,76,158,0.12)')
             expect(restPaint.blur).toContain('blur')
             const before = await pill.boundingBox()
+            restWidths.push(before?.width ?? -1)
             await page.screenshot({
                 path: join(ARTIFACT_DIR, `A-rest-${tone}-${viewport.name}.png`),
             })
@@ -150,6 +152,7 @@ test('states A through D and confirm at 390 and 1280', async ({ page }) => {
                     boxSizing: style.boxSizing,
                     appearance: style.appearance,
                     clipped,
+                    text: labels.map((label) => label.textContent).join('|'),
                 }
             })
             expect(metrics.borderLeft).toBe('1px')
@@ -157,6 +160,8 @@ test('states A through D and confirm at 390 and 1280', async ({ page }) => {
             expect(metrics.boxSizing).toBe('border-box')
             expect(metrics.appearance).toBe('none')
             expect(metrics.clipped).toBe(false)
+            expect(metrics.text).toContain('Launching Soon')
+            expect(metrics.text).toContain('Vote for the next product launch')
             await page.mouse.up()
             await page.setContent(pageHtml(tone, 'static'), { waitUntil: 'domcontentloaded' })
             const staticPill = page.getByTestId('launch-vote-pill')
@@ -177,6 +182,8 @@ test('states A through D and confirm at 390 and 1280', async ({ page }) => {
                 })
             }
         }
+        expect(restWidths[0]).toBe(restWidths[1])
+        expect(restWidths[0]).toBeGreaterThan(0)
     }
 })
 

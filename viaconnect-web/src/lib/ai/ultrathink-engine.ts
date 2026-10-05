@@ -1,8 +1,10 @@
 // Ultrathink AI Engine — Core Configuration & Chain-of-Thought Builder
 // 14-specialty composite persona with 6-step methodology
 
+import { CLAUDE_SONNET } from "@/lib/ai/claude-models";
+
 export const ULTRATHINK_CONFIG = {
-  model: "claude-sonnet-4-20250514" as const,
+  model: CLAUDE_SONNET,
   maxTokens: 8000,
   ragEnabled: true,
   vectorStore: "supabase",

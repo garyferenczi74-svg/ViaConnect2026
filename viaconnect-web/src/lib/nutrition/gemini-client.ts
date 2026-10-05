@@ -25,6 +25,7 @@ import { withAbortTimeout } from '@/lib/utils/with-timeout';
 import { getCircuitBreaker } from '@/lib/utils/circuit-breaker';
 import { AIRouteError, classifyGeminiResponse } from '@/lib/errors/classify-ai';
 import { safeLog } from '@/lib/utils/safe-log';
+import { CLAUDE_HAIKU } from '@/lib/ai/claude-models';
 import { TEXT_PARSE_SYSTEM_INSTRUCTION, PHOTO_PARSE_SYSTEM_INSTRUCTION, ESTIMATION_FALLBACK_INSTRUCTION, GEMINI_MODEL } from './gemini-prompts';
 import { ParsedMealSchema, normalizeParsedMealNulls, type ParsedMeal } from './parsed-meal-schema';
 
@@ -35,7 +36,7 @@ const breaker = getCircuitBreaker('gemini-api', { failureThreshold: 5, resetTime
 
 // Claude text fallback configuration. Independent breaker so a Gemini
 // outage does not propagate into Claude's failure window.
-const CLAUDE_MODEL = 'claude-haiku-4-5-20251001';
+const CLAUDE_MODEL = CLAUDE_HAIKU;
 const CLAUDE_TIMEOUT_MS = 18_000;
 // Gary 2026-06-12 incident follow-through (Hannah + Gordon): the Claude
 // fallback gets the same 2048 headroom as the Gemini parse call so a large

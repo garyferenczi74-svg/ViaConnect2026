@@ -10,6 +10,7 @@
  */
 
 import { checkProductInteractions } from "@/lib/ai/interaction-engine";
+import { CLAUDE_SONNET } from "@/lib/ai/claude-models";
 import { createClient } from "@/lib/supabase/server";
 import { getCircuitBreaker, isCircuitBreakerError } from "@/lib/utils/circuit-breaker";
 import { safeLog } from "@/lib/utils/safe-log";
@@ -369,7 +370,7 @@ async function claudeOrLocal(
               "anthropic-version": "2023-06-01",
             },
             body: JSON.stringify({
-              model: "claude-sonnet-4-20250514",
+              model: CLAUDE_SONNET,
               max_tokens: 4096,
               messages: [
                 {

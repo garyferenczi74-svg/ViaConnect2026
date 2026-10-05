@@ -46,7 +46,8 @@
     position: relative;
     z-index: 1;
     display: grid;
-    flex: 1 1 auto;
+    flex: 1 1 0%;
+    width: 0;
     min-width: 0;
 }
 
