@@ -47,17 +47,24 @@
     white-space: nowrap;
 }
 
-/* Votes on: the hover line wraps inside the rest label's width, two lines max,
-   so the pill stays the rest stamp and does not grow across the bottle. */
+/* Votes on: one box for rest and hover. The rest stamp sets the width.
+   The hover line wraps inside that width, up to 3 lines at 12px, and
+   that wrap sets the height. "Launching Soon" is centered in the same
+   box. Hover must not widen the pill: a wider sash moves the caps. */
+.vc-launch-vote > .vc-stardust[data-interactive='true'] .vc-stardust-label-rest {
+    align-self: center;
+}
+
 .vc-launch-vote > .vc-stardust[data-interactive='true'] .vc-stardust-label-alt {
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    overflow: hidden;
+    display: block;
+    -webkit-box-orient: horizontal;
+    -webkit-line-clamp: unset;
+    line-clamp: unset;
+    overflow: visible;
     white-space: normal;
     width: 0;
     min-width: 100%;
+    text-align: center;
 }
 
 .vc-launch-vote > .vc-stardust[data-state='voted'] .vc-stardust-labels,

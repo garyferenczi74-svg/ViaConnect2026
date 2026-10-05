@@ -62,7 +62,7 @@ function pageHtml(tone: 'white' | 'black', state: 'rest' | 'voted' | 'popular' |
     return `<!DOCTYPE html><html><head><style>
       ${CSS}
       ${OVERLAY_CSS}
-      body { margin: 0; background: #0F1A2E; }
+      body { margin: 0; background: #0F1A2E; font-family: Inter, sans-serif; }
       .stack { width: 280px; margin: 40px auto; }
       .card { position: relative; width: 280px; height: 360px; background: #ffffff; overflow: hidden; border-radius: 12px; }
       .bottle-shape {
@@ -176,6 +176,20 @@ test('states A through D and confirm at 390 and 1280', async ({ page }) => {
             const after = await pill.boundingBox()
             expect(before?.width).toBe(after?.width)
             expect(before?.height).toBe(after?.height)
+            expect(before?.x).toBe(after?.x)
+            expect(before?.y).toBe(after?.y)
+            const hoverFit = await readHoverLabel(pill)
+            expect(hoverFit.visibility, `${tone} ${viewport.name}`).toBe('visible')
+            expect(hoverFit.text, `${tone} ${viewport.name}`).toBe('Vote for the next product launch')
+            expect(hoverFit.lines, `${tone} ${viewport.name} lines ${hoverFit.lines}`).toBeGreaterThan(0)
+            expect(hoverFit.lines).toBeLessThanOrEqual(3)
+            expect(hoverFit.cut, `${tone} ${viewport.name}`).toBe(false)
+            expect(hoverFit.clamp).toBe('none')
+            expect(hoverFit.altWidth).toBeLessThanOrEqual(hoverFit.restWidth + 2)
+            if (viewport.name === '390' || viewport.name === '1280') {
+                const hoverPad = await measureClearance(pill, 'bottle')
+                expect(hoverPad, `${tone} ${viewport.name} hover`).toBeGreaterThanOrEqual(8)
+            }
             await page.screenshot({
                 path: join(ARTIFACT_DIR, `B-hover-${tone}-${viewport.name}.png`),
             })
@@ -195,19 +209,16 @@ test('states A through D and confirm at 390 and 1280', async ({ page }) => {
             const metrics = await pill.evaluate((node) => {
                 const style = getComputedStyle(node)
                 const labels = [...node.querySelectorAll('.vc-stardust-label')]
-                const restLabel = node.querySelector('.vc-stardust-label-rest')
-                const clipped = restLabel
-                    ? getComputedStyle(restLabel).visibility !== 'hidden' &&
-                      (restLabel.scrollHeight > restLabel.clientHeight + 1 ||
-                          restLabel.scrollWidth > restLabel.clientWidth + 1)
-                    : false
+                const visible = labels.find((label) => getComputedStyle(label).visibility !== 'hidden')
+                const clipped = visible
+                    ? visible.scrollHeight > visible.clientHeight + 1 || visible.scrollWidth > visible.clientWidth + 1
+                    : true
                 return {
                     borderLeft: style.borderLeftWidth,
                     borderRight: style.borderRightWidth,
                     boxSizing: style.boxSizing,
                     appearance: style.appearance,
                     clipped,
-                    restText: restLabel?.textContent ?? '',
                     text: labels.map((label) => label.textContent).join('|'),
                 }
             })
@@ -244,6 +255,63 @@ test('states A through D and confirm at 390 and 1280', async ({ page }) => {
         expect(restWidths[0]).toBeGreaterThan(0)
     }
 })
+
+async function readHoverLabel(pill: ReturnType<Page['getByTestId']>) {
+    return pill.evaluate((node) => {
+        const alt = node.querySelector('.vc-stardust-label-alt')
+        const rest = node.querySelector('.vc-stardust-label-rest')
+        if (!(alt instanceof HTMLElement) || !(rest instanceof HTMLElement)) {
+            return { text: '', lines: 0, clamp: 'missing', cut: true, altWidth: 0, restWidth: 0, visibility: 'missing' }
+        }
+        const style = getComputedStyle(alt)
+        const range = document.createRange()
+        range.selectNodeContents(alt)
+        const tops = new Set<number>()
+        for (const rect of range.getClientRects()) tops.add(Math.round(rect.top))
+        return {
+            text: alt.textContent ?? '',
+            lines: tops.size,
+            clamp: style.webkitLineClamp,
+            cut: alt.scrollHeight > alt.clientHeight + 1 || alt.scrollWidth > alt.clientWidth + 1,
+            altWidth: alt.clientWidth,
+            restWidth: rest.scrollWidth,
+            visibility: style.visibility,
+        }
+    })
+}
+
+async function measureClearance(pill: ReturnType<Page['getByTestId']>, edge: 'bottle' | 'frame'): Promise<number> {
+    return pill.evaluate((node, which) => {
+        const pillNode = node as HTMLElement
+        const edgeNode = (which === 'bottle'
+            ? pillNode.closest('[data-testid="bottle"]')
+            : pillNode.parentElement) as HTMLElement
+        const w = pillNode.offsetWidth
+        const h = pillNode.offsetHeight
+        const style = getComputedStyle(pillNode)
+        const origin = style.transformOrigin.split(' ').map((part) => parseFloat(part))
+        const matrix = new DOMMatrix(style.transform)
+        const edgeRect = edgeNode.getBoundingClientRect()
+        const host = pillNode.offsetParent as HTMLElement
+        const hostRect = host.getBoundingClientRect()
+        const radius = h / 2
+        const samples: Array<[number, number]> = []
+        for (let i = 0; i <= 16; i += 1) {
+            const leftAngle = Math.PI / 2 + (Math.PI * i) / 16
+            const rightAngle = -Math.PI / 2 + (Math.PI * i) / 16
+            samples.push([radius + Math.cos(leftAngle) * radius, radius + Math.sin(leftAngle) * radius])
+            samples.push([w - radius + Math.cos(rightAngle) * radius, radius + Math.sin(rightAngle) * radius])
+        }
+        let minPad = Number.POSITIVE_INFINITY
+        for (const [x, y] of samples) {
+            const point = matrix.transformPoint(new DOMPoint(x - origin[0], y - origin[1]))
+            const sx = hostRect.left + pillNode.offsetLeft + origin[0] + point.x
+            const sy = hostRect.top + pillNode.offsetTop + origin[1] + point.y
+            minPad = Math.min(minPad, sx - edgeRect.left, sy - edgeRect.top, edgeRect.right - sx, edgeRect.bottom - sy)
+        }
+        return minPad
+    }, edge)
+}
 
 async function tuckSash(page: Page): Promise<void> {
     const pills = page.getByTestId('launch-vote-pill')
@@ -310,8 +378,9 @@ const REAL_LAYOUT = `
   }
 `
 
-function realHarness(surface: 'card' | 'pdp', builtCss: string): string {
-    return `<!DOCTYPE html><html data-sash-surface="${surface}"><head><style>${builtCss}${REAL_LAYOUT}</style></head><body><script>window.process={env:{NODE_ENV:"production"}}</script><div id="root"></div></body></html>`
+function realHarness(surface: 'card' | 'pdp', builtCss: string, bottle?: 'histamine'): string {
+    const bottleAttr = bottle ? ` data-sash-bottle="${bottle}"` : ''
+    return `<!DOCTYPE html><html data-sash-surface="${surface}"${bottleAttr}><head><style>${builtCss}${REAL_LAYOUT}</style></head><body><script>window.process={env:{NODE_ENV:"production"}}</script><div id="root"></div></body></html>`
 }
 
 test('real ProductCard and PDP caps clear by 8px at 390, 1024, and 1280', async ({ page }) => {
@@ -394,19 +463,84 @@ test('real ProductCard and PDP caps clear by 8px at 390, 1024, and 1280', async 
             expect(fit.padding).toBe('6px 14px')
             expect(fit.restScroll).toBeLessThanOrEqual(1)
             expect(fit.minPad, `${surface} ${viewport.name} frame ${fit.frameWidth}x${fit.frameHeight} pill ${fit.pillWidth}x${fit.pillHeight}`).toBeGreaterThanOrEqual(8)
-            const before = await page.getByTestId('launch-vote-pill').boundingBox()
-            await page.getByTestId('launch-vote-pill').hover()
-            const after = await page.getByTestId('launch-vote-pill').boundingBox()
+            const shot = page.locator('[data-testid="sash-grid"] > *')
+            await shot.screenshot({
+                path: join(ARTIFACT_DIR, `${surface}-${viewport.name}-rest.png`),
+            })
+            const pill = page.getByTestId('launch-vote-pill')
+            const before = await pill.boundingBox()
+            const placedBefore = await pill.evaluate((node) => ({
+                left: (node as HTMLElement).style.left,
+                top: (node as HTMLElement).style.top,
+                width: (node as HTMLElement).offsetWidth,
+                height: (node as HTMLElement).offsetHeight,
+            }))
+            await pill.hover()
+            const after = await pill.boundingBox()
             expect(after?.width).toBe(before?.width)
             expect(after?.height).toBe(before?.height)
+            expect(after?.x).toBe(before?.x)
+            expect(after?.y).toBe(before?.y)
+            const placedAfter = await pill.evaluate((node) => ({
+                left: (node as HTMLElement).style.left,
+                top: (node as HTMLElement).style.top,
+                width: (node as HTMLElement).offsetWidth,
+                height: (node as HTMLElement).offsetHeight,
+            }))
+            expect(placedAfter).toEqual(placedBefore)
+            const hoverFit = await readHoverLabel(pill)
+            expect(hoverFit.visibility, `${surface} ${viewport.name}`).toBe('visible')
+            expect(hoverFit.text, `${surface} ${viewport.name}`).toBe('Vote for the next product launch')
+            expect(hoverFit.lines).toBeGreaterThan(0)
+            expect(hoverFit.lines).toBeLessThanOrEqual(3)
+            expect(hoverFit.cut, `${surface} ${viewport.name}`).toBe(false)
+            expect(hoverFit.clamp).toBe('none')
+            expect(hoverFit.altWidth).toBeLessThanOrEqual(hoverFit.restWidth + 2)
+            if (viewport.name === '390' || viewport.name === '1280') {
+                const hoverPad = await measureClearance(pill, 'frame')
+                expect(hoverPad, `${surface} ${viewport.name} hover frame ${fit.frameWidth}x${fit.frameHeight}`).toBeGreaterThanOrEqual(8)
+            }
             const terms = page.getByTestId('launch-vote-terms')
             const termsBox = await terms.boundingBox()
             const frameBox = await page.getByTestId('launch-vote-overlay').boundingBox()
             expect(termsBox?.y ?? 0).toBeGreaterThanOrEqual((frameBox?.y ?? 0) + (frameBox?.height ?? 0) - 1)
-            await page.locator('[data-testid="sash-grid"] > *').screenshot({
-                path: join(ARTIFACT_DIR, `${surface}-${viewport.name}.png`),
+            await shot.screenshot({
+                path: join(ARTIFACT_DIR, `${surface}-${viewport.name}-hover.png`),
             })
         }
+    }
+    for (const viewport of FIT_VIEWPORTS.filter((item) => item.name === '390' || item.name === '1280')) {
+        await page.setViewportSize({ width: viewport.width, height: viewport.height })
+        await page.setContent(realHarness('card', builtCss, 'histamine'), { waitUntil: 'domcontentloaded' })
+        await page.addScriptTag({ path: bundlePath })
+        await page.waitForSelector('[data-sash-placed="true"]', { state: 'attached', timeout: 8000 })
+        await page.waitForFunction(() => {
+            const img = document.querySelector('[data-testid="sash-grid"] img')
+            return img instanceof HTMLImageElement && img.complete && img.naturalWidth > 0
+        })
+        const pill = page.getByTestId('launch-vote-pill')
+        const shot = page.locator('[data-testid="launch-vote-overlay"]').locator('..')
+        await shot.screenshot({
+            path: join(ARTIFACT_DIR, `histamine-${viewport.name}-rest.png`),
+        })
+        const before = await pill.boundingBox()
+        await pill.hover()
+        const after = await pill.boundingBox()
+        expect(after?.width).toBe(before?.width)
+        expect(after?.height).toBe(before?.height)
+        expect(after?.x).toBe(before?.x)
+        expect(after?.y).toBe(before?.y)
+        const hoverFit = await readHoverLabel(pill)
+        expect(hoverFit.visibility).toBe('visible')
+        expect(hoverFit.text).toBe('Vote for the next product launch')
+        expect(hoverFit.lines).toBeGreaterThan(0)
+        expect(hoverFit.lines).toBeLessThanOrEqual(3)
+        expect(hoverFit.cut).toBe(false)
+        const hoverPad = await measureClearance(pill, 'frame')
+        expect(hoverPad, `histamine ${viewport.name}`).toBeGreaterThanOrEqual(8)
+        await shot.screenshot({
+            path: join(ARTIFACT_DIR, `histamine-${viewport.name}-hover.png`),
+        })
     }
     expect(pageErrors).toEqual([])
 })

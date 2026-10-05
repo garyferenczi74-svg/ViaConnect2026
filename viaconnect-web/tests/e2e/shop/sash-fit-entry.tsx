@@ -21,6 +21,10 @@ const BOTTLE =
         </svg>`,
     )
 
+/** Real catalog art. Dark glass. White field around the bottle is in the file. */
+const HISTAMINE_BOTTLE =
+    'https://nnhkcufyqjojdbvdrpky.supabase.co/storage/v1/object/public/supplement-photos/Advance%20Formulations/histamine-relief-protocol.png'
+
 const vote: LaunchVoteCardModel = {
     signedIn: true,
     votingEnabled: true,
@@ -30,12 +34,14 @@ const vote: LaunchVoteCardModel = {
 }
 
 function product(): ShopProduct {
+    const darkBottle = document.documentElement.dataset.sashBottle === 'histamine'
+    const image = darkBottle ? HISTAMINE_BOTTLE : BOTTLE
     return {
-        id: 'balance-plus',
-        sku: 'FC-BALANCE-PLUS',
-        slug: 'balance-plus-gut-repair',
-        name: 'Balance+ Gut Repair',
-        short_name: 'Balance+',
+        id: darkBottle ? 'histamine-relief' : 'balance-plus',
+        sku: darkBottle ? 'FC-HISTAMINE-RELIEF' : 'FC-BALANCE-PLUS',
+        slug: darkBottle ? 'histamine-relief-protocol' : 'balance-plus-gut-repair',
+        name: darkBottle ? 'Histamine Relief Protocol' : 'Balance+ Gut Repair',
+        short_name: darkBottle ? 'Histamine Relief' : 'Balance+',
         summary: 'Not catalog data',
         description: 'Not catalog data',
         format: 'capsule',
@@ -44,8 +50,8 @@ function product(): ShopProduct {
         price: 98.88,
         price_msrp: null,
         pricing_tier: 'L1',
-        image_url: BOTTLE,
-        image_urls: [BOTTLE],
+        image_url: image,
+        image_urls: [image],
         status_tags: null,
         testing_meta: null,
         snp_targets: null,

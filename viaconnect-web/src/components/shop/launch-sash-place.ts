@@ -50,9 +50,30 @@ export function launchSashOffsetInFrame(
     }
 }
 
+/** Identity of the shared rest/hover box inside its frame. */
+export function launchSashBoxKey(
+    width: number,
+    height: number,
+    frameWidth: number,
+    frameHeight: number,
+): string {
+    return `${width}x${height}@${frameWidth}x${frameHeight}`
+}
+
+/**
+ * Measure the shared box once. Rest and hover are the same width and
+ * height, so a later call with the same key does not move the sash.
+ */
 export function applyLaunchSash(frame: HTMLElement): void {
     const pill = frame.querySelector<HTMLElement>('[data-testid="launch-vote-pill"]')
     if (!pill || pill.offsetWidth === 0 || pill.offsetHeight === 0) return
+    const key = launchSashBoxKey(
+        pill.offsetWidth,
+        pill.offsetHeight,
+        frame.clientWidth,
+        frame.clientHeight,
+    )
+    if (frame.getAttribute('data-sash-box') === key) return
     const next = launchSashOffsetInFrame(
         pill.offsetWidth,
         pill.offsetHeight,
@@ -62,5 +83,6 @@ export function applyLaunchSash(frame: HTMLElement): void {
     )
     pill.style.left = `${next.left}px`
     pill.style.top = `${next.top}px`
+    frame.setAttribute('data-sash-box', key)
     frame.setAttribute('data-sash-placed', 'true')
 }
