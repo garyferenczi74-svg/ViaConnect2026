@@ -196,17 +196,26 @@ test('states A through D and confirm at 390 and 1280', async ({ page }) => {
                 const style = getComputedStyle(node)
                 const labels = [...node.querySelectorAll('.vc-stardust-label')]
                 const restLabel = node.querySelector('.vc-stardust-label-rest')
+                const altLabel = node.querySelector('.vc-stardust-label-alt')
                 const clipped = restLabel
                     ? getComputedStyle(restLabel).visibility !== 'hidden' &&
                       (restLabel.scrollHeight > restLabel.clientHeight + 1 ||
                           restLabel.scrollWidth > restLabel.clientWidth + 1)
                     : false
+                const altText = (altLabel?.textContent ?? '').replace(/\s+/g, ' ').trim()
+                const altClipped = !altLabel ||
+                    getComputedStyle(altLabel).visibility === 'hidden' ||
+                    altLabel.scrollHeight > altLabel.clientHeight + 1 ||
+                    altLabel.scrollWidth > altLabel.clientWidth + 1 ||
+                    altText.includes('…')
                 return {
                     borderLeft: style.borderLeftWidth,
                     borderRight: style.borderRightWidth,
                     boxSizing: style.boxSizing,
                     appearance: style.appearance,
                     clipped,
+                    altClipped,
+                    altText,
                     restText: restLabel?.textContent ?? '',
                     text: labels.map((label) => label.textContent).join('|'),
                 }
@@ -216,6 +225,8 @@ test('states A through D and confirm at 390 and 1280', async ({ page }) => {
             expect(metrics.boxSizing).toBe('border-box')
             expect(metrics.appearance).toBe('none')
             expect(metrics.clipped).toBe(false)
+            expect(metrics.altClipped).toBe(false)
+            expect(metrics.altText).toBe('Vote for the next product launch')
             expect(metrics.text).toContain('Launching Soon')
             expect(metrics.text).toContain('Vote for the next product launch')
             await page.mouse.up()
@@ -310,6 +321,61 @@ const REAL_LAYOUT = `
   }
 `
 
+async function readAltLabel(page: Page): Promise<{
+    visibility: string
+    text: string
+    client: number
+    scroll: number
+    ellipsis: boolean
+}> {
+    return page.getByTestId('launch-vote-pill').evaluate((node) => {
+        const alt = node.querySelector('.vc-stardust-label-alt')
+        if (!alt) {
+            return { visibility: 'missing', text: '', client: 0, scroll: 1, ellipsis: true }
+        }
+        const text = (alt.textContent ?? '').replace(/\s+/g, ' ').trim()
+        return {
+            visibility: getComputedStyle(alt).visibility,
+            text,
+            client: alt.clientHeight,
+            scroll: alt.scrollHeight,
+            ellipsis: text.includes('…') || text.includes('...'),
+        }
+    })
+}
+
+async function readCapClearance(page: Page): Promise<number> {
+    return page.getByTestId('launch-vote-pill').evaluate((node) => {
+        const pill = node as HTMLElement
+        const frame = pill.parentElement as HTMLElement
+        const style = getComputedStyle(pill)
+        const w = pill.offsetWidth
+        const h = pill.offsetHeight
+        const origin = style.transformOrigin.split(' ').map((part) => parseFloat(part))
+        const matrix = new DOMMatrix(style.transform)
+        const frameRect = frame.getBoundingClientRect()
+        const host = pill.offsetParent as HTMLElement
+        const hostRect = host.getBoundingClientRect()
+        const radius = h / 2
+        let minPad = Number.POSITIVE_INFINITY
+        for (let i = 0; i <= 16; i += 1) {
+            const leftAngle = Math.PI / 2 + (Math.PI * i) / 16
+            const rightAngle = -Math.PI / 2 + (Math.PI * i) / 16
+            const samples: Array<[number, number]> = [
+                [radius + Math.cos(leftAngle) * radius, radius + Math.sin(leftAngle) * radius],
+                [w - radius + Math.cos(rightAngle) * radius, radius + Math.sin(rightAngle) * radius],
+            ]
+            for (const [x, y] of samples) {
+                const point = matrix.transformPoint(new DOMPoint(x - origin[0], y - origin[1]))
+                const sx = hostRect.left + pill.offsetLeft + origin[0] + point.x
+                const sy = hostRect.top + pill.offsetTop + origin[1] + point.y
+                minPad = Math.min(minPad, sx - frameRect.left, sy - frameRect.top, frameRect.right - sx, frameRect.bottom - sy)
+            }
+        }
+        return minPad
+    })
+}
+
 function realHarness(surface: 'card' | 'pdp', builtCss: string): string {
     return `<!DOCTYPE html><html data-sash-surface="${surface}"><head><style>${builtCss}${REAL_LAYOUT}</style></head><body><script>window.process={env:{NODE_ENV:"production"}}</script><div id="root"></div></body></html>`
 }
@@ -394,8 +460,44 @@ test('real ProductCard and PDP caps clear by 8px at 390, 1024, and 1280', async 
             expect(fit.padding).toBe('6px 14px')
             expect(fit.restScroll).toBeLessThanOrEqual(1)
             expect(fit.minPad, `${surface} ${viewport.name} frame ${fit.frameWidth}x${fit.frameHeight} pill ${fit.pillWidth}x${fit.pillHeight}`).toBeGreaterThanOrEqual(8)
+            await page.locator('[data-testid="sash-grid"] > *').screenshot({
+                path: join(ARTIFACT_DIR, `${surface}-${viewport.name}.png`),
+            })
             const before = await page.getByTestId('launch-vote-pill').boundingBox()
-            await page.getByTestId('launch-vote-pill').hover()
+            if (surface === 'card' && (viewport.name === '390' || viewport.name === '1280')) {
+                const pill = page.getByTestId('launch-vote-pill')
+                await pill.hover()
+                const hoverAlt = await readAltLabel(page)
+                expect(hoverAlt.visibility, `hover ${viewport.name}`).toBe('visible')
+                expect(hoverAlt.text, `hover ${viewport.name}`).toBe('Vote for the next product launch')
+                expect(hoverAlt.ellipsis, `hover ${viewport.name}`).toBe(false)
+                expect(hoverAlt.scroll, `hover ${viewport.name}`).toBeLessThanOrEqual(hoverAlt.client + 1)
+                expect(await readCapClearance(page), `hover clearance ${viewport.name}`).toBeGreaterThanOrEqual(8)
+                await page.mouse.move(0, 0)
+                await pill.evaluate((node) => {
+                    if (node instanceof HTMLElement) node.focus({ focusVisible: true })
+                })
+                const focusAlt = await readAltLabel(page)
+                expect(focusAlt.visibility, `focus ${viewport.name}`).toBe('visible')
+                expect(focusAlt.text, `focus ${viewport.name}`).toBe('Vote for the next product launch')
+                expect(focusAlt.ellipsis, `focus ${viewport.name}`).toBe(false)
+                expect(focusAlt.scroll, `focus ${viewport.name}`).toBeLessThanOrEqual(focusAlt.client + 1)
+                expect(await readCapClearance(page), `focus clearance ${viewport.name}`).toBeGreaterThanOrEqual(8)
+                const box = await pill.boundingBox()
+                if (!box) throw new Error('missing pill box')
+                await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+                await page.mouse.down()
+                const activeAlt = await readAltLabel(page)
+                expect(activeAlt.visibility, `active ${viewport.name}`).toBe('visible')
+                expect(activeAlt.text, `active ${viewport.name}`).toBe('Vote for the next product launch')
+                expect(activeAlt.ellipsis, `active ${viewport.name}`).toBe(false)
+                expect(activeAlt.scroll, `active ${viewport.name}`).toBeLessThanOrEqual(activeAlt.client + 1)
+                expect(await readCapClearance(page), `active clearance ${viewport.name}`).toBeGreaterThanOrEqual(8)
+                await page.mouse.up()
+                await page.locator('[data-testid="sash-grid"] > *').screenshot({
+                    path: join(ARTIFACT_DIR, `card-hover-${viewport.name}.png`),
+                })
+            }
             const after = await page.getByTestId('launch-vote-pill').boundingBox()
             expect(after?.width).toBe(before?.width)
             expect(after?.height).toBe(before?.height)
@@ -403,9 +505,6 @@ test('real ProductCard and PDP caps clear by 8px at 390, 1024, and 1280', async 
             const termsBox = await terms.boundingBox()
             const frameBox = await page.getByTestId('launch-vote-overlay').boundingBox()
             expect(termsBox?.y ?? 0).toBeGreaterThanOrEqual((frameBox?.y ?? 0) + (frameBox?.height ?? 0) - 1)
-            await page.locator('[data-testid="sash-grid"] > *').screenshot({
-                path: join(ARTIFACT_DIR, `${surface}-${viewport.name}.png`),
-            })
         }
     }
     expect(pageErrors).toEqual([])

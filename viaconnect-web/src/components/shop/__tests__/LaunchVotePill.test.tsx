@@ -224,6 +224,8 @@ describe('LaunchVotePillView', () => {
         expect(focusBlock).not.toContain('display: none')
         expect(overlay).not.toContain('11.25rem')
         expect(overlay).toContain(".vc-launch-vote > .vc-stardust[data-interactive='true'] .vc-stardust-label-alt")
+        expect(overlay).toContain('-webkit-line-clamp: 3')
+        expect(overlay).toContain('line-clamp: 3')
         expect(overlay).toContain('white-space: normal')
         expect(overlay).toContain('min-width: 100%')
         expect(overlay).toContain('pointer-events: auto')

@@ -30,12 +30,13 @@ const vote: LaunchVoteCardModel = {
 }
 
 function product(): ShopProduct {
+    const photo = document.documentElement.dataset.sashPhoto || BOTTLE
     return {
         id: 'balance-plus',
         sku: 'FC-BALANCE-PLUS',
         slug: 'balance-plus-gut-repair',
-        name: 'Balance+ Gut Repair',
-        short_name: 'Balance+',
+        name: document.documentElement.dataset.sashName || 'Balance+ Gut Repair',
+        short_name: document.documentElement.dataset.sashName || 'Balance+',
         summary: 'Not catalog data',
         description: 'Not catalog data',
         format: 'capsule',
@@ -44,8 +45,8 @@ function product(): ShopProduct {
         price: 98.88,
         price_msrp: null,
         pricing_tier: 'L1',
-        image_url: BOTTLE,
-        image_urls: [BOTTLE],
+        image_url: photo,
+        image_urls: [photo],
         status_tags: null,
         testing_meta: null,
         snp_targets: null,
