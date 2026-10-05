@@ -8,7 +8,7 @@ import { ProductCard } from '@/components/shop/ProductCard'
 import type { ShopProduct } from '@/lib/shop/queries'
 import type { LaunchVoteCardModel } from '@/lib/shop/launch-vote/types'
 
-const BOTTLE =
+const DEFAULT_BOTTLE =
     'data:image/svg+xml,' +
     encodeURIComponent(
         `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 400">
@@ -21,6 +21,11 @@ const BOTTLE =
         </svg>`,
     )
 
+function bottleSrc(): string {
+    const override = document.documentElement.dataset.bottle
+    return override && override.length > 0 ? override : DEFAULT_BOTTLE
+}
+
 const vote: LaunchVoteCardModel = {
     signedIn: true,
     votingEnabled: true,
@@ -30,12 +35,13 @@ const vote: LaunchVoteCardModel = {
 }
 
 function product(): ShopProduct {
+    const darkBottle = Boolean(document.documentElement.dataset.bottle)
     return {
-        id: 'balance-plus',
-        sku: 'FC-BALANCE-PLUS',
-        slug: 'balance-plus-gut-repair',
-        name: 'Balance+ Gut Repair',
-        short_name: 'Balance+',
+        id: darkBottle ? 'mthfr-plus' : 'balance-plus',
+        sku: darkBottle ? 'FC-MTHFR-PLUS' : 'FC-BALANCE-PLUS',
+        slug: darkBottle ? 'mthfr-plus-folate-metabolism' : 'balance-plus-gut-repair',
+        name: darkBottle ? 'MTHFR+ Folate Metabolism' : 'Balance+ Gut Repair',
+        short_name: darkBottle ? 'MTHFR+' : 'Balance+',
         summary: 'Not catalog data',
         description: 'Not catalog data',
         format: 'capsule',
@@ -44,8 +50,8 @@ function product(): ShopProduct {
         price: 98.88,
         price_msrp: null,
         pricing_tier: 'L1',
-        image_url: BOTTLE,
-        image_urls: [BOTTLE],
+        image_url: bottleSrc(),
+        image_urls: [bottleSrc()],
         status_tags: null,
         testing_meta: null,
         snp_targets: null,
@@ -101,7 +107,7 @@ function PdpSurface() {
                             className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl bg-white shadow-md"
                             data-testid="pdp-photo"
                         >
-                            <img alt={item.name} src={BOTTLE} />
+                            <img alt={item.name} src={bottleSrc()} />
                         </div>
                     </LaunchVotePill>
                 </div>
