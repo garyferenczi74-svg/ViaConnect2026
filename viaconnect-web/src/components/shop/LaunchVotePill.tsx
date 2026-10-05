@@ -5,7 +5,7 @@
  */
 'use client'
 
-import { useEffect, useId, useRef, useState, type MouseEvent, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type MouseEvent, type PointerEvent, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { usePathname, useRouter } from 'next/navigation'
 import { Check, Sparkles, ThumbsUp } from 'lucide-react'
@@ -39,6 +39,49 @@ import {
 } from '@/lib/shop/launch-vote/state'
 import './launch-vote-pill.css'
 
+const FOLLOW_THROUGH_MS = 350
+const FOLLOW_THROUGH_SLOP_PX = 24
+
+export interface FollowThroughPoint {
+    x: number
+    y: number
+}
+
+interface FollowThroughHost {
+    addEventListener(type: 'click', listener: (event: Event) => void, capture: true): void
+    removeEventListener(type: 'click', listener: (event: Event) => void, capture: true): void
+}
+
+/** Blocks the click that lands on the card after a dialog tap removes the overlay. */
+export function armFollowThroughBlock(
+    host: FollowThroughHost,
+    schedule: (fn: () => void, ms: number) => number,
+    origin: FollowThroughPoint,
+): void {
+    const block = (event: Event) => {
+        const point = event as Event & { clientX?: unknown; clientY?: unknown }
+        if (typeof point.clientX === 'number' && typeof point.clientY === 'number') {
+            if (Math.abs(point.clientX - origin.x) > FOLLOW_THROUGH_SLOP_PX) return
+            if (Math.abs(point.clientY - origin.y) > FOLLOW_THROUGH_SLOP_PX) return
+        }
+        event.preventDefault()
+        event.stopPropagation()
+    }
+    host.addEventListener('click', block, true)
+    schedule(() => {
+        host.removeEventListener('click', block, true)
+    }, FOLLOW_THROUGH_MS)
+}
+
+function stopCardBubble(event: { stopPropagation(): void }): void {
+    event.stopPropagation()
+}
+
+function armDismissFollowThrough(origin: FollowThroughPoint): void {
+    if (typeof document === 'undefined') return
+    armFollowThroughBlock(document, (fn, ms) => window.setTimeout(fn, ms), origin)
+}
+
 export interface LaunchVotePillViewProps {
     productId: string
     productName: string
@@ -68,8 +111,28 @@ export function LaunchVotePillView({
     onSubmit,
 }: LaunchVotePillViewProps) {
     const titleId = useId()
+    const overlayRef = useRef<HTMLDivElement>(null)
     const terms = termsForPill(pill.kind, votingEnabled, hasPriorPaidOrder)
     const dialogOpen = phase === 'confirm' || phase === 'pending'
+
+    useEffect(() => {
+        if (!dialogOpen) return
+        const blockAnchor = (event: Event) => {
+            const node = overlayRef.current
+            const target = event.target
+            if (!node || !(target instanceof Node) || !node.contains(target)) return
+            event.preventDefault()
+        }
+        document.addEventListener('click', blockAnchor, true)
+        return () => document.removeEventListener('click', blockAnchor, true)
+    }, [dialogOpen])
+
+    const dismiss = (event: MouseEvent<HTMLElement>) => {
+        guardCardClick(event)
+        if (phase === 'pending') return
+        armDismissFollowThrough({ x: event.clientX, y: event.clientY })
+        onCancel()
+    }
     let control: ReactNode = null
 
     if (pill.kind === 'popular' && pill.releaseDateLabel) {
@@ -119,28 +182,63 @@ export function LaunchVotePillView({
                 ariaExpanded={dialogOpen}
                 glyph={<Sparkles className="h-3 w-3" strokeWidth={1.5} />}
                 altGlyph={<ThumbsUp className="h-3 w-3" strokeWidth={1.5} />}
+                onPointerDown={(event: PointerEvent<HTMLButtonElement>) => {
+                    stopCardBubble(event)
+                }}
                 onClick={onOpen}
             />
         )
     }
 
     const dialog = dialogOpen ? (
-        <div className="vc-vote-dialog" role="presentation">
+        <div
+            ref={overlayRef}
+            className="vc-vote-dialog"
+            role="presentation"
+            data-testid="launch-vote-dialog"
+            onPointerDown={stopCardBubble}
+            onClick={(event) => {
+                guardCardClick(event)
+                if (event.target !== event.currentTarget) return
+                dismiss(event)
+            }}
+        >
             <div
                 className="vc-vote-dialog-card"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby={titleId}
                 data-testid="launch-vote-confirm"
+                onPointerDown={stopCardBubble}
+                onClick={(event) => {
+                    guardCardClick(event)
+                }}
             >
                 <h2 id={titleId}>{fillLaunchTemplate(LAUNCH_CONFIRM_TITLE, { productName })}</h2>
                 <p>{LAUNCH_CONFIRM_BODY}</p>
                 {error ? <p role="alert">{error}</p> : null}
                 <div className="vc-vote-dialog-actions">
-                    <button type="button" className="vc-vote-dialog-submit" onClick={onSubmit} disabled={phase === 'pending'}>
+                    <button
+                        type="button"
+                        className="vc-vote-dialog-submit"
+                        onPointerDown={stopCardBubble}
+                        onClick={(event) => {
+                            guardCardClick(event)
+                            if (phase === 'pending') return
+                            armDismissFollowThrough({ x: event.clientX, y: event.clientY })
+                            onSubmit()
+                        }}
+                        disabled={phase === 'pending'}
+                    >
                         {LAUNCH_CONFIRM_SUBMIT}
                     </button>
-                    <button type="button" className="vc-vote-dialog-cancel" onClick={onCancel} disabled={phase === 'pending'}>
+                    <button
+                        type="button"
+                        className="vc-vote-dialog-cancel"
+                        onPointerDown={stopCardBubble}
+                        onClick={dismiss}
+                        disabled={phase === 'pending'}
+                    >
                         {LAUNCH_CONFIRM_CANCEL}
                     </button>
                 </div>
@@ -193,6 +291,7 @@ export function LaunchVotePill({
     const [phase, setPhase] = useState<VotePhase>(pill.kind === 'voted' ? 'voted' : 'rest')
     const [error, setError] = useState<string | null>(null)
     const submitLock = useRef(false)
+    const closeConfirmRef = useRef<() => void>(() => undefined)
 
     useEffect(() => {
         if (!pill.interactive || typeof window === 'undefined') return
@@ -219,7 +318,8 @@ export function LaunchVotePill({
         const onKey = (event: KeyboardEvent) => {
             if (event.key === 'Escape' && phase === 'confirm') {
                 event.preventDefault()
-                setPhase('rest')
+                event.stopPropagation()
+                closeConfirmRef.current()
                 return
             }
             if (event.key !== 'Tab' || !focusable || focusable.length === 0) return
@@ -255,6 +355,7 @@ export function LaunchVotePill({
         setPhase((current) => nextVoteState(current, 'cancel'))
         clearReturn()
     }
+    closeConfirmRef.current = onCancel
 
     const onSubmit = () => {
         if (submitLock.current || phase === 'pending' || phase === 'voted') return
