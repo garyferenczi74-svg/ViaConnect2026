@@ -1,8 +1,13 @@
-/* Narrow phone shop card only (the 390 two-column frame, about 167px).
-   The same inset applies to every product. The photo scales to 92%
-   and stays anchored to the bottom center, so the bottle base keeps
-   the grid baseline and the white field fills the space above it.
-   Wider cards (768, 1024, 1280) and the product page do not match. */
+/* Card photo inset, Brief 72 A9.
+   The scale follows the photo frame's width (container query), not the
+   viewport. Live shop cards are 151px and 207px inside the signed-in shell,
+   and 146px and 205px when that shell shows a classic scrollbar. The same
+   inset applies to every product so neighbouring bottles share a baseline.
+   The photo stays bottom-center: the bottle base sits on the frame, and the
+   freed white field is above it.
+   Steps were computed from the real gold VIACURA ink, including the V serif,
+   against the 100x40 phone sash and the 12px desktop sash. Each step keeps
+   at least 5px of clearance on both the 3/4 and 4/5 frames from 146px to 220px. */
 .vc-card-photo-frame {
     container-type: inline-size;
     container-name: card-photo;
@@ -13,7 +18,84 @@
     inset: 0;
 }
 
-@container card-photo (max-width: 190px) {
+@container card-photo (max-width: 218px) {
+    .vc-card-photo-fit {
+        top: auto;
+        right: auto;
+        bottom: 0;
+        left: 0.5%;
+        width: 99%;
+        height: 99%;
+    }
+}
+
+@container card-photo (max-width: 215px) {
+    .vc-card-photo-fit {
+        top: auto;
+        right: auto;
+        bottom: 0;
+        left: 1%;
+        width: 98%;
+        height: 98%;
+    }
+}
+
+@container card-photo (max-width: 212px) {
+    .vc-card-photo-fit {
+        top: auto;
+        right: auto;
+        bottom: 0;
+        left: 1.5%;
+        width: 97%;
+        height: 97%;
+    }
+}
+
+@container card-photo (max-width: 209px) {
+    .vc-card-photo-fit {
+        top: auto;
+        right: auto;
+        bottom: 0;
+        left: 2%;
+        width: 96%;
+        height: 96%;
+    }
+}
+
+@container card-photo (max-width: 206px) {
+    .vc-card-photo-fit {
+        top: auto;
+        right: auto;
+        bottom: 0;
+        left: 2.5%;
+        width: 95%;
+        height: 95%;
+    }
+}
+
+@container card-photo (max-width: 203px) {
+    .vc-card-photo-fit {
+        top: auto;
+        right: auto;
+        bottom: 0;
+        left: 3%;
+        width: 94%;
+        height: 94%;
+    }
+}
+
+@container card-photo (max-width: 201px) {
+    .vc-card-photo-fit {
+        top: auto;
+        right: auto;
+        bottom: 0;
+        left: 3.5%;
+        width: 93%;
+        height: 93%;
+    }
+}
+
+@container card-photo (max-width: 198px) {
     .vc-card-photo-fit {
         top: auto;
         right: auto;
@@ -21,5 +103,346 @@
         left: 4%;
         width: 92%;
         height: 92%;
+    }
+}
+
+@container card-photo (max-width: 196px) {
+    .vc-card-photo-fit {
+        top: auto;
+        right: auto;
+        bottom: 0;
+        left: 4.5%;
+        width: 91%;
+        height: 91%;
+    }
+}
+
+@container card-photo (max-width: 193px) {
+    .vc-card-photo-fit {
+        top: auto;
+        right: auto;
+        bottom: 0;
+        left: 5%;
+        width: 90%;
+        height: 90%;
+    }
+}
+
+@container card-photo (max-width: 191px) {
+    .vc-card-photo-fit {
+        top: auto;
+        right: auto;
+        bottom: 0;
+        left: 5.5%;
+        width: 89%;
+        height: 89%;
+    }
+}
+
+@container card-photo (max-width: 190px) {
+    .vc-card-photo-fit {
+        top: auto;
+        right: auto;
+        bottom: 0;
+        left: 0%;
+        width: 100%;
+        height: 100%;
+    }
+}
+
+@container card-photo (max-width: 188px) {
+    .vc-card-photo-fit {
+        top: auto;
+        right: auto;
+        bottom: 0;
+        left: 0.5%;
+        width: 99%;
+        height: 99%;
+    }
+}
+
+@container card-photo (max-width: 185px) {
+    .vc-card-photo-fit {
+        top: auto;
+        right: auto;
+        bottom: 0;
+        left: 1%;
+        width: 98%;
+        height: 98%;
+    }
+}
+
+@container card-photo (max-width: 183px) {
+    .vc-card-photo-fit {
+        top: auto;
+        right: auto;
+        bottom: 0;
+        left: 1.5%;
+        width: 97%;
+        height: 97%;
+    }
+}
+
+@container card-photo (max-width: 180px) {
+    .vc-card-photo-fit {
+        top: auto;
+        right: auto;
+        bottom: 0;
+        left: 2%;
+        width: 96%;
+        height: 96%;
+    }
+}
+
+@container card-photo (max-width: 178px) {
+    .vc-card-photo-fit {
+        top: auto;
+        right: auto;
+        bottom: 0;
+        left: 2.5%;
+        width: 95%;
+        height: 95%;
+    }
+}
+
+@container card-photo (max-width: 175px) {
+    .vc-card-photo-fit {
+        top: auto;
+        right: auto;
+        bottom: 0;
+        left: 3%;
+        width: 94%;
+        height: 94%;
+    }
+}
+
+@container card-photo (max-width: 173px) {
+    .vc-card-photo-fit {
+        top: auto;
+        right: auto;
+        bottom: 0;
+        left: 3.5%;
+        width: 93%;
+        height: 93%;
+    }
+}
+
+@container card-photo (max-width: 171px) {
+    .vc-card-photo-fit {
+        top: auto;
+        right: auto;
+        bottom: 0;
+        left: 4%;
+        width: 92%;
+        height: 92%;
+    }
+}
+
+@container card-photo (max-width: 169px) {
+    .vc-card-photo-fit {
+        top: auto;
+        right: auto;
+        bottom: 0;
+        left: 4.5%;
+        width: 91%;
+        height: 91%;
+    }
+}
+
+@container card-photo (max-width: 166px) {
+    .vc-card-photo-fit {
+        top: auto;
+        right: auto;
+        bottom: 0;
+        left: 5%;
+        width: 90%;
+        height: 90%;
+    }
+}
+
+@container card-photo (max-width: 164px) {
+    .vc-card-photo-fit {
+        top: auto;
+        right: auto;
+        bottom: 0;
+        left: 5.5%;
+        width: 89%;
+        height: 89%;
+    }
+}
+
+@container card-photo (max-width: 162px) {
+    .vc-card-photo-fit {
+        top: auto;
+        right: auto;
+        bottom: 0;
+        left: 6%;
+        width: 88%;
+        height: 88%;
+    }
+}
+
+@container card-photo (max-width: 160px) {
+    .vc-card-photo-fit {
+        top: auto;
+        right: auto;
+        bottom: 0;
+        left: 6.5%;
+        width: 87%;
+        height: 87%;
+    }
+}
+
+@container card-photo (max-width: 158px) {
+    .vc-card-photo-fit {
+        top: auto;
+        right: auto;
+        bottom: 0;
+        left: 7%;
+        width: 86%;
+        height: 86%;
+    }
+}
+
+@container card-photo (max-width: 156px) {
+    .vc-card-photo-fit {
+        top: auto;
+        right: auto;
+        bottom: 0;
+        left: 7.5%;
+        width: 85%;
+        height: 85%;
+    }
+}
+
+@container card-photo (max-width: 155px) {
+    .vc-card-photo-fit {
+        top: auto;
+        right: auto;
+        bottom: 0;
+        left: 8%;
+        width: 84%;
+        height: 84%;
+    }
+}
+
+@container card-photo (max-width: 153px) {
+    .vc-card-photo-fit {
+        top: auto;
+        right: auto;
+        bottom: 0;
+        left: 8.5%;
+        width: 83%;
+        height: 83%;
+    }
+}
+
+@container card-photo (max-width: 151px) {
+    .vc-card-photo-fit {
+        top: auto;
+        right: auto;
+        bottom: 0;
+        left: 9%;
+        width: 82%;
+        height: 82%;
+    }
+}
+
+@container card-photo (max-width: 149px) {
+    .vc-card-photo-fit {
+        top: auto;
+        right: auto;
+        bottom: 0;
+        left: 9.5%;
+        width: 81%;
+        height: 81%;
+    }
+}
+
+@container card-photo (max-width: 148px) {
+    .vc-card-photo-fit {
+        top: auto;
+        right: auto;
+        bottom: 0;
+        left: 10%;
+        width: 80%;
+        height: 80%;
+    }
+}
+
+@container card-photo (max-width: 146px) {
+    .vc-card-photo-fit {
+        top: auto;
+        right: auto;
+        bottom: 0;
+        left: 10.5%;
+        width: 79%;
+        height: 79%;
+    }
+}
+
+/* TIER 3 sits top-right. On a narrow Launching Soon card the 100x40 sash
+   reaches that corner, so the chip steps down until it clears the sash.
+   Wider cards already clear it at the 12px offset. */
+.vc-card-status {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 10;
+}
+
+@container card-photo (max-width: 164px) {
+    .vc-card-photo-frame--sash .vc-card-status {
+        top: 32px;
+    }
+}
+
+@container card-photo (max-width: 161px) {
+    .vc-card-photo-frame--sash .vc-card-status {
+        top: 38px;
+    }
+}
+
+@container card-photo (max-width: 157px) {
+    .vc-card-photo-frame--sash .vc-card-status {
+        top: 44px;
+    }
+}
+
+@container card-photo (max-width: 153px) {
+    .vc-card-photo-frame--sash .vc-card-status {
+        top: 48px;
+    }
+}
+
+@container card-photo (max-width: 149px) {
+    .vc-card-photo-frame--sash .vc-card-status {
+        top: 52px;
+    }
+}
+
+/* Dark navy glass. The light 10% white chip disappeared on the white
+   bottle. #1A2744 at 82% over white is the same navy frost as the consumer
+   glass chips, dark enough that 11px white type stays legible (about 8:1). */
+.vc-tier-chip {
+    box-sizing: border-box;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(26, 39, 68, 0.82);
+    color: #ffffff;
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+    .vc-tier-chip {
+        background: rgba(26, 39, 68, 0.92);
+    }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    .vc-tier-chip {
+        background: rgba(26, 39, 68, 0.94);
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
     }
 }

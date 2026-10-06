@@ -285,6 +285,23 @@ describe('LaunchVotePillView', () => {
         expect(pdp.indexOf('<LaunchVotePill')).toBeLessThan(pdp.indexOf('aspect-[4/5]'))
     })
 
+    it('sizes the card photo from the frame and keeps the hover grow off the sash', () => {
+        const photo = readFileSync(join(process.cwd(), 'src/components/shop/product-card-photo.css'), 'utf8')
+        const card = readFileSync(join(process.cwd(), 'src/components/shop/ProductCard.tsx'), 'utf8')
+        const pill = readFileSync(join(process.cwd(), 'src/components/shop/StatusPill.tsx'), 'utf8')
+        expect(photo).toContain('container-name: card-photo')
+        expect(photo).toContain('width: 79%')
+        expect(photo).toContain('width: 82%')
+        expect(photo).toContain('width: 96%')
+        expect(photo).toContain('.vc-tier-chip')
+        expect(photo).toContain('rgba(26, 39, 68, 0.82)')
+        expect(card).toContain('vc-card-photo-frame--sash')
+        expect(card).toContain("showSash ? '' : 'group-hover:scale-[1.02]'")
+        expect(card).toContain('vc-card-status absolute top-3 right-3 z-10')
+        expect(pill).toContain('vc-tier-chip')
+        expect(pill).toContain("kind === 'TIER 3'")
+    })
+
     it('seals dialog taps so Cancel, overlay, Submit, and Escape do not reach the card link', () => {
         const source = readFileSync(join(process.cwd(), 'src/components/shop/LaunchVotePill.tsx'), 'utf8')
         expect(source).toContain('createPortal(dialog, document.body)')

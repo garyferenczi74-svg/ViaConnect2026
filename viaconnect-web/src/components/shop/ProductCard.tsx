@@ -100,13 +100,17 @@ export function ProductCard({
         model: voteModel,
     })
 
+    const showSash = pill.kind !== 'hidden'
+    // The hover photo grow scales from the center, which walks the wordmark
+    // toward the corner sash. Launching Soon cards stay still. Released cards
+    // keep the grow.
     const photo = (
         <div
             className={`
-                    vc-card-photo-frame relative overflow-hidden block w-full rounded-xl ${primaryImage ? 'bg-white' : 'bg-white/[0.04]'} shadow-md
+                    vc-card-photo-frame ${showSash ? 'vc-card-photo-frame--sash' : ''} relative overflow-hidden block w-full rounded-xl ${primaryImage ? 'bg-white' : 'bg-white/[0.04]'} shadow-md
                     aspect-[3/4] md:aspect-[4/5]
                     transition-[transform,box-shadow] duration-300 ease-in-out
-                    group-hover:scale-[1.02] group-hover:shadow-[0_12px_32px_rgba(45,165,160,0.22)]
+                    ${showSash ? '' : 'group-hover:scale-[1.02]'} group-hover:shadow-[0_12px_32px_rgba(45,165,160,0.22)]
                     before:content-[''] before:absolute before:inset-0 before:rounded-xl before:pointer-events-none
                     before:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]
                 `}
@@ -144,7 +148,7 @@ export function ProductCard({
             )}
             </div>
             {visibleTags.length > 0 && (
-                <div className="absolute top-3 right-3 z-10 flex flex-col items-end gap-1">
+                <div className="vc-card-status absolute top-3 right-3 z-10 flex flex-col items-end gap-1">
                     {visibleTags.map((tag) => (
                         <StatusPill key={tag} kind={tag} />
                     ))}

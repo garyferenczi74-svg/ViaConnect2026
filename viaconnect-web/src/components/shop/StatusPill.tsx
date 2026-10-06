@@ -30,10 +30,13 @@ interface StatusPillProps {
 
 export function StatusPill({ kind, className }: StatusPillProps) {
     const isGeneMatch = kind === 'GENE MATCH'
+    const isTier3 = kind === 'TIER 3'
     const base =
         'text-[11px] uppercase tracking-wider px-2 py-1 rounded-full backdrop-blur-md'
     const variant = isGeneMatch
         ? 'border border-[#2DA5A0] text-[#2DA5A0] bg-[#2DA5A0]/10'
-        : 'border border-white/15 text-white/80 bg-white/10'
+        : isTier3
+          ? 'vc-tier-chip border border-white/15 text-white bg-[#1A2744]/80 backdrop-blur-md'
+          : 'border border-white/15 text-white/80 bg-white/10'
     return <span className={`${base} ${variant}${className ? ' ' + className : ''}`}>{kind}</span>
 }
