@@ -134,7 +134,14 @@ export function LaunchVotePillView({
             if (sash) observer.observe(sash)
         }
         const fonts = document.fonts
-        if (fonts?.ready) void fonts.ready.then(apply)
+        if (fonts?.ready) {
+            void fonts.ready.then(() => {
+                const sash = frame.querySelector<HTMLElement>('[data-testid="launch-vote-pill"]')
+                if (sash) delete sash.dataset.sashFit
+                delete frame.dataset.sashBox
+                apply()
+            })
+        }
         return () => observer?.disconnect()
     }, [pill.kind, phase, size, votingEnabled])
 

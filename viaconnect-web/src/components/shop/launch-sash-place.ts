@@ -50,9 +50,58 @@ export function launchSashOffsetInFrame(
     }
 }
 
+/**
+ * Locks the interactive label column so the hover sentence fits in at most
+ * three lines. The rest line already sets that width when three lines fit.
+ * A wider shared width is written only when the sentence would wrap to a
+ * fourth line. The result is one box for rest and hover.
+ * Self-contained so a browser evaluate() can run the function body alone.
+ */
+export function fitLaunchSashLabel(pill: HTMLElement): void {
+    if (pill.getAttribute('data-interactive') !== 'true') return
+    if (pill.dataset.sashFit === '1') return
+    const labels = pill.querySelector<HTMLElement>('.vc-stardust-labels')
+    const alt = pill.querySelector<HTMLElement>('.vc-stardust-label-alt')
+    if (!labels || !alt) return
+    const line = parseFloat(getComputedStyle(alt).lineHeight) || 15
+    const limit = line * 3 + 1
+    const fits = (): boolean =>
+        alt.scrollHeight <= limit && alt.scrollWidth <= alt.clientWidth + 1
+    if (fits()) {
+        pill.dataset.sashFit = '1'
+        return
+    }
+    const rest = pill.querySelector<HTMLElement>('.vc-stardust-label-rest')
+    let lo = Math.max(1, Math.ceil(rest?.scrollWidth ?? labels.clientWidth))
+    let hi = lo
+    const applyWidth = (width: number): void => {
+        const px = `${width}px`
+        labels.style.width = px
+        labels.style.minWidth = px
+        labels.style.maxWidth = px
+    }
+    while (hi < 480) {
+        applyWidth(hi)
+        if (fits()) break
+        hi += 8
+    }
+    let best = hi
+    while (lo + 1 < best) {
+        const mid = Math.floor((lo + best) / 2)
+        applyWidth(mid)
+        if (fits()) best = mid
+        else lo = mid
+    }
+    applyWidth(best)
+    pill.dataset.sashFit = '1'
+}
+
 export function applyLaunchSash(frame: HTMLElement): void {
     const pill = frame.querySelector<HTMLElement>('[data-testid="launch-vote-pill"]')
     if (!pill || pill.offsetWidth === 0 || pill.offsetHeight === 0) return
+    fitLaunchSashLabel(pill)
+    const signature = `${pill.offsetWidth}x${pill.offsetHeight}@${frame.clientWidth}x${frame.clientHeight}`
+    if (frame.dataset.sashBox === signature) return
     const next = launchSashOffsetInFrame(
         pill.offsetWidth,
         pill.offsetHeight,
@@ -62,5 +111,6 @@ export function applyLaunchSash(frame: HTMLElement): void {
     )
     pill.style.left = `${next.left}px`
     pill.style.top = `${next.top}px`
+    frame.dataset.sashBox = signature
     frame.setAttribute('data-sash-placed', 'true')
 }
