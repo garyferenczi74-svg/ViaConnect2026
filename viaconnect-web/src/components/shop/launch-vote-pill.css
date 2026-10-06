@@ -10,19 +10,21 @@
     overflow: hidden;
     border-radius: 0.75rem;
     pointer-events: none;
+    container-type: inline-size;
+    container-name: launch-sash;
 }
 
 .vc-launch-vote[data-size='pdp'] {
     border-radius: 1rem;
 }
 
-/* Brief 72 A8. One shared box, smaller than the #282 ~141×59 sash.
-   Rest and hover both use 11px, the floor. "Launching Soon" stays one
-   line and sets the width; the vote sentence wraps to three lines in
-   that same box. Measured on the 390px MTHFR+ card (167×223), a 120×50
-   box still crosses the VIACURA ink by about 16px and a 113×47 box by
-   about 11px. 100×40 is the largest 11px fit that stays off that ink
-   while the caps keep at least 8px of photo clearance. */
+/* Brief 72 A8. The box is chosen by the photo frame, not by hover.
+   The 1280 shop card (~219px) uses 119×49 at 12px. 120×49 on that
+   frame clears the Histamine VIACURA ink by 3.97px, short of 4px.
+   The product page is wide enough for 120×50. A card near 217px (the
+   768 and 1024 shop columns) steps to 118×49. The narrow phone card
+   (~167px at 390) stays 100×40 at 11px: that frame cannot hold a 4px
+   ink gap without dropping below 11px or losing the three-line vote. */
 .vc-launch-vote > .vc-stardust {
     position: absolute;
     top: 0;
@@ -31,27 +33,64 @@
     width: max-content;
     max-width: none;
     margin: 0;
-    font-size: 11px;
-    line-height: 1.15;
+    font-size: 12px;
+    line-height: 1.25;
     gap: 2px;
-    padding: 0;
+    padding: 1px 5px;
     transform-origin: center;
     transform: rotate(-45deg);
     pointer-events: auto;
 }
 
+.vc-launch-vote[data-size='pdp'] > .vc-stardust {
+    gap: 3px;
+    padding: 1px 5px 2px;
+}
+
 .vc-launch-vote .vc-stardust-glyphs {
-    flex: 0 0 11px;
-    width: 11px;
-    min-width: 11px;
-    max-width: 11px;
-    height: 11px;
+    flex: 0 0 12px;
+    width: 12px;
+    min-width: 12px;
+    max-width: 12px;
+    height: 12px;
 }
 
 .vc-launch-vote .vc-stardust-glyph,
 .vc-launch-vote .vc-stardust-glyph svg {
-    width: 11px;
-    height: 11px;
+    width: 12px;
+    height: 12px;
+}
+
+@container launch-sash (max-width: 218px) {
+    .vc-launch-vote > .vc-stardust {
+        font-size: 12px;
+        line-height: 1.2;
+        gap: 3px;
+        padding: 2px 4px;
+    }
+}
+
+@container launch-sash (max-width: 190px) {
+    .vc-launch-vote > .vc-stardust {
+        font-size: 11px;
+        line-height: 1.15;
+        gap: 2px;
+        padding: 0;
+    }
+
+    .vc-launch-vote .vc-stardust-glyphs {
+        flex-basis: 11px;
+        width: 11px;
+        min-width: 11px;
+        max-width: 11px;
+        height: 11px;
+    }
+
+    .vc-launch-vote .vc-stardust-glyph,
+    .vc-launch-vote .vc-stardust-glyph svg {
+        width: 11px;
+        height: 11px;
+    }
 }
 
 /* Rest copy sets the width. Line-clamp on the shared label would ellipsize it. */

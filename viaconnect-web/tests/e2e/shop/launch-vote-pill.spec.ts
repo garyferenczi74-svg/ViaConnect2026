@@ -24,6 +24,13 @@ const A8_DIR = '/opt/cursor/artifacts/launch-vote-a8'
  */
 const VIACURA_WORDMARK = { x: 906, y: 1429, w: 1189, h: 186 }
 
+/**
+ * VIACURA wordmark on histamine-relief-protocol.png, 3000×4000.
+ * Same gold-ink rule as MTHFR+ (R>150, G>100, B<110, R>G). The letters
+ * sit higher on this bottle: inclusive bounds x 883–2117, y 1275–1460.
+ */
+const HISTAMINE_WORDMARK = { x: 883, y: 1275, w: 1235, h: 186 }
+
 const VIEWPORTS = [
     { name: '390', width: 390, height: 844 },
     { name: '1024', width: 1024, height: 768 },
@@ -648,8 +655,24 @@ test('real ProductCard and PDP caps clear by 8px at 390, 1024, and 1280', async 
             })
             expect(fit.ellipsis, `${surface} ${viewport.name}`).toBe(false)
             expect(fit.text).toBe('Launching Soon')
-            expect(fit.fontSize).toBe('11px')
-            expect(fit.padding).toBe('0px')
+            const phoneCard = surface === 'card' && fit.frameWidth < 190
+            if (phoneCard) {
+                expect(fit.fontSize, `${surface} ${viewport.name}`).toBe('11px')
+                expect(fit.padding).toBe('0px')
+                expect(fit.pillWidth).toBeGreaterThanOrEqual(96)
+                expect(fit.pillWidth).toBeLessThanOrEqual(106)
+                expect(fit.pillHeight).toBeLessThanOrEqual(44)
+            } else if (surface === 'card') {
+                expect(fit.fontSize, `${surface} ${viewport.name}`).toBe('12px')
+                expect(fit.pillWidth).toBeGreaterThan(108)
+                expect(fit.pillWidth).toBeLessThanOrEqual(124)
+                expect(fit.pillHeight).toBeLessThanOrEqual(54)
+            } else {
+                expect(fit.fontSize, `${surface} ${viewport.name}`).toBe('12px')
+                expect(fit.pillWidth).toBeGreaterThanOrEqual(114)
+                expect(fit.pillWidth).toBeLessThanOrEqual(124)
+                expect(fit.pillHeight).toBeLessThanOrEqual(54)
+            }
             expect(fit.restScroll).toBeLessThanOrEqual(1)
             expect(fit.minPad, `${surface} ${viewport.name} frame ${fit.frameWidth}x${fit.frameHeight} pill ${fit.pillWidth}x${fit.pillHeight}`).toBeGreaterThanOrEqual(8)
             const restShared = await page.getByTestId('launch-vote-pill').evaluate(readSharedLabel)
@@ -702,147 +725,122 @@ test('real ProductCard and PDP caps clear by 8px at 390, 1024, and 1280', async 
     await page.route(bottleUrl, (route) => route.fulfill({ path: bottleFile, contentType: 'image/png' }))
     await page.route(histamineUrl, (route) => route.fulfill({ path: histamineFile, contentType: 'image/png' }))
     const measured: Array<Record<string, unknown>> = []
-    for (const surface of ['card', 'pdp'] as const) {
-        for (const viewport of [
-            { name: '390', width: 390, height: 844 },
-            { name: '1280', width: 1280, height: 800 },
-        ] as const) {
-            await page.setViewportSize({ width: viewport.width, height: viewport.height })
-            await page.setContent(realHarness(surface, builtCss, bottleUrl, 'mthfr'), { waitUntil: 'domcontentloaded' })
-            await page.addScriptTag({ path: bundlePath })
-            await page.waitForSelector('[data-sash-placed="true"]', { state: 'attached', timeout: 8000 })
-            await page.evaluate(() => document.fonts.ready)
-            await expect.poll(async () => page.locator('img').first().evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(200)
-            const pill = page.getByTestId('launch-vote-pill')
-            const restBox = await pill.boundingBox()
-            const restShared = await pill.evaluate(readSharedLabel)
-            expect(restShared.restCenterDelta).toBeLessThanOrEqual(1)
-            expect(restShared.lines).toBeLessThanOrEqual(3)
-            const restPad = await pill.evaluate(readMinPad)
-            expect(restPad).toBeGreaterThanOrEqual(8)
-            const restInk = await page.evaluate(measureAgainst, {
-                word: VIACURA_WORDMARK,
-                badgeText: null,
-                hypothetical: [
-                    { name: '85', width: 120, height: 50, clearance: 9 },
-                    { name: '80', width: 113, height: 47, clearance: 9 },
-                ],
-            })
-            expect(restInk.gap, `mthfr ${surface} ${viewport.name} rest wordmark pill ${restInk.pillWidth}x${restInk.pillHeight}`).toBeGreaterThan(0)
-            expect(restInk.fontSize).toBe('11px')
-            await page.locator('[data-testid="sash-grid"] > *').screenshot({
-                path: join(ARTIFACT_DIR, `dark-mthfr-${surface}-rest-${viewport.name}.png`),
-            })
-            await page.locator('[data-testid="sash-grid"] > *').screenshot({
-                path: join(A8_DIR, `mthfr-${surface}-rest-${viewport.name}.png`),
-            })
-            await pill.hover()
-            const hoverBox = await pill.boundingBox()
-            expect(hoverBox?.width).toBe(restBox?.width)
-            expect(hoverBox?.height).toBe(restBox?.height)
-            expect(hoverBox?.x).toBe(restBox?.x)
-            expect(hoverBox?.y).toBe(restBox?.y)
-            const hoverShared = await pill.evaluate(readSharedLabel)
-            expect(hoverShared.clipped, `dark ${surface} ${viewport.name}`).toBe(false)
-            expect(hoverShared.altScroll).toBeLessThanOrEqual(hoverShared.altClient)
-            expect(hoverShared.lines).toBeGreaterThan(0)
-            expect(hoverShared.lines).toBeLessThanOrEqual(3)
-            expect(hoverShared.text).toBe('Vote for the next product launch')
-            expect(hoverShared.text.includes('…') || hoverShared.text.includes('...')).toBe(false)
-            expect(hoverShared.clamp === 'none' || hoverShared.clamp === 'unset' || hoverShared.clamp === '').toBe(true)
-            const hoverPad = await pill.evaluate(readMinPad)
-            expect(hoverPad, `dark ${surface} ${viewport.name} hover`).toBeGreaterThanOrEqual(8)
-            const hoverInk = await page.evaluate(measureAgainst, {
-                word: VIACURA_WORDMARK,
-                badgeText: null,
-                hypothetical: [],
-            })
-            expect(hoverInk.gap, `mthfr ${surface} ${viewport.name} hover wordmark`).toBeGreaterThan(0)
-            await page.locator('[data-testid="sash-grid"] > *').screenshot({
-                path: join(ARTIFACT_DIR, `dark-mthfr-${surface}-hover-${viewport.name}.png`),
-            })
-            await page.locator('[data-testid="sash-grid"] > *').screenshot({
-                path: join(A8_DIR, `mthfr-${surface}-hover-${viewport.name}.png`),
-            })
-            measured.push({
-                product: 'MTHFR+',
-                surface,
-                viewport: viewport.name,
-                pillWidth: restInk.pillWidth,
-                pillHeight: restInk.pillHeight,
-                fontSize: restInk.fontSize,
-                padding: restInk.padding,
-                lineHeight: restInk.lineHeight,
-                restMinPad: restPad,
-                hoverMinPad: hoverPad,
-                restWordmarkGap: restInk.gap,
-                hoverWordmarkGap: hoverInk.gap,
-                wordmarkAt85: restInk.hypotheticalGaps['85'],
-                wordmarkAt80: restInk.hypotheticalGaps['80'],
-                mappedWordmark: restInk.mapped,
-                hoverLines: hoverShared.lines,
-                altScroll: hoverShared.altScroll,
-                altClient: hoverShared.altClient,
-            })
+    const products = [
+        { slug: 'mthfr', label: 'MTHFR+', url: bottleUrl, word: VIACURA_WORDMARK },
+        { slug: 'histamine', label: 'Histamine Relief', url: histamineUrl, word: HISTAMINE_WORDMARK },
+    ] as const
+    for (const product of products) {
+        for (const surface of ['card', 'pdp'] as const) {
+            for (const viewport of [
+                { name: '390', width: 390, height: 844 },
+                { name: '1280', width: 1280, height: 800 },
+            ] as const) {
+                await page.setViewportSize({ width: viewport.width, height: viewport.height })
+                await page.setContent(realHarness(surface, builtCss, product.url, product.slug), { waitUntil: 'domcontentloaded' })
+                await page.addScriptTag({ path: bundlePath })
+                await page.waitForSelector('[data-sash-placed="true"]', { state: 'attached', timeout: 8000 })
+                await page.evaluate(() => document.fonts.ready)
+                await expect.poll(async () => page.locator('img').first().evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(200)
+                const pill = page.getByTestId('launch-vote-pill')
+                const phoneCard = surface === 'card' && viewport.name === '390'
+                const badge = page.getByText('TIER 3', { exact: true })
+                if (product.slug === 'histamine' && surface === 'card') await expect(badge).toBeVisible()
+                const restBox = await pill.boundingBox()
+                const restShared = await pill.evaluate(readSharedLabel)
+                expect(restShared.restCenterDelta).toBeLessThanOrEqual(1)
+                expect(restShared.lines).toBeLessThanOrEqual(3)
+                const restPad = await pill.evaluate(readMinPad)
+                expect(restPad, `${product.label} ${surface} ${viewport.name} rest minPad`).toBeGreaterThanOrEqual(8)
+                const restInk = await page.evaluate(measureAgainst, {
+                    word: product.word,
+                    badgeText: product.slug === 'histamine' && surface === 'card' ? 'TIER 3' : null,
+                    hypothetical: [],
+                })
+                const where = `${product.label} ${surface} ${viewport.name} pill ${restInk.pillWidth}x${restInk.pillHeight} ${restInk.fontSize}`
+                if (phoneCard) {
+                    expect(restInk.fontSize, where).toBe('11px')
+                    expect(restInk.padding, where).toBe('0px')
+                    expect(restInk.pillWidth, where).toBeGreaterThanOrEqual(96)
+                    expect(restInk.pillWidth, where).toBeLessThanOrEqual(106)
+                    expect(restInk.pillHeight, where).toBeLessThanOrEqual(44)
+                } else if (surface === 'card') {
+                    expect(restInk.gap, `${where} rest wordmark`).toBeGreaterThanOrEqual(4)
+                    expect(restInk.fontSize, where).toBe('12px')
+                    expect(restInk.pillWidth, where).toBeGreaterThanOrEqual(116)
+                    expect(restInk.pillWidth, where).toBeLessThanOrEqual(120)
+                    expect(restInk.pillHeight, where).toBeGreaterThanOrEqual(46)
+                    expect(restInk.pillHeight, where).toBeLessThanOrEqual(50)
+                } else {
+                    expect(restInk.gap, `${where} rest wordmark`).toBeGreaterThanOrEqual(4)
+                    expect(restInk.fontSize, where).toBe('12px')
+                    expect(restInk.pillWidth, where).toBeGreaterThanOrEqual(118)
+                    expect(restInk.pillWidth, where).toBeLessThanOrEqual(122)
+                    expect(restInk.pillHeight, where).toBeGreaterThanOrEqual(48)
+                    expect(restInk.pillHeight, where).toBeLessThanOrEqual(52)
+                }
+                if (product.slug === 'histamine' && surface === 'card') {
+                    expect(restInk.badgeGap, `${where} rest badge`).toBeGreaterThan(0)
+                }
+                const shot = `${product.slug}-${surface}`
+                await page.locator('[data-testid="sash-grid"] > *').screenshot({
+                    path: join(ARTIFACT_DIR, `dark-${shot}-rest-${viewport.name}.png`),
+                })
+                await page.locator('[data-testid="sash-grid"] > *').screenshot({
+                    path: join(A8_DIR, `${shot}-rest-${viewport.name}.png`),
+                })
+                await pill.hover()
+                const hoverBox = await pill.boundingBox()
+                expect(hoverBox?.width).toBe(restBox?.width)
+                expect(hoverBox?.height).toBe(restBox?.height)
+                expect(hoverBox?.x).toBe(restBox?.x)
+                expect(hoverBox?.y).toBe(restBox?.y)
+                const hoverShared = await pill.evaluate(readSharedLabel)
+                expect(hoverShared.clipped, `${where} hover`).toBe(false)
+                expect(hoverShared.altScroll).toBeLessThanOrEqual(hoverShared.altClient)
+                expect(hoverShared.lines).toBeGreaterThan(0)
+                expect(hoverShared.lines).toBeLessThanOrEqual(3)
+                expect(hoverShared.text).toBe('Vote for the next product launch')
+                expect(hoverShared.text.includes('…') || hoverShared.text.includes('...')).toBe(false)
+                expect(hoverShared.clamp === 'none' || hoverShared.clamp === 'unset' || hoverShared.clamp === '').toBe(true)
+                const hoverPad = await pill.evaluate(readMinPad)
+                expect(hoverPad, `${where} hover minPad`).toBeGreaterThanOrEqual(8)
+                const hoverInk = await page.evaluate(measureAgainst, {
+                    word: product.word,
+                    badgeText: product.slug === 'histamine' && surface === 'card' ? 'TIER 3' : null,
+                    hypothetical: [],
+                })
+                if (!phoneCard) {
+                    expect(hoverInk.gap, `${where} hover wordmark`).toBeGreaterThanOrEqual(4)
+                }
+                if (product.slug === 'histamine' && surface === 'card') {
+                    expect(hoverInk.badgeGap, `${where} hover badge`).toBeGreaterThan(0)
+                }
+                await page.locator('[data-testid="sash-grid"] > *').screenshot({
+                    path: join(ARTIFACT_DIR, `dark-${shot}-hover-${viewport.name}.png`),
+                })
+                await page.locator('[data-testid="sash-grid"] > *').screenshot({
+                    path: join(A8_DIR, `${shot}-hover-${viewport.name}.png`),
+                })
+                measured.push({
+                    product: product.label,
+                    surface,
+                    viewport: viewport.name,
+                    pillWidth: restInk.pillWidth,
+                    pillHeight: restInk.pillHeight,
+                    fontSize: restInk.fontSize,
+                    padding: restInk.padding,
+                    lineHeight: restInk.lineHeight,
+                    restMinPad: restPad,
+                    hoverMinPad: hoverPad,
+                    restWordmarkGap: restInk.gap,
+                    hoverWordmarkGap: hoverInk.gap,
+                    restBadgeGap: restInk.badgeGap,
+                    hoverBadgeGap: hoverInk.badgeGap,
+                    hoverLines: hoverShared.lines,
+                    phoneCardWordmarkFloor: phoneCard ? '100x40 cannot hold a 4px gap; kept at 11px' : null,
+                })
+            }
         }
-    }
-
-    for (const viewport of [
-        { name: '390', width: 390, height: 844 },
-        { name: '1280', width: 1280, height: 800 },
-    ] as const) {
-        await page.setViewportSize({ width: viewport.width, height: viewport.height })
-        await page.setContent(realHarness('card', builtCss, histamineUrl, 'histamine'), { waitUntil: 'domcontentloaded' })
-        await page.addScriptTag({ path: bundlePath })
-        await page.waitForSelector('[data-sash-placed="true"]', { state: 'attached', timeout: 8000 })
-        await page.evaluate(() => document.fonts.ready)
-        const pill = page.getByTestId('launch-vote-pill')
-        const badge = page.getByText('TIER 3', { exact: true })
-        await expect(badge).toBeVisible()
-        const restPad = await pill.evaluate(readMinPad)
-        expect(restPad).toBeGreaterThanOrEqual(8)
-        const restBadge = await page.evaluate(measureAgainst, {
-            word: null,
-            badgeText: 'TIER 3',
-            hypothetical: [],
-        })
-        expect(restBadge.badgeGap, `histamine ${viewport.name} rest badge`).toBeGreaterThan(0)
-        await page.locator('[data-testid="sash-grid"] > *').screenshot({
-            path: join(A8_DIR, `histamine-card-rest-${viewport.name}.png`),
-        })
-        const before = await pill.boundingBox()
-        await pill.hover()
-        const after = await pill.boundingBox()
-        expect(after?.width).toBe(before?.width)
-        expect(after?.height).toBe(before?.height)
-        expect(after?.x).toBe(before?.x)
-        expect(after?.y).toBe(before?.y)
-        const hoverShared = await pill.evaluate(readSharedLabel)
-        expect(hoverShared.clipped).toBe(false)
-        expect(hoverShared.altScroll).toBeLessThanOrEqual(hoverShared.altClient)
-        expect(hoverShared.lines).toBeLessThanOrEqual(3)
-        expect(hoverShared.text).toBe('Vote for the next product launch')
-        const hoverPad = await pill.evaluate(readMinPad)
-        expect(hoverPad).toBeGreaterThanOrEqual(8)
-        const hoverBadge = await page.evaluate(measureAgainst, {
-            word: null,
-            badgeText: 'TIER 3',
-            hypothetical: [],
-        })
-        expect(hoverBadge.badgeGap, `histamine ${viewport.name} hover badge`).toBeGreaterThan(0)
-        await page.locator('[data-testid="sash-grid"] > *').screenshot({
-            path: join(A8_DIR, `histamine-card-hover-${viewport.name}.png`),
-        })
-        measured.push({
-            product: 'Histamine Relief',
-            surface: 'card',
-            viewport: viewport.name,
-            restMinPad: restPad,
-            hoverMinPad: hoverPad,
-            restBadgeGap: restBadge.badgeGap,
-            hoverBadgeGap: hoverBadge.badgeGap,
-            badge: restBadge.badge,
-        })
     }
     writeFileSync(join(A8_DIR, 'measurements.json'), JSON.stringify(measured, null, 2))
     expect(pageErrors).toEqual([])
