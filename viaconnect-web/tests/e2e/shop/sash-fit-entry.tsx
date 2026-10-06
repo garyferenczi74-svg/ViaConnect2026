@@ -21,8 +21,10 @@ const DEFAULT_BOTTLE =
         </svg>`,
     )
 
-function bottleSrc(): string {
-    const override = document.documentElement.dataset.bottle
+function bottleSrc(which: 'a' | 'b' = 'a'): string {
+    const override = which === 'b'
+        ? document.documentElement.dataset.bottleB
+        : document.documentElement.dataset.bottle
     return override && override.length > 0 ? override : DEFAULT_BOTTLE
 }
 
@@ -34,14 +36,15 @@ const vote: LaunchVoteCardModel = {
     hasPriorPaidOrder: null,
 }
 
-function product(): ShopProduct {
+function product(which: 'a' | 'b' = 'a'): ShopProduct {
     const darkBottle = Boolean(document.documentElement.dataset.bottle)
+    const histamine = which === 'b' || document.documentElement.dataset.product === 'histamine'
     return {
-        id: darkBottle ? 'mthfr-plus' : 'balance-plus',
-        sku: darkBottle ? 'FC-MTHFR-PLUS' : 'FC-BALANCE-PLUS',
-        slug: darkBottle ? 'mthfr-plus-folate-metabolism' : 'balance-plus-gut-repair',
-        name: darkBottle ? 'MTHFR+ Folate Metabolism' : 'Balance+ Gut Repair',
-        short_name: darkBottle ? 'MTHFR+' : 'Balance+',
+        id: histamine ? 'histamine-relief' : darkBottle ? 'mthfr-plus' : 'balance-plus',
+        sku: histamine ? 'FC-HISTAMINE-RELIEF' : darkBottle ? 'FC-MTHFR-PLUS' : 'FC-BALANCE-PLUS',
+        slug: histamine ? 'histamine-relief-protocol' : darkBottle ? 'mthfr-plus-folate-metabolism' : 'balance-plus-gut-repair',
+        name: histamine ? 'Histamine Relief Protocol' : darkBottle ? 'MTHFR+ Folate Metabolism' : 'Balance+ Gut Repair',
+        short_name: histamine ? 'Histamine Relief' : darkBottle ? 'MTHFR+' : 'Balance+',
         summary: 'Not catalog data',
         description: 'Not catalog data',
         format: 'capsule',
@@ -50,9 +53,9 @@ function product(): ShopProduct {
         price: 98.88,
         price_msrp: null,
         pricing_tier: 'L1',
-        image_url: bottleSrc(),
-        image_urls: [bottleSrc()],
-        status_tags: null,
+        image_url: bottleSrc(which),
+        image_urls: [bottleSrc(which)],
+        status_tags: histamine ? ['TIER 3'] : null,
         testing_meta: null,
         snp_targets: null,
         bioavailability_pct: null,
@@ -66,20 +69,28 @@ function product(): ShopProduct {
     }
 }
 
+function card(item: ShopProduct) {
+    return (
+        <ProductCard
+            product={item}
+            variant="supplement"
+            href="/shop/product/balance-plus-gut-repair"
+            isFormulationOpen={false}
+            onToggleFormulation={() => undefined}
+            waitlist={{ signedIn: true, joined: false }}
+            vote={vote}
+        />
+    )
+}
+
 function CardSurface() {
+    const pair = document.documentElement.dataset.sashPair === '1'
     return (
         <div className="sash-shell">
             <div className="sash-shop">
                 <div className="sash-plp" data-testid="sash-grid">
-                    <ProductCard
-                        product={product()}
-                        variant="supplement"
-                        href="/shop/product/balance-plus-gut-repair"
-                        isFormulationOpen={false}
-                        onToggleFormulation={() => undefined}
-                        waitlist={{ signedIn: true, joined: false }}
-                        vote={vote}
-                    />
+                    {card(product())}
+                    {pair ? card(product('b')) : null}
                 </div>
             </div>
         </div>
@@ -107,7 +118,18 @@ function PdpSurface() {
                             className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl bg-white shadow-md"
                             data-testid="pdp-photo"
                         >
-                            <img alt={item.name} src={bottleSrc()} />
+                            <img
+                                alt={item.name}
+                                src={bottleSrc()}
+                                style={{
+                                    position: 'absolute',
+                                    inset: 0,
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'cover',
+                                    objectPosition: 'center top',
+                                }}
+                            />
                         </div>
                     </LaunchVotePill>
                 </div>
