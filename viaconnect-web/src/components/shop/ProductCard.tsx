@@ -30,6 +30,7 @@ import { LaunchVotePill } from './LaunchVotePill'
 import { ProductCardSupplementBody } from './ProductCard.SupplementBody'
 import { ProductCardTestingBody } from './ProductCard.TestingBody'
 import { StatusPill } from './StatusPill'
+import './product-card-photo.css'
 import type { ShopWaitlistState } from './JoinWaitlistButton'
 import { pillForProduct } from '@/lib/shop/launch-vote/state'
 import { staticVoteModel, type LaunchVoteCardModel } from '@/lib/shop/launch-vote/types'
@@ -102,7 +103,7 @@ export function ProductCard({
     const photo = (
         <div
             className={`
-                    relative overflow-hidden block w-full rounded-xl ${primaryImage ? 'bg-white' : 'bg-white/[0.04]'} shadow-md
+                    vc-card-photo-frame relative overflow-hidden block w-full rounded-xl ${primaryImage ? 'bg-white' : 'bg-white/[0.04]'} shadow-md
                     aspect-[3/4] md:aspect-[4/5]
                     transition-[transform,box-shadow] duration-300 ease-in-out
                     group-hover:scale-[1.02] group-hover:shadow-[0_12px_32px_rgba(45,165,160,0.22)]
@@ -110,6 +111,7 @@ export function ProductCard({
                     before:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]
                 `}
         >
+            <div className="vc-card-photo-fit">
             {primaryImage ? (
                 display.hasOverride ? (
                     <div className={`absolute inset-0 ${display.bgClass}`}>
@@ -140,6 +142,7 @@ export function ProductCard({
             ) : (
                 <CategoryFallbackImage categorySlug={product.category_slug} />
             )}
+            </div>
             {visibleTags.length > 0 && (
                 <div className="absolute top-3 right-3 z-10 flex flex-col items-end gap-1">
                     {visibleTags.map((tag) => (

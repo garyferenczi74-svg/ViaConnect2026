@@ -1,0 +1,25 @@
+/* Narrow phone shop card only (the 390 two-column frame, about 167px).
+   The same inset applies to every product. The photo scales to 92%
+   and stays anchored to the bottom center, so the bottle base keeps
+   the grid baseline and the white field fills the space above it.
+   Wider cards (768, 1024, 1280) and the product page do not match. */
+.vc-card-photo-frame {
+    container-type: inline-size;
+    container-name: card-photo;
+}
+
+.vc-card-photo-fit {
+    position: absolute;
+    inset: 0;
+}
+
+@container card-photo (max-width: 190px) {
+    .vc-card-photo-fit {
+        top: auto;
+        right: auto;
+        bottom: 0;
+        left: 4%;
+        width: 92%;
+        height: 92%;
+    }
+}

@@ -31,6 +31,9 @@ const VIACURA_WORDMARK = { x: 906, y: 1429, w: 1189, h: 186 }
  */
 const HISTAMINE_WORDMARK = { x: 883, y: 1275, w: 1235, h: 186 }
 
+/** Lowest non-white bottle pixel in each 3000×4000 photo. Both bases sit on the same row. */
+const BOTTLE_BASE_Y = { mthfr: 3398, histamine: 3395 } as const
+
 const VIEWPORTS = [
     { name: '390', width: 390, height: 844 },
     { name: '1024', width: 1024, height: 768 },
@@ -572,10 +575,97 @@ const REAL_LAYOUT = `
   }
 `
 
-function realHarness(surface: 'card' | 'pdp', builtCss: string, bottle?: string, product?: string): string {
+function realHarness(
+    surface: 'card' | 'pdp',
+    builtCss: string,
+    bottle?: string,
+    product?: string,
+    pairBottle?: string,
+): string {
     const bottleAttr = bottle ? ` data-bottle="${bottle}"` : ''
     const productAttr = product ? ` data-product="${product}"` : ''
-    return `<!DOCTYPE html><html data-sash-surface="${surface}"${bottleAttr}${productAttr}><head><style>${builtCss}${REAL_LAYOUT}</style></head><body><script>window.process={env:{NODE_ENV:"production"}}</script><div id="root"></div></body></html>`
+    const pairAttr = pairBottle ? ` data-sash-pair="1" data-bottle-b="${pairBottle}"` : ''
+    return `<!DOCTYPE html><html data-sash-surface="${surface}"${bottleAttr}${productAttr}${pairAttr}><head><style>${builtCss}${REAL_LAYOUT}</style></head><body><script>window.process={env:{NODE_ENV:"production"}}</script><div id="root"></div></body></html>`
+}
+
+function readPairBaselines(bases: { mthfr: number; histamine: number }): Array<{
+    alt: string
+    baseY: number
+    frameBottom: number
+    baseFromFrameBottom: number
+    imgBottomGap: number
+    clipped: boolean
+}> {
+    function objectOffset(token: string, container: number, content: number): number {
+        if (token === 'left' || token === 'top' || token === '0%') return 0
+        if (token === 'center' || token === '50%') return (container - content) / 2
+        if (token === 'right' || token === 'bottom' || token === '100%') return container - content
+        if (token.endsWith('%')) return (container - content) * (parseFloat(token) / 100)
+        const px = parseFloat(token)
+        return Number.isFinite(px) ? px : (container - content) / 2
+    }
+    return [...document.querySelectorAll('.vc-card-photo-frame')].map((frame) => {
+        const img = frame.querySelector('img') as HTMLImageElement
+        const frameRect = frame.getBoundingClientRect()
+        const imgRect = img.getBoundingClientRect()
+        const style = getComputedStyle(img)
+        const scale = style.objectFit === 'contain'
+            ? Math.min(imgRect.width / img.naturalWidth, imgRect.height / img.naturalHeight)
+            : Math.max(imgRect.width / img.naturalWidth, imgRect.height / img.naturalHeight)
+        const drawnH = img.naturalHeight * scale
+        const parts = style.objectPosition.trim().split(/\s+/)
+        const oy = objectOffset(parts[1] ?? '50%', imgRect.height, drawnH)
+        const imageY = img.alt.includes('Histamine') ? bases.histamine : bases.mthfr
+        const baseY = imgRect.top + oy + imageY * scale
+        return {
+            alt: img.alt,
+            baseY,
+            frameBottom: frameRect.bottom,
+            baseFromFrameBottom: frameRect.bottom - baseY,
+            imgBottomGap: frameRect.bottom - imgRect.bottom,
+            clipped: baseY >= frameRect.bottom - 1 || baseY <= frameRect.top,
+        }
+    })
+}
+
+function readBottleBaseline(imageY: number): number {
+    const img = document.querySelector('img') as HTMLImageElement
+    const frame = (img.closest('.vc-card-photo-frame') ?? img.parentElement) as HTMLElement
+    const frameRect = frame.getBoundingClientRect()
+    const imgRect = img.getBoundingClientRect()
+    const style = getComputedStyle(img)
+    const scale = style.objectFit === 'contain'
+        ? Math.min(imgRect.width / img.naturalWidth, imgRect.height / img.naturalHeight)
+        : Math.max(imgRect.width / img.naturalWidth, imgRect.height / img.naturalHeight)
+    const drawnH = img.naturalHeight * scale
+    const parts = style.objectPosition.trim().split(/\s+/)
+    const token = parts[1] ?? '50%'
+    const oy = token === 'top' || token === '0%'
+        ? 0
+        : token === 'bottom' || token === '100%'
+            ? imgRect.height - drawnH
+            : token === 'center' || token === '50%'
+                ? (imgRect.height - drawnH) / 2
+                : token.endsWith('%')
+                    ? (imgRect.height - drawnH) * (parseFloat(token) / 100)
+                    : (imgRect.height - drawnH) / 2
+    const baseY = imgRect.top + oy + imageY * scale
+    return frameRect.bottom - baseY
+}
+
+function readPhotoFit(): { scaleX: number; imgBottomGap: number; imgTopGap: number; frameWidth: number } {
+    const img = document.querySelector('img') as HTMLImageElement
+    const frame = (img.closest('.vc-card-photo-frame') ?? img.parentElement) as HTMLElement
+    const fit = img.closest('.vc-card-photo-fit') as HTMLElement | null
+    const box = (fit ?? img).getBoundingClientRect()
+    const frameRect = frame.getBoundingClientRect()
+    const imgRect = img.getBoundingClientRect()
+    return {
+        scaleX: box.width / frameRect.width,
+        imgBottomGap: frameRect.bottom - imgRect.bottom,
+        imgTopGap: imgRect.top - frameRect.top,
+        frameWidth: frameRect.width,
+    }
 }
 
 test('real ProductCard and PDP caps clear by 8px at 390, 1024, and 1280', async ({ page }) => {
@@ -674,6 +764,16 @@ test('real ProductCard and PDP caps clear by 8px at 390, 1024, and 1280', async 
                 expect(fit.pillHeight).toBeLessThanOrEqual(54)
             }
             expect(fit.restScroll).toBeLessThanOrEqual(1)
+            if (surface === 'card') {
+                const photo = await page.evaluate(readPhotoFit)
+                if (phoneCard) {
+                    expect(photo.scaleX, `${surface} ${viewport.name} photo scale`).toBeGreaterThan(0.9)
+                    expect(photo.scaleX, `${surface} ${viewport.name} photo scale`).toBeLessThan(0.94)
+                    expect(photo.imgBottomGap, `${surface} ${viewport.name} photo baseline`).toBeLessThanOrEqual(1)
+                } else {
+                    expect(photo.scaleX, `${surface} ${viewport.name} photo stays full bleed`).toBeGreaterThan(0.98)
+                }
+            }
             expect(fit.minPad, `${surface} ${viewport.name} frame ${fit.frameWidth}x${fit.frameHeight} pill ${fit.pillWidth}x${fit.pillHeight}`).toBeGreaterThanOrEqual(8)
             const restShared = await page.getByTestId('launch-vote-pill').evaluate(readSharedLabel)
             expect(restShared.restCenterDelta, `${surface} ${viewport.name} rest center`).toBeLessThanOrEqual(1)
@@ -757,12 +857,34 @@ test('real ProductCard and PDP caps clear by 8px at 390, 1024, and 1280', async 
                     hypothetical: [],
                 })
                 const where = `${product.label} ${surface} ${viewport.name} pill ${restInk.pillWidth}x${restInk.pillHeight} ${restInk.fontSize}`
+                const lockedGap: Record<string, number> = {
+                    'MTHFR+|card|1280': 13.46,
+                    'MTHFR+|pdp|390': 89.13,
+                    'MTHFR+|pdp|1280': 147.41,
+                    'Histamine Relief|card|1280': 4.33,
+                    'Histamine Relief|pdp|390': 73.82,
+                    'Histamine Relief|pdp|1280': 126.92,
+                }
+                const lockedBadge: Record<string, number> = {
+                    'Histamine Relief|card|390': 8.85,
+                    'Histamine Relief|card|1280': 44.38,
+                }
+                const frameKey = `${product.label}|${surface}|${viewport.name}`
+                if (lockedGap[frameKey] != null) expect(restInk.gap, frameKey).toBeCloseTo(lockedGap[frameKey], 0)
+                if (lockedBadge[frameKey] != null) expect(restInk.badgeGap, frameKey).toBeCloseTo(lockedBadge[frameKey], 0)
+                const photo = await page.evaluate(readPhotoFit)
+                const bottleBaseline = await page.evaluate(readBottleBaseline, BOTTLE_BASE_Y[product.slug])
                 if (phoneCard) {
+                    expect(restInk.gap, `${where} rest wordmark`).toBeGreaterThanOrEqual(4)
                     expect(restInk.fontSize, where).toBe('11px')
                     expect(restInk.padding, where).toBe('0px')
                     expect(restInk.pillWidth, where).toBeGreaterThanOrEqual(96)
                     expect(restInk.pillWidth, where).toBeLessThanOrEqual(106)
                     expect(restInk.pillHeight, where).toBeLessThanOrEqual(44)
+                    expect(photo.scaleX, where).toBeGreaterThan(0.9)
+                    expect(photo.scaleX, where).toBeLessThan(0.94)
+                    expect(photo.imgBottomGap, `${where} photo anchored to the frame bottom`).toBeLessThanOrEqual(1)
+                    expect(photo.imgTopGap, `${where} freed space sits above the photo`).toBeGreaterThan(8)
                 } else if (surface === 'card') {
                     expect(restInk.gap, `${where} rest wordmark`).toBeGreaterThanOrEqual(4)
                     expect(restInk.fontSize, where).toBe('12px')
@@ -770,6 +892,7 @@ test('real ProductCard and PDP caps clear by 8px at 390, 1024, and 1280', async 
                     expect(restInk.pillWidth, where).toBeLessThanOrEqual(120)
                     expect(restInk.pillHeight, where).toBeGreaterThanOrEqual(46)
                     expect(restInk.pillHeight, where).toBeLessThanOrEqual(50)
+                    expect(photo.scaleX, `${where} photo stays full bleed`).toBeGreaterThan(0.98)
                 } else {
                     expect(restInk.gap, `${where} rest wordmark`).toBeGreaterThanOrEqual(4)
                     expect(restInk.fontSize, where).toBe('12px')
@@ -777,6 +900,7 @@ test('real ProductCard and PDP caps clear by 8px at 390, 1024, and 1280', async 
                     expect(restInk.pillWidth, where).toBeLessThanOrEqual(122)
                     expect(restInk.pillHeight, where).toBeGreaterThanOrEqual(48)
                     expect(restInk.pillHeight, where).toBeLessThanOrEqual(52)
+                    expect(photo.scaleX, `${where} photo stays full bleed`).toBeGreaterThan(0.98)
                 }
                 if (product.slug === 'histamine' && surface === 'card') {
                     expect(restInk.badgeGap, `${where} rest badge`).toBeGreaterThan(0)
@@ -809,9 +933,7 @@ test('real ProductCard and PDP caps clear by 8px at 390, 1024, and 1280', async 
                     badgeText: product.slug === 'histamine' && surface === 'card' ? 'TIER 3' : null,
                     hypothetical: [],
                 })
-                if (!phoneCard) {
-                    expect(hoverInk.gap, `${where} hover wordmark`).toBeGreaterThanOrEqual(4)
-                }
+                expect(hoverInk.gap, `${where} hover wordmark`).toBeGreaterThanOrEqual(4)
                 if (product.slug === 'histamine' && surface === 'card') {
                     expect(hoverInk.badgeGap, `${where} hover badge`).toBeGreaterThan(0)
                 }
@@ -837,11 +959,40 @@ test('real ProductCard and PDP caps clear by 8px at 390, 1024, and 1280', async 
                     restBadgeGap: restInk.badgeGap,
                     hoverBadgeGap: hoverInk.badgeGap,
                     hoverLines: hoverShared.lines,
-                    phoneCardWordmarkFloor: phoneCard ? '100x40 cannot hold a 4px gap; kept at 11px' : null,
+                    photoScale: photo.scaleX,
+                    photoBottomGap: photo.imgBottomGap,
+                    photoTopGap: photo.imgTopGap,
+                    bottleBaseline,
                 })
             }
         }
     }
+
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.setContent(realHarness('card', builtCss, bottleUrl, 'mthfr', histamineUrl), { waitUntil: 'domcontentloaded' })
+    await page.addScriptTag({ path: bundlePath })
+    await expect(page.getByTestId('launch-vote-pill')).toHaveCount(2)
+    await page.waitForSelector('[data-sash-placed="true"]', { state: 'attached', timeout: 8000 })
+    await page.evaluate(() => document.fonts.ready)
+    await expect.poll(async () => page.locator('img').nth(1).evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(200)
+    const baselines = await page.evaluate(readPairBaselines, BOTTLE_BASE_Y)
+    expect(baselines).toHaveLength(2)
+    for (const row of baselines) {
+        expect(row.clipped, row.alt).toBe(false)
+        expect(row.imgBottomGap, `${row.alt} photo sits on the frame bottom`).toBeLessThanOrEqual(1)
+        expect(row.baseFromFrameBottom, `${row.alt} bottle base is inside the frame`).toBeGreaterThanOrEqual(8)
+    }
+    expect(Math.abs(baselines[0].frameBottom - baselines[1].frameBottom), 'card frames share a row').toBeLessThanOrEqual(1)
+    expect(
+        Math.abs(baselines[0].baseY - baselines[1].baseY),
+        'bottle bases share a baseline',
+    ).toBeLessThanOrEqual(2)
+    measured.push({
+        product: 'pair',
+        surface: 'card',
+        viewport: '390',
+        bottleBaseline: baselines,
+    })
     writeFileSync(join(A8_DIR, 'measurements.json'), JSON.stringify(measured, null, 2))
     expect(pageErrors).toEqual([])
 })
