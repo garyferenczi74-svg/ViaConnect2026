@@ -16,6 +16,13 @@
     border-radius: 1rem;
 }
 
+/* Brief 72 A8. One shared box, smaller than the #282 ~141×59 sash.
+   Rest and hover both use 11px, the floor. "Launching Soon" stays one
+   line and sets the width; the vote sentence wraps to three lines in
+   that same box. Measured on the 390px MTHFR+ card (167×223), a 120×50
+   box still crosses the VIACURA ink by about 16px and a 113×47 box by
+   about 11px. 100×40 is the largest 11px fit that stays off that ink
+   while the caps keep at least 8px of photo clearance. */
 .vc-launch-vote > .vc-stardust {
     position: absolute;
     top: 0;
@@ -24,9 +31,27 @@
     width: max-content;
     max-width: none;
     margin: 0;
+    font-size: 11px;
+    line-height: 1.15;
+    gap: 2px;
+    padding: 0;
     transform-origin: center;
     transform: rotate(-45deg);
     pointer-events: auto;
+}
+
+.vc-launch-vote .vc-stardust-glyphs {
+    flex: 0 0 11px;
+    width: 11px;
+    min-width: 11px;
+    max-width: 11px;
+    height: 11px;
+}
+
+.vc-launch-vote .vc-stardust-glyph,
+.vc-launch-vote .vc-stardust-glyph svg {
+    width: 11px;
+    height: 11px;
 }
 
 /* Rest copy sets the width. Line-clamp on the shared label would ellipsize it. */
@@ -48,7 +73,7 @@
 }
 
 /* One box for rest and hover. The hover sentence stays in flow while hidden
-   and wraps inside that box, at most three lines at 12px. "Launching Soon"
+   and wraps inside that box, at most three lines at 11px. "Launching Soon"
    is centered in the same box. Hover does not change width or height. */
 .vc-launch-vote > .vc-stardust[data-interactive='true'] .vc-stardust-labels {
     align-items: center;

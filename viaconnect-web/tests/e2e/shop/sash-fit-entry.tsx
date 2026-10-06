@@ -36,12 +36,13 @@ const vote: LaunchVoteCardModel = {
 
 function product(): ShopProduct {
     const darkBottle = Boolean(document.documentElement.dataset.bottle)
+    const histamine = document.documentElement.dataset.product === 'histamine'
     return {
-        id: darkBottle ? 'mthfr-plus' : 'balance-plus',
-        sku: darkBottle ? 'FC-MTHFR-PLUS' : 'FC-BALANCE-PLUS',
-        slug: darkBottle ? 'mthfr-plus-folate-metabolism' : 'balance-plus-gut-repair',
-        name: darkBottle ? 'MTHFR+ Folate Metabolism' : 'Balance+ Gut Repair',
-        short_name: darkBottle ? 'MTHFR+' : 'Balance+',
+        id: histamine ? 'histamine-relief' : darkBottle ? 'mthfr-plus' : 'balance-plus',
+        sku: histamine ? 'FC-HISTAMINE-RELIEF' : darkBottle ? 'FC-MTHFR-PLUS' : 'FC-BALANCE-PLUS',
+        slug: histamine ? 'histamine-relief-protocol' : darkBottle ? 'mthfr-plus-folate-metabolism' : 'balance-plus-gut-repair',
+        name: histamine ? 'Histamine Relief Protocol' : darkBottle ? 'MTHFR+ Folate Metabolism' : 'Balance+ Gut Repair',
+        short_name: histamine ? 'Histamine Relief' : darkBottle ? 'MTHFR+' : 'Balance+',
         summary: 'Not catalog data',
         description: 'Not catalog data',
         format: 'capsule',
@@ -52,7 +53,7 @@ function product(): ShopProduct {
         pricing_tier: 'L1',
         image_url: bottleSrc(),
         image_urls: [bottleSrc()],
-        status_tags: null,
+        status_tags: histamine ? ['TIER 3'] : null,
         testing_meta: null,
         snp_targets: null,
         bioavailability_pct: null,
@@ -107,7 +108,18 @@ function PdpSurface() {
                             className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl bg-white shadow-md"
                             data-testid="pdp-photo"
                         >
-                            <img alt={item.name} src={bottleSrc()} />
+                            <img
+                                alt={item.name}
+                                src={bottleSrc()}
+                                style={{
+                                    position: 'absolute',
+                                    inset: 0,
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'cover',
+                                    objectPosition: 'center top',
+                                }}
+                            />
                         </div>
                     </LaunchVotePill>
                 </div>
