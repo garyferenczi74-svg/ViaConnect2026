@@ -138,8 +138,31 @@ function PdpSurface() {
     )
 }
 
+function LiveShell() {
+    return (
+        <div className="live-app" data-testid="live-app">
+            <aside className="live-sidebar" aria-hidden="true" />
+            <div className="live-column">
+                <main className="live-main" data-testid="live-main">
+                    <div className="live-pad">
+                        <div className="live-shop">
+                            <div className="live-grid" data-testid="sash-grid">
+                                {card(product('a'))}
+                                {card(product('b'))}
+                            </div>
+                            <div className="live-spacer" aria-hidden="true" />
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+    )
+}
+
 const rootNode = document.getElementById('root')
 if (rootNode) {
+    const shell = document.documentElement.dataset.sashShell
     const surface = document.documentElement.dataset.sashSurface
-    createRoot(rootNode).render(surface === 'pdp' ? <PdpSurface /> : <CardSurface />)
+    const tree = shell === 'live' ? <LiveShell /> : surface === 'pdp' ? <PdpSurface /> : <CardSurface />
+    createRoot(rootNode).render(tree)
 }

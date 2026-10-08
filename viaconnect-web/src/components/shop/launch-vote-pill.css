@@ -18,13 +18,12 @@
     border-radius: 1rem;
 }
 
-/* Brief 72 A8. The box is chosen by the photo frame, not by hover.
-   The 1280 shop card (~219px) uses 119×49 at 12px. 120×49 on that
-   frame clears the Histamine VIACURA ink by 3.97px, short of 4px.
-   The product page is wide enough for 120×50. A card near 217px (the
-   768 and 1024 shop columns) steps to 118×49. The narrow phone card
-   (~167px at 390) stays 100×40 at 11px: that frame cannot hold a 4px
-   ink gap without dropping below 11px or losing the three-line vote. */
+/* Brief 72 A8 / A9. The box is chosen by the photo frame, not by the
+   viewport and not by hover. Phone-width frames stay 100×40 at 11px.
+   Desktop frames use 12px (118×49 through 218px, 119×49 above that).
+   The product page is wide enough for 120×50 and is not part of the
+   card inset. A9 clears the VIACURA ink by scaling the card photo from
+   the frame width. The sash size does not change on hover. */
 .vc-launch-vote > .vc-stardust {
     position: absolute;
     top: 0;
