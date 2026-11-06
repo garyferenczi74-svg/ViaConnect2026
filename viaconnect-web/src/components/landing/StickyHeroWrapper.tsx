@@ -7,7 +7,7 @@ interface StickyHeroWrapperProps {
 
 export function StickyHeroWrapper({ children }: StickyHeroWrapperProps) {
     return (
-        <div className="sticky top-0 left-0 w-full h-screen z-0 overflow-hidden">
+        <div className="sticky top-0 left-0 z-0 h-screen w-full overflow-hidden min-[1000px]:static min-[1000px]:h-auto min-[1000px]:max-h-none min-[1000px]:min-h-[100svh] min-[1000px]:overflow-visible">
             {children}
             {/* Gradient overlay: above video, below scroll sections.
                 Provides the uniform readability floor across the entire scroll narrative.

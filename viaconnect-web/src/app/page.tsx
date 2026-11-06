@@ -5,7 +5,6 @@ import { SarahScenarioSection } from "@/components/home/SarahScenarioSection";
 import { OutcomeTimelineSection } from "@/components/home/OutcomeTimelineSection";
 import { LandingNav } from "@/components/landing/LandingNav";
 import { StickyHeroWrapper } from "@/components/landing/StickyHeroWrapper";
-import { LandingHeroCarousel } from "@/components/landing/LandingHeroCarousel";
 import { LandingScrollSections } from "@/components/landing/scroll-sections/LandingScrollSections";
 
 // TrustBand reads cookies for A/B; keep home dynamic to avoid static-gen thrash.
@@ -14,9 +13,7 @@ export const dynamic = "force-dynamic";
 // Prompt #139: landing scroll consolidation.
 // Hero is sticky; subsequent sections scroll over it with semi-transparent
 // backgrounds so the hero video stays visible throughout.
-// LandingHeroCarousel sits OUTSIDE StickyHeroWrapper so it stays locked to
-// the first viewport and scrolls away as the user moves into TrustBand.
-// `relative` on main is required for the carousel's absolute positioning.
+// The hero ticker is the last row of the viewport-tall hero (mt-auto).
 // TrustBand / SarahScenario / OutcomeTimeline preserved verbatim from #138.
 // LandingScrollSections appends one Features / Process / Genomics / About /
 // Membership / Final CTA tree (Brief 45: no dual desktop+mobile SSR).
@@ -35,7 +32,6 @@ export default function HomePage() {
             Without this, TrustBand starts entering the viewport at ~14px scroll and
             covers the third button before it can be tapped. */}
         <div aria-hidden="true" className="sm:hidden h-[280px]" />
-        <LandingHeroCarousel />
         <TrustBandSection />
         <SarahScenarioSection />
         <OutcomeTimelineSection />
