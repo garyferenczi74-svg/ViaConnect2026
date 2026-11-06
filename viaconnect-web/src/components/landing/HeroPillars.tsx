@@ -152,7 +152,7 @@ function PillarCard({
 
         <span
           aria-hidden="true"
-          className="pillar-numeral pointer-events-none absolute right-[-2px] top-[-6px] z-[1] select-none text-[64px] font-bold leading-none tracking-[-0.06em] sm:right-[-4px] sm:top-[-10px] sm:text-[90px] lg:text-[110px]"
+          className="pillar-numeral pointer-events-none absolute right-[-2px] top-[-6px] z-[1] select-none text-[64px] font-bold leading-none tracking-[-0.06em] sm:right-[-4px] sm:top-[-10px] sm:text-[90px] min-[1000px]:text-[110px]"
           style={{
             color: 'transparent',
             WebkitTextStroke: `1.2px ${numeralStrokeIdle}`,
@@ -237,18 +237,18 @@ export function HeroPillars() {
           (dwell HERO_PILLAR_DWELL_MS; swipe/dots reset timer). Desktop: static grid. */}
       <HeroPillarsMobileMarquee pillars={PILLARS} />
 
-      {/* Tablet and desktop: existing grid */}
+      {/* Tablet stays two columns. Three columns from 1000px, same switch as the nav. */}
       <div
         role="list"
         data-testid="hero-pillars-desktop-grid"
-        className="mt-6 hidden sm:grid sm:grid-cols-2 sm:gap-3 lg:grid-cols-3 lg:gap-4"
+        className="mt-6 hidden sm:grid sm:grid-cols-2 sm:gap-3 min-[1000px]:grid-cols-3 min-[1000px]:gap-4"
       >
         {PILLARS.map((pillar, index) => (
           <div
             key={pillar.numeral}
             className={
               index === 2
-                ? 'sm:col-span-2 sm:mx-auto sm:w-full sm:max-w-[480px] lg:col-span-1 lg:max-w-none'
+                ? 'sm:col-span-2 sm:mx-auto sm:w-full sm:max-w-[480px] min-[1000px]:col-span-1 min-[1000px]:max-w-none'
                 : ''
             }
           >

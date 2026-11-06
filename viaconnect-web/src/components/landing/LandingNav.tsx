@@ -14,6 +14,12 @@ import { NAV_ITEMS } from './scroll-sections/shared/sectionConstants'
 // added for LandingHeroCarousel positioning, certain browsers may treat
 // the relative ancestor as a containing block for fixed descendants.
 // Mounting at the page root sidesteps that entirely.
+//
+// Desktop chrome starts at 1000px, not Tailwind lg (1024px). A 1024px
+// Windows window loses about 15–17px to the classic scrollbar, so a
+// min-width:1024px rule kept the hamburger on those laptops.
+// px-8 until 1024px leaves a gap between the logo and the links so a
+// wider system font (Segoe UI) does not wrap the row.
 const Logo = () => {
     return (
         <span className="text-xl font-bold tracking-tight">
@@ -43,25 +49,25 @@ export function LandingNav() {
             <nav
                 data-state={menuState ? 'active' : 'inactive'}
                 className="group fixed z-20 w-full px-2">
-                <div className={cn('mx-auto mt-2 max-w-2xl px-6 transition-all duration-300 lg:max-w-7xl lg:px-12', isScrolled && 'bg-[#0d1225]/80 max-w-4xl rounded-3xl border border-white/5 backdrop-blur-2xl lg:px-5')}>
+                <div className={cn('mx-auto mt-2 max-w-2xl px-6 transition-all duration-300 min-[1000px]:max-w-7xl min-[1000px]:px-8 min-[1024px]:px-12', isScrolled && 'bg-[#0d1225]/80 max-w-4xl rounded-3xl border border-white/5 backdrop-blur-2xl min-[1000px]:px-5')}>
                     <div className="relative flex flex-wrap items-center justify-between gap-6 py-3 md:gap-0 md:py-4">
-                        <div className="flex w-full items-center justify-between lg:w-auto">
+                        <div className="flex w-full items-center justify-between min-[1000px]:w-auto">
                             <Link href="/" aria-label="home">
                                 <Logo />
                             </Link>
                             <button
                                 onClick={() => setMenuState(!menuState)}
                                 aria-label={menuState ? 'Close Menu' : 'Open Menu'}
-                                className="relative z-20 flex items-center justify-center w-10 h-10 rounded-lg lg:hidden hover:bg-white/10 transition-colors">
+                                className="relative z-20 flex items-center justify-center w-10 h-10 rounded-lg min-[1000px]:hidden hover:bg-white/10 transition-colors">
                                 <div aria-hidden="true" className="size-5 text-white">
                                     {menuState ? <X strokeWidth={1.5} /> : <Menu strokeWidth={1.5} />}
                                 </div>
                             </button>
                         </div>
 
-                        <div className="bg-[#0d1225] group-data-[state=active]:block lg:group-data-[state=active]:flex mb-6 hidden w-full flex-wrap items-center justify-end gap-6 rounded-3xl border border-white/5 p-6 shadow-2xl shadow-zinc-600/10 md:flex-nowrap lg:m-0 lg:flex lg:w-fit lg:gap-0 lg:border-transparent lg:bg-transparent lg:p-0 lg:shadow-none">
-                            <div className="lg:pr-4">
-                                <ul className="flex flex-col gap-6 text-base lg:flex-row lg:gap-0 lg:text-sm">
+                        <div className="bg-[#0d1225] group-data-[state=active]:block min-[1000px]:group-data-[state=active]:flex mb-6 hidden w-full flex-wrap items-center justify-end gap-6 rounded-3xl border border-white/5 p-6 shadow-2xl shadow-zinc-600/10 md:flex-nowrap min-[1000px]:m-0 min-[1000px]:flex min-[1000px]:w-fit min-[1000px]:gap-0 min-[1000px]:border-transparent min-[1000px]:bg-transparent min-[1000px]:p-0 min-[1000px]:shadow-none">
+                            <div className="min-[1000px]:pr-4">
+                                <ul className="flex flex-col gap-6 text-base min-[1000px]:flex-row min-[1000px]:gap-0 min-[1000px]:text-sm">
                                     {NAV_ITEMS.map((item) => (
                                         <li key={item.id}>
                                             <Link
@@ -73,7 +79,7 @@ export function LandingNav() {
                                                 }}
                                                 aria-current={activeId === item.id ? 'location' : undefined}
                                                 className={cn(
-                                                    'text-slate-300 block duration-150 hover:text-white md:px-4 lg:text-sm text-left w-full lg:w-auto',
+                                                    'text-slate-300 block duration-150 hover:text-white md:px-4 min-[1000px]:text-sm text-left w-full min-[1000px]:w-auto',
                                                     activeId === item.id && 'text-white border-b-2 border-[#B87333] pb-0.5'
                                                 )}>
                                                 <span>{item.label}</span>
@@ -84,7 +90,7 @@ export function LandingNav() {
                                         <Link
                                             href="/peptide-protocol/browse"
                                             onClick={() => setMenuState(false)}
-                                            className="text-slate-300 block duration-150 hover:text-white md:px-4 lg:text-sm text-left w-full lg:w-auto">
+                                            className="text-slate-300 block duration-150 hover:text-white md:px-4 min-[1000px]:text-sm text-left w-full min-[1000px]:w-auto">
                                             <span>Peptide Education</span>
                                         </Link>
                                     </li>
