@@ -238,11 +238,6 @@ export function HeroPillars() {
             0 16px 36px -14px rgba(226,122,44,0.26),
             0 4px 12px -6px rgba(26,39,68,0.45);
         }
-        @media (min-width: 1000px) {
-          .pillar-title { font-size: clamp(1.375rem, min(1.9vw, 4vh), 1.5rem) !important; line-height: 1.15 !important; }
-          .pillar-body { font-size: 1rem !important; line-height: 1.5 !important; }
-          .pillar-inner { padding: 26px 28px !important; }
-        }
       `}</style>
 
       {/* Mobile: Prompt 220 revised auto-rotating scroll-snap carousel

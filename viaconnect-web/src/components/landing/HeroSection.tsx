@@ -87,30 +87,80 @@ export function HeroSection({
                     .hero-screen,
                     .hero-fold {
                       box-sizing: border-box !important;
-                      height: auto !important;
+                      height: 100svh !important;
                       min-height: 100svh !important;
-                      max-height: none !important;
+                      max-height: 100svh !important;
+                      overflow: hidden !important;
                     }
                     .hero-headline {
-                      font-size: clamp(2.75rem, min(5.5vw, 8vh), 4.5rem) !important;
+                      font-size: clamp(1.75rem, min(5.5vw, 8vh), 4.5rem) !important;
                       line-height: 1.05 !important;
                       letter-spacing: -0.02em;
+                    }
+                    .hero-subtitle,
+                    .hero-tagline {
+                      line-height: 1.25 !important;
+                    }
+                    .hero-subtitle {
+                      font-size: clamp(0.75rem, 1.78vh, 1rem) !important;
+                      margin-top: clamp(12px, 4.4vh, 32px) !important;
+                    }
+                    [data-testid="hero-pillars-desktop-grid"] {
+                      margin-top: clamp(28px, 5.36vh, 48px) !important;
+                    }
+                    .hero-flex-spacer {
+                      flex: 1 1 0px;
+                      min-height: 0;
+                    }
+                    .hero-bottom-block {
+                      flex: 1 1 auto !important;
+                      display: flex;
+                      flex-direction: column;
+                      min-height: 0;
+                    }
+                    .hero-bottom-block .hero-flex-spacer {
+                      min-height: clamp(21px, calc(3.24vh + 3px), 48px);
+                    }
+                    [data-testid="hero-ctas"] {
+                      margin-top: 0 !important;
+                    }
+                    [data-testid="hero-ticker"] {
+                      margin-top: clamp(16px, 3.2vh, 20px) !important;
+                    }
+                    [data-testid="hero-ctas"] a {
+                      height: clamp(2.25rem, calc(3.53vh + 16px), 3rem) !important;
+                    }
+                    .pillar-title {
+                      font-size: clamp(0.875rem, min(1.9vw, 2.67vh), 1.5rem) !important;
+                      line-height: 1.15 !important;
+                    }
+                    .pillar-body {
+                      font-size: clamp(14px, 1.78vh, 1rem) !important;
+                      line-height: 1.35 !important;
+                    }
+                    .pillar-inner {
+                      padding: clamp(8px, calc(4.71vh - 16px), 26px) clamp(12px, 1.95vw, 28px) !important;
+                    }
+                    .pillar-numeral {
+                      top: clamp(4px, 0.9vh, 12px) !important;
+                      right: clamp(8px, 0.9vw, 16px) !important;
+                      font-size: clamp(1.5rem, min(6vw, 8vh), 6.875rem) !important;
                     }
                   }
                 `}</style>
                 <div className="fixed inset-0 bg-gradient-to-b from-[#0d1225] to-[#141c35] -z-10" />
                 <div className="fixed top-0 right-0 w-[55vw] h-[55vh] bg-[radial-gradient(ellipse_at_top_right,rgba(120,60,180,0.12),transparent_65%)] pointer-events-none -z-10" />
-                <section className="relative flex min-h-0 flex-1 flex-col min-[1000px]:min-h-[auto]">
-                    {/* Pad is the measured header plus a gap. The column is at
-                        least one screen. On a short screen it grows so the
-                        tagline and ticker follow the cards. */}
+                <section className="relative flex min-h-0 flex-1 flex-col min-[1000px]:overflow-hidden">
+                    {/* Pad is the measured header plus a gap. The column is
+                        exactly one screen so the ticker stays in the viewport. */}
                     <div
-                        className="hero-fold relative box-border flex min-h-0 flex-1 flex-col min-[1000px]:min-h-[100svh]"
-                        style={{ paddingTop: 'calc(var(--landing-nav-h, 4.75rem) + 1.25rem)' }}
+                        className="hero-fold relative box-border flex min-h-0 flex-1 flex-col"
+                        style={{ paddingTop: 'calc(var(--landing-nav-h, 4.75rem) + clamp(8px, calc(1.8vh - 2px), 1.25rem))' }}
                     >
                         <HeroOverlayScrollWrapper>
-                            <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center px-6 min-[1000px]:h-auto min-[1000px]:min-h-[auto] min-[1000px]:flex-1 min-[1000px]:items-stretch min-[1000px]:gap-[clamp(12px,2vh,28px)] min-[1000px]:px-12">
+                            <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center px-6 min-[1000px]:h-full min-[1000px]:min-h-0 min-[1000px]:flex-1 min-[1000px]:items-stretch min-[1000px]:gap-0 min-[1000px]:px-12">
                                 <div className="w-full mx-auto max-w-lg text-center md:max-w-none min-[1000px]:contents min-[1000px]:ml-0 min-[1000px]:text-left">
+                                    <div aria-hidden="true" className="hero-flex-spacer hidden min-[1000px]:block" />
                                     <h1
                                         data-testid="hero-headline"
                                         className="hero-headline w-full max-w-full shrink-0 min-[1000px]:max-w-5xl mx-auto min-[1000px]:mx-0 text-center min-[1000px]:text-left text-balance font-bold text-white leading-[1.08]"
@@ -127,16 +177,18 @@ export function HeroSection({
                                     </h1>
                                     {!variantSubheadline && (
                                         <p
-                                            className="mt-[clamp(0.45rem,1.6vh,1rem)] w-full max-w-full shrink-0 mx-auto min-[1000px]:mx-0 min-[1000px]:mt-0 text-center min-[1000px]:text-left text-slate-400 leading-relaxed text-balance min-[1000px]:whitespace-nowrap"
+                                            className="hero-subtitle mt-[clamp(0.45rem,1.6vh,1rem)] w-full max-w-full shrink-0 mx-auto min-[1000px]:mx-0 min-[1000px]:mt-0 text-center min-[1000px]:text-left text-slate-400 text-balance min-[1000px]:whitespace-nowrap"
                                             style={{ fontSize: 'clamp(0.8rem, min(1.35vw, 2.1vh), 1rem)' }}
                                         >
                                             Precision health insights from your DNA, delivered through formulations engineered for your unique genome
                                         </p>
                                     )}
                                     <HeroPillars />
+                                    <div className="hero-bottom-block w-full shrink-0">
+                                    <div aria-hidden="true" className="hero-flex-spacer hidden min-[1000px]:block" />
                                     {variantSubheadline ? (
                                         <p
-                                            className="mt-[clamp(0.4rem,1.4vh,1.25rem)] w-full max-w-full min-[1000px]:max-w-2xl mx-auto min-[1000px]:mx-0 text-center min-[1000px]:text-left text-balance text-slate-300 leading-snug"
+                                            className="mt-[clamp(0.4rem,1.4vh,1.25rem)] w-full max-w-full min-[1000px]:mt-0 min-[1000px]:max-w-2xl mx-auto min-[1000px]:mx-0 text-center min-[1000px]:text-left text-balance text-slate-300 leading-snug"
                                             style={{ fontSize: 'clamp(0.85rem, min(1.3vw, 2vh), 1.05rem)' }}
                                         >
                                             {variantSubheadline}
@@ -144,32 +196,34 @@ export function HeroSection({
                                     ) : (
                                         <p
                                             data-testid="hero-tagline"
-                                            className="mt-[clamp(0.55rem,2vh,1rem)] w-full max-w-full shrink-0 mx-auto min-[1000px]:mx-0 min-[1000px]:mt-4 text-center min-[1000px]:text-left text-balance text-slate-300 leading-snug"
+                                            className="hero-tagline mt-[clamp(0.55rem,2vh,1rem)] w-full max-w-full shrink-0 mx-auto min-[1000px]:mx-0 min-[1000px]:mt-0 text-center min-[1000px]:text-left text-balance text-slate-300"
                                             style={{ fontSize: 'clamp(0.8rem, min(1.2vw, 1.8vh), 1rem)' }}
                                         >
                                             One Genome  One Formulation  One Life at a Time
                                         </p>
                                     )}
-                                    <div data-testid="hero-ctas" className="mt-[clamp(2.25rem,3vh,2.5rem)] w-full shrink-0 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-[clamp(0.5rem,1.2vh,1rem)] min-[1000px]:mt-0 min-[1000px]:justify-start">
+                                    <div aria-hidden="true" className="hero-flex-spacer hidden min-[1000px]:block" />
+                                    <div data-testid="hero-ctas" className="mt-[clamp(2.25rem,3vh,2.5rem)] w-full shrink-0 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-[clamp(0.5rem,1.2vh,1rem)] min-[1000px]:justify-start">
                                         <Link
                                             href={variantCtaHref ?? "/signup"}
-                                            className="inline-flex h-14 sm:h-12 min-[1000px]:h-12 min-[1000px]:px-6 w-full sm:w-auto items-center justify-center rounded-full bg-[#b75e18]/30 backdrop-blur-xl border border-[#b75e18]/40 pl-6 pr-4 text-base font-semibold text-white shadow-[0_0_20px_rgba(183,94,24,0.4)] transition-all duration-300 hover:bg-[#b75e18]/50 hover:border-[#b75e18]/60 hover:shadow-[0_0_30px_rgba(183,94,24,0.6)]">
+                                            className="inline-flex h-14 sm:h-12 min-[1000px]:h-[clamp(1.875rem,5.33vh,3rem)] min-[1000px]:px-6 w-full sm:w-auto items-center justify-center rounded-full bg-[#b75e18]/30 backdrop-blur-xl border border-[#b75e18]/40 pl-6 pr-4 text-base font-semibold text-white shadow-[0_0_20px_rgba(183,94,24,0.4)] transition-all duration-300 hover:bg-[#b75e18]/50 hover:border-[#b75e18]/60 hover:shadow-[0_0_30px_rgba(183,94,24,0.6)]">
                                             <span>{variantCtaLabel ?? "Your Journey Starts Here"}</span>
                                             <ChevronRight strokeWidth={1.5} className="ml-1" />
                                         </Link>
                                         <Link
                                             href="/login"
-                                            className="order-2 sm:order-1 inline-flex h-14 sm:h-12 min-[1000px]:h-12 min-[1000px]:px-6 w-full sm:w-auto items-center justify-center rounded-full border border-white/20 px-6 text-base font-semibold text-white backdrop-blur-sm transition-all duration-300 hover:border-white/30 hover:bg-white/10">
+                                            className="order-2 sm:order-1 inline-flex h-14 sm:h-12 min-[1000px]:h-[clamp(1.875rem,5.33vh,3rem)] min-[1000px]:px-6 w-full sm:w-auto items-center justify-center rounded-full border border-white/20 px-6 text-base font-semibold text-white backdrop-blur-sm transition-all duration-300 hover:border-white/30 hover:bg-white/10">
                                             <span>Sign In</span>
                                         </Link>
                                         <Link
                                             href="/practitioners"
-                                            className="order-1 sm:order-2 inline-flex h-14 sm:h-12 min-[1000px]:h-12 min-[1000px]:px-6 w-full sm:w-auto items-center justify-center rounded-full bg-[#2DA5A0]/30 backdrop-blur-xl border border-[#2DA5A0]/40 px-6 text-base font-semibold text-white shadow-[0_0_20px_rgba(45,165,160,0.4)] transition-all duration-300 hover:bg-[#2DA5A0]/50 hover:border-[#2DA5A0]/60 hover:shadow-[0_0_30px_rgba(45,165,160,0.6)]">
+                                            className="order-1 sm:order-2 inline-flex h-14 sm:h-12 min-[1000px]:h-[clamp(1.875rem,5.33vh,3rem)] min-[1000px]:px-6 w-full sm:w-auto items-center justify-center rounded-full bg-[#2DA5A0]/30 backdrop-blur-xl border border-[#2DA5A0]/40 px-6 text-base font-semibold text-white shadow-[0_0_20px_rgba(45,165,160,0.4)] transition-all duration-300 hover:bg-[#2DA5A0]/50 hover:border-[#2DA5A0]/60 hover:shadow-[0_0_30px_rgba(45,165,160,0.6)]">
                                             <span>I am a Practitioner or Naturopath</span>
                                         </Link>
                                     </div>
                                     <div className="mt-3 sm:hidden flex justify-center" aria-hidden="true">
                                         <ArrowDown className="w-4 h-4 text-white/50" strokeWidth={1.5} />
+                                    </div>
                                     </div>
                                 </div>
                             </div>
