@@ -84,14 +84,17 @@ export function HeroSection({
                 <div className="fixed inset-0 bg-gradient-to-b from-[#0d1225] to-[#141c35] -z-10" />
                 <div className="fixed top-0 right-0 w-[55vw] h-[55vh] bg-[radial-gradient(ellipse_at_top_right,rgba(120,60,180,0.12),transparent_65%)] pointer-events-none -z-10" />
                 <section className="relative flex-1 flex flex-col">
-                    {/* From 768px the hero used to center with no top padding, so a tall
-                        stack slid under the fixed bar. Keep a header clearance until
-                        the desktop layout (1000px), which is short enough to center. */}
-                    <div className="relative flex-1 pt-[102px] pb-[80px] md:flex md:flex-col md:justify-start md:pt-[88px] md:pb-6 min-[1000px]:justify-center min-[1000px]:pt-0 min-[1000px]:pb-0">
+                    {/* Padding is a floor under the fixed bar. safe center only
+                        uses leftover space, so a short viewport cannot pull the
+                        headline up through the logo. The bottom pad clears the ticker. */}
+                    <div className="relative flex-1 flex flex-col justify-start pt-[102px] pb-16 md:pt-[88px] md:pb-8 min-[1000px]:pt-[5.5rem] min-[1000px]:pb-[clamp(3.5rem,10vh,6rem)] min-[1000px]:[justify-content:safe_center]">
                         <HeroOverlayScrollWrapper>
                             <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center px-6 min-[1000px]:items-stretch min-[1000px]:block min-[1000px]:px-12">
                                 <div className="w-full mx-auto max-w-lg text-center md:max-w-none min-[1000px]:ml-0 min-[1000px]:text-left">
-                                    <h1 className="w-full max-w-full min-[1000px]:max-w-5xl mx-auto min-[1000px]:mx-0 text-center min-[1000px]:text-left text-balance text-3xl sm:text-4xl md:text-5xl min-[1000px]:text-6xl xl:text-7xl font-bold text-white leading-[1.1]">
+                                    <h1
+                                        className="w-full max-w-full min-[1000px]:max-w-5xl mx-auto min-[1000px]:mx-0 text-center min-[1000px]:text-left text-balance font-bold text-white leading-[1.08]"
+                                        style={{ fontSize: 'clamp(1.75rem, min(5.5vw, 6.2vh), 4.5rem)' }}
+                                    >
                                         {variantHeadline ? (
                                             <span className="block">{variantHeadline}</span>
                                         ) : (
@@ -102,35 +105,44 @@ export function HeroSection({
                                         )}
                                     </h1>
                                     {!variantSubheadline && (
-                                        <p className="mt-6 sm:mt-4 w-full max-w-full mx-auto min-[1000px]:mx-0 text-center min-[1000px]:text-left text-sm sm:text-base text-slate-400 leading-relaxed text-balance min-[1000px]:whitespace-nowrap">
+                                        <p
+                                            className="mt-[clamp(0.45rem,1.6vh,1rem)] w-full max-w-full mx-auto min-[1000px]:mx-0 text-center min-[1000px]:text-left text-slate-400 leading-relaxed text-balance min-[1000px]:whitespace-nowrap"
+                                            style={{ fontSize: 'clamp(0.8rem, min(1.35vw, 2.1vh), 1rem)' }}
+                                        >
                                             Precision health insights from your DNA, delivered through formulations engineered for your unique genome
                                         </p>
                                     )}
                                     <HeroPillars />
                                     {variantSubheadline ? (
-                                        <p className="mt-6 sm:mt-10 w-full max-w-full min-[1000px]:max-w-2xl mx-auto min-[1000px]:mx-0 text-center min-[1000px]:text-left text-balance text-base sm:text-lg text-slate-300 leading-relaxed">
+                                        <p
+                                            className="mt-[clamp(0.55rem,2vh,2.5rem)] w-full max-w-full min-[1000px]:max-w-2xl mx-auto min-[1000px]:mx-0 text-center min-[1000px]:text-left text-balance text-slate-300 leading-snug"
+                                            style={{ fontSize: 'clamp(0.9rem, min(1.5vw, 2.4vh), 1.125rem)' }}
+                                        >
                                             {variantSubheadline}
                                         </p>
                                     ) : (
-                                        <p className="mt-6 sm:mt-10 w-full max-w-full min-[1000px]:max-w-2xl mx-auto min-[1000px]:mx-0 text-center min-[1000px]:text-left text-balance text-base sm:text-lg text-slate-300 leading-relaxed">
+                                        <p
+                                            className="mt-[clamp(0.55rem,2vh,2.5rem)] w-full max-w-full min-[1000px]:max-w-2xl mx-auto min-[1000px]:mx-0 text-center min-[1000px]:text-left text-balance text-slate-300 leading-snug"
+                                            style={{ fontSize: 'clamp(0.9rem, min(1.5vw, 2.4vh), 1.125rem)' }}
+                                        >
                                             One Genome  One Formulation  One Life at a Time
                                         </p>
                                     )}
-                                    <div className="mt-6 sm:mt-10 w-full flex flex-col items-center justify-center gap-3 sm:gap-4 sm:flex-row min-[1000px]:justify-start">
+                                    <div className="mt-[clamp(0.55rem,2vh,2.5rem)] w-full flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-[clamp(0.5rem,1.5vh,1rem)] min-[1000px]:justify-start">
                                         <Link
                                             href={variantCtaHref ?? "/signup"}
-                                            className="inline-flex h-14 sm:h-12 w-full sm:w-auto items-center justify-center rounded-full bg-[#b75e18]/30 backdrop-blur-xl border border-[#b75e18]/40 pl-6 pr-4 text-base font-semibold text-white shadow-[0_0_20px_rgba(183,94,24,0.4)] transition-all duration-300 hover:bg-[#b75e18]/50 hover:border-[#b75e18]/60 hover:shadow-[0_0_30px_rgba(183,94,24,0.6)]">
+                                            className="inline-flex h-14 sm:h-12 min-[1000px]:h-[clamp(2.4rem,6vh,3rem)] w-full sm:w-auto items-center justify-center rounded-full bg-[#b75e18]/30 backdrop-blur-xl border border-[#b75e18]/40 pl-6 pr-4 text-base font-semibold text-white shadow-[0_0_20px_rgba(183,94,24,0.4)] transition-all duration-300 hover:bg-[#b75e18]/50 hover:border-[#b75e18]/60 hover:shadow-[0_0_30px_rgba(183,94,24,0.6)]">
                                             <span>{variantCtaLabel ?? "Your Journey Starts Here"}</span>
                                             <ChevronRight strokeWidth={1.5} className="ml-1" />
                                         </Link>
                                         <Link
                                             href="/login"
-                                            className="order-2 sm:order-1 inline-flex h-14 sm:h-12 w-full sm:w-auto items-center justify-center rounded-full border border-white/20 px-6 text-base font-semibold text-white backdrop-blur-sm transition-all duration-300 hover:border-white/30 hover:bg-white/10">
+                                            className="order-2 sm:order-1 inline-flex h-14 sm:h-12 min-[1000px]:h-[clamp(2.4rem,6vh,3rem)] w-full sm:w-auto items-center justify-center rounded-full border border-white/20 px-6 text-base font-semibold text-white backdrop-blur-sm transition-all duration-300 hover:border-white/30 hover:bg-white/10">
                                             <span>Sign In</span>
                                         </Link>
                                         <Link
                                             href="/practitioners"
-                                            className="order-1 sm:order-2 inline-flex h-14 sm:h-12 w-full sm:w-auto items-center justify-center rounded-full bg-[#2DA5A0]/30 backdrop-blur-xl border border-[#2DA5A0]/40 px-6 text-base font-semibold text-white shadow-[0_0_20px_rgba(45,165,160,0.4)] transition-all duration-300 hover:bg-[#2DA5A0]/50 hover:border-[#2DA5A0]/60 hover:shadow-[0_0_30px_rgba(45,165,160,0.6)]">
+                                            className="order-1 sm:order-2 inline-flex h-14 sm:h-12 min-[1000px]:h-[clamp(2.4rem,6vh,3rem)] w-full sm:w-auto items-center justify-center rounded-full bg-[#2DA5A0]/30 backdrop-blur-xl border border-[#2DA5A0]/40 px-6 text-base font-semibold text-white shadow-[0_0_20px_rgba(45,165,160,0.4)] transition-all duration-300 hover:bg-[#2DA5A0]/50 hover:border-[#2DA5A0]/60 hover:shadow-[0_0_30px_rgba(45,165,160,0.6)]">
                                             <span>I am a Practitioner or Naturopath</span>
                                         </Link>
                                     </div>
