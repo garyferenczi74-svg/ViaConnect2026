@@ -113,10 +113,16 @@ export function HeroSection({
                       min-height: 0;
                     }
                     .hero-bottom-block {
-                      padding-top: clamp(28px, 5.36vh, 48px) !important;
+                      flex: 1 1 auto !important;
+                      display: flex;
+                      flex-direction: column;
+                      min-height: 0;
+                    }
+                    .hero-bottom-block .hero-flex-spacer {
+                      min-height: clamp(21px, calc(3.24vh + 3px), 48px);
                     }
                     [data-testid="hero-ctas"] {
-                      margin-top: clamp(12px, 2vh, 16px) !important;
+                      margin-top: 0 !important;
                     }
                     [data-testid="hero-ticker"] {
                       margin-top: clamp(16px, 3.2vh, 20px) !important;
@@ -178,8 +184,8 @@ export function HeroSection({
                                         </p>
                                     )}
                                     <HeroPillars />
-                                    <div aria-hidden="true" className="hero-flex-spacer hidden min-[1000px]:block" />
                                     <div className="hero-bottom-block w-full shrink-0">
+                                    <div aria-hidden="true" className="hero-flex-spacer hidden min-[1000px]:block" />
                                     {variantSubheadline ? (
                                         <p
                                             className="mt-[clamp(0.4rem,1.4vh,1.25rem)] w-full max-w-full min-[1000px]:mt-0 min-[1000px]:max-w-2xl mx-auto min-[1000px]:mx-0 text-center min-[1000px]:text-left text-balance text-slate-300 leading-snug"
@@ -196,6 +202,7 @@ export function HeroSection({
                                             One Genome  One Formulation  One Life at a Time
                                         </p>
                                     )}
+                                    <div aria-hidden="true" className="hero-flex-spacer hidden min-[1000px]:block" />
                                     <div data-testid="hero-ctas" className="mt-[clamp(2.25rem,3vh,2.5rem)] w-full shrink-0 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-[clamp(0.5rem,1.2vh,1rem)] min-[1000px]:justify-start">
                                         <Link
                                             href={variantCtaHref ?? "/signup"}
