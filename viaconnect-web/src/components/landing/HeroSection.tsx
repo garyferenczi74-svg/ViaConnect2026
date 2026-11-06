@@ -103,16 +103,20 @@ export function HeroSection({
                     }
                     .hero-subtitle {
                       font-size: clamp(0.75rem, 1.78vh, 1rem) !important;
-                      margin-top: clamp(14px, 4.11vh, 40px) !important;
-                    }
-                    .hero-tagline {
-                      margin-top: clamp(20px, 5.36vh, 52px) !important;
+                      margin-top: clamp(12px, 4.4vh, 32px) !important;
                     }
                     [data-testid="hero-pillars-desktop-grid"] {
-                      margin-top: clamp(16px, 2.86vh, 28px) !important;
+                      margin-top: clamp(28px, 5.36vh, 48px) !important;
+                    }
+                    .hero-bottom-block {
+                      margin-top: auto !important;
+                      padding-top: clamp(28px, 5.36vh, 48px) !important;
                     }
                     [data-testid="hero-ctas"] {
-                      margin-top: clamp(14px, 4.11vh, 40px) !important;
+                      margin-top: clamp(12px, 2vh, 16px) !important;
+                    }
+                    [data-testid="hero-ticker"] {
+                      margin-top: clamp(16px, 3.2vh, 20px) !important;
                     }
                     [data-testid="hero-ctas"] a {
                       height: clamp(2.25rem, calc(3.53vh + 16px), 3rem) !important;
@@ -145,7 +149,7 @@ export function HeroSection({
                         style={{ paddingTop: 'calc(var(--landing-nav-h, 4.75rem) + clamp(8px, calc(1.8vh - 2px), 1.25rem))' }}
                     >
                         <HeroOverlayScrollWrapper>
-                            <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center px-6 min-[1000px]:h-auto min-[1000px]:min-h-0 min-[1000px]:flex-1 min-[1000px]:items-stretch min-[1000px]:gap-0 min-[1000px]:px-12">
+                            <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center px-6 min-[1000px]:h-full min-[1000px]:min-h-0 min-[1000px]:flex-1 min-[1000px]:items-stretch min-[1000px]:gap-0 min-[1000px]:px-12">
                                 <div className="w-full mx-auto max-w-lg text-center md:max-w-none min-[1000px]:contents min-[1000px]:ml-0 min-[1000px]:text-left">
                                     <h1
                                         data-testid="hero-headline"
@@ -170,9 +174,10 @@ export function HeroSection({
                                         </p>
                                     )}
                                     <HeroPillars />
+                                    <div className="hero-bottom-block w-full shrink-0 min-[1000px]:mt-auto">
                                     {variantSubheadline ? (
                                         <p
-                                            className="mt-[clamp(0.4rem,1.4vh,1.25rem)] w-full max-w-full min-[1000px]:max-w-2xl mx-auto min-[1000px]:mx-0 text-center min-[1000px]:text-left text-balance text-slate-300 leading-snug"
+                                            className="mt-[clamp(0.4rem,1.4vh,1.25rem)] w-full max-w-full min-[1000px]:mt-0 min-[1000px]:max-w-2xl mx-auto min-[1000px]:mx-0 text-center min-[1000px]:text-left text-balance text-slate-300 leading-snug"
                                             style={{ fontSize: 'clamp(0.85rem, min(1.3vw, 2vh), 1.05rem)' }}
                                         >
                                             {variantSubheadline}
@@ -186,7 +191,7 @@ export function HeroSection({
                                             One Genome  One Formulation  One Life at a Time
                                         </p>
                                     )}
-                                    <div data-testid="hero-ctas" className="mt-[clamp(2.25rem,3vh,2.5rem)] w-full shrink-0 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-[clamp(0.5rem,1.2vh,1rem)] min-[1000px]:mt-0 min-[1000px]:justify-start">
+                                    <div data-testid="hero-ctas" className="mt-[clamp(2.25rem,3vh,2.5rem)] w-full shrink-0 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-[clamp(0.5rem,1.2vh,1rem)] min-[1000px]:justify-start">
                                         <Link
                                             href={variantCtaHref ?? "/signup"}
                                             className="inline-flex h-14 sm:h-12 min-[1000px]:h-[clamp(1.875rem,5.33vh,3rem)] min-[1000px]:px-6 w-full sm:w-auto items-center justify-center rounded-full bg-[#b75e18]/30 backdrop-blur-xl border border-[#b75e18]/40 pl-6 pr-4 text-base font-semibold text-white shadow-[0_0_20px_rgba(183,94,24,0.4)] transition-all duration-300 hover:bg-[#b75e18]/50 hover:border-[#b75e18]/60 hover:shadow-[0_0_30px_rgba(183,94,24,0.6)]">
@@ -206,6 +211,7 @@ export function HeroSection({
                                     </div>
                                     <div className="mt-3 sm:hidden flex justify-center" aria-hidden="true">
                                         <ArrowDown className="w-4 h-4 text-white/50" strokeWidth={1.5} />
+                                    </div>
                                     </div>
                                 </div>
                             </div>
