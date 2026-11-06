@@ -14,8 +14,7 @@ describe('launch vote migration shape', () => {
     const m2 = readFileSync(join(MIGRATIONS_DIR, M2), 'utf8')
 
     it('sorts after the shop waitlist migration and sets lock timeout without a commit', () => {
-        expect(files.at(-2)).toBe(M1)
-        expect(files.at(-1)).toBe(M2)
+        expect(files.indexOf(M2)).toBe(files.indexOf(M1) + 1)
         expect(files.indexOf(M1)).toBeGreaterThan(files.indexOf('20260926200100_shop_product_waitlist.sql'))
         for (const sql of [m1, m2]) {
             expect(sql).toContain("set local lock_timeout = '5s'")

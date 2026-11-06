@@ -1,5 +1,5 @@
 {
-  "comment": "Baseline as of 2026-07-08 (210d P3-1c pre-merge regen): 210f-applied objects (practitioner core, cert/waitlist, invitations, white label tables/views) now exist in the refreshed live-types.ts snapshot and have left this baseline. Remaining entries are residual audit-known findings pending P1 decisions, plus applied RPCs still listed because db-functions.json was not part of this regen. 2026-07-12 (Prompt 211a): scan_cadence_reminders and scan_streak were applied to prod (migrations 20260710120000 / 20260712000500) and are baselined here pending the next live-types.ts snapshot regen, which moves them into the snapshot and out of this baseline (same lifecycle the 210f tables followed). 2026-08-16 (Prompt 219k): baselined 36 post-213/219 table refs used in app code (continuous ops, wearables, hannah/elysium/hounddog) pending next live-types.ts snapshot regen per apply-procedure. 2026-08-23 (Prompt #50 apply record): live-types.ts regen after v20260823225944; removed hounddog_scripts, hounddog_pipeline, and hounddog_analytics_rollup from this baseline because they are now in the snapshot. Kept hounddog_gated_items and hounddog_staging_items (pre-existing; not created by this apply). 2026-08-24 (inherited main gate): reviewed scan-code-refs stdout on 18ebc65 \u2014 8 leftover RPCs (kb/location/jeffery) plus table lifemetrics_webhook_events are in app code but absent from the committed snapshot + prior baseline. Baselined from scanner stdout pending the next live-types.ts / db-functions.json regen. Not a snapshot regen. 2026-08-24 (Brief 15): baselined practitioner_list_live_roster pending live-types.ts / db-functions.json regen after the roster apply.",
+  "comment": "Baseline as of 2026-07-08 (210d P3-1c pre-merge regen): 210f-applied objects (practitioner core, cert/waitlist, invitations, white label tables/views) now exist in the refreshed live-types.ts snapshot and have left this baseline. Remaining entries are residual audit-known findings pending P1 decisions, plus applied RPCs still listed because db-functions.json was not part of this regen. 2026-07-12 (Prompt 211a): scan_cadence_reminders and scan_streak were applied to prod (migrations 20260710120000 / 20260712000500) and are baselined here pending the next live-types.ts snapshot regen, which moves them into the snapshot and out of this baseline (same lifecycle the 210f tables followed). 2026-08-16 (Prompt 219k): baselined 36 post-213/219 table refs used in app code (continuous ops, wearables, hannah/elysium/hounddog) pending next live-types.ts snapshot regen per apply-procedure. 2026-08-23 (Prompt #50 apply record): live-types.ts regen after v20260823225944; removed hounddog_scripts, hounddog_pipeline, and hounddog_analytics_rollup from this baseline because they are now in the snapshot. Kept hounddog_gated_items and hounddog_staging_items (pre-existing; not created by this apply). 2026-08-24 (inherited main gate): reviewed scan-code-refs stdout on 18ebc65: 8 leftover RPCs (kb/location/jeffery) plus table lifemetrics_webhook_events are in app code but absent from the committed snapshot + prior baseline. Baselined from scanner stdout pending the next live-types.ts / db-functions.json regen. Not a snapshot regen. 2026-08-24 (Brief 15): baselined practitioner_list_live_roster pending live-types.ts / db-functions.json regen after the roster apply. 2026-11-06 (CI schema gates, job 128029260327): baselined 13 scan-code-refs findings. Eleven exist in public on nnhkcufyqjojdbvdrpky and are absent from the committed snapshot, pending the next live-types.ts and db-functions.json regen: body_photo_session_frames, scan_consent_acks, scan_consent_versions, shop_early_voter_codes, shop_launch_email_log, shop_launch_email_optout, shop_product_launch_plan, shop_product_waitlist, shop_admin_release_product, shop_cast_launch_vote, shop_launch_vote_top3. Not a snapshot regen and not an apply. ai_response_reports and practitioner_naturopath_credentials are referenced by app code; migrations 20261003120000_via_10_ai_data_sharing_consent and 20261003130000_practitioner_naturopath_credential were confirmed absent from supabase_migrations.schema_migrations the same day, so those two stay baselined as reviewed code ahead of the live schema.",
   "entries": [
     {
       "kind": "bucket",
@@ -91,6 +91,18 @@
     },
     {
       "kind": "rpc",
+      "name": "shop_admin_release_product"
+    },
+    {
+      "kind": "rpc",
+      "name": "shop_cast_launch_vote"
+    },
+    {
+      "kind": "rpc",
+      "name": "shop_launch_vote_top3"
+    },
+    {
+      "kind": "rpc",
       "name": "sum_practitioner_wholesale_volume"
     },
     {
@@ -127,6 +139,10 @@
     },
     {
       "kind": "table",
+      "name": "ai_response_reports"
+    },
+    {
+      "kind": "table",
       "name": "archetype_definitions"
     },
     {
@@ -144,6 +160,10 @@
     {
       "kind": "table",
       "name": "biometrics"
+    },
+    {
+      "kind": "table",
+      "name": "body_photo_session_frames"
     },
     {
       "kind": "table",
@@ -351,6 +371,10 @@
     },
     {
       "kind": "table",
+      "name": "practitioner_naturopath_credentials"
+    },
+    {
+      "kind": "table",
       "name": "practitioner_referral_attributions"
     },
     {
@@ -419,11 +443,39 @@
     },
     {
       "kind": "table",
+      "name": "scan_consent_acks"
+    },
+    {
+      "kind": "table",
+      "name": "scan_consent_versions"
+    },
+    {
+      "kind": "table",
       "name": "scan_streak"
     },
     {
       "kind": "table",
       "name": "sherlock_curation_items"
+    },
+    {
+      "kind": "table",
+      "name": "shop_early_voter_codes"
+    },
+    {
+      "kind": "table",
+      "name": "shop_launch_email_log"
+    },
+    {
+      "kind": "table",
+      "name": "shop_launch_email_optout"
+    },
+    {
+      "kind": "table",
+      "name": "shop_product_launch_plan"
+    },
+    {
+      "kind": "table",
+      "name": "shop_product_waitlist"
     },
     {
       "kind": "table",
