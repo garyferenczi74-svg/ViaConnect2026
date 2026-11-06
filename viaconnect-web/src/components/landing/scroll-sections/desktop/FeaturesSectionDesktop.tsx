@@ -11,7 +11,7 @@ export function FeaturesSectionDesktop() {
         <SectionAnchor
             id={SECTION_IDS.features}
             ariaLabel="ViaConnect Features"
-            className="px-5 pt-20 pb-6 md:px-12 md:pt-32 md:pb-8"
+            className="px-5 pt-20 pb-6 md:px-12 md:pt-32 md:pb-8 min-[1000px]:!bg-[#0d1225] min-[1000px]:!pt-24"
         >
             <div className="max-w-7xl mx-auto">
                 <motion.div
@@ -24,7 +24,7 @@ export function FeaturesSectionDesktop() {
                     <p className="text-[#2DA5A0] uppercase tracking-[0.2em] text-xs md:text-sm mb-3 md:mb-4 font-medium">
                         What You Get
                     </p>
-                    <h2 className="text-white text-4xl md:text-6xl font-light leading-tight mb-4 md:mb-6">
+                    <h2 data-testid="features-heading" className="text-white text-4xl md:text-6xl font-light leading-tight mb-4 md:mb-6">
                         Features built for your biology
                     </h2>
                     <p className="text-white/70 text-base md:text-xl max-w-3xl leading-relaxed lg:hidden">

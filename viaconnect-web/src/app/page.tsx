@@ -11,9 +11,8 @@ import { LandingScrollSections } from "@/components/landing/scroll-sections/Land
 export const dynamic = "force-dynamic";
 
 // Prompt #139: landing scroll consolidation.
-// Hero is sticky; subsequent sections scroll over it with semi-transparent
-// backgrounds so the hero video stays visible throughout.
-// The hero ticker is the last row of the viewport-tall hero (mt-auto).
+// From 1000px the hero is an in-flow 100svh/100dvh block. Later sections
+// start after it, with their own top padding, and do not paint over it.
 // TrustBand / SarahScenario / OutcomeTimeline preserved verbatim from #138.
 // LandingScrollSections appends one Features / Process / Genomics / About /
 // Membership / Final CTA tree (Brief 45: no dual desktop+mobile SSR).

@@ -110,3 +110,65 @@ test.describe('landing hero one viewport', () => {
     });
   }
 });
+
+const SCROLL_SIZES = [
+  { width: 1007, height: 520 },
+  { width: 1007, height: 560 },
+  { width: 1280, height: 720 },
+  { width: 1440, height: 900 },
+] as const;
+
+function boxesIntersect(
+  a: { x: number; y: number; width: number; height: number },
+  b: { x: number; y: number; width: number; height: number },
+) {
+  return a.x < b.x + b.width - 1
+    && a.x + a.width > b.x + 1
+    && a.y < b.y + b.height - 1
+    && a.y + a.height > b.y + 1;
+}
+
+test.describe('landing hero stays in flow while scrolling', () => {
+  for (const { width, height } of SCROLL_SIZES) {
+    test(`next section clears the hero at ${width}x${height}`, async ({ page }) => {
+      await page.setViewportSize({ width, height });
+      await page.goto('/');
+      await page.getByTestId('hero-headline').waitFor({ state: 'visible' });
+      await page.evaluate(() => window.scrollTo(0, 0));
+
+      const hero = page.locator('.hero-screen');
+      const heroBox = await hero.boundingBox();
+      const headline = await page.getByTestId('hero-headline').boundingBox();
+      const nav = await page.locator('header nav').boundingBox();
+      expect(heroBox).not.toBeNull();
+      expect(headline).not.toBeNull();
+      expect(nav).not.toBeNull();
+      if (!heroBox || !headline || !nav) return;
+
+      const innerHeight = await page.evaluate(() => window.innerHeight);
+      expect(heroBox.y + heroBox.height).toBeLessThanOrEqual(innerHeight + 1);
+      expect(headline.y).toBeGreaterThanOrEqual(nav.y + nav.height + 4);
+      const scrollHeight = await page.evaluate(() => document.documentElement.scrollHeight);
+      expect(scrollHeight).toBeGreaterThan(innerHeight + 40);
+
+      const heroHeight = await hero.evaluate((el) => el.getBoundingClientRect().height);
+      await page.evaluate((y) => window.scrollTo(0, y), heroHeight);
+      const heading = page.getByTestId('features-heading');
+      const headingBox = await heading.boundingBox();
+      const heroAfter = await hero.boundingBox();
+      expect(headingBox).not.toBeNull();
+      expect(heroAfter).not.toBeNull();
+      if (!headingBox || !heroAfter) return;
+      expect(headingBox.y).toBeGreaterThan(heroAfter.y + heroAfter.height);
+
+      const features = await page.locator('#features').boundingBox();
+      expect(features).not.toBeNull();
+      if (!features) return;
+      for (const id of ['hero-headline', 'hero-tagline', 'hero-ctas', 'hero-ticker'] as const) {
+        const piece = await page.getByTestId(id).boundingBox();
+        expect(piece).not.toBeNull();
+        if (piece) expect(boxesIntersect(piece, features)).toBe(false);
+      }
+    });
+  }
+});
